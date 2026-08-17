@@ -16,6 +16,8 @@ type ChunkRow = {
 type FinalAudio = { url: string; extension: string; sizeBytes: number };
 
 const SILENCE_RMS_THRESHOLD = 0.005;
+const SUMMARY_EVERY_N_CHUNKS = 2;
+const FORMAT_EVERY_N_CHUNKS = 4;
 
 async function isSilentBlob(blob: Blob): Promise<boolean> {
   try {
@@ -98,12 +100,19 @@ export default function SpikePage() {
   const chunksRef = useRef<Map<number, ChunkRow>>(new Map());
   const startedAtRef = useRef<number>(0);
   const tickTimerRef = useRef<ReturnType<typeof setInterval> | null>(null);
+  const lastSummaryChunkRef = useRef(0);
+  const lastFormatChunkRef = useRef(0);
 
   const [running, setRunning] = useState(false);
   const [elapsedMs, setElapsedMs] = useState(0);
   const [chunkRows, setChunkRows] = useState<ChunkRow[]>([]);
   const [finalAudio, setFinalAudio] = useState<FinalAudio | null>(null);
   const [startupError, setStartupError] = useState<string>("");
+  const [summary, setSummary] = useState("");
+  const [formattedTranscript, setFormattedTranscript] = useState("");
+  const [formattedUpToOkCount, setFormattedUpToOkCount] = useState(0);
+  const [summarizing, setSummarizing] = useState(false);
+  const [formatting, setFormatting] = useState(false);
 
   const publish = useCallback(() => {
     const rows = Array.from(chunksRef.current.values()).sort((a, b) => a.index - b.index);
@@ -120,7 +129,73 @@ export default function SpikePage() {
       .trim();
   }, [chunkRows]);
 
+  const okChunkCount = useMemo(
+    () => chunkRows.filter((r) => r.status === "ok").length,
+    [chunkRows]
+  );
+
+  const displayTranscript = useMemo(() => {
+    if (!formattedTranscript) return transcript;
+    const newerText = chunkRows
+      .filter((r) => r.status === "ok")
+      .slice(formattedUpToOkCount)
+      .map((r) => r.text.trim())
+      .filter(Boolean)
+      .join(" ")
+      .replace(/\s+/g, " ")
+      .trim();
+    return newerText ? `${formattedTranscript}\n\n${newerText}` : formattedTranscript;
+  }, [chunkRows, formattedTranscript, formattedUpToOkCount, transcript]);
+
   const isProcessing = useMemo(() => chunkRows.some((r) => r.status === "uploading"), [chunkRows]);
+
+  useEffect(() => {
+    if (!transcript || summarizing) return;
+    const dueForSummary =
+      okChunkCount > 0 &&
+      okChunkCount % SUMMARY_EVERY_N_CHUNKS === 0 &&
+      lastSummaryChunkRef.current !== okChunkCount;
+    if (!dueForSummary) return;
+    lastSummaryChunkRef.current = okChunkCount;
+    setSummarizing(true);
+    fetch("/api/summarize", {
+      method: "POST",
+      headers: { "content-type": "application/json" },
+      body: JSON.stringify({ text: transcript }),
+    })
+      .then((r) => r.json())
+      .then((body) => {
+        if (body?.summary) setSummary(body.summary);
+      })
+      .catch(() => {})
+      .finally(() => setSummarizing(false));
+  }, [okChunkCount, transcript, summarizing]);
+
+  useEffect(() => {
+    if (!transcript || formatting) return;
+    const dueForFormat =
+      okChunkCount > 0 &&
+      okChunkCount % FORMAT_EVERY_N_CHUNKS === 0 &&
+      lastFormatChunkRef.current !== okChunkCount;
+    if (!dueForFormat) return;
+    lastFormatChunkRef.current = okChunkCount;
+    const okCountAtTrigger = okChunkCount;
+    setFormatting(true);
+    fetch("/api/format-paragraphs", {
+      method: "POST",
+      headers: { "content-type": "application/json" },
+      body: JSON.stringify({ text: transcript }),
+    })
+      .then((r) => r.json())
+      .then((body) => {
+        if (body?.formatted) {
+          setFormattedTranscript(body.formatted);
+          setFormattedUpToOkCount(okCountAtTrigger);
+        }
+      })
+      .catch(() => {})
+      .finally(() => setFormatting(false));
+  }, [okChunkCount, transcript, formatting]);
 
   const handleChunk = useCallback(
     async (ev: ChunkEvent) => {
@@ -180,6 +255,11 @@ export default function SpikePage() {
     setStartupError("");
     setFinalAudio(null);
     setChunkRows([]);
+    setSummary("");
+    setFormattedTranscript("");
+    setFormattedUpToOkCount(0);
+    lastSummaryChunkRef.current = 0;
+    lastFormatChunkRef.current = 0;
     chunksRef.current = new Map();
 
     const rec = createRecorder({
@@ -240,30 +320,32 @@ export default function SpikePage() {
   }, [releaseWakeLock]);
 
   const showFinal = !running && finalAudio && transcript.length > 0;
+  const showPanels = running || showFinal;
+  const transcriptState: "listening" | "transcribing" | "idle" = running
+    ? isProcessing
+      ? "transcribing"
+      : "listening"
+    : "idle";
 
   return (
-    <main className="mx-auto flex min-h-svh max-w-2xl flex-col items-center gap-10 px-6 py-16">
+    <main className="mx-auto flex min-h-svh max-w-5xl flex-col items-center gap-10 px-6 py-16">
       <RecordButton running={running} elapsedMs={elapsedMs} onStart={start} onStop={stop} />
 
       {startupError ? (
         <p className="text-sm text-destructive" role="alert">
           {startupError}
         </p>
-      ) : (
-        <p className="text-sm text-muted-foreground">
-          {running
-            ? "Escutando…"
-            : showFinal
-              ? "Gravação finalizada"
-              : "Toque no microfone para começar"}
-        </p>
-      )}
+      ) : null}
 
-      {running || showFinal ? (
-        <Transcript
-          text={transcript}
-          state={running ? (isProcessing ? "transcribing" : "listening") : "idle"}
-        />
+      {showPanels ? (
+        <div className="grid w-full self-stretch grid-cols-1 gap-6 md:grid-cols-2">
+          <Panel title="Transcrição" pending={formatting}>
+            <TranscriptView text={displayTranscript} state={transcriptState} />
+          </Panel>
+          <Panel title="Resumo" pending={summarizing}>
+            <SummaryView summary={summary} hasTranscript={transcript.length > 0} />
+          </Panel>
+        </div>
       ) : null}
 
       {showFinal ? <AudioPlayer audio={finalAudio} /> : null}
@@ -314,23 +396,87 @@ function RecordButton({
   );
 }
 
-function Transcript({
+function Panel({
+  title,
+  pending,
+  children,
+}: {
+  title: string;
+  pending: boolean;
+  children: React.ReactNode;
+}) {
+  return (
+    <section className="flex min-h-[220px] flex-col gap-3 rounded-2xl border border-border bg-card p-5 shadow-sm">
+      <header className="flex items-center justify-between">
+        <h2 className="text-xs font-medium tracking-wider text-muted-foreground uppercase">
+          {title}
+        </h2>
+        {pending ? <InlineDots /> : null}
+      </header>
+      <div className="flex-1">{children}</div>
+    </section>
+  );
+}
+
+function InlineDots() {
+  return (
+    <div role="status" aria-label="Processando" className="flex items-center gap-1">
+      <span className="size-1 animate-listening-dot rounded-full bg-muted-foreground/60" />
+      <span className="size-1 animate-listening-dot rounded-full bg-muted-foreground/60 [animation-delay:200ms]" />
+      <span className="size-1 animate-listening-dot rounded-full bg-muted-foreground/60 [animation-delay:400ms]" />
+    </div>
+  );
+}
+
+function TranscriptView({
   text,
   state,
 }: {
   text: string;
   state: "listening" | "transcribing" | "idle";
 }) {
+  const paragraphs = text
+    .split(/\n\n+/)
+    .map((p) => p.trim())
+    .filter(Boolean);
+
   return (
-    <div className="w-full self-stretch space-y-3">
-      {text ? (
-        <p className="text-pretty text-base leading-relaxed text-foreground">{text}</p>
+    <div className="space-y-3">
+      {paragraphs.length > 0 ? (
+        <div className="space-y-3 text-pretty text-sm leading-relaxed text-foreground">
+          {paragraphs.map((p) => (
+            <p key={p}>{p}</p>
+          ))}
+        </div>
       ) : state === "idle" ? (
-        <p className="text-center text-muted-foreground">Aguardando fala…</p>
+        <p className="text-sm text-muted-foreground">Sem transcrição.</p>
       ) : null}
       {state === "transcribing" ? <TranscriptSkeleton /> : null}
-      {state === "listening" ? <ListeningDots /> : null}
+      {state === "listening" && !text ? <ListeningDots /> : null}
     </div>
+  );
+}
+
+function SummaryView({ summary, hasTranscript }: { summary: string; hasTranscript: boolean }) {
+  if (summary) {
+    const paragraphs = summary
+      .split(/\n\n+/)
+      .map((p) => p.trim())
+      .filter(Boolean);
+    return (
+      <div className="space-y-3 text-pretty text-sm leading-relaxed text-foreground">
+        {paragraphs.map((p) => (
+          <p key={p}>{p}</p>
+        ))}
+      </div>
+    );
+  }
+  return (
+    <p className="text-sm text-muted-foreground">
+      {hasTranscript
+        ? "Aguardando conteúdo suficiente para o primeiro resumo…"
+        : "O resumo aparecerá aqui."}
+    </p>
   );
 }
 
