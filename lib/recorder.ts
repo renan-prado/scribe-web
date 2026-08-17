@@ -7,7 +7,7 @@ export type ChunkEvent = {
   durationMs: number;
 };
 
-export type RecorderErrorSource = "stream" | "chunk" | "full";
+export type RecorderErrorSource = "stream" | "chunk" | "full" | "vad";
 
 export type RecorderErrorEvent = {
   source: RecorderErrorSource;
@@ -21,7 +21,10 @@ export type FinalAudioEvent = {
 };
 
 export type RecorderOptions = {
-  chunkMs?: number;
+  minChunkMs?: number;
+  maxChunkMs?: number;
+  silenceThreshold?: number;
+  silenceHoldMs?: number;
 };
 
 export type Recorder = {
@@ -54,7 +57,10 @@ function pickMime(): MimeCandidate | null {
 }
 
 export function createRecorder(opts: RecorderOptions = {}): Recorder {
-  const chunkMs = opts.chunkMs ?? 30_000;
+  const minChunkMs = opts.minChunkMs ?? 20_000;
+  const maxChunkMs = opts.maxChunkMs ?? 45_000;
+  const silenceThreshold = opts.silenceThreshold ?? 0.01;
+  const silenceHoldMs = opts.silenceHoldMs ?? 400;
 
   let stream: MediaStream | null = null;
   let chunkRecorder: MediaRecorder | null = null;
@@ -63,9 +69,13 @@ export function createRecorder(opts: RecorderOptions = {}): Recorder {
   let fullParts: BlobPart[] = [];
   let chunkIndex = 0;
   let chunkStartedAt = 0;
-  let restartTimer: ReturnType<typeof setTimeout> | null = null;
   let running = false;
   let picked: MimeCandidate | null = null;
+
+  let audioContext: AudioContext | null = null;
+  let analyser: AnalyserNode | null = null;
+  let vadTimer: ReturnType<typeof setInterval> | null = null;
+  let silenceSince: number | null = null;
 
   let chunkCb: ((ev: ChunkEvent) => void) | null = null;
   let errorCb: ((ev: RecorderErrorEvent) => void) | null = null;
@@ -75,18 +85,47 @@ export function createRecorder(opts: RecorderOptions = {}): Recorder {
     if (errorCb) errorCb({ source, message });
   };
 
-  const scheduleRestart = () => {
-    if (restartTimer) clearTimeout(restartTimer);
-    restartTimer = setTimeout(() => {
-      if (!running || !chunkRecorder) return;
-      try {
-        if (chunkRecorder.state === "recording") {
-          chunkRecorder.stop();
-        }
-      } catch (err) {
-        emitError("chunk", (err as Error).message ?? "chunk stop failed");
+  const stopVadTimer = () => {
+    if (vadTimer) {
+      clearInterval(vadTimer);
+      vadTimer = null;
+    }
+  };
+
+  const startVadMonitor = () => {
+    stopVadTimer();
+    if (!analyser) return;
+    silenceSince = null;
+    const buffer = new Uint8Array(analyser.fftSize);
+    vadTimer = setInterval(() => {
+      if (!running || !chunkRecorder || chunkRecorder.state !== "recording") return;
+      if (!analyser) return;
+      const elapsed = performance.now() - chunkStartedAt;
+
+      analyser.getByteTimeDomainData(buffer);
+      let sumSquares = 0;
+      for (let i = 0; i < buffer.length; i++) {
+        const v = (buffer[i] - 128) / 128;
+        sumSquares += v * v;
       }
-    }, chunkMs);
+      const rms = Math.sqrt(sumSquares / buffer.length);
+      const now = performance.now();
+      if (rms < silenceThreshold) {
+        if (silenceSince == null) silenceSince = now;
+      } else {
+        silenceSince = null;
+      }
+      const silenceHeldMs = silenceSince != null ? now - silenceSince : 0;
+      const cutAtSilence = elapsed >= minChunkMs && silenceHeldMs >= silenceHoldMs;
+      const forceCut = elapsed >= maxChunkMs;
+      if (cutAtSilence || forceCut) {
+        try {
+          chunkRecorder.stop();
+        } catch (err) {
+          emitError("chunk", (err as Error).message ?? "chunk stop failed");
+        }
+      }
+    }, 50);
   };
 
   const startChunkRecorder = () => {
@@ -129,7 +168,7 @@ export function createRecorder(opts: RecorderOptions = {}): Recorder {
     chunkRecorder = rec;
     try {
       rec.start();
-      scheduleRestart();
+      startVadMonitor();
     } catch (err) {
       emitError("chunk", (err as Error).message ?? "chunk start failed");
     }
@@ -169,6 +208,23 @@ export function createRecorder(opts: RecorderOptions = {}): Recorder {
     }
   };
 
+  const setupVad = () => {
+    if (!stream) return;
+    try {
+      const AC =
+        window.AudioContext ??
+        (window as unknown as { webkitAudioContext?: typeof AudioContext }).webkitAudioContext;
+      if (!AC) throw new Error("AudioContext unavailable");
+      audioContext = new AC();
+      const source = audioContext.createMediaStreamSource(stream);
+      analyser = audioContext.createAnalyser();
+      analyser.fftSize = 2048;
+      source.connect(analyser);
+    } catch (err) {
+      emitError("vad", (err as Error).message ?? "vad setup failed");
+    }
+  };
+
   return {
     async start() {
       if (running) throw new Error("already running");
@@ -182,6 +238,7 @@ export function createRecorder(opts: RecorderOptions = {}): Recorder {
       }
       chunkIndex = 0;
       running = true;
+      setupVad();
       startFullRecorder();
       startChunkRecorder();
       return { mimeType: picked.mimeType, extension: picked.extension };
@@ -189,10 +246,7 @@ export function createRecorder(opts: RecorderOptions = {}): Recorder {
     async stop() {
       if (!running) return;
       running = false;
-      if (restartTimer) {
-        clearTimeout(restartTimer);
-        restartTimer = null;
-      }
+      stopVadTimer();
       try {
         if (chunkRecorder && chunkRecorder.state === "recording") chunkRecorder.stop();
       } catch (err) {
@@ -202,6 +256,15 @@ export function createRecorder(opts: RecorderOptions = {}): Recorder {
         if (fullRecorder && fullRecorder.state === "recording") fullRecorder.stop();
       } catch (err) {
         emitError("full", (err as Error).message ?? "full final stop failed");
+      }
+      if (audioContext) {
+        try {
+          await audioContext.close();
+        } catch {
+          // ignore
+        }
+        audioContext = null;
+        analyser = null;
       }
       if (stream) {
         for (const t of stream.getTracks()) t.stop();

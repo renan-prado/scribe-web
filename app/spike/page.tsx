@@ -214,7 +214,12 @@ export default function SpikePage() {
     setVisibilityLog([]);
     chunksRef.current = new Map();
 
-    const rec = createRecorder({ chunkMs: 30_000 });
+    const rec = createRecorder({
+      minChunkMs: 20_000,
+      maxChunkMs: 45_000,
+      silenceThreshold: 0.01,
+      silenceHoldMs: 400,
+    });
     rec.onChunk(handleChunk);
     rec.onError((e) => {
       setErrorCount((n) => n + 1);
