@@ -381,7 +381,7 @@ function AudioPlayer({ audio }: { audio: FinalAudio }) {
     else el.pause();
   }, []);
 
-  const onSeek = useCallback((e: React.PointerEvent<HTMLDivElement>) => {
+  const onSeek = useCallback((e: React.PointerEvent<HTMLButtonElement>) => {
     const el = audioRef.current;
     if (!el || !Number.isFinite(el.duration)) return;
     const rect = e.currentTarget.getBoundingClientRect();
