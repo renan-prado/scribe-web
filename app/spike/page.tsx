@@ -1,18 +1,19 @@
 "use client";
 
+import { Download, Mic, Pause, Play, Square } from "lucide-react";
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { type ChunkEvent, createRecorder, type Recorder } from "@/lib/recorder";
+import { cn } from "@/lib/utils";
 
 type ChunkStatus = "uploading" | "ok" | "silence" | "error";
 
 type ChunkRow = {
   index: number;
-  timestamp: string;
   status: ChunkStatus;
-  latencyMs: number | null;
   text: string;
-  errorMessage?: string;
 };
+
+type FinalAudio = { url: string; extension: string; sizeBytes: number };
 
 const SILENCE_RMS_THRESHOLD = 0.005;
 
@@ -45,8 +46,6 @@ async function isSilentBlob(blob: Blob): Promise<boolean> {
   }
 }
 
-type FinalAudio = { url: string; extension: string; sizeBytes: number };
-
 function formatMmSs(ms: number): string {
   const total = Math.max(0, Math.floor(ms / 1000));
   const mm = Math.floor(total / 60)
@@ -65,7 +64,7 @@ function tailSentences(text: string, count: number): string {
 async function uploadChunkWithRetry(
   ev: ChunkEvent,
   prevText: string
-): Promise<{ ok: true; text: string; latencyMs: number } | { ok: false; message: string }> {
+): Promise<{ ok: true; text: string } | { ok: false; message: string }> {
   const backoffMs = [500, 1500];
   let lastMessage = "unknown error";
   for (let attempt = 0; attempt <= backoffMs.length; attempt++) {
@@ -81,7 +80,7 @@ async function uploadChunkWithRetry(
       if (!res.ok) {
         lastMessage = body?.error ?? `HTTP ${res.status}`;
       } else {
-        return { ok: true, text: body.text ?? "", latencyMs: body.latencyMs ?? 0 };
+        return { ok: true, text: body.text ?? "" };
       }
     } catch (err) {
       lastMessage = (err as Error).message ?? "network error";
@@ -102,12 +101,8 @@ export default function SpikePage() {
 
   const [running, setRunning] = useState(false);
   const [elapsedMs, setElapsedMs] = useState(0);
-  const [mimeType, setMimeType] = useState<string>("");
   const [chunkRows, setChunkRows] = useState<ChunkRow[]>([]);
-  const [errorCount, setErrorCount] = useState(0);
-  const [visibilityLog, setVisibilityLog] = useState<string[]>([]);
   const [finalAudio, setFinalAudio] = useState<FinalAudio | null>(null);
-  const [wakeLockStatus, setWakeLockStatus] = useState<string>("idle");
   const [startupError, setStartupError] = useState<string>("");
 
   const publish = useCallback(() => {
@@ -115,34 +110,26 @@ export default function SpikePage() {
     setChunkRows(rows);
   }, []);
 
-  const accumulatedText = useMemo(() => {
+  const transcript = useMemo(() => {
     return chunkRows
       .filter((r) => r.status === "ok")
-      .map((r) => r.text)
+      .map((r) => r.text.trim())
+      .filter(Boolean)
       .join(" ")
       .replace(/\s+/g, " ")
       .trim();
   }, [chunkRows]);
 
+  const isProcessing = useMemo(() => chunkRows.some((r) => r.status === "uploading"), [chunkRows]);
+
   const handleChunk = useCallback(
     async (ev: ChunkEvent) => {
-      const row: ChunkRow = {
-        index: ev.index,
-        timestamp: formatMmSs(ev.startedAt - startedAtRef.current),
-        status: "uploading",
-        latencyMs: null,
-        text: "",
-      };
+      const row: ChunkRow = { index: ev.index, status: "uploading", text: "" };
       chunksRef.current.set(ev.index, row);
       publish();
 
       if (await isSilentBlob(ev.blob)) {
-        chunksRef.current.set(ev.index, {
-          ...row,
-          status: "silence",
-          latencyMs: 0,
-          text: "",
-        });
+        chunksRef.current.set(ev.index, { ...row, status: "silence" });
         publish();
         return;
       }
@@ -158,19 +145,9 @@ export default function SpikePage() {
       const current = chunksRef.current.get(ev.index);
       if (!current) return;
       if (result.ok) {
-        chunksRef.current.set(ev.index, {
-          ...current,
-          status: "ok",
-          latencyMs: result.latencyMs,
-          text: result.text,
-        });
+        chunksRef.current.set(ev.index, { ...current, status: "ok", text: result.text });
       } else {
-        chunksRef.current.set(ev.index, {
-          ...current,
-          status: "error",
-          errorMessage: result.message,
-        });
-        setErrorCount((n) => n + 1);
+        chunksRef.current.set(ev.index, { ...current, status: "error" });
       }
       publish();
     },
@@ -179,17 +156,11 @@ export default function SpikePage() {
 
   const requestWakeLock = useCallback(async () => {
     const wl = (navigator as unknown as { wakeLock?: WakeLock }).wakeLock;
-    if (!wl || typeof wl.request !== "function") {
-      setWakeLockStatus("unsupported");
-      return;
-    }
+    if (!wl || typeof wl.request !== "function") return;
     try {
-      const sentinel = await wl.request("screen");
-      wakeLockRef.current = sentinel;
-      setWakeLockStatus("held");
-      sentinel.addEventListener("release", () => setWakeLockStatus("released"));
-    } catch (err) {
-      setWakeLockStatus(`error: ${(err as Error).message}`);
+      wakeLockRef.current = await wl.request("screen");
+    } catch {
+      // ignore
     }
   }, []);
 
@@ -201,7 +172,6 @@ export default function SpikePage() {
         // ignore
       }
       wakeLockRef.current = null;
-      setWakeLockStatus("released");
     }
   }, []);
 
@@ -210,8 +180,6 @@ export default function SpikePage() {
     setStartupError("");
     setFinalAudio(null);
     setChunkRows([]);
-    setErrorCount(0);
-    setVisibilityLog([]);
     chunksRef.current = new Map();
 
     const rec = createRecorder({
@@ -221,22 +189,14 @@ export default function SpikePage() {
       silenceHoldMs: 400,
     });
     rec.onChunk(handleChunk);
-    rec.onError((e) => {
-      setErrorCount((n) => n + 1);
-      setVisibilityLog((log) => [
-        ...log,
-        `${formatMmSs(performance.now() - startedAtRef.current)} — recorder error (${e.source}): ${e.message}`,
-      ]);
-    });
     rec.onFinalAudio((ev) => {
       const url = URL.createObjectURL(ev.blob);
       setFinalAudio({ url, extension: ev.extension, sizeBytes: ev.blob.size });
     });
 
     try {
-      const info = await rec.start();
+      await rec.start();
       recorderRef.current = rec;
-      setMimeType(info.mimeType);
       startedAtRef.current = performance.now();
       setElapsedMs(0);
       setRunning(true);
@@ -263,8 +223,6 @@ export default function SpikePage() {
 
   useEffect(() => {
     const onVis = () => {
-      const stamp = formatMmSs(performance.now() - startedAtRef.current);
-      setVisibilityLog((log) => [...log, `${stamp} — visibility: ${document.visibilityState}`]);
       if (document.visibilityState === "visible" && running && !wakeLockRef.current) {
         void requestWakeLock();
       }
@@ -281,179 +239,239 @@ export default function SpikePage() {
     };
   }, [releaseWakeLock]);
 
-  const copyTranscript = useCallback(async () => {
-    try {
-      await navigator.clipboard.writeText(accumulatedText);
-    } catch {
-      // fall back to selecting
-    }
-  }, [accumulatedText]);
+  const showFinal = !running && finalAudio && transcript.length > 0;
 
   return (
-    <main className="mx-auto flex max-w-3xl flex-col gap-6 p-6">
-      <header className="flex flex-col gap-2">
-        <h1 className="text-2xl font-semibold">Spike: gravação + transcrição</h1>
-        <p className="text-sm text-gray-600">
-          Descartável. Prova de conceito para gravar ~50 min em celular com transcrição
-          quase-real-time.
+    <main className="mx-auto flex min-h-svh max-w-2xl flex-col items-center gap-10 px-6 py-16">
+      <RecordButton running={running} elapsedMs={elapsedMs} onStart={start} onStop={stop} />
+
+      {startupError ? (
+        <p className="text-sm text-destructive" role="alert">
+          {startupError}
         </p>
-      </header>
+      ) : (
+        <p className="text-sm text-muted-foreground">
+          {running
+            ? "Escutando…"
+            : showFinal
+              ? "Gravação finalizada"
+              : "Toque no microfone para começar"}
+        </p>
+      )}
 
-      <section className="flex flex-wrap items-center gap-3">
-        {running ? (
-          <button
-            type="button"
-            onClick={stop}
-            className="rounded bg-red-600 px-4 py-2 font-medium text-white"
-          >
-            Parar
-          </button>
-        ) : (
-          <button
-            type="button"
-            onClick={start}
-            className="rounded bg-black px-4 py-2 font-medium text-white"
-          >
-            Iniciar
-          </button>
-        )}
-        <div className="font-mono text-lg">{formatMmSs(elapsedMs)}</div>
-        <div className="text-sm text-gray-600">Erros: {errorCount}</div>
-        <div className="text-sm text-gray-600">Chunks: {chunkRows.length}</div>
-      </section>
-
-      <section className="grid grid-cols-1 gap-2 text-xs text-gray-700 sm:grid-cols-2">
-        <div>
-          <span className="text-gray-500">mimeType:</span>{" "}
-          <span className="font-mono">{mimeType || "—"}</span>
-        </div>
-        <div>
-          <span className="text-gray-500">wake lock:</span>{" "}
-          <span className="font-mono">{wakeLockStatus}</span>
-        </div>
-        {startupError ? (
-          <div className="col-span-full text-red-600">Startup: {startupError}</div>
-        ) : null}
-      </section>
-
-      <section className="flex flex-col gap-2">
-        <div className="flex items-center justify-between">
-          <h2 className="text-sm font-semibold">Transcrição acumulada</h2>
-          <button
-            type="button"
-            onClick={copyTranscript}
-            className="rounded border border-gray-300 px-2 py-1 text-xs"
-          >
-            Copiar
-          </button>
-        </div>
-        <textarea
-          readOnly
-          value={accumulatedText}
-          className="min-h-[160px] w-full rounded border border-gray-300 p-2 font-mono text-sm"
-          placeholder="(vazio)"
+      {running || showFinal ? (
+        <Transcript
+          text={transcript}
+          state={running ? (isProcessing ? "transcribing" : "listening") : "idle"}
         />
-      </section>
+      ) : null}
 
-      <section className="flex flex-col gap-2">
-        <h2 className="text-sm font-semibold">Chunks</h2>
-        <div className="overflow-x-auto">
-          <table className="w-full text-left text-xs">
-            <thead className="bg-gray-100">
-              <tr>
-                <th className="px-2 py-1">#</th>
-                <th className="px-2 py-1">t</th>
-                <th className="px-2 py-1">status</th>
-                <th className="px-2 py-1">latência</th>
-                <th className="px-2 py-1">texto</th>
-              </tr>
-            </thead>
-            <tbody>
-              {chunkRows.map((row) => (
-                <tr key={row.index} className="border-b border-gray-200 align-top">
-                  <td className="px-2 py-1 font-mono">{row.index}</td>
-                  <td className="px-2 py-1 font-mono">{row.timestamp}</td>
-                  <td className="px-2 py-1">
-                    {row.status === "ok" ? (
-                      <span className="text-green-700">ok</span>
-                    ) : row.status === "uploading" ? (
-                      <span className="text-blue-700">enviando</span>
-                    ) : row.status === "silence" ? (
-                      <span className="text-gray-500">silêncio</span>
-                    ) : (
-                      <span className="text-red-700" title={row.errorMessage}>
-                        erro
-                      </span>
-                    )}
-                  </td>
-                  <td className="px-2 py-1 font-mono">
-                    {row.latencyMs != null ? `${row.latencyMs} ms` : "—"}
-                  </td>
-                  <td className="px-2 py-1">
-                    {row.status === "error" ? (
-                      <span className="text-red-700">{row.errorMessage}</span>
-                    ) : (
-                      row.text || "—"
-                    )}
-                  </td>
-                </tr>
-              ))}
-              {chunkRows.length === 0 ? (
-                <tr>
-                  <td colSpan={5} className="px-2 py-4 text-center text-gray-500">
-                    (sem chunks)
-                  </td>
-                </tr>
-              ) : null}
-            </tbody>
-          </table>
-        </div>
-      </section>
-
-      <section className="flex flex-col gap-2">
-        <h2 className="text-sm font-semibold">Áudio contínuo</h2>
-        {finalAudio ? (
-          <div className="flex flex-col gap-2">
-            {/* biome-ignore lint/a11y/useMediaCaption: playback of user-recorded audio */}
-            <audio
-              controls
-              src={finalAudio.url}
-              className="w-full"
-              onLoadedMetadata={(e) => {
-                const el = e.currentTarget;
-                // MediaRecorder WebM has no duration in the header (Infinity). Force
-                // Chrome to compute it by seeking past the end, then reset to 0.
-                if (!Number.isFinite(el.duration)) {
-                  const reset = () => {
-                    el.removeEventListener("durationchange", reset);
-                    el.removeEventListener("timeupdate", reset);
-                    el.currentTime = 0;
-                  };
-                  el.addEventListener("durationchange", reset);
-                  el.addEventListener("timeupdate", reset);
-                  el.currentTime = 1e101;
-                }
-              }}
-            />
-            <a
-              href={finalAudio.url}
-              download={`spike.${finalAudio.extension}`}
-              className="inline-block w-fit rounded border border-gray-300 px-2 py-1 text-xs"
-            >
-              Baixar ({Math.round(finalAudio.sizeBytes / 1024)} KB)
-            </a>
-          </div>
-        ) : (
-          <p className="text-xs text-gray-500">(disponível quando a gravação for parada)</p>
-        )}
-      </section>
-
-      <section className="flex flex-col gap-2">
-        <h2 className="text-sm font-semibold">Log de eventos</h2>
-        <pre className="max-h-40 overflow-auto rounded bg-gray-50 p-2 text-xs">
-          {visibilityLog.join("\n") || "(vazio)"}
-        </pre>
-      </section>
+      {showFinal ? <AudioPlayer audio={finalAudio} /> : null}
     </main>
+  );
+}
+
+function RecordButton({
+  running,
+  elapsedMs,
+  onStart,
+  onStop,
+}: {
+  running: boolean;
+  elapsedMs: number;
+  onStart: () => void;
+  onStop: () => void;
+}) {
+  return (
+    <div className="relative flex size-40 items-center justify-center">
+      {running ? (
+        <span
+          aria-hidden
+          className="pointer-events-none absolute inset-0 animate-record-halo rounded-full bg-primary/10"
+        />
+      ) : null}
+      <button
+        type="button"
+        onClick={running ? onStop : onStart}
+        aria-label={running ? "Parar gravação" : "Iniciar gravação"}
+        className={cn(
+          "relative flex size-32 flex-col items-center justify-center rounded-full bg-primary text-primary-foreground shadow-lg outline-none transition-all duration-300 ease-out",
+          "hover:scale-[1.03] active:scale-95 focus-visible:ring-4 focus-visible:ring-ring/40"
+        )}
+      >
+        {running ? (
+          <>
+            <span className="font-mono text-2xl tabular-nums">{formatMmSs(elapsedMs)}</span>
+            <span className="mt-1 flex items-center gap-1 text-[0.65rem] tracking-wider uppercase opacity-70">
+              <Square className="size-2.5 fill-current" /> Parar
+            </span>
+          </>
+        ) : (
+          <Mic className="size-10" />
+        )}
+      </button>
+    </div>
+  );
+}
+
+function Transcript({
+  text,
+  state,
+}: {
+  text: string;
+  state: "listening" | "transcribing" | "idle";
+}) {
+  return (
+    <div className="w-full self-stretch space-y-3">
+      {text ? (
+        <p className="text-pretty text-base leading-relaxed text-foreground">{text}</p>
+      ) : state === "idle" ? (
+        <p className="text-center text-muted-foreground">Aguardando fala…</p>
+      ) : null}
+      {state === "transcribing" ? <TranscriptSkeleton /> : null}
+      {state === "listening" ? <ListeningDots /> : null}
+    </div>
+  );
+}
+
+function TranscriptSkeleton() {
+  return (
+    <div
+      role="status"
+      aria-label="Transcrevendo"
+      className="flex w-full flex-col items-center gap-2 pt-1"
+    >
+      <div className="h-4 w-full animate-skeleton-shimmer rounded-md bg-muted" />
+      <div className="h-4 w-4/5 animate-skeleton-shimmer rounded-md bg-muted [animation-delay:150ms]" />
+      <div className="h-4 w-2/5 animate-skeleton-shimmer rounded-md bg-muted [animation-delay:300ms]" />
+    </div>
+  );
+}
+
+function ListeningDots() {
+  return (
+    <div
+      role="status"
+      aria-label="Escutando"
+      className="flex items-center justify-center gap-1.5 pt-2"
+    >
+      <span className="size-1.5 animate-listening-dot rounded-full bg-muted-foreground/60" />
+      <span className="size-1.5 animate-listening-dot rounded-full bg-muted-foreground/60 [animation-delay:200ms]" />
+      <span className="size-1.5 animate-listening-dot rounded-full bg-muted-foreground/60 [animation-delay:400ms]" />
+    </div>
+  );
+}
+
+function AudioPlayer({ audio }: { audio: FinalAudio }) {
+  const audioRef = useRef<HTMLAudioElement | null>(null);
+  const [playing, setPlaying] = useState(false);
+  const [currentTime, setCurrentTime] = useState(0);
+  const [duration, setDuration] = useState(0);
+
+  useEffect(() => {
+    setPlaying(false);
+    setCurrentTime(0);
+    setDuration(0);
+  }, []);
+
+  const togglePlay = useCallback(() => {
+    const el = audioRef.current;
+    if (!el) return;
+    if (el.paused) void el.play();
+    else el.pause();
+  }, []);
+
+  const onSeek = useCallback((e: React.PointerEvent<HTMLDivElement>) => {
+    const el = audioRef.current;
+    if (!el || !Number.isFinite(el.duration)) return;
+    const rect = e.currentTarget.getBoundingClientRect();
+    const pct = Math.min(1, Math.max(0, (e.clientX - rect.left) / rect.width));
+    el.currentTime = pct * el.duration;
+  }, []);
+
+  const progress = duration > 0 ? Math.min(100, (currentTime / duration) * 100) : 0;
+
+  return (
+    <div className="w-full self-stretch rounded-2xl border border-border bg-card p-4 shadow-sm">
+      <div className="flex items-center gap-4">
+        <button
+          type="button"
+          onClick={togglePlay}
+          aria-label={playing ? "Pausar" : "Reproduzir"}
+          className={cn(
+            "flex size-11 shrink-0 items-center justify-center rounded-full bg-primary text-primary-foreground transition-all",
+            "hover:scale-105 active:scale-95 focus-visible:ring-4 focus-visible:ring-ring/40 outline-none"
+          )}
+        >
+          {playing ? (
+            <Pause className="size-5 fill-current" />
+          ) : (
+            <Play className="size-5 fill-current translate-x-0.5" />
+          )}
+        </button>
+
+        <div className="flex flex-1 flex-col gap-1.5">
+          <button
+            type="button"
+            onPointerDown={onSeek}
+            className="group relative h-1.5 w-full cursor-pointer rounded-full bg-muted"
+            aria-label="Buscar posição"
+          >
+            <div
+              className="absolute inset-y-0 left-0 rounded-full bg-primary transition-[width] duration-100"
+              style={{ width: `${progress}%` }}
+            />
+            <div
+              className="absolute top-1/2 size-3 -translate-x-1/2 -translate-y-1/2 rounded-full bg-primary opacity-0 shadow transition-opacity group-hover:opacity-100"
+              style={{ left: `${progress}%` }}
+            />
+          </button>
+          <div className="flex justify-between font-mono text-[0.7rem] tabular-nums text-muted-foreground">
+            <span>{formatMmSs(currentTime * 1000)}</span>
+            <span>{duration > 0 ? formatMmSs(duration * 1000) : "--:--"}</span>
+          </div>
+        </div>
+
+        <a
+          href={audio.url}
+          download={`spike.${audio.extension}`}
+          aria-label="Baixar áudio"
+          className={cn(
+            "flex size-9 shrink-0 items-center justify-center rounded-full border border-border text-muted-foreground transition-colors",
+            "hover:bg-muted hover:text-foreground focus-visible:ring-2 focus-visible:ring-ring/40 outline-none"
+          )}
+        >
+          <Download className="size-4" />
+        </a>
+      </div>
+
+      {/* biome-ignore lint/a11y/useMediaCaption: playback of user-recorded audio */}
+      <audio
+        ref={audioRef}
+        src={audio.url}
+        preload="metadata"
+        className="hidden"
+        onLoadedMetadata={(e) => {
+          const el = e.currentTarget;
+          if (!Number.isFinite(el.duration)) {
+            const reset = () => {
+              el.removeEventListener("durationchange", reset);
+              el.removeEventListener("timeupdate", reset);
+              setDuration(el.duration);
+              el.currentTime = 0;
+            };
+            el.addEventListener("durationchange", reset);
+            el.addEventListener("timeupdate", reset);
+            el.currentTime = 1e101;
+          } else {
+            setDuration(el.duration);
+          }
+        }}
+        onTimeUpdate={(e) => setCurrentTime(e.currentTarget.currentTime)}
+        onPlay={() => setPlaying(true)}
+        onPause={() => setPlaying(false)}
+        onEnded={() => setPlaying(false)}
+      />
+    </div>
   );
 }
