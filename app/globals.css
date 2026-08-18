@@ -133,6 +133,9 @@
   --animate-record-halo: record-halo 2.4s cubic-bezier(0.4, 0, 0.6, 1) infinite;
   --animate-skeleton-shimmer: skeleton-shimmer 1.6s ease-in-out infinite;
   --animate-listening-dot: listening-dot 1.4s ease-in-out infinite;
+  --animate-status-fade: status-fade 0.35s ease-out;
+  --animate-text-shimmer: text-shimmer 2.4s ease-in-out infinite;
+  --animate-content-fade: content-fade 0.5s cubic-bezier(0.22, 1, 0.36, 1);
 
   @keyframes record-halo {
     0%,
@@ -165,6 +168,39 @@
     50% {
       transform: scale(1.1);
       opacity: 1;
+    }
+  }
+
+  @keyframes status-fade {
+    from {
+      opacity: 0;
+      transform: translateY(2px);
+    }
+    to {
+      opacity: 1;
+      transform: translateY(0);
+    }
+  }
+
+  @keyframes text-shimmer {
+    0% {
+      background-position: 200% 0;
+    }
+    100% {
+      background-position: -200% 0;
+    }
+  }
+
+  @keyframes content-fade {
+    from {
+      opacity: 0;
+      transform: translateY(4px);
+      filter: blur(2px);
+    }
+    to {
+      opacity: 1;
+      transform: translateY(0);
+      filter: blur(0);
     }
   }
 }

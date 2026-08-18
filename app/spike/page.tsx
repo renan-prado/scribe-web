@@ -1,16 +1,21 @@
 "use client";
 
 import {
+  AlertTriangle,
+  BookOpen,
   Download,
   FileText,
   Headphones,
+  MapPin,
   Mic,
   MoreVertical,
   Pause,
   Play,
   Square,
+  User,
 } from "lucide-react";
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
+import type { SummaryBlock, SummaryPayload, SummaryPhase } from "@/app/api/summarize/route";
 import {
   Dialog,
   DialogContent,
@@ -27,6 +32,28 @@ import {
 import { type ChunkEvent, createRecorder, type Recorder } from "@/lib/recorder";
 import { cn } from "@/lib/utils";
 
+const AUTHOR_PLACEHOLDER = "José Leante";
+const LOCATION_PLACEHOLDER = "Assembleia de Deus • Ipiranga • Vila Marcondes";
+
+const MONTHS_PT = [
+  "janeiro",
+  "fevereiro",
+  "março",
+  "abril",
+  "maio",
+  "junho",
+  "julho",
+  "agosto",
+  "setembro",
+  "outubro",
+  "novembro",
+  "dezembro",
+];
+
+function defaultRecordingTitle(date: Date): string {
+  return `Gravação dia ${date.getDate()} de ${MONTHS_PT[date.getMonth()]}.`;
+}
+
 type ChunkStatus = "uploading" | "ok" | "silence" | "error";
 
 type ChunkRow = {
@@ -39,8 +66,30 @@ type FinalAudio = { url: string; extension: string; sizeBytes: number };
 
 const SILENCE_RMS_THRESHOLD = 0.005;
 const SUMMARY_WARMUP_CHUNKS = 3;
-const SUMMARY_EVERY_N_CHUNKS = 3;
+const SUMMARY_EVERY_N_CHUNKS = 1;
 const FORMAT_EVERY_N_CHUNKS = 4;
+
+const EARLY_STATUS_PHRASES = [
+  "ouvindo o áudio",
+  "escutando com atenção",
+  "aguardando as primeiras ideias",
+  "captando a fala inicial",
+  "acompanhando o começo",
+  "atento ao que vem por aí",
+  "esperando o discurso engrenar",
+];
+
+const LATER_STATUS_PHRASES = [
+  "acompanhando o raciocínio",
+  "juntando as ideias que surgiram até aqui",
+  "conectando os argumentos",
+  "identificando os temas centrais",
+  "consultando as Escrituras",
+  "estruturando o resumo",
+  "escutando com atenção o próximo trecho",
+  "amadurecendo as ideias",
+  "deixando o pensamento se desenvolver",
+];
 
 async function isSilentBlob(blob: Blob): Promise<boolean> {
   try {
@@ -125,20 +174,24 @@ export default function SpikePage() {
   const tickTimerRef = useRef<ReturnType<typeof setInterval> | null>(null);
   const lastSummaryChunkRef = useRef(0);
   const lastFormatChunkRef = useRef(0);
+  const bottomRef = useRef<HTMLDivElement | null>(null);
 
   const [running, setRunning] = useState(false);
   const [elapsedMs, setElapsedMs] = useState(0);
   const [chunkRows, setChunkRows] = useState<ChunkRow[]>([]);
   const [finalAudio, setFinalAudio] = useState<FinalAudio | null>(null);
   const [startupError, setStartupError] = useState<string>("");
-  const [summary, setSummary] = useState("");
+  const [summary, setSummary] = useState<SummaryPayload | null>(null);
   const [summaryTitle, setSummaryTitle] = useState("");
+  const [recordingStartedAt, setRecordingStartedAt] = useState<Date | null>(null);
   const [formattedTranscript, setFormattedTranscript] = useState("");
   const [formattedUpToOkCount, setFormattedUpToOkCount] = useState(0);
   const [summarizing, setSummarizing] = useState(false);
+  const [finalizing, setFinalizing] = useState(false);
   const [formatting, setFormatting] = useState(false);
   const [transcriptOpen, setTranscriptOpen] = useState(false);
   const [audioOpen, setAudioOpen] = useState(false);
+  const [hiddenWarning, setHiddenWarning] = useState(false);
 
   const publish = useCallback(() => {
     const rows = Array.from(chunksRef.current.values()).sort((a, b) => a.index - b.index);
@@ -175,8 +228,40 @@ export default function SpikePage() {
 
   const isProcessing = useMemo(() => chunkRows.some((r) => r.status === "uploading"), [chunkRows]);
 
+  const requestSummary = useCallback(
+    async (body: {
+      text: string;
+      isFinal?: boolean;
+      phase?: SummaryPhase;
+      elapsedSec?: number;
+      previous?: SummaryPayload;
+    }): Promise<void> => {
+      try {
+        const res = await fetch("/api/summarize", {
+          method: "POST",
+          headers: { "content-type": "application/json" },
+          body: JSON.stringify(body),
+        });
+        const payload = (await res.json()) as Partial<SummaryPayload> & { error?: string };
+        if (payload?.error) return;
+        const blocks = Array.isArray(payload.blocks) ? payload.blocks : [];
+        const shortSummary = typeof payload.shortSummary === "string" ? payload.shortSummary : "";
+        const title = typeof payload.title === "string" ? payload.title : "";
+        const thinking = typeof payload.thinking === "string" ? payload.thinking : "";
+        setSummary({ thinking, title, shortSummary, blocks });
+        if (title) setSummaryTitle(title);
+      } catch {
+        // ignore transient failures — next tick will retry
+      }
+    },
+    []
+  );
+
   useEffect(() => {
-    if (!transcript || summarizing) return;
+    // Only auto-summarize while the recording is live. Once stopped, any
+    // late-arriving chunk transcription must not overwrite the finalized
+    // summary (with its conclusion block).
+    if (!running || !transcript || summarizing || finalizing) return;
     const withinWarmup = okChunkCount > 0 && okChunkCount <= SUMMARY_WARMUP_CHUNKS;
     const dueForSummary =
       (withinWarmup || (okChunkCount > 0 && okChunkCount % SUMMARY_EVERY_N_CHUNKS === 0)) &&
@@ -184,19 +269,12 @@ export default function SpikePage() {
     if (!dueForSummary) return;
     lastSummaryChunkRef.current = okChunkCount;
     setSummarizing(true);
-    fetch("/api/summarize", {
-      method: "POST",
-      headers: { "content-type": "application/json" },
-      body: JSON.stringify({ text: transcript }),
-    })
-      .then((r) => r.json())
-      .then((body) => {
-        if (body?.summary) setSummary(body.summary);
-        if (typeof body?.title === "string") setSummaryTitle(body.title);
-      })
-      .catch(() => {})
-      .finally(() => setSummarizing(false));
-  }, [okChunkCount, transcript, summarizing]);
+    const elapsedSec = Math.floor((performance.now() - startedAtRef.current) / 1000);
+    const previous = summary ?? undefined;
+    void requestSummary({ text: transcript, elapsedSec, previous }).finally(() =>
+      setSummarizing(false)
+    );
+  }, [running, okChunkCount, transcript, summarizing, finalizing, summary, requestSummary]);
 
   useEffect(() => {
     if (!transcript || formatting) return;
@@ -282,10 +360,12 @@ export default function SpikePage() {
     setStartupError("");
     setFinalAudio(null);
     setChunkRows([]);
-    setSummary("");
+    setSummary(null);
     setSummaryTitle("");
+    setRecordingStartedAt(new Date());
     setFormattedTranscript("");
     setFormattedUpToOkCount(0);
+    setHiddenWarning(false);
     lastSummaryChunkRef.current = 0;
     lastFormatChunkRef.current = 0;
     chunksRef.current = new Map();
@@ -327,13 +407,44 @@ export default function SpikePage() {
     await recorderRef.current?.stop();
     recorderRef.current = null;
     await releaseWakeLock();
-  }, [releaseWakeLock, running]);
+
+    const finalTranscript = Array.from(chunksRef.current.values())
+      .filter((r) => r.status === "ok")
+      .sort((a, b) => a.index - b.index)
+      .map((r) => r.text.trim())
+      .filter(Boolean)
+      .join(" ")
+      .replace(/\s+/g, " ")
+      .trim();
+    if (finalTranscript) {
+      const elapsedSec = Math.floor((performance.now() - startedAtRef.current) / 1000);
+      const previous = summary ?? undefined;
+      setFinalizing(true);
+      try {
+        await requestSummary({
+          text: finalTranscript,
+          isFinal: true,
+          elapsedSec,
+          previous,
+        });
+      } finally {
+        setFinalizing(false);
+      }
+    }
+  }, [releaseWakeLock, requestSummary, running, summary]);
 
   useEffect(() => {
+    if (!running) return;
     const onVis = () => {
-      if (document.visibilityState === "visible" && running && !wakeLockRef.current) {
-        void requestWakeLock();
+      if (document.visibilityState === "hidden") {
+        // Latch a warning: we may have lost audio while backgrounded.
+        setHiddenWarning(true);
+        return;
       }
+      // Coming back to the tab: setInterval can freeze while hidden, so
+      // resync the timer from the monotonic clock and refresh the wake lock.
+      setElapsedMs(performance.now() - startedAtRef.current);
+      if (!wakeLockRef.current) void requestWakeLock();
     };
     document.addEventListener("visibilitychange", onVis);
     return () => document.removeEventListener("visibilitychange", onVis);
@@ -354,6 +465,13 @@ export default function SpikePage() {
       : "listening"
     : "idle";
 
+  // Keep the live "thinking" line in view whenever any part of the summary
+  // updates while we're still recording.
+  useEffect(() => {
+    if (!running || !summary) return;
+    bottomRef.current?.scrollIntoView({ behavior: "smooth", block: "end" });
+  }, [summary, running]);
+
   return (
     <main
       className={cn(
@@ -362,7 +480,20 @@ export default function SpikePage() {
       )}
     >
       {!hasStarted ? <Greeting /> : null}
-      <RecordButton running={running} elapsedMs={elapsedMs} onStart={start} onStop={stop} />
+      {!hasStarted ? (
+        <RecordButton running={running} elapsedMs={elapsedMs} onStart={start} onStop={stop} />
+      ) : null}
+      {running ? (
+        <div className="fixed bottom-6 left-1/2 z-40 -translate-x-1/2">
+          <RecordButton
+            running={running}
+            elapsedMs={elapsedMs}
+            onStart={start}
+            onStop={stop}
+            compact
+          />
+        </div>
+      ) : null}
 
       {startupError ? (
         <p className="text-sm text-destructive" role="alert">
@@ -371,24 +502,20 @@ export default function SpikePage() {
       ) : null}
 
       {hasStarted ? (
-        <section className="flex w-full min-h-[280px] self-stretch flex-col gap-4 rounded-2xl border border-border bg-card p-6 shadow-sm">
-          <header className="flex items-start justify-between gap-3">
-            <div className="flex min-w-0 flex-1 flex-col gap-1">
-              <div className="flex items-center gap-2">
-                <span className="text-[0.65rem] font-medium tracking-widest text-muted-foreground uppercase">
-                  Resumo
-                </span>
-                {summarizing ? <InlineDots /> : null}
-              </div>
-              <SummaryTitle title={summaryTitle} running={running} />
-            </div>
-            <SessionMenu
-              hasTranscript={transcript.length > 0}
-              hasAudio={finalAudio !== null}
-              onOpenTranscript={() => setTranscriptOpen(true)}
-              onOpenAudio={() => setAudioOpen(true)}
-            />
-          </header>
+        <section className="relative flex w-full min-h-[280px] self-stretch flex-col gap-6 p-6">
+          <RecordingHeader
+            title={summaryTitle}
+            startedAt={recordingStartedAt}
+            menu={
+              <SessionMenu
+                hasTranscript={transcript.length > 0}
+                hasAudio={finalAudio !== null}
+                onOpenTranscript={() => setTranscriptOpen(true)}
+                onOpenAudio={() => setAudioOpen(true)}
+              />
+            }
+          />
+          <div className="h-px w-full bg-border" />
           <div className="flex-1">
             <SummaryView
               summary={summary}
@@ -396,6 +523,21 @@ export default function SpikePage() {
               running={running}
             />
           </div>
+          {running ? (
+            <div ref={bottomRef} className="pt-2 scroll-mb-24">
+              <StatusPhrases
+                hasSummary={
+                  !!summary && (summary.shortSummary.length > 0 || summary.blocks.length > 0)
+                }
+                thinking={summary?.thinking ?? ""}
+              />
+            </div>
+          ) : null}
+
+          {hiddenWarning && running ? (
+            <HiddenTabOverlay onDismiss={() => setHiddenWarning(false)} />
+          ) : null}
+          {finalizing ? <FinalizingOverlay /> : null}
         </section>
       ) : null}
 
@@ -515,12 +657,45 @@ function RecordButton({
   elapsedMs,
   onStart,
   onStop,
+  compact = false,
 }: {
   running: boolean;
   elapsedMs: number;
   onStart: () => void;
   onStop: () => void;
+  compact?: boolean;
 }) {
+  if (compact) {
+    return (
+      <button
+        type="button"
+        onClick={onStop}
+        aria-label="Parar gravação"
+        className={cn(
+          "group flex items-center gap-4 rounded-full border border-border bg-background/90 px-5 py-2.5 text-sm text-foreground shadow-sm backdrop-blur outline-none transition-all",
+          "hover:border-foreground/40 hover:bg-background hover:shadow-md",
+          "focus-visible:ring-2 focus-visible:ring-ring/40 active:scale-95"
+        )}
+      >
+        <span className="flex items-center gap-2">
+          <span className="relative flex size-2 items-center justify-center">
+            <span className="absolute inset-0 animate-ping rounded-full bg-foreground/40" />
+            <span className="size-2 rounded-full bg-foreground" />
+          </span>
+          <span className="font-mono tabular-nums">{formatMmSs(elapsedMs)}</span>
+        </span>
+        <span
+          className={cn(
+            "flex items-center gap-1.5 text-muted-foreground transition-colors",
+            "group-hover:text-foreground"
+          )}
+        >
+          <Square className="size-3 fill-current" />
+          <span>parar</span>
+        </span>
+      </button>
+    );
+  }
   return (
     <div className="relative flex size-28 items-center justify-center">
       {running ? (
@@ -592,39 +767,154 @@ function TranscriptView({
   );
 }
 
-function SummaryTitle({ title, running }: { title: string; running: boolean }) {
-  if (title) {
-    return (
-      <h2 className="font-heading text-xl font-semibold leading-tight text-foreground">{title}</h2>
-    );
-  }
-  if (running) {
-    return (
-      <div
-        role="status"
-        aria-label="Gerando título"
-        className="h-6 w-2/3 animate-skeleton-shimmer rounded-md bg-muted"
-      />
-    );
-  }
-  return null;
+function RecordingHeader({
+  title,
+  startedAt,
+  menu,
+}: {
+  title: string;
+  startedAt: Date | null;
+  menu: React.ReactNode;
+}) {
+  const displayTitle =
+    title.trim() || (startedAt ? defaultRecordingTitle(startedAt) : "Nova gravação.");
+  return (
+    <header className="flex flex-col gap-3">
+      <div className="flex items-center justify-between gap-3">
+        <div className="flex items-center gap-2 text-sm leading-none text-muted-foreground">
+          <span className="flex size-6 shrink-0 items-center justify-center rounded-full border border-border">
+            <User className="size-3" />
+          </span>
+          <span className="font-medium leading-none text-foreground">{AUTHOR_PLACEHOLDER}</span>
+        </div>
+        {menu}
+      </div>
+
+      <h1
+        key={displayTitle}
+        className="animate-content-fade font-heading text-3xl font-bold leading-[1.1] tracking-tight text-foreground sm:text-4xl"
+        suppressHydrationWarning
+      >
+        {displayTitle}
+      </h1>
+
+      <p className="mt-4 flex items-center gap-1.5 text-xs leading-none text-muted-foreground">
+        <MapPin className="size-3 shrink-0" />
+        <span className="leading-none">{LOCATION_PLACEHOLDER}</span>
+      </p>
+    </header>
+  );
 }
 
-function renderBoldRefs(text: string): React.ReactNode[] {
-  const parts = text.split(/(\*\*[^*]+\*\*)/g);
-  return parts.map((part, i) => {
-    if (part.startsWith("**") && part.endsWith("**")) {
-      const inner = part.slice(2, -2);
-      return (
-        // biome-ignore lint/suspicious/noArrayIndexKey: parts are order-stable within a paragraph
-        <strong key={`${i}-${inner}`} className="font-semibold text-foreground">
-          {inner}
-        </strong>
-      );
-    }
-    // biome-ignore lint/suspicious/noArrayIndexKey: parts are order-stable within a paragraph
-    return <span key={`${i}-${part.slice(0, 24)}`}>{part}</span>;
-  });
+function HiddenTabOverlay({ onDismiss }: { onDismiss: () => void }) {
+  return (
+    <div
+      role="alertdialog"
+      aria-labelledby="hidden-tab-title"
+      className="absolute inset-0 z-20 flex flex-col items-center justify-center gap-4 bg-background/85 backdrop-blur-sm"
+    >
+      <span className="flex size-11 items-center justify-center rounded-full border border-border bg-background text-foreground">
+        <AlertTriangle className="size-5" />
+      </span>
+      <div className="flex flex-col items-center gap-2 px-6 text-center">
+        <p id="hidden-tab-title" className="text-base font-semibold text-foreground">
+          A gravação precisa desta aba em foco
+        </p>
+        <p className="max-w-sm text-sm leading-relaxed text-muted-foreground text-balance">
+          Enquanto a aba fica em segundo plano, o navegador pode pausar a captura e trechos da fala
+          podem ter sido perdidos. Volte assim que puder para continuar sem furos.
+        </p>
+      </div>
+      <button
+        type="button"
+        onClick={onDismiss}
+        className={cn(
+          "rounded-full bg-foreground px-4 py-2 text-xs font-medium text-background transition-transform outline-none",
+          "hover:scale-[1.02] active:scale-95 focus-visible:ring-4 focus-visible:ring-ring/40"
+        )}
+      >
+        Entendi, continuar
+      </button>
+    </div>
+  );
+}
+
+function FinalizingOverlay() {
+  return (
+    <div
+      role="status"
+      aria-live="polite"
+      className="fixed inset-0 z-50 flex flex-col items-center justify-center gap-4 bg-background/80 backdrop-blur-sm"
+    >
+      <span className="relative flex size-10 items-center justify-center">
+        <span className="absolute inset-0 animate-ping rounded-full bg-primary/20" />
+        <span className="size-3 rounded-full bg-primary" />
+      </span>
+      <div className="flex flex-col items-center gap-1 px-6 text-center">
+        <p className="text-base font-semibold text-foreground">Gerando a conclusão</p>
+        <p className="max-w-xs text-sm text-muted-foreground">
+          Ajustando os últimos pontos e amarrando a ideia central.
+        </p>
+      </div>
+    </div>
+  );
+}
+
+function StatusPhrases({ hasSummary, thinking }: { hasSummary: boolean; thinking?: string }) {
+  const pool = hasSummary ? LATER_STATUS_PHRASES : EARLY_STATUS_PHRASES;
+  const [index, setIndex] = useState(() => Math.floor(Math.random() * pool.length));
+
+  useEffect(() => {
+    setIndex(Math.floor(Math.random() * pool.length));
+    const id = setInterval(
+      () => setIndex((i) => (i + 1 + Math.floor(Math.random() * (pool.length - 1))) % pool.length),
+      15000
+    );
+    return () => clearInterval(id);
+  }, [pool]);
+
+  const message = thinking && thinking.trim().length > 0 ? thinking : pool[index];
+  const keyForFade = thinking && thinking.trim().length > 0 ? thinking : `pool-${index}`;
+
+  return (
+    <div
+      role="status"
+      aria-live="polite"
+      className="flex w-full items-start gap-2 text-left text-xs"
+    >
+      <span className="mt-[1px] shrink-0">
+        <SpinnerGlyph />
+      </span>
+      <span
+        key={keyForFade}
+        className={cn(
+          "flex-1 text-pretty leading-relaxed animate-status-fade animate-text-shimmer bg-clip-text text-transparent",
+          "bg-[linear-gradient(90deg,var(--muted-foreground)_0%,var(--muted-foreground)_35%,var(--foreground)_50%,var(--muted-foreground)_65%,var(--muted-foreground)_100%)]",
+          "bg-[length:200%_100%]"
+        )}
+      >
+        {message}
+      </span>
+    </div>
+  );
+}
+
+const SPINNER_FRAMES = ["·", "*", "✳", "✶", "✳", "*"];
+
+function SpinnerGlyph() {
+  const [frame, setFrame] = useState(0);
+  useEffect(() => {
+    const id = setInterval(() => setFrame((f) => (f + 1) % SPINNER_FRAMES.length), 140);
+    return () => clearInterval(id);
+  }, []);
+  return (
+    <span
+      aria-hidden
+      className="inline-flex w-3 items-center justify-center font-mono text-sm leading-none text-foreground/70 tabular-nums"
+    >
+      {SPINNER_FRAMES[frame]}
+    </span>
+  );
 }
 
 function SummaryView({
@@ -632,21 +922,38 @@ function SummaryView({
   hasTranscript,
   running,
 }: {
-  summary: string;
+  summary: SummaryPayload | null;
   hasTranscript: boolean;
   running: boolean;
 }) {
-  if (summary) {
-    const paragraphs = summary
-      .split(/\n\n+/)
-      .map((p) => p.trim())
-      .filter(Boolean);
+  const hasBody = summary && (summary.shortSummary.length > 0 || summary.blocks.length > 0);
+  const hasThinking = summary && summary.thinking.length > 0;
+
+  if (hasBody || hasThinking) {
     return (
-      <div className="space-y-4 text-pretty text-base leading-relaxed text-foreground">
-        {paragraphs.map((p) => (
-          <p key={p}>{renderBoldRefs(p)}</p>
-        ))}
-        {running ? <GeneratingMore /> : null}
+      <div className="flex flex-col gap-8">
+        {hasBody && summary!.shortSummary ? (
+          <div className="-mb-2 flex flex-col gap-2 border-l-2 border-foreground/60 pl-4">
+            <span className="text-[0.65rem] font-semibold tracking-widest text-muted-foreground uppercase">
+              Ideia central
+            </span>
+            <p
+              key={summary!.shortSummary}
+              className="animate-content-fade text-pretty text-lg font-medium leading-snug text-foreground text-balance"
+            >
+              {summary!.shortSummary}
+            </p>
+          </div>
+        ) : null}
+        {hasBody
+          ? summary!.blocks.map((block, i) => (
+              // biome-ignore lint/suspicious/noArrayIndexKey: index disambiguates blocks whose type + content hash collide (e.g., two short paragraphs starting the same way)
+              <div key={`${block.type}-${i}-${blockKey(block)}`} className="animate-content-fade">
+                <BlockRenderer block={block} />
+              </div>
+            ))
+          : null}
+        {!hasBody ? <SummarySkeleton /> : null}
       </div>
     );
   }
@@ -656,21 +963,89 @@ function SummaryView({
   return <p className="text-sm text-muted-foreground">O resumo aparecerá aqui.</p>;
 }
 
-function GeneratingMore() {
-  return (
-    <div
-      role="status"
-      aria-label="Gerando mais conteúdo"
-      className="flex items-center gap-2 pt-2 text-xs text-muted-foreground"
-    >
-      <span className="flex items-center gap-1">
-        <span className="size-1 animate-listening-dot rounded-full bg-muted-foreground/60" />
-        <span className="size-1 animate-listening-dot rounded-full bg-muted-foreground/60 [animation-delay:200ms]" />
-        <span className="size-1 animate-listening-dot rounded-full bg-muted-foreground/60 [animation-delay:400ms]" />
-      </span>
-      <span>gerando mais conforme a fala continua</span>
-    </div>
-  );
+function blockKey(block: SummaryBlock): string {
+  if (block.type === "bibleQuote") return `${block.reference}-${block.text.slice(0, 24)}`;
+  if (block.type === "quote") return `${block.text.slice(0, 24)}-${block.author ?? ""}`;
+  return block.text.slice(0, 32);
+}
+
+function BlockRenderer({ block }: { block: SummaryBlock }) {
+  switch (block.type) {
+    case "h1":
+      return (
+        <h2 className="mt-4 font-heading text-2xl font-bold leading-tight tracking-tight text-foreground sm:text-[1.75rem]">
+          {block.text}
+        </h2>
+      );
+    case "h2":
+      return (
+        <h3 className="mt-4 font-heading text-xl font-bold leading-snug tracking-tight text-foreground">
+          {block.text}
+        </h3>
+      );
+    case "paragraph":
+      return <p className="text-pretty text-base leading-relaxed text-foreground">{block.text}</p>;
+    case "bibleQuote":
+      return (
+        <figure className="flex flex-col gap-3 rounded-xl bg-muted/70 p-4">
+          <figcaption>
+            <span className="inline-flex items-center gap-1.5 rounded-md bg-foreground px-2 py-1 text-[0.7rem] font-semibold text-background">
+              <BookOpen className="size-3" />
+              {block.reference}
+            </span>
+          </figcaption>
+          {block.text ? (
+            <blockquote className="pl-3 text-sm leading-relaxed text-foreground/90">
+              {block.text}
+            </blockquote>
+          ) : null}
+        </figure>
+      );
+    case "highlight":
+      return (
+        <figure className="my-4 px-4 text-center sm:px-8">
+          <blockquote className="text-pretty text-lg font-semibold leading-loose tracking-tight text-foreground sm:text-xl">
+            <span
+              aria-hidden
+              className="mr-3 select-none align-[-0.25em] font-heading text-4xl leading-none text-muted-foreground/30"
+            >
+              ❝
+            </span>
+            <span className="bg-[#fff8c9] px-1 py-0.5 [box-decoration-break:clone] [-webkit-box-decoration-break:clone]">
+              {block.text}
+            </span>
+            <span
+              aria-hidden
+              className="ml-3 select-none align-[-0.25em] font-heading text-4xl leading-none text-muted-foreground/30"
+            >
+              ❞
+            </span>
+          </blockquote>
+        </figure>
+      );
+    case "conclusion":
+      return (
+        <section className="mt-4 flex flex-col gap-3 rounded-2xl border border-border bg-muted/40 p-5">
+          <span className="text-[0.65rem] font-semibold tracking-widest text-muted-foreground uppercase">
+            Conclusão
+          </span>
+          <p className="text-pretty text-base leading-relaxed text-foreground">{block.text}</p>
+        </section>
+      );
+    case "quote":
+      return (
+        <figure className="border-l-2 border-border pl-4">
+          <blockquote className="text-base italic leading-relaxed text-foreground/80">
+            {block.text}
+          </blockquote>
+          {block.author ? (
+            <figcaption className="mt-1 text-xs text-muted-foreground">— {block.author}</figcaption>
+          ) : null}
+        </figure>
+      );
+    default:
+      return null;
+  }
 }
 
 function SummarySkeleton() {
