@@ -136,6 +136,7 @@
   --animate-status-fade: status-fade 0.35s ease-out;
   --animate-text-shimmer: text-shimmer 2.4s ease-in-out infinite;
   --animate-content-fade: content-fade 0.5s cubic-bezier(0.22, 1, 0.36, 1);
+  --animate-insight-gradient: insight-gradient 12s ease-in-out infinite;
 
   @keyframes record-halo {
     0%,
@@ -201,6 +202,16 @@
       opacity: 1;
       transform: translateY(0);
       filter: blur(0);
+    }
+  }
+
+  @keyframes insight-gradient {
+    0%,
+    100% {
+      background-position: 0% 0%;
+    }
+    50% {
+      background-position: 100% 100%;
     }
   }
 }

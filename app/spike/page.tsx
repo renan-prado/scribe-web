@@ -11,10 +11,12 @@ import {
   MoreVertical,
   Pause,
   Play,
+  Sparkles,
   Square,
   User,
 } from "lucide-react";
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
+import type { Insight } from "@/app/api/insights/route";
 import type { SummaryBlock, SummaryPayload, SummaryPhase } from "@/app/api/summarize/route";
 import {
   Dialog,
@@ -68,6 +70,7 @@ const SILENCE_RMS_THRESHOLD = 0.005;
 const SUMMARY_WARMUP_CHUNKS = 3;
 const SUMMARY_EVERY_N_CHUNKS = 1;
 const FORMAT_EVERY_N_CHUNKS = 4;
+const INSIGHTS_EVERY_N_CHUNKS = 6;
 
 const EARLY_STATUS_PHRASES = [
   "ouvindo o áudio",
@@ -174,6 +177,7 @@ export default function SpikePage() {
   const tickTimerRef = useRef<ReturnType<typeof setInterval> | null>(null);
   const lastSummaryChunkRef = useRef(0);
   const lastFormatChunkRef = useRef(0);
+  const lastInsightsChunkRef = useRef(0);
   const bottomRef = useRef<HTMLDivElement | null>(null);
 
   const [running, setRunning] = useState(false);
@@ -189,6 +193,8 @@ export default function SpikePage() {
   const [summarizing, setSummarizing] = useState(false);
   const [finalizing, setFinalizing] = useState(false);
   const [formatting, setFormatting] = useState(false);
+  const [insights, setInsights] = useState<Insight[]>([]);
+  const [insighting, setInsighting] = useState(false);
   const [transcriptOpen, setTranscriptOpen] = useState(false);
   const [audioOpen, setAudioOpen] = useState(false);
   const [hiddenWarning, setHiddenWarning] = useState(false);
@@ -302,6 +308,30 @@ export default function SpikePage() {
       .finally(() => setFormatting(false));
   }, [okChunkCount, transcript, formatting]);
 
+  useEffect(() => {
+    if (!running || insighting) return;
+    const blocks = summary?.blocks ?? [];
+    if (blocks.length === 0) return;
+    const dueForInsights =
+      okChunkCount > 0 &&
+      okChunkCount % INSIGHTS_EVERY_N_CHUNKS === 0 &&
+      lastInsightsChunkRef.current !== okChunkCount;
+    if (!dueForInsights) return;
+    lastInsightsChunkRef.current = okChunkCount;
+    setInsighting(true);
+    fetch("/api/insights", {
+      method: "POST",
+      headers: { "content-type": "application/json" },
+      body: JSON.stringify({ text: transcript, blocks }),
+    })
+      .then((r) => r.json())
+      .then((body) => {
+        if (Array.isArray(body?.insights)) setInsights(body.insights);
+      })
+      .catch(() => {})
+      .finally(() => setInsighting(false));
+  }, [okChunkCount, running, transcript, summary, insighting]);
+
   const handleChunk = useCallback(
     async (ev: ChunkEvent) => {
       const row: ChunkRow = { index: ev.index, status: "uploading", text: "" };
@@ -366,8 +396,10 @@ export default function SpikePage() {
     setFormattedTranscript("");
     setFormattedUpToOkCount(0);
     setHiddenWarning(false);
+    setInsights([]);
     lastSummaryChunkRef.current = 0;
     lastFormatChunkRef.current = 0;
+    lastInsightsChunkRef.current = 0;
     chunksRef.current = new Map();
 
     const rec = createRecorder({
@@ -519,6 +551,7 @@ export default function SpikePage() {
           <div className="flex-1">
             <SummaryView
               summary={summary}
+              insights={insights}
               hasTranscript={transcript.length > 0}
               running={running}
             />
@@ -919,15 +952,26 @@ function SpinnerGlyph() {
 
 function SummaryView({
   summary,
+  insights,
   hasTranscript,
   running,
 }: {
   summary: SummaryPayload | null;
+  insights: Insight[];
   hasTranscript: boolean;
   running: boolean;
 }) {
   const hasBody = summary && (summary.shortSummary.length > 0 || summary.blocks.length > 0);
   const hasThinking = summary && summary.thinking.length > 0;
+  const insightsByBlock = useMemo(() => {
+    const map = new Map<number, Insight[]>();
+    for (const ins of insights) {
+      const list = map.get(ins.targetBlockIndex) ?? [];
+      list.push(ins);
+      map.set(ins.targetBlockIndex, list);
+    }
+    return map;
+  }, [insights]);
 
   if (hasBody || hasThinking) {
     return (
@@ -946,12 +990,23 @@ function SummaryView({
           </div>
         ) : null}
         {hasBody
-          ? summary!.blocks.map((block, i) => (
-              // biome-ignore lint/suspicious/noArrayIndexKey: index disambiguates blocks whose type + content hash collide (e.g., two short paragraphs starting the same way)
-              <div key={`${block.type}-${i}-${blockKey(block)}`} className="animate-content-fade">
-                <BlockRenderer block={block} />
-              </div>
-            ))
+          ? summary!.blocks.map((block, i) => {
+              const attached = insightsByBlock.get(i) ?? [];
+              return (
+                // biome-ignore lint/suspicious/noArrayIndexKey: index disambiguates blocks whose type + content hash collide (e.g., two short paragraphs starting the same way)
+                <div key={`${block.type}-${i}-${blockKey(block)}`} className="animate-content-fade">
+                  <BlockRenderer block={block} />
+                  {attached.length > 0 ? (
+                    <div className="mt-4 flex flex-col gap-3">
+                      {attached.map((ins, j) => (
+                        // biome-ignore lint/suspicious/noArrayIndexKey: insight order is stable within a fetch
+                        <InsightRenderer key={`${ins.type}-${j}`} insight={ins} />
+                      ))}
+                    </div>
+                  ) : null}
+                </div>
+              );
+            })
           : null}
         {!hasBody ? <SummarySkeleton /> : null}
       </div>
@@ -961,6 +1016,56 @@ function SummaryView({
     return <SummarySkeleton />;
   }
   return <p className="text-sm text-muted-foreground">O resumo aparecerá aqui.</p>;
+}
+
+function InsightRenderer({ insight }: { insight: Insight }) {
+  const [openRef, setOpenRef] = useState<string | null>(null);
+
+  if (insight.type === "bibleReference") {
+    return (
+      <>
+        <div className="flex flex-wrap items-center gap-1.5 text-xs text-muted-foreground">
+          <span className="inline-flex items-center gap-1 pr-0.5 italic">
+            <BookOpen className="size-3" />
+            Leia também:
+          </span>
+          {insight.references.map((ref) => (
+            <button
+              key={ref}
+              type="button"
+              onClick={() => setOpenRef(ref)}
+              className={cn(
+                "inline-flex items-center rounded-full border border-border/70 bg-background px-2 py-0.5 font-medium text-foreground/80 transition-colors outline-none",
+                "hover:border-foreground/60 hover:bg-muted hover:text-foreground",
+                "focus-visible:ring-2 focus-visible:ring-ring/40"
+              )}
+            >
+              {ref}
+            </button>
+          ))}
+        </div>
+        <VerseDialog reference={openRef} onOpenChange={(open) => !open && setOpenRef(null)} />
+      </>
+    );
+  }
+  return (
+    <aside
+      className="relative flex flex-col gap-5 rounded-3xl rounded-tl-none border-2 border-dashed border-border/80 p-7 animate-insight-gradient"
+      style={{
+        backgroundImage: "linear-gradient(135deg, #FBFCFE 0%, #F4F6FC 97%)",
+        backgroundSize: "200% 200%",
+      }}
+    >
+      <div className="flex items-center gap-1.5 text-[0.65rem] font-semibold tracking-widest text-muted-foreground uppercase">
+        <Sparkles className="size-3" />
+        <span>{insight.label}</span>
+      </div>
+      <p className="text-pretty text-xs leading-relaxed text-foreground/85">{insight.text}</p>
+      {insight.source ? (
+        <p className="text-[0.7rem] italic text-muted-foreground">— {insight.source}</p>
+      ) : null}
+    </aside>
+  );
 }
 
 function blockKey(block: SummaryBlock): string {
@@ -987,7 +1092,13 @@ function BlockRenderer({ block }: { block: SummaryBlock }) {
       return <p className="text-pretty text-base leading-relaxed text-foreground">{block.text}</p>;
     case "bibleQuote":
       return (
-        <figure className="flex flex-col gap-3 rounded-xl bg-muted/70 p-4">
+        <figure
+          className="relative flex flex-col gap-5 rounded-3xl border border-border p-7 animate-insight-gradient"
+          style={{
+            backgroundImage: "linear-gradient(135deg, #FBFCFE 0%, #F4F6FC 97%)",
+            backgroundSize: "200% 200%",
+          }}
+        >
           <figcaption>
             <span className="inline-flex items-center gap-1.5 rounded-md bg-foreground px-2 py-1 text-[0.7rem] font-semibold text-background">
               <BookOpen className="size-3" />
@@ -1025,7 +1136,13 @@ function BlockRenderer({ block }: { block: SummaryBlock }) {
       );
     case "conclusion":
       return (
-        <section className="mt-4 flex flex-col gap-3 rounded-2xl border border-border bg-muted/40 p-5">
+        <section
+          className="relative mt-4 flex flex-col gap-5 rounded-3xl border border-border p-7 animate-insight-gradient"
+          style={{
+            backgroundImage: "linear-gradient(135deg, #FBFCFE 0%, #F4F6FC 97%)",
+            backgroundSize: "200% 200%",
+          }}
+        >
           <span className="text-[0.65rem] font-semibold tracking-widest text-muted-foreground uppercase">
             Conclusão
           </span>
@@ -1198,5 +1315,104 @@ function AudioPlayer({ audio }: { audio: FinalAudio }) {
         onEnded={() => setPlaying(false)}
       />
     </div>
+  );
+}
+
+type VerseFetchState =
+  | { status: "idle" }
+  | { status: "loading" }
+  | { status: "ok"; reference: string; text: string; translation: string }
+  | { status: "error"; message: string };
+
+const verseCache = new Map<string, { reference: string; text: string; translation: string }>();
+
+function VerseDialog({
+  reference,
+  onOpenChange,
+}: {
+  reference: string | null;
+  onOpenChange: (open: boolean) => void;
+}) {
+  const [state, setState] = useState<VerseFetchState>({ status: "idle" });
+
+  useEffect(() => {
+    if (!reference) {
+      setState({ status: "idle" });
+      return;
+    }
+    const cached = verseCache.get(reference);
+    if (cached) {
+      setState({ status: "ok", ...cached });
+      return;
+    }
+    let cancelled = false;
+    setState({ status: "loading" });
+    fetch("/api/verse", {
+      method: "POST",
+      headers: { "content-type": "application/json" },
+      body: JSON.stringify({ reference }),
+    })
+      .then((r) => r.json())
+      .then((body: { reference?: string; text?: string; translation?: string; error?: string }) => {
+        if (cancelled) return;
+        if (body?.error) {
+          setState({ status: "error", message: body.error });
+          return;
+        }
+        const payload = {
+          reference: body.reference || reference,
+          text: body.text || "",
+          translation: body.translation || "",
+        };
+        verseCache.set(reference, payload);
+        setState({ status: "ok", ...payload });
+      })
+      .catch((err: Error) => {
+        if (cancelled) return;
+        setState({ status: "error", message: err.message || "falha ao buscar" });
+      });
+    return () => {
+      cancelled = true;
+    };
+  }, [reference]);
+
+  const open = reference !== null;
+  const headerRef = state.status === "ok" ? state.reference : reference || "";
+
+  return (
+    <Dialog open={open} onOpenChange={onOpenChange}>
+      <DialogContent className="sm:max-w-md">
+        <DialogHeader>
+          <DialogTitle className="flex items-center gap-2">
+            <BookOpen className="size-4" />
+            {headerRef}
+          </DialogTitle>
+          <DialogDescription>
+            {state.status === "ok" && state.translation
+              ? `Tradução: ${state.translation}`
+              : "Versículo sugerido pela IA"}
+          </DialogDescription>
+        </DialogHeader>
+        <div className="min-h-[80px]">
+          {state.status === "loading" ? (
+            <div className="flex flex-col gap-2 pt-1">
+              <div className="h-4 w-full animate-skeleton-shimmer rounded-md bg-muted" />
+              <div className="h-4 w-11/12 animate-skeleton-shimmer rounded-md bg-muted [animation-delay:120ms]" />
+              <div className="h-4 w-3/5 animate-skeleton-shimmer rounded-md bg-muted [animation-delay:240ms]" />
+            </div>
+          ) : state.status === "ok" && state.text ? (
+            <blockquote className="text-pretty text-base leading-relaxed text-foreground/90">
+              {state.text}
+            </blockquote>
+          ) : state.status === "ok" ? (
+            <p className="text-sm text-muted-foreground">
+              Não consegui recuperar o texto dessa referência com confiança. Consulte sua Bíblia.
+            </p>
+          ) : state.status === "error" ? (
+            <p className="text-sm text-destructive">Falha ao buscar: {state.message}</p>
+          ) : null}
+        </div>
+      </DialogContent>
+    </Dialog>
   );
 }
