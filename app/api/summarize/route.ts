@@ -39,17 +39,38 @@ export async function POST(request: Request) {
       body: JSON.stringify({
         model,
         temperature: 0.2,
+        response_format: { type: "json_object" },
         messages: [
           {
             role: "system",
             content:
-              "Você recebe uma transcrição parcial em português de uma palestra, aula ou reunião. " +
-              "Sua tarefa: escrever um resumo em texto corrido (parágrafos curtos, sem bullets, sem tópicos) " +
-              "explicando a ideia central do que está sendo dito e como ela se desenvolve. " +
-              "Seja descritivo e claro, como se estivesse explicando o assunto para alguém que não escutou. " +
-              "O texto vai crescer com o tempo — adapte o resumo conforme novo conteúdo chega, " +
-              "mantendo coerência com o que já foi dito. Não invente conteúdo que não está na transcrição. " +
-              "Se ainda não houver ideia clara, responda apenas: (sem conteúdo suficiente).",
+              "Você recebe uma transcrição parcial em português de uma palestra, aula bíblica, sermão ou reunião cristã. " +
+              "Sua tarefa: produzir um TÍTULO curto e um RESUMO em texto corrido. " +
+              "\n\n" +
+              "FORMATO DE SAÍDA — retorne SOMENTE um objeto JSON válido com esta forma exata: " +
+              '{ "title": "...", "summary": "..." }. ' +
+              "Nada além desse JSON. Sem comentários, sem markdown ao redor. " +
+              "\n\n" +
+              "TÍTULO: no máximo 60 caracteres, direto ao ponto, capturando o tema central. " +
+              "Adapte livremente conforme novo conteúdo chega e um título melhor se torna claro. " +
+              'Se ainda não houver tema claro, use "Início da gravação". ' +
+              "\n\n" +
+              "RESUMO: texto corrido em parágrafos curtos (sem bullets, sem tópicos), explicando " +
+              "a ideia central e como ela se desenvolve, como se explicasse a alguém que não escutou. " +
+              "Adapte conforme o texto cresce, mantendo coerência com o que já foi dito. " +
+              "Não invente conteúdo que não está na transcrição. " +
+              "\n\n" +
+              "REFERÊNCIAS BÍBLICAS — regra especial dentro do resumo: " +
+              "1) Sempre destaque passagens bíblicas citadas ou lidas usando **Livro Cap:Ver** " +
+              "(ex.: **João 3:16**, **Romanos 8:28-30**, **Salmos 23**). " +
+              "2) Se identificar alusão indireta que soa como versículo mas sem citação da fonte, " +
+              'acrescente entre parênteses sua hipótese com "cf." e "?", ' +
+              'ex: "...bem-aventurados os que choram (cf. **Mateus 5:4**?)". ' +
+              '3) Nunca invente referência: se não souber, escreva "(referência bíblica não identificada)". ' +
+              "4) Nome completo do livro em português. " +
+              "\n\n" +
+              "Se a transcrição ainda for muito curta para um resumo real, o campo summary pode ser " +
+              'apenas "(sem conteúdo suficiente)".',
           },
           { role: "user", content: text },
         ],
@@ -77,7 +98,18 @@ export async function POST(request: Request) {
   } catch {
     // fall through
   }
-  const summary = parsed.choices?.[0]?.message?.content?.trim() ?? "";
+  const content = parsed.choices?.[0]?.message?.content?.trim() ?? "";
 
-  return NextResponse.json({ summary, latencyMs, model });
+  let title = "";
+  let summary = "";
+  try {
+    const obj = JSON.parse(content) as { title?: string; summary?: string };
+    title = (obj.title ?? "").trim();
+    summary = (obj.summary ?? "").trim();
+  } catch {
+    // Fallback: model returned plain text instead of JSON.
+    summary = content;
+  }
+
+  return NextResponse.json({ title, summary, latencyMs, model });
 }

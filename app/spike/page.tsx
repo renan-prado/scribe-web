@@ -1,7 +1,29 @@
 "use client";
 
-import { Download, Mic, Pause, Play, Square } from "lucide-react";
+import {
+  Download,
+  FileText,
+  Headphones,
+  Mic,
+  MoreVertical,
+  Pause,
+  Play,
+  Square,
+} from "lucide-react";
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
+import {
+  Dialog,
+  DialogContent,
+  DialogDescription,
+  DialogHeader,
+  DialogTitle,
+} from "@/components/ui/dialog";
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuTrigger,
+} from "@/components/ui/dropdown-menu";
 import { type ChunkEvent, createRecorder, type Recorder } from "@/lib/recorder";
 import { cn } from "@/lib/utils";
 
@@ -16,7 +38,8 @@ type ChunkRow = {
 type FinalAudio = { url: string; extension: string; sizeBytes: number };
 
 const SILENCE_RMS_THRESHOLD = 0.005;
-const SUMMARY_EVERY_N_CHUNKS = 2;
+const SUMMARY_WARMUP_CHUNKS = 3;
+const SUMMARY_EVERY_N_CHUNKS = 3;
 const FORMAT_EVERY_N_CHUNKS = 4;
 
 async function isSilentBlob(blob: Blob): Promise<boolean> {
@@ -109,10 +132,13 @@ export default function SpikePage() {
   const [finalAudio, setFinalAudio] = useState<FinalAudio | null>(null);
   const [startupError, setStartupError] = useState<string>("");
   const [summary, setSummary] = useState("");
+  const [summaryTitle, setSummaryTitle] = useState("");
   const [formattedTranscript, setFormattedTranscript] = useState("");
   const [formattedUpToOkCount, setFormattedUpToOkCount] = useState(0);
   const [summarizing, setSummarizing] = useState(false);
   const [formatting, setFormatting] = useState(false);
+  const [transcriptOpen, setTranscriptOpen] = useState(false);
+  const [audioOpen, setAudioOpen] = useState(false);
 
   const publish = useCallback(() => {
     const rows = Array.from(chunksRef.current.values()).sort((a, b) => a.index - b.index);
@@ -151,9 +177,9 @@ export default function SpikePage() {
 
   useEffect(() => {
     if (!transcript || summarizing) return;
+    const withinWarmup = okChunkCount > 0 && okChunkCount <= SUMMARY_WARMUP_CHUNKS;
     const dueForSummary =
-      okChunkCount > 0 &&
-      okChunkCount % SUMMARY_EVERY_N_CHUNKS === 0 &&
+      (withinWarmup || (okChunkCount > 0 && okChunkCount % SUMMARY_EVERY_N_CHUNKS === 0)) &&
       lastSummaryChunkRef.current !== okChunkCount;
     if (!dueForSummary) return;
     lastSummaryChunkRef.current = okChunkCount;
@@ -166,6 +192,7 @@ export default function SpikePage() {
       .then((r) => r.json())
       .then((body) => {
         if (body?.summary) setSummary(body.summary);
+        if (typeof body?.title === "string") setSummaryTitle(body.title);
       })
       .catch(() => {})
       .finally(() => setSummarizing(false));
@@ -256,6 +283,7 @@ export default function SpikePage() {
     setFinalAudio(null);
     setChunkRows([]);
     setSummary("");
+    setSummaryTitle("");
     setFormattedTranscript("");
     setFormattedUpToOkCount(0);
     lastSummaryChunkRef.current = 0;
@@ -319,8 +347,7 @@ export default function SpikePage() {
     };
   }, [releaseWakeLock]);
 
-  const showFinal = !running && finalAudio && transcript.length > 0;
-  const showPanels = running || showFinal;
+  const hasStarted = running || chunkRows.length > 0 || finalAudio !== null;
   const transcriptState: "listening" | "transcribing" | "idle" = running
     ? isProcessing
       ? "transcribing"
@@ -328,7 +355,13 @@ export default function SpikePage() {
     : "idle";
 
   return (
-    <main className="mx-auto flex min-h-svh max-w-5xl flex-col items-center gap-10 px-6 py-16">
+    <main
+      className={cn(
+        "mx-auto flex min-h-svh w-full max-w-3xl flex-col items-center gap-10 px-6 py-16",
+        !hasStarted && "justify-center"
+      )}
+    >
+      {!hasStarted ? <Greeting /> : null}
       <RecordButton running={running} elapsedMs={elapsedMs} onStart={start} onStop={stop} />
 
       {startupError ? (
@@ -337,20 +370,144 @@ export default function SpikePage() {
         </p>
       ) : null}
 
-      {showPanels ? (
-        <div className="grid w-full self-stretch grid-cols-1 gap-6 md:grid-cols-2">
-          <Panel title="Transcrição" pending={formatting}>
-            <TranscriptView text={displayTranscript} state={transcriptState} />
-          </Panel>
-          <Panel title="Resumo" pending={summarizing}>
-            <SummaryView summary={summary} hasTranscript={transcript.length > 0} />
-          </Panel>
-        </div>
+      {hasStarted ? (
+        <section className="flex w-full min-h-[280px] self-stretch flex-col gap-4 rounded-2xl border border-border bg-card p-6 shadow-sm">
+          <header className="flex items-start justify-between gap-3">
+            <div className="flex min-w-0 flex-1 flex-col gap-1">
+              <div className="flex items-center gap-2">
+                <span className="text-[0.65rem] font-medium tracking-widest text-muted-foreground uppercase">
+                  Resumo
+                </span>
+                {summarizing ? <InlineDots /> : null}
+              </div>
+              <SummaryTitle title={summaryTitle} running={running} />
+            </div>
+            <SessionMenu
+              hasTranscript={transcript.length > 0}
+              hasAudio={finalAudio !== null}
+              onOpenTranscript={() => setTranscriptOpen(true)}
+              onOpenAudio={() => setAudioOpen(true)}
+            />
+          </header>
+          <div className="flex-1">
+            <SummaryView
+              summary={summary}
+              hasTranscript={transcript.length > 0}
+              running={running}
+            />
+          </div>
+        </section>
       ) : null}
 
-      {showFinal ? <AudioPlayer audio={finalAudio} /> : null}
+      <Dialog open={transcriptOpen} onOpenChange={setTranscriptOpen}>
+        <DialogContent className="sm:max-w-2xl">
+          <DialogHeader>
+            <DialogTitle>Transcrição</DialogTitle>
+            <DialogDescription>Texto bruto capturado pelo microfone.</DialogDescription>
+          </DialogHeader>
+          <div className="max-h-[60vh] overflow-y-auto pr-2">
+            <TranscriptView text={displayTranscript} state={transcriptState} />
+          </div>
+          {formatting ? (
+            <p className="flex items-center gap-2 text-xs text-muted-foreground">
+              <InlineDots /> Reformatando parágrafos…
+            </p>
+          ) : null}
+        </DialogContent>
+      </Dialog>
+
+      <Dialog open={audioOpen} onOpenChange={setAudioOpen}>
+        <DialogContent className="sm:max-w-lg">
+          <DialogHeader>
+            <DialogTitle>Áudio completo</DialogTitle>
+            <DialogDescription>Reprodução da gravação inteira.</DialogDescription>
+          </DialogHeader>
+          {finalAudio ? <AudioPlayer audio={finalAudio} /> : null}
+        </DialogContent>
+      </Dialog>
     </main>
   );
+}
+
+function SessionMenu({
+  hasTranscript,
+  hasAudio,
+  onOpenTranscript,
+  onOpenAudio,
+}: {
+  hasTranscript: boolean;
+  hasAudio: boolean;
+  onOpenTranscript: () => void;
+  onOpenAudio: () => void;
+}) {
+  return (
+    <DropdownMenu>
+      <DropdownMenuTrigger
+        className={cn(
+          "flex size-8 items-center justify-center rounded-full text-muted-foreground transition-colors outline-none",
+          "hover:bg-muted hover:text-foreground focus-visible:ring-2 focus-visible:ring-ring/40"
+        )}
+        aria-label="Mais opções"
+      >
+        <MoreVertical className="size-4" />
+      </DropdownMenuTrigger>
+      <DropdownMenuContent align="end" className="w-48">
+        <DropdownMenuItem disabled={!hasTranscript} onClick={onOpenTranscript} className="gap-2">
+          <FileText className="size-4" />
+          Ler transcrição
+        </DropdownMenuItem>
+        <DropdownMenuItem disabled={!hasAudio} onClick={onOpenAudio} className="gap-2">
+          <Headphones className="size-4" />
+          Áudio completo
+        </DropdownMenuItem>
+      </DropdownMenuContent>
+    </DropdownMenu>
+  );
+}
+
+function Greeting() {
+  const [time, setTime] = useState<string>("");
+
+  useEffect(() => {
+    const tick = () => setTime(formatClock(new Date()));
+    tick();
+    const now = new Date();
+    const msToNextMinute = (60 - now.getSeconds()) * 1000 - now.getMilliseconds();
+    let intervalId: ReturnType<typeof setInterval> | null = null;
+    const timeoutId = setTimeout(() => {
+      tick();
+      intervalId = setInterval(tick, 60_000);
+    }, msToNextMinute);
+    return () => {
+      clearTimeout(timeoutId);
+      if (intervalId) clearInterval(intervalId);
+    };
+  }, []);
+
+  return (
+    <section className="flex flex-col items-center gap-6 text-center">
+      <span
+        suppressHydrationWarning
+        className="inline-flex items-center rounded-full bg-muted px-4 py-1.5 text-sm font-medium tabular-nums text-foreground"
+      >
+        {time || " "}
+      </span>
+      <h1 className="text-3xl font-bold tracking-tight text-foreground sm:text-4xl">Olá, Renan!</h1>
+      <p className="max-w-md text-balance text-base font-normal leading-relaxed text-muted-foreground">
+        Grave um sermão, uma aula da EBD, uma palestra ou uma conversa entre amigos e geramos um
+        resumo bíblico para você!
+      </p>
+    </section>
+  );
+}
+
+function formatClock(date: Date): string {
+  let hours = date.getHours();
+  const minutes = date.getMinutes().toString().padStart(2, "0");
+  const period = hours >= 12 ? "pm" : "am";
+  hours = hours % 12;
+  if (hours === 0) hours = 12;
+  return `${hours}:${minutes} ${period}`;
 }
 
 function RecordButton({
@@ -365,7 +522,7 @@ function RecordButton({
   onStop: () => void;
 }) {
   return (
-    <div className="relative flex size-40 items-center justify-center">
+    <div className="relative flex size-28 items-center justify-center">
       {running ? (
         <span
           aria-hidden
@@ -377,44 +534,22 @@ function RecordButton({
         onClick={running ? onStop : onStart}
         aria-label={running ? "Parar gravação" : "Iniciar gravação"}
         className={cn(
-          "relative flex size-32 flex-col items-center justify-center rounded-full bg-primary text-primary-foreground shadow-lg outline-none transition-all duration-300 ease-out",
+          "relative flex size-20 flex-col items-center justify-center rounded-full bg-primary text-primary-foreground shadow-lg outline-none transition-all duration-300 ease-out",
           "hover:scale-[1.03] active:scale-95 focus-visible:ring-4 focus-visible:ring-ring/40"
         )}
       >
         {running ? (
           <>
-            <span className="font-mono text-2xl tabular-nums">{formatMmSs(elapsedMs)}</span>
-            <span className="mt-1 flex items-center gap-1 text-[0.65rem] tracking-wider uppercase opacity-70">
-              <Square className="size-2.5 fill-current" /> Parar
+            <span className="font-mono text-sm tabular-nums">{formatMmSs(elapsedMs)}</span>
+            <span className="mt-0.5 flex items-center gap-1 text-[0.55rem] tracking-wider uppercase opacity-70">
+              <Square className="size-2 fill-current" /> Parar
             </span>
           </>
         ) : (
-          <Mic className="size-10" />
+          <Mic className="size-6" />
         )}
       </button>
     </div>
-  );
-}
-
-function Panel({
-  title,
-  pending,
-  children,
-}: {
-  title: string;
-  pending: boolean;
-  children: React.ReactNode;
-}) {
-  return (
-    <section className="flex min-h-[220px] flex-col gap-3 rounded-2xl border border-border bg-card p-5 shadow-sm">
-      <header className="flex items-center justify-between">
-        <h2 className="text-xs font-medium tracking-wider text-muted-foreground uppercase">
-          {title}
-        </h2>
-        {pending ? <InlineDots /> : null}
-      </header>
-      <div className="flex-1">{children}</div>
-    </section>
   );
 }
 
@@ -457,26 +592,95 @@ function TranscriptView({
   );
 }
 
-function SummaryView({ summary, hasTranscript }: { summary: string; hasTranscript: boolean }) {
+function SummaryTitle({ title, running }: { title: string; running: boolean }) {
+  if (title) {
+    return (
+      <h2 className="font-heading text-xl font-semibold leading-tight text-foreground">{title}</h2>
+    );
+  }
+  if (running) {
+    return (
+      <div
+        role="status"
+        aria-label="Gerando título"
+        className="h-6 w-2/3 animate-skeleton-shimmer rounded-md bg-muted"
+      />
+    );
+  }
+  return null;
+}
+
+function renderBoldRefs(text: string): React.ReactNode[] {
+  const parts = text.split(/(\*\*[^*]+\*\*)/g);
+  return parts.map((part, i) => {
+    if (part.startsWith("**") && part.endsWith("**")) {
+      const inner = part.slice(2, -2);
+      return (
+        // biome-ignore lint/suspicious/noArrayIndexKey: parts are order-stable within a paragraph
+        <strong key={`${i}-${inner}`} className="font-semibold text-foreground">
+          {inner}
+        </strong>
+      );
+    }
+    // biome-ignore lint/suspicious/noArrayIndexKey: parts are order-stable within a paragraph
+    return <span key={`${i}-${part.slice(0, 24)}`}>{part}</span>;
+  });
+}
+
+function SummaryView({
+  summary,
+  hasTranscript,
+  running,
+}: {
+  summary: string;
+  hasTranscript: boolean;
+  running: boolean;
+}) {
   if (summary) {
     const paragraphs = summary
       .split(/\n\n+/)
       .map((p) => p.trim())
       .filter(Boolean);
     return (
-      <div className="space-y-3 text-pretty text-sm leading-relaxed text-foreground">
+      <div className="space-y-4 text-pretty text-base leading-relaxed text-foreground">
         {paragraphs.map((p) => (
-          <p key={p}>{p}</p>
+          <p key={p}>{renderBoldRefs(p)}</p>
         ))}
+        {running ? <GeneratingMore /> : null}
       </div>
     );
   }
+  if (running || hasTranscript) {
+    return <SummarySkeleton />;
+  }
+  return <p className="text-sm text-muted-foreground">O resumo aparecerá aqui.</p>;
+}
+
+function GeneratingMore() {
   return (
-    <p className="text-sm text-muted-foreground">
-      {hasTranscript
-        ? "Aguardando conteúdo suficiente para o primeiro resumo…"
-        : "O resumo aparecerá aqui."}
-    </p>
+    <div
+      role="status"
+      aria-label="Gerando mais conteúdo"
+      className="flex items-center gap-2 pt-2 text-xs text-muted-foreground"
+    >
+      <span className="flex items-center gap-1">
+        <span className="size-1 animate-listening-dot rounded-full bg-muted-foreground/60" />
+        <span className="size-1 animate-listening-dot rounded-full bg-muted-foreground/60 [animation-delay:200ms]" />
+        <span className="size-1 animate-listening-dot rounded-full bg-muted-foreground/60 [animation-delay:400ms]" />
+      </span>
+      <span>gerando mais conforme a fala continua</span>
+    </div>
+  );
+}
+
+function SummarySkeleton() {
+  return (
+    <div role="status" aria-label="Gerando resumo" className="flex flex-col gap-3">
+      <div className="h-4 w-full animate-skeleton-shimmer rounded-md bg-muted" />
+      <div className="h-4 w-11/12 animate-skeleton-shimmer rounded-md bg-muted [animation-delay:120ms]" />
+      <div className="h-4 w-full animate-skeleton-shimmer rounded-md bg-muted [animation-delay:240ms]" />
+      <div className="h-4 w-3/5 animate-skeleton-shimmer rounded-md bg-muted [animation-delay:360ms]" />
+    </div>
   );
 }
 
@@ -538,7 +742,7 @@ function AudioPlayer({ audio }: { audio: FinalAudio }) {
   const progress = duration > 0 ? Math.min(100, (currentTime / duration) * 100) : 0;
 
   return (
-    <div className="w-full self-stretch rounded-2xl border border-border bg-card p-4 shadow-sm">
+    <div className="w-full self-stretch rounded-xl border border-border bg-card p-4 shadow-sm">
       <div className="flex items-center gap-4">
         <button
           type="button"
