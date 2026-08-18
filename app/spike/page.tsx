@@ -16,6 +16,7 @@ import {
   User,
 } from "lucide-react";
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
+import type { Proposal } from "@/app/api/consolidate/route";
 import type { Insight } from "@/app/api/insights/route";
 import type { SummaryBlock, SummaryPayload, SummaryPhase } from "@/app/api/summarize/route";
 import {
@@ -62,6 +63,7 @@ type ChunkRow = {
   index: number;
   status: ChunkStatus;
   text: string;
+  startedAtMs: number;
 };
 
 type FinalAudio = { url: string; extension: string; sizeBytes: number };
@@ -69,8 +71,9 @@ type FinalAudio = { url: string; extension: string; sizeBytes: number };
 const SILENCE_RMS_THRESHOLD = 0.005;
 const SUMMARY_WARMUP_CHUNKS = 3;
 const SUMMARY_EVERY_N_CHUNKS = 1;
-const FORMAT_EVERY_N_CHUNKS = 4;
-const INSIGHTS_EVERY_N_CHUNKS = 6;
+const INSIGHTS_EVERY_N_CHUNKS = 5;
+const CONSOLIDATE_EVERY_N_CHUNKS = 6;
+const CONSOLIDATE_PULSE_MS = 5000;
 
 const EARLY_STATUS_PHRASES = [
   "ouvindo o áudio",
@@ -138,6 +141,94 @@ function tailSentences(text: string, count: number): string {
   return parts.slice(-count).join(" ").trim();
 }
 
+function collectAffectedIndices(proposals: Proposal[]): number[] {
+  const set = new Set<number>();
+  for (const p of proposals) {
+    if (p.action === "merge") for (const i of p.targetIndices) set.add(i);
+    else if (p.action === "refine") set.add(p.targetIndex);
+    else if (p.action === "insertHeading") set.add(p.afterIndex + 1);
+  }
+  return Array.from(set);
+}
+
+function mergeInsights(prev: Insight[], incoming: Insight[]): Insight[] {
+  const taken = new Set(prev.map((i) => i.targetBlockIndex));
+  const additions = incoming.filter((i) => !taken.has(i.targetBlockIndex));
+  if (additions.length === 0) return prev;
+  return [...prev, ...additions];
+}
+
+function applyProposalsToPayload(payload: SummaryPayload, proposals: Proposal[]): SummaryPayload {
+  const refines = proposals.filter(
+    (p): p is Extract<Proposal, { action: "refine" }> => p.action === "refine"
+  );
+  const structural = proposals.filter(
+    (p): p is Extract<Proposal, { action: "merge" | "insertHeading" }> =>
+      p.action === "merge" || p.action === "insertHeading"
+  );
+  let blocks: SummaryBlock[] = payload.blocks.map((b, i) => {
+    const r = refines.find((x) => x.targetIndex === i);
+    if (r && b.type === "paragraph") return { type: "paragraph", text: r.newText };
+    return b;
+  });
+  const anchor = (p: Extract<Proposal, { action: "merge" | "insertHeading" }>): number =>
+    p.action === "merge" ? Math.min(...p.targetIndices) : p.afterIndex + 1;
+  const sortedStructural = [...structural].sort((a, b) => anchor(b) - anchor(a));
+  for (const p of sortedStructural) {
+    if (p.action === "merge") {
+      const sorted = [...p.targetIndices].sort((a, b) => a - b);
+      const start = sorted[0];
+      const removeCount = sorted.length;
+      blocks = [
+        ...blocks.slice(0, start),
+        { type: "paragraph", text: p.newText },
+        ...blocks.slice(start + removeCount),
+      ];
+    } else {
+      const insertAt = p.afterIndex + 1;
+      blocks = [
+        ...blocks.slice(0, insertAt),
+        { type: "h2", text: p.text },
+        ...blocks.slice(insertAt),
+      ];
+    }
+  }
+  return { ...payload, blocks };
+}
+
+function remapInsightsForProposals(insights: Insight[], proposals: Proposal[]): Insight[] {
+  const structural = proposals.filter(
+    (p): p is Extract<Proposal, { action: "merge" | "insertHeading" }> =>
+      p.action === "merge" || p.action === "insertHeading"
+  );
+  if (structural.length === 0) return insights;
+  const anchor = (p: Extract<Proposal, { action: "merge" | "insertHeading" }>): number =>
+    p.action === "merge" ? Math.min(...p.targetIndices) : p.afterIndex + 1;
+  const sortedStructural = [...structural].sort((a, b) => anchor(b) - anchor(a));
+  const out: Insight[] = [];
+  for (const ins of insights) {
+    let idx = ins.targetBlockIndex;
+    let drop = false;
+    for (const p of sortedStructural) {
+      if (p.action === "merge") {
+        const sorted = [...p.targetIndices].sort((a, b) => a - b);
+        const start = sorted[0];
+        const end = sorted[sorted.length - 1];
+        if (idx > start && idx <= end) {
+          drop = true;
+          break;
+        }
+        if (idx > end) idx -= sorted.length - 1;
+      } else {
+        const insertAt = p.afterIndex + 1;
+        if (idx >= insertAt) idx += 1;
+      }
+    }
+    if (!drop) out.push({ ...ins, targetBlockIndex: idx });
+  }
+  return out;
+}
+
 async function uploadChunkWithRetry(
   ev: ChunkEvent,
   prevText: string
@@ -176,8 +267,9 @@ export default function SpikePage() {
   const startedAtRef = useRef<number>(0);
   const tickTimerRef = useRef<ReturnType<typeof setInterval> | null>(null);
   const lastSummaryChunkRef = useRef(0);
-  const lastFormatChunkRef = useRef(0);
   const lastInsightsChunkRef = useRef(0);
+  const lastConsolidateChunkRef = useRef(0);
+  const pulseTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
   const bottomRef = useRef<HTMLDivElement | null>(null);
 
   const [running, setRunning] = useState(false);
@@ -188,13 +280,12 @@ export default function SpikePage() {
   const [summary, setSummary] = useState<SummaryPayload | null>(null);
   const [summaryTitle, setSummaryTitle] = useState("");
   const [recordingStartedAt, setRecordingStartedAt] = useState<Date | null>(null);
-  const [formattedTranscript, setFormattedTranscript] = useState("");
-  const [formattedUpToOkCount, setFormattedUpToOkCount] = useState(0);
   const [summarizing, setSummarizing] = useState(false);
   const [finalizing, setFinalizing] = useState(false);
-  const [formatting, setFormatting] = useState(false);
   const [insights, setInsights] = useState<Insight[]>([]);
   const [insighting, setInsighting] = useState(false);
+  const [consolidating, setConsolidating] = useState(false);
+  const [pendingIndices, setPendingIndices] = useState<Set<number>>(() => new Set());
   const [transcriptOpen, setTranscriptOpen] = useState(false);
   const [audioOpen, setAudioOpen] = useState(false);
   const [hiddenWarning, setHiddenWarning] = useState(false);
@@ -219,19 +310,6 @@ export default function SpikePage() {
     [chunkRows]
   );
 
-  const displayTranscript = useMemo(() => {
-    if (!formattedTranscript) return transcript;
-    const newerText = chunkRows
-      .filter((r) => r.status === "ok")
-      .slice(formattedUpToOkCount)
-      .map((r) => r.text.trim())
-      .filter(Boolean)
-      .join(" ")
-      .replace(/\s+/g, " ")
-      .trim();
-    return newerText ? `${formattedTranscript}\n\n${newerText}` : formattedTranscript;
-  }, [chunkRows, formattedTranscript, formattedUpToOkCount, transcript]);
-
   const isProcessing = useMemo(() => chunkRows.some((r) => r.status === "uploading"), [chunkRows]);
 
   const requestSummary = useCallback(
@@ -241,7 +319,7 @@ export default function SpikePage() {
       phase?: SummaryPhase;
       elapsedSec?: number;
       previous?: SummaryPayload;
-    }): Promise<void> => {
+    }): Promise<SummaryPayload | null> => {
       try {
         const res = await fetch("/api/summarize", {
           method: "POST",
@@ -249,15 +327,17 @@ export default function SpikePage() {
           body: JSON.stringify(body),
         });
         const payload = (await res.json()) as Partial<SummaryPayload> & { error?: string };
-        if (payload?.error) return;
+        if (payload?.error) return null;
         const blocks = Array.isArray(payload.blocks) ? payload.blocks : [];
         const shortSummary = typeof payload.shortSummary === "string" ? payload.shortSummary : "";
         const title = typeof payload.title === "string" ? payload.title : "";
         const thinking = typeof payload.thinking === "string" ? payload.thinking : "";
-        setSummary({ thinking, title, shortSummary, blocks });
+        const next: SummaryPayload = { thinking, title, shortSummary, blocks };
+        setSummary(next);
         if (title) setSummaryTitle(title);
+        return next;
       } catch {
-        // ignore transient failures — next tick will retry
+        return null;
       }
     },
     []
@@ -268,6 +348,10 @@ export default function SpikePage() {
     // late-arriving chunk transcription must not overwrite the finalized
     // summary (with its conclusion block).
     if (!running || !transcript || summarizing || finalizing) return;
+    // Don't overwrite blocks while the consolidator is running or pulsing —
+    // any in-flight summary response would clobber the pending merge/refine
+    // that the user is being warned about.
+    if (consolidating || pendingIndices.size > 0) return;
     const withinWarmup = okChunkCount > 0 && okChunkCount <= SUMMARY_WARMUP_CHUNKS;
     const dueForSummary =
       (withinWarmup || (okChunkCount > 0 && okChunkCount % SUMMARY_EVERY_N_CHUNKS === 0)) &&
@@ -280,36 +364,21 @@ export default function SpikePage() {
     void requestSummary({ text: transcript, elapsedSec, previous }).finally(() =>
       setSummarizing(false)
     );
-  }, [running, okChunkCount, transcript, summarizing, finalizing, summary, requestSummary]);
-
-  useEffect(() => {
-    if (!transcript || formatting) return;
-    const dueForFormat =
-      okChunkCount > 0 &&
-      okChunkCount % FORMAT_EVERY_N_CHUNKS === 0 &&
-      lastFormatChunkRef.current !== okChunkCount;
-    if (!dueForFormat) return;
-    lastFormatChunkRef.current = okChunkCount;
-    const okCountAtTrigger = okChunkCount;
-    setFormatting(true);
-    fetch("/api/format-paragraphs", {
-      method: "POST",
-      headers: { "content-type": "application/json" },
-      body: JSON.stringify({ text: transcript }),
-    })
-      .then((r) => r.json())
-      .then((body) => {
-        if (body?.formatted) {
-          setFormattedTranscript(body.formatted);
-          setFormattedUpToOkCount(okCountAtTrigger);
-        }
-      })
-      .catch(() => {})
-      .finally(() => setFormatting(false));
-  }, [okChunkCount, transcript, formatting]);
+  }, [
+    running,
+    okChunkCount,
+    transcript,
+    summarizing,
+    finalizing,
+    summary,
+    requestSummary,
+    consolidating,
+    pendingIndices,
+  ]);
 
   useEffect(() => {
     if (!running || insighting) return;
+    if (consolidating || pendingIndices.size > 0) return;
     const blocks = summary?.blocks ?? [];
     if (blocks.length === 0) return;
     const dueForInsights =
@@ -319,22 +388,99 @@ export default function SpikePage() {
     if (!dueForInsights) return;
     lastInsightsChunkRef.current = okChunkCount;
     setInsighting(true);
+    const existingInsightIndices = insights.map((i) => i.targetBlockIndex);
     fetch("/api/insights", {
       method: "POST",
       headers: { "content-type": "application/json" },
-      body: JSON.stringify({ text: transcript, blocks }),
+      body: JSON.stringify({ text: transcript, blocks, existingInsightIndices }),
     })
       .then((r) => r.json())
       .then((body) => {
-        if (Array.isArray(body?.insights)) setInsights(body.insights);
+        if (Array.isArray(body?.insights) && body.insights.length > 0) {
+          setInsights((prev) => mergeInsights(prev, body.insights));
+        }
       })
       .catch(() => {})
       .finally(() => setInsighting(false));
-  }, [okChunkCount, running, transcript, summary, insighting]);
+  }, [
+    okChunkCount,
+    running,
+    transcript,
+    summary,
+    insighting,
+    insights,
+    consolidating,
+    pendingIndices,
+  ]);
+
+  const runConsolidate = useCallback(
+    async (opts: { isFinal?: boolean } = {}): Promise<void> => {
+      const currentBlocks = summary?.blocks ?? [];
+      if (currentBlocks.length < 3) return;
+      const paragraphCount = currentBlocks.filter((b) => b.type === "paragraph").length;
+      if (paragraphCount < 3) return;
+      setConsolidating(true);
+      try {
+        const res = await fetch("/api/consolidate", {
+          method: "POST",
+          headers: { "content-type": "application/json" },
+          body: JSON.stringify({ blocks: currentBlocks, isFinal: !!opts.isFinal }),
+        });
+        const body = (await res.json()) as { proposals?: Proposal[] };
+        const proposals = Array.isArray(body?.proposals) ? body.proposals : [];
+        if (proposals.length === 0) return;
+        const affected = collectAffectedIndices(proposals);
+        setPendingIndices(new Set(affected));
+        await new Promise<void>((resolve) => {
+          pulseTimerRef.current = setTimeout(() => {
+            pulseTimerRef.current = null;
+            resolve();
+          }, CONSOLIDATE_PULSE_MS);
+        });
+        setSummary((prev) => (prev ? applyProposalsToPayload(prev, proposals) : prev));
+        setInsights((prev) => remapInsightsForProposals(prev, proposals));
+        setPendingIndices(new Set());
+      } catch {
+        setPendingIndices(new Set());
+      } finally {
+        setConsolidating(false);
+      }
+    },
+    [summary]
+  );
+
+  useEffect(() => {
+    if (!running || consolidating || summarizing || finalizing) return;
+    if (pendingIndices.size > 0) return;
+    const blocks = summary?.blocks ?? [];
+    if (blocks.length < 3) return;
+    const dueForConsolidate =
+      okChunkCount > 0 &&
+      okChunkCount % CONSOLIDATE_EVERY_N_CHUNKS === 0 &&
+      lastConsolidateChunkRef.current !== okChunkCount;
+    if (!dueForConsolidate) return;
+    lastConsolidateChunkRef.current = okChunkCount;
+    void runConsolidate();
+  }, [
+    okChunkCount,
+    running,
+    summary,
+    consolidating,
+    summarizing,
+    finalizing,
+    pendingIndices,
+    runConsolidate,
+  ]);
 
   const handleChunk = useCallback(
     async (ev: ChunkEvent) => {
-      const row: ChunkRow = { index: ev.index, status: "uploading", text: "" };
+      const startedAtMs = Math.max(0, ev.startedAt - startedAtRef.current);
+      const row: ChunkRow = {
+        index: ev.index,
+        status: "uploading",
+        text: "",
+        startedAtMs,
+      };
       chunksRef.current.set(ev.index, row);
       publish();
 
@@ -393,13 +539,17 @@ export default function SpikePage() {
     setSummary(null);
     setSummaryTitle("");
     setRecordingStartedAt(new Date());
-    setFormattedTranscript("");
-    setFormattedUpToOkCount(0);
     setHiddenWarning(false);
     setInsights([]);
+    setPendingIndices(new Set());
+    setConsolidating(false);
+    if (pulseTimerRef.current) {
+      clearTimeout(pulseTimerRef.current);
+      pulseTimerRef.current = null;
+    }
     lastSummaryChunkRef.current = 0;
-    lastFormatChunkRef.current = 0;
     lastInsightsChunkRef.current = 0;
+    lastConsolidateChunkRef.current = 0;
     chunksRef.current = new Map();
 
     const rec = createRecorder({
@@ -453,17 +603,66 @@ export default function SpikePage() {
       const previous = summary ?? undefined;
       setFinalizing(true);
       try {
-        await requestSummary({
+        let finalPayload = await requestSummary({
           text: finalTranscript,
           isFinal: true,
           elapsedSec,
           previous,
         });
+        let localInsights = insights;
+        if (finalPayload && finalPayload.blocks.length >= 3) {
+          try {
+            const cRes = await fetch("/api/consolidate", {
+              method: "POST",
+              headers: { "content-type": "application/json" },
+              body: JSON.stringify({ blocks: finalPayload.blocks, isFinal: true }),
+            });
+            const cBody = (await cRes.json()) as { proposals?: Proposal[] };
+            const proposals = Array.isArray(cBody?.proposals) ? cBody.proposals : [];
+            if (proposals.length > 0) {
+              setPendingIndices(new Set(collectAffectedIndices(proposals)));
+              await new Promise<void>((resolve) => {
+                pulseTimerRef.current = setTimeout(() => {
+                  pulseTimerRef.current = null;
+                  resolve();
+                }, CONSOLIDATE_PULSE_MS);
+              });
+              const applied = applyProposalsToPayload(finalPayload, proposals);
+              setSummary(applied);
+              localInsights = remapInsightsForProposals(localInsights, proposals);
+              setInsights(localInsights);
+              setPendingIndices(new Set());
+              finalPayload = applied;
+            }
+          } catch {
+            setPendingIndices(new Set());
+          }
+        }
+        if (finalPayload && finalPayload.blocks.length > 0) {
+          try {
+            const existingInsightIndices = localInsights.map((i) => i.targetBlockIndex);
+            const iRes = await fetch("/api/insights", {
+              method: "POST",
+              headers: { "content-type": "application/json" },
+              body: JSON.stringify({
+                text: finalTranscript,
+                blocks: finalPayload.blocks,
+                existingInsightIndices,
+              }),
+            });
+            const iBody = (await iRes.json()) as { insights?: Insight[] };
+            if (Array.isArray(iBody?.insights) && iBody.insights.length > 0) {
+              setInsights((prev) => mergeInsights(prev, iBody.insights ?? []));
+            }
+          } catch {
+            // ignore
+          }
+        }
       } finally {
         setFinalizing(false);
       }
     }
-  }, [releaseWakeLock, requestSummary, running, summary]);
+  }, [releaseWakeLock, requestSummary, running, summary, insights]);
 
   useEffect(() => {
     if (!running) return;
@@ -485,6 +684,7 @@ export default function SpikePage() {
   useEffect(() => {
     return () => {
       if (tickTimerRef.current) clearInterval(tickTimerRef.current);
+      if (pulseTimerRef.current) clearTimeout(pulseTimerRef.current);
       void recorderRef.current?.stop();
       void releaseWakeLock();
     };
@@ -552,6 +752,7 @@ export default function SpikePage() {
             <SummaryView
               summary={summary}
               insights={insights}
+              pendingIndices={pendingIndices}
               hasTranscript={transcript.length > 0}
               running={running}
             />
@@ -581,13 +782,8 @@ export default function SpikePage() {
             <DialogDescription>Texto bruto capturado pelo microfone.</DialogDescription>
           </DialogHeader>
           <div className="max-h-[60vh] overflow-y-auto pr-2">
-            <TranscriptView text={displayTranscript} state={transcriptState} />
+            <TranscriptView rows={chunkRows} state={transcriptState} />
           </div>
-          {formatting ? (
-            <p className="flex items-center gap-2 text-xs text-muted-foreground">
-              <InlineDots /> Reformatando parágrafos…
-            </p>
-          ) : null}
         </DialogContent>
       </Dialog>
 
@@ -761,43 +957,53 @@ function RecordButton({
   );
 }
 
-function InlineDots() {
-  return (
-    <div role="status" aria-label="Processando" className="flex items-center gap-1">
-      <span className="size-1 animate-listening-dot rounded-full bg-muted-foreground/60" />
-      <span className="size-1 animate-listening-dot rounded-full bg-muted-foreground/60 [animation-delay:200ms]" />
-      <span className="size-1 animate-listening-dot rounded-full bg-muted-foreground/60 [animation-delay:400ms]" />
-    </div>
-  );
-}
-
 function TranscriptView({
-  text,
+  rows,
   state,
 }: {
-  text: string;
+  rows: ChunkRow[];
   state: "listening" | "transcribing" | "idle";
 }) {
-  const paragraphs = text
-    .split(/\n\n+/)
-    .map((p) => p.trim())
-    .filter(Boolean);
+  const groups = useMemo(() => groupChunksByMinute(rows), [rows]);
 
   return (
-    <div className="space-y-3">
-      {paragraphs.length > 0 ? (
-        <div className="space-y-3 text-pretty text-sm leading-relaxed text-foreground">
-          {paragraphs.map((p) => (
-            <p key={p}>{p}</p>
+    <div className="flex flex-col gap-7">
+      {groups.length > 0 ? (
+        <ol className="flex flex-col gap-7">
+          {groups.map((g) => (
+            <li key={g.startedAtMs} className="flex flex-col gap-2">
+              <span className="inline-flex w-fit items-center rounded-full bg-muted px-2.5 py-0.5 font-mono text-[0.65rem] tabular-nums text-muted-foreground">
+                {formatMmSs(g.startedAtMs)}
+              </span>
+              <p className="text-pretty text-sm leading-relaxed text-foreground">{g.text}</p>
+            </li>
           ))}
-        </div>
+        </ol>
       ) : state === "idle" ? (
         <p className="text-sm text-muted-foreground">Sem transcrição.</p>
       ) : null}
       {state === "transcribing" ? <TranscriptSkeleton /> : null}
-      {state === "listening" && !text ? <ListeningDots /> : null}
+      {state === "listening" && groups.length === 0 ? <ListeningDots /> : null}
     </div>
   );
+}
+
+function groupChunksByMinute(rows: ChunkRow[]): { startedAtMs: number; text: string }[] {
+  const ok = rows.filter((r) => r.status === "ok" && r.text.trim().length > 0);
+  if (ok.length === 0) return [];
+  const groups: { startedAtMs: number; text: string }[] = [];
+  let currentMinute = -1;
+  for (const r of ok) {
+    const minute = Math.floor(r.startedAtMs / 60_000);
+    if (minute !== currentMinute) {
+      currentMinute = minute;
+      groups.push({ startedAtMs: minute * 60_000, text: r.text.trim() });
+    } else {
+      const last = groups[groups.length - 1];
+      last.text = `${last.text} ${r.text.trim()}`.replace(/\s+/g, " ").trim();
+    }
+  }
+  return groups;
 }
 
 function RecordingHeader({
@@ -953,11 +1159,13 @@ function SpinnerGlyph() {
 function SummaryView({
   summary,
   insights,
+  pendingIndices,
   hasTranscript,
   running,
 }: {
   summary: SummaryPayload | null;
   insights: Insight[];
+  pendingIndices: Set<number>;
   hasTranscript: boolean;
   running: boolean;
 }) {
@@ -992,9 +1200,13 @@ function SummaryView({
         {hasBody
           ? summary!.blocks.map((block, i) => {
               const attached = insightsByBlock.get(i) ?? [];
+              const pulsing = pendingIndices.has(i);
               return (
-                // biome-ignore lint/suspicious/noArrayIndexKey: index disambiguates blocks whose type + content hash collide (e.g., two short paragraphs starting the same way)
-                <div key={`${block.type}-${i}-${blockKey(block)}`} className="animate-content-fade">
+                <div
+                  // biome-ignore lint/suspicious/noArrayIndexKey: index disambiguates blocks whose type + content hash collide (e.g., two short paragraphs starting the same way)
+                  key={`${block.type}-${i}-${blockKey(block)}`}
+                  className={cn("animate-content-fade", pulsing && "animate-consolidate-pulse")}
+                >
                   <BlockRenderer block={block} />
                   {attached.length > 0 ? (
                     <div className="mt-4 flex flex-col gap-3">

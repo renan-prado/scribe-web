@@ -24,7 +24,7 @@ export type Insight = InsightBibleReference | InsightSupportingContent;
 
 export type InsightsPayload = { insights: Insight[] };
 
-const SYSTEM_PROMPT = `Você recebe (a) uma transcrição parcial em português de uma palestra, aula bíblica, sermão ou reunião cristã, e (b) o resumo estruturado já produzido dessa fala, como um array de blocos com índices.
+const SYSTEM_PROMPT = `Você recebe (a) uma transcrição parcial em português de uma palestra, aula bíblica, sermão ou reunião cristã, (b) o resumo estruturado já produzido dessa fala, como um array de blocos com índices, e (c) uma lista "existingInsightIndices" com os índices dos blocos que JÁ têm insight atribuído em iterações anteriores.
 
 Sua tarefa: sugerir INSIGHTS EXTRAS que enriqueçam a leitura — conteúdo que NÃO estava explicitamente na fala mas que se conecta genuinamente com o que está sendo dito. Cada insight é ancorado a UM bloco específico do resumo (pelo índice).
 
@@ -34,12 +34,14 @@ FORMATO DE SAÍDA — retorne SOMENTE um objeto JSON válido com esta forma exat
 }
 Nada além disso. Sem markdown ao redor, sem comentários.
 
-REGRA FUNDAMENTAL — RELEVÂNCIA ANTES DE TUDO
-- Sua meta padrão é devolver POUCOS ou NENHUM insight. Array vazio é a resposta correta na maioria das iterações.
+REGRA FUNDAMENTAL — RELEVÂNCIA COM BOA COBERTURA
+- Sua meta é dar BOA COBERTURA ao longo do resumo, sem repetir ou encher linguiça.
+- FOQUE nos blocos QUE AINDA NÃO ESTÃO em "existingInsightIndices". Esses são os candidatos naturais. Blocos que já têm insight NÃO precisam de outro — você não pode nem propor pra eles (será rejeitado).
+- Cadência típica por chamada: 0 a 2 insights, ocasionalmente 3 se o material realmente pede. Array vazio é aceitável quando nada dos blocos novos merece.
 - Só emita um insight se ele passa neste teste: "Um leitor atento diria 'isso agregou' ou 'isso me faria parar pra olhar'?".
 - PROIBIDO encheção de linguiça: sugestões óbvias, genéricas, tautológicas ou que só repetem o que o bloco já diz. Se você está em dúvida, NÃO emita.
 - Um insight ruim é MUITO pior que a ausência de insight. O usuário perde confiança se a IA começa a sugerir bobagem.
-- Se o resumo tem 5 blocos, é comum devolver 0, 1 ou 2 insights no total. 3+ já é excepcional. NUNCA um insight por bloco.
+- Ideal ao final da fala: um resumo de 8 blocos com ~3-4 insights bem distribuídos. NUNCA um insight por bloco.
 
 TIPOS DE INSIGHT:
 
@@ -77,7 +79,7 @@ export async function POST(request: Request) {
 
   const model = process.env.OPENAI_INSIGHTS_MODEL ?? "gpt-4o-mini";
 
-  let body: { text?: string; blocks?: SummaryBlock[] };
+  let body: { text?: string; blocks?: SummaryBlock[]; existingInsightIndices?: number[] };
   try {
     body = await request.json();
   } catch (err) {
@@ -88,12 +90,17 @@ export async function POST(request: Request) {
   }
   const text = (body.text ?? "").trim();
   const blocks = Array.isArray(body.blocks) ? body.blocks : [];
+  const existingIndices = Array.isArray(body.existingInsightIndices)
+    ? body.existingInsightIndices.filter(
+        (n): n is number => typeof n === "number" && Number.isInteger(n)
+      )
+    : [];
   if (!text || blocks.length === 0) {
     return NextResponse.json({ insights: [] });
   }
 
   const indexedBlocks = blocks.map((b, i) => ({ index: i, ...b }));
-  const userMessage = `blocks:\n${JSON.stringify(indexedBlocks)}\n\n---\ntranscript:\n${text}`;
+  const userMessage = `existingInsightIndices: ${JSON.stringify(existingIndices)}\n\nblocks:\n${JSON.stringify(indexedBlocks)}\n\n---\ntranscript:\n${text}`;
 
   const startedAt = performance.now();
   let upstream: Response;
@@ -138,11 +145,15 @@ export async function POST(request: Request) {
   }
   const content = parsed.choices?.[0]?.message?.content?.trim() ?? "";
 
-  const insights = normalizeInsights(content, blocks);
+  const insights = normalizeInsights(content, blocks, existingIndices);
   return NextResponse.json({ insights, latencyMs, model });
 }
 
-function normalizeInsights(content: string, blocks: SummaryBlock[]): Insight[] {
+function normalizeInsights(
+  content: string,
+  blocks: SummaryBlock[],
+  existingIndices: number[]
+): Insight[] {
   let obj: unknown = null;
   try {
     obj = JSON.parse(content);
@@ -153,7 +164,7 @@ function normalizeInsights(content: string, blocks: SummaryBlock[]): Insight[] {
   const rawList = (obj as { insights?: unknown }).insights;
   if (!Array.isArray(rawList)) return [];
 
-  const seenBlocks = new Set<number>();
+  const takenBlocks = new Set<number>(existingIndices);
   const out: Insight[] = [];
   for (const raw of rawList) {
     if (!raw || typeof raw !== "object") continue;
@@ -162,7 +173,7 @@ function normalizeInsights(content: string, blocks: SummaryBlock[]): Insight[] {
     const idx = typeof rec.targetBlockIndex === "number" ? rec.targetBlockIndex : -1;
     if (idx < 0 || idx >= blocks.length) continue;
     if (blocks[idx].type === "conclusion") continue;
-    if (seenBlocks.has(idx)) continue;
+    if (takenBlocks.has(idx)) continue;
 
     if (type === "bibleReference") {
       const rawRefs = Array.isArray(rec.references) ? rec.references : [];
@@ -176,7 +187,7 @@ function normalizeInsights(content: string, blocks: SummaryBlock[]): Insight[] {
       const fresh = references.filter((r) => !alreadyCited.has(normalizeRef(r)));
       if (fresh.length === 0) continue;
       out.push({ type: "bibleReference", targetBlockIndex: idx, references: fresh });
-      seenBlocks.add(idx);
+      takenBlocks.add(idx);
       continue;
     }
     if (type === "supportingContent") {
@@ -191,8 +202,7 @@ function normalizeInsights(content: string, blocks: SummaryBlock[]): Insight[] {
         text,
         ...(source ? { source } : {}),
       });
-      seenBlocks.add(idx);
-      continue;
+      takenBlocks.add(idx);
     }
   }
   return out;
