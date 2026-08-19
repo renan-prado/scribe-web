@@ -29,10 +29,42 @@ import {
   DropdownMenuItem,
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
-import type { Proposal } from "@/lib/domain/consolidate";
+import {
+  CONSOLIDATE_EVERY_N_CHUNKS,
+  CONSOLIDATE_PULSE_MS,
+  INSIGHTS_EVERY_N_CHUNKS,
+  RECENT_TRANSCRIPT_CHARS,
+  RECORDER_MAX_CHUNK_MS,
+  RECORDER_MIN_CHUNK_MS,
+  RECORDER_SILENCE_HOLD_MS,
+  RECORDER_SILENCE_THRESHOLD,
+  SUMMARY_EVERY_N_CHUNKS,
+  SUMMARY_WARMUP_CHUNKS,
+} from "@/features/session/config";
+import { useElapsedTimer } from "@/features/session/hooks/useElapsedTimer";
+import { useVerseFetch } from "@/features/session/hooks/useVerseFetch";
+import { useVisibilityWarning } from "@/features/session/hooks/useVisibilityWarning";
+import { useWakeLock } from "@/features/session/hooks/useWakeLock";
+import {
+  requestSummary as apiRequestSummary,
+  requestConsolidate,
+  requestInsights,
+  uploadChunkWithRetry,
+} from "@/features/session/lib/api";
+import { isSilentBlob } from "@/features/session/lib/audio";
+import { groupChunksByMinute } from "@/features/session/lib/chunks";
+import {
+  applyProposalsToPayload,
+  collectAffectedIndices,
+  mergeInsights,
+  remapInsightsForProposals,
+} from "@/features/session/lib/proposals";
+import { formatMmSs, tailSentences, tailTranscript } from "@/features/session/lib/text";
+import type { ChunkRow, FinalAudio, TranscriptState } from "@/features/session/types";
 import type { Insight } from "@/lib/domain/insights";
-import type { SummaryBlock, SummaryPayload, SummaryPhase } from "@/lib/domain/summary";
-import { type ChunkEvent, createRecorder, type Recorder } from "@/lib/recorder";
+import type { ChunkEvent, Recorder } from "@/lib/domain/recorder";
+import type { SummaryBlock, SummaryPayload } from "@/lib/domain/summary";
+import { createRecorder } from "@/lib/recorder";
 import { cn } from "@/lib/utils";
 
 const AUTHOR_PLACEHOLDER = "José Leante";
@@ -57,35 +89,6 @@ function defaultRecordingTitle(date: Date): string {
   return `Gravação dia ${date.getDate()} de ${MONTHS_PT[date.getMonth()]}.`;
 }
 
-type ChunkStatus = "uploading" | "ok" | "silence" | "error";
-
-type ChunkRow = {
-  index: number;
-  status: ChunkStatus;
-  text: string;
-  startedAtMs: number;
-};
-
-type FinalAudio = { url: string; extension: string; sizeBytes: number };
-
-const SILENCE_RMS_THRESHOLD = 0.005;
-const SUMMARY_WARMUP_CHUNKS = 3;
-const SUMMARY_EVERY_N_CHUNKS = 1;
-const INSIGHTS_EVERY_N_CHUNKS = 5;
-const CONSOLIDATE_EVERY_N_CHUNKS = 6;
-const CONSOLIDATE_PULSE_MS = 5000;
-// Cap the transcript sent to summarize/insights so long recordings don't
-// balloon the prompt (and cost/latency). The previousSummary already carries
-// older context — the model only needs the recent tail to keep going.
-const RECENT_TRANSCRIPT_CHARS = 6000;
-
-function tailTranscript(full: string, maxChars: number): string {
-  if (full.length <= maxChars) return full;
-  const tail = full.slice(-maxChars);
-  const spaceIdx = tail.indexOf(" ");
-  return spaceIdx > 0 ? tail.slice(spaceIdx + 1) : tail;
-}
-
 const EARLY_STATUS_PHRASES = [
   "ouvindo o áudio",
   "escutando com atenção",
@@ -108,175 +111,10 @@ const LATER_STATUS_PHRASES = [
   "deixando o pensamento se desenvolver",
 ];
 
-async function isSilentBlob(blob: Blob): Promise<boolean> {
-  try {
-    const arrayBuf = await blob.arrayBuffer();
-    const AC =
-      window.AudioContext ??
-      (window as unknown as { webkitAudioContext?: typeof AudioContext }).webkitAudioContext;
-    if (!AC) return false;
-    const ctx = new AC();
-    try {
-      const decoded = await ctx.decodeAudioData(arrayBuf.slice(0));
-      let sumSquares = 0;
-      let count = 0;
-      for (let ch = 0; ch < decoded.numberOfChannels; ch++) {
-        const data = decoded.getChannelData(ch);
-        for (let i = 0; i < data.length; i++) {
-          sumSquares += data[i] * data[i];
-          count++;
-        }
-      }
-      const rms = Math.sqrt(sumSquares / Math.max(1, count));
-      return rms < SILENCE_RMS_THRESHOLD;
-    } finally {
-      void ctx.close();
-    }
-  } catch {
-    return false;
-  }
-}
-
-function formatMmSs(ms: number): string {
-  const total = Math.max(0, Math.floor(ms / 1000));
-  const mm = Math.floor(total / 60)
-    .toString()
-    .padStart(2, "0");
-  const ss = (total % 60).toString().padStart(2, "0");
-  return `${mm}:${ss}`;
-}
-
-function tailSentences(text: string, count: number): string {
-  const parts = text.match(/[^.!?]+[.!?]+/g) ?? [];
-  if (parts.length === 0) return text.slice(-400);
-  return parts.slice(-count).join(" ").trim();
-}
-
-function collectAffectedIndices(proposals: Proposal[]): number[] {
-  const set = new Set<number>();
-  for (const p of proposals) {
-    if (p.action === "merge") for (const i of p.targetIndices) set.add(i);
-    else if (p.action === "refine") set.add(p.targetIndex);
-    else if (p.action === "insertHeading") set.add(p.afterIndex + 1);
-  }
-  return Array.from(set);
-}
-
-function mergeInsights(prev: Insight[], incoming: Insight[]): Insight[] {
-  const taken = new Set(prev.map((i) => i.targetBlockIndex));
-  const additions = incoming.filter((i) => !taken.has(i.targetBlockIndex));
-  if (additions.length === 0) return prev;
-  return [...prev, ...additions];
-}
-
-function applyProposalsToPayload(payload: SummaryPayload, proposals: Proposal[]): SummaryPayload {
-  const refines = proposals.filter(
-    (p): p is Extract<Proposal, { action: "refine" }> => p.action === "refine"
-  );
-  const structural = proposals.filter(
-    (p): p is Extract<Proposal, { action: "merge" | "insertHeading" }> =>
-      p.action === "merge" || p.action === "insertHeading"
-  );
-  let blocks: SummaryBlock[] = payload.blocks.map((b, i) => {
-    const r = refines.find((x) => x.targetIndex === i);
-    if (r && b.type === "paragraph") return { type: "paragraph", text: r.newText };
-    return b;
-  });
-  const anchor = (p: Extract<Proposal, { action: "merge" | "insertHeading" }>): number =>
-    p.action === "merge" ? Math.min(...p.targetIndices) : p.afterIndex + 1;
-  const sortedStructural = [...structural].sort((a, b) => anchor(b) - anchor(a));
-  for (const p of sortedStructural) {
-    if (p.action === "merge") {
-      const sorted = [...p.targetIndices].sort((a, b) => a - b);
-      const start = sorted[0];
-      const removeCount = sorted.length;
-      blocks = [
-        ...blocks.slice(0, start),
-        { type: "paragraph", text: p.newText },
-        ...blocks.slice(start + removeCount),
-      ];
-    } else {
-      const insertAt = p.afterIndex + 1;
-      blocks = [
-        ...blocks.slice(0, insertAt),
-        { type: "h2", text: p.text },
-        ...blocks.slice(insertAt),
-      ];
-    }
-  }
-  return { ...payload, blocks };
-}
-
-function remapInsightsForProposals(insights: Insight[], proposals: Proposal[]): Insight[] {
-  const structural = proposals.filter(
-    (p): p is Extract<Proposal, { action: "merge" | "insertHeading" }> =>
-      p.action === "merge" || p.action === "insertHeading"
-  );
-  if (structural.length === 0) return insights;
-  const anchor = (p: Extract<Proposal, { action: "merge" | "insertHeading" }>): number =>
-    p.action === "merge" ? Math.min(...p.targetIndices) : p.afterIndex + 1;
-  const sortedStructural = [...structural].sort((a, b) => anchor(b) - anchor(a));
-  const out: Insight[] = [];
-  for (const ins of insights) {
-    let idx = ins.targetBlockIndex;
-    let drop = false;
-    for (const p of sortedStructural) {
-      if (p.action === "merge") {
-        const sorted = [...p.targetIndices].sort((a, b) => a - b);
-        const start = sorted[0];
-        const end = sorted[sorted.length - 1];
-        if (idx > start && idx <= end) {
-          drop = true;
-          break;
-        }
-        if (idx > end) idx -= sorted.length - 1;
-      } else {
-        const insertAt = p.afterIndex + 1;
-        if (idx >= insertAt) idx += 1;
-      }
-    }
-    if (!drop) out.push({ ...ins, targetBlockIndex: idx });
-  }
-  return out;
-}
-
-async function uploadChunkWithRetry(
-  ev: ChunkEvent,
-  prevText: string
-): Promise<{ ok: true; text: string } | { ok: false; message: string }> {
-  const backoffMs = [500, 1500];
-  let lastMessage = "unknown error";
-  for (let attempt = 0; attempt <= backoffMs.length; attempt++) {
-    try {
-      const form = new FormData();
-      const filename = `chunk-${ev.index}.${ev.extension}`;
-      form.append("file", ev.blob, filename);
-      form.append("chunkIndex", String(ev.index));
-      form.append("extension", ev.extension);
-      form.append("prevText", prevText);
-      const res = await fetch("/api/transcribe", { method: "POST", body: form });
-      const body = await res.json();
-      if (!res.ok) {
-        lastMessage = body?.error ?? `HTTP ${res.status}`;
-      } else {
-        return { ok: true, text: body.text ?? "" };
-      }
-    } catch (err) {
-      lastMessage = (err as Error).message ?? "network error";
-    }
-    if (attempt < backoffMs.length) {
-      await new Promise((r) => setTimeout(r, backoffMs[attempt]));
-    }
-  }
-  return { ok: false, message: lastMessage };
-}
-
 export default function SpikePage() {
   const recorderRef = useRef<Recorder | null>(null);
-  const wakeLockRef = useRef<WakeLockSentinel | null>(null);
   const chunksRef = useRef<Map<number, ChunkRow>>(new Map());
   const startedAtRef = useRef<number>(0);
-  const tickTimerRef = useRef<ReturnType<typeof setInterval> | null>(null);
   const lastSummaryChunkRef = useRef(0);
   const lastInsightsChunkRef = useRef(0);
   const lastConsolidateChunkRef = useRef(0);
@@ -284,7 +122,6 @@ export default function SpikePage() {
   const bottomRef = useRef<HTMLDivElement | null>(null);
 
   const [running, setRunning] = useState(false);
-  const [elapsedMs, setElapsedMs] = useState(0);
   const [chunkRows, setChunkRows] = useState<ChunkRow[]>([]);
   const [finalAudio, setFinalAudio] = useState<FinalAudio | null>(null);
   const [startupError, setStartupError] = useState<string>("");
@@ -299,7 +136,12 @@ export default function SpikePage() {
   const [pendingIndices, setPendingIndices] = useState<Set<number>>(() => new Set());
   const [transcriptOpen, setTranscriptOpen] = useState(false);
   const [audioOpen, setAudioOpen] = useState(false);
-  const [hiddenWarning, setHiddenWarning] = useState(false);
+
+  const elapsedMs = useElapsedTimer(running, startedAtRef);
+  useWakeLock({ enabled: running });
+  const { warning: hiddenWarning, dismiss: dismissHiddenWarning } = useVisibilityWarning({
+    enabled: running,
+  });
 
   const publish = useCallback(() => {
     const rows = Array.from(chunksRef.current.values()).sort((a, b) => a.index - b.index);
@@ -323,33 +165,13 @@ export default function SpikePage() {
 
   const isProcessing = useMemo(() => chunkRows.some((r) => r.status === "uploading"), [chunkRows]);
 
-  const requestSummary = useCallback(
-    async (body: {
-      text: string;
-      isFinal?: boolean;
-      phase?: SummaryPhase;
-      elapsedSec?: number;
-      previous?: SummaryPayload;
-    }): Promise<SummaryPayload | null> => {
-      try {
-        const res = await fetch("/api/summarize", {
-          method: "POST",
-          headers: { "content-type": "application/json" },
-          body: JSON.stringify(body),
-        });
-        const payload = (await res.json()) as Partial<SummaryPayload> & { error?: string };
-        if (payload?.error) return null;
-        const blocks = Array.isArray(payload.blocks) ? payload.blocks : [];
-        const shortSummary = typeof payload.shortSummary === "string" ? payload.shortSummary : "";
-        const title = typeof payload.title === "string" ? payload.title : "";
-        const thinking = typeof payload.thinking === "string" ? payload.thinking : "";
-        const next: SummaryPayload = { thinking, title, shortSummary, blocks };
-        setSummary(next);
-        if (title) setSummaryTitle(title);
-        return next;
-      } catch {
-        return null;
-      }
+  const requestSummaryAndCommit = useCallback(
+    async (body: Parameters<typeof apiRequestSummary>[0]): Promise<SummaryPayload | null> => {
+      const next = await apiRequestSummary(body);
+      if (!next) return null;
+      setSummary(next);
+      if (next.title) setSummaryTitle(next.title);
+      return next;
     },
     []
   );
@@ -373,7 +195,7 @@ export default function SpikePage() {
     const elapsedSec = Math.floor((performance.now() - startedAtRef.current) / 1000);
     const previous = summary ?? undefined;
     const recent = tailTranscript(transcript, RECENT_TRANSCRIPT_CHARS);
-    void requestSummary({ text: recent, elapsedSec, previous }).finally(() =>
+    void requestSummaryAndCommit({ text: recent, elapsedSec, previous }).finally(() =>
       setSummarizing(false)
     );
   }, [
@@ -383,7 +205,7 @@ export default function SpikePage() {
     summarizing,
     finalizing,
     summary,
-    requestSummary,
+    requestSummaryAndCommit,
     consolidating,
     pendingIndices,
   ]);
@@ -402,18 +224,10 @@ export default function SpikePage() {
     setInsighting(true);
     const existingInsightIndices = insights.map((i) => i.targetBlockIndex);
     const recent = tailTranscript(transcript, RECENT_TRANSCRIPT_CHARS);
-    fetch("/api/insights", {
-      method: "POST",
-      headers: { "content-type": "application/json" },
-      body: JSON.stringify({ text: recent, blocks, existingInsightIndices }),
-    })
-      .then((r) => r.json())
-      .then((body) => {
-        if (Array.isArray(body?.insights) && body.insights.length > 0) {
-          setInsights((prev) => mergeInsights(prev, body.insights));
-        }
+    void requestInsights({ text: recent, blocks, existingInsightIndices })
+      .then((incoming) => {
+        if (incoming.length > 0) setInsights((prev) => mergeInsights(prev, incoming));
       })
-      .catch(() => {})
       .finally(() => setInsighting(false));
   }, [
     okChunkCount,
@@ -434,13 +248,10 @@ export default function SpikePage() {
       if (paragraphCount < 3) return;
       setConsolidating(true);
       try {
-        const res = await fetch("/api/consolidate", {
-          method: "POST",
-          headers: { "content-type": "application/json" },
-          body: JSON.stringify({ blocks: currentBlocks, isFinal: !!opts.isFinal }),
+        const proposals = await requestConsolidate({
+          blocks: currentBlocks,
+          isFinal: !!opts.isFinal,
         });
-        const body = (await res.json()) as { proposals?: Proposal[] };
-        const proposals = Array.isArray(body?.proposals) ? body.proposals : [];
         if (proposals.length === 0) return;
         const affected = collectAffectedIndices(proposals);
         setPendingIndices(new Set(affected));
@@ -523,27 +334,6 @@ export default function SpikePage() {
     [publish]
   );
 
-  const requestWakeLock = useCallback(async () => {
-    const wl = (navigator as unknown as { wakeLock?: WakeLock }).wakeLock;
-    if (!wl || typeof wl.request !== "function") return;
-    try {
-      wakeLockRef.current = await wl.request("screen");
-    } catch {
-      // ignore
-    }
-  }, []);
-
-  const releaseWakeLock = useCallback(async () => {
-    if (wakeLockRef.current) {
-      try {
-        await wakeLockRef.current.release();
-      } catch {
-        // ignore
-      }
-      wakeLockRef.current = null;
-    }
-  }, []);
-
   const start = useCallback(async () => {
     if (running) return;
     setStartupError("");
@@ -552,7 +342,6 @@ export default function SpikePage() {
     setSummary(null);
     setSummaryTitle("");
     setRecordingStartedAt(new Date());
-    setHiddenWarning(false);
     setInsights([]);
     setPendingIndices(new Set());
     setConsolidating(false);
@@ -566,10 +355,10 @@ export default function SpikePage() {
     chunksRef.current = new Map();
 
     const rec = createRecorder({
-      minChunkMs: 20_000,
-      maxChunkMs: 45_000,
-      silenceThreshold: 0.01,
-      silenceHoldMs: 400,
+      minChunkMs: RECORDER_MIN_CHUNK_MS,
+      maxChunkMs: RECORDER_MAX_CHUNK_MS,
+      silenceThreshold: RECORDER_SILENCE_THRESHOLD,
+      silenceHoldMs: RECORDER_SILENCE_HOLD_MS,
     });
     rec.onChunk(handleChunk);
     rec.onFinalAudio((ev) => {
@@ -581,27 +370,17 @@ export default function SpikePage() {
       await rec.start();
       recorderRef.current = rec;
       startedAtRef.current = performance.now();
-      setElapsedMs(0);
       setRunning(true);
-      tickTimerRef.current = setInterval(() => {
-        setElapsedMs(performance.now() - startedAtRef.current);
-      }, 250);
-      await requestWakeLock();
     } catch (err) {
       setStartupError((err as Error).message ?? "failed to start");
     }
-  }, [handleChunk, requestWakeLock, running]);
+  }, [handleChunk, running]);
 
   const stop = useCallback(async () => {
     if (!running) return;
     setRunning(false);
-    if (tickTimerRef.current) {
-      clearInterval(tickTimerRef.current);
-      tickTimerRef.current = null;
-    }
     await recorderRef.current?.stop();
     recorderRef.current = null;
-    await releaseWakeLock();
 
     const finalTranscript = Array.from(chunksRef.current.values())
       .filter((r) => r.status === "ok")
@@ -611,100 +390,67 @@ export default function SpikePage() {
       .join(" ")
       .replace(/\s+/g, " ")
       .trim();
-    if (finalTranscript) {
-      const elapsedSec = Math.floor((performance.now() - startedAtRef.current) / 1000);
-      const previous = summary ?? undefined;
-      setFinalizing(true);
-      try {
-        let finalPayload = await requestSummary({
-          text: finalTranscript,
-          isFinal: true,
-          elapsedSec,
-          previous,
-        });
-        let localInsights = insights;
-        if (finalPayload && finalPayload.blocks.length >= 3) {
-          try {
-            const cRes = await fetch("/api/consolidate", {
-              method: "POST",
-              headers: { "content-type": "application/json" },
-              body: JSON.stringify({ blocks: finalPayload.blocks, isFinal: true }),
-            });
-            const cBody = (await cRes.json()) as { proposals?: Proposal[] };
-            const proposals = Array.isArray(cBody?.proposals) ? cBody.proposals : [];
-            if (proposals.length > 0) {
-              setPendingIndices(new Set(collectAffectedIndices(proposals)));
-              await new Promise<void>((resolve) => {
-                pulseTimerRef.current = setTimeout(() => {
-                  pulseTimerRef.current = null;
-                  resolve();
-                }, CONSOLIDATE_PULSE_MS);
-              });
-              const applied = applyProposalsToPayload(finalPayload, proposals);
-              setSummary(applied);
-              localInsights = remapInsightsForProposals(localInsights, proposals);
-              setInsights(localInsights);
-              setPendingIndices(new Set());
-              finalPayload = applied;
-            }
-          } catch {
-            setPendingIndices(new Set());
-          }
-        }
-        if (finalPayload && finalPayload.blocks.length > 0) {
-          try {
-            const existingInsightIndices = localInsights.map((i) => i.targetBlockIndex);
-            const iRes = await fetch("/api/insights", {
-              method: "POST",
-              headers: { "content-type": "application/json" },
-              body: JSON.stringify({
-                text: finalTranscript,
-                blocks: finalPayload.blocks,
-                existingInsightIndices,
-              }),
-            });
-            const iBody = (await iRes.json()) as { insights?: Insight[] };
-            if (Array.isArray(iBody?.insights) && iBody.insights.length > 0) {
-              setInsights((prev) => mergeInsights(prev, iBody.insights ?? []));
-            }
-          } catch {
-            // ignore
-          }
-        }
-      } finally {
-        setFinalizing(false);
-      }
-    }
-  }, [releaseWakeLock, requestSummary, running, summary, insights]);
+    if (!finalTranscript) return;
 
-  useEffect(() => {
-    if (!running) return;
-    const onVis = () => {
-      if (document.visibilityState === "hidden") {
-        // Latch a warning: we may have lost audio while backgrounded.
-        setHiddenWarning(true);
-        return;
+    const elapsedSec = Math.floor((performance.now() - startedAtRef.current) / 1000);
+    const previous = summary ?? undefined;
+    setFinalizing(true);
+    try {
+      let finalPayload = await requestSummaryAndCommit({
+        text: finalTranscript,
+        isFinal: true,
+        elapsedSec,
+        previous,
+      });
+      let localInsights = insights;
+      if (finalPayload && finalPayload.blocks.length >= 3) {
+        try {
+          const proposals = await requestConsolidate({
+            blocks: finalPayload.blocks,
+            isFinal: true,
+          });
+          if (proposals.length > 0) {
+            setPendingIndices(new Set(collectAffectedIndices(proposals)));
+            await new Promise<void>((resolve) => {
+              pulseTimerRef.current = setTimeout(() => {
+                pulseTimerRef.current = null;
+                resolve();
+              }, CONSOLIDATE_PULSE_MS);
+            });
+            const applied = applyProposalsToPayload(finalPayload, proposals);
+            setSummary(applied);
+            localInsights = remapInsightsForProposals(localInsights, proposals);
+            setInsights(localInsights);
+            setPendingIndices(new Set());
+            finalPayload = applied;
+          }
+        } catch {
+          setPendingIndices(new Set());
+        }
       }
-      // Coming back to the tab: setInterval can freeze while hidden, so
-      // resync the timer from the monotonic clock and refresh the wake lock.
-      setElapsedMs(performance.now() - startedAtRef.current);
-      if (!wakeLockRef.current) void requestWakeLock();
-    };
-    document.addEventListener("visibilitychange", onVis);
-    return () => document.removeEventListener("visibilitychange", onVis);
-  }, [requestWakeLock, running]);
+      if (finalPayload && finalPayload.blocks.length > 0) {
+        const existingInsightIndices = localInsights.map((i) => i.targetBlockIndex);
+        const incoming = await requestInsights({
+          text: finalTranscript,
+          blocks: finalPayload.blocks,
+          existingInsightIndices,
+        });
+        if (incoming.length > 0) setInsights((prev) => mergeInsights(prev, incoming));
+      }
+    } finally {
+      setFinalizing(false);
+    }
+  }, [requestSummaryAndCommit, running, summary, insights]);
 
   useEffect(() => {
     return () => {
-      if (tickTimerRef.current) clearInterval(tickTimerRef.current);
       if (pulseTimerRef.current) clearTimeout(pulseTimerRef.current);
       void recorderRef.current?.stop();
-      void releaseWakeLock();
     };
-  }, [releaseWakeLock]);
+  }, []);
 
   const hasStarted = running || chunkRows.length > 0 || finalAudio !== null;
-  const transcriptState: "listening" | "transcribing" | "idle" = running
+  const transcriptState: TranscriptState = running
     ? isProcessing
       ? "transcribing"
       : "listening"
@@ -781,9 +527,7 @@ export default function SpikePage() {
             </div>
           ) : null}
 
-          {hiddenWarning && running ? (
-            <HiddenTabOverlay onDismiss={() => setHiddenWarning(false)} />
-          ) : null}
+          {hiddenWarning && running ? <HiddenTabOverlay onDismiss={dismissHiddenWarning} /> : null}
           {finalizing ? <FinalizingOverlay /> : null}
         </section>
       ) : null}
@@ -973,13 +717,7 @@ function RecordButton({
   );
 }
 
-function TranscriptView({
-  rows,
-  state,
-}: {
-  rows: ChunkRow[];
-  state: "listening" | "transcribing" | "idle";
-}) {
+function TranscriptView({ rows, state }: { rows: ChunkRow[]; state: TranscriptState }) {
   const groups = useMemo(() => groupChunksByMinute(rows), [rows]);
 
   return (
@@ -1002,24 +740,6 @@ function TranscriptView({
       {state === "listening" && groups.length === 0 ? <ListeningDots /> : null}
     </div>
   );
-}
-
-function groupChunksByMinute(rows: ChunkRow[]): { startedAtMs: number; text: string }[] {
-  const ok = rows.filter((r) => r.status === "ok" && r.text.trim().length > 0);
-  if (ok.length === 0) return [];
-  const groups: { startedAtMs: number; text: string }[] = [];
-  let currentMinute = -1;
-  for (const r of ok) {
-    const minute = Math.floor(r.startedAtMs / 60_000);
-    if (minute !== currentMinute) {
-      currentMinute = minute;
-      groups.push({ startedAtMs: minute * 60_000, text: r.text.trim() });
-    } else {
-      const last = groups[groups.length - 1];
-      last.text = `${last.text} ${r.text.trim()}`.replace(/\s+/g, " ").trim();
-    }
-  }
-  return groups;
 }
 
 function RecordingHeader({
@@ -1546,14 +1266,6 @@ function AudioPlayer({ audio }: { audio: FinalAudio }) {
   );
 }
 
-type VerseFetchState =
-  | { status: "idle" }
-  | { status: "loading" }
-  | { status: "ok"; reference: string; text: string; translation: string }
-  | { status: "error"; message: string };
-
-const verseCache = new Map<string, { reference: string; text: string; translation: string }>();
-
 function VerseDialog({
   reference,
   onOpenChange,
@@ -1561,49 +1273,7 @@ function VerseDialog({
   reference: string | null;
   onOpenChange: (open: boolean) => void;
 }) {
-  const [state, setState] = useState<VerseFetchState>({ status: "idle" });
-
-  useEffect(() => {
-    if (!reference) {
-      setState({ status: "idle" });
-      return;
-    }
-    const cached = verseCache.get(reference);
-    if (cached) {
-      setState({ status: "ok", ...cached });
-      return;
-    }
-    let cancelled = false;
-    setState({ status: "loading" });
-    fetch("/api/verse", {
-      method: "POST",
-      headers: { "content-type": "application/json" },
-      body: JSON.stringify({ reference }),
-    })
-      .then((r) => r.json())
-      .then((body: { reference?: string; text?: string; translation?: string; error?: string }) => {
-        if (cancelled) return;
-        if (body?.error) {
-          setState({ status: "error", message: body.error });
-          return;
-        }
-        const payload = {
-          reference: body.reference || reference,
-          text: body.text || "",
-          translation: body.translation || "",
-        };
-        verseCache.set(reference, payload);
-        setState({ status: "ok", ...payload });
-      })
-      .catch((err: Error) => {
-        if (cancelled) return;
-        setState({ status: "error", message: err.message || "falha ao buscar" });
-      });
-    return () => {
-      cancelled = true;
-    };
-  }, [reference]);
-
+  const state = useVerseFetch(reference);
   const open = reference !== null;
   const headerRef = state.status === "ok" ? state.reference : reference || "";
 
