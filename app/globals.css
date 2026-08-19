@@ -81,6 +81,12 @@
   --sidebar-accent-foreground: oklch(0.205 0 0);
   --sidebar-border: oklch(0.922 0 0);
   --sidebar-ring: oklch(0.708 0 0);
+
+  /* Session-specific tokens.
+     The quote gradient wraps bibleQuote / conclusion / supportingContent
+     surfaces; the highlight yellow paints the "frase de efeito" span. */
+  --session-surface-quote: linear-gradient(135deg, #fbfcfe 0%, #f4f6fc 97%);
+  --session-highlight-yellow: #fff8c9;
 }
 
 .dark {

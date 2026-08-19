@@ -40,7 +40,7 @@ export function InsightRenderer({ insight }: { insight: Insight }) {
     <aside
       className="relative flex flex-col gap-5 rounded-3xl rounded-tl-none border-2 border-dashed border-border/80 p-7 animate-insight-gradient"
       style={{
-        backgroundImage: "linear-gradient(135deg, #FBFCFE 0%, #F4F6FC 97%)",
+        backgroundImage: "var(--session-surface-quote)",
         backgroundSize: "200% 200%",
       }}
     >

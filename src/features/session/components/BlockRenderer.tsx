@@ -28,7 +28,7 @@ export function BlockRenderer({ block }: { block: SummaryBlock }) {
         <figure
           className="relative flex flex-col gap-5 rounded-3xl border border-border p-7 animate-insight-gradient"
           style={{
-            backgroundImage: "linear-gradient(135deg, #FBFCFE 0%, #F4F6FC 97%)",
+            backgroundImage: "var(--session-surface-quote)",
             backgroundSize: "200% 200%",
           }}
         >
@@ -55,7 +55,7 @@ export function BlockRenderer({ block }: { block: SummaryBlock }) {
             >
               ❝
             </span>
-            <span className="bg-[#fff8c9] px-1 py-0.5 [box-decoration-break:clone] [-webkit-box-decoration-break:clone]">
+            <span className="bg-[var(--session-highlight-yellow)] px-1 py-0.5 [box-decoration-break:clone] [-webkit-box-decoration-break:clone]">
               {block.text}
             </span>
             <span
@@ -72,7 +72,7 @@ export function BlockRenderer({ block }: { block: SummaryBlock }) {
         <section
           className="relative mt-4 flex flex-col gap-5 rounded-3xl border border-border p-7 animate-insight-gradient"
           style={{
-            backgroundImage: "linear-gradient(135deg, #FBFCFE 0%, #F4F6FC 97%)",
+            backgroundImage: "var(--session-surface-quote)",
             backgroundSize: "200% 200%",
           }}
         >
