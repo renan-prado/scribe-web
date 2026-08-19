@@ -16,9 +16,6 @@ import {
   User,
 } from "lucide-react";
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
-import type { Proposal } from "@/app/api/consolidate/route";
-import type { Insight } from "@/app/api/insights/route";
-import type { SummaryBlock, SummaryPayload, SummaryPhase } from "@/app/api/summarize/route";
 import {
   Dialog,
   DialogContent,
@@ -32,6 +29,9 @@ import {
   DropdownMenuItem,
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
+import type { Proposal } from "@/lib/domain/consolidate";
+import type { Insight } from "@/lib/domain/insights";
+import type { SummaryBlock, SummaryPayload, SummaryPhase } from "@/lib/domain/summary";
 import { type ChunkEvent, createRecorder, type Recorder } from "@/lib/recorder";
 import { cn } from "@/lib/utils";
 

@@ -1,29 +1,21 @@
 import { NextResponse } from "next/server";
-import type { SummaryBlock } from "@/app/api/summarize/route";
+import { parseInsightsFromLLM } from "@/lib/domain/insights";
+import type { SummaryBlock } from "@/lib/domain/summary";
 import { serverEnv } from "@/lib/env/server";
+
+// Re-export domain types so client-side imports that used to reach into this
+// route file keep resolving during the refactor.
+export type {
+  Insight,
+  InsightBibleReference,
+  InsightSupportingContent,
+  InsightsPayload,
+} from "@/lib/domain/insights";
 
 export const runtime = "nodejs";
 export const dynamic = "force-dynamic";
 
 const OPENAI_URL = "https://api.openai.com/v1/chat/completions";
-
-export type InsightBibleReference = {
-  type: "bibleReference";
-  targetBlockIndex: number;
-  references: string[];
-};
-
-export type InsightSupportingContent = {
-  type: "supportingContent";
-  targetBlockIndex: number;
-  label: string;
-  text: string;
-  source?: string;
-};
-
-export type Insight = InsightBibleReference | InsightSupportingContent;
-
-export type InsightsPayload = { insights: Insight[] };
 
 const SYSTEM_PROMPT = `Você recebe (a) uma transcrição parcial em português de uma palestra, aula bíblica, sermão ou reunião cristã, (b) o resumo estruturado já produzido dessa fala, como um array de blocos com índices, e (c) uma lista "existingInsightIndices" com os índices dos blocos que JÁ têm insight atribuído em iterações anteriores.
 
@@ -153,7 +145,7 @@ export async function POST(request: Request) {
   const content = parsed.choices?.[0]?.message?.content?.trim() ?? "";
   const finishReason = parsed.choices?.[0]?.finish_reason ?? "";
 
-  const insights = normalizeInsights(content, blocks, existingIndices);
+  const insights = parseInsightsFromLLM(content, blocks, existingIndices);
   console.log("[insights] ok", {
     latencyMs,
     finishReason,
@@ -162,75 +154,4 @@ export async function POST(request: Request) {
     insights: insights.length,
   });
   return NextResponse.json({ insights, latencyMs, model });
-}
-
-function normalizeInsights(
-  content: string,
-  blocks: SummaryBlock[],
-  existingIndices: number[]
-): Insight[] {
-  let obj: unknown = null;
-  try {
-    obj = JSON.parse(content);
-  } catch {
-    return [];
-  }
-  if (!obj || typeof obj !== "object") return [];
-  const rawList = (obj as { insights?: unknown }).insights;
-  if (!Array.isArray(rawList)) return [];
-
-  const takenBlocks = new Set<number>(existingIndices);
-  const out: Insight[] = [];
-  for (const raw of rawList) {
-    if (!raw || typeof raw !== "object") continue;
-    const rec = raw as Record<string, unknown>;
-    const type = typeof rec.type === "string" ? rec.type : "";
-    const idx = typeof rec.targetBlockIndex === "number" ? rec.targetBlockIndex : -1;
-    if (idx < 0 || idx >= blocks.length) continue;
-    if (blocks[idx].type === "conclusion") continue;
-    if (takenBlocks.has(idx)) continue;
-
-    if (type === "bibleReference") {
-      const rawRefs = Array.isArray(rec.references) ? rec.references : [];
-      const references = rawRefs
-        .filter((r): r is string => typeof r === "string")
-        .map((r) => r.trim())
-        .filter(Boolean)
-        .slice(0, 3);
-      if (references.length === 0) continue;
-      const alreadyCited = collectCitedReferences(blocks);
-      const fresh = references.filter((r) => !alreadyCited.has(normalizeRef(r)));
-      if (fresh.length === 0) continue;
-      out.push({ type: "bibleReference", targetBlockIndex: idx, references: fresh });
-      takenBlocks.add(idx);
-      continue;
-    }
-    if (type === "supportingContent") {
-      const label = typeof rec.label === "string" ? rec.label.trim() : "";
-      const text = typeof rec.text === "string" ? rec.text.trim() : "";
-      if (!label || !text) continue;
-      const source = typeof rec.source === "string" ? rec.source.trim() : "";
-      out.push({
-        type: "supportingContent",
-        targetBlockIndex: idx,
-        label,
-        text,
-        ...(source ? { source } : {}),
-      });
-      takenBlocks.add(idx);
-    }
-  }
-  return out;
-}
-
-function collectCitedReferences(blocks: SummaryBlock[]): Set<string> {
-  const set = new Set<string>();
-  for (const b of blocks) {
-    if (b.type === "bibleQuote" && b.reference) set.add(normalizeRef(b.reference));
-  }
-  return set;
-}
-
-function normalizeRef(ref: string): string {
-  return ref.toLowerCase().replace(/\s+/g, "").replace(/[.,]/g, "");
 }

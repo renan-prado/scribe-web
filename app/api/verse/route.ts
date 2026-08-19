@@ -1,5 +1,8 @@
 import { NextResponse } from "next/server";
+import { parseVerseFromLLM } from "@/lib/domain/verse";
 import { serverEnv } from "@/lib/env/server";
+
+export type { VersePayload } from "@/lib/domain/verse";
 
 export const runtime = "nodejs";
 export const dynamic = "force-dynamic";
@@ -83,17 +86,5 @@ export async function POST(request: Request) {
     // fall through
   }
   const content = parsed.choices?.[0]?.message?.content?.trim() ?? "";
-
-  let obj: unknown = null;
-  try {
-    obj = JSON.parse(content);
-  } catch {
-    return NextResponse.json({ reference, text: "", translation: "" });
-  }
-  const rec = (obj && typeof obj === "object" ? obj : {}) as Record<string, unknown>;
-  return NextResponse.json({
-    reference: typeof rec.reference === "string" ? rec.reference.trim() : reference,
-    text: typeof rec.text === "string" ? rec.text.trim() : "",
-    translation: typeof rec.translation === "string" ? rec.translation.trim() : "",
-  });
+  return NextResponse.json(parseVerseFromLLM(content, reference));
 }

@@ -1,28 +1,20 @@
 import { NextResponse } from "next/server";
+import {
+  normalizePreviousForPrompt,
+  parseSummaryFromLLM,
+  type SummaryPayload,
+  type SummaryPhase,
+} from "@/lib/domain/summary";
 import { serverEnv } from "@/lib/env/server";
+
+// Re-export domain types so existing consumers that import from this route
+// (app/api/consolidate, app/api/insights) keep working during the refactor.
+export type { SummaryBlock, SummaryPayload, SummaryPhase } from "@/lib/domain/summary";
 
 export const runtime = "nodejs";
 export const dynamic = "force-dynamic";
 
 const OPENAI_URL = "https://api.openai.com/v1/chat/completions";
-
-export type SummaryBlock =
-  | { type: "h1"; text: string }
-  | { type: "h2"; text: string }
-  | { type: "paragraph"; text: string }
-  | { type: "bibleQuote"; reference: string; text: string }
-  | { type: "highlight"; text: string }
-  | { type: "quote"; text: string; author?: string }
-  | { type: "conclusion"; text: string };
-
-export type SummaryPayload = {
-  thinking: string;
-  title: string;
-  shortSummary: string;
-  blocks: SummaryBlock[];
-};
-
-export type SummaryPhase = "intro" | "developing" | "mature" | "final";
 
 const BASE_PROMPT = `Você recebe uma transcrição parcial em português de uma palestra, aula bíblica, sermão ou reunião cristã.
 Sua tarefa: produzir um resumo estruturado em JSON, pronto para ser renderizado em uma UI de leitura.
@@ -446,7 +438,7 @@ export async function POST(request: Request) {
   const content = parsed.choices?.[0]?.message?.content?.trim() ?? "";
   const finishReason = parsed.choices?.[0]?.finish_reason ?? "";
 
-  const payload = normalizePayload(content, phase);
+  const payload = parseSummaryFromLLM(content, phase);
 
   console.log("[summarize] ok", {
     phase,
@@ -498,72 +490,4 @@ function resolvePhase(
     final: 3,
   };
   return order[timePhase] >= order[wordPhase] ? timePhase : wordPhase;
-}
-
-function normalizePreviousForPrompt(prev: SummaryPayload | undefined): SummaryPayload | null {
-  if (!prev || typeof prev !== "object") return null;
-  const title = typeof prev.title === "string" ? prev.title : "";
-  const shortSummary = typeof prev.shortSummary === "string" ? prev.shortSummary : "";
-  const blocks = Array.isArray(prev.blocks) ? prev.blocks : [];
-  const hasContent = title || shortSummary || blocks.length > 0;
-  if (!hasContent) return null;
-  // thinking is ephemeral — don't send it back to the model.
-  return { thinking: "", title, shortSummary, blocks };
-}
-
-function normalizePayload(content: string, phase: SummaryPhase): SummaryPayload {
-  const empty: SummaryPayload = { thinking: "", title: "", shortSummary: "", blocks: [] };
-  let obj: unknown = null;
-  try {
-    obj = JSON.parse(content);
-  } catch {
-    return empty;
-  }
-  if (!obj || typeof obj !== "object") return empty;
-  const src = obj as Record<string, unknown>;
-  const thinking = typeof src.thinking === "string" ? src.thinking.trim() : "";
-  const title = typeof src.title === "string" ? src.title.trim() : "";
-  const shortSummary = typeof src.shortSummary === "string" ? src.shortSummary.trim() : "";
-  const rawBlocks = Array.isArray(src.blocks) ? src.blocks : [];
-  const blocks: SummaryBlock[] = [];
-  for (const b of rawBlocks) {
-    if (!b || typeof b !== "object") continue;
-    const rec = b as Record<string, unknown>;
-    const type = typeof rec.type === "string" ? rec.type : "";
-    const text = typeof rec.text === "string" ? rec.text.trim() : "";
-    switch (type) {
-      case "h1": {
-        if (phase === "intro" || phase === "developing") break;
-        if (text) blocks.push({ type: "h1", text });
-        break;
-      }
-      case "h2":
-      case "paragraph":
-      case "highlight": {
-        if (phase === "intro") break;
-        if (text) blocks.push({ type, text });
-        break;
-      }
-      case "bibleQuote": {
-        const reference = typeof rec.reference === "string" ? rec.reference.trim() : "";
-        if (reference) blocks.push({ type: "bibleQuote", reference, text });
-        break;
-      }
-      case "quote": {
-        if (phase === "intro") break;
-        if (!text) break;
-        const author = typeof rec.author === "string" ? rec.author.trim() : "";
-        blocks.push(author ? { type: "quote", text, author } : { type: "quote", text });
-        break;
-      }
-      case "conclusion": {
-        if (phase !== "final") break;
-        if (text) blocks.push({ type: "conclusion", text });
-        break;
-      }
-      default:
-        break;
-    }
-  }
-  return { thinking, title, shortSummary, blocks };
 }

@@ -1,38 +1,19 @@
-export type ChunkEvent = {
-  index: number;
-  blob: Blob;
-  mimeType: string;
-  extension: string;
-  startedAt: number;
-  durationMs: number;
-};
+import type {
+  ChunkEvent,
+  FinalAudioEvent,
+  Recorder,
+  RecorderErrorEvent,
+  RecorderErrorSource,
+  RecorderOptions,
+} from "@/lib/domain/recorder";
 
-export type RecorderErrorSource = "stream" | "chunk" | "full" | "vad";
-
-export type RecorderErrorEvent = {
-  source: RecorderErrorSource;
-  message: string;
-};
-
-export type FinalAudioEvent = {
-  blob: Blob;
-  mimeType: string;
-  extension: string;
-};
-
-export type RecorderOptions = {
-  minChunkMs?: number;
-  maxChunkMs?: number;
-  silenceThreshold?: number;
-  silenceHoldMs?: number;
-};
-
-export type Recorder = {
-  start(): Promise<{ mimeType: string; extension: string }>;
-  stop(): Promise<void>;
-  onChunk(cb: (ev: ChunkEvent) => void): void;
-  onError(cb: (ev: RecorderErrorEvent) => void): void;
-  onFinalAudio(cb: (ev: FinalAudioEvent) => void): void;
+export type {
+  ChunkEvent,
+  FinalAudioEvent,
+  Recorder,
+  RecorderErrorEvent,
+  RecorderErrorSource,
+  RecorderOptions,
 };
 
 type MimeCandidate = { mimeType: string; extension: string };
