@@ -1,4 +1,5 @@
 import { NextResponse } from "next/server";
+import { serverEnv } from "@/lib/env/server";
 import { VOCABULARIO_GUIA } from "@/lib/vocabulario";
 
 export const runtime = "nodejs";
@@ -7,12 +8,8 @@ export const dynamic = "force-dynamic";
 const OPENAI_URL = "https://api.openai.com/v1/audio/transcriptions";
 
 export async function POST(request: Request) {
-  const apiKey = process.env.OPENAI_API_KEY;
-  if (!apiKey) {
-    return NextResponse.json({ error: "OPENAI_API_KEY missing" }, { status: 500 });
-  }
-
-  const model = process.env.OPENAI_TRANSCRIBE_MODEL ?? "gpt-transcribe";
+  const apiKey = serverEnv.OPENAI_API_KEY;
+  const model = serverEnv.OPENAI_TRANSCRIBE_MODEL;
 
   let form: FormData;
   try {

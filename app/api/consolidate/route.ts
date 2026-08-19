@@ -1,5 +1,6 @@
 import { NextResponse } from "next/server";
 import type { SummaryBlock } from "@/app/api/summarize/route";
+import { serverEnv } from "@/lib/env/server";
 
 export const runtime = "nodejs";
 export const dynamic = "force-dynamic";
@@ -105,12 +106,8 @@ CADÊNCIA
 - Blocos com muito poucos parágrafos (menos de 3 no total) raramente merecem consolidação — devolva { "proposals": [] }.`;
 
 export async function POST(request: Request) {
-  const apiKey = process.env.OPENAI_API_KEY;
-  if (!apiKey) {
-    return NextResponse.json({ error: "OPENAI_API_KEY missing" }, { status: 500 });
-  }
-
-  const model = process.env.OPENAI_CONSOLIDATE_MODEL ?? "gpt-4o-mini";
+  const apiKey = serverEnv.OPENAI_API_KEY;
+  const model = serverEnv.OPENAI_CONSOLIDATE_MODEL;
 
   let body: { blocks?: SummaryBlock[]; isFinal?: boolean };
   try {

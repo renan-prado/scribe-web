@@ -1,4 +1,5 @@
 import { NextResponse } from "next/server";
+import { serverEnv } from "@/lib/env/server";
 
 export const runtime = "nodejs";
 export const dynamic = "force-dynamic";
@@ -6,12 +7,8 @@ export const dynamic = "force-dynamic";
 const OPENAI_URL = "https://api.openai.com/v1/chat/completions";
 
 export async function POST(request: Request) {
-  const apiKey = process.env.OPENAI_API_KEY;
-  if (!apiKey) {
-    return NextResponse.json({ error: "OPENAI_API_KEY missing" }, { status: 500 });
-  }
-
-  const model = process.env.OPENAI_FORMAT_MODEL ?? "gpt-4o-mini";
+  const apiKey = serverEnv.OPENAI_API_KEY;
+  const model = serverEnv.OPENAI_FORMAT_MODEL;
 
   let body: { text?: string };
   try {

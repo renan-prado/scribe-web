@@ -1,5 +1,6 @@
 import { NextResponse } from "next/server";
 import type { SummaryBlock } from "@/app/api/summarize/route";
+import { serverEnv } from "@/lib/env/server";
 
 export const runtime = "nodejs";
 export const dynamic = "force-dynamic";
@@ -72,12 +73,8 @@ REGRAS GERAIS
 - Retorne { "insights": [] } se nada passar no teste de relevância. Isso é a resposta certa muitas vezes.`;
 
 export async function POST(request: Request) {
-  const apiKey = process.env.OPENAI_API_KEY;
-  if (!apiKey) {
-    return NextResponse.json({ error: "OPENAI_API_KEY missing" }, { status: 500 });
-  }
-
-  const model = process.env.OPENAI_INSIGHTS_MODEL ?? "gpt-4o-mini";
+  const apiKey = serverEnv.OPENAI_API_KEY;
+  const model = serverEnv.OPENAI_INSIGHTS_MODEL;
 
   let body: { text?: string; blocks?: SummaryBlock[]; existingInsightIndices?: number[] };
   try {
