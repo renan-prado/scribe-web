@@ -13,7 +13,7 @@ export function useWakeLock({ enabled }: { enabled: boolean }): void {
   const sentinelRef = useRef<WakeLockSentinel | null>(null);
 
   const request = useCallback(async () => {
-    const wl = (navigator as unknown as { wakeLock?: WakeLock }).wakeLock;
+    const wl = navigator.wakeLock;
     if (!wl || typeof wl.request !== "function") return;
     try {
       sentinelRef.current = await wl.request("screen");

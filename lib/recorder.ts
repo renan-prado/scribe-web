@@ -125,8 +125,8 @@ export function createRecorder(opts: RecorderOptions = {}): Recorder {
     rec.ondataavailable = (e) => {
       if (e.data && e.data.size > 0) chunkParts.push(e.data);
     };
-    rec.onerror = (e: Event) => {
-      const err = (e as unknown as { error?: DOMException }).error;
+    rec.onerror = (e: ErrorEvent) => {
+      const err = e.error as DOMException | undefined;
       emitError("chunk", err?.message ?? "MediaRecorder error");
     };
     rec.onstop = () => {
@@ -168,8 +168,8 @@ export function createRecorder(opts: RecorderOptions = {}): Recorder {
     rec.ondataavailable = (e) => {
       if (e.data && e.data.size > 0) fullParts.push(e.data);
     };
-    rec.onerror = (e: Event) => {
-      const err = (e as unknown as { error?: DOMException }).error;
+    rec.onerror = (e: ErrorEvent) => {
+      const err = e.error as DOMException | undefined;
       emitError("full", err?.message ?? "MediaRecorder error");
     };
     rec.onstop = () => {
