@@ -2,6 +2,7 @@ import { NextResponse } from "next/server";
 import { parseInsightsFromLLM } from "@/lib/domain/insights";
 import type { SummaryBlock } from "@/lib/domain/summary";
 import { serverEnv } from "@/lib/env/server";
+import { callChat } from "@/lib/llm/openai";
 import { INSIGHTS_SYSTEM_PROMPT } from "@/lib/prompts/insights";
 
 // Re-export domain types so client-side imports that used to reach into this
@@ -16,10 +17,7 @@ export type {
 export const runtime = "nodejs";
 export const dynamic = "force-dynamic";
 
-const OPENAI_URL = "https://api.openai.com/v1/chat/completions";
-
 export async function POST(request: Request) {
-  const apiKey = serverEnv.OPENAI_API_KEY;
   const model = serverEnv.OPENAI_INSIGHTS_MODEL;
 
   let body: { text?: string; blocks?: SummaryBlock[]; existingInsightIndices?: number[] };
@@ -45,66 +43,43 @@ export async function POST(request: Request) {
   const indexedBlocks = blocks.map((b, i) => ({ index: i, ...b }));
   const userMessage = `existingInsightIndices: ${JSON.stringify(existingIndices)}\n\nblocks:\n${JSON.stringify(indexedBlocks)}\n\n---\ntranscript:\n${text}`;
 
-  const startedAt = performance.now();
-  let upstream: Response;
-  try {
-    upstream = await fetch(OPENAI_URL, {
-      method: "POST",
-      headers: {
-        Authorization: `Bearer ${apiKey}`,
-        "content-type": "application/json",
-      },
-      body: JSON.stringify({
-        model,
-        temperature: 0.3,
-        max_tokens: 1500,
-        response_format: { type: "json_object" },
-        messages: [
-          { role: "system", content: INSIGHTS_SYSTEM_PROMPT },
-          { role: "user", content: userMessage },
-        ],
-      }),
-    });
-  } catch (err) {
-    console.error("[insights] upstream fetch failed", { error: (err as Error).message });
-    return NextResponse.json(
-      { error: `upstream fetch failed: ${(err as Error).message}`, insights: [] },
-      { status: 502 }
-    );
-  }
+  const result = await callChat({
+    model,
+    temperature: 0.3,
+    maxTokens: 1500,
+    responseFormat: { type: "json_object" },
+    messages: [
+      { role: "system", content: INSIGHTS_SYSTEM_PROMPT },
+      { role: "user", content: userMessage },
+    ],
+  });
 
-  const latencyMs = Math.round(performance.now() - startedAt);
-  const raw = await upstream.text();
-  if (!upstream.ok) {
+  if (!result.ok) {
+    if (result.error.kind === "fetch") {
+      console.error("[insights] upstream fetch failed", { error: result.error.message });
+      return NextResponse.json(
+        { error: `upstream fetch failed: ${result.error.message}`, insights: [] },
+        { status: 502 }
+      );
+    }
     console.error("[insights] upstream error", {
-      status: upstream.status,
-      latencyMs,
-      snippet: raw.slice(0, 300),
+      status: result.error.status,
+      latencyMs: result.error.latencyMs,
+      snippet: result.error.snippet.slice(0, 300),
     });
     return NextResponse.json(
-      { error: `upstream ${upstream.status}: ${raw.slice(0, 500)}`, latencyMs, insights: [] },
+      { error: result.error.message, latencyMs: result.error.latencyMs, insights: [] },
       { status: 502 }
     );
   }
 
-  let parsed: {
-    choices?: { message?: { content?: string }; finish_reason?: string }[];
-    usage?: { prompt_tokens?: number; completion_tokens?: number };
-  } = {};
-  try {
-    parsed = JSON.parse(raw);
-  } catch {
-    // fall through
-  }
-  const content = parsed.choices?.[0]?.message?.content?.trim() ?? "";
-  const finishReason = parsed.choices?.[0]?.finish_reason ?? "";
-
+  const { content, finishReason, usage, latencyMs } = result.data;
   const insights = parseInsightsFromLLM(content, blocks, existingIndices);
   console.log("[insights] ok", {
     latencyMs,
     finishReason,
-    promptTokens: parsed.usage?.prompt_tokens,
-    completionTokens: parsed.usage?.completion_tokens,
+    promptTokens: usage.promptTokens,
+    completionTokens: usage.completionTokens,
     insights: insights.length,
   });
   return NextResponse.json({ insights, latencyMs, model });

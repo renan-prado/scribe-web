@@ -6,6 +6,7 @@ import {
   type SummaryPhase,
 } from "@/lib/domain/summary";
 import { serverEnv } from "@/lib/env/server";
+import { callChat } from "@/lib/llm/openai";
 import { buildSummarizeSystemPrompt } from "@/lib/prompts/summarize";
 
 // Re-export domain types so existing consumers that import from this route
@@ -15,10 +16,7 @@ export type { SummaryBlock, SummaryPayload, SummaryPhase } from "@/lib/domain/su
 export const runtime = "nodejs";
 export const dynamic = "force-dynamic";
 
-const OPENAI_URL = "https://api.openai.com/v1/chat/completions";
-
 export async function POST(request: Request) {
-  const apiKey = serverEnv.OPENAI_API_KEY;
   const model = serverEnv.OPENAI_SUMMARY_MODEL;
 
   let body: {
@@ -48,79 +46,53 @@ export async function POST(request: Request) {
     ? `previousSummary:\n${JSON.stringify(previous)}\n\n---\ntranscript:\n${text}`
     : `transcript:\n${text}`;
 
-  const startedAt = performance.now();
-  let upstream: Response;
-  try {
-    upstream = await fetch(OPENAI_URL, {
-      method: "POST",
-      headers: {
-        Authorization: `Bearer ${apiKey}`,
-        "content-type": "application/json",
-      },
-      body: JSON.stringify({
-        model,
-        temperature: 0.2,
-        max_tokens: 4000,
-        response_format: { type: "json_object" },
-        messages: [
-          { role: "system", content: systemPrompt },
-          { role: "user", content: userMessage },
-        ],
-      }),
-    });
-  } catch (err) {
-    console.error("[summarize] upstream fetch failed", {
-      phase,
-      error: (err as Error).message,
-    });
-    return NextResponse.json(
-      { error: `upstream fetch failed: ${(err as Error).message}` },
-      { status: 502 }
-    );
-  }
+  const result = await callChat({
+    model,
+    temperature: 0.2,
+    maxTokens: 4000,
+    responseFormat: { type: "json_object" },
+    messages: [
+      { role: "system", content: systemPrompt },
+      { role: "user", content: userMessage },
+    ],
+  });
 
-  const latencyMs = Math.round(performance.now() - startedAt);
-  const raw = await upstream.text();
-  if (!upstream.ok) {
+  if (!result.ok) {
+    if (result.error.kind === "fetch") {
+      console.error("[summarize] upstream fetch failed", { phase, error: result.error.message });
+      return NextResponse.json(
+        { error: `upstream fetch failed: ${result.error.message}` },
+        { status: 502 }
+      );
+    }
     console.error("[summarize] upstream error", {
       phase,
-      status: upstream.status,
-      latencyMs,
-      snippet: raw.slice(0, 300),
+      status: result.error.status,
+      latencyMs: result.error.latencyMs,
+      snippet: result.error.snippet.slice(0, 300),
     });
     return NextResponse.json(
-      { error: `upstream ${upstream.status}: ${raw.slice(0, 500)}`, latencyMs },
+      { error: result.error.message, latencyMs: result.error.latencyMs },
       { status: 502 }
     );
   }
 
-  let parsed: {
-    choices?: { message?: { content?: string }; finish_reason?: string }[];
-    usage?: { prompt_tokens?: number; completion_tokens?: number; total_tokens?: number };
-  } = {};
-  try {
-    parsed = JSON.parse(raw);
-  } catch {
-    // fall through
-  }
-  const content = parsed.choices?.[0]?.message?.content?.trim() ?? "";
-  const finishReason = parsed.choices?.[0]?.finish_reason ?? "";
-
+  const { content, finishReason, usage, latencyMs } = result.data;
   const payload = parseSummaryFromLLM(content, phase);
 
   console.log("[summarize] ok", {
     phase,
     latencyMs,
     finishReason,
-    promptTokens: parsed.usage?.prompt_tokens,
-    completionTokens: parsed.usage?.completion_tokens,
+    promptTokens: usage.promptTokens,
+    completionTokens: usage.completionTokens,
     blocks: payload.blocks.length,
     title: payload.title.slice(0, 60),
   });
   if (finishReason === "length") {
     console.warn("[summarize] output truncated by max_tokens", {
       phase,
-      completionTokens: parsed.usage?.completion_tokens,
+      completionTokens: usage.completionTokens,
     });
   }
 
