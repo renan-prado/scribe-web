@@ -23,6 +23,17 @@ export function BlockRenderer({ block }: { block: SummaryBlock }) {
       );
     case "paragraph":
       return <p className="text-pretty text-base leading-relaxed text-foreground">{block.text}</p>;
+    case "example":
+      return (
+        <aside className="relative rounded-2xl border-l-4 border-foreground/25 bg-muted/40 py-4 pr-5 pl-5">
+          <span className="mb-1.5 block text-[0.65rem] font-semibold tracking-widest text-muted-foreground uppercase">
+            Exemplo do pregador
+          </span>
+          <p className="text-pretty text-[0.95rem] leading-relaxed text-foreground/90">
+            {block.text}
+          </p>
+        </aside>
+      );
     case "bibleQuote":
       return (
         <figure

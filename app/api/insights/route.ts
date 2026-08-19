@@ -20,7 +20,12 @@ export const dynamic = "force-dynamic";
 export async function POST(request: Request) {
   const model = serverEnv.OPENAI_INSIGHTS_MODEL;
 
-  let body: { text?: string; blocks?: SummaryBlock[]; existingInsightIndices?: number[] };
+  let body: {
+    text?: string;
+    blocks?: SummaryBlock[];
+    existingInsightIndices?: number[];
+    existingSupportingContent?: Array<{ label?: unknown; text?: unknown; source?: unknown }>;
+  };
   try {
     body = await request.json();
   } catch (err) {
@@ -36,12 +41,22 @@ export async function POST(request: Request) {
         (n): n is number => typeof n === "number" && Number.isInteger(n)
       )
     : [];
+  const existingSupportingContent = Array.isArray(body.existingSupportingContent)
+    ? body.existingSupportingContent
+        .map((it) => ({
+          label: typeof it?.label === "string" ? it.label : "",
+          text: typeof it?.text === "string" ? it.text : "",
+          source: typeof it?.source === "string" ? it.source : "",
+        }))
+        .filter((it) => it.label && it.text)
+        .map((it) => (it.source ? it : { label: it.label, text: it.text }))
+    : [];
   if (!text || blocks.length === 0) {
     return NextResponse.json({ insights: [] });
   }
 
   const indexedBlocks = blocks.map((b, i) => ({ index: i, ...b }));
-  const userMessage = `existingInsightIndices: ${JSON.stringify(existingIndices)}\n\nblocks:\n${JSON.stringify(indexedBlocks)}\n\n---\ntranscript:\n${text}`;
+  const userMessage = `existingInsightIndices: ${JSON.stringify(existingIndices)}\n\nexistingSupportingContent: ${JSON.stringify(existingSupportingContent)}\n\nblocks:\n${JSON.stringify(indexedBlocks)}\n\n---\ntranscript:\n${text}`;
 
   const result = await callChat({
     model,

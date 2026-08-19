@@ -6,6 +6,7 @@ export const SummaryBlockSchema = z.discriminatedUnion("type", [
   z.object({ type: z.literal("paragraph"), text: z.string() }),
   z.object({ type: z.literal("bibleQuote"), reference: z.string(), text: z.string() }),
   z.object({ type: z.literal("highlight"), text: z.string() }),
+  z.object({ type: z.literal("example"), text: z.string() }),
   z.object({ type: z.literal("quote"), text: z.string(), author: z.string().optional() }),
   z.object({ type: z.literal("conclusion"), text: z.string() }),
 ]);
@@ -66,7 +67,8 @@ export function parseSummaryFromLLM(content: string, phase: SummaryPhase): Summa
       }
       case "h2":
       case "paragraph":
-      case "highlight": {
+      case "highlight":
+      case "example": {
         if (phase === "intro") break;
         if (text) blocks.push({ type, text });
         break;

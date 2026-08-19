@@ -166,8 +166,20 @@ export default function SpikePage() {
     lastInsightsChunkRef.current = okChunkCount;
     setInsighting(true);
     const existingInsightIndices = insights.map((i) => i.targetBlockIndex);
+    const existingSupportingContent = insights
+      .filter((i) => i.type === "supportingContent")
+      .map((i) => ({
+        label: i.label,
+        text: i.text,
+        ...(i.source ? { source: i.source } : {}),
+      }));
     const recent = tailTranscript(transcript, RECENT_TRANSCRIPT_CHARS);
-    void requestInsights({ text: recent, blocks, existingInsightIndices })
+    void requestInsights({
+      text: recent,
+      blocks,
+      existingInsightIndices,
+      existingSupportingContent,
+    })
       .then((incoming) => {
         if (incoming.length > 0) setInsights((prev) => mergeInsights(prev, incoming));
       })
@@ -373,10 +385,18 @@ export default function SpikePage() {
       }
       if (finalPayload && finalPayload.blocks.length > 0) {
         const existingInsightIndices = localInsights.map((i) => i.targetBlockIndex);
+        const existingSupportingContent = localInsights
+          .filter((i) => i.type === "supportingContent")
+          .map((i) => ({
+            label: i.label,
+            text: i.text,
+            ...(i.source ? { source: i.source } : {}),
+          }));
         const incoming = await requestInsights({
           text: finalTranscript,
           blocks: finalPayload.blocks,
           existingInsightIndices,
+          existingSupportingContent,
         });
         if (incoming.length > 0) setInsights((prev) => mergeInsights(prev, incoming));
       }

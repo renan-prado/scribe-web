@@ -47,6 +47,7 @@ export async function requestInsights(body: {
   text: string;
   blocks: SummaryPayload["blocks"];
   existingInsightIndices: number[];
+  existingSupportingContent: Array<{ label: string; text: string; source?: string }>;
 }): Promise<Insight[]> {
   try {
     const res = await fetch("/api/insights", {
