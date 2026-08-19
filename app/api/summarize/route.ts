@@ -207,25 +207,54 @@ REGRAS GERAIS
 - Não use markdown (nada de **, *, #, -, >).
 - Não repita literalmente o "shortSummary" no primeiro parágrafo.
 
+DISCERNIMENTO DE TEMA (crítico — vale para title, shortSummary, blocks e conclusion)
+- O tema real de um sermão/EBD/estudo/palestra cristã é normalmente um
+  PERSONAGEM, TEXTO ou DOUTRINA BÍBLICA. Não é a anedota de abertura.
+- Introduções costumam usar histórias seculares, personagens históricos,
+  notícias, filmes, esportes ou curiosidades — como GANCHO pra chegar no que
+  interessa. Isso NÃO é o tema; é ponte.
+- Regra prática:
+    ✅ Se um personagem/passagem bíblica aparece e RECORRE ao longo da fala,
+        ELE é o tema — mesmo que tenha entrado no minuto 3, depois de uma
+        introdução secular longa.
+    ✅ Ex.: locutor abre com Glenn Winuk (bombeiro do 11/9) por 2 minutos e
+        depois conecta com Jonas, e o resto da fala é sobre Jonas — o tema é
+        JONAS. Glenn foi ilustração de abertura.
+    ❌ Título "A bravura de Glenn Winuk e a resistência de Jonas" é ERRADO:
+        mistura gancho com tema. O certo é só o tema bíblico ("Jonas e a
+        fuga de Deus", "A obediência de Jonas", conforme o ângulo real).
+- REAVALIAÇÃO OBRIGATÓRIA: title, shortSummary e conclusion DEVEM sempre
+  refletir o tema BÍBLICO dominante quando ele emergir. Se o título inicial
+  foi tirado da introdução e agora o conteúdo bíblico domina, TROQUE o
+  título — mesmo que isso contrarie a preferência de estabilidade.
+  Estabilidade cede pra correção de tema.
+- Personagens/textos bíblicos SEMPRE têm precedência sobre figuras seculares
+  na hora de nomear o tema, exceto se a fala inteira for construída em torno
+  da figura secular (raro; se acontecer, você percebe pela recorrência).
+
 PRESERVAÇÃO DE CONTEÚDO (crítica para UX de leitura ao vivo)
 - Quando um "previousSummary" for enviado junto com a transcrição, os blocos
-  já produzidos estão sendo LIDOS pelo usuário em tempo real. Reescrevê-los
-  quebra a leitura.
-- REGRA: em fases "intro", "developing" e "mature", todos os blocos anteriores
-  são TRAVADOS, EXCETO o último. Você deve copiar os travados VERBATIM em
-  "blocks", na mesma ordem, sem mudar uma palavra.
-- Você pode:
-    (a) refinar/reescrever APENAS o último bloco do previousSummary, ou
-    (b) manter o último bloco intacto e APENDAR novos blocos ao final.
-- Você NÃO pode: reordenar, remover, ou editar blocos travados. Se um bloco
+  já produzidos estão sendo LIDOS pelo usuário em tempo real. Reescrever
+  blocos antigos quebra a leitura.
+- REGRA GERAL: blocos ANTIGOS são TRAVADOS — copie verbatim em "blocks", na
+  mesma ordem, sem mudar uma palavra. Só os blocos MAIS RECENTES ficam
+  editáveis, e a janela varia por fase:
+    - intro/developing: só o ÚLTIMO bloco é editável.
+    - mature: os ÚLTIMOS 3 blocos são editáveis (pode refinar, substituir
+      ou remover); blocos anteriores a esses três são travados.
+    - final: liberdade total (ver instruções da fase).
+- Você pode, dentro da janela editável:
+    (a) refinar/reescrever blocos editáveis, ou
+    (b) manter os editáveis intactos e APENDAR novos blocos ao final, ou
+    (c) combinar: ajustar alguns editáveis e apendar novos.
+- Você NÃO pode: reordenar, remover ou editar blocos TRAVADOS. Se um bloco
   travado ficou factualmente incorreto por causa de contexto novo, mencione
   a correção em um novo bloco (paragraph) ao final, em vez de reescrever o
   antigo.
-- "title" e "shortSummary" podem ser refinados livremente (não são
-  travados) — mas prefira estabilidade também neles: só troque se ficar
-  claramente melhor com o novo contexto.
+- "title" e "shortSummary" podem ser refinados livremente (não são travados)
+  — a regra de DISCERNIMENTO DE TEMA acima é o que manda aqui.
 - EXCEÇÃO: na fase "final" (gravação encerrada), você tem liberdade total
-  para reestruturar tudo. É a revisão definitiva.
+  pra reestruturar tudo. É a revisão definitiva.
 
 DIVERSIDADE DE BLOCOS (importante para leitura)
 - Um resumo com só paragraph em sequência é ruim de ler. Após 2-3 parágrafos
@@ -295,8 +324,11 @@ const PHASE_INSTRUCTIONS: Record<SummaryPhase, string> = {
   ("aprofundando o ponto sobre X", "novo versículo entrou, integrando…").
 - Todos os tipos de bloco liberados EXCETO conclusion (só em final).
 - Use h1 apenas para mudanças grandes de tema (1 a 3 no total).
-- LEMBRE-SE: se veio previousSummary, apenas o último bloco pode ser
-  refinado; os demais são travados.`,
+- JANELA EDITÁVEL: os ÚLTIMOS 3 blocos do previousSummary são editáveis —
+  pode refinar, substituir ou remover. Blocos anteriores são TRAVADOS
+  (verbatim, mesma ordem). Use essa janela pra corrigir rumo se um bloco
+  recente estiver mal ancorado (ex.: ainda preso na anedota de abertura
+  quando o tema bíblico já dominou).`,
 
   final: `FASE ATUAL: FINAL (gravação encerrada, transcrição completa).
 - Este é o resumo definitivo. "thinking" deve estar VAZIO ("").
@@ -304,6 +336,13 @@ const PHASE_INSTRUCTIONS: Record<SummaryPhase, string> = {
 - Você DEVE encerrar "blocks" com { "type": "conclusion", "text": "..." }
   sintetizando o discurso inteiro e o principal chamado/aplicação — em voz
   direta sobre o conteúdo.
+- A "conclusion" DEVE fechar sobre o TEMA BÍBLICO dominante (personagem,
+  texto, doutrina), NUNCA sobre a anedota de abertura. Se restam blocos
+  ancorados na introdução secular que não conectam com o tema bíblico
+  central, ESTA é a fase pra reescrevê-los ou removê-los.
+- title e shortSummary devem estar 100% alinhados com o tema bíblico real
+  (releia a regra de DISCERNIMENTO DE TEMA). Se o título arrastou o nome
+  de figura secular do gancho de abertura, tire agora.
 - LIBERDADE de reestruturação para paragraph, h1, h2, highlight, quote:
   pode reordenar, reescrever, remover ou fundir.
 - PRESERVAÇÃO OBRIGATÓRIA de bibleQuote:
@@ -364,6 +403,7 @@ export async function POST(request: Request) {
       body: JSON.stringify({
         model,
         temperature: 0.2,
+        max_tokens: 4000,
         response_format: { type: "json_object" },
         messages: [
           { role: "system", content: systemPrompt },
@@ -372,6 +412,10 @@ export async function POST(request: Request) {
       }),
     });
   } catch (err) {
+    console.error("[summarize] upstream fetch failed", {
+      phase,
+      error: (err as Error).message,
+    });
     return NextResponse.json(
       { error: `upstream fetch failed: ${(err as Error).message}` },
       { status: 502 }
@@ -381,21 +425,47 @@ export async function POST(request: Request) {
   const latencyMs = Math.round(performance.now() - startedAt);
   const raw = await upstream.text();
   if (!upstream.ok) {
+    console.error("[summarize] upstream error", {
+      phase,
+      status: upstream.status,
+      latencyMs,
+      snippet: raw.slice(0, 300),
+    });
     return NextResponse.json(
       { error: `upstream ${upstream.status}: ${raw.slice(0, 500)}`, latencyMs },
       { status: 502 }
     );
   }
 
-  let parsed: { choices?: { message?: { content?: string } }[] } = {};
+  let parsed: {
+    choices?: { message?: { content?: string }; finish_reason?: string }[];
+    usage?: { prompt_tokens?: number; completion_tokens?: number; total_tokens?: number };
+  } = {};
   try {
     parsed = JSON.parse(raw);
   } catch {
     // fall through
   }
   const content = parsed.choices?.[0]?.message?.content?.trim() ?? "";
+  const finishReason = parsed.choices?.[0]?.finish_reason ?? "";
 
   const payload = normalizePayload(content, phase);
+
+  console.log("[summarize] ok", {
+    phase,
+    latencyMs,
+    finishReason,
+    promptTokens: parsed.usage?.prompt_tokens,
+    completionTokens: parsed.usage?.completion_tokens,
+    blocks: payload.blocks.length,
+    title: payload.title.slice(0, 60),
+  });
+  if (finishReason === "length") {
+    console.warn("[summarize] output truncated by max_tokens", {
+      phase,
+      completionTokens: parsed.usage?.completion_tokens,
+    });
+  }
 
   return NextResponse.json({ ...payload, phase, latencyMs, model });
 }

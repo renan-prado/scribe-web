@@ -129,6 +129,7 @@ export async function POST(request: Request) {
   const indexedBlocks = blocks.map((b, i) => ({ index: i, ...b }));
   const userMessage = `blocks:\n${JSON.stringify(indexedBlocks)}`;
 
+  const startedAt = performance.now();
   let upstream: Response;
   try {
     upstream = await fetch(OPENAI_URL, {
@@ -140,6 +141,7 @@ export async function POST(request: Request) {
       body: JSON.stringify({
         model,
         temperature: 0.1,
+        max_tokens: 1500,
         response_format: { type: "json_object" },
         messages: [
           { role: "system", content: SYSTEM_PROMPT },
@@ -148,29 +150,47 @@ export async function POST(request: Request) {
       }),
     });
   } catch (err) {
+    console.error("[consolidate] upstream fetch failed", { error: (err as Error).message });
     return NextResponse.json(
       { error: `upstream fetch failed: ${(err as Error).message}`, proposals: [] },
       { status: 502 }
     );
   }
 
+  const latencyMs = Math.round(performance.now() - startedAt);
   const raw = await upstream.text();
   if (!upstream.ok) {
+    console.error("[consolidate] upstream error", {
+      status: upstream.status,
+      latencyMs,
+      snippet: raw.slice(0, 300),
+    });
     return NextResponse.json(
       { error: `upstream ${upstream.status}: ${raw.slice(0, 500)}`, proposals: [] },
       { status: 502 }
     );
   }
 
-  let parsed: { choices?: { message?: { content?: string } }[] } = {};
+  let parsed: {
+    choices?: { message?: { content?: string }; finish_reason?: string }[];
+    usage?: { prompt_tokens?: number; completion_tokens?: number };
+  } = {};
   try {
     parsed = JSON.parse(raw);
   } catch {
     // fall through
   }
   const content = parsed.choices?.[0]?.message?.content?.trim() ?? "";
+  const finishReason = parsed.choices?.[0]?.finish_reason ?? "";
   const proposals = normalizeAndGuard(content, blocks);
-  return NextResponse.json({ proposals, model });
+  console.log("[consolidate] ok", {
+    latencyMs,
+    finishReason,
+    promptTokens: parsed.usage?.prompt_tokens,
+    completionTokens: parsed.usage?.completion_tokens,
+    proposals: proposals.length,
+  });
+  return NextResponse.json({ proposals, latencyMs, model });
 }
 
 const MERGE_MIN_WORD_RATIO = 0.85;

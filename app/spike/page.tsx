@@ -74,6 +74,17 @@ const SUMMARY_EVERY_N_CHUNKS = 1;
 const INSIGHTS_EVERY_N_CHUNKS = 5;
 const CONSOLIDATE_EVERY_N_CHUNKS = 6;
 const CONSOLIDATE_PULSE_MS = 5000;
+// Cap the transcript sent to summarize/insights so long recordings don't
+// balloon the prompt (and cost/latency). The previousSummary already carries
+// older context — the model only needs the recent tail to keep going.
+const RECENT_TRANSCRIPT_CHARS = 6000;
+
+function tailTranscript(full: string, maxChars: number): string {
+  if (full.length <= maxChars) return full;
+  const tail = full.slice(-maxChars);
+  const spaceIdx = tail.indexOf(" ");
+  return spaceIdx > 0 ? tail.slice(spaceIdx + 1) : tail;
+}
 
 const EARLY_STATUS_PHRASES = [
   "ouvindo o áudio",
@@ -361,7 +372,8 @@ export default function SpikePage() {
     setSummarizing(true);
     const elapsedSec = Math.floor((performance.now() - startedAtRef.current) / 1000);
     const previous = summary ?? undefined;
-    void requestSummary({ text: transcript, elapsedSec, previous }).finally(() =>
+    const recent = tailTranscript(transcript, RECENT_TRANSCRIPT_CHARS);
+    void requestSummary({ text: recent, elapsedSec, previous }).finally(() =>
       setSummarizing(false)
     );
   }, [
@@ -389,10 +401,11 @@ export default function SpikePage() {
     lastInsightsChunkRef.current = okChunkCount;
     setInsighting(true);
     const existingInsightIndices = insights.map((i) => i.targetBlockIndex);
+    const recent = tailTranscript(transcript, RECENT_TRANSCRIPT_CHARS);
     fetch("/api/insights", {
       method: "POST",
       headers: { "content-type": "application/json" },
-      body: JSON.stringify({ text: transcript, blocks, existingInsightIndices }),
+      body: JSON.stringify({ text: recent, blocks, existingInsightIndices }),
     })
       .then((r) => r.json())
       .then((body) => {
@@ -865,8 +878,11 @@ function Greeting() {
       </span>
       <h1 className="text-3xl font-bold tracking-tight text-foreground sm:text-4xl">Olá, Renan!</h1>
       <p className="max-w-md text-balance text-base font-normal leading-relaxed text-muted-foreground">
-        Grave um sermão, uma aula da EBD, uma palestra ou uma conversa entre amigos e geramos um
-        resumo bíblico para você!
+        Transforme qualquer <strong className="font-semibold text-foreground">sermão</strong>,{" "}
+        <strong className="font-semibold text-foreground">aula da EBD</strong>,{" "}
+        <strong className="font-semibold text-foreground">palestra</strong> ou{" "}
+        <strong className="font-semibold text-foreground">bate-papo</strong> em um resumo bíblico
+        pronto para revisar e revisitar.
       </p>
     </section>
   );
