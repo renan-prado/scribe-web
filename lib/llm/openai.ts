@@ -50,9 +50,28 @@ export type LLMFailure =
 export type Result<T> = { ok: true; data: T } | { ok: false; error: LLMFailure };
 
 /**
+ * OpenAI's 429 response body carries a "Please try again in Xs" hint. Pull
+ * it out so backoff can wait roughly the right amount instead of guessing.
+ * Returns milliseconds, or null if the hint isn't present.
+ */
+function parseRetryAfterMs(body: string): number | null {
+  const match = /try again in (\d+(?:\.\d+)?)(ms|s)/i.exec(body);
+  if (!match) return null;
+  const value = Number.parseFloat(match[1]);
+  if (!Number.isFinite(value)) return null;
+  return match[2].toLowerCase() === "ms" ? value : value * 1000;
+}
+
+/**
  * Call the OpenAI Chat Completions endpoint. Wraps fetch with an abort-based
  * timeout and returns a Result so callers can format their own error responses
  * and success logs. Does no logging itself — the calling route owns that.
+ *
+ * 429 (rate limit) responses are retried up to twice with the delay the
+ * OpenAI error message suggests (or a small linear backoff). Under a busy
+ * live session — extract + suggest + parallel verse fetches — TPM is easy
+ * to bump into; a short wait usually clears it far cheaper than surfacing
+ * an empty payload to the UI.
  */
 export async function callChat(params: ChatParams): Promise<Result<ChatResult>> {
   const startedAt = performance.now();
@@ -60,33 +79,44 @@ export async function callChat(params: ChatParams): Promise<Result<ChatResult>> 
   const timeoutId = setTimeout(() => controller.abort(), params.timeoutMs ?? DEFAULT_TIMEOUT_MS);
 
   let upstream: Response;
+  let raw = "";
+  const maxAttempts = 3;
   try {
-    upstream = await fetch(CHAT_URL, {
-      method: "POST",
-      signal: controller.signal,
-      headers: {
-        Authorization: `Bearer ${serverEnv.OPENAI_API_KEY}`,
-        "content-type": "application/json",
-      },
-      body: JSON.stringify({
-        model: params.model,
-        temperature: params.temperature,
-        max_tokens: params.maxTokens,
-        response_format: params.responseFormat,
-        messages: params.messages,
-      }),
-    });
-  } catch (err) {
-    return {
-      ok: false,
-      error: { kind: "fetch", message: (err as Error).message ?? "network error" },
-    };
+    let attempt = 0;
+    while (true) {
+      attempt++;
+      try {
+        upstream = await fetch(CHAT_URL, {
+          method: "POST",
+          signal: controller.signal,
+          headers: {
+            Authorization: `Bearer ${serverEnv.OPENAI_API_KEY}`,
+            "content-type": "application/json",
+          },
+          body: JSON.stringify({
+            model: params.model,
+            temperature: params.temperature,
+            max_tokens: params.maxTokens,
+            response_format: params.responseFormat,
+            messages: params.messages,
+          }),
+        });
+      } catch (err) {
+        return {
+          ok: false,
+          error: { kind: "fetch", message: (err as Error).message ?? "network error" },
+        };
+      }
+      raw = await upstream.text();
+      if (upstream.status !== 429 || attempt >= maxAttempts) break;
+      const waitMs = parseRetryAfterMs(raw) ?? 500 * attempt;
+      await new Promise((r) => setTimeout(r, waitMs));
+    }
   } finally {
     clearTimeout(timeoutId);
   }
 
   const latencyMs = Math.round(performance.now() - startedAt);
-  const raw = await upstream.text();
   if (!upstream.ok) {
     return {
       ok: false,

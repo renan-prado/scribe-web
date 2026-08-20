@@ -1,13 +1,22 @@
 "use client";
 
-import { BookOpen, Quote } from "lucide-react";
-import { type ElementType, useEffect } from "react";
+import { BookOpen, ChevronDown, Quote } from "lucide-react";
+import { type ElementType, useCallback, useEffect, useState } from "react";
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuSeparator,
+  DropdownMenuTrigger,
+} from "@/components/ui/dropdown-menu";
 import { AiIcon } from "@/features/session/components/AiIcon";
 import { PassageVerses } from "@/features/session/components/PassageVerses";
 import {
+  LIVE_READING_ACTIVE_GRACE_MS,
   LIVE_READING_LOOKAHEAD_PREFETCH,
   LIVE_READING_LOOKAHEAD_VISIBLE,
 } from "@/features/session/config";
+import { KNOWN_TRANSLATIONS, useTranslation } from "@/features/session/hooks/useTranslation";
 import { prefetchVerse, useVerseFetch } from "@/features/session/hooks/useVerseFetch";
 import type { FeedItem } from "@/lib/domain/feed";
 import { feedItemOrigin, parseVerseReference } from "@/lib/domain/feed";
@@ -87,6 +96,14 @@ export function FeedItemCard({
    * renders exactly the extracted range with no speculative verses. */
   isActiveReading?: boolean;
 }) {
+  // Tracks the translation of the text actually on screen (from the first
+  // verse's resolved payload). May differ from effective when the model
+  // falls back to a known translation (e.g. asked for NVT, returned ARC).
+  const [resolvedTranslation, setResolvedTranslation] = useState<string | null>(null);
+  const handleTranslationResolved = useCallback((t: string) => {
+    setResolvedTranslation(t);
+  }, []);
+
   if (item.kind === "speakerHighlight") {
     return <HighlightBlock text={item.text} />;
   }
@@ -121,13 +138,33 @@ export function FeedItemCard({
         backgroundSize: "200% 200%",
       };
 
+  // The translation badge sits on the top-right of citedVerse cards with a
+  // parseable range — it's the only kind where a translation choice is
+  // meaningful (chapter-only refs and non-verse items don't render text).
+  const showTranslationBadge =
+    item.kind === "citedVerse" &&
+    (() => {
+      const p = parseVerseReference(item.reference);
+      return p !== null && p.startVerse != null && p.endVerse != null;
+    })();
+
   const card = (
     <article className={surfaceClass} style={surfaceStyle}>
-      <div className="flex items-center gap-1.5 text-[0.65rem] font-semibold tracking-widest text-muted-foreground uppercase">
-        {ChipIcon ? <ChipIcon className="size-3" /> : null}
-        <span>{chip.label}</span>
+      <div className="flex items-center justify-between gap-3 text-[0.65rem] font-semibold tracking-widest text-muted-foreground uppercase">
+        <div className="flex items-center gap-1.5">
+          {ChipIcon ? <ChipIcon className="size-3" /> : null}
+          <span>{chip.label}</span>
+        </div>
+        {showTranslationBadge ? (
+          <TranslationBadge resolvedTranslation={resolvedTranslation} />
+        ) : null}
       </div>
-      <FeedItemBody item={item} onOpenVerse={onOpenVerse} isActiveReading={isActiveReading} />
+      <FeedItemBody
+        item={item}
+        onOpenVerse={onOpenVerse}
+        isActiveReading={isActiveReading}
+        onTranslationResolved={handleTranslationResolved}
+      />
     </article>
   );
 
@@ -209,6 +246,7 @@ function ReadingPassage({
   startVerse,
   extractedEndVerse,
   isActive,
+  onTranslationResolved,
 }: {
   bookDisplay: string;
   chapter: number;
@@ -218,9 +256,25 @@ function ReadingPassage({
    * back to exactly the extracted range — no lookahead, no prefetch. Ghost
    * verses that never got read fade out. */
   isActive: boolean;
+  onTranslationResolved?: (translation: string) => void;
 }) {
+  const { effective: translation } = useTranslation();
+  // Debounce isActive=false: readingMode from extract flips briefly when the
+  // model treats a pause or short interjection as commentary. Collapsing on
+  // the first false hides verses that were on screen mid-passage. Only after
+  // GRACE_MS of continuous inactivity do we shrink.
+  const [effectiveActive, setEffectiveActive] = useState(isActive);
+  useEffect(() => {
+    if (isActive) {
+      setEffectiveActive(true);
+      return;
+    }
+    const timer = setTimeout(() => setEffectiveActive(false), LIVE_READING_ACTIVE_GRACE_MS);
+    return () => clearTimeout(timer);
+  }, [isActive]);
+
   let visibleEnd: number;
-  if (isActive) {
+  if (effectiveActive) {
     const blockSize = LIVE_READING_LOOKAHEAD_VISIBLE;
     const blocksToShow = Math.ceil(Math.max(1, extractedEndVerse - startVerse + 2) / blockSize);
     visibleEnd = startVerse + blocksToShow * blockSize - 1;
@@ -229,11 +283,11 @@ function ReadingPassage({
   }
 
   useEffect(() => {
-    if (!isActive) return;
+    if (!effectiveActive) return;
     for (let v = visibleEnd + 1; v <= visibleEnd + LIVE_READING_LOOKAHEAD_PREFETCH; v++) {
-      prefetchVerse(`${bookDisplay} ${chapter}:${v}`);
+      prefetchVerse(`${bookDisplay} ${chapter}:${v}`, translation);
     }
-  }, [bookDisplay, chapter, visibleEnd, isActive]);
+  }, [bookDisplay, chapter, visibleEnd, effectiveActive, translation]);
 
   return (
     <PassageVerses
@@ -241,7 +295,48 @@ function ReadingPassage({
       chapter={chapter}
       startVerse={startVerse}
       endVerse={visibleEnd}
+      onTranslationResolved={onTranslationResolved}
     />
+  );
+}
+
+/**
+ * Small badge on the top-right of a reading card. Shows the translation of
+ * the text actually on screen (resolvedTranslation from the first verse's
+ * payload), falling back to the requested effective translation while loading.
+ * Clicking opens a dropdown to override the session-wide preference.
+ */
+function TranslationBadge({ resolvedTranslation }: { resolvedTranslation: string | null }) {
+  const { effective, manual, auto, setManual } = useTranslation();
+  const label = resolvedTranslation ?? effective ?? "auto";
+  const source = manual ? "manual" : auto ? "auto" : "padrão";
+
+  return (
+    <DropdownMenu>
+      <DropdownMenuTrigger
+        className={cn(
+          "inline-flex items-center gap-1 rounded-md border border-border/60 bg-background/60 px-1.5 py-0.5",
+          "text-[0.6rem] font-semibold tracking-wider text-foreground/70 uppercase",
+          "transition-colors outline-none hover:bg-background focus-visible:ring-2 focus-visible:ring-ring/40"
+        )}
+        title={`Tradução (${source}) — clique para trocar`}
+      >
+        <span>{label}</span>
+        <ChevronDown className="size-3 opacity-60" />
+      </DropdownMenuTrigger>
+      <DropdownMenuContent align="end" className="min-w-32">
+        <DropdownMenuItem onClick={() => setManual(null)}>
+          Auto {!manual && auto ? `(${auto})` : ""}
+        </DropdownMenuItem>
+        <DropdownMenuSeparator />
+        {KNOWN_TRANSLATIONS.map((t) => (
+          <DropdownMenuItem key={t} onClick={() => setManual(t)}>
+            {t}
+            {effective === t ? " ✓" : ""}
+          </DropdownMenuItem>
+        ))}
+      </DropdownMenuContent>
+    </DropdownMenu>
   );
 }
 
@@ -249,10 +344,12 @@ function FeedItemBody({
   item,
   onOpenVerse,
   isActiveReading,
+  onTranslationResolved,
 }: {
   item: FeedItem;
   onOpenVerse: (reference: string) => void;
   isActiveReading: boolean;
+  onTranslationResolved?: (translation: string) => void;
 }) {
   switch (item.kind) {
     case "citedVerse": {
@@ -287,6 +384,7 @@ function FeedItemBody({
             startVerse={parsed.startVerse}
             extractedEndVerse={parsed.endVerse}
             isActive={isActiveReading}
+            onTranslationResolved={onTranslationResolved}
           />
         </>
       );

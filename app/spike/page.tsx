@@ -21,6 +21,7 @@ import { SummaryView } from "@/features/session/components/SummaryView";
 import { TranscriptView } from "@/features/session/components/TranscriptView";
 import {
   EXTRACT_EVERY_N_CHUNKS,
+  EXTRACT_EVERY_N_CHUNKS_READING,
   EXTRACT_MIN_TAIL_DELTA_CHARS,
   FEED_MIN_GAP_MS,
   RECENT_TRANSCRIPT_CHARS,
@@ -35,6 +36,7 @@ import {
   SUGGEST_WARMUP_CHUNKS,
 } from "@/features/session/config";
 import { useElapsedTimer } from "@/features/session/hooks/useElapsedTimer";
+import { TranslationProvider, useTranslation } from "@/features/session/hooks/useTranslation";
 import { prefetchVerse } from "@/features/session/hooks/useVerseFetch";
 import { useVisibilityWarning } from "@/features/session/hooks/useVisibilityWarning";
 import { useWakeLock } from "@/features/session/hooks/useWakeLock";
@@ -54,6 +56,14 @@ import { createRecorder } from "@/lib/recorder";
 import { cn } from "@/lib/utils";
 
 export default function SpikePage() {
+  return (
+    <TranslationProvider>
+      <SpikePageInner />
+    </TranslationProvider>
+  );
+}
+
+function SpikePageInner() {
   const recorderRef = useRef<Recorder | null>(null);
   const chunksRef = useRef<Map<number, ChunkRow>>(new Map());
   const startedAtRef = useRef<number>(0);
@@ -116,6 +126,7 @@ export default function SpikePage() {
   const { warning: hiddenWarning, dismiss: dismissHiddenWarning } = useVisibilityWarning({
     enabled: running,
   });
+  const { setAuto: setAutoTranslation, effective: translation } = useTranslation();
 
   const publish = useCallback(() => {
     const rows = Array.from(chunksRef.current.values()).sort((a, b) => a.index - b.index);
@@ -292,7 +303,8 @@ export default function SpikePage() {
   useEffect(() => {
     if (!running || extracting || finalizing) return;
     if (okChunkCount === 0) return;
-    if (okChunkCount % EXTRACT_EVERY_N_CHUNKS !== 0) return;
+    const extractN = readingModeRef.current ? EXTRACT_EVERY_N_CHUNKS_READING : EXTRACT_EVERY_N_CHUNKS;
+    if (okChunkCount % extractN !== 0) return;
     if (lastExtractChunkRef.current === okChunkCount) return;
     const recent = tailTranscript(transcript, RECENT_TRANSCRIPT_CHARS);
     const delta = transcript.length - lastExtractTailLenRef.current;
@@ -308,7 +320,7 @@ export default function SpikePage() {
     sessionCountersRef.current.extractCalls++;
     const extractSermonAtMs = Math.max(0, performance.now() - startedAtRef.current);
     void requestExtract({ text: recent, existingItems: feedItems, sermonAtMs: extractSermonAtMs })
-      .then(({ items, thinking: nextThinking, readingMode: nextReadingMode }) => {
+      .then(({ items, thinking: nextThinking, readingMode: nextReadingMode, translationHint }) => {
         sessionCountersRef.current.extractYield += items.length;
         // Warm the verse cache the moment a citedVerse lands, before the drip
         // queue releases it. The /api/verse call runs in parallel with the
@@ -316,7 +328,7 @@ export default function SpikePage() {
         // card renders — the user sees the verse without a skeleton flash.
         for (const item of items) {
           if (item.kind === "citedVerse" && !item.text && item.reference.includes(":")) {
-            prefetchVerse(item.reference);
+            prefetchVerse(item.reference, translation);
           }
         }
         enqueueFeedItems(items);
@@ -325,6 +337,10 @@ export default function SpikePage() {
         if (nextReadingMode !== readingMode) {
           console.log("[feed] readingMode →", nextReadingMode);
         }
+        // Extract identifies the pastor's translation from verbatim wording.
+        // setAuto is a no-op if it matches the current auto value; a manual
+        // pick (via TranslationBadge) always wins over this.
+        if (translationHint) setAutoTranslation(translationHint);
       })
       .finally(() => setExtracting(false));
   }, [
@@ -336,6 +352,8 @@ export default function SpikePage() {
     feedItems,
     enqueueFeedItems,
     readingMode,
+    translation,
+    setAutoTranslation,
   ]);
 
   // Suggest pipeline — slower cadence, needs more accumulated context before

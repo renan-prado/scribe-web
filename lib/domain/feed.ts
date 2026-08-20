@@ -207,13 +207,21 @@ export type FeedParseResult = {
 export function parseExtractFromLLM(
   content: string,
   existingKeys: Set<string>
-): { items: FeedItem[]; thinking: string; readingMode: boolean; drops: FeedParseDrop[] } {
+): {
+  items: FeedItem[];
+  thinking: string;
+  readingMode: boolean;
+  translationHint: string;
+  drops: FeedParseDrop[];
+} {
   const { items, drops } = parseFeedItems(content, existingKeys, RECORDING_KINDS);
   const parsed = safeJson(content);
   const record = parsed && typeof parsed === "object" ? (parsed as Record<string, unknown>) : {};
   const thinking = typeof record.thinking === "string" ? record.thinking.trim().slice(0, 200) : "";
   const readingMode = record.readingMode === true;
-  return { items, thinking, readingMode, drops };
+  const translationHint =
+    typeof record.translationHint === "string" ? record.translationHint.trim().slice(0, 12) : "";
+  return { items, thinking, readingMode, translationHint, drops };
 }
 
 /**

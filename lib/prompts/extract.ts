@@ -6,8 +6,19 @@ FORMATO DE SAÍDA — retorne SOMENTE um objeto JSON válido, sem markdown ao re
 {
   "thinking": "string",
   "readingMode": boolean,
+  "translationHint": "string",
   "items": [ ...ver tipos abaixo... ]
 }
+
+CAMPO "translationHint" (obrigatório, string — pode ser "")
+Quando você reconhece leitura verbatim da Escritura no transcript, tente identificar QUAL tradução o pastor está lendo comparando o wording exato com as tradições em português que você conhece: ACF, ARA, ARC, KJA, KJF, NAA, NBV, NTLH, NVI, NVT, OL.
+- Se você tem confiança ALTA em uma tradução específica, devolva a sigla (ex.: "NVT"). O cliente propaga como preferência da sessão pra buscas de versos subsequentes ficarem consistentes com o que o pastor está lendo.
+- Se você NÃO tem confiança alta (o wording pode caber em várias traduções, ou o trecho é curto demais, ou não há leitura verbatim no chunk), devolva "" (string vazia). NÃO chute.
+- Exemplos de sinais fortes:
+  * "No princípio, aquele que é a Palavra já existia" → NVT (ARC diz "No princípio era o Verbo").
+  * "No princípio era o Verbo, e o Verbo estava com Deus" → ARC.
+  * "No princípio, a Palavra já existia. A Palavra estava com Deus" → NAA.
+- Uma vez identificada com confiança em qualquer chunk, você não precisa reafirmar — o cliente mantém a preferência. Pode continuar devolvendo "" nos chunks seguintes se não houver nova evidência.
 
 CAMPO "readingMode" (obrigatório, boolean)
 Sinaliza se o momento é de LEITURA BÍBLICA VERBATIM ACONTECENDO AGORA. Quando true, o cliente PAUSA todas as sugestões da IA (contextos, versículos correlatos, citações sugeridas) — o ouvinte fica focado na Escritura sem distrações. Extração de citedVerse continua acontecendo pra completar o texto que está sendo lido.
@@ -45,6 +56,7 @@ CAMPO "thinking" (obrigatório, mas só atualizado quando há novidade)
 FOCO NO MOMENTO ATUAL (crítico)
 - O "transcript" abaixo é uma JANELA MÓVEL dos últimos ~2-3 minutos da fala. NÃO É a fala inteira.
 - Emita APENAS sobre o que está sendo tratado na PARTE FINAL do transcript (últimos ~30-60 segundos). Se algo aparece só no começo da janela e não foi retomado, o assunto virou — NÃO emita sobre isso.
+  EXCEÇÃO — LEITURA CORRIDA (readingMode=true): uma passagem que COMEÇOU no início da janela e CONTINUA sendo lida no final NÃO "virou de assunto". Durante readingMode, rastreie a faixa de leitura de ponta a ponta do transcript e emita citedVerse com a faixa total acumulada (do primeiro verso lido até o último verso identificável no transcript atual), mesmo que a abertura da leitura apareça só no começo da janela.
 - Um versículo ou highlight que aparece no feed vários minutos depois do momento em que foi dito confunde o ouvinte. Timing é parte da qualidade.
 - O "thinking" também deve refletir o momento ATUAL, não algo antigo da janela.
 
@@ -73,9 +85,10 @@ FORMATO OBRIGATÓRIO (crítico): cada item PRECISA vir como objeto com os campos
        * SEMPRE emita com número específico de versículo (ex: "Tiago 1:1"). NUNCA emita chapter-only ("Tiago 1") quando o pastor mencionou um número inicial na frase de anúncio — o cliente usa o número inicial pra começar a renderizar os primeiros versos imediatamente; sem ele, o ouvinte fica olhando pra um badge vazio até você emitir o específico no próximo chunk.
        * Se o transcript atual JÁ CONTÉM leitura verbatim que segue esse anúncio, IDENTIFIQUE qual foi o último versículo efetivamente lido no trecho e emita a faixa real (ex: pastor disse "Tiago 1, versículo 1 em diante" e leu vv.1‑4 verbatim → emita "Tiago 1:1-4", NÃO "Tiago 1:1"). Emitir só o versículo inicial nesse caso é o segundo erro mais custoso — o card mostra 1 verso quando o pastor leu 4.
        * Se ainda não há leitura verbatim no chunk (só o anúncio), emita o versículo inicial isolado ("Tiago 1:1") — o cliente já renderiza os primeiros 3 versos automaticamente a partir dele. Em chunks futuros, à medida que mais versos forem lidos, emita novos citedVerse com a faixa acumulada (ex: "Tiago 1:1-6", depois "Tiago 1:1-9") — cada faixa maior supersede a anterior no cliente.
+       * DURANTE LEITURA ATIVA (readingMode=true, existingItems já tem a faixa): a cada chunk em que o pastor leu versos além da faixa existente, você DEVE emitir a faixa expandida. Se existingItems tem "1-8" e o pastor leu mais 4 versos neste chunk, emita "1-12". Ficar sem emitir durante leitura contínua é o erro mais custoso — o card para de crescer enquanto o texto continua sendo lido, e o ouvinte perde os versículos que estão sendo pronunciados agora.
 
    COMO CONTAR VERSÍCULOS LIDOS (crítico — falha comum: subcontagem):
-   - Existem VÁRIAS TRADUÇÕES em português (ARC, ARA, NVI, NVT, NAA, NTLH, BJ, KJA). O pastor pode estar lendo QUALQUER UMA. Não compare palavra-por-palavra com uma tradução única que você conhece: o wording muda, mas o SENTIDO SEMÂNTICO de cada versículo é o mesmo entre todas.
+   - Existem VÁRIAS TRADUÇÕES em português (ACF, ARA, ARC, KJA, KJF, NAA, NBV, NTLH, NVI, NVT, OL). O pastor pode estar lendo QUALQUER UMA. Não compare palavra-por-palavra com uma tradução única que você conhece: o wording muda, mas o SENTIDO SEMÂNTICO de cada versículo é o mesmo entre todas.
    - Exemplo real: João 1:5 é reconhecível em qualquer tradução como "A luz brilha nas trevas / na escuridão, e as trevas não a compreenderam / a escuridão nunca conseguiu apagá-la". Se o transcript tem "A luz brilha na escuridão, e a escuridão nunca conseguia apagá-la", isso É João 1:5, mesmo que sua memória interna esteja em ARC ("prevaleceram contra ela").
    - CONTE por unidades semânticas, não por match textual. Cada afirmação bíblica distinta = um versículo. Se o pastor leu 5 frases bíblicas encadeadas de João 1, ele leu vv.1-5.
    - Marcadores de FIM de leitura no transcript: "aqui temos", "aqui vemos", "essa passagem", "essa reflexão", "então", "amém", "palavra do Senhor", ou qualquer frase interpretativa que segue o texto bíblico. TUDO ANTES desses marcadores foi leitura — capture até a ÚLTIMA frase bíblica antes deles.
@@ -119,7 +132,8 @@ DEDUP (crítico — a maior fonte de desperdício de tokens é reemissão)
     existing "João 4" (sem versículo) → EMITA "João 4:7", "João 4:7-15", etc. — NÃO estão cobertos.
     existing "Romanos 8" → EMITA "Romanos 8:1", "Romanos 8:28-30" etc.
     A lógica: capítulo inteiro é apenas uma indicação de navegação; os versículos lidos merecem cards próprios para o ouvinte poder ler o texto.
-- Em dúvida clara sobre sobreposição (com versículos numerados), prefira não emitir. Em dúvida marginal, emita — o cliente também aplica dedup.
+  EXPANSÃO vs CONTENÇÃO — DISTINÇÃO CRÍTICA: a regra acima bloqueia referências MENORES OU IGUAIS à existente. Se a referência nova é MAIOR (existing "2 Tm 4:1-8", nova seria "2 Tm 4:1-12"), isso é EXPANSÃO — EMITA sempre. O cliente substitui o card antigo pelo novo, maior. Emitir a faixa expandida durante leitura contínua é OBRIGATÓRIO, não opcional.
+- Em dúvida sobre sobreposição: se a nova referência parece MENOR que a existente, prefira não emitir. Se a nova referência pode ser MAIOR (mais versículos lidos), EMITA — o cliente aplica dedup final e descarta se for de fato duplicata.
 
 REGRAS GERAIS
 - Não invente referência bíblica, texto bíblico, ou conteúdo de citação de terceiro. Essas três coisas têm risco alto e devem vir de fatos: do que o locutor de fato disse, ou (para o texto bíblico) do que você conhece com segurança.

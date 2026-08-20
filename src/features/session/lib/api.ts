@@ -19,7 +19,12 @@ export async function requestExtract(body: {
   text: string;
   existingItems: FeedItem[];
   sermonAtMs?: number;
-}): Promise<{ items: FeedItem[]; thinking: string; readingMode: boolean }> {
+}): Promise<{
+  items: FeedItem[];
+  thinking: string;
+  readingMode: boolean;
+  translationHint: string;
+}> {
   try {
     const res = await fetch("/api/extract", {
       method: "POST",
@@ -30,14 +35,16 @@ export async function requestExtract(body: {
       items?: FeedItem[];
       thinking?: string;
       readingMode?: boolean;
+      translationHint?: string;
     };
     return {
       items: Array.isArray(payload?.items) ? payload.items : [],
       thinking: typeof payload?.thinking === "string" ? payload.thinking : "",
       readingMode: payload?.readingMode === true,
+      translationHint: typeof payload?.translationHint === "string" ? payload.translationHint : "",
     };
   } catch {
-    return { items: [], thinking: "", readingMode: false };
+    return { items: [], thinking: "", readingMode: false, translationHint: "" };
   }
 }
 
@@ -93,13 +100,14 @@ export async function requestFinalSummary(body: {
 }
 
 export async function requestVerse(
-  reference: string
+  reference: string,
+  translation?: string | null
 ): Promise<{ ok: true; payload: VersePayload } | { ok: false; message: string }> {
   try {
     const res = await fetch("/api/verse", {
       method: "POST",
       headers: { "content-type": "application/json" },
-      body: JSON.stringify({ reference }),
+      body: JSON.stringify(translation ? { reference, translation } : { reference }),
     });
     const body = (await res.json()) as {
       reference?: string;

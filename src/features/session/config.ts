@@ -13,6 +13,11 @@ export const SILENCE_RMS_THRESHOLD = 0.005;
  * immediately.
  */
 export const EXTRACT_EVERY_N_CHUNKS = 1;
+// During reading mode the recorder cuts chunks smaller (4-8s), so firing
+// extract on every chunk means firing every 4-8s — which at ~4500 tokens
+// per call blows past gpt-4o's 30k TPM. Firing every 2 chunks (~8-16s) is
+// comparable to the non-reading cadence and stays under the tier limit.
+export const EXTRACT_EVERY_N_CHUNKS_READING = 1;
 
 /**
  * "Suggest" is AI-authored enrichment (related verses, historical/linguistic
@@ -20,8 +25,8 @@ export const EXTRACT_EVERY_N_CHUNKS = 1;
  * before the first fire, but shouldn't lag too far behind extract — the
  * listener is hearing the intro right now.
  */
-export const SUGGEST_EVERY_N_CHUNKS = 2;
-export const SUGGEST_WARMUP_CHUNKS = 1;
+export const SUGGEST_EVERY_N_CHUNKS = 3;
+export const SUGGEST_WARMUP_CHUNKS = 2;
 
 /**
  * Cap the transcript sent to extract/suggest. Two reasons: (1) cost/latency,
@@ -71,8 +76,15 @@ export const RECORDER_MAX_CHUNK_MS_READING = 8_000;
 // what we render on-screen; PREFETCH warms the cache one buffer further out
 // so the next visible expansion is also instant. Each unit costs one
 // /api/verse call.
-export const LIVE_READING_LOOKAHEAD_VISIBLE = 3;
-export const LIVE_READING_LOOKAHEAD_PREFETCH = 3;
+export const LIVE_READING_LOOKAHEAD_VISIBLE = 6;
+export const LIVE_READING_LOOKAHEAD_PREFETCH = 6;
+
+// Grace period before an "active" reading passage collapses its lookahead
+// verses. Extract's readingMode can briefly flip false between verses (a
+// pause, a short interjection, transcription noise) — collapsing on the
+// first false would hide verses mid-passage. Only when readingMode stays
+// false for this long do we treat the passage as truly ended.
+export const LIVE_READING_ACTIVE_GRACE_MS = 15_000;
 export const RECORDER_SILENCE_THRESHOLD = 0.01;
 export const RECORDER_SILENCE_HOLD_MS = 400;
 

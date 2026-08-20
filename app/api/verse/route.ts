@@ -1,18 +1,17 @@
 import { NextResponse } from "next/server";
-import { parseVerseFromLLM } from "@/lib/domain/verse";
-import { serverEnv } from "@/lib/env/server";
-import { callChat } from "@/lib/llm/openai";
-import { VERSE_SYSTEM_PROMPT } from "@/lib/prompts/verse";
+import { AVAILABLE_TRANSLATIONS, isAvailableTranslation, loadBible } from "@/lib/bibles/loader";
+import { lookupVerse } from "@/lib/bibles/lookup";
+import { parseVerseReference } from "@/lib/domain/feed";
 
 export type { VersePayload } from "@/lib/domain/verse";
 
 export const runtime = "nodejs";
 export const dynamic = "force-dynamic";
 
-export async function POST(request: Request) {
-  const model = serverEnv.OPENAI_VERSE_MODEL;
+const DEFAULT_TRANSLATION = "NVI";
 
-  let body: { reference?: string };
+export async function POST(request: Request) {
+  let body: { reference?: string; translation?: string };
   try {
     body = await request.json();
   } catch (err) {
@@ -21,30 +20,43 @@ export async function POST(request: Request) {
       { status: 400 }
     );
   }
+
   const reference = (body.reference ?? "").trim();
+  const requested = (body.translation ?? "").trim().toUpperCase() || DEFAULT_TRANSLATION;
+
   if (!reference) {
     return NextResponse.json({ error: "empty reference" }, { status: 400 });
   }
 
-  const result = await callChat({
-    model,
-    temperature: 0,
-    responseFormat: { type: "json_object" },
-    messages: [
-      { role: "system", content: VERSE_SYSTEM_PROMPT },
-      { role: "user", content: `referência: ${reference}` },
-    ],
-  });
-
-  if (!result.ok) {
-    if (result.error.kind === "fetch") {
-      return NextResponse.json(
-        { error: `upstream fetch failed: ${result.error.message}` },
-        { status: 502 }
-      );
-    }
-    return NextResponse.json({ error: result.error.message }, { status: 502 });
+  const parsed = parseVerseReference(reference);
+  if (!parsed || parsed.startVerse == null || parsed.endVerse == null) {
+    return NextResponse.json({ reference, text: "", translation: requested });
   }
 
-  return NextResponse.json(parseVerseFromLLM(result.data.content, reference));
+  // Fallback chain: requested translation → NVI. Deduped, only known files.
+  const chain = [requested, DEFAULT_TRANSLATION]
+    .filter((t, i, arr) => arr.indexOf(t) === i && isAvailableTranslation(t));
+
+  for (const t of chain) {
+    const bible = await loadBible(t);
+    if (!bible) continue;
+    const { text, truncated } = lookupVerse(
+      bible,
+      parsed.bookDisplay,
+      parsed.chapter,
+      parsed.startVerse,
+      parsed.endVerse
+    );
+    if (text) {
+      if (truncated) {
+        console.log("[verse] truncated", { reference, translation: t, requested });
+      } else {
+        console.log("[verse] ok", { reference, translation: t, requested, chars: text.length });
+      }
+      return NextResponse.json({ reference, text, translation: t });
+    }
+  }
+
+  console.log("[verse] miss", { reference, requested, available: AVAILABLE_TRANSLATIONS });
+  return NextResponse.json({ reference, text: "", translation: requested });
 }

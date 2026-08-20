@@ -69,7 +69,10 @@ export async function POST(request: Request) {
   }
 
   const { content, finishReason, usage, latencyMs } = result.data;
-  const { items, thinking, readingMode, drops } = parseExtractFromLLM(content, existingKeys);
+  const { items, thinking, readingMode, translationHint, drops } = parseExtractFromLLM(
+    content,
+    existingKeys
+  );
   for (const d of drops) {
     if (d.reason === "dedup") continue;
     console.warn("[extract] schema-drop", d);
@@ -84,12 +87,13 @@ export async function POST(request: Request) {
     items: items.length,
     kinds: items.map((i) => i.kind),
     readingMode,
+    translationHint,
     drops: drops.length,
     thinking: thinking.slice(0, 120),
     inputTail: text.slice(-400),
     rawOutput: content.slice(0, 800),
   });
-  return NextResponse.json({ items, thinking, readingMode, latencyMs, model });
+  return NextResponse.json({ items, thinking, readingMode, translationHint, latencyMs, model });
 }
 
 function formatSermonAt(ms: number | undefined): string {
