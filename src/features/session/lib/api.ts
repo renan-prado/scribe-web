@@ -72,6 +72,30 @@ export async function requestSuggest(body: {
 }
 
 /**
+ * POST /api/sermon-echo. Picks ONE literal phrase the speaker just said from
+ * the recent transcript tail, to break up runs of AI-authored cards in the
+ * feed. May legitimately return an empty items array when nothing in the
+ * recent tail qualifies.
+ */
+export async function requestEcho(body: {
+  text: string;
+  existingItems: FeedItem[];
+  sermonAtMs?: number;
+}): Promise<FeedItem[]> {
+  try {
+    const res = await fetch("/api/sermon-echo", {
+      method: "POST",
+      headers: { "content-type": "application/json" },
+      body: JSON.stringify(body),
+    });
+    const payload = (await res.json()) as { items?: FeedItem[] };
+    return Array.isArray(payload?.items) ? payload.items : [];
+  } catch {
+    return [];
+  }
+}
+
+/**
  * POST /api/final-summary. Single-shot after the recording stops: feeds the
  * full transcript and the curated live feed to the LLM and gets back the
  * definitive SummaryPayload rendered by SummaryView.

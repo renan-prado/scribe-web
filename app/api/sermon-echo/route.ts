@@ -1,0 +1,119 @@
+import { NextResponse } from "next/server";
+import { type FeedItem, feedItemDedupKey, parseEchoFromLLM } from "@/lib/domain/feed";
+import { serverEnv } from "@/lib/env/server";
+import { callChat } from "@/lib/llm/openai";
+import { SERMON_ECHO_SYSTEM_PROMPT } from "@/lib/prompts/sermon-echo";
+
+export const runtime = "nodejs";
+export const dynamic = "force-dynamic";
+
+/**
+ * Live "sermon echo" pipeline: picks ONE literal phrase the speaker just said
+ * from the recent transcript tail. Fires from the client whenever the visible
+ * feed accumulates a run of AI-authored cards without a speaker-origin card
+ * breaking it up — the echo is the reality check that reminds the listener
+ * they're hearing an actual sermon, not a wall of AI commentary.
+ */
+export async function POST(request: Request) {
+  const model = serverEnv.OPENAI_ECHO_MODEL;
+
+  let body: { text?: string; existingItems?: FeedItem[]; sermonAtMs?: number };
+  try {
+    body = await request.json();
+  } catch (err) {
+    return NextResponse.json(
+      { error: `invalid json body: ${(err as Error).message}` },
+      { status: 400 }
+    );
+  }
+
+  const text = (body.text ?? "").trim();
+  const sermonAt = formatSermonAt(body.sermonAtMs);
+  if (!text) {
+    return NextResponse.json({ items: [] });
+  }
+
+  const existingItems = Array.isArray(body.existingItems) ? body.existingItems : [];
+  const existingKeys = new Set(existingItems.map(feedItemDedupKey));
+  const existingSummary = summarizeExistingForPrompt(existingItems);
+
+  const userMessage = `existingItems:\n${JSON.stringify(existingSummary)}\n\n---\ntranscript:\n${text}`;
+
+  const result = await callChat({
+    model,
+    temperature: 0.4,
+    maxTokens: 400,
+    responseFormat: { type: "json_object" },
+    messages: [
+      { role: "system", content: SERMON_ECHO_SYSTEM_PROMPT },
+      { role: "user", content: userMessage },
+    ],
+  });
+
+  if (!result.ok) {
+    if (result.error.kind === "fetch") {
+      console.error("[echo] upstream fetch failed", { error: result.error.message });
+      return NextResponse.json(
+        { error: `upstream fetch failed: ${result.error.message}`, items: [] },
+        { status: 502 }
+      );
+    }
+    console.error("[echo] upstream error", {
+      status: result.error.status,
+      latencyMs: result.error.latencyMs,
+      snippet: result.error.snippet.slice(0, 300),
+    });
+    return NextResponse.json(
+      { error: result.error.message, latencyMs: result.error.latencyMs, items: [] },
+      { status: 502 }
+    );
+  }
+
+  const { content, finishReason, usage, latencyMs } = result.data;
+  const { items, drops } = parseEchoFromLLM(content, existingKeys);
+  for (const d of drops) {
+    if (d.reason === "dedup") continue;
+    console.warn("[echo] schema-drop", d);
+  }
+  console.log("[echo] ok", {
+    sermonAt,
+    model,
+    latencyMs,
+    finishReason,
+    promptTokens: usage.promptTokens,
+    completionTokens: usage.completionTokens,
+    items: items.length,
+    drops: drops.length,
+    inputTail: text.slice(-400),
+    rawOutput: content.slice(0, 400),
+  });
+  return NextResponse.json({ items, latencyMs, model });
+}
+
+function formatSermonAt(ms: number | undefined): string {
+  if (!ms || ms < 0) return "00:00";
+  const totalSec = Math.floor(ms / 1000);
+  const m = Math.floor(totalSec / 60)
+    .toString()
+    .padStart(2, "0");
+  const s = (totalSec % 60).toString().padStart(2, "0");
+  return `${m}:${s}`;
+}
+
+/**
+ * Collapse the existing feed into just what the echo prompt needs: prior
+ * speaker phrases (highlight OR echo) so the model doesn't repeat them. Capped
+ * to the most recent N to keep prompt tokens bounded — older phrases are
+ * already off-screen and unlikely to be re-uttered.
+ */
+const RECENT_DEDUP_WINDOW = 16;
+
+function summarizeExistingForPrompt(items: FeedItem[]) {
+  const previousPhrases: string[] = [];
+  for (const it of items) {
+    if (it.kind === "speakerHighlight" || it.kind === "speakerEcho") {
+      previousPhrases.push(it.text);
+    }
+  }
+  return { previousPhrases: previousPhrases.slice(-RECENT_DEDUP_WINDOW) };
+}

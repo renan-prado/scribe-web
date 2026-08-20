@@ -20,6 +20,9 @@ import { StatusPhrases } from "@/features/session/components/StatusPhrases";
 import { SummaryView } from "@/features/session/components/SummaryView";
 import { TranscriptView } from "@/features/session/components/TranscriptView";
 import {
+  ECHO_MIN_TAIL_DELTA_CHARS,
+  ECHO_STREAK_MAX,
+  ECHO_STREAK_MIN,
   EXTRACT_EVERY_N_CHUNKS,
   EXTRACT_EVERY_N_CHUNKS_READING,
   EXTRACT_MIN_TAIL_DELTA_CHARS,
@@ -41,6 +44,7 @@ import { prefetchVerse } from "@/features/session/hooks/useVerseFetch";
 import { useVisibilityWarning } from "@/features/session/hooks/useVisibilityWarning";
 import { useWakeLock } from "@/features/session/hooks/useWakeLock";
 import {
+  requestEcho,
   requestExtract,
   requestFinalSummary,
   requestSuggest,
@@ -49,7 +53,12 @@ import {
 import { isSilentBlob } from "@/features/session/lib/audio";
 import { tailSentences, tailTranscript } from "@/features/session/lib/text";
 import type { ChunkRow, FinalAudio, TranscriptState } from "@/features/session/types";
-import { type FeedItem, feedItemDedupKey, referenceStrictlyContains } from "@/lib/domain/feed";
+import {
+  type FeedItem,
+  feedItemDedupKey,
+  feedItemOrigin,
+  referenceStrictlyContains,
+} from "@/lib/domain/feed";
 import type { ChunkEvent, Recorder } from "@/lib/domain/recorder";
 import type { SummaryPayload } from "@/lib/domain/summary";
 import { createRecorder } from "@/lib/recorder";
@@ -61,6 +70,16 @@ export default function SpikePage() {
       <SpikePageInner />
     </TranslationProvider>
   );
+}
+
+/**
+ * Uniformly sort a fresh echo threshold in [ECHO_STREAK_MIN, ECHO_STREAK_MAX].
+ * Re-sorted every time an echo actually reveals so the cadence between echoes
+ * doesn't feel metronomic to the listener.
+ */
+function pickEchoThreshold(): number {
+  const span = ECHO_STREAK_MAX - ECHO_STREAK_MIN + 1;
+  return ECHO_STREAK_MIN + Math.floor(Math.random() * span);
 }
 
 function SpikePageInner() {
@@ -102,6 +121,26 @@ function SpikePageInner() {
   // Snapshot of feedItems for range-containment checks in enqueueFeedItems.
   // Synced on every commit so the callback stays free of stale-closure bugs.
   const feedItemsRef = useRef<FeedItem[]>([]);
+
+  // Sermon-echo pacing. `aiStreakThresholdRef` is re-sorted uniformly in
+  // [MIN, MAX] every time a speakerEcho actually reveals, so the cadence
+  // feels organic rather than metronomic. `echoingRef` guards against
+  // double-fire while a request is in flight OR while a fetched item is
+  // still waiting to drip onto the feed. `lastEchoTailLenRef` gates the
+  // fire on transcript growth so we don't spend tokens on the same tail.
+  const aiStreakThresholdRef = useRef<number>(pickEchoThreshold());
+  const echoingRef = useRef(false);
+  const lastEchoTailLenRef = useRef(0);
+
+  // Smart auto-follow: keep the feed pinned to the bottom while the user is
+  // reading the tail, but STOP scrolling the moment they pull up to re-read
+  // something. When new items land while detached, a "Ler novidades" pill
+  // appears — clicking it (or scrolling back to the bottom manually) resumes
+  // follow mode.
+  const autoFollowRef = useRef(true);
+  const seenItemsLenRef = useRef(0);
+  const [autoFollow, setAutoFollow] = useState(true);
+  const [pendingNew, setPendingNew] = useState(0);
 
   const [running, setRunning] = useState(false);
   const [chunkRows, setChunkRows] = useState<ChunkRow[]>([]);
@@ -303,7 +342,9 @@ function SpikePageInner() {
   useEffect(() => {
     if (!running || extracting || finalizing) return;
     if (okChunkCount === 0) return;
-    const extractN = readingModeRef.current ? EXTRACT_EVERY_N_CHUNKS_READING : EXTRACT_EVERY_N_CHUNKS;
+    const extractN = readingModeRef.current
+      ? EXTRACT_EVERY_N_CHUNKS_READING
+      : EXTRACT_EVERY_N_CHUNKS;
     if (okChunkCount % extractN !== 0) return;
     if (lastExtractChunkRef.current === okChunkCount) return;
     const recent = tailTranscript(transcript, RECENT_TRANSCRIPT_CHARS);
@@ -397,6 +438,62 @@ function SpikePageInner() {
     enqueueFeedItems,
   ]);
 
+  // Sermon-echo pipeline — decoupled from the chunk cadence, driven purely by
+  // what the LISTENER is seeing on screen. Counts the trailing run of
+  // AI-origin cards in the visible feed; when it hits the current threshold
+  // (uniformly sorted in [MIN, MAX] each fire), pulls one literal phrase
+  // from the recent transcript tail to break the streak. Paused during
+  // readingMode — the Bible reading itself is already speaker-origin, and
+  // the drip-purge on readingMode-on strips pending echoes anyway.
+  //
+  // The counter is REVEALED-based, not queued-based: an echo item still
+  // sitting in the drip queue does not yet reset the streak. `echoingRef`
+  // stays true from request-fire until an actual speakerEcho appears at the
+  // tail of `feedItems`, so we never fire twice for the same visible streak
+  // (drip lag can be 30s+). On empty response, `echoingRef` clears
+  // immediately so the next AI item that reveals gets another chance.
+  useEffect(() => {
+    if (!running || finalizing) return;
+    if (readingModeRef.current) return;
+    // Reveal side: if an echo we asked for just landed at the tail, we're
+    // free to fire again — and we re-sort the threshold so the next
+    // fire feels different from this one.
+    const last = feedItems[feedItems.length - 1];
+    if (echoingRef.current && last?.kind === "speakerEcho") {
+      echoingRef.current = false;
+      aiStreakThresholdRef.current = pickEchoThreshold();
+    }
+    if (echoingRef.current) return;
+
+    let streak = 0;
+    for (let i = feedItems.length - 1; i >= 0; i--) {
+      if (feedItemOrigin(feedItems[i]) === "ai") streak++;
+      else break;
+    }
+    if (streak < aiStreakThresholdRef.current) return;
+
+    const recent = tailTranscript(transcript, RECENT_TRANSCRIPT_CHARS);
+    if (!recent) return;
+    const delta = transcript.length - lastEchoTailLenRef.current;
+    if (lastEchoTailLenRef.current > 0 && delta < ECHO_MIN_TAIL_DELTA_CHARS) return;
+
+    lastEchoTailLenRef.current = transcript.length;
+    echoingRef.current = true;
+    const sermonAtMs = Math.max(0, performance.now() - startedAtRef.current);
+    console.log("[echo] fire", { streak, threshold: aiStreakThresholdRef.current });
+    void requestEcho({ text: recent, existingItems: feedItems, sermonAtMs })
+      .then((items) => {
+        if (items.length === 0) {
+          echoingRef.current = false;
+          return;
+        }
+        enqueueFeedItems(items);
+      })
+      .catch(() => {
+        echoingRef.current = false;
+      });
+  }, [feedItems, running, finalizing, transcript, enqueueFeedItems]);
+
   const handleChunk = useCallback(
     async (ev: ChunkEvent) => {
       const startedAtMs = Math.max(0, ev.startedAt - startedAtRef.current);
@@ -451,6 +548,13 @@ function SpikePageInner() {
     lastSuggestChunkRef.current = 0;
     lastExtractTailLenRef.current = 0;
     lastSuggestTailLenRef.current = 0;
+    lastEchoTailLenRef.current = 0;
+    echoingRef.current = false;
+    aiStreakThresholdRef.current = pickEchoThreshold();
+    autoFollowRef.current = true;
+    setAutoFollow(true);
+    seenItemsLenRef.current = 0;
+    setPendingNew(0);
     chunksRef.current = new Map();
     if (drainTimerRef.current) {
       clearTimeout(drainTimerRef.current);
@@ -554,11 +658,16 @@ function SpikePageInner() {
     readingModeRef.current = readingMode;
     if (readingMode && dripQueueRef.current.length > 0) {
       const before = dripQueueRef.current.length;
+      // If a fetched echo was still waiting in the drip, purging it means the
+      // "awaiting-reveal" state will never resolve — clear the flag so the
+      // next AI streak after reading ends can trigger again.
+      const hadPendingEcho = dripQueueRef.current.some((e) => e.item.kind === "speakerEcho");
       dripQueueRef.current = dripQueueRef.current.filter((e) => e.item.kind === "citedVerse");
       const dropped = before - dripQueueRef.current.length;
       if (dropped > 0) {
         console.log("[feed] drip-purge", { reason: "readingMode-on", dropped });
       }
+      if (hadPendingEcho) echoingRef.current = false;
     }
     const rec = recorderRef.current;
     if (!rec || !running) return;
@@ -606,14 +715,62 @@ function SpikePageInner() {
       : "listening"
     : "idle";
 
-  // Keep the "listening" status line in view whenever a new feed item lands
-  // while we're still recording. Scrolls also on thinking updates so the user
-  // always sees the latest AI note without hunting.
+  // Threshold in px from the bottom below which we consider the user "at the
+  // tail" and keep auto-following. Larger than a single line so a small
+  // wiggle doesn't detach; small enough that a real pull-up is caught.
+  const AUTO_FOLLOW_BOTTOM_PX = 140;
+
+  const scrollToBottom = useCallback(() => {
+    bottomRef.current?.scrollIntoView({ behavior: "smooth", block: "end" });
+  }, []);
+
+  const resumeAutoFollow = useCallback(() => {
+    autoFollowRef.current = true;
+    setAutoFollow(true);
+    seenItemsLenRef.current = feedItemsRef.current.length;
+    setPendingNew(0);
+    scrollToBottom();
+  }, [scrollToBottom]);
+
+  // Track scroll position to decide whether we're pinned to the tail. When
+  // the user scrolls up beyond the threshold, auto-follow pauses; when they
+  // scroll back within the threshold, it resumes and the pending count
+  // clears. Listener stays mounted only during a live recording — after
+  // stop the summary takes over and follow-behavior is moot.
+  useEffect(() => {
+    if (!running) return;
+    const onScroll = () => {
+      const distanceFromBottom =
+        document.documentElement.scrollHeight - window.scrollY - window.innerHeight;
+      const atTail = distanceFromBottom <= AUTO_FOLLOW_BOTTOM_PX;
+      if (atTail !== autoFollowRef.current) {
+        autoFollowRef.current = atTail;
+        setAutoFollow(atTail);
+        if (atTail) {
+          seenItemsLenRef.current = feedItemsRef.current.length;
+          setPendingNew(0);
+        }
+      }
+    };
+    window.addEventListener("scroll", onScroll, { passive: true });
+    return () => window.removeEventListener("scroll", onScroll);
+  }, [running]);
+
+  // Scroll or count. If following: pin to the bottom on every new item and
+  // on thinking updates so the status line stays visible. If detached: bump
+  // the pending count so the "Ler novidades" pill reflects what the user
+  // hasn't seen yet.
   // biome-ignore lint/correctness/useExhaustiveDependencies: feedItems.length + thinking are intentional change-triggers, not read inside
   useEffect(() => {
     if (!running) return;
-    bottomRef.current?.scrollIntoView({ behavior: "smooth", block: "end" });
-  }, [running, feedItems.length, thinking]);
+    if (autoFollowRef.current) {
+      seenItemsLenRef.current = feedItems.length;
+      scrollToBottom();
+    } else {
+      const unseen = Math.max(0, feedItems.length - seenItemsLenRef.current);
+      setPendingNew(unseen);
+    }
+  }, [running, feedItems.length, thinking, scrollToBottom]);
 
   return (
     <main
@@ -636,6 +793,23 @@ function SpikePageInner() {
             compact
           />
         </div>
+      ) : null}
+      {running && !autoFollow && pendingNew > 0 ? (
+        <button
+          type="button"
+          onClick={resumeAutoFollow}
+          className={cn(
+            "fixed bottom-24 left-1/2 z-40 -translate-x-1/2",
+            "inline-flex items-center gap-2 rounded-full border border-border bg-background/95 px-4 py-2 shadow-lg backdrop-blur",
+            "text-xs font-semibold text-foreground/85",
+            "transition-colors outline-none hover:bg-muted focus-visible:ring-2 focus-visible:ring-ring/40"
+          )}
+        >
+          Ler novidades
+          <span className="inline-flex min-w-5 items-center justify-center rounded-full bg-foreground px-1.5 text-[0.65rem] font-bold text-background">
+            {pendingNew}
+          </span>
+        </button>
       ) : null}
 
       {startupError ? (

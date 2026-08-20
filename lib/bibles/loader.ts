@@ -9,7 +9,17 @@ const cache = new Map<string, Bible>();
 const loading = new Map<string, Promise<Bible | null>>();
 
 export const AVAILABLE_TRANSLATIONS = [
-  "ACF", "ARA", "ARC", "KJA", "KJF", "NAA", "NBV", "NTLH", "NVI", "NVT", "OL",
+  "ACF",
+  "ARA",
+  "ARC",
+  "KJA",
+  "KJF",
+  "NAA",
+  "NBV",
+  "NTLH",
+  "NVI",
+  "NVT",
+  "OL",
 ] as const;
 
 export type AvailableTranslation = (typeof AVAILABLE_TRANSLATIONS)[number];

@@ -1,5 +1,5 @@
-import type { Bible } from "./loader";
 import { abbrevFor } from "./books";
+import type { Bible } from "./loader";
 
 export type VerseLookup = { text: string; truncated: boolean };
 
@@ -28,7 +28,10 @@ export function lookupVerse(
   let truncated = false;
   for (let v = startVerse; v <= endVerse; v++) {
     const verseText = chapterArr[v - 1];
-    if (!verseText) { truncated = true; break; }
+    if (!verseText) {
+      truncated = true;
+      break;
+    }
     parts.push(verseText);
   }
   return { text: parts.join(" ").trim(), truncated };

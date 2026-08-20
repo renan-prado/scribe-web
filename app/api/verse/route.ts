@@ -34,8 +34,9 @@ export async function POST(request: Request) {
   }
 
   // Fallback chain: requested translation → NVI. Deduped, only known files.
-  const chain = [requested, DEFAULT_TRANSLATION]
-    .filter((t, i, arr) => arr.indexOf(t) === i && isAvailableTranslation(t));
+  const chain = [requested, DEFAULT_TRANSLATION].filter(
+    (t, i, arr) => arr.indexOf(t) === i && isAvailableTranslation(t)
+  );
 
   for (const t of chain) {
     const bible = await loadBible(t);

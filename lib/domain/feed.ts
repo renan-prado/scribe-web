@@ -19,6 +19,11 @@ const SpeakerHighlightSchema = z.object({
   text: z.string(),
 });
 
+const SpeakerEchoSchema = z.object({
+  kind: z.literal("speakerEcho"),
+  text: z.string(),
+});
+
 const SpeakerCitationSchema = z.object({
   kind: z.literal("speakerCitation"),
   text: z.string(),
@@ -48,6 +53,7 @@ const SuggestedQuoteSchema = z.object({
 export const FeedItemSchema = z.discriminatedUnion("kind", [
   CitedVerseSchema,
   SpeakerHighlightSchema,
+  SpeakerEchoSchema,
   SpeakerCitationSchema,
   RelatedVerseSchema,
   ContextSchema,
@@ -61,8 +67,11 @@ export type FeedItemOrigin = "recording" | "ai";
 const RECORDING_KINDS: ReadonlySet<FeedItemKind> = new Set<FeedItemKind>([
   "citedVerse",
   "speakerHighlight",
+  "speakerEcho",
   "speakerCitation",
 ]);
+
+const ECHO_KINDS: ReadonlySet<FeedItemKind> = new Set<FeedItemKind>(["speakerEcho"]);
 
 const AI_KINDS: ReadonlySet<FeedItemKind> = new Set<FeedItemKind>([
   "relatedVerse",
@@ -85,7 +94,11 @@ export function feedItemDedupKey(item: FeedItem): string {
     case "relatedVerse":
       return `${item.kind}:${normalizeReference(item.reference)}`;
     case "speakerHighlight":
-      return `speakerHighlight:${normalizeText(item.text)}`;
+    case "speakerEcho":
+      // Shared prefix so an echo and a highlight of the same phrase collide in
+      // dedup — extract and sermon-echo can both surface the same sentence,
+      // and we only want one card for it.
+      return `speakerText:${normalizeText(item.text)}`;
     case "speakerCitation":
       return `speakerCitation:${normalizeText(item.author)}|${normalizeText(item.text)}`;
     case "context":
@@ -133,14 +146,22 @@ export function parseVerseReference(ref: string): ParsedVerseReference | null {
  * React key for feed items that stays stable when a citedVerse range grows.
  * `feedItemDedupKey` uses the exact reference, which changes when
  * `Tiago 1:1` gets superseded by `Tiago 1:1-4` — that would remount the
- * card and blank the whole verse text. Keying by book+chapter instead lets
- * React reconcile the passage in place; individual verse paragraphs each
- * key on their verse number so already-rendered ones stay mounted.
+ * card and blank the whole verse text. Keying by book+chapter+startVerse
+ * lets React reconcile the passage in place as its end grows; individual
+ * verse paragraphs each key on their verse number so already-rendered
+ * ones stay mounted.
+ *
+ * Including startVerse is important — two non-overlapping passages in the
+ * same chapter (e.g. `Romanos 7:1` and `Romanos 7:14-25` from a preacher
+ * jumping around) must render as separate cards, not collide on one key.
  */
 export function feedItemStableKey(item: FeedItem): string {
   if (item.kind === "citedVerse") {
     const parsed = parseVerseReference(item.reference);
-    if (parsed) return `citedVerse:${parsed.book}:${parsed.chapter}`;
+    if (parsed) {
+      const start = parsed.startVerse ?? 0;
+      return `citedVerse:${parsed.book}:${parsed.chapter}:${start}`;
+    }
   }
   return feedItemDedupKey(item);
 }
@@ -231,6 +252,15 @@ export function parseExtractFromLLM(
  */
 export function parseSuggestFromLLM(content: string, existingKeys: Set<string>): FeedParseResult {
   return parseFeedItems(content, existingKeys, AI_KINDS);
+}
+
+/**
+ * Parse the sermon-echo-route LLM response. Only accepts speakerEcho items;
+ * dedup runs against the SHARED speakerText key, so an echo whose text matches
+ * an existing speakerHighlight is rejected here (same phrase, different kind).
+ */
+export function parseEchoFromLLM(content: string, existingKeys: Set<string>): FeedParseResult {
+  return parseFeedItems(content, existingKeys, ECHO_KINDS);
 }
 
 function parseFeedItems(

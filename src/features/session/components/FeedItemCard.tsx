@@ -14,7 +14,6 @@ import { PassageVerses } from "@/features/session/components/PassageVerses";
 import {
   LIVE_READING_ACTIVE_GRACE_MS,
   LIVE_READING_LOOKAHEAD_PREFETCH,
-  LIVE_READING_LOOKAHEAD_VISIBLE,
 } from "@/features/session/config";
 import { KNOWN_TRANSLATIONS, useTranslation } from "@/features/session/hooks/useTranslation";
 import { prefetchVerse, useVerseFetch } from "@/features/session/hooks/useVerseFetch";
@@ -46,6 +45,8 @@ function chipFor(item: FeedItem): ChipMeta {
       return { icon: BookOpen, label: "Leitura Bíblica" };
     case "speakerHighlight":
       return { icon: Quote, label: "Destaque" };
+    case "speakerEcho":
+      return { icon: null, label: "Frase para relembrar" };
     case "speakerCitation":
       return { icon: Quote, label: "Citação" };
     case "relatedVerse":
@@ -106,6 +107,10 @@ export function FeedItemCard({
 
   if (item.kind === "speakerHighlight") {
     return <HighlightBlock text={item.text} />;
+  }
+
+  if (item.kind === "speakerEcho") {
+    return <EchoBlock text={item.text} />;
   }
 
   // Prompt-authored placeholder — the model was told "if the pastor only
@@ -180,6 +185,26 @@ export function FeedItemCard({
   return <div className="animate-content-fade">{card}</div>;
 }
 
+/**
+ * Rendered when a sermon-echo lands: a literal phrase the speaker just said,
+ * shown as a raw pull-quote with no card frame — the "reality check" between
+ * runs of AI cards. Deliberately different treatment from HighlightBlock
+ * (yellow highlight, curated) and from speakerCitation (attributed): this is
+ * the pastor's own voice, mid-flow, unadorned.
+ */
+function EchoBlock({ text }: { text: string }) {
+  return (
+    <figure className="animate-content-fade my-4 border-l-2 border-border pl-5">
+      <figcaption className="mb-2 text-[0.65rem] font-semibold tracking-widest text-muted-foreground uppercase">
+        Frase para relembrar
+      </figcaption>
+      <blockquote className="text-pretty font-heading text-xl italic leading-relaxed text-foreground/85">
+        {text}
+      </blockquote>
+    </figure>
+  );
+}
+
 function HighlightBlock({ text }: { text: string }) {
   return (
     <figure className="animate-content-fade my-4 px-4 text-center sm:px-8">
@@ -229,12 +254,10 @@ function VerseText({ reference, initialText }: { reference: string; initialText:
 }
 
 /**
- * Wraps PassageVerses with a sliding-window strategy for LIVE reading:
- * verses reveal in blocks of LOOKAHEAD_VISIBLE (not one at a time), and a
- * second block is prefetched silently so the next expansion is instant.
- * Extract emits progressively wider ranges as the pastor reads; this
- * component computes how far the visible edge should be from the confirmed
- * range end and delegates rendering to PassageVerses.
+ * Wraps PassageVerses for LIVE reading. The visible range mirrors the extract
+ * output exactly (badge and text stay in sync), and a silent prefetch warms
+ * the cache for verses just beyond the confirmed end — so when extract grows
+ * the range the next expansion renders instantly from cache.
  *
  * The parent Feed keys citedVerse cards by book+chapter (feedItemStableKey),
  * so this component stays mounted across range grows — only the individual
@@ -252,17 +275,16 @@ function ReadingPassage({
   chapter: number;
   startVerse: number;
   extractedEndVerse: number;
-  /** When false (reading ended, or another passage is now active), collapse
-   * back to exactly the extracted range — no lookahead, no prefetch. Ghost
-   * verses that never got read fade out. */
+  /** Gates the silent prefetch: while true we warm the cache for verses
+   * beyond the current end; once inactive (with a grace period) we stop
+   * prefetching to avoid wasted /api/verse calls for a passage that ended. */
   isActive: boolean;
   onTranslationResolved?: (translation: string) => void;
 }) {
   const { effective: translation } = useTranslation();
   // Debounce isActive=false: readingMode from extract flips briefly when the
-  // model treats a pause or short interjection as commentary. Collapsing on
-  // the first false hides verses that were on screen mid-passage. Only after
-  // GRACE_MS of continuous inactivity do we shrink.
+  // model treats a pause or short interjection as commentary. Only after
+  // GRACE_MS of continuous inactivity do we stop prefetching.
   const [effectiveActive, setEffectiveActive] = useState(isActive);
   useEffect(() => {
     if (isActive) {
@@ -273,28 +295,23 @@ function ReadingPassage({
     return () => clearTimeout(timer);
   }, [isActive]);
 
-  let visibleEnd: number;
-  if (effectiveActive) {
-    const blockSize = LIVE_READING_LOOKAHEAD_VISIBLE;
-    const blocksToShow = Math.ceil(Math.max(1, extractedEndVerse - startVerse + 2) / blockSize);
-    visibleEnd = startVerse + blocksToShow * blockSize - 1;
-  } else {
-    visibleEnd = extractedEndVerse;
-  }
-
   useEffect(() => {
     if (!effectiveActive) return;
-    for (let v = visibleEnd + 1; v <= visibleEnd + LIVE_READING_LOOKAHEAD_PREFETCH; v++) {
+    for (
+      let v = extractedEndVerse + 1;
+      v <= extractedEndVerse + LIVE_READING_LOOKAHEAD_PREFETCH;
+      v++
+    ) {
       prefetchVerse(`${bookDisplay} ${chapter}:${v}`, translation);
     }
-  }, [bookDisplay, chapter, visibleEnd, effectiveActive, translation]);
+  }, [bookDisplay, chapter, extractedEndVerse, effectiveActive, translation]);
 
   return (
     <PassageVerses
       bookDisplay={bookDisplay}
       chapter={chapter}
       startVerse={startVerse}
-      endVerse={visibleEnd}
+      endVerse={extractedEndVerse}
       onTranslationResolved={onTranslationResolved}
     />
   );

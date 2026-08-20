@@ -8,7 +8,19 @@ import { createContext, type ReactNode, useCallback, useContext, useMemo, useSta
  * only pick from this set. Adding one here without updating the prompts will
  * result in the auto-detect never suggesting it.
  */
-export const KNOWN_TRANSLATIONS = ["ACF", "ARA", "ARC", "KJA", "KJF", "NAA", "NBV", "NTLH", "NVI", "NVT", "OL"] as const;
+export const KNOWN_TRANSLATIONS = [
+  "ACF",
+  "ARA",
+  "ARC",
+  "KJA",
+  "KJF",
+  "NAA",
+  "NBV",
+  "NTLH",
+  "NVI",
+  "NVT",
+  "OL",
+] as const;
 export type Translation = (typeof KNOWN_TRANSLATIONS)[number];
 
 /** Session-wide default before extract has a chance to auto-detect. NVI is
