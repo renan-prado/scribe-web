@@ -141,7 +141,7 @@ export function RecordingHeader({
           >
             <h1
               key={displayTitle}
-              className="animate-content-fade font-heading text-3xl font-bold leading-[1.1] tracking-tight text-foreground sm:text-4xl"
+              className="animate-content-fade font-heading text-2xl font-bold leading-[1.15] tracking-tight text-foreground sm:text-3xl md:text-4xl"
               suppressHydrationWarning
             >
               {displayTitle}

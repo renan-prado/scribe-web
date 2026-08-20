@@ -1,6 +1,6 @@
 "use client";
 
-import { ArrowLeft, FileText, MapPin, Sparkles, User } from "lucide-react";
+import { ArrowLeft, MapPin, User } from "lucide-react";
 import Link from "next/link";
 import { useState } from "react";
 import {
@@ -11,6 +11,7 @@ import {
   DialogTitle,
 } from "@/components/ui/dialog";
 import { Feed } from "@/features/session/components/Feed";
+import { SessionMenu } from "@/features/session/components/SessionMenu";
 import { SummaryView } from "@/features/session/components/SummaryView";
 import { TranslationProvider } from "@/features/session/hooks/useTranslation";
 import type { FeedItem } from "@/lib/domain/feed";
@@ -46,47 +47,25 @@ export function SavedSessionView({
 
   return (
     <TranslationProvider>
-      <main className="mx-auto flex min-h-svh w-full max-w-3xl flex-col gap-8 px-6 py-16">
+      <main className="mx-auto flex min-h-svh w-full max-w-3xl flex-col gap-6 px-4 py-8 sm:gap-8 sm:px-6 sm:py-16">
         <div className="flex items-center justify-between gap-3">
           <Link
             href="/"
             className={cn(
               "inline-flex items-center gap-1.5 text-sm text-muted-foreground",
-              "rounded-md px-2 py-1 -mx-2 transition-colors hover:bg-muted hover:text-foreground",
+              "rounded-md px-2 py-1.5 -mx-2 transition-colors hover:bg-muted hover:text-foreground",
               "focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring/40"
             )}
           >
             <ArrowLeft className="size-4" />
             Voltar
           </Link>
-          <div className="flex items-center gap-2">
-            <button
-              type="button"
-              disabled={feedItems.length === 0}
-              onClick={() => setFeedOpen(true)}
-              className={cn(
-                "inline-flex items-center gap-1.5 rounded-full border border-border px-3 py-1.5 text-xs font-medium",
-                "transition-colors hover:bg-muted disabled:cursor-not-allowed disabled:opacity-50",
-                "focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring/40"
-              )}
-            >
-              <Sparkles className="size-3.5" />
-              Conteúdo do live
-            </button>
-            <button
-              type="button"
-              disabled={!transcript}
-              onClick={() => setTranscriptOpen(true)}
-              className={cn(
-                "inline-flex items-center gap-1.5 rounded-full border border-border px-3 py-1.5 text-xs font-medium",
-                "transition-colors hover:bg-muted disabled:cursor-not-allowed disabled:opacity-50",
-                "focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring/40"
-              )}
-            >
-              <FileText className="size-3.5" />
-              Transcrição
-            </button>
-          </div>
+          <SessionMenu
+            hasTranscript={transcript.length > 0}
+            hasLiveFeed={feedItems.length > 0}
+            onOpenTranscript={() => setTranscriptOpen(true)}
+            onOpenLiveFeed={() => setFeedOpen(true)}
+          />
         </div>
 
         <header className="flex flex-col gap-3">
@@ -98,7 +77,7 @@ export function SavedSessionView({
               <span className="font-medium leading-none">{speakerName}</span>
             </span>
           ) : null}
-          <h1 className="font-heading text-3xl font-bold leading-[1.1] tracking-tight text-foreground sm:text-4xl">
+          <h1 className="font-heading text-2xl font-bold leading-[1.15] tracking-tight text-foreground sm:text-3xl md:text-4xl">
             {title}
           </h1>
           {speakerLocation?.trim() ? (

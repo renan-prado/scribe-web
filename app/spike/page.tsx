@@ -1,5 +1,7 @@
 "use client";
 
+import { ArrowLeft } from "lucide-react";
+import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { toast } from "sonner";
@@ -789,10 +791,25 @@ function SpikePageInner() {
   return (
     <main
       className={cn(
-        "mx-auto flex min-h-svh w-full max-w-3xl flex-col items-center gap-10 px-6 py-16",
+        "relative mx-auto flex min-h-svh w-full max-w-3xl flex-col items-center gap-8 px-4 py-8 sm:gap-10 sm:px-6 sm:py-16",
         !hasStarted && "justify-center"
       )}
     >
+      {!hasStarted ? (
+        <div className="absolute left-4 top-4 sm:left-6 sm:top-6">
+          <Link
+            href="/"
+            className={cn(
+              "inline-flex items-center gap-1.5 rounded-md px-2 py-1.5 -mx-2 text-sm text-muted-foreground",
+              "transition-colors hover:bg-muted hover:text-foreground",
+              "focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring/40"
+            )}
+          >
+            <ArrowLeft className="size-4" />
+            Voltar
+          </Link>
+        </div>
+      ) : null}
       {!hasStarted ? <Greeting /> : null}
       {!hasStarted ? (
         <RecordButton running={running} elapsedMs={elapsedMs} onStart={start} onStop={stop} />
@@ -833,7 +850,7 @@ function SpikePageInner() {
       ) : null}
 
       {hasStarted ? (
-        <section className="relative flex w-full min-h-[280px] self-stretch flex-col gap-6 p-6">
+        <section className="relative flex w-full min-h-[280px] self-stretch flex-col gap-6 pb-32 sm:p-6 sm:pb-32">
           <RecordingHeader
             title={summaryTitle}
             startedAt={recordingStartedAt}

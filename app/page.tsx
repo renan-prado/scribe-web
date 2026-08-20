@@ -39,11 +39,11 @@ export default async function HomePage() {
   }
 
   return (
-    <main className="mx-auto flex min-h-svh w-full max-w-3xl flex-col gap-10 px-6 py-16">
-      <header className="flex items-start justify-between gap-4">
-        <div className="flex flex-col gap-2">
-          <h1 className="font-heading text-3xl font-bold tracking-tight text-foreground">
-            scribe-web
+    <main className="mx-auto flex min-h-svh w-full max-w-3xl flex-col gap-8 px-4 py-10 sm:gap-10 sm:px-6 sm:py-16">
+      <header className="flex flex-col gap-4 sm:flex-row sm:items-start sm:justify-between">
+        <div className="flex min-w-0 flex-col gap-2">
+          <h1 className="font-heading text-2xl font-bold tracking-tight text-foreground sm:text-3xl">
+            scribe
           </h1>
           <p className="text-sm text-muted-foreground">
             Transcrições, resumos e cartões extraídos de sermões gravados.
@@ -52,7 +52,7 @@ export default async function HomePage() {
         <Link
           href="/spike"
           className={cn(
-            "inline-flex items-center gap-2 rounded-full bg-primary px-4 py-2 text-sm font-medium text-primary-foreground shadow-sm",
+            "inline-flex items-center justify-center gap-2 self-stretch rounded-full bg-primary px-4 py-2.5 text-sm font-medium text-primary-foreground shadow-sm sm:self-start sm:py-2",
             "transition-transform hover:scale-[1.02] active:scale-95",
             "focus-visible:outline-none focus-visible:ring-4 focus-visible:ring-ring/40"
           )}
@@ -67,10 +67,21 @@ export default async function HomePage() {
           Não consegui carregar as sessões: {loadError}
         </div>
       ) : sessions.length === 0 ? (
-        <div className="rounded-lg border border-dashed border-border p-8 text-center">
+        <div className="flex flex-col items-center gap-4 rounded-lg border border-dashed border-border p-8 text-center">
           <p className="text-sm text-muted-foreground">
-            Nenhuma sessão salva ainda. Abra uma nova gravação para começar.
+            Nenhuma sessão salva ainda. Comece pela primeira gravação.
           </p>
+          <Link
+            href="/spike"
+            className={cn(
+              "inline-flex items-center gap-2 rounded-full bg-primary px-4 py-2 text-sm font-medium text-primary-foreground shadow-sm",
+              "transition-transform hover:scale-[1.02] active:scale-95",
+              "focus-visible:outline-none focus-visible:ring-4 focus-visible:ring-ring/40"
+            )}
+          >
+            <Plus className="size-4" />
+            Nova gravação
+          </Link>
         </div>
       ) : (
         <ul className="flex flex-col gap-3">
@@ -122,7 +133,7 @@ export default async function HomePage() {
                     type="submit"
                     aria-label="Excluir sessão"
                     className={cn(
-                      "flex size-9 items-center justify-center rounded-full text-muted-foreground",
+                      "flex size-10 shrink-0 items-center justify-center rounded-full text-muted-foreground sm:size-9",
                       "transition-colors hover:bg-destructive/10 hover:text-destructive",
                       "focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-destructive/40"
                     )}
