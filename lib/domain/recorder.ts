@@ -27,10 +27,16 @@ export type RecorderOptions = {
   silenceHoldMs?: number;
 };
 
+export type ChunkTiming = {
+  minChunkMs?: number;
+  maxChunkMs?: number;
+};
+
 export type Recorder = {
   start(): Promise<{ mimeType: string; extension: string }>;
   stop(): Promise<void>;
   onChunk(cb: (ev: ChunkEvent) => void): void;
   onError(cb: (ev: RecorderErrorEvent) => void): void;
   onFinalAudio(cb: (ev: FinalAudioEvent) => void): void;
+  setChunkTiming(next: ChunkTiming): void;
 };

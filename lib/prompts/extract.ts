@@ -68,9 +68,20 @@ FORMATO OBRIGATÓRIO (crítico): cada item PRECISA vir como objeto com os campos
 
    Gatilhos que devem disparar citedVerse específico IMEDIATAMENTE (no mesmo chunk em que aparecem):
    - "vamos ler os versículos 1", "leia comigo o versículo 7", "abram no versículo 23" → emita já com o número (ex: "Salmo 119:1", "João 4:7", "João 4:23"), usando o capítulo/livro do contexto acumulado.
-   - "versículos 1 a 3", "do 7 ao 15", "1 até 3" → emita a faixa (ex: "Salmo 119:1-3").
-   - Se o pastor disse só um número inicial ("versículos 1") e o range ainda não veio no chunk atual, emita o número único (ex: "Salmo 119:1"). Se em um chunk futuro emergir a faixa completa ("1 a 3"), emita a faixa nova — o cliente faz dedup da anterior.
-   - Se o transcript já contém leitura verbatim, o citedVerse específico já deveria ter sido emitido; se por algum motivo não foi, emita agora.
+   - RANGE FECHADO ("versículos 1 a 3", "do 7 ao 15", "1 até 3", "do 7 ao 15") → emita a faixa exata (ex: "Salmo 119:1-3").
+   - RANGE ABERTO ("versículo 1 em diante", "1 e diante", "a partir do verso 1", "do 1 em diante", "versículos 1 e seguintes", "verso 1 ss") → o pastor sinalizou que vai ler MAIS DE UM verso a partir daquele ponto, sem dizer onde termina. Trate assim:
+       * SEMPRE emita com número específico de versículo (ex: "Tiago 1:1"). NUNCA emita chapter-only ("Tiago 1") quando o pastor mencionou um número inicial na frase de anúncio — o cliente usa o número inicial pra começar a renderizar os primeiros versos imediatamente; sem ele, o ouvinte fica olhando pra um badge vazio até você emitir o específico no próximo chunk.
+       * Se o transcript atual JÁ CONTÉM leitura verbatim que segue esse anúncio, IDENTIFIQUE qual foi o último versículo efetivamente lido no trecho e emita a faixa real (ex: pastor disse "Tiago 1, versículo 1 em diante" e leu vv.1‑4 verbatim → emita "Tiago 1:1-4", NÃO "Tiago 1:1"). Emitir só o versículo inicial nesse caso é o segundo erro mais custoso — o card mostra 1 verso quando o pastor leu 4.
+       * Se ainda não há leitura verbatim no chunk (só o anúncio), emita o versículo inicial isolado ("Tiago 1:1") — o cliente já renderiza os primeiros 3 versos automaticamente a partir dele. Em chunks futuros, à medida que mais versos forem lidos, emita novos citedVerse com a faixa acumulada (ex: "Tiago 1:1-6", depois "Tiago 1:1-9") — cada faixa maior supersede a anterior no cliente.
+
+   COMO CONTAR VERSÍCULOS LIDOS (crítico — falha comum: subcontagem):
+   - Existem VÁRIAS TRADUÇÕES em português (ARC, ARA, NVI, NVT, NAA, NTLH, BJ, KJA). O pastor pode estar lendo QUALQUER UMA. Não compare palavra-por-palavra com uma tradução única que você conhece: o wording muda, mas o SENTIDO SEMÂNTICO de cada versículo é o mesmo entre todas.
+   - Exemplo real: João 1:5 é reconhecível em qualquer tradução como "A luz brilha nas trevas / na escuridão, e as trevas não a compreenderam / a escuridão nunca conseguiu apagá-la". Se o transcript tem "A luz brilha na escuridão, e a escuridão nunca conseguia apagá-la", isso É João 1:5, mesmo que sua memória interna esteja em ARC ("prevaleceram contra ela").
+   - CONTE por unidades semânticas, não por match textual. Cada afirmação bíblica distinta = um versículo. Se o pastor leu 5 frases bíblicas encadeadas de João 1, ele leu vv.1-5.
+   - Marcadores de FIM de leitura no transcript: "aqui temos", "aqui vemos", "essa passagem", "essa reflexão", "então", "amém", "palavra do Senhor", ou qualquer frase interpretativa que segue o texto bíblico. TUDO ANTES desses marcadores foi leitura — capture até a ÚLTIMA frase bíblica antes deles.
+   - REGRA DE DESEMPATE: se você está em dúvida entre "pastor leu até N ou até N+1", escolha N+1. Errar pra cima em 1 verso é imperceptível pro usuário (o cliente mostra lookahead mesmo). Errar pra baixo faz o card colapsar removendo um verso que ele leu — o usuário percebe imediatamente e perde confiança.
+   - Se o pastor disse só um número inicial isolado ("versículo 1") sem qualquer palavra de continuidade e SEM leitura verbatim posterior no chunk, emita o número único (ex: "Salmo 119:1"). Se em um chunk futuro emergir a faixa completa ("1 a 3"), emita a faixa nova.
+   - Se o transcript já contém leitura verbatim, o citedVerse específico já deveria ter sido emitido; se por algum motivo não foi, emita agora — e se você consegue determinar quantos versos foram lidos, emita a faixa real, não só o primeiro.
 
    Regra geral: NÃO ESPERE a leitura verbatim começar pra emitir a referência. Esperar significa que o card com o texto aparece 8-15 segundos DEPOIS que o pastor já está lendo — o usuário perde o começo. Usar o contexto acumulado (mesmo que o pastor não repita o nome do livro/capítulo a cada vez) é obrigatório.
 

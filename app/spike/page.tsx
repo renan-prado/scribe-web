@@ -25,7 +25,9 @@ import {
   FEED_MIN_GAP_MS,
   RECENT_TRANSCRIPT_CHARS,
   RECORDER_MAX_CHUNK_MS,
+  RECORDER_MAX_CHUNK_MS_READING,
   RECORDER_MIN_CHUNK_MS,
+  RECORDER_MIN_CHUNK_MS_READING,
   RECORDER_SILENCE_HOLD_MS,
   RECORDER_SILENCE_THRESHOLD,
   SUGGEST_EVERY_N_CHUNKS,
@@ -45,7 +47,7 @@ import {
 import { isSilentBlob } from "@/features/session/lib/audio";
 import { tailSentences, tailTranscript } from "@/features/session/lib/text";
 import type { ChunkRow, FinalAudio, TranscriptState } from "@/features/session/types";
-import { type FeedItem, feedItemDedupKey } from "@/lib/domain/feed";
+import { type FeedItem, feedItemDedupKey, referenceStrictlyContains } from "@/lib/domain/feed";
 import type { ChunkEvent, Recorder } from "@/lib/domain/recorder";
 import type { SummaryPayload } from "@/lib/domain/summary";
 import { createRecorder } from "@/lib/recorder";
@@ -82,6 +84,15 @@ export default function SpikePage() {
     skippedDelta: 0,
   });
 
+  const titleLockedByUserRef = useRef(false);
+
+  // Kept in sync with the readingMode state so callbacks / recorder-timing
+  // effects can read the latest value without adding it to every dep array.
+  const readingModeRef = useRef(false);
+  // Snapshot of feedItems for range-containment checks in enqueueFeedItems.
+  // Synced on every commit so the callback stays free of stale-closure bugs.
+  const feedItemsRef = useRef<FeedItem[]>([]);
+
   const [running, setRunning] = useState(false);
   const [chunkRows, setChunkRows] = useState<ChunkRow[]>([]);
   const [finalAudio, setFinalAudio] = useState<FinalAudio | null>(null);
@@ -91,6 +102,8 @@ export default function SpikePage() {
   const [readingMode, setReadingMode] = useState<boolean>(false);
   const [summary, setSummary] = useState<SummaryPayload | null>(null);
   const [summaryTitle, setSummaryTitle] = useState("");
+  const [speakerName, setSpeakerName] = useState("Autor desconhecido");
+  const [speakerLocation, setSpeakerLocation] = useState("Local desconhecido");
   const [recordingStartedAt, setRecordingStartedAt] = useState<Date | null>(null);
   const [extracting, setExtracting] = useState(false);
   const [suggesting, setSuggesting] = useState(false);
@@ -158,13 +171,31 @@ export default function SpikePage() {
    * Enqueue new items and schedule the drip if it isn't already running.
    * Dedup is checked against both the visible feed and the pending queue so
    * repeat items from overlapping extract/suggest calls don't duplicate.
+   *
+   * Two range-aware behaviors for `citedVerse`:
+   * - SUPERSEDE: an incoming reference that strictly contains an existing
+   *   one (e.g., "Tiago 1:1-4" arrives, "Tiago 1:1" is visible) removes the
+   *   narrower card so a single card tracks the passage as the pastor reads.
+   *   This intentionally departs from the additive-only feed rule; see the
+   *   guardrail note in AGENTS.md.
+   * - FAST PATH: during readingMode, citedVerse items skip the drip queue
+   *   and append immediately — the listener is watching one card grow, not
+   *   scanning a stream of new cards, so the 3.5s spacing just adds lag.
    */
   const enqueueFeedItems = useCallback(
     (incoming: FeedItem[]) => {
       if (incoming.length === 0) return;
-      let anyAdded = false;
+      let anyDripAdded = false;
       const queuedKeys = new Set(dripQueueRef.current.map((e) => feedItemDedupKey(e.item)));
       const now = Date.now();
+      const readingModeNow = readingModeRef.current;
+      // Snapshot citedVerses currently in the world (visible + queued) so
+      // containment checks see the full picture within this batch.
+      const currentCitedVerses: Array<Extract<FeedItem, { kind: "citedVerse" }>> = [
+        ...feedItemsRef.current,
+        ...dripQueueRef.current.map((e) => e.item),
+      ].filter((i): i is Extract<FeedItem, { kind: "citedVerse" }> => i.kind === "citedVerse");
+
       for (const item of incoming) {
         const key = feedItemDedupKey(item);
         if (visibleKeysRef.current.has(key)) {
@@ -185,11 +216,67 @@ export default function SpikePage() {
           });
           continue;
         }
+
+        if (item.kind === "citedVerse") {
+          const coveredBy = currentCitedVerses.find((ex) =>
+            referenceStrictlyContains(ex.reference, item.reference)
+          );
+          if (coveredBy) {
+            sessionCountersRef.current.dedupSuppressed++;
+            console.log("[feed] dedup-suppressed", {
+              kind: item.kind,
+              key,
+              reason: "covered-by",
+              by: coveredBy.reference,
+            });
+            continue;
+          }
+          const superseded = currentCitedVerses.filter((ex) =>
+            referenceStrictlyContains(item.reference, ex.reference)
+          );
+          if (superseded.length > 0) {
+            const supersededKeys = new Set(superseded.map(feedItemDedupKey));
+            for (const k of supersededKeys) {
+              visibleKeysRef.current.delete(k);
+              queuedKeys.delete(k);
+            }
+            dripQueueRef.current = dripQueueRef.current.filter(
+              (e) => !supersededKeys.has(feedItemDedupKey(e.item))
+            );
+            setFeedItems((prev) => prev.filter((i) => !supersededKeys.has(feedItemDedupKey(i))));
+            for (let i = currentCitedVerses.length - 1; i >= 0; i--) {
+              if (supersededKeys.has(feedItemDedupKey(currentCitedVerses[i]))) {
+                currentCitedVerses.splice(i, 1);
+              }
+            }
+            console.log("[feed] supersede", {
+              newer: item.reference,
+              removed: [...supersededKeys],
+            });
+          }
+        }
+
+        if (readingModeNow && item.kind === "citedVerse") {
+          visibleKeysRef.current.add(key);
+          currentCitedVerses.push(item);
+          console.log("[feed] +item (fast)", {
+            kind: item.kind,
+            key,
+            lagMs: 0,
+            at: new Date().toISOString(),
+            item,
+          });
+          setFeedItems((prev) => [...prev, item]);
+          lastAppendedAtRef.current = Date.now();
+          continue;
+        }
+
         queuedKeys.add(key);
         dripQueueRef.current.push({ item, enqueuedAt: now });
-        anyAdded = true;
+        if (item.kind === "citedVerse") currentCitedVerses.push(item);
+        anyDripAdded = true;
       }
-      if (!anyAdded) return;
+      if (!anyDripAdded) return;
       if (drainTimerRef.current === null) {
         const elapsed = Date.now() - lastAppendedAtRef.current;
         const delay = Math.max(0, FEED_MIN_GAP_MS - elapsed);
@@ -340,6 +427,7 @@ export default function SpikePage() {
     setReadingMode(false);
     setSummary(null);
     setSummaryTitle("");
+    titleLockedByUserRef.current = false;
     setRecordingStartedAt(new Date());
     lastExtractChunkRef.current = 0;
     lastSuggestChunkRef.current = 0;
@@ -417,7 +505,7 @@ export default function SpikePage() {
       });
       if (payload) {
         setSummary(payload);
-        if (payload.title) setSummaryTitle(payload.title);
+        if (payload.title && !titleLockedByUserRef.current) setSummaryTitle(payload.title);
       }
     } finally {
       setFinalizing(false);
@@ -430,6 +518,44 @@ export default function SpikePage() {
       void recorderRef.current?.stop();
     };
   }, []);
+
+  useEffect(() => {
+    feedItemsRef.current = feedItems;
+  }, [feedItems]);
+
+  // Reading Scripture verbatim → tighter chunks so the extract fires often
+  // enough to keep the verse card in sync with the pastor's cadence. Reverts
+  // to the default timing the moment the pastor moves back to exposition.
+  //
+  // Also purges pending non-citedVerse items from the drip queue when
+  // readingMode flips true: a suggest call may have been in flight when the
+  // pastor started reading; its items would otherwise land mid-passage and
+  // push the reading card down the feed. citedVerse items are kept because
+  // they're the passage itself.
+  useEffect(() => {
+    readingModeRef.current = readingMode;
+    if (readingMode && dripQueueRef.current.length > 0) {
+      const before = dripQueueRef.current.length;
+      dripQueueRef.current = dripQueueRef.current.filter((e) => e.item.kind === "citedVerse");
+      const dropped = before - dripQueueRef.current.length;
+      if (dropped > 0) {
+        console.log("[feed] drip-purge", { reason: "readingMode-on", dropped });
+      }
+    }
+    const rec = recorderRef.current;
+    if (!rec || !running) return;
+    if (readingMode) {
+      rec.setChunkTiming({
+        minChunkMs: RECORDER_MIN_CHUNK_MS_READING,
+        maxChunkMs: RECORDER_MAX_CHUNK_MS_READING,
+      });
+    } else {
+      rec.setChunkTiming({
+        minChunkMs: RECORDER_MIN_CHUNK_MS,
+        maxChunkMs: RECORDER_MAX_CHUNK_MS,
+      });
+    }
+  }, [readingMode, running]);
 
   // Session rollup: log a one-line summary every 60s while recording so
   // post-session analysis can see yield rates and waste at a glance.
@@ -505,6 +631,14 @@ export default function SpikePage() {
           <RecordingHeader
             title={summaryTitle}
             startedAt={recordingStartedAt}
+            speakerName={speakerName}
+            speakerLocation={speakerLocation}
+            onTitleChange={setSummaryTitle}
+            onTitleLock={() => {
+              titleLockedByUserRef.current = true;
+            }}
+            onSpeakerNameChange={setSpeakerName}
+            onSpeakerLocationChange={setSpeakerLocation}
             menu={
               <SessionMenu
                 hasTranscript={transcript.length > 0}
@@ -522,6 +656,7 @@ export default function SpikePage() {
                 running={running}
                 hasTranscript={transcript.length > 0}
                 suggesting={suggesting}
+                readingMode={readingMode}
               />
             ) : (
               <SummaryView

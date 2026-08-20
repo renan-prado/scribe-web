@@ -5,7 +5,7 @@ import { AiIcon } from "@/features/session/components/AiIcon";
 import { FeedItemCard } from "@/features/session/components/FeedItemCard";
 import { VerseDialog } from "@/features/session/components/VerseDialog";
 import type { FeedItem } from "@/lib/domain/feed";
-import { feedItemDedupKey } from "@/lib/domain/feed";
+import { feedItemStableKey } from "@/lib/domain/feed";
 
 /**
  * Live feed of extracted + suggested items. Purely additive during a
@@ -21,11 +21,13 @@ export function Feed({
   running,
   hasTranscript,
   suggesting,
+  readingMode,
 }: {
   items: FeedItem[];
   running: boolean;
   hasTranscript: boolean;
   suggesting: boolean;
+  readingMode: boolean;
 }) {
   const [openRef, setOpenRef] = useState<string | null>(null);
 
@@ -38,12 +40,36 @@ export function Feed({
 
   const displayItems = dedupeGrowingHighlights(dedupeConsecutiveChapters(items));
 
+  // The "active reading" is the most recent citedVerse WHILE readingMode is
+  // on. Only that card gets the forward-verse lookahead; older passages and
+  // stopped readings render exactly up to the extracted end, so speculative
+  // verses fade out the moment the pastor closes the passage. Prevents ghost
+  // verses (v8, v9 shown but never actually read) from lingering in the feed.
+  let activeReadingKey: string | null = null;
+  if (readingMode) {
+    for (let i = displayItems.length - 1; i >= 0; i--) {
+      const it = displayItems[i];
+      if (it.kind === "citedVerse") {
+        activeReadingKey = feedItemStableKey(it);
+        break;
+      }
+    }
+  }
+
   return (
     <>
       <div className="flex flex-col gap-4">
-        {displayItems.map((item) => (
-          <FeedItemCard key={feedItemDedupKey(item)} item={item} onOpenVerse={setOpenRef} />
-        ))}
+        {displayItems.map((item) => {
+          const key = feedItemStableKey(item);
+          return (
+            <FeedItemCard
+              key={key}
+              item={item}
+              onOpenVerse={setOpenRef}
+              isActiveReading={key === activeReadingKey}
+            />
+          );
+        })}
         {suggesting ? <SuggestingIndicator /> : null}
       </div>
       <VerseDialog reference={openRef} onOpenChange={(open) => !open && setOpenRef(null)} />

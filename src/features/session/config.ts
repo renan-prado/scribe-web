@@ -56,6 +56,23 @@ export const FEED_MIN_GAP_MS = 3500;
 // Max stays at 20s so a sentence that runs long doesn't wait indefinitely.
 export const RECORDER_MIN_CHUNK_MS = 8_000;
 export const RECORDER_MAX_CHUNK_MS = 20_000;
+
+// While the speaker is reading Scripture verbatim (readingMode=true), the
+// listener is watching a single verse card grow to match the passage being
+// read. Cutting chunks sooner lets the extract fire more often on each new
+// verse, so the range card catches up in near-real time. Whisper still gets
+// enough audio because reading cadence is slow and diction is deliberate.
+export const RECORDER_MIN_CHUNK_MS_READING = 4_000;
+export const RECORDER_MAX_CHUNK_MS_READING = 8_000;
+
+// During an active reading, the passage card renders verses BEYOND what the
+// extract has confirmed so far — a sliding "look ahead" that fills instantly
+// (from cache) when the pastor actually arrives at those verses. VISIBLE is
+// what we render on-screen; PREFETCH warms the cache one buffer further out
+// so the next visible expansion is also instant. Each unit costs one
+// /api/verse call.
+export const LIVE_READING_LOOKAHEAD_VISIBLE = 3;
+export const LIVE_READING_LOOKAHEAD_PREFETCH = 3;
 export const RECORDER_SILENCE_THRESHOLD = 0.01;
 export const RECORDER_SILENCE_HOLD_MS = 400;
 

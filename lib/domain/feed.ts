@@ -99,6 +99,70 @@ function normalizeReference(ref: string): string {
   return ref.trim().toLowerCase().replace(/\s+/g, "").replace(/[.,]/g, "");
 }
 
+export type ParsedVerseReference = {
+  /** Normalized book name for equality checks: lowercase, no punctuation. */
+  book: string;
+  /** Original-case book name for reassembling display references. */
+  bookDisplay: string;
+  chapter: number;
+  startVerse?: number;
+  endVerse?: number;
+};
+
+const VERSE_REFERENCE_RE = /^(.+?)\s+(\d+)(?::(\d+)(?:-(\d+))?)?$/;
+
+export function parseVerseReference(ref: string): ParsedVerseReference | null {
+  const m = VERSE_REFERENCE_RE.exec(ref.trim());
+  if (!m) return null;
+  const [, bookRaw, chapterStr, startStr, endStr] = m;
+  const chapter = Number.parseInt(chapterStr, 10);
+  if (!Number.isFinite(chapter)) return null;
+  const startVerse = startStr ? Number.parseInt(startStr, 10) : undefined;
+  const endVerse = endStr ? Number.parseInt(endStr, 10) : startVerse;
+  const bookDisplay = bookRaw.trim().replace(/\s+/g, " ").replace(/[.,]/g, "");
+  return {
+    book: bookDisplay.toLowerCase(),
+    bookDisplay,
+    chapter,
+    startVerse,
+    endVerse,
+  };
+}
+
+/**
+ * React key for feed items that stays stable when a citedVerse range grows.
+ * `feedItemDedupKey` uses the exact reference, which changes when
+ * `Tiago 1:1` gets superseded by `Tiago 1:1-4` — that would remount the
+ * card and blank the whole verse text. Keying by book+chapter instead lets
+ * React reconcile the passage in place; individual verse paragraphs each
+ * key on their verse number so already-rendered ones stay mounted.
+ */
+export function feedItemStableKey(item: FeedItem): string {
+  if (item.kind === "citedVerse") {
+    const parsed = parseVerseReference(item.reference);
+    if (parsed) return `citedVerse:${parsed.book}:${parsed.chapter}`;
+  }
+  return feedItemDedupKey(item);
+}
+
+/**
+ * True when `broader` strictly covers `narrower` — same book/chapter, and
+ * narrower's verse range fits inside broader's. Chapter-only refs never cover
+ * verse-specific refs (matches the extract-prompt exception at lib/prompts/extract.ts).
+ * Exact equality returns false; those are handled by the exact-key dedup path.
+ */
+export function referenceStrictlyContains(broader: string, narrower: string): boolean {
+  const b = parseVerseReference(broader);
+  const n = parseVerseReference(narrower);
+  if (!b || !n) return false;
+  if (b.book !== n.book || b.chapter !== n.chapter) return false;
+  if (b.startVerse == null || b.endVerse == null) return false;
+  if (n.startVerse == null || n.endVerse == null) return false;
+  if (b.startVerse > n.startVerse) return false;
+  if (b.endVerse < n.endVerse) return false;
+  return b.startVerse < n.startVerse || b.endVerse > n.endVerse;
+}
+
 function normalizeText(text: string): string {
   return text.trim().toLowerCase().replace(/\s+/g, " ");
 }

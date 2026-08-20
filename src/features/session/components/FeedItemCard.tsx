@@ -1,11 +1,16 @@
 "use client";
 
 import { BookOpen, Quote } from "lucide-react";
-import type { ElementType } from "react";
+import { type ElementType, useEffect } from "react";
 import { AiIcon } from "@/features/session/components/AiIcon";
-import { useVerseFetch } from "@/features/session/hooks/useVerseFetch";
+import { PassageVerses } from "@/features/session/components/PassageVerses";
+import {
+  LIVE_READING_LOOKAHEAD_PREFETCH,
+  LIVE_READING_LOOKAHEAD_VISIBLE,
+} from "@/features/session/config";
+import { prefetchVerse, useVerseFetch } from "@/features/session/hooks/useVerseFetch";
 import type { FeedItem } from "@/lib/domain/feed";
-import { feedItemOrigin } from "@/lib/domain/feed";
+import { feedItemOrigin, parseVerseReference } from "@/lib/domain/feed";
 import { cn } from "@/lib/utils";
 
 /**
@@ -73,9 +78,14 @@ function isConcreteSource(source: string): boolean {
 export function FeedItemCard({
   item,
   onOpenVerse,
+  isActiveReading = false,
 }: {
   item: FeedItem;
   onOpenVerse: (reference: string) => void;
+  /** True only for the most recent citedVerse WHILE readingMode is on. Drives
+   * the sliding-window lookahead in ReadingPassage; when false, the passage
+   * renders exactly the extracted range with no speculative verses. */
+  isActiveReading?: boolean;
 }) {
   if (item.kind === "speakerHighlight") {
     return <HighlightBlock text={item.text} />;
@@ -117,7 +127,7 @@ export function FeedItemCard({
         {ChipIcon ? <ChipIcon className="size-3" /> : null}
         <span>{chip.label}</span>
       </div>
-      <FeedItemBody item={item} onOpenVerse={onOpenVerse} />
+      <FeedItemBody item={item} onOpenVerse={onOpenVerse} isActiveReading={isActiveReading} />
     </article>
   );
 
@@ -158,9 +168,9 @@ function HighlightBlock({ text }: { text: string }) {
 }
 
 /**
- * When the extract call couldn't return the verse text (either unknown to the
- * model or over a long range), fetch it lazily via /api/verse. Uses the shared
- * verseCache so repeat renders are free. Passing null skips the fetch entirely.
+ * When the extract call returns a relatedVerse (or another non-passage ref
+ * without inline text), fetch it lazily via /api/verse. Uses the shared
+ * verseCache so repeat renders are free. Passing null skips the fetch.
  */
 function VerseText({ reference, initialText }: { reference: string; initialText: string }) {
   const state = useVerseFetch(initialText ? null : reference);
@@ -181,12 +191,68 @@ function VerseText({ reference, initialText }: { reference: string; initialText:
   return null;
 }
 
+/**
+ * Wraps PassageVerses with a sliding-window strategy for LIVE reading:
+ * verses reveal in blocks of LOOKAHEAD_VISIBLE (not one at a time), and a
+ * second block is prefetched silently so the next expansion is instant.
+ * Extract emits progressively wider ranges as the pastor reads; this
+ * component computes how far the visible edge should be from the confirmed
+ * range end and delegates rendering to PassageVerses.
+ *
+ * The parent Feed keys citedVerse cards by book+chapter (feedItemStableKey),
+ * so this component stays mounted across range grows — only the individual
+ * verse lines mount/unmount as the passage extends.
+ */
+function ReadingPassage({
+  bookDisplay,
+  chapter,
+  startVerse,
+  extractedEndVerse,
+  isActive,
+}: {
+  bookDisplay: string;
+  chapter: number;
+  startVerse: number;
+  extractedEndVerse: number;
+  /** When false (reading ended, or another passage is now active), collapse
+   * back to exactly the extracted range — no lookahead, no prefetch. Ghost
+   * verses that never got read fade out. */
+  isActive: boolean;
+}) {
+  let visibleEnd: number;
+  if (isActive) {
+    const blockSize = LIVE_READING_LOOKAHEAD_VISIBLE;
+    const blocksToShow = Math.ceil(Math.max(1, extractedEndVerse - startVerse + 2) / blockSize);
+    visibleEnd = startVerse + blocksToShow * blockSize - 1;
+  } else {
+    visibleEnd = extractedEndVerse;
+  }
+
+  useEffect(() => {
+    if (!isActive) return;
+    for (let v = visibleEnd + 1; v <= visibleEnd + LIVE_READING_LOOKAHEAD_PREFETCH; v++) {
+      prefetchVerse(`${bookDisplay} ${chapter}:${v}`);
+    }
+  }, [bookDisplay, chapter, visibleEnd, isActive]);
+
+  return (
+    <PassageVerses
+      bookDisplay={bookDisplay}
+      chapter={chapter}
+      startVerse={startVerse}
+      endVerse={visibleEnd}
+    />
+  );
+}
+
 function FeedItemBody({
   item,
   onOpenVerse,
+  isActiveReading,
 }: {
   item: FeedItem;
   onOpenVerse: (reference: string) => void;
+  isActiveReading: boolean;
 }) {
   switch (item.kind) {
     case "citedVerse": {
@@ -195,8 +261,8 @@ function FeedItemBody({
       // label — no fetch (would return the entire chapter), no click (dialog
       // has nothing meaningful to show). dedupeConsecutiveChapters will remove
       // this once a verse-numbered ref for the same chapter arrives.
-      const hasVerseNumber = item.reference.includes(":");
-      if (!hasVerseNumber) {
+      const parsed = parseVerseReference(item.reference);
+      if (!parsed || parsed.startVerse == null || parsed.endVerse == null) {
         return (
           <span className="self-start inline-flex items-center rounded-md bg-foreground px-2 py-1 text-[0.7rem] font-semibold text-background">
             {item.reference}
@@ -215,7 +281,13 @@ function FeedItemBody({
           >
             {item.reference}
           </button>
-          <VerseText reference={item.reference} initialText={item.text} />
+          <ReadingPassage
+            bookDisplay={parsed.bookDisplay}
+            chapter={parsed.chapter}
+            startVerse={parsed.startVerse}
+            extractedEndVerse={parsed.endVerse}
+            isActive={isActiveReading}
+          />
         </>
       );
     }

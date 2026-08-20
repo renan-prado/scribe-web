@@ -1,4 +1,6 @@
 import { BookOpen } from "lucide-react";
+import { PassageVerses } from "@/features/session/components/PassageVerses";
+import { parseVerseReference } from "@/lib/domain/feed";
 import type { SummaryBlock } from "@/lib/domain/summary";
 
 export function blockKey(block: SummaryBlock): string {
@@ -34,7 +36,13 @@ export function BlockRenderer({ block }: { block: SummaryBlock }) {
           </p>
         </aside>
       );
-    case "bibleQuote":
+    case "bibleQuote": {
+      // Parse the range so we can render each verse as its own numbered
+      // paragraph (Bible-app style). Falls back to the LLM-provided monolithic
+      // text for chapter-only refs or unparseable references, where per-verse
+      // fetch would either explode (whole chapter) or fail (bad ref).
+      const parsed = parseVerseReference(block.reference);
+      const hasRange = parsed && parsed.startVerse != null && parsed.endVerse != null;
       return (
         <figure
           className="relative flex flex-col gap-5 rounded-3xl border border-border p-7 animate-insight-gradient"
@@ -49,13 +57,21 @@ export function BlockRenderer({ block }: { block: SummaryBlock }) {
               {block.reference}
             </span>
           </figcaption>
-          {block.text ? (
+          {hasRange ? (
+            <PassageVerses
+              bookDisplay={parsed.bookDisplay}
+              chapter={parsed.chapter}
+              startVerse={parsed.startVerse as number}
+              endVerse={parsed.endVerse as number}
+            />
+          ) : block.text ? (
             <blockquote className="pl-3 text-sm leading-relaxed text-foreground/90">
               {block.text}
             </blockquote>
           ) : null}
         </figure>
       );
+    }
     case "highlight":
       return (
         <figure className="my-4 px-4 text-center sm:px-8">

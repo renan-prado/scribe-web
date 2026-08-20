@@ -38,8 +38,8 @@ function pickMime(): MimeCandidate | null {
 }
 
 export function createRecorder(opts: RecorderOptions = {}): Recorder {
-  const minChunkMs = opts.minChunkMs ?? 20_000;
-  const maxChunkMs = opts.maxChunkMs ?? 45_000;
+  let minChunkMs = opts.minChunkMs ?? 20_000;
+  let maxChunkMs = opts.maxChunkMs ?? 45_000;
   const silenceThreshold = opts.silenceThreshold ?? 0.01;
   const silenceHoldMs = opts.silenceHoldMs ?? 400;
 
@@ -260,6 +260,14 @@ export function createRecorder(opts: RecorderOptions = {}): Recorder {
     },
     onFinalAudio(cb) {
       finalCb = cb;
+    },
+    setChunkTiming(next) {
+      if (typeof next.minChunkMs === "number" && next.minChunkMs > 0) {
+        minChunkMs = next.minChunkMs;
+      }
+      if (typeof next.maxChunkMs === "number" && next.maxChunkMs > 0) {
+        maxChunkMs = next.maxChunkMs;
+      }
     },
   };
 }
