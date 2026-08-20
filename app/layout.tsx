@@ -19,8 +19,8 @@ const firaMono = Fira_Mono({
 });
 
 export const metadata: Metadata = {
-  title: "scribe-web",
-  description: "scribe-web",
+  title: "Scribe",
+  description: "Transcrição e resumo de sermões em tempo real",
 };
 
 export default function RootLayout({ children }: LayoutProps<"/">) {
