@@ -9,6 +9,7 @@ import {
   DialogTitle,
 } from "@/components/ui/dialog";
 import { AudioPlayer } from "@/features/session/components/AudioPlayer";
+import { Feed } from "@/features/session/components/Feed";
 import { FinalizingOverlay } from "@/features/session/components/FinalizingOverlay";
 import { Greeting } from "@/features/session/components/Greeting";
 import { HiddenTabOverlay } from "@/features/session/components/HiddenTabOverlay";
@@ -19,36 +20,32 @@ import { StatusPhrases } from "@/features/session/components/StatusPhrases";
 import { SummaryView } from "@/features/session/components/SummaryView";
 import { TranscriptView } from "@/features/session/components/TranscriptView";
 import {
-  CONSOLIDATE_EVERY_N_CHUNKS,
-  CONSOLIDATE_PULSE_MS,
-  INSIGHTS_EVERY_N_CHUNKS,
+  EXTRACT_EVERY_N_CHUNKS,
+  EXTRACT_MIN_TAIL_DELTA_CHARS,
+  FEED_MIN_GAP_MS,
   RECENT_TRANSCRIPT_CHARS,
   RECORDER_MAX_CHUNK_MS,
   RECORDER_MIN_CHUNK_MS,
   RECORDER_SILENCE_HOLD_MS,
   RECORDER_SILENCE_THRESHOLD,
-  SUMMARY_EVERY_N_CHUNKS,
-  SUMMARY_WARMUP_CHUNKS,
+  SUGGEST_EVERY_N_CHUNKS,
+  SUGGEST_MIN_TAIL_DELTA_CHARS,
+  SUGGEST_WARMUP_CHUNKS,
 } from "@/features/session/config";
 import { useElapsedTimer } from "@/features/session/hooks/useElapsedTimer";
+import { prefetchVerse } from "@/features/session/hooks/useVerseFetch";
 import { useVisibilityWarning } from "@/features/session/hooks/useVisibilityWarning";
 import { useWakeLock } from "@/features/session/hooks/useWakeLock";
 import {
-  requestSummary as apiRequestSummary,
-  requestConsolidate,
-  requestInsights,
+  requestExtract,
+  requestFinalSummary,
+  requestSuggest,
   uploadChunkWithRetry,
 } from "@/features/session/lib/api";
 import { isSilentBlob } from "@/features/session/lib/audio";
-import {
-  applyProposalsToPayload,
-  collectAffectedIndices,
-  mergeInsights,
-  remapInsightsForProposals,
-} from "@/features/session/lib/proposals";
 import { tailSentences, tailTranscript } from "@/features/session/lib/text";
 import type { ChunkRow, FinalAudio, TranscriptState } from "@/features/session/types";
-import type { Insight } from "@/lib/domain/insights";
+import { type FeedItem, feedItemDedupKey } from "@/lib/domain/feed";
 import type { ChunkEvent, Recorder } from "@/lib/domain/recorder";
 import type { SummaryPayload } from "@/lib/domain/summary";
 import { createRecorder } from "@/lib/recorder";
@@ -58,25 +55,46 @@ export default function SpikePage() {
   const recorderRef = useRef<Recorder | null>(null);
   const chunksRef = useRef<Map<number, ChunkRow>>(new Map());
   const startedAtRef = useRef<number>(0);
-  const lastSummaryChunkRef = useRef(0);
-  const lastInsightsChunkRef = useRef(0);
-  const lastConsolidateChunkRef = useRef(0);
-  const pulseTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+  const lastExtractChunkRef = useRef(0);
+  const lastSuggestChunkRef = useRef(0);
+  // Length of the transcript tail last sent to each pipeline. Used to gate the
+  // next call: if the tail barely grew, the model already saw ~all of this
+  // text on the previous fire — skip and save the tokens.
+  const lastExtractTailLenRef = useRef(0);
+  const lastSuggestTailLenRef = useRef(0);
   const bottomRef = useRef<HTMLDivElement | null>(null);
+  // Drip queue: extract/suggest may return 2+ items at once; we release them
+  // to the visible feed one at a time with FEED_MIN_GAP_MS spacing so the
+  // listener has time to read each card. enqueuedAt lets us log lag from
+  // when the item was queued to when it actually appears in the feed.
+  const dripQueueRef = useRef<Array<{ item: FeedItem; enqueuedAt: number }>>([]);
+  const visibleKeysRef = useRef<Set<string>>(new Set());
+  const drainTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+  const lastAppendedAtRef = useRef(0);
+
+  // Session-level counters for the periodic rollup log.
+  const sessionCountersRef = useRef({
+    extractCalls: 0,
+    extractYield: 0,
+    suggestCalls: 0,
+    suggestYield: 0,
+    dedupSuppressed: 0,
+    skippedDelta: 0,
+  });
 
   const [running, setRunning] = useState(false);
   const [chunkRows, setChunkRows] = useState<ChunkRow[]>([]);
   const [finalAudio, setFinalAudio] = useState<FinalAudio | null>(null);
   const [startupError, setStartupError] = useState<string>("");
+  const [feedItems, setFeedItems] = useState<FeedItem[]>([]);
+  const [thinking, setThinking] = useState<string>("");
+  const [readingMode, setReadingMode] = useState<boolean>(false);
   const [summary, setSummary] = useState<SummaryPayload | null>(null);
   const [summaryTitle, setSummaryTitle] = useState("");
   const [recordingStartedAt, setRecordingStartedAt] = useState<Date | null>(null);
-  const [summarizing, setSummarizing] = useState(false);
+  const [extracting, setExtracting] = useState(false);
+  const [suggesting, setSuggesting] = useState(false);
   const [finalizing, setFinalizing] = useState(false);
-  const [insights, setInsights] = useState<Insight[]>([]);
-  const [insighting, setInsighting] = useState(false);
-  const [consolidating, setConsolidating] = useState(false);
-  const [pendingIndices, setPendingIndices] = useState<Set<number>>(() => new Set());
   const [transcriptOpen, setTranscriptOpen] = useState(false);
   const [audioOpen, setAudioOpen] = useState(false);
 
@@ -108,147 +126,170 @@ export default function SpikePage() {
 
   const isProcessing = useMemo(() => chunkRows.some((r) => r.status === "uploading"), [chunkRows]);
 
-  const requestSummaryAndCommit = useCallback(
-    async (body: Parameters<typeof apiRequestSummary>[0]): Promise<SummaryPayload | null> => {
-      const next = await apiRequestSummary(body);
-      if (!next) return null;
-      setSummary(next);
-      if (next.title) setSummaryTitle(next.title);
-      return next;
-    },
-    []
-  );
+  /**
+   * Release exactly one queued item to the visible feed. Called by
+   * enqueueFeedItems and re-scheduled by itself as long as the queue has
+   * more. Logs each release so the whole session can be inspected in
+   * devtools.
+   */
+  const drainOne = useCallback(() => {
+    drainTimerRef.current = null;
+    const entry = dripQueueRef.current.shift();
+    if (!entry) return;
+    const { item, enqueuedAt } = entry;
+    const key = feedItemDedupKey(item);
+    visibleKeysRef.current.add(key);
+    const lagMs = Date.now() - enqueuedAt;
+    console.log("[feed] +item", {
+      kind: item.kind,
+      key,
+      lagMs,
+      at: new Date().toISOString(),
+      item,
+    });
+    setFeedItems((prev) => [...prev, item]);
+    lastAppendedAtRef.current = Date.now();
+    if (dripQueueRef.current.length > 0) {
+      drainTimerRef.current = setTimeout(drainOne, FEED_MIN_GAP_MS);
+    }
+  }, []);
 
-  useEffect(() => {
-    // Only auto-summarize while the recording is live. Once stopped, any
-    // late-arriving chunk transcription must not overwrite the finalized
-    // summary (with its conclusion block).
-    if (!running || !transcript || summarizing || finalizing) return;
-    // Don't overwrite blocks while the consolidator is running or pulsing —
-    // any in-flight summary response would clobber the pending merge/refine
-    // that the user is being warned about.
-    if (consolidating || pendingIndices.size > 0) return;
-    const withinWarmup = okChunkCount > 0 && okChunkCount <= SUMMARY_WARMUP_CHUNKS;
-    const dueForSummary =
-      (withinWarmup || (okChunkCount > 0 && okChunkCount % SUMMARY_EVERY_N_CHUNKS === 0)) &&
-      lastSummaryChunkRef.current !== okChunkCount;
-    if (!dueForSummary) return;
-    lastSummaryChunkRef.current = okChunkCount;
-    setSummarizing(true);
-    const elapsedSec = Math.floor((performance.now() - startedAtRef.current) / 1000);
-    const previous = summary ?? undefined;
-    const recent = tailTranscript(transcript, RECENT_TRANSCRIPT_CHARS);
-    void requestSummaryAndCommit({ text: recent, elapsedSec, previous }).finally(() =>
-      setSummarizing(false)
-    );
-  }, [
-    running,
-    okChunkCount,
-    transcript,
-    summarizing,
-    finalizing,
-    summary,
-    requestSummaryAndCommit,
-    consolidating,
-    pendingIndices,
-  ]);
-
-  useEffect(() => {
-    if (!running || insighting) return;
-    if (consolidating || pendingIndices.size > 0) return;
-    const blocks = summary?.blocks ?? [];
-    if (blocks.length === 0) return;
-    const dueForInsights =
-      okChunkCount > 0 &&
-      okChunkCount % INSIGHTS_EVERY_N_CHUNKS === 0 &&
-      lastInsightsChunkRef.current !== okChunkCount;
-    if (!dueForInsights) return;
-    lastInsightsChunkRef.current = okChunkCount;
-    setInsighting(true);
-    const existingInsightIndices = insights.map((i) => i.targetBlockIndex);
-    const existingSupportingContent = insights
-      .filter((i) => i.type === "supportingContent")
-      .map((i) => ({
-        label: i.label,
-        text: i.text,
-        ...(i.source ? { source: i.source } : {}),
-      }));
-    const recent = tailTranscript(transcript, RECENT_TRANSCRIPT_CHARS);
-    void requestInsights({
-      text: recent,
-      blocks,
-      existingInsightIndices,
-      existingSupportingContent,
-    })
-      .then((incoming) => {
-        if (incoming.length > 0) setInsights((prev) => mergeInsights(prev, incoming));
-      })
-      .finally(() => setInsighting(false));
-  }, [
-    okChunkCount,
-    running,
-    transcript,
-    summary,
-    insighting,
-    insights,
-    consolidating,
-    pendingIndices,
-  ]);
-
-  const runConsolidate = useCallback(
-    async (opts: { isFinal?: boolean } = {}): Promise<void> => {
-      const currentBlocks = summary?.blocks ?? [];
-      if (currentBlocks.length < 3) return;
-      const paragraphCount = currentBlocks.filter((b) => b.type === "paragraph").length;
-      if (paragraphCount < 3) return;
-      setConsolidating(true);
-      try {
-        const proposals = await requestConsolidate({
-          blocks: currentBlocks,
-          isFinal: !!opts.isFinal,
-        });
-        if (proposals.length === 0) return;
-        const affected = collectAffectedIndices(proposals);
-        setPendingIndices(new Set(affected));
-        await new Promise<void>((resolve) => {
-          pulseTimerRef.current = setTimeout(() => {
-            pulseTimerRef.current = null;
-            resolve();
-          }, CONSOLIDATE_PULSE_MS);
-        });
-        setSummary((prev) => (prev ? applyProposalsToPayload(prev, proposals) : prev));
-        setInsights((prev) => remapInsightsForProposals(prev, proposals));
-        setPendingIndices(new Set());
-      } catch {
-        setPendingIndices(new Set());
-      } finally {
-        setConsolidating(false);
+  /**
+   * Enqueue new items and schedule the drip if it isn't already running.
+   * Dedup is checked against both the visible feed and the pending queue so
+   * repeat items from overlapping extract/suggest calls don't duplicate.
+   */
+  const enqueueFeedItems = useCallback(
+    (incoming: FeedItem[]) => {
+      if (incoming.length === 0) return;
+      let anyAdded = false;
+      const queuedKeys = new Set(dripQueueRef.current.map((e) => feedItemDedupKey(e.item)));
+      const now = Date.now();
+      for (const item of incoming) {
+        const key = feedItemDedupKey(item);
+        if (visibleKeysRef.current.has(key)) {
+          sessionCountersRef.current.dedupSuppressed++;
+          console.log("[feed] dedup-suppressed", {
+            kind: item.kind,
+            key,
+            reason: "already-visible",
+          });
+          continue;
+        }
+        if (queuedKeys.has(key)) {
+          sessionCountersRef.current.dedupSuppressed++;
+          console.log("[feed] dedup-suppressed", {
+            kind: item.kind,
+            key,
+            reason: "already-queued",
+          });
+          continue;
+        }
+        queuedKeys.add(key);
+        dripQueueRef.current.push({ item, enqueuedAt: now });
+        anyAdded = true;
+      }
+      if (!anyAdded) return;
+      if (drainTimerRef.current === null) {
+        const elapsed = Date.now() - lastAppendedAtRef.current;
+        const delay = Math.max(0, FEED_MIN_GAP_MS - elapsed);
+        drainTimerRef.current = setTimeout(drainOne, delay);
       }
     },
-    [summary]
+    [drainOne]
   );
 
+  // Extract pipeline — fires on every completed chunk. Its job is to surface
+  // things the speaker actually said (cited verses, verbatim highlights,
+  // attributed citations) with as little delay as possible.
   useEffect(() => {
-    if (!running || consolidating || summarizing || finalizing) return;
-    if (pendingIndices.size > 0) return;
-    const blocks = summary?.blocks ?? [];
-    if (blocks.length < 3) return;
-    const dueForConsolidate =
-      okChunkCount > 0 &&
-      okChunkCount % CONSOLIDATE_EVERY_N_CHUNKS === 0 &&
-      lastConsolidateChunkRef.current !== okChunkCount;
-    if (!dueForConsolidate) return;
-    lastConsolidateChunkRef.current = okChunkCount;
-    void runConsolidate();
+    if (!running || extracting || finalizing) return;
+    if (okChunkCount === 0) return;
+    if (okChunkCount % EXTRACT_EVERY_N_CHUNKS !== 0) return;
+    if (lastExtractChunkRef.current === okChunkCount) return;
+    const recent = tailTranscript(transcript, RECENT_TRANSCRIPT_CHARS);
+    const delta = transcript.length - lastExtractTailLenRef.current;
+    if (lastExtractTailLenRef.current > 0 && delta < EXTRACT_MIN_TAIL_DELTA_CHARS) {
+      lastExtractChunkRef.current = okChunkCount;
+      sessionCountersRef.current.skippedDelta++;
+      console.log("[extract] skip", { reason: "tail-delta", delta, tailLen: recent.length });
+      return;
+    }
+    lastExtractChunkRef.current = okChunkCount;
+    lastExtractTailLenRef.current = transcript.length;
+    setExtracting(true);
+    sessionCountersRef.current.extractCalls++;
+    const extractSermonAtMs = Math.max(0, performance.now() - startedAtRef.current);
+    void requestExtract({ text: recent, existingItems: feedItems, sermonAtMs: extractSermonAtMs })
+      .then(({ items, thinking: nextThinking, readingMode: nextReadingMode }) => {
+        sessionCountersRef.current.extractYield += items.length;
+        // Warm the verse cache the moment a citedVerse lands, before the drip
+        // queue releases it. The /api/verse call runs in parallel with the
+        // FEED_MIN_GAP_MS drip so the text is usually cached by the time the
+        // card renders — the user sees the verse without a skeleton flash.
+        for (const item of items) {
+          if (item.kind === "citedVerse" && !item.text && item.reference.includes(":")) {
+            prefetchVerse(item.reference);
+          }
+        }
+        enqueueFeedItems(items);
+        if (nextThinking) setThinking(nextThinking);
+        setReadingMode(nextReadingMode);
+        if (nextReadingMode !== readingMode) {
+          console.log("[feed] readingMode →", nextReadingMode);
+        }
+      })
+      .finally(() => setExtracting(false));
   }, [
-    okChunkCount,
     running,
-    summary,
-    consolidating,
-    summarizing,
+    okChunkCount,
+    transcript,
+    extracting,
     finalizing,
-    pendingIndices,
-    runConsolidate,
+    feedItems,
+    enqueueFeedItems,
+    readingMode,
+  ]);
+
+  // Suggest pipeline — slower cadence, needs more accumulated context before
+  // deciding whether a related verse / context / quote actually adds value.
+  // Paused entirely while readingMode is on: during Bible reading the listener
+  // should stay focused on the sacred text without AI enrichment competing
+  // for attention.
+  useEffect(() => {
+    if (!running || suggesting || finalizing) return;
+    if (readingMode) return;
+    if (okChunkCount < SUGGEST_WARMUP_CHUNKS) return;
+    if (okChunkCount % SUGGEST_EVERY_N_CHUNKS !== 0) return;
+    if (lastSuggestChunkRef.current === okChunkCount) return;
+    const recent = tailTranscript(transcript, RECENT_TRANSCRIPT_CHARS);
+    const delta = transcript.length - lastSuggestTailLenRef.current;
+    if (lastSuggestTailLenRef.current > 0 && delta < SUGGEST_MIN_TAIL_DELTA_CHARS) {
+      lastSuggestChunkRef.current = okChunkCount;
+      sessionCountersRef.current.skippedDelta++;
+      console.log("[suggest] skip", { reason: "tail-delta", delta, tailLen: recent.length });
+      return;
+    }
+    lastSuggestChunkRef.current = okChunkCount;
+    lastSuggestTailLenRef.current = transcript.length;
+    setSuggesting(true);
+    sessionCountersRef.current.suggestCalls++;
+    const suggestSermonAtMs = Math.max(0, performance.now() - startedAtRef.current);
+    void requestSuggest({ text: recent, existingItems: feedItems, sermonAtMs: suggestSermonAtMs })
+      .then((items) => {
+        sessionCountersRef.current.suggestYield += items.length;
+        enqueueFeedItems(items);
+      })
+      .finally(() => setSuggesting(false));
+  }, [
+    running,
+    okChunkCount,
+    transcript,
+    suggesting,
+    finalizing,
+    readingMode,
+    feedItems,
+    enqueueFeedItems,
   ]);
 
   const handleChunk = useCallback(
@@ -294,20 +335,32 @@ export default function SpikePage() {
     setStartupError("");
     setFinalAudio(null);
     setChunkRows([]);
+    setFeedItems([]);
+    setThinking("");
+    setReadingMode(false);
     setSummary(null);
     setSummaryTitle("");
     setRecordingStartedAt(new Date());
-    setInsights([]);
-    setPendingIndices(new Set());
-    setConsolidating(false);
-    if (pulseTimerRef.current) {
-      clearTimeout(pulseTimerRef.current);
-      pulseTimerRef.current = null;
-    }
-    lastSummaryChunkRef.current = 0;
-    lastInsightsChunkRef.current = 0;
-    lastConsolidateChunkRef.current = 0;
+    lastExtractChunkRef.current = 0;
+    lastSuggestChunkRef.current = 0;
+    lastExtractTailLenRef.current = 0;
+    lastSuggestTailLenRef.current = 0;
     chunksRef.current = new Map();
+    if (drainTimerRef.current) {
+      clearTimeout(drainTimerRef.current);
+      drainTimerRef.current = null;
+    }
+    dripQueueRef.current = [];
+    visibleKeysRef.current = new Set();
+    lastAppendedAtRef.current = 0;
+    sessionCountersRef.current = {
+      extractCalls: 0,
+      extractYield: 0,
+      suggestCalls: 0,
+      suggestYield: 0,
+      dedupSuppressed: 0,
+      skippedDelta: 0,
+    };
 
     const rec = createRecorder({
       minChunkMs: RECORDER_MIN_CHUNK_MS,
@@ -324,8 +377,11 @@ export default function SpikePage() {
     try {
       await rec.start();
       recorderRef.current = rec;
+      // Seed startedAtRef before flipping running=true so useElapsedTimer
+      // observes a valid origin on its first render.
       startedAtRef.current = performance.now();
       setRunning(true);
+      console.log("[session] start", { at: new Date().toISOString() });
     } catch (err) {
       setStartupError((err as Error).message ?? "failed to start");
     }
@@ -333,6 +389,12 @@ export default function SpikePage() {
 
   const stop = useCallback(async () => {
     if (!running) return;
+    const durationMs = Math.round(performance.now() - startedAtRef.current);
+    console.log("[session] stop", {
+      at: new Date().toISOString(),
+      durationMs,
+      ...sessionCountersRef.current,
+    });
     setRunning(false);
     await recorderRef.current?.stop();
     recorderRef.current = null;
@@ -347,70 +409,51 @@ export default function SpikePage() {
       .trim();
     if (!finalTranscript) return;
 
-    const elapsedSec = Math.floor((performance.now() - startedAtRef.current) / 1000);
-    const previous = summary ?? undefined;
     setFinalizing(true);
     try {
-      let finalPayload = await requestSummaryAndCommit({
+      const payload = await requestFinalSummary({
         text: finalTranscript,
-        isFinal: true,
-        elapsedSec,
-        previous,
+        feedItems,
       });
-      let localInsights = insights;
-      if (finalPayload && finalPayload.blocks.length >= 3) {
-        try {
-          const proposals = await requestConsolidate({
-            blocks: finalPayload.blocks,
-            isFinal: true,
-          });
-          if (proposals.length > 0) {
-            setPendingIndices(new Set(collectAffectedIndices(proposals)));
-            await new Promise<void>((resolve) => {
-              pulseTimerRef.current = setTimeout(() => {
-                pulseTimerRef.current = null;
-                resolve();
-              }, CONSOLIDATE_PULSE_MS);
-            });
-            const applied = applyProposalsToPayload(finalPayload, proposals);
-            setSummary(applied);
-            localInsights = remapInsightsForProposals(localInsights, proposals);
-            setInsights(localInsights);
-            setPendingIndices(new Set());
-            finalPayload = applied;
-          }
-        } catch {
-          setPendingIndices(new Set());
-        }
-      }
-      if (finalPayload && finalPayload.blocks.length > 0) {
-        const existingInsightIndices = localInsights.map((i) => i.targetBlockIndex);
-        const existingSupportingContent = localInsights
-          .filter((i) => i.type === "supportingContent")
-          .map((i) => ({
-            label: i.label,
-            text: i.text,
-            ...(i.source ? { source: i.source } : {}),
-          }));
-        const incoming = await requestInsights({
-          text: finalTranscript,
-          blocks: finalPayload.blocks,
-          existingInsightIndices,
-          existingSupportingContent,
-        });
-        if (incoming.length > 0) setInsights((prev) => mergeInsights(prev, incoming));
+      if (payload) {
+        setSummary(payload);
+        if (payload.title) setSummaryTitle(payload.title);
       }
     } finally {
       setFinalizing(false);
     }
-  }, [requestSummaryAndCommit, running, summary, insights]);
+  }, [running, feedItems]);
 
   useEffect(() => {
     return () => {
-      if (pulseTimerRef.current) clearTimeout(pulseTimerRef.current);
+      if (drainTimerRef.current) clearTimeout(drainTimerRef.current);
       void recorderRef.current?.stop();
     };
   }, []);
+
+  // Session rollup: log a one-line summary every 60s while recording so
+  // post-session analysis can see yield rates and waste at a glance.
+  useEffect(() => {
+    if (!running) return;
+    const id = setInterval(() => {
+      const elapsedSec = Math.round((performance.now() - startedAtRef.current) / 1000);
+      const m = Math.floor(elapsedSec / 60)
+        .toString()
+        .padStart(2, "0");
+      const s = (elapsedSec % 60).toString().padStart(2, "0");
+      const c = sessionCountersRef.current;
+      console.log("[session] rollup", {
+        at: `${m}:${s}`,
+        extractCalls: c.extractCalls,
+        extractYield: c.extractYield,
+        suggestCalls: c.suggestCalls,
+        suggestYield: c.suggestYield,
+        skippedDelta: c.skippedDelta,
+        dedupSuppressed: c.dedupSuppressed,
+      });
+    }, 60_000);
+    return () => clearInterval(id);
+  }, [running]);
 
   const hasStarted = running || chunkRows.length > 0 || finalAudio !== null;
   const transcriptState: TranscriptState = running
@@ -419,12 +462,14 @@ export default function SpikePage() {
       : "listening"
     : "idle";
 
-  // Keep the live "thinking" line in view whenever any part of the summary
-  // updates while we're still recording.
+  // Keep the "listening" status line in view whenever a new feed item lands
+  // while we're still recording. Scrolls also on thinking updates so the user
+  // always sees the latest AI note without hunting.
+  // biome-ignore lint/correctness/useExhaustiveDependencies: feedItems.length + thinking are intentional change-triggers, not read inside
   useEffect(() => {
-    if (!running || !summary) return;
+    if (!running) return;
     bottomRef.current?.scrollIntoView({ behavior: "smooth", block: "end" });
-  }, [summary, running]);
+  }, [running, feedItems.length, thinking]);
 
   return (
     <main
@@ -471,22 +516,24 @@ export default function SpikePage() {
           />
           <div className="h-px w-full bg-border" />
           <div className="flex-1">
-            <SummaryView
-              summary={summary}
-              insights={insights}
-              pendingIndices={pendingIndices}
-              hasTranscript={transcript.length > 0}
-              running={running}
-            />
+            {running || (!summary && !finalizing) ? (
+              <Feed
+                items={feedItems}
+                running={running}
+                hasTranscript={transcript.length > 0}
+                suggesting={suggesting}
+              />
+            ) : (
+              <SummaryView
+                summary={summary}
+                hasTranscript={transcript.length > 0}
+                running={running}
+              />
+            )}
           </div>
           {running ? (
             <div ref={bottomRef} className="pt-2 scroll-mb-24">
-              <StatusPhrases
-                hasSummary={
-                  !!summary && (summary.shortSummary.length > 0 || summary.blocks.length > 0)
-                }
-                thinking={summary?.thinking ?? ""}
-              />
+              <StatusPhrases hasSummary={feedItems.length > 0} thinking={thinking} />
             </div>
           ) : null}
 

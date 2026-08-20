@@ -10,7 +10,10 @@ This block is written and re-added by `next dev` — verify at `node_modules/nex
 
 # Project overview
 
-scribe-web is a live sermon/lecture transcription + summarization app. A recorder emits ~30s audio chunks that stream through five OpenAI-backed API routes (transcribe, summarize, consolidate, insights, verse, format-paragraphs) and land in a live-updating summary UI with block-level LLM insights and a bible-verse lookup dialog.
+scribe-web is a live sermon/lecture transcription + summarization app. A recorder emits ~30s audio chunks that stream through OpenAI-backed API routes:
+- LIVE (while recording): `transcribe` on every chunk, then `extract` (speaker-sourced feed items: cited verses, verbatim highlights, attributed citations) on every chunk and `suggest` (AI-authored enrichment: related verses, historical/exegetical context, suggested quotes) on a slower cadence. Items append to a scroll feed — nothing is rewritten.
+- FINAL (after stop): `final-summary` runs once, consuming the full transcript AND the curated feed items, producing the definitive structured summary rendered by SummaryView.
+- ALSO: `verse` (on-click bible lookup dialog) and `format-paragraphs` (transcript display).
 
 Stack: Next.js 16 (App Router), React 19, Supabase SSR, Tailwind v4 + shadcn/base-ui components, Biome, Zod.
 
@@ -18,14 +21,14 @@ Stack: Next.js 16 (App Router), React 19, Supabase SSR, Tailwind v4 + shadcn/bas
 
 ```
 app/
-  api/{transcribe,summarize,consolidate,insights,verse,format-paragraphs}/route.ts
+  api/{transcribe,extract,suggest,final-summary,verse,format-paragraphs}/route.ts
   spike/page.tsx                — the recording session page (orchestration only)
   page.tsx                      — landing that links to /spike
   layout.tsx, globals.css
 components/ui/                  — shadcn primitives (Dialog, DropdownMenu, Button)
 lib/
   env/{server,client}.ts        — Zod-parsed env vars (throw at import)
-  domain/{summary,consolidate,insights,verse,recorder}.ts
+  domain/{summary,feed,verse,recorder}.ts
                                 — shared types + Zod schemas + parseXxxFromLLM helpers
   llm/openai.ts                 — callChat / callTranscribe (Result<T>, AbortController timeout)
   prompts/*.ts                  — system prompts as exported constants
@@ -34,10 +37,12 @@ lib/
   vocabulario.ts                — biblical books + theology vocab for the STT prompt
   utils.ts                      — cn()
 src/features/session/
-  components/*.tsx              — every UI piece of the recording page
+  components/*.tsx              — every UI piece of the recording page (Feed + FeedItemCard
+                                  drive the live view; SummaryView renders the post-stop
+                                  final payload)
   hooks/                        — useElapsedTimer, useWakeLock, useVisibilityWarning, useVerseFetch
   lib/                          — audio (isSilentBlob), text (tail/format), chunks (grouping),
-                                  proposals (apply/remap), api (typed fetch wrappers)
+                                  api (typed fetch wrappers)
   config.ts                     — pacing constants (chunk cadences, warmup, timeouts)
   types.ts                      — ChunkRow, FinalAudio, TranscriptState, VerseFetchState
 ```
@@ -77,6 +82,10 @@ Do not add these unprompted (the user is aware and defers them):
 
 ## Behaviour-preservation guardrails
 
-The session page has three pipelines (summarize, insights, consolidate) coordinated by four flight-flag booleans (`summarizing`, `insighting`, `consolidating`, `finalizing`) and one pending-index set. The `useEffect` guard order matters — dropping or reordering guards can cause a summary response to clobber a pending consolidate merge. When touching `app/spike/page.tsx`, keep the guard predicates and dependency arrays intact unless the change is intentional.
+The session page has two live pipelines (`extract`, `suggest`) coordinated by flight-flag booleans (`extracting`, `suggesting`, `finalizing`) plus per-pipeline "last chunk fired" refs. Both pipelines are ADDITIVE — they only append to `feedItems`; nothing is rewritten or reordered mid-recording. Client-side dedup via `feedItemDedupKey` protects against equivalent items landing from overlapping calls. When touching `app/spike/page.tsx`, keep the guard predicates and dependency arrays intact unless the change is intentional.
+
+The final summary is single-shot: on stop, `/api/final-summary` runs once with the full transcript + accumulated `feedItems`. The prompt treats the feed as high-priority curated context (cited verses and speaker highlights must carry through; AI suggestions are kept only if they still fit the whole).
+
+Visual convention in the feed: cards for items ORIGINATED from the speaker (`citedVerse`, `speakerHighlight`, `speakerCitation`) use the quote-gradient surface; cards for AI-authored items (`relatedVerse`, `context`, `suggestedQuote`) use a dashed outlined surface. Origin is derived from `kind` via `feedItemOrigin`; do not add an explicit `origin` field.
 
 The recorder's `startedAtRef` is seeded by `start()` *before* flipping `setRunning(true)` so `useElapsedTimer` observes a valid origin on first render. Preserve this order.

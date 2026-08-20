@@ -1,7 +1,6 @@
-import type { Proposal } from "@/lib/domain/consolidate";
-import type { Insight } from "@/lib/domain/insights";
+import type { FeedItem } from "@/lib/domain/feed";
 import type { ChunkEvent } from "@/lib/domain/recorder";
-import type { SummaryPayload, SummaryPhase } from "@/lib/domain/summary";
+import type { SummaryPayload } from "@/lib/domain/summary";
 import type { VersePayload } from "@/lib/domain/verse";
 
 /**
@@ -9,23 +8,73 @@ import type { VersePayload } from "@/lib/domain/verse";
  * headers and body shapes so the page + hooks only speak in typed helpers.
  */
 
-export type SummarizeRequest = {
+/**
+ * POST /api/extract. Pulls speaker-sourced feed items (cited verses, speaker
+ * highlights, attributed citations) from the recent transcript tail. Also
+ * returns a transient `thinking` note the session view surfaces at the
+ * bottom while recording. Returns an empty result on network/parse errors
+ * so effects can no-op cleanly.
+ */
+export async function requestExtract(body: {
   text: string;
-  isFinal?: boolean;
-  phase?: SummaryPhase;
-  elapsedSec?: number;
-  previous?: SummaryPayload;
-};
+  existingItems: FeedItem[];
+  sermonAtMs?: number;
+}): Promise<{ items: FeedItem[]; thinking: string; readingMode: boolean }> {
+  try {
+    const res = await fetch("/api/extract", {
+      method: "POST",
+      headers: { "content-type": "application/json" },
+      body: JSON.stringify(body),
+    });
+    const payload = (await res.json()) as {
+      items?: FeedItem[];
+      thinking?: string;
+      readingMode?: boolean;
+    };
+    return {
+      items: Array.isArray(payload?.items) ? payload.items : [],
+      thinking: typeof payload?.thinking === "string" ? payload.thinking : "",
+      readingMode: payload?.readingMode === true,
+    };
+  } catch {
+    return { items: [], thinking: "", readingMode: false };
+  }
+}
 
 /**
- * POST /api/summarize. Normalizes the response so the caller always gets a
- * `SummaryPayload` shape (empty blocks + strings when the model returned
- * nothing useful). Returns null on network/parse errors so effects can
- * short-circuit without throwing.
+ * POST /api/suggest. AI-authored enrichment (related verses, context,
+ * suggested quotes) grounded in the current transcript. Same error handling
+ * shape as requestExtract.
  */
-export async function requestSummary(body: SummarizeRequest): Promise<SummaryPayload | null> {
+export async function requestSuggest(body: {
+  text: string;
+  existingItems: FeedItem[];
+  sermonAtMs?: number;
+}): Promise<FeedItem[]> {
   try {
-    const res = await fetch("/api/summarize", {
+    const res = await fetch("/api/suggest", {
+      method: "POST",
+      headers: { "content-type": "application/json" },
+      body: JSON.stringify(body),
+    });
+    const payload = (await res.json()) as { items?: FeedItem[] };
+    return Array.isArray(payload?.items) ? payload.items : [];
+  } catch {
+    return [];
+  }
+}
+
+/**
+ * POST /api/final-summary. Single-shot after the recording stops: feeds the
+ * full transcript and the curated live feed to the LLM and gets back the
+ * definitive SummaryPayload rendered by SummaryView.
+ */
+export async function requestFinalSummary(body: {
+  text: string;
+  feedItems: FeedItem[];
+}): Promise<SummaryPayload | null> {
+  try {
+    const res = await fetch("/api/final-summary", {
       method: "POST",
       headers: { "content-type": "application/json" },
       body: JSON.stringify(body),
@@ -41,38 +90,6 @@ export async function requestSummary(body: SummarizeRequest): Promise<SummaryPay
   } catch {
     return null;
   }
-}
-
-export async function requestInsights(body: {
-  text: string;
-  blocks: SummaryPayload["blocks"];
-  existingInsightIndices: number[];
-  existingSupportingContent: Array<{ label: string; text: string; source?: string }>;
-}): Promise<Insight[]> {
-  try {
-    const res = await fetch("/api/insights", {
-      method: "POST",
-      headers: { "content-type": "application/json" },
-      body: JSON.stringify(body),
-    });
-    const payload = (await res.json()) as { insights?: Insight[] };
-    return Array.isArray(payload?.insights) ? payload.insights : [];
-  } catch {
-    return [];
-  }
-}
-
-export async function requestConsolidate(body: {
-  blocks: SummaryPayload["blocks"];
-  isFinal?: boolean;
-}): Promise<Proposal[]> {
-  const res = await fetch("/api/consolidate", {
-    method: "POST",
-    headers: { "content-type": "application/json" },
-    body: JSON.stringify(body),
-  });
-  const payload = (await res.json()) as { proposals?: Proposal[] };
-  return Array.isArray(payload?.proposals) ? payload.proposals : [];
 }
 
 export async function requestVerse(

@@ -9,6 +9,23 @@ import type { VersePayload } from "@/lib/domain/verse";
 // is a fixed cost per reference. Persists across component remounts within
 // the same page load; cleared on navigation, which is fine.
 const verseCache = new Map<string, VersePayload>();
+const verseInFlight = new Map<string, Promise<void>>();
+
+/**
+ * Warm the cache for a reference ahead of render. Called from the extract
+ * pipeline the moment a citedVerse lands, so by the time the card is
+ * released from the drip queue useVerseFetch resolves instantly instead of
+ * hitting the API. Safe to call multiple times for the same ref — dedupes
+ * in-flight promises.
+ */
+export function prefetchVerse(reference: string): void {
+  if (verseCache.has(reference) || verseInFlight.has(reference)) return;
+  const promise = requestVerse(reference).then((result) => {
+    if (result.ok) verseCache.set(reference, result.payload);
+    verseInFlight.delete(reference);
+  });
+  verseInFlight.set(reference, promise);
+}
 
 /**
  * Fetch the text for a bible reference, using an in-module cache to keep

@@ -28,11 +28,23 @@ REGRAS ABSOLUTAS:
    - Se a referência é um capítulo inteiro (ex.: "Salmos 23", "Romanos 8") e o capítulo tem mais de 10 versículos, devolva "text" vazio (""). Não gere capítulos longos.
    - Capítulos curtos (≤ 10 versículos) podem ser devolvidos por inteiro, seguindo as regras de RANGES e INTEGRIDADE.
 
-5) INTEGRIDADE — VERSÍCULO COMPLETO
-   - "text" DEVE conter cada versículo (ou range) por COMPLETO.
-   - NUNCA devolva só a primeira oração/frase de um versículo longo (ex.: 2 Pe 1:4, Ef 2:8-10, Jo 3:16) como se fosse o versículo inteiro.
-   - Se precisar omitir um trecho (ex.: versículo excepcionalmente longo), sinalize a omissão com "[...]" no ponto exato do corte — no início ("[...] e nisto está o amor"), no meio, ou no fim.
-   - Se não tem certeza do texto completo, "text" vazio.
+5) INTEGRIDADE — VERSÍCULO COMPLETO (crítico — falha frequente)
+   - "text" DEVE conter cada versículo (ou range) por COMPLETO, do início ao fim de CADA versículo.
+   - Antes de responder, mentalmente confira: o ÚLTIMO versículo do range está inteiro? Nada foi cortado no meio?
+   - EXEMPLOS DE ERRO A EVITAR:
+     * Referência: "Salmos 119:1-3"
+       ❌ ERRADO: "Bem-aventurados os irrepreensíveis no seu caminho, que andam na lei do Senhor. Bem-aventurados os que guardam os seus testemunhos e o buscam de todo o coração, e não praticam iniquidade."
+         (v.3 truncado no meio — faltou "e andam nos seus caminhos")
+       ✅ CORRETO: "Bem-aventurados os irrepreensíveis no seu caminho, que andam na lei do Senhor. Bem-aventurados os que guardam os seus testemunhos e o buscam de todo o coração; não praticam iniquidade e andam nos seus caminhos."
+     * Referência: "Efésios 2:8-9"
+       ❌ ERRADO: "Porque pela graça sois salvos, por meio da fé; e isto não vem de vós."
+         (parou no meio do v.8, ignorou o resto do v.8 e todo o v.9)
+       ✅ CORRETO: "Porque pela graça sois salvos, por meio da fé; e isto não vem de vós, é dom de Deus. Não vem das obras, para que ninguém se glorie."
+     * Referência: "João 3:16"
+       ❌ ERRADO: "Porque Deus amou o mundo de tal maneira que deu o seu Filho unigênito."
+         (parou na metade — faltou "para que todo aquele que nele crê não pereça, mas tenha a vida eterna")
+   - Se precisar omitir um trecho por ser excepcionalmente longo, SINALIZE a omissão com "[...]" no ponto exato do corte — no início ("[...] e nisto está o amor"), no meio, ou no fim. Nunca corte silenciosamente.
+   - Se você não tem certeza absoluta do texto COMPLETO de algum versículo do range, "text" DEVE vir vazio. Melhor vazio do que truncado — o usuário confia que o que aparece está completo.
 
 6) REFERÊNCIA NORMALIZADA
    - "reference" usa nome COMPLETO do livro em português (ex.: "Efésios 2:8", não "Ef 2:8"; "1 Coríntios 13:4-7", não "1Co 13:4-7").
