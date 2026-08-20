@@ -7,12 +7,6 @@ export type ChunkRow = {
   startedAtMs: number;
 };
 
-export type FinalAudio = {
-  url: string;
-  extension: string;
-  sizeBytes: number;
-};
-
 export type TranscriptState = "listening" | "transcribing" | "idle";
 
 export type VerseFetchState =

@@ -103,20 +103,29 @@ export async function requestEcho(body: {
 export async function requestFinalSummary(body: {
   text: string;
   feedItems: FeedItem[];
-}): Promise<SummaryPayload | null> {
+  durationMs?: number;
+  speakerName?: string;
+  speakerLocation?: string;
+}): Promise<{ payload: SummaryPayload; sessionId: string | null } | null> {
   try {
     const res = await fetch("/api/final-summary", {
       method: "POST",
       headers: { "content-type": "application/json" },
       body: JSON.stringify(body),
     });
-    const payload = (await res.json()) as Partial<SummaryPayload> & { error?: string };
-    if (payload?.error) return null;
+    const raw = (await res.json()) as Partial<SummaryPayload> & {
+      error?: string;
+      sessionId?: string | null;
+    };
+    if (raw?.error) return null;
     return {
-      thinking: typeof payload.thinking === "string" ? payload.thinking : "",
-      title: typeof payload.title === "string" ? payload.title : "",
-      shortSummary: typeof payload.shortSummary === "string" ? payload.shortSummary : "",
-      blocks: Array.isArray(payload.blocks) ? payload.blocks : [],
+      payload: {
+        thinking: typeof raw.thinking === "string" ? raw.thinking : "",
+        title: typeof raw.title === "string" ? raw.title : "",
+        shortSummary: typeof raw.shortSummary === "string" ? raw.shortSummary : "",
+        blocks: Array.isArray(raw.blocks) ? raw.blocks : [],
+      },
+      sessionId: typeof raw.sessionId === "string" ? raw.sessionId : null,
     };
   } catch {
     return null;

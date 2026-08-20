@@ -1,4 +1,5 @@
 import { NextResponse } from "next/server";
+import { saveSession } from "@/lib/db/sessions";
 import type { FeedItem } from "@/lib/domain/feed";
 import { parseSummaryFromLLM } from "@/lib/domain/summary";
 import { serverEnv } from "@/lib/env/server";
@@ -19,7 +20,13 @@ export const dynamic = "force-dynamic";
 export async function POST(request: Request) {
   const model = serverEnv.OPENAI_FINAL_SUMMARY_MODEL;
 
-  let body: { text?: string; feedItems?: FeedItem[] };
+  let body: {
+    text?: string;
+    feedItems?: FeedItem[];
+    durationMs?: number;
+    speakerName?: string;
+    speakerLocation?: string;
+  };
   try {
     body = await request.json();
   } catch (err) {
@@ -89,5 +96,24 @@ export async function POST(request: Request) {
     });
   }
 
-  return NextResponse.json({ ...payload, latencyMs, model });
+  // Persist the session. Never fail the request if save fails — the user
+  // already sat through the recording; give them the summary, log the error
+  // for investigation.
+  let sessionId: string | null = null;
+  try {
+    sessionId = await saveSession({
+      transcript: text,
+      feedItems,
+      summary: payload,
+      durationMs: typeof body.durationMs === "number" ? body.durationMs : null,
+      speakerName: typeof body.speakerName === "string" ? body.speakerName.trim() || null : null,
+      speakerLocation:
+        typeof body.speakerLocation === "string" ? body.speakerLocation.trim() || null : null,
+    });
+    console.log("[final-summary] saved", { sessionId });
+  } catch (err) {
+    console.error("[final-summary] save failed", { error: (err as Error).message });
+  }
+
+  return NextResponse.json({ ...payload, latencyMs, model, sessionId });
 }

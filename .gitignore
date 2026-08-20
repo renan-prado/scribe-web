@@ -42,3 +42,7 @@ next-env.d.ts
 
 # local screenshots / working prints
 /public/prints/
+
+# supabase CLI local cache
+/supabase/.temp/
+/supabase/.branches/

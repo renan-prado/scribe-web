@@ -1,6 +1,6 @@
 "use client";
 
-import { MapPin, Pencil, User } from "lucide-react";
+import { Check, MapPin, Pencil, User } from "lucide-react";
 import { useEffect, useState } from "react";
 import { Button } from "@/components/ui/button";
 import {
@@ -87,6 +87,7 @@ export function RecordingHeader({
   onSpeakerNameChange,
   onSpeakerLocationChange,
   menu,
+  saved = false,
 }: {
   title: string;
   startedAt: Date | null;
@@ -97,6 +98,7 @@ export function RecordingHeader({
   onSpeakerNameChange: (name: string) => void;
   onSpeakerLocationChange: (location: string) => void;
   menu: React.ReactNode;
+  saved?: boolean;
 }) {
   const [nameDialogOpen, setNameDialogOpen] = useState(false);
   const [locationDialogOpen, setLocationDialogOpen] = useState(false);
@@ -131,20 +133,32 @@ export function RecordingHeader({
           {menu}
         </div>
 
-        <button
-          type="button"
-          onClick={() => setTitleDialogOpen(true)}
-          className="group -mx-1 rounded-md px-1 py-0.5 text-left transition-colors hover:bg-muted"
-        >
-          <h1
-            key={displayTitle}
-            className="animate-content-fade font-heading text-3xl font-bold leading-[1.1] tracking-tight text-foreground sm:text-4xl"
-            suppressHydrationWarning
+        <div className="flex flex-col items-start gap-2">
+          <button
+            type="button"
+            onClick={() => setTitleDialogOpen(true)}
+            className="group -mx-1 rounded-md px-1 py-0.5 text-left transition-colors hover:bg-muted"
           >
-            {displayTitle}
-            <Pencil className="ml-2 inline size-4 align-middle opacity-0 transition-opacity group-hover:opacity-40" />
-          </h1>
-        </button>
+            <h1
+              key={displayTitle}
+              className="animate-content-fade font-heading text-3xl font-bold leading-[1.1] tracking-tight text-foreground sm:text-4xl"
+              suppressHydrationWarning
+            >
+              {displayTitle}
+              <Pencil className="ml-2 inline size-4 align-middle opacity-0 transition-opacity group-hover:opacity-40" />
+            </h1>
+          </button>
+          {saved ? (
+            <span
+              role="status"
+              aria-label="Sessão salva"
+              className="animate-content-fade inline-flex items-center gap-1 rounded-full border border-emerald-200 bg-emerald-50 px-2 py-0.5 text-[0.65rem] font-medium tracking-wide text-emerald-700 uppercase dark:border-emerald-900/50 dark:bg-emerald-950/40 dark:text-emerald-300"
+            >
+              <Check className="size-3" />
+              Salvo
+            </span>
+          ) : null}
+        </div>
 
         <button
           type="button"

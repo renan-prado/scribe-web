@@ -1,6 +1,8 @@
 "use client";
 
+import { useRouter } from "next/navigation";
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
+import { toast } from "sonner";
 import {
   Dialog,
   DialogContent,
@@ -8,7 +10,6 @@ import {
   DialogHeader,
   DialogTitle,
 } from "@/components/ui/dialog";
-import { AudioPlayer } from "@/features/session/components/AudioPlayer";
 import { Feed } from "@/features/session/components/Feed";
 import { FinalizingOverlay } from "@/features/session/components/FinalizingOverlay";
 import { Greeting } from "@/features/session/components/Greeting";
@@ -52,7 +53,7 @@ import {
 } from "@/features/session/lib/api";
 import { isSilentBlob } from "@/features/session/lib/audio";
 import { tailSentences, tailTranscript } from "@/features/session/lib/text";
-import type { ChunkRow, FinalAudio, TranscriptState } from "@/features/session/types";
+import type { ChunkRow, TranscriptState } from "@/features/session/types";
 import {
   type FeedItem,
   feedItemDedupKey,
@@ -83,6 +84,7 @@ function pickEchoThreshold(): number {
 }
 
 function SpikePageInner() {
+  const router = useRouter();
   const recorderRef = useRef<Recorder | null>(null);
   const chunksRef = useRef<Map<number, ChunkRow>>(new Map());
   const startedAtRef = useRef<number>(0);
@@ -144,7 +146,6 @@ function SpikePageInner() {
 
   const [running, setRunning] = useState(false);
   const [chunkRows, setChunkRows] = useState<ChunkRow[]>([]);
-  const [finalAudio, setFinalAudio] = useState<FinalAudio | null>(null);
   const [startupError, setStartupError] = useState<string>("");
   const [feedItems, setFeedItems] = useState<FeedItem[]>([]);
   const [thinking, setThinking] = useState<string>("");
@@ -158,7 +159,8 @@ function SpikePageInner() {
   const [suggesting, setSuggesting] = useState(false);
   const [finalizing, setFinalizing] = useState(false);
   const [transcriptOpen, setTranscriptOpen] = useState(false);
-  const [audioOpen, setAudioOpen] = useState(false);
+  const [liveFeedOpen, setLiveFeedOpen] = useState(false);
+  const [sessionId, setSessionId] = useState<string | null>(null);
 
   const elapsedMs = useElapsedTimer(running, startedAtRef);
   useWakeLock({ enabled: running });
@@ -535,7 +537,7 @@ function SpikePageInner() {
   const start = useCallback(async () => {
     if (running) return;
     setStartupError("");
-    setFinalAudio(null);
+    setSessionId(null);
     setChunkRows([]);
     setFeedItems([]);
     setThinking("");
@@ -579,10 +581,6 @@ function SpikePageInner() {
       silenceHoldMs: RECORDER_SILENCE_HOLD_MS,
     });
     rec.onChunk(handleChunk);
-    rec.onFinalAudio((ev) => {
-      const url = URL.createObjectURL(ev.blob);
-      setFinalAudio({ url, extension: ev.extension, sizeBytes: ev.blob.size });
-    });
 
     try {
       await rec.start();
@@ -621,18 +619,34 @@ function SpikePageInner() {
 
     setFinalizing(true);
     try {
-      const payload = await requestFinalSummary({
+      const result = await requestFinalSummary({
         text: finalTranscript,
         feedItems,
+        durationMs,
+        speakerName,
+        speakerLocation,
       });
-      if (payload) {
-        setSummary(payload);
-        if (payload.title && !titleLockedByUserRef.current) setSummaryTitle(payload.title);
+      if (result) {
+        setSummary(result.payload);
+        if (result.payload.title && !titleLockedByUserRef.current) {
+          setSummaryTitle(result.payload.title);
+        }
+        if (result.sessionId) {
+          setSessionId(result.sessionId);
+          toast.success("Sessão salva", {
+            description: result.payload.title || "Resumo disponível no histórico.",
+          });
+          router.replace(`/session/${result.sessionId}`);
+        } else {
+          toast.error("Resumo pronto, mas o salvamento falhou.", {
+            description: "Verifique o log do servidor. Você ainda pode ver o resumo abaixo.",
+          });
+        }
       }
     } finally {
       setFinalizing(false);
     }
-  }, [running, feedItems]);
+  }, [running, feedItems, speakerName, speakerLocation, router]);
 
   useEffect(() => {
     return () => {
@@ -708,7 +722,7 @@ function SpikePageInner() {
     return () => clearInterval(id);
   }, [running]);
 
-  const hasStarted = running || chunkRows.length > 0 || finalAudio !== null;
+  const hasStarted = running || chunkRows.length > 0;
   const transcriptState: TranscriptState = running
     ? isProcessing
       ? "transcribing"
@@ -831,12 +845,13 @@ function SpikePageInner() {
             }}
             onSpeakerNameChange={setSpeakerName}
             onSpeakerLocationChange={setSpeakerLocation}
+            saved={sessionId !== null}
             menu={
               <SessionMenu
                 hasTranscript={transcript.length > 0}
-                hasAudio={finalAudio !== null}
+                hasLiveFeed={feedItems.length > 0}
                 onOpenTranscript={() => setTranscriptOpen(true)}
-                onOpenAudio={() => setAudioOpen(true)}
+                onOpenLiveFeed={() => setLiveFeedOpen(true)}
               />
             }
           />
@@ -881,13 +896,23 @@ function SpikePageInner() {
         </DialogContent>
       </Dialog>
 
-      <Dialog open={audioOpen} onOpenChange={setAudioOpen}>
-        <DialogContent className="sm:max-w-lg">
+      <Dialog open={liveFeedOpen} onOpenChange={setLiveFeedOpen}>
+        <DialogContent className="sm:max-w-2xl">
           <DialogHeader>
-            <DialogTitle>Áudio completo</DialogTitle>
-            <DialogDescription>Reprodução da gravação inteira.</DialogDescription>
+            <DialogTitle>Conteúdo do live</DialogTitle>
+            <DialogDescription>
+              Cartões extraídos e sugestões que apareceram durante a gravação.
+            </DialogDescription>
           </DialogHeader>
-          {finalAudio ? <AudioPlayer audio={finalAudio} /> : null}
+          <div className="max-h-[65vh] overflow-y-auto pr-2">
+            <Feed
+              items={feedItems}
+              running={false}
+              hasTranscript={transcript.length > 0}
+              suggesting={false}
+              readingMode={false}
+            />
+          </div>
         </DialogContent>
       </Dialog>
     </main>
