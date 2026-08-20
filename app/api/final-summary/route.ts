@@ -40,7 +40,11 @@ export async function POST(request: Request) {
   const result = await callChat({
     model,
     temperature: 0.2,
-    maxTokens: 4000,
+    // 4k was truncating dense 40-60min sermons (Nicodemus, expositional
+    // preaching): the finishReason=length warn was firing and the resumo
+    // was arriving cut short. 12k gives room for the resumo to grow
+    // proportionally to content density without capping doctrinal depth.
+    maxTokens: 12000,
     responseFormat: { type: "json_object" },
     messages: [
       { role: "system", content: FINAL_SUMMARY_SYSTEM_PROMPT },

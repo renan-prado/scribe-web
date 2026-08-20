@@ -17,10 +17,17 @@ FORMATO DE SAÍDA — retorne SOMENTE um objeto JSON válido, sem markdown ao re
 - "shortSummary" (1 a 5 linhas): a IDEIA CENTRAL enunciada como AFIRMAÇÃO sobre o tema. Sem meta ("A gravação fala…" / "O locutor destaca…" são PROIBIDOS).
 - "blocks": array ordenado. Cada bloco é um dos tipos abaixo. Em voz direta sobre a IDEIA — proibido meta.
 
+PROPORCIONALIDADE — CRÍTICO
+O tamanho do resumo é proporcional à DENSIDADE DE CONTEÚDO, não ao tempo de fala. Sinais de alta densidade que EXIGEM resumo mais longo:
+- muitos "citedVerse" no feed (exposição bíblica extensa, cross-references) → mais bibleQuotes;
+- muitas "speakerCitation" e "context" (pregador erudito citando pais da igreja, historiadores, teólogos) → mais quotes + paragraphs de contexto;
+- múltiplos argumentos exegéticos/doutrinários encadeados → múltiplas seções (h1/h2), não um parágrafo condensado.
+Uma pregação expositiva de 40-60 min de alguém como Nicodemus, Piper, MacArthur, Lopes tipicamente rende 12-25 blocks. Uma devocional curta rende 6-10. NUNCA comprima densidade doutrinária em "shortSummary + 5 parágrafos genéricos" — isso trai o conteúdo. Se o material pede seções extras, USE-AS: os limites abaixo são orientações, não caps rígidos.
+
 TIPOS DE BLOCO:
 
-- { "type": "h1", "text": "..." } — título de seção principal. 1 a 3 no total.
-- { "type": "h2", "text": "..." } — subtítulo. Com parcimônia.
+- { "type": "h1", "text": "..." } — título de seção principal. Use quantos o material pedir (tipicamente 2-5 numa pregação expositiva densa).
+- { "type": "h2", "text": "..." } — subtítulo dentro de uma seção. Use quando um h1 tem mais de um sub-argumento distinto.
 - { "type": "paragraph", "text": "..." } — parágrafo expositivo sobre a IDEIA. Como artigo sobre o TEMA, não como relato do que o locutor disse. Sem markdown, sem bullets.
 - { "type": "bibleQuote", "reference": "Livro Cap:Ver", "text": "..." } — versículo com texto bíblico real (ver REGRA DE OURO abaixo).
 - { "type": "highlight", "text": "..." } — frase de efeito do PRÓPRIO locutor, verbatim ou muito próximo. NÃO use para citação de terceiro (use "quote"). Sem aspas ao redor.
@@ -37,13 +44,14 @@ INTEGRIDADE: "text" DEVE conter o versículo/range COMPLETO. Se precisar omitir 
 NUNCA invente referência.
 
 USO DOS feedItems (crítico para coerência live→final)
-- Todo "citedVerse" do feed DEVE aparecer como "bibleQuote" no resumo final. O ouvinte já viu — não pode sumir.
-- "speakerHighlight" do feed idealmente vira "highlight" no resumo final (se ainda faz sentido no fluxo do texto).
-- "speakerCitation" do feed vira "quote" com o autor correto e um lead-in "paragraph" antes.
-- "relatedVerse" (sugestão da IA no live): se a conexão continua forte após ouvir a fala inteira, incorpore como "bibleQuote" (com o texto real, mesmo padrão). Se ficou fraco no contexto completo, DROPE.
-- "context" (sugestão da IA no live): se ainda ilumina o tema, incorpore como "paragraph" no ponto certo. Se ficou redundante, DROPE.
-- "suggestedQuote" (sugestão da IA no live): se relevante, incorpore como "quote" com lead-in. Senão, DROPE.
-- Você PODE adicionar bibleQuote/quote/paragraph NOVOS que não estavam no feed, se a transcrição completa revelou algo que só ficou claro no todo. Cautela — o filtro de qualidade do resumo final é ALTO.
+POSTURA PADRÃO: PRESERVE. Os feedItems são o "highlight reel" curado da sessão — o ouvinte investiu atenção neles ao vivo. Dropar deve ser exceção justificada (redundância clara, contradição pela fala inteira, ou sugestão que envelheceu mal), não a atitude padrão.
+- Todo "citedVerse" do feed DEVE aparecer como "bibleQuote" no resumo final. OBRIGATÓRIO — o ouvinte já viu, não pode sumir.
+- Todo "speakerHighlight" do feed DEVE virar "highlight" no resumo final. Se dois highlights dizem essencialmente a mesma coisa, mantenha o mais forte.
+- Todo "speakerCitation" do feed DEVE virar "quote" com o autor correto e um lead-in "paragraph" antes.
+- "relatedVerse" (sugestão da IA no live): PRESERVE por padrão como "bibleQuote" com o texto real. Só drope se a fala inteira mostrou que a conexão era superficial ou contraditória.
+- "context" (sugestão da IA no live): PRESERVE por padrão como "paragraph" no ponto certo do fluxo — esses trazem enriquecimento histórico/exegético que o pregador não explicitou mas o ouvinte já absorveu. Só drope se claramente redundante com outra passagem do resumo.
+- "suggestedQuote" (sugestão da IA no live): PRESERVE por padrão como "quote" com lead-in. Só drope se a atribuição ficou duvidosa no todo.
+- Você DEVE adicionar bibleQuote/quote/paragraph NOVOS que não estavam no feed quando a transcrição completa revelou algo que só ficou claro no todo — argumento exegético central, aplicação prática forte, conexão doutrinária que atravessa a fala. Não seja tímido: pregadores densos merecem resumos densos.
 
 DISCERNIMENTO DE TEMA
 - O tema real é normalmente um PERSONAGEM, TEXTO ou DOUTRINA BÍBLICA — não a anedota de abertura.
