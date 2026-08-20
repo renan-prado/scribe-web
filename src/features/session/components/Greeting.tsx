@@ -43,7 +43,9 @@ export function Greeting() {
       >
         {time || " "}
       </span>
-      <h1 className="text-3xl font-bold tracking-tight text-foreground sm:text-4xl">Olá, Renan!</h1>
+      <h1 className="text-3xl font-bold tracking-tight text-foreground sm:text-4xl">
+        Olá, tudo bem?
+      </h1>
       <p className="max-w-md text-balance text-base font-normal leading-relaxed text-muted-foreground">
         Transforme qualquer <strong className="font-semibold text-foreground">sermão</strong>,{" "}
         <strong className="font-semibold text-foreground">aula da EBD</strong>,{" "}
