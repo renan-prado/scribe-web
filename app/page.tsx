@@ -3,6 +3,7 @@ import { revalidatePath } from "next/cache";
 import Link from "next/link";
 import { deleteSession, listSessions } from "@/lib/db/sessions";
 import { cn } from "@/lib/utils";
+import { RefreshSessionsButton } from "./RefreshSessionsButton";
 
 async function deleteSessionAction(formData: FormData): Promise<void> {
   "use server";
@@ -49,17 +50,20 @@ export default async function HomePage() {
             Transcrições, resumos e cartões extraídos de sermões gravados.
           </p>
         </div>
-        <Link
-          href="/spike"
-          className={cn(
-            "inline-flex items-center justify-center gap-2 self-stretch rounded-full bg-primary px-4 py-2.5 text-sm font-medium text-primary-foreground shadow-sm sm:self-start sm:py-2",
-            "transition-transform hover:scale-[1.02] active:scale-95",
-            "focus-visible:outline-none focus-visible:ring-4 focus-visible:ring-ring/40"
-          )}
-        >
-          <Plus className="size-4" />
-          Nova gravação
-        </Link>
+        <div className="flex items-center gap-2 self-stretch sm:self-start">
+          <RefreshSessionsButton />
+          <Link
+            href="/spike"
+            className={cn(
+              "inline-flex flex-1 items-center justify-center gap-2 whitespace-nowrap rounded-full bg-primary px-4 py-2.5 text-sm font-medium text-primary-foreground shadow-sm sm:flex-initial sm:py-2",
+              "transition-transform hover:scale-[1.02] active:scale-95",
+              "focus-visible:outline-none focus-visible:ring-4 focus-visible:ring-ring/40"
+            )}
+          >
+            <Plus className="size-4" />
+            Nova gravação
+          </Link>
+        </div>
       </header>
 
       {loadError ? (
