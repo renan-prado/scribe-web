@@ -4,6 +4,7 @@ import { type FeedItem, feedItemDedupKey, parseEchoFromLLM } from "@/lib/domain/
 import { serverEnv } from "@/lib/env/server";
 import { buildLlmMetadata } from "@/lib/llm/metadata";
 import { callChat } from "@/lib/llm/openai";
+import { devLog } from "@/lib/log";
 import { SERMON_ECHO_SYSTEM_PROMPT } from "@/lib/prompts/sermon-echo";
 import { requireAuth } from "@/lib/supabase/require-auth";
 
@@ -89,7 +90,7 @@ export async function POST(request: Request) {
     if (d.reason === "dedup") continue;
     console.warn("[echo] schema-drop", d);
   }
-  console.log("[echo] ok", {
+  devLog("[echo] ok", {
     sermonAt,
     model,
     latencyMs,

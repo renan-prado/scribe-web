@@ -6,6 +6,7 @@ import { parseSummaryFromLLM } from "@/lib/domain/summary";
 import { serverEnv } from "@/lib/env/server";
 import { buildLlmMetadata } from "@/lib/llm/metadata";
 import { callChat } from "@/lib/llm/openai";
+import { devLog } from "@/lib/log";
 import { FINAL_SUMMARY_SYSTEM_PROMPT } from "@/lib/prompts/final-summary";
 import { requireAuth } from "@/lib/supabase/require-auth";
 
@@ -94,7 +95,7 @@ export async function POST(request: Request) {
   const { content, finishReason, usage, latencyMs } = result.data;
   const payload = parseSummaryFromLLM(content, "final");
 
-  console.log("[final-summary] ok", {
+  devLog("[final-summary] ok", {
     latencyMs,
     finishReason,
     promptTokens: usage.promptTokens,
@@ -132,7 +133,7 @@ export async function POST(request: Request) {
         typeof body.speakerLocation === "string" ? body.speakerLocation.trim() || null : null,
     });
     saved = true;
-    console.log("[final-summary] saved", { sessionId });
+    devLog("[final-summary] saved", { sessionId });
   } catch (err) {
     console.error("[final-summary] save failed", { sessionId, error: (err as Error).message });
   }

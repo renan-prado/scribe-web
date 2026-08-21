@@ -1,5 +1,6 @@
 import { NextResponse } from "next/server";
 import { updateSessionMeta } from "@/lib/db/sessions";
+import { devLog } from "@/lib/log";
 import { requireAuth } from "@/lib/supabase/require-auth";
 
 export const runtime = "nodejs";
@@ -32,7 +33,7 @@ export async function PATCH(request: Request, { params }: { params: Promise<{ id
 
   try {
     await updateSessionMeta(id, { title, speakerName, speakerLocation });
-    console.log("[sessions] meta updated", { id });
+    devLog("[sessions] meta updated", { id });
     return NextResponse.json({ ok: true });
   } catch (err) {
     console.error("[sessions] meta update failed", { id, error: (err as Error).message });

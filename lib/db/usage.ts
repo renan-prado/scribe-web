@@ -23,8 +23,8 @@ import { createClient } from "@/lib/supabase/server";
  */
 
 export type UsageRoute =
-  | "extract"
-  | "suggest"
+  | "bible"
+  | "insights"
   | "sermon-echo"
   | "final-summary"
   | "format-paragraphs"

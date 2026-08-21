@@ -2,6 +2,7 @@ import { NextResponse } from "next/server";
 import { AVAILABLE_TRANSLATIONS, isAvailableTranslation, loadBible } from "@/lib/bibles/loader";
 import { lookupVerse } from "@/lib/bibles/lookup";
 import { parseVerseReference } from "@/lib/domain/feed";
+import { devLog } from "@/lib/log";
 import { requireAuth } from "@/lib/supabase/require-auth";
 
 export type { VersePayload } from "@/lib/domain/verse";
@@ -54,14 +55,14 @@ export async function POST(request: Request) {
     );
     if (text) {
       if (truncated) {
-        console.log("[verse] truncated", { reference, translation: t, requested });
+        devLog("[verse] truncated", { reference, translation: t, requested });
       } else {
-        console.log("[verse] ok", { reference, translation: t, requested, chars: text.length });
+        devLog("[verse] ok", { reference, translation: t, requested, chars: text.length });
       }
       return NextResponse.json({ reference, text, translation: t });
     }
   }
 
-  console.log("[verse] miss", { reference, requested, available: AVAILABLE_TRANSLATIONS });
+  devLog("[verse] miss", { reference, requested, available: AVAILABLE_TRANSLATIONS });
   return NextResponse.json({ reference, text: "", translation: requested });
 }

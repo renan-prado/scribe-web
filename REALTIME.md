@@ -2,9 +2,9 @@
 
 ## Contexto
 
-A arquitetura atual é chunk-based: o MediaRecorder acumula 20–45s de áudio, envia para Whisper via REST, e só então extract/suggest disparam. Isso cria um lag mínimo de 20s entre o pastor falar e o card aparecer na tela.
+A arquitetura atual é chunk-based: o MediaRecorder acumula 20–45s de áudio, envia para Whisper via REST, e só então bible/insights disparam. Isso cria um lag mínimo de 20s entre o pastor falar e o card aparecer na tela.
 
-O problema ficou evidente quando o pastor leu João 4:7 e nenhum `citedVerse` apareceu durante a leitura — o extract só veria esse trecho no próximo chunk.
+O problema ficou evidente quando o pastor leu João 4:7 e nenhum `citedVerse` apareceu durante a leitura — o `bible` só veria esse trecho no próximo chunk.
 
 A Opção A (chunks de 8s) atenua o problema mas não resolve a raiz. A Opção B resolve.
 
@@ -32,8 +32,9 @@ Browser
   ← transcrição parcial (words) em tempo real
   ← transcrição finalizada (por silêncio VAD ou por frase)
 
-Extract/suggest disparam sobre o texto acumulado a cada N caracteres novos
-ou a cada "frase finalizada" detectada pelo VAD da API.
+Bible/insights disparam sobre o texto acumulado (bible ainda gated por
+regex, insights ainda por intervalo) ou a cada "frase finalizada"
+detectada pelo VAD da API.
 ```
 
 ### Eventos relevantes da Realtime API
@@ -41,9 +42,9 @@ ou a cada "frase finalizada" detectada pelo VAD da API.
 | Evento | Quando | Uso |
 |--------|--------|-----|
 | `input_audio_transcription.delta` | A cada palavra | Atualizar transcript em tela |
-| `input_audio_transcription.completed` | Fim de turno/silêncio | Disparar extract |
+| `input_audio_transcription.completed` | Fim de turno/silêncio | Disparar bible/insights |
 | `input_audio_buffer.speech_started` | VAD detecta fala | Indicador visual |
-| `input_audio_buffer.speech_stopped` | VAD detecta silêncio | Gate para extract |
+| `input_audio_buffer.speech_stopped` | VAD detecta silêncio | Gate para bible/insights |
 
 ### Custo
 
@@ -54,9 +55,9 @@ ou a cada "frase finalizada" detectada pelo VAD da API.
 
 ### O que NÃO muda
 
-- `/api/extract`, `/api/suggest`, `/api/verse`, `/api/final-summary` — todos ficam iguais
+- `/api/bible`, `/api/insights`, `/api/verse`, `/api/final-summary` — todos ficam iguais
 - Prompts, domain types, feed, SummaryView — sem alteração
-- O trigger do extract muda de "chunk completado" para "N chars acumulados desde último extract" ou "frase finalizada"
+- O trigger do bible muda de "chunk completado" para "N chars acumulados desde último bible" ou "frase finalizada" (mantendo o regex-gate). Insights continua tempo-based.
 
 ### Riscos e mitigações
 
@@ -64,7 +65,7 @@ ou a cada "frase finalizada" detectada pelo VAD da API.
 |-------|-----------|
 | WebSocket cai no meio do sermão | Reconexão automática com backoff; último transcript salvo em ref |
 | Next.js App Router não suporta WebSocket nativo | Usar `server.upgrade()` no custom server, ou separar num servidor Node simples para a rota Realtime |
-| Transcrição parcial (delta) gera extração prematura | Só disparar extract em `transcription.completed` (fim de turno), não em deltas |
+| Transcrição parcial (delta) gera extração prematura | Só disparar bible/insights em `transcription.completed` (fim de turno), não em deltas |
 | Latência de ida e volta WebSocket adicional | Negligível (~50ms) frente ao ganho de 20s+ eliminado |
 
 ### Pré-requisitos técnicos
@@ -78,7 +79,7 @@ ou a cada "frase finalizada" detectada pelo VAD da API.
 
 1. Spike: conectar AudioWorklet → WebSocket → Realtime API e logar transcrições
 2. Integrar com o transcript state (substituir `chunkRows` por streaming de texto)
-3. Rewire os triggers de extract/suggest para `transcription.completed`
+3. Rewire os triggers de bible/insights para `transcription.completed` (bible continua atrás do regex-gate; insights continua com intervalo)
 4. Remover `/api/transcribe` (ou manter como fallback offline)
 5. Testar com sermão real de 30+ min
 

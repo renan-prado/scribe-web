@@ -1,5 +1,6 @@
 import { NextResponse } from "next/server";
 import { createEmptySession } from "@/lib/db/sessions";
+import { devLog } from "@/lib/log";
 import { requireAuth } from "@/lib/supabase/require-auth";
 
 export const runtime = "nodejs";
@@ -32,7 +33,7 @@ export async function POST(request: Request) {
 
   try {
     const id = await createEmptySession({ speakerName, speakerLocation });
-    console.log("[sessions] created", { id });
+    devLog("[sessions] created", { id });
     return NextResponse.json({ id });
   } catch (err) {
     console.error("[sessions] create failed", { error: (err as Error).message });
