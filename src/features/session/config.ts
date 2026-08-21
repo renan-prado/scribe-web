@@ -39,13 +39,13 @@ export const RECENT_TRANSCRIPT_CHARS = 2500;
 
 /**
  * Minimum growth of the transcript tail (in chars) between two extract/suggest
- * calls. With 12s chunks a speaker produces ~120–180 chars of speech; the
- * threshold is set below that floor so meaningful growth still fires. Raised
- * from 40 → 120 because extract was firing on chunks that added almost no
- * new material and burning tokens for no yield.
+ * calls. With 8s chunks a speaker produces ~80–120 chars of speech, so the
+ * thresholds are set below that floor to avoid skipping real content.
+ * Extract fires every chunk; suggest every 2 chunks (~16s) so its bar is
+ * slightly higher to avoid firing on almost-identical context.
  */
-export const EXTRACT_MIN_TAIL_DELTA_CHARS = 120;
-export const SUGGEST_MIN_TAIL_DELTA_CHARS = 240;
+export const EXTRACT_MIN_TAIL_DELTA_CHARS = 40;
+export const SUGGEST_MIN_TAIL_DELTA_CHARS = 160;
 
 /**
  * Every time the visible feed accumulates a run of this many AI-authored
@@ -70,20 +70,20 @@ export const ECHO_MIN_TAIL_DELTA_CHARS = 200;
  */
 export const FEED_MIN_GAP_MS = 60000; // 60s
 
-// Chunk cadence trades cost for feed latency. Raised from 8s→12s min and
-// 30s→40s max after profiling showed extract dominated cost with only
-// marginal freshness benefit at the tighter cadence — the FEED_MIN_GAP_MS
-// drip already spaces cards at 60s, so firing extract every 8s just wasted
-// tokens on chunks that never made it to the user faster.
-export const RECORDER_MIN_CHUNK_MS = 12_000;
-export const RECORDER_MAX_CHUNK_MS = 40_000;
+// Smaller chunks reduce the lag between the speaker saying something and the
+// first extract/suggest firing on it. 8s min gives Whisper enough audio to
+// transcribe accurately while keeping latency under 10s in practice.
+// Max stays at 20s so a sentence that runs long doesn't wait indefinitely.
+export const RECORDER_MIN_CHUNK_MS = 8_000;
+export const RECORDER_MAX_CHUNK_MS = 30_000;
 
-// Reading mode still cuts smaller so the passage card can grow verse-by-verse
-// in near-real time, but bumped from 4s→6s min and 8s→12s max to match the
-// same cost-tightening pass. Whisper still gets enough audio since reading
-// cadence is slow and diction is deliberate.
-export const RECORDER_MIN_CHUNK_MS_READING = 6_000;
-export const RECORDER_MAX_CHUNK_MS_READING = 12_000;
+// While the speaker is reading Scripture verbatim (readingMode=true), the
+// listener is watching a single verse card grow to match the passage being
+// read. Cutting chunks sooner lets the extract fire more often on each new
+// verse, so the range card catches up in near-real time. Whisper still gets
+// enough audio because reading cadence is slow and diction is deliberate.
+export const RECORDER_MIN_CHUNK_MS_READING = 4_000;
+export const RECORDER_MAX_CHUNK_MS_READING = 8_000;
 
 // During an active reading, the passage card silently prefetches this many
 // verses beyond the confirmed end so that when extract grows the range, the
