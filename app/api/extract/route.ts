@@ -53,7 +53,7 @@ export async function POST(request: Request) {
   const result = await callChat({
     model,
     temperature: 0.3,
-    maxTokens: 1200,
+    maxTokens: 800,
     responseFormat: { type: "json_object" },
     messages: [
       { role: "system", content: EXTRACT_SYSTEM_PROMPT },
@@ -129,11 +129,18 @@ function formatSermonAt(ms: number | undefined): string {
 
 /**
  * Compact the existing feed into just what the extract prompt needs to dedup.
- * We cap highlights + citations to the most recent N — older ones almost never
- * come up again in the model's current-window emissions, and pruning keeps
- * prompt tokens bounded as the session grows. citedVerses stay full because
- * the "contido-em" range dedup rule needs the whole history.
+ * All three kinds are windowed to the most recent N: the LLM's window is
+ * "what the speaker is talking about now", so a verse dropped 20 minutes
+ * ago is unlikely to come up again — and if it does, client-side dedup
+ * (feedItemDedupKey + referenceStrictlyContains) catches the duplicate
+ * before it renders. Windowing keeps prompt tokens bounded as the session
+ * grows, which was the single biggest cost lever profiled on /extract.
+ *
+ * citedVerses gets a larger window than highlights/citations because verses
+ * tend to be re-referenced across sections of a sermon (intro → application),
+ * so keeping more history helps the LLM avoid re-emitting them.
  */
+const CITED_VERSES_WINDOW = 24;
 const RECENT_DEDUP_WINDOW = 12;
 
 function summarizeExistingForPrompt(items: FeedItem[]) {
@@ -147,7 +154,7 @@ function summarizeExistingForPrompt(items: FeedItem[]) {
       speakerCitations.push({ author: it.author, text: it.text });
   }
   return {
-    citedVerses,
+    citedVerses: citedVerses.slice(-CITED_VERSES_WINDOW),
     speakerHighlights: speakerHighlights.slice(-RECENT_DEDUP_WINDOW),
     speakerCitations: speakerCitations.slice(-RECENT_DEDUP_WINDOW),
   };
