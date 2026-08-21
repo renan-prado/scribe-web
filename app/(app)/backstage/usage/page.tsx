@@ -9,6 +9,7 @@ import {
   TableHeader,
   TableRow,
 } from "@/components/ui/table";
+import { FxRateBadge } from "@/features/admin/components/FxRateBadge";
 import { UsageFilters } from "@/features/admin/components/UsageFilters";
 import {
   type AdminUsageSummary,
@@ -16,22 +17,12 @@ import {
   loadAdminUsageSummary,
   type UsageFilters as UsageFiltersType,
 } from "@/lib/db/admin/usage";
+import { type MoneyFormatter, makeMoneyFormatter } from "@/lib/fx/format";
+import { getUsdToBrl } from "@/lib/fx/usd-brl";
 
 export const metadata: Metadata = { title: "Uso & custos — Backstage" };
 export const dynamic = "force-dynamic";
 
-const USD = new Intl.NumberFormat("en-US", {
-  style: "currency",
-  currency: "USD",
-  minimumFractionDigits: 4,
-  maximumFractionDigits: 4,
-});
-const USD2 = new Intl.NumberFormat("en-US", {
-  style: "currency",
-  currency: "USD",
-  minimumFractionDigits: 2,
-  maximumFractionDigits: 2,
-});
 const INT = new Intl.NumberFormat("pt-BR");
 const DATE_FMT = new Intl.DateTimeFormat("pt-BR", {
   day: "2-digit",
@@ -85,11 +76,13 @@ export default async function BackstageUsagePage({
     sessionId: sp.sessionId?.trim() || undefined,
   };
 
-  const [summary, users] = await Promise.all([
+  const [summary, users, rate] = await Promise.all([
     loadAdminUsageSummary(filters),
     listUsersForFilter(),
+    getUsdToBrl(),
   ]);
 
+  const money = makeMoneyFormatter(rate);
   const routeUniverse: string[] =
     summary.routes.length > 0
       ? summary.routes
@@ -108,14 +101,15 @@ export default async function BackstageUsagePage({
         }}
       />
 
-      <TotalsGrid summary={summary} />
-      <RouteAndUserTables summary={summary} />
-      <SessionsTable summary={summary} />
+      <TotalsGrid summary={summary} money={money} />
+      <RouteAndUserTables summary={summary} money={money} />
+      <SessionsTable summary={summary} money={money} />
+      <FxRateBadge rate={rate} />
     </div>
   );
 }
 
-function TotalsGrid({ summary }: { summary: AdminUsageSummary }) {
+function TotalsGrid({ summary, money }: { summary: AdminUsageSummary; money: MoneyFormatter }) {
   const { totals, overallCostPerMinuteUsd } = summary;
   return (
     <section className="grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
@@ -126,7 +120,7 @@ function TotalsGrid({ summary }: { summary: AdminUsageSummary }) {
           </CardTitle>
         </CardHeader>
         <CardContent>
-          <div className="text-2xl font-semibold">{USD2.format(totals.totalCostUsd)}</div>
+          <div className="text-2xl font-semibold">{money(totals.totalCostUsd)}</div>
           <p className="mt-1 text-xs text-muted-foreground">
             {INT.format(totals.totalEvents)} chamadas
           </p>
@@ -161,12 +155,12 @@ function TotalsGrid({ summary }: { summary: AdminUsageSummary }) {
       <Card>
         <CardHeader>
           <CardTitle className="text-xs font-medium uppercase tracking-wider text-muted-foreground/70">
-            $/min gravado
+            Custo por minuto gravado
           </CardTitle>
         </CardHeader>
         <CardContent>
           <div className="text-2xl font-semibold">
-            {overallCostPerMinuteUsd != null ? USD.format(overallCostPerMinuteUsd) : "—"}
+            {overallCostPerMinuteUsd != null ? money(overallCostPerMinuteUsd, "fine") : "—"}
           </div>
         </CardContent>
       </Card>
@@ -174,7 +168,13 @@ function TotalsGrid({ summary }: { summary: AdminUsageSummary }) {
   );
 }
 
-function RouteAndUserTables({ summary }: { summary: AdminUsageSummary }) {
+function RouteAndUserTables({
+  summary,
+  money,
+}: {
+  summary: AdminUsageSummary;
+  money: MoneyFormatter;
+}) {
   return (
     <section className="grid gap-4 lg:grid-cols-2">
       <div className="flex flex-col gap-2">
@@ -202,7 +202,7 @@ function RouteAndUserTables({ summary }: { summary: AdminUsageSummary }) {
                   <TableRow key={r.route}>
                     <TableCell className="font-mono text-xs">{r.route}</TableCell>
                     <TableCell className="text-right">{INT.format(r.events)}</TableCell>
-                    <TableCell className="text-right">{USD.format(r.totalCostUsd)}</TableCell>
+                    <TableCell className="text-right">{money(r.totalCostUsd, "fine")}</TableCell>
                   </TableRow>
                 ))
               )}
@@ -245,7 +245,7 @@ function RouteAndUserTables({ summary }: { summary: AdminUsageSummary }) {
                       </div>
                     </TableCell>
                     <TableCell className="text-right">{INT.format(u.events)}</TableCell>
-                    <TableCell className="text-right">{USD.format(u.totalCostUsd)}</TableCell>
+                    <TableCell className="text-right">{money(u.totalCostUsd, "fine")}</TableCell>
                   </TableRow>
                 ))
               )}
@@ -257,7 +257,7 @@ function RouteAndUserTables({ summary }: { summary: AdminUsageSummary }) {
   );
 }
 
-function SessionsTable({ summary }: { summary: AdminUsageSummary }) {
+function SessionsTable({ summary, money }: { summary: AdminUsageSummary; money: MoneyFormatter }) {
   return (
     <section className="flex flex-col gap-2">
       <h2 className="text-sm font-medium uppercase tracking-wider text-muted-foreground/70">
@@ -272,7 +272,7 @@ function SessionsTable({ summary }: { summary: AdminUsageSummary }) {
               <TableHead className="text-right">Duração</TableHead>
               <TableHead className="text-right">Chamadas</TableHead>
               <TableHead className="text-right">Custo</TableHead>
-              <TableHead className="text-right">$/min</TableHead>
+              <TableHead className="text-right">Por minuto</TableHead>
             </TableRow>
           </TableHeader>
           <TableBody>
@@ -301,9 +301,9 @@ function SessionsTable({ summary }: { summary: AdminUsageSummary }) {
                   </TableCell>
                   <TableCell className="text-right">{formatDuration(s.durationMs)}</TableCell>
                   <TableCell className="text-right">{INT.format(s.events)}</TableCell>
-                  <TableCell className="text-right">{USD.format(s.totalCostUsd)}</TableCell>
+                  <TableCell className="text-right">{money(s.totalCostUsd, "fine")}</TableCell>
                   <TableCell className="text-right">
-                    {s.costPerMinuteUsd != null ? USD.format(s.costPerMinuteUsd) : "—"}
+                    {s.costPerMinuteUsd != null ? money(s.costPerMinuteUsd, "fine") : "—"}
                   </TableCell>
                 </TableRow>
               ))
