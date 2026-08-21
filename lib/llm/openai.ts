@@ -11,6 +11,7 @@ export type ChatUsage = {
   promptTokens: number | undefined;
   completionTokens: number | undefined;
   totalTokens: number | undefined;
+  cachedTokens: number | undefined;
 };
 
 export type ChatResult = {
@@ -27,6 +28,14 @@ export type ChatParams = {
   maxTokens?: number;
   responseFormat?: { type: "json_object" };
   timeoutMs?: number;
+  /**
+   * When true, OpenAI persists the completion in the platform Logs UI. Pair
+   * with `metadata` to filter logs by route/session/user in the dashboard.
+   * Note: retains prompts/responses for 30 days on OpenAI's side.
+   */
+  store?: boolean;
+  /** Up to 16 string→string entries. Shown in the OpenAI Logs UI. */
+  metadata?: Record<string, string>;
 };
 
 export type TranscribeParams = {
@@ -99,6 +108,8 @@ export async function callChat(params: ChatParams): Promise<Result<ChatResult>> 
             max_tokens: params.maxTokens,
             response_format: params.responseFormat,
             messages: params.messages,
+            store: params.store,
+            metadata: params.metadata,
           }),
         });
       } catch (err) {
@@ -132,7 +143,12 @@ export async function callChat(params: ChatParams): Promise<Result<ChatResult>> 
 
   let parsed: {
     choices?: { message?: { content?: string }; finish_reason?: string }[];
-    usage?: { prompt_tokens?: number; completion_tokens?: number; total_tokens?: number };
+    usage?: {
+      prompt_tokens?: number;
+      completion_tokens?: number;
+      total_tokens?: number;
+      prompt_tokens_details?: { cached_tokens?: number };
+    };
   } = {};
   try {
     parsed = JSON.parse(raw);
@@ -149,6 +165,7 @@ export async function callChat(params: ChatParams): Promise<Result<ChatResult>> 
         promptTokens: parsed.usage?.prompt_tokens,
         completionTokens: parsed.usage?.completion_tokens,
         totalTokens: parsed.usage?.total_tokens,
+        cachedTokens: parsed.usage?.prompt_tokens_details?.cached_tokens,
       },
       latencyMs,
     },

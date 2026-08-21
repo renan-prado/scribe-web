@@ -44,10 +44,19 @@ export type ChatCost = {
   totalUsd: number;
 };
 
+/**
+ * All current OpenAI models (GPT-4o/4.1/5 families) charge cached input
+ * tokens at 50% of the fresh input rate. The response's
+ * usage.prompt_tokens_details.cached_tokens is a SUBSET of prompt_tokens
+ * (not additive), so fresh = prompt - cached.
+ */
+const CACHED_INPUT_MULTIPLIER = 0.5;
+
 export function computeChatCost(
   model: string,
   promptTokens: number | undefined,
-  completionTokens: number | undefined
+  completionTokens: number | undefined,
+  cachedTokens: number | undefined = 0
 ): ChatCost {
   const price = CHAT_PRICES[model];
   if (!price) {
@@ -55,7 +64,11 @@ export function computeChatCost(
   }
   const pt = promptTokens ?? 0;
   const ct = completionTokens ?? 0;
-  const inputUsd = (pt / 1_000_000) * price.inputPer1M;
+  const cached = Math.min(cachedTokens ?? 0, pt);
+  const fresh = pt - cached;
+  const inputUsd =
+    (fresh / 1_000_000) * price.inputPer1M +
+    (cached / 1_000_000) * price.inputPer1M * CACHED_INPUT_MULTIPLIER;
   const outputUsd = (ct / 1_000_000) * price.outputPer1M;
   return { inputUsd, outputUsd, totalUsd: inputUsd + outputUsd };
 }

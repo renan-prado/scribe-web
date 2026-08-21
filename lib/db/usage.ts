@@ -36,6 +36,7 @@ export type RecordChatUsageInput = {
   model: string;
   promptTokens: number | undefined;
   completionTokens: number | undefined;
+  cachedTokens: number | undefined;
   latencyMs: number;
 };
 
@@ -55,13 +56,19 @@ export async function recordChatUsage(input: RecordChatUsageInput): Promise<void
     } = await supabase.auth.getUser();
     if (!user) return;
 
-    const cost: ChatCost = computeChatCost(input.model, input.promptTokens, input.completionTokens);
+    const cost: ChatCost = computeChatCost(
+      input.model,
+      input.promptTokens,
+      input.completionTokens,
+      input.cachedTokens
+    );
     if (!hasChatPricing(input.model)) {
       console.warn("[usage] no chat pricing for model", { model: input.model });
     }
 
     const prompt = input.promptTokens ?? null;
     const completion = input.completionTokens ?? null;
+    const cached = input.cachedTokens ?? null;
     const total = prompt !== null && completion !== null ? prompt + completion : null;
 
     const { error } = await supabase.from("llm_usage_events").insert({
@@ -71,6 +78,7 @@ export async function recordChatUsage(input: RecordChatUsageInput): Promise<void
       model: input.model,
       prompt_tokens: prompt,
       completion_tokens: completion,
+      cached_tokens: cached,
       total_tokens: total,
       audio_seconds: null,
       input_cost_usd: cost.inputUsd,

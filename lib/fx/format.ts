@@ -1,48 +1,34 @@
 import type { UsdBrlRate } from "./usd-brl";
 
 /**
- * Money formatter that renders in BRL when we have a live rate, and
- * falls back to USD otherwise. `precision` controls decimal places:
- * "cents" for headline sums, "fine" for tiny per-call values.
+ * Money formatter — always renders with 2 decimal places for consistency
+ * across the app. BRL when we have a live rate, USD as fallback.
+ *
+ * The `_precision` parameter is accepted for backward compatibility with
+ * existing call sites but ignored — sub-cent precision was creating noise
+ * in the dashboard and the user asked for uniform 2-decimal display.
  */
 
-const BRL_CENTS = new Intl.NumberFormat("pt-BR", {
+const BRL = new Intl.NumberFormat("pt-BR", {
   style: "currency",
   currency: "BRL",
   minimumFractionDigits: 2,
   maximumFractionDigits: 2,
 });
 
-const BRL_FINE = new Intl.NumberFormat("pt-BR", {
-  style: "currency",
-  currency: "BRL",
-  minimumFractionDigits: 4,
-  maximumFractionDigits: 4,
-});
-
-const USD_CENTS = new Intl.NumberFormat("en-US", {
+const USD = new Intl.NumberFormat("en-US", {
   style: "currency",
   currency: "USD",
   minimumFractionDigits: 2,
   maximumFractionDigits: 2,
-});
-
-const USD_FINE = new Intl.NumberFormat("en-US", {
-  style: "currency",
-  currency: "USD",
-  minimumFractionDigits: 4,
-  maximumFractionDigits: 4,
 });
 
 export type MoneyPrecision = "cents" | "fine";
 
 export function makeMoneyFormatter(rate: UsdBrlRate | null) {
-  return (usd: number, precision: MoneyPrecision = "cents"): string => {
-    if (rate) {
-      const brl = usd * rate.rate;
-      return (precision === "fine" ? BRL_FINE : BRL_CENTS).format(brl);
-    }
-    return (precision === "fine" ? USD_FINE : USD_CENTS).format(usd);
+  return (usd: number, _precision: MoneyPrecision = "cents"): string => {
+    if (rate) return BRL.format(usd * rate.rate);
+    return USD.format(usd);
   };
 }
 

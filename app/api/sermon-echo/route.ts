@@ -2,6 +2,7 @@ import { NextResponse } from "next/server";
 import { recordChatUsage } from "@/lib/db/usage";
 import { type FeedItem, feedItemDedupKey, parseEchoFromLLM } from "@/lib/domain/feed";
 import { serverEnv } from "@/lib/env/server";
+import { buildLlmMetadata } from "@/lib/llm/metadata";
 import { callChat } from "@/lib/llm/openai";
 import { SERMON_ECHO_SYSTEM_PROMPT } from "@/lib/prompts/sermon-echo";
 import { requireAuth } from "@/lib/supabase/require-auth";
@@ -49,6 +50,7 @@ export async function POST(request: Request) {
 
   const userMessage = `existingItems:\n${JSON.stringify(existingSummary)}\n\n---\ntranscript:\n${text}`;
 
+  const sessionId = typeof body.sessionId === "string" && body.sessionId ? body.sessionId : null;
   const result = await callChat({
     model,
     temperature: 0.4,
@@ -58,6 +60,8 @@ export async function POST(request: Request) {
       { role: "system", content: SERMON_ECHO_SYSTEM_PROMPT },
       { role: "user", content: userMessage },
     ],
+    store: true,
+    metadata: buildLlmMetadata({ route: "sermon-echo", userId: auth.user.id, sessionId }),
   });
 
   if (!result.ok) {
@@ -96,11 +100,12 @@ export async function POST(request: Request) {
     drops: drops.length,
   });
   await recordChatUsage({
-    sessionId: typeof body.sessionId === "string" && body.sessionId ? body.sessionId : null,
+    sessionId,
     route: "sermon-echo",
     model,
     promptTokens: usage.promptTokens,
     completionTokens: usage.completionTokens,
+    cachedTokens: usage.cachedTokens,
     latencyMs,
   });
   return NextResponse.json({ items, latencyMs, model });

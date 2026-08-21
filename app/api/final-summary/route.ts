@@ -4,6 +4,7 @@ import { recordChatUsage } from "@/lib/db/usage";
 import type { FeedItem } from "@/lib/domain/feed";
 import { parseSummaryFromLLM } from "@/lib/domain/summary";
 import { serverEnv } from "@/lib/env/server";
+import { buildLlmMetadata } from "@/lib/llm/metadata";
 import { callChat } from "@/lib/llm/openai";
 import { FINAL_SUMMARY_SYSTEM_PROMPT } from "@/lib/prompts/final-summary";
 import { requireAuth } from "@/lib/supabase/require-auth";
@@ -67,6 +68,8 @@ export async function POST(request: Request) {
       { role: "system", content: FINAL_SUMMARY_SYSTEM_PROMPT },
       { role: "user", content: userMessage },
     ],
+    store: true,
+    metadata: buildLlmMetadata({ route: "final-summary", userId: auth.user.id, sessionId }),
   });
 
   if (!result.ok) {
@@ -110,6 +113,7 @@ export async function POST(request: Request) {
     model,
     promptTokens: usage.promptTokens,
     completionTokens: usage.completionTokens,
+    cachedTokens: usage.cachedTokens,
     latencyMs,
   });
 

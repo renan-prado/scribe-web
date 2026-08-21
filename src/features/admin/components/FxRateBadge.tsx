@@ -1,8 +1,8 @@
 import type { UsdBrlRate } from "@/lib/fx/usd-brl";
 
 const BRL_FMT = new Intl.NumberFormat("pt-BR", {
-  minimumFractionDigits: 4,
-  maximumFractionDigits: 4,
+  minimumFractionDigits: 2,
+  maximumFractionDigits: 2,
 });
 
 const DATE_FMT = new Intl.DateTimeFormat("pt-BR", {

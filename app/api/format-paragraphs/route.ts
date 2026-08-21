@@ -1,6 +1,7 @@
 import { NextResponse } from "next/server";
 import { recordChatUsage } from "@/lib/db/usage";
 import { serverEnv } from "@/lib/env/server";
+import { buildLlmMetadata } from "@/lib/llm/metadata";
 import { callChat } from "@/lib/llm/openai";
 import { FORMAT_PARAGRAPHS_SYSTEM_PROMPT } from "@/lib/prompts/format-paragraphs";
 import { requireAuth } from "@/lib/supabase/require-auth";
@@ -28,6 +29,7 @@ export async function POST(request: Request) {
     return NextResponse.json({ error: "empty text" }, { status: 400 });
   }
 
+  const sessionId = typeof body.sessionId === "string" && body.sessionId ? body.sessionId : null;
   const result = await callChat({
     model,
     temperature: 0,
@@ -35,6 +37,8 @@ export async function POST(request: Request) {
       { role: "system", content: FORMAT_PARAGRAPHS_SYSTEM_PROMPT },
       { role: "user", content: text },
     ],
+    store: true,
+    metadata: buildLlmMetadata({ route: "format-paragraphs", userId: auth.user.id, sessionId }),
   });
 
   if (!result.ok) {
@@ -51,11 +55,12 @@ export async function POST(request: Request) {
   }
 
   await recordChatUsage({
-    sessionId: typeof body.sessionId === "string" && body.sessionId ? body.sessionId : null,
+    sessionId,
     route: "format-paragraphs",
     model,
     promptTokens: result.data.usage.promptTokens,
     completionTokens: result.data.usage.completionTokens,
+    cachedTokens: result.data.usage.cachedTokens,
     latencyMs: result.data.latencyMs,
   });
   return NextResponse.json({
