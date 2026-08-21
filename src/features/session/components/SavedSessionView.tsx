@@ -1,6 +1,7 @@
 "use client";
 
-import { MapPin, User } from "lucide-react";
+import { ArrowLeft, MapPin, User } from "lucide-react";
+import Link from "next/link";
 import { useState } from "react";
 import {
   Dialog,
@@ -69,6 +70,13 @@ export function SavedSessionView({
   return (
     <TranslationProvider>
       <main className="mx-auto flex min-h-svh w-full max-w-3xl flex-col gap-6 px-4 py-8 sm:gap-8 sm:px-6 sm:py-10">
+        <Link
+          href="/home"
+          className="inline-flex w-fit items-center gap-1.5 rounded-md -mx-1 px-1 py-0.5 text-xs font-medium text-muted-foreground transition-colors hover:text-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring/40"
+        >
+          <ArrowLeft className="size-3.5" />
+          Voltar
+        </Link>
         <div className="flex items-start justify-between gap-3">
           <header className="flex flex-col gap-3">
             {speakerName?.trim() ? (

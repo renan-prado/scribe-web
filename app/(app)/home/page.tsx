@@ -82,36 +82,36 @@ export default async function HomePage() {
                 <li
                   key={s.id}
                   className={cn(
-                    "group flex items-start justify-between gap-4 rounded-lg border border-border bg-card px-5 py-4",
+                    "group relative flex items-start justify-between gap-2 rounded-lg border border-border bg-card px-4 py-3.5 sm:gap-3 sm:px-5 sm:py-4",
                     "transition-colors hover:border-foreground/25 hover:bg-muted/40"
                   )}
                 >
                   <Link
                     href={`/recording/${s.id}/summary`}
-                    className="flex min-w-0 flex-1 flex-col gap-2 outline-none focus-visible:ring-2 focus-visible:ring-ring/40 rounded-md -mx-1 px-1"
+                    className="-mx-1 flex min-w-0 flex-1 flex-col gap-1.5 rounded-md px-1 outline-none focus-visible:ring-2 focus-visible:ring-ring/40 sm:gap-2"
                   >
-                    <span className="truncate text-base font-medium text-foreground">
+                    <span className="line-clamp-2 text-[0.95rem] font-medium leading-snug text-foreground sm:text-base">
                       {s.title?.trim() || "Sessão sem título"}
                     </span>
                     {s.shortSummary ? (
-                      <span className="line-clamp-2 text-sm text-muted-foreground">
+                      <span className="line-clamp-2 text-[0.8rem] leading-snug text-muted-foreground sm:text-sm">
                         {s.shortSummary}
                       </span>
                     ) : null}
-                    <span className="flex flex-wrap items-center gap-x-3 gap-y-1 text-[0.7rem] tracking-wide text-muted-foreground/80">
+                    <span className="mt-0.5 flex flex-wrap items-center gap-x-2.5 gap-y-1 text-[0.7rem] tracking-wide text-muted-foreground/80">
                       {s.speakerName?.trim() ? (
-                        <span className="inline-flex items-center gap-1">
-                          <User className="size-3" />
-                          {s.speakerName}
+                        <span className="inline-flex min-w-0 items-center gap-1">
+                          <User className="size-3 shrink-0" />
+                          <span className="truncate">{s.speakerName}</span>
                         </span>
                       ) : null}
                       {s.speakerLocation?.trim() ? (
-                        <span className="inline-flex items-center gap-1">
-                          <MapPin className="size-3" />
-                          {s.speakerLocation}
+                        <span className="inline-flex min-w-0 items-center gap-1">
+                          <MapPin className="size-3 shrink-0" />
+                          <span className="truncate">{s.speakerLocation}</span>
                         </span>
                       ) : null}
-                      <span>
+                      <span className="whitespace-nowrap">
                         {when}
                         {dur ? ` · ${dur}` : ""}
                       </span>

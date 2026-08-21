@@ -4,7 +4,6 @@ import { Mic } from "lucide-react";
 import { useRouter } from "next/navigation";
 import { useState } from "react";
 import { toast } from "sonner";
-import { AppHeader } from "@/components/AppHeader";
 import { Greeting } from "@/features/session/components/Greeting";
 import { requestCreateSession } from "@/features/session/lib/api";
 import { cn } from "@/lib/utils";
@@ -32,29 +31,26 @@ export default function SpikePage() {
   }
 
   return (
-    <>
-      <AppHeader />
-      <main className="mx-auto flex flex-1 w-full max-w-3xl flex-col items-center justify-center gap-10 px-4 sm:px-6">
-        <Greeting />
+    <main className="mx-auto flex w-full max-w-3xl flex-1 flex-col items-center justify-center gap-8 px-4 sm:gap-10 sm:px-6">
+      <Greeting />
 
-        <button
-          type="button"
-          onClick={handleStart}
-          disabled={loading}
-          className={cn(
-            "group relative flex size-40 items-center justify-center rounded-full bg-primary text-primary-foreground shadow-lg",
-            "transition-transform hover:scale-[1.03] active:scale-95",
-            "focus-visible:outline-none focus-visible:ring-4 focus-visible:ring-ring/40",
-            "disabled:cursor-not-allowed disabled:opacity-80"
-          )}
-          aria-label="Iniciar gravação"
-        >
-          <Mic className="size-16" />
-        </button>
-        <p className="text-sm text-muted-foreground">
-          {loading ? "Preparando sessão..." : "Toque no microfone para começar"}
-        </p>
-      </main>
-    </>
+      <button
+        type="button"
+        onClick={handleStart}
+        disabled={loading}
+        className={cn(
+          "group relative flex size-16 items-center justify-center rounded-full bg-primary text-primary-foreground shadow-lg sm:size-20",
+          "transition-transform hover:scale-[1.03] active:scale-95",
+          "focus-visible:outline-none focus-visible:ring-4 focus-visible:ring-ring/40",
+          "disabled:cursor-not-allowed disabled:opacity-80"
+        )}
+        aria-label="Iniciar gravação"
+      >
+        <Mic className="size-6 sm:size-7" />
+      </button>
+      <p className="text-sm text-muted-foreground">
+        {loading ? "Preparando sessão..." : "Toque no microfone para começar"}
+      </p>
+    </main>
   );
 }
