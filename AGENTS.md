@@ -26,8 +26,8 @@ Stack: Next.js 16 (App Router), React 19, Supabase SSR, Tailwind v4 + shadcn/bas
 ```
 app/
   api/{transcribe,bible,insights,sermon-echo,final-summary,verse,format-paragraphs}/route.ts
-  spike/page.tsx                — the recording session page (orchestration only)
-  page.tsx                      — landing that links to /spike
+  (app)/recording/[id]/live/page.tsx — the recording session page (orchestration only)
+  page.tsx                      — landing that links into the app
   layout.tsx, globals.css
 components/ui/                  — shadcn primitives (Dialog, DropdownMenu, Button)
 lib/
@@ -65,7 +65,7 @@ src/features/session/
 ## Adding a new feature
 
 - **New API route calling OpenAI**: (1) add a prompt in `lib/prompts/foo.ts`, (2) add the schema + `parseFooFromLLM` in `lib/domain/foo.ts`, (3) create `app/api/foo/route.ts` that reads env from `serverEnv`, invokes `callChat({...})`, and delegates parsing to the domain helper. Log `[foo] ok { latencyMs, finishReason, promptTokens, completionTokens, ... }` on success and `[foo] upstream {fetch failed|error}` on failure.
-- **New UI element for the session page**: put it under `src/features/session/components/`. Keep `app/spike/page.tsx` as pure orchestration. Pure helpers go to `src/features/session/lib/`; reusable stateful behaviour goes to `src/features/session/hooks/`.
+- **New UI element for the session page**: put it under `src/features/session/components/`. Keep `app/(app)/recording/[id]/live/page.tsx` as pure orchestration. Pure helpers go to `src/features/session/lib/`; reusable stateful behaviour goes to `src/features/session/hooks/`.
 - **New env var**: add to the Zod schema in `lib/env/server.ts` (or `client.ts`) — this is intentionally strict so a missing var fails at boot, not on the first request.
 
 ## What is deliberately NOT here yet

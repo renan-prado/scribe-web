@@ -1,10 +1,11 @@
-import { MapPin, Plus, User } from "lucide-react";
+import { MapPin, User } from "lucide-react";
 import type { Metadata } from "next";
 
 export const metadata: Metadata = { title: "Minhas lista" };
 
 import { revalidatePath } from "next/cache";
 import Link from "next/link";
+import { NewRecordingDialog } from "@/features/session/components/NewRecordingDialog";
 import { RefreshSessionsButton } from "@/features/session/components/RefreshSessionsButton";
 import { deleteSession, listSessions } from "@/lib/db/sessions";
 import { cn } from "@/lib/utils";
@@ -54,17 +55,7 @@ export default async function HomePage() {
           <p className="text-sm text-muted-foreground">
             Nenhuma sessão salva ainda. Comece pela primeira gravação.
           </p>
-          <Link
-            href="/spike"
-            aria-label="Nova gravação"
-            className={cn(
-              "inline-flex size-7 items-center justify-center rounded-none bg-primary text-primary-foreground shadow-sm",
-              "transition-transform hover:scale-[1.02] active:scale-95",
-              "focus-visible:outline-none focus-visible:ring-4 focus-visible:ring-ring/40"
-            )}
-          >
-            <Plus className="size-4" />
-          </Link>
+          <NewRecordingDialog />
         </div>
       ) : (
         <div className="flex flex-col gap-3">

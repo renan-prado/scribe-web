@@ -70,7 +70,7 @@ type Props = {
   sessionId: string;
   initialSpeakerName: string;
   initialSpeakerLocation: string;
-  /** If true, fire start() once on mount (typical entry from /spike). */
+  /** If true, fire start() once on mount (entry from the "Nova gravação" dialog). */
   autoStart?: boolean;
 };
 
@@ -643,9 +643,9 @@ function RecordingLiveInner({
     feedItemsRef.current = feedItems;
   }, [feedItems]);
 
-  // Auto-start once on mount when entering from /spike so the user only has
-  // to click "Iniciar" one time. Guarded by autoStartFiredRef so React 18
-  // strict-mode double-invoke doesn't fire twice.
+  // Auto-start once on mount when entering from the "Nova gravação" dialog so
+  // the user only has to click "Iniciar" one time. Guarded by
+  // autoStartFiredRef so React 18 strict-mode double-invoke doesn't fire twice.
   const autoStartFiredRef = useRef(false);
   useEffect(() => {
     if (!autoStart) return;

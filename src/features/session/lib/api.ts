@@ -137,7 +137,7 @@ export async function requestFinalSummary(body: {
 
 /**
  * POST /api/sessions. Creates the empty row that anchors /recording/{id}/live.
- * Called from the start button on /spike before the recorder mounts.
+ * Called from the "Nova gravação" dialog before the recorder mounts.
  */
 export async function requestCreateSession(body: {
   speakerName?: string | null;

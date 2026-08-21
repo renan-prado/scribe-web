@@ -9,7 +9,7 @@ export const dynamic = "force-dynamic";
 /**
  * POST /api/sessions
  * Creates the empty row that anchors /recording/{id}/live. Called from the
- * "Iniciar gravação" button on /spike (or straight from /home). The row
+ * "Nova gravação" dialog in the app header. The row
  * lives in Supabase with user_id = auth.uid() so RLS auto-scopes every
  * subsequent read/update.
  */
