@@ -1,6 +1,8 @@
 import { BookOpenText, MicVocal, Sparkles } from "lucide-react";
 import Link from "next/link";
+import { redirect } from "next/navigation";
 import { Button } from "@/components/ui/button";
+import { createClient } from "@/lib/supabase/server";
 
 export const metadata = {
   title: { absolute: "Scribe — Transcrição e resumos ao vivo de sermões" },
@@ -24,7 +26,13 @@ const FEATURES = [
   },
 ];
 
-export default function LandingPage() {
+export default async function LandingPage() {
+  const supabase = await createClient();
+  const {
+    data: { user },
+  } = await supabase.auth.getUser();
+  if (user) redirect("/home");
+
   return (
     <main className="mx-auto flex min-h-svh w-full max-w-4xl flex-col px-4 py-6 sm:px-6 sm:py-16">
       <header className="flex items-center justify-between gap-2">
