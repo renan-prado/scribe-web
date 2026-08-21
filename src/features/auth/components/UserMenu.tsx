@@ -1,6 +1,6 @@
 "use client";
 
-import { LogOut, User as UserIcon } from "lucide-react";
+import { LayoutDashboard, LogOut, User as UserIcon } from "lucide-react";
 import Link from "next/link";
 import { useRef } from "react";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
@@ -16,6 +16,7 @@ type Props = {
   displayName: string | null;
   email: string | null;
   avatarUrl: string | null;
+  isAdmin: boolean;
 };
 
 function initialsFrom(name: string | null, email: string | null): string {
@@ -25,7 +26,7 @@ function initialsFrom(name: string | null, email: string | null): string {
   return initials || source.slice(0, 1).toUpperCase();
 }
 
-export function UserMenu({ displayName, email, avatarUrl }: Props) {
+export function UserMenu({ displayName, email, avatarUrl, isAdmin }: Props) {
   const signOutFormRef = useRef<HTMLFormElement>(null);
   const initials = initialsFrom(displayName, email);
   const shownName = displayName?.trim() || email?.split("@")[0] || "Sua conta";
@@ -52,6 +53,12 @@ export function UserMenu({ displayName, email, avatarUrl }: Props) {
             <UserIcon />
             Meu perfil
           </DropdownMenuItem>
+          {isAdmin ? (
+            <DropdownMenuItem render={<Link href="/backstage" />}>
+              <LayoutDashboard />
+              Backstage
+            </DropdownMenuItem>
+          ) : null}
           <DropdownMenuSeparator />
           <DropdownMenuItem
             variant="destructive"

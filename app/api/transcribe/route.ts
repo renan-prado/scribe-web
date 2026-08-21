@@ -1,4 +1,5 @@
 import { NextResponse } from "next/server";
+import { recordAudioUsage } from "@/lib/db/usage";
 import { serverEnv } from "@/lib/env/server";
 import { callTranscribe } from "@/lib/llm/openai";
 import { requireAuth } from "@/lib/supabase/require-auth";
@@ -36,6 +37,12 @@ export async function POST(request: Request) {
   const chunkIndex = form.get("chunkIndex");
   const prevText = (form.get("prevText") as string | null) ?? "";
   const extension = ((form.get("extension") as string | null) ?? "webm").toLowerCase();
+  const sessionIdRaw = form.get("sessionId");
+  const sessionId =
+    typeof sessionIdRaw === "string" && sessionIdRaw.trim() ? sessionIdRaw.trim() : null;
+  const durationMsRaw = form.get("durationMs");
+  const durationMs = typeof durationMsRaw === "string" ? Number.parseFloat(durationMsRaw) : NaN;
+  const audioSeconds = Number.isFinite(durationMs) && durationMs > 0 ? durationMs / 1000 : 0;
   if (!ALLOWED_EXTENSIONS.has(extension)) {
     return NextResponse.json({ error: "unsupported file type" }, { status: 415 });
   }
@@ -65,6 +72,13 @@ export async function POST(request: Request) {
     );
   }
 
+  await recordAudioUsage({
+    sessionId,
+    route: "transcribe",
+    model,
+    audioSeconds,
+    latencyMs: result.data.latencyMs,
+  });
   return NextResponse.json({
     text: result.data.text,
     latencyMs: result.data.latencyMs,

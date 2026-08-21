@@ -1,4 +1,5 @@
 import { NextResponse } from "next/server";
+import { recordChatUsage } from "@/lib/db/usage";
 import { type FeedItem, feedItemDedupKey, parseExtractFromLLM } from "@/lib/domain/feed";
 import { serverEnv } from "@/lib/env/server";
 import { callChat } from "@/lib/llm/openai";
@@ -20,7 +21,12 @@ export async function POST(request: Request) {
 
   const model = serverEnv.OPENAI_EXTRACT_MODEL;
 
-  let body: { text?: string; existingItems?: FeedItem[]; sermonAtMs?: number };
+  let body: {
+    text?: string;
+    existingItems?: FeedItem[];
+    sermonAtMs?: number;
+    sessionId?: string;
+  };
   try {
     body = await request.json();
   } catch (err) {
@@ -94,6 +100,14 @@ export async function POST(request: Request) {
     translationHint,
     drops: drops.length,
     thinking: thinking.slice(0, 120),
+  });
+  await recordChatUsage({
+    sessionId: typeof body.sessionId === "string" && body.sessionId ? body.sessionId : null,
+    route: "extract",
+    model,
+    promptTokens: usage.promptTokens,
+    completionTokens: usage.completionTokens,
+    latencyMs,
   });
   return NextResponse.json({ items, thinking, readingMode, translationHint, latencyMs, model });
 }

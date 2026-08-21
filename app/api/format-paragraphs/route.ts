@@ -1,4 +1,5 @@
 import { NextResponse } from "next/server";
+import { recordChatUsage } from "@/lib/db/usage";
 import { serverEnv } from "@/lib/env/server";
 import { callChat } from "@/lib/llm/openai";
 import { FORMAT_PARAGRAPHS_SYSTEM_PROMPT } from "@/lib/prompts/format-paragraphs";
@@ -13,7 +14,7 @@ export async function POST(request: Request) {
 
   const model = serverEnv.OPENAI_FORMAT_MODEL;
 
-  let body: { text?: string };
+  let body: { text?: string; sessionId?: string };
   try {
     body = await request.json();
   } catch (err) {
@@ -49,6 +50,14 @@ export async function POST(request: Request) {
     );
   }
 
+  await recordChatUsage({
+    sessionId: typeof body.sessionId === "string" && body.sessionId ? body.sessionId : null,
+    route: "format-paragraphs",
+    model,
+    promptTokens: result.data.usage.promptTokens,
+    completionTokens: result.data.usage.completionTokens,
+    latencyMs: result.data.latencyMs,
+  });
   return NextResponse.json({
     formatted: result.data.content,
     latencyMs: result.data.latencyMs,

@@ -8,6 +8,7 @@ const schema = z.object({
   OPENAI_ECHO_MODEL: z.string().default("gpt-4o-mini"),
   OPENAI_FINAL_SUMMARY_MODEL: z.string().default("gpt-4o"),
   OPENAI_FORMAT_MODEL: z.string().default("gpt-4o-mini"),
+  SUPABASE_SERVICE_ROLE_KEY: z.string().min(1),
 });
 
 const parsed = schema.safeParse({
@@ -18,6 +19,7 @@ const parsed = schema.safeParse({
   OPENAI_ECHO_MODEL: process.env.OPENAI_ECHO_MODEL,
   OPENAI_FINAL_SUMMARY_MODEL: process.env.OPENAI_FINAL_SUMMARY_MODEL,
   OPENAI_FORMAT_MODEL: process.env.OPENAI_FORMAT_MODEL,
+  SUPABASE_SERVICE_ROLE_KEY: process.env.SUPABASE_SERVICE_ROLE_KEY,
 });
 
 if (!parsed.success) {

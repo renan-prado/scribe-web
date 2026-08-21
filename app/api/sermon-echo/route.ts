@@ -1,4 +1,5 @@
 import { NextResponse } from "next/server";
+import { recordChatUsage } from "@/lib/db/usage";
 import { type FeedItem, feedItemDedupKey, parseEchoFromLLM } from "@/lib/domain/feed";
 import { serverEnv } from "@/lib/env/server";
 import { callChat } from "@/lib/llm/openai";
@@ -21,7 +22,12 @@ export async function POST(request: Request) {
 
   const model = serverEnv.OPENAI_ECHO_MODEL;
 
-  let body: { text?: string; existingItems?: FeedItem[]; sermonAtMs?: number };
+  let body: {
+    text?: string;
+    existingItems?: FeedItem[];
+    sermonAtMs?: number;
+    sessionId?: string;
+  };
   try {
     body = await request.json();
   } catch (err) {
@@ -88,6 +94,14 @@ export async function POST(request: Request) {
     completionTokens: usage.completionTokens,
     items: items.length,
     drops: drops.length,
+  });
+  await recordChatUsage({
+    sessionId: typeof body.sessionId === "string" && body.sessionId ? body.sessionId : null,
+    route: "sermon-echo",
+    model,
+    promptTokens: usage.promptTokens,
+    completionTokens: usage.completionTokens,
+    latencyMs,
   });
   return NextResponse.json({ items, latencyMs, model });
 }

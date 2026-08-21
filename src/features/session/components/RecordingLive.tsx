@@ -325,7 +325,12 @@ function RecordingLiveInner({
     setExtracting(true);
     sessionCountersRef.current.extractCalls++;
     const extractSermonAtMs = Math.max(0, performance.now() - startedAtRef.current);
-    void requestExtract({ text: recent, existingItems: feedItems, sermonAtMs: extractSermonAtMs })
+    void requestExtract({
+      text: recent,
+      existingItems: feedItems,
+      sermonAtMs: extractSermonAtMs,
+      sessionId,
+    })
       .then(({ items, thinking: nextThinking, readingMode: nextReadingMode, translationHint }) => {
         sessionCountersRef.current.extractYield += items.length;
         for (const item of items) {
@@ -353,6 +358,7 @@ function RecordingLiveInner({
     readingMode,
     translation,
     setAutoTranslation,
+    sessionId,
   ]);
 
   useEffect(() => {
@@ -374,7 +380,12 @@ function RecordingLiveInner({
     setSuggesting(true);
     sessionCountersRef.current.suggestCalls++;
     const suggestSermonAtMs = Math.max(0, performance.now() - startedAtRef.current);
-    void requestSuggest({ text: recent, existingItems: feedItems, sermonAtMs: suggestSermonAtMs })
+    void requestSuggest({
+      text: recent,
+      existingItems: feedItems,
+      sermonAtMs: suggestSermonAtMs,
+      sessionId,
+    })
       .then((items) => {
         sessionCountersRef.current.suggestYield += items.length;
         enqueueFeedItems(items);
@@ -389,6 +400,7 @@ function RecordingLiveInner({
     readingMode,
     feedItems,
     enqueueFeedItems,
+    sessionId,
   ]);
 
   useEffect(() => {
@@ -417,7 +429,7 @@ function RecordingLiveInner({
     echoingRef.current = true;
     const sermonAtMs = Math.max(0, performance.now() - startedAtRef.current);
     console.log("[echo] fire", { streak, threshold: aiStreakThresholdRef.current });
-    void requestEcho({ text: recent, existingItems: feedItems, sermonAtMs })
+    void requestEcho({ text: recent, existingItems: feedItems, sermonAtMs, sessionId })
       .then((items) => {
         if (items.length === 0) {
           echoingRef.current = false;
@@ -428,7 +440,7 @@ function RecordingLiveInner({
       .catch(() => {
         echoingRef.current = false;
       });
-  }, [feedItems, running, finalizing, transcript, enqueueFeedItems]);
+  }, [feedItems, running, finalizing, transcript, enqueueFeedItems, sessionId]);
 
   const handleChunk = useCallback(
     async (ev: ChunkEvent) => {
@@ -455,7 +467,7 @@ function RecordingLiveInner({
         .join(" ");
       const prevHint = tailSentences(previousText, 2);
 
-      const result = await uploadChunkWithRetry(ev, prevHint);
+      const result = await uploadChunkWithRetry(ev, prevHint, sessionId);
       const current = chunksRef.current.get(ev.index);
       if (!current) return;
       if (result.ok) {
@@ -465,7 +477,7 @@ function RecordingLiveInner({
       }
       publish();
     },
-    [publish]
+    [publish, sessionId]
   );
 
   const start = useCallback(async () => {

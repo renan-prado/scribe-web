@@ -3,11 +3,15 @@ import Link from "next/link";
 import type { ReactNode } from "react";
 import { AppHeader } from "@/components/AppHeader";
 import { UserMenu } from "@/features/auth/components/UserMenu";
+import { isCurrentUserAdmin } from "@/lib/auth/require-admin";
 import { getCurrentProfile } from "@/lib/db/profiles";
 import { cn } from "@/lib/utils";
 
 export default async function AppLayout({ children }: { children: ReactNode }) {
-  const profile = await getCurrentProfile().catch(() => null);
+  const [profile, isAdmin] = await Promise.all([
+    getCurrentProfile().catch(() => null),
+    isCurrentUserAdmin().catch(() => false),
+  ]);
 
   return (
     <>
@@ -30,6 +34,7 @@ export default async function AppLayout({ children }: { children: ReactNode }) {
                 displayName={profile.displayName ?? null}
                 email={profile.email ?? null}
                 avatarUrl={profile.avatarUrl ?? null}
+                isAdmin={isAdmin}
               />
             ) : null}
           </>

@@ -19,6 +19,7 @@ export async function requestExtract(body: {
   text: string;
   existingItems: FeedItem[];
   sermonAtMs?: number;
+  sessionId?: string;
 }): Promise<{
   items: FeedItem[];
   thinking: string;
@@ -57,6 +58,7 @@ export async function requestSuggest(body: {
   text: string;
   existingItems: FeedItem[];
   sermonAtMs?: number;
+  sessionId?: string;
 }): Promise<FeedItem[]> {
   try {
     const res = await fetch("/api/suggest", {
@@ -81,6 +83,7 @@ export async function requestEcho(body: {
   text: string;
   existingItems: FeedItem[];
   sermonAtMs?: number;
+  sessionId?: string;
 }): Promise<FeedItem[]> {
   try {
     const res = await fetch("/api/sermon-echo", {
@@ -192,7 +195,8 @@ export async function requestVerse(
  */
 export async function uploadChunkWithRetry(
   ev: ChunkEvent,
-  prevText: string
+  prevText: string,
+  sessionId?: string
 ): Promise<{ ok: true; text: string } | { ok: false; message: string }> {
   const backoffMs = [500, 1500];
   let lastMessage = "unknown error";
@@ -204,6 +208,8 @@ export async function uploadChunkWithRetry(
       form.append("chunkIndex", String(ev.index));
       form.append("extension", ev.extension);
       form.append("prevText", prevText);
+      form.append("durationMs", String(ev.durationMs));
+      if (sessionId) form.append("sessionId", sessionId);
       const res = await fetch("/api/transcribe", { method: "POST", body: form });
       const body = await res.json();
       if (!res.ok) {

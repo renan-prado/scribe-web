@@ -1,5 +1,6 @@
 import { NextResponse } from "next/server";
 import { updateSessionFinal } from "@/lib/db/sessions";
+import { recordChatUsage } from "@/lib/db/usage";
 import type { FeedItem } from "@/lib/domain/feed";
 import { parseSummaryFromLLM } from "@/lib/domain/summary";
 import { serverEnv } from "@/lib/env/server";
@@ -103,6 +104,14 @@ export async function POST(request: Request) {
       completionTokens: usage.completionTokens,
     });
   }
+  await recordChatUsage({
+    sessionId,
+    route: "final-summary",
+    model,
+    promptTokens: usage.promptTokens,
+    completionTokens: usage.completionTokens,
+    latencyMs,
+  });
 
   // Fill the row created at start. Never fail the request on save error —
   // the user already sat through the recording; return the summary and log
