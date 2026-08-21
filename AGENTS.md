@@ -11,7 +11,11 @@ This block is written and re-added by `next dev` — verify at `node_modules/nex
 # Project overview
 
 scribe-web is a live sermon/lecture transcription + summarization app. A recorder emits ~30s audio chunks that stream through OpenAI-backed API routes:
-- LIVE (while recording): `transcribe` on every chunk, then `extract` (speaker-sourced feed items: cited verses, verbatim highlights, attributed citations) on every chunk and `suggest` (AI-authored enrichment: related verses, historical/exegetical context, suggested quotes) on a slower cadence. Items append to a scroll feed — nothing is rewritten.
+- LIVE (while recording): `transcribe` on every chunk. Two enrichment pipelines then run in parallel with very different cadences:
+  - `bible` (fast, regex-gated) — only emits `citedVerse`. A cheap regex on the transcript tail (`lib/bible/detect.ts`) decides whether the LLM is even called; while `readingMode` is on the gate is bypassed so the passage card can keep expanding as the pastor reads more verses.
+  - `insights` (slow, ~45s interval) — emits the other five kinds (`speakerHighlight`, `speakerCitation`, `relatedVerse`, `context`, `suggestedQuote`). Paused while `readingMode` is on.
+  - `sermon-echo` (streak-based) — injects a single verbatim `speakerEcho` phrase whenever the feed accumulates too many AI-authored cards in a row.
+  Items append to a scroll feed — nothing is rewritten.
 - FINAL (after stop): `final-summary` runs once, consuming the full transcript AND the curated feed items, producing the definitive structured summary rendered by SummaryView.
 - ALSO: `verse` (on-click bible lookup dialog) and `format-paragraphs` (transcript display).
 
@@ -21,12 +25,13 @@ Stack: Next.js 16 (App Router), React 19, Supabase SSR, Tailwind v4 + shadcn/bas
 
 ```
 app/
-  api/{transcribe,extract,suggest,final-summary,verse,format-paragraphs}/route.ts
+  api/{transcribe,bible,insights,sermon-echo,final-summary,verse,format-paragraphs}/route.ts
   spike/page.tsx                — the recording session page (orchestration only)
   page.tsx                      — landing that links to /spike
   layout.tsx, globals.css
 components/ui/                  — shadcn primitives (Dialog, DropdownMenu, Button)
 lib/
+  bible/detect.ts               — regex-gate that decides whether /api/bible is called
   env/{server,client}.ts        — Zod-parsed env vars (throw at import)
   domain/{summary,feed,verse,recorder}.ts
                                 — shared types + Zod schemas + parseXxxFromLLM helpers
@@ -43,7 +48,7 @@ src/features/session/
   hooks/                        — useElapsedTimer, useWakeLock, useVisibilityWarning, useVerseFetch
   lib/                          — audio (isSilentBlob), text (tail/format), chunks (grouping),
                                   api (typed fetch wrappers)
-  config.ts                     — pacing constants (chunk cadences, warmup, timeouts)
+  config.ts                     — pacing constants (chunk cadences, insights interval, deltas, timeouts)
   types.ts                      — ChunkRow, FinalAudio, TranscriptState, VerseFetchState
 ```
 
@@ -82,11 +87,16 @@ Do not add these unprompted (the user is aware and defers them):
 
 ## Behaviour-preservation guardrails
 
-The session page has two live pipelines (`extract`, `suggest`) coordinated by flight-flag booleans (`extracting`, `suggesting`, `finalizing`) plus per-pipeline "last chunk fired" refs. Both pipelines are ADDITIVE — they only append to `feedItems`; nothing is rewritten or reordered mid-recording. Client-side dedup via `feedItemDedupKey` protects against equivalent items landing from overlapping calls. When touching `app/spike/page.tsx`, keep the guard predicates and dependency arrays intact unless the change is intentional.
+The session page runs two live pipelines coordinated by flight-flag booleans (`bibleInFlight`, `insightsInFlight`, `finalizing`):
+- **`bible`** fires per-chunk, gated by `hasBibleMention(recentTail)` (see `lib/bible/detect.ts`) OR by the current `readingMode`. The regex tolerates missing accents, ordinal variants (`1`, `I`, `primeiro`), and also fires on the reading triggers `capítulo` / `versículo` / `verso` even when no book name shows up in the chunk (contextual anchoring during a reading).
+- **`insights`** fires on a `setInterval(INSIGHTS_INTERVAL_MS)` — currently 45s. It's paused while `readingMode` is on and has a `INSIGHTS_MIN_TAIL_DELTA_CHARS` gate so ticks in near-silence no-op.
+Both pipelines are ADDITIVE — they only append to `feedItems`; nothing is rewritten or reordered mid-recording. Client-side dedup via `feedItemDedupKey` protects against equivalent items landing from overlapping calls. When touching `RecordingLive.tsx`, keep the guard predicates and dependency arrays intact unless the change is intentional.
 
-Exception to "additive only" — RANGE SUPERSEDE for `citedVerse`: when an incoming reference strictly contains an already-visible one (same book/chapter, wider verse span — e.g., `Tiago 1:1-4` arrives while `Tiago 1:1` is visible), the narrower card is removed so a single card tracks the passage as the pastor reads. Containment is asymmetric: chapter-only refs never cover verse-specific refs (`João 4` does NOT supersede `João 4:7`), matching the extract-prompt rule. See `referenceStrictlyContains` in `lib/domain/feed.ts`.
+**Do not merge `bible` back into `insights` or vice-versa.** They exist as separate routes because their cost/latency profiles are fundamentally different: `bible` needs to appear on screen the moment the pastor starts reading (low-latency, cheap because regex-gated); `insights` needs accumulated context and can wait (higher-latency, tolerated because slower cadence bounds cost). `citedVerse` is exclusive to `/api/bible`; the other five kinds are exclusive to `/api/insights`.
 
-Reading-mode fast path: while `readingMode` is true, `citedVerse` items bypass the `FEED_MIN_GAP_MS` drip queue and append immediately. The drip exists to space out NEW cards for readability; a verse card whose range is expanding isn't new from the listener's viewpoint, so gating it just adds felt lag. The recorder also switches to `RECORDER_MIN_CHUNK_MS_READING` / `RECORDER_MAX_CHUNK_MS_READING` (via `setChunkTiming`) while `readingMode` is on so extract fires more often on each new verse.
+Exception to "additive only" — RANGE SUPERSEDE for `citedVerse`: when an incoming reference strictly contains an already-visible one (same book/chapter, wider verse span — e.g., `Tiago 1:1-4` arrives while `Tiago 1:1` is visible), the narrower card is removed so a single card tracks the passage as the pastor reads. Containment is asymmetric: chapter-only refs never cover verse-specific refs (`João 4` does NOT supersede `João 4:7`), matching the bible-prompt rule. See `referenceStrictlyContains` in `lib/domain/feed.ts`.
+
+Reading-mode fast path: while `readingMode` is true, `citedVerse` items bypass the `FEED_MIN_GAP_MS` drip queue and append immediately. The drip exists to space out NEW cards for readability; a verse card whose range is expanding isn't new from the listener's viewpoint, so gating it just adds felt lag. The recorder also switches to `RECORDER_MIN_CHUNK_MS_READING` / `RECORDER_MAX_CHUNK_MS_READING` (via `setChunkTiming`) while `readingMode` is on so `bible` fires more often on each new verse. Insights stays paused during reading — the listener is meant to be focused on Scripture, not distracted by AI enrichment.
 
 The final summary is single-shot: on stop, `/api/final-summary` runs once with the full transcript + accumulated `feedItems`. The prompt treats the feed as high-priority curated context (cited verses and speaker highlights must carry through; AI suggestions are kept only if they still fit the whole).
 

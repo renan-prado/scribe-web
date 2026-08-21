@@ -71,9 +71,13 @@ const RECORDING_KINDS: ReadonlySet<FeedItemKind> = new Set<FeedItemKind>([
   "speakerCitation",
 ]);
 
+const BIBLE_KINDS: ReadonlySet<FeedItemKind> = new Set<FeedItemKind>(["citedVerse"]);
+
 const ECHO_KINDS: ReadonlySet<FeedItemKind> = new Set<FeedItemKind>(["speakerEcho"]);
 
-const AI_KINDS: ReadonlySet<FeedItemKind> = new Set<FeedItemKind>([
+const INSIGHTS_KINDS: ReadonlySet<FeedItemKind> = new Set<FeedItemKind>([
+  "speakerHighlight",
+  "speakerCitation",
   "relatedVerse",
   "context",
   "suggestedQuote",
@@ -215,17 +219,16 @@ export type FeedParseResult = {
 };
 
 /**
- * Parse the extract-route LLM response. Filters to kinds that come from the
- * speaker's own words (citedVerse / speakerHighlight / speakerCitation) and
- * drops anything whose dedup key is already present in `existingKeys`. Also
- * returns the transient `thinking` note the model uses to power the status
- * line at the bottom of the session view.
+ * Parse the bible-route LLM response. Filters to citedVerse only and drops
+ * anything whose dedup key is already present in `existingKeys`. Also returns
+ * the transient `thinking` note, the `readingMode` flag (pauses the insights
+ * pipeline while true) and the optional `translationHint`.
  *
  * `drops` surfaces per-item rejections (bad shape, disallowed kind, dedup) so
  * the route can log them — otherwise a model that drifts into the wrong shape
  * loses items silently.
  */
-export function parseExtractFromLLM(
+export function parseBibleFromLLM(
   content: string,
   existingKeys: Set<string>
 ): {
@@ -235,7 +238,7 @@ export function parseExtractFromLLM(
   translationHint: string;
   drops: FeedParseDrop[];
 } {
-  const { items, drops } = parseFeedItems(content, existingKeys, RECORDING_KINDS);
+  const { items, drops } = parseFeedItems(content, existingKeys, BIBLE_KINDS);
   const parsed = safeJson(content);
   const record = parsed && typeof parsed === "object" ? (parsed as Record<string, unknown>) : {};
   const thinking = typeof record.thinking === "string" ? record.thinking.trim().slice(0, 200) : "";
@@ -246,12 +249,12 @@ export function parseExtractFromLLM(
 }
 
 /**
- * Parse the suggest-route LLM response. Filters to AI-generated kinds
- * (relatedVerse / context / suggestedQuote) and drops anything already in
- * `existingKeys`.
+ * Parse the insights-route LLM response. Filters to the 5 non-citedVerse
+ * kinds (speakerHighlight, speakerCitation, relatedVerse, context,
+ * suggestedQuote) and drops anything already in `existingKeys`.
  */
-export function parseSuggestFromLLM(content: string, existingKeys: Set<string>): FeedParseResult {
-  return parseFeedItems(content, existingKeys, AI_KINDS);
+export function parseInsightsFromLLM(content: string, existingKeys: Set<string>): FeedParseResult {
+  return parseFeedItems(content, existingKeys, INSIGHTS_KINDS);
 }
 
 /**

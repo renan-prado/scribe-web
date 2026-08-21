@@ -1,26 +1,26 @@
 import { NextResponse } from "next/server";
 import { recordChatUsage } from "@/lib/db/usage";
-import { type FeedItem, feedItemDedupKey, parseExtractFromLLM } from "@/lib/domain/feed";
+import { type FeedItem, feedItemDedupKey, parseBibleFromLLM } from "@/lib/domain/feed";
 import { serverEnv } from "@/lib/env/server";
 import { buildLlmMetadata } from "@/lib/llm/metadata";
 import { callChat } from "@/lib/llm/openai";
-import { EXTRACT_SYSTEM_PROMPT } from "@/lib/prompts/extract";
+import { devLog } from "@/lib/log";
+import { BIBLE_SYSTEM_PROMPT } from "@/lib/prompts/bible";
 import { requireAuth } from "@/lib/supabase/require-auth";
 
 export const runtime = "nodejs";
 export const dynamic = "force-dynamic";
 
 /**
- * Live "extract" pipeline: pulls out only what the speaker actually said —
- * cited verses, verbatim highlight phrases, and third-party citations the
- * speaker attributed on the fly. Runs on every chunk during a recording. The
- * companion /api/suggest pipeline handles AI-generated enrichment.
+ * Live "bible" pipeline: só emite citedVerse. O cliente já filtrou via regex
+ * que há sinal de menção bíblica no trecho antes de chamar — a rota confirma
+ * e normaliza a referência, ou devolve items vazio em caso de falso alarme.
  */
 export async function POST(request: Request) {
   const auth = await requireAuth();
   if (auth.response) return auth.response;
 
-  const model = serverEnv.OPENAI_EXTRACT_MODEL;
+  const model = serverEnv.OPENAI_BIBLE_MODEL;
 
   let body: {
     text?: string;
@@ -52,26 +52,26 @@ export async function POST(request: Request) {
   const sessionId = typeof body.sessionId === "string" && body.sessionId ? body.sessionId : null;
   const result = await callChat({
     model,
-    temperature: 0.3,
-    maxTokens: 1200,
+    temperature: 0.2,
+    maxTokens: 600,
     responseFormat: { type: "json_object" },
     messages: [
-      { role: "system", content: EXTRACT_SYSTEM_PROMPT },
+      { role: "system", content: BIBLE_SYSTEM_PROMPT },
       { role: "user", content: userMessage },
     ],
     store: true,
-    metadata: buildLlmMetadata({ route: "extract", userId: auth.user.id, sessionId }),
+    metadata: buildLlmMetadata({ route: "bible", userId: auth.user.id, sessionId }),
   });
 
   if (!result.ok) {
     if (result.error.kind === "fetch") {
-      console.error("[extract] upstream fetch failed", { error: result.error.message });
+      console.error("[bible] upstream fetch failed", { error: result.error.message });
       return NextResponse.json(
         { error: `upstream fetch failed: ${result.error.message}`, items: [] },
         { status: 502 }
       );
     }
-    console.error("[extract] upstream error", {
+    console.error("[bible] upstream error", {
       status: result.error.status,
       latencyMs: result.error.latencyMs,
       snippet: result.error.snippet.slice(0, 300),
@@ -83,15 +83,15 @@ export async function POST(request: Request) {
   }
 
   const { content, finishReason, usage, latencyMs } = result.data;
-  const { items, thinking, readingMode, translationHint, drops } = parseExtractFromLLM(
+  const { items, thinking, readingMode, translationHint, drops } = parseBibleFromLLM(
     content,
     existingKeys
   );
   for (const d of drops) {
     if (d.reason === "dedup") continue;
-    console.warn("[extract] schema-drop", d);
+    console.warn("[bible] schema-drop", d);
   }
-  console.log("[extract] ok", {
+  devLog("[bible] ok", {
     sermonAt,
     model,
     latencyMs,
@@ -107,7 +107,7 @@ export async function POST(request: Request) {
   });
   await recordChatUsage({
     sessionId,
-    route: "extract",
+    route: "bible",
     model,
     promptTokens: usage.promptTokens,
     completionTokens: usage.completionTokens,
@@ -128,27 +128,14 @@ function formatSermonAt(ms: number | undefined): string {
 }
 
 /**
- * Compact the existing feed into just what the extract prompt needs to dedup.
- * We cap highlights + citations to the most recent N — older ones almost never
- * come up again in the model's current-window emissions, and pruning keeps
- * prompt tokens bounded as the session grows. citedVerses stay full because
- * the "contido-em" range dedup rule needs the whole history.
+ * Compacta o feed no mínimo que o prompt do bible precisa pra dedup. Passa
+ * TODAS as citedVerses (a regra de "contido-em" precisa do histórico
+ * completo) e nenhum outro kind — bible não emite mais nada.
  */
-const RECENT_DEDUP_WINDOW = 12;
-
 function summarizeExistingForPrompt(items: FeedItem[]) {
   const citedVerses: string[] = [];
-  const speakerHighlights: string[] = [];
-  const speakerCitations: Array<{ author: string; text: string }> = [];
   for (const it of items) {
     if (it.kind === "citedVerse") citedVerses.push(it.reference);
-    else if (it.kind === "speakerHighlight") speakerHighlights.push(it.text);
-    else if (it.kind === "speakerCitation")
-      speakerCitations.push({ author: it.author, text: it.text });
   }
-  return {
-    citedVerses,
-    speakerHighlights: speakerHighlights.slice(-RECENT_DEDUP_WINDOW),
-    speakerCitations: speakerCitations.slice(-RECENT_DEDUP_WINDOW),
-  };
+  return { citedVerses };
 }

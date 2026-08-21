@@ -9,13 +9,12 @@ import type { VersePayload } from "@/lib/domain/verse";
  */
 
 /**
- * POST /api/extract. Pulls speaker-sourced feed items (cited verses, speaker
- * highlights, attributed citations) from the recent transcript tail. Also
- * returns a transient `thinking` note the session view surfaces at the
- * bottom while recording. Returns an empty result on network/parse errors
- * so effects can no-op cleanly.
+ * POST /api/bible. Extrai APENAS citedVerse do trecho recente. O cliente
+ * já filtrou via regex que há sinal de menção bíblica antes de chamar.
+ * Também devolve o `thinking`, o `readingMode` (que pausa o fluxo insights)
+ * e o `translationHint`.
  */
-export async function requestExtract(body: {
+export async function requestBible(body: {
   text: string;
   existingItems: FeedItem[];
   sermonAtMs?: number;
@@ -27,7 +26,7 @@ export async function requestExtract(body: {
   translationHint: string;
 }> {
   try {
-    const res = await fetch("/api/extract", {
+    const res = await fetch("/api/bible", {
       method: "POST",
       headers: { "content-type": "application/json" },
       body: JSON.stringify(body),
@@ -50,18 +49,18 @@ export async function requestExtract(body: {
 }
 
 /**
- * POST /api/suggest. AI-authored enrichment (related verses, context,
- * suggested quotes) grounded in the current transcript. Same error handling
- * shape as requestExtract.
+ * POST /api/insights. Enriquecimento (speakerHighlight, speakerCitation,
+ * relatedVerse, context, suggestedQuote) sobre a transcrição corrente.
+ * citedVerse fica com /api/bible.
  */
-export async function requestSuggest(body: {
+export async function requestInsights(body: {
   text: string;
   existingItems: FeedItem[];
   sermonAtMs?: number;
   sessionId?: string;
 }): Promise<FeedItem[]> {
   try {
-    const res = await fetch("/api/suggest", {
+    const res = await fetch("/api/insights", {
       method: "POST",
       headers: { "content-type": "application/json" },
       body: JSON.stringify(body),

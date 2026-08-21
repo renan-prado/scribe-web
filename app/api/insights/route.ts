@@ -1,26 +1,27 @@
 import { NextResponse } from "next/server";
 import { recordChatUsage } from "@/lib/db/usage";
-import { type FeedItem, feedItemDedupKey, parseSuggestFromLLM } from "@/lib/domain/feed";
+import { type FeedItem, feedItemDedupKey, parseInsightsFromLLM } from "@/lib/domain/feed";
 import { serverEnv } from "@/lib/env/server";
 import { buildLlmMetadata } from "@/lib/llm/metadata";
 import { callChat } from "@/lib/llm/openai";
-import { SUGGEST_SYSTEM_PROMPT } from "@/lib/prompts/suggest";
+import { devLog } from "@/lib/log";
+import { INSIGHTS_SYSTEM_PROMPT } from "@/lib/prompts/insights";
 import { requireAuth } from "@/lib/supabase/require-auth";
 
 export const runtime = "nodejs";
 export const dynamic = "force-dynamic";
 
 /**
- * Live "suggest" pipeline: generates AI-authored enrichment (related verses,
- * historical/linguistic context, quotes from other authors) that the speaker
- * did NOT mention. Runs on a slower cadence than /api/extract so the model
- * has more accumulated context before deciding what actually deserves a card.
+ * Live "insights" pipeline: emite os 5 kinds que não são citedVerse
+ * (speakerHighlight, speakerCitation, relatedVerse, context, suggestedQuote).
+ * Roda em cadência lenta (~45s) pra baratear tokens e dar contexto acumulado
+ * ao modelo. citedVerse fica com /api/bible.
  */
 export async function POST(request: Request) {
   const auth = await requireAuth();
   if (auth.response) return auth.response;
 
-  const model = serverEnv.OPENAI_SUGGEST_MODEL;
+  const model = serverEnv.OPENAI_INSIGHTS_MODEL;
 
   let body: {
     text?: string;
@@ -56,22 +57,22 @@ export async function POST(request: Request) {
     maxTokens: 1500,
     responseFormat: { type: "json_object" },
     messages: [
-      { role: "system", content: SUGGEST_SYSTEM_PROMPT },
+      { role: "system", content: INSIGHTS_SYSTEM_PROMPT },
       { role: "user", content: userMessage },
     ],
     store: true,
-    metadata: buildLlmMetadata({ route: "suggest", userId: auth.user.id, sessionId }),
+    metadata: buildLlmMetadata({ route: "insights", userId: auth.user.id, sessionId }),
   });
 
   if (!result.ok) {
     if (result.error.kind === "fetch") {
-      console.error("[suggest] upstream fetch failed", { error: result.error.message });
+      console.error("[insights] upstream fetch failed", { error: result.error.message });
       return NextResponse.json(
         { error: `upstream fetch failed: ${result.error.message}`, items: [] },
         { status: 502 }
       );
     }
-    console.error("[suggest] upstream error", {
+    console.error("[insights] upstream error", {
       status: result.error.status,
       latencyMs: result.error.latencyMs,
       snippet: result.error.snippet.slice(0, 300),
@@ -83,12 +84,12 @@ export async function POST(request: Request) {
   }
 
   const { content, finishReason, usage, latencyMs } = result.data;
-  const { items, drops } = parseSuggestFromLLM(content, existingKeys);
+  const { items, drops } = parseInsightsFromLLM(content, existingKeys);
   for (const d of drops) {
     if (d.reason === "dedup") continue;
-    console.warn("[suggest] schema-drop", d);
+    console.warn("[insights] schema-drop", d);
   }
-  console.log("[suggest] ok", {
+  devLog("[insights] ok", {
     sermonAt,
     model,
     latencyMs,
@@ -101,7 +102,7 @@ export async function POST(request: Request) {
   });
   await recordChatUsage({
     sessionId,
-    route: "suggest",
+    route: "insights",
     model,
     promptTokens: usage.promptTokens,
     completionTokens: usage.completionTokens,
@@ -122,20 +123,22 @@ function formatSermonAt(ms: number | undefined): string {
 }
 
 /**
- * Cap AI-generated history to the most recent N entries per type. citedVerses
- * stay full so relatedVerse dedup covers the whole session; AI items are
- * windowed since the model's current window rarely revisits older themes.
+ * Limita histórico de itens da IA. citedVerses fica completo pra relatedVerse
+ * dedup cobrir toda a sessão; speaker/AI items ficam janelados porque o
+ * modelo raramente revisita temas antigos na janela atual.
  */
-const RECENT_DEDUP_WINDOW = 10;
+const RECENT_DEDUP_WINDOW = 12;
 
 function summarizeExistingForPrompt(items: FeedItem[]) {
   const citedVerses: string[] = [];
+  const speakerHighlights: string[] = [];
   const speakerCitations: Array<{ author: string; text: string }> = [];
   const relatedVerses: string[] = [];
   const contexts: Array<{ label: string; text: string }> = [];
   const suggestedQuotes: Array<{ author: string; text: string }> = [];
   for (const it of items) {
     if (it.kind === "citedVerse") citedVerses.push(it.reference);
+    else if (it.kind === "speakerHighlight") speakerHighlights.push(it.text);
     else if (it.kind === "speakerCitation")
       speakerCitations.push({ author: it.author, text: it.text });
     else if (it.kind === "relatedVerse") relatedVerses.push(it.reference);
@@ -145,6 +148,7 @@ function summarizeExistingForPrompt(items: FeedItem[]) {
   }
   return {
     citedVerses,
+    speakerHighlights: speakerHighlights.slice(-RECENT_DEDUP_WINDOW),
     speakerCitations: speakerCitations.slice(-RECENT_DEDUP_WINDOW),
     relatedVerses: relatedVerses.slice(-RECENT_DEDUP_WINDOW),
     contexts: contexts.slice(-RECENT_DEDUP_WINDOW),

@@ -2,6 +2,7 @@ import { NextResponse } from "next/server";
 import { z } from "zod";
 import { requireAdmin } from "@/lib/auth/require-admin";
 import { deleteUser, updateUser } from "@/lib/db/admin/users";
+import { devLog } from "@/lib/log";
 
 export const runtime = "nodejs";
 export const dynamic = "force-dynamic";
@@ -46,7 +47,7 @@ export async function PATCH(request: Request, { params }: { params: Promise<{ id
 
   try {
     await updateUser(id, parsed.data);
-    console.log("[admin/users] updated", { id, fields: Object.keys(parsed.data) });
+    devLog("[admin/users] updated", { id, fields: Object.keys(parsed.data) });
     return NextResponse.json({ ok: true });
   } catch (err) {
     console.error("[admin/users] update failed", { id, error: (err as Error).message });
@@ -65,7 +66,7 @@ export async function DELETE(_request: Request, { params }: { params: Promise<{ 
 
   try {
     await deleteUser(id);
-    console.log("[admin/users] deleted", { id });
+    devLog("[admin/users] deleted", { id });
     return NextResponse.json({ ok: true });
   } catch (err) {
     console.error("[admin/users] delete failed", { id, error: (err as Error).message });

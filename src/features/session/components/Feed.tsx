@@ -80,7 +80,7 @@ export function Feed({
 /**
  * WhatsApp-style typing indicator: same avatar + dashed bubble the AI cards
  * use, but content is three pulsing dots instead of a real message. Only
- * appears while /api/suggest is in flight.
+ * appears while /api/insights is in flight.
  */
 function SuggestingIndicator() {
   return (
