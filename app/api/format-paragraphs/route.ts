@@ -2,11 +2,15 @@ import { NextResponse } from "next/server";
 import { serverEnv } from "@/lib/env/server";
 import { callChat } from "@/lib/llm/openai";
 import { FORMAT_PARAGRAPHS_SYSTEM_PROMPT } from "@/lib/prompts/format-paragraphs";
+import { requireAuth } from "@/lib/supabase/require-auth";
 
 export const runtime = "nodejs";
 export const dynamic = "force-dynamic";
 
 export async function POST(request: Request) {
+  const auth = await requireAuth();
+  if (auth.response) return auth.response;
+
   const model = serverEnv.OPENAI_FORMAT_MODEL;
 
   let body: { text?: string };

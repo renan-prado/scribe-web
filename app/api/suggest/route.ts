@@ -3,6 +3,7 @@ import { type FeedItem, feedItemDedupKey, parseSuggestFromLLM } from "@/lib/doma
 import { serverEnv } from "@/lib/env/server";
 import { callChat } from "@/lib/llm/openai";
 import { SUGGEST_SYSTEM_PROMPT } from "@/lib/prompts/suggest";
+import { requireAuth } from "@/lib/supabase/require-auth";
 
 export const runtime = "nodejs";
 export const dynamic = "force-dynamic";
@@ -14,6 +15,9 @@ export const dynamic = "force-dynamic";
  * has more accumulated context before deciding what actually deserves a card.
  */
 export async function POST(request: Request) {
+  const auth = await requireAuth();
+  if (auth.response) return auth.response;
+
   const model = serverEnv.OPENAI_SUGGEST_MODEL;
 
   let body: { text?: string; existingItems?: FeedItem[]; sermonAtMs?: number };
@@ -84,8 +88,6 @@ export async function POST(request: Request) {
     items: items.length,
     kinds: items.map((i) => i.kind),
     drops: drops.length,
-    inputTail: text.slice(-400),
-    rawOutput: content.slice(0, 800),
   });
   return NextResponse.json({ items, latencyMs, model });
 }

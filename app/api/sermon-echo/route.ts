@@ -3,6 +3,7 @@ import { type FeedItem, feedItemDedupKey, parseEchoFromLLM } from "@/lib/domain/
 import { serverEnv } from "@/lib/env/server";
 import { callChat } from "@/lib/llm/openai";
 import { SERMON_ECHO_SYSTEM_PROMPT } from "@/lib/prompts/sermon-echo";
+import { requireAuth } from "@/lib/supabase/require-auth";
 
 export const runtime = "nodejs";
 export const dynamic = "force-dynamic";
@@ -15,6 +16,9 @@ export const dynamic = "force-dynamic";
  * they're hearing an actual sermon, not a wall of AI commentary.
  */
 export async function POST(request: Request) {
+  const auth = await requireAuth();
+  if (auth.response) return auth.response;
+
   const model = serverEnv.OPENAI_ECHO_MODEL;
 
   let body: { text?: string; existingItems?: FeedItem[]; sermonAtMs?: number };
@@ -84,8 +88,6 @@ export async function POST(request: Request) {
     completionTokens: usage.completionTokens,
     items: items.length,
     drops: drops.length,
-    inputTail: text.slice(-400),
-    rawOutput: content.slice(0, 400),
   });
   return NextResponse.json({ items, latencyMs, model });
 }

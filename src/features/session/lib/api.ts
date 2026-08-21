@@ -101,12 +101,13 @@ export async function requestEcho(body: {
  * definitive SummaryPayload rendered by SummaryView.
  */
 export async function requestFinalSummary(body: {
+  sessionId: string;
   text: string;
   feedItems: FeedItem[];
   durationMs?: number;
   speakerName?: string;
   speakerLocation?: string;
-}): Promise<{ payload: SummaryPayload; sessionId: string | null } | null> {
+}): Promise<{ payload: SummaryPayload; saved: boolean } | null> {
   try {
     const res = await fetch("/api/final-summary", {
       method: "POST",
@@ -115,7 +116,7 @@ export async function requestFinalSummary(body: {
     });
     const raw = (await res.json()) as Partial<SummaryPayload> & {
       error?: string;
-      sessionId?: string | null;
+      saved?: boolean;
     };
     if (raw?.error) return null;
     return {
@@ -125,10 +126,32 @@ export async function requestFinalSummary(body: {
         shortSummary: typeof raw.shortSummary === "string" ? raw.shortSummary : "",
         blocks: Array.isArray(raw.blocks) ? raw.blocks : [],
       },
-      sessionId: typeof raw.sessionId === "string" ? raw.sessionId : null,
+      saved: raw?.saved === true,
     };
   } catch {
     return null;
+  }
+}
+
+/**
+ * POST /api/sessions. Creates the empty row that anchors /recording/{id}/live.
+ * Called from the start button on /spike before the recorder mounts.
+ */
+export async function requestCreateSession(body: {
+  speakerName?: string | null;
+  speakerLocation?: string | null;
+}): Promise<{ id: string } | { error: string }> {
+  try {
+    const res = await fetch("/api/sessions", {
+      method: "POST",
+      headers: { "content-type": "application/json" },
+      body: JSON.stringify(body),
+    });
+    const raw = (await res.json()) as { id?: string; error?: string };
+    if (raw?.id) return { id: raw.id };
+    return { error: raw?.error || `HTTP ${res.status}` };
+  } catch (err) {
+    return { error: (err as Error).message || "network error" };
   }
 }
 

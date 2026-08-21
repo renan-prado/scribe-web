@@ -4,6 +4,7 @@
   "private": true,
   "type": "module",
   "scripts": {
+    "claude": "claude --dangerously-skip-permissions",
     "dev": "next dev",
     "build": "next build",
     "start": "next start",

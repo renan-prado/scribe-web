@@ -121,7 +121,7 @@ export function RecordingHeader({
             onClick={() => setNameDialogOpen(true)}
             className={cn(
               "group flex items-center gap-2 text-sm leading-none text-muted-foreground",
-              "rounded-md px-1 py-0.5 -mx-1 transition-colors hover:bg-muted hover:text-foreground cursor-pointer"
+              "rounded-md px-1 py-0.5 -mx-1 transition-colors hover:bg-muted hover:text-foreground"
             )}
           >
             <span className="flex size-6 shrink-0 items-center justify-center rounded-full border border-border transition-colors group-hover:border-foreground/30">
@@ -165,7 +165,7 @@ export function RecordingHeader({
           onClick={() => setLocationDialogOpen(true)}
           className={cn(
             "group mt-4 flex items-center gap-1.5 text-xs leading-none text-muted-foreground",
-            "rounded-md px-1 py-0.5 -mx-1 transition-colors hover:bg-muted hover:text-foreground cursor-pointer w-fit"
+            "rounded-md px-1 py-0.5 -mx-1 transition-colors hover:bg-muted hover:text-foreground w-fit"
           )}
         >
           <MapPin className="size-3 shrink-0" />

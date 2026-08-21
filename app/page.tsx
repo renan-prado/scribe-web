@@ -1,155 +1,93 @@
-import { MapPin, Plus, Trash2, User } from "lucide-react";
-import { revalidatePath } from "next/cache";
+import { BookOpenText, MicVocal, Sparkles } from "lucide-react";
 import Link from "next/link";
-import { deleteSession, listSessions } from "@/lib/db/sessions";
-import { cn } from "@/lib/utils";
-import { RefreshSessionsButton } from "./RefreshSessionsButton";
+import { Button } from "@/components/ui/button";
 
-async function deleteSessionAction(formData: FormData): Promise<void> {
-  "use server";
-  const id = formData.get("id");
-  if (typeof id !== "string" || !id) return;
-  await deleteSession(id);
-  revalidatePath("/");
-}
+export const metadata = {
+  title: { absolute: "Scribe — Transcrição e resumos ao vivo de sermões" },
+};
 
-const DATE_FMT = new Intl.DateTimeFormat("pt-BR", {
-  day: "2-digit",
-  month: "short",
-  year: "numeric",
-  hour: "2-digit",
-  minute: "2-digit",
-});
+const FEATURES = [
+  {
+    icon: MicVocal,
+    title: "Transcrição em tempo real",
+    body: "Grave o culto direto do navegador. O Scribe transcreve conforme o pregador fala, com prompt de vocabulário bíblico.",
+  },
+  {
+    icon: BookOpenText,
+    title: "Feed vivo de versículos e citações",
+    body: "Versículos citados, destaques verbatim e autores mencionados aparecem em cards enquanto a pregação acontece.",
+  },
+  {
+    icon: Sparkles,
+    title: "Resumo estruturado no final",
+    body: "Ao parar a gravação, você recebe título, resumo curto e blocos temáticos gerados a partir do transcrito + do feed curado.",
+  },
+];
 
-function formatDuration(ms: number | null): string {
-  if (!ms || ms <= 0) return "";
-  const totalSec = Math.round(ms / 1000);
-  const m = Math.floor(totalSec / 60);
-  const s = totalSec % 60;
-  if (m === 0) return `${s}s`;
-  return `${m}m ${s.toString().padStart(2, "0")}s`;
-}
-
-export default async function HomePage() {
-  let sessions: Awaited<ReturnType<typeof listSessions>> = [];
-  let loadError: string | null = null;
-  try {
-    sessions = await listSessions();
-  } catch (err) {
-    loadError = (err as Error).message;
-  }
-
+export default function LandingPage() {
   return (
-    <main className="mx-auto flex min-h-svh w-full max-w-3xl flex-col gap-8 px-4 py-10 sm:gap-10 sm:px-6 sm:py-16">
-      <header className="flex flex-col gap-4 sm:flex-row sm:items-start sm:justify-between">
-        <div className="flex min-w-0 flex-col gap-2">
-          <h1 className="font-heading text-2xl font-bold tracking-tight text-foreground sm:text-3xl">
-            scribe
-          </h1>
-          <p className="text-sm text-muted-foreground">
-            Transcrições, resumos e cartões extraídos de sermões gravados.
-          </p>
-        </div>
-        <div className="flex items-center gap-2 self-stretch sm:self-start">
-          <RefreshSessionsButton />
-          <Link
-            href="/spike"
-            className={cn(
-              "inline-flex flex-1 items-center justify-center gap-2 whitespace-nowrap rounded-full bg-primary px-4 py-2.5 text-sm font-medium text-primary-foreground shadow-sm sm:flex-initial sm:py-2",
-              "transition-transform hover:scale-[1.02] active:scale-95",
-              "focus-visible:outline-none focus-visible:ring-4 focus-visible:ring-ring/40"
-            )}
-          >
-            <Plus className="size-4" />
-            Nova gravação
-          </Link>
+    <main className="mx-auto flex min-h-svh w-full max-w-4xl flex-col px-6 py-10 sm:py-16">
+      <header className="flex items-center justify-between">
+        <span className="font-heading text-lg font-bold tracking-tight text-foreground">
+          scribe
+        </span>
+        <div className="flex items-center gap-2">
+          <Button render={<Link href="/sign-in" />} nativeButton={false} variant="ghost" size="lg">
+            Entrar
+          </Button>
+          <Button render={<Link href="/sign-up" />} nativeButton={false} size="lg">
+            Criar conta
+          </Button>
         </div>
       </header>
 
-      {loadError ? (
-        <div className="rounded-md border border-destructive/40 bg-destructive/5 p-4 text-sm text-destructive">
-          Não consegui carregar as sessões: {loadError}
-        </div>
-      ) : sessions.length === 0 ? (
-        <div className="flex flex-col items-center gap-4 rounded-lg border border-dashed border-border p-8 text-center">
-          <p className="text-sm text-muted-foreground">
-            Nenhuma sessão salva ainda. Comece pela primeira gravação.
-          </p>
-          <Link
-            href="/spike"
-            className={cn(
-              "inline-flex items-center gap-2 rounded-full bg-primary px-4 py-2 text-sm font-medium text-primary-foreground shadow-sm",
-              "transition-transform hover:scale-[1.02] active:scale-95",
-              "focus-visible:outline-none focus-visible:ring-4 focus-visible:ring-ring/40"
-            )}
+      <section className="mt-16 flex flex-col items-center gap-6 text-center sm:mt-24">
+        <h1 className="font-heading text-3xl font-bold tracking-tight text-foreground sm:text-5xl">
+          O sermão inteiro, transcrito e resumido enquanto acontece.
+        </h1>
+        <p className="max-w-2xl text-balance text-base text-muted-foreground sm:text-lg">
+          Scribe grava a pregação, transcreve ao vivo, extrai versículos e citações em um feed e
+          entrega um resumo estruturado assim que o pregador termina.
+        </p>
+        <div className="mt-2 flex flex-col gap-3 sm:flex-row">
+          <Button
+            render={<Link href="/sign-up" />}
+            nativeButton={false}
+            size="lg"
+            className="min-w-40"
           >
-            <Plus className="size-4" />
-            Nova gravação
-          </Link>
+            Começar grátis
+          </Button>
+          <Button
+            render={<Link href="/sign-in" />}
+            nativeButton={false}
+            variant="outline"
+            size="lg"
+            className="min-w-40"
+          >
+            Já tenho conta
+          </Button>
         </div>
-      ) : (
-        <ul className="flex flex-col gap-3">
-          {sessions.map((s) => {
-            const when = DATE_FMT.format(new Date(s.createdAt));
-            const dur = formatDuration(s.durationMs);
-            return (
-              <li
-                key={s.id}
-                className={cn(
-                  "group flex items-center justify-between gap-4 rounded-lg border border-border bg-card px-4 py-3",
-                  "transition-colors hover:border-foreground/25 hover:bg-muted/40"
-                )}
-              >
-                <Link
-                  href={`/session/${s.id}`}
-                  className="flex min-w-0 flex-1 flex-col gap-1 outline-none focus-visible:ring-2 focus-visible:ring-ring/40 rounded-md -mx-1 px-1"
-                >
-                  <span className="truncate text-base font-medium text-foreground">
-                    {s.title?.trim() || "Sessão sem título"}
-                  </span>
-                  {s.shortSummary ? (
-                    <span className="line-clamp-2 text-sm text-muted-foreground">
-                      {s.shortSummary}
-                    </span>
-                  ) : null}
-                  <span className="mt-1 flex flex-wrap items-center gap-x-3 gap-y-1 text-[0.7rem] tracking-wide text-muted-foreground/80">
-                    {s.speakerName?.trim() ? (
-                      <span className="inline-flex items-center gap-1">
-                        <User className="size-3" />
-                        {s.speakerName}
-                      </span>
-                    ) : null}
-                    {s.speakerLocation?.trim() ? (
-                      <span className="inline-flex items-center gap-1">
-                        <MapPin className="size-3" />
-                        {s.speakerLocation}
-                      </span>
-                    ) : null}
-                    <span>
-                      {when}
-                      {dur ? ` · ${dur}` : ""}
-                    </span>
-                  </span>
-                </Link>
-                <form action={deleteSessionAction}>
-                  <input type="hidden" name="id" value={s.id} />
-                  <button
-                    type="submit"
-                    aria-label="Excluir sessão"
-                    className={cn(
-                      "flex size-10 shrink-0 items-center justify-center rounded-full text-muted-foreground sm:size-9",
-                      "transition-colors hover:bg-destructive/10 hover:text-destructive",
-                      "focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-destructive/40"
-                    )}
-                  >
-                    <Trash2 className="size-4" />
-                  </button>
-                </form>
-              </li>
-            );
-          })}
-        </ul>
-      )}
+      </section>
+
+      <section className="mt-20 grid gap-6 sm:mt-28 sm:grid-cols-3">
+        {FEATURES.map(({ icon: Icon, title, body }) => (
+          <div
+            key={title}
+            className="flex flex-col gap-3 rounded-lg border border-border bg-card p-5"
+          >
+            <span className="flex size-9 items-center justify-center rounded-md bg-primary/10 text-primary">
+              <Icon className="size-5" />
+            </span>
+            <h2 className="font-heading text-base font-semibold text-foreground">{title}</h2>
+            <p className="text-sm text-muted-foreground">{body}</p>
+          </div>
+        ))}
+      </section>
+
+      <footer className="mt-auto pt-16 text-center text-xs text-muted-foreground">
+        © {new Date().getFullYear()} scribe
+      </footer>
     </main>
   );
 }

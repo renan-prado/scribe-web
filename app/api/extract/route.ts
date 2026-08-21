@@ -3,6 +3,7 @@ import { type FeedItem, feedItemDedupKey, parseExtractFromLLM } from "@/lib/doma
 import { serverEnv } from "@/lib/env/server";
 import { callChat } from "@/lib/llm/openai";
 import { EXTRACT_SYSTEM_PROMPT } from "@/lib/prompts/extract";
+import { requireAuth } from "@/lib/supabase/require-auth";
 
 export const runtime = "nodejs";
 export const dynamic = "force-dynamic";
@@ -14,6 +15,9 @@ export const dynamic = "force-dynamic";
  * companion /api/suggest pipeline handles AI-generated enrichment.
  */
 export async function POST(request: Request) {
+  const auth = await requireAuth();
+  if (auth.response) return auth.response;
+
   const model = serverEnv.OPENAI_EXTRACT_MODEL;
 
   let body: { text?: string; existingItems?: FeedItem[]; sermonAtMs?: number };
@@ -90,8 +94,6 @@ export async function POST(request: Request) {
     translationHint,
     drops: drops.length,
     thinking: thinking.slice(0, 120),
-    inputTail: text.slice(-400),
-    rawOutput: content.slice(0, 800),
   });
   return NextResponse.json({ items, thinking, readingMode, translationHint, latencyMs, model });
 }

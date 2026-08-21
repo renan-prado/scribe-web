@@ -2,6 +2,7 @@ import { NextResponse } from "next/server";
 import { AVAILABLE_TRANSLATIONS, isAvailableTranslation, loadBible } from "@/lib/bibles/loader";
 import { lookupVerse } from "@/lib/bibles/lookup";
 import { parseVerseReference } from "@/lib/domain/feed";
+import { requireAuth } from "@/lib/supabase/require-auth";
 
 export type { VersePayload } from "@/lib/domain/verse";
 
@@ -11,6 +12,9 @@ export const dynamic = "force-dynamic";
 const DEFAULT_TRANSLATION = "NVI";
 
 export async function POST(request: Request) {
+  const auth = await requireAuth();
+  if (auth.response) return auth.response;
+
   let body: { reference?: string; translation?: string };
   try {
     body = await request.json();

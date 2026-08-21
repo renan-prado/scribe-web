@@ -1,10 +1,11 @@
 import { NextResponse } from "next/server";
-import { saveSession } from "@/lib/db/sessions";
+import { updateSessionFinal } from "@/lib/db/sessions";
 import type { FeedItem } from "@/lib/domain/feed";
 import { parseSummaryFromLLM } from "@/lib/domain/summary";
 import { serverEnv } from "@/lib/env/server";
 import { callChat } from "@/lib/llm/openai";
 import { FINAL_SUMMARY_SYSTEM_PROMPT } from "@/lib/prompts/final-summary";
+import { requireAuth } from "@/lib/supabase/require-auth";
 
 export const runtime = "nodejs";
 export const dynamic = "force-dynamic";
@@ -18,9 +19,13 @@ export const dynamic = "force-dynamic";
  * for the previous live summary.
  */
 export async function POST(request: Request) {
+  const auth = await requireAuth();
+  if (auth.response) return auth.response;
+
   const model = serverEnv.OPENAI_FINAL_SUMMARY_MODEL;
 
   let body: {
+    sessionId?: string;
     text?: string;
     feedItems?: FeedItem[];
     durationMs?: number;
@@ -36,6 +41,10 @@ export async function POST(request: Request) {
     );
   }
 
+  const sessionId = typeof body.sessionId === "string" ? body.sessionId.trim() : "";
+  if (!sessionId) {
+    return NextResponse.json({ error: "missing sessionId" }, { status: 400 });
+  }
   const text = (body.text ?? "").trim();
   if (!text) {
     return NextResponse.json({ error: "empty text" }, { status: 400 });
@@ -88,7 +97,6 @@ export async function POST(request: Request) {
     completionTokens: usage.completionTokens,
     blocks: payload.blocks.length,
     feedItems: feedItems.length,
-    title: payload.title.slice(0, 60),
   });
   if (finishReason === "length") {
     console.warn("[final-summary] output truncated by max_tokens", {
@@ -96,12 +104,12 @@ export async function POST(request: Request) {
     });
   }
 
-  // Persist the session. Never fail the request if save fails — the user
-  // already sat through the recording; give them the summary, log the error
-  // for investigation.
-  let sessionId: string | null = null;
+  // Fill the row created at start. Never fail the request on save error —
+  // the user already sat through the recording; return the summary and log
+  // for investigation. RLS scopes the update to the session's owner.
+  let saved = false;
   try {
-    sessionId = await saveSession({
+    await updateSessionFinal(sessionId, {
       transcript: text,
       feedItems,
       summary: payload,
@@ -110,10 +118,11 @@ export async function POST(request: Request) {
       speakerLocation:
         typeof body.speakerLocation === "string" ? body.speakerLocation.trim() || null : null,
     });
+    saved = true;
     console.log("[final-summary] saved", { sessionId });
   } catch (err) {
-    console.error("[final-summary] save failed", { error: (err as Error).message });
+    console.error("[final-summary] save failed", { sessionId, error: (err as Error).message });
   }
 
-  return NextResponse.json({ ...payload, latencyMs, model, sessionId });
+  return NextResponse.json({ ...payload, latencyMs, model, sessionId, saved });
 }

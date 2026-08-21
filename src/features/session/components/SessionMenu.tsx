@@ -1,4 +1,4 @@
-import { FileText, MoreVertical, Sparkles } from "lucide-react";
+import { FileText, MoreVertical, Pencil, Sparkles } from "lucide-react";
 import {
   DropdownMenu,
   DropdownMenuContent,
@@ -12,11 +12,13 @@ export function SessionMenu({
   hasLiveFeed,
   onOpenTranscript,
   onOpenLiveFeed,
+  onEdit,
 }: {
   hasTranscript: boolean;
   hasLiveFeed: boolean;
   onOpenTranscript: () => void;
   onOpenLiveFeed: () => void;
+  onEdit?: () => void;
 }) {
   return (
     <DropdownMenu>
@@ -30,6 +32,12 @@ export function SessionMenu({
         <MoreVertical className="size-4" />
       </DropdownMenuTrigger>
       <DropdownMenuContent align="end" className="w-52">
+        {onEdit ? (
+          <DropdownMenuItem onClick={onEdit} className="gap-2">
+            <Pencil className="size-4" />
+            Editar
+          </DropdownMenuItem>
+        ) : null}
         <DropdownMenuItem disabled={!hasLiveFeed} onClick={onOpenLiveFeed} className="gap-2">
           <Sparkles className="size-4" />
           Ver conteúdo do live
