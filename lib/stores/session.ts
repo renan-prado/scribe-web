@@ -4,6 +4,7 @@ import { create } from "zustand";
 import { subscribeWithSelector } from "zustand/middleware";
 import { ECHO_STREAK_MAX, ECHO_STREAK_MIN } from "@/features/session/config";
 import type { ChunkRow } from "@/features/session/types";
+import type { GuardCurrentReading, GuardLastEmit } from "@/lib/bible/guard";
 import { type FeedItem, feedItemDedupKey, referenceStrictlyContains } from "@/lib/domain/feed";
 import type { SummaryPayload } from "@/lib/domain/summary";
 import { devLog } from "@/lib/log";
@@ -11,7 +12,10 @@ import { devLog } from "@/lib/log";
 export type SessionCounters = {
   bibleCalls: number;
   bibleYield: number;
+  /** Vezes que a camada 1 (regex de menção) descartou o chunk. */
   bibleGateSkipped: number;
+  /** Vezes que a camada 2 (guard ponderado) descartou o chunk. */
+  bibleGuardSkipped: number;
   insightsCalls: number;
   insightsYield: number;
   dedupSuppressed: number;
@@ -23,6 +27,7 @@ const INITIAL_COUNTERS: SessionCounters = {
   bibleCalls: 0,
   bibleYield: 0,
   bibleGateSkipped: 0,
+  bibleGuardSkipped: 0,
   insightsCalls: 0,
   insightsYield: 0,
   dedupSuppressed: 0,
@@ -80,13 +85,24 @@ export type SessionStoreState = {
   bibleInFlight: boolean;
   insightsInFlight: boolean;
 
+  // ---- bible guard context ----
+  /** Última leitura reconhecida (livro + capítulo + verso). Alimenta os
+   * sinais continuationHit, verseProgression e bookRepeatNoNumber do guard. */
+  currentReading: GuardCurrentReading | null;
+  /** Última referência efetivamente emitida como citedVerse. Alimenta o sinal
+   * duplicateEmit (-5) do guard enquanto o cooldown estiver ativo. */
+  lastBibleEmit: GuardLastEmit | null;
+
   // ---- feed drip / dedup internals ----
   dripQueue: DripEntry[];
   visibleKeys: Set<string>;
   lastAppendedAt: number;
 
   // ---- pipeline gates (delta tracking) ----
-  lastBibleTailLen: number;
+  /** transcript.length no momento do último disparo de /api/bible, independente
+   * do yield. Usado pra impedir re-fire no mesmo tail quando o LLM retorna 0
+   * items (aí `lastBibleEmit` não atualiza e o guard não sabe abafar sozinho). */
+  lastBibleFiredTailLen: number;
   lastInsightsTailLen: number;
   lastEchoTailLen: number;
 
@@ -121,11 +137,13 @@ export type SessionStoreState = {
   setSpeakerLocation: (v: string) => void;
   setBibleInFlight: (v: boolean) => void;
   setInsightsInFlight: (v: boolean) => void;
+  setCurrentReading: (v: GuardCurrentReading | null) => void;
+  setLastBibleEmit: (v: GuardLastEmit | null) => void;
   setAutoFollow: (v: boolean) => void;
   setPendingNew: (v: number) => void;
   setSeenItemsLen: (v: number) => void;
 
-  setLastBibleTailLen: (v: number) => void;
+  setLastBibleFiredTailLen: (v: number) => void;
   setLastInsightsTailLen: (v: number) => void;
   setLastEchoTailLen: (v: number) => void;
   setEchoing: (v: boolean) => void;
@@ -181,11 +199,14 @@ export const useSessionStore = create<SessionStoreState>()(
     bibleInFlight: false,
     insightsInFlight: false,
 
+    currentReading: null,
+    lastBibleEmit: null,
+
     dripQueue: [],
     visibleKeys: new Set<string>(),
     lastAppendedAt: 0,
 
-    lastBibleTailLen: 0,
+    lastBibleFiredTailLen: 0,
     lastInsightsTailLen: 0,
     lastEchoTailLen: 0,
 
@@ -216,10 +237,12 @@ export const useSessionStore = create<SessionStoreState>()(
         speakerLocation,
         bibleInFlight: false,
         insightsInFlight: false,
+        currentReading: null,
+        lastBibleEmit: null,
         dripQueue: [],
         visibleKeys: new Set<string>(),
         lastAppendedAt: 0,
-        lastBibleTailLen: 0,
+        lastBibleFiredTailLen: 0,
         lastInsightsTailLen: 0,
         lastEchoTailLen: 0,
         aiStreakThreshold: pickEchoThreshold(),
@@ -242,11 +265,13 @@ export const useSessionStore = create<SessionStoreState>()(
     setSpeakerLocation: (v) => set({ speakerLocation: v }),
     setBibleInFlight: (v) => set({ bibleInFlight: v }),
     setInsightsInFlight: (v) => set({ insightsInFlight: v }),
+    setCurrentReading: (v) => set({ currentReading: v }),
+    setLastBibleEmit: (v) => set({ lastBibleEmit: v }),
     setAutoFollow: (v) => set({ autoFollow: v }),
     setPendingNew: (v) => set({ pendingNew: v }),
     setSeenItemsLen: (v) => set({ seenItemsLen: v }),
 
-    setLastBibleTailLen: (v) => set({ lastBibleTailLen: v }),
+    setLastBibleFiredTailLen: (v) => set({ lastBibleFiredTailLen: v }),
     setLastInsightsTailLen: (v) => set({ lastInsightsTailLen: v }),
     setLastEchoTailLen: (v) => set({ lastEchoTailLen: v }),
     setEchoing: (v) => set({ echoing: v }),
@@ -337,8 +362,20 @@ export const useSessionStore = create<SessionStoreState>()(
         }
 
         queuedKeys.add(key);
-        dripQueue = [...dripQueue, { item, enqueuedAt: Date.now() }];
-        if (item.kind === "citedVerse") currentCitedVerses.push(item);
+        const entry = { item, enqueuedAt: Date.now() };
+        if (item.kind === "citedVerse") {
+          // citedVerse fura fila de itens de IA — precisa aparecer perto do
+          // momento em que o pregador leu. Mantém FIFO entre citedVerses.
+          const insertAt = dripQueue.findIndex((e) => e.item.kind !== "citedVerse");
+          if (insertAt === -1) {
+            dripQueue = [...dripQueue, entry];
+          } else {
+            dripQueue = [...dripQueue.slice(0, insertAt), entry, ...dripQueue.slice(insertAt)];
+          }
+          currentCitedVerses.push(item);
+        } else {
+          dripQueue = [...dripQueue, entry];
+        }
         hasDripAdd = true;
       }
 

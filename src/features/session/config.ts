@@ -4,7 +4,7 @@
  * ficam no nome (Ms, Chars) para o chamador não precisar adivinhar.
  */
 
-// ---------- Fluxo BIBLE (rápido, gated por regex) ----------
+// ---------- Fluxo BIBLE (rápido, gated por regex + guard ponderado) ----------
 
 /**
  * Trecho da transcrição enviado ao /api/bible. Pequeno porque a rota só
@@ -13,9 +13,42 @@
 export const BIBLE_TRANSCRIPT_CHARS = 900;
 
 /**
+ * Score mínimo do bible guard (`lib/bible/guard.ts`) pra disparar a chamada.
+ * A primeira camada (regex de menção) já rodou; o guard soma sinais ponderados
+ * como bookWithNumber (+4), readingVerbNear (+3), demonstrativeAnaphora (-4)
+ * etc. Threshold 4 corresponde a exigir pelo menos um sinal forte
+ * ("Salmo 23") ou dois sinais médios que se somem.
+ */
+export const BIBLE_GUARD_THRESHOLD = 4;
+
+/**
+ * Janela em que uma referência recém-emitida ainda é considerada duplicata.
+ * Enquanto ativa, o sinal duplicateEmit (-5) mata sozinho um bookWithNumber
+ * (+4), impedindo re-disparo pra mesma passagem quando o pastor segue
+ * discutindo em cima dela.
+ */
+export const BIBLE_GUARD_COOLDOWN_MS = 90_000;
+
+/**
+ * TTL do `currentReading` — enquanto fresco, triggers isolados
+ * ("versículo 10", "no verso seguinte") disparam continuationHit (+3),
+ * resolvendo a leitura pausada em que o pastor anuncia livro+capítulo
+ * uma vez e depois só cita versos.
+ */
+export const BIBLE_GUARD_CURRENT_READING_TTL_MS = 300_000; // 5min
+
+/**
+ * Palavras ao redor do match consideradas pelo guard pra detectar verbo de
+ * leitura ("abra", "leiam") ou verbo passado ("li", "acabei de ler").
+ */
+export const BIBLE_GUARD_VERB_WINDOW_WORDS = 6;
+
+/**
  * Crescimento mínimo da transcrição (em chars) entre duas chamadas de bible.
- * Chunks de 8s produzem ~80-120 chars — o piso fica abaixo pra não pular
- * conteúdo real, mas evita disparar em contexto quase idêntico.
+ * Aplicado *após* o guard passar — impede re-fire no mesmo tail quando o LLM
+ * responde items: 0 (nesse caso `lastBibleEmit` não atualiza e o sinal
+ * `duplicateEmit` não dispara, então sem esse gate o effect re-executa
+ * imediatamente ao flip de `bibleInFlight`).
  */
 export const BIBLE_MIN_TAIL_DELTA_CHARS = 40;
 
@@ -67,6 +100,14 @@ export const ECHO_MIN_TAIL_DELTA_CHARS = 200;
 export const FEED_MIN_GAP_MS = 25_000; // 25s
 
 /**
+ * Gap curto aplicado quando o head da drip queue é um `citedVerse`. A citação
+ * vem do próprio pregador lendo — precisa aparecer perto do momento da fala,
+ * não atrás dos 25s dos cards de IA. Combina com o "furar-fila" no
+ * `enqueueFeedItems` (citedVerse é inserido antes de itens não-citedVerse).
+ */
+export const FEED_CITED_VERSE_GAP_MS = 3_000; // 3s
+
+/**
  * Se a fila de drip já tem esse número de items pendentes, o insights tick
  * pula a chamada. Backpressure: enquanto os cards antigos não aparecem, não
  * faz sentido gerar mais material — economiza tokens e evita que insights
@@ -81,7 +122,7 @@ export const INSIGHTS_QUEUE_BACKPRESSURE = 3;
 // transcrever com precisão. Máximo de 30s pra que uma frase longa não
 // espere indefinidamente.
 export const RECORDER_MIN_CHUNK_MS = 15_000;
-export const RECORDER_MAX_CHUNK_MS = 30_000;
+export const RECORDER_MAX_CHUNK_MS = 20_000;
 
 export const RECORDER_SILENCE_THRESHOLD = 0.01;
 export const RECORDER_SILENCE_HOLD_MS = 400;

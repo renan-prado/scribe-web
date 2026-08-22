@@ -1,18 +1,31 @@
 "use client";
 
 import { type RefObject, useEffect, useMemo } from "react";
-import { BIBLE_MIN_TAIL_DELTA_CHARS, BIBLE_TRANSCRIPT_CHARS } from "@/features/session/config";
+import {
+  BIBLE_GUARD_COOLDOWN_MS,
+  BIBLE_GUARD_CURRENT_READING_TTL_MS,
+  BIBLE_GUARD_THRESHOLD,
+  BIBLE_GUARD_VERB_WINDOW_WORDS,
+  BIBLE_MIN_TAIL_DELTA_CHARS,
+  BIBLE_TRANSCRIPT_CHARS,
+} from "@/features/session/config";
 import { requestBible } from "@/features/session/lib/api";
 import { tailTranscript } from "@/features/session/lib/text";
 import { hasBibleMention } from "@/lib/bible/detect";
+import { canonicalBookStem, scoreBibleGuard } from "@/lib/bible/guard";
+import { parseVerseReference } from "@/lib/domain/feed";
+import { devLog } from "@/lib/log";
 import { useSessionStore } from "@/lib/stores/session";
 
 /**
- * BIBLE pipeline. Fires per new chunk when the regex-gate finds a bible
- * mention in the recent tail.
+ * BIBLE pipeline. Gate em duas camadas:
+ *   1. `hasBibleMention` — regex barato: sem menção, sai.
+ *   2. `scoreBibleGuard` — soma sinais ponderados (livro+número, verbo de
+ *      leitura, anáfora demonstrativa, cooldown, etc.). Só chama a rota se
+ *      passar do threshold.
  *
- * Fast, cheap: gated by regex, tiny transcript window. Emits citedVerse only —
- * the other five feed kinds are exclusive to the insights pipeline.
+ * Após um retorno com `citedVerse`, atualiza `currentReading` (habilita
+ * continuationHit/verseProgression) e `lastBibleEmit` (arma o cooldown).
  */
 export function useBiblePipeline({
   sessionId,
@@ -50,15 +63,36 @@ export function useBiblePipeline({
     const recent = tailTranscript(transcript, BIBLE_TRANSCRIPT_CHARS);
     if (!recent) return;
     const store = useSessionStore.getState();
-    const delta = transcript.length - store.lastBibleTailLen;
-    if (store.lastBibleTailLen > 0 && delta < BIBLE_MIN_TAIL_DELTA_CHARS) {
-      return;
-    }
     if (!hasBibleMention(recent)) {
       store.bumpCounter("bibleGateSkipped");
       return;
     }
-    store.setLastBibleTailLen(transcript.length);
+    const guard = scoreBibleGuard(
+      recent,
+      {
+        currentReading: store.currentReading,
+        lastEmit: store.lastBibleEmit,
+        nowMs: Date.now(),
+        currentReadingTtlMs: BIBLE_GUARD_CURRENT_READING_TTL_MS,
+        cooldownMs: BIBLE_GUARD_COOLDOWN_MS,
+        verbWindowWords: BIBLE_GUARD_VERB_WINDOW_WORDS,
+      },
+      BIBLE_GUARD_THRESHOLD
+    );
+    if (guard.decision === "skip") {
+      store.bumpCounter("bibleGuardSkipped");
+      devLog("[bible-guard] skip", { score: guard.score, signals: guard.signals });
+      return;
+    }
+    // Delta pós-guard: se o LLM anterior respondeu 0 items, `lastBibleEmit`
+    // não atualizou e o guard vai re-aprovar o mesmo tail em loop. O delta
+    // exige que a transcrição tenha crescido desde o último fire.
+    const delta = transcript.length - store.lastBibleFiredTailLen;
+    if (store.lastBibleFiredTailLen > 0 && delta < BIBLE_MIN_TAIL_DELTA_CHARS) {
+      return;
+    }
+    devLog("[bible-guard] fire", { score: guard.score, signals: guard.signals });
+    store.setLastBibleFiredTailLen(transcript.length);
     store.setBibleInFlight(true);
     store.bumpCounter("bibleCalls");
     const bibleSermonAtMs = Math.max(0, performance.now() - startedAtRef.current);
@@ -71,10 +105,29 @@ export function useBiblePipeline({
       .then((items) => {
         const s = useSessionStore.getState();
         s.bumpCounter("bibleYield", items.length);
+        const nowMs = Date.now();
+        let latestRef: ReturnType<typeof parseVerseReference> | null = null;
+        let latestRefStr = "";
         for (const item of items) {
-          if (item.kind === "citedVerse" && !item.text && item.reference.includes(":")) {
+          if (item.kind !== "citedVerse") continue;
+          if (item.text === "" && item.reference.includes(":")) {
             prefetchVerse(item.reference);
           }
+          const parsed = parseVerseReference(item.reference);
+          if (parsed) {
+            latestRef = parsed;
+            latestRefStr = item.reference;
+          }
+        }
+        if (latestRef) {
+          s.setCurrentReading({
+            book: canonicalBookStem(latestRef.bookDisplay),
+            bookDisplay: latestRef.bookDisplay,
+            chapter: latestRef.chapter,
+            verse: latestRef.startVerse ?? latestRef.endVerse,
+            updatedAtMs: nowMs,
+          });
+          s.setLastBibleEmit({ reference: latestRefStr, atMs: nowMs });
         }
         const { hasDripAdd } = s.enqueueFeedItems(items);
         if (hasDripAdd) scheduleDrainIfIdle();
