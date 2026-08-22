@@ -1,8 +1,9 @@
-import { FileText, MoreVertical, Pencil, Sparkles } from "lucide-react";
+import { FileText, MoreVertical, Pencil, Sparkles, Trash2 } from "lucide-react";
 import {
   DropdownMenu,
   DropdownMenuContent,
   DropdownMenuItem,
+  DropdownMenuSeparator,
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
 import { cn } from "@/lib/utils";
@@ -13,12 +14,14 @@ export function SessionMenu({
   onOpenTranscript,
   onOpenLiveFeed,
   onEdit,
+  onDelete,
 }: {
   hasTranscript: boolean;
   hasLiveFeed: boolean;
   onOpenTranscript: () => void;
   onOpenLiveFeed: () => void;
   onEdit?: () => void;
+  onDelete?: () => void;
 }) {
   return (
     <DropdownMenu>
@@ -46,6 +49,15 @@ export function SessionMenu({
           <FileText className="size-4" />
           Ler transcrição
         </DropdownMenuItem>
+        {onDelete ? (
+          <>
+            <DropdownMenuSeparator />
+            <DropdownMenuItem variant="destructive" onClick={onDelete} className="gap-2">
+              <Trash2 className="size-4" />
+              Excluir resumo
+            </DropdownMenuItem>
+          </>
+        ) : null}
       </DropdownMenuContent>
     </DropdownMenu>
   );

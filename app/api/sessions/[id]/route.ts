@@ -1,5 +1,5 @@
 import { NextResponse } from "next/server";
-import { updateSessionMeta } from "@/lib/db/sessions";
+import { deleteSession, updateSessionMeta } from "@/lib/db/sessions";
 import { devLog } from "@/lib/log";
 import { requireAuth } from "@/lib/supabase/require-auth";
 
@@ -38,5 +38,25 @@ export async function PATCH(request: Request, { params }: { params: Promise<{ id
   } catch (err) {
     console.error("[sessions] meta update failed", { id, error: (err as Error).message });
     return NextResponse.json({ error: "update_failed" }, { status: 500 });
+  }
+}
+
+/**
+ * DELETE /api/sessions/:id
+ * Permanently removes the session and its associated data.
+ */
+export async function DELETE(_request: Request, { params }: { params: Promise<{ id: string }> }) {
+  const auth = await requireAuth();
+  if (auth.response) return auth.response;
+
+  const { id } = await params;
+
+  try {
+    await deleteSession(id);
+    devLog("[sessions] deleted", { id });
+    return NextResponse.json({ ok: true });
+  } catch (err) {
+    console.error("[sessions] delete failed", { id, error: (err as Error).message });
+    return NextResponse.json({ error: "delete_failed" }, { status: 500 });
   }
 }

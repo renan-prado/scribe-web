@@ -2,6 +2,7 @@
 
 import { ArrowLeft, MapPin, User } from "lucide-react";
 import Link from "next/link";
+import { useRouter } from "next/navigation";
 import { useState } from "react";
 import {
   Dialog,
@@ -46,9 +47,17 @@ export function SavedSessionView({
   const [transcriptOpen, setTranscriptOpen] = useState(false);
   const [editOpen, setEditOpen] = useState(false);
 
+  const router = useRouter();
+
   const [title, setTitle] = useState(initialTitle);
   const [speakerName, setSpeakerName] = useState(initialSpeakerName);
   const [speakerLocation, setSpeakerLocation] = useState(initialSpeakerLocation);
+
+  async function handleDelete() {
+    const res = await fetch(`/api/sessions/${id}`, { method: "DELETE" });
+    if (!res.ok) throw new Error("delete failed");
+    router.push("/home");
+  }
 
   async function handleSave(fields: {
     title: string;
@@ -105,6 +114,7 @@ export function SavedSessionView({
           onOpenTranscript={() => setTranscriptOpen(true)}
           onOpenLiveFeed={() => setFeedOpen(true)}
           onEdit={() => setEditOpen(true)}
+          onDelete={handleDelete}
         />
       </div>
 
