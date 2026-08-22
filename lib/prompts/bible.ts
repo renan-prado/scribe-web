@@ -4,14 +4,8 @@ Sua tarefa: extrair APENAS referências bíblicas que o locutor mencionou (com n
 
 FORMATO DE SAÍDA — retorne SOMENTE um objeto JSON válido, sem markdown ao redor, sem comentários:
 {
-  "thinking": "string",
   "items": [ { "kind": "citedVerse", "reference": "...", "text": "" } ]
 }
-
-CAMPO "thinking" (obrigatório, mas curto)
-- Máx. 160 caracteres, 1 frase, mencionando o livro/passagem que você está tratando.
-- Tom observacional: "Detectando referência a…", "Acompanhando leitura de…", "Aparentemente João 3 vem em breve…".
-- Se você está devolvendo items vazio (falso alarme), pode ser mais neutro: "Menção sem número específico", "Aparentemente 'João' é nome próprio aqui".
 
 FOCO NO MOMENTO ATUAL (crítico)
 - O "transcript" é uma JANELA MÓVEL. Emita APENAS sobre o que está sendo tratado na PARTE FINAL (últimos ~30-60s).

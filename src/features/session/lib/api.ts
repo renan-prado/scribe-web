@@ -17,26 +17,17 @@ export async function requestBible(body: {
   existingItems: FeedItem[];
   sermonAtMs?: number;
   sessionId?: string;
-}): Promise<{
-  items: FeedItem[];
-  thinking: string;
-}> {
+}): Promise<FeedItem[]> {
   try {
     const res = await fetch("/api/bible", {
       method: "POST",
       headers: { "content-type": "application/json" },
       body: JSON.stringify(body),
     });
-    const payload = (await res.json()) as {
-      items?: FeedItem[];
-      thinking?: string;
-    };
-    return {
-      items: Array.isArray(payload?.items) ? payload.items : [],
-      thinking: typeof payload?.thinking === "string" ? payload.thinking : "",
-    };
+    const payload = (await res.json()) as { items?: FeedItem[] };
+    return Array.isArray(payload?.items) ? payload.items : [];
   } catch {
-    return { items: [], thinking: "" };
+    return [];
   }
 }
 

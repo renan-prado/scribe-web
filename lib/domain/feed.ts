@@ -232,14 +232,9 @@ export function parseBibleFromLLM(
   existingKeys: Set<string>
 ): {
   items: FeedItem[];
-  thinking: string;
   drops: FeedParseDrop[];
 } {
-  const { items, drops } = parseFeedItems(content, existingKeys, BIBLE_KINDS);
-  const parsed = safeJson(content);
-  const record = parsed && typeof parsed === "object" ? (parsed as Record<string, unknown>) : {};
-  const thinking = typeof record.thinking === "string" ? record.thinking.trim().slice(0, 200) : "";
-  return { items, thinking, drops };
+  return parseFeedItems(content, existingKeys, BIBLE_KINDS);
 }
 
 /**

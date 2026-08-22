@@ -83,7 +83,7 @@ export async function POST(request: Request) {
   }
 
   const { content, finishReason, usage, latencyMs } = result.data;
-  const { items, thinking, drops } = parseBibleFromLLM(content, existingKeys);
+  const { items, drops } = parseBibleFromLLM(content, existingKeys);
   for (const d of drops) {
     if (d.reason === "dedup") continue;
     console.warn("[bible] schema-drop", d);
@@ -98,7 +98,6 @@ export async function POST(request: Request) {
     items: items.length,
     kinds: items.map((i) => i.kind),
     drops: drops.length,
-    thinking: thinking.slice(0, 120),
   });
   await recordChatUsage({
     sessionId,
@@ -109,7 +108,7 @@ export async function POST(request: Request) {
     cachedTokens: usage.cachedTokens,
     latencyMs,
   });
-  return NextResponse.json({ items, thinking, latencyMs, model });
+  return NextResponse.json({ items, latencyMs, model });
 }
 
 function formatSermonAt(ms: number | undefined): string {

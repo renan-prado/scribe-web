@@ -26,13 +26,7 @@ const LATER_STATUS_PHRASES = [
   "deixando o pensamento se desenvolver",
 ];
 
-export function StatusPhrases({
-  hasSummary,
-  thinking,
-}: {
-  hasSummary: boolean;
-  thinking?: string;
-}) {
+export function StatusPhrases({ hasSummary }: { hasSummary: boolean }) {
   const pool = hasSummary ? LATER_STATUS_PHRASES : EARLY_STATUS_PHRASES;
   const [index, setIndex] = useState(() => Math.floor(Math.random() * pool.length));
 
@@ -45,9 +39,6 @@ export function StatusPhrases({
     return () => clearInterval(id);
   }, [pool]);
 
-  const message = thinking && thinking.trim().length > 0 ? thinking : pool[index];
-  const keyForFade = thinking && thinking.trim().length > 0 ? thinking : `pool-${index}`;
-
   return (
     <div
       role="status"
@@ -58,14 +49,14 @@ export function StatusPhrases({
         <SpinnerGlyph />
       </span>
       <span
-        key={keyForFade}
+        key={`pool-${index}`}
         className={cn(
           "flex-1 text-pretty leading-relaxed animate-status-fade animate-text-shimmer bg-clip-text text-transparent",
           "bg-[linear-gradient(90deg,var(--muted-foreground)_0%,var(--muted-foreground)_35%,var(--foreground)_50%,var(--muted-foreground)_65%,var(--muted-foreground)_100%)]",
           "bg-[length:200%_100%]"
         )}
       >
-        {message}
+        {pool[index]}
       </span>
     </div>
   );

@@ -68,7 +68,7 @@ export function useBiblePipeline({
       sermonAtMs: bibleSermonAtMs,
       sessionId,
     })
-      .then(({ items, thinking: nextThinking }) => {
+      .then((items) => {
         const s = useSessionStore.getState();
         s.bumpCounter("bibleYield", items.length);
         for (const item of items) {
@@ -78,7 +78,6 @@ export function useBiblePipeline({
         }
         const { hasDripAdd } = s.enqueueFeedItems(items);
         if (hasDripAdd) scheduleDrainIfIdle();
-        if (nextThinking) s.setThinking(nextThinking);
       })
       .finally(() => useSessionStore.getState().setBibleInFlight(false));
   }, [

@@ -68,7 +68,6 @@ export type SessionStoreState = {
 
   // ---- feed data ----
   feedItems: FeedItem[];
-  thinking: string;
 
   // ---- final output ----
   summary: SummaryPayload | null;
@@ -115,7 +114,6 @@ export type SessionStoreState = {
   setSaved: (v: boolean) => void;
   setStartupError: (v: string) => void;
   setRecordingStartedAt: (v: Date | null) => void;
-  setThinking: (v: string) => void;
   setSummary: (v: SummaryPayload | null) => void;
   setSummaryTitle: (v: string) => void;
   lockTitle: () => void;
@@ -173,7 +171,6 @@ export const useSessionStore = create<SessionStoreState>()(
     chunks: {},
 
     feedItems: [],
-    thinking: "",
 
     summary: null,
     summaryTitle: "",
@@ -212,7 +209,6 @@ export const useSessionStore = create<SessionStoreState>()(
         recordingStartedAt: null,
         chunks: {},
         feedItems: [],
-        thinking: "",
         summary: null,
         summaryTitle: "",
         titleLockedByUser: false,
@@ -239,7 +235,6 @@ export const useSessionStore = create<SessionStoreState>()(
     setSaved: (v) => set({ saved: v }),
     setStartupError: (v) => set({ startupError: v }),
     setRecordingStartedAt: (v) => set({ recordingStartedAt: v }),
-    setThinking: (v) => set({ thinking: v }),
     setSummary: (v) => set({ summary: v }),
     setSummaryTitle: (v) => set({ summaryTitle: v }),
     lockTitle: () => set({ titleLockedByUser: true }),

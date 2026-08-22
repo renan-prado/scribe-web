@@ -74,7 +74,6 @@ export function RecordingLive({
   const recordingStartedAt = useSessionStore((s) => s.recordingStartedAt);
   const chunks = useSessionStore((s) => s.chunks);
   const feedItems = useSessionStore((s) => s.feedItems);
-  const thinking = useSessionStore((s) => s.thinking);
   const summary = useSessionStore((s) => s.summary);
   const summaryTitle = useSessionStore((s) => s.summaryTitle);
   const speakerName = useSessionStore((s) => s.speakerName);
@@ -324,7 +323,6 @@ export function RecordingLive({
     return () => window.removeEventListener("scroll", onScroll);
   }, [running]);
 
-  // biome-ignore lint/correctness/useExhaustiveDependencies: feedItems.length + thinking are intentional change-triggers
   useEffect(() => {
     if (!running) return;
     const s = getSessionState();
@@ -335,7 +333,7 @@ export function RecordingLive({
       const unseen = Math.max(0, feedItems.length - s.seenItemsLen);
       s.setPendingNew(unseen);
     }
-  }, [running, feedItems.length, thinking, scrollToBottom]);
+  }, [running, feedItems.length, scrollToBottom]);
 
   const handleTitleChange = useCallback((v: string) => {
     getSessionState().setSummaryTitle(v);
@@ -432,7 +430,7 @@ export function RecordingLive({
           </div>
           {running ? (
             <div ref={bottomRef} className="pt-2 scroll-mb-24">
-              <StatusPhrases hasSummary={feedItems.length > 0} thinking={thinking} />
+              <StatusPhrases hasSummary={feedItems.length > 0} />
             </div>
           ) : null}
 
