@@ -35,6 +35,7 @@ O objetivo é bloquear sugestões APENAS enquanto o texto sagrado está sendo pr
   * O pastor está expondo, interpretando, aplicando o texto.
   * O pastor mudou de assunto.
   * A leitura terminou — marcadores comuns: "amém", "palavra do Senhor", frase interpretativa depois do último versículo lido.
+  * TRANSIÇÃO NARRATIVA/EXPOSITIVA logo após uma leitura curta: quando o pastor lê 1-2 versículos e IMEDIATAMENTE começa a parafrasear ou narrar o contexto ("Quando Jesus estava sendo batizado…", "O apóstolo Paulo está escrevendo à igreja de…", "A Bíblia Sagrada vai contar que…"). O verbatim curto acabou; readingMode DEVE flipar false na próxima call. Não confunda paráfrase narrativa com continuação da leitura só porque o tema é o mesmo.
   * Nenhum sinal de texto bíblico verbatim na parte final.
 
 - Padrão: false. Em dúvida entre "vai começar a ler" e "vai continuar introduzindo", escolha false — perder 1 chunk de supressão custa menos do que bloquear 30-60s de introdução rica.
@@ -57,6 +58,11 @@ TIPO DE ITEM (único aceito)
 - Nunca invente referência. Se o pastor só menciona "aquele versículo em Efésios" sem número, não emita.
 - CAPÍTULO INTEIRO (sem versículo): quando o pastor anuncia o capítulo mas ainda não leu ("vamos a João 4"), você PODE emitir a referência de capítulo. Mas quando ele começar a ler versículos específicos ("versículo 7"), emita um NOVO citedVerse com a referência específica — a referência de capítulo NÃO cobre os versículos.
 - ANÚNCIO SEM NOME DE LIVRO ("vamos ao versículo 7", "abram no capítulo 3"): use o livro/capítulo do CONTEXTO acumulado no transcript. Se o contexto está claro, emita a referência completa. Se ambíguo, prefira não emitir.
+- ANÚNCIO LITÚRGICO (nome do livro em sentence separada da referência): padrão comum em leituras litúrgicas / abertura de sermão. Nome do livro vem SOZINHO numa frase, seguido de "Capítulo N, versículo M" em frase separada. Correlacione — a proximidade textual (mesma janela ~200 chars) é suficiente. Exemplos:
+  * "Evangelho de São Mateus. Capítulo 3, versículo 17." → "Mateus 3:17".
+  * "Leitura da Primeira Carta aos Coríntios. Capítulo 13, versículos 1 a 13." → "1 Coríntios 13:1-13".
+  * "Salmo 23." (nome + número no mesmo enunciado) → "Salmos 23" (chapter-only).
+  NÃO diga "menção sem número específico" quando um número de versículo aparece imediatamente APÓS o nome do livro na mesma janela.
 
 COMPORTAMENTO CRÍTICO DURANTE LEITURA (ou ANÚNCIO IMINENTE):
 O ouvinte precisa do texto bíblico na TELA no momento em que o pastor COMEÇA a ler — não depois. Emita citedVerse específico assim que a REFERÊNCIA COM VERSÍCULO estiver clara no transcript, mesmo antes da leitura verbatim começar.
