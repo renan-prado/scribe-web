@@ -23,8 +23,6 @@ import {
   BIBLE_MIN_TAIL_DELTA_CHARS,
   BIBLE_TRANSCRIPT_CHARS,
   ECHO_MIN_TAIL_DELTA_CHARS,
-  ECHO_STREAK_MAX,
-  ECHO_STREAK_MIN,
   FEED_MIN_GAP_MS,
   INSIGHTS_INTERVAL_MS,
   INSIGHTS_MIN_TAIL_DELTA_CHARS,
@@ -53,17 +51,12 @@ import { isSilentBlob } from "@/features/session/lib/audio";
 import { tailSentences, tailTranscript } from "@/features/session/lib/text";
 import type { ChunkRow, TranscriptState } from "@/features/session/types";
 import { hasBibleMention } from "@/lib/bible/detect";
-import {
-  type FeedItem,
-  feedItemDedupKey,
-  feedItemOrigin,
-  referenceStrictlyContains,
-} from "@/lib/domain/feed";
+import { feedItemOrigin } from "@/lib/domain/feed";
 import type { ChunkEvent, Recorder } from "@/lib/domain/recorder";
-import type { SummaryPayload } from "@/lib/domain/summary";
 import { devLog } from "@/lib/log";
 import { createRecorder } from "@/lib/recorder";
 import { usePreferencesStore } from "@/lib/stores/preferences";
+import { getSessionState, useSessionStore } from "@/lib/stores/session";
 import { cn } from "@/lib/utils";
 
 type Props = {
@@ -75,79 +68,42 @@ type Props = {
   autoStart?: boolean;
 };
 
-export function RecordingLive(props: Props) {
-  return <RecordingLiveInner {...props} />;
-}
-
-/**
- * Uniformly sort a fresh echo threshold in [ECHO_STREAK_MIN, ECHO_STREAK_MAX].
- * Re-sorted every time an echo actually reveals so the cadence between echoes
- * doesn't feel metronomic to the listener.
- */
-function pickEchoThreshold(): number {
-  const span = ECHO_STREAK_MAX - ECHO_STREAK_MIN + 1;
-  return ECHO_STREAK_MIN + Math.floor(Math.random() * span);
-}
-
-function RecordingLiveInner({
+export function RecordingLive({
   sessionId,
   initialSpeakerName,
   initialSpeakerLocation,
   autoStart = false,
 }: Props) {
   const router = useRouter();
+
+  // ---- imperative refs (browser resources, mount guards) ----
   const recorderRef = useRef<Recorder | null>(null);
-  const chunksRef = useRef<Map<number, ChunkRow>>(new Map());
   const startedAtRef = useRef<number>(0);
-  const lastBibleTailLenRef = useRef(0);
-  const lastInsightsTailLenRef = useRef(0);
-  const insightsInFlightRef = useRef(false);
   const insightsIntervalRef = useRef<ReturnType<typeof setInterval> | null>(null);
-  const bottomRef = useRef<HTMLDivElement | null>(null);
-  const dripQueueRef = useRef<Array<{ item: FeedItem; enqueuedAt: number }>>([]);
-  const visibleKeysRef = useRef<Set<string>>(new Set());
   const drainTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
-  const lastAppendedAtRef = useRef(0);
+  const bottomRef = useRef<HTMLDivElement | null>(null);
+  const autoStartFiredRef = useRef(false);
 
-  const sessionCountersRef = useRef({
-    bibleCalls: 0,
-    bibleYield: 0,
-    bibleGateSkipped: 0,
-    insightsCalls: 0,
-    insightsYield: 0,
-    dedupSuppressed: 0,
-    skippedDelta: 0,
-    skippedBackpressure: 0,
-  });
+  // ---- store selectors (subscribe) ----
+  const running = useSessionStore((s) => s.running);
+  const finalizing = useSessionStore((s) => s.finalizing);
+  const saved = useSessionStore((s) => s.saved);
+  const startupError = useSessionStore((s) => s.startupError);
+  const recordingStartedAt = useSessionStore((s) => s.recordingStartedAt);
+  const chunks = useSessionStore((s) => s.chunks);
+  const feedItems = useSessionStore((s) => s.feedItems);
+  const thinking = useSessionStore((s) => s.thinking);
+  const readingMode = useSessionStore((s) => s.readingMode);
+  const summary = useSessionStore((s) => s.summary);
+  const summaryTitle = useSessionStore((s) => s.summaryTitle);
+  const speakerName = useSessionStore((s) => s.speakerName);
+  const speakerLocation = useSessionStore((s) => s.speakerLocation);
+  const bibleInFlight = useSessionStore((s) => s.bibleInFlight);
+  const insightsInFlight = useSessionStore((s) => s.insightsInFlight);
+  const autoFollow = useSessionStore((s) => s.autoFollow);
+  const pendingNew = useSessionStore((s) => s.pendingNew);
 
-  const titleLockedByUserRef = useRef(false);
-  const readingModeRef = useRef(false);
-  const feedItemsRef = useRef<FeedItem[]>([]);
-
-  const aiStreakThresholdRef = useRef<number>(pickEchoThreshold());
-  const echoingRef = useRef(false);
-  const lastEchoTailLenRef = useRef(0);
-
-  const autoFollowRef = useRef(true);
-  const seenItemsLenRef = useRef(0);
-  const [autoFollow, setAutoFollow] = useState(true);
-  const [pendingNew, setPendingNew] = useState(0);
-
-  const [running, setRunning] = useState(false);
-  const [chunkRows, setChunkRows] = useState<ChunkRow[]>([]);
-  const [startupError, setStartupError] = useState<string>("");
-  const [feedItems, setFeedItems] = useState<FeedItem[]>([]);
-  const [thinking, setThinking] = useState<string>("");
-  const [readingMode, setReadingMode] = useState<boolean>(false);
-  const [summary, setSummary] = useState<SummaryPayload | null>(null);
-  const [summaryTitle, setSummaryTitle] = useState("");
-  const [speakerName, setSpeakerName] = useState(initialSpeakerName);
-  const [speakerLocation, setSpeakerLocation] = useState(initialSpeakerLocation);
-  const [recordingStartedAt, setRecordingStartedAt] = useState<Date | null>(null);
-  const [bibleInFlight, setBibleInFlight] = useState(false);
-  const [insightsInFlight, setInsightsInFlight] = useState(false);
-  const [finalizing, setFinalizing] = useState(false);
-  const [saved, setSaved] = useState(false);
+  // ---- ui-local state (dialog open flags, hidden-tab warning banner) ----
   const [transcriptOpen, setTranscriptOpen] = useState(false);
   const [liveFeedOpen, setLiveFeedOpen] = useState(false);
 
@@ -159,10 +115,11 @@ function RecordingLiveInner({
   const { setAuto: setAutoTranslation, effective: translation } = useTranslation();
   const prefetchVerse = useVersePrefetcher();
 
-  const publish = useCallback(() => {
-    const rows = Array.from(chunksRef.current.values()).sort((a, b) => a.index - b.index);
-    setChunkRows(rows);
-  }, []);
+  // ---- derived views ----
+  const chunkRows = useMemo<ChunkRow[]>(
+    () => Object.values(chunks).sort((a, b) => a.index - b.index),
+    [chunks]
+  );
 
   const transcript = useMemo(() => {
     return chunkRows
@@ -181,138 +138,28 @@ function RecordingLiveInner({
 
   const isProcessing = useMemo(() => chunkRows.some((r) => r.status === "uploading"), [chunkRows]);
 
+  // ---- drip drain timer ----
   const drainOne = useCallback(() => {
     drainTimerRef.current = null;
-    const entry = dripQueueRef.current[0];
-    if (!entry) return;
-    // Durante readingMode, cards da IA seguram a fila em vez de aparecer —
-    // o ouvinte fica focado na Escritura. Volta a drenar quando readingMode
-    // for false. citedVerse é a exceção: leitura em curso só cresce cards
-    // de versículo, e ainda por cima ela pula a fila via fast-path abaixo.
-    if (readingModeRef.current && entry.item.kind !== "citedVerse") {
+    const { drained, hasMore, deferred } = useSessionStore.getState().drainOne();
+    // While readingMode holds a non-citedVerse card, poll again in FEED_MIN_GAP_MS
+    // so the queue resumes as soon as readingMode flips off.
+    if (deferred) {
       drainTimerRef.current = setTimeout(drainOne, FEED_MIN_GAP_MS);
       return;
     }
-    dripQueueRef.current.shift();
-    const { item, enqueuedAt } = entry;
-    const key = feedItemDedupKey(item);
-    visibleKeysRef.current.add(key);
-    const lagMs = Date.now() - enqueuedAt;
-    devLog("[feed] +item", {
-      kind: item.kind,
-      key,
-      lagMs,
-      at: new Date().toISOString(),
-      item,
-    });
-    setFeedItems((prev) => [...prev, item]);
-    lastAppendedAtRef.current = Date.now();
-    if (dripQueueRef.current.length > 0) {
+    if (drained && hasMore) {
       drainTimerRef.current = setTimeout(drainOne, FEED_MIN_GAP_MS);
     }
   }, []);
 
-  const enqueueFeedItems = useCallback(
-    (incoming: FeedItem[]) => {
-      if (incoming.length === 0) return;
-      let anyDripAdded = false;
-      const queuedKeys = new Set(dripQueueRef.current.map((e) => feedItemDedupKey(e.item)));
-      const now = Date.now();
-      const readingModeNow = readingModeRef.current;
-      const currentCitedVerses: Array<Extract<FeedItem, { kind: "citedVerse" }>> = [
-        ...feedItemsRef.current,
-        ...dripQueueRef.current.map((e) => e.item),
-      ].filter((i): i is Extract<FeedItem, { kind: "citedVerse" }> => i.kind === "citedVerse");
-
-      for (const item of incoming) {
-        const key = feedItemDedupKey(item);
-        if (visibleKeysRef.current.has(key)) {
-          sessionCountersRef.current.dedupSuppressed++;
-          devLog("[feed] dedup-suppressed", {
-            kind: item.kind,
-            key,
-            reason: "already-visible",
-          });
-          continue;
-        }
-        if (queuedKeys.has(key)) {
-          sessionCountersRef.current.dedupSuppressed++;
-          devLog("[feed] dedup-suppressed", {
-            kind: item.kind,
-            key,
-            reason: "already-queued",
-          });
-          continue;
-        }
-
-        if (item.kind === "citedVerse") {
-          const coveredBy = currentCitedVerses.find((ex) =>
-            referenceStrictlyContains(ex.reference, item.reference)
-          );
-          if (coveredBy) {
-            sessionCountersRef.current.dedupSuppressed++;
-            devLog("[feed] dedup-suppressed", {
-              kind: item.kind,
-              key,
-              reason: "covered-by",
-              by: coveredBy.reference,
-            });
-            continue;
-          }
-          const superseded = currentCitedVerses.filter((ex) =>
-            referenceStrictlyContains(item.reference, ex.reference)
-          );
-          if (superseded.length > 0) {
-            const supersededKeys = new Set(superseded.map(feedItemDedupKey));
-            for (const k of supersededKeys) {
-              visibleKeysRef.current.delete(k);
-              queuedKeys.delete(k);
-            }
-            dripQueueRef.current = dripQueueRef.current.filter(
-              (e) => !supersededKeys.has(feedItemDedupKey(e.item))
-            );
-            setFeedItems((prev) => prev.filter((i) => !supersededKeys.has(feedItemDedupKey(i))));
-            for (let i = currentCitedVerses.length - 1; i >= 0; i--) {
-              if (supersededKeys.has(feedItemDedupKey(currentCitedVerses[i]))) {
-                currentCitedVerses.splice(i, 1);
-              }
-            }
-            devLog("[feed] supersede", {
-              newer: item.reference,
-              removed: [...supersededKeys],
-            });
-          }
-        }
-
-        if (readingModeNow && item.kind === "citedVerse") {
-          visibleKeysRef.current.add(key);
-          currentCitedVerses.push(item);
-          devLog("[feed] +item (fast)", {
-            kind: item.kind,
-            key,
-            lagMs: 0,
-            at: new Date().toISOString(),
-            item,
-          });
-          setFeedItems((prev) => [...prev, item]);
-          lastAppendedAtRef.current = Date.now();
-          continue;
-        }
-
-        queuedKeys.add(key);
-        dripQueueRef.current.push({ item, enqueuedAt: now });
-        if (item.kind === "citedVerse") currentCitedVerses.push(item);
-        anyDripAdded = true;
-      }
-      if (!anyDripAdded) return;
-      if (drainTimerRef.current === null) {
-        const elapsed = Date.now() - lastAppendedAtRef.current;
-        const delay = Math.max(0, FEED_MIN_GAP_MS - elapsed);
-        drainTimerRef.current = setTimeout(drainOne, delay);
-      }
-    },
-    [drainOne]
-  );
+  const scheduleDrainIfIdle = useCallback(() => {
+    if (drainTimerRef.current !== null) return;
+    const lastAppendedAt = useSessionStore.getState().lastAppendedAt;
+    const elapsed = Date.now() - lastAppendedAt;
+    const delay = Math.max(0, FEED_MIN_GAP_MS - elapsed);
+    drainTimerRef.current = setTimeout(drainOne, delay);
+  }, [drainOne]);
 
   // Fluxo BIBLE: dispara em cada novo chunk quando (a) o regex-gate encontra
   // menção bíblica na janela recente OU (b) já estamos em readingMode (pra que
@@ -323,16 +170,17 @@ function RecordingLiveInner({
     if (okChunkCount === 0) return;
     const recent = tailTranscript(transcript, BIBLE_TRANSCRIPT_CHARS);
     if (!recent) return;
-    const delta = transcript.length - lastBibleTailLenRef.current;
-    if (lastBibleTailLenRef.current > 0 && delta < BIBLE_MIN_TAIL_DELTA_CHARS) return;
-    const inReading = readingModeRef.current;
+    const store = useSessionStore.getState();
+    const delta = transcript.length - store.lastBibleTailLen;
+    if (store.lastBibleTailLen > 0 && delta < BIBLE_MIN_TAIL_DELTA_CHARS) return;
+    const inReading = store.readingMode;
     if (!inReading && !hasBibleMention(recent)) {
-      sessionCountersRef.current.bibleGateSkipped++;
+      store.bumpCounter("bibleGateSkipped");
       return;
     }
-    lastBibleTailLenRef.current = transcript.length;
-    setBibleInFlight(true);
-    sessionCountersRef.current.bibleCalls++;
+    store.setLastBibleTailLen(transcript.length);
+    store.setBibleInFlight(true);
+    store.bumpCounter("bibleCalls");
     const bibleSermonAtMs = Math.max(0, performance.now() - startedAtRef.current);
     void requestBible({
       text: recent,
@@ -341,21 +189,23 @@ function RecordingLiveInner({
       sessionId,
     })
       .then(({ items, thinking: nextThinking, readingMode: nextReadingMode, translationHint }) => {
-        sessionCountersRef.current.bibleYield += items.length;
+        const s = useSessionStore.getState();
+        s.bumpCounter("bibleYield", items.length);
         for (const item of items) {
           if (item.kind === "citedVerse" && !item.text && item.reference.includes(":")) {
             prefetchVerse(item.reference, translation);
           }
         }
-        enqueueFeedItems(items);
-        if (nextThinking) setThinking(nextThinking);
-        setReadingMode(nextReadingMode);
+        const { hasDripAdd } = s.enqueueFeedItems(items);
+        if (hasDripAdd) scheduleDrainIfIdle();
+        if (nextThinking) s.setThinking(nextThinking);
+        s.setReadingMode(nextReadingMode);
         if (nextReadingMode !== readingMode) {
           devLog("[feed] readingMode →", nextReadingMode);
         }
         if (translationHint) setAutoTranslation(translationHint);
       })
-      .finally(() => setBibleInFlight(false));
+      .finally(() => useSessionStore.getState().setBibleInFlight(false));
   }, [
     running,
     okChunkCount,
@@ -363,39 +213,35 @@ function RecordingLiveInner({
     bibleInFlight,
     finalizing,
     feedItems,
-    enqueueFeedItems,
     readingMode,
     translation,
     setAutoTranslation,
     sessionId,
     prefetchVerse,
+    scheduleDrainIfIdle,
   ]);
 
   // Fluxo INSIGHTS: setInterval tempo-based (INSIGHTS_INTERVAL_MS). Pausa
-  // enquanto readingMode=true — o ouvinte fica focado na Escritura. Gates
-  // adicionais dentro do tick: warmup mínimo de chunks + delta de transcrição
-  // pra não chamar quando o pregador está em silêncio ou repetindo a mesma
-  // frase por 45s.
+  // enquanto readingMode=true. Gates internos: warmup + delta de transcrição.
   //
-  // insightsInFlight fica no useState (pra o Feed mostrar spinner) E num ref
-  // (pra o guard interno). O state NÃO entra nos deps do effect — se entrasse,
-  // cada chamada disparava cleanup+recreate do setInterval, reiniciando o
-  // relógio de 45s a cada resposta e cortando ~metade das chamadas por sessão.
+  // insightsInFlight NÃO entra nos deps — se entrasse, cada resposta disparava
+  // cleanup+recreate do setInterval, reiniciando o relógio de 45s a cada
+  // chamada e cortando ~metade das chamadas por sessão. Lemos via getSessionState().
   useEffect(() => {
     if (!running || finalizing) return;
     const tick = () => {
-      if (insightsInFlightRef.current) return;
-      if (readingModeRef.current) return;
+      const s = useSessionStore.getState();
+      if (s.insightsInFlight) return;
+      if (s.readingMode) return;
       // Backpressure: se a fila de drip já tem items suficientes esperando pra
-      // aparecer, não faz sentido gerar mais — o novo item só apareceria vários
-      // minutos depois do momento que gerou ele, e ainda queimaria tokens.
-      const pending = dripQueueRef.current.length;
+      // aparecer, não faz sentido gerar mais.
+      const pending = s.dripQueue.length;
       if (pending >= INSIGHTS_QUEUE_BACKPRESSURE) {
-        sessionCountersRef.current.skippedBackpressure++;
+        s.bumpCounter("skippedBackpressure");
         devLog("[insights] skip", { reason: "queue-backpressure", pending });
         return;
       }
-      const currentTranscript = Array.from(chunksRef.current.values())
+      const currentTranscript = Object.values(s.chunks)
         .filter((r) => r.status === "ok")
         .sort((a, b) => a.index - b.index)
         .map((r) => r.text.trim())
@@ -405,30 +251,30 @@ function RecordingLiveInner({
         .trim();
       if (!currentTranscript) return;
       const recent = tailTranscript(currentTranscript, INSIGHTS_TRANSCRIPT_CHARS);
-      const delta = currentTranscript.length - lastInsightsTailLenRef.current;
-      if (lastInsightsTailLenRef.current > 0 && delta < INSIGHTS_MIN_TAIL_DELTA_CHARS) {
-        sessionCountersRef.current.skippedDelta++;
+      const delta = currentTranscript.length - s.lastInsightsTailLen;
+      if (s.lastInsightsTailLen > 0 && delta < INSIGHTS_MIN_TAIL_DELTA_CHARS) {
+        s.bumpCounter("skippedDelta");
         devLog("[insights] skip", { reason: "tail-delta", delta, tailLen: recent.length });
         return;
       }
-      lastInsightsTailLenRef.current = currentTranscript.length;
-      insightsInFlightRef.current = true;
-      setInsightsInFlight(true);
-      sessionCountersRef.current.insightsCalls++;
+      s.setLastInsightsTailLen(currentTranscript.length);
+      s.setInsightsInFlight(true);
+      s.bumpCounter("insightsCalls");
       const sermonAtMs = Math.max(0, performance.now() - startedAtRef.current);
       void requestInsights({
         text: recent,
-        existingItems: feedItemsRef.current,
+        existingItems: s.feedItems,
         sermonAtMs,
         sessionId,
       })
         .then((items) => {
-          sessionCountersRef.current.insightsYield += items.length;
-          enqueueFeedItems(items);
+          const cur = useSessionStore.getState();
+          cur.bumpCounter("insightsYield", items.length);
+          const { hasDripAdd } = cur.enqueueFeedItems(items);
+          if (hasDripAdd) scheduleDrainIfIdle();
         })
         .finally(() => {
-          insightsInFlightRef.current = false;
-          setInsightsInFlight(false);
+          useSessionStore.getState().setInsightsInFlight(false);
         });
     };
     const id = setInterval(tick, INSIGHTS_INTERVAL_MS);
@@ -437,46 +283,55 @@ function RecordingLiveInner({
       clearInterval(id);
       insightsIntervalRef.current = null;
     };
-  }, [running, finalizing, enqueueFeedItems, sessionId]);
+  }, [running, finalizing, sessionId, scheduleDrainIfIdle]);
 
+  // Fluxo ECHO: dispara quando o feed acumula ai-streak >= aiStreakThreshold.
+  // A frase repetida do pregador quebra o padrão visual de cards da IA.
   useEffect(() => {
     if (!running || finalizing) return;
-    if (readingModeRef.current) return;
+    const s = useSessionStore.getState();
+    if (s.readingMode) return;
     const last = feedItems[feedItems.length - 1];
-    if (echoingRef.current && last?.kind === "speakerEcho") {
-      echoingRef.current = false;
-      aiStreakThresholdRef.current = pickEchoThreshold();
+    if (s.echoing && last?.kind === "speakerEcho") {
+      s.setEchoing(false);
+      s.rerollEchoThreshold();
     }
-    if (echoingRef.current) return;
+    if (useSessionStore.getState().echoing) return;
 
     let streak = 0;
     for (let i = feedItems.length - 1; i >= 0; i--) {
       if (feedItemOrigin(feedItems[i]) === "ai") streak++;
       else break;
     }
-    if (streak < aiStreakThresholdRef.current) return;
+    if (streak < useSessionStore.getState().aiStreakThreshold) return;
 
     const recent = tailTranscript(transcript, INSIGHTS_TRANSCRIPT_CHARS);
     if (!recent) return;
-    const delta = transcript.length - lastEchoTailLenRef.current;
-    if (lastEchoTailLenRef.current > 0 && delta < ECHO_MIN_TAIL_DELTA_CHARS) return;
+    const delta = transcript.length - useSessionStore.getState().lastEchoTailLen;
+    if (useSessionStore.getState().lastEchoTailLen > 0 && delta < ECHO_MIN_TAIL_DELTA_CHARS) {
+      return;
+    }
 
-    lastEchoTailLenRef.current = transcript.length;
-    echoingRef.current = true;
+    useSessionStore.getState().setLastEchoTailLen(transcript.length);
+    useSessionStore.getState().setEchoing(true);
     const sermonAtMs = Math.max(0, performance.now() - startedAtRef.current);
-    devLog("[echo] fire", { streak, threshold: aiStreakThresholdRef.current });
+    devLog("[echo] fire", {
+      streak,
+      threshold: useSessionStore.getState().aiStreakThreshold,
+    });
     void requestEcho({ text: recent, existingItems: feedItems, sermonAtMs, sessionId })
       .then((items) => {
         if (items.length === 0) {
-          echoingRef.current = false;
+          useSessionStore.getState().setEchoing(false);
           return;
         }
-        enqueueFeedItems(items);
+        const { hasDripAdd } = useSessionStore.getState().enqueueFeedItems(items);
+        if (hasDripAdd) scheduleDrainIfIdle();
       })
       .catch(() => {
-        echoingRef.current = false;
+        useSessionStore.getState().setEchoing(false);
       });
-  }, [feedItems, running, finalizing, transcript, enqueueFeedItems, sessionId]);
+  }, [feedItems, running, finalizing, transcript, sessionId, scheduleDrainIfIdle]);
 
   const handleChunk = useCallback(
     async (ev: ChunkEvent) => {
@@ -487,16 +342,15 @@ function RecordingLiveInner({
         text: "",
         startedAtMs,
       };
-      chunksRef.current.set(ev.index, row);
-      publish();
+      useSessionStore.getState().upsertChunk(row);
 
       if (await isSilentBlob(ev.blob)) {
-        chunksRef.current.set(ev.index, { ...row, status: "silence" });
-        publish();
+        useSessionStore.getState().upsertChunk({ ...row, status: "silence" });
         return;
       }
 
-      const previousText = Array.from(chunksRef.current.values())
+      const currentChunks = useSessionStore.getState().chunks;
+      const previousText = Object.values(currentChunks)
         .filter((r) => r.index < ev.index && r.status === "ok")
         .sort((a, b) => a.index - b.index)
         .map((r) => r.text)
@@ -504,61 +358,34 @@ function RecordingLiveInner({
       const prevHint = tailSentences(previousText, 2);
 
       const result = await uploadChunkWithRetry(ev, prevHint, sessionId);
-      const current = chunksRef.current.get(ev.index);
+      const current = useSessionStore.getState().chunks[ev.index];
       if (!current) return;
       if (result.ok) {
-        chunksRef.current.set(ev.index, { ...current, status: "ok", text: result.text });
+        useSessionStore.getState().upsertChunk({ ...current, status: "ok", text: result.text });
       } else {
-        chunksRef.current.set(ev.index, { ...current, status: "error" });
+        useSessionStore.getState().upsertChunk({ ...current, status: "error" });
       }
-      publish();
     },
-    [publish, sessionId]
+    [sessionId]
   );
 
   const start = useCallback(async () => {
-    if (running) return;
-    setStartupError("");
-    setSaved(false);
-    setChunkRows([]);
-    setFeedItems([]);
-    setThinking("");
-    setReadingMode(false);
-    setSummary(null);
-    setSummaryTitle("");
-    titleLockedByUserRef.current = false;
+    if (getSessionState().running) return;
+
     // Preserve pre-Zustand semantics: each session starts with a fresh auto so
     // stale detection from a previous recording doesn't leak into this one.
-    // Manual selection is intentionally preserved (persisted in localStorage).
     usePreferencesStore.getState().resetTranslationAuto();
-    setRecordingStartedAt(new Date());
-    lastBibleTailLenRef.current = 0;
-    lastInsightsTailLenRef.current = 0;
-    lastEchoTailLenRef.current = 0;
-    echoingRef.current = false;
-    aiStreakThresholdRef.current = pickEchoThreshold();
-    autoFollowRef.current = true;
-    setAutoFollow(true);
-    seenItemsLenRef.current = 0;
-    setPendingNew(0);
-    chunksRef.current = new Map();
+
+    getSessionState().reset({
+      speakerName: initialSpeakerName,
+      speakerLocation: initialSpeakerLocation,
+    });
+    getSessionState().setRecordingStartedAt(new Date());
+
     if (drainTimerRef.current) {
       clearTimeout(drainTimerRef.current);
       drainTimerRef.current = null;
     }
-    dripQueueRef.current = [];
-    visibleKeysRef.current = new Set();
-    lastAppendedAtRef.current = 0;
-    sessionCountersRef.current = {
-      bibleCalls: 0,
-      bibleYield: 0,
-      bibleGateSkipped: 0,
-      insightsCalls: 0,
-      insightsYield: 0,
-      dedupSuppressed: 0,
-      skippedDelta: 0,
-      skippedBackpressure: 0,
-    };
 
     const rec = createRecorder({
       minChunkMs: RECORDER_MIN_CHUNK_MS,
@@ -571,28 +398,31 @@ function RecordingLiveInner({
     try {
       await rec.start();
       recorderRef.current = rec;
+      // startedAtRef MUST be seeded before setRunning(true) so useElapsedTimer
+      // observes a valid origin on first render — see AGENTS.md guardrails.
       startedAtRef.current = performance.now();
-      setRunning(true);
+      getSessionState().setRunning(true);
       devLog("[session] start", { sessionId, at: new Date().toISOString() });
     } catch (err) {
-      setStartupError((err as Error).message ?? "failed to start");
+      getSessionState().setStartupError((err as Error).message ?? "failed to start");
     }
-  }, [handleChunk, running, sessionId]);
+  }, [handleChunk, sessionId, initialSpeakerName, initialSpeakerLocation]);
 
   const stop = useCallback(async () => {
-    if (!running) return;
+    const s = getSessionState();
+    if (!s.running) return;
     const durationMs = Math.round(performance.now() - startedAtRef.current);
     devLog("[session] stop", {
       sessionId,
       at: new Date().toISOString(),
       durationMs,
-      ...sessionCountersRef.current,
+      ...s.counters,
     });
-    setRunning(false);
+    s.setRunning(false);
     await recorderRef.current?.stop();
     recorderRef.current = null;
 
-    const finalTranscript = Array.from(chunksRef.current.values())
+    const finalTranscript = Object.values(getSessionState().chunks)
       .filter((r) => r.status === "ok")
       .sort((a, b) => a.index - b.index)
       .map((r) => r.text.trim())
@@ -602,23 +432,28 @@ function RecordingLiveInner({
       .trim();
     if (!finalTranscript) return;
 
-    setFinalizing(true);
+    const capturedItems = getSessionState().feedItems;
+    const capturedSpeakerName = getSessionState().speakerName;
+    const capturedSpeakerLocation = getSessionState().speakerLocation;
+
+    getSessionState().setFinalizing(true);
     try {
       const result = await requestFinalSummary({
         sessionId,
         text: finalTranscript,
-        feedItems,
+        feedItems: capturedItems,
         durationMs,
-        speakerName,
-        speakerLocation,
+        speakerName: capturedSpeakerName,
+        speakerLocation: capturedSpeakerLocation,
       });
       if (result) {
-        setSummary(result.payload);
-        if (result.payload.title && !titleLockedByUserRef.current) {
-          setSummaryTitle(result.payload.title);
+        const cur = getSessionState();
+        cur.setSummary(result.payload);
+        if (result.payload.title && !cur.titleLockedByUser) {
+          cur.setSummaryTitle(result.payload.title);
         }
         if (result.saved) {
-          setSaved(true);
+          cur.setSaved(true);
           toast.success("Sessão salva", {
             description: result.payload.title || "Resumo disponível no histórico.",
           });
@@ -630,9 +465,9 @@ function RecordingLiveInner({
         }
       }
     } finally {
-      setFinalizing(false);
+      getSessionState().setFinalizing(false);
     }
-  }, [running, feedItems, speakerName, speakerLocation, router, sessionId]);
+  }, [router, sessionId]);
 
   useEffect(() => {
     return () => {
@@ -642,14 +477,9 @@ function RecordingLiveInner({
     };
   }, []);
 
-  useEffect(() => {
-    feedItemsRef.current = feedItems;
-  }, [feedItems]);
-
   // Auto-start once on mount when entering from the "Nova gravação" dialog so
-  // the user only has to click "Iniciar" one time. Guarded by
-  // autoStartFiredRef so React 18 strict-mode double-invoke doesn't fire twice.
-  const autoStartFiredRef = useRef(false);
+  // the user only has to click "Iniciar" one time. Guarded so React strict-mode
+  // double-invoke doesn't fire twice.
   useEffect(() => {
     if (!autoStart) return;
     if (autoStartFiredRef.current) return;
@@ -657,22 +487,11 @@ function RecordingLiveInner({
     void start();
   }, [autoStart, start]);
 
+  // React to readingMode transitions: adjust recorder chunk timing and purge
+  // stale echoes from the drip queue when entering reading mode.
   useEffect(() => {
-    readingModeRef.current = readingMode;
-    if (readingMode && dripQueueRef.current.length > 0) {
-      // Echos são time-sensitive (frase recente do pregador pra quebrar streak
-      // de cards da IA) — segurar por 30-60s até a leitura acabar deixa o eco
-      // stale. Purga só eles. Insights (context, relatedVerse, etc.) continuam
-      // na fila e drenam quando readingMode voltar false — o drainOne acima
-      // adia items não-citedVerse enquanto readingMode está on.
-      const before = dripQueueRef.current.length;
-      const hadPendingEcho = dripQueueRef.current.some((e) => e.item.kind === "speakerEcho");
-      dripQueueRef.current = dripQueueRef.current.filter((e) => e.item.kind !== "speakerEcho");
-      const dropped = before - dripQueueRef.current.length;
-      if (dropped > 0) {
-        devLog("[feed] drip-purge", { reason: "readingMode-on", dropped, kind: "echo" });
-      }
-      if (hadPendingEcho) echoingRef.current = false;
+    if (readingMode) {
+      getSessionState().purgeEchoFromDripQueue();
     }
     const rec = recorderRef.current;
     if (!rec || !running) return;
@@ -689,6 +508,7 @@ function RecordingLiveInner({
     }
   }, [readingMode, running]);
 
+  // Session rollup log every 60s while running.
   useEffect(() => {
     if (!running) return;
     const id = setInterval(() => {
@@ -697,18 +517,8 @@ function RecordingLiveInner({
         .toString()
         .padStart(2, "0");
       const s = (elapsedSec % 60).toString().padStart(2, "0");
-      const c = sessionCountersRef.current;
-      devLog("[session] rollup", {
-        at: `${m}:${s}`,
-        bibleCalls: c.bibleCalls,
-        bibleYield: c.bibleYield,
-        bibleGateSkipped: c.bibleGateSkipped,
-        insightsCalls: c.insightsCalls,
-        insightsYield: c.insightsYield,
-        skippedDelta: c.skippedDelta,
-        skippedBackpressure: c.skippedBackpressure,
-        dedupSuppressed: c.dedupSuppressed,
-      });
+      const c = getSessionState().counters;
+      devLog("[session] rollup", { at: `${m}:${s}`, ...c });
     }, 60_000);
     return () => clearInterval(id);
   }, [running]);
@@ -727,10 +537,10 @@ function RecordingLiveInner({
   }, []);
 
   const resumeAutoFollow = useCallback(() => {
-    autoFollowRef.current = true;
-    setAutoFollow(true);
-    seenItemsLenRef.current = feedItemsRef.current.length;
-    setPendingNew(0);
+    const s = getSessionState();
+    s.setAutoFollow(true);
+    s.setSeenItemsLen(s.feedItems.length);
+    s.setPendingNew(0);
     scrollToBottom();
   }, [scrollToBottom]);
 
@@ -740,12 +550,12 @@ function RecordingLiveInner({
       const distanceFromBottom =
         document.documentElement.scrollHeight - window.scrollY - window.innerHeight;
       const atTail = distanceFromBottom <= AUTO_FOLLOW_BOTTOM_PX;
-      if (atTail !== autoFollowRef.current) {
-        autoFollowRef.current = atTail;
-        setAutoFollow(atTail);
+      const s = getSessionState();
+      if (atTail !== s.autoFollow) {
+        s.setAutoFollow(atTail);
         if (atTail) {
-          seenItemsLenRef.current = feedItemsRef.current.length;
-          setPendingNew(0);
+          s.setSeenItemsLen(s.feedItems.length);
+          s.setPendingNew(0);
         }
       }
     };
@@ -753,17 +563,31 @@ function RecordingLiveInner({
     return () => window.removeEventListener("scroll", onScroll);
   }, [running]);
 
-  // biome-ignore lint/correctness/useExhaustiveDependencies: feedItems.length + thinking are intentional change-triggers, not read inside
+  // biome-ignore lint/correctness/useExhaustiveDependencies: feedItems.length + thinking are intentional change-triggers
   useEffect(() => {
     if (!running) return;
-    if (autoFollowRef.current) {
-      seenItemsLenRef.current = feedItems.length;
+    const s = getSessionState();
+    if (s.autoFollow) {
+      s.setSeenItemsLen(feedItems.length);
       scrollToBottom();
     } else {
-      const unseen = Math.max(0, feedItems.length - seenItemsLenRef.current);
-      setPendingNew(unseen);
+      const unseen = Math.max(0, feedItems.length - s.seenItemsLen);
+      s.setPendingNew(unseen);
     }
   }, [running, feedItems.length, thinking, scrollToBottom]);
+
+  const handleTitleChange = useCallback((v: string) => {
+    getSessionState().setSummaryTitle(v);
+  }, []);
+  const handleTitleLock = useCallback(() => {
+    getSessionState().lockTitle();
+  }, []);
+  const handleSpeakerNameChange = useCallback((v: string) => {
+    getSessionState().setSpeakerName(v);
+  }, []);
+  const handleSpeakerLocationChange = useCallback((v: string) => {
+    getSessionState().setSpeakerLocation(v);
+  }, []);
 
   return (
     <main className="mx-auto flex flex-1 w-full max-w-3xl flex-col gap-8 px-4 py-8 sm:gap-10 sm:px-6 sm:py-10">
@@ -814,12 +638,10 @@ function RecordingLiveInner({
             startedAt={recordingStartedAt}
             speakerName={speakerName}
             speakerLocation={speakerLocation}
-            onTitleChange={setSummaryTitle}
-            onTitleLock={() => {
-              titleLockedByUserRef.current = true;
-            }}
-            onSpeakerNameChange={setSpeakerName}
-            onSpeakerLocationChange={setSpeakerLocation}
+            onTitleChange={handleTitleChange}
+            onTitleLock={handleTitleLock}
+            onSpeakerNameChange={handleSpeakerNameChange}
+            onSpeakerLocationChange={handleSpeakerLocationChange}
             saved={saved}
             menu={
               <SessionMenu
