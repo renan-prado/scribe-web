@@ -23,8 +23,8 @@ const firaMono = Fira_Mono({
 
 export const metadata: Metadata = {
   title: {
-    default: "Scribe",
-    template: "%s | Scribe",
+    default: "Scriba",
+    template: "%s | Scriba",
   },
   description: "Transcrição e resumo de sermões em tempo real",
   icons: { icon: "/favicon-260821.svg" },

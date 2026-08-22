@@ -9,7 +9,7 @@ export function AppHeader({ actions }: { actions?: ReactNode }) {
           href="/home"
           className="font-heading text-2xl font-bold leading-none tracking-tight text-foreground transition-colors hover:text-foreground/70 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring/40 rounded-sm"
         >
-          scribe
+          scriba
         </Link>
         {actions ? <div className="flex items-center gap-3">{actions}</div> : null}
       </div>

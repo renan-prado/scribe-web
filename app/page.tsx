@@ -5,14 +5,14 @@ import { Button } from "@/components/ui/button";
 import { createClient } from "@/lib/supabase/server";
 
 export const metadata = {
-  title: { absolute: "Scribe — Transcrição e resumos ao vivo de sermões" },
+  title: { absolute: "Scriba — Transcrição e resumos ao vivo de sermões" },
 };
 
 const FEATURES = [
   {
     icon: MicVocal,
     title: "Transcrição em tempo real",
-    body: "Grave o culto direto do navegador. O Scribe transcreve conforme o pregador fala, com prompt de vocabulário bíblico.",
+    body: "Grave o culto direto do navegador. O Scriba transcreve conforme o pregador fala, com prompt de vocabulário bíblico.",
   },
   {
     icon: BookOpenText,
@@ -37,7 +37,7 @@ export default async function LandingPage() {
     <main className="mx-auto flex min-h-svh w-full max-w-4xl flex-col px-4 py-6 sm:px-6 sm:py-16">
       <header className="flex items-center justify-between gap-2">
         <span className="font-heading text-lg font-bold tracking-tight text-foreground">
-          scribe
+          scriba
         </span>
         <div className="flex items-center gap-1 sm:gap-2">
           <Button
@@ -65,7 +65,7 @@ export default async function LandingPage() {
           O sermão inteiro, transcrito e resumido enquanto acontece.
         </h1>
         <p className="max-w-2xl text-balance text-sm text-muted-foreground sm:text-lg">
-          Scribe grava a pregação, transcreve ao vivo, extrai versículos e citações em um feed e
+          Scriba grava a pregação, transcreve ao vivo, extrai versículos e citações em um feed e
           entrega um resumo estruturado assim que o pregador termina.
         </p>
         <div className="mt-2 flex w-full flex-col gap-3 sm:w-auto sm:flex-row">
@@ -105,7 +105,7 @@ export default async function LandingPage() {
       </section>
 
       <footer className="mt-auto pt-12 text-center text-xs text-muted-foreground sm:pt-16">
-        © {new Date().getFullYear()} scribe
+        © {new Date().getFullYear()} scriba
       </footer>
     </main>
   );

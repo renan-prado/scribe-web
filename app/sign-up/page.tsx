@@ -10,7 +10,7 @@ export default function SignUpPage() {
     <main className="mx-auto flex min-h-svh w-full max-w-sm flex-col justify-center gap-8 px-6 py-16">
       <header className="flex flex-col gap-2 text-center">
         <h1 className="font-heading text-2xl font-bold tracking-tight text-foreground">
-          Criar conta no Scribe
+          Criar conta no Scriba
         </h1>
         <p className="text-sm text-muted-foreground">
           Sua conta é criada automaticamente no primeiro login com Google.
