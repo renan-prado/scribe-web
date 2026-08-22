@@ -19,18 +19,17 @@ export const BIBLE_TRANSCRIPT_CHARS = 900;
  */
 export const BIBLE_MIN_TAIL_DELTA_CHARS = 40;
 
-// ---------- Fluxo INSIGHTS (lento, tempo-based) ----------
+// ---------- Fluxo INSIGHTS (lento, chunk-based) ----------
 
 /**
- * Cadência do /api/insights. Alto o suficiente pra dar contexto ao modelo
- * (pregador desenvolve o ponto durante ~1 min), baixo o suficiente pra que
- * highlights/citações não fiquem descolados do momento.
+ * Cadência do /api/insights em número de chunks OK. A cada 3 chunks
+ * transcritos com sucesso o pipeline dispara — com chunks de 15-30s isso
+ * equivale a ~45-90s de fala, dando contexto suficiente ao modelo.
  */
-export const INSIGHTS_INTERVAL_MS = 45_000; // 45s
+export const INSIGHTS_CHUNK_INTERVAL = 3;
 
 /**
  * Trecho da transcrição enviado ao /api/insights. Menor que a janela
- * antiga (2500) pra baratear tokens — 1500 ≈ 90-120s de fala, suficiente
  * pra o modelo captar o tema atual sem carregar o histórico inteiro.
  */
 export const INSIGHTS_TRANSCRIPT_CHARS = 1500; // 1.5k chars
@@ -38,8 +37,7 @@ export const INSIGHTS_TRANSCRIPT_CHARS = 1500; // 1.5k chars
 /**
  * Delta mínimo de transcrição entre duas chamadas de insights. Evita
  * chamar quando pouco foi dito desde a chamada anterior. Também funciona
- * como warmup implícito: o primeiro tick só dispara quando a transcrição
- * cresceu além desse piso.
+ * como warmup implícito: o primeiro tick só dispara quando a transcrição cresceu além desse piso.
  */
 export const INSIGHTS_MIN_TAIL_DELTA_CHARS = 200;
 
@@ -65,7 +63,7 @@ export const ECHO_MIN_TAIL_DELTA_CHARS = 200;
  * podem retornar 2+ itens de uma vez; uma fila no cliente os espaça pra o
  * ouvinte ter tempo de ler cada um.
  */
-export const FEED_MIN_GAP_MS = 45_000; // 45s
+export const FEED_MIN_GAP_MS = 25_000; // 25s
 
 /**
  * Se a fila de drip já tem esse número de items pendentes, o insights tick
@@ -81,7 +79,7 @@ export const INSIGHTS_QUEUE_BACKPRESSURE = 3;
 // disparo da pipeline. Mínimo de 8s dá ao Whisper áudio suficiente pra
 // transcrever com precisão. Máximo de 30s pra que uma frase longa não
 // espere indefinidamente.
-export const RECORDER_MIN_CHUNK_MS = 8_000;
+export const RECORDER_MIN_CHUNK_MS = 15_000;
 export const RECORDER_MAX_CHUNK_MS = 30_000;
 
 export const RECORDER_SILENCE_THRESHOLD = 0.01;
