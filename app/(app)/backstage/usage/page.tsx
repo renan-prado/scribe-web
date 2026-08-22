@@ -9,6 +9,7 @@ import {
   TableHeader,
   TableRow,
 } from "@/components/ui/table";
+import { CopyButton } from "@/features/admin/components/CopyButton";
 import { FxRateBadge } from "@/features/admin/components/FxRateBadge";
 import { UsageFilters } from "@/features/admin/components/UsageFilters";
 import {
@@ -284,7 +285,7 @@ function SessionsTable({ summary, money }: { summary: AdminUsageSummary; money: 
               </TableRow>
             ) : (
               summary.bySession.map((s) => (
-                <TableRow key={s.sessionId}>
+                <TableRow key={s.sessionId} className="group">
                   <TableCell>
                     <Link
                       className="flex flex-col hover:underline"
@@ -295,6 +296,10 @@ function SessionsTable({ summary, money }: { summary: AdminUsageSummary; money: 
                         {s.createdAt ? DATE_FMT.format(new Date(s.createdAt)) : ""}
                       </span>
                     </Link>
+                    <span className="mt-0.5 flex items-center font-mono text-[0.65rem] text-muted-foreground/60">
+                      {s.sessionId.slice(0, 8)}…
+                      <CopyButton value={s.sessionId} />
+                    </span>
                   </TableCell>
                   <TableCell className="text-xs text-muted-foreground">
                     {s.ownerDisplayName || (s.userId ? s.userId.slice(0, 8) : "—")}
