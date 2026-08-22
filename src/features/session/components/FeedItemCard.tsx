@@ -97,6 +97,15 @@ export function FeedItemCard({
     return null;
   }
 
+  // Chapter-only citations ("João 21") give the listener nothing to read — no
+  // verse text to fetch, no click target worth opening. Wait until a
+  // verse-specific ref for the same passage arrives (see
+  // dedupeConsecutiveChapters) before surfacing a card.
+  if (item.kind === "citedVerse") {
+    const parsed = parseVerseReference(item.reference);
+    if (!parsed || parsed.startVerse == null) return null;
+  }
+
   const origin = feedItemOrigin(item);
   const chip = chipFor(item);
   const ChipIcon = chip.icon;
@@ -219,19 +228,10 @@ function FeedItemBody({
 }) {
   switch (item.kind) {
     case "citedVerse": {
-      // Chapter-only refs ("Salmo 119") show up during the announcement phase,
-      // before the pastor starts reading specific verses. Render as a plain
-      // label — no fetch (would return the entire chapter), no click (dialog
-      // has nothing meaningful to show). dedupeConsecutiveChapters will remove
-      // this once a verse-numbered ref for the same chapter arrives.
+      // Chapter-only refs are suppressed upstream in FeedItemCard — by the time
+      // we get here the parse is guaranteed to have startVerse/endVerse.
       const parsed = parseVerseReference(item.reference);
-      if (!parsed || parsed.startVerse == null || parsed.endVerse == null) {
-        return (
-          <span className="self-start inline-flex items-center rounded-md bg-foreground px-2 py-1 text-[0.7rem] font-semibold text-background">
-            {item.reference}
-          </span>
-        );
-      }
+      if (!parsed || parsed.startVerse == null || parsed.endVerse == null) return null;
       return (
         <>
           <button
