@@ -20,14 +20,6 @@ import { StatusPhrases } from "@/features/session/components/StatusPhrases";
 import { SummaryView } from "@/features/session/components/SummaryView";
 import { TranscriptView } from "@/features/session/components/TranscriptView";
 import {
-  BIBLE_MIN_TAIL_DELTA_CHARS,
-  BIBLE_TRANSCRIPT_CHARS,
-  ECHO_MIN_TAIL_DELTA_CHARS,
-  FEED_MIN_GAP_MS,
-  INSIGHTS_INTERVAL_MS,
-  INSIGHTS_MIN_TAIL_DELTA_CHARS,
-  INSIGHTS_QUEUE_BACKPRESSURE,
-  INSIGHTS_TRANSCRIPT_CHARS,
   RECORDER_MAX_CHUNK_MS,
   RECORDER_MAX_CHUNK_MS_READING,
   RECORDER_MIN_CHUNK_MS,
@@ -35,23 +27,19 @@ import {
   RECORDER_SILENCE_HOLD_MS,
   RECORDER_SILENCE_THRESHOLD,
 } from "@/features/session/config";
+import { useBiblePipeline } from "@/features/session/hooks/useBiblePipeline";
+import { useDrainTimer } from "@/features/session/hooks/useDrainTimer";
+import { useEchoPipeline } from "@/features/session/hooks/useEchoPipeline";
 import { useElapsedTimer } from "@/features/session/hooks/useElapsedTimer";
+import { useInsightsPipeline } from "@/features/session/hooks/useInsightsPipeline";
 import { useTranslation } from "@/features/session/hooks/useTranslation";
 import { useVersePrefetcher } from "@/features/session/hooks/useVerseFetch";
 import { useVisibilityWarning } from "@/features/session/hooks/useVisibilityWarning";
 import { useWakeLock } from "@/features/session/hooks/useWakeLock";
-import {
-  requestBible,
-  requestEcho,
-  requestFinalSummary,
-  requestInsights,
-  uploadChunkWithRetry,
-} from "@/features/session/lib/api";
+import { requestFinalSummary, uploadChunkWithRetry } from "@/features/session/lib/api";
 import { isSilentBlob } from "@/features/session/lib/audio";
-import { tailSentences, tailTranscript } from "@/features/session/lib/text";
+import { tailSentences } from "@/features/session/lib/text";
 import type { ChunkRow, TranscriptState } from "@/features/session/types";
-import { hasBibleMention } from "@/lib/bible/detect";
-import { feedItemOrigin } from "@/lib/domain/feed";
 import type { ChunkEvent, Recorder } from "@/lib/domain/recorder";
 import { devLog } from "@/lib/log";
 import { createRecorder } from "@/lib/recorder";
@@ -79,12 +67,10 @@ export function RecordingLive({
   // ---- imperative refs (browser resources, mount guards) ----
   const recorderRef = useRef<Recorder | null>(null);
   const startedAtRef = useRef<number>(0);
-  const insightsIntervalRef = useRef<ReturnType<typeof setInterval> | null>(null);
-  const drainTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
   const bottomRef = useRef<HTMLDivElement | null>(null);
   const autoStartFiredRef = useRef(false);
 
-  // ---- store selectors (subscribe) ----
+  // ---- store subscriptions ----
   const running = useSessionStore((s) => s.running);
   const finalizing = useSessionStore((s) => s.finalizing);
   const saved = useSessionStore((s) => s.saved);
@@ -98,12 +84,11 @@ export function RecordingLive({
   const summaryTitle = useSessionStore((s) => s.summaryTitle);
   const speakerName = useSessionStore((s) => s.speakerName);
   const speakerLocation = useSessionStore((s) => s.speakerLocation);
-  const bibleInFlight = useSessionStore((s) => s.bibleInFlight);
   const insightsInFlight = useSessionStore((s) => s.insightsInFlight);
   const autoFollow = useSessionStore((s) => s.autoFollow);
   const pendingNew = useSessionStore((s) => s.pendingNew);
 
-  // ---- ui-local state (dialog open flags, hidden-tab warning banner) ----
+  // ---- ui-local state (dialog open flags) ----
   const [transcriptOpen, setTranscriptOpen] = useState(false);
   const [liveFeedOpen, setLiveFeedOpen] = useState(false);
 
@@ -114,6 +99,20 @@ export function RecordingLive({
   });
   const { setAuto: setAutoTranslation, effective: translation } = useTranslation();
   const prefetchVerse = useVersePrefetcher();
+
+  // ---- feed drip + three live pipelines ----
+  const { scheduleDrainIfIdle, cancel: cancelDrainTimer } = useDrainTimer();
+
+  useBiblePipeline({
+    sessionId,
+    translation,
+    setAutoTranslation,
+    prefetchVerse,
+    scheduleDrainIfIdle,
+    startedAtRef,
+  });
+  useInsightsPipeline({ sessionId, scheduleDrainIfIdle, startedAtRef });
+  useEchoPipeline({ sessionId, scheduleDrainIfIdle, startedAtRef });
 
   // ---- derived views ----
   const chunkRows = useMemo<ChunkRow[]>(
@@ -131,207 +130,7 @@ export function RecordingLive({
       .trim();
   }, [chunkRows]);
 
-  const okChunkCount = useMemo(
-    () => chunkRows.filter((r) => r.status === "ok").length,
-    [chunkRows]
-  );
-
   const isProcessing = useMemo(() => chunkRows.some((r) => r.status === "uploading"), [chunkRows]);
-
-  // ---- drip drain timer ----
-  const drainOne = useCallback(() => {
-    drainTimerRef.current = null;
-    const { drained, hasMore, deferred } = useSessionStore.getState().drainOne();
-    // While readingMode holds a non-citedVerse card, poll again in FEED_MIN_GAP_MS
-    // so the queue resumes as soon as readingMode flips off.
-    if (deferred) {
-      drainTimerRef.current = setTimeout(drainOne, FEED_MIN_GAP_MS);
-      return;
-    }
-    if (drained && hasMore) {
-      drainTimerRef.current = setTimeout(drainOne, FEED_MIN_GAP_MS);
-    }
-  }, []);
-
-  const scheduleDrainIfIdle = useCallback(() => {
-    if (drainTimerRef.current !== null) return;
-    const lastAppendedAt = useSessionStore.getState().lastAppendedAt;
-    const elapsed = Date.now() - lastAppendedAt;
-    const delay = Math.max(0, FEED_MIN_GAP_MS - elapsed);
-    drainTimerRef.current = setTimeout(drainOne, delay);
-  }, [drainOne]);
-
-  // Fluxo BIBLE: dispara em cada novo chunk quando (a) o regex-gate encontra
-  // menção bíblica na janela recente OU (b) já estamos em readingMode (pra que
-  // o card da passagem continue expandindo enquanto o pastor lê versos além
-  // da faixa já emitida, mesmo sem repetir o nome do livro no chunk atual).
-  useEffect(() => {
-    if (!running || bibleInFlight || finalizing) return;
-    if (okChunkCount === 0) return;
-    const recent = tailTranscript(transcript, BIBLE_TRANSCRIPT_CHARS);
-    if (!recent) return;
-    const store = useSessionStore.getState();
-    const delta = transcript.length - store.lastBibleTailLen;
-    if (store.lastBibleTailLen > 0 && delta < BIBLE_MIN_TAIL_DELTA_CHARS) return;
-    const inReading = store.readingMode;
-    if (!inReading && !hasBibleMention(recent)) {
-      store.bumpCounter("bibleGateSkipped");
-      return;
-    }
-    store.setLastBibleTailLen(transcript.length);
-    store.setBibleInFlight(true);
-    store.bumpCounter("bibleCalls");
-    const bibleSermonAtMs = Math.max(0, performance.now() - startedAtRef.current);
-    void requestBible({
-      text: recent,
-      existingItems: feedItems,
-      sermonAtMs: bibleSermonAtMs,
-      sessionId,
-    })
-      .then(({ items, thinking: nextThinking, readingMode: nextReadingMode, translationHint }) => {
-        const s = useSessionStore.getState();
-        s.bumpCounter("bibleYield", items.length);
-        for (const item of items) {
-          if (item.kind === "citedVerse" && !item.text && item.reference.includes(":")) {
-            prefetchVerse(item.reference, translation);
-          }
-        }
-        const { hasDripAdd } = s.enqueueFeedItems(items);
-        if (hasDripAdd) scheduleDrainIfIdle();
-        if (nextThinking) s.setThinking(nextThinking);
-        s.setReadingMode(nextReadingMode);
-        if (nextReadingMode !== readingMode) {
-          devLog("[feed] readingMode →", nextReadingMode);
-        }
-        if (translationHint) setAutoTranslation(translationHint);
-      })
-      .finally(() => useSessionStore.getState().setBibleInFlight(false));
-  }, [
-    running,
-    okChunkCount,
-    transcript,
-    bibleInFlight,
-    finalizing,
-    feedItems,
-    readingMode,
-    translation,
-    setAutoTranslation,
-    sessionId,
-    prefetchVerse,
-    scheduleDrainIfIdle,
-  ]);
-
-  // Fluxo INSIGHTS: setInterval tempo-based (INSIGHTS_INTERVAL_MS). Pausa
-  // enquanto readingMode=true. Gates internos: warmup + delta de transcrição.
-  //
-  // insightsInFlight NÃO entra nos deps — se entrasse, cada resposta disparava
-  // cleanup+recreate do setInterval, reiniciando o relógio de 45s a cada
-  // chamada e cortando ~metade das chamadas por sessão. Lemos via getSessionState().
-  useEffect(() => {
-    if (!running || finalizing) return;
-    const tick = () => {
-      const s = useSessionStore.getState();
-      if (s.insightsInFlight) return;
-      if (s.readingMode) return;
-      // Backpressure: se a fila de drip já tem items suficientes esperando pra
-      // aparecer, não faz sentido gerar mais.
-      const pending = s.dripQueue.length;
-      if (pending >= INSIGHTS_QUEUE_BACKPRESSURE) {
-        s.bumpCounter("skippedBackpressure");
-        devLog("[insights] skip", { reason: "queue-backpressure", pending });
-        return;
-      }
-      const currentTranscript = Object.values(s.chunks)
-        .filter((r) => r.status === "ok")
-        .sort((a, b) => a.index - b.index)
-        .map((r) => r.text.trim())
-        .filter(Boolean)
-        .join(" ")
-        .replace(/\s+/g, " ")
-        .trim();
-      if (!currentTranscript) return;
-      const recent = tailTranscript(currentTranscript, INSIGHTS_TRANSCRIPT_CHARS);
-      const delta = currentTranscript.length - s.lastInsightsTailLen;
-      if (s.lastInsightsTailLen > 0 && delta < INSIGHTS_MIN_TAIL_DELTA_CHARS) {
-        s.bumpCounter("skippedDelta");
-        devLog("[insights] skip", { reason: "tail-delta", delta, tailLen: recent.length });
-        return;
-      }
-      s.setLastInsightsTailLen(currentTranscript.length);
-      s.setInsightsInFlight(true);
-      s.bumpCounter("insightsCalls");
-      const sermonAtMs = Math.max(0, performance.now() - startedAtRef.current);
-      void requestInsights({
-        text: recent,
-        existingItems: s.feedItems,
-        sermonAtMs,
-        sessionId,
-      })
-        .then((items) => {
-          const cur = useSessionStore.getState();
-          cur.bumpCounter("insightsYield", items.length);
-          const { hasDripAdd } = cur.enqueueFeedItems(items);
-          if (hasDripAdd) scheduleDrainIfIdle();
-        })
-        .finally(() => {
-          useSessionStore.getState().setInsightsInFlight(false);
-        });
-    };
-    const id = setInterval(tick, INSIGHTS_INTERVAL_MS);
-    insightsIntervalRef.current = id;
-    return () => {
-      clearInterval(id);
-      insightsIntervalRef.current = null;
-    };
-  }, [running, finalizing, sessionId, scheduleDrainIfIdle]);
-
-  // Fluxo ECHO: dispara quando o feed acumula ai-streak >= aiStreakThreshold.
-  // A frase repetida do pregador quebra o padrão visual de cards da IA.
-  useEffect(() => {
-    if (!running || finalizing) return;
-    const s = useSessionStore.getState();
-    if (s.readingMode) return;
-    const last = feedItems[feedItems.length - 1];
-    if (s.echoing && last?.kind === "speakerEcho") {
-      s.setEchoing(false);
-      s.rerollEchoThreshold();
-    }
-    if (useSessionStore.getState().echoing) return;
-
-    let streak = 0;
-    for (let i = feedItems.length - 1; i >= 0; i--) {
-      if (feedItemOrigin(feedItems[i]) === "ai") streak++;
-      else break;
-    }
-    if (streak < useSessionStore.getState().aiStreakThreshold) return;
-
-    const recent = tailTranscript(transcript, INSIGHTS_TRANSCRIPT_CHARS);
-    if (!recent) return;
-    const delta = transcript.length - useSessionStore.getState().lastEchoTailLen;
-    if (useSessionStore.getState().lastEchoTailLen > 0 && delta < ECHO_MIN_TAIL_DELTA_CHARS) {
-      return;
-    }
-
-    useSessionStore.getState().setLastEchoTailLen(transcript.length);
-    useSessionStore.getState().setEchoing(true);
-    const sermonAtMs = Math.max(0, performance.now() - startedAtRef.current);
-    devLog("[echo] fire", {
-      streak,
-      threshold: useSessionStore.getState().aiStreakThreshold,
-    });
-    void requestEcho({ text: recent, existingItems: feedItems, sermonAtMs, sessionId })
-      .then((items) => {
-        if (items.length === 0) {
-          useSessionStore.getState().setEchoing(false);
-          return;
-        }
-        const { hasDripAdd } = useSessionStore.getState().enqueueFeedItems(items);
-        if (hasDripAdd) scheduleDrainIfIdle();
-      })
-      .catch(() => {
-        useSessionStore.getState().setEchoing(false);
-      });
-  }, [feedItems, running, finalizing, transcript, sessionId, scheduleDrainIfIdle]);
 
   const handleChunk = useCallback(
     async (ev: ChunkEvent) => {
@@ -382,10 +181,7 @@ export function RecordingLive({
     });
     getSessionState().setRecordingStartedAt(new Date());
 
-    if (drainTimerRef.current) {
-      clearTimeout(drainTimerRef.current);
-      drainTimerRef.current = null;
-    }
+    cancelDrainTimer();
 
     const rec = createRecorder({
       minChunkMs: RECORDER_MIN_CHUNK_MS,
@@ -406,7 +202,7 @@ export function RecordingLive({
     } catch (err) {
       getSessionState().setStartupError((err as Error).message ?? "failed to start");
     }
-  }, [handleChunk, sessionId, initialSpeakerName, initialSpeakerLocation]);
+  }, [handleChunk, sessionId, initialSpeakerName, initialSpeakerLocation, cancelDrainTimer]);
 
   const stop = useCallback(async () => {
     const s = getSessionState();
@@ -471,8 +267,6 @@ export function RecordingLive({
 
   useEffect(() => {
     return () => {
-      if (drainTimerRef.current) clearTimeout(drainTimerRef.current);
-      if (insightsIntervalRef.current) clearInterval(insightsIntervalRef.current);
       void recorderRef.current?.stop();
     };
   }, []);
