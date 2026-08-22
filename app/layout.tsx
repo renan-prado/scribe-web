@@ -2,6 +2,7 @@ import type { Metadata } from "next";
 import { Fira_Mono, Geist, Geist_Mono } from "next/font/google";
 import { Toaster } from "sonner";
 import { PageTransition } from "@/components/PageTransition";
+import { Providers } from "@/components/Providers";
 import "./globals.css";
 
 const geistSans = Geist({
@@ -36,8 +37,10 @@ export default function RootLayout({ children }: LayoutProps<"/">) {
       className={`${geistSans.variable} ${geistMono.variable} ${firaMono.variable} h-full antialiased`}
     >
       <body className="min-h-full flex flex-col" suppressHydrationWarning>
-        <PageTransition>{children}</PageTransition>
-        <Toaster position="top-center" richColors />
+        <Providers>
+          <PageTransition>{children}</PageTransition>
+          <Toaster position="top-center" richColors />
+        </Providers>
       </body>
     </html>
   );

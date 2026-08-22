@@ -38,8 +38,8 @@ import {
   RECORDER_SILENCE_THRESHOLD,
 } from "@/features/session/config";
 import { useElapsedTimer } from "@/features/session/hooks/useElapsedTimer";
-import { TranslationProvider, useTranslation } from "@/features/session/hooks/useTranslation";
-import { prefetchVerse } from "@/features/session/hooks/useVerseFetch";
+import { useTranslation } from "@/features/session/hooks/useTranslation";
+import { useVersePrefetcher } from "@/features/session/hooks/useVerseFetch";
 import { useVisibilityWarning } from "@/features/session/hooks/useVisibilityWarning";
 import { useWakeLock } from "@/features/session/hooks/useWakeLock";
 import {
@@ -63,6 +63,7 @@ import type { ChunkEvent, Recorder } from "@/lib/domain/recorder";
 import type { SummaryPayload } from "@/lib/domain/summary";
 import { devLog } from "@/lib/log";
 import { createRecorder } from "@/lib/recorder";
+import { usePreferencesStore } from "@/lib/stores/preferences";
 import { cn } from "@/lib/utils";
 
 type Props = {
@@ -75,11 +76,7 @@ type Props = {
 };
 
 export function RecordingLive(props: Props) {
-  return (
-    <TranslationProvider>
-      <RecordingLiveInner {...props} />
-    </TranslationProvider>
-  );
+  return <RecordingLiveInner {...props} />;
 }
 
 /**
@@ -160,6 +157,7 @@ function RecordingLiveInner({
     enabled: running,
   });
   const { setAuto: setAutoTranslation, effective: translation } = useTranslation();
+  const prefetchVerse = useVersePrefetcher();
 
   const publish = useCallback(() => {
     const rows = Array.from(chunksRef.current.values()).sort((a, b) => a.index - b.index);
@@ -370,6 +368,7 @@ function RecordingLiveInner({
     translation,
     setAutoTranslation,
     sessionId,
+    prefetchVerse,
   ]);
 
   // Fluxo INSIGHTS: setInterval tempo-based (INSIGHTS_INTERVAL_MS). Pausa
@@ -528,6 +527,10 @@ function RecordingLiveInner({
     setSummary(null);
     setSummaryTitle("");
     titleLockedByUserRef.current = false;
+    // Preserve pre-Zustand semantics: each session starts with a fresh auto so
+    // stale detection from a previous recording doesn't leak into this one.
+    // Manual selection is intentionally preserved (persisted in localStorage).
+    usePreferencesStore.getState().resetTranslationAuto();
     setRecordingStartedAt(new Date());
     lastBibleTailLenRef.current = 0;
     lastInsightsTailLenRef.current = 0;

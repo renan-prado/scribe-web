@@ -1,114 +1,96 @@
 "use client";
 
-import { useEffect, useRef, useState } from "react";
+import { keepPreviousData, queryOptions, useQuery, useQueryClient } from "@tanstack/react-query";
+import { useCallback, useEffect, useRef } from "react";
 import { requestVerse } from "@/features/session/lib/api";
 import type { VerseFetchState } from "@/features/session/types";
 import type { VersePayload } from "@/lib/domain/verse";
 
-// Module-level cache: verses rarely change between prompts and the API call
-// is a fixed cost per (reference, translation). Persists across component
-// remounts within the same page load; cleared on navigation, which is fine.
-// Keying by translation lets a session switch preference and re-fetch cleanly
-// without polluting other cached translations.
-const verseCache = new Map<string, VersePayload>();
-const verseInFlight = new Map<string, Promise<void>>();
-
-function cacheKey(reference: string, translation?: string | null): string {
-  return `${reference}|${translation || "auto"}`;
-}
-
 /**
- * Warm the cache for a (reference, translation) ahead of render. Called from
- * the extract pipeline as new verses come into the lookahead window so the
- * text is usually cached by the time the corresponding VerseLine mounts.
- * Safe to call multiple times for the same key — dedupes in-flight promises.
+ * Shared query options factory for verse fetching. Both useVerseFetch and
+ * prefetchers use this so they hit the same cache entry. Keying by translation
+ * lets a session switch preference and re-fetch cleanly without polluting
+ * other cached translations.
  */
-export function prefetchVerse(reference: string, translation?: string | null): void {
-  const key = cacheKey(reference, translation);
-  if (verseCache.has(key) || verseInFlight.has(key)) return;
-  const promise = requestVerse(reference, translation).then((result) => {
-    if (result.ok) verseCache.set(key, result.payload);
-    verseInFlight.delete(key);
+export function verseQueryOptions(reference: string, translation?: string | null) {
+  return queryOptions<VersePayload>({
+    queryKey: ["verse", reference, translation ?? "auto"] as const,
+    queryFn: async () => {
+      const result = await requestVerse(reference, translation);
+      if (!result.ok) throw new Error(result.message);
+      return result.payload;
+    },
   });
-  verseInFlight.set(key, promise);
 }
 
 /**
- * Fetch the text for a bible reference in an optional preferred translation,
- * using an in-module cache to keep repeat renders free. Fires whenever
- * `reference` or `translation` change to a non-null reference and cancels
- * the in-flight request when the caller changes.
+ * Hook returning a stable prefetcher for warming the verse cache ahead of
+ * render — used by the extract pipeline and by ReadingPassage as new verses
+ * enter the lookahead window so the text is usually cached by the time the
+ * corresponding VerseLine mounts.
+ */
+export function useVersePrefetcher() {
+  const queryClient = useQueryClient();
+  return useCallback(
+    (reference: string, translation?: string | null) => {
+      void queryClient.prefetchQuery(verseQueryOptions(reference, translation));
+    },
+    [queryClient]
+  );
+}
+
+/**
+ * Fetch the text for a bible reference in an optional preferred translation.
+ * Backed by React Query's cache — repeat renders and remounts for the same
+ * (reference, translation) are free.
  *
  * Translation-change UX: when only the translation changes (same reference),
  * the previous text stays on screen until the new one lands — no skeleton
- * flash mid-reading. If the new fetch comes back empty (integrity guard on
- * /api/verse), the previous text is kept rather than blanking the verse.
+ * flash mid-reading. Achieved via `placeholderData: keepPreviousData` +
+ * a per-hook lastGood ref (React Query's placeholder covers the fetch
+ * window; the ref covers the case where the new fetch returns empty text
+ * and we want to keep the previous verse displayed).
  */
 export function useVerseFetch(
   reference: string | null,
   translation?: string | null
 ): VerseFetchState {
-  const [state, setState] = useState<VerseFetchState>({ status: "idle" });
-  // Last successful payload we handed to the UI, tagged by reference so we
-  // know it's still relevant when translation changes but ref stays.
-  const lastPayloadRef = useRef<VersePayload | null>(null);
+  // Last successful non-empty payload we handed to the UI, tagged by reference
+  // so we know it's still relevant when translation changes but ref stays.
+  const lastGoodRef = useRef<VersePayload | null>(null);
+
+  const query = useQuery({
+    ...(reference !== null
+      ? verseQueryOptions(reference, translation)
+      : { queryKey: ["verse", "__idle__"] as const, queryFn: async () => null as never }),
+    enabled: reference !== null,
+    placeholderData: keepPreviousData,
+  });
 
   useEffect(() => {
     if (!reference) {
-      setState({ status: "idle" });
+      lastGoodRef.current = null;
       return;
     }
-    const key = cacheKey(reference, translation);
-    const hasStaleTextForRef =
-      lastPayloadRef.current !== null && lastPayloadRef.current.reference === reference;
-
-    const cached = verseCache.get(key);
-    if (cached) {
-      if (cached.text) {
-        lastPayloadRef.current = cached;
-        setState({ status: "ok", ...cached });
-        return;
-      }
-      // Cached-but-empty: don't blank the display. Keep stale text if we
-      // have any for this reference; otherwise fall through and re-fetch
-      // (the cache miss branch below handles it).
-      if (hasStaleTextForRef) return;
+    const payload = query.data as VersePayload | undefined;
+    if (payload?.text && payload.reference === reference) {
+      lastGoodRef.current = payload;
     }
+  }, [query.data, reference]);
 
-    let cancelled = false;
-    // Only transition to loading (skeleton) when there's no relevant text to
-    // keep on screen. A translation swap for the same verse skips this so the
-    // old text stays visible until the new one is ready.
-    if (!hasStaleTextForRef) {
-      setState({ status: "loading" });
-    }
-    void requestVerse(reference, translation).then((result) => {
-      if (result.ok && result.payload.text) {
-        // Populate cache BEFORE the cancellation check — a superseded fetch
-        // that happened to succeed still enriches the cache for future
-        // toggles back to that translation.
-        verseCache.set(key, result.payload);
-      }
-      if (cancelled) return;
-      if (!result.ok) {
-        if (!hasStaleTextForRef) setState({ status: "error", message: result.message });
-        return;
-      }
-      if (result.payload.text) {
-        lastPayloadRef.current = result.payload;
-        setState({ status: "ok", ...result.payload });
-      } else if (!hasStaleTextForRef) {
-        // No stale text and the fetch came back empty — surface the empty
-        // ok state so the caller knows the fetch is done (progressive-reveal
-        // in PassageVerses needs this signal to stop waiting on this verse).
-        setState({ status: "ok", ...result.payload });
-      }
-      // else: keep the previous text visible, don't blank on empty refetch.
-    });
-    return () => {
-      cancelled = true;
-    };
-  }, [reference, translation]);
+  if (!reference) return { status: "idle" };
 
-  return state;
+  const payload = query.data as VersePayload | undefined;
+  const stale =
+    lastGoodRef.current && lastGoodRef.current.reference === reference ? lastGoodRef.current : null;
+
+  if (query.isError && !stale) {
+    return { status: "error", message: (query.error as Error).message };
+  }
+  if (!payload && !stale) {
+    return { status: "loading" };
+  }
+  const effective = payload && !payload.text && stale?.text ? stale : (payload ?? stale);
+  if (!effective) return { status: "loading" };
+  return { status: "ok", ...effective };
 }

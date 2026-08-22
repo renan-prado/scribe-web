@@ -16,7 +16,7 @@ import {
   LIVE_READING_LOOKAHEAD_PREFETCH,
 } from "@/features/session/config";
 import { KNOWN_TRANSLATIONS, useTranslation } from "@/features/session/hooks/useTranslation";
-import { prefetchVerse, useVerseFetch } from "@/features/session/hooks/useVerseFetch";
+import { useVerseFetch, useVersePrefetcher } from "@/features/session/hooks/useVerseFetch";
 import type { FeedItem } from "@/lib/domain/feed";
 import { feedItemOrigin, parseVerseReference } from "@/lib/domain/feed";
 import { cn } from "@/lib/utils";
@@ -282,6 +282,7 @@ function ReadingPassage({
   onTranslationResolved?: (translation: string) => void;
 }) {
   const { effective: translation } = useTranslation();
+  const prefetchVerse = useVersePrefetcher();
   // Debounce isActive=false: readingMode from extract flips briefly when the
   // model treats a pause or short interjection as commentary. Only after
   // GRACE_MS of continuous inactivity do we stop prefetching.
@@ -304,7 +305,7 @@ function ReadingPassage({
     ) {
       prefetchVerse(`${bookDisplay} ${chapter}:${v}`, translation);
     }
-  }, [bookDisplay, chapter, extractedEndVerse, effectiveActive, translation]);
+  }, [bookDisplay, chapter, extractedEndVerse, effectiveActive, translation, prefetchVerse]);
 
   return (
     <PassageVerses
