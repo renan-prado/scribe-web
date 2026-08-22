@@ -58,9 +58,18 @@ export function useBiblePipeline({
     const recent = tailTranscript(transcript, BIBLE_TRANSCRIPT_CHARS);
     if (!recent) return;
     const store = useSessionStore.getState();
-    const delta = transcript.length - store.lastBibleTailLen;
-    if (store.lastBibleTailLen > 0 && delta < BIBLE_MIN_TAIL_DELTA_CHARS) return;
     const inReading = store.readingMode;
+    // Delta gate is a cost-control heuristic that assumes "same content = same
+    // answer". That assumption breaks during readingMode because we're actively
+    // watching for two transitions the LLM can only see in a NEW call: (a) more
+    // verses read → passage card needs to grow, (b) reading ended → readingMode
+    // must flip false so insights resume. Skipping ticks in-reading has cost
+    // both ways. Bypass the gate; the ~10 calls/min is acceptable during the
+    // reading window (typically <1min).
+    const delta = transcript.length - store.lastBibleTailLen;
+    if (!inReading && store.lastBibleTailLen > 0 && delta < BIBLE_MIN_TAIL_DELTA_CHARS) {
+      return;
+    }
     if (!inReading && !hasBibleMention(recent)) {
       store.bumpCounter("bibleGateSkipped");
       return;
