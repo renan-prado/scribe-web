@@ -11,7 +11,6 @@ import type { VersePayload } from "@/lib/domain/verse";
 /**
  * POST /api/bible. Extrai APENAS citedVerse do trecho recente. O cliente
  * já filtrou via regex que há sinal de menção bíblica antes de chamar.
- * Também devolve o `thinking` e o `readingMode` (que pausa o fluxo insights).
  */
 export async function requestBible(body: {
   text: string;
@@ -21,7 +20,6 @@ export async function requestBible(body: {
 }): Promise<{
   items: FeedItem[];
   thinking: string;
-  readingMode: boolean;
 }> {
   try {
     const res = await fetch("/api/bible", {
@@ -32,15 +30,13 @@ export async function requestBible(body: {
     const payload = (await res.json()) as {
       items?: FeedItem[];
       thinking?: string;
-      readingMode?: boolean;
     };
     return {
       items: Array.isArray(payload?.items) ? payload.items : [],
       thinking: typeof payload?.thinking === "string" ? payload.thinking : "",
-      readingMode: payload?.readingMode === true,
     };
   } catch {
-    return { items: [], thinking: "", readingMode: false };
+    return { items: [], thinking: "" };
   }
 }
 

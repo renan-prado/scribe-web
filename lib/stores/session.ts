@@ -33,9 +33,6 @@ const INITIAL_COUNTERS: SessionCounters = {
 type DripEntry = { item: FeedItem; enqueuedAt: number };
 
 export type EnqueueResult = {
-  /** True if any item was appended directly to feedItems via the readingMode
-   * fast-path — the caller may want to skip drip-timer scheduling in that case. */
-  hasFastPathAdd: boolean;
   /** True if any item was pushed onto the drip queue — the caller needs to
    * schedule the drain timer if it isn't already running. */
   hasDripAdd: boolean;
@@ -72,7 +69,6 @@ export type SessionStoreState = {
   // ---- feed data ----
   feedItems: FeedItem[];
   thinking: string;
-  readingMode: boolean;
 
   // ---- final output ----
   summary: SummaryPayload | null;
@@ -120,7 +116,6 @@ export type SessionStoreState = {
   setStartupError: (v: string) => void;
   setRecordingStartedAt: (v: Date | null) => void;
   setThinking: (v: string) => void;
-  setReadingMode: (v: boolean) => void;
   setSummary: (v: SummaryPayload | null) => void;
   setSummaryTitle: (v: string) => void;
   lockTitle: () => void;
@@ -145,8 +140,8 @@ export type SessionStoreState = {
   upsertChunk: (row: ChunkRow) => void;
 
   /**
-   * Enqueue LLM-produced feed items with dedup/supersede/reading-mode-fast-path.
-   * Returns which paths fired so the caller can schedule the drain timer.
+   * Enqueue LLM-produced feed items with dedup/supersede logic.
+   * Returns whether the drain timer needs scheduling.
    */
   enqueueFeedItems: (incoming: FeedItem[]) => EnqueueResult;
 
@@ -157,18 +152,8 @@ export type SessionStoreState = {
    * Returns:
    *  - drained: true if an item moved from queue to feedItems on this call.
    *  - hasMore: true if the queue is non-empty AFTER this call (schedule another timer).
-   *  - deferred: true if the head is a non-citedVerse item while readingMode is on
-   *    (caller should reschedule a delay of FEED_MIN_GAP_MS to re-check).
    */
-  drainOne: () => { drained: boolean; hasMore: boolean; deferred: boolean };
-
-  /**
-   * Purge speakerEcho entries from the drip queue and clear the echoing flag.
-   * Called when readingMode flips on — a stale echo would fire against a
-   * pastor mid-reading who has moved on from that line. Insights (context,
-   * relatedVerse, etc.) stay in the queue and drain when reading ends.
-   */
-  purgeEchoFromDripQueue: () => void;
+  drainOne: () => { drained: boolean; hasMore: boolean };
 };
 
 /**
@@ -189,7 +174,6 @@ export const useSessionStore = create<SessionStoreState>()(
 
     feedItems: [],
     thinking: "",
-    readingMode: false,
 
     summary: null,
     summaryTitle: "",
@@ -229,7 +213,6 @@ export const useSessionStore = create<SessionStoreState>()(
         chunks: {},
         feedItems: [],
         thinking: "",
-        readingMode: false,
         summary: null,
         summaryTitle: "",
         titleLockedByUser: false,
@@ -257,7 +240,6 @@ export const useSessionStore = create<SessionStoreState>()(
     setStartupError: (v) => set({ startupError: v }),
     setRecordingStartedAt: (v) => set({ recordingStartedAt: v }),
     setThinking: (v) => set({ thinking: v }),
-    setReadingMode: (v) => set({ readingMode: v }),
     setSummary: (v) => set({ summary: v }),
     setSummaryTitle: (v) => set({ summaryTitle: v }),
     lockTitle: () => set({ titleLockedByUser: true }),
@@ -281,18 +263,15 @@ export const useSessionStore = create<SessionStoreState>()(
     upsertChunk: (row) => set((s) => ({ chunks: { ...s.chunks, [row.index]: row } })),
 
     enqueueFeedItems: (incoming) => {
-      if (incoming.length === 0) return { hasFastPathAdd: false, hasDripAdd: false };
+      if (incoming.length === 0) return { hasDripAdd: false };
 
       const s = get();
-      const readingModeNow = s.readingMode;
 
       // Work-in-progress copies. We commit them all in a single set() at the end.
       const visibleKeys = new Set(s.visibleKeys);
       let dripQueue = s.dripQueue.slice();
       let feedItems = s.feedItems;
-      let lastAppendedAt = s.lastAppendedAt;
       let dedupSuppressedInc = 0;
-      let hasFastPathAdd = false;
       let hasDripAdd = false;
 
       // Snapshot the currently-known citedVerse references (visible + queued) so
@@ -362,22 +341,6 @@ export const useSessionStore = create<SessionStoreState>()(
           }
         }
 
-        if (readingModeNow && item.kind === "citedVerse") {
-          visibleKeys.add(key);
-          currentCitedVerses.push(item);
-          devLog("[feed] +item (fast)", {
-            kind: item.kind,
-            key,
-            lagMs: 0,
-            at: new Date().toISOString(),
-            item,
-          });
-          feedItems = [...feedItems, item];
-          lastAppendedAt = Date.now();
-          hasFastPathAdd = true;
-          continue;
-        }
-
         queuedKeys.add(key);
         dripQueue = [...dripQueue, { item, enqueuedAt: Date.now() }];
         if (item.kind === "citedVerse") currentCitedVerses.push(item);
@@ -388,7 +351,6 @@ export const useSessionStore = create<SessionStoreState>()(
         visibleKeys,
         dripQueue,
         feedItems,
-        lastAppendedAt,
         counters:
           dedupSuppressedInc > 0
             ? {
@@ -398,20 +360,13 @@ export const useSessionStore = create<SessionStoreState>()(
             : prev.counters,
       }));
 
-      return { hasFastPathAdd, hasDripAdd };
+      return { hasDripAdd };
     },
 
     drainOne: () => {
       const s = get();
       const entry = s.dripQueue[0];
-      if (!entry) return { drained: false, hasMore: false, deferred: false };
-
-      // Cards da IA seguram a fila enquanto readingMode está on — o ouvinte
-      // fica focado na Escritura. citedVerse é a exceção porque a fase de
-      // leitura só faz sentido em cima do próprio card do versículo.
-      if (s.readingMode && entry.item.kind !== "citedVerse") {
-        return { drained: false, hasMore: true, deferred: true };
-      }
+      if (!entry) return { drained: false, hasMore: false };
 
       const { item, enqueuedAt } = entry;
       const key = feedItemDedupKey(item);
@@ -433,22 +388,7 @@ export const useSessionStore = create<SessionStoreState>()(
         lastAppendedAt: Date.now(),
       });
 
-      return { drained: true, hasMore: get().dripQueue.length > 0, deferred: false };
-    },
-
-    purgeEchoFromDripQueue: () => {
-      const s = get();
-      if (s.dripQueue.length === 0) return;
-      const before = s.dripQueue.length;
-      const hadPendingEcho = s.dripQueue.some((e) => e.item.kind === "speakerEcho");
-      const nextQueue = s.dripQueue.filter((e) => e.item.kind !== "speakerEcho");
-      const dropped = before - nextQueue.length;
-      if (dropped === 0) return;
-      devLog("[feed] drip-purge", { reason: "readingMode-on", dropped, kind: "echo" });
-      set({
-        dripQueue: nextQueue,
-        echoing: hadPendingEcho ? false : s.echoing,
-      });
+      return { drained: true, hasMore: get().dripQueue.length > 0 };
     },
   }))
 );

@@ -11,7 +11,7 @@ import { useSessionStore } from "@/lib/stores/session";
 /**
  * ECHO pipeline. Fires when the feed accumulates aiStreakThreshold AI-authored
  * cards in a row. Injects a single verbatim speakerEcho phrase that visually
- * breaks the streak of AI cards. Paused during readingMode.
+ * breaks the streak of AI cards.
  *
  * The threshold is re-sampled after each successful reveal (see store's
  * rerollEchoThreshold) so the cadence doesn't feel metronomic.
@@ -46,7 +46,6 @@ export function useEchoPipeline({
   useEffect(() => {
     if (!running || finalizing) return;
     const s = useSessionStore.getState();
-    if (s.readingMode) return;
     const last = feedItems[feedItems.length - 1];
     if (s.echoing && last?.kind === "speakerEcho") {
       s.setEchoing(false);

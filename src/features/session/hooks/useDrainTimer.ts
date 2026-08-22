@@ -18,13 +18,7 @@ export function useDrainTimer() {
 
   const drainOne = useCallback(() => {
     drainTimerRef.current = null;
-    const { drained, hasMore, deferred } = useSessionStore.getState().drainOne();
-    // While readingMode holds a non-citedVerse card, poll again in FEED_MIN_GAP_MS
-    // so the queue resumes as soon as readingMode flips off.
-    if (deferred) {
-      drainTimerRef.current = setTimeout(drainOne, FEED_MIN_GAP_MS);
-      return;
-    }
+    const { drained, hasMore } = useSessionStore.getState().drainOne();
     if (drained && hasMore) {
       drainTimerRef.current = setTimeout(drainOne, FEED_MIN_GAP_MS);
     }

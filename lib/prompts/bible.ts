@@ -5,29 +5,8 @@ Sua tarefa: extrair APENAS referências bíblicas que o locutor mencionou (com n
 FORMATO DE SAÍDA — retorne SOMENTE um objeto JSON válido, sem markdown ao redor, sem comentários:
 {
   "thinking": "string",
-  "readingMode": boolean,
   "items": [ { "kind": "citedVerse", "reference": "...", "text": "" } ]
 }
-
-CAMPO "readingMode" (obrigatório, boolean)
-Sinaliza se o momento é de LEITURA BÍBLICA VERBATIM ACONTECENDO AGORA. Quando true, o cliente PAUSA sugestões da IA (fluxo insights) — o ouvinte fica focado na Escritura. Extração de citedVerse continua acontecendo pra completar o texto que está sendo lido.
-
-O objetivo é bloquear sugestões APENAS enquanto o texto sagrado está sendo pronunciado. Uma introdução longa que ANTECEDE a leitura (falando sobre estrutura, autor, contexto histórico) NÃO É leitura — bloquear ali esvazia o feed.
-
-- readingMode = true APENAS quando:
-  * A parte final do transcript (últimos ~30s) contém leitura verbatim da Escritura — frases que são o texto bíblico real.
-  * OU a última frase é a fronteira imediata da leitura (pastor acabou de dar o gancho e vai começar a ler no próximo instante — "Salmos 119, versículo 1:" seguido de pausa; "abram na Palavra e leiam comigo" no fim do trecho).
-  * OU um meta-momento CURTO durante leitura já em curso (cumprimento breve, oração pedindo entendimento) e o fluxo natural é continuar lendo.
-
-- readingMode = false (padrão) quando:
-  * O pastor ANUNCIOU mas está INTRODUZINDO a passagem antes de ler — falando sobre estrutura, autor, contexto histórico. Anúncio isolado NÃO liga readingMode.
-  * O pastor está expondo, interpretando, aplicando o texto.
-  * O pastor mudou de assunto.
-  * A leitura terminou — marcadores comuns: "amém", "palavra do Senhor", frase interpretativa depois do último versículo lido.
-  * TRANSIÇÃO NARRATIVA/EXPOSITIVA logo após uma leitura curta: quando o pastor lê 1-2 versículos e IMEDIATAMENTE começa a parafrasear ou narrar o contexto ("Quando Jesus estava sendo batizado…", "O apóstolo Paulo está escrevendo à igreja de…", "A Bíblia Sagrada vai contar que…"). O verbatim curto acabou; readingMode DEVE flipar false na próxima call. Não confunda paráfrase narrativa com continuação da leitura só porque o tema é o mesmo.
-  * Nenhum sinal de texto bíblico verbatim na parte final.
-
-- Padrão: false. Em dúvida entre "vai começar a ler" e "vai continuar introduzindo", escolha false — perder 1 chunk de supressão custa menos do que bloquear 30-60s de introdução rica.
 
 CAMPO "thinking" (obrigatório, mas curto)
 - Máx. 160 caracteres, 1 frase, mencionando o livro/passagem que você está tratando.
@@ -36,7 +15,7 @@ CAMPO "thinking" (obrigatório, mas curto)
 
 FOCO NO MOMENTO ATUAL (crítico)
 - O "transcript" é uma JANELA MÓVEL. Emita APENAS sobre o que está sendo tratado na PARTE FINAL (últimos ~30-60s).
-- EXCEÇÃO — LEITURA CORRIDA (readingMode=true): uma passagem que COMEÇOU no início da janela e CONTINUA sendo lida no final NÃO "virou de assunto". Durante readingMode, rastreie a faixa de leitura ponta-a-ponta e emita citedVerse com a faixa TOTAL ACUMULADA (do primeiro verso lido até o último identificável), mesmo que a abertura apareça só no começo da janela.
+- EXCEÇÃO — LEITURA CORRIDA: uma passagem que COMEÇOU no início da janela e CONTINUA sendo lida no final NÃO "virou de assunto". Rastreie a faixa de leitura ponta-a-ponta e emita citedVerse com a faixa TOTAL ACUMULADA (do primeiro verso lido até o último identificável), mesmo que a abertura apareça só no começo da janela.
 
 TIPO DE ITEM (único aceito)
 
@@ -63,7 +42,7 @@ Gatilhos que devem disparar citedVerse específico IMEDIATAMENTE:
     * SEMPRE emita com número específico ("Tiago 1:1"). NUNCA emita chapter-only quando o pastor mencionou um número inicial — o cliente usa o número inicial pra começar a renderizar os primeiros versos imediatamente.
     * Se o transcript JÁ CONTÉM leitura verbatim seguindo o anúncio, IDENTIFIQUE o último versículo lido e emita a faixa real (pastor disse "Tiago 1, versículo 1 em diante" e leu vv.1-4 → emita "Tiago 1:1-4", NÃO "Tiago 1:1").
     * Só o anúncio, sem leitura ainda: emita o versículo inicial isolado ("Tiago 1:1"). Em chunks futuros, à medida que mais versos forem lidos, emita novos citedVerse com a faixa acumulada ("Tiago 1:1-6", depois "Tiago 1:1-9") — cada faixa maior supersede a anterior.
-    * DURANTE LEITURA ATIVA (readingMode=true, existingItems já tem a faixa): a cada chunk em que o pastor leu versos ALÉM da faixa existente, você DEVE emitir a faixa expandida. Se existingItems tem "1-8" e o pastor leu mais 4 versos, emita "1-12". Ficar sem emitir durante leitura contínua é o erro mais custoso.
+    * DURANTE LEITURA CONTÍNUA (existingItems já tem a faixa): a cada chunk em que o pastor leu versos ALÉM da faixa existente, você DEVE emitir a faixa expandida. Se existingItems tem "1-8" e o pastor leu mais 4 versos, emita "1-12". Ficar sem emitir durante leitura contínua é o erro mais custoso.
 
 COMO CONTAR VERSÍCULOS LIDOS (crítico — falha comum: subcontagem):
 - Existem VÁRIAS TRADUÇÕES (ACF, ARA, ARC, KJA, KJF, NAA, NBV, NTLH, NVI, NVT, OL). Não compare palavra-por-palavra: o wording muda, mas o SENTIDO SEMÂNTICO de cada versículo é o mesmo.

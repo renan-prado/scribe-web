@@ -126,7 +126,6 @@ export function SavedSessionView({
               running={false}
               hasTranscript={transcript.length > 0}
               suggesting={false}
-              readingMode={false}
             />
           </div>
         </DialogContent>

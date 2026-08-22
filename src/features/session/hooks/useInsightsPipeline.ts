@@ -13,8 +13,7 @@ import { devLog } from "@/lib/log";
 import { useSessionStore } from "@/lib/stores/session";
 
 /**
- * INSIGHTS pipeline. setInterval-driven every INSIGHTS_INTERVAL_MS. Paused
- * while readingMode is on — the listener is meant to focus on Scripture.
+ * INSIGHTS pipeline. setInterval-driven every INSIGHTS_INTERVAL_MS.
  *
  * insightsInFlight is intentionally NOT in the effect deps — if it were, each
  * response would tear down and rebuild the setInterval, resetting the 45s
@@ -38,7 +37,6 @@ export function useInsightsPipeline({
     const tick = () => {
       const s = useSessionStore.getState();
       if (s.insightsInFlight) return;
-      if (s.readingMode) return;
       // Backpressure: se a fila de drip já tem items esperando aparecer, não
       // faz sentido gerar mais — o novo item só apareceria minutos depois.
       const pending = s.dripQueue.length;

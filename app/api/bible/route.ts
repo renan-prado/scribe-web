@@ -83,7 +83,7 @@ export async function POST(request: Request) {
   }
 
   const { content, finishReason, usage, latencyMs } = result.data;
-  const { items, thinking, readingMode, drops } = parseBibleFromLLM(content, existingKeys);
+  const { items, thinking, drops } = parseBibleFromLLM(content, existingKeys);
   for (const d of drops) {
     if (d.reason === "dedup") continue;
     console.warn("[bible] schema-drop", d);
@@ -97,7 +97,6 @@ export async function POST(request: Request) {
     completionTokens: usage.completionTokens,
     items: items.length,
     kinds: items.map((i) => i.kind),
-    readingMode,
     drops: drops.length,
     thinking: thinking.slice(0, 120),
   });
@@ -110,7 +109,7 @@ export async function POST(request: Request) {
     cachedTokens: usage.cachedTokens,
     latencyMs,
   });
-  return NextResponse.json({ items, thinking, readingMode, latencyMs, model });
+  return NextResponse.json({ items, thinking, latencyMs, model });
 }
 
 function formatSermonAt(ms: number | undefined): string {

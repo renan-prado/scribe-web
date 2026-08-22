@@ -84,34 +84,9 @@ export const INSIGHTS_QUEUE_BACKPRESSURE = 3;
 export const RECORDER_MIN_CHUNK_MS = 8_000;
 export const RECORDER_MAX_CHUNK_MS = 30_000;
 
-// Enquanto o pregador lê a Escritura literalmente (readingMode=true), o
-// ouvinte assiste um card de versículo crescer pra acompanhar a passagem
-// sendo lida. Cortar chunks mais cedo permite que /api/bible dispare com
-// mais frequência a cada novo versículo, atualizando o card em tempo quase
-// real. O Whisper ainda recebe áudio suficiente porque o ritmo de leitura
-// é lento e a dicção é cuidadosa.
-export const RECORDER_MIN_CHUNK_MS_READING = 4_000;
-export const RECORDER_MAX_CHUNK_MS_READING = 8_000;
-
 export const RECORDER_SILENCE_THRESHOLD = 0.01;
 export const RECORDER_SILENCE_HOLD_MS = 400;
 export const SILENCE_RMS_THRESHOLD = 0.005;
-
-// ---------- LEITURA ATIVA (prefetch/graça) ----------
-
-// Durante uma leitura ativa, o card da passagem faz prefetch silencioso
-// desse número de versículos além do fim confirmado, pra que quando o
-// bible expanda o intervalo os novos versículos renderizem instantaneamente
-// do cache. Cada unidade custa uma chamada a /api/verse.
-export const LIVE_READING_LOOKAHEAD_PREFETCH = 6;
-
-// Período de carência antes que uma passagem "ativa" recolha seus versículos
-// de lookahead. O readingMode pode alternar brevemente pra false entre
-// versículos (pausa, interjeição curta, ruído de transcrição) — recolher no
-// primeiro false esconderia versículos no meio da passagem. Só tratamos a
-// passagem como realmente encerrada quando readingMode permanece false por
-// esse tempo.
-export const LIVE_READING_ACTIVE_GRACE_MS = 15_000;
 
 // ---------- OUTROS ----------
 

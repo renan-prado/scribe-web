@@ -1,15 +1,10 @@
 "use client";
 
 import { BookOpen, Quote } from "lucide-react";
-import { type ElementType, useEffect, useState } from "react";
+import type { ElementType } from "react";
 import { AiIcon } from "@/features/session/components/AiIcon";
 import { PassageVerses } from "@/features/session/components/PassageVerses";
-import {
-  LIVE_READING_ACTIVE_GRACE_MS,
-  LIVE_READING_LOOKAHEAD_PREFETCH,
-} from "@/features/session/config";
-import { useVerseFetch, useVersePrefetcher } from "@/features/session/hooks/useVerseFetch";
-import { chapterVerseCount } from "@/lib/bibles/books";
+import { useVerseFetch } from "@/features/session/hooks/useVerseFetch";
 import type { FeedItem } from "@/lib/domain/feed";
 import { feedItemOrigin, parseVerseReference } from "@/lib/domain/feed";
 import { cn } from "@/lib/utils";
@@ -81,14 +76,9 @@ function isConcreteSource(source: string): boolean {
 export function FeedItemCard({
   item,
   onOpenVerse,
-  isActiveReading = false,
 }: {
   item: FeedItem;
   onOpenVerse: (reference: string) => void;
-  /** True only for the most recent citedVerse WHILE readingMode is on. Drives
-   * the sliding-window lookahead in ReadingPassage; when false, the passage
-   * renders exactly the extracted range with no speculative verses. */
-  isActiveReading?: boolean;
 }) {
   if (item.kind === "speakerHighlight") {
     return <HighlightBlock text={item.text} />;
@@ -136,7 +126,7 @@ export function FeedItemCard({
           <span>{chip.label}</span>
         </div>
       </div>
-      <FeedItemBody item={item} onOpenVerse={onOpenVerse} isActiveReading={isActiveReading} />
+      <FeedItemBody item={item} onOpenVerse={onOpenVerse} />
     </article>
   );
 
@@ -220,79 +210,12 @@ function VerseText({ reference, initialText }: { reference: string; initialText:
   return null;
 }
 
-/**
- * Wraps PassageVerses for LIVE reading. The visible range mirrors the extract
- * output exactly, and a silent prefetch warms the cache for verses just
- * beyond the confirmed end — so when extract grows the range the next
- * expansion renders instantly from cache.
- *
- * The parent Feed keys citedVerse cards by book+chapter (feedItemStableKey),
- * so this component stays mounted across range grows — only the individual
- * verse lines mount/unmount as the passage extends.
- */
-function ReadingPassage({
-  bookDisplay,
-  chapter,
-  startVerse,
-  extractedEndVerse,
-  isActive,
-}: {
-  bookDisplay: string;
-  chapter: number;
-  startVerse: number;
-  extractedEndVerse: number;
-  /** Gates the silent prefetch: while true we warm the cache for verses
-   * beyond the current end; once inactive (with a grace period) we stop
-   * prefetching to avoid wasted /api/verse calls for a passage that ended. */
-  isActive: boolean;
-}) {
-  const prefetchVerse = useVersePrefetcher();
-  // Debounce isActive=false: readingMode from extract flips briefly when the
-  // model treats a pause or short interjection as commentary. Only after
-  // GRACE_MS of continuous inactivity do we stop prefetching.
-  const [effectiveActive, setEffectiveActive] = useState(isActive);
-  useEffect(() => {
-    if (isActive) {
-      setEffectiveActive(true);
-      return;
-    }
-    const timer = setTimeout(() => setEffectiveActive(false), LIVE_READING_ACTIVE_GRACE_MS);
-    return () => clearTimeout(timer);
-  }, [isActive]);
-
-  useEffect(() => {
-    if (!effectiveActive) return;
-    // Cap lookahead at chapter end. Matthew 3 has 17 verses — prefetching v18-v23
-    // burns 6 useless /api/verse round-trips per session (and pollutes the React
-    // Query cache with empty results). Falls back to LOOKAHEAD when the chapter
-    // isn't in metadata (unknown book) — safer to over-prefetch than to fail-open.
-    const chapterEnd = chapterVerseCount(bookDisplay, chapter);
-    const lookaheadEnd = chapterEnd
-      ? Math.min(chapterEnd, extractedEndVerse + LIVE_READING_LOOKAHEAD_PREFETCH)
-      : extractedEndVerse + LIVE_READING_LOOKAHEAD_PREFETCH;
-    for (let v = extractedEndVerse + 1; v <= lookaheadEnd; v++) {
-      prefetchVerse(`${bookDisplay} ${chapter}:${v}`);
-    }
-  }, [bookDisplay, chapter, extractedEndVerse, effectiveActive, prefetchVerse]);
-
-  return (
-    <PassageVerses
-      bookDisplay={bookDisplay}
-      chapter={chapter}
-      startVerse={startVerse}
-      endVerse={extractedEndVerse}
-    />
-  );
-}
-
 function FeedItemBody({
   item,
   onOpenVerse,
-  isActiveReading,
 }: {
   item: FeedItem;
   onOpenVerse: (reference: string) => void;
-  isActiveReading: boolean;
 }) {
   switch (item.kind) {
     case "citedVerse": {
@@ -321,12 +244,11 @@ function FeedItemBody({
           >
             {item.reference}
           </button>
-          <ReadingPassage
+          <PassageVerses
             bookDisplay={parsed.bookDisplay}
             chapter={parsed.chapter}
             startVerse={parsed.startVerse}
-            extractedEndVerse={parsed.endVerse}
-            isActive={isActiveReading}
+            endVerse={parsed.endVerse}
           />
         </>
       );

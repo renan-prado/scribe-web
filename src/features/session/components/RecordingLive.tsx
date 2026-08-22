@@ -21,9 +21,7 @@ import { SummaryView } from "@/features/session/components/SummaryView";
 import { TranscriptView } from "@/features/session/components/TranscriptView";
 import {
   RECORDER_MAX_CHUNK_MS,
-  RECORDER_MAX_CHUNK_MS_READING,
   RECORDER_MIN_CHUNK_MS,
-  RECORDER_MIN_CHUNK_MS_READING,
   RECORDER_SILENCE_HOLD_MS,
   RECORDER_SILENCE_THRESHOLD,
 } from "@/features/session/config";
@@ -77,7 +75,6 @@ export function RecordingLive({
   const chunks = useSessionStore((s) => s.chunks);
   const feedItems = useSessionStore((s) => s.feedItems);
   const thinking = useSessionStore((s) => s.thinking);
-  const readingMode = useSessionStore((s) => s.readingMode);
   const summary = useSessionStore((s) => s.summary);
   const summaryTitle = useSessionStore((s) => s.summaryTitle);
   const speakerName = useSessionStore((s) => s.speakerName);
@@ -272,27 +269,6 @@ export function RecordingLive({
     void start();
   }, [autoStart, start]);
 
-  // React to readingMode transitions: adjust recorder chunk timing and purge
-  // stale echoes from the drip queue when entering reading mode.
-  useEffect(() => {
-    if (readingMode) {
-      getSessionState().purgeEchoFromDripQueue();
-    }
-    const rec = recorderRef.current;
-    if (!rec || !running) return;
-    if (readingMode) {
-      rec.setChunkTiming({
-        minChunkMs: RECORDER_MIN_CHUNK_MS_READING,
-        maxChunkMs: RECORDER_MAX_CHUNK_MS_READING,
-      });
-    } else {
-      rec.setChunkTiming({
-        minChunkMs: RECORDER_MIN_CHUNK_MS,
-        maxChunkMs: RECORDER_MAX_CHUNK_MS,
-      });
-    }
-  }, [readingMode, running]);
-
   // Session rollup log every 60s while running.
   useEffect(() => {
     if (!running) return;
@@ -445,7 +421,6 @@ export function RecordingLive({
                 running={running}
                 hasTranscript={transcript.length > 0}
                 suggesting={insightsInFlight}
-                readingMode={readingMode}
               />
             ) : (
               <SummaryView
@@ -492,7 +467,6 @@ export function RecordingLive({
               running={false}
               hasTranscript={transcript.length > 0}
               suggesting={false}
-              readingMode={false}
             />
           </div>
         </DialogContent>

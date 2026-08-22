@@ -82,9 +82,12 @@ export function UsageFilters({ users, routes, current }: Props) {
 
       <div className="flex flex-col gap-1.5">
         <Label>Usuário</Label>
-        <Select value={userId} onValueChange={(v) => setUserId(v ?? ANY)}>
+        <Select
+          value={userId === ANY ? undefined : userId}
+          onValueChange={(v) => setUserId(v ?? ANY)}
+        >
           <SelectTrigger className="w-full">
-            <SelectValue />
+            <SelectValue placeholder="Todos" />
           </SelectTrigger>
           <SelectContent>
             <SelectItem value={ANY}>Todos</SelectItem>
@@ -99,9 +102,9 @@ export function UsageFilters({ users, routes, current }: Props) {
 
       <div className="flex flex-col gap-1.5">
         <Label>Rota</Label>
-        <Select value={route} onValueChange={(v) => setRoute(v ?? ANY)}>
+        <Select value={route === ANY ? undefined : route} onValueChange={(v) => setRoute(v ?? ANY)}>
           <SelectTrigger className="w-full">
-            <SelectValue />
+            <SelectValue placeholder="Todas" />
           </SelectTrigger>
           <SelectContent>
             <SelectItem value={ANY}>Todas</SelectItem>
