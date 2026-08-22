@@ -2,9 +2,9 @@ import { z } from "zod";
 
 const schema = z.object({
   OPENAI_API_KEY: z.string().min(1),
-  OPENAI_TRANSCRIBE_MODEL: z.string().default("gpt-transcribe"),
-  OPENAI_BIBLE_MODEL: z.string().default("gpt-4o"),
-  OPENAI_INSIGHTS_MODEL: z.string().default("gpt-4o"),
+  OPENAI_TRANSCRIBE_MODEL: z.string().default("gpt-4o-mini-transcribe"),
+  OPENAI_BIBLE_MODEL: z.string().default("gpt-4.1-mini"),
+  OPENAI_INSIGHTS_MODEL: z.string().default("gpt-4.1-mini"),
   OPENAI_ECHO_MODEL: z.string().default("gpt-4o-mini"),
   OPENAI_FINAL_SUMMARY_MODEL: z.string().default("gpt-4o"),
   OPENAI_FORMAT_MODEL: z.string().default("gpt-4o-mini"),

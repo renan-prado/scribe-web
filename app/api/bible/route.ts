@@ -53,7 +53,7 @@ export async function POST(request: Request) {
   const result = await callChat({
     model,
     temperature: 0.2,
-    maxTokens: 600,
+    maxTokens: 300,
     responseFormat: { type: "json_object" },
     messages: [
       { role: "system", content: BIBLE_SYSTEM_PROMPT },

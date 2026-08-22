@@ -22,11 +22,12 @@ export const BIBLE_MIN_TAIL_DELTA_CHARS = 40;
 // ---------- Fluxo INSIGHTS (lento, chunk-based) ----------
 
 /**
- * Cadência do /api/insights em número de chunks OK. A cada 3 chunks
+ * Cadência do /api/insights em número de chunks OK. A cada 4 chunks
  * transcritos com sucesso o pipeline dispara — com chunks de 15-30s isso
- * equivale a ~45-90s de fala, dando contexto suficiente ao modelo.
+ * equivale a ~60-120s de fala, dando contexto suficiente ao modelo e
+ * mantendo o custo por minuto sob controle.
  */
-export const INSIGHTS_CHUNK_INTERVAL = 3;
+export const INSIGHTS_CHUNK_INTERVAL = 4;
 
 /**
  * Trecho da transcrição enviado ao /api/insights. Menor que a janela
