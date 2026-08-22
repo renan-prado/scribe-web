@@ -17,6 +17,7 @@ import {
 } from "@/features/session/config";
 import { KNOWN_TRANSLATIONS, useTranslation } from "@/features/session/hooks/useTranslation";
 import { useVerseFetch, useVersePrefetcher } from "@/features/session/hooks/useVerseFetch";
+import { chapterVerseCount } from "@/lib/bibles/books";
 import type { FeedItem } from "@/lib/domain/feed";
 import { feedItemOrigin, parseVerseReference } from "@/lib/domain/feed";
 import { cn } from "@/lib/utils";
@@ -298,11 +299,15 @@ function ReadingPassage({
 
   useEffect(() => {
     if (!effectiveActive) return;
-    for (
-      let v = extractedEndVerse + 1;
-      v <= extractedEndVerse + LIVE_READING_LOOKAHEAD_PREFETCH;
-      v++
-    ) {
+    // Cap lookahead at chapter end. Matthew 3 has 17 verses — prefetching v18-v23
+    // burns 6 useless /api/verse round-trips per session (and pollutes the React
+    // Query cache with empty results). Falls back to LOOKAHEAD when the chapter
+    // isn't in metadata (unknown book) — safer to over-prefetch than to fail-open.
+    const chapterEnd = chapterVerseCount(bookDisplay, chapter);
+    const lookaheadEnd = chapterEnd
+      ? Math.min(chapterEnd, extractedEndVerse + LIVE_READING_LOOKAHEAD_PREFETCH)
+      : extractedEndVerse + LIVE_READING_LOOKAHEAD_PREFETCH;
+    for (let v = extractedEndVerse + 1; v <= lookaheadEnd; v++) {
       prefetchVerse(`${bookDisplay} ${chapter}:${v}`, translation);
     }
   }, [bookDisplay, chapter, extractedEndVerse, effectiveActive, translation, prefetchVerse]);

@@ -7,6 +7,8 @@
  * prefixes) plus common spoken variants (Roman numerals, ordinal words).
  */
 
+import { CHAPTER_VERSE_COUNTS } from "./chapter-lengths";
+
 export const BOOK_ABBREVS: Record<string, string> = {
   // ── Old Testament ─────────────────────────────────────────────────────────
   genesis: "Gn",
@@ -163,4 +165,19 @@ export function normalizeBookName(name: string): string {
 /** Return the JSON abbrev for a full Portuguese book name, or null if not recognized. */
 export function abbrevFor(fullName: string): string | null {
   return BOOK_ABBREVS[normalizeBookName(fullName)] ?? null;
+}
+
+/**
+ * Number of verses in a given chapter of a book, or null when the book/chapter
+ * isn't recognized. Client-safe (no fs/network) — reads from the generated
+ * chapter-lengths.ts metadata. Used by ReadingPassage to cap lookahead prefetch
+ * so we don't burn /api/verse calls on verses that don't exist (e.g. Matthew 3
+ * only has 17 verses, prefetching v18-v23 is pure waste).
+ */
+export function chapterVerseCount(bookFullName: string, chapter: number): number | null {
+  const abbrev = abbrevFor(bookFullName);
+  if (!abbrev) return null;
+  const chapters = CHAPTER_VERSE_COUNTS[abbrev];
+  if (!chapters) return null;
+  return chapters[chapter - 1] ?? null;
 }
