@@ -29,11 +29,7 @@ export function VerseDialog({
             <BookOpen className="size-4" />
             {headerRef}
           </DialogTitle>
-          <DialogDescription>
-            {state.status === "ok" && state.translation
-              ? `Tradução: ${state.translation}`
-              : "Versículo sugerido pela IA"}
-          </DialogDescription>
+          <DialogDescription>Versículo sugerido pela IA</DialogDescription>
         </DialogHeader>
         <div className="min-h-[80px]">
           {state.status === "loading" ? (

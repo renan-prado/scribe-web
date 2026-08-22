@@ -1,5 +1,5 @@
 import { NextResponse } from "next/server";
-import { AVAILABLE_TRANSLATIONS, isAvailableTranslation, loadBible } from "@/lib/bibles/loader";
+import { loadBible } from "@/lib/bibles/loader";
 import { lookupVerse } from "@/lib/bibles/lookup";
 import { parseVerseReference } from "@/lib/domain/feed";
 import { devLog } from "@/lib/log";
@@ -10,13 +10,13 @@ export type { VersePayload } from "@/lib/domain/verse";
 export const runtime = "nodejs";
 export const dynamic = "force-dynamic";
 
-const DEFAULT_TRANSLATION = "NVI";
+const TRANSLATION = "NVI";
 
 export async function POST(request: Request) {
   const auth = await requireAuth();
   if (auth.response) return auth.response;
 
-  let body: { reference?: string; translation?: string };
+  let body: { reference?: string };
   try {
     body = await request.json();
   } catch (err) {
@@ -27,42 +27,36 @@ export async function POST(request: Request) {
   }
 
   const reference = (body.reference ?? "").trim();
-  const requested = (body.translation ?? "").trim().toUpperCase() || DEFAULT_TRANSLATION;
-
   if (!reference) {
     return NextResponse.json({ error: "empty reference" }, { status: 400 });
   }
 
   const parsed = parseVerseReference(reference);
   if (!parsed || parsed.startVerse == null || parsed.endVerse == null) {
-    return NextResponse.json({ reference, text: "", translation: requested });
+    return NextResponse.json({ reference, text: "" });
   }
 
-  // Fallback chain: requested translation → NVI. Deduped, only known files.
-  const chain = [requested, DEFAULT_TRANSLATION].filter(
-    (t, i, arr) => arr.indexOf(t) === i && isAvailableTranslation(t)
+  const bible = await loadBible(TRANSLATION);
+  if (!bible) {
+    devLog("[verse] miss", { reference, reason: "translation-file-missing" });
+    return NextResponse.json({ reference, text: "" });
+  }
+
+  const { text, truncated } = lookupVerse(
+    bible,
+    parsed.bookDisplay,
+    parsed.chapter,
+    parsed.startVerse,
+    parsed.endVerse
   );
-
-  for (const t of chain) {
-    const bible = await loadBible(t);
-    if (!bible) continue;
-    const { text, truncated } = lookupVerse(
-      bible,
-      parsed.bookDisplay,
-      parsed.chapter,
-      parsed.startVerse,
-      parsed.endVerse
-    );
-    if (text) {
-      if (truncated) {
-        devLog("[verse] truncated", { reference, translation: t, requested });
-      } else {
-        devLog("[verse] ok", { reference, translation: t, requested, chars: text.length });
-      }
-      return NextResponse.json({ reference, text, translation: t });
-    }
+  if (!text) {
+    devLog("[verse] miss", { reference, reason: "not-found" });
+    return NextResponse.json({ reference, text: "" });
   }
-
-  devLog("[verse] miss", { reference, requested, available: AVAILABLE_TRANSLATIONS });
-  return NextResponse.json({ reference, text: "", translation: requested });
+  if (truncated) {
+    devLog("[verse] truncated", { reference });
+  } else {
+    devLog("[verse] ok", { reference, chars: text.length });
+  }
+  return NextResponse.json({ reference, text });
 }

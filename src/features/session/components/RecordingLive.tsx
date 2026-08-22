@@ -32,7 +32,6 @@ import { useDrainTimer } from "@/features/session/hooks/useDrainTimer";
 import { useEchoPipeline } from "@/features/session/hooks/useEchoPipeline";
 import { useElapsedTimer } from "@/features/session/hooks/useElapsedTimer";
 import { useInsightsPipeline } from "@/features/session/hooks/useInsightsPipeline";
-import { useTranslation } from "@/features/session/hooks/useTranslation";
 import { useVersePrefetcher } from "@/features/session/hooks/useVerseFetch";
 import { useVisibilityWarning } from "@/features/session/hooks/useVisibilityWarning";
 import { useWakeLock } from "@/features/session/hooks/useWakeLock";
@@ -43,7 +42,6 @@ import type { ChunkRow, TranscriptState } from "@/features/session/types";
 import type { ChunkEvent, Recorder } from "@/lib/domain/recorder";
 import { devLog } from "@/lib/log";
 import { createRecorder } from "@/lib/recorder";
-import { usePreferencesStore } from "@/lib/stores/preferences";
 import { getSessionState, useSessionStore } from "@/lib/stores/session";
 import { cn } from "@/lib/utils";
 
@@ -97,7 +95,6 @@ export function RecordingLive({
   const { warning: hiddenWarning, dismiss: dismissHiddenWarning } = useVisibilityWarning({
     enabled: running,
   });
-  const { setAuto: setAutoTranslation, effective: translation } = useTranslation();
   const prefetchVerse = useVersePrefetcher();
 
   // ---- feed drip + three live pipelines ----
@@ -105,8 +102,6 @@ export function RecordingLive({
 
   useBiblePipeline({
     sessionId,
-    translation,
-    setAutoTranslation,
     prefetchVerse,
     scheduleDrainIfIdle,
     startedAtRef,
@@ -170,10 +165,6 @@ export function RecordingLive({
 
   const start = useCallback(async () => {
     if (getSessionState().running) return;
-
-    // Preserve pre-Zustand semantics: each session starts with a fresh auto so
-    // stale detection from a previous recording doesn't leak into this one.
-    usePreferencesStore.getState().resetTranslationAuto();
 
     getSessionState().reset({
       speakerName: initialSpeakerName,

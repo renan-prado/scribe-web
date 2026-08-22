@@ -1,7 +1,6 @@
 "use client";
 
 import { useCallback, useEffect, useState } from "react";
-import { useTranslation } from "@/features/session/hooks/useTranslation";
 import { useVerseFetch } from "@/features/session/hooks/useVerseFetch";
 import { cn } from "@/lib/utils";
 
@@ -24,16 +23,11 @@ export function PassageVerses({
   chapter,
   startVerse,
   endVerse,
-  onTranslationResolved,
 }: {
   bookDisplay: string;
   chapter: number;
   startVerse: number;
   endVerse: number;
-  /** Called whenever the first verse resolves with an actual translation so the
-   * parent can reflect the real translation in the badge (may differ from what
-   * was requested when the model falls back to a known translation). */
-  onTranslationResolved?: (translation: string) => void;
 }) {
   const [readySet, setReadySet] = useState<Set<number>>(new Set());
   const handleReady = useCallback((v: number) => {
@@ -66,7 +60,6 @@ export function PassageVerses({
           verseNumber={v}
           hidden={v > maxRevealed}
           onReady={handleReady}
-          onTranslationResolved={v === startVerse ? onTranslationResolved : undefined}
         />
       ))}
     </div>
@@ -78,16 +71,13 @@ function VerseLine({
   verseNumber,
   hidden,
   onReady,
-  onTranslationResolved,
 }: {
   reference: string;
   verseNumber: number;
   hidden: boolean;
   onReady: (v: number) => void;
-  onTranslationResolved?: (translation: string) => void;
 }) {
-  const { effective } = useTranslation();
-  const state = useVerseFetch(reference, effective);
+  const state = useVerseFetch(reference);
   const text = state.status === "ok" ? state.text : "";
   const loading = state.status === "idle" || state.status === "loading";
 
@@ -98,15 +88,6 @@ function VerseLine({
       onReady(verseNumber);
     }
   }, [state.status, verseNumber, onReady]);
-
-  useEffect(() => {
-    // Report the actual translation of the displayed text back to the badge.
-    // Fires whenever the resolved translation changes (e.g. stale NVI → new NVT,
-    // or requested NVT but model returned ARC).
-    if (state.status === "ok" && state.text && onTranslationResolved) {
-      onTranslationResolved(state.translation);
-    }
-  }, [state, onTranslationResolved]);
 
   return (
     <p className={cn("text-sm leading-relaxed text-foreground/90", hidden && "hidden")}>

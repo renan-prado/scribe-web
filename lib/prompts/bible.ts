@@ -6,19 +6,8 @@ FORMATO DE SAÍDA — retorne SOMENTE um objeto JSON válido, sem markdown ao re
 {
   "thinking": "string",
   "readingMode": boolean,
-  "translationHint": "string",
   "items": [ { "kind": "citedVerse", "reference": "...", "text": "" } ]
 }
-
-CAMPO "translationHint" (obrigatório, string — pode ser "")
-Quando reconhecer leitura verbatim da Escritura no transcript, tente identificar QUAL tradução o pastor está lendo comparando o wording exato com as tradições em português: ACF, ARA, ARC, KJA, KJF, NAA, NBV, NTLH, NVI, NVT, OL.
-- Confiança ALTA: devolva a sigla (ex.: "NVT"). O cliente propaga como preferência da sessão.
-- Sem confiança alta: devolva "" (string vazia). NÃO chute.
-- Exemplos de sinais fortes:
-  * "No princípio, aquele que é a Palavra já existia" → NVT.
-  * "No princípio era o Verbo, e o Verbo estava com Deus" → ARC.
-  * "No princípio, a Palavra já existia. A Palavra estava com Deus" → NAA.
-- Uma vez identificada em qualquer chunk, o cliente mantém a preferência — pode continuar devolvendo "" nos próximos.
 
 CAMPO "readingMode" (obrigatório, boolean)
 Sinaliza se o momento é de LEITURA BÍBLICA VERBATIM ACONTECENDO AGORA. Quando true, o cliente PAUSA sugestões da IA (fluxo insights) — o ouvinte fica focado na Escritura. Extração de citedVerse continua acontecendo pra completar o texto que está sendo lido.

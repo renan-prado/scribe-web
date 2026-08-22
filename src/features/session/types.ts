@@ -12,5 +12,5 @@ export type TranscriptState = "listening" | "transcribing" | "idle";
 export type VerseFetchState =
   | { status: "idle" }
   | { status: "loading" }
-  | { status: "ok"; reference: string; text: string; translation: string }
+  | { status: "ok"; reference: string; text: string }
   | { status: "error"; message: string };

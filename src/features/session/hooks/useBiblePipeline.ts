@@ -19,16 +19,12 @@ import { useSessionStore } from "@/lib/stores/session";
  */
 export function useBiblePipeline({
   sessionId,
-  translation,
-  setAutoTranslation,
   prefetchVerse,
   scheduleDrainIfIdle,
   startedAtRef,
 }: {
   sessionId: string;
-  translation: string | null;
-  setAutoTranslation: (v: string) => void;
-  prefetchVerse: (reference: string, translation?: string | null) => void;
+  prefetchVerse: (reference: string) => void;
   scheduleDrainIfIdle: () => void;
   startedAtRef: RefObject<number>;
 }): void {
@@ -84,12 +80,12 @@ export function useBiblePipeline({
       sermonAtMs: bibleSermonAtMs,
       sessionId,
     })
-      .then(({ items, thinking: nextThinking, readingMode: nextReadingMode, translationHint }) => {
+      .then(({ items, thinking: nextThinking, readingMode: nextReadingMode }) => {
         const s = useSessionStore.getState();
         s.bumpCounter("bibleYield", items.length);
         for (const item of items) {
           if (item.kind === "citedVerse" && !item.text && item.reference.includes(":")) {
-            prefetchVerse(item.reference, translation);
+            prefetchVerse(item.reference);
           }
         }
         const { hasDripAdd } = s.enqueueFeedItems(items);
@@ -99,7 +95,6 @@ export function useBiblePipeline({
         if (nextReadingMode !== readingMode) {
           devLog("[feed] readingMode →", nextReadingMode);
         }
-        if (translationHint) setAutoTranslation(translationHint);
       })
       .finally(() => useSessionStore.getState().setBibleInFlight(false));
   }, [
@@ -110,8 +105,6 @@ export function useBiblePipeline({
     finalizing,
     feedItems,
     readingMode,
-    translation,
-    setAutoTranslation,
     sessionId,
     prefetchVerse,
     scheduleDrainIfIdle,

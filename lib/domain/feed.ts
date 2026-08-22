@@ -221,8 +221,8 @@ export type FeedParseResult = {
 /**
  * Parse the bible-route LLM response. Filters to citedVerse only and drops
  * anything whose dedup key is already present in `existingKeys`. Also returns
- * the transient `thinking` note, the `readingMode` flag (pauses the insights
- * pipeline while true) and the optional `translationHint`.
+ * the transient `thinking` note and the `readingMode` flag (pauses the
+ * insights pipeline while true).
  *
  * `drops` surfaces per-item rejections (bad shape, disallowed kind, dedup) so
  * the route can log them — otherwise a model that drifts into the wrong shape
@@ -235,7 +235,6 @@ export function parseBibleFromLLM(
   items: FeedItem[];
   thinking: string;
   readingMode: boolean;
-  translationHint: string;
   drops: FeedParseDrop[];
 } {
   const { items, drops } = parseFeedItems(content, existingKeys, BIBLE_KINDS);
@@ -243,9 +242,7 @@ export function parseBibleFromLLM(
   const record = parsed && typeof parsed === "object" ? (parsed as Record<string, unknown>) : {};
   const thinking = typeof record.thinking === "string" ? record.thinking.trim().slice(0, 200) : "";
   const readingMode = record.readingMode === true;
-  const translationHint =
-    typeof record.translationHint === "string" ? record.translationHint.trim().slice(0, 12) : "";
-  return { items, thinking, readingMode, translationHint, drops };
+  return { items, thinking, readingMode, drops };
 }
 
 /**

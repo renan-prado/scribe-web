@@ -11,8 +11,7 @@ import type { VersePayload } from "@/lib/domain/verse";
 /**
  * POST /api/bible. Extrai APENAS citedVerse do trecho recente. O cliente
  * já filtrou via regex que há sinal de menção bíblica antes de chamar.
- * Também devolve o `thinking`, o `readingMode` (que pausa o fluxo insights)
- * e o `translationHint`.
+ * Também devolve o `thinking` e o `readingMode` (que pausa o fluxo insights).
  */
 export async function requestBible(body: {
   text: string;
@@ -23,7 +22,6 @@ export async function requestBible(body: {
   items: FeedItem[];
   thinking: string;
   readingMode: boolean;
-  translationHint: string;
 }> {
   try {
     const res = await fetch("/api/bible", {
@@ -35,16 +33,14 @@ export async function requestBible(body: {
       items?: FeedItem[];
       thinking?: string;
       readingMode?: boolean;
-      translationHint?: string;
     };
     return {
       items: Array.isArray(payload?.items) ? payload.items : [],
       thinking: typeof payload?.thinking === "string" ? payload.thinking : "",
       readingMode: payload?.readingMode === true,
-      translationHint: typeof payload?.translationHint === "string" ? payload.translationHint : "",
     };
   } catch {
-    return { items: [], thinking: "", readingMode: false, translationHint: "" };
+    return { items: [], thinking: "", readingMode: false };
   }
 }
 
@@ -158,19 +154,17 @@ export async function requestCreateSession(body: {
 }
 
 export async function requestVerse(
-  reference: string,
-  translation?: string | null
+  reference: string
 ): Promise<{ ok: true; payload: VersePayload } | { ok: false; message: string }> {
   try {
     const res = await fetch("/api/verse", {
       method: "POST",
       headers: { "content-type": "application/json" },
-      body: JSON.stringify(translation ? { reference, translation } : { reference }),
+      body: JSON.stringify({ reference }),
     });
     const body = (await res.json()) as {
       reference?: string;
       text?: string;
-      translation?: string;
       error?: string;
     };
     if (body?.error) return { ok: false, message: body.error };
@@ -179,7 +173,6 @@ export async function requestVerse(
       payload: {
         reference: body.reference || reference,
         text: body.text || "",
-        translation: body.translation || "",
       },
     };
   } catch (err) {
