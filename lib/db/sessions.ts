@@ -95,15 +95,19 @@ type DbRow = {
   location_id: string | null;
   speaker_name: string | null;
   speaker_location: string | null;
-  mode: string | null;
+  capture_mode: string | null;
   transcript: string;
   feed_items: FeedItem[] | null;
   final_summary: SummaryPayload | null;
 };
 
+// `mode` is a Postgres ordered-set aggregate function name — PostgREST tries
+// to parse `select=mode` as a call to that aggregate ("WITHIN GROUP is
+// required for ordered-set aggregate mode"). The column is physically named
+// `capture_mode`; we keep the API-side field name as `mode` for callers.
 const SELECT_LIST =
-  "id, created_at, duration_ms, title, short_summary, speaker_id, location_id, speaker_name, speaker_location, mode";
-const SELECT_FULL = `id, created_at, ended_at, duration_ms, title, short_summary, speaker_id, location_id, speaker_name, speaker_location, mode, transcript, feed_items, final_summary`;
+  "id, created_at, duration_ms, title, short_summary, speaker_id, location_id, speaker_name, speaker_location, capture_mode";
+const SELECT_FULL = `id, created_at, ended_at, duration_ms, title, short_summary, speaker_id, location_id, speaker_name, speaker_location, capture_mode, transcript, feed_items, final_summary`;
 
 function rowToSession(row: DbRow): SessionRow {
   return {
@@ -117,7 +121,7 @@ function rowToSession(row: DbRow): SessionRow {
     locationId: row.location_id,
     speakerName: row.speaker_name,
     speakerLocation: row.speaker_location,
-    mode: parseSessionMode(row.mode),
+    mode: parseSessionMode(row.capture_mode),
     transcript: row.transcript,
     feedItems: Array.isArray(row.feed_items) ? row.feed_items : [],
     finalSummary: row.final_summary,
@@ -148,7 +152,7 @@ export async function createEmptySession(input: CreateEmptySessionInput): Promis
       location_id: input.locationId ?? null,
       speaker_name: input.speakerName,
       speaker_location: input.speakerLocation,
-      mode: input.mode ?? "live",
+      capture_mode: input.mode ?? "live",
       transcript: "",
       feed_items: [],
     })
@@ -214,7 +218,7 @@ export async function listSessions(filter: ListSessionsFilter = {}): Promise<Ses
     locationId: r.location_id,
     speakerName: r.speaker_name,
     speakerLocation: r.speaker_location,
-    mode: parseSessionMode(r.mode),
+    mode: parseSessionMode(r.capture_mode),
   }));
 }
 

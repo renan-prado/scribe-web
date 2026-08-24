@@ -131,7 +131,7 @@ export async function loadAdminUsageSummary(
     // llm_usage_events has no mode column, so resolve session ids of the
     // requested mode first and restrict the event query to that set. The
     // subquery is bounded to sessions the same admin scope can read.
-    const modeSessionsQuery = admin.from("sessions").select("id").eq("mode", filters.mode);
+    const modeSessionsQuery = admin.from("sessions").select("id").eq("capture_mode", filters.mode);
     const modeSessions =
       filters.userId != null
         ? await modeSessionsQuery.eq("user_id", filters.userId)
