@@ -2,7 +2,6 @@
 
 import { useState } from "react";
 import { toast } from "sonner";
-import { Button } from "@/components/ui/button";
 import { createClient } from "@/lib/supabase/client";
 
 type Props = {
@@ -31,17 +30,24 @@ export function GoogleSignInButton({ next = "/home", label = "Continuar com Goog
   }
 
   return (
-    <Button
+    <button
       type="button"
-      variant="outline"
-      size="lg"
       onClick={handleClick}
       disabled={loading}
-      className="w-full gap-2"
+      className="inline-flex w-full items-center justify-center gap-3 rounded-[24px] border bg-white transition-colors hover:bg-[#F6FAFE] hover:border-[#C9D9E8] disabled:cursor-not-allowed disabled:opacity-70"
+      style={{
+        borderColor: "#DFEAF4",
+        color: "#33414F",
+        fontFamily: "var(--font-poppins), system-ui, sans-serif",
+        fontSize: 14,
+        fontWeight: 500,
+        padding: "16px 22px",
+        boxShadow: "0 4px 14px rgba(79,168,240,.08)",
+      }}
     >
       <GoogleIcon />
-      {loading ? "Abrindo Google..." : label}
-    </Button>
+      <span>{loading ? "Abrindo Google…" : label}</span>
+    </button>
   );
 }
 
@@ -51,7 +57,7 @@ function GoogleIcon() {
       xmlns="http://www.w3.org/2000/svg"
       viewBox="0 0 48 48"
       aria-hidden="true"
-      className="size-4"
+      className="size-5"
     >
       <path
         fill="#FFC107"
