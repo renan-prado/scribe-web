@@ -47,25 +47,34 @@ export function RecordButton({
       </button>
     );
   }
+  const showRecordingPulse = running && pulseWhileRunning;
   return (
     <div className="relative flex flex-col items-center gap-5">
-      <button
-        type="button"
-        onClick={running ? onStop : onStart}
-        aria-label={running ? "Parar gravação" : "Iniciar gravação"}
-        className={cn(
-          "relative flex size-24 items-center justify-center rounded-full bg-[color:var(--scriba-blue)] text-white outline-none transition-colors duration-300 ease-out",
-          (!running || pulseWhileRunning) && "animate-scriba-halo",
-          "hover:bg-[color:var(--scriba-blue-hover)] active:scale-95",
-          "focus-visible:ring-4 focus-visible:ring-[color:var(--scriba-blue)]/40"
-        )}
-      >
-        {running ? (
-          <Square className="size-7 fill-current" />
-        ) : (
-          <Mic className="size-8" strokeWidth={2.2} />
-        )}
-      </button>
+      <div className="relative flex size-24 items-center justify-center">
+        {showRecordingPulse ? (
+          <span
+            aria-hidden
+            className="absolute inset-0 animate-ping rounded-full bg-[color:var(--scriba-blue)]/50"
+          />
+        ) : null}
+        <button
+          type="button"
+          onClick={running ? onStop : onStart}
+          aria-label={running ? "Parar gravação" : "Iniciar gravação"}
+          className={cn(
+            "relative flex size-24 items-center justify-center rounded-full bg-[color:var(--scriba-blue)] text-white outline-none transition-colors duration-300 ease-out",
+            !running && "animate-scriba-halo",
+            "hover:bg-[color:var(--scriba-blue-hover)] active:scale-95",
+            "focus-visible:ring-4 focus-visible:ring-[color:var(--scriba-blue)]/40"
+          )}
+        >
+          {running ? (
+            <Square className="size-7 fill-current" />
+          ) : (
+            <Mic className="size-8" strokeWidth={2.2} />
+          )}
+        </button>
+      </div>
       {!running ? (
         <p className="max-w-xs text-pretty text-center text-sm font-light leading-relaxed text-[color:var(--scriba-ink-soft)]">
           Toque para começar a gravar.
