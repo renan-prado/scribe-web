@@ -8,12 +8,17 @@ export function RecordButton({
   onStart,
   onStop,
   compact = false,
+  pulseWhileRunning = false,
 }: {
   running: boolean;
   elapsedMs: number;
   onStart: () => void;
   onStop: () => void;
   compact?: boolean;
+  /** Keep the halo pulse active even while recording. Used by the audio-only
+   * view where the big button is the only element on screen and needs the
+   * pulse to signal "we're listening". */
+  pulseWhileRunning?: boolean;
 }) {
   if (compact) {
     return (
@@ -50,7 +55,7 @@ export function RecordButton({
         aria-label={running ? "Parar gravação" : "Iniciar gravação"}
         className={cn(
           "relative flex size-24 items-center justify-center rounded-full bg-[color:var(--scriba-blue)] text-white outline-none transition-colors duration-300 ease-out",
-          !running && "animate-scriba-halo",
+          (!running || pulseWhileRunning) && "animate-scriba-halo",
           "hover:bg-[color:var(--scriba-blue-hover)] active:scale-95",
           "focus-visible:ring-4 focus-visible:ring-[color:var(--scriba-blue)]/40"
         )}

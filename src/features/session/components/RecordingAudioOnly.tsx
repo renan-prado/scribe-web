@@ -164,7 +164,13 @@ export function RecordingAudioOnly({
   return (
     <main className="flex flex-1 flex-col items-center justify-center px-6">
       <div className="flex flex-col items-center gap-4">
-        <RecordButton running={running} elapsedMs={elapsedMs} onStart={start} onStop={stop} />
+        <RecordButton
+          running={running}
+          elapsedMs={elapsedMs}
+          onStart={start}
+          onStop={stop}
+          pulseWhileRunning
+        />
         {running ? (
           <p className="font-mono text-sm font-medium tabular-nums tracking-wider text-[color:var(--scriba-ink)]">
             {formatMmSs(elapsedMs)}
