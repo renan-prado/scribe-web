@@ -17,18 +17,23 @@ export default async function AppLayout({ children }: { children: ReactNode }) {
     <>
       <AppHeader
         actions={
-          <div className="hidden items-center gap-3 sm:flex">
-            <NewRecordingDialog />
-            <CoinBalance />
-            {profile ? (
-              <UserMenu
-                displayName={profile.displayName ?? null}
-                email={profile.email ?? null}
-                avatarUrl={profile.avatarUrl ?? null}
-                isAdmin={isAdmin}
-              />
-            ) : null}
-          </div>
+          <>
+            <div className="flex items-center sm:hidden">
+              <CoinBalance />
+            </div>
+            <div className="hidden items-center gap-3 sm:flex">
+              <NewRecordingDialog />
+              <CoinBalance />
+              {profile ? (
+                <UserMenu
+                  displayName={profile.displayName ?? null}
+                  email={profile.email ?? null}
+                  avatarUrl={profile.avatarUrl ?? null}
+                  isAdmin={isAdmin}
+                />
+              ) : null}
+            </div>
+          </>
         }
       />
       <div className="flex flex-1 flex-col pb-36 sm:pb-0">{children}</div>
