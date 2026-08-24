@@ -1,6 +1,6 @@
 import type { Metadata } from "next";
 import { notFound, redirect } from "next/navigation";
-import { RecordingLive } from "@/features/session/components/RecordingLive";
+import { RecordingAudioOnly } from "@/features/session/components/RecordingAudioOnly";
 import { getSession } from "@/lib/db/sessions";
 
 export async function generateMetadata({
@@ -16,7 +16,7 @@ export async function generateMetadata({
 
 type Search = { autostart?: string };
 
-export default async function RecordingLivePage({
+export default async function RecordingAudioPage({
   params,
   searchParams,
 }: {
@@ -28,13 +28,13 @@ export default async function RecordingLivePage({
   const session = await getSession(id);
   if (!session) notFound();
 
-  // Route mismatch guard: audio-only sessions belong on /audio.
-  if (session.mode === "audio_only") {
-    redirect(`/recording/${id}/audio${autostart === "1" ? "?autostart=1" : ""}`);
+  // Route mismatch guard: live-mode sessions belong on /live.
+  if (session.mode === "live") {
+    redirect(`/recording/${id}/live${autostart === "1" ? "?autostart=1" : ""}`);
   }
 
   return (
-    <RecordingLive
+    <RecordingAudioOnly
       sessionId={session.id}
       initialSpeakerName={session.speakerName?.trim() || "Autor desconhecido"}
       initialSpeakerLocation={session.speakerLocation?.trim() || "Local desconhecido"}

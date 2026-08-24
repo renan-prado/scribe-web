@@ -24,13 +24,10 @@ export function useInsightsPipeline({
   sessionId,
   scheduleDrainIfIdle,
   startedAtRef,
-  enabled = true,
 }: {
   sessionId: string;
   scheduleDrainIfIdle: () => void;
   startedAtRef: RefObject<number>;
-  /** When false the pipeline never fires — used for audio-only sessions. */
-  enabled?: boolean;
 }): void {
   const running = useSessionStore((s) => s.running);
   const finalizing = useSessionStore((s) => s.finalizing);
@@ -52,7 +49,6 @@ export function useInsightsPipeline({
   const lastFiredChunkRef = useRef(0);
 
   useEffect(() => {
-    if (!enabled) return;
     if (!running || finalizing) return;
     if (okChunkCount === 0) return;
     if (okChunkCount - lastFiredChunkRef.current < INSIGHTS_CHUNK_INTERVAL) return;
@@ -94,14 +90,5 @@ export function useInsightsPipeline({
       .finally(() => {
         useSessionStore.getState().setInsightsInFlight(false);
       });
-  }, [
-    enabled,
-    running,
-    finalizing,
-    okChunkCount,
-    transcript,
-    sessionId,
-    scheduleDrainIfIdle,
-    startedAtRef,
-  ]);
+  }, [running, finalizing, okChunkCount, transcript, sessionId, scheduleDrainIfIdle, startedAtRef]);
 }

@@ -32,14 +32,11 @@ export function useBiblePipeline({
   prefetchVerse,
   scheduleDrainIfIdle,
   startedAtRef,
-  enabled = true,
 }: {
   sessionId: string;
   prefetchVerse: (reference: string) => void;
   scheduleDrainIfIdle: () => void;
   startedAtRef: RefObject<number>;
-  /** When false the pipeline never fires — used for audio-only sessions. */
-  enabled?: boolean;
 }): void {
   const running = useSessionStore((s) => s.running);
   const finalizing = useSessionStore((s) => s.finalizing);
@@ -61,7 +58,6 @@ export function useBiblePipeline({
   }, [chunks]);
 
   useEffect(() => {
-    if (!enabled) return;
     if (!running || bibleInFlight || finalizing) return;
     if (okChunkCount === 0) return;
     const recent = tailTranscript(transcript, BIBLE_TRANSCRIPT_CHARS);
@@ -138,7 +134,6 @@ export function useBiblePipeline({
       })
       .finally(() => useSessionStore.getState().setBibleInFlight(false));
   }, [
-    enabled,
     running,
     okChunkCount,
     transcript,

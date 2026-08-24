@@ -55,7 +55,8 @@ export function NewRecordingDialog({ trigger }: { trigger?: ReactNode }) {
       toast.error("Não consegui iniciar a sessão", { description: result.error });
       return;
     }
-    router.push(`/recording/${result.id}/live?autostart=1`);
+    const route = mode === "audio_only" ? "audio" : "live";
+    router.push(`/recording/${result.id}/${route}?autostart=1`);
   }
 
   const copy = MODE_COPY[mode];
