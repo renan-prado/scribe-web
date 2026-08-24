@@ -163,7 +163,7 @@ export function RecordingAudioOnly({
 
   return (
     <main className="flex flex-1 flex-col items-center justify-center px-6">
-      <div className="flex flex-col items-center gap-4">
+      <div className="flex flex-col items-center gap-10">
         <RecordButton
           running={running}
           elapsedMs={elapsedMs}

@@ -54,7 +54,7 @@ export function RecordButton({
         {showRecordingPulse ? (
           <span
             aria-hidden
-            className="absolute inset-0 animate-ping rounded-full bg-[color:var(--scriba-blue)]/50"
+            className="absolute inset-0 animate-ping rounded-full bg-[color:var(--scriba-blue)]/50 [animation-duration:2.4s]"
           />
         ) : null}
         <button
