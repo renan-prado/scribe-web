@@ -146,12 +146,12 @@ function ReflectionCard({
   return (
     <article className="flex flex-col gap-4 rounded-[24px] border border-[color:var(--scriba-hairline-soft)] bg-white p-6 shadow-[0_6px_22px_rgba(79,168,240,0.13)]">
       <div className="flex items-center gap-2">
-        <div className="h-1.5 w-6 rounded-full bg-[color:var(--scriba-yellow)]" />
-        <span className="text-[11px] font-semibold uppercase tracking-wider text-[color:var(--scriba-yellow-hover)]">
-          Continue refletindo
+        <div className="h-1.5 w-6 rounded-full bg-[color:var(--scriba-hairline)]" />
+        <span className="text-[11px] font-semibold uppercase tracking-wider text-[color:var(--scriba-ink-mute)]">
+          Sobre a última gravação
         </span>
       </div>
-      <p className="text-pretty text-lg font-medium leading-snug text-[color:var(--scriba-ink-strong)] sm:text-xl">
+      <p className="max-w-[500px] text-pretty text-lg font-medium leading-snug text-[color:var(--scriba-ink-strong)] sm:text-xl">
         {quote}
       </p>
       <div className="flex flex-col gap-0.5 border-t border-[color:var(--scriba-hairline)] pt-3">
@@ -193,7 +193,7 @@ function PracticeCard({ sourceTitle }: { sourceTitle?: string }) {
           Prática de hoje
         </span>
       </div>
-      <p className="text-pretty text-base leading-snug text-[color:var(--scriba-mint-ink)]">
+      <p className="max-w-[500px] text-pretty text-base leading-snug text-[color:var(--scriba-mint-ink)]">
         Pense em três coisas pelas quais você pode agradecer a Deus hoje e reserve alguns minutos
         para orar por elas.
       </p>
@@ -206,12 +206,6 @@ function PracticeCard({ sourceTitle }: { sourceTitle?: string }) {
             {sourceTitle?.trim() || "Um coração grato"}
           </span>
         </p>
-        <button
-          type="button"
-          className="rounded-full bg-[color:var(--scriba-blue)] px-5 py-2.5 text-[11px] font-semibold uppercase tracking-wider text-white shadow-[0_5px_12px_rgba(79,168,240,0.24)] transition-colors hover:bg-[color:var(--scriba-blue-hover)]"
-        >
-          Praticar
-        </button>
       </div>
     </article>
   );
@@ -297,7 +291,7 @@ function BibleReadCard() {
         Releia este texto
       </span>
       <p className="text-sm font-semibold text-[color:var(--scriba-rose-ink)]">Romanos 8:28</p>
-      <p className="text-pretty text-[15px] font-light italic leading-snug text-[#83604F]">
+      <p className="max-w-[500px] text-pretty text-[15px] font-light italic leading-snug text-[#83604F]">
         Sabemos que Deus age em todas as coisas para o bem daqueles que o amam…
       </p>
       <p className="pt-1 text-[11px] font-light leading-snug text-[#A08373]">
@@ -333,7 +327,7 @@ function EditorialCard() {
       <h3 className="text-lg font-semibold leading-tight tracking-tight text-[color:var(--scriba-lilac-ink)]">
         O que significa meditar na Palavra?
       </h3>
-      <p className="text-pretty text-[13px] font-light leading-snug text-[#77869F]">
+      <p className="max-w-[500px] text-pretty text-[13px] font-light leading-snug text-[#77869F]">
         Uma introdução curta a uma prática antiga — e por que ela não tem nada a ver com esvaziar a
         mente.
       </p>

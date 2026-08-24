@@ -36,7 +36,7 @@ export function MobileBottomNav() {
       >
         <TabLink
           href="/home"
-          label="Início"
+          label="Feed"
           active={isFeed}
           icon={
             <span

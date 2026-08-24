@@ -1,33 +1,34 @@
 "use client";
 
+import { List, Rss } from "lucide-react";
 import { usePathname } from "next/navigation";
 import { NavLink } from "@/components/NavLink";
 import { cn } from "@/lib/utils";
 
 const LINKS = [
-  { href: "/home", label: "Início" },
-  { href: "/list", label: "Gravações" },
+  { href: "/home", label: "Feed", icon: Rss },
+  { href: "/list", label: "Gravações", icon: List },
 ];
 
 export function AppNav() {
   const pathname = usePathname();
   return (
     <nav className="hidden items-center gap-1 sm:flex">
-      {LINKS.map((link) => {
-        const active =
-          pathname === link.href || (link.href !== "/home" && pathname?.startsWith(link.href));
+      {LINKS.map(({ href, label, icon: Icon }) => {
+        const active = pathname === href || (href !== "/home" && pathname?.startsWith(href));
         return (
           <NavLink
-            key={link.href}
-            href={link.href}
+            key={href}
+            href={href}
             className={cn(
-              "rounded-full px-3.5 py-1.5 text-sm font-medium transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring/40",
+              "flex items-center gap-1.5 rounded-full px-3.5 py-1.5 text-sm font-medium transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring/40",
               active
                 ? "bg-[color:var(--scriba-blue-soft)] text-[color:var(--scriba-blue)]"
                 : "text-[color:var(--scriba-ink-soft)] hover:bg-[color:var(--scriba-blue-soft)]/60 hover:text-[color:var(--scriba-blue)]"
             )}
           >
-            {link.label}
+            <Icon size={14} strokeWidth={2} aria-hidden />
+            {label}
           </NavLink>
         );
       })}
