@@ -1,7 +1,6 @@
 "use client";
 
 import { useState } from "react";
-import { AiIcon } from "@/features/session/components/AiIcon";
 import { FeedItemCard } from "@/features/session/components/FeedItemCard";
 import { VerseDialog } from "@/features/session/components/VerseDialog";
 import type { FeedItem } from "@/lib/domain/feed";
@@ -60,20 +59,20 @@ export function Feed({
 function SuggestingIndicator() {
   return (
     <div
-      className="animate-content-fade flex items-start gap-3"
+      className="animate-content-fade flex items-start gap-2.5"
       role="status"
       aria-label="A IA está preparando uma sugestão"
     >
       <div
         aria-hidden
-        className="flex size-9 shrink-0 items-center justify-center rounded-full border border-border bg-muted text-muted-foreground"
+        className="flex size-8 shrink-0 items-center justify-center rounded-full bg-[color:var(--scriba-blue-soft)]"
       >
-        <AiIcon className="size-4" spinning />
+        <span className="block size-2.5 rotate-45 rounded-[3px] bg-[color:var(--scriba-blue)]" />
       </div>
-      <div className="flex items-center gap-1.5 rounded-3xl rounded-tl-none border-2 border-dashed border-border/80 bg-muted/30 px-5 py-4">
-        <span className="size-1.5 animate-listening-dot rounded-full bg-muted-foreground/60" />
-        <span className="size-1.5 animate-listening-dot rounded-full bg-muted-foreground/60 [animation-delay:200ms]" />
-        <span className="size-1.5 animate-listening-dot rounded-full bg-muted-foreground/60 [animation-delay:400ms]" />
+      <div className="flex items-center gap-1.5 rounded-3xl rounded-tl-md border border-dashed border-[color:var(--scriba-blue-soft)] bg-[color:var(--scriba-blue-soft)]/40 px-5 py-4">
+        <span className="size-1.5 animate-listening-dot rounded-full bg-[#9BB6CC]" />
+        <span className="size-1.5 animate-listening-dot rounded-full bg-[#9BB6CC] [animation-delay:200ms]" />
+        <span className="size-1.5 animate-listening-dot rounded-full bg-[#9BB6CC] [animation-delay:400ms]" />
       </div>
     </div>
   );
@@ -81,7 +80,7 @@ function SuggestingIndicator() {
 
 function FeedEmptyState() {
   return (
-    <p className="text-sm leading-relaxed text-muted-foreground/80">
+    <p className="text-pretty text-sm font-light leading-relaxed text-[color:var(--scriba-ink-mute)]">
       Versículos citados, destaques da fala e referências correlatas vão aparecer aqui conforme a
       gravação avança.
     </p>

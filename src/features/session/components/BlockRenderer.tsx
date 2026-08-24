@@ -1,4 +1,3 @@
-import { BookOpen } from "lucide-react";
 import { PassageVerses } from "@/features/session/components/PassageVerses";
 import { parseVerseReference } from "@/lib/domain/feed";
 import type { SummaryBlock } from "@/lib/domain/summary";
@@ -9,63 +8,74 @@ export function blockKey(block: SummaryBlock): string {
   return block.text.slice(0, 32);
 }
 
+function BookGlyph() {
+  return (
+    <span
+      aria-hidden
+      className="block size-3 rounded-[3px_5px_5px_3px] border-[1.5px] border-white"
+    />
+  );
+}
+
 export function BlockRenderer({ block }: { block: SummaryBlock }) {
   switch (block.type) {
     case "h1":
       return (
-        <h2 className="mt-4 font-heading text-2xl font-bold leading-tight tracking-tight text-foreground sm:text-[1.75rem]">
+        <h2 className="mt-4 font-heading text-[22px] font-bold leading-tight tracking-tight text-[color:var(--scriba-ink-strong)] sm:text-2xl">
           {block.text}
         </h2>
       );
     case "h2":
       return (
-        <h3 className="mt-4 font-heading text-xl font-bold leading-snug tracking-tight text-foreground">
+        <h3 className="mt-4 font-heading text-lg font-semibold leading-snug tracking-tight text-[#3E5164]">
           {block.text}
         </h3>
       );
     case "paragraph":
-      return <p className="text-pretty text-base leading-relaxed text-foreground">{block.text}</p>;
+      return (
+        <p className="text-pretty text-[15px] font-light leading-[1.72] text-[color:var(--scriba-ink)]">
+          {block.text}
+        </p>
+      );
     case "example":
       return (
-        <aside className="relative rounded-2xl border-l-4 border-foreground/25 bg-muted/40 py-4 pr-5 pl-5">
-          <span className="mb-1.5 block text-[0.65rem] font-semibold tracking-widest text-muted-foreground uppercase">
+        <aside className="relative rounded-2xl border-l-4 border-[#D7DFE7] bg-[#F5F8FB] px-5 py-4">
+          <span className="mb-1.5 block text-[10px] font-semibold uppercase tracking-[0.14em] text-[color:var(--scriba-ink-mute)]">
             Exemplo do pregador
           </span>
-          <p className="text-pretty text-[0.95rem] leading-relaxed text-foreground/90">
+          <p className="text-pretty text-sm font-light leading-relaxed text-[color:var(--scriba-ink)]">
             {block.text}
           </p>
         </aside>
       );
     case "bibleQuote": {
-      // Parse the range so we can render each verse as its own numbered
-      // paragraph (Bible-app style). Falls back to the LLM-provided monolithic
-      // text for chapter-only refs or unparseable references, where per-verse
-      // fetch would either explode (whole chapter) or fail (bad ref).
       const parsed = parseVerseReference(block.reference);
       const hasRange = parsed && parsed.startVerse != null && parsed.endVerse != null;
       return (
         <figure
-          className="relative flex flex-col gap-5 rounded-3xl border border-border p-7 animate-insight-gradient"
+          className="relative flex flex-col gap-3.5 rounded-[26px] p-6 animate-insight-gradient"
           style={{
             backgroundImage: "var(--session-surface-quote)",
-            backgroundSize: "200% 200%",
+            backgroundSize: "200% 100%",
           }}
         >
           <figcaption>
-            <span className="inline-flex items-center gap-1.5 rounded-md bg-foreground px-2 py-1 text-[0.7rem] font-semibold text-background">
-              <BookOpen className="size-3" />
+            <span className="inline-flex items-center gap-2 rounded-full bg-[color:var(--scriba-ink-strong)] px-4 py-1.5 text-xs font-semibold text-white">
+              <BookGlyph />
               {block.reference}
             </span>
           </figcaption>
           {hasRange ? (
-            <PassageVerses
-              bookDisplay={parsed.bookDisplay}
-              chapter={parsed.chapter}
-              startVerse={parsed.startVerse as number}
-              endVerse={parsed.endVerse as number}
-            />
+            <div className="text-[15px] font-light leading-relaxed text-[#3E5164]">
+              <PassageVerses
+                bookDisplay={parsed.bookDisplay}
+                chapter={parsed.chapter}
+                startVerse={parsed.startVerse as number}
+                endVerse={parsed.endVerse as number}
+              />
+            </div>
           ) : block.text ? (
-            <blockquote className="pl-3 text-sm leading-relaxed text-foreground/90">
+            <blockquote className="text-[15px] font-light leading-relaxed text-[#3E5164]">
               {block.text}
             </blockquote>
           ) : null}
@@ -74,49 +84,53 @@ export function BlockRenderer({ block }: { block: SummaryBlock }) {
     }
     case "highlight":
       return (
-        <figure className="my-4 px-4 text-center sm:px-8">
-          <blockquote className="text-pretty text-lg font-semibold leading-loose tracking-tight text-foreground sm:text-xl">
-            <span
-              aria-hidden
-              className="mr-3 select-none align-[-0.25em] font-heading text-4xl leading-none text-muted-foreground/30"
-            >
-              ❝
-            </span>
-            <span className="bg-[var(--session-highlight-yellow)] px-1 py-0.5 [box-decoration-break:clone] [-webkit-box-decoration-break:clone]">
+        <figure className="my-2 flex flex-col items-center gap-1.5 px-4 text-center sm:px-8">
+          <span
+            aria-hidden
+            className="select-none text-4xl font-semibold leading-none text-[color:var(--scriba-hairline-soft)]"
+          >
+            “
+          </span>
+          <blockquote className="text-pretty text-lg font-semibold leading-relaxed text-[color:var(--scriba-ink-strong)] sm:text-xl">
+            <span className="bg-[linear-gradient(transparent_58%,var(--session-highlight-yellow)_58%)] px-1 py-0.5 [box-decoration-break:clone] [-webkit-box-decoration-break:clone]">
               {block.text}
             </span>
-            <span
-              aria-hidden
-              className="ml-3 select-none align-[-0.25em] font-heading text-4xl leading-none text-muted-foreground/30"
-            >
-              ❞
-            </span>
           </blockquote>
+          <span
+            aria-hidden
+            className="select-none text-4xl font-semibold leading-none text-[color:var(--scriba-hairline-soft)]"
+          >
+            ”
+          </span>
         </figure>
       );
     case "conclusion":
       return (
         <section
-          className="relative mt-4 flex flex-col gap-5 rounded-3xl border border-border p-7 animate-insight-gradient"
+          className="relative mt-2 flex flex-col gap-3 rounded-[26px] p-6 animate-insight-gradient"
           style={{
             backgroundImage: "var(--session-surface-quote)",
-            backgroundSize: "200% 200%",
+            backgroundSize: "200% 100%",
           }}
         >
-          <span className="text-[0.65rem] font-semibold tracking-widest text-muted-foreground uppercase">
+          <span className="text-[10px] font-semibold uppercase tracking-[0.14em] text-[#7FA9CC]">
             Conclusão
           </span>
-          <p className="text-pretty text-base leading-relaxed text-foreground">{block.text}</p>
+          <p className="text-pretty text-[15px] font-light leading-[1.7] text-[#3E5164]">
+            {block.text}
+          </p>
         </section>
       );
     case "quote":
       return (
-        <figure className="border-l-2 border-border pl-4">
-          <blockquote className="text-base italic leading-relaxed text-foreground/80">
+        <figure className="flex flex-col gap-1.5 border-l-2 border-[color:var(--scriba-hairline)] pl-4">
+          <blockquote className="text-[15px] font-light italic leading-relaxed text-[color:var(--scriba-ink-soft)]">
             {block.text}
           </blockquote>
           {block.author ? (
-            <figcaption className="mt-1 text-xs text-muted-foreground">— {block.author}</figcaption>
+            <figcaption className="text-xs font-normal text-[color:var(--scriba-ink-mute)]">
+              — {block.author}
+            </figcaption>
           ) : null}
         </figure>
       );

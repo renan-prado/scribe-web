@@ -1,36 +1,88 @@
 export default function HomeLoading() {
   return (
-    <main className="mx-auto flex min-h-svh w-full max-w-3xl flex-col gap-8 px-4 py-8 sm:gap-10 sm:px-6 sm:py-10">
-      <div className="flex flex-col gap-3">
-        <div className="flex items-center justify-between">
-          <div className="h-3 w-32 animate-skeleton-shimmer rounded-md bg-muted" />
-          <div className="h-7 w-7 animate-skeleton-shimmer rounded-md bg-muted [animation-delay:120ms]" />
+    <main className="mx-auto flex w-full max-w-3xl flex-col gap-6 px-4 py-6 sm:gap-8 sm:px-6 sm:py-8">
+      <SB className="h-3 w-32" />
+
+      <div className="flex flex-col gap-2">
+        <SB className="h-7 w-56" />
+        <SB className="h-3.5 w-40" />
+      </div>
+
+      <div className="flex flex-col gap-4">
+        {/* Reflection card */}
+        <div className="flex flex-col gap-4 rounded-[24px] border border-[color:var(--scriba-hairline-soft)] bg-white p-6 shadow-[0_6px_22px_rgba(79,168,240,0.13)]">
+          <div className="flex items-center gap-2">
+            <SB className="h-1.5 w-6 rounded-full" />
+            <SB className="h-3 w-32" />
+          </div>
+          <SB className="h-5 w-full" />
+          <SB className="h-5 w-4/5" />
+          <div className="flex flex-col gap-1 border-t border-[color:var(--scriba-hairline)] pt-3">
+            <SB className="h-3.5 w-52" />
+            <SB className="h-3 w-36" />
+          </div>
+          <div className="flex gap-2">
+            <SB className="h-10 flex-1 rounded-full" />
+            <SB className="h-10 flex-1 rounded-full" />
+          </div>
         </div>
-        <ul className="flex flex-col gap-3">
-          {[0, 1, 2].map((i) => (
-            <li
-              key={i}
-              className="flex items-start justify-between gap-4 rounded-lg border border-border bg-card px-5 py-4"
-            >
-              <div className="flex min-w-0 flex-1 flex-col gap-2">
-                <div
-                  className="h-4 w-1/2 animate-skeleton-shimmer rounded-md bg-muted"
-                  style={{ animationDelay: `${i * 120}ms` }}
-                />
-                <div
-                  className="h-3 w-4/5 animate-skeleton-shimmer rounded-md bg-muted"
-                  style={{ animationDelay: `${i * 120 + 100}ms` }}
-                />
-                <div
-                  className="h-3 w-2/5 animate-skeleton-shimmer rounded-md bg-muted"
-                  style={{ animationDelay: `${i * 120 + 200}ms` }}
-                />
-              </div>
-              <div className="size-8 shrink-0 animate-skeleton-shimmer rounded-md bg-muted" />
-            </li>
-          ))}
-        </ul>
+
+        {/* Practice card (mint) */}
+        <div className="flex flex-col gap-3.5 rounded-[24px] bg-[color:var(--scriba-mint)] p-5">
+          <div className="flex items-center justify-between gap-2">
+            <SB className="h-3 w-32 !bg-[color:var(--scriba-mint-accent)]/25" />
+            <SB className="h-6 w-24 rounded-full !bg-white/60" />
+          </div>
+          <SB className="h-4 w-full !bg-[color:var(--scriba-mint-accent)]/25" />
+          <SB className="h-4 w-4/5 !bg-[color:var(--scriba-mint-accent)]/25" />
+          <div className="flex items-center justify-between gap-3">
+            <SB className="h-8 w-40 !bg-[color:var(--scriba-mint-accent)]/25" />
+            <SB className="h-9 w-24 rounded-full !bg-[color:var(--scriba-blue-soft)]" />
+          </div>
+        </div>
+
+        <div className="grid gap-4 sm:grid-cols-2">
+          {/* Connection card (blue) */}
+          <div className="flex flex-col gap-3.5 rounded-[24px] bg-[color:var(--scriba-blue)] p-5">
+            <SB className="h-3 w-32 !bg-white/25" />
+            <SB className="h-5 w-full !bg-white/25" />
+            <SB className="h-5 w-3/5 !bg-white/25" />
+            <div className="flex flex-col gap-2">
+              <SB className="h-11 w-full rounded-2xl !bg-white/20" />
+              <SB className="h-11 w-full rounded-2xl !bg-white/20" />
+            </div>
+            <SB className="h-10 rounded-full !bg-[color:var(--scriba-yellow)]/60" />
+          </div>
+
+          {/* Memory card (cream) */}
+          <div className="flex flex-col gap-2.5 rounded-[24px] bg-[color:var(--scriba-cream)] p-5">
+            <SB className="h-3 w-32 !bg-[color:var(--scriba-cream-accent)]/30" />
+            <SB className="h-5 w-full !bg-[color:var(--scriba-cream-accent)]/30" />
+            <SB className="h-3 w-2/3 !bg-[color:var(--scriba-cream-accent)]/30" />
+            <SB className="h-3.5 w-full !bg-[color:var(--scriba-cream-accent)]/30" />
+            <SB className="h-3.5 w-3/4 !bg-[color:var(--scriba-cream-accent)]/30" />
+            <SB className="mt-1 h-8 w-28 rounded-full !bg-white/70" />
+          </div>
+        </div>
+
+        {/* Bible re-read (rose) */}
+        <div className="flex flex-col gap-2 rounded-[24px] bg-[color:var(--scriba-rose)] p-5">
+          <SB className="h-3 w-28 !bg-[color:var(--scriba-rose-accent)]/30" />
+          <SB className="h-4 w-24 !bg-[color:var(--scriba-rose-accent)]/30" />
+          <SB className="h-4 w-full !bg-[color:var(--scriba-rose-accent)]/30" />
+          <SB className="h-4 w-3/4 !bg-[color:var(--scriba-rose-accent)]/30" />
+          <SB className="mt-2 h-8 w-32 rounded-full !bg-white/70" />
+        </div>
       </div>
     </main>
+  );
+}
+
+function SB({ className }: { className: string }) {
+  return (
+    <div
+      aria-hidden
+      className={`animate-skeleton-shimmer rounded-md bg-[color:var(--scriba-hairline-soft)] ${className}`}
+    />
   );
 }

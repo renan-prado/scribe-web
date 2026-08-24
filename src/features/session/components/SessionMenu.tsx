@@ -27,8 +27,8 @@ export function SessionMenu({
     <DropdownMenu>
       <DropdownMenuTrigger
         className={cn(
-          "flex size-8 items-center justify-center rounded-full text-muted-foreground transition-colors outline-none",
-          "hover:bg-muted hover:text-foreground focus-visible:ring-2 focus-visible:ring-ring/40"
+          "flex size-8 items-center justify-center rounded-full text-[color:var(--scriba-ink-mute)] transition-colors outline-none",
+          "hover:bg-[color:var(--scriba-blue-soft)]/60 hover:text-[color:var(--scriba-ink)] focus-visible:ring-2 focus-visible:ring-ring/40"
         )}
         aria-label="Mais opções"
       >

@@ -20,8 +20,8 @@ export function RefreshSessionsButton() {
         });
       }}
       className={cn(
-        "inline-flex size-10 shrink-0 items-center justify-center rounded-full border border-border bg-card text-muted-foreground sm:size-9",
-        "transition-colors hover:border-foreground/25 hover:text-foreground",
+        "inline-flex size-9 shrink-0 items-center justify-center rounded-full border border-[color:var(--scriba-hairline-soft)] bg-white text-[color:var(--scriba-ink-mute)]",
+        "transition-colors hover:border-[color:var(--scriba-blue)]/40 hover:text-[color:var(--scriba-blue)]",
         "focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring/40",
         "disabled:cursor-not-allowed"
       )}

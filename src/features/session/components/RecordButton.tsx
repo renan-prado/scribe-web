@@ -22,58 +22,51 @@ export function RecordButton({
         onClick={onStop}
         aria-label="Parar gravação"
         className={cn(
-          "group flex items-center gap-4 rounded-full border border-border bg-background/90 px-5 py-2.5 text-sm text-foreground shadow-sm backdrop-blur outline-none transition-all",
-          "hover:border-foreground/40 hover:bg-background hover:shadow-md",
-          "focus-visible:ring-2 focus-visible:ring-ring/40 active:scale-95"
+          "group flex items-center gap-3 rounded-full bg-[color:var(--scriba-ink-strong)] px-5 py-3.5 text-white shadow-[0_10px_24px_rgba(51,65,79,0.28)] outline-none transition-all",
+          "hover:bg-[color:var(--scriba-ink-strong)]/95 hover:shadow-[0_12px_28px_rgba(51,65,79,0.35)]",
+          "focus-visible:ring-2 focus-visible:ring-white/40 active:scale-95"
         )}
       >
-        <span className="flex items-center gap-2">
-          <span className="relative flex size-2 items-center justify-center">
-            <span className="absolute inset-0 animate-ping rounded-full bg-foreground/40" />
-            <span className="size-2 rounded-full bg-foreground" />
-          </span>
-          <span className="font-mono tabular-nums">{formatMmSs(elapsedMs)}</span>
+        <span className="relative flex size-2.5 items-center justify-center">
+          <span className="absolute inset-0 animate-ping rounded-full bg-[#F0564E]/50" />
+          <span className="size-2.5 rounded-full bg-[#F0564E]" />
         </span>
-        <span
-          className={cn(
-            "flex items-center gap-1.5 text-muted-foreground transition-colors",
-            "group-hover:text-foreground"
-          )}
-        >
-          <Square className="size-3 fill-current" />
-          <span>parar</span>
+        <span className="font-mono text-sm font-medium tabular-nums tracking-wider">
+          {formatMmSs(elapsedMs)}
+        </span>
+        <span className="h-4 w-px bg-white/25" />
+        <span className="flex items-center gap-1.5 text-sm font-medium">
+          <Square className="size-2.5 fill-current" />
+          parar
         </span>
       </button>
     );
   }
   return (
-    <div className="relative flex size-28 items-center justify-center">
-      {running ? (
-        <span
-          aria-hidden
-          className="pointer-events-none absolute inset-0 animate-record-halo rounded-full bg-primary/10"
-        />
-      ) : null}
+    <div className="relative flex flex-col items-center gap-5">
       <button
         type="button"
         onClick={running ? onStop : onStart}
         aria-label={running ? "Parar gravação" : "Iniciar gravação"}
         className={cn(
-          "relative flex size-20 flex-col items-center justify-center rounded-full bg-primary text-primary-foreground shadow-lg outline-none transition-all duration-300 ease-out",
-          "hover:scale-[1.03] active:scale-95 focus-visible:ring-4 focus-visible:ring-ring/40"
+          "relative flex size-24 items-center justify-center rounded-full bg-[color:var(--scriba-blue)] text-white outline-none transition-colors duration-300 ease-out",
+          !running && "animate-scriba-halo",
+          "hover:bg-[color:var(--scriba-blue-hover)] active:scale-95",
+          "focus-visible:ring-4 focus-visible:ring-[color:var(--scriba-blue)]/40"
         )}
       >
         {running ? (
-          <>
-            <span className="font-mono text-sm tabular-nums">{formatMmSs(elapsedMs)}</span>
-            <span className="mt-0.5 flex items-center gap-1 text-[0.55rem] tracking-wider uppercase opacity-70">
-              <Square className="size-2 fill-current" /> Parar
-            </span>
-          </>
+          <Square className="size-7 fill-current" />
         ) : (
-          <Mic className="size-6" />
+          <Mic className="size-8" strokeWidth={2.2} />
         )}
       </button>
+      {!running ? (
+        <p className="max-w-xs text-pretty text-center text-sm font-light leading-relaxed text-[color:var(--scriba-ink-soft)]">
+          Toque para começar a gravar.
+          <br />O Scriba acompanha e organiza enquanto você ouve.
+        </p>
+      ) : null}
     </div>
   );
 }

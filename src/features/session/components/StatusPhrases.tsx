@@ -43,17 +43,17 @@ export function StatusPhrases({ hasSummary }: { hasSummary: boolean }) {
     <div
       role="status"
       aria-live="polite"
-      className="flex w-full items-start gap-2 text-left text-xs"
+      className="flex w-full items-center gap-2.5 text-left text-xs"
     >
-      <span className="mt-[1px] shrink-0">
+      <span className="mt-0 shrink-0 text-[color:var(--scriba-blue)]">
         <SpinnerGlyph />
       </span>
       <span
         key={`pool-${index}`}
         className={cn(
-          "flex-1 text-pretty leading-relaxed animate-status-fade animate-text-shimmer bg-clip-text text-transparent",
-          "bg-[linear-gradient(90deg,var(--muted-foreground)_0%,var(--muted-foreground)_35%,var(--foreground)_50%,var(--muted-foreground)_65%,var(--muted-foreground)_100%)]",
-          "bg-[length:200%_100%]"
+          "flex-1 text-pretty leading-relaxed font-normal animate-status-fade animate-text-shimmer bg-clip-text text-transparent",
+          "bg-[linear-gradient(90deg,#B7C3D0_20%,#4A5A6A_50%,#B7C3D0_80%)]",
+          "bg-[length:220%_100%]"
         )}
       >
         {pool[index]}

@@ -1,6 +1,6 @@
 "use client";
 
-import { Check, MapPin, Pencil, User } from "lucide-react";
+import { Check, MapPin, Pencil } from "lucide-react";
 import { useEffect, useState } from "react";
 import { Button } from "@/components/ui/button";
 import {
@@ -28,7 +28,14 @@ const MONTHS_PT = [
 ];
 
 function defaultRecordingTitle(date: Date): string {
-  return `Gravação dia ${date.getDate()} de ${MONTHS_PT[date.getMonth()]}.`;
+  return `Gravação dia ${date.getDate()} de ${MONTHS_PT[date.getMonth()]}`;
+}
+
+function initialsOf(name: string): string {
+  const parts = name.trim().split(/\s+/).filter(Boolean);
+  if (parts.length === 0) return "?";
+  if (parts.length === 1) return parts[0][0]?.toUpperCase() ?? "?";
+  return `${parts[0][0] ?? ""}${parts[parts.length - 1][0] ?? ""}`.toUpperCase();
 }
 
 function EditDialog({
@@ -105,12 +112,8 @@ export function RecordingHeader({
   const [titleDialogOpen, setTitleDialogOpen] = useState(false);
 
   const displayTitle =
-    title.trim() || (startedAt ? defaultRecordingTitle(startedAt) : "Nova gravação.");
-
-  const handleTitleSave = (value: string) => {
-    onTitleChange(value);
-    onTitleLock();
-  };
+    title.trim() || (startedAt ? defaultRecordingTitle(startedAt) : "Nova gravação");
+  const initials = initialsOf(speakerName);
 
   return (
     <>
@@ -120,57 +123,62 @@ export function RecordingHeader({
             type="button"
             onClick={() => setNameDialogOpen(true)}
             className={cn(
-              "group flex items-center gap-2 text-sm leading-none text-muted-foreground",
-              "rounded-md px-1 py-0.5 -mx-1 transition-colors hover:bg-muted hover:text-foreground"
+              "group flex items-center gap-2 rounded-full px-1 -mx-1 py-0.5 outline-none transition-colors",
+              "hover:bg-[color:var(--scriba-blue-soft)]/60 focus-visible:ring-2 focus-visible:ring-ring/40"
             )}
           >
-            <span className="flex size-6 shrink-0 items-center justify-center rounded-full border border-border transition-colors group-hover:border-foreground/30">
-              <User className="size-3" />
+            <span className="flex size-6 items-center justify-center rounded-full bg-[color:var(--scriba-blue-soft)] text-[10px] font-semibold text-[color:var(--scriba-blue)]">
+              {initials}
             </span>
-            <span className="font-medium leading-none">{speakerName}</span>
-            <Pencil className="size-3 opacity-0 transition-opacity group-hover:opacity-60" />
+            <span className="text-sm font-medium leading-none text-[color:var(--scriba-ink)]">
+              {speakerName}
+            </span>
+            <Pencil className="size-3 opacity-0 text-[color:var(--scriba-ink-soft)] transition-opacity group-hover:opacity-60" />
           </button>
-          {menu}
+          <div className="flex items-center gap-2">
+            {saved ? (
+              <span
+                role="status"
+                aria-label="Sessão salva"
+                className="inline-flex items-center gap-1.5 rounded-full bg-[color:var(--scriba-mint)] px-2.5 py-1 text-[10px] font-semibold uppercase tracking-wider text-[#3F7F66]"
+              >
+                <span className="size-1.5 rounded-full bg-[#4E9C7F]" />
+                Salvo
+                <Check className="size-3" />
+              </span>
+            ) : null}
+            {menu}
+          </div>
         </div>
 
-        <div className="flex flex-col items-start gap-2">
-          <button
-            type="button"
-            onClick={() => setTitleDialogOpen(true)}
-            className="group -mx-1 rounded-md px-1 py-0.5 text-left transition-colors hover:bg-muted"
+        <button
+          type="button"
+          onClick={() => setTitleDialogOpen(true)}
+          className="group -mx-1 rounded-md px-1 py-0.5 text-left transition-colors hover:bg-[color:var(--scriba-blue-soft)]/60"
+        >
+          <h1
+            key={displayTitle}
+            className="animate-content-fade font-heading text-2xl font-semibold leading-tight tracking-tight text-[color:var(--scriba-ink-strong)] sm:text-3xl md:text-4xl"
+            suppressHydrationWarning
           >
-            <h1
-              key={displayTitle}
-              className="animate-content-fade font-heading text-2xl font-bold leading-[1.15] tracking-tight text-foreground sm:text-3xl md:text-4xl"
-              suppressHydrationWarning
-            >
-              {displayTitle}
-              <Pencil className="ml-2 inline size-4 align-middle opacity-0 transition-opacity group-hover:opacity-40" />
-            </h1>
-          </button>
-          {saved ? (
-            <span
-              role="status"
-              aria-label="Sessão salva"
-              className="animate-content-fade inline-flex items-center gap-1 rounded-full border border-emerald-200 bg-emerald-50 px-2 py-0.5 text-[0.65rem] font-medium tracking-wide text-emerald-700 uppercase dark:border-emerald-900/50 dark:bg-emerald-950/40 dark:text-emerald-300"
-            >
-              <Check className="size-3" />
-              Salvo
-            </span>
-          ) : null}
-        </div>
+            {displayTitle}
+            <Pencil className="ml-2 inline size-4 align-middle opacity-0 text-[color:var(--scriba-ink-mute)] transition-opacity group-hover:opacity-60" />
+          </h1>
+        </button>
 
         <button
           type="button"
           onClick={() => setLocationDialogOpen(true)}
           className={cn(
-            "group mt-4 flex items-center gap-1.5 text-xs leading-none text-muted-foreground",
-            "rounded-md px-1 py-0.5 -mx-1 transition-colors hover:bg-muted hover:text-foreground w-fit"
+            "group -mx-1 mt-1 flex w-fit items-center gap-1.5 rounded-md px-1 py-0.5 outline-none transition-colors",
+            "hover:bg-[color:var(--scriba-blue-soft)]/60 focus-visible:ring-2 focus-visible:ring-ring/40"
           )}
         >
-          <MapPin className="size-3 shrink-0" />
-          <span className="leading-none">{speakerLocation}</span>
-          <Pencil className="size-3 opacity-0 transition-opacity group-hover:opacity-60" />
+          <MapPin className="size-3 shrink-0 text-[color:var(--scriba-ink-mute)]" />
+          <span className="text-xs font-light leading-none text-[color:var(--scriba-ink-mute)]">
+            {speakerLocation}
+          </span>
+          <Pencil className="size-3 opacity-0 text-[color:var(--scriba-ink-mute)] transition-opacity group-hover:opacity-60" />
         </button>
       </header>
 
@@ -193,7 +201,10 @@ export function RecordingHeader({
         onOpenChange={setTitleDialogOpen}
         heading="Editar título"
         currentValue={displayTitle}
-        onSave={handleTitleSave}
+        onSave={(v) => {
+          onTitleChange(v);
+          onTitleLock();
+        }}
       />
     </>
   );

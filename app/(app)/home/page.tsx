@@ -1,165 +1,348 @@
-import { MapPin, User } from "lucide-react";
 import type { Metadata } from "next";
-
-export const metadata: Metadata = { title: "Minhas lista" };
-
-import { revalidatePath } from "next/cache";
-import Link from "next/link";
+import { NavLink } from "@/components/NavLink";
 import { NewRecordingDialog } from "@/features/session/components/NewRecordingDialog";
-import { RefreshSessionsButton } from "@/features/session/components/RefreshSessionsButton";
-import { deleteSession, listSessions } from "@/lib/db/sessions";
-import { cn } from "@/lib/utils";
-import { SessionCardMenu } from "./SessionCardMenu";
+import { getCurrentProfile } from "@/lib/db/profiles";
+import { listSessions } from "@/lib/db/sessions";
 
-async function deleteSessionAction(formData: FormData): Promise<void> {
-  "use server";
-  const id = formData.get("id");
-  if (typeof id !== "string" || !id) return;
-  await deleteSession(id);
-  revalidatePath("/home");
+export const metadata: Metadata = { title: "Início" };
+
+const MONTHS_PT_LONG = [
+  "janeiro",
+  "fevereiro",
+  "março",
+  "abril",
+  "maio",
+  "junho",
+  "julho",
+  "agosto",
+  "setembro",
+  "outubro",
+  "novembro",
+  "dezembro",
+];
+
+const MONTHS_PT_SHORT = [
+  "jan",
+  "fev",
+  "mar",
+  "abr",
+  "mai",
+  "jun",
+  "jul",
+  "ago",
+  "set",
+  "out",
+  "nov",
+  "dez",
+];
+
+function todayLabel(now: Date): string {
+  return `Hoje, ${now.getDate()} de ${MONTHS_PT_LONG[now.getMonth()]}`;
 }
 
-const DATE_FMT = new Intl.DateTimeFormat("pt-BR", {
-  hour: "2-digit",
-  minute: "2-digit",
-});
-
-const DATE_GROUP_FMT = new Intl.DateTimeFormat("pt-BR", {
-  day: "numeric",
-  month: "long",
-  weekday: "long",
-});
-
-function formatDateGroup(isoDate: string): string {
-  const d = new Date(isoDate);
-  const today = new Date();
-  const yesterday = new Date(today);
-  yesterday.setDate(today.getDate() - 1);
-
-  const isSameDay = (a: Date, b: Date) =>
-    a.getFullYear() === b.getFullYear() &&
-    a.getMonth() === b.getMonth() &&
-    a.getDate() === b.getDate();
-
-  if (isSameDay(d, today)) return "Hoje";
-  if (isSameDay(d, yesterday)) return "Ontem";
-
-  const formatted = DATE_GROUP_FMT.format(d);
-  // Capitalise first letter and replace comma separator
-  return formatted.charAt(0).toUpperCase() + formatted.slice(1);
+function shortDate(iso: string): string {
+  const d = new Date(iso);
+  return `${d.getDate()} ${MONTHS_PT_SHORT[d.getMonth()]}`;
 }
 
-function sessionDateKey(isoDate: string): string {
-  const d = new Date(isoDate);
-  return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, "0")}-${String(d.getDate()).padStart(2, "0")}`;
+function firstNameOf(fullName: string | null | undefined): string {
+  if (!fullName) return "amigo";
+  const trimmed = fullName.trim();
+  if (!trimmed) return "amigo";
+  return trimmed.split(/\s+/)[0];
 }
 
-function formatDuration(ms: number | null): string {
-  if (!ms || ms <= 0) return "";
-  const totalSec = Math.round(ms / 1000);
-  const m = Math.floor(totalSec / 60);
-  const s = totalSec % 60;
-  if (m === 0) return `${s}s`;
-  return `${m}m ${s.toString().padStart(2, "0")}s`;
+function greetingFor(hour: number): string {
+  if (hour < 5) return "Boa noite";
+  if (hour < 12) return "Bom dia";
+  if (hour < 18) return "Boa tarde";
+  return "Boa noite";
 }
 
 export default async function HomePage() {
-  const sessionsResult = await listSessions()
-    .then((s) => ({ ok: true as const, sessions: s }))
-    .catch((err: Error) => ({ ok: false as const, message: err.message }));
+  const [profile, sessions] = await Promise.all([
+    getCurrentProfile().catch(() => null),
+    listSessions().catch(() => [] as Awaited<ReturnType<typeof listSessions>>),
+  ]);
 
-  const sessions = sessionsResult.ok ? sessionsResult.sessions : [];
-  const loadError = sessionsResult.ok ? null : sessionsResult.message;
+  const now = new Date();
+  const firstName = firstNameOf(profile?.displayName);
+  const greeting = greetingFor(now.getHours());
+
+  const latest = sessions[0] ?? null;
+  const older = sessions[3] ?? null;
 
   return (
-    <main className="mx-auto flex min-h-svh w-full max-w-3xl flex-col gap-8 px-4 py-8 sm:gap-10 sm:px-6 sm:py-10">
-      {loadError ? (
-        <div className="rounded-md border border-destructive/40 bg-destructive/5 p-4 text-sm text-destructive">
-          Não consegui carregar as sessões: {loadError}
-        </div>
-      ) : sessions.length === 0 ? (
-        <div className="flex flex-col items-center gap-4 rounded-lg border border-dashed border-border p-8 text-center">
-          <p className="text-sm text-muted-foreground">
-            Nenhuma sessão salva ainda. Comece pela primeira gravação.
-          </p>
-          <NewRecordingDialog />
-        </div>
-      ) : (
-        <div className="flex flex-col gap-3">
-          <div className="flex justify-end">
-            <RefreshSessionsButton />
+    <main className="mx-auto flex w-full max-w-3xl flex-col gap-6 px-4 py-6 sm:gap-8 sm:px-6 sm:py-8">
+      <div className="flex items-center justify-between gap-3">
+        <p className="text-xs font-medium text-[color:var(--scriba-ink-soft)]">{todayLabel(now)}</p>
+      </div>
+
+      <div className="flex flex-col gap-1.5">
+        <h1 className="font-heading text-2xl font-semibold leading-tight tracking-tight text-[color:var(--scriba-ink-strong)] sm:text-3xl">
+          {greeting}, {firstName}!
+        </h1>
+        <p className="text-sm font-light text-[color:var(--scriba-ink-soft)]">
+          Vamos relembrar algo importante?
+        </p>
+      </div>
+
+      <div className="flex flex-col gap-4">
+        {sessions.length === 0 ? (
+          <div className="flex flex-col items-start gap-4 rounded-3xl border border-dashed border-[color:var(--scriba-hairline-soft)] bg-white p-6 shadow-[0_6px_22px_rgba(79,168,240,0.08)]">
+            <div className="flex items-center gap-2">
+              <div className="h-1.5 w-6 rounded-full bg-[color:var(--scriba-yellow)]" />
+              <span className="text-[11px] font-semibold uppercase tracking-wider text-[color:var(--scriba-yellow-hover)]">
+                Comece por aqui
+              </span>
+            </div>
+            <p className="text-pretty text-lg leading-snug text-[color:var(--scriba-ink-strong)]">
+              Nenhum sermão gravado ainda. Comece pela primeira gravação e o Scriba passa a montar
+              seu feed a partir do que você ouvir.
+            </p>
+            <NewRecordingDialog />
           </div>
-          <div className="flex flex-col gap-6">
-            {(() => {
-              const groups: { key: string; label: string; items: typeof sessions }[] = [];
-              for (const s of sessions) {
-                const key = sessionDateKey(s.createdAt);
-                const last = groups[groups.length - 1];
-                if (last?.key === key) {
-                  last.items.push(s);
-                } else {
-                  groups.push({ key, label: formatDateGroup(s.createdAt), items: [s] });
-                }
-              }
-              return groups.map((group) => (
-                <div key={group.key} className="flex flex-col gap-2">
-                  <p className="text-xs font-semibold uppercase tracking-wider text-muted-foreground/60">
-                    {group.label}
-                  </p>
-                  <ul className="flex flex-col gap-2">
-                    {group.items.map((s) => {
-                      const when = DATE_FMT.format(new Date(s.createdAt));
-                      const dur = formatDuration(s.durationMs);
-                      return (
-                        <li
-                          key={s.id}
-                          className={cn(
-                            "group relative flex items-start justify-between gap-2 rounded-lg border border-border bg-card px-4 py-3.5 sm:gap-3 sm:px-5 sm:py-4",
-                            "transition-colors hover:border-foreground/25 hover:bg-muted/40"
-                          )}
-                        >
-                          <Link
-                            href={`/recording/${s.id}/summary`}
-                            className="-mx-1 flex min-w-0 flex-1 flex-col gap-1.5 rounded-md px-1 outline-none focus-visible:ring-2 focus-visible:ring-ring/40 sm:gap-2"
-                          >
-                            <span className="line-clamp-2 text-[0.95rem] font-medium leading-snug text-foreground sm:text-base">
-                              {s.title?.trim() || "Sessão sem título"}
-                            </span>
-                            {s.shortSummary ? (
-                              <span className="line-clamp-2 text-[0.8rem] leading-snug text-muted-foreground sm:text-sm">
-                                {s.shortSummary}
-                              </span>
-                            ) : null}
-                            <span className="mt-0.5 flex flex-wrap items-center gap-x-2.5 gap-y-1 text-[0.7rem] tracking-wide text-muted-foreground/80">
-                              {s.speakerName?.trim() ? (
-                                <span className="inline-flex min-w-0 items-center gap-1">
-                                  <User className="size-3 shrink-0" />
-                                  <span className="truncate">{s.speakerName}</span>
-                                </span>
-                              ) : null}
-                              {s.speakerLocation?.trim() ? (
-                                <span className="inline-flex min-w-0 items-center gap-1">
-                                  <MapPin className="size-3 shrink-0" />
-                                  <span className="truncate">{s.speakerLocation}</span>
-                                </span>
-                              ) : null}
-                              <span className="whitespace-nowrap">
-                                {when}
-                                {dur ? ` · ${dur}` : ""}
-                              </span>
-                            </span>
-                          </Link>
-                          <SessionCardMenu sessionId={s.id} deleteAction={deleteSessionAction} />
-                        </li>
-                      );
-                    })}
-                  </ul>
-                </div>
-              ));
-            })()}
-          </div>
+        ) : latest ? (
+          <ReflectionCard
+            title={latest.title ?? "Sessão sem título"}
+            speaker={latest.speakerName}
+            date={shortDate(latest.createdAt)}
+            shortSummary={latest.shortSummary}
+            href={`/recording/${latest.id}/summary`}
+          />
+        ) : null}
+
+        <PracticeCard sourceTitle={sessions[1]?.title ?? undefined} />
+
+        <div className="grid gap-4 sm:grid-cols-2">
+          <ConnectionCard sessions={sessions} />
+          <MemoryCard oldest={older} />
         </div>
-      )}
+
+        <BibleReadCard />
+        <EditorialCard />
+      </div>
     </main>
+  );
+}
+
+function ReflectionCard({
+  title,
+  speaker,
+  date,
+  shortSummary,
+  href,
+}: {
+  title: string;
+  speaker: string | null;
+  date: string;
+  shortSummary: string | null;
+  href: string;
+}) {
+  const quote =
+    shortSummary?.trim() ||
+    "“A nossa confiança em Deus não nasce da ausência de incertezas, mas de saber quem Ele é.”";
+  const speakerLine = [speaker, date].filter(Boolean).join(" · ");
+  return (
+    <article className="flex flex-col gap-4 rounded-[24px] border border-[color:var(--scriba-hairline-soft)] bg-white p-6 shadow-[0_6px_22px_rgba(79,168,240,0.13)]">
+      <div className="flex items-center gap-2">
+        <div className="h-1.5 w-6 rounded-full bg-[color:var(--scriba-yellow)]" />
+        <span className="text-[11px] font-semibold uppercase tracking-wider text-[color:var(--scriba-yellow-hover)]">
+          Continue refletindo
+        </span>
+      </div>
+      <p className="text-pretty text-lg font-medium leading-snug text-[color:var(--scriba-ink-strong)] sm:text-xl">
+        {quote}
+      </p>
+      <div className="flex flex-col gap-0.5 border-t border-[color:var(--scriba-hairline)] pt-3">
+        <span className="text-sm font-semibold text-[color:var(--scriba-ink)]">{title}</span>
+        {speakerLine ? (
+          <span className="text-xs font-light text-[color:var(--scriba-ink-mute)]">
+            {speakerLine}
+          </span>
+        ) : null}
+      </div>
+      <div className="flex gap-2">
+        <NavLink
+          href={href}
+          contentClassName="inline-flex items-center justify-center gap-1.5"
+          className="inline-flex flex-1 items-center justify-center rounded-full bg-[color:var(--scriba-blue)] px-4 py-3 text-[11px] font-semibold uppercase tracking-wider text-white shadow-[0_5px_14px_rgba(79,168,240,0.32)] transition-colors hover:bg-[color:var(--scriba-blue-hover)]"
+        >
+          Aprofundar
+        </NavLink>
+        <NavLink
+          href={href}
+          contentClassName="inline-flex items-center justify-center gap-1.5"
+          className="inline-flex flex-1 items-center justify-center rounded-full bg-[color:var(--scriba-blue-soft)]/60 px-4 py-3 text-[11px] font-semibold uppercase tracking-wider text-[color:var(--scriba-ink-soft)] transition-colors hover:bg-[color:var(--scriba-blue-soft)]"
+        >
+          Relembrar
+        </NavLink>
+      </div>
+    </article>
+  );
+}
+
+function PracticeCard({ sourceTitle }: { sourceTitle?: string }) {
+  return (
+    <article className="flex flex-col gap-3.5 rounded-[24px] bg-[color:var(--scriba-mint)] p-5">
+      <div className="flex items-center justify-between gap-2">
+        <span className="text-[11px] font-semibold uppercase tracking-wider text-[color:var(--scriba-mint-accent)]">
+          Coloque em prática
+        </span>
+        <span className="rounded-full bg-white/60 px-3 py-1 text-[10px] font-semibold uppercase tracking-wider text-[color:var(--scriba-mint-accent)]">
+          Prática de hoje
+        </span>
+      </div>
+      <p className="text-pretty text-base leading-snug text-[color:var(--scriba-mint-ink)]">
+        Pense em três coisas pelas quais você pode agradecer a Deus hoje e reserve alguns minutos
+        para orar por elas.
+      </p>
+      <div className="h-px w-full bg-[color:var(--scriba-mint-accent)]/25" />
+      <div className="flex items-center justify-between gap-3">
+        <p className="text-[11px] font-light leading-snug text-[color:var(--scriba-mint-accent)]">
+          Você ouviu sobre gratidão em
+          <br />
+          <span className="font-medium text-[color:var(--scriba-mint-accent)]">
+            {sourceTitle?.trim() || "Um coração grato"}
+          </span>
+        </p>
+        <button
+          type="button"
+          className="rounded-full bg-[color:var(--scriba-blue)] px-5 py-2.5 text-[11px] font-semibold uppercase tracking-wider text-white shadow-[0_5px_12px_rgba(79,168,240,0.24)] transition-colors hover:bg-[color:var(--scriba-blue-hover)]"
+        >
+          Praticar
+        </button>
+      </div>
+    </article>
+  );
+}
+
+function ConnectionCard({ sessions }: { sessions: Awaited<ReturnType<typeof listSessions>> }) {
+  const picks = sessions.slice(1, 3);
+  return (
+    <article className="flex flex-col gap-3.5 rounded-[24px] bg-[color:var(--scriba-blue)] p-5 text-white shadow-[0_10px_26px_rgba(79,168,240,0.3)]">
+      <span className="text-[11px] font-semibold uppercase tracking-wider text-white/80">
+        Uma conexão interessante
+      </span>
+      <p className="text-pretty text-lg font-medium leading-snug">
+        Dois sermões que você ouviu falam sobre{" "}
+        <span className="text-[color:var(--scriba-yellow)]">ansiedade e confiança em Deus</span>.
+      </p>
+      <div className="flex flex-col gap-2">
+        {(picks.length === 2
+          ? picks
+          : [
+              { id: "mock-1", title: "Quando o medo chega", speakerName: "Pr. Daniel Souza" },
+              { id: "mock-2", title: "Descansando na providência", speakerName: "Pr. João Silva" },
+            ]
+        ).map((s) => (
+          <div key={s.id} className="flex flex-col gap-0.5 rounded-2xl bg-white/15 px-4 py-3">
+            <span className="text-sm font-semibold">{s.title ?? "Sermão"}</span>
+            <span className="text-[11px] font-light text-white/80">
+              {s.speakerName ?? "Autor desconhecido"}
+            </span>
+          </div>
+        ))}
+      </div>
+      <p className="text-xs font-light leading-snug text-white/80">
+        Os dois abordam maneiras diferentes de responder à incerteza.
+      </p>
+      <button
+        type="button"
+        className="rounded-full bg-[color:var(--scriba-yellow)] px-4 py-3 text-[11px] font-semibold uppercase tracking-wider text-[#5A4409] transition-colors hover:bg-[color:var(--scriba-yellow-hover)]"
+      >
+        Explorar conexão
+      </button>
+    </article>
+  );
+}
+
+function MemoryCard({
+  oldest,
+}: {
+  oldest: Awaited<ReturnType<typeof listSessions>>[number] | null;
+}) {
+  const title = oldest?.title?.trim() || "O perigo de uma fé superficial";
+  const speaker = oldest?.speakerName?.trim() || "Pr. Marcos Almeida";
+  const location = oldest?.speakerLocation?.trim() || "Igreja Batista Central";
+  const summary =
+    oldest?.shortSummary?.trim() ||
+    "“Raízes profundas não aparecem no dia da tempestade — elas crescem em silêncio, muito antes.”";
+  return (
+    <article className="flex flex-col gap-2 rounded-[24px] bg-[color:var(--scriba-cream)] p-5">
+      <span className="text-[11px] font-semibold uppercase tracking-wider text-[color:var(--scriba-cream-accent)]">
+        Há algum tempo você ouviu
+      </span>
+      <h3 className="text-lg font-semibold leading-tight tracking-tight text-[color:var(--scriba-cream-ink)]">
+        {title}
+      </h3>
+      <p className="text-[11px] font-light text-[#9C8A55]">
+        {speaker} · {location}
+      </p>
+      <p className="text-pretty text-sm font-light leading-snug text-[#7A6836]">{summary}</p>
+      <button
+        type="button"
+        className="mt-1 self-start rounded-full bg-white px-5 py-2.5 text-[11px] font-semibold uppercase tracking-wider text-[color:var(--scriba-cream-accent)]"
+      >
+        Relembrar
+      </button>
+    </article>
+  );
+}
+
+function BibleReadCard() {
+  return (
+    <article className="flex flex-col gap-2 rounded-[24px] bg-[color:var(--scriba-rose)] p-5">
+      <span className="text-[11px] font-semibold uppercase tracking-wider text-[color:var(--scriba-rose-accent)]">
+        Releia este texto
+      </span>
+      <p className="text-sm font-semibold text-[color:var(--scriba-rose-ink)]">Romanos 8:28</p>
+      <p className="text-pretty text-[15px] font-light italic leading-snug text-[#83604F]">
+        Sabemos que Deus age em todas as coisas para o bem daqueles que o amam…
+      </p>
+      <p className="pt-1 text-[11px] font-light leading-snug text-[#A08373]">
+        Mencionado em{" "}
+        <span className="font-medium text-[color:var(--scriba-rose-ink)]">
+          Providência em meio ao sofrimento
+        </span>
+      </p>
+      <button
+        type="button"
+        className="mt-2 self-start rounded-full bg-white px-5 py-2.5 text-[11px] font-semibold uppercase tracking-wider text-[color:var(--scriba-rose-accent)]"
+      >
+        Revisitar sermão
+      </button>
+    </article>
+  );
+}
+
+function EditorialCard() {
+  return (
+    <article className="flex flex-col gap-2 rounded-[24px] bg-[color:var(--scriba-lilac)] p-5">
+      <div className="flex items-center gap-2">
+        <span
+          aria-hidden
+          className="flex size-4 items-center justify-center rounded-md bg-[color:var(--scriba-blue)] text-[10px] font-bold text-white"
+        >
+          S
+        </span>
+        <span className="text-[11px] font-semibold uppercase tracking-wider text-[color:var(--scriba-lilac-accent)]">
+          Do Scriba
+        </span>
+      </div>
+      <h3 className="text-lg font-semibold leading-tight tracking-tight text-[color:var(--scriba-lilac-ink)]">
+        O que significa meditar na Palavra?
+      </h3>
+      <p className="text-pretty text-[13px] font-light leading-snug text-[#77869F]">
+        Uma introdução curta a uma prática antiga — e por que ela não tem nada a ver com esvaziar a
+        mente.
+      </p>
+      <button
+        type="button"
+        className="mt-2 self-start rounded-full bg-[color:var(--scriba-blue)] px-5 py-2.5 text-[11px] font-semibold uppercase tracking-wider text-white shadow-[0_5px_12px_rgba(79,168,240,0.26)] transition-colors hover:bg-[color:var(--scriba-blue-hover)]"
+      >
+        Ler · 4 min
+      </button>
+    </article>
   );
 }

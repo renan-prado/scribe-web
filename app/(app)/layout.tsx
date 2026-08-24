@@ -1,5 +1,6 @@
 import type { ReactNode } from "react";
 import { AppHeader } from "@/components/AppHeader";
+import { MobileBottomNav } from "@/components/MobileBottomNav";
 import { UserMenu } from "@/features/auth/components/UserMenu";
 import { NewRecordingDialog } from "@/features/session/components/NewRecordingDialog";
 import { isCurrentUserAdmin } from "@/lib/auth/require-admin";
@@ -16,19 +17,24 @@ export default async function AppLayout({ children }: { children: ReactNode }) {
       <AppHeader
         actions={
           <>
-            <NewRecordingDialog />
+            <div className="hidden sm:block">
+              <NewRecordingDialog />
+            </div>
             {profile ? (
-              <UserMenu
-                displayName={profile.displayName ?? null}
-                email={profile.email ?? null}
-                avatarUrl={profile.avatarUrl ?? null}
-                isAdmin={isAdmin}
-              />
+              <div className="hidden sm:block">
+                <UserMenu
+                  displayName={profile.displayName ?? null}
+                  email={profile.email ?? null}
+                  avatarUrl={profile.avatarUrl ?? null}
+                  isAdmin={isAdmin}
+                />
+              </div>
             ) : null}
           </>
         }
       />
-      {children}
+      <div className="pb-36 sm:pb-0">{children}</div>
+      <MobileBottomNav />
     </>
   );
 }

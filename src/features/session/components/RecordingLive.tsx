@@ -349,7 +349,7 @@ export function RecordingLive({
   }, []);
 
   return (
-    <main className="mx-auto flex flex-1 w-full max-w-3xl flex-col gap-8 px-4 py-8 sm:gap-10 sm:px-6 sm:py-10">
+    <main className="mx-auto flex flex-1 w-full max-w-3xl flex-col gap-6 px-4 py-8 sm:gap-8 sm:px-6 sm:py-10">
       {!hasStarted ? (
         <div className="flex flex-1 flex-col items-center justify-center">
           <RecordButton running={running} elapsedMs={elapsedMs} onStart={start} onStop={stop} />
@@ -372,13 +372,13 @@ export function RecordingLive({
           onClick={resumeAutoFollow}
           className={cn(
             "fixed bottom-24 left-1/2 z-40 -translate-x-1/2",
-            "inline-flex items-center gap-2 rounded-full border border-border bg-background/95 px-4 py-2 shadow-lg backdrop-blur",
-            "text-xs font-semibold text-foreground/85",
-            "transition-colors outline-none hover:bg-muted focus-visible:ring-2 focus-visible:ring-ring/40"
+            "inline-flex items-center gap-2 rounded-full border border-[color:var(--scriba-hairline)] bg-white/95 px-4 py-2 shadow-lg backdrop-blur",
+            "text-xs font-semibold text-[color:var(--scriba-ink)]",
+            "transition-colors outline-none hover:bg-[color:var(--scriba-blue-soft)]/60 focus-visible:ring-2 focus-visible:ring-ring/40"
           )}
         >
           Ler novidades
-          <span className="inline-flex min-w-5 items-center justify-center rounded-full bg-foreground px-1.5 text-[0.65rem] font-bold text-background">
+          <span className="inline-flex min-w-5 items-center justify-center rounded-full bg-[color:var(--scriba-blue)] px-1.5 text-[0.65rem] font-bold text-white">
             {pendingNew}
           </span>
         </button>
@@ -411,7 +411,7 @@ export function RecordingLive({
               />
             }
           />
-          <div className="h-px w-full bg-border" />
+          <div className="h-px w-full bg-[color:var(--scriba-hairline)]" />
           <div className="flex-1">
             {running || (!summary && !finalizing) ? (
               <Feed

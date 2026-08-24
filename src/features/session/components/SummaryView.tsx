@@ -22,15 +22,15 @@ export function SummaryView({
 
   if (hasBody) {
     return (
-      <div className="flex flex-col gap-8">
+      <div className="flex flex-col gap-7">
         {summary!.shortSummary ? (
-          <div className="-mb-2 flex flex-col gap-2 border-l-2 border-foreground/60 pl-4">
-            <span className="text-[0.65rem] font-semibold tracking-widest text-muted-foreground uppercase">
+          <div className="-mb-2 flex flex-col gap-2 border-l-[2.5px] border-[color:var(--scriba-ink-soft)] pl-4">
+            <span className="text-[10px] font-semibold uppercase tracking-[0.14em] text-[color:var(--scriba-ink-mute)]">
               Ideia central
             </span>
             <p
               key={summary!.shortSummary}
-              className="animate-content-fade text-pretty text-lg font-medium leading-snug text-foreground text-balance"
+              className="animate-content-fade text-pretty text-lg font-medium leading-snug text-[color:var(--scriba-ink-strong)] text-balance"
             >
               {summary!.shortSummary}
             </p>
@@ -51,5 +51,9 @@ export function SummaryView({
   if (running || hasTranscript) {
     return <SummarySkeleton />;
   }
-  return <p className="text-sm text-muted-foreground">O resumo aparecerá aqui.</p>;
+  return (
+    <p className="text-sm font-light text-[color:var(--scriba-ink-mute)]">
+      O resumo aparecerá aqui.
+    </p>
+  );
 }

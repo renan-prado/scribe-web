@@ -1,48 +1,53 @@
 "use client";
 
-import { BookOpen, Quote } from "lucide-react";
-import type { ElementType } from "react";
-import { AiIcon } from "@/features/session/components/AiIcon";
 import { PassageVerses } from "@/features/session/components/PassageVerses";
 import { useVerseFetch } from "@/features/session/hooks/useVerseFetch";
 import type { FeedItem } from "@/lib/domain/feed";
 import { feedItemOrigin, parseVerseReference } from "@/lib/domain/feed";
 import { cn } from "@/lib/utils";
 
+function BookGlyph({ className }: { className?: string }) {
+  return (
+    <span
+      aria-hidden
+      className={cn("block rounded-[3px_5px_5px_3px] border-[1.6px] border-current", className)}
+    />
+  );
+}
+
 /**
- * Avatar for AI-authored feed messages. Placeholder icon for now — swap for a
- * real logo when the brand is settled. Sized to sit flush against the top-left
- * of the card bubble.
+ * Avatar for AI-authored feed messages: a diamond mark on a soft-blue circle.
+ * Sits flush against the top-left of the card bubble.
  */
 function AiAvatar() {
   return (
     <div
       aria-hidden
-      className="flex size-9 shrink-0 items-center justify-center rounded-full border border-border bg-muted text-muted-foreground"
+      className="flex size-8 shrink-0 items-center justify-center rounded-full bg-[color:var(--scriba-blue-soft)]"
     >
-      <AiIcon className="size-4" />
+      <span className="block size-2.5 rotate-45 rounded-[3px] bg-[color:var(--scriba-blue)]" />
     </div>
   );
 }
 
-type ChipMeta = { icon: ElementType<{ className?: string }> | null; label: string };
+type ChipMeta = { icon: "book" | null; label: string };
 
 function chipFor(item: FeedItem): ChipMeta {
   switch (item.kind) {
     case "citedVerse":
-      return { icon: BookOpen, label: "Leitura Bíblica" };
+      return { icon: "book", label: "Leitura bíblica" };
     case "speakerHighlight":
-      return { icon: Quote, label: "Destaque" };
+      return { icon: null, label: "Destaque" };
     case "speakerEcho":
       return { icon: null, label: "Frase para relembrar" };
     case "speakerCitation":
-      return { icon: Quote, label: "Citação" };
+      return { icon: null, label: "Citação na fala" };
     case "relatedVerse":
-      return { icon: BookOpen, label: "Leia também" };
+      return { icon: "book", label: "Leia também" };
     case "context":
       return { icon: null, label: item.label || "Contexto" };
     case "suggestedQuote":
-      return { icon: Quote, label: "Citação sugerida" };
+      return { icon: null, label: "Citação sugerida" };
   }
 }
 
@@ -64,14 +69,12 @@ function isConcreteSource(source: string): boolean {
 }
 
 /**
- * Single feed card. Card treatment carries the ORIGIN (recording → quote
- * gradient like bibleQuote; ai → outlined muted). Chip on top carries the
- * TYPE. Verse-bearing kinds are clickable and delegate to the parent's
- * onOpenVerse handler, which drives the shared bible-verse dialog.
+ * Single feed card. Speaker-sourced items sit on a light-blue animated gradient
+ * (matches BlockRenderer's bibleQuote/conclusion). AI-authored items render as
+ * a chat bubble from a diamond avatar with a dashed outline.
  *
- * speakerHighlight is the one exception — it renders as a standalone
- * centered blockquote (no card frame) to match the original "highlight"
- * treatment in BlockRenderer.
+ * speakerHighlight and speakerEcho break out of the card frame entirely — see
+ * HighlightBlock / EchoBlock.
  */
 export function FeedItemCard({
   item,
@@ -88,19 +91,10 @@ export function FeedItemCard({
     return <EchoBlock text={item.text} />;
   }
 
-  // Prompt-authored placeholder — the model was told "if the pastor only
-  // mentioned a reference without quoting, emit speakerCitation with text
-  // 'referência mencionada em passagem: X'". That text is meaningless in the
-  // UI. Suppress the card entirely; the extract pipeline should be emitting
-  // citedVerse for these passing mentions now.
   if (item.kind === "speakerCitation" && /^referência mencionada/i.test(item.text.trim())) {
     return null;
   }
 
-  // Chapter-only citations ("João 21") give the listener nothing to read — no
-  // verse text to fetch, no click target worth opening. Wait until a
-  // verse-specific ref for the same passage arrives (see
-  // dedupeConsecutiveChapters) before surfacing a card.
   if (item.kind === "citedVerse") {
     const parsed = parseVerseReference(item.reference);
     if (!parsed || parsed.startVerse == null) return null;
@@ -108,40 +102,36 @@ export function FeedItemCard({
 
   const origin = feedItemOrigin(item);
   const chip = chipFor(item);
-  const ChipIcon = chip.icon;
-
-  // AI-authored cards render as chat messages from the AI: avatar on the left,
-  // bubble with rounded-tl-none flush against it. Recording-sourced cards
-  // stand alone (they represent the SPEAKER's material, not an AI message).
   const isAi = origin === "ai";
+
   const surfaceClass = cn(
-    "relative flex flex-1 flex-col gap-4 p-6",
+    "relative flex flex-1 flex-col gap-3",
     isAi
-      ? "rounded-3xl rounded-tl-none border-2 border-dashed border-border/80 bg-muted/30"
-      : "rounded-3xl border border-border animate-insight-gradient"
+      ? "rounded-3xl rounded-tl-md border border-dashed border-[color:var(--scriba-blue-soft)] bg-[color:var(--scriba-blue-soft)]/40 px-5 py-4"
+      : "rounded-[22px] p-5 animate-insight-gradient"
   );
   const surfaceStyle = isAi
     ? undefined
     : {
         backgroundImage: "var(--session-surface-quote)",
-        backgroundSize: "200% 200%",
+        backgroundSize: "200% 100%",
       };
+
+  const chipColor = isAi ? "text-[color:var(--scriba-ink-mute)]" : "text-[#7FA9CC]";
 
   const card = (
     <article className={surfaceClass} style={surfaceStyle}>
-      <div className="flex items-center justify-between gap-3 text-[0.65rem] font-semibold tracking-widest text-muted-foreground uppercase">
-        <div className="flex items-center gap-1.5">
-          {ChipIcon ? <ChipIcon className="size-3" /> : null}
-          <span>{chip.label}</span>
-        </div>
+      <div className={cn("flex items-center gap-1.5", chipColor)}>
+        {chip.icon === "book" ? <BookGlyph className="size-3" /> : null}
+        <span className="text-[10px] font-semibold uppercase tracking-[0.14em]">{chip.label}</span>
       </div>
-      <FeedItemBody item={item} onOpenVerse={onOpenVerse} />
+      <FeedItemBody item={item} onOpenVerse={onOpenVerse} isAi={isAi} />
     </article>
   );
 
   if (isAi) {
     return (
-      <div className="animate-content-fade flex items-start gap-3">
+      <div className="animate-content-fade flex items-start gap-2.5">
         <AiAvatar />
         {card}
       </div>
@@ -151,20 +141,13 @@ export function FeedItemCard({
   return <div className="animate-content-fade">{card}</div>;
 }
 
-/**
- * Rendered when a sermon-echo lands: a literal phrase the speaker just said,
- * shown as a raw pull-quote with no card frame — the "reality check" between
- * runs of AI cards. Deliberately different treatment from HighlightBlock
- * (yellow highlight, curated) and from speakerCitation (attributed): this is
- * the pastor's own voice, mid-flow, unadorned.
- */
 function EchoBlock({ text }: { text: string }) {
   return (
-    <figure className="animate-content-fade my-4 border-l-2 border-border pl-5">
-      <figcaption className="mb-2 text-[0.65rem] font-semibold tracking-widest text-muted-foreground uppercase">
+    <figure className="animate-content-fade my-2 flex flex-col gap-2 border-l-2 border-[color:var(--scriba-hairline)] py-1 pl-4">
+      <figcaption className="text-[10px] font-semibold uppercase tracking-[0.14em] text-[color:var(--scriba-ink-mute)]">
         Frase para relembrar
       </figcaption>
-      <blockquote className="text-pretty font-heading text-xl italic leading-relaxed text-foreground/85">
+      <blockquote className="text-pretty text-base italic leading-relaxed text-[color:var(--scriba-ink)]/90 sm:text-lg">
         {text}
       </blockquote>
     </figure>
@@ -173,46 +156,37 @@ function EchoBlock({ text }: { text: string }) {
 
 function HighlightBlock({ text }: { text: string }) {
   return (
-    <figure className="animate-content-fade my-4 px-4 text-center sm:px-8">
-      <blockquote className="text-pretty text-lg font-semibold leading-loose tracking-tight text-foreground sm:text-xl">
-        <span
-          aria-hidden
-          className="mr-3 select-none align-[-0.25em] font-heading text-4xl leading-none text-muted-foreground/30"
-        >
-          ❝
-        </span>
-        <span className="bg-[var(--session-highlight-yellow)] px-1 py-0.5 [box-decoration-break:clone] [-webkit-box-decoration-break:clone]">
+    <figure className="animate-content-fade my-2 flex flex-col items-center gap-1.5 px-4 text-center sm:px-8">
+      <span
+        aria-hidden
+        className="select-none text-4xl font-semibold leading-none text-[color:var(--scriba-hairline-soft)]"
+      >
+        “
+      </span>
+      <blockquote className="text-pretty text-lg font-medium leading-relaxed text-[color:var(--scriba-ink-strong)] sm:text-xl">
+        <span className="bg-[linear-gradient(transparent_58%,var(--session-highlight-yellow)_58%)] px-1 py-0.5 [box-decoration-break:clone] [-webkit-box-decoration-break:clone]">
           {text}
-        </span>
-        <span
-          aria-hidden
-          className="ml-3 select-none align-[-0.25em] font-heading text-4xl leading-none text-muted-foreground/30"
-        >
-          ❞
         </span>
       </blockquote>
     </figure>
   );
 }
 
-/**
- * When the extract call returns a relatedVerse (or another non-passage ref
- * without inline text), fetch it lazily via /api/verse. Uses the shared
- * verseCache so repeat renders are free. Passing null skips the fetch.
- */
 function VerseText({ reference, initialText }: { reference: string; initialText: string }) {
   const state = useVerseFetch(initialText ? null : reference);
   const text = initialText || (state.status === "ok" ? state.text : "");
   if (text) {
     return (
-      <blockquote className="pl-3 text-sm leading-relaxed text-foreground/90">{text}</blockquote>
+      <blockquote className="border-l-[3px] border-[#9FCBEC] pl-3.5 text-[15px] font-light italic leading-relaxed text-[#3E5164]">
+        {text}
+      </blockquote>
     );
   }
   if (state.status === "loading") {
     return (
-      <div className="flex flex-col gap-2 pl-3">
-        <div className="h-3 w-11/12 animate-skeleton-shimmer rounded-md bg-muted" />
-        <div className="h-3 w-3/5 animate-skeleton-shimmer rounded-md bg-muted [animation-delay:120ms]" />
+      <div className="flex flex-col gap-2 pl-3.5">
+        <div className="h-3 w-11/12 animate-skeleton-shimmer rounded-md bg-white/60" />
+        <div className="h-3 w-3/5 animate-skeleton-shimmer rounded-md bg-white/60 [animation-delay:120ms]" />
       </div>
     );
   }
@@ -222,14 +196,14 @@ function VerseText({ reference, initialText }: { reference: string; initialText:
 function FeedItemBody({
   item,
   onOpenVerse,
+  isAi,
 }: {
   item: FeedItem;
   onOpenVerse: (reference: string) => void;
+  isAi: boolean;
 }) {
   switch (item.kind) {
     case "citedVerse": {
-      // Chapter-only refs are suppressed upstream in FeedItemCard — by the time
-      // we get here the parse is guaranteed to have startVerse/endVerse.
       const parsed = parseVerseReference(item.reference);
       if (!parsed || parsed.startVerse == null || parsed.endVerse == null) return null;
       return (
@@ -238,32 +212,33 @@ function FeedItemBody({
             type="button"
             onClick={() => onOpenVerse(item.reference)}
             className={cn(
-              "self-start inline-flex items-center rounded-md bg-foreground px-2 py-1 text-[0.7rem] font-semibold text-background transition-opacity outline-none",
+              "self-start inline-flex items-center rounded-full bg-[color:var(--scriba-ink-strong)] px-4 py-1.5 text-xs font-semibold text-white transition-opacity outline-none",
               "hover:opacity-85 focus-visible:ring-2 focus-visible:ring-ring/40"
             )}
           >
             {item.reference}
           </button>
-          <PassageVerses
-            bookDisplay={parsed.bookDisplay}
-            chapter={parsed.chapter}
-            startVerse={parsed.startVerse}
-            endVerse={parsed.endVerse}
-          />
+          <div className="text-[15px] font-light leading-relaxed text-[#3E5164]">
+            <PassageVerses
+              bookDisplay={parsed.bookDisplay}
+              chapter={parsed.chapter}
+              startVerse={parsed.startVerse}
+              endVerse={parsed.endVerse}
+            />
+          </div>
         </>
       );
     }
     case "speakerHighlight":
-      // Handled above at top-level to skip the card frame.
       return null;
     case "speakerCitation":
       return (
-        <figure className="border-l-2 border-border pl-4">
-          <blockquote className="text-base italic leading-relaxed text-foreground/85">
+        <>
+          <blockquote className="border-l-[3px] border-[#9FCBEC] pl-3.5 text-[15px] font-light italic leading-relaxed text-[#3E5164]">
             {item.text}
           </blockquote>
-          <figcaption className="mt-1.5 text-xs text-muted-foreground">— {item.author}</figcaption>
-        </figure>
+          <p className="text-xs font-medium text-[color:var(--scriba-ink-soft)]">— {item.author}</p>
+        </>
       );
     case "relatedVerse":
       return (
@@ -272,39 +247,51 @@ function FeedItemBody({
             type="button"
             onClick={() => onOpenVerse(item.reference)}
             className={cn(
-              "self-start inline-flex items-center rounded-full border border-border bg-background px-2.5 py-1 text-[0.7rem] font-semibold text-foreground/85 transition-colors outline-none",
-              "hover:border-foreground/60 hover:bg-muted hover:text-foreground",
-              "focus-visible:ring-2 focus-visible:ring-ring/40"
+              "self-start inline-flex items-center rounded-full border border-[#B9CEDF] bg-white/60 px-3.5 py-1.5 text-xs font-semibold text-[#5B7183] transition-colors outline-none",
+              "hover:bg-white focus-visible:ring-2 focus-visible:ring-ring/40"
             )}
           >
             {item.reference}
           </button>
           <VerseText reference={item.reference} initialText="" />
           {item.reason ? (
-            <p className="text-xs leading-relaxed text-foreground/75">{item.reason}</p>
+            <p
+              className={cn(
+                "text-xs font-light leading-relaxed",
+                isAi ? "text-[color:var(--scriba-ink-mute)]" : "text-[#3E5164]/75"
+              )}
+            >
+              {item.reason}
+            </p>
           ) : null}
         </>
       );
     case "context":
       return (
         <>
-          <p className="text-pretty text-sm leading-relaxed text-foreground/85">{item.text}</p>
+          <p className="text-pretty text-sm font-light leading-relaxed text-[color:var(--scriba-ink)]">
+            {item.text}
+          </p>
           {item.source && isConcreteSource(item.source) ? (
-            <p className="text-[0.7rem] italic text-muted-foreground">— {item.source}</p>
+            <p className="text-[11px] italic font-light text-[color:var(--scriba-ink-mute)]">
+              — {item.source}
+            </p>
           ) : null}
         </>
       );
     case "suggestedQuote":
       return (
-        <figure className="border-l-2 border-border pl-4">
-          <blockquote className="text-sm italic leading-relaxed text-foreground/85">
+        <>
+          <blockquote className="text-sm font-light italic leading-relaxed text-[color:var(--scriba-ink)]">
             {item.text}
           </blockquote>
-          <figcaption className="mt-1.5 text-xs text-muted-foreground">— {item.author}</figcaption>
+          <p className="text-xs font-medium text-[color:var(--scriba-ink-soft)]">— {item.author}</p>
           {item.reason ? (
-            <p className="mt-2 text-[0.7rem] leading-relaxed text-foreground/65">{item.reason}</p>
+            <p className="text-[11px] font-light leading-relaxed text-[color:var(--scriba-ink-mute)]">
+              {item.reason}
+            </p>
           ) : null}
-        </figure>
+        </>
       );
   }
 }

@@ -1,9 +1,9 @@
 "use client";
 
-import { ArrowLeft, MapPin, User } from "lucide-react";
-import Link from "next/link";
+import { ArrowLeft, MapPin } from "lucide-react";
 import { useRouter } from "next/navigation";
 import { useState } from "react";
+import { NavLink } from "@/components/NavLink";
 import {
   Dialog,
   DialogContent,
@@ -17,6 +17,14 @@ import { SessionMenu } from "@/features/session/components/SessionMenu";
 import { SummaryView } from "@/features/session/components/SummaryView";
 import type { FeedItem } from "@/lib/domain/feed";
 import type { SummaryPayload } from "@/lib/domain/summary";
+
+function initialsOf(name: string | null): string {
+  if (!name) return "?";
+  const parts = name.trim().split(/\s+/).filter(Boolean);
+  if (parts.length === 0) return "?";
+  if (parts.length === 1) return parts[0][0]?.toUpperCase() ?? "?";
+  return `${parts[0][0] ?? ""}${parts[parts.length - 1][0] ?? ""}`.toUpperCase();
+}
 
 /**
  * View of a saved session. Renders the same SummaryView the live page uses on
@@ -56,7 +64,7 @@ export function SavedSessionView({
   async function handleDelete() {
     const res = await fetch(`/api/sessions/${id}`, { method: "DELETE" });
     if (!res.ok) throw new Error("delete failed");
-    router.push("/home");
+    router.push("/list");
   }
 
   async function handleSave(fields: {
@@ -75,50 +83,69 @@ export function SavedSessionView({
     setSpeakerLocation(fields.speakerLocation || null);
   }
 
+  const initials = initialsOf(speakerName);
+
   return (
     <main className="mx-auto flex min-h-svh w-full max-w-3xl flex-col gap-6 px-4 py-8 sm:gap-8 sm:px-6 sm:py-10">
-      <Link
-        href="/home"
-        className="inline-flex w-fit items-center gap-1.5 rounded-md -mx-1 px-1 py-0.5 text-xs font-medium text-muted-foreground transition-colors hover:text-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring/40"
+      <NavLink
+        href="/list"
+        className="-mx-1 inline-flex w-fit items-center rounded-md px-1 py-0.5 text-xs font-medium text-[color:var(--scriba-ink-mute)] transition-colors hover:text-[color:var(--scriba-ink)] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring/40"
       >
         <ArrowLeft className="size-3.5" />
         Voltar
-      </Link>
-      <div className="flex items-start justify-between gap-3">
-        <header className="flex flex-col gap-3">
-          {speakerName?.trim() ? (
-            <span className="inline-flex items-center gap-2 text-sm leading-none text-muted-foreground">
-              <span className="flex size-6 shrink-0 items-center justify-center rounded-full border border-border">
-                <User className="size-3" />
-              </span>
-              <span className="font-medium leading-none">{speakerName}</span>
-            </span>
-          ) : null}
-          <h1 className="font-heading text-2xl font-bold leading-[1.15] tracking-tight text-foreground sm:text-3xl md:text-4xl">
-            {title}
-          </h1>
-          {speakerLocation?.trim() ? (
-            <span className="inline-flex items-center gap-1.5 text-xs leading-none text-muted-foreground">
-              <MapPin className="size-3" />
-              {speakerLocation}
-            </span>
-          ) : null}
-          <p className="text-[0.7rem] tracking-wide text-muted-foreground/80">
-            {createdAtLabel}
-            {durationLabel ? ` · ${durationLabel}` : ""}
-          </p>
-        </header>
-        <SessionMenu
-          hasTranscript={transcript.length > 0}
-          hasLiveFeed={feedItems.length > 0}
-          onOpenTranscript={() => setTranscriptOpen(true)}
-          onOpenLiveFeed={() => setFeedOpen(true)}
-          onEdit={() => setEditOpen(true)}
-          onDelete={handleDelete}
-        />
-      </div>
+      </NavLink>
 
-      <div className="h-px w-full bg-border" />
+      <header className="flex flex-col gap-3">
+        <div className="flex items-center justify-between gap-3">
+          {speakerName?.trim() ? (
+            <div className="inline-flex items-center gap-2">
+              <span className="flex size-6 items-center justify-center rounded-full bg-[color:var(--scriba-blue-soft)] text-[10px] font-semibold text-[color:var(--scriba-blue)]">
+                {initials}
+              </span>
+              <span className="text-sm font-medium leading-none text-[color:var(--scriba-ink)]">
+                {speakerName}
+              </span>
+            </div>
+          ) : (
+            <div />
+          )}
+          <div className="flex items-center gap-2">
+            <span
+              role="status"
+              aria-label="Sessão salva"
+              className="inline-flex items-center gap-1.5 rounded-full bg-[color:var(--scriba-mint)] px-2.5 py-1 text-[10px] font-semibold uppercase tracking-wider text-[#3F7F66]"
+            >
+              <span className="size-1.5 rounded-full bg-[#4E9C7F]" />
+              Salvo
+            </span>
+            <SessionMenu
+              hasTranscript={transcript.length > 0}
+              hasLiveFeed={feedItems.length > 0}
+              onOpenTranscript={() => setTranscriptOpen(true)}
+              onOpenLiveFeed={() => setFeedOpen(true)}
+              onEdit={() => setEditOpen(true)}
+              onDelete={handleDelete}
+            />
+          </div>
+        </div>
+
+        <h1 className="font-heading text-2xl font-semibold leading-tight tracking-tight text-[color:var(--scriba-ink-strong)] sm:text-3xl md:text-4xl">
+          {title}
+        </h1>
+
+        {speakerLocation?.trim() ? (
+          <span className="inline-flex items-center gap-1.5 text-xs font-light text-[color:var(--scriba-ink-mute)]">
+            <MapPin className="size-3" />
+            {speakerLocation}
+          </span>
+        ) : null}
+        <p className="text-[11px] font-light text-[color:var(--scriba-ink-mute)]">
+          {createdAtLabel}
+          {durationLabel ? ` · ${durationLabel}` : ""}
+        </p>
+      </header>
+
+      <div className="h-px w-full bg-[color:var(--scriba-hairline)]" />
 
       <SummaryView summary={summary} hasTranscript={transcript.length > 0} running={false} />
 
@@ -148,7 +175,7 @@ export function SavedSessionView({
             <DialogDescription>Texto bruto capturado pelo microfone.</DialogDescription>
           </DialogHeader>
           <div className="max-h-[65vh] overflow-y-auto pr-2">
-            <p className="text-pretty text-sm leading-relaxed text-foreground whitespace-pre-wrap">
+            <p className="text-pretty text-sm font-light leading-relaxed text-[color:var(--scriba-ink)] whitespace-pre-wrap">
               {transcript || "Sem transcrição."}
             </p>
           </div>

@@ -24,7 +24,7 @@ export function SessionCardMenu({ sessionId, deleteAction }: Props) {
       <DropdownMenu>
         <DropdownMenuTrigger
           aria-label="Opções da sessão"
-          className="flex size-8 shrink-0 items-center justify-center rounded-md text-muted-foreground outline-none transition-colors hover:bg-muted hover:text-foreground focus-visible:ring-2 focus-visible:ring-ring/40"
+          className="flex size-8 shrink-0 items-center justify-center rounded-md text-[color:var(--scriba-ink-mute)] outline-none transition-colors hover:bg-[color:var(--scriba-blue-soft)]/60 hover:text-[color:var(--scriba-ink)] focus-visible:ring-2 focus-visible:ring-ring/40"
         >
           <EllipsisVertical className="size-4" />
         </DropdownMenuTrigger>
