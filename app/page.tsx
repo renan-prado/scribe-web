@@ -24,7 +24,7 @@ export default async function LandingPage() {
   const {
     data: { user },
   } = await supabase.auth.getUser();
-  if (user) redirect("/home");
+  if (user) redirect("/feed");
 
   return (
     <div

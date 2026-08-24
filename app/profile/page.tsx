@@ -33,7 +33,7 @@ export default async function ProfilePage() {
     <main className="mx-auto flex min-h-svh w-full max-w-2xl flex-col gap-8 px-4 py-10 sm:gap-10 sm:px-6 sm:py-16">
       <header className="flex items-center justify-between">
         <Link
-          href="/home"
+          href="/feed"
           className="inline-flex items-center gap-2 text-sm text-muted-foreground transition-colors hover:text-foreground"
         >
           <ArrowLeft className="size-4" />

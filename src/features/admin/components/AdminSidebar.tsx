@@ -50,7 +50,7 @@ export function AdminSidebar({
       <SidebarHeader>
         <SidebarMenu>
           <SidebarMenuItem>
-            <SidebarMenuButton size="lg" tooltip="Voltar para o app" render={<Link href="/home" />}>
+            <SidebarMenuButton size="lg" tooltip="Voltar para o app" render={<Link href="/feed" />}>
               <span
                 aria-hidden
                 className="flex size-8 shrink-0 items-center justify-center rounded-[10px] font-bold text-white"

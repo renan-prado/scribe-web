@@ -24,7 +24,7 @@ export default function SignUpPage() {
         </>
       }
     >
-      <GoogleSignInButton next="/home" label="Criar conta com Google" />
+      <GoogleSignInButton next="/feed" label="Criar conta com Google" />
       <p className="text-center text-[11.5px]" style={{ fontWeight: 300, color: "#9BA6B3" }}>
         Ao continuar, você aceita nossos termos e a política de privacidade.
       </p>

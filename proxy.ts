@@ -71,7 +71,7 @@ export async function proxy(request: NextRequest) {
 
   if (user && isAuthOnly(pathname)) {
     const url = request.nextUrl.clone();
-    url.pathname = "/home";
+    url.pathname = "/feed";
     url.search = "";
     return NextResponse.redirect(url);
   }

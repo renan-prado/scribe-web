@@ -25,7 +25,7 @@ export default function NotFoundPage() {
       </div>
 
       <div className="flex flex-col gap-2 sm:flex-row">
-        <Button render={<Link href="/home" />} nativeButton={false} size="lg">
+        <Button render={<Link href="/feed" />} nativeButton={false} size="lg">
           Ir para o início
         </Button>
         <Button render={<Link href="/" />} nativeButton={false} size="lg" variant="outline">

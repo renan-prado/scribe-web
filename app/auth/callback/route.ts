@@ -13,8 +13,8 @@ import { createClient } from "@/lib/supabase/server";
 export async function GET(request: Request) {
   const { searchParams, origin } = new URL(request.url);
   const code = searchParams.get("code");
-  const rawNext = searchParams.get("next") ?? "/home";
-  const next = rawNext.startsWith("/") ? rawNext : "/home";
+  const rawNext = searchParams.get("next") ?? "/feed";
+  const next = rawNext.startsWith("/") ? rawNext : "/feed";
 
   if (!code) {
     return NextResponse.redirect(`${origin}/sign-in?error=missing_code`);

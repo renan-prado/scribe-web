@@ -10,7 +10,7 @@ type Search = { next?: string; error?: string };
 
 export default async function SignInPage({ searchParams }: { searchParams: Promise<Search> }) {
   const { next, error } = await searchParams;
-  const target = typeof next === "string" && next.startsWith("/") ? next : "/home";
+  const target = typeof next === "string" && next.startsWith("/") ? next : "/feed";
   const errorMessage =
     error === "exchange_failed"
       ? "Não consegui completar o login. Tente novamente."

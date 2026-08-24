@@ -9,7 +9,7 @@ type Props = {
   label?: string;
 };
 
-export function GoogleSignInButton({ next = "/home", label = "Continuar com Google" }: Props) {
+export function GoogleSignInButton({ next = "/feed", label = "Continuar com Google" }: Props) {
   const [loading, setLoading] = useState(false);
 
   async function handleClick() {

@@ -6,7 +6,7 @@ import { NavLink } from "@/components/NavLink";
 import { cn } from "@/lib/utils";
 
 const LINKS = [
-  { href: "/home", label: "Feed", icon: Rss },
+  { href: "/feed", label: "Feed", icon: Rss },
   { href: "/list", label: "Gravações", icon: List },
 ];
 
@@ -15,7 +15,7 @@ export function AppNav() {
   return (
     <nav className="hidden items-center gap-1 sm:flex">
       {LINKS.map(({ href, label, icon: Icon }) => {
-        const active = pathname === href || (href !== "/home" && pathname?.startsWith(href));
+        const active = pathname === href || (href !== "/feed" && pathname?.startsWith(href));
         return (
           <NavLink
             key={href}

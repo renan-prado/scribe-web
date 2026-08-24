@@ -23,7 +23,7 @@ export function MobileBottomNav() {
 
   if (hide) return null;
 
-  const isFeed = pathname === "/home";
+  const isFeed = pathname === "/feed";
   const isLibrary = pathname.startsWith("/list");
   const isProfile = pathname.startsWith("/profile");
 
@@ -35,7 +35,7 @@ export function MobileBottomNav() {
         className="pointer-events-auto relative flex h-[76px] items-center justify-around bg-white pb-2 shadow-[0_-6px_22px_rgba(79,168,240,0.12)]"
       >
         <TabLink
-          href="/home"
+          href="/feed"
           label="Feed"
           active={isFeed}
           icon={
