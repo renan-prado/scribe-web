@@ -1,6 +1,7 @@
 import type { Metadata } from "next";
 import { notFound } from "next/navigation";
 import { SavedSessionView } from "@/features/session/components/SavedSessionView";
+import { hasDeepening } from "@/lib/db/deepenings";
 import { getSession } from "@/lib/db/sessions";
 
 export async function generateMetadata({
@@ -36,7 +37,7 @@ export default async function RecordingSummaryPage({
   params: Promise<{ id: string }>;
 }) {
   const { id } = await params;
-  const session = await getSession(id);
+  const [session, deepeningExists] = await Promise.all([getSession(id), hasDeepening(id)]);
   if (!session) notFound();
 
   return (
@@ -50,6 +51,7 @@ export default async function RecordingSummaryPage({
       transcript={session.transcript}
       feedItems={session.feedItems}
       summary={session.finalSummary}
+      hasDeepening={deepeningExists}
     />
   );
 }

@@ -11,6 +11,7 @@ import {
   DialogHeader,
   DialogTitle,
 } from "@/components/ui/dialog";
+import { DeepenButton } from "@/features/session/components/DeepenButton";
 import { EditSessionDialog } from "@/features/session/components/EditSessionDialog";
 import { Feed } from "@/features/session/components/Feed";
 import { SessionMenu } from "@/features/session/components/SessionMenu";
@@ -40,6 +41,7 @@ export function SavedSessionView({
   transcript,
   feedItems,
   summary,
+  hasDeepening,
 }: {
   id: string;
   title: string;
@@ -50,6 +52,7 @@ export function SavedSessionView({
   transcript: string;
   feedItems: FeedItem[];
   summary: SummaryPayload | null;
+  hasDeepening: boolean;
 }) {
   const [feedOpen, setFeedOpen] = useState(false);
   const [transcriptOpen, setTranscriptOpen] = useState(false);
@@ -133,16 +136,23 @@ export function SavedSessionView({
           {title}
         </h1>
 
-        {speakerLocation?.trim() ? (
-          <span className="inline-flex items-center gap-1.5 text-xs font-light text-[color:var(--scriba-ink-mute)]">
-            <MapPin className="size-3" />
-            {speakerLocation}
-          </span>
-        ) : null}
-        <p className="text-[11px] font-light text-[color:var(--scriba-ink-mute)]">
-          {createdAtLabel}
-          {durationLabel ? ` · ${durationLabel}` : ""}
-        </p>
+        <div className="flex items-end justify-between gap-3">
+          <div className="flex min-w-0 flex-col gap-0.5">
+            {speakerLocation?.trim() ? (
+              <span className="inline-flex items-center gap-1.5 text-xs font-light text-[color:var(--scriba-ink-mute)]">
+                <MapPin className="size-3" />
+                {speakerLocation}
+              </span>
+            ) : null}
+            <p className="text-[11px] font-light text-[color:var(--scriba-ink-mute)]">
+              {createdAtLabel}
+              {durationLabel ? ` · ${durationLabel}` : ""}
+            </p>
+          </div>
+          {summary ? (
+            <DeepenButton sessionId={id} hasDeepening={hasDeepening} variant="summary-header" />
+          ) : null}
+        </div>
       </header>
 
       <div className="h-px w-full bg-[color:var(--scriba-hairline)]" />
