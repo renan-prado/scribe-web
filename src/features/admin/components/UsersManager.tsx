@@ -15,6 +15,7 @@ import {
   TableHeader,
   TableRow,
 } from "@/components/ui/table";
+import { ADMIN_TABLE_SURFACE } from "@/features/admin/lib/surfaces";
 import type { AdminUser } from "@/lib/db/admin/users";
 import { EditUserDialog } from "./EditUserDialog";
 
@@ -84,14 +85,14 @@ export function UsersManager({ initialUsers, currentUserId }: Props) {
           placeholder="Buscar por nome, email ou id"
           value={search}
           onChange={(e) => setSearch(e.target.value)}
-          className="sm:max-w-sm"
+          className="h-11 rounded-xl border-[color:var(--scriba-hairline-soft)] bg-white px-4 shadow-[0_4px_14px_rgba(79,168,240,0.06)] sm:max-w-sm"
         />
         <span className="text-xs text-muted-foreground">
           {filtered.length} de {users.length} usuários
         </span>
       </div>
 
-      <div className="rounded-lg border border-border">
+      <div className={ADMIN_TABLE_SURFACE}>
         <Table>
           <TableHeader>
             <TableRow>

@@ -54,9 +54,9 @@ export function UserMenu({ displayName, email, avatarUrl, isAdmin }: Props) {
             Meu perfil
           </DropdownMenuItem>
           {isAdmin ? (
-            <DropdownMenuItem render={<Link href="/backstage" />}>
+            <DropdownMenuItem render={<Link href="/admin" />}>
               <LayoutDashboard />
-              Backstage
+              Admin
             </DropdownMenuItem>
           ) : null}
           <DropdownMenuSeparator />

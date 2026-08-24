@@ -73,14 +73,16 @@
   --chart-4: oklch(0.371 0 0);
   --chart-5: oklch(0.269 0 0);
   --radius: 0.625rem;
-  --sidebar: oklch(0.985 0 0);
-  --sidebar-foreground: oklch(0.145 0 0);
-  --sidebar-primary: oklch(0.205 0 0);
-  --sidebar-primary-foreground: oklch(0.985 0 0);
-  --sidebar-accent: oklch(0.97 0 0);
-  --sidebar-accent-foreground: oklch(0.205 0 0);
-  --sidebar-border: oklch(0.922 0 0);
-  --sidebar-ring: oklch(0.708 0 0);
+  /* Sidebar tokens tuned to the Scriba palette: soft blue background,
+     ink-strong text, blue-soft hover, scriba-blue accents. */
+  --sidebar: #F8FBFE;
+  --sidebar-foreground: #33414F;
+  --sidebar-primary: #4FA8F0;
+  --sidebar-primary-foreground: #ffffff;
+  --sidebar-accent: #EAF4FE;
+  --sidebar-accent-foreground: #3E86C4;
+  --sidebar-border: #EEF4FA;
+  --sidebar-ring: rgba(79, 168, 240, 0.4);
 
   /* Session-specific tokens.
      The quote gradient wraps bibleQuote / conclusion / supportingContent
@@ -168,6 +170,35 @@
   }
   a, button {
     cursor: default;
+  }
+
+  /* Admin table treatment — white surface with generous cell padding and a
+     tinted Scriba header row. Applied via the ADMIN_TABLE_SURFACE constant
+     so /admin/users and /admin/usage tables stay visually consistent. */
+  .admin-table {
+    background: #ffffff;
+  }
+  .admin-table table {
+    background: #ffffff;
+  }
+  .admin-table thead {
+    background: #ffffff;
+    border-bottom: 1px solid var(--scriba-hairline);
+  }
+  .admin-table th {
+    height: 3rem;
+    padding: 0 1.25rem;
+    font-size: 11px;
+    font-weight: 600;
+    letter-spacing: 0.08em;
+    text-transform: uppercase;
+    color: var(--scriba-ink-mute);
+  }
+  .admin-table td {
+    padding: 1rem 1.25rem;
+  }
+  .admin-table tbody tr {
+    border-color: var(--scriba-hairline);
   }
 }
 
