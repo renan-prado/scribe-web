@@ -4,7 +4,7 @@ import { createClient } from "@/lib/supabase/server";
 /**
  * OAuth PKCE callback. Google (and any future OAuth provider) redirects
  * here with ?code=... after the user consents. We exchange the code for a
- * session cookie via Supabase, then bounce to `?next=` (or /home).
+ * session cookie via Supabase, then bounce to `?next=` (or /feed).
  *
  * The `?next=` param comes from middleware.ts when it kicks an unauth user
  * off a protected route, so after login the user lands where they were

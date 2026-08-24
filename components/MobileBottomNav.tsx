@@ -110,7 +110,7 @@ export function MobileBottomNav() {
                 className={cn(
                   "flex size-16 flex-col items-center justify-center gap-1 rounded-full bg-[color:var(--scriba-blue)] text-white",
                   "border-[5px] border-white shadow-[0_10px_22px_rgba(79,168,240,0.42)] transition-colors",
-                  "hover:bg-[color:var(--scriba-blue-hover)] cursor-pointer"
+                  "hover:bg-[color:var(--scriba-blue-hover)]"
                 )}
               >
                 <span aria-hidden className="block h-[15px] w-[11px] rounded-[6px] bg-white" />

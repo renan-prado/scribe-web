@@ -38,7 +38,7 @@ export function NewRecordingDialog({ trigger }: { trigger?: ReactNode }) {
           trigger
             ? "contents"
             : cn(
-                "inline-flex items-center gap-2 rounded-full bg-[color:var(--scriba-blue)] px-4 py-2.5 text-[13px] font-semibold text-white shadow-[0_8px_20px_rgba(79,168,240,0.32)] transition-colors",
+                "inline-flex h-[34px] items-center gap-2 rounded-full bg-[color:var(--scriba-blue)] px-4 text-[13px] font-semibold text-white shadow-[0_8px_20px_rgba(79,168,240,0.32)] transition-colors",
                 "hover:bg-[color:var(--scriba-blue-hover)]",
                 "focus-visible:outline-none focus-visible:ring-4 focus-visible:ring-[color:var(--scriba-blue)]/30"
               )

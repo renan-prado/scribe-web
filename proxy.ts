@@ -14,7 +14,7 @@ import { clientEnv } from "@/lib/env/client";
  *   PROTECTED  — everything else the matcher lets through
  *
  * Unauth users hitting a protected route → /sign-in?next=<original-path>.
- * Auth users hitting /sign-in or /sign-up → /home (already in).
+ * Auth users hitting /sign-in or /sign-up → /feed (already in).
  */
 
 const PUBLIC_PREFIXES = ["/sign-in", "/sign-up", "/auth"];
