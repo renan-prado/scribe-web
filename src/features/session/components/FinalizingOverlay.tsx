@@ -11,7 +11,7 @@ export function FinalizingOverlay() {
       </span>
       <div className="flex flex-col items-center gap-2 text-center">
         <p className="font-heading text-xl font-semibold tracking-tight text-[color:var(--scriba-ink-strong)]">
-          Gerando a conclusão
+          Gerando o resumo
         </p>
         <p className="max-w-sm text-sm font-light leading-relaxed text-[color:var(--scriba-ink-soft)]">
           Ajustando os últimos pontos e amarrando a ideia central.

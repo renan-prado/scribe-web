@@ -65,36 +65,36 @@ function greetingFor(hour: number): string {
 const DAILY_PROMPTS = [
   "",
   "Vamos relembrar algo importante?", // 1
-  "Que tal recordar algo especial?", // 2
-  "Vamos revisitar uma mensagem importante?", // 3
-  "Que tal relembrar o que você ouviu?", // 4
-  "Vamos recordar um ensinamento marcante?", // 5
-  "Que tal revisitar uma reflexão?", // 6
-  "Vamos trazer uma mensagem de volta à memória?", // 7
-  "Que tal recordar algo que marcou você?", // 8
-  "Vamos relembrar uma verdade importante?", // 9
-  "Que tal revisitar um sermão especial?", // 10
-  "Vamos recordar algo que vale guardar?", // 11
-  "Que tal relembrar uma mensagem marcante?", // 12
-  "Vamos revisitar algo que você aprendeu?", // 13
-  "Que tal trazer um ensinamento à memória?", // 14
-  "Vamos recordar uma reflexão importante?", // 15
-  "Que tal relembrar algo que falou com você?", // 16
-  "Vamos revisitar uma mensagem que marcou você?", // 17
-  "Que tal recordar uma verdade que você ouviu?", // 18
-  "Vamos relembrar um momento especial?", // 19
-  "Que tal revisitar algo que vale a pena lembrar?", // 20
-  "Vamos recordar um ensinamento importante?", // 21
-  "Que tal trazer uma mensagem de volta?", // 22
-  "Vamos relembrar algo que não pode ser esquecido?", // 23
-  "Que tal revisitar uma palavra marcante?", // 24
-  "Vamos recordar algo que fez sentido para você?", // 25
-  "Que tal relembrar uma reflexão especial?", // 26
-  "Vamos revisitar algo que merece atenção?", // 27
-  "Que tal recordar uma mensagem que ficou com você?", // 28
-  "Vamos relembrar algo que vale levar adiante?", // 29
-  "Que tal revisitar um ensinamento especial?", // 30
-  "Vamos recordar algo importante deste mês?", // 31
+  "O que ficou guardado na memória hoje?", // 2
+  "Tem alguma palavra que merece revisitar?", // 3
+  "Qual mensagem você quer levar essa semana?", // 4
+  "Algo do que ouviu ainda ecoa em você?", // 5
+  "Que passagem marcou sua última escuta?", // 6
+  "Vale a pena ouvir de novo?", // 7
+  "Qual versículo ficou com você?", // 8
+  "Tem uma frase que ainda está te falando?", // 9
+  "O que você não quer esquecer desta semana?", // 10
+  "Alguma revelação que merece mais atenção?", // 11
+  "Qual parte do sermão tocou mais fundo?", // 12
+  "O que você ainda precisa processar?", // 13
+  "Tem algo para compartilhar com alguém?", // 14
+  "Qual verdade você precisa revisitar hoje?", // 15
+  "Algo do que ouviu mudou sua perspectiva?", // 16
+  "Que palavra ainda está amadurecendo em você?", // 17
+  "O que o Espírito destacou no último sermão?", // 18
+  "Tem uma aplicação que ainda está pendente?", // 19
+  "Qual ensinamento você quer fixar na memória?", // 20
+  "Alguma promessa que precisa ser lembrada?", // 21
+  "O que você ouviu que vale ler de novo?", // 22
+  "Tem algo que você quer levar para a oração?", // 23
+  "Vamos relembrar algo importante?", // 24
+  "Qual mensagem ainda merece meditação?", // 25
+  "O que ficou incompleto na sua anotação?", // 26
+  "Tem um ponto que você quer aprofundar?", // 27
+  "Qual citação você não quer perder de vista?", // 28
+  "O que você ouviu que precisa colocar em prática?", // 29
+  "Tem uma passagem que ainda está te desafiando?", // 30
+  "Que aprendizado você leva deste mês?", // 31
 ];
 
 function dailyPrompt(day: number): string {
