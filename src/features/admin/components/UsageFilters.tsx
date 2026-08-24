@@ -17,7 +17,7 @@ import { ADMIN_CARD_SURFACE } from "@/features/admin/lib/surfaces";
 type Props = {
   users: { id: string; displayName: string | null; email: string | null }[];
   routes: string[];
-  current: { range: string; userId: string; route: string; sessionId: string };
+  current: { range: string; userId: string; route: string; sessionId: string; mode: string };
 };
 
 const RANGE_LABELS: Record<string, string> = {
@@ -25,6 +25,11 @@ const RANGE_LABELS: Record<string, string> = {
   "30d": "Últimos 30 dias",
   "90d": "Últimos 90 dias",
   all: "Todo o histórico",
+};
+
+const MODE_LABELS: Record<string, string> = {
+  live: "Com live",
+  audio_only: "Sem live",
 };
 
 const ANY = "__any__";
@@ -35,6 +40,7 @@ export function UsageFilters({ users, routes, current }: Props) {
   const [range, setRange] = useState(current.range);
   const [userId, setUserId] = useState(current.userId || ANY);
   const [route, setRoute] = useState(current.route || ANY);
+  const [mode, setMode] = useState(current.mode || ANY);
   const [isPending, startTransition] = useTransition();
 
   const activeSessionId = current.sessionId?.trim() ?? "";
@@ -47,6 +53,8 @@ export function UsageFilters({ users, routes, current }: Props) {
     else params.delete("userId");
     if (route && route !== ANY) params.set("route", route);
     else params.delete("route");
+    if (mode && mode !== ANY) params.set("mode", mode);
+    else params.delete("mode");
     // Session filter is set from the Sessions table row, not from an input here.
 
     const qs = params.toString();
@@ -59,6 +67,7 @@ export function UsageFilters({ users, routes, current }: Props) {
     setRange("30d");
     setUserId(ANY);
     setRoute(ANY);
+    setMode(ANY);
     startTransition(() => router.push("/admin/usage"));
   }
 
@@ -73,7 +82,7 @@ export function UsageFilters({ users, routes, current }: Props) {
 
   return (
     <div className={`flex flex-col gap-4 p-5 ${ADMIN_CARD_SURFACE}`}>
-      <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-4 lg:items-end">
+      <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-5 lg:items-end">
         <div className="flex flex-col gap-1.5">
           <Label>Período</Label>
           <Select value={range} onValueChange={(v) => setRange(v ?? "30d")}>
@@ -124,6 +133,23 @@ export function UsageFilters({ users, routes, current }: Props) {
               {routes.map((r) => (
                 <SelectItem key={r} value={r}>
                   {r}
+                </SelectItem>
+              ))}
+            </SelectContent>
+          </Select>
+        </div>
+
+        <div className="flex flex-col gap-1.5">
+          <Label>Modo</Label>
+          <Select value={mode === ANY ? undefined : mode} onValueChange={(v) => setMode(v ?? ANY)}>
+            <SelectTrigger className="w-full">
+              <SelectValue placeholder="Todos" />
+            </SelectTrigger>
+            <SelectContent>
+              <SelectItem value={ANY}>Todos</SelectItem>
+              {Object.entries(MODE_LABELS).map(([k, v]) => (
+                <SelectItem key={k} value={k}>
+                  {v}
                 </SelectItem>
               ))}
             </SelectContent>

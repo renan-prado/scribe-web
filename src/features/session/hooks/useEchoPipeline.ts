@@ -20,10 +20,13 @@ export function useEchoPipeline({
   sessionId,
   scheduleDrainIfIdle,
   startedAtRef,
+  enabled = true,
 }: {
   sessionId: string;
   scheduleDrainIfIdle: () => void;
   startedAtRef: RefObject<number>;
+  /** When false the pipeline never fires — used for audio-only sessions. */
+  enabled?: boolean;
 }): void {
   const running = useSessionStore((s) => s.running);
   const finalizing = useSessionStore((s) => s.finalizing);
@@ -44,6 +47,7 @@ export function useEchoPipeline({
   );
 
   useEffect(() => {
+    if (!enabled) return;
     if (!running || finalizing) return;
     const s = useSessionStore.getState();
     const last = feedItems[feedItems.length - 1];
@@ -86,5 +90,14 @@ export function useEchoPipeline({
       .catch(() => {
         useSessionStore.getState().setEchoing(false);
       });
-  }, [feedItems, running, finalizing, transcript, sessionId, scheduleDrainIfIdle, startedAtRef]);
+  }, [
+    enabled,
+    feedItems,
+    running,
+    finalizing,
+    transcript,
+    sessionId,
+    scheduleDrainIfIdle,
+    startedAtRef,
+  ]);
 }

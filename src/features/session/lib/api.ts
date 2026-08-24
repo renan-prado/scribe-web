@@ -120,11 +120,13 @@ export async function requestFinalSummary(body: {
 
 /**
  * POST /api/sessions. Creates the empty row that anchors /recording/{id}/live.
- * Called from the "Nova gravação" dialog before the recorder mounts.
+ * Called from the "Nova gravação" dialog before the recorder mounts. `mode`
+ * selects between the live enrichment pipelines and the audio-only capture.
  */
 export async function requestCreateSession(body: {
   speakerName?: string | null;
   speakerLocation?: string | null;
+  mode?: "live" | "audio_only";
 }): Promise<{ id: string } | { error: string }> {
   try {
     const res = await fetch("/api/sessions", {

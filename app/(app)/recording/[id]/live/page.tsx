@@ -33,6 +33,7 @@ export default async function RecordingLivePage({
       sessionId={session.id}
       initialSpeakerName={session.speakerName?.trim() || "Autor desconhecido"}
       initialSpeakerLocation={session.speakerLocation?.trim() || "Local desconhecido"}
+      mode={session.mode}
       autoStart={autostart === "1"}
     />
   );

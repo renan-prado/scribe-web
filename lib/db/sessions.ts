@@ -22,6 +22,19 @@ import { createClient } from "@/lib/supabase/server";
  * renaming a speaker later never rewrites past sessions.
  */
 
+/**
+ * Recording mode. `live` runs the full bible/insights/echo enrichment
+ * pipelines during capture. `audio_only` only transcribes chunks in the
+ * background and produces the final summary on stop — no live cards.
+ */
+export type SessionMode = "live" | "audio_only";
+
+export const SESSION_MODES = ["live", "audio_only"] as const;
+
+export function parseSessionMode(value: unknown): SessionMode {
+  return value === "audio_only" ? "audio_only" : "live";
+}
+
 export type SessionRow = {
   id: string;
   createdAt: string;
@@ -33,6 +46,7 @@ export type SessionRow = {
   locationId: string | null;
   speakerName: string | null;
   speakerLocation: string | null;
+  mode: SessionMode;
   transcript: string;
   feedItems: FeedItem[];
   finalSummary: SummaryPayload | null;
@@ -48,6 +62,7 @@ export type SessionListItem = {
   locationId: string | null;
   speakerName: string | null;
   speakerLocation: string | null;
+  mode: SessionMode;
 };
 
 export type CreateEmptySessionInput = {
@@ -55,6 +70,7 @@ export type CreateEmptySessionInput = {
   speakerLocation: string | null;
   speakerId?: string | null;
   locationId?: string | null;
+  mode?: SessionMode;
 };
 
 export type UpdateSessionFinalInput = {
@@ -79,14 +95,15 @@ type DbRow = {
   location_id: string | null;
   speaker_name: string | null;
   speaker_location: string | null;
+  mode: string | null;
   transcript: string;
   feed_items: FeedItem[] | null;
   final_summary: SummaryPayload | null;
 };
 
 const SELECT_LIST =
-  "id, created_at, duration_ms, title, short_summary, speaker_id, location_id, speaker_name, speaker_location";
-const SELECT_FULL = `id, created_at, ended_at, duration_ms, title, short_summary, speaker_id, location_id, speaker_name, speaker_location, transcript, feed_items, final_summary`;
+  "id, created_at, duration_ms, title, short_summary, speaker_id, location_id, speaker_name, speaker_location, mode";
+const SELECT_FULL = `id, created_at, ended_at, duration_ms, title, short_summary, speaker_id, location_id, speaker_name, speaker_location, mode, transcript, feed_items, final_summary`;
 
 function rowToSession(row: DbRow): SessionRow {
   return {
@@ -100,6 +117,7 @@ function rowToSession(row: DbRow): SessionRow {
     locationId: row.location_id,
     speakerName: row.speaker_name,
     speakerLocation: row.speaker_location,
+    mode: parseSessionMode(row.mode),
     transcript: row.transcript,
     feedItems: Array.isArray(row.feed_items) ? row.feed_items : [],
     finalSummary: row.final_summary,
@@ -130,6 +148,7 @@ export async function createEmptySession(input: CreateEmptySessionInput): Promis
       location_id: input.locationId ?? null,
       speaker_name: input.speakerName,
       speaker_location: input.speakerLocation,
+      mode: input.mode ?? "live",
       transcript: "",
       feed_items: [],
     })
@@ -195,6 +214,7 @@ export async function listSessions(filter: ListSessionsFilter = {}): Promise<Ses
     locationId: r.location_id,
     speakerName: r.speaker_name,
     speakerLocation: r.speaker_location,
+    mode: parseSessionMode(r.mode),
   }));
 }
 

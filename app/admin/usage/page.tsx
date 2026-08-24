@@ -61,7 +61,13 @@ type SearchParams = {
   userId?: string;
   route?: string;
   sessionId?: string;
+  mode?: string;
 };
+
+function parseModeFilter(value: string | undefined): "live" | "audio_only" | undefined {
+  if (value === "live" || value === "audio_only") return value;
+  return undefined;
+}
 
 export default async function AdminUsagePage({
   searchParams,
@@ -76,6 +82,7 @@ export default async function AdminUsagePage({
     userId: sp.userId || undefined,
     route: sp.route || undefined,
     sessionId: sp.sessionId?.trim() || undefined,
+    mode: parseModeFilter(sp.mode),
   };
 
   const [summary, users, rate] = await Promise.all([
@@ -104,6 +111,7 @@ export default async function AdminUsagePage({
           userId: sp.userId ?? "",
           route: sp.route ?? "",
           sessionId: sp.sessionId ?? "",
+          mode: sp.mode ?? "",
         }}
       />
 
@@ -297,6 +305,7 @@ function sessionFilterHref(filters: SearchParams, sessionId: string): string {
   if (filters.range && filters.range !== "30d") p.set("range", filters.range);
   if (filters.userId) p.set("userId", filters.userId);
   if (filters.route) p.set("route", filters.route);
+  if (filters.mode) p.set("mode", filters.mode);
   p.set("sessionId", sessionId);
   return `/admin/usage?${p.toString()}`;
 }

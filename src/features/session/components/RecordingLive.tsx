@@ -37,6 +37,7 @@ import { requestFinalSummary, uploadChunkWithRetry } from "@/features/session/li
 import { isSilentBlob } from "@/features/session/lib/audio";
 import { tailSentences } from "@/features/session/lib/text";
 import type { ChunkRow, TranscriptState } from "@/features/session/types";
+import type { SessionMode } from "@/lib/db/sessions";
 import type { ChunkEvent, Recorder } from "@/lib/domain/recorder";
 import { devLog } from "@/lib/log";
 import { createRecorder } from "@/lib/recorder";
@@ -48,6 +49,8 @@ type Props = {
   sessionId: string;
   initialSpeakerName: string;
   initialSpeakerLocation: string;
+  /** Capture mode. `live` runs bible/insights/echo. `audio_only` skips them. */
+  mode: SessionMode;
   /** If true, fire start() once on mount (entry from the "Nova gravação" dialog). */
   autoStart?: boolean;
 };
@@ -56,8 +59,10 @@ export function RecordingLive({
   sessionId,
   initialSpeakerName,
   initialSpeakerLocation,
+  mode,
   autoStart = false,
 }: Props) {
+  const liveMode = mode === "live";
   const router = useRouter();
 
   // ---- imperative refs (browser resources, mount guards) ----
@@ -101,9 +106,10 @@ export function RecordingLive({
     prefetchVerse,
     scheduleDrainIfIdle,
     startedAtRef,
+    enabled: liveMode,
   });
-  useInsightsPipeline({ sessionId, scheduleDrainIfIdle, startedAtRef });
-  useEchoPipeline({ sessionId, scheduleDrainIfIdle, startedAtRef });
+  useInsightsPipeline({ sessionId, scheduleDrainIfIdle, startedAtRef, enabled: liveMode });
+  useEchoPipeline({ sessionId, scheduleDrainIfIdle, startedAtRef, enabled: liveMode });
 
   // ---- derived views ----
   const chunkRows = useMemo<ChunkRow[]>(
@@ -405,7 +411,7 @@ export function RecordingLive({
             menu={
               <SessionMenu
                 hasTranscript={transcript.length > 0}
-                hasLiveFeed={feedItems.length > 0}
+                hasLiveFeed={liveMode && feedItems.length > 0}
                 onOpenTranscript={() => setTranscriptOpen(true)}
                 onOpenLiveFeed={() => setLiveFeedOpen(true)}
               />
@@ -414,12 +420,16 @@ export function RecordingLive({
           <div className="h-px w-full bg-[color:var(--scriba-hairline)]" />
           <div className="flex-1">
             {running || (!summary && !finalizing) ? (
-              <Feed
-                items={feedItems}
-                running={running}
-                hasTranscript={transcript.length > 0}
-                suggesting={insightsInFlight}
-              />
+              liveMode ? (
+                <Feed
+                  items={feedItems}
+                  running={running}
+                  hasTranscript={transcript.length > 0}
+                  suggesting={insightsInFlight}
+                />
+              ) : (
+                <AudioOnlyPlaceholder running={running} hasTranscript={transcript.length > 0} />
+              )
             ) : (
               <SummaryView
                 summary={summary}
@@ -470,5 +480,24 @@ export function RecordingLive({
         </DialogContent>
       </Dialog>
     </main>
+  );
+}
+
+function AudioOnlyPlaceholder({
+  running,
+  hasTranscript,
+}: {
+  running: boolean;
+  hasTranscript: boolean;
+}) {
+  const message = running
+    ? "Gravando em modo sem live. O resumo completo será gerado quando você parar."
+    : hasTranscript
+      ? "Gravação finalizada. Preparando o resumo…"
+      : "Toque em gravar para começar.";
+  return (
+    <p className="text-pretty text-sm font-light leading-relaxed text-[color:var(--scriba-ink-mute)]">
+      {message}
+    </p>
   );
 }

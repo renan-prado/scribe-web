@@ -40,6 +40,12 @@ export type UsageFilters = {
   userId?: string;
   route?: string;
   sessionId?: string;
+  /**
+   * Recording mode of the parent session. When set, only events tied to a
+   * session with this mode are counted. Events without a session_id (ad-hoc
+   * routes like verse / format-paragraphs) are excluded when the filter is on.
+   */
+  mode?: "live" | "audio_only";
   from?: string;
   to?: string;
 };
@@ -121,6 +127,23 @@ export async function loadAdminUsageSummary(
   if (filters.sessionId) query = query.eq("session_id", filters.sessionId);
   if (filters.from) query = query.gte("created_at", filters.from);
   if (filters.to) query = query.lte("created_at", filters.to);
+  if (filters.mode) {
+    // llm_usage_events has no mode column, so resolve session ids of the
+    // requested mode first and restrict the event query to that set. The
+    // subquery is bounded to sessions the same admin scope can read.
+    const modeSessionsQuery = admin.from("sessions").select("id").eq("mode", filters.mode);
+    const modeSessions =
+      filters.userId != null
+        ? await modeSessionsQuery.eq("user_id", filters.userId)
+        : await modeSessionsQuery;
+    if (modeSessions.error) {
+      throw new Error(`loadAdminUsageSummary mode filter failed: ${modeSessions.error.message}`);
+    }
+    const ids = (modeSessions.data ?? []).map((r) => r.id as string);
+    // When the mode has no matching sessions, force an empty result rather
+    // than returning every event (Supabase treats .in([]) as no filter).
+    query = ids.length > 0 ? query.in("session_id", ids) : query.eq("session_id", "__none__");
+  }
 
   const { data: events, error } = await query;
   if (error) throw new Error(`loadAdminUsageSummary events failed: ${error.message}`);
