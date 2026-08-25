@@ -1,6 +1,6 @@
 "use client";
 
-import { BarChart3, LayoutDashboard, Users } from "lucide-react";
+import { BarChart3, BookOpen, LayoutDashboard, Users } from "lucide-react";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
 import type { ComponentProps } from "react";
@@ -29,6 +29,7 @@ const NAV: NavItem[] = [
   { href: "/admin", label: "Visão geral", icon: LayoutDashboard, exact: true },
   { href: "/admin/users", label: "Usuários", icon: Users },
   { href: "/admin/usage", label: "Uso & custos", icon: BarChart3 },
+  { href: "/admin/knowledge", label: "Biblioteca", icon: BookOpen },
 ];
 
 type AdminUser = {
