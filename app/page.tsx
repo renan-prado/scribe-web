@@ -133,7 +133,7 @@ function Header() {
           </Link>
           <Link
             href="/sign-in"
-            className="lp-cta inline-flex items-center justify-center rounded-[22px] font-semibold uppercase text-white"
+            className="lp-cta inline-flex items-center justify-center gap-2 rounded-[22px] font-semibold uppercase text-white"
             style={{
               background: BLUE,
               fontSize: 12,
@@ -142,6 +142,8 @@ function Header() {
               boxShadow: "0 5px 14px rgba(79,168,240,.3)",
             }}
           >
+            {/** biome-ignore lint/performance/noImgElement: static asset in landing CTA */}
+            <img src="/pena-logo-white.svg" alt="" aria-hidden width={14} height={14} />
             Começar
           </Link>
         </div>
@@ -216,7 +218,7 @@ function Hero() {
           <div className="flex flex-col gap-2.5 pt-1 sm:flex-row sm:items-center sm:gap-3.5">
             <Link
               href="/sign-in"
-              className="lp-cta inline-flex items-center justify-center rounded-[26px] font-semibold uppercase text-white"
+              className="lp-cta inline-flex items-center justify-center gap-2.5 rounded-[26px] font-semibold uppercase text-white"
               style={{
                 background: BLUE,
                 fontSize: 13,
@@ -225,6 +227,8 @@ function Hero() {
                 boxShadow: "0 9px 22px rgba(79,168,240,.3)",
               }}
             >
+              {/** biome-ignore lint/performance/noImgElement: static asset in landing CTA */}
+              <img src="/pena-logo-white.svg" alt="" aria-hidden width={16} height={16} />
               Começar grátis
             </Link>
             <a
@@ -1058,7 +1062,7 @@ function PlanCard({
       ) : (
         <Link
           href="/sign-in"
-          className={`${isPrimary ? "lp-cta" : "lp-cta-soft"} inline-flex items-center justify-center rounded-[24px] font-semibold uppercase`}
+          className={`${isPrimary ? "lp-cta" : "lp-cta-soft"} inline-flex items-center justify-center gap-2 rounded-[24px] font-semibold uppercase`}
           style={{
             background: isPrimary ? BLUE : "#F4F8FC",
             color: isPrimary ? "#fff" : "#4A5A6A",
@@ -1068,6 +1072,12 @@ function PlanCard({
             boxShadow: isPrimary ? "0 8px 20px rgba(79,168,240,.3)" : undefined,
           }}
         >
+          {isPrimary ? (
+            <>
+              {/** biome-ignore lint/performance/noImgElement: static asset in landing CTA */}
+              <img src="/pena-logo-white.svg" alt="" aria-hidden width={14} height={14} />
+            </>
+          ) : null}
           {cta}
         </Link>
       )}
@@ -1110,7 +1120,7 @@ function FinalCTA() {
         <div className="relative flex flex-none flex-col items-stretch gap-3">
           <Link
             href="/sign-in"
-            className="lp-cta-yellow inline-flex items-center justify-center rounded-[26px] font-semibold uppercase"
+            className="lp-cta-yellow inline-flex items-center justify-center gap-2.5 rounded-[26px] font-semibold uppercase"
             style={{
               background: YELLOW,
               color: "#5A4409",
@@ -1120,6 +1130,8 @@ function FinalCTA() {
               boxShadow: "0 10px 24px rgba(0,0,0,.2)",
             }}
           >
+            {/** biome-ignore lint/performance/noImgElement: static asset in landing CTA */}
+            <img src="/pena-logo-white.svg" alt="" aria-hidden width={16} height={16} />
             Começar grátis
           </Link>
           <div
