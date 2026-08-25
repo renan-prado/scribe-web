@@ -36,6 +36,7 @@ returns table (
 )
 language sql
 stable
+set search_path = public, extensions
 as $$
   select
     c.id as chunk_id,
