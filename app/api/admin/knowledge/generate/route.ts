@@ -85,6 +85,12 @@ export async function POST(req: Request) {
       ],
       temperature: 0.2,
       maxTokens: 2000,
+      // OpenAI rejects `metadata` unless `store: true` is set — the
+      // metadata fields only make sense in the Logs UI, which only
+      // stores completions when store is on. Since this is an admin
+      // playground surface (opt-in, low volume), enabling store here
+      // is fine and gives us filterable dashboards.
+      store: true,
       metadata: {
         route: "admin_knowledge_generate",
         chunks: String(chunksUsed.length),
