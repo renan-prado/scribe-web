@@ -1,4 +1,6 @@
 import type { Metadata } from "next";
+import Link from "next/link";
+import { Button } from "@/components/ui/button";
 import { AdminPageHeader } from "@/features/admin/components/AdminPageHeader";
 import { KnowledgeSourceForm } from "@/features/admin/knowledge/KnowledgeSourceForm";
 
@@ -11,6 +13,11 @@ export default function AdminKnowledgeNewPage() {
       <AdminPageHeader
         title="Nova fonte"
         subtitle="Comentário, teologia sistemática, artigo, livro, editorial. Bíblias entram via CLI."
+        actions={
+          <Link href="/admin/knowledge">
+            <Button variant="outline">← voltar</Button>
+          </Link>
+        }
       />
       <KnowledgeSourceForm />
     </div>

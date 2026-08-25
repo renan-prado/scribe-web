@@ -4,6 +4,8 @@ import { useEffect, useState } from "react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
+import { AdminSelect } from "@/features/admin/components/AdminSelect";
+import { SOURCE_TYPE_LABEL } from "@/lib/knowledge/labels";
 
 type SearchResult = {
   chunkId: number;
@@ -164,10 +166,13 @@ export function KnowledgePlayground({ defaultSystemPrompt, sourceTypes }: Props)
           />
         </div>
 
-        <div className="flex items-center gap-3">
-          <Label htmlFor="pg-topk" className="text-xs">
-            Top-K: {topK}
-          </Label>
+        <div className="flex flex-col gap-1">
+          <div className="flex items-baseline justify-between">
+            <Label htmlFor="pg-topk" className="text-xs">
+              Nº de resultados
+            </Label>
+            <span className="font-mono text-xs text-[color:var(--scriba-ink-mute)]">{topK}</span>
+          </div>
           <input
             id="pg-topk"
             type="range"
@@ -175,8 +180,11 @@ export function KnowledgePlayground({ defaultSystemPrompt, sourceTypes }: Props)
             max={30}
             value={topK}
             onChange={(e) => setTopK(Number.parseInt(e.target.value, 10))}
-            className="flex-1"
+            className="w-full"
           />
+          <p className="text-[11px] text-muted-foreground">
+            Quantos trechos a busca vetorial retorna (e passa pro modelo, se você gerar resposta).
+          </p>
         </div>
 
         <div className="flex flex-col gap-1.5">
@@ -184,6 +192,7 @@ export function KnowledgePlayground({ defaultSystemPrompt, sourceTypes }: Props)
           <div className="flex flex-wrap gap-1.5">
             {sourceTypes.map((t) => {
               const active = selectedTypes.includes(t);
+              const label = SOURCE_TYPE_LABEL[t as keyof typeof SOURCE_TYPE_LABEL] ?? t;
               return (
                 <button
                   key={t}
@@ -196,7 +205,7 @@ export function KnowledgePlayground({ defaultSystemPrompt, sourceTypes }: Props)
                     color: active ? "var(--scriba-blue)" : "var(--scriba-ink-mute)",
                   }}
                 >
-                  {t}
+                  {label}
                 </button>
               );
             })}
@@ -243,16 +252,14 @@ export function KnowledgePlayground({ defaultSystemPrompt, sourceTypes }: Props)
           <Label htmlFor="pg-model" className="text-xs">
             Modelo (geração)
           </Label>
-          <select
+          <AdminSelect
             id="pg-model"
             value={model}
             onChange={(e) => persistModel(e.target.value as "gpt-4o-mini" | "gpt-4o")}
-            className="h-9 rounded-md border bg-white px-3 text-sm"
-            style={{ borderColor: "var(--scriba-hairline)" }}
           >
             <option value="gpt-4o-mini">gpt-4o-mini</option>
             <option value="gpt-4o">gpt-4o</option>
-          </select>
+          </AdminSelect>
         </div>
 
         <div className="flex flex-col gap-2">
@@ -320,7 +327,9 @@ export function KnowledgePlayground({ defaultSystemPrompt, sourceTypes }: Props)
                   ) : null}
                 </div>
                 <span className="font-mono text-xs text-[color:var(--scriba-ink-mute)]">
-                  sim {r.similarity.toFixed(3)} · {r.sourceType}
+                  sim {r.similarity.toFixed(3)} ·{" "}
+                  {SOURCE_TYPE_LABEL[r.sourceType as keyof typeof SOURCE_TYPE_LABEL] ??
+                    r.sourceType}
                 </span>
               </header>
               <p className="whitespace-pre-wrap">
