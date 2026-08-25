@@ -1,9 +1,10 @@
-import { MapPin, Mic } from "lucide-react";
+import { MapPin, Mic, Sparkles } from "lucide-react";
 import type { Metadata } from "next";
 import { revalidatePath } from "next/cache";
 import { NavLink } from "@/components/NavLink";
 import { NewRecordingDialog } from "@/features/session/components/NewRecordingDialog";
 import { RefreshSessionsButton } from "@/features/session/components/RefreshSessionsButton";
+import { listDeepenedSessionIds } from "@/lib/db/deepenings";
 import { deleteSession, listSessions } from "@/lib/db/sessions";
 import { SessionCardMenu } from "./SessionCardMenu";
 
@@ -95,6 +96,9 @@ export default async function LibraryPage() {
 
   const sessions = sessionsResult.ok ? sessionsResult.sessions : [];
   const loadError = sessionsResult.ok ? null : sessionsResult.message;
+  const deepenedIds = await listDeepenedSessionIds(sessions.map((s) => s.id)).catch(
+    () => new Set<string>()
+  );
   const now = new Date();
 
   const groups: {
@@ -149,6 +153,7 @@ export default async function LibraryPage() {
               <ul className="grid gap-3 sm:grid-cols-2">
                 {group.items.map((s) => {
                   const includeYear = new Date(s.createdAt).getFullYear() !== now.getFullYear();
+                  const isDeepened = deepenedIds.has(s.id);
                   return (
                     <li
                       key={s.id}
@@ -205,6 +210,18 @@ export default async function LibraryPage() {
                               <span className="size-[3px] rounded-full bg-[color:var(--scriba-ink-mute)]/60" />
                               <span className="text-[11px] font-light text-[color:var(--scriba-ink-mute)]">
                                 {formatDuration(s.durationMs)}
+                              </span>
+                            </>
+                          ) : null}
+                          {isDeepened ? (
+                            <>
+                              <span className="size-[3px] rounded-full bg-[color:var(--scriba-ink-mute)]/60" />
+                              <span
+                                title="Você já aprofundou este sermão"
+                                className="inline-flex items-center gap-1 rounded-full bg-[color:var(--scriba-blue-soft)] px-2 py-0.5 text-[10px] font-semibold uppercase tracking-wider text-[color:var(--scriba-blue)]"
+                              >
+                                <Sparkles className="size-3" />
+                                Aprofundado
                               </span>
                             </>
                           ) : null}

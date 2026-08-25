@@ -45,6 +45,22 @@ export async function hasDeepening(sessionId: string): Promise<boolean> {
 }
 
 /**
+ * Bulk lookup of which sessions already have a deepening. Returns a Set of
+ * session ids the caller can O(1) test. RLS scopes rows to the current user,
+ * so no extra ownership filter is needed here.
+ */
+export async function listDeepenedSessionIds(sessionIds: string[]): Promise<Set<string>> {
+  if (sessionIds.length === 0) return new Set();
+  const supabase = await createClient();
+  const { data, error } = await supabase
+    .from("session_deepenings")
+    .select("session_id")
+    .in("session_id", sessionIds);
+  if (error) throw new Error(`listDeepenedSessionIds failed: ${error.message}`);
+  return new Set((data ?? []).map((r) => r.session_id as string));
+}
+
+/**
  * Insert the deepening. The unique(session_id) constraint enforces the
  * "só pode ser aprofundado uma vez" rule at the DB level — this throws with
  * a distinctive message so the caller can turn it into a 409.
