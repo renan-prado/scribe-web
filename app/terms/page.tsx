@@ -11,28 +11,22 @@ const CONTACT_EMAIL = "contato@scriba.cc";
 
 export default function TermsPage() {
   return (
-    <main
-      className="mx-auto w-full max-w-2xl px-4 py-16 sm:px-6"
-      style={{ fontFamily: "var(--font-poppins)", color: "#33414F" }}
-    >
+    <main className="mx-auto w-full max-w-2xl px-4 py-16 text-scriba-ink-strong sm:px-6">
       <Link
         href="/"
-        className="mb-10 inline-flex items-center gap-1.5 text-sm transition-opacity hover:opacity-70"
-        style={{ color: "#4FA8F0" }}
+        className="mb-10 inline-flex items-center gap-1.5 text-sm text-scriba-blue transition-opacity hover:opacity-70"
       >
         ← Voltar ao início
       </Link>
 
-      <h1 className="mb-2 text-3xl font-semibold tracking-tight" style={{ color: "#2B3947" }}>
+      <h1 className="mb-2 text-3xl font-semibold tracking-tight text-scriba-ink-strong">
         Termos de Uso
       </h1>
-      <p className="mb-10 text-sm" style={{ color: "#9BA6B3" }}>
-        Última atualização: {LAST_UPDATED}
-      </p>
+      <p className="mb-10 text-sm text-scriba-ink-mute">Última atualização: {LAST_UPDATED}</p>
 
-      <div className="space-y-8 text-sm leading-relaxed" style={{ color: "#4A5A6A" }}>
+      <div className="space-y-8 text-sm leading-relaxed text-scriba-ink">
         <section>
-          <h2 className="mb-3 text-base font-semibold" style={{ color: "#2B3947" }}>
+          <h2 className="mb-3 text-base font-semibold text-scriba-ink-strong">
             1. Aceitação dos termos
           </h2>
           <p>
@@ -42,9 +36,7 @@ export default function TermsPage() {
         </section>
 
         <section>
-          <h2 className="mb-3 text-base font-semibold" style={{ color: "#2B3947" }}>
-            2. O serviço
-          </h2>
+          <h2 className="mb-3 text-base font-semibold text-scriba-ink-strong">2. O serviço</h2>
           <p>
             O Scriba oferece transcrição automática de sermões e pregações, enriquecimento com
             citações bíblicas e geração de resumos via inteligência artificial. O serviço é
@@ -54,7 +46,7 @@ export default function TermsPage() {
         </section>
 
         <section>
-          <h2 className="mb-3 text-base font-semibold" style={{ color: "#2B3947" }}>
+          <h2 className="mb-3 text-base font-semibold text-scriba-ink-strong">
             3. Conta e responsabilidades
           </h2>
           <ul className="list-disc space-y-1.5 pl-5">
@@ -72,7 +64,7 @@ export default function TermsPage() {
         </section>
 
         <section>
-          <h2 className="mb-3 text-base font-semibold" style={{ color: "#2B3947" }}>
+          <h2 className="mb-3 text-base font-semibold text-scriba-ink-strong">
             4. Conteúdo do usuário
           </h2>
           <p>
@@ -87,9 +79,7 @@ export default function TermsPage() {
         </section>
 
         <section>
-          <h2 className="mb-3 text-base font-semibold" style={{ color: "#2B3947" }}>
-            5. Uso aceitável
-          </h2>
+          <h2 className="mb-3 text-base font-semibold text-scriba-ink-strong">5. Uso aceitável</h2>
           <p>É proibido:</p>
           <ul className="mt-2 list-disc space-y-1.5 pl-5">
             <li>Tentar acessar sistemas ou dados de outros usuários.</li>
@@ -102,7 +92,7 @@ export default function TermsPage() {
         </section>
 
         <section>
-          <h2 className="mb-3 text-base font-semibold" style={{ color: "#2B3947" }}>
+          <h2 className="mb-3 text-base font-semibold text-scriba-ink-strong">
             6. Limitação de responsabilidade
           </h2>
           <p>
@@ -118,7 +108,7 @@ export default function TermsPage() {
         </section>
 
         <section>
-          <h2 className="mb-3 text-base font-semibold" style={{ color: "#2B3947" }}>
+          <h2 className="mb-3 text-base font-semibold text-scriba-ink-strong">
             7. Planos e pagamentos
           </h2>
           <p>
@@ -129,7 +119,7 @@ export default function TermsPage() {
         </section>
 
         <section>
-          <h2 className="mb-3 text-base font-semibold" style={{ color: "#2B3947" }}>
+          <h2 className="mb-3 text-base font-semibold text-scriba-ink-strong">
             8. Encerramento de conta
           </h2>
           <p>
@@ -140,7 +130,7 @@ export default function TermsPage() {
         </section>
 
         <section>
-          <h2 className="mb-3 text-base font-semibold" style={{ color: "#2B3947" }}>
+          <h2 className="mb-3 text-base font-semibold text-scriba-ink-strong">
             9. Propriedade intelectual
           </h2>
           <p>
@@ -151,7 +141,7 @@ export default function TermsPage() {
         </section>
 
         <section>
-          <h2 className="mb-3 text-base font-semibold" style={{ color: "#2B3947" }}>
+          <h2 className="mb-3 text-base font-semibold text-scriba-ink-strong">
             10. Alterações nos termos
           </h2>
           <p>
@@ -162,7 +152,7 @@ export default function TermsPage() {
         </section>
 
         <section>
-          <h2 className="mb-3 text-base font-semibold" style={{ color: "#2B3947" }}>
+          <h2 className="mb-3 text-base font-semibold text-scriba-ink-strong">
             11. Legislação aplicável
           </h2>
           <p>
@@ -173,12 +163,13 @@ export default function TermsPage() {
         </section>
 
         <section>
-          <h2 className="mb-3 text-base font-semibold" style={{ color: "#2B3947" }}>
-            12. Contato
-          </h2>
+          <h2 className="mb-3 text-base font-semibold text-scriba-ink-strong">12. Contato</h2>
           <p>
             Dúvidas sobre estes termos? Fale conosco:{" "}
-            <a href={`mailto:${CONTACT_EMAIL}`} style={{ color: "#4FA8F0" }}>
+            <a
+              href={`mailto:${CONTACT_EMAIL}`}
+              className="text-scriba-blue underline-offset-2 hover:underline"
+            >
               {CONTACT_EMAIL}
             </a>
             .
@@ -186,11 +177,8 @@ export default function TermsPage() {
         </section>
       </div>
 
-      <div
-        className="mt-12 border-t pt-6 text-xs"
-        style={{ borderColor: "#EEF4FA", color: "#9BA6B3" }}
-      >
-        <Link href="/privacy" style={{ color: "#4FA8F0" }}>
+      <div className="mt-12 border-t border-scriba-hairline-soft pt-6 text-xs text-scriba-ink-mute">
+        <Link href="/privacy" className="text-scriba-blue">
           Política de Privacidade
         </Link>{" "}
         · Scriba © {new Date().getFullYear()}

@@ -46,6 +46,33 @@
   --radius-2xl: calc(var(--radius) * 1.8);
   --radius-3xl: calc(var(--radius) * 2.2);
   --radius-4xl: calc(var(--radius) * 2.6);
+
+  /* Scriba brand palette — exposes --scriba-* CSS vars as Tailwind utilities.
+     Use text-scriba-blue, bg-scriba-blue-soft, border-scriba-hairline, etc. */
+  --color-scriba-blue: var(--scriba-blue);
+  --color-scriba-blue-hover: var(--scriba-blue-hover);
+  --color-scriba-blue-soft: var(--scriba-blue-soft);
+  --color-scriba-yellow: var(--scriba-yellow);
+  --color-scriba-yellow-hover: var(--scriba-yellow-hover);
+  --color-scriba-mint: var(--scriba-mint);
+  --color-scriba-mint-ink: var(--scriba-mint-ink);
+  --color-scriba-mint-accent: var(--scriba-mint-accent);
+  --color-scriba-rose: var(--scriba-rose);
+  --color-scriba-rose-ink: var(--scriba-rose-ink);
+  --color-scriba-rose-accent: var(--scriba-rose-accent);
+  --color-scriba-cream: var(--scriba-cream);
+  --color-scriba-cream-ink: var(--scriba-cream-ink);
+  --color-scriba-cream-accent: var(--scriba-cream-accent);
+  --color-scriba-lilac: var(--scriba-lilac);
+  --color-scriba-lilac-ink: var(--scriba-lilac-ink);
+  --color-scriba-lilac-accent: var(--scriba-lilac-accent);
+  --color-scriba-ink-strong: var(--scriba-ink-strong);
+  --color-scriba-ink: var(--scriba-ink);
+  --color-scriba-ink-soft: var(--scriba-ink-soft);
+  --color-scriba-ink-mute: var(--scriba-ink-mute);
+  --color-scriba-surface: var(--scriba-surface);
+  --color-scriba-hairline: var(--scriba-hairline);
+  --color-scriba-hairline-soft: var(--scriba-hairline-soft);
 }
 
 :root {

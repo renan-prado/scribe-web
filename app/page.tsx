@@ -10,15 +10,6 @@ export const metadata = {
   title: { absolute: "Scriba — Grave, entenda e viva o sermão" },
 };
 
-const BLUE = "#4FA8F0";
-const YELLOW = "#F8C64B";
-const INK_STRONG = "#2B3947";
-const INK = "#33414F";
-const INK_SOFT = "#6E7C8B";
-const INK_MUTE = "#9BA6B3";
-const HAIRLINE = "#EEF4FA";
-const SURFACE = "#F6FBFF";
-
 export default async function LandingPage() {
   const supabase = await createClient();
   const {
@@ -27,10 +18,7 @@ export default async function LandingPage() {
   if (user) redirect("/feed");
 
   return (
-    <div
-      className="w-full overflow-x-hidden bg-white text-[#33414F] antialiased"
-      style={{ fontFamily: "var(--font-poppins), system-ui, sans-serif" }}
-    >
+    <div className="w-full overflow-x-hidden bg-white text-scriba-ink-strong antialiased">
       <LandingStyles />
       <Header />
       <Hero />
@@ -104,14 +92,14 @@ function Header() {
       style={{
         background: "rgba(255,255,255,.9)",
         backdropFilter: "blur(14px)",
-        borderBottom: `1px solid ${HAIRLINE}`,
+        borderBottom: "1px solid #EEF4FA",
       }}
     >
       <div className="mx-auto flex max-w-[1200px] items-center justify-between gap-6 px-5 py-3.5 sm:gap-8 sm:px-10 sm:py-[18px]">
         <Logo textSize={18} />
         <div
-          className="hidden items-center gap-8 lg:flex"
-          style={{ fontSize: 13.5, color: INK_SOFT }}
+          className="hidden items-center gap-8 text-scriba-ink-soft lg:flex"
+          style={{ fontSize: 13.5 }}
         >
           <a href="#como-funciona" className="lp-nav">
             Como funciona
@@ -126,16 +114,15 @@ function Header() {
         <div className="flex items-center gap-2 sm:gap-3.5">
           <Link
             href="/sign-in"
-            className="lp-link hidden px-1 py-2.5 font-medium lg:inline"
-            style={{ fontSize: 13.5, color: INK_SOFT }}
+            className="lp-link hidden px-1 py-2.5 font-medium text-scriba-ink-soft lg:inline"
+            style={{ fontSize: 13.5 }}
           >
             Entrar
           </Link>
           <Link
             href="/sign-in"
-            className="lp-cta inline-flex items-center justify-center gap-2 rounded-[22px] font-semibold uppercase text-white"
+            className="lp-cta inline-flex items-center justify-center gap-2 rounded-[22px] bg-scriba-blue font-semibold uppercase text-white"
             style={{
-              background: BLUE,
               fontSize: 12,
               letterSpacing: ".04em",
               padding: "12px 20px",
@@ -186,31 +173,30 @@ function Hero() {
             className="inline-flex items-center gap-2 self-start rounded-[22px] border bg-white px-3.5 py-[7px] pl-[9px]"
             style={{ borderColor: "#E3EEF8", boxShadow: "0 4px 12px rgba(79,168,240,.1)" }}
           >
-            <div style={{ width: 10, height: 5, borderRadius: 3, background: YELLOW }} />
+            <div style={{ width: 10, height: 5, borderRadius: 3 }} className="bg-scriba-yellow" />
             <div
+              className="text-scriba-ink-soft"
               style={{
                 fontSize: 10.5,
                 fontWeight: 600,
                 letterSpacing: ".03em",
-                color: INK_SOFT,
               }}
             >
               Ouça, relembre e coloque em prática.
             </div>
           </div>
           <h1
-            className="text-[36px] leading-[1.08] text-pretty lg:text-[60px] lg:leading-[1.06]"
+            className="text-pretty text-[36px] leading-[1.08] text-scriba-ink-strong lg:text-[60px] lg:leading-[1.06]"
             style={{
               fontWeight: 600,
               letterSpacing: "-.025em",
-              color: INK_STRONG,
             }}
           >
             O sermão não termina quando você sai da igreja.
           </h1>
           <p
-            className="max-w-[520px] text-pretty text-[14.5px] leading-[1.62] lg:text-[17.5px]"
-            style={{ fontWeight: 300, color: INK_SOFT }}
+            className="max-w-[520px] text-pretty text-[14.5px] leading-[1.62] text-scriba-ink-soft lg:text-[17.5px]"
+            style={{ fontWeight: 300 }}
           >
             O Scriba escuta a pregação com você, organiza os principais ensinamentos e ajuda a
             relembrar e colocar em prática ao longo da semana.
@@ -218,9 +204,8 @@ function Hero() {
           <div className="flex flex-col gap-2.5 pt-1 sm:flex-row sm:items-center sm:gap-3.5">
             <Link
               href="/sign-in"
-              className="lp-cta inline-flex items-center justify-center gap-2.5 rounded-[26px] font-semibold uppercase text-white"
+              className="lp-cta inline-flex items-center justify-center gap-2.5 rounded-[26px] bg-scriba-blue font-semibold uppercase text-white"
               style={{
-                background: BLUE,
                 fontSize: 13,
                 letterSpacing: ".04em",
                 padding: "17px 32px",
@@ -233,10 +218,9 @@ function Hero() {
             </Link>
             <a
               href="#recursos"
-              className="lp-cta-outline inline-flex items-center justify-center rounded-[26px] border bg-white font-medium"
+              className="lp-cta-outline inline-flex items-center justify-center rounded-[26px] border bg-white font-medium text-scriba-ink"
               style={{
                 borderColor: "#DFEAF4",
-                color: "#4A5A6A",
                 fontSize: 13,
                 padding: "16px 28px",
               }}
@@ -269,11 +253,11 @@ function Hero() {
               ))}
             </div>
             <div
-              className="text-[11.5px] leading-[1.5] sm:text-[12.5px]"
-              style={{ fontWeight: 300, color: "#8C98A6" }}
+              className="text-[11.5px] leading-[1.5] text-scriba-ink-soft sm:text-[12.5px]"
+              style={{ fontWeight: 300 }}
             >
-              <span style={{ fontWeight: 600, color: "#4A5A6A" }}>12 mil sermões</span> registrados
-              por membros de 340 igrejas.
+              <span className="font-semibold text-scriba-ink">12 mil sermões</span> registrados por
+              membros de 340 igrejas.
             </div>
           </div>
         </div>
@@ -301,10 +285,12 @@ function Problem() {
       <SectionLabel>O problema</SectionLabel>
       <div className="grid gap-8 lg:grid-cols-[1.1fr_1fr] lg:gap-14">
         <h2
-          className="text-pretty text-[25px] leading-[1.32] lg:text-[34px]"
-          style={{ fontWeight: 500, letterSpacing: "-.016em", color: INK_STRONG }}
+          className="text-pretty text-[25px] leading-[1.32] text-scriba-ink-strong lg:text-[34px]"
+          style={{ fontWeight: 500, letterSpacing: "-.016em" }}
         >
-          <span style={{ color: "#8C98A6" }}>Você sai da igreja querendo lembrar de tudo. </span>
+          <span className="text-scriba-ink-mute">
+            Você sai da igreja querendo lembrar de tudo.{" "}
+          </span>
           Alguns dias depois, muita coisa já se perdeu.
         </h2>
         <div className="flex flex-col gap-3.5 lg:gap-[18px]">
@@ -323,8 +309,8 @@ function Problem() {
                 {p.n}
               </div>
               <div
-                className="pt-1.5 text-pretty text-[13.5px] leading-[1.6] sm:text-[14.5px]"
-                style={{ fontWeight: 300, color: INK_SOFT }}
+                className="pt-1.5 text-pretty text-[13.5px] leading-[1.6] text-scriba-ink-soft sm:text-[14.5px]"
+                style={{ fontWeight: 300 }}
               >
                 {p.body}
               </div>
@@ -359,20 +345,13 @@ const PROBLEMS = [
 
 function HowItWorks() {
   return (
-    <section
-      id="como-funciona"
-      style={{
-        background: SURFACE,
-        borderTop: `1px solid ${HAIRLINE}`,
-        borderBottom: `1px solid ${HAIRLINE}`,
-      }}
-    >
+    <section id="como-funciona" className="bg-scriba-surface border-scriba-hairline-soft border-y">
       <div className="mx-auto flex max-w-[1200px] flex-col gap-6 px-5 py-12 sm:px-10 sm:py-[92px] lg:gap-[52px]">
         <div className="flex max-w-[640px] flex-col gap-3">
-          <SectionLabel color={BLUE}>Como funciona</SectionLabel>
+          <SectionLabel color="blue">Como funciona</SectionLabel>
           <h2
-            className="text-pretty text-[29px] leading-[1.16] lg:text-[42px]"
-            style={{ fontWeight: 600, letterSpacing: "-.02em", color: INK_STRONG }}
+            className="text-pretty text-[29px] leading-[1.16] text-scriba-ink-strong lg:text-[42px]"
+            style={{ fontWeight: 600, letterSpacing: "-.02em" }}
           >
             Três passos, e o resto acontece sozinho.
           </h2>
@@ -384,8 +363,8 @@ function HowItWorks() {
             body="Enquanto você ouve, o Scriba identifica versículos e citações, explica contextos e destaca as frases mais importantes da pregação em tempo real."
             icon={
               <div
-                className="flex size-11 items-center justify-center rounded-full"
-                style={{ background: BLUE, animation: "scriba-halo 2.6s ease-out infinite" }}
+                className="flex size-11 items-center justify-center rounded-full bg-scriba-blue"
+                style={{ animation: "scriba-halo 2.6s ease-out infinite" }}
               >
                 <div className="flex items-center gap-[2.5px]">
                   <span style={{ width: 2.5, height: 10, background: "#fff", borderRadius: 2 }} />
@@ -400,10 +379,7 @@ function HowItWorks() {
             title="Tenha tudo organizado"
             body="Depois do amém, você recebe um resumo completo com o tema central, os principais ensinamentos, versículos citados, frases marcantes e aplicações práticas."
             icon={
-              <div
-                className="flex size-11 items-center justify-center rounded-full"
-                style={{ background: "#E4EFEA" }}
-              >
+              <div className="flex size-11 items-center justify-center rounded-full bg-scriba-mint">
                 <div
                   style={{
                     width: 16,
@@ -420,10 +396,7 @@ function HowItWorks() {
             title="Continue a reflexão"
             body="Durante a semana, o Scriba ajuda você a relembrar a mensagem, colocá-la em prática e fazer conexões com outros sermões."
             icon={
-              <div
-                className="flex size-11 items-center justify-center rounded-full"
-                style={{ background: "#FDF3DD" }}
-              >
+              <div className="flex size-11 items-center justify-center rounded-full bg-scriba-cream">
                 <div
                   style={{
                     width: 16,
@@ -463,12 +436,12 @@ function StepCard({
     >
       <div className="flex items-center justify-between">
         <div
+          className="text-scriba-ink-mute"
           style={{
             fontSize: 11,
             fontWeight: 600,
             letterSpacing: ".1em",
             textTransform: "uppercase",
-            color: "#A9B5C2",
           }}
         >
           {step}
@@ -476,14 +449,14 @@ function StepCard({
         {icon}
       </div>
       <div
-        className="text-[19px] leading-[1.28] sm:text-[21px]"
-        style={{ fontWeight: 600, letterSpacing: "-.012em", color: INK }}
+        className="text-[19px] leading-[1.28] text-scriba-ink sm:text-[21px]"
+        style={{ fontWeight: 600, letterSpacing: "-.012em" }}
       >
         {title}
       </div>
       <div
-        className="text-pretty text-[13.5px] leading-[1.6] sm:text-[14px] sm:leading-[1.62]"
-        style={{ fontWeight: 300, color: "#8C98A6" }}
+        className="text-pretty text-[13.5px] leading-[1.6] text-scriba-ink-soft sm:text-[14px] sm:leading-[1.62]"
+        style={{ fontWeight: 300 }}
       >
         {body}
       </div>
@@ -504,16 +477,16 @@ function Resumo() {
         </div>
         <div className="order-1 flex min-w-0 flex-col gap-6 lg:order-2 lg:gap-[34px]">
           <div className="flex flex-col gap-3">
-            <SectionLabel color={BLUE}>O resumo</SectionLabel>
+            <SectionLabel color="blue">O resumo</SectionLabel>
             <h2
-              className="text-pretty text-[29px] leading-[1.16] lg:text-[40px]"
-              style={{ fontWeight: 600, letterSpacing: "-.022em", color: INK_STRONG }}
+              className="text-pretty text-[29px] leading-[1.16] text-scriba-ink-strong lg:text-[40px]"
+              style={{ fontWeight: 600, letterSpacing: "-.022em" }}
             >
               Não é transcrição. É a mensagem, organizada.
             </h2>
             <p
-              className="max-w-[520px] text-pretty text-[14.5px] leading-[1.62] lg:text-[16px] lg:leading-[1.65]"
-              style={{ fontWeight: 300, color: INK_SOFT }}
+              className="max-w-[520px] text-pretty text-[14.5px] leading-[1.62] text-scriba-ink-soft lg:text-[16px] lg:leading-[1.65]"
+              style={{ fontWeight: 300 }}
             >
               Ao final do sermão, o Scriba transforma tudo o que foi dito em um resumo claro, para
               você entender, encontrar e relembrar o que realmente importa.
@@ -580,7 +553,7 @@ const SUMMARY_BLOCKS = [
 
 function Biblioteca() {
   return (
-    <section className="relative overflow-hidden" style={{ background: BLUE }}>
+    <section className="relative overflow-hidden bg-scriba-blue">
       <div
         className="pointer-events-none absolute"
         style={{
@@ -611,7 +584,7 @@ function Biblioteca() {
           <div className="flex flex-col gap-2.5 pt-1 sm:pt-2">
             <BiblioCard
               title="Busca por significado"
-              subtitle={`“aquele sermão sobre perdão na família”`}
+              subtitle={`"aquele sermão sobre perdão na família"`}
               badge="3 resultados"
             />
             <BiblioCard
@@ -688,9 +661,7 @@ function Testimonials() {
     <section className="mx-auto flex max-w-[1200px] flex-col gap-3.5 px-5 py-11 sm:px-10 sm:py-24">
       <div className="grid gap-3.5 lg:grid-cols-3 lg:gap-[22px]">
         <TestimonialCard
-          quote={
-            "“Parei de anotar e comecei a ouvir de verdade. Na quarta-feira o app me devolve exatamente o ponto que eu precisava.”"
-          }
+          quote={`"Parei de anotar e comecei a ouvir de verdade. Na quarta-feira o app me devolve exatamente o ponto que eu precisava."`}
           name="Mateus Ribeiro"
           title="Membro · Igreja Batista Central"
           initials="MR"
@@ -704,9 +675,7 @@ function Testimonials() {
           divider="#EEF2F6"
         />
         <TestimonialCard
-          quote={
-            "“Uso com meu grupo pequeno. Chegamos na reunião falando do mesmo sermão, com as mesmas perguntas.”"
-          }
+          quote={`"Uso com meu grupo pequeno. Chegamos na reunião falando do mesmo sermão, com as mesmas perguntas."`}
           name="Ana Laura Prado"
           title="Líder de grupo pequeno"
           initials="AL"
@@ -720,9 +689,7 @@ function Testimonials() {
           divider="#EEF2F6"
         />
         <TestimonialCard
-          quote={
-            "“Sei o que a igreja tem ouvido nos últimos dois anos. Isso mudou como eu planejo a pregação.”"
-          }
+          quote={`"Sei o que a igreja tem ouvido nos últimos dois anos. Isso mudou como eu planejo a pregação."`}
           name="Pr. João Silva"
           title="Pastor titular"
           initials="JS"
@@ -818,19 +785,19 @@ function TestimonialCard({
 
 function Plans() {
   return (
-    <section id="planos" style={{ background: SURFACE, borderTop: `1px solid ${HAIRLINE}` }}>
+    <section id="planos" className="bg-scriba-surface border-t border-scriba-hairline-soft">
       <div className="mx-auto flex max-w-[1200px] flex-col gap-6 px-5 py-12 sm:px-10 sm:py-[92px] lg:gap-12">
         <div className="flex flex-col gap-3 lg:items-center lg:text-center">
-          <SectionLabel color={BLUE}>Planos</SectionLabel>
+          <SectionLabel color="blue">Planos</SectionLabel>
           <h2
-            className="text-pretty text-[29px] leading-[1.16] lg:text-[42px] lg:leading-[1.14]"
-            style={{ fontWeight: 600, letterSpacing: "-.022em", color: INK_STRONG }}
+            className="text-pretty text-[29px] leading-[1.16] text-scriba-ink-strong lg:text-[42px] lg:leading-[1.14]"
+            style={{ fontWeight: 600, letterSpacing: "-.022em" }}
           >
             Comece grátis. Cresça quando fizer sentido.
           </h2>
           <p
-            className="max-w-[520px] text-[13.5px] leading-[1.6] lg:text-[15.5px]"
-            style={{ fontWeight: 300, color: "#8C98A6" }}
+            className="max-w-[520px] text-[13.5px] leading-[1.6] text-scriba-ink-soft lg:text-[15.5px]"
+            style={{ fontWeight: 300 }}
           >
             Sem contrato, sem cartão para testar. Cancele em um toque.
           </p>
@@ -868,7 +835,7 @@ function Plans() {
             ]}
             cta="Começar grátis"
             variant="primary"
-            accent={BLUE}
+            accent="#4FA8F0"
           />
           <PlanCard
             name="Estudioso"
@@ -940,7 +907,7 @@ function PlanCard({
     <div
       className={`${comingSoon ? "" : "lp-lift-plan"} relative flex flex-col gap-[22px] rounded-[24px] bg-white p-6 sm:rounded-[26px] sm:p-8`}
       style={{
-        border: isPrimary ? `1.5px solid ${BLUE}` : "1px solid #EAF2FA",
+        border: isPrimary ? "1.5px solid #4FA8F0" : "1px solid #EAF2FA",
         boxShadow: isPrimary ? "0 16px 40px rgba(79,168,240,.18)" : undefined,
         filter: comingSoon ? "grayscale(1)" : undefined,
         opacity: comingSoon ? 0.45 : 1,
@@ -969,7 +936,7 @@ function PlanCard({
           className="absolute left-6 sm:left-7"
           style={{
             top: -13,
-            background: YELLOW,
+            background: "#F8C64B",
             color: "#5A4409",
             fontSize: 10.5,
             fontWeight: 600,
@@ -984,43 +951,43 @@ function PlanCard({
       ) : null}
       <div className="flex flex-col gap-2">
         <div
+          className={isPrimary ? "text-scriba-blue" : "text-scriba-ink-soft"}
           style={{
             fontSize: 13,
             fontWeight: 600,
             letterSpacing: ".03em",
-            color: isPrimary ? BLUE : INK_SOFT,
           }}
         >
           {name}
         </div>
         <div className="flex items-baseline gap-1.5">
           <div
-            className="text-[36px] lg:text-[40px]"
-            style={{ fontWeight: 600, letterSpacing: "-.02em", color: INK_STRONG }}
+            className="text-[36px] text-scriba-ink-strong lg:text-[40px]"
+            style={{ fontWeight: 600, letterSpacing: "-.02em" }}
           >
             {price}
           </div>
           {priceUnit ? (
             <div
-              className="text-[13px] lg:text-[13.5px]"
-              style={{ fontWeight: 300, color: INK_MUTE }}
+              className="text-[13px] text-scriba-ink-mute lg:text-[13.5px]"
+              style={{ fontWeight: 300 }}
             >
               {priceUnit}
             </div>
           ) : null}
         </div>
         <div
-          className="flex items-center gap-1.5 text-[12.5px] lg:text-[13px]"
-          style={{ fontWeight: 300, color: INK_MUTE }}
+          className="flex items-center gap-1.5 text-[12.5px] text-scriba-ink-mute lg:text-[13px]"
+          style={{ fontWeight: 300 }}
         >
           <CoinHex size={14} />
           {hint}
         </div>
       </div>
-      <div className="h-px" style={{ background: HAIRLINE }} />
+      <div className="h-px bg-scriba-hairline-soft" />
       <div
-        className="flex flex-col gap-2.5 text-[13px] lg:text-[13.5px]"
-        style={{ fontWeight: 300, color: INK_SOFT }}
+        className="flex flex-col gap-2.5 text-[13px] text-scriba-ink-soft lg:text-[13.5px]"
+        style={{ fontWeight: 300 }}
       >
         {features.map((f) => (
           <div key={f} className="flex items-start gap-2.5">
@@ -1036,7 +1003,7 @@ function PlanCard({
             >
               <path
                 d="M3 8.5L6.5 12L13 5"
-                stroke={isPrimary ? BLUE : "#7A9BB5"}
+                stroke={isPrimary ? "#4FA8F0" : "#7A9BB5"}
                 strokeWidth="1.75"
                 strokeLinecap="round"
                 strokeLinejoin="round"
@@ -1064,7 +1031,7 @@ function PlanCard({
           href="/sign-in"
           className={`${isPrimary ? "lp-cta" : "lp-cta-soft"} inline-flex items-center justify-center gap-2 rounded-[24px] font-semibold uppercase`}
           style={{
-            background: isPrimary ? BLUE : "#F4F8FC",
+            background: isPrimary ? "#4FA8F0" : "#F4F8FC",
             color: isPrimary ? "#fff" : "#4A5A6A",
             fontSize: 12,
             letterSpacing: ".04em",
@@ -1120,9 +1087,8 @@ function FinalCTA() {
         <div className="relative flex flex-none flex-col items-stretch gap-3">
           <Link
             href="/sign-in"
-            className="lp-cta-yellow inline-flex items-center justify-center gap-2.5 rounded-[26px] font-semibold uppercase"
+            className="lp-cta-yellow inline-flex items-center justify-center gap-2.5 rounded-[26px] bg-scriba-yellow font-semibold uppercase"
             style={{
-              background: YELLOW,
               color: "#5A4409",
               fontSize: 13,
               letterSpacing: ".04em",
@@ -1148,12 +1114,12 @@ function FinalCTA() {
 
 function Footer() {
   return (
-    <footer style={{ borderTop: `1px solid ${HAIRLINE}` }}>
+    <footer className="border-t border-scriba-hairline-soft">
       <div className="mx-auto flex max-w-[1200px] flex-col gap-4 px-5 py-8 sm:px-10 sm:py-11 lg:flex-row lg:items-center lg:justify-between lg:gap-8">
         <Logo size={26} textSize={15} />
         <div
-          className="flex flex-wrap gap-5 sm:gap-7"
-          style={{ fontSize: 12.5, fontWeight: 300, color: "#9BA6B3" }}
+          className="flex flex-wrap gap-5 text-scriba-ink-mute sm:gap-7"
+          style={{ fontSize: 12.5, fontWeight: 300 }}
         >
           <a href="#recursos" className="lp-link-footer">
             Recursos
@@ -1168,7 +1134,7 @@ function Footer() {
             Contato
           </a>
         </div>
-        <div style={{ fontSize: 12, fontWeight: 300, color: "#B4BEC9" }}>
+        <div className="text-[12px] text-scriba-ink-mute" style={{ fontWeight: 300 }}>
           © {new Date().getFullYear()} Scriba
         </div>
       </div>
@@ -1176,21 +1142,18 @@ function Footer() {
   );
 }
 
-function SectionLabel({
-  children,
-  color = "#A9B5C2",
-}: {
-  children: React.ReactNode;
-  color?: string;
-}) {
+function SectionLabel({ children, color = "mute" }: { children: React.ReactNode; color?: string }) {
+  const colorClass =
+    color === "blue" ? "text-scriba-blue" : color === "mute" ? "text-scriba-ink-mute" : undefined;
   return (
     <div
+      className={colorClass}
       style={{
         fontSize: 11,
         fontWeight: 600,
         letterSpacing: ".12em",
         textTransform: "uppercase",
-        color,
+        color: colorClass ? undefined : color,
       }}
     >
       {children}
@@ -1231,8 +1194,8 @@ function PhoneFrame({
       >
         {/* status bar */}
         <div
-          className="absolute inset-x-0 top-0 z-10 flex items-center justify-between px-7"
-          style={{ height: 44, fontSize: 12, fontWeight: 600, color: "#3B4A5A" }}
+          className="absolute inset-x-0 top-0 z-10 flex items-center justify-between px-7 text-[#3B4A5A]"
+          style={{ height: 44, fontSize: 12, fontWeight: 600 }}
         >
           <span>9:41</span>
           <div className="flex items-center gap-1">
@@ -1271,26 +1234,25 @@ function PhoneChrome({
   return (
     <div
       className="flex items-center justify-between gap-3 px-5 pb-3 pt-2"
-      style={{ borderBottom: `1px solid ${HAIRLINE}` }}
+      style={{ borderBottom: "1px solid #EEF4FA" }}
     >
       <div className="flex min-w-0 flex-col">
         {subtitle ? (
           <span
-            className="truncate"
+            className="truncate text-scriba-ink-mute"
             style={{
               fontSize: 10,
               fontWeight: 600,
               letterSpacing: ".12em",
               textTransform: "uppercase",
-              color: "#A9B5C2",
             }}
           >
             {subtitle}
           </span>
         ) : null}
         <span
-          className="truncate"
-          style={{ fontSize: 15, fontWeight: 600, letterSpacing: "-.01em", color: INK_STRONG }}
+          className="truncate text-scriba-ink-strong"
+          style={{ fontSize: 15, fontWeight: 600, letterSpacing: "-.01em" }}
         >
           {title}
         </span>

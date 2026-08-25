@@ -9,26 +9,18 @@ export const metadata = {
 export default function NotFoundPage() {
   return (
     <main className="mx-auto flex min-h-svh w-full max-w-lg flex-col items-center justify-center gap-6 px-4 py-12 text-center sm:px-6">
-      <span
-        className="flex size-16 items-center justify-center rounded-full"
-        style={{ background: "#EAF4FE", color: "#4FA8F0" }}
-      >
+      <span className="flex size-16 items-center justify-center rounded-full bg-scriba-blue-soft text-scriba-blue">
         <MicOff className="size-7" />
       </span>
 
       <div className="flex flex-col gap-3">
-        <p className="font-mono text-xs uppercase tracking-[0.2em]" style={{ color: "#4FA8F0" }}>
-          404
-        </p>
-        <h1
-          className="text-2xl font-semibold tracking-tight sm:text-3xl"
-          style={{ fontFamily: "var(--font-poppins)", color: "#2B3947" }}
-        >
+        <p className="font-mono text-xs uppercase tracking-[0.2em] text-scriba-blue">404</p>
+        <h1 className="text-2xl font-semibold tracking-tight text-scriba-ink-strong sm:text-3xl">
           Página não encontrada
         </h1>
-        <p className="max-w-sm text-sm leading-relaxed" style={{ color: "#6E7C8B" }}>
+        <p className="max-w-sm text-sm leading-relaxed text-scriba-ink-soft">
           Nossa IA tentou transcrever essa URL e ficou em silêncio.{" "}
-          <span style={{ color: "#9BA6B3" }}>O endereço não existe ou foi movido.</span>
+          <span className="text-scriba-ink-mute">O endereço não existe ou foi movido.</span>
         </p>
       </div>
 

@@ -11,30 +11,22 @@ const CONTACT_EMAIL = "contato@scriba.cc";
 
 export default function PrivacyPage() {
   return (
-    <main
-      className="mx-auto w-full max-w-2xl px-4 py-16 sm:px-6"
-      style={{ fontFamily: "var(--font-poppins)", color: "#33414F" }}
-    >
+    <main className="mx-auto w-full max-w-2xl px-4 py-16 text-scriba-ink-strong sm:px-6">
       <Link
         href="/"
-        className="mb-10 inline-flex items-center gap-1.5 text-sm transition-opacity hover:opacity-70"
-        style={{ color: "#4FA8F0" }}
+        className="mb-10 inline-flex items-center gap-1.5 text-sm text-scriba-blue transition-opacity hover:opacity-70"
       >
         ← Voltar ao início
       </Link>
 
-      <h1 className="mb-2 text-3xl font-semibold tracking-tight" style={{ color: "#2B3947" }}>
+      <h1 className="mb-2 text-3xl font-semibold tracking-tight text-scriba-ink-strong">
         Política de Privacidade
       </h1>
-      <p className="mb-10 text-sm" style={{ color: "#9BA6B3" }}>
-        Última atualização: {LAST_UPDATED}
-      </p>
+      <p className="mb-10 text-sm text-scriba-ink-mute">Última atualização: {LAST_UPDATED}</p>
 
-      <div className="prose-scriba space-y-8 text-sm leading-relaxed" style={{ color: "#4A5A6A" }}>
+      <div className="space-y-8 text-sm leading-relaxed text-scriba-ink">
         <section>
-          <h2 className="mb-3 text-base font-semibold" style={{ color: "#2B3947" }}>
-            1. Quem somos
-          </h2>
+          <h2 className="mb-3 text-base font-semibold text-scriba-ink-strong">1. Quem somos</h2>
           <p>
             O Scriba é um serviço de transcrição e resumo de sermões em tempo real. Nosso objetivo é
             ajudar igrejas e ministérios a registrar e revisar pregações com facilidade.
@@ -42,7 +34,7 @@ export default function PrivacyPage() {
         </section>
 
         <section>
-          <h2 className="mb-3 text-base font-semibold" style={{ color: "#2B3947" }}>
+          <h2 className="mb-3 text-base font-semibold text-scriba-ink-strong">
             2. Dados que coletamos
           </h2>
           <ul className="list-disc space-y-1.5 pl-5">
@@ -66,7 +58,7 @@ export default function PrivacyPage() {
         </section>
 
         <section>
-          <h2 className="mb-3 text-base font-semibold" style={{ color: "#2B3947" }}>
+          <h2 className="mb-3 text-base font-semibold text-scriba-ink-strong">
             3. Como usamos seus dados
           </h2>
           <ul className="list-disc space-y-1.5 pl-5">
@@ -81,7 +73,7 @@ export default function PrivacyPage() {
         </section>
 
         <section>
-          <h2 className="mb-3 text-base font-semibold" style={{ color: "#2B3947" }}>
+          <h2 className="mb-3 text-base font-semibold text-scriba-ink-strong">
             4. Compartilhamento de dados
           </h2>
           <p>
@@ -96,7 +88,7 @@ export default function PrivacyPage() {
                 href="https://openai.com/policies/privacy-policy"
                 target="_blank"
                 rel="noopener noreferrer"
-                style={{ color: "#4FA8F0" }}
+                className="text-scriba-blue underline-offset-2 hover:underline"
               >
                 política de privacidade da OpenAI
               </a>
@@ -109,9 +101,7 @@ export default function PrivacyPage() {
         </section>
 
         <section>
-          <h2 className="mb-3 text-base font-semibold" style={{ color: "#2B3947" }}>
-            5. Seus direitos
-          </h2>
+          <h2 className="mb-3 text-base font-semibold text-scriba-ink-strong">5. Seus direitos</h2>
           <p>Você tem o direito de:</p>
           <ul className="mt-2 list-disc space-y-1.5 pl-5">
             <li>Acessar os dados que temos sobre você.</li>
@@ -121,7 +111,10 @@ export default function PrivacyPage() {
           </ul>
           <p className="mt-3">
             Para exercer qualquer desses direitos, entre em contato:{" "}
-            <a href={`mailto:${CONTACT_EMAIL}`} style={{ color: "#4FA8F0" }}>
+            <a
+              href={`mailto:${CONTACT_EMAIL}`}
+              className="text-scriba-blue underline-offset-2 hover:underline"
+            >
               {CONTACT_EMAIL}
             </a>
             .
@@ -129,9 +122,7 @@ export default function PrivacyPage() {
         </section>
 
         <section>
-          <h2 className="mb-3 text-base font-semibold" style={{ color: "#2B3947" }}>
-            6. Cookies
-          </h2>
+          <h2 className="mb-3 text-base font-semibold text-scriba-ink-strong">6. Cookies</h2>
           <p>
             O Scriba usa cookies de sessão essenciais para manter você autenticado. Não utilizamos
             cookies de rastreamento ou publicidade de terceiros.
@@ -139,9 +130,7 @@ export default function PrivacyPage() {
         </section>
 
         <section>
-          <h2 className="mb-3 text-base font-semibold" style={{ color: "#2B3947" }}>
-            7. Segurança
-          </h2>
+          <h2 className="mb-3 text-base font-semibold text-scriba-ink-strong">7. Segurança</h2>
           <p>
             Adotamos medidas técnicas e organizacionais para proteger seus dados, incluindo
             criptografia em trânsito (HTTPS) e senhas armazenadas com hash seguro. Nenhum sistema é
@@ -150,7 +139,7 @@ export default function PrivacyPage() {
         </section>
 
         <section>
-          <h2 className="mb-3 text-base font-semibold" style={{ color: "#2B3947" }}>
+          <h2 className="mb-3 text-base font-semibold text-scriba-ink-strong">
             8. Retenção de dados
           </h2>
           <p>
@@ -161,7 +150,7 @@ export default function PrivacyPage() {
         </section>
 
         <section>
-          <h2 className="mb-3 text-base font-semibold" style={{ color: "#2B3947" }}>
+          <h2 className="mb-3 text-base font-semibold text-scriba-ink-strong">
             9. Alterações nesta política
           </h2>
           <p>
@@ -171,12 +160,13 @@ export default function PrivacyPage() {
         </section>
 
         <section>
-          <h2 className="mb-3 text-base font-semibold" style={{ color: "#2B3947" }}>
-            10. Contato
-          </h2>
+          <h2 className="mb-3 text-base font-semibold text-scriba-ink-strong">10. Contato</h2>
           <p>
             Dúvidas sobre esta política? Fale conosco:{" "}
-            <a href={`mailto:${CONTACT_EMAIL}`} style={{ color: "#4FA8F0" }}>
+            <a
+              href={`mailto:${CONTACT_EMAIL}`}
+              className="text-scriba-blue underline-offset-2 hover:underline"
+            >
               {CONTACT_EMAIL}
             </a>
             .
@@ -184,11 +174,8 @@ export default function PrivacyPage() {
         </section>
       </div>
 
-      <div
-        className="mt-12 border-t pt-6 text-xs"
-        style={{ borderColor: "#EEF4FA", color: "#9BA6B3" }}
-      >
-        <Link href="/terms" style={{ color: "#4FA8F0" }}>
+      <div className="mt-12 border-t border-scriba-hairline-soft pt-6 text-xs text-scriba-ink-mute">
+        <Link href="/terms" className="text-scriba-blue">
           Termos de Uso
         </Link>{" "}
         · Scriba © {new Date().getFullYear()}
