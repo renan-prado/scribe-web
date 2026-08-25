@@ -103,6 +103,26 @@ Rules:
   --translation NAA` (also ARA, NVI). Not idempotent — re-running
   duplicates sources. Use `--dry-run` first.
 
+## Admin knowledge (CRUD + Playground)
+
+Under `/admin/knowledge` (gated by `requireAdmin`):
+- List with search + status/type filters.
+- New source form (`/new`): title, author, publisher, source_type,
+  license (required), tags (Enter-to-add chip), content textarea.
+  Two buttons: `Salvar rascunho` (status='draft') and
+  `Salvar e indexar` (POST then `/[id]/index`).
+- Detail page (`/[id]?tab=`) with tabs Conteúdo | Chunks | Metadados
+  | Indexação. Bible sources cannot be reindexed here — see the
+  `npm run index:bible` CLI.
+- Playground (`/playground`) — retrieval bench. Search-only or
+  Search+Generate; system prompt is editable and persisted in
+  `localStorage` (per admin browser); default lives in
+  `lib/prompts/knowledge-playground.ts`. Model select limited to
+  `gpt-4o-mini | gpt-4o` to keep cost comparisons meaningful.
+
+All routes: `[admin/knowledge] event` log tag with
+`sourceId/query/topK/chunksUsed/latencyMs`.
+
 ## What is deliberately NOT here yet
 
 Do not add these unprompted (the user is aware and defers them):

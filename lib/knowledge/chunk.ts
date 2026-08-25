@@ -170,3 +170,87 @@ export function chunkBibleChapter(
 
   return out;
 }
+
+export type EditorialChunkerOpts = {
+  /** Target characters per chunk. Default 1200 — roughly 300 tokens,
+   * which fits ~5-8 short paragraphs of pt-BR prose. */
+  targetChars?: number;
+  /** Overlap between chunks so a query landing between windows still hits
+   * something. Default 200 chars. */
+  overlapChars?: number;
+};
+
+/**
+ * Chunk arbitrary editorial text (commentary, systematic theology,
+ * article, editorial note) into overlapping character-window chunks.
+ * Splits on paragraph boundaries (blank lines) first so a chunk almost
+ * always starts at a natural break. If a single paragraph exceeds the
+ * target, it is emitted alone (no mid-paragraph splitting — accepting
+ * the size overshoot beats splitting an argument mid-sentence).
+ *
+ * A markdown heading line (`# `, `## `, etc.) starting a chunk is
+ * captured into the chunk `section` for playground display.
+ */
+export function chunkEditorialText(text: string, opts: EditorialChunkerOpts = {}): PreparedChunk[] {
+  const targetChars = Math.max(200, opts.targetChars ?? 1200);
+  const overlapChars = Math.max(0, Math.min(opts.overlapChars ?? 200, targetChars - 100));
+  const normalized = text.replace(/\r\n/g, "\n").trim();
+  if (!normalized) return [];
+
+  const paragraphs = normalized
+    .split(/\n\s*\n+/)
+    .map((p) => p.trim())
+    .filter(Boolean);
+  if (paragraphs.length === 0) return [];
+
+  const chunks: PreparedChunk[] = [];
+  let buffer = "";
+  let bufferSection: string | undefined;
+  let bufferParagraphs = 0;
+
+  function detectHeading(paragraph: string): string | undefined {
+    const firstLine = paragraph.split("\n", 1)[0] ?? "";
+    const match = /^#{1,6}\s+(.+)$/.exec(firstLine.trim());
+    return match ? match[1].trim() : undefined;
+  }
+
+  function flush(): void {
+    if (!buffer) return;
+    chunks.push({
+      content: buffer.trim(),
+      section: bufferSection,
+      metadata: { kind: "editorial", paragraphs: bufferParagraphs },
+    });
+    // Start next buffer with the tail of the current one for overlap continuity.
+    if (overlapChars > 0 && buffer.length > overlapChars) {
+      buffer = buffer.slice(-overlapChars);
+      bufferSection = undefined;
+      bufferParagraphs = 0;
+    } else {
+      buffer = "";
+      bufferSection = undefined;
+      bufferParagraphs = 0;
+    }
+  }
+
+  for (const paragraph of paragraphs) {
+    const heading = detectHeading(paragraph);
+    if (buffer.length === 0 && heading) bufferSection = heading;
+
+    // If adding this paragraph would exceed target and we already have content,
+    // flush first (paragraph starts fresh in a new chunk).
+    if (buffer.length > 0 && buffer.length + paragraph.length + 2 > targetChars) {
+      flush();
+      if (heading) bufferSection = heading;
+    }
+
+    buffer = buffer ? `${buffer}\n\n${paragraph}` : paragraph;
+    bufferParagraphs++;
+
+    // A single oversized paragraph gets its own chunk (no mid-para splitting).
+    if (buffer.length >= targetChars) flush();
+  }
+
+  flush();
+  return chunks;
+}
