@@ -200,7 +200,7 @@ function ReflectionCard({
           </span>
         ) : null}
       </div>
-      <div className="flex flex-col gap-2 sm:flex-row">
+      <div className="flex flex-col gap-3 sm:flex-row sm:gap-2">
         <DeepenButton sessionId={sessionId} hasDeepening={hasDeepening} variant="feed-card" />
         <NavLink
           href={href}

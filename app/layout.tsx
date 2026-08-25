@@ -33,7 +33,20 @@ export const metadata: Metadata = {
     template: "%s | Scriba",
   },
   description: "Transcrição e resumo de sermões em tempo real",
-  icons: { icon: "/favicon.svg" },
+  icons: {
+    icon: [
+      {
+        url: "/favicon-light-theme.svg",
+        type: "image/svg+xml",
+        media: "(prefers-color-scheme: light)",
+      },
+      {
+        url: "/favicon-dark-theme.svg",
+        type: "image/svg+xml",
+        media: "(prefers-color-scheme: dark)",
+      },
+    ],
+  },
 };
 
 export default function RootLayout({ children }: LayoutProps<"/">) {

@@ -38,7 +38,10 @@ export function MobileBottomNav({
 
   return (
     <div className="pointer-events-none fixed inset-x-0 bottom-0 z-40 sm:hidden">
-      <div aria-hidden className="h-16 bg-[linear-gradient(to_top,#FFFFFF,rgba(255,255,255,0))]" />
+      <div
+        aria-hidden
+        className="h-24 bg-[linear-gradient(to_top,rgba(255,255,255,0.98)_0%,rgba(255,255,255,0.75)_40%,rgba(255,255,255,0.35)_75%,rgba(255,255,255,0)_100%)]"
+      />
       <nav
         aria-label="Navegação principal"
         className="pointer-events-auto relative flex h-[76px] items-center justify-around bg-white pb-2 shadow-[0_-6px_22px_rgba(79,168,240,0.12)]"
@@ -123,7 +126,7 @@ export function MobileBottomNav({
               <span
                 className={cn(
                   "flex size-16 flex-col items-center justify-center gap-1 rounded-full bg-[color:var(--scriba-blue)] text-white",
-                  "border-[5px] border-white shadow-[0_10px_22px_rgba(79,168,240,0.42)] transition-colors",
+                  "border-[2px] border-white shadow-[0_10px_22px_rgba(79,168,240,0.42)] transition-colors",
                   "hover:bg-[color:var(--scriba-blue-hover)]"
                 )}
               >
