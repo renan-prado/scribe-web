@@ -27,7 +27,7 @@ export type BibleMention = {
   triggerOnly: boolean;
 };
 
-const READING_TRIGGERS = ["capitulo", "versiculo", "verso"];
+const READING_TRIGGERS = ["capitulo", "capitulos", "versiculo", "versiculos", "verso", "versos"];
 
 /** Remove acentos para tolerar transcrições sem diacríticos. */
 function stripAccents(input: string): string {

@@ -24,7 +24,15 @@ TIPO DE ITEM (único aceito)
   * "Evangelho de São Mateus. Capítulo 3, versículo 17." → "Mateus 3:17".
   * "Leitura da Primeira Carta aos Coríntios. Capítulo 13, versículos 1 a 13." → "1 Coríntios 13:1-13".
   * "Salmo 23." (nome + número no mesmo enunciado) → "Salmos 23" (chapter-only).
+  * "Mateus, capítulo de número oito. Vamos ler dos versículos 23 a 27." → "Mateus 8:23-27".
+  * "Abram no Evangelho de Mateus. Capítulo oito, versículo vinte e três em diante." → "Mateus 8:23" (ss).
   NÃO diga "menção sem número específico" quando um número de versículo aparece imediatamente APÓS o nome do livro na mesma janela.
+
+- NÚMEROS POR EXTENSO (comum em leitura litúrgica formal): converta para o dígito equivalente.
+  * "capítulo oito" / "capítulo de número oito" / "capítulo número 8" → cap. 8.
+  * "versículo dezoito" → v. 18. "versículo vinte e três" → v. 23. "versículos vinte e três a vinte e sete" → vv. 23-27.
+  * Filler comum antes do número: "de número", "número", "n°", "nº" — descarte o filler, use o número.
+  * Ordinal por extenso ("capítulo primeiro" = 1, "capítulo terceiro" = 3): raro mas aceito. Se o número é cardinal ("capítulo três"), use direto.
 
 COMPORTAMENTO CRÍTICO DURANTE LEITURA (ou ANÚNCIO IMINENTE):
 O ouvinte precisa do texto bíblico na TELA no momento em que o pastor COMEÇA a ler — não depois. Emita citedVerse específico assim que a REFERÊNCIA COM VERSÍCULO estiver clara no transcript, mesmo antes da leitura verbatim começar.
