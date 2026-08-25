@@ -11,7 +11,14 @@ import {
   TableRow,
 } from "@/components/ui/table";
 import { AdminPageHeader } from "@/features/admin/components/AdminPageHeader";
+import { AdminSelect } from "@/features/admin/components/AdminSelect";
+import {
+  LicenseBadge,
+  SourceTypeBadge,
+  StatusBadge,
+} from "@/features/admin/knowledge/KnowledgeBadges";
 import { ADMIN_TABLE_SURFACE } from "@/features/admin/lib/surfaces";
+import { SOURCE_TYPE_LABEL, STATUS_LABEL } from "@/lib/knowledge/labels";
 import { SOURCE_STATUSES, SOURCE_TYPES } from "@/lib/knowledge/types";
 import { createAdminClient } from "@/lib/supabase/admin";
 
@@ -24,20 +31,6 @@ const DATE_FMT = new Intl.DateTimeFormat("pt-BR", {
   hour: "2-digit",
   minute: "2-digit",
 });
-
-const STATUS_LABEL: Record<string, string> = {
-  draft: "Rascunho",
-  processing: "Indexando…",
-  indexed: "Indexado",
-  failed: "Falhou",
-};
-
-const STATUS_TONE: Record<string, { bg: string; fg: string }> = {
-  draft: { bg: "#F4F1EA", fg: "#7B6748" },
-  processing: { bg: "#FDF3DD", fg: "#C79B2A" },
-  indexed: { bg: "#E4EFEA", fg: "#4E8570" },
-  failed: { bg: "#FAEAE5", fg: "#A8715C" },
-};
 
 type SearchParams = {
   search?: string;
@@ -62,8 +55,8 @@ async function loadSources(sp: SearchParams): Promise<SourceRow[]> {
   let q = admin
     .from("knowledge_sources")
     .select("id,title,author,source_type,license,status,indexed_at,created_at")
-    .order("created_at", { ascending: false })
-    .limit(200);
+    .order("title", { ascending: true })
+    .limit(500);
   if (sp.search) q = q.ilike("title", `%${sp.search}%`);
   if (sp.status && (SOURCE_STATUSES as readonly string[]).includes(sp.status)) {
     q = q.eq("status", sp.status);
@@ -105,6 +98,9 @@ export default async function AdminKnowledgePage({
         subtitle="Fontes indexadas para RAG (Bíblia + editorial). Escrita apenas via admin."
         actions={
           <div className="flex items-center gap-2">
+            <Link href="/admin">
+              <Button variant="outline">← voltar</Button>
+            </Link>
             <Link href="/admin/knowledge/playground">
               <Button variant="outline">Playground</Button>
             </Link>
@@ -142,20 +138,14 @@ export default async function AdminKnowledgePage({
           >
             Status
           </label>
-          <select
-            id="knowledge-status"
-            name="status"
-            defaultValue={sp.status ?? ""}
-            className="h-9 rounded-md border bg-white px-3 text-sm"
-            style={{ borderColor: "var(--scriba-hairline)" }}
-          >
-            <option value="">todos</option>
+          <AdminSelect id="knowledge-status" name="status" defaultValue={sp.status ?? ""}>
+            <option value="">Todos</option>
             {SOURCE_STATUSES.map((s) => (
               <option key={s} value={s}>
-                {STATUS_LABEL[s] ?? s}
+                {STATUS_LABEL[s]}
               </option>
             ))}
-          </select>
+          </AdminSelect>
         </div>
         <div className="flex flex-col gap-1">
           <label
@@ -164,20 +154,14 @@ export default async function AdminKnowledgePage({
           >
             Tipo
           </label>
-          <select
-            id="knowledge-type"
-            name="sourceType"
-            defaultValue={sp.sourceType ?? ""}
-            className="h-9 rounded-md border bg-white px-3 text-sm"
-            style={{ borderColor: "var(--scriba-hairline)" }}
-          >
-            <option value="">todos</option>
+          <AdminSelect id="knowledge-type" name="sourceType" defaultValue={sp.sourceType ?? ""}>
+            <option value="">Todos</option>
             {SOURCE_TYPES.map((t) => (
               <option key={t} value={t}>
-                {t}
+                {SOURCE_TYPE_LABEL[t]}
               </option>
             ))}
-          </select>
+          </AdminSelect>
         </div>
         <Button type="submit" variant="outline">
           Filtrar
@@ -204,44 +188,40 @@ export default async function AdminKnowledgePage({
                 </TableCell>
               </TableRow>
             ) : (
-              sources.map((s) => {
-                const tone = STATUS_TONE[s.status] ?? STATUS_TONE.draft;
-                return (
-                  <TableRow key={s.id}>
-                    <TableCell>
-                      <Link
-                        href={`/admin/knowledge/${s.id}`}
-                        className="text-[color:var(--scriba-ink)] hover:text-[color:var(--scriba-blue)]"
-                      >
-                        <div className="flex flex-col">
-                          <span className="font-medium">{s.title}</span>
-                          {s.author ? (
-                            <span className="text-[0.7rem] text-[color:var(--scriba-ink-mute)]">
-                              {s.author}
-                            </span>
-                          ) : null}
-                        </div>
-                      </Link>
-                    </TableCell>
-                    <TableCell className="font-mono text-xs">{s.source_type}</TableCell>
-                    <TableCell className="text-xs text-muted-foreground">{s.license}</TableCell>
-                    <TableCell>
-                      <span
-                        className="inline-flex items-center rounded-full px-2 py-0.5 text-[10px] font-semibold uppercase tracking-[0.1em]"
-                        style={{ background: tone.bg, color: tone.fg }}
-                      >
-                        {STATUS_LABEL[s.status] ?? s.status}
-                      </span>
-                    </TableCell>
-                    <TableCell className="text-right font-mono text-xs">
-                      {s.chunk_count.toLocaleString("pt-BR")}
-                    </TableCell>
-                    <TableCell className="text-xs text-muted-foreground">
-                      {s.indexed_at ? DATE_FMT.format(new Date(s.indexed_at)) : "—"}
-                    </TableCell>
-                  </TableRow>
-                );
-              })
+              sources.map((s) => (
+                <TableRow key={s.id}>
+                  <TableCell>
+                    <Link
+                      href={`/admin/knowledge/${s.id}`}
+                      className="text-[color:var(--scriba-ink)] hover:text-[color:var(--scriba-blue)]"
+                    >
+                      <div className="flex flex-col">
+                        <span className="font-medium">{s.title}</span>
+                        {s.author ? (
+                          <span className="text-[0.7rem] text-[color:var(--scriba-ink-mute)]">
+                            {s.author}
+                          </span>
+                        ) : null}
+                      </div>
+                    </Link>
+                  </TableCell>
+                  <TableCell>
+                    <SourceTypeBadge type={s.source_type} />
+                  </TableCell>
+                  <TableCell>
+                    <LicenseBadge license={s.license} />
+                  </TableCell>
+                  <TableCell>
+                    <StatusBadge status={s.status} />
+                  </TableCell>
+                  <TableCell className="text-right font-mono text-xs">
+                    {s.chunk_count.toLocaleString("pt-BR")}
+                  </TableCell>
+                  <TableCell className="text-xs text-muted-foreground">
+                    {s.indexed_at ? DATE_FMT.format(new Date(s.indexed_at)) : "—"}
+                  </TableCell>
+                </TableRow>
+              ))
             )}
           </TableBody>
         </Table>
