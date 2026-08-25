@@ -46,3 +46,7 @@ next-env.d.ts
 # supabase CLI local cache
 /supabase/.temp/
 /supabase/.branches/
+
+# ad-hoc script logs and one-off verify SQL
+/scripts/_*.log
+/scripts/_*.sql
