@@ -9,6 +9,8 @@ const schema = z.object({
   OPENAI_FINAL_SUMMARY_MODEL: z.string().default("gpt-4o"),
   OPENAI_DEEPENING_MODEL: z.string().default("gpt-4o"),
   OPENAI_FORMAT_MODEL: z.string().default("gpt-4o-mini"),
+  OPENAI_EMBEDDING_MODEL: z.string().default("text-embedding-3-small"),
+  OPENAI_EMBEDDING_DIMENSIONS: z.coerce.number().int().positive().default(512),
   SUPABASE_SERVICE_ROLE_KEY: z.string().min(1),
 });
 
@@ -21,6 +23,8 @@ const parsed = schema.safeParse({
   OPENAI_FINAL_SUMMARY_MODEL: process.env.OPENAI_FINAL_SUMMARY_MODEL,
   OPENAI_DEEPENING_MODEL: process.env.OPENAI_DEEPENING_MODEL,
   OPENAI_FORMAT_MODEL: process.env.OPENAI_FORMAT_MODEL,
+  OPENAI_EMBEDDING_MODEL: process.env.OPENAI_EMBEDDING_MODEL,
+  OPENAI_EMBEDDING_DIMENSIONS: process.env.OPENAI_EMBEDDING_DIMENSIONS,
   SUPABASE_SERVICE_ROLE_KEY: process.env.SUPABASE_SERVICE_ROLE_KEY,
 });
 
