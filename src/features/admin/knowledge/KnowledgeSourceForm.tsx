@@ -5,7 +5,14 @@ import { type FormEvent, useState } from "react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
-import { LICENSES, SOURCE_TYPES } from "@/lib/knowledge/types";
+import { AdminSelect } from "@/features/admin/components/AdminSelect";
+import { MarkdownEditor } from "@/features/admin/knowledge/MarkdownEditor";
+import {
+  EDITORIAL_SOURCE_TYPES,
+  LICENSE_LABEL,
+  SELECTABLE_LICENSES,
+  SOURCE_TYPE_LABEL,
+} from "@/lib/knowledge/labels";
 
 type Props = {
   initial?: {
@@ -19,23 +26,6 @@ type Props = {
     tags?: string[];
     content?: string | null;
   };
-};
-
-const EDITORIAL_TYPES = SOURCE_TYPES.filter(
-  (t) =>
-    t !== "bible" &&
-    t !== "session_summary" &&
-    t !== "session_deepening" &&
-    t !== "session_highlight"
-);
-
-const LICENSE_LABEL: Record<string, string> = {
-  public_domain: "Domínio público",
-  cc_by: "CC BY",
-  cc_by_sa: "CC BY-SA",
-  editorial_original: "Editorial próprio",
-  licensed_agreement: "Licenciado (contrato)",
-  user_content: "Conteúdo do usuário",
 };
 
 /**
@@ -158,37 +148,33 @@ export function KnowledgeSourceForm({ initial }: Props) {
 
         <div className="flex flex-col gap-1.5">
           <Label htmlFor="source-type">Tipo *</Label>
-          <select
+          <AdminSelect
             id="source-type"
             value={sourceType}
             onChange={(e) => setSourceType(e.target.value)}
-            className="h-9 rounded-md border bg-white px-3 text-sm"
-            style={{ borderColor: "var(--scriba-hairline)" }}
           >
-            {EDITORIAL_TYPES.map((t) => (
+            {EDITORIAL_SOURCE_TYPES.map((t) => (
               <option key={t} value={t}>
-                {t}
+                {SOURCE_TYPE_LABEL[t]}
               </option>
             ))}
-          </select>
+          </AdminSelect>
         </div>
         <div className="flex flex-col gap-1.5">
           <Label htmlFor="license">Licença *</Label>
-          <select
+          <AdminSelect
             id="license"
             value={license}
             onChange={(e) => setLicense(e.target.value)}
-            className="h-9 rounded-md border bg-white px-3 text-sm"
-            style={{ borderColor: "var(--scriba-hairline)" }}
             required
+            placeholder="Escolha a licença…"
           >
-            <option value="">— selecione —</option>
-            {LICENSES.filter((l) => l !== "user_content").map((l) => (
+            {SELECTABLE_LICENSES.map((l) => (
               <option key={l} value={l}>
-                {LICENSE_LABEL[l] ?? l}
+                {LICENSE_LABEL[l]}
               </option>
             ))}
-          </select>
+          </AdminSelect>
         </div>
 
         <div className="sm:col-span-2 flex flex-col gap-1.5">
@@ -238,15 +224,17 @@ export function KnowledgeSourceForm({ initial }: Props) {
         </div>
 
         <div className="sm:col-span-2 flex flex-col gap-1.5">
-          <Label htmlFor="content">Conteúdo (markdown/texto)</Label>
-          <textarea
-            id="content"
+          <Label htmlFor="content">Conteúdo (markdown)</Label>
+          <MarkdownEditor
             value={content}
-            onChange={(e) => setContent(e.target.value)}
-            className="min-h-[300px] rounded-md border bg-white p-3 font-mono text-sm"
-            style={{ borderColor: "var(--scriba-hairline)" }}
+            onChange={setContent}
+            minHeight={420}
             placeholder="Cole o texto integral. O chunker divide em parágrafos, alvo ~1200 chars por chunk com overlap de 200."
           />
+          <p className="text-[11px] text-muted-foreground">
+            Aceita **negrito**, *itálico*, listas, títulos (## Título), citações (&gt; ...) e
+            código. Os títulos viram `section` dos chunks quando o chunker roda.
+          </p>
         </div>
       </div>
 

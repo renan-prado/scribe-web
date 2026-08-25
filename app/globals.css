@@ -335,3 +335,109 @@
     }
   }
 }
+
+/*
+ * Tiptap admin editor — Notion-ish styling driven purely by markdown
+ * shortcuts. Kept scoped to `.scriba-md-editor` so it never leaks into
+ * the rendered summary/feed markdown elsewhere.
+ */
+.scriba-md-editor .ProseMirror {
+  min-height: 380px;
+  padding: 1.25rem 1.5rem;
+  font-size: 0.9375rem;
+  line-height: 1.7;
+  color: var(--scriba-ink-strong);
+  outline: none;
+}
+
+.scriba-md-editor .ProseMirror > * + * {
+  margin-top: 0.75em;
+}
+
+.scriba-md-editor .ProseMirror h1 {
+  font-size: 1.75rem;
+  font-weight: 700;
+  letter-spacing: -0.01em;
+  margin-top: 1.2em;
+  color: var(--scriba-ink-strong);
+}
+.scriba-md-editor .ProseMirror h2 {
+  font-size: 1.375rem;
+  font-weight: 600;
+  letter-spacing: -0.005em;
+  margin-top: 1.1em;
+  color: var(--scriba-ink-strong);
+}
+.scriba-md-editor .ProseMirror h3 {
+  font-size: 1.125rem;
+  font-weight: 600;
+  margin-top: 1em;
+  color: var(--scriba-ink-strong);
+}
+
+.scriba-md-editor .ProseMirror ul,
+.scriba-md-editor .ProseMirror ol {
+  padding-left: 1.5em;
+}
+.scriba-md-editor .ProseMirror ul {
+  list-style: disc;
+}
+.scriba-md-editor .ProseMirror ol {
+  list-style: decimal;
+}
+.scriba-md-editor .ProseMirror li > p {
+  margin: 0;
+}
+
+.scriba-md-editor .ProseMirror blockquote {
+  border-left: 3px solid var(--scriba-hairline);
+  padding-left: 1em;
+  color: var(--scriba-ink-mute);
+  font-style: italic;
+}
+
+.scriba-md-editor .ProseMirror code {
+  font-family: var(--font-mono, ui-monospace, monospace);
+  background: var(--scriba-surface);
+  padding: 0.1em 0.35em;
+  border-radius: 4px;
+  font-size: 0.85em;
+}
+
+.scriba-md-editor .ProseMirror pre {
+  background: #1c1e22;
+  color: #e6e6e6;
+  padding: 0.9em 1em;
+  border-radius: 8px;
+  overflow-x: auto;
+  font-family: var(--font-mono, ui-monospace, monospace);
+  font-size: 0.85rem;
+  line-height: 1.55;
+}
+.scriba-md-editor .ProseMirror pre code {
+  background: transparent;
+  color: inherit;
+  padding: 0;
+  border-radius: 0;
+}
+
+.scriba-md-editor .ProseMirror hr {
+  border: 0;
+  border-top: 1px solid var(--scriba-hairline);
+  margin: 1.5em 0;
+}
+
+.scriba-md-editor .ProseMirror a {
+  color: var(--scriba-blue);
+  text-decoration: underline;
+  text-underline-offset: 2px;
+}
+
+/* Placeholder — shown only in the very first empty paragraph */
+.scriba-md-editor .ProseMirror p.is-editor-empty:first-child::before {
+  content: attr(data-placeholder);
+  float: left;
+  color: var(--scriba-ink-mute);
+  pointer-events: none;
+  height: 0;
+}
