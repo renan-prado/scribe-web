@@ -85,3 +85,11 @@ export const SELECTABLE_LICENSES: License[] = [
   "editorial_original",
   "licensed_agreement",
 ];
+
+/**
+ * Bible translations currently indexed in production. Keep in sync
+ * with what `npm run index:bible` was actually run for — used by the
+ * admin metadata builder to populate the translation dropdown.
+ */
+export const INDEXED_BIBLE_TRANSLATIONS = ["NAA", "ARA", "NVI"] as const;
+export type IndexedBibleTranslation = (typeof INDEXED_BIBLE_TRANSLATIONS)[number];

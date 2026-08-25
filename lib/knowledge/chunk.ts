@@ -111,6 +111,21 @@ export function bookDisplayFor(abbrev: string): string {
   return BOOK_DISPLAY[abbrev] ?? abbrev;
 }
 
+/**
+ * Canonical protestant-canon book list in reading order (OT then NT).
+ * Client-safe — used by the admin metadata builder to populate a Book
+ * dropdown without importing the fs-backed bible loader.
+ */
+export const KNOWN_BIBLE_BOOKS: Array<{
+  abbrev: string;
+  display: string;
+  testament: "OT" | "NT";
+}> = Object.entries(BOOK_DISPLAY).map(([abbrev, display]) => ({
+  abbrev,
+  display,
+  testament: NT_BOOKS.has(abbrev) ? "NT" : "OT",
+}));
+
 export type BibleChunkerOpts = {
   /** Number of verses per chunk. Default 8 — small enough to stay focused,
    * big enough to keep argumentative units (a paragraph in Paul, a stanza
