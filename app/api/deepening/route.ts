@@ -1,4 +1,5 @@
 import { NextResponse } from "next/server";
+import { chargeCoins } from "@/lib/db/coins";
 import { createDeepening, hasDeepening } from "@/lib/db/deepenings";
 import { getSession } from "@/lib/db/sessions";
 import { recordChatUsage } from "@/lib/db/usage";
@@ -54,6 +55,20 @@ export async function POST(request: Request) {
 
   if (await hasDeepening(sessionId)) {
     return NextResponse.json({ error: "deepening_already_exists" }, { status: 409 });
+  }
+
+  // Charge coins BEFORE we call the LLM — a 402 here means the account is
+  // dry and there's no point spending upstream tokens on a request the user
+  // can't afford. Any downstream failure below leaves the ledger entry in
+  // place (intentional: this is a mechanism-testing pass and refunds add
+  // complexity we don't need yet).
+  const charge = await chargeCoins("deepening", sessionId);
+  if (!charge.ok) {
+    if (charge.error === "insufficient_balance") {
+      return NextResponse.json({ error: "insufficient_balance" }, { status: 402 });
+    }
+    console.error("[deepening] charge failed", { error: charge.error, message: charge.message });
+    return NextResponse.json({ error: "charge_failed" }, { status: 500 });
   }
 
   const userMessage = [

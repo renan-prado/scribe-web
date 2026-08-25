@@ -181,7 +181,7 @@ function Hero() {
             className="inline-flex items-center gap-2 self-start rounded-[22px] border bg-white px-3.5 py-[7px] pl-[9px]"
             style={{ borderColor: "#E3EEF8", boxShadow: "0 4px 12px rgba(79,168,240,.1)" }}
           >
-            <div style={{ width: 20, height: 5, borderRadius: 3, background: YELLOW }} />
+            <div style={{ width: 10, height: 5, borderRadius: 3, background: YELLOW }} />
             <div
               style={{
                 fontSize: 10.5,
@@ -190,7 +190,7 @@ function Hero() {
                 color: INK_SOFT,
               }}
             >
-              Grave, entenda e viva o sermão
+              Ouça, relembre e coloque em prática.
             </div>
           </div>
           <h1
@@ -207,9 +207,8 @@ function Hero() {
             className="max-w-[520px] text-pretty text-[14.5px] leading-[1.62] lg:text-[17.5px]"
             style={{ fontWeight: 300, color: INK_SOFT }}
           >
-            O Scriba escuta a pregação com você, transforma o que foi dito em resumo, versículos e
-            práticas — e devolve tudo aos poucos, ao longo da semana, para que a mensagem realmente
-            fique.
+            O Scriba escuta a pregação com você, organiza os principais ensinamentos e ajuda a
+            relembrar e colocar em prática ao longo da semana.
           </p>
           <div className="flex flex-col gap-2.5 pt-1 sm:flex-row sm:items-center sm:gap-3.5">
             <Link
@@ -235,7 +234,7 @@ function Hero() {
                 padding: "16px 28px",
               }}
             >
-              Ver o app por dentro
+              Conhecer o Scriba
             </a>
           </div>
           <div className="flex items-center gap-3.5 pt-1.5 sm:gap-5 sm:pt-3.5">
@@ -274,7 +273,11 @@ function Hero() {
         <div className="-mx-5 flex justify-center sm:mx-0">
           <PhoneFrame
             chrome={
-              <PhoneChrome subtitle="Culto de domingo" title="Feed vivo" right={<LiveDot />} />
+              <PhoneChrome
+                subtitle="Culto de domingo"
+                title="Ensinamentos ao vivo"
+                right={<LiveDot />}
+              />
             }
           >
             <FeedMock />
@@ -294,10 +297,8 @@ function Problem() {
           className="text-pretty text-[25px] leading-[1.32] lg:text-[34px]"
           style={{ fontWeight: 500, letterSpacing: "-.016em", color: INK_STRONG }}
         >
-          Na quarta-feira, quase nada resta.{" "}
-          <span style={{ color: "#8C98A6" }}>
-            Anotações soltas, um versículo esquecido e a sensação de que algo importante passou.
-          </span>
+          <span style={{ color: "#8C98A6" }}>Você sai da igreja querendo lembrar de tudo. </span>
+          Alguns dias depois, muita coisa já se perdeu.
         </h2>
         <div className="flex flex-col gap-3.5 lg:gap-[18px]">
           {PROBLEMS.map((p) => (
@@ -333,19 +334,19 @@ const PROBLEMS = [
     n: 1,
     bg: "#FAEAE5",
     fg: "#A8715C",
-    body: "Anotar durante a pregação divide sua atenção — você escreve em vez de ouvir.",
+    body: "Anotar durante o sermão divide sua atenção: enquanto você escreve, deixa de acompanhar o que está sendo dito.",
   },
   {
     n: 2,
     bg: "#FDF3DD",
     fg: "#C79B2A",
-    body: "Uma mensagem ouvida uma única vez raramente vira mudança de vida.",
+    body: "Sem revisitar a mensagem, os detalhes desaparecem: uma frase importante, uma referência bíblica, uma aplicação para a semana.",
   },
   {
     n: 3,
     bg: "#EAF0FB",
     fg: "#6E82A8",
-    body: "Anos de sermões ficam perdidos: nada é buscável, nada se conecta.",
+    body: "Com o tempo, fica difícil encontrar o que você ouviu: os sermões se acumulam, mas seus aprendizados não ficam organizados.",
   },
 ];
 
@@ -372,8 +373,8 @@ function HowItWorks() {
         <div className="grid gap-3.5 lg:grid-cols-3 lg:gap-[22px]">
           <StepCard
             step="Passo 01"
-            title="Toque em gravar"
-            body="Guarde o celular no bolso e apenas ouça. O Scriba acompanha a pregação e vai montando os cartões em tempo real."
+            title="Acompanhe ao vivo"
+            body="Enquanto você ouve, o Scriba identifica versículos e citações, explica contextos e destaca as frases mais importantes da pregação em tempo real."
             icon={
               <div
                 className="flex size-11 items-center justify-center rounded-full"
@@ -389,8 +390,8 @@ function HowItWorks() {
           />
           <StepCard
             step="Passo 02"
-            title="Receba o resumo"
-            body="Ideia central, pontos principais, versículos citados e aplicações práticas — organizados minutos depois do amém."
+            title="Tenha tudo organizado"
+            body="Depois do amém, você recebe um resumo completo com o tema central, os principais ensinamentos, versículos citados, frases marcantes e aplicações práticas."
             icon={
               <div
                 className="flex size-11 items-center justify-center rounded-full"
@@ -409,8 +410,8 @@ function HowItWorks() {
           />
           <StepCard
             step="Passo 03"
-            title="Viva durante a semana"
-            body="O feed devolve a mensagem em doses curtas: relembrar, entender, aprofundar e praticar — um passo por dia."
+            title="Continue a reflexão"
+            body="Durante a semana, o Scriba ajuda você a relembrar a mensagem, colocá-la em prática e fazer conexões com outros sermões."
             icon={
               <div
                 className="flex size-11 items-center justify-center rounded-full"
@@ -507,8 +508,8 @@ function Resumo() {
               className="max-w-[520px] text-pretty text-[14.5px] leading-[1.62] lg:text-[16px] lg:leading-[1.65]"
               style={{ fontWeight: 300, color: INK_SOFT }}
             >
-              Cada sermão vira blocos com propósito próprio — e cada bloco tem sua cor, para você
-              achar o que procura em segundos.
+              Ao final do sermão, o Scriba transforma tudo o que foi dito em um resumo claro, para
+              você entender, encontrar e relembrar o que realmente importa.
             </p>
           </div>
           <div className="grid grid-cols-2 gap-3 sm:gap-3.5">
@@ -542,28 +543,28 @@ function Resumo() {
 const SUMMARY_BLOCKS = [
   {
     title: "Ideia central",
-    text: "A frase que sustenta toda a pregação, ancorada no topo.",
+    text: "O ensinamento que conduz toda a mensagem, destacado logo no início.",
     bg: "#EAF4FE",
     fg: "#3E86C4",
     body: "#5E86AC",
   },
   {
     title: "Versículos citados",
-    text: "Todo texto lido, com referência e contexto de uso.",
+    text: "As passagens mencionadas pelo pregador, reunidas com suas referências.",
     bg: "#FAEAE5",
     fg: "#A8715C",
     body: "#A08373",
   },
   {
     title: "Aplicações práticas",
-    text: "O que fazer na segunda-feira, em passos possíveis.",
+    text: "Caminhos possíveis para levar o que você ouviu para a vida cotidiana.",
     bg: "#E4EFEA",
     fg: "#4E8570",
     body: "#6E8A7E",
   },
   {
     title: "Pontos principais",
-    text: "A estrutura da mensagem, na ordem em que foi dita.",
+    text: "O desenvolvimento do sermão organizado de forma clara e fácil de consultar.",
     bg: "#FDF3DD",
     fg: "#C79B2A",
     body: "#9C8A55",
@@ -603,7 +604,7 @@ function Biblioteca() {
           <div className="flex flex-col gap-2.5 pt-1 sm:pt-2">
             <BiblioCard
               title="Busca por significado"
-              subtitle="“aquele sermão sobre perdão na família”"
+              subtitle={`“aquele sermão sobre perdão na família”`}
               badge="3 resultados"
             />
             <BiblioCard
@@ -680,7 +681,9 @@ function Testimonials() {
     <section className="mx-auto flex max-w-[1200px] flex-col gap-3.5 px-5 py-11 sm:px-10 sm:py-24">
       <div className="grid gap-3.5 lg:grid-cols-3 lg:gap-[22px]">
         <TestimonialCard
-          quote="“Parei de anotar e comecei a ouvir de verdade. Na quarta-feira o app me devolve exatamente o ponto que eu precisava.”"
+          quote={
+            "“Parei de anotar e comecei a ouvir de verdade. Na quarta-feira o app me devolve exatamente o ponto que eu precisava.”"
+          }
           name="Mateus Ribeiro"
           title="Membro · Igreja Batista Central"
           initials="MR"
@@ -694,30 +697,36 @@ function Testimonials() {
           divider="#EEF2F6"
         />
         <TestimonialCard
-          quote="“Uso com meu grupo pequeno. Chegamos na reunião falando do mesmo sermão, com as mesmas perguntas.”"
+          quote={
+            "“Uso com meu grupo pequeno. Chegamos na reunião falando do mesmo sermão, com as mesmas perguntas.”"
+          }
           name="Ana Laura Prado"
           title="Líder de grupo pequeno"
           initials="AL"
-          bg="#E4EFEA"
-          quoteColor="#2F5A49"
-          nameColor="#3F6D5A"
-          roleColor="#6E8A7E"
-          avatarBg="rgba(255,255,255,.7)"
-          avatarFg="#4E8570"
-          divider="rgba(78,133,112,.22)"
+          bg="#fff"
+          border="#EAF2FA"
+          quoteColor="#3D4C5B"
+          nameColor="#4A5A6A"
+          roleColor="#9BA6B3"
+          avatarBg="#EAF4FE"
+          avatarFg="#4FA8F0"
+          divider="#EEF2F6"
         />
         <TestimonialCard
-          quote="“Sei o que a igreja tem ouvido nos últimos dois anos. Isso mudou como eu planejo a pregação.”"
+          quote={
+            "“Sei o que a igreja tem ouvido nos últimos dois anos. Isso mudou como eu planejo a pregação.”"
+          }
           name="Pr. João Silva"
           title="Pastor titular"
           initials="JS"
-          bg="#FDF3DD"
-          quoteColor="#6B5A2A"
-          nameColor="#7A6836"
-          roleColor="#9C8A55"
-          avatarBg="rgba(255,255,255,.7)"
-          avatarFg="#C79B2A"
-          divider="rgba(199,155,42,.24)"
+          bg="#fff"
+          border="#EAF2FA"
+          quoteColor="#3D4C5B"
+          nameColor="#4A5A6A"
+          roleColor="#9BA6B3"
+          avatarBg="#EAF4FE"
+          avatarFg="#4FA8F0"
+          divider="#EEF2F6"
         />
       </div>
     </section>
@@ -821,51 +830,79 @@ function Plans() {
         </div>
         <div className="grid items-start gap-4 lg:grid-cols-3 lg:gap-[22px]">
           <PlanCard
-            name="Membro"
-            price="Grátis"
-            hint="4 sermões por mês"
+            name="Pessoal"
+            price="R$ 19,90"
+            priceUnit="/mês"
+            hint="2.000 créditos por mês"
             features={[
-              "Gravação e resumo completo",
-              "Feed diário de retomada",
-              "Biblioteca pessoal",
+              "Sermão ao vivo",
+              "Resumo organizado",
+              "Referências bíblicas",
+              "Destaques e principais ideias",
+              "Biblioteca de sermões",
+              "Aprofundar sermões",
             ]}
-            cta="Criar conta"
+            cta="Escolher Pessoal"
             variant="soft"
             accent="#EAF4FE"
+            comingSoon
           />
           <PlanCard
-            name="Discípulo"
-            price="R$ 19"
-            priceUnit="/mês"
-            hint="Sermões ilimitados"
+            name="Grátis"
+            price="Grátis"
+            hint="100 créditos para conhecer o Scriba"
             features={[
-              "Tudo do plano Membro",
-              "Conexões entre sermões",
-              "Busca por significado",
-              "Planos de aprofundamento",
+              "Sermão ao vivo",
+              "Resumo organizado",
+              "Referências bíblicas",
+              "Destaques e principais ideias",
+              "Biblioteca de sermões",
+              "Aprofundar sermões",
             ]}
-            cta="Testar 14 dias grátis"
+            cta="Começar grátis"
             variant="primary"
             accent={BLUE}
-            badge="Mais escolhido"
           />
           <PlanCard
-            name="Igreja"
-            price="R$ 249"
+            name="Estudioso"
+            price="R$ 44,90"
             priceUnit="/mês"
-            hint="Até 300 membros"
+            hint="5.000 créditos por mês"
             features={[
-              "Biblioteca oficial da igreja",
-              "Conteúdo para grupos pequenos",
-              "Painel de temas e engajamento",
+              "Sermão ao vivo",
+              "Resumo organizado",
+              "Referências bíblicas",
+              "Destaques e principais ideias",
+              "Biblioteca de sermões",
+              "Aprofundar sermões",
             ]}
-            cta="Falar com o time"
+            cta="Escolher Estudioso"
             variant="soft"
-            accent="#FDF3DD"
+            accent="#EAF4FE"
+            comingSoon
           />
         </div>
       </div>
     </section>
+  );
+}
+
+function CoinHex({ size = 12 }: { size?: number }) {
+  return (
+    <span
+      className="inline-flex flex-none items-center justify-center rounded-full bg-[#FFF3C4]"
+      style={{ width: size + 6, height: size + 6 }}
+    >
+      <span
+        className="bg-[#F8C64B]"
+        style={{
+          display: "block",
+          width: size * 0.78,
+          height: size * 0.89,
+          clipPath: "polygon(50% 0, 100% 25%, 100% 75%, 50% 100%, 0 75%, 0 25%)",
+        }}
+      />
+    </span>
   );
 }
 
@@ -877,8 +914,8 @@ function PlanCard({
   features,
   cta,
   variant,
-  accent,
   badge,
+  comingSoon,
 }: {
   name: string;
   price: string;
@@ -889,17 +926,38 @@ function PlanCard({
   variant: "primary" | "soft";
   accent: string;
   badge?: string;
+  comingSoon?: boolean;
 }) {
-  const isPrimary = variant === "primary";
+  const isPrimary = variant === "primary" && !comingSoon;
   return (
     <div
-      className="lp-lift-plan relative flex flex-col gap-[22px] rounded-[24px] bg-white p-6 sm:rounded-[26px] sm:p-8"
+      className={`${comingSoon ? "" : "lp-lift-plan"} relative flex flex-col gap-[22px] rounded-[24px] bg-white p-6 sm:rounded-[26px] sm:p-8`}
       style={{
         border: isPrimary ? `1.5px solid ${BLUE}` : "1px solid #EAF2FA",
         boxShadow: isPrimary ? "0 16px 40px rgba(79,168,240,.18)" : undefined,
+        filter: comingSoon ? "grayscale(1)" : undefined,
+        opacity: comingSoon ? 0.45 : 1,
+        pointerEvents: comingSoon ? "none" : undefined,
       }}
     >
-      {badge ? (
+      {comingSoon ? (
+        <div
+          className="absolute left-6 sm:left-7"
+          style={{
+            top: -13,
+            background: "#E8EEF4",
+            color: "#637080",
+            fontSize: 10.5,
+            fontWeight: 600,
+            letterSpacing: ".06em",
+            textTransform: "uppercase",
+            padding: "6px 14px",
+            borderRadius: 20,
+          }}
+        >
+          Em breve
+        </div>
+      ) : badge ? (
         <div
           className="absolute left-6 sm:left-7"
           style={{
@@ -944,7 +1002,11 @@ function PlanCard({
             </div>
           ) : null}
         </div>
-        <div className="text-[12.5px] lg:text-[13px]" style={{ fontWeight: 300, color: INK_MUTE }}>
+        <div
+          className="flex items-center gap-1.5 text-[12.5px] lg:text-[13px]"
+          style={{ fontWeight: 300, color: INK_MUTE }}
+        >
+          <CoinHex size={14} />
           {hint}
         </div>
       </div>
@@ -955,32 +1017,57 @@ function PlanCard({
       >
         {features.map((f) => (
           <div key={f} className="flex items-start gap-2.5">
-            <div
-              className="mt-0.5 flex-none rounded-[5px]"
-              style={{
-                width: 16,
-                height: 16,
-                background: isPrimary ? BLUE : accent,
-              }}
-            />
+            <svg
+              role="img"
+              aria-label="Incluído"
+              className="mt-0.5 flex-none"
+              width="16"
+              height="16"
+              viewBox="0 0 16 16"
+              fill="none"
+              xmlns="http://www.w3.org/2000/svg"
+            >
+              <path
+                d="M3 8.5L6.5 12L13 5"
+                stroke={isPrimary ? BLUE : "#7A9BB5"}
+                strokeWidth="1.75"
+                strokeLinecap="round"
+                strokeLinejoin="round"
+              />
+            </svg>
             {f}
           </div>
         ))}
       </div>
-      <Link
-        href="/sign-up"
-        className={`${isPrimary ? "lp-cta" : "lp-cta-soft"} inline-flex items-center justify-center rounded-[24px] font-semibold uppercase`}
-        style={{
-          background: isPrimary ? BLUE : "#F4F8FC",
-          color: isPrimary ? "#fff" : "#4A5A6A",
-          fontSize: 12,
-          letterSpacing: ".04em",
-          padding: 15,
-          boxShadow: isPrimary ? "0 8px 20px rgba(79,168,240,.3)" : undefined,
-        }}
-      >
-        {cta}
-      </Link>
+      {comingSoon ? (
+        <div
+          className="inline-flex cursor-not-allowed items-center justify-center rounded-[24px] font-semibold uppercase"
+          style={{
+            background: "#F0F4F8",
+            color: "#9AABB8",
+            fontSize: 12,
+            letterSpacing: ".04em",
+            padding: 15,
+          }}
+        >
+          Em breve
+        </div>
+      ) : (
+        <Link
+          href="/sign-up"
+          className={`${isPrimary ? "lp-cta" : "lp-cta-soft"} inline-flex items-center justify-center rounded-[24px] font-semibold uppercase`}
+          style={{
+            background: isPrimary ? BLUE : "#F4F8FC",
+            color: isPrimary ? "#fff" : "#4A5A6A",
+            fontSize: 12,
+            letterSpacing: ".04em",
+            padding: 15,
+            boxShadow: isPrimary ? "0 8px 20px rgba(79,168,240,.3)" : undefined,
+          }}
+        >
+          {cta}
+        </Link>
+      )}
     </div>
   );
 }
@@ -1218,63 +1305,77 @@ function LiveDot() {
 const DEMO_FEED_ITEMS: FeedItem[] = [
   {
     kind: "speakerHighlight",
-    text: "A sede que o mundo oferece nunca termina — só troca de nome.",
+    text: "Jesus não oferece apenas água para a sede. Ele revela a sede que aquela mulher ainda não sabia nomear.",
   },
   {
     kind: "context",
-    label: "Sicar",
-    text: "O poço de Jacó era memória viva: aliança, promessa e disputa. Jesus escolhe esse cenário para reabrir uma conversa antiga sobre a fonte certa.",
-    source: "Comentário bíblico",
+    label: "Judeus e samaritanos",
+    text: "A conversa em João 4 rompe barreiras religiosas, étnicas e sociais. Ao pedir água a uma mulher samaritana, Jesus se aproxima de alguém que muitos judeus evitariam e transforma um encontro improvável em revelação.",
+    source: "Contexto histórico de João 4",
   },
   {
     kind: "speakerCitation",
-    text: "O nosso coração está inquieto enquanto não repousa em Ti.",
+    text: "Fizeste-nos para Ti, e inquieto está o nosso coração enquanto não repousa em Ti.",
     author: "Agostinho, citado pelo pregador",
   },
   {
     kind: "suggestedQuote",
-    text: "A sede humana só encontra descanso na plenitude de Deus.",
-    author: "A. W. Tozer",
-    reason: "Reforça o ponto sobre fontes secas.",
+    text: "O meu povo cometeu dois males: abandonou a mim, a fonte de água viva, e cavou as suas próprias cisternas.",
+    author: "Jeremias 2:13",
+    reason: "Conecta a água viva oferecida por Jesus às falsas fontes onde buscamos satisfação.",
   },
   {
     kind: "speakerEcho",
-    text: "A cura da sede vem por outra sede — a sede de Deus.",
+    text: "Cristo não veio apenas melhorar as nossas cisternas. Veio nos levar de volta à fonte.",
   },
 ];
 
 const DEMO_SUMMARY: SummaryPayload = {
   thinking: "",
-  title: "A sede que só Cristo cura",
+  title: "A água viva para corações sedentos",
   shortSummary:
-    "A verdadeira sede da alma não é fisiológica — é por comunhão com Deus, e nada além dele a sacia.",
+    "Em João 4, Jesus revela que nossa sede mais profunda não pode ser satisfeita pelas fontes deste mundo.",
   blocks: [
-    { type: "h1", text: "A sede que só Cristo cura" },
+    {
+      type: "h1",
+      text: "A água viva para corações sedentos",
+    },
     {
       type: "paragraph",
-      text: "Jesus se aproxima da samaritana num poço fora da cidade — território de cansaço e vergonha. É ali, no meio-dia mais quente, que ele oferece uma água que sacia de outra maneira.",
+      text: "À beira do poço de Jacó, Jesus inicia uma conversa improvável com uma mulher samaritana. Ao pedir água, ele atravessa barreiras religiosas, étnicas e sociais.",
     },
     {
       type: "highlight",
-      text: "A sede que o mundo oferece nunca termina — só troca de nome.",
+      text: "Jesus não oferece apenas água para a sede. Ele revela a sede que aquela mulher ainda não sabia nomear.",
     },
-    { type: "h2", text: "Três fontes falsas" },
+    {
+      type: "h2",
+      text: "As cisternas que não podem nos saciar",
+    },
     {
       type: "paragraph",
-      text: "O pregador identifica os lugares onde tentamos matar essa sede: aprovação social, produtividade constante e o entretenimento que anestesia sem curar.",
+      text: "Assim como a samaritana voltaria ao poço depois de beber, também retornamos às mesmas fontes em busca de satisfação: aprovação, relacionamentos, conquistas e conforto. Elas aliviam por um momento, mas não alcançam a sede mais profunda do coração.",
     },
     {
       type: "example",
-      text: "Ele contou de um ex-atleta que só descobriu a sede real quando as medalhas pararam de bastar.",
+      text: "É possível conquistar aquilo que desejávamos e, pouco tempo depois, sentir novamente o mesmo vazio. O problema não está apenas no que buscamos, mas no que esperamos que essas coisas façam por nós.",
+    },
+    {
+      type: "h2",
+      text: "Conhecidos por inteiro, amados por completo",
+    },
+    {
+      type: "paragraph",
+      text: "Jesus conhece a história daquela mulher e ainda assim permanece diante dela. Ele não revela seu passado para afastá-la, mas para mostrar que a água viva é oferecida a pessoas plenamente conhecidas e graciosamente alcançadas.",
     },
     {
       type: "quote",
-      text: "O nosso coração está inquieto enquanto não repousa em Ti.",
+      text: "Fizeste-nos para Ti, e inquieto está o nosso coração enquanto não repousa em Ti.",
       author: "Agostinho",
     },
     {
       type: "conclusion",
-      text: "Se a sede não passa é porque a fonte está errada. A oferta permanece: água viva, para quem tiver coragem de dizer ‘tenho sede’.",
+      text: "Cristo não veio apenas melhorar as cisternas que construímos. Ele veio nos levar de volta à fonte. Nele, nossa sede encontra descanso e nossa vida se transforma em verdadeira adoração.",
     },
   ],
 };

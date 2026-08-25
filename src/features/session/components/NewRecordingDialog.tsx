@@ -4,28 +4,34 @@ import { Mic } from "lucide-react";
 import { useRouter } from "next/navigation";
 import { type ReactNode, useState } from "react";
 import { toast } from "sonner";
+import { CoinCost } from "@/components/CoinCost";
 import { Dialog, DialogContent, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
+import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/components/ui/tooltip";
 import { requestCreateSession } from "@/features/session/lib/api";
+import { refreshCoinBalance, useCoinBalance } from "@/features/session/lib/coins";
+import { COIN_COSTS } from "@/lib/coins/pricing";
 import { cn } from "@/lib/utils";
 
 type Mode = "live" | "audio_only";
 
-const MODE_COPY: Record<Mode, { title: string; caption: ReactNode }> = {
+const MODE_COPY: Record<Mode, { title: string; costPerMinute: number; caption: ReactNode }> = {
   live: {
-    title: "Aprendizado ao vivo",
+    title: "Acompanhar ao vivo",
+    costPerMinute: COIN_COSTS.liveMinute,
     caption: (
       <>
-        Enquanto você ouve a reflexão, o Scriba traz contextos, destaca frases importantes e
-        registra os principais ensinamentos.
+        Enquanto o sermão acontece, o Scriba mostra versículos, contextos, frases importantes e
+        outros insights. No final, você também recebe o resumo completo.
       </>
     ),
   },
   audio_only: {
-    title: "Somente o resumo",
+    title: "Só o resumo",
+    costPerMinute: COIN_COSTS.audioOnlyMinute,
     caption: (
       <>
-        <br />O Scriba grava o áudio e, ao final, transforma o sermão em um resumo claro e
-        organizado.
+        O Scriba grava o sermão sem mostrar conteúdos durante a pregação. No final, você recebe os
+        principais ensinamentos, versículos e aplicações organizados em um resumo.
       </>
     ),
   },
@@ -45,10 +51,27 @@ export function NewRecordingDialog({ trigger }: { trigger?: ReactNode }) {
   const [open, setOpen] = useState(false);
   const [loading, setLoading] = useState(false);
   const [mode, setMode] = useState<Mode>("live");
+  const balance = useCoinBalance();
+  const balanceLoading = balance === null;
+  const minCost = mode === "audio_only" ? COIN_COSTS.audioOnlyMinute : COIN_COSTS.liveMinute;
+  const insufficient = balance !== null && balance < minCost;
 
   async function handleStart() {
-    if (loading) return;
+    if (loading || insufficient) return;
     setLoading(true);
+
+    // Second-chance preflight: refetch balance in case a concurrent tab spent
+    // coins while this dialog was open. The button is already disabled when
+    // `insufficient` — this catches races only.
+    const fresh = await refreshCoinBalance();
+    if (fresh !== null && fresh < minCost) {
+      setLoading(false);
+      toast.error("Saldo de moedas insuficiente", {
+        description: `Você precisa de pelo menos ${minCost} moedas para começar.`,
+      });
+      return;
+    }
+
     const result = await requestCreateSession({ mode });
     if ("error" in result) {
       setLoading(false);
@@ -93,6 +116,7 @@ export function NewRecordingDialog({ trigger }: { trigger?: ReactNode }) {
         >
           {(Object.keys(MODE_COPY) as Mode[]).map((m) => {
             const active = mode === m;
+            const { title, costPerMinute } = MODE_COPY[m];
             return (
               <button
                 key={m}
@@ -102,7 +126,7 @@ export function NewRecordingDialog({ trigger }: { trigger?: ReactNode }) {
                 onClick={() => !loading && setMode(m)}
                 disabled={loading}
                 className={cn(
-                  "rounded-full px-4 py-1.5 transition-colors",
+                  "flex flex-col items-center gap-0.5 rounded-full px-4 py-1.5 leading-tight transition-colors",
                   active
                     ? "bg-white text-[color:var(--scriba-blue)] shadow-[0_2px_10px_rgba(79,168,240,0.18)]"
                     : "text-[color:var(--scriba-ink-mute)] hover:text-[color:var(--scriba-ink)]",
@@ -110,30 +134,78 @@ export function NewRecordingDialog({ trigger }: { trigger?: ReactNode }) {
                   "disabled:cursor-not-allowed"
                 )}
               >
-                {MODE_COPY[m].title}
+                <span>{title}</span>
+                <span
+                  className={cn(
+                    "inline-flex items-center gap-1 text-[10px] font-medium tabular-nums",
+                    active ? "text-[color:var(--scriba-blue)]/70" : "text-current opacity-70"
+                  )}
+                >
+                  <span
+                    aria-hidden
+                    className="block bg-[#F8C64B]"
+                    style={{
+                      width: "7px",
+                      height: "8px",
+                      clipPath: "polygon(50% 0, 100% 25%, 100% 75%, 50% 100%, 0 75%, 0 25%)",
+                    }}
+                  />
+                  {costPerMinute}/min
+                </span>
               </button>
             );
           })}
         </div>
 
-        <button
-          type="button"
-          onClick={handleStart}
-          disabled={loading}
-          aria-label={loading ? "Preparando sessão" : "Começar a gravar"}
-          style={loading ? undefined : { animation: "scriba-halo 2.4s ease-out infinite" }}
-          className={cn(
-            "flex size-[88px] mt-4 items-center justify-center rounded-full bg-[color:var(--scriba-blue)] transition-colors",
-            "hover:bg-[color:var(--scriba-blue-hover)]",
-            "disabled:cursor-not-allowed disabled:opacity-80",
-            "focus-visible:outline-none focus-visible:ring-4 focus-visible:ring-[color:var(--scriba-blue)]/30"
-          )}
-        >
-          <span aria-hidden className="block h-[30px] w-[22px] rounded-[12px] bg-white" />
-        </button>
         <p className="max-w-xs text-pretty text-center text-sm font-light leading-relaxed text-[color:var(--scriba-ink-soft)]">
           {loading ? "Preparando sessão…" : copy.caption}
         </p>
+
+        {(() => {
+          if (balanceLoading) {
+            return (
+              <span
+                aria-hidden
+                className="mt-4 inline-block h-[54px] w-[220px] animate-pulse rounded-full bg-[color:var(--scriba-ink-mute)]/15"
+              />
+            );
+          }
+          const startButton = (
+            <button
+              type="button"
+              onClick={handleStart}
+              disabled={loading || insufficient}
+              aria-disabled={insufficient}
+              aria-label={loading ? "Preparando sessão" : "Gravar"}
+              className={cn(
+                "mt-4 inline-flex items-center gap-2.5 rounded-full px-7 py-3.5 text-[15px] font-semibold shadow-[0_10px_24px_rgba(79,168,240,0.32)] transition-colors",
+                insufficient
+                  ? "cursor-not-allowed bg-[color:var(--scriba-ink-mute)]/25 text-[color:var(--scriba-ink-mute)] shadow-none"
+                  : "bg-[color:var(--scriba-blue)] text-white hover:bg-[color:var(--scriba-blue-hover)]",
+                "disabled:cursor-not-allowed disabled:opacity-90",
+                "focus-visible:outline-none focus-visible:ring-4 focus-visible:ring-[color:var(--scriba-blue)]/30"
+              )}
+            >
+              <Mic aria-hidden className="size-4" strokeWidth={2.4} />
+              {loading ? "Preparando…" : "Gravar"}
+              {loading ? null : <CoinCost count={copy.costPerMinute} suffix="/min" />}
+            </button>
+          );
+          if (!insufficient) return startButton;
+          return (
+            <TooltipProvider delay={120}>
+              <Tooltip>
+                <TooltipTrigger
+                  // biome-ignore lint/a11y/noNoninteractiveTabindex: focus target for the tooltip on a disabled button
+                  render={<span tabIndex={0} className="inline-flex focus:outline-none" />}
+                >
+                  {startButton}
+                </TooltipTrigger>
+                <TooltipContent>Moedas insuficientes para gravar neste modo.</TooltipContent>
+              </Tooltip>
+            </TooltipProvider>
+          );
+        })()}
       </DialogContent>
     </Dialog>
   );

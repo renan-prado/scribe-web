@@ -12,6 +12,7 @@ import {
   RECORDER_SILENCE_HOLD_MS,
   RECORDER_SILENCE_THRESHOLD,
 } from "@/features/session/config";
+import { useCoinTick } from "@/features/session/hooks/useCoinTick";
 import { useElapsedTimer } from "@/features/session/hooks/useElapsedTimer";
 import { useVisibilityWarning } from "@/features/session/hooks/useVisibilityWarning";
 import { useWakeLock } from "@/features/session/hooks/useWakeLock";
@@ -148,6 +149,22 @@ export function RecordingAudioOnly({
     }
   }, [assembleTranscript, sessionId, initialSpeakerName, initialSpeakerLocation, router]);
 
+  // Coin billing: 3 moedas/min (per started minute). First tick fires
+  // immediately so t=0 is billed; subsequent ticks every 60s. On depletion
+  // we call stop() to finalize whatever was captured so far — the summary
+  // still runs on the fragment the user paid for.
+  useCoinTick({
+    enabled: running,
+    reason: "audio_only_minute",
+    sessionId,
+    onDepleted: () => {
+      toast.warning("Saldo de moedas esgotado.", {
+        description: "Gravação finalizada automaticamente.",
+      });
+      void stop();
+    },
+  });
+
   useEffect(() => {
     return () => {
       void recorderRef.current?.stop();
@@ -170,6 +187,7 @@ export function RecordingAudioOnly({
           onStart={start}
           onStop={stop}
           pulseWhileRunning
+          autoStarting={autoStart && !running && !startupError}
         />
         {running ? (
           <p className="font-mono text-sm font-medium tabular-nums tracking-wider text-[color:var(--scriba-ink)]">

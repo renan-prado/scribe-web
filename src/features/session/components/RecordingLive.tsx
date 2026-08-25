@@ -26,6 +26,7 @@ import {
   RECORDER_SILENCE_THRESHOLD,
 } from "@/features/session/config";
 import { useBiblePipeline } from "@/features/session/hooks/useBiblePipeline";
+import { useCoinTick } from "@/features/session/hooks/useCoinTick";
 import { useDrainTimer } from "@/features/session/hooks/useDrainTimer";
 import { useEchoPipeline } from "@/features/session/hooks/useEchoPipeline";
 import { useElapsedTimer } from "@/features/session/hooks/useElapsedTimer";
@@ -252,6 +253,22 @@ export function RecordingLive({
     }
   }, [router, sessionId]);
 
+  // Coin billing: 10 moedas/min (per started minute). First tick fires
+  // immediately so t=0 is billed; subsequent ticks every 60s. On depletion
+  // we call stop() so the pipeline finalizes what was captured so far
+  // instead of leaving the recorder running with no budget behind it.
+  useCoinTick({
+    enabled: running,
+    reason: "live_minute",
+    sessionId,
+    onDepleted: () => {
+      toast.warning("Saldo de moedas esgotado.", {
+        description: "Gravação finalizada automaticamente.",
+      });
+      void stop();
+    },
+  });
+
   useEffect(() => {
     return () => {
       void recorderRef.current?.stop();
@@ -352,7 +369,13 @@ export function RecordingLive({
     <main className="mx-auto flex flex-1 w-full max-w-3xl flex-col gap-6 px-4 py-8 sm:gap-8 sm:px-6 sm:py-10">
       {!hasStarted ? (
         <div className="flex flex-1 flex-col items-center justify-center">
-          <RecordButton running={running} elapsedMs={elapsedMs} onStart={start} onStop={stop} />
+          <RecordButton
+            running={running}
+            elapsedMs={elapsedMs}
+            onStart={start}
+            onStop={stop}
+            autoStarting={autoStart && !running && !startupError}
+          />
         </div>
       ) : null}
       {running ? (

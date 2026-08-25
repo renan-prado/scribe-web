@@ -9,6 +9,7 @@ export function RecordButton({
   onStop,
   compact = false,
   pulseWhileRunning = false,
+  autoStarting = false,
 }: {
   running: boolean;
   elapsedMs: number;
@@ -19,6 +20,10 @@ export function RecordButton({
    * view where the big button is the only element on screen and needs the
    * pulse to signal "we're listening". */
   pulseWhileRunning?: boolean;
+  /** Landed here from NewRecordingDialog with autostart=1 — start() is about
+   * to fire but running is still false. Suppresses the "toque para começar"
+   * idle prompt so the user doesn't see it flash before the recorder mounts. */
+  autoStarting?: boolean;
 }) {
   if (compact) {
     return (
@@ -75,7 +80,7 @@ export function RecordButton({
           )}
         </button>
       </div>
-      {!running ? (
+      {!running && !autoStarting ? (
         <p className="max-w-xs text-pretty text-center text-sm font-light leading-relaxed text-[color:var(--scriba-ink-soft)]">
           Toque para começar a gravar.
           <br />O Scriba acompanha e organiza enquanto você ouve.
