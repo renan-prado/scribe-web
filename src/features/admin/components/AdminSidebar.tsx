@@ -58,8 +58,7 @@ export function AdminSidebar({
                 viewBox="0 0 249 249"
                 fill="currentColor"
                 xmlns="http://www.w3.org/2000/svg"
-                className="shrink-0"
-                style={{ color: "#0F0D1E" }}
+                className="shrink-0 text-[#0F0D1E]"
               >
                 <path
                   fillRule="evenodd"
@@ -113,8 +112,7 @@ export function AdminSidebar({
             <SidebarMenuButton size="lg" tooltip={shownName}>
               <span
                 aria-hidden
-                className="flex size-8 shrink-0 items-center justify-center rounded-full text-[11px] font-semibold"
-                style={{ background: "#EAF4FE", color: "#4FA8F0" }}
+                className="flex size-8 shrink-0 items-center justify-center rounded-full bg-scriba-blue-soft text-[11px] font-semibold text-scriba-blue"
               >
                 {initials}
               </span>

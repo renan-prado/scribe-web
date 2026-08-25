@@ -36,10 +36,7 @@ export default async function AdminLayout({ children }: { children: ReactNode })
         }}
       />
       <SidebarInset className="bg-[color:var(--scriba-surface)]">
-        <header
-          className="sticky top-0 z-30 flex h-14 shrink-0 items-center gap-2 border-b bg-white/85 px-4 backdrop-blur-md"
-          style={{ borderColor: "var(--scriba-hairline)" }}
-        >
+        <header className="sticky top-0 z-30 flex h-14 shrink-0 items-center gap-2 border-b border-scriba-hairline bg-white/85 px-4 backdrop-blur-md">
           <SidebarTrigger className="-ml-1" />
           <Separator orientation="vertical" className="mx-2 data-[orientation=vertical]:h-4" />
           <AdminBreadcrumbs />

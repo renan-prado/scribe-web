@@ -82,14 +82,7 @@ export default async function ProfilePage() {
                 }}
               >
                 <span className="flex size-[13px] items-center justify-center rounded-full bg-white">
-                  <span
-                    className="bg-[#F8C64B]"
-                    style={{
-                      width: "6.5px",
-                      height: "7.5px",
-                      clipPath: "polygon(50% 0, 100% 25%, 100% 75%, 50% 100%, 0 75%, 0 25%)",
-                    }}
-                  />
+                  <span className="w-[6.5px] h-[7.5px] bg-[#F8C64B] [clip-path:polygon(50%_0,100%_25%,100%_75%,50%_100%,0_75%,0_25%)]" />
                 </span>
               </span>
               <span className="text-[12px] font-semibold tabular-nums text-[#B07F13]">

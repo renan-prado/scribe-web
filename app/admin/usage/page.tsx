@@ -314,20 +314,14 @@ function sessionFilterHref(filters: SearchParams, sessionId: string): string {
 function ModeBadge({ mode }: { mode: "live" | "audio_only" | null }) {
   if (mode === "live") {
     return (
-      <span
-        className="inline-flex items-center rounded-full px-2 py-0.5 text-[10px] font-semibold uppercase tracking-[0.08em]"
-        style={{ background: "#E4EFEA", color: "#4E8570" }}
-      >
+      <span className="inline-flex items-center rounded-full bg-scriba-mint px-2 py-0.5 text-[10px] font-semibold uppercase tracking-[0.08em] text-scriba-mint-accent">
         Com live
       </span>
     );
   }
   if (mode === "audio_only") {
     return (
-      <span
-        className="inline-flex items-center rounded-full px-2 py-0.5 text-[10px] font-semibold uppercase tracking-[0.08em]"
-        style={{ background: "#FDF3DD", color: "#C79B2A" }}
-      >
+      <span className="inline-flex items-center rounded-full bg-scriba-cream px-2 py-0.5 text-[10px] font-semibold uppercase tracking-[0.08em] text-scriba-cream-accent">
         Sem live
       </span>
     );

@@ -72,7 +72,7 @@ function Logo({ size = 28, textSize = 16.5 }: { size?: number; textSize?: number
         viewBox="0 0 249 249"
         fill="currentColor"
         xmlns="http://www.w3.org/2000/svg"
-        style={{ color: "#0F0D1E" }}
+        className="text-[#0F0D1E]"
       >
         <path
           fillRule="evenodd"
@@ -80,27 +80,19 @@ function Logo({ size = 28, textSize = 16.5 }: { size?: number; textSize?: number
           d="M179 0C217.66 0 249 31.3401 249 70V179C249 217.66 217.66 249 179 249H70C31.3401 249 5.96018e-07 217.66 0 179V70C0 31.3401 31.3401 5.95941e-07 70 0H179ZM187.439 57.0098C159.551 59.2819 135.374 67.6406 115.574 81.8604C114.292 82.7832 113.634 84.3421 113.859 85.8994C115.091 94.2864 111.474 104.192 107.856 111.561C106.377 107.376 104.206 103.534 102.131 100.434C101.4 99.3431 100.207 98.6571 98.9023 98.5664C97.5913 98.4933 96.3203 99.0167 95.4541 99.9951C78.5287 119.267 72.9249 139.522 77.707 163.333L58.6504 182.391C56.4504 184.59 56.4504 188.145 58.6504 190.344C59.7463 191.441 61.1871 191.993 62.627 191.993C64.0668 191.993 65.5067 191.441 66.6035 190.344L114.899 142.048C117.098 139.849 120.655 139.849 122.854 142.048C125.053 144.248 125.053 147.802 122.854 150.002L99.9082 172.947C100.342 172.952 100.792 173.03 101.22 173.03C120.648 173.03 137.928 164.942 154.511 148.314C178.023 124.802 188.879 99.6637 191.984 61.5488C192.091 60.317 191.641 59.1019 190.764 58.2295C189.891 57.3585 188.694 56.9315 187.439 57.0098Z"
         />
       </svg>
-      <div style={{ fontSize: textSize, fontWeight: 600, letterSpacing: "-.01em" }}>Scriba</div>
+      <div className="font-semibold tracking-[-.01em]" style={{ fontSize: textSize }}>
+        Scriba
+      </div>
     </div>
   );
 }
 
 function Header() {
   return (
-    <div
-      className="sticky top-0 z-40"
-      style={{
-        background: "rgba(255,255,255,.9)",
-        backdropFilter: "blur(14px)",
-        borderBottom: "1px solid #EEF4FA",
-      }}
-    >
+    <div className="sticky top-0 z-40 bg-white/90 backdrop-blur-[14px] border-b border-scriba-hairline-soft">
       <div className="mx-auto flex max-w-[1200px] items-center justify-between gap-6 px-5 py-3.5 sm:gap-8 sm:px-10 sm:py-[18px]">
         <Logo textSize={18} />
-        <div
-          className="hidden items-center gap-8 text-scriba-ink-soft lg:flex"
-          style={{ fontSize: 13.5 }}
-        >
+        <div className="hidden items-center gap-8 text-[13.5px] text-scriba-ink-soft lg:flex">
           <a href="#como-funciona" className="lp-nav">
             Como funciona
           </a>
@@ -114,20 +106,13 @@ function Header() {
         <div className="flex items-center gap-2 sm:gap-3.5">
           <Link
             href="/sign-in"
-            className="lp-link hidden px-1 py-2.5 font-medium text-scriba-ink-soft lg:inline"
-            style={{ fontSize: 13.5 }}
+            className="lp-link hidden px-1 py-2.5 text-[13.5px] font-medium text-scriba-ink-soft lg:inline"
           >
             Entrar
           </Link>
           <Link
             href="/sign-in"
-            className="lp-cta inline-flex items-center justify-center gap-2 rounded-[22px] bg-scriba-blue font-semibold uppercase text-white"
-            style={{
-              fontSize: 12,
-              letterSpacing: ".04em",
-              padding: "12px 20px",
-              boxShadow: "0 5px 14px rgba(79,168,240,.3)",
-            }}
+            className="lp-cta inline-flex items-center justify-center gap-2 rounded-[22px] bg-scriba-blue text-[12px] font-semibold uppercase tracking-[.04em] text-white shadow-[0_5px_14px_rgba(79,168,240,.3)] py-3 px-5"
           >
             {/** biome-ignore lint/performance/noImgElement: static asset in landing CTA */}
             <img src="/pena-logo-white.svg" alt="" aria-hidden width={14} height={14} />
@@ -141,76 +126,28 @@ function Header() {
 
 function Hero() {
   return (
-    <section
-      className="relative overflow-hidden"
-      style={{ background: "linear-gradient(180deg,#F6FBFF 0%,#FFFFFF 100%)" }}
-    >
-      <div
-        className="pointer-events-none absolute"
-        style={{
-          top: -180,
-          right: -140,
-          width: 620,
-          height: 620,
-          borderRadius: "50%",
-          background: "radial-gradient(circle,rgba(79,168,240,.16) 0%,rgba(79,168,240,0) 70%)",
-        }}
-      />
-      <div
-        className="pointer-events-none absolute hidden lg:block"
-        style={{
-          bottom: -120,
-          left: -160,
-          width: 520,
-          height: 520,
-          borderRadius: "50%",
-          background: "radial-gradient(circle,rgba(248,198,75,.16) 0%,rgba(248,198,75,0) 70%)",
-        }}
-      />
+    <section className="relative overflow-hidden bg-[linear-gradient(180deg,#F6FBFF_0%,#FFFFFF_100%)]">
+      <div className="pointer-events-none absolute -top-[180px] -right-[140px] w-[620px] h-[620px] rounded-full bg-[radial-gradient(circle,rgba(79,168,240,.16)_0%,rgba(79,168,240,0)_70%)]" />
+      <div className="pointer-events-none absolute hidden lg:block -bottom-[120px] -left-[160px] w-[520px] h-[520px] rounded-full bg-[radial-gradient(circle,rgba(248,198,75,.16)_0%,rgba(248,198,75,0)_70%)]" />
       <div className="relative mx-auto flex max-w-[1200px] flex-col gap-10 px-5 pt-9 pb-2 sm:px-10 lg:grid lg:grid-cols-[minmax(0,1fr)_430px] lg:gap-14 lg:pt-[88px] lg:pb-24">
         <div className="flex min-w-0 flex-col gap-4 lg:gap-6">
-          <div
-            className="inline-flex items-center gap-2 self-start rounded-[22px] border bg-white px-3.5 py-[7px] pl-[9px]"
-            style={{ borderColor: "#E3EEF8", boxShadow: "0 4px 12px rgba(79,168,240,.1)" }}
-          >
-            <div style={{ width: 10, height: 5, borderRadius: 3 }} className="bg-scriba-yellow" />
-            <div
-              className="text-scriba-ink-soft"
-              style={{
-                fontSize: 10.5,
-                fontWeight: 600,
-                letterSpacing: ".03em",
-              }}
-            >
+          <div className="inline-flex items-center gap-2 self-start rounded-[22px] border border-[#E3EEF8] bg-white px-3.5 py-[7px] pl-[9px] shadow-[0_4px_12px_rgba(79,168,240,.1)]">
+            <div className="w-[10px] h-[5px] rounded-[3px] bg-scriba-yellow" />
+            <div className="text-[10.5px] font-semibold tracking-[.03em] text-scriba-ink-soft">
               Ouça, relembre e coloque em prática.
             </div>
           </div>
-          <h1
-            className="text-pretty text-[36px] leading-[1.08] text-scriba-ink-strong lg:text-[60px] lg:leading-[1.06]"
-            style={{
-              fontWeight: 600,
-              letterSpacing: "-.025em",
-            }}
-          >
+          <h1 className="text-pretty text-[36px] leading-[1.08] font-semibold tracking-[-.025em] text-scriba-ink-strong lg:text-[60px] lg:leading-[1.06]">
             O sermão não termina quando você sai da igreja.
           </h1>
-          <p
-            className="max-w-[520px] text-pretty text-[14.5px] leading-[1.62] text-scriba-ink-soft lg:text-[17.5px]"
-            style={{ fontWeight: 300 }}
-          >
+          <p className="max-w-[520px] text-pretty text-[14.5px] leading-[1.62] font-light text-scriba-ink-soft lg:text-[17.5px]">
             O Scriba escuta a pregação com você, organiza os principais ensinamentos e ajuda a
             relembrar e colocar em prática ao longo da semana.
           </p>
           <div className="flex flex-col gap-2.5 pt-1 sm:flex-row sm:items-center sm:gap-3.5">
             <Link
               href="/sign-in"
-              className="lp-cta inline-flex items-center justify-center gap-2.5 rounded-[26px] bg-scriba-blue font-semibold uppercase text-white"
-              style={{
-                fontSize: 13,
-                letterSpacing: ".04em",
-                padding: "17px 32px",
-                boxShadow: "0 9px 22px rgba(79,168,240,.3)",
-              }}
+              className="lp-cta inline-flex items-center justify-center gap-2.5 rounded-[26px] bg-scriba-blue text-[13px] font-semibold uppercase tracking-[.04em] text-white shadow-[0_9px_22px_rgba(79,168,240,.3)] py-[17px] px-8"
             >
               {/** biome-ignore lint/performance/noImgElement: static asset in landing CTA */}
               <img src="/pena-logo-white.svg" alt="" aria-hidden width={16} height={16} />
@@ -218,12 +155,7 @@ function Hero() {
             </Link>
             <a
               href="#recursos"
-              className="lp-cta-outline inline-flex items-center justify-center rounded-[26px] border bg-white font-medium text-scriba-ink"
-              style={{
-                borderColor: "#DFEAF4",
-                fontSize: 13,
-                padding: "16px 28px",
-              }}
+              className="lp-cta-outline inline-flex items-center justify-center rounded-[26px] border border-[#DFEAF4] bg-white text-[13px] font-medium text-scriba-ink py-4 px-7"
             >
               Conhecer o Scriba
             </a>
@@ -238,13 +170,10 @@ function Hero() {
               ].map((a, i) => (
                 <div
                   key={a.txt}
-                  className="flex items-center justify-center rounded-full border-2 border-white font-semibold sm:size-[34px] sm:text-[11px]"
+                  className="flex items-center justify-center rounded-full border-2 border-white text-[10px] font-semibold w-[31px] h-[31px] sm:size-[34px] sm:text-[11px]"
                   style={{
-                    width: 31,
-                    height: 31,
                     background: a.bg,
                     color: a.fg,
-                    fontSize: 10,
                     marginLeft: i === 0 ? 0 : -9,
                   }}
                 >
@@ -252,10 +181,7 @@ function Hero() {
                 </div>
               ))}
             </div>
-            <div
-              className="text-[11.5px] leading-[1.5] text-scriba-ink-soft sm:text-[12.5px]"
-              style={{ fontWeight: 300 }}
-            >
+            <div className="text-[11.5px] leading-[1.5] font-light text-scriba-ink-soft sm:text-[12.5px]">
               <span className="font-semibold text-scriba-ink">12 mil sermões</span> registrados por
               membros de 340 igrejas.
             </div>
@@ -284,10 +210,7 @@ function Problem() {
     <section className="mx-auto flex max-w-[1200px] flex-col gap-5 px-5 py-11 sm:px-10 sm:py-20 lg:gap-9 lg:pb-24">
       <SectionLabel>O problema</SectionLabel>
       <div className="grid gap-8 lg:grid-cols-[1.1fr_1fr] lg:gap-14">
-        <h2
-          className="text-pretty text-[25px] leading-[1.32] text-scriba-ink-strong lg:text-[34px]"
-          style={{ fontWeight: 500, letterSpacing: "-.016em" }}
-        >
+        <h2 className="text-pretty text-[25px] leading-[1.32] font-medium tracking-[-.016em] text-scriba-ink-strong lg:text-[34px]">
           <span className="text-scriba-ink-mute">
             Você sai da igreja querendo lembrar de tudo.{" "}
           </span>
@@ -297,21 +220,15 @@ function Problem() {
           {PROBLEMS.map((p) => (
             <div key={p.n} className="flex items-start gap-3.5 sm:gap-4">
               <div
-                className="flex flex-none items-center justify-center rounded-[11px] font-semibold sm:size-[38px] sm:rounded-[12px]"
+                className="flex flex-none items-center justify-center rounded-[11px] text-[13px] font-semibold w-[34px] h-[34px] sm:size-[38px] sm:rounded-[12px]"
                 style={{
-                  width: 34,
-                  height: 34,
                   background: p.bg,
                   color: p.fg,
-                  fontSize: 13,
                 }}
               >
                 {p.n}
               </div>
-              <div
-                className="pt-1.5 text-pretty text-[13.5px] leading-[1.6] text-scriba-ink-soft sm:text-[14.5px]"
-                style={{ fontWeight: 300 }}
-              >
+              <div className="pt-1.5 text-pretty text-[13.5px] leading-[1.6] font-light text-scriba-ink-soft sm:text-[14.5px]">
                 {p.body}
               </div>
             </div>
@@ -349,10 +266,7 @@ function HowItWorks() {
       <div className="mx-auto flex max-w-[1200px] flex-col gap-6 px-5 py-12 sm:px-10 sm:py-[92px] lg:gap-[52px]">
         <div className="flex max-w-[640px] flex-col gap-3">
           <SectionLabel color="blue">Como funciona</SectionLabel>
-          <h2
-            className="text-pretty text-[29px] leading-[1.16] text-scriba-ink-strong lg:text-[42px]"
-            style={{ fontWeight: 600, letterSpacing: "-.02em" }}
-          >
+          <h2 className="text-pretty text-[29px] leading-[1.16] font-semibold tracking-[-.02em] text-scriba-ink-strong lg:text-[42px]">
             Três passos, e o resto acontece sozinho.
           </h2>
         </div>
@@ -362,14 +276,11 @@ function HowItWorks() {
             title="Acompanhe ao vivo"
             body="Enquanto você ouve, o Scriba identifica versículos e citações, explica contextos e destaca as frases mais importantes da pregação em tempo real."
             icon={
-              <div
-                className="flex size-11 items-center justify-center rounded-full bg-scriba-blue"
-                style={{ animation: "scriba-halo 2.6s ease-out infinite" }}
-              >
+              <div className="flex size-11 items-center justify-center rounded-full bg-scriba-blue animate-scriba-halo">
                 <div className="flex items-center gap-[2.5px]">
-                  <span style={{ width: 2.5, height: 10, background: "#fff", borderRadius: 2 }} />
-                  <span style={{ width: 2.5, height: 18, background: "#fff", borderRadius: 2 }} />
-                  <span style={{ width: 2.5, height: 13, background: "#fff", borderRadius: 2 }} />
+                  <span className="w-[2.5px] h-[10px] bg-white rounded-[2px]" />
+                  <span className="w-[2.5px] h-[18px] bg-white rounded-[2px]" />
+                  <span className="w-[2.5px] h-[13px] bg-white rounded-[2px]" />
                 </div>
               </div>
             }
@@ -380,14 +291,7 @@ function HowItWorks() {
             body="Depois do amém, você recebe um resumo completo com o tema central, os principais ensinamentos, versículos citados, frases marcantes e aplicações práticas."
             icon={
               <div className="flex size-11 items-center justify-center rounded-full bg-scriba-mint">
-                <div
-                  style={{
-                    width: 16,
-                    height: 16,
-                    borderRadius: 5,
-                    border: "2.5px solid #4E8570",
-                  }}
-                />
+                <div className="w-[16px] h-[16px] rounded-[5px] border-[2.5px] border-scriba-mint-accent" />
               </div>
             }
           />
@@ -397,15 +301,7 @@ function HowItWorks() {
             body="Durante a semana, o Scriba ajuda você a relembrar a mensagem, colocá-la em prática e fazer conexões com outros sermões."
             icon={
               <div className="flex size-11 items-center justify-center rounded-full bg-scriba-cream">
-                <div
-                  style={{
-                    width: 16,
-                    height: 16,
-                    borderRadius: "50%",
-                    border: "2.5px solid #C79B2A",
-                    borderTopColor: "transparent",
-                  }}
-                />
+                <div className="w-[16px] h-[16px] rounded-full border-[2.5px] border-scriba-cream-accent border-t-transparent" />
               </div>
             }
           />
@@ -427,37 +323,17 @@ function StepCard({
   icon: React.ReactNode;
 }) {
   return (
-    <div
-      className="lp-lift flex flex-col gap-3.5 rounded-[24px] border bg-white p-6 sm:rounded-[26px] sm:p-8"
-      style={{
-        borderColor: "#EAF2FA",
-        boxShadow: "0 8px 26px rgba(79,168,240,.09)",
-      }}
-    >
+    <div className="lp-lift flex flex-col gap-3.5 rounded-[24px] border border-[#EAF2FA] bg-white p-6 shadow-[0_8px_26px_rgba(79,168,240,.09)] sm:rounded-[26px] sm:p-8">
       <div className="flex items-center justify-between">
-        <div
-          className="text-scriba-ink-mute"
-          style={{
-            fontSize: 11,
-            fontWeight: 600,
-            letterSpacing: ".1em",
-            textTransform: "uppercase",
-          }}
-        >
+        <div className="text-[11px] font-semibold tracking-[.1em] uppercase text-scriba-ink-mute">
           {step}
         </div>
         {icon}
       </div>
-      <div
-        className="text-[19px] leading-[1.28] text-scriba-ink sm:text-[21px]"
-        style={{ fontWeight: 600, letterSpacing: "-.012em" }}
-      >
+      <div className="text-[19px] leading-[1.28] font-semibold tracking-[-.012em] text-scriba-ink sm:text-[21px]">
         {title}
       </div>
-      <div
-        className="text-pretty text-[13.5px] leading-[1.6] text-scriba-ink-soft sm:text-[14px] sm:leading-[1.62]"
-        style={{ fontWeight: 300 }}
-      >
+      <div className="text-pretty text-[13.5px] leading-[1.6] font-light text-scriba-ink-soft sm:text-[14px] sm:leading-[1.62]">
         {body}
       </div>
     </div>
@@ -478,16 +354,10 @@ function Resumo() {
         <div className="order-1 flex min-w-0 flex-col gap-6 lg:order-2 lg:gap-[34px]">
           <div className="flex flex-col gap-3">
             <SectionLabel color="blue">O resumo</SectionLabel>
-            <h2
-              className="text-pretty text-[29px] leading-[1.16] text-scriba-ink-strong lg:text-[40px]"
-              style={{ fontWeight: 600, letterSpacing: "-.022em" }}
-            >
+            <h2 className="text-pretty text-[29px] leading-[1.16] font-semibold tracking-[-.022em] text-scriba-ink-strong lg:text-[40px]">
               Não é transcrição. É a mensagem, organizada.
             </h2>
-            <p
-              className="max-w-[520px] text-pretty text-[14.5px] leading-[1.62] text-scriba-ink-soft lg:text-[16px] lg:leading-[1.65]"
-              style={{ fontWeight: 300 }}
-            >
+            <p className="max-w-[520px] text-pretty text-[14.5px] leading-[1.62] font-light text-scriba-ink-soft lg:text-[16px] lg:leading-[1.65]">
               Ao final do sermão, o Scriba transforma tudo o que foi dito em um resumo claro, para
               você entender, encontrar e relembrar o que realmente importa.
             </p>
@@ -499,15 +369,12 @@ function Resumo() {
                 className="lp-tile flex flex-col gap-1.5 rounded-[18px] p-4 sm:rounded-[20px] sm:p-5"
                 style={{ background: b.bg }}
               >
-                <div
-                  className="text-[11.5px] sm:text-[12px]"
-                  style={{ fontWeight: 600, color: b.fg }}
-                >
+                <div className="text-[11.5px] font-semibold sm:text-[12px]" style={{ color: b.fg }}>
                   {b.title}
                 </div>
                 <div
-                  className="text-[12px] leading-[1.5] sm:text-[13px] sm:leading-[1.55]"
-                  style={{ fontWeight: 300, color: b.body }}
+                  className="text-[12px] leading-[1.5] font-light sm:text-[13px] sm:leading-[1.55]"
+                  style={{ color: b.body }}
                 >
                   {b.text}
                 </div>
@@ -554,30 +421,14 @@ const SUMMARY_BLOCKS = [
 function Biblioteca() {
   return (
     <section className="relative overflow-hidden bg-scriba-blue">
-      <div
-        className="pointer-events-none absolute"
-        style={{
-          top: -140,
-          left: -100,
-          width: 480,
-          height: 480,
-          borderRadius: "50%",
-          background: "radial-gradient(circle,rgba(255,255,255,.14) 0%,rgba(255,255,255,0) 70%)",
-        }}
-      />
+      <div className="pointer-events-none absolute -top-[140px] -left-[100px] w-[480px] h-[480px] rounded-full bg-[radial-gradient(circle,rgba(255,255,255,.14)_0%,rgba(255,255,255,0)_70%)]" />
       <div className="relative mx-auto flex max-w-[1200px] flex-col items-stretch gap-8 px-5 py-12 text-white sm:px-10 sm:py-[88px] lg:grid lg:grid-cols-[minmax(0,1fr)_minmax(0,1fr)] lg:items-center lg:gap-16">
         <div className="flex min-w-0 flex-col gap-5">
           <SectionLabel color="#FFDF8C">Sua biblioteca</SectionLabel>
-          <h2
-            className="text-pretty text-[29px] leading-[1.16] lg:text-[40px]"
-            style={{ fontWeight: 600, letterSpacing: "-.022em" }}
-          >
+          <h2 className="text-pretty text-[29px] leading-[1.16] font-semibold tracking-[-.022em] lg:text-[40px]">
             Anos de pregação, finalmente buscáveis.
           </h2>
-          <p
-            className="max-w-[500px] text-pretty text-[14.5px] leading-[1.62] lg:text-[16px] lg:leading-[1.65]"
-            style={{ fontWeight: 300, color: "#E2F1FF" }}
-          >
+          <p className="max-w-[500px] text-pretty text-[14.5px] leading-[1.62] font-light text-[#E2F1FF] lg:text-[16px] lg:leading-[1.65]">
             Busque por tema, versículo ou pregador. O Scriba também cruza sermões distantes no tempo
             e mostra quando dois deles falam da mesma coisa.
           </p>
@@ -602,10 +453,7 @@ function Biblioteca() {
                 subtitle="Biblioteca"
                 title="Suas gravações"
                 right={
-                  <span
-                    className="rounded-full px-2.5 py-1 text-[10px] font-semibold"
-                    style={{ background: "var(--scriba-blue-soft)", color: "var(--scriba-blue)" }}
-                  >
+                  <span className="rounded-full px-2.5 py-1 text-[10px] font-semibold bg-scriba-blue-soft text-scriba-blue">
                     12
                   </span>
                 }
@@ -630,26 +478,12 @@ function BiblioCard({
   badge: string;
 }) {
   return (
-    <div
-      className="flex items-center justify-between gap-4 rounded-[18px] p-4 px-[17px] sm:px-[18px]"
-      style={{ background: "rgba(255,255,255,.16)" }}
-    >
+    <div className="flex items-center justify-between gap-4 rounded-[18px] bg-white/[.16] p-4 px-[17px] sm:px-[18px]">
       <div className="flex flex-col gap-0.5">
         <div className="text-[13px] font-semibold sm:text-[13.5px]">{title}</div>
-        <div className="text-[11.5px] sm:text-[12px]" style={{ fontWeight: 300, color: "#E2F1FF" }}>
-          {subtitle}
-        </div>
+        <div className="text-[11.5px] font-light text-[#E2F1FF] sm:text-[12px]">{subtitle}</div>
       </div>
-      <div
-        className="flex-none whitespace-nowrap"
-        style={{
-          fontSize: 11,
-          fontWeight: 600,
-          letterSpacing: ".04em",
-          textTransform: "uppercase",
-          color: "#FFDF8C",
-        }}
-      >
+      <div className="flex-none whitespace-nowrap text-[11px] font-semibold tracking-[.04em] uppercase text-[#FFDF8C]">
         {badge}
       </div>
     </div>
@@ -665,42 +499,18 @@ function Testimonials() {
           name="Mateus Ribeiro"
           title="Membro · Igreja Batista Central"
           initials="MR"
-          bg="#fff"
-          border="#EAF2FA"
-          quoteColor="#3D4C5B"
-          nameColor="#4A5A6A"
-          roleColor="#9BA6B3"
-          avatarBg="#EAF4FE"
-          avatarFg="#4FA8F0"
-          divider="#EEF2F6"
         />
         <TestimonialCard
           quote={`"Uso com meu grupo pequeno. Chegamos na reunião falando do mesmo sermão, com as mesmas perguntas."`}
           name="Ana Laura Prado"
           title="Líder de grupo pequeno"
           initials="AL"
-          bg="#fff"
-          border="#EAF2FA"
-          quoteColor="#3D4C5B"
-          nameColor="#4A5A6A"
-          roleColor="#9BA6B3"
-          avatarBg="#EAF4FE"
-          avatarFg="#4FA8F0"
-          divider="#EEF2F6"
         />
         <TestimonialCard
           quote={`"Sei o que a igreja tem ouvido nos últimos dois anos. Isso mudou como eu planejo a pregação."`}
           name="Pr. João Silva"
           title="Pastor titular"
           initials="JS"
-          bg="#fff"
-          border="#EAF2FA"
-          quoteColor="#3D4C5B"
-          nameColor="#4A5A6A"
-          roleColor="#9BA6B3"
-          avatarBg="#EAF4FE"
-          avatarFg="#4FA8F0"
-          divider="#EEF2F6"
         />
       </div>
     </section>
@@ -712,69 +522,24 @@ function TestimonialCard({
   name,
   title,
   initials,
-  bg,
-  border,
-  quoteColor,
-  nameColor,
-  roleColor,
-  avatarBg,
-  avatarFg,
-  divider,
 }: {
   quote: string;
   name: string;
   title: string;
   initials: string;
-  bg: string;
-  border?: string;
-  quoteColor: string;
-  nameColor: string;
-  roleColor: string;
-  avatarBg: string;
-  avatarFg: string;
-  divider: string;
 }) {
   return (
-    <div
-      className="flex flex-col gap-3.5 rounded-[24px] p-6 sm:rounded-[26px] sm:p-8"
-      style={{
-        background: bg,
-        border: border ? `1px solid ${border}` : undefined,
-        boxShadow: border ? "0 8px 24px rgba(79,168,240,.08)" : undefined,
-      }}
-    >
-      <div
-        className="text-pretty text-[15px] leading-[1.55] sm:text-[16.5px]"
-        style={{ fontWeight: 400, color: quoteColor }}
-      >
+    <div className="flex flex-col gap-3.5 rounded-[24px] border border-[#EAF2FA] bg-white p-6 shadow-[0_8px_24px_rgba(79,168,240,.08)] sm:rounded-[26px] sm:p-8">
+      <div className="text-pretty text-[15px] leading-[1.55] font-normal text-[#3D4C5B] sm:text-[16.5px]">
         {quote}
       </div>
-      <div
-        className="flex items-center gap-2.5 pt-[13px] sm:gap-[11px] sm:pt-[15px]"
-        style={{ borderTop: `1px solid ${divider}` }}
-      >
-        <div
-          className="flex size-8 items-center justify-center rounded-full sm:size-[34px]"
-          style={{
-            background: avatarBg,
-            color: avatarFg,
-            fontSize: 10.5,
-            fontWeight: 600,
-          }}
-        >
+      <div className="flex items-center gap-2.5 border-t border-[#EEF2F6] pt-[13px] sm:gap-[11px] sm:pt-[15px]">
+        <div className="flex size-8 items-center justify-center rounded-full bg-scriba-blue-soft text-[10.5px] font-semibold text-scriba-blue sm:size-[34px]">
           {initials}
         </div>
         <div className="flex flex-col gap-px">
-          <div
-            className="text-[12.5px] sm:text-[13px]"
-            style={{ fontWeight: 600, color: nameColor }}
-          >
-            {name}
-          </div>
-          <div
-            className="text-[11px] sm:text-[11.5px]"
-            style={{ fontWeight: 300, color: roleColor }}
-          >
+          <div className="text-[12.5px] font-semibold text-scriba-ink sm:text-[13px]">{name}</div>
+          <div className="text-[11px] font-light text-scriba-ink-mute sm:text-[11.5px]">
             {title}
           </div>
         </div>
@@ -789,16 +554,10 @@ function Plans() {
       <div className="mx-auto flex max-w-[1200px] flex-col gap-6 px-5 py-12 sm:px-10 sm:py-[92px] lg:gap-12">
         <div className="flex flex-col gap-3 lg:items-center lg:text-center">
           <SectionLabel color="blue">Planos</SectionLabel>
-          <h2
-            className="text-pretty text-[29px] leading-[1.16] text-scriba-ink-strong lg:text-[42px] lg:leading-[1.14]"
-            style={{ fontWeight: 600, letterSpacing: "-.022em" }}
-          >
+          <h2 className="text-pretty text-[29px] leading-[1.16] font-semibold tracking-[-.022em] text-scriba-ink-strong lg:text-[42px] lg:leading-[1.14]">
             Comece grátis. Cresça quando fizer sentido.
           </h2>
-          <p
-            className="max-w-[520px] text-[13.5px] leading-[1.6] text-scriba-ink-soft lg:text-[15.5px]"
-            style={{ fontWeight: 300 }}
-          >
+          <p className="max-w-[520px] text-[13.5px] leading-[1.6] font-light text-scriba-ink-soft lg:text-[15.5px]">
             Sem contrato, sem cartão para testar. Cancele em um toque.
           </p>
         </div>
@@ -868,9 +627,8 @@ function CoinHex({ size = 12 }: { size?: number }) {
       style={{ width: size + 6, height: size + 6 }}
     >
       <span
-        className="bg-[#F8C64B]"
+        className="bg-[#F8C64B] block"
         style={{
-          display: "block",
           width: size * 0.78,
           height: size * 0.89,
           clipPath: "polygon(50% 0, 100% 25%, 100% 75%, 50% 100%, 0 75%, 0 25%)",
@@ -915,80 +673,37 @@ function PlanCard({
       }}
     >
       {comingSoon ? (
-        <div
-          className="absolute left-6 sm:left-7"
-          style={{
-            top: -13,
-            background: "#E8EEF4",
-            color: "#637080",
-            fontSize: 10.5,
-            fontWeight: 600,
-            letterSpacing: ".06em",
-            textTransform: "uppercase",
-            padding: "6px 14px",
-            borderRadius: 20,
-          }}
-        >
+        <div className="absolute left-6 -top-[13px] rounded-[20px] bg-[#E8EEF4] text-[#637080] text-[10.5px] font-semibold tracking-[.06em] uppercase px-[14px] py-[6px] sm:left-7">
           Em breve
         </div>
       ) : badge ? (
-        <div
-          className="absolute left-6 sm:left-7"
-          style={{
-            top: -13,
-            background: "#F8C64B",
-            color: "#5A4409",
-            fontSize: 10.5,
-            fontWeight: 600,
-            letterSpacing: ".06em",
-            textTransform: "uppercase",
-            padding: "6px 14px",
-            borderRadius: 20,
-          }}
-        >
+        <div className="absolute left-6 -top-[13px] rounded-[20px] bg-scriba-yellow text-[#5A4409] text-[10.5px] font-semibold tracking-[.06em] uppercase px-[14px] py-[6px] sm:left-7">
           {badge}
         </div>
       ) : null}
       <div className="flex flex-col gap-2">
         <div
-          className={isPrimary ? "text-scriba-blue" : "text-scriba-ink-soft"}
-          style={{
-            fontSize: 13,
-            fontWeight: 600,
-            letterSpacing: ".03em",
-          }}
+          className={`text-[13px] font-semibold tracking-[.03em] ${isPrimary ? "text-scriba-blue" : "text-scriba-ink-soft"}`}
         >
           {name}
         </div>
         <div className="flex items-baseline gap-1.5">
-          <div
-            className="text-[36px] text-scriba-ink-strong lg:text-[40px]"
-            style={{ fontWeight: 600, letterSpacing: "-.02em" }}
-          >
+          <div className="text-[36px] font-semibold tracking-[-.02em] text-scriba-ink-strong lg:text-[40px]">
             {price}
           </div>
           {priceUnit ? (
-            <div
-              className="text-[13px] text-scriba-ink-mute lg:text-[13.5px]"
-              style={{ fontWeight: 300 }}
-            >
+            <div className="text-[13px] font-light text-scriba-ink-mute lg:text-[13.5px]">
               {priceUnit}
             </div>
           ) : null}
         </div>
-        <div
-          className="flex items-center gap-1.5 text-[12.5px] text-scriba-ink-mute lg:text-[13px]"
-          style={{ fontWeight: 300 }}
-        >
+        <div className="flex items-center gap-1.5 text-[12.5px] font-light text-scriba-ink-mute lg:text-[13px]">
           <CoinHex size={14} />
           {hint}
         </div>
       </div>
       <div className="h-px bg-scriba-hairline-soft" />
-      <div
-        className="flex flex-col gap-2.5 text-[13px] text-scriba-ink-soft lg:text-[13.5px]"
-        style={{ fontWeight: 300 }}
-      >
+      <div className="flex flex-col gap-2.5 text-[13px] font-light text-scriba-ink-soft lg:text-[13.5px]">
         {features.map((f) => (
           <div key={f} className="flex items-start gap-2.5">
             <svg
@@ -1014,28 +729,16 @@ function PlanCard({
         ))}
       </div>
       {comingSoon ? (
-        <div
-          className="inline-flex cursor-not-allowed items-center justify-center rounded-[24px] font-semibold uppercase"
-          style={{
-            background: "#F0F4F8",
-            color: "#9AABB8",
-            fontSize: 12,
-            letterSpacing: ".04em",
-            padding: 15,
-          }}
-        >
+        <div className="inline-flex cursor-not-allowed items-center justify-center rounded-[24px] bg-[#F0F4F8] text-[#9AABB8] text-[12px] font-semibold uppercase tracking-[.04em] p-[15px]">
           Em breve
         </div>
       ) : (
         <Link
           href="/sign-in"
-          className={`${isPrimary ? "lp-cta" : "lp-cta-soft"} inline-flex items-center justify-center gap-2 rounded-[24px] font-semibold uppercase`}
+          className={`${isPrimary ? "lp-cta" : "lp-cta-soft"} inline-flex items-center justify-center gap-2 rounded-[24px] text-[12px] font-semibold uppercase tracking-[.04em] p-[15px]`}
           style={{
             background: isPrimary ? "#4FA8F0" : "#F4F8FC",
             color: isPrimary ? "#fff" : "#4A5A6A",
-            fontSize: 12,
-            letterSpacing: ".04em",
-            padding: 15,
             boxShadow: isPrimary ? "0 8px 20px rgba(79,168,240,.3)" : undefined,
           }}
         >
@@ -1055,55 +758,26 @@ function PlanCard({
 function FinalCTA() {
   return (
     <section className="mx-auto max-w-[1200px] px-5 py-11 sm:px-10 sm:py-24">
-      <div
-        className="relative flex flex-col gap-4 overflow-hidden rounded-[30px] p-9 text-white sm:gap-3.5 sm:rounded-[34px] lg:flex-row lg:items-center lg:justify-between lg:gap-12 lg:p-16"
-        style={{ background: "linear-gradient(135deg,#33414F 0%,#1F5E92 100%)" }}
-      >
-        <div
-          className="pointer-events-none absolute"
-          style={{
-            top: -90,
-            right: 60,
-            width: 340,
-            height: 340,
-            borderRadius: "50%",
-            background: "radial-gradient(circle,rgba(248,198,75,.22) 0%,rgba(248,198,75,0) 70%)",
-          }}
-        />
+      <div className="relative flex flex-col gap-4 overflow-hidden rounded-[30px] bg-[linear-gradient(135deg,#33414F_0%,#1F5E92_100%)] p-9 text-white sm:gap-3.5 sm:rounded-[34px] lg:flex-row lg:items-center lg:justify-between lg:gap-12 lg:p-16">
+        <div className="pointer-events-none absolute -top-[90px] right-[60px] w-[340px] h-[340px] rounded-full bg-[radial-gradient(circle,rgba(248,198,75,.22)_0%,rgba(248,198,75,0)_70%)]" />
         <div className="relative flex max-w-[620px] flex-col gap-3">
-          <div
-            className="text-pretty text-[28px] leading-[1.16] lg:text-[38px]"
-            style={{ fontWeight: 600, letterSpacing: "-.022em" }}
-          >
+          <div className="text-pretty text-[28px] leading-[1.16] font-semibold tracking-[-.022em] lg:text-[38px]">
             Neste domingo, ouça sem medo de esquecer.
           </div>
-          <div
-            className="text-[14px] leading-[1.6] lg:text-[16px] lg:leading-[1.62]"
-            style={{ fontWeight: 300, color: "#CFE4F3" }}
-          >
+          <div className="text-[14px] leading-[1.6] font-light text-[#CFE4F3] lg:text-[16px] lg:leading-[1.62]">
             Crie sua conta em menos de um minuto e grave seu primeiro sermão.
           </div>
         </div>
         <div className="relative flex flex-none flex-col items-stretch gap-3">
           <Link
             href="/sign-in"
-            className="lp-cta-yellow inline-flex items-center justify-center gap-2.5 rounded-[26px] bg-scriba-yellow font-semibold uppercase"
-            style={{
-              color: "#5A4409",
-              fontSize: 13,
-              letterSpacing: ".04em",
-              padding: "17px 38px",
-              boxShadow: "0 10px 24px rgba(0,0,0,.2)",
-            }}
+            className="lp-cta-yellow inline-flex items-center justify-center gap-2.5 rounded-[26px] bg-scriba-yellow text-[#5A4409] text-[13px] font-semibold uppercase tracking-[.04em] shadow-[0_10px_24px_rgba(0,0,0,.2)] py-[17px] px-[38px]"
           >
             {/** biome-ignore lint/performance/noImgElement: static asset in landing CTA */}
             <img src="/pena-logo-white.svg" alt="" aria-hidden width={16} height={16} />
             Começar grátis
           </Link>
-          <div
-            className="text-center text-[11px] lg:text-[11.5px]"
-            style={{ fontWeight: 300, color: "#AFCBE0" }}
-          >
+          <div className="text-center text-[11px] font-light text-[#AFCBE0] lg:text-[11.5px]">
             Sem cartão de crédito
           </div>
         </div>
@@ -1117,10 +791,7 @@ function Footer() {
     <footer className="border-t border-scriba-hairline-soft">
       <div className="mx-auto flex max-w-[1200px] flex-col gap-4 px-5 py-8 sm:px-10 sm:py-11 lg:flex-row lg:items-center lg:justify-between lg:gap-8">
         <Logo size={26} textSize={15} />
-        <div
-          className="flex flex-wrap gap-5 text-scriba-ink-mute sm:gap-7"
-          style={{ fontSize: 12.5, fontWeight: 300 }}
-        >
+        <div className="flex flex-wrap gap-5 text-[12.5px] font-light text-scriba-ink-mute sm:gap-7">
           <a href="#recursos" className="lp-link-footer">
             Recursos
           </a>
@@ -1134,7 +805,7 @@ function Footer() {
             Contato
           </a>
         </div>
-        <div className="text-[12px] text-scriba-ink-mute" style={{ fontWeight: 300 }}>
+        <div className="text-[12px] font-light text-scriba-ink-mute">
           © {new Date().getFullYear()} Scriba
         </div>
       </div>
@@ -1147,14 +818,8 @@ function SectionLabel({ children, color = "mute" }: { children: React.ReactNode;
     color === "blue" ? "text-scriba-blue" : color === "mute" ? "text-scriba-ink-mute" : undefined;
   return (
     <div
-      className={colorClass}
-      style={{
-        fontSize: 11,
-        fontWeight: 600,
-        letterSpacing: ".12em",
-        textTransform: "uppercase",
-        color: colorClass ? undefined : color,
-      }}
+      className={`text-[11px] font-semibold tracking-[.12em] uppercase${colorClass ? ` ${colorClass}` : ""}`}
+      style={colorClass ? undefined : { color }}
     >
       {children}
     </div>
@@ -1174,43 +839,28 @@ function PhoneFrame({
 }) {
   return (
     <div
-      className="relative flex-none scale-[.75] sm:scale-90 lg:scale-100"
-      style={{
-        width: 390,
-        padding: 11,
-        background: "#fff",
-        borderRadius: 44,
-        boxShadow: shadow,
-      }}
+      className="relative flex-none w-[390px] scale-[.75] rounded-[44px] bg-white p-[11px] sm:scale-90 lg:scale-100"
+      style={{ boxShadow: shadow }}
     >
       <div
-        className="relative overflow-hidden bg-white"
+        className="relative overflow-hidden rounded-[34px] bg-white h-[680px]"
         style={{
-          borderRadius: 34,
-          height: 680,
           maskImage: "linear-gradient(180deg, #000 82%, transparent 100%)",
           WebkitMaskImage: "linear-gradient(180deg, #000 82%, transparent 100%)",
         }}
       >
         {/* status bar */}
-        <div
-          className="absolute inset-x-0 top-0 z-10 flex items-center justify-between px-7 text-[#3B4A5A]"
-          style={{ height: 44, fontSize: 12, fontWeight: 600 }}
-        >
+        <div className="absolute inset-x-0 top-0 z-10 flex h-[44px] items-center justify-between px-7 text-[12px] font-semibold text-[#3B4A5A]">
           <span>9:41</span>
           <div className="flex items-center gap-1">
             <span
               aria-hidden
-              className="inline-block"
-              style={{ width: 14, height: 8, border: "1.4px solid #3B4A5A", borderRadius: 2 }}
+              className="inline-block w-[14px] h-[8px] border-[1.4px] border-[#3B4A5A] rounded-[2px]"
             />
           </div>
         </div>
         {/* notch */}
-        <div
-          className="absolute left-1/2 z-10 -translate-x-1/2"
-          style={{ top: 12, width: 104, height: 26, borderRadius: 16, background: "#0B1220" }}
-        />
+        <div className="absolute left-1/2 z-10 -translate-x-1/2 top-[12px] w-[104px] h-[26px] rounded-[16px] bg-[#0B1220]" />
         {chrome ? (
           <div className="absolute inset-x-0 top-[44px] z-[5] bg-white/95 backdrop-blur">
             {chrome}
@@ -1232,28 +882,14 @@ function PhoneChrome({
   right?: React.ReactNode;
 }) {
   return (
-    <div
-      className="flex items-center justify-between gap-3 px-5 pb-3 pt-2"
-      style={{ borderBottom: "1px solid #EEF4FA" }}
-    >
+    <div className="flex items-center justify-between gap-3 border-b border-scriba-hairline-soft px-5 pb-3 pt-2">
       <div className="flex min-w-0 flex-col">
         {subtitle ? (
-          <span
-            className="truncate text-scriba-ink-mute"
-            style={{
-              fontSize: 10,
-              fontWeight: 600,
-              letterSpacing: ".12em",
-              textTransform: "uppercase",
-            }}
-          >
+          <span className="truncate text-[10px] font-semibold tracking-[.12em] uppercase text-scriba-ink-mute">
             {subtitle}
           </span>
         ) : null}
-        <span
-          className="truncate text-scriba-ink-strong"
-          style={{ fontSize: 15, fontWeight: 600, letterSpacing: "-.01em" }}
-        >
+        <span className="truncate text-[15px] font-semibold tracking-[-.01em] text-scriba-ink-strong">
           {title}
         </span>
       </div>
@@ -1264,17 +900,9 @@ function PhoneChrome({
 
 function LiveDot() {
   return (
-    <div
-      className="flex items-center gap-1.5 rounded-full px-2.5 py-1"
-      style={{ background: "rgba(220, 38, 38, .08)" }}
-    >
-      <span
-        className="size-1.5 rounded-full"
-        style={{ background: "#DC2626", boxShadow: "0 0 0 4px rgba(220,38,38,.15)" }}
-      />
-      <span style={{ fontSize: 10, fontWeight: 700, letterSpacing: ".08em", color: "#B91C1C" }}>
-        AO VIVO
-      </span>
+    <div className="flex items-center gap-1.5 rounded-full bg-red-600/[.08] px-2.5 py-1">
+      <span className="size-1.5 rounded-full bg-[#DC2626] shadow-[0_0_0_4px_rgba(220,38,38,.15)]" />
+      <span className="text-[10px] font-bold tracking-[.08em] text-[#B91C1C]">AO VIVO</span>
     </div>
   );
 }
@@ -1379,11 +1007,9 @@ function LibraryMock() {
       {LIB_GROUPS.map((group) => (
         <section key={group.label} className="flex flex-col gap-3">
           <div className="flex items-center gap-2.5 px-1">
-            <span className="text-xs font-semibold" style={{ color: "var(--scriba-blue)" }}>
-              {group.label}
-            </span>
-            <span className="h-px flex-1" style={{ background: "var(--scriba-hairline)" }} />
-            <span className="text-[11px] font-light" style={{ color: "var(--scriba-ink-mute)" }}>
+            <span className="text-xs font-semibold text-scriba-blue">{group.label}</span>
+            <span className="h-px flex-1 bg-scriba-hairline" />
+            <span className="text-[11px] font-light text-scriba-ink-mute">
               {group.items.length}
             </span>
           </div>
@@ -1391,69 +1017,29 @@ function LibraryMock() {
             {group.items.map((s) => (
               <li
                 key={s.title}
-                className="rounded-3xl border bg-white p-4"
-                style={{
-                  borderColor: "var(--scriba-hairline-soft)",
-                  boxShadow: "0 4px 14px rgba(79,168,240,0.08)",
-                }}
+                className="rounded-3xl border border-scriba-hairline-soft bg-white p-4 shadow-[0_4px_14px_rgba(79,168,240,0.08)]"
               >
                 <div className="flex min-w-0 flex-col gap-1.5">
-                  <span
-                    className="text-pretty text-[15px] font-semibold leading-tight tracking-tight"
-                    style={{ color: "var(--scriba-ink-strong)" }}
-                  >
+                  <span className="text-pretty text-[15px] font-semibold leading-tight tracking-tight text-scriba-ink-strong">
                     {s.title}
                   </span>
-                  <span
-                    className="text-pretty text-[13px] font-light leading-snug"
-                    style={{ color: "var(--scriba-ink-soft)" }}
-                  >
+                  <span className="text-pretty text-[13px] font-light leading-snug text-scriba-ink-soft">
                     {s.summary}
                   </span>
                   <span className="flex flex-wrap items-center gap-x-2 gap-y-1 pt-1.5">
-                    <span
-                      className="text-[12px] font-medium"
-                      style={{ color: "var(--scriba-ink)" }}
-                    >
-                      {s.speaker}
-                    </span>
-                    <span style={{ color: "var(--scriba-ink-mute)" }}>·</span>
-                    <span
-                      className="text-[11px] font-light"
-                      style={{ color: "var(--scriba-ink-mute)" }}
-                    >
+                    <span className="text-[12px] font-medium text-scriba-ink">{s.speaker}</span>
+                    <span className="text-scriba-ink-mute">·</span>
+                    <span className="text-[11px] font-light text-scriba-ink-mute">
                       {s.location}
                     </span>
                   </span>
                 </div>
-                <div
-                  className="mt-3 flex items-center gap-2 border-t pt-2.5"
-                  style={{ borderColor: "var(--scriba-hairline)" }}
-                >
-                  <span
-                    className="text-[11px] font-light"
-                    style={{ color: "var(--scriba-ink-mute)" }}
-                  >
-                    {s.date}
-                  </span>
-                  <span
-                    className="size-[3px] rounded-full"
-                    style={{ background: "rgba(169,181,196,.6)" }}
-                  />
-                  <span
-                    className="text-[11px] font-light"
-                    style={{ color: "var(--scriba-ink-mute)" }}
-                  >
-                    {s.duration}
-                  </span>
+                <div className="mt-3 flex items-center gap-2 border-t border-scriba-hairline pt-2.5">
+                  <span className="text-[11px] font-light text-scriba-ink-mute">{s.date}</span>
+                  <span className="size-[3px] rounded-full bg-[rgba(169,181,196,.6)]" />
+                  <span className="text-[11px] font-light text-scriba-ink-mute">{s.duration}</span>
                   <div className="flex-1" />
-                  <span
-                    className="rounded-full px-3.5 py-1.5 text-[11px] font-semibold"
-                    style={{
-                      background: "var(--scriba-blue-soft)",
-                      color: "var(--scriba-blue)",
-                    }}
-                  >
+                  <span className="rounded-full bg-scriba-blue-soft px-3.5 py-1.5 text-[11px] font-semibold text-scriba-blue">
                     Ver resumo →
                   </span>
                 </div>

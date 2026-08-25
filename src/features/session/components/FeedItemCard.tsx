@@ -108,19 +108,13 @@ export function FeedItemCard({
     "relative flex flex-1 flex-col gap-3",
     isAi
       ? "rounded-3xl rounded-tl-md border border-dashed border-[color:var(--scriba-blue-soft)] bg-[color:var(--scriba-blue-soft)]/40 px-5 py-4"
-      : "rounded-[22px] p-5 animate-insight-gradient"
+      : "rounded-[22px] p-5 animate-insight-gradient bg-[image:var(--session-surface-quote)] bg-[size:200%_100%]"
   );
-  const surfaceStyle = isAi
-    ? undefined
-    : {
-        backgroundImage: "var(--session-surface-quote)",
-        backgroundSize: "200% 100%",
-      };
 
   const chipColor = isAi ? "text-[color:var(--scriba-ink-mute)]" : "text-[#7FA9CC]";
 
   const card = (
-    <article className={surfaceClass} style={surfaceStyle}>
+    <article className={surfaceClass}>
       <div className={cn("flex items-center gap-1.5", chipColor)}>
         {chip.icon === "book" ? <BookGlyph className="size-3" /> : null}
         <span className="text-[10px] font-semibold uppercase tracking-[0.14em]">{chip.label}</span>

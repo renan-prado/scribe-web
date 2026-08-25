@@ -143,12 +143,7 @@ export function NewRecordingDialog({ trigger }: { trigger?: ReactNode }) {
                 >
                   <span
                     aria-hidden
-                    className="block bg-[#F8C64B]"
-                    style={{
-                      width: "7px",
-                      height: "8px",
-                      clipPath: "polygon(50% 0, 100% 25%, 100% 75%, 50% 100%, 0 75%, 0 25%)",
-                    }}
+                    className="block size-[7px] h-[8px] bg-[#F8C64B] [clip-path:polygon(50%_0,100%_25%,100%_75%,50%_100%,0_75%,0_25%)]"
                   />
                   {costPerMinute}/min
                 </span>

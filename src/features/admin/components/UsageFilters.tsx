@@ -167,25 +167,16 @@ export function UsageFilters({ users, routes, current }: Props) {
       </div>
 
       {activeSessionId ? (
-        <div
-          className="flex items-center gap-2 rounded-full px-3 py-1.5"
-          style={{ background: "var(--scriba-blue-soft)" }}
-        >
-          <span
-            className="text-[10px] font-semibold uppercase tracking-[0.1em]"
-            style={{ color: "var(--scriba-blue)" }}
-          >
+        <div className="flex items-center gap-2 rounded-full bg-scriba-blue-soft px-3 py-1.5">
+          <span className="text-[10px] font-semibold uppercase tracking-[0.1em] text-scriba-blue">
             Sessão
           </span>
-          <span className="truncate font-mono text-[11px]" style={{ color: "var(--scriba-ink)" }}>
-            {activeSessionId}
-          </span>
+          <span className="truncate font-mono text-[11px] text-scriba-ink">{activeSessionId}</span>
           <button
             type="button"
             onClick={clearSessionFilter}
             aria-label="Remover filtro de sessão"
-            className="ml-auto inline-flex size-5 items-center justify-center rounded-full transition-colors"
-            style={{ color: "var(--scriba-blue)" }}
+            className="ml-auto inline-flex size-5 items-center justify-center rounded-full text-scriba-blue transition-colors"
           >
             <X className="size-3" />
           </button>

@@ -140,13 +140,7 @@ const TONES: Record<Tone, { bg: string; label: string }> = {
 function KpiCard({ label, value, hint, tone }: KpiTile) {
   const c = TONES[tone];
   return (
-    <div
-      className="flex flex-col gap-1 rounded-2xl border bg-white p-5"
-      style={{
-        borderColor: "var(--scriba-hairline-soft)",
-        boxShadow: "0 4px 14px rgba(79,168,240,0.06)",
-      }}
-    >
+    <div className="flex flex-col gap-1 rounded-2xl border border-scriba-hairline-soft bg-white p-5 shadow-[0_4px_14px_rgba(79,168,240,0.06)]">
       <div
         className="mb-1 inline-flex w-fit items-center gap-1.5 rounded-full px-2.5 py-1"
         style={{ background: c.bg }}
@@ -176,13 +170,7 @@ function ListCard({
   children: React.ReactNode;
 }) {
   return (
-    <section
-      className="flex flex-col gap-3 rounded-2xl border bg-white p-5"
-      style={{
-        borderColor: "var(--scriba-hairline-soft)",
-        boxShadow: "0 4px 14px rgba(79,168,240,0.06)",
-      }}
-    >
+    <section className="flex flex-col gap-3 rounded-2xl border border-scriba-hairline-soft bg-white p-5 shadow-[0_4px_14px_rgba(79,168,240,0.06)]">
       <div className="flex items-baseline justify-between gap-3">
         <h2 className="text-[14px] font-semibold text-[color:var(--scriba-ink-strong)]">{title}</h2>
         {subtitle ? (

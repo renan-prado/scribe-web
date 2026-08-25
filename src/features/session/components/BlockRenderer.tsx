@@ -52,13 +52,7 @@ export function BlockRenderer({ block }: { block: SummaryBlock }) {
       const parsed = parseVerseReference(block.reference);
       const hasRange = parsed && parsed.startVerse != null && parsed.endVerse != null;
       return (
-        <figure
-          className="relative flex flex-col gap-3.5 rounded-[26px] p-6 animate-insight-gradient"
-          style={{
-            backgroundImage: "var(--session-surface-quote)",
-            backgroundSize: "200% 100%",
-          }}
-        >
+        <figure className="relative flex flex-col gap-3.5 rounded-[26px] p-6 animate-insight-gradient bg-[image:var(--session-surface-quote)] bg-[size:200%_100%]">
           <figcaption>
             <span className="inline-flex items-center gap-2 rounded-full bg-[color:var(--scriba-ink-strong)] px-4 py-1.5 text-xs font-semibold text-white">
               <BookGlyph />
@@ -106,13 +100,7 @@ export function BlockRenderer({ block }: { block: SummaryBlock }) {
       );
     case "conclusion":
       return (
-        <section
-          className="relative mt-2 flex flex-col gap-3 rounded-[26px] p-6 animate-insight-gradient"
-          style={{
-            backgroundImage: "var(--session-surface-quote)",
-            backgroundSize: "200% 100%",
-          }}
-        >
+        <section className="relative mt-2 flex flex-col gap-3 rounded-[26px] p-6 animate-insight-gradient bg-[image:var(--session-surface-quote)] bg-[size:200%_100%]">
           <span className="text-[10px] font-semibold uppercase tracking-[0.14em] text-[#7FA9CC]">
             Conclusão
           </span>

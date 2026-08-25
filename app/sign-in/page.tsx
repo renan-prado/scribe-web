@@ -26,24 +26,17 @@ export default async function SignInPage({ searchParams }: { searchParams: Promi
       <GoogleSignInButton next={target} label="Continuar com Google" />
       {errorMessage ? (
         <div
-          className="flex items-start gap-2 rounded-2xl px-4 py-3"
-          style={{
-            background: "#FAEAE5",
-            color: "#8A4E3B",
-            fontSize: 12.5,
-            lineHeight: 1.5,
-          }}
+          className="flex items-start gap-2 rounded-2xl bg-[#FAEAE5] px-4 py-3 text-[12.5px] leading-[1.5] text-[#8A4E3B]"
           role="alert"
         >
           <span
             aria-hidden
-            className="mt-1 inline-block size-1.5 flex-none rounded-full"
-            style={{ background: "#A8715C" }}
+            className="mt-1 inline-block size-1.5 flex-none rounded-full bg-scriba-rose-accent"
           />
           <span>{errorMessage}</span>
         </div>
       ) : null}
-      <p className="text-center text-[11.5px]" style={{ fontWeight: 300, color: "#9BA6B3" }}>
+      <p className="text-center text-[11.5px] font-light text-scriba-ink-mute">
         Ao continuar, você aceita nossos termos e a política de privacidade.
       </p>
     </AuthShell>
