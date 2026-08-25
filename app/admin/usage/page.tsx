@@ -201,6 +201,7 @@ function TotalsGrid({ summary, money }: { summary: AdminUsageSummary; money: Mon
       <Kpi
         label="Custo $/min"
         value={overallCostPerMinuteUsd != null ? money(overallCostPerMinuteUsd, "fine") : "—"}
+        hint="Aprofundamento não entra na conta"
         tone={KPI_TONES[3]}
       />
     </section>
@@ -310,6 +311,30 @@ function sessionFilterHref(filters: SearchParams, sessionId: string): string {
   return `/admin/usage?${p.toString()}`;
 }
 
+function ModeBadge({ mode }: { mode: "live" | "audio_only" | null }) {
+  if (mode === "live") {
+    return (
+      <span
+        className="inline-flex items-center rounded-full px-2 py-0.5 text-[10px] font-semibold uppercase tracking-[0.08em]"
+        style={{ background: "#E4EFEA", color: "#4E8570" }}
+      >
+        Com live
+      </span>
+    );
+  }
+  if (mode === "audio_only") {
+    return (
+      <span
+        className="inline-flex items-center rounded-full px-2 py-0.5 text-[10px] font-semibold uppercase tracking-[0.08em]"
+        style={{ background: "#FDF3DD", color: "#C79B2A" }}
+      >
+        Sem live
+      </span>
+    );
+  }
+  return <span className="text-[10px] text-muted-foreground">—</span>;
+}
+
 function SessionsTable({
   summary,
   money,
@@ -328,6 +353,7 @@ function SessionsTable({
             <TableRow>
               <TableHead>Sessão</TableHead>
               <TableHead>Dono</TableHead>
+              <TableHead>Modo</TableHead>
               <TableHead className="text-right">Duração</TableHead>
               <TableHead className="text-right">Chamadas</TableHead>
               <TableHead className="text-right">Custo</TableHead>
@@ -337,7 +363,7 @@ function SessionsTable({
           <TableBody>
             {summary.bySession.length === 0 ? (
               <TableRow>
-                <TableCell colSpan={6} className="text-center text-sm text-muted-foreground">
+                <TableCell colSpan={7} className="text-center text-sm text-muted-foreground">
                   Nenhuma sessão com eventos.
                 </TableCell>
               </TableRow>
@@ -364,6 +390,9 @@ function SessionsTable({
                   </TableCell>
                   <TableCell className="text-xs text-muted-foreground">
                     {s.ownerDisplayName || (s.userId ? s.userId.slice(0, 8) : "—")}
+                  </TableCell>
+                  <TableCell>
+                    <ModeBadge mode={s.mode} />
                   </TableCell>
                   <TableCell className="text-right">{formatDuration(s.durationMs)}</TableCell>
                   <TableCell className="text-right">{INT.format(s.events)}</TableCell>

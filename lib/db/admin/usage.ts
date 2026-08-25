@@ -33,6 +33,7 @@ export type UsageBySession = {
   costPerMinuteUsd: number | null;
   userId: string | null;
   ownerDisplayName: string | null;
+  mode: "live" | "audio_only" | null;
 };
 export type UsageByDay = { day: string; totalCostUsd: number; events: number };
 
@@ -77,7 +78,13 @@ type SessionRow = {
   created_at: string;
   duration_ms: number | null;
   user_id: string | null;
+  capture_mode: string | null;
 };
+
+function parseMode(value: string | null | undefined): "live" | "audio_only" | null {
+  if (value === "live" || value === "audio_only") return value;
+  return null;
+}
 
 type ProfileLite = { id: string; display_name: string | null; email: string | null };
 
@@ -108,6 +115,11 @@ function accumulate(acc: UsageTotals, row: EventRow): void {
 
 const RECENT_SESSIONS = 50;
 const TOP_USERS = 25;
+
+// Rotas cobradas separadamente (produto à parte, e.g. deepening) não entram
+// no cálculo de custo por minuto — senão inflação artificial pra sessões que
+// receberam aprofundamento. Continuam contando em totals/byRoute/byUser.
+const EXCLUDED_FROM_PER_MINUTE = new Set<string>(["deepening"]);
 
 export async function loadAdminUsageSummary(
   filters: UsageFilters = {}
@@ -153,28 +165,31 @@ export async function loadAdminUsageSummary(
   const totals = emptyTotals();
   const routeMap = new Map<string, UsageByRoute>();
   const userMap = new Map<string, { cost: number; events: number }>();
-  const sessionAgg = new Map<string, { cost: number; events: number }>();
+  const sessionAgg = new Map<string, { cost: number; events: number; recordingCost: number }>();
   const dayMap = new Map<string, UsageByDay>();
   const routeUniverse = new Set<string>();
 
   for (const row of rows) {
     accumulate(totals, row);
     routeUniverse.add(row.route);
+    const rowCost = toNumber(row.total_cost_usd);
+    const countsForRate = !EXCLUDED_FROM_PER_MINUTE.has(row.route);
 
     const routeAgg = routeMap.get(row.route) ?? { route: row.route, events: 0, totalCostUsd: 0 };
     routeAgg.events += 1;
-    routeAgg.totalCostUsd += toNumber(row.total_cost_usd);
+    routeAgg.totalCostUsd += rowCost;
     routeMap.set(row.route, routeAgg);
 
     const uAgg = userMap.get(row.user_id) ?? { cost: 0, events: 0 };
-    uAgg.cost += toNumber(row.total_cost_usd);
+    uAgg.cost += rowCost;
     uAgg.events += 1;
     userMap.set(row.user_id, uAgg);
 
     if (row.session_id) {
-      const sAgg = sessionAgg.get(row.session_id) ?? { cost: 0, events: 0 };
-      sAgg.cost += toNumber(row.total_cost_usd);
+      const sAgg = sessionAgg.get(row.session_id) ?? { cost: 0, events: 0, recordingCost: 0 };
+      sAgg.cost += rowCost;
       sAgg.events += 1;
+      if (countsForRate) sAgg.recordingCost += rowCost;
       sessionAgg.set(row.session_id, sAgg);
     }
 
@@ -218,7 +233,7 @@ export async function loadAdminUsageSummary(
   if (sessionIds.length > 0) {
     const { data: sessions, error: sErr } = await admin
       .from("sessions")
-      .select("id, title, created_at, duration_ms, user_id")
+      .select("id, title, created_at, duration_ms, user_id, capture_mode")
       .in("id", sessionIds);
     if (sErr) throw new Error(`loadAdminUsageSummary sessions failed: ${sErr.message}`);
     sessionMeta = new Map(((sessions ?? []) as SessionRow[]).map((s) => [s.id, s]));
@@ -231,7 +246,8 @@ export async function loadAdminUsageSummary(
       const meta = sessionMeta.get(id);
       const durationMs = meta?.duration_ms ?? null;
       const minutes = durationMs && durationMs > 0 ? durationMs / 60_000 : 0;
-      const costPerMinuteUsd = minutes > 0 ? agg.cost / minutes : null;
+      // costPerMinute usa apenas o custo "de gravação" (exclui deepening).
+      const costPerMinuteUsd = minutes > 0 ? agg.recordingCost / minutes : null;
       const ownerProfile = meta?.user_id ? profiles.get(meta.user_id) : null;
       return {
         sessionId: id,
@@ -243,6 +259,7 @@ export async function loadAdminUsageSummary(
         costPerMinuteUsd,
         userId: meta?.user_id ?? null,
         ownerDisplayName: ownerProfile?.display_name ?? ownerProfile?.email ?? null,
+        mode: parseMode(meta?.capture_mode),
       } satisfies UsageBySession;
     })
     .filter((s): s is UsageBySession => s !== null)
@@ -253,7 +270,10 @@ export async function loadAdminUsageSummary(
     (sum, s) => sum + (s.durationMs && s.durationMs > 0 ? s.durationMs / 60_000 : 0),
     0
   );
-  const recordedCost = bySession.reduce((sum, s) => sum + s.totalCostUsd, 0);
+  const recordedCost = bySession.reduce(
+    (sum, s) => sum + (sessionAgg.get(s.sessionId)?.recordingCost ?? 0),
+    0
+  );
   const overallCostPerMinuteUsd = totalMinutes > 0 ? recordedCost / totalMinutes : null;
 
   const byRoute = Array.from(routeMap.values()).sort((a, b) => b.totalCostUsd - a.totalCostUsd);
