@@ -210,7 +210,6 @@ export function KnowledgePlayground({ defaultSystemPrompt, sourceTypes }: Props)
               );
             })}
           </div>
-          <p className="text-[11px] text-muted-foreground">Vazio = todos.</p>
         </div>
 
         <div className="flex flex-col gap-1.5">
