@@ -39,9 +39,15 @@ lib/
   llm/openai.ts                 — callChat / callTranscribe (Result<T>, AbortController timeout)
   prompts/*.ts                  — system prompts as exported constants
   supabase/{server,client}.ts
+  supabase/admin.ts             — service-role client (BYPASSES RLS — admin server routes only)
   recorder.ts                   — MediaRecorder + VAD factory (createRecorder)
   vocabulario.ts                — biblical books + theology vocab for the STT prompt
   utils.ts                      — cn()
+  ai/embeddings.ts              — embedText / embedTexts (mirrors callChat contract)
+  knowledge/                    — RAG stack: types, chunk (bible chunker), ingest,
+                                  search (searchKnowledge → match_knowledge RPC)
+  bibles/*.json                 — 11 pt-BR/en Bible translations (ACF, ARA, ARC, KJA,
+                                  KJF, NAA, NBV, NTLH, NVI, NVT, OL)
 src/features/session/
   components/*.tsx              — every UI piece of the recording page (Feed + FeedItemCard
                                   drive the live view; SummaryView renders the post-stop
@@ -68,6 +74,34 @@ src/features/session/
 - **New API route calling OpenAI**: (1) add a prompt in `lib/prompts/foo.ts`, (2) add the schema + `parseFooFromLLM` in `lib/domain/foo.ts`, (3) create `app/api/foo/route.ts` that reads env from `serverEnv`, invokes `callChat({...})`, and delegates parsing to the domain helper. Log `[foo] ok { latencyMs, finishReason, promptTokens, completionTokens, ... }` on success and `[foo] upstream {fetch failed|error}` on failure.
 - **New UI element for the session page**: put it under `src/features/session/components/`. Keep `app/(app)/recording/[id]/live/page.tsx` as pure orchestration. Pure helpers go to `src/features/session/lib/`; reusable stateful behaviour goes to `src/features/session/hooks/`.
 - **New env var**: add to the Zod schema in `lib/env/server.ts` (or `client.ts`) — this is intentionally strict so a missing var fails at boot, not on the first request.
+
+## Knowledge base (RAG)
+
+Enabled by migrations 0012-0016. `public.knowledge_sources` +
+`public.knowledge_chunks` (vector(512)) + `public.match_knowledge` RPC.
+Owner-user-id is nullable on sources — null means a global source
+(current state: Bible only); non-null is reserved for future
+auto-indexing of session summaries/deepenings (see
+`docs/scriba-rag-todos-futuros.md` item #1).
+
+Rules:
+- **Every embedding call** goes through `embedText` / `embedTexts` in
+  `@/lib/ai/embeddings`. Do not call `fetch("https://api.openai.com/v1/embeddings")` directly.
+- **Every ingest** goes through `indexKnowledgeSource` /
+  `reindexKnowledgeSource` in `@/lib/knowledge/ingest`. These use the
+  service-role admin client — never call from client code.
+- **Every retrieval** goes through `searchKnowledge` in
+  `@/lib/knowledge/search`. It embeds the query with the same model+dims
+  as ingest and calls the RPC; mixing embedding models silently produces
+  garbage similarities.
+- Locked to `text-embedding-3-small@512`. Coexistence with other models
+  is deferred (todos-futuros #9).
+- **Do not mount RAG on `/api/final-summary`.** The summary is a
+  fidelity contract to the transcript. RAG lives on the future
+  `/api/deepening/v2` and any downstream deepening surfaces.
+- Ingestion of the Bible is a one-shot CLI: `npm run index:bible --
+  --translation NAA` (also ARA, NVI). Not idempotent — re-running
+  duplicates sources. Use `--dry-run` first.
 
 ## What is deliberately NOT here yet
 
