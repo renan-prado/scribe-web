@@ -1,4 +1,4 @@
-import { Compass } from "lucide-react";
+import { MicOff } from "lucide-react";
 import Link from "next/link";
 import { Button } from "@/components/ui/button";
 
@@ -9,18 +9,26 @@ export const metadata = {
 export default function NotFoundPage() {
   return (
     <main className="mx-auto flex min-h-svh w-full max-w-lg flex-col items-center justify-center gap-6 px-4 py-12 text-center sm:px-6">
-      <span className="flex size-14 items-center justify-center rounded-full bg-muted text-muted-foreground">
-        <Compass className="size-6" />
+      <span
+        className="flex size-16 items-center justify-center rounded-full"
+        style={{ background: "#EAF4FE", color: "#4FA8F0" }}
+      >
+        <MicOff className="size-7" />
       </span>
 
-      <div className="flex flex-col gap-2">
-        <p className="font-mono text-xs uppercase tracking-[0.2em] text-muted-foreground">404</p>
-        <h1 className="font-heading text-2xl font-semibold tracking-tight text-foreground sm:text-3xl">
+      <div className="flex flex-col gap-3">
+        <p className="font-mono text-xs uppercase tracking-[0.2em]" style={{ color: "#4FA8F0" }}>
+          404
+        </p>
+        <h1
+          className="text-2xl font-semibold tracking-tight sm:text-3xl"
+          style={{ fontFamily: "var(--font-poppins)", color: "#2B3947" }}
+        >
           Página não encontrada
         </h1>
-        <p className="max-w-sm text-sm text-muted-foreground">
-          O endereço que você abriu não existe ou foi movido. Se você chegou aqui a partir de um
-          link, ele pode estar desatualizado.
+        <p className="max-w-sm text-sm leading-relaxed" style={{ color: "#6E7C8B" }}>
+          Nossa IA tentou transcrever essa URL e ficou em silêncio.{" "}
+          <span style={{ color: "#9BA6B3" }}>O endereço não existe ou foi movido.</span>
         </p>
       </div>
 

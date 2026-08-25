@@ -1,0 +1,30 @@
+# Scriba
+
+> Scriba é uma aplicação web de transcrição e resumo de sermões e pregações em tempo real, com inteligência artificial.
+
+## O que é
+
+Scriba usa IA para transcrever sermões ao vivo, identificar citações bíblicas enquanto o pregador fala, e gerar um resumo estruturado ao final de cada gravação. Tudo acontece em tempo real, diretamente no navegador.
+
+## Funcionalidades
+
+- Transcrição ao vivo de áudio via microfone (chunks de ~30s)
+- Detecção automática de citações bíblicas (Bíblia completa, PT-BR)
+- Feed ao vivo com destaques do pregador, versículos citados e relacionados, contexto e sugestões de citação
+- Resumo final estruturado após encerrar a gravação
+- Lookup de versículos bíblicos via clique nos cards
+- Histórico de gravações no painel do usuário
+
+## Para quem é
+
+Igrejas, ministérios, pregadores, obreiros e ouvintes que queiram registrar, revisar e compartilhar sermões com facilidade.
+
+## Tecnologia
+
+- Next.js (App Router), React, Tailwind CSS
+- OpenAI (transcrição e enrichment de IA)
+- Supabase (auth e banco de dados)
+
+## URL
+
+https://scriba.cc
