@@ -15,14 +15,27 @@ const LABELS: Record<string, string> = {
   admin: "Admin",
   users: "Usuários",
   usage: "Uso & custos",
+  knowledge: "Biblioteca",
+  new: "Nova fonte",
+  playground: "Playground",
 };
+
+// Path segments that are dynamic ids (uuids, numeric). Rendered as a
+// short prefix of the value so the crumb reads well without exposing
+// the full uuid.
+function isProbablyId(segment: string): boolean {
+  return (
+    /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i.test(segment) ||
+    /^\d+$/.test(segment)
+  );
+}
 
 export function AdminBreadcrumbs() {
   const pathname = usePathname();
   const parts = pathname.split("/").filter(Boolean);
   const trail = parts.map((seg, i) => {
     const href = `/${parts.slice(0, i + 1).join("/")}`;
-    const label = LABELS[seg] ?? seg;
+    const label = LABELS[seg] ?? (isProbablyId(seg) ? `${seg.slice(0, 8)}…` : seg);
     return { href, label };
   });
 

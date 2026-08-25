@@ -11,8 +11,14 @@ import {
   TableRow,
 } from "@/components/ui/table";
 import { AdminPageHeader } from "@/features/admin/components/AdminPageHeader";
+import {
+  LicenseBadge,
+  SourceTypeBadge,
+  StatusBadge,
+} from "@/features/admin/knowledge/KnowledgeBadges";
 import { KnowledgeReindexButton } from "@/features/admin/knowledge/KnowledgeReindexButton";
 import { ADMIN_CARD_SURFACE, ADMIN_TABLE_SURFACE } from "@/features/admin/lib/surfaces";
+import { STATUS_LABEL } from "@/lib/knowledge/labels";
 import { createAdminClient } from "@/lib/supabase/admin";
 
 export const metadata: Metadata = { title: "Detalhes da fonte" };
@@ -74,13 +80,21 @@ export default async function AdminKnowledgeSourcePage({ params, searchParams }:
     <div className="flex flex-col gap-6">
       <AdminPageHeader
         title={source.title}
-        subtitle={`${source.source_type} · ${source.license} · ${chunkCount ?? 0} chunks`}
         actions={
           <Link href="/admin/knowledge">
             <Button variant="outline">← voltar</Button>
           </Link>
         }
       />
+
+      <div className="-mt-2 flex flex-wrap items-center gap-2">
+        <SourceTypeBadge type={source.source_type} />
+        <LicenseBadge license={source.license} />
+        <StatusBadge status={source.status} />
+        <span className="text-xs text-[color:var(--scriba-ink-mute)]">
+          {(chunkCount ?? 0).toLocaleString("pt-BR")} chunks
+        </span>
+      </div>
 
       <nav className="flex gap-1 border-b" style={{ borderColor: "var(--scriba-hairline)" }}>
         {TABS.map((t) => (
@@ -175,7 +189,7 @@ export default async function AdminKnowledgeSourcePage({ params, searchParams }:
         <div className={`flex flex-col gap-4 p-5 ${ADMIN_CARD_SURFACE}`}>
           <dl className="grid grid-cols-2 gap-x-6 gap-y-2 text-sm">
             <dt className="text-[color:var(--scriba-ink-mute)]">Status</dt>
-            <dd className="font-mono">{source.status}</dd>
+            <dd>{STATUS_LABEL[source.status as keyof typeof STATUS_LABEL] ?? source.status}</dd>
             <dt className="text-[color:var(--scriba-ink-mute)]">Modelo de embedding</dt>
             <dd className="font-mono">{source.embedding_model ?? "—"}</dd>
             <dt className="text-[color:var(--scriba-ink-mute)]">Dimensões</dt>
