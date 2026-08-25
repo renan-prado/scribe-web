@@ -112,7 +112,6 @@ export default async function HomePage() {
   const greeting = greetingFor(now.getHours());
 
   const latest = sessions[0] ?? null;
-  const older = sessions[3] ?? null;
   const latestHasDeepening = latest ? await hasDeepening(latest.id).catch(() => false) : false;
 
   return (
@@ -156,16 +155,6 @@ export default async function HomePage() {
             hasDeepening={latestHasDeepening}
           />
         ) : null}
-
-        <PracticeCard sourceTitle={sessions[1]?.title ?? undefined} />
-
-        <div className="grid gap-4 sm:grid-cols-2">
-          <ConnectionCard sessions={sessions} />
-          <MemoryCard oldest={older} />
-        </div>
-
-        <BibleReadCard />
-        <EditorialCard />
       </div>
     </main>
   );
@@ -221,165 +210,6 @@ function ReflectionCard({
           Relembrar
         </NavLink>
       </div>
-    </article>
-  );
-}
-
-function PracticeCard({ sourceTitle }: { sourceTitle?: string }) {
-  return (
-    <article className="flex flex-col gap-3.5 rounded-[24px] bg-[color:var(--scriba-mint)] p-5">
-      <div className="flex items-center justify-between gap-2">
-        <span className="text-[11px] font-semibold uppercase tracking-wider text-[color:var(--scriba-mint-accent)]">
-          Coloque em prática
-        </span>
-        <span className="rounded-full bg-white/60 px-3 py-1 text-[10px] font-semibold uppercase tracking-wider text-[color:var(--scriba-mint-accent)]">
-          Prática de hoje
-        </span>
-      </div>
-      <p className="max-w-[500px] text-pretty text-base leading-snug text-[color:var(--scriba-mint-ink)]">
-        Pense em três coisas pelas quais você pode agradecer a Deus hoje e reserve alguns minutos
-        para orar por elas.
-      </p>
-      <div className="h-px w-full bg-[color:var(--scriba-mint-accent)]/25" />
-      <div className="flex items-center justify-between gap-3">
-        <p className="text-[11px] font-light leading-snug text-[color:var(--scriba-mint-accent)]">
-          Você ouviu sobre gratidão em
-          <br />
-          <span className="font-medium text-[color:var(--scriba-mint-accent)]">
-            {sourceTitle?.trim() || "Um coração grato"}
-          </span>
-        </p>
-      </div>
-    </article>
-  );
-}
-
-function ConnectionCard({ sessions }: { sessions: Awaited<ReturnType<typeof listSessions>> }) {
-  const picks = sessions.slice(1, 3);
-  return (
-    <article className="flex flex-col gap-3.5 rounded-[24px] bg-[color:var(--scriba-blue)] p-5 text-white shadow-[0_10px_26px_rgba(79,168,240,0.3)]">
-      <span className="text-[11px] font-semibold uppercase tracking-wider text-white/80">
-        Uma conexão interessante
-      </span>
-      <p className="text-pretty text-lg font-medium leading-snug">
-        Dois sermões que você ouviu falam sobre{" "}
-        <span className="text-[color:var(--scriba-yellow)]">ansiedade e confiança em Deus</span>.
-      </p>
-      <div className="flex flex-col gap-2">
-        {(picks.length === 2
-          ? picks
-          : [
-              { id: "mock-1", title: "Quando o medo chega", speakerName: "Pr. Daniel Souza" },
-              { id: "mock-2", title: "Descansando na providência", speakerName: "Pr. João Silva" },
-            ]
-        ).map((s) => (
-          <div key={s.id} className="flex flex-col gap-0.5 rounded-2xl bg-white/15 px-4 py-3">
-            <span className="text-sm font-semibold">{s.title ?? "Sermão"}</span>
-            <span className="text-[11px] font-light text-white/80">
-              {s.speakerName ?? "Autor desconhecido"}
-            </span>
-          </div>
-        ))}
-      </div>
-      <p className="text-xs font-light leading-snug text-white/80">
-        Os dois abordam maneiras diferentes de responder à incerteza.
-      </p>
-      <button
-        type="button"
-        className="rounded-full bg-[color:var(--scriba-yellow)] px-4 py-3 text-[11px] font-semibold uppercase tracking-wider text-[#5A4409] transition-colors hover:bg-[color:var(--scriba-yellow-hover)]"
-      >
-        Explorar conexão
-      </button>
-    </article>
-  );
-}
-
-function MemoryCard({
-  oldest,
-}: {
-  oldest: Awaited<ReturnType<typeof listSessions>>[number] | null;
-}) {
-  const title = oldest?.title?.trim() || "O perigo de uma fé superficial";
-  const speaker = oldest?.speakerName?.trim() || "Pr. Marcos Almeida";
-  const location = oldest?.speakerLocation?.trim() || "Igreja Batista Central";
-  const summary =
-    oldest?.shortSummary?.trim() ||
-    "“Raízes profundas não aparecem no dia da tempestade — elas crescem em silêncio, muito antes.”";
-  return (
-    <article className="flex flex-col gap-2 rounded-[24px] bg-[color:var(--scriba-cream)] p-5">
-      <span className="text-[11px] font-semibold uppercase tracking-wider text-[color:var(--scriba-cream-accent)]">
-        Há algum tempo você ouviu
-      </span>
-      <h3 className="text-lg font-semibold leading-tight tracking-tight text-[color:var(--scriba-cream-ink)]">
-        {title}
-      </h3>
-      <p className="text-[11px] font-light text-[#9C8A55]">
-        {speaker} · {location}
-      </p>
-      <p className="text-pretty text-sm font-light leading-snug text-[#7A6836]">{summary}</p>
-      <button
-        type="button"
-        className="mt-1 self-start rounded-full bg-white px-5 py-2.5 text-[11px] font-semibold uppercase tracking-wider text-[color:var(--scriba-cream-accent)]"
-      >
-        Relembrar
-      </button>
-    </article>
-  );
-}
-
-function BibleReadCard() {
-  return (
-    <article className="flex flex-col gap-2 rounded-[24px] bg-[color:var(--scriba-rose)] p-5">
-      <span className="text-[11px] font-semibold uppercase tracking-wider text-[color:var(--scriba-rose-accent)]">
-        Releia este texto
-      </span>
-      <p className="text-sm font-semibold text-[color:var(--scriba-rose-ink)]">Romanos 8:28</p>
-      <p className="max-w-[500px] text-pretty text-[15px] font-light italic leading-snug text-[#83604F]">
-        Sabemos que Deus age em todas as coisas para o bem daqueles que o amam…
-      </p>
-      <p className="pt-1 text-[11px] font-light leading-snug text-[#A08373]">
-        Mencionado em{" "}
-        <span className="font-medium text-[color:var(--scriba-rose-ink)]">
-          Providência em meio ao sofrimento
-        </span>
-      </p>
-      <button
-        type="button"
-        className="mt-2 self-start rounded-full bg-white px-5 py-2.5 text-[11px] font-semibold uppercase tracking-wider text-[color:var(--scriba-rose-accent)]"
-      >
-        Revisitar sermão
-      </button>
-    </article>
-  );
-}
-
-function EditorialCard() {
-  return (
-    <article className="flex flex-col gap-2 rounded-[24px] bg-[color:var(--scriba-lilac)] p-5">
-      <div className="flex items-center gap-2">
-        <span
-          aria-hidden
-          className="flex size-4 items-center justify-center rounded-md bg-[color:var(--scriba-blue)] text-[10px] font-bold text-white"
-        >
-          S
-        </span>
-        <span className="text-[11px] font-semibold uppercase tracking-wider text-[color:var(--scriba-lilac-accent)]">
-          Do Scriba
-        </span>
-      </div>
-      <h3 className="text-lg font-semibold leading-tight tracking-tight text-[color:var(--scriba-lilac-ink)]">
-        O que significa meditar na Palavra?
-      </h3>
-      <p className="max-w-[500px] text-pretty text-[13px] font-light leading-snug text-[#77869F]">
-        Uma introdução curta a uma prática antiga — e por que ela não tem nada a ver com esvaziar a
-        mente.
-      </p>
-      <button
-        type="button"
-        className="mt-2 self-start rounded-full bg-[color:var(--scriba-blue)] px-5 py-2.5 text-[11px] font-semibold uppercase tracking-wider text-white shadow-[0_5px_12px_rgba(79,168,240,0.26)] transition-colors hover:bg-[color:var(--scriba-blue-hover)]"
-      >
-        Ler · 4 min
-      </button>
     </article>
   );
 }
