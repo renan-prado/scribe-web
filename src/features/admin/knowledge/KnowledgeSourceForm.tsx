@@ -1,7 +1,7 @@
 "use client";
 
 import { useRouter } from "next/navigation";
-import { type FormEvent, useState } from "react";
+import { type FormEvent, useRef, useState } from "react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -48,6 +48,20 @@ export function KnowledgeSourceForm({ initial }: Props) {
   const [content, setContent] = useState(initial?.content ?? "");
   const [submitting, setSubmitting] = useState<null | "draft" | "index">(null);
   const [error, setError] = useState<string | null>(null);
+  const fileInputRef = useRef<HTMLInputElement>(null);
+
+  function handleFileUpload(e: React.ChangeEvent<HTMLInputElement>) {
+    const file = e.target.files?.[0];
+    if (!file) return;
+    const reader = new FileReader();
+    reader.onload = (ev) => {
+      const text = ev.target?.result;
+      if (typeof text === "string") setContent(text);
+    };
+    reader.readAsText(file, "utf-8");
+    // Reset so the same file can be re-selected if needed
+    e.target.value = "";
+  }
 
   function addTagFromInput() {
     const value = tagInput.trim();
@@ -224,7 +238,23 @@ export function KnowledgeSourceForm({ initial }: Props) {
         </div>
 
         <div className="sm:col-span-2 flex flex-col gap-1.5">
-          <Label htmlFor="content">Conteúdo</Label>
+          <div className="flex items-center justify-between">
+            <Label htmlFor="content">Conteúdo</Label>
+            <button
+              type="button"
+              onClick={() => fileInputRef.current?.click()}
+              className="text-xs text-[color:var(--scriba-blue)] hover:underline"
+            >
+              Importar .md
+            </button>
+          </div>
+          <input
+            ref={fileInputRef}
+            type="file"
+            accept=".md,.txt"
+            className="hidden"
+            onChange={handleFileUpload}
+          />
           <MarkdownEditor
             value={content}
             onChange={setContent}

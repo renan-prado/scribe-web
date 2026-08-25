@@ -68,18 +68,16 @@ async function loadSources(sp: SearchParams): Promise<SourceRow[]> {
   const rows = (data ?? []) as Omit<SourceRow, "chunk_count">[];
   if (rows.length === 0) return [];
 
-  const { data: chunkRows } = await admin
-    .from("knowledge_chunks")
-    .select("source_id")
-    .in(
-      "source_id",
-      rows.map((r) => r.id)
-    );
-  const counts = new Map<string, number>();
-  for (const r of chunkRows ?? []) {
-    const id = r.source_id as string;
-    counts.set(id, (counts.get(id) ?? 0) + 1);
-  }
+  const countEntries = await Promise.all(
+    rows.map(async (r) => {
+      const { count } = await admin
+        .from("knowledge_chunks")
+        .select("id", { count: "exact", head: true })
+        .eq("source_id", r.id);
+      return [r.id, count ?? 0] as const;
+    })
+  );
+  const counts = new Map<string, number>(countEntries);
   return rows.map((r) => ({ ...r, chunk_count: counts.get(r.id) ?? 0 }));
 }
 

@@ -56,15 +56,16 @@ export async function GET(req: Request) {
   const ids = (data ?? []).map((r) => r.id);
   let chunkCounts: Record<string, number> = {};
   if (ids.length > 0) {
-    const { data: rows } = await admin
-      .from("knowledge_chunks")
-      .select("source_id")
-      .in("source_id", ids);
-    chunkCounts = (rows ?? []).reduce<Record<string, number>>((acc, r) => {
-      const id = r.source_id as string;
-      acc[id] = (acc[id] ?? 0) + 1;
-      return acc;
-    }, {});
+    const entries = await Promise.all(
+      ids.map(async (id) => {
+        const { count } = await admin
+          .from("knowledge_chunks")
+          .select("id", { count: "exact", head: true })
+          .eq("source_id", id);
+        return [id, count ?? 0] as const;
+      })
+    );
+    chunkCounts = Object.fromEntries(entries);
   }
 
   return NextResponse.json({
