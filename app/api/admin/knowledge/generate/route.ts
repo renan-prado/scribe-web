@@ -10,7 +10,7 @@ const GenerateBody = z.object({
   query: z.string().min(1).max(4000),
   topK: z.number().int().min(1).max(30).optional(),
   sourceTypes: z.array(z.enum(SOURCE_TYPES)).max(SOURCE_TYPES.length).optional(),
-  metadataFilter: z.record(z.string(), z.unknown()).optional(),
+  metadataFilter: z.record(z.string(), z.unknown()).nullable().optional(),
   systemPrompt: z.string().max(20_000).optional(),
   model: z.enum(["gpt-4o-mini", "gpt-4o"]).optional(),
 });
@@ -48,7 +48,7 @@ export async function POST(req: Request) {
     const chunks = await searchKnowledge(parsed.data.query, {
       topK: parsed.data.topK ?? 10,
       sourceTypes: parsed.data.sourceTypes,
-      metadataFilter: parsed.data.metadataFilter,
+      metadataFilter: parsed.data.metadataFilter ?? undefined,
       admin: true,
     });
     searchLatencyMs = Math.round(performance.now() - searchStart);

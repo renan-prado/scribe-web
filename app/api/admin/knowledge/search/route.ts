@@ -8,7 +8,7 @@ const SearchBody = z.object({
   query: z.string().min(1).max(4000),
   topK: z.number().int().min(1).max(50).optional(),
   sourceTypes: z.array(z.enum(SOURCE_TYPES)).max(SOURCE_TYPES.length).optional(),
-  metadataFilter: z.record(z.string(), z.unknown()).optional(),
+  metadataFilter: z.record(z.string(), z.unknown()).nullable().optional(),
 });
 
 export async function POST(req: Request) {
@@ -34,7 +34,7 @@ export async function POST(req: Request) {
     const results = await searchKnowledge(parsed.data.query, {
       topK: parsed.data.topK ?? 10,
       sourceTypes: parsed.data.sourceTypes,
-      metadataFilter: parsed.data.metadataFilter,
+      metadataFilter: parsed.data.metadataFilter ?? undefined,
       admin: true,
     });
     const latencyMs = Math.round(performance.now() - startedAt);
