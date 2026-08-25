@@ -33,7 +33,7 @@ export const metadata: Metadata = {
     template: "%s | Scriba",
   },
   description: "Transcrição e resumo de sermões em tempo real",
-  icons: { icon: "/favicon-260821.svg" },
+  icons: { icon: "/favicon.svg" },
 };
 
 export default function RootLayout({ children }: LayoutProps<"/">) {
