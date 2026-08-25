@@ -111,7 +111,7 @@ export function KnowledgeSourceForm({ initial }: Props) {
 
   return (
     <form
-      className="flex flex-col gap-5 rounded-2xl border bg-white p-6"
+      className="flex flex-col gap-6 rounded-2xl border bg-white p-6"
       style={{ borderColor: "var(--scriba-hairline)" }}
       onSubmit={(e) => e.preventDefault()}
     >
@@ -224,7 +224,7 @@ export function KnowledgeSourceForm({ initial }: Props) {
         </div>
 
         <div className="sm:col-span-2 flex flex-col gap-1.5">
-          <Label htmlFor="content">Conteúdo (markdown)</Label>
+          <Label htmlFor="content">Conteúdo</Label>
           <MarkdownEditor
             value={content}
             onChange={setContent}

@@ -1,10 +1,10 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useCallback, useEffect, useState } from "react";
 import { Button } from "@/components/ui/button";
-import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { AdminSelect } from "@/features/admin/components/AdminSelect";
+import { MetadataFilterBuilder } from "@/features/admin/knowledge/MetadataFilterBuilder";
 import { SOURCE_TYPE_LABEL } from "@/lib/knowledge/labels";
 
 type SearchResult = {
@@ -36,7 +36,10 @@ export function KnowledgePlayground({ defaultSystemPrompt, sourceTypes }: Props)
   const [query, setQuery] = useState("");
   const [topK, setTopK] = useState(10);
   const [selectedTypes, setSelectedTypes] = useState<string[]>([]);
-  const [metadataFilter, setMetadataFilter] = useState("");
+  const [metadataFilter, setMetadataFilter] = useState<Record<string, unknown> | null>(null);
+  const handleMetadataChange = useCallback((f: Record<string, unknown> | null) => {
+    setMetadataFilter(f);
+  }, []);
   const [systemPrompt, setSystemPrompt] = useState(defaultSystemPrompt);
   const [model, setModel] = useState<"gpt-4o-mini" | "gpt-4o">("gpt-4o-mini");
 
@@ -68,19 +71,6 @@ export function KnowledgePlayground({ defaultSystemPrompt, sourceTypes }: Props)
     if (typeof window !== "undefined") window.localStorage.setItem(STORAGE_KEY_MODEL, value);
   }
 
-  function parseMetadataFilter(): Record<string, unknown> | null {
-    if (!metadataFilter.trim()) return null;
-    try {
-      const parsed = JSON.parse(metadataFilter);
-      if (typeof parsed !== "object" || Array.isArray(parsed) || parsed === null) {
-        throw new Error("metadata filter must be a JSON object");
-      }
-      return parsed as Record<string, unknown>;
-    } catch (err) {
-      throw new Error(`metadata filter inválido: ${(err as Error).message}`);
-    }
-  }
-
   async function runSearch() {
     if (!query.trim() || searchBusy) return;
     setError(null);
@@ -89,7 +79,6 @@ export function KnowledgePlayground({ defaultSystemPrompt, sourceTypes }: Props)
     setChatMs(null);
     setSearchBusy(true);
     try {
-      const meta = parseMetadataFilter();
       const res = await fetch("/api/admin/knowledge/search", {
         method: "POST",
         headers: { "content-type": "application/json" },
@@ -97,7 +86,7 @@ export function KnowledgePlayground({ defaultSystemPrompt, sourceTypes }: Props)
           query,
           topK,
           sourceTypes: selectedTypes.length ? selectedTypes : undefined,
-          metadataFilter: meta,
+          ...(metadataFilter ? { metadataFilter } : {}),
         }),
       });
       const data = await res.json();
@@ -116,7 +105,6 @@ export function KnowledgePlayground({ defaultSystemPrompt, sourceTypes }: Props)
     setError(null);
     setGenBusy(true);
     try {
-      const meta = parseMetadataFilter();
       const res = await fetch("/api/admin/knowledge/generate", {
         method: "POST",
         headers: { "content-type": "application/json" },
@@ -124,7 +112,7 @@ export function KnowledgePlayground({ defaultSystemPrompt, sourceTypes }: Props)
           query,
           topK,
           sourceTypes: selectedTypes.length ? selectedTypes : undefined,
-          metadataFilter: meta,
+          ...(metadataFilter ? { metadataFilter } : {}),
           systemPrompt,
           model,
         }),
@@ -210,21 +198,9 @@ export function KnowledgePlayground({ defaultSystemPrompt, sourceTypes }: Props)
               );
             })}
           </div>
-          <p className="text-[11px] text-muted-foreground">Vazio = todos.</p>
         </div>
 
-        <div className="flex flex-col gap-1.5">
-          <Label htmlFor="pg-meta" className="text-xs">
-            Filtro de metadata (JSON)
-          </Label>
-          <Input
-            id="pg-meta"
-            value={metadataFilter}
-            onChange={(e) => setMetadataFilter(e.target.value)}
-            placeholder='{"kind":"bible","book":"Rm","chapter":8}'
-            className="font-mono text-xs"
-          />
-        </div>
+        <MetadataFilterBuilder onChange={handleMetadataChange} />
 
         <hr style={{ borderColor: "var(--scriba-hairline)" }} />
 
