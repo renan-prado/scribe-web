@@ -12,7 +12,8 @@
     "format": "biome format --write .",
     "check": "biome check --write .",
     "typecheck": "tsc --noEmit",
-    "prepare": "husky"
+    "prepare": "husky",
+    "index:bible": "tsx --env-file=.env.local scripts/index-bible.ts"
   },
   "dependencies": {
     "@base-ui/react": "^1.7.0",
@@ -43,6 +44,7 @@
     "@types/react-dom": "^19",
     "husky": "^9.1.7",
     "tailwindcss": "^4",
+    "tsx": "^4.23.12",
     "typescript": "^5"
   }
 }
