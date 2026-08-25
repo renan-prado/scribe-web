@@ -178,8 +178,8 @@ function Hero() {
           background: "radial-gradient(circle,rgba(248,198,75,.16) 0%,rgba(248,198,75,0) 70%)",
         }}
       />
-      <div className="relative mx-auto grid max-w-[1200px] gap-10 px-5 pt-9 pb-2 sm:px-10 lg:grid-cols-[1fr_430px] lg:gap-14 lg:pt-[88px] lg:pb-24">
-        <div className="flex flex-col gap-4 lg:gap-6">
+      <div className="relative mx-auto flex max-w-[1200px] flex-col gap-10 px-5 pt-9 pb-2 sm:px-10 lg:grid lg:grid-cols-[minmax(0,1fr)_430px] lg:gap-14 lg:pt-[88px] lg:pb-24">
+        <div className="flex min-w-0 flex-col gap-4 lg:gap-6">
           <div
             className="inline-flex items-center gap-2 self-start rounded-[22px] border bg-white px-3.5 py-[7px] pl-[9px]"
             style={{ borderColor: "#E3EEF8", boxShadow: "0 4px 12px rgba(79,168,240,.1)" }}
@@ -273,7 +273,7 @@ function Hero() {
             </div>
           </div>
         </div>
-        <div className="-mx-5 flex justify-center sm:mx-0">
+        <div className="-mx-5 flex min-w-0 justify-center overflow-hidden sm:mx-0 sm:overflow-visible">
           <PhoneFrame
             chrome={
               <PhoneChrome
@@ -490,15 +490,15 @@ function StepCard({
 function Resumo() {
   return (
     <section id="recursos" className="mx-auto max-w-[1200px] px-5 py-12 sm:px-10 sm:py-24">
-      <div className="grid items-center gap-8 lg:grid-cols-[420px_1fr] lg:gap-16">
-        <div className="order-2 -mx-5 flex justify-center sm:mx-0 lg:order-1">
+      <div className="flex flex-col items-center gap-8 lg:grid lg:grid-cols-[420px_minmax(0,1fr)] lg:gap-16">
+        <div className="order-2 -mx-5 flex min-w-0 justify-center overflow-hidden sm:mx-0 sm:overflow-visible lg:order-1">
           <PhoneFrame
             chrome={<PhoneChrome subtitle="Resumo · 41 min" title="A sede que só Cristo cura" />}
           >
             <SummaryMock />
           </PhoneFrame>
         </div>
-        <div className="order-1 flex flex-col gap-6 lg:order-2 lg:gap-[34px]">
+        <div className="order-1 flex min-w-0 flex-col gap-6 lg:order-2 lg:gap-[34px]">
           <div className="flex flex-col gap-3">
             <SectionLabel color={BLUE}>O resumo</SectionLabel>
             <h2
@@ -515,7 +515,7 @@ function Resumo() {
               você entender, encontrar e relembrar o que realmente importa.
             </p>
           </div>
-          <div className="grid grid-cols-2 gap-3 sm:gap-3.5">
+          <div className="grid grid-cols-1 gap-3 sm:grid-cols-2 sm:gap-3.5">
             {SUMMARY_BLOCKS.map((b) => (
               <div
                 key={b.title}
@@ -588,8 +588,8 @@ function Biblioteca() {
           background: "radial-gradient(circle,rgba(255,255,255,.14) 0%,rgba(255,255,255,0) 70%)",
         }}
       />
-      <div className="relative mx-auto grid max-w-[1200px] items-center gap-8 px-5 py-12 text-white sm:px-10 sm:py-[88px] lg:grid-cols-2 lg:gap-16">
-        <div className="flex flex-col gap-5">
+      <div className="relative mx-auto flex max-w-[1200px] flex-col items-stretch gap-8 px-5 py-12 text-white sm:px-10 sm:py-[88px] lg:grid lg:grid-cols-[minmax(0,1fr)_minmax(0,1fr)] lg:items-center lg:gap-16">
+        <div className="flex min-w-0 flex-col gap-5">
           <SectionLabel color="#FFDF8C">Sua biblioteca</SectionLabel>
           <h2
             className="text-pretty text-[29px] leading-[1.16] lg:text-[40px]"
@@ -617,7 +617,7 @@ function Biblioteca() {
             />
           </div>
         </div>
-        <div className="-mx-5 flex justify-center sm:mx-0">
+        <div className="-mx-5 flex min-w-0 justify-center overflow-hidden sm:mx-0 sm:overflow-visible">
           <PhoneFrame
             shadow="0 30px 62px rgba(20,66,105,.34)"
             chrome={
