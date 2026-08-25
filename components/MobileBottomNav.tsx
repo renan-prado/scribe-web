@@ -3,6 +3,7 @@
 import { usePathname } from "next/navigation";
 import type { ReactNode } from "react";
 import { NavLink } from "@/components/NavLink";
+import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { NewRecordingDialog } from "@/features/session/components/NewRecordingDialog";
 import { cn } from "@/lib/utils";
 
@@ -12,7 +13,15 @@ import { cn } from "@/lib/utils";
  * Design prototype exactly (rounded square, staggered lines, hollow circle,
  * filled dot) rather than lucide glyphs.
  */
-export function MobileBottomNav() {
+export function MobileBottomNav({
+  avatarUrl,
+  displayName,
+  email,
+}: {
+  avatarUrl?: string | null;
+  displayName?: string | null;
+  email?: string | null;
+} = {}) {
   const pathname = usePathname() ?? "";
 
   const hide =
@@ -81,10 +90,11 @@ export function MobileBottomNav() {
         <TabButton
           label="Buscar"
           disabled
+          className="text-[color:var(--scriba-ink-mute)]/50"
           icon={
             <span
               aria-hidden
-              className="block size-[15px] rounded-full border-[2px] border-[color:var(--scriba-ink-mute)]"
+              className="block size-[15px] rounded-full border-[2px] border-[color:var(--scriba-ink-mute)]/40"
             />
           }
         />
@@ -93,13 +103,17 @@ export function MobileBottomNav() {
           label="Perfil"
           active={isProfile}
           icon={
-            <span
-              aria-hidden
+            <Avatar
               className={cn(
-                "block size-4 rounded-full",
-                isProfile ? "bg-[color:var(--scriba-blue)]" : "bg-[color:#DCE4EC]"
+                "size-5 rounded-full ring-2",
+                isProfile ? "ring-[color:var(--scriba-blue)]" : "ring-transparent"
               )}
-            />
+            >
+              {avatarUrl ? <AvatarImage src={avatarUrl} alt={displayName ?? "Perfil"} /> : null}
+              <AvatarFallback className="bg-[color:var(--scriba-blue-soft)] text-[9px] font-semibold text-[color:var(--scriba-blue)]">
+                {profileInitials(displayName, email)}
+              </AvatarFallback>
+            </Avatar>
           }
         />
 
@@ -155,10 +169,12 @@ function TabButton({
   label,
   icon,
   disabled,
+  className,
 }: {
   label: string;
   icon: ReactNode;
   disabled?: boolean;
+  className?: string;
 }) {
   return (
     <button
@@ -166,11 +182,21 @@ function TabButton({
       disabled={disabled}
       className={cn(
         "flex flex-col items-center gap-1.5 rounded-md px-2 py-1 text-[10px] font-medium text-[color:var(--scriba-ink-mute)] transition-colors",
-        disabled && "cursor-default"
+        disabled && "cursor-default",
+        className
       )}
     >
       {icon}
       <span>{label}</span>
     </button>
   );
+}
+
+function profileInitials(
+  name: string | null | undefined,
+  email: string | null | undefined
+): string {
+  const source = name?.trim() || email?.split("@")[0] || "?";
+  const parts = source.split(/\s+/).filter(Boolean).slice(0, 2);
+  return parts.map((p) => p[0]?.toUpperCase() ?? "").join("") || source.slice(0, 1).toUpperCase();
 }

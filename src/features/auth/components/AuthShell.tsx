@@ -1,9 +1,9 @@
 import Link from "next/link";
 
 /**
- * Shared shell for /sign-in and /sign-up. Mirrors the landing page aesthetic:
- * soft blue gradient background, sticky logo header, and a rounded auth card
- * centered vertically.
+ * Shared shell for the unified /sign-in page (also serving as sign-up).
+ * Mirrors the landing page aesthetic: soft blue gradient background, sticky
+ * logo header, and a rounded auth card centered vertically.
  */
 export function AuthShell({
   title,

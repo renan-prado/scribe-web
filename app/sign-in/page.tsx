@@ -1,9 +1,8 @@
-import Link from "next/link";
 import { AuthShell } from "@/features/auth/components/AuthShell";
 import { GoogleSignInButton } from "@/features/auth/components/GoogleSignInButton";
 
 export const metadata = {
-  title: "Entrar",
+  title: "Entrar ou criar conta",
 };
 
 type Search = { next?: string; error?: string };
@@ -20,22 +19,11 @@ export default async function SignInPage({ searchParams }: { searchParams: Promi
 
   return (
     <AuthShell
-      title="Entre no Scriba"
-      subtitle="Use sua conta Google para acessar suas gravações e o feed vivo do próximo culto."
-      footer={
-        <>
-          Novo por aqui?{" "}
-          <Link
-            href="/sign-up"
-            className="font-medium transition-colors hover:text-[#33414F]"
-            style={{ color: "#4FA8F0" }}
-          >
-            Criar conta
-          </Link>
-        </>
-      }
+      title="Entrar no Scriba"
+      subtitle="Use sua conta Google para entrar. Se ainda não tem uma conta, ela é criada automaticamente no primeiro acesso — grátis, sem cartão."
+      footer={<>Primeira vez por aqui? É só continuar com o Google. Sua conta é criada na hora.</>}
     >
-      <GoogleSignInButton next={target} label="Entrar com Google" />
+      <GoogleSignInButton next={target} label="Continuar com Google" />
       {errorMessage ? (
         <div
           className="flex items-start gap-2 rounded-2xl px-4 py-3"

@@ -200,12 +200,12 @@ function ReflectionCard({
           </span>
         ) : null}
       </div>
-      <div className="flex gap-2">
+      <div className="flex flex-col gap-2 sm:flex-row">
         <DeepenButton sessionId={sessionId} hasDeepening={hasDeepening} variant="feed-card" />
         <NavLink
           href={href}
           contentClassName="inline-flex items-center justify-center gap-1.5"
-          className="inline-flex flex-1 items-center justify-center rounded-full bg-[color:var(--scriba-blue-soft)]/60 px-4 py-3 text-[11px] font-semibold uppercase tracking-wider text-[color:var(--scriba-ink-soft)] transition-colors hover:bg-[color:var(--scriba-blue-soft)]"
+          className="inline-flex w-full items-center justify-center rounded-full bg-[color:var(--scriba-blue-soft)]/60 px-4 py-3 text-[11px] font-semibold uppercase tracking-wider text-[color:var(--scriba-ink-soft)] transition-colors hover:bg-[color:var(--scriba-blue-soft)] sm:flex-1"
         >
           Relembrar
         </NavLink>

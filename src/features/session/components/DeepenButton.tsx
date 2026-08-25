@@ -60,7 +60,7 @@ export function DeepenButton({
       <NavLink
         href={href}
         contentClassName="inline-flex items-center justify-center gap-1.5"
-        className="inline-flex flex-1 items-center justify-center rounded-full bg-[color:var(--scriba-blue)] px-4 py-3 text-[11px] font-semibold uppercase tracking-wider text-white shadow-[0_5px_14px_rgba(79,168,240,0.32)] transition-colors hover:bg-[color:var(--scriba-blue-hover)]"
+        className="inline-flex w-full items-center justify-center rounded-full bg-[color:var(--scriba-blue)] px-4 py-3 text-[11px] font-semibold uppercase tracking-wider text-white shadow-[0_5px_14px_rgba(79,168,240,0.32)] transition-colors hover:bg-[color:var(--scriba-blue-hover)] sm:flex-1"
       >
         Ver aprofundamento
       </NavLink>
@@ -106,7 +106,7 @@ export function DeepenButton({
     insufficient ? baseDisabled : baseEnabled
   );
   const feedClass = cn(
-    "inline-flex flex-1 items-center justify-center gap-2 rounded-full px-4 py-3 text-[11px] font-semibold uppercase tracking-wider transition-colors disabled:cursor-progress disabled:opacity-70",
+    "inline-flex w-full items-center justify-center gap-2 rounded-full px-4 py-3 text-[11px] font-semibold uppercase tracking-wider transition-colors disabled:cursor-progress disabled:opacity-70 sm:flex-1",
     insufficient ? baseDisabled : baseEnabled
   );
 
@@ -147,8 +147,16 @@ export function DeepenButton({
     <TooltipProvider delay={120}>
       <Tooltip>
         <TooltipTrigger
-          // biome-ignore lint/a11y/noNoninteractiveTabindex: focus target for the tooltip on a disabled button
-          render={<span tabIndex={0} className="inline-flex focus:outline-none" />}
+          render={
+            <span
+              // biome-ignore lint/a11y/noNoninteractiveTabindex: focus target for the tooltip on a disabled button
+              tabIndex={0}
+              className={cn(
+                "inline-flex focus:outline-none",
+                variant === "feed-card" && "w-full sm:w-auto"
+              )}
+            />
+          }
         >
           {button}
         </TooltipTrigger>
@@ -173,7 +181,7 @@ export function DeepenButton({
   }
 
   return (
-    <div className="flex flex-1 flex-col gap-1">
+    <div className="flex w-full flex-col gap-1 sm:flex-1">
       {wrapped}
       {error && !insufficient ? (
         <span className="text-[10px] font-medium text-red-600">Falhou. Tente de novo.</span>

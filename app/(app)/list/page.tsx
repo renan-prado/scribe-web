@@ -201,37 +201,40 @@ export default async function LibraryPage() {
                             ) : null}
                           </span>
                         ) : null}
-                        <div className="flex items-center gap-2 border-t border-[color:var(--scriba-hairline)] pt-3">
-                          <span className="text-[11px] font-light text-[color:var(--scriba-ink-mute)]">
-                            {shortDate(s.createdAt, includeYear)}
-                          </span>
-                          {formatDuration(s.durationMs) ? (
-                            <>
-                              <span className="size-[3px] rounded-full bg-[color:var(--scriba-ink-mute)]/60" />
-                              <span className="text-[11px] font-light text-[color:var(--scriba-ink-mute)]">
-                                {formatDuration(s.durationMs)}
-                              </span>
-                            </>
-                          ) : null}
-                          {isDeepened ? (
-                            <>
-                              <span className="size-[3px] rounded-full bg-[color:var(--scriba-ink-mute)]/60" />
-                              <span
-                                title="Você já aprofundou este sermão"
-                                className="inline-flex items-center gap-1 rounded-full bg-[color:var(--scriba-blue-soft)] px-2 py-0.5 text-[10px] font-semibold uppercase tracking-wider text-[color:var(--scriba-blue)]"
-                              >
-                                <Sparkles className="size-3" />
-                                Aprofundado
-                              </span>
-                            </>
-                          ) : null}
-                          <div className="flex-1" />
-                          <NavLink
-                            href={`/recording/${s.id}/summary`}
-                            className="rounded-full bg-[color:var(--scriba-blue-soft)] px-4 py-2 text-[11px] font-semibold text-[color:var(--scriba-blue)] transition-colors hover:bg-[color:var(--scriba-blue-soft)]/70"
-                          >
-                            Ver resumo →
-                          </NavLink>
+                        <div className="flex flex-col gap-3 border-t border-[color:var(--scriba-hairline)] pt-3 sm:flex-row sm:items-center sm:gap-2">
+                          <div className="flex flex-wrap items-center gap-x-2 gap-y-1">
+                            <span className="text-[11px] font-light text-[color:var(--scriba-ink-mute)]">
+                              {shortDate(s.createdAt, includeYear)}
+                            </span>
+                            {formatDuration(s.durationMs) ? (
+                              <>
+                                <span className="size-[3px] rounded-full bg-[color:var(--scriba-ink-mute)]/60" />
+                                <span className="text-[11px] font-light text-[color:var(--scriba-ink-mute)]">
+                                  {formatDuration(s.durationMs)}
+                                </span>
+                              </>
+                            ) : null}
+                            {isDeepened ? (
+                              <>
+                                <span className="size-[3px] rounded-full bg-[color:var(--scriba-ink-mute)]/60" />
+                                <span
+                                  title="Você já aprofundou este sermão"
+                                  className="inline-flex items-center gap-1 rounded-full bg-[color:var(--scriba-blue-soft)] px-2 py-0.5 text-[10px] font-semibold uppercase tracking-wider text-[color:var(--scriba-blue)]"
+                                >
+                                  <Sparkles className="size-3" />
+                                  Aprofundado
+                                </span>
+                              </>
+                            ) : null}
+                          </div>
+                          <div className="sm:ml-auto">
+                            <NavLink
+                              href={`/recording/${s.id}/summary`}
+                              className="inline-flex w-full items-center justify-center rounded-full bg-[color:var(--scriba-blue-soft)] px-4 py-2 text-[11px] font-semibold text-[color:var(--scriba-blue)] transition-colors hover:bg-[color:var(--scriba-blue-soft)]/70 sm:w-auto"
+                            >
+                              Ver resumo →
+                            </NavLink>
+                          </div>
                         </div>
                       </div>
                     </li>

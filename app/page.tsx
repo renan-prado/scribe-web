@@ -28,7 +28,7 @@ export default async function LandingPage() {
 
   return (
     <div
-      className="w-full bg-white text-[#33414F] antialiased"
+      className="w-full overflow-x-hidden bg-white text-[#33414F] antialiased"
       style={{ fontFamily: "var(--font-poppins), system-ui, sans-serif" }}
     >
       <LandingStyles />
@@ -132,7 +132,7 @@ function Header() {
             Entrar
           </Link>
           <Link
-            href="/sign-up"
+            href="/sign-in"
             className="lp-cta inline-flex items-center justify-center rounded-[22px] font-semibold uppercase text-white"
             style={{
               background: BLUE,
@@ -215,7 +215,7 @@ function Hero() {
           </p>
           <div className="flex flex-col gap-2.5 pt-1 sm:flex-row sm:items-center sm:gap-3.5">
             <Link
-              href="/sign-up"
+              href="/sign-in"
               className="lp-cta inline-flex items-center justify-center rounded-[26px] font-semibold uppercase text-white"
               style={{
                 background: BLUE,
@@ -831,7 +831,7 @@ function Plans() {
             Sem contrato, sem cartão para testar. Cancele em um toque.
           </p>
         </div>
-        <div className="grid items-start gap-4 lg:grid-cols-3 lg:gap-[22px]">
+        <div className="grid items-start gap-4 [&>*:nth-child(2)]:order-first lg:grid-cols-3 lg:gap-[22px] lg:[&>*:nth-child(2)]:order-none">
           <PlanCard
             name="Pessoal"
             price="R$ 19,90"
@@ -1057,7 +1057,7 @@ function PlanCard({
         </div>
       ) : (
         <Link
-          href="/sign-up"
+          href="/sign-in"
           className={`${isPrimary ? "lp-cta" : "lp-cta-soft"} inline-flex items-center justify-center rounded-[24px] font-semibold uppercase`}
           style={{
             background: isPrimary ? BLUE : "#F4F8FC",
@@ -1109,7 +1109,7 @@ function FinalCTA() {
         </div>
         <div className="relative flex flex-none flex-col items-stretch gap-3">
           <Link
-            href="/sign-up"
+            href="/sign-in"
             className="lp-cta-yellow inline-flex items-center justify-center rounded-[26px] font-semibold uppercase"
             style={{
               background: YELLOW,
