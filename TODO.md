@@ -22,17 +22,16 @@
 ## Coisas para prestar atenção
 - [x] Ausencia de rate-limit (limitação por ip, limitação por conta, etc...)
 - [x] Configuração do cors (localhost e scriba.cc)
-- [ ] Analisar se api está devolvendo dados sensiveis de usuario
-- [ ] sql injection + proteger inputs e endpoints
-- [ ] add app no google search console (acho que isso é manual)
-- [ ] fazer perfil no google negocio (manual tambem)
+- [x] sql injection + proteger inputs e endpoints
 - [x] criar llms.txt e robots.txt
-- [ ] testar speedpage (manual?)
 - [x] melhorar seo e add meta dados, meta descriptions
 - [x] criar xml sitemap (sitemap.xml)
-- [ ] configurar dados no google analitics (manual)
 - [x] pagina 404 propria e customizada (no design da aplicação atual, bem humorado)
 - [x] og:image
 - [x] politicas e privacidades e cookies (precisamos gerar um mesmo que generico ainda)
+- [ ] add app no google search console (acho que isso é manual)
+- [ ] fazer perfil no google negocio (manual tambem)
+- [ ] testar speedpage (manual?)
+- [ ] configurar dados no google analitics (manual)
 - [ ] monitor de uptime
 - [ ] rastreamento de erro (depois eu faço, ignora)

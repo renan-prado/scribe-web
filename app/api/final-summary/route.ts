@@ -1,15 +1,39 @@
 import { NextResponse } from "next/server";
+import { z } from "zod";
 import { updateSessionFinal } from "@/lib/db/sessions";
 import { recordChatUsage } from "@/lib/db/usage";
-import type { FeedItem } from "@/lib/domain/feed";
+import { FeedItemSchema } from "@/lib/domain/feed";
 import { parseSummaryFromLLM } from "@/lib/domain/summary";
 import { serverEnv } from "@/lib/env/server";
+import { parseJsonBody, UuidSchema } from "@/lib/http/validate";
 import { buildLlmMetadata } from "@/lib/llm/metadata";
 import { callChat } from "@/lib/llm/openai";
 import { devLog } from "@/lib/log";
 import { FINAL_SUMMARY_SYSTEM_PROMPT } from "@/lib/prompts/final-summary";
 import { enforceRateLimit, RATE_LIMITS } from "@/lib/rate-limit";
 import { requireAuth } from "@/lib/supabase/require-auth";
+
+// Sermons run 30-90min in practice; the transcript we've observed maxes out
+// around ~150k chars. 300k is 2× headroom without letting a bot smuggle an
+// unbounded prompt through this endpoint (which is expensive: gpt-4-class
+// model, 12k output tokens).
+// feedItems is strictly validated — this array is persisted to the DB, so a
+// malformed entry from a compromised client would poison future reads.
+// 2000 items is far above any real recording; the live feed rarely tops 150.
+const MAX_TEXT_CHARS = 300_000;
+const MAX_FEED_ITEMS = 2000;
+const MAX_SESSION_HOURS_MS = 12 * 60 * 60 * 1000;
+
+const BodySchema = z
+  .object({
+    sessionId: UuidSchema,
+    text: z.string().max(MAX_TEXT_CHARS),
+    feedItems: z.array(FeedItemSchema).max(MAX_FEED_ITEMS).optional(),
+    durationMs: z.number().finite().nonnegative().max(MAX_SESSION_HOURS_MS).optional(),
+    speakerName: z.string().max(200).optional(),
+    speakerLocation: z.string().max(200).optional(),
+  })
+  .strict();
 
 export const runtime = "nodejs";
 export const dynamic = "force-dynamic";
@@ -31,32 +55,15 @@ export async function POST(request: Request) {
 
   const model = serverEnv.OPENAI_FINAL_SUMMARY_MODEL;
 
-  let body: {
-    sessionId?: string;
-    text?: string;
-    feedItems?: FeedItem[];
-    durationMs?: number;
-    speakerName?: string;
-    speakerLocation?: string;
-  };
-  try {
-    body = await request.json();
-  } catch (err) {
-    return NextResponse.json(
-      { error: `invalid json body: ${(err as Error).message}` },
-      { status: 400 }
-    );
-  }
-
-  const sessionId = typeof body.sessionId === "string" ? body.sessionId.trim() : "";
-  if (!sessionId) {
-    return NextResponse.json({ error: "missing sessionId" }, { status: 400 });
-  }
-  const text = (body.text ?? "").trim();
+  const parsed = await parseJsonBody(request, BodySchema);
+  if (!parsed.ok) return parsed.response;
+  const body = parsed.data;
+  const sessionId = body.sessionId;
+  const text = body.text.trim();
   if (!text) {
     return NextResponse.json({ error: "empty text" }, { status: 400 });
   }
-  const feedItems = Array.isArray(body.feedItems) ? body.feedItems : [];
+  const feedItems = body.feedItems ?? [];
 
   const userMessage = `feedItems:\n${JSON.stringify(feedItems)}\n\n---\ntranscript:\n${text}`;
 
@@ -131,10 +138,9 @@ export async function POST(request: Request) {
       transcript: text,
       feedItems,
       summary: payload,
-      durationMs: typeof body.durationMs === "number" ? body.durationMs : null,
-      speakerName: typeof body.speakerName === "string" ? body.speakerName.trim() || null : null,
-      speakerLocation:
-        typeof body.speakerLocation === "string" ? body.speakerLocation.trim() || null : null,
+      durationMs: body.durationMs ?? null,
+      speakerName: body.speakerName?.trim() || null,
+      speakerLocation: body.speakerLocation?.trim() || null,
     });
     saved = true;
     devLog("[final-summary] saved", { sessionId });

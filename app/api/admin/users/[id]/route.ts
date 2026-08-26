@@ -2,18 +2,21 @@ import { NextResponse } from "next/server";
 import { z } from "zod";
 import { requireAdmin } from "@/lib/auth/require-admin";
 import { deleteUser, updateUser } from "@/lib/db/admin/users";
+import { parseJsonBody, parseUuidParam } from "@/lib/http/validate";
 import { devLog } from "@/lib/log";
 import { enforceRateLimit, RATE_LIMITS } from "@/lib/rate-limit";
 
 export const runtime = "nodejs";
 export const dynamic = "force-dynamic";
 
-const PatchSchema = z.object({
-  displayName: z.string().trim().min(1).max(120).nullable().optional(),
-  role: z.enum(["user", "admin"]).optional(),
-  isActive: z.boolean().optional(),
-  email: z.string().email().optional(),
-});
+const PatchSchema = z
+  .object({
+    displayName: z.string().trim().min(1).max(120).nullable().optional(),
+    role: z.enum(["user", "admin"]).optional(),
+    isActive: z.boolean().optional(),
+    email: z.string().email().max(320).optional(),
+  })
+  .strict();
 
 export async function PATCH(request: Request, { params }: { params: Promise<{ id: string }> }) {
   const auth = await requireAdmin();
@@ -22,22 +25,13 @@ export async function PATCH(request: Request, { params }: { params: Promise<{ id
   const limited = enforceRateLimit(request, RATE_LIMITS.admin, auth.user.id);
   if (limited) return limited;
 
-  const { id } = await params;
+  const { id: rawId } = await params;
+  const guarded = parseUuidParam(rawId);
+  if (!guarded.ok) return guarded.response;
+  const id = guarded.id;
 
-  let body: unknown;
-  try {
-    body = await request.json();
-  } catch {
-    return NextResponse.json({ error: "invalid_json" }, { status: 400 });
-  }
-
-  const parsed = PatchSchema.safeParse(body);
-  if (!parsed.success) {
-    return NextResponse.json(
-      { error: "invalid_input", details: parsed.error.flatten().fieldErrors },
-      { status: 400 }
-    );
-  }
+  const parsed = await parseJsonBody(request, PatchSchema);
+  if (!parsed.ok) return parsed.response;
 
   // Guardrail: admin cannot demote or deactivate themselves — prevents
   // locking the last admin out of the platform.
@@ -67,7 +61,10 @@ export async function DELETE(request: Request, { params }: { params: Promise<{ i
   const limited = enforceRateLimit(request, RATE_LIMITS.admin, auth.user.id);
   if (limited) return limited;
 
-  const { id } = await params;
+  const { id: rawId } = await params;
+  const guarded = parseUuidParam(rawId);
+  if (!guarded.ok) return guarded.response;
+  const id = guarded.id;
 
   if (id === auth.user.id) {
     return NextResponse.json({ error: "cannot_self_delete" }, { status: 400 });

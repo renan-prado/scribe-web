@@ -1,11 +1,23 @@
 import { NextResponse } from "next/server";
+import { z } from "zod";
 import { recordChatUsage } from "@/lib/db/usage";
 import { serverEnv } from "@/lib/env/server";
+import { OptionalUuidSchema, parseJsonBody } from "@/lib/http/validate";
 import { buildLlmMetadata } from "@/lib/llm/metadata";
 import { callChat } from "@/lib/llm/openai";
 import { FORMAT_PARAGRAPHS_SYSTEM_PROMPT } from "@/lib/prompts/format-paragraphs";
 import { enforceRateLimit, RATE_LIMITS } from "@/lib/rate-limit";
 import { requireAuth } from "@/lib/supabase/require-auth";
+
+// A full transcript can be hundreds of KB for long sermons. 300k is well
+// above the observed p99 while still keeping a single request from evaluating
+// to an unbounded OpenAI token bill.
+const BodySchema = z
+  .object({
+    text: z.string().max(300_000),
+    sessionId: OptionalUuidSchema,
+  })
+  .strict();
 
 export const runtime = "nodejs";
 export const dynamic = "force-dynamic";
@@ -19,21 +31,14 @@ export async function POST(request: Request) {
 
   const model = serverEnv.OPENAI_FORMAT_MODEL;
 
-  let body: { text?: string; sessionId?: string };
-  try {
-    body = await request.json();
-  } catch (err) {
-    return NextResponse.json(
-      { error: `invalid json body: ${(err as Error).message}` },
-      { status: 400 }
-    );
-  }
-  const text = (body.text ?? "").trim();
+  const parsed = await parseJsonBody(request, BodySchema);
+  if (!parsed.ok) return parsed.response;
+  const text = parsed.data.text.trim();
   if (!text) {
     return NextResponse.json({ error: "empty text" }, { status: 400 });
   }
 
-  const sessionId = typeof body.sessionId === "string" && body.sessionId ? body.sessionId : null;
+  const sessionId = parsed.data.sessionId ?? null;
   const result = await callChat({
     model,
     temperature: 0,

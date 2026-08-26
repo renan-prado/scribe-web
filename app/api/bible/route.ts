@@ -1,7 +1,13 @@
 import { NextResponse } from "next/server";
 import { recordChatUsage } from "@/lib/db/usage";
-import { type FeedItem, feedItemDedupKey, parseBibleFromLLM } from "@/lib/domain/feed";
+import {
+  coerceFeedItemsLoose,
+  type FeedItem,
+  feedItemDedupKey,
+  parseBibleFromLLM,
+} from "@/lib/domain/feed";
 import { serverEnv } from "@/lib/env/server";
+import { LivePipelineBodySchema, parseJsonBody } from "@/lib/http/validate";
 import { buildLlmMetadata } from "@/lib/llm/metadata";
 import { callChat } from "@/lib/llm/openai";
 import { devLog } from "@/lib/log";
@@ -26,20 +32,9 @@ export async function POST(request: Request) {
 
   const model = serverEnv.OPENAI_BIBLE_MODEL;
 
-  let body: {
-    text?: string;
-    existingItems?: FeedItem[];
-    sermonAtMs?: number;
-    sessionId?: string;
-  };
-  try {
-    body = await request.json();
-  } catch (err) {
-    return NextResponse.json(
-      { error: `invalid json body: ${(err as Error).message}` },
-      { status: 400 }
-    );
-  }
+  const parsed = await parseJsonBody(request, LivePipelineBodySchema);
+  if (!parsed.ok) return parsed.response;
+  const body = parsed.data;
 
   const text = (body.text ?? "").trim();
   const sermonAt = formatSermonAt(body.sermonAtMs);
@@ -47,13 +42,13 @@ export async function POST(request: Request) {
     return NextResponse.json({ items: [] });
   }
 
-  const existingItems = Array.isArray(body.existingItems) ? body.existingItems : [];
+  const existingItems = coerceFeedItemsLoose(body.existingItems);
   const existingKeys = new Set(existingItems.map(feedItemDedupKey));
   const existingSummary = summarizeExistingForPrompt(existingItems);
 
   const userMessage = `existingItems:\n${JSON.stringify(existingSummary)}\n\n---\ntranscript:\n${text}`;
 
-  const sessionId = typeof body.sessionId === "string" && body.sessionId ? body.sessionId : null;
+  const sessionId = body.sessionId ?? null;
   const result = await callChat({
     model,
     temperature: 0.2,

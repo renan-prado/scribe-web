@@ -1,6 +1,7 @@
 import { NextResponse } from "next/server";
 import { recordAudioUsage } from "@/lib/db/usage";
 import { serverEnv } from "@/lib/env/server";
+import { isUuid } from "@/lib/http/validate";
 import { callTranscribe } from "@/lib/llm/openai";
 import { enforceRateLimit, RATE_LIMITS } from "@/lib/rate-limit";
 import { requireAuth } from "@/lib/supabase/require-auth";
@@ -11,6 +12,12 @@ export const dynamic = "force-dynamic";
 
 const MAX_FILE_BYTES = 25 * 1024 * 1024; // 25 MB — OpenAI's limit
 const ALLOWED_EXTENSIONS = new Set(["webm", "mp4", "mp3", "wav", "ogg", "m4a", "flac"]);
+// `prevText` seeds the Whisper prompt with the transcript tail; the recorder
+// sends at most a few hundred chars in practice. Cap defends against a
+// scripted client stuffing the prompt with an unbounded payload.
+const MAX_PREV_TEXT_CHARS = 4000;
+// A single chunk is ~30s; anything above 5min is either a bug or abuse.
+const MAX_DURATION_MS = 5 * 60 * 1000;
 
 export async function POST(request: Request) {
   const auth = await requireAuth();
@@ -39,14 +46,22 @@ export async function POST(request: Request) {
     return NextResponse.json({ error: "file too large" }, { status: 413 });
   }
   const chunkIndex = form.get("chunkIndex");
-  const prevText = (form.get("prevText") as string | null) ?? "";
+  const prevTextRaw = (form.get("prevText") as string | null) ?? "";
+  const prevText =
+    prevTextRaw.length > MAX_PREV_TEXT_CHARS
+      ? prevTextRaw.slice(-MAX_PREV_TEXT_CHARS)
+      : prevTextRaw;
   const extension = ((form.get("extension") as string | null) ?? "webm").toLowerCase();
   const sessionIdRaw = form.get("sessionId");
-  const sessionId =
+  const sessionIdCandidate =
     typeof sessionIdRaw === "string" && sessionIdRaw.trim() ? sessionIdRaw.trim() : null;
+  const sessionId = isUuid(sessionIdCandidate) ? sessionIdCandidate : null;
   const durationMsRaw = form.get("durationMs");
   const durationMs = typeof durationMsRaw === "string" ? Number.parseFloat(durationMsRaw) : NaN;
-  const audioSeconds = Number.isFinite(durationMs) && durationMs > 0 ? durationMs / 1000 : 0;
+  const audioSeconds =
+    Number.isFinite(durationMs) && durationMs > 0
+      ? Math.min(durationMs, MAX_DURATION_MS) / 1000
+      : 0;
   if (!ALLOWED_EXTENSIONS.has(extension)) {
     return NextResponse.json({ error: "unsupported file type" }, { status: 415 });
   }

@@ -1,11 +1,21 @@
 import { NextResponse } from "next/server";
-import { createEmptySession, parseSessionMode } from "@/lib/db/sessions";
+import { z } from "zod";
+import { createEmptySession, SESSION_MODES } from "@/lib/db/sessions";
+import { parseJsonBody } from "@/lib/http/validate";
 import { devLog } from "@/lib/log";
 import { enforceRateLimit, RATE_LIMITS } from "@/lib/rate-limit";
 import { requireAuth } from "@/lib/supabase/require-auth";
 
 export const runtime = "nodejs";
 export const dynamic = "force-dynamic";
+
+const CreateSessionSchema = z
+  .object({
+    speakerName: z.string().trim().max(200).nullable().optional(),
+    speakerLocation: z.string().trim().max(200).nullable().optional(),
+    mode: z.enum(SESSION_MODES).optional(),
+  })
+  .strict();
 
 /**
  * POST /api/sessions
@@ -21,21 +31,15 @@ export async function POST(request: Request) {
   const limited = enforceRateLimit(request, RATE_LIMITS["sessions-write"], auth.user.id);
   if (limited) return limited;
 
-  let body: {
-    speakerName?: string | null;
-    speakerLocation?: string | null;
-    mode?: string;
-  } = {};
-  try {
-    body = await request.json();
-  } catch {
-    // Empty body is fine — user may not have typed a speaker/location yet.
-  }
+  // Empty body is intentional — user may not have typed a speaker/location
+  // yet. Try to parse; on any body-shape error fall back to defaults.
+  const parsed = await parseJsonBody(request, CreateSessionSchema.optional());
+  if (!parsed.ok) return parsed.response;
+  const body = parsed.data ?? {};
 
-  const speakerName = typeof body.speakerName === "string" ? body.speakerName.trim() || null : null;
-  const speakerLocation =
-    typeof body.speakerLocation === "string" ? body.speakerLocation.trim() || null : null;
-  const mode = parseSessionMode(body.mode);
+  const speakerName = body.speakerName?.trim() || null;
+  const speakerLocation = body.speakerLocation?.trim() || null;
+  const mode = body.mode ?? "live";
 
   try {
     const id = await createEmptySession({ speakerName, speakerLocation, mode });

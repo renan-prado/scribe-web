@@ -116,6 +116,26 @@ function normalizeReference(ref: string): string {
   return ref.trim().toLowerCase().replace(/\s+/g, "").replace(/[.,]/g, "");
 }
 
+/**
+ * Coerce an untrusted client-supplied array into valid FeedItems. Silently
+ * drops entries that don't match the schema — used on live-pipeline routes
+ * (bible/insights/sermon-echo) where the array is *only* prompt dedup
+ * context and a malformed entry shouldn't fail the whole request.
+ *
+ * Callers that persist the array (final-summary) MUST NOT use this — they
+ * should reject with 400 so the client learns its bug instead of silently
+ * losing cards.
+ */
+export function coerceFeedItemsLoose(input: unknown, max = 500): FeedItem[] {
+  if (!Array.isArray(input)) return [];
+  const out: FeedItem[] = [];
+  for (const entry of input.slice(0, max)) {
+    const parsed = FeedItemSchema.safeParse(entry);
+    if (parsed.success) out.push(parsed.data);
+  }
+  return out;
+}
+
 export type ParsedVerseReference = {
   /** Normalized book name for equality checks: lowercase, no punctuation. */
   book: string;

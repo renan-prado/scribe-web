@@ -1,10 +1,16 @@
 import { NextResponse } from "next/server";
+import { z } from "zod";
 import { loadBible } from "@/lib/bibles/loader";
 import { lookupVerse } from "@/lib/bibles/lookup";
 import { parseVerseReference } from "@/lib/domain/feed";
+import { parseJsonBody } from "@/lib/http/validate";
 import { devLog } from "@/lib/log";
 import { enforceRateLimit, RATE_LIMITS } from "@/lib/rate-limit";
 import { requireAuth } from "@/lib/supabase/require-auth";
+
+// A verse reference like "1 Coríntios 13:1-13" is well under 100 chars.
+// 200 is generous headroom without giving a bot room to smuggle a payload.
+const BodySchema = z.object({ reference: z.string().max(200) }).strict();
 
 export type { VersePayload } from "@/lib/domain/verse";
 
@@ -20,23 +26,16 @@ export async function POST(request: Request) {
   const limited = enforceRateLimit(request, RATE_LIMITS.verse, auth.user.id);
   if (limited) return limited;
 
-  let body: { reference?: string };
-  try {
-    body = await request.json();
-  } catch (err) {
-    return NextResponse.json(
-      { error: `invalid json body: ${(err as Error).message}` },
-      { status: 400 }
-    );
-  }
+  const parsed = await parseJsonBody(request, BodySchema);
+  if (!parsed.ok) return parsed.response;
 
-  const reference = (body.reference ?? "").trim();
+  const reference = parsed.data.reference.trim();
   if (!reference) {
     return NextResponse.json({ error: "empty reference" }, { status: 400 });
   }
 
-  const parsed = parseVerseReference(reference);
-  if (!parsed || parsed.startVerse == null || parsed.endVerse == null) {
+  const ref = parseVerseReference(reference);
+  if (!ref || ref.startVerse == null || ref.endVerse == null) {
     return NextResponse.json({ reference, text: "" });
   }
 
@@ -48,10 +47,10 @@ export async function POST(request: Request) {
 
   const { text, truncated } = lookupVerse(
     bible,
-    parsed.bookDisplay,
-    parsed.chapter,
-    parsed.startVerse,
-    parsed.endVerse
+    ref.bookDisplay,
+    ref.chapter,
+    ref.startVerse,
+    ref.endVerse
   );
   if (!text) {
     devLog("[verse] miss", { reference, reason: "not-found" });

@@ -1,8 +1,17 @@
 import { NextResponse } from "next/server";
-import { isChargeReason } from "@/lib/coins/pricing";
+import { z } from "zod";
+import { CHARGE_REASONS } from "@/lib/coins/pricing";
 import { chargeCoins } from "@/lib/db/coins";
+import { OptionalUuidSchema, parseJsonBody } from "@/lib/http/validate";
 import { enforceRateLimit, RATE_LIMITS } from "@/lib/rate-limit";
 import { requireAuth } from "@/lib/supabase/require-auth";
+
+const BodySchema = z
+  .object({
+    reason: z.enum(CHARGE_REASONS),
+    sessionId: OptionalUuidSchema,
+  })
+  .strict();
 
 export const runtime = "nodejs";
 export const dynamic = "force-dynamic";
@@ -20,29 +29,18 @@ export async function POST(request: Request) {
   const limited = enforceRateLimit(request, RATE_LIMITS["coins-write"], auth.user.id);
   if (limited) return limited;
 
-  let body: { reason?: unknown; sessionId?: unknown };
-  try {
-    body = await request.json();
-  } catch (err) {
-    return NextResponse.json(
-      { error: `invalid json body: ${(err as Error).message}` },
-      { status: 400 }
-    );
-  }
+  const parsed = await parseJsonBody(request, BodySchema);
+  if (!parsed.ok) return parsed.response;
+  const { reason, sessionId: rawSessionId } = parsed.data;
+  const sessionId = rawSessionId ?? null;
 
-  if (!isChargeReason(body.reason)) {
-    return NextResponse.json({ error: "invalid_reason" }, { status: 400 });
-  }
-  const sessionId =
-    typeof body.sessionId === "string" && body.sessionId.trim() ? body.sessionId.trim() : null;
-
-  const result = await chargeCoins(body.reason, sessionId);
+  const result = await chargeCoins(reason, sessionId);
   if (!result.ok) {
     if (result.error === "insufficient_balance") {
       return NextResponse.json({ error: "insufficient_balance" }, { status: 402 });
     }
     console.error("[coins/charge] failed", {
-      reason: body.reason,
+      reason,
       error: result.error,
       message: result.message,
     });

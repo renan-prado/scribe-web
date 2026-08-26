@@ -1,16 +1,20 @@
 import { NextResponse } from "next/server";
+import { z } from "zod";
 import { chargeCoins } from "@/lib/db/coins";
 import { createDeepening, hasDeepening } from "@/lib/db/deepenings";
 import { getSession } from "@/lib/db/sessions";
 import { recordChatUsage } from "@/lib/db/usage";
 import { parseDeepeningFromLLM } from "@/lib/domain/deepening";
 import { serverEnv } from "@/lib/env/server";
+import { parseJsonBody, UuidSchema } from "@/lib/http/validate";
 import { buildLlmMetadata } from "@/lib/llm/metadata";
 import { callChat } from "@/lib/llm/openai";
 import { devLog } from "@/lib/log";
 import { DEEPENING_SYSTEM_PROMPT } from "@/lib/prompts/deepening";
 import { enforceRateLimit, RATE_LIMITS } from "@/lib/rate-limit";
 import { requireAuth } from "@/lib/supabase/require-auth";
+
+const BodySchema = z.object({ sessionId: UuidSchema }).strict();
 
 export const runtime = "nodejs";
 export const dynamic = "force-dynamic";
@@ -30,20 +34,9 @@ export async function POST(request: Request) {
 
   const model = serverEnv.OPENAI_DEEPENING_MODEL;
 
-  let body: { sessionId?: string };
-  try {
-    body = await request.json();
-  } catch (err) {
-    return NextResponse.json(
-      { error: `invalid json body: ${(err as Error).message}` },
-      { status: 400 }
-    );
-  }
-
-  const sessionId = typeof body.sessionId === "string" ? body.sessionId.trim() : "";
-  if (!sessionId) {
-    return NextResponse.json({ error: "missing sessionId" }, { status: 400 });
-  }
+  const parsed = await parseJsonBody(request, BodySchema);
+  if (!parsed.ok) return parsed.response;
+  const sessionId = parsed.data.sessionId;
 
   const session = await getSession(sessionId);
   if (!session) {
