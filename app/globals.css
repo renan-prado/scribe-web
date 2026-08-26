@@ -90,6 +90,9 @@
   --color-auth-btn-border-hover: var(--auth-btn-border-hover);
   --color-auth-btn-bg-hover: var(--auth-btn-bg-hover);
   --color-scriba-mint-dark: var(--scriba-mint-dark);
+  /* Scriba AI chat bubble tokens (feed + summary comments) */
+  --color-scriba-bubble: var(--scriba-bubble);
+  --color-scriba-bubble-ink: var(--scriba-bubble-ink);
 }
 
 :root {
@@ -180,6 +183,10 @@
   --auth-btn-bg-hover: #F6FAFE;
   /* Mint saved-state token */
   --scriba-mint-dark: #3F7F66;
+  /* Scriba AI chat bubble tokens (feed + summary) */
+  --scriba-bubble: #F5F8FB;
+  --scriba-bubble-ink: #2A3542;
+  --scriba-avatar-gradient: linear-gradient(140deg, #2F6BD8, #7C5CE0);
   /* Design-system border widths */
   --border-book: 1.5px;   /* book glyph icon border */
   --border-fine: 1.4px;   /* fine phone frame border */
