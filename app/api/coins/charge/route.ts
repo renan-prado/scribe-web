@@ -1,6 +1,7 @@
 import { NextResponse } from "next/server";
 import { isChargeReason } from "@/lib/coins/pricing";
 import { chargeCoins } from "@/lib/db/coins";
+import { enforceRateLimit, RATE_LIMITS } from "@/lib/rate-limit";
 import { requireAuth } from "@/lib/supabase/require-auth";
 
 export const runtime = "nodejs";
@@ -15,6 +16,9 @@ export const dynamic = "force-dynamic";
 export async function POST(request: Request) {
   const auth = await requireAuth();
   if (auth.response) return auth.response;
+
+  const limited = enforceRateLimit(request, RATE_LIMITS["coins-write"], auth.user.id);
+  if (limited) return limited;
 
   let body: { reason?: unknown; sessionId?: unknown };
   try {

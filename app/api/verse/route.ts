@@ -3,6 +3,7 @@ import { loadBible } from "@/lib/bibles/loader";
 import { lookupVerse } from "@/lib/bibles/lookup";
 import { parseVerseReference } from "@/lib/domain/feed";
 import { devLog } from "@/lib/log";
+import { enforceRateLimit, RATE_LIMITS } from "@/lib/rate-limit";
 import { requireAuth } from "@/lib/supabase/require-auth";
 
 export type { VersePayload } from "@/lib/domain/verse";
@@ -15,6 +16,9 @@ const TRANSLATION = "NVI";
 export async function POST(request: Request) {
   const auth = await requireAuth();
   if (auth.response) return auth.response;
+
+  const limited = enforceRateLimit(request, RATE_LIMITS.verse, auth.user.id);
+  if (limited) return limited;
 
   let body: { reference?: string };
   try {

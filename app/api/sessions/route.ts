@@ -1,6 +1,7 @@
 import { NextResponse } from "next/server";
 import { createEmptySession, parseSessionMode } from "@/lib/db/sessions";
 import { devLog } from "@/lib/log";
+import { enforceRateLimit, RATE_LIMITS } from "@/lib/rate-limit";
 import { requireAuth } from "@/lib/supabase/require-auth";
 
 export const runtime = "nodejs";
@@ -16,6 +17,9 @@ export const dynamic = "force-dynamic";
 export async function POST(request: Request) {
   const auth = await requireAuth();
   if (auth.response) return auth.response;
+
+  const limited = enforceRateLimit(request, RATE_LIMITS["sessions-write"], auth.user.id);
+  if (limited) return limited;
 
   let body: {
     speakerName?: string | null;

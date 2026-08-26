@@ -3,6 +3,7 @@ import { z } from "zod";
 import { requireAdmin } from "@/lib/auth/require-admin";
 import { deleteUser, updateUser } from "@/lib/db/admin/users";
 import { devLog } from "@/lib/log";
+import { enforceRateLimit, RATE_LIMITS } from "@/lib/rate-limit";
 
 export const runtime = "nodejs";
 export const dynamic = "force-dynamic";
@@ -17,6 +18,10 @@ const PatchSchema = z.object({
 export async function PATCH(request: Request, { params }: { params: Promise<{ id: string }> }) {
   const auth = await requireAdmin();
   if (auth.response) return auth.response;
+
+  const limited = enforceRateLimit(request, RATE_LIMITS.admin, auth.user.id);
+  if (limited) return limited;
+
   const { id } = await params;
 
   let body: unknown;
@@ -55,9 +60,13 @@ export async function PATCH(request: Request, { params }: { params: Promise<{ id
   }
 }
 
-export async function DELETE(_request: Request, { params }: { params: Promise<{ id: string }> }) {
+export async function DELETE(request: Request, { params }: { params: Promise<{ id: string }> }) {
   const auth = await requireAdmin();
   if (auth.response) return auth.response;
+
+  const limited = enforceRateLimit(request, RATE_LIMITS.admin, auth.user.id);
+  if (limited) return limited;
+
   const { id } = await params;
 
   if (id === auth.user.id) {

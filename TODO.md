@@ -20,7 +20,7 @@
 - [x] Revisar partes do código criadas pela IA que podem ter ficado mal estruturadas
 
 ## Coisas para prestar atenção
-- [ ] Ausencia de rate-limit (limitação por ip, limitação por conta, etc...)
+- [x] Ausencia de rate-limit (limitação por ip, limitação por conta, etc...)
 - [ ] Configuração do cors (localhost e scriba.cc)
 - [ ] Analisar se api está devolvendo dados sensiveis de usuario
 - [ ] mensagem generica de erro de login para não dar dicas se existe o usuario ou se a senha é certa

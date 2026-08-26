@@ -6,6 +6,7 @@ import { buildLlmMetadata } from "@/lib/llm/metadata";
 import { callChat } from "@/lib/llm/openai";
 import { devLog } from "@/lib/log";
 import { BIBLE_SYSTEM_PROMPT } from "@/lib/prompts/bible";
+import { enforceRateLimit, RATE_LIMITS } from "@/lib/rate-limit";
 import { requireAuth } from "@/lib/supabase/require-auth";
 
 export const runtime = "nodejs";
@@ -19,6 +20,9 @@ export const dynamic = "force-dynamic";
 export async function POST(request: Request) {
   const auth = await requireAuth();
   if (auth.response) return auth.response;
+
+  const limited = enforceRateLimit(request, RATE_LIMITS.bible, auth.user.id);
+  if (limited) return limited;
 
   const model = serverEnv.OPENAI_BIBLE_MODEL;
 

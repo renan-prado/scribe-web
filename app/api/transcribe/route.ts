@@ -2,6 +2,7 @@ import { NextResponse } from "next/server";
 import { recordAudioUsage } from "@/lib/db/usage";
 import { serverEnv } from "@/lib/env/server";
 import { callTranscribe } from "@/lib/llm/openai";
+import { enforceRateLimit, RATE_LIMITS } from "@/lib/rate-limit";
 import { requireAuth } from "@/lib/supabase/require-auth";
 import { VOCABULARIO_GUIA } from "@/lib/vocabulario";
 
@@ -14,6 +15,9 @@ const ALLOWED_EXTENSIONS = new Set(["webm", "mp4", "mp3", "wav", "ogg", "m4a", "
 export async function POST(request: Request) {
   const auth = await requireAuth();
   if (auth.response) return auth.response;
+
+  const limited = enforceRateLimit(request, RATE_LIMITS.transcribe, auth.user.id);
+  if (limited) return limited;
 
   const model = serverEnv.OPENAI_TRANSCRIBE_MODEL;
 

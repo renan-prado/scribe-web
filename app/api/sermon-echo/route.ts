@@ -6,6 +6,7 @@ import { buildLlmMetadata } from "@/lib/llm/metadata";
 import { callChat } from "@/lib/llm/openai";
 import { devLog } from "@/lib/log";
 import { SERMON_ECHO_SYSTEM_PROMPT } from "@/lib/prompts/sermon-echo";
+import { enforceRateLimit, RATE_LIMITS } from "@/lib/rate-limit";
 import { requireAuth } from "@/lib/supabase/require-auth";
 
 export const runtime = "nodejs";
@@ -21,6 +22,9 @@ export const dynamic = "force-dynamic";
 export async function POST(request: Request) {
   const auth = await requireAuth();
   if (auth.response) return auth.response;
+
+  const limited = enforceRateLimit(request, RATE_LIMITS["sermon-echo"], auth.user.id);
+  if (limited) return limited;
 
   const model = serverEnv.OPENAI_ECHO_MODEL;
 
