@@ -3,10 +3,10 @@
 import { cva } from "class-variance-authority";
 import { useRouter } from "next/navigation";
 import { useState } from "react";
-import { CoinCost } from "@/components/CoinCost";
 import { NavLink } from "@/components/NavLink";
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/components/ui/tooltip";
-import { refreshCoinBalance, useCoinBalance } from "@/features/session/lib/coins";
+import { CoinCost } from "@/features/coins/components/CoinCost";
+import { useCoinsStore } from "@/features/coins/store";
 import { COIN_COSTS } from "@/lib/coins/pricing";
 import { cn } from "@/lib/utils";
 
@@ -59,7 +59,8 @@ export function DeepenButton({ sessionId, hasDeepening, variant }: DeepenButtonP
   const router = useRouter();
   const [pending, setPending] = useState(false);
   const [error, setError] = useState<string | null>(null);
-  const balance = useCoinBalance();
+  const balance = useCoinsStore((s) => s.balance);
+  const refresh = useCoinsStore((s) => s.refresh);
   const balanceLoading = balance === null;
   const insufficient = balance !== null && balance < DEEPENING_COST;
 
@@ -106,7 +107,7 @@ export function DeepenButton({ sessionId, hasDeepening, variant }: DeepenButtonP
         throw new Error(data.error || `deepen_failed_${res.status}`);
       }
       // Re-sync the header chip: the server debited COIN_COSTS.deepening.
-      void refreshCoinBalance();
+      void refresh();
       router.push(href);
       router.refresh();
     } catch (err) {

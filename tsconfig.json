@@ -19,6 +19,10 @@
       }
     ],
     "paths": {
+      "@/components/ui/*": ["./src/shared/ui/*"],
+      "@/components/icons/*": ["./src/shared/icons/*"],
+      "@/components/*": ["./src/shared/components/*"],
+      "@/hooks/*": ["./src/shared/hooks/*"],
       "@/*": ["./*", "./src/*"]
     }
   },

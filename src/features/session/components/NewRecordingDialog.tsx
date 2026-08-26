@@ -4,11 +4,11 @@ import { Mic } from "lucide-react";
 import { useRouter } from "next/navigation";
 import { type ReactNode, useState } from "react";
 import { toast } from "sonner";
-import { CoinCost } from "@/components/CoinCost";
 import { Dialog, DialogContent, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/components/ui/tooltip";
+import { CoinCost } from "@/features/coins/components/CoinCost";
+import { useCoinsStore } from "@/features/coins/store";
 import { requestCreateSession } from "@/features/session/lib/api";
-import { refreshCoinBalance, useCoinBalance } from "@/features/session/lib/coins";
 import { COIN_COSTS } from "@/lib/coins/pricing";
 import { cn } from "@/lib/utils";
 
@@ -51,7 +51,8 @@ export function NewRecordingDialog({ trigger }: { trigger?: ReactNode }) {
   const [open, setOpen] = useState(false);
   const [loading, setLoading] = useState(false);
   const [mode, setMode] = useState<Mode>("live");
-  const balance = useCoinBalance();
+  const balance = useCoinsStore((s) => s.balance);
+  const refresh = useCoinsStore((s) => s.refresh);
   const balanceLoading = balance === null;
   const minCost = mode === "audio_only" ? COIN_COSTS.audioOnlyMinute : COIN_COSTS.liveMinute;
   const insufficient = balance !== null && balance < minCost;
@@ -63,7 +64,7 @@ export function NewRecordingDialog({ trigger }: { trigger?: ReactNode }) {
     // Second-chance preflight: refetch balance in case a concurrent tab spent
     // coins while this dialog was open. The button is already disabled when
     // `insufficient` — this catches races only.
-    const fresh = await refreshCoinBalance();
+    const fresh = await refresh();
     if (fresh !== null && fresh < minCost) {
       setLoading(false);
       toast.error("Saldo de moedas insuficiente", {

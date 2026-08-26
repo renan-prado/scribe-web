@@ -1,8 +1,8 @@
 import type { ReactNode } from "react";
 import { AppHeader } from "@/components/AppHeader";
-import { CoinBalance } from "@/components/CoinBalance";
 import { MobileBottomNav } from "@/components/MobileBottomNav";
 import { UserMenu } from "@/features/auth/components/UserMenu";
+import { CoinBalance } from "@/features/coins/components/CoinBalance";
 import { NewRecordingDialog } from "@/features/session/components/NewRecordingDialog";
 import { isCurrentUserAdmin } from "@/lib/auth/require-admin";
 import { INITIAL_COIN_BALANCE } from "@/lib/coins/pricing";

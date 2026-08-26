@@ -1,7 +1,7 @@
 "use client";
 
 import { Check, MapPin, Pencil } from "lucide-react";
-import { useEffect, useState } from "react";
+import { type ReactNode, useEffect, useState } from "react";
 import { Button } from "@/components/ui/button";
 import {
   Dialog,
@@ -10,6 +10,7 @@ import {
   DialogHeader,
   DialogTitle,
 } from "@/components/ui/dialog";
+import { getSessionState, useSessionStore } from "@/features/session/store";
 import { cn } from "@/lib/utils";
 
 const MONTHS_PT = [
@@ -80,31 +81,24 @@ function EditDialog({ open, onOpenChange, heading, currentValue, onSave }: EditD
   );
 }
 
+/**
+ * Header bar for the live recording page. Owned state (title, speakerName,
+ * speakerLocation, saved, recording start time) all lives in the session
+ * store — the header reads and writes it directly instead of drilling
+ * callbacks from RecordingLive. Only `menu` is drilled because it's a
+ * ReactNode composed by the caller.
+ */
 type RecordingHeaderProps = {
-  title: string;
-  startedAt: Date | null;
-  speakerName: string;
-  speakerLocation: string;
-  onTitleChange: (title: string) => void;
-  onTitleLock: () => void;
-  onSpeakerNameChange: (name: string) => void;
-  onSpeakerLocationChange: (location: string) => void;
-  menu: React.ReactNode;
-  saved?: boolean;
+  menu: ReactNode;
 };
 
-export function RecordingHeader({
-  title,
-  startedAt,
-  speakerName,
-  speakerLocation,
-  onTitleChange,
-  onTitleLock,
-  onSpeakerNameChange,
-  onSpeakerLocationChange,
-  menu,
-  saved = false,
-}: RecordingHeaderProps) {
+export function RecordingHeader({ menu }: RecordingHeaderProps) {
+  const title = useSessionStore((s) => s.summaryTitle);
+  const startedAt = useSessionStore((s) => s.recordingStartedAt);
+  const speakerName = useSessionStore((s) => s.speakerName);
+  const speakerLocation = useSessionStore((s) => s.speakerLocation);
+  const saved = useSessionStore((s) => s.saved);
+
   const [nameDialogOpen, setNameDialogOpen] = useState(false);
   const [locationDialogOpen, setLocationDialogOpen] = useState(false);
   const [titleDialogOpen, setTitleDialogOpen] = useState(false);
@@ -183,14 +177,14 @@ export function RecordingHeader({
         onOpenChange={setNameDialogOpen}
         heading="Editar autor"
         currentValue={speakerName}
-        onSave={onSpeakerNameChange}
+        onSave={(v) => getSessionState().setSpeakerName(v)}
       />
       <EditDialog
         open={locationDialogOpen}
         onOpenChange={setLocationDialogOpen}
         heading="Editar local"
         currentValue={speakerLocation}
-        onSave={onSpeakerLocationChange}
+        onSave={(v) => getSessionState().setSpeakerLocation(v)}
       />
       <EditDialog
         open={titleDialogOpen}
@@ -198,8 +192,9 @@ export function RecordingHeader({
         heading="Editar título"
         currentValue={displayTitle}
         onSave={(v) => {
-          onTitleChange(v);
-          onTitleLock();
+          const s = getSessionState();
+          s.setSummaryTitle(v);
+          s.lockTitle();
         }}
       />
     </>

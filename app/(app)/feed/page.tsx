@@ -2,6 +2,7 @@ import type { Metadata } from "next";
 import { NavLink } from "@/components/NavLink";
 import { DeepenButton } from "@/features/session/components/DeepenButton";
 import { NewRecordingDialog } from "@/features/session/components/NewRecordingDialog";
+import { shortDate } from "@/features/session/lib/formatting";
 import { hasDeepening } from "@/lib/db/deepenings";
 import { getCurrentProfile } from "@/lib/db/profiles";
 import { listSessions } from "@/lib/db/sessions";
@@ -23,28 +24,8 @@ const MONTHS_PT_LONG = [
   "dezembro",
 ];
 
-const MONTHS_PT_SHORT = [
-  "jan",
-  "fev",
-  "mar",
-  "abr",
-  "mai",
-  "jun",
-  "jul",
-  "ago",
-  "set",
-  "out",
-  "nov",
-  "dez",
-];
-
 function todayLabel(now: Date): string {
   return `Hoje, ${now.getDate()} de ${MONTHS_PT_LONG[now.getMonth()]}`;
-}
-
-function shortDate(iso: string): string {
-  const d = new Date(iso);
-  return `${d.getDate()} ${MONTHS_PT_SHORT[d.getMonth()]}`;
 }
 
 function firstNameOf(fullName: string | null | undefined): string {

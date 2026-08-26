@@ -4,9 +4,9 @@ import { type RefObject, useEffect, useMemo } from "react";
 import { ECHO_MIN_TAIL_DELTA_CHARS, INSIGHTS_TRANSCRIPT_CHARS } from "@/features/session/config";
 import { requestEcho } from "@/features/session/lib/api";
 import { tailTranscript } from "@/features/session/lib/text";
+import { useSessionStore } from "@/features/session/store";
 import { feedItemOrigin } from "@/lib/domain/feed";
 import { devLog } from "@/lib/log";
-import { useSessionStore } from "@/lib/stores/session";
 
 /**
  * ECHO pipeline. Fires when the feed accumulates aiStreakThreshold AI-authored

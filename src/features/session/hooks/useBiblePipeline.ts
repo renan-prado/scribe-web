@@ -11,11 +11,11 @@ import {
 } from "@/features/session/config";
 import { requestBible } from "@/features/session/lib/api";
 import { tailTranscript } from "@/features/session/lib/text";
+import { useSessionStore } from "@/features/session/store";
 import { hasBibleMention } from "@/lib/bible/detect";
 import { canonicalBookStem, scoreBibleGuard } from "@/lib/bible/guard";
 import { parseVerseReference } from "@/lib/domain/feed";
 import { devLog } from "@/lib/log";
-import { useSessionStore } from "@/lib/stores/session";
 
 /**
  * BIBLE pipeline. Gate em duas camadas:

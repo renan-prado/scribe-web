@@ -37,11 +37,11 @@ import { useWakeLock } from "@/features/session/hooks/useWakeLock";
 import { requestFinalSummary, uploadChunkWithRetry } from "@/features/session/lib/api";
 import { isSilentBlob } from "@/features/session/lib/audio";
 import { tailSentences } from "@/features/session/lib/text";
+import { getSessionState, useSessionStore } from "@/features/session/store";
 import type { ChunkRow, TranscriptState } from "@/features/session/types";
 import type { ChunkEvent, Recorder } from "@/lib/domain/recorder";
 import { devLog } from "@/lib/log";
 import { createRecorder } from "@/lib/recorder";
-import { getSessionState, useSessionStore } from "@/lib/stores/session";
 import { cn } from "@/lib/utils";
 
 type Props = {
@@ -70,15 +70,10 @@ export function RecordingLive({
   // ---- store subscriptions ----
   const running = useSessionStore((s) => s.running);
   const finalizing = useSessionStore((s) => s.finalizing);
-  const saved = useSessionStore((s) => s.saved);
   const startupError = useSessionStore((s) => s.startupError);
-  const recordingStartedAt = useSessionStore((s) => s.recordingStartedAt);
   const chunks = useSessionStore((s) => s.chunks);
   const feedItems = useSessionStore((s) => s.feedItems);
   const summary = useSessionStore((s) => s.summary);
-  const summaryTitle = useSessionStore((s) => s.summaryTitle);
-  const speakerName = useSessionStore((s) => s.speakerName);
-  const speakerLocation = useSessionStore((s) => s.speakerLocation);
   const insightsInFlight = useSessionStore((s) => s.insightsInFlight);
   const autoFollow = useSessionStore((s) => s.autoFollow);
   const pendingNew = useSessionStore((s) => s.pendingNew);
@@ -352,19 +347,6 @@ export function RecordingLive({
     }
   }, [running, feedItems.length, scrollToBottom]);
 
-  const handleTitleChange = useCallback((v: string) => {
-    getSessionState().setSummaryTitle(v);
-  }, []);
-  const handleTitleLock = useCallback(() => {
-    getSessionState().lockTitle();
-  }, []);
-  const handleSpeakerNameChange = useCallback((v: string) => {
-    getSessionState().setSpeakerName(v);
-  }, []);
-  const handleSpeakerLocationChange = useCallback((v: string) => {
-    getSessionState().setSpeakerLocation(v);
-  }, []);
-
   return (
     <main className="mx-auto flex flex-1 w-full max-w-3xl flex-col gap-6 px-4 py-8 sm:gap-8 sm:px-6 sm:py-10">
       {!hasStarted ? (
@@ -416,15 +398,6 @@ export function RecordingLive({
       {hasStarted ? (
         <section className="relative flex w-full min-h-70 self-stretch flex-col gap-6 pb-32 sm:p-6 sm:pb-32">
           <RecordingHeader
-            title={summaryTitle}
-            startedAt={recordingStartedAt}
-            speakerName={speakerName}
-            speakerLocation={speakerLocation}
-            onTitleChange={handleTitleChange}
-            onTitleLock={handleTitleLock}
-            onSpeakerNameChange={handleSpeakerNameChange}
-            onSpeakerLocationChange={handleSpeakerLocationChange}
-            saved={saved}
             menu={
               <SessionMenu
                 hasTranscript={transcript.length > 0}

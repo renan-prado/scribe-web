@@ -4,6 +4,7 @@ import { revalidatePath } from "next/cache";
 import { NavLink } from "@/components/NavLink";
 import { NewRecordingDialog } from "@/features/session/components/NewRecordingDialog";
 import { RefreshSessionsButton } from "@/features/session/components/RefreshSessionsButton";
+import { formatDurationShort, groupLabel, shortDate } from "@/features/session/lib/formatting";
 import { listDeepenedSessionIds } from "@/lib/db/deepenings";
 import { deleteSession, listSessions } from "@/lib/db/sessions";
 import { SessionCardMenu } from "./SessionCardMenu";
@@ -16,77 +17,6 @@ async function deleteSessionAction(formData: FormData): Promise<void> {
   if (typeof id !== "string" || !id) return;
   await deleteSession(id);
   revalidatePath("/list");
-}
-
-const MONTHS_PT_SHORT = [
-  "jan",
-  "fev",
-  "mar",
-  "abr",
-  "mai",
-  "jun",
-  "jul",
-  "ago",
-  "set",
-  "out",
-  "nov",
-  "dez",
-];
-
-function groupLabel(iso: string, now: Date): string {
-  const d = new Date(iso);
-  const start = new Date(now);
-  start.setHours(0, 0, 0, 0);
-  const dayMs = 24 * 60 * 60 * 1000;
-  const dow = start.getDay(); // 0 = Sunday
-  const daysSinceMon = (dow + 6) % 7;
-  const startOfWeek = new Date(start.getTime() - daysSinceMon * dayMs);
-  const startOfLastWeek = new Date(startOfWeek.getTime() - 7 * dayMs);
-  if (d >= startOfWeek) return "Esta semana";
-  if (d >= startOfLastWeek) return "Semana passada";
-  if (d.getFullYear() === now.getFullYear() && d.getMonth() === now.getMonth()) {
-    return capitalize(monthNameLong(d.getMonth()));
-  }
-  if (d.getFullYear() === now.getFullYear()) return capitalize(monthNameLong(d.getMonth()));
-  return `${capitalize(monthNameLong(d.getMonth()))} ${d.getFullYear()}`;
-}
-
-const MONTHS_PT_LONG = [
-  "janeiro",
-  "fevereiro",
-  "março",
-  "abril",
-  "maio",
-  "junho",
-  "julho",
-  "agosto",
-  "setembro",
-  "outubro",
-  "novembro",
-  "dezembro",
-];
-
-function monthNameLong(idx: number): string {
-  return MONTHS_PT_LONG[idx];
-}
-
-function capitalize(s: string): string {
-  return s.charAt(0).toUpperCase() + s.slice(1);
-}
-
-function shortDate(iso: string, includeYear: boolean): string {
-  const d = new Date(iso);
-  const base = `${d.getDate()} ${MONTHS_PT_SHORT[d.getMonth()]}`;
-  return includeYear ? `${base} ${d.getFullYear()}` : base;
-}
-
-function formatDuration(ms: number | null): string {
-  if (!ms || ms <= 0) return "";
-  const totalSec = Math.round(ms / 1000);
-  const m = Math.floor(totalSec / 60);
-  const s = totalSec % 60;
-  if (m === 0) return `${s}s`;
-  return `${m} min`;
 }
 
 export default async function LibraryPage() {
@@ -204,11 +134,11 @@ export default async function LibraryPage() {
                             <span className="text-[11px] font-light text-scriba-ink-mute">
                               {shortDate(s.createdAt, includeYear)}
                             </span>
-                            {formatDuration(s.durationMs) ? (
+                            {formatDurationShort(s.durationMs) ? (
                               <>
                                 <span className="size-[3px] rounded-full bg-scriba-ink-mute/60" />
                                 <span className="text-[11px] font-light text-scriba-ink-mute">
-                                  {formatDuration(s.durationMs)}
+                                  {formatDurationShort(s.durationMs)}
                                 </span>
                               </>
                             ) : null}

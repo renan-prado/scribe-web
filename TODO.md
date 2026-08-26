@@ -2,22 +2,22 @@
 
 ## Estado e arquitetura
 
-- [ ] Modularizar o projeto - organizar em modulos - /modules ou algo semelhante
-- [ ] Criar stores para centralizar os estados que fizerem sentido ao modulo
-- [ ] Diminuir o prop drilling existente no projeto
+- [x] Modularizar o projeto - organizar em modulos - /features ou algo semelhante
+- [x] Criar stores para centralizar os estados que fizerem sentido ao modulo
+- [x] Diminuir o prop drilling existente no projeto
   
 ## Tailwind
-- [ ] existe muito atributo style={}, a aplicação precisa ser tailwind first e só usar style em casos dinamicos extremos
-- [ ] melhore as variaveis de tamanho e cores, etc... no tailwind, pois tem muito valor sendo passado na mão nos componentes
-- [ ] melhore o style guide do tailwind e projeto
-- [ ] use o tailwind mais recente
+- [x] existe muito atributo style={}, a aplicação precisa ser tailwind first e só usar style em casos dinamicos extremos
+- [x] melhore as variaveis de tamanho e cores, etc... no tailwind, pois tem muito valor sendo passado na mão nos componentes
+- [x] melhore o style guide do tailwind e projeto
+- [x] use o tailwind mais recente
 
 ## Qualidade e segurança
 
 - [ ] encontrar e melhorar vunerabilidades de autenticação
 - [ ] Fazer uma revisão de segurança do projeto
-- [ ] Fazer uma revisão geral da qualidade do código
-- [ ] Revisar partes do código criadas pela IA que podem ter ficado mal estruturadas
+- [x] Fazer uma revisão geral da qualidade do código
+- [x] Revisar partes do código criadas pela IA que podem ter ficado mal estruturadas
 
 ## Coisas para prestar atenção
 - [ ] Ausencia de rate-limit (limitação por ip, limitação por conta, etc...)

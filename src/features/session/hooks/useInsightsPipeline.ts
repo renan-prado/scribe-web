@@ -9,8 +9,8 @@ import {
 } from "@/features/session/config";
 import { requestInsights } from "@/features/session/lib/api";
 import { tailTranscript } from "@/features/session/lib/text";
+import { useSessionStore } from "@/features/session/store";
 import { devLog } from "@/lib/log";
-import { useSessionStore } from "@/lib/stores/session";
 
 /**
  * INSIGHTS pipeline. Fires every INSIGHTS_CHUNK_INTERVAL successfully

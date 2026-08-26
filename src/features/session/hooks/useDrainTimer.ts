@@ -2,7 +2,7 @@
 
 import { useCallback, useEffect, useRef } from "react";
 import { FEED_CITED_VERSE_GAP_MS, FEED_MIN_GAP_MS } from "@/features/session/config";
-import { useSessionStore } from "@/lib/stores/session";
+import { useSessionStore } from "@/features/session/store";
 
 /**
  * Owns the browser setTimeout that drives the feed drip queue. The store

@@ -1,7 +1,7 @@
 "use client";
 
 import { useEffect, useRef } from "react";
-import { chargeCoinsRequest } from "@/features/session/lib/coins";
+import { getCoinsState } from "@/features/coins/store";
 import type { ChargeReason } from "@/lib/coins/pricing";
 
 /**
@@ -37,7 +37,7 @@ export function useCoinTick({
 
     async function tick() {
       if (cancelled || depletedRef.current) return;
-      const res = await chargeCoinsRequest(reason, sessionId);
+      const res = await getCoinsState().charge(reason, sessionId);
       if (cancelled) return;
       if (!res.ok && res.error === "insufficient_balance") {
         depletedRef.current = true;
