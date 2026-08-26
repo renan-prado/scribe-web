@@ -74,7 +74,7 @@ function Header() {
           </Link>
           <Link
             href="/sign-in"
-            className="lp-cta inline-flex items-center justify-center gap-2 rounded-5.5 bg-scriba-blue py-3 px-5 text-[12px] font-semibold uppercase tracking-[.04em] text-white shadow-[0_5px_14px_rgba(79,168,240,.3)]"
+            className="lp-cta inline-flex items-center justify-center gap-2 rounded-[22px] bg-scriba-blue py-3 px-5 text-[12px] font-semibold uppercase tracking-[.04em] text-white shadow-[0_5px_14px_rgba(79,168,240,.3)]"
           >
             {/** biome-ignore lint/performance/noImgElement: static asset in landing CTA */}
             <img src="/pena-logo-white.svg" alt="" aria-hidden width={14} height={14} />
@@ -100,7 +100,7 @@ function Hero() {
       <div className="pointer-events-none absolute -bottom-[120px] -left-[160px] hidden h-[520px] w-[520px] rounded-full bg-[radial-gradient(circle,rgba(248,198,75,.16)_0%,rgba(248,198,75,0)_70%)] lg:block" />
       <div className="relative mx-auto flex max-w-[1200px] flex-col gap-10 px-5 pb-2 pt-9 sm:px-10 lg:grid lg:grid-cols-[minmax(0,1fr)_430px] lg:gap-14 lg:pb-24 lg:pt-[88px]">
         <div className="flex min-w-0 flex-col gap-4 lg:gap-6">
-          <div className="inline-flex items-center gap-2 self-start rounded-5.5 border border-[#E3EEF8] bg-white px-3.5 py-[7px] pl-[9px] shadow-[0_4px_12px_rgba(79,168,240,.1)]">
+          <div className="inline-flex items-center gap-2 self-start rounded-[22px] border border-[#E3EEF8] bg-white px-3.5 py-[7px] pl-[9px] shadow-[0_4px_12px_rgba(79,168,240,.1)]">
             <div className="h-[5px] w-2.5 rounded-[3px] bg-scriba-yellow" />
             <div className="text-[10.5px] font-semibold tracking-[.03em] text-scriba-ink-soft">
               Ouça, relembre e coloque em prática.
@@ -116,7 +116,7 @@ function Hero() {
           <div className="flex flex-col gap-2.5 pt-1 sm:flex-row sm:items-center sm:gap-3.5">
             <Link
               href="/sign-in"
-              className="lp-cta inline-flex items-center justify-center gap-2.5 rounded-6.5 bg-scriba-blue py-[17px] px-8 text-[13px] font-semibold uppercase tracking-[.04em] text-white shadow-[0_9px_22px_rgba(79,168,240,.3)]"
+              className="lp-cta inline-flex items-center justify-center gap-2.5 rounded-[26px] bg-scriba-blue py-[17px] px-8 text-[13px] font-semibold uppercase tracking-[.04em] text-white shadow-[0_9px_22px_rgba(79,168,240,.3)]"
             >
               {/** biome-ignore lint/performance/noImgElement: static asset in landing CTA */}
               <img src="/pena-logo-white.svg" alt="" aria-hidden width={16} height={16} />
@@ -124,7 +124,7 @@ function Hero() {
             </Link>
             <a
               href="#recursos"
-              className="lp-cta-outline inline-flex items-center justify-center rounded-6.5 border border-auth-btn-border bg-white py-4 px-7 text-[13px] font-medium text-scriba-ink"
+              className="lp-cta-outline inline-flex items-center justify-center rounded-[26px] border border-auth-btn-border bg-white py-4 px-7 text-[13px] font-medium text-scriba-ink"
             >
               Conhecer o Scriba
             </a>
@@ -208,7 +208,7 @@ function Problem() {
             <div key={p.n} className="flex items-start gap-3.5 sm:gap-4">
               <div
                 className={cn(
-                  "flex h-[34px] w-[34px] flex-none items-center justify-center rounded-[11px] text-[13px] font-semibold sm:size-[38px] sm:rounded-3",
+                  "flex h-[34px] w-[34px] flex-none items-center justify-center rounded-[11px] text-[13px] font-semibold sm:size-[38px] sm:rounded-[12px]",
                   PROBLEM_CLASSES[p.variant]
                 )}
               >
@@ -285,7 +285,7 @@ type StepCardProps = {
 
 function StepCard({ step, title, body, icon }: StepCardProps) {
   return (
-    <div className="lp-lift flex flex-col gap-3.5 rounded-6 border border-[#EAF2FA] bg-white p-6 shadow-[0_8px_26px_rgba(79,168,240,.09)] sm:rounded-6.5 sm:p-8">
+    <div className="lp-lift flex flex-col gap-3.5 rounded-[24px] border border-[#EAF2FA] bg-white p-6 shadow-[0_8px_26px_rgba(79,168,240,.09)] sm:rounded-[26px] sm:p-8">
       <div className="flex items-center justify-between">
         <div className="text-[11px] font-semibold uppercase tracking-[.1em] text-scriba-ink-mute">
           {step}
@@ -365,7 +365,7 @@ function Resumo() {
                 <div
                   key={b.title}
                   className={cn(
-                    "lp-tile flex flex-col gap-1.5 rounded-4.5 p-4 sm:rounded-5 sm:p-5",
+                    "lp-tile flex flex-col gap-1.5 rounded-[18px] p-4 sm:rounded-[20px] sm:p-5",
                     cls.bg
                   )}
                 >
@@ -448,7 +448,7 @@ type BiblioCardProps = {
 
 function BiblioCard({ title, subtitle, badge }: BiblioCardProps) {
   return (
-    <div className="flex items-center justify-between gap-4 rounded-4.5 bg-white/[.16] p-4 px-[17px] sm:px-[18px]">
+    <div className="flex items-center justify-between gap-4 rounded-[18px] bg-white/[.16] p-4 px-[17px] sm:px-[18px]">
       <div className="flex flex-col gap-0.5">
         <div className="text-[13px] font-semibold sm:text-[13.5px]">{title}</div>
         <div className="text-[11.5px] font-light text-[#E2F1FF] sm:text-[12px]">{subtitle}</div>
@@ -496,7 +496,7 @@ type TestimonialCardProps = {
 
 function TestimonialCard({ quote, name, title, initials }: TestimonialCardProps) {
   return (
-    <div className="flex flex-col gap-3.5 rounded-6 border border-[#EAF2FA] bg-white p-6 shadow-[0_8px_24px_rgba(79,168,240,.08)] sm:rounded-6.5 sm:p-8">
+    <div className="flex flex-col gap-3.5 rounded-[24px] border border-[#EAF2FA] bg-white p-6 shadow-[0_8px_24px_rgba(79,168,240,.08)] sm:rounded-[26px] sm:p-8">
       <div className="text-pretty text-[15px] font-normal leading-[1.55] text-[#3D4C5B] sm:text-[16.5px]">
         {quote}
       </div>
@@ -619,20 +619,20 @@ function PlanCard({
   return (
     <div
       className={cn(
-        "relative flex flex-col gap-[22px] rounded-6 bg-white p-6 sm:rounded-6.5 sm:p-8",
+        "relative flex flex-col gap-[22px] rounded-[24px] bg-white p-6 sm:rounded-[26px] sm:p-8",
         isPrimary
-          ? "border-[--border-book] border-scriba-blue shadow-[0_16px_40px_rgba(79,168,240,.18)]"
+          ? "border-[1.5px] border-scriba-blue shadow-[0_16px_40px_rgba(79,168,240,.18)]"
           : "border border-[#EAF2FA]",
         !comingSoon && "lp-lift-plan",
         comingSoon && "pointer-events-none grayscale opacity-45"
       )}
     >
       {comingSoon ? (
-        <div className="absolute -top-[13px] left-6 rounded-5 bg-[#E8EEF4] px-[14px] py-[6px] text-[10.5px] font-semibold uppercase tracking-[.06em] text-[#637080] sm:left-7">
+        <div className="absolute -top-[13px] left-6 rounded-[20px] bg-[#E8EEF4] px-[14px] py-[6px] text-[10.5px] font-semibold uppercase tracking-[.06em] text-[#637080] sm:left-7">
           Em breve
         </div>
       ) : badge ? (
-        <div className="absolute -top-[13px] left-6 rounded-5 bg-scriba-yellow px-[14px] py-[6px] text-[10.5px] font-semibold uppercase tracking-[.06em] text-[#5A4409] sm:left-7">
+        <div className="absolute -top-[13px] left-6 rounded-[20px] bg-scriba-yellow px-[14px] py-[6px] text-[10.5px] font-semibold uppercase tracking-[.06em] text-[#5A4409] sm:left-7">
           {badge}
         </div>
       ) : null}
@@ -687,14 +687,14 @@ function PlanCard({
         ))}
       </div>
       {comingSoon ? (
-        <div className="inline-flex cursor-not-allowed items-center justify-center rounded-6 bg-[#F0F4F8] p-[15px] text-[12px] font-semibold uppercase tracking-[.04em] text-[#9AABB8]">
+        <div className="inline-flex cursor-not-allowed items-center justify-center rounded-[24px] bg-[#F0F4F8] p-[15px] text-[12px] font-semibold uppercase tracking-[.04em] text-[#9AABB8]">
           Em breve
         </div>
       ) : (
         <Link
           href="/sign-in"
           className={cn(
-            "inline-flex items-center justify-center gap-2 rounded-6 p-[15px] text-[12px] font-semibold uppercase tracking-[.04em]",
+            "inline-flex items-center justify-center gap-2 rounded-[24px] p-[15px] text-[12px] font-semibold uppercase tracking-[.04em]",
             isPrimary
               ? "lp-cta bg-scriba-blue text-white shadow-[0_8px_20px_rgba(79,168,240,.3)]"
               : "lp-cta-soft bg-scriba-btn-muted text-scriba-ink"
@@ -716,7 +716,7 @@ function PlanCard({
 function FinalCTA() {
   return (
     <section className="mx-auto max-w-[1200px] px-5 py-11 sm:px-10 sm:py-24">
-      <div className="relative flex flex-col gap-4 overflow-hidden rounded-7.5 bg-[linear-gradient(135deg,#33414F_0%,#1F5E92_100%)] p-9 text-white sm:gap-3.5 sm:rounded-8.5 lg:flex-row lg:items-center lg:justify-between lg:gap-12 lg:p-16">
+      <div className="relative flex flex-col gap-4 overflow-hidden rounded-[30px] bg-[linear-gradient(135deg,#33414F_0%,#1F5E92_100%)] p-9 text-white sm:gap-3.5 sm:rounded-[34px] lg:flex-row lg:items-center lg:justify-between lg:gap-12 lg:p-16">
         <div className="pointer-events-none absolute -top-[90px] right-[60px] h-[340px] w-[340px] rounded-full bg-[radial-gradient(circle,rgba(248,198,75,.22)_0%,rgba(248,198,75,0)_70%)]" />
         <div className="relative flex max-w-[620px] flex-col gap-3">
           <div className="text-pretty text-[28px] font-semibold leading-[1.16] tracking-[-.022em] lg:text-[38px]">
@@ -729,7 +729,7 @@ function FinalCTA() {
         <div className="relative flex flex-none flex-col items-stretch gap-3">
           <Link
             href="/sign-in"
-            className="lp-cta-yellow inline-flex items-center justify-center gap-2.5 rounded-6.5 bg-scriba-yellow py-[17px] px-[38px] text-[13px] font-semibold uppercase tracking-[.04em] text-[#5A4409] shadow-[0_10px_24px_rgba(0,0,0,.2)]"
+            className="lp-cta-yellow inline-flex items-center justify-center gap-2.5 rounded-[26px] bg-scriba-yellow py-[17px] px-[38px] text-[13px] font-semibold uppercase tracking-[.04em] text-[#5A4409] shadow-[0_10px_24px_rgba(0,0,0,.2)]"
           >
             {/** biome-ignore lint/performance/noImgElement: static asset in landing CTA */}
             <img src="/pena-logo-white.svg" alt="" aria-hidden width={16} height={16} />
@@ -803,21 +803,21 @@ function PhoneFrame({ children, dark = false, chrome }: PhoneFrameProps) {
   return (
     <div
       className={cn(
-        "relative w-[390px] flex-none scale-[.75] rounded-11 bg-white p-[11px] sm:scale-90 lg:scale-100",
+        "relative w-[390px] flex-none scale-[.75] rounded-[44px] bg-white p-[11px] sm:scale-90 lg:scale-100",
         dark ? "phone-frame-dark" : "phone-frame"
       )}
     >
-      <div className="phone-mask relative h-[680px] overflow-hidden rounded-8.5 bg-white">
+      <div className="phone-mask relative h-[680px] overflow-hidden rounded-[34px] bg-white">
         <div className="absolute inset-x-0 top-0 z-10 flex h-11 items-center justify-between px-7 text-[12px] font-semibold text-[#3B4A5A]">
           <span>9:41</span>
           <div className="flex items-center gap-1">
             <span
               aria-hidden
-              className="inline-block h-2 w-[14px] rounded-[2px] border-[--border-fine] border-[#3B4A5A]"
+              className="inline-block h-2 w-[14px] rounded-[2px] border-[1.4px] border-[#3B4A5A]"
             />
           </div>
         </div>
-        <div className="absolute left-1/2 top-[12px] z-10 h-6.5 w-26 -translate-x-1/2 rounded-4 bg-[#0B1220]" />
+        <div className="absolute left-1/2 top-[12px] z-10 h-6.5 w-26 -translate-x-1/2 rounded-[16px] bg-[#0B1220]" />
         {chrome ? (
           <div className="absolute inset-x-0 top-11 z-[5] bg-white/95 backdrop-blur">{chrome}</div>
         ) : null}

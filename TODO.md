@@ -14,8 +14,6 @@
 
 ## Qualidade e segurança
 
-- [ ] encontrar e melhorar vunerabilidades de autenticação
-- [ ] Fazer uma revisão de segurança do projeto
 - [x] Fazer uma revisão geral da qualidade do código
 - [x] Revisar partes do código criadas pela IA que podem ter ficado mal estruturadas
 
@@ -29,9 +27,9 @@
 - [x] pagina 404 propria e customizada (no design da aplicação atual, bem humorado)
 - [x] og:image
 - [x] politicas e privacidades e cookies (precisamos gerar um mesmo que generico ainda)
+- [ ] monitor de uptime
 - [ ] add app no google search console (acho que isso é manual)
 - [ ] fazer perfil no google negocio (manual tambem)
 - [ ] testar speedpage (manual?)
 - [ ] configurar dados no google analitics (manual)
-- [ ] monitor de uptime
 - [ ] rastreamento de erro (depois eu faço, ignora)

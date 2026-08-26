@@ -10,7 +10,7 @@ export default function HomeLoading() {
 
       <div className="flex flex-col gap-4">
         {/* Reflection card */}
-        <div className="flex flex-col gap-4 rounded-6 border border-scriba-hairline-soft bg-white p-6 shadow-[0_6px_22px_rgba(79,168,240,0.13)]">
+        <div className="flex flex-col gap-4 rounded-[24px] border border-scriba-hairline-soft bg-white p-6 shadow-[0_6px_22px_rgba(79,168,240,0.13)]">
           <div className="flex items-center gap-2">
             <SB className="h-1.5 w-6 rounded-full" />
             <SB className="h-3 w-32" />
@@ -28,7 +28,7 @@ export default function HomeLoading() {
         </div>
 
         {/* Practice card (mint) */}
-        <div className="flex flex-col gap-3.5 rounded-6 bg-scriba-mint p-5">
+        <div className="flex flex-col gap-3.5 rounded-[24px] bg-scriba-mint p-5">
           <div className="flex items-center justify-between gap-2">
             <SB className="h-3 w-32 !bg-scriba-mint-accent/25" />
             <SB className="h-6 w-24 rounded-full !bg-white/60" />
@@ -43,7 +43,7 @@ export default function HomeLoading() {
 
         <div className="grid gap-4 sm:grid-cols-2">
           {/* Connection card (blue) */}
-          <div className="flex flex-col gap-3.5 rounded-6 bg-scriba-blue p-5">
+          <div className="flex flex-col gap-3.5 rounded-[24px] bg-scriba-blue p-5">
             <SB className="h-3 w-32 !bg-white/25" />
             <SB className="h-5 w-full !bg-white/25" />
             <SB className="h-5 w-3/5 !bg-white/25" />
@@ -55,7 +55,7 @@ export default function HomeLoading() {
           </div>
 
           {/* Memory card (cream) */}
-          <div className="flex flex-col gap-2.5 rounded-6 bg-scriba-cream p-5">
+          <div className="flex flex-col gap-2.5 rounded-[24px] bg-scriba-cream p-5">
             <SB className="h-3 w-32 !bg-scriba-cream-accent/30" />
             <SB className="h-5 w-full !bg-scriba-cream-accent/30" />
             <SB className="h-3 w-2/3 !bg-scriba-cream-accent/30" />
@@ -66,7 +66,7 @@ export default function HomeLoading() {
         </div>
 
         {/* Bible re-read (rose) */}
-        <div className="flex flex-col gap-2 rounded-6 bg-scriba-rose p-5">
+        <div className="flex flex-col gap-2 rounded-[24px] bg-scriba-rose p-5">
           <SB className="h-3 w-28 !bg-scriba-rose-accent/30" />
           <SB className="h-4 w-24 !bg-scriba-rose-accent/30" />
           <SB className="h-4 w-full !bg-scriba-rose-accent/30" />

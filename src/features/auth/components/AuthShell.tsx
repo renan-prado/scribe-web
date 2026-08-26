@@ -48,7 +48,7 @@ export function AuthShell({ title, subtitle, children, footer }: AuthShellProps)
           </p>
         </div>
 
-        <div className="flex flex-col gap-4 rounded-6.5 border border-[#EAF2FA] bg-white p-7 shadow-[0_16px_40px_rgba(79,168,240,.14)]">
+        <div className="flex flex-col gap-4 rounded-[26px] border border-[#EAF2FA] bg-white p-7 shadow-[0_16px_40px_rgba(79,168,240,.14)]">
           {children}
         </div>
 

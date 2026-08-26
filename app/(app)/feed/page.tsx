@@ -163,7 +163,7 @@ function ReflectionCard({
     "“A nossa confiança em Deus não nasce da ausência de incertezas, mas de saber quem Ele é.”";
   const speakerLine = [speaker, date].filter(Boolean).join(" · ");
   return (
-    <article className="flex flex-col gap-4 rounded-6 border border-scriba-hairline-soft bg-white p-6 shadow-[0_6px_22px_rgba(79,168,240,0.13)]">
+    <article className="flex flex-col gap-4 rounded-[24px] border border-scriba-hairline-soft bg-white p-6 shadow-[0_6px_22px_rgba(79,168,240,0.13)]">
       <div className="flex items-center gap-2">
         <div className="h-1.5 w-6 rounded-full bg-scriba-hairline" />
         <span className="text-[11px] font-semibold uppercase tracking-wider text-scriba-ink-mute">

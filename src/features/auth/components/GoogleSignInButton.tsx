@@ -33,7 +33,7 @@ export function GoogleSignInButton({ next = "/feed", label = "Continuar com Goog
       type="button"
       onClick={handleClick}
       disabled={loading}
-      className="inline-flex w-full items-center justify-center gap-3 rounded-6 border border-auth-btn-border bg-white px-[22px] py-[16px] text-[14px] font-medium text-scriba-ink-strong shadow-[0_4px_14px_rgba(79,168,240,.08)] transition-colors font-[var(--font-poppins),system-ui,sans-serif] hover:border-auth-btn-border-hover hover:bg-auth-btn-bg-hover disabled:cursor-not-allowed disabled:opacity-70"
+      className="inline-flex w-full items-center justify-center gap-3 rounded-[24px] border border-auth-btn-border bg-white px-[22px] py-[16px] text-[14px] font-medium text-scriba-ink-strong shadow-[0_4px_14px_rgba(79,168,240,.08)] transition-colors font-[var(--font-poppins),system-ui,sans-serif] hover:border-auth-btn-border-hover hover:bg-auth-btn-bg-hover disabled:cursor-not-allowed disabled:opacity-70"
     >
       <GoogleIcon />
       <span>{loading ? "Abrindo Google…" : label}</span>

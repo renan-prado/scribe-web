@@ -107,7 +107,7 @@ export function NewRecordingDialog({ trigger }: { trigger?: ReactNode }) {
           </>
         )}
       </DialogTrigger>
-      <DialogContent className="flex flex-col items-center gap-8 rounded-7 bg-white px-8 py-14">
+      <DialogContent className="flex flex-col items-center gap-8 rounded-[28px] bg-white px-8 py-14">
         <DialogTitle className="sr-only">Nova gravação</DialogTitle>
 
         <div
