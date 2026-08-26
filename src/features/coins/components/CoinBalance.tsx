@@ -5,7 +5,7 @@ import { useCoinsStore } from "@/features/coins/store";
 import { INITIAL_COIN_BALANCE } from "@/lib/coins/pricing";
 import { cn } from "@/lib/utils";
 
-const COIN_C = 2 * Math.PI * 13; // circumference for r=13 pie chart
+const COIN_C = 2 * Math.PI * 6.5; // circumference for the r=6.5 stroke centerline (stroke-width 13 fills a r=13 disc without overflowing the viewBox)
 
 const DIGIT_TRANSFORM = [
   "[transform:translateY(0px)]",
@@ -110,7 +110,7 @@ export function CoinBalance({ initialBalance }: { initialBalance: number }) {
       role="status"
       aria-label={`${balance} moedas restantes`}
       className={cn(
-        "flex select-none items-center gap-[7px] rounded-5 py-1 pr-3 pl-2.5 transition-colors duration-500",
+        "flex select-none items-center gap-[7px] rounded-[20px] py-1 pr-3 pl-2.5 transition-colors duration-500",
         flash === "debit" ? "bg-[#FCE1B8]" : flash === "credit" ? "bg-[#DDEFCB]" : "bg-[#FFF9E8]"
       )}
     >
@@ -127,10 +127,10 @@ export function CoinBalance({ initialBalance }: { initialBalance: number }) {
           <circle
             cx="13"
             cy="13"
-            r="13"
+            r="6.5"
             fill="none"
             stroke="#F8C64B"
-            strokeWidth="26"
+            strokeWidth="13"
             strokeDasharray={`${filled} ${COIN_C - filled}`}
           />
         </svg>
