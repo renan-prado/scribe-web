@@ -27,6 +27,7 @@ export type UsageRoute =
   | "insights"
   | "sermon-echo"
   | "final-summary"
+  | "summary-enrichment"
   | "deepening"
   | "format-paragraphs"
   | "transcribe";

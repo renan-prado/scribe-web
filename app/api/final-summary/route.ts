@@ -3,13 +3,18 @@ import { z } from "zod";
 import { updateSessionFinal } from "@/lib/db/sessions";
 import { recordChatUsage } from "@/lib/db/usage";
 import { FeedItemSchema } from "@/lib/domain/feed";
-import { parseSummaryFromLLM } from "@/lib/domain/summary";
+import {
+  mergeEnrichmentIntoBlocks,
+  parseEnrichmentFromLLM,
+  parseSummaryFromLLM,
+} from "@/lib/domain/summary";
 import { serverEnv } from "@/lib/env/server";
 import { parseJsonBody, UuidSchema } from "@/lib/http/validate";
 import { buildLlmMetadata } from "@/lib/llm/metadata";
 import { callChat } from "@/lib/llm/openai";
 import { devLog } from "@/lib/log";
 import { FINAL_SUMMARY_SYSTEM_PROMPT } from "@/lib/prompts/final-summary";
+import { SUMMARY_ENRICHMENT_SYSTEM_PROMPT } from "@/lib/prompts/summary-enrichment";
 import { enforceRateLimit, RATE_LIMITS } from "@/lib/rate-limit";
 import { requireAuth } from "@/lib/supabase/require-auth";
 
@@ -128,6 +133,74 @@ export async function POST(request: Request) {
     cachedTokens: usage.cachedTokens,
     latencyMs,
   });
+
+  // Second call: enrichment (contextCard + relatedVerse). Runs after the
+  // organized sermon is ready and receives the indexed blocks + transcript
+  // + feedItems as context. Best-effort — a failure here does NOT block
+  // the summary; the user still gets the organized sermon without AI cards.
+  // Only run when we actually have blocks to enrich against.
+  if (payload.blocks.length > 0) {
+    const enrichmentModel = serverEnv.OPENAI_SUMMARY_ENRICHMENT_MODEL;
+    // The enrichment prompt refers to blocks by index — send them with an
+    // explicit "index" field so the model can't miscount.
+    const indexedBlocks = payload.blocks.map((block, index) => ({ index, ...block }));
+    const enrichmentUserMessage =
+      `blocks (indexed):\n${JSON.stringify(indexedBlocks)}\n\n---\n` +
+      `feedItems:\n${JSON.stringify(feedItems)}\n\n---\n` +
+      `transcript:\n${text}`;
+
+    const enrichmentResult = await callChat({
+      model: enrichmentModel,
+      // Slightly higher than the sermon call — enrichment benefits from
+      // some variation in which angle to hit; sermon needs fidelity.
+      temperature: 0.5,
+      // ~40 insertions of 2-5 sentences ≈ 3-4k tokens ceiling. 6k gives
+      // headroom without letting a runaway response cost too much.
+      maxTokens: 6000,
+      responseFormat: { type: "json_object" },
+      messages: [
+        { role: "system", content: SUMMARY_ENRICHMENT_SYSTEM_PROMPT },
+        { role: "user", content: enrichmentUserMessage },
+      ],
+      store: true,
+      metadata: buildLlmMetadata({
+        route: "summary-enrichment",
+        userId: auth.user.id,
+        sessionId,
+      }),
+    });
+
+    if (!enrichmentResult.ok) {
+      const err = enrichmentResult.error;
+      const kind = err.kind === "fetch" ? "fetch" : "upstream";
+      console.warn("[summary-enrichment] failed — sermon returned without AI cards", {
+        kind,
+        message: err.message,
+      });
+    } else {
+      const insertions = parseEnrichmentFromLLM(enrichmentResult.data.content);
+      if (insertions.length > 0) {
+        payload.blocks = mergeEnrichmentIntoBlocks(payload.blocks, insertions);
+      }
+      devLog("[summary-enrichment] ok", {
+        latencyMs: enrichmentResult.data.latencyMs,
+        finishReason: enrichmentResult.data.finishReason,
+        promptTokens: enrichmentResult.data.usage.promptTokens,
+        completionTokens: enrichmentResult.data.usage.completionTokens,
+        insertions: insertions.length,
+        totalBlocksAfterMerge: payload.blocks.length,
+      });
+      await recordChatUsage({
+        sessionId,
+        route: "summary-enrichment",
+        model: enrichmentModel,
+        promptTokens: enrichmentResult.data.usage.promptTokens,
+        completionTokens: enrichmentResult.data.usage.completionTokens,
+        cachedTokens: enrichmentResult.data.usage.cachedTokens,
+        latencyMs: enrichmentResult.data.latencyMs,
+      });
+    }
+  }
 
   // Fill the row created at start. Never fail the request on save error —
   // the user already sat through the recording; return the summary and log

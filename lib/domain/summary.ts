@@ -134,6 +134,134 @@ export function parseSummaryFromLLM(content: string, phase: SummaryPhase): Summa
 }
 
 /**
+ * Insertion output from the enrichment call. Each entry says: insert `block`
+ * AFTER the block at `afterBlockIndex` in the original organized-sermon array.
+ * Index -1 means "at the very beginning". Only contextCard and relatedVerse
+ * are valid enrichment types — anything else is rejected by parseEnrichment.
+ */
+const EnrichmentBlockSchema = z.discriminatedUnion("type", [
+  z.object({
+    type: z.literal("contextCard"),
+    label: z.string(),
+    text: z.string(),
+    source: z.string().optional(),
+  }),
+  z.object({
+    type: z.literal("relatedVerse"),
+    reference: z.string(),
+    text: z.string().default(""),
+    reason: z.string().default(""),
+  }),
+]);
+
+export type EnrichmentBlock = z.infer<typeof EnrichmentBlockSchema>;
+
+export type EnrichmentInsertion = {
+  afterBlockIndex: number;
+  block: EnrichmentBlock;
+};
+
+/**
+ * Parse the enrichment LLM output. Silently drops malformed entries (bad
+ * type, missing fields, non-integer index) — enrichment is best-effort, we
+ * never fail the whole final-summary just because one card was wrong.
+ */
+export function parseEnrichmentFromLLM(content: string): EnrichmentInsertion[] {
+  let obj: unknown;
+  try {
+    obj = JSON.parse(content);
+  } catch {
+    return [];
+  }
+  if (!obj || typeof obj !== "object") return [];
+  const raw = (obj as { insertions?: unknown }).insertions;
+  if (!Array.isArray(raw)) return [];
+
+  const out: EnrichmentInsertion[] = [];
+  for (const entry of raw) {
+    if (!entry || typeof entry !== "object") continue;
+    const rec = entry as Record<string, unknown>;
+    const idxRaw = rec.afterBlockIndex;
+    if (typeof idxRaw !== "number" || !Number.isFinite(idxRaw)) continue;
+    const afterBlockIndex = Math.trunc(idxRaw);
+
+    const blockCandidate = rec.block;
+    if (!blockCandidate || typeof blockCandidate !== "object") continue;
+    // Trim string fields before validating so the discriminated union sees
+    // clean input. contextCard.label/text and relatedVerse.reference are
+    // required non-empty in practice — enforce here since the schema uses
+    // z.string() (which allows empty).
+    const normalized = normalizeEnrichmentBlock(blockCandidate as Record<string, unknown>);
+    if (!normalized) continue;
+    const parsed = EnrichmentBlockSchema.safeParse(normalized);
+    if (!parsed.success) continue;
+    out.push({ afterBlockIndex, block: parsed.data });
+  }
+  return out;
+}
+
+function normalizeEnrichmentBlock(rec: Record<string, unknown>): Record<string, unknown> | null {
+  const type = typeof rec.type === "string" ? rec.type : "";
+  if (type === "contextCard") {
+    const label = typeof rec.label === "string" ? rec.label.trim() : "";
+    const text = typeof rec.text === "string" ? rec.text.trim() : "";
+    if (!label || !text) return null;
+    const source = typeof rec.source === "string" ? rec.source.trim() : "";
+    return source ? { type, label, text, source } : { type, label, text };
+  }
+  if (type === "relatedVerse") {
+    const reference = typeof rec.reference === "string" ? rec.reference.trim() : "";
+    if (!reference) return null;
+    const text = typeof rec.text === "string" ? rec.text.trim() : "";
+    const reason = typeof rec.reason === "string" ? rec.reason.trim() : "";
+    return { type, reference, text, reason };
+  }
+  return null;
+}
+
+/**
+ * Splice enrichment insertions into the organized sermon. Each insertion
+ * lands AFTER the block at its afterBlockIndex; indices refer to the ORIGINAL
+ * array, so we sort descending and splice in reverse to keep indices stable.
+ *
+ * Guards:
+ * - afterBlockIndex is clamped to [-1, blocks.length - 1].
+ * - Never inserts after the conclusion block (conclusion must remain last);
+ *   insertions targeting >= conclusionIndex are re-anchored to conclusionIndex-1.
+ * - When multiple insertions share an afterBlockIndex, their input order is
+ *   preserved.
+ */
+export function mergeEnrichmentIntoBlocks(
+  blocks: SummaryBlock[],
+  insertions: EnrichmentInsertion[]
+): SummaryBlock[] {
+  if (insertions.length === 0) return blocks;
+  const conclusionIndex = blocks.findIndex((b) => b.type === "conclusion");
+  const maxAllowed = conclusionIndex >= 0 ? conclusionIndex - 1 : blocks.length - 1;
+
+  // Group insertions by their (clamped) anchor, preserving input order within a group.
+  const buckets = new Map<number, EnrichmentBlock[]>();
+  insertions.forEach((ins) => {
+    let idx = ins.afterBlockIndex;
+    if (idx > maxAllowed) idx = maxAllowed;
+    if (idx < -1) idx = -1;
+    const bucket = buckets.get(idx) ?? [];
+    bucket.push(ins.block);
+    buckets.set(idx, bucket);
+  });
+
+  const out: SummaryBlock[] = [];
+  const leading = buckets.get(-1);
+  if (leading) out.push(...leading);
+  blocks.forEach((block, i) => {
+    out.push(block);
+    const trailing = buckets.get(i);
+    if (trailing) out.push(...trailing);
+  });
+  return out;
+}
+
+/**
  * Prepares the previous summary so the LLM sees only the fields that matter
  * for continuation. The transient "thinking" field never round-trips.
  * Returns null when there is no meaningful content to send.
