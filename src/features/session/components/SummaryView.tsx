@@ -1,8 +1,9 @@
 "use client";
 
 import { BlockRenderer, blockKey } from "@/features/session/components/BlockRenderer";
+import { type CommentBlock, ScribaCommentGroup } from "@/features/session/components/ScribaComment";
 import { SummarySkeleton } from "@/features/session/components/skeletons";
-import type { SummaryPayload } from "@/lib/domain/summary";
+import type { SummaryBlock, SummaryPayload } from "@/lib/domain/summary";
 
 /**
  * Renders the final summary produced by /api/final-summary. Purely presentational —
@@ -15,10 +16,37 @@ type SummaryViewProps = {
   running: boolean;
 };
 
+type BlockGroup = { primary: SummaryBlock; comments: CommentBlock[] };
+
+function isCommentBlock(b: SummaryBlock): b is CommentBlock {
+  return b.type === "contextCard" || b.type === "relatedVerse";
+}
+
+/**
+ * Groups each Scriba comment (contextCard/relatedVerse) with the preceding
+ * primary block. Orphan comments (comment appears before any primary) render
+ * standalone as their own group.
+ */
+function groupBlocks(blocks: SummaryBlock[]): BlockGroup[] {
+  const groups: BlockGroup[] = [];
+  for (const b of blocks) {
+    if (isCommentBlock(b)) {
+      const last = groups[groups.length - 1];
+      if (last && !isCommentBlock(last.primary)) {
+        last.comments.push(b);
+        continue;
+      }
+    }
+    groups.push({ primary: b, comments: [] });
+  }
+  return groups;
+}
+
 export function SummaryView({ summary, hasTranscript, running }: SummaryViewProps) {
   const hasBody = summary && (summary.shortSummary.length > 0 || summary.blocks.length > 0);
 
   if (hasBody) {
+    const groups = groupBlocks(summary!.blocks);
     return (
       <div className="flex flex-col gap-7">
         {summary!.shortSummary ? (
@@ -34,15 +62,23 @@ export function SummaryView({ summary, hasTranscript, running }: SummaryViewProp
             </p>
           </div>
         ) : null}
-        {summary!.blocks.map((block, i) => (
-          <div
-            // biome-ignore lint/suspicious/noArrayIndexKey: index disambiguates blocks whose type + content hash collide (e.g., two short paragraphs starting the same way)
-            key={`${block.type}-${i}-${blockKey(block)}`}
-            className="animate-content-fade"
-          >
-            <BlockRenderer block={block} />
-          </div>
-        ))}
+        {groups.map((g, i) => {
+          const key = `${g.primary.type}-${i}-${blockKey(g.primary)}`;
+          if (g.comments.length > 0) {
+            return (
+              <div key={key} className="animate-content-fade">
+                <ScribaCommentGroup comments={g.comments}>
+                  <BlockRenderer block={g.primary} />
+                </ScribaCommentGroup>
+              </div>
+            );
+          }
+          return (
+            <div key={key} className="animate-content-fade">
+              <BlockRenderer block={g.primary} />
+            </div>
+          );
+        })}
       </div>
     );
   }
