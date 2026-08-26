@@ -1,19 +1,11 @@
 "use client";
 
+import { BookGlyph } from "@/components/icons/BookGlyph";
 import { PassageVerses } from "@/features/session/components/PassageVerses";
 import { useVerseFetch } from "@/features/session/hooks/useVerseFetch";
 import type { FeedItem } from "@/lib/domain/feed";
 import { feedItemOrigin, parseVerseReference } from "@/lib/domain/feed";
 import { cn } from "@/lib/utils";
-
-function BookGlyph({ className }: { className?: string }) {
-  return (
-    <span
-      aria-hidden
-      className={cn("block rounded-[3px_5px_5px_3px] border-[1.6px] border-current", className)}
-    />
-  );
-}
 
 /**
  * Avatar for AI-authored feed messages: a diamond mark on a soft-blue circle.
@@ -23,9 +15,9 @@ function AiAvatar() {
   return (
     <div
       aria-hidden
-      className="flex size-8 shrink-0 items-center justify-center rounded-full bg-[color:var(--scriba-blue-soft)]"
+      className="flex size-8 shrink-0 items-center justify-center rounded-full bg-scriba-blue-soft"
     >
-      <span className="block size-2.5 rotate-45 rounded-[3px] bg-[color:var(--scriba-blue)]" />
+      <span className="block size-2.5 rotate-45 rounded-[3px] bg-scriba-blue" />
     </div>
   );
 }
@@ -76,13 +68,12 @@ function isConcreteSource(source: string): boolean {
  * speakerHighlight and speakerEcho break out of the card frame entirely — see
  * HighlightBlock / EchoBlock.
  */
-export function FeedItemCard({
-  item,
-  onOpenVerse,
-}: {
+type FeedItemCardProps = {
   item: FeedItem;
   onOpenVerse: (reference: string) => void;
-}) {
+};
+
+export function FeedItemCard({ item, onOpenVerse }: FeedItemCardProps) {
   if (item.kind === "speakerHighlight") {
     return <HighlightBlock text={item.text} />;
   }
@@ -107,11 +98,11 @@ export function FeedItemCard({
   const surfaceClass = cn(
     "relative flex flex-1 flex-col gap-3",
     isAi
-      ? "rounded-3xl rounded-tl-md border border-dashed border-[color:var(--scriba-blue-soft)] bg-[color:var(--scriba-blue-soft)]/40 px-5 py-4"
-      : "rounded-[22px] p-5 animate-insight-gradient bg-[image:var(--session-surface-quote)] bg-[size:200%_100%]"
+      ? "rounded-3xl rounded-tl-md border border-dashed border-scriba-blue-soft bg-scriba-blue-soft/40 px-5 py-4"
+      : "rounded-5.5 p-5 animate-insight-gradient bg-[image:var(--session-surface-quote)] bg-[size:200%_100%]"
   );
 
-  const chipColor = isAi ? "text-[color:var(--scriba-ink-mute)]" : "text-[#7FA9CC]";
+  const chipColor = isAi ? "text-scriba-ink-mute" : "text-session-chip-ai";
 
   const card = (
     <article className={surfaceClass}>
@@ -137,11 +128,11 @@ export function FeedItemCard({
 
 function EchoBlock({ text }: { text: string }) {
   return (
-    <figure className="animate-content-fade my-2 flex flex-col gap-2 border-l-2 border-[color:var(--scriba-hairline)] py-1 pl-4">
-      <figcaption className="text-[10px] font-semibold uppercase tracking-[0.14em] text-[color:var(--scriba-ink-mute)]">
+    <figure className="animate-content-fade my-2 flex flex-col gap-2 border-l-2 border-scriba-hairline py-1 pl-4">
+      <figcaption className="text-[10px] font-semibold uppercase tracking-[0.14em] text-scriba-ink-mute">
         Frase para relembrar
       </figcaption>
-      <blockquote className="text-pretty text-base italic leading-relaxed text-[color:var(--scriba-ink)]/90 sm:text-lg">
+      <blockquote className="text-pretty text-base italic leading-relaxed text-scriba-ink/90 sm:text-lg">
         {text}
       </blockquote>
     </figure>
@@ -153,11 +144,11 @@ function HighlightBlock({ text }: { text: string }) {
     <figure className="animate-content-fade my-2 flex flex-col items-center gap-1.5 px-4 text-center sm:px-8">
       <span
         aria-hidden
-        className="select-none text-4xl font-semibold leading-none text-[color:var(--scriba-hairline-soft)]"
+        className="select-none text-4xl font-semibold leading-none text-scriba-hairline-soft"
       >
-        “
+        "
       </span>
-      <blockquote className="text-pretty text-lg font-medium leading-relaxed text-[color:var(--scriba-ink-strong)] sm:text-xl">
+      <blockquote className="text-pretty text-lg font-medium leading-relaxed text-scriba-ink-strong sm:text-xl">
         <span className="bg-[linear-gradient(transparent_58%,var(--session-highlight-yellow)_58%)] px-1 py-0.5 [box-decoration-break:clone] [-webkit-box-decoration-break:clone]">
           {text}
         </span>
@@ -166,12 +157,17 @@ function HighlightBlock({ text }: { text: string }) {
   );
 }
 
-function VerseText({ reference, initialText }: { reference: string; initialText: string }) {
+type VerseTextProps = {
+  reference: string;
+  initialText: string;
+};
+
+function VerseText({ reference, initialText }: VerseTextProps) {
   const state = useVerseFetch(initialText ? null : reference);
   const text = initialText || (state.status === "ok" ? state.text : "");
   if (text) {
     return (
-      <blockquote className="border-l-[3px] border-[#9FCBEC] pl-3.5 text-[15px] font-light italic leading-relaxed text-[#3E5164]">
+      <blockquote className="border-l-[3px] border-session-verse-border pl-3.5 text-[15px] font-light italic leading-relaxed text-session-verse-text">
         {text}
       </blockquote>
     );
@@ -187,15 +183,13 @@ function VerseText({ reference, initialText }: { reference: string; initialText:
   return null;
 }
 
-function FeedItemBody({
-  item,
-  onOpenVerse,
-  isAi,
-}: {
+type FeedItemBodyProps = {
   item: FeedItem;
   onOpenVerse: (reference: string) => void;
   isAi: boolean;
-}) {
+};
+
+function FeedItemBody({ item, onOpenVerse, isAi }: FeedItemBodyProps) {
   switch (item.kind) {
     case "citedVerse": {
       const parsed = parseVerseReference(item.reference);
@@ -206,13 +200,13 @@ function FeedItemBody({
             type="button"
             onClick={() => onOpenVerse(item.reference)}
             className={cn(
-              "self-start inline-flex items-center rounded-full bg-[color:var(--scriba-ink-strong)] px-4 py-1.5 text-xs font-semibold text-white transition-opacity outline-none",
+              "self-start inline-flex items-center rounded-full bg-scriba-ink-strong px-4 py-1.5 text-xs font-semibold text-white transition-opacity outline-none",
               "hover:opacity-85 focus-visible:ring-2 focus-visible:ring-ring/40"
             )}
           >
             {item.reference}
           </button>
-          <div className="text-[15px] font-light leading-relaxed text-[#3E5164]">
+          <div className="text-[15px] font-light leading-relaxed text-session-verse-text">
             <PassageVerses
               bookDisplay={parsed.bookDisplay}
               chapter={parsed.chapter}
@@ -228,10 +222,10 @@ function FeedItemBody({
     case "speakerCitation":
       return (
         <>
-          <blockquote className="border-l-[3px] border-[#9FCBEC] pl-3.5 text-[15px] font-light italic leading-relaxed text-[#3E5164]">
+          <blockquote className="border-l-[3px] border-session-verse-border pl-3.5 text-[15px] font-light italic leading-relaxed text-session-verse-text">
             {item.text}
           </blockquote>
-          <p className="text-xs font-medium text-[color:var(--scriba-ink-soft)]">— {item.author}</p>
+          <p className="text-xs font-medium text-scriba-ink-soft">— {item.author}</p>
         </>
       );
     case "relatedVerse":
@@ -252,7 +246,7 @@ function FeedItemBody({
             <p
               className={cn(
                 "text-xs font-light leading-relaxed",
-                isAi ? "text-[color:var(--scriba-ink-mute)]" : "text-[#3E5164]/75"
+                isAi ? "text-scriba-ink-mute" : "text-session-verse-text/75"
               )}
             >
               {item.reason}
@@ -263,25 +257,23 @@ function FeedItemBody({
     case "context":
       return (
         <>
-          <p className="text-pretty text-sm font-light leading-relaxed text-[color:var(--scriba-ink)]">
+          <p className="text-pretty text-sm font-light leading-relaxed text-scriba-ink">
             {item.text}
           </p>
           {item.source && isConcreteSource(item.source) ? (
-            <p className="text-[11px] italic font-light text-[color:var(--scriba-ink-mute)]">
-              — {item.source}
-            </p>
+            <p className="text-[11px] italic font-light text-scriba-ink-mute">— {item.source}</p>
           ) : null}
         </>
       );
     case "suggestedQuote":
       return (
         <>
-          <blockquote className="text-sm font-light italic leading-relaxed text-[color:var(--scriba-ink)]">
+          <blockquote className="text-sm font-light italic leading-relaxed text-scriba-ink">
             {item.text}
           </blockquote>
-          <p className="text-xs font-medium text-[color:var(--scriba-ink-soft)]">— {item.author}</p>
+          <p className="text-xs font-medium text-scriba-ink-soft">— {item.author}</p>
           {item.reason ? (
-            <p className="text-[11px] font-light leading-relaxed text-[color:var(--scriba-ink-mute)]">
+            <p className="text-[11px] font-light leading-relaxed text-scriba-ink-mute">
               {item.reason}
             </p>
           ) : null}

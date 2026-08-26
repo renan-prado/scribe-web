@@ -10,13 +10,12 @@ import {
 } from "@/components/ui/dialog";
 import { useVerseFetch } from "@/features/session/hooks/useVerseFetch";
 
-export function VerseDialog({
-  reference,
-  onOpenChange,
-}: {
+type VerseDialogProps = {
   reference: string | null;
   onOpenChange: (open: boolean) => void;
-}) {
+};
+
+export function VerseDialog({ reference, onOpenChange }: VerseDialogProps) {
   const state = useVerseFetch(reference);
   const open = reference !== null;
   const headerRef = state.status === "ok" ? state.reference : reference || "";
@@ -31,7 +30,7 @@ export function VerseDialog({
           </DialogTitle>
           <DialogDescription>Versículo sugerido pela IA</DialogDescription>
         </DialogHeader>
-        <div className="min-h-[80px]">
+        <div className="min-h-20">
           {state.status === "loading" ? (
             <div className="flex flex-col gap-2 pt-1">
               <div className="h-4 w-full animate-skeleton-shimmer rounded-md bg-muted" />

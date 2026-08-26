@@ -2,13 +2,12 @@
 
 import { cn } from "@/lib/utils";
 
-export function AiIcon({
-  className,
-  spinning = false,
-}: {
+type AiIconProps = {
   className?: string;
   spinning?: boolean;
-}) {
+};
+
+export function AiIcon({ className, spinning = false }: AiIconProps) {
   return (
     <svg
       viewBox="0 0 131 131"

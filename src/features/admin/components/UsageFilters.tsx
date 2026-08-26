@@ -12,7 +12,6 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
-import { ADMIN_CARD_SURFACE } from "@/features/admin/lib/surfaces";
 
 type Props = {
   users: { id: string; displayName: string | null; email: string | null }[];
@@ -81,7 +80,7 @@ export function UsageFilters({ users, routes, current }: Props) {
   }
 
   return (
-    <div className={`flex flex-col gap-4 p-5 ${ADMIN_CARD_SURFACE}`}>
+    <div className="flex flex-col gap-4 p-5 admin-card-surface">
       <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-5 lg:items-end">
         <div className="flex flex-col gap-1.5">
           <Label>Período</Label>

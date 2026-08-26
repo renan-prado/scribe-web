@@ -3,11 +3,12 @@ import { notFound, redirect } from "next/navigation";
 import { RecordingAudioOnly } from "@/features/session/components/RecordingAudioOnly";
 import { getSession } from "@/lib/db/sessions";
 
-export async function generateMetadata({
-  params,
-}: {
+type PageProps = {
   params: Promise<{ id: string }>;
-}): Promise<Metadata> {
+  searchParams: Promise<Search>;
+};
+
+export async function generateMetadata({ params }: PageProps): Promise<Metadata> {
   const { id } = await params;
   const session = await getSession(id);
   const name = session?.title?.trim() || "Gravação";
@@ -16,13 +17,7 @@ export async function generateMetadata({
 
 type Search = { autostart?: string };
 
-export default async function RecordingAudioPage({
-  params,
-  searchParams,
-}: {
-  params: Promise<{ id: string }>;
-  searchParams: Promise<Search>;
-}) {
+export default async function RecordingAudioPage({ params, searchParams }: PageProps) {
   const { id } = await params;
   const { autostart } = await searchParams;
   const session = await getSession(id);

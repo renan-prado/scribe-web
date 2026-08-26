@@ -45,7 +45,7 @@ export function StatusPhrases({ hasSummary }: { hasSummary: boolean }) {
       aria-live="polite"
       className="flex w-full items-center gap-2.5 text-left text-xs"
     >
-      <span className="mt-0 shrink-0 text-[color:var(--scriba-blue)]">
+      <span className="mt-0 shrink-0 text-scriba-blue">
         <SpinnerGlyph />
       </span>
       <span

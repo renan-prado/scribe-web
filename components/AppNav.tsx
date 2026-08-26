@@ -23,8 +23,8 @@ export function AppNav() {
             className={cn(
               "flex items-center gap-1.5 rounded-full px-3.5 py-1.5 text-sm font-medium transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring/40",
               active
-                ? "bg-[color:var(--scriba-blue-soft)] text-[color:var(--scriba-blue)]"
-                : "text-[color:var(--scriba-ink-soft)] hover:bg-[color:var(--scriba-blue-soft)]/60 hover:text-[color:var(--scriba-blue)]"
+                ? "bg-scriba-blue-soft text-scriba-blue"
+                : "text-scriba-ink-soft hover:bg-scriba-blue-soft/60 hover:text-scriba-blue"
             )}
           >
             <Icon size={14} strokeWidth={2} aria-hidden />

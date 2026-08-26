@@ -46,15 +46,13 @@ export function NavLink({
   );
 }
 
-function NavLinkContent({
-  children,
-  contentClassName,
-  spinner,
-}: {
+type NavLinkContentProps = {
   children: ReactNode;
   contentClassName?: string;
   spinner: "inline" | "overlay" | "none";
-}) {
+};
+
+function NavLinkContent({ children, contentClassName, spinner }: NavLinkContentProps) {
   const { pending } = useLinkStatus();
   const wrapperClass = contentClassName ?? "inline-flex items-center gap-1.5";
   return (
@@ -72,7 +70,7 @@ function NavLinkContent({
           aria-hidden
           className="pointer-events-none absolute inset-0 flex items-center justify-center rounded-[inherit] bg-white/40 backdrop-blur-[1px]"
         >
-          <Loader2 className="size-5 animate-spin text-[color:var(--scriba-blue)]" />
+          <Loader2 className="size-5 animate-spin text-scriba-blue" />
         </span>
       ) : null}
     </>

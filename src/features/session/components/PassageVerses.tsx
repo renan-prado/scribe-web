@@ -18,17 +18,14 @@ import { cn } from "@/lib/utils";
  * out of order. Verses that stay "not ready" don't hold the passage back
  * forever — see the readySet CSS-hidden pattern below.
  */
-export function PassageVerses({
-  bookDisplay,
-  chapter,
-  startVerse,
-  endVerse,
-}: {
+type PassageVersesProps = {
   bookDisplay: string;
   chapter: number;
   startVerse: number;
   endVerse: number;
-}) {
+};
+
+export function PassageVerses({ bookDisplay, chapter, startVerse, endVerse }: PassageVersesProps) {
   const [readySet, setReadySet] = useState<Set<number>>(new Set());
   const handleReady = useCallback((v: number) => {
     setReadySet((prev) => {
@@ -66,17 +63,14 @@ export function PassageVerses({
   );
 }
 
-function VerseLine({
-  reference,
-  verseNumber,
-  hidden,
-  onReady,
-}: {
+type VerseLineProps = {
   reference: string;
   verseNumber: number;
   hidden: boolean;
   onReady: (v: number) => void;
-}) {
+};
+
+function VerseLine({ reference, verseNumber, hidden, onReady }: VerseLineProps) {
   const state = useVerseFetch(reference);
   const text = state.status === "ok" ? state.text : "";
   const loading = state.status === "idle" || state.status === "loading";

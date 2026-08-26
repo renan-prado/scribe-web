@@ -13,15 +13,13 @@ import { cn } from "@/lib/utils";
  * Design prototype exactly (rounded square, staggered lines, hollow circle,
  * filled dot) rather than lucide glyphs.
  */
-export function MobileBottomNav({
-  avatarUrl,
-  displayName,
-  email,
-}: {
+type MobileBottomNavProps = {
   avatarUrl?: string | null;
   displayName?: string | null;
   email?: string | null;
-} = {}) {
+};
+
+export function MobileBottomNav({ avatarUrl, displayName, email }: MobileBottomNavProps = {}) {
   const pathname = usePathname() ?? "";
 
   const hide =
@@ -44,7 +42,7 @@ export function MobileBottomNav({
       />
       <nav
         aria-label="Navegação principal"
-        className="pointer-events-auto relative flex h-[76px] items-center justify-around bg-white pb-2 shadow-[0_-6px_22px_rgba(79,168,240,0.12)]"
+        className="pointer-events-auto relative flex h-19 items-center justify-around bg-white pb-2 shadow-[0_-6px_22px_rgba(79,168,240,0.12)]"
       >
         <TabLink
           href="/feed"
@@ -54,10 +52,8 @@ export function MobileBottomNav({
             <span
               aria-hidden
               className={cn(
-                "block size-4 rounded-[5px] border-[2px]",
-                isFeed
-                  ? "border-[color:var(--scriba-blue)]"
-                  : "border-[color:var(--scriba-ink-mute)]"
+                "block size-4 rounded-[5px] border-2",
+                isFeed ? "border-scriba-blue" : "border-scriba-ink-mute"
               )}
             />
           }
@@ -71,33 +67,33 @@ export function MobileBottomNav({
               <span
                 className={cn(
                   "h-0.5 w-full rounded-full",
-                  isLibrary ? "bg-[color:var(--scriba-blue)]" : "bg-[color:var(--scriba-ink-mute)]"
+                  isLibrary ? "bg-scriba-blue" : "bg-scriba-ink-mute"
                 )}
               />
               <span
                 className={cn(
                   "h-0.5 w-full rounded-full",
-                  isLibrary ? "bg-[color:var(--scriba-blue)]" : "bg-[color:var(--scriba-ink-mute)]"
+                  isLibrary ? "bg-scriba-blue" : "bg-scriba-ink-mute"
                 )}
               />
               <span
                 className={cn(
-                  "h-0.5 w-[10px] rounded-full",
-                  isLibrary ? "bg-[color:var(--scriba-blue)]" : "bg-[color:var(--scriba-ink-mute)]"
+                  "h-0.5 w-2.5 rounded-full",
+                  isLibrary ? "bg-scriba-blue" : "bg-scriba-ink-mute"
                 )}
               />
             </span>
           }
         />
-        <span className="w-[72px] shrink-0" aria-hidden />
+        <span className="w-18 shrink-0" aria-hidden />
         <TabButton
           label="Buscar"
           disabled
-          className="text-[color:var(--scriba-ink-mute)]/50"
+          className="text-scriba-ink-mute/50"
           icon={
             <span
               aria-hidden
-              className="block size-[15px] rounded-full border-[2px] border-[color:var(--scriba-ink-mute)]/40"
+              className="block size-[15px] rounded-full border-2 border-scriba-ink-mute/40"
             />
           }
         />
@@ -109,11 +105,11 @@ export function MobileBottomNav({
             <Avatar
               className={cn(
                 "size-5 rounded-full ring-2",
-                isProfile ? "ring-[color:var(--scriba-blue)]" : "ring-transparent"
+                isProfile ? "ring-scriba-blue" : "ring-transparent"
               )}
             >
               {avatarUrl ? <AvatarImage src={avatarUrl} alt={displayName ?? "Perfil"} /> : null}
-              <AvatarFallback className="bg-[color:var(--scriba-blue-soft)] text-[9px] font-semibold text-[color:var(--scriba-blue)]">
+              <AvatarFallback className="bg-scriba-blue-soft text-[9px] font-semibold text-scriba-blue">
                 {profileInitials(displayName, email)}
               </AvatarFallback>
             </Avatar>
@@ -125,9 +121,9 @@ export function MobileBottomNav({
             trigger={
               <span
                 className={cn(
-                  "flex size-16 flex-col items-center justify-center gap-1 rounded-full bg-[color:var(--scriba-blue)] text-white",
-                  "border-[2px] border-white shadow-[0_10px_22px_rgba(79,168,240,0.42)] transition-colors",
-                  "hover:bg-[color:var(--scriba-blue-hover)]"
+                  "flex size-16 flex-col items-center justify-center gap-1 rounded-full bg-scriba-blue text-white",
+                  "border-2 border-white shadow-[0_10px_22px_rgba(79,168,240,0.42)] transition-colors",
+                  "hover:bg-scriba-blue-hover"
                 )}
               >
                 <span aria-hidden className="block h-[15px] w-[11px] rounded-[6px] bg-white" />
@@ -141,17 +137,14 @@ export function MobileBottomNav({
   );
 }
 
-function TabLink({
-  href,
-  label,
-  active,
-  icon,
-}: {
+type TabLinkProps = {
   href: string;
   label: string;
   active: boolean;
   icon: ReactNode;
-}) {
+};
+
+function TabLink({ href, label, active, icon }: TabLinkProps) {
   return (
     <NavLink
       href={href}
@@ -159,7 +152,7 @@ function TabLink({
       contentClassName="flex flex-col items-center gap-1.5"
       className={cn(
         "rounded-md px-2 py-1 text-[10px] font-medium transition-colors",
-        active ? "text-[color:var(--scriba-blue)]" : "text-[color:var(--scriba-ink-mute)]"
+        active ? "text-scriba-blue" : "text-scriba-ink-mute"
       )}
     >
       {icon}
@@ -168,23 +161,20 @@ function TabLink({
   );
 }
 
-function TabButton({
-  label,
-  icon,
-  disabled,
-  className,
-}: {
+type TabButtonProps = {
   label: string;
   icon: ReactNode;
   disabled?: boolean;
   className?: string;
-}) {
+};
+
+function TabButton({ label, icon, disabled, className }: TabButtonProps) {
   return (
     <button
       type="button"
       disabled={disabled}
       className={cn(
-        "flex flex-col items-center gap-1.5 rounded-md px-2 py-1 text-[10px] font-medium text-[color:var(--scriba-ink-mute)] transition-colors",
+        "flex flex-col items-center gap-1.5 rounded-md px-2 py-1 text-[10px] font-medium text-scriba-ink-mute transition-colors",
         disabled && "cursor-default",
         className
       )}

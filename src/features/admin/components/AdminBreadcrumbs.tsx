@@ -35,13 +35,11 @@ export function AdminBreadcrumbs() {
             <Fragment key={item.href}>
               <BreadcrumbItem>
                 {isLast ? (
-                  <BreadcrumbPage className="text-[color:var(--scriba-ink-strong)]">
-                    {item.label}
-                  </BreadcrumbPage>
+                  <BreadcrumbPage className="text-scriba-ink-strong">{item.label}</BreadcrumbPage>
                 ) : (
                   <BreadcrumbLink
                     href={item.href}
-                    className="text-[color:var(--scriba-ink-mute)] hover:text-[color:var(--scriba-ink)]"
+                    className="text-scriba-ink-mute hover:text-scriba-ink"
                   >
                     {item.label}
                   </BreadcrumbLink>

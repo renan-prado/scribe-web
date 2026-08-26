@@ -38,19 +38,15 @@ function initialsOf(name: string): string {
   return `${parts[0][0] ?? ""}${parts[parts.length - 1][0] ?? ""}`.toUpperCase();
 }
 
-function EditDialog({
-  open,
-  onOpenChange,
-  heading,
-  currentValue,
-  onSave,
-}: {
+type EditDialogProps = {
   open: boolean;
   onOpenChange: (open: boolean) => void;
   heading: string;
   currentValue: string;
   onSave: (value: string) => void;
-}) {
+};
+
+function EditDialog({ open, onOpenChange, heading, currentValue, onSave }: EditDialogProps) {
   const [draft, setDraft] = useState(currentValue);
 
   useEffect(() => {
@@ -84,6 +80,19 @@ function EditDialog({
   );
 }
 
+type RecordingHeaderProps = {
+  title: string;
+  startedAt: Date | null;
+  speakerName: string;
+  speakerLocation: string;
+  onTitleChange: (title: string) => void;
+  onTitleLock: () => void;
+  onSpeakerNameChange: (name: string) => void;
+  onSpeakerLocationChange: (location: string) => void;
+  menu: React.ReactNode;
+  saved?: boolean;
+};
+
 export function RecordingHeader({
   title,
   startedAt,
@@ -95,18 +104,7 @@ export function RecordingHeader({
   onSpeakerLocationChange,
   menu,
   saved = false,
-}: {
-  title: string;
-  startedAt: Date | null;
-  speakerName: string;
-  speakerLocation: string;
-  onTitleChange: (title: string) => void;
-  onTitleLock: () => void;
-  onSpeakerNameChange: (name: string) => void;
-  onSpeakerLocationChange: (location: string) => void;
-  menu: React.ReactNode;
-  saved?: boolean;
-}) {
+}: RecordingHeaderProps) {
   const [nameDialogOpen, setNameDialogOpen] = useState(false);
   const [locationDialogOpen, setLocationDialogOpen] = useState(false);
   const [titleDialogOpen, setTitleDialogOpen] = useState(false);
@@ -124,23 +122,21 @@ export function RecordingHeader({
             onClick={() => setNameDialogOpen(true)}
             className={cn(
               "group flex items-center gap-2 rounded-full px-1 -mx-1 py-0.5 outline-none transition-colors",
-              "hover:bg-[color:var(--scriba-blue-soft)]/60 focus-visible:ring-2 focus-visible:ring-ring/40"
+              "hover:bg-scriba-blue-soft/60 focus-visible:ring-2 focus-visible:ring-ring/40"
             )}
           >
-            <span className="flex size-6 items-center justify-center rounded-full bg-[color:var(--scriba-blue-soft)] text-[10px] font-semibold text-[color:var(--scriba-blue)]">
+            <span className="flex size-6 items-center justify-center rounded-full bg-scriba-blue-soft text-[10px] font-semibold text-scriba-blue">
               {initials}
             </span>
-            <span className="text-sm font-medium leading-none text-[color:var(--scriba-ink)]">
-              {speakerName}
-            </span>
-            <Pencil className="size-3 opacity-0 text-[color:var(--scriba-ink-soft)] transition-opacity group-hover:opacity-60" />
+            <span className="text-sm font-medium leading-none text-scriba-ink">{speakerName}</span>
+            <Pencil className="size-3 opacity-0 text-scriba-ink-soft transition-opacity group-hover:opacity-60" />
           </button>
           <div className="flex items-center gap-2">
             {saved ? (
               <span
                 role="status"
                 aria-label="Sessão salva"
-                className="inline-flex items-center gap-1.5 rounded-full bg-[color:var(--scriba-mint)] px-2.5 py-1 text-[10px] font-semibold uppercase tracking-wider text-[#3F7F66]"
+                className="inline-flex items-center gap-1.5 rounded-full bg-scriba-mint px-2.5 py-1 text-[10px] font-semibold uppercase tracking-wider text-[#3F7F66]"
               >
                 <span className="size-1.5 rounded-full bg-[#4E9C7F]" />
                 Salvo
@@ -154,15 +150,15 @@ export function RecordingHeader({
         <button
           type="button"
           onClick={() => setTitleDialogOpen(true)}
-          className="group -mx-1 rounded-md px-1 py-0.5 text-left transition-colors hover:bg-[color:var(--scriba-blue-soft)]/60"
+          className="group -mx-1 rounded-md px-1 py-0.5 text-left transition-colors hover:bg-scriba-blue-soft/60"
         >
           <h1
             key={displayTitle}
-            className="animate-content-fade font-heading text-2xl font-semibold leading-tight tracking-tight text-[color:var(--scriba-ink-strong)] sm:text-3xl md:text-4xl"
+            className="animate-content-fade font-heading text-2xl font-semibold leading-tight tracking-tight text-scriba-ink-strong sm:text-3xl md:text-4xl"
             suppressHydrationWarning
           >
             {displayTitle}
-            <Pencil className="ml-2 inline size-4 align-middle opacity-0 text-[color:var(--scriba-ink-mute)] transition-opacity group-hover:opacity-60" />
+            <Pencil className="ml-2 inline size-4 align-middle opacity-0 text-scriba-ink-mute transition-opacity group-hover:opacity-60" />
           </h1>
         </button>
 
@@ -171,14 +167,14 @@ export function RecordingHeader({
           onClick={() => setLocationDialogOpen(true)}
           className={cn(
             "group -mx-1 mt-1 flex w-fit items-center gap-1.5 rounded-md px-1 py-0.5 outline-none transition-colors",
-            "hover:bg-[color:var(--scriba-blue-soft)]/60 focus-visible:ring-2 focus-visible:ring-ring/40"
+            "hover:bg-scriba-blue-soft/60 focus-visible:ring-2 focus-visible:ring-ring/40"
           )}
         >
-          <MapPin className="size-3 shrink-0 text-[color:var(--scriba-ink-mute)]" />
-          <span className="text-xs font-light leading-none text-[color:var(--scriba-ink-mute)]">
+          <MapPin className="size-3 shrink-0 text-scriba-ink-mute" />
+          <span className="text-xs font-light leading-none text-scriba-ink-mute">
             {speakerLocation}
           </span>
-          <Pencil className="size-3 opacity-0 text-[color:var(--scriba-ink-mute)] transition-opacity group-hover:opacity-60" />
+          <Pencil className="size-3 opacity-0 text-scriba-ink-mute transition-opacity group-hover:opacity-60" />
         </button>
       </header>
 

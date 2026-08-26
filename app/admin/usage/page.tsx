@@ -12,7 +12,6 @@ import { AdminPageHeader } from "@/features/admin/components/AdminPageHeader";
 import { CopyButton } from "@/features/admin/components/CopyButton";
 import { FxRateBadge } from "@/features/admin/components/FxRateBadge";
 import { UsageFilters } from "@/features/admin/components/UsageFilters";
-import { ADMIN_CARD_SURFACE, ADMIN_TABLE_SURFACE } from "@/features/admin/lib/surfaces";
 import {
   type AdminUsageSummary,
   listUsersForFilter,
@@ -21,6 +20,7 @@ import {
 } from "@/lib/db/admin/usage";
 import { type MoneyFormatter, makeMoneyFormatter } from "@/lib/fx/format";
 import { getUsdToBrl } from "@/lib/fx/usd-brl";
+import { cn } from "@/lib/utils";
 
 export const metadata: Metadata = { title: "Uso & custos" };
 export const dynamic = "force-dynamic";
@@ -69,11 +69,11 @@ function parseModeFilter(value: string | undefined): "live" | "audio_only" | und
   return undefined;
 }
 
-export default async function AdminUsagePage({
-  searchParams,
-}: {
+type PageProps = {
   searchParams: Promise<SearchParams>;
-}) {
+};
+
+export default async function AdminUsagePage({ searchParams }: PageProps) {
   const sp = await searchParams;
   const range = sp.range ?? "30d";
 
@@ -123,60 +123,57 @@ export default async function AdminUsagePage({
   );
 }
 
-const SURFACE_CARD = `flex flex-col gap-1 p-5 ${ADMIN_CARD_SURFACE}`;
+const SURFACE_CARD = "flex flex-col gap-1 p-5 admin-card-surface";
 
-const TABLE_SURFACE = ADMIN_TABLE_SURFACE;
+const TABLE_SURFACE = "admin-table admin-card-surface overflow-hidden";
 
 const KPI_TONES = [
-  { bg: "#EAF4FE", label: "#3E86C4" },
-  { bg: "#FAEAE5", label: "#A8715C" },
-  { bg: "#FDF3DD", label: "#C79B2A" },
-  { bg: "#E4EFEA", label: "#4E8570" },
+  { badge: "bg-scriba-blue-soft", label: "text-scriba-blue-ink" },
+  { badge: "bg-scriba-rose", label: "text-scriba-rose-accent" },
+  { badge: "bg-scriba-cream", label: "text-scriba-cream-accent" },
+  { badge: "bg-scriba-mint", label: "text-scriba-mint-accent" },
 ] as const;
 
-function Kpi({
-  label,
-  value,
-  hint,
-  tone,
-}: {
+type KpiProps = {
   label: string;
   value: string;
   hint?: string;
   tone: (typeof KPI_TONES)[number];
-}) {
+};
+
+function Kpi({ label, value, hint, tone }: KpiProps) {
   return (
     <div className={SURFACE_CARD}>
       <div
-        className="mb-1 inline-flex w-fit items-center gap-1.5 rounded-full px-2.5 py-1"
-        style={{ background: tone.bg }}
+        className={cn(
+          "mb-1 inline-flex w-fit items-center gap-1.5 rounded-full px-2.5 py-1",
+          tone.badge
+        )}
       >
-        <span
-          className="text-[10px] font-semibold uppercase tracking-[0.12em]"
-          style={{ color: tone.label }}
-        >
+        <span className={cn("text-[10px] font-semibold uppercase tracking-[0.12em]", tone.label)}>
           {label}
         </span>
       </div>
-      <div className="text-[22px] font-semibold tracking-tight text-[color:var(--scriba-ink-strong)]">
-        {value}
-      </div>
-      {hint ? (
-        <p className="text-[12px] font-light text-[color:var(--scriba-ink-mute)]">{hint}</p>
-      ) : null}
+      <div className="text-[22px] font-semibold tracking-tight text-scriba-ink-strong">{value}</div>
+      {hint ? <p className="text-[12px] font-light text-scriba-ink-mute">{hint}</p> : null}
     </div>
   );
 }
 
 function SectionLabel({ children }: { children: React.ReactNode }) {
   return (
-    <h2 className="text-[11px] font-semibold uppercase tracking-[0.14em] text-[color:var(--scriba-ink-mute)]">
+    <h2 className="text-[11px] font-semibold uppercase tracking-[0.14em] text-scriba-ink-mute">
       {children}
     </h2>
   );
 }
 
-function TotalsGrid({ summary, money }: { summary: AdminUsageSummary; money: MoneyFormatter }) {
+type TotalsGridProps = {
+  summary: AdminUsageSummary;
+  money: MoneyFormatter;
+};
+
+function TotalsGrid({ summary, money }: TotalsGridProps) {
   const { totals, overallCostPerMinuteUsd } = summary;
   return (
     <section className="grid gap-3 sm:grid-cols-2 lg:grid-cols-4">
@@ -208,13 +205,12 @@ function TotalsGrid({ summary, money }: { summary: AdminUsageSummary; money: Mon
   );
 }
 
-function RouteAndUserTables({
-  summary,
-  money,
-}: {
+type RouteAndUserTablesProps = {
   summary: AdminUsageSummary;
   money: MoneyFormatter;
-}) {
+};
+
+function RouteAndUserTables({ summary, money }: RouteAndUserTablesProps) {
   return (
     <section className="grid gap-4 lg:grid-cols-2">
       <div className="flex flex-col gap-2">
@@ -238,9 +234,7 @@ function RouteAndUserTables({
               ) : (
                 summary.byRoute.map((r) => (
                   <TableRow key={r.route}>
-                    <TableCell className="font-mono text-xs text-[color:var(--scriba-ink)]">
-                      {r.route}
-                    </TableCell>
+                    <TableCell className="font-mono text-xs text-scriba-ink">{r.route}</TableCell>
                     <TableCell className="text-right">{INT.format(r.events)}</TableCell>
                     <TableCell className="text-right font-mono text-xs">
                       {money(r.totalCostUsd, "fine")}
@@ -276,13 +270,11 @@ function RouteAndUserTables({
                   <TableRow key={u.userId}>
                     <TableCell>
                       <div className="flex flex-col">
-                        <span className="text-sm text-[color:var(--scriba-ink)]">
+                        <span className="text-sm text-scriba-ink">
                           {u.displayName?.trim() || u.email || u.userId.slice(0, 8)}
                         </span>
                         {u.email ? (
-                          <span className="text-[0.7rem] text-[color:var(--scriba-ink-mute)]">
-                            {u.email}
-                          </span>
+                          <span className="text-[0.7rem] text-scriba-ink-mute">{u.email}</span>
                         ) : null}
                       </div>
                     </TableCell>
@@ -329,15 +321,13 @@ function ModeBadge({ mode }: { mode: "live" | "audio_only" | null }) {
   return <span className="text-[10px] text-muted-foreground">—</span>;
 }
 
-function SessionsTable({
-  summary,
-  money,
-  filters,
-}: {
+type SessionsTableProps = {
   summary: AdminUsageSummary;
   money: MoneyFormatter;
   filters: SearchParams;
-}) {
+};
+
+function SessionsTable({ summary, money, filters }: SessionsTableProps) {
   return (
     <section className="flex flex-col gap-2">
       <SectionLabel>Sessões</SectionLabel>
@@ -366,18 +356,18 @@ function SessionsTable({
                 <TableRow key={s.sessionId} className="group">
                   <TableCell>
                     <Link
-                      className="flex flex-col text-[color:var(--scriba-ink)] transition-colors hover:text-[color:var(--scriba-blue)]"
+                      className="flex flex-col text-scriba-ink transition-colors hover:text-scriba-blue"
                       href={sessionFilterHref(filters, s.sessionId)}
                       title="Filtrar por esta sessão"
                     >
                       <span className="truncate font-medium">
                         {s.title?.trim() || "Sessão sem título"}
                       </span>
-                      <span className="text-[0.7rem] font-light text-[color:var(--scriba-ink-mute)]">
+                      <span className="text-[0.7rem] font-light text-scriba-ink-mute">
                         {s.createdAt ? DATE_FMT.format(new Date(s.createdAt)) : ""}
                       </span>
                     </Link>
-                    <span className="mt-0.5 flex items-center font-mono text-[0.65rem] text-[color:var(--scriba-ink-mute)]/70">
+                    <span className="mt-0.5 flex items-center font-mono text-[0.65rem] text-scriba-ink-mute/70">
                       {s.sessionId.slice(0, 8)}…
                       <CopyButton value={s.sessionId} />
                     </span>

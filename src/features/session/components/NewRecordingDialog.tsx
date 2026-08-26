@@ -92,9 +92,9 @@ export function NewRecordingDialog({ trigger }: { trigger?: ReactNode }) {
           trigger
             ? "contents"
             : cn(
-                "inline-flex h-[34px] items-center gap-2 rounded-full bg-[color:var(--scriba-blue)] px-4 text-[13px] font-semibold text-white shadow-[0_8px_20px_rgba(79,168,240,0.32)] transition-colors",
-                "hover:bg-[color:var(--scriba-blue-hover)]",
-                "focus-visible:outline-none focus-visible:ring-4 focus-visible:ring-[color:var(--scriba-blue)]/30"
+                "inline-flex h-8.5 items-center gap-2 rounded-full bg-scriba-blue px-4 text-[13px] font-semibold text-white shadow-[0_8px_20px_rgba(79,168,240,0.32)] transition-colors",
+                "hover:bg-scriba-blue-hover",
+                "focus-visible:outline-none focus-visible:ring-4 focus-visible:ring-scriba-blue/30"
               )
         )}
       >
@@ -106,13 +106,13 @@ export function NewRecordingDialog({ trigger }: { trigger?: ReactNode }) {
           </>
         )}
       </DialogTrigger>
-      <DialogContent className="flex flex-col items-center gap-8 rounded-[28px] bg-white px-8 py-14">
+      <DialogContent className="flex flex-col items-center gap-8 rounded-7 bg-white px-8 py-14">
         <DialogTitle className="sr-only">Nova gravação</DialogTitle>
 
         <div
           role="tablist"
           aria-label="Modo de gravação"
-          className="inline-flex rounded-full bg-[color:var(--scriba-blue-soft)]/50 p-1 text-[12px] font-semibold"
+          className="inline-flex rounded-full bg-scriba-blue-soft/50 p-1 text-[12px] font-semibold"
         >
           {(Object.keys(MODE_COPY) as Mode[]).map((m) => {
             const active = mode === m;
@@ -128,9 +128,9 @@ export function NewRecordingDialog({ trigger }: { trigger?: ReactNode }) {
                 className={cn(
                   "flex flex-col items-center gap-0.5 rounded-full px-4 py-1.5 leading-tight transition-colors",
                   active
-                    ? "bg-white text-[color:var(--scriba-blue)] shadow-[0_2px_10px_rgba(79,168,240,0.18)]"
-                    : "text-[color:var(--scriba-ink-mute)] hover:text-[color:var(--scriba-ink)]",
-                  "focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[color:var(--scriba-blue)]/40",
+                    ? "bg-white text-scriba-blue shadow-[0_2px_10px_rgba(79,168,240,0.18)]"
+                    : "text-scriba-ink-mute hover:text-scriba-ink",
+                  "focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-scriba-blue/40",
                   "disabled:cursor-not-allowed"
                 )}
               >
@@ -138,12 +138,12 @@ export function NewRecordingDialog({ trigger }: { trigger?: ReactNode }) {
                 <span
                   className={cn(
                     "inline-flex items-center gap-1 text-[10px] font-medium tabular-nums",
-                    active ? "text-[color:var(--scriba-blue)]/70" : "text-current opacity-70"
+                    active ? "text-scriba-blue/70" : "text-current opacity-70"
                   )}
                 >
                   <span
                     aria-hidden
-                    className="block size-[7px] h-[8px] bg-[#F8C64B] [clip-path:polygon(50%_0,100%_25%,100%_75%,50%_100%,0_75%,0_25%)]"
+                    className="block size-[7px] h-2 bg-scriba-yellow [clip-path:polygon(50%_0,100%_25%,100%_75%,50%_100%,0_75%,0_25%)]"
                   />
                   {costPerMinute}/min
                 </span>
@@ -152,7 +152,7 @@ export function NewRecordingDialog({ trigger }: { trigger?: ReactNode }) {
           })}
         </div>
 
-        <p className="max-w-xs text-pretty text-center text-sm font-light leading-relaxed text-[color:var(--scriba-ink-soft)]">
+        <p className="max-w-xs text-pretty text-center text-sm font-light leading-relaxed text-scriba-ink-soft">
           {loading ? "Preparando sessão…" : copy.caption}
         </p>
 
@@ -161,7 +161,7 @@ export function NewRecordingDialog({ trigger }: { trigger?: ReactNode }) {
             return (
               <span
                 aria-hidden
-                className="mt-4 inline-block h-[54px] w-[220px] animate-pulse rounded-full bg-[color:var(--scriba-ink-mute)]/15"
+                className="mt-4 inline-block h-13.5 w-55 animate-pulse rounded-full bg-scriba-ink-mute/15"
               />
             );
           }
@@ -175,10 +175,10 @@ export function NewRecordingDialog({ trigger }: { trigger?: ReactNode }) {
               className={cn(
                 "mt-4 inline-flex items-center gap-2.5 rounded-full px-7 py-3.5 text-[15px] font-semibold shadow-[0_10px_24px_rgba(79,168,240,0.32)] transition-colors",
                 insufficient
-                  ? "cursor-not-allowed bg-[color:var(--scriba-ink-mute)]/25 text-[color:var(--scriba-ink-mute)] shadow-none"
-                  : "bg-[color:var(--scriba-blue)] text-white hover:bg-[color:var(--scriba-blue-hover)]",
+                  ? "cursor-not-allowed bg-scriba-ink-mute/25 text-scriba-ink-mute shadow-none"
+                  : "bg-scriba-blue text-white hover:bg-scriba-blue-hover",
                 "disabled:cursor-not-allowed disabled:opacity-90",
-                "focus-visible:outline-none focus-visible:ring-4 focus-visible:ring-[color:var(--scriba-blue)]/30"
+                "focus-visible:outline-none focus-visible:ring-4 focus-visible:ring-scriba-blue/30"
               )}
             >
               <Mic aria-hidden className="size-4" strokeWidth={2.4} />

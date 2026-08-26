@@ -13,15 +13,7 @@ export function CoinCost({ count, suffix }: { count: number; suffix?: string }) 
       aria-label={label}
       className="inline-flex items-center gap-1 rounded-full bg-white/18 px-2 py-0.5 text-[11px] font-semibold tabular-nums text-white"
     >
-      <span
-        aria-hidden
-        className="block bg-white"
-        style={{
-          width: "9px",
-          height: "10.25px",
-          clipPath: "polygon(50% 0, 100% 25%, 100% 75%, 50% 100%, 0 75%, 0 25%)",
-        }}
-      />
+      <span aria-hidden className="coin-hex block h-[10.25px] w-[9px] bg-white" />
       {count}
       {suffix ? <span className="font-medium opacity-80">{suffix}</span> : null}
     </span>

@@ -117,28 +117,26 @@ export default async function HomePage() {
   return (
     <main className="mx-auto flex w-full max-w-3xl flex-col gap-6 px-4 py-6 sm:gap-8 sm:px-6 sm:py-8">
       <div className="flex items-center justify-between gap-3">
-        <p className="text-xs font-medium text-[color:var(--scriba-ink-soft)]">{todayLabel(now)}</p>
+        <p className="text-xs font-medium text-scriba-ink-soft">{todayLabel(now)}</p>
       </div>
 
       <div className="flex flex-col gap-1.5">
-        <h1 className="font-heading text-2xl font-semibold leading-tight tracking-tight text-[color:var(--scriba-ink-strong)] sm:text-3xl">
+        <h1 className="font-heading text-2xl font-semibold leading-tight tracking-tight text-scriba-ink-strong sm:text-3xl">
           {greeting}, {firstName}!
         </h1>
-        <p className="text-sm font-light text-[color:var(--scriba-ink-soft)]">
-          {dailyPrompt(now.getDate())}
-        </p>
+        <p className="text-sm font-light text-scriba-ink-soft">{dailyPrompt(now.getDate())}</p>
       </div>
 
       <div className="flex flex-col gap-4">
         {sessions.length === 0 ? (
-          <div className="flex flex-col items-start gap-4 rounded-3xl border border-dashed border-[color:var(--scriba-hairline-soft)] bg-white p-6 shadow-[0_6px_22px_rgba(79,168,240,0.08)]">
+          <div className="flex flex-col items-start gap-4 rounded-3xl border border-dashed border-scriba-hairline-soft bg-white p-6 shadow-[0_6px_22px_rgba(79,168,240,0.08)]">
             <div className="flex items-center gap-2">
-              <div className="h-1.5 w-6 rounded-full bg-[color:var(--scriba-yellow)]" />
-              <span className="text-[11px] font-semibold uppercase tracking-wider text-[color:var(--scriba-yellow-hover)]">
+              <div className="h-1.5 w-6 rounded-full bg-scriba-yellow" />
+              <span className="text-[11px] font-semibold uppercase tracking-wider text-scriba-yellow-hover">
                 Comece por aqui
               </span>
             </div>
-            <p className="text-pretty text-lg leading-snug text-[color:var(--scriba-ink-strong)]">
+            <p className="text-pretty text-lg leading-snug text-scriba-ink-strong">
               Nenhum sermão gravado ainda. Comece pela primeira gravação e o Scriba passa a montar
               seu feed a partir do que você ouvir.
             </p>
@@ -160,6 +158,16 @@ export default async function HomePage() {
   );
 }
 
+type ReflectionCardProps = {
+  sessionId: string;
+  title: string;
+  speaker: string | null;
+  date: string;
+  shortSummary: string | null;
+  href: string;
+  hasDeepening: boolean;
+};
+
 function ReflectionCard({
   sessionId,
   title,
@@ -168,36 +176,26 @@ function ReflectionCard({
   shortSummary,
   href,
   hasDeepening,
-}: {
-  sessionId: string;
-  title: string;
-  speaker: string | null;
-  date: string;
-  shortSummary: string | null;
-  href: string;
-  hasDeepening: boolean;
-}) {
+}: ReflectionCardProps) {
   const quote =
     shortSummary?.trim() ||
     "“A nossa confiança em Deus não nasce da ausência de incertezas, mas de saber quem Ele é.”";
   const speakerLine = [speaker, date].filter(Boolean).join(" · ");
   return (
-    <article className="flex flex-col gap-4 rounded-[24px] border border-[color:var(--scriba-hairline-soft)] bg-white p-6 shadow-[0_6px_22px_rgba(79,168,240,0.13)]">
+    <article className="flex flex-col gap-4 rounded-6 border border-scriba-hairline-soft bg-white p-6 shadow-[0_6px_22px_rgba(79,168,240,0.13)]">
       <div className="flex items-center gap-2">
-        <div className="h-1.5 w-6 rounded-full bg-[color:var(--scriba-hairline)]" />
-        <span className="text-[11px] font-semibold uppercase tracking-wider text-[color:var(--scriba-ink-mute)]">
+        <div className="h-1.5 w-6 rounded-full bg-scriba-hairline" />
+        <span className="text-[11px] font-semibold uppercase tracking-wider text-scriba-ink-mute">
           Sobre a última gravação
         </span>
       </div>
-      <p className="max-w-[500px] text-pretty text-lg font-medium leading-snug text-[color:var(--scriba-ink-strong)] sm:text-xl">
+      <p className="max-w-[500px] text-pretty text-lg font-medium leading-snug text-scriba-ink-strong sm:text-xl">
         {quote}
       </p>
-      <div className="flex flex-col gap-0.5 border-t border-[color:var(--scriba-hairline)] pt-3">
-        <span className="text-sm font-semibold text-[color:var(--scriba-ink)]">{title}</span>
+      <div className="flex flex-col gap-0.5 border-t border-scriba-hairline pt-3">
+        <span className="text-sm font-semibold text-scriba-ink">{title}</span>
         {speakerLine ? (
-          <span className="text-xs font-light text-[color:var(--scriba-ink-mute)]">
-            {speakerLine}
-          </span>
+          <span className="text-xs font-light text-scriba-ink-mute">{speakerLine}</span>
         ) : null}
       </div>
       <div className="flex flex-col gap-3 sm:flex-row sm:gap-2">
@@ -205,7 +203,7 @@ function ReflectionCard({
         <NavLink
           href={href}
           contentClassName="inline-flex items-center justify-center gap-1.5"
-          className="inline-flex w-full items-center justify-center rounded-full bg-[color:var(--scriba-blue-soft)]/60 px-4 py-3 text-[11px] font-semibold uppercase tracking-wider text-[color:var(--scriba-ink-soft)] transition-colors hover:bg-[color:var(--scriba-blue-soft)] sm:flex-1"
+          className="inline-flex w-full items-center justify-center rounded-full bg-scriba-blue-soft/60 px-4 py-3 text-[11px] font-semibold uppercase tracking-wider text-scriba-ink-soft transition-colors hover:bg-scriba-blue-soft sm:flex-1"
         >
           Relembrar
         </NavLink>

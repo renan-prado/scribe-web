@@ -2,15 +2,7 @@ import { Mic, Square } from "lucide-react";
 import { formatMmSs } from "@/features/session/lib/text";
 import { cn } from "@/lib/utils";
 
-export function RecordButton({
-  running,
-  elapsedMs,
-  onStart,
-  onStop,
-  compact = false,
-  pulseWhileRunning = false,
-  autoStarting = false,
-}: {
+type RecordButtonProps = {
   running: boolean;
   elapsedMs: number;
   onStart: () => void;
@@ -24,7 +16,17 @@ export function RecordButton({
    * to fire but running is still false. Suppresses the "toque para começar"
    * idle prompt so the user doesn't see it flash before the recorder mounts. */
   autoStarting?: boolean;
-}) {
+};
+
+export function RecordButton({
+  running,
+  elapsedMs,
+  onStart,
+  onStop,
+  compact = false,
+  pulseWhileRunning = false,
+  autoStarting = false,
+}: RecordButtonProps) {
   if (compact) {
     return (
       <button
@@ -32,8 +34,8 @@ export function RecordButton({
         onClick={onStop}
         aria-label="Parar gravação"
         className={cn(
-          "group flex items-center gap-3 rounded-full bg-[color:var(--scriba-ink-strong)] px-5 py-3.5 text-white shadow-[0_10px_24px_rgba(51,65,79,0.28)] outline-none transition-all",
-          "hover:bg-[color:var(--scriba-ink-strong)]/95 hover:shadow-[0_12px_28px_rgba(51,65,79,0.35)]",
+          "group flex items-center gap-3 rounded-full bg-scriba-ink-strong px-5 py-3.5 text-white shadow-[0_10px_24px_rgba(51,65,79,0.28)] outline-none transition-all",
+          "hover:bg-scriba-ink-strong/95 hover:shadow-[0_12px_28px_rgba(51,65,79,0.35)]",
           "focus-visible:ring-2 focus-visible:ring-white/40 active:scale-95"
         )}
       >
@@ -59,7 +61,7 @@ export function RecordButton({
         {showRecordingPulse ? (
           <span
             aria-hidden
-            className="absolute inset-0 animate-ping rounded-full bg-[color:var(--scriba-blue)]/50 [animation-duration:2.4s]"
+            className="absolute inset-0 animate-ping rounded-full bg-scriba-blue/50 [animation-duration:2.4s]"
           />
         ) : null}
         <button
@@ -67,10 +69,10 @@ export function RecordButton({
           onClick={running ? onStop : onStart}
           aria-label={running ? "Parar gravação" : "Iniciar gravação"}
           className={cn(
-            "relative flex size-24 items-center justify-center rounded-full bg-[color:var(--scriba-blue)] text-white outline-none transition-colors duration-300 ease-out",
+            "relative flex size-24 items-center justify-center rounded-full bg-scriba-blue text-white outline-none transition-colors duration-300 ease-out",
             !running && "animate-scriba-halo",
-            "hover:bg-[color:var(--scriba-blue-hover)] active:scale-95",
-            "focus-visible:ring-4 focus-visible:ring-[color:var(--scriba-blue)]/40"
+            "hover:bg-scriba-blue-hover active:scale-95",
+            "focus-visible:ring-4 focus-visible:ring-scriba-blue/40"
           )}
         >
           {running ? (
@@ -81,7 +83,7 @@ export function RecordButton({
         </button>
       </div>
       {!running && !autoStarting ? (
-        <p className="max-w-xs text-pretty text-center text-sm font-light leading-relaxed text-[color:var(--scriba-ink-soft)]">
+        <p className="max-w-xs text-pretty text-center text-sm font-light leading-relaxed text-scriba-ink-soft">
           Toque para começar a gravar.
           <br />O Scriba acompanha e organiza enquanto você ouve.
         </p>

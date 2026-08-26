@@ -41,12 +41,12 @@ export function UserMenu({ displayName, email, avatarUrl, isAdmin }: Props) {
     <>
       <DropdownMenu>
         <DropdownMenuTrigger
-          className="rounded-full outline-none transition-opacity hover:opacity-90 focus-visible:ring-4 focus-visible:ring-[color:var(--scriba-blue)]/25"
+          className="rounded-full outline-none transition-opacity hover:opacity-90 focus-visible:ring-4 focus-visible:ring-scriba-blue/25"
           aria-label="Abrir menu do usuário"
         >
           <Avatar className="ring-2 ring-white shadow-[0_4px_12px_rgba(51,65,79,0.10)]">
             {avatarUrl ? <AvatarImage src={avatarUrl} alt={shownName} /> : null}
-            <AvatarFallback className="bg-[color:var(--scriba-blue-soft)] text-[color:var(--scriba-blue)]">
+            <AvatarFallback className="bg-scriba-blue-soft text-scriba-blue">
               {initials}
             </AvatarFallback>
           </Avatar>
@@ -54,53 +54,51 @@ export function UserMenu({ displayName, email, avatarUrl, isAdmin }: Props) {
         <DropdownMenuContent
           align="end"
           sideOffset={10}
-          className="min-w-[260px] rounded-2xl border-none bg-white p-2 shadow-[0_18px_40px_rgba(51,65,79,0.14)] ring-1 ring-[color:var(--scriba-hairline)]"
+          className="min-w-[260px] rounded-2xl border-none bg-white p-2 shadow-[0_18px_40px_rgba(51,65,79,0.14)] ring-1 ring-scriba-hairline"
         >
           {/* Identity header */}
-          <div className="flex items-center gap-3 rounded-xl bg-[color:var(--scriba-blue-soft)]/60 px-3 py-3">
+          <div className="flex items-center gap-3 rounded-xl bg-scriba-blue-soft/60 px-3 py-3">
             <Avatar className="size-10">
               {avatarUrl ? <AvatarImage src={avatarUrl} alt={shownName} /> : null}
-              <AvatarFallback className="bg-white text-[color:var(--scriba-blue)] text-sm font-semibold">
+              <AvatarFallback className="bg-white text-scriba-blue text-sm font-semibold">
                 {initials}
               </AvatarFallback>
             </Avatar>
             <div className="flex min-w-0 flex-1 flex-col">
-              <span className="truncate text-[13px] font-semibold text-[color:var(--scriba-ink-strong)]">
+              <span className="truncate text-[13px] font-semibold text-scriba-ink-strong">
                 {shownName}
               </span>
               {email ? (
-                <span className="truncate text-[11px] text-[color:var(--scriba-ink-soft)]">
-                  {email}
-                </span>
+                <span className="truncate text-[11px] text-scriba-ink-soft">{email}</span>
               ) : null}
             </div>
           </div>
 
-          <div className="my-1.5 h-px bg-[color:var(--scriba-hairline)]" />
+          <div className="my-1.5 h-px bg-scriba-hairline" />
 
           <DropdownMenuItem
             render={<Link href="/profile" />}
-            className="rounded-xl px-3 py-2.5 text-[13px] font-medium text-[color:var(--scriba-ink-strong)] focus:bg-[color:var(--scriba-surface)]"
+            className="rounded-xl px-3 py-2.5 text-[13px] font-medium text-scriba-ink-strong focus:bg-scriba-surface"
           >
-            <UserIcon className="size-4 text-[color:var(--scriba-ink-soft)]" />
+            <UserIcon className="size-4 text-scriba-ink-soft" />
             Meu perfil
           </DropdownMenuItem>
           {isAdmin ? (
             <DropdownMenuItem
               render={<Link href="/admin" />}
-              className="rounded-xl px-3 py-2.5 text-[13px] font-medium text-[color:var(--scriba-ink-strong)] focus:bg-[color:var(--scriba-surface)]"
+              className="rounded-xl px-3 py-2.5 text-[13px] font-medium text-scriba-ink-strong focus:bg-scriba-surface"
             >
-              <LayoutDashboard className="size-4 text-[color:var(--scriba-ink-soft)]" />
+              <LayoutDashboard className="size-4 text-scriba-ink-soft" />
               Admin
             </DropdownMenuItem>
           ) : null}
 
-          <DropdownMenuSeparator className="my-1.5 bg-[color:var(--scriba-hairline)]" />
+          <DropdownMenuSeparator className="my-1.5 bg-scriba-hairline" />
 
           <DropdownMenuItem
             variant="destructive"
             onClick={() => signOutFormRef.current?.requestSubmit()}
-            className="rounded-xl px-3 py-2.5 text-[13px] font-medium text-[color:var(--scriba-rose-ink)] focus:bg-[color:var(--scriba-rose)]/60 focus:text-[color:var(--scriba-rose-ink)]"
+            className="rounded-xl px-3 py-2.5 text-[13px] font-medium text-scriba-rose-ink focus:bg-scriba-rose/60 focus:text-scriba-rose-ink"
           >
             <LogOut className="size-4" />
             Sair da conta

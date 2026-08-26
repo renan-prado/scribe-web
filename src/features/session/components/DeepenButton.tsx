@@ -1,5 +1,6 @@
 "use client";
 
+import { cva } from "class-variance-authority";
 import { useRouter } from "next/navigation";
 import { useState } from "react";
 import { CoinCost } from "@/components/CoinCost";
@@ -27,15 +28,34 @@ import { cn } from "@/lib/utils";
  */
 export const DEEPENING_COST = COIN_COSTS.deepening;
 
-export function DeepenButton({
-  sessionId,
-  hasDeepening,
-  variant,
-}: {
+type DeepenButtonProps = {
   sessionId: string;
   hasDeepening: boolean;
   variant: "summary-header" | "feed-card";
-}) {
+};
+
+const deepenButtonVariants = cva(
+  "inline-flex items-center rounded-full font-semibold uppercase tracking-wider transition-colors disabled:cursor-progress disabled:opacity-70",
+  {
+    variants: {
+      layout: {
+        compact: "gap-1.5 px-3 py-1.5 text-[11px]",
+        full: "w-full justify-center gap-2 px-4 py-3 text-[11px] sm:flex-1",
+      },
+      state: {
+        enabled:
+          "bg-scriba-blue text-white shadow-[0_5px_14px_rgba(79,168,240,0.32)] hover:bg-scriba-blue-hover",
+        disabled: "cursor-not-allowed bg-scriba-ink-mute/25 text-scriba-ink-mute shadow-none",
+      },
+    },
+    defaultVariants: {
+      layout: "full",
+      state: "enabled",
+    },
+  }
+);
+
+export function DeepenButton({ sessionId, hasDeepening, variant }: DeepenButtonProps) {
   const router = useRouter();
   const [pending, setPending] = useState(false);
   const [error, setError] = useState<string | null>(null);
@@ -44,13 +64,14 @@ export function DeepenButton({
   const insufficient = balance !== null && balance < DEEPENING_COST;
 
   const href = `/recording/${sessionId}/deepening`;
+  const layout = variant === "summary-header" ? "compact" : "full";
 
   if (hasDeepening) {
     if (variant === "summary-header") {
       return (
         <NavLink
           href={href}
-          className="inline-flex items-center gap-1.5 rounded-full bg-[color:var(--scriba-blue-soft)] px-3 py-1.5 text-[11px] font-semibold uppercase tracking-wider text-[color:var(--scriba-blue)] transition-colors hover:bg-[color:var(--scriba-blue-soft)]/80 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[color:var(--scriba-blue)]/40"
+          className="inline-flex items-center gap-1.5 rounded-full bg-scriba-blue-soft px-3 py-1.5 text-[11px] font-semibold uppercase tracking-wider text-scriba-blue transition-colors hover:bg-scriba-blue-soft/80 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-scriba-blue/40"
         >
           Ver aprofundamento
         </NavLink>
@@ -60,7 +81,7 @@ export function DeepenButton({
       <NavLink
         href={href}
         contentClassName="inline-flex items-center justify-center gap-1.5"
-        className="inline-flex w-full items-center justify-center rounded-full bg-[color:var(--scriba-blue)] px-4 py-3 text-[11px] font-semibold uppercase tracking-wider text-white shadow-[0_5px_14px_rgba(79,168,240,0.32)] transition-colors hover:bg-[color:var(--scriba-blue-hover)] sm:flex-1"
+        className="inline-flex w-full items-center justify-center rounded-full bg-scriba-blue px-4 py-3 text-[11px] font-semibold uppercase tracking-wider text-white shadow-[0_5px_14px_rgba(79,168,240,0.32)] transition-colors hover:bg-scriba-blue-hover sm:flex-1"
       >
         Ver aprofundamento
       </NavLink>
@@ -94,29 +115,16 @@ export function DeepenButton({
     }
   }
 
-  // Style branches: `enabled` is the live blue CTA; `disabled` is the muted
-  // grey with the coin cost still visible so the user can read the price.
-  const baseEnabled =
-    "bg-[color:var(--scriba-blue)] text-white shadow-[0_5px_14px_rgba(79,168,240,0.32)] hover:bg-[color:var(--scriba-blue-hover)]";
-  const baseDisabled =
-    "cursor-not-allowed bg-[color:var(--scriba-ink-mute)]/25 text-[color:var(--scriba-ink-mute)] shadow-none";
-
-  const summaryClass = cn(
-    "inline-flex items-center gap-1.5 rounded-full px-3 py-1.5 text-[11px] font-semibold uppercase tracking-wider transition-colors disabled:cursor-progress disabled:opacity-70",
-    insufficient ? baseDisabled : baseEnabled
-  );
-  const feedClass = cn(
-    "inline-flex w-full items-center justify-center gap-2 rounded-full px-4 py-3 text-[11px] font-semibold uppercase tracking-wider transition-colors disabled:cursor-progress disabled:opacity-70 sm:flex-1",
-    insufficient ? baseDisabled : baseEnabled
-  );
-
   const button = (
     <button
       type="button"
       onClick={handleClick}
       disabled={pending || insufficient}
       aria-disabled={insufficient}
-      className={variant === "summary-header" ? summaryClass : feedClass}
+      className={deepenButtonVariants({
+        layout,
+        state: insufficient ? "disabled" : "enabled",
+      })}
     >
       {pending ? "Aprofundando…" : "Aprofundar"}
       <CoinCost count={DEEPENING_COST} />
@@ -129,12 +137,12 @@ export function DeepenButton({
     variant === "summary-header" ? (
       <span
         aria-hidden
-        className="inline-block h-[30px] w-[130px] animate-pulse rounded-full bg-[color:var(--scriba-ink-mute)]/15"
+        className="inline-block h-7.5 w-32.5 animate-pulse rounded-full bg-scriba-ink-mute/15"
       />
     ) : (
       <span
         aria-hidden
-        className="block h-[46px] w-full animate-pulse rounded-full bg-[color:var(--scriba-ink-mute)]/15"
+        className="block h-11.5 w-full animate-pulse rounded-full bg-scriba-ink-mute/15"
       />
     );
 

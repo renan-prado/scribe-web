@@ -4,11 +4,11 @@ import { SavedSessionView } from "@/features/session/components/SavedSessionView
 import { hasDeepening } from "@/lib/db/deepenings";
 import { getSession } from "@/lib/db/sessions";
 
-export async function generateMetadata({
-  params,
-}: {
+type PageProps = {
   params: Promise<{ id: string }>;
-}): Promise<Metadata> {
+};
+
+export async function generateMetadata({ params }: PageProps): Promise<Metadata> {
   const { id } = await params;
   const session = await getSession(id);
   return { title: session?.title?.trim() || "Sessão sem título" };
@@ -31,11 +31,7 @@ function formatDuration(ms: number | null): string {
   return `${m}m ${s.toString().padStart(2, "0")}s`;
 }
 
-export default async function RecordingSummaryPage({
-  params,
-}: {
-  params: Promise<{ id: string }>;
-}) {
+export default async function RecordingSummaryPage({ params }: PageProps) {
   const { id } = await params;
   const [session, deepeningExists] = await Promise.all([getSession(id), hasDeepening(id)]);
   if (!session) notFound();

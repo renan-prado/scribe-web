@@ -6,11 +6,11 @@ import { BlockRenderer, blockKey } from "@/features/session/components/BlockRend
 import { getDeepening } from "@/lib/db/deepenings";
 import { getSession } from "@/lib/db/sessions";
 
-export async function generateMetadata({
-  params,
-}: {
+type PageProps = {
   params: Promise<{ id: string }>;
-}): Promise<Metadata> {
+};
+
+export async function generateMetadata({ params }: PageProps): Promise<Metadata> {
   const { id } = await params;
   const [session, deepening] = await Promise.all([getSession(id), getDeepening(id)]);
   const base = session?.title?.trim() || "Sessão sem título";
@@ -26,11 +26,7 @@ const DATE_FMT = new Intl.DateTimeFormat("pt-BR", {
   minute: "2-digit",
 });
 
-export default async function RecordingDeepeningPage({
-  params,
-}: {
-  params: Promise<{ id: string }>;
-}) {
+export default async function RecordingDeepeningPage({ params }: PageProps) {
   const { id } = await params;
   const [session, deepening] = await Promise.all([getSession(id), getDeepening(id)]);
   if (!session || !deepening) notFound();
@@ -43,7 +39,7 @@ export default async function RecordingDeepeningPage({
     <main className="mx-auto flex min-h-svh w-full max-w-3xl flex-col gap-6 px-4 py-8 sm:gap-8 sm:px-6 sm:py-10">
       <NavLink
         href={`/recording/${id}/summary`}
-        className="-mx-1 inline-flex w-fit items-center rounded-md px-1 py-0.5 text-xs font-medium text-[color:var(--scriba-ink-mute)] transition-colors hover:text-[color:var(--scriba-ink)] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring/40"
+        className="-mx-1 inline-flex w-fit items-center rounded-md px-1 py-0.5 text-xs font-medium text-scriba-ink-mute transition-colors hover:text-scriba-ink focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring/40"
       >
         <ArrowLeft className="size-3.5" />
         Voltar ao resumo
@@ -51,33 +47,32 @@ export default async function RecordingDeepeningPage({
 
       <header className="flex flex-col gap-3">
         <div className="flex items-center justify-between gap-3">
-          <span className="inline-flex items-center gap-1.5 rounded-full bg-[color:var(--scriba-blue-soft)] px-2.5 py-1 text-[10px] font-semibold uppercase tracking-wider text-[color:var(--scriba-blue)]">
+          <span className="inline-flex items-center gap-1.5 rounded-full bg-scriba-blue-soft px-2.5 py-1 text-[10px] font-semibold uppercase tracking-wider text-scriba-blue">
             <Sparkles aria-hidden className="size-3" />
             Aprofundamento
           </span>
-          <span className="text-[11px] font-light text-[color:var(--scriba-ink-mute)]">
+          <span className="text-[11px] font-light text-scriba-ink-mute">
             {DATE_FMT.format(new Date(deepening.createdAt))}
           </span>
         </div>
 
-        <h1 className="font-heading text-2xl font-semibold leading-tight tracking-tight text-[color:var(--scriba-ink-strong)] sm:text-3xl md:text-4xl">
+        <h1 className="font-heading text-2xl font-semibold leading-tight tracking-tight text-scriba-ink-strong sm:text-3xl md:text-4xl">
           {deepeningTitle}
         </h1>
-        <p className="text-[11px] font-light text-[color:var(--scriba-ink-mute)]">
-          Baseado em{" "}
-          <span className="font-medium text-[color:var(--scriba-ink-soft)]">{sessionTitle}</span>
+        <p className="text-[11px] font-light text-scriba-ink-mute">
+          Baseado em <span className="font-medium text-scriba-ink-soft">{sessionTitle}</span>
         </p>
       </header>
 
-      <div className="h-px w-full bg-[color:var(--scriba-hairline)]" />
+      <div className="h-px w-full bg-scriba-hairline" />
 
       <div className="flex flex-col gap-7">
         {payload.shortSummary ? (
-          <div className="-mb-2 flex flex-col gap-2 border-l-[2.5px] border-[color:var(--scriba-blue)] pl-4">
-            <span className="text-[10px] font-semibold uppercase tracking-[0.14em] text-[color:var(--scriba-blue)]">
+          <div className="-mb-2 flex flex-col gap-2 border-l-[2.5px] border-scriba-blue pl-4">
+            <span className="text-[10px] font-semibold uppercase tracking-[0.14em] text-scriba-blue">
               Tese central
             </span>
-            <p className="text-pretty text-lg font-medium leading-snug text-[color:var(--scriba-ink-strong)] text-balance">
+            <p className="text-pretty text-lg font-medium leading-snug text-scriba-ink-strong text-balance">
               {payload.shortSummary}
             </p>
           </div>

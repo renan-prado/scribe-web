@@ -1,7 +1,7 @@
 "use client";
 
 import { useRouter } from "next/navigation";
-import { useCallback, useEffect, useRef, useState } from "react";
+import { Activity, useCallback, useEffect, useRef, useState } from "react";
 import { toast } from "sonner";
 import { FinalizingOverlay } from "@/features/session/components/FinalizingOverlay";
 import { HiddenTabOverlay } from "@/features/session/components/HiddenTabOverlay";
@@ -33,17 +33,19 @@ import { createRecorder } from "@/lib/recorder";
  * locally into `transcriptRef` because the only consumer of the transcript
  * is the single final-summary call.
  */
+type RecordingAudioOnlyProps = {
+  sessionId: string;
+  initialSpeakerName: string;
+  initialSpeakerLocation: string;
+  autoStart?: boolean;
+};
+
 export function RecordingAudioOnly({
   sessionId,
   initialSpeakerName,
   initialSpeakerLocation,
   autoStart = false,
-}: {
-  sessionId: string;
-  initialSpeakerName: string;
-  initialSpeakerLocation: string;
-  autoStart?: boolean;
-}) {
+}: RecordingAudioOnlyProps) {
   const router = useRouter();
   const recorderRef = useRef<Recorder | null>(null);
   const startedAtRef = useRef<number>(0);
@@ -190,7 +192,7 @@ export function RecordingAudioOnly({
           autoStarting={autoStart && !running && !startupError}
         />
         {running ? (
-          <p className="font-mono text-sm font-medium tabular-nums tracking-wider text-[color:var(--scriba-ink)]">
+          <p className="font-mono text-sm font-medium tabular-nums tracking-wider text-scriba-ink">
             {formatMmSs(elapsedMs)}
           </p>
         ) : null}
@@ -201,7 +203,9 @@ export function RecordingAudioOnly({
         ) : null}
       </div>
 
-      {hiddenWarning && running ? <HiddenTabOverlay onDismiss={dismissHiddenWarning} /> : null}
+      <Activity mode={hiddenWarning && running ? "visible" : "hidden"}>
+        <HiddenTabOverlay onDismiss={dismissHiddenWarning} />
+      </Activity>
       {finalizing ? <FinalizingOverlay /> : null}
     </main>
   );

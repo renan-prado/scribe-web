@@ -16,17 +16,14 @@ type Fields = {
   speakerLocation: string;
 };
 
-export function EditSessionDialog({
-  open,
-  onOpenChange,
-  initial,
-  onSave,
-}: {
+type EditSessionDialogProps = {
   open: boolean;
   onOpenChange: (open: boolean) => void;
   initial: Fields;
   onSave: (fields: Fields) => Promise<void>;
-}) {
+};
+
+export function EditSessionDialog({ open, onOpenChange, initial, onSave }: EditSessionDialogProps) {
   const [fields, setFields] = useState<Fields>(initial);
   const [saving, setSaving] = useState(false);
   const [error, setError] = useState<string | null>(null);

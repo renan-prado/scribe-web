@@ -14,7 +14,7 @@ export default function DeepeningLoading() {
         <SB className="h-3 w-56" />
       </header>
 
-      <div className="h-px w-full bg-[color:var(--scriba-hairline)]" />
+      <div className="h-px w-full bg-scriba-hairline" />
 
       <SummarySkeleton />
     </main>
@@ -25,7 +25,7 @@ function SB({ className }: { className: string }) {
   return (
     <div
       aria-hidden
-      className={`animate-skeleton-shimmer rounded-md bg-[color:var(--scriba-hairline-soft)] ${className}`}
+      className={`animate-skeleton-shimmer rounded-md bg-scriba-hairline-soft ${className}`}
     />
   );
 }

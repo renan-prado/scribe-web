@@ -8,6 +8,15 @@ import {
 } from "@/components/ui/dropdown-menu";
 import { cn } from "@/lib/utils";
 
+type SessionMenuProps = {
+  hasTranscript: boolean;
+  hasLiveFeed: boolean;
+  onOpenTranscript: () => void;
+  onOpenLiveFeed: () => void;
+  onEdit?: () => void;
+  onDelete?: () => void;
+};
+
 export function SessionMenu({
   hasTranscript,
   hasLiveFeed,
@@ -15,20 +24,13 @@ export function SessionMenu({
   onOpenLiveFeed,
   onEdit,
   onDelete,
-}: {
-  hasTranscript: boolean;
-  hasLiveFeed: boolean;
-  onOpenTranscript: () => void;
-  onOpenLiveFeed: () => void;
-  onEdit?: () => void;
-  onDelete?: () => void;
-}) {
+}: SessionMenuProps) {
   return (
     <DropdownMenu>
       <DropdownMenuTrigger
         className={cn(
-          "flex size-8 items-center justify-center rounded-full text-[color:var(--scriba-ink-mute)] transition-colors outline-none",
-          "hover:bg-[color:var(--scriba-blue-soft)]/60 hover:text-[color:var(--scriba-ink)] focus-visible:ring-2 focus-visible:ring-ring/40"
+          "flex size-8 items-center justify-center rounded-full text-scriba-ink-mute transition-colors outline-none",
+          "hover:bg-scriba-blue-soft/60 hover:text-scriba-ink focus-visible:ring-2 focus-visible:ring-ring/40"
         )}
         aria-label="Mais opções"
       >

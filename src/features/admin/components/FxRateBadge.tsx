@@ -41,11 +41,11 @@ export function FxRateBadge({ rate }: { rate: UsdBrlRate | null }) {
             placeholder="5,42"
             required
             pattern="[0-9]+([.,][0-9]{1,4})?"
-            className="w-24 rounded-md border border-[color:var(--scriba-hairline)] bg-white px-2 py-1 text-xs font-mono focus:outline-none focus:ring-2 focus:ring-[color:var(--scriba-blue)]/40"
+            className="w-24 rounded-md border border-scriba-hairline bg-white px-2 py-1 text-xs font-mono focus:outline-none focus:ring-2 focus:ring-scriba-blue/40"
           />
           <button
             type="submit"
-            className="rounded-md bg-[color:var(--scriba-blue)] px-2.5 py-1 text-[11px] font-semibold text-white transition-opacity hover:opacity-90"
+            className="rounded-md bg-scriba-blue px-2.5 py-1 text-[11px] font-semibold text-white transition-opacity hover:opacity-90"
           >
             Salvar
           </button>

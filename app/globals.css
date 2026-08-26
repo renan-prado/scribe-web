@@ -73,6 +73,23 @@
   --color-scriba-surface: var(--scriba-surface);
   --color-scriba-hairline: var(--scriba-hairline);
   --color-scriba-hairline-soft: var(--scriba-hairline-soft);
+  /* Surface-tinted body text — one per palette swatch, for tile/card interiors */
+  --color-scriba-yellow-light: var(--scriba-yellow-light);
+  --color-scriba-blue-ink: var(--scriba-blue-ink);
+  --color-scriba-blue-body: var(--scriba-blue-body);
+  --color-scriba-rose-body: var(--scriba-rose-body);
+  --color-scriba-mint-body: var(--scriba-mint-body);
+  --color-scriba-cream-body: var(--scriba-cream-body);
+  --color-scriba-btn-muted: var(--scriba-btn-muted);
+  --color-session-typing-dot: var(--session-typing-dot);
+  --color-session-verse-text: var(--session-verse-text);
+  --color-session-verse-border: var(--session-verse-border);
+  --color-session-chip-ai: var(--session-chip-ai);
+  --color-scriba-gold-ink: var(--scriba-gold-ink);
+  --color-auth-btn-border: var(--auth-btn-border);
+  --color-auth-btn-border-hover: var(--auth-btn-border-hover);
+  --color-auth-btn-bg-hover: var(--auth-btn-bg-hover);
+  --color-scriba-mint-dark: var(--scriba-mint-dark);
 }
 
 :root {
@@ -143,6 +160,32 @@
   --scriba-surface: #F7FAFD;
   --scriba-hairline: #EDF2F7;
   --scriba-hairline-soft: #EEF4FA;
+  --scriba-yellow-light: #FFDF8C;
+  --scriba-blue-ink: #3E86C4;
+  --scriba-blue-body: #5E86AC;
+  --scriba-rose-body: #A08373;
+  --scriba-mint-body: #6E8A7E;
+  --scriba-cream-body: #9C8A55;
+  --scriba-btn-muted: #F4F8FC;
+  /* Session feed color tokens */
+  --session-typing-dot: #9BB6CC;
+  --session-verse-text: #3E5164;
+  --session-verse-border: #9FCBEC;
+  --session-chip-ai: #7FA9CC;
+  /* Coin/gold tokens */
+  --scriba-gold-ink: #B07F13;
+  /* Auth surface tokens */
+  --auth-btn-border: #DFEAF4;
+  --auth-btn-border-hover: #C9D9E8;
+  --auth-btn-bg-hover: #F6FAFE;
+  /* Mint saved-state token */
+  --scriba-mint-dark: #3F7F66;
+  /* Design-system border widths */
+  --border-book: 1.5px;   /* book glyph icon border */
+  --border-fine: 1.4px;   /* fine phone frame border */
+  /* Sidebar layout tokens — consumed by w-(--sidebar-width) etc. in sidebar.tsx */
+  --sidebar-width: 16rem;
+  --sidebar-width-icon: 3rem;
 }
 
 .dark {
@@ -189,6 +232,7 @@
   html {
     @apply font-sans;
     scroll-behavior: smooth;
+    scroll-padding-top: 84px;
   }
   @media (prefers-reduced-motion: reduce) {
     html {
@@ -197,6 +241,10 @@
   }
   a, button {
     cursor: default;
+  }
+  /* Mobile sidebar overrides the width token so w-(--sidebar-width) resolves to 18rem */
+  [data-sidebar="sidebar"][data-mobile="true"] {
+    --sidebar-width: 18rem;
   }
 
   /* Admin table treatment — white surface with generous cell padding and a
@@ -226,6 +274,61 @@
   }
   .admin-table tbody tr {
     border-color: var(--scriba-hairline);
+  }
+}
+
+@layer components {
+  .lp-cta {
+    transition: filter 0.18s ease, box-shadow 0.18s ease;
+    &:hover { filter: brightness(0.95); box-shadow: 0 14px 30px rgba(79,168,240,0.4); }
+  }
+  .lp-cta-yellow {
+    transition: filter 0.18s ease, box-shadow 0.18s ease;
+    &:hover { filter: brightness(0.96); box-shadow: 0 14px 30px rgba(0,0,0,0.28); }
+  }
+  .lp-cta-outline {
+    transition: background-color 0.18s ease, border-color 0.18s ease, color 0.18s ease;
+    &:hover { background-color: #F6FAFE; border-color: #C9D9E8; color: var(--scriba-ink-strong); }
+  }
+  .lp-cta-soft {
+    transition: background-color 0.18s ease, color 0.18s ease;
+    &:hover { background-color: var(--scriba-blue-soft); color: var(--scriba-ink-strong); }
+  }
+  .lp-link {
+    transition: color 0.18s ease;
+    &:hover { color: var(--scriba-ink-strong); }
+  }
+  .lp-link-footer {
+    transition: color 0.18s ease;
+    &:hover { color: var(--scriba-ink); }
+  }
+  .lp-nav {
+    transition: color 0.18s ease;
+    &:hover { color: var(--scriba-ink-strong); }
+  }
+  .lp-lift {
+    transition: box-shadow 0.25s ease, border-color 0.25s ease;
+    &:hover { box-shadow: 0 16px 36px rgba(79,168,240,0.18); border-color: #D9E7F5; }
+  }
+  .lp-lift-plan {
+    transition: box-shadow 0.25s ease;
+    &:hover { box-shadow: 0 22px 48px rgba(79,168,240,0.22); }
+  }
+  .lp-tile {
+    transition: box-shadow 0.25s ease, filter 0.25s ease;
+    &:hover { box-shadow: 0 10px 22px rgba(79,168,240,0.14); filter: brightness(0.98); }
+  }
+  .phone-frame { box-shadow: 0 26px 54px rgba(29,90,140,0.22); }
+  .phone-frame-dark { box-shadow: 0 30px 62px rgba(20,66,105,0.34); }
+  .phone-mask {
+    mask-image: linear-gradient(180deg, #000 82%, transparent 100%);
+    -webkit-mask-image: linear-gradient(180deg, #000 82%, transparent 100%);
+  }
+  .coin-hex {
+    clip-path: polygon(50% 0, 100% 25%, 100% 75%, 50% 100%, 0 75%, 0 25%);
+  }
+  .admin-card-surface {
+    @apply rounded-2xl border border-scriba-hairline-soft bg-white shadow-[0_4px_14px_rgba(79,168,240,0.06)];
   }
 }
 

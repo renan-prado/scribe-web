@@ -31,6 +31,19 @@ function initialsOf(name: string | null): string {
  * View of a saved session. Renders the same SummaryView the live page uses on
  * stop, plus dialogs for the live feed, the raw transcript, and editing metadata.
  */
+type SavedSessionViewProps = {
+  id: string;
+  title: string;
+  createdAtLabel: string;
+  durationLabel: string;
+  speakerName: string | null;
+  speakerLocation: string | null;
+  transcript: string;
+  feedItems: FeedItem[];
+  summary: SummaryPayload | null;
+  hasDeepening: boolean;
+};
+
 export function SavedSessionView({
   id,
   title: initialTitle,
@@ -42,18 +55,7 @@ export function SavedSessionView({
   feedItems,
   summary,
   hasDeepening,
-}: {
-  id: string;
-  title: string;
-  createdAtLabel: string;
-  durationLabel: string;
-  speakerName: string | null;
-  speakerLocation: string | null;
-  transcript: string;
-  feedItems: FeedItem[];
-  summary: SummaryPayload | null;
-  hasDeepening: boolean;
-}) {
+}: SavedSessionViewProps) {
   const [feedOpen, setFeedOpen] = useState(false);
   const [transcriptOpen, setTranscriptOpen] = useState(false);
   const [editOpen, setEditOpen] = useState(false);
@@ -92,7 +94,7 @@ export function SavedSessionView({
     <main className="mx-auto flex min-h-svh w-full max-w-3xl flex-col gap-6 px-4 py-8 sm:gap-8 sm:px-6 sm:py-10">
       <NavLink
         href="/list"
-        className="-mx-1 inline-flex w-fit items-center rounded-md px-1 py-0.5 text-xs font-medium text-[color:var(--scriba-ink-mute)] transition-colors hover:text-[color:var(--scriba-ink)] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring/40"
+        className="-mx-1 inline-flex w-fit items-center rounded-md px-1 py-0.5 text-xs font-medium text-scriba-ink-mute transition-colors hover:text-scriba-ink focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring/40"
       >
         <ArrowLeft className="size-3.5" />
         Voltar
@@ -102,10 +104,10 @@ export function SavedSessionView({
         <div className="flex items-center justify-between gap-3">
           {speakerName?.trim() ? (
             <div className="inline-flex items-center gap-2">
-              <span className="flex size-6 items-center justify-center rounded-full bg-[color:var(--scriba-blue-soft)] text-[10px] font-semibold text-[color:var(--scriba-blue)]">
+              <span className="flex size-6 items-center justify-center rounded-full bg-scriba-blue-soft text-[10px] font-semibold text-scriba-blue">
                 {initials}
               </span>
-              <span className="text-sm font-medium leading-none text-[color:var(--scriba-ink)]">
+              <span className="text-sm font-medium leading-none text-scriba-ink">
                 {speakerName}
               </span>
             </div>
@@ -116,7 +118,7 @@ export function SavedSessionView({
             <span
               role="status"
               aria-label="Sessão salva"
-              className="inline-flex items-center gap-1.5 rounded-full bg-[color:var(--scriba-mint)] px-2.5 py-1 text-[10px] font-semibold uppercase tracking-wider text-[#3F7F66]"
+              className="inline-flex items-center gap-1.5 rounded-full bg-scriba-mint px-2.5 py-1 text-[10px] font-semibold uppercase tracking-wider text-[#3F7F66]"
             >
               <span className="size-1.5 rounded-full bg-[#4E9C7F]" />
               Salvo
@@ -132,19 +134,19 @@ export function SavedSessionView({
           </div>
         </div>
 
-        <h1 className="font-heading text-2xl font-semibold leading-tight tracking-tight text-[color:var(--scriba-ink-strong)] sm:text-3xl md:text-4xl">
+        <h1 className="font-heading text-2xl font-semibold leading-tight tracking-tight text-scriba-ink-strong sm:text-3xl md:text-4xl">
           {title}
         </h1>
 
         <div className="flex items-end justify-between gap-3">
           <div className="flex min-w-0 flex-col gap-0.5">
             {speakerLocation?.trim() ? (
-              <span className="inline-flex items-center gap-1.5 text-xs font-light text-[color:var(--scriba-ink-mute)]">
+              <span className="inline-flex items-center gap-1.5 text-xs font-light text-scriba-ink-mute">
                 <MapPin className="size-3" />
                 {speakerLocation}
               </span>
             ) : null}
-            <p className="text-[11px] font-light text-[color:var(--scriba-ink-mute)]">
+            <p className="text-[11px] font-light text-scriba-ink-mute">
               {createdAtLabel}
               {durationLabel ? ` · ${durationLabel}` : ""}
             </p>
@@ -155,7 +157,7 @@ export function SavedSessionView({
         </div>
       </header>
 
-      <div className="h-px w-full bg-[color:var(--scriba-hairline)]" />
+      <div className="h-px w-full bg-scriba-hairline" />
 
       <SummaryView summary={summary} hasTranscript={transcript.length > 0} running={false} />
 
@@ -185,7 +187,7 @@ export function SavedSessionView({
             <DialogDescription>Texto bruto capturado pelo microfone.</DialogDescription>
           </DialogHeader>
           <div className="max-h-[65vh] overflow-y-auto pr-2">
-            <p className="text-pretty text-sm font-light leading-relaxed text-[color:var(--scriba-ink)] whitespace-pre-wrap">
+            <p className="text-pretty text-sm font-light leading-relaxed text-scriba-ink whitespace-pre-wrap">
               {transcript || "Sem transcrição."}
             </p>
           </div>

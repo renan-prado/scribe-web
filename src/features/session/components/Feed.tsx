@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { Activity, useState } from "react";
 import { FeedItemCard } from "@/features/session/components/FeedItemCard";
 import { VerseDialog } from "@/features/session/components/VerseDialog";
 import type { FeedItem } from "@/lib/domain/feed";
@@ -15,17 +15,14 @@ import { feedItemStableKey } from "@/lib/domain/feed";
  * feed while the AI-authored pipeline is in flight — makes the wait feel
  * conversational rather than dead.
  */
-export function Feed({
-  items,
-  running,
-  hasTranscript,
-  suggesting,
-}: {
+type FeedProps = {
   items: FeedItem[];
   running: boolean;
   hasTranscript: boolean;
   suggesting: boolean;
-}) {
+};
+
+export function Feed({ items, running, hasTranscript, suggesting }: FeedProps) {
   const [openRef, setOpenRef] = useState<string | null>(null);
 
   if (items.length === 0 && !suggesting) {
@@ -44,7 +41,9 @@ export function Feed({
           const key = feedItemStableKey(item);
           return <FeedItemCard key={key} item={item} onOpenVerse={setOpenRef} />;
         })}
-        {suggesting ? <SuggestingIndicator /> : null}
+        <Activity mode={suggesting ? "visible" : "hidden"}>
+          <SuggestingIndicator />
+        </Activity>
       </div>
       <VerseDialog reference={openRef} onOpenChange={(open) => !open && setOpenRef(null)} />
     </>
@@ -65,11 +64,11 @@ function SuggestingIndicator() {
     >
       <div
         aria-hidden
-        className="flex size-8 shrink-0 items-center justify-center rounded-full bg-[color:var(--scriba-blue-soft)]"
+        className="flex size-8 shrink-0 items-center justify-center rounded-full bg-scriba-blue-soft"
       >
-        <span className="block size-2.5 rotate-45 rounded-[3px] bg-[color:var(--scriba-blue)]" />
+        <span className="block size-2.5 rotate-45 rounded-[3px] bg-scriba-blue" />
       </div>
-      <div className="flex items-center gap-1.5 rounded-3xl rounded-tl-md border border-dashed border-[color:var(--scriba-blue-soft)] bg-[color:var(--scriba-blue-soft)]/40 px-5 py-4">
+      <div className="flex items-center gap-1.5 rounded-3xl rounded-tl-md border border-dashed border-scriba-blue-soft bg-scriba-blue-soft/40 px-5 py-4">
         <span className="size-1.5 animate-listening-dot rounded-full bg-[#9BB6CC]" />
         <span className="size-1.5 animate-listening-dot rounded-full bg-[#9BB6CC] [animation-delay:200ms]" />
         <span className="size-1.5 animate-listening-dot rounded-full bg-[#9BB6CC] [animation-delay:400ms]" />
@@ -80,7 +79,7 @@ function SuggestingIndicator() {
 
 function FeedEmptyState() {
   return (
-    <p className="text-pretty text-sm font-light leading-relaxed text-[color:var(--scriba-ink-mute)]">
+    <p className="text-pretty text-sm font-light leading-relaxed text-scriba-ink-mute">
       Versículos citados, destaques da fala e referências correlatas vão aparecer aqui conforme a
       gravação avança.
     </p>
