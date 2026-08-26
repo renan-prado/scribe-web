@@ -6,6 +6,8 @@ import type { SummaryBlock } from "@/lib/domain/summary";
 export function blockKey(block: SummaryBlock): string {
   if (block.type === "bibleQuote") return `${block.reference}-${block.text.slice(0, 24)}`;
   if (block.type === "quote") return `${block.text.slice(0, 24)}-${block.author ?? ""}`;
+  if (block.type === "contextCard") return `${block.label}-${block.text.slice(0, 24)}`;
+  if (block.type === "relatedVerse") return `${block.reference}-${block.reason.slice(0, 24)}`;
   return block.text.slice(0, 32);
 }
 
@@ -114,6 +116,78 @@ export function BlockRenderer({ block }: { block: SummaryBlock }) {
           ) : null}
         </figure>
       );
+    case "contextCard":
+      return (
+        <details className="group animate-content-fade rounded-3xl rounded-tl-md border border-dashed border-scriba-blue-soft bg-scriba-blue-soft/40 px-5 py-3 open:py-4">
+          <summary className="flex cursor-pointer list-none items-center gap-2 text-[10px] font-semibold uppercase tracking-[0.14em] text-scriba-ink-mute [&::-webkit-details-marker]:hidden">
+            <span
+              aria-hidden
+              className="flex size-5 shrink-0 items-center justify-center rounded-full bg-scriba-blue-soft"
+            >
+              <span className="block size-1.5 rotate-45 rounded-[2px] bg-scriba-blue" />
+            </span>
+            <span className="flex-1">{block.label}</span>
+            <span
+              aria-hidden
+              className="text-scriba-ink-mute transition-transform group-open:rotate-180"
+            >
+              ⌄
+            </span>
+          </summary>
+          <div className="mt-3 flex flex-col gap-2 pl-7">
+            <p className="text-pretty text-sm font-light leading-relaxed text-scriba-ink">
+              {block.text}
+            </p>
+            {block.source ? (
+              <p className="text-[11px] font-light italic text-scriba-ink-mute">— {block.source}</p>
+            ) : null}
+          </div>
+        </details>
+      );
+    case "relatedVerse": {
+      const parsed = parseVerseReference(block.reference);
+      const hasRange = parsed && parsed.startVerse != null && parsed.endVerse != null;
+      return (
+        <details className="group animate-content-fade rounded-3xl rounded-tl-md border border-dashed border-scriba-blue-soft bg-scriba-blue-soft/40 px-5 py-3 open:py-4">
+          <summary className="flex cursor-pointer list-none items-center gap-2 text-[10px] font-semibold uppercase tracking-[0.14em] text-scriba-ink-mute [&::-webkit-details-marker]:hidden">
+            <span
+              aria-hidden
+              className="flex size-5 shrink-0 items-center justify-center rounded-full bg-scriba-blue-soft"
+            >
+              <BookGlyph className="size-2.5" />
+            </span>
+            <span className="flex-1">Leia também · {block.reference}</span>
+            <span
+              aria-hidden
+              className="text-scriba-ink-mute transition-transform group-open:rotate-180"
+            >
+              ⌄
+            </span>
+          </summary>
+          <div className="mt-3 flex flex-col gap-2 pl-7">
+            {hasRange ? (
+              <div className="text-[15px] font-light leading-relaxed text-session-verse-text">
+                <PassageVerses
+                  bookDisplay={parsed.bookDisplay}
+                  chapter={parsed.chapter}
+                  startVerse={parsed.startVerse as number}
+                  endVerse={parsed.endVerse as number}
+                />
+              </div>
+            ) : block.text ? (
+              <blockquote className="border-l-[3px] border-session-verse-border pl-3.5 text-[15px] font-light italic leading-relaxed text-session-verse-text">
+                {block.text}
+              </blockquote>
+            ) : null}
+            {block.reason ? (
+              <p className="text-xs font-light leading-relaxed text-scriba-ink-mute">
+                {block.reason}
+              </p>
+            ) : null}
+          </div>
+        </details>
+      );
+    }
     default:
       return null;
   }

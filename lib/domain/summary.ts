@@ -8,6 +8,21 @@ export const SummaryBlockSchema = z.discriminatedUnion("type", [
   z.object({ type: z.literal("highlight"), text: z.string() }),
   z.object({ type: z.literal("example"), text: z.string() }),
   z.object({ type: z.literal("quote"), text: z.string(), author: z.string().optional() }),
+  // AI-voice blocks — rendered as visually-distinct collapsible cards so the
+  // reader can distinguish sermon content (speaker's voice) from Scriba
+  // enrichment. Emitted only by /api/final-summary.
+  z.object({
+    type: z.literal("contextCard"),
+    label: z.string(),
+    text: z.string(),
+    source: z.string().optional(),
+  }),
+  z.object({
+    type: z.literal("relatedVerse"),
+    reference: z.string(),
+    text: z.string().default(""),
+    reason: z.string().default(""),
+  }),
   z.object({ type: z.literal("conclusion"), text: z.string() }),
 ]);
 
@@ -83,6 +98,26 @@ export function parseSummaryFromLLM(content: string, phase: SummaryPhase): Summa
         if (!text) break;
         const author = typeof rec.author === "string" ? rec.author.trim() : "";
         blocks.push(author ? { type: "quote", text, author } : { type: "quote", text });
+        break;
+      }
+      case "contextCard": {
+        if (phase !== "final") break;
+        const label = typeof rec.label === "string" ? rec.label.trim() : "";
+        if (!label || !text) break;
+        const source = typeof rec.source === "string" ? rec.source.trim() : "";
+        blocks.push(
+          source
+            ? { type: "contextCard", label, text, source }
+            : { type: "contextCard", label, text }
+        );
+        break;
+      }
+      case "relatedVerse": {
+        if (phase !== "final") break;
+        const reference = typeof rec.reference === "string" ? rec.reference.trim() : "";
+        if (!reference) break;
+        const reason = typeof rec.reason === "string" ? rec.reason.trim() : "";
+        blocks.push({ type: "relatedVerse", reference, text, reason });
         break;
       }
       case "conclusion": {
