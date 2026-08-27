@@ -164,8 +164,8 @@ function Hero() {
               ))}
             </div>
             <div className="text-[11.5px] font-light leading-[1.5] text-scriba-ink-soft sm:text-[12.5px]">
-              <span className="font-semibold text-scriba-ink">12 mil sermões</span> registrados por
-              membros de 340 igrejas.
+              <span className="font-semibold text-scriba-ink">15 sermões</span> registrados por
+              membros do Scriba.
             </div>
           </div>
         </div>
