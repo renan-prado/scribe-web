@@ -1,5 +1,6 @@
 import type { Metadata } from "next";
 import Link from "next/link";
+import { CoinMark } from "@/components/icons/CoinMark";
 import {
   Table,
   TableBody,
@@ -19,7 +20,7 @@ import {
   type UsageFilters as UsageFiltersType,
 } from "@/lib/db/admin/usage";
 import { type MoneyFormatter, makeMoneyFormatter } from "@/lib/fx/format";
-import { getUsdToBrl } from "@/lib/fx/usd-brl";
+import { getUsdToBrl, type UsdBrlRate } from "@/lib/fx/usd-brl";
 import { cn } from "@/lib/utils";
 
 export const metadata: Metadata = { title: "Uso & custos" };
@@ -32,6 +33,27 @@ const DATE_FMT = new Intl.DateTimeFormat("pt-BR", {
   hour: "2-digit",
   minute: "2-digit",
 });
+
+const BRL_FINE = new Intl.NumberFormat("pt-BR", {
+  style: "currency",
+  currency: "BRL",
+  minimumFractionDigits: 3,
+  maximumFractionDigits: 3,
+});
+const USD_FINE = new Intl.NumberFormat("en-US", {
+  style: "currency",
+  currency: "USD",
+  minimumFractionDigits: 3,
+  maximumFractionDigits: 3,
+});
+
+// Custo por moeda vive em faixas muito pequenas ($0.001–$0.05); o formatter
+// padrão (2 casas) esconde a diferença. Aqui forçamos 4 casas — só para essa
+// métrica.
+function formatCostPerCoin(usd: number, rate: UsdBrlRate | null): string {
+  if (rate) return BRL_FINE.format(usd * rate.rate);
+  return USD_FINE.format(usd);
+}
 
 function formatDuration(ms: number | null): string {
   if (!ms || ms <= 0) return "—";
@@ -115,9 +137,9 @@ export default async function AdminUsagePage({ searchParams }: PageProps) {
         }}
       />
 
-      <TotalsGrid summary={summary} money={money} />
+      <TotalsGrid summary={summary} money={money} rate={rate} />
       <RouteAndUserTables summary={summary} money={money} />
-      <SessionsTable summary={summary} money={money} filters={sp} />
+      <SessionsTable summary={summary} money={money} rate={rate} filters={sp} />
       <FxRateBadge rate={rate} />
     </div>
   );
@@ -136,12 +158,13 @@ const KPI_TONES = [
 
 type KpiProps = {
   label: string;
-  value: string;
+  value: React.ReactNode;
   hint?: string;
   tone: (typeof KPI_TONES)[number];
+  icon?: React.ReactNode;
 };
 
-function Kpi({ label, value, hint, tone }: KpiProps) {
+function Kpi({ label, value, hint, tone, icon }: KpiProps) {
   return (
     <div className={SURFACE_CARD}>
       <div
@@ -154,7 +177,10 @@ function Kpi({ label, value, hint, tone }: KpiProps) {
           {label}
         </span>
       </div>
-      <div className="text-[22px] font-semibold tracking-tight text-scriba-ink-strong">{value}</div>
+      <div className="flex items-center gap-2 text-[22px] font-semibold tracking-tight text-scriba-ink-strong">
+        {icon}
+        <span>{value}</span>
+      </div>
       {hint ? <p className="text-[12px] font-light text-scriba-ink-mute">{hint}</p> : null}
     </div>
   );
@@ -171,10 +197,12 @@ function SectionLabel({ children }: { children: React.ReactNode }) {
 type TotalsGridProps = {
   summary: AdminUsageSummary;
   money: MoneyFormatter;
+  rate: UsdBrlRate | null;
 };
 
-function TotalsGrid({ summary, money }: TotalsGridProps) {
-  const { totals, overallCostPerMinuteUsd } = summary;
+function TotalsGrid({ summary, money, rate }: TotalsGridProps) {
+  const { totals, overallCostPerCoinUsd } = summary;
+  const audioMin = totals.totalAudioSeconds > 0 ? totals.totalAudioSeconds / 60 : 0;
   return (
     <section className="grid gap-3 sm:grid-cols-2 lg:grid-cols-4">
       <Kpi
@@ -186,19 +214,21 @@ function TotalsGrid({ summary, money }: TotalsGridProps) {
       <Kpi
         label="Tokens (in / out)"
         value={`${INT.format(totals.totalPromptTokens)} / ${INT.format(totals.totalCompletionTokens)}`}
+        hint={audioMin > 0 ? `${audioMin.toFixed(1)} min de áudio` : undefined}
         tone={KPI_TONES[1]}
       />
       <Kpi
-        label="Áudio processado"
-        value={
-          totals.totalAudioSeconds > 0 ? `${(totals.totalAudioSeconds / 60).toFixed(1)} min` : "—"
-        }
+        label="Moedas gastas"
+        value={INT.format(totals.totalCoins)}
+        hint="Ledger de coin_transactions"
+        icon={<CoinMark size={22} />}
         tone={KPI_TONES[2]}
       />
       <Kpi
-        label="Custo $/min"
-        value={overallCostPerMinuteUsd != null ? money(overallCostPerMinuteUsd, "fine") : "—"}
-        hint="Aprofundamento não entra na conta"
+        label="Custo por moeda"
+        value={overallCostPerCoinUsd != null ? formatCostPerCoin(overallCostPerCoinUsd, rate) : "—"}
+        hint="Total gasto ÷ moedas debitadas"
+        icon={<CoinMark size={22} />}
         tone={KPI_TONES[3]}
       />
     </section>
@@ -324,10 +354,11 @@ function ModeBadge({ mode }: { mode: "live" | "audio_only" | null }) {
 type SessionsTableProps = {
   summary: AdminUsageSummary;
   money: MoneyFormatter;
+  rate: UsdBrlRate | null;
   filters: SearchParams;
 };
 
-function SessionsTable({ summary, money, filters }: SessionsTableProps) {
+function SessionsTable({ summary, money, rate, filters }: SessionsTableProps) {
   return (
     <section className="flex flex-col gap-2">
       <SectionLabel>Sessões</SectionLabel>
@@ -341,13 +372,22 @@ function SessionsTable({ summary, money, filters }: SessionsTableProps) {
               <TableHead className="text-right">Duração</TableHead>
               <TableHead className="text-right">Chamadas</TableHead>
               <TableHead className="text-right">Custo</TableHead>
-              <TableHead className="text-right">Por minuto</TableHead>
+              <TableHead className="text-right">
+                <span className="inline-flex items-center gap-1.5">
+                  <CoinMark size={14} /> Moedas
+                </span>
+              </TableHead>
+              <TableHead className="text-right">
+                <span className="inline-flex items-center gap-1.5">
+                  <CoinMark size={14} /> Por moeda
+                </span>
+              </TableHead>
             </TableRow>
           </TableHeader>
           <TableBody>
             {summary.bySession.length === 0 ? (
               <TableRow>
-                <TableCell colSpan={7} className="text-center text-sm text-muted-foreground">
+                <TableCell colSpan={8} className="text-center text-sm text-muted-foreground">
                   Nenhuma sessão com eventos.
                 </TableCell>
               </TableRow>
@@ -381,8 +421,11 @@ function SessionsTable({ summary, money, filters }: SessionsTableProps) {
                   <TableCell className="text-right">{formatDuration(s.durationMs)}</TableCell>
                   <TableCell className="text-right">{INT.format(s.events)}</TableCell>
                   <TableCell className="text-right">{money(s.totalCostUsd, "fine")}</TableCell>
+                  <TableCell className="text-right tabular-nums">
+                    {s.coins > 0 ? INT.format(s.coins) : "—"}
+                  </TableCell>
                   <TableCell className="text-right">
-                    {s.costPerMinuteUsd != null ? money(s.costPerMinuteUsd, "fine") : "—"}
+                    {s.costPerCoinUsd != null ? formatCostPerCoin(s.costPerCoinUsd, rate) : "—"}
                   </TableCell>
                 </TableRow>
               ))

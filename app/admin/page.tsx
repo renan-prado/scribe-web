@@ -1,13 +1,31 @@
 import { ArrowRight } from "lucide-react";
 import type { Metadata } from "next";
 import Link from "next/link";
+import { CoinMark } from "@/components/icons/CoinMark";
 import { AdminPageHeader } from "@/features/admin/components/AdminPageHeader";
 import { FxRateBadge } from "@/features/admin/components/FxRateBadge";
 import { loadAdminUsageSummary } from "@/lib/db/admin/usage";
 import { listUsers } from "@/lib/db/admin/users";
 import { makeMoneyFormatter } from "@/lib/fx/format";
-import { getUsdToBrl } from "@/lib/fx/usd-brl";
+import { getUsdToBrl, type UsdBrlRate } from "@/lib/fx/usd-brl";
 import { cn } from "@/lib/utils";
+
+const BRL_FINE = new Intl.NumberFormat("pt-BR", {
+  style: "currency",
+  currency: "BRL",
+  minimumFractionDigits: 3,
+  maximumFractionDigits: 3,
+});
+const USD_FINE = new Intl.NumberFormat("en-US", {
+  style: "currency",
+  currency: "USD",
+  minimumFractionDigits: 3,
+  maximumFractionDigits: 3,
+});
+function formatCostPerCoin(usd: number, rate: UsdBrlRate | null): string {
+  if (rate) return BRL_FINE.format(usd * rate.rate);
+  return USD_FINE.format(usd);
+}
 
 export const metadata: Metadata = { title: "Admin" };
 export const dynamic = "force-dynamic";
@@ -48,13 +66,14 @@ export default async function AdminOverviewPage() {
       tone: "mint",
     },
     {
-      label: "Custo $/min",
+      label: "Custo por moeda",
       value:
-        summaryAll.overallCostPerMinuteUsd != null
-          ? money(summaryAll.overallCostPerMinuteUsd, "fine")
+        summaryAll.overallCostPerCoinUsd != null
+          ? formatCostPerCoin(summaryAll.overallCostPerCoinUsd, rate)
           : "—",
-      hint: "Média sobre sessões com duração",
+      hint: `${INT.format(summaryAll.totals.totalCoins)} moedas debitadas`,
       tone: "cream",
+      icon: <CoinMark size={22} />,
     },
   ];
 
@@ -127,7 +146,13 @@ export default async function AdminOverviewPage() {
 }
 
 type Tone = "blue" | "rose" | "mint" | "cream";
-type KpiTile = { label: string; value: string; hint: string; tone: Tone };
+type KpiTile = {
+  label: string;
+  value: string;
+  hint: string;
+  tone: Tone;
+  icon?: React.ReactNode;
+};
 
 const TONE_CLASSES: Record<Tone, { badge: string; label: string }> = {
   blue: { badge: "bg-scriba-blue-soft", label: "text-scriba-blue-ink" },
@@ -136,7 +161,7 @@ const TONE_CLASSES: Record<Tone, { badge: string; label: string }> = {
   cream: { badge: "bg-scriba-cream", label: "text-scriba-cream-accent" },
 };
 
-function KpiCard({ label, value, hint, tone }: KpiTile) {
+function KpiCard({ label, value, hint, tone, icon }: KpiTile) {
   const c = TONE_CLASSES[tone];
   return (
     <div className="flex flex-col gap-1 rounded-2xl border border-scriba-hairline-soft bg-white p-5 shadow-[0_4px_14px_rgba(79,168,240,0.06)]">
@@ -150,7 +175,10 @@ function KpiCard({ label, value, hint, tone }: KpiTile) {
           {label}
         </span>
       </div>
-      <div className="text-[26px] font-semibold tracking-tight text-scriba-ink-strong">{value}</div>
+      <div className="flex items-center gap-2 text-[26px] font-semibold tracking-tight text-scriba-ink-strong">
+        {icon}
+        <span>{value}</span>
+      </div>
       <p className="text-[12px] font-light text-scriba-ink-mute">{hint}</p>
     </div>
   );
