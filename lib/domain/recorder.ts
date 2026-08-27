@@ -25,6 +25,10 @@ export type RecorderOptions = {
   maxChunkMs?: number;
   silenceThreshold?: number;
   silenceHoldMs?: number;
+  /** First chunk index this recorder should emit. Used when resuming from a
+   * pause so new chunks keep counting up instead of colliding with chunks
+   * captured before the pause. Defaults to 0. */
+  startingIndex?: number;
 };
 
 export type ChunkTiming = {

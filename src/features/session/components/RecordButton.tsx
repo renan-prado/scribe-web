@@ -1,4 +1,4 @@
-import { Mic, Square } from "lucide-react";
+import { Mic, Pause, Square } from "lucide-react";
 import { formatMmSs } from "@/features/session/lib/text";
 import { cn } from "@/lib/utils";
 
@@ -7,6 +7,9 @@ type RecordButtonProps = {
   elapsedMs: number;
   onStart: () => void;
   onStop: () => void;
+  /** When provided, adds a pause action to the control cluster. Omit on the
+   * idle/empty state where pause has no meaning. */
+  onPause?: () => void;
   compact?: boolean;
   /** Keep the halo pulse active even while recording. Used by the audio-only
    * view where the big button is the only element on screen and needs the
@@ -23,20 +26,16 @@ export function RecordButton({
   elapsedMs,
   onStart,
   onStop,
+  onPause,
   compact = false,
   pulseWhileRunning = false,
   autoStarting = false,
 }: RecordButtonProps) {
   if (compact) {
     return (
-      <button
-        type="button"
-        onClick={onStop}
-        aria-label="Parar gravação"
+      <div
         className={cn(
-          "group flex items-center gap-3 rounded-full bg-scriba-ink-strong px-5 py-3.5 text-white shadow-[0_10px_24px_rgba(51,65,79,0.28)] outline-none transition-all",
-          "hover:bg-scriba-ink-strong/95 hover:shadow-[0_12px_28px_rgba(51,65,79,0.35)]",
-          "focus-visible:ring-2 focus-visible:ring-white/40 active:scale-95"
+          "flex items-center gap-2 rounded-full bg-scriba-ink-strong pl-4 pr-1.5 py-1.5 text-white shadow-[0_10px_24px_rgba(51,65,79,0.28)]"
         )}
       >
         <span className="relative flex size-2.5 items-center justify-center">
@@ -46,12 +45,37 @@ export function RecordButton({
         <span className="font-mono text-sm font-medium tabular-nums tracking-wider">
           {formatMmSs(elapsedMs)}
         </span>
-        <span className="h-4 w-px bg-white/25" />
-        <span className="flex items-center gap-1.5 text-sm font-medium">
-          <Square className="size-2.5 fill-current" />
+        {onPause ? (
+          <>
+            <span className="h-4 w-px bg-white/20" />
+            <button
+              type="button"
+              onClick={onPause}
+              aria-label="Pausar gravação"
+              className={cn(
+                "inline-flex items-center gap-1.5 rounded-full px-3 py-1.5 text-sm font-medium outline-none transition-colors",
+                "hover:bg-white/10 focus-visible:ring-2 focus-visible:ring-white/40 active:scale-95"
+              )}
+            >
+              <Pause className="size-3.5 fill-current" />
+              pausar
+            </button>
+          </>
+        ) : null}
+        <span className="h-4 w-px bg-white/20" />
+        <button
+          type="button"
+          onClick={onStop}
+          aria-label="Parar gravação"
+          className={cn(
+            "inline-flex items-center gap-1.5 rounded-full bg-[#F0564E]/90 px-3 py-1.5 text-sm font-medium outline-none transition-colors",
+            "hover:bg-[#F0564E] focus-visible:ring-2 focus-visible:ring-white/40 active:scale-95"
+          )}
+        >
+          <Square className="size-3 fill-current" />
           parar
-        </span>
-      </button>
+        </button>
+      </div>
     );
   }
   const showRecordingPulse = running && pulseWhileRunning;
@@ -82,6 +106,21 @@ export function RecordButton({
           )}
         </button>
       </div>
+      {running && onPause ? (
+        <button
+          type="button"
+          onClick={onPause}
+          aria-label="Pausar gravação"
+          className={cn(
+            "inline-flex items-center gap-2 rounded-full border border-scriba-hairline bg-white px-4 py-2 text-sm font-semibold text-scriba-ink outline-none transition-colors",
+            "hover:bg-scriba-blue-soft/40",
+            "focus-visible:ring-2 focus-visible:ring-ring/40"
+          )}
+        >
+          <Pause className="size-3.5 fill-current" />
+          Pausar
+        </button>
+      ) : null}
       {!running && !autoStarting ? (
         <p className="max-w-xs text-pretty text-center text-sm font-light leading-relaxed text-scriba-ink-soft">
           Toque para começar a gravar.

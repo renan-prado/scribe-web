@@ -61,6 +61,11 @@ export type ResetArgs = {
 export type SessionStoreState = {
   // ---- lifecycle ----
   running: boolean;
+  /** Temporary hold: capture is torn down but the session (transcript, feed,
+   * summary intent) is preserved. Coin billing, background keepalive, and
+   * pipeline API calls are frozen while this is true. Resume rebuilds the
+   * recorder without wiping any accumulated state. */
+  paused: boolean;
   finalizing: boolean;
   saved: boolean;
   startupError: string;
@@ -126,6 +131,7 @@ export type SessionStoreState = {
 
   // primitive setters
   setRunning: (v: boolean) => void;
+  setPaused: (v: boolean) => void;
   setFinalizing: (v: boolean) => void;
   setSaved: (v: boolean) => void;
   setStartupError: (v: string) => void;
@@ -181,6 +187,7 @@ export const useSessionStore = create<SessionStoreState>()(
   subscribeWithSelector((set, get) => ({
     // ---- initial state ----
     running: false,
+    paused: false,
     finalizing: false,
     saved: false,
     startupError: "",
@@ -224,6 +231,7 @@ export const useSessionStore = create<SessionStoreState>()(
     reset: ({ speakerName, speakerLocation }) =>
       set({
         running: false,
+        paused: false,
         finalizing: false,
         saved: false,
         startupError: "",
@@ -254,6 +262,7 @@ export const useSessionStore = create<SessionStoreState>()(
       }),
 
     setRunning: (v) => set({ running: v }),
+    setPaused: (v) => set({ paused: v }),
     setFinalizing: (v) => set({ finalizing: v }),
     setSaved: (v) => set({ saved: v }),
     setStartupError: (v) => set({ startupError: v }),
