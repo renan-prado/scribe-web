@@ -1,7 +1,7 @@
 "use client";
 
 import { useRouter } from "next/navigation";
-import { Activity, useCallback, useEffect, useMemo, useRef, useState } from "react";
+import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { toast } from "sonner";
 import {
   Dialog,
@@ -12,7 +12,7 @@ import {
 } from "@/components/ui/dialog";
 import { Feed } from "@/features/session/components/Feed";
 import { FinalizingOverlay } from "@/features/session/components/FinalizingOverlay";
-import { HiddenTabOverlay } from "@/features/session/components/HiddenTabOverlay";
+import { PausedOverlay } from "@/features/session/components/PausedOverlay";
 import { RecordButton } from "@/features/session/components/RecordButton";
 import { RecordingHeader } from "@/features/session/components/RecordingHeader";
 import { SessionMenu } from "@/features/session/components/SessionMenu";
@@ -25,16 +25,21 @@ import {
   RECORDER_SILENCE_HOLD_MS,
   RECORDER_SILENCE_THRESHOLD,
 } from "@/features/session/config";
+import { useBackgroundKeepalive } from "@/features/session/hooks/useBackgroundKeepalive";
 import { useBiblePipeline } from "@/features/session/hooks/useBiblePipeline";
 import { useCoinTick } from "@/features/session/hooks/useCoinTick";
 import { useDrainTimer } from "@/features/session/hooks/useDrainTimer";
 import { useEchoPipeline } from "@/features/session/hooks/useEchoPipeline";
 import { useElapsedTimer } from "@/features/session/hooks/useElapsedTimer";
 import { useInsightsPipeline } from "@/features/session/hooks/useInsightsPipeline";
+import { useUnloadGuard } from "@/features/session/hooks/useUnloadGuard";
 import { useVersePrefetcher } from "@/features/session/hooks/useVerseFetch";
-import { useVisibilityWarning } from "@/features/session/hooks/useVisibilityWarning";
 import { useWakeLock } from "@/features/session/hooks/useWakeLock";
-import { requestFinalSummary, uploadChunkWithRetry } from "@/features/session/lib/api";
+import {
+  requestDeleteSession,
+  requestFinalSummary,
+  uploadChunkWithRetry,
+} from "@/features/session/lib/api";
 import { isSilentBlob } from "@/features/session/lib/audio";
 import { tailSentences } from "@/features/session/lib/text";
 import { getSessionState, useSessionStore } from "@/features/session/store";
@@ -64,11 +69,20 @@ export function RecordingLive({
   // ---- imperative refs (browser resources, mount guards) ----
   const recorderRef = useRef<Recorder | null>(null);
   const startedAtRef = useRef<number>(0);
+  /** Active-recording elapsed ms captured the instant we entered pause; used
+   * to re-anchor `startedAtRef` on resume so the timer picks up where it
+   * stopped (paused time is not counted). */
+  const pausedElapsedRef = useRef<number>(0);
+  /** Next chunk index to hand to the new recorder created on resume — keeps
+   * chunk indices monotonically increasing across pauses so nothing overwrites
+   * previously stored transcript rows. */
+  const nextChunkIndexRef = useRef<number>(0);
   const bottomRef = useRef<HTMLDivElement | null>(null);
   const autoStartFiredRef = useRef(false);
 
   // ---- store subscriptions ----
   const running = useSessionStore((s) => s.running);
+  const paused = useSessionStore((s) => s.paused);
   const finalizing = useSessionStore((s) => s.finalizing);
   const startupError = useSessionStore((s) => s.startupError);
   const chunks = useSessionStore((s) => s.chunks);
@@ -82,11 +96,9 @@ export function RecordingLive({
   const [transcriptOpen, setTranscriptOpen] = useState(false);
   const [liveFeedOpen, setLiveFeedOpen] = useState(false);
 
-  const elapsedMs = useElapsedTimer(running, startedAtRef);
-  useWakeLock({ enabled: running });
-  const { warning: hiddenWarning, dismiss: dismissHiddenWarning } = useVisibilityWarning({
-    enabled: running,
-  });
+  const activelyRecording = running && !paused;
+  const elapsedMs = useElapsedTimer(activelyRecording, startedAtRef);
+  useWakeLock({ enabled: activelyRecording });
   const prefetchVerse = useVersePrefetcher();
 
   // ---- feed drip + three live pipelines ----
@@ -166,11 +178,15 @@ export function RecordingLive({
 
     cancelDrainTimer();
 
+    nextChunkIndexRef.current = 0;
+    pausedElapsedRef.current = 0;
+
     const rec = createRecorder({
       minChunkMs: RECORDER_MIN_CHUNK_MS,
       maxChunkMs: RECORDER_MAX_CHUNK_MS,
       silenceThreshold: RECORDER_SILENCE_THRESHOLD,
       silenceHoldMs: RECORDER_SILENCE_HOLD_MS,
+      startingIndex: 0,
     });
     rec.onChunk(handleChunk);
 
@@ -187,17 +203,76 @@ export function RecordingLive({
     }
   }, [handleChunk, sessionId, initialSpeakerName, initialSpeakerLocation, cancelDrainTimer]);
 
+  const pause = useCallback(async () => {
+    const s = getSessionState();
+    if (!s.running || s.paused) return;
+    // Freeze the elapsed timer at its current value — startedAtRef is now
+    // stale and will be re-anchored on resume.
+    pausedElapsedRef.current = Math.max(0, performance.now() - startedAtRef.current);
+    // Next chunk index the RESUMED recorder should start at. Uses the max
+    // of already-stored chunk indices plus one, so the resumed capture never
+    // overwrites transcript rows produced before the pause.
+    const chunkIndices = Object.keys(getSessionState().chunks).map(Number);
+    nextChunkIndexRef.current = chunkIndices.length > 0 ? Math.max(...chunkIndices) + 1 : 0;
+    s.setPaused(true);
+    // Tearing down the recorder releases the mic (removes the OS "in use"
+    // indicator) and stops MediaRecorder from consuming any resources.
+    await recorderRef.current?.stop();
+    recorderRef.current = null;
+    devLog("[session] pause", {
+      sessionId,
+      at: new Date().toISOString(),
+      elapsedMs: pausedElapsedRef.current,
+      nextChunkIndex: nextChunkIndexRef.current,
+    });
+  }, [sessionId]);
+
+  const resume = useCallback(async () => {
+    const s = getSessionState();
+    if (!s.running || !s.paused) return;
+
+    const rec = createRecorder({
+      minChunkMs: RECORDER_MIN_CHUNK_MS,
+      maxChunkMs: RECORDER_MAX_CHUNK_MS,
+      silenceThreshold: RECORDER_SILENCE_THRESHOLD,
+      silenceHoldMs: RECORDER_SILENCE_HOLD_MS,
+      startingIndex: nextChunkIndexRef.current,
+    });
+    rec.onChunk(handleChunk);
+
+    try {
+      await rec.start();
+      recorderRef.current = rec;
+      // Re-anchor timer so elapsed picks up from the paused value.
+      startedAtRef.current = performance.now() - pausedElapsedRef.current;
+      s.setPaused(false);
+      devLog("[session] resume", {
+        sessionId,
+        at: new Date().toISOString(),
+        elapsedMs: pausedElapsedRef.current,
+        nextChunkIndex: nextChunkIndexRef.current,
+      });
+    } catch (err) {
+      getSessionState().setStartupError((err as Error).message ?? "failed to resume");
+    }
+  }, [handleChunk, sessionId]);
+
   const stop = useCallback(async () => {
     const s = getSessionState();
     if (!s.running) return;
-    const durationMs = Math.round(performance.now() - startedAtRef.current);
+    // While paused, startedAtRef is stale — use the frozen elapsed instead.
+    const durationMs = s.paused
+      ? pausedElapsedRef.current
+      : Math.round(performance.now() - startedAtRef.current);
     devLog("[session] stop", {
       sessionId,
       at: new Date().toISOString(),
       durationMs,
+      wasPaused: s.paused,
       ...s.counters,
     });
     s.setRunning(false);
+    s.setPaused(false);
     await recorderRef.current?.stop();
     recorderRef.current = null;
 
@@ -209,7 +284,18 @@ export function RecordingLive({
       .join(" ")
       .replace(/\s+/g, " ")
       .trim();
-    if (!finalTranscript) return;
+    // Empty transcript = the mic was open but nothing intelligible was
+    // captured (silence, room noise below VAD, mic muted, etc). Skip the
+    // final-summary LLM call and discard the empty session row created
+    // up-front by the "Nova gravação" dialog so it doesn't clutter history.
+    if (!finalTranscript) {
+      toast.warning("Nenhuma fala foi capturada.", {
+        description: "A gravação foi descartada sem gerar resumo.",
+      });
+      void requestDeleteSession(sessionId);
+      router.replace("/list");
+      return;
+    }
 
     const capturedItems = getSessionState().feedItems;
     const capturedSpeakerName = getSessionState().speakerName;
@@ -253,7 +339,7 @@ export function RecordingLive({
   // we call stop() so the pipeline finalizes what was captured so far
   // instead of leaving the recorder running with no budget behind it.
   useCoinTick({
-    enabled: running,
+    enabled: activelyRecording,
     reason: "live_minute",
     sessionId,
     onDepleted: () => {
@@ -263,6 +349,16 @@ export function RecordingLive({
       void stop();
     },
   });
+
+  // Background-recording defenses (silent audio + Media Session + RN bridge)
+  // and browser close-confirmation. See hook docs for full rationale.
+  useBackgroundKeepalive({
+    enabled: activelyRecording,
+    sessionId,
+    label: initialSpeakerName || "Gravando sermão",
+    onExternalStop: () => void stop(),
+  });
+  useUnloadGuard(running);
 
   useEffect(() => {
     return () => {
@@ -360,16 +456,20 @@ export function RecordingLive({
           />
         </div>
       ) : null}
-      {running ? (
+      {running && !paused ? (
         <div className="fixed bottom-6 left-1/2 z-40 -translate-x-1/2">
           <RecordButton
             running={running}
             elapsedMs={elapsedMs}
             onStart={start}
             onStop={stop}
+            onPause={pause}
             compact
           />
         </div>
+      ) : null}
+      {running && paused ? (
+        <PausedOverlay elapsedMs={elapsedMs} onResume={() => void resume()} onStop={stop} />
       ) : null}
       {running && !autoFollow && pendingNew > 0 ? (
         <button
@@ -430,9 +530,6 @@ export function RecordingLive({
             </div>
           ) : null}
 
-          <Activity mode={hiddenWarning && running ? "visible" : "hidden"}>
-            <HiddenTabOverlay onDismiss={dismissHiddenWarning} />
-          </Activity>
           {finalizing ? <FinalizingOverlay /> : null}
         </section>
       ) : null}

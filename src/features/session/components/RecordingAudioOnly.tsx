@@ -1,10 +1,10 @@
 "use client";
 
 import { useRouter } from "next/navigation";
-import { Activity, useCallback, useEffect, useRef, useState } from "react";
+import { useCallback, useEffect, useRef, useState } from "react";
 import { toast } from "sonner";
 import { FinalizingOverlay } from "@/features/session/components/FinalizingOverlay";
-import { HiddenTabOverlay } from "@/features/session/components/HiddenTabOverlay";
+import { PausedOverlay } from "@/features/session/components/PausedOverlay";
 import { RecordButton } from "@/features/session/components/RecordButton";
 import {
   RECORDER_MAX_CHUNK_MS,
@@ -12,11 +12,16 @@ import {
   RECORDER_SILENCE_HOLD_MS,
   RECORDER_SILENCE_THRESHOLD,
 } from "@/features/session/config";
+import { useBackgroundKeepalive } from "@/features/session/hooks/useBackgroundKeepalive";
 import { useCoinTick } from "@/features/session/hooks/useCoinTick";
 import { useElapsedTimer } from "@/features/session/hooks/useElapsedTimer";
-import { useVisibilityWarning } from "@/features/session/hooks/useVisibilityWarning";
+import { useUnloadGuard } from "@/features/session/hooks/useUnloadGuard";
 import { useWakeLock } from "@/features/session/hooks/useWakeLock";
-import { requestFinalSummary, uploadChunkWithRetry } from "@/features/session/lib/api";
+import {
+  requestDeleteSession,
+  requestFinalSummary,
+  uploadChunkWithRetry,
+} from "@/features/session/lib/api";
 import { isSilentBlob } from "@/features/session/lib/audio";
 import { formatMmSs, tailSentences } from "@/features/session/lib/text";
 import type { ChunkEvent, Recorder } from "@/lib/domain/recorder";
@@ -49,18 +54,23 @@ export function RecordingAudioOnly({
   const router = useRouter();
   const recorderRef = useRef<Recorder | null>(null);
   const startedAtRef = useRef<number>(0);
+  /** Active-recording elapsed ms captured the instant we entered pause; used
+   * to re-anchor `startedAtRef` on resume so the timer picks up where it
+   * stopped (paused time is not counted). */
+  const pausedElapsedRef = useRef<number>(0);
+  /** Next chunk index to hand to the recorder created on resume. */
+  const nextChunkIndexRef = useRef<number>(0);
   const chunksRef = useRef<Map<number, string>>(new Map());
   const autoStartFiredRef = useRef(false);
 
   const [running, setRunning] = useState(false);
+  const [paused, setPaused] = useState(false);
   const [finalizing, setFinalizing] = useState(false);
   const [startupError, setStartupError] = useState("");
 
-  const elapsedMs = useElapsedTimer(running, startedAtRef);
-  useWakeLock({ enabled: running });
-  const { warning: hiddenWarning, dismiss: dismissHiddenWarning } = useVisibilityWarning({
-    enabled: running,
-  });
+  const activelyRecording = running && !paused;
+  const elapsedMs = useElapsedTimer(activelyRecording, startedAtRef);
+  useWakeLock({ enabled: activelyRecording });
 
   const assembleTranscript = useCallback(() => {
     const indices = Array.from(chunksRef.current.keys()).sort((a, b) => a - b);
@@ -88,12 +98,15 @@ export function RecordingAudioOnly({
   const start = useCallback(async () => {
     if (recorderRef.current) return;
     chunksRef.current = new Map();
+    nextChunkIndexRef.current = 0;
+    pausedElapsedRef.current = 0;
     setStartupError("");
     const rec = createRecorder({
       minChunkMs: RECORDER_MIN_CHUNK_MS,
       maxChunkMs: RECORDER_MAX_CHUNK_MS,
       silenceThreshold: RECORDER_SILENCE_THRESHOLD,
       silenceHoldMs: RECORDER_SILENCE_HOLD_MS,
+      startingIndex: 0,
     });
     rec.onChunk(handleChunk);
     try {
@@ -103,24 +116,73 @@ export function RecordingAudioOnly({
       // observes a valid origin on first render — see AGENTS.md guardrails.
       startedAtRef.current = performance.now();
       setRunning(true);
+      setPaused(false);
       devLog("[session:audio] start", { sessionId, at: new Date().toISOString() });
     } catch (err) {
       setStartupError((err as Error).message ?? "failed to start");
     }
   }, [handleChunk, sessionId]);
 
-  const stop = useCallback(async () => {
-    if (!recorderRef.current) return;
-    const durationMs = Math.round(performance.now() - startedAtRef.current);
-    setRunning(false);
+  const pause = useCallback(async () => {
+    if (!recorderRef.current || paused) return;
+    pausedElapsedRef.current = Math.max(0, performance.now() - startedAtRef.current);
+    const indices = Array.from(chunksRef.current.keys());
+    nextChunkIndexRef.current = indices.length > 0 ? Math.max(...indices) + 1 : 0;
+    setPaused(true);
     await recorderRef.current.stop();
+    recorderRef.current = null;
+    devLog("[session:audio] pause", {
+      sessionId,
+      elapsedMs: pausedElapsedRef.current,
+      nextChunkIndex: nextChunkIndexRef.current,
+    });
+  }, [paused, sessionId]);
+
+  const resume = useCallback(async () => {
+    if (recorderRef.current || !paused) return;
+    const rec = createRecorder({
+      minChunkMs: RECORDER_MIN_CHUNK_MS,
+      maxChunkMs: RECORDER_MAX_CHUNK_MS,
+      silenceThreshold: RECORDER_SILENCE_THRESHOLD,
+      silenceHoldMs: RECORDER_SILENCE_HOLD_MS,
+      startingIndex: nextChunkIndexRef.current,
+    });
+    rec.onChunk(handleChunk);
+    try {
+      await rec.start();
+      recorderRef.current = rec;
+      startedAtRef.current = performance.now() - pausedElapsedRef.current;
+      setPaused(false);
+      devLog("[session:audio] resume", {
+        sessionId,
+        elapsedMs: pausedElapsedRef.current,
+        nextChunkIndex: nextChunkIndexRef.current,
+      });
+    } catch (err) {
+      setStartupError((err as Error).message ?? "failed to resume");
+    }
+  }, [handleChunk, paused, sessionId]);
+
+  const stop = useCallback(async () => {
+    if (!recorderRef.current && !paused) return;
+    const durationMs = paused
+      ? pausedElapsedRef.current
+      : Math.round(performance.now() - startedAtRef.current);
+    setRunning(false);
+    setPaused(false);
+    await recorderRef.current?.stop();
     recorderRef.current = null;
 
     const transcript = assembleTranscript();
     if (!transcript) {
-      toast.error("Nada foi capturado.", {
-        description: "Nenhuma fala foi transcrita durante a gravação.",
+      // Nothing intelligible was captured — skip the final-summary LLM call
+      // and delete the empty session row so the user doesn't see it in their
+      // history.
+      toast.warning("Nenhuma fala foi capturada.", {
+        description: "A gravação foi descartada sem gerar resumo.",
       });
+      void requestDeleteSession(sessionId);
+      router.replace("/list");
       return;
     }
 
@@ -149,14 +211,13 @@ export function RecordingAudioOnly({
     } finally {
       setFinalizing(false);
     }
-  }, [assembleTranscript, sessionId, initialSpeakerName, initialSpeakerLocation, router]);
+  }, [assembleTranscript, paused, sessionId, initialSpeakerName, initialSpeakerLocation, router]);
 
-  // Coin billing: 3 moedas/min (per started minute). First tick fires
-  // immediately so t=0 is billed; subsequent ticks every 60s. On depletion
-  // we call stop() to finalize whatever was captured so far — the summary
-  // still runs on the fragment the user paid for.
+  // Coin billing: 3 moedas/min (per started minute). While paused billing is
+  // frozen; `useCoinTick` preserves the current minute so resuming does not
+  // trigger an extra debit.
   useCoinTick({
-    enabled: running,
+    enabled: activelyRecording,
     reason: "audio_only_minute",
     sessionId,
     onDepleted: () => {
@@ -166,6 +227,16 @@ export function RecordingAudioOnly({
       void stop();
     },
   });
+
+  // Background-recording defenses (silent audio + Media Session + RN bridge)
+  // and browser close-confirmation. See hook docs for full rationale.
+  useBackgroundKeepalive({
+    enabled: activelyRecording,
+    sessionId,
+    label: initialSpeakerName || "Gravando áudio",
+    onExternalStop: () => void stop(),
+  });
+  useUnloadGuard(running);
 
   useEffect(() => {
     return () => {
@@ -188,10 +259,11 @@ export function RecordingAudioOnly({
           elapsedMs={elapsedMs}
           onStart={start}
           onStop={stop}
+          onPause={running && !paused ? pause : undefined}
           pulseWhileRunning
           autoStarting={autoStart && !running && !startupError}
         />
-        {running ? (
+        {running && !paused ? (
           <p className="font-mono text-sm font-medium tabular-nums tracking-wider text-scriba-ink">
             {formatMmSs(elapsedMs)}
           </p>
@@ -203,9 +275,9 @@ export function RecordingAudioOnly({
         ) : null}
       </div>
 
-      <Activity mode={hiddenWarning && running ? "visible" : "hidden"}>
-        <HiddenTabOverlay onDismiss={dismissHiddenWarning} />
-      </Activity>
+      {running && paused ? (
+        <PausedOverlay elapsedMs={elapsedMs} onResume={() => void resume()} onStop={stop} />
+      ) : null}
       {finalizing ? <FinalizingOverlay /> : null}
     </main>
   );
