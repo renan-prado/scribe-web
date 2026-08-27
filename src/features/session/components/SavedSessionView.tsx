@@ -1,8 +1,8 @@
 "use client";
 
-import { ArrowLeft, MapPin, Plus } from "lucide-react";
+import { ArrowLeft, MapPin, Pencil, Plus } from "lucide-react";
 import { useRouter } from "next/navigation";
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { toast } from "sonner";
 import { NavLink } from "@/components/NavLink";
 import { PageBlurOverlay } from "@/components/PageBlurOverlay";
@@ -10,12 +10,12 @@ import {
   Dialog,
   DialogContent,
   DialogDescription,
+  DialogFooter,
   DialogHeader,
   DialogTitle,
 } from "@/components/ui/dialog";
 import { useCoinsStore } from "@/features/coins/store";
 import { DeepenButton } from "@/features/session/components/DeepenButton";
-import { EditSessionDialog } from "@/features/session/components/EditSessionDialog";
 import { EntityFieldDialog } from "@/features/session/components/EntityFieldDialog";
 import { Feed } from "@/features/session/components/Feed";
 import { SavedTranscriptView } from "@/features/session/components/SavedTranscriptView";
@@ -40,6 +40,82 @@ const ADD_BADGE_CLASSES = cn(
   "inline-flex items-center gap-1 rounded-full bg-scriba-ink-mute/10 px-2.5 py-1 text-[11px] font-semibold uppercase tracking-wider text-scriba-ink-soft outline-none transition-colors",
   "hover:bg-scriba-blue-soft/70 hover:text-scriba-blue focus-visible:ring-2 focus-visible:ring-ring/40"
 );
+
+type TitleDialogProps = {
+  open: boolean;
+  onOpenChange: (open: boolean) => void;
+  initialValue: string;
+  onSave: (value: string) => Promise<void> | void;
+};
+
+function TitleDialog({ open, onOpenChange, initialValue, onSave }: TitleDialogProps) {
+  const [draft, setDraft] = useState(initialValue);
+  const [saving, setSaving] = useState(false);
+  useEffect(() => {
+    if (open) setDraft(initialValue);
+  }, [open, initialValue]);
+  async function handleSave() {
+    const trimmed = draft.trim();
+    if (!trimmed) {
+      onOpenChange(false);
+      return;
+    }
+    setSaving(true);
+    try {
+      await onSave(trimmed);
+      onOpenChange(false);
+    } catch {
+      toast.error("Não foi possível salvar o título.");
+    } finally {
+      setSaving(false);
+    }
+  }
+  return (
+    <Dialog open={open} onOpenChange={onOpenChange}>
+      <DialogContent className="sm:max-w-sm">
+        <DialogHeader>
+          <DialogTitle>Editar título</DialogTitle>
+        </DialogHeader>
+        <input
+          className="w-full rounded-md border border-input bg-transparent px-3 py-2 text-sm outline-none ring-offset-background placeholder:text-muted-foreground focus:border-ring focus:ring-2 focus:ring-ring/50"
+          value={draft}
+          onChange={(e) => setDraft(e.target.value)}
+          onKeyDown={(e) => e.key === "Enter" && handleSave()}
+          disabled={saving}
+          autoFocus
+        />
+        <DialogFooter>
+          <button
+            type="button"
+            onClick={() => onOpenChange(false)}
+            disabled={saving}
+            className={cn(
+              "inline-flex h-9 items-center justify-center rounded-full px-4 text-[13px] font-medium text-scriba-ink-soft transition-colors",
+              "hover:bg-scriba-blue-soft/60 hover:text-scriba-ink",
+              "focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-scriba-blue/30",
+              "disabled:cursor-not-allowed disabled:opacity-60"
+            )}
+          >
+            Cancelar
+          </button>
+          <button
+            type="button"
+            onClick={handleSave}
+            disabled={saving}
+            className={cn(
+              "inline-flex h-9 items-center justify-center rounded-full bg-scriba-blue px-5 text-[13px] font-semibold text-white shadow-[0_8px_20px_rgba(79,168,240,0.28)] transition-colors",
+              "hover:bg-scriba-blue-hover",
+              "focus-visible:outline-none focus-visible:ring-4 focus-visible:ring-scriba-blue/30",
+              "disabled:cursor-not-allowed disabled:opacity-70"
+            )}
+          >
+            {saving ? "Salvando…" : "Salvar"}
+          </button>
+        </DialogFooter>
+      </DialogContent>
+    </Dialog>
+  );
+}
 
 /**
  * View of a saved session. Renders the same SummaryView the live page uses on
@@ -80,7 +156,7 @@ export function SavedSessionView({
 }: SavedSessionViewProps) {
   const [feedOpen, setFeedOpen] = useState(false);
   const [transcriptOpen, setTranscriptOpen] = useState(false);
-  const [editOpen, setEditOpen] = useState(false);
+  const [titleDialogOpen, setTitleDialogOpen] = useState(false);
   const [speakerDialogOpen, setSpeakerDialogOpen] = useState(false);
   const [locationDialogOpen, setLocationDialogOpen] = useState(false);
   const [reprocessing, setReprocessing] = useState(false);
@@ -126,23 +202,7 @@ export function SavedSessionView({
     }
   }
 
-  async function handleSave(fields: {
-    title: string;
-    speakerName: string;
-    speakerLocation: string;
-  }) {
-    const res = await fetch(`/api/sessions/${id}`, {
-      method: "PATCH",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify(fields),
-    });
-    if (!res.ok) throw new Error("update failed");
-    setTitle(fields.title || title);
-    setSpeakerName(fields.speakerName || null);
-    setSpeakerLocation(fields.speakerLocation || null);
-  }
-
-  async function patchField(field: "speakerName" | "speakerLocation", value: string) {
+  async function patchField(field: "title" | "speakerName" | "speakerLocation", value: string) {
     const body = { [field]: value || null };
     const res = await fetch(`/api/sessions/${id}`, {
       method: "PATCH",
@@ -150,7 +210,8 @@ export function SavedSessionView({
       body: JSON.stringify(body),
     });
     if (!res.ok) throw new Error("update failed");
-    if (field === "speakerName") setSpeakerName(value || null);
+    if (field === "title") setTitle(value || title);
+    else if (field === "speakerName") setSpeakerName(value || null);
     else setSpeakerLocation(value || null);
   }
 
@@ -213,7 +274,6 @@ export function SavedSessionView({
               hasLiveFeed={feedItems.length > 0}
               onOpenTranscript={() => setTranscriptOpen(true)}
               onOpenLiveFeed={() => setFeedOpen(true)}
-              onEdit={() => setEditOpen(true)}
               onDelete={handleDelete}
               onReprocess={summary ? handleReprocess : undefined}
               reprocessing={reprocessing}
@@ -221,9 +281,16 @@ export function SavedSessionView({
           </div>
         </div>
 
-        <h1 className="font-heading text-2xl font-semibold leading-tight tracking-tight text-scriba-ink-strong sm:text-3xl md:text-4xl">
-          {title}
-        </h1>
+        <button
+          type="button"
+          onClick={() => setTitleDialogOpen(true)}
+          className="group -mx-1 rounded-md px-1 py-0.5 text-left transition-colors hover:bg-scriba-blue-soft/60"
+        >
+          <h1 className="font-heading text-2xl font-semibold leading-tight tracking-tight text-scriba-ink-strong sm:text-3xl md:text-4xl">
+            {title}
+            <Pencil className="ml-2 inline size-4 align-middle opacity-0 text-scriba-ink-mute transition-opacity group-hover:opacity-60" />
+          </h1>
+        </button>
 
         <div className="flex items-end justify-between gap-3">
           <div className="flex min-w-0 flex-col gap-1">
@@ -300,15 +367,11 @@ export function SavedSessionView({
         </DialogContent>
       </Dialog>
 
-      <EditSessionDialog
-        open={editOpen}
-        onOpenChange={setEditOpen}
-        initial={{
-          title,
-          speakerName: speakerName ?? "",
-          speakerLocation: speakerLocation ?? "",
-        }}
-        onSave={handleSave}
+      <TitleDialog
+        open={titleDialogOpen}
+        onOpenChange={setTitleDialogOpen}
+        initialValue={title}
+        onSave={(v) => patchField("title", v)}
       />
 
       <EntityFieldDialog

@@ -235,22 +235,22 @@ export async function getSession(id: string): Promise<SessionRow | null> {
 }
 
 export type UpdateSessionMetaInput = {
-  title: string | null;
-  speakerName: string | null;
-  speakerLocation: string | null;
+  title?: string | null;
+  speakerName?: string | null;
+  speakerLocation?: string | null;
   speakerId?: string | null;
   locationId?: string | null;
 };
 
 export async function updateSessionMeta(id: string, input: UpdateSessionMetaInput): Promise<void> {
   const supabase = await createClient();
-  const patch: Record<string, unknown> = {
-    title: input.title,
-    speaker_name: input.speakerName,
-    speaker_location: input.speakerLocation,
-  };
+  const patch: Record<string, unknown> = {};
+  if (input.title !== undefined) patch.title = input.title;
+  if (input.speakerName !== undefined) patch.speaker_name = input.speakerName;
+  if (input.speakerLocation !== undefined) patch.speaker_location = input.speakerLocation;
   if (input.speakerId !== undefined) patch.speaker_id = input.speakerId;
   if (input.locationId !== undefined) patch.location_id = input.locationId;
+  if (Object.keys(patch).length === 0) return;
   const { error } = await supabase.from("sessions").update(patch).eq("id", id);
   if (error) throw new Error(`updateSessionMeta failed: ${error.message}`);
 }

@@ -38,16 +38,20 @@ export async function PATCH(request: Request, { params }: { params: Promise<{ id
   const parsed = await parseJsonBody(request, PatchSchema);
   if (!parsed.ok) return parsed.response;
 
-  const title = parsed.data.title?.trim() || null;
-  const speakerName = parsed.data.speakerName?.trim() || null;
-  const speakerLocation = parsed.data.speakerLocation?.trim() || null;
+  const title = parsed.data.title === undefined ? undefined : parsed.data.title?.trim() || null;
+  const speakerName =
+    parsed.data.speakerName === undefined ? undefined : parsed.data.speakerName?.trim() || null;
+  const speakerLocation =
+    parsed.data.speakerLocation === undefined
+      ? undefined
+      : parsed.data.speakerLocation?.trim() || null;
 
   // Promote free-text speaker/location into per-user entities so future edits
   // can autocomplete against them. Fall through silently if entity save fails
   // — the session meta patch is what the user is waiting on.
   let speakerId: string | null | undefined;
   let locationId: string | null | undefined;
-  if (parsed.data.speakerName !== undefined) {
+  if (speakerName !== undefined) {
     if (speakerName) {
       try {
         const s = await upsertSpeakerByName({ name: speakerName, userId: auth.user.id });
@@ -59,7 +63,7 @@ export async function PATCH(request: Request, { params }: { params: Promise<{ id
       speakerId = null;
     }
   }
-  if (parsed.data.speakerLocation !== undefined) {
+  if (speakerLocation !== undefined) {
     if (speakerLocation) {
       try {
         const l = await upsertLocationByName({ name: speakerLocation, userId: auth.user.id });

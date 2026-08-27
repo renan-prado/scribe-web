@@ -1,7 +1,6 @@
 "use client";
 
 import { useEffect, useState } from "react";
-import { Button } from "@/components/ui/button";
 import {
   Dialog,
   DialogContent,
@@ -12,6 +11,7 @@ import {
 } from "@/components/ui/dialog";
 import { EntityCombobox } from "@/features/session/components/EntityCombobox";
 import type { EntitySuggestion } from "@/features/session/lib/api";
+import { cn } from "@/lib/utils";
 
 /**
  * Single-field edit dialog used by the speaker AND location "Adicionar / Editar"
@@ -85,18 +85,32 @@ export function EntityFieldDialog({
         />
         {error ? <p className="text-sm text-destructive">{error}</p> : null}
         <DialogFooter>
-          <Button
+          <button
             type="button"
-            variant="outline"
-            size="sm"
             onClick={() => onOpenChange(false)}
             disabled={saving}
+            className={cn(
+              "inline-flex h-9 items-center justify-center rounded-full px-4 text-[13px] font-medium text-scriba-ink-soft transition-colors",
+              "hover:bg-scriba-blue-soft/60 hover:text-scriba-ink",
+              "focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-scriba-blue/30",
+              "disabled:cursor-not-allowed disabled:opacity-60"
+            )}
           >
             Cancelar
-          </Button>
-          <Button type="button" size="sm" onClick={handleSave} disabled={saving}>
+          </button>
+          <button
+            type="button"
+            onClick={handleSave}
+            disabled={saving}
+            className={cn(
+              "inline-flex h-9 items-center justify-center rounded-full bg-scriba-blue px-5 text-[13px] font-semibold text-white shadow-[0_8px_20px_rgba(79,168,240,0.28)] transition-colors",
+              "hover:bg-scriba-blue-hover",
+              "focus-visible:outline-none focus-visible:ring-4 focus-visible:ring-scriba-blue/30",
+              "disabled:cursor-not-allowed disabled:opacity-70"
+            )}
+          >
             {saving ? "Salvando…" : "Salvar"}
-          </Button>
+          </button>
         </DialogFooter>
       </DialogContent>
     </Dialog>
