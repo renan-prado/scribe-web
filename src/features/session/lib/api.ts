@@ -142,6 +142,20 @@ export async function requestCreateSession(body: {
   }
 }
 
+/**
+ * DELETE /api/sessions/:id. Discards a session row and its associated data —
+ * used when the user stops a recording that captured zero transcribable speech
+ * so the empty row created up-front doesn't linger in their history.
+ */
+export async function requestDeleteSession(id: string): Promise<{ ok: boolean }> {
+  try {
+    const res = await fetch(`/api/sessions/${encodeURIComponent(id)}`, { method: "DELETE" });
+    return { ok: res.ok };
+  } catch {
+    return { ok: false };
+  }
+}
+
 export type EntitySuggestion = { id: string; name: string; count: number };
 
 /**
