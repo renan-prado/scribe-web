@@ -1,5 +1,6 @@
 "use client";
 
+import { BookOpen } from "lucide-react";
 import { usePathname } from "next/navigation";
 import type { ReactNode } from "react";
 import { NavLink } from "@/components/NavLink";
@@ -32,6 +33,7 @@ export function MobileBottomNav({ avatarUrl, displayName, email }: MobileBottomN
 
   const isFeed = pathname === "/feed";
   const isLibrary = pathname.startsWith("/list");
+  const isStudies = pathname.startsWith("/studies");
   const isProfile = pathname.startsWith("/profile");
 
   return (
@@ -86,14 +88,15 @@ export function MobileBottomNav({ avatarUrl, displayName, email }: MobileBottomN
           }
         />
         <span className="w-18 shrink-0" aria-hidden />
-        <TabButton
-          label="Buscar"
-          disabled
-          className="text-scriba-ink-mute/50"
+        <TabLink
+          href="/studies"
+          label="Estudos"
+          active={isStudies}
           icon={
-            <span
+            <BookOpen
               aria-hidden
-              className="block size-[15px] rounded-full border-2 border-scriba-ink-mute/40"
+              className={cn("size-4", isStudies ? "text-scriba-blue" : "text-scriba-ink-mute")}
+              strokeWidth={2}
             />
           }
         />
@@ -158,30 +161,6 @@ function TabLink({ href, label, active, icon }: TabLinkProps) {
       {icon}
       <span>{label}</span>
     </NavLink>
-  );
-}
-
-type TabButtonProps = {
-  label: string;
-  icon: ReactNode;
-  disabled?: boolean;
-  className?: string;
-};
-
-function TabButton({ label, icon, disabled, className }: TabButtonProps) {
-  return (
-    <button
-      type="button"
-      disabled={disabled}
-      className={cn(
-        "flex flex-col items-center gap-1.5 rounded-md px-2 py-1 text-[10px] font-medium text-scriba-ink-mute transition-colors",
-        disabled && "cursor-default",
-        className
-      )}
-    >
-      {icon}
-      <span>{label}</span>
-    </button>
   );
 }
 

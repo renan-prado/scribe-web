@@ -5,6 +5,7 @@ import { BookOpen } from "lucide-react";
 import { useRouter } from "next/navigation";
 import { useState } from "react";
 import { NavLink } from "@/components/NavLink";
+import { PageBlurOverlay } from "@/components/PageBlurOverlay";
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/components/ui/tooltip";
 import { CoinCost } from "@/features/coins/components/CoinCost";
 import { useCoinsStore } from "@/features/coins/store";
@@ -180,6 +181,14 @@ export function DeepenButton({ sessionId, hasDeepening, variant }: DeepenButtonP
     button
   );
 
+  const overlay = (
+    <PageBlurOverlay
+      open={pending}
+      title="Gerando o estudo"
+      subtitle="Buscando cross-references, distinções doutrinárias e vozes da tradição."
+    />
+  );
+
   if (variant === "summary-header") {
     return (
       <div className="flex flex-col items-end gap-1">
@@ -189,6 +198,7 @@ export function DeepenButton({ sessionId, hasDeepening, variant }: DeepenButtonP
             {error === "insufficient_balance" ? "Saldo insuficiente." : "Falhou. Tente de novo."}
           </span>
         ) : null}
+        {overlay}
       </div>
     );
   }
@@ -199,6 +209,7 @@ export function DeepenButton({ sessionId, hasDeepening, variant }: DeepenButtonP
       {error && !insufficient ? (
         <span className="text-[10px] font-medium text-red-600">Falhou. Tente de novo.</span>
       ) : null}
+      {overlay}
     </div>
   );
 }

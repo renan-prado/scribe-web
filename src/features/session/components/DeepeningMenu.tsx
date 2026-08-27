@@ -4,6 +4,7 @@ import { MoreVertical, RefreshCw } from "lucide-react";
 import { useRouter } from "next/navigation";
 import { useState } from "react";
 import { toast } from "sonner";
+import { PageBlurOverlay } from "@/components/PageBlurOverlay";
 import {
   DropdownMenu,
   DropdownMenuContent,
@@ -62,38 +63,45 @@ export function DeepeningMenu({ sessionId }: DeepeningMenuProps) {
   }
 
   return (
-    <DropdownMenu>
-      <DropdownMenuTrigger
-        className={cn(
-          "flex size-8 items-center justify-center rounded-full text-scriba-ink-mute transition-colors outline-none",
-          "hover:bg-scriba-blue-soft/60 hover:text-scriba-ink focus-visible:ring-2 focus-visible:ring-ring/40"
-        )}
-        aria-label="Mais opções"
-      >
-        <MoreVertical className="size-4" />
-      </DropdownMenuTrigger>
-      <DropdownMenuContent align="end" className="w-56">
-        <DropdownMenuItem
-          disabled={disabled}
-          onClick={handleReprocess}
-          className="gap-2"
-          aria-label={
-            insufficient
-              ? `Reprocessar (moedas insuficientes — custa ${REPROCESS_COST})`
-              : `Reprocessar (custa ${REPROCESS_COST} moedas)`
-          }
+    <>
+      <PageBlurOverlay
+        open={reprocessing}
+        title="Reprocessando o estudo"
+        subtitle="Refazendo cross-references, distinções e vozes da tradição."
+      />
+      <DropdownMenu>
+        <DropdownMenuTrigger
+          className={cn(
+            "flex size-8 items-center justify-center rounded-full text-scriba-ink-mute transition-colors outline-none",
+            "hover:bg-scriba-blue-soft/60 hover:text-scriba-ink focus-visible:ring-2 focus-visible:ring-ring/40"
+          )}
+          aria-label="Mais opções"
         >
-          <RefreshCw className={cn("size-4", reprocessing && "animate-spin")} />
-          <span className="flex-1">{reprocessing ? "Reprocessando…" : "Reprocessar estudo"}</span>
-          <span
-            aria-hidden
-            className="ml-auto inline-flex items-center gap-1 rounded-full bg-scriba-yellow/15 px-1.5 py-0.5 text-[10px] font-semibold tabular-nums text-scriba-gold-ink"
+          <MoreVertical className="size-4" />
+        </DropdownMenuTrigger>
+        <DropdownMenuContent align="end" className="w-56">
+          <DropdownMenuItem
+            disabled={disabled}
+            onClick={handleReprocess}
+            className="gap-2"
+            aria-label={
+              insufficient
+                ? `Reprocessar (moedas insuficientes — custa ${REPROCESS_COST})`
+                : `Reprocessar (custa ${REPROCESS_COST} moedas)`
+            }
           >
-            <span className="coin-hex block h-[9px] w-[8px] bg-scriba-yellow" />
-            {REPROCESS_COST}
-          </span>
-        </DropdownMenuItem>
-      </DropdownMenuContent>
-    </DropdownMenu>
+            <RefreshCw className={cn("size-4", reprocessing && "animate-spin")} />
+            <span className="flex-1">{reprocessing ? "Reprocessando…" : "Reprocessar estudo"}</span>
+            <span
+              aria-hidden
+              className="ml-auto inline-flex items-center gap-1 rounded-full bg-scriba-yellow/15 px-1.5 py-0.5 text-[10px] font-semibold tabular-nums text-scriba-gold-ink"
+            >
+              <span className="coin-hex block h-[9px] w-[8px] bg-scriba-yellow" />
+              {REPROCESS_COST}
+            </span>
+          </DropdownMenuItem>
+        </DropdownMenuContent>
+      </DropdownMenu>
+    </>
   );
 }

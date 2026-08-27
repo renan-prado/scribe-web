@@ -5,6 +5,7 @@ import { useRouter } from "next/navigation";
 import { useState } from "react";
 import { toast } from "sonner";
 import { NavLink } from "@/components/NavLink";
+import { PageBlurOverlay } from "@/components/PageBlurOverlay";
 import {
   Dialog,
   DialogContent,
@@ -127,6 +128,11 @@ export function SavedSessionView({
 
   return (
     <main className="mx-auto flex min-h-svh w-full max-w-3xl flex-col gap-6 px-4 py-8 sm:gap-8 sm:px-6 sm:py-10">
+      <PageBlurOverlay
+        open={reprocessing}
+        title="Reprocessando o resumo"
+        subtitle="Refazendo os pontos centrais e enriquecendo com contexto."
+      />
       <NavLink
         href="/list"
         className="-mx-1 inline-flex w-fit items-center rounded-md px-1 py-0.5 text-xs font-medium text-scriba-ink-mute transition-colors hover:text-scriba-ink focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring/40"

@@ -45,6 +45,64 @@ export async function hasDeepening(sessionId: string): Promise<boolean> {
 }
 
 /**
+ * List all deepenings do usuário atual, ordenados por criação desc, joined
+ * com metadata mínima do sermão parental (título, nome do orador, data,
+ * duração). Usado pela página /studies. RLS restringe às linhas do dono.
+ */
+export type DeepeningListItem = {
+  sessionId: string;
+  createdAt: string;
+  studyTitle: string;
+  studyShort: string;
+  sessionTitle: string | null;
+  sessionCreatedAt: string;
+  sessionSpeakerName: string | null;
+  sessionDurationMs: number | null;
+};
+
+export async function listDeepenings(): Promise<DeepeningListItem[]> {
+  const supabase = await createClient();
+  const { data, error } = await supabase
+    .from("session_deepenings")
+    .select(
+      "session_id, payload, created_at, session:sessions!inner(title, created_at, duration_ms, speaker_name)"
+    )
+    .order("created_at", { ascending: false });
+  if (error) throw new Error(`listDeepenings failed: ${error.message}`);
+  type Row = {
+    session_id: string;
+    payload: DeepeningPayload;
+    created_at: string;
+    session:
+      | {
+          title: string | null;
+          created_at: string;
+          duration_ms: number | null;
+          speaker_name: string | null;
+        }
+      | Array<{
+          title: string | null;
+          created_at: string;
+          duration_ms: number | null;
+          speaker_name: string | null;
+        }>;
+  };
+  return ((data ?? []) as Row[]).map((row) => {
+    const session = Array.isArray(row.session) ? row.session[0] : row.session;
+    return {
+      sessionId: row.session_id,
+      createdAt: row.created_at,
+      studyTitle: row.payload?.title?.trim() || "Estudo sem título",
+      studyShort: row.payload?.shortSummary?.trim() ?? "",
+      sessionTitle: session?.title ?? null,
+      sessionCreatedAt: session?.created_at ?? "",
+      sessionSpeakerName: session?.speaker_name ?? null,
+      sessionDurationMs: session?.duration_ms ?? null,
+    };
+  });
+}
+
+/**
  * Bulk lookup of which sessions already have a deepening. Returns a Set of
  * session ids the caller can O(1) test. RLS scopes rows to the current user,
  * so no extra ownership filter is needed here.

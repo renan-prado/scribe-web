@@ -1,6 +1,6 @@
 "use client";
 
-import { List, Rss } from "lucide-react";
+import { BookOpen, List, Rss } from "lucide-react";
 import { usePathname } from "next/navigation";
 import { NavLink } from "@/components/NavLink";
 import { cn } from "@/lib/utils";
@@ -8,6 +8,7 @@ import { cn } from "@/lib/utils";
 const LINKS = [
   { href: "/feed", label: "Feed", icon: Rss },
   { href: "/list", label: "Gravações", icon: List },
+  { href: "/studies", label: "Estudos", icon: BookOpen },
 ];
 
 export function AppNav() {
