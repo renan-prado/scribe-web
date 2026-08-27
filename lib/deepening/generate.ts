@@ -57,7 +57,10 @@ export async function generateDeepening(
 
   const result = await callChat({
     model,
-    temperature: 0.3,
+    // Draft usa temperatura mais alta pra reduzir colapso de template
+    // (mesmos h1, palavra grega e autoexame reaparecendo em sermões
+    // temáticamente diferentes). Auditor no passe 2 controla qualidade.
+    temperature: 0.6,
     maxTokens: 16000,
     responseFormat: { type: "json_object" },
     messages: [

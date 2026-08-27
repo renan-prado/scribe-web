@@ -27,7 +27,7 @@ type StudiesEmptyStateProps = {
  * refletem o fluxo de geração de estudo, não o de gravação.
  */
 export function StudiesEmptyState({
-  sticker = "/stickers/men/026-man.svg",
+  sticker = "/stickers/men/012-man.svg",
   heading = "Nenhum estudo por aqui.",
 }: StudiesEmptyStateProps = {}) {
   return (

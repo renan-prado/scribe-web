@@ -124,7 +124,7 @@ async function chat(model: string, messages: Msg[], temperature: number): Promis
       { role: "system", content: DEEPENING_SYSTEM_PROMPT },
       { role: "user", content: userMessage },
     ],
-    0.3
+    0.6
   );
   const draft = parseDeepeningFromLLM(draftRaw);
   console.log(`[reprocess] draft blocks=${draft.blocks.length} title="${draft.title}"`);
