@@ -2,11 +2,12 @@ import { MapPin, Mic, Sparkles } from "lucide-react";
 import type { Metadata } from "next";
 import { revalidatePath } from "next/cache";
 import { NavLink } from "@/components/NavLink";
-import { NewRecordingDialog } from "@/features/session/components/NewRecordingDialog";
 import { RefreshSessionsButton } from "@/features/session/components/RefreshSessionsButton";
+import { SessionsEmptyState } from "@/features/session/components/SessionsEmptyState";
 import { formatDurationShort, groupLabel, shortDate } from "@/features/session/lib/formatting";
 import { listDeepenedSessionIds } from "@/lib/db/deepenings";
 import { deleteSession, listSessions } from "@/lib/db/sessions";
+import { cn } from "@/lib/utils";
 import { SessionCardMenu } from "./SessionCardMenu";
 
 export const metadata: Metadata = { title: "Suas gravações" };
@@ -42,31 +43,38 @@ export default async function LibraryPage() {
     else groups.push({ label, items: [s] });
   }
 
+  const isEmpty = sessions.length === 0 && !loadError;
+
   return (
-    <main className="mx-auto flex w-full max-w-4xl flex-col gap-6 px-4 py-6 sm:gap-8 sm:px-6 sm:py-8">
-      <div className="flex items-start justify-between gap-4">
-        <div className="flex flex-col gap-1.5">
-          <h1 className="font-heading text-2xl font-semibold leading-tight tracking-tight text-scriba-ink-strong sm:text-3xl">
-            Suas gravações
-          </h1>
-          <p className="text-sm font-light text-scriba-ink-soft">
-            Tudo o que você ouviu e registrou com o Scriba.
-          </p>
+    <main
+      className={cn(
+        "mx-auto flex w-full max-w-4xl flex-col gap-6 px-4 py-6 sm:gap-8 sm:px-6 sm:py-8",
+        isEmpty && "flex-1 justify-center py-0 sm:py-0"
+      )}
+    >
+      {isEmpty ? null : (
+        <div className="flex items-start justify-between gap-4">
+          <div className="flex flex-col gap-1.5">
+            <h1 className="font-heading text-2xl font-semibold leading-tight tracking-tight text-scriba-ink-strong sm:text-3xl">
+              Suas gravações
+            </h1>
+            <p className="text-sm font-light text-scriba-ink-soft">
+              Tudo o que você ouviu e registrou com o Scriba.
+            </p>
+          </div>
+          {sessions.length > 0 ? <RefreshSessionsButton /> : null}
         </div>
-        {sessions.length > 0 ? <RefreshSessionsButton /> : null}
-      </div>
+      )}
 
       {loadError ? (
         <div className="rounded-2xl border border-destructive/40 bg-destructive/5 p-4 text-sm text-destructive">
           Não consegui carregar as gravações: {loadError}
         </div>
       ) : sessions.length === 0 ? (
-        <div className="flex flex-col items-start gap-4 rounded-3xl border border-dashed border-scriba-hairline-soft bg-white p-6 shadow-[0_6px_22px_rgba(79,168,240,0.08)]">
-          <p className="text-sm text-scriba-ink-soft">
-            Nenhuma gravação salva ainda. Comece pela primeira gravação.
-          </p>
-          <NewRecordingDialog />
-        </div>
+        <SessionsEmptyState
+          sticker="/stickers/woman/018-woman.svg"
+          heading="Sem gravações, ainda..."
+        />
       ) : (
         <div className="flex flex-col gap-6">
           {groups.map((group) => (

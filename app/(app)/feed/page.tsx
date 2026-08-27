@@ -1,11 +1,12 @@
 import type { Metadata } from "next";
 import { NavLink } from "@/components/NavLink";
 import { DeepenButton } from "@/features/session/components/DeepenButton";
-import { NewRecordingDialog } from "@/features/session/components/NewRecordingDialog";
+import { SessionsEmptyState } from "@/features/session/components/SessionsEmptyState";
 import { shortDate } from "@/features/session/lib/formatting";
 import { hasDeepening } from "@/lib/db/deepenings";
 import { getCurrentProfile } from "@/lib/db/profiles";
 import { listSessions } from "@/lib/db/sessions";
+import { cn } from "@/lib/utils";
 
 export const metadata: Metadata = { title: "Início" };
 
@@ -94,35 +95,33 @@ export default async function HomePage() {
 
   const latest = sessions[0] ?? null;
   const latestHasDeepening = latest ? await hasDeepening(latest.id).catch(() => false) : false;
+  const isEmpty = sessions.length === 0;
 
   return (
-    <main className="mx-auto flex w-full max-w-3xl flex-col gap-6 px-4 py-6 sm:gap-8 sm:px-6 sm:py-8">
-      <div className="flex items-center justify-between gap-3">
-        <p className="text-xs font-medium text-scriba-ink-soft">{todayLabel(now)}</p>
-      </div>
+    <main
+      className={cn(
+        "mx-auto flex w-full max-w-3xl flex-col gap-6 px-4 py-6 sm:gap-8 sm:px-6 sm:py-8",
+        isEmpty && "flex-1 justify-center py-0 sm:py-0"
+      )}
+    >
+      {isEmpty ? null : (
+        <>
+          <div className="flex items-center justify-between gap-3">
+            <p className="text-xs font-medium text-scriba-ink-soft">{todayLabel(now)}</p>
+          </div>
 
-      <div className="flex flex-col gap-1.5">
-        <h1 className="font-heading text-2xl font-semibold leading-tight tracking-tight text-scriba-ink-strong sm:text-3xl">
-          {greeting}, {firstName}!
-        </h1>
-        <p className="text-sm font-light text-scriba-ink-soft">{dailyPrompt(now.getDate())}</p>
-      </div>
+          <div className="flex flex-col gap-1.5">
+            <h1 className="font-heading text-2xl font-semibold leading-tight tracking-tight text-scriba-ink-strong sm:text-3xl">
+              {greeting}, {firstName}!
+            </h1>
+            <p className="text-sm font-light text-scriba-ink-soft">{dailyPrompt(now.getDate())}</p>
+          </div>
+        </>
+      )}
 
       <div className="flex flex-col gap-4">
-        {sessions.length === 0 ? (
-          <div className="flex flex-col items-start gap-4 rounded-3xl border border-dashed border-scriba-hairline-soft bg-white p-6 shadow-[0_6px_22px_rgba(79,168,240,0.08)]">
-            <div className="flex items-center gap-2">
-              <div className="h-1.5 w-6 rounded-full bg-scriba-yellow" />
-              <span className="text-[11px] font-semibold uppercase tracking-wider text-scriba-yellow-hover">
-                Comece por aqui
-              </span>
-            </div>
-            <p className="text-pretty text-lg leading-snug text-scriba-ink-strong">
-              Nenhum sermão gravado ainda. Comece pela primeira gravação e o Scriba passa a montar
-              seu feed a partir do que você ouvir.
-            </p>
-            <NewRecordingDialog />
-          </div>
+        {isEmpty ? (
+          <SessionsEmptyState />
         ) : latest ? (
           <ReflectionCard
             sessionId={latest.id}
