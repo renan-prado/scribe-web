@@ -39,6 +39,7 @@ type SavedSessionViewProps = {
   id: string;
   title: string;
   createdAtLabel: string;
+  createdAtShortLabel: string;
   durationLabel: string;
   durationMs: number | null;
   speakerName: string | null;
@@ -53,6 +54,7 @@ export function SavedSessionView({
   id,
   title: initialTitle,
   createdAtLabel,
+  createdAtShortLabel,
   durationLabel,
   durationMs,
   speakerName: initialSpeakerName,
@@ -159,7 +161,7 @@ export function SavedSessionView({
             <span
               role="status"
               aria-label="Sessão salva"
-              className="inline-flex items-center gap-1.5 rounded-full bg-scriba-mint px-2.5 py-1 text-[10px] font-semibold uppercase tracking-wider text-[#3F7F66]"
+              className="hidden items-center gap-1.5 rounded-full bg-scriba-mint px-2.5 py-1 text-[10px] font-semibold uppercase tracking-wider text-[#3F7F66] sm:inline-flex"
             >
               <span className="size-1.5 rounded-full bg-[#4E9C7F]" />
               Salvo
@@ -190,8 +192,11 @@ export function SavedSessionView({
               </span>
             ) : null}
             <p className="text-[11px] font-light text-scriba-ink-mute">
-              {createdAtLabel}
-              {durationLabel ? ` · ${durationLabel}` : ""}
+              <span className="sm:hidden">{createdAtShortLabel}</span>
+              <span className="hidden sm:inline">
+                {createdAtLabel}
+                {durationLabel ? ` · ${durationLabel}` : ""}
+              </span>
             </p>
           </div>
           {summary ? (

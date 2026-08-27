@@ -52,6 +52,11 @@
   --color-scriba-blue: var(--scriba-blue);
   --color-scriba-blue-hover: var(--scriba-blue-hover);
   --color-scriba-blue-soft: var(--scriba-blue-soft);
+  --color-scriba-green: var(--scriba-green);
+  --color-scriba-green-hover: var(--scriba-green-hover);
+  --color-scriba-green-soft: var(--scriba-green-soft);
+  --color-scriba-green-ink: var(--scriba-green-ink);
+  --color-scriba-green-body: var(--scriba-green-body);
   --color-scriba-yellow: var(--scriba-yellow);
   --color-scriba-yellow-hover: var(--scriba-yellow-hover);
   --color-scriba-mint: var(--scriba-mint);
@@ -136,12 +141,21 @@
      surfaces; the highlight yellow paints the "frase de efeito" span. */
   --session-surface-quote: linear-gradient(110deg, #EAF4FE, #F6FAFF, #E6F1FD, #EAF4FE);
   --session-highlight-yellow: #FCE9A6;
+  --session-example-bg: #EEF3FB;
+  --session-example-border: #D7DFE7;
 
   /* Scriba palette — used by the redesigned Feed, Library, Live and Summary
      surfaces. Kept as raw hex so the design intent stays 1:1 with the mocks. */
   --scriba-blue: #4FA8F0;
   --scriba-blue-hover: #3E97DF;
   --scriba-blue-soft: #EAF4FE;
+  /* Study (aprofundamento) palette — greens matched 1:1 to the blue tokens so
+     study surfaces read as a distinct, but co-equal, colorway to summaries. */
+  --scriba-green: #4FC28B;
+  --scriba-green-hover: #3EB07A;
+  --scriba-green-soft: #E8F6EF;
+  --scriba-green-ink: #2E8F63;
+  --scriba-green-body: #6E9E85;
   --scriba-yellow: #F8C64B;
   --scriba-yellow-hover: #F2B92F;
   --scriba-mint: #E4EFEA;
@@ -336,6 +350,20 @@
   }
   .admin-card-surface {
     @apply rounded-2xl border border-scriba-hairline-soft bg-white shadow-[0_4px_14px_rgba(79,168,240,0.06)];
+  }
+
+  /* Scoped tone override for /studies + /recording/[id]/deepening surfaces.
+     Rebinds the shared session-* tokens (used by BlockRenderer for bibleQuote,
+     conclusion, relatedVerse) to the green colorway without touching the
+     tokens themselves — summary surfaces keep the blue palette globally. */
+  .tone-study {
+    --session-surface-quote: linear-gradient(110deg, #F1FAF5, #F9FDFB, #ECF7F1, #F1FAF5);
+    --session-verse-text: #2F5E48;
+    --session-verse-border: #B4E3C7;
+    --session-chip-ai: #7DAE94;
+    --session-highlight-yellow: #CFEBD9;
+    --session-example-bg: #EFF7F1;
+    --session-example-border: #CDE4D6;
   }
 }
 

@@ -73,7 +73,7 @@ export function DeepeningMenu({ sessionId }: DeepeningMenuProps) {
         <DropdownMenuTrigger
           className={cn(
             "flex size-8 items-center justify-center rounded-full text-scriba-ink-mute transition-colors outline-none",
-            "hover:bg-scriba-blue-soft/60 hover:text-scriba-ink focus-visible:ring-2 focus-visible:ring-ring/40"
+            "hover:bg-scriba-green-soft/60 hover:text-scriba-ink focus-visible:ring-2 focus-visible:ring-ring/40"
           )}
           aria-label="Mais opções"
         >

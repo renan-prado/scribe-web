@@ -92,10 +92,11 @@ export function MobileBottomNav({ avatarUrl, displayName, email }: MobileBottomN
           href="/studies"
           label="Estudos"
           active={isStudies}
+          activeClass="text-scriba-green-ink"
           icon={
             <BookOpen
               aria-hidden
-              className={cn("size-4", isStudies ? "text-scriba-blue" : "text-scriba-ink-mute")}
+              className={cn("size-4", isStudies ? "text-scriba-green-ink" : "text-scriba-ink-mute")}
               strokeWidth={2}
             />
           }
@@ -145,9 +146,10 @@ type TabLinkProps = {
   label: string;
   active: boolean;
   icon: ReactNode;
+  activeClass?: string;
 };
 
-function TabLink({ href, label, active, icon }: TabLinkProps) {
+function TabLink({ href, label, active, icon, activeClass = "text-scriba-blue" }: TabLinkProps) {
   return (
     <NavLink
       href={href}
@@ -155,7 +157,7 @@ function TabLink({ href, label, active, icon }: TabLinkProps) {
       contentClassName="flex flex-col items-center gap-1.5"
       className={cn(
         "rounded-md px-2 py-1 text-[10px] font-medium transition-colors",
-        active ? "text-scriba-blue" : "text-scriba-ink-mute"
+        active ? activeClass : "text-scriba-ink-mute"
       )}
     >
       {icon}

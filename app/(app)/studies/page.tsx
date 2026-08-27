@@ -74,7 +74,7 @@ export default async function StudiesPage() {
                   return (
                     <li
                       key={s.sessionId}
-                      className="group flex flex-col rounded-3xl border border-scriba-hairline-soft bg-white p-5 shadow-[0_4px_14px_rgba(79,168,240,0.08)] transition-shadow hover:shadow-[0_8px_20px_rgba(79,168,240,0.18)] sm:p-6"
+                      className="group flex flex-col rounded-3xl border border-scriba-hairline-soft bg-white p-5 shadow-[0_4px_14px_rgba(79,194,139,0.08)] transition-shadow hover:shadow-[0_8px_20px_rgba(79,194,139,0.18)] sm:p-6"
                     >
                       <NavLink
                         href={`/recording/${s.sessionId}/deepening`}
@@ -83,8 +83,8 @@ export default async function StudiesPage() {
                         className="flex min-w-0 flex-1 flex-col rounded-md outline-none focus-visible:ring-2 focus-visible:ring-ring/40"
                       >
                         <div className="flex items-start gap-2.5">
-                          <div className="flex size-9 shrink-0 items-center justify-center rounded-lg bg-scriba-blue-soft">
-                            <BookOpen className="size-4 text-scriba-blue" />
+                          <div className="flex size-9 shrink-0 items-center justify-center rounded-lg bg-scriba-green-soft">
+                            <BookOpen className="size-4 text-scriba-green-ink" />
                           </div>
                           <span className="text-pretty text-[15px] font-semibold leading-tight tracking-tight text-scriba-ink-strong sm:text-base">
                             {s.studyTitle}
@@ -107,7 +107,7 @@ export default async function StudiesPage() {
                           href={`/recording/${s.sessionId}/summary`}
                           spinner="overlay"
                           contentClassName="flex flex-col gap-0.5"
-                          className="-mx-1 rounded-md px-1 py-0.5 outline-none transition-colors hover:bg-scriba-blue-soft/40 focus-visible:ring-2 focus-visible:ring-ring/40"
+                          className="-mx-1 rounded-md px-1 py-0.5 outline-none transition-colors hover:bg-scriba-green-soft/40 focus-visible:ring-2 focus-visible:ring-ring/40"
                         >
                           <span className="text-pretty text-[13px] font-medium leading-snug text-scriba-ink">
                             {sessionLabel}

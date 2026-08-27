@@ -1,4 +1,4 @@
-import { ArrowLeft, Sparkles } from "lucide-react";
+import { ArrowLeft, BookOpen } from "lucide-react";
 import type { Metadata } from "next";
 import { notFound } from "next/navigation";
 import { NavLink } from "@/components/NavLink";
@@ -27,6 +27,12 @@ const DATE_FMT = new Intl.DateTimeFormat("pt-BR", {
   minute: "2-digit",
 });
 
+const DATE_FMT_SHORT = new Intl.DateTimeFormat("pt-BR", {
+  day: "2-digit",
+  month: "short",
+  year: "numeric",
+});
+
 export default async function RecordingDeepeningPage({ params }: PageProps) {
   const { id } = await params;
   const [session, deepening] = await Promise.all([getSession(id), getDeepening(id)]);
@@ -37,7 +43,7 @@ export default async function RecordingDeepeningPage({ params }: PageProps) {
   const deepeningTitle = payload.title?.trim() || `Estudo — ${sessionTitle}`;
 
   return (
-    <main className="mx-auto flex min-h-svh w-full max-w-3xl flex-col gap-6 px-4 py-8 sm:gap-8 sm:px-6 sm:py-10">
+    <main className="tone-study mx-auto flex min-h-svh w-full max-w-3xl flex-col gap-6 px-4 py-8 sm:gap-8 sm:px-6 sm:py-10">
       <NavLink
         href={`/recording/${id}/summary`}
         className="-mx-1 inline-flex w-fit items-center rounded-md px-1 py-0.5 text-xs font-medium text-scriba-ink-mute transition-colors hover:text-scriba-ink focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring/40"
@@ -48,13 +54,18 @@ export default async function RecordingDeepeningPage({ params }: PageProps) {
 
       <header className="flex flex-col gap-3">
         <div className="flex items-center justify-between gap-3">
-          <span className="inline-flex items-center gap-1.5 rounded-full bg-scriba-blue-soft px-2.5 py-1 text-[10px] font-semibold uppercase tracking-wider text-scriba-blue">
-            <Sparkles aria-hidden className="size-3" />
+          <span className="inline-flex items-center gap-1.5 rounded-full bg-scriba-green-soft px-2.5 py-1 text-[10px] font-semibold uppercase tracking-wider text-scriba-green">
+            <BookOpen aria-hidden className="size-3" />
             Estudo
           </span>
           <div className="flex items-center gap-2">
             <span className="text-[11px] font-light text-scriba-ink-mute">
-              {DATE_FMT.format(new Date(deepening.createdAt))}
+              <span className="sm:hidden">
+                {DATE_FMT_SHORT.format(new Date(deepening.createdAt))}
+              </span>
+              <span className="hidden sm:inline">
+                {DATE_FMT.format(new Date(deepening.createdAt))}
+              </span>
             </span>
             <DeepeningMenu sessionId={id} />
           </div>
@@ -72,8 +83,8 @@ export default async function RecordingDeepeningPage({ params }: PageProps) {
 
       <div className="flex flex-col gap-7">
         {payload.shortSummary ? (
-          <div className="-mb-2 flex flex-col gap-2 border-l-[2.5px] border-scriba-blue pl-4">
-            <span className="text-[10px] font-semibold uppercase tracking-[0.14em] text-scriba-blue">
+          <div className="-mb-2 flex flex-col gap-2 border-l-[2.5px] border-scriba-green pl-4">
+            <span className="text-[10px] font-semibold uppercase tracking-[0.14em] text-scriba-green">
               Tese central
             </span>
             <p className="text-pretty text-lg font-medium leading-snug text-scriba-ink-strong text-balance">

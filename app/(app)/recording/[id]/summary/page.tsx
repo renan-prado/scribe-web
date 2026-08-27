@@ -23,16 +23,25 @@ const DATE_FMT = new Intl.DateTimeFormat("pt-BR", {
   minute: "2-digit",
 });
 
+const DATE_FMT_SHORT = new Intl.DateTimeFormat("pt-BR", {
+  day: "2-digit",
+  month: "short",
+  year: "numeric",
+});
+
 export default async function RecordingSummaryPage({ params }: PageProps) {
   const { id } = await params;
   const [session, deepeningExists] = await Promise.all([getSession(id), hasDeepening(id)]);
   if (!session) notFound();
 
+  const createdAt = new Date(session.createdAt);
+
   return (
     <SavedSessionView
       id={id}
       title={session.title?.trim() || "Sessão sem título"}
-      createdAtLabel={DATE_FMT.format(new Date(session.createdAt))}
+      createdAtLabel={DATE_FMT.format(createdAt)}
+      createdAtShortLabel={DATE_FMT_SHORT.format(createdAt)}
       durationLabel={formatDurationLong(session.durationMs)}
       durationMs={session.durationMs}
       speakerName={session.speakerName}

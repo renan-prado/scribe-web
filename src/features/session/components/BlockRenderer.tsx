@@ -34,7 +34,7 @@ export function BlockRenderer({ block }: { block: SummaryBlock }) {
       );
     case "example":
       return (
-        <aside className="relative rounded-2xl border-l-4 border-[#D7DFE7] bg-[#EEF3FB] px-5 py-4">
+        <aside className="relative rounded-2xl border-l-4 border-[var(--session-example-border)] bg-[var(--session-example-bg)] px-5 py-4">
           <span className="mb-1.5 block text-[10px] font-semibold uppercase tracking-[0.14em] text-scriba-ink-mute">
             Exemplo do pregador
           </span>
