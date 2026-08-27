@@ -1,4 +1,6 @@
-import { FileText, MoreVertical, Pencil, Sparkles, Trash2 } from "lucide-react";
+"use client";
+
+import { FileText, MoreVertical, Pencil, RefreshCw, Sparkles, Trash2 } from "lucide-react";
 import {
   DropdownMenu,
   DropdownMenuContent,
@@ -6,6 +8,8 @@ import {
   DropdownMenuSeparator,
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
+import { useCoinsStore } from "@/features/coins/store";
+import { COIN_COSTS } from "@/lib/coins/pricing";
 import { cn } from "@/lib/utils";
 
 type SessionMenuProps = {
@@ -15,7 +19,11 @@ type SessionMenuProps = {
   onOpenLiveFeed: () => void;
   onEdit?: () => void;
   onDelete?: () => void;
+  onReprocess?: () => void;
+  reprocessing?: boolean;
 };
+
+const REPROCESS_COST = COIN_COSTS.reprocessSummary;
 
 export function SessionMenu({
   hasTranscript,
@@ -24,7 +32,13 @@ export function SessionMenu({
   onOpenLiveFeed,
   onEdit,
   onDelete,
+  onReprocess,
+  reprocessing,
 }: SessionMenuProps) {
+  const balance = useCoinsStore((s) => s.balance);
+  const insufficient = balance !== null && balance < REPROCESS_COST;
+  const reprocessDisabled = !onReprocess || reprocessing || insufficient;
+
   return (
     <DropdownMenu>
       <DropdownMenuTrigger
@@ -36,11 +50,33 @@ export function SessionMenu({
       >
         <MoreVertical className="size-4" />
       </DropdownMenuTrigger>
-      <DropdownMenuContent align="end" className="w-52">
+      <DropdownMenuContent align="end" className="w-56">
         {onEdit ? (
           <DropdownMenuItem onClick={onEdit} className="gap-2">
             <Pencil className="size-4" />
             Editar
+          </DropdownMenuItem>
+        ) : null}
+        {onReprocess ? (
+          <DropdownMenuItem
+            disabled={reprocessDisabled}
+            onClick={onReprocess}
+            className="gap-2"
+            aria-label={
+              insufficient
+                ? `Reprocessar (moedas insuficientes — custa ${REPROCESS_COST})`
+                : `Reprocessar (custa ${REPROCESS_COST} moedas)`
+            }
+          >
+            <RefreshCw className={cn("size-4", reprocessing && "animate-spin")} />
+            <span className="flex-1">{reprocessing ? "Reprocessando…" : "Reprocessar"}</span>
+            <span
+              aria-hidden
+              className="ml-auto inline-flex items-center gap-1 rounded-full bg-scriba-yellow/15 px-1.5 py-0.5 text-[10px] font-semibold tabular-nums text-scriba-gold-ink"
+            >
+              <span className="coin-hex block h-[9px] w-[8px] bg-scriba-yellow" />
+              {REPROCESS_COST}
+            </span>
           </DropdownMenuItem>
         ) : null}
         <DropdownMenuItem disabled={!hasLiveFeed} onClick={onOpenLiveFeed} className="gap-2">

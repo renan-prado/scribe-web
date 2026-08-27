@@ -3,6 +3,7 @@
 import { ArrowLeft, MapPin } from "lucide-react";
 import { useRouter } from "next/navigation";
 import { useState } from "react";
+import { toast } from "sonner";
 import { NavLink } from "@/components/NavLink";
 import {
   Dialog,
@@ -11,6 +12,7 @@ import {
   DialogHeader,
   DialogTitle,
 } from "@/components/ui/dialog";
+import { useCoinsStore } from "@/features/coins/store";
 import { DeepenButton } from "@/features/session/components/DeepenButton";
 import { EditSessionDialog } from "@/features/session/components/EditSessionDialog";
 import { Feed } from "@/features/session/components/Feed";
@@ -59,8 +61,10 @@ export function SavedSessionView({
   const [feedOpen, setFeedOpen] = useState(false);
   const [transcriptOpen, setTranscriptOpen] = useState(false);
   const [editOpen, setEditOpen] = useState(false);
+  const [reprocessing, setReprocessing] = useState(false);
 
   const router = useRouter();
+  const refreshCoins = useCoinsStore((s) => s.refresh);
 
   const [title, setTitle] = useState(initialTitle);
   const [speakerName, setSpeakerName] = useState(initialSpeakerName);
@@ -70,6 +74,34 @@ export function SavedSessionView({
     const res = await fetch(`/api/sessions/${id}`, { method: "DELETE" });
     if (!res.ok) throw new Error("delete failed");
     router.push("/list");
+  }
+
+  async function handleReprocess() {
+    if (reprocessing) return;
+    setReprocessing(true);
+    try {
+      const res = await fetch("/api/final-summary/reprocess", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ sessionId: id }),
+      });
+      const body = (await res.json().catch(() => ({}))) as { error?: string };
+      if (res.status === 402 || body.error === "insufficient_balance") {
+        toast.error("Moedas insuficientes para reprocessar.");
+        return;
+      }
+      if (!res.ok) {
+        toast.error("Não consegui reprocessar o resumo. Tente novamente.");
+        return;
+      }
+      void refreshCoins();
+      toast.success("Resumo atualizado.");
+      router.refresh();
+    } catch {
+      toast.error("Falha de conexão ao reprocessar.");
+    } finally {
+      setReprocessing(false);
+    }
   }
 
   async function handleSave(fields: {
@@ -130,6 +162,8 @@ export function SavedSessionView({
               onOpenLiveFeed={() => setFeedOpen(true)}
               onEdit={() => setEditOpen(true)}
               onDelete={handleDelete}
+              onReprocess={summary ? handleReprocess : undefined}
+              reprocessing={reprocessing}
             />
           </div>
         </div>

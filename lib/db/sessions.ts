@@ -258,3 +258,21 @@ export async function deleteSession(id: string): Promise<void> {
   const { error } = await supabase.from("sessions").delete().eq("id", id);
   if (error) throw new Error(`deleteSession failed: ${error.message}`);
 }
+
+/**
+ * Overwrite only the final_summary payload (plus its derived title and
+ * short_summary). Used by POST /api/final-summary/reprocess — transcript,
+ * feed_items and duration_ms are preserved as originally captured.
+ */
+export async function updateSessionSummary(id: string, summary: SummaryPayload): Promise<void> {
+  const supabase = await createClient();
+  const { error } = await supabase
+    .from("sessions")
+    .update({
+      title: summary.title || null,
+      short_summary: summary.shortSummary || null,
+      final_summary: summary,
+    })
+    .eq("id", id);
+  if (error) throw new Error(`updateSessionSummary failed: ${error.message}`);
+}

@@ -18,19 +18,27 @@ export const COIN_COSTS = {
   audioOnlyMinute: 3,
   /** One-shot cost of running /api/deepening. */
   deepening: 10,
+  /** One-shot cost of re-running /api/final-summary/reprocess on a saved session. */
+  reprocessSummary: 10,
 } as const;
 
 /**
  * Reason strings persisted in coin_transactions.reason. The server maps each
  * reason to its cost in COIN_COST_BY_REASON — clients never send an amount.
  */
-export const CHARGE_REASONS = ["live_minute", "audio_only_minute", "deepening"] as const;
+export const CHARGE_REASONS = [
+  "live_minute",
+  "audio_only_minute",
+  "deepening",
+  "reprocess_summary",
+] as const;
 export type ChargeReason = (typeof CHARGE_REASONS)[number];
 
 export const COIN_COST_BY_REASON: Record<ChargeReason, number> = {
   live_minute: COIN_COSTS.liveMinute,
   audio_only_minute: COIN_COSTS.audioOnlyMinute,
   deepening: COIN_COSTS.deepening,
+  reprocess_summary: COIN_COSTS.reprocessSummary,
 };
 
 export function isChargeReason(value: unknown): value is ChargeReason {
