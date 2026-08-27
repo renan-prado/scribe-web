@@ -3,6 +3,7 @@ import { Fira_Mono, Geist, Geist_Mono, Poppins } from "next/font/google";
 import { Toaster } from "sonner";
 import { PageTransition } from "@/components/PageTransition";
 import { Providers } from "@/components/Providers";
+import { PwaBootstrap } from "@/components/PwaBootstrap";
 import "./globals.css";
 
 const geistSans = Geist({
@@ -94,6 +95,7 @@ export default function RootLayout({ children }: LayoutProps<"/">) {
         <Providers>
           <PageTransition>{children}</PageTransition>
           <Toaster position="top-center" richColors />
+          <PwaBootstrap />
         </Providers>
       </body>
     </html>

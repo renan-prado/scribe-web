@@ -6,8 +6,9 @@ const securityHeaders = [
   { key: "Referrer-Policy", value: "strict-origin-when-cross-origin" },
   {
     key: "Permissions-Policy",
-    // microphone needed for recording; camera/geolocation blocked
-    value: "camera=(), microphone=(self), geolocation=()",
+    // microphone + autoplay needed for recording + silent-audio keepalive;
+    // camera/geolocation blocked.
+    value: "camera=(), microphone=(self), geolocation=(), autoplay=(self)",
   },
 ];
 
