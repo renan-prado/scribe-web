@@ -119,7 +119,7 @@ const TOP_USERS = 25;
 // Rotas cobradas separadamente (produto à parte, e.g. deepening) não entram
 // no cálculo de custo por minuto — senão inflação artificial pra sessões que
 // receberam aprofundamento. Continuam contando em totals/byRoute/byUser.
-const EXCLUDED_FROM_PER_MINUTE = new Set<string>(["deepening"]);
+const EXCLUDED_FROM_PER_MINUTE = new Set<string>(["deepening", "deepening-audit"]);
 
 export async function loadAdminUsageSummary(
   filters: UsageFilters = {}

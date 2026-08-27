@@ -1,6 +1,7 @@
 "use client";
 
 import { cva } from "class-variance-authority";
+import { BookOpen } from "lucide-react";
 import { useRouter } from "next/navigation";
 import { useState } from "react";
 import { NavLink } from "@/components/NavLink";
@@ -74,7 +75,8 @@ export function DeepenButton({ sessionId, hasDeepening, variant }: DeepenButtonP
           href={href}
           className="inline-flex items-center gap-1.5 rounded-full bg-scriba-blue-soft px-3 py-1.5 text-[11px] font-semibold uppercase tracking-wider text-scriba-blue transition-colors hover:bg-scriba-blue-soft/80 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-scriba-blue/40"
         >
-          Ver aprofundamento
+          <BookOpen aria-hidden className="size-3.5" />
+          Ver estudo
         </NavLink>
       );
     }
@@ -84,7 +86,8 @@ export function DeepenButton({ sessionId, hasDeepening, variant }: DeepenButtonP
         contentClassName="inline-flex items-center justify-center gap-1.5"
         className="inline-flex w-full items-center justify-center rounded-full bg-scriba-blue px-4 py-3 text-[11px] font-semibold uppercase tracking-wider text-white shadow-[0_5px_14px_rgba(79,168,240,0.32)] transition-colors hover:bg-scriba-blue-hover sm:flex-1"
       >
-        Ver aprofundamento
+        <BookOpen aria-hidden className="size-3.5" />
+        Ver estudo
       </NavLink>
     );
   }
@@ -127,7 +130,8 @@ export function DeepenButton({ sessionId, hasDeepening, variant }: DeepenButtonP
         state: insufficient ? "disabled" : "enabled",
       })}
     >
-      {pending ? "Aprofundando…" : "Aprofundar"}
+      <BookOpen aria-hidden className="size-3.5" />
+      {pending ? "Gerando estudo…" : "Gerar estudo"}
       <CoinCost count={DEEPENING_COST} />
     </button>
   );
@@ -169,7 +173,7 @@ export function DeepenButton({ sessionId, hasDeepening, variant }: DeepenButtonP
         >
           {button}
         </TooltipTrigger>
-        <TooltipContent>Moedas insuficientes para aprofundar.</TooltipContent>
+        <TooltipContent>Moedas insuficientes para gerar estudo.</TooltipContent>
       </Tooltip>
     </TooltipProvider>
   ) : (

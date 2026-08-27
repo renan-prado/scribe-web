@@ -200,6 +200,82 @@ export function parseEnrichmentFromLLM(content: string): EnrichmentInsertion[] {
   return out;
 }
 
+// contextCards that name a specific historical figure or use a vague-tradition
+// phrase without a concrete `source` are dropped. Prompt-level guidance keeps
+// failing here — the model repeatedly writes "reformadores como Lutero…" with
+// no attribution. Silent drop is more reliable than another prompt round.
+const UNSOURCED_ATTRIBUTION_PATTERN = new RegExp(
+  [
+    // Reformadores e magisteriais
+    "Lutero",
+    "Luther",
+    "Calvino",
+    "Calvin",
+    "Zw[ií]nglio",
+    "Zwingli",
+    "Melanchthon",
+    // Patrística e medieval
+    "Agostinho",
+    "Augustinho",
+    "Augustine",
+    "(?:Tom[aá]s de\\s+)?Aquino",
+    "Aquinas",
+    "Atan[aá]sio",
+    "Athanasius",
+    "Cris[oó]stomo",
+    "Chrysostom",
+    "Jer[oô]nimo",
+    "Jerome",
+    "Or[ií]genes",
+    "Origen",
+    "Tertuliano",
+    "Tertullian",
+    "Irineu",
+    "Irenaeus",
+    "Anselmo",
+    "Anselm",
+    // Modernos
+    "Wesley",
+    "Spurgeon",
+    "Bonhoeffer",
+    "Karl Barth",
+    "Jonathan Edwards",
+    "Whitefield",
+    "Kuyper",
+    "Lloyd-Jones",
+    "J\\.\\s*I\\.\\s*Packer",
+    "John Piper",
+    "Tim Keller",
+    "John Stott",
+    "Wayne Grudem",
+    "R\\.\\s*C\\.\\s*Sproul",
+    "John Owen",
+    "John Bunyan",
+    "Richard Baxter",
+    "Warfield",
+    "Machen",
+    "Schaeffer",
+    "Chesterton",
+    "C\\.\\s*S\\.\\s*Lewis",
+    "Tozer",
+    // Fórmulas vagas (o problema principal)
+    "reformadores?",
+    "Reforma Protestante",
+    "durante a Reforma",
+    "na Reforma",
+    "pais da igreja",
+    "padres da igreja",
+    "tradi[çc][ãa]o\\s+(?:reformada|crist[ãa]|protestante|cat[oó]lica|patr[ií]stica|puritana|evang[eé]lica)",
+    "l[ií]deres\\s+(?:como|protestantes|reformados|crist[ãa]os)",
+    "te[oó]logos?\\s+(?:como|contempor[âa]neos|reformados|crist[ãa]os)",
+    "puritanos",
+    "escol[aá]sticos",
+  ]
+    .map((p) => `\\b${p}\\b`)
+    .join("|"),
+  "i"
+);
+
 function normalizeEnrichmentBlock(rec: Record<string, unknown>): Record<string, unknown> | null {
   const type = typeof rec.type === "string" ? rec.type : "";
   if (type === "contextCard") {
@@ -207,6 +283,7 @@ function normalizeEnrichmentBlock(rec: Record<string, unknown>): Record<string, 
     const text = typeof rec.text === "string" ? rec.text.trim() : "";
     if (!label || !text) return null;
     const source = typeof rec.source === "string" ? rec.source.trim() : "";
+    if (!source && UNSOURCED_ATTRIBUTION_PATTERN.test(text)) return null;
     return source ? { type, label, text, source } : { type, label, text };
   }
   if (type === "relatedVerse") {

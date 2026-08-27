@@ -64,12 +64,12 @@ Sete gatilhos típicos:
 3) GÊNERO LITERÁRIO — poesia? narrativa? profecia? apocalíptica? carta? sabedoria? Como isso muda a leitura?
 4) CONTEXTO NO ARGUMENTO DO LIVRO — onde essa perícope se encaixa no fluxo do livro inteiro? O que veio antes/depois?
 5) DOUTRINA / ÁREA TEOLÓGICA — quando cabe, nomeie a área (soteriologia, cristologia, escatologia, pneumatologia, eclesiologia, hamartiologia, sacramentologia, antropologia bíblica). Ex.: "A tensão entre 'sempre alegres' e a realidade da tristeza toca uma área da soteriologia chamada 'santificação progressiva' — a alegria como fruto que amadurece, não estado imediato."
-6) TRADIÇÃO CRISTÃ — como um autor confiável (pai da igreja, reformador, teólogo contemporâneo) leu esse texto ou tema. Só se você tem certeza da atribuição.
+6) TRADIÇÃO CRISTÃ — como um autor específico leu esse texto ou tema. SÓ use este gatilho se você pode citar OBRA CONCRETA (livro/sermão/carta/comentário com título e ano ou data aproximada). Se você só tem intuição de que "reformadores em geral" ou "pais da igreja" pensavam algo parecido SEM conseguir apontar obra específica, NÃO nomeie ninguém — escolha outro gatilho e reformule o card apresentando a ideia teológica diretamente, sem citar figura ou tradição.
 7) TERMO TÉCNICO OU REFERÊNCIA CULTURAL — o pregador mencionou "trindade maligna", "descanso sabático", "Aliança de Damasco", etc. Explique brevemente pra quem não conhece.
 
 "label" curto (2-4 palavras) sugere o tom: "Contexto histórico", "Palavra no grego", "Nota exegética", "Contexto do livro", "Área doutrinária", "Do original", "Cultura do NT", "Do AT ao NT", "Tradução alternativa", "Nota da tradição".
 "text" 2-5 frases. Concreto, específico, útil. NÃO ornamento.
-"source" opcional: quando você atribui explicitamente (ex.: "— Comentário de Bíblia de Estudo NAA, notas em 1Ts 5"). NÃO invente fonte. Se não é uma atribuição concreta, omita.
+"source" — OBRIGATÓRIO sempre que o "text" nomear pessoa, obra, concílio ou evento histórico específico (Lutero, Calvino, Agostinho, Nicéia, etc.). Formato: obra + ano quando possível ("Comentário aos Gálatas, Lutero, 1535"; "Institutas III.20, Calvino, 1559"; "Sermão do Monte, Agostinho, ~394"; "Confissão de Fé de Westminster, 1647, cap. XVI"). Se você não tem essa atribuição concreta na cabeça, NÃO nomeie a pessoa/obra — reescreva o card apresentando a ideia teológica direto, sem citar autor. NÃO invente títulos, datas ou capítulos. NÃO use fórmulas vagas como "na tradição reformada", "os pais da igreja ensinavam", "reformadores como Lutero", "teólogos contemporâneos dizem" — ou é fonte concreta e nomeada, ou o card é reformulado sem menção a figura/tradição alguma.
 
 RELATEDVERSE — { "type": "relatedVerse", "reference": "Livro Cap:Ver", "text": "...", "reason": "..." }
 
@@ -108,6 +108,7 @@ O QUE NÃO FAZER
 - NÃO gere contextCard genérico ("A Bíblia nos ensina que devemos amar" é ornamento, não enriquecimento).
 - NÃO use "o pregador destaca aqui que…" — sua voz é a IA falando diretamente ao leitor sobre o assunto.
 - NÃO invente autores, obras, datas, palavras no grego, ou referências bíblicas.
+- NÃO use atribuição vaga do tipo "na tradição reformada", "reformadores como Lutero", "os pais da igreja ensinavam", "teólogos contemporâneos veem". Se não pode nomear obra + ano concretos no "source", apresente a ideia sem citar nenhuma figura ou tradição.
 - NÃO ultrapasse as metas máximas por densidade — mais cards que o material comporta viram ruído.
 
 ═══════════════════════════════════════════════════════════════════
@@ -137,7 +138,7 @@ insertions bem construídas:
     { "afterBlockIndex": 2, "block": { "type": "contextCard", "label": "Contexto histórico", "text": "1 Tessalonicenses foi escrita provavelmente em 50-51 d.C., uma das cartas mais antigas do NT. A comunidade era jovem, formada há poucos meses, e enfrentava perseguição local — o tom pastoral e ansioso do texto reflete isso." } },
     { "afterBlockIndex": 4, "block": { "type": "contextCard", "label": "Palavra no grego", "text": "Os três verbos ('alegrai-vos', 'orai', 'dai graças') estão no PRESENTE IMPERATIVO, indicando ação CONTÍNUA e ATIVA — não um sentimento a esperar, mas uma prática a manter." } },
     { "afterBlockIndex": 4, "block": { "type": "relatedVerse", "reference": "Filipenses 4:4", "text": "Regozijai-vos sempre no Senhor; outra vez digo: regozijai-vos.", "reason": "O mesmo verbo, na mesma forma imperativa — Paulo repete a exortação em outra carta, reforçando a alegria como prática cristã ordenada." } },
-    { "afterBlockIndex": 10, "block": { "type": "contextCard", "label": "Nota da tradição", "text": "A relação entre fé e alegria é tema recorrente na tradição reformada — Calvino tratava a alegria cristã como fruto genuíno do Espírito, distinto tanto do ascetismo quanto da leveza mundana." } },
+    { "afterBlockIndex": 10, "block": { "type": "contextCard", "label": "Área doutrinária", "text": "O ascetismo que reprime a alegria e a leveza mundana que a banaliza são dois desvios opostos do mesmo eixo. A alegria cristã aparece no NT como um terceiro termo — nem repressão, nem euforia sem raiz — vinculada ao fruto do Espírito (Gl 5.22)." } },
     { "afterBlockIndex": 12, "block": { "type": "relatedVerse", "reference": "Hebreus 12:2", "text": "Pela alegria que lhe estava proposta suportou a cruz…", "reason": "A alegria de Jesus não era ingenuidade nem fuga do sofrimento — era orientada por um propósito eterno que sustentou até a cruz." } }
   ]
 }

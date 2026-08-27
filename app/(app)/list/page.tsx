@@ -154,11 +154,11 @@ export default async function LibraryPage() {
                               <>
                                 <span className="size-[3px] rounded-full bg-scriba-ink-mute/60" />
                                 <span
-                                  title="Você já aprofundou este sermão"
+                                  title="Você já gerou o estudo deste sermão"
                                   className="inline-flex items-center gap-1 rounded-full bg-scriba-blue-soft px-2 py-0.5 text-[10px] font-semibold uppercase tracking-wider text-scriba-blue"
                                 >
                                   <Sparkles className="size-3" />
-                                  Aprofundado
+                                  Estudo
                                 </span>
                               </>
                             ) : null}

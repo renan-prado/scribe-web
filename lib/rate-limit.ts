@@ -194,6 +194,11 @@ export const RATE_LIMITS = {
     perUser: { limit: 30, windowMs: HOUR },
     perIp: { limit: 100, windowMs: HOUR },
   },
+  "deepening-reprocess": {
+    route: "deepening-reprocess",
+    perUser: { limit: 10, windowMs: HOUR },
+    perIp: { limit: 40, windowMs: HOUR },
+  },
   verse: {
     route: "verse",
     perUser: { limit: 60, windowMs: MIN },

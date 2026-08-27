@@ -72,7 +72,7 @@ const DAILY_PROMPTS = [
   "Vamos relembrar algo importante?", // 24
   "Qual mensagem ainda merece meditação?", // 25
   "O que ficou incompleto na sua anotação?", // 26
-  "Tem um ponto que você quer aprofundar?", // 27
+  "Tem um ponto que você quer estudar?", // 27
   "Qual citação você não quer perder de vista?", // 28
   "O que você ouviu que precisa colocar em prática?", // 29
   "Tem uma passagem que ainda está te desafiando?", // 30

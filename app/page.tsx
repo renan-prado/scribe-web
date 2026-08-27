@@ -559,7 +559,7 @@ function Plans() {
               "Referências bíblicas",
               "Destaques e principais ideias",
               "Biblioteca de sermões",
-              "Aprofundar sermões",
+              "Gerar estudos",
             ]}
             cta="Escolher Pessoal"
             variant="soft"
@@ -575,7 +575,7 @@ function Plans() {
               "Referências bíblicas",
               "Destaques e principais ideias",
               "Biblioteca de sermões",
-              "Aprofundar sermões",
+              "Gerar estudos",
             ]}
             cta="Começar grátis"
             variant="primary"
@@ -591,7 +591,7 @@ function Plans() {
               "Referências bíblicas",
               "Destaques e principais ideias",
               "Biblioteca de sermões",
-              "Aprofundar sermões",
+              "Gerar estudos",
             ]}
             cta="Escolher Estudioso"
             variant="soft"

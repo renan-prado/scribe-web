@@ -30,6 +30,7 @@ export type UsageRoute =
   | "final-summary-reprocess"
   | "summary-enrichment"
   | "deepening"
+  | "deepening-audit"
   | "format-paragraphs"
   | "transcribe";
 

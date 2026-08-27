@@ -20,6 +20,8 @@ export const COIN_COSTS = {
   deepening: 10,
   /** One-shot cost of re-running /api/final-summary/reprocess on a saved session. */
   reprocessSummary: 10,
+  /** One-shot cost of re-running /api/deepening/reprocess on an existing study. */
+  reprocessDeepening: 10,
 } as const;
 
 /**
@@ -31,6 +33,7 @@ export const CHARGE_REASONS = [
   "audio_only_minute",
   "deepening",
   "reprocess_summary",
+  "reprocess_deepening",
 ] as const;
 export type ChargeReason = (typeof CHARGE_REASONS)[number];
 
@@ -39,6 +42,7 @@ export const COIN_COST_BY_REASON: Record<ChargeReason, number> = {
   audio_only_minute: COIN_COSTS.audioOnlyMinute,
   deepening: COIN_COSTS.deepening,
   reprocess_summary: COIN_COSTS.reprocessSummary,
+  reprocess_deepening: COIN_COSTS.reprocessDeepening,
 };
 
 export function isChargeReason(value: unknown): value is ChargeReason {

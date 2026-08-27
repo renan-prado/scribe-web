@@ -1,7 +1,7 @@
 import { NextResponse } from "next/server";
 import { z } from "zod";
 import { chargeCoins } from "@/lib/db/coins";
-import { createDeepening, hasDeepening } from "@/lib/db/deepenings";
+import { getDeepening, updateDeepening } from "@/lib/db/deepenings";
 import { getSession } from "@/lib/db/sessions";
 import { generateDeepening } from "@/lib/deepening/generate";
 import { parseJsonBody, UuidSchema } from "@/lib/http/validate";
@@ -15,16 +15,18 @@ export const runtime = "nodejs";
 export const dynamic = "force-dynamic";
 
 /**
- * Single-shot study ("estudo"). Consumes the full transcript, curated feed
- * items AND the final_summary already produced for the session, and produces
- * a standalone theological study on the same theme — not a repackage of the
- * sermon. Persisted in session_deepenings (unique per session_id).
+ * POST /api/deepening/reprocess
+ *
+ * Re-runs the study prompt on an already-generated deepening, overwriting
+ * the persisted payload. Same inputs as /api/deepening (transcript + feed
+ * items + final_summary). Costs `reprocess_deepening` coins — charged before
+ * the LLM call, following the same pattern as /api/final-summary/reprocess.
  */
 export async function POST(request: Request) {
   const auth = await requireAuth();
   if (auth.response) return auth.response;
 
-  const limited = enforceRateLimit(request, RATE_LIMITS.deepening, auth.user.id);
+  const limited = enforceRateLimit(request, RATE_LIMITS["deepening-reprocess"], auth.user.id);
   if (limited) return limited;
 
   const parsed = await parseJsonBody(request, BodySchema);
@@ -43,21 +45,20 @@ export async function POST(request: Request) {
     return NextResponse.json({ error: "empty_transcript" }, { status: 409 });
   }
 
-  if (await hasDeepening(sessionId)) {
-    return NextResponse.json({ error: "deepening_already_exists" }, { status: 409 });
+  const existing = await getDeepening(sessionId);
+  if (!existing) {
+    return NextResponse.json({ error: "deepening_not_found" }, { status: 404 });
   }
 
-  // Charge coins BEFORE we call the LLM — a 402 here means the account is
-  // dry and there's no point spending upstream tokens on a request the user
-  // can't afford. Any downstream failure below leaves the ledger entry in
-  // place (intentional: this is a mechanism-testing pass and refunds add
-  // complexity we don't need yet).
-  const charge = await chargeCoins("deepening", sessionId);
+  const charge = await chargeCoins("reprocess_deepening", sessionId);
   if (!charge.ok) {
     if (charge.error === "insufficient_balance") {
       return NextResponse.json({ error: "insufficient_balance" }, { status: 402 });
     }
-    console.error("[deepening] charge failed", { error: charge.error, message: charge.message });
+    console.error("[deepening-reprocess] charge failed", {
+      error: charge.error,
+      message: charge.message,
+    });
     return NextResponse.json({ error: "charge_failed" }, { status: 500 });
   }
 
@@ -67,7 +68,7 @@ export async function POST(request: Request) {
     transcript,
     feedItems: session.feedItems,
     finalSummary: session.finalSummary,
-    logPrefix: "deepening",
+    logPrefix: "deepening-reprocess",
   });
 
   if (!result.ok) {
@@ -87,15 +88,14 @@ export async function POST(request: Request) {
 
   let saved = false;
   try {
-    await createDeepening(sessionId, payload);
+    await updateDeepening(sessionId, payload);
     saved = true;
-    devLog("[deepening] saved", { sessionId });
+    devLog("[deepening-reprocess] saved", { sessionId });
   } catch (err) {
-    const message = (err as Error).message;
-    if (message === "deepening_already_exists") {
-      return NextResponse.json({ error: "deepening_already_exists" }, { status: 409 });
-    }
-    console.error("[deepening] save failed", { sessionId, error: message });
+    console.error("[deepening-reprocess] save failed", {
+      sessionId,
+      error: (err as Error).message,
+    });
   }
 
   return NextResponse.json({ ...payload, latencyMs, model, sessionId, saved });

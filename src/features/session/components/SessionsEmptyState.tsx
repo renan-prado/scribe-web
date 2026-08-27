@@ -11,7 +11,7 @@ const STEPS = [
   },
   {
     n: 3,
-    title: "Aprofunde depois",
+    title: "Gere o estudo depois",
     body: "Volte a qualquer trecho para estudar, relembrar ou compartilhar.",
   },
 ];

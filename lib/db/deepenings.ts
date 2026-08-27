@@ -84,3 +84,27 @@ export async function createDeepening(sessionId: string, payload: DeepeningPaylo
     throw new Error(`createDeepening failed: ${error.message}`);
   }
 }
+
+/**
+ * Overwrite the payload of an existing deepening. Used by /api/deepening/reprocess
+ * to re-run the study prompt on demand. Matches the update-by-session_id
+ * pattern used by sessions.updateSessionSummary — RLS scopes the row to the
+ * current user, so no explicit ownership filter is needed here.
+ */
+export async function updateDeepening(sessionId: string, payload: DeepeningPayload): Promise<void> {
+  const supabase = await createClient();
+  // .select() forces PostgREST to return the affected rows so we can detect
+  // silent 0-row updates (e.g. missing UPDATE RLS policy, wrong session_id).
+  // Without it, Supabase happily returns { data: null, error: null } even
+  // when the update matched nothing — which masked the "reprocess parecia
+  // funcionar mas nunca persistia" bug caught in prod.
+  const { data, error } = await supabase
+    .from("session_deepenings")
+    .update({ payload })
+    .eq("session_id", sessionId)
+    .select("session_id");
+  if (error) throw new Error(`updateDeepening failed: ${error.message}`);
+  if (!data || data.length === 0) {
+    throw new Error("updateDeepening failed: no rows affected (RLS or missing row)");
+  }
+}
