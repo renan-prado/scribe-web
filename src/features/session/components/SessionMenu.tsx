@@ -79,14 +79,18 @@ export function SessionMenu({
             </span>
           </DropdownMenuItem>
         ) : null}
-        <DropdownMenuItem disabled={!hasLiveFeed} onClick={onOpenLiveFeed} className="gap-2">
-          <Sparkles className="size-4" />
-          Ver conteúdo do live
-        </DropdownMenuItem>
-        <DropdownMenuItem disabled={!hasTranscript} onClick={onOpenTranscript} className="gap-2">
-          <FileText className="size-4" />
-          Ler transcrição
-        </DropdownMenuItem>
+        {hasLiveFeed ? (
+          <DropdownMenuItem onClick={onOpenLiveFeed} className="gap-2">
+            <Sparkles className="size-4" />
+            Ver conteúdo do live
+          </DropdownMenuItem>
+        ) : null}
+        {hasTranscript ? (
+          <DropdownMenuItem onClick={onOpenTranscript} className="gap-2">
+            <FileText className="size-4" />
+            Ler transcrição
+          </DropdownMenuItem>
+        ) : null}
         {onDelete ? (
           <>
             <DropdownMenuSeparator />

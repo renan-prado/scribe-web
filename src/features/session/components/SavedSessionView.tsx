@@ -16,6 +16,7 @@ import { useCoinsStore } from "@/features/coins/store";
 import { DeepenButton } from "@/features/session/components/DeepenButton";
 import { EditSessionDialog } from "@/features/session/components/EditSessionDialog";
 import { Feed } from "@/features/session/components/Feed";
+import { SavedTranscriptView } from "@/features/session/components/SavedTranscriptView";
 import { SessionMenu } from "@/features/session/components/SessionMenu";
 import { SummaryView } from "@/features/session/components/SummaryView";
 import type { FeedItem } from "@/lib/domain/feed";
@@ -38,6 +39,7 @@ type SavedSessionViewProps = {
   title: string;
   createdAtLabel: string;
   durationLabel: string;
+  durationMs: number | null;
   speakerName: string | null;
   speakerLocation: string | null;
   transcript: string;
@@ -51,6 +53,7 @@ export function SavedSessionView({
   title: initialTitle,
   createdAtLabel,
   durationLabel,
+  durationMs,
   speakerName: initialSpeakerName,
   speakerLocation: initialSpeakerLocation,
   transcript,
@@ -218,12 +221,12 @@ export function SavedSessionView({
         <DialogContent className="sm:max-w-2xl">
           <DialogHeader>
             <DialogTitle>Transcrição</DialogTitle>
-            <DialogDescription>Texto bruto capturado pelo microfone.</DialogDescription>
+            <DialogDescription className="sr-only">
+              Texto bruto capturado pelo microfone.
+            </DialogDescription>
           </DialogHeader>
           <div className="max-h-[65vh] overflow-y-auto pr-2">
-            <p className="text-pretty text-sm font-light leading-relaxed text-scriba-ink whitespace-pre-wrap">
-              {transcript || "Sem transcrição."}
-            </p>
+            <SavedTranscriptView transcript={transcript} durationMs={durationMs} />
           </div>
         </DialogContent>
       </Dialog>

@@ -34,6 +34,7 @@ export default async function RecordingSummaryPage({ params }: PageProps) {
       title={session.title?.trim() || "Sessão sem título"}
       createdAtLabel={DATE_FMT.format(new Date(session.createdAt))}
       durationLabel={formatDurationLong(session.durationMs)}
+      durationMs={session.durationMs}
       speakerName={session.speakerName}
       speakerLocation={session.speakerLocation}
       transcript={session.transcript}
