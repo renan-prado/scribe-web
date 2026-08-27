@@ -157,14 +157,31 @@ export function ScribaCommentGroup({
               "transition-opacity duration-150"
             )}
           />
-          <Popover.Positioner side="left" align="start" sideOffset={12} className="z-50">
+          <Popover.Positioner
+            side="left"
+            align="center"
+            sideOffset={12}
+            collisionPadding={16}
+            collisionAvoidance={{ side: "shift", align: "shift", fallbackAxisSide: "end" }}
+            className="z-50"
+          >
             <Popover.Popup
               className={cn(
-                "w-[min(24rem,calc(100vw-2rem))] rounded-3xl bg-scriba-bubble p-6 shadow-[0_12px_36px_rgba(30,45,70,0.12)] outline-none",
+                "relative w-[min(20rem,calc(100vw-2.5rem))] max-h-[85dvh] overflow-y-auto rounded-3xl bg-scriba-bubble p-6 pr-12 shadow-[0_12px_36px_rgba(30,45,70,0.12)] outline-none sm:pr-6",
                 "data-[starting-style]:opacity-0 data-[ending-style]:opacity-0",
                 "origin-[var(--transform-origin)] transition-[opacity,transform] duration-150"
               )}
             >
+              <Popover.Close
+                aria-label="Fechar comentário do Scriba"
+                className={cn(
+                  "absolute right-3 top-3 flex size-8 items-center justify-center rounded-full text-scriba-ink-soft transition-colors sm:hidden",
+                  "hover:bg-scriba-blue-soft hover:text-scriba-ink",
+                  "focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring/40"
+                )}
+              >
+                <CloseIcon className="size-4" />
+              </Popover.Close>
               <ScribaCommentsStack comments={comments} />
             </Popover.Popup>
           </Popover.Positioner>
