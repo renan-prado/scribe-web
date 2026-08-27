@@ -1,6 +1,6 @@
 "use client";
 
-import { Check, MapPin, Pencil } from "lucide-react";
+import { Check, MapPin, Pencil, Plus } from "lucide-react";
 import { type ReactNode, useEffect, useState } from "react";
 import { Button } from "@/components/ui/button";
 import {
@@ -10,6 +10,14 @@ import {
   DialogHeader,
   DialogTitle,
 } from "@/components/ui/dialog";
+import { EntityFieldDialog } from "@/features/session/components/EntityFieldDialog";
+import { requestLocationSuggestions, requestSpeakerSuggestions } from "@/features/session/lib/api";
+import {
+  isUnknownLocationLabel,
+  isUnknownSpeakerLabel,
+  normalizeLocationInput,
+  normalizeSpeakerInput,
+} from "@/features/session/lib/unknown";
 import { getSessionState, useSessionStore } from "@/features/session/store";
 import { cn } from "@/lib/utils";
 
@@ -39,32 +47,35 @@ function initialsOf(name: string): string {
   return `${parts[0][0] ?? ""}${parts[parts.length - 1][0] ?? ""}`.toUpperCase();
 }
 
-type EditDialogProps = {
+/** Neutral pill matching the "Salvo" / "Estudo" family for "add missing meta"
+ * CTAs. Rendered when speaker or location is unknown. */
+const ADD_BADGE_CLASSES = cn(
+  "inline-flex items-center gap-1 rounded-full bg-scriba-ink-mute/10 px-2.5 py-1 text-[11px] font-semibold uppercase tracking-wider text-scriba-ink-soft outline-none transition-colors",
+  "hover:bg-scriba-blue-soft/70 hover:text-scriba-blue focus-visible:ring-2 focus-visible:ring-ring/40"
+);
+
+type TitleDialogProps = {
   open: boolean;
   onOpenChange: (open: boolean) => void;
-  heading: string;
-  currentValue: string;
+  initialValue: string;
   onSave: (value: string) => void;
 };
 
-function EditDialog({ open, onOpenChange, heading, currentValue, onSave }: EditDialogProps) {
-  const [draft, setDraft] = useState(currentValue);
-
+function TitleDialog({ open, onOpenChange, initialValue, onSave }: TitleDialogProps) {
+  const [draft, setDraft] = useState(initialValue);
   useEffect(() => {
-    if (open) setDraft(currentValue);
-  }, [open, currentValue]);
-
+    if (open) setDraft(initialValue);
+  }, [open, initialValue]);
   const handleSave = () => {
     const trimmed = draft.trim();
     if (trimmed) onSave(trimmed);
     onOpenChange(false);
   };
-
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
       <DialogContent className="sm:max-w-sm">
         <DialogHeader>
-          <DialogTitle>{heading}</DialogTitle>
+          <DialogTitle>Editar título</DialogTitle>
         </DialogHeader>
         <input
           className="w-full rounded-md border border-input bg-transparent px-3 py-2 text-sm outline-none ring-offset-background placeholder:text-muted-foreground focus:border-ring focus:ring-2 focus:ring-ring/50"
@@ -87,6 +98,11 @@ function EditDialog({ open, onOpenChange, heading, currentValue, onSave }: EditD
  * store — the header reads and writes it directly instead of drilling
  * callbacks from RecordingLive. Only `menu` is drilled because it's a
  * ReactNode composed by the caller.
+ *
+ * When speaker/location are unknown, the header renders a standard "Adicionar
+ * autor / local" badge that opens its OWN searchable combobox (independent
+ * dialog per field). Clicking the input in that combobox surfaces the list
+ * of the user's previously used entities, ordered by usage.
  */
 type RecordingHeaderProps = {
   menu: ReactNode;
@@ -105,26 +121,41 @@ export function RecordingHeader({ menu }: RecordingHeaderProps) {
 
   const displayTitle =
     title.trim() || (startedAt ? defaultRecordingTitle(startedAt) : "Nova gravação");
+  const speakerUnknown = isUnknownSpeakerLabel(speakerName);
+  const locationUnknown = isUnknownLocationLabel(speakerLocation);
   const initials = initialsOf(speakerName);
 
   return (
     <>
       <header className="flex flex-col gap-3">
         <div className="flex items-center justify-between gap-3">
-          <button
-            type="button"
-            onClick={() => setNameDialogOpen(true)}
-            className={cn(
-              "group flex items-center gap-2 rounded-full px-1 -mx-1 py-0.5 outline-none transition-colors",
-              "hover:bg-scriba-blue-soft/60 focus-visible:ring-2 focus-visible:ring-ring/40"
-            )}
-          >
-            <span className="flex size-6 items-center justify-center rounded-full bg-scriba-blue-soft text-[10px] font-semibold text-scriba-blue">
-              {initials}
-            </span>
-            <span className="text-sm font-medium leading-none text-scriba-ink">{speakerName}</span>
-            <Pencil className="size-3 opacity-0 text-scriba-ink-soft transition-opacity group-hover:opacity-60" />
-          </button>
+          {speakerUnknown ? (
+            <button
+              type="button"
+              onClick={() => setNameDialogOpen(true)}
+              className={ADD_BADGE_CLASSES}
+            >
+              <Plus className="size-3" strokeWidth={2.5} />
+              Adicionar autor
+            </button>
+          ) : (
+            <button
+              type="button"
+              onClick={() => setNameDialogOpen(true)}
+              className={cn(
+                "group flex items-center gap-2 rounded-full px-1 -mx-1 py-0.5 outline-none transition-colors",
+                "hover:bg-scriba-blue-soft/60 focus-visible:ring-2 focus-visible:ring-ring/40"
+              )}
+            >
+              <span className="flex size-6 items-center justify-center rounded-full bg-scriba-blue-soft text-[10px] font-semibold text-scriba-blue">
+                {initials}
+              </span>
+              <span className="text-sm font-medium leading-none text-scriba-ink">
+                {speakerName}
+              </span>
+              <Pencil className="size-3 opacity-0 text-scriba-ink-soft transition-opacity group-hover:opacity-60" />
+            </button>
+          )}
           <div className="flex items-center gap-2">
             {saved ? (
               <span
@@ -156,41 +187,59 @@ export function RecordingHeader({ menu }: RecordingHeaderProps) {
           </h1>
         </button>
 
-        <button
-          type="button"
-          onClick={() => setLocationDialogOpen(true)}
-          className={cn(
-            "group -mx-1 mt-1 flex w-fit items-center gap-1.5 rounded-md px-1 py-0.5 outline-none transition-colors",
-            "hover:bg-scriba-blue-soft/60 focus-visible:ring-2 focus-visible:ring-ring/40"
-          )}
-        >
-          <MapPin className="size-3 shrink-0 text-scriba-ink-mute" />
-          <span className="text-xs font-light leading-none text-scriba-ink-mute">
-            {speakerLocation}
-          </span>
-          <Pencil className="size-3 opacity-0 text-scriba-ink-mute transition-opacity group-hover:opacity-60" />
-        </button>
+        {locationUnknown ? (
+          <button
+            type="button"
+            onClick={() => setLocationDialogOpen(true)}
+            className={cn(ADD_BADGE_CLASSES, "mt-1 w-fit")}
+          >
+            <Plus className="size-3" strokeWidth={2.5} />
+            Adicionar local
+          </button>
+        ) : (
+          <button
+            type="button"
+            onClick={() => setLocationDialogOpen(true)}
+            className={cn(
+              "group -mx-1 mt-1 flex w-fit items-center gap-1.5 rounded-md px-1 py-0.5 outline-none transition-colors",
+              "hover:bg-scriba-blue-soft/60 focus-visible:ring-2 focus-visible:ring-ring/40"
+            )}
+          >
+            <MapPin className="size-3 shrink-0 text-scriba-ink-mute" />
+            <span className="text-xs font-light leading-none text-scriba-ink-mute">
+              {speakerLocation}
+            </span>
+            <Pencil className="size-3 opacity-0 text-scriba-ink-mute transition-opacity group-hover:opacity-60" />
+          </button>
+        )}
       </header>
 
-      <EditDialog
+      <EntityFieldDialog
         open={nameDialogOpen}
         onOpenChange={setNameDialogOpen}
-        heading="Editar autor"
-        currentValue={speakerName}
-        onSave={(v) => getSessionState().setSpeakerName(v)}
+        title={speakerUnknown ? "Adicionar autor" : "Editar autor"}
+        placeholder="Nome do pregador"
+        initialValue={normalizeSpeakerInput(speakerName)}
+        fetchSuggestions={requestSpeakerSuggestions}
+        onSave={(v) => {
+          if (v) getSessionState().setSpeakerName(v);
+        }}
       />
-      <EditDialog
+      <EntityFieldDialog
         open={locationDialogOpen}
         onOpenChange={setLocationDialogOpen}
-        heading="Editar local"
-        currentValue={speakerLocation}
-        onSave={(v) => getSessionState().setSpeakerLocation(v)}
+        title={locationUnknown ? "Adicionar local" : "Editar local"}
+        placeholder="Igreja ou local"
+        initialValue={normalizeLocationInput(speakerLocation)}
+        fetchSuggestions={requestLocationSuggestions}
+        onSave={(v) => {
+          if (v) getSessionState().setSpeakerLocation(v);
+        }}
       />
-      <EditDialog
+      <TitleDialog
         open={titleDialogOpen}
         onOpenChange={setTitleDialogOpen}
-        heading="Editar título"
-        currentValue={displayTitle}
+        initialValue={displayTitle}
         onSave={(v) => {
           const s = getSessionState();
           s.setSummaryTitle(v);

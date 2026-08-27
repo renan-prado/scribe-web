@@ -9,6 +9,9 @@ import {
   DialogHeader,
   DialogTitle,
 } from "@/components/ui/dialog";
+import { EntityCombobox } from "@/features/session/components/EntityCombobox";
+import { requestLocationSuggestions, requestSpeakerSuggestions } from "@/features/session/lib/api";
+import { normalizeLocationInput, normalizeSpeakerInput } from "@/features/session/lib/unknown";
 
 type Fields = {
   title: string;
@@ -19,19 +22,20 @@ type Fields = {
 type EditSessionDialogProps = {
   open: boolean;
   onOpenChange: (open: boolean) => void;
+  /** Raw values from the session row. Placeholder labels ("Autor desconhecido",
+   * etc) are stripped so the input opens blank instead of pre-filled. */
   initial: Fields;
   onSave: (fields: Fields) => Promise<void>;
 };
 
 export function EditSessionDialog({ open, onOpenChange, initial, onSave }: EditSessionDialogProps) {
-  const [fields, setFields] = useState<Fields>(initial);
+  const [fields, setFields] = useState<Fields>(() => ({
+    title: initial.title,
+    speakerName: normalizeSpeakerInput(initial.speakerName),
+    speakerLocation: normalizeLocationInput(initial.speakerLocation),
+  }));
   const [saving, setSaving] = useState(false);
   const [error, setError] = useState<string | null>(null);
-
-  function set(key: keyof Fields) {
-    return (e: React.ChangeEvent<HTMLInputElement>) =>
-      setFields((f) => ({ ...f, [key]: e.target.value }));
-  }
 
   async function handleSubmit(e: React.FormEvent) {
     e.preventDefault();
@@ -66,7 +70,7 @@ export function EditSessionDialog({ open, onOpenChange, initial, onSave }: EditS
               id="edit-title"
               className={inputClass}
               value={fields.title}
-              onChange={set("title")}
+              onChange={(e) => setFields((f) => ({ ...f, title: e.target.value }))}
               placeholder="Título do sermão"
               disabled={saving}
             />
@@ -75,26 +79,26 @@ export function EditSessionDialog({ open, onOpenChange, initial, onSave }: EditS
             <label className="text-sm font-medium text-foreground" htmlFor="edit-speaker">
               Pregador
             </label>
-            <input
+            <EntityCombobox
               id="edit-speaker"
-              className={inputClass}
               value={fields.speakerName}
-              onChange={set("speakerName")}
+              onChange={(v) => setFields((f) => ({ ...f, speakerName: v }))}
               placeholder="Nome do pregador"
               disabled={saving}
+              fetchSuggestions={requestSpeakerSuggestions}
             />
           </div>
           <div className="flex flex-col gap-1.5">
             <label className="text-sm font-medium text-foreground" htmlFor="edit-location">
               Local
             </label>
-            <input
+            <EntityCombobox
               id="edit-location"
-              className={inputClass}
               value={fields.speakerLocation}
-              onChange={set("speakerLocation")}
+              onChange={(v) => setFields((f) => ({ ...f, speakerLocation: v }))}
               placeholder="Igreja ou local"
               disabled={saving}
+              fetchSuggestions={requestLocationSuggestions}
             />
           </div>
           {error ? <p className="text-sm text-destructive">{error}</p> : null}

@@ -6,6 +6,9 @@ import { createClient } from "@/lib/supabase/server";
  * Persistence for reusable location entities (churches, venues, wherever
  * a sermon happens). Sessions link via sessions.location_id and keep
  * speaker_location as the historical snapshot.
+ *
+ * All reads/writes are user-scoped by RLS (user_id column). Case-insensitive
+ * uniqueness on (user_id, lower(name)) enforced by index — see 0019.
  */
 
 type DbRow = {
@@ -28,14 +31,31 @@ function rowToLocation(row: DbRow): Location {
 
 const SELECT = "id, name, city, notes, created_at";
 
-export async function listLocations(): Promise<Location[]> {
+export type LocationWithUsage = Location & { usageCount: number };
+
+/**
+ * List the current user's locations ordered by usage (most sessions first),
+ * then name. Optional case-insensitive substring search.
+ */
+export async function listLocationsWithUsage(
+  opts: { q?: string; limit?: number } = {}
+): Promise<LocationWithUsage[]> {
   const supabase = await createClient();
-  const { data, error } = await supabase
-    .from("locations")
-    .select(SELECT)
-    .order("name", { ascending: true });
-  if (error) throw new Error(`listLocations failed: ${error.message}`);
-  return (data ?? []).map((r) => rowToLocation(r as DbRow));
+  let q = supabase
+    .from("locations_with_usage")
+    .select("id, name, city, notes, created_at, usage_count")
+    .order("usage_count", { ascending: false })
+    .order("name", { ascending: true })
+    .limit(opts.limit ?? 25);
+  if (opts.q?.trim()) {
+    q = q.ilike("name", `%${opts.q.trim()}%`);
+  }
+  const { data, error } = await q;
+  if (error) throw new Error(`listLocationsWithUsage failed: ${error.message}`);
+  return (data ?? []).map((r) => ({
+    ...rowToLocation(r as DbRow),
+    usageCount: (r as { usage_count?: number }).usage_count ?? 0,
+  }));
 }
 
 export async function getLocation(id: string): Promise<Location | null> {
@@ -49,11 +69,12 @@ export async function getLocation(id: string): Promise<Location | null> {
   return data ? rowToLocation(data as DbRow) : null;
 }
 
-export async function findLocationByName(name: string): Promise<Location | null> {
+async function findLocationByNameForUser(name: string, userId: string): Promise<Location | null> {
   const supabase = await createClient();
   const { data, error } = await supabase
     .from("locations")
     .select(SELECT)
+    .eq("user_id", userId)
     .ilike("name", name.trim())
     .limit(1)
     .maybeSingle();
@@ -63,6 +84,7 @@ export async function findLocationByName(name: string): Promise<Location | null>
 
 export type UpsertLocationInput = {
   name: string;
+  userId: string;
   city?: string | null;
   notes?: string | null;
 };
@@ -70,13 +92,14 @@ export type UpsertLocationInput = {
 export async function upsertLocationByName(input: UpsertLocationInput): Promise<Location> {
   const trimmed = input.name.trim();
   if (!trimmed) throw new Error("upsertLocationByName: empty name");
-  const existing = await findLocationByName(trimmed);
+  const existing = await findLocationByNameForUser(trimmed, input.userId);
   if (existing) return existing;
 
   const supabase = await createClient();
   const { data, error } = await supabase
     .from("locations")
     .insert({
+      user_id: input.userId,
       name: trimmed,
       city: input.city ?? null,
       notes: input.notes ?? null,

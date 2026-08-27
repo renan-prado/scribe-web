@@ -238,18 +238,20 @@ export type UpdateSessionMetaInput = {
   title: string | null;
   speakerName: string | null;
   speakerLocation: string | null;
+  speakerId?: string | null;
+  locationId?: string | null;
 };
 
 export async function updateSessionMeta(id: string, input: UpdateSessionMetaInput): Promise<void> {
   const supabase = await createClient();
-  const { error } = await supabase
-    .from("sessions")
-    .update({
-      title: input.title,
-      speaker_name: input.speakerName,
-      speaker_location: input.speakerLocation,
-    })
-    .eq("id", id);
+  const patch: Record<string, unknown> = {
+    title: input.title,
+    speaker_name: input.speakerName,
+    speaker_location: input.speakerLocation,
+  };
+  if (input.speakerId !== undefined) patch.speaker_id = input.speakerId;
+  if (input.locationId !== undefined) patch.location_id = input.locationId;
+  const { error } = await supabase.from("sessions").update(patch).eq("id", id);
   if (error) throw new Error(`updateSessionMeta failed: ${error.message}`);
 }
 

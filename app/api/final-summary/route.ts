@@ -1,6 +1,8 @@
 import { NextResponse } from "next/server";
 import { z } from "zod";
+import { upsertLocationByName } from "@/lib/db/locations";
 import { updateSessionFinal } from "@/lib/db/sessions";
+import { upsertSpeakerByName } from "@/lib/db/speakers";
 import { FeedItemSchema } from "@/lib/domain/feed";
 import { generateFinalSummary } from "@/lib/final-summary/generate";
 import { parseJsonBody, UuidSchema } from "@/lib/http/validate";
@@ -85,6 +87,41 @@ export async function POST(request: Request) {
   // Fill the row created at start. Never fail the request on save error —
   // the user already sat through the recording; return the summary and log
   // for investigation. RLS scopes the update to the session's owner.
+  const speakerName = body.speakerName?.trim() || null;
+  const speakerLocation = body.speakerLocation?.trim() || null;
+
+  // Promote speaker/location free-text into per-user entities so they show up
+  // in future autocomplete lists ranked by usage. Best-effort — the actual
+  // session save must not fail on an entity upsert glitch.
+  let speakerId: string | null | undefined;
+  let locationId: string | null | undefined;
+  if (speakerName) {
+    try {
+      const s = await upsertSpeakerByName({ name: speakerName, userId: auth.user.id });
+      speakerId = s.id;
+    } catch (err) {
+      console.error("[final-summary] speaker upsert failed", {
+        sessionId,
+        error: (err as Error).message,
+      });
+    }
+  } else {
+    speakerId = null;
+  }
+  if (speakerLocation) {
+    try {
+      const l = await upsertLocationByName({ name: speakerLocation, userId: auth.user.id });
+      locationId = l.id;
+    } catch (err) {
+      console.error("[final-summary] location upsert failed", {
+        sessionId,
+        error: (err as Error).message,
+      });
+    }
+  } else {
+    locationId = null;
+  }
+
   let saved = false;
   try {
     await updateSessionFinal(sessionId, {
@@ -92,8 +129,10 @@ export async function POST(request: Request) {
       feedItems,
       summary: payload,
       durationMs: body.durationMs ?? null,
-      speakerName: body.speakerName?.trim() || null,
-      speakerLocation: body.speakerLocation?.trim() || null,
+      speakerName,
+      speakerLocation,
+      speakerId,
+      locationId,
     });
     saved = true;
     devLog("[final-summary] saved", { sessionId });

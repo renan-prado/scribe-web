@@ -142,6 +142,34 @@ export async function requestCreateSession(body: {
   }
 }
 
+export type EntitySuggestion = { id: string; name: string; count: number };
+
+/**
+ * GET /api/speakers?q=... — search the current user's speakers, ordered by
+ * how often they appear in past recordings.
+ */
+export async function requestSpeakerSuggestions(q: string): Promise<EntitySuggestion[]> {
+  try {
+    const url = `/api/speakers${q ? `?q=${encodeURIComponent(q)}` : ""}`;
+    const res = await fetch(url, { method: "GET" });
+    const body = (await res.json()) as { items?: EntitySuggestion[] };
+    return Array.isArray(body?.items) ? body.items : [];
+  } catch {
+    return [];
+  }
+}
+
+export async function requestLocationSuggestions(q: string): Promise<EntitySuggestion[]> {
+  try {
+    const url = `/api/locations${q ? `?q=${encodeURIComponent(q)}` : ""}`;
+    const res = await fetch(url, { method: "GET" });
+    const body = (await res.json()) as { items?: EntitySuggestion[] };
+    return Array.isArray(body?.items) ? body.items : [];
+  } catch {
+    return [];
+  }
+}
+
 export async function requestVerse(
   reference: string
 ): Promise<{ ok: true; payload: VersePayload } | { ok: false; message: string }> {

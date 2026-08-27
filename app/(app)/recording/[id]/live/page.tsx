@@ -31,8 +31,8 @@ export default async function RecordingLivePage({ params, searchParams }: PagePr
   return (
     <RecordingLive
       sessionId={session.id}
-      initialSpeakerName={session.speakerName?.trim() || "Autor desconhecido"}
-      initialSpeakerLocation={session.speakerLocation?.trim() || "Local desconhecido"}
+      initialSpeakerName={session.speakerName?.trim() ?? ""}
+      initialSpeakerLocation={session.speakerLocation?.trim() ?? ""}
       autoStart={autostart === "1"}
     />
   );

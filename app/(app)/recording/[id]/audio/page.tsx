@@ -31,8 +31,8 @@ export default async function RecordingAudioPage({ params, searchParams }: PageP
   return (
     <RecordingAudioOnly
       sessionId={session.id}
-      initialSpeakerName={session.speakerName?.trim() || "Autor desconhecido"}
-      initialSpeakerLocation={session.speakerLocation?.trim() || "Local desconhecido"}
+      initialSpeakerName={session.speakerName?.trim() ?? ""}
+      initialSpeakerLocation={session.speakerLocation?.trim() ?? ""}
       autoStart={autostart === "1"}
     />
   );

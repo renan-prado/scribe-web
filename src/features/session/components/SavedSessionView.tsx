@@ -1,6 +1,6 @@
 "use client";
 
-import { ArrowLeft, MapPin } from "lucide-react";
+import { ArrowLeft, MapPin, Plus } from "lucide-react";
 import { useRouter } from "next/navigation";
 import { useState } from "react";
 import { toast } from "sonner";
@@ -16,12 +16,15 @@ import {
 import { useCoinsStore } from "@/features/coins/store";
 import { DeepenButton } from "@/features/session/components/DeepenButton";
 import { EditSessionDialog } from "@/features/session/components/EditSessionDialog";
+import { EntityFieldDialog } from "@/features/session/components/EntityFieldDialog";
 import { Feed } from "@/features/session/components/Feed";
 import { SavedTranscriptView } from "@/features/session/components/SavedTranscriptView";
 import { SessionMenu } from "@/features/session/components/SessionMenu";
 import { SummaryView } from "@/features/session/components/SummaryView";
+import { requestLocationSuggestions, requestSpeakerSuggestions } from "@/features/session/lib/api";
 import type { FeedItem } from "@/lib/domain/feed";
 import type { SummaryPayload } from "@/lib/domain/summary";
+import { cn } from "@/lib/utils";
 
 function initialsOf(name: string | null): string {
   if (!name) return "?";
@@ -31,9 +34,20 @@ function initialsOf(name: string | null): string {
   return `${parts[0][0] ?? ""}${parts[parts.length - 1][0] ?? ""}`.toUpperCase();
 }
 
+/** Neutral pill matching the "Salvo" / "Estudo" family for "add missing meta"
+ * CTAs. Rendered when speaker or location is unknown. */
+const ADD_BADGE_CLASSES = cn(
+  "inline-flex items-center gap-1 rounded-full bg-scriba-ink-mute/10 px-2.5 py-1 text-[11px] font-semibold uppercase tracking-wider text-scriba-ink-soft outline-none transition-colors",
+  "hover:bg-scriba-blue-soft/70 hover:text-scriba-blue focus-visible:ring-2 focus-visible:ring-ring/40"
+);
+
 /**
  * View of a saved session. Renders the same SummaryView the live page uses on
  * stop, plus dialogs for the live feed, the raw transcript, and editing metadata.
+ *
+ * Speaker and location each get an independent edit dialog (opened by clicking
+ * the badge/chip). The combined "Editar sermão" dialog is still reachable from
+ * the menu for cases where the user wants to touch multiple fields at once.
  */
 type SavedSessionViewProps = {
   id: string;
@@ -67,6 +81,8 @@ export function SavedSessionView({
   const [feedOpen, setFeedOpen] = useState(false);
   const [transcriptOpen, setTranscriptOpen] = useState(false);
   const [editOpen, setEditOpen] = useState(false);
+  const [speakerDialogOpen, setSpeakerDialogOpen] = useState(false);
+  const [locationDialogOpen, setLocationDialogOpen] = useState(false);
   const [reprocessing, setReprocessing] = useState(false);
 
   const router = useRouter();
@@ -126,6 +142,18 @@ export function SavedSessionView({
     setSpeakerLocation(fields.speakerLocation || null);
   }
 
+  async function patchField(field: "speakerName" | "speakerLocation", value: string) {
+    const body = { [field]: value || null };
+    const res = await fetch(`/api/sessions/${id}`, {
+      method: "PATCH",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify(body),
+    });
+    if (!res.ok) throw new Error("update failed");
+    if (field === "speakerName") setSpeakerName(value || null);
+    else setSpeakerLocation(value || null);
+  }
+
   const initials = initialsOf(speakerName);
 
   return (
@@ -146,16 +174,30 @@ export function SavedSessionView({
       <header className="flex flex-col gap-3">
         <div className="flex items-center justify-between gap-3">
           {speakerName?.trim() ? (
-            <div className="inline-flex items-center gap-2">
+            <button
+              type="button"
+              onClick={() => setSpeakerDialogOpen(true)}
+              className={cn(
+                "group inline-flex items-center gap-2 rounded-full -mx-1 px-1 py-0.5 outline-none transition-colors",
+                "hover:bg-scriba-blue-soft/60 focus-visible:ring-2 focus-visible:ring-ring/40"
+              )}
+            >
               <span className="flex size-6 items-center justify-center rounded-full bg-scriba-blue-soft text-[10px] font-semibold text-scriba-blue">
                 {initials}
               </span>
               <span className="text-sm font-medium leading-none text-scriba-ink">
                 {speakerName}
               </span>
-            </div>
+            </button>
           ) : (
-            <div />
+            <button
+              type="button"
+              onClick={() => setSpeakerDialogOpen(true)}
+              className={ADD_BADGE_CLASSES}
+            >
+              <Plus className="size-3" strokeWidth={2.5} />
+              Adicionar autor
+            </button>
           )}
           <div className="flex items-center gap-2">
             <span
@@ -184,13 +226,29 @@ export function SavedSessionView({
         </h1>
 
         <div className="flex items-end justify-between gap-3">
-          <div className="flex min-w-0 flex-col gap-0.5">
+          <div className="flex min-w-0 flex-col gap-1">
             {speakerLocation?.trim() ? (
-              <span className="inline-flex items-center gap-1.5 text-xs font-light text-scriba-ink-mute">
+              <button
+                type="button"
+                onClick={() => setLocationDialogOpen(true)}
+                className={cn(
+                  "group -mx-1 inline-flex w-fit items-center gap-1.5 rounded-md px-1 py-0.5 text-xs font-light text-scriba-ink-mute outline-none transition-colors",
+                  "hover:bg-scriba-blue-soft/60 focus-visible:ring-2 focus-visible:ring-ring/40"
+                )}
+              >
                 <MapPin className="size-3" />
                 {speakerLocation}
-              </span>
-            ) : null}
+              </button>
+            ) : (
+              <button
+                type="button"
+                onClick={() => setLocationDialogOpen(true)}
+                className={cn(ADD_BADGE_CLASSES, "w-fit")}
+              >
+                <Plus className="size-3" strokeWidth={2.5} />
+                Adicionar local
+              </button>
+            )}
             <p className="text-[11px] font-light text-scriba-ink-mute">
               <span className="sm:hidden">{createdAtShortLabel}</span>
               <span className="hidden sm:inline">
@@ -251,6 +309,25 @@ export function SavedSessionView({
           speakerLocation: speakerLocation ?? "",
         }}
         onSave={handleSave}
+      />
+
+      <EntityFieldDialog
+        open={speakerDialogOpen}
+        onOpenChange={setSpeakerDialogOpen}
+        title={speakerName?.trim() ? "Editar autor" : "Adicionar autor"}
+        placeholder="Nome do pregador"
+        initialValue={speakerName ?? ""}
+        fetchSuggestions={requestSpeakerSuggestions}
+        onSave={(v) => patchField("speakerName", v)}
+      />
+      <EntityFieldDialog
+        open={locationDialogOpen}
+        onOpenChange={setLocationDialogOpen}
+        title={speakerLocation?.trim() ? "Editar local" : "Adicionar local"}
+        placeholder="Igreja ou local"
+        initialValue={speakerLocation ?? ""}
+        fetchSuggestions={requestLocationSuggestions}
+        onSave={(v) => patchField("speakerLocation", v)}
       />
     </main>
   );

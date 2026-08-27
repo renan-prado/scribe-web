@@ -1,6 +1,8 @@
 import { NextResponse } from "next/server";
 import { z } from "zod";
+import { upsertLocationByName } from "@/lib/db/locations";
 import { deleteSession, updateSessionMeta } from "@/lib/db/sessions";
+import { upsertSpeakerByName } from "@/lib/db/speakers";
 import { parseJsonBody, parseUuidParam } from "@/lib/http/validate";
 import { devLog } from "@/lib/log";
 import { enforceRateLimit, RATE_LIMITS } from "@/lib/rate-limit";
@@ -40,8 +42,44 @@ export async function PATCH(request: Request, { params }: { params: Promise<{ id
   const speakerName = parsed.data.speakerName?.trim() || null;
   const speakerLocation = parsed.data.speakerLocation?.trim() || null;
 
+  // Promote free-text speaker/location into per-user entities so future edits
+  // can autocomplete against them. Fall through silently if entity save fails
+  // — the session meta patch is what the user is waiting on.
+  let speakerId: string | null | undefined;
+  let locationId: string | null | undefined;
+  if (parsed.data.speakerName !== undefined) {
+    if (speakerName) {
+      try {
+        const s = await upsertSpeakerByName({ name: speakerName, userId: auth.user.id });
+        speakerId = s.id;
+      } catch (err) {
+        console.error("[sessions] speaker upsert failed", { error: (err as Error).message });
+      }
+    } else {
+      speakerId = null;
+    }
+  }
+  if (parsed.data.speakerLocation !== undefined) {
+    if (speakerLocation) {
+      try {
+        const l = await upsertLocationByName({ name: speakerLocation, userId: auth.user.id });
+        locationId = l.id;
+      } catch (err) {
+        console.error("[sessions] location upsert failed", { error: (err as Error).message });
+      }
+    } else {
+      locationId = null;
+    }
+  }
+
   try {
-    await updateSessionMeta(id, { title, speakerName, speakerLocation });
+    await updateSessionMeta(id, {
+      title,
+      speakerName,
+      speakerLocation,
+      speakerId,
+      locationId,
+    });
     devLog("[sessions] meta updated", { id });
     return NextResponse.json({ ok: true });
   } catch (err) {
