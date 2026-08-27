@@ -106,10 +106,10 @@ function Header() {
 }
 
 const HERO_AVATARS = [
-  { txt: "MR", className: "bg-scriba-blue-soft text-scriba-blue" },
-  { txt: "JS", className: "bg-scriba-mint text-scriba-mint-accent" },
-  { txt: "AL", className: "bg-scriba-cream text-scriba-cream-accent" },
-  { txt: "DS", className: "bg-scriba-rose text-scriba-rose-accent" },
+  { src: "https://mockmind-api.uifaces.co/content/human/5.jpg" },
+  { src: "https://mockmind-api.uifaces.co/content/human/17.jpg" },
+  { src: "https://mockmind-api.uifaces.co/content/human/42.jpg" },
+  { src: "https://mockmind-api.uifaces.co/content/human/88.jpg" },
 ] as const;
 
 function Hero() {
@@ -151,16 +151,19 @@ function Hero() {
           <div className="flex items-center gap-3.5 pt-1.5 sm:gap-5 sm:pt-3.5">
             <div className="flex">
               {HERO_AVATARS.map((a, i) => (
-                <div
-                  key={a.txt}
+                // biome-ignore lint/performance/noImgElement: external placeholder avatar (uifaces.co)
+                <img
+                  key={a.src}
+                  src={a.src}
+                  alt=""
+                  aria-hidden
+                  width={34}
+                  height={34}
                   className={cn(
-                    "flex h-[31px] w-[31px] items-center justify-center rounded-full border-2 border-white text-[10px] font-semibold sm:size-[34px] sm:text-[11px]",
-                    a.className,
+                    "size-[31px] rounded-full border-2 border-white object-cover sm:size-[34px]",
                     i > 0 && "-ml-[9px]"
                   )}
-                >
-                  {a.txt}
-                </div>
+                />
               ))}
             </div>
             <div className="text-[11.5px] font-light leading-[1.5] text-scriba-ink-soft sm:text-[12.5px]">
@@ -487,19 +490,19 @@ function Testimonials() {
           quote={`"Parei de anotar e comecei a ouvir de verdade. Na quarta-feira o app me devolve exatamente o ponto que eu precisava."`}
           name="Mateus Ribeiro"
           title="Membro · Igreja Batista Central"
-          initials="MR"
+          avatarSrc="https://mockmind-api.uifaces.co/content/human/12.jpg"
         />
         <TestimonialCard
           quote={`"Uso com meu grupo pequeno. Chegamos na reunião falando do mesmo sermão, com as mesmas perguntas."`}
           name="Ana Laura Prado"
           title="Líder de grupo pequeno"
-          initials="AL"
+          avatarSrc="https://mockmind-api.uifaces.co/content/human/22.jpg"
         />
         <TestimonialCard
           quote={`"Sei o que a igreja tem ouvido nos últimos dois anos. Isso mudou como eu planejo a pregação."`}
           name="Pr. João Silva"
           title="Pastor titular"
-          initials="JS"
+          avatarSrc="https://mockmind-api.uifaces.co/content/human/45.jpg"
         />
       </div>
     </section>
@@ -510,19 +513,25 @@ type TestimonialCardProps = {
   quote: string;
   name: string;
   title: string;
-  initials: string;
+  avatarSrc: string;
 };
 
-function TestimonialCard({ quote, name, title, initials }: TestimonialCardProps) {
+function TestimonialCard({ quote, name, title, avatarSrc }: TestimonialCardProps) {
   return (
     <div className="flex flex-col gap-3.5 rounded-[24px] border border-[#EAF2FA] bg-white p-6 shadow-[0_8px_24px_rgba(79,168,240,.08)] sm:rounded-[26px] sm:p-8">
       <div className="text-pretty text-[15px] font-normal leading-[1.55] text-[#3D4C5B] sm:text-[16.5px]">
         {quote}
       </div>
-      <div className="flex items-center gap-2.5 border-t border-[#EEF2F6] pt-[13px] sm:gap-[11px] sm:pt-[15px]">
-        <div className="flex size-8 items-center justify-center rounded-full bg-scriba-blue-soft text-[10.5px] font-semibold text-scriba-blue sm:size-[34px]">
-          {initials}
-        </div>
+      <div className="mt-auto flex items-center gap-2.5 border-t border-[#EEF2F6] pt-[13px] sm:gap-[11px] sm:pt-[15px]">
+        {/** biome-ignore lint/performance/noImgElement: external placeholder avatar (uifaces.co) */}
+        <img
+          src={avatarSrc}
+          alt=""
+          aria-hidden
+          width={34}
+          height={34}
+          className="size-8 flex-none rounded-full object-cover sm:size-[34px]"
+        />
         <div className="flex flex-col gap-px">
           <div className="text-[12.5px] font-semibold text-scriba-ink sm:text-[13px]">{name}</div>
           <div className="text-[11px] font-light text-scriba-ink-mute sm:text-[11.5px]">
