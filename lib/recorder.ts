@@ -48,7 +48,7 @@ export function createRecorder(opts: RecorderOptions = {}): Recorder {
   let fullRecorder: MediaRecorder | null = null;
   let chunkParts: BlobPart[] = [];
   let fullParts: BlobPart[] = [];
-  let chunkIndex = 0;
+  let chunkIndex = opts.startingIndex ?? 0;
   let chunkStartedAt = 0;
   let running = false;
   let picked: MimeCandidate | null = null;
@@ -57,6 +57,7 @@ export function createRecorder(opts: RecorderOptions = {}): Recorder {
   let analyser: AnalyserNode | null = null;
   let vadTimer: ReturnType<typeof setInterval> | null = null;
   let silenceSince: number | null = null;
+  let visibilityListener: (() => void) | null = null;
 
   let chunkCb: ((ev: ChunkEvent) => void) | null = null;
   let errorCb: ((ev: RecorderErrorEvent) => void) | null = null;
@@ -201,6 +202,19 @@ export function createRecorder(opts: RecorderOptions = {}): Recorder {
       analyser = audioContext.createAnalyser();
       analyser.fftSize = 2048;
       source.connect(analyser);
+
+      // Some browsers auto-suspend AudioContexts when the tab goes into the
+      // background — that would silently break VAD chunk cutting. Resume as
+      // soon as we're visible again (and speculatively on every visibility
+      // event, since resume() on a running context is a no-op).
+      visibilityListener = () => {
+        if (audioContext && audioContext.state === "suspended") {
+          audioContext.resume().catch(() => {
+            // ignore — will retry on next visibility change
+          });
+        }
+      };
+      document.addEventListener("visibilitychange", visibilityListener);
     } catch (err) {
       emitError("vad", (err as Error).message ?? "vad setup failed");
     }
@@ -217,7 +231,6 @@ export function createRecorder(opts: RecorderOptions = {}): Recorder {
         emitError("stream", (err as Error).message ?? "getUserMedia failed");
         throw err;
       }
-      chunkIndex = 0;
       running = true;
       setupVad();
       startFullRecorder();
@@ -237,6 +250,10 @@ export function createRecorder(opts: RecorderOptions = {}): Recorder {
         if (fullRecorder && fullRecorder.state === "recording") fullRecorder.stop();
       } catch (err) {
         emitError("full", (err as Error).message ?? "full final stop failed");
+      }
+      if (visibilityListener) {
+        document.removeEventListener("visibilitychange", visibilityListener);
+        visibilityListener = null;
       }
       if (audioContext) {
         try {
