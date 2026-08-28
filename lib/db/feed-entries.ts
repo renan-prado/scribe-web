@@ -1,4 +1,5 @@
 import "server-only";
+import type { HighlightsPayload } from "@/lib/domain/highlights";
 import type { PracticesPayload } from "@/lib/domain/practices";
 import type { RemindersPayload } from "@/lib/domain/reminders";
 import type { RereadsPayload } from "@/lib/domain/rereads";
@@ -52,6 +53,7 @@ const TIEBREAK: Record<FeedEntryKind, number> = {
   practice: 0,
   reread: 1,
   reminder: 2,
+  highlight: 3,
 };
 
 function scheduledAtIso(createdAt: string, dayOffset: number): string {
@@ -82,7 +84,7 @@ export async function listFeedEntries(input: ListFeedEntriesInput): Promise<List
   } = await supabase.auth.getUser();
   if (!user) return { items: [], total: 0, hasMore: false };
 
-  const [sessionsRes, practicesRes, rereadsRes, remindersRes] = await Promise.all([
+  const [sessionsRes, practicesRes, rereadsRes, remindersRes, highlightsRes] = await Promise.all([
     supabase
       .from("sessions")
       .select("id, created_at, title, speaker_name, speaker_location")
@@ -90,6 +92,7 @@ export async function listFeedEntries(input: ListFeedEntriesInput): Promise<List
     supabase.from("session_practices").select("session_id, payload"),
     supabase.from("session_rereads").select("session_id, payload"),
     supabase.from("session_reminders").select("session_id, payload"),
+    supabase.from("session_highlights").select("session_id, payload"),
   ]);
 
   if (sessionsRes.error) {
@@ -103,6 +106,9 @@ export async function listFeedEntries(input: ListFeedEntriesInput): Promise<List
   }
   if (remindersRes.error) {
     throw new Error(`listFeedEntries.reminders failed: ${remindersRes.error.message}`);
+  }
+  if (highlightsRes.error) {
+    throw new Error(`listFeedEntries.highlights failed: ${highlightsRes.error.message}`);
   }
 
   const sessions = new Map<string, FeedEntrySessionRef>();
@@ -174,6 +180,29 @@ export async function listFeedEntries(input: ListFeedEntriesInput): Promise<List
         item,
       });
     }
+  }
+
+  for (const row of (highlightsRes.data ?? []) as {
+    session_id: string;
+    payload: HighlightsPayload;
+  }[]) {
+    const session = sessions.get(row.session_id);
+    if (!session) continue;
+    // Índice na chave para não colidir se duas frases caírem no mesmo
+    // dayOffset (raro após a compensação em computeHighlightDayOffsets, mas
+    // possível em legado se alguém popular direto no banco).
+    (row.payload?.items ?? []).forEach((item, idx) => {
+      const scheduledAt = scheduledAtIso(session.createdAt, item.dayOffset);
+      if (!isEligible(scheduledAt, input.now)) return;
+      entries.push({
+        kind: "highlight",
+        key: `highlight:${session.id}:${idx}:${item.dayOffset}`,
+        dayOffset: item.dayOffset,
+        scheduledAt,
+        session,
+        item,
+      });
+    });
   }
 
   entries.sort((a, b) => {

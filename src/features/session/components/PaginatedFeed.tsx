@@ -11,7 +11,13 @@ import {
 } from "@/components/ui/select";
 import type { FeedEntry, FeedOrder } from "@/lib/db/feed-entries-types";
 import { cn } from "@/lib/utils";
-import { buildFooter, PracticeCard, ReminderCard, RereadCard } from "./FeedEntryCards";
+import {
+  buildFooter,
+  HighlightCard,
+  PracticeCard,
+  ReminderCard,
+  RereadCard,
+} from "./FeedEntryCards";
 import { StudyCtaCard, type StudyCtaSession } from "./StudyCtaCard";
 
 const STUDY_CTA_EVERY = 10;
@@ -87,8 +93,6 @@ export function PaginatedFeed({
   const [hasMore, setHasMore] = useState(initialHasMore);
   const [order, setOrder] = useState<FeedOrder>(initialOrder);
   const [state, setState] = useState<FetchState>("idle");
-  // now is captured on mount so relative labels stay stable across "Ver mais"
-  const [now] = useState(() => new Date());
 
   const fetchPage = useCallback(
     async (nextOrder: FeedOrder, offset: number, replace: boolean) => {
@@ -139,7 +143,7 @@ export function PaginatedFeed({
           {(() => {
             const ctaSlots = computeStudyCtaSlots(items.length, studyCtaSessions.length);
             return items.map((entry, index) => {
-              const footer = buildFooter(entry.session, now);
+              const footer = buildFooter(entry.session);
               const ctaSlot = ctaSlots.get(index);
               const ctaSession = ctaSlot !== undefined ? studyCtaSessions[ctaSlot] : null;
               return (
@@ -149,8 +153,10 @@ export function PaginatedFeed({
                       <PracticeCard item={entry.item as never} footer={footer} />
                     ) : entry.kind === "reread" ? (
                       <RereadCard item={entry.item as never} footer={footer} />
-                    ) : (
+                    ) : entry.kind === "reminder" ? (
                       <ReminderCard item={entry.item as never} footer={footer} />
+                    ) : (
+                      <HighlightCard item={entry.item as never} footer={footer} />
                     )}
                   </li>
                   {ctaSession ? (

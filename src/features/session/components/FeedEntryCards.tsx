@@ -1,7 +1,7 @@
 import { Footprints, type LucideIcon, MessageCircleQuestion, Quote } from "lucide-react";
 import type { ReactNode } from "react";
 import { NavLink } from "@/components/NavLink";
-import { relativeShort } from "@/features/session/lib/formatting";
+import type { HighlightItem } from "@/lib/domain/highlights";
 import type { PracticeItem } from "@/lib/domain/practices";
 import type { ReminderItem } from "@/lib/domain/reminders";
 import type { RereadItem } from "@/lib/domain/rereads";
@@ -16,19 +16,15 @@ export type FeedCardFooter = {
   href: string;
   title: string;
   byline: string;
-  relative: string;
 };
 
-export function buildFooter(
-  session: {
-    id: string;
-    title: string | null;
-    createdAt: string;
-    speakerName: string | null;
-    speakerLocation: string | null;
-  },
-  now: Date
-): FeedCardFooter {
+export function buildFooter(session: {
+  id: string;
+  title: string | null;
+  createdAt: string;
+  speakerName: string | null;
+  speakerLocation: string | null;
+}): FeedCardFooter {
   return {
     href: `/recording/${session.id}/summary`,
     title: session.title ?? "Sessão sem título",
@@ -36,13 +32,12 @@ export function buildFooter(
       .map((s) => s?.trim())
       .filter((s): s is string => Boolean(s))
       .join(" · "),
-    relative: relativeShort(session.createdAt, now),
   };
 }
 
 function CardShell({ children }: { children: ReactNode }) {
   return (
-    <article className="flex flex-col gap-2 rounded-2xl border border-scriba-hairline-soft bg-white px-5 py-4 shadow-[0_2px_10px_rgba(79,168,240,0.06)]">
+    <article className="flex flex-col gap-2 rounded-2xl border border-scriba-hairline-soft bg-white p-6 shadow-[0_2px_10px_rgba(79,168,240,0.06)]">
       {children}
     </article>
   );
@@ -63,23 +58,18 @@ function CardHeaderRow({ Icon, label }: { Icon: LucideIcon; label: string }) {
 
 function CardFooter({ footer }: { footer: FeedCardFooter }) {
   return (
-    <footer className="mt-2 flex items-center justify-between gap-4 border-t border-scriba-hairline-soft pt-2 text-[11px] font-light text-scriba-ink-mute">
-      <div className="flex min-w-0 flex-col gap-0.5">
-        <NavLink
-          href={footer.href}
-          className="font-medium text-scriba-ink-soft transition-colors hover:text-scriba-blue"
-        >
-          {footer.title}
-        </NavLink>
-        {footer.byline ? (
-          <span className="truncate text-[10px] font-light text-scriba-ink-mute">
-            {footer.byline}
-          </span>
-        ) : null}
-      </div>
-      <span className="inline-flex shrink-0 items-center rounded-full bg-scriba-ink-mute/10 px-2 py-0.5 text-[10px] font-medium text-scriba-ink-soft">
-        {footer.relative}
-      </span>
+    <footer className="mt-2 flex flex-col gap-0.5 border-t border-scriba-hairline-soft pt-2 text-[11px] font-light text-scriba-ink-mute">
+      <NavLink
+        href={footer.href}
+        className="font-medium text-scriba-ink-soft transition-colors hover:text-scriba-blue"
+      >
+        {footer.title}
+      </NavLink>
+      {footer.byline ? (
+        <span className="truncate text-[10px] font-light text-scriba-ink-mute">
+          {footer.byline}
+        </span>
+      ) : null}
     </footer>
   );
 }
@@ -116,23 +106,18 @@ export function RereadCard({ item, footer }: { item: RereadItem; footer: FeedCar
           {item.text}
         </blockquote>
       ) : null}
-      <footer className="mt-2 flex items-center justify-between gap-4 border-t border-session-verse-text/15 pt-4 pb-1 text-[11px] font-light text-session-verse-text/75">
-        <div className="flex min-w-0 flex-col gap-0.5">
-          <NavLink
-            href={footer.href}
-            className="font-medium text-session-verse-text transition-colors hover:text-scriba-blue"
-          >
-            {footer.title}
-          </NavLink>
-          {footer.byline ? (
-            <span className="truncate text-[10px] font-light text-session-verse-text/70">
-              {footer.byline}
-            </span>
-          ) : null}
-        </div>
-        <span className="inline-flex shrink-0 items-center rounded-full bg-white/70 px-2 py-0.5 text-[10px] font-medium text-session-verse-text">
-          {footer.relative}
-        </span>
+      <footer className="mt-2 flex flex-col gap-0.5 border-t border-session-verse-text/15 pt-4 pb-1 text-[11px] font-light text-session-verse-text/75">
+        <NavLink
+          href={footer.href}
+          className="font-medium text-session-verse-text transition-colors hover:text-scriba-blue"
+        >
+          {footer.title}
+        </NavLink>
+        {footer.byline ? (
+          <span className="truncate text-[10px] font-light text-session-verse-text/70">
+            {footer.byline}
+          </span>
+        ) : null}
       </footer>
     </article>
   );
@@ -152,6 +137,39 @@ export function ReminderCard({ item, footer }: { item: ReminderItem; footer: Fee
         </blockquote>
       ) : null}
       <p className="text-pretty text-sm font-light leading-relaxed text-scriba-ink">{item.text}</p>
+      <CardFooter footer={footer} />
+    </CardShell>
+  );
+}
+
+/**
+ * Frase marcante do sermão, reciclada sem IA a partir dos speaker* do feed
+ * do ao vivo ou dos quote blocks do resumo final. Visual espelha o
+ * HighlightBlock usado no FeedItemCard/SummaryView: aspa ornamental grande,
+ * texto em blockquote com faixa amarela por trás. Autor renderiza abaixo
+ * quando presente (speakerCitation / summaryQuote com atribuição).
+ */
+export function HighlightCard({ item, footer }: { item: HighlightItem; footer: FeedCardFooter }) {
+  return (
+    <CardShell>
+      <figure className="flex flex-1 flex-col items-center justify-center px-1 pb-6 pt-2 text-center sm:px-4 sm:pb-8 sm:pt-3">
+        <span
+          aria-hidden
+          className="-mb-3 select-none text-3xl font-semibold leading-none text-scriba-hairline-soft sm:-mb-4 sm:text-4xl"
+        >
+          "
+        </span>
+        <blockquote className="text-pretty text-lg font-medium leading-relaxed text-scriba-ink-strong">
+          <span className="bg-[linear-gradient(transparent_58%,var(--session-highlight-yellow)_58%)] px-1 py-0.5 [box-decoration-break:clone] [-webkit-box-decoration-break:clone]">
+            {item.text}
+          </span>
+        </blockquote>
+        {item.author ? (
+          <figcaption className="mt-1 text-xs font-medium text-scriba-ink-soft">
+            — {item.author}
+          </figcaption>
+        ) : null}
+      </figure>
       <CardFooter footer={footer} />
     </CardShell>
   );

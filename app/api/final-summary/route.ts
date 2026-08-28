@@ -5,6 +5,7 @@ import { updateSessionFinal } from "@/lib/db/sessions";
 import { upsertSpeakerByName } from "@/lib/db/speakers";
 import { FeedItemSchema } from "@/lib/domain/feed";
 import { generateFinalSummary } from "@/lib/final-summary/generate";
+import { generateAndSaveHighlights } from "@/lib/highlights/save";
 import { parseJsonBody, UuidSchema } from "@/lib/http/validate";
 import { devLog } from "@/lib/log";
 import { generateAndSavePractices } from "@/lib/practices/save";
@@ -144,10 +145,11 @@ export async function POST(request: Request) {
   }
 
   // Best-effort: gera e persiste "Coloque em prática" (5 itens), "Releia este
-  // texto" (10 versículos) e "Lembra disso?" (10 mini-callbacks) em paralelo
-  // após o resumo estar salvo. Nenhuma delas falhando quebra a resposta do
-  // resumo — a UI trata payloads ausentes como estado normal.
-  const [practices, rereads, reminders] = await Promise.all([
+  // texto" (10 versículos), "Lembra disso?" (10 mini-callbacks) e
+  // "Frases marcantes" (até 12 itens, sem IA) em paralelo após o resumo
+  // estar salvo. Nenhuma delas falhando quebra a resposta do resumo — a UI
+  // trata payloads ausentes como estado normal.
+  const [practices, rereads, reminders, highlights] = await Promise.all([
     generateAndSavePractices({
       userId: auth.user.id,
       sessionId,
@@ -172,6 +174,12 @@ export async function POST(request: Request) {
       finalSummary: payload,
       logPrefix: "reminders",
     }),
+    generateAndSaveHighlights({
+      sessionId,
+      feedItems,
+      finalSummary: payload,
+      logPrefix: "highlights",
+    }),
   ]);
 
   return NextResponse.json({
@@ -183,5 +191,6 @@ export async function POST(request: Request) {
     practices,
     rereads,
     reminders,
+    highlights,
   });
 }

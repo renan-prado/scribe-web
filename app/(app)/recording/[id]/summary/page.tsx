@@ -3,6 +3,7 @@ import { notFound } from "next/navigation";
 import { SavedSessionView } from "@/features/session/components/SavedSessionView";
 import { formatDurationLong } from "@/features/session/lib/formatting";
 import { hasDeepening } from "@/lib/db/deepenings";
+import { getHighlights } from "@/lib/db/highlights";
 import { getPractices } from "@/lib/db/practices";
 import { getReminders } from "@/lib/db/reminders";
 import { getRereads } from "@/lib/db/rereads";
@@ -34,13 +35,15 @@ const DATE_FMT_SHORT = new Intl.DateTimeFormat("pt-BR", {
 
 export default async function RecordingSummaryPage({ params }: PageProps) {
   const { id } = await params;
-  const [session, deepeningExists, practicesRow, rereadsRow, remindersRow] = await Promise.all([
-    getSession(id),
-    hasDeepening(id),
-    getPractices(id).catch(() => null),
-    getRereads(id).catch(() => null),
-    getReminders(id).catch(() => null),
-  ]);
+  const [session, deepeningExists, practicesRow, rereadsRow, remindersRow, highlightsRow] =
+    await Promise.all([
+      getSession(id),
+      hasDeepening(id),
+      getPractices(id).catch(() => null),
+      getRereads(id).catch(() => null),
+      getReminders(id).catch(() => null),
+      getHighlights(id).catch(() => null),
+    ]);
   if (!session) notFound();
 
   const createdAt = new Date(session.createdAt);
@@ -61,6 +64,7 @@ export default async function RecordingSummaryPage({ params }: PageProps) {
       practices={practicesRow?.payload ?? null}
       rereads={rereadsRow?.payload ?? null}
       reminders={remindersRow?.payload ?? null}
+      highlights={highlightsRow?.payload ?? null}
       hasDeepening={deepeningExists}
     />
   );

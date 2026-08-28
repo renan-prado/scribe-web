@@ -19,13 +19,13 @@ import { ColoqueEmPratica } from "@/features/session/components/ColoqueEmPratica
 import { DeepenButton } from "@/features/session/components/DeepenButton";
 import { EntityFieldDialog } from "@/features/session/components/EntityFieldDialog";
 import { Feed } from "@/features/session/components/Feed";
-import { LembraDisso } from "@/features/session/components/LembraDisso";
-import { ReleiaEsteTexto } from "@/features/session/components/ReleiaEsteTexto";
+import { FeedAgendadoPreview } from "@/features/session/components/FeedAgendadoPreview";
 import { SavedTranscriptView } from "@/features/session/components/SavedTranscriptView";
 import { SessionMenu } from "@/features/session/components/SessionMenu";
 import { SummaryView } from "@/features/session/components/SummaryView";
 import { requestLocationSuggestions, requestSpeakerSuggestions } from "@/features/session/lib/api";
 import type { FeedItem } from "@/lib/domain/feed";
+import type { HighlightsPayload } from "@/lib/domain/highlights";
 import type { PracticesPayload } from "@/lib/domain/practices";
 import type { RemindersPayload } from "@/lib/domain/reminders";
 import type { RereadsPayload } from "@/lib/domain/rereads";
@@ -146,6 +146,7 @@ type SavedSessionViewProps = {
   practices: PracticesPayload | null;
   rereads: RereadsPayload | null;
   reminders: RemindersPayload | null;
+  highlights: HighlightsPayload | null;
   hasDeepening: boolean;
 };
 
@@ -164,6 +165,7 @@ export function SavedSessionView({
   practices,
   rereads,
   reminders,
+  highlights,
   hasDeepening,
 }: SavedSessionViewProps) {
   const [feedOpen, setFeedOpen] = useState(false);
@@ -358,9 +360,8 @@ export function SavedSessionView({
       </div>
 
       <div className="flex items-start sm:gap-4">
-        <div className="flex min-w-0 flex-1 flex-col gap-2">
-          <ReleiaEsteTexto rereads={rereads} />
-          <LembraDisso reminders={reminders} />
+        <div className="min-w-0 flex-1">
+          <FeedAgendadoPreview rereads={rereads} reminders={reminders} highlights={highlights} />
         </div>
         <div aria-hidden className="hidden size-9 shrink-0 sm:block" />
       </div>

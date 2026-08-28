@@ -1,3 +1,4 @@
+import type { HighlightItem } from "@/lib/domain/highlights";
 import type { PracticeItem } from "@/lib/domain/practices";
 import type { ReminderItem } from "@/lib/domain/reminders";
 import type { RereadItem } from "@/lib/domain/rereads";
@@ -8,7 +9,7 @@ import type { RereadItem } from "@/lib/domain/rereads";
  * "server-only" gate.
  */
 
-export type FeedEntryKind = "practice" | "reread" | "reminder";
+export type FeedEntryKind = "practice" | "reread" | "reminder" | "highlight";
 
 export type FeedEntrySessionRef = {
   id: string;
@@ -24,7 +25,7 @@ export type FeedEntry = {
   dayOffset: number;
   scheduledAt: string;
   session: FeedEntrySessionRef;
-  item: PracticeItem | RereadItem | ReminderItem;
+  item: PracticeItem | RereadItem | ReminderItem | HighlightItem;
 };
 
 export type FeedOrder = "recent" | "oldest";
