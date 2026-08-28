@@ -120,11 +120,6 @@ export function ReleiaEsteTexto({
                 {item.text}
               </p>
             ) : null}
-            {item.reason ? (
-              <p className="text-pretty text-[13px] font-light leading-snug text-scriba-ink-mute">
-                {item.reason}
-              </p>
-            ) : null}
             {footer ? (
               <footer className="mt-2 flex items-start justify-between gap-2 border-t border-scriba-hairline-soft pt-2 text-[11px] font-light text-scriba-ink-mute">
                 <div className="flex min-w-0 flex-col gap-0.5">

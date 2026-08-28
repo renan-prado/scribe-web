@@ -166,10 +166,10 @@ export async function generateRereads(input: GenerateRereadsInput): Promise<Gene
   return { ok: true, payload, latencyMs, model, fillCount: dedupedFill.length };
 }
 
-type FillItemNormalized = { reference: string; reason: string };
+type FillItemNormalized = { reference: string };
 
 function dedupeFillAgainstPool(
-  fill: { reference: string; reason: string }[],
+  fill: { reference: string }[],
   pool: RereadPoolItem[]
 ): FillItemNormalized[] {
   const kept: FillItemNormalized[] = [];
@@ -194,7 +194,7 @@ function dedupeFillAgainstPool(
         referenceStrictlyContains(ref, k.reference)
     );
     if (clashesInFill) continue;
-    kept.push({ reference: ref, reason: item.reason });
+    kept.push({ reference: ref });
   }
   return kept;
 }
@@ -227,7 +227,7 @@ function assembleFinal(pool: RereadPoolItem[], fill: FillItemNormalized[]): Rere
       dayOffset: offsets[cursor],
       reference: f.reference,
       text: "",
-      reason: f.reason,
+      reason: "",
       origin: "ai-fill",
     });
     cursor++;

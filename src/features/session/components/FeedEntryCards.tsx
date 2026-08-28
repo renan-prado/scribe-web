@@ -1,16 +1,11 @@
-import {
-  BookOpenText,
-  Footprints,
-  type LucideIcon,
-  MessageCircleQuestion,
-  Quote,
-} from "lucide-react";
+import { Footprints, type LucideIcon, MessageCircleQuestion, Quote } from "lucide-react";
 import type { ReactNode } from "react";
 import { NavLink } from "@/components/NavLink";
 import { relativeShort } from "@/features/session/lib/formatting";
 import type { PracticeItem } from "@/lib/domain/practices";
 import type { ReminderItem } from "@/lib/domain/reminders";
 import type { RereadItem } from "@/lib/domain/rereads";
+import { BookGlyph } from "@/shared/icons/BookGlyph";
 
 /**
  * Renderers dos três tipos de card do feed (praticar/releia/lembra). Ficam
@@ -53,15 +48,7 @@ function CardShell({ children }: { children: ReactNode }) {
   );
 }
 
-function CardHeaderRow({
-  Icon,
-  label,
-  relative,
-}: {
-  Icon: LucideIcon;
-  label: string;
-  relative: string;
-}) {
+function CardHeaderRow({ Icon, label }: { Icon: LucideIcon; label: string }) {
   return (
     <div className="flex items-center justify-between gap-2">
       <span className="inline-flex items-center gap-1.5 text-[10px] font-semibold uppercase tracking-[0.14em] text-scriba-blue">
@@ -70,27 +57,29 @@ function CardHeaderRow({
         </span>
         {label}
       </span>
-      <span className="inline-flex shrink-0 items-center rounded-full bg-scriba-ink-mute/10 px-2 py-0.5 text-[10px] font-medium text-scriba-ink-soft">
-        {relative}
-      </span>
     </div>
   );
 }
 
 function CardFooter({ footer }: { footer: FeedCardFooter }) {
   return (
-    <footer className="mt-2 flex min-w-0 flex-col gap-0.5 border-t border-scriba-hairline-soft pt-2 text-[11px] font-light text-scriba-ink-mute">
-      <NavLink
-        href={footer.href}
-        className="truncate font-medium text-scriba-ink-soft transition-colors hover:text-scriba-blue"
-      >
-        {footer.title}
-      </NavLink>
-      {footer.byline ? (
-        <span className="truncate text-[10px] font-light text-scriba-ink-mute">
-          {footer.byline}
-        </span>
-      ) : null}
+    <footer className="mt-2 flex items-center justify-between gap-4 border-t border-scriba-hairline-soft pt-2 text-[11px] font-light text-scriba-ink-mute">
+      <div className="flex min-w-0 flex-col gap-0.5">
+        <NavLink
+          href={footer.href}
+          className="font-medium text-scriba-ink-soft transition-colors hover:text-scriba-blue"
+        >
+          {footer.title}
+        </NavLink>
+        {footer.byline ? (
+          <span className="truncate text-[10px] font-light text-scriba-ink-mute">
+            {footer.byline}
+          </span>
+        ) : null}
+      </div>
+      <span className="inline-flex shrink-0 items-center rounded-full bg-scriba-ink-mute/10 px-2 py-0.5 text-[10px] font-medium text-scriba-ink-soft">
+        {footer.relative}
+      </span>
     </footer>
   );
 }
@@ -98,7 +87,7 @@ function CardFooter({ footer }: { footer: FeedCardFooter }) {
 export function PracticeCard({ item, footer }: { item: PracticeItem; footer: FeedCardFooter }) {
   return (
     <CardShell>
-      <CardHeaderRow Icon={Footprints} label="Coloque em prática" relative={footer.relative} />
+      <CardHeaderRow Icon={Footprints} label="Coloque em prática" />
       <p className="text-pretty text-base font-semibold leading-snug text-scriba-ink-strong">
         {item.title}
       </p>
@@ -115,34 +104,44 @@ export function PracticeCard({ item, footer }: { item: PracticeItem; footer: Fee
 
 export function RereadCard({ item, footer }: { item: RereadItem; footer: FeedCardFooter }) {
   return (
-    <CardShell>
-      <CardHeaderRow Icon={BookOpenText} label="Releia este texto" relative={footer.relative} />
-      <p className="font-heading text-base font-semibold leading-snug text-scriba-ink-strong">
-        {item.reference}
-      </p>
+    <article className="relative flex flex-col gap-3.5 rounded-[26px] p-6 animate-insight-gradient bg-[image:var(--session-surface-quote)] bg-[size:200%_100%]">
+      <div className="flex flex-wrap items-center gap-2">
+        <span className="inline-flex items-center gap-2 rounded-full bg-scriba-ink-strong px-4 py-1.5 text-xs font-semibold text-white">
+          <BookGlyph className="size-3 border-white" />
+          {item.reference}
+        </span>
+      </div>
       {item.text ? (
-        <p className="text-pretty text-sm font-light italic leading-relaxed text-scriba-ink">
+        <blockquote className="text-[15px] font-light leading-relaxed text-session-verse-text">
           {item.text}
-        </p>
+        </blockquote>
       ) : null}
-      {item.reason ? (
-        <p className="text-pretty text-[13px] font-light leading-snug text-scriba-ink-mute">
-          {item.reason}
-        </p>
-      ) : null}
-      <CardFooter footer={footer} />
-    </CardShell>
+      <footer className="mt-2 flex items-center justify-between gap-4 border-t border-session-verse-text/15 pt-4 pb-1 text-[11px] font-light text-session-verse-text/75">
+        <div className="flex min-w-0 flex-col gap-0.5">
+          <NavLink
+            href={footer.href}
+            className="font-medium text-session-verse-text transition-colors hover:text-scriba-blue"
+          >
+            {footer.title}
+          </NavLink>
+          {footer.byline ? (
+            <span className="truncate text-[10px] font-light text-session-verse-text/70">
+              {footer.byline}
+            </span>
+          ) : null}
+        </div>
+        <span className="inline-flex shrink-0 items-center rounded-full bg-white/70 px-2 py-0.5 text-[10px] font-medium text-session-verse-text">
+          {footer.relative}
+        </span>
+      </footer>
+    </article>
   );
 }
 
 export function ReminderCard({ item, footer }: { item: ReminderItem; footer: FeedCardFooter }) {
   return (
     <CardShell>
-      <CardHeaderRow
-        Icon={MessageCircleQuestion}
-        label="Lembra disso?"
-        relative={footer.relative}
-      />
+      <CardHeaderRow Icon={MessageCircleQuestion} label="Lembra disso?" />
       <p className="text-pretty text-base font-semibold leading-snug text-scriba-ink-strong">
         {item.title}
       </p>

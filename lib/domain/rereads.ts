@@ -58,12 +58,11 @@ export const RereadsPayloadSchema = z.object({
 export type RereadsPayload = z.infer<typeof RereadsPayloadSchema>;
 
 /**
- * Só o que o LLM devolve na chamada de "fill": uma lista de referências com
- * um motivo curto, SEM dayOffset (quem atribui é o assembler em ordem).
+ * Só o que o LLM devolve na chamada de "fill": uma lista de referências, SEM
+ * dayOffset (quem atribui é o assembler em ordem).
  */
 export const RereadFillItemSchema = z.object({
   reference: z.string(),
-  reason: z.string().default(""),
 });
 
 export type RereadFillItem = z.infer<typeof RereadFillItemSchema>;
@@ -85,7 +84,6 @@ export function parseRereadsFillFromLLM(content: string): RereadFillItem[] {
     const rec = entry as Record<string, unknown>;
     const parsed = RereadFillItemSchema.safeParse({
       reference: typeof rec.reference === "string" ? rec.reference.trim() : "",
-      reason: typeof rec.reason === "string" ? rec.reason.trim() : "",
     });
     if (!parsed.success) continue;
     if (!parsed.data.reference) continue;
