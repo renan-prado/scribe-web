@@ -5,6 +5,7 @@ import { getSession, updateSessionSummary } from "@/lib/db/sessions";
 import { generateFinalSummary } from "@/lib/final-summary/generate";
 import { parseJsonBody, UuidSchema } from "@/lib/http/validate";
 import { devLog } from "@/lib/log";
+import { generateAndSavePractices } from "@/lib/practices/save";
 import { enforceRateLimit, RATE_LIMITS } from "@/lib/rate-limit";
 import { requireAuth } from "@/lib/supabase/require-auth";
 
@@ -93,5 +94,17 @@ export async function POST(request: Request) {
     });
   }
 
-  return NextResponse.json({ ...payload, latencyMs, model, sessionId, saved });
+  // Regenera as 5 "Coloque em prática" com o resumo atualizado — upsert
+  // sobrescreve o payload anterior. Best-effort, mesmo padrão do route de
+  // primeira geração.
+  const practices = await generateAndSavePractices({
+    userId: auth.user.id,
+    sessionId,
+    transcript,
+    feedItems: session.feedItems,
+    finalSummary: payload,
+    logPrefix: "practices-reprocess",
+  });
+
+  return NextResponse.json({ ...payload, latencyMs, model, sessionId, saved, practices });
 }

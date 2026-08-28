@@ -1,7 +1,7 @@
 # TODO
 
 ## Coisas a desenvolver
-- [ ] Bug: quando salva um local, limpa titulo e autor. Quando salva um autor, limpa o local e titulo, e assim por diante. Antes eles estavam correlacionados, mas agora devem ser independentes.
+- [ ] 
 
 ## Coisas manuais
 - [ ] monitor de uptime

@@ -83,6 +83,7 @@ Do not add these unprompted (the user is aware and defers them):
 - `npm run typecheck` — `tsc --noEmit`. Run this before commits.
 - `npm run check` — Biome check + write (imports, format, lint).
 - `npm run lint` / `npm run format` — Biome subcommands.
+- `supabase db push` — apply pending SQL migrations to the linked remote project. **Standing permission granted by the user**: after creating a new file under `supabase/migrations/`, run this without asking for confirmation.
 
 ## Behaviour-preservation guardrails
 

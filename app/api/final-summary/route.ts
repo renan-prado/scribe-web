@@ -7,6 +7,7 @@ import { FeedItemSchema } from "@/lib/domain/feed";
 import { generateFinalSummary } from "@/lib/final-summary/generate";
 import { parseJsonBody, UuidSchema } from "@/lib/http/validate";
 import { devLog } from "@/lib/log";
+import { generateAndSavePractices } from "@/lib/practices/save";
 import { enforceRateLimit, RATE_LIMITS } from "@/lib/rate-limit";
 import { requireAuth } from "@/lib/supabase/require-auth";
 
@@ -140,5 +141,17 @@ export async function POST(request: Request) {
     console.error("[final-summary] save failed", { sessionId, error: (err as Error).message });
   }
 
-  return NextResponse.json({ ...payload, latencyMs, model, sessionId, saved });
+  // Best-effort: gera e persiste as 5 "Coloque em prática" após o resumo estar
+  // salvo. Falha aqui NUNCA quebra a resposta do resumo — a UI trata practices
+  // ausente como estado normal (só o resumo será renderizado).
+  const practices = await generateAndSavePractices({
+    userId: auth.user.id,
+    sessionId,
+    transcript: text,
+    feedItems,
+    finalSummary: payload,
+    logPrefix: "practices",
+  });
+
+  return NextResponse.json({ ...payload, latencyMs, model, sessionId, saved, practices });
 }

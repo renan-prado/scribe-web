@@ -67,6 +67,30 @@ export function groupLabel(iso: string, now: Date): string {
   return `${capitalize(MONTHS_PT_LONG[d.getMonth()])} ${d.getFullYear()}`;
 }
 
+/**
+ * "hoje" / "ontem" / "há 3 dias" / "há 2 semanas" / "há 1 mês" — compact
+ * relative-time label. Used in the feed to indicate when a sermon was
+ * recorded without showing the raw date.
+ */
+export function relativeShort(iso: string, now: Date): string {
+  const then = new Date(iso);
+  const startOfToday = new Date(now);
+  startOfToday.setHours(0, 0, 0, 0);
+  const startOfThen = new Date(then);
+  startOfThen.setHours(0, 0, 0, 0);
+  const dayMs = 24 * 60 * 60 * 1000;
+  const diffDays = Math.round((startOfToday.getTime() - startOfThen.getTime()) / dayMs);
+  if (diffDays <= 0) return "hoje";
+  if (diffDays === 1) return "ontem";
+  if (diffDays < 7) return `há ${diffDays} dias`;
+  if (diffDays < 14) return "há 1 semana";
+  if (diffDays < 30) return `há ${Math.floor(diffDays / 7)} semanas`;
+  if (diffDays < 60) return "há 1 mês";
+  if (diffDays < 365) return `há ${Math.floor(diffDays / 30)} meses`;
+  const years = Math.floor(diffDays / 365);
+  return years === 1 ? "há 1 ano" : `há ${years} anos`;
+}
+
 /** "5 min" or "45s" — compact form used in the library list. */
 export function formatDurationShort(ms: number | null): string {
   if (!ms || ms <= 0) return "";

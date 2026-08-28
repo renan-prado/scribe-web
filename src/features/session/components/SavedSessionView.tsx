@@ -15,6 +15,7 @@ import {
   DialogTitle,
 } from "@/components/ui/dialog";
 import { useCoinsStore } from "@/features/coins/store";
+import { ColoqueEmPratica } from "@/features/session/components/ColoqueEmPratica";
 import { DeepenButton } from "@/features/session/components/DeepenButton";
 import { EntityFieldDialog } from "@/features/session/components/EntityFieldDialog";
 import { Feed } from "@/features/session/components/Feed";
@@ -23,6 +24,7 @@ import { SessionMenu } from "@/features/session/components/SessionMenu";
 import { SummaryView } from "@/features/session/components/SummaryView";
 import { requestLocationSuggestions, requestSpeakerSuggestions } from "@/features/session/lib/api";
 import type { FeedItem } from "@/lib/domain/feed";
+import type { PracticesPayload } from "@/lib/domain/practices";
 import type { SummaryPayload } from "@/lib/domain/summary";
 import { cn } from "@/lib/utils";
 
@@ -137,6 +139,7 @@ type SavedSessionViewProps = {
   transcript: string;
   feedItems: FeedItem[];
   summary: SummaryPayload | null;
+  practices: PracticesPayload | null;
   hasDeepening: boolean;
 };
 
@@ -152,6 +155,7 @@ export function SavedSessionView({
   transcript,
   feedItems,
   summary,
+  practices,
   hasDeepening,
 }: SavedSessionViewProps) {
   const [feedOpen, setFeedOpen] = useState(false);
@@ -333,6 +337,8 @@ export function SavedSessionView({
       <div className="h-px w-full bg-scriba-hairline" />
 
       <SummaryView summary={summary} hasTranscript={transcript.length > 0} running={false} />
+
+      <ColoqueEmPratica practices={practices} />
 
       <Dialog open={feedOpen} onOpenChange={setFeedOpen}>
         <DialogContent className="sm:max-w-2xl">

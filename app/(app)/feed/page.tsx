@@ -1,9 +1,11 @@
 import type { Metadata } from "next";
 import { NavLink } from "@/components/NavLink";
+import { ColoqueEmPratica } from "@/features/session/components/ColoqueEmPratica";
 import { DeepenButton } from "@/features/session/components/DeepenButton";
 import { SessionsEmptyState } from "@/features/session/components/SessionsEmptyState";
 import { shortDate } from "@/features/session/lib/formatting";
 import { hasDeepening } from "@/lib/db/deepenings";
+import { getPractices } from "@/lib/db/practices";
 import { getCurrentProfile } from "@/lib/db/profiles";
 import { listSessions } from "@/lib/db/sessions";
 import { cn } from "@/lib/utils";
@@ -94,7 +96,12 @@ export default async function HomePage() {
   const greeting = greetingFor(now.getHours());
 
   const latest = sessions[0] ?? null;
-  const latestHasDeepening = latest ? await hasDeepening(latest.id).catch(() => false) : false;
+  const [latestHasDeepening, latestPractices] = latest
+    ? await Promise.all([
+        hasDeepening(latest.id).catch(() => false),
+        getPractices(latest.id).catch(() => null),
+      ])
+    : [false, null];
   const isEmpty = sessions.length === 0;
 
   return (
@@ -123,15 +130,29 @@ export default async function HomePage() {
         {isEmpty ? (
           <SessionsEmptyState />
         ) : latest ? (
-          <ReflectionCard
-            sessionId={latest.id}
-            title={latest.title ?? "Sessão sem título"}
-            speaker={latest.speakerName}
-            date={shortDate(latest.createdAt)}
-            shortSummary={latest.shortSummary}
-            href={`/recording/${latest.id}/summary`}
-            hasDeepening={latestHasDeepening}
-          />
+          <>
+            <ReflectionCard
+              sessionId={latest.id}
+              title={latest.title ?? "Sessão sem título"}
+              speaker={latest.speakerName}
+              date={shortDate(latest.createdAt)}
+              shortSummary={latest.shortSummary}
+              href={`/recording/${latest.id}/summary`}
+              hasDeepening={latestHasDeepening}
+            />
+            <ColoqueEmPratica
+              practices={latestPractices?.payload ?? null}
+              variant="feed"
+              sessionRef={{
+                id: latest.id,
+                title: latest.title ?? "Sessão sem título",
+                createdAt: latest.createdAt,
+                speakerName: latest.speakerName,
+                speakerLocation: latest.speakerLocation,
+                now,
+              }}
+            />
+          </>
         ) : null}
       </div>
     </main>
