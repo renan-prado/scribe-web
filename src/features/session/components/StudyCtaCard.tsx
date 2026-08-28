@@ -23,7 +23,7 @@ export function StudyCtaCard({ session }: { session: StudyCtaSession }) {
     .join(" · ");
 
   return (
-    <article className="relative my-2 flex flex-col items-stretch gap-3 overflow-hidden rounded-[24px] bg-scriba-blue-soft/70 px-5 py-4 shadow-[0_2px_10px_rgba(79,168,240,0.08)] sm:flex-row sm:pl-5 sm:pr-2">
+    <article className="relative my-2 flex flex-col items-stretch gap-3 overflow-hidden rounded-[24px] bg-scriba-blue-soft/70 p-6 shadow-[0_2px_10px_rgba(79,168,240,0.08)] sm:flex-row sm:pl-6 sm:pr-2">
       {/** biome-ignore lint/performance/noImgElement: local sticker asset */}
       <img
         src="/stickers/men/012-man.svg"
