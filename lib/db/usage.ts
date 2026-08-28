@@ -32,6 +32,7 @@ export type UsageRoute =
   | "deepening"
   | "deepening-audit"
   | "practices"
+  | "rereads"
   | "format-paragraphs"
   | "transcribe";
 

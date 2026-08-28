@@ -4,6 +4,7 @@ import { SavedSessionView } from "@/features/session/components/SavedSessionView
 import { formatDurationLong } from "@/features/session/lib/formatting";
 import { hasDeepening } from "@/lib/db/deepenings";
 import { getPractices } from "@/lib/db/practices";
+import { getRereads } from "@/lib/db/rereads";
 import { getSession } from "@/lib/db/sessions";
 
 type PageProps = {
@@ -32,10 +33,11 @@ const DATE_FMT_SHORT = new Intl.DateTimeFormat("pt-BR", {
 
 export default async function RecordingSummaryPage({ params }: PageProps) {
   const { id } = await params;
-  const [session, deepeningExists, practicesRow] = await Promise.all([
+  const [session, deepeningExists, practicesRow, rereadsRow] = await Promise.all([
     getSession(id),
     hasDeepening(id),
     getPractices(id).catch(() => null),
+    getRereads(id).catch(() => null),
   ]);
   if (!session) notFound();
 
@@ -55,6 +57,7 @@ export default async function RecordingSummaryPage({ params }: PageProps) {
       feedItems={session.feedItems}
       summary={session.finalSummary}
       practices={practicesRow?.payload ?? null}
+      rereads={rereadsRow?.payload ?? null}
       hasDeepening={deepeningExists}
     />
   );

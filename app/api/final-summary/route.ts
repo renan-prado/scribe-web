@@ -9,6 +9,7 @@ import { parseJsonBody, UuidSchema } from "@/lib/http/validate";
 import { devLog } from "@/lib/log";
 import { generateAndSavePractices } from "@/lib/practices/save";
 import { enforceRateLimit, RATE_LIMITS } from "@/lib/rate-limit";
+import { generateAndSaveRereads } from "@/lib/rereads/save";
 import { requireAuth } from "@/lib/supabase/require-auth";
 
 // Sermons run 30-90min in practice; the transcript we've observed maxes out
@@ -141,17 +142,36 @@ export async function POST(request: Request) {
     console.error("[final-summary] save failed", { sessionId, error: (err as Error).message });
   }
 
-  // Best-effort: gera e persiste as 5 "Coloque em prática" após o resumo estar
-  // salvo. Falha aqui NUNCA quebra a resposta do resumo — a UI trata practices
-  // ausente como estado normal (só o resumo será renderizado).
-  const practices = await generateAndSavePractices({
-    userId: auth.user.id,
-    sessionId,
-    transcript: text,
-    feedItems,
-    finalSummary: payload,
-    logPrefix: "practices",
-  });
+  // Best-effort: gera e persiste "Coloque em prática" (5 itens) e "Releia este
+  // texto" (10 versículos) em paralelo após o resumo estar salvo. Nenhuma das
+  // duas falhas quebra a resposta do resumo — a UI trata payloads ausentes como
+  // estado normal (só o resumo será renderizado).
+  const [practices, rereads] = await Promise.all([
+    generateAndSavePractices({
+      userId: auth.user.id,
+      sessionId,
+      transcript: text,
+      feedItems,
+      finalSummary: payload,
+      logPrefix: "practices",
+    }),
+    generateAndSaveRereads({
+      userId: auth.user.id,
+      sessionId,
+      transcript: text,
+      feedItems,
+      finalSummary: payload,
+      logPrefix: "rereads",
+    }),
+  ]);
 
-  return NextResponse.json({ ...payload, latencyMs, model, sessionId, saved, practices });
+  return NextResponse.json({
+    ...payload,
+    latencyMs,
+    model,
+    sessionId,
+    saved,
+    practices,
+    rereads,
+  });
 }

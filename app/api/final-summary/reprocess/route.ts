@@ -7,6 +7,7 @@ import { parseJsonBody, UuidSchema } from "@/lib/http/validate";
 import { devLog } from "@/lib/log";
 import { generateAndSavePractices } from "@/lib/practices/save";
 import { enforceRateLimit, RATE_LIMITS } from "@/lib/rate-limit";
+import { generateAndSaveRereads } from "@/lib/rereads/save";
 import { requireAuth } from "@/lib/supabase/require-auth";
 
 const BodySchema = z.object({ sessionId: UuidSchema }).strict();
@@ -94,17 +95,35 @@ export async function POST(request: Request) {
     });
   }
 
-  // Regenera as 5 "Coloque em prática" com o resumo atualizado — upsert
-  // sobrescreve o payload anterior. Best-effort, mesmo padrão do route de
-  // primeira geração.
-  const practices = await generateAndSavePractices({
-    userId: auth.user.id,
-    sessionId,
-    transcript,
-    feedItems: session.feedItems,
-    finalSummary: payload,
-    logPrefix: "practices-reprocess",
-  });
+  // Regenera "Coloque em prática" (5) e "Releia este texto" (10) em paralelo
+  // com o resumo atualizado — upsert sobrescreve o payload anterior de cada.
+  // Best-effort, mesmo padrão do route de primeira geração.
+  const [practices, rereads] = await Promise.all([
+    generateAndSavePractices({
+      userId: auth.user.id,
+      sessionId,
+      transcript,
+      feedItems: session.feedItems,
+      finalSummary: payload,
+      logPrefix: "practices-reprocess",
+    }),
+    generateAndSaveRereads({
+      userId: auth.user.id,
+      sessionId,
+      transcript,
+      feedItems: session.feedItems,
+      finalSummary: payload,
+      logPrefix: "rereads-reprocess",
+    }),
+  ]);
 
-  return NextResponse.json({ ...payload, latencyMs, model, sessionId, saved, practices });
+  return NextResponse.json({
+    ...payload,
+    latencyMs,
+    model,
+    sessionId,
+    saved,
+    practices,
+    rereads,
+  });
 }

@@ -19,12 +19,14 @@ import { ColoqueEmPratica } from "@/features/session/components/ColoqueEmPratica
 import { DeepenButton } from "@/features/session/components/DeepenButton";
 import { EntityFieldDialog } from "@/features/session/components/EntityFieldDialog";
 import { Feed } from "@/features/session/components/Feed";
+import { ReleiaEsteTexto } from "@/features/session/components/ReleiaEsteTexto";
 import { SavedTranscriptView } from "@/features/session/components/SavedTranscriptView";
 import { SessionMenu } from "@/features/session/components/SessionMenu";
 import { SummaryView } from "@/features/session/components/SummaryView";
 import { requestLocationSuggestions, requestSpeakerSuggestions } from "@/features/session/lib/api";
 import type { FeedItem } from "@/lib/domain/feed";
 import type { PracticesPayload } from "@/lib/domain/practices";
+import type { RereadsPayload } from "@/lib/domain/rereads";
 import type { SummaryPayload } from "@/lib/domain/summary";
 import { cn } from "@/lib/utils";
 
@@ -140,6 +142,7 @@ type SavedSessionViewProps = {
   feedItems: FeedItem[];
   summary: SummaryPayload | null;
   practices: PracticesPayload | null;
+  rereads: RereadsPayload | null;
   hasDeepening: boolean;
 };
 
@@ -156,6 +159,7 @@ export function SavedSessionView({
   feedItems,
   summary,
   practices,
+  rereads,
   hasDeepening,
 }: SavedSessionViewProps) {
   const [feedOpen, setFeedOpen] = useState(false);
@@ -339,6 +343,8 @@ export function SavedSessionView({
       <SummaryView summary={summary} hasTranscript={transcript.length > 0} running={false} />
 
       <ColoqueEmPratica practices={practices} />
+
+      <ReleiaEsteTexto rereads={rereads} />
 
       <Dialog open={feedOpen} onOpenChange={setFeedOpen}>
         <DialogContent className="sm:max-w-2xl">
