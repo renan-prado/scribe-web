@@ -169,7 +169,7 @@ function ReflectionCard({
           Sobre a última gravação
         </span>
       </div>
-      <p className="max-w-[500px] text-pretty text-lg font-medium leading-snug text-scriba-ink-strong sm:text-xl">
+      <p className="text-pretty text-base font-medium leading-snug text-scriba-ink-strong sm:text-lg">
         {quote}
       </p>
       <div className="flex flex-col gap-0.5 border-t border-scriba-hairline pt-3">

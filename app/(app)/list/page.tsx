@@ -1,4 +1,4 @@
-import { MapPin, Mic, Sparkles } from "lucide-react";
+import { BookOpen, MapPin, Mic } from "lucide-react";
 import type { Metadata } from "next";
 import { revalidatePath } from "next/cache";
 import { NavLink } from "@/components/NavLink";
@@ -157,7 +157,7 @@ export default async function LibraryPage() {
                                   title="Você já gerou o estudo deste sermão"
                                   className="inline-flex items-center gap-1 rounded-full bg-scriba-blue-soft px-2 py-0.5 text-[10px] font-semibold uppercase tracking-wider text-scriba-blue"
                                 >
-                                  <Sparkles className="size-3" />
+                                  <BookOpen className="size-3" />
                                   Estudo
                                 </span>
                               </>
