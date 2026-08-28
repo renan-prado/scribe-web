@@ -73,9 +73,19 @@ export function SummaryView({ summary, hasTranscript, running }: SummaryViewProp
               </div>
             );
           }
+          // Sem comentários: mantém o mesmo layout row do ScribaCommentGroup no
+          // desktop com um placeholder invisível do tamanho do botão. Assim TODA
+          // linha do resumo termina no mesmo eixo vertical, evitando as
+          // "curvas" causadas por alguns blocos correrem até a borda e outros
+          // ficarem espremidos pelo botão. No mobile o placeholder some (nesse
+          // breakpoint o botão de comentário fica embaixo do bloco, não à
+          // direita, então não há espaço a reservar).
           return (
-            <div key={key} className="animate-content-fade">
-              <BlockRenderer block={g.primary} />
+            <div key={key} className="animate-content-fade flex items-start sm:gap-4">
+              <div className="min-w-0 flex-1">
+                <BlockRenderer block={g.primary} />
+              </div>
+              <div aria-hidden className="hidden size-9 shrink-0 sm:block" />
             </div>
           );
         })}

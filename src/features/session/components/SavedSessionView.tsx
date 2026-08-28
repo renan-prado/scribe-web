@@ -346,11 +346,23 @@ export function SavedSessionView({
 
       <SummaryView summary={summary} hasTranscript={transcript.length > 0} running={false} />
 
-      <ColoqueEmPratica practices={practices} />
+      {/* As tres secoes pos-resumo reservam a mesma "canaleta" direita que os
+          blocos do SummaryView reservam pro botao de comentario do Scriba —
+          um placeholder invisivel size-9 alinha a borda direita de todo o
+          conteudo na mesma coluna. No mobile o placeholder some. */}
+      <div className="flex items-start sm:gap-4">
+        <div className="min-w-0 flex-1">
+          <ColoqueEmPratica practices={practices} />
+        </div>
+        <div aria-hidden className="hidden size-9 shrink-0 sm:block" />
+      </div>
 
-      <div className="flex flex-col gap-2">
-        <ReleiaEsteTexto rereads={rereads} />
-        <LembraDisso reminders={reminders} />
+      <div className="flex items-start sm:gap-4">
+        <div className="flex min-w-0 flex-1 flex-col gap-2">
+          <ReleiaEsteTexto rereads={rereads} />
+          <LembraDisso reminders={reminders} />
+        </div>
+        <div aria-hidden className="hidden size-9 shrink-0 sm:block" />
       </div>
 
       <Dialog open={feedOpen} onOpenChange={setFeedOpen}>

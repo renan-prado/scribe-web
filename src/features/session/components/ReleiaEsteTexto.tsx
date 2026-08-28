@@ -61,8 +61,8 @@ export function ReleiaEsteTexto({
             {rereads.items.length} versiculos foram separados.
           </p>
           <p className="text-xs font-light text-scriba-ink-mute">
-            Ao longo dos próximos dias, versículos deste sermão aparecerão no seu feed para serem
-            relidos e meditados.
+            Nos próximos dias, versículos deste sermão aparecerão no seu feed para serem
+            revisitados.
           </p>
         </div>
       </section>
