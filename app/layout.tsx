@@ -36,7 +36,7 @@ export const metadata: Metadata = {
   metadataBase: new URL(SITE_URL),
   title: {
     default: "Scriba — Transcrição de sermões em tempo real",
-    template: "%s | Scriba",
+    template: "%s",
   },
   description: DESCRIPTION,
   keywords: [
