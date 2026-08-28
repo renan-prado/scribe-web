@@ -7,7 +7,7 @@ import {
 } from "lucide-react";
 import type { ReactNode } from "react";
 import { NavLink } from "@/components/NavLink";
-import { dayOffsetLabel, relativeShort } from "@/features/session/lib/formatting";
+import { relativeShort } from "@/features/session/lib/formatting";
 import type { PracticeItem, PracticesPayload } from "@/lib/domain/practices";
 import type { ReminderItem, RemindersPayload } from "@/lib/domain/reminders";
 import type { RereadItem, RereadsPayload } from "@/lib/domain/rereads";
@@ -18,14 +18,17 @@ import type { RereadItem, RereadsPayload } from "@/lib/domain/rereads";
  * ordenada por dayOffset descendente (mais distante em cima, "Hoje" no fim),
  * imitando o comportamento de um feed de rede social.
  *
- * Empates de dayOffset (ex.: dia 1 tem practice E reread, dia 7 idem) são
- * resolvidos por ordem estável: practice > reread > reminder — mantém a
- * "ação para hoje" acima da "releitura" e da "lembrança" quando batem no
- * mesmo dia.
+ * FILTRO POR AGENDAMENTO: só entram cards cujo dayOffset já foi alcançado
+ * (dayOffset <= diasDesdeSessão). Um sermão de hoje mostra só o card de
+ * "Hoje" (dayOffset=0 do praticar); os demais aparecem no dia agendado.
  *
- * Cada card preserva sua identidade visual: um chip do tipo no topo (ícone
- * colorido + rótulo curto) + o chip de janela agendada, seguido do conteúdo
- * próprio e do rodapé com referência ao sermão.
+ * Empates de dayOffset (ex.: dia 1 tem practice E reread) são resolvidos por
+ * ordem estável: practice > reread > reminder — mantém a "ação" acima da
+ * "releitura" e da "lembrança" quando batem no mesmo dia.
+ *
+ * Cada card mostra o chip de identidade do tipo (ícone + rótulo) no topo,
+ * o conteúdo próprio, e um rodapé com título do sermão + autor/local e um
+ * badge cinza com "há X dias" alinhado à direita centralizado.
  */
 type MixedTimelineFeedProps = {
   practices: PracticesPayload | null;
@@ -52,12 +55,24 @@ const TIEBREAK: Record<Entry["kind"], number> = {
   reminder: 2,
 };
 
+const DAY_MS = 24 * 60 * 60 * 1000;
+
+function daysSince(createdAt: string, now: Date): number {
+  const startOfToday = new Date(now);
+  startOfToday.setHours(0, 0, 0, 0);
+  const startOfSession = new Date(createdAt);
+  startOfSession.setHours(0, 0, 0, 0);
+  return Math.floor((startOfToday.getTime() - startOfSession.getTime()) / DAY_MS);
+}
+
 export function MixedTimelineFeed({
   practices,
   rereads,
   reminders,
   sessionRef,
 }: MixedTimelineFeedProps) {
+  const elapsed = daysSince(sessionRef.createdAt, sessionRef.now);
+
   const entries: Entry[] = [];
   for (const item of practices?.items ?? []) {
     entries.push({
@@ -83,9 +98,11 @@ export function MixedTimelineFeed({
       key: `reminder:${item.dayOffset}`,
     });
   }
-  if (entries.length === 0) return null;
 
-  entries.sort((a, b) => {
+  const eligible = entries.filter((e) => e.dayOffset <= elapsed);
+  if (eligible.length === 0) return null;
+
+  eligible.sort((a, b) => {
     if (b.dayOffset !== a.dayOffset) return b.dayOffset - a.dayOffset;
     return TIEBREAK[a.kind] - TIEBREAK[b.kind];
   });
@@ -102,7 +119,7 @@ export function MixedTimelineFeed({
 
   return (
     <ol className="flex flex-col gap-3">
-      {entries.map((entry) => (
+      {eligible.map((entry) => (
         <li key={entry.key}>
           {entry.kind === "practice" ? (
             <PracticeCard item={entry.item} footer={footer} />
@@ -135,11 +152,11 @@ function CardShell({ children }: { children: ReactNode }) {
 function CardHeaderRow({
   Icon,
   label,
-  dayOffset,
+  relative,
 }: {
   Icon: LucideIcon;
   label: string;
-  dayOffset: number;
+  relative: string;
 }) {
   return (
     <div className="flex items-center justify-between gap-2">
@@ -149,8 +166,8 @@ function CardHeaderRow({
         </span>
         {label}
       </span>
-      <span className="inline-flex items-center gap-1.5 rounded-full bg-scriba-blue-soft/70 px-2.5 py-0.5 text-[10px] font-semibold uppercase tracking-[0.14em] text-scriba-blue">
-        {dayOffsetLabel(dayOffset)}
+      <span className="inline-flex shrink-0 items-center rounded-full bg-scriba-ink-mute/10 px-2 py-0.5 text-[10px] font-medium text-scriba-ink-soft">
+        {relative}
       </span>
     </div>
   );
@@ -158,21 +175,18 @@ function CardHeaderRow({
 
 function CardFooter({ footer }: { footer: Footer }) {
   return (
-    <footer className="mt-2 flex items-start justify-between gap-2 border-t border-scriba-hairline-soft pt-2 text-[11px] font-light text-scriba-ink-mute">
-      <div className="flex min-w-0 flex-col gap-0.5">
-        <NavLink
-          href={footer.href}
-          className="truncate font-medium text-scriba-ink-soft transition-colors hover:text-scriba-blue"
-        >
-          {footer.title}
-        </NavLink>
-        {footer.byline ? (
-          <span className="truncate text-[10px] font-light text-scriba-ink-mute">
-            {footer.byline}
-          </span>
-        ) : null}
-      </div>
-      <span className="shrink-0">{footer.relative}</span>
+    <footer className="mt-2 flex min-w-0 flex-col gap-0.5 border-t border-scriba-hairline-soft pt-2 text-[11px] font-light text-scriba-ink-mute">
+      <NavLink
+        href={footer.href}
+        className="truncate font-medium text-scriba-ink-soft transition-colors hover:text-scriba-blue"
+      >
+        {footer.title}
+      </NavLink>
+      {footer.byline ? (
+        <span className="truncate text-[10px] font-light text-scriba-ink-mute">
+          {footer.byline}
+        </span>
+      ) : null}
     </footer>
   );
 }
@@ -180,7 +194,7 @@ function CardFooter({ footer }: { footer: Footer }) {
 function PracticeCard({ item, footer }: { item: PracticeItem; footer: Footer }) {
   return (
     <CardShell>
-      <CardHeaderRow Icon={Footprints} label="Coloque em prática" dayOffset={item.dayOffset} />
+      <CardHeaderRow Icon={Footprints} label="Coloque em prática" relative={footer.relative} />
       <p className="text-pretty text-base font-semibold leading-snug text-scriba-ink-strong">
         {item.title}
       </p>
@@ -198,7 +212,7 @@ function PracticeCard({ item, footer }: { item: PracticeItem; footer: Footer }) 
 function RereadCard({ item, footer }: { item: RereadItem; footer: Footer }) {
   return (
     <CardShell>
-      <CardHeaderRow Icon={BookOpenText} label="Releia este texto" dayOffset={item.dayOffset} />
+      <CardHeaderRow Icon={BookOpenText} label="Releia este texto" relative={footer.relative} />
       <p className="font-heading text-base font-semibold leading-snug text-scriba-ink-strong">
         {item.reference}
       </p>
@@ -223,7 +237,7 @@ function ReminderCard({ item, footer }: { item: ReminderItem; footer: Footer }) 
       <CardHeaderRow
         Icon={MessageCircleQuestion}
         label="Lembra disso?"
-        dayOffset={item.dayOffset}
+        relative={footer.relative}
       />
       <p className="text-pretty text-base font-semibold leading-snug text-scriba-ink-strong">
         {item.title}
