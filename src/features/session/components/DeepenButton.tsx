@@ -33,7 +33,7 @@ export const DEEPENING_COST = COIN_COSTS.deepening;
 type DeepenButtonProps = {
   sessionId: string;
   hasDeepening: boolean;
-  variant: "summary-header" | "feed-card";
+  variant: "summary-header" | "feed-card" | "cta-card";
 };
 
 const deepenButtonVariants = cva(
@@ -67,10 +67,10 @@ export function DeepenButton({ sessionId, hasDeepening, variant }: DeepenButtonP
   const insufficient = balance !== null && balance < DEEPENING_COST;
 
   const href = `/recording/${sessionId}/deepening`;
-  const layout = variant === "summary-header" ? "compact" : "full";
+  const layout = variant === "feed-card" ? "full" : "compact";
 
   if (hasDeepening) {
-    if (variant === "summary-header") {
+    if (variant === "summary-header" || variant === "cta-card") {
       return (
         <NavLink
           href={href}
@@ -189,9 +189,14 @@ export function DeepenButton({ sessionId, hasDeepening, variant }: DeepenButtonP
     />
   );
 
-  if (variant === "summary-header") {
+  if (variant === "summary-header" || variant === "cta-card") {
     return (
-      <div className="flex flex-col items-end gap-1">
+      <div
+        className={cn(
+          "flex flex-col gap-1",
+          variant === "summary-header" ? "items-end" : "items-start"
+        )}
+      >
         {wrapped}
         {error && !insufficient ? (
           <span className="text-[10px] font-medium text-red-600">

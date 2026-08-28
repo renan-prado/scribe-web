@@ -4,7 +4,7 @@ import { DeepenButton } from "@/features/session/components/DeepenButton";
 import { PaginatedFeed } from "@/features/session/components/PaginatedFeed";
 import { SessionsEmptyState } from "@/features/session/components/SessionsEmptyState";
 import { shortDate } from "@/features/session/lib/formatting";
-import { hasDeepening } from "@/lib/db/deepenings";
+import { hasDeepening, listDeepenedSessionIds } from "@/lib/db/deepenings";
 import { type ListFeedEntriesResult, listFeedEntries } from "@/lib/db/feed-entries";
 import { getCurrentProfile } from "@/lib/db/profiles";
 import { listSessions } from "@/lib/db/sessions";
@@ -96,7 +96,7 @@ export default async function HomePage() {
   const greeting = greetingFor(now.getHours());
 
   const latest = sessions[0] ?? null;
-  const [latestHasDeepening, feedPage] = latest
+  const [latestHasDeepening, feedPage, deepenedIds] = latest
     ? await Promise.all([
         hasDeepening(latest.id).catch(() => false),
         listFeedEntries({
@@ -105,9 +105,25 @@ export default async function HomePage() {
           limit: 10,
           now,
         }).catch(() => ({ items: [], total: 0, hasMore: false })),
+        listDeepenedSessionIds(sessions.map((s) => s.id)).catch(() => new Set<string>()),
       ])
-    : [false, { items: [], total: 0, hasMore: false } satisfies ListFeedEntriesResult];
+    : [
+        false,
+        { items: [], total: 0, hasMore: false } satisfies ListFeedEntriesResult,
+        new Set<string>(),
+      ];
   const isEmpty = sessions.length === 0;
+
+  // Sessões sem estudo — usadas para intercalar o card "Gerar estudo" no feed.
+  // Excluímos a sessão do topo (ReflectionCard) para não duplicar o CTA.
+  const studyCtaSessions = sessions
+    .filter((s) => s.id !== latest?.id && !deepenedIds.has(s.id))
+    .map((s) => ({
+      id: s.id,
+      title: s.title,
+      speakerName: s.speakerName,
+      speakerLocation: s.speakerLocation,
+    }));
 
   return (
     <main
@@ -149,6 +165,7 @@ export default async function HomePage() {
               initialItems={feedPage.items}
               initialHasMore={feedPage.hasMore}
               initialOrder="recent"
+              studyCtaSessions={studyCtaSessions}
             />
           </>
         ) : null}

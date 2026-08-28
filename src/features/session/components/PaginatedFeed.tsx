@@ -1,7 +1,7 @@
 "use client";
 
 import { ArrowDownWideNarrow, ArrowUpNarrowWide, Loader2 } from "lucide-react";
-import { useCallback, useEffect, useState } from "react";
+import { Fragment, useCallback, useEffect, useState } from "react";
 import {
   Select,
   SelectContent,
@@ -12,6 +12,39 @@ import {
 import type { FeedEntry, FeedOrder } from "@/lib/db/feed-entries-types";
 import { cn } from "@/lib/utils";
 import { buildFooter, PracticeCard, ReminderCard, RereadCard } from "./FeedEntryCards";
+import { StudyCtaCard, type StudyCtaSession } from "./StudyCtaCard";
+
+const STUDY_CTA_EVERY = 10;
+
+/**
+ * Decide onde encaixar os cards de CTA "Gerar estudo" no meio da lista.
+ * Retorna um mapa `indexDoCard → slotDoCta`, onde o CTA é inserido logo
+ * depois do card daquele index.
+ *
+ * Regras:
+ * - Uma janela a cada `STUDY_CTA_EVERY` cards; se o total for menor, ainda
+ *   entra 1 CTA (desde que exista sessão sem estudo).
+ * - Dentro da janela, prefere o meio (evita ser o primeiro/último da lista
+ *   inteira quando possível).
+ * - Nunca mais CTAs do que sessões sem estudo disponíveis (sem repetir).
+ */
+function computeStudyCtaSlots(itemCount: number, ctaSessionCount: number): Map<number, number> {
+  const slots = new Map<number, number>();
+  if (itemCount === 0 || ctaSessionCount === 0) return slots;
+  const windowCount = Math.max(1, Math.ceil(itemCount / STUDY_CTA_EVERY));
+  const totalCtas = Math.min(ctaSessionCount, windowCount);
+  for (let w = 0; w < totalCtas; w++) {
+    const start = w * STUDY_CTA_EVERY;
+    if (start >= itemCount) break;
+    const end = Math.min(start + STUDY_CTA_EVERY, itemCount);
+    const size = end - start;
+    let idx = start + Math.floor((size - 1) / 2);
+    // Evita cair como último card geral quando existe alternativa.
+    if (idx === itemCount - 1 && itemCount > 1) idx = itemCount - 2;
+    slots.set(idx, w);
+  }
+  return slots;
+}
 
 /**
  * Feed paginado (praticar/releia/lembra) do /feed. Consome GET /api/feed:
@@ -29,6 +62,11 @@ type PaginatedFeedProps = {
   initialHasMore: boolean;
   initialOrder: FeedOrder;
   excludeSessionId?: string | null;
+  /**
+   * Sessões sem estudo (aprofundamento) do usuário. Uma delas é intercalada
+   * a cada `STUDY_CTA_EVERY` cards carregados; se acabar a lista, não repete.
+   */
+  studyCtaSessions?: StudyCtaSession[];
 };
 
 type FetchState = "idle" | "loading" | "error";
@@ -43,6 +81,7 @@ export function PaginatedFeed({
   initialHasMore,
   initialOrder,
   excludeSessionId = null,
+  studyCtaSessions = [],
 }: PaginatedFeedProps) {
   const [items, setItems] = useState<FeedEntry[]>(initialItems);
   const [hasMore, setHasMore] = useState(initialHasMore);
@@ -97,20 +136,32 @@ export function PaginatedFeed({
         <EmptyFeedNotice />
       ) : (
         <ol className="flex flex-col gap-3">
-          {items.map((entry) => {
-            const footer = buildFooter(entry.session, now);
-            return (
-              <li key={entry.key}>
-                {entry.kind === "practice" ? (
-                  <PracticeCard item={entry.item as never} footer={footer} />
-                ) : entry.kind === "reread" ? (
-                  <RereadCard item={entry.item as never} footer={footer} />
-                ) : (
-                  <ReminderCard item={entry.item as never} footer={footer} />
-                )}
-              </li>
-            );
-          })}
+          {(() => {
+            const ctaSlots = computeStudyCtaSlots(items.length, studyCtaSessions.length);
+            return items.map((entry, index) => {
+              const footer = buildFooter(entry.session, now);
+              const ctaSlot = ctaSlots.get(index);
+              const ctaSession = ctaSlot !== undefined ? studyCtaSessions[ctaSlot] : null;
+              return (
+                <Fragment key={entry.key}>
+                  <li>
+                    {entry.kind === "practice" ? (
+                      <PracticeCard item={entry.item as never} footer={footer} />
+                    ) : entry.kind === "reread" ? (
+                      <RereadCard item={entry.item as never} footer={footer} />
+                    ) : (
+                      <ReminderCard item={entry.item as never} footer={footer} />
+                    )}
+                  </li>
+                  {ctaSession ? (
+                    <li>
+                      <StudyCtaCard session={ctaSession} />
+                    </li>
+                  ) : null}
+                </Fragment>
+              );
+            });
+          })()}
         </ol>
       )}
 
