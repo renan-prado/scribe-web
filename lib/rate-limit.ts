@@ -214,6 +214,11 @@ export const RATE_LIMITS = {
     perUser: { limit: 60, windowMs: MIN },
     perIp: { limit: 180, windowMs: MIN },
   },
+  "feed-read": {
+    route: "feed-read",
+    perUser: { limit: 120, windowMs: MIN },
+    perIp: { limit: 300, windowMs: MIN },
+  },
   "entity-search": {
     route: "entity-search",
     perUser: { limit: 120, windowMs: MIN },

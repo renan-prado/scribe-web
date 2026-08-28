@@ -1,14 +1,12 @@
 import type { Metadata } from "next";
 import { NavLink } from "@/components/NavLink";
 import { DeepenButton } from "@/features/session/components/DeepenButton";
-import { MixedTimelineFeed } from "@/features/session/components/MixedTimelineFeed";
+import { PaginatedFeed } from "@/features/session/components/PaginatedFeed";
 import { SessionsEmptyState } from "@/features/session/components/SessionsEmptyState";
 import { shortDate } from "@/features/session/lib/formatting";
 import { hasDeepening } from "@/lib/db/deepenings";
-import { getPractices } from "@/lib/db/practices";
+import { type ListFeedEntriesResult, listFeedEntries } from "@/lib/db/feed-entries";
 import { getCurrentProfile } from "@/lib/db/profiles";
-import { getReminders } from "@/lib/db/reminders";
-import { getRereads } from "@/lib/db/rereads";
 import { listSessions } from "@/lib/db/sessions";
 import { cn } from "@/lib/utils";
 
@@ -98,14 +96,17 @@ export default async function HomePage() {
   const greeting = greetingFor(now.getHours());
 
   const latest = sessions[0] ?? null;
-  const [latestHasDeepening, latestPractices, latestRereads, latestReminders] = latest
+  const [latestHasDeepening, feedPage] = latest
     ? await Promise.all([
         hasDeepening(latest.id).catch(() => false),
-        getPractices(latest.id).catch(() => null),
-        getRereads(latest.id).catch(() => null),
-        getReminders(latest.id).catch(() => null),
+        listFeedEntries({
+          order: "recent",
+          offset: 0,
+          limit: 10,
+          now,
+        }).catch(() => ({ items: [], total: 0, hasMore: false })),
       ])
-    : [false, null, null, null];
+    : [false, { items: [], total: 0, hasMore: false } satisfies ListFeedEntriesResult];
   const isEmpty = sessions.length === 0;
 
   return (
@@ -144,18 +145,10 @@ export default async function HomePage() {
               href={`/recording/${latest.id}/summary`}
               hasDeepening={latestHasDeepening}
             />
-            <MixedTimelineFeed
-              practices={latestPractices?.payload ?? null}
-              rereads={latestRereads?.payload ?? null}
-              reminders={latestReminders?.payload ?? null}
-              sessionRef={{
-                id: latest.id,
-                title: latest.title ?? "Sessão sem título",
-                createdAt: latest.createdAt,
-                speakerName: latest.speakerName,
-                speakerLocation: latest.speakerLocation,
-                now,
-              }}
+            <PaginatedFeed
+              initialItems={feedPage.items}
+              initialHasMore={feedPage.hasMore}
+              initialOrder="recent"
             />
           </>
         ) : null}
