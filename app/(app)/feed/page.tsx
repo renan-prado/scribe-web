@@ -12,25 +12,6 @@ import { cn } from "@/lib/utils";
 
 export const metadata: Metadata = { title: "Início" };
 
-const MONTHS_PT_LONG = [
-  "janeiro",
-  "fevereiro",
-  "março",
-  "abril",
-  "maio",
-  "junho",
-  "julho",
-  "agosto",
-  "setembro",
-  "outubro",
-  "novembro",
-  "dezembro",
-];
-
-function todayLabel(now: Date): string {
-  return `Hoje, ${now.getDate()} de ${MONTHS_PT_LONG[now.getMonth()]}`;
-}
-
 function firstNameOf(fullName: string | null | undefined): string {
   if (!fullName) return "amigo";
   const trimmed = fullName.trim();
@@ -134,10 +115,6 @@ export default async function HomePage() {
     >
       {isEmpty ? null : (
         <>
-          <div className="flex items-center justify-between gap-3">
-            <p className="text-xs font-medium text-scriba-ink-soft">{todayLabel(now)}</p>
-          </div>
-
           <div className="flex flex-col gap-1.5">
             <h1 className="font-heading text-2xl font-semibold leading-tight tracking-tight text-scriba-ink-strong sm:text-3xl">
               {greeting}, {firstName}!
@@ -161,6 +138,9 @@ export default async function HomePage() {
               href={`/recording/${latest.id}/summary`}
               hasDeepening={latestHasDeepening}
             />
+            <div className="py-2">
+              <div className="h-px bg-scriba-hairline" />
+            </div>
             <PaginatedFeed
               initialItems={feedPage.items}
               initialHasMore={feedPage.hasMore}
