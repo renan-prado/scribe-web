@@ -114,14 +114,12 @@ export default async function HomePage() {
       )}
     >
       {isEmpty ? null : (
-        <>
-          <div className="flex flex-col gap-1.5">
-            <h1 className="font-heading text-2xl font-semibold leading-tight tracking-tight text-scriba-ink-strong sm:text-3xl">
-              {greeting}, {firstName}!
-            </h1>
-            <p className="text-sm font-light text-scriba-ink-soft">{dailyPrompt(now.getDate())}</p>
-          </div>
-        </>
+        <div className="flex flex-col gap-1.5">
+          <h1 className="font-heading text-2xl font-semibold leading-tight tracking-tight text-scriba-ink-strong sm:text-3xl">
+            {greeting}, {firstName}!
+          </h1>
+          <p className="text-sm font-light text-scriba-ink-soft">{dailyPrompt(now.getDate())}</p>
+        </div>
       )}
 
       <div className="flex flex-col gap-4">
