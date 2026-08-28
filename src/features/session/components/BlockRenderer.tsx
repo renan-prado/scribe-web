@@ -1,4 +1,5 @@
 import { BookGlyph } from "@/components/icons/BookGlyph";
+import { PenaGlyph } from "@/components/icons/PenaGlyph";
 import { PassageVerses } from "@/features/session/components/PassageVerses";
 import { PenaAvatar } from "@/features/session/components/PenaAvatar";
 import { parseVerseReference } from "@/lib/domain/feed";
@@ -96,7 +97,8 @@ export function BlockRenderer({ block }: { block: SummaryBlock }) {
     case "conclusion":
       return (
         <section className="relative mt-2 flex flex-col gap-3 rounded-[26px] p-6 animate-insight-gradient bg-[image:var(--session-surface-quote)] bg-[size:200%_100%]">
-          <span className="text-[10px] font-semibold uppercase tracking-[0.14em] text-session-chip-ai">
+          <span className="inline-flex items-center gap-1.5 text-[10px] font-semibold uppercase tracking-[0.14em] text-session-chip-ai">
+            <PenaGlyph className="size-3" />
             Conclusão
           </span>
           <p className="text-pretty text-[15px] font-light leading-[1.7] text-session-verse-text">
