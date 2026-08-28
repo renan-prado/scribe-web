@@ -2,6 +2,9 @@
 
 ## Coisas a desenvolver
 - [ ] Limpar codigo, componentes, funções, classes, variaveis, etc.. Que não estejam sendo usadas.
+- [x] card de "gere um estudo"
+- [ ] card editorial
+- [ ] 
 
 ## Coisas manuais
 - [ ] monitor de uptime
