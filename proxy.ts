@@ -17,7 +17,7 @@ import { clientEnv } from "@/lib/env/client";
  * Auth users hitting /sign-in or /sign-up → /feed (already in).
  */
 
-const PUBLIC_PREFIXES = ["/sign-in", "/sign-up", "/auth"];
+const PUBLIC_PREFIXES = ["/sign-in", "/sign-up", "/auth", "/terms", "/privacy"];
 const AUTH_ONLY_PREFIXES = ["/sign-in", "/sign-up"];
 
 const STATIC_ALLOWED_ORIGINS = new Set(["https://scriba.cc", "https://www.scriba.cc"]);
