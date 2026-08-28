@@ -1,9 +1,7 @@
 import type { Metadata } from "next";
 import { NavLink } from "@/components/NavLink";
-import { ColoqueEmPratica } from "@/features/session/components/ColoqueEmPratica";
 import { DeepenButton } from "@/features/session/components/DeepenButton";
-import { LembraDisso } from "@/features/session/components/LembraDisso";
-import { ReleiaEsteTexto } from "@/features/session/components/ReleiaEsteTexto";
+import { MixedTimelineFeed } from "@/features/session/components/MixedTimelineFeed";
 import { SessionsEmptyState } from "@/features/session/components/SessionsEmptyState";
 import { shortDate } from "@/features/session/lib/formatting";
 import { hasDeepening } from "@/lib/db/deepenings";
@@ -146,33 +144,10 @@ export default async function HomePage() {
               href={`/recording/${latest.id}/summary`}
               hasDeepening={latestHasDeepening}
             />
-            <ColoqueEmPratica
+            <MixedTimelineFeed
               practices={latestPractices?.payload ?? null}
-              variant="feed"
-              sessionRef={{
-                id: latest.id,
-                title: latest.title ?? "Sessão sem título",
-                createdAt: latest.createdAt,
-                speakerName: latest.speakerName,
-                speakerLocation: latest.speakerLocation,
-                now,
-              }}
-            />
-            <ReleiaEsteTexto
               rereads={latestRereads?.payload ?? null}
-              variant="feed"
-              sessionRef={{
-                id: latest.id,
-                title: latest.title ?? "Sessão sem título",
-                createdAt: latest.createdAt,
-                speakerName: latest.speakerName,
-                speakerLocation: latest.speakerLocation,
-                now,
-              }}
-            />
-            <LembraDisso
               reminders={latestReminders?.payload ?? null}
-              variant="feed"
               sessionRef={{
                 id: latest.id,
                 title: latest.title ?? "Sessão sem título",

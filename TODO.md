@@ -1,7 +1,7 @@
 # TODO
 
 ## Coisas a desenvolver
-- [ ] 
+- [ ] Limpar codigo, componentes, funções, classes, variaveis, etc.. Que não estejam sendo usadas.
 
 ## Coisas manuais
 - [ ] monitor de uptime

@@ -91,6 +91,20 @@ export function relativeShort(iso: string, now: Date): string {
   return years === 1 ? "há 1 ano" : `há ${years} anos`;
 }
 
+/**
+ * "Hoje" / "Em 1 dia" / "Em 15 dias" / "Em 4 meses" / "Em 9 meses" —
+ * rótulo de janela agendada. Usado nos cards do feed (praticar/releia/lembra)
+ * onde o dayOffset determina quando o item aparecerá. Passa a meses quando
+ * ficaria feio em dias (≥ 100).
+ */
+export function dayOffsetLabel(dayOffset: number): string {
+  if (dayOffset <= 0) return "Hoje";
+  if (dayOffset === 1) return "Em 1 dia";
+  if (dayOffset < 100) return `Em ${dayOffset} dias`;
+  const months = Math.round(dayOffset / 30);
+  return months === 1 ? "Em 1 mês" : `Em ${months} meses`;
+}
+
 /** "5 min" or "45s" — compact form used in the library list. */
 export function formatDurationShort(ms: number | null): string {
   if (!ms || ms <= 0) return "";
