@@ -46,3 +46,11 @@ next-env.d.ts
 # supabase CLI local cache
 /supabase/.temp/
 /supabase/.branches/
+
+# playwright MCP cache
+/.playwright-mcp/
+
+# local scratch: session dumps, comparison files
+/compare*.json
+/compare*.txt
+/overview.txt
