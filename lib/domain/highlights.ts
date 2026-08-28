@@ -16,11 +16,11 @@ import { z } from "zod";
  * poder exibir metadados corretos (autor só faz sentido em citation/quote).
  */
 
-export const HIGHLIGHT_MIN_DAY_OFFSET = 3;
-export const HIGHLIGHT_MAX_DAY_OFFSET = 365;
+const HIGHLIGHT_MIN_DAY_OFFSET = 3;
+const HIGHLIGHT_MAX_DAY_OFFSET = 365;
 export const HIGHLIGHT_MAX_ITEMS = 12;
 
-export const HighlightSourceSchema = z.enum([
+const HighlightSourceSchema = z.enum([
   "speakerCitation",
   "speakerHighlight",
   "speakerEcho",
@@ -28,7 +28,7 @@ export const HighlightSourceSchema = z.enum([
 ]);
 export type HighlightSource = z.infer<typeof HighlightSourceSchema>;
 
-export const HighlightItemSchema = z.object({
+const HighlightItemSchema = z.object({
   dayOffset: z.number().int().min(0),
   text: z.string(),
   author: z.string().optional(),
@@ -36,7 +36,7 @@ export const HighlightItemSchema = z.object({
 });
 export type HighlightItem = z.infer<typeof HighlightItemSchema>;
 
-export const HighlightsPayloadSchema = z.object({
+const HighlightsPayloadSchema = z.object({
   items: z.array(HighlightItemSchema),
 });
 export type HighlightsPayload = z.infer<typeof HighlightsPayloadSchema>;

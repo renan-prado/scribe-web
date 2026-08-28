@@ -1,6 +1,6 @@
 import { z } from "zod";
 
-export const VersePayloadSchema = z.object({
+const VersePayloadSchema = z.object({
   reference: z.string(),
   text: z.string(),
 });

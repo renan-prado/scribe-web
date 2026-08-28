@@ -61,7 +61,7 @@ export const FeedItemSchema = z.discriminatedUnion("kind", [
 ]);
 
 export type FeedItem = z.infer<typeof FeedItemSchema>;
-export type FeedItemKind = FeedItem["kind"];
+type FeedItemKind = FeedItem["kind"];
 export type FeedItemOrigin = "recording" | "ai";
 
 const RECORDING_KINDS: ReadonlySet<FeedItemKind> = new Set<FeedItemKind>([

@@ -1,6 +1,6 @@
 import { z } from "zod";
 
-export const LocationSchema = z.object({
+const LocationSchema = z.object({
   id: z.string().uuid(),
   name: z.string(),
   city: z.string().nullable(),

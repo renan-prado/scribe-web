@@ -31,7 +31,7 @@ export type RecorderOptions = {
   startingIndex?: number;
 };
 
-export type ChunkTiming = {
+type ChunkTiming = {
   minChunkMs?: number;
   maxChunkMs?: number;
 };

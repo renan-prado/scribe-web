@@ -27,11 +27,11 @@ import { createClient } from "@/lib/supabase/server";
  * pipelines during capture. `audio_only` only transcribes chunks in the
  * background and produces the final summary on stop — no live cards.
  */
-export type SessionMode = "live" | "audio_only";
+type SessionMode = "live" | "audio_only";
 
 export const SESSION_MODES = ["live", "audio_only"] as const;
 
-export function parseSessionMode(value: unknown): SessionMode {
+function parseSessionMode(value: unknown): SessionMode {
   return value === "audio_only" ? "audio_only" : "live";
 }
 

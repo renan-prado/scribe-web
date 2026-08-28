@@ -38,10 +38,10 @@ const RereadDayOffsetSchema = z.union([
  * - `ai-fill`: gerado pelo LLM só para completar os 10 quando o pool
  *    reaproveitável não cobria todos os slots.
  */
-export const RereadOriginSchema = z.enum(["cited", "related", "summary", "ai-fill"]);
+const RereadOriginSchema = z.enum(["cited", "related", "summary", "ai-fill"]);
 export type RereadOrigin = z.infer<typeof RereadOriginSchema>;
 
-export const RereadItemSchema = z.object({
+const RereadItemSchema = z.object({
   dayOffset: RereadDayOffsetSchema,
   reference: z.string(),
   text: z.string().default(""),
@@ -51,7 +51,7 @@ export const RereadItemSchema = z.object({
 
 export type RereadItem = z.infer<typeof RereadItemSchema>;
 
-export const RereadsPayloadSchema = z.object({
+const RereadsPayloadSchema = z.object({
   items: z.array(RereadItemSchema),
 });
 
@@ -61,7 +61,7 @@ export type RereadsPayload = z.infer<typeof RereadsPayloadSchema>;
  * Só o que o LLM devolve na chamada de "fill": uma lista de referências, SEM
  * dayOffset (quem atribui é o assembler em ordem).
  */
-export const RereadFillItemSchema = z.object({
+const RereadFillItemSchema = z.object({
   reference: z.string(),
 });
 

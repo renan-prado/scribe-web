@@ -1,6 +1,6 @@
 import { z } from "zod";
 
-export const ProfileSchema = z.object({
+const ProfileSchema = z.object({
   id: z.string().uuid(),
   displayName: z.string().nullable(),
   avatarUrl: z.string().nullable(),

@@ -40,17 +40,6 @@ export async function getHighlights(sessionId: string): Promise<HighlightsRow | 
   };
 }
 
-export async function hasHighlights(sessionId: string): Promise<boolean> {
-  const supabase = await createClient();
-  const { data, error } = await supabase
-    .from("session_highlights")
-    .select("session_id")
-    .eq("session_id", sessionId)
-    .maybeSingle();
-  if (error) throw new Error(`hasHighlights failed: ${error.message}`);
-  return !!data;
-}
-
 /**
  * Upsert por session_id. Reprocess reescreve o payload inteiro; primeira
  * geração cria a linha. `.select()` força o PostgREST a retornar a linha

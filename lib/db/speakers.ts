@@ -59,13 +59,6 @@ export async function listSpeakersWithUsage(
   }));
 }
 
-export async function getSpeaker(id: string): Promise<Speaker | null> {
-  const supabase = await createClient();
-  const { data, error } = await supabase.from("speakers").select(SELECT).eq("id", id).maybeSingle();
-  if (error) throw new Error(`getSpeaker failed: ${error.message}`);
-  return data ? rowToSpeaker(data as DbRow) : null;
-}
-
 async function findSpeakerByNameForUser(name: string, userId: string): Promise<Speaker | null> {
   const supabase = await createClient();
   const { data, error } = await supabase

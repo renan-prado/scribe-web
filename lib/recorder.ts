@@ -7,15 +7,6 @@ import type {
   RecorderOptions,
 } from "@/lib/domain/recorder";
 
-export type {
-  ChunkEvent,
-  FinalAudioEvent,
-  Recorder,
-  RecorderErrorEvent,
-  RecorderErrorSource,
-  RecorderOptions,
-};
-
 type MimeCandidate = { mimeType: string; extension: string };
 
 const MIME_CANDIDATES: MimeCandidate[] = [

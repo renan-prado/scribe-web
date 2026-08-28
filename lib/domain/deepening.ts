@@ -1,9 +1,4 @@
-import {
-  type SummaryBlock,
-  SummaryBlockSchema,
-  type SummaryPayload,
-  SummaryPayloadSchema,
-} from "./summary";
+import type { SummaryBlock, SummaryPayload } from "./summary";
 
 /**
  * A "deepening" (aprofundamento) is a denser, more theological pass over a
@@ -12,9 +7,7 @@ import {
  * (deeper exegesis, more cross-references, richer historical/doctrinal context).
  */
 export type DeepeningPayload = SummaryPayload;
-export const DeepeningPayloadSchema = SummaryPayloadSchema;
-export type DeepeningBlock = SummaryBlock;
-export const DeepeningBlockSchema = SummaryBlockSchema;
+type DeepeningBlock = SummaryBlock;
 
 const emptyPayload = (): DeepeningPayload => ({
   thinking: "",

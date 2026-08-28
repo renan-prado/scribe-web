@@ -1,6 +1,6 @@
 import { z } from "zod";
 
-export const SpeakerSchema = z.object({
+const SpeakerSchema = z.object({
   id: z.string().uuid(),
   name: z.string(),
   defaultLocationId: z.string().uuid().nullable(),

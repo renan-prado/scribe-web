@@ -19,8 +19,8 @@ import { z } from "zod";
  *   fontes acima não davam material para os 10 slots.
  */
 
-export const REMINDER_DAY_OFFSETS = [2, 5, 18, 33, 47, 62, 82, 120, 180, 260] as const;
-export type ReminderDayOffset = (typeof REMINDER_DAY_OFFSETS)[number];
+const REMINDER_DAY_OFFSETS = [2, 5, 18, 33, 47, 62, 82, 120, 180, 260] as const;
+type ReminderDayOffset = (typeof REMINDER_DAY_OFFSETS)[number];
 
 const ReminderDayOffsetSchema = z.union([
   z.literal(2),
@@ -35,10 +35,9 @@ const ReminderDayOffsetSchema = z.union([
   z.literal(260),
 ]);
 
-export const ReminderOriginSchema = z.enum(["verbatim", "paraphrase", "generated"]);
-export type ReminderOrigin = z.infer<typeof ReminderOriginSchema>;
+const ReminderOriginSchema = z.enum(["verbatim", "paraphrase", "generated"]);
 
-export const ReminderItemSchema = z.object({
+const ReminderItemSchema = z.object({
   dayOffset: ReminderDayOffsetSchema,
   title: z.string(),
   text: z.string(),
@@ -48,7 +47,7 @@ export const ReminderItemSchema = z.object({
 
 export type ReminderItem = z.infer<typeof ReminderItemSchema>;
 
-export const RemindersPayloadSchema = z.object({
+const RemindersPayloadSchema = z.object({
   items: z.array(ReminderItemSchema),
 });
 

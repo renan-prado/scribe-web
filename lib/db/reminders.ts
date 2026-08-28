@@ -40,17 +40,6 @@ export async function getReminders(sessionId: string): Promise<RemindersRow | nu
   };
 }
 
-export async function hasReminders(sessionId: string): Promise<boolean> {
-  const supabase = await createClient();
-  const { data, error } = await supabase
-    .from("session_reminders")
-    .select("session_id")
-    .eq("session_id", sessionId)
-    .maybeSingle();
-  if (error) throw new Error(`hasReminders failed: ${error.message}`);
-  return !!data;
-}
-
 /**
  * Upsert por session_id. Reprocess reescreve o payload inteiro; primeira
  * geração cria a linha. .select() força o PostgREST a retornar a linha

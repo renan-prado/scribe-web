@@ -58,17 +58,6 @@ export async function listLocationsWithUsage(
   }));
 }
 
-export async function getLocation(id: string): Promise<Location | null> {
-  const supabase = await createClient();
-  const { data, error } = await supabase
-    .from("locations")
-    .select(SELECT)
-    .eq("id", id)
-    .maybeSingle();
-  if (error) throw new Error(`getLocation failed: ${error.message}`);
-  return data ? rowToLocation(data as DbRow) : null;
-}
-
 async function findLocationByNameForUser(name: string, userId: string): Promise<Location | null> {
   const supabase = await createClient();
   const { data, error } = await supabase

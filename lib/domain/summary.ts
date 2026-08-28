@@ -154,7 +154,7 @@ const EnrichmentBlockSchema = z.discriminatedUnion("type", [
   }),
 ]);
 
-export type EnrichmentBlock = z.infer<typeof EnrichmentBlockSchema>;
+type EnrichmentBlock = z.infer<typeof EnrichmentBlockSchema>;
 
 export type EnrichmentInsertion = {
   afterBlockIndex: number;
@@ -336,21 +336,4 @@ export function mergeEnrichmentIntoBlocks(
     if (trailing) out.push(...trailing);
   });
   return out;
-}
-
-/**
- * Prepares the previous summary so the LLM sees only the fields that matter
- * for continuation. The transient "thinking" field never round-trips.
- * Returns null when there is no meaningful content to send.
- */
-export function normalizePreviousForPrompt(
-  prev: SummaryPayload | undefined
-): SummaryPayload | null {
-  if (!prev || typeof prev !== "object") return null;
-  const title = typeof prev.title === "string" ? prev.title : "";
-  const shortSummary = typeof prev.shortSummary === "string" ? prev.shortSummary : "";
-  const blocks = Array.isArray(prev.blocks) ? prev.blocks : [];
-  const hasContent = title || shortSummary || blocks.length > 0;
-  if (!hasContent) return null;
-  return { thinking: "", title, shortSummary, blocks };
 }

@@ -10,7 +10,7 @@ import { z } from "zod";
  */
 
 export const PRACTICE_DAY_OFFSETS = [0, 1, 3, 7, 15] as const;
-export type PracticeDayOffset = (typeof PRACTICE_DAY_OFFSETS)[number];
+type PracticeDayOffset = (typeof PRACTICE_DAY_OFFSETS)[number];
 
 const PracticeDayOffsetSchema = z.union([
   z.literal(0),
@@ -20,7 +20,7 @@ const PracticeDayOffsetSchema = z.union([
   z.literal(15),
 ]);
 
-export const PracticeItemSchema = z.object({
+const PracticeItemSchema = z.object({
   dayOffset: PracticeDayOffsetSchema,
   title: z.string(),
   text: z.string(),
@@ -29,7 +29,7 @@ export const PracticeItemSchema = z.object({
 
 export type PracticeItem = z.infer<typeof PracticeItemSchema>;
 
-export const PracticesPayloadSchema = z.object({
+const PracticesPayloadSchema = z.object({
   items: z.array(PracticeItemSchema),
 });
 
