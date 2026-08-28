@@ -348,9 +348,10 @@ export function SavedSessionView({
 
       <ColoqueEmPratica practices={practices} />
 
-      <ReleiaEsteTexto rereads={rereads} />
-
-      <LembraDisso reminders={reminders} />
+      <div className="flex flex-col gap-2">
+        <ReleiaEsteTexto rereads={rereads} />
+        <LembraDisso reminders={reminders} />
+      </div>
 
       <Dialog open={feedOpen} onOpenChange={setFeedOpen}>
         <DialogContent className="sm:max-w-2xl">

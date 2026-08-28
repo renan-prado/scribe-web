@@ -52,17 +52,17 @@ export function ReleiaEsteTexto({
 
   if (variant === "summary") {
     return (
-      <section className="mt-4 flex items-start gap-3 rounded-2xl border border-dashed border-scriba-hairline-soft bg-scriba-blue-soft/25 px-4 py-3">
+      <section className="flex items-start gap-3 rounded-2xl border border-dashed border-scriba-hairline-soft bg-scriba-blue-soft/25 px-4 py-3">
         <span className="mt-0.5 flex size-6 shrink-0 items-center justify-center rounded-full bg-scriba-blue-soft text-scriba-blue">
           <BookOpenText className="size-3.5" strokeWidth={2.2} />
         </span>
         <div className="flex flex-col gap-0.5">
           <p className="text-sm font-semibold text-scriba-ink-strong">
-            {rereads.items.length} textos separados para reler
+            {rereads.items.length} versiculos foram separados.
           </p>
           <p className="text-xs font-light text-scriba-ink-mute">
-            Nos próximos 90 dias novos versículos deste sermão aparecerão no seu feed em ritmo
-            espaçado.
+            Ao longo dos próximos dias, versículos deste sermão aparecerão no seu feed para serem
+            relidos e meditados.
           </p>
         </div>
       </section>

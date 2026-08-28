@@ -1,4 +1,4 @@
-import { Sparkles } from "lucide-react";
+import { Footprints } from "lucide-react";
 import { NavLink } from "@/components/NavLink";
 import { relativeShort } from "@/features/session/lib/formatting";
 import { PRACTICE_DAY_OFFSETS, type PracticesPayload } from "@/lib/domain/practices";
@@ -53,8 +53,8 @@ export function ColoqueEmPratica({
   if (ordered.length === 0) return null;
   const description =
     variant === "summary"
-      ? "Uma provocação para levar deste sermão hoje. Nos próximos dias novas aparecerão no seu feed."
-      : "Provocações para viver este sermão ao longo dos próximos 15 dias.";
+      ? "Sugestões para aplicar esta mensagem em sua vida."
+      : "Conselhos e sugestões para viver esta reflexão ao longo dos próximos dias.";
   const footer = sessionRef
     ? {
         href: `/recording/${sessionRef.id}/summary`,
@@ -71,7 +71,7 @@ export function ColoqueEmPratica({
     <section className="mt-6 flex flex-col gap-4">
       <header className="flex items-center gap-2">
         <span className="flex size-6 items-center justify-center rounded-full bg-scriba-blue-soft text-scriba-blue">
-          <Sparkles className="size-3.5" strokeWidth={2.2} />
+          <Footprints className="size-3.5" strokeWidth={2.2} />
         </span>
         <h2 className="font-heading text-lg font-semibold tracking-tight text-scriba-ink-strong">
           Coloque em prática
