@@ -7,6 +7,7 @@ import { parseJsonBody, UuidSchema } from "@/lib/http/validate";
 import { devLog } from "@/lib/log";
 import { generateAndSavePractices } from "@/lib/practices/save";
 import { enforceRateLimit, RATE_LIMITS } from "@/lib/rate-limit";
+import { generateAndSaveReminders } from "@/lib/reminders/save";
 import { generateAndSaveRereads } from "@/lib/rereads/save";
 import { requireAuth } from "@/lib/supabase/require-auth";
 
@@ -95,10 +96,11 @@ export async function POST(request: Request) {
     });
   }
 
-  // Regenera "Coloque em prática" (5) e "Releia este texto" (10) em paralelo
-  // com o resumo atualizado — upsert sobrescreve o payload anterior de cada.
-  // Best-effort, mesmo padrão do route de primeira geração.
-  const [practices, rereads] = await Promise.all([
+  // Regenera "Coloque em prática" (5), "Releia este texto" (10) e "Lembra
+  // disso?" (10) em paralelo com o resumo atualizado — upsert sobrescreve o
+  // payload anterior de cada. Best-effort, mesmo padrão do route de primeira
+  // geração.
+  const [practices, rereads, reminders] = await Promise.all([
     generateAndSavePractices({
       userId: auth.user.id,
       sessionId,
@@ -115,6 +117,14 @@ export async function POST(request: Request) {
       finalSummary: payload,
       logPrefix: "rereads-reprocess",
     }),
+    generateAndSaveReminders({
+      userId: auth.user.id,
+      sessionId,
+      transcript,
+      feedItems: session.feedItems,
+      finalSummary: payload,
+      logPrefix: "reminders-reprocess",
+    }),
   ]);
 
   return NextResponse.json({
@@ -125,5 +135,6 @@ export async function POST(request: Request) {
     saved,
     practices,
     rereads,
+    reminders,
   });
 }

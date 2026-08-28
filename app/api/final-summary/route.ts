@@ -9,6 +9,7 @@ import { parseJsonBody, UuidSchema } from "@/lib/http/validate";
 import { devLog } from "@/lib/log";
 import { generateAndSavePractices } from "@/lib/practices/save";
 import { enforceRateLimit, RATE_LIMITS } from "@/lib/rate-limit";
+import { generateAndSaveReminders } from "@/lib/reminders/save";
 import { generateAndSaveRereads } from "@/lib/rereads/save";
 import { requireAuth } from "@/lib/supabase/require-auth";
 
@@ -142,11 +143,11 @@ export async function POST(request: Request) {
     console.error("[final-summary] save failed", { sessionId, error: (err as Error).message });
   }
 
-  // Best-effort: gera e persiste "Coloque em prática" (5 itens) e "Releia este
-  // texto" (10 versículos) em paralelo após o resumo estar salvo. Nenhuma das
-  // duas falhas quebra a resposta do resumo — a UI trata payloads ausentes como
-  // estado normal (só o resumo será renderizado).
-  const [practices, rereads] = await Promise.all([
+  // Best-effort: gera e persiste "Coloque em prática" (5 itens), "Releia este
+  // texto" (10 versículos) e "Lembra disso?" (10 mini-callbacks) em paralelo
+  // após o resumo estar salvo. Nenhuma delas falhando quebra a resposta do
+  // resumo — a UI trata payloads ausentes como estado normal.
+  const [practices, rereads, reminders] = await Promise.all([
     generateAndSavePractices({
       userId: auth.user.id,
       sessionId,
@@ -163,6 +164,14 @@ export async function POST(request: Request) {
       finalSummary: payload,
       logPrefix: "rereads",
     }),
+    generateAndSaveReminders({
+      userId: auth.user.id,
+      sessionId,
+      transcript: text,
+      feedItems,
+      finalSummary: payload,
+      logPrefix: "reminders",
+    }),
   ]);
 
   return NextResponse.json({
@@ -173,5 +182,6 @@ export async function POST(request: Request) {
     saved,
     practices,
     rereads,
+    reminders,
   });
 }

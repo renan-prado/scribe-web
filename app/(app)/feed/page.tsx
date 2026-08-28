@@ -2,12 +2,14 @@ import type { Metadata } from "next";
 import { NavLink } from "@/components/NavLink";
 import { ColoqueEmPratica } from "@/features/session/components/ColoqueEmPratica";
 import { DeepenButton } from "@/features/session/components/DeepenButton";
+import { LembraDisso } from "@/features/session/components/LembraDisso";
 import { ReleiaEsteTexto } from "@/features/session/components/ReleiaEsteTexto";
 import { SessionsEmptyState } from "@/features/session/components/SessionsEmptyState";
 import { shortDate } from "@/features/session/lib/formatting";
 import { hasDeepening } from "@/lib/db/deepenings";
 import { getPractices } from "@/lib/db/practices";
 import { getCurrentProfile } from "@/lib/db/profiles";
+import { getReminders } from "@/lib/db/reminders";
 import { getRereads } from "@/lib/db/rereads";
 import { listSessions } from "@/lib/db/sessions";
 import { cn } from "@/lib/utils";
@@ -98,13 +100,14 @@ export default async function HomePage() {
   const greeting = greetingFor(now.getHours());
 
   const latest = sessions[0] ?? null;
-  const [latestHasDeepening, latestPractices, latestRereads] = latest
+  const [latestHasDeepening, latestPractices, latestRereads, latestReminders] = latest
     ? await Promise.all([
         hasDeepening(latest.id).catch(() => false),
         getPractices(latest.id).catch(() => null),
         getRereads(latest.id).catch(() => null),
+        getReminders(latest.id).catch(() => null),
       ])
-    : [false, null, null];
+    : [false, null, null, null];
   const isEmpty = sessions.length === 0;
 
   return (
@@ -157,6 +160,18 @@ export default async function HomePage() {
             />
             <ReleiaEsteTexto
               rereads={latestRereads?.payload ?? null}
+              variant="feed"
+              sessionRef={{
+                id: latest.id,
+                title: latest.title ?? "Sessão sem título",
+                createdAt: latest.createdAt,
+                speakerName: latest.speakerName,
+                speakerLocation: latest.speakerLocation,
+                now,
+              }}
+            />
+            <LembraDisso
+              reminders={latestReminders?.payload ?? null}
               variant="feed"
               sessionRef={{
                 id: latest.id,
