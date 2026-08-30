@@ -98,11 +98,11 @@ export const ECHO_MIN_TAIL_DELTA_CHARS = 200;
 /**
  * Espaçamento mínimo entre dois cards se tornarem visíveis. As pipelines
  * podem retornar 2+ itens de uma vez; uma fila no cliente os espaça pra o
- * ouvinte ter tempo de ler cada um. 90s casa com a cadência de insights
- * (~3min) entregando ~1 card por 1:30 min sem sobrecarregar a atenção do
- * ouvinte em aula/culto ao vivo.
+ * ouvinte ter tempo de ler cada um. 70s casa com a cadência de insights
+ * (~2.5-3min) entregando ~1 card por ~1:10 min sem sobrecarregar a atenção
+ * do ouvinte em aula/culto ao vivo.
  */
-export const FEED_MIN_GAP_MS = 90_000; // 90s
+export const FEED_MIN_GAP_MS = 70_000; // 70s
 
 /**
  * Gap curto pro PRIMEIRO card da sessão. Enquanto `feedItems` estiver vazio,
