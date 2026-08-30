@@ -47,6 +47,7 @@ export function createRecorder(opts: RecorderOptions = {}): Recorder {
   let audioContext: AudioContext | null = null;
   let analyser: AnalyserNode | null = null;
   let vadTimer: ReturnType<typeof setInterval> | null = null;
+  let chunkHardCutTimer: ReturnType<typeof setTimeout> | null = null;
   let silenceSince: number | null = null;
   let visibilityListener: (() => void) | null = null;
 
@@ -62,6 +63,22 @@ export function createRecorder(opts: RecorderOptions = {}): Recorder {
     if (vadTimer) {
       clearInterval(vadTimer);
       vadTimer = null;
+    }
+  };
+
+  const stopHardCutTimer = () => {
+    if (chunkHardCutTimer) {
+      clearTimeout(chunkHardCutTimer);
+      chunkHardCutTimer = null;
+    }
+  };
+
+  const requestChunkCut = () => {
+    if (chunkRecorder?.state !== "recording") return;
+    try {
+      chunkRecorder.stop();
+    } catch (err) {
+      emitError("chunk", (err as Error).message ?? "chunk stop failed");
     }
   };
 
@@ -92,11 +109,7 @@ export function createRecorder(opts: RecorderOptions = {}): Recorder {
       const cutAtSilence = elapsed >= minChunkMs && silenceHeldMs >= silenceHoldMs;
       const forceCut = elapsed >= maxChunkMs;
       if (cutAtSilence || forceCut) {
-        try {
-          chunkRecorder.stop();
-        } catch (err) {
-          emitError("chunk", (err as Error).message ?? "chunk stop failed");
-        }
+        requestChunkCut();
       }
     }, 50);
   };
@@ -123,6 +136,7 @@ export function createRecorder(opts: RecorderOptions = {}): Recorder {
     };
     rec.onstop = () => {
       if (!picked) return;
+      stopHardCutTimer();
       const durationMs = performance.now() - chunkStartedAt;
       const blob = new Blob(chunkParts, { type: picked.mimeType });
       const ev: ChunkEvent = {
@@ -142,6 +156,16 @@ export function createRecorder(opts: RecorderOptions = {}): Recorder {
     try {
       rec.start();
       startVadMonitor();
+      // Absolute fallback: if the VAD setInterval or AudioContext get frozen
+      // by background throttling, this setTimeout is our last line of defense
+      // guaranteeing a chunk cut. Sized slightly above maxChunkMs so the VAD
+      // still has priority under normal conditions.
+      stopHardCutTimer();
+      chunkHardCutTimer = setTimeout(() => {
+        chunkHardCutTimer = null;
+        if (!running) return;
+        requestChunkCut();
+      }, maxChunkMs + 2_000);
     } catch (err) {
       emitError("chunk", (err as Error).message ?? "chunk start failed");
     }
@@ -232,6 +256,7 @@ export function createRecorder(opts: RecorderOptions = {}): Recorder {
       if (!running) return;
       running = false;
       stopVadTimer();
+      stopHardCutTimer();
       try {
         if (chunkRecorder && chunkRecorder.state === "recording") chunkRecorder.stop();
       } catch (err) {

@@ -32,14 +32,11 @@ import { useDrainTimer } from "@/features/session/hooks/useDrainTimer";
 import { useEchoPipeline } from "@/features/session/hooks/useEchoPipeline";
 import { useElapsedTimer } from "@/features/session/hooks/useElapsedTimer";
 import { useInsightsPipeline } from "@/features/session/hooks/useInsightsPipeline";
+import { useTranscribeQueue } from "@/features/session/hooks/useTranscribeQueue";
 import { useUnloadGuard } from "@/features/session/hooks/useUnloadGuard";
 import { useVersePrefetcher } from "@/features/session/hooks/useVerseFetch";
 import { useWakeLock } from "@/features/session/hooks/useWakeLock";
-import {
-  requestDeleteSession,
-  requestFinalSummary,
-  uploadChunkWithRetry,
-} from "@/features/session/lib/api";
+import { requestDeleteSession, requestFinalSummary } from "@/features/session/lib/api";
 import { isSilentBlob } from "@/features/session/lib/audio";
 import { tailSentences } from "@/features/session/lib/text";
 import { getSessionState, useSessionStore } from "@/features/session/store";
@@ -131,6 +128,26 @@ export function RecordingLive({
 
   const isProcessing = useMemo(() => chunkRows.some((r) => r.status === "uploading"), [chunkRows]);
 
+  const transcribeQueue = useTranscribeQueue({
+    sessionId,
+    onOrphanRecovered: (chunk) => {
+      // Recovered chunks land at index-order in the transcript. We don't know
+      // their original startedAtMs offset (the previous session's clock is
+      // gone), so we seed 0 — the transcript view sorts by index anyway.
+      useSessionStore.getState().upsertChunk({
+        index: chunk.index,
+        status: "uploading",
+        text: "",
+        startedAtMs: 0,
+      });
+    },
+    onSuccess: (index, text) => {
+      const current = useSessionStore.getState().chunks[index];
+      if (!current) return;
+      useSessionStore.getState().upsertChunk({ ...current, status: "ok", text });
+    },
+  });
+
   const handleChunk = useCallback(
     async (ev: ChunkEvent) => {
       const startedAtMs = Math.max(0, ev.startedAt - startedAtRef.current);
@@ -155,16 +172,17 @@ export function RecordingLive({
         .join(" ");
       const prevHint = tailSentences(previousText, 2);
 
-      const result = await uploadChunkWithRetry(ev, prevHint, sessionId);
-      const current = useSessionStore.getState().chunks[ev.index];
-      if (!current) return;
-      if (result.ok) {
-        useSessionStore.getState().upsertChunk({ ...current, status: "ok", text: result.text });
-      } else {
-        useSessionStore.getState().upsertChunk({ ...current, status: "error" });
-      }
+      await transcribeQueue.enqueue({
+        index: ev.index,
+        blob: ev.blob,
+        mimeType: ev.mimeType,
+        extension: ev.extension,
+        startedAt: ev.startedAt,
+        durationMs: ev.durationMs,
+        prevText: prevHint,
+      });
     },
-    [sessionId]
+    [transcribeQueue]
   );
 
   const start = useCallback(async () => {
@@ -276,6 +294,19 @@ export function RecordingLive({
     await recorderRef.current?.stop();
     recorderRef.current = null;
 
+    // Drain the transcribe queue before running final-summary — without this,
+    // chunks still in retry-backoff would be missing from the LLM input and
+    // the summary would silently exclude parts of the sermon.
+    if (transcribeQueue.pendingCount() > 0) {
+      getSessionState().setFinalizing(true);
+      const { drained, pending } = await transcribeQueue.drain(60_000);
+      if (!drained && pending > 0) {
+        toast.warning(`${pending} trecho(s) ainda não foram transcritos.`, {
+          description: "Serão retomados automaticamente quando você abrir esta sessão de novo.",
+        });
+      }
+    }
+
     const finalTranscript = Object.values(getSessionState().chunks)
       .filter((r) => r.status === "ok")
       .sort((a, b) => a.index - b.index)
@@ -289,6 +320,7 @@ export function RecordingLive({
     // final-summary LLM call and discard the empty session row created
     // up-front by the "Nova gravação" dialog so it doesn't clutter history.
     if (!finalTranscript) {
+      getSessionState().setFinalizing(false);
       toast.warning("Nenhuma fala foi capturada.", {
         description: "A gravação foi descartada sem gerar resumo.",
       });
@@ -332,7 +364,7 @@ export function RecordingLive({
     } finally {
       getSessionState().setFinalizing(false);
     }
-  }, [router, sessionId]);
+  }, [router, sessionId, transcribeQueue]);
 
   // Coin billing: 5 moedas/min (per started minute). First tick fires
   // immediately so t=0 is billed; subsequent ticks every 60s. On depletion
