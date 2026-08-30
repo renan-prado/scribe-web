@@ -63,6 +63,10 @@ src/features/session/
 - **Every system prompt** lives in `lib/prompts/*` as an exported constant, not inline.
 - **LLM response parsing** lives in `lib/domain/*` as `parseXxxFromLLM(content, ...)`. Do not re-implement JSON.parse + shape guards in routes.
 
+## Icon rules
+
+- **The `Sparkles` icon from `lucide-react` is BANNED.** Do not import or render it anywhere. If you need a decorative accent, use the yellow hex-shape (`clip-path:polygon(50%_0,100%_25%,100%_75%,50%_100%,0_75%,0_25%)` on a `bg-scriba-yellow` block) already used elsewhere in the app.
+
 ## Adding a new feature
 
 - **New API route calling OpenAI**: (1) add a prompt in `lib/prompts/foo.ts`, (2) add the schema + `parseFooFromLLM` in `lib/domain/foo.ts`, (3) create `app/api/foo/route.ts` that reads env from `serverEnv`, invokes `callChat({...})`, and delegates parsing to the domain helper. Log `[foo] ok { latencyMs, finishReason, promptTokens, completionTokens, ... }` on success and `[foo] upstream {fetch failed|error}` on failure. Every new route MUST call `enforceRateLimit(request, RATE_LIMITS.foo, auth.user.id)` right after `requireAuth()` — add a bucket to `RATE_LIMITS` in `lib/rate-limit.ts` sized to the expected client cadence (per-user + per-IP).

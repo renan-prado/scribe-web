@@ -14,26 +14,31 @@ import { cn } from "@/lib/utils";
 
 type Mode = "live" | "audio_only";
 
-const MODE_COPY: Record<Mode, { title: string; costPerMinute: number; caption: ReactNode }> = {
+const MODE_COPY: Record<
+  Mode,
+  { title: string; costPerMinute: number; description: ReactNode; idealFor: string }
+> = {
   live: {
-    title: "Acompanhar ao vivo",
+    title: "Modo Estudo",
     costPerMinute: COIN_COSTS.liveMinute,
-    caption: (
+    description: (
       <>
-        Enquanto o sermão acontece, o Scriba mostra versículos, contextos, frases importantes e
-        outros insights. No final, você também recebe o resumo completo.
+        Enquanto o sermão acontece, o Scriba comenta ao vivo, trazendo versículos, contextos e
+        ensinamentos na tela para você acompanhar.
       </>
     ),
+    idealFor: "estudos, palestras e aulas",
   },
   audio_only: {
-    title: "Só o resumo",
+    title: "Modo Resumo",
     costPerMinute: COIN_COSTS.audioOnlyMinute,
-    caption: (
+    description: (
       <>
-        O Scriba grava o sermão sem mostrar conteúdos durante a pregação. No final, você recebe os
-        principais ensinamentos, versículos e aplicações organizados em um resumo.
+        O Scriba escuta em silêncio e, ao final, organiza tudo em um resumo estruturado com o
+        essencial da mensagem.
       </>
     ),
+    idealFor: "pregações, cultos e ministrações",
   },
 };
 
@@ -153,9 +158,22 @@ export function NewRecordingDialog({ trigger }: { trigger?: ReactNode }) {
           })}
         </div>
 
-        <p className="max-w-xs text-pretty text-center text-sm font-light leading-relaxed text-scriba-ink-soft">
-          {loading ? "Preparando sessão…" : copy.caption}
-        </p>
+        <div className="flex max-w-xs flex-col items-center gap-3">
+          <p className="text-pretty text-center text-sm font-light leading-relaxed text-scriba-ink-soft">
+            {loading ? "Preparando sessão…" : copy.description}
+          </p>
+          {loading ? null : (
+            <span className="inline-flex items-center gap-1.5 rounded-full border border-scriba-yellow/40 bg-scriba-yellow/15 px-3 py-1 text-[11px] font-medium text-scriba-ink">
+              <span
+                aria-hidden
+                className="block size-[7px] bg-scriba-yellow [clip-path:polygon(50%_0,100%_25%,100%_75%,50%_100%,0_75%,0_25%)]"
+              />
+              <span>
+                <span className="text-scriba-ink-soft">Ideal para</span> {copy.idealFor}
+              </span>
+            </span>
+          )}
+        </div>
 
         {(() => {
           if (balanceLoading) {
