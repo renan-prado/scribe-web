@@ -5,7 +5,7 @@ import { isUuid } from "@/lib/http/validate";
 import { callTranscribe } from "@/lib/llm/openai";
 import { enforceRateLimit, RATE_LIMITS } from "@/lib/rate-limit";
 import { requireAuth } from "@/lib/supabase/require-auth";
-import { VOCABULARIO_GUIA } from "@/lib/vocabulario";
+import { stripVocabHallucination, VOCABULARIO_PROMPT } from "@/lib/vocabulario";
 
 export const runtime = "nodejs";
 export const dynamic = "force-dynamic";
@@ -67,8 +67,7 @@ export async function POST(request: Request) {
   }
 
   const filename = `chunk-${chunkIndex ?? "x"}.${extension}`;
-  const vocab = VOCABULARIO_GUIA.join(", ");
-  const prompt = prevText ? `${vocab}. ${prevText}` : vocab;
+  const prompt = prevText ? `${VOCABULARIO_PROMPT} ${prevText}` : VOCABULARIO_PROMPT;
 
   const result = await callTranscribe({
     model,
@@ -98,8 +97,11 @@ export async function POST(request: Request) {
     audioSeconds,
     latencyMs: result.data.latencyMs,
   });
+  // Rede de segurança: mesmo com prompt em prosa, se o Whisper ainda ecoar
+  // uma corrida longa do vocabulário-guia, remove antes de devolver ao client.
+  const cleanedText = stripVocabHallucination(result.data.text);
   return NextResponse.json({
-    text: result.data.text,
+    text: cleanedText,
     latencyMs: result.data.latencyMs,
     model,
   });
