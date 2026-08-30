@@ -58,7 +58,7 @@ export function RecordButton({
               )}
             >
               <Pause className="size-3.5 fill-current" />
-              pausar
+              <span className="hidden sm:inline">pausar</span>
             </button>
           </>
         ) : null}
@@ -73,7 +73,7 @@ export function RecordButton({
           )}
         >
           <Square className="size-3 fill-current" />
-          parar
+          <span className="hidden sm:inline">parar</span>
         </button>
       </div>
     );

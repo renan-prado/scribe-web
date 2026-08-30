@@ -147,7 +147,7 @@ function EchoBlock({ text }: { text: string }) {
 
 function HighlightBlock({ text }: { text: string }) {
   return (
-    <figure className="animate-content-fade my-2 flex flex-col items-center gap-1.5 px-4 text-center sm:px-8">
+    <figure className="animate-content-fade mt-2 mb-6 flex flex-col items-center gap-1.5 px-4 text-center sm:mb-8 sm:px-8">
       <span
         aria-hidden
         className="select-none text-4xl font-semibold leading-none text-scriba-hairline-soft"
