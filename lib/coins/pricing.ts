@@ -13,15 +13,15 @@ export const INITIAL_COIN_BALANCE = 100;
 
 export const COIN_COSTS = {
   /** Per started minute of live recording. */
-  liveMinute: 10,
+  liveMinute: 5,
   /** Per started minute of audio-only recording. */
-  audioOnlyMinute: 3,
+  audioOnlyMinute: 2,
   /** One-shot cost of running /api/deepening. */
-  deepening: 10,
+  deepening: 5,
   /** One-shot cost of re-running /api/final-summary/reprocess on a saved session. */
-  reprocessSummary: 10,
+  reprocessSummary: 5,
   /** One-shot cost of re-running /api/deepening/reprocess on an existing study. */
-  reprocessDeepening: 10,
+  reprocessDeepening: 5,
 } as const;
 
 /**

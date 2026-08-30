@@ -213,7 +213,7 @@ export function RecordingAudioOnly({
     }
   }, [assembleTranscript, paused, sessionId, initialSpeakerName, initialSpeakerLocation, router]);
 
-  // Coin billing: 3 moedas/min (per started minute). While paused billing is
+  // Coin billing: 2 moedas/min (per started minute). While paused billing is
   // frozen; `useCoinTick` preserves the current minute so resuming does not
   // trigger an extra debit.
   useCoinTick({

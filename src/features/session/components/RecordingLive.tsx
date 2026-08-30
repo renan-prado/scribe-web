@@ -334,7 +334,7 @@ export function RecordingLive({
     }
   }, [router, sessionId]);
 
-  // Coin billing: 10 moedas/min (per started minute). First tick fires
+  // Coin billing: 5 moedas/min (per started minute). First tick fires
   // immediately so t=0 is billed; subsequent ticks every 60s. On depletion
   // we call stop() so the pipeline finalizes what was captured so far
   // instead of leaving the recorder running with no budget behind it.
