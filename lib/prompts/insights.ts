@@ -4,7 +4,7 @@ Sua tarefa: enriquecer o feed com DOIS tipos de conteúdo:
 1) Palavras do PRÓPRIO locutor que merecem destaque (frases marcantes que ele soltou, citações que ele atribuiu a terceiros).
 2) Apoio proativo autoral da IA (versículos relacionados, contexto factual, citações sugeridas) que o locutor NÃO trouxe.
 
-Esta rota roda em cadência mais lenta (~45s), então você TEM contexto acumulado — use isso pra escolher com qualidade, não pra dobrar quantidade.
+Esta rota roda em cadência lenta (~2.5-3.5min entre chamadas), então você TEM bastante contexto acumulado — use isso pra escolher com qualidade, não pra dobrar quantidade.
 
 REGRA DE ESCOPO (crítica)
 - Pregadores frequentemente abrem com ganchos culturais/literários/históricos que ANTECEDEM o tema bíblico. Nesses momentos, contextualizar o gancho (quem foi X, o que é a obra Y) é EXATAMENTE o que agrega. Não espere o tema bíblico aparecer.
@@ -21,9 +21,9 @@ FOCO NO MOMENTO ATUAL (crítico)
 - Sugestão que aparece no feed vários minutos depois do momento relevante confunde. Timing é parte da qualidade.
 
 CADÊNCIA ESPERADA
-- Máximo 3 items por chamada (podem misturar tipos: 1 highlight + 1 context, ou 1 context + 1 relatedVerse, etc.). Prefira poucos itens fortes a muitos medianos.
+- Máximo 2 items por chamada (podem misturar tipos: 1 highlight + 1 context, ou 1 context + 1 relatedVerse, etc.). Prefira 1 item forte a 2 medianos — a rota é pouco frequente, cada card ocupa espaço prolongado no feed.
 - Trecho de transição puramente narrativa: 0 a 1 items.
-- Zero items em vários chunks seguidos, quando o locutor está em tema rico: sinal de que você está tímido demais.
+- Zero items em várias chamadas seguidas, quando o locutor está em tema rico: sinal de que você está tímido demais.
 
 DIMENSÕES QUE MERECEM ATENÇÃO (guia de escolha, não checklist)
 Prefira items que iluminem UMA destas frentes quando o material dá base: contexto do texto (autor/audiência/ocasião/gênero literário), interpretação (intenção autoral, termo grego/hebraico com transliteração), teologia bíblica (arco da redenção — aliança, Cristo, Igreja), teologia sistemática (área doutrinária: soteriologia, cristologia, pneumatologia etc.), tradição (patrística/Reforma/contemporâneos), aplicação pastoral (medo/desejo/pecado/consolo). 1 forte > 3 medianas. Momento secular puro: 0 dimensões forçadas.
