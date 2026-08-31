@@ -309,7 +309,7 @@ export function SavedSessionView({
           </h1>
         </button>
 
-        <div className="flex items-end justify-between gap-3">
+        <div className="flex flex-col items-start gap-3 sm:flex-row sm:items-end sm:justify-between">
           <div className="flex min-w-0 flex-col gap-1">
             {speakerLocation?.trim() ? (
               <button
@@ -333,17 +333,19 @@ export function SavedSessionView({
                 Adicionar local
               </button>
             )}
-            <p className="text-[11px] font-light text-scriba-ink-mute">
-              <span className="sm:hidden">{createdAtShortLabel}</span>
-              <span className="hidden sm:inline">
-                {createdAtLabel}
-                {durationLabel ? ` · ${durationLabel}` : ""}
-              </span>
+            <p className="hidden text-[11px] font-light text-scriba-ink-mute sm:block">
+              {createdAtLabel}
+              {durationLabel ? ` · ${durationLabel}` : ""}
             </p>
           </div>
           {summary ? (
             <DeepenButton sessionId={id} hasDeepening={hasDeepening} variant="summary-header" />
           ) : null}
+          {/* No mobile a data fica abaixo do botão "Gerar estudo"; no desktop
+              ela mora na coluna esquerda, sob o local. */}
+          <p className="text-[11px] font-light text-scriba-ink-mute sm:hidden">
+            {createdAtShortLabel}
+          </p>
         </div>
       </header>
 

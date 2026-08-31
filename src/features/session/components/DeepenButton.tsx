@@ -194,7 +194,7 @@ export function DeepenButton({ sessionId, hasDeepening, variant }: DeepenButtonP
       <div
         className={cn(
           "flex flex-col gap-1",
-          variant === "summary-header" ? "items-end" : "items-start"
+          variant === "summary-header" ? "items-start sm:items-end" : "items-start"
         )}
       >
         {wrapped}
