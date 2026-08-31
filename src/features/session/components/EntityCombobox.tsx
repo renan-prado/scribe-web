@@ -114,7 +114,7 @@ export function EntityCombobox({
       />
       {open && suggestions.length > 0 ? (
         <div
-          className="absolute left-0 right-0 top-full z-50 mt-1 max-h-64 overflow-y-auto rounded-md border border-scriba-hairline bg-white py-1 shadow-lg"
+          className="absolute left-0 right-0 top-full z-50 mt-1 max-h-64 overflow-y-auto rounded-md border border-scriba-hairline bg-scriba-paper py-1 shadow-lg"
           role="listbox"
         >
           {suggestions.map((s, idx) => {

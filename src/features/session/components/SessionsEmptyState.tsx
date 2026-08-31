@@ -1,3 +1,5 @@
+import { ThemeToggle } from "@/components/ThemeToggle";
+
 const STEPS = [
   {
     n: 1,
@@ -19,14 +21,26 @@ const STEPS = [
 type SessionsEmptyStateProps = {
   sticker?: string;
   heading?: string;
+  /**
+   * Shows the light/dark switch in the card corner. Only /feed turns this on —
+   * it's the one empty surface a signed-in user lands on with nothing else to
+   * do, which makes it the natural home for the theme control.
+   */
+  showThemeToggle?: boolean;
 };
 
 export function SessionsEmptyState({
   sticker = "/stickers/men/019-man.svg",
   heading = "Nada de novo por aqui.",
+  showThemeToggle = false,
 }: SessionsEmptyStateProps = {}) {
   return (
-    <div className="overflow-hidden rounded-3xl bg-white">
+    <div className="relative overflow-hidden rounded-3xl bg-scriba-paper">
+      {showThemeToggle ? (
+        <div className="absolute right-4 top-4 z-10 sm:right-5 sm:top-5">
+          <ThemeToggle />
+        </div>
+      ) : null}
       <div className="flex flex-col items-center px-5 pt-6 pb-8 text-center sm:px-8 sm:pt-9">
         <div className="flex items-center justify-center">
           {/** biome-ignore lint/performance/noImgElement: local sticker asset */}

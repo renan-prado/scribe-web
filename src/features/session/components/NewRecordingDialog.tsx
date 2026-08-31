@@ -112,7 +112,7 @@ export function NewRecordingDialog({ trigger }: { trigger?: ReactNode }) {
           </>
         )}
       </DialogTrigger>
-      <DialogContent className="flex flex-col items-center gap-8 rounded-[28px] bg-white px-8 py-14">
+      <DialogContent className="flex flex-col items-center gap-8 rounded-[28px] bg-scriba-paper px-8 py-14">
         <DialogTitle className="sr-only">Nova gravação</DialogTitle>
 
         <div
@@ -134,7 +134,7 @@ export function NewRecordingDialog({ trigger }: { trigger?: ReactNode }) {
                 className={cn(
                   "flex flex-col items-center gap-0.5 rounded-full px-4 py-1.5 leading-tight transition-colors",
                   active
-                    ? "bg-white text-scriba-blue shadow-[0_2px_10px_rgba(79,168,240,0.18)]"
+                    ? "bg-scriba-paper text-scriba-blue shadow-[0_2px_10px_rgba(79,168,240,0.18)]"
                     : "text-scriba-ink-mute hover:text-scriba-ink",
                   "focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-scriba-blue/40",
                   "disabled:cursor-not-allowed"

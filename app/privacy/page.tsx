@@ -12,7 +12,7 @@ const CONTACT_EMAIL = "contato@scriba.cc";
 
 export default function PrivacyPage() {
   return (
-    <div className="w-full overflow-x-hidden bg-white text-scriba-ink-strong antialiased">
+    <div className="w-full overflow-x-clip bg-background text-scriba-ink-strong antialiased">
       <LandingHeader />
       <main className="mx-auto w-full max-w-2xl px-4 py-16 text-scriba-ink-strong sm:px-6">
         <h1 className="mb-2 text-3xl font-semibold tracking-tight text-scriba-ink-strong">

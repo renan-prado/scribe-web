@@ -37,7 +37,7 @@ export function buildFooter(session: {
 
 function CardShell({ children }: { children: ReactNode }) {
   return (
-    <article className="flex flex-col gap-2 rounded-2xl border border-scriba-hairline-soft bg-white p-6 shadow-[0_2px_10px_rgba(79,168,240,0.06)]">
+    <article className="flex flex-col gap-2 rounded-2xl border border-scriba-hairline-soft bg-scriba-paper p-6 shadow-[0_2px_10px_rgba(79,168,240,0.06)]">
       {children}
     </article>
   );
@@ -96,8 +96,8 @@ export function RereadCard({ item, footer }: { item: RereadItem; footer: FeedCar
   return (
     <article className="relative flex flex-col gap-3.5 rounded-[26px] p-6 animate-insight-gradient bg-[image:var(--session-surface-quote)] bg-[size:200%_100%]">
       <div className="flex flex-wrap items-center gap-2">
-        <span className="inline-flex items-center gap-2 rounded-full bg-scriba-ink-strong px-4 py-1.5 text-xs font-semibold text-white">
-          <BookGlyph className="size-3 border-white" />
+        <span className="inline-flex items-center gap-2 rounded-full bg-scriba-ink-strong px-4 py-1.5 text-xs font-semibold text-background">
+          <BookGlyph className="size-3 border-background" />
           {item.reference}
         </span>
       </div>

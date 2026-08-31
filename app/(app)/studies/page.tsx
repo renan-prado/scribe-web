@@ -74,7 +74,7 @@ export default async function StudiesPage() {
                   return (
                     <li
                       key={s.sessionId}
-                      className="group flex flex-col rounded-3xl border border-scriba-hairline-soft bg-white p-5 shadow-[0_4px_14px_rgba(79,194,139,0.08)] transition-shadow hover:shadow-[0_8px_20px_rgba(79,194,139,0.18)] sm:p-6"
+                      className="group flex flex-col rounded-3xl border border-scriba-hairline-soft bg-scriba-paper p-5 shadow-[0_4px_14px_rgba(79,194,139,0.08)] transition-shadow hover:shadow-[0_8px_20px_rgba(79,194,139,0.18)] sm:p-6"
                     >
                       <NavLink
                         href={`/recording/${s.sessionId}/deepening`}

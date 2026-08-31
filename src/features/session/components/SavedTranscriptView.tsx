@@ -157,7 +157,7 @@ export function SavedTranscriptView({
           onChange={(e) => setQuery(e.target.value)}
           placeholder="Pesquisar na transcrição"
           className={cn(
-            "w-full rounded-full border border-scriba-hairline bg-white py-2 pl-9 pr-9 text-sm font-light text-scriba-ink outline-none transition-colors",
+            "w-full rounded-full border border-scriba-hairline bg-scriba-paper py-2 pl-9 pr-9 text-sm font-light text-scriba-ink outline-none transition-colors",
             "placeholder:text-scriba-ink-mute",
             "hover:border-scriba-ink-mute/40",
             "focus:border-scriba-ink-mute/60"

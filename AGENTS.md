@@ -63,6 +63,18 @@ src/features/session/
 - **Every system prompt** lives in `lib/prompts/*` as an exported constant, not inline.
 - **LLM response parsing** lives in `lib/domain/*` as `parseXxxFromLLM(content, ...)`. Do not re-implement JSON.parse + shape guards in routes.
 
+## Theming rules
+
+The app is light/dark via a single `.dark` class on `<html>` — there are no per-component theme branches.
+
+- **Never write a literal colour in a `className`.** No `bg-white`, no `bg-[#EAF2FA]`, no `fill="#F8C64B"`. Every colour comes from a `--scriba-*` / `--session-*` / shadcn token declared in BOTH `:root` and `.dark` in `app/globals.css`. Adding a token means adding it in three places: `:root`, `.dark`, and the `@theme inline` map that exposes it as a utility.
+- **`bg-scriba-paper` is the elevated surface** (cards, dialogs, sheets, popovers) — white in light, raised indigo in dark. `bg-background` is the page ground; `bg-scriba-surface` is the recessed band between the two.
+- Literal `text-white` / `bg-white` is allowed **only** on a surface that is the same colour in both themes (`bg-scriba-blue`, `bg-scriba-rec`, `bg-scriba-yellow`, the fixed LP gradients). Anything sitting on `bg-scriba-ink-strong` must use `text-background`, since that token inverts.
+- A `dark:` variant is the right tool for the rare non-palette case (modal scrim opacity). Prefer a token whenever the value is a colour.
+- **The landing page's full-bleed bands have their own tokens** (`--lp-hero`, `--lp-band`/`--lp-band-ink`, `--lp-phone-frame`) rather than reusing `--scriba-blue`. The primary blue works as a page-wide slab only in light; in dark it reads as a lit panel dropped into a dark page, so the band swaps to a deep blue lifted just above the ground and the phone mockup gets a near-black bezel to keep its edge. Don't paint an LP section with `bg-scriba-blue`.
+- Theme state lives in `src/shared/hooks/use-theme.ts` (localStorage key `scriba-theme`, falls back to `prefers-color-scheme`); `ThemeScript` in `app/layout.tsx` applies it before first paint. Portals outside the token tree (sonner) need the resolved theme passed explicitly — see `ThemedToaster`.
+- The switch (`ThemeToggle` / `ThemeToggleRow`) is exposed on sign-in/sign-up, /profile, and the empty state of /feed. Don't scatter it further without being asked.
+
 ## Icon rules
 
 - **The `Sparkles` icon from `lucide-react` is BANNED.** Do not import or render it anywhere. If you need a decorative accent, use the yellow hex-shape (`clip-path:polygon(50%_0,100%_25%,100%_75%,50%_100%,0_75%,0_25%)` on a `bg-scriba-yellow` block) already used elsewhere in the app.
@@ -77,7 +89,6 @@ src/features/session/
 
 Do not add these unprompted (the user is aware and defers them):
 - Streaming (SSE) responses.
-- Dark mode wiring (the `.dark` selector exists in `globals.css` but no toggle applies it).
 - A test runner or tests.
 - An i18n framework — pt-BR strings live inline for now; extraction can wait.
 

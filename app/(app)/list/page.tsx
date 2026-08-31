@@ -93,7 +93,7 @@ export default async function LibraryPage() {
                   return (
                     <li
                       key={s.id}
-                      className="group flex flex-col rounded-3xl border border-scriba-hairline-soft bg-white p-5 shadow-[0_4px_14px_rgba(79,168,240,0.08)] transition-shadow hover:shadow-[0_8px_20px_rgba(79,168,240,0.18)] sm:p-6"
+                      className="group flex flex-col rounded-3xl border border-scriba-hairline-soft bg-scriba-paper p-5 shadow-[0_4px_14px_rgba(79,168,240,0.08)] transition-shadow hover:shadow-[0_8px_20px_rgba(79,168,240,0.18)] sm:p-6"
                     >
                       <div className="flex flex-1 flex-col gap-2">
                         <div className="flex items-start gap-2">

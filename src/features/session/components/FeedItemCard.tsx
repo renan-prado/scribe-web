@@ -181,8 +181,8 @@ function VerseText({ reference, initialText }: VerseTextProps) {
   if (state.status === "loading") {
     return (
       <div className="flex flex-col gap-2 pl-3.5">
-        <div className="h-3 w-11/12 animate-skeleton-shimmer rounded-md bg-white/60" />
-        <div className="h-3 w-3/5 animate-skeleton-shimmer rounded-md bg-white/60 [animation-delay:120ms]" />
+        <div className="h-3 w-11/12 animate-skeleton-shimmer rounded-md bg-scriba-hairline" />
+        <div className="h-3 w-3/5 animate-skeleton-shimmer rounded-md bg-scriba-hairline [animation-delay:120ms]" />
       </div>
     );
   }
@@ -206,7 +206,7 @@ function FeedItemBody({ item, onOpenVerse, isAi }: FeedItemBodyProps) {
             type="button"
             onClick={() => onOpenVerse(item.reference)}
             className={cn(
-              "self-start inline-flex items-center rounded-full bg-scriba-ink-strong px-4 py-1.5 text-xs font-semibold text-white transition-opacity outline-none",
+              "self-start inline-flex items-center rounded-full bg-scriba-ink-strong px-4 py-1.5 text-xs font-semibold text-background transition-opacity outline-none",
               "hover:opacity-85 focus-visible:ring-2 focus-visible:ring-ring/40"
             )}
           >
@@ -241,8 +241,8 @@ function FeedItemBody({ item, onOpenVerse, isAi }: FeedItemBodyProps) {
             type="button"
             onClick={() => onOpenVerse(item.reference)}
             className={cn(
-              "self-start inline-flex items-center rounded-full border border-[#B9CEDF] bg-white/60 px-3.5 py-1.5 text-xs font-semibold text-[#5B7183] transition-colors outline-none",
-              "hover:bg-white focus-visible:ring-2 focus-visible:ring-ring/40"
+              "self-start inline-flex items-center rounded-full border border-session-btn-border bg-scriba-paper/60 px-3.5 py-1.5 text-xs font-semibold text-session-btn-ink transition-colors outline-none",
+              "hover:bg-scriba-paper focus-visible:ring-2 focus-visible:ring-ring/40"
             )}
           >
             {item.reference}

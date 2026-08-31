@@ -34,7 +34,7 @@ export default function ListLoading() {
                 return (
                   <li
                     key={`${groupKey}-${itemKey}`}
-                    className="rounded-3xl border border-scriba-hairline-soft bg-white p-5 shadow-[0_4px_14px_rgba(79,168,240,0.08)] sm:p-6"
+                    className="rounded-3xl border border-scriba-hairline-soft bg-scriba-paper p-5 shadow-[0_4px_14px_rgba(79,168,240,0.08)] sm:p-6"
                   >
                     <div className="flex items-start justify-between gap-3">
                       <div className="flex min-w-0 flex-1 flex-col gap-2">

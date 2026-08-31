@@ -22,7 +22,7 @@ export function PageBlurOverlay({ open, title, subtitle }: PageBlurOverlayProps)
     <div
       role="status"
       aria-live="polite"
-      className="fixed inset-0 z-50 flex flex-col items-center justify-center gap-5 bg-white/85 px-8 text-center backdrop-blur-md"
+      className="fixed inset-0 z-50 flex flex-col items-center justify-center gap-5 bg-scriba-paper/85 px-8 text-center backdrop-blur-md"
     >
       <span className="relative flex size-4 items-center justify-center">
         <span className="absolute inset-0 animate-ping rounded-full bg-scriba-blue/55" />

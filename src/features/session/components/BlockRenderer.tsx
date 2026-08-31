@@ -50,8 +50,8 @@ export function BlockRenderer({ block }: { block: SummaryBlock }) {
       return (
         <figure className="relative flex flex-col gap-3.5 rounded-[26px] p-6 animate-insight-gradient bg-[image:var(--session-surface-quote)] bg-[size:200%_100%]">
           <figcaption>
-            <span className="inline-flex items-center gap-2 rounded-full bg-scriba-ink-strong px-4 py-1.5 text-xs font-semibold text-white">
-              <BookGlyph className="size-3 border-white" />
+            <span className="inline-flex items-center gap-2 rounded-full bg-scriba-ink-strong px-4 py-1.5 text-xs font-semibold text-background">
+              <BookGlyph className="size-3 border-background" />
               {block.reference}
             </span>
           </figcaption>

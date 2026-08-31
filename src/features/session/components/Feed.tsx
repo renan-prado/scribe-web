@@ -69,9 +69,9 @@ function SuggestingIndicator() {
         <span className="block size-2.5 rotate-45 rounded-[3px] bg-scriba-blue" />
       </div>
       <div className="flex items-center gap-1.5 rounded-3xl rounded-tl-md border border-dashed border-scriba-blue-soft bg-scriba-blue-soft/40 px-5 py-4">
-        <span className="size-1.5 animate-listening-dot rounded-full bg-[#9BB6CC]" />
-        <span className="size-1.5 animate-listening-dot rounded-full bg-[#9BB6CC] [animation-delay:200ms]" />
-        <span className="size-1.5 animate-listening-dot rounded-full bg-[#9BB6CC] [animation-delay:400ms]" />
+        <span className="size-1.5 animate-listening-dot rounded-full bg-session-typing-dot" />
+        <span className="size-1.5 animate-listening-dot rounded-full bg-session-typing-dot [animation-delay:200ms]" />
+        <span className="size-1.5 animate-listening-dot rounded-full bg-session-typing-dot [animation-delay:400ms]" />
       </div>
     </div>
   );

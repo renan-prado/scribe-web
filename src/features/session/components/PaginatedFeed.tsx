@@ -199,7 +199,7 @@ function SortSelector({
         <SelectTrigger
           size="sm"
           className={cn(
-            "gap-1.5 rounded-full border-scriba-hairline-soft bg-white pl-3 pr-2 text-[11px] font-semibold text-scriba-ink shadow-[0_1px_3px_rgba(79,168,240,0.05)] hover:border-scriba-blue-soft",
+            "gap-1.5 rounded-full border-scriba-hairline-soft bg-scriba-paper pl-3 pr-2 text-[11px] font-semibold text-scriba-ink shadow-[0_1px_3px_rgba(79,168,240,0.05)] hover:border-scriba-blue-soft",
             disabled && "opacity-60"
           )}
         >
@@ -253,7 +253,7 @@ function FeedTail({
           onClick={onLoadMore}
           disabled={state === "loading"}
           className={cn(
-            "inline-flex items-center gap-2 rounded-full border border-scriba-hairline-soft bg-white px-5 py-2.5 text-[11px] font-semibold uppercase tracking-wider text-scriba-ink-soft transition-colors hover:border-scriba-blue-soft hover:text-scriba-blue",
+            "inline-flex items-center gap-2 rounded-full border border-scriba-hairline-soft bg-scriba-paper px-5 py-2.5 text-[11px] font-semibold uppercase tracking-wider text-scriba-ink-soft transition-colors hover:border-scriba-blue-soft hover:text-scriba-blue",
             state === "loading" && "opacity-60"
           )}
         >
@@ -309,7 +309,7 @@ function EndOfFeedSticker() {
 
 function EmptyFeedNotice() {
   return (
-    <div className="flex flex-col items-center gap-2 rounded-2xl border border-dashed border-scriba-hairline-soft bg-white/60 px-5 py-8 text-center">
+    <div className="flex flex-col items-center gap-2 rounded-2xl border border-dashed border-scriba-hairline-soft bg-scriba-paper/60 px-5 py-8 text-center">
       {/** biome-ignore lint/performance/noImgElement: local sticker asset */}
       <img
         src="/stickers/men/007-man.svg"

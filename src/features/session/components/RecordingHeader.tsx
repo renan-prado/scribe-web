@@ -170,9 +170,9 @@ export function RecordingHeader({ menu }: RecordingHeaderProps) {
               <span
                 role="status"
                 aria-label="Sessão salva"
-                className="inline-flex items-center gap-1.5 rounded-full bg-scriba-mint px-2.5 py-1 text-[10px] font-semibold uppercase tracking-wider text-[#3F7F66]"
+                className="inline-flex items-center gap-1.5 rounded-full bg-scriba-mint px-2.5 py-1 text-[10px] font-semibold uppercase tracking-wider text-scriba-mint-dark"
               >
-                <span className="size-1.5 rounded-full bg-[#4E9C7F]" />
+                <span className="size-1.5 rounded-full bg-scriba-mint-strong" />
                 Salvo
                 <Check className="size-3" />
               </span>

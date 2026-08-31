@@ -6,7 +6,7 @@ import type { FeedItem } from "@/lib/domain/feed";
 import type { SummaryPayload } from "@/lib/domain/summary";
 import { createClient } from "@/lib/supabase/server";
 import { cn } from "@/lib/utils";
-import { LandingFooter, LandingHeader } from "@/shared/components/LandingChrome";
+import { LandingFooter, LandingHeader, PenaGlyph } from "@/shared/components/LandingChrome";
 
 export const metadata = {
   title: { absolute: "Scriba — Grave, entenda e viva o sermão" },
@@ -20,7 +20,7 @@ export default async function LandingPage() {
   if (user) redirect("/feed");
 
   return (
-    <div className="w-full overflow-x-hidden bg-white text-scriba-ink-strong antialiased">
+    <div className="w-full overflow-x-clip bg-background text-scriba-ink-strong antialiased">
       <LandingHeader onLandingPage />
       <Hero />
       <Problem />
@@ -42,14 +42,19 @@ const HERO_AVATARS = [
   { src: "https://mockmind-api.uifaces.co/content/human/88.jpg" },
 ] as const;
 
+/**
+ * O hero sobe por trás do header (margem negativa = `--lp-header-h`) e devolve
+ * o mesmo valor no padding do conteúdo, então o gradiente corre sob o header
+ * translúcido sem deslocar nada do que está escrito.
+ */
 function Hero() {
   return (
-    <section className="relative overflow-hidden bg-[linear-gradient(180deg,#F6FBFF_0%,#FFFFFF_100%)]">
+    <section className="relative mt-[calc(var(--lp-header-h)*-1)] overflow-hidden bg-[image:var(--lp-hero)]">
       <div className="pointer-events-none absolute -top-[180px] -right-[140px] h-[620px] w-[620px] rounded-full bg-[radial-gradient(circle,rgba(79,168,240,.16)_0%,rgba(79,168,240,0)_70%)]" />
       <div className="pointer-events-none absolute -bottom-[120px] -left-[160px] hidden h-[520px] w-[520px] rounded-full bg-[radial-gradient(circle,rgba(248,198,75,.16)_0%,rgba(248,198,75,0)_70%)] lg:block" />
-      <div className="relative mx-auto flex max-w-[1200px] flex-col gap-10 px-5 pb-2 pt-9 sm:px-10 lg:grid lg:grid-cols-[minmax(0,1fr)_430px] lg:gap-14 lg:pb-24 lg:pt-[88px]">
+      <div className="relative mx-auto flex max-w-[1200px] flex-col gap-10 px-5 pb-2 pt-[calc(var(--lp-header-h)+2.25rem)] sm:px-10 lg:grid lg:grid-cols-[minmax(0,1fr)_430px] lg:gap-14 lg:pb-24 lg:pt-[calc(var(--lp-header-h)+5.5rem)]">
         <div className="flex min-w-0 flex-col gap-4 lg:gap-6">
-          <div className="inline-flex items-center gap-2 self-start rounded-[22px] border border-[#E3EEF8] bg-white px-3.5 py-[7px] pl-[9px] shadow-[0_4px_12px_rgba(79,168,240,.1)]">
+          <div className="inline-flex items-center gap-2 self-start rounded-[22px] border border-scriba-hairline bg-scriba-paper px-3.5 py-[7px] pl-[9px] shadow-[0_4px_12px_rgba(79,168,240,.1)]">
             <div className="h-[5px] w-2.5 rounded-[3px] bg-scriba-yellow" />
             <div className="text-[10.5px] font-semibold tracking-[.03em] text-scriba-ink-soft">
               Ouça, relembre e coloque em prática.
@@ -65,21 +70,23 @@ function Hero() {
           <div className="flex flex-col gap-2.5 pt-1 sm:flex-row sm:items-center sm:gap-3.5">
             <Link
               href="/sign-in"
-              className="lp-cta inline-flex items-center justify-center gap-2.5 rounded-[26px] bg-scriba-blue py-[17px] px-8 text-[13px] font-semibold uppercase tracking-[.04em] text-white shadow-[0_9px_22px_rgba(79,168,240,.3)]"
+              className="lp-cta inline-flex items-center justify-center gap-2.5 rounded-[26px] bg-lp-brand py-[17px] px-8 text-[13px] font-semibold uppercase tracking-[.04em] text-scriba-on-blue shadow-[0_9px_22px_rgba(79,168,240,.3)]"
             >
-              {/** biome-ignore lint/performance/noImgElement: static asset in landing CTA */}
-              <img src="/pena-logo-white.svg" alt="" aria-hidden width={16} height={16} />
+              <PenaGlyph size={16} />
               Começar grátis
             </Link>
             <a
               href="#recursos"
-              className="lp-cta-outline inline-flex items-center justify-center rounded-[26px] border border-auth-btn-border bg-white py-4 px-7 text-[13px] font-medium text-scriba-ink"
+              className="lp-cta-outline inline-flex items-center justify-center rounded-[26px] border border-auth-btn-border bg-scriba-paper py-4 px-7 text-[13px] font-medium text-scriba-ink"
             >
               Conhecer o Scriba
             </a>
           </div>
-          <div className="flex items-center gap-3.5 pt-1.5 sm:gap-5 sm:pt-3.5">
-            <div className="flex">
+          {/* Avatares nunca encolhem (flex-none) e o texto ganha min-w-0 + basis
+              própria, então em telas estreitas ele quebra para a linha de baixo
+              em vez de espremer as fotos. */}
+          <div className="flex flex-wrap items-center gap-x-3.5 gap-y-2 pt-1.5 sm:gap-x-5 sm:pt-3.5">
+            <div className="flex flex-none">
               {HERO_AVATARS.map((a, i) => (
                 // biome-ignore lint/performance/noImgElement: external placeholder avatar (uifaces.co)
                 <img
@@ -90,13 +97,13 @@ function Hero() {
                   width={34}
                   height={34}
                   className={cn(
-                    "size-[31px] rounded-full border-2 border-white object-cover sm:size-[34px]",
+                    "size-[31px] flex-none rounded-full border-2 border-scriba-paper object-cover sm:size-[34px]",
                     i > 0 && "-ml-[9px]"
                   )}
                 />
               ))}
             </div>
-            <div className="text-[11.5px] font-light leading-[1.5] text-scriba-ink-soft sm:text-[12.5px]">
+            <div className="min-w-0 flex-1 basis-[200px] text-pretty text-[11.5px] font-light leading-[1.5] text-scriba-ink-soft sm:text-[12.5px]">
               <span className="font-semibold text-scriba-ink">15 sermões</span> registrados por
               membros do Scriba.
             </div>
@@ -126,21 +133,33 @@ const PROBLEM_CLASSES = {
   lilac: "bg-scriba-lilac text-scriba-lilac-accent",
 } as const;
 
-const PROBLEMS: { n: number; variant: keyof typeof PROBLEM_CLASSES; body: string }[] = [
+/**
+ * A cópia original vinha como um parágrafo único com dois pontos no meio; o
+ * corte vira manchete + desdobramento, que é o que a trilha abaixo desenha.
+ */
+const PROBLEMS: {
+  n: number;
+  variant: keyof typeof PROBLEM_CLASSES;
+  title: string;
+  body: string;
+}[] = [
   {
     n: 1,
     variant: "rose",
-    body: "Anotar durante o sermão divide sua atenção: enquanto você escreve, deixa de acompanhar o que está sendo dito.",
+    title: "Anotar durante o sermão divide sua atenção",
+    body: "Enquanto você escreve, deixa de acompanhar o que está sendo dito.",
   },
   {
     n: 2,
     variant: "cream",
-    body: "Sem revisitar a mensagem, os detalhes desaparecem: uma frase importante, uma referência bíblica, uma aplicação para a semana.",
+    title: "Sem revisitar a mensagem, os detalhes desaparecem",
+    body: "Uma frase importante, uma referência bíblica, uma aplicação para a semana.",
   },
   {
     n: 3,
     variant: "lilac",
-    body: "Com o tempo, fica difícil encontrar o que você ouviu: os sermões se acumulam, mas seus aprendizados não ficam organizados.",
+    title: "Com o tempo, fica difícil encontrar o que você ouviu",
+    body: "Os sermões se acumulam, mas seus aprendizados não ficam organizados.",
   },
 ];
 
@@ -155,23 +174,40 @@ function Problem() {
           </span>
           Alguns dias depois, muita coisa já se perdeu.
         </h2>
-        <div className="flex flex-col gap-3.5 lg:gap-[18px]">
-          {PROBLEMS.map((p) => (
-            <div key={p.n} className="flex items-start gap-3.5 sm:gap-4">
-              <div
-                className={cn(
-                  "flex h-[34px] w-[34px] flex-none items-center justify-center rounded-[11px] text-[13px] font-semibold sm:size-[38px] sm:rounded-[12px]",
-                  PROBLEM_CLASSES[p.variant]
-                )}
-              >
-                {p.n}
-              </div>
-              <div className="pt-1.5 text-pretty text-[13.5px] font-light leading-[1.6] text-scriba-ink-soft sm:text-[14.5px]">
-                {p.body}
-              </div>
-            </div>
-          ))}
-        </div>
+        <ol className="flex flex-col">
+          {PROBLEMS.map((p, i) => {
+            const last = i === PROBLEMS.length - 1;
+            return (
+              <li key={p.n} className={cn("flex gap-4 sm:gap-5", !last && "pb-6 sm:pb-7")}>
+                {/* Trilho: marcador + linha que se dissolve até o próximo item */}
+                <div className="flex flex-none flex-col items-center">
+                  <span
+                    className={cn(
+                      "flex size-9 flex-none items-center justify-center rounded-[13px] text-[13px] font-semibold sm:size-10",
+                      PROBLEM_CLASSES[p.variant]
+                    )}
+                  >
+                    {p.n}
+                  </span>
+                  {last ? null : (
+                    <span
+                      aria-hidden
+                      className="mt-2 w-px flex-1 bg-[linear-gradient(180deg,var(--scriba-hairline),transparent)]"
+                    />
+                  )}
+                </div>
+                <div className="flex min-w-0 flex-col gap-1.5 pt-1 sm:pt-1.5">
+                  <h3 className="text-pretty text-[15px] font-semibold leading-[1.35] tracking-[-.01em] text-scriba-ink-strong sm:text-[16.5px]">
+                    {p.title}
+                  </h3>
+                  <p className="text-pretty text-[13.5px] font-light leading-[1.6] text-scriba-ink-soft sm:text-[14.5px]">
+                    {p.body}
+                  </p>
+                </div>
+              </li>
+            );
+          })}
+        </ol>
       </div>
     </section>
   );
@@ -195,9 +231,9 @@ function HowItWorks() {
             icon={
               <div className="flex size-11 items-center justify-center rounded-full bg-scriba-blue animate-scriba-halo">
                 <div className="flex items-center gap-[2.5px]">
-                  <span className="h-2.5 w-[2.5px] rounded-[2px] bg-white" />
-                  <span className="h-4.5 w-[2.5px] rounded-[2px] bg-white" />
-                  <span className="h-[13px] w-[2.5px] rounded-[2px] bg-white" />
+                  <span className="h-2.5 w-[2.5px] rounded-[2px] bg-scriba-paper" />
+                  <span className="h-4.5 w-[2.5px] rounded-[2px] bg-scriba-paper" />
+                  <span className="h-[13px] w-[2.5px] rounded-[2px] bg-scriba-paper" />
                 </div>
               </div>
             }
@@ -237,7 +273,7 @@ type StepCardProps = {
 
 function StepCard({ step, title, body, icon }: StepCardProps) {
   return (
-    <div className="lp-lift flex flex-col gap-3.5 rounded-[24px] border border-[#EAF2FA] bg-white p-6 shadow-[0_8px_26px_rgba(79,168,240,.09)] sm:rounded-[26px] sm:p-8">
+    <div className="lp-lift flex flex-col gap-3.5 rounded-[24px] border border-scriba-hairline bg-scriba-paper p-6 shadow-[0_8px_26px_rgba(79,168,240,.09)] sm:rounded-[26px] sm:p-8">
       <div className="flex items-center justify-between">
         <div className="text-[11px] font-semibold uppercase tracking-[.1em] text-scriba-ink-mute">
           {step}
@@ -254,37 +290,75 @@ function StepCard({ step, title, body, icon }: StepCardProps) {
   );
 }
 
+/** Chip tinting for the summary tiles — one swatch per block of the resumo. */
 const TILE_CLASSES = {
-  blue: { bg: "bg-scriba-blue-soft", title: "text-scriba-blue-ink", body: "text-scriba-blue-body" },
-  rose: { bg: "bg-scriba-rose", title: "text-scriba-rose-accent", body: "text-scriba-rose-body" },
-  mint: { bg: "bg-scriba-mint", title: "text-scriba-mint-accent", body: "text-scriba-mint-body" },
-  cream: {
-    bg: "bg-scriba-cream",
-    title: "text-scriba-cream-accent",
-    body: "text-scriba-cream-body",
-  },
+  blue: "bg-scriba-blue-soft text-scriba-blue-ink",
+  rose: "bg-scriba-rose text-scriba-rose-accent",
+  mint: "bg-scriba-mint text-scriba-mint-accent",
+  cream: "bg-scriba-cream text-scriba-cream-accent",
 } as const;
 
-const SUMMARY_BLOCKS: { title: string; text: string; variant: keyof typeof TILE_CLASSES }[] = [
+const TILE_ICON_PROPS = {
+  width: 16,
+  height: 16,
+  viewBox: "0 0 16 16",
+  fill: "none",
+  stroke: "currentColor",
+  strokeWidth: 1.6,
+  strokeLinecap: "round",
+  strokeLinejoin: "round",
+} as const;
+
+const SUMMARY_BLOCKS: {
+  title: string;
+  text: string;
+  variant: keyof typeof TILE_CLASSES;
+  icon: React.ReactNode;
+}[] = [
   {
     title: "Ideia central",
     text: "O ensinamento que conduz toda a mensagem, destacado logo no início.",
     variant: "blue",
+    icon: (
+      <svg {...TILE_ICON_PROPS} role="presentation">
+        <circle cx="8" cy="8" r="5.6" />
+        <circle cx="8" cy="8" r="1.7" fill="currentColor" stroke="none" />
+      </svg>
+    ),
   },
   {
     title: "Versículos citados",
     text: "As passagens mencionadas pelo pregador, reunidas com suas referências.",
     variant: "rose",
+    icon: (
+      <svg {...TILE_ICON_PROPS} role="presentation">
+        <path d="M8 4.6v8.2" />
+        <path d="M8 4.6C6.7 3.5 5.1 3.2 3.4 3.3v8.2c1.7-.1 3.3.2 4.6 1.3" />
+        <path d="M8 4.6c1.3-1.1 2.9-1.4 4.6-1.3v8.2c-1.7-.1-3.3.2-4.6 1.3" />
+      </svg>
+    ),
   },
   {
     title: "Aplicações práticas",
     text: "Caminhos possíveis para levar o que você ouviu para a vida cotidiana.",
     variant: "mint",
+    icon: (
+      <svg {...TILE_ICON_PROPS} role="presentation">
+        <circle cx="8" cy="8" r="5.6" />
+        <path d="M5.6 8.2 7.3 9.9l3.2-3.6" />
+      </svg>
+    ),
   },
   {
     title: "Pontos principais",
     text: "O desenvolvimento do sermão organizado de forma clara e fácil de consultar.",
     variant: "cream",
+    icon: (
+      <svg {...TILE_ICON_PROPS} role="presentation">
+        <path d="M6.4 4.6h6.2M6.4 8h6.2M6.4 11.4h4" />
+        <path d="M3.4 4.6h.01M3.4 8h.01M3.4 11.4h.01" strokeWidth={2.2} />
+      </svg>
+    ),
   },
 ];
 
@@ -310,31 +384,34 @@ function Resumo() {
               você entender, encontrar e relembrar o que realmente importa.
             </p>
           </div>
+          {/* Cartões de papel com um chip colorido por bloco — a cor vira
+              acento e não fundo, o que mantém a leitura calma e funciona igual
+              nos dois temas. */}
           <div className="grid grid-cols-1 gap-3 sm:grid-cols-2 sm:gap-3.5">
-            {SUMMARY_BLOCKS.map((b) => {
-              const cls = TILE_CLASSES[b.variant];
-              return (
-                <div
-                  key={b.title}
-                  className={cn(
-                    "lp-tile flex flex-col gap-1.5 rounded-[18px] p-4 sm:rounded-[20px] sm:p-5",
-                    cls.bg
-                  )}
-                >
-                  <div className={cn("text-[11.5px] font-semibold sm:text-[12px]", cls.title)}>
-                    {b.title}
-                  </div>
-                  <div
+            {SUMMARY_BLOCKS.map((b) => (
+              <div
+                key={b.title}
+                className="lp-lift flex flex-col gap-2.5 rounded-[20px] border border-scriba-hairline bg-scriba-paper p-4 shadow-[0_4px_16px_rgba(79,168,240,.06)] sm:p-5"
+              >
+                <div className="flex items-center gap-2.5">
+                  <span
+                    aria-hidden
                     className={cn(
-                      "text-[12px] font-light leading-[1.5] sm:text-[13px] sm:leading-[1.55]",
-                      cls.body
+                      "flex size-8 flex-none items-center justify-center rounded-[10px]",
+                      TILE_CLASSES[b.variant]
                     )}
                   >
-                    {b.text}
-                  </div>
+                    {b.icon}
+                  </span>
+                  <span className="text-[13px] font-semibold tracking-[-.005em] text-scriba-ink-strong sm:text-[13.5px]">
+                    {b.title}
+                  </span>
                 </div>
-              );
-            })}
+                <p className="text-pretty text-[12.5px] font-light leading-[1.55] text-scriba-ink-soft sm:text-[13px]">
+                  {b.text}
+                </p>
+              </div>
+            ))}
           </div>
         </div>
       </div>
@@ -344,7 +421,7 @@ function Resumo() {
 
 function Biblioteca() {
   return (
-    <section className="relative overflow-hidden bg-scriba-blue">
+    <section className="relative overflow-hidden bg-lp-band">
       <div className="pointer-events-none absolute -top-[140px] -left-[100px] h-[480px] w-[480px] rounded-full bg-[radial-gradient(circle,rgba(255,255,255,.14)_0%,rgba(255,255,255,0)_70%)]" />
       <div className="relative mx-auto flex max-w-[1200px] flex-col items-stretch gap-8 px-5 py-12 text-white sm:px-10 sm:py-[88px] lg:grid lg:grid-cols-[minmax(0,1fr)_minmax(0,1fr)] lg:items-center lg:gap-16">
         <div className="flex min-w-0 flex-col gap-5">
@@ -352,7 +429,7 @@ function Biblioteca() {
           <h2 className="text-pretty text-[29px] font-semibold leading-[1.16] tracking-[-.022em] lg:text-[40px]">
             Anos de pregação, finalmente buscáveis.
           </h2>
-          <p className="max-w-[500px] text-pretty text-[14.5px] font-light leading-[1.62] text-[#E2F1FF] lg:text-[16px] lg:leading-[1.65]">
+          <p className="max-w-[500px] text-pretty text-[14.5px] font-light leading-[1.62] text-lp-band-ink lg:text-[16px] lg:leading-[1.65]">
             Busque por tema, versículo ou pregador. O Scriba também cruza sermões distantes no tempo
             e mostra quando dois deles falam da mesma coisa.
           </p>
@@ -403,7 +480,7 @@ function BiblioCard({ title, subtitle, badge }: BiblioCardProps) {
     <div className="flex items-center justify-between gap-4 rounded-[18px] bg-white/[.16] p-4 px-[17px] sm:px-[18px]">
       <div className="flex flex-col gap-0.5">
         <div className="text-[13px] font-semibold sm:text-[13.5px]">{title}</div>
-        <div className="text-[11.5px] font-light text-[#E2F1FF] sm:text-[12px]">{subtitle}</div>
+        <div className="text-[11.5px] font-light text-lp-band-ink sm:text-[12px]">{subtitle}</div>
       </div>
       <div className="flex-none whitespace-nowrap text-[11px] font-semibold uppercase tracking-[.04em] text-scriba-yellow-light">
         {badge}
@@ -414,7 +491,16 @@ function BiblioCard({ title, subtitle, badge }: BiblioCardProps) {
 
 function Testimonials() {
   return (
-    <section className="mx-auto flex max-w-[1200px] flex-col gap-3.5 px-5 py-11 sm:px-10 sm:py-24">
+    <section className="mx-auto flex max-w-[1200px] flex-col gap-6 px-5 py-11 sm:px-10 sm:py-24 lg:gap-10">
+      <div className="flex flex-col gap-3 lg:items-center lg:text-center">
+        <SectionLabel color="blue">Depoimentos</SectionLabel>
+        <h2 className="text-pretty text-[29px] font-semibold leading-[1.16] tracking-[-.022em] text-scriba-ink-strong lg:text-[40px]">
+          O que dizem quem já ouve com o Scriba.
+        </h2>
+        <p className="max-w-[520px] text-pretty text-[13.5px] font-light leading-[1.6] text-scriba-ink-soft lg:text-[15.5px]">
+          Membros, líderes de grupo e pastores contam o que mudou depois do primeiro domingo.
+        </p>
+      </div>
       <div className="grid gap-3.5 lg:grid-cols-3 lg:gap-[22px]">
         <TestimonialCard
           quote={`"Parei de anotar e comecei a ouvir de verdade. Na quarta-feira o app me devolve exatamente o ponto que eu precisava."`}
@@ -448,11 +534,11 @@ type TestimonialCardProps = {
 
 function TestimonialCard({ quote, name, title, avatarSrc }: TestimonialCardProps) {
   return (
-    <div className="flex flex-col gap-3.5 rounded-[24px] border border-[#EAF2FA] bg-white p-6 shadow-[0_8px_24px_rgba(79,168,240,.08)] sm:rounded-[26px] sm:p-8">
-      <div className="text-pretty text-[15px] font-normal leading-[1.55] text-[#3D4C5B] sm:text-[16.5px]">
+    <div className="flex flex-col gap-3.5 rounded-[24px] border border-scriba-hairline bg-scriba-paper p-6 shadow-[0_8px_24px_rgba(79,168,240,.08)] sm:rounded-[26px] sm:p-8">
+      <div className="text-pretty text-[15px] font-normal leading-[1.55] text-scriba-ink sm:text-[16.5px]">
         {quote}
       </div>
-      <div className="mt-auto flex items-center gap-2.5 border-t border-[#EEF2F6] pt-[13px] sm:gap-[11px] sm:pt-[15px]">
+      <div className="mt-auto flex items-center gap-2.5 border-t border-scriba-hairline pt-[13px] sm:gap-[11px] sm:pt-[15px]">
         {/** biome-ignore lint/performance/noImgElement: external placeholder avatar (uifaces.co) */}
         <img
           src={avatarSrc}
@@ -544,7 +630,7 @@ function Plans() {
 
 function CoinHex() {
   return (
-    <span className="inline-flex size-5 flex-none items-center justify-center rounded-full bg-[#FFF3C4]">
+    <span className="inline-flex size-5 flex-none items-center justify-center rounded-full bg-scriba-gold-soft">
       <span className="coin-hex block h-[12.5px] w-[11px] bg-scriba-yellow" />
     </span>
   );
@@ -577,20 +663,20 @@ function PlanCard({
   return (
     <div
       className={cn(
-        "relative flex flex-col gap-[22px] rounded-[24px] bg-white p-6 sm:rounded-[26px] sm:p-8",
+        "relative flex flex-col gap-[22px] rounded-[24px] bg-scriba-paper p-6 sm:rounded-[26px] sm:p-8",
         isPrimary
           ? "border-[1.5px] border-scriba-blue shadow-[0_16px_40px_rgba(79,168,240,.18)]"
-          : "border border-[#EAF2FA]",
+          : "border border-scriba-hairline",
         !comingSoon && "lp-lift-plan",
         comingSoon && "pointer-events-none grayscale opacity-45"
       )}
     >
       {comingSoon ? (
-        <div className="absolute -top-[13px] left-6 rounded-[20px] bg-[#E8EEF4] px-[14px] py-[6px] text-[10.5px] font-semibold uppercase tracking-[.06em] text-[#637080] sm:left-7">
+        <div className="absolute -top-[13px] left-6 rounded-[20px] bg-scriba-btn-muted px-[14px] py-[6px] text-[10.5px] font-semibold uppercase tracking-[.06em] text-scriba-ink-soft sm:left-7">
           Em breve
         </div>
       ) : badge ? (
-        <div className="absolute -top-[13px] left-6 rounded-[20px] bg-scriba-yellow px-[14px] py-[6px] text-[10.5px] font-semibold uppercase tracking-[.06em] text-[#5A4409] sm:left-7">
+        <div className="absolute -top-[13px] left-6 rounded-[20px] bg-scriba-yellow px-[14px] py-[6px] text-[10.5px] font-semibold uppercase tracking-[.06em] text-scriba-yellow-ink sm:left-7">
           {badge}
         </div>
       ) : null}
@@ -625,7 +711,10 @@ function PlanCard({
             <svg
               role="img"
               aria-label="Incluído"
-              className={cn("mt-0.5 flex-none", isPrimary ? "text-scriba-blue" : "text-[#7A9BB5]")}
+              className={cn(
+                "mt-0.5 flex-none",
+                isPrimary ? "text-scriba-blue" : "text-scriba-ink-mute"
+              )}
               width="16"
               height="16"
               viewBox="0 0 16 16"
@@ -645,7 +734,7 @@ function PlanCard({
         ))}
       </div>
       {comingSoon ? (
-        <div className="inline-flex cursor-not-allowed items-center justify-center rounded-[24px] bg-[#F0F4F8] p-[15px] text-[12px] font-semibold uppercase tracking-[.04em] text-[#9AABB8]">
+        <div className="inline-flex cursor-not-allowed items-center justify-center rounded-[24px] bg-scriba-btn-muted p-[15px] text-[12px] font-semibold uppercase tracking-[.04em] text-scriba-ink-mute">
           Em breve
         </div>
       ) : (
@@ -654,16 +743,11 @@ function PlanCard({
           className={cn(
             "inline-flex items-center justify-center gap-2 rounded-[24px] p-[15px] text-[12px] font-semibold uppercase tracking-[.04em]",
             isPrimary
-              ? "lp-cta bg-scriba-blue text-white shadow-[0_8px_20px_rgba(79,168,240,.3)]"
+              ? "lp-cta bg-lp-brand text-scriba-on-blue shadow-[0_8px_20px_rgba(79,168,240,.3)]"
               : "lp-cta-soft bg-scriba-btn-muted text-scriba-ink"
           )}
         >
-          {isPrimary ? (
-            <>
-              {/** biome-ignore lint/performance/noImgElement: static asset in landing CTA */}
-              <img src="/pena-logo-white.svg" alt="" aria-hidden width={14} height={14} />
-            </>
-          ) : null}
+          {isPrimary ? <PenaGlyph size={14} /> : null}
           {cta}
         </Link>
       )}
@@ -687,10 +771,11 @@ function FinalCTA() {
         <div className="relative flex flex-none flex-col items-stretch gap-3">
           <Link
             href="/sign-in"
-            className="lp-cta-yellow inline-flex items-center justify-center gap-2.5 rounded-[26px] bg-scriba-yellow py-[17px] px-[38px] text-[13px] font-semibold uppercase tracking-[.04em] text-[#5A4409] shadow-[0_10px_24px_rgba(0,0,0,.2)]"
+            className="lp-cta-yellow inline-flex items-center justify-center gap-2.5 rounded-[26px] bg-scriba-yellow py-[17px] px-[38px] text-[13px] font-semibold uppercase tracking-[.04em] text-scriba-yellow-ink shadow-[0_10px_24px_rgba(0,0,0,.2)]"
           >
-            {/** biome-ignore lint/performance/noImgElement: static asset in landing CTA */}
-            <img src="/pena-logo-white.svg" alt="" aria-hidden width={16} height={16} />
+            {/* currentColor: a pena acompanha o âmbar escuro do texto, em vez de
+                sumir em branco sobre o amarelo */}
+            <PenaGlyph size={16} />
             Começar grátis
           </Link>
           <div className="text-center text-[11px] font-light text-[#AFCBE0] lg:text-[11.5px]">
@@ -734,23 +819,25 @@ function PhoneFrame({ children, dark = false, chrome }: PhoneFrameProps) {
   return (
     <div
       className={cn(
-        "relative w-[390px] flex-none scale-[.75] rounded-[44px] bg-white p-[11px] sm:scale-90 lg:scale-100",
+        "relative w-[390px] flex-none scale-[.75] rounded-[44px] bg-lp-phone-frame p-[11px] sm:scale-90 lg:scale-100",
         dark ? "phone-frame-dark" : "phone-frame"
       )}
     >
-      <div className="phone-mask relative h-[680px] overflow-hidden rounded-[34px] bg-white">
-        <div className="absolute inset-x-0 top-0 z-10 flex h-11 items-center justify-between px-7 text-[12px] font-semibold text-[#3B4A5A]">
+      <div className="phone-mask relative h-[680px] overflow-hidden rounded-[34px] bg-scriba-paper">
+        <div className="absolute inset-x-0 top-0 z-10 flex h-11 items-center justify-between px-7 text-[12px] font-semibold text-scriba-ink">
           <span>9:41</span>
           <div className="flex items-center gap-1">
             <span
               aria-hidden
-              className="inline-block h-2 w-[14px] rounded-[2px] border-[1.4px] border-[#3B4A5A]"
+              className="inline-block h-2 w-[14px] rounded-[2px] border-[1.4px] border-scriba-ink"
             />
           </div>
         </div>
         <div className="absolute left-1/2 top-[12px] z-10 h-6.5 w-26 -translate-x-1/2 rounded-[16px] bg-[#0B1220]" />
         {chrome ? (
-          <div className="absolute inset-x-0 top-11 z-[5] bg-white/95 backdrop-blur">{chrome}</div>
+          <div className="absolute inset-x-0 top-11 z-[5] bg-scriba-paper/95 backdrop-blur">
+            {chrome}
+          </div>
         ) : null}
         <div className={chrome ? "pt-[108px]" : "pt-[52px]"}>{children}</div>
       </div>
@@ -892,7 +979,7 @@ function LibraryMock() {
             {group.items.map((s) => (
               <li
                 key={s.title}
-                className="rounded-3xl border border-scriba-hairline-soft bg-white p-4 shadow-[0_4px_14px_rgba(79,168,240,0.08)]"
+                className="rounded-3xl border border-scriba-hairline-soft bg-scriba-paper p-4 shadow-[0_4px_14px_rgba(79,168,240,0.08)]"
               >
                 <div className="flex min-w-0 flex-col gap-1.5">
                   <span className="text-pretty text-[15px] font-semibold leading-tight tracking-tight text-scriba-ink-strong">

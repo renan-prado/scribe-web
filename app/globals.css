@@ -98,9 +98,36 @@
   /* Scriba AI chat bubble tokens (feed + summary comments) */
   --color-scriba-bubble: var(--scriba-bubble);
   --color-scriba-bubble-ink: var(--scriba-bubble-ink);
+  /* Elevated surface ("paper"). White in light, raised indigo in dark — this is
+     the token every card/sheet/dialog uses instead of a literal `bg-white`, so
+     the whole app flips with a single `.dark` on <html>. */
+  --color-scriba-paper: var(--scriba-paper);
+  --color-scriba-rec: var(--scriba-rec);
+  --color-scriba-violet: var(--scriba-violet);
+  --color-scriba-mint-strong: var(--scriba-mint-strong);
+  --color-scriba-gold-soft: var(--scriba-gold-soft);
+  --color-scriba-gold-track: var(--scriba-gold-track);
+  --color-scriba-flash-debit: var(--scriba-flash-debit);
+  --color-scriba-flash-credit: var(--scriba-flash-credit);
+  --color-scriba-yellow-ink: var(--scriba-yellow-ink);
+  --color-session-btn-border: var(--session-btn-border);
+  --color-session-btn-ink: var(--session-btn-ink);
+  /* Tinta sobre o botão azul sólido. Branco no light; no dark o azul clareia
+     para #5FB0F5 e branco cai para ~2.3:1, então a tinta vira um navy da mesma
+     família de matiz (~6.5:1). */
+  --color-scriba-on-blue: var(--scriba-on-blue);
+  /* Azul de marca: CTAs da LP e o logo (LP, rodapé e telas de auth). No dark
+     vira branco sólido, em vez do azul claro do tema. */
+  --color-lp-brand: var(--lp-brand);
+  /* Landing-page bands: full-bleed section grounds that carry their own
+     colorway per theme (see --lp-band / --lp-phone-frame). */
+  --color-lp-band: var(--lp-band);
+  --color-lp-band-ink: var(--lp-band-ink);
+  --color-lp-phone-frame: var(--lp-phone-frame);
 }
 
 :root {
+  color-scheme: light;
   --background: oklch(1 0 0);
   --foreground: oklch(0.145 0 0);
   --card: oklch(1 0 0);
@@ -201,6 +228,38 @@
   --scriba-bubble: #F5F8FB;
   --scriba-bubble-ink: #2A3542;
   --scriba-avatar-gradient: linear-gradient(140deg, #2F6BD8, #7C5CE0);
+  /* Elevated surface + accents that used to be hardcoded in className strings.
+     Every one of these has a `.dark` counterpart below. */
+  --scriba-paper: #ffffff;
+  --scriba-rec: #F0564E;
+  --scriba-violet: #7C5CE0;
+  --scriba-mint-strong: #4E9C7F;
+  --scriba-gold-soft: #FFF9E8;
+  --scriba-gold-track: #F0E4C6;
+  --scriba-flash-debit: #FCE1B8;
+  --scriba-flash-credit: #DDEFCB;
+  --scriba-yellow-ink: #5A4409;
+  --session-btn-border: #B9CEDF;
+  --session-btn-ink: #5B7183;
+  /* Landing/auth hero wash */
+  --lp-hero: linear-gradient(180deg, #F6FBFF 0%, #FFFFFF 100%);
+  --lp-hero-auth: linear-gradient(180deg, #F6FBFF 0%, #FFFFFF 60%);
+  /* "Sua biblioteca" band — the one full-bleed blue section. In light it is the
+     primary blue; in dark that same primary reads as a lit slab dropped into a
+     dark page, so the dark colorway swaps it for a deep blue lifted just above
+     the page ground. */
+  --lp-band: #4FA8F0;
+  --lp-band-ink: #E2F1FF;
+  /* Phone bezel. White in light (it reads as a shadowed white device); a near
+     black bezel in dark, so the mockup keeps a visible edge against the band
+     instead of dissolving into it. */
+  --lp-phone-frame: #ffffff;
+  /* Altura do header da LP. O hero se puxa para cima por exatamente este valor
+     e devolve o mesmo tanto em padding, então o conteúdo fica na mesma posição
+     enquanto o fundo passa por baixo do header translúcido. */
+  --scriba-on-blue: #ffffff;
+  --lp-brand: #4FA8F0;
+  --lp-header-h: 71px;
   /* Design-system border widths */
   --border-book: 1.5px;   /* book glyph icon border */
   --border-fine: 1.4px;   /* fine phone frame border */
@@ -209,38 +268,128 @@
   --sidebar-width-icon: 3rem;
 }
 
+/* ---------------------------------------------------------------------------
+   Dark theme.
+
+   Deep indigo (#0F0D1E) ground with four elevation steps:
+     background (#0F0D1E) < surface (#14122A) < paper (#1A1733) < btn/hairline.
+   Every token defined in :root is redefined here — nothing else in the app
+   needs a `dark:` variant, adding `.dark` to <html> is enough.
+--------------------------------------------------------------------------- */
 .dark {
-  --background: oklch(0.145 0 0);
-  --foreground: oklch(0.985 0 0);
-  --card: oklch(0.205 0 0);
-  --card-foreground: oklch(0.985 0 0);
-  --popover: oklch(0.205 0 0);
-  --popover-foreground: oklch(0.985 0 0);
-  --primary: oklch(0.922 0 0);
-  --primary-foreground: oklch(0.205 0 0);
-  --secondary: oklch(0.269 0 0);
-  --secondary-foreground: oklch(0.985 0 0);
-  --muted: oklch(0.269 0 0);
-  --muted-foreground: oklch(0.708 0 0);
-  --accent: oklch(0.269 0 0);
-  --accent-foreground: oklch(0.985 0 0);
-  --destructive: oklch(0.704 0.191 22.216);
-  --border: oklch(1 0 0 / 10%);
-  --input: oklch(1 0 0 / 15%);
-  --ring: oklch(0.556 0 0);
-  --chart-1: oklch(0.87 0 0);
-  --chart-2: oklch(0.556 0 0);
-  --chart-3: oklch(0.439 0 0);
-  --chart-4: oklch(0.371 0 0);
-  --chart-5: oklch(0.269 0 0);
-  --sidebar: oklch(0.205 0 0);
-  --sidebar-foreground: oklch(0.985 0 0);
-  --sidebar-primary: oklch(0.488 0.243 264.376);
-  --sidebar-primary-foreground: oklch(0.985 0 0);
-  --sidebar-accent: oklch(0.269 0 0);
-  --sidebar-accent-foreground: oklch(0.985 0 0);
-  --sidebar-border: oklch(1 0 0 / 10%);
-  --sidebar-ring: oklch(0.556 0 0);
+  color-scheme: dark;
+  --background: #0F0D1E;
+  --foreground: #F2F0FA;
+  --card: #1A1733;
+  --card-foreground: #F2F0FA;
+  --popover: #1A1733;
+  --popover-foreground: #F2F0FA;
+  --primary: #F2F0FA;
+  --primary-foreground: #17142C;
+  --secondary: #231F42;
+  --secondary-foreground: #F2F0FA;
+  --muted: #231F42;
+  --muted-foreground: #9E99BC;
+  --accent: #262148;
+  --accent-foreground: #F2F0FA;
+  --destructive: #F0564E;
+  --border: #272247;
+  --input: #2E294F;
+  --ring: #5FB0F5;
+  --chart-1: #5FB0F5;
+  --chart-2: #9E99BC;
+  --chart-3: #726D93;
+  --chart-4: #4A4470;
+  --chart-5: #322D57;
+  --sidebar: #14122A;
+  --sidebar-foreground: #CFCBE6;
+  --sidebar-primary: #5FB0F5;
+  --sidebar-primary-foreground: #0F0D1E;
+  --sidebar-accent: #1B2545;
+  --sidebar-accent-foreground: #8AC6FA;
+  --sidebar-border: #221E40;
+  --sidebar-ring: rgba(95, 176, 245, 0.4);
+
+  /* Session surfaces */
+  --session-surface-quote: linear-gradient(110deg, #1B2242, #171A35, #1E2549, #1B2242);
+  --session-highlight-yellow: rgba(250, 190, 40, 0.44);
+  --session-example-bg: #1A1B36;
+  --session-example-border: #373B60;
+
+  /* Scriba palette — dark colorway */
+  --scriba-blue: #5FB0F5;
+  --scriba-blue-hover: #7CC1F8;
+  --scriba-blue-soft: #1B2545;
+  --scriba-green: #4FC28B;
+  --scriba-green-hover: #63D19C;
+  --scriba-green-soft: #142E28;
+  --scriba-green-ink: #6FD9A5;
+  --scriba-green-body: #8CB8A3;
+  --scriba-yellow: #F8C64B;
+  --scriba-yellow-hover: #FFD469;
+  --scriba-mint: #17302A;
+  --scriba-mint-ink: #A5DCC5;
+  --scriba-mint-accent: #7CCBAD;
+  --scriba-rose: #33211D;
+  --scriba-rose-ink: #F0C5B5;
+  --scriba-rose-accent: #D89E88;
+  --scriba-cream: #322A17;
+  --scriba-cream-ink: #F0DDAB;
+  --scriba-cream-accent: #D8B558;
+  --scriba-lilac: #1F2444;
+  --scriba-lilac-ink: #C2CDEC;
+  --scriba-lilac-accent: #94A5D0;
+  --scriba-ink-strong: #F2F0FA;
+  --scriba-ink: #CFCBE6;
+  --scriba-ink-soft: #9E99BC;
+  --scriba-ink-mute: #726D93;
+  --scriba-surface: #14122A;
+  --scriba-hairline: #272247;
+  --scriba-hairline-soft: #221E40;
+  --scriba-yellow-light: #FFE29A;
+  --scriba-blue-ink: #8AC6FA;
+  --scriba-blue-body: #94AECB;
+  --scriba-rose-body: #B99C8F;
+  --scriba-mint-body: #8DB2A4;
+  --scriba-cream-body: #B7A47A;
+  --scriba-btn-muted: #221E40;
+  --session-typing-dot: #6E7FA0;
+  --session-verse-text: #C6D6E6;
+  --session-verse-border: #3E5F82;
+  --session-chip-ai: #7E9BBC;
+  --scriba-gold-ink: #E8C66E;
+  --auth-btn-border: #2C2752;
+  --auth-btn-border-hover: #3C3670;
+  --auth-btn-bg-hover: #1F1B3B;
+  --scriba-mint-dark: #6FD2AA;
+  --scriba-bubble: #1E1A38;
+  --scriba-bubble-ink: #E7E4F5;
+  --scriba-avatar-gradient: linear-gradient(140deg, #4A82EA, #9575F0);
+  --scriba-paper: #1A1733;
+  --scriba-rec: #F0564E;
+  --scriba-violet: #9A7CF0;
+  --scriba-mint-strong: #6FD2AA;
+  --scriba-gold-soft: #2E2717;
+  --scriba-gold-track: #3D3520;
+  --scriba-flash-debit: #3D2E15;
+  --scriba-flash-credit: #1F3220;
+  --scriba-yellow-ink: #5A4409;
+  --session-btn-border: #3A4A66;
+  --session-btn-ink: #A9BDD3;
+  --lp-hero: linear-gradient(180deg, #1C2349 0%, #12102A 100%);
+  --lp-hero-auth: linear-gradient(180deg, #191634 0%, #0F0D1E 60%);
+  --lp-band: #212B5E;
+  --lp-band-ink: #B9C9E8;
+  --lp-phone-frame: #0A0817;
+  --scriba-on-blue: #0B2742;
+  --lp-brand: #ffffff;
+}
+
+/* sm: o header ganha py-[18px] e cresce 8px. */
+@media (min-width: 40rem) {
+  :root {
+    --lp-header-h: 79px;
+  }
 }
 
 @layer base {
@@ -272,13 +421,13 @@
      tinted Scriba header row. Applied via the ADMIN_TABLE_SURFACE constant
      so /admin/users and /admin/usage tables stay visually consistent. */
   .admin-table {
-    background: #ffffff;
+    background: var(--scriba-paper);
   }
   .admin-table table {
-    background: #ffffff;
+    background: var(--scriba-paper);
   }
   .admin-table thead {
-    background: #ffffff;
+    background: var(--scriba-paper);
     border-bottom: 1px solid var(--scriba-hairline);
   }
   .admin-table th {
@@ -309,7 +458,7 @@
   }
   .lp-cta-outline {
     transition: background-color 0.18s ease, border-color 0.18s ease, color 0.18s ease;
-    &:hover { background-color: #F6FAFE; border-color: #C9D9E8; color: var(--scriba-ink-strong); }
+    &:hover { background-color: var(--auth-btn-bg-hover); border-color: var(--auth-btn-border-hover); color: var(--scriba-ink-strong); }
   }
   .lp-cta-soft {
     transition: background-color 0.18s ease, color 0.18s ease;
@@ -349,7 +498,7 @@
     clip-path: polygon(50% 0, 100% 25%, 100% 75%, 50% 100%, 0 75%, 0 25%);
   }
   .admin-card-surface {
-    @apply rounded-2xl border border-scriba-hairline-soft bg-white shadow-[0_4px_14px_rgba(79,168,240,0.06)];
+    @apply rounded-2xl border border-scriba-hairline-soft bg-scriba-paper shadow-[0_4px_14px_rgba(79,168,240,0.06)];
   }
 
   /* Scoped tone override for /studies + /recording/[id]/deepening surfaces.
@@ -364,6 +513,15 @@
     --session-highlight-yellow: #CFEBD9;
     --session-example-bg: #EFF7F1;
     --session-example-border: #CDE4D6;
+  }
+  .dark .tone-study {
+    --session-surface-quote: linear-gradient(110deg, #16302A, #131F2A, #17352C, #16302A);
+    --session-verse-text: #BCE0CD;
+    --session-verse-border: #366B52;
+    --session-chip-ai: #7DAE94;
+    --session-highlight-yellow: rgba(79, 194, 139, 0.28);
+    --session-example-bg: #15251F;
+    --session-example-border: #2E4A3C;
   }
 }
 

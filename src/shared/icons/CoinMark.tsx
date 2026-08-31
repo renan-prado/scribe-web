@@ -18,11 +18,11 @@ export function CoinMark({ size = 20, className }: { size?: number; className?: 
       style={{ width: outer, height: outer }}
     >
       <span
-        className="absolute inset-0 rounded-full bg-[#F0E4C6]"
-        style={{ boxShadow: "inset 0 0 0 2px #F8C64B" }}
+        className="absolute inset-0 rounded-full bg-scriba-gold-track"
+        style={{ boxShadow: "inset 0 0 0 2px var(--scriba-yellow)" }}
       />
       <span
-        className="relative flex items-center justify-center rounded-full bg-white"
+        className="relative flex items-center justify-center rounded-full bg-scriba-paper"
         style={{ width: outer * 0.78, height: outer * 0.78 }}
       >
         <span className="coin-hex bg-scriba-yellow" style={{ width: hexW, height: hexH }} />

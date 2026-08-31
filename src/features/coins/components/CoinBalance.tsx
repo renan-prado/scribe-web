@@ -111,7 +111,11 @@ export function CoinBalance({ initialBalance }: { initialBalance: number }) {
       aria-label={`${balance} moedas restantes`}
       className={cn(
         "flex select-none items-center gap-[7px] rounded-[20px] py-1 pr-3 pl-2.5 transition-colors duration-500",
-        flash === "debit" ? "bg-[#FCE1B8]" : flash === "credit" ? "bg-[#DDEFCB]" : "bg-[#FFF9E8]"
+        flash === "debit"
+          ? "bg-scriba-flash-debit"
+          : flash === "credit"
+            ? "bg-scriba-flash-credit"
+            : "bg-scriba-gold-soft"
       )}
     >
       <div className="relative flex size-6.5 flex-none items-center justify-center">
@@ -123,18 +127,18 @@ export function CoinBalance({ initialBalance }: { initialBalance: number }) {
           viewBox="0 0 26 26"
           aria-hidden
         >
-          <circle cx="13" cy="13" r="13" fill="#F0E4C6" />
+          <circle cx="13" cy="13" r="13" fill="var(--scriba-gold-track)" />
           <circle
             cx="13"
             cy="13"
             r="6.5"
             fill="none"
-            stroke="#F8C64B"
+            stroke="var(--scriba-yellow)"
             strokeWidth="13"
             strokeDasharray={`${filled} ${COIN_C - filled}`}
           />
         </svg>
-        <div className="relative flex size-5 items-center justify-center rounded-full bg-white">
+        <div className="relative flex size-5 items-center justify-center rounded-full bg-scriba-paper">
           <div className="coin-hex h-[10.625px] w-[9.35px] bg-scriba-yellow" />
         </div>
       </div>

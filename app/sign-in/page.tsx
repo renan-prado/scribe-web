@@ -26,7 +26,7 @@ export default async function SignInPage({ searchParams }: { searchParams: Promi
       <GoogleSignInButton next={target} label="Continuar com Google" />
       {errorMessage ? (
         <div
-          className="flex items-start gap-2 rounded-2xl bg-[#FAEAE5] px-4 py-3 text-[12.5px] leading-[1.5] text-[#8A4E3B]"
+          className="flex items-start gap-2 rounded-2xl bg-scriba-rose px-4 py-3 text-[12.5px] leading-[1.5] text-scriba-rose-ink"
           role="alert"
         >
           <span

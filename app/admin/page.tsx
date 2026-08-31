@@ -164,7 +164,7 @@ const TONE_CLASSES: Record<Tone, { badge: string; label: string }> = {
 function KpiCard({ label, value, hint, tone, icon }: KpiTile) {
   const c = TONE_CLASSES[tone];
   return (
-    <div className="flex flex-col gap-1 rounded-2xl border border-scriba-hairline-soft bg-white p-5 shadow-[0_4px_14px_rgba(79,168,240,0.06)]">
+    <div className="flex flex-col gap-1 rounded-2xl border border-scriba-hairline-soft bg-scriba-paper p-5 shadow-[0_4px_14px_rgba(79,168,240,0.06)]">
       <div
         className={cn(
           "mb-1 inline-flex w-fit items-center gap-1.5 rounded-full px-2.5 py-1",
@@ -192,7 +192,7 @@ type ListCardProps = {
 
 function ListCard({ title, subtitle, children }: ListCardProps) {
   return (
-    <section className="flex flex-col gap-3 rounded-2xl border border-scriba-hairline-soft bg-white p-5 shadow-[0_4px_14px_rgba(79,168,240,0.06)]">
+    <section className="flex flex-col gap-3 rounded-2xl border border-scriba-hairline-soft bg-scriba-paper p-5 shadow-[0_4px_14px_rgba(79,168,240,0.06)]">
       <div className="flex items-baseline justify-between gap-3">
         <h2 className="text-[14px] font-semibold text-scriba-ink-strong">{title}</h2>
         {subtitle ? (

@@ -82,7 +82,7 @@ export function ColoqueEmPratica({
         {ordered.map((item) => (
           <li
             key={item.dayOffset}
-            className="flex flex-col gap-2 rounded-2xl border border-scriba-hairline-soft bg-white px-5 py-4 shadow-[0_2px_10px_rgba(79,168,240,0.06)]"
+            className="flex flex-col gap-2 rounded-2xl border border-scriba-hairline-soft bg-scriba-paper px-5 py-4 shadow-[0_2px_10px_rgba(79,168,240,0.06)]"
           >
             <div className="flex items-center justify-between gap-3">
               <span className="inline-flex items-center gap-1.5 rounded-full bg-scriba-blue-soft/70 px-2.5 py-0.5 text-[10px] font-semibold uppercase tracking-[0.14em] text-scriba-blue">

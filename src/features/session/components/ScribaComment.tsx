@@ -145,14 +145,14 @@ export function ScribaCommentGroup({
           {showUnread ? (
             <span
               aria-hidden
-              className="absolute -right-0.5 -top-0.5 size-2.5 rounded-full bg-[#7C5CE0] ring-2 ring-white"
+              className="absolute -right-0.5 -top-0.5 size-2.5 rounded-full bg-scriba-violet ring-2 ring-scriba-paper"
             />
           ) : null}
         </Popover.Trigger>
         <Popover.Portal>
           <Popover.Backdrop
             className={cn(
-              "fixed inset-0 z-40 bg-black/20 supports-[backdrop-filter]:backdrop-blur-[2px]",
+              "fixed inset-0 z-40 bg-black/20 dark:bg-black/55 supports-[backdrop-filter]:backdrop-blur-[2px]",
               "data-[starting-style]:opacity-0 data-[ending-style]:opacity-0",
               "transition-opacity duration-150"
             )}

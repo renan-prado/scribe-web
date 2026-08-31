@@ -527,7 +527,7 @@ export function RecordingLive({
           onClick={resumeAutoFollow}
           className={cn(
             "fixed bottom-24 left-1/2 z-40 -translate-x-1/2",
-            "inline-flex items-center gap-2 rounded-full border border-scriba-hairline bg-white/95 px-4 py-2 shadow-lg backdrop-blur",
+            "inline-flex items-center gap-2 rounded-full border border-scriba-hairline bg-scriba-paper/95 px-4 py-2 shadow-lg backdrop-blur",
             "text-xs font-semibold text-scriba-ink",
             "transition-colors outline-none hover:bg-scriba-blue-soft/60 focus-visible:ring-2 focus-visible:ring-ring/40"
           )}

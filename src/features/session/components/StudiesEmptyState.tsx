@@ -31,7 +31,7 @@ export function StudiesEmptyState({
   heading = "Nenhum estudo por aqui.",
 }: StudiesEmptyStateProps = {}) {
   return (
-    <div className="overflow-hidden rounded-3xl bg-white">
+    <div className="overflow-hidden rounded-3xl bg-scriba-paper">
       <div className="flex flex-col items-center px-5 pt-6 pb-8 text-center sm:px-8 sm:pt-9">
         <div className="flex items-center justify-center">
           {/** biome-ignore lint/performance/noImgElement: local sticker asset */}

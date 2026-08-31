@@ -20,7 +20,7 @@ export function RefreshSessionsButton() {
         });
       }}
       className={cn(
-        "inline-flex size-9 shrink-0 items-center justify-center rounded-full border border-scriba-hairline-soft bg-white text-scriba-ink-mute",
+        "inline-flex size-9 shrink-0 items-center justify-center rounded-full border border-scriba-hairline-soft bg-scriba-paper text-scriba-ink-mute",
         "transition-colors hover:border-scriba-blue/40 hover:text-scriba-blue",
         "focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring/40",
         "disabled:cursor-not-allowed"

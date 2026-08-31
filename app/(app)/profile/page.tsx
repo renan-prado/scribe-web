@@ -1,6 +1,7 @@
 import { AtSign, CalendarClock, LogOut, User as UserIcon } from "lucide-react";
 import { redirect } from "next/navigation";
 import type { ReactNode } from "react";
+import { ThemeToggleRow } from "@/components/ThemeToggle";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { INITIAL_COIN_BALANCE } from "@/lib/coins/pricing";
 import { getCurrentBalance } from "@/lib/db/coins";
@@ -45,7 +46,7 @@ export default async function ProfilePage() {
   return (
     <main className="mx-auto flex w-full max-w-2xl flex-col gap-6 px-4 py-8 sm:gap-8 sm:px-6 sm:py-12">
       {/* Identity hero */}
-      <section className="relative overflow-hidden rounded-[28px] bg-white p-6 shadow-[0_18px_40px_rgba(51,65,79,0.06)] ring-1 ring-scriba-hairline sm:p-8">
+      <section className="relative overflow-hidden rounded-[28px] bg-scriba-paper p-6 shadow-[0_18px_40px_rgba(51,65,79,0.06)] ring-1 ring-scriba-hairline sm:p-8">
         <div
           aria-hidden
           className="absolute inset-x-0 top-0 h-24 bg-gradient-to-b from-scriba-blue-soft to-transparent"
@@ -53,7 +54,7 @@ export default async function ProfilePage() {
         <div className="relative flex flex-col items-center gap-4 text-center">
           <Avatar
             size="lg"
-            className="size-24 ring-4 ring-white shadow-[0_12px_28px_rgba(51,65,79,0.14)]"
+            className="size-24 ring-4 ring-scriba-paper shadow-[0_12px_28px_rgba(51,65,79,0.14)]"
           >
             {profile.avatarUrl ? <AvatarImage src={profile.avatarUrl} alt={shownName} /> : null}
             <AvatarFallback className="bg-scriba-blue-soft text-2xl font-semibold text-scriba-blue">
@@ -71,7 +72,7 @@ export default async function ProfilePage() {
             <span
               role="img"
               aria-label={`${coinBalance} moedas`}
-              className="mt-2 inline-flex items-center gap-1.5 rounded-full bg-[#FFF9E8] py-1 pr-3 pl-2"
+              className="mt-2 inline-flex items-center gap-1.5 rounded-full bg-scriba-gold-soft py-1 pr-3 pl-2"
             >
               <span className="relative flex size-4.5 flex-none items-center justify-center">
                 {/* biome-ignore lint/a11y/noSvgWithoutTitle: aria-hidden decorative coin ring */}
@@ -82,18 +83,18 @@ export default async function ProfilePage() {
                   viewBox="0 0 18 18"
                   aria-hidden
                 >
-                  <circle cx="9" cy="9" r="9" fill="#F0E4C6" />
+                  <circle cx="9" cy="9" r="9" fill="var(--scriba-gold-track)" />
                   <circle
                     cx="9"
                     cy="9"
                     r="9"
                     fill="none"
-                    stroke="#F8C64B"
+                    stroke="var(--scriba-yellow)"
                     strokeWidth="18"
                     strokeDasharray={`${(percent / 100) * 56.549} ${56.549 - (percent / 100) * 56.549}`}
                   />
                 </svg>
-                <span className="relative flex size-[13px] items-center justify-center rounded-full bg-white">
+                <span className="relative flex size-[13px] items-center justify-center rounded-full bg-scriba-paper">
                   <span className="coin-hex block h-[7.5px] w-[6.5px] bg-scriba-yellow" />
                 </span>
               </span>
@@ -106,7 +107,7 @@ export default async function ProfilePage() {
       </section>
 
       {/* Account info */}
-      <section className="rounded-[28px] bg-white p-6 ring-1 ring-scriba-hairline sm:p-7">
+      <section className="rounded-[28px] bg-scriba-paper p-6 ring-1 ring-scriba-hairline sm:p-7">
         <h2 className="mb-5 text-[11px] font-semibold uppercase tracking-wider text-scriba-ink-mute">
           Informações da conta
         </h2>
@@ -123,6 +124,14 @@ export default async function ProfilePage() {
             value={memberSince}
           />
         </dl>
+      </section>
+
+      {/* Preferências */}
+      <section className="rounded-[28px] bg-scriba-paper p-6 ring-1 ring-scriba-hairline sm:p-7">
+        <h2 className="mb-5 text-[11px] font-semibold uppercase tracking-wider text-scriba-ink-mute">
+          Preferências
+        </h2>
+        <ThemeToggleRow />
       </section>
 
       <form action="/auth/sign-out" method="post">

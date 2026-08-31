@@ -1,4 +1,5 @@
 import Link from "next/link";
+import { ThemeToggle } from "@/components/ThemeToggle";
 
 /**
  * Shared shell for the unified /sign-in page (also serving as sign-up).
@@ -14,7 +15,7 @@ type AuthShellProps = {
 
 export function AuthShell({ title, subtitle, children, footer }: AuthShellProps) {
   return (
-    <div className="relative flex min-h-svh w-full flex-col overflow-hidden bg-[linear-gradient(180deg,#F6FBFF_0%,#FFFFFF_60%)] font-[var(--font-poppins),system-ui,sans-serif] text-scriba-ink-strong">
+    <div className="relative flex min-h-svh w-full flex-col overflow-hidden bg-[image:var(--lp-hero-auth)] font-[var(--font-poppins),system-ui,sans-serif] text-scriba-ink-strong">
       <div
         aria-hidden
         className="pointer-events-none absolute top-[-220px] right-[-160px] size-[620px] rounded-full bg-[radial-gradient(circle,rgba(79,168,240,.16)_0%,rgba(79,168,240,0)_70%)]"
@@ -28,7 +29,7 @@ export function AuthShell({ title, subtitle, children, footer }: AuthShellProps)
         <Link
           href="/"
           aria-label="Voltar para o início"
-          className="flex items-center gap-2 rounded-full text-scriba-blue transition-opacity hover:opacity-80 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring/40"
+          className="flex items-center gap-2 rounded-full text-lp-brand transition-opacity hover:opacity-80 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring/40"
         >
           <svg
             aria-hidden="true"
@@ -47,12 +48,15 @@ export function AuthShell({ title, subtitle, children, footer }: AuthShellProps)
             scriba
           </span>
         </Link>
-        <Link
-          href="/"
-          className="text-[13px] font-light text-scriba-ink-soft transition-colors hover:text-[#33414F]"
-        >
-          ← Voltar
-        </Link>
+        <div className="flex items-center gap-3 sm:gap-4">
+          <ThemeToggle />
+          <Link
+            href="/"
+            className="text-[13px] font-light text-scriba-ink-soft transition-colors hover:text-scriba-ink-strong"
+          >
+            ← Voltar
+          </Link>
+        </div>
       </header>
 
       <main className="relative z-10 mx-auto flex w-full max-w-[420px] flex-1 flex-col justify-center gap-6 px-5 pb-16 pt-4 sm:pb-24">
@@ -65,7 +69,7 @@ export function AuthShell({ title, subtitle, children, footer }: AuthShellProps)
           </p>
         </div>
 
-        <div className="flex flex-col gap-4 rounded-[26px] border border-[#EAF2FA] bg-white p-7 shadow-[0_16px_40px_rgba(79,168,240,.14)]">
+        <div className="flex flex-col gap-4 rounded-[26px] border border-scriba-hairline bg-scriba-paper p-7 shadow-[0_16px_40px_rgba(79,168,240,.14)]">
           {children}
         </div>
 

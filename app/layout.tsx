@@ -1,9 +1,10 @@
 import type { Metadata } from "next";
 import { Fira_Mono, Geist, Geist_Mono, Poppins } from "next/font/google";
-import { Toaster } from "sonner";
 import { PageTransition } from "@/components/PageTransition";
 import { Providers } from "@/components/Providers";
 import { PwaBootstrap } from "@/components/PwaBootstrap";
+import { ThemedToaster } from "@/components/ThemedToaster";
+import { ThemeScript } from "@/components/ThemeScript";
 import "./globals.css";
 
 const geistSans = Geist({
@@ -90,11 +91,15 @@ export default function RootLayout({ children }: LayoutProps<"/">) {
     <html
       lang="pt-BR"
       className={`${geistSans.variable} ${geistMono.variable} ${firaMono.variable} ${poppins.variable} h-full antialiased`}
+      suppressHydrationWarning
     >
+      <head>
+        <ThemeScript />
+      </head>
       <body className="min-h-full flex flex-col" suppressHydrationWarning>
         <Providers>
           <PageTransition>{children}</PageTransition>
-          <Toaster position="top-center" richColors />
+          <ThemedToaster />
           <PwaBootstrap />
         </Providers>
       </body>

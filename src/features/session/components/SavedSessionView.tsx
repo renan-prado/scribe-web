@@ -280,9 +280,9 @@ export function SavedSessionView({
             <span
               role="status"
               aria-label="Sessão salva"
-              className="hidden items-center gap-1.5 rounded-full bg-scriba-mint px-2.5 py-1 text-[10px] font-semibold uppercase tracking-wider text-[#3F7F66] sm:inline-flex"
+              className="hidden items-center gap-1.5 rounded-full bg-scriba-mint px-2.5 py-1 text-[10px] font-semibold uppercase tracking-wider text-scriba-mint-dark sm:inline-flex"
             >
-              <span className="size-1.5 rounded-full bg-[#4E9C7F]" />
+              <span className="size-1.5 rounded-full bg-scriba-mint-strong" />
               Salvo
             </span>
             <SessionMenu

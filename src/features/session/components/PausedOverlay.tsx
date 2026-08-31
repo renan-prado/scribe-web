@@ -24,7 +24,7 @@ export function PausedOverlay({ elapsedMs, onResume, onStop }: Props) {
       aria-labelledby="paused-title"
       className={cn(
         "fixed inset-0 z-40 flex flex-col items-center justify-center gap-6 px-6",
-        "bg-white/85 backdrop-blur-md text-center"
+        "bg-scriba-paper/85 backdrop-blur-md text-center"
       )}
     >
       <span className="relative flex size-16 items-center justify-center rounded-full bg-scriba-blue-soft text-scriba-blue shadow-inner">
@@ -65,7 +65,7 @@ export function PausedOverlay({ elapsedMs, onResume, onStop }: Props) {
           type="button"
           onClick={onStop}
           className={cn(
-            "inline-flex items-center justify-center gap-2 rounded-full border border-scriba-hairline bg-white px-6 py-3 text-sm font-semibold text-scriba-ink transition-colors outline-none",
+            "inline-flex items-center justify-center gap-2 rounded-full border border-scriba-hairline bg-scriba-paper px-6 py-3 text-sm font-semibold text-scriba-ink transition-colors outline-none",
             "hover:bg-scriba-blue-soft/40",
             "focus-visible:ring-2 focus-visible:ring-ring/40"
           )}

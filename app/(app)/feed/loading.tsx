@@ -8,7 +8,7 @@ export default function HomeLoading() {
         <SB className="h-3.5 w-40" />
       </div>
 
-      <div className="flex flex-col gap-4 rounded-[24px] border border-scriba-hairline-soft bg-white p-6 shadow-[0_6px_22px_rgba(79,168,240,0.13)]">
+      <div className="flex flex-col gap-4 rounded-[24px] border border-scriba-hairline-soft bg-scriba-paper p-6 shadow-[0_6px_22px_rgba(79,168,240,0.13)]">
         <div className="flex items-center gap-2">
           <SB className="h-1.5 w-6 rounded-full" />
           <SB className="h-3 w-32" />

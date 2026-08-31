@@ -33,9 +33,9 @@ export function ListeningDots() {
       aria-label="Escutando"
       className="flex items-center justify-center gap-1.5 pt-2"
     >
-      <span className="size-1.5 animate-listening-dot rounded-full bg-[#9BB6CC]" />
-      <span className="size-1.5 animate-listening-dot rounded-full bg-[#9BB6CC] [animation-delay:200ms]" />
-      <span className="size-1.5 animate-listening-dot rounded-full bg-[#9BB6CC] [animation-delay:400ms]" />
+      <span className="size-1.5 animate-listening-dot rounded-full bg-session-typing-dot" />
+      <span className="size-1.5 animate-listening-dot rounded-full bg-session-typing-dot [animation-delay:200ms]" />
+      <span className="size-1.5 animate-listening-dot rounded-full bg-session-typing-dot [animation-delay:400ms]" />
     </div>
   );
 }

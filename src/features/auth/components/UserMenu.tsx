@@ -44,7 +44,7 @@ export function UserMenu({ displayName, email, avatarUrl, isAdmin }: Props) {
           className="rounded-full outline-none transition-opacity hover:opacity-90 focus-visible:ring-4 focus-visible:ring-scriba-blue/25"
           aria-label="Abrir menu do usuário"
         >
-          <Avatar className="ring-2 ring-white shadow-[0_4px_12px_rgba(51,65,79,0.10)]">
+          <Avatar className="ring-2 ring-scriba-paper shadow-[0_4px_12px_rgba(51,65,79,0.10)]">
             {avatarUrl ? <AvatarImage src={avatarUrl} alt={shownName} /> : null}
             <AvatarFallback className="bg-scriba-blue-soft text-scriba-blue">
               {initials}
@@ -54,13 +54,13 @@ export function UserMenu({ displayName, email, avatarUrl, isAdmin }: Props) {
         <DropdownMenuContent
           align="end"
           sideOffset={10}
-          className="min-w-[260px] rounded-2xl border-none bg-white p-2 shadow-[0_18px_40px_rgba(51,65,79,0.14)] ring-1 ring-scriba-hairline"
+          className="min-w-[260px] rounded-2xl border-none bg-scriba-paper p-2 shadow-[0_18px_40px_rgba(51,65,79,0.14)] ring-1 ring-scriba-hairline"
         >
           {/* Identity header */}
           <div className="flex items-center gap-3 rounded-xl bg-scriba-blue-soft/60 px-3 py-3">
             <Avatar className="size-10">
               {avatarUrl ? <AvatarImage src={avatarUrl} alt={shownName} /> : null}
-              <AvatarFallback className="bg-white text-scriba-blue text-sm font-semibold">
+              <AvatarFallback className="bg-scriba-paper text-scriba-blue text-sm font-semibold">
                 {initials}
               </AvatarFallback>
             </Avatar>

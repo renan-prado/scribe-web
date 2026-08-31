@@ -44,7 +44,7 @@ export function MobileBottomNav({ avatarUrl, displayName, email }: MobileBottomN
       />
       <nav
         aria-label="Navegação principal"
-        className="pointer-events-auto relative flex h-19 items-center justify-around bg-white pb-2 shadow-[0_-6px_22px_rgba(79,168,240,0.12)]"
+        className="pointer-events-auto relative flex h-19 items-center justify-around bg-scriba-paper pb-2 shadow-[0_-6px_22px_rgba(79,168,240,0.12)]"
       >
         <TabLink
           href="/feed"
@@ -126,7 +126,7 @@ export function MobileBottomNav({ avatarUrl, displayName, email }: MobileBottomN
               <span
                 className={cn(
                   "flex size-16 flex-col items-center justify-center gap-1 rounded-full bg-scriba-blue text-white",
-                  "border-2 border-white shadow-[0_10px_22px_rgba(79,168,240,0.42)] transition-colors",
+                  "border-2 border-scriba-paper shadow-[0_10px_22px_rgba(79,168,240,0.42)] transition-colors",
                   "hover:bg-scriba-blue-hover"
                 )}
               >
