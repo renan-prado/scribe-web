@@ -20,7 +20,12 @@ declare global {
 export type NativeRecordingEvent =
   | { type: "recording:start"; sessionId: string; label?: string }
   | { type: "recording:stop"; sessionId: string }
-  | { type: "recording:heartbeat"; sessionId: string; elapsedMs: number };
+  | { type: "recording:heartbeat"; sessionId: string; elapsedMs: number }
+  /**
+   * Pedido de haptic curto (card novo no feed). Existe porque iOS/Safari não
+   * implementa `navigator.vibrate` — dentro da shell RN quem vibra é o nativo.
+   */
+  | { type: "haptics:tap" };
 
 export function isReactNativeWebView(): boolean {
   return typeof window !== "undefined" && !!window.ReactNativeWebView;

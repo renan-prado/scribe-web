@@ -6,6 +6,7 @@ import {
   FEED_FIRST_CARD_GAP_MS,
   FEED_MIN_GAP_MS,
 } from "@/features/session/config";
+import { vibrateNewCard } from "@/features/session/lib/haptics";
 import { useSessionStore } from "@/features/session/store";
 
 /**
@@ -38,6 +39,9 @@ export function useDrainTimer() {
   const drainOne = useCallback(() => {
     drainTimerRef.current = null;
     const { drained, hasMore } = useSessionStore.getState().drainOne();
+    // Único ponto em que um card se torna visível ao vivo — vibra aqui pra
+    // o haptic acompanhar o que o ouvinte vê, não a chegada da resposta da API.
+    if (drained) vibrateNewCard();
     if (drained && hasMore) {
       drainTimerRef.current = setTimeout(drainOne, gapForCurrentHead());
     }
