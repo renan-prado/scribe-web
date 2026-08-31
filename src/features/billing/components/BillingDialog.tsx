@@ -1,6 +1,15 @@
 "use client";
 
-import { Check, CreditCard, ExternalLink, Loader2, Minus, Plus, Settings2 } from "lucide-react";
+import {
+  Check,
+  ChevronDown,
+  CreditCard,
+  ExternalLink,
+  Loader2,
+  Minus,
+  Plus,
+  Settings2,
+} from "lucide-react";
 import { type ReactNode, useCallback, useEffect, useState } from "react";
 import { toast } from "sonner";
 import {
@@ -17,8 +26,8 @@ import {
   requestBillingPortal,
   requestCheckout,
 } from "@/features/billing/lib/api";
-import { useBillingStore } from "@/features/billing/store";
-import { useCoinsStore } from "@/features/coins/store";
+import { getBillingState, useBillingStore } from "@/features/billing/store";
+import { getCoinsState, useCoinsStore } from "@/features/coins/store";
 import { useSessionStore } from "@/features/session/store";
 import {
   formatBrl,
@@ -33,9 +42,14 @@ import {
 import { cn } from "@/lib/utils";
 
 /**
- * Diálogo de créditos: saldo, compra de pacote avulso e upgrade de plano.
- * Aberto pelo chip de moedas do header, pelo /profile e pelo overlay de saldo
- * esgotado no meio de uma gravação.
+ * Diálogo de créditos: saldo, planos de assinatura e, por último, o pacote
+ * avulso. Aberto pelo chip de moedas do header, pelo /profile e pelo overlay
+ * de saldo esgotado no meio de uma gravação.
+ *
+ * A ordem é intencional: a assinatura é a oferta principal e ocupa o corpo do
+ * diálogo; a compra única fica recolhida atrás de um link discreto, para não
+ * competir com os planos. Ela só aparece aberta quando não há plano nenhum a
+ * oferecer (usuário já no topo) — aí é a única compra possível.
  *
  * O checkout SEMPRE abre em aba nova (ver `openCheckoutWindow`) — enquanto
  * uma gravação está em curso, sair desta página destruiria o MediaRecorder e
@@ -87,6 +101,19 @@ export function BillingDialog({
   const refreshSummary = useBillingStore((s) => s.refresh);
 
   const [quantity, setQuantity] = useState(1);
+  /**
+   * O pacote avulso fica recolhido: a assinatura é o caminho principal e a
+   * compra única só aparece para quem procura por ela. Quando não há plano
+   * nenhum para oferecer (usuário já no topo), abre direto — senão o diálogo
+   * não ofereceria nada.
+   */
+  const [topupOpen, setTopupOpen] = useState(false);
+  /**
+   * Só montamos as opções de compra com plano e saldo já em mãos. Sem isso a
+   * tela abria assumindo "free", desenhava os dois planos e depois removia o
+   * que o usuário já assina — conteúdo trocando na frente de quem lê.
+   */
+  const [ready, setReady] = useState(false);
   const [pending, setPending] = useState<null | "topup" | PaidPlanKey | "portal">(null);
 
   /**
@@ -102,9 +129,24 @@ export function BillingDialog({
 
   useEffect(() => {
     if (!isOpen) return;
-    void refreshSummary();
-    void refreshBalance();
+    let alive = true;
+    // Com dados de uma abertura anterior em cache, revalida em segundo plano
+    // sem esconder o que já está correto na tela.
+    if (getBillingState().summary !== null && getCoinsState().balance !== null) setReady(true);
+    void Promise.all([refreshSummary(), refreshBalance()]).finally(() => {
+      // Também no erro: melhor cair no fallback conhecido do que deixar o
+      // usuário preso num esqueleto que nunca sai.
+      if (alive) setReady(true);
+    });
+    return () => {
+      alive = false;
+    };
   }, [isOpen, refreshSummary, refreshBalance]);
+
+  // Reabrir o diálogo volta ao estado recolhido.
+  useEffect(() => {
+    if (!isOpen) setTopupOpen(false);
+  }, [isOpen]);
 
   // O pagamento acontece noutra aba. Quando esta volta ao foco, ressincroniza
   // saldo e plano — é o que faz o número subir "sozinho" depois da compra.
@@ -172,6 +214,10 @@ export function BillingDialog({
     isUpgradeFrom(plan, p)
   );
 
+  // Sem plano nenhum para oferecer (usuário já no topo), o avulso é a única
+  // compra possível — recolhê-lo deixaria o diálogo sem ação.
+  const topupExpanded = topupOpen || upgradeTargets.length === 0;
+
   const totalCoins = TOPUP.coins * quantity;
   const totalCents = TOPUP.priceCents * quantity;
 
@@ -193,8 +239,8 @@ export function BillingDialog({
                 Seus créditos
               </DialogTitle>
               <DialogDescription className="text-[13px] font-light text-scriba-ink-soft">
-                {balance === null ? (
-                  "Carregando saldo…"
+                {!ready || balance === null ? (
+                  "Carregando seu plano e seu saldo…"
                 ) : (
                   <>
                     Você tem{" "}
@@ -217,76 +263,14 @@ export function BillingDialog({
             </div>
           ) : null}
 
-          {!billingReady ? (
+          {!ready ? (
+            <BillingSkeleton />
+          ) : !billingReady ? (
             <p className="rounded-2xl border border-scriba-hairline bg-scriba-surface px-4 py-3 text-center text-[13px] text-scriba-ink-soft">
               A compra de créditos ainda não está ativa nesta instalação.
             </p>
           ) : (
             <>
-              {/* ---- pacote avulso ---- */}
-              <section className="flex flex-col gap-3 rounded-2xl border border-scriba-hairline bg-scriba-surface/60 p-4">
-                <div className="flex items-baseline justify-between gap-3">
-                  <h3 className="text-[14px] font-semibold text-scriba-ink">
-                    Adicionar créditos agora
-                  </h3>
-                  <span className="text-[11px] font-medium text-scriba-ink-mute">
-                    {formatCoins(TOPUP.coins)} por {formatBrl(TOPUP.priceCents)}
-                  </span>
-                </div>
-                <p className="text-[12px] font-light leading-relaxed text-scriba-ink-soft">
-                  Compra única, sem assinatura. Os créditos entram na conta e não expiram.
-                </p>
-
-                <div className="flex items-center justify-between gap-3">
-                  <div className="inline-flex items-center gap-1 rounded-full border border-scriba-hairline bg-scriba-paper p-1">
-                    <StepButton
-                      label="Menos um pacote"
-                      disabled={quantity <= 1 || pending !== null}
-                      onClick={() => setQuantity((q) => Math.max(1, q - 1))}
-                    >
-                      <Minus className="size-3.5" strokeWidth={2.6} />
-                    </StepButton>
-                    <span className="min-w-8 text-center text-[14px] font-semibold tabular-nums text-scriba-ink">
-                      {quantity}
-                    </span>
-                    <StepButton
-                      label="Mais um pacote"
-                      disabled={quantity >= TOPUP_MAX_QUANTITY || pending !== null}
-                      onClick={() => setQuantity((q) => Math.min(TOPUP_MAX_QUANTITY, q + 1))}
-                    >
-                      <Plus className="size-3.5" strokeWidth={2.6} />
-                    </StepButton>
-                  </div>
-                  <div className="flex flex-col items-end leading-tight">
-                    <span className="inline-flex items-center gap-1 text-[15px] font-semibold tabular-nums text-scriba-ink-strong">
-                      <span aria-hidden className="coin-hex block h-3 w-2.5 bg-scriba-yellow" />
-                      {formatCoins(totalCoins)}
-                    </span>
-                    <span className="text-[11px] font-medium text-scriba-ink-mute">
-                      {formatBrl(totalCents)}
-                    </span>
-                  </div>
-                </div>
-
-                <button
-                  type="button"
-                  disabled={pending !== null}
-                  onClick={() => void startCheckout({ kind: "topup", quantity }, "topup")}
-                  className={cn(
-                    "inline-flex w-full items-center justify-center gap-2 rounded-full bg-scriba-blue px-5 py-3 text-[14px] font-semibold text-white shadow-[0_10px_24px_rgba(79,168,240,0.32)] outline-none transition-colors",
-                    "hover:bg-scriba-blue-hover focus-visible:ring-4 focus-visible:ring-scriba-blue/30",
-                    "disabled:cursor-not-allowed disabled:opacity-70"
-                  )}
-                >
-                  {pending === "topup" ? (
-                    <Loader2 className="size-4 animate-spin" />
-                  ) : (
-                    <CreditCard className="size-4" strokeWidth={2.2} />
-                  )}
-                  {pending === "topup" ? "Abrindo…" : `Comprar ${formatCoins(totalCoins)} créditos`}
-                </button>
-              </section>
-
               {/* ---- upgrade ---- */}
               {upgradeTargets.length > 0 ? (
                 <section className="flex flex-col gap-3">
@@ -360,6 +344,90 @@ export function BillingDialog({
                 </section>
               ) : null}
 
+              {/* ---- pacote avulso (sempre por último: é o caminho secundário) ---- */}
+              <section className="flex flex-col gap-3">
+                {topupExpanded ? null : (
+                  <button
+                    type="button"
+                    aria-expanded={false}
+                    onClick={() => setTopupOpen(true)}
+                    className={cn(
+                      "inline-flex items-center justify-center gap-1.5 self-center rounded-full px-3 py-1.5 text-[12px] font-medium text-scriba-ink-soft outline-none transition-colors",
+                      "hover:text-scriba-ink focus-visible:ring-2 focus-visible:ring-ring/40"
+                    )}
+                  >
+                    Prefiro adicionar créditos avulsos
+                    <ChevronDown className="size-3.5" strokeWidth={2.4} />
+                  </button>
+                )}
+
+                {topupExpanded ? (
+                  <div className="flex flex-col gap-3 rounded-2xl border border-scriba-hairline bg-scriba-surface/60 p-4">
+                    <div className="flex items-baseline justify-between gap-3">
+                      <h3 className="text-[14px] font-semibold text-scriba-ink">
+                        Adicionar créditos agora
+                      </h3>
+                      <span className="text-[11px] font-medium text-scriba-ink-mute">
+                        {formatCoins(TOPUP.coins)} por {formatBrl(TOPUP.priceCents)}
+                      </span>
+                    </div>
+                    <p className="text-[12px] font-light leading-relaxed text-scriba-ink-soft">
+                      Compra única, sem assinatura. Os créditos entram na conta e não expiram.
+                    </p>
+
+                    <div className="flex items-center justify-between gap-3">
+                      <div className="inline-flex items-center gap-1 rounded-full border border-scriba-hairline bg-scriba-paper p-1">
+                        <StepButton
+                          label="Menos um pacote"
+                          disabled={quantity <= 1 || pending !== null}
+                          onClick={() => setQuantity((q) => Math.max(1, q - 1))}
+                        >
+                          <Minus className="size-3.5" strokeWidth={2.6} />
+                        </StepButton>
+                        <span className="min-w-8 text-center text-[14px] font-semibold tabular-nums text-scriba-ink">
+                          {quantity}
+                        </span>
+                        <StepButton
+                          label="Mais um pacote"
+                          disabled={quantity >= TOPUP_MAX_QUANTITY || pending !== null}
+                          onClick={() => setQuantity((q) => Math.min(TOPUP_MAX_QUANTITY, q + 1))}
+                        >
+                          <Plus className="size-3.5" strokeWidth={2.6} />
+                        </StepButton>
+                      </div>
+                      <div className="flex flex-col items-end leading-tight">
+                        <span className="inline-flex items-center gap-1 text-[15px] font-semibold tabular-nums text-scriba-ink-strong">
+                          <span aria-hidden className="coin-hex block h-3 w-2.5 bg-scriba-yellow" />
+                          {formatCoins(totalCoins)}
+                        </span>
+                        <span className="text-[11px] font-medium text-scriba-ink-mute">
+                          {formatBrl(totalCents)}
+                        </span>
+                      </div>
+                    </div>
+
+                    <button
+                      type="button"
+                      disabled={pending !== null}
+                      onClick={() => void startCheckout({ kind: "topup", quantity }, "topup")}
+                      className={cn(
+                        "inline-flex w-full items-center justify-center gap-2 rounded-full bg-scriba-blue px-5 py-3 text-[14px] font-semibold text-white shadow-[0_10px_24px_rgba(79,168,240,0.32)] outline-none transition-colors",
+                        "hover:bg-scriba-blue-hover focus-visible:ring-4 focus-visible:ring-scriba-blue/30",
+                        "disabled:cursor-not-allowed disabled:opacity-70"
+                      )}
+                    >
+                      {pending === "topup" ? (
+                        <Loader2 className="size-4 animate-spin" />
+                      ) : (
+                        <CreditCard className="size-4" strokeWidth={2.2} />
+                      )}
+                      {pending === "topup"
+                        ? "Abrindo…"
+                        : `Comprar ${formatCoins(totalCoins)} créditos`}
+                    </button>
+                  </div>
+                ) : null}
+              </section>
               {/* ---- gestão da assinatura ---- */}
               {subscribed ? (
                 <button
@@ -389,6 +457,21 @@ export function BillingDialog({
         </div>
       </DialogContent>
     </Dialog>
+  );
+}
+
+/**
+ * Esqueleto com a silhueta de dois cards de plano — o pior caso do que vem
+ * depois. Reservar o espaço maior evita que o diálogo pule de altura quando o
+ * conteúdo real entra.
+ */
+function BillingSkeleton() {
+  return (
+    <div aria-hidden className="flex flex-col gap-3">
+      <div className="h-3 w-36 animate-pulse rounded-full bg-scriba-surface" />
+      <div className="h-48 animate-pulse rounded-2xl bg-scriba-surface" />
+      <div className="h-48 animate-pulse rounded-2xl bg-scriba-surface" />
+    </div>
   );
 }
 
