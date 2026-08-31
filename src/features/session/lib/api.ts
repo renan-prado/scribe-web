@@ -1,4 +1,5 @@
 import type { FeedItem } from "@/lib/domain/feed";
+import type { HallucinationReview, HallucinationScope } from "@/lib/domain/hallucination";
 import type { ChunkEvent } from "@/lib/domain/recorder";
 import type { SummaryPayload } from "@/lib/domain/summary";
 import type { VersePayload } from "@/lib/domain/verse";
@@ -153,6 +154,46 @@ export async function requestDeleteSession(id: string): Promise<{ ok: boolean }>
     return { ok: res.ok };
   } catch {
     return { ok: false };
+  }
+}
+
+/**
+ * POST /api/hallucination-report. O usuário avisou que o Scriba entendeu
+ * errado e escreveu uma nota curta. A resposta traz o veredito da auditoria
+ * e, no escopo live, as chaves dos cards que devem sair do feed.
+ */
+export async function requestHallucinationReview(body: {
+  sessionId: string;
+  scope: HallucinationScope;
+  note: string;
+  text?: string;
+  feedItems?: FeedItem[];
+}): Promise<{ ok: true; review: HallucinationReview } | { ok: false; message: string }> {
+  try {
+    const res = await fetch("/api/hallucination-report", {
+      method: "POST",
+      headers: { "content-type": "application/json" },
+      body: JSON.stringify(body),
+    });
+    const raw = (await res.json().catch(() => ({}))) as Partial<HallucinationReview> & {
+      error?: string;
+    };
+    if (!res.ok) {
+      if (res.status === 429) {
+        return { ok: false, message: "Muitos alertas seguidos. Aguarde um pouco e tente de novo." };
+      }
+      return { ok: false, message: "Não consegui analisar seu alerta agora. Tente novamente." };
+    }
+    return {
+      ok: true,
+      review: {
+        verdict: raw.verdict ?? "acknowledged",
+        message: typeof raw.message === "string" ? raw.message : "",
+        removeKeys: Array.isArray(raw.removeKeys) ? raw.removeKeys : [],
+      },
+    };
+  } catch {
+    return { ok: false, message: "Falha de conexão ao enviar o alerta." };
   }
 }
 

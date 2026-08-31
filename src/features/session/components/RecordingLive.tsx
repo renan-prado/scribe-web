@@ -12,6 +12,7 @@ import {
 } from "@/components/ui/dialog";
 import { Feed } from "@/features/session/components/Feed";
 import { FinalizingOverlay } from "@/features/session/components/FinalizingOverlay";
+import { HallucinationReportDialog } from "@/features/session/components/HallucinationReportDialog";
 import { PausedOverlay } from "@/features/session/components/PausedOverlay";
 import { RecordButton } from "@/features/session/components/RecordButton";
 import { RecordingHeader } from "@/features/session/components/RecordingHeader";
@@ -96,6 +97,7 @@ export function RecordingLive({
   // ---- ui-local state (dialog open flags) ----
   const [transcriptOpen, setTranscriptOpen] = useState(false);
   const [liveFeedOpen, setLiveFeedOpen] = useState(false);
+  const [reportOpen, setReportOpen] = useState(false);
 
   const activelyRecording = running && !paused;
   const elapsedMs = useElapsedTimer(activelyRecording, startedAtRef);
@@ -552,6 +554,7 @@ export function RecordingLive({
                 hasLiveFeed={feedItems.length > 0}
                 onOpenTranscript={() => setTranscriptOpen(true)}
                 onOpenLiveFeed={() => setLiveFeedOpen(true)}
+                onReportHallucination={() => setReportOpen(true)}
               />
             }
           />
@@ -606,6 +609,19 @@ export function RecordingLive({
           </div>
         </DialogContent>
       </Dialog>
+
+      <HallucinationReportDialog
+        open={reportOpen}
+        onOpenChange={setReportOpen}
+        sessionId={sessionId}
+        scope="live"
+        getLiveContext={() => {
+          const s = getSessionState();
+          return { text: joinOkChunks(s.chunks).transcript, feedItems: s.feedItems };
+        }}
+        onRemoveKeys={(keys) => getSessionState().removeFeedItemsByKey(keys)}
+        onStopRecording={running ? () => void stop() : undefined}
+      />
 
       <Dialog open={liveFeedOpen} onOpenChange={setLiveFeedOpen}>
         <DialogContent className="sm:max-w-2xl">

@@ -176,6 +176,18 @@ export type SessionStoreState = {
   enqueueFeedItems: (incoming: FeedItem[]) => EnqueueResult;
 
   /**
+   * Remove feed items by dedup key — from the visible feed, from the drip
+   * queue, and from `visibleKeys`. Usada pela auditoria do alerta de
+   * alucinação, que identifica cards sem apoio na transcrição. É a única
+   * remoção retroativa fora do RANGE SUPERSEDE de citedVerse, e acontece
+   * apenas a pedido explícito do usuário.
+   *
+   * A chave sai de `visibleKeys` para que o card possa reaparecer se a
+   * pipeline reemitir o mesmo conteúdo mais tarde com apoio real na fala.
+   */
+  removeFeedItemsByKey: (keys: string[]) => number;
+
+  /**
    * Attempt to drain the head of the drip queue. Callers own the setTimeout —
    * this action performs at most one drip on this call.
    *
@@ -414,6 +426,27 @@ export const useSessionStore = create<SessionStoreState>()(
       }));
 
       return { hasDripAdd };
+    },
+
+    removeFeedItemsByKey: (keys) => {
+      if (keys.length === 0) return 0;
+      const doomed = new Set(keys);
+      const s = get();
+      const feedItems = s.feedItems.filter((i) => !doomed.has(feedItemDedupKey(i)));
+      const dripQueue = s.dripQueue.filter((e) => !doomed.has(feedItemDedupKey(e.item)));
+      const removed =
+        s.feedItems.length - feedItems.length + (s.dripQueue.length - dripQueue.length);
+      if (removed === 0) return 0;
+      const visibleKeys = new Set(s.visibleKeys);
+      for (const k of doomed) visibleKeys.delete(k);
+      devLog("[feed] removed by report", { keys, removed });
+      set({
+        feedItems,
+        dripQueue,
+        visibleKeys,
+        seenItemsLen: Math.min(s.seenItemsLen, feedItems.length),
+      });
+      return removed;
     },
 
     drainOne: () => {

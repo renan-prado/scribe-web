@@ -35,6 +35,7 @@ export type UsageRoute =
   | "rereads"
   | "reminders"
   | "format-paragraphs"
+  | "hallucination-report"
   | "transcribe";
 
 export type RecordChatUsageInput = {

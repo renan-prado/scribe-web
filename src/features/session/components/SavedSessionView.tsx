@@ -20,6 +20,7 @@ import { DeepenButton } from "@/features/session/components/DeepenButton";
 import { EntityFieldDialog } from "@/features/session/components/EntityFieldDialog";
 import { Feed } from "@/features/session/components/Feed";
 import { FeedAgendadoPreview } from "@/features/session/components/FeedAgendadoPreview";
+import { HallucinationReportDialog } from "@/features/session/components/HallucinationReportDialog";
 import { SavedTranscriptView } from "@/features/session/components/SavedTranscriptView";
 import { SessionMenu } from "@/features/session/components/SessionMenu";
 import { SummaryView } from "@/features/session/components/SummaryView";
@@ -174,6 +175,7 @@ export function SavedSessionView({
   const [speakerDialogOpen, setSpeakerDialogOpen] = useState(false);
   const [locationDialogOpen, setLocationDialogOpen] = useState(false);
   const [reprocessing, setReprocessing] = useState(false);
+  const [reportOpen, setReportOpen] = useState(false);
 
   const router = useRouter();
   const refreshCoins = useCoinsStore((s) => s.refresh);
@@ -291,6 +293,7 @@ export function SavedSessionView({
               onDelete={handleDelete}
               onReprocess={summary ? handleReprocess : undefined}
               reprocessing={reprocessing}
+              onReportHallucination={() => setReportOpen(true)}
             />
           </div>
         </div>
@@ -398,6 +401,14 @@ export function SavedSessionView({
           </div>
         </DialogContent>
       </Dialog>
+
+      <HallucinationReportDialog
+        open={reportOpen}
+        onOpenChange={setReportOpen}
+        sessionId={id}
+        scope="summary"
+        onReprocess={summary ? handleReprocess : undefined}
+      />
 
       <TitleDialog
         open={titleDialogOpen}

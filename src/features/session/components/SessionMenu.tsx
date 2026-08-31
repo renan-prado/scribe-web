@@ -1,6 +1,14 @@
 "use client";
 
-import { FileText, MoreVertical, Pencil, RefreshCw, Sparkles, Trash2 } from "lucide-react";
+import {
+  FileText,
+  MoreVertical,
+  Pencil,
+  RefreshCw,
+  Sparkles,
+  Trash2,
+  TriangleAlert,
+} from "lucide-react";
 import {
   DropdownMenu,
   DropdownMenuContent,
@@ -21,6 +29,8 @@ type SessionMenuProps = {
   onDelete?: () => void;
   onReprocess?: () => void;
   reprocessing?: boolean;
+  /** Abre o alerta de alucinação ("Algo está errado"). */
+  onReportHallucination?: () => void;
 };
 
 const REPROCESS_COST = COIN_COSTS.reprocessSummary;
@@ -34,6 +44,7 @@ export function SessionMenu({
   onDelete,
   onReprocess,
   reprocessing,
+  onReportHallucination,
 }: SessionMenuProps) {
   const balance = useCoinsStore((s) => s.balance);
   const insufficient = balance !== null && balance < REPROCESS_COST;
@@ -90,6 +101,15 @@ export function SessionMenu({
             <FileText className="size-4" />
             Ler transcrição
           </DropdownMenuItem>
+        ) : null}
+        {onReportHallucination ? (
+          <>
+            <DropdownMenuSeparator />
+            <DropdownMenuItem onClick={onReportHallucination} className="gap-2">
+              <TriangleAlert className="size-4" />
+              Algo está errado
+            </DropdownMenuItem>
+          </>
         ) : null}
         {onDelete ? (
           <>

@@ -209,6 +209,15 @@ export const RATE_LIMITS = {
     perUser: { limit: 30, windowMs: MIN },
     perIp: { limit: 90, windowMs: MIN },
   },
+  // Alerta manual de alucinação: o usuário digita uma nota, então a cadência
+  // real é de alguns por sessão. Generoso o bastante para quem está frustrado
+  // com o áudio insistir algumas vezes, apertado o bastante para não virar
+  // um canal barato de chamadas ao gpt-4o.
+  "hallucination-report": {
+    route: "hallucination-report",
+    perUser: { limit: 10, windowMs: HOUR },
+    perIp: { limit: 40, windowMs: HOUR },
+  },
   "sessions-write": {
     route: "sessions-write",
     perUser: { limit: 60, windowMs: MIN },

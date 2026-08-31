@@ -4,8 +4,10 @@ import { useRouter } from "next/navigation";
 import { useCallback, useEffect, useRef, useState } from "react";
 import { toast } from "sonner";
 import { FinalizingOverlay } from "@/features/session/components/FinalizingOverlay";
+import { HallucinationReportDialog } from "@/features/session/components/HallucinationReportDialog";
 import { PausedOverlay } from "@/features/session/components/PausedOverlay";
 import { RecordButton } from "@/features/session/components/RecordButton";
+import { SessionMenu } from "@/features/session/components/SessionMenu";
 import {
   RECORDER_MAX_CHUNK_MS,
   RECORDER_MIN_CHUNK_MS,
@@ -76,6 +78,7 @@ export function RecordingAudioOnly({
   const [finalizing, setFinalizing] = useState(false);
   const [startupError, setStartupError] = useState("");
   const [qualityPoor, setQualityPoor] = useState(false);
+  const [reportOpen, setReportOpen] = useState(false);
 
   const activelyRecording = running && !paused;
   const elapsedMs = useElapsedTimer(activelyRecording, startedAtRef);
@@ -290,7 +293,18 @@ export function RecordingAudioOnly({
   }, [autoStart, start]);
 
   return (
-    <main className="flex flex-1 flex-col items-center justify-center px-6">
+    <main className="relative flex flex-1 flex-col items-center justify-center px-6">
+      {running ? (
+        <div className="absolute right-4 top-4">
+          <SessionMenu
+            hasTranscript={false}
+            hasLiveFeed={false}
+            onOpenTranscript={() => undefined}
+            onOpenLiveFeed={() => undefined}
+            onReportHallucination={() => setReportOpen(true)}
+          />
+        </div>
+      ) : null}
       <div className="flex flex-col items-center gap-10">
         <RecordButton
           running={running}
@@ -324,6 +338,17 @@ export function RecordingAudioOnly({
           </div>
         ) : null}
       </div>
+
+      <HallucinationReportDialog
+        open={reportOpen}
+        onOpenChange={setReportOpen}
+        sessionId={sessionId}
+        scope="live"
+        // Modo áudio: não há feed para corrigir, então a auditoria julga só a
+        // qualidade da transcrição — o desfecho útil aqui é encerrar ou seguir.
+        getLiveContext={() => ({ text: assembleTranscript(), feedItems: [] })}
+        onStopRecording={() => void stop()}
+      />
 
       {running && paused ? (
         <PausedOverlay elapsedMs={elapsedMs} onResume={() => void resume()} onStop={stop} />

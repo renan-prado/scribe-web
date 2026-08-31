@@ -18,6 +18,9 @@ const schema = z.object({
   OPENAI_REREADS_MODEL: z.string().default("gpt-4o-mini"),
   OPENAI_REMINDERS_MODEL: z.string().default("gpt-4o-mini"),
   OPENAI_FORMAT_MODEL: z.string().default("gpt-4o-mini"),
+  /** Auditoria do alerta de alucinação. Julga se um card se sustenta na
+   * transcrição — evento raro e de alto impacto, então vale o modelo bom. */
+  OPENAI_HALLUCINATION_MODEL: z.string().default("gpt-4o"),
   SUPABASE_SERVICE_ROLE_KEY: z.string().min(1),
 });
 
@@ -36,6 +39,7 @@ const parsed = schema.safeParse({
   OPENAI_REREADS_MODEL: process.env.OPENAI_REREADS_MODEL,
   OPENAI_REMINDERS_MODEL: process.env.OPENAI_REMINDERS_MODEL,
   OPENAI_FORMAT_MODEL: process.env.OPENAI_FORMAT_MODEL,
+  OPENAI_HALLUCINATION_MODEL: process.env.OPENAI_HALLUCINATION_MODEL,
   SUPABASE_SERVICE_ROLE_KEY: process.env.SUPABASE_SERVICE_ROLE_KEY,
 });
 
