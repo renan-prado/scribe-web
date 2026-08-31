@@ -19,6 +19,7 @@ import {
   loadAdminUsageSummary,
   type UsageFilters as UsageFiltersType,
 } from "@/lib/db/admin/usage";
+import { SESSION_MODES, type SessionMode } from "@/lib/domain/session";
 import { type MoneyFormatter, makeMoneyFormatter } from "@/lib/fx/format";
 import { getUsdToBrl, type UsdBrlRate } from "@/lib/fx/usd-brl";
 import { cn } from "@/lib/utils";
@@ -86,9 +87,10 @@ type SearchParams = {
   mode?: string;
 };
 
-function parseModeFilter(value: string | undefined): "live" | "audio_only" | undefined {
-  if (value === "live" || value === "audio_only") return value;
-  return undefined;
+function parseModeFilter(value: string | undefined): SessionMode | undefined {
+  return (SESSION_MODES as readonly string[]).includes(value ?? "")
+    ? (value as SessionMode)
+    : undefined;
 }
 
 type PageProps = {
@@ -333,7 +335,7 @@ function sessionFilterHref(filters: SearchParams, sessionId: string): string {
   return `/admin/usage?${p.toString()}`;
 }
 
-function ModeBadge({ mode }: { mode: "live" | "audio_only" | null }) {
+function ModeBadge({ mode }: { mode: SessionMode | null }) {
   if (mode === "live") {
     return (
       <span className="inline-flex items-center rounded-full bg-scriba-mint px-2 py-0.5 text-[10px] font-semibold uppercase tracking-[0.08em] text-scriba-mint-accent">
@@ -345,6 +347,13 @@ function ModeBadge({ mode }: { mode: "live" | "audio_only" | null }) {
     return (
       <span className="inline-flex items-center rounded-full bg-scriba-cream px-2 py-0.5 text-[10px] font-semibold uppercase tracking-[0.08em] text-scriba-cream-accent">
         Sem live
+      </span>
+    );
+  }
+  if (mode === "transcript_only") {
+    return (
+      <span className="inline-flex items-center rounded-full bg-scriba-hairline-soft px-2 py-0.5 text-[10px] font-semibold uppercase tracking-[0.08em] text-scriba-ink-soft">
+        Transcrição
       </span>
     );
   }

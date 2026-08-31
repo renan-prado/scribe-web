@@ -1,6 +1,7 @@
 import type { FeedItem } from "@/lib/domain/feed";
 import type { HallucinationReview, HallucinationScope } from "@/lib/domain/hallucination";
 import type { ChunkEvent } from "@/lib/domain/recorder";
+import type { SessionMode } from "@/lib/domain/session";
 import type { SummaryPayload } from "@/lib/domain/summary";
 import type { VersePayload } from "@/lib/domain/verse";
 
@@ -122,12 +123,12 @@ export async function requestFinalSummary(body: {
 /**
  * POST /api/sessions. Creates the empty row that anchors /recording/{id}/live.
  * Called from the "Nova gravação" dialog before the recorder mounts. `mode`
- * selects between the live enrichment pipelines and the audio-only capture.
+ * escolhe entre as pipelines ao vivo, a captura só-áudio e o modo transcrição.
  */
 export async function requestCreateSession(body: {
   speakerName?: string | null;
   speakerLocation?: string | null;
-  mode?: "live" | "audio_only";
+  mode?: SessionMode;
 }): Promise<{ id: string } | { error: string }> {
   try {
     const res = await fetch("/api/sessions", {
@@ -140,6 +141,34 @@ export async function requestCreateSession(body: {
     return { error: raw?.error || `HTTP ${res.status}` };
   } catch (err) {
     return { error: (err as Error).message || "network error" };
+  }
+}
+
+/**
+ * PUT /api/sessions/:id/transcript. Fecha uma sessão do modo transcrição
+ * gravando o texto capturado. Sem LLM: o corpo já é o transcript final que o
+ * cliente montou a partir dos chunks.
+ */
+export async function requestSaveTranscript(body: {
+  sessionId: string;
+  transcript: string;
+  durationMs?: number | null;
+  title?: string | null;
+  speakerName?: string | null;
+  speakerLocation?: string | null;
+}): Promise<{ ok: true } | { ok: false; message: string }> {
+  const { sessionId, ...payload } = body;
+  try {
+    const res = await fetch(`/api/sessions/${encodeURIComponent(sessionId)}/transcript`, {
+      method: "PUT",
+      headers: { "content-type": "application/json" },
+      body: JSON.stringify(payload),
+    });
+    if (res.ok) return { ok: true };
+    const raw = (await res.json().catch(() => ({}))) as { error?: string };
+    return { ok: false, message: raw?.error || `HTTP ${res.status}` };
+  } catch (err) {
+    return { ok: false, message: (err as Error).message || "network error" };
   }
 }
 

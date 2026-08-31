@@ -2,6 +2,7 @@ import type { Metadata } from "next";
 import { notFound, redirect } from "next/navigation";
 import { RecordingAudioOnly } from "@/features/session/components/RecordingAudioOnly";
 import { getSession } from "@/lib/db/sessions";
+import { recordingRouteFor } from "@/lib/domain/session";
 
 type PageProps = {
   params: Promise<{ id: string }>;
@@ -23,9 +24,10 @@ export default async function RecordingAudioPage({ params, searchParams }: PageP
   const session = await getSession(id);
   if (!session) notFound();
 
-  // Route mismatch guard: live-mode sessions belong on /live.
-  if (session.mode === "live") {
-    redirect(`/recording/${id}/live${autostart === "1" ? "?autostart=1" : ""}`);
+  // Route mismatch guard: cada modo grava na sua própria página.
+  if (session.mode !== "audio_only") {
+    const route = recordingRouteFor(session.mode);
+    redirect(`/recording/${id}/${route}${autostart === "1" ? "?autostart=1" : ""}`);
   }
 
   return (

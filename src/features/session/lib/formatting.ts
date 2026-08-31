@@ -124,3 +124,12 @@ export function formatDurationLong(ms: number | null): string {
   if (m === 0) return `${s}s`;
   return `${m}m ${s.toString().padStart(2, "0")}s`;
 }
+
+/**
+ * "Gravação dia 12 de março" — título padrão de uma gravação enquanto o
+ * usuário não digita um. No modo transcrição não há LLM para gerar título, então
+ * este é o valor que efetivamente vai para o banco no stop.
+ */
+export function defaultRecordingTitle(date: Date): string {
+  return `Gravação dia ${date.getDate()} de ${MONTHS_PT_LONG[date.getMonth()]}`;
+}

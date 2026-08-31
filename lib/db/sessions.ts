@@ -1,5 +1,6 @@
 import "server-only";
 import type { FeedItem } from "@/lib/domain/feed";
+import { parseSessionMode, type SessionMode } from "@/lib/domain/session";
 import type { SummaryPayload } from "@/lib/domain/summary";
 import { createClient } from "@/lib/supabase/server";
 
@@ -22,18 +23,7 @@ import { createClient } from "@/lib/supabase/server";
  * renaming a speaker later never rewrites past sessions.
  */
 
-/**
- * Recording mode. `live` runs the full bible/insights/echo enrichment
- * pipelines during capture. `audio_only` only transcribes chunks in the
- * background and produces the final summary on stop — no live cards.
- */
-type SessionMode = "live" | "audio_only";
-
-export const SESSION_MODES = ["live", "audio_only"] as const;
-
-function parseSessionMode(value: unknown): SessionMode {
-  return value === "audio_only" ? "audio_only" : "live";
-}
+export { SESSION_MODES } from "@/lib/domain/session";
 
 export type SessionRow = {
   id: string;
@@ -277,4 +267,48 @@ export async function updateSessionSummary(id: string, summary: SummaryPayload):
     })
     .eq("id", id);
   if (error) throw new Error(`updateSessionSummary failed: ${error.message}`);
+}
+
+export type UpdateSessionTranscriptInput = {
+  transcript: string;
+  durationMs: number | null;
+  /** Título escolhido pelo usuário no header da gravação (ou o padrão
+   * "Gravação dia N de mês"). Modo transcrição não roda LLM, então não há
+   * título gerado — este é o único que a sessão terá. */
+  title: string | null;
+  /** Preview curto para o card da lista: as primeiras frases da própria
+   * transcrição, cortadas no servidor. Não é um resumo — é um trecho. */
+  shortSummary: string | null;
+  speakerName: string | null;
+  speakerLocation: string | null;
+  speakerId?: string | null;
+  locationId?: string | null;
+};
+
+/**
+ * Fecha uma sessão do modo transcrição: grava o texto capturado, a duração e
+ * o título. `final_summary` fica null de propósito — é o que distingue uma
+ * sessão transcript_only salva de uma sessão com resumo, e o que faz a página
+ * salva renderizar a transcrição em vez do SummaryView.
+ */
+export async function updateSessionTranscript(
+  id: string,
+  input: UpdateSessionTranscriptInput
+): Promise<void> {
+  const supabase = await createClient();
+  const patch: Record<string, unknown> = {
+    ended_at: new Date().toISOString(),
+    duration_ms: input.durationMs,
+    title: input.title,
+    short_summary: input.shortSummary,
+    speaker_name: input.speakerName,
+    speaker_location: input.speakerLocation,
+    transcript: input.transcript,
+    feed_items: [],
+  };
+  if (input.speakerId !== undefined) patch.speaker_id = input.speakerId;
+  if (input.locationId !== undefined) patch.location_id = input.locationId;
+
+  const { error } = await supabase.from("sessions").update(patch).eq("id", id);
+  if (error) throw new Error(`updateSessionTranscript failed: ${error.message}`);
 }

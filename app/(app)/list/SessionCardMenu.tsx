@@ -13,10 +13,13 @@ import {
 
 type Props = {
   sessionId: string;
+  /** Página da sessão salva — /summary nos modos com resumo, /transcript no
+   * modo transcrição. */
+  href: string;
   deleteAction: (formData: FormData) => Promise<void>;
 };
 
-export function SessionCardMenu({ sessionId, deleteAction }: Props) {
+export function SessionCardMenu({ sessionId, href, deleteAction }: Props) {
   const formRef = useRef<HTMLFormElement>(null);
 
   return (
@@ -29,7 +32,7 @@ export function SessionCardMenu({ sessionId, deleteAction }: Props) {
           <EllipsisVertical className="size-4" />
         </DropdownMenuTrigger>
         <DropdownMenuContent align="end" sideOffset={4}>
-          <DropdownMenuItem render={<Link href={`/recording/${sessionId}/summary`} />}>
+          <DropdownMenuItem render={<Link href={href} />}>
             <Pencil />
             Editar
           </DropdownMenuItem>

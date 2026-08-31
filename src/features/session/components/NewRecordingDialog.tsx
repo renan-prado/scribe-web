@@ -1,6 +1,6 @@
 "use client";
 
-import { BookOpenText, Check, FileText, type LucideIcon, Mic } from "lucide-react";
+import { BookOpenText, Captions, Check, FileText, type LucideIcon, Mic } from "lucide-react";
 import { useRouter } from "next/navigation";
 import { type ReactNode, useState } from "react";
 import { toast } from "sonner";
@@ -10,12 +10,11 @@ import { CoinCost } from "@/features/coins/components/CoinCost";
 import { useCoinsStore } from "@/features/coins/store";
 import { requestCreateSession } from "@/features/session/lib/api";
 import { COIN_COSTS } from "@/lib/coins/pricing";
+import { recordingRouteFor, type SessionMode } from "@/lib/domain/session";
 import { cn } from "@/lib/utils";
 
-type Mode = "live" | "audio_only";
-
 const MODE_COPY: Record<
-  Mode,
+  SessionMode,
   {
     title: string;
     icon: LucideIcon;
@@ -48,29 +47,42 @@ const MODE_COPY: Record<
     ),
     idealFor: "pregações, cultos e ministrações",
   },
+  transcript_only: {
+    title: "Modo Transcrição",
+    icon: Captions,
+    costPerMinute: COIN_COSTS.transcriptMinute,
+    description: (
+      <>
+        O texto aparece na tela conforme é falado, trecho a trecho. Sem comentários e sem resumo, só
+        o registro do que foi dito.
+      </>
+    ),
+    idealFor: "quem quer o texto exato",
+  },
 };
 
-const MODE_ORDER = Object.keys(MODE_COPY) as Mode[];
+const MODE_ORDER = Object.keys(MODE_COPY) as SessionMode[];
 
 /**
  * Trigger + dialog for starting a new recording session. Renders a Scriba-blue
  * pill button by default ("Gravar sermão") — passing `trigger` overrides that
  * button entirely (used by the mobile bottom nav for the elevated circle).
  *
- * The dialog exposes two capture modes as selectable cards: `live` runs the
+ * The dialog exposes the capture modes as selectable cards: `live` runs the
  * bible/insights/echo pipelines during recording; `audio_only` skips them and
- * only produces the final summary on stop. The start button lives below the
- * cards and reflects the cost of whichever mode is selected.
+ * only produces the final summary on stop; `transcript_only` skips the summary
+ * too and shows the transcription as it happens. The start button lives below
+ * the cards and reflects the cost of whichever mode is selected.
  */
 export function NewRecordingDialog({ trigger }: { trigger?: ReactNode }) {
   const router = useRouter();
   const [open, setOpen] = useState(false);
   const [loading, setLoading] = useState(false);
-  const [mode, setMode] = useState<Mode>("live");
+  const [mode, setMode] = useState<SessionMode>("live");
   const balance = useCoinsStore((s) => s.balance);
   const refresh = useCoinsStore((s) => s.refresh);
   const balanceLoading = balance === null;
-  const minCost = mode === "audio_only" ? COIN_COSTS.audioOnlyMinute : COIN_COSTS.liveMinute;
+  const minCost = MODE_COPY[mode].costPerMinute;
   const insufficient = balance !== null && balance < minCost;
 
   async function handleStart() {
@@ -95,8 +107,7 @@ export function NewRecordingDialog({ trigger }: { trigger?: ReactNode }) {
       toast.error("Não consegui iniciar a sessão", { description: result.error });
       return;
     }
-    const route = mode === "audio_only" ? "audio" : "live";
-    router.push(`/recording/${result.id}/${route}?autostart=1`);
+    router.push(`/recording/${result.id}/${recordingRouteFor(mode)}?autostart=1`);
   }
 
   const copy = MODE_COPY[mode];

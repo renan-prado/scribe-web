@@ -1,4 +1,4 @@
-import { BookOpen, MapPin, Mic } from "lucide-react";
+import { BookOpen, Captions, MapPin, Mic } from "lucide-react";
 import type { Metadata } from "next";
 import { revalidatePath } from "next/cache";
 import { NavLink } from "@/components/NavLink";
@@ -7,6 +7,7 @@ import { SessionsEmptyState } from "@/features/session/components/SessionsEmptyS
 import { formatDurationShort, groupLabel, shortDate } from "@/features/session/lib/formatting";
 import { listDeepenedSessionIds } from "@/lib/db/deepenings";
 import { deleteSession, listSessions } from "@/lib/db/sessions";
+import { savedRouteFor } from "@/lib/domain/session";
 import { cn } from "@/lib/utils";
 import { SessionCardMenu } from "./SessionCardMenu";
 
@@ -90,6 +91,10 @@ export default async function LibraryPage() {
                 {group.items.map((s) => {
                   const includeYear = new Date(s.createdAt).getFullYear() !== now.getFullYear();
                   const isDeepened = deepenedIds.has(s.id);
+                  // Sessões do modo transcrição não têm resumo: abrem na
+                  // página de leitura da transcrição, com CTA e ícone próprios.
+                  const isTranscriptOnly = s.mode === "transcript_only";
+                  const href = `/recording/${s.id}/${savedRouteFor(s.mode)}`;
                   return (
                     <li
                       key={s.id}
@@ -98,19 +103,27 @@ export default async function LibraryPage() {
                       <div className="flex flex-1 flex-col gap-2">
                         <div className="flex items-start gap-2">
                           <NavLink
-                            href={`/recording/${s.id}/summary`}
+                            href={href}
                             spinner="overlay"
                             contentClassName="flex min-w-0 items-center gap-2.5"
                             className="flex min-w-0 flex-1 rounded-md outline-none focus-visible:ring-2 focus-visible:ring-ring/40"
                           >
                             <div className="flex size-9 shrink-0 items-center justify-center rounded-lg bg-scriba-blue">
-                              <Mic className="size-4 text-white" />
+                              {isTranscriptOnly ? (
+                                <Captions className="size-4 text-white" />
+                              ) : (
+                                <Mic className="size-4 text-white" />
+                              )}
                             </div>
                             <span className="text-pretty text-[15px] font-semibold leading-tight tracking-tight text-scriba-ink-strong sm:text-base">
                               {s.title?.trim() || "Sessão sem título"}
                             </span>
                           </NavLink>
-                          <SessionCardMenu sessionId={s.id} deleteAction={deleteSessionAction} />
+                          <SessionCardMenu
+                            sessionId={s.id}
+                            href={href}
+                            deleteAction={deleteSessionAction}
+                          />
                         </div>
                         {s.shortSummary?.trim() ? (
                           <p className="text-pretty text-[13px] font-light leading-snug text-scriba-ink-soft">
@@ -150,6 +163,18 @@ export default async function LibraryPage() {
                                 </span>
                               </>
                             ) : null}
+                            {isTranscriptOnly ? (
+                              <>
+                                <span className="size-[3px] rounded-full bg-scriba-ink-mute/60" />
+                                <span
+                                  title="Gravada no modo transcrição — sem resumo"
+                                  className="inline-flex items-center gap-1 rounded-full bg-scriba-cream px-2 py-0.5 text-[10px] font-semibold uppercase tracking-wider text-scriba-cream-accent"
+                                >
+                                  <Captions className="size-3" />
+                                  Transcrição
+                                </span>
+                              </>
+                            ) : null}
                             {isDeepened ? (
                               <>
                                 <span className="size-[3px] rounded-full bg-scriba-ink-mute/60" />
@@ -165,10 +190,10 @@ export default async function LibraryPage() {
                           </div>
                           <div className="sm:ml-auto">
                             <NavLink
-                              href={`/recording/${s.id}/summary`}
+                              href={href}
                               className="inline-flex w-full items-center justify-center rounded-full bg-scriba-blue-soft px-4 py-2 text-[11px] font-semibold text-scriba-blue transition-colors hover:bg-scriba-blue-soft/70 sm:w-auto"
                             >
-                              Ver resumo →
+                              {isTranscriptOnly ? "Ver transcrição →" : "Ver resumo →"}
                             </NavLink>
                           </div>
                         </div>

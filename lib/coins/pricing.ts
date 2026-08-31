@@ -16,6 +16,8 @@ export const COIN_COSTS = {
   liveMinute: 5,
   /** Per started minute of audio-only recording. */
   audioOnlyMinute: 2,
+  /** Per started minute of transcript-only recording (no LLM beyond STT). */
+  transcriptMinute: 1,
   /** One-shot cost of running /api/deepening. */
   deepening: 5,
   /** One-shot cost of re-running /api/final-summary/reprocess on a saved session. */
@@ -31,6 +33,7 @@ export const COIN_COSTS = {
 export const CHARGE_REASONS = [
   "live_minute",
   "audio_only_minute",
+  "transcript_minute",
   "deepening",
   "reprocess_summary",
   "reprocess_deepening",
@@ -40,6 +43,7 @@ export type ChargeReason = (typeof CHARGE_REASONS)[number];
 export const COIN_COST_BY_REASON: Record<ChargeReason, number> = {
   live_minute: COIN_COSTS.liveMinute,
   audio_only_minute: COIN_COSTS.audioOnlyMinute,
+  transcript_minute: COIN_COSTS.transcriptMinute,
   deepening: COIN_COSTS.deepening,
   reprocess_summary: COIN_COSTS.reprocessSummary,
   reprocess_deepening: COIN_COSTS.reprocessDeepening,

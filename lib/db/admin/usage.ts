@@ -1,4 +1,5 @@
 import "server-only";
+import { SESSION_MODES, type SessionMode } from "@/lib/domain/session";
 import { createAdminClient } from "@/lib/supabase/admin";
 
 /**
@@ -36,7 +37,7 @@ export type UsageBySession = {
   costPerCoinUsd: number | null;
   userId: string | null;
   ownerDisplayName: string | null;
-  mode: "live" | "audio_only" | null;
+  mode: SessionMode | null;
 };
 export type UsageByDay = { day: string; totalCostUsd: number; events: number };
 
@@ -49,7 +50,7 @@ export type UsageFilters = {
    * session with this mode are counted. Events without a session_id (ad-hoc
    * routes like verse / format-paragraphs) are excluded when the filter is on.
    */
-  mode?: "live" | "audio_only";
+  mode?: SessionMode;
   from?: string;
   to?: string;
 };
@@ -84,9 +85,8 @@ type SessionRow = {
   capture_mode: string | null;
 };
 
-function parseMode(value: string | null | undefined): "live" | "audio_only" | null {
-  if (value === "live" || value === "audio_only") return value;
-  return null;
+function parseMode(value: string | null | undefined): SessionMode | null {
+  return (SESSION_MODES as readonly string[]).includes(value ?? "") ? (value as SessionMode) : null;
 }
 
 type ProfileLite = { id: string; display_name: string | null; email: string | null };
@@ -280,6 +280,7 @@ export async function loadAdminUsageSummary(
       const coins = coinsBySession.get(id) ?? 0;
       // custo/moeda = tudo que a API cobrou nessa sessão dividido pelas moedas
       // que o usuário efetivamente pagou (live_minute + audio_only_minute +
+      // transcript_minute +
       // deepening + reprocess_*). Se não houver ledger para a sessão, é null.
       const costPerCoinUsd = coins > 0 ? agg.cost / coins : null;
       const ownerProfile = meta?.user_id ? profiles.get(meta.user_id) : null;

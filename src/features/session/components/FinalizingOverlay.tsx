@@ -1,4 +1,14 @@
-export function FinalizingOverlay() {
+type Props = {
+  /** Sobrescreve a copy padrão (resumo). O modo transcrição só está salvando
+   * texto — prometer "gerando o resumo" ali seria mentira. */
+  title?: string;
+  subtitle?: string;
+};
+
+export function FinalizingOverlay({
+  title = "Gerando o resumo",
+  subtitle = "Ajustando os últimos pontos e amarrando a ideia central.",
+}: Props = {}) {
   return (
     <div
       role="status"
@@ -11,10 +21,10 @@ export function FinalizingOverlay() {
       </span>
       <div className="flex flex-col items-center gap-2 text-center">
         <p className="font-heading text-xl font-semibold tracking-tight text-scriba-ink-strong">
-          Gerando o resumo
+          {title}
         </p>
         <p className="max-w-sm text-sm font-light leading-relaxed text-scriba-ink-soft">
-          Ajustando os últimos pontos e amarrando a ideia central.
+          {subtitle}
         </p>
       </div>
     </div>

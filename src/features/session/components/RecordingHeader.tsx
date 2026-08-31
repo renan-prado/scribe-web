@@ -11,6 +11,7 @@ import {
 } from "@/components/ui/dialog";
 import { EntityFieldDialog } from "@/features/session/components/EntityFieldDialog";
 import { requestLocationSuggestions, requestSpeakerSuggestions } from "@/features/session/lib/api";
+import { defaultRecordingTitle } from "@/features/session/lib/formatting";
 import {
   isUnknownLocationLabel,
   isUnknownSpeakerLabel,
@@ -19,25 +20,6 @@ import {
 } from "@/features/session/lib/unknown";
 import { getSessionState, useSessionStore } from "@/features/session/store";
 import { cn } from "@/lib/utils";
-
-const MONTHS_PT = [
-  "janeiro",
-  "fevereiro",
-  "março",
-  "abril",
-  "maio",
-  "junho",
-  "julho",
-  "agosto",
-  "setembro",
-  "outubro",
-  "novembro",
-  "dezembro",
-];
-
-function defaultRecordingTitle(date: Date): string {
-  return `Gravação dia ${date.getDate()} de ${MONTHS_PT[date.getMonth()]}`;
-}
 
 function initialsOf(name: string): string {
   const parts = name.trim().split(/\s+/).filter(Boolean);

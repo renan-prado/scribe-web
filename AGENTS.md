@@ -19,6 +19,8 @@ scribe-web is a live sermon/lecture transcription + summarization app. A recorde
 - FINAL (after stop): `final-summary` runs once, consuming the full transcript AND the curated feed items, producing the definitive structured summary rendered by SummaryView.
 - ALSO: `verse` (on-click bible lookup dialog) and `format-paragraphs` (transcript display).
 
+There are three capture modes (`lib/domain/session.ts` — `SessionMode`, plus the route helpers `recordingRouteFor` / `savedRouteFor`): `live` (everything above), `audio_only` (transcribe + final summary, no live cards) and `transcript_only` (transcribe ONLY — no enrichment and no summary; each chunk is rendered on screen as it comes back, and on stop the text is saved by `PUT /api/sessions/:id/transcript` with `final_summary` left null). Each mode records on its own page (`/recording/{id}/{live,audio,transcribe}`) and each page redirects a mismatched mode to the right one. Prices per started minute live in `lib/coins/pricing.ts`: live 5, audio_only 2, transcript_only 1.
+
 Stack: Next.js 16 (App Router), React 19, Supabase SSR, Tailwind v4 + shadcn/base-ui components, Biome, Zod.
 
 ## Folder layout
@@ -26,7 +28,10 @@ Stack: Next.js 16 (App Router), React 19, Supabase SSR, Tailwind v4 + shadcn/bas
 ```
 app/
   api/{transcribe,bible,insights,sermon-echo,final-summary,verse,format-paragraphs}/route.ts
-  (app)/recording/[id]/live/page.tsx — the recording session page (orchestration only)
+  (app)/recording/[id]/{live,audio,transcribe}/page.tsx
+                                — recording pages, one per capture mode (orchestration only)
+  (app)/recording/[id]/{summary,transcript}/page.tsx
+                                — saved session: summary, or transcription for transcript_only
   page.tsx                      — landing that links into the app
   layout.tsx, globals.css
 components/ui/                  — shadcn primitives (Dialog, DropdownMenu, Button)
@@ -34,7 +39,7 @@ lib/
   bible/detect.ts               — layer-1 regex-gate (cheap "is there any bible mention?")
   bible/guard.ts                — layer-2 weighted-signal guard (scoreBibleGuard + currentReading)
   env/{server,client}.ts        — Zod-parsed env vars (throw at import)
-  domain/{summary,feed,verse,recorder}.ts
+  domain/{summary,feed,verse,recorder,session}.ts
                                 — shared types + Zod schemas + parseXxxFromLLM helpers
   llm/openai.ts                 — callChat / callTranscribe (Result<T>, AbortController timeout)
   prompts/*.ts                  — system prompts as exported constants

@@ -1,5 +1,5 @@
 import type { Metadata } from "next";
-import { notFound } from "next/navigation";
+import { notFound, redirect } from "next/navigation";
 import { SavedSessionView } from "@/features/session/components/SavedSessionView";
 import { formatDurationLong } from "@/features/session/lib/formatting";
 import { hasDeepening } from "@/lib/db/deepenings";
@@ -45,6 +45,9 @@ export default async function RecordingSummaryPage({ params }: PageProps) {
       getHighlights(id).catch(() => null),
     ]);
   if (!session) notFound();
+  // Sessões do modo transcrição não têm resumo — moram na página de leitura
+  // da transcrição.
+  if (session.mode === "transcript_only") redirect(`/recording/${id}/transcript`);
 
   const createdAt = new Date(session.createdAt);
 

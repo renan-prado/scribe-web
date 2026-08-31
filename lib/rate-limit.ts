@@ -218,6 +218,13 @@ export const RATE_LIMITS = {
     perUser: { limit: 10, windowMs: HOUR },
     perIp: { limit: 40, windowMs: HOUR },
   },
+  // Save de fim de gravação do modo transcrição: uma chamada por sessão
+  // encerrada, com retry manual do usuário se falhar.
+  "sessions-transcript": {
+    route: "sessions-transcript",
+    perUser: { limit: 20, windowMs: HOUR },
+    perIp: { limit: 60, windowMs: HOUR },
+  },
   "sessions-write": {
     route: "sessions-write",
     perUser: { limit: 60, windowMs: MIN },

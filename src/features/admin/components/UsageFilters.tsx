@@ -29,6 +29,7 @@ const RANGE_LABELS: Record<string, string> = {
 const MODE_LABELS: Record<string, string> = {
   live: "Com live",
   audio_only: "Sem live",
+  transcript_only: "Transcrição",
 };
 
 const ANY = "__any__";
