@@ -55,21 +55,28 @@ export const BIBLE_MIN_TAIL_DELTA_CHARS = 40;
 // ---------- Fluxo INSIGHTS (lento, chunk-based) ----------
 
 /**
- * Cadência do /api/insights em número de chunks OK. A cada 10 chunks
- * transcritos com sucesso o pipeline dispara — com chunks de 15-20s isso
- * equivale a ~150-200s (2.5-3.3min) de fala. Cadência lenta pra reduzir
- * ruído no feed live e cortar custo de API; combinada com o drip gap de
- * ~90s, entrega ~1 card por 90s sem burst-then-silence.
+ * Cadência do /api/insights em número de chunks OK. Com chunks de 15-20s,
+ * 6 chunks equivalem a ~90-120s (1.5-2min) de fala — a cadência-alvo de
+ * ~1 card a cada 1:30-2min no feed live. O FEED_MIN_GAP_MS de 90s segura
+ * o ritmo quando uma call retorna 2 itens de uma vez.
  */
-export const INSIGHTS_CHUNK_INTERVAL = 10;
+export const INSIGHTS_CHUNK_INTERVAL = 6;
 
 /**
- * Trecho da transcrição enviado ao /api/insights. Cresceu junto com o
- * INSIGHTS_CHUNK_INTERVAL: com ~3min entre chamadas, o modelo precisa de
- * mais janela pra escolher bem o item forte do trecho recente. Fala em
- * português roda ~900 chars/min, então 2.8k cobre ~3min de contexto.
+ * Warmup: chunks OK exigidos pro PRIMEIRO disparo de insights da sessão.
+ * Sem ele, o primeiro card só apareceria após INSIGHTS_CHUNK_INTERVAL chunks
+ * (2min+), o que lê como "não está funcionando". Disparar já no primeiro
+ * chunk deixa o prompt decidir se o trecho curto rende algo útil — se
+ * retornar 0 items, o próximo tick volta à cadência normal.
  */
-export const INSIGHTS_TRANSCRIPT_CHARS = 2800; // 2.8k chars
+export const INSIGHTS_FIRST_FIRE_CHUNK = 1;
+
+/**
+ * Trecho da transcrição enviado ao /api/insights. Acompanha o
+ * INSIGHTS_CHUNK_INTERVAL: com ~2min entre chamadas e fala em português
+ * rodando ~900 chars/min, 2k cobre o intervalo com folga de contexto.
+ */
+export const INSIGHTS_TRANSCRIPT_CHARS = 2000; // 2k chars
 
 /**
  * Delta mínimo de transcrição entre duas chamadas de insights. Evita
@@ -98,11 +105,11 @@ export const ECHO_MIN_TAIL_DELTA_CHARS = 200;
 /**
  * Espaçamento mínimo entre dois cards se tornarem visíveis. As pipelines
  * podem retornar 2+ itens de uma vez; uma fila no cliente os espaça pra o
- * ouvinte ter tempo de ler cada um. 70s casa com a cadência de insights
- * (~2.5-3min) entregando ~1 card por ~1:10 min sem sobrecarregar a atenção
- * do ouvinte em aula/culto ao vivo.
+ * ouvinte ter tempo de ler cada um. 90s casa com a cadência de insights
+ * (~1.5-2min): quando uma call retorna 2 itens, o segundo espera 90s, e o
+ * ritmo visível fica na faixa 1:30-2min por card.
  */
-export const FEED_MIN_GAP_MS = 70_000; // 70s
+export const FEED_MIN_GAP_MS = 90_000; // 90s
 
 /**
  * Gap curto pro PRIMEIRO card da sessão. Enquanto `feedItems` estiver vazio,
@@ -113,12 +120,14 @@ export const FEED_MIN_GAP_MS = 70_000; // 70s
 export const FEED_FIRST_CARD_GAP_MS = 20_000; // 20s
 
 /**
- * Gap curto aplicado quando o head da drip queue é um `citedVerse`. A citação
- * vem do próprio pregador lendo — precisa aparecer perto do momento da fala,
- * não atrás do gap longo dos cards de IA. Combina com o "furar-fila" no
- * `enqueueFeedItems` (citedVerse é inserido antes de itens não-citedVerse).
+ * Gap aplicado quando o head da drip queue é um `citedVerse`. ZERO de
+ * propósito: a citação vem do próprio pregador lendo — uma vez identificada,
+ * aparece imediatamente, sem nenhum pacing de fila. O atraso restante é só o
+ * inevitável (fechamento do chunk de áudio + transcrição + call do bible).
+ * Combina com o "furar-fila" no `enqueueFeedItems` (citedVerse é inserido
+ * antes de itens não-citedVerse).
  */
-export const FEED_CITED_VERSE_GAP_MS = 3_000; // 3s
+export const FEED_CITED_VERSE_GAP_MS = 0;
 
 /**
  * Se a fila de drip já tem esse número de items pendentes, o insights tick

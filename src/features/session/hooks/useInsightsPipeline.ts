@@ -3,6 +3,7 @@
 import { type RefObject, useEffect, useMemo, useRef } from "react";
 import {
   INSIGHTS_CHUNK_INTERVAL,
+  INSIGHTS_FIRST_FIRE_CHUNK,
   INSIGHTS_MIN_TAIL_DELTA_CHARS,
   INSIGHTS_QUEUE_BACKPRESSURE,
   INSIGHTS_TRANSCRIPT_CHARS,
@@ -15,7 +16,9 @@ import { devLog } from "@/lib/log";
 
 /**
  * INSIGHTS pipeline. Fires every INSIGHTS_CHUNK_INTERVAL successfully
- * transcribed chunks (chunk-count-based, not time-based).
+ * transcribed chunks (chunk-count-based, not time-based). O primeiro disparo
+ * da sessão usa INSIGHTS_FIRST_FIRE_CHUNK (warmup) — o feed mostra algo útil
+ * já no início em vez de esperar um intervalo inteiro.
  *
  * insightsInFlight is intentionally NOT in the effect deps — re-triggering
  * on flight changes would cause unnecessary re-runs. State is read via
@@ -44,7 +47,9 @@ export function useInsightsPipeline({
   useEffect(() => {
     if (!running || finalizing) return;
     if (okChunkCount === 0) return;
-    if (okChunkCount - lastFiredChunkRef.current < INSIGHTS_CHUNK_INTERVAL) return;
+    const interval =
+      lastFiredChunkRef.current === 0 ? INSIGHTS_FIRST_FIRE_CHUNK : INSIGHTS_CHUNK_INTERVAL;
+    if (okChunkCount - lastFiredChunkRef.current < interval) return;
 
     const s = useSessionStore.getState();
     if (s.insightsInFlight) return;
