@@ -9,6 +9,11 @@ import { type SanitizedTranscription, sanitizeTranscription } from "@/lib/transc
  *  2. Confiança do próprio modelo (média de logprobs por token) — pega o
  *     caso oposto: decodificação incerta/embolada de áudio ruim, que sai
  *     sem assinatura conhecida mas com probabilidade baixa.
+ *  3. Densidade de texto por segundo de áudio — pega o caso que escapa dos
+ *     dois acima: áudio dominado por ruído/música em que o modelo só decodifica
+ *     fragmentos esparsos. Os fragmentos saem CONFIANTES (poucos tokens, logprob
+ *     ok) e sem assinatura, mas um chunk não-silencioso que rende quase nenhum
+ *     texto é o sinal mais direto de que o modelo não está entendendo o áudio.
  *
  * `poor` = qualquer uma das fontes acusou. É o sinal que dispara a escalada
  * de modelo no servidor e a exclusão do chunk como contexto no cliente.
@@ -22,24 +27,46 @@ import { type SanitizedTranscription, sanitizeTranscription } from "@/lib/transc
  */
 export const LOW_CONFIDENCE_AVG_LOGPROB = -0.6;
 
+/**
+ * Piso de densidade: chars de texto limpo por segundo de áudio. Fala contínua
+ * em pt-BR rende ~12-16 chars/s; mesmo fala pausada (metade do chunk em
+ * silêncio) fica acima de 5. Abaixo de 3, o modelo devolveu fragmentos de um
+ * áudio que o gate de silêncio do cliente considerou "com som" — ruído ou
+ * música, não fala inteligível.
+ */
+export const LOW_DENSITY_CHARS_PER_SEC = 3;
+
+/**
+ * Áudio mínimo pra densidade significar algo. O chunk final de uma gravação
+ * (flush do stop) pode ter poucos segundos e legitimamente render pouco texto.
+ */
+export const LOW_DENSITY_MIN_AUDIO_SECONDS = 8;
+
 export type TranscriptionAssessment = SanitizedTranscription & {
   avgLogprob: number | null;
   lowConfidence: boolean;
-  /** Assinatura de alucinação OU baixa confiança — chunk de qualidade ruim. */
+  /** Áudio não-silencioso que rendeu texto abaixo do piso de densidade. */
+  lowDensity: boolean;
+  /** Assinatura de alucinação, baixa confiança OU baixa densidade. */
   poor: boolean;
 };
 
 export function assessTranscription(
   raw: string,
-  avgLogprob: number | null
+  avgLogprob: number | null,
+  audioSeconds = 0
 ): TranscriptionAssessment {
   const sanitized = sanitizeTranscription(raw);
   const lowConfidence = avgLogprob !== null && avgLogprob < LOW_CONFIDENCE_AVG_LOGPROB;
+  const lowDensity =
+    audioSeconds >= LOW_DENSITY_MIN_AUDIO_SECONDS &&
+    sanitized.text.length / audioSeconds < LOW_DENSITY_CHARS_PER_SEC;
   return {
     ...sanitized,
     avgLogprob,
     lowConfidence,
-    poor: sanitized.suspect || lowConfidence,
+    lowDensity,
+    poor: sanitized.suspect || lowConfidence || lowDensity,
   };
 }
 
@@ -48,7 +75,7 @@ export function assessTranscription(
  * resultado do modelo padrão com o do modelo escalado e ficar com o melhor.
  */
 export function assessmentPenalty(a: TranscriptionAssessment): number {
-  return (a.suspect ? 1 : 0) + (a.lowConfidence ? 1 : 0);
+  return (a.suspect ? 1 : 0) + (a.lowConfidence ? 1 : 0) + (a.lowDensity ? 1 : 0);
 }
 
 /** `include[]=logprobs` só é aceito pela família gpt-*-transcribe sem diarize. */

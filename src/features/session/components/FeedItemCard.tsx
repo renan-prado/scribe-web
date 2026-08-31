@@ -94,7 +94,7 @@ export function FeedItemCard({ item, onOpenVerse }: FeedItemCardProps) {
 
   if (item.kind === "citedVerse") {
     const parsed = parseVerseReference(item.reference);
-    if (!parsed || parsed.startVerse == null) return null;
+    if (!parsed) return null;
   }
 
   const origin = feedItemOrigin(item);
@@ -199,7 +199,13 @@ function FeedItemBody({ item, onOpenVerse, isAi }: FeedItemBodyProps) {
   switch (item.kind) {
     case "citedVerse": {
       const parsed = parseVerseReference(item.reference);
-      if (!parsed || parsed.startVerse == null || parsed.endVerse == null) return null;
+      if (!parsed) return null;
+      // Referência só de capítulo (pastor anunciou "João 4" sem versículo):
+      // pré-supõe leitura a partir do v.1 e já mostra o texto. Quando o
+      // versículo real for falado, o citedVerse específico substitui este
+      // card (referenceResolvesChapterOnly no enqueueFeedItems).
+      const startVerse = parsed.startVerse ?? 1;
+      const endVerse = parsed.endVerse ?? startVerse;
       return (
         <>
           <button
@@ -216,8 +222,8 @@ function FeedItemBody({ item, onOpenVerse, isAi }: FeedItemBodyProps) {
             <PassageVerses
               bookDisplay={parsed.bookDisplay}
               chapter={parsed.chapter}
-              startVerse={parsed.startVerse}
-              endVerse={parsed.endVerse}
+              startVerse={startVerse}
+              endVerse={endVerse}
             />
           </div>
         </>

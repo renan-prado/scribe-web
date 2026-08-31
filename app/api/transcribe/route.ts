@@ -112,12 +112,13 @@ export async function POST(request: Request) {
     latencyMs: result.data.latencyMs,
   });
 
-  // Rede de segurança em duas frentes (ver lib/transcription/quality):
+  // Rede de segurança em três frentes (ver lib/transcription/quality):
   // sanitização determinística de assinaturas de alucinação + piso de
-  // confiança via logprobs. `poor` marca o chunk como suspeito para o client
+  // confiança via logprobs + piso de densidade de texto por segundo de
+  // áudio. `poor` marca o chunk como suspeito para o client
   // (fora do prevText/pipelines) e, no tier standard, dispara uma segunda
   // tentativa com o modelo escalado usando o MESMO áudio.
-  let assessment = assessTranscription(result.data.text, result.data.avgLogprob);
+  let assessment = assessTranscription(result.data.text, result.data.avgLogprob, audioSeconds);
   let chosenModel = model;
   let latencyMs = result.data.latencyMs;
   let escalated = tier === "escalated";
@@ -132,7 +133,11 @@ export async function POST(request: Request) {
         audioSeconds,
         latencyMs: retry.data.latencyMs,
       });
-      const retryAssessment = assessTranscription(retry.data.text, retry.data.avgLogprob);
+      const retryAssessment = assessTranscription(
+        retry.data.text,
+        retry.data.avgLogprob,
+        audioSeconds
+      );
       // Empate favorece o modelo escalado: mesma contagem de assinaturas
       // ruins, mas decodificação mais robusta por trás.
       if (assessmentPenalty(retryAssessment) <= assessmentPenalty(assessment)) {
@@ -154,6 +159,8 @@ export async function POST(request: Request) {
       vocabEcho: assessment.vocabEcho,
       repetitionLoop: assessment.repetitionLoop,
       lowConfidence: assessment.lowConfidence,
+      lowDensity: assessment.lowDensity,
+      audioSeconds,
       avgLogprob: assessment.avgLogprob,
       cleanChars: assessment.text.length,
     });

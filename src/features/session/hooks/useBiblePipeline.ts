@@ -103,8 +103,10 @@ export function useBiblePipeline({
         let latestRefStr = "";
         for (const item of items) {
           if (item.kind !== "citedVerse") continue;
-          if (item.text === "" && item.reference.includes(":")) {
-            prefetchVerse(item.reference);
+          if (item.text === "") {
+            // Chapter-only pré-supõe leitura a partir do v.1 (o card renderiza
+            // o verso 1) — aquece o cache com ele em vez de pular o prefetch.
+            prefetchVerse(item.reference.includes(":") ? item.reference : `${item.reference}:1`);
           }
           const parsed = parseVerseReference(item.reference);
           if (parsed) {
@@ -117,7 +119,10 @@ export function useBiblePipeline({
             book: canonicalBookStem(latestRef.bookDisplay),
             bookDisplay: latestRef.bookDisplay,
             chapter: latestRef.chapter,
-            verse: latestRef.startVerse ?? latestRef.endVerse,
+            // Chapter-only assume leitura a partir do v.1 — deixa o sinal
+            // verseProgression do guard armado pra quando o pastor disser
+            // "versículo N" logo em seguida.
+            verse: latestRef.startVerse ?? latestRef.endVerse ?? 1,
             updatedAtMs: nowMs,
           });
           s.setLastBibleEmit({ reference: latestRefStr, atMs: nowMs });

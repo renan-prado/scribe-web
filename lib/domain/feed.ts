@@ -208,6 +208,21 @@ export function referenceStrictlyContains(broader: string, narrower: string): bo
   return b.startVerse < n.startVerse || b.endVerse > n.endVerse;
 }
 
+/**
+ * True when `specific` resolves the verse assumption of a chapter-only ref:
+ * same book+chapter, `specific` carries a verse number and `chapterOnly`
+ * doesn't. The live feed renders a chapter-only citedVerse assuming the
+ * reading starts at verse 1; once the speaker names the actual verse, the
+ * specific reference replaces the assumed card (see enqueueFeedItems).
+ */
+export function referenceResolvesChapterOnly(specific: string, chapterOnly: string): boolean {
+  const s = parseVerseReference(specific);
+  const c = parseVerseReference(chapterOnly);
+  if (!s || !c) return false;
+  if (s.book !== c.book || s.chapter !== c.chapter) return false;
+  return s.startVerse != null && c.startVerse == null;
+}
+
 function normalizeText(text: string): string {
   return text.trim().toLowerCase().replace(/\s+/g, " ");
 }

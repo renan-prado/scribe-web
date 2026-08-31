@@ -5,7 +5,12 @@ import { subscribeWithSelector } from "zustand/middleware";
 import { ECHO_STREAK_MAX, ECHO_STREAK_MIN } from "@/features/session/config";
 import type { ChunkRow, TranscribeTier } from "@/features/session/types";
 import type { GuardCurrentReading, GuardLastEmit } from "@/lib/bible/guard";
-import { type FeedItem, feedItemDedupKey, referenceStrictlyContains } from "@/lib/domain/feed";
+import {
+  type FeedItem,
+  feedItemDedupKey,
+  referenceResolvesChapterOnly,
+  referenceStrictlyContains,
+} from "@/lib/domain/feed";
 import type { SummaryPayload } from "@/lib/domain/summary";
 import { devLog } from "@/lib/log";
 
@@ -360,8 +365,13 @@ export const useSessionStore = create<SessionStoreState>()(
         }
 
         if (item.kind === "citedVerse") {
-          const coveredBy = currentCitedVerses.find((ex) =>
-            referenceStrictlyContains(ex.reference, item.reference)
+          // Cobertura: faixa maior já visível/na fila, OU um chapter-only
+          // chegando quando um verso específico do mesmo capítulo já existe
+          // (a referência vaga não acrescenta nada).
+          const coveredBy = currentCitedVerses.find(
+            (ex) =>
+              referenceStrictlyContains(ex.reference, item.reference) ||
+              referenceResolvesChapterOnly(ex.reference, item.reference)
           );
           if (coveredBy) {
             dedupSuppressedInc++;
@@ -373,8 +383,13 @@ export const useSessionStore = create<SessionStoreState>()(
             });
             continue;
           }
-          const superseded = currentCitedVerses.filter((ex) =>
-            referenceStrictlyContains(item.reference, ex.reference)
+          // Supersede: faixa que contém uma menor, OU verso específico que
+          // corrige um chapter-only do mesmo capítulo (o card assumia leitura
+          // a partir do v.1; agora o versículo real chegou).
+          const superseded = currentCitedVerses.filter(
+            (ex) =>
+              referenceStrictlyContains(item.reference, ex.reference) ||
+              referenceResolvesChapterOnly(item.reference, ex.reference)
           );
           if (superseded.length > 0) {
             const supersededKeys = new Set(superseded.map(feedItemDedupKey));
