@@ -143,6 +143,21 @@ export const RECORDER_SILENCE_THRESHOLD = 0.01;
 export const RECORDER_SILENCE_HOLD_MS = 400;
 export const SILENCE_RMS_THRESHOLD = 0.005;
 
+// ---------- TRANSCRIÇÃO (qualidade + escalada de modelo) ----------
+
+/**
+ * Janela deslizante de chunks OK observada para decidir a promoção da sessão
+ * ao modelo de transcrição escalado. Se, entre os últimos
+ * TRANSCRIBE_ESCALATION_WINDOW chunks, TRANSCRIBE_ESCALATION_BAD_COUNT ou mais
+ * saíram ruins (assinatura de alucinação, baixa confiança, ou o servidor
+ * precisou re-transcrever no modelo escalado), a sessão inteira passa a pedir
+ * o modelo escalado direto — evita pagar dois modelos por chunk em áudio
+ * sabidamente ruim. A promoção é pegajosa: vale até o fim da sessão, e o
+ * usuário é avisado por um banner para decidir se continua gastando moedas.
+ */
+export const TRANSCRIBE_ESCALATION_WINDOW = 5;
+export const TRANSCRIBE_ESCALATION_BAD_COUNT = 3;
+
 // ---------- OUTROS ----------
 
 export const TICK_INTERVAL_MS = 300;

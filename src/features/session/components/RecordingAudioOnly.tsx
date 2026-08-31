@@ -11,6 +11,8 @@ import {
   RECORDER_MIN_CHUNK_MS,
   RECORDER_SILENCE_HOLD_MS,
   RECORDER_SILENCE_THRESHOLD,
+  TRANSCRIBE_ESCALATION_BAD_COUNT,
+  TRANSCRIBE_ESCALATION_WINDOW,
 } from "@/features/session/config";
 import { useBackgroundKeepalive } from "@/features/session/hooks/useBackgroundKeepalive";
 import { useCoinTick } from "@/features/session/hooks/useCoinTick";
@@ -60,13 +62,20 @@ export function RecordingAudioOnly({
   const pausedElapsedRef = useRef<number>(0);
   /** Next chunk index to hand to the recorder created on resume. */
   const nextChunkIndexRef = useRef<number>(0);
-  const chunksRef = useRef<Map<number, { text: string; suspect: boolean }>>(new Map());
+  const chunksRef = useRef<Map<number, { text: string; suspect: boolean; escalated: boolean }>>(
+    new Map()
+  );
+  /** Tier de transcrição da sessão. Promovido (pegajoso) quando uma sequência
+   * de chunks sai ruim — mesmo critério do modo live, mas em ref local porque
+   * este modo não usa o session store. */
+  const tierRef = useRef<"standard" | "escalated">("standard");
   const autoStartFiredRef = useRef(false);
 
   const [running, setRunning] = useState(false);
   const [paused, setPaused] = useState(false);
   const [finalizing, setFinalizing] = useState(false);
   const [startupError, setStartupError] = useState("");
+  const [qualityPoor, setQualityPoor] = useState(false);
 
   const activelyRecording = running && !paused;
   const elapsedMs = useElapsedTimer(activelyRecording, startedAtRef);
@@ -77,7 +86,7 @@ export function RecordingAudioOnly({
     return indices
       .map((i) => chunksRef.current.get(i))
       .filter(
-        (c): c is { text: string; suspect: boolean } =>
+        (c): c is { text: string; suspect: boolean; escalated: boolean } =>
           Boolean(c) && !(opts?.excludeSuspect && c?.suspect)
       )
       .map((c) => c.text.trim())
@@ -94,9 +103,29 @@ export function RecordingAudioOnly({
       // entram no hint — realimentá-los tende a repetir a alucinação.
       const previousText = assembleTranscript({ excludeSuspect: true });
       const prevHint = tailSentences(previousText, 2);
-      const result = await uploadChunkWithRetry(ev, prevHint, sessionId);
+      const result = await uploadChunkWithRetry(ev, prevHint, sessionId, tierRef.current);
       if (result.ok) {
-        chunksRef.current.set(ev.index, { text: result.text, suspect: result.suspect });
+        chunksRef.current.set(ev.index, {
+          text: result.text,
+          suspect: result.suspect,
+          escalated: result.escalated,
+        });
+        if (tierRef.current === "standard") {
+          const recent = Array.from(chunksRef.current.keys())
+            .sort((a, b) => a - b)
+            .slice(-TRANSCRIBE_ESCALATION_WINDOW)
+            .map((i) => chunksRef.current.get(i));
+          const bad = recent.filter((c) => c && (c.suspect || c.escalated)).length;
+          if (bad >= TRANSCRIBE_ESCALATION_BAD_COUNT) {
+            tierRef.current = "escalated";
+            setQualityPoor(true);
+            devLog("[session:audio] transcribe escalated", { index: ev.index });
+            toast.warning("Áudio com qualidade baixa detectada.", {
+              description:
+                "Ativamos um modelo de transcrição mais preciso para os próximos trechos.",
+            });
+          }
+        }
       }
     },
     [assembleTranscript, sessionId]
@@ -105,9 +134,11 @@ export function RecordingAudioOnly({
   const start = useCallback(async () => {
     if (recorderRef.current) return;
     chunksRef.current = new Map();
+    tierRef.current = "standard";
     nextChunkIndexRef.current = 0;
     pausedElapsedRef.current = 0;
     setStartupError("");
+    setQualityPoor(false);
     const rec = createRecorder({
       minChunkMs: RECORDER_MIN_CHUNK_MS,
       maxChunkMs: RECORDER_MAX_CHUNK_MS,
@@ -279,6 +310,18 @@ export function RecordingAudioOnly({
           <p className="max-w-xs text-center text-sm text-destructive" role="alert">
             {startupError}
           </p>
+        ) : null}
+        {running && qualityPoor ? (
+          <div
+            role="status"
+            className="max-w-sm rounded-xl border border-amber-300 bg-amber-50 px-4 py-3 text-center text-sm text-amber-900"
+          >
+            <p className="font-semibold">Áudio com qualidade baixa</p>
+            <p className="mt-1">
+              A transcrição pode conter erros. Ativamos um modelo mais preciso — se possível,
+              aproxime o aparelho do som. Você pode continuar ou encerrar a gravação.
+            </p>
+          </div>
         ) : null}
       </div>
 

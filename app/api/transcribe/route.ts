@@ -5,7 +5,11 @@ import { isUuid } from "@/lib/http/validate";
 import { callTranscribe } from "@/lib/llm/openai";
 import { enforceRateLimit, RATE_LIMITS } from "@/lib/rate-limit";
 import { requireAuth } from "@/lib/supabase/require-auth";
-import { sanitizeTranscription } from "@/lib/transcription/sanitize";
+import {
+  assessmentPenalty,
+  assessTranscription,
+  modelSupportsLogprobs,
+} from "@/lib/transcription/quality";
 import { VOCABULARIO_PROMPT } from "@/lib/vocabulario";
 
 export const runtime = "nodejs";
@@ -26,8 +30,6 @@ export async function POST(request: Request) {
 
   const limited = enforceRateLimit(request, RATE_LIMITS.transcribe, auth.user.id);
   if (limited) return limited;
-
-  const model = serverEnv.OPENAI_TRANSCRIBE_MODEL;
 
   let form: FormData;
   try {
@@ -66,17 +68,28 @@ export async function POST(request: Request) {
   if (!ALLOWED_EXTENSIONS.has(extension)) {
     return NextResponse.json({ error: "unsupported file type" }, { status: 415 });
   }
+  // Sessão já promovida pelo client (sequência de chunks ruins) transcreve
+  // direto no modelo escalado — evita pagar mini + escalado em todo chunk de
+  // uma sessão com áudio sabidamente ruim.
+  const tier = form.get("tier") === "escalated" ? "escalated" : "standard";
+  const standardModel = serverEnv.OPENAI_TRANSCRIBE_MODEL;
+  const escalatedModel = serverEnv.OPENAI_TRANSCRIBE_ESCALATED_MODEL;
+  const model = tier === "escalated" ? escalatedModel : standardModel;
 
   const filename = `chunk-${chunkIndex ?? "x"}.${extension}`;
   const prompt = prevText ? `${VOCABULARIO_PROMPT} ${prevText}` : VOCABULARIO_PROMPT;
 
-  const result = await callTranscribe({
-    model,
-    file,
-    filename,
-    prompt,
-    language: "pt",
-  });
+  const transcribeWith = (m: string) =>
+    callTranscribe({
+      model: m,
+      file,
+      filename,
+      prompt,
+      language: "pt",
+      include: modelSupportsLogprobs(m) ? ["logprobs"] : undefined,
+    });
+
+  const result = await transcribeWith(model);
 
   if (!result.ok) {
     if (result.error.kind === "fetch") {
@@ -98,25 +111,59 @@ export async function POST(request: Request) {
     audioSeconds,
     latencyMs: result.data.latencyMs,
   });
-  // Rede de segurança: remove assinaturas conhecidas de alucinação (eco do
-  // prompt-guia, eco do vocabulário, loop de sentença repetida) antes de
-  // devolver ao client. `suspect` avisa o client para não reutilizar este
-  // chunk como contexto (prevText/pipelines) — ver lib/transcription/sanitize.
-  const sanitized = sanitizeTranscription(result.data.text);
-  if (sanitized.suspect) {
-    console.warn("[transcribe] hallucination-signature", {
+
+  // Rede de segurança em duas frentes (ver lib/transcription/quality):
+  // sanitização determinística de assinaturas de alucinação + piso de
+  // confiança via logprobs. `poor` marca o chunk como suspeito para o client
+  // (fora do prevText/pipelines) e, no tier standard, dispara uma segunda
+  // tentativa com o modelo escalado usando o MESMO áudio.
+  let assessment = assessTranscription(result.data.text, result.data.avgLogprob);
+  let chosenModel = model;
+  let latencyMs = result.data.latencyMs;
+  let escalated = tier === "escalated";
+
+  if (tier === "standard" && assessment.poor && escalatedModel !== standardModel) {
+    const retry = await transcribeWith(escalatedModel);
+    if (retry.ok) {
+      await recordAudioUsage({
+        sessionId,
+        route: "transcribe",
+        model: escalatedModel,
+        audioSeconds,
+        latencyMs: retry.data.latencyMs,
+      });
+      const retryAssessment = assessTranscription(retry.data.text, retry.data.avgLogprob);
+      // Empate favorece o modelo escalado: mesma contagem de assinaturas
+      // ruins, mas decodificação mais robusta por trás.
+      if (assessmentPenalty(retryAssessment) <= assessmentPenalty(assessment)) {
+        assessment = retryAssessment;
+        chosenModel = escalatedModel;
+      }
+      latencyMs += retry.data.latencyMs;
+      escalated = true;
+    }
+  }
+
+  if (assessment.poor || escalated) {
+    console.warn("[transcribe] quality", {
       chunkIndex: chunkIndex ?? null,
-      promptEcho: sanitized.promptEcho,
-      vocabEcho: sanitized.vocabEcho,
-      repetitionLoop: sanitized.repetitionLoop,
-      rawChars: result.data.text.length,
-      cleanChars: sanitized.text.length,
+      tier,
+      chosenModel,
+      escalated,
+      promptEcho: assessment.promptEcho,
+      vocabEcho: assessment.vocabEcho,
+      repetitionLoop: assessment.repetitionLoop,
+      lowConfidence: assessment.lowConfidence,
+      avgLogprob: assessment.avgLogprob,
+      cleanChars: assessment.text.length,
     });
   }
+
   return NextResponse.json({
-    text: sanitized.text,
-    suspect: sanitized.suspect,
-    latencyMs: result.data.latencyMs,
-    model,
+    text: assessment.text,
+    suspect: assessment.poor,
+    escalated,
+    latencyMs,
+    model: chosenModel,
   });
 }

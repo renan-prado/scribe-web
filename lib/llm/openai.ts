@@ -45,11 +45,19 @@ export type TranscribeParams = {
   prompt?: string;
   language?: string;
   timeoutMs?: number;
+  /** Extra payload to request. `logprobs` only works with the gpt-*-transcribe
+   * family em response_format json (não suportado por whisper-1 nem pelos
+   * modelos -diarize) — o caller decide quando pedir. */
+  include?: "logprobs"[];
 };
 
 export type TranscribeResult = {
   text: string;
   latencyMs: number;
+  /** Média dos logprobs por token quando `include: ["logprobs"]` foi pedido e
+   * o upstream respondeu com eles; null caso contrário. Proxy de confiança:
+   * mais próximo de 0 = decodificação confiante. */
+  avgLogprob: number | null;
 };
 
 export type LLMFailure =
@@ -186,6 +194,7 @@ export async function callTranscribe(params: TranscribeParams): Promise<Result<T
   if (params.language) form.append("language", params.language);
   form.append("response_format", "json");
   if (params.prompt) form.append("prompt", params.prompt);
+  for (const inc of params.include ?? []) form.append("include[]", inc);
 
   let upstream: Response;
   try {
@@ -219,12 +228,18 @@ export async function callTranscribe(params: TranscribeParams): Promise<Result<T
     };
   }
 
-  let parsed: { text?: string } = {};
+  let parsed: { text?: string; logprobs?: { logprob?: number }[] } = {};
   try {
     parsed = JSON.parse(raw);
   } catch {
     parsed = { text: raw };
   }
 
-  return { ok: true, data: { text: parsed.text ?? "", latencyMs } };
+  const logprobs = Array.isArray(parsed.logprobs)
+    ? parsed.logprobs.map((l) => l?.logprob).filter((v): v is number => Number.isFinite(v))
+    : [];
+  const avgLogprob =
+    logprobs.length > 0 ? logprobs.reduce((a, b) => a + b, 0) / logprobs.length : null;
+
+  return { ok: true, data: { text: parsed.text ?? "", latencyMs, avgLogprob } };
 }

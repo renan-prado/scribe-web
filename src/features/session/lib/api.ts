@@ -219,8 +219,11 @@ export async function requestVerse(
 export async function uploadChunkWithRetry(
   ev: ChunkEvent,
   prevText: string,
-  sessionId?: string
-): Promise<{ ok: true; text: string; suspect: boolean } | { ok: false; message: string }> {
+  sessionId?: string,
+  tier?: "standard" | "escalated"
+): Promise<
+  { ok: true; text: string; suspect: boolean; escalated: boolean } | { ok: false; message: string }
+> {
   const backoffMs = [500, 1500];
   let last: { ok: false; message: string } = { ok: false, message: "unknown error" };
   for (let attempt = 0; attempt <= backoffMs.length; attempt++) {
@@ -231,6 +234,7 @@ export async function uploadChunkWithRetry(
       durationMs: ev.durationMs,
       prevText,
       sessionId,
+      tier,
     });
     if (res.ok) return res;
     last = res;
@@ -253,7 +257,12 @@ export async function uploadChunk(input: {
   durationMs: number;
   prevText: string;
   sessionId?: string;
-}): Promise<{ ok: true; text: string; suspect: boolean } | { ok: false; message: string }> {
+  /** "escalated" quando a sessão foi promovida ao modelo mais robusto —
+   * o servidor então transcreve direto nele, sem passar pelo padrão. */
+  tier?: "standard" | "escalated";
+}): Promise<
+  { ok: true; text: string; suspect: boolean; escalated: boolean } | { ok: false; message: string }
+> {
   try {
     const form = new FormData();
     const filename = `chunk-${input.index}.${input.extension}`;
@@ -263,12 +272,18 @@ export async function uploadChunk(input: {
     form.append("prevText", input.prevText);
     form.append("durationMs", String(input.durationMs));
     if (input.sessionId) form.append("sessionId", input.sessionId);
+    if (input.tier) form.append("tier", input.tier);
     const res = await fetch("/api/transcribe", { method: "POST", body: form });
     const body = await res.json();
     if (!res.ok) {
       return { ok: false, message: body?.error ?? `HTTP ${res.status}` };
     }
-    return { ok: true, text: body.text ?? "", suspect: body.suspect === true };
+    return {
+      ok: true,
+      text: body.text ?? "",
+      suspect: body.suspect === true,
+      escalated: body.escalated === true,
+    };
   } catch (err) {
     return { ok: false, message: (err as Error).message ?? "network error" };
   }

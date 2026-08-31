@@ -3,7 +3,7 @@
 import { create } from "zustand";
 import { subscribeWithSelector } from "zustand/middleware";
 import { ECHO_STREAK_MAX, ECHO_STREAK_MIN } from "@/features/session/config";
-import type { ChunkRow } from "@/features/session/types";
+import type { ChunkRow, TranscribeTier } from "@/features/session/types";
 import type { GuardCurrentReading, GuardLastEmit } from "@/lib/bible/guard";
 import { type FeedItem, feedItemDedupKey, referenceStrictlyContains } from "@/lib/domain/feed";
 import type { SummaryPayload } from "@/lib/domain/summary";
@@ -90,6 +90,13 @@ export type SessionStoreState = {
   bibleInFlight: boolean;
   insightsInFlight: boolean;
 
+  // ---- transcription quality ----
+  /** Modelo de transcrição pedido pelos próximos uploads. Promovido a
+   * "escalated" quando uma sequência de chunks sai ruim (ver
+   * TRANSCRIBE_ESCALATION_*). Pegajoso até o fim da sessão — rebaixar exigiria
+   * sondar o modelo barato de novo em áudio que já se mostrou ruim. */
+  transcribeTier: TranscribeTier;
+
   // ---- bible guard context ----
   /** Última leitura reconhecida (livro + capítulo + verso). Alimenta os
    * sinais continuationHit, verseProgression e bookRepeatNoNumber do guard. */
@@ -143,6 +150,7 @@ export type SessionStoreState = {
   setSpeakerLocation: (v: string) => void;
   setBibleInFlight: (v: boolean) => void;
   setInsightsInFlight: (v: boolean) => void;
+  setTranscribeTier: (v: TranscribeTier) => void;
   setCurrentReading: (v: GuardCurrentReading | null) => void;
   setLastBibleEmit: (v: GuardLastEmit | null) => void;
   setAutoFollow: (v: boolean) => void;
@@ -206,6 +214,8 @@ export const useSessionStore = create<SessionStoreState>()(
     bibleInFlight: false,
     insightsInFlight: false,
 
+    transcribeTier: "standard",
+
     currentReading: null,
     lastBibleEmit: null,
 
@@ -245,6 +255,7 @@ export const useSessionStore = create<SessionStoreState>()(
         speakerLocation,
         bibleInFlight: false,
         insightsInFlight: false,
+        transcribeTier: "standard",
         currentReading: null,
         lastBibleEmit: null,
         dripQueue: [],
@@ -274,6 +285,7 @@ export const useSessionStore = create<SessionStoreState>()(
     setSpeakerLocation: (v) => set({ speakerLocation: v }),
     setBibleInFlight: (v) => set({ bibleInFlight: v }),
     setInsightsInFlight: (v) => set({ insightsInFlight: v }),
+    setTranscribeTier: (v) => set({ transcribeTier: v }),
     setCurrentReading: (v) => set({ currentReading: v }),
     setLastBibleEmit: (v) => set({ lastBibleEmit: v }),
     setAutoFollow: (v) => set({ autoFollow: v }),

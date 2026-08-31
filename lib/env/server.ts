@@ -3,6 +3,10 @@ import { z } from "zod";
 const schema = z.object({
   OPENAI_API_KEY: z.string().min(1),
   OPENAI_TRANSCRIBE_MODEL: z.string().default("gpt-4o-mini-transcribe"),
+  /** Modelo mais robusto usado quando a qualidade do chunk padrão sai ruim
+   * (assinatura de alucinação ou baixa confiança). Custa ~2x o mini; só é
+   * cobrado nos chunks/sessões que precisarem. */
+  OPENAI_TRANSCRIBE_ESCALATED_MODEL: z.string().default("gpt-4o-transcribe"),
   OPENAI_BIBLE_MODEL: z.string().default("gpt-4.1-mini"),
   OPENAI_INSIGHTS_MODEL: z.string().default("gpt-4.1-mini"),
   OPENAI_ECHO_MODEL: z.string().default("gpt-4o-mini"),
@@ -20,6 +24,7 @@ const schema = z.object({
 const parsed = schema.safeParse({
   OPENAI_API_KEY: process.env.OPENAI_API_KEY,
   OPENAI_TRANSCRIBE_MODEL: process.env.OPENAI_TRANSCRIBE_MODEL,
+  OPENAI_TRANSCRIBE_ESCALATED_MODEL: process.env.OPENAI_TRANSCRIBE_ESCALATED_MODEL,
   OPENAI_BIBLE_MODEL: process.env.OPENAI_BIBLE_MODEL,
   OPENAI_INSIGHTS_MODEL: process.env.OPENAI_INSIGHTS_MODEL,
   OPENAI_ECHO_MODEL: process.env.OPENAI_ECHO_MODEL,

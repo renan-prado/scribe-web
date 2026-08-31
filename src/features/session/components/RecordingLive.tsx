@@ -24,6 +24,8 @@ import {
   RECORDER_MIN_CHUNK_MS,
   RECORDER_SILENCE_HOLD_MS,
   RECORDER_SILENCE_THRESHOLD,
+  TRANSCRIBE_ESCALATION_BAD_COUNT,
+  TRANSCRIBE_ESCALATION_WINDOW,
 } from "@/features/session/config";
 import { useBackgroundKeepalive } from "@/features/session/hooks/useBackgroundKeepalive";
 import { useBiblePipeline } from "@/features/session/hooks/useBiblePipeline";
@@ -38,7 +40,7 @@ import { useVersePrefetcher } from "@/features/session/hooks/useVerseFetch";
 import { useWakeLock } from "@/features/session/hooks/useWakeLock";
 import { requestDeleteSession, requestFinalSummary } from "@/features/session/lib/api";
 import { isSilentBlob } from "@/features/session/lib/audio";
-import { joinOkChunks } from "@/features/session/lib/chunks";
+import { joinOkChunks, shouldEscalateTranscription } from "@/features/session/lib/chunks";
 import { tailSentences } from "@/features/session/lib/text";
 import { getSessionState, useSessionStore } from "@/features/session/store";
 import type { ChunkRow, TranscriptState } from "@/features/session/types";
@@ -89,6 +91,7 @@ export function RecordingLive({
   const insightsInFlight = useSessionStore((s) => s.insightsInFlight);
   const autoFollow = useSessionStore((s) => s.autoFollow);
   const pendingNew = useSessionStore((s) => s.pendingNew);
+  const transcribeTier = useSessionStore((s) => s.transcribeTier);
 
   // ---- ui-local state (dialog open flags) ----
   const [transcriptOpen, setTranscriptOpen] = useState(false);
@@ -134,11 +137,36 @@ export function RecordingLive({
         startedAtMs: 0,
       });
     },
-    onSuccess: (index, text, suspect) => {
-      const current = useSessionStore.getState().chunks[index];
+    onSuccess: (index, text, meta) => {
+      const s = useSessionStore.getState();
+      const current = s.chunks[index];
       if (!current) return;
-      useSessionStore.getState().upsertChunk({ ...current, status: "ok", text, suspect });
+      s.upsertChunk({
+        ...current,
+        status: "ok",
+        text,
+        suspect: meta.suspect,
+        escalated: meta.escalated,
+      });
+      // Promoção da sessão ao modelo escalado quando o áudio se mostra ruim
+      // de forma sustentada. Pegajosa até o fim da sessão; o banner acima do
+      // feed avisa o usuário para que ele decida se continua.
+      if (
+        s.transcribeTier === "standard" &&
+        shouldEscalateTranscription(
+          useSessionStore.getState().chunks,
+          TRANSCRIBE_ESCALATION_WINDOW,
+          TRANSCRIBE_ESCALATION_BAD_COUNT
+        )
+      ) {
+        s.setTranscribeTier("escalated");
+        devLog("[transcribe] session escalated", { index });
+        toast.warning("Áudio com qualidade baixa detectada.", {
+          description: "Ativamos um modelo de transcrição mais preciso para os próximos trechos.",
+        });
+      }
     },
+    getTier: () => useSessionStore.getState().transcribeTier,
   });
 
   const handleChunk = useCallback(
@@ -528,6 +556,19 @@ export function RecordingLive({
             }
           />
           <div className="h-px w-full bg-scriba-hairline" />
+          {running && transcribeTier === "escalated" ? (
+            <div
+              role="status"
+              className="rounded-xl border border-amber-300 bg-amber-50 px-4 py-3 text-sm text-amber-900"
+            >
+              <p className="font-semibold">Áudio com qualidade baixa</p>
+              <p className="mt-1">
+                A transcrição pode conter erros. Ativamos um modelo mais preciso para os próximos
+                trechos — se possível, aproxime o aparelho do som ou verifique o microfone. Você
+                pode continuar ou encerrar a gravação.
+              </p>
+            </div>
+          ) : null}
           <div className="flex-1">
             {running || (!summary && !finalizing) ? (
               <Feed
