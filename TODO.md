@@ -16,6 +16,9 @@
   3) poderia ao minimizar ter algo na parte de notificação dizendo que o microfone segue ativo sabe? Tem uns apps que fazem isso por exemplo quando o      
   audio ainda está ativo, mesmo com a aba minimizada. Acho que existe isso de alguma forma nativa 
 - [ ] Vibrar quando chegar card no ao vivo, no mobile
+- [ ] dark theme
+- [ ] Quantidade de sermões registradas no mobile está quebrando
+- [ ] mudar cards feios na lp
 
 ## Coisas manuais
 - [ ] monitor de uptime
@@ -24,3 +27,6 @@
 - [ ] testar speedpage (manual?)
 - [ ] configurar dados no google analitics (manual)
 - [ ] rastreamento de erro (depois eu faço, ignora)
+
+
+
