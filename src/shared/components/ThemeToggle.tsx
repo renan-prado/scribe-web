@@ -6,6 +6,12 @@ import { useTheme } from "@/shared/hooks/use-theme";
 
 type ThemeToggleProps = {
   className?: string;
+  /**
+   * Icon-only 36px round button instead of the full pill track. For tight
+   * headers (landing mobile, the logged-in app header) where the 68px pill
+   * would crowd the CTA / coin balance on small screens.
+   */
+  compact?: boolean;
 };
 
 /**
@@ -15,8 +21,34 @@ type ThemeToggleProps = {
  * Everything downstream reacts to the `.dark` class this writes onto <html>;
  * see `useTheme` and `ThemeScript`.
  */
-export function ThemeToggle({ className }: ThemeToggleProps) {
+export function ThemeToggle({ className, compact = false }: ThemeToggleProps) {
   const { isDark, toggleTheme, mounted } = useTheme();
+
+  if (compact) {
+    return (
+      <button
+        type="button"
+        role="switch"
+        aria-checked={isDark}
+        aria-label={isDark ? "Mudar para o tema claro" : "Mudar para o tema escuro"}
+        title={isDark ? "Tema claro" : "Tema escuro"}
+        onClick={toggleTheme}
+        className={cn(
+          "inline-flex size-9 flex-none items-center justify-center rounded-full",
+          "border border-scriba-hairline bg-scriba-surface text-scriba-ink-mute",
+          "outline-none transition-colors focus-visible:ring-2 focus-visible:ring-scriba-blue/40",
+          "hover:border-scriba-blue-soft hover:text-scriba-blue",
+          className
+        )}
+      >
+        {isDark ? (
+          <Moon className="size-4" strokeWidth={2} />
+        ) : (
+          <Sun className="size-4" strokeWidth={2} />
+        )}
+      </button>
+    );
+  }
 
   return (
     <button

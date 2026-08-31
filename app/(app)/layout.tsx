@@ -1,6 +1,7 @@
 import type { ReactNode } from "react";
 import { AppHeader } from "@/components/AppHeader";
 import { MobileBottomNav } from "@/components/MobileBottomNav";
+import { ThemeToggle } from "@/components/ThemeToggle";
 import { UserMenu } from "@/features/auth/components/UserMenu";
 import { CoinBalance } from "@/features/coins/components/CoinBalance";
 import { NewRecordingDialog } from "@/features/session/components/NewRecordingDialog";
@@ -22,12 +23,14 @@ export default async function AppLayout({ children }: { children: ReactNode }) {
       <AppHeader
         actions={
           <>
-            <div className="flex items-center sm:hidden">
+            <div className="flex items-center gap-2 sm:hidden">
+              <ThemeToggle compact />
               <CoinBalance initialBalance={initialBalance} />
             </div>
             <div className="hidden items-center gap-3 sm:flex">
               <NewRecordingDialog />
               <CoinBalance initialBalance={initialBalance} />
+              <ThemeToggle compact />
               {profile ? (
                 <UserMenu
                   displayName={profile.displayName ?? null}

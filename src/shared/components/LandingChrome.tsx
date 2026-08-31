@@ -84,8 +84,10 @@ export function LandingHeader({ onLandingPage = false }: LandingHeaderProps) {
           </a>
         </div>
         <div className="flex items-center gap-2 sm:gap-3.5">
-          {/* Desktop-only: no mesmo breakpoint do "Entrar" e da navegação, para
-              o header mobile ficar só com logo + CTA. */}
+          {/* Mobile/tablet: botão-ícone compacto pra não brigar com o CTA em
+              telas estreitas. No desktop (lg) vira o pill completo, junto do
+              "Entrar" e da navegação. */}
+          <ThemeToggle compact className="lg:hidden" />
           <ThemeToggle className="hidden lg:inline-flex" />
           <Link
             href="/sign-in"
