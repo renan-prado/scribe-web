@@ -1,23 +1,15 @@
 # TODO
 
 ## Coisas a desenvolver
-- [x] Limpar codigo, componentes, funções, classes, variaveis, etc.. Que não estejam sendo usadas.
-- [x] card de "gere um estudo"
-- [ ] card editorial
-- [x] alucinação na transcrição
-- [x] mudar valor de moeda para: ao vivo 5/min, resumo 2/min, aprofundar e reprocessar 5 moedas. Mudar em labels, em logica, em todas as partes.
+- [ ] Criar um sistema de cards editoriais, cards que serão criados pelos admistradores do scriba que será mostrado para todos os usuarios. Regras: só mostrar os cards que foram publicados após o cadastro do usuario. Outra coisa é criar um card padrão para deixar um exemplo de resumo para o usuario quando criar a conta saber como poderá vir. Ter essa opção no admin de selecionar uma erflexão como boas vindas. No admin esta pagina de criação de conteudo editorial, deve ser um editor de texto, semelhante ao notion, moderno (acho que ja temos tiptap no projeto), mas quero poder usar nesta area os componente que existe no /summary. E tambem ter a opção de programar um post para aparecer no feed dos usuarios.
 - [ ] eu tive um problema numa gravação pelo celular.                                                                                            
-                                                                                                                                                           
+                    
   eu minimizei o navegador e:                                                                                                                              
   1) a aplicação não parou: ok, a contagem dos segundos continuou, porem                                                                                   
   2) nao foi gravado nada, ou foi e nao foi enviado para transcrição. Precisamos ver como resolver isso, se grava e juntar e depois transcreve, se nao ta  
   gravando mesmo e precisa ajustar algo no codigo, etc...                                                                                                  
   1) poderia ao minimizar ter algo na parte de notificação dizendo que o microfone segue ativo sabe? Tem uns apps que fazem isso por exemplo quando o      
   audio ainda está ativo, mesmo com a aba minimizada. Acho que existe isso de alguma forma nativa 
-- [x] Vibrar quando chegar card no ao vivo, no mobile
-- [x] dark theme
-- [x] Quantidade de sermões registradas no mobile está quebrando
-- [x] mudar cards feios na lp
 
 ## Coisas manuais
 - [ ] monitor de uptime
