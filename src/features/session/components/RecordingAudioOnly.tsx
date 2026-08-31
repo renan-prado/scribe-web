@@ -60,7 +60,7 @@ export function RecordingAudioOnly({
   const pausedElapsedRef = useRef<number>(0);
   /** Next chunk index to hand to the recorder created on resume. */
   const nextChunkIndexRef = useRef<number>(0);
-  const chunksRef = useRef<Map<number, string>>(new Map());
+  const chunksRef = useRef<Map<number, { text: string; suspect: boolean }>>(new Map());
   const autoStartFiredRef = useRef(false);
 
   const [running, setRunning] = useState(false);
@@ -72,10 +72,15 @@ export function RecordingAudioOnly({
   const elapsedMs = useElapsedTimer(activelyRecording, startedAtRef);
   useWakeLock({ enabled: activelyRecording });
 
-  const assembleTranscript = useCallback(() => {
+  const assembleTranscript = useCallback((opts?: { excludeSuspect?: boolean }) => {
     const indices = Array.from(chunksRef.current.keys()).sort((a, b) => a - b);
     return indices
-      .map((i) => chunksRef.current.get(i)?.trim() ?? "")
+      .map((i) => chunksRef.current.get(i))
+      .filter(
+        (c): c is { text: string; suspect: boolean } =>
+          Boolean(c) && !(opts?.excludeSuspect && c?.suspect)
+      )
+      .map((c) => c.text.trim())
       .filter(Boolean)
       .join(" ")
       .replace(/\s+/g, " ")
@@ -85,11 +90,13 @@ export function RecordingAudioOnly({
   const handleChunk = useCallback(
     async (ev: ChunkEvent) => {
       if (await isSilentBlob(ev.blob)) return;
-      const previousText = assembleTranscript();
+      // Chunks suspeitos (assinatura de alucinação detectada no servidor) não
+      // entram no hint — realimentá-los tende a repetir a alucinação.
+      const previousText = assembleTranscript({ excludeSuspect: true });
       const prevHint = tailSentences(previousText, 2);
       const result = await uploadChunkWithRetry(ev, prevHint, sessionId);
       if (result.ok) {
-        chunksRef.current.set(ev.index, result.text);
+        chunksRef.current.set(ev.index, { text: result.text, suspect: result.suspect });
       }
     },
     [assembleTranscript, sessionId]

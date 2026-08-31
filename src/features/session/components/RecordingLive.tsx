@@ -38,6 +38,7 @@ import { useVersePrefetcher } from "@/features/session/hooks/useVerseFetch";
 import { useWakeLock } from "@/features/session/hooks/useWakeLock";
 import { requestDeleteSession, requestFinalSummary } from "@/features/session/lib/api";
 import { isSilentBlob } from "@/features/session/lib/audio";
+import { joinOkChunks } from "@/features/session/lib/chunks";
 import { tailSentences } from "@/features/session/lib/text";
 import { getSessionState, useSessionStore } from "@/features/session/store";
 import type { ChunkRow, TranscriptState } from "@/features/session/types";
@@ -116,15 +117,7 @@ export function RecordingLive({
     [chunks]
   );
 
-  const transcript = useMemo(() => {
-    return chunkRows
-      .filter((r) => r.status === "ok")
-      .map((r) => r.text.trim())
-      .filter(Boolean)
-      .join(" ")
-      .replace(/\s+/g, " ")
-      .trim();
-  }, [chunkRows]);
+  const transcript = useMemo(() => joinOkChunks(chunks).transcript, [chunks]);
 
   const isProcessing = useMemo(() => chunkRows.some((r) => r.status === "uploading"), [chunkRows]);
 
@@ -141,10 +134,10 @@ export function RecordingLive({
         startedAtMs: 0,
       });
     },
-    onSuccess: (index, text) => {
+    onSuccess: (index, text, suspect) => {
       const current = useSessionStore.getState().chunks[index];
       if (!current) return;
-      useSessionStore.getState().upsertChunk({ ...current, status: "ok", text });
+      useSessionStore.getState().upsertChunk({ ...current, status: "ok", text, suspect });
     },
   });
 
@@ -164,9 +157,11 @@ export function RecordingLive({
         return;
       }
 
+      // Chunks suspeitos ficam fora do hint: realimentar o Whisper com uma
+      // alucinação recém-detectada tende a fazê-la se repetir no próximo chunk.
       const currentChunks = useSessionStore.getState().chunks;
       const previousText = Object.values(currentChunks)
-        .filter((r) => r.index < ev.index && r.status === "ok")
+        .filter((r) => r.index < ev.index && r.status === "ok" && !r.suspect)
         .sort((a, b) => a.index - b.index)
         .map((r) => r.text)
         .join(" ");
@@ -307,14 +302,7 @@ export function RecordingLive({
       }
     }
 
-    const finalTranscript = Object.values(getSessionState().chunks)
-      .filter((r) => r.status === "ok")
-      .sort((a, b) => a.index - b.index)
-      .map((r) => r.text.trim())
-      .filter(Boolean)
-      .join(" ")
-      .replace(/\s+/g, " ")
-      .trim();
+    const finalTranscript = joinOkChunks(getSessionState().chunks).transcript;
     // Empty transcript = the mic was open but nothing intelligible was
     // captured (silence, room noise below VAD, mic muted, etc). Skip the
     // final-summary LLM call and discard the empty session row created

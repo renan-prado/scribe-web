@@ -8,6 +8,7 @@ import {
   INSIGHTS_TRANSCRIPT_CHARS,
 } from "@/features/session/config";
 import { requestInsights } from "@/features/session/lib/api";
+import { joinOkChunks } from "@/features/session/lib/chunks";
 import { tailTranscript } from "@/features/session/lib/text";
 import { useSessionStore } from "@/features/session/store";
 import { devLog } from "@/lib/log";
@@ -33,18 +34,10 @@ export function useInsightsPipeline({
   const finalizing = useSessionStore((s) => s.finalizing);
   const chunks = useSessionStore((s) => s.chunks);
 
-  const { transcript, okChunkCount } = useMemo(() => {
-    const ok = Object.values(chunks)
-      .filter((r) => r.status === "ok")
-      .sort((a, b) => a.index - b.index);
-    const text = ok
-      .map((r) => r.text.trim())
-      .filter(Boolean)
-      .join(" ")
-      .replace(/\s+/g, " ")
-      .trim();
-    return { transcript: text, okChunkCount: ok.length };
-  }, [chunks]);
+  const { transcript, okChunkCount } = useMemo(
+    () => joinOkChunks(chunks, { excludeSuspect: true }),
+    [chunks]
+  );
 
   const lastFiredChunkRef = useRef(0);
 

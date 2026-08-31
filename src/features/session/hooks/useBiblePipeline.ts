@@ -10,6 +10,7 @@ import {
   BIBLE_TRANSCRIPT_CHARS,
 } from "@/features/session/config";
 import { requestBible } from "@/features/session/lib/api";
+import { joinOkChunks } from "@/features/session/lib/chunks";
 import { tailTranscript } from "@/features/session/lib/text";
 import { useSessionStore } from "@/features/session/store";
 import { hasBibleMention } from "@/lib/bible/detect";
@@ -44,18 +45,10 @@ export function useBiblePipeline({
   const feedItems = useSessionStore((s) => s.feedItems);
   const chunks = useSessionStore((s) => s.chunks);
 
-  const { transcript, okChunkCount } = useMemo(() => {
-    const ok = Object.values(chunks)
-      .filter((r) => r.status === "ok")
-      .sort((a, b) => a.index - b.index);
-    const text = ok
-      .map((r) => r.text.trim())
-      .filter(Boolean)
-      .join(" ")
-      .replace(/\s+/g, " ")
-      .trim();
-    return { transcript: text, okChunkCount: ok.length };
-  }, [chunks]);
+  const { transcript, okChunkCount } = useMemo(
+    () => joinOkChunks(chunks, { excludeSuspect: true }),
+    [chunks]
+  );
 
   useEffect(() => {
     if (!running || bibleInFlight || finalizing) return;

@@ -49,7 +49,7 @@ type Args = {
    * reflects that recovered audio is being processed.
    */
   onOrphanRecovered?: (chunk: StoredChunk) => void;
-  onSuccess: (index: number, text: string) => void;
+  onSuccess: (index: number, text: string, suspect: boolean) => void;
 };
 
 export type TranscribeQueue = {
@@ -117,7 +117,7 @@ export function useTranscribeQueue({
           attempts: chunk.attempts,
           durationMs: chunk.durationMs,
         });
-        onSuccessRef.current(index, result.text);
+        onSuccessRef.current(index, result.text, result.suspect);
         notifyDrained();
         return;
       }

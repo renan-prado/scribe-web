@@ -5,7 +5,8 @@ import { isUuid } from "@/lib/http/validate";
 import { callTranscribe } from "@/lib/llm/openai";
 import { enforceRateLimit, RATE_LIMITS } from "@/lib/rate-limit";
 import { requireAuth } from "@/lib/supabase/require-auth";
-import { stripVocabHallucination, VOCABULARIO_PROMPT } from "@/lib/vocabulario";
+import { sanitizeTranscription } from "@/lib/transcription/sanitize";
+import { VOCABULARIO_PROMPT } from "@/lib/vocabulario";
 
 export const runtime = "nodejs";
 export const dynamic = "force-dynamic";
@@ -97,11 +98,24 @@ export async function POST(request: Request) {
     audioSeconds,
     latencyMs: result.data.latencyMs,
   });
-  // Rede de segurança: mesmo com prompt em prosa, se o Whisper ainda ecoar
-  // uma corrida longa do vocabulário-guia, remove antes de devolver ao client.
-  const cleanedText = stripVocabHallucination(result.data.text);
+  // Rede de segurança: remove assinaturas conhecidas de alucinação (eco do
+  // prompt-guia, eco do vocabulário, loop de sentença repetida) antes de
+  // devolver ao client. `suspect` avisa o client para não reutilizar este
+  // chunk como contexto (prevText/pipelines) — ver lib/transcription/sanitize.
+  const sanitized = sanitizeTranscription(result.data.text);
+  if (sanitized.suspect) {
+    console.warn("[transcribe] hallucination-signature", {
+      chunkIndex: chunkIndex ?? null,
+      promptEcho: sanitized.promptEcho,
+      vocabEcho: sanitized.vocabEcho,
+      repetitionLoop: sanitized.repetitionLoop,
+      rawChars: result.data.text.length,
+      cleanChars: sanitized.text.length,
+    });
+  }
   return NextResponse.json({
-    text: cleanedText,
+    text: sanitized.text,
+    suspect: sanitized.suspect,
     latencyMs: result.data.latencyMs,
     model,
   });

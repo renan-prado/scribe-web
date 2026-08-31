@@ -220,7 +220,7 @@ export async function uploadChunkWithRetry(
   ev: ChunkEvent,
   prevText: string,
   sessionId?: string
-): Promise<{ ok: true; text: string } | { ok: false; message: string }> {
+): Promise<{ ok: true; text: string; suspect: boolean } | { ok: false; message: string }> {
   const backoffMs = [500, 1500];
   let last: { ok: false; message: string } = { ok: false, message: "unknown error" };
   for (let attempt = 0; attempt <= backoffMs.length; attempt++) {
@@ -253,7 +253,7 @@ export async function uploadChunk(input: {
   durationMs: number;
   prevText: string;
   sessionId?: string;
-}): Promise<{ ok: true; text: string } | { ok: false; message: string }> {
+}): Promise<{ ok: true; text: string; suspect: boolean } | { ok: false; message: string }> {
   try {
     const form = new FormData();
     const filename = `chunk-${input.index}.${input.extension}`;
@@ -268,7 +268,7 @@ export async function uploadChunk(input: {
     if (!res.ok) {
       return { ok: false, message: body?.error ?? `HTTP ${res.status}` };
     }
-    return { ok: true, text: body.text ?? "" };
+    return { ok: true, text: body.text ?? "", suspect: body.suspect === true };
   } catch (err) {
     return { ok: false, message: (err as Error).message ?? "network error" };
   }

@@ -3,6 +3,7 @@
 import { type RefObject, useEffect, useMemo } from "react";
 import { ECHO_MIN_TAIL_DELTA_CHARS, INSIGHTS_TRANSCRIPT_CHARS } from "@/features/session/config";
 import { requestEcho } from "@/features/session/lib/api";
+import { joinOkChunks } from "@/features/session/lib/chunks";
 import { tailTranscript } from "@/features/session/lib/text";
 import { useSessionStore } from "@/features/session/store";
 import { feedItemOrigin } from "@/lib/domain/feed";
@@ -31,15 +32,7 @@ export function useEchoPipeline({
   const chunks = useSessionStore((s) => s.chunks);
 
   const transcript = useMemo(
-    () =>
-      Object.values(chunks)
-        .filter((r) => r.status === "ok")
-        .sort((a, b) => a.index - b.index)
-        .map((r) => r.text.trim())
-        .filter(Boolean)
-        .join(" ")
-        .replace(/\s+/g, " ")
-        .trim(),
+    () => joinOkChunks(chunks, { excludeSuspect: true }).transcript,
     [chunks]
   );
 
