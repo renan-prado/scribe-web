@@ -28,6 +28,11 @@ Stack: Next.js 16 (App Router), React 19, Supabase SSR, Tailwind v4 + shadcn/bas
 ```
 app/
   api/{transcribe,bible,insights,sermon-echo,final-summary,verse,format-paragraphs}/route.ts
+  api/billing/{checkout,portal,summary}/route.ts
+                                — Stripe Checkout / portal / resumo de plano (autenticadas)
+  api/stripe/webhook/route.ts   — ÚNICA porta de crédito. Pública + assinatura HMAC.
+  (app)/billing/retorno/page.tsx
+                                — retorno do Checkout (decorativa: não credita nada)
   (app)/recording/[id]/{live,audio,transcribe}/page.tsx
                                 — recording pages, one per capture mode (orchestration only)
   (app)/recording/[id]/{summary,transcript}/page.tsx
@@ -36,6 +41,11 @@ app/
   layout.tsx, globals.css
 components/ui/                  — shadcn primitives (Dialog, DropdownMenu, Button)
 lib/
+  billing/plans.ts              — catálogo CLIENT-SAFE (nome, moedas, preço de tela)
+  billing/catalog.ts            — server-only: chave↔Price ID e Price ID↔moedas
+  billing/stripe.ts             — cliente Stripe (null se não configurado) + helpers
+  billing/customer.ts           — getOrCreateCustomer (nunca aceita id do request)
+  db/billing.ts                 — assinaturas, grantCoins, clawbackCoins, idempotência
   bible/detect.ts               — layer-1 regex-gate (cheap "is there any bible mention?")
   bible/guard.ts                — layer-2 weighted-signal guard (scoreBibleGuard + currentReading)
   env/{server,client}.ts        — Zod-parsed env vars (throw at import)
@@ -47,6 +57,10 @@ lib/
   recorder.ts                   — MediaRecorder + VAD factory (createRecorder)
   vocabulario.ts                — biblical books + theology vocab for the STT prompt
   utils.ts                      — cn()
+src/features/billing/
+  components/{BillingDialog,PlanCard,CheckoutReturn}.tsx
+  lib/api.ts                    — só envia CHAVE de plano / quantidade, nunca preço
+  store.ts                      — resumo de plano (leitura)
 src/features/session/
   components/*.tsx              — every UI piece of the recording page (Feed + FeedItemCard
                                   drive the live view; SummaryView renders the post-stop
@@ -84,11 +98,107 @@ The app is light/dark via a single `.dark` class on `<html>` — there are no pe
 
 - **The `Sparkles` icon from `lucide-react` is BANNED.** Do not import or render it anywhere. If you need a decorative accent, use the yellow hex-shape (`clip-path:polygon(50%_0,100%_25%,100%_75%,50%_100%,0_75%,0_25%)` on a `bg-scriba-yellow` block) already used elsewhere in the app.
 
+## Billing (Stripe) — invariantes que não se negociam
+
+Créditos ("moedas") são dinheiro. As regras abaixo existem para que nenhuma
+mudança futura reabra um caminho de crédito grátis. Migrações: `0026_billing_stripe.sql`
+(planos, assinaturas, `grant_coins`) e `0027_coin_clawback.sql` (estorno).
+
+- **Todo crédito passa por `lib/billing/fulfill.ts` — sem exceção.** Quatro
+  pontos de entrada, três linhas de defesa em ordem de latência:
+  (1) `POST /api/stripe/webhook` — segundos, o caminho normal;
+  (2) `POST /api/billing/reconcile` — no retorno do checkout, cobre compras
+  cujo webhook falhou;
+  (3) check preguiçoso em `GET /api/billing/summary` — assinatura viva com
+  `current_period_end` vencido dispara conferência no Stripe (cooldown 15min),
+  cobrindo renovações perdidas exatamente quando o usuário estranha o saldo;
+  (4) `GET /api/billing/sweep` — cron diário (vercel.json), varre pagamentos
+  recentes no Stripe e credita o que não estiver no ledger; guardado por
+  `CRON_SECRET` (comparação em tempo constante) e público no proxy como o
+  webhook. `coinsRecovered > 0` numa passada = incidente nas camadas de cima.
+  Tudo idempotente pelo `external_ref` UNIQUE: os quatro caminhos sobre o
+  mesmo pagamento creditam UMA vez. Um quinto caminho, se surgir, também usa
+  `fulfill.ts` — duas implementações de "quanto creditar" divergem.
+- **A reconciliação não afrouxa nada.** Ela recebe um `cs_...`, mas o id só
+  ENDEREÇA: a sessão é buscada na API do Stripe, o `customer` dela tem de bater
+  com o `stripe_customer_id` de quem está autenticado (senão 403), o pagamento
+  tem de estar `paid`, e o `external_ref` UNIQUE faz webhook e reconciliação
+  juntos creditarem uma vez só. A página de retorno segue decorativa: forjar
+  `?status=sucesso` não produz crédito nenhum.
+- **A landing page NÃO tem números próprios.** Nome, preço e créditos dos
+  cards de `/#planos` saem de `lib/billing/plans.ts` — o mesmo catálogo do
+  diálogo de compra e do /profile. Só a lista de recursos (`PLAN_FEATURES` em
+  `app/page.tsx`) é copy local, porque descreve capacidades, não valores.
+  Antes disso a LP anunciava 2.000/5.000/100 créditos contra os 1.000/2.500/50
+  reais: preço de tela errado é promessa quebrada no checkout.
+- **A intenção de plano sobrevive ao login.** CTA da LP aponta para
+  `/sign-in?next=%2Fbilling%2Fassinar%3Fplan%3D<plano>`; `/billing/assinar`
+  (dentro de `(app)`, logo protegida) abre o Checkout. A chave do plano viaja
+  pela URL e isso é seguro — ela só ENDEREÇA; preço e moedas continuam vindo
+  do catálogo server-only. Trocar `?plan=` muda qual plano é oferecido, nunca
+  quanto custa. O `?next=` passa por `safeNextPath` no proxy e por checagem
+  equivalente no `/auth/callback`: caminho relativo, recusando `//host`,
+  `/\host` e `/%2F…` — um `next` frouxo no fluxo de login é open redirect
+  assinado pelo nosso domínio.
+- **O front nunca envia valor nem quantidade de moedas.** O corpo aceito por
+  `/api/billing/checkout` é uma chave de plano (`pessoal`/`estudioso`) ou o
+  pacote avulso com uma quantidade inteira clampeada. Preço vem do Price object
+  no Stripe; moedas vêm de `entitlementForPrice(priceId)` em
+  `lib/billing/catalog.ts`. Um Price fora do catálogo credita **zero**.
+- **O dono do crédito vem do vínculo que nós gravamos**, `profiles.stripe_customer_id`,
+  resolvido por `findUserIdByCustomerId`. Nunca de metadata ou do corpo do request.
+- **`grant_coins` e `clawback_coins` têm EXECUTE revogado de `anon`/`authenticated`.**
+  Só `service_role` chama. Verificado: com o anon key a RPC devolve 42501.
+- **`profiles` tem GRANT por coluna.** `authenticated` só escreve
+  `display_name/avatar_url/email`. `coin_balance`, `stripe_customer_id`, `role` e
+  `is_active` estão fora do alcance do cliente — RLS não restringe coluna, GRANT sim.
+  (Antes desta mudança, um usuário com o anon key podia dar
+  `update profiles set coin_balance = 999999 where id = auth.uid()`.)
+- **O espelho `subscriptions` se cura sozinho em três pontos** (webhook,
+  reconciliação e o guard do checkout), sempre via
+  `syncSubscriptionState` em `fulfill.ts`, e sempre a partir de uma busca
+  FRESCA na API — nunca do payload de um evento, porque o Stripe não garante
+  ordem de entrega e um `updated` atrasado sobrescreveria estado novo. O guard
+  anti-cobrança-dupla do checkout NUNCA deve confiar só no espelho local:
+  antes de criar assinatura, ele confere no Stripe se já existe uma viva.
+- **Idempotência em duas camadas.** `stripe_events` (PK = event id) descarta
+  reentrega; `coin_transactions.external_ref` (UNIQUE) impede crédito duplo
+  mesmo vindo de eventos diferentes. Falha depois do claim → `releaseStripeEvent`
+  + 5xx, para o Stripe reentregar.
+- **Assinatura credita em `invoice.paid`**, não em `checkout.session.completed`
+  (que dispara com pagamento pendente). Avulso exige `payment_status === "paid"`
+  e as linhas são relidas da API do Stripe, não do payload.
+- **Refund e chargeback estornam** (`charge.refunded`, `charge.dispute.created`)
+  via `clawback_coins`, que nunca deixa o saldo negativo e loga em `warn` quando
+  os créditos já tinham sido gastos.
+- `/api/stripe` está na allowlist do `proxy.ts` porque o Stripe chega sem cookie.
+  Não remova sem quebrar todo o faturamento.
+- Ferramentas: `npm run stripe:doctor` (diagnóstico da configuração — chave,
+  conta, preços, endpoints de webhook) e `npm run stripe:listen` (sobe o
+  `stripe listen` no ambiente certo e confere o `whsec_`). Guia completo e
+  armadilhas conhecidas em `docs/stripe-setup.md`.
+
+## Créditos durante a gravação
+
+Acabar o saldo no meio de um sermão **congela** a captura, não a encerra —
+ver `useCoinGuard` (`src/features/session/hooks/`), usado pelos três modos.
+Fluxo: aviso em 5 min e 2 min restantes → ao zerar, `pause()` + `PausedOverlay`
+com `outOfCoins` → o usuário compra em **aba nova** (sair da página mataria o
+MediaRecorder e a fila de chunks) → o saldo é ressincronizado por `focus`,
+`visibilitychange` e polling curto → a trava cai e "Retomar" reaparece.
+O hook nunca retoma sozinho: reabrir o microfone sem gesto do usuário seria
+surpreendente e, em alguns navegadores, bloqueado.
+
+Sessões que nunca foram encerradas (`ended_at is null`) saem da lista principal
+e aparecem numa faixa "Gravações em aberto" no `/list`, com opção de continuar
+ou apagar — ver `listUnfinishedSessions`.
+
 ## Adding a new feature
 
 - **New API route calling OpenAI**: (1) add a prompt in `lib/prompts/foo.ts`, (2) add the schema + `parseFooFromLLM` in `lib/domain/foo.ts`, (3) create `app/api/foo/route.ts` that reads env from `serverEnv`, invokes `callChat({...})`, and delegates parsing to the domain helper. Log `[foo] ok { latencyMs, finishReason, promptTokens, completionTokens, ... }` on success and `[foo] upstream {fetch failed|error}` on failure. Every new route MUST call `enforceRateLimit(request, RATE_LIMITS.foo, auth.user.id)` right after `requireAuth()` — add a bucket to `RATE_LIMITS` in `lib/rate-limit.ts` sized to the expected client cadence (per-user + per-IP).
 - **New UI element for the session page**: put it under `src/features/session/components/`. Keep `app/(app)/recording/[id]/live/page.tsx` as pure orchestration. Pure helpers go to `src/features/session/lib/`; reusable stateful behaviour goes to `src/features/session/hooks/`.
-- **New env var**: add to the Zod schema in `lib/env/server.ts` (or `client.ts`) — this is intentionally strict so a missing var fails at boot, not on the first request.
+- **New env var**: add to the Zod schema in `lib/env/server.ts` (or `client.ts`) — this is intentionally strict so a missing var fails at boot, not on the first request. As variáveis do Stripe são a exceção: ficam `.optional()` para o app subir sem cobrança configurada, e as rotas de billing respondem 503 `billing_unavailable`.
+- **Nova rota que mexe em moedas**: débito passa por `chargeCoins` (`lib/db/coins.ts`); crédito NÃO tem rota — ver a seção de Billing acima.
 
 ## What is deliberately NOT here yet
 

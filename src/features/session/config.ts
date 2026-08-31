@@ -170,3 +170,23 @@ export const TRANSCRIBE_ESCALATION_BAD_COUNT = 3;
 // ---------- OUTROS ----------
 
 export const TICK_INTERVAL_MS = 300;
+
+// ---------- SALDO DE MOEDAS DURANTE A GRAVAÇÃO ----------
+
+/**
+ * Minutos restantes de gravação que disparam o primeiro aviso de saldo baixo.
+ * Escolhido para caber uma decisão sem susto: 5 minutos é tempo de abrir o
+ * diálogo, comprar um pacote e voltar antes de a captura congelar.
+ */
+export const COIN_WARN_MINUTES_LOW = 5;
+
+/** Segundo aviso, mais duro, quando a interrupção é iminente. */
+export const COIN_WARN_MINUTES_CRITICAL = 2;
+
+/**
+ * Cadência do polling de saldo enquanto a gravação está congelada por falta de
+ * crédito. O pagamento acontece noutra aba, então não há evento local para
+ * escutar — o `focus` da janela cobre o caso comum e este intervalo cobre quem
+ * deixa as duas abas visíveis lado a lado. Só roda com a aba visível.
+ */
+export const COIN_RECOVERY_POLL_MS = 5_000;

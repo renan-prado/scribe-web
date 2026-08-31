@@ -1,8 +1,9 @@
 "use client";
 
 import { useEffect, useRef, useState } from "react";
+import { BillingDialog } from "@/features/billing/components/BillingDialog";
 import { useCoinsStore } from "@/features/coins/store";
-import { INITIAL_COIN_BALANCE } from "@/lib/coins/pricing";
+import { COIN_RING_REFERENCE } from "@/lib/coins/pricing";
 import { cn } from "@/lib/utils";
 
 const COIN_C = 2 * Math.PI * 6.5; // circumference for the r=6.5 stroke centerline (stroke-width 13 fills a r=13 disc without overflowing the viewBox)
@@ -71,7 +72,18 @@ function Odometer({ value, minWidth = 3 }: { value: number; minWidth?: number })
   );
 }
 
-export function CoinBalance({ initialBalance }: { initialBalance: number }) {
+/**
+ * Chip de saldo do header. Clicável: abre o `BillingDialog`, de onde o usuário
+ * compra um pacote avulso ou assina um plano. `interactive={false}` devolve o
+ * chip puramente informativo (usado onde não faz sentido vender).
+ */
+export function CoinBalance({
+  initialBalance,
+  interactive = true,
+}: {
+  initialBalance: number;
+  interactive?: boolean;
+}) {
   const storeBalance = useCoinsStore((s) => s.balance);
   const setBalance = useCoinsStore((s) => s.setBalance);
   const refresh = useCoinsStore((s) => s.refresh);
@@ -92,6 +104,27 @@ export function CoinBalance({ initialBalance }: { initialBalance: number }) {
     void refresh();
   }, [refresh]);
 
+  // O pagamento acontece numa ABA NOVA (para não derrubar uma gravação em
+  // curso), então esta aba não recebe nenhum evento próprio quando o crédito
+  // entra. Dois sinais cobrem o caso: a volta do foco, e um postMessage que a
+  // aba de retorno dispara no `window.opener` assim que vê o saldo subir.
+  // Como o store é global, este único listener no header atualiza o app todo.
+  useEffect(() => {
+    const onFocus = () => void refresh();
+    const onMessage = (event: MessageEvent) => {
+      if (event.origin !== window.location.origin) return;
+      if ((event.data as { type?: string } | null)?.type === "scriba:coins-updated") {
+        void refresh();
+      }
+    };
+    window.addEventListener("focus", onFocus);
+    window.addEventListener("message", onMessage);
+    return () => {
+      window.removeEventListener("focus", onFocus);
+      window.removeEventListener("message", onMessage);
+    };
+  }, [refresh]);
+
   useEffect(() => {
     const prev = prevBalanceRef.current;
     if (balance !== prev) {
@@ -102,13 +135,11 @@ export function CoinBalance({ initialBalance }: { initialBalance: number }) {
     }
   }, [balance]);
 
-  const percent = Math.max(0, Math.min(100, (balance / INITIAL_COIN_BALANCE) * 100));
+  const percent = Math.max(0, Math.min(100, (balance / COIN_RING_REFERENCE) * 100));
   const filled = (percent / 100) * COIN_C;
 
-  return (
-    <div
-      role="status"
-      aria-label={`${balance} moedas restantes`}
+  const chip = (
+    <span
       className={cn(
         "flex select-none items-center gap-[7px] rounded-[20px] py-1 pr-3 pl-2.5 transition-colors duration-500",
         flash === "debit"
@@ -118,7 +149,7 @@ export function CoinBalance({ initialBalance }: { initialBalance: number }) {
             : "bg-scriba-gold-soft"
       )}
     >
-      <div className="relative flex size-6.5 flex-none items-center justify-center">
+      <span className="relative flex size-6.5 flex-none items-center justify-center">
         {/* biome-ignore lint/a11y/noSvgWithoutTitle: aria-hidden decorative coin ring */}
         <svg
           className="absolute inset-0 -rotate-90"
@@ -138,13 +169,33 @@ export function CoinBalance({ initialBalance }: { initialBalance: number }) {
             strokeDasharray={`${filled} ${COIN_C - filled}`}
           />
         </svg>
-        <div className="relative flex size-5 items-center justify-center rounded-full bg-scriba-paper">
-          <div className="coin-hex h-[10.625px] w-[9.35px] bg-scriba-yellow" />
-        </div>
-      </div>
+        <span className="relative flex size-5 items-center justify-center rounded-full bg-scriba-paper">
+          <span className="coin-hex block h-[10.625px] w-[9.35px] bg-scriba-yellow" />
+        </span>
+      </span>
       <span className="inline-flex h-6.5 flex-none items-center text-[13px] font-semibold leading-none tabular-nums text-scriba-gold-ink">
         <Odometer value={balance} />
       </span>
-    </div>
+    </span>
+  );
+
+  if (!interactive) {
+    return (
+      <span role="status" aria-label={`${balance} moedas restantes`} className="inline-flex">
+        {chip}
+      </span>
+    );
+  }
+
+  return (
+    <BillingDialog
+      trigger={chip}
+      triggerLabel={`${balance} moedas restantes. Adicionar créditos.`}
+      triggerClassName={cn(
+        "inline-flex rounded-[20px] outline-none transition-transform",
+        "hover:brightness-[0.97] active:scale-[0.97]",
+        "focus-visible:ring-2 focus-visible:ring-scriba-yellow/60"
+      )}
+    />
   );
 }

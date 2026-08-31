@@ -1,15 +1,28 @@
 /**
  * Coin ("moeda") pricing — the single source of truth mirrored by the
- * corresponding SQL migration (0012_coin_balance.sql). Client-safe: this
- * module is imported by both the API routes and the UI so the price shown on
- * a button matches the amount the server actually debits.
+ * corresponding SQL migration (0017_coin_balance.sql / 0026_billing_stripe.sql).
+ * Client-safe: this module is imported by both the API routes and the UI so
+ * the price shown on a button matches the amount the server actually debits.
  *
- * Every account starts with 100 coins. Recording modes are billed per
- * started minute (ceil), ticked from the client every 60s. Aprofundar is a
- * flat single-shot charge inside POST /api/deepening.
+ * Recording modes are billed per started minute (ceil), ticked from the client
+ * every 60s. Aprofundar is a flat single-shot charge inside POST /api/deepening.
+ *
+ * NOTE: this file governs SPENDING only. Crediting lives in lib/billing/* and
+ * only ever happens server-side from a verified Stripe webhook.
  */
 
-export const INITIAL_COIN_BALANCE = 100;
+/** Grant given to a brand-new account. Mirrors the DEFAULT on
+ * profiles.coin_balance set in migration 0026. */
+export const INITIAL_COIN_BALANCE = 50;
+
+/**
+ * Reference used by the coin ring/gauge in the UI to decide "how full" the
+ * balance looks. Deliberately NOT the signup grant: since a plan tops the
+ * account up to 1.000+ credits, anchoring the gauge to 50 would peg it at
+ * 100% forever. 300 ≈ one hour of Modo Estudo, which is the amount that
+ * actually feels like "a full tank" to a user about to record.
+ */
+export const COIN_RING_REFERENCE = 300;
 
 export const COIN_COSTS = {
   /** Per started minute of live recording. */

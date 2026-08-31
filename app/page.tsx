@@ -2,6 +2,7 @@ import Link from "next/link";
 import { redirect } from "next/navigation";
 import { Feed } from "@/features/session/components/Feed";
 import { SummaryView } from "@/features/session/components/SummaryView";
+import { formatBrl, formatCoins, PLANS, TOPUP } from "@/lib/billing/plans";
 import type { FeedItem } from "@/lib/domain/feed";
 import type { SummaryPayload } from "@/lib/domain/summary";
 import { createClient } from "@/lib/supabase/server";
@@ -559,6 +560,23 @@ function TestimonialCard({ quote, name, title, avatarSrc }: TestimonialCardProps
   );
 }
 
+/**
+ * Capacidades do produto — iguais em todos os planos; o que muda entre eles é
+ * quantos créditos vêm por mês. Nome, preço e créditos NÃO moram aqui: saem de
+ * `lib/billing/plans.ts`, o mesmo catálogo que o diálogo de compra e o
+ * /profile leem. Antes disso a LP tinha números próprios, e eles já haviam
+ * divergido do real (anunciava 2.000/5.000/100 créditos contra 1.000/2.500/50).
+ * Preço de tela errado é promessa quebrada na hora do checkout.
+ */
+const PLAN_FEATURES = [
+  "Sermão ao vivo",
+  "Resumo organizado",
+  "Referências bíblicas",
+  "Destaques e principais ideias",
+  "Biblioteca de sermões",
+  "Gerar estudos",
+];
+
 function Plans() {
   return (
     <section id="planos" className="border-t border-scriba-hairline-soft bg-scriba-surface">
@@ -574,55 +592,40 @@ function Plans() {
         </div>
         <div className="grid items-start gap-4 [&>*:nth-child(2)]:order-first lg:grid-cols-3 lg:gap-[22px] lg:[&>*:nth-child(2)]:order-none">
           <PlanCard
-            name="Pessoal"
-            price="R$ 19,90"
+            name={PLANS.pessoal.name}
+            price={formatBrl(PLANS.pessoal.priceCents)}
             priceUnit="/mês"
-            hint="2.000 créditos por mês"
-            features={[
-              "Sermão ao vivo",
-              "Resumo organizado",
-              "Referências bíblicas",
-              "Destaques e principais ideias",
-              "Biblioteca de sermões",
-              "Gerar estudos",
-            ]}
-            cta="Escolher Pessoal"
+            hint={`${formatCoins(PLANS.pessoal.coins)} créditos por mês`}
+            features={PLAN_FEATURES}
+            cta={`Assinar ${PLANS.pessoal.name}`}
+            href="/sign-in?next=%2Fbilling%2Fassinar%3Fplan%3Dpessoal"
             variant="soft"
-            comingSoon
           />
           <PlanCard
-            name="Grátis"
+            name={PLANS.free.name}
             price="Grátis"
-            hint="100 créditos para conhecer o Scriba"
-            features={[
-              "Sermão ao vivo",
-              "Resumo organizado",
-              "Referências bíblicas",
-              "Destaques e principais ideias",
-              "Biblioteca de sermões",
-              "Gerar estudos",
-            ]}
+            hint={`${formatCoins(PLANS.free.coins)} créditos para conhecer o Scriba`}
+            features={PLAN_FEATURES}
             cta="Começar grátis"
+            href="/sign-in"
             variant="primary"
+            badge="Sem cartão"
           />
           <PlanCard
-            name="Estudioso"
-            price="R$ 44,90"
+            name={PLANS.estudioso.name}
+            price={formatBrl(PLANS.estudioso.priceCents)}
             priceUnit="/mês"
-            hint="5.000 créditos por mês"
-            features={[
-              "Sermão ao vivo",
-              "Resumo organizado",
-              "Referências bíblicas",
-              "Destaques e principais ideias",
-              "Biblioteca de sermões",
-              "Gerar estudos",
-            ]}
-            cta="Escolher Estudioso"
+            hint={`${formatCoins(PLANS.estudioso.coins)} créditos por mês`}
+            features={PLAN_FEATURES}
+            cta={`Assinar ${PLANS.estudioso.name}`}
+            href="/sign-in?next=%2Fbilling%2Fassinar%3Fplan%3Destudioso"
             variant="soft"
-            comingSoon
           />
         </div>
+        <p className="text-center text-[12.5px] font-light leading-[1.6] text-scriba-ink-mute lg:text-[13px]">
+          Precisou de mais no meio do mês? Compre {formatCoins(TOPUP.coins)} créditos avulsos por{" "}
+          {formatBrl(TOPUP.priceCents)}, quantas vezes quiser — sem assinatura, e eles não expiram.
+        </p>
       </div>
     </section>
   );
@@ -643,9 +646,11 @@ type PlanCardProps = {
   hint: string;
   features: string[];
   cta: string;
+  /** Destino do CTA. Nos planos pagos carrega a intenção via `?next=`, para
+   * que a escolha sobreviva ao login e o usuário caia direto no Checkout. */
+  href: string;
   variant: "primary" | "soft";
   badge?: string;
-  comingSoon?: boolean;
 };
 
 function PlanCard({
@@ -655,27 +660,21 @@ function PlanCard({
   hint,
   features,
   cta,
+  href,
   variant,
   badge,
-  comingSoon,
 }: PlanCardProps) {
-  const isPrimary = variant === "primary" && !comingSoon;
+  const isPrimary = variant === "primary";
   return (
     <div
       className={cn(
         "relative flex flex-col gap-[22px] rounded-[24px] bg-scriba-paper p-6 sm:rounded-[26px] sm:p-8",
         isPrimary
           ? "border-[1.5px] border-scriba-blue shadow-[0_16px_40px_rgba(79,168,240,.18)]"
-          : "border border-scriba-hairline",
-        !comingSoon && "lp-lift-plan",
-        comingSoon && "pointer-events-none grayscale opacity-45"
+          : "border border-scriba-hairline"
       )}
     >
-      {comingSoon ? (
-        <div className="absolute -top-[13px] left-6 rounded-[20px] bg-scriba-btn-muted px-[14px] py-[6px] text-[10.5px] font-semibold uppercase tracking-[.06em] text-scriba-ink-soft sm:left-7">
-          Em breve
-        </div>
-      ) : badge ? (
+      {badge ? (
         <div className="absolute -top-[13px] left-6 rounded-[20px] bg-scriba-yellow px-[14px] py-[6px] text-[10.5px] font-semibold uppercase tracking-[.06em] text-scriba-yellow-ink sm:left-7">
           {badge}
         </div>
@@ -733,24 +732,18 @@ function PlanCard({
           </div>
         ))}
       </div>
-      {comingSoon ? (
-        <div className="inline-flex cursor-not-allowed items-center justify-center rounded-[24px] bg-scriba-btn-muted p-[15px] text-[12px] font-semibold uppercase tracking-[.04em] text-scriba-ink-mute">
-          Em breve
-        </div>
-      ) : (
-        <Link
-          href="/sign-in"
-          className={cn(
-            "inline-flex items-center justify-center gap-2 rounded-[24px] p-[15px] text-[12px] font-semibold uppercase tracking-[.04em]",
-            isPrimary
-              ? "lp-cta bg-lp-brand text-scriba-on-blue shadow-[0_8px_20px_rgba(79,168,240,.3)]"
-              : "lp-cta-soft bg-scriba-btn-muted text-scriba-ink"
-          )}
-        >
-          {isPrimary ? <PenaGlyph size={14} /> : null}
-          {cta}
-        </Link>
-      )}
+      <Link
+        href={href}
+        className={cn(
+          "inline-flex items-center justify-center gap-2 rounded-[24px] p-[15px] text-[12px] font-semibold uppercase tracking-[.04em]",
+          isPrimary
+            ? "lp-cta bg-lp-brand text-scriba-on-blue shadow-[0_8px_20px_rgba(79,168,240,.3)]"
+            : "lp-cta-soft bg-scriba-btn-muted text-scriba-ink hover:bg-scriba-btn-muted-hover"
+        )}
+      >
+        {isPrimary ? <PenaGlyph size={14} /> : null}
+        {cta}
+      </Link>
     </div>
   );
 }

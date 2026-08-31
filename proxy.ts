@@ -17,7 +17,25 @@ import { clientEnv } from "@/lib/env/client";
  * Auth users hitting /sign-in or /sign-up → /feed (already in).
  */
 
-const PUBLIC_PREFIXES = ["/sign-in", "/sign-up", "/auth", "/terms", "/privacy"];
+/**
+ * `/api/stripe` entra aqui porque o webhook do Stripe chega SEM cookie de
+ * sessão: sem a exceção, este proxy responderia com um 307 para /sign-in e
+ * toda entrega de evento falharia silenciosamente. A rota se defende sozinha
+ * verificando a assinatura HMAC do payload — ser pública é requisito, não
+ * descuido. Ver app/api/stripe/webhook/route.ts.
+ */
+// "/api/billing/sweep" segue o mesmo padrão do webhook: público no proxy (o
+// cron da Vercel não tem cookie de sessão), autenticado por CRON_SECRET dentro
+// da própria rota.
+const PUBLIC_PREFIXES = [
+  "/sign-in",
+  "/sign-up",
+  "/auth",
+  "/terms",
+  "/privacy",
+  "/api/stripe",
+  "/api/billing/sweep",
+];
 const AUTH_ONLY_PREFIXES = ["/sign-in", "/sign-up"];
 
 const STATIC_ALLOWED_ORIGINS = new Set(["https://scriba.cc", "https://www.scriba.cc"]);
@@ -43,6 +61,27 @@ function isPublic(pathname: string): boolean {
 
 function isAuthOnly(pathname: string): boolean {
   return AUTH_ONLY_PREFIXES.some((p) => pathname === p || pathname.startsWith(`${p}/`));
+}
+
+/**
+ * Sanitiza um `?next=` antes de redirecionar para ele.
+ *
+ * Exige caminho relativo à nossa origem e recusa as formas que os navegadores
+ * resolvem como host externo — `//evil.com`, `/\evil.com`, `/%2F...`. Sem
+ * isso, um link `/sign-in?next=...` publicado por terceiros viraria um
+ * open redirect com a credibilidade do nosso domínio, que é o vetor clássico
+ * de phishing sobre fluxo de login.
+ */
+function safeNextPath(raw: string | null): string | null {
+  if (!raw) return null;
+  if (!raw.startsWith("/")) return null;
+  // "//host" e "/\host" são resolvidos como URL absoluta pelos navegadores.
+  if (raw.startsWith("//")) return null;
+  if (raw.startsWith("/\\")) return null;
+  // "/%2F..." e "/%5C..." viram as formas acima depois da decodificação.
+  if (/^\/%2f/i.test(raw)) return null;
+  if (/^\/%5c/i.test(raw)) return null;
+  return raw;
 }
 
 function isAllowedOrigin(origin: string): boolean {
@@ -115,9 +154,11 @@ export async function proxy(request: NextRequest) {
   }
 
   if (user && isAuthOnly(pathname)) {
-    const url = request.nextUrl.clone();
-    url.pathname = "/feed";
-    url.search = "";
+    // Preserva a INTENÇÃO. Um usuário já logado que clica em "Assinar Pessoal"
+    // na landing page chega aqui com `?next=/billing/assinar?plan=pessoal`;
+    // jogá-lo em /feed descartaria a escolha e ele teria de recomeçar.
+    const next = safeNextPath(request.nextUrl.searchParams.get("next"));
+    const url = new URL(next ?? "/feed", request.nextUrl.origin);
     return NextResponse.redirect(url);
   }
 

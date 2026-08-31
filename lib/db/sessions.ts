@@ -189,16 +189,21 @@ export type ListSessionsFilter = {
   locationId?: string;
 };
 
-export async function listSessions(filter: ListSessionsFilter = {}): Promise<SessionListItem[]> {
-  const supabase = await createClient();
-  let q = supabase.from("sessions").select(SELECT_LIST).order("created_at", { ascending: false });
+type ListRow = {
+  id: string;
+  created_at: string;
+  duration_ms: number | null;
+  title: string | null;
+  short_summary: string | null;
+  speaker_id: string | null;
+  location_id: string | null;
+  speaker_name: string | null;
+  speaker_location: string | null;
+  capture_mode: string | null;
+};
 
-  if (filter.speakerId) q = q.eq("speaker_id", filter.speakerId);
-  if (filter.locationId) q = q.eq("location_id", filter.locationId);
-
-  const { data, error } = await q;
-  if (error) throw new Error(`listSessions failed: ${error.message}`);
-  return (data ?? []).map((r) => ({
+function rowToListItem(r: ListRow): SessionListItem {
+  return {
     id: r.id,
     createdAt: r.created_at,
     durationMs: r.duration_ms,
@@ -209,7 +214,51 @@ export async function listSessions(filter: ListSessionsFilter = {}): Promise<Ses
     speakerName: r.speaker_name,
     speakerLocation: r.speaker_location,
     mode: parseSessionMode(r.capture_mode),
-  }));
+  };
+}
+
+/**
+ * Sessões CONCLUÍDAS. `ended_at` só é preenchido por updateSessionFinal /
+ * updateSessionTranscript, ou seja, ao encerrar de verdade — filtrar por ele
+ * tira da lista as gravações que ficaram no meio do caminho, que passam a
+ * viver em `listUnfinishedSessions`.
+ */
+export async function listSessions(filter: ListSessionsFilter = {}): Promise<SessionListItem[]> {
+  const supabase = await createClient();
+  let q = supabase
+    .from("sessions")
+    .select(SELECT_LIST)
+    .not("ended_at", "is", null)
+    .order("created_at", { ascending: false });
+
+  if (filter.speakerId) q = q.eq("speaker_id", filter.speakerId);
+  if (filter.locationId) q = q.eq("location_id", filter.locationId);
+
+  const { data, error } = await q;
+  if (error) throw new Error(`listSessions failed: ${error.message}`);
+  return (data ?? []).map((r) => rowToListItem(r as ListRow));
+}
+
+/**
+ * Gravações EM ABERTO — a linha existe, mas nunca foi encerrada. Acontece
+ * quando o navegador fecha no meio, quando a bateria acaba, ou quando a pessoa
+ * sai da página com a gravação congelada por falta de crédito.
+ *
+ * Ficam listadas para que a gravação não vire um fantasma invisível: o usuário
+ * decide se volta para ela ou se apaga. Abrir a sessão de novo reaproveita os
+ * chunks de áudio que ficaram pendentes no IndexedDB (ver `useTranscribeQueue`,
+ * TTL de 24h); o texto já transcrito antes do fechamento, porém, vivia só na
+ * memória da aba e não volta.
+ */
+export async function listUnfinishedSessions(): Promise<SessionListItem[]> {
+  const supabase = await createClient();
+  const { data, error } = await supabase
+    .from("sessions")
+    .select(SELECT_LIST)
+    .is("ended_at", null)
+    .order("created_at", { ascending: false });
+  if (error) throw new Error(`listUnfinishedSessions failed: ${error.message}`);
+  return (data ?? []).map((r) => rowToListItem(r as ListRow));
 }
 
 export async function getSession(id: string): Promise<SessionRow | null> {

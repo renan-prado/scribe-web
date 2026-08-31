@@ -8,8 +8,12 @@ import type { ChargeReason } from "@/lib/coins/pricing";
  * Charges the caller once every 60s while `enabled` is true. First debit fires
  * as soon as the recording starts (billing model is "per started minute"),
  * then every 60s after that. On the first `insufficient_balance` response it
- * invokes `onDepleted` — recording pages use that to call stop() so capture
- * halts as soon as the account is dry.
+ * invokes `onDepleted` and stops ticking.
+ *
+ * Este hook é a mecânica pura de cobrança e não decide o que fazer quando o
+ * saldo acaba. Quem decide é `useCoinGuard`, que o embrulha e responde
+ * CONGELANDO a captura (pause) em vez de encerrá-la — as páginas de gravação
+ * usam o guard, não este hook diretamente.
  *
  * **Pause-aware billing:** across `enabled` toggles for the same session
  * (pause → resume), we remember the last successful charge timestamp so

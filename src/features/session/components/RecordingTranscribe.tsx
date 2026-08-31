@@ -3,6 +3,7 @@
 import { useRouter } from "next/navigation";
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { toast } from "sonner";
+import { BillingDialog } from "@/features/billing/components/BillingDialog";
 import { ConfirmDialog } from "@/features/session/components/ConfirmDialog";
 import { FinalizingOverlay } from "@/features/session/components/FinalizingOverlay";
 import { HallucinationReportDialog } from "@/features/session/components/HallucinationReportDialog";
@@ -20,7 +21,7 @@ import {
   TRANSCRIBE_ESCALATION_WINDOW,
 } from "@/features/session/config";
 import { useBackgroundKeepalive } from "@/features/session/hooks/useBackgroundKeepalive";
-import { useCoinTick } from "@/features/session/hooks/useCoinTick";
+import { useCoinGuard } from "@/features/session/hooks/useCoinGuard";
 import { useElapsedTimer } from "@/features/session/hooks/useElapsedTimer";
 import { useTranscribeQueue } from "@/features/session/hooks/useTranscribeQueue";
 import { useUnloadGuard } from "@/features/session/hooks/useUnloadGuard";
@@ -28,11 +29,13 @@ import { useWakeLock } from "@/features/session/hooks/useWakeLock";
 import { requestDeleteSession, requestSaveTranscript } from "@/features/session/lib/api";
 import { isSilentBlob } from "@/features/session/lib/audio";
 import { joinOkChunks, shouldEscalateTranscription } from "@/features/session/lib/chunks";
+import { notifyCoinsRecovered, warnLowCoins } from "@/features/session/lib/coinToasts";
 import { defaultRecordingTitle } from "@/features/session/lib/formatting";
 import { tailSentences } from "@/features/session/lib/text";
 import { normalizeLocationInput, normalizeSpeakerInput } from "@/features/session/lib/unknown";
 import { getSessionState, useSessionStore } from "@/features/session/store";
 import type { ChunkRow } from "@/features/session/types";
+import { COIN_COSTS } from "@/lib/coins/pricing";
 import type { ChunkEvent, Recorder } from "@/lib/domain/recorder";
 import { devLog } from "@/lib/log";
 import { createRecorder } from "@/lib/recorder";
@@ -95,6 +98,7 @@ export function RecordingTranscribe({
 
   const [reportOpen, setReportOpen] = useState(false);
   const [discardOpen, setDiscardOpen] = useState(false);
+  const [billingOpen, setBillingOpen] = useState(false);
   const [follow, setFollow] = useState(true);
   /** O stop rodou mas o PUT falhou: o texto está só na tela. */
   const [saveFailed, setSaveFailed] = useState(false);
@@ -352,17 +356,15 @@ export function RecordingTranscribe({
   }, [router, sessionId, transcribeQueue, initialSpeakerName, initialSpeakerLocation]);
 
   // Cobrança: 1 moeda por minuto iniciado — o modo mais barato, já que só paga
-  // a transcrição.
-  useCoinTick({
+  // a transcrição. Ao esgotar, congela em vez de encerrar.
+  const coinGuard = useCoinGuard({
     enabled: activelyRecording,
     reason: "transcript_minute",
     sessionId,
-    onDepleted: () => {
-      toast.warning("Saldo de moedas esgotado.", {
-        description: "Gravação finalizada automaticamente.",
-      });
-      void stop();
-    },
+    costPerMinute: COIN_COSTS.transcriptMinute,
+    onFreeze: () => void pause(),
+    onWarn: (minutesLeft, level) => warnLowCoins(minutesLeft, level, () => setBillingOpen(true)),
+    onRecovered: notifyCoinsRecovered,
   });
 
   useBackgroundKeepalive({
@@ -435,6 +437,7 @@ export function RecordingTranscribe({
           onResume={() => void resume()}
           onStop={stop}
           onDiscard={() => setDiscardOpen(true)}
+          outOfCoins={coinGuard.outOfCoins}
         />
       ) : null}
 
@@ -533,6 +536,8 @@ export function RecordingTranscribe({
         getLiveContext={() => ({ text: transcript, feedItems: [] })}
         onStopRecording={running ? () => void stop() : undefined}
       />
+
+      <BillingDialog open={billingOpen} onOpenChange={setBillingOpen} />
 
       <ConfirmDialog
         open={discardOpen}

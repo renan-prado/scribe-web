@@ -250,6 +250,38 @@ export const RATE_LIMITS = {
     perUser: { limit: 60, windowMs: MIN },
     perIp: { limit: 180, windowMs: MIN },
   },
+  // Cobrança: cada clique abre UMA sessão de checkout/portal no Stripe, que é
+  // uma chamada paga de API e um objeto persistido lá. Apertado de propósito —
+  // uso legítimo são alguns cliques por hora, e um limite baixo aqui é a
+  // primeira barreira contra alguém rodando um script de criação de sessões.
+  "billing-write": {
+    route: "billing-write",
+    perUser: { limit: 12, windowMs: 10 * MIN },
+    perIp: { limit: 40, windowMs: 10 * MIN },
+  },
+  // Reconciliação pós-checkout. A tela de retorno chama uma vez; os retries
+  // são raros. Apertado porque cada chamada bate na API do Stripe — e porque
+  // é o único endpoint autenticado capaz de creditar, ainda que só um
+  // pagamento comprovadamente pago e pertencente ao próprio chamador.
+  "billing-reconcile": {
+    route: "billing-reconcile",
+    perUser: { limit: 20, windowMs: 10 * MIN },
+    perIp: { limit: 60, windowMs: 10 * MIN },
+  },
+  // Varredura do cron: 1 chamada/dia no uso real. O limite por IP existe só
+  // para que a rota pública não vire alvo de flood/brute-force do segredo.
+  "billing-sweep": {
+    route: "billing-sweep",
+    perIp: { limit: 10, windowMs: 10 * MIN },
+  },
+  // Leitura do resumo de plano/saldo. O diálogo de moedas faz polling enquanto
+  // o usuário está sem crédito no meio de uma gravação, então precisa caber
+  // um tick a cada poucos segundos.
+  "billing-read": {
+    route: "billing-read",
+    perUser: { limit: 120, windowMs: MIN },
+    perIp: { limit: 300, windowMs: MIN },
+  },
   admin: {
     route: "admin",
     perUser: { limit: 60, windowMs: MIN },

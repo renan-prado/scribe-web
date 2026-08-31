@@ -3,7 +3,8 @@ import { redirect } from "next/navigation";
 import type { ReactNode } from "react";
 import { ThemeToggleRow } from "@/components/ThemeToggle";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
-import { INITIAL_COIN_BALANCE } from "@/lib/coins/pricing";
+import { PlanCard } from "@/features/billing/components/PlanCard";
+import { COIN_RING_REFERENCE } from "@/lib/coins/pricing";
 import { getCurrentBalance } from "@/lib/db/coins";
 import { getCurrentProfile } from "@/lib/db/profiles";
 
@@ -41,7 +42,7 @@ export default async function ProfilePage() {
   const memberSince = DATE_FMT.format(new Date(profile.createdAt));
   const initials = initialsFrom(profile.displayName, profile.email);
   const coinBalance = balance ?? 0;
-  const percent = Math.max(0, Math.min(100, (coinBalance / INITIAL_COIN_BALANCE) * 100));
+  const percent = Math.max(0, Math.min(100, (coinBalance / COIN_RING_REFERENCE) * 100));
 
   return (
     <main className="mx-auto flex w-full max-w-2xl flex-col gap-6 px-4 py-8 sm:gap-8 sm:px-6 sm:py-12">
@@ -105,6 +106,8 @@ export default async function ProfilePage() {
           </div>
         </div>
       </section>
+
+      <PlanCard />
 
       {/* Account info */}
       <section className="rounded-[28px] bg-scriba-paper p-6 ring-1 ring-scriba-hairline sm:p-7">

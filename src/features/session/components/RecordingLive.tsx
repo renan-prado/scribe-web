@@ -10,6 +10,7 @@ import {
   DialogHeader,
   DialogTitle,
 } from "@/components/ui/dialog";
+import { BillingDialog } from "@/features/billing/components/BillingDialog";
 import { ConfirmDialog } from "@/features/session/components/ConfirmDialog";
 import { Feed } from "@/features/session/components/Feed";
 import { FinalizingOverlay } from "@/features/session/components/FinalizingOverlay";
@@ -31,7 +32,7 @@ import {
 } from "@/features/session/config";
 import { useBackgroundKeepalive } from "@/features/session/hooks/useBackgroundKeepalive";
 import { useBiblePipeline } from "@/features/session/hooks/useBiblePipeline";
-import { useCoinTick } from "@/features/session/hooks/useCoinTick";
+import { useCoinGuard } from "@/features/session/hooks/useCoinGuard";
 import { useDrainTimer } from "@/features/session/hooks/useDrainTimer";
 import { useEchoPipeline } from "@/features/session/hooks/useEchoPipeline";
 import { useElapsedTimer } from "@/features/session/hooks/useElapsedTimer";
@@ -43,9 +44,11 @@ import { useWakeLock } from "@/features/session/hooks/useWakeLock";
 import { requestDeleteSession, requestFinalSummary } from "@/features/session/lib/api";
 import { isSilentBlob } from "@/features/session/lib/audio";
 import { joinOkChunks, shouldEscalateTranscription } from "@/features/session/lib/chunks";
+import { notifyCoinsRecovered, warnLowCoins } from "@/features/session/lib/coinToasts";
 import { tailSentences } from "@/features/session/lib/text";
 import { getSessionState, useSessionStore } from "@/features/session/store";
 import type { ChunkRow, TranscriptState } from "@/features/session/types";
+import { COIN_COSTS } from "@/lib/coins/pricing";
 import type { ChunkEvent, Recorder } from "@/lib/domain/recorder";
 import { devLog } from "@/lib/log";
 import { createRecorder } from "@/lib/recorder";
@@ -100,6 +103,8 @@ export function RecordingLive({
   const [liveFeedOpen, setLiveFeedOpen] = useState(false);
   const [reportOpen, setReportOpen] = useState(false);
   const [discardOpen, setDiscardOpen] = useState(false);
+  /** Diálogo de compra aberto sem sair da página — sair mataria o recorder. */
+  const [billingOpen, setBillingOpen] = useState(false);
 
   const activelyRecording = running && !paused;
   const elapsedMs = useElapsedTimer(activelyRecording, startedAtRef);
@@ -416,20 +421,18 @@ export function RecordingLive({
     initialSpeakerLocation,
   ]);
 
-  // Coin billing: 5 moedas/min (per started minute). First tick fires
-  // immediately so t=0 is billed; subsequent ticks every 60s. On depletion
-  // we call stop() so the pipeline finalizes what was captured so far
-  // instead of leaving the recorder running with no budget behind it.
-  useCoinTick({
+  // Cobrança: 5 moedas/min iniciado. O primeiro débito sai no t=0; os demais
+  // a cada 60s. Ao esgotar, a captura é CONGELADA (pause), não encerrada —
+  // o transcript, a fila de chunks e o feed continuam vivos esperando o
+  // crédito. Ver `useCoinGuard` para o porquê da mudança.
+  const coinGuard = useCoinGuard({
     enabled: activelyRecording,
     reason: "live_minute",
     sessionId,
-    onDepleted: () => {
-      toast.warning("Saldo de moedas esgotado.", {
-        description: "Gravação finalizada automaticamente.",
-      });
-      void stop();
-    },
+    costPerMinute: COIN_COSTS.liveMinute,
+    onFreeze: () => void pause(),
+    onWarn: (minutesLeft, level) => warnLowCoins(minutesLeft, level, () => setBillingOpen(true)),
+    onRecovered: notifyCoinsRecovered,
   });
 
   // Background-recording defenses (silent audio + Media Session + RN bridge)
@@ -557,6 +560,7 @@ export function RecordingLive({
           onResume={() => void resume()}
           onStop={stop}
           onDiscard={() => setDiscardOpen(true)}
+          outOfCoins={coinGuard.outOfCoins}
         />
       ) : null}
       {running && !autoFollow && pendingNew > 0 ? (
@@ -660,6 +664,8 @@ export function RecordingLive({
         onRemoveKeys={(keys) => getSessionState().removeFeedItemsByKey(keys)}
         onStopRecording={running ? () => void stop() : undefined}
       />
+
+      <BillingDialog open={billingOpen} onOpenChange={setBillingOpen} />
 
       <ConfirmDialog
         open={discardOpen}

@@ -13,8 +13,18 @@ import { createClient } from "@/lib/supabase/server";
 export async function GET(request: Request) {
   const { searchParams, origin } = new URL(request.url);
   const code = searchParams.get("code");
+  // Mesma sanitização do proxy: só caminho relativo, recusando as formas que
+  // o navegador resolve como host externo ("//evil.com", "/\evil.com",
+  // "/%2Fevil.com"). Um `next` frouxo aqui é um open redirect assinado pelo
+  // nosso domínio, logo depois do login — o vetor clássico de phishing.
   const rawNext = searchParams.get("next") ?? "/feed";
-  const next = rawNext.startsWith("/") ? rawNext : "/feed";
+  const next =
+    rawNext.startsWith("/") &&
+    !rawNext.startsWith("//") &&
+    !rawNext.startsWith("/\\") &&
+    !/^\/%(2f|5c)/i.test(rawNext)
+      ? rawNext
+      : "/feed";
 
   if (!code) {
     return NextResponse.redirect(`${origin}/sign-in?error=missing_code`);

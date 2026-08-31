@@ -1,11 +1,19 @@
 "use client";
 
-import { BookOpenText, Captions, Check, FileText, type LucideIcon, Mic } from "lucide-react";
+import {
+  BookOpenText,
+  Captions,
+  Check,
+  CreditCard,
+  FileText,
+  type LucideIcon,
+  Mic,
+} from "lucide-react";
 import { useRouter } from "next/navigation";
 import { type ReactNode, useState } from "react";
 import { toast } from "sonner";
 import { Dialog, DialogContent, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
-import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/components/ui/tooltip";
+import { BillingDialog } from "@/features/billing/components/BillingDialog";
 import { CoinCost } from "@/features/coins/components/CoinCost";
 import { useCoinsStore } from "@/features/coins/store";
 import { requestCreateSession } from "@/features/session/lib/api";
@@ -79,6 +87,9 @@ export function NewRecordingDialog({ trigger }: { trigger?: ReactNode }) {
   const [open, setOpen] = useState(false);
   const [loading, setLoading] = useState(false);
   const [mode, setMode] = useState<SessionMode>("live");
+  /** Compra de créditos a partir do próprio diálogo — evita mandar o usuário
+   * para outra tela só para descobrir como destravar a gravação. */
+  const [billingOpen, setBillingOpen] = useState(false);
   const balance = useCoinsStore((s) => s.balance);
   const refresh = useCoinsStore((s) => s.refresh);
   const balanceLoading = balance === null;
@@ -251,21 +262,35 @@ export function NewRecordingDialog({ trigger }: { trigger?: ReactNode }) {
             </button>
           );
           if (!insufficient) return startButton;
+          // Saldo insuficiente deixou de ser um beco sem saída com tooltip: o
+          // caminho para destravar fica na frente do usuário, na mesma tela.
           return (
-            <TooltipProvider delay={120}>
-              <Tooltip>
-                <TooltipTrigger
-                  // biome-ignore lint/a11y/noNoninteractiveTabindex: focus target for the tooltip on a disabled button
-                  render={<span tabIndex={0} className="inline-flex w-full focus:outline-none" />}
-                >
-                  {startButton}
-                </TooltipTrigger>
-                <TooltipContent>Moedas insuficientes para gravar neste modo.</TooltipContent>
-              </Tooltip>
-            </TooltipProvider>
+            <div className="mt-1 flex flex-col gap-2.5">
+              <p
+                role="alert"
+                className="rounded-2xl border border-scriba-cream-accent/40 bg-scriba-cream px-4 py-3 text-center text-[12px] font-light leading-relaxed text-scriba-cream-ink"
+              >
+                Você tem <strong className="font-semibold">{balance} créditos</strong> — o{" "}
+                {copy.title} custa {minCost} por minuto. Adicione créditos para começar.
+              </p>
+              <button
+                type="button"
+                onClick={() => setBillingOpen(true)}
+                className={cn(
+                  "inline-flex w-full items-center justify-center gap-2.5 rounded-full bg-scriba-blue px-7 py-3.5 text-[15px] font-semibold text-white shadow-[0_10px_24px_rgba(79,168,240,0.32)] transition-colors",
+                  "hover:bg-scriba-blue-hover",
+                  "focus-visible:outline-none focus-visible:ring-4 focus-visible:ring-scriba-blue/30"
+                )}
+              >
+                <CreditCard aria-hidden className="size-4" strokeWidth={2.4} />
+                Adicionar créditos
+              </button>
+            </div>
           );
         })()}
       </DialogContent>
+
+      <BillingDialog open={billingOpen} onOpenChange={setBillingOpen} />
     </Dialog>
   );
 }

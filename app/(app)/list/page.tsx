@@ -1,4 +1,4 @@
-import { BookOpen, Captions, MapPin, Mic } from "lucide-react";
+import { BookOpen, Captions, CircleDot, MapPin, Mic, Trash2 } from "lucide-react";
 import type { Metadata } from "next";
 import { revalidatePath } from "next/cache";
 import { NavLink } from "@/components/NavLink";
@@ -6,8 +6,8 @@ import { RefreshSessionsButton } from "@/features/session/components/RefreshSess
 import { SessionsEmptyState } from "@/features/session/components/SessionsEmptyState";
 import { formatDurationShort, groupLabel, shortDate } from "@/features/session/lib/formatting";
 import { listDeepenedSessionIds } from "@/lib/db/deepenings";
-import { deleteSession, listSessions } from "@/lib/db/sessions";
-import { savedRouteFor } from "@/lib/domain/session";
+import { deleteSession, listSessions, listUnfinishedSessions } from "@/lib/db/sessions";
+import { recordingRouteFor, savedRouteFor } from "@/lib/domain/session";
 import { cn } from "@/lib/utils";
 import { SessionCardMenu } from "./SessionCardMenu";
 
@@ -28,6 +28,11 @@ export default async function LibraryPage() {
 
   const sessions = sessionsResult.ok ? sessionsResult.sessions : [];
   const loadError = sessionsResult.ok ? null : sessionsResult.message;
+  // Gravações que nunca foram encerradas — fechou o navegador, acabou a
+  // bateria, ou o crédito congelou a captura e a pessoa saiu da página. Ficam
+  // numa faixa própria no topo para não sumirem de vista.
+  const unfinished = await listUnfinishedSessions().catch(() => []);
+
   const deepenedIds = await listDeepenedSessionIds(sessions.map((s) => s.id)).catch(
     () => new Set<string>()
   );
@@ -44,7 +49,7 @@ export default async function LibraryPage() {
     else groups.push({ label, items: [s] });
   }
 
-  const isEmpty = sessions.length === 0 && !loadError;
+  const isEmpty = sessions.length === 0 && unfinished.length === 0 && !loadError;
 
   return (
     <main
@@ -67,16 +72,78 @@ export default async function LibraryPage() {
         </div>
       )}
 
+      {unfinished.length > 0 ? (
+        <section className="flex flex-col gap-3">
+          <div className="flex items-center gap-3 px-1">
+            <span className="inline-flex items-center gap-1.5 text-xs font-semibold text-scriba-cream-accent">
+              <CircleDot className="size-3.5" />
+              Gravações em aberto
+            </span>
+            <span className="h-px flex-1 bg-scriba-hairline" />
+            <span className="text-[11px] font-light text-scriba-ink-mute">{unfinished.length}</span>
+          </div>
+          <p className="px-1 text-[12px] font-light leading-relaxed text-scriba-ink-soft">
+            Estas gravações nunca foram encerradas. Você pode voltar para elas e continuar, ou
+            apagá-las. Trechos de áudio que ficaram pendentes no aparelho são reenviados ao abrir a
+            sessão (até 24h depois).
+          </p>
+          <ul className="grid gap-3 sm:grid-cols-2">
+            {unfinished.map((s) => {
+              const includeYear = new Date(s.createdAt).getFullYear() !== now.getFullYear();
+              return (
+                <li
+                  key={s.id}
+                  className="flex flex-col gap-3 rounded-3xl border border-scriba-cream-accent/35 bg-scriba-cream p-5 sm:p-6"
+                >
+                  <div className="flex items-start gap-2.5">
+                    <div className="flex size-9 shrink-0 items-center justify-center rounded-lg bg-scriba-cream-accent/25 text-scriba-cream-ink">
+                      <Mic className="size-4" />
+                    </div>
+                    <div className="flex min-w-0 flex-1 flex-col gap-0.5">
+                      <span className="truncate text-[15px] font-semibold leading-tight text-scriba-cream-ink">
+                        {s.title?.trim() || "Gravação sem título"}
+                      </span>
+                      <span className="text-[11px] font-light text-scriba-cream-body">
+                        Iniciada em {shortDate(s.createdAt, includeYear)}
+                      </span>
+                    </div>
+                  </div>
+                  <div className="mt-auto flex items-center gap-2">
+                    <NavLink
+                      href={`/recording/${s.id}/${recordingRouteFor(s.mode)}`}
+                      spinner="overlay"
+                      className="inline-flex flex-1 items-center justify-center rounded-full bg-scriba-blue px-4 py-2 text-[11px] font-semibold text-white transition-colors hover:bg-scriba-blue-hover"
+                    >
+                      Continuar gravação →
+                    </NavLink>
+                    <form action={deleteSessionAction}>
+                      <input type="hidden" name="id" value={s.id} />
+                      <button
+                        type="submit"
+                        aria-label="Apagar gravação em aberto"
+                        className="inline-flex size-8 items-center justify-center rounded-full text-scriba-cream-body outline-none transition-colors hover:bg-destructive/10 hover:text-destructive focus-visible:ring-2 focus-visible:ring-destructive/30"
+                      >
+                        <Trash2 className="size-3.5" />
+                      </button>
+                    </form>
+                  </div>
+                </li>
+              );
+            })}
+          </ul>
+        </section>
+      ) : null}
+
       {loadError ? (
         <div className="rounded-2xl border border-destructive/40 bg-destructive/5 p-4 text-sm text-destructive">
           Não consegui carregar as gravações: {loadError}
         </div>
-      ) : sessions.length === 0 ? (
+      ) : sessions.length === 0 && unfinished.length === 0 ? (
         <SessionsEmptyState
           sticker="/stickers/woman/018-woman.svg"
           heading="Sem gravações, ainda..."
         />
-      ) : (
+      ) : sessions.length === 0 ? null : (
         <div className="flex flex-col gap-6">
           {groups.map((group) => (
             <section key={group.label} className="flex flex-col gap-3">

@@ -86,6 +86,7 @@
   --color-scriba-mint-body: var(--scriba-mint-body);
   --color-scriba-cream-body: var(--scriba-cream-body);
   --color-scriba-btn-muted: var(--scriba-btn-muted);
+  --color-scriba-btn-muted-hover: var(--scriba-btn-muted-hover);
   --color-session-typing-dot: var(--session-typing-dot);
   --color-session-verse-text: var(--session-verse-text);
   --color-session-verse-border: var(--session-verse-border);
@@ -211,6 +212,7 @@
   --scriba-mint-body: #6E8A7E;
   --scriba-cream-body: #9C8A55;
   --scriba-btn-muted: #F4F8FC;
+  --scriba-btn-muted-hover: #E8EEF6;
   /* Session feed color tokens */
   --session-typing-dot: #9BB6CC;
   --session-verse-text: #3E5164;
@@ -353,6 +355,7 @@
   --scriba-mint-body: #8DB2A4;
   --scriba-cream-body: #B7A47A;
   --scriba-btn-muted: #221E40;
+  --scriba-btn-muted-hover: #2B2750;
   --session-typing-dot: #6E7FA0;
   --session-verse-text: #C6D6E6;
   --session-verse-border: #3E5F82;
@@ -461,8 +464,13 @@
     &:hover { background-color: var(--auth-btn-bg-hover); border-color: var(--auth-btn-border-hover); color: var(--scriba-ink-strong); }
   }
   .lp-cta-soft {
-    transition: background-color 0.18s ease, color 0.18s ease;
-    &:hover { background-color: var(--scriba-blue-soft); color: var(--scriba-ink-strong); }
+    /* Only the transition lives here. The hover background CANNOT: this is
+       @layer components, and the element also carries the `bg-scriba-btn-muted`
+       utility from @layer utilities — a later layer beats an earlier one no
+       matter the specificity, so any background-color set here is dead code.
+       The hover fill is applied as a `hover:bg-scriba-btn-muted-hover` utility
+       on the element itself, competing inside the same layer. */
+    transition: background-color 0.18s ease;
   }
   .lp-link {
     transition: color 0.18s ease;
@@ -479,10 +487,6 @@
   .lp-lift {
     transition: box-shadow 0.25s ease, border-color 0.25s ease;
     &:hover { box-shadow: 0 16px 36px rgba(79,168,240,0.18); border-color: #D9E7F5; }
-  }
-  .lp-lift-plan {
-    transition: box-shadow 0.25s ease;
-    &:hover { box-shadow: 0 22px 48px rgba(79,168,240,0.22); }
   }
   .lp-tile {
     transition: box-shadow 0.25s ease, filter 0.25s ease;

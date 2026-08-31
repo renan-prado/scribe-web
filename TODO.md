@@ -3,7 +3,7 @@
 ## Coisas a desenvolver
 - [ ] Criar um sistema de cards editoriais, cards que serão criados pelos admistradores do scriba que será mostrado para todos os usuarios. Regras: só mostrar os cards que foram publicados após o cadastro do usuario. Outra coisa é criar um card padrão para deixar um exemplo de resumo para o usuario quando criar a conta saber como poderá vir. Ter essa opção no admin de selecionar uma erflexão como boas vindas. No admin esta pagina de criação de conteudo editorial, deve ser um editor de texto, semelhante ao notion, moderno (acho que ja temos tiptap no projeto), mas quero poder usar nesta area os componente que existe no /summary. E tambem ter a opção de programar um post para aparecer no feed dos usuarios.
 - [x] Adicionar modo transcrição
-- [ ] Adicionar modo de pagamento com stripe
+- [x] Adicionar modo de pagamento com stripe
 - [ ] Separar ambientes de dev e produção
 - [ ] eu tive um problema numa gravação pelo celular.                                                                                            
                     
