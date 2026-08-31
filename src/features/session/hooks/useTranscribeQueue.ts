@@ -4,6 +4,7 @@ import { useCallback, useEffect, useRef } from "react";
 import { uploadChunk } from "@/features/session/lib/api";
 import {
   deleteChunk,
+  deleteChunksForSession,
   deleteExpiredChunks,
   listChunksForSession,
   putChunk,
@@ -66,6 +67,12 @@ export type TranscribeQueue = {
    */
   drain: (timeoutMs?: number) => Promise<{ drained: boolean; pending: number }>;
   pendingCount: () => number;
+  /**
+   * Drop everything: cancel retry timers, empty the in-memory queue, and wipe
+   * this session's persisted chunks from IDB. Used when the recording is
+   * discarded so nothing keeps uploading for a deleted session.
+   */
+  clear: () => void;
 };
 
 export function useTranscribeQueue({
@@ -210,6 +217,17 @@ export function useTranscribeQueue({
 
   const pendingCount = useCallback(() => pendingRef.current.size, []);
 
+  const clear = useCallback(() => {
+    for (const entry of pendingRef.current.values()) {
+      if (entry.timer) clearTimeout(entry.timer);
+      entry.timer = null;
+    }
+    pendingRef.current.clear();
+    drainResolversRef.current = [];
+    void deleteChunksForSession(sessionId);
+    devLog("[queue] cleared", { sessionId });
+  }, [sessionId]);
+
   // Orphan recovery + retry triggers.
   useEffect(() => {
     let cancelled = false;
@@ -267,5 +285,5 @@ export function useTranscribeQueue({
     };
   }, [sessionId, attempt, flushAll]);
 
-  return { enqueue, drain, pendingCount };
+  return { enqueue, drain, pendingCount, clear };
 }

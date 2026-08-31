@@ -16,6 +16,7 @@ import {
 } from "@/components/ui/dialog";
 import { useCoinsStore } from "@/features/coins/store";
 import { ColoqueEmPratica } from "@/features/session/components/ColoqueEmPratica";
+import { ConfirmDialog } from "@/features/session/components/ConfirmDialog";
 import { DeepenButton } from "@/features/session/components/DeepenButton";
 import { EntityFieldDialog } from "@/features/session/components/EntityFieldDialog";
 import { Feed } from "@/features/session/components/Feed";
@@ -176,6 +177,7 @@ export function SavedSessionView({
   const [locationDialogOpen, setLocationDialogOpen] = useState(false);
   const [reprocessing, setReprocessing] = useState(false);
   const [reportOpen, setReportOpen] = useState(false);
+  const [deleteOpen, setDeleteOpen] = useState(false);
 
   const router = useRouter();
   const refreshCoins = useCoinsStore((s) => s.refresh);
@@ -186,7 +188,10 @@ export function SavedSessionView({
 
   async function handleDelete() {
     const res = await fetch(`/api/sessions/${id}`, { method: "DELETE" });
-    if (!res.ok) throw new Error("delete failed");
+    if (!res.ok) {
+      toast.error("Não foi possível excluir. Tente novamente.");
+      return;
+    }
     router.push("/list");
   }
 
@@ -290,7 +295,7 @@ export function SavedSessionView({
               hasLiveFeed={feedItems.length > 0}
               onOpenTranscript={() => setTranscriptOpen(true)}
               onOpenLiveFeed={() => setFeedOpen(true)}
-              onDelete={handleDelete}
+              onDelete={() => setDeleteOpen(true)}
               onReprocess={summary ? handleReprocess : undefined}
               reprocessing={reprocessing}
               onReportHallucination={() => setReportOpen(true)}
@@ -410,6 +415,16 @@ export function SavedSessionView({
         sessionId={id}
         scope="summary"
         onReprocess={summary ? handleReprocess : undefined}
+      />
+
+      <ConfirmDialog
+        open={deleteOpen}
+        onOpenChange={setDeleteOpen}
+        title="Excluir este resumo?"
+        description="O resumo e a transcrição desta gravação serão apagados permanentemente. Esta ação não pode ser desfeita."
+        confirmLabel="Excluir"
+        pendingLabel="Excluindo…"
+        onConfirm={handleDelete}
       />
 
       <TitleDialog

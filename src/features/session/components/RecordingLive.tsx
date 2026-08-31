@@ -10,6 +10,7 @@ import {
   DialogHeader,
   DialogTitle,
 } from "@/components/ui/dialog";
+import { ConfirmDialog } from "@/features/session/components/ConfirmDialog";
 import { Feed } from "@/features/session/components/Feed";
 import { FinalizingOverlay } from "@/features/session/components/FinalizingOverlay";
 import { HallucinationReportDialog } from "@/features/session/components/HallucinationReportDialog";
@@ -98,6 +99,7 @@ export function RecordingLive({
   const [transcriptOpen, setTranscriptOpen] = useState(false);
   const [liveFeedOpen, setLiveFeedOpen] = useState(false);
   const [reportOpen, setReportOpen] = useState(false);
+  const [discardOpen, setDiscardOpen] = useState(false);
 
   const activelyRecording = running && !paused;
   const elapsedMs = useElapsedTimer(activelyRecording, startedAtRef);
@@ -384,6 +386,36 @@ export function RecordingLive({
     }
   }, [router, sessionId, transcribeQueue]);
 
+  /**
+   * End the recording and throw it away: tear down the recorder, drop the
+   * transcribe queue (incl. persisted chunks), delete the session row, and
+   * return to the list. No final-summary call. Gated behind ConfirmDialog.
+   */
+  const discard = useCallback(async () => {
+    const s = getSessionState();
+    devLog("[session] discard", { sessionId, at: new Date().toISOString() });
+    s.setRunning(false);
+    s.setPaused(false);
+    await recorderRef.current?.stop();
+    recorderRef.current = null;
+    cancelDrainTimer();
+    transcribeQueue.clear();
+    await requestDeleteSession(sessionId);
+    s.reset({
+      speakerName: initialSpeakerName,
+      speakerLocation: initialSpeakerLocation,
+    });
+    toast.success("Gravação descartada.");
+    router.replace("/list");
+  }, [
+    router,
+    sessionId,
+    cancelDrainTimer,
+    transcribeQueue,
+    initialSpeakerName,
+    initialSpeakerLocation,
+  ]);
+
   // Coin billing: 5 moedas/min (per started minute). First tick fires
   // immediately so t=0 is billed; subsequent ticks every 60s. On depletion
   // we call stop() so the pipeline finalizes what was captured so far
@@ -514,12 +546,18 @@ export function RecordingLive({
             onStart={start}
             onStop={stop}
             onPause={pause}
+            onDiscard={() => setDiscardOpen(true)}
             compact
           />
         </div>
       ) : null}
       {running && paused ? (
-        <PausedOverlay elapsedMs={elapsedMs} onResume={() => void resume()} onStop={stop} />
+        <PausedOverlay
+          elapsedMs={elapsedMs}
+          onResume={() => void resume()}
+          onStop={stop}
+          onDiscard={() => setDiscardOpen(true)}
+        />
       ) : null}
       {running && !autoFollow && pendingNew > 0 ? (
         <button
@@ -621,6 +659,16 @@ export function RecordingLive({
         }}
         onRemoveKeys={(keys) => getSessionState().removeFeedItemsByKey(keys)}
         onStopRecording={running ? () => void stop() : undefined}
+      />
+
+      <ConfirmDialog
+        open={discardOpen}
+        onOpenChange={setDiscardOpen}
+        title="Descartar esta gravação?"
+        description="Tudo o que foi capturado até agora será apagado e nenhum resumo será gerado. Esta ação não pode ser desfeita."
+        confirmLabel="Descartar"
+        pendingLabel="Descartando…"
+        onConfirm={discard}
       />
 
       <Dialog open={liveFeedOpen} onOpenChange={setLiveFeedOpen}>

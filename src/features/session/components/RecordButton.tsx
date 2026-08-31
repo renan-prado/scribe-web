@@ -1,4 +1,4 @@
-import { Mic, Pause, Square } from "lucide-react";
+import { Mic, Pause, Square, Trash2 } from "lucide-react";
 import { formatMmSs } from "@/features/session/lib/text";
 import { cn } from "@/lib/utils";
 
@@ -10,6 +10,10 @@ type RecordButtonProps = {
   /** When provided, adds a pause action to the control cluster. Omit on the
    * idle/empty state where pause has no meaning. */
   onPause?: () => void;
+  /** When provided (compact cluster only), adds a discard action — end the
+   * recording without generating or saving a summary. The caller is expected
+   * to gate it behind a confirmation dialog. */
+  onDiscard?: () => void;
   compact?: boolean;
   /** Keep the halo pulse active even while recording. Used by the audio-only
    * view where the big button is the only element on screen and needs the
@@ -27,6 +31,7 @@ export function RecordButton({
   onStart,
   onStop,
   onPause,
+  onDiscard,
   compact = false,
   pulseWhileRunning = false,
   autoStarting = false,
@@ -35,7 +40,7 @@ export function RecordButton({
     return (
       <div
         className={cn(
-          "flex items-center gap-2 rounded-full bg-scriba-ink-strong pl-4 pr-1.5 py-1.5 text-background shadow-[0_10px_24px_rgba(51,65,79,0.28)]"
+          "flex items-center gap-2 rounded-full bg-scriba-ink-strong pl-4 pr-3 py-1.5 text-background shadow-[0_10px_24px_rgba(51,65,79,0.28)]"
         )}
       >
         <span className="relative flex size-2.5 items-center justify-center">
@@ -75,6 +80,22 @@ export function RecordButton({
           <Square className="size-3 fill-current" />
           <span className="hidden sm:inline">parar</span>
         </button>
+        {onDiscard ? (
+          <>
+            <span className="h-4 w-px bg-background/20" />
+            <button
+              type="button"
+              onClick={onDiscard}
+              aria-label="Descartar gravação"
+              className={cn(
+                "inline-flex items-center justify-center rounded-full p-2 outline-none transition-colors",
+                "hover:bg-background/10 focus-visible:ring-2 focus-visible:ring-background/40 active:scale-95"
+              )}
+            >
+              <Trash2 className="size-3.5" />
+            </button>
+          </>
+        ) : null}
       </div>
     );
   }

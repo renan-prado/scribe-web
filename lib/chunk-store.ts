@@ -106,6 +106,36 @@ export async function deleteChunk(sessionId: string, index: number): Promise<voi
   }
 }
 
+/**
+ * Delete every persisted chunk for one session. Used when a live recording is
+ * discarded — the session row is gone, so its pending audio must not linger in
+ * IDB where orphan recovery would keep retrying uploads for a dead session.
+ */
+export async function deleteChunksForSession(sessionId: string): Promise<void> {
+  const db = await openDb();
+  if (!db) return;
+  try {
+    const tx = db.transaction(STORE, "readwrite");
+    const store = tx.objectStore(STORE);
+    const idx = store.index("bySession");
+    await new Promise<void>((resolve) => {
+      const cursorReq = idx.openCursor(IDBKeyRange.only(sessionId));
+      cursorReq.onsuccess = () => {
+        const cursor = cursorReq.result;
+        if (!cursor) {
+          resolve();
+          return;
+        }
+        cursor.delete();
+        cursor.continue();
+      };
+      cursorReq.onerror = () => resolve();
+    });
+  } catch {
+    // best-effort
+  }
+}
+
 export async function listChunksForSession(sessionId: string): Promise<StoredChunk[]> {
   const db = await openDb();
   if (!db) return [];

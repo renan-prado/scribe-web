@@ -1,4 +1,4 @@
-import { Pause, Play, Square } from "lucide-react";
+import { Pause, Play, Square, Trash2 } from "lucide-react";
 import { formatMmSs } from "@/features/session/lib/text";
 import { cn } from "@/lib/utils";
 
@@ -6,6 +6,9 @@ type Props = {
   elapsedMs: number;
   onResume: () => void;
   onStop: () => void;
+  /** End the recording and discard it — no summary, session row deleted. The
+   * caller gates this behind a confirmation dialog. */
+  onDiscard?: () => void;
 };
 
 /**
@@ -16,7 +19,7 @@ type Props = {
  * see `useCoinTick`, `useBackgroundKeepalive`, and the `paused` flag in the
  * session store.
  */
-export function PausedOverlay({ elapsedMs, onResume, onStop }: Props) {
+export function PausedOverlay({ elapsedMs, onResume, onStop, onDiscard }: Props) {
   return (
     <div
       role="dialog"
@@ -74,6 +77,20 @@ export function PausedOverlay({ elapsedMs, onResume, onStop }: Props) {
           Encerrar e gerar resumo
         </button>
       </div>
+
+      {onDiscard ? (
+        <button
+          type="button"
+          onClick={onDiscard}
+          className={cn(
+            "inline-flex items-center gap-1.5 rounded-full px-3 py-1.5 text-xs font-semibold text-destructive/80 outline-none transition-colors",
+            "hover:bg-destructive/10 hover:text-destructive focus-visible:ring-2 focus-visible:ring-destructive/30"
+          )}
+        >
+          <Trash2 className="size-3.5" />
+          Descartar gravação
+        </button>
+      ) : null}
     </div>
   );
 }
