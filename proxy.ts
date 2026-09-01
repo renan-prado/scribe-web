@@ -173,8 +173,25 @@ export async function proxy(request: NextRequest) {
   return supabaseResponse;
 }
 
+/**
+ * Arquivos que TÊM de responder sem cookie de sessão.
+ *
+ * Sem esta exceção o proxy trata `/sitemap.xml` como rota protegida e devolve
+ * `307 → /sign-in` para o Googlebot, que registra "Não foi possível buscar o
+ * sitemap" e não indexa nada. O mesmo 307 quebrava o `robots.txt` (o rastreador
+ * lê um HTML de login no lugar das diretivas), o `manifest.webmanifest` e o
+ * `sw.js` (instalação do PWA) e o `opengraph-image` (prévia dos links no
+ * WhatsApp e nas redes).
+ *
+ * São recursos públicos por definição — não existe sessão para renovar neles,
+ * então pular o proxy também economiza uma ida ao Supabase por requisição.
+ *
+ * A lista fica INLINE de propósito: o Next exige que `matcher` seja constante
+ * literal para analisá-lo em build-time — montar a string a partir de uma
+ * variável faz o matcher inteiro ser IGNORADO, em silêncio.
+ */
 export const config = {
   matcher: [
-    "/((?!_next/static|_next/image|favicon.ico|.*\\.(?:svg|png|jpg|jpeg|gif|webp|ico)$).*)",
+    "/((?!_next/static|_next/image|favicon.ico|robots\\.txt|sitemap\\.xml|manifest\\.webmanifest|sw\\.js|llms\\.txt|opengraph-image|.*\\.(?:svg|png|jpg|jpeg|gif|webp|ico)$).*)",
   ],
 };
