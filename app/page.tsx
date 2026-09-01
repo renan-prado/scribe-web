@@ -5,13 +5,18 @@ import { SummaryView } from "@/features/session/components/SummaryView";
 import { formatBrl, formatCoins, PLANS, TOPUP } from "@/lib/billing/plans";
 import type { FeedItem } from "@/lib/domain/feed";
 import type { SummaryPayload } from "@/lib/domain/summary";
+import { SITE_DESCRIPTION, SITE_TITLE } from "@/lib/seo";
 import { createClient } from "@/lib/supabase/server";
 import { cn } from "@/lib/utils";
 import { LandingFooter, LandingHeader, PenaGlyph } from "@/shared/components/LandingChrome";
 import { LandingJsonLd } from "@/shared/components/LandingJsonLd";
+import { FAQ_ITEMS } from "@/shared/content/landing-faq";
 
 export const metadata = {
-  title: { absolute: "Scriba — Grave, entenda e viva o sermão" },
+  // `absolute` porque o template do layout é "%s": sem ele o título da LP
+  // seria o mesmo da rota, e é aqui que o valor do Google é decidido.
+  title: { absolute: SITE_TITLE },
+  description: SITE_DESCRIPTION,
   alternates: { canonical: "/" },
 };
 
@@ -27,12 +32,14 @@ export default async function LandingPage() {
       <LandingJsonLd />
       <LandingHeader onLandingPage />
       <Hero />
+      <WhatIsScriba />
       <Problem />
       <HowItWorks />
       <Resumo />
       <Biblioteca />
       <Testimonials />
       <Plans />
+      <Faq />
       <FinalCTA />
       <LandingFooter onLandingPage />
     </div>
@@ -68,8 +75,8 @@ function Hero() {
             O sermão não termina quando você sai da igreja.
           </h1>
           <p className="max-w-[520px] text-pretty text-[14.5px] font-light leading-[1.62] text-scriba-ink-soft lg:text-[17.5px]">
-            O Scriba escuta a pregação com você, organiza os principais ensinamentos e ajuda a
-            relembrar e colocar em prática ao longo da semana.
+            O Scriba escuta a pregação com você, transcreve o que é dito, organiza os principais
+            ensinamentos e ajuda a relembrar e colocar em prática ao longo da semana.
           </p>
           <div className="flex flex-col gap-2.5 pt-1 sm:flex-row sm:items-center sm:gap-3.5">
             <Link
@@ -166,6 +173,117 @@ const PROBLEMS: {
     body: "Os sermões se acumulam, mas seus aprendizados não ficam organizados.",
   },
 ];
+
+/**
+ * Definição em texto corrido do produto.
+ *
+ * A LP inteira era escrita por evocação — "o sermão não termina quando você
+ * sai da igreja" — e em nenhum ponto dizia o que o Scriba É. Isso funciona
+ * para quem já chegou pelo boca a boca e falha para quem chega pela busca:
+ * sem uma frase declarativa, nem o leitor nem o buscador conseguem
+ * classificar o produto. Esta seção responde às quatro perguntas nessa ordem:
+ * o que é, para quem, o que faz, que problema resolve.
+ *
+ * Marcação semântica de propósito: `<dl>` com termo e definição diz a
+ * estrutura, coisa que quatro `<div>` empilhadas não fazem.
+ */
+const DEFINITIONS: { term: string; detail: string }[] = [
+  {
+    term: "Para quem é",
+    detail:
+      "Membros que querem lembrar do domingo durante a semana, líderes de grupo pequeno, estudantes de teologia e quem acompanha pregações e quer revisá-las depois.",
+  },
+  {
+    term: "O que ele faz",
+    detail:
+      "Transcreve a fala em tempo real, reconhece os versículos citados, guarda as frases marcantes e escreve o resumo assim que a pregação termina.",
+  },
+  {
+    term: "Onde funciona",
+    detail:
+      "No navegador do celular ou do computador, sem instalar nada: culto, estudo bíblico, célula, congresso ou aula de seminário.",
+  },
+  {
+    term: "Que problema resolve",
+    detail:
+      "Anotar tira você da mensagem; não anotar apaga a mensagem alguns dias depois. O Scriba anota no seu lugar e devolve organizado.",
+  },
+];
+
+function WhatIsScriba() {
+  return (
+    <section id="o-que-e" className="border-y border-scriba-hairline-soft bg-scriba-surface">
+      <div className="mx-auto grid max-w-[1200px] gap-8 px-5 py-12 sm:px-10 sm:py-20 lg:grid-cols-[1fr_1.15fr] lg:gap-16">
+        <div className="flex flex-col gap-4">
+          <SectionLabel color="blue">O que é o Scriba</SectionLabel>
+          <h2 className="text-pretty text-[27px] font-semibold leading-[1.18] tracking-[-.02em] text-scriba-ink-strong lg:text-[38px]">
+            Um aplicativo que ouve a pregação e escreve por você.
+          </h2>
+          <p className="max-w-[520px] text-pretty text-[14.5px] font-light leading-[1.65] text-scriba-ink-soft lg:text-[16px]">
+            O Scriba transcreve sermões, estudos bíblicos e mensagens da igreja enquanto eles
+            acontecem. Enquanto o pregador fala, ele reconhece as passagens lidas e separa o que foi
+            dito de mais importante. Quando a pregação termina, o resumo já está pronto: ideia
+            central, pontos principais, versículos citados e aplicações para a semana.
+          </p>
+        </div>
+        <dl className="flex flex-col">
+          {DEFINITIONS.map((d, i) => (
+            <div
+              key={d.term}
+              className={cn(
+                "flex flex-col gap-1.5 py-4 sm:flex-row sm:gap-8 sm:py-[18px]",
+                i > 0 && "border-t border-scriba-hairline"
+              )}
+            >
+              <dt className="flex-none text-[13px] font-semibold leading-[1.5] text-scriba-ink-strong sm:w-[168px] sm:text-[13.5px]">
+                {d.term}
+              </dt>
+              <dd className="min-w-0 text-pretty text-[13.5px] font-light leading-[1.62] text-scriba-ink-soft sm:text-[14.5px]">
+                {d.detail}
+              </dd>
+            </div>
+          ))}
+        </dl>
+      </div>
+    </section>
+  );
+}
+
+/**
+ * As perguntas vêm de `src/shared/content/landing-faq.ts`, o mesmo módulo que
+ * alimenta o JSON-LD `FAQPage`. Um texto aqui divergente do dado estruturado
+ * derruba o rich result da página inteira — por isso a fonte é única.
+ */
+function Faq() {
+  return (
+    <section
+      id="perguntas"
+      className="mx-auto flex max-w-[1200px] flex-col gap-7 px-5 py-12 sm:px-10 sm:py-24 lg:gap-12"
+    >
+      <div className="flex flex-col gap-3 lg:items-center lg:text-center">
+        <SectionLabel color="blue">Perguntas frequentes</SectionLabel>
+        <h2 className="text-pretty text-[29px] font-semibold leading-[1.16] tracking-[-.022em] text-scriba-ink-strong lg:text-[40px]">
+          O que costumam perguntar antes do primeiro domingo.
+        </h2>
+      </div>
+      <div className="grid gap-x-[52px] gap-y-0 lg:grid-cols-2">
+        {FAQ_ITEMS.map((item) => (
+          <div
+            key={item.question}
+            className="flex flex-col gap-2 border-t border-scriba-hairline py-5 sm:py-6"
+          >
+            <h3 className="text-pretty text-[15px] font-semibold leading-[1.4] tracking-[-.01em] text-scriba-ink-strong sm:text-[16px]">
+              {item.question}
+            </h3>
+            <p className="text-pretty text-[13.5px] font-light leading-[1.65] text-scriba-ink-soft sm:text-[14.5px]">
+              {item.answer}
+            </p>
+          </div>
+        ))}
+      </div>
+    </section>
+  );
+}
 
 function Problem() {
   return (
@@ -381,7 +499,7 @@ function Resumo() {
           <div className="flex flex-col gap-3">
             <SectionLabel color="blue">O resumo</SectionLabel>
             <h2 className="text-pretty text-[29px] font-semibold leading-[1.16] tracking-[-.022em] text-scriba-ink-strong lg:text-[40px]">
-              Não é transcrição. É a mensagem, organizada.
+              Mais que transcrição: a mensagem, organizada.
             </h2>
             <p className="max-w-[520px] text-pretty text-[14.5px] font-light leading-[1.62] text-scriba-ink-soft lg:text-[16px] lg:leading-[1.65]">
               Ao final do sermão, o Scriba transforma tudo o que foi dito em um resumo claro, para

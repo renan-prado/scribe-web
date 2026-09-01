@@ -5,7 +5,7 @@ import { Providers } from "@/components/Providers";
 import { PwaBootstrap } from "@/components/PwaBootstrap";
 import { ThemedToaster } from "@/components/ThemedToaster";
 import { ThemeScript } from "@/components/ThemeScript";
-import { IS_INDEXABLE, SITE_DESCRIPTION, SITE_NAME, SITE_URL } from "@/lib/seo";
+import { IS_INDEXABLE, SITE_DESCRIPTION, SITE_NAME, SITE_TITLE, SITE_URL } from "@/lib/seo";
 import "./globals.css";
 
 const geistSans = Geist({
@@ -33,16 +33,18 @@ const poppins = Poppins({
 export const metadata: Metadata = {
   metadataBase: new URL(SITE_URL),
   title: {
-    default: "Scriba — Transcrição de sermões em tempo real",
+    default: SITE_TITLE,
     template: "%s",
   },
   description: SITE_DESCRIPTION,
   keywords: [
     "transcrição de sermões",
+    "transcrever sermão",
     "resumo de pregação",
-    "IA para igrejas",
-    "transcrição em tempo real",
+    "aplicativo para estudo bíblico",
+    "anotar sermão",
     "citações bíblicas automáticas",
+    "IA para igrejas",
     "scriba",
   ],
   authors: [{ name: SITE_NAME, url: SITE_URL }],
@@ -52,13 +54,13 @@ export const metadata: Metadata = {
     locale: "pt_BR",
     url: SITE_URL,
     siteName: SITE_NAME,
-    title: "Scriba — Transcrição de sermões em tempo real",
+    title: SITE_TITLE,
     description: SITE_DESCRIPTION,
     images: [{ url: "/opengraph-image", width: 1200, height: 630, alt: "Scriba" }],
   },
   twitter: {
     card: "summary_large_image",
-    title: "Scriba — Transcrição de sermões em tempo real",
+    title: SITE_TITLE,
     description: SITE_DESCRIPTION,
     images: ["/opengraph-image"],
   },

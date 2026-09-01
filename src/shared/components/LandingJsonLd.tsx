@@ -1,5 +1,6 @@
 import { PLAN_ORDER, PLANS, TOPUP } from "@/lib/billing/plans";
 import { SITE_DESCRIPTION, SITE_NAME, SITE_URL } from "@/lib/seo";
+import { FAQ_ITEMS } from "@/shared/content/landing-faq";
 
 /**
  * Dados estruturados (schema.org) da landing page.
@@ -91,6 +92,20 @@ const GRAPH = {
         "Biblioteca de sermões gravados",
       ],
       offers: OFFERS,
+    },
+    {
+      // As respostas são as MESMAS strings renderizadas na seção "Perguntas
+      // frequentes" — ambas leem `FAQ_ITEMS`. O Google compara o dado
+      // estruturado com o texto visível, e responder aqui algo que não está
+      // na página custa o rich result do site inteiro, não só deste bloco.
+      "@type": "FAQPage",
+      "@id": `${SITE_URL}/#faq`,
+      inLanguage: "pt-BR",
+      mainEntity: FAQ_ITEMS.map((item) => ({
+        "@type": "Question",
+        name: item.question,
+        acceptedAnswer: { "@type": "Answer", text: item.answer },
+      })),
     },
   ],
 };

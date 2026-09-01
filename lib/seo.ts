@@ -9,8 +9,22 @@
 export const SITE_URL = "https://scriba.cc";
 export const SITE_NAME = "Scriba";
 
+/**
+ * Título e descrição — o par que o Google mostra no resultado de busca.
+ *
+ * Escritos com o vocabulário de quem PROCURA, não com o da marca. A LP falava
+ * "Grave, entenda e viva o sermão": ótimo como promessa, invisível numa busca,
+ * porque ninguém digita isso. "Transcrever sermão" e "estudo bíblico" são os
+ * termos reais — e, até esta mudança, a única aparição da palavra
+ * "transcrição" na página inteira era numa frase que a NEGAVA.
+ *
+ * Limites práticos antes do Google truncar: ~60 caracteres no título, ~155 na
+ * descrição. Ambos abaixo respeitam isso — conferir ao editar.
+ */
+export const SITE_TITLE = "Scriba | Transcreva e organize sermões e estudos bíblicos";
+
 export const SITE_DESCRIPTION =
-  "Scriba transcreve e resume sermões em tempo real com IA — citações bíblicas detectadas automaticamente, destaques do pregador e resumo estruturado ao final.";
+  "Grave, transcreva e organize sermões, estudos bíblicos e mensagens da igreja. O Scriba reconhece os versículos citados e entrega um resumo pronto ao final.";
 
 /**
  * Só o deploy de produção pode ser indexado.
