@@ -33,19 +33,15 @@ export function LandingLogo({ size = 26, textClassName = "text-[22px]" }: LogoPr
   // "scriba" solta: o leitor de tela anuncia "Scriba" uma vez, em vez do SVG
   // decorativo seguido de um texto órfão.
   //
-  // A pena e a palavra têm cores SEPARADAS de propósito, e é o que permite ter
-  // as duas coisas. A pena é `aria-hidden`, portanto imagem decorativa — a
-  // regra de contraste só avalia nós de TEXTO, então ela fica no azul da marca
-  // sem restrição. Já a palavra é texto para o verificador, e por isso usa
-  // `ink-strong`, que inverte sozinho: quase preto no claro (10,45:1), quase
-  // branco no escuro (16,98:1). Antes as duas herdavam uma cor só, e qualquer
-  // escolha sacrificava um lado — azul legível deixava o logo apagado, azul
-  // vivo reprovava no contraste.
+  // A cor sai do CONTAINER e desce por herança para os dois: o `<path>` pinta
+  // com `fill="currentColor"` e o texto herda o `color`. Pena e palavra são uma
+  // marca só e precisam ser a mesma cor — dar classe própria a um deles é o que
+  // os desencontra. `ink-strong` inverte sozinho: quase preto no claro
+  // (10,45:1), quase branco no escuro (16,98:1).
   return (
-    <div className="flex items-center gap-2" role="img" aria-label="Scriba">
+    <div className="flex items-center gap-2 text-scriba-ink-strong" role="img" aria-label="Scriba">
       <svg
         aria-hidden="true"
-        className="text-scriba-blue"
         width={size}
         height={size}
         viewBox="0 0 155 155"
@@ -56,7 +52,7 @@ export function LandingLogo({ size = 26, textClassName = "text-[22px]" }: LogoPr
       </svg>
       <span
         aria-hidden="true"
-        className={cn("font-semibold leading-none text-scriba-ink-strong", textClassName)}
+        className={cn("font-semibold leading-none", textClassName)}
         style={{ fontFamily: "var(--font-poppins)", letterSpacing: "-0.015em" }}
       >
         scriba
