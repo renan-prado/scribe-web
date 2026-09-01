@@ -200,8 +200,17 @@
   --scriba-lilac-accent: #6E82A8;
   --scriba-ink-strong: #33414F;
   --scriba-ink: #4A5A6A;
-  --scriba-ink-soft: #7C8A99;
-  --scriba-ink-mute: #A9B6C4;
+  /* Os dois cinzas de apoio são escuros o bastante para serem lidos, e ainda
+     assim distintos entre si — as duas metas estão em tensão e a segunda foi
+     priorizada. Antes: soft 3,53:1 e mute 2,06:1 sobre papel, os dois abaixo do
+     mínimo AA (4,5) que o texto pequeno exige. Levar AMBOS a 4,5 os deixaria a
+     0,01 de razão um do outro, ou seja, a mesma cor — e o app perderia um
+     degrau inteiro da escala (ink > soft > mute). Então o soft passa AA com
+     folga e o mute sobe de 2,06 para 3,96, mantendo 1,5 de distância do soft.
+     O mute segue abaixo de AA nos chips de 10px; é dívida conhecida, não
+     descuido. Ao mexer aqui, verifique os DOIS números, não só um. */
+  --scriba-ink-soft: #5C6B7C;
+  --scriba-ink-mute: #6E8296;
   --scriba-surface: #F7FAFD;
   --scriba-hairline: #EDF2F7;
   --scriba-hairline-soft: #EEF4FA;
@@ -264,7 +273,16 @@
   /* Altura do header da LP. O hero se puxa para cima por exatamente este valor
      e devolve o mesmo tanto em padding, então o conteúdo fica na mesma posição
      enquanto o fundo passa por baixo do header translúcido. */
-  --scriba-on-blue: #ffffff;
+  /* Tinta sobre o azul da marca. Era branco, e branco sobre #4FA8F0 dá 2,56:1
+     — reprovado no botão mais importante da landing ("COMEÇAR GRÁTIS") e, sem
+     ninguém ter notado, também nos cards do NewRecordingDialog, que usam o
+     mesmo par sobre `bg-scriba-blue` (a mesma cor). Azul-escuro sobre o mesmo
+     fundo dá 5,92:1.
+     Escurecer o AZUL seria a outra saída, mas mudaria a cor da marca em toda a
+     LP para ganhar 4,53:1 — passar raspando e pagando mais caro. Aqui o
+     #4FA8F0 fica intacto; o que muda é a tinta por cima. É também o valor que o
+     tema escuro já usava, então a paleta não ganha cor nova. */
+  --scriba-on-blue: #0B2742;
   --lp-brand: #4FA8F0;
   --lp-header-h: 71px;
   /* Design-system border widths */
@@ -649,16 +667,22 @@
     }
   }
 
+  /* Só `opacity` e `transform` — as duas únicas propriedades que o navegador
+     anima na GPU, sem repintar a cada quadro.
+     Havia um `filter: blur(2px)` aqui. Um único filtro tira a animação inteira
+     do compositor, e esta é a animação de entrada MAIS usada do app: o
+     Lighthouse acusava 21 elementos animados não compostos, 14 deles por causa
+     deste blur ("a propriedade relacionada com o filtro pode mover píxeis").
+     Como o desfoque durava 0,5 s sobre texto que já estava surgindo em
+     `opacity`, o custo era permanente e o ganho visual, quase nulo. */
   @keyframes content-fade {
     from {
       opacity: 0;
       transform: translateY(4px);
-      filter: blur(2px);
     }
     to {
       opacity: 1;
       transform: translateY(0);
-      filter: blur(0);
     }
   }
 

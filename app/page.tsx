@@ -43,16 +43,24 @@ export default function LandingPage() {
     <div className="w-full overflow-x-clip bg-background text-scriba-ink-strong antialiased">
       <LandingJsonLd />
       <LandingHeader onLandingPage />
-      <Hero />
-      <WhatIsScriba />
-      <Problem />
-      <HowItWorks />
-      <Resumo />
-      <Biblioteca />
-      <Testimonials />
-      <Plans />
-      <Faq />
-      <FinalCTA />
+      {/* O `<main>` é o landmark que faltava — o resto do app já tem um, só a
+          LP não tinha. Sem ele, quem navega por leitor de tela não consegue
+          pular o header e cair direto no conteúdo. Não leva classe nenhuma: o
+          hero sobe atrás do header por margem negativa, e qualquer coisa que
+          criasse contexto de formatação novo aqui (overflow, display) quebraria
+          esse encaixe. */}
+      <main>
+        <Hero />
+        <WhatIsScriba />
+        <Problem />
+        <HowItWorks />
+        <Resumo />
+        <Biblioteca />
+        <Testimonials />
+        <Plans />
+        <Faq />
+        <FinalCTA />
+      </main>
       <LandingFooter onLandingPage />
     </div>
   );
@@ -127,6 +135,14 @@ function Hero() {
                   aria-hidden
                   width={34}
                   height={34}
+                  // Estes quatro estão acima da dobra e o `next/image` adia por
+                  // padrão — o Next chega a avisar no console que um deles vira
+                  // o elemento de LCP. `eager` (e não `priority`) porque só
+                  // queremos tirar o adiamento: `priority` devolveria o
+                  // `<link rel="preload">` que motivou toda esta mudança. São
+                  // 10 KB somados, não vale adiar. Os dos depoimentos, bem
+                  // abaixo da dobra, seguem `lazy`.
+                  loading="eager"
                   className={cn(
                     "size-[31px] flex-none rounded-full border-2 border-scriba-paper object-cover sm:size-[34px]",
                     i > 0 && "-ml-[9px]"
