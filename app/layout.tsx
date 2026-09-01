@@ -5,6 +5,7 @@ import { Providers } from "@/components/Providers";
 import { PwaBootstrap } from "@/components/PwaBootstrap";
 import { ThemedToaster } from "@/components/ThemedToaster";
 import { ThemeScript } from "@/components/ThemeScript";
+import { IS_INDEXABLE, SITE_DESCRIPTION, SITE_NAME, SITE_URL } from "@/lib/seo";
 import "./globals.css";
 
 const geistSans = Geist({
@@ -29,17 +30,13 @@ const poppins = Poppins({
   weight: ["300", "400", "500", "600", "700"],
 });
 
-const SITE_URL = "https://scriba.cc";
-const DESCRIPTION =
-  "Scriba transcreve e resume sermões em tempo real com IA — citações bíblicas detectadas automaticamente, destaques do pregador e resumo estruturado ao final.";
-
 export const metadata: Metadata = {
   metadataBase: new URL(SITE_URL),
   title: {
     default: "Scriba — Transcrição de sermões em tempo real",
     template: "%s",
   },
-  description: DESCRIPTION,
+  description: SITE_DESCRIPTION,
   keywords: [
     "transcrição de sermões",
     "resumo de pregação",
@@ -48,27 +45,35 @@ export const metadata: Metadata = {
     "citações bíblicas automáticas",
     "scriba",
   ],
-  authors: [{ name: "Scriba", url: SITE_URL }],
-  creator: "Scriba",
+  authors: [{ name: SITE_NAME, url: SITE_URL }],
+  creator: SITE_NAME,
   openGraph: {
     type: "website",
     locale: "pt_BR",
     url: SITE_URL,
-    siteName: "Scriba",
+    siteName: SITE_NAME,
     title: "Scriba — Transcrição de sermões em tempo real",
-    description: DESCRIPTION,
+    description: SITE_DESCRIPTION,
     images: [{ url: "/opengraph-image", width: 1200, height: 630, alt: "Scriba" }],
   },
   twitter: {
     card: "summary_large_image",
     title: "Scriba — Transcrição de sermões em tempo real",
-    description: DESCRIPTION,
+    description: SITE_DESCRIPTION,
     images: ["/opengraph-image"],
   },
+  // Fora de produção o `noindex` vem junto com o `Disallow: /` de
+  // `app/robots.ts`: o robots impede o rastreio, a meta tag cobre a URL que já
+  // tenha sido descoberta por um link. Ver `IS_INDEXABLE` em `lib/seo.ts`.
   robots: {
-    index: true,
-    follow: true,
-    googleBot: { index: true, follow: true, "max-image-preview": "large" },
+    index: IS_INDEXABLE,
+    follow: IS_INDEXABLE,
+    googleBot: {
+      index: IS_INDEXABLE,
+      follow: IS_INDEXABLE,
+      "max-image-preview": "large",
+      "max-snippet": -1,
+    },
   },
   icons: {
     icon: [

@@ -1,8 +1,0 @@
-User-agent: *
-Allow: /
-Disallow: /api/
-Disallow: /admin/
-Disallow: /feed
-Disallow: /profile
-
-Sitemap: https://scriba.cc/sitemap.xml

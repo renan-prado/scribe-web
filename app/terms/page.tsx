@@ -3,8 +3,9 @@ import Link from "next/link";
 import { LandingFooter, LandingHeader } from "@/shared/components/LandingChrome";
 
 export const metadata: Metadata = {
-  title: "Termos de Uso",
+  title: "Termos de Uso · Scriba",
   description: "Termos e condições de uso do Scriba.",
+  alternates: { canonical: "/terms" },
 };
 
 const LAST_UPDATED = "28 de agosto de 2026";

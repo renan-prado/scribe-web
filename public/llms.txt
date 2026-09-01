@@ -1,30 +1,42 @@
 # Scriba
 
-> Scriba é uma aplicação web de transcrição e resumo de sermões e pregações em tempo real, com inteligência artificial.
+> Scriba é um aplicativo web (PWA) em português que acompanha uma pregação ao vivo pelo microfone, identifica as passagens bíblicas enquanto o pregador fala e entrega, ao final, um resumo estruturado do sermão. Feito para quem ouve — membros, obreiros e estudantes da Bíblia — não para quem prega.
 
-## O que é
+O Scriba roda inteiramente no navegador, sem instalar nada e sem gravador externo. O áudio é capturado em blocos curtos e transcrito em tempo real; o resultado fica na conta do usuário, privado por padrão.
 
-Scriba usa IA para transcrever sermões ao vivo, identificar citações bíblicas enquanto o pregador fala, e gerar um resumo estruturado ao final de cada gravação. Tudo acontece em tempo real, diretamente no navegador.
+## Como funciona
 
-## Funcionalidades
+- **Durante o sermão** — a transcrição aparece conforme a fala avança. Em paralelo, um feed ao vivo acrescenta cartões: versículos citados pelo pregador (detectados automaticamente, com o texto da passagem), frases marcantes, citações de terceiros, versículos relacionados, contexto histórico e sugestões de leitura. Nada é reescrito: o feed só cresce.
+- **Depois do amém** — um resumo único e estruturado é gerado a partir da transcrição completa somada aos cartões do feed: ideia central, pontos principais, versículos citados, frases marcantes e aplicações práticas.
+- **Durante a semana** — a partir de um sermão salvo o usuário gera estudos de aprofundamento, revê a transcrição formatada e consulta qualquer versículo citado.
 
-- Transcrição ao vivo de áudio via microfone (chunks de ~30s)
-- Detecção automática de citações bíblicas (Bíblia completa, PT-BR)
-- Feed ao vivo com destaques do pregador, versículos citados e relacionados, contexto e sugestões de citação
-- Resumo final estruturado após encerrar a gravação
-- Lookup de versículos bíblicos via clique nos cards
-- Histórico de gravações no painel do usuário
+## Modos de gravação
+
+O usuário escolhe quanto processamento quer antes de começar. Cada modo tem um custo por minuto diferente, cobrado em créditos:
+
+- **Ao vivo** — transcrição + feed ao vivo + resumo final. É o modo completo.
+- **Somente áudio** — transcrição + resumo final, sem cartões ao vivo. Mais barato; útil quando o celular fica no bolso.
+- **Somente transcrição** — apenas o texto do que foi dito, sem IA de enriquecimento e sem resumo. O mais barato.
+
+## Planos
+
+Conta gratuita com 50 créditos de boas-vindas, sem cartão. Assinaturas mensais (Pessoal e Estudioso) creditam moedas todo mês, e os créditos não usados acumulam de um mês para o outro. Há também pacotes avulsos, sem assinatura e sem validade. Os valores vigentes estão em https://scriba.cc/#planos.
 
 ## Para quem é
 
-Igrejas, ministérios, pregadores, obreiros e ouvintes que queiram registrar, revisar e compartilhar sermões com facilidade.
+Membros de igreja que querem lembrar o que ouviram no domingo, líderes de célula e pequenos grupos preparando a discussão da semana, estudantes de teologia, e qualquer pessoa que acompanhe pregações e queira revisá-las depois. Idioma: português do Brasil, com vocabulário bíblico e teológico.
 
-## Tecnologia
+## Privacidade
 
-- Next.js (App Router), React, Tailwind CSS
-- OpenAI (transcrição e enrichment de IA)
-- Supabase (auth e banco de dados)
+A gravação pertence ao usuário e não é pública. O tratamento de dados está descrito em https://scriba.cc/privacy e as condições de uso em https://scriba.cc/terms.
 
-## URL
+## Links
 
-https://scriba.cc
+- [Site](https://scriba.cc): landing page com demonstração das telas, explicação dos passos e planos.
+- [Política de Privacidade](https://scriba.cc/privacy): quais dados são coletados, por quanto tempo e com quem são compartilhados.
+- [Termos de Uso](https://scriba.cc/terms): condições do serviço, créditos e cancelamento.
+- [Criar conta](https://scriba.cc/sign-in): cadastro e login.
+
+## Contato
+
+contato@scriba.cc

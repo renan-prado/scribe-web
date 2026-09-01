@@ -2,7 +2,9 @@ import { AuthShell } from "@/features/auth/components/AuthShell";
 import { GoogleSignInButton } from "@/features/auth/components/GoogleSignInButton";
 
 export const metadata = {
-  title: "Entrar ou criar conta",
+  title: "Entrar ou criar conta · Scriba",
+  robots: { index: false, follow: true },
+  alternates: { canonical: "/sign-in" },
 };
 
 type Search = { next?: string; error?: string };

@@ -8,9 +8,11 @@ import type { SummaryPayload } from "@/lib/domain/summary";
 import { createClient } from "@/lib/supabase/server";
 import { cn } from "@/lib/utils";
 import { LandingFooter, LandingHeader, PenaGlyph } from "@/shared/components/LandingChrome";
+import { LandingJsonLd } from "@/shared/components/LandingJsonLd";
 
 export const metadata = {
   title: { absolute: "Scriba — Grave, entenda e viva o sermão" },
+  alternates: { canonical: "/" },
 };
 
 export default async function LandingPage() {
@@ -22,6 +24,7 @@ export default async function LandingPage() {
 
   return (
     <div className="w-full overflow-x-clip bg-background text-scriba-ink-strong antialiased">
+      <LandingJsonLd />
       <LandingHeader onLandingPage />
       <Hero />
       <Problem />
