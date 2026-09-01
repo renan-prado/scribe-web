@@ -12,7 +12,14 @@ import {
 import { useRouter } from "next/navigation";
 import { type ReactNode, useState } from "react";
 import { toast } from "sonner";
-import { Dialog, DialogContent, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
+import {
+  Dialog,
+  DialogContent,
+  DialogFooter,
+  DialogHeader,
+  DialogTitle,
+  DialogTrigger,
+} from "@/components/ui/dialog";
 import { BillingDialog } from "@/features/billing/components/BillingDialog";
 import { CoinCost } from "@/features/coins/components/CoinCost";
 import { useCoinsStore } from "@/features/coins/store";
@@ -145,10 +152,17 @@ export function NewRecordingDialog({ trigger }: { trigger?: ReactNode }) {
           </>
         )}
       </DialogTrigger>
-      <DialogContent className="flex flex-col gap-5 rounded-[28px] bg-scriba-paper px-6 py-8 sm:max-w-md">
-        <DialogTitle className="text-center font-heading text-base font-semibold text-scriba-ink">
-          Selecione o modo de gravação
-        </DialogTitle>
+      {/* Título e botão ficam fixos; só a lista de modos rola. O `px-4` do corpo
+          soma com o `mx-2` da folga do scrollbar e dá os mesmos 24px das faixas. */}
+      <DialogContent
+        className="rounded-[28px] bg-scriba-paper sm:max-w-md"
+        bodyClassName="flex flex-col gap-5 px-4 pt-5 pb-5"
+      >
+        <DialogHeader className="px-6 pt-8">
+          <DialogTitle className="text-center font-heading text-base font-semibold text-scriba-ink">
+            Selecione o modo de gravação
+          </DialogTitle>
+        </DialogHeader>
 
         <fieldset className="flex min-w-0 flex-col gap-3 border-0 p-0">
           <legend className="sr-only">Modo de gravação</legend>
@@ -231,63 +245,65 @@ export function NewRecordingDialog({ trigger }: { trigger?: ReactNode }) {
           })}
         </fieldset>
 
-        {(() => {
-          if (balanceLoading) {
-            return (
-              <span
-                aria-hidden
-                className="mt-1 block h-13.5 w-full animate-pulse rounded-full bg-scriba-ink-mute/15"
-              />
-            );
-          }
-          const startButton = (
-            <button
-              type="button"
-              onClick={handleStart}
-              disabled={loading || insufficient}
-              aria-disabled={insufficient}
-              aria-label={loading ? "Preparando sessão" : "Gravar"}
-              className={cn(
-                "mt-1 inline-flex w-full items-center justify-center gap-2.5 rounded-full px-7 py-3.5 text-[15px] font-semibold shadow-[0_10px_24px_rgba(79,168,240,0.32)] transition-colors",
-                insufficient
-                  ? "cursor-not-allowed bg-scriba-ink-mute/25 text-scriba-ink-mute shadow-none"
-                  : "bg-scriba-blue text-white hover:bg-scriba-blue-hover",
-                "disabled:cursor-not-allowed disabled:opacity-90",
-                "focus-visible:outline-none focus-visible:ring-4 focus-visible:ring-scriba-blue/30"
-              )}
-            >
-              <Mic aria-hidden className="size-4" strokeWidth={2.4} />
-              {loading ? "Preparando…" : "Gravar"}
-              {loading ? null : <CoinCost count={copy.costPerMinute} suffix="/min" />}
-            </button>
-          );
-          if (!insufficient) return startButton;
-          // Saldo insuficiente deixou de ser um beco sem saída com tooltip: o
-          // caminho para destravar fica na frente do usuário, na mesma tela.
-          return (
-            <div className="mt-1 flex flex-col gap-2.5">
-              <p
-                role="alert"
-                className="rounded-2xl border border-scriba-cream-accent/40 bg-scriba-cream px-4 py-3 text-center text-[12px] font-light leading-relaxed text-scriba-cream-ink"
-              >
-                Você tem <strong className="font-semibold">{balance} créditos</strong> — o{" "}
-                {copy.title} custa {minCost} por minuto. Adicione créditos para começar.
-              </p>
+        <DialogFooter variant="plain" className="px-6 pb-8">
+          {(() => {
+            if (balanceLoading) {
+              return (
+                <span
+                  aria-hidden
+                  className="mt-1 block h-13.5 w-full animate-pulse rounded-full bg-scriba-ink-mute/15"
+                />
+              );
+            }
+            const startButton = (
               <button
                 type="button"
-                onClick={() => setBillingOpen(true)}
+                onClick={handleStart}
+                disabled={loading || insufficient}
+                aria-disabled={insufficient}
+                aria-label={loading ? "Preparando sessão" : "Gravar"}
                 className={cn(
-                  "inline-flex w-full items-center justify-center gap-2.5 rounded-full bg-scriba-blue px-7 py-3.5 text-[15px] font-semibold text-white shadow-[0_10px_24px_rgba(79,168,240,0.32)] transition-colors",
-                  "hover:bg-scriba-blue-hover",
+                  "mt-1 inline-flex w-full items-center justify-center gap-2.5 rounded-full px-7 py-3.5 text-[15px] font-semibold shadow-[0_10px_24px_rgba(79,168,240,0.32)] transition-colors",
+                  insufficient
+                    ? "cursor-not-allowed bg-scriba-ink-mute/25 text-scriba-ink-mute shadow-none"
+                    : "bg-scriba-blue text-white hover:bg-scriba-blue-hover",
+                  "disabled:cursor-not-allowed disabled:opacity-90",
                   "focus-visible:outline-none focus-visible:ring-4 focus-visible:ring-scriba-blue/30"
                 )}
               >
-                <CreditCard aria-hidden className="size-4" strokeWidth={2.4} />
-                Adicionar créditos
+                <Mic aria-hidden className="size-4" strokeWidth={2.4} />
+                {loading ? "Preparando…" : "Gravar"}
+                {loading ? null : <CoinCost count={copy.costPerMinute} suffix="/min" />}
               </button>
-            </div>
-          );
-        })()}
+            );
+            if (!insufficient) return startButton;
+            // Saldo insuficiente deixou de ser um beco sem saída com tooltip: o
+            // caminho para destravar fica na frente do usuário, na mesma tela.
+            return (
+              <div className="mt-1 flex flex-col gap-2.5">
+                <p
+                  role="alert"
+                  className="rounded-2xl border border-scriba-cream-accent/40 bg-scriba-cream px-4 py-3 text-center text-[12px] font-light leading-relaxed text-scriba-cream-ink"
+                >
+                  Você tem <strong className="font-semibold">{balance} créditos</strong> — o{" "}
+                  {copy.title} custa {minCost} por minuto. Adicione créditos para começar.
+                </p>
+                <button
+                  type="button"
+                  onClick={() => setBillingOpen(true)}
+                  className={cn(
+                    "inline-flex w-full items-center justify-center gap-2.5 rounded-full bg-scriba-blue px-7 py-3.5 text-[15px] font-semibold text-white shadow-[0_10px_24px_rgba(79,168,240,0.32)] transition-colors",
+                    "hover:bg-scriba-blue-hover",
+                    "focus-visible:outline-none focus-visible:ring-4 focus-visible:ring-scriba-blue/30"
+                  )}
+                >
+                  <CreditCard aria-hidden className="size-4" strokeWidth={2.4} />
+                  Adicionar créditos
+                </button>
+              </div>
+            );
+          })()}
+        </DialogFooter>
       </DialogContent>
 
       <BillingDialog open={billingOpen} onOpenChange={setBillingOpen} />

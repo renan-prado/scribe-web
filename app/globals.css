@@ -213,6 +213,11 @@
   --scriba-cream-body: #9C8A55;
   --scriba-btn-muted: #F4F8FC;
   --scriba-btn-muted-hover: #E8EEF6;
+  /* Scrollbar. Consumido só pelas regras de `::-webkit-scrollbar` /
+     `scrollbar-color` no @layer base — não vira utilitário no @theme porque
+     ninguém pinta um elemento com essa cor. */
+  --scriba-scroll-thumb: rgba(124, 138, 153, 0.3);
+  --scriba-scroll-thumb-hover: rgba(124, 138, 153, 0.55);
   /* Session feed color tokens */
   --session-typing-dot: #9BB6CC;
   --session-verse-text: #3E5164;
@@ -356,6 +361,8 @@
   --scriba-cream-body: #B7A47A;
   --scriba-btn-muted: #221E40;
   --scriba-btn-muted-hover: #2B2750;
+  --scriba-scroll-thumb: rgba(158, 153, 188, 0.3);
+  --scriba-scroll-thumb-hover: rgba(158, 153, 188, 0.55);
   --session-typing-dot: #6E7FA0;
   --session-verse-text: #C6D6E6;
   --session-verse-border: #3E5F82;
@@ -414,6 +421,41 @@
   }
   a, button {
     cursor: default;
+  }
+
+  /* Scrollbar sutil, em toda a aplicação.
+     Duas trilhas, porque nenhuma sozinha cobre todos os navegadores:
+     - Padrão (`scrollbar-width`/`scrollbar-color`): Chromium, Firefox e Safari
+       18.2+. `scrollbar-color` é herdado — o <html> basta; `scrollbar-width`
+       NÃO é, daí o seletor universal, senão só a página raiz afinava.
+     - Legado (`::-webkit-scrollbar`): Safari antigo. O Chromium ignora esses
+       pseudo-elementos assim que uma das propriedades padrão está definida,
+       então as duas trilhas não brigam.
+     A borda transparente + `background-clip: content-box` deixa o polegar com
+     4px visíveis numa pista de 10px — fino e com folga, em vez de colado no
+     conteúdo. A cor sai de token, então acompanha o dark. */
+  html {
+    scrollbar-color: var(--scriba-scroll-thumb) transparent;
+  }
+  * {
+    scrollbar-width: thin;
+  }
+  *::-webkit-scrollbar {
+    width: 10px;
+    height: 10px;
+  }
+  *::-webkit-scrollbar-track,
+  *::-webkit-scrollbar-corner {
+    background: transparent;
+  }
+  *::-webkit-scrollbar-thumb {
+    background-color: var(--scriba-scroll-thumb);
+    background-clip: content-box;
+    border: 3px solid transparent;
+    border-radius: 9999px;
+  }
+  *::-webkit-scrollbar-thumb:hover {
+    background-color: var(--scriba-scroll-thumb-hover);
   }
   /* Mobile sidebar overrides the width token so w-(--sidebar-width) resolves to 18rem */
   [data-sidebar="sidebar"][data-mobile="true"] {

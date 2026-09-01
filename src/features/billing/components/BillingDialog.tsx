@@ -228,8 +228,12 @@ export function BillingDialog({
           {trigger}
         </DialogTrigger>
       ) : null}
-      <DialogContent className="max-h-[90vh] gap-0 overflow-y-auto rounded-[28px] bg-scriba-paper p-0 sm:max-w-md">
-        <div className="flex flex-col gap-5 px-6 pt-8 pb-7">
+      <DialogContent
+        className="rounded-[28px] bg-scriba-paper sm:max-w-md"
+        bodyClassName="gap-0 p-0"
+      >
+        {/* Somado ao p-2 do popup: os mesmos 24px/32px/28px de respiro de antes. */}
+        <div className="flex flex-col gap-5 px-4 pt-6 pb-5">
           <header className="flex flex-col items-center gap-3 text-center">
             <span className="flex size-11 items-center justify-center rounded-2xl bg-scriba-gold-soft">
               <span aria-hidden className="coin-hex block h-4.5 w-4 bg-scriba-yellow" />
