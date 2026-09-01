@@ -110,7 +110,7 @@ function Hero() {
           <div className="flex flex-col gap-2.5 pt-1 sm:flex-row sm:items-center sm:gap-3.5">
             <Link
               href="/sign-in"
-              className="lp-cta inline-flex items-center justify-center gap-2.5 rounded-[26px] bg-lp-brand py-[17px] px-8 text-[13px] font-semibold uppercase tracking-[.04em] text-scriba-on-blue shadow-[0_9px_22px_rgba(79,168,240,.3)]"
+              className="lp-cta inline-flex items-center justify-center gap-2.5 rounded-[26px] bg-[image:var(--lp-cta)] py-[17px] px-8 text-[13px] font-semibold uppercase tracking-[.04em] text-lp-cta-ink shadow-[0_9px_22px_rgba(79,168,240,.3)]"
             >
               <PenaGlyph size={16} />
               Começar grátis
@@ -579,7 +579,7 @@ function Resumo() {
 
 function Biblioteca() {
   return (
-    <section className="relative overflow-hidden bg-lp-band">
+    <section className="relative overflow-hidden bg-[image:var(--lp-band)]">
       <div className="pointer-events-none absolute -top-[140px] -left-[100px] h-[480px] w-[480px] rounded-full bg-[radial-gradient(circle,rgba(255,255,255,.14)_0%,rgba(255,255,255,0)_70%)]" />
       <div className="relative mx-auto flex max-w-[1200px] flex-col items-stretch gap-8 px-5 py-12 text-white sm:px-10 sm:py-[88px] lg:grid lg:grid-cols-[minmax(0,1fr)_minmax(0,1fr)] lg:items-center lg:gap-16">
         <div className="flex min-w-0 flex-col gap-5">
@@ -899,7 +899,7 @@ function PlanCard({
         className={cn(
           "inline-flex items-center justify-center gap-2 rounded-[24px] p-[15px] text-[12px] font-semibold uppercase tracking-[.04em]",
           isPrimary
-            ? "lp-cta bg-lp-brand text-scriba-on-blue shadow-[0_8px_20px_rgba(79,168,240,.3)]"
+            ? "lp-cta bg-[image:var(--lp-cta)] text-lp-cta-ink shadow-[0_8px_20px_rgba(79,168,240,.3)]"
             : "lp-cta-soft bg-scriba-btn-muted text-scriba-ink hover:bg-scriba-btn-muted-hover"
         )}
       >

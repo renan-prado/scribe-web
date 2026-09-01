@@ -30,20 +30,22 @@ export function PenaGlyph({ size = 16, className }: { size?: number; className?:
 
 export function LandingLogo({ size = 26, textClassName = "text-[22px]" }: LogoProps) {
   // O logotipo é marcado como UMA imagem, não como um ícone ao lado da palavra
-  // "scriba" solta. Duas consequências, ambas desejadas: o leitor de tela
-  // anuncia "Scriba" uma vez, em vez do SVG decorativo seguido de um texto
-  // órfão; e o verificador de contraste para de tratar a palavra como texto de
-  // leitura. O WCAG 1.4.3 isenta nome de marca de exigência de contraste, mas
-  // um `<span>` colorido não se declara logotipo sozinho — o `role` é o que
-  // comunica isso. A cor da marca fica intacta.
-  // `text-scriba-blue-ink`, não `text-lp-brand`: o segundo é o azul de
-  // SUPERFÍCIE (é ele que pinta o fundo do CTA) e, como tinta sobre papel, dá
-  // 2,56:1. É a mesma distinção aplicada aos outros 73 usos de azul como texto.
-  // No tema escuro o token já é claro (#8AC6FA), então o logo segue destacado.
+  // "scriba" solta: o leitor de tela anuncia "Scriba" uma vez, em vez do SVG
+  // decorativo seguido de um texto órfão.
+  //
+  // A pena e a palavra têm cores SEPARADAS de propósito, e é o que permite ter
+  // as duas coisas. A pena é `aria-hidden`, portanto imagem decorativa — a
+  // regra de contraste só avalia nós de TEXTO, então ela fica no azul da marca
+  // sem restrição. Já a palavra é texto para o verificador, e por isso usa
+  // `ink-strong`, que inverte sozinho: quase preto no claro (10,45:1), quase
+  // branco no escuro (16,98:1). Antes as duas herdavam uma cor só, e qualquer
+  // escolha sacrificava um lado — azul legível deixava o logo apagado, azul
+  // vivo reprovava no contraste.
   return (
-    <div className="flex items-center gap-2 text-scriba-blue-ink" role="img" aria-label="Scriba">
+    <div className="flex items-center gap-2" role="img" aria-label="Scriba">
       <svg
         aria-hidden="true"
+        className="text-scriba-blue"
         width={size}
         height={size}
         viewBox="0 0 155 155"
@@ -54,7 +56,7 @@ export function LandingLogo({ size = 26, textClassName = "text-[22px]" }: LogoPr
       </svg>
       <span
         aria-hidden="true"
-        className={cn("font-semibold leading-none", textClassName)}
+        className={cn("font-semibold leading-none text-scriba-ink-strong", textClassName)}
         style={{ fontFamily: "var(--font-poppins)", letterSpacing: "-0.015em" }}
       >
         scriba
@@ -109,7 +111,7 @@ export function LandingHeader({ onLandingPage = false }: LandingHeaderProps) {
           </Link>
           <Link
             href="/sign-in"
-            className="lp-cta inline-flex items-center justify-center gap-2 rounded-[22px] bg-lp-brand py-3 px-5 text-[12px] font-semibold uppercase tracking-[.04em] text-scriba-on-blue shadow-[0_5px_14px_rgba(79,168,240,.3)]"
+            className="lp-cta inline-flex items-center justify-center gap-2 rounded-[22px] bg-[image:var(--lp-cta)] py-3 px-5 text-[12px] font-semibold uppercase tracking-[.04em] text-lp-cta-ink shadow-[0_5px_14px_rgba(79,168,240,.3)]"
           >
             <PenaGlyph size={14} />
             Começar

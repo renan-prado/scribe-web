@@ -119,12 +119,12 @@
      para #5FB0F5 e branco cai para ~2.3:1, então a tinta vira um navy da mesma
      família de matiz (~6.5:1). */
   --color-scriba-on-blue: var(--scriba-on-blue);
-  /* Azul de marca: CTAs da LP e o logo (LP, rodapé e telas de auth). No dark
-     vira branco sólido, em vez do azul claro do tema. */
-  --color-lp-brand: var(--lp-brand);
   /* Landing-page bands: full-bleed section grounds that carry their own
      colorway per theme (see --lp-band / --lp-phone-frame). */
-  --color-lp-band: var(--lp-band);
+  /* `--lp-band` e `--lp-cta` são GRADIENTES: entram por
+     `bg-[image:var(--…)]`, não como utilitário de cor. Só a tinta vira
+     utilitário. */
+  --color-lp-cta-ink: var(--lp-cta-ink);
   --color-lp-band-ink: var(--lp-band-ink);
   --color-lp-phone-frame: var(--lp-phone-frame);
 }
@@ -306,7 +306,18 @@
      nenhuma cor de texto precisasse mudar: branco, `--lp-band-ink` e o amarelo
      continuam os mesmos, e só o fundo ficou mais fundo.
        branco 5,87 · band-ink 5,10 · amarelo 4,52 */
-  --lp-band: #0F67AF;
+  /* Gradiente, não cor chapada: o azul fecha num índigo que é a mesma família
+     do fundo do tema escuro (`--background` #0F0D1E, `--scriba-paper` #1A1733),
+     então a seção pertence ao app em vez de ser um retângulo azul avulso.
+     ATENÇÃO: com `background-image` o verificador automático PARA de medir o
+     contraste — ele marca "incomplete", não violação. A garantia passa a ser
+     destes números, conferidos no ponto MAIS CLARO (0%), que é o pior caso:
+       0%   #0F67AF  branco 5,87 · amarelo 4,52 · band-ink 5,10
+       55%  #124E8C  branco 8,42 · amarelo 6,49 · band-ink 7,32
+       100% #1A2F63  branco 12,88 · amarelo 9,93 · band-ink 11,20
+     Ao clarear QUALQUER parada, recalcule — sobretudo contra o amarelo de
+     11px, que é o texto mais claro da seção e o primeiro a reprovar. */
+  --lp-band: linear-gradient(135deg, #0F67AF 0%, #124E8C 55%, #1A2F63 100%);
   --lp-band-ink: #E2F1FF;
   /* Phone bezel. White in light (it reads as a shadowed white device); a near
      black bezel in dark, so the mockup keeps a visible edge against the band
@@ -325,7 +336,14 @@
      #4FA8F0 fica intacto; o que muda é a tinta por cima. É também o valor que o
      tema escuro já usava, então a paleta não ganha cor nova. */
   --scriba-on-blue: #0B2742;
-  --lp-brand: #4FA8F0;
+  /* Fundo do CTA da landing. Gradiente para que o botão continue parecendo
+     azul VIVO mesmo tendo de escurecer: texto branco de 13px exige 4,5:1, e
+     sobre o #4FA8F0 da marca o branco dá 2,56:1 — não havia como manter o azul
+     claro e a letra branca ao mesmo tempo. As duas paradas passam:
+       #1976C5 (4,73) → #0D5E9F (6,73)
+     Mesma ressalva do `--lp-band`: gradiente não é medido automaticamente. */
+  --lp-cta: linear-gradient(135deg, #1976C5 0%, #0D5E9F 100%);
+  --lp-cta-ink: #FFFFFF;
   --lp-header-h: 71px;
   /* Design-system border widths */
   --border-book: 1.5px;   /* book glyph icon border */
@@ -446,8 +464,8 @@
   --scriba-avatar-gradient: linear-gradient(140deg, #4A82EA, #9575F0);
   --scriba-paper: #1A1733;
   --scriba-rec: #F0564E;
-  /* escuro  #FF8A80 sobre #331A20 = 7,03 */
-  --scriba-rec-ink: #FF8A80;
+  /* escuro  #FCA5A5 sobre #331A20 = 8,45 */
+  --scriba-rec-ink: #FCA5A5;
   --scriba-rec-soft: #331A20;
   --scriba-violet: #9A7CF0;
   --scriba-mint-strong: #6FD2AA;
@@ -460,11 +478,18 @@
   --session-btn-ink: #A9BDD3;
   --lp-hero: linear-gradient(180deg, #1C2349 0%, #12102A 100%);
   --lp-hero-auth: linear-gradient(180deg, #191634 0%, #0F0D1E 60%);
-  --lp-band: #212B5E;
+  /* Mesma ideia do tema claro, uma oitava abaixo: o índigo já é o fundo aqui,
+     então a banda desce dentro da própria família em vez de virar azul.
+       0% #212B5E · 55% #1A2148 · 100% #141833
+     branco 13,4→17,4 · band-ink 8,0→10,4 · amarelo 10,6→13,7 */
+  --lp-band: linear-gradient(135deg, #212B5E 0%, #1A2148 55%, #141833 100%);
   --lp-band-ink: #B9C9E8;
   --lp-phone-frame: #0A0817;
   --scriba-on-blue: #0B2742;
-  --lp-brand: #ffffff;
+  /* No escuro o CTA inverte: pastilha clara sobre a página escura, com tinta
+     navy. 15,18:1 no início do gradiente e 12,87:1 no fim. */
+  --lp-cta: linear-gradient(135deg, #FFFFFF 0%, #E6EDF5 100%);
+  --lp-cta-ink: #0B2742;
 }
 
 /* sm: o header ganha py-[18px] e cresce 8px. */
