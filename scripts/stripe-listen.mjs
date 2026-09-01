@@ -4,7 +4,10 @@
  *
  *   npm run stripe:listen
  *   npm run stripe:listen -- --port 3001
- *   npm run stripe:listen -- --write     (grava o whsec no .env.local)
+ *   npm run stripe:listen -- --write     (grava o whsec no .env.dev)
+ *
+ * Sempre opera sobre `.env.dev`: `stripe listen` encaminha eventos de TESTE, e
+ * não existe cenário em que apontá-lo para o ambiente de produção faça sentido.
  *
  * Resolve três atritos que aparecem toda vez que se retoma o desenvolvimento
  * da cobrança:
@@ -16,7 +19,7 @@
  *    conta/modo". Aqui passamos `--api-key` com a chave que a própria
  *    aplicação usa, então o CLI escuta exatamente o ambiente certo.
  *
- * 2. SEGREDO NO HISTÓRICO. A chave é lida do .env.local e passada como
+ * 2. SEGREDO NO HISTÓRICO. A chave é lida do .env.dev e passada como
  *    argumento de processo, não interpolada num comando de shell.
  *
  * 3. O whsec ERRADO. Existem três `whsec_` possíveis (o do `stripe listen`, o
@@ -24,14 +27,15 @@
  *    formato os distingue. Usar o errado é a falha mais silenciosa do fluxo:
  *    o cartão passa, a tela mostra sucesso, e o webhook devolve 400 sem
  *    ninguém olhar. Este script lê o segredo que o CLI imprime, compara com o
- *    do .env.local e grita se forem diferentes.
+ *    do .env.dev e grita se forem diferentes.
  */
 
 import { spawn } from "node:child_process";
 import fs from "node:fs";
-import path from "node:path";
+import { parseEnvFile, resolveEnvPath } from "./env-file.mjs";
 
-const ENV_PATH = path.resolve(process.cwd(), ".env.local");
+const ENV_FILE = ".env.dev";
+const ENV_PATH = resolveEnvPath("dev");
 const args = process.argv.slice(2);
 const portArg = args.indexOf("--port");
 const PORT = portArg >= 0 ? args[portArg + 1] : "3000";
@@ -40,29 +44,14 @@ const FORWARD_TO = `localhost:${PORT}/api/stripe/webhook`;
 
 function readEnv() {
   if (!fs.existsSync(ENV_PATH)) return {};
-  return Object.fromEntries(
-    fs
-      .readFileSync(ENV_PATH, "utf8")
-      .split(/\r?\n/)
-      .filter((l) => l && !l.trimStart().startsWith("#") && l.includes("="))
-      .map((l) => {
-        const i = l.indexOf("=");
-        return [
-          l.slice(0, i).trim(),
-          l
-            .slice(i + 1)
-            .trim()
-            .replace(/^["']|["']$/g, ""),
-        ];
-      })
-  );
+  return parseEnvFile(ENV_PATH);
 }
 
 const env = readEnv();
 const apiKey = env.STRIPE_SECRET_KEY;
 
 if (!apiKey) {
-  console.error("✗ STRIPE_SECRET_KEY não encontrada em .env.local. Veja docs/stripe-setup.md.");
+  console.error(`✗ STRIPE_SECRET_KEY não encontrada em ${ENV_FILE}. Veja docs/stripe-setup.md.`);
   process.exit(1);
 }
 if (apiKey.startsWith("sk_live")) {
@@ -80,21 +69,21 @@ if (apiKey.startsWith("sk_live")) {
 // No Windows o `stripe` costuma ser um `.cmd` (instalação via npm), e o
 // `spawn` do Node não executa .cmd/.bat sem passar pelo shell. Como o shell
 // reintroduz o risco de injeção pela linha de comando, conferimos antes que a
-// chave é só [A-Za-z0-9_] — se o .env.local tiver algo estranho, preferimos
+// chave é só [A-Za-z0-9_] — se o .env.dev tiver algo estranho, preferimos
 // abortar a mandar isso para um interpretador.
 const needsShell = process.platform === "win32";
 if (needsShell && !/^sk_(test|live)_[A-Za-z0-9]+$/.test(apiKey)) {
   console.error(
     [
       "✗ STRIPE_SECRET_KEY tem caracteres fora do formato esperado (sk_test_… alfanumérico).",
-      "  Verifique se não sobrou aspa, espaço ou quebra de linha no .env.local.",
+      "  Verifique se não sobrou aspa, espaço ou quebra de linha no .env.dev.",
     ].join("\n")
   );
   process.exit(1);
 }
 
 console.log(`▸ stripe listen → ${FORWARD_TO}`);
-console.log(`▸ ambiente fixado pela chave ${apiKey.slice(0, 12)}… do .env.local\n`);
+console.log(`▸ ambiente fixado pela chave ${apiKey.slice(0, 12)}… do .env.dev\n`);
 
 const child = spawn("stripe", ["listen", "--api-key", apiKey, "--forward-to", FORWARD_TO], {
   stdio: ["inherit", "pipe", "pipe"],
@@ -130,7 +119,7 @@ function checkSecret(text) {
   const current = readEnv().STRIPE_WEBHOOK_SECRET;
 
   if (current === cliSecret) {
-    console.log("\n✓ STRIPE_WEBHOOK_SECRET do .env.local confere com o do CLI.\n");
+    console.log("\n✓ STRIPE_WEBHOOK_SECRET do .env.dev confere com o do CLI.\n");
     return;
   }
 
@@ -144,7 +133,7 @@ function checkSecret(text) {
     console.log(
       [
         "",
-        "✓ STRIPE_WEBHOOK_SECRET atualizado no .env.local.",
+        "✓ STRIPE_WEBHOOK_SECRET atualizado no .env.dev.",
         "  REINICIE o `npm run dev` — o Next só lê env vars ao subir.",
         "",
       ].join("\n")
@@ -156,12 +145,12 @@ function checkSecret(text) {
     [
       "",
       "┌────────────────────────────────────────────────────────────",
-      "│ ATENÇÃO: o STRIPE_WEBHOOK_SECRET do .env.local NÃO é este.",
+      "│ ATENÇÃO: o STRIPE_WEBHOOK_SECRET do .env.dev NÃO é este.",
       "│",
       "│ Do jeito que está, o webhook responde 400 e NENHUM pagamento",
       "│ vira crédito — sem erro visível na tela.",
       "│",
-      "│ Cole no .env.local e reinicie o `npm run dev`:",
+      "│ Cole no .env.dev e reinicie o `npm run dev`:",
       "│",
       `│   STRIPE_WEBHOOK_SECRET=${cliSecret}`,
       "│",

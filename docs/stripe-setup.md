@@ -39,7 +39,7 @@ de verdade e existem cartões falsos para testar.
 > ⚠️ **Teste e live são duas contas separadas na prática.** Produtos, preços,
 > clientes e webhooks criados num modo **não existem** no outro, e a chave de
 > um não enxerga os objetos do outro. Além disso, `stripe listen` só encaminha
-> eventos de **teste** — com uma chave live no `.env.local`, o webhook local
+> eventos de **teste** — com uma chave live no `.env.dev`, o webhook local
 > nunca receberia a confirmação e nenhum crédito entraria.
 >
 > Confirme no canto superior direito que **Test mode está LIGADO** antes de
@@ -193,21 +193,21 @@ O Stripe não alcança `localhost`. Instale o Stripe CLI
 terminal separado (é um processo que fica aberto):
 
 ```bash
-stripe listen   --api-key "$(grep '^STRIPE_SECRET_KEY=' .env.local | cut -d= -f2-)"   --forward-to localhost:3000/api/stripe/webhook
+stripe listen   --api-key "$(grep '^STRIPE_SECRET_KEY=' .env.dev | cut -d= -f2-)"   --forward-to localhost:3000/api/stripe/webhook
 ```
 
 O comando imprime um `whsec_...` **diferente** de qualquer outro, só para o
-encaminhamento local. É ESSE que vai no `.env.local`.
+encaminhamento local. É ESSE que vai no `.env.dev`.
 
 Ou, mais simples, o atalho que já faz tudo isso:
 
 ```bash
 npm run stripe:listen              # porta 3000
 npm run stripe:listen -- --port 3001
-npm run stripe:listen -- --write   # grava o whsec no .env.local
+npm run stripe:listen -- --write   # grava o whsec no .env.dev
 ```
 
-Ele fixa o ambiente pela chave do `.env.local`, recusa chave live, e compara o
+Ele fixa o ambiente pela chave do `.env.dev`, recusa chave live, e compara o
 `whsec_` impresso pelo CLI com o do arquivo — avisando em destaque se
 divergirem.
 
@@ -231,7 +231,12 @@ divergirem.
 
 ## 6. Colar as variáveis
 
-### Local — `.env.local`
+O projeto tem dois arquivos de ambiente, `.env.dev` e `.env.prod`, escolhidos
+explicitamente pelo script de npm (`npm run dev` / `npm run prod`). Os valores
+de **teste** vão no primeiro, os de **live** no segundo — e nunca se misturam,
+porque os IDs de preço de um modo não existem no outro. Ver `docs/ambientes.md`.
+
+### Local — `.env.dev`
 
 ```bash
 STRIPE_SECRET_KEY=sk_test_...

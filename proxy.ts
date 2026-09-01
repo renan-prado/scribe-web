@@ -38,7 +38,14 @@ const PUBLIC_PREFIXES = [
 ];
 const AUTH_ONLY_PREFIXES = ["/sign-in", "/sign-up"];
 
-const STATIC_ALLOWED_ORIGINS = new Set(["https://scriba.cc", "https://www.scriba.cc"]);
+// `dev.scriba.cc` é o ambiente de desenvolvimento: mesmo projeto na Vercel,
+// domínio fixado no branch `develop`, com env vars de Preview apontando para o
+// Supabase e o Stripe de teste. Ver docs/ambientes.md.
+const STATIC_ALLOWED_ORIGINS = new Set([
+  "https://scriba.cc",
+  "https://www.scriba.cc",
+  "https://dev.scriba.cc",
+]);
 // localhost / 127.0.0.1 on any port, plus Vercel preview URLs scoped to this
 // project (e.g. scribe-<hash>-renanprados-projects.vercel.app).
 const ALLOWED_ORIGIN_PATTERNS: RegExp[] = [

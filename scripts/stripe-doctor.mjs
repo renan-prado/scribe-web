@@ -21,7 +21,7 @@ import fs from "node:fs";
 import path from "node:path";
 import Stripe from "stripe";
 
-const ENV_FILE = process.argv[2] ?? ".env.local";
+const ENV_FILE = process.argv[2] ?? ".env.dev";
 
 function loadEnv(file) {
   const full = path.resolve(process.cwd(), file);

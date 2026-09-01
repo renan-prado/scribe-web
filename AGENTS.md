@@ -207,13 +207,43 @@ Do not add these unprompted (the user is aware and defers them):
 - A test runner or tests.
 - An i18n framework — pt-BR strings live inline for now; extraction can wait.
 
+## Ambientes (dev × produção)
+
+Dois conjuntos independentes de recursos — Supabase, Stripe e URL —
+selecionados por dois arquivos: `.env.dev` e `.env.prod`. Guia completo em
+`docs/ambientes.md`.
+
+- **Nenhum dos dois é lido pelo Next automaticamente.** `scripts/with-env.mjs`
+  injeta o arquivo certo em `process.env` e só então sobe o comando. Isso é
+  deliberado: com um `.env.local` na pasta, um `next dev` distraído fala com o
+  Supabase e o Stripe de PRODUÇÃO sem avisar. O `with-env` **aborta** se
+  encontrar qualquer arquivo que o Next carregue sozinho (`.env`, `.env.local`,
+  `.env.development[.local]`, `.env.production[.local]`).
+- **Não crie `.env.local`.** O modelo é `.env.example` — único da família no git.
+- O `with-env` também aborta com `sk_live_` no `.env.dev` e quando os dois
+  arquivos apontam para o mesmo Supabase.
+- Nova variável de ambiente: além do schema Zod em `lib/env/{server,client}.ts`,
+  acrescente a linha em `.env.example`, nos dois arquivos locais e no painel da
+  Vercel (escopos Production **e** Preview).
+- Na Vercel é um projeto só: `master` → `scriba.cc` (Production), `develop` →
+  `dev.scriba.cc` (Preview, env vars fixadas nesse branch). Cron da Vercel só
+  roda em produção, então `/api/billing/sweep` não existe em dev.
+
 ## Commands
 
-- `npm run dev` — Next dev server.
+- `npm run dev` — Next dev server com `.env.dev`.
+- `npm run prod` — Next dev server com `.env.prod`. **Dados reais, Stripe LIVE.**
+  Imprime banner vermelho. Use só para reproduzir bug que depende de produção.
 - `npm run typecheck` — `tsc --noEmit`. Run this before commits.
 - `npm run check` — Biome check + write (imports, format, lint).
 - `npm run lint` / `npm run format` — Biome subcommands.
-- `supabase db push` — apply pending SQL migrations to the linked remote project. **Standing permission granted by the user**: after creating a new file under `supabase/migrations/`, run this without asking for confirmation.
+- `npm run db:push` — aplica `supabase/migrations/` no Supabase de **dev**. O ref
+  vem de `.env.dev` e o script religa o CLI antes do push (o vínculo em
+  `supabase/.temp/` é global à pasta e não é confiável). **Standing permission
+  granted by the user**: after creating a new file under `supabase/migrations/`,
+  run this without asking for confirmation.
+- `npm run db:push:prod -- --yes` — o mesmo em **produção**. O `--yes` é
+  obrigatório e esta é a única exceção à permissão acima: sempre confirme antes.
 
 ## Behaviour-preservation guardrails
 

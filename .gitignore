@@ -30,8 +30,10 @@ yarn-debug.log*
 yarn-error.log*
 .pnpm-debug.log*
 
-# env files (can opt-in for committing if needed)
+# env files — .env.dev e .env.prod carregam segredos reais e ficam fora do git.
+# O modelo sem valores é a única exceção. Ver docs/ambientes.md.
 .env*
+!.env.example
 
 # vercel
 .vercel
