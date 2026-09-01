@@ -219,7 +219,7 @@ function QuickLink({ href, children }: QuickLinkProps) {
   return (
     <Link
       href={href}
-      className="inline-flex items-center gap-1.5 rounded-full bg-scriba-blue-soft px-3.5 py-2 text-[12px] font-semibold text-scriba-blue transition-colors hover:bg-scriba-blue-soft/70"
+      className="inline-flex items-center gap-1.5 rounded-full bg-scriba-blue-soft px-3.5 py-2 text-[12px] font-semibold text-scriba-blue-ink transition-colors hover:bg-scriba-blue-soft/70"
     >
       {children}
       <ArrowRight className="size-3.5" />

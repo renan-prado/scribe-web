@@ -48,7 +48,7 @@ const VISUAL: Record<Stage, { Icon: typeof CircleCheck; spin: boolean; tone: str
   // das moedas em todo o app.
   received: { Icon: CircleCheck, spin: false, tone: "bg-scriba-green-soft text-scriba-green-ink" },
   credited: { Icon: CircleCheck, spin: false, tone: "bg-scriba-gold-soft text-scriba-gold-ink" },
-  pending: { Icon: Loader2, spin: true, tone: "bg-scriba-blue-soft text-scriba-blue" },
+  pending: { Icon: Loader2, spin: true, tone: "bg-scriba-blue-soft text-scriba-blue-ink" },
   canceled: { Icon: CircleSlash, spin: false, tone: "bg-scriba-rose text-scriba-rose-accent" },
 };
 

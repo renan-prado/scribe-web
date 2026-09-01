@@ -22,7 +22,7 @@ function initialsOf(name: string | null): string {
 
 const ADD_BADGE_CLASSES = cn(
   "inline-flex items-center gap-1 rounded-full bg-scriba-ink-mute/10 px-2.5 py-1 text-[11px] font-semibold uppercase tracking-wider text-scriba-ink-soft outline-none transition-colors",
-  "hover:bg-scriba-blue-soft/70 hover:text-scriba-blue focus-visible:ring-2 focus-visible:ring-ring/40"
+  "hover:bg-scriba-blue-soft/70 hover:text-scriba-blue-ink focus-visible:ring-2 focus-visible:ring-ring/40"
 );
 
 type Props = {
@@ -112,7 +112,7 @@ export function SavedTranscriptSessionView({
                 "hover:bg-scriba-blue-soft/60 focus-visible:ring-2 focus-visible:ring-ring/40"
               )}
             >
-              <span className="flex size-6 items-center justify-center rounded-full bg-scriba-blue-soft text-[10px] font-semibold text-scriba-blue">
+              <span className="flex size-6 items-center justify-center rounded-full bg-scriba-blue-soft text-[10px] font-semibold text-scriba-blue-ink">
                 {initials}
               </span>
               <span className="text-sm font-medium leading-none text-scriba-ink">

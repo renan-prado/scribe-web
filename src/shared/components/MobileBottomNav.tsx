@@ -113,7 +113,7 @@ export function MobileBottomNav({ avatarUrl, displayName, email }: MobileBottomN
               )}
             >
               {avatarUrl ? <AvatarImage src={avatarUrl} alt={displayName ?? "Perfil"} /> : null}
-              <AvatarFallback className="bg-scriba-blue-soft text-[9px] font-semibold text-scriba-blue">
+              <AvatarFallback className="bg-scriba-blue-soft text-[9px] font-semibold text-scriba-blue-ink">
                 {profileInitials(displayName, email)}
               </AvatarFallback>
             </Avatar>
@@ -149,7 +149,13 @@ type TabLinkProps = {
   activeClass?: string;
 };
 
-function TabLink({ href, label, active, icon, activeClass = "text-scriba-blue" }: TabLinkProps) {
+function TabLink({
+  href,
+  label,
+  active,
+  icon,
+  activeClass = "text-scriba-blue-ink",
+}: TabLinkProps) {
   return (
     <NavLink
       href={href}

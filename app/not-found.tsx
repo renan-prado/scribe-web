@@ -9,12 +9,12 @@ export const metadata = {
 export default function NotFoundPage() {
   return (
     <main className="mx-auto flex min-h-svh w-full max-w-lg flex-col items-center justify-center gap-6 px-4 py-12 text-center sm:px-6">
-      <span className="flex size-16 items-center justify-center rounded-full bg-scriba-blue-soft text-scriba-blue">
+      <span className="flex size-16 items-center justify-center rounded-full bg-scriba-blue-soft text-scriba-blue-ink">
         <MicOff className="size-7" />
       </span>
 
       <div className="flex flex-col gap-3">
-        <p className="font-mono text-xs uppercase tracking-[0.2em] text-scriba-blue">404</p>
+        <p className="font-mono text-xs uppercase tracking-[0.2em] text-scriba-blue-ink">404</p>
         <h1 className="text-2xl font-semibold tracking-tight text-scriba-ink-strong sm:text-3xl">
           Página não encontrada
         </h1>

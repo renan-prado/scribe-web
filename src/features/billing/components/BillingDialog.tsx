@@ -314,7 +314,7 @@ export function BillingDialog({
                             >
                               <Check
                                 aria-hidden
-                                className="mt-0.5 size-3.5 shrink-0 text-scriba-blue"
+                                className="mt-0.5 size-3.5 shrink-0 text-scriba-blue-ink"
                                 strokeWidth={3}
                               />
                               {h}
@@ -328,7 +328,7 @@ export function BillingDialog({
                             void startCheckout({ kind: "subscription", plan: key }, key)
                           }
                           className={cn(
-                            "inline-flex w-full items-center justify-center gap-2 rounded-full border border-scriba-blue px-5 py-2.5 text-[13px] font-semibold text-scriba-blue outline-none transition-colors",
+                            "inline-flex w-full items-center justify-center gap-2 rounded-full border border-scriba-blue px-5 py-2.5 text-[13px] font-semibold text-scriba-blue-ink outline-none transition-colors",
                             "hover:bg-scriba-blue-soft/60 focus-visible:ring-4 focus-visible:ring-scriba-blue/25",
                             "disabled:cursor-not-allowed disabled:opacity-70"
                           )}

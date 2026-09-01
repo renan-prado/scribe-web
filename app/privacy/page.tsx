@@ -50,7 +50,7 @@ export default function PrivacyPage() {
               proteção de dados pessoais, entre em contato pelo e-mail{" "}
               <a
                 href={`mailto:${CONTACT_EMAIL}`}
-                className="text-scriba-blue underline-offset-2 hover:underline"
+                className="text-scriba-blue-ink underline underline-offset-2"
               >
                 {CONTACT_EMAIL}
               </a>
@@ -178,7 +178,7 @@ export default function PrivacyPage() {
                   href="https://openai.com/policies/privacy-policy"
                   target="_blank"
                   rel="noopener noreferrer"
-                  className="text-scriba-blue underline-offset-2 hover:underline"
+                  className="text-scriba-blue-ink underline underline-offset-2"
                 >
                   política de privacidade da OpenAI
                 </a>
@@ -191,7 +191,7 @@ export default function PrivacyPage() {
                   href="https://supabase.com/privacy"
                   target="_blank"
                   rel="noopener noreferrer"
-                  className="text-scriba-blue underline-offset-2 hover:underline"
+                  className="text-scriba-blue-ink underline underline-offset-2"
                 >
                   política de privacidade da Supabase
                 </a>
@@ -263,7 +263,7 @@ export default function PrivacyPage() {
                   href="https://www.gov.br/anpd"
                   target="_blank"
                   rel="noopener noreferrer"
-                  className="text-scriba-blue underline-offset-2 hover:underline"
+                  className="text-scriba-blue-ink underline underline-offset-2"
                 >
                   www.gov.br/anpd
                 </a>
@@ -274,7 +274,7 @@ export default function PrivacyPage() {
               Para exercer qualquer desses direitos, entre em contato:{" "}
               <a
                 href={`mailto:${CONTACT_EMAIL}`}
-                className="text-scriba-blue underline-offset-2 hover:underline"
+                className="text-scriba-blue-ink underline underline-offset-2"
               >
                 {CONTACT_EMAIL}
               </a>
@@ -383,7 +383,7 @@ export default function PrivacyPage() {
               direitos:{" "}
               <a
                 href={`mailto:${CONTACT_EMAIL}`}
-                className="text-scriba-blue underline-offset-2 hover:underline"
+                className="text-scriba-blue-ink underline underline-offset-2"
               >
                 {CONTACT_EMAIL}
               </a>
@@ -393,7 +393,7 @@ export default function PrivacyPage() {
         </div>
 
         <div className="mt-12 border-t border-scriba-hairline-soft pt-6 text-xs text-scriba-ink-mute">
-          <Link href="/terms" className="text-scriba-blue">
+          <Link href="/terms" className="text-scriba-blue-ink underline underline-offset-2">
             Termos de Uso
           </Link>{" "}
           · Scriba © {new Date().getFullYear()}

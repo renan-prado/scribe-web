@@ -247,7 +247,7 @@ export default async function LibraryPage() {
                                 <span className="size-[3px] rounded-full bg-scriba-ink-mute/60" />
                                 <span
                                   title="Você já gerou o estudo deste sermão"
-                                  className="inline-flex items-center gap-1 rounded-full bg-scriba-blue-soft px-2 py-0.5 text-[10px] font-semibold uppercase tracking-wider text-scriba-blue"
+                                  className="inline-flex items-center gap-1 rounded-full bg-scriba-blue-soft px-2 py-0.5 text-[10px] font-semibold uppercase tracking-wider text-scriba-blue-ink"
                                 >
                                   <BookOpen className="size-3" />
                                   Estudo
@@ -258,7 +258,7 @@ export default async function LibraryPage() {
                           <div className="sm:ml-auto">
                             <NavLink
                               href={href}
-                              className="inline-flex w-full items-center justify-center rounded-full bg-scriba-blue-soft px-4 py-2 text-[11px] font-semibold text-scriba-blue transition-colors hover:bg-scriba-blue-soft/70 sm:w-auto"
+                              className="inline-flex w-full items-center justify-center rounded-full bg-scriba-blue-soft px-4 py-2 text-[11px] font-semibold text-scriba-blue-ink transition-colors hover:bg-scriba-blue-soft/70 sm:w-auto"
                             >
                               {isTranscriptOnly ? "Ver transcrição →" : "Ver resumo →"}
                             </NavLink>

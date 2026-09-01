@@ -58,7 +58,7 @@ export default async function ProfilePage() {
             className="size-24 ring-4 ring-scriba-paper shadow-[0_12px_28px_rgba(51,65,79,0.14)]"
           >
             {profile.avatarUrl ? <AvatarImage src={profile.avatarUrl} alt={shownName} /> : null}
-            <AvatarFallback className="bg-scriba-blue-soft text-2xl font-semibold text-scriba-blue">
+            <AvatarFallback className="bg-scriba-blue-soft text-2xl font-semibold text-scriba-blue-ink">
               {initials}
             </AvatarFallback>
           </Avatar>
@@ -153,7 +153,7 @@ export default async function ProfilePage() {
 function InfoRow({ icon, label, value }: { icon: ReactNode; label: string; value: string }) {
   return (
     <div className="flex items-center gap-3">
-      <span className="flex size-9 flex-none items-center justify-center rounded-full bg-scriba-blue-soft text-scriba-blue">
+      <span className="flex size-9 flex-none items-center justify-center rounded-full bg-scriba-blue-soft text-scriba-blue-ink">
         {icon}
       </span>
       <div className="flex min-w-0 flex-1 flex-col">

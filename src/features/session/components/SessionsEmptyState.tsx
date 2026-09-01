@@ -71,7 +71,7 @@ export function SessionsEmptyState({
             <li key={step.n} className="flex items-start gap-3 sm:flex-col sm:gap-1.5">
               <span
                 aria-hidden
-                className="flex size-7 flex-none items-center justify-center rounded-[9px] bg-scriba-blue-soft text-[13px] font-semibold text-scriba-blue"
+                className="flex size-7 flex-none items-center justify-center rounded-[9px] bg-scriba-blue-soft text-[13px] font-semibold text-scriba-blue-ink"
               >
                 {step.n}
               </span>

@@ -70,7 +70,7 @@ export function ColoqueEmPratica({
   return (
     <section className="mt-6 flex flex-col gap-4">
       <header className="flex items-center gap-2">
-        <span className="flex size-6 items-center justify-center rounded-full bg-scriba-blue-soft text-scriba-blue">
+        <span className="flex size-6 items-center justify-center rounded-full bg-scriba-blue-soft text-scriba-blue-ink">
           <Footprints className="size-3.5" strokeWidth={2.2} />
         </span>
         <h2 className="font-heading text-lg font-semibold tracking-tight text-scriba-ink-strong">
@@ -85,7 +85,7 @@ export function ColoqueEmPratica({
             className="flex flex-col gap-2 rounded-2xl border border-scriba-hairline-soft bg-scriba-paper px-5 py-4 shadow-[0_2px_10px_rgba(79,168,240,0.06)]"
           >
             <div className="flex items-center justify-between gap-3">
-              <span className="inline-flex items-center gap-1.5 rounded-full bg-scriba-blue-soft/70 px-2.5 py-0.5 text-[10px] font-semibold uppercase tracking-[0.14em] text-scriba-blue">
+              <span className="inline-flex items-center gap-1.5 rounded-full bg-scriba-blue-soft/70 px-2.5 py-0.5 text-[10px] font-semibold uppercase tracking-[0.14em] text-scriba-blue-ink">
                 {DAY_LABELS[item.dayOffset] ?? `Em ${item.dayOffset} dias`}
               </span>
             </div>
@@ -96,7 +96,7 @@ export function ColoqueEmPratica({
               {item.text}
             </p>
             {item.prompt ? (
-              <p className="mt-1 rounded-xl bg-scriba-blue-soft/40 px-3 py-2 text-[13px] font-medium italic leading-snug text-scriba-blue">
+              <p className="mt-1 rounded-xl bg-scriba-blue-soft/40 px-3 py-2 text-[13px] font-medium italic leading-snug text-scriba-blue-ink">
                 {item.prompt}
               </p>
             ) : null}
@@ -105,7 +105,7 @@ export function ColoqueEmPratica({
                 <div className="flex min-w-0 flex-col gap-0.5">
                   <NavLink
                     href={footer.href}
-                    className="truncate font-medium text-scriba-ink-soft transition-colors hover:text-scriba-blue"
+                    className="truncate font-medium text-scriba-ink-soft transition-colors hover:text-scriba-blue-ink"
                   >
                     {footer.title}
                   </NavLink>

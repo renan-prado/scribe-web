@@ -13,8 +13,8 @@ const LINKS = [
 
 const TONES = {
   blue: {
-    active: "bg-scriba-blue-soft text-scriba-blue",
-    idle: "text-scriba-ink-soft hover:bg-scriba-blue-soft/60 hover:text-scriba-blue",
+    active: "bg-scriba-blue-soft text-scriba-blue-ink",
+    idle: "text-scriba-ink-soft hover:bg-scriba-blue-soft/60 hover:text-scriba-blue-ink",
   },
   green: {
     active: "bg-scriba-green-soft text-scriba-green-ink",

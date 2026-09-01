@@ -73,7 +73,7 @@ export function FeedAgendadoPreview({ rereads, reminders, highlights }: FeedAgen
               : "flex items-start gap-2"
           }
         >
-          <span className="mt-0.5 flex size-4 shrink-0 items-center justify-center rounded-full bg-scriba-blue-soft/70 text-scriba-blue">
+          <span className="mt-0.5 flex size-4 shrink-0 items-center justify-center rounded-full bg-scriba-blue-soft/70 text-scriba-blue-ink">
             <row.Icon className="size-2.5" strokeWidth={2} />
           </span>
           <div className="flex flex-col gap-0 leading-snug">

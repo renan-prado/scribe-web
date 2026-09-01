@@ -104,6 +104,8 @@
      the whole app flips with a single `.dark` on <html>. */
   --color-scriba-paper: var(--scriba-paper);
   --color-scriba-rec: var(--scriba-rec);
+  --color-scriba-rec-ink: var(--scriba-rec-ink);
+  --color-scriba-rec-soft: var(--scriba-rec-soft);
   --color-scriba-violet: var(--scriba-violet);
   --color-scriba-mint-strong: var(--scriba-mint-strong);
   --color-scriba-gold-soft: var(--scriba-gold-soft);
@@ -199,23 +201,45 @@
   --scriba-lilac-ink: #3F5170;
   --scriba-lilac-accent: #6E82A8;
   --scriba-ink-strong: #33414F;
-  --scriba-ink: #4A5A6A;
-  /* Os dois cinzas de apoio são escuros o bastante para serem lidos, e ainda
-     assim distintos entre si — as duas metas estão em tensão e a segunda foi
-     priorizada. Antes: soft 3,53:1 e mute 2,06:1 sobre papel, os dois abaixo do
-     mínimo AA (4,5) que o texto pequeno exige. Levar AMBOS a 4,5 os deixaria a
-     0,01 de razão um do outro, ou seja, a mesma cor — e o app perderia um
-     degrau inteiro da escala (ink > soft > mute). Então o soft passa AA com
-     folga e o mute sobe de 2,06 para 3,96, mantendo 1,5 de distância do soft.
-     O mute segue abaixo de AA nos chips de 10px; é dívida conhecida, não
-     descuido. Ao mexer aqui, verifique os DOIS números, não só um. */
-  --scriba-ink-soft: #5C6B7C;
-  --scriba-ink-mute: #6E8296;
+  /* ESCALA DE TINTA — quatro degraus, todos acima de AA, espaçados por igual.
+     Ver `--scriba-ink-strong` logo acima: ele é o topo e não muda.
+
+     O texto pequeno exige 4,5:1, e o piso da escala (`mute`) precisa disso
+     contra o fundo MAIS ESCURO em que aparece — `--scriba-bubble` (#F5F8FB),
+     não o papel branco. Calibrar pelo branco deixaria os chips dentro dos
+     balões reprovando.
+
+     Os quatro valores não foram escolhidos um a um: são uma progressão
+     geométrica de ~1,3x entre 4,5 e 10,45. Ajustar só o `mute` para AA (a
+     tentativa anterior) o encostava no `soft` — 1,14x de diferença, ou seja,
+     dois níveis que ninguém distingue — e o app perdia um degrau da escala.
+     Empurrar a escala inteira resolve os dois problemas de uma vez.
+
+     Contraste sobre paper / surface / bubble:
+       ink-strong  10,45 / 9,97 / 9,80
+       ink          8,00 / 7,64 / 7,50
+       ink-soft     6,05 / 5,78 / 5,68
+       ink-mute     4,82 / 4,60 / 4,52   <- o piso, calibrado pelo bubble
+
+     Ao mexer em QUALQUER um: recalcule os outros três. O valor de um degrau
+     isolado não quer dizer nada; o que importa é a escala. */
+  --scriba-ink: #445261;
+  --scriba-ink-soft: #566474;
+  --scriba-ink-mute: #617487;
   --scriba-surface: #F7FAFD;
   --scriba-hairline: #EDF2F7;
   --scriba-hairline-soft: #EEF4FA;
   --scriba-yellow-light: #FFDF8C;
-  --scriba-blue-ink: #3E86C4;
+  /* AZUL PARA TEXTO — não confundir com `--scriba-blue`, que é o azul de
+     SUPERFÍCIE (fundo de botão, borda, badge).
+     A mesma cor não serve para as duas coisas: #4FA8F0 é excelente como fundo
+     e dá 2,56:1 como tinta sobre papel, bem abaixo do mínimo AA. O app usava o
+     token de superfície como cor de texto em 73 lugares — daí `text-scriba-blue`
+     ter virado `text-scriba-blue-ink` em toda parte.
+     Calibrado pelo pior fundo em que aparece, `--scriba-blue-soft` (#EAF4FE),
+     não pelo papel branco.
+       branco 5,03 · surface 4,80 · blue-soft 4,52 */
+  --scriba-blue-ink: #3473AA;
   --scriba-blue-body: #5E86AC;
   --scriba-rose-body: #A08373;
   --scriba-mint-body: #6E8A7E;
@@ -248,6 +272,13 @@
      Every one of these has a `.dark` counterpart below. */
   --scriba-paper: #ffffff;
   --scriba-rec: #F0564E;
+  /* Chip "AO VIVO". As três cores eram literais no className
+     (`bg-red-600/[.08]`, `bg-[#DC2626]`, `text-[#B91C1C]`), então NÃO
+     invertiam: no tema escuro o texto vinha a 2,55:1 sobre o fundo escuro do
+     mockup. Agora são tokens, e o par de cada tema é conferido.
+       claro  #B91C1C sobre #FCEEEE = 5,73 */
+  --scriba-rec-ink: #B91C1C;
+  --scriba-rec-soft: #FCEEEE;
   --scriba-violet: #7C5CE0;
   --scriba-mint-strong: #4E9C7F;
   --scriba-gold-soft: #FFF9E8;
@@ -264,7 +295,18 @@
      primary blue; in dark that same primary reads as a lit slab dropped into a
      dark page, so the dark colorway swaps it for a deep blue lifted just above
      the page ground. */
-  --lp-band: #4FA8F0;
+  /* A banda azul da seção "Biblioteca" carrega texto por cima, e isso muda o
+     que a cor precisa ser. Era o mesmo #4FA8F0 do resto da marca — sobre ele,
+     NENHUM texto claro é legível: branco puro dá 2,56:1, e o azul-claro e o
+     amarelo do acento ficam ainda piores. O problema não tinha conserto do
+     lado da tinta, porque o branco já é o extremo; o fundo é que tinha de
+     descer.
+     #0F67AF é o ponto em que o texto MAIS CLARO da seção — o label amarelo de
+     11px, o caso mais difícil — alcança 4,5:1. Escolhido assim para que
+     nenhuma cor de texto precisasse mudar: branco, `--lp-band-ink` e o amarelo
+     continuam os mesmos, e só o fundo ficou mais fundo.
+       branco 5,87 · band-ink 5,10 · amarelo 4,52 */
+  --lp-band: #0F67AF;
   --lp-band-ink: #E2F1FF;
   /* Phone bezel. White in light (it reads as a shadowed white device); a near
      black bezel in dark, so the mockup keeps a visible edge against the band
@@ -365,9 +407,18 @@
   --scriba-lilac-ink: #C2CDEC;
   --scriba-lilac-accent: #94A5D0;
   --scriba-ink-strong: #F2F0FA;
-  --scriba-ink: #CFCBE6;
-  --scriba-ink-soft: #9E99BC;
-  --scriba-ink-mute: #726D93;
+  /* Mesma escala do tema claro, invertida: quatro degraus de ~1,5x, o piso
+     calibrado pelo fundo de MENOR contraste (aqui `--scriba-bubble` #1E1A38, o
+     mais claro dos fundos escuros). O `mute` vinha de 3,56:1 — o tema escuro
+     reprovava exatamente como o claro, só que ninguém tinha medido.
+     Contraste sobre paper / surface / bubble / background:
+       ink-strong  15,33 / 16,20 / 14,78 / 16,98
+       ink         10,36 / 10,94 /  9,98 / 11,47
+       ink-soft     6,92 /  7,30 /  6,66 /  7,66
+       ink-mute     4,72 /  4,99 /  4,55 /  5,23   <- piso, pelo bubble */
+  --scriba-ink: #C9C5E3;
+  --scriba-ink-soft: #A5A0C1;
+  --scriba-ink-mute: #8682A3;
   --scriba-surface: #14122A;
   --scriba-hairline: #272247;
   --scriba-hairline-soft: #221E40;
@@ -395,6 +446,9 @@
   --scriba-avatar-gradient: linear-gradient(140deg, #4A82EA, #9575F0);
   --scriba-paper: #1A1733;
   --scriba-rec: #F0564E;
+  /* escuro  #FF8A80 sobre #331A20 = 7,03 */
+  --scriba-rec-ink: #FF8A80;
+  --scriba-rec-soft: #331A20;
   --scriba-violet: #9A7CF0;
   --scriba-mint-strong: #6FD2AA;
   --scriba-gold-soft: #2E2717;

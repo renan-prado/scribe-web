@@ -59,7 +59,9 @@ export function StartSubscription({ plan }: { plan: PaidPlanKey }) {
       <span
         className={cn(
           "flex size-16 items-center justify-center rounded-full",
-          error ? "bg-scriba-rose text-scriba-rose-accent" : "bg-scriba-blue-soft text-scriba-blue"
+          error
+            ? "bg-scriba-rose text-scriba-rose-accent"
+            : "bg-scriba-blue-soft text-scriba-blue-ink"
         )}
       >
         {error ? (

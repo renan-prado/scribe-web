@@ -168,7 +168,7 @@ export function UsageFilters({ users, routes, current }: Props) {
 
       {activeSessionId ? (
         <div className="flex items-center gap-2 rounded-full bg-scriba-blue-soft px-3 py-1.5">
-          <span className="text-[10px] font-semibold uppercase tracking-[0.1em] text-scriba-blue">
+          <span className="text-[10px] font-semibold uppercase tracking-[0.1em] text-scriba-blue-ink">
             Sessão
           </span>
           <span className="truncate font-mono text-[11px] text-scriba-ink">{activeSessionId}</span>
@@ -176,7 +176,7 @@ export function UsageFilters({ users, routes, current }: Props) {
             type="button"
             onClick={clearSessionFilter}
             aria-label="Remover filtro de sessão"
-            className="ml-auto inline-flex size-5 items-center justify-center rounded-full text-scriba-blue transition-colors"
+            className="ml-auto inline-flex size-5 items-center justify-center rounded-full text-scriba-blue-ink transition-colors"
           >
             <X className="size-3" />
           </button>

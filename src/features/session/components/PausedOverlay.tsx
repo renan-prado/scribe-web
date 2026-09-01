@@ -59,7 +59,7 @@ export function PausedOverlay({
           "relative flex size-16 items-center justify-center rounded-full shadow-inner",
           outOfCoins
             ? "bg-scriba-gold-soft text-scriba-gold-ink"
-            : "bg-scriba-blue-soft text-scriba-blue"
+            : "bg-scriba-blue-soft text-scriba-blue-ink"
         )}
       >
         <span

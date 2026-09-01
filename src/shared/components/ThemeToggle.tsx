@@ -37,7 +37,7 @@ export function ThemeToggle({ className, compact = false }: ThemeToggleProps) {
           "inline-flex size-9 flex-none items-center justify-center rounded-full",
           "border border-scriba-hairline bg-scriba-surface text-scriba-ink-mute",
           "outline-none transition-colors focus-visible:ring-2 focus-visible:ring-scriba-blue/40",
-          "hover:border-scriba-blue-soft hover:text-scriba-blue",
+          "hover:border-scriba-blue-soft hover:text-scriba-blue-ink",
           className
         )}
       >
@@ -89,7 +89,7 @@ export function ThemeToggle({ className, compact = false }: ThemeToggleProps) {
           mounted && "transition-transform duration-300 ease-[cubic-bezier(0.22,1,0.36,1)]",
           isDark
             ? "translate-x-[32px] text-scriba-yellow shadow-[0_2px_10px_rgba(95,176,245,0.28)]"
-            : "translate-x-0 text-scriba-blue"
+            : "translate-x-0 text-scriba-blue-ink"
         )}
       >
         {isDark ? (
@@ -110,7 +110,7 @@ export function ThemeToggleRow({ className }: ThemeToggleProps) {
   const { isDark } = useTheme();
   return (
     <div className={cn("flex items-center gap-3", className)}>
-      <span className="flex size-9 flex-none items-center justify-center rounded-full bg-scriba-blue-soft text-scriba-blue">
+      <span className="flex size-9 flex-none items-center justify-center rounded-full bg-scriba-blue-soft text-scriba-blue-ink">
         {isDark ? <Moon className="size-4" /> : <Sun className="size-4" />}
       </span>
       <div className="flex min-w-0 flex-1 flex-col">

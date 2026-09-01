@@ -69,7 +69,7 @@ export function LiveTranscriptStream({
                 "mt-0.5 inline-flex h-5 shrink-0 items-center justify-center rounded-md px-1.5 font-mono text-[10px] font-medium tabular-nums",
                 row.status === "ok"
                   ? "bg-scriba-hairline-soft text-scriba-ink-mute"
-                  : "bg-scriba-blue-soft text-scriba-blue"
+                  : "bg-scriba-blue-soft text-scriba-blue-ink"
               )}
             >
               {formatMmSs(row.startedAtMs)}

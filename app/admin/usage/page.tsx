@@ -405,7 +405,7 @@ function SessionsTable({ summary, money, rate, filters }: SessionsTableProps) {
                 <TableRow key={s.sessionId} className="group">
                   <TableCell>
                     <Link
-                      className="flex flex-col text-scriba-ink transition-colors hover:text-scriba-blue"
+                      className="flex flex-col text-scriba-ink transition-colors hover:text-scriba-blue-ink"
                       href={sessionFilterHref(filters, s.sessionId)}
                       title="Filtrar por esta sessão"
                     >

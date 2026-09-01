@@ -29,7 +29,7 @@ export default function TermsPage() {
             <p>
               Ao criar uma conta, acessar ou utilizar o Scriba ("Serviço"), você declara ter lido,
               compreendido e concordado integralmente com estes Termos de Uso, com a{" "}
-              <Link href="/privacy" className="text-scriba-blue underline-offset-2 hover:underline">
+              <Link href="/privacy" className="text-scriba-blue-ink underline underline-offset-2">
                 Política de Privacidade
               </Link>{" "}
               e com quaisquer políticas complementares publicadas no serviço. O aceite eletrônico
@@ -91,7 +91,7 @@ export default function TermsPage() {
                 Notifique-nos imediatamente em caso de uso não autorizado da sua conta pelo e-mail{" "}
                 <a
                   href={`mailto:${CONTACT_EMAIL}`}
-                  className="text-scriba-blue underline-offset-2 hover:underline"
+                  className="text-scriba-blue-ink underline underline-offset-2"
                 >
                   {CONTACT_EMAIL}
                 </a>
@@ -299,7 +299,7 @@ export default function TermsPage() {
               envie notificação circunstanciada para{" "}
               <a
                 href={`mailto:${CONTACT_EMAIL}`}
-                className="text-scriba-blue underline-offset-2 hover:underline"
+                className="text-scriba-blue-ink underline underline-offset-2"
               >
                 {CONTACT_EMAIL}
               </a>
@@ -365,7 +365,7 @@ export default function TermsPage() {
               Dúvidas sobre estes Termos? Fale conosco:{" "}
               <a
                 href={`mailto:${CONTACT_EMAIL}`}
-                className="text-scriba-blue underline-offset-2 hover:underline"
+                className="text-scriba-blue-ink underline underline-offset-2"
               >
                 {CONTACT_EMAIL}
               </a>
@@ -375,7 +375,7 @@ export default function TermsPage() {
         </div>
 
         <div className="mt-12 border-t border-scriba-hairline-soft pt-6 text-xs text-scriba-ink-mute">
-          <Link href="/privacy" className="text-scriba-blue">
+          <Link href="/privacy" className="text-scriba-blue-ink">
             Política de Privacidade
           </Link>{" "}
           · Scriba © {new Date().getFullYear()}

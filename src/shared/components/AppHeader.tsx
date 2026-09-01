@@ -10,7 +10,7 @@ export function AppHeader({ actions }: { actions?: ReactNode }) {
           <Link
             href="/feed"
             aria-label="Scriba"
-            className="flex items-center gap-2 rounded-full text-scriba-blue transition-opacity hover:opacity-80 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring/40"
+            className="flex items-center gap-2 rounded-full text-scriba-blue-ink transition-opacity hover:opacity-80 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring/40"
           >
             <svg
               aria-hidden="true"

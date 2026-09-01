@@ -70,7 +70,7 @@ function NavLinkContent({ children, contentClassName, spinner }: NavLinkContentP
           aria-hidden
           className="pointer-events-none absolute inset-0 flex items-center justify-center rounded-[inherit] bg-scriba-paper/40 backdrop-blur-[1px]"
         >
-          <Loader2 className="size-5 animate-spin text-scriba-blue" />
+          <Loader2 className="size-5 animate-spin text-scriba-blue-ink" />
         </span>
       ) : null}
     </>

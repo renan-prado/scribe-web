@@ -612,7 +612,7 @@ function Biblioteca() {
                 subtitle="Biblioteca"
                 title="Suas gravações"
                 right={
-                  <span className="rounded-full bg-scriba-blue-soft px-2.5 py-1 text-[10px] font-semibold text-scriba-blue">
+                  <span className="rounded-full bg-scriba-blue-soft px-2.5 py-1 text-[10px] font-semibold text-scriba-blue-ink">
                     12
                   </span>
                 }
@@ -635,7 +635,12 @@ type BiblioCardProps = {
 
 function BiblioCard({ title, subtitle, badge }: BiblioCardProps) {
   return (
-    <div className="flex items-center justify-between gap-4 rounded-[18px] bg-white/[.16] p-4 px-[17px] sm:px-[18px]">
+    // O véu era `bg-white/[.16]`, que CLAREAVA a banda — e o card é justamente
+    // onde ficam os textos menores da seção, então ele piorava o contraste
+    // exatamente onde a régua é mais dura. Escurecer em vez de clarear inverte
+    // isso: o cartão continua se destacando do fundo, agora para baixo.
+    //   título 7,26 · subtítulo 6,31 · badge 5,59
+    <div className="flex items-center justify-between gap-4 rounded-[18px] bg-black/[.14] p-4 px-[17px] sm:px-[18px]">
       <div className="flex flex-col gap-0.5">
         <div className="text-[13px] font-semibold sm:text-[13.5px]">{title}</div>
         <div className="text-[11.5px] font-light text-lp-band-ink sm:text-[12px]">{subtitle}</div>
@@ -840,7 +845,7 @@ function PlanCard({
         <div
           className={cn(
             "text-[13px] font-semibold tracking-[.03em]",
-            isPrimary ? "text-scriba-blue" : "text-scriba-ink-soft"
+            isPrimary ? "text-scriba-blue-ink" : "text-scriba-ink-soft"
           )}
         >
           {name}
@@ -869,7 +874,7 @@ function PlanCard({
               aria-label="Incluído"
               className={cn(
                 "mt-0.5 flex-none",
-                isPrimary ? "text-scriba-blue" : "text-scriba-ink-mute"
+                isPrimary ? "text-scriba-blue-ink" : "text-scriba-ink-mute"
               )}
               width="16"
               height="16"
@@ -947,7 +952,7 @@ function SectionLabel({ children, color = "mute" }: SectionLabelProps) {
     <div
       className={cn(
         "text-[11px] font-semibold uppercase tracking-[.12em]",
-        color === "blue" && "text-scriba-blue",
+        color === "blue" && "text-scriba-blue-ink",
         color === "mute" && "text-scriba-ink-mute",
         color === "yellow-light" && "text-scriba-yellow-light"
       )}
@@ -1021,9 +1026,13 @@ function PhoneChrome({ title, subtitle, right }: PhoneChromeProps) {
 
 function LiveDot() {
   return (
-    <div className="flex items-center gap-1.5 rounded-full bg-red-600/[.08] px-2.5 py-1">
-      <span className="size-1.5 rounded-full bg-[#DC2626] shadow-[0_0_0_4px_rgba(220,38,38,.15)]" />
-      <span className="text-[10px] font-bold tracking-[.08em] text-[#B91C1C]">AO VIVO</span>
+    // As três cores eram literais (`bg-red-600/[.08]`, `bg-[#DC2626]`,
+    // `text-[#B91C1C]`) e por isso não trocavam com o tema: no escuro o texto
+    // ficava a 2,55:1 sobre o fundo do mockup. Agora são tokens, conferidos nos
+    // dois temas — claro 5,73:1, escuro 7,03:1.
+    <div className="flex items-center gap-1.5 rounded-full bg-scriba-rec-soft px-2.5 py-1">
+      <span className="size-1.5 rounded-full bg-scriba-rec shadow-[0_0_0_4px_rgba(220,38,38,.15)]" />
+      <span className="text-[10px] font-bold tracking-[.08em] text-scriba-rec-ink">AO VIVO</span>
     </div>
   );
 }
@@ -1034,7 +1043,7 @@ function LibraryMock() {
       {LIB_GROUPS.map((group) => (
         <section key={group.label} className="flex flex-col gap-3">
           <div className="flex items-center gap-2.5 px-1">
-            <span className="text-xs font-semibold text-scriba-blue">{group.label}</span>
+            <span className="text-xs font-semibold text-scriba-blue-ink">{group.label}</span>
             <span className="h-px flex-1 bg-scriba-hairline" />
             <span className="text-[11px] font-light text-scriba-ink-mute">
               {group.items.length}
@@ -1066,7 +1075,7 @@ function LibraryMock() {
                   <span className="size-[3px] rounded-full bg-scriba-hairline" />
                   <span className="text-[11px] font-light text-scriba-ink-mute">{s.duration}</span>
                   <div className="flex-1" />
-                  <span className="rounded-full bg-scriba-blue-soft px-3.5 py-1.5 text-[11px] font-semibold text-scriba-blue">
+                  <span className="rounded-full bg-scriba-blue-soft px-3.5 py-1.5 text-[11px] font-semibold text-scriba-blue-ink">
                     Ver resumo →
                   </span>
                 </div>

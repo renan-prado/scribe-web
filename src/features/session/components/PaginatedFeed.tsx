@@ -237,7 +237,7 @@ function FeedTail({
         <button
           type="button"
           onClick={onRetry}
-          className="rounded-full bg-scriba-blue-soft/60 px-4 py-2 text-[11px] font-semibold uppercase tracking-wider text-scriba-blue transition-colors hover:bg-scriba-blue-soft"
+          className="rounded-full bg-scriba-blue-soft/60 px-4 py-2 text-[11px] font-semibold uppercase tracking-wider text-scriba-blue-ink transition-colors hover:bg-scriba-blue-soft"
         >
           Tentar de novo
         </button>
@@ -253,7 +253,7 @@ function FeedTail({
           onClick={onLoadMore}
           disabled={state === "loading"}
           className={cn(
-            "inline-flex items-center gap-2 rounded-full border border-scriba-hairline-soft bg-scriba-paper px-5 py-2.5 text-[11px] font-semibold uppercase tracking-wider text-scriba-ink-soft transition-colors hover:border-scriba-blue-soft hover:text-scriba-blue",
+            "inline-flex items-center gap-2 rounded-full border border-scriba-hairline-soft bg-scriba-paper px-5 py-2.5 text-[11px] font-semibold uppercase tracking-wider text-scriba-ink-soft transition-colors hover:border-scriba-blue-soft hover:text-scriba-blue-ink",
             state === "loading" && "opacity-60"
           )}
         >

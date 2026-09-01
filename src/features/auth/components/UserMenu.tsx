@@ -46,7 +46,7 @@ export function UserMenu({ displayName, email, avatarUrl, isAdmin }: Props) {
         >
           <Avatar className="ring-2 ring-scriba-paper shadow-[0_4px_12px_rgba(51,65,79,0.10)]">
             {avatarUrl ? <AvatarImage src={avatarUrl} alt={shownName} /> : null}
-            <AvatarFallback className="bg-scriba-blue-soft text-scriba-blue">
+            <AvatarFallback className="bg-scriba-blue-soft text-scriba-blue-ink">
               {initials}
             </AvatarFallback>
           </Avatar>
@@ -60,7 +60,7 @@ export function UserMenu({ displayName, email, avatarUrl, isAdmin }: Props) {
           <div className="flex items-center gap-3 rounded-xl bg-scriba-blue-soft/60 px-3 py-3">
             <Avatar className="size-10">
               {avatarUrl ? <AvatarImage src={avatarUrl} alt={shownName} /> : null}
-              <AvatarFallback className="bg-scriba-paper text-scriba-blue text-sm font-semibold">
+              <AvatarFallback className="bg-scriba-paper text-scriba-blue-ink text-sm font-semibold">
                 {initials}
               </AvatarFallback>
             </Avatar>

@@ -46,7 +46,7 @@ function CardShell({ children }: { children: ReactNode }) {
 function CardHeaderRow({ Icon, label }: { Icon: LucideIcon; label: string }) {
   return (
     <div className="flex items-center justify-between gap-2">
-      <span className="inline-flex items-center gap-1.5 text-[10px] font-semibold uppercase tracking-[0.14em] text-scriba-blue">
+      <span className="inline-flex items-center gap-1.5 text-[10px] font-semibold uppercase tracking-[0.14em] text-scriba-blue-ink">
         <span className="flex size-5 items-center justify-center rounded-full bg-scriba-blue-soft">
           <Icon className="size-3" strokeWidth={2.2} />
         </span>
@@ -61,7 +61,7 @@ function CardFooter({ footer }: { footer: FeedCardFooter }) {
     <footer className="mt-2 flex flex-col gap-0.5 border-t border-scriba-hairline-soft pt-2 text-[11px] font-light text-scriba-ink-mute">
       <NavLink
         href={footer.href}
-        className="font-medium text-scriba-ink-soft transition-colors hover:text-scriba-blue"
+        className="font-medium text-scriba-ink-soft transition-colors hover:text-scriba-blue-ink"
       >
         {footer.title}
       </NavLink>
@@ -83,7 +83,7 @@ export function PracticeCard({ item, footer }: { item: PracticeItem; footer: Fee
       </p>
       <p className="text-pretty text-sm font-light leading-relaxed text-scriba-ink">{item.text}</p>
       {item.prompt ? (
-        <p className="mt-1 rounded-xl bg-scriba-blue-soft/40 px-3 py-2 text-[13px] font-medium italic leading-snug text-scriba-blue">
+        <p className="mt-1 rounded-xl bg-scriba-blue-soft/40 px-3 py-2 text-[13px] font-medium italic leading-snug text-scriba-blue-ink">
           {item.prompt}
         </p>
       ) : null}
@@ -109,7 +109,7 @@ export function RereadCard({ item, footer }: { item: RereadItem; footer: FeedCar
       <footer className="mt-2 flex flex-col gap-0.5 border-t border-session-verse-text/15 pt-4 pb-1 text-[11px] font-light text-session-verse-text/75">
         <NavLink
           href={footer.href}
-          className="font-medium text-session-verse-text transition-colors hover:text-scriba-blue"
+          className="font-medium text-session-verse-text transition-colors hover:text-scriba-blue-ink"
         >
           {footer.title}
         </NavLink>
@@ -131,7 +131,7 @@ export function ReminderCard({ item, footer }: { item: ReminderItem; footer: Fee
         {item.title}
       </p>
       {item.quote ? (
-        <blockquote className="flex gap-2 rounded-xl bg-scriba-blue-soft/40 px-3 py-2 text-[13px] font-medium italic leading-snug text-scriba-blue">
+        <blockquote className="flex gap-2 rounded-xl bg-scriba-blue-soft/40 px-3 py-2 text-[13px] font-medium italic leading-snug text-scriba-blue-ink">
           <Quote className="mt-0.5 size-3.5 shrink-0" strokeWidth={2.2} aria-hidden />
           <span className="text-pretty">{item.quote}</span>
         </blockquote>
