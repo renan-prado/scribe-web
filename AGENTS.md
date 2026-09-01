@@ -37,7 +37,9 @@ app/
                                 — recording pages, one per capture mode (orchestration only)
   (app)/recording/[id]/{summary,transcript}/page.tsx
                                 — saved session: summary, or transcription for transcript_only
-  page.tsx                      — landing that links into the app
+  page.tsx                      — landing that links into the app. ESTÁTICA: não pode ler
+                                  cookie/sessão (o redirect de quem já está logado mora no
+                                  proxy.ts). Ver "Landing page" abaixo.
   layout.tsx, globals.css
 components/ui/                  — shadcn primitives (Dialog, DropdownMenu, Button)
 lib/
@@ -70,6 +72,10 @@ src/features/session/
                                   api (typed fetch wrappers)
   config.ts                     — pacing constants (chunk cadences, insights interval, deltas, timeouts)
   types.ts                      — ChunkRow, FinalAudio, TranscriptState, VerseFetchState
+src/shared/
+  assets/avatars/*.webp         — avatares dos depoimentos e do hero da LP (136px, ~3 KB cada)
+  components/LandingMocks.tsx   — as telas dentro dos mockups de celular da LP. Markup
+                                  estático PRÓPRIO, não os componentes do app — ver abaixo.
 ```
 
 ## Import rules
@@ -192,6 +198,45 @@ surpreendente e, em alguns navegadores, bloqueado.
 Sessões que nunca foram encerradas (`ended_at is null`) saem da lista principal
 e aparecem numa faixa "Gravações em aberto" no `/list`, com opção de continuar
 ou apagar — ver `listUnfinishedSessions`.
+
+## Landing page — o que não pode voltar
+
+A LP é a única página que um visitante anônimo carrega, e é ela que decide se
+ele fica. Duas regras existem só para protegê-la, e as duas são fáceis de
+desfazer sem perceber.
+
+- **`app/page.tsx` é ESTÁTICA. Nada nela pode ler cookie, sessão ou header.**
+  Uma única chamada a `supabase.auth.getUser()` ali dentro basta para o Next
+  marcar a rota como dinâmica, e o efeito é desproporcional: a resposta passa a
+  sair com `Cache-Control: private, no-store` e `X-Vercel-Cache: MISS`, ou seja,
+  HTML remontado na origem a cada visita, com DUAS idas ao Supabase antes do
+  primeiro byte — uma no `proxy.ts` e outra na página. Numa página cujo conteúdo
+  é idêntico para todo mundo que não está logado. O `no-store` ainda derrubava o
+  bfcache, então voltar para a LP recarregava tudo. O redirect de quem já está
+  logado mora no `proxy.ts` (junto do guard de `/sign-in`), que já tem o usuário
+  resolvido — sai de graça e não custa a estaticidade.
+  O proxy também sai cedo, ANTES de instanciar o client do Supabase, quando o
+  path é `/` e não há nenhum cookie `sb-*`: sem sessão não há o que renovar, e
+  isso poupa uma ida à rede na rota mais visitada.
+
+- **A LP NÃO importa componentes de `src/features/session/` que sejam
+  `"use client"`.** As telas dentro dos mockups de celular são markup estático
+  em `src/shared/components/LandingMocks.tsx`. Antes elas montavam o `<Feed>` e
+  o `<SummaryView>` reais, e isso arrastava `FeedItemCard`, `VerseDialog` (com o
+  Dialog do base-ui), `useVerseFetch`, `PassageVerses`, `ScribaComment` e os
+  skeletons para o bundle da landing page — o app de gravação inteiro baixado
+  para exibir cinco cards que nunca mudam e nunca respondem a clique. Reusar um
+  server component (o `BlockRenderer`, por exemplo) continua liberado: ele não
+  custa bundle. O preço de reproduzir o visual à mão é real — mexer no
+  `FeedItemCard` não atualiza mais a LP — e é aceito de propósito: as duas telas
+  mudam por razões diferentes.
+
+Imagens: nada de `<img>` para host externo. Sete avatares placeholder de
+`mockmind-api.uifaces.co` (1024×1024 para desenhar círculos de 34 px) custavam
+724 KB, e o React 19 ainda os promovia a `<link rel="preload" as="image">` no
+`<head>`, disputando a banda inicial com o CSS. Hoje são sete WebP de 136 px em
+`src/shared/assets/avatars/` (20 KB no total) servidos por `next/image` com
+import estático — que também traz `width`/`height` de graça, sem CLS.
 
 ## Adding a new feature
 

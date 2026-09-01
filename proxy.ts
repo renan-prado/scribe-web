@@ -119,6 +119,19 @@ export async function proxy(request: NextRequest) {
     return new NextResponse(null, { status: 204, headers });
   }
 
+  // Visitante anônimo na landing page: não há sessão para renovar nem rota a
+  // proteger, então saímos ANTES de instanciar o client — economiza uma ida ao
+  // Supabase na rota mais visitada do site, e é ela que decide se a pessoa
+  // fica. A ausência de cookie `sb-*` é o sinal barato de "não há sessão": o
+  // @supabase/ssr guarda o token em cookies com esse prefixo, e sem nenhum
+  // deles o `getUser()` só devolveria `null` depois de uma ida à rede.
+  //
+  // O early-return fica aqui em cima, ANTES do `createServerClient`. Enfiá-lo
+  // no meio do handshake violaria o contrato do @supabase/ssr descrito acima.
+  if (earlyPath === "/" && !request.cookies.getAll().some((c) => c.name.startsWith("sb-"))) {
+    return NextResponse.next({ request });
+  }
+
   let supabaseResponse = NextResponse.next({ request });
 
   const supabase = createServerClient(
@@ -158,6 +171,16 @@ export async function proxy(request: NextRequest) {
     const redirect = NextResponse.redirect(url);
     if (isApi) applyCorsHeaders(redirect, origin, allowedOrigin);
     return redirect;
+  }
+
+  // Quem já está logado não tem o que fazer na landing page — vai para o feed.
+  //
+  // Esta checagem MORAVA em `app/page.tsx`, e era só por causa dela que a LP
+  // precisava ser uma rota dinâmica (ver o comentário lá). Aqui o `user` já
+  // foi resolvido para os outros guards, então o redirect sai de graça e a
+  // página volta a ser estática e cacheável na CDN para o visitante anônimo.
+  if (user && pathname === "/") {
+    return NextResponse.redirect(new URL("/feed", request.nextUrl.origin));
   }
 
   if (user && isAuthOnly(pathname)) {

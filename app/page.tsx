@@ -1,15 +1,18 @@
+import Image, { type StaticImageData } from "next/image";
 import Link from "next/link";
-import { redirect } from "next/navigation";
-import { Feed } from "@/features/session/components/Feed";
-import { SummaryView } from "@/features/session/components/SummaryView";
 import { formatBrl, formatCoins, PLANS, TOPUP } from "@/lib/billing/plans";
-import type { FeedItem } from "@/lib/domain/feed";
-import type { SummaryPayload } from "@/lib/domain/summary";
 import { SITE_DESCRIPTION, SITE_TITLE } from "@/lib/seo";
-import { createClient } from "@/lib/supabase/server";
 import { cn } from "@/lib/utils";
+import avatar1 from "@/shared/assets/avatars/avatar-1.webp";
+import avatar2 from "@/shared/assets/avatars/avatar-2.webp";
+import avatar3 from "@/shared/assets/avatars/avatar-3.webp";
+import avatar4 from "@/shared/assets/avatars/avatar-4.webp";
+import avatar5 from "@/shared/assets/avatars/avatar-5.webp";
+import avatar6 from "@/shared/assets/avatars/avatar-6.webp";
+import avatar7 from "@/shared/assets/avatars/avatar-7.webp";
 import { LandingFooter, LandingHeader, PenaGlyph } from "@/shared/components/LandingChrome";
 import { LandingJsonLd } from "@/shared/components/LandingJsonLd";
+import { LandingFeedMock, LandingSummaryMock } from "@/shared/components/LandingMocks";
 import { FAQ_ITEMS } from "@/shared/content/landing-faq";
 
 export const metadata = {
@@ -20,13 +23,22 @@ export const metadata = {
   alternates: { canonical: "/" },
 };
 
-export default async function LandingPage() {
-  const supabase = await createClient();
-  const {
-    data: { user },
-  } = await supabase.auth.getUser();
-  if (user) redirect("/feed");
-
+/**
+ * A landing page é ESTÁTICA de propósito — nada aqui pode ler cookie, sessão
+ * ou header, ou o Next volta a marcá-la como dinâmica.
+ *
+ * Antes ela chamava `supabase.auth.getUser()` para mandar quem já está logado
+ * para `/feed`. Bastava isso para tornar a rota dinâmica, e o efeito ia longe:
+ * cada visita anônima respondia `Cache-Control: private, no-store` com
+ * `X-Vercel-Cache: MISS`, ou seja, HTML remontado do zero na origem, com duas
+ * idas ao Supabase — uma no `proxy.ts` e outra aqui — antes do primeiro byte.
+ * Numa página cujo conteúdo é o MESMO para todo visitante deslogado. O
+ * `no-store` ainda derrubava o bfcache (voltar para a LP recarregava tudo).
+ *
+ * O redirect de quem está logado mudou para o `proxy.ts`, que já tinha o
+ * usuário em mãos: mesmo comportamento, sem custar a estaticidade da página.
+ */
+export default function LandingPage() {
   return (
     <div className="w-full overflow-x-clip bg-background text-scriba-ink-strong antialiased">
       <LandingJsonLd />
@@ -46,12 +58,21 @@ export default async function LandingPage() {
   );
 }
 
-const HERO_AVATARS = [
-  { src: "https://mockmind-api.uifaces.co/content/human/5.jpg" },
-  { src: "https://mockmind-api.uifaces.co/content/human/17.jpg" },
-  { src: "https://mockmind-api.uifaces.co/content/human/42.jpg" },
-  { src: "https://mockmind-api.uifaces.co/content/human/88.jpg" },
-] as const;
+/**
+ * Avatares servidos do nosso próprio bundle, não de `mockmind-api.uifaces.co`.
+ *
+ * O externo custava 724 KB: sete JPEG de 1024×1024 para desenhar círculos de
+ * 34 px. Pior que o peso era a prioridade — o React 19 emite
+ * `<link rel="preload" as="image">` para todo `<img>` renderizado no servidor,
+ * então os 724 KB disputavam a banda inicial COM o CSS, antes do primeiro
+ * paint. Era a maior linha do relatório do Lighthouse ("723 KiB").
+ *
+ * Reduzidos a 136 px (4× o tamanho de tela) em WebP, os sete somam 20 KB, e o
+ * `next/image` ainda gera as variantes do srcset a partir daí. O import
+ * estático também dá `width`/`height` de graça — sem reserva de espaço, sete
+ * avatares chegando tarde empurrariam o texto ao lado e viraria CLS.
+ */
+const HERO_AVATARS: readonly StaticImageData[] = [avatar1, avatar2, avatar3, avatar4];
 
 /**
  * O hero sobe por trás do header (margem negativa = `--lp-header-h`) e devolve
@@ -99,10 +120,9 @@ function Hero() {
           <div className="flex flex-wrap items-center gap-x-3.5 gap-y-2 pt-1.5 sm:gap-x-5 sm:pt-3.5">
             <div className="flex flex-none">
               {HERO_AVATARS.map((a, i) => (
-                // biome-ignore lint/performance/noImgElement: external placeholder avatar (uifaces.co)
-                <img
+                <Image
                   key={a.src}
-                  src={a.src}
+                  src={a}
                   alt=""
                   aria-hidden
                   width={34}
@@ -130,7 +150,7 @@ function Hero() {
               />
             }
           >
-            <FeedMock />
+            <LandingFeedMock />
           </PhoneFrame>
         </div>
       </div>
@@ -492,7 +512,7 @@ function Resumo() {
           <PhoneFrame
             chrome={<PhoneChrome subtitle="Resumo · 41 min" title="A sede que só Cristo cura" />}
           >
-            <SummaryMock />
+            <LandingSummaryMock />
           </PhoneFrame>
         </div>
         <div className="order-1 flex min-w-0 flex-col gap-6 lg:order-2 lg:gap-[34px]">
@@ -628,19 +648,19 @@ function Testimonials() {
           quote={`"Parei de anotar e comecei a ouvir de verdade. Na quarta-feira o app me devolve exatamente o ponto que eu precisava."`}
           name="Mateus Ribeiro"
           title="Membro · Igreja Batista Central"
-          avatarSrc="https://mockmind-api.uifaces.co/content/human/12.jpg"
+          avatarSrc={avatar5}
         />
         <TestimonialCard
           quote={`"Uso com meu grupo pequeno. Chegamos na reunião falando do mesmo sermão, com as mesmas perguntas."`}
           name="Ana Laura Prado"
           title="Líder de grupo pequeno"
-          avatarSrc="https://mockmind-api.uifaces.co/content/human/22.jpg"
+          avatarSrc={avatar6}
         />
         <TestimonialCard
           quote={`"Sei o que a igreja tem ouvido nos últimos dois anos. Isso mudou como eu planejo a pregação."`}
           name="Pr. João Silva"
           title="Pastor titular"
-          avatarSrc="https://mockmind-api.uifaces.co/content/human/45.jpg"
+          avatarSrc={avatar7}
         />
       </div>
     </section>
@@ -651,7 +671,7 @@ type TestimonialCardProps = {
   quote: string;
   name: string;
   title: string;
-  avatarSrc: string;
+  avatarSrc: StaticImageData;
 };
 
 function TestimonialCard({ quote, name, title, avatarSrc }: TestimonialCardProps) {
@@ -661,13 +681,13 @@ function TestimonialCard({ quote, name, title, avatarSrc }: TestimonialCardProps
         {quote}
       </div>
       <div className="mt-auto flex items-center gap-2.5 border-t border-scriba-hairline pt-[13px] sm:gap-[11px] sm:pt-[15px]">
-        {/** biome-ignore lint/performance/noImgElement: external placeholder avatar (uifaces.co) */}
-        <img
+        <Image
           src={avatarSrc}
           alt=""
           aria-hidden
           width={34}
           height={34}
+          loading="lazy"
           className="size-8 flex-none rounded-full object-cover sm:size-[34px]"
         />
         <div className="flex flex-col gap-px">
@@ -988,91 +1008,6 @@ function LiveDot() {
     <div className="flex items-center gap-1.5 rounded-full bg-red-600/[.08] px-2.5 py-1">
       <span className="size-1.5 rounded-full bg-[#DC2626] shadow-[0_0_0_4px_rgba(220,38,38,.15)]" />
       <span className="text-[10px] font-bold tracking-[.08em] text-[#B91C1C]">AO VIVO</span>
-    </div>
-  );
-}
-
-const DEMO_FEED_ITEMS: FeedItem[] = [
-  {
-    kind: "speakerHighlight",
-    text: "Jesus não oferece apenas água para a sede. Ele revela a sede que aquela mulher ainda não sabia nomear.",
-  },
-  {
-    kind: "context",
-    label: "Judeus e samaritanos",
-    text: "A conversa em João 4 rompe barreiras religiosas, étnicas e sociais. Ao pedir água a uma mulher samaritana, Jesus se aproxima de alguém que muitos judeus evitariam e transforma um encontro improvável em revelação.",
-    source: "Contexto histórico de João 4",
-  },
-  {
-    kind: "speakerCitation",
-    text: "Fizeste-nos para Ti, e inquieto está o nosso coração enquanto não repousa em Ti.",
-    author: "Agostinho, citado pelo pregador",
-  },
-  {
-    kind: "suggestedQuote",
-    text: "O meu povo cometeu dois males: abandonou a mim, a fonte de água viva, e cavou as suas próprias cisternas.",
-    author: "Jeremias 2:13",
-    reason: "Conecta a água viva oferecida por Jesus às falsas fontes onde buscamos satisfação.",
-  },
-  {
-    kind: "speakerEcho",
-    text: "Cristo não veio apenas melhorar as nossas cisternas. Veio nos levar de volta à fonte.",
-  },
-];
-
-const DEMO_SUMMARY: SummaryPayload = {
-  thinking: "",
-  title: "A água viva para corações sedentos",
-  shortSummary:
-    "Em João 4, Jesus revela que nossa sede mais profunda não pode ser satisfeita pelas fontes deste mundo.",
-  blocks: [
-    { type: "h1", text: "A água viva para corações sedentos" },
-    {
-      type: "paragraph",
-      text: "À beira do poço de Jacó, Jesus inicia uma conversa improvável com uma mulher samaritana. Ao pedir água, ele atravessa barreiras religiosas, étnicas e sociais.",
-    },
-    {
-      type: "highlight",
-      text: "Jesus não oferece apenas água para a sede. Ele revela a sede que aquela mulher ainda não sabia nomear.",
-    },
-    { type: "h2", text: "As cisternas que não podem nos saciar" },
-    {
-      type: "paragraph",
-      text: "Assim como a samaritana voltaria ao poço depois de beber, também retornamos às mesmas fontes em busca de satisfação: aprovação, relacionamentos, conquistas e conforto. Elas aliviam por um momento, mas não alcançam a sede mais profunda do coração.",
-    },
-    {
-      type: "example",
-      text: "É possível conquistar aquilo que desejávamos e, pouco tempo depois, sentir novamente o mesmo vazio. O problema não está apenas no que buscamos, mas no que esperamos que essas coisas façam por nós.",
-    },
-    { type: "h2", text: "Conhecidos por inteiro, amados por completo" },
-    {
-      type: "paragraph",
-      text: "Jesus conhece a história daquela mulher e ainda assim permanece diante dela. Ele não revela seu passado para afastá-la, mas para mostrar que a água viva é oferecida a pessoas plenamente conhecidas e graciosamente alcançadas.",
-    },
-    {
-      type: "quote",
-      text: "Fizeste-nos para Ti, e inquieto está o nosso coração enquanto não repousa em Ti.",
-      author: "Agostinho",
-    },
-    {
-      type: "conclusion",
-      text: "Cristo não veio apenas melhorar as cisternas que construímos. Ele veio nos levar de volta à fonte. Nele, nossa sede encontra descanso e nossa vida se transforma em verdadeira adoração.",
-    },
-  ],
-};
-
-function FeedMock() {
-  return (
-    <div className="flex flex-col gap-4 px-4 pb-8 pt-3">
-      <Feed items={DEMO_FEED_ITEMS} running hasTranscript suggesting />
-    </div>
-  );
-}
-
-function SummaryMock() {
-  return (
-    <div className="flex flex-col gap-4 px-4 pb-8 pt-3">
-      <SummaryView summary={DEMO_SUMMARY} hasTranscript running={false} />
     </div>
   );
 }
