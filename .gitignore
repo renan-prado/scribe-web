@@ -52,7 +52,8 @@ next-env.d.ts
 # playwright MCP cache
 /.playwright-mcp/
 
-# local scratch: session dumps, comparison files
+# local scratch: session dumps, comparison files, scripts de teste manual
+/tmp/
 /compare*.json
 /compare*.txt
 /overview.txt
