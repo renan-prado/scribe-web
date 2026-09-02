@@ -1,6 +1,6 @@
 "use client";
 
-import { LayoutDashboard, LogOut, User as UserIcon } from "lucide-react";
+import { Handshake, LayoutDashboard, LogOut, User as UserIcon } from "lucide-react";
 import Link from "next/link";
 import { useRef } from "react";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
@@ -17,6 +17,7 @@ type Props = {
   email: string | null;
   avatarUrl: string | null;
   isAdmin: boolean;
+  isPartner: boolean;
 };
 
 function initialsFrom(name: string | null, email: string | null): string {
@@ -32,7 +33,7 @@ function initialsFrom(name: string | null, email: string | null): string {
  * like a small Dialog panel rather than the base shadcn menu. The identity
  * block on top mirrors the /profile hero at a smaller scale.
  */
-export function UserMenu({ displayName, email, avatarUrl, isAdmin }: Props) {
+export function UserMenu({ displayName, email, avatarUrl, isAdmin, isPartner }: Props) {
   const signOutFormRef = useRef<HTMLFormElement>(null);
   const initials = initialsFrom(displayName, email);
   const shownName = displayName?.trim() || email?.split("@")[0] || "Sua conta";
@@ -83,6 +84,17 @@ export function UserMenu({ displayName, email, avatarUrl, isAdmin }: Props) {
             <UserIcon className="size-4 text-scriba-ink-soft" />
             Meu perfil
           </DropdownMenuItem>
+          {/* Sem este item o parceiro só chega ao painel digitando a URL —
+              o admin manda o link uma vez e depois a área some do mundo dele. */}
+          {isPartner ? (
+            <DropdownMenuItem
+              render={<Link href="/partners" />}
+              className="rounded-xl px-3 py-2.5 text-[13px] font-medium text-scriba-ink-strong focus:bg-scriba-surface"
+            >
+              <Handshake className="size-4 text-scriba-ink-soft" />
+              Área do parceiro
+            </DropdownMenuItem>
+          ) : null}
           {isAdmin ? (
             <DropdownMenuItem
               render={<Link href="/admin" />}

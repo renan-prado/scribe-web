@@ -22,6 +22,17 @@ const BodySchema = z
     /** Mês de referência (AAAA-MM-DD, dia 1). Só rótulo. */
     period: z.string().regex(/^\d{4}-\d{2}-\d{2}$/),
     note: z.string().trim().max(500).nullable().optional(),
+    // O comprovante mora fora daqui (Drive, banco) — guardamos o endereço.
+    // Só https, e o mesmo CHECK existe na coluna: um "mandei no zap" salvo
+    // neste campo vira um botão quebrado no painel do parceiro.
+    receiptUrl: z
+      .string()
+      .trim()
+      .max(2000)
+      .url()
+      .startsWith("https://", "o link do comprovante precisa ser https")
+      .nullable()
+      .optional(),
   })
   .strict();
 
@@ -44,6 +55,7 @@ export async function POST(request: Request, { params }: { params: Promise<{ id:
       partnerId: guarded.id,
       period: parsed.data.period,
       note: parsed.data.note ?? null,
+      receiptUrl: parsed.data.receiptUrl ?? null,
     });
     if (!result) {
       return NextResponse.json({ error: "nothing_due" }, { status: 409 });

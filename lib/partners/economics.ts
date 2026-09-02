@@ -44,6 +44,18 @@ export const DEFAULT_COMMISSION_BPS = 3000;
 export const DEFAULT_SIGNUP_BONUS_COINS = 150;
 
 /**
+ * Mesada mensal padrão do PRÓPRIO parceiro — ~100 min de gravação com live.
+ *
+ * Mora aqui, e não em `allowance.ts`, porque o cadastro do admin é um client
+ * component: importar a constante de um módulo `server-only` arrasta o cliente
+ * do Supabase com service-role para o bundle do navegador, e o build recusa —
+ * corretamente. A regra vale para toda constante desta família: número que a
+ * tela precisa ler fica no arquivo client-safe; quem CREDITA fica no
+ * server-only.
+ */
+export const DEFAULT_PARTNER_MONTHLY_COINS = 500;
+
+/**
  * Taxa do Stripe para cartão nacional. Sai da nossa margem — o parceiro é
  * comissionado sobre o valor cheio da mensalidade, porque é o número que ele
  * consegue conferir sozinho a partir do preço público, e essa conferência é o

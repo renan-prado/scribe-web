@@ -158,7 +158,10 @@ export type GrantReason =
   // quem chegou pelo link ou pelo código de um parceiro. Some às moedas de
   // boas-vindas (que vêm do DEFAULT da coluna e não geram lançamento) —
   // este, como todo crédito, é uma linha explícita no ledger.
-  | "partner_bonus";
+  | "partner_bonus"
+  // Mesada mensal do PRÓPRIO parceiro, para ele conseguir usar o produto que
+  // divulga. Renovada por check preguiçoso — ver lib/partners/allowance.ts.
+  | "partner_allowance";
 
 /**
  * ÚNICA porta de crédito da aplicação.

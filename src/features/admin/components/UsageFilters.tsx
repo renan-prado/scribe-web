@@ -9,6 +9,7 @@ import {
   Select,
   SelectContent,
   SelectItem,
+  type SelectOption,
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
@@ -19,20 +20,24 @@ type Props = {
   current: { range: string; userId: string; route: string; sessionId: string; mode: string };
 };
 
-const RANGE_LABELS: Record<string, string> = {
-  "7d": "Últimos 7 dias",
-  "30d": "Últimos 30 dias",
-  "90d": "Últimos 90 dias",
-  all: "Todo o histórico",
-};
-
-const MODE_LABELS: Record<string, string> = {
-  live: "Com live",
-  audio_only: "Sem live",
-  transcript_only: "Transcrição",
-};
-
 const ANY = "__any__";
+
+// Cada Select declara suas opções UMA vez e passa a mesma lista para o `items`
+// do Root e para o map dos itens. Sem o `items`, o gatilho mostra o valor cru
+// ("30d", "audio_only") em vez do rótulo — ver o cabeçalho de shared/ui/select.
+const RANGE_OPTIONS: SelectOption[] = [
+  { value: "7d", label: "Últimos 7 dias" },
+  { value: "30d", label: "Últimos 30 dias" },
+  { value: "90d", label: "Últimos 90 dias" },
+  { value: "all", label: "Todo o histórico" },
+];
+
+const MODE_OPTIONS: SelectOption[] = [
+  { value: ANY, label: "Todos" },
+  { value: "live", label: "Com live" },
+  { value: "audio_only", label: "Sem live" },
+  { value: "transcript_only", label: "Transcrição" },
+];
 
 export function UsageFilters({ users, routes, current }: Props) {
   const router = useRouter();
@@ -44,6 +49,18 @@ export function UsageFilters({ users, routes, current }: Props) {
   const [isPending, startTransition] = useTransition();
 
   const activeSessionId = current.sessionId?.trim() ?? "";
+
+  const userOptions: SelectOption[] = [
+    { value: ANY, label: "Todos" },
+    ...users.map((u) => ({
+      value: u.id,
+      label: u.displayName?.trim() || u.email || u.id.slice(0, 8),
+    })),
+  ];
+  const routeOptions: SelectOption[] = [
+    { value: ANY, label: "Todas" },
+    ...routes.map((r) => ({ value: r, label: r })),
+  ];
 
   function apply() {
     const params = new URLSearchParams(searchParams.toString());
@@ -85,14 +102,14 @@ export function UsageFilters({ users, routes, current }: Props) {
       <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-5 lg:items-end">
         <div className="flex flex-col gap-1.5">
           <Label>Período</Label>
-          <Select value={range} onValueChange={(v) => setRange(v ?? "30d")}>
+          <Select items={RANGE_OPTIONS} value={range} onValueChange={(v) => setRange(v ?? "30d")}>
             <SelectTrigger className="w-full">
               <SelectValue />
             </SelectTrigger>
             <SelectContent>
-              {Object.entries(RANGE_LABELS).map(([k, v]) => (
-                <SelectItem key={k} value={k}>
-                  {v}
+              {RANGE_OPTIONS.map((o) => (
+                <SelectItem key={o.value} value={o.value}>
+                  {o.label}
                 </SelectItem>
               ))}
             </SelectContent>
@@ -102,6 +119,7 @@ export function UsageFilters({ users, routes, current }: Props) {
         <div className="flex flex-col gap-1.5">
           <Label>Usuário</Label>
           <Select
+            items={userOptions}
             value={userId === ANY ? undefined : userId}
             onValueChange={(v) => setUserId(v ?? ANY)}
           >
@@ -109,10 +127,9 @@ export function UsageFilters({ users, routes, current }: Props) {
               <SelectValue placeholder="Todos" />
             </SelectTrigger>
             <SelectContent>
-              <SelectItem value={ANY}>Todos</SelectItem>
-              {users.map((u) => (
-                <SelectItem key={u.id} value={u.id}>
-                  {u.displayName?.trim() || u.email || u.id.slice(0, 8)}
+              {userOptions.map((o) => (
+                <SelectItem key={o.value} value={o.value}>
+                  {o.label}
                 </SelectItem>
               ))}
             </SelectContent>
@@ -122,6 +139,7 @@ export function UsageFilters({ users, routes, current }: Props) {
         <div className="flex flex-col gap-1.5">
           <Label>Rota</Label>
           <Select
+            items={routeOptions}
             value={route === ANY ? undefined : route}
             onValueChange={(v) => setRoute(v ?? ANY)}
           >
@@ -129,10 +147,9 @@ export function UsageFilters({ users, routes, current }: Props) {
               <SelectValue placeholder="Todas" />
             </SelectTrigger>
             <SelectContent>
-              <SelectItem value={ANY}>Todas</SelectItem>
-              {routes.map((r) => (
-                <SelectItem key={r} value={r}>
-                  {r}
+              {routeOptions.map((o) => (
+                <SelectItem key={o.value} value={o.value}>
+                  {o.label}
                 </SelectItem>
               ))}
             </SelectContent>
@@ -141,15 +158,18 @@ export function UsageFilters({ users, routes, current }: Props) {
 
         <div className="flex flex-col gap-1.5">
           <Label>Modo</Label>
-          <Select value={mode === ANY ? undefined : mode} onValueChange={(v) => setMode(v ?? ANY)}>
+          <Select
+            items={MODE_OPTIONS}
+            value={mode === ANY ? undefined : mode}
+            onValueChange={(v) => setMode(v ?? ANY)}
+          >
             <SelectTrigger className="w-full">
               <SelectValue placeholder="Todos" />
             </SelectTrigger>
             <SelectContent>
-              <SelectItem value={ANY}>Todos</SelectItem>
-              {Object.entries(MODE_LABELS).map(([k, v]) => (
-                <SelectItem key={k} value={k}>
-                  {v}
+              {MODE_OPTIONS.map((o) => (
+                <SelectItem key={o.value} value={o.value}>
+                  {o.label}
                 </SelectItem>
               ))}
             </SelectContent>

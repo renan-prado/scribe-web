@@ -17,10 +17,23 @@ import {
   Select,
   SelectContent,
   SelectItem,
+  type SelectOption,
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
 import type { AdminUser } from "@/lib/db/admin/users";
+
+// `items` no Root é o que faz o gatilho mostrar o rótulo em vez do valor cru
+// — sem ele, "Situação" exibia "active". Ver shared/ui/select.
+const ROLE_OPTIONS: SelectOption[] = [
+  { value: "user", label: "Usuário" },
+  { value: "admin", label: "Administrador" },
+];
+
+const STATUS_OPTIONS: SelectOption[] = [
+  { value: "active", label: "Ativo" },
+  { value: "inactive", label: "Desativado" },
+];
 
 type Props = {
   user: AdminUser;
@@ -110,6 +123,7 @@ export function EditUserDialog({ user, currentUserId, onClose, onSaved }: Props)
           <div className="flex flex-col gap-1.5">
             <Label>Papel</Label>
             <Select
+              items={ROLE_OPTIONS}
               value={role}
               onValueChange={(v) => setRole(v as "user" | "admin")}
               disabled={isSelf}
@@ -118,8 +132,11 @@ export function EditUserDialog({ user, currentUserId, onClose, onSaved }: Props)
                 <SelectValue />
               </SelectTrigger>
               <SelectContent>
-                <SelectItem value="user">user</SelectItem>
-                <SelectItem value="admin">admin</SelectItem>
+                {ROLE_OPTIONS.map((o) => (
+                  <SelectItem key={o.value} value={o.value}>
+                    {o.label}
+                  </SelectItem>
+                ))}
               </SelectContent>
             </Select>
             {isSelf ? (
@@ -131,6 +148,7 @@ export function EditUserDialog({ user, currentUserId, onClose, onSaved }: Props)
           <div className="flex flex-col gap-1.5">
             <Label>Status</Label>
             <Select
+              items={STATUS_OPTIONS}
               value={isActive ? "active" : "inactive"}
               onValueChange={(v) => setIsActive(v === "active")}
               disabled={isSelf}
@@ -139,8 +157,11 @@ export function EditUserDialog({ user, currentUserId, onClose, onSaved }: Props)
                 <SelectValue />
               </SelectTrigger>
               <SelectContent>
-                <SelectItem value="active">Ativo</SelectItem>
-                <SelectItem value="inactive">Desativado</SelectItem>
+                {STATUS_OPTIONS.map((o) => (
+                  <SelectItem key={o.value} value={o.value}>
+                    {o.label}
+                  </SelectItem>
+                ))}
               </SelectContent>
             </Select>
           </div>

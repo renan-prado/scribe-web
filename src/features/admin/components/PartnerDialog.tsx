@@ -17,11 +17,19 @@ import {
   Select,
   SelectContent,
   SelectItem,
+  type SelectOption,
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
+import { formatDoc, isValidDoc, normalizeDoc, onlyDigits } from "@/lib/br/documento";
 import type { AdminPartnerWithStats } from "@/lib/db/admin/partners";
-import { DEFAULT_COMMISSION_BPS, DEFAULT_SIGNUP_BONUS_COINS } from "@/lib/partners/economics";
+import {
+  DEFAULT_COMMISSION_BPS,
+  DEFAULT_PARTNER_MONTHLY_COINS,
+  DEFAULT_SIGNUP_BONUS_COINS,
+} from "@/lib/partners/economics";
+import { normalizeHandle, SOCIAL_LABELS, SOCIAL_NETWORKS } from "@/lib/partners/socials";
+import { cn } from "@/lib/utils";
 import { CommissionSimulator } from "./CommissionSimulator";
 
 /**
@@ -44,7 +52,13 @@ const ERROR_MESSAGES: Record<string, string> = {
   slug_or_email_taken: "Já existe um parceiro com esse código ou e-mail.",
   create_failed: "Não consegui criar o parceiro.",
   update_failed: "Não consegui salvar as alterações.",
+  invalid_doc: "CPF ou CNPJ inválido — confira os dígitos.",
 };
+
+const STATUS_OPTIONS: SelectOption[] = [
+  { value: "active", label: "Ativo" },
+  { value: "suspended", label: "Suspenso" },
+];
 
 export function PartnerDialog({ partner, costPerThousandCoinsCents, onClose, onSaved }: Props) {
   const isNew = partner === null;
@@ -52,10 +66,10 @@ export function PartnerDialog({ partner, costPerThousandCoinsCents, onClose, onS
   const [displayName, setDisplayName] = useState(partner?.displayName ?? "");
   const [invitedEmail, setInvitedEmail] = useState(partner?.invitedEmail ?? "");
   const [slug, setSlug] = useState(partner?.slug ?? "");
-  const [instagram, setInstagram] = useState(partner?.socials.instagram ?? "");
-  const [tiktok, setTiktok] = useState(partner?.socials.tiktok ?? "");
-  const [youtube, setYoutube] = useState(partner?.socials.youtube ?? "");
-  const [doc, setDoc] = useState(partner?.doc ?? "");
+  const [socials, setSocials] = useState<Record<string, string>>(() =>
+    Object.fromEntries(SOCIAL_NETWORKS.map((n) => [n, partner?.socials[n] ?? ""]))
+  );
+  const [doc, setDoc] = useState(partner?.doc ? formatDoc(partner.doc) : "");
   const [pixKey, setPixKey] = useState(partner?.pixKey ?? "");
   const [ratePct, setRatePct] = useState(
     String((partner?.commissionRateBps ?? DEFAULT_COMMISSION_BPS) / 100)
@@ -63,10 +77,14 @@ export function PartnerDialog({ partner, costPerThousandCoinsCents, onClose, onS
   const [bonusCoins, setBonusCoins] = useState(
     String(partner?.signupBonusCoins ?? DEFAULT_SIGNUP_BONUS_COINS)
   );
+  const [monthlyCoins, setMonthlyCoins] = useState(
+    String(partner?.monthlyCoins ?? DEFAULT_PARTNER_MONTHLY_COINS)
+  );
   const [budget, setBudget] = useState(
     partner?.bonusBudgetCoins != null ? String(partner.bonusBudgetCoins) : ""
   );
   const [status, setStatus] = useState<"active" | "suspended">(partner?.status ?? "active");
+  const [docBlurred, setDocBlurred] = useState(false);
   const [saving, setSaving] = useState(false);
 
   // Clamp para a simulação não quebrar enquanto o campo está vazio ou no meio
@@ -74,11 +92,31 @@ export function PartnerDialog({ partner, costPerThousandCoinsCents, onClose, onS
   const rateBps = Math.min(10_000, Math.max(0, Math.round(Number(ratePct || 0) * 100)));
   const bonus = Math.max(0, Math.round(Number(bonusCoins || 0)));
 
+  // O documento é opcional, mas um documento ERRADO é pior que nenhum: o PIX
+  // sai, cai em lugar nenhum, e a gente só descobre pela reclamação. Vazio
+  // passa; preenchido tem de fechar.
+  const docDigits = onlyDigits(doc);
+  const docComplete = docDigits.length === 11 || docDigits.length === 14;
+  const docValid = docComplete && isValidDoc(doc);
+  const docBlocking = docDigits.length > 0 && !docValid;
+  // A mensagem só aparece quando já dá para julgar — ao completar os dígitos
+  // ou ao sair do campo. Gritar "faltam 10 dígitos" na primeira tecla é ruído.
+  const docError =
+    docBlocking && (docComplete || docBlurred)
+      ? docComplete
+        ? "Dígitos não conferem — confira o número."
+        : "Documento incompleto."
+      : undefined;
+
   // Conversão medida só existe quando já houve cadastros por este parceiro.
   const measuredConversion =
     partner && partner.stats.signups > 0 ? partner.stats.conversionRate : null;
 
   async function handleSave() {
+    if (docBlocking) {
+      toast.error(ERROR_MESSAGES.invalid_doc);
+      return;
+    }
     setSaving(true);
     try {
       const body = {
@@ -86,16 +124,13 @@ export function PartnerDialog({ partner, costPerThousandCoinsCents, onClose, onS
         slug: slug.trim(),
         displayName: displayName.trim(),
         socials: Object.fromEntries(
-          [
-            ["instagram", instagram.trim()],
-            ["tiktok", tiktok.trim()],
-            ["youtube", youtube.trim()],
-          ].filter(([, v]) => v)
+          SOCIAL_NETWORKS.map((n) => [n, normalizeHandle(socials[n] ?? "")]).filter(([, v]) => v)
         ),
-        doc: doc.trim() || null,
+        doc: normalizeDoc(doc),
         pixKey: pixKey.trim() || null,
         commissionRateBps: rateBps,
         signupBonusCoins: bonus,
+        monthlyCoins: Math.max(0, Math.round(Number(monthlyCoins || 0))),
         bonusBudgetCoins: budget.trim() ? Math.max(0, Math.round(Number(budget))) : null,
         status,
       };
@@ -166,27 +201,41 @@ export function PartnerDialog({ partner, costPerThousandCoinsCents, onClose, onS
           </div>
 
           <div className="grid gap-3 sm:grid-cols-3">
-            <Field label="Instagram" id="p-ig">
-              <Input id="p-ig" value={instagram} onChange={(e) => setInstagram(e.target.value)} />
-            </Field>
-            <Field label="TikTok" id="p-tt">
-              <Input id="p-tt" value={tiktok} onChange={(e) => setTiktok(e.target.value)} />
-            </Field>
-            <Field label="YouTube" id="p-yt">
-              <Input id="p-yt" value={youtube} onChange={(e) => setYoutube(e.target.value)} />
-            </Field>
+            {SOCIAL_NETWORKS.map((network) => (
+              <Field key={network} label={SOCIAL_LABELS[network]} id={`p-${network}`}>
+                <HandleInput
+                  id={`p-${network}`}
+                  value={socials[network] ?? ""}
+                  onChange={(v) => setSocials((prev) => ({ ...prev, [network]: v }))}
+                />
+              </Field>
+            ))}
           </div>
 
           <div className="grid gap-3 sm:grid-cols-2">
-            <Field label="CPF / CNPJ" id="p-doc">
-              <Input id="p-doc" value={doc} onChange={(e) => setDoc(e.target.value)} />
+            <Field
+              label="CPF / CNPJ"
+              id="p-doc"
+              hint="Opcional. Máscara e dígito verificador conferidos aqui."
+              error={docError}
+            >
+              <Input
+                id="p-doc"
+                inputMode="numeric"
+                autoComplete="off"
+                value={doc}
+                onChange={(e) => setDoc(formatDoc(e.target.value))}
+                onBlur={() => setDocBlurred(true)}
+                aria-invalid={docError ? true : undefined}
+                placeholder="000.000.000-00"
+              />
             </Field>
-            <Field label="Chave PIX" id="p-pix" hint="Sem ela não há como pagar.">
+            <Field label="Chave PIX" id="p-pix">
               <Input id="p-pix" value={pixKey} onChange={(e) => setPixKey(e.target.value)} />
             </Field>
           </div>
 
-          <div className="grid gap-3 sm:grid-cols-3">
+          <div className="grid gap-3 sm:grid-cols-2">
             <Field label="Comissão (%)" id="p-rate">
               <Input
                 id="p-rate"
@@ -198,7 +247,24 @@ export function PartnerDialog({ partner, costPerThousandCoinsCents, onClose, onS
                 onChange={(e) => setRatePct(e.target.value)}
               />
             </Field>
-            <Field label="Bônus (moedas)" id="p-bonus">
+            <Field
+              label="Mesada (moedas/mês)"
+              id="p-monthly"
+              hint="Para ele usar o produto que divulga. 0 = sem mesada."
+            >
+              <Input
+                id="p-monthly"
+                type="number"
+                min={0}
+                step={50}
+                value={monthlyCoins}
+                onChange={(e) => setMonthlyCoins(e.target.value)}
+              />
+            </Field>
+          </div>
+
+          <div className="grid gap-3 sm:grid-cols-2">
+            <Field label="Bônus ao indicado (moedas)" id="p-bonus">
               <Input
                 id="p-bonus"
                 type="number"
@@ -229,13 +295,20 @@ export function PartnerDialog({ partner, costPerThousandCoinsCents, onClose, onS
           />
 
           <Field label="Situação" id="p-status">
-            <Select value={status} onValueChange={(v) => setStatus(v as "active" | "suspended")}>
+            <Select
+              items={STATUS_OPTIONS}
+              value={status}
+              onValueChange={(v) => setStatus(v as "active" | "suspended")}
+            >
               <SelectTrigger className="w-full">
                 <SelectValue />
               </SelectTrigger>
               <SelectContent>
-                <SelectItem value="active">Ativo</SelectItem>
-                <SelectItem value="suspended">Suspenso</SelectItem>
+                {STATUS_OPTIONS.map((o) => (
+                  <SelectItem key={o.value} value={o.value}>
+                    {o.label}
+                  </SelectItem>
+                ))}
               </SelectContent>
             </Select>
           </Field>
@@ -251,7 +324,10 @@ export function PartnerDialog({ partner, costPerThousandCoinsCents, onClose, onS
           <Button variant="ghost" onClick={onClose} disabled={saving}>
             Cancelar
           </Button>
-          <Button onClick={handleSave} disabled={saving || !displayName.trim() || !slug.trim()}>
+          <Button
+            onClick={handleSave}
+            disabled={saving || !displayName.trim() || !slug.trim() || docBlocking}
+          >
             {saving ? "Salvando…" : isNew ? "Cadastrar" : "Salvar"}
           </Button>
         </DialogFooter>
@@ -260,22 +336,68 @@ export function PartnerDialog({ partner, costPerThousandCoinsCents, onClose, onS
   );
 }
 
+/**
+ * Campo de @ com o arroba desenhado FORA do input.
+ *
+ * O arroba é parte do endereço na fala ("arroba joão") e não do dado — o que
+ * guardamos é só o handle. Deixá-lo como afixo visual resolve os dois lados:
+ * quem digita vê o formato certo, e quem cola a URL inteira do Instagram não
+ * precisa saber que ela vai ser reduzida (a normalização faz isso ao salvar).
+ */
+function HandleInput({
+  id,
+  value,
+  onChange,
+}: {
+  id: string;
+  value: string;
+  onChange: (value: string) => void;
+}) {
+  return (
+    <div
+      className={cn(
+        "flex h-9 items-center rounded-lg border border-input bg-transparent pl-2.5 transition-colors",
+        "focus-within:border-ring focus-within:ring-3 focus-within:ring-ring/50"
+      )}
+    >
+      <span aria-hidden className="select-none pr-0.5 text-sm text-scriba-ink-mute">
+        @
+      </span>
+      <Input
+        id={id}
+        value={value}
+        onChange={(e) => onChange(e.target.value)}
+        autoCapitalize="none"
+        spellCheck={false}
+        className="h-full border-none bg-transparent px-0 shadow-none focus-visible:ring-0"
+        placeholder="joao"
+      />
+    </div>
+  );
+}
+
 function Field({
   label,
   id,
   hint,
+  error,
   children,
 }: {
   label: string;
   id: string;
   hint?: string;
+  error?: string;
   children: React.ReactNode;
 }) {
   return (
     <div className="flex flex-col gap-1.5">
       <Label htmlFor={id}>{label}</Label>
       {children}
-      {hint ? <p className="text-[11px] font-light text-scriba-ink-mute">{hint}</p> : null}
+      {error ? (
+        <p className="text-[11px] font-medium text-scriba-rose-ink">{error}</p>
+      ) : hint ? (
+        <p className="text-[11px] font-light text-scriba-ink-mute">{hint}</p>
+      ) : null}
     </div>
   );
 }

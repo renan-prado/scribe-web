@@ -1,4 +1,5 @@
 import "server-only";
+import { ensurePartnerAllowance } from "@/lib/partners/allowance";
 import { createAdminClient } from "@/lib/supabase/admin";
 import { createClient } from "@/lib/supabase/server";
 
@@ -13,6 +14,12 @@ import { createClient } from "@/lib/supabase/server";
  * do convite com o e-mail do login. É o único momento em que sabemos as duas
  * coisas: o admin cadastra o parceiro antes de ele existir como usuário, e a
  * conta só ganha id quando a pessoa entra pela primeira vez.
+ *
+ * Duas entradas, uma resolução:
+ *   - `getCurrentPartner()` — o painel. Tudo que a tela mostra.
+ *   - `getPartnerNavLink()` — o menu do avatar dentro do app, que só precisa
+ *     saber SE mostra o item. Vem da mesma consulta porque a linha é uma só e
+ *     buscá-la parcialmente não economizaria nada.
  */
 
 export type CurrentPartner = {
@@ -21,8 +28,12 @@ export type CurrentPartner = {
   displayName: string;
   commissionRateBps: number;
   signupBonusCoins: number;
+  monthlyCoins: number;
   pixKey: string | null;
 };
+
+const SELECT =
+  "id, user_id, slug, display_name, commission_rate_bps, signup_bonus_coins, monthly_coins, allowance_month, pix_key";
 
 export async function getCurrentPartner(): Promise<CurrentPartner | null> {
   const supabase = await createClient();
@@ -37,7 +48,7 @@ export async function getCurrentPartner(): Promise<CurrentPartner | null> {
   const admin = createAdminClient();
   const { data, error } = await admin
     .from("partners")
-    .select("id, user_id, slug, display_name, commission_rate_bps, signup_bonus_coins, pix_key")
+    .select(SELECT)
     .or(`user_id.eq.${user.id},invited_email.ilike.${user.email}`)
     .eq("status", "active")
     .maybeSingle();
@@ -59,12 +70,36 @@ export async function getCurrentPartner(): Promise<CurrentPartner | null> {
     }
   }
 
+  // A mesada é conferida aqui porque este é o único ponto por onde todo
+  // parceiro passa — o painel e o menu do app chamam os dois esta resolução.
+  // O `allowance_month` da linha que acabamos de ler decide, sem ida extra ao
+  // banco no caso normal (já creditado neste mês).
+  await ensurePartnerAllowance({
+    partnerId: data.id,
+    userId: user.id,
+    monthlyCoins: data.monthly_coins ?? 0,
+    allowanceMonth: (data.allowance_month as string | null) ?? null,
+  });
+
   return {
     id: data.id,
     slug: data.slug,
     displayName: data.display_name,
     commissionRateBps: data.commission_rate_bps,
     signupBonusCoins: data.signup_bonus_coins,
+    monthlyCoins: data.monthly_coins ?? 0,
     pixKey: data.pix_key,
   };
+}
+
+/**
+ * `true` quando a conta logada é de um parceiro ativo — o que o menu do avatar
+ * precisa saber para oferecer "Área do parceiro".
+ *
+ * Sem isso o parceiro só chega ao painel digitando a URL, que é como ele
+ * estava chegando: o admin manda o link uma vez, e depois disso a área some
+ * do mundo dele.
+ */
+export async function isCurrentUserPartner(): Promise<boolean> {
+  return (await getCurrentPartner()) !== null;
 }

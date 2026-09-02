@@ -71,6 +71,24 @@ O bônus é creditado uma única vez por conta, no momento do cadastro.
 
 ---
 
+## O que o parceiro recebe para usar
+
+Além da comissão, o parceiro tem uma **mesada mensal de moedas** — 500 por
+padrão, configurável por parceiro no cadastro (0 desliga).
+
+A razão é simples e não é generosidade: **quem não usa o produto não consegue
+falar dele**. Um parceiro sem saldo para de gravar, para de ter o que mostrar,
+e o programa morre em silêncio — sem que nada apareça em painel nenhum.
+
+500 moedas equivalem a ~100 minutos no Modo Completo por mês, o suficiente
+para acompanhar os cultos que ele mesmo grava.
+
+As moedas caem sozinhas no começo de cada mês, na primeira vez que o parceiro
+abre o app. Não há acúmulo entre meses: a mesada é uma permissão de uso, não
+um saldo a resgatar.
+
+---
+
 ## Como o parceiro é remunerado
 
 **30% do valor da primeira mensalidade paga por cada pessoa indicada.**
@@ -112,7 +130,12 @@ padrão do programa, e pode ser negociado individualmente.
   deixe o programa.
 
 O parceiro informa chave PIX e CPF/CNPJ no cadastro. Sem esses dados não há
-como pagar.
+como pagar. O CPF/CNPJ é conferido pelo dígito verificador na hora de salvar —
+um documento digitado errado só apareceria quando o PIX não caísse.
+
+Ao registrar o pagamento, quem paga pode anexar o **link do comprovante** (um
+arquivo no Drive, por exemplo). Ele aparece no painel do parceiro junto da
+linha do pagamento. Não há upload: guardamos o endereço, não o arquivo.
 
 ---
 
@@ -122,7 +145,15 @@ como pagar.
 - **Cadastros** — quantas dessas criaram conta.
 - **Assinantes** — quantas viraram assinantes pagantes.
 - **A liberar / disponível / já pago** — em reais.
+  - *A liberar*: dentro da carência de 30 dias.
+  - *Disponível*: passou a carência e ainda não foi pago — é o que sai no
+    próximo PIX.
+  - *Já pago*: quitado, com link do comprovante quando houver.
 - Histórico por mês.
+
+As três seções (divulgação, ganhos e pagamentos) ficam em abas; os valores em
+reais ficam acima delas, sempre visíveis — é a pergunta que traz o parceiro ao
+painel, e escondê-la atrás de um clique seria esconder a resposta.
 
 O painel mostra **apenas números**. Nome, e-mail ou qualquer dado dos usuários
 indicados nunca são exibidos ao parceiro.

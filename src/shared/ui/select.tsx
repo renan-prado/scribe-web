@@ -5,7 +5,38 @@ import { CheckIcon, ChevronDownIcon, ChevronUpIcon } from "lucide-react";
 import type * as React from "react";
 import { cn } from "@/lib/utils";
 
+/**
+ * ARMADILHA, e ela morde toda vez: `<Select.Value />` do base-ui renderiza o
+ * VALOR cru, não o rótulo do item escolhido. Um select de situação mostra
+ * "active" no gatilho e "Ativo" na lista aberta.
+ *
+ * Não é bug do nosso wrapper e não tem conserto dentro dele: os `<SelectItem>`
+ * vivem dentro do Portal e só montam quando a lista abre, então o gatilho não
+ * tem como descobrir sozinho o rótulo antes do primeiro clique.
+ *
+ * As duas saídas suportadas, e todo `Select` do app usa uma delas:
+ *
+ *   1. `items` no Root — o jeito da biblioteca. Declare as opções uma vez e
+ *      passe a mesma lista para o Root e para o map dos itens:
+ *
+ *        const OPTIONS = [{ value: "active", label: "Ativo" }, ...];
+ *        <Select items={OPTIONS} value={v} onValueChange={set}>
+ *          <SelectTrigger><SelectValue /></SelectTrigger>
+ *          <SelectContent>
+ *            {OPTIONS.map((o) => <SelectItem key={o.value} value={o.value}>{o.label}</SelectItem>)}
+ *          </SelectContent>
+ *        </Select>
+ *
+ *   2. `<SelectValue>{(v) => LABELS[v]}</SelectValue>` — função como filho,
+ *      quando o rótulo do gatilho é diferente do da lista.
+ *
+ * Um `<SelectValue />` pelado só está correto quando o valor JÁ É o texto que
+ * se quer ler na tela.
+ */
 const Select = SelectPrimitive.Root;
+
+/** Formato aceito pelo `items` do Root. */
+export type SelectOption<T extends string = string> = { value: T; label: string };
 
 function SelectValue({ className, ...props }: SelectPrimitive.Value.Props) {
   return (

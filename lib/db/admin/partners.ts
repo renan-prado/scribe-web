@@ -27,6 +27,7 @@ export type AdminPartner = {
   pixKey: string | null;
   commissionRateBps: number;
   signupBonusCoins: number;
+  monthlyCoins: number;
   bonusBudgetCoins: number | null;
   bonusGrantedCoins: number;
   status: "active" | "suspended";
@@ -62,6 +63,7 @@ type PartnerRow = {
   pix_key: string | null;
   commission_rate_bps: number;
   signup_bonus_coins: number;
+  monthly_coins: number;
   bonus_budget_coins: number | null;
   bonus_granted_coins: number;
   status: "active" | "suspended";
@@ -69,7 +71,7 @@ type PartnerRow = {
 };
 
 const SELECT =
-  "id, user_id, invited_email, slug, display_name, socials, doc, pix_key, commission_rate_bps, signup_bonus_coins, bonus_budget_coins, bonus_granted_coins, status, created_at";
+  "id, user_id, invited_email, slug, display_name, socials, doc, pix_key, commission_rate_bps, signup_bonus_coins, monthly_coins, bonus_budget_coins, bonus_granted_coins, status, created_at";
 
 function toPartner(row: PartnerRow): AdminPartner {
   return {
@@ -83,6 +85,7 @@ function toPartner(row: PartnerRow): AdminPartner {
     pixKey: row.pix_key,
     commissionRateBps: row.commission_rate_bps,
     signupBonusCoins: row.signup_bonus_coins,
+    monthlyCoins: row.monthly_coins ?? 0,
     bonusBudgetCoins: row.bonus_budget_coins,
     bonusGrantedCoins: row.bonus_granted_coins,
     status: row.status,
@@ -147,6 +150,7 @@ export type PartnerInput = {
   pixKey?: string | null;
   commissionRateBps?: number;
   signupBonusCoins?: number;
+  monthlyCoins?: number;
   bonusBudgetCoins?: number | null;
   status?: "active" | "suspended";
 };
@@ -164,6 +168,7 @@ export async function createPartner(input: PartnerInput): Promise<AdminPartner> 
       pix_key: input.pixKey ?? null,
       commission_rate_bps: input.commissionRateBps,
       signup_bonus_coins: input.signupBonusCoins,
+      monthly_coins: input.monthlyCoins,
       bonus_budget_coins: input.bonusBudgetCoins ?? null,
       status: input.status ?? "active",
     })
@@ -187,6 +192,7 @@ export async function updatePartner(
   if (input.pixKey !== undefined) patch.pix_key = input.pixKey;
   if (input.commissionRateBps !== undefined) patch.commission_rate_bps = input.commissionRateBps;
   if (input.signupBonusCoins !== undefined) patch.signup_bonus_coins = input.signupBonusCoins;
+  if (input.monthlyCoins !== undefined) patch.monthly_coins = input.monthlyCoins;
   if (input.bonusBudgetCoins !== undefined) patch.bonus_budget_coins = input.bonusBudgetCoins;
   if (input.status !== undefined) patch.status = input.status;
 
@@ -232,6 +238,8 @@ export async function registerPayout(args: {
   partnerId: string;
   period: string;
   note?: string | null;
+  /** Link externo do comprovante (Drive, etc). Não é storage nosso. */
+  receiptUrl?: string | null;
 }): Promise<{ amountCents: number; commissions: number } | null> {
   const admin = createAdminClient();
 
@@ -254,6 +262,7 @@ export async function registerPayout(args: {
       period: args.period,
       amount_cents: amountCents,
       note: args.note ?? null,
+      receipt_url: args.receiptUrl ?? null,
     })
     .select("id")
     .single();

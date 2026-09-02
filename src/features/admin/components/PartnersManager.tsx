@@ -3,7 +3,6 @@
 import { Banknote, Pencil, Plus } from "lucide-react";
 import { useRouter } from "next/navigation";
 import { useState } from "react";
-import { toast } from "sonner";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -17,17 +16,28 @@ import {
 } from "@/components/ui/table";
 import { formatBrl } from "@/lib/billing/plans";
 import type { AdminPartnerWithStats } from "@/lib/db/admin/partners";
-import { PAYOUT_MINIMUM_CENTS } from "@/lib/partners/economics";
+import { COMMISSION_HOLD_DAYS, PAYOUT_MINIMUM_CENTS } from "@/lib/partners/economics";
 import { CopyButton } from "./CopyButton";
 import { PartnerDialog } from "./PartnerDialog";
+import { PayoutDialog } from "./PayoutDialog";
 
 /**
  * Lista de parceiros com o funil e o dinheiro de cada um.
  *
- * A coluna "disponível" é a que o operador olha para pagar. O botão de PIX só
- * aparece a partir do mínimo de saque — abaixo disso o valor acumula, e
- * oferecer o botão convidaria a pagar R$ 4 por PIX, que é o que o mínimo
- * existe para evitar.
+ * As três colunas de dinheiro são o mesmo valor em três estágios, e ler uma
+ * pela outra é o erro fácil:
+ *
+ *   A liberar  — comissão nascida há menos de 30 dias. O pagamento que a
+ *                originou ainda pode ser contestado, então o dinheiro existe
+ *                mas não pode sair.
+ *   Disponível — passou a carência e ainda não foi paga. É EXATAMENTE o que
+ *                sai no próximo PIX, e é a única coluna que o operador precisa
+ *                olhar para pagar.
+ *   Pago       — já quitada por um `partner_payouts`.
+ *
+ * O botão de PIX só aparece a partir do mínimo de saque — abaixo disso o valor
+ * acumula, e oferecer o botão convidaria a pagar R$ 4 por PIX, que é o que o
+ * mínimo existe para evitar.
  */
 
 type Props = {
@@ -43,7 +53,7 @@ export function PartnersManager({ initialPartners, costPerThousandCoinsCents, li
   const [search, setSearch] = useState("");
   const [editing, setEditing] = useState<AdminPartnerWithStats | null>(null);
   const [creating, setCreating] = useState(false);
-  const [payingId, setPayingId] = useState<string | null>(null);
+  const [paying, setPaying] = useState<AdminPartnerWithStats | null>(null);
   const router = useRouter();
 
   const term = search.trim().toLowerCase();
@@ -55,47 +65,6 @@ export function PartnersManager({ initialPartners, costPerThousandCoinsCents, li
           p.invitedEmail.toLowerCase().includes(term)
       )
     : initialPartners;
-
-  async function handlePayout(partner: AdminPartnerWithStats) {
-    const amount = formatBrl(partner.stats.availableCents);
-    if (
-      !window.confirm(
-        `Registrar pagamento de ${amount} para ${partner.displayName}?\n\n` +
-          "Confirme apenas DEPOIS de enviar o PIX. As comissões correspondentes " +
-          "serão marcadas como pagas e saem do valor a receber."
-      )
-    ) {
-      return;
-    }
-    setPayingId(partner.id);
-    try {
-      const period = new Date();
-      const res = await fetch(`/api/admin/partners/${partner.id}/payout`, {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({
-          period: `${period.getFullYear()}-${String(period.getMonth() + 1).padStart(2, "0")}-01`,
-        }),
-      });
-      if (!res.ok) {
-        const payload = await res.json().catch(() => ({}));
-        throw new Error(
-          payload.error === "nothing_due"
-            ? "Nada disponível para pagar agora."
-            : (payload.error ?? `HTTP ${res.status}`)
-        );
-      }
-      const result = await res.json();
-      toast.success(
-        `Pagamento de ${formatBrl(result.amountCents)} registrado (${result.commissions} comissões).`
-      );
-      router.refresh();
-    } catch (err) {
-      toast.error((err as Error).message);
-    } finally {
-      setPayingId(null);
-    }
-  }
 
   return (
     <div className="flex flex-col gap-4">
@@ -127,9 +96,18 @@ export function PartnersManager({ initialPartners, costPerThousandCoinsCents, li
                 <TableHead className="text-right">Visitas</TableHead>
                 <TableHead className="text-right">Cadastros</TableHead>
                 <TableHead className="text-right">Assinantes</TableHead>
-                <TableHead className="text-right">A liberar</TableHead>
-                <TableHead className="text-right">Disponível</TableHead>
-                <TableHead className="text-right">Pago</TableHead>
+                <TableHead className="text-right" title="Comissões dentro da carência de 30 dias">
+                  A liberar
+                </TableHead>
+                <TableHead
+                  className="text-right"
+                  title="Já fora da carência e ainda não pago — é o que sai no próximo PIX"
+                >
+                  Disponível
+                </TableHead>
+                <TableHead className="text-right" title="Total já quitado por PIX">
+                  Pago
+                </TableHead>
                 <TableHead />
               </TableRow>
             </TableHeader>
@@ -191,11 +169,11 @@ export function PartnersManager({ initialPartners, costPerThousandCoinsCents, li
                           <Button
                             variant="ghost"
                             size="sm"
-                            onClick={() => handlePayout(p)}
-                            disabled={payingId === p.id}
+                            onClick={() => setPaying(p)}
                             title="Registrar PIX enviado"
                           >
                             <Banknote className="size-4" />
+                            <span className="sr-only">Registrar pagamento</span>
                           </Button>
                         ) : null}
                         <Button variant="ghost" size="sm" onClick={() => setEditing(p)}>
@@ -211,11 +189,25 @@ export function PartnersManager({ initialPartners, costPerThousandCoinsCents, li
         </div>
       )}
 
-      <p className="text-[11.5px] font-light text-scriba-ink-mute">
-        &quot;A liberar&quot; são comissões dentro da carência de 30 dias — o prazo em que um
-        pagamento ainda pode ser contestado. O botão de pagamento aparece a partir de{" "}
-        {formatBrl(PAYOUT_MINIMUM_CENTS)}; abaixo disso o valor acumula para o mês seguinte.
+      <p className="text-[11.5px] font-light leading-[1.6] text-scriba-ink-mute">
+        <strong className="font-semibold">A liberar</strong> são comissões dentro da carência de{" "}
+        {COMMISSION_HOLD_DAYS} dias — o prazo em que o pagamento que as gerou ainda pode ser
+        contestado. <strong className="font-semibold">Disponível</strong> é o que já venceu a
+        carência e ainda não foi pago: é esse o valor que sai no próximo PIX, e é o que o botão de
+        pagamento registra. Ele aparece a partir de {formatBrl(PAYOUT_MINIMUM_CENTS)}; abaixo disso
+        o valor acumula para o mês seguinte.
       </p>
+
+      {paying ? (
+        <PayoutDialog
+          partner={paying}
+          onClose={() => setPaying(null)}
+          onDone={() => {
+            setPaying(null);
+            router.refresh();
+          }}
+        />
+      ) : null}
 
       {(creating || editing) && (
         <PartnerDialog

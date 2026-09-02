@@ -37,6 +37,8 @@ export type PartnerPayoutRow = {
   paidAt: string;
   amountCents: number;
   note: string | null;
+  /** Link externo do comprovante, quando quem pagou registrou um. */
+  receiptUrl: string | null;
 };
 
 export async function loadPartnerPanel(partnerId: string): Promise<{
@@ -55,7 +57,7 @@ export async function loadPartnerPanel(partnerId: string): Promise<{
       .eq("partner_id", partnerId),
     admin
       .from("partner_payouts")
-      .select("paid_at, amount_cents, note")
+      .select("paid_at, amount_cents, note, receipt_url")
       .eq("partner_id", partnerId)
       .order("paid_at", { ascending: false })
       .limit(24),
@@ -111,6 +113,7 @@ export async function loadPartnerPanel(partnerId: string): Promise<{
       paidAt: p.paid_at as string,
       amountCents: p.amount_cents as number,
       note: (p.note as string | null) ?? null,
+      receiptUrl: (p.receipt_url as string | null) ?? null,
     })),
   };
 }

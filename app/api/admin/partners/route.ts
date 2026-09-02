@@ -1,10 +1,12 @@
 import { NextResponse } from "next/server";
 import { z } from "zod";
 import { requireAdmin } from "@/lib/auth/require-admin";
+import { isValidDoc, normalizeDoc } from "@/lib/br/documento";
 import { createPartner, listPartners } from "@/lib/db/admin/partners";
 import { parseJsonBody } from "@/lib/http/validate";
 import { devLog } from "@/lib/log";
 import { normalizeSlug } from "@/lib/partners/cookies";
+import { normalizeSocials } from "@/lib/partners/socials";
 import { enforceRateLimit, RATE_LIMITS } from "@/lib/rate-limit";
 
 export const runtime = "nodejs";
@@ -34,13 +36,36 @@ export const PartnerBodySchema = z
     invitedEmail: z.string().email().max(320),
     slug: SlugSchema,
     displayName: z.string().trim().min(1).max(120),
-    socials: z.record(z.string(), z.string().trim().max(200)).optional(),
-    doc: z.string().trim().max(40).nullable().optional(),
+    // O handle chega já normalizado pela tela, mas normalizamos DE NOVO aqui:
+    // a rota é a fronteira, e um `curl` com a URL inteira do Instagram gravaria
+    // um valor que o painel não consegue transformar em link.
+    socials: z
+      .record(z.string(), z.string().trim().max(200))
+      .optional()
+      .transform((v) => (v ? normalizeSocials(v) : v)),
+    // Só dígitos no banco, e o dígito verificador tem de fechar: um PIX
+    // enviado para documento errado não volta sozinho.
+    doc: z
+      .string()
+      .trim()
+      .max(40)
+      .nullable()
+      .optional()
+      .transform((v, ctx) => {
+        const digits = normalizeDoc(v);
+        if (digits === null) return null;
+        if (!isValidDoc(digits)) {
+          ctx.addIssue({ code: "custom", message: "CPF ou CNPJ inválido" });
+          return z.NEVER;
+        }
+        return digits;
+      }),
     pixKey: z.string().trim().max(140).nullable().optional(),
     // Teto em 100%: o simulador avisa muito antes disso, mas nada aqui deveria
     // aceitar um número que o CHECK do banco recusaria.
     commissionRateBps: z.number().int().min(0).max(10_000).optional(),
     signupBonusCoins: z.number().int().min(0).max(100_000).optional(),
+    monthlyCoins: z.number().int().min(0).max(100_000).optional(),
     bonusBudgetCoins: z.number().int().min(0).nullable().optional(),
     status: z.enum(["active", "suspended"]).optional(),
   })

@@ -6,14 +6,20 @@ import { UserMenu } from "@/features/auth/components/UserMenu";
 import { CoinBalance } from "@/features/coins/components/CoinBalance";
 import { NewRecordingDialog } from "@/features/session/components/NewRecordingDialog";
 import { isCurrentUserAdmin } from "@/lib/auth/require-admin";
+import { isCurrentUserPartner } from "@/lib/auth/require-partner";
 import { INITIAL_COIN_BALANCE } from "@/lib/coins/pricing";
 import { getCurrentBalance } from "@/lib/db/coins";
 import { getCurrentProfile } from "@/lib/db/profiles";
 
 export default async function AppLayout({ children }: { children: ReactNode }) {
-  const [profile, isAdmin, coinBalance] = await Promise.all([
+  // `isCurrentUserPartner` também é o ponto onde a mesada mensal de moedas do
+  // parceiro é conferida e creditada — ver lib/partners/allowance.ts. Fica
+  // aqui, e não numa rota, porque é o único caminho por onde todo parceiro
+  // passa ao usar o app.
+  const [profile, isAdmin, isPartner, coinBalance] = await Promise.all([
     getCurrentProfile().catch(() => null),
     isCurrentUserAdmin().catch(() => false),
+    isCurrentUserPartner().catch(() => false),
     getCurrentBalance().catch(() => null),
   ]);
   const initialBalance = coinBalance ?? INITIAL_COIN_BALANCE;
@@ -37,6 +43,7 @@ export default async function AppLayout({ children }: { children: ReactNode }) {
                   email={profile.email ?? null}
                   avatarUrl={profile.avatarUrl ?? null}
                   isAdmin={isAdmin}
+                  isPartner={isPartner}
                 />
               ) : null}
             </div>

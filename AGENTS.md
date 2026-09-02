@@ -47,7 +47,9 @@ app/
   layout.tsx, globals.css
 components/ui/                  — shadcn primitives (Dialog, DropdownMenu, Button)
 lib/
-  auth/require-partner.ts       — gate do /partners + vínculo parceiro↔conta na 1ª visita
+  auth/require-partner.ts       — gate do /partners, vínculo parceiro↔conta na 1ª visita
+                                  e o ponto onde a mesada mensal é conferida
+  br/documento.ts               — CPF/CNPJ: máscara + dígito verificador (client-safe)
   billing/plans.ts              — catálogo CLIENT-SAFE (nome, moedas, preço de tela)
   billing/catalog.ts            — server-only: chave↔Price ID e Price ID↔moedas
   billing/stripe.ts             — cliente Stripe (null se não configurado) + helpers
@@ -59,6 +61,8 @@ lib/
   db/admin/partners.ts          — CRUD + registerPayout (carimba as comissões pagas)
   partners/cookies.ts           — nomes, prazos e opções dos cookies de indicação
   partners/economics.ts         — a conta do programa (client-safe, fonte única)
+  partners/allowance.ts         — server-only: mesada mensal de moedas do parceiro
+  partners/socials.ts           — normaliza @handle (tira arroba, domínio, query)
   deploy.ts                     — IS_PRODUCTION_DEPLOY (VERCEL_ENV === "production")
   bible/detect.ts               — layer-1 regex-gate (cheap "is there any bible mention?")
   bible/guard.ts                — layer-2 weighted-signal guard (scoreBibleGuard + currentReading)
@@ -78,6 +82,8 @@ src/features/billing/
 src/features/partners/
   components/ReferralField.tsx  — campo de código na tela de entrada
   components/ReferralLinkCard.tsx
+  components/PartnerTabs.tsx    — as três seções do painel (recebe painéis do server)
+  components/RefreshPanelButton.tsx
 src/features/session/
   components/*.tsx              — every UI piece of the recording page (Feed + FeedItemCard
                                   drive the live view; SummaryView renders the post-stop
@@ -137,6 +143,23 @@ The app is light/dark via a single `.dark` class on `<html>` — there are no pe
 ## Icon rules
 
 - **The `Sparkles` icon from `lucide-react` is BANNED.** Do not import or render it anywhere. If you need a decorative accent, use the yellow hex-shape (`clip-path:polygon(50%_0,100%_25%,100%_75%,50%_100%,0_75%,0_25%)` on a `bg-scriba-yellow` block) already used elsewhere in the app.
+
+## Select — o rótulo não vem de graça
+
+`<SelectValue />` do base-ui renderiza o **valor cru**, não o rótulo do item.
+Um select de situação mostra "active" no gatilho e "Ativo" na lista aberta, e
+o bug reaparece em cada `Select` novo porque a composição parece completa.
+
+Não tem conserto dentro do nosso wrapper: os `<SelectItem>` moram no Portal e
+só montam quando a lista abre, então o gatilho não conhece o rótulo antes do
+primeiro clique. As duas saídas — e todo `Select` do app usa uma delas:
+
+1. `items={OPTIONS}` no Root, com a MESMA lista alimentando o map dos itens.
+2. `<SelectValue>{(v) => LABELS[v]}</SelectValue>`, quando o rótulo do gatilho
+   difere do da lista.
+
+`<SelectValue />` pelado só está certo quando o valor JÁ É o texto da tela.
+Detalhes no cabeçalho de `src/shared/ui/select.tsx`.
 
 ## Marca — a pena mora em um lugar só
 
@@ -322,6 +345,28 @@ As regras abaixo existem porque cada uma delas já foi um bug possível.
 - **`lib/partners/economics.ts` é a ÚNICA implementação da conta.** Simulador
   do admin, painel do parceiro e as tabelas do doc leem dela. O custo por
   moeda é sempre MEDIDO (usage + câmbio), nunca constante.
+- **A mesada do parceiro é crédito, logo passa por `grant_coins`.**
+  `lib/partners/allowance.ts`, renovação PREGUIÇOSA (sem cron): o crédito sai
+  quando o parceiro aparece, disparado por `getCurrentPartner()` — que o
+  layout de `(app)` chama para decidir o item "Área do parceiro" no menu, e é
+  por isso o único caminho por onde todo parceiro passa. Duas travas, nesta
+  ordem: `partners.allowance_month` (comparação em memória, evita ir ao banco
+  em toda visita) e `coin_transactions.external_ref` UNIQUE
+  (`partner_allowance:<id>:<AAAA-MM>` — a trava de verdade). Discordando as
+  duas, quem manda é o ledger. A função **nunca lança**: ela roda no caminho
+  de render de todas as páginas do app, e falhar em creditar cortesia não pode
+  derrubar quem só queria abrir o feed.
+- **Número que a TELA lê fica em `economics.ts`, não em `allowance.ts`.** O
+  cadastro do admin é client component; importar uma constante de um módulo
+  `server-only` arrasta o Supabase com service-role para o bundle do navegador
+  e o build recusa — corretamente. Foi exatamente isso que aconteceu com
+  `DEFAULT_PARTNER_MONTHLY_COINS`.
+- **CPF/CNPJ é validado nas DUAS pontas** (`lib/br/documento.ts`), e o banco
+  guarda só os dígitos. Máscara é apresentação: gravada, "123.456.789-09" e
+  "12345678909" viram duas pessoas na hora de conferir um pagamento.
+- **O comprovante do PIX é um LINK, não um upload.** `partner_payouts.receipt_url`,
+  https obrigatório num CHECK da coluna e no schema da rota — um "mandei no
+  zap" salvo ali vira botão quebrado no painel do parceiro.
 
 ## Créditos durante a gravação
 
@@ -329,6 +374,8 @@ Acabar o saldo no meio de um sermão **congela** a captura, não a encerra —
 ver `useCoinGuard` (`src/features/partners/
   components/ReferralField.tsx  — campo de código na tela de entrada
   components/ReferralLinkCard.tsx
+  components/PartnerTabs.tsx    — as três seções do painel (recebe painéis do server)
+  components/RefreshPanelButton.tsx
 src/features/session/hooks/`), usado pelos três modos.
 Fluxo: aviso em 5 min e 2 min restantes → ao zerar, `pause()` + `PausedOverlay`
 com `outOfCoins` → o usuário compra em **aba nova** (sair da página mataria o
@@ -364,6 +411,8 @@ desfazer sem perceber.
 - **A LP NÃO importa componentes de `src/features/partners/
   components/ReferralField.tsx  — campo de código na tela de entrada
   components/ReferralLinkCard.tsx
+  components/PartnerTabs.tsx    — as três seções do painel (recebe painéis do server)
+  components/RefreshPanelButton.tsx
 src/features/session/` que sejam
   `"use client"`.** As telas dentro dos mockups de celular são markup estático
   em `src/shared/components/LandingMocks.tsx`. Antes elas montavam o `<Feed>` e
@@ -407,12 +456,18 @@ import estático — que também traz `width`/`height` de graça, sem CLS.
 - **New UI element for the session page**: put it under `src/features/partners/
   components/ReferralField.tsx  — campo de código na tela de entrada
   components/ReferralLinkCard.tsx
+  components/PartnerTabs.tsx    — as três seções do painel (recebe painéis do server)
+  components/RefreshPanelButton.tsx
 src/features/session/components/`. Keep `app/(app)/recording/[id]/live/page.tsx` as pure orchestration. Pure helpers go to `src/features/partners/
   components/ReferralField.tsx  — campo de código na tela de entrada
   components/ReferralLinkCard.tsx
+  components/PartnerTabs.tsx    — as três seções do painel (recebe painéis do server)
+  components/RefreshPanelButton.tsx
 src/features/session/lib/`; reusable stateful behaviour goes to `src/features/partners/
   components/ReferralField.tsx  — campo de código na tela de entrada
   components/ReferralLinkCard.tsx
+  components/PartnerTabs.tsx    — as três seções do painel (recebe painéis do server)
+  components/RefreshPanelButton.tsx
 src/features/session/hooks/`.
 - **New env var**: add to the Zod schema in `lib/env/server.ts` (or `client.ts`) — this is intentionally strict so a missing var fails at boot, not on the first request. As variáveis do Stripe são a exceção: ficam `.optional()` para o app subir sem cobrança configurada, e as rotas de billing respondem 503 `billing_unavailable`.
 - **Nova rota que mexe em moedas**: débito passa por `chargeCoins` (`lib/db/coins.ts`); crédito NÃO tem rota — ver a seção de Billing acima.
