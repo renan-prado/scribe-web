@@ -287,4 +287,14 @@ export const RATE_LIMITS = {
     perUser: { limit: 60, windowMs: MIN },
     perIp: { limit: 120, windowMs: MIN },
   },
+  // Link de parceiro (/r/<slug>). Público e sem sessão, então só por IP.
+  // Generoso porque um link em stories é aberto muitas vezes em sequência e
+  // uma operadora móvel coloca muita gente atrás do mesmo IP — bloquear um
+  // visitante legítimo custa uma conversão. O limite existe contra o script
+  // que tentaria inflar o funil de um parceiro, e o custo de estourá-lo é
+  // baixo: o redirect acontece do mesmo jeito, só o clique não é contado.
+  "partner-link": {
+    route: "partner-link",
+    perIp: { limit: 120, windowMs: MIN },
+  },
 } as const satisfies Record<string, RateLimitConfig>;

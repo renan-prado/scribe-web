@@ -27,12 +27,18 @@ import { clientEnv } from "@/lib/env/client";
 // "/api/billing/sweep" segue o mesmo padrão do webhook: público no proxy (o
 // cron da Vercel não tem cookie de sessão), autenticado por CRON_SECRET dentro
 // da própria rota.
+//
+// "/r" é o link do parceiro (/r/<slug>): quem chega por ele é, por definição,
+// um visitante anônimo vindo de fora. Sem esta entrada, o proxy responderia
+// 307 para /sign-in e o link de divulgação levaria a uma tela de login em vez
+// da landing page. Ver app/r/[slug]/route.ts.
 const PUBLIC_PREFIXES = [
   "/sign-in",
   "/sign-up",
   "/auth",
   "/terms",
   "/privacy",
+  "/r",
   "/api/stripe",
   "/api/billing/sweep",
 ];
@@ -119,16 +125,18 @@ export async function proxy(request: NextRequest) {
     return new NextResponse(null, { status: 204, headers });
   }
 
-  // Visitante anônimo na landing page: não há sessão para renovar nem rota a
-  // proteger, então saímos ANTES de instanciar o client — economiza uma ida ao
-  // Supabase na rota mais visitada do site, e é ela que decide se a pessoa
-  // fica. A ausência de cookie `sb-*` é o sinal barato de "não há sessão": o
+  // Visitante anônimo na landing page ou chegando por um link de parceiro:
+  // não há sessão para renovar nem rota a proteger, então saímos ANTES de
+  // instanciar o client — economiza uma ida ao Supabase nas duas rotas de
+  // entrada do site, que são justamente as que decidem se a pessoa fica. A
+  // ausência de cookie `sb-*` é o sinal barato de "não há sessão": o
   // @supabase/ssr guarda o token em cookies com esse prefixo, e sem nenhum
   // deles o `getUser()` só devolveria `null` depois de uma ida à rede.
   //
   // O early-return fica aqui em cima, ANTES do `createServerClient`. Enfiá-lo
   // no meio do handshake violaria o contrato do @supabase/ssr descrito acima.
-  if (earlyPath === "/" && !request.cookies.getAll().some((c) => c.name.startsWith("sb-"))) {
+  const isAnonEntry = earlyPath === "/" || earlyPath.startsWith("/r/");
+  if (isAnonEntry && !request.cookies.getAll().some((c) => c.name.startsWith("sb-"))) {
     return NextResponse.next({ request });
   }
 
