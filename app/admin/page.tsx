@@ -6,26 +6,9 @@ import { AdminPageHeader } from "@/features/admin/components/AdminPageHeader";
 import { FxRateBadge } from "@/features/admin/components/FxRateBadge";
 import { loadAdminUsageSummary } from "@/lib/db/admin/usage";
 import { listUsers } from "@/lib/db/admin/users";
-import { makeMoneyFormatter } from "@/lib/fx/format";
-import { getUsdToBrl, type UsdBrlRate } from "@/lib/fx/usd-brl";
+import { makeCostPerThousandCoinsFormatter, makeMoneyFormatter } from "@/lib/fx/format";
+import { getUsdToBrl } from "@/lib/fx/usd-brl";
 import { cn } from "@/lib/utils";
-
-const BRL_FINE = new Intl.NumberFormat("pt-BR", {
-  style: "currency",
-  currency: "BRL",
-  minimumFractionDigits: 3,
-  maximumFractionDigits: 3,
-});
-const USD_FINE = new Intl.NumberFormat("en-US", {
-  style: "currency",
-  currency: "USD",
-  minimumFractionDigits: 3,
-  maximumFractionDigits: 3,
-});
-function formatCostPerCoin(usd: number, rate: UsdBrlRate | null): string {
-  if (rate) return BRL_FINE.format(usd * rate.rate);
-  return USD_FINE.format(usd);
-}
 
 export const metadata: Metadata = { title: "Admin" };
 export const dynamic = "force-dynamic";
@@ -43,6 +26,7 @@ export default async function AdminOverviewPage() {
   ]);
 
   const money = makeMoneyFormatter(rate);
+  const costPerThousandCoins = makeCostPerThousandCoinsFormatter(rate);
   const activeUsers = users.filter((u) => u.isActive).length;
   const adminUsers = users.filter((u) => u.role === "admin").length;
 
@@ -66,11 +50,8 @@ export default async function AdminOverviewPage() {
       tone: "mint",
     },
     {
-      label: "Custo por moeda",
-      value:
-        summaryAll.overallCostPerCoinUsd != null
-          ? formatCostPerCoin(summaryAll.overallCostPerCoinUsd, rate)
-          : "—",
+      label: "Custo por 1.000 moedas",
+      value: costPerThousandCoins(summaryAll.overallCostPerCoinUsd),
       hint: `${INT.format(summaryAll.totals.totalCoins)} moedas debitadas`,
       tone: "cream",
       icon: <CoinMark size={22} />,

@@ -33,3 +33,18 @@ export function makeMoneyFormatter(rate: UsdBrlRate | null) {
 }
 
 export type MoneyFormatter = ReturnType<typeof makeMoneyFormatter>;
+
+/**
+ * Custo por moeda vive na casa dos R$ 0,003: dois decimais mostram "R$ 0,00" e
+ * três ainda não dizem nada útil. A métrica é publicada por 1.000 moedas, que
+ * cai numa faixa legível e na mesma ordem de grandeza dos pacotes vendidos.
+ */
+export const COINS_PER_COST_UNIT = 1000;
+
+export function makeCostPerThousandCoinsFormatter(rate: UsdBrlRate | null) {
+  const money = makeMoneyFormatter(rate);
+  return (usdPerCoin: number | null): string =>
+    usdPerCoin == null ? "—" : money(usdPerCoin * COINS_PER_COST_UNIT);
+}
+
+export type CostPerThousandCoinsFormatter = ReturnType<typeof makeCostPerThousandCoinsFormatter>;
