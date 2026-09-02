@@ -1,6 +1,6 @@
 "use client";
 
-import { BarChart3, LayoutDashboard, TrendingUp, Users } from "lucide-react";
+import { BarChart3, Handshake, LayoutDashboard, TrendingUp, Users } from "lucide-react";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
 import type { ComponentProps } from "react";
@@ -31,6 +31,7 @@ const NAV: NavItem[] = [
   { href: "/admin/users", label: "Usuários", icon: Users },
   { href: "/admin/metricas", label: "Métricas", icon: TrendingUp },
   { href: "/admin/usage", label: "Uso & custos", icon: BarChart3 },
+  { href: "/admin/partners", label: "Parceiros", icon: Handshake },
 ];
 
 type AdminUser = {
