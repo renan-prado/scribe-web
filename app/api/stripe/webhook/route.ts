@@ -13,6 +13,7 @@ import {
   findUserIdByCustomerId,
   releaseStripeEvent,
 } from "@/lib/db/billing";
+import { reverseCommissionForUser } from "@/lib/db/partners";
 import { serverEnv } from "@/lib/env/server";
 
 export const runtime = "nodejs";
@@ -192,6 +193,22 @@ async function handleMoneyBack(
     });
     return;
   }
+
+  // A comissão do parceiro acompanha o dinheiro: se o pagamento voltou atrás,
+  // ela também volta. Sem isto, um chargeback custaria duas vezes — as moedas
+  // já consumidas E a comissão paga sobre uma venda que não existiu.
+  //
+  // Roda ANTES do clawback e fora do laço: é uma comissão por pessoa,
+  // independente de quantos prefixos de crédito a cobrança tenha gerado. E
+  // falhar aqui não pode impedir o estorno das moedas, que é a parte que
+  // protege o caixa.
+  await reverseCommissionForUser(userId, reason).catch((err) => {
+    console.error("[stripe/webhook] commission reversal failed", {
+      userId,
+      charge: charge.id,
+      error: (err as Error).message,
+    });
+  });
 
   for (const prefix of prefixes) {
     const balance = await clawbackCoins({ userId, refPrefix: prefix, reason });

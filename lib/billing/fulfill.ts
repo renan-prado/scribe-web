@@ -4,6 +4,8 @@ import { entitlementForPrice } from "@/lib/billing/catalog";
 import { isPlanKey, type PlanKey, TOPUP_MAX_QUANTITY } from "@/lib/billing/plans";
 import { customerIdOf, priceIdOf, subscriptionPeriodEnd } from "@/lib/billing/stripe";
 import { existingExternalRefs, grantCoins, upsertSubscription } from "@/lib/db/billing";
+import { insertFirstSubscriptionCommission } from "@/lib/db/partners";
+import { COMMISSION_HOLD_DAYS } from "@/lib/partners/economics";
 
 /**
  * O núcleo do crédito: dado um pagamento que o Stripe confirma como pago,
@@ -146,7 +148,67 @@ export async function creditInvoice(
     }
   }
 
+  // A comissão do parceiro nasce AQUI, e não numa rota, porque este é o ponto
+  // por onde os quatro caminhos de crédito passam (webhook, reconciliação,
+  // check preguiçoso do resumo e varredura do cron). Pendurá-la em qualquer
+  // um deles isoladamente significaria que uma compra recuperada pelos outros
+  // três não comissionaria — e essa é exatamente a compra que já deu trabalho.
+  //
+  // Só quando ALGO foi creditado agora: a segunda passada sobre o mesmo
+  // pagamento não deve nem tentar. (A constraint UNIQUE em `referred_user_id`
+  // seguraria de qualquer forma; isto só evita a ida ao banco.)
+  if (credited > 0) {
+    await accrueCommission(invoice, userId, source);
+  }
+
   return { credited, balance };
+}
+
+/**
+ * Comissão do parceiro sobre uma fatura de assinatura já creditada.
+ *
+ * O try/catch é a parte importante: uma falha aqui NÃO pode derrubar o
+ * crédito de moedas que acabou de acontecer. As moedas são contrato com o
+ * usuário e ele está esperando o saldo; a comissão é interna e reconciliável
+ * depois — inclusive porque, sem o catch, o webhook devolveria 5xx, o Stripe
+ * reentregaria, e o usuário ficaria sem saldo por causa de um problema que
+ * não é dele.
+ */
+async function accrueCommission(
+  invoice: Stripe.Invoice,
+  userId: string,
+  source: FulfillSource
+): Promise<void> {
+  try {
+    // Valor BRUTO efetivamente pago — depois de cupom e proração, antes das
+    // taxas do Stripe. É o número que o parceiro consegue conferir sozinho a
+    // partir do preço público, e é isso que o torna auditável para ele.
+    const grossCents = invoice.amount_paid ?? 0;
+    if (grossCents <= 0) return;
+
+    await insertFirstSubscriptionCommission({
+      userId,
+      invoiceId: invoice.id ?? null,
+      plan: planFromInvoice(invoice),
+      grossCents,
+      holdDays: COMMISSION_HOLD_DAYS,
+    });
+  } catch (err) {
+    console.error(`[billing:${source}] partner commission failed — coins were credited`, {
+      userId,
+      invoice: invoice.id,
+      error: (err as Error).message,
+    });
+  }
+}
+
+/** Plano de uma fatura, só para rótulo na linha da comissão. */
+function planFromInvoice(invoice: Stripe.Invoice): string | null {
+  for (const line of invoiceLines(invoice)) {
+    const entitlement = entitlementForPrice(line.priceId);
+    if (entitlement?.kind === "subscription") return entitlement.plan;
+  }
+  return null;
 }
 
 /** Deriva a chave de plano a partir dos preços dos itens da assinatura. */

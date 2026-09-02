@@ -121,3 +121,177 @@ export async function getPartnerPublicBySlug(slug: string): Promise<PartnerPubli
     signupBonusCoins: data.signup_bonus_coins,
   };
 }
+
+/**
+ * Registra a comissão da PRIMEIRA assinatura de um indicado.
+ *
+ * Devolve o valor em centavos quando a comissão foi criada agora, e `0`
+ * quando não havia o que criar — porque o usuário não veio de parceiro, ou
+ * porque a comissão dele já existe. Os dois casos são normais e nenhum é erro.
+ *
+ * A regra "uma vez por pessoa, para sempre" NÃO é verificada aqui: ela é a
+ * constraint UNIQUE em `referred_user_id` (migração 0029). Cancelar e
+ * reassinar seis meses depois colide na constraint, e o INSERT simplesmente
+ * não acontece. Deixar a regra no banco em vez de num `if` significa que ela
+ * vale para todos os caminhos de crédito, inclusive os que ainda não existem.
+ *
+ * O cálculo usa o valor BRUTO da fatura, e `commission_cents` fica congelado
+ * na linha junto do `rate_bps` que o produziu: mudar a taxa de um parceiro
+ * amanhã não pode reescrever o que ele já ganhou.
+ */
+export async function insertFirstSubscriptionCommission(args: {
+  userId: string;
+  invoiceId: string | null;
+  plan: string | null;
+  grossCents: number;
+  /** Dias de carência antes de a comissão ficar disponível para saque. */
+  holdDays: number;
+}): Promise<number> {
+  const admin = createAdminClient();
+
+  const { data: profile, error: profileErr } = await admin
+    .from("profiles")
+    .select("partner_id")
+    .eq("id", args.userId)
+    .maybeSingle();
+  if (profileErr) {
+    console.error("[partners] commission: profile lookup failed", {
+      userId: args.userId,
+      error: profileErr.message,
+    });
+    return 0;
+  }
+  if (!profile?.partner_id) return 0; // não veio de parceiro — o caso comum
+
+  const { data: partner, error: partnerErr } = await admin
+    .from("partners")
+    .select("id, user_id, commission_rate_bps, status")
+    .eq("id", profile.partner_id)
+    .maybeSingle();
+  if (partnerErr || !partner) {
+    console.error("[partners] commission: partner lookup failed", {
+      partnerId: profile.partner_id,
+      error: partnerErr?.message,
+    });
+    return 0;
+  }
+
+  // Parceiro suspenso não acumula. A atribuição do usuário permanece — se a
+  // suspensão for revertida, as assinaturas seguintes voltam a comissionar.
+  if (partner.status !== "active") {
+    console.warn("[partners] commission skipped — partner not active", {
+      partnerId: partner.id,
+      status: partner.status,
+    });
+    return 0;
+  }
+
+  // Auto-indicação. Já é barrada no vínculo (`attach_partner`), mas o parceiro
+  // pode ter ligado a conta DEPOIS de ela ter sido atribuída a ele — e aí a
+  // checagem de lá não teve como acontecer.
+  if (partner.user_id && partner.user_id === args.userId) {
+    console.warn("[partners] commission skipped — self referral", { partnerId: partner.id });
+    return 0;
+  }
+
+  const commissionCents = Math.round((args.grossCents * partner.commission_rate_bps) / 10_000);
+  if (commissionCents <= 0) return 0;
+
+  const availableAt = new Date(Date.now() + args.holdDays * 24 * 60 * 60 * 1000).toISOString();
+
+  const { error } = await admin.from("partner_commissions").insert({
+    partner_id: partner.id,
+    referred_user_id: args.userId,
+    external_ref: `commission:user:${args.userId}`,
+    stripe_invoice_id: args.invoiceId,
+    plan: args.plan,
+    gross_cents: args.grossCents,
+    commission_cents: commissionCents,
+    rate_bps: partner.commission_rate_bps,
+    status: "pending",
+    available_at: availableAt,
+  });
+
+  if (error) {
+    // 23505 = a comissão desta pessoa já existe. É o funcionamento normal da
+    // regra "uma vez por pessoa" — não é erro e não merece log de erro.
+    if (error.code === "23505") return 0;
+    console.error("[partners] commission insert failed", {
+      partnerId: partner.id,
+      userId: args.userId,
+      error: error.message,
+    });
+    return 0;
+  }
+
+  console.info("[partners] commission accrued", {
+    partnerId: partner.id,
+    userId: args.userId,
+    grossCents: args.grossCents,
+    rateBps: partner.commission_rate_bps,
+    commissionCents,
+    invoice: args.invoiceId,
+  });
+  return commissionCents;
+}
+
+/**
+ * Reverte a comissão de um indicado cujo pagamento voltou atrás (reembolso ou
+ * contestação).
+ *
+ * Uma comissão JÁ PAGA não é revertida: o dinheiro saiu daqui por PIX e a
+ * linha não pode fingir que isso não aconteceu. O caso vira log em `warn`
+ * para conferência manual — mesmo tratamento que o clawback de moedas dá a
+ * créditos que já foram gastos. A carência de 30 dias existe justamente para
+ * tornar esse caso raro.
+ */
+export async function reverseCommissionForUser(
+  userId: string,
+  reason: "refund" | "chargeback"
+): Promise<void> {
+  const admin = createAdminClient();
+
+  const { data: row, error } = await admin
+    .from("partner_commissions")
+    .select("id, partner_id, commission_cents, status, payout_id")
+    .eq("referred_user_id", userId)
+    .maybeSingle();
+  if (error) {
+    console.error("[partners] commission reversal lookup failed", {
+      userId,
+      error: error.message,
+    });
+    return;
+  }
+  if (!row || row.status === "reversed") return;
+
+  if (row.payout_id) {
+    console.warn("[partners] commission already PAID — manual settlement needed", {
+      commissionId: row.id,
+      partnerId: row.partner_id,
+      amountCents: row.commission_cents,
+      reason,
+    });
+    return;
+  }
+
+  const { error: updateErr } = await admin
+    .from("partner_commissions")
+    .update({ status: "reversed" })
+    .eq("id", row.id)
+    .is("payout_id", null);
+  if (updateErr) {
+    console.error("[partners] commission reversal failed", {
+      commissionId: row.id,
+      error: updateErr.message,
+    });
+    return;
+  }
+
+  console.warn("[partners] commission reversed", {
+    commissionId: row.id,
+    partnerId: row.partner_id,
+    amountCents: row.commission_cents,
+    reason,
+  });
+}
