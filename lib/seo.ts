@@ -6,6 +6,8 @@
  * de erro que só aparece semanas depois, num relatório do Search Console.
  */
 
+import { IS_PRODUCTION_DEPLOY } from "@/lib/deploy";
+
 export const SITE_URL = "https://scriba.cc";
 export const SITE_NAME = "Scriba";
 
@@ -35,4 +37,4 @@ export const SITE_DESCRIPTION =
  * ambiente de desenvolvimento entra no índice competindo com scriba.cc por
  * conteúdo idêntico.
  */
-export const IS_INDEXABLE = process.env.VERCEL_ENV === "production";
+export const IS_INDEXABLE = IS_PRODUCTION_DEPLOY;

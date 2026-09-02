@@ -48,6 +48,7 @@ lib/
   billing/stripe.ts             — cliente Stripe (null se não configurado) + helpers
   billing/customer.ts           — getOrCreateCustomer (nunca aceita id do request)
   db/billing.ts                 — assinaturas, grantCoins, clawbackCoins, idempotência
+  deploy.ts                     — IS_PRODUCTION_DEPLOY (VERCEL_ENV === "production")
   bible/detect.ts               — layer-1 regex-gate (cheap "is there any bible mention?")
   bible/guard.ts                — layer-2 weighted-signal guard (scoreBibleGuard + currentReading)
   env/{server,client}.ts        — Zod-parsed env vars (throw at import)
@@ -73,6 +74,7 @@ src/features/session/
   config.ts                     — pacing constants (chunk cadences, insights interval, deltas, timeouts)
   types.ts                      — ChunkRow, FinalAudio, TranscriptState, VerseFetchState
 src/shared/
+  components/Analytics.tsx      — GA4 via @next/third-parties, só em produção
   assets/avatars/*.webp         — avatares dos depoimentos e do hero da LP (136px, ~3 KB cada)
   components/LandingMocks.tsx   — as telas dentro dos mockups de celular da LP. Markup
                                   estático PRÓPRIO, não os componentes do app — ver abaixo.
@@ -307,6 +309,24 @@ Imagens: nada de `<img>` para host externo. Sete avatares placeholder de
 `<head>`, disputando a banda inicial com o CSS. Hoje são sete WebP de 136 px em
 `src/shared/assets/avatars/` (20 KB no total) servidos por `next/image` com
 import estático — que também traz `width`/`height` de graça, sem CLS.
+
+## Analytics (GA4)
+
+- **O gtag NÃO entra no `<head>` na mão.** `src/shared/components/Analytics.tsx`
+  usa o `GoogleAnalytics` de `@next/third-parties/google`, que emite os mesmos
+  dois scripts por `next/script` com `afterInteractive` — depois da hidratação,
+  sem disputar o primeiro paint com o CSS e o JS da LP, e sem duplicar a tag
+  quando o layout re-renderiza entre navegações.
+- **Duas condições para medir:** `IS_PRODUCTION_DEPLOY` (`lib/deploy.ts`) e
+  `NEXT_PUBLIC_GA_ID`. Faltando qualquer uma, o componente devolve `null` e a
+  página sai sem nada do Google. Localhost, `npm run prod` e `dev.scriba.cc`
+  (Preview) portanto não medem — nem que a variável vaze para o escopo errado
+  do painel da Vercel. Para validar uma tag, DebugView do GA4 contra `scriba.cc`.
+- Ler `process.env` não torna rota dinâmica: a LP continua `○ Static` com o
+  `<Analytics />` no root layout — conferido no output do build.
+- **Não escrevemos pageview.** As navegações do App Router viram `page_view`
+  pela medição aprimorada do GA4 (eventos de histórico), ligada na propriedade.
+  Evento personalizado usa `sendGAEvent`, nunca `window.gtag` direto.
 
 ## Adding a new feature
 

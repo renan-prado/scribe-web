@@ -1,5 +1,6 @@
 import type { Metadata } from "next";
 import { Fira_Mono, Geist, Geist_Mono, Poppins } from "next/font/google";
+import { Analytics } from "@/components/Analytics";
 import { PageTransition } from "@/components/PageTransition";
 import { Providers } from "@/components/Providers";
 import { PwaBootstrap } from "@/components/PwaBootstrap";
@@ -123,6 +124,7 @@ export default function RootLayout({ children }: LayoutProps<"/">) {
           <ThemedToaster />
           <PwaBootstrap />
         </Providers>
+        <Analytics />
       </body>
     </html>
   );
