@@ -153,7 +153,12 @@ export type GrantReason =
   | "subscription_grant"
   | "topup_pack"
   | "admin_grant"
-  | "refund_reversal_block";
+  | "refund_reversal_block"
+  // Bônus de indicação, creditado por `attach_partner()` no primeiro login de
+  // quem chegou pelo link ou pelo código de um parceiro. Some às moedas de
+  // boas-vindas (que vêm do DEFAULT da coluna e não geram lançamento) —
+  // este, como todo crédito, é uma linha explícita no ledger.
+  | "partner_bonus";
 
 /**
  * ÚNICA porta de crédito da aplicação.

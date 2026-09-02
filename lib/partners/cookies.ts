@@ -13,7 +13,10 @@
  * um valor de servidor vira estado de cliente sem ninguém decidir isso.
  */
 
-/** Indicação ativa: o slug do parceiro que trouxe a visita. */
+/**
+ * Indicação ativa. O valor é `<slug>.<origem>` — ver `encodeRef`/`decodeRef`
+ * no fim deste arquivo.
+ */
 export const REF_COOKIE = "scriba_ref";
 
 /**
@@ -68,4 +71,51 @@ export function normalizeSlug(raw: string | null | undefined): string | null {
   const slug = raw.trim().toLowerCase();
   if (!/^[a-z0-9][a-z0-9-]{1,30}[a-z0-9]$/.test(slug)) return null;
   return slug;
+}
+
+/**
+ * Origem da indicação, preservada até o cadastro.
+ *
+ * `link` — a pessoa abriu `/r/<slug>`.
+ * `code` — a pessoa digitou o código na tela de entrada.
+ *
+ * A distinção não muda nada no dinheiro (as duas atribuem igual), mas é o
+ * único jeito de responder "o link ou o código converte melhor?" — pergunta
+ * que decide o que o parceiro deve divulgar. Sem gravar isso no momento da
+ * indicação, o dado não existe depois.
+ */
+export type ReferralSource = "link" | "code";
+
+/**
+ * Serializa slug + origem num valor de cookie só.
+ *
+ * Um cookie em vez de dois porque os dois campos nascem e morrem juntos: são
+ * escritos no mesmo instante e apagados no mesmo instante (no /auth/callback,
+ * assim que a atribuição vira permanente em `profiles`). Dois cookies
+ * poderiam divergir — um expirando antes do outro, um sobrevivendo a um
+ * clear parcial — e não há leitura que precise de um sem o outro.
+ *
+ * O separador é `.` porque o formato do slug (`[a-z0-9-]`) não o admite, então
+ * o split nunca é ambíguo.
+ */
+export function encodeRef(slug: string, source: ReferralSource): string {
+  return `${slug}.${source}`;
+}
+
+/**
+ * Lê o par gravado por `encodeRef`. Devolve `null` quando o valor não é
+ * utilizável — cookie de uma versão anterior, valor truncado, slug fora do
+ * formato. Um valor sem origem reconhecível é tratado como `link`, que é o
+ * caminho majoritário e o padrão seguro.
+ */
+export function decodeRef(raw: string | null | undefined): {
+  slug: string;
+  source: ReferralSource;
+} | null {
+  if (typeof raw !== "string") return null;
+  const dot = raw.lastIndexOf(".");
+  const slug = normalizeSlug(dot === -1 ? raw : raw.slice(0, dot));
+  if (!slug) return null;
+  const tail = dot === -1 ? "" : raw.slice(dot + 1);
+  return { slug, source: tail === "code" ? "code" : "link" };
 }

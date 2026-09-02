@@ -85,3 +85,39 @@ export async function recordPartnerClick(slug: string, unique: boolean): Promise
     console.error("[partners] record_partner_click failed", { slug, error: error.message });
   }
 }
+
+/**
+ * Dados de um parceiro que podem ser mostrados a um VISITANTE anônimo — hoje,
+ * na tela de login, para confirmar "você foi indicado por Fulano e vai ganhar
+ * N moedas".
+ *
+ * O nome do tipo é literal: `Public` significa que este objeto atravessa a
+ * fronteira do servidor. Não acrescente e-mail, documento, chave PIX, taxa de
+ * comissão nem orçamento aqui — é a mesma tabela que guarda tudo isso.
+ */
+export type PartnerPublic = {
+  slug: string;
+  displayName: string;
+  signupBonusCoins: number;
+};
+
+/** Resolve um slug para exibição. `null` quando não existe ou está suspenso. */
+export async function getPartnerPublicBySlug(slug: string): Promise<PartnerPublic | null> {
+  const admin = createAdminClient();
+  const { data, error } = await admin
+    .from("partners")
+    .select("slug, display_name, signup_bonus_coins")
+    .ilike("slug", slug)
+    .eq("status", "active")
+    .maybeSingle();
+  if (error) {
+    console.error("[partners] getPartnerPublicBySlug failed", { slug, error: error.message });
+    return null;
+  }
+  if (!data) return null;
+  return {
+    slug: data.slug,
+    displayName: data.display_name,
+    signupBonusCoins: data.signup_bonus_coins,
+  };
+}

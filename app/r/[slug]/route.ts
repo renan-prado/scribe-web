@@ -2,6 +2,7 @@ import { type NextRequest, NextResponse } from "next/server";
 import { recordPartnerClick } from "@/lib/db/partners";
 import { devLog } from "@/lib/log";
 import {
+  encodeRef,
   normalizeSlug,
   REF_COOKIE,
   REF_COOKIE_MAX_AGE,
@@ -52,7 +53,7 @@ export async function GET(request: NextRequest, ctx: { params: Promise<{ slug: s
   // A indicação sobrevive 30 dias e é RENOVADA a cada visita: quem acompanha
   // o parceiro e clica de novo antes de decidir não deve perder a atribuição
   // por causa do relógio do primeiro clique.
-  response.cookies.set(REF_COOKIE, slug, refCookieOptions(REF_COOKIE_MAX_AGE));
+  response.cookies.set(REF_COOKIE, encodeRef(slug, "link"), refCookieOptions(REF_COOKIE_MAX_AGE));
 
   // Contagem de cliques. O redirect JÁ está montado: daqui para baixo é tudo
   // métrica, e nada pode impedir a pessoa de chegar na landing page.

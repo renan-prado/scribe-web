@@ -74,8 +74,13 @@ export function checkRateLimit(key: string, limit: number, windowMs: number): Ra
   };
 }
 
-export function getClientIp(request: Request): string {
-  const h = request.headers;
+/**
+ * Aceita `Request` ou `Headers` porque as duas formas aparecem: rotas de API
+ * recebem o request inteiro, e server actions só conseguem os headers (via
+ * `headers()` do next/headers).
+ */
+export function getClientIp(source: Request | Headers): string {
+  const h = source instanceof Headers ? source : source.headers;
   const xff = h.get("x-forwarded-for");
   if (xff) {
     const first = xff.split(",")[0]?.trim();
