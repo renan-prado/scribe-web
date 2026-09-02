@@ -31,6 +31,10 @@ app/
   api/billing/{checkout,portal,summary}/route.ts
                                 — Stripe Checkout / portal / resumo de plano (autenticadas)
   api/stripe/webhook/route.ts   — ÚNICA porta de crédito. Pública + assinatura HMAC.
+  api/admin/partners/**         — CRUD de parceiros e registro de pagamento (PIX)
+  r/[slug]/route.ts             — link do parceiro. Marca a visita e redireciona (302)
+  partners/{layout,page}.tsx    — painel do parceiro. Só agregados, nunca uma pessoa
+  admin/{metricas,partners}/    — funil do produto; cadastro e pagamento de parceiros
   (app)/billing/retorno/page.tsx
                                 — retorno do Checkout (decorativa: não credita nada)
   (app)/recording/[id]/{live,audio,transcribe}/page.tsx
@@ -43,11 +47,18 @@ app/
   layout.tsx, globals.css
 components/ui/                  — shadcn primitives (Dialog, DropdownMenu, Button)
 lib/
+  auth/require-partner.ts       — gate do /partners + vínculo parceiro↔conta na 1ª visita
   billing/plans.ts              — catálogo CLIENT-SAFE (nome, moedas, preço de tela)
   billing/catalog.ts            — server-only: chave↔Price ID e Price ID↔moedas
   billing/stripe.ts             — cliente Stripe (null se não configurado) + helpers
   billing/customer.ts           — getOrCreateCustomer (nunca aceita id do request)
   db/billing.ts                 — assinaturas, grantCoins, clawbackCoins, idempotência
+  db/partners.ts                — attachPartner, comissão, estorno
+  db/partner-panel.ts           — agregados do painel do parceiro
+  db/admin/metrics.ts           — funil, ativação, receita, passivo de moedas
+  db/admin/partners.ts          — CRUD + registerPayout (carimba as comissões pagas)
+  partners/cookies.ts           — nomes, prazos e opções dos cookies de indicação
+  partners/economics.ts         — a conta do programa (client-safe, fonte única)
   deploy.ts                     — IS_PRODUCTION_DEPLOY (VERCEL_ENV === "production")
   bible/detect.ts               — layer-1 regex-gate (cheap "is there any bible mention?")
   bible/guard.ts                — layer-2 weighted-signal guard (scoreBibleGuard + currentReading)
@@ -64,6 +75,9 @@ src/features/billing/
   components/{BillingDialog,PlanCard,CheckoutReturn}.tsx
   lib/api.ts                    — só envia CHAVE de plano / quantidade, nunca preço
   store.ts                      — resumo de plano (leitura)
+src/features/partners/
+  components/ReferralField.tsx  — campo de código na tela de entrada
+  components/ReferralLinkCard.tsx
 src/features/session/
   components/*.tsx              — every UI piece of the recording page (Feed + FeedItemCard
                                   drive the live view; SummaryView renders the post-stop
@@ -256,10 +270,66 @@ mudança futura reabra um caminho de crédito grátis. Migrações: `0026_billin
   `stripe listen` no ambiente certo e confere o `whsec_`). Guia completo e
   armadilhas conhecidas em `docs/stripe-setup.md`.
 
+## Parceiros divulgadores — invariantes
+
+Programa de indicação por convite. Regras de negócio em `docs/parceiros.md`,
+plano técnico em `docs/parceiros-plano.md`. Migração: `0029_partners.sql`.
+As regras abaixo existem porque cada uma delas já foi um bug possível.
+
+- **A comissão nasce DENTRO de `lib/billing/fulfill.ts`**, no `creditInvoice`,
+  e não numa rota. É por ali que passam os quatro caminhos de crédito
+  (webhook, reconciliação, resumo, sweep); pendurá-la em um deles faria uma
+  compra recuperada pelos outros três não comissionar — justamente a compra
+  que já deu trabalho. O `try/catch` em volta é obrigatório: falha de comissão
+  não pode derrubar o crédito de moedas, senão o webhook devolve 5xx, o Stripe
+  reentrega, e o usuário fica sem saldo por um problema que não é dele.
+- **"Uma comissão por pessoa na vida" é uma CONSTRAINT, não um `if`.**
+  `partner_commissions.referred_user_id` é UNIQUE. Renovação e reassinatura
+  seis meses depois colidem e não criam nada. A regra vale para caminhos que
+  ainda não existem.
+- **`commission_cents` e `rate_bps` são congelados na linha.** A taxa é
+  editável por parceiro; mudá-la amanhã não pode reescrever o que ele já
+  ganhou.
+- **A atribuição é imutável.** `profiles.partner_id` é gravado uma vez, por
+  `attach_partner()`. As três colunas de atribuição ficam fora do GRANT de
+  coluna concedido a `authenticated` em 0026 — `partner_id` decide para quem
+  vai dinheiro.
+- **`attach_partner()` recusa conta que não é nova.** Sem essa checagem, um
+  usuário antigo que abrisse `/r/<slug>` seria vinculado no login seguinte e
+  ganharia moedas de graça, de novo a cada link diferente que abrisse.
+- **O bônus passa por `grant_coins`**, como todo crédito. Não escreva em
+  `coin_balance`.
+- **Nada de Stripe novo.** A atribuição é 100% nossa (cookie + código). Não
+  existe Coupon nem Promotion Code de parceiro, e `billing/checkout` não sabe
+  que este programa existe.
+- **A LP continua estática.** O clique é gravado em `app/r/[slug]/route.ts`,
+  nunca em `app/page.tsx` — ver "Landing page" acima. A rota devolve 302 (um
+  308 seria memorizado pelo navegador e o parceiro perderia a contagem a
+  partir do segundo clique da mesma pessoa) e redireciona mesmo com slug
+  inválido, porque um 404 puniria o visitante por um erro que não é dele.
+- **Os cookies são httpOnly e `sameSite: "lax"`.** Nomes e prazos só em
+  `lib/partners/cookies.ts`. `strict` faria o cookie sumir na volta do OAuth
+  do Google, que é o único momento em que ele importa. Nenhum código de
+  navegador lê ou escreve esses cookies: a tela de entrada recebe a indicação
+  por prop, resolvida no servidor.
+- **O painel do parceiro nunca expõe uma pessoa.** Só agregados, nem no HTML
+  nem numa rota. Não crie endpoint que liste indicados.
+- **Pagamento é ledger, não contador.** `registerPayout` cria a linha em
+  `partner_payouts` E carimba as comissões com o `payout_id`. Sem o carimbo, o
+  "a receber" nunca diminui e o primeiro PIX pago deixa o número mentindo para
+  sempre. A rota não aceita valor no corpo — o servidor soma o que está
+  disponível, para que pagamento e comissões sempre fechem.
+- **`lib/partners/economics.ts` é a ÚNICA implementação da conta.** Simulador
+  do admin, painel do parceiro e as tabelas do doc leem dela. O custo por
+  moeda é sempre MEDIDO (usage + câmbio), nunca constante.
+
 ## Créditos durante a gravação
 
 Acabar o saldo no meio de um sermão **congela** a captura, não a encerra —
-ver `useCoinGuard` (`src/features/session/hooks/`), usado pelos três modos.
+ver `useCoinGuard` (`src/features/partners/
+  components/ReferralField.tsx  — campo de código na tela de entrada
+  components/ReferralLinkCard.tsx
+src/features/session/hooks/`), usado pelos três modos.
 Fluxo: aviso em 5 min e 2 min restantes → ao zerar, `pause()` + `PausedOverlay`
 com `outOfCoins` → o usuário compra em **aba nova** (sair da página mataria o
 MediaRecorder e a fila de chunks) → o saldo é ressincronizado por `focus`,
@@ -291,7 +361,10 @@ desfazer sem perceber.
   path é `/` e não há nenhum cookie `sb-*`: sem sessão não há o que renovar, e
   isso poupa uma ida à rede na rota mais visitada.
 
-- **A LP NÃO importa componentes de `src/features/session/` que sejam
+- **A LP NÃO importa componentes de `src/features/partners/
+  components/ReferralField.tsx  — campo de código na tela de entrada
+  components/ReferralLinkCard.tsx
+src/features/session/` que sejam
   `"use client"`.** As telas dentro dos mockups de celular são markup estático
   em `src/shared/components/LandingMocks.tsx`. Antes elas montavam o `<Feed>` e
   o `<SummaryView>` reais, e isso arrastava `FeedItemCard`, `VerseDialog` (com o
@@ -331,9 +404,19 @@ import estático — que também traz `width`/`height` de graça, sem CLS.
 ## Adding a new feature
 
 - **New API route calling OpenAI**: (1) add a prompt in `lib/prompts/foo.ts`, (2) add the schema + `parseFooFromLLM` in `lib/domain/foo.ts`, (3) create `app/api/foo/route.ts` that reads env from `serverEnv`, invokes `callChat({...})`, and delegates parsing to the domain helper. Log `[foo] ok { latencyMs, finishReason, promptTokens, completionTokens, ... }` on success and `[foo] upstream {fetch failed|error}` on failure. Every new route MUST call `enforceRateLimit(request, RATE_LIMITS.foo, auth.user.id)` right after `requireAuth()` — add a bucket to `RATE_LIMITS` in `lib/rate-limit.ts` sized to the expected client cadence (per-user + per-IP).
-- **New UI element for the session page**: put it under `src/features/session/components/`. Keep `app/(app)/recording/[id]/live/page.tsx` as pure orchestration. Pure helpers go to `src/features/session/lib/`; reusable stateful behaviour goes to `src/features/session/hooks/`.
+- **New UI element for the session page**: put it under `src/features/partners/
+  components/ReferralField.tsx  — campo de código na tela de entrada
+  components/ReferralLinkCard.tsx
+src/features/session/components/`. Keep `app/(app)/recording/[id]/live/page.tsx` as pure orchestration. Pure helpers go to `src/features/partners/
+  components/ReferralField.tsx  — campo de código na tela de entrada
+  components/ReferralLinkCard.tsx
+src/features/session/lib/`; reusable stateful behaviour goes to `src/features/partners/
+  components/ReferralField.tsx  — campo de código na tela de entrada
+  components/ReferralLinkCard.tsx
+src/features/session/hooks/`.
 - **New env var**: add to the Zod schema in `lib/env/server.ts` (or `client.ts`) — this is intentionally strict so a missing var fails at boot, not on the first request. As variáveis do Stripe são a exceção: ficam `.optional()` para o app subir sem cobrança configurada, e as rotas de billing respondem 503 `billing_unavailable`.
 - **Nova rota que mexe em moedas**: débito passa por `chargeCoins` (`lib/db/coins.ts`); crédito NÃO tem rota — ver a seção de Billing acima.
+- **Nova métrica de produto**: entra em `lib/db/admin/metrics.ts`, que já aceita recorte por período e por `partnerId`. NÃO escreva uma segunda consulta de "conversão" dentro das telas de parceiro — duas definições do mesmo número um dia discordam, e a discordância aparece como um parceiro reclamando do próprio painel.
 
 ## What is deliberately NOT here yet
 

@@ -4,8 +4,9 @@ Documento de referência do programa. A primeira parte é o que o parceiro
 precisa saber (pode ser enviada como está). A última seção, **Pendências**, é
 interna.
 
-Status: regras acordadas, ainda não implementadas. Plano de execução em
-[`parceiros-plano.md`](./parceiros-plano.md).
+Status: **implementado**. O plano técnico e o que ficou de fora estão em
+[`parceiros-plano.md`](./parceiros-plano.md); as invariantes de código, na
+seção "Parceiros divulgadores" do `AGENTS.md`.
 
 ---
 

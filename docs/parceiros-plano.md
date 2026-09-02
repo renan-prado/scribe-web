@@ -4,7 +4,9 @@ Regras de negócio em [`parceiros.md`](./parceiros.md). Este documento é o
 plano técnico: o que construir, em que ordem, e onde encostar no código que
 já existe.
 
-Branch: `feat/parceiros`.
+Branch: `feat/parceiros`. **Fases 0 a 7 entregues** — o que cada uma resolveu
+está no corpo do commit correspondente. As invariantes que precisam sobreviver
+a refactors foram promovidas para o `AGENTS.md`.
 
 ---
 
@@ -360,14 +362,31 @@ Só agregados. Nenhuma query toca `profiles` além de `count(*)`.
 
 ---
 
-## Ordem sugerida
+## O que ficou de fora
 
-As fases 0 a 3 entregam o programa funcionando de ponta a ponta, operado por
-SQL. Se precisar convidar o primeiro parceiro antes das telas ficarem prontas,
-dá para operar direto no Supabase — o que também serve de teste real das
-regras antes de investir em UI.
+Decisões conscientes, não esquecimentos:
 
-A Fase 4 (métricas) é independente do resto e pode ser antecipada: ela tem
-valor sozinha, e as fases 5 e 6 consomem o que ela constrói. Fazê-la depois
-das telas de parceiro significaria escrever a mesma query de conversão duas
-vezes.
+- **Sem e-mail de convite.** O parceiro é avisado fora do sistema e entra com
+  a conta Google dele; o vínculo se resolve sozinho na primeira visita a
+  `/partners`. Um fluxo de convite por e-mail só se paga quando houver
+  parceiros demais para avisar à mão.
+- **Sem exportação de relatório.** O painel responde às perguntas que o
+  parceiro faz; um CSV é trabalho até alguém pedir.
+- **Sem histórico de cliques por dia na tela.** O rollup diário existe no
+  banco (`partner_clicks`), então o gráfico é aditivo quando fizer falta.
+- **Sem notificação de comissão nova.** O parceiro descobre no painel.
+- **A promoção `pending → available` é resolvida em query**, não por cron.
+  Menos peça móvel, e o estado é sempre verdadeiro no instante em que se olha.
+
+## O que testar antes de convidar o primeiro parceiro
+
+O que foi verificado em dev está no corpo de cada commit. Falta o que só
+existe em produção:
+
+1. Um pagamento REAL no Stripe live gerando comissão (o caminho foi testado
+   com comissões inseridas à mão, não com uma fatura de verdade).
+2. Um reembolso real revertendo a comissão.
+3. O primeiro PIX de verdade, conferindo que o valor do painel bate com o que
+   foi enviado.
+4. As variáveis de ambiente: nenhuma nova foi criada, mas vale confirmar que
+   `APP_URL` está correta em produção — é dela que sai o link do parceiro.
