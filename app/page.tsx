@@ -111,7 +111,7 @@ function Hero() {
           <div className="flex flex-col gap-2.5 pt-1 sm:flex-row sm:items-center sm:gap-3.5">
             <Link
               href="/sign-in"
-              className="lp-cta inline-flex items-center justify-center gap-2.5 rounded-[26px] bg-[image:var(--lp-cta)] py-[17px] px-8 text-[13px] font-semibold uppercase tracking-[.04em] text-lp-cta-ink shadow-[0_9px_22px_rgba(79,168,240,.3)]"
+              className="scriba-cta inline-flex items-center justify-center gap-2.5 rounded-[26px] bg-[image:var(--scriba-cta)] py-[17px] px-8 text-[13px] font-semibold uppercase tracking-[.04em] text-scriba-cta-ink shadow-[0_9px_22px_var(--scriba-cta-shadow)]"
             >
               <ScribaMark size={20} />
               Começar grátis
@@ -900,7 +900,7 @@ function PlanCard({
         className={cn(
           "inline-flex items-center justify-center gap-2 rounded-[24px] p-[15px] text-[12px] font-semibold uppercase tracking-[.04em]",
           isPrimary
-            ? "lp-cta bg-[image:var(--lp-cta)] text-lp-cta-ink shadow-[0_8px_20px_rgba(79,168,240,.3)]"
+            ? "scriba-cta bg-[image:var(--scriba-cta)] text-scriba-cta-ink shadow-[0_8px_20px_var(--scriba-cta-shadow)]"
             : "lp-cta-soft bg-scriba-btn-muted text-scriba-ink hover:bg-scriba-btn-muted-hover"
         )}
       >

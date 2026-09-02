@@ -194,9 +194,17 @@ function SortSelector({
   const Icon = order === "recent" ? ArrowDownWideNarrow : ArrowUpNarrowWide;
   return (
     <div className="flex items-center justify-end gap-2 text-[11px] text-scriba-ink-mute">
-      <span className="font-medium">Ordenar por</span>
+      {/* O rótulo visível É o nome acessível do seletor: `role="combobox"` não
+          tira nome do conteúdo, então sem o `aria-labelledby` o leitor de tela
+          anuncia um combobox anônimo (axe: `button-name`). Apontar para o
+          <span> em vez de repetir a string num aria-label mantém as duas em
+          sincronia. */}
+      <span id="feed-order-label" className="font-medium">
+        Ordenar por
+      </span>
       <Select value={order} onValueChange={(v) => onChange(v as FeedOrder)} disabled={disabled}>
         <SelectTrigger
+          aria-labelledby="feed-order-label"
           size="sm"
           className={cn(
             "gap-1.5 rounded-full border-scriba-hairline-soft bg-scriba-paper pl-3 pr-2 text-[11px] font-semibold text-scriba-ink shadow-[0_1px_3px_rgba(79,168,240,0.05)] hover:border-scriba-blue-soft",

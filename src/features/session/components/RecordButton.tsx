@@ -114,9 +114,9 @@ export function RecordButton({
           onClick={running ? onStop : onStart}
           aria-label={running ? "Parar gravação" : "Iniciar gravação"}
           className={cn(
-            "relative flex size-24 items-center justify-center rounded-full bg-scriba-blue text-white outline-none transition-colors duration-300 ease-out",
+            "relative flex size-24 items-center justify-center rounded-full scriba-cta bg-[image:var(--scriba-cta)] text-scriba-cta-ink outline-none transition-colors duration-300 ease-out",
             !running && "animate-scriba-halo",
-            "hover:bg-scriba-blue-hover active:scale-95",
+            " active:scale-95",
             "focus-visible:ring-4 focus-visible:ring-scriba-blue/40"
           )}
         >

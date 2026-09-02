@@ -125,9 +125,8 @@ export function MobileBottomNav({ avatarUrl, displayName, email }: MobileBottomN
             trigger={
               <span
                 className={cn(
-                  "flex size-16 flex-col items-center justify-center gap-1 rounded-full bg-scriba-blue text-white",
-                  "border-2 border-scriba-paper shadow-[0_10px_22px_rgba(79,168,240,0.42)] transition-colors",
-                  "hover:bg-scriba-blue-hover"
+                  "flex size-16 flex-col items-center justify-center gap-1 rounded-full scriba-cta bg-[image:var(--scriba-cta)] text-scriba-cta-ink",
+                  "border-2 border-scriba-paper shadow-[0_10px_22px_rgba(79,168,240,0.42)] transition-colors"
                 )}
               >
                 <span aria-hidden className="block h-[15px] w-[11px] rounded-[6px] bg-white" />

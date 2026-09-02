@@ -112,7 +112,7 @@ export default async function LibraryPage() {
                     <NavLink
                       href={`/recording/${s.id}/${recordingRouteFor(s.mode)}`}
                       spinner="overlay"
-                      className="inline-flex flex-1 items-center justify-center rounded-full bg-scriba-blue px-4 py-2 text-[11px] font-semibold text-white transition-colors hover:bg-scriba-blue-hover"
+                      className="inline-flex flex-1 items-center justify-center rounded-full scriba-cta bg-[image:var(--scriba-cta)] px-4 py-2 text-[11px] font-semibold text-scriba-cta-ink transition-colors"
                     >
                       Continuar gravação →
                     </NavLink>

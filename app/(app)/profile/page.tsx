@@ -150,18 +150,27 @@ export default async function ProfilePage() {
   );
 }
 
+/**
+ * Uma linha "rótulo / valor" da lista de informações da conta.
+ *
+ * O wrapper é um <div> contendo APENAS <dt> e <dd> — é a única forma de
+ * agrupamento que o HTML aceita dentro de um <dl>. Antes o ícone era irmão
+ * deles e o par ficava dois níveis abaixo do <dl>, o que invalidava a lista
+ * inteira (axe: `dlitem` + `definition-list`, 7 nós). O ícone agora mora
+ * dentro do <dt>, posicionado em absoluto para o visual não mudar: o `pl-12`
+ * do wrapper abre a calha e o `-translate-y-1/2` centra o disco na altura
+ * das duas linhas.
+ */
 function InfoRow({ icon, label, value }: { icon: ReactNode; label: string; value: string }) {
   return (
-    <div className="flex items-center gap-3">
-      <span className="flex size-9 flex-none items-center justify-center rounded-full bg-scriba-blue-soft text-scriba-blue-ink">
-        {icon}
-      </span>
-      <div className="flex min-w-0 flex-1 flex-col">
-        <dt className="text-[11px] font-medium uppercase tracking-wider text-scriba-ink-mute">
-          {label}
-        </dt>
-        <dd className="truncate text-sm font-medium text-scriba-ink-strong">{value}</dd>
-      </div>
+    <div className="relative min-w-0 pl-12">
+      <dt className="text-[11px] font-medium uppercase tracking-wider text-scriba-ink-mute">
+        <span className="-translate-y-1/2 absolute top-1/2 left-0 flex size-9 flex-none items-center justify-center rounded-full bg-scriba-blue-soft text-scriba-blue-ink">
+          {icon}
+        </span>
+        {label}
+      </dt>
+      <dd className="truncate text-sm font-medium text-scriba-ink-strong">{value}</dd>
     </div>
   );
 }

@@ -79,8 +79,7 @@ export function TitleDialog({ open, onOpenChange, initialValue, onSave }: TitleD
             onClick={handleSave}
             disabled={saving}
             className={cn(
-              "inline-flex h-9 items-center justify-center rounded-full bg-scriba-blue px-5 text-[13px] font-semibold text-white shadow-[0_8px_20px_rgba(79,168,240,0.28)] transition-colors",
-              "hover:bg-scriba-blue-hover",
+              "inline-flex h-9 items-center justify-center rounded-full scriba-cta bg-[image:var(--scriba-cta)] px-5 text-[13px] font-semibold text-scriba-cta-ink shadow-[0_8px_20px_var(--scriba-cta-shadow)] transition-colors",
               "focus-visible:outline-none focus-visible:ring-4 focus-visible:ring-scriba-blue/30",
               "disabled:cursor-not-allowed disabled:opacity-70"
             )}

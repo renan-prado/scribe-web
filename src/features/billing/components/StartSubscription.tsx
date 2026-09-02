@@ -86,8 +86,8 @@ export function StartSubscription({ plan }: { plan: PaidPlanKey }) {
           <Link
             href="/profile"
             className={cn(
-              "inline-flex items-center justify-center rounded-full bg-scriba-blue px-6 py-3 text-sm font-semibold text-white outline-none transition-colors",
-              "hover:bg-scriba-blue-hover focus-visible:ring-4 focus-visible:ring-scriba-blue/30"
+              "inline-flex items-center justify-center rounded-full scriba-cta bg-[image:var(--scriba-cta)] px-6 py-3 text-sm font-semibold text-scriba-cta-ink outline-none transition-colors",
+              " focus-visible:ring-4 focus-visible:ring-scriba-blue/30"
             )}
           >
             Ver planos no perfil

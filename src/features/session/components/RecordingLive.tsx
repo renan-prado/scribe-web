@@ -575,7 +575,7 @@ export function RecordingLive({
           )}
         >
           Ler novidades
-          <span className="inline-flex min-w-5 items-center justify-center rounded-full bg-scriba-blue px-1.5 text-[0.65rem] font-bold text-white">
+          <span className="inline-flex min-w-5 items-center justify-center rounded-full scriba-cta bg-[image:var(--scriba-cta)] px-1.5 text-[0.65rem] font-bold text-scriba-cta-ink">
             {pendingNew}
           </span>
         </button>

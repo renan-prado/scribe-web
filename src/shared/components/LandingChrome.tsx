@@ -48,7 +48,7 @@ export function LandingHeader({ onLandingPage = false }: LandingHeaderProps) {
           </Link>
           <Link
             href="/sign-in"
-            className="lp-cta inline-flex items-center justify-center gap-2 rounded-[22px] bg-[image:var(--lp-cta)] py-3 px-5 text-[12px] font-semibold uppercase tracking-[.04em] text-lp-cta-ink shadow-[0_5px_14px_rgba(79,168,240,.3)]"
+            className="scriba-cta inline-flex items-center justify-center gap-2 rounded-[22px] bg-[image:var(--scriba-cta)] py-3 px-5 text-[12px] font-semibold uppercase tracking-[.04em] text-scriba-cta-ink shadow-[0_5px_14px_var(--scriba-cta-shadow)]"
           >
             <ScribaMark size={18} />
             Começar

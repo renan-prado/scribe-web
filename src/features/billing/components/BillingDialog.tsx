@@ -415,8 +415,8 @@ export function BillingDialog({
                       disabled={pending !== null}
                       onClick={() => void startCheckout({ kind: "topup", quantity }, "topup")}
                       className={cn(
-                        "inline-flex w-full items-center justify-center gap-2 rounded-full bg-scriba-blue px-5 py-3 text-[14px] font-semibold text-white shadow-[0_10px_24px_rgba(79,168,240,0.32)] outline-none transition-colors",
-                        "hover:bg-scriba-blue-hover focus-visible:ring-4 focus-visible:ring-scriba-blue/30",
+                        "inline-flex w-full items-center justify-center gap-2 rounded-full scriba-cta bg-[image:var(--scriba-cta)] px-5 py-3 text-[14px] font-semibold text-scriba-cta-ink shadow-[0_10px_24px_var(--scriba-cta-shadow)] outline-none transition-colors",
+                        " focus-visible:ring-4 focus-visible:ring-scriba-blue/30",
                         "disabled:cursor-not-allowed disabled:opacity-70"
                       )}
                     >

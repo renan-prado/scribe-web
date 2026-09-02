@@ -46,7 +46,7 @@ const deepenButtonVariants = cva(
       },
       state: {
         enabled:
-          "bg-scriba-blue text-white shadow-[0_5px_14px_rgba(79,168,240,0.32)] hover:bg-scriba-blue-hover",
+          "scriba-cta bg-[image:var(--scriba-cta)] text-scriba-cta-ink shadow-[0_5px_14px_var(--scriba-cta-shadow)]",
         disabled: "cursor-not-allowed bg-scriba-ink-mute/25 text-scriba-ink-mute shadow-none",
       },
     },
@@ -85,7 +85,7 @@ export function DeepenButton({ sessionId, hasDeepening, variant }: DeepenButtonP
       <NavLink
         href={href}
         contentClassName="inline-flex items-center justify-center gap-1.5"
-        className="inline-flex w-full items-center justify-center rounded-full bg-scriba-blue px-4 py-3 text-[11px] font-semibold uppercase tracking-wider text-white shadow-[0_5px_14px_rgba(79,168,240,0.32)] transition-colors hover:bg-scriba-blue-hover sm:flex-1"
+        className="inline-flex w-full items-center justify-center rounded-full scriba-cta bg-[image:var(--scriba-cta)] px-4 py-3 text-[11px] font-semibold uppercase tracking-wider text-scriba-cta-ink shadow-[0_5px_14px_var(--scriba-cta-shadow)] transition-colors sm:flex-1"
       >
         <BookOpen aria-hidden className="size-3.5" />
         Ver estudo

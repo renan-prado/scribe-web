@@ -138,8 +138,7 @@ export function NewRecordingDialog({ trigger }: { trigger?: ReactNode }) {
           trigger
             ? "contents"
             : cn(
-                "inline-flex h-8.5 items-center gap-2 rounded-full bg-scriba-blue px-4 text-[13px] font-semibold text-white shadow-[0_8px_20px_rgba(79,168,240,0.32)] transition-colors",
-                "hover:bg-scriba-blue-hover",
+                "inline-flex h-8.5 items-center gap-2 rounded-full scriba-cta bg-[image:var(--scriba-cta)] px-4 text-[13px] font-semibold text-scriba-cta-ink shadow-[0_8px_20px_var(--scriba-cta-shadow)] transition-colors",
                 "focus-visible:outline-none focus-visible:ring-4 focus-visible:ring-scriba-blue/30"
               )
         )}
@@ -266,7 +265,7 @@ export function NewRecordingDialog({ trigger }: { trigger?: ReactNode }) {
                   "mt-1 inline-flex w-full items-center justify-center gap-2.5 rounded-full px-7 py-3.5 text-[15px] font-semibold shadow-[0_10px_24px_rgba(79,168,240,0.32)] transition-colors",
                   insufficient
                     ? "cursor-not-allowed bg-scriba-ink-mute/25 text-scriba-ink-mute shadow-none"
-                    : "bg-scriba-blue text-white hover:bg-scriba-blue-hover",
+                    : "scriba-cta bg-[image:var(--scriba-cta)] text-scriba-cta-ink",
                   "disabled:cursor-not-allowed disabled:opacity-90",
                   "focus-visible:outline-none focus-visible:ring-4 focus-visible:ring-scriba-blue/30"
                 )}
@@ -292,8 +291,7 @@ export function NewRecordingDialog({ trigger }: { trigger?: ReactNode }) {
                   type="button"
                   onClick={() => setBillingOpen(true)}
                   className={cn(
-                    "inline-flex w-full items-center justify-center gap-2.5 rounded-full bg-scriba-blue px-7 py-3.5 text-[15px] font-semibold text-white shadow-[0_10px_24px_rgba(79,168,240,0.32)] transition-colors",
-                    "hover:bg-scriba-blue-hover",
+                    "inline-flex w-full items-center justify-center gap-2.5 rounded-full scriba-cta bg-[image:var(--scriba-cta)] px-7 py-3.5 text-[15px] font-semibold text-scriba-cta-ink shadow-[0_10px_24px_var(--scriba-cta-shadow)] transition-colors",
                     "focus-visible:outline-none focus-visible:ring-4 focus-visible:ring-scriba-blue/30"
                   )}
                 >

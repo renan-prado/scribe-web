@@ -45,7 +45,7 @@ export function FxRateBadge({ rate }: { rate: UsdBrlRate | null }) {
           />
           <button
             type="submit"
-            className="rounded-md bg-scriba-blue px-2.5 py-1 text-[11px] font-semibold text-white transition-opacity hover:opacity-90"
+            className="rounded-md scriba-cta bg-[image:var(--scriba-cta)] px-2.5 py-1 text-[11px] font-semibold text-scriba-cta-ink transition-opacity hover:opacity-90"
           >
             Salvar
           </button>

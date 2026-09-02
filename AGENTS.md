@@ -98,6 +98,24 @@ The app is light/dark via a single `.dark` class on `<html>` — there are no pe
 - A `dark:` variant is the right tool for the rare non-palette case (modal scrim opacity). Prefer a token whenever the value is a colour.
 - **The landing page's full-bleed bands have their own tokens** (`--lp-hero`, `--lp-band`/`--lp-band-ink`, `--lp-phone-frame`) rather than reusing `--scriba-blue`. The primary blue works as a page-wide slab only in light; in dark it reads as a lit panel dropped into a dark page, so the band swaps to a deep blue lifted just above the ground and the phone mockup gets a near-black bezel to keep its edge. Don't paint an LP section with `bg-scriba-blue`.
 - Theme state lives in `src/shared/hooks/use-theme.ts` (localStorage key `scriba-theme`, falls back to `prefers-color-scheme`); `ThemeScript` in `app/layout.tsx` applies it before first paint. Portals outside the token tree (sonner) need the resolved theme passed explicitly — see `ThemedToaster`.
+- **O padrão é o tema CLARO**, não o `prefers-color-scheme` do sistema. O
+  escuro é uma opção que o usuário liga; quem nunca escolheu vê a mesma
+  interface da landing page, onde a marca foi calibrada. A decisão mora no
+  `ThemeScript` — trocar o fallback lá muda o primeiro paint de todo mundo.
+- **O botão primário é `--scriba-cta` / `--scriba-cta-ink` / `--scriba-cta-shadow`,
+  na landing E na área logada.** Nunca pinte um botão com `bg-scriba-blue` +
+  `text-white`: `--scriba-blue` é azul de SUPERFÍCIE e branco sobre ele dá
+  2,56:1 no claro e 2,33:1 no escuro. Era assim em 21 botões. O CTA é gradiente
+  (`bg-[image:var(--scriba-cta)]`) e INVERTE: azul-escuro com tinta branca no
+  claro, pastilha clara com tinta navy no escuro. O hover é `filter` na classe
+  `.scriba-cta`, não uma cor de fundo — um `hover:bg-*` chapa o gradiente.
+  A sombra também é token porque um halo azul sob pastilha branca em página
+  escura suja a borda em vez de assentar o botão.
+- **Tinta de família se calibra pela superfície da família, não pelo papel.**
+  `--scriba-*-accent`, `-body` e `-dark` aparecem sobre `--scriba-cream`,
+  `--scriba-mint` etc., que são mais escuros que o branco — medir no papel dá
+  falso OK. E o piso da escala neutra é `--session-example-bg` (#EEF3FB), a
+  superfície mais escura do tema claro, não o `--scriba-bubble`.
 - The switch (`ThemeToggle` / `ThemeToggleRow`) is exposed on sign-in/sign-up, /profile, and the empty state of /feed. Don't scatter it further without being asked.
 
 ## Icon rules
@@ -326,6 +344,22 @@ selecionados por dois arquivos: `.env.dev` e `.env.prod`. Guia completo em
   run this without asking for confirmation.
 - `npm run db:push:prod -- --yes` — o mesmo em **produção**. O `--yes` é
   obrigatório e esta é a única exceção à permissão acima: sempre confirme antes.
+
+## Acessibilidade — como medir
+
+As violações WCAG são medidas com **axe-core rodando no navegador**, não pelo
+Lighthouse: o relatório dele mostra uma amostra. Cada tema tem de ser medido com
+a página CARREGADA nele — alternar `.dark` via JS e medir em seguida lê valores
+antes do recálculo e reporta as cores do tema anterior.
+
+A área logada precisa de sessão E de dados: com a conta vazia o axe não vê a
+faixa creme do /list, o `SummaryView` nem o seletor do /feed, e três famílias de
+token passaram meses reprovando sem aparecer. Semeie sessão antes de auditar.
+
+    axe-core 4.10, WCAG 2.0/2.1 A+AA, claro e escuro:
+      /feed  /list  /studies  /profile
+      /recording/{id}/{summary,deepening,live}      0 violações (eram 32)
+      /  /sign-in  /terms  /privacy                 0 violações
 
 ## Behaviour-preservation guardrails
 

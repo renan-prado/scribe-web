@@ -138,8 +138,8 @@ export function PlanCard() {
               type="button"
               onClick={() => setBillingOpen(true)}
               className={cn(
-                "inline-flex flex-1 items-center justify-center gap-2 rounded-full bg-scriba-blue px-5 py-2.5 text-[13px] font-semibold text-white outline-none transition-colors",
-                "hover:bg-scriba-blue-hover focus-visible:ring-4 focus-visible:ring-scriba-blue/30"
+                "inline-flex flex-1 items-center justify-center gap-2 rounded-full scriba-cta bg-[image:var(--scriba-cta)] px-5 py-2.5 text-[13px] font-semibold text-scriba-cta-ink outline-none transition-colors",
+                " focus-visible:ring-4 focus-visible:ring-scriba-blue/30"
               )}
             >
               <CreditCard className="size-3.5" strokeWidth={2.2} />

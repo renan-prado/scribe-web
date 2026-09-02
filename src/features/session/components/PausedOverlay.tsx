@@ -97,8 +97,8 @@ export function PausedOverlay({
             type="button"
             onClick={() => setBillingOpen(true)}
             className={cn(
-              "inline-flex items-center justify-center gap-2 rounded-full bg-scriba-blue px-6 py-3 text-sm font-semibold text-white shadow-[0_10px_24px_rgba(79,168,240,0.32)] outline-none transition-colors",
-              "hover:bg-scriba-blue-hover focus-visible:ring-4 focus-visible:ring-scriba-blue/30"
+              "inline-flex items-center justify-center gap-2 rounded-full scriba-cta bg-[image:var(--scriba-cta)] px-6 py-3 text-sm font-semibold text-scriba-cta-ink shadow-[0_10px_24px_var(--scriba-cta-shadow)] outline-none transition-colors",
+              " focus-visible:ring-4 focus-visible:ring-scriba-blue/30"
             )}
           >
             <CreditCard className="size-4" strokeWidth={2.2} />
@@ -109,8 +109,7 @@ export function PausedOverlay({
             type="button"
             onClick={onResume}
             className={cn(
-              "inline-flex items-center justify-center gap-2 rounded-full bg-scriba-blue px-6 py-3 text-sm font-semibold text-white shadow-[0_10px_24px_rgba(79,168,240,0.32)] transition-colors outline-none",
-              "hover:bg-scriba-blue-hover",
+              "inline-flex items-center justify-center gap-2 rounded-full scriba-cta bg-[image:var(--scriba-cta)] px-6 py-3 text-sm font-semibold text-scriba-cta-ink shadow-[0_10px_24px_var(--scriba-cta-shadow)] transition-colors outline-none",
               "focus-visible:ring-4 focus-visible:ring-scriba-blue/30"
             )}
           >

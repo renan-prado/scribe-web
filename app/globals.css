@@ -81,7 +81,6 @@
   /* Surface-tinted body text — one per palette swatch, for tile/card interiors */
   --color-scriba-yellow-light: var(--scriba-yellow-light);
   --color-scriba-blue-ink: var(--scriba-blue-ink);
-  --color-scriba-blue-body: var(--scriba-blue-body);
   --color-scriba-rose-body: var(--scriba-rose-body);
   --color-scriba-mint-body: var(--scriba-mint-body);
   --color-scriba-cream-body: var(--scriba-cream-body);
@@ -121,10 +120,10 @@
   --color-scriba-on-blue: var(--scriba-on-blue);
   /* Landing-page bands: full-bleed section grounds that carry their own
      colorway per theme (see --lp-band / --lp-phone-frame). */
-  /* `--lp-band` e `--lp-cta` são GRADIENTES: entram por
+  /* `--lp-band` e `--scriba-cta` são GRADIENTES: entram por
      `bg-[image:var(--…)]`, não como utilitário de cor. Só a tinta vira
      utilitário. */
-  --color-lp-cta-ink: var(--lp-cta-ink);
+  --color-scriba-cta-ink: var(--scriba-cta-ink);
   --color-lp-band-ink: var(--lp-band-ink);
   --color-lp-phone-frame: var(--lp-phone-frame);
 }
@@ -184,19 +183,21 @@
   --scriba-green: #4FC28B;
   --scriba-green-hover: #3EB07A;
   --scriba-green-soft: #E8F6EF;
-  --scriba-green-ink: #2E8F63;
+  /* 4,59:1 sobre `--scriba-green-soft`, o pior fundo em que aparece — o papel
+     branco é mais folgado. Era #2E8F63 (3,61:1) e reprovava AA. */
+  --scriba-green-ink: #287C56;
   --scriba-green-body: #6E9E85;
   --scriba-yellow: #F8C64B;
   --scriba-yellow-hover: #F2B92F;
   --scriba-mint: #E4EFEA;
   --scriba-mint-ink: #2F5A49;
-  --scriba-mint-accent: #4E8570;
+  --scriba-mint-accent: #447461;
   --scriba-rose: #FAEAE5;
   --scriba-rose-ink: #6E4636;
   --scriba-rose-accent: #A8715C;
   --scriba-cream: #FDF3DD;
   --scriba-cream-ink: #6B5A2A;
-  --scriba-cream-accent: #C79B2A;
+  --scriba-cream-accent: #896B1D;
   --scriba-lilac: #EAF0FB;
   --scriba-lilac-ink: #3F5170;
   --scriba-lilac-accent: #6E82A8;
@@ -225,7 +226,7 @@
      isolado não quer dizer nada; o que importa é a escala. */
   --scriba-ink: #445261;
   --scriba-ink-soft: #566474;
-  --scriba-ink-mute: #617487;
+  --scriba-ink-mute: #5E7183;
   --scriba-surface: #F7FAFD;
   --scriba-hairline: #EDF2F7;
   --scriba-hairline-soft: #EEF4FA;
@@ -240,10 +241,9 @@
      não pelo papel branco.
        branco 5,03 · surface 4,80 · blue-soft 4,52 */
   --scriba-blue-ink: #3473AA;
-  --scriba-blue-body: #5E86AC;
   --scriba-rose-body: #A08373;
-  --scriba-mint-body: #6E8A7E;
-  --scriba-cream-body: #9C8A55;
+  --scriba-mint-body: #597066;
+  --scriba-cream-body: #7D6E44;
   --scriba-btn-muted: #F4F8FC;
   --scriba-btn-muted-hover: #E8EEF6;
   /* Scrollbar. Consumido só pelas regras de `::-webkit-scrollbar` /
@@ -257,13 +257,14 @@
   --session-verse-border: #9FCBEC;
   --session-chip-ai: #7FA9CC;
   /* Coin/gold tokens */
-  --scriba-gold-ink: #B07F13;
+  /* 4,57:1 sobre `--scriba-gold-soft`. Era #B07F13 (3,39:1). */
+  --scriba-gold-ink: #946B10;
   /* Auth surface tokens */
   --auth-btn-border: #DFEAF4;
   --auth-btn-border-hover: #C9D9E8;
   --auth-btn-bg-hover: #F6FAFE;
   /* Mint saved-state token */
-  --scriba-mint-dark: #3F7F66;
+  --scriba-mint-dark: #3B765F;
   /* Scriba AI chat bubble tokens (feed + summary) */
   --scriba-bubble: #F5F8FB;
   --scriba-bubble-ink: #2A3542;
@@ -342,8 +343,14 @@
      claro e a letra branca ao mesmo tempo. As duas paradas passam:
        #1976C5 (4,73) → #0D5E9F (6,73)
      Mesma ressalva do `--lp-band`: gradiente não é medido automaticamente. */
-  --lp-cta: linear-gradient(135deg, #1976C5 0%, #0D5E9F 100%);
-  --lp-cta-ink: #FFFFFF;
+  /* O BOTÃO PRIMÁRIO DO PRODUTO — a landing e a área logada usam este par,
+     não dois. Era `--lp-cta`, exclusivo da LP, enquanto a área logada pintava
+     `bg-scriba-blue` com `text-white`: 2,56:1, reprovando AA em 21 botões.
+     Azul de superfície não sustenta tinta branca — o mesmo diagnóstico que
+     obrigou a `--lp-band` a descer. */
+  --scriba-cta: linear-gradient(135deg, #1976C5 0%, #0D5E9F 100%);
+  --scriba-cta-ink: #FFFFFF;
+  --scriba-cta-shadow: rgba(79, 168, 240, 0.32);
   --lp-header-h: 71px;
   /* Design-system border widths */
   --border-book: 1.5px;   /* book glyph icon border */
@@ -442,7 +449,6 @@
   --scriba-hairline-soft: #221E40;
   --scriba-yellow-light: #FFE29A;
   --scriba-blue-ink: #8AC6FA;
-  --scriba-blue-body: #94AECB;
   --scriba-rose-body: #B99C8F;
   --scriba-mint-body: #8DB2A4;
   --scriba-cream-body: #B7A47A;
@@ -487,9 +493,12 @@
   --lp-phone-frame: #0A0817;
   --scriba-on-blue: #0B2742;
   /* No escuro o CTA inverte: pastilha clara sobre a página escura, com tinta
-     navy. 15,18:1 no início do gradiente e 12,87:1 no fim. */
-  --lp-cta: linear-gradient(135deg, #FFFFFF 0%, #E6EDF5 100%);
-  --lp-cta-ink: #0B2742;
+     navy. 15,18:1 no início do gradiente e 12,87:1 no fim.
+     A sombra inverte junto: halo azul sob pastilha branca em página escura
+     suja a borda em vez de assentar o botão. */
+  --scriba-cta: linear-gradient(135deg, #FFFFFF 0%, #E6EDF5 100%);
+  --scriba-cta-ink: #0B2742;
+  --scriba-cta-shadow: rgba(0, 0, 0, 0.45);
 }
 
 /* sm: o header ganha py-[18px] e cresce 8px. */
@@ -590,9 +599,12 @@
 }
 
 @layer components {
-  .lp-cta {
+  /* Botão primário: landing E área logada. O hover é `filter`, não cor de
+     fundo — o fundo é gradiente e inverte por tema, então clarear/escurecer
+     serve aos dois sem um segundo par de tokens. */
+  .scriba-cta {
     transition: filter 0.18s ease, box-shadow 0.18s ease;
-    &:hover { filter: brightness(0.95); box-shadow: 0 14px 30px rgba(79,168,240,0.4); }
+    &:hover { filter: brightness(0.95); box-shadow: 0 14px 30px var(--scriba-cta-shadow); }
   }
   .lp-cta-yellow {
     transition: filter 0.18s ease, box-shadow 0.18s ease;
