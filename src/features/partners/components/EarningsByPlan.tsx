@@ -13,9 +13,9 @@ import { commissionCents, PAYOUT_MINIMUM_CENTS } from "@/lib/partners/economics"
  * ela ele também não sabe que indicar um Estudioso vale mais que o dobro de um
  * Pessoal — que é exatamente o tipo de coisa que muda o que ele fala.
  *
- * A última coluna responde a pergunta seguinte, e é a que realmente importa
- * para quem está começando: quantas indicações faltam para o dinheiro sair da
- * tela e cair na conta. O mínimo de saque só é frustrante quando é invisível.
+ * O mínimo de saque é mencionado no rodapé, em uma frase, e NÃO como um
+ * "faltam N assinantes" por linha: junto do valor da comissão, aquele número
+ * era lido como se o parceiro precisasse de N assinantes para ganhar aquilo.
  *
  * Os valores saem de `lib/billing/plans.ts` — o MESMO catálogo do checkout e
  * da landing. Número de comissão calculado sobre preço copiado à mão é uma
@@ -30,13 +30,11 @@ type Props = {
 export function EarningsByPlan({ rateBps }: Props) {
   const rows = PAID_PLAN_KEYS.map((key) => {
     const plan = PLANS[key];
-    const commission = commissionCents(plan.priceCents, rateBps);
     return {
       key,
       name: plan.name,
       priceCents: plan.priceCents,
-      commissionCents: commission,
-      toPayout: commission > 0 ? Math.ceil(PAYOUT_MINIMUM_CENTS / commission) : 0,
+      commissionCents: commissionCents(plan.priceCents, rateBps),
     };
   });
 
@@ -63,16 +61,9 @@ export function EarningsByPlan({ rateBps }: Props) {
                 {formatBrl(row.priceCents)} por mês
               </span>
             </div>
-            <div className="flex flex-none flex-col items-end">
-              <span className="font-mono text-[15px] font-semibold text-scriba-ink-strong">
-                {formatBrl(row.commissionCents)}
-              </span>
-              {row.toPayout > 0 ? (
-                <span className="text-[11px] font-light text-scriba-ink-mute">
-                  {row.toPayout} {row.toPayout === 1 ? "assinante" : "assinantes"} para sacar
-                </span>
-              ) : null}
-            </div>
+            <span className="flex-none font-mono text-[15px] font-semibold text-scriba-ink-strong">
+              {formatBrl(row.commissionCents)}
+            </span>
           </li>
         ))}
       </ul>

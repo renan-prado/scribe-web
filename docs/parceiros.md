@@ -144,9 +144,11 @@ linha do pagamento. Não há upload: guardamos o endereço, não o arquivo.
 - **Visitas** — quantas pessoas abriram o link (contagem única por dia).
 - **Cadastros** — quantas dessas criaram conta.
 - **Assinantes** — quantas viraram assinantes pagantes.
-- **Quanto ele ganha por plano** — a comissão em reais de cada assinatura, e
-  quantas indicações faltam para alcançar o mínimo de saque. "30% da primeira
-  mensalidade" é fórmula; o parceiro precisa do valor.
+- **Quanto ele ganha por plano** — a comissão em reais de cada assinatura.
+  "30% da primeira mensalidade" é fórmula; o parceiro precisa do valor. O
+  mínimo de saque aparece uma vez, no rodapé do cartão — repetido por linha
+  como "faltam N assinantes", era lido como se o valor ao lado só valesse
+  depois de N indicações.
 - **A liberar / disponível / já pago** — em reais.
   - *A liberar*: dentro da carência de 30 dias.
   - *Disponível*: passou a carência e ainda não foi pago — é o que sai no
