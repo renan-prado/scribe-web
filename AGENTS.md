@@ -141,23 +141,38 @@ desencontra — já aconteceu, e o conserto virou commit.
 
 **Os consumos de fora do React vivem em `public/brand/`** — `pena.svg` e os
 dois favicons — porque favicon, manifest e dados estruturados não passam por
-componente. Eles NÃO se atualizam sozinhos quando `ScribaMark` muda. Quando a
-marca mudar, os cinco pontos abaixo mudam juntos:
+componente. Eles NÃO se atualizam sozinhos quando `ScribaMark` muda.
 
-1. `src/shared/brand/ScribaMark.tsx` — a aplicação inteira.
-2. `public/brand/pena.svg` — a mesma pena para consumo externo.
-3. `public/brand/favicon-{light,dark}-theme.svg` — a aba do navegador.
-4. `app/opengraph-image.tsx` — o card de compartilhamento (Satori não lê
-   componente React do app nem `clip-path`; o SVG ali é inline de propósito).
-5. `app/manifest.ts` + `app/layout.tsx` + `LandingJsonLd.tsx` — só apontam
-   para `/brand/`, mas confira se o arquivo apontado ainda existe.
+Os MESTRES são `public/brand/logo.png` (quadrado, opaco) e
+`public/brand/banner-preview.png` (1200×630). Todo o resto de raster é
+derivado deles por `sharp` — não desenhe um tamanho à mão. Quando a marca
+mudar, troque os mestres e regenere:
 
-**Não crie `app/icon.svg` nem `app/favicon.ico`.** São convenções de arquivo
-do Next que injetam um `<link rel="icon">` **sem `media`**, e a marca precisa
-trocar com o tema — por isso os ícones são declarados em `metadata.icons` no
-`app/layout.tsx`. As duas coisas não se substituem, elas se SOMAM: enquanto
-`app/favicon.ico` existiu (o padrão do Next, vindo do scaffold), o `<head>`
-saía com três `<link rel="icon">` e o ícone do Next vencia na aba.
+1. `src/shared/brand/ScribaMark.tsx` — a aplicação inteira (o `<path>`).
+2. `public/brand/pena.svg` — a mesma pena para consumo externo e para a
+   máscara do logotipo em gradiente.
+3. `public/brand/favicon-{light,dark}-theme.svg` — a aba, por tema.
+4. `app/favicon.ico` — 16/32/48/64/128/256 no mesmo arquivo.
+5. `app/apple-icon.png` (180, opaco) e `public/brand/icon-{192,512}.png`.
+6. `app/opengraph-image.png` — cópia do banner (o `.alt.txt` ao lado).
+7. `app/manifest.ts` + `app/layout.tsx` + `LandingJsonLd.tsx` — só apontam,
+   mas confira se o arquivo apontado ainda existe.
+
+**Formato importa mais do que parece: o Google não aceita SVG como favicon.**
+A lista dele é BMP, GIF, ICO, PNG, JPEG, PPM e TIFF. Enquanto o site declarou
+só os dois SVGs — e ainda por cima atrás de `media`, que rastreador não
+avalia — a busca continuou mostrando o ícone antigo, e `/favicon.ico` dava
+404. Por isso `app/favicon.ico` existe e NÃO pode sumir de novo. Pela mesma
+razão o logo do JSON-LD e os ícones do manifest são PNG: o Chrome não instala
+PWA com ícone SVG.
+
+**Ordem de precedência, medida na prática:** `metadata.icons` no
+`app/layout.tsx` SUPRIME as convenções `app/icon.*` e `app/apple-icon.*`,
+mas NÃO suprime `app/favicon.ico` — esse é emitido junto. É por isso que o
+`apple-touch-icon` está declarado à mão no bloco de metadata: o arquivo
+sozinho era servido, mas nenhum `<link>` apontava para ele. O bloco existe
+porque só ele expressa `prefers-color-scheme`; a convenção de arquivo emite
+`<link>` sem `media`.
 
 ## Billing (Stripe) — invariantes que não se negociam
 

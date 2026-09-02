@@ -56,13 +56,11 @@ export const metadata: Metadata = {
     siteName: SITE_NAME,
     title: SITE_TITLE,
     description: SITE_DESCRIPTION,
-    images: [{ url: "/opengraph-image", width: 1200, height: 630, alt: "Scriba" }],
   },
   twitter: {
     card: "summary_large_image",
     title: SITE_TITLE,
     description: SITE_DESCRIPTION,
-    images: ["/opengraph-image"],
   },
   // Fora de produção o `noindex` vem junto com o `Disallow: /` de
   // `app/robots.ts`: o robots impede o rastreio, a meta tag cobre a URL que já
@@ -77,11 +75,17 @@ export const metadata: Metadata = {
       "max-snippet": -1,
     },
   },
-  // Os ícones ficam AQUI e não em `app/icon.svg`/`app/favicon.ico` de
-  // propósito: a convenção de arquivo do Next emite um <link> sem `media`,
-  // e a marca precisa trocar com o tema. Os dois arquivos-convenção foram
-  // removidos — enquanto existiam, o `favicon.ico` padrão do Next era
-  // emitido JUNTO com estes e vencia na aba do navegador.
+  // Os SVGs por tema ficam AQUI porque a convenção de arquivo do Next emite
+  // um <link> sem `media`, e só o bloco de metadata expressa o
+  // `prefers-color-scheme`.
+  //
+  // Eles NÃO bastam sozinhos, e é por isso que `app/favicon.ico` voltou a
+  // existir (agora com a marca certa, não a do scaffold): o Google não
+  // aceita SVG como favicon — a lista dele é BMP, GIF, ICO, PNG, JPEG, PPM
+  // e TIFF — e um rastreador não avalia `media`. Sem o .ico o site ficava
+  // sem nenhum ícone indexável, e a busca seguia mostrando o antigo.
+  // Os dois convivem: o .ico entra pela convenção de arquivo e este bloco
+  // continua valendo para o navegador.
   icons: {
     icon: [
       {
@@ -95,6 +99,11 @@ export const metadata: Metadata = {
         media: "(prefers-color-scheme: dark)",
       },
     ],
+    // Declarado à mão porque este bloco suprime a convenção `app/apple-icon`
+    // (o `favicon.ico` é a única que sobrevive a ele). Sem esta linha o
+    // arquivo era servido em /apple-icon.png mas nenhum <link> apontava para
+    // ele, e o iOS caía no screenshot da página ao salvar na tela inicial.
+    apple: [{ url: "/apple-icon.png", sizes: "180x180", type: "image/png" }],
   },
 };
 
