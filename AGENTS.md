@@ -83,6 +83,7 @@ src/features/partners/
   components/ReferralField.tsx  — campo de código na tela de entrada
   components/ReferralLinkCard.tsx
   components/PartnerTabs.tsx    — as três seções do painel (recebe painéis do server)
+  components/EarningsByPlan.tsx — comissão em reais por plano (lê o catálogo público)
   components/RefreshPanelButton.tsx
 src/features/session/
   components/*.tsx              — every UI piece of the recording page (Feed + FeedItemCard
@@ -375,6 +376,7 @@ ver `useCoinGuard` (`src/features/partners/
   components/ReferralField.tsx  — campo de código na tela de entrada
   components/ReferralLinkCard.tsx
   components/PartnerTabs.tsx    — as três seções do painel (recebe painéis do server)
+  components/EarningsByPlan.tsx — comissão em reais por plano (lê o catálogo público)
   components/RefreshPanelButton.tsx
 src/features/session/hooks/`), usado pelos três modos.
 Fluxo: aviso em 5 min e 2 min restantes → ao zerar, `pause()` + `PausedOverlay`
@@ -412,6 +414,7 @@ desfazer sem perceber.
   components/ReferralField.tsx  — campo de código na tela de entrada
   components/ReferralLinkCard.tsx
   components/PartnerTabs.tsx    — as três seções do painel (recebe painéis do server)
+  components/EarningsByPlan.tsx — comissão em reais por plano (lê o catálogo público)
   components/RefreshPanelButton.tsx
 src/features/session/` que sejam
   `"use client"`.** As telas dentro dos mockups de celular são markup estático
@@ -457,16 +460,19 @@ import estático — que também traz `width`/`height` de graça, sem CLS.
   components/ReferralField.tsx  — campo de código na tela de entrada
   components/ReferralLinkCard.tsx
   components/PartnerTabs.tsx    — as três seções do painel (recebe painéis do server)
+  components/EarningsByPlan.tsx — comissão em reais por plano (lê o catálogo público)
   components/RefreshPanelButton.tsx
 src/features/session/components/`. Keep `app/(app)/recording/[id]/live/page.tsx` as pure orchestration. Pure helpers go to `src/features/partners/
   components/ReferralField.tsx  — campo de código na tela de entrada
   components/ReferralLinkCard.tsx
   components/PartnerTabs.tsx    — as três seções do painel (recebe painéis do server)
+  components/EarningsByPlan.tsx — comissão em reais por plano (lê o catálogo público)
   components/RefreshPanelButton.tsx
 src/features/session/lib/`; reusable stateful behaviour goes to `src/features/partners/
   components/ReferralField.tsx  — campo de código na tela de entrada
   components/ReferralLinkCard.tsx
   components/PartnerTabs.tsx    — as três seções do painel (recebe painéis do server)
+  components/EarningsByPlan.tsx — comissão em reais por plano (lê o catálogo público)
   components/RefreshPanelButton.tsx
 src/features/session/hooks/`.
 - **New env var**: add to the Zod schema in `lib/env/server.ts` (or `client.ts`) — this is intentionally strict so a missing var fails at boot, not on the first request. As variáveis do Stripe são a exceção: ficam `.optional()` para o app subir sem cobrança configurada, e as rotas de billing respondem 503 `billing_unavailable`.

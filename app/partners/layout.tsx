@@ -3,7 +3,9 @@ import Link from "next/link";
 import { notFound } from "next/navigation";
 import type { ReactNode } from "react";
 import { ThemeToggle } from "@/components/ThemeToggle";
+import { UserMenu } from "@/features/auth/components/UserMenu";
 import { getCurrentPartner } from "@/lib/auth/require-partner";
+import { getCurrentProfile } from "@/lib/db/profiles";
 import { ScribaLogo } from "@/shared/brand";
 
 export const metadata: Metadata = {
@@ -22,9 +24,17 @@ export const dynamic = "force-dynamic";
  *
  * `notFound()` em vez de 403, pelo mesmo motivo do admin: não confirmamos a
  * existência da área para quem não deveria vê-la.
+ *
+ * O menu do avatar é o mesmo componente do app, na variante "partners": sem
+ * ele, sair da conta exigia ir até o app primeiro — o painel do parceiro é
+ * autônomo em tudo, menos em deslogar, que é a hora em que menos se quer
+ * procurar por onde.
  */
 export default async function PartnersLayout({ children }: { children: ReactNode }) {
-  const partner = await getCurrentPartner();
+  const [partner, profile] = await Promise.all([
+    getCurrentPartner(),
+    getCurrentProfile().catch(() => null),
+  ]);
   if (!partner) notFound();
 
   return (
@@ -34,13 +44,13 @@ export default async function PartnersLayout({ children }: { children: ReactNode
           <ScribaLogo size={26} textClassName="text-[19px]" subtitle="Parceiros" />
         </Link>
         <div className="flex items-center gap-3">
-          <ThemeToggle />
-          <Link
-            href="/feed"
-            className="text-[12.5px] font-light text-scriba-ink-soft transition-colors hover:text-scriba-ink-strong"
-          >
-            Ir para o app →
-          </Link>
+          <ThemeToggle compact />
+          <UserMenu
+            variant="partners"
+            displayName={profile?.displayName ?? partner.displayName}
+            email={profile?.email ?? null}
+            avatarUrl={profile?.avatarUrl ?? null}
+          />
         </div>
       </header>
       <main className="mx-auto flex w-full max-w-[900px] flex-1 flex-col gap-6 p-4 sm:p-6 lg:p-8">

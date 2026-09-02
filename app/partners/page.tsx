@@ -1,6 +1,7 @@
-import { ExternalLink } from "lucide-react";
+import { ExternalLink, Info } from "lucide-react";
 import type { Metadata } from "next";
 import { CoinMark } from "@/components/icons/CoinMark";
+import { EarningsByPlan } from "@/features/partners/components/EarningsByPlan";
 import { PartnerTabs } from "@/features/partners/components/PartnerTabs";
 import { ReferralLinkCard } from "@/features/partners/components/ReferralLinkCard";
 import { RefreshPanelButton } from "@/features/partners/components/RefreshPanelButton";
@@ -115,12 +116,13 @@ export default async function PartnerDashboardPage() {
                   }
                 />
               </div>
-              <p className="text-[11.5px] font-light leading-[1.5] text-scriba-ink-mute">
-                Os números têm defasagem natural: uma visita de hoje pode virar cadastro amanhã e
-                assinatura daqui a duas semanas. O mês em curso quase sempre parece menor do que vai
-                ser.
-              </p>
             </section>
+
+            <Callout>
+              Os números têm defasagem natural: uma visita de hoje pode virar cadastro amanhã e
+              assinatura daqui a duas semanas. O mês em curso quase sempre parece menor do que vai
+              ser.
+            </Callout>
 
             {partner.monthlyCoins > 0 ? (
               <section className="flex items-start gap-3 rounded-2xl border border-scriba-hairline-soft bg-scriba-cream p-5">
@@ -139,29 +141,32 @@ export default async function PartnerDashboardPage() {
           </>
         }
         ganhos={
-          <Panel title="Por mês">
-            {monthly.length === 0 ? (
-              <Empty>Nenhuma comissão ainda. Compartilhe seu link para começar.</Empty>
-            ) : (
-              <ul className="flex flex-col divide-y divide-scriba-hairline">
-                {monthly.map((m) => (
-                  <li key={m.month} className="flex items-center justify-between gap-3 py-2.5">
-                    <span className="text-[13px] text-scriba-ink first-letter:uppercase">
-                      {MONTH_FMT.format(new Date(`${m.month}-01T12:00:00Z`))}
-                    </span>
-                    <span className="text-right">
-                      <span className="font-mono text-[12px] font-semibold text-scriba-ink-strong">
-                        {formatBrl(m.cents)}
+          <>
+            <EarningsByPlan rateBps={partner.commissionRateBps} />
+            <Panel title="Por mês">
+              {monthly.length === 0 ? (
+                <Empty>Nenhuma comissão ainda. Compartilhe seu link para começar.</Empty>
+              ) : (
+                <ul className="flex flex-col divide-y divide-scriba-hairline">
+                  {monthly.map((m) => (
+                    <li key={m.month} className="flex items-center justify-between gap-3 py-2.5">
+                      <span className="text-[13px] text-scriba-ink first-letter:uppercase">
+                        {MONTH_FMT.format(new Date(`${m.month}-01T12:00:00Z`))}
                       </span>
-                      <span className="ml-2 text-[11px] font-light text-scriba-ink-mute">
-                        {m.commissions} {m.commissions === 1 ? "assinante" : "assinantes"}
+                      <span className="text-right">
+                        <span className="font-mono text-[12px] font-semibold text-scriba-ink-strong">
+                          {formatBrl(m.cents)}
+                        </span>
+                        <span className="ml-2 text-[11px] font-light text-scriba-ink-mute">
+                          {m.commissions} {m.commissions === 1 ? "assinante" : "assinantes"}
+                        </span>
                       </span>
-                    </span>
-                  </li>
-                ))}
-              </ul>
-            )}
-          </Panel>
+                    </li>
+                  ))}
+                </ul>
+              )}
+            </Panel>
+          </>
         }
         pagamentos={
           <Panel title="Pagamentos recebidos">
@@ -282,6 +287,23 @@ function Panel({ title, children }: { title: string; children: React.ReactNode }
       </h2>
       {children}
     </section>
+  );
+}
+
+/**
+ * Ressalva de leitura, destacada do conteúdo que ela ressalva.
+ *
+ * Solta no fim do cartão do funil, a nota sobre defasagem virava rodapé e não
+ * era lida — justamente por quem mais precisa dela: o parceiro que publicou
+ * ontem e abre o painel esperando ver número. Em caixa própria, com a barra e
+ * o ícone, ela para de parecer letra miúda.
+ */
+function Callout({ children }: { children: React.ReactNode }) {
+  return (
+    <aside className="flex items-start gap-2.5 rounded-xl border-l-2 border-scriba-blue bg-scriba-surface px-4 py-3">
+      <Info className="mt-px size-4 flex-none text-scriba-blue-ink" aria-hidden />
+      <p className="text-[12px] font-light leading-[1.55] text-scriba-ink-soft">{children}</p>
+    </aside>
   );
 }
 

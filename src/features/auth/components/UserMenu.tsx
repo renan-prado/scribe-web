@@ -1,6 +1,6 @@
 "use client";
 
-import { Handshake, LayoutDashboard, LogOut, User as UserIcon } from "lucide-react";
+import { ArrowRight, Handshake, LayoutDashboard, LogOut, User as UserIcon } from "lucide-react";
 import Link from "next/link";
 import { useRef } from "react";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
@@ -12,13 +12,27 @@ import {
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
 
+/**
+ * Onde o menu está sendo montado. Muda apenas os atalhos do meio — a
+ * identidade e o "Sair da conta" são iguais nos dois, e é justamente por isso
+ * que existe um componente só: o botão de sair é o motivo de o parceiro ter de
+ * ir até o app para deslogar, e duplicar essa parte convidaria os dois a
+ * divergirem.
+ */
+type MenuVariant = "app" | "partners";
+
 type Props = {
   displayName: string | null;
   email: string | null;
   avatarUrl: string | null;
-  isAdmin: boolean;
-  isPartner: boolean;
+  /** Só lidos na variante "app". */
+  isAdmin?: boolean;
+  isPartner?: boolean;
+  variant?: MenuVariant;
 };
+
+const ITEM_CLASS =
+  "rounded-xl px-3 py-2.5 text-[13px] font-medium text-scriba-ink-strong focus:bg-scriba-surface";
 
 function initialsFrom(name: string | null, email: string | null): string {
   const source = name?.trim() || email?.split("@")[0] || "?";
@@ -33,7 +47,14 @@ function initialsFrom(name: string | null, email: string | null): string {
  * like a small Dialog panel rather than the base shadcn menu. The identity
  * block on top mirrors the /profile hero at a smaller scale.
  */
-export function UserMenu({ displayName, email, avatarUrl, isAdmin, isPartner }: Props) {
+export function UserMenu({
+  displayName,
+  email,
+  avatarUrl,
+  isAdmin = false,
+  isPartner = false,
+  variant = "app",
+}: Props) {
   const signOutFormRef = useRef<HTMLFormElement>(null);
   const initials = initialsFrom(displayName, email);
   const shownName = displayName?.trim() || email?.split("@")[0] || "Sua conta";
@@ -77,29 +98,28 @@ export function UserMenu({ displayName, email, avatarUrl, isAdmin, isPartner }: 
 
           <div className="my-1.5 h-px bg-scriba-hairline" />
 
-          <DropdownMenuItem
-            render={<Link href="/profile" />}
-            className="rounded-xl px-3 py-2.5 text-[13px] font-medium text-scriba-ink-strong focus:bg-scriba-surface"
-          >
+          {variant === "partners" ? (
+            <DropdownMenuItem render={<Link href="/feed" />} className={ITEM_CLASS}>
+              <ArrowRight className="size-4 text-scriba-ink-soft" />
+              Ir para o app
+            </DropdownMenuItem>
+          ) : null}
+
+          <DropdownMenuItem render={<Link href="/profile" />} className={ITEM_CLASS}>
             <UserIcon className="size-4 text-scriba-ink-soft" />
             Meu perfil
           </DropdownMenuItem>
+
           {/* Sem este item o parceiro só chega ao painel digitando a URL —
               o admin manda o link uma vez e depois a área some do mundo dele. */}
-          {isPartner ? (
-            <DropdownMenuItem
-              render={<Link href="/partners" />}
-              className="rounded-xl px-3 py-2.5 text-[13px] font-medium text-scriba-ink-strong focus:bg-scriba-surface"
-            >
+          {variant === "app" && isPartner ? (
+            <DropdownMenuItem render={<Link href="/partners" />} className={ITEM_CLASS}>
               <Handshake className="size-4 text-scriba-ink-soft" />
               Área do parceiro
             </DropdownMenuItem>
           ) : null}
-          {isAdmin ? (
-            <DropdownMenuItem
-              render={<Link href="/admin" />}
-              className="rounded-xl px-3 py-2.5 text-[13px] font-medium text-scriba-ink-strong focus:bg-scriba-surface"
-            >
+          {variant === "app" && isAdmin ? (
+            <DropdownMenuItem render={<Link href="/admin" />} className={ITEM_CLASS}>
               <LayoutDashboard className="size-4 text-scriba-ink-soft" />
               Admin
             </DropdownMenuItem>
