@@ -33,12 +33,13 @@ import { PartnerDialog } from "./PartnerDialog";
 type Props = {
   initialPartners: AdminPartnerWithStats[];
   costPerThousandCoinsCents: number;
-  appOrigin: string;
+  /** Prefixo do link de indicação, já com o domínio (ex.: https://scriba.cc/r). */
+  linkBase: string;
 };
 
 const pct = (n: number) => `${(n * 100).toFixed(1).replace(".", ",")}%`;
 
-export function PartnersManager({ initialPartners, costPerThousandCoinsCents, appOrigin }: Props) {
+export function PartnersManager({ initialPartners, costPerThousandCoinsCents, linkBase }: Props) {
   const [search, setSearch] = useState("");
   const [editing, setEditing] = useState<AdminPartnerWithStats | null>(null);
   const [creating, setCreating] = useState(false);
@@ -134,7 +135,7 @@ export function PartnersManager({ initialPartners, costPerThousandCoinsCents, ap
             </TableHeader>
             <TableBody>
               {partners.map((p) => {
-                const link = `${appOrigin}/r/${p.slug}`;
+                const link = `${linkBase}/${p.slug}`;
                 const canPay = p.stats.availableCents >= PAYOUT_MINIMUM_CENTS;
                 return (
                   <TableRow key={p.id}>

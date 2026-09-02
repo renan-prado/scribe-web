@@ -37,7 +37,7 @@ export default async function AdminPartnersPage() {
       <PartnersManager
         initialPartners={partners}
         costPerThousandCoinsCents={costPerThousandCoinsCents}
-        appOrigin={appUrl("")}
+        linkBase={appUrl("/r")}
       />
     </div>
   );
