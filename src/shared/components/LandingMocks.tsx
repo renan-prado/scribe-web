@@ -1,6 +1,6 @@
 import { BlockRenderer, blockKey } from "@/features/session/components/BlockRenderer";
-import { PenaAvatar } from "@/features/session/components/PenaAvatar";
 import type { SummaryBlock } from "@/lib/domain/summary";
+import { ScribaAvatar } from "@/shared/brand";
 
 /**
  * As telas de demonstração dentro dos mockups de celular da landing page.
@@ -46,7 +46,7 @@ function Chip({ children, ai }: { children: React.ReactNode; ai: boolean }) {
 function AiCard({ label, children }: { label: string; children: React.ReactNode }) {
   return (
     <div className="animate-content-fade flex items-start gap-2.5">
-      <PenaAvatar />
+      <ScribaAvatar />
       <article className="relative flex flex-1 flex-col gap-3 rounded-3xl rounded-tl-none bg-scriba-bubble px-5 py-4 text-scriba-bubble-ink">
         <Chip ai>{label}</Chip>
         {children}
@@ -138,7 +138,7 @@ export function LandingFeedMock() {
             `role="status"` do original: não há nada a anunciar a um leitor de
             tela numa captura de tela parada. */}
         <div className="animate-content-fade flex items-start gap-2.5" aria-hidden>
-          <PenaAvatar />
+          <ScribaAvatar />
           <div className="flex items-center gap-1.5 rounded-3xl rounded-tl-md border border-dashed border-scriba-blue-soft bg-scriba-blue-soft/40 px-5 py-4">
             <span className="size-1.5 animate-listening-dot rounded-full bg-session-typing-dot" />
             <span className="size-1.5 animate-listening-dot rounded-full bg-session-typing-dot [animation-delay:200ms]" />

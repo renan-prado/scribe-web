@@ -10,7 +10,8 @@ import avatar4 from "@/shared/assets/avatars/avatar-4.webp";
 import avatar5 from "@/shared/assets/avatars/avatar-5.webp";
 import avatar6 from "@/shared/assets/avatars/avatar-6.webp";
 import avatar7 from "@/shared/assets/avatars/avatar-7.webp";
-import { LandingFooter, LandingHeader, PenaGlyph } from "@/shared/components/LandingChrome";
+import { ScribaMark } from "@/shared/brand";
+import { LandingFooter, LandingHeader } from "@/shared/components/LandingChrome";
 import { LandingJsonLd } from "@/shared/components/LandingJsonLd";
 import { LandingFeedMock, LandingSummaryMock } from "@/shared/components/LandingMocks";
 import { FAQ_ITEMS } from "@/shared/content/landing-faq";
@@ -112,7 +113,7 @@ function Hero() {
               href="/sign-in"
               className="lp-cta inline-flex items-center justify-center gap-2.5 rounded-[26px] bg-[image:var(--lp-cta)] py-[17px] px-8 text-[13px] font-semibold uppercase tracking-[.04em] text-lp-cta-ink shadow-[0_9px_22px_rgba(79,168,240,.3)]"
             >
-              <PenaGlyph size={16} />
+              <ScribaMark size={20} />
               Começar grátis
             </Link>
             <a
@@ -903,7 +904,7 @@ function PlanCard({
             : "lp-cta-soft bg-scriba-btn-muted text-scriba-ink hover:bg-scriba-btn-muted-hover"
         )}
       >
-        {isPrimary ? <PenaGlyph size={14} /> : null}
+        {isPrimary ? <ScribaMark size={18} /> : null}
         {cta}
       </Link>
     </div>
@@ -930,7 +931,7 @@ function FinalCTA() {
           >
             {/* currentColor: a pena acompanha o âmbar escuro do texto, em vez de
                 sumir em branco sobre o amarelo */}
-            <PenaGlyph size={16} />
+            <ScribaMark size={20} />
             Começar grátis
           </Link>
           <div className="text-center text-[11px] font-light text-[#AFCBE0] lg:text-[11.5px]">

@@ -77,15 +77,20 @@ export const metadata: Metadata = {
       "max-snippet": -1,
     },
   },
+  // Os ícones ficam AQUI e não em `app/icon.svg`/`app/favicon.ico` de
+  // propósito: a convenção de arquivo do Next emite um <link> sem `media`,
+  // e a marca precisa trocar com o tema. Os dois arquivos-convenção foram
+  // removidos — enquanto existiam, o `favicon.ico` padrão do Next era
+  // emitido JUNTO com estes e vencia na aba do navegador.
   icons: {
     icon: [
       {
-        url: "/favicon-light-theme.svg",
+        url: "/brand/favicon-light-theme.svg",
         type: "image/svg+xml",
         media: "(prefers-color-scheme: light)",
       },
       {
-        url: "/favicon-dark-theme.svg",
+        url: "/brand/favicon-dark-theme.svg",
         type: "image/svg+xml",
         media: "(prefers-color-scheme: dark)",
       },

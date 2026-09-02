@@ -104,6 +104,43 @@ The app is light/dark via a single `.dark` class on `<html>` — there are no pe
 
 - **The `Sparkles` icon from `lucide-react` is BANNED.** Do not import or render it anywhere. If you need a decorative accent, use the yellow hex-shape (`clip-path:polygon(50%_0,100%_25%,100%_75%,50%_100%,0_75%,0_25%)` on a `bg-scriba-yellow` block) already used elsewhere in the app.
 
+## Marca — a pena mora em um lugar só
+
+A pena e o logotipo saem de `src/shared/brand/`, e o `<path>` do desenho
+existe em **um** arquivo: `ScribaMark.tsx`. Não cole o path em nenhum outro
+lugar, nem crie um SVG inline "só desta vez".
+
+- `ScribaMark` — a pena sozinha, pintando com `currentColor`.
+- `ScribaLogo` — pena + a palavra "scriba" em Poppins (`--font-poppins`),
+  com `subtitle` opcional (hoje só o "Admin" da sidebar).
+- `ScribaAvatar` — a pena branca no disco com gradiente, usada quando o
+  Scriba fala como autor (cartões de IA no feed e nos blocos de estudo).
+
+**A cor do logotipo vem do container, nunca de uma classe própria em cada
+metade.** Pena e palavra são uma marca só: o `<path>` usa `currentColor` e o
+texto herda o `color`. Pintar um dos dois separadamente é exatamente o que os
+desencontra — já aconteceu, e o conserto virou commit.
+
+**Os consumos de fora do React vivem em `public/brand/`** — `pena.svg` e os
+dois favicons — porque favicon, manifest e dados estruturados não passam por
+componente. Eles NÃO se atualizam sozinhos quando `ScribaMark` muda. Quando a
+marca mudar, os cinco pontos abaixo mudam juntos:
+
+1. `src/shared/brand/ScribaMark.tsx` — a aplicação inteira.
+2. `public/brand/pena.svg` — a mesma pena para consumo externo.
+3. `public/brand/favicon-{light,dark}-theme.svg` — a aba do navegador.
+4. `app/opengraph-image.tsx` — o card de compartilhamento (Satori não lê
+   componente React do app nem `clip-path`; o SVG ali é inline de propósito).
+5. `app/manifest.ts` + `app/layout.tsx` + `LandingJsonLd.tsx` — só apontam
+   para `/brand/`, mas confira se o arquivo apontado ainda existe.
+
+**Não crie `app/icon.svg` nem `app/favicon.ico`.** São convenções de arquivo
+do Next que injetam um `<link rel="icon">` **sem `media`**, e a marca precisa
+trocar com o tema — por isso os ícones são declarados em `metadata.icons` no
+`app/layout.tsx`. As duas coisas não se substituem, elas se SOMAM: enquanto
+`app/favicon.ico` existiu (o padrão do Next, vindo do scaffold), o `<head>`
+saía com três `<link rel="icon">` e o ícone do Next vencia na aba.
+
 ## Billing (Stripe) — invariantes que não se negociam
 
 Créditos ("moedas") são dinheiro. As regras abaixo existem para que nenhuma

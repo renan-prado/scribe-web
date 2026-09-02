@@ -58,7 +58,7 @@ const GRAPH = {
       "@id": `${SITE_URL}/#organization`,
       name: SITE_NAME,
       url: SITE_URL,
-      logo: `${SITE_URL}/logo-scriba.svg`,
+      logo: `${SITE_URL}/brand/favicon-light-theme.svg`,
       email: "contato@scriba.cc",
     },
     {

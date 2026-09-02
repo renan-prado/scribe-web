@@ -21,25 +21,16 @@ export default function manifest(): MetadataRoute.Manifest {
     prefer_related_applications: false,
     icons: [
       {
-        src: "/favicon-light-theme.svg",
+        src: "/brand/favicon-light-theme.svg",
         sizes: "any",
         type: "image/svg+xml",
         purpose: "any",
       },
       {
-        src: "/favicon-light-theme.svg",
+        src: "/brand/favicon-light-theme.svg",
         sizes: "any",
         type: "image/svg+xml",
         purpose: "maskable",
-      },
-    ],
-    shortcuts: [
-      {
-        name: "Nova gravação",
-        short_name: "Gravar",
-        description: "Abrir o diálogo de nova gravação",
-        url: "/?novo=1",
-        icons: [{ src: "/recording-plus.svg", sizes: "any", type: "image/svg+xml" }],
       },
     ],
   };
