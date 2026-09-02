@@ -338,6 +338,11 @@ As regras abaixo existem porque cada uma delas já foi um bug possível.
   por prop, resolvida no servidor.
 - **O painel do parceiro nunca expõe uma pessoa.** Só agregados, nem no HTML
   nem numa rota. Não crie endpoint que liste indicados.
+- **`PAYOUT_MINIMUM_CENTS` é política, não trava.** O botão de pagar aparece
+  com qualquer valor disponível e o diálogo apenas AVISA abaixo do mínimo. A
+  regra do próprio programa — saldo pago integralmente a quem sai — descreve um
+  pagamento que quase sempre nasce abaixo dele; escondendo o botão, a saída
+  seria mexer no banco à mão.
 - **Pagamento é ledger, não contador.** `registerPayout` cria a linha em
   `partner_payouts` E carimba as comissões com o `payout_id`. Sem o carimbo, o
   "a receber" nunca diminui e o primeiro PIX pago deixa o número mentindo para

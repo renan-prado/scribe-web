@@ -1,5 +1,6 @@
 "use client";
 
+import { TriangleAlert } from "lucide-react";
 import { useState } from "react";
 import { toast } from "sonner";
 import { Button } from "@/components/ui/button";
@@ -15,6 +16,7 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { formatBrl } from "@/lib/billing/plans";
 import type { AdminPartnerWithStats } from "@/lib/db/admin/partners";
+import { PAYOUT_MINIMUM_CENTS } from "@/lib/partners/economics";
 
 /**
  * Registro do PIX já enviado.
@@ -28,6 +30,11 @@ import type { AdminPartnerWithStats } from "@/lib/db/admin/partners";
  * disponíveis no instante da chamada, calculada no servidor: um campo de valor
  * abriria a possibilidade de o total pago divergir do total quitado, e essa
  * diferença não teria onde aparecer depois.
+ *
+ * Abaixo do mínimo de saque o diálogo AVISA e segue. A regra do mínimo existe
+ * para o pagamento mensal de rotina — um PIX de R$ 4 custa mais trabalho do
+ * que vale —, mas ela não pode virar uma trava: o parceiro que deixa o
+ * programa recebe o saldo integral, e esse pagamento é sempre pequeno.
  */
 
 type Props = {
@@ -43,6 +50,7 @@ export function PayoutDialog({ partner, onClose, onDone }: Props) {
 
   const trimmedReceipt = receiptUrl.trim();
   const receiptInvalid = trimmedReceipt.length > 0 && !trimmedReceipt.startsWith("https://");
+  const belowMinimum = partner.stats.availableCents < PAYOUT_MINIMUM_CENTS;
 
   async function handleConfirm() {
     setSaving(true);
@@ -107,6 +115,20 @@ export function PayoutDialog({ partner, onClose, onDone }: Props) {
               )}
             </span>
           </div>
+
+          {belowMinimum ? (
+            <div className="flex items-start gap-2.5 rounded-xl border-l-2 border-scriba-yellow bg-scriba-cream px-4 py-3">
+              <TriangleAlert
+                className="mt-px size-4 flex-none text-scriba-cream-accent"
+                aria-hidden
+              />
+              <p className="text-[12px] font-light leading-[1.55] text-scriba-cream-body">
+                Abaixo do mínimo de {formatBrl(PAYOUT_MINIMUM_CENTS)} do pagamento de rotina. Se não
+                houver motivo para pagar agora — saída do programa, acerto pontual —, o valor
+                acumula para o mês seguinte e não se perde.
+              </p>
+            </div>
+          ) : null}
 
           <div className="flex flex-col gap-1.5">
             <Label htmlFor="payout-receipt">Link do comprovante</Label>

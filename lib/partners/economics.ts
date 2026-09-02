@@ -26,7 +26,7 @@
 export const COMMISSION_HOLD_DAYS = 30;
 
 /**
- * Mínimo para um pagamento sair. Abaixo disso o saldo acumula para o mês
+ * Mínimo do pagamento de ROTINA. Abaixo disso o saldo acumula para o mês
  * seguinte, nunca expira, e é pago integralmente se o parceiro deixar o
  * programa.
  *
@@ -34,6 +34,12 @@ export const COMMISSION_HOLD_DAYS = 30;
  * o número não é neutro: quanto maior o mínimo, mais tempo um parceiro
  * pequeno passa sem receber nada, o que faz o programa PARECER que não paga.
  * Foi essa tensão, e não a margem, que decidiu a taxa padrão de 30%.
+ *
+ * É POLÍTICA, NÃO TRAVA. O admin pode registrar um pagamento abaixo dele —
+ * o diálogo avisa e segue. A própria frase acima ("é pago integralmente se o
+ * parceiro deixar o programa") descreve um pagamento que quase sempre nasce
+ * abaixo do mínimo; se o botão sumisse, a única saída seria mexer no banco à
+ * mão. Não transforme esta constante em condição de bloqueio.
  */
 export const PAYOUT_MINIMUM_CENTS = 5000;
 

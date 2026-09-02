@@ -35,9 +35,11 @@ import { PayoutDialog } from "./PayoutDialog";
  *                olhar para pagar.
  *   Pago       — já quitada por um `partner_payouts`.
  *
- * O botão de PIX só aparece a partir do mínimo de saque — abaixo disso o valor
- * acumula, e oferecer o botão convidaria a pagar R$ 4 por PIX, que é o que o
- * mínimo existe para evitar.
+ * O botão de PIX aparece com QUALQUER valor disponível. O mínimo de saque é
+ * política do pagamento de rotina, não uma trava: quem sai do programa com
+ * R$ 12 tem direito ao dinheiro, e o operador precisa conseguir pagá-lo. O
+ * aviso de "abaixo do mínimo" mora no diálogo, onde é lido antes de confirmar
+ * — escondendo o botão, a única saída seria mexer no banco à mão.
  */
 
 type Props = {
@@ -114,7 +116,12 @@ export function PartnersManager({ initialPartners, costPerThousandCoinsCents, li
             <TableBody>
               {partners.map((p) => {
                 const link = `${linkBase}/${p.slug}`;
-                const canPay = p.stats.availableCents >= PAYOUT_MINIMUM_CENTS;
+                // O botão aparece com qualquer valor disponível. O mínimo de
+                // saque é política de rotina, não trava: o caso que ele mais
+                // atrapalharia é o parceiro que sai do programa com R$ 12 —
+                // esse dinheiro é dele, e o operador precisa conseguir pagar.
+                const canPay = p.stats.availableCents > 0;
+                const belowMinimum = p.stats.availableCents < PAYOUT_MINIMUM_CENTS;
                 return (
                   <TableRow key={p.id}>
                     <TableCell>
@@ -170,7 +177,12 @@ export function PartnersManager({ initialPartners, costPerThousandCoinsCents, li
                             variant="ghost"
                             size="sm"
                             onClick={() => setPaying(p)}
-                            title="Registrar PIX enviado"
+                            title={
+                              belowMinimum
+                                ? `Registrar PIX enviado — abaixo do mínimo de ${formatBrl(PAYOUT_MINIMUM_CENTS)}`
+                                : "Registrar PIX enviado"
+                            }
+                            className={belowMinimum ? "text-scriba-ink-mute" : undefined}
                           >
                             <Banknote className="size-4" />
                             <span className="sr-only">Registrar pagamento</span>
@@ -194,8 +206,9 @@ export function PartnersManager({ initialPartners, costPerThousandCoinsCents, li
         {COMMISSION_HOLD_DAYS} dias — o prazo em que o pagamento que as gerou ainda pode ser
         contestado. <strong className="font-semibold">Disponível</strong> é o que já venceu a
         carência e ainda não foi pago: é esse o valor que sai no próximo PIX, e é o que o botão de
-        pagamento registra. Ele aparece a partir de {formatBrl(PAYOUT_MINIMUM_CENTS)}; abaixo disso
-        o valor acumula para o mês seguinte.
+        pagamento registra. O mínimo de {formatBrl(PAYOUT_MINIMUM_CENTS)} é a regra do pagamento
+        mensal de rotina — abaixo dele o valor normalmente acumula, mas o botão continua ali e avisa
+        antes de confirmar, para quando pagar valer a pena mesmo assim.
       </p>
 
       {paying ? (
