@@ -117,7 +117,6 @@
   /* Tinta sobre o botão azul sólido. Branco no light; no dark o azul clareia
      para #5FB0F5 e branco cai para ~2.3:1, então a tinta vira um navy da mesma
      família de matiz (~6.5:1). */
-  --color-scriba-on-blue: var(--scriba-on-blue);
   /* Landing-page bands: full-bleed section grounds that carry their own
      colorway per theme (see --lp-band / --lp-phone-frame). */
   /* `--lp-band` e `--scriba-cta` são GRADIENTES: entram por
@@ -336,7 +335,6 @@
      LP para ganhar 4,53:1 — passar raspando e pagando mais caro. Aqui o
      #4FA8F0 fica intacto; o que muda é a tinta por cima. É também o valor que o
      tema escuro já usava, então a paleta não ganha cor nova. */
-  --scriba-on-blue: #0B2742;
   /* Fundo do CTA da landing. Gradiente para que o botão continue parecendo
      azul VIVO mesmo tendo de escurecer: texto branco de 13px exige 4,5:1, e
      sobre o #4FA8F0 da marca o branco dá 2,56:1 — não havia como manter o azul
@@ -491,7 +489,6 @@
   --lp-band: linear-gradient(135deg, #212B5E 0%, #1A2148 55%, #141833 100%);
   --lp-band-ink: #B9C9E8;
   --lp-phone-frame: #0A0817;
-  --scriba-on-blue: #0B2742;
   /* No escuro o CTA inverte: pastilha clara sobre a página escura, com tinta
      navy. 15,18:1 no início do gradiente e 12,87:1 no fim.
      A sombra inverte junto: halo azul sob pastilha branca em página escura

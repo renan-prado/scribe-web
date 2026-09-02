@@ -190,12 +190,17 @@ export function NewRecordingDialog({ trigger }: { trigger?: ReactNode }) {
                   className="sr-only"
                 />
                 <div className="flex items-center gap-2.5">
+                  {/* Selecionado usa o gradiente do CTA, não `bg-scriba-blue`.
+                      Ícone branco sobre o azul de superfície dá 2,56:1 no claro
+                      e 2,33:1 no escuro — reprova até os 3:1 que a WCAG 1.4.11
+                      pede para objeto gráfico, então não era opção. O gradiente
+                      resolve e ainda amarra o disco ao botão "Gravar". */}
                   <span
                     aria-hidden
                     className={cn(
                       "flex size-8 shrink-0 items-center justify-center rounded-xl transition-colors",
                       active
-                        ? "bg-scriba-blue text-scriba-on-blue"
+                        ? "bg-[image:var(--scriba-cta)] text-scriba-cta-ink"
                         : "bg-scriba-surface text-scriba-ink-soft"
                     )}
                   >
@@ -209,7 +214,7 @@ export function NewRecordingDialog({ trigger }: { trigger?: ReactNode }) {
                     className={cn(
                       "flex size-5 shrink-0 items-center justify-center rounded-full border transition-colors",
                       active
-                        ? "border-scriba-blue bg-scriba-blue text-scriba-on-blue"
+                        ? "border-transparent bg-[image:var(--scriba-cta)] text-scriba-cta-ink"
                         : "border-scriba-hairline"
                     )}
                   >
