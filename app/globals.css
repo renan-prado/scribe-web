@@ -596,6 +596,17 @@
 }
 
 @layer components {
+  /* A pena pintada com o gradiente do CTA. Um `linear-gradient` do CSS não
+     entra num `fill` de SVG, então a pena vira MÁSCARA: o fundo é o próprio
+     `--scriba-cta` e o desenho recorta. Assim o gradiente continua definido
+     num lugar só — reproduzi-lo como `<linearGradient>` dentro do SVG seria
+     uma segunda cópia, e cópia de cor diverge. Usa o mesmo
+     `public/brand/pena.svg` dos consumos de fora do React. */
+  .scriba-mark-gradient {
+    background-image: var(--scriba-cta);
+    -webkit-mask: url("/brand/pena.svg") center / contain no-repeat;
+    mask: url("/brand/pena.svg") center / contain no-repeat;
+  }
   /* Botão primário: landing E área logada. O hover é `filter`, não cor de
      fundo — o fundo é gradiente e inverte por tema, então clarear/escurecer
      serve aos dois sem um segundo par de tokens. */
