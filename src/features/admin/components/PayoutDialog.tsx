@@ -43,6 +43,36 @@ type Props = {
   onDone: () => void;
 };
 
+/**
+ * Toast de erro é a única coisa que o operador vai ler, e ele acabou de
+ * mandar dinheiro por PIX. Cada mensagem responde a única pergunta que
+ * importa nesse instante: **o que eu faço agora?**
+ *
+ * Por isso nenhuma delas é um código, e a de `payout_stamp_failed` diz
+ * explicitamente para NÃO tentar de novo — repetir criaria um segundo
+ * pagamento sobre as mesmas comissões.
+ */
+const ERROR_MESSAGES: Record<string, string> = {
+  nothing_due:
+    "Nada disponível para pagar agora. Se você acabou de registrar, o valor já saiu da fila — atualize a página para conferir.",
+  payout_stamp_failed:
+    "O pagamento foi gravado, mas as comissões NÃO foram marcadas como pagas. Não registre de novo (pagaria em dobro) — avise o time para corrigir à mão.",
+  payout_failed:
+    "Não consegui gravar o pagamento, e nada foi marcado como pago. O PIX que você enviou continua valendo: tente registrar de novo.",
+  invalid_input: "O link do comprovante precisa ser um endereço https válido.",
+  invalid_json: "Não consegui enviar os dados. Tente de novo.",
+  invalid_id: "Parceiro não encontrado. Recarregue a página.",
+  forbidden: "Sua sessão de admin expirou. Recarregue a página e entre de novo.",
+  rate_limited: "Muitas ações seguidas. Espere alguns segundos e tente de novo.",
+};
+
+function messageFor(status: number, code: unknown): string {
+  if (typeof code === "string" && ERROR_MESSAGES[code]) return ERROR_MESSAGES[code];
+  if (status === 401 || status === 403) return ERROR_MESSAGES.forbidden;
+  if (status === 429) return ERROR_MESSAGES.rate_limited;
+  return "Não consegui registrar o pagamento. Confira o log do servidor antes de tentar de novo.";
+}
+
 export function PayoutDialog({ partner, onClose, onDone }: Props) {
   const [receiptUrl, setReceiptUrl] = useState("");
   const [note, setNote] = useState("");
@@ -67,11 +97,7 @@ export function PayoutDialog({ partner, onClose, onDone }: Props) {
       });
       if (!res.ok) {
         const payload = await res.json().catch(() => ({}));
-        throw new Error(
-          payload.error === "nothing_due"
-            ? "Nada disponível para pagar agora."
-            : (payload.error ?? `HTTP ${res.status}`)
-        );
+        throw new Error(messageFor(res.status, payload.error));
       }
       const result = await res.json();
       toast.success(
@@ -79,7 +105,9 @@ export function PayoutDialog({ partner, onClose, onDone }: Props) {
       );
       onDone();
     } catch (err) {
-      toast.error((err as Error).message);
+      // Duração longa de propósito: são instruções, não um "ops". O padrão do
+      // sonner some antes de a frase ser lida.
+      toast.error((err as Error).message, { duration: 12_000 });
       setSaving(false);
     }
   }

@@ -224,6 +224,25 @@ export async function linkPartnerToUserByEmail(id: string, email: string): Promi
 }
 
 /**
+ * O carimbo das comissões falhou DEPOIS de a linha de pagamento existir.
+ *
+ * É o único estado inconsistente que `registerPayout` consegue produzir, e o
+ * que a interface precisa saber para não piorá-lo: repetir a operação criaria
+ * um SEGUNDO pagamento sobre as mesmas comissões, ou seja, pagaria em dobro.
+ * Uma classe própria em vez de um texto de erro porque essa distinção decide o
+ * que o operador faz em seguida.
+ */
+export class PayoutStampError extends Error {
+  constructor(
+    readonly payoutId: string,
+    cause: string
+  ) {
+    super(`registerPayout stamp failed (payout ${payoutId}): ${cause}`);
+    this.name = "PayoutStampError";
+  }
+}
+
+/**
  * Registra um pagamento e CARIMBA as comissões que ele quitou.
  *
  * As duas coisas andam juntas: criar a linha de pagamento sem marcar as
@@ -284,7 +303,7 @@ export async function registerPayout(args: {
       partnerId: args.partnerId,
       error: stampErr.message,
     });
-    throw new Error(`registerPayout stamp failed: ${stampErr.message}`);
+    throw new PayoutStampError(payout.id, stampErr.message);
   }
 
   return { amountCents, commissions: due.length };

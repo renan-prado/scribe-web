@@ -1,7 +1,7 @@
 import { NextResponse } from "next/server";
 import { z } from "zod";
 import { requireAdmin } from "@/lib/auth/require-admin";
-import { registerPayout } from "@/lib/db/admin/partners";
+import { PayoutStampError, registerPayout } from "@/lib/db/admin/partners";
 import { parseJsonBody, parseUuidParam } from "@/lib/http/validate";
 import { enforceRateLimit, RATE_LIMITS } from "@/lib/rate-limit";
 
@@ -72,6 +72,15 @@ export async function POST(request: Request, { params }: { params: Promise<{ id:
       partnerId: guarded.id,
       error: (err as Error).message,
     });
+    // Código próprio para o meio-caminho: o pagamento existe, as comissões não
+    // foram quitadas. A tela precisa dizer "não tente de novo" — repetir
+    // pagaria em dobro.
+    if (err instanceof PayoutStampError) {
+      return NextResponse.json(
+        { error: "payout_stamp_failed", payoutId: err.payoutId },
+        { status: 500 }
+      );
+    }
     return NextResponse.json({ error: "payout_failed" }, { status: 500 });
   }
 }

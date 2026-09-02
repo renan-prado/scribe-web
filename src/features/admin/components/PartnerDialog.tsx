@@ -50,10 +50,20 @@ type Props = {
 
 const ERROR_MESSAGES: Record<string, string> = {
   slug_or_email_taken: "Já existe um parceiro com esse código ou e-mail.",
-  create_failed: "Não consegui criar o parceiro.",
-  update_failed: "Não consegui salvar as alterações.",
+  create_failed: "Não consegui criar o parceiro. Nada foi salvo — tente de novo.",
+  update_failed: "Não consegui salvar as alterações. Nada foi alterado — tente de novo.",
   invalid_doc: "CPF ou CNPJ inválido — confira os dígitos.",
+  invalid_input: "Algum campo não passou na validação: confira código, e-mail e documento.",
+  invalid_json: "Não consegui enviar os dados. Tente de novo.",
 };
+
+/** Nunca joga um código de erro na cara de quem está usando a tela. */
+function messageFor(status: number, code: unknown): string {
+  if (typeof code === "string" && ERROR_MESSAGES[code]) return ERROR_MESSAGES[code];
+  if (status === 401 || status === 403) return "Sua sessão de admin expirou. Recarregue a página.";
+  if (status === 429) return "Muitas ações seguidas. Espere alguns segundos.";
+  return "Não consegui salvar. Confira o log do servidor antes de tentar de novo.";
+}
 
 const STATUS_OPTIONS: SelectOption[] = [
   { value: "active", label: "Ativo" },
@@ -142,7 +152,7 @@ export function PartnerDialog({ partner, costPerThousandCoinsCents, onClose, onS
       });
       if (!res.ok) {
         const payload = await res.json().catch(() => ({}));
-        throw new Error(ERROR_MESSAGES[payload.error] ?? payload.error ?? `HTTP ${res.status}`);
+        throw new Error(messageFor(res.status, payload.error));
       }
       toast.success(isNew ? "Parceiro cadastrado." : "Parceiro atualizado.");
       onSaved();
