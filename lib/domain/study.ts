@@ -174,8 +174,13 @@ export type StudyBlock =
   | { type: "objection"; text: string; response: string }
   /** Dois conceitos que costumam ser colapsados, e a diferença. */
   | { type: "distinction"; a: string; b: string; text: string }
-  /** Indicação de leitura. Campos separados para poderem ser validados. */
-  | { type: "reading"; author: string; title: string; note: string }
+  /**
+   * Indicação de leitura. Campos separados para poderem ser validados, e
+   * `coverUrl` NUNCA vem do modelo: é resolvido no servidor
+   * (`lib/study/covers.ts`) contra uma API externa, ou fica ausente. Um link
+   * inventado é indistinguível de um real até alguém clicar.
+   */
+  | { type: "reading"; author: string; title: string; note: string; coverUrl?: string }
   /** Pergunta em aberto. No máximo duas, e só no fecho — o texto é artigo,
    *  não questionário. */
   | { type: "question"; text: string }
@@ -371,6 +376,8 @@ export function parseStudyFromLLM(content: string): StudyPayload {
         const author = str(rec, "author");
         const title = str(rec, "title");
         if (author && title) {
+          // `coverUrl` é deliberadamente NÃO lido daqui: se o modelo mandar um,
+          // é invenção. Ele entra depois, na selagem, vindo do resolvedor.
           blocks.push({ type: "reading", author, title, note: str(rec, "note") });
         }
         break;

@@ -2,6 +2,7 @@ import "server-only";
 import type { StudyBlock, StudyPayload } from "@/lib/domain/study";
 import { findTheologian } from "@/lib/prompts/theologians";
 import type { AnchoredPassage } from "@/lib/study/anchor";
+import { coverKey } from "@/lib/study/covers";
 
 /**
  * PASSO 5 — a SELAGEM. Sem LLM.
@@ -43,7 +44,9 @@ function clean(text: string): string {
 
 export function sealStudy(
   payload: StudyPayload,
-  anchored: AnchoredPassage[]
+  anchored: AnchoredPassage[],
+  /** `"autor||título" → url`, de `resolveCovers`. Vazio quando não há chave. */
+  covers: Map<string, string> = new Map()
 ): { payload: StudyPayload; report: SealReport } {
   const byReference = new Map(anchored.map((p) => [normalizeRef(p.reference), p]));
   const report: SealReport = {
@@ -92,11 +95,18 @@ export function sealStudy(
           report.droppedReadings++;
           break;
         }
+        const title = clean(block.title);
+        // A capa entra AQUI, e só aqui: é o único ponto do pipeline em que a
+        // URL tem procedência conhecida (o resolvedor conferiu autor e título
+        // contra a API). O que o modelo tivesse escrito já foi descartado no
+        // parser.
+        const cover = covers.get(coverKey(author.name, title));
         blocks.push({
           type: "reading",
           author: author.name,
-          title: clean(block.title),
+          title,
           note: clean(block.note),
+          ...(cover ? { coverUrl: cover } : {}),
         });
         break;
       }

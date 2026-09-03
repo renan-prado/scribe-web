@@ -1,6 +1,6 @@
-import { BookGlyph } from "@/components/icons/BookGlyph";
 import { BlockRenderer } from "@/features/session/components/BlockRenderer";
 import type { StudyBlock } from "@/lib/domain/study";
+import { cn } from "@/lib/utils";
 
 /**
  * Renderer do ESTUDO. Delega ao `BlockRenderer` os blocos que o estudo divide
@@ -31,6 +31,79 @@ export function studyBlockKey(block: StudyBlock): string {
 }
 
 const LABEL = "text-[10px] font-semibold uppercase tracking-[0.14em]";
+
+/**
+ * Paleta das capas tipográficas. Tokens existentes, nunca cor literal —
+ * `src/shared/AGENTS.md`. Índice escolhido pelo título, não sorteado: a mesma
+ * obra tem de sair com a mesma cor toda vez que aparecer, em qualquer estudo.
+ */
+const COVER_TONES = [
+  "bg-scriba-blue-soft text-scriba-blue-ink",
+  "bg-scriba-green-soft text-scriba-green-ink",
+  "bg-scriba-cream text-scriba-cream-ink",
+  "bg-scriba-lilac text-scriba-lilac-ink",
+  "bg-scriba-rose text-scriba-rose-ink",
+  "bg-scriba-mint text-scriba-mint-ink",
+];
+
+function toneFor(seed: string): string {
+  let hash = 0;
+  for (let i = 0; i < seed.length; i++) hash = (hash * 31 + seed.charCodeAt(i)) | 0;
+  return COVER_TONES[Math.abs(hash) % COVER_TONES.length];
+}
+
+/**
+ * A capa do livro indicado. Proporção 2:3, a de um livro de verdade.
+ *
+ * Duas formas, e a tipográfica NÃO é um placeholder degradado: ela é o caso
+ * comum. `coverUrl` só existe quando `GOOGLE_BOOKS_API_KEY` está configurada e
+ * a API confirmou o par autor+título (ver `lib/study/covers.ts`) — sem chave,
+ * toda capa é tipográfica, e o bloco tem de parecer intencional assim.
+ *
+ * Daí ela carregar o TÍTULO, e não um ícone genérico: uma lombada com o nome
+ * do livro é informação, um livrinho cinza é ausência.
+ */
+function BookCover({
+  title,
+  author,
+  coverUrl,
+}: {
+  title: string;
+  author: string;
+  coverUrl?: string;
+}) {
+  if (coverUrl) {
+    return (
+      // biome-ignore lint/performance/noImgElement: URL externa e variável; next/image exigiria allowlist de domínio
+      <img
+        src={coverUrl}
+        alt={`Capa de ${title}`}
+        width={56}
+        height={84}
+        loading="lazy"
+        className="h-[84px] w-14 shrink-0 rounded-md object-cover shadow-[0_2px_8px_rgba(0,0,0,0.12)]"
+      />
+    );
+  }
+
+  return (
+    <div
+      aria-hidden
+      className={cn(
+        "flex h-[84px] w-14 shrink-0 flex-col justify-between rounded-md px-2 py-2 shadow-[0_2px_8px_rgba(0,0,0,0.08)]",
+        // A borda esquerda mais grossa é a lombada — é o que faz o retângulo
+        // ser lido como livro sem precisar de ilustração.
+        "border-l-[3px] border-black/10",
+        toneFor(title)
+      )}
+    >
+      <span className="line-clamp-4 text-[8.5px] font-semibold leading-[1.25] tracking-tight">
+        {title}
+      </span>
+      <span className="truncate text-[7px] font-normal opacity-70">{author}</span>
+    </div>
+  );
+}
 
 export function StudyBlockRenderer({ block }: { block: StudyBlock }) {
   switch (block.type) {
@@ -85,9 +158,9 @@ export function StudyBlockRenderer({ block }: { block: StudyBlock }) {
 
     case "reading":
       return (
-        <aside className="flex items-start gap-3.5 rounded-2xl border border-scriba-hairline-soft px-5 py-4">
-          <BookGlyph aria-hidden className="mt-1 size-4 shrink-0 border-scriba-ink-mute" />
-          <div className="flex min-w-0 flex-col gap-1">
+        <aside className="flex items-start gap-4 rounded-2xl border border-scriba-hairline-soft px-5 py-4">
+          <BookCover title={block.title} author={block.author} coverUrl={block.coverUrl} />
+          <div className="flex min-w-0 flex-col gap-1 pt-0.5">
             <span className={`${LABEL} text-scriba-ink-mute`}>Para ler depois</span>
             <p className="text-pretty text-[15px] font-medium leading-snug text-scriba-ink-strong">
               {block.title}

@@ -249,6 +249,14 @@ teto que explica o esforço baixo no redator e o prazo da reescrita do guardião
 (`REWRITE_DEADLINE_MS`): estourar a função depois de já ter debitado moedas é
 um estrago maior que entregar um texto imperfeito.
 
+**A capa do bloco `reading` não vem do modelo.** `lib/study/covers.ts` resolve
+contra a Google Books API e confere autor+título antes de deixar a URL entrar
+no payload — o parser de `domain/study.ts` DESCARTA um `coverUrl` que venha do
+LLM, de propósito. Sem `GOOGLE_BOOKS_API_KEY` (opcional) nada é chamado e a UI
+desenha uma capa tipográfica, que é o caso normal, não um fallback degradado.
+Medido: sem chave o Google responde 429 sempre, e a Open Library em busca livre
+devolve a capa de outro livro do mesmo autor.
+
 Para medir qualquer uma dessas coisas de novo, o harness é
 `tmp/dev-scripts/study-eval.mts` (roda o pipeline de verdade sobre uma sessão
 real e imprime perguntas, vereditos e o artigo) e `guard-eval.mts` (compara

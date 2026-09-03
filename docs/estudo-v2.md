@@ -419,6 +419,42 @@ Esse orçamento é o que governa duas decisões acima: o esforço baixo no redat
 e o prazo da reescrita do guardião. Ele também é o primeiro a apertar quando
 alguém quiser um estudo ainda mais longo.
 
+## As capas dos livros
+
+O bloco `reading` mostra a capa do livro indicado, e a URL dela **nunca vem do
+modelo**: é resolvida no servidor (`lib/study/covers.ts`) contra a Google Books
+API, que precisa confirmar o par autor+título antes de a URL entrar no payload.
+Um link inventado é indistinguível de um real até alguém clicar.
+
+A conferência é do nosso lado, e não só na query: o Google relaxa a busca
+estrita sozinho quando não acha nada exato, e é assim que se recebe a capa de
+outro livro do mesmo autor. `looksLikeMatch` exige contenção de título (para
+tolerar subtítulo) e o sobrenome do autor (porque "C. S. Lewis" e "Clive
+Staples Lewis" são a mesma pessoa).
+
+**A chave é opcional, e o caso sem chave é o normal.** Sem
+`GOOGLE_BOOKS_API_KEY`, o resolvedor devolve vazio sem chamar ninguém e a UI
+desenha uma **capa tipográfica**: título e autor sobre um tom da paleta,
+escolhido por hash do título — a mesma obra sai com a mesma cor em qualquer
+estudo. Ela não é placeholder degradado; é a forma padrão, e por isso carrega o
+título em vez de um ícone genérico.
+
+Por que não outra fonte, medido contra os 41 livros do índice de teólogos:
+
+| fonte | resultado |
+|---|---|
+| Google Books sem chave | `429 Quota exceeded` em toda chamada |
+| Open Library, busca estrita | 2 de 41 |
+| Open Library, busca livre | acha capa, **do livro errado** |
+
+A busca livre foi o pior caso: "Alegria em Deus" (Piper) devolveu a capa de
+"I e II Pedro"; "A Cruz de Cristo" (Stott) devolveu "Testemunho da Verdade".
+Capa errada ao lado de uma indicação de leitura manda a pessoa procurar outro
+livro na livraria.
+
+Teto de 6 buscas por estudo e timeout de 4s cada, porque capa é enfeite: ela
+nunca pode atrasar nem derrubar a geração, que já roda num orçamento apertado.
+
 ## O preço
 
 **50 moedas**, contra as 5 de antes (`lib/coins/pricing.ts`). São três chamadas

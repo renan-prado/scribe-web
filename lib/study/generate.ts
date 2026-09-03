@@ -8,6 +8,7 @@ import {
   parseStudyQuestionsFromLLM,
   parseThesisCheckFromLLM,
   type StudyAnswer,
+  type StudyBlock,
   type StudyPayload,
   type StudyQuestion,
   type StudyRecord,
@@ -27,6 +28,7 @@ import { STUDY_QUESTIONS_SYSTEM_PROMPT } from "@/lib/prompts/study-questions";
 import { STUDY_WRITE_SYSTEM_PROMPT } from "@/lib/prompts/study-write";
 import { renderTheologianBriefing, theologiansFor } from "@/lib/prompts/theologians";
 import { anchorReferences, renderAnchoredPassages } from "@/lib/study/anchor";
+import { resolveCovers } from "@/lib/study/covers";
 import { sealStudy } from "@/lib/study/seal";
 
 /**
@@ -342,7 +344,16 @@ export async function generateStudy(input: GenerateStudyInput): Promise<Generate
   }
 
   // ── [5] SELAGEM (sem LLM) ────────────────────────────────────────────────
-  const { payload, report } = sealStudy(draft, anchored);
+  // As capas dos livros indicados. Melhor-esforço e opcional: sem
+  // GOOGLE_BOOKS_API_KEY isto devolve um mapa vazio sem chamar ninguém, e a UI
+  // desenha uma capa tipográfica. Nunca atrasa nem derruba o estudo.
+  const covers = await resolveCovers(
+    draft.blocks
+      .filter((b): b is Extract<StudyBlock, { type: "reading" }> => b.type === "reading")
+      .map((b) => ({ author: b.author, title: b.title }))
+  ).catch(() => new Map<string, string>());
+
+  const { payload, report } = sealStudy(draft, anchored, covers);
   log.info("estudo pronto", {
     blocks: payload.blocks.length,
     words: payload.blocks.reduce((n, b) => n + ("text" in b ? b.text.split(/\s+/).length : 0), 0),

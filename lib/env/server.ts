@@ -46,6 +46,16 @@ const schema = z.object({
   // 27 perguntas com o mesmo prompt em que o gpt-5-mini reprova 6 — e um
   // filtro que reprova tudo não filtra nada, só aciona o fallback. Custa 9s.
   OPENAI_STUDY_GUARD_MODEL: z.string().default("gpt-5-mini"),
+  /**
+   * Capa dos livros indicados no estudo. OPCIONAL: sem ela o resolvedor
+   * devolve null sem chamar ninguém e a UI desenha uma capa tipográfica.
+   *
+   * Sem chave, a API do Google responde 429 a toda chamada — foi medido. E as
+   * alternativas gratuitas não têm acervo de teologia em português: a busca
+   * livre na Open Library devolve a capa de OUTRO livro do mesmo autor, que é
+   * pior que capa nenhuma. Ver lib/study/covers.ts.
+   */
+  GOOGLE_BOOKS_API_KEY: z.string().optional(),
   OPENAI_PRACTICES_MODEL: z.string().default("gpt-4o-mini"),
   OPENAI_REREADS_MODEL: z.string().default("gpt-4o-mini"),
   OPENAI_REMINDERS_MODEL: z.string().default("gpt-4o-mini"),
@@ -93,6 +103,7 @@ const parsed = schema.safeParse({
   OPENAI_STUDY_ANSWERS_MODEL: process.env.OPENAI_STUDY_ANSWERS_MODEL,
   OPENAI_STUDY_WRITE_MODEL: process.env.OPENAI_STUDY_WRITE_MODEL,
   OPENAI_STUDY_GUARD_MODEL: process.env.OPENAI_STUDY_GUARD_MODEL,
+  GOOGLE_BOOKS_API_KEY: process.env.GOOGLE_BOOKS_API_KEY,
   OPENAI_PRACTICES_MODEL: process.env.OPENAI_PRACTICES_MODEL,
   OPENAI_REREADS_MODEL: process.env.OPENAI_REREADS_MODEL,
   OPENAI_REMINDERS_MODEL: process.env.OPENAI_REMINDERS_MODEL,
