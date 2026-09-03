@@ -4,6 +4,7 @@ import { chargeCoins } from "@/lib/db/coins";
 import { createDeepening, hasDeepening } from "@/lib/db/deepenings";
 import { getSession } from "@/lib/db/sessions";
 import { generateDeepening } from "@/lib/deepening/generate";
+import { requireFeature } from "@/lib/entitlements/server";
 import { parseJsonBody, UuidSchema } from "@/lib/http/validate";
 import { createLogger } from "@/lib/log";
 import { enforceRateLimit, RATE_LIMITS } from "@/lib/rate-limit";
@@ -28,6 +29,12 @@ export async function POST(request: Request) {
 
   const limited = enforceRateLimit(request, RATE_LIMITS.deepening, auth.user.id);
   if (limited) return limited;
+
+  // Gate de plano ANTES de qualquer trabalho — e, principalmente, antes de
+  // cobrar. Esconder o botão é UX; isto é a proteção. Ver
+  // lib/entitlements/features.ts.
+  const gated = await requireFeature("study_generation");
+  if (gated) return gated;
 
   const parsed = await parseJsonBody(request, BodySchema);
   if (!parsed.ok) return parsed.response;

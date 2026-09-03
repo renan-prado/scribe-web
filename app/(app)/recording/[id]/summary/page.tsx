@@ -8,6 +8,7 @@ import { getPractices } from "@/lib/db/practices";
 import { getReminders } from "@/lib/db/reminders";
 import { getRereads } from "@/lib/db/rereads";
 import { getSession } from "@/lib/db/sessions";
+import { canCurrentUserUse } from "@/lib/entitlements/server";
 
 type PageProps = {
   params: Promise<{ id: string }>;
@@ -35,15 +36,23 @@ const DATE_FMT_SHORT = new Intl.DateTimeFormat("pt-BR", {
 
 export default async function RecordingSummaryPage({ params }: PageProps) {
   const { id } = await params;
-  const [session, deepeningExists, practicesRow, rereadsRow, remindersRow, highlightsRow] =
-    await Promise.all([
-      getSession(id),
-      hasDeepening(id),
-      getPractices(id).catch(() => null),
-      getRereads(id).catch(() => null),
-      getReminders(id).catch(() => null),
-      getHighlights(id).catch(() => null),
-    ]);
+  const [
+    session,
+    deepeningExists,
+    practicesRow,
+    rereadsRow,
+    remindersRow,
+    highlightsRow,
+    canGenerateStudy,
+  ] = await Promise.all([
+    getSession(id),
+    hasDeepening(id),
+    getPractices(id).catch(() => null),
+    getRereads(id).catch(() => null),
+    getReminders(id).catch(() => null),
+    getHighlights(id).catch(() => null),
+    canCurrentUserUse("study_generation").catch(() => false),
+  ]);
   if (!session) notFound();
   // Sessões do modo transcrição não têm resumo — moram na página de leitura
   // da transcrição.
@@ -69,6 +78,7 @@ export default async function RecordingSummaryPage({ params }: PageProps) {
       reminders={remindersRow?.payload ?? null}
       highlights={highlightsRow?.payload ?? null}
       hasDeepening={deepeningExists}
+      canGenerateStudy={canGenerateStudy}
     />
   );
 }

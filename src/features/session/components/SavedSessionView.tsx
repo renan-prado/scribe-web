@@ -74,6 +74,8 @@ type SavedSessionViewProps = {
   reminders: RemindersPayload | null;
   highlights: HighlightsPayload | null;
   hasDeepening: boolean;
+  /** Ver `lib/entitlements/server.ts`. */
+  canGenerateStudy: boolean;
 };
 
 export function SavedSessionView({
@@ -93,6 +95,7 @@ export function SavedSessionView({
   reminders,
   highlights,
   hasDeepening,
+  canGenerateStudy,
 }: SavedSessionViewProps) {
   const [feedOpen, setFeedOpen] = useState(false);
   const [transcriptOpen, setTranscriptOpen] = useState(false);
@@ -268,7 +271,12 @@ export function SavedSessionView({
             </p>
           </div>
           {summary ? (
-            <DeepenButton sessionId={id} hasDeepening={hasDeepening} variant="summary-header" />
+            <DeepenButton
+              sessionId={id}
+              hasDeepening={hasDeepening}
+              variant="summary-header"
+              canGenerate={canGenerateStudy}
+            />
           ) : null}
           {/* No mobile a data fica abaixo do botão "Gerar estudo"; no desktop
               ela mora na coluna esquerda, sob o local. */}

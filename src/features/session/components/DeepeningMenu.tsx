@@ -17,6 +17,13 @@ import { cn } from "@/lib/utils";
 
 type DeepeningMenuProps = {
   sessionId: string;
+  /**
+   * Reprocessar e gerar de novo — mesma feature, mesmo gate
+   * (`study_generation`). Quando o plano nao libera, o menu inteiro some: ele
+   * nao tem outro item, e um menu com uma opcao morta e pior que menu nenhum.
+   * A protecao real esta em POST /api/deepening/reprocess.
+   */
+  canReprocess: boolean;
 };
 
 const REPROCESS_COST = COIN_COSTS.reprocessDeepening;
@@ -26,7 +33,7 @@ const REPROCESS_COST = COIN_COSTS.reprocessDeepening;
  * "Reprocessar estudo" — refazer a chamada de LLM sobreescrevendo o payload
  * salvo, cobrando `reprocess_deepening` moedas.
  */
-export function DeepeningMenu({ sessionId }: DeepeningMenuProps) {
+export function DeepeningMenu({ sessionId, canReprocess }: DeepeningMenuProps) {
   const router = useRouter();
   const [reprocessing, setReprocessing] = useState(false);
   const balance = useCoinsStore((s) => s.balance);
@@ -61,6 +68,8 @@ export function DeepeningMenu({ sessionId }: DeepeningMenuProps) {
       setReprocessing(false);
     }
   }
+
+  if (!canReprocess) return null;
 
   return (
     <>

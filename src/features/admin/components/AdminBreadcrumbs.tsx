@@ -17,6 +17,7 @@ const LABELS: Record<string, string> = {
   usage: "Uso & custos",
   metricas: "Métricas",
   partners: "Parceiros",
+  features: "Funcionalidades",
 };
 
 export function AdminBreadcrumbs() {

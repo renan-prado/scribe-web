@@ -8,6 +8,7 @@ import { hasDeepening, listDeepenedSessionIds } from "@/lib/db/deepenings";
 import { type ListFeedEntriesResult, listFeedEntries } from "@/lib/db/feed-entries";
 import { getCurrentProfile } from "@/lib/db/profiles";
 import { listSessions } from "@/lib/db/sessions";
+import { canCurrentUserUse } from "@/lib/entitlements/server";
 import { cn } from "@/lib/utils";
 
 export const metadata: Metadata = { title: "Início" };
@@ -67,9 +68,10 @@ function dailyPrompt(day: number): string {
 }
 
 export default async function HomePage() {
-  const [profile, sessions] = await Promise.all([
+  const [profile, sessions, canGenerateStudy] = await Promise.all([
     getCurrentProfile().catch(() => null),
     listSessions().catch(() => [] as Awaited<ReturnType<typeof listSessions>>),
+    canCurrentUserUse("study_generation").catch(() => false),
   ]);
 
   const now = new Date();
@@ -135,6 +137,7 @@ export default async function HomePage() {
               shortSummary={latest.shortSummary}
               href={`/recording/${latest.id}/summary`}
               hasDeepening={latestHasDeepening}
+              canGenerateStudy={canGenerateStudy}
             />
             <div className="py-2">
               <div className="h-px bg-scriba-hairline" />
@@ -144,6 +147,7 @@ export default async function HomePage() {
               initialHasMore={feedPage.hasMore}
               initialOrder="recent"
               studyCtaSessions={studyCtaSessions}
+              canGenerateStudy={canGenerateStudy}
             />
           </>
         ) : null}
@@ -160,6 +164,7 @@ type ReflectionCardProps = {
   shortSummary: string | null;
   href: string;
   hasDeepening: boolean;
+  canGenerateStudy: boolean;
 };
 
 function ReflectionCard({
@@ -170,6 +175,7 @@ function ReflectionCard({
   shortSummary,
   href,
   hasDeepening,
+  canGenerateStudy,
 }: ReflectionCardProps) {
   const quote =
     shortSummary?.trim() ||
@@ -193,7 +199,12 @@ function ReflectionCard({
         ) : null}
       </div>
       <div className="flex flex-col gap-3 sm:flex-row sm:gap-2">
-        <DeepenButton sessionId={sessionId} hasDeepening={hasDeepening} variant="feed-card" />
+        <DeepenButton
+          sessionId={sessionId}
+          hasDeepening={hasDeepening}
+          variant="feed-card"
+          canGenerate={canGenerateStudy}
+        />
         <NavLink
           href={href}
           contentClassName="inline-flex items-center justify-center gap-1.5"

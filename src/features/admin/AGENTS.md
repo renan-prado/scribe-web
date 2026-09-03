@@ -58,6 +58,23 @@ A ordenação do "top de usuários" é por **moedas gastas**, não por dólar: d
 mistura modelos de preços diferentes e a lista deixava de responder à pergunta
 que ela existe para responder.
 
+## Funcionalidades (`/admin/features`)
+
+A tela tem três blocos e a ORDEM é a mensagem: a matriz `funcionalidade ×
+plano` vem primeiro e **não tem botão nenhum**. Ela é o retrato de
+`lib/entitlements/features.ts`, e é assim que a tela diz "o lugar de liberar o
+estudo para outro plano não é aqui, é um commit".
+
+Os dois blocos seguintes editam o que precisa mudar sem deploy:
+
+- **Kill switch** — desliga uma feature para TODO MUNDO, inclusive para quem
+  tem exceção liberada e para quem paga. Botão de incidente.
+- **Exceções por pessoa** — por e-mail, liberar ou revogar.
+
+`POST /api/admin/features` valida `feature` contra `isFeatureKey` antes de
+escrever. Sem isso, um typo cria linha órfã que nunca é lida, e alguém passa a
+tarde procurando por que o switch "não funcionou".
+
 ## Parceiros
 
 O cadastro, a taxa de comissão e o registro de pagamento (PIX) vivem aqui, mas

@@ -73,6 +73,11 @@ export const PLANS: Record<PlanKey, PlanDisplay> = {
     tagline: "Para quem estuda a sério, toda semana",
     highlights: [
       "2.500 créditos por mês",
+      // O que este plano DESTRAVA, e não só quanto ele dá. A regra em si está
+      // em `lib/entitlements/features.ts` — esta linha é a legenda dela, e as
+      // duas precisam andar juntas: prometer aqui o que o catálogo não libera
+      // é promessa quebrada depois do pagamento, como já foi com os créditos.
+      "Estudo aprofundado de cada sessão",
       "Créditos acumulam de um mês para o outro",
       "Cancele quando quiser",
     ],

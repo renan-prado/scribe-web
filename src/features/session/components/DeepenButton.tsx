@@ -1,15 +1,17 @@
 "use client";
 
 import { cva } from "class-variance-authority";
-import { BookOpen } from "lucide-react";
+import { BookOpen, Lock } from "lucide-react";
 import { useRouter } from "next/navigation";
 import { useState } from "react";
 import { NavLink } from "@/components/NavLink";
 import { PageBlurOverlay } from "@/components/PageBlurOverlay";
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/components/ui/tooltip";
+import { BillingDialog } from "@/features/billing/components/BillingDialog";
 import { CoinCost } from "@/features/coins/components/CoinCost";
 import { useCoinsStore } from "@/features/coins/store";
 import { COIN_COSTS } from "@/lib/coins/pricing";
+import { FEATURES, minPlanNameFor } from "@/lib/entitlements/features";
 import { cn } from "@/lib/utils";
 
 /**
@@ -23,6 +25,13 @@ import { cn } from "@/lib/utils";
  * - "feed-card": full-width button that replaces the placeholder "Aprofundar"
  *   in the ReflectionCard on /feed.
  *
+ * `canGenerate=false` (o plano do usuário nao libera "Gerar estudo") troca o
+ * botao por um CTA de plano que abre o BillingDialog. LER um estudo ja gerado
+ * nunca e bloqueado — so a geracao. A decisao vem do servidor via
+ * `canCurrentUserUse("study_generation")`; aqui ela so DESENHA. A protecao de
+ * verdade esta em `requireFeature` dentro de POST /api/deepening, e o 403 dela
+ * cai no mesmo dialogo caso o estado da tela esteja velho.
+ *
  * When the caller's coin balance is below DEEPENING_COST the button renders
  * grey/disabled with a "moedas insuficientes" tooltip. While the initial
  * balance fetch is pending we render a skeleton pill of the same shape so
@@ -34,6 +43,8 @@ type DeepenButtonProps = {
   sessionId: string;
   hasDeepening: boolean;
   variant: "summary-header" | "feed-card" | "cta-card";
+  /** Resolvido no servidor. Ver `lib/entitlements/server.ts`. */
+  canGenerate: boolean;
 };
 
 const deepenButtonVariants = cva(
@@ -57,10 +68,11 @@ const deepenButtonVariants = cva(
   }
 );
 
-export function DeepenButton({ sessionId, hasDeepening, variant }: DeepenButtonProps) {
+export function DeepenButton({ sessionId, hasDeepening, variant, canGenerate }: DeepenButtonProps) {
   const router = useRouter();
   const [pending, setPending] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  const [billingOpen, setBillingOpen] = useState(false);
   const balance = useCoinsStore((s) => s.balance);
   const refresh = useCoinsStore((s) => s.refresh);
   const balanceLoading = balance === null;
@@ -93,6 +105,38 @@ export function DeepenButton({ sessionId, hasDeepening, variant }: DeepenButtonP
     );
   }
 
+  // Plano insuficiente. O botao vira convite, nao parede: abre o mesmo
+  // BillingDialog do resto do app. Sem custo em moedas na etiqueta — o preco
+  // que importa aqui e o do plano, e mostrar os dois confunde.
+  if (!canGenerate) {
+    const lockedButton = (
+      <button
+        type="button"
+        onClick={() => setBillingOpen(true)}
+        className={deepenButtonVariants({ layout, state: "enabled" })}
+      >
+        <Lock aria-hidden className="size-3.5" />
+        Plano {minPlanNameFor("study_generation")}
+      </button>
+    );
+    return (
+      <div
+        className={cn(
+          "flex flex-col gap-1.5",
+          variant === "feed-card" ? "w-full sm:flex-1" : "items-start"
+        )}
+      >
+        {lockedButton}
+        {variant === "summary-header" ? null : (
+          <span className="text-[11px] font-light leading-snug text-scriba-ink-mute">
+            {FEATURES.study_generation.upsell}
+          </span>
+        )}
+        <BillingDialog open={billingOpen} onOpenChange={setBillingOpen} />
+      </div>
+    );
+  }
+
   async function handleClick() {
     if (pending || insufficient) return;
     setPending(true);
@@ -107,6 +151,14 @@ export function DeepenButton({ sessionId, hasDeepening, variant }: DeepenButtonP
         const data = (await res.json().catch(() => ({}))) as { error?: string };
         if (res.status === 402 || data.error === "insufficient_balance") {
           throw new Error("insufficient_balance");
+        }
+        // A tela pode estar velha (assinatura vencida numa aba aberta ha
+        // horas, kill switch acionado agora). O servidor e quem manda: em vez
+        // de mostrar "falhou", abrimos o caminho que resolve.
+        if (res.status === 403 || data.error === "feature_not_available") {
+          setBillingOpen(true);
+          setPending(false);
+          return;
         }
         throw new Error(data.error || `deepen_failed_${res.status}`);
       }
@@ -182,11 +234,14 @@ export function DeepenButton({ sessionId, hasDeepening, variant }: DeepenButtonP
   );
 
   const overlay = (
-    <PageBlurOverlay
-      open={pending}
-      title="Gerando o estudo"
-      subtitle="Buscando cross-references, distinções doutrinárias e vozes da tradição."
-    />
+    <>
+      <PageBlurOverlay
+        open={pending}
+        title="Gerando o estudo"
+        subtitle="Buscando cross-references, distinções doutrinárias e vozes da tradição."
+      />
+      <BillingDialog open={billingOpen} onOpenChange={setBillingOpen} />
+    </>
   );
 
   if (variant === "summary-header" || variant === "cta-card") {

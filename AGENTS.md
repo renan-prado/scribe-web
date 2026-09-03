@@ -50,6 +50,7 @@ shadcn sobre base-ui · Zod · Zustand · TanStack Query · Biome · Stripe.
 app/          rotas, API, proxy, SEO, landing         → app/AGENTS.md
 lib/          servidor: LLM, DB, env, log, auth        → lib/AGENTS.md
   billing/    Stripe, moedas e crédito                 → lib/billing/AGENTS.md
+  entitlements/ o que cada plano libera                → lib/AGENTS.md
 src/features/
   session/    gravação, pipelines ao vivo, feed        → src/features/session/AGENTS.md
   partners/   programa de divulgadores                 → src/features/partners/AGENTS.md
@@ -76,6 +77,13 @@ componente cliente.
 
 **Cliente não importa de `app/api/*/route.ts`.** Todo tipo compartilhado vive
 em `lib/domain/`.
+
+**Nada de `plan === "estudioso"`.** Quem decide se uma funcionalidade está
+disponível é `lib/entitlements/` — `canCurrentUserUse(feature)` em server
+component, `requireFeature(feature)` em rota. Uma comparação de plano solta no
+meio do código é a regra duplicada em mais um lugar, e um dia os dois lugares
+discordam. E **esconder o botão nunca é a proteção**: a rota reconfere, sempre,
+antes de cobrar.
 
 **Nada de `console.*`** em `app/`, `lib/` ou `src/`. O logger é
 `createLogger(escopo)` de `@/lib/log` — ver `lib/AGENTS.md`.

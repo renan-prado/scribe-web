@@ -6,6 +6,7 @@ import { BlockRenderer, blockKey } from "@/features/session/components/BlockRend
 import { DeepeningMenu } from "@/features/session/components/DeepeningMenu";
 import { getDeepening } from "@/lib/db/deepenings";
 import { getSessionMeta } from "@/lib/db/sessions";
+import { canCurrentUserUse } from "@/lib/entitlements/server";
 
 type PageProps = {
   params: Promise<{ id: string }>;
@@ -35,7 +36,13 @@ const DATE_FMT_SHORT = new Intl.DateTimeFormat("pt-BR", {
 
 export default async function RecordingDeepeningPage({ params }: PageProps) {
   const { id } = await params;
-  const [session, deepening] = await Promise.all([getSessionMeta(id), getDeepening(id)]);
+  // LER um estudo ja gerado nao e restrito por plano — so gerar e reprocessar.
+  // Tirar acesso a conteudo que a pessoa ja pagou seria confisco.
+  const [session, deepening, canReprocess] = await Promise.all([
+    getSessionMeta(id),
+    getDeepening(id),
+    canCurrentUserUse("study_generation").catch(() => false),
+  ]);
   if (!session || !deepening) notFound();
 
   const payload = deepening.payload;
@@ -67,7 +74,7 @@ export default async function RecordingDeepeningPage({ params }: PageProps) {
                 {DATE_FMT.format(new Date(deepening.createdAt))}
               </span>
             </span>
-            <DeepeningMenu sessionId={id} />
+            <DeepeningMenu sessionId={id} canReprocess={canReprocess} />
           </div>
         </div>
 

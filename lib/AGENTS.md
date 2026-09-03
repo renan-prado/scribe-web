@@ -23,9 +23,10 @@ aconteceu com `DEFAULT_PARTNER_MONTHLY_COINS`, que teve de mudar de
 `partners/allowance.ts` para `partners/economics.ts`.
 
 Client-safe de propósito: `coins/pricing.ts`, `billing/plans.ts`,
-`partners/economics.ts`, `br/documento.ts`, `domain/*` (tipos e schemas),
-`bible/detect.ts`, `bible/guard.ts`, `deploy.ts`, `seo.ts`, `utils.ts`,
-`vocabulario.ts`, `chunk-store.ts` (IndexedDB, só roda no browser).
+`entitlements/features.ts`, `partners/economics.ts`, `br/documento.ts`,
+`domain/*` (tipos e schemas), `bible/detect.ts`, `bible/guard.ts`,
+`deploy.ts`, `seo.ts`, `utils.ts`, `vocabulario.ts`, `chunk-store.ts`
+(IndexedDB, só roda no browser).
 
 ## Env — estrito de propósito
 
@@ -131,6 +132,54 @@ ativação, receita, passivo de moedas), e já aceita recorte por período e por
 `partnerId`. Não escreva uma segunda consulta de "conversão" dentro das telas
 de parceiro: duas definições do mesmo número um dia discordam, e a discordância
 aparece como um parceiro reclamando do próprio painel.
+
+## Entitlements — o que cada plano libera
+
+Dois módulos, e a divisão é a mesma de `billing/plans.ts` × `billing/catalog.ts`:
+
+| Módulo | Papel |
+|---|---|
+| `entitlements/features.ts` | **client-safe**: o catálogo `feature → plano mínimo` e a aritmética da decisão |
+| `entitlements/server.ts` | **server-only**: o estado real do usuário e o gate |
+| `db/feature-flags.ts` | **server-only**: kill switch e exceção por pessoa |
+
+**O catálogo mora em CÓDIGO, não no banco.** Mesma razão de `billing/catalog.ts`:
+uma linha errada numa tabela não pode virar acesso grátis a funcionalidade
+paga. O `/admin/features` MOSTRA a matriz; não a edita. Mudar qual plano libera
+o quê é um commit.
+
+O que o admin edita são as duas coisas que precisam mudar sem deploy, ambas em
+`feature_switches` / `feature_overrides` (migração `0032`):
+
+- **kill switch por feature** — desliga para todo mundo num incidente;
+- **exceção por pessoa** — libera para um beta tester, revoga de um abusador.
+
+Precedência, implementada em `evaluateFeature` e em nenhum outro lugar:
+`kill switch → exceção → plano`. O kill switch vencer a exceção é deliberado —
+ele existe para incidente, e incidente não abre exceção para ninguém.
+
+**Flag e entitlement são coisas diferentes, e um ponto de consulta só.** Flag é
+temporária e não olha para quem é o usuário; entitlement é contratual e muda
+com a assinatura. Separar as duas em duas abstrações grandes seria pior que o
+problema — elas convivem como duas dimensões da mesma pergunta.
+
+Três regras ao usar:
+
+1. **`requireFeature(key)` em toda rota que executa a funcionalidade**, ANTES
+   de cobrar moedas e antes de qualquer trabalho caro. É a proteção; o botão
+   escondido é só UX.
+2. **`canCurrentUserUse(key)` em server component**, e o booleano desce por
+   prop até o componente cliente. Não existe store de entitlement no cliente:
+   o valor já é conhecido no servidor, e buscá-lo de novo só produziria um
+   piscar de botão habilitado→bloqueado.
+3. **O plano efetivo NÃO é `subscription.plan`.** Uma assinatura cancelada
+   mantém o plano gravado para histórico; ler o campo direto daria acesso
+   vitalício a quem cancelou. `getCurrentPlan()` cruza com `isActiveStatus`.
+
+Ler conteúdo já gerado nunca é gated — só gerar. Tirar acesso ao que a pessoa
+já pagou seria confisco.
+
+Diagnóstico e desenho completos: `docs/estudo-v2.md` §8.
 
 ## Validação de entrada
 

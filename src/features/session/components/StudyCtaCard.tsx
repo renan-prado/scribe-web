@@ -15,7 +15,13 @@ export type StudyCtaSession = {
   speakerLocation: string | null;
 };
 
-export function StudyCtaCard({ session }: { session: StudyCtaSession }) {
+export function StudyCtaCard({
+  session,
+  canGenerate,
+}: {
+  session: StudyCtaSession;
+  canGenerate: boolean;
+}) {
   const title = session.title?.trim() || "Sessão sem título";
   const byline = [session.speakerName, session.speakerLocation]
     .map((s) => s?.trim())
@@ -46,7 +52,12 @@ export function StudyCtaCard({ session }: { session: StudyCtaSession }) {
           Gere um estudo para se aprofundar ainda mais nesta mensagem.
         </p>
         <div className="mt-1">
-          <DeepenButton sessionId={session.id} hasDeepening={false} variant="cta-card" />
+          <DeepenButton
+            sessionId={session.id}
+            hasDeepening={false}
+            variant="cta-card"
+            canGenerate={canGenerate}
+          />
         </div>
       </div>
     </article>

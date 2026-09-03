@@ -13,6 +13,8 @@ saber ao editar código ficam nos `AGENTS.md` de cada pasta, não aqui.
 | Como funcionam dev e produção? | [`ambientes.md`](./ambientes.md) |
 | O que falta configurar nos painéis? | [`checklist-ambiente-dev.md`](./checklist-ambiente-dev.md) |
 | Quais são as regras do programa de parceiros? | [`parceiros.md`](./parceiros.md) |
+| Por que o estudo entrega pouco, e o que fazer? | [`estudo-v2.md`](./estudo-v2.md) |
+| Qual plano libera qual funcionalidade? | [`estudo-v2.md` §8](./estudo-v2.md) e `lib/entitlements/features.ts` |
 | Como o app fala com a shell React Native? | [`react-native-bridge.md`](./react-native-bridge.md) |
 
 ## Operação
@@ -36,6 +38,11 @@ saber ao editar código ficam nos `AGENTS.md` de cada pasta, não aqui.
 - **[`melhorias-resumo-sermao.md`](./melhorias-resumo-sermao.md)** — o problema
   de o resumo soar como interpretação da IA em vez de organização do que foi
   dito, e o que fazer a respeito.
+- **[`estudo-v2.md`](./estudo-v2.md)** — por que o "Gerar estudo" entrega
+  pouco valor hoje (sete causas, todas no código, nenhuma resolvível por
+  prompt), o pipeline de cinco etapas que substitui a chamada única, e o
+  desenho de entitlements por plano. **Status: §8 (entitlements) implementado;
+  §3-§7 (pipeline) em andamento.**
 
 ## Integração
 

@@ -73,6 +73,8 @@ type PaginatedFeedProps = {
    * a cada `STUDY_CTA_EVERY` cards carregados; se acabar a lista, não repete.
    */
   studyCtaSessions?: StudyCtaSession[];
+  /** Ver `lib/entitlements/server.ts`. Repassado ao CTA de estudo. */
+  canGenerateStudy?: boolean;
 };
 
 type FetchState = "idle" | "loading" | "error";
@@ -88,6 +90,7 @@ export function PaginatedFeed({
   initialOrder,
   excludeSessionId = null,
   studyCtaSessions = [],
+  canGenerateStudy = false,
 }: PaginatedFeedProps) {
   const [items, setItems] = useState<FeedEntry[]>(initialItems);
   const [hasMore, setHasMore] = useState(initialHasMore);
@@ -161,7 +164,7 @@ export function PaginatedFeed({
                   </li>
                   {ctaSession ? (
                     <li>
-                      <StudyCtaCard session={ctaSession} />
+                      <StudyCtaCard session={ctaSession} canGenerate={canGenerateStudy} />
                     </li>
                   ) : null}
                 </Fragment>
