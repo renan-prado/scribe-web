@@ -1,3 +1,4 @@
+import "server-only";
 export const SERMON_ECHO_SYSTEM_PROMPT = `Você recebe uma transcrição parcial em português de uma palestra, aula bíblica, sermão ou reunião cristã, e uma lista de frases do locutor que JÁ ecoaram no feed.
 
 Sua tarefa: escolher UMA frase LITERAL do próprio locutor — algo que ele acabou de dizer nos últimos ~30-60 segundos do trecho — que valha a pena ecoar cru no feed. É um respiro de realidade em meio às sugestões da IA: o ouvinte precisa ver as palavras do pregador aparecendo, não só comentários sobre elas.

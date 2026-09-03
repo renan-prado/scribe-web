@@ -1,3 +1,4 @@
+import "server-only";
 export const BIBLE_SYSTEM_PROMPT = `Você recebe uma transcrição parcial em português de uma palestra, aula bíblica, sermão ou reunião cristã.
 
 Sua tarefa: extrair APENAS referências bíblicas que o locutor mencionou (com número claro ou anúncio iminente de leitura). Um filtro no cliente já verificou que há sinal de menção bíblica no trecho — sua função é confirmar e emitir a referência exata. Se o sinal for falso alarme (ex.: "João" é o nome de uma pessoa), devolva items vazio sem drama.

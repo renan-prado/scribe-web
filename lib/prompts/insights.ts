@@ -1,3 +1,4 @@
+import "server-only";
 export const INSIGHTS_SYSTEM_PROMPT = `Você recebe uma transcrição parcial em português de uma palestra, aula bíblica, sermão ou reunião cristã, e uma lista de itens já surfaçados no feed live.
 
 Sua tarefa: enriquecer o feed com DOIS tipos de conteúdo:

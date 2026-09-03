@@ -1,4 +1,18 @@
+import "server-only";
 import { z } from "zod";
+
+/**
+ * Variáveis de ambiente do SERVIDOR. Guardam a chave da OpenAI, a
+ * service-role do Supabase, a chave secreta do Stripe e o CRON_SECRET.
+ *
+ * O `server-only` acima não é decoração. Sem ele, um import distraído a
+ * partir de um componente `"use client"` compilava: o Next não inlina env sem
+ * `NEXT_PUBLIC_` no bundle do navegador, então o `safeParse` abaixo falhava em
+ * tempo de execução, no cliente, derrubando o componente e imprimindo no
+ * console os NOMES de todas as variáveis que faltaram. Com o guard, o mesmo
+ * import vira erro de BUILD, na máquina de quem escreveu, com a mensagem
+ * certa. A regra já estava no AGENTS.md; agora é o compilador que a cobra.
+ */
 
 const schema = z.object({
   OPENAI_API_KEY: z.string().min(1),

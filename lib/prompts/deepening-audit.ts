@@ -1,3 +1,4 @@
+import "server-only";
 export const DEEPENING_AUDIT_SYSTEM_PROMPT = `Você é auditor teológico. Recebe:
 (a) "finalSummary": o resumo definitivo de um sermão que o leitor JÁ ABSORVEU;
 (b) "draft": um estudo teológico gerado em um primeiro passe sobre ESTE sermão específico.

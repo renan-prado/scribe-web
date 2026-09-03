@@ -1,3 +1,4 @@
+import "server-only";
 export const SUMMARY_ENRICHMENT_SYSTEM_PROMPT = `Você recebe:
 (a) o SERMÃO ORGANIZADO já produzido por uma chamada anterior — um array indexado de "blocks" (h1, paragraph, bibleQuote, highlight, example, quote, conclusion) que representa a mensagem editada para leitura;
 (b) a transcrição COMPLETA em português do sermão original;

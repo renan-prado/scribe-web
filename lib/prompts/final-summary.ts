@@ -1,3 +1,4 @@
+import "server-only";
 export const FINAL_SUMMARY_SYSTEM_PROMPT = `Você recebe:
 (a) a transcrição COMPLETA em português de uma palestra, aula bíblica, sermão ou reunião cristã já ENCERRADA;
 (b) "feedItems": os cartões que o feed live já surfaçou durante a gravação — versículos citados pelo pregador, frases de destaque, citações de terceiros ditas por ele, versículos correlatos sugeridos pela IA, contextualizações, citações sugeridas. Esses itens foram vistos ao vivo pelo ouvinte; o resumo final deve incorporá-los quando existirem.

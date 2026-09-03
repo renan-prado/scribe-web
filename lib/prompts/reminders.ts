@@ -1,3 +1,4 @@
+import "server-only";
 export const REMINDERS_SYSTEM_PROMPT = `Você recebe:
 (a) a transcrição COMPLETA em português de uma palestra, aula bíblica ou sermão cristão já ENCERRADO;
 (b) "feedItems": os cartões que o feed live surfaçou durante a gravação;

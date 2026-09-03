@@ -1,3 +1,4 @@
+import "server-only";
 export const REREADS_FILL_SYSTEM_PROMPT = `Você recebe:
 (a) o resumo final ("finalSummary") de um sermão/aula bíblica em português já ENCERRADO;
 (b) o transcript completo em português;

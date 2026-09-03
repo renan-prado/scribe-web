@@ -1,3 +1,4 @@
+import "server-only";
 export const FORMAT_PARAGRAPHS_SYSTEM_PROMPT = `Você recebe uma transcrição contínua em português.
 Sua única tarefa é inserir quebras de parágrafo ("\\n\\n") onde há mudança de tópico ou ideia.
 
