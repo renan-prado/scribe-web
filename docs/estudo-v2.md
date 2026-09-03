@@ -419,6 +419,20 @@ Esse orçamento é o que governa duas decisões acima: o esforço baixo no redat
 e o prazo da reescrita do guardião. Ele também é o primeiro a apertar quando
 alguém quiser um estudo ainda mais longo.
 
+## O preço
+
+**50 moedas**, contra as 5 de antes (`lib/coins/pricing.ts`). São três chamadas
+a um modelo de raciocínio produzindo um artigo de três a quatro mil palavras: o
+estudo passou a ser a ação mais cara do produto por uma ordem de grandeza.
+
+Reprocessar custa o mesmo 50, e não pode custar menos: reprocessar roda o
+pipeline inteiro de novo, e um preço menor abriria a arbitragem de gerar uma
+vez pelo preço cheio e reprocessar indefinidamente barato.
+
+O custo real por estudo é MEDIDO em `/admin/usage` — as três etapas gravam com
+rotas separadas, então dá para ver quanto custa perguntar, responder e
+escrever, e decidir onde baixar de modelo se a conta não fechar.
+
 ---
 
 # 5. Estrutura do estudo

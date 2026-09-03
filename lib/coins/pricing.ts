@@ -31,12 +31,25 @@ export const COIN_COSTS = {
   audioOnlyMinute: 2,
   /** Per started minute of transcript-only recording (no LLM beyond STT). */
   transcriptMinute: 1,
-  /** One-shot cost of running /api/deepening. */
-  deepening: 5,
+  /**
+   * One-shot cost of running /api/deepening.
+   *
+   * 50 e não 5: o estudo deixou de ser uma chamada de LLM e virou um pipeline
+   * de cinco etapas — três delas num modelo de raciocínio — que produz um
+   * artigo de três a quatro mil palavras e leva perto de quatro minutos. É a
+   * ação mais cara do produto por uma ordem de grandeza, e a única restrita a
+   * um plano (ver lib/entitlements/features.ts).
+   */
+  deepening: 50,
   /** One-shot cost of re-running /api/final-summary/reprocess on a saved session. */
   reprocessSummary: 5,
-  /** One-shot cost of re-running /api/deepening/reprocess on an existing study. */
-  reprocessDeepening: 5,
+  /**
+   * Reprocessar roda o MESMO pipeline do zero, então custa o mesmo. Deixá-lo
+   * mais barato que a geração abriria uma arbitragem óbvia: gerar uma vez pelo
+   * preço cheio e reprocessar indefinidamente pelo preço de banana, pagando 5
+   * por um trabalho de 50.
+   */
+  reprocessDeepening: 50,
 } as const;
 
 /**
