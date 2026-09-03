@@ -257,7 +257,10 @@ export async function loadAdminUsageSummary(
       } satisfies UsageByUser;
     })
     .filter((u): u is UsageByUser => u !== null)
-    .sort((a, b) => b.totalCostUsd - a.totalCostUsd)
+    // O ranking é por MOEDAS gastas, não por custo em dólar: o que classifica um
+    // usuário é o quanto ele consumiu do produto, e moeda é a unidade que ele
+    // paga. O custo em USD continua na linha, como informação, não como ordem.
+    .sort((a, b) => b.totalCoins - a.totalCoins || b.totalCostUsd - a.totalCostUsd)
     .slice(0, TOP_USERS);
 
   const sessionIds = Array.from(sessionAgg.keys());

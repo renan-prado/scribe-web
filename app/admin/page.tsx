@@ -76,7 +76,7 @@ export default async function AdminOverviewPage() {
       </section>
 
       <section className="grid gap-4 lg:grid-cols-2">
-        <ListCard title="Top usuários" subtitle="Últimos 30 dias">
+        <ListCard title="Top usuários" subtitle="Moedas gastas · últimos 30 dias">
           {summary30d.byUser.length === 0 ? (
             <EmptyState>Sem eventos no período.</EmptyState>
           ) : (
@@ -89,8 +89,9 @@ export default async function AdminOverviewPage() {
                   <span className="truncate text-scriba-ink">
                     {u.displayName?.trim() || u.email || u.userId.slice(0, 8)}
                   </span>
-                  <span className="font-mono text-xs font-semibold text-scriba-ink-strong">
-                    {money(u.totalCostUsd)}
+                  <span className="inline-flex shrink-0 items-center gap-1.5 font-mono text-xs font-semibold text-scriba-ink-strong">
+                    <CoinMark size={14} />
+                    {INT.format(u.totalCoins)}
                   </span>
                 </li>
               ))}

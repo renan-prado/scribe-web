@@ -276,6 +276,11 @@ function RouteAndUserTables({ summary, money }: RouteAndUserTablesProps) {
             <TableHeader>
               <TableRow>
                 <TableHead>Usuário</TableHead>
+                <TableHead className="text-right">
+                  <span className="inline-flex items-center gap-1.5">
+                    <CoinMark size={14} /> Moedas
+                  </span>
+                </TableHead>
                 <TableHead className="text-right">Chamadas</TableHead>
                 <TableHead className="text-right">Custo</TableHead>
               </TableRow>
@@ -283,7 +288,7 @@ function RouteAndUserTables({ summary, money }: RouteAndUserTablesProps) {
             <TableBody>
               {summary.byUser.length === 0 ? (
                 <TableRow>
-                  <TableCell colSpan={3} className="text-center text-sm text-muted-foreground">
+                  <TableCell colSpan={4} className="text-center text-sm text-muted-foreground">
                     Sem eventos.
                   </TableCell>
                 </TableRow>
@@ -299,6 +304,9 @@ function RouteAndUserTables({ summary, money }: RouteAndUserTablesProps) {
                           <span className="text-[0.7rem] text-scriba-ink-mute">{u.email}</span>
                         ) : null}
                       </div>
+                    </TableCell>
+                    <TableCell className="text-right font-mono text-xs">
+                      {u.totalCoins > 0 ? INT.format(u.totalCoins) : "—"}
                     </TableCell>
                     <TableCell className="text-right">{INT.format(u.events)}</TableCell>
                     <TableCell className="text-right font-mono text-xs">
