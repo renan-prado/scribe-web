@@ -119,7 +119,16 @@ export function DeepenButton({ sessionId, hasDeepening, variant, canGenerate }: 
   // convite por extenso. `aria-label` carrega o que o icone sozinho nao diz.
   if (!canGenerate) {
     return (
-      <div className={cn("flex flex-col", variant === "feed-card" ? "w-full sm:flex-1" : "")}>
+      <div
+        className={cn(
+          "flex flex-col",
+          // `items-start` NAO e decoracao: num flex-col o alinhamento padrao e
+          // `stretch`, entao sem ele o botao compacto (cta-card e
+          // summary-header) estica ate a largura do card. So a variante
+          // "feed-card" quer largura cheia.
+          variant === "feed-card" ? "w-full sm:flex-1" : "items-start"
+        )}
+      >
         <button
           type="button"
           onClick={() => setBillingOpen(true)}
