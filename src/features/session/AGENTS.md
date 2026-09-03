@@ -258,6 +258,13 @@ O estudo tem duas particularidades que mordem de fora:
   do servidor por prop (`canGenerate` / `canReprocess`); a proteção real está
   em `requireFeature` dentro da rota. Ver `lib/AGENTS.md`.
 
+  Consequência na tela: o `/studies` tem TRÊS estados, não dois. Sem plano e
+  sem nenhum estudo, a página inteira é o convite (`StudiesUpsell` variante
+  `full`) — o `StudiesEmptyState`, que ensina a gerar, seria instrução para
+  algo que a pessoa não pode fazer. Sem plano MAS com estudos antigos, a lista
+  fica e o convite vira faixa acima dela: esconder o que a pessoa já pagou
+  para produzir seria confisco.
+
 ## Ao mexer aqui
 
 Mantenha as predicados dos guards e os arrays de dependência dos effects

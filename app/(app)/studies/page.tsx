@@ -2,16 +2,21 @@ import { BookOpen } from "lucide-react";
 import type { Metadata } from "next";
 import { NavLink } from "@/components/NavLink";
 import { StudiesEmptyState } from "@/features/session/components/StudiesEmptyState";
+import { StudiesUpsell } from "@/features/session/components/StudiesUpsell";
 import { formatDurationShort, groupLabel, shortDate } from "@/features/session/lib/formatting";
 import { listDeepenings } from "@/lib/db/deepenings";
+import { canCurrentUserUse } from "@/lib/entitlements/server";
 import { cn } from "@/lib/utils";
 
 export const metadata: Metadata = { title: "Seus estudos" };
 
 export default async function StudiesPage() {
-  const result = await listDeepenings()
-    .then((s) => ({ ok: true as const, studies: s }))
-    .catch((err: Error) => ({ ok: false as const, message: err.message }));
+  const [result, canGenerate] = await Promise.all([
+    listDeepenings()
+      .then((s) => ({ ok: true as const, studies: s }))
+      .catch((err: Error) => ({ ok: false as const, message: err.message })),
+    canCurrentUserUse("study_generation").catch(() => false),
+  ]);
 
   const studies = result.ok ? result.studies : [];
   const loadError = result.ok ? null : result.message;
@@ -26,6 +31,9 @@ export default async function StudiesPage() {
   }
 
   const isEmpty = studies.length === 0 && !loadError;
+  // Sem o plano e sem nenhum estudo, a página inteira vira o convite: explicar
+  // como gerar algo que a pessoa não pode gerar seria pior que não explicar.
+  const showUpsellState = isEmpty && !canGenerate;
 
   return (
     <main
@@ -47,10 +55,17 @@ export default async function StudiesPage() {
         </div>
       )}
 
+      {/* Tem estudos mas perdeu (ou nunca teve) o plano: a lista fica, o
+          convite entra acima dela. Só a GERAÇÃO é restrita — ver
+          lib/entitlements/features.ts. */}
+      {!canGenerate && studies.length > 0 ? <StudiesUpsell variant="banner" /> : null}
+
       {loadError ? (
         <div className="rounded-2xl border border-destructive/40 bg-destructive/5 p-4 text-sm text-destructive">
           Não consegui carregar os estudos: {loadError}
         </div>
+      ) : showUpsellState ? (
+        <StudiesUpsell variant="full" />
       ) : studies.length === 0 ? (
         <StudiesEmptyState />
       ) : (
