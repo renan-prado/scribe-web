@@ -87,7 +87,7 @@ export async function POST(request: Request) {
         { status: 502 }
       );
     }
-    if (result.kind === "plan") {
+    if (result.kind === "pipeline") {
       return NextResponse.json({ error: result.message }, { status: 502 });
     }
     return NextResponse.json(
@@ -96,11 +96,11 @@ export async function POST(request: Request) {
     );
   }
 
-  const { payload, plan, latencyMs, model } = result;
+  const { payload, record, latencyMs, model } = result;
 
   let saved = false;
   try {
-    await updateDeepening(sessionId, payload, plan);
+    await updateDeepening(sessionId, payload, record);
     saved = true;
     log.debug("saved", { sessionId });
   } catch (err) {

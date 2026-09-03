@@ -1,5 +1,5 @@
 import "server-only";
-import type { StudyApproach, StudyTopic } from "@/lib/domain/study";
+import type { StudyTopic } from "@/lib/domain/study";
 
 /**
  * Índice de teólogos — substitui a whitelist plana que o prompt antigo
@@ -36,7 +36,6 @@ export type Theologian = {
   /** Obras pelas quais é lembrado — as localizáveis, não a bibliografia. */
   works: string[];
   topics: StudyTopic[];
-  approaches: StudyApproach[];
 };
 
 export const THEOLOGIANS: Theologian[] = [
@@ -52,7 +51,6 @@ export const THEOLOGIANS: Theologian[] = [
       "Sobre a Graça e o Livre-Arbítrio",
     ],
     topics: ["graca", "pecado", "trindade", "providencia", "amor", "duvida", "criacao"],
-    approaches: ["teologia-sistematica", "historia-da-igreja", "filosofia", "conceitual"],
   },
   {
     name: "Atanásio",
@@ -60,7 +58,6 @@ export const THEOLOGIANS: Theologian[] = [
     tradition: "patrística grega",
     works: ["Sobre a Encarnação do Verbo", "Discursos contra os Arianos"],
     topics: ["cristologia", "trindade", "criacao"],
-    approaches: ["teologia-sistematica", "historia-da-igreja"],
   },
   {
     name: "João Crisóstomo",
@@ -68,7 +65,6 @@ export const THEOLOGIANS: Theologian[] = [
     tradition: "patrística grega",
     works: ["Homilias sobre Mateus", "Homilias sobre Romanos", "Sobre o Sacerdócio"],
     topics: ["etica", "justica-social", "oracao", "lideranca-pastoral", "escritura"],
-    approaches: ["exegese", "pastoral", "historia-da-igreja"],
   },
   {
     name: "Irineu de Lyon",
@@ -76,7 +72,6 @@ export const THEOLOGIANS: Theologian[] = [
     tradition: "patrística",
     works: ["Contra as Heresias", "Demonstração da Pregação Apostólica"],
     topics: ["cristologia", "criacao", "escatologia", "alianca"],
-    approaches: ["teologia-biblica", "historia-da-igreja"],
   },
   {
     name: "Gregório de Nazianzo",
@@ -84,7 +79,6 @@ export const THEOLOGIANS: Theologian[] = [
     tradition: "patrística grega",
     works: ["Discursos Teológicos"],
     topics: ["trindade", "cristologia"],
-    approaches: ["teologia-sistematica", "historia-da-igreja"],
   },
 
   // ── Reforma e pós-Reforma ────────────────────────────────────────────────
@@ -99,7 +93,6 @@ export const THEOLOGIANS: Theologian[] = [
       "Catecismo Maior",
     ],
     topics: ["graca", "fe", "justificacao", "lei-e-evangelho", "pecado", "duvida"],
-    approaches: ["exegese", "teologia-sistematica", "historia-da-igreja", "pastoral"],
   },
   {
     name: "João Calvino",
@@ -107,7 +100,6 @@ export const THEOLOGIANS: Theologian[] = [
     tradition: "reforma reformada",
     works: ["Institutas da Religião Cristã", "Comentários bíblicos"],
     topics: ["soberania", "providencia", "escritura", "igreja", "sacramentos", "oracao", "alianca"],
-    approaches: ["exegese", "teologia-sistematica", "historia-da-igreja"],
   },
   {
     name: "John Owen",
@@ -120,7 +112,6 @@ export const THEOLOGIANS: Theologian[] = [
       "A Morte da Morte na Morte de Cristo",
     ],
     topics: ["pecado", "santificacao", "cristologia", "espirito-santo", "trindade"],
-    approaches: ["teologia-sistematica", "pastoral"],
   },
   {
     name: "Richard Baxter",
@@ -128,7 +119,6 @@ export const THEOLOGIANS: Theologian[] = [
     tradition: "puritano inglês",
     works: ["O Pastor Aprovado", "O Eterno Descanso dos Santos"],
     topics: ["lideranca-pastoral", "escatologia", "santificacao", "morte"],
-    approaches: ["pastoral", "historia-da-igreja"],
   },
   {
     name: "Thomas Watson",
@@ -136,7 +126,6 @@ export const THEOLOGIANS: Theologian[] = [
     tradition: "puritano inglês",
     works: ["O Corpo da Divindade", "A Arte do Contentamento Divino", "O Doce Consolo do Cristão"],
     topics: ["alegria", "santificacao", "providencia", "sofrimento", "oracao"],
-    approaches: ["pastoral", "teologia-sistematica"],
   },
   {
     name: "Jonathan Edwards",
@@ -144,7 +133,6 @@ export const THEOLOGIANS: Theologian[] = [
     tradition: "puritano norte-americano",
     works: ["Afeições Religiosas", "A Liberdade da Vontade", "Pecadores nas Mãos de um Deus Irado"],
     topics: ["santificacao", "alegria", "pecado", "soberania", "escatologia"],
-    approaches: ["teologia-sistematica", "filosofia", "pastoral", "historia-da-igreja"],
   },
 
   // ── Pregação e espiritualidade ───────────────────────────────────────────
@@ -154,7 +142,6 @@ export const THEOLOGIANS: Theologian[] = [
     tradition: "batista reformado",
     works: ["Sermões do Tabernáculo Metropolitano", "Tesouro de Davi", "Lições aos Meus Alunos"],
     topics: ["graca", "sofrimento", "oracao", "fe", "duvida", "lideranca-pastoral"],
-    approaches: ["pastoral", "exegese"],
   },
   {
     name: "Martyn Lloyd-Jones",
@@ -167,7 +154,6 @@ export const THEOLOGIANS: Theologian[] = [
       "Exposição de Romanos",
     ],
     topics: ["duvida", "santificacao", "espirito-santo", "etica", "lideranca-pastoral"],
-    approaches: ["exegese", "pastoral", "teologia-sistematica"],
   },
   {
     name: "J. C. Ryle",
@@ -175,7 +161,6 @@ export const THEOLOGIANS: Theologian[] = [
     tradition: "anglicano evangélico",
     works: ["Santidade", "Pensamentos Expositivos sobre os Evangelhos"],
     topics: ["santificacao", "pecado", "fe"],
-    approaches: ["pastoral", "exegese"],
   },
   {
     name: "A. W. Tozer",
@@ -183,7 +168,6 @@ export const THEOLOGIANS: Theologian[] = [
     tradition: "evangélico norte-americano",
     works: ["A Busca de Deus", "O Conhecimento do Santo"],
     topics: ["oracao", "santificacao", "trindade"],
-    approaches: ["pastoral", "conceitual"],
   },
   {
     name: "C. S. Lewis",
@@ -197,7 +181,6 @@ export const THEOLOGIANS: Theologian[] = [
       "Um Luto Observado",
     ],
     topics: ["sofrimento", "duvida", "amor", "apologetica", "morte", "etica", "alegria"],
-    approaches: ["filosofia", "conceitual", "pastoral"],
   },
   {
     name: "Elisabeth Elliot",
@@ -205,7 +188,6 @@ export const THEOLOGIANS: Theologian[] = [
     tradition: "evangélica missionária",
     works: ["Portais de Esplendor", "A Sombra do Todo-Poderoso", "Deixe-me Ser Mulher"],
     topics: ["sofrimento", "missao", "providencia", "morte"],
-    approaches: ["pastoral", "conceitual"],
   },
   {
     name: "Dietrich Bonhoeffer",
@@ -213,7 +195,6 @@ export const THEOLOGIANS: Theologian[] = [
     tradition: "luterano alemão",
     works: ["Discipulado", "Vida em Comunhão", "Ética", "Resistência e Submissão"],
     topics: ["graca", "igreja", "etica", "justica-social", "sofrimento", "morte"],
-    approaches: ["teologia-sistematica", "pastoral", "historia-da-igreja"],
   },
 
   // ── Contemporâneos ───────────────────────────────────────────────────────
@@ -229,7 +210,6 @@ export const THEOLOGIANS: Theologian[] = [
       "Deuses Falsos",
     ],
     topics: ["graca", "duvida", "sofrimento", "oracao", "apologetica", "justica-social", "amor"],
-    approaches: ["pastoral", "conceitual", "filosofia", "teologia-sistematica"],
   },
   {
     name: "D. A. Carson",
@@ -242,7 +222,6 @@ export const THEOLOGIANS: Theologian[] = [
       "Chamado à Renovação Espiritual",
     ],
     topics: ["amor", "sofrimento", "escritura", "oracao", "cristologia"],
-    approaches: ["exegese", "teologia-biblica", "teologia-sistematica"],
   },
   {
     name: "John Stott",
@@ -255,7 +234,6 @@ export const THEOLOGIANS: Theologian[] = [
       "Cristianismo Básico",
     ],
     topics: ["cristologia", "etica", "justica-social", "missao", "escritura"],
-    approaches: ["exegese", "teologia-sistematica", "pastoral"],
   },
   {
     name: "J. I. Packer",
@@ -263,7 +241,6 @@ export const THEOLOGIANS: Theologian[] = [
     tradition: "anglicano reformado",
     works: ["O Conhecimento de Deus", "Evangelização e Soberania de Deus"],
     topics: ["soberania", "missao", "santificacao", "escritura"],
-    approaches: ["teologia-sistematica", "pastoral"],
   },
   {
     name: "R. C. Sproul",
@@ -271,7 +248,6 @@ export const THEOLOGIANS: Theologian[] = [
     tradition: "presbiteriano reformado",
     works: ["A Santidade de Deus", "Escolhidos por Deus", "Somos Todos Teólogos"],
     topics: ["soberania", "graca", "pecado", "trindade"],
-    approaches: ["teologia-sistematica", "conceitual"],
   },
   {
     name: "Sinclair Ferguson",
@@ -279,7 +255,6 @@ export const THEOLOGIANS: Theologian[] = [
     tradition: "presbiteriano escocês",
     works: ["A Controvérsia Marrow (O Cristo Integral)", "O Espírito Santo", "Vida Cristã"],
     topics: ["lei-e-evangelho", "graca", "espirito-santo", "santificacao"],
-    approaches: ["teologia-sistematica", "historia-da-igreja", "pastoral"],
   },
   {
     name: "N. T. Wright",
@@ -292,7 +267,6 @@ export const THEOLOGIANS: Theologian[] = [
       "Paulo e a Fidelidade de Deus",
     ],
     topics: ["escatologia", "justificacao", "alianca", "cristologia", "justica-social"],
-    approaches: ["teologia-biblica", "contexto-historico", "exegese"],
   },
   {
     name: "Craig Keener",
@@ -300,7 +274,6 @@ export const THEOLOGIANS: Theologian[] = [
     tradition: "acadêmico evangélico",
     works: ["Comentário Histórico-Cultural do Novo Testamento", "Comentário de Atos", "Milagres"],
     topics: ["escritura", "espirito-santo", "missao"],
-    approaches: ["contexto-historico", "exegese"],
   },
   {
     name: "Gordon Fee",
@@ -308,7 +281,6 @@ export const THEOLOGIANS: Theologian[] = [
     tradition: "pentecostal acadêmico",
     works: ["Comentário de 1 Coríntios", "Entendes o Que Lês?", "A Presença Poderosa de Deus"],
     topics: ["espirito-santo", "escritura", "igreja"],
-    approaches: ["exegese", "teologia-biblica"],
   },
   {
     name: "Christopher J. H. Wright",
@@ -316,7 +288,6 @@ export const THEOLOGIANS: Theologian[] = [
     tradition: "anglicano evangélico",
     works: ["A Missão de Deus", "Ética do Antigo Testamento para o Povo de Deus"],
     topics: ["missao", "etica", "justica-social", "alianca", "criacao"],
-    approaches: ["teologia-biblica", "contexto-historico"],
   },
   {
     name: "Alister McGrath",
@@ -327,7 +298,6 @@ export const THEOLOGIANS: Theologian[] = [
       "Doutrina da Justificação (Iustitia Dei)",
     ],
     topics: ["justificacao", "apologetica", "duvida", "criacao"],
-    approaches: ["historia-da-igreja", "teologia-sistematica", "filosofia"],
   },
   {
     name: "Miroslav Volf",
@@ -335,7 +305,6 @@ export const THEOLOGIANS: Theologian[] = [
     tradition: "teologia pública",
     works: ["Exclusão e Abraço", "Memória do Bem, Perdão do Mal"],
     topics: ["justica-social", "amor", "sofrimento", "etica"],
-    approaches: ["filosofia", "teologia-sistematica", "conceitual"],
   },
   {
     name: "John Piper",
@@ -347,7 +316,6 @@ export const THEOLOGIANS: Theologian[] = [
       "A Paixão de Deus por Sua Glória",
     ],
     topics: ["alegria", "soberania", "sofrimento", "missao"],
-    approaches: ["pastoral", "teologia-sistematica"],
   },
 
   // ── Brasileiros e lusófonos ──────────────────────────────────────────────
@@ -361,7 +329,6 @@ export const THEOLOGIANS: Theologian[] = [
       "O Escândalo da Cruz",
     ],
     topics: ["escritura", "igreja", "cristologia"],
-    approaches: ["exegese", "teologia-sistematica", "pastoral"],
   },
   {
     name: "Hernandes Dias Lopes",
@@ -369,7 +336,6 @@ export const THEOLOGIANS: Theologian[] = [
     tradition: "presbiteriano brasileiro",
     works: ["Comentários expositivos (série)", "Vencendo a Ansiedade"],
     topics: ["sofrimento", "oracao", "lideranca-pastoral"],
-    approaches: ["exegese", "pastoral"],
   },
   {
     name: "Jonas Madureira",
@@ -377,7 +343,6 @@ export const THEOLOGIANS: Theologian[] = [
     tradition: "batista, filosofia e teologia",
     works: ["Inteligência Humilhada", "Acorda, Igreja!"],
     topics: ["apologetica", "duvida", "escritura", "etica"],
-    approaches: ["filosofia", "conceitual", "historia-da-igreja"],
   },
   {
     name: "Franklin Ferreira",
@@ -385,7 +350,6 @@ export const THEOLOGIANS: Theologian[] = [
     tradition: "batista reformado brasileiro",
     works: ["Teologia Sistemática (com Alan Myatt)", "Contigo Caminharei"],
     topics: ["trindade", "graca", "igreja", "escatologia"],
-    approaches: ["teologia-sistematica", "historia-da-igreja"],
   },
   {
     name: "Heber Carlos de Campos",
@@ -393,7 +357,6 @@ export const THEOLOGIANS: Theologian[] = [
     tradition: "presbiteriano brasileiro",
     works: ["O Ser de Deus e os Seus Atributos", "As Obras de Deus"],
     topics: ["soberania", "providencia", "trindade", "criacao"],
-    approaches: ["teologia-sistematica"],
   },
   {
     name: "Luiz Sayão",
@@ -401,7 +364,6 @@ export const THEOLOGIANS: Theologian[] = [
     tradition: "batista, hebraísta",
     works: ["Introdução à Bíblia", "Rendição Total"],
     topics: ["escritura", "alianca"],
-    approaches: ["exegese", "contexto-historico"],
   },
   {
     name: "Russell Shedd",
@@ -409,7 +371,6 @@ export const THEOLOGIANS: Theologian[] = [
     tradition: "batista, Brasil",
     works: ["Bíblia Shedd (notas)", "Salvação Plena"],
     topics: ["escritura", "santificacao", "igreja"],
-    approaches: ["exegese", "teologia-biblica"],
   },
   {
     name: "Ricardo Barbosa de Sousa",
@@ -417,7 +378,6 @@ export const THEOLOGIANS: Theologian[] = [
     tradition: "espiritualidade cristã, Brasil",
     works: ["O Caminho do Coração", "A Fé como Descanso"],
     topics: ["oracao", "sofrimento", "santificacao", "duvida"],
-    approaches: ["pastoral", "conceitual"],
   },
   {
     name: "Antônio Carlos Costa",
@@ -425,7 +385,6 @@ export const THEOLOGIANS: Theologian[] = [
     tradition: "presbiteriano, ação social",
     works: ["Comunidade dos Vagabundos", "Missão Redenção"],
     topics: ["justica-social", "missao", "igreja", "amor"],
-    approaches: ["pastoral", "conceitual"],
   },
   {
     name: "Guilherme de Carvalho",
@@ -433,7 +392,6 @@ export const THEOLOGIANS: Theologian[] = [
     tradition: "teologia pública, Brasil",
     works: ["Ensaios sobre cosmovisão e cultura (L'Abri Brasil)"],
     topics: ["apologetica", "etica", "justica-social", "criacao"],
-    approaches: ["filosofia", "conceitual"],
   },
 ];
 
@@ -450,26 +408,15 @@ export function findTheologian(name: string | null | undefined): Theologian | nu
 }
 
 /**
- * Os autores pertinentes a um eixo. Interseção por abordagem E por tema, com
- * dois degraus de folga para não devolver lista vazia — uma lista vazia faria
- * o redator inventar um nome, que é exatamente o que queremos evitar.
+ * Os autores pertinentes a um tema. Interseção por assunto, com um degrau de
+ * folga: lista vazia faria o redator inventar um nome, que é exatamente o que
+ * queremos evitar.
  */
-export function theologiansFor(
-  approach: StudyApproach,
-  topics: StudyTopic[],
-  limit = 10
-): Theologian[] {
-  const byBoth = THEOLOGIANS.filter(
-    (t) => t.approaches.includes(approach) && t.topics.some((x) => topics.includes(x))
-  );
-  if (byBoth.length >= 4) return byBoth.slice(0, limit);
-
-  const byTopic = THEOLOGIANS.filter((t) => t.topics.some((x) => topics.includes(x)));
-  const merged = dedupe([...byBoth, ...byTopic]);
-  if (merged.length >= 4) return merged.slice(0, limit);
-
-  const byApproach = THEOLOGIANS.filter((t) => t.approaches.includes(approach));
-  return dedupe([...merged, ...byApproach]).slice(0, limit);
+export function theologiansFor(topics: StudyTopic[], limit = 12): Theologian[] {
+  if (topics.length === 0) return THEOLOGIANS.slice(0, limit);
+  const matched = THEOLOGIANS.filter((t) => t.topics.some((x) => topics.includes(x)));
+  if (matched.length >= 4) return matched.slice(0, limit);
+  return dedupe([...matched, ...THEOLOGIANS]).slice(0, limit);
 }
 
 function dedupe(list: Theologian[]): Theologian[] {
@@ -483,7 +430,7 @@ function dedupe(list: Theologian[]): Theologian[] {
   return out;
 }
 
-/** Bloco de texto que entra no prompt do redator. Uma linha por autor. */
+/** Bloco de texto que entra nos prompts. Uma linha por autor. */
 export function renderTheologianBriefing(list: Theologian[]): string {
   return list
     .map((t) => `- ${t.name} (${t.era}, ${t.tradition}) — obras: ${t.works.join("; ")}`)

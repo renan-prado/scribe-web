@@ -1,61 +1,34 @@
 /**
- * O estudo ("Gerar estudo" / aprofundamento) — tipos, plano e parsers.
+ * O estudo ("Gerar estudo") — tipos, roteiro e parsers.
  *
- * Client-safe: o renderer precisa da união de blocos, e o `/admin` precisa do
- * vocabulário de abordagens. Nada aqui toca segredo.
+ * Client-safe: o renderer precisa da união de blocos e o `/admin` precisa das
+ * perguntas. Nada aqui toca segredo.
  *
- * ⚠️ Este módulo deixou de ser um alias de `SummaryPayload`, e a mudança é
- * deliberada. Enquanto o estudo falava exatamente o vocabulário de blocos do
- * resumo, ele não tinha como parecer outra coisa: não existia bloco para
- * objeção, para distinção, para leitura recomendada, para pergunta em aberto.
- * "A estrutura deve surgir do assunto" não era um problema de prompt — era o
- * tipo que não expressava estrutura nenhuma além da do resumo.
- * Diagnóstico completo em `docs/estudo-v2.md` §1.7.
+ * ## A definição de produto, que governa tudo abaixo
  *
- * Os quatro tipos novos saem do modelo com CAMPOS, não com prosa. É o que
- * permite à selagem (`lib/study/seal.ts`) conferir mecanicamente — mesmo
- * princípio de `bibleQuote.reference` vs `bibleQuote.text`.
+ *     resumo  responde  →  o que foi ensinado nesta pregação?
+ *     estudo  responde  →  agora que entendi o tema, o que preciso aprender
+ *                          sobre ele?
+ *
+ * É por isso que a representação intermediária do pipeline são PERGUNTAS, e
+ * não uma taxonomia de eixos e disciplinas. Uma taxonomia é um formulário para
+ * o modelo preencher, e "Eixo: a graça em Efésios 2 / abordagem: teologia
+ * sistemática" não diz nada sobre se o estudo vai prestar. Uma pergunta é
+ * autovalidável: "Graça é libertinagem?" se recomenda sozinha, e "O que a
+ * graça nos ensina?" se denuncia sozinha.
+ *
+ * Consequência prática: **a qualidade do estudo é a qualidade das perguntas.**
+ * É onde vale investir prompt.
+ *
+ * ⚠️ Este módulo não é alias de `SummaryPayload`, e a diferença é deliberada.
+ * Enquanto o estudo falava o vocabulário de blocos do resumo, ele não tinha
+ * como parecer outra coisa. Ver `docs/estudo-v2.md`.
  */
-
-/** As disciplinas com que um eixo pode ser tratado. Ver `docs/estudo-v2.md` §5.3. */
-export const STUDY_APPROACHES = [
-  "exegese",
-  "contexto-historico",
-  "teologia-biblica",
-  "teologia-sistematica",
-  "historia-da-igreja",
-  "filosofia",
-  "pastoral",
-  /**
-   * A saída honesta para o sermão em que nenhuma disciplina ilumina: explicar
-   * bem o conceito, com exemplo e analogia. É escolha legítima do plano, não
-   * fallback envergonhado — sem ela, o modelo força uma disciplina que não
-   * cabe e produz o estudo genérico que esta reforma existe para matar.
-   */
-  "conceitual",
-] as const;
-
-export type StudyApproach = (typeof STUDY_APPROACHES)[number];
-
-export function isStudyApproach(v: unknown): v is StudyApproach {
-  return typeof v === "string" && (STUDY_APPROACHES as readonly string[]).includes(v);
-}
-
-export const APPROACH_LABELS: Record<StudyApproach, string> = {
-  exegese: "Exegese",
-  "contexto-historico": "Contexto histórico",
-  "teologia-biblica": "Teologia bíblica",
-  "teologia-sistematica": "Teologia sistemática",
-  "historia-da-igreja": "História da Igreja",
-  filosofia: "Filosofia",
-  pastoral: "Pastoral",
-  conceitual: "Explicação conceitual",
-};
 
 /**
  * Vocabulário FECHADO de temas. Fechado de propósito: é o que permite juntar
- * "este eixo trata de X" com "este autor escreveu sobre X" por igualdade de
- * string — sem embedding, e sem deixar ao modelo a decisão de quem é
+ * "esta pergunta trata de X" com "este autor escreveu sobre X" por igualdade
+ * de string — sem embedding, e sem deixar ao modelo a decisão de quem é
  * pertinente, que é a que ele mais erra.
  */
 export const STUDY_TOPICS = [
@@ -95,45 +68,60 @@ export function isStudyTopic(v: unknown): v is StudyTopic {
   return typeof v === "string" && (STUDY_TOPICS as readonly string[]).includes(v);
 }
 
-// ── O plano (passo 1 do pipeline) ────────────────────────────────────────────
+// ── Passo 1: as perguntas ────────────────────────────────────────────────────
 
 /**
- * Um eixo de aprofundamento: um mergulho, com a disciplina já escolhida.
+ * `media` — a pergunta que um ouvinte atento faria ao sair do culto.
+ * `alta`  — a que exige distinção conceitual, história da doutrina ou tensão
+ *           entre textos para ser respondida.
  *
- * `rationale` existe para ser LIDO por um humano na avaliação — é a resposta
- * a "por que este ponto merecia profundidade?", que antes acontecia dentro de
- * um forward pass e ninguém conseguia inspecionar.
+ * Não há nível "baixa" de propósito: a pergunta cuja resposta já está no
+ * resumo não é uma pergunta de estudo, é o resumo de novo.
  */
-export type StudyAxis = {
-  /** Vira o h1 do estudo. Precisa nomear algo deste sermão. */
-  title: string;
-  approach: StudyApproach;
+export type StudyQuestionDepth = "media" | "alta";
+
+export type StudyQuestion = {
+  text: string;
   topics: StudyTopic[];
-  /** Por que ESTE ponto merece profundidade, e o resumo não deu conta. */
-  rationale: string;
-  /** A pergunta que o eixo responde. Guia a redação. */
+  depth: StudyQuestionDepth;
+  /** Por que ela importa. Curto — serve ao respondedor na hora de escolher. */
+  why: string;
+};
+
+// ── Passo 2: as respostas ────────────────────────────────────────────────────
+
+export type StudyAnswer = {
+  /** A pergunta respondida, copiada do passo 1. */
   question: string;
-  /** Referências bíblicas candidatas — resolvidas contra a NVI no passo 2. */
+  text: string;
+  /** Referências bíblicas citadas. Conferidas contra a NVI no passo 3. */
   passages: string[];
-};
-
-export type StudyPlan = {
-  /** O tema real: texto, personagem ou doutrina. Nunca a anedota de abertura. */
-  theme: string;
-  /** O(s) texto(s) base do sermão. */
-  primaryPassages: string[];
-  /** O que o resumo JÁ entregou — o estudo não repete. */
-  alreadyCovered: string[];
-  /** 1 a 3. Um só é resposta legítima para sermão com pouco material. */
-  axes: StudyAxis[];
   /**
-   * Avaliação honesta do material disponível. Quando é `"raso"`, o estudo sai
-   * curto — e sair curto é sucesso, não falha. Ver `docs/estudo-v2.md` §2.
+   * Onde as tradições protestantes divergem de fato, a divergência é
+   * CONTEÚDO, não risco a evitar. Vazio quando há consenso — e aí a resposta
+   * afirma com convicção em vez de hedgear.
    */
-  depth: "raso" | "medio" | "denso";
+  tension: string;
 };
 
-// ── Os blocos (passos 3-5) ───────────────────────────────────────────────────
+/**
+ * O que fica gravado ao lado do estudo (`session_deepenings.plan`, migração
+ * 0033). Guarda o que foi PERGUNTADO e o recorte que virou texto.
+ *
+ * Sem isto, avaliar o estudo exige adivinhar o que o modelo pensou. Com isto,
+ * dá para ler as trinta perguntas, ver quais o respondedor escolheu, e
+ * descobrir se o problema estava na pergunta ou na resposta — que são
+ * consertos completamente diferentes.
+ */
+export type StudyRecord = {
+  theme: string;
+  /** TODAS as perguntas levantadas, inclusive as descartadas. */
+  questions: StudyQuestion[];
+  /** As que o respondedor escolheu responder, na ordem em que respondeu. */
+  answered: string[];
+};
+
+// ── Passos 4-5: os blocos ────────────────────────────────────────────────────
 
 export type StudyBlock =
   | { type: "h1"; text: string }
@@ -147,13 +135,14 @@ export type StudyBlock =
    * selagem — não avaliado, descartado. Ver `docs/estudo-v2.md` §6.
    */
   | { type: "quote"; text: string; author: string; work: string }
-  /** Uma objeção honesta ao que foi pregado, com a resposta. */
+  /** Uma objeção honesta, com a resposta. */
   | { type: "objection"; text: string; response: string }
-  /** Dois conceitos que o sermão colapsou. */
+  /** Dois conceitos que costumam ser colapsados, e a diferença. */
   | { type: "distinction"; a: string; b: string; text: string }
   /** Indicação de leitura. Campos separados para poderem ser validados. */
   | { type: "reading"; author: string; title: string; note: string }
-  /** Pergunta em aberto — o leitor continua pensando depois de fechar. */
+  /** Pergunta em aberto. No máximo duas, e só no fecho — o texto é artigo,
+   *  não questionário. */
   | { type: "question"; text: string }
   | { type: "conclusion"; text: string };
 
@@ -161,7 +150,7 @@ export type StudyBlockType = StudyBlock["type"];
 
 export type StudyPayload = {
   title: string;
-  /** A tese do estudo, como afirmação. */
+  /** A tese do artigo, como afirmação. */
   shortSummary: string;
   blocks: StudyBlock[];
 };
@@ -189,11 +178,14 @@ function strArray(rec: Record<string, unknown>, key: string): string[] {
 }
 
 /**
- * Plano vindo do passo 1. Um plano sem eixos é plano inválido: o chamador
- * trata como falha e não segue para a redação — escrever sem plano é
- * exatamente o comportamento antigo que queremos eliminar.
+ * Teto de perguntas aceitas do passo 1. Alto de propósito: o questionador é
+ * instruído a perguntar sem pudor, e é o respondedor quem seleciona. Cortar
+ * cedo demais aqui seria fazer a seleção pelo critério errado — ordem de
+ * geração em vez de qualidade.
  */
-export function parseStudyPlanFromLLM(content: string): StudyPlan | null {
+const MAX_QUESTIONS = 40;
+
+export function parseStudyQuestionsFromLLM(content: string): StudyRecord | null {
   let obj: unknown;
   try {
     obj = JSON.parse(content);
@@ -203,42 +195,68 @@ export function parseStudyPlanFromLLM(content: string): StudyPlan | null {
   if (!obj || typeof obj !== "object") return null;
   const src = obj as Record<string, unknown>;
 
-  const rawAxes = Array.isArray(src.axes) ? src.axes : [];
-  const axes: StudyAxis[] = [];
-  for (const a of rawAxes) {
+  const raw = Array.isArray(src.questions) ? src.questions : [];
+  const questions: StudyQuestion[] = [];
+  const seen = new Set<string>();
+
+  for (const q of raw) {
+    if (!q || typeof q !== "object") continue;
+    const rec = q as Record<string, unknown>;
+    const text = str(rec, "text");
+    if (!text) continue;
+    // Duplicata literal acontece quando o modelo reformula a mesma pergunta;
+    // ela custaria uma vaga na seleção do respondedor.
+    const key = text.toLowerCase().replace(/\s+/g, " ");
+    if (seen.has(key)) continue;
+    seen.add(key);
+
+    questions.push({
+      text,
+      topics: strArray(rec, "topics").filter(isStudyTopic),
+      depth: rec.depth === "alta" ? "alta" : "media",
+      why: str(rec, "why"),
+    });
+    if (questions.length === MAX_QUESTIONS) break;
+  }
+
+  // Sem perguntas não há estudo: o chamador para aqui em vez de escrever no
+  // vazio, que é exatamente o comportamento antigo.
+  if (questions.length === 0) return null;
+
+  return { theme: str(src, "theme"), questions, answered: [] };
+}
+
+export function parseStudyAnswersFromLLM(content: string): StudyAnswer[] {
+  let obj: unknown;
+  try {
+    obj = JSON.parse(content);
+  } catch {
+    return [];
+  }
+  if (!obj || typeof obj !== "object") return [];
+  const src = obj as Record<string, unknown>;
+
+  const raw = Array.isArray(src.answers) ? src.answers : [];
+  const answers: StudyAnswer[] = [];
+  for (const a of raw) {
     if (!a || typeof a !== "object") continue;
     const rec = a as Record<string, unknown>;
-    const title = str(rec, "title");
-    const approach = rec.approach;
-    if (!title || !isStudyApproach(approach)) continue;
-    axes.push({
-      title,
-      approach,
-      topics: strArray(rec, "topics").filter(isStudyTopic),
-      rationale: str(rec, "rationale"),
-      question: str(rec, "question"),
+    const question = str(rec, "question");
+    const text = str(rec, "text");
+    if (!question || !text) continue;
+    answers.push({
+      question,
+      text,
       passages: strArray(rec, "passages"),
+      tension: str(rec, "tension"),
     });
-    // Teto duro: o plano pede 1-3 e o prompt repete, mas um modelo generoso
-    // devolve seis e o estudo vira o "tour" que a versão anterior era.
-    if (axes.length === 3) break;
   }
-  if (axes.length === 0) return null;
-
-  const depth = src.depth;
-  return {
-    theme: str(src, "theme"),
-    primaryPassages: strArray(src, "primaryPassages"),
-    alreadyCovered: strArray(src, "alreadyCovered"),
-    axes,
-    depth: depth === "raso" || depth === "denso" ? depth : "medio",
-  };
+  return answers;
 }
 
 /**
- * Payload vindo dos passos 3 e 4. Só descarta o que está estruturalmente
- * quebrado (campo obrigatório vazio, tipo desconhecido) — o julgamento de
- * conteúdo é do auditor, e a verificação de fonte é da selagem.
+ * Payload do redator. Só descarta o que está estruturalmente quebrado (campo
+ * obrigatório vazio, tipo desconhecido) — a verificação de fonte é da selagem.
  */
 export function parseStudyFromLLM(content: string): StudyPayload {
   let obj: unknown;
@@ -272,7 +290,7 @@ export function parseStudyFromLLM(content: string): StudyPayload {
       }
       case "bibleQuote": {
         const reference = str(rec, "reference");
-        // Sem referência não há o que ancorar contra a NVI no passo 5.
+        // Sem referência não há o que ancorar contra a NVI na selagem.
         if (reference) blocks.push({ type: "bibleQuote", reference, text });
         break;
       }

@@ -3,7 +3,6 @@ import Link from "next/link";
 import { EmptyState } from "@/features/admin/components/AdminCards";
 import { AdminPageHeader } from "@/features/admin/components/AdminPageHeader";
 import { listStudiesForAdmin } from "@/lib/db/admin/studies";
-import { APPROACH_LABELS } from "@/lib/domain/study";
 
 export const metadata: Metadata = { title: "Estudos" };
 export const dynamic = "force-dynamic";
@@ -11,15 +10,18 @@ export const dynamic = "force-dynamic";
 /**
  * A tela de avaliação do estudo. Não é métrica: é leitura.
  *
- * Cada linha mostra a DECISÃO editorial (o plano) ao lado do que ela produziu
- * (contagem de blocos, fontes que sobreviveram à selagem, versículos). É o
- * instrumento dos critérios 2, 4, 6 e 8 de `docs/estudo-v2.md` §7 — os que não
- * dá para julgar só lendo o estudo pronto.
+ * Mostra as perguntas que o questionador levantou, marcando as que o
+ * respondedor escolheu responder, ao lado do que saiu (contagem de blocos,
+ * versículos conferidos, fontes que sobreviveram à selagem).
  *
- * Duas leituras que esta tela torna imediatas:
- *   - um estudo com `depth: raso` e poucos blocos está CERTO, não quebrado;
- *   - um estudo sem nenhuma fonte não é necessariamente pior — significa que a
- *     selagem descartou o que não tinha obra, que é o comportamento desejado.
+ * A razão de ser é diagnóstica. Um estudo ruim tem duas causas possíveis que
+ * se parecem no texto final e têm consertos opostos: as perguntas eram rasas,
+ * ou eram boas e foram mal respondidas. Sem ver as perguntas, não dá para
+ * saber em qual dos dois modelos mexer.
+ *
+ * Uma leitura que a tela precisa preservar: estudo sem nenhuma fonte não é
+ * necessariamente pior — é a selagem tendo descartado o que não tinha obra,
+ * que é o comportamento desejado.
  */
 
 const DATE_FMT = new Intl.DateTimeFormat("pt-BR", {
@@ -29,7 +31,7 @@ const DATE_FMT = new Intl.DateTimeFormat("pt-BR", {
   minute: "2-digit",
 });
 
-const DEPTH_LABEL = { raso: "Raso", medio: "Médio", denso: "Denso" } as const;
+const DEPTH_LABEL = { media: "média", alta: "alta" } as const;
 
 export default async function AdminStudiesPage() {
   const studies = await listStudiesForAdmin().catch(() => []);
@@ -73,36 +75,46 @@ export default async function AdminStudiesPage() {
                 </p>
               ) : null}
 
-              {s.plan ? (
+              {s.record ? (
                 <div className="flex flex-col gap-2 rounded-lg bg-scriba-blue-soft/40 p-4">
                   <div className="flex flex-wrap items-center gap-2">
                     <span className="text-[10px] font-semibold uppercase tracking-[0.14em] text-scriba-ink-mute">
-                      Plano
+                      Perguntas
                     </span>
                     <span className="rounded-full bg-scriba-paper px-2 py-0.5 text-[11px] font-medium text-scriba-ink-strong">
-                      {DEPTH_LABEL[s.plan.depth]}
+                      {s.record.answered.length} de {s.record.questions.length}
                     </span>
-                    <span className="text-[12px] font-medium text-scriba-ink">{s.plan.theme}</span>
+                    <span className="text-[12px] font-medium text-scriba-ink">
+                      {s.record.theme}
+                    </span>
                   </div>
-                  <ol className="flex flex-col gap-2">
-                    {s.plan.axes.map((axis) => (
-                      <li key={axis.title} className="flex flex-col gap-0.5">
-                        <span className="text-[13px] font-medium text-scriba-ink-strong">
-                          {axis.title}{" "}
-                          <span className="font-normal text-scriba-ink-mute">
-                            · {APPROACH_LABELS[axis.approach]}
+                  {/* Todas as perguntas, com as respondidas em destaque. As
+                      descartadas são metade do diagnóstico: se o respondedor
+                      deixou de fora justamente as boas, o problema é dele. */}
+                  <ol className="flex flex-col gap-1">
+                    {s.record.questions.map((q) => {
+                      const used = s.record?.answered.includes(q.text) ?? false;
+                      return (
+                        <li
+                          key={q.text}
+                          className={
+                            used
+                              ? "text-[12.5px] font-medium leading-relaxed text-scriba-ink-strong"
+                              : "text-[12.5px] font-light leading-relaxed text-scriba-ink-mute line-through decoration-scriba-ink-mute/40"
+                          }
+                        >
+                          {q.text}{" "}
+                          <span className="font-normal text-[11px] text-scriba-ink-mute">
+                            ({DEPTH_LABEL[q.depth]})
                           </span>
-                        </span>
-                        <span className="text-[12px] font-light leading-relaxed text-scriba-ink">
-                          {axis.rationale}
-                        </span>
-                      </li>
-                    ))}
+                        </li>
+                      );
+                    })}
                   </ol>
                 </div>
               ) : (
                 <p className="text-[11px] font-light italic text-scriba-ink-mute">
-                  Gerado antes do pipeline de cinco etapas — sem plano registrado.
+                  Gerado antes do pipeline atual — sem perguntas registradas.
                 </p>
               )}
 

@@ -4,12 +4,12 @@ import { CHAPTER_VERSE_COUNTS } from "@/lib/bibles/chapter-lengths";
 import { loadBible } from "@/lib/bibles/loader";
 import { lookupVerse } from "@/lib/bibles/lookup";
 import { parseVerseReference } from "@/lib/domain/feed";
-import type { StudyPlan } from "@/lib/domain/study";
 
 /**
- * PASSO 2 — a ANCORAGEM. Sem LLM.
+ * PASSO 3 — a ANCORAGEM. Sem LLM.
  *
- * Toda referência bíblica que o plano propôs é resolvida contra a NVI local.
+ * Toda referência bíblica que o respondedor citou é resolvida contra a NVI
+ * local.
  * A que existe volta com o TEXTO REAL; a que não existe é descartada antes de
  * chegar ao redator.
  *
@@ -71,32 +71,29 @@ export async function anchorReference(raw: string): Promise<AnchoredPassage | nu
 }
 
 /**
- * Limite de passagens ancoradas por estudo. Um plano com três eixos pode
- * listar quinze referências; mandar o capítulo inteiro de cada uma para o
- * redator infla o prompt sem melhorar o texto. O teto corta pela ordem do
- * plano, que já é ordem de prioridade.
+ * Limite de passagens ancoradas por estudo. Doze respostas podem citar trinta
+ * referências; mandar o capítulo inteiro de cada uma para o redator infla o
+ * prompt sem melhorar o texto. O corte segue a ordem das respostas, que já é
+ * ordem de prioridade — a primeira resposta é a mais importante.
  */
-const MAX_ANCHORED = 14;
+const MAX_ANCHORED = 18;
 
 /**
- * Ancora tudo que o plano propôs — passagens principais primeiro, depois as de
- * cada eixo, deduplicadas pela referência normalizada.
+ * Ancora uma lista de referências, deduplicando pela forma normalizada.
  *
- * Devolve também `dropped`, as referências que não resolveram. Elas vão para o
- * log: uma taxa alta de descarte é sinal de que o passo do plano está
- * inventando referência, e é o tipo de coisa que não se descobre sem medir.
+ * Devolve também `dropped`, as que não resolveram. Elas vão para o log: uma
+ * taxa alta de descarte é sinal de que o respondedor está inventando
+ * referência, e é o tipo de coisa que não se descobre sem medir.
  */
-export async function anchorPlan(plan: StudyPlan): Promise<{
+export async function anchorReferences(refs: string[]): Promise<{
   anchored: AnchoredPassage[];
   dropped: string[];
 }> {
-  const candidates = [...plan.primaryPassages, ...plan.axes.flatMap((a) => a.passages)];
-
   const anchored: AnchoredPassage[] = [];
   const dropped: string[] = [];
   const seen = new Set<string>();
 
-  for (const raw of candidates) {
+  for (const raw of refs) {
     if (anchored.length >= MAX_ANCHORED) break;
     const resolved = await anchorReference(raw);
     if (!resolved) {
@@ -112,7 +109,7 @@ export async function anchorPlan(plan: StudyPlan): Promise<{
   return { anchored, dropped };
 }
 
-/** Bloco que entra no prompt do redator e do revisor. */
+/** Bloco que entra no prompt do redator. */
 export function renderAnchoredPassages(list: AnchoredPassage[]): string {
   if (list.length === 0) return "(nenhuma passagem conferida)";
   return list.map((p) => `${p.reference} — ${p.text}`).join("\n\n");

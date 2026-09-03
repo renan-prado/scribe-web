@@ -2,48 +2,60 @@ import "server-only";
 import { recordChatUsage, type UsageRoute } from "@/lib/db/usage";
 import type { FeedItem } from "@/lib/domain/feed";
 import {
+  parseStudyAnswersFromLLM,
   parseStudyFromLLM,
-  parseStudyPlanFromLLM,
+  parseStudyQuestionsFromLLM,
+  type StudyAnswer,
   type StudyPayload,
-  type StudyPlan,
+  type StudyRecord,
+  type StudyTopic,
 } from "@/lib/domain/study";
 import type { SummaryPayload } from "@/lib/domain/summary";
 import { serverEnv } from "@/lib/env/server";
 import { buildLlmMetadata } from "@/lib/llm/metadata";
 import { callChat } from "@/lib/llm/openai";
 import { createLogger } from "@/lib/log";
-import { STUDY_AUDIT_SYSTEM_PROMPT } from "@/lib/prompts/study-audit";
-import { STUDY_PLAN_SYSTEM_PROMPT } from "@/lib/prompts/study-plan";
+import { STUDY_ANSWERS_SYSTEM_PROMPT } from "@/lib/prompts/study-answers";
+import { STUDY_QUESTIONS_SYSTEM_PROMPT } from "@/lib/prompts/study-questions";
 import { STUDY_WRITE_SYSTEM_PROMPT } from "@/lib/prompts/study-write";
 import { renderTheologianBriefing, theologiansFor } from "@/lib/prompts/theologians";
-import { type AnchoredPassage, anchorPlan, renderAnchoredPassages } from "@/lib/study/anchor";
+import { anchorReferences, renderAnchoredPassages } from "@/lib/study/anchor";
 import { sealStudy } from "@/lib/study/seal";
 
 /**
- * O pipeline do estudo — cinco etapas, três chamadas de modelo, duas
- * determinísticas. Diagnóstico e desenho completos em `docs/estudo-v2.md`.
+ * O pipeline do estudo.
  *
- *   [1] PLANO      LLM   decide o tema, os eixos e a disciplina de cada eixo
- *   [2] ANCORAGEM  ---   resolve toda referência bíblica contra a NVI local
- *   [3] REDAÇÃO    LLM   escreve seguindo o plano e os versículos conferidos
- *   [4] REVISÃO    LLM   corta o que a transcrição e as fontes não sustentam
- *   [5] SELAGEM    ---   reescreve versículo da NVI, descarta fonte sem obra
+ *     resumo  responde  →  o que foi ensinado nesta pregação?
+ *     estudo  responde  →  agora que entendi o tema, o que preciso aprender
+ *                          sobre ele?
  *
- * A versão anterior era uma chamada única a 16k tokens que decidia, escrevia e
- * se auto-auditava ao mesmo tempo, seguida de um auditor que não recebia a
- * transcrição. O que ela produzia era estudo genérico com fontes plausíveis —
- * as sete causas estão em `docs/estudo-v2.md` §1.
+ * Cinco etapas, três de LLM e duas determinísticas:
  *
- * Persistência é do chamador. Usado por:
- *   - POST /api/deepening            (primeira geração)
- *   - POST /api/deepening/reprocess  (refazer sobre um estudo existente)
+ *   [1] QUESTIONADOR  LLM  interroga o sermão como um crítico: 25-30 perguntas
+ *   [2] RESPONDEDOR   LLM  ESCOLHE as 10-14 que rendem e responde todas juntas
+ *   [3] ANCORAGEM     ---  resolve as referências bíblicas citadas na NVI
+ *   [4] REDATOR       LLM  transforma as respostas num artigo corrido
+ *   [5] SELAGEM       ---  versículo vem da NVI; fonte sem obra é descartada
+ *
+ * A representação intermediária ser PERGUNTA, e não uma taxonomia de eixos e
+ * disciplinas, é a decisão que carrega o resto: uma pergunta é autovalidável —
+ * dá para ler e saber se presta — enquanto um eixo com abordagem escolhida é
+ * um formulário preenchido que nada diz sobre a qualidade do que virá.
+ *
+ * Daí a assimetria de esforço: **a qualidade do estudo é a qualidade das
+ * perguntas**. O passo 1 pergunta sem pudor e NÃO seleciona; a seleção mora no
+ * passo 2, com quem vai ter de responder — quem melhor julga se uma pergunta
+ * vale é quem precisa respondê-la.
+ *
+ * Persistência é do chamador. Usado por `/api/deepening` e
+ * `/api/deepening/reprocess`.
  */
 
 export type GenerateStudySuccess = {
   ok: true;
   payload: StudyPayload;
-  /** Persistido junto do estudo: é o que torna a decisão editorial avaliável. */
-  plan: StudyPlan;
+  /** Perguntas levantadas e o recorte respondido. Persistido para avaliação. */
+  record: StudyRecord;
   latencyMs: number;
   model: string;
 };
@@ -51,8 +63,8 @@ export type GenerateStudySuccess = {
 export type GenerateStudyError =
   | { ok: false; kind: "fetch"; message: string }
   | { ok: false; kind: "upstream"; message: string; status: number; latencyMs: number }
-  /** O plano não saiu utilizável. Sem plano não escrevemos — ver abaixo. */
-  | { ok: false; kind: "plan"; message: string };
+  /** Parada dura do pipeline. Nenhuma delas grava estudo pela metade. */
+  | { ok: false; kind: "pipeline"; message: string };
 
 export type GenerateStudyResult = GenerateStudySuccess | GenerateStudyError;
 
@@ -66,12 +78,21 @@ export type GenerateStudyInput = {
 };
 
 /**
- * Teto da transcrição enviada aos passos 3 e 4. O passo 1 recebe a íntegra —
- * ele precisa dela para escolher o tema. Os passos seguintes já têm o plano,
- * e mandar 40 minutos de fala de novo em cada um triplicaria o custo de
- * entrada sem melhorar o texto.
+ * Teto da transcrição enviada ao passo 2. O passo 1 recebe a íntegra — é ele
+ * que precisa dela para achar o que perguntar. Depois disso o material de
+ * trabalho são as perguntas e as respostas, e remandar quarenta minutos de
+ * fala infla o prompt sem melhorar o texto. O passo 4 não recebe transcrição
+ * nenhuma: ele escreve sobre o ASSUNTO, não sobre a gravação.
  */
-const TRANSCRIPT_CAP = 24_000;
+const TRANSCRIPT_CAP = 20_000;
+
+/**
+ * As chamadas do respondedor e do redator são grandes — 10-14 respostas de até
+ * 350 palavras, e depois um artigo inteiro. O padrão de `callChat` é 60s, curto
+ * demais para elas, e um timeout aqui aborta um trabalho pelo qual o usuário já
+ * pagou moedas.
+ */
+const LONG_CALL_TIMEOUT_MS = 180_000;
 
 function capTranscript(transcript: string): string {
   if (transcript.length <= TRANSCRIPT_CAP) return transcript;
@@ -82,20 +103,20 @@ export async function generateStudy(input: GenerateStudyInput): Promise<Generate
   const { userId, sessionId, transcript, feedItems, finalSummary, logPrefix } = input;
   const log = createLogger(logPrefix);
 
-  // ── [1] PLANO ─────────────────────────────────────────────────────────────
-  const planModel = serverEnv.OPENAI_STUDY_PLAN_MODEL;
-  const planLog = log.scoped("plan");
+  // ── [1] QUESTIONADOR ─────────────────────────────────────────────────────
+  const questionsModel = serverEnv.OPENAI_STUDY_QUESTIONS_MODEL;
+  const qLog = log.scoped("questions");
 
-  const planResult = await callChat({
-    model: planModel,
-    // Baixa de propósito: o plano é a decisão que vamos AVALIAR, e uma decisão
-    // que muda a cada execução não pode ser avaliada. A variação criativa fica
-    // toda no passo 3.
-    temperature: 0.3,
-    maxTokens: 3000,
+  const questionsResult = await callChat({
+    model: questionsModel,
+    // Alta: aqui queremos amplitude e ângulos improváveis. Perguntar demais é
+    // barato — a seleção vem depois. Uma boa pergunta não feita está perdida
+    // para sempre.
+    temperature: 0.9,
+    maxTokens: 6000,
     responseFormat: { type: "json_object" },
     messages: [
-      { role: "system", content: STUDY_PLAN_SYSTEM_PROMPT },
+      { role: "system", content: STUDY_QUESTIONS_SYSTEM_PROMPT },
       {
         role: "user",
         content: [
@@ -106,125 +127,154 @@ export async function generateStudy(input: GenerateStudyInput): Promise<Generate
       },
     ],
     store: true,
-    metadata: buildLlmMetadata({ route: "study-plan", userId, sessionId }),
+    metadata: buildLlmMetadata({ route: "study-questions", userId, sessionId }),
   });
 
-  if (!planResult.ok) return upstreamFailure(planLog, planResult.error);
+  if (!questionsResult.ok) return upstreamFailure(qLog, questionsResult.error);
+  await recordUsage(sessionId, "study-questions", questionsModel, questionsResult.data);
 
-  await recordUsage(sessionId, "study-plan", planModel, planResult.data);
-
-  const plan = parseStudyPlanFromLLM(planResult.data.content);
-  if (!plan) {
-    // Falha dura, e deliberadamente: escrever sem plano é exatamente o
-    // comportamento antigo. Um estudo sem decisão editorial não é o que
-    // estamos vendendo, e devolver 502 aqui é melhor que devolver o produto
-    // que esta reforma existe para eliminar.
-    planLog.error("plano inválido — abortando");
-    return { ok: false, kind: "plan", message: "plan_unusable" };
+  const record = parseStudyQuestionsFromLLM(questionsResult.data.content);
+  if (!record) {
+    qLog.error("nenhuma pergunta utilizável — abortando");
+    return { ok: false, kind: "pipeline", message: "questions_unusable" };
   }
 
-  planLog.debug("ok", {
-    theme: plan.theme,
-    depth: plan.depth,
-    axes: plan.axes.map((a) => a.approach).join(","),
-    latencyMs: planResult.data.latencyMs,
+  qLog.debug("ok", {
+    theme: record.theme,
+    total: record.questions.length,
+    alta: record.questions.filter((q) => q.depth === "alta").length,
+    latencyMs: questionsResult.data.latencyMs,
   });
 
-  // ── [2] ANCORAGEM (sem LLM) ──────────────────────────────────────────────
-  const { anchored, dropped } = await anchorPlan(plan);
+  // Autores pertinentes ao conjunto dos temas levantados. Respondedor e
+  // redator recebem os MESMOS, senão o segundo cita gente que o primeiro não
+  // trabalhou.
+  const topics = [...new Set(record.questions.flatMap((q) => q.topics))] as StudyTopic[];
+  const authorsBlock = renderTheologianBriefing(theologiansFor(topics));
+
+  // ── [2] RESPONDEDOR — seleciona e responde ───────────────────────────────
+  const answersModel = serverEnv.OPENAI_STUDY_ANSWERS_MODEL;
+  const aLog = log.scoped("answers");
+
+  const answersResult = await callChat({
+    model: answersModel,
+    // Média: precisa de liberdade para formular, mas é a etapa que carrega os
+    // fatos, e temperatura alta aqui vira citação inventada.
+    temperature: 0.5,
+    maxTokens: 16000,
+    timeoutMs: LONG_CALL_TIMEOUT_MS,
+    responseFormat: { type: "json_object" },
+    messages: [
+      { role: "system", content: STUDY_ANSWERS_SYSTEM_PROMPT },
+      {
+        role: "user",
+        content: [
+          `theme:\n${record.theme}`,
+          `questions:\n${JSON.stringify(record.questions)}`,
+          `authors:\n${authorsBlock}`,
+          `summary:\n${JSON.stringify(finalSummary)}`,
+          `transcript:\n${capTranscript(transcript)}`,
+        ].join("\n\n---\n"),
+      },
+    ],
+    store: true,
+    metadata: buildLlmMetadata({ route: "study-answers", userId, sessionId }),
+  });
+
+  if (!answersResult.ok) return upstreamFailure(aLog, answersResult.error);
+  await recordUsage(sessionId, "study-answers", answersModel, answersResult.data);
+
+  const answers = parseStudyAnswersFromLLM(answersResult.data.content);
+  if (answers.length === 0) {
+    aLog.error("nenhuma resposta — abortando");
+    return { ok: false, kind: "pipeline", message: "answers_empty" };
+  }
+
+  record.answered = answers.map((a) => a.question);
+  aLog.debug("ok", {
+    asked: record.questions.length,
+    answered: answers.length,
+    withTension: answers.filter((a) => a.tension).length,
+    latencyMs: answersResult.data.latencyMs,
+  });
+  if (answersResult.data.finishReason === "length") {
+    aLog.warn("saída truncada por max_tokens", {
+      completionTokens: answersResult.data.usage.completionTokens,
+    });
+  }
+
+  // ── [3] ANCORAGEM (sem LLM) ──────────────────────────────────────────────
+  const { anchored, dropped } = await anchorReferences(answers.flatMap((a) => a.passages));
   if (dropped.length > 0) {
-    // Taxa alta aqui = o passo do plano está inventando referência. É um sinal
-    // que só existe porque medimos; sem ele, a referência inventada seguiria
-    // para o texto e sairia como versículo.
+    // Taxa alta aqui = o respondedor está inventando referência. É um sinal
+    // que só existe porque medimos.
     log.warn("referências descartadas na ancoragem", {
       dropped: dropped.join(" | "),
       kept: anchored.length,
     });
   }
 
-  // ── [3] REDAÇÃO ──────────────────────────────────────────────────────────
+  // ── [4] REDATOR ──────────────────────────────────────────────────────────
   const writeModel = serverEnv.OPENAI_STUDY_WRITE_MODEL;
-  const writeLog = log.scoped("write");
-  const cappedTranscript = capTranscript(transcript);
-  const authorsBlock = renderAuthorsForPlan(plan);
-
-  const writeUserMessage = [
-    `plan:\n${JSON.stringify(plan)}`,
-    `anchoredPassages:\n${renderAnchoredPassages(anchored)}`,
-    `authors:\n${authorsBlock}`,
-    `summary:\n${JSON.stringify(finalSummary)}`,
-    `transcript:\n${cappedTranscript}`,
-  ].join("\n\n---\n");
+  const wLog = log.scoped("write");
 
   const writeResult = await callChat({
     model: writeModel,
-    // Alta: é a ÚNICA etapa que ganha com variação. O plano já fixou o
-    // esqueleto, então a temperatura aqui muda a prosa, não as decisões.
-    temperature: 0.7,
+    // Alta: é a etapa de prosa, e a substância já está fixada nas respostas.
+    // A temperatura aqui muda como o texto é escrito, não o que ele afirma.
+    temperature: 0.75,
     maxTokens: 16000,
+    timeoutMs: LONG_CALL_TIMEOUT_MS,
     responseFormat: { type: "json_object" },
     messages: [
       { role: "system", content: STUDY_WRITE_SYSTEM_PROMPT },
-      { role: "user", content: writeUserMessage },
+      {
+        role: "user",
+        content: [
+          `theme:\n${record.theme}`,
+          `answers:\n${JSON.stringify(answers.map(stripPassages))}`,
+          `anchoredPassages:\n${renderAnchoredPassages(anchored)}`,
+          `authors:\n${authorsBlock}`,
+          `summary:\n${JSON.stringify(finalSummary)}`,
+        ].join("\n\n---\n"),
+      },
     ],
     store: true,
     metadata: buildLlmMetadata({ route: "study-write", userId, sessionId }),
   });
 
-  if (!writeResult.ok) return upstreamFailure(writeLog, writeResult.error);
-
+  if (!writeResult.ok) return upstreamFailure(wLog, writeResult.error);
   await recordUsage(sessionId, "study-write", writeModel, writeResult.data);
-  const draft = parseStudyFromLLM(writeResult.data.content);
 
-  writeLog.debug("ok", {
+  const draft = parseStudyFromLLM(writeResult.data.content);
+  wLog.debug("ok", {
     blocks: draft.blocks.length,
     latencyMs: writeResult.data.latencyMs,
     finishReason: writeResult.data.finishReason,
   });
   if (writeResult.data.finishReason === "length") {
-    writeLog.warn("saída truncada por max_tokens", {
+    wLog.warn("saída truncada por max_tokens", {
       completionTokens: writeResult.data.usage.completionTokens,
     });
   }
-
   if (draft.blocks.length === 0) {
-    writeLog.error("redação vazia — abortando");
-    return { ok: false, kind: "plan", message: "draft_empty" };
+    wLog.error("redação vazia — abortando");
+    return { ok: false, kind: "pipeline", message: "draft_empty" };
   }
 
-  // ── [4] REVISÃO ──────────────────────────────────────────────────────────
-  // Best-effort, como o enriquecimento do resumo: se o revisor falha, o
-  // rascunho selado ainda é entregável. O que NÃO é aceitável é entregar sem
-  // passar pela selagem — por isso ela vem depois, fora deste `if`.
-  let reviewed = draft;
-  const audited = await runAudit({
-    userId,
-    sessionId,
-    plan,
-    draft,
-    anchored,
-    finalSummary,
-    transcript: cappedTranscript,
-    log: log.scoped("audit"),
-  });
-  if (audited) reviewed = audited;
-
   // ── [5] SELAGEM (sem LLM) ────────────────────────────────────────────────
-  const { payload, report } = sealStudy(reviewed, anchored);
+  const { payload, report } = sealStudy(draft, anchored);
+  log.debug("selado", { blocks: payload.blocks.length, ...report });
 
-  log.debug("selado", {
-    blocks: payload.blocks.length,
-    ...report,
-  });
   if (payload.blocks.length === 0) {
     log.error("selagem esvaziou o estudo");
-    return { ok: false, kind: "plan", message: "sealed_empty" };
+    return { ok: false, kind: "pipeline", message: "sealed_empty" };
   }
 
   return {
     ok: true,
     payload,
-    plan,
+    record,
     latencyMs: writeResult.data.latencyMs,
     model: writeModel,
   };
@@ -233,83 +283,13 @@ export async function generateStudy(input: GenerateStudyInput): Promise<Generate
 // ── Auxiliares ───────────────────────────────────────────────────────────────
 
 /**
- * O briefing de autores, por eixo. O redator recebe seis a doze nomes COM obra
- * e século, escolhidos pelo cruzamento entre a abordagem e os temas do eixo —
- * não os 48 nomes soltos da whitelist antiga. Ver `lib/prompts/theologians.ts`.
+ * O redator não precisa da lista crua de referências: ele recebe
+ * `anchoredPassages`, que já é o subconjunto que existe de verdade. Mandar as
+ * duas listas convidaria a citar uma referência que a ancoragem descartou.
  */
-function renderAuthorsForPlan(plan: StudyPlan): string {
-  return plan.axes
-    .map((axis) => {
-      const list = theologiansFor(axis.approach, axis.topics);
-      return `Eixo "${axis.title}" (${axis.approach}):\n${renderTheologianBriefing(list)}`;
-    })
-    .join("\n\n");
-}
-
-type AuditArgs = {
-  userId: string;
-  sessionId: string;
-  plan: StudyPlan;
-  draft: StudyPayload;
-  anchored: AnchoredPassage[];
-  finalSummary: SummaryPayload;
-  transcript: string;
-  log: ReturnType<typeof createLogger>;
-};
-
-async function runAudit(args: AuditArgs): Promise<StudyPayload | null> {
-  const model = serverEnv.OPENAI_STUDY_AUDIT_MODEL;
-
-  const result = await callChat({
-    model,
-    // Mínima: o revisor corta, não cria. Temperatura aqui só produziria
-    // reescrita criativa — que é fabricação com outro nome.
-    temperature: 0.1,
-    maxTokens: 16000,
-    responseFormat: { type: "json_object" },
-    messages: [
-      { role: "system", content: STUDY_AUDIT_SYSTEM_PROMPT },
-      {
-        role: "user",
-        content: [
-          `plan:\n${JSON.stringify(args.plan)}`,
-          `draft:\n${JSON.stringify(args.draft)}`,
-          `anchoredPassages:\n${renderAnchoredPassages(args.anchored)}`,
-          `summary:\n${JSON.stringify(args.finalSummary)}`,
-          `transcript:\n${args.transcript}`,
-        ].join("\n\n---\n"),
-      },
-    ],
-    store: true,
-    metadata: buildLlmMetadata({
-      route: "study-audit",
-      userId: args.userId,
-      sessionId: args.sessionId,
-    }),
-  });
-
-  if (!result.ok) {
-    args.log.warn("revisão falhou — seguindo com o rascunho", {
-      kind: result.error.kind,
-      message: result.error.message,
-    });
-    return null;
-  }
-
-  await recordUsage(args.sessionId, "study-audit", model, result.data);
-  const reviewed = parseStudyFromLLM(result.data.content);
-
-  if (reviewed.blocks.length === 0) {
-    args.log.warn("revisão devolveu vazio — mantendo o rascunho");
-    return null;
-  }
-
-  args.log.debug("ok", {
-    draftBlocks: args.draft.blocks.length,
-    reviewedBlocks: reviewed.blocks.length,
-    latencyMs: result.data.latencyMs,
-  });
-  return reviewed;
+function stripPassages(answer: StudyAnswer): Omit<StudyAnswer, "passages"> {
+  const { passages: _dropped, ...rest } = answer;
+  return rest;
 }
 
 type ChatOk = Extract<Awaited<ReturnType<typeof callChat>>, { ok: true }>["data"];

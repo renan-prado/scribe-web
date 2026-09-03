@@ -26,13 +26,14 @@ const schema = z.object({
   OPENAI_ECHO_MODEL: z.string().default("gpt-4o-mini"),
   OPENAI_FINAL_SUMMARY_MODEL: z.string().default("gpt-4o"),
   OPENAI_SUMMARY_ENRICHMENT_MODEL: z.string().default("gpt-4o"),
-  // O estudo é um pipeline de três chamadas com papéis distintos (ver
-  // docs/estudo-v2.md §4). Três variáveis e não uma para que dê para subir só
-  // a REDAÇÃO para um modelo mais caro e medir o efeito isoladamente — que é a
-  // única forma honesta de saber se o modelo maior compensou.
-  OPENAI_STUDY_PLAN_MODEL: z.string().default("gpt-4o"),
+  // O estudo é um pipeline de três chamadas com papéis distintos: quem
+  // PERGUNTA, quem RESPONDE e quem ESCREVE (ver docs/estudo-v2.md). Três
+  // variáveis e não uma porque a qualidade do estudo é a qualidade das
+  // perguntas: dá para subir só o questionador de modelo e medir o efeito
+  // isoladamente, que é a única forma honesta de saber se compensou.
+  OPENAI_STUDY_QUESTIONS_MODEL: z.string().default("gpt-4o"),
+  OPENAI_STUDY_ANSWERS_MODEL: z.string().default("gpt-4o"),
   OPENAI_STUDY_WRITE_MODEL: z.string().default("gpt-4o"),
-  OPENAI_STUDY_AUDIT_MODEL: z.string().default("gpt-4o"),
   OPENAI_PRACTICES_MODEL: z.string().default("gpt-4o-mini"),
   OPENAI_REREADS_MODEL: z.string().default("gpt-4o-mini"),
   OPENAI_REMINDERS_MODEL: z.string().default("gpt-4o-mini"),
@@ -76,9 +77,9 @@ const parsed = schema.safeParse({
   OPENAI_ECHO_MODEL: process.env.OPENAI_ECHO_MODEL,
   OPENAI_FINAL_SUMMARY_MODEL: process.env.OPENAI_FINAL_SUMMARY_MODEL,
   OPENAI_SUMMARY_ENRICHMENT_MODEL: process.env.OPENAI_SUMMARY_ENRICHMENT_MODEL,
-  OPENAI_STUDY_PLAN_MODEL: process.env.OPENAI_STUDY_PLAN_MODEL,
+  OPENAI_STUDY_QUESTIONS_MODEL: process.env.OPENAI_STUDY_QUESTIONS_MODEL,
+  OPENAI_STUDY_ANSWERS_MODEL: process.env.OPENAI_STUDY_ANSWERS_MODEL,
   OPENAI_STUDY_WRITE_MODEL: process.env.OPENAI_STUDY_WRITE_MODEL,
-  OPENAI_STUDY_AUDIT_MODEL: process.env.OPENAI_STUDY_AUDIT_MODEL,
   OPENAI_PRACTICES_MODEL: process.env.OPENAI_PRACTICES_MODEL,
   OPENAI_REREADS_MODEL: process.env.OPENAI_REREADS_MODEL,
   OPENAI_REMINDERS_MODEL: process.env.OPENAI_REMINDERS_MODEL,

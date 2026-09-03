@@ -33,14 +33,15 @@ export type UsageRoute =
   | "final-summary-reprocess"
   | "summary-enrichment"
   // As três etapas de LLM do estudo (`lib/study/generate.ts`). Separadas de
-  // propósito: é o que permite ver no /admin/usage quanto custa DECIDIR,
-  // quanto custa ESCREVER e quanto custa REVISAR — e portanto onde vale subir
-  // ou baixar de modelo. Um "deepening" único não respondia a essa pergunta.
-  // As linhas antigas gravadas como "deepening"/"deepening-audit" continuam
-  // no banco; o tipo governa só o que se ESCREVE daqui em diante.
-  | "study-plan"
+  // propósito: é o que permite ver no /admin/usage quanto custa PERGUNTAR,
+  // quanto custa RESPONDER e quanto custa ESCREVER — e portanto onde vale
+  // subir ou baixar de modelo. Um "deepening" único não respondia a isso.
+  // As linhas antigas ("deepening", "deepening-audit", "study-plan",
+  // "study-audit") continuam no banco; o tipo governa só o que se ESCREVE
+  // daqui em diante.
+  | "study-questions"
+  | "study-answers"
   | "study-write"
-  | "study-audit"
   | "practices"
   | "rereads"
   | "reminders"

@@ -1,18 +1,18 @@
 import "server-only";
-import type { StudyBlock, StudyPayload, StudyPlan } from "@/lib/domain/study";
+import type { StudyBlock, StudyPayload, StudyRecord } from "@/lib/domain/study";
 import { createAdminClient } from "@/lib/supabase/admin";
 
 /**
  * Leitura dos estudos gerados, para a tela de avaliação do `/admin`.
  *
- * Existe por causa da §7 de `docs/estudo-v2.md`: a qualidade do estudo passou
- * a ser avaliada por leitura humana sobre uma amostra fixa, e dois dos oito
- * critérios — "a abordagem escolhida era a melhor disponível?" e "o estudo é
- * honesto quanto à extensão?" — só são julgáveis se dá para ver a DECISÃO
- * editorial ao lado do texto que ela produziu.
+ * A qualidade do estudo é a qualidade das perguntas — e é por isso que esta
+ * tela existe. Vendo as 25-30 perguntas levantadas ao lado das 10-14 que o
+ * respondedor escolheu, dá para separar duas falhas que se parecem no texto
+ * final e têm consertos opostos: pergunta rasa (mexer no questionador) e
+ * pergunta boa mal respondida (mexer no respondedor).
  *
- * Persistir o plano (migração 0033) sem lugar nenhum de lê-lo teria sido
- * guardar evidência num cofre sem chave.
+ * Persistir as perguntas (migração 0033) sem lugar nenhum de lê-las teria
+ * sido guardar evidência num cofre sem chave.
  *
  * Service-role porque a tela é transversal a usuários — só é alcançada depois
  * de `isCurrentUserAdmin()`.
@@ -26,8 +26,8 @@ export type AdminStudyRow = {
   sessionTitle: string | null;
   studyTitle: string;
   thesis: string;
-  /** NULL nos estudos gerados antes do pipeline de 5 etapas. */
-  plan: StudyPlan | null;
+  /** Perguntas e recorte respondido. NULL nos estudos anteriores ao pipeline. */
+  record: StudyRecord | null;
   totalBlocks: number;
   counts: StudyBlockCounts;
   /** Fontes que sobreviveram à selagem — "autor, obra". */
@@ -40,7 +40,7 @@ type Row = {
   session_id: string;
   created_at: string;
   payload: StudyPayload;
-  plan: StudyPlan | null;
+  plan: StudyRecord | null;
   session: { title: string | null } | Array<{ title: string | null }> | null;
 };
 
@@ -65,7 +65,7 @@ export async function listStudiesForAdmin(limit = 40): Promise<AdminStudyRow[]> 
       sessionTitle: session?.title ?? null,
       studyTitle: row.payload?.title?.trim() || "(sem título)",
       thesis: row.payload?.shortSummary?.trim() ?? "",
-      plan: row.plan ?? null,
+      record: row.plan ?? null,
       totalBlocks: blocks.length,
       counts,
       sources: blocks

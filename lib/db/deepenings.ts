@@ -1,5 +1,5 @@
 import "server-only";
-import type { StudyPayload, StudyPlan } from "@/lib/domain/study";
+import type { StudyPayload, StudyRecord } from "@/lib/domain/study";
 import { createClient } from "@/lib/supabase/server";
 
 /**
@@ -11,15 +11,20 @@ import { createClient } from "@/lib/supabase/server";
 export type DeepeningRow = {
   sessionId: string;
   payload: StudyPayload;
-  /** NULL nos estudos anteriores ao pipeline de 5 etapas. Ver migração 0033. */
-  plan: StudyPlan | null;
+  /**
+   * As perguntas que originaram o estudo e o recorte respondido. A coluna se
+   * chama `plan` desde a migração 0033, quando o passo 1 do pipeline ainda era
+   * um plano de eixos; hoje guarda um `StudyRecord`. NULL nos estudos
+   * anteriores ao pipeline — não há backfill possível.
+   */
+  plan: StudyRecord | null;
   createdAt: string;
 };
 
 type DbRow = {
   session_id: string;
   payload: StudyPayload;
-  plan: StudyPlan | null;
+  plan: StudyRecord | null;
   created_at: string;
 };
 
@@ -134,7 +139,7 @@ export async function listDeepenedSessionIds(sessionIds: string[]): Promise<Set<
 export async function createDeepening(
   sessionId: string,
   payload: StudyPayload,
-  plan: StudyPlan
+  plan: StudyRecord
 ): Promise<void> {
   const supabase = await createClient();
   const {
@@ -165,7 +170,7 @@ export async function createDeepening(
 export async function updateDeepening(
   sessionId: string,
   payload: StudyPayload,
-  plan: StudyPlan
+  plan: StudyRecord
 ): Promise<void> {
   const supabase = await createClient();
   // .select() forces PostgREST to return the affected rows so we can detect

@@ -254,6 +254,11 @@ O estudo tem duas particularidades que mordem de fora:
   `StudyBlockRenderer`, que desenha esses cinco e delega o resto ao
   `BlockRenderer`. Um bloco novo precisa entrar nos DOIS lugares: no parser e
   no renderer.
+
+  O `question` tem limite de dois blocos, e só no fecho. Não é estética: o
+  estudo é um ARTIGO, e o pipeline que o produz passa por uma etapa de
+  perguntas — sem esse limite, o redator devolve o andaime como se fosse o
+  produto, e o texto vira um FAQ.
 - **Gerar exige plano `Estudioso`.** LER um estudo salvo, não. O booleano vem
   do servidor por prop (`canGenerate` / `canReprocess`); a proteção real está
   em `requireFeature` dentro da rota. Ver `lib/AGENTS.md`.

@@ -86,11 +86,11 @@ export async function POST(request: Request) {
         { status: 502 }
       );
     }
-    // "plan" cobre as três paradas duras do pipeline: plano inutilizável,
-    // redação vazia, selagem que esvaziou o estudo. Todas devolvem 502 porque
-    // todas são falha nossa, não do pedido — e nenhuma delas deve gravar um
-    // estudo pela metade.
-    if (result.kind === "plan") {
+    // "pipeline" cobre as paradas duras: nenhuma pergunta utilizável, nenhuma
+    // resposta, redação vazia, selagem que esvaziou o estudo. Todas devolvem
+    // 502 porque todas são falha nossa, não do pedido — e nenhuma delas deve
+    // gravar um estudo pela metade.
+    if (result.kind === "pipeline") {
       return NextResponse.json({ error: result.message }, { status: 502 });
     }
     return NextResponse.json(
@@ -99,11 +99,11 @@ export async function POST(request: Request) {
     );
   }
 
-  const { payload, plan, latencyMs, model } = result;
+  const { payload, record, latencyMs, model } = result;
 
   let saved = false;
   try {
-    await createDeepening(sessionId, payload, plan);
+    await createDeepening(sessionId, payload, record);
     saved = true;
     log.debug("saved", { sessionId });
   } catch (err) {

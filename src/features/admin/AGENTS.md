@@ -77,18 +77,21 @@ tarde procurando por que o switch "não funcionou".
 
 ## Estudos (`/admin/studies`)
 
-Não é métrica: é leitura. Cada linha põe a DECISÃO editorial do estudo (o
-plano do passo 1 do pipeline, persistido em `session_deepenings.plan`) ao lado
-do que ela produziu — contagem por tipo de bloco, versículos e as fontes que
-sobreviveram à selagem.
+Não é métrica: é leitura. Cada linha mostra as 25-30 perguntas que o
+questionador levantou — as respondidas em destaque, as descartadas riscadas —
+ao lado do que saiu: contagem por tipo de bloco, versículos conferidos e as
+fontes que sobreviveram à selagem.
 
-Existe porque dois dos oito critérios de qualidade de `docs/estudo-v2.md` §7
-não são julgáveis lendo só o estudo pronto: "a abordagem escolhida era a
-melhor disponível?" e "a extensão é honesta com o material?".
+A razão de ser é diagnóstica. Um estudo ruim tem duas causas que se parecem no
+texto final e têm consertos opostos: **as perguntas eram rasas** (mexer no
+questionador) ou **eram boas e foram mal respondidas** (mexer no respondedor).
+Sem ver as perguntas, não dá para saber em qual dos dois modelos mexer — e as
+descartadas são metade do diagnóstico, porque se o respondedor deixou de fora
+justamente as boas, o problema é dele.
 
-Duas leituras que a tela deve tornar imediatas, e que quem mexer aqui precisa
-preservar: um estudo `raso` com poucos blocos está CERTO, e um estudo sem
-fontes não é pior — é a selagem tendo descartado o que não tinha obra.
+Uma leitura que quem mexer aqui precisa preservar: estudo sem nenhuma fonte não
+é necessariamente pior — é a selagem tendo descartado o que não tinha obra, que
+é o comportamento desejado.
 
 ## Parceiros
 

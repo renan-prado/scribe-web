@@ -6,7 +6,7 @@
 > reaberto aqui — os dois planos são ortogonais, e o ponto de encontro está
 > marcado na §3.
 
-## O que existe hoje
+## O que existia antes desta reforma
 
 ```
 POST /api/deepening            cobra 5 moedas → generateDeepening() → session_deepenings
@@ -153,67 +153,111 @@ blocos de enchimento — que é o que o usuário recebe hoje.
 
 # 3. Nova arquitetura de geração
 
-Pipeline de cinco etapas, **duas delas determinísticas** (sem LLM). A hipótese
-da task (pipeline editorial) acerta a direção, mas tem etapas demais: cada
-chamada extra é mais uma chance de derivar do sermão. Cinco etapas, três
-chamadas de modelo.
+A ideia que organiza tudo cabe em duas linhas:
 
 ```
-transcrição + finalSummary + feedItems
+resumo  responde  →  o que foi ensinado nesta pregação?
+estudo  responde  →  agora que entendi o tema, o que preciso aprender sobre ele?
+```
+
+O estudo, então, não é uma versão mais elaborada do resumo. É a resposta às
+perguntas que o sermão deixou em aberto — e por isso a representação
+intermediária do pipeline é uma lista de **perguntas**.
+
+Cinco etapas, três chamadas de modelo, duas determinísticas:
+
+```
+transcrição + resumo + cards
         │
         ▼
-[1] PLANO (LLM, JSON)                    ← a decisão, explícita e persistida
-        │  tema real, texto(s) base, 1-3 eixos de aprofundamento,
-        │  abordagem escolhida por eixo + justificativa,
-        │  o que NÃO cobrir (já está no resumo),
-        │  referências bíblicas candidatas, autores candidatos
+[1] QUESTIONADOR (LLM, t=0.9)      ← interroga o sermão como um crítico
+        │  tema real + 25-30 perguntas de média e alta complexidade
+        │  NÃO seleciona. Pergunta sem pudor.
         ▼
-[2] ANCORAGEM (determinístico)           ← sem LLM
-        │  lookupVerse(NVI) em toda referência do plano
-        │  referência inexistente → descartada do plano
-        │  saída: texto bíblico REAL para injetar no passo 3
+[2] RESPONDEDOR (LLM, t=0.5)       ← escolhe e responde
+        │  descarta a redundante, a rasa, a genérica, a que não sabe responder
+        │  responde 10-14 numa chamada só, com todas à vista
+        │  marca onde as tradições protestantes divergem
         ▼
-[3] REDAÇÃO (LLM, JSON)                  ← escreve seguindo o plano
-        │  recebe: plano + versículos ancorados + resumo + transcrição
-        │  não decide mais nada estrutural; só escreve
+[3] ANCORAGEM (determinístico)     ← sem LLM
+        │  lookupVerse(NVI) em toda referência citada nas respostas
+        │  referência inexistente → descartada
         ▼
-[4] REVISÃO (LLM, JSON)                  ← agora com a fonte à mão
-        │  recebe: plano + rascunho + transcrição + versículos ancorados
-        │  corta o que não se sustenta. NÃO tem cota para preencher.
+[4] REDATOR (LLM, t=0.75)          ← artigo corrido, NÃO pergunta-e-resposta
+        │  reordena, funde, descarta e desdobra as respostas
+        │  abre pelo problema, sustenta uma tese
         ▼
-[5] SELAGEM (determinístico)             ← sem LLM
-        │  bibleQuote.text reescrito da NVI (nunca do modelo)
-        │  quote sem obra declarada → descartado
-        │  autor fora do índice → descartado
+[5] SELAGEM (determinístico)       ← sem LLM
+        │  bibleQuote.text reescrito da NVI; quote sem obra descartado
         ▼
-payload final + plano persistido para avaliação
+artigo + as perguntas persistidas para avaliação
 ```
 
-## Por que esta forma e não a da task
+## Por que perguntas, e não eixos com disciplinas
 
-A task propunha oito etapas, com "pesquisa" e "análise das fontes" separadas.
-As duas ficam de fora **por ora**, por um motivo concreto: hoje não há fonte
-para pesquisar. `lib/llm/openai.ts::callChat` fala com Chat Completions sem
-ferramentas — não há web search, não há base indexada. Uma etapa de "pesquisa"
-contra o conhecimento paramétrico do modelo é apenas mais uma chance de
-inventar, com um rótulo mais confiável colado em cima.
+A primeira versão desta reforma pedia ao modelo um *plano editorial*: dois ou
+três eixos, cada um com uma disciplina escolhida (exegese, teologia bíblica,
+história da Igreja…). Não funcionou, e o motivo é instrutivo.
 
-A pesquisa entra quando a camada de conhecimento existir
-(`docs/scriba-rag-proposta-claude.md`, PR 1-2). O ponto de encaixe já está
-desenhado: o passo [2] passa a produzir `âncoras = versículos + chunks
-recuperados`, e o passo [3] recebe fontes reais com proveniência. **O pipeline
-foi desenhado para que essa troca seja um parâmetro, não uma reescrita.**
+Uma taxonomia é um formulário. "Eixo: a graça em Efésios 2 · abordagem:
+teologia sistemática" é preenchível por qualquer modelo e **não diz nada**
+sobre se o estudo vai prestar. Já uma pergunta é autovalidável: qualquer
+pessoa lê "Graça é libertinagem?" e sabe que rende, e lê "O que a graça nos
+ensina?" e sabe que não.
 
-## As duas etapas determinísticas são o coração da proposta
+Daí a regra que governa o esforço deste pipeline:
 
-É a diferença de método em relação a tudo que já se tentou aqui. Nenhuma
-instrução em linguagem natural — por mais maiúscula, por mais "REGRA DE OURO" —
-consegue o que uma consulta a `NVI.json` consegue de graça: garantir que o
-versículo está certo.
+> **A qualidade do estudo é a qualidade das perguntas.**
+
+É onde vale investir prompt, e é o primeiro lugar a olhar quando um estudo sai
+ruim.
+
+## Por que o questionador não seleciona
+
+Ele gera 25-30 e entrega todas. Duas razões:
+
+- **Pedir poucas produz as óbvias.** O modelo gasta as primeiras vagas nas
+  definições; as perguntas interessantes aparecem depois da décima. Perguntar
+  é barato, e uma boa pergunta não feita está perdida para sempre.
+- **Quem melhor julga se uma pergunta vale é quem vai ter de respondê-la.** A
+  seleção mora no passo 2, que descarta a redundante, a rasa e — sobretudo — a
+  que ele não conseguiria responder bem. Uma resposta vaga é pior que uma
+  pergunta não respondida: ocupa espaço fingindo que ensina.
+
+Selecionar num quarto modelo pagaria latência sem comprar qualidade.
+
+## Por que as respostas saem numa chamada só
+
+Responder pergunta a pergunta, isoladamente, faz dez respostas sobre graça
+reestabelecerem dez vezes que graça é favor imerecido. Com o conjunto à vista,
+cada resposta pressupõe as anteriores — e é isso que produz densidade em vez
+de repetição costurada.
+
+## As duas etapas determinísticas são o coração
+
+Nenhuma instrução em linguagem natural — por mais maiúscula, por mais "REGRA
+DE OURO" — consegue o que uma consulta a `NVI.json` consegue de graça: garantir
+que o versículo está certo.
 
 Regra geral que passa a valer: **toda restrição que pode virar código sai do
 prompt e vira código.** O que sobra no prompt é o que só linguagem consegue
 pedir — julgamento.
+
+## O que não existe aqui, e por quê
+
+- **Não há passo de auditoria.** Ele existia na primeira versão e foi
+  removido: o artigo fala do ASSUNTO, não do que o pregador disse, então o
+  risco de atribuir ao pregador uma posição que ele não defendeu caiu muito. O
+  que o auditor de fato pegava — citação sem origem, versículo parafraseado —
+  a selagem pega melhor, porque é código e não instrução.
+- **Não há passo de pesquisa.** `callChat` fala com Chat Completions sem
+  ferramentas: não há web search nem base indexada. Uma "pesquisa" contra o
+  conhecimento paramétrico do modelo é só mais uma chance de inventar, com um
+  rótulo mais confiável colado em cima. Ela entra quando a camada de
+  conhecimento existir (`docs/scriba-rag-proposta-claude.md`, PR 1-2): o passo
+  [3] passa a produzir `âncoras = versículos + chunks recuperados`, e o
+  respondedor recebe fontes reais com proveniência. **O pipeline foi desenhado
+  para que essa troca seja um parâmetro, não uma reescrita.**
 
 ---
 
@@ -221,60 +265,88 @@ pedir — julgamento.
 
 | Etapa | Papel | Env var | Temp. | Por quê |
 |---|---|---|---|---|
-| [1] Plano | julgamento editorial sobre texto longo | `OPENAI_STUDY_PLAN_MODEL` | 0.3 | A decisão precisa ser estável e reproduzível; é o que vamos avaliar |
-| [3] Redação | prosa teológica densa | `OPENAI_STUDY_WRITE_MODEL` | 0.7 | Única etapa que ganha com variação — o plano já fixou o esqueleto |
-| [4] Revisão | verificação contra a fonte | `OPENAI_STUDY_AUDIT_MODEL` | 0.1 | Corte, não criação |
+| [1] Questionador | amplitude e ângulos improváveis | `OPENAI_STUDY_QUESTIONS_MODEL` | 0.9 | Queremos as perguntas que um modelo cauteloso não faria |
+| [2] Respondedor | seleção e substância | `OPENAI_STUDY_ANSWERS_MODEL` | 0.5 | É a etapa que carrega os fatos; temperatura alta aqui vira citação inventada |
+| [4] Redator | prosa | `OPENAI_STUDY_WRITE_MODEL` | 0.75 | A substância já está fixada; a temperatura muda como se escreve, não o que se afirma |
 
 **Especializar por etapa é a decisão certa; usar três famílias de modelo
 diferentes não é.** O ganho real vem de temperatura e escopo distintos por
-etapa, não de trocar de fornecedor. Manter três env vars separadas permite
-subir só a redação para um modelo mais caro e medir o delta isoladamente — a
-única forma honesta de saber se o modelo maior compensou.
+etapa. Manter três env vars separadas permite subir só o questionador — a
+etapa que mais determina a qualidade final — e medir o delta isoladamente.
 
-Custo: hoje são duas chamadas somando ~25k tokens de entrada. O pipeline sobe
-para três, com entradas mais focadas. A conta fica na mesma ordem de grandeza —
-perto de 1,3× do atual, não 3×. Com a margem declarada na task, é irrelevante.
-Se um dia importar, a alavanca é o passo [1], o mais barato de rebaixar.
+Duas notas operacionais:
+
+- As chamadas [2] e [4] são grandes (10-14 respostas de até 350 palavras;
+  depois um artigo inteiro). O padrão de `callChat` é 60s, curto demais para
+  elas: ambas passam `timeoutMs` explícito de 180s. Um timeout aqui abortaria
+  trabalho que o usuário já pagou.
+- Só o passo [1] recebe a transcrição inteira — é ele que precisa dela para
+  achar o que perguntar. O [2] recebe uma versão limitada; o [4] não recebe
+  transcrição nenhuma, porque escreve sobre o assunto, não sobre a gravação.
 
 ---
 
 # 5. Estrutura do estudo
 
+O resultado é um **artigo**: texto corrido, que se lê do começo ao fim, com
+título, tese e de três a seis seções.
+
 `DeepeningPayload` deixa de ser alias de `SummaryPayload`.
 
 ## 5.1 Blocos novos
 
-Ao vocabulário atual, quatro tipos que hoje não têm como existir:
+Ao vocabulário do resumo, quatro tipos que hoje não teriam como existir:
 
-- `objection` — uma objeção honesta ao que foi pregado, com a resposta. É o que
-  mais falta: nenhum bloco atual comporta tensão.
-- `distinction` — `{ a, b, text }`: dois conceitos que o sermão colapsou.
+- `objection` — uma objeção honesta, pelo lado mais forte dela, com a resposta.
+  É o que mais faltava: nenhum bloco do resumo comporta tensão.
+- `distinction` — `{ a, b, text }`: dois conceitos que costumam ser colapsados.
 - `reading` — `{ author, title, note }`: indicação de leitura. Campos separados
   justamente para que autor e obra possam ser validados em código.
-- `question` — pergunta em aberto, para o leitor continuar pensando.
+- `question` — pergunta em aberto, **no máximo duas e só no fecho**. O limite é
+  a regra número um do redator em forma de tipo: o texto é artigo, não
+  questionário.
 
-Cada um sai do modelo com campos, não com prosa — é o que permite à selagem [5]
+Cada um sai do modelo com campos, não com prosa — é o que permite à selagem
 conferir. Mesmo princípio de `bibleQuote.reference` vs `text`.
 
-## 5.2 A estrutura deixa de ser obrigatória
+## 5.2 Não há cota de nada
 
-Não há mais cota. O plano do passo [1] decide quantos eixos existem (1 a 3) e
-qual abordagem cada um recebe; a redação segue o plano. Um estudo pode sair com
-um eixo só, sem citação nenhuma e sem palavra original, se é isso que o material
-sustenta — e isso é sucesso, não falha.
+Nem de citação, nem de versículo, nem de seção. O comprimento vem do número de
+perguntas boas respondidas, não de uma instrução para escrever longo — pedir
+"escreva longo" é o pedido que produz enchimento. A instrução ao redator é a
+inversa: não corte substância para encurtar, e não escreva parágrafo que não
+carrega ideia nova.
 
-Permanece obrigatório apenas o que é estrutural, não temático: `title`,
-`shortSummary` (a tese) e um fechamento.
+## 5.3 A armadilha do redator
 
-## 5.3 Abordagens disponíveis (escolhidas no plano, não fixas)
+Ele pode simplesmente tirar os pontos de interrogação e entregar um FAQ
+disfarçado — um parágrafo por resposta, na ordem em que vieram. Três
+instruções existem só para impedir isso: licença explícita para **reordenar,
+fundir, descartar e desdobrar** respostas; a exigência de uma **tese** que
+atravessa o texto; e a ordem de **abrir pelo problema, nunca pela definição**.
 
-`exegese` · `contexto-historico` · `teologia-biblica` · `teologia-sistematica`
-· `historia-da-igreja` · `filosofia` · `pastoral` · `conceitual`
+O teste: se o artigo tem tantas seções quanto respostas recebidas, o redator
+não fez o trabalho.
 
-A oitava responde à pergunta 8 da task ("assuntos em que nenhuma abordagem é
-útil"): quando nenhuma disciplina ilumina, o valor está em explicar bem o
-conceito, com exemplo e analogia. É uma escolha legítima do plano, não um
-fallback envergonhado.
+## 5.4 Divergência entre tradições é conteúdo
+
+O leitor pode ser batista, presbiteriano, pentecostal, metodista ou luterano.
+A leitura ingênua disso ("não ofenda ninguém") produz mingau: o modelo hedgeia
+tudo em "alguns entendem X, outros Y", que é exatamente o genérico que esta
+reforma existe para matar.
+
+A regra tem duas metades, e a primeira é a que importa:
+
+- **Onde as tradições protestantes concordam** — e é a maior parte do
+  evangelho — **afirme com convicção, sem ressalva.** Encher de "alguns creem
+  que" o que a Igreja crê há vinte séculos é covardia, não prudência.
+- **Onde divergem de fato** — soberania e livre-arbítrio, batismo, dons,
+  perseverança, escatologia — **a divergência vira conteúdo**: nomeie os lados
+  e explique o que cada um está protegendo. "Reformados e arminianos separam
+  águas aqui, e a diferença é esta" ensina; "há várias visões" não ensina nada.
+
+O respondedor registra isso no campo `tension` de cada resposta, e o redator o
+usa. Vazio significa consenso — e aí o texto afirma.
 
 ---
 
@@ -316,7 +388,7 @@ comparação possível. Nota 1-5, exceto os binários.
 | 1 | **Fidelidade** | Alguma afirmação atribui ao pregador algo que ele não disse? (binário; qualquer ocorrência reprova) |
 | 2 | **Verificabilidade** | % de `quote`/`reading` cuja obra existe e contém a formulação |
 | 3 | **Novidade sobre o resumo** | Quantos blocos trazem substância ausente do `finalSummary` |
-| 4 | **Pertinência da abordagem** | A abordagem escolhida no plano era a melhor disponível? |
+| 4 | **Qualidade das perguntas** | Quantas das 25-30 levantadas rendiam de fato? O respondedor escolheu as certas? |
 | 5 | **Ausência de genérico** | Quantos blocos passariam intactos para um sermão de outro tema |
 | 6 | **Densidade** | Blocos com conteúdo ÷ blocos totais |
 | 7 | **Provocação** | O estudo produz uma pergunta que o leitor não tinha |
@@ -325,10 +397,11 @@ comparação possível. Nota 1-5, exceto os binários.
 O critério 5 é o único já perseguido hoje (via anti-template) e sozinho não
 resolveu nada — está na lista para não regredir, não como meta.
 
-**O plano do passo [1] é persistido junto com o estudo.** Sem isso, avaliar o
-critério 4 exige adivinhar o que o modelo pensou. Com isso, a decisão editorial
-vira dado, e a próxima rodada de melhoria parte de evidência em vez de
-impressão.
+**As perguntas são persistidas junto com o estudo** — todas, com marcação de
+quais foram respondidas. É o que separa duas falhas que se parecem no texto
+final e têm consertos opostos: as perguntas eram rasas (mexer no questionador)
+ou eram boas e foram mal respondidas (mexer no respondedor). Sem esse dado, a
+próxima rodada de melhoria volta a partir de impressão.
 
 ---
 
@@ -394,18 +467,15 @@ tinha. Ambas revertem em uma linha do catálogo:
 | 1 | Feature entitlements: catálogo, gate no servidor, UI, admin, docs | **feito** |
 | 2 | Índice de teólogos com obra, século e tema (`lib/prompts/theologians.ts`) | **feito** |
 | 3 | Tipos de bloco novos + `StudyPayload` próprio + `StudyBlockRenderer` | **feito** |
-| 4 | Pipeline de cinco passos (`lib/study/`) + persistência do plano | **feito** |
+| 4 | Pipeline questionador → respondedor → redator (`lib/study/`) | **feito** |
 | 5 | Amostra fixa de sessões + planilha dos oito critérios | a fazer |
-| 6 | (RAG PR 1-2) fontes reais no passo [2] — ver `docs/scriba-rag-*` | a fazer |
-
-O passo 1 é independente dos demais e por isso entrou primeiro. Os passos 2-4
-são um bloco só: nenhum deles isolado muda o que o usuário lê.
+| 6 | (RAG PR 1-2) fontes reais no passo [3] — ver `docs/scriba-rag-*` | a fazer |
 
 ## O que o passo 5 ainda precisa
 
-A metade instrumental existe: o plano é persistido em
-`session_deepenings.plan` e `/admin/studies` mostra plano e resultado lado a
-lado. Falta a metade humana — escolher as sessões da amostra e passar a
+A metade instrumental existe: as perguntas são persistidas em
+`session_deepenings.plan` e `/admin/studies` mostra as levantadas, as
+escolhidas e o resultado lado a lado. Falta a metade humana — escolher as sessões da amostra e passar a
 preencher a tabela dos oito critérios a cada mudança. Sem isso, a próxima
 rodada de melhoria volta a começar de impressão.
 

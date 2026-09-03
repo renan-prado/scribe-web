@@ -135,48 +135,76 @@ aparece como um parceiro reclamando do próprio painel.
 
 ## O estudo é um pipeline, não uma chamada
 
-`lib/study/` — cinco etapas, três de LLM e **duas determinísticas**:
+A definição de produto que governa `lib/study/`:
 
 ```
-[1] lib/prompts/study-plan.ts   LLM  decide tema, eixos e disciplina de cada eixo
-[2] lib/study/anchor.ts         ---  resolve toda referência bíblica na NVI
-[3] lib/prompts/study-write.ts  LLM  escreve seguindo o plano
-[4] lib/prompts/study-audit.ts  LLM  corta o que a transcrição não sustenta
-[5] lib/study/seal.ts           ---  reescreve versículo da NVI, descarta fonte sem obra
+resumo  responde  →  o que foi ensinado nesta pregação?
+estudo  responde  →  agora que entendi o tema, o que preciso aprender sobre ele?
+```
+
+Cinco etapas, três de LLM e **duas determinísticas**:
+
+```
+[1] lib/prompts/study-questions.ts  LLM  interroga o sermão: 25-30 perguntas
+[2] lib/prompts/study-answers.ts    LLM  ESCOLHE as 10-14 que rendem e responde
+[3] lib/study/anchor.ts             ---  resolve as referências citadas na NVI
+[4] lib/prompts/study-write.ts      LLM  vira um artigo corrido
+[5] lib/study/seal.ts               ---  versículo da NVI; fonte sem obra cai
 ```
 
 Orquestrador: `lib/study/generate.ts`. Chamado por `/api/deepening` e
 `/api/deepening/reprocess`.
 
-**A regra de método que este módulo existe para impor: toda restrição que pode
-virar código sai do prompt e vira código.** O pipeline anterior gastava seções
-inteiras de prompt pedindo ao modelo que não parafraseasse a Escritura e não
-inventasse citação — num repositório que já tinha `lookupVerse` e a NVI em
-disco. Hoje o texto de todo `bibleQuote` vem da NVI (nunca do modelo), e todo
-`quote` sem obra nomeável é descartado no passo 5.
+**A representação intermediária é PERGUNTA, não taxonomia.** A versão anterior
+pedia um plano de eixos com disciplinas ("exegese", "teologia sistemática") e
+não funcionou: taxonomia é formulário, preenchível por qualquer modelo, e não
+diz nada sobre a qualidade do que virá. Uma pergunta é autovalidável — dá para
+ler "Graça é libertinagem?" e saber que rende.
 
-Três coisas que parecem faltar e não faltam:
+Regra que decorre disso, e que decide onde investir prompt:
 
-- **Não há cota de nada** — nem de citação, nem de versículo, nem de
-  distinção. As seis cotas mínimas do prompt antigo eram a maior fonte de
-  invenção do sistema: cota é concreta, "não invente" é vago, e cota vence.
-- **O passo 4 não tem cota para fechar.** Ele só corta. Um revisor que
-  acrescenta é uma segunda fonte de invenção, que era o que o auditor antigo
-  fazia.
-- **Estudo curto é resultado válido.** O plano declara `depth`, e `raso`
-  produz oito blocos de propósito.
+> **A qualidade do estudo é a qualidade das perguntas.** Estudo ruim: olhe o
+> questionador primeiro.
 
-O plano do passo 1 é **persistido** (`session_deepenings.plan`, migração 0033)
-e lido em `/admin/studies`. Sem isso, "a abordagem escolhida era a melhor?" —
-um dos oito critérios de qualidade — é impossível de julgar.
+Quatro decisões que parecem detalhe e não são:
 
-Três env vars (`OPENAI_STUDY_PLAN_MODEL`, `_WRITE_`, `_AUDIT_`) e não uma:
-é o que permite subir só a redação de modelo e medir o efeito isoladamente.
-As três etapas gravam em `llm_usage_events` com rotas separadas
-(`study-plan` / `study-write` / `study-audit`), então `/admin/usage` mostra
-quanto custa decidir, escrever e revisar.
+- **O questionador não seleciona.** Gera 25-30 e entrega todas. Pedir poucas
+  produz as óbvias — as boas aparecem depois da décima. A seleção é do passo 2,
+  porque quem melhor julga se uma pergunta vale é quem vai ter de respondê-la.
+- **As respostas saem numa chamada só**, com todas as perguntas à vista. Uma
+  chamada por pergunta faz dez respostas reestabelecerem a mesma definição.
+- **Divergência entre tradições é conteúdo, não risco.** Onde protestantes
+  concordam, o texto AFIRMA; onde divergem, nomeia os lados. A leitura ingênua
+  ("não ofenda ninguém") produz "alguns entendem X, outros Y" — o genérico que
+  a reforma existe para matar. Vive no campo `tension` de cada resposta.
+- **O redator tem licença para reordenar, fundir, descartar e desdobrar.** Sem
+  ela, ele tira os pontos de interrogação e entrega um FAQ disfarçado. Teste:
+  se o artigo tem tantas seções quanto respostas, ele não fez o trabalho.
 
-Diagnóstico das sete causas que motivaram a reforma: `docs/estudo-v2.md`.
+**Não há cota de nada** — nem de citação, nem de versículo, nem de seção. As
+cotas mínimas do prompt antigo eram a maior fonte de invenção do sistema: cota
+é concreta, "não invente" é vago, e cota vence. O comprimento vem do número de
+perguntas boas respondidas, nunca de uma instrução para escrever longo.
+
+**Não há passo de auditoria**, e é deliberado: o artigo fala do ASSUNTO, não do
+que o pregador disse, e o que um auditor pegaria — citação sem origem,
+versículo parafraseado — a selagem pega melhor, porque é código.
+
+As perguntas são **persistidas** (`session_deepenings.plan`, migração 0033 — a
+coluna nasceu guardando um plano de eixos e hoje guarda um `StudyRecord`) e
+lidas em `/admin/studies`. É o que separa "as perguntas eram rasas" de "eram
+boas e foram mal respondidas", que são consertos em modelos diferentes.
+
+Três env vars (`OPENAI_STUDY_QUESTIONS_MODEL`, `_ANSWERS_`, `_WRITE_`) e três
+rotas em `llm_usage_events` (`study-questions` / `study-answers` /
+`study-write`), para dar para subir só o questionador de modelo e medir o
+efeito isoladamente.
+
+**As chamadas [2] e [4] passam `timeoutMs` explícito de 180s.** O padrão de
+`callChat` é 60s, e essas duas são grandes — um timeout ali abortaria trabalho
+que o usuário já pagou em moedas.
+
+Diagnóstico e desenho completos: `docs/estudo-v2.md`.
 
 ## Entitlements — o que cada plano libera
 
