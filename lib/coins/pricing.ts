@@ -25,10 +25,26 @@ export const INITIAL_COIN_BALANCE = 50;
 export const COIN_RING_REFERENCE = 300;
 
 export const COIN_COSTS = {
-  /** Per started minute of live recording. */
-  liveMinute: 5,
-  /** Per started minute of audio-only recording. */
-  audioOnlyMinute: 2,
+  /**
+   * Per started minute of live recording.
+   *
+   * 7 e não 5: medido sobre a janela do painel, o minuto ao vivo fechava 63%
+   * de margem contra o alvo de 70% da régua. Ele paga transcrição MAIS os três
+   * pipelines do feed — é o minuto mais caro do produto, e era o mais barato
+   * por moeda.
+   */
+  liveMinute: 7,
+  /**
+   * Per started minute of audio-only recording.
+   *
+   * 6 e não 2: a 2 moedas o minuto de áudio fechava 24,5% de margem — cada
+   * milheiro de moeda debitado custava R$ 10,01 de OpenAI contra os R$ 5,97
+   * que o alvo comporta. O modo dispensa o feed, mas NÃO dispensa a
+   * transcrição nem o resumo final, que é onde o dinheiro está; cobrar menos
+   * da metade do ao vivo era supor uma economia que a medição não mostrou.
+   * Amostra de 50 execuções — vale reconferir quando ela crescer.
+   */
+  audioOnlyMinute: 6,
   /** Per started minute of transcript-only recording (no LLM beyond STT). */
   transcriptMinute: 1,
   /**
@@ -41,8 +57,16 @@ export const COIN_COSTS = {
    * um plano (ver lib/entitlements/features.ts).
    */
   deepening: 50,
-  /** One-shot cost of re-running /api/final-summary/reprocess on a saved session. */
-  reprocessSummary: 5,
+  /**
+   * One-shot cost of re-running /api/final-summary/reprocess on a saved
+   * session.
+   *
+   * 15 e não 5: a 5 moedas o reprocessamento rodava NO PREJUÍZO (−5,4% de
+   * margem) — ele reexecuta o resumo inteiro sobre a transcrição completa,
+   * num modelo grande, e 5 moedas não pagavam a chamada. A régua pedia 18
+   * para fechar os 70%; 15 é a decisão do produto, e deixa a margem em ~65%.
+   */
+  reprocessSummary: 15,
   /**
    * Reprocessar roda o MESMO pipeline do zero, então custa o mesmo. Deixá-lo
    * mais barato que a geração abriria uma arbitragem óbvia: gerar uma vez pelo

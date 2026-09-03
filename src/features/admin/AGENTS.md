@@ -58,6 +58,115 @@ A ordenação do "top de usuários" é por **moedas gastas**, não por dólar: d
 mistura modelos de preços diferentes e a lista deixava de responder à pergunta
 que ela existe para responder.
 
+**"Moedas gastas" é filtrado por MOTIVO, nunca por `abs(amount)`.**
+`coin_transactions` é o ledger inteiro: `grant_coins` grava
+`subscription_grant`, `topup_pack` e `partner_bonus` com valor POSITIVO, e o
+estorno grava um negativo que é devolução de crédito, não consumo. Só os seis
+motivos de `CHARGE_REASONS` são gasto. O módulo de leitura já faz esse corte —
+não recrie a soma numa tela.
+
+## Precificação (`/admin/precificacao`)
+
+Responde a UMA pergunta que `/admin/usage` não responde: **continuo cobrando 5
+moedas o minuto?** Preço não é cobrado por rota — é cobrado por AÇÃO, e uma
+ação é várias rotas (o Modo Ao Vivo é transcrição + três pipelines + resumo +
+os cards de acompanhamento). Somar rota a rota à mão para chegar no minuto era
+o trabalho que esta tela existe para não ser refeito.
+
+O vocabulário está em `lib/coins/billable.ts` (client-safe) e a conta em
+`lib/coins/economics.ts`. O mapeamento ROTA → ação mora em
+`lib/db/admin/usage.ts`, junto do resto da agregação: **é a mesma passada pelas
+mesmas linhas** que alimenta `/admin/usage`. Uma segunda consulta de custo é
+uma segunda definição do mesmo número.
+
+**Há DUAS margens, e a coluna mostra a da DECISÃO.** `marginAtCurrentPrice` é
+custo de uma execução contra o que a ação cobra hoje; `realizedMargin` é custo
+contra as moedas que o ledger de fato debitou no período. A coluna já mostrou
+só a segunda, e isso a punha em contradição com a coluna vizinha: o Estudo
+aprofundado aparecia com **−18% de margem** e, ao lado, a sugestão de **cobrar
+menos**. Nenhuma das duas tinha defeito de cálculo — o período pegava
+lançamentos anteriores à subida de 5 para 50 moedas, então o ledger tinha 180
+moedas em 18 execuções. Ao preço de hoje aquela linha tem 76% de margem.
+
+A regra que decorre: **a margem exibida e o preço sugerido saem do MESMO custo
+por execução**, ou duas colunas vizinhas voltam a se contradizer sem que nada
+esteja errado. A realizada continua na tela, mas só quando o ledger cobrou algo
+diferente do preço atual (`ledgerDivergesFromPrice`) — porque aí a divergência
+é o achado, não ruído.
+
+Três coisas que quem mexer aqui não pode desfazer:
+
+- **Os dois lados da conta têm origens diferentes, e a tela diz qual é qual.**
+  O custo é MEDIDO; o valor da moeda é uma régua que o admin gira. Um painel em
+  que os dois parecem igualmente factuais convida a decidir preço com base num
+  número que alguém digitou.
+- **A régua é um cookie, não uma tabela.** Nada do que se digita ali cobra
+  coisa alguma — quem cobra é o Price do Stripe, e quem credita é
+  `lib/billing/catalog.ts`. Uma tabela `coin_pricing` no banco seria um convite
+  a alguém, um dia, ler dali para cobrar de verdade.
+- **A linha "gasto sem cobrança" precisa aparecer.** É a consulta de versículo
+  avulsa, a formatação fora de gravação e o evento de sessão apagada: custo real
+  que não entrou em margem nenhuma. Listar só o que é cobrável faz toda margem
+  parecer melhor do que é.
+
+Gerar e reprocessar estudo são UMA linha. Os dois rodam `generateStudy` com as
+mesmas rotas de telemetria, então o custo é indistinguível no banco; como o
+preço também é o mesmo, somá-los não perde nada — separá-los daria um custo por
+execução inventado.
+
+## A leitura da IA (`AdminInsightsCard`)
+
+As três telas de dinheiro — precificação, uso e métricas — carregam o mesmo
+card, com escopos diferentes. Ele não tem número próprio: `lib/admin/insights/
+briefing.ts` monta o briefing a partir de `loadAdminUsageSummary`,
+`loadAdminMetrics` e `computeActionEconomics`, os MESMOS que desenham as
+tabelas ao lado. Uma segunda aritmética "só para o prompt" produziria um
+insight contradizendo a tela logo acima dele.
+
+Quatro coisas que quem mexer aqui não pode desfazer:
+
+- **O card diz ao modelo o que é MEDIDO e o que é RÉGUA.** Custo vem de
+  `llm_usage_events` × câmbio; o valor da moeda e a margem alvo vêm do cookie
+  de simulação. Um analista que trate os dois como igualmente factuais escreve
+  "a margem é 62%" onde o correto é "é 62% SE a moeda valer os R$ 20 que você
+  digitou" — e é assim que uma simulação vira decisão de preço. Está no prompt
+  e nas etiquetas do briefing; as duas metades são necessárias.
+- **A geração é disparada do CLIENTE, depois do render.** São ~85s num modelo
+  de raciocínio; gerar dentro do server component faria a primeira visita do
+  dia esperar um minuto e meio — e não a de quem queria o insight, a de quem só
+  ia conferir o MRR.
+- **O esforço de raciocínio é `medium`, e isso foi MEDIDO.** Sobre um briefing
+  real de 2.697 tokens de entrada: `high` leva 203s e gasta 15.182 tokens de
+  raciocínio; `medium` leva 83s com 5.078 e chega nos mesmos cinco achados. Com
+  `high` e o teto de 180s da primeira versão, TODA geração estourava — e o card
+  dizia "a OpenAI não respondeu a tempo" sem dizer por quantos segundos.
+- **A mensagem de erro mostra o que o upstream disse.** Timeout, 400 e 401
+  chegavam à tela com a mesma frase, e o diagnóstico só existia no terminal do
+  servidor. Numa tela atrás de `requireAdmin()`, o texto do upstream não é
+  vazamento: é o que encurta o conserto.
+- **A validade é conferida DUAS vezes**, no card e na rota. O card decide o que
+  renderizar; a rota decide o que GASTAR, e são coisas diferentes no instante
+  em que alguém recarrega a página três vezes.
+- **A janela é fixa em 30 dias**, e não as pílulas de período da tela. Amarrar
+  o insight ao filtro daria quatro chamadas de modelo caro por dia por tela,
+  para responder a mesma pergunta.
+
+O custo dela é gravado como qualquer outra rota (`admin-insights` em
+`llm_usage_events`), na ação `internal` — separada de `unbilled` porque os dois
+têm consertos opostos: gasto sem cobrança é preço mal ajustado, custo interno é
+despesa nossa que nunca vai ter moeda atrás. Somados, a tela sugeriria cobrar
+do usuário por uma chamada que só o admin dispara.
+
+## Modelo sem preço na tabela
+
+`/admin/usage` abre com um aviso vermelho quando alguma chamada rodou num
+modelo que não está em `lib/llm/pricing.ts`. Elas gravaram custo **zero**, e
+sem o aviso o sintoma é uma conta boa demais — que é o sintoma que ninguém
+investiga. O efeito em cadeia é o pior possível: a margem daquela ação sobe, e
+a tela de precificação passa a recomendar BAIXAR um preço que já não se paga.
+Trocar um modelo por env var sem acrescentá-lo à tabela é o caminho normal de
+cair nisso.
+
 ## Funcionalidades (`/admin/features`)
 
 A tela tem três blocos e a ORDEM é a mensagem: a matriz `funcionalidade ×

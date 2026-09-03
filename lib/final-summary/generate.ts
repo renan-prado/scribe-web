@@ -120,6 +120,14 @@ export async function generateFinalSummary(
 
   if (payload.blocks.length > 0) {
     const enrichmentModel = serverEnv.OPENAI_SUMMARY_ENRICHMENT_MODEL;
+    // O enriquecimento herda o passe que o chamou. Marcado sempre como
+    // "summary-enrichment", metade do custo de um reprocessamento ia parar na
+    // linha da gravação e o preço de reprocessar resumo parecia mais barato do
+    // que é — ver /admin/precificacao.
+    const enrichmentRoute: UsageRoute =
+      metadataRoute === "final-summary-reprocess"
+        ? "summary-enrichment-reprocess"
+        : "summary-enrichment";
     const indexedBlocks = payload.blocks.map((block, index) => ({ index, ...block }));
     const enrichmentUserMessage =
       `blocks (indexed):\n${JSON.stringify(indexedBlocks)}\n\n---\n` +
@@ -137,7 +145,7 @@ export async function generateFinalSummary(
       ],
       store: true,
       metadata: buildLlmMetadata({
-        route: "summary-enrichment",
+        route: enrichmentRoute,
         userId,
         sessionId,
       }),
@@ -165,7 +173,7 @@ export async function generateFinalSummary(
       });
       await recordChatUsage({
         sessionId,
-        route: "summary-enrichment",
+        route: enrichmentRoute,
         model: enrichmentModel,
         promptTokens: enrichmentResult.data.usage.promptTokens,
         completionTokens: enrichmentResult.data.usage.completionTokens,

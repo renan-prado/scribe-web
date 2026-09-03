@@ -63,6 +63,13 @@ const schema = z.object({
   /** Auditoria do alerta de alucinação. Julga se um card se sustenta na
    * transcrição — evento raro e de alto impacto, então vale o modelo bom. */
   OPENAI_HALLUCINATION_MODEL: z.string().default("gpt-4o"),
+  /**
+   * O analista financeiro do /admin. Roda no máximo uma vez por dia por tela,
+   * disparado por um admin, sobre um briefing de números já agregados —
+   * volume ínfimo, e a tarefa é aritmética cruzada, não redação. É o lugar do
+   * modelo caro: um insight errado sobre margem custa mais que a chamada.
+   */
+  OPENAI_ADMIN_INSIGHTS_MODEL: z.string().default("gpt-5.1"),
   SUPABASE_SERVICE_ROLE_KEY: z.string().min(1),
 
   /* ---- Stripe (billing) ----------------------------------------------
@@ -109,6 +116,7 @@ const parsed = schema.safeParse({
   OPENAI_REMINDERS_MODEL: process.env.OPENAI_REMINDERS_MODEL,
   OPENAI_FORMAT_MODEL: process.env.OPENAI_FORMAT_MODEL,
   OPENAI_HALLUCINATION_MODEL: process.env.OPENAI_HALLUCINATION_MODEL,
+  OPENAI_ADMIN_INSIGHTS_MODEL: process.env.OPENAI_ADMIN_INSIGHTS_MODEL,
   SUPABASE_SERVICE_ROLE_KEY: process.env.SUPABASE_SERVICE_ROLE_KEY,
   STRIPE_SECRET_KEY: process.env.STRIPE_SECRET_KEY,
   STRIPE_WEBHOOK_SECRET: process.env.STRIPE_WEBHOOK_SECRET,

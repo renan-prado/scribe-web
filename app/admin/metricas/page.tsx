@@ -6,7 +6,9 @@ import {
   type KpiTile,
   ListCard,
 } from "@/features/admin/components/AdminCards";
+import { AdminInsightsCard } from "@/features/admin/components/AdminInsightsCard";
 import { AdminPageHeader } from "@/features/admin/components/AdminPageHeader";
+import { readAdminInsights } from "@/lib/admin/insights/store";
 import { formatBrl, PLANS } from "@/lib/billing/plans";
 import { INITIAL_COIN_BALANCE } from "@/lib/coins/pricing";
 import { loadAdminMetrics } from "@/lib/db/admin/metrics";
@@ -31,7 +33,11 @@ const pct = (n: number) => `${(n * 100).toFixed(1).replace(".", ",")}%`;
  * passivo em reais.
  */
 export default async function AdminMetricsPage() {
-  const [rate, usage] = await Promise.all([getUsdToBrl(), loadAdminUsageSummary()]);
+  const [rate, usage, insights] = await Promise.all([
+    getUsdToBrl(),
+    loadAdminUsageSummary(),
+    readAdminInsights("metrics"),
+  ]);
 
   // USD/moeda → centavos de BRL por 1.000 moedas. Sem câmbio disponível o
   // passivo aparece zerado em vez de errado — a tela diz que falta a cotação.
@@ -104,6 +110,8 @@ export default async function AdminMetricsPage() {
           <KpiCard key={t.label} {...t} />
         ))}
       </section>
+
+      <AdminInsightsCard scope="metrics" initial={insights} />
 
       <section className="grid gap-4 lg:grid-cols-2">
         <ListCard title="Funil" subtitle="Base completa">

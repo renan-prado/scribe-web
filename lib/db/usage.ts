@@ -31,7 +31,11 @@ export type UsageRoute =
   | "sermon-echo"
   | "final-summary"
   | "final-summary-reprocess"
+  // Duas rotas para a MESMA chamada de enriquecimento, escolhidas pelo passe
+  // que a disparou. Sem a segunda, metade do custo de reprocessar um resumo
+  // caía na linha da gravação e o preço de `reprocess_summary` parecia baixo.
   | "summary-enrichment"
+  | "summary-enrichment-reprocess"
   // As três etapas de LLM do estudo (`lib/study/generate.ts`). Separadas de
   // propósito: é o que permite ver no /admin/usage quanto custa PERGUNTAR,
   // quanto custa RESPONDER e quanto custa ESCREVER — e portanto onde vale
@@ -50,6 +54,12 @@ export type UsageRoute =
   | "reminders"
   | "format-paragraphs"
   | "hallucination-report"
+  // A análise diária do próprio painel (/api/admin/insights). Entra aqui, e
+  // não fora da telemetria, porque é dólar de verdade saindo: fora da tabela,
+  // o custo somado do painel deixaria de bater com a fatura da OpenAI. Ela é
+  // atribuída à ação `internal` em lib/db/admin/usage.ts — não a `unbilled` —
+  // para não parecer gasto de usuário que ninguém cobrou.
+  | "admin-insights"
   | "transcribe";
 
 export type RecordChatUsageInput = {

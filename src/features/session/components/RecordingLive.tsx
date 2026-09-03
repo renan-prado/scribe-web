@@ -424,7 +424,7 @@ export function RecordingLive({
     initialSpeakerLocation,
   ]);
 
-  // Cobrança: 5 moedas/min iniciado. O primeiro débito sai no t=0; os demais
+  // Cobrança: `COIN_COSTS.liveMinute` moedas/min iniciado. O primeiro débito sai no t=0; os demais
   // a cada 60s. Ao esgotar, a captura é CONGELADA (pause), não encerrada —
   // o transcript, a fila de chunks e o feed continuam vivos esperando o
   // crédito. Ver `useCoinGuard` para o porquê da mudança.

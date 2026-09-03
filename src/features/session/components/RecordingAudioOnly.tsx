@@ -260,7 +260,7 @@ export function RecordingAudioOnly({
     }
   }, [assembleTranscript, paused, sessionId, initialSpeakerName, initialSpeakerLocation, router]);
 
-  // Cobrança: 2 moedas/min iniciado. Pausado não debita; `useCoinTick`
+  // Cobrança: `COIN_COSTS.audioOnlyMinute` moedas/min iniciado. Pausado não debita; `useCoinTick`
   // preserva o minuto corrente para retomar não gerar débito extra. Ao
   // esgotar, a captura é congelada (pause) em vez de encerrada.
   const coinGuard = useCoinGuard({

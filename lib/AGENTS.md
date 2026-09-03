@@ -22,8 +22,9 @@ Supabase com service-role para o bundle e o build recusa — corretamente. Já
 aconteceu com `DEFAULT_PARTNER_MONTHLY_COINS`, que teve de mudar de
 `partners/allowance.ts` para `partners/economics.ts`.
 
-Client-safe de propósito: `coins/pricing.ts`, `billing/plans.ts`,
-`entitlements/features.ts`, `partners/economics.ts`, `br/documento.ts`,
+Client-safe de propósito: `coins/pricing.ts`, `coins/billable.ts`,
+`coins/economics.ts`, `billing/plans.ts`, `entitlements/features.ts`,
+`partners/economics.ts`, `br/documento.ts`,
 `domain/*` (tipos e schemas), `bible/detect.ts`, `bible/guard.ts`,
 `deploy.ts`, `seo.ts`, `utils.ts`, `vocabulario.ts`, `chunk-store.ts`
 (IndexedDB, só roda no browser).
@@ -420,6 +421,21 @@ modelo no servidor.
 - `fx/usd-brl.ts` — câmbio USD→BRL da AwesomeAPI, cacheado 1h. Quando o
   upstream falha, cai num valor que o admin digitou e ficou num cookie
   server-readable. O custo por moeda é sempre MEDIDO, nunca constante.
+- `coins/billable.ts` + `coins/economics.ts` — o que é uma AÇÃO cobrável e a
+  conta de margem por milheiro de moeda, os dois client-safe. `pricing.ts` diz
+  quanto custa em moedas; `billable.ts` diz o que é uma coisa (gerar e
+  reprocessar estudo são dois motivos no ledger e um produto só). Alimentam
+  `/admin/precificacao` — ver `src/features/admin/AGENTS.md`.
+- `admin/insights/` — server-only, a leitura de um modelo sobre os números de
+  `/admin/precificacao`, `/admin/usage` e `/admin/metricas`. `briefing.ts`
+  monta os números (sem calcular nada: tudo vem de `db/admin/*` e
+  `coins/economics.ts`), `generate.ts` chama o modelo e `store.ts` grava a
+  linha em `admin_insights`. O tipo e o parser são client-safe, em
+  `domain/admin-insights.ts`. Ver `src/features/admin/AGENTS.md`.
+- `coins/settings.ts` — server-only, lê do cookie o valor de venda da moeda e a
+  margem alvo que o admin girou. É régua de SIMULAÇÃO: não cobra, não credita e
+  não pode virar tabela. Escrita por `coins/settings-actions.ts`, com
+  `assertAdmin()` dentro de cada action.
 - `chunk-store.ts` — IndexedDB dos chunks de áudio à espera de upload. Degrada
   em silêncio onde IndexedDB não existe. Ver `src/features/session/AGENTS.md`.
 - `br/documento.ts` — CPF/CNPJ com máscara e dígito verificador, client-safe,

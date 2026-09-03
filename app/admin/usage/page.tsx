@@ -9,10 +9,12 @@ import {
   TableHeader,
   TableRow,
 } from "@/components/ui/table";
+import { AdminInsightsCard } from "@/features/admin/components/AdminInsightsCard";
 import { AdminPageHeader } from "@/features/admin/components/AdminPageHeader";
 import { CopyButton } from "@/features/admin/components/CopyButton";
 import { FxRateBadge } from "@/features/admin/components/FxRateBadge";
 import { UsageFilters } from "@/features/admin/components/UsageFilters";
+import { readAdminInsights } from "@/lib/admin/insights/store";
 import {
   type AdminUsageSummary,
   listUsersForFilter,
@@ -93,10 +95,11 @@ export default async function AdminUsagePage({ searchParams }: PageProps) {
     mode: parseModeFilter(sp.mode),
   };
 
-  const [summary, users, rate] = await Promise.all([
+  const [summary, users, rate, insights] = await Promise.all([
     loadAdminUsageSummary(filters),
     listUsersForFilter(),
     getUsdToBrl(),
+    readAdminInsights("usage"),
   ]);
 
   const money = makeMoneyFormatter(rate);
@@ -125,6 +128,8 @@ export default async function AdminUsagePage({ searchParams }: PageProps) {
       />
 
       <TotalsGrid summary={summary} money={money} costPerThousandCoins={costPerThousandCoins} />
+      <UnpricedNote summary={summary} />
+      <AdminInsightsCard scope="usage" initial={insights} />
       <RouteAndUserTables summary={summary} money={money} />
       <SessionsTable
         summary={summary}
@@ -223,6 +228,38 @@ function TotalsGrid({ summary, money, costPerThousandCoins }: TotalsGridProps) {
         icon={<CoinMark size={22} />}
         tone={KPI_TONES[3]}
       />
+    </section>
+  );
+}
+
+/**
+ * O aviso que precede qualquer leitura desta tela: chamadas cujo modelo não
+ * está em `lib/llm/pricing.ts` gravaram custo ZERO.
+ *
+ * Ele não é decoração de robustez — é a única forma de o painel dizer que está
+ * mentindo. Sem ele, um modelo novo configurado por env var faz o custo de uma
+ * etapa inteira desaparecer, a margem daquela ação sobe, e a tela de
+ * precificação recomenda BAIXAR um preço que já não se paga. O sintoma é uma
+ * conta boa demais, que é o sintoma que ninguém investiga.
+ *
+ * O conserto é sempre o mesmo: acrescentar o modelo à tabela de preços.
+ */
+function UnpricedNote({ summary }: { summary: AdminUsageSummary }) {
+  if (summary.unpricedEvents === 0) return null;
+  const share =
+    summary.totals.totalEvents > 0 ? summary.unpricedEvents / summary.totals.totalEvents : 0;
+  return (
+    <section className="rounded-2xl border border-scriba-rose-accent/30 bg-scriba-rose p-5">
+      <h2 className="text-[14px] font-semibold text-scriba-rose-accent">Custo subestimado</h2>
+      <p className="mt-1 text-[12.5px] font-light leading-relaxed text-scriba-ink">
+        {INT.format(summary.unpricedEvents)} de {INT.format(summary.totals.totalEvents)} chamadas (
+        {(share * 100).toFixed(1).replace(".", ",")}%) rodaram em modelos que não estão na tabela de
+        preços interna e gravaram custo <span className="font-mono">R$ 0,00</span>:{" "}
+        <span className="font-mono">{summary.unpricedModels.join(", ")}</span>. Todo custo e toda
+        margem desta tela e da de precificação estão baixos na proporção do que elas consumiram.
+        Acrescente esses modelos a <span className="font-mono">lib/llm/pricing.ts</span> — os
+        eventos já gravados continuarão em zero.
+      </p>
     </section>
   );
 }

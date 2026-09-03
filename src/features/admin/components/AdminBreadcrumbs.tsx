@@ -15,6 +15,7 @@ const LABELS: Record<string, string> = {
   admin: "Admin",
   users: "Usuários",
   usage: "Uso & custos",
+  precificacao: "Precificação",
   metricas: "Métricas",
   partners: "Parceiros",
   features: "Funcionalidades",

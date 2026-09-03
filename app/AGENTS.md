@@ -47,7 +47,7 @@ a quem não é admin) e `/partners` (gate em `lib/auth/require-partner.ts`).
 `sermon-echo`, `final-summary[/reprocess]`, `deepening[/reprocess]`, `verse`,
 `format-paragraphs`, `hallucination-report`), dados (`sessions`, `feed`,
 `speakers`, `locations`, `coins`), cobrança (`billing/*`, `stripe/webhook`) e
-admin (`admin/users`, `admin/partners`, `admin/features`).
+admin (`admin/users`, `admin/partners`, `admin/features`, `admin/insights`).
 
 ## O proxy é o gate, não a página
 

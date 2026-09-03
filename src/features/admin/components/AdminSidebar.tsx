@@ -3,6 +3,7 @@
 import {
   BarChart3,
   Handshake,
+  Landmark,
   LayoutDashboard,
   ScrollText,
   ToggleRight,
@@ -39,6 +40,7 @@ const NAV: NavItem[] = [
   { href: "/admin/users", label: "Usuários", icon: Users },
   { href: "/admin/metricas", label: "Métricas", icon: TrendingUp },
   { href: "/admin/usage", label: "Uso & custos", icon: BarChart3 },
+  { href: "/admin/precificacao", label: "Precificação", icon: Landmark },
   { href: "/admin/partners", label: "Parceiros", icon: Handshake },
   { href: "/admin/features", label: "Funcionalidades", icon: ToggleRight },
   { href: "/admin/studies", label: "Estudos", icon: ScrollText },

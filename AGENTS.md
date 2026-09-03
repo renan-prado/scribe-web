@@ -33,8 +33,8 @@ preço por minuto iniciado (`lib/coins/pricing.ts`):
 
 | Modo | Página | O que roda | Moedas/min |
 |---|---|---|---|
-| `live` | `/recording/:id/live` | tudo acima | 5 |
-| `audio_only` | `/recording/:id/audio` | transcribe + resumo final | 2 |
+| `live` | `/recording/:id/live` | tudo acima | 7 |
+| `audio_only` | `/recording/:id/audio` | transcribe + resumo final | 6 |
 | `transcript_only` | `/recording/:id/transcribe` | só transcribe, sem LLM nem resumo | 1 |
 
 Cada página redireciona um modo que não é o dela. Sessão salva abre em
