@@ -113,7 +113,7 @@ export default async function AdminUsagePage({ searchParams }: PageProps) {
     <div className="flex flex-col gap-6">
       <AdminPageHeader
         title="Uso & custos"
-        subtitle="Chamadas, tokens e áudio processados, com custo por rota, usuário e sessão."
+        subtitle="Chamadas e áudio processados, com custo por rota, usuário e sessão."
       />
       <UsageFilters
         users={users}
@@ -201,23 +201,22 @@ function TotalsGrid({ summary, money, costPerThousandCoins }: TotalsGridProps) {
   const { totals, overallCostPerCoinUsd } = summary;
   const audioMin = totals.totalAudioSeconds > 0 ? totals.totalAudioSeconds / 60 : 0;
   return (
-    <section className="grid gap-3 sm:grid-cols-2 lg:grid-cols-4">
+    <section className="grid gap-3 sm:grid-cols-2 lg:grid-cols-3">
       <Kpi
         label="Custo no período"
         value={money(totals.totalCostUsd)}
-        hint={`${INT.format(totals.totalEvents)} chamadas`}
+        hint={
+          audioMin > 0
+            ? `${INT.format(totals.totalEvents)} chamadas · ${audioMin
+                .toFixed(1)
+                .replace(".", ",")} min de áudio`
+            : `${INT.format(totals.totalEvents)} chamadas`
+        }
         tone={KPI_TONES[0]}
-      />
-      <Kpi
-        label="Tokens (in / out)"
-        value={`${INT.format(totals.totalPromptTokens)} / ${INT.format(totals.totalCompletionTokens)}`}
-        hint={audioMin > 0 ? `${audioMin.toFixed(1)} min de áudio` : undefined}
-        tone={KPI_TONES[1]}
       />
       <Kpi
         label="Moedas gastas"
         value={INT.format(totals.totalCoins)}
-        hint="Ledger de coin_transactions"
         icon={<CoinMark size={22} />}
         tone={KPI_TONES[2]}
       />
