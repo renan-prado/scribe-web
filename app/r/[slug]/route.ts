@@ -1,6 +1,6 @@
 import { type NextRequest, NextResponse } from "next/server";
 import { recordPartnerClick } from "@/lib/db/partners";
-import { devLog } from "@/lib/log";
+import { createLogger } from "@/lib/log";
 import {
   encodeRef,
   normalizeSlug,
@@ -11,6 +11,8 @@ import {
   VISIT_COOKIE_MAX_AGE,
 } from "@/lib/partners/cookies";
 import { enforceRateLimit, RATE_LIMITS } from "@/lib/rate-limit";
+
+const log = createLogger("partners/r");
 
 export const runtime = "nodejs";
 export const dynamic = "force-dynamic";
@@ -44,7 +46,7 @@ export async function GET(request: NextRequest, ctx: { params: Promise<{ slug: s
 
   // Slug impossível: nem consulta o banco. Só sai da frente.
   if (!slug) {
-    devLog("[partners/r] slug inválido", { raw });
+    log.info("slug inválido", { raw });
     return NextResponse.redirect(home, 302);
   }
 
@@ -59,7 +61,7 @@ export async function GET(request: NextRequest, ctx: { params: Promise<{ slug: s
   // métrica, e nada pode impedir a pessoa de chegar na landing page.
   const limited = enforceRateLimit(request, RATE_LIMITS["partner-link"]);
   if (limited) {
-    console.warn("[partners/r] clique não contado — rate limit", { slug });
+    log.warn("clique não contado — rate limit", { slug });
     return response;
   }
 
@@ -71,7 +73,7 @@ export async function GET(request: NextRequest, ctx: { params: Promise<{ slug: s
   response.cookies.set(VISIT_COOKIE, slug, refCookieOptions(VISIT_COOKIE_MAX_AGE));
 
   await recordPartnerClick(slug, unique);
-  devLog("[partners/r] clique", { slug, unique });
+  log.info("clique", { slug, unique });
 
   return response;
 }

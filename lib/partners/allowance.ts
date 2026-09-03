@@ -1,6 +1,9 @@
 import "server-only";
 import { grantCoins } from "@/lib/db/billing";
+import { createLogger } from "@/lib/log";
 import { createAdminClient } from "@/lib/supabase/admin";
+
+const log = createLogger("partners");
 
 /**
  * A mesada mensal de moedas do parceiro.
@@ -74,21 +77,21 @@ export async function ensurePartnerAllowance(args: {
       .update({ allowance_month: month })
       .eq("id", args.partnerId);
     if (error) {
-      console.error("[partners] mesada creditada mas allowance_month não gravado", {
+      log.error("mesada creditada mas allowance_month não gravado", {
         partnerId: args.partnerId,
         month,
         error: error.message,
       });
     }
 
-    console.info("[partners] mesada creditada", {
+    log.info("mesada creditada", {
       partnerId: args.partnerId,
       coins: args.monthlyCoins,
       month,
     });
     return args.monthlyCoins;
   } catch (err) {
-    console.error("[partners] falha ao creditar mesada", {
+    log.error("falha ao creditar mesada", {
       partnerId: args.partnerId,
       error: (err as Error).message,
     });

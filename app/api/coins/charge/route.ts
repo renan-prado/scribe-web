@@ -3,8 +3,11 @@ import { z } from "zod";
 import { CHARGE_REASONS } from "@/lib/coins/pricing";
 import { chargeCoins } from "@/lib/db/coins";
 import { OptionalUuidSchema, parseJsonBody } from "@/lib/http/validate";
+import { createLogger } from "@/lib/log";
 import { enforceRateLimit, RATE_LIMITS } from "@/lib/rate-limit";
 import { requireAuth } from "@/lib/supabase/require-auth";
+
+const log = createLogger("coins/charge");
 
 const BodySchema = z
   .object({
@@ -39,7 +42,7 @@ export async function POST(request: Request) {
     if (result.error === "insufficient_balance") {
       return NextResponse.json({ error: "insufficient_balance" }, { status: 402 });
     }
-    console.error("[coins/charge] failed", {
+    log.error("failed", {
       reason,
       error: result.error,
       message: result.message,

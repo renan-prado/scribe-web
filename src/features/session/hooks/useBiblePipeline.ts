@@ -16,7 +16,9 @@ import { useSessionStore } from "@/features/session/store";
 import { hasBibleMention } from "@/lib/bible/detect";
 import { canonicalBookStem, scoreBibleGuard } from "@/lib/bible/guard";
 import { parseVerseReference } from "@/lib/domain/feed";
-import { devLog } from "@/lib/log";
+import { createLogger } from "@/lib/log";
+
+const log = createLogger("bible-guard");
 
 /**
  * BIBLE pipeline. Gate em duas camadas:
@@ -74,7 +76,7 @@ export function useBiblePipeline({
     );
     if (guard.decision === "skip") {
       store.bumpCounter("bibleGuardSkipped");
-      devLog("[bible-guard] skip", { score: guard.score, signals: guard.signals });
+      log.debug("skip", { score: guard.score, signals: guard.signals });
       return;
     }
     // Delta pós-guard: se o LLM anterior respondeu 0 items, `lastBibleEmit`
@@ -84,7 +86,7 @@ export function useBiblePipeline({
     if (store.lastBibleFiredTailLen > 0 && delta < BIBLE_MIN_TAIL_DELTA_CHARS) {
       return;
     }
-    devLog("[bible-guard] fire", { score: guard.score, signals: guard.signals });
+    log.debug("fire", { score: guard.score, signals: guard.signals });
     store.setLastBibleFiredTailLen(transcript.length);
     store.setBibleInFlight(true);
     store.bumpCounter("bibleCalls");

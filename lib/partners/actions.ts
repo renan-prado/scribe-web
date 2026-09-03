@@ -3,6 +3,7 @@
 import { revalidatePath } from "next/cache";
 import { cookies, headers } from "next/headers";
 import { getPartnerPublicBySlug } from "@/lib/db/partners";
+import { createLogger } from "@/lib/log";
 import {
   encodeRef,
   normalizeSlug,
@@ -11,6 +12,8 @@ import {
   refCookieOptions,
 } from "@/lib/partners/cookies";
 import { checkRateLimit, getClientIp } from "@/lib/rate-limit";
+
+const log = createLogger("partners");
 
 /**
  * Grava um código de indicação digitado na tela de login.
@@ -45,7 +48,7 @@ export async function applyReferralCode(
   const ip = getClientIp(await headers());
   const limit = checkRateLimit(`referral-code:ip:${ip}`, 20, 10 * MIN);
   if (!limit.ok) {
-    console.warn("[partners] referral code rate limited", { ip });
+    log.warn("referral code rate limited", { ip });
     return { status: "rate_limited" };
   }
 

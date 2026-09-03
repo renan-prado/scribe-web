@@ -10,7 +10,7 @@ import {
 import { serverEnv } from "@/lib/env/server";
 import { buildLlmMetadata } from "@/lib/llm/metadata";
 import { callChat } from "@/lib/llm/openai";
-import { devLog } from "@/lib/log";
+import { createLogger } from "@/lib/log";
 import { FINAL_SUMMARY_SYSTEM_PROMPT } from "@/lib/prompts/final-summary";
 import { SUMMARY_ENRICHMENT_SYSTEM_PROMPT } from "@/lib/prompts/summary-enrichment";
 
@@ -54,6 +54,8 @@ export async function generateFinalSummary(
   input: GenerateFinalSummaryInput
 ): Promise<GenerateFinalSummaryResult> {
   const { userId, sessionId, transcript, feedItems, logPrefix, metadataRoute } = input;
+  const log = createLogger(logPrefix);
+  const enrichmentLog = log.scoped("enrichment");
   const model = serverEnv.OPENAI_FINAL_SUMMARY_MODEL;
 
   const userMessage = `feedItems:\n${JSON.stringify(feedItems)}\n\n---\ntranscript:\n${transcript}`;
@@ -73,10 +75,10 @@ export async function generateFinalSummary(
 
   if (!result.ok) {
     if (result.error.kind === "fetch") {
-      console.error(`[${logPrefix}] upstream fetch failed`, { error: result.error.message });
+      log.error(`upstream fetch failed`, { error: result.error.message });
       return { ok: false, kind: "fetch", message: result.error.message };
     }
-    console.error(`[${logPrefix}] upstream error`, {
+    log.error(`upstream error`, {
       status: result.error.status,
       latencyMs: result.error.latencyMs,
       snippet: result.error.snippet.slice(0, 300),
@@ -93,7 +95,7 @@ export async function generateFinalSummary(
   const { content, finishReason, usage, latencyMs } = result.data;
   const payload = parseSummaryFromLLM(content, "final");
 
-  devLog(`[${logPrefix}] ok`, {
+  log.debug(`ok`, {
     latencyMs,
     finishReason,
     promptTokens: usage.promptTokens,
@@ -102,7 +104,7 @@ export async function generateFinalSummary(
     feedItems: feedItems.length,
   });
   if (finishReason === "length") {
-    console.warn(`[${logPrefix}] output truncated by max_tokens`, {
+    log.warn(`output truncated by max_tokens`, {
       completionTokens: usage.completionTokens,
     });
   }
@@ -144,7 +146,7 @@ export async function generateFinalSummary(
     if (!enrichmentResult.ok) {
       const err = enrichmentResult.error;
       const kind = err.kind === "fetch" ? "fetch" : "upstream";
-      console.warn(`[summary-enrichment] failed — sermon returned without AI cards`, {
+      enrichmentLog.warn(`failed — sermon returned without AI cards`, {
         kind,
         message: err.message,
       });
@@ -153,7 +155,7 @@ export async function generateFinalSummary(
       if (insertions.length > 0) {
         payload.blocks = mergeEnrichmentIntoBlocks(payload.blocks, insertions);
       }
-      devLog(`[summary-enrichment] ok`, {
+      enrichmentLog.debug(`ok`, {
         latencyMs: enrichmentResult.data.latencyMs,
         finishReason: enrichmentResult.data.finishReason,
         promptTokens: enrichmentResult.data.usage.promptTokens,

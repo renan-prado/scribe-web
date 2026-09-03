@@ -31,6 +31,18 @@ const YELLOW = "\x1b[33m";
 const GREEN = "\x1b[32m";
 const DIM = "\x1b[2m";
 const BOLD = "\x1b[1m";
+const BLUE = "\x1b[94m";
+
+/**
+ * A marca em blocos, impressa antes de qualquer outra coisa. Sai em azul no
+ * dev e em VERMELHO em `npm run prod` — a mesma cor da moldura de aviso logo
+ * abaixo, para que a troca de ambiente se veja antes de se ler uma palavra.
+ */
+const WORDMARK = [
+  "▄█████ ▄█████ █████▄  ██ █████▄ ▄████▄ ",
+  "▀▀▀▄▄▄ ██     ██▄▄██▄ ██ ██▄▄██ ██▄▄██ ",
+  "█████▀ ▀█████ ██   ██ ██ ██▄▄█▀ ██  ██",
+];
 
 function die(lines) {
   console.error(`\n${RED}✗ ${lines.join(`\n  `)}${RESET}\n`);
@@ -150,27 +162,31 @@ const stripeMode = stripeKey.startsWith("sk_live")
     : `${DIM}não configurado${RESET}`;
 
 const line = "─".repeat(58);
+
+console.log("");
+for (const row of WORDMARK) console.log(`${isProd ? RED : BLUE}${BOLD}  ${row}${RESET}`);
+
 if (isProd) {
   console.log(
     [
       "",
-      `${RED}${BOLD}╔${"═".repeat(56)}╗`,
-      "║  PRODUÇÃO — este processo fala com os dados REAIS.      ║",
-      `╚${"═".repeat(56)}╝${RESET}`,
+      `${RED}${BOLD}  ╔${"═".repeat(56)}╗`,
+      "  ║  PRODUÇÃO — este processo fala com os dados REAIS.      ║",
+      `  ╚${"═".repeat(56)}╝${RESET}`,
     ].join("\n")
   );
 } else {
-  console.log(`\n${GREEN}▸ ambiente de DESENVOLVIMENTO${RESET}`);
+  console.log(`\n${GREEN}  ▸ ambiente de DESENVOLVIMENTO${RESET}`);
 }
 
 console.log(
   [
-    `${DIM}${line}${RESET}`,
+    `${DIM}  ${line}${RESET}`,
     `  arquivo   ${ENV_TARGETS[target]}`,
     `  supabase  ${supabaseRef ?? "(ausente)"}`,
     `  stripe    ${stripeMode}`,
     `  app url   ${appUrl || "(padrão do código)"}`,
-    `${DIM}${line}${RESET}`,
+    `${DIM}  ${line}${RESET}`,
     "",
   ].join("\n")
 );

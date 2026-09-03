@@ -3,7 +3,10 @@ import { z } from "zod";
 import { requireAdmin } from "@/lib/auth/require-admin";
 import { PayoutStampError, registerPayout } from "@/lib/db/admin/partners";
 import { parseJsonBody, parseUuidParam } from "@/lib/http/validate";
+import { createLogger } from "@/lib/log";
 import { enforceRateLimit, RATE_LIMITS } from "@/lib/rate-limit";
+
+const log = createLogger("admin/partners");
 
 export const runtime = "nodejs";
 export const dynamic = "force-dynamic";
@@ -60,7 +63,7 @@ export async function POST(request: Request, { params }: { params: Promise<{ id:
     if (!result) {
       return NextResponse.json({ error: "nothing_due" }, { status: 409 });
     }
-    console.info("[admin/partners] payout registered", {
+    log.info("payout registered", {
       partnerId: guarded.id,
       amountCents: result.amountCents,
       commissions: result.commissions,
@@ -68,7 +71,7 @@ export async function POST(request: Request, { params }: { params: Promise<{ id:
     });
     return NextResponse.json(result, { status: 201 });
   } catch (err) {
-    console.error("[admin/partners] payout failed", {
+    log.error("payout failed", {
       partnerId: guarded.id,
       error: (err as Error).message,
     });

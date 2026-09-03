@@ -9,9 +9,11 @@ import { appUrl, getStripe, isBillingConfigured } from "@/lib/billing/stripe";
 import { getOwnSubscription } from "@/lib/db/billing";
 import { getCurrentProfile } from "@/lib/db/profiles";
 import { parseJsonBody } from "@/lib/http/validate";
-import { devLog } from "@/lib/log";
+import { createLogger } from "@/lib/log";
 import { enforceRateLimit, RATE_LIMITS } from "@/lib/rate-limit";
 import { requireAuth } from "@/lib/supabase/require-auth";
+
+const log = createLogger("billing/checkout");
 
 export const runtime = "nodejs";
 export const dynamic = "force-dynamic";
@@ -84,7 +86,7 @@ async function assertPriceShape(
   try {
     price = await stripe.prices.retrieve(priceId);
   } catch (err) {
-    console.error("[billing/checkout] price not found", {
+    log.error("price not found", {
       envVar,
       priceId,
       error: (err as Error).message,
@@ -96,7 +98,7 @@ async function assertPriceShape(
   }
 
   if (!price.active) {
-    console.error(`[billing/checkout] ${envVar} points to an ARCHIVED price`, { priceId });
+    log.error(`${envVar} points to an ARCHIVED price`, { priceId });
     return {
       ok: false,
       response: NextResponse.json({ error: "price_misconfigured" }, { status: 503 }),
@@ -105,8 +107,8 @@ async function assertPriceShape(
 
   const actual = price.recurring ? "recurring" : "one_time";
   if (actual !== expected) {
-    console.error(
-      `[billing/checkout] ${envVar} points to a ${actual} price but a ${expected} price is required.` +
+    log.error(
+      `${envVar} points to a ${actual} price but a ${expected} price is required.` +
         (expected === "one_time"
           ? " Crie um preço com cobrança ÚNICA no produto de créditos avulsos e aponte a variável para o novo price_..."
           : " Crie um preço RECORRENTE mensal no produto do plano e aponte a variável para o novo price_..."),
@@ -148,7 +150,7 @@ export async function POST(request: Request) {
       name: profile?.displayName ?? null,
     });
   } catch (err) {
-    console.error("[billing/checkout] customer failed", { error: (err as Error).message });
+    log.error("customer failed", { error: (err as Error).message });
     return NextResponse.json({ error: "customer_failed" }, { status: 502 });
   }
 
@@ -156,7 +158,7 @@ export async function POST(request: Request) {
     if (body.kind === "subscription") {
       const priceId = priceIdForPlan(body.plan);
       if (!priceId) {
-        console.error("[billing/checkout] missing price id for plan", { plan: body.plan });
+        log.error("missing price id for plan", { plan: body.plan });
         return NextResponse.json({ error: "plan_unavailable" }, { status: 503 });
       }
 
@@ -181,7 +183,7 @@ export async function POST(request: Request) {
       });
       const live = existing.data.find((sub) => BLOCKING_STATUSES.has(sub.status));
       if (live) {
-        console.warn("[billing/checkout] local mirror was stale — healing and blocking", {
+        log.warn("local mirror was stale — healing and blocking", {
           userId: auth.user.id,
           subscription: live.id,
           status: live.status,
@@ -219,7 +221,7 @@ export async function POST(request: Request) {
         { idempotencyKey: `sub:${auth.user.id}:${body.plan}:${Math.floor(Date.now() / 60_000)}` }
       );
 
-      devLog("[billing/checkout] subscription session", {
+      log.info("subscription session", {
         userId: auth.user.id,
         plan: body.plan,
         sessionId: session.id,
@@ -230,7 +232,7 @@ export async function POST(request: Request) {
     // ---- pacote avulso -----------------------------------------------------
     const priceId = priceIdForTopup();
     if (!priceId) {
-      console.error("[billing/checkout] missing topup price id");
+      log.error("missing topup price id");
       return NextResponse.json({ error: "topup_unavailable" }, { status: 503 });
     }
 
@@ -260,7 +262,7 @@ export async function POST(request: Request) {
       }
     );
 
-    devLog("[billing/checkout] topup session", {
+    log.info("topup session", {
       userId: auth.user.id,
       quantity,
       sessionId: session.id,
@@ -273,8 +275,8 @@ export async function POST(request: Request) {
     // sem nenhum método ligado para a moeda. Sem esta dica, o rastro é um 502
     // genérico e horas de caça ao erro errado.
     if (message.includes("payment method types")) {
-      console.error(
-        "[billing/checkout] a conta do Stripe não tem método de pagamento disponível para esta moeda. " +
+      log.error(
+        "a conta do Stripe não tem método de pagamento disponível para esta moeda. " +
           "Rode `node scripts/stripe-doctor.mjs` — em geral é `charges_enabled: false` " +
           "(conta em análise ou com dados pendentes) ou nenhum método ligado em " +
           "dashboard.stripe.com/settings/payment_methods.",
@@ -282,7 +284,7 @@ export async function POST(request: Request) {
       );
       return NextResponse.json({ error: "payment_methods_unavailable" }, { status: 503 });
     }
-    console.error("[billing/checkout] stripe error", { error: message });
+    log.error("stripe error", { error: message });
     return NextResponse.json({ error: "checkout_failed" }, { status: 502 });
   }
 }

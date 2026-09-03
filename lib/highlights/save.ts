@@ -4,7 +4,7 @@ import type { FeedItem } from "@/lib/domain/feed";
 import type { HighlightsPayload } from "@/lib/domain/highlights";
 import type { SummaryPayload } from "@/lib/domain/summary";
 import { extractHighlights } from "@/lib/highlights/extract";
-import { devLog } from "@/lib/log";
+import { createLogger } from "@/lib/log";
 
 /**
  * Best-effort: extrai frases marcantes do feed do ao vivo + summary final e
@@ -18,30 +18,31 @@ export async function generateAndSaveHighlights(input: {
   finalSummary: SummaryPayload;
   logPrefix: string;
 }): Promise<HighlightsPayload | null> {
+  const log = createLogger(input.logPrefix);
   try {
     const payload = extractHighlights({
       feedItems: input.feedItems,
       finalSummary: input.finalSummary,
     });
     if (payload.items.length === 0) {
-      devLog(`[${input.logPrefix}] no candidates`, { sessionId: input.sessionId });
+      log.debug(`no candidates`, { sessionId: input.sessionId });
       return payload;
     }
     try {
       await upsertHighlights(input.sessionId, payload);
-      devLog(`[${input.logPrefix}] saved`, {
+      log.debug(`saved`, {
         sessionId: input.sessionId,
         count: payload.items.length,
       });
     } catch (err) {
-      console.error(`[${input.logPrefix}] save failed`, {
+      log.error(`save failed`, {
         sessionId: input.sessionId,
         error: (err as Error).message,
       });
     }
     return payload;
   } catch (err) {
-    console.error(`[${input.logPrefix}] threw`, {
+    log.error(`threw`, {
       sessionId: input.sessionId,
       error: (err as Error).message,
     });

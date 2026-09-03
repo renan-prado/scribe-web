@@ -3,7 +3,10 @@ import { NextResponse } from "next/server";
 import { getStripe, isBillingConfigured } from "@/lib/billing/stripe";
 import { sweepRecentPayments } from "@/lib/billing/sweep";
 import { serverEnv } from "@/lib/env/server";
+import { createLogger } from "@/lib/log";
 import { enforceRateLimit, RATE_LIMITS } from "@/lib/rate-limit";
+
+const log = createLogger("billing/sweep");
 
 export const runtime = "nodejs";
 export const dynamic = "force-dynamic";
@@ -55,7 +58,7 @@ export async function GET(request: Request) {
     return NextResponse.json({ error: "sweep_not_configured" }, { status: 503 });
   }
   if (!authorized(request)) {
-    console.warn("[billing/sweep] unauthorized attempt");
+    log.warn("unauthorized attempt");
     return NextResponse.json({ error: "unauthorized" }, { status: 401 });
   }
 
@@ -68,7 +71,7 @@ export async function GET(request: Request) {
     const report = await sweepRecentPayments(stripe, SWEEP_WINDOW_HOURS);
     return NextResponse.json(report);
   } catch (err) {
-    console.error("[billing/sweep] failed", { error: (err as Error).message });
+    log.error("failed", { error: (err as Error).message });
     return NextResponse.json({ error: "sweep_failed" }, { status: 500 });
   }
 }

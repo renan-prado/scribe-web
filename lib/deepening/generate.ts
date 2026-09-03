@@ -6,7 +6,7 @@ import type { SummaryPayload } from "@/lib/domain/summary";
 import { serverEnv } from "@/lib/env/server";
 import { buildLlmMetadata } from "@/lib/llm/metadata";
 import { callChat } from "@/lib/llm/openai";
-import { devLog } from "@/lib/log";
+import { createLogger } from "@/lib/log";
 import { DEEPENING_SYSTEM_PROMPT } from "@/lib/prompts/deepening";
 import { DEEPENING_AUDIT_SYSTEM_PROMPT } from "@/lib/prompts/deepening-audit";
 
@@ -47,6 +47,8 @@ export async function generateDeepening(
   input: GenerateDeepeningInput
 ): Promise<GenerateDeepeningResult> {
   const { userId, sessionId, transcript, feedItems, finalSummary, logPrefix } = input;
+  const log = createLogger(logPrefix);
+  const auditLog = log.scoped("audit");
   const model = serverEnv.OPENAI_DEEPENING_MODEL;
 
   const userMessage = [
@@ -73,10 +75,10 @@ export async function generateDeepening(
 
   if (!result.ok) {
     if (result.error.kind === "fetch") {
-      console.error(`[${logPrefix}] upstream fetch failed`, { error: result.error.message });
+      log.error(`upstream fetch failed`, { error: result.error.message });
       return { ok: false, kind: "fetch", message: result.error.message };
     }
-    console.error(`[${logPrefix}] upstream error`, {
+    log.error(`upstream error`, {
       status: result.error.status,
       latencyMs: result.error.latencyMs,
       snippet: result.error.snippet.slice(0, 300),
@@ -93,7 +95,7 @@ export async function generateDeepening(
   const { content, finishReason, usage, latencyMs } = result.data;
   const payload = parseDeepeningFromLLM(content);
 
-  devLog(`[${logPrefix}] ok`, {
+  log.debug(`ok`, {
     latencyMs,
     finishReason,
     promptTokens: usage.promptTokens,
@@ -101,7 +103,7 @@ export async function generateDeepening(
     blocks: payload.blocks.length,
   });
   if (finishReason === "length") {
-    console.warn(`[${logPrefix}] output truncated by max_tokens`, {
+    log.warn(`output truncated by max_tokens`, {
       completionTokens: usage.completionTokens,
     });
   }
@@ -146,7 +148,7 @@ export async function generateDeepening(
     if (!auditResult.ok) {
       const err = auditResult.error;
       const kind = err.kind === "fetch" ? "fetch" : "upstream";
-      console.warn(`[${logPrefix}-audit] failed — falling back to draft`, {
+      auditLog.warn(`failed — falling back to draft`, {
         kind,
         message: err.message,
       });
@@ -155,11 +157,11 @@ export async function generateDeepening(
 
     const audited = parseDeepeningFromLLM(auditResult.data.content);
     if (audited.blocks.length === 0) {
-      console.warn(`[${logPrefix}-audit] returned empty payload — keeping draft`);
+      auditLog.warn(`returned empty payload — keeping draft`);
       return { ok: true, payload, latencyMs, model };
     }
 
-    devLog(`[${logPrefix}-audit] ok`, {
+    auditLog.debug(`ok`, {
       latencyMs: auditResult.data.latencyMs,
       finishReason: auditResult.data.finishReason,
       promptTokens: auditResult.data.usage.promptTokens,
@@ -168,7 +170,7 @@ export async function generateDeepening(
       auditedBlocks: audited.blocks.length,
     });
     if (auditResult.data.finishReason === "length") {
-      console.warn(`[${logPrefix}-audit] output truncated by max_tokens`, {
+      auditLog.warn(`output truncated by max_tokens`, {
         completionTokens: auditResult.data.usage.completionTokens,
       });
     }

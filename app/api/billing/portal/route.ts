@@ -1,9 +1,11 @@
 import { NextResponse } from "next/server";
 import { appUrl, getStripe, isBillingConfigured } from "@/lib/billing/stripe";
 import { getStripeCustomerId } from "@/lib/db/billing";
-import { devLog } from "@/lib/log";
+import { createLogger } from "@/lib/log";
 import { enforceRateLimit, RATE_LIMITS } from "@/lib/rate-limit";
 import { requireAuth } from "@/lib/supabase/require-auth";
+
+const log = createLogger("billing/portal");
 
 export const runtime = "nodejs";
 export const dynamic = "force-dynamic";
@@ -42,10 +44,10 @@ export async function POST(request: Request) {
       return_url: appUrl("/profile"),
       locale: "pt-BR",
     });
-    devLog("[billing/portal] session", { userId: auth.user.id });
+    log.info("session", { userId: auth.user.id });
     return NextResponse.json({ url: session.url });
   } catch (err) {
-    console.error("[billing/portal] stripe error", { error: (err as Error).message });
+    log.error("stripe error", { error: (err as Error).message });
     return NextResponse.json({ error: "portal_failed" }, { status: 502 });
   }
 }

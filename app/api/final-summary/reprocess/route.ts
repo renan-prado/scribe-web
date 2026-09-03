@@ -5,12 +5,14 @@ import { getSession, updateSessionSummary } from "@/lib/db/sessions";
 import { generateFinalSummary } from "@/lib/final-summary/generate";
 import { generateAndSaveHighlights } from "@/lib/highlights/save";
 import { parseJsonBody, UuidSchema } from "@/lib/http/validate";
-import { devLog } from "@/lib/log";
+import { createLogger } from "@/lib/log";
 import { generateAndSavePractices } from "@/lib/practices/save";
 import { enforceRateLimit, RATE_LIMITS } from "@/lib/rate-limit";
 import { generateAndSaveReminders } from "@/lib/reminders/save";
 import { generateAndSaveRereads } from "@/lib/rereads/save";
 import { requireAuth } from "@/lib/supabase/require-auth";
+
+const log = createLogger("final-summary-reprocess");
 
 const BodySchema = z.object({ sessionId: UuidSchema }).strict();
 
@@ -54,7 +56,7 @@ export async function POST(request: Request) {
     if (charge.error === "insufficient_balance") {
       return NextResponse.json({ error: "insufficient_balance" }, { status: 402 });
     }
-    console.error("[final-summary-reprocess] charge failed", {
+    log.error("charge failed", {
       error: charge.error,
       message: charge.message,
     });
@@ -89,9 +91,9 @@ export async function POST(request: Request) {
   try {
     await updateSessionSummary(sessionId, payload);
     saved = true;
-    devLog("[final-summary-reprocess] saved", { sessionId });
+    log.debug("saved", { sessionId });
   } catch (err) {
-    console.error("[final-summary-reprocess] save failed", {
+    log.error("save failed", {
       sessionId,
       error: (err as Error).message,
     });

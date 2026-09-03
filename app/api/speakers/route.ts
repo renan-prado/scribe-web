@@ -1,8 +1,10 @@
 import { NextResponse } from "next/server";
 import { listSpeakersWithUsage } from "@/lib/db/speakers";
-import { devLog } from "@/lib/log";
+import { createLogger } from "@/lib/log";
 import { enforceRateLimit, RATE_LIMITS } from "@/lib/rate-limit";
 import { requireAuth } from "@/lib/supabase/require-auth";
+
+const log = createLogger("speakers");
 
 export const runtime = "nodejs";
 export const dynamic = "force-dynamic";
@@ -28,8 +30,8 @@ export async function GET(request: Request) {
       items: items.map((s) => ({ id: s.id, name: s.name, count: s.usageCount })),
     });
   } catch (err) {
-    console.error("[speakers] list failed", { error: (err as Error).message });
-    devLog("[speakers] list error");
+    log.error("list failed", { error: (err as Error).message });
+    log.debug("list error");
     return NextResponse.json({ error: "list_failed" }, { status: 500 });
   }
 }

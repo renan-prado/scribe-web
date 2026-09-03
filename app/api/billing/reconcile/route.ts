@@ -9,9 +9,11 @@ import {
 import { customerIdOf, getStripe, isBillingConfigured } from "@/lib/billing/stripe";
 import { getStripeCustomerId } from "@/lib/db/billing";
 import { parseJsonBody } from "@/lib/http/validate";
-import { devLog } from "@/lib/log";
+import { createLogger } from "@/lib/log";
 import { enforceRateLimit, RATE_LIMITS } from "@/lib/rate-limit";
 import { requireAuth } from "@/lib/supabase/require-auth";
+
+const log = createLogger("billing/reconcile");
 
 export const runtime = "nodejs";
 export const dynamic = "force-dynamic";
@@ -84,7 +86,7 @@ export async function POST(request: Request) {
   try {
     session = await stripe.checkout.sessions.retrieve(sessionId);
   } catch (err) {
-    console.warn("[billing/reconcile] session not found", {
+    log.warn("session not found", {
       sessionId,
       error: (err as Error).message,
     });
@@ -94,7 +96,7 @@ export async function POST(request: Request) {
   // Defesa 2: a sessão tem de ser DESTE usuário.
   const sessionCustomer = customerIdOf(session.customer);
   if (!sessionCustomer || sessionCustomer !== ownCustomerId) {
-    console.warn("[billing/reconcile] session does not belong to caller", {
+    log.warn("session does not belong to caller", {
       userId: auth.user.id,
       sessionId,
       sessionCustomer,
@@ -109,13 +111,13 @@ export async function POST(request: Request) {
       }
       const result = await creditCheckoutSession(stripe, session, auth.user.id, "reconcile");
       if (result.credited > 0) {
-        console.warn("[billing/reconcile] recovered a payment the webhook had not credited", {
+        log.warn("recovered a payment the webhook had not credited", {
           userId: auth.user.id,
           sessionId,
           credited: result.credited,
         });
       }
-      devLog("[billing/reconcile] topup", { sessionId, credited: result.credited });
+      log.info("topup", { sessionId, credited: result.credited });
       return NextResponse.json({ credited: result.credited, balance: result.balance });
     }
 
@@ -139,7 +141,7 @@ export async function POST(request: Request) {
         const subscription = await stripe.subscriptions.retrieve(subscriptionId);
         await syncSubscriptionState(subscription, auth.user.id, "reconcile");
       } catch (err) {
-        console.warn("[billing/reconcile] subscription sync failed", {
+        log.warn("subscription sync failed", {
           subscriptionId,
           error: (err as Error).message,
         });
@@ -157,19 +159,19 @@ export async function POST(request: Request) {
       }
 
       if (credited > 0) {
-        console.warn("[billing/reconcile] recovered a subscription grant the webhook had missed", {
+        log.warn("recovered a subscription grant the webhook had missed", {
           userId: auth.user.id,
           subscriptionId,
           credited,
         });
       }
-      devLog("[billing/reconcile] subscription", { subscriptionId, credited });
+      log.info("subscription", { subscriptionId, credited });
       return NextResponse.json({ credited, balance, pending: credited === 0 });
     }
 
     return NextResponse.json({ credited: 0 });
   } catch (err) {
-    console.error("[billing/reconcile] failed", {
+    log.error("failed", {
       sessionId,
       error: (err as Error).message,
     });

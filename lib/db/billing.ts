@@ -1,7 +1,10 @@
 import "server-only";
 import type { PlanKey } from "@/lib/billing/plans";
+import { createLogger } from "@/lib/log";
 import { createAdminClient } from "@/lib/supabase/admin";
 import { createClient } from "@/lib/supabase/server";
+
+const log = createLogger("billing");
 
 /**
  * Persistência de cobrança.
@@ -180,7 +183,7 @@ export async function grantCoins(args: {
   externalRef: string;
 }): Promise<number | null> {
   if (!Number.isInteger(args.amount) || args.amount <= 0) {
-    console.error("[billing] grantCoins refused non-positive amount", { amount: args.amount });
+    log.error("grantCoins refused non-positive amount", { amount: args.amount });
     return null;
   }
   const admin = createAdminClient();
@@ -191,7 +194,7 @@ export async function grantCoins(args: {
     p_external_ref: args.externalRef,
   });
   if (error) {
-    console.error("[billing] grant_coins failed", {
+    log.error("grant_coins failed", {
       userId: args.userId,
       reason: args.reason,
       externalRef: args.externalRef,
@@ -242,7 +245,7 @@ export async function clawbackCoins(args: {
     p_reason: args.reason,
   });
   if (error) {
-    console.error("[billing] clawback_coins failed", {
+    log.error("clawback_coins failed", {
       userId: args.userId,
       refPrefix: args.refPrefix,
       error: error.message,
@@ -277,6 +280,6 @@ export async function releaseStripeEvent(eventId: string): Promise<void> {
   const admin = createAdminClient();
   const { error } = await admin.from("stripe_events").delete().eq("id", eventId);
   if (error) {
-    console.error("[billing] releaseStripeEvent failed", { eventId, error: error.message });
+    log.error("releaseStripeEvent failed", { eventId, error: error.message });
   }
 }

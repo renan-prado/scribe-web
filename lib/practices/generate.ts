@@ -10,7 +10,7 @@ import type { SummaryPayload } from "@/lib/domain/summary";
 import { serverEnv } from "@/lib/env/server";
 import { buildLlmMetadata } from "@/lib/llm/metadata";
 import { callChat } from "@/lib/llm/openai";
-import { devLog } from "@/lib/log";
+import { createLogger } from "@/lib/log";
 import { PRACTICES_SYSTEM_PROMPT } from "@/lib/prompts/practices";
 
 /**
@@ -51,6 +51,7 @@ export async function generatePractices(
   input: GeneratePracticesInput
 ): Promise<GeneratePracticesResult> {
   const { userId, sessionId, transcript, finalSummary, feedItems, logPrefix } = input;
+  const log = createLogger(logPrefix);
   const model = serverEnv.OPENAI_PRACTICES_MODEL;
 
   const userMessage = [
@@ -76,10 +77,10 @@ export async function generatePractices(
 
   if (!result.ok) {
     if (result.error.kind === "fetch") {
-      console.error(`[${logPrefix}] upstream fetch failed`, { error: result.error.message });
+      log.error(`upstream fetch failed`, { error: result.error.message });
       return { ok: false, kind: "fetch", message: result.error.message };
     }
-    console.error(`[${logPrefix}] upstream error`, {
+    log.error(`upstream error`, {
       status: result.error.status,
       latencyMs: result.error.latencyMs,
       snippet: result.error.snippet.slice(0, 300),
@@ -96,7 +97,7 @@ export async function generatePractices(
   const { content, finishReason, usage, latencyMs } = result.data;
   const payload = parsePracticesFromLLM(content);
 
-  devLog(`[${logPrefix}] ok`, {
+  log.debug(`ok`, {
     latencyMs,
     finishReason,
     promptTokens: usage.promptTokens,
@@ -104,7 +105,7 @@ export async function generatePractices(
     items: payload.items.length,
   });
   if (finishReason === "length") {
-    console.warn(`[${logPrefix}] output truncated by max_tokens`, {
+    log.warn(`output truncated by max_tokens`, {
       completionTokens: usage.completionTokens,
     });
   }
@@ -119,7 +120,7 @@ export async function generatePractices(
   });
 
   if (!isCompletePracticesPayload(payload)) {
-    console.warn(`[${logPrefix}] incomplete payload — expected 5 items covering all offsets`, {
+    log.warn(`incomplete payload — expected 5 items covering all offsets`, {
       got: payload.items.length,
       offsets: payload.items.map((i) => i.dayOffset),
     });

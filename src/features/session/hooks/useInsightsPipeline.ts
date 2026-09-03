@@ -12,7 +12,9 @@ import { requestInsights } from "@/features/session/lib/api";
 import { joinOkChunks } from "@/features/session/lib/chunks";
 import { tailTranscript } from "@/features/session/lib/text";
 import { useSessionStore } from "@/features/session/store";
-import { devLog } from "@/lib/log";
+import { createLogger } from "@/lib/log";
+
+const log = createLogger("insights");
 
 /**
  * INSIGHTS pipeline. Fires every INSIGHTS_CHUNK_INTERVAL successfully
@@ -56,7 +58,7 @@ export function useInsightsPipeline({
     const pending = s.dripQueue.length;
     if (pending >= INSIGHTS_QUEUE_BACKPRESSURE) {
       s.bumpCounter("skippedBackpressure");
-      devLog("[insights] skip", { reason: "queue-backpressure", pending });
+      log.debug("skip", { reason: "queue-backpressure", pending });
       return;
     }
     if (!transcript) return;
@@ -64,7 +66,7 @@ export function useInsightsPipeline({
     const delta = transcript.length - s.lastInsightsTailLen;
     if (s.lastInsightsTailLen > 0 && delta < INSIGHTS_MIN_TAIL_DELTA_CHARS) {
       s.bumpCounter("skippedDelta");
-      devLog("[insights] skip", { reason: "tail-delta", delta });
+      log.debug("skip", { reason: "tail-delta", delta });
       return;
     }
 

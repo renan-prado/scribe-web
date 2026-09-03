@@ -3,6 +3,7 @@ import { recordAudioUsage } from "@/lib/db/usage";
 import { serverEnv } from "@/lib/env/server";
 import { isUuid } from "@/lib/http/validate";
 import { callTranscribe } from "@/lib/llm/openai";
+import { createLogger } from "@/lib/log";
 import { enforceRateLimit, RATE_LIMITS } from "@/lib/rate-limit";
 import { requireAuth } from "@/lib/supabase/require-auth";
 import {
@@ -11,6 +12,8 @@ import {
   modelSupportsLogprobs,
 } from "@/lib/transcription/quality";
 import { VOCABULARIO_PROMPT } from "@/lib/vocabulario";
+
+const log = createLogger("transcribe");
 
 export const runtime = "nodejs";
 export const dynamic = "force-dynamic";
@@ -150,7 +153,7 @@ export async function POST(request: Request) {
   }
 
   if (assessment.poor || escalated) {
-    console.warn("[transcribe] quality", {
+    log.warn("quality", {
       chunkIndex: chunkIndex ?? null,
       tier,
       chosenModel,

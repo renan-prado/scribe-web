@@ -15,6 +15,9 @@ import {
 } from "@/lib/db/billing";
 import { reverseCommissionForUser } from "@/lib/db/partners";
 import { serverEnv } from "@/lib/env/server";
+import { createLogger } from "@/lib/log";
+
+const log = createLogger("stripe/webhook");
 
 export const runtime = "nodejs";
 export const dynamic = "force-dynamic";
@@ -54,7 +57,7 @@ export const dynamic = "force-dynamic";
 
 async function handleInvoicePaid(invoice: Stripe.Invoice): Promise<void> {
   if (!invoiceShouldGrant(invoice)) {
-    console.info("[stripe/webhook] invoice.paid ignored", {
+    log.info("invoice.paid ignored", {
       id: invoice.id,
       reason: invoice.billing_reason,
       amountPaid: invoice.amount_paid,
@@ -64,12 +67,12 @@ async function handleInvoicePaid(invoice: Stripe.Invoice): Promise<void> {
 
   const customerId = customerIdOf(invoice.customer);
   if (!customerId) {
-    console.error("[stripe/webhook] invoice without customer", { id: invoice.id });
+    log.error("invoice without customer", { id: invoice.id });
     return;
   }
   const userId = await findUserIdByCustomerId(customerId);
   if (!userId) {
-    console.error("[stripe/webhook] no user for customer", { customerId, invoice: invoice.id });
+    log.error("no user for customer", { customerId, invoice: invoice.id });
     return;
   }
 
@@ -83,7 +86,7 @@ async function handleCheckoutCompleted(
   // Assinaturas são creditadas por invoice.paid — aqui só o avulso.
   if (session.mode !== "payment") return;
   if (session.payment_status !== "paid") {
-    console.info("[stripe/webhook] checkout not paid yet", {
+    log.info("checkout not paid yet", {
       id: session.id,
       status: session.payment_status,
     });
@@ -93,7 +96,7 @@ async function handleCheckoutCompleted(
   const customerId = customerIdOf(session.customer);
   const userId = customerId ? await findUserIdByCustomerId(customerId) : null;
   if (!userId) {
-    console.error("[stripe/webhook] no user for checkout session", {
+    log.error("no user for checkout session", {
       session: session.id,
       customerId,
     });
@@ -111,7 +114,7 @@ async function handleSubscriptionChanged(
   if (!customerId) return;
   const userId = await findUserIdByCustomerId(customerId);
   if (!userId) {
-    console.error("[stripe/webhook] no user for subscription", {
+    log.error("no user for subscription", {
       subscription: eventSubscription.id,
       customerId,
     });
@@ -129,7 +132,7 @@ async function handleSubscriptionChanged(
   try {
     subscription = await stripe.subscriptions.retrieve(eventSubscription.id);
   } catch (err) {
-    console.warn("[stripe/webhook] subscription refetch failed — using event payload", {
+    log.warn("subscription refetch failed — using event payload", {
       subscription: eventSubscription.id,
       error: (err as Error).message,
     });
@@ -159,7 +162,7 @@ async function handleMoneyBack(
   const customerId = customerIdOf(charge.customer);
   const userId = customerId ? await findUserIdByCustomerId(customerId) : null;
   if (!userId) {
-    console.error("[stripe/webhook] money-back with no known user", {
+    log.error("money-back with no known user", {
       charge: charge.id,
       customerId,
       reason,
@@ -186,7 +189,7 @@ async function handleMoneyBack(
   }
 
   if (prefixes.length === 0) {
-    console.error("[stripe/webhook] money-back could not be traced to a grant", {
+    log.error("money-back could not be traced to a grant", {
       charge: charge.id,
       userId,
       reason,
@@ -203,7 +206,7 @@ async function handleMoneyBack(
   // falhar aqui não pode impedir o estorno das moedas, que é a parte que
   // protege o caixa.
   await reverseCommissionForUser(userId, reason).catch((err) => {
-    console.error("[stripe/webhook] commission reversal failed", {
+    log.error("commission reversal failed", {
       userId,
       charge: charge.id,
       error: (err as Error).message,
@@ -215,7 +218,7 @@ async function handleMoneyBack(
     if (balance === null) throw new Error("clawback_coins failed");
     // Nível de log alto de propósito: se o saldo resultante for 0, é sinal de
     // que os créditos já tinham sido consumidos — vale olhar a conta.
-    console.warn("[stripe/webhook] coins clawed back", {
+    log.warn("coins clawed back", {
       userId,
       reason,
       prefix,
@@ -269,7 +272,7 @@ export async function POST(request: Request) {
   } catch (err) {
     // Único ponto do sistema em que "assinatura inválida" pode acontecer, e
     // por isso vale um log alto: é o sinal de alguém tentando forjar crédito.
-    console.error("[stripe/webhook] signature verification failed", {
+    log.error("signature verification failed", {
       error: (err as Error).message,
     });
     return NextResponse.json({ error: "invalid_signature" }, { status: 400 });
@@ -284,11 +287,11 @@ export async function POST(request: Request) {
   try {
     claimed = await claimStripeEvent(event.id, event.type);
   } catch (err) {
-    console.error("[stripe/webhook] claim failed", { error: (err as Error).message });
+    log.error("claim failed", { error: (err as Error).message });
     return NextResponse.json({ error: "claim_failed" }, { status: 500 });
   }
   if (!claimed) {
-    console.info("[stripe/webhook] duplicate delivery ignored", {
+    log.info("duplicate delivery ignored", {
       id: event.id,
       type: event.type,
     });
@@ -327,7 +330,7 @@ export async function POST(request: Request) {
     // Solta a trava para que a reentrega do Stripe tenha efeito — caso
     // contrário um erro transitório perderia o crédito para sempre.
     await releaseStripeEvent(event.id);
-    console.error("[stripe/webhook] handler failed", {
+    log.error("handler failed", {
       id: event.id,
       type: event.type,
       error: (err as Error).message,

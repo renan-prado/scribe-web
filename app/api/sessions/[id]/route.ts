@@ -4,9 +4,11 @@ import { upsertLocationByName } from "@/lib/db/locations";
 import { deleteSession, updateSessionMeta } from "@/lib/db/sessions";
 import { upsertSpeakerByName } from "@/lib/db/speakers";
 import { parseJsonBody, parseUuidParam } from "@/lib/http/validate";
-import { devLog } from "@/lib/log";
+import { createLogger } from "@/lib/log";
 import { enforceRateLimit, RATE_LIMITS } from "@/lib/rate-limit";
 import { requireAuth } from "@/lib/supabase/require-auth";
+
+const log = createLogger("sessions");
 
 export const runtime = "nodejs";
 export const dynamic = "force-dynamic";
@@ -57,7 +59,7 @@ export async function PATCH(request: Request, { params }: { params: Promise<{ id
         const s = await upsertSpeakerByName({ name: speakerName, userId: auth.user.id });
         speakerId = s.id;
       } catch (err) {
-        console.error("[sessions] speaker upsert failed", { error: (err as Error).message });
+        log.error("speaker upsert failed", { error: (err as Error).message });
       }
     } else {
       speakerId = null;
@@ -69,7 +71,7 @@ export async function PATCH(request: Request, { params }: { params: Promise<{ id
         const l = await upsertLocationByName({ name: speakerLocation, userId: auth.user.id });
         locationId = l.id;
       } catch (err) {
-        console.error("[sessions] location upsert failed", { error: (err as Error).message });
+        log.error("location upsert failed", { error: (err as Error).message });
       }
     } else {
       locationId = null;
@@ -84,10 +86,10 @@ export async function PATCH(request: Request, { params }: { params: Promise<{ id
       speakerId,
       locationId,
     });
-    devLog("[sessions] meta updated", { id });
+    log.debug("meta updated", { id });
     return NextResponse.json({ ok: true });
   } catch (err) {
-    console.error("[sessions] meta update failed", { id, error: (err as Error).message });
+    log.error("meta update failed", { id, error: (err as Error).message });
     return NextResponse.json({ error: "update_failed" }, { status: 500 });
   }
 }
@@ -110,10 +112,10 @@ export async function DELETE(request: Request, { params }: { params: Promise<{ i
 
   try {
     await deleteSession(id);
-    devLog("[sessions] deleted", { id });
+    log.debug("deleted", { id });
     return NextResponse.json({ ok: true });
   } catch (err) {
-    console.error("[sessions] delete failed", { id, error: (err as Error).message });
+    log.error("delete failed", { id, error: (err as Error).message });
     return NextResponse.json({ error: "delete_failed" }, { status: 500 });
   }
 }

@@ -16,7 +16,7 @@ import type { SummaryPayload } from "@/lib/domain/summary";
 import { serverEnv } from "@/lib/env/server";
 import { buildLlmMetadata } from "@/lib/llm/metadata";
 import { callChat } from "@/lib/llm/openai";
-import { devLog } from "@/lib/log";
+import { createLogger } from "@/lib/log";
 import { REREADS_FILL_SYSTEM_PROMPT } from "@/lib/prompts/rereads";
 import { collectRereadPool, type RereadPoolItem, referencesFromPool } from "@/lib/rereads/collect";
 
@@ -59,13 +59,14 @@ export type GenerateRereadsInput = {
 
 export async function generateRereads(input: GenerateRereadsInput): Promise<GenerateRereadsResult> {
   const { userId, sessionId, transcript, finalSummary, feedItems, logPrefix } = input;
+  const log = createLogger(logPrefix);
   const target = REREAD_DAY_OFFSETS.length;
 
   const pool = collectRereadPool(feedItems, finalSummary);
   const truncatedPool = pool.slice(0, target);
   const needed = target - truncatedPool.length;
 
-  devLog(`[${logPrefix}] pool`, {
+  log.debug(`pool`, {
     total: pool.length,
     kept: truncatedPool.length,
     needed,
@@ -75,7 +76,7 @@ export async function generateRereads(input: GenerateRereadsInput): Promise<Gene
   if (needed === 0) {
     const payload = await enrichWithVerseText(assembleFinal(truncatedPool, []), logPrefix);
     if (!isCompleteRereadsPayload(payload)) {
-      console.warn(`[${logPrefix}] incomplete payload assembly`, {
+      log.warn(`incomplete payload assembly`, {
         got: payload.items.length,
       });
       return { ok: false, kind: "incomplete", payload, latencyMs: 0 };
@@ -109,10 +110,10 @@ export async function generateRereads(input: GenerateRereadsInput): Promise<Gene
 
   if (!result.ok) {
     if (result.error.kind === "fetch") {
-      console.error(`[${logPrefix}] upstream fetch failed`, { error: result.error.message });
+      log.error(`upstream fetch failed`, { error: result.error.message });
       return { ok: false, kind: "fetch", message: result.error.message };
     }
-    console.error(`[${logPrefix}] upstream error`, {
+    log.error(`upstream error`, {
       status: result.error.status,
       latencyMs: result.error.latencyMs,
       snippet: result.error.snippet.slice(0, 300),
@@ -129,7 +130,7 @@ export async function generateRereads(input: GenerateRereadsInput): Promise<Gene
   const { content, finishReason, usage, latencyMs } = result.data;
   const fillItems = parseRereadsFillFromLLM(content);
 
-  devLog(`[${logPrefix}] ok`, {
+  log.debug(`ok`, {
     latencyMs,
     finishReason,
     promptTokens: usage.promptTokens,
@@ -138,7 +139,7 @@ export async function generateRereads(input: GenerateRereadsInput): Promise<Gene
     got: fillItems.length,
   });
   if (finishReason === "length") {
-    console.warn(`[${logPrefix}] output truncated by max_tokens`, {
+    log.warn(`output truncated by max_tokens`, {
       completionTokens: usage.completionTokens,
     });
   }
@@ -156,7 +157,7 @@ export async function generateRereads(input: GenerateRereadsInput): Promise<Gene
   const payload = await enrichWithVerseText(assembleFinal(truncatedPool, dedupedFill), logPrefix);
 
   if (!isCompleteRereadsPayload(payload)) {
-    console.warn(`[${logPrefix}] incomplete payload — expected 10 items covering all offsets`, {
+    log.warn(`incomplete payload — expected 10 items covering all offsets`, {
       got: payload.items.length,
       offsets: payload.items.map((i) => i.dayOffset),
     });
@@ -255,12 +256,13 @@ async function enrichWithVerseText(
   payload: RereadsPayload,
   logPrefix: string
 ): Promise<RereadsPayload> {
+  const log = createLogger(logPrefix);
   const missing = payload.items.filter((i) => !i.text.trim());
   if (missing.length === 0) return payload;
 
   const bible = await loadBible(RETRIEVAL_TRANSLATION);
   if (!bible) {
-    console.warn(`[${logPrefix}] bible not loaded for text enrichment`, {
+    log.warn(`bible not loaded for text enrichment`, {
       translation: RETRIEVAL_TRANSLATION,
     });
     return payload;
@@ -283,6 +285,6 @@ async function enrichWithVerseText(
     return { ...item, text };
   });
 
-  devLog(`[${logPrefix}] enriched`, { missing: missing.length, filled });
+  log.debug(`enriched`, { missing: missing.length, filled });
   return { items };
 }

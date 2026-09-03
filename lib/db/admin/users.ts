@@ -1,5 +1,8 @@
 import "server-only";
+import { createLogger } from "@/lib/log";
 import { createAdminClient } from "@/lib/supabase/admin";
+
+const log = createLogger("admin.users");
 
 /**
  * Admin-side user management. All functions here assume the caller has
@@ -45,7 +48,7 @@ export async function listUsers(): Promise<AdminUser[]> {
     perPage: 1000,
   });
   if (authErr) {
-    console.warn("[admin.users] listUsers auth enrichment failed", { error: authErr.message });
+    log.warn("listUsers auth enrichment failed", { error: authErr.message });
   } else {
     for (const u of authData.users) {
       lastSignIn.set(u.id, u.last_sign_in_at ?? null);

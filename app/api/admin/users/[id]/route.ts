@@ -3,8 +3,10 @@ import { z } from "zod";
 import { requireAdmin } from "@/lib/auth/require-admin";
 import { deleteUser, updateUser } from "@/lib/db/admin/users";
 import { parseJsonBody, parseUuidParam } from "@/lib/http/validate";
-import { devLog } from "@/lib/log";
+import { createLogger } from "@/lib/log";
 import { enforceRateLimit, RATE_LIMITS } from "@/lib/rate-limit";
+
+const log = createLogger("admin/users");
 
 export const runtime = "nodejs";
 export const dynamic = "force-dynamic";
@@ -46,10 +48,10 @@ export async function PATCH(request: Request, { params }: { params: Promise<{ id
 
   try {
     await updateUser(id, parsed.data);
-    devLog("[admin/users] updated", { id, fields: Object.keys(parsed.data) });
+    log.info("updated", { id, fields: Object.keys(parsed.data) });
     return NextResponse.json({ ok: true });
   } catch (err) {
-    console.error("[admin/users] update failed", { id, error: (err as Error).message });
+    log.error("update failed", { id, error: (err as Error).message });
     return NextResponse.json({ error: "update_failed" }, { status: 500 });
   }
 }
@@ -72,10 +74,10 @@ export async function DELETE(request: Request, { params }: { params: Promise<{ i
 
   try {
     await deleteUser(id);
-    devLog("[admin/users] deleted", { id });
+    log.info("deleted", { id });
     return NextResponse.json({ ok: true });
   } catch (err) {
-    console.error("[admin/users] delete failed", { id, error: (err as Error).message });
+    log.error("delete failed", { id, error: (err as Error).message });
     return NextResponse.json({ error: "delete_failed" }, { status: 500 });
   }
 }

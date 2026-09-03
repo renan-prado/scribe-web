@@ -9,7 +9,9 @@ import {
 } from "@/features/session/config";
 import { useCoinTick } from "@/features/session/hooks/useCoinTick";
 import type { ChargeReason } from "@/lib/coins/pricing";
-import { devLog } from "@/lib/log";
+import { createLogger } from "@/lib/log";
+
+const log = createLogger("coins");
 
 /**
  * Política de saldo de uma gravação em curso. Reúne três comportamentos que
@@ -88,7 +90,7 @@ export function useCoinGuard({
 
   // ---- 2) congelar no esgotamento ----------------------------------------
   const handleDepleted = useCallback(() => {
-    devLog("[coins] depleted — freezing capture", { sessionId, reason });
+    log.debug("depleted — freezing capture", { sessionId, reason });
     setOutOfCoins(true);
     onFreezeRef.current();
   }, [sessionId, reason]);
@@ -133,7 +135,7 @@ export function useCoinGuard({
       const next = await getCoinsState().refresh();
       if (cancelled || next === null) return;
       if (next >= costPerMinute) {
-        devLog("[coins] balance recovered — unfreezing", { sessionId, balance: next });
+        log.debug("balance recovered — unfreezing", { sessionId, balance: next });
         setOutOfCoins(false);
         warnedRef.current = { low: false, critical: false };
         onRecoveredRef.current?.();

@@ -10,10 +10,12 @@ import { serverEnv } from "@/lib/env/server";
 import { LivePipelineBodySchema, parseJsonBody } from "@/lib/http/validate";
 import { buildLlmMetadata } from "@/lib/llm/metadata";
 import { callChat } from "@/lib/llm/openai";
-import { devLog } from "@/lib/log";
+import { createLogger } from "@/lib/log";
 import { SERMON_ECHO_SYSTEM_PROMPT } from "@/lib/prompts/sermon-echo";
 import { enforceRateLimit, RATE_LIMITS } from "@/lib/rate-limit";
 import { requireAuth } from "@/lib/supabase/require-auth";
+
+const log = createLogger("echo");
 
 export const runtime = "nodejs";
 export const dynamic = "force-dynamic";
@@ -66,13 +68,13 @@ export async function POST(request: Request) {
 
   if (!result.ok) {
     if (result.error.kind === "fetch") {
-      console.error("[echo] upstream fetch failed", { error: result.error.message });
+      log.error("upstream fetch failed", { error: result.error.message });
       return NextResponse.json(
         { error: `upstream fetch failed: ${result.error.message}`, items: [] },
         { status: 502 }
       );
     }
-    console.error("[echo] upstream error", {
+    log.error("upstream error", {
       status: result.error.status,
       latencyMs: result.error.latencyMs,
       snippet: result.error.snippet.slice(0, 300),
@@ -87,9 +89,9 @@ export async function POST(request: Request) {
   const { items, drops } = parseEchoFromLLM(content, existingKeys);
   for (const d of drops) {
     if (d.reason === "dedup") continue;
-    console.warn("[echo] schema-drop", d);
+    log.warn("schema-drop", d);
   }
-  devLog("[echo] ok", {
+  log.debug("ok", {
     sermonAt,
     model,
     latencyMs,

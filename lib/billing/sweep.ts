@@ -9,6 +9,9 @@ import {
 } from "@/lib/billing/fulfill";
 import { customerIdOf } from "@/lib/billing/stripe";
 import { findUserIdByCustomerId, type SubscriptionRecord } from "@/lib/db/billing";
+import { createLogger } from "@/lib/log";
+
+const log = createLogger("billing:summary");
 
 /**
  * As duas verificações "de tempos em tempos" do faturamento.
@@ -99,7 +102,7 @@ export async function lazySubscriptionCheck(
     }
 
     if (credited > 0) {
-      console.warn("[billing:summary] recovered a renewal the webhook had missed", {
+      log.warn("recovered a renewal the webhook had missed", {
         userId,
         subscriptionId,
         credited,
@@ -107,7 +110,7 @@ export async function lazySubscriptionCheck(
     }
     return credited;
   } catch (err) {
-    console.warn("[billing:summary] lazy subscription check failed", {
+    log.warn("lazy subscription check failed", {
       subscriptionId,
       error: (err as Error).message,
     });

@@ -2,9 +2,11 @@ import { NextResponse } from "next/server";
 import { requireAdmin } from "@/lib/auth/require-admin";
 import { updatePartner } from "@/lib/db/admin/partners";
 import { parseJsonBody, parseUuidParam } from "@/lib/http/validate";
-import { devLog } from "@/lib/log";
+import { createLogger } from "@/lib/log";
 import { enforceRateLimit, RATE_LIMITS } from "@/lib/rate-limit";
 import { PartnerBodySchema } from "../route";
+
+const log = createLogger("admin/partners");
 
 export const runtime = "nodejs";
 export const dynamic = "force-dynamic";
@@ -31,20 +33,20 @@ export async function PATCH(request: Request, { params }: { params: Promise<{ id
     // haver rastro de quando mudou: as comissões antigas guardam a taxa
     // vigente na época e, por isso mesmo, não denunciam a alteração.
     if (parsed.data.commissionRateBps !== undefined) {
-      console.info("[admin/partners] commission rate changed", {
+      log.info("commission rate changed", {
         id: guarded.id,
         rateBps: parsed.data.commissionRateBps,
         by: auth.user.id,
       });
     }
-    devLog("[admin/partners] updated", { id: guarded.id, fields: Object.keys(parsed.data) });
+    log.info("updated", { id: guarded.id, fields: Object.keys(parsed.data) });
     return NextResponse.json({ partner });
   } catch (err) {
     const message = (err as Error).message;
     if (message.includes("23505") || message.includes("duplicate key")) {
       return NextResponse.json({ error: "slug_or_email_taken" }, { status: 409 });
     }
-    console.error("[admin/partners] update failed", { id: guarded.id, error: message });
+    log.error("update failed", { id: guarded.id, error: message });
     return NextResponse.json({ error: "update_failed" }, { status: 500 });
   }
 }

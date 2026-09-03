@@ -1,5 +1,8 @@
 import "server-only";
+import { createLogger } from "@/lib/log";
 import { createAdminClient } from "@/lib/supabase/admin";
+
+const log = createLogger("partners");
 
 /**
  * Acesso ao schema de parceiros (migração 0029).
@@ -56,7 +59,7 @@ export async function attachPartner(args: {
     p_source: args.source,
   });
   if (error) {
-    console.error("[partners] attach_partner failed", {
+    log.error("attach_partner failed", {
       userId: args.userId,
       slug: args.slug,
       error: error.message,
@@ -82,7 +85,7 @@ export async function recordPartnerClick(slug: string, unique: boolean): Promise
   if (error) {
     // Contador de métrica: registrar é melhor do que falhar, mas um erro aqui
     // nunca pode atrapalhar o redirect que leva a pessoa à landing page.
-    console.error("[partners] record_partner_click failed", { slug, error: error.message });
+    log.error("record_partner_click failed", { slug, error: error.message });
   }
 }
 
@@ -111,7 +114,7 @@ export async function getPartnerPublicBySlug(slug: string): Promise<PartnerPubli
     .eq("status", "active")
     .maybeSingle();
   if (error) {
-    console.error("[partners] getPartnerPublicBySlug failed", { slug, error: error.message });
+    log.error("getPartnerPublicBySlug failed", { slug, error: error.message });
     return null;
   }
   if (!data) return null;
@@ -155,7 +158,7 @@ export async function insertFirstSubscriptionCommission(args: {
     .eq("id", args.userId)
     .maybeSingle();
   if (profileErr) {
-    console.error("[partners] commission: profile lookup failed", {
+    log.error("commission: profile lookup failed", {
       userId: args.userId,
       error: profileErr.message,
     });
@@ -169,7 +172,7 @@ export async function insertFirstSubscriptionCommission(args: {
     .eq("id", profile.partner_id)
     .maybeSingle();
   if (partnerErr || !partner) {
-    console.error("[partners] commission: partner lookup failed", {
+    log.error("commission: partner lookup failed", {
       partnerId: profile.partner_id,
       error: partnerErr?.message,
     });
@@ -179,7 +182,7 @@ export async function insertFirstSubscriptionCommission(args: {
   // Parceiro suspenso não acumula. A atribuição do usuário permanece — se a
   // suspensão for revertida, as assinaturas seguintes voltam a comissionar.
   if (partner.status !== "active") {
-    console.warn("[partners] commission skipped — partner not active", {
+    log.warn("commission skipped — partner not active", {
       partnerId: partner.id,
       status: partner.status,
     });
@@ -190,7 +193,7 @@ export async function insertFirstSubscriptionCommission(args: {
   // pode ter ligado a conta DEPOIS de ela ter sido atribuída a ele — e aí a
   // checagem de lá não teve como acontecer.
   if (partner.user_id && partner.user_id === args.userId) {
-    console.warn("[partners] commission skipped — self referral", { partnerId: partner.id });
+    log.warn("commission skipped — self referral", { partnerId: partner.id });
     return 0;
   }
 
@@ -216,7 +219,7 @@ export async function insertFirstSubscriptionCommission(args: {
     // 23505 = a comissão desta pessoa já existe. É o funcionamento normal da
     // regra "uma vez por pessoa" — não é erro e não merece log de erro.
     if (error.code === "23505") return 0;
-    console.error("[partners] commission insert failed", {
+    log.error("commission insert failed", {
       partnerId: partner.id,
       userId: args.userId,
       error: error.message,
@@ -224,7 +227,7 @@ export async function insertFirstSubscriptionCommission(args: {
     return 0;
   }
 
-  console.info("[partners] commission accrued", {
+  log.info("commission accrued", {
     partnerId: partner.id,
     userId: args.userId,
     grossCents: args.grossCents,
@@ -257,7 +260,7 @@ export async function reverseCommissionForUser(
     .eq("referred_user_id", userId)
     .maybeSingle();
   if (error) {
-    console.error("[partners] commission reversal lookup failed", {
+    log.error("commission reversal lookup failed", {
       userId,
       error: error.message,
     });
@@ -266,7 +269,7 @@ export async function reverseCommissionForUser(
   if (!row || row.status === "reversed") return;
 
   if (row.payout_id) {
-    console.warn("[partners] commission already PAID — manual settlement needed", {
+    log.warn("commission already PAID — manual settlement needed", {
       commissionId: row.id,
       partnerId: row.partner_id,
       amountCents: row.commission_cents,
@@ -281,14 +284,14 @@ export async function reverseCommissionForUser(
     .eq("id", row.id)
     .is("payout_id", null);
   if (updateErr) {
-    console.error("[partners] commission reversal failed", {
+    log.error("commission reversal failed", {
       commissionId: row.id,
       error: updateErr.message,
     });
     return;
   }
 
-  console.warn("[partners] commission reversed", {
+  log.warn("commission reversed", {
     commissionId: row.id,
     partnerId: row.partner_id,
     amountCents: row.commission_cents,

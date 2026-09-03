@@ -32,8 +32,10 @@ import { notifyCoinsRecovered, warnLowCoins } from "@/features/session/lib/coinT
 import { formatMmSs, tailSentences } from "@/features/session/lib/text";
 import { COIN_COSTS } from "@/lib/coins/pricing";
 import type { ChunkEvent, Recorder } from "@/lib/domain/recorder";
-import { devLog } from "@/lib/log";
+import { createLogger } from "@/lib/log";
 import { createRecorder } from "@/lib/recorder";
+
+const log = createLogger("session:audio");
 
 /**
  * Audio-only capture. Same chunk-upload/transcribe backbone as the live view
@@ -126,7 +128,7 @@ export function RecordingAudioOnly({
           if (bad >= TRANSCRIBE_ESCALATION_BAD_COUNT) {
             tierRef.current = "escalated";
             setQualityPoor(true);
-            devLog("[session:audio] transcribe escalated", { index: ev.index });
+            log.debug("transcribe escalated", { index: ev.index });
             toast.warning("Áudio com qualidade baixa detectada.", {
               description:
                 "Ativamos um modelo de transcrição mais preciso para os próximos trechos.",
@@ -162,7 +164,7 @@ export function RecordingAudioOnly({
       startedAtRef.current = performance.now();
       setRunning(true);
       setPaused(false);
-      devLog("[session:audio] start", { sessionId, at: new Date().toISOString() });
+      log.debug("start", { sessionId, at: new Date().toISOString() });
     } catch (err) {
       setStartupError((err as Error).message ?? "failed to start");
     }
@@ -176,7 +178,7 @@ export function RecordingAudioOnly({
     setPaused(true);
     await recorderRef.current.stop();
     recorderRef.current = null;
-    devLog("[session:audio] pause", {
+    log.debug("pause", {
       sessionId,
       elapsedMs: pausedElapsedRef.current,
       nextChunkIndex: nextChunkIndexRef.current,
@@ -198,7 +200,7 @@ export function RecordingAudioOnly({
       recorderRef.current = rec;
       startedAtRef.current = performance.now() - pausedElapsedRef.current;
       setPaused(false);
-      devLog("[session:audio] resume", {
+      log.debug("resume", {
         sessionId,
         elapsedMs: pausedElapsedRef.current,
         nextChunkIndex: nextChunkIndexRef.current,

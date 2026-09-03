@@ -4,9 +4,11 @@ import { loadBible } from "@/lib/bibles/loader";
 import { lookupVerse } from "@/lib/bibles/lookup";
 import { parseVerseReference } from "@/lib/domain/feed";
 import { parseJsonBody } from "@/lib/http/validate";
-import { devLog } from "@/lib/log";
+import { createLogger } from "@/lib/log";
 import { enforceRateLimit, RATE_LIMITS } from "@/lib/rate-limit";
 import { requireAuth } from "@/lib/supabase/require-auth";
+
+const log = createLogger("verse");
 
 // A verse reference like "1 Coríntios 13:1-13" is well under 100 chars.
 // 200 is generous headroom without giving a bot room to smuggle a payload.
@@ -41,7 +43,7 @@ export async function POST(request: Request) {
 
   const bible = await loadBible(TRANSLATION);
   if (!bible) {
-    devLog("[verse] miss", { reference, reason: "translation-file-missing" });
+    log.debug("miss", { reference, reason: "translation-file-missing" });
     return NextResponse.json({ reference, text: "" });
   }
 
@@ -53,13 +55,13 @@ export async function POST(request: Request) {
     ref.endVerse
   );
   if (!text) {
-    devLog("[verse] miss", { reference, reason: "not-found" });
+    log.debug("miss", { reference, reason: "not-found" });
     return NextResponse.json({ reference, text: "" });
   }
   if (truncated) {
-    devLog("[verse] truncated", { reference });
+    log.debug("truncated", { reference });
   } else {
-    devLog("[verse] ok", { reference, chars: text.length });
+    log.debug("ok", { reference, chars: text.length });
   }
   return NextResponse.json({ reference, text });
 }

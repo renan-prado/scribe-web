@@ -3,7 +3,7 @@ import { upsertPractices } from "@/lib/db/practices";
 import type { FeedItem } from "@/lib/domain/feed";
 import type { PracticesPayload } from "@/lib/domain/practices";
 import type { SummaryPayload } from "@/lib/domain/summary";
-import { devLog } from "@/lib/log";
+import { createLogger } from "@/lib/log";
 import { generatePractices } from "@/lib/practices/generate";
 
 /**
@@ -24,21 +24,22 @@ export async function generateAndSavePractices(input: {
   finalSummary: SummaryPayload;
   logPrefix: string;
 }): Promise<PracticesPayload | null> {
+  const log = createLogger(input.logPrefix);
   try {
     const result = await generatePractices(input);
     if (!result.ok) return null;
     try {
       await upsertPractices(input.sessionId, result.payload);
-      devLog(`[${input.logPrefix}] saved`, { sessionId: input.sessionId });
+      log.debug(`saved`, { sessionId: input.sessionId });
     } catch (err) {
-      console.error(`[${input.logPrefix}] save failed`, {
+      log.error(`save failed`, {
         sessionId: input.sessionId,
         error: (err as Error).message,
       });
     }
     return result.payload;
   } catch (err) {
-    console.error(`[${input.logPrefix}] threw`, {
+    log.error(`threw`, {
       sessionId: input.sessionId,
       error: (err as Error).message,
     });

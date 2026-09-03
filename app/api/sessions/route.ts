@@ -2,9 +2,11 @@ import { NextResponse } from "next/server";
 import { z } from "zod";
 import { createEmptySession, SESSION_MODES } from "@/lib/db/sessions";
 import { parseJsonBody } from "@/lib/http/validate";
-import { devLog } from "@/lib/log";
+import { createLogger } from "@/lib/log";
 import { enforceRateLimit, RATE_LIMITS } from "@/lib/rate-limit";
 import { requireAuth } from "@/lib/supabase/require-auth";
+
+const log = createLogger("sessions");
 
 export const runtime = "nodejs";
 export const dynamic = "force-dynamic";
@@ -43,10 +45,10 @@ export async function POST(request: Request) {
 
   try {
     const id = await createEmptySession({ speakerName, speakerLocation, mode });
-    devLog("[sessions] created", { id, mode });
+    log.debug("created", { id, mode });
     return NextResponse.json({ id, mode });
   } catch (err) {
-    console.error("[sessions] create failed", { error: (err as Error).message });
+    log.error("create failed", { error: (err as Error).message });
     return NextResponse.json({ error: "create_failed" }, { status: 500 });
   }
 }

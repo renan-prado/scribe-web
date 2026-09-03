@@ -7,7 +7,9 @@ import { joinOkChunks } from "@/features/session/lib/chunks";
 import { tailTranscript } from "@/features/session/lib/text";
 import { useSessionStore } from "@/features/session/store";
 import { feedItemOrigin } from "@/lib/domain/feed";
-import { devLog } from "@/lib/log";
+import { createLogger } from "@/lib/log";
+
+const log = createLogger("echo");
 
 /**
  * ECHO pipeline. Fires when the feed accumulates aiStreakThreshold AI-authored
@@ -63,7 +65,7 @@ export function useEchoPipeline({
     useSessionStore.getState().setLastEchoTailLen(transcript.length);
     useSessionStore.getState().setEchoing(true);
     const sermonAtMs = Math.max(0, performance.now() - startedAtRef.current);
-    devLog("[echo] fire", {
+    log.debug("fire", {
       streak,
       threshold: useSessionStore.getState().aiStreakThreshold,
     });

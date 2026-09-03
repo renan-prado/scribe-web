@@ -12,11 +12,13 @@ import { serverEnv } from "@/lib/env/server";
 import { parseJsonBody, UuidSchema } from "@/lib/http/validate";
 import { buildLlmMetadata } from "@/lib/llm/metadata";
 import { callChat } from "@/lib/llm/openai";
-import { devLog } from "@/lib/log";
+import { createLogger } from "@/lib/log";
 import { HALLUCINATION_SYSTEM_PROMPT } from "@/lib/prompts/hallucination";
 import { enforceRateLimit, RATE_LIMITS } from "@/lib/rate-limit";
 import { requireAuth } from "@/lib/supabase/require-auth";
 import { createClient } from "@/lib/supabase/server";
+
+const log = createLogger("hallucination-report");
 
 export const runtime = "nodejs";
 export const dynamic = "force-dynamic";
@@ -123,11 +125,11 @@ export async function POST(request: Request) {
 
   if (!result.ok) {
     if (result.error.kind === "fetch") {
-      console.error("[hallucination-report] upstream fetch failed", {
+      log.error("upstream fetch failed", {
         error: result.error.message,
       });
     } else {
-      console.error("[hallucination-report] upstream error", {
+      log.error("upstream error", {
         status: result.error.status,
         snippet: result.error.snippet.slice(0, 300),
       });
@@ -143,7 +145,7 @@ export async function POST(request: Request) {
     index < items.length ? feedItemDedupKey(items[index]) : null
   );
 
-  devLog("[hallucination-report] ok", {
+  log.debug("ok", {
     model,
     latencyMs,
     finishReason,
@@ -186,9 +188,9 @@ async function persistReport(input: {
       removed_count: input.review?.removeKeys.length ?? 0,
     });
     if (error) {
-      console.error("[hallucination-report] insert failed", { error: error.message });
+      log.error("insert failed", { error: error.message });
     }
   } catch (err) {
-    console.error("[hallucination-report] insert threw", { error: (err as Error).message });
+    log.error("insert threw", { error: (err as Error).message });
   }
 }

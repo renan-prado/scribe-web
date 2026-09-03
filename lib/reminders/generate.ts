@@ -10,7 +10,7 @@ import type { SummaryPayload } from "@/lib/domain/summary";
 import { serverEnv } from "@/lib/env/server";
 import { buildLlmMetadata } from "@/lib/llm/metadata";
 import { callChat } from "@/lib/llm/openai";
-import { devLog } from "@/lib/log";
+import { createLogger } from "@/lib/log";
 import { REMINDERS_SYSTEM_PROMPT } from "@/lib/prompts/reminders";
 
 /**
@@ -47,6 +47,7 @@ export async function generateReminders(
   input: GenerateRemindersInput
 ): Promise<GenerateRemindersResult> {
   const { userId, sessionId, transcript, finalSummary, feedItems, logPrefix } = input;
+  const log = createLogger(logPrefix);
   const model = serverEnv.OPENAI_REMINDERS_MODEL;
 
   const userMessage = [
@@ -72,10 +73,10 @@ export async function generateReminders(
 
   if (!result.ok) {
     if (result.error.kind === "fetch") {
-      console.error(`[${logPrefix}] upstream fetch failed`, { error: result.error.message });
+      log.error(`upstream fetch failed`, { error: result.error.message });
       return { ok: false, kind: "fetch", message: result.error.message };
     }
-    console.error(`[${logPrefix}] upstream error`, {
+    log.error(`upstream error`, {
       status: result.error.status,
       latencyMs: result.error.latencyMs,
       snippet: result.error.snippet.slice(0, 300),
@@ -92,7 +93,7 @@ export async function generateReminders(
   const { content, finishReason, usage, latencyMs } = result.data;
   const payload = parseRemindersFromLLM(content);
 
-  devLog(`[${logPrefix}] ok`, {
+  log.debug(`ok`, {
     latencyMs,
     finishReason,
     promptTokens: usage.promptTokens,
@@ -101,7 +102,7 @@ export async function generateReminders(
     origins: countByOrigin(payload),
   });
   if (finishReason === "length") {
-    console.warn(`[${logPrefix}] output truncated by max_tokens`, {
+    log.warn(`output truncated by max_tokens`, {
       completionTokens: usage.completionTokens,
     });
   }
@@ -116,7 +117,7 @@ export async function generateReminders(
   });
 
   if (!isCompleteRemindersPayload(payload)) {
-    console.warn(`[${logPrefix}] incomplete payload — expected 10 items covering all offsets`, {
+    log.warn(`incomplete payload — expected 10 items covering all offsets`, {
       got: payload.items.length,
       offsets: payload.items.map((i) => i.dayOffset),
     });

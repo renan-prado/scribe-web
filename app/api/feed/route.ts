@@ -1,9 +1,11 @@
 import { NextResponse } from "next/server";
 import { z } from "zod";
 import { type FeedOrder, listFeedEntries } from "@/lib/db/feed-entries";
-import { devLog } from "@/lib/log";
+import { createLogger } from "@/lib/log";
 import { enforceRateLimit, RATE_LIMITS } from "@/lib/rate-limit";
 import { requireAuth } from "@/lib/supabase/require-auth";
+
+const log = createLogger("feed");
 
 export const runtime = "nodejs";
 export const dynamic = "force-dynamic";
@@ -55,7 +57,7 @@ export async function GET(request: Request) {
       now,
       excludeSessionId: excludeSessionId?.trim() || null,
     });
-    devLog("[feed] ok", {
+    log.debug("ok", {
       order,
       offset,
       limit,
@@ -67,7 +69,7 @@ export async function GET(request: Request) {
       { headers: { "X-Total-Count": String(result.total) } }
     );
   } catch (err) {
-    console.error("[feed] failed", { error: (err as Error).message });
+    log.error("failed", { error: (err as Error).message });
     return NextResponse.json({ error: "list_failed" }, { status: 500 });
   }
 }

@@ -5,9 +5,11 @@ import { createDeepening, hasDeepening } from "@/lib/db/deepenings";
 import { getSession } from "@/lib/db/sessions";
 import { generateDeepening } from "@/lib/deepening/generate";
 import { parseJsonBody, UuidSchema } from "@/lib/http/validate";
-import { devLog } from "@/lib/log";
+import { createLogger } from "@/lib/log";
 import { enforceRateLimit, RATE_LIMITS } from "@/lib/rate-limit";
 import { requireAuth } from "@/lib/supabase/require-auth";
+
+const log = createLogger("deepening");
 
 const BodySchema = z.object({ sessionId: UuidSchema }).strict();
 
@@ -57,7 +59,7 @@ export async function POST(request: Request) {
     if (charge.error === "insufficient_balance") {
       return NextResponse.json({ error: "insufficient_balance" }, { status: 402 });
     }
-    console.error("[deepening] charge failed", { error: charge.error, message: charge.message });
+    log.error("charge failed", { error: charge.error, message: charge.message });
     return NextResponse.json({ error: "charge_failed" }, { status: 500 });
   }
 
@@ -89,13 +91,13 @@ export async function POST(request: Request) {
   try {
     await createDeepening(sessionId, payload);
     saved = true;
-    devLog("[deepening] saved", { sessionId });
+    log.debug("saved", { sessionId });
   } catch (err) {
     const message = (err as Error).message;
     if (message === "deepening_already_exists") {
       return NextResponse.json({ error: "deepening_already_exists" }, { status: 409 });
     }
-    console.error("[deepening] save failed", { sessionId, error: message });
+    log.error("save failed", { sessionId, error: message });
   }
 
   return NextResponse.json({ ...payload, latencyMs, model, sessionId, saved });

@@ -37,9 +37,11 @@ import { getSessionState, useSessionStore } from "@/features/session/store";
 import type { ChunkRow } from "@/features/session/types";
 import { COIN_COSTS } from "@/lib/coins/pricing";
 import type { ChunkEvent, Recorder } from "@/lib/domain/recorder";
-import { devLog } from "@/lib/log";
+import { createLogger } from "@/lib/log";
 import { createRecorder } from "@/lib/recorder";
 import { cn } from "@/lib/utils";
+
+const log = createLogger("session:transcribe");
 
 /** Distância do fim da página abaixo da qual o autoscroll continua ligado. */
 const AUTO_FOLLOW_BOTTOM_PX = 160;
@@ -143,7 +145,7 @@ export function RecordingTranscribe({
         )
       ) {
         s.setTranscribeTier("escalated");
-        devLog("[session:transcribe] session escalated", { index });
+        log.debug("session escalated", { index });
         toast.warning("Áudio com qualidade baixa detectada.", {
           description: "Ativamos um modelo de transcrição mais preciso para os próximos trechos.",
         });
@@ -214,7 +216,7 @@ export function RecordingTranscribe({
       // guardrails do AGENTS.md.
       startedAtRef.current = performance.now();
       getSessionState().setRunning(true);
-      devLog("[session:transcribe] start", { sessionId, at: new Date().toISOString() });
+      log.debug("start", { sessionId, at: new Date().toISOString() });
     } catch (err) {
       getSessionState().setStartupError((err as Error).message ?? "failed to start");
     }
@@ -229,7 +231,7 @@ export function RecordingTranscribe({
     s.setPaused(true);
     await recorderRef.current?.stop();
     recorderRef.current = null;
-    devLog("[session:transcribe] pause", {
+    log.debug("pause", {
       sessionId,
       elapsedMs: pausedElapsedRef.current,
       nextChunkIndex: nextChunkIndexRef.current,
@@ -252,7 +254,7 @@ export function RecordingTranscribe({
       recorderRef.current = rec;
       startedAtRef.current = performance.now() - pausedElapsedRef.current;
       s.setPaused(false);
-      devLog("[session:transcribe] resume", { sessionId, elapsedMs: pausedElapsedRef.current });
+      log.debug("resume", { sessionId, elapsedMs: pausedElapsedRef.current });
     } catch (err) {
       getSessionState().setStartupError((err as Error).message ?? "failed to resume");
     }
@@ -290,7 +292,7 @@ export function RecordingTranscribe({
         router.replace(`/recording/${sessionId}/transcript`);
         return true;
       }
-      devLog("[session:transcribe] save failed", { sessionId, message: result.message });
+      log.debug("save failed", { sessionId, message: result.message });
       setSaveFailed(true);
       toast.error("Não consegui salvar a transcrição.", {
         description:
@@ -309,7 +311,7 @@ export function RecordingTranscribe({
       ? pausedElapsedRef.current
       : Math.round(performance.now() - startedAtRef.current);
     finalDurationRef.current = durationMs;
-    devLog("[session:transcribe] stop", { sessionId, durationMs, wasPaused: s.paused });
+    log.debug("stop", { sessionId, durationMs, wasPaused: s.paused });
     s.setRunning(false);
     s.setPaused(false);
     await recorderRef.current?.stop();
@@ -343,7 +345,7 @@ export function RecordingTranscribe({
    * chunks persistidos), apaga a linha da sessão e volta pra lista. */
   const discard = useCallback(async () => {
     const s = getSessionState();
-    devLog("[session:transcribe] discard", { sessionId });
+    log.debug("discard", { sessionId });
     s.setRunning(false);
     s.setPaused(false);
     await recorderRef.current?.stop();

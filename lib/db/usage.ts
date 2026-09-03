@@ -6,7 +6,10 @@ import {
   hasAudioPricing,
   hasChatPricing,
 } from "@/lib/llm/pricing";
+import { createLogger } from "@/lib/log";
 import { createClient } from "@/lib/supabase/server";
+
+const log = createLogger("usage");
 
 /**
  * Persist a single upstream LLM call into public.llm_usage_events.
@@ -71,7 +74,7 @@ export async function recordChatUsage(input: RecordChatUsageInput): Promise<void
       input.cachedTokens
     );
     if (!hasChatPricing(input.model)) {
-      console.warn("[usage] no chat pricing for model", { model: input.model });
+      log.warn("no chat pricing for model", { model: input.model });
     }
 
     const prompt = input.promptTokens ?? null;
@@ -95,10 +98,10 @@ export async function recordChatUsage(input: RecordChatUsageInput): Promise<void
       latency_ms: input.latencyMs,
     });
     if (error) {
-      console.error("[usage] insert failed", { route: input.route, error: error.message });
+      log.error("insert failed", { route: input.route, error: error.message });
     }
   } catch (err) {
-    console.error("[usage] insert threw", {
+    log.error("insert threw", {
       route: input.route,
       error: (err as Error).message,
     });
@@ -115,7 +118,7 @@ export async function recordAudioUsage(input: RecordAudioUsageInput): Promise<vo
 
     const totalUsd = computeAudioCost(input.model, input.audioSeconds);
     if (!hasAudioPricing(input.model)) {
-      console.warn("[usage] no audio pricing for model", { model: input.model });
+      log.warn("no audio pricing for model", { model: input.model });
     }
 
     const { error } = await supabase.from("llm_usage_events").insert({
@@ -133,10 +136,10 @@ export async function recordAudioUsage(input: RecordAudioUsageInput): Promise<vo
       latency_ms: input.latencyMs,
     });
     if (error) {
-      console.error("[usage] insert failed", { route: input.route, error: error.message });
+      log.error("insert failed", { route: input.route, error: error.message });
     }
   } catch (err) {
-    console.error("[usage] insert threw", {
+    log.error("insert threw", {
       route: input.route,
       error: (err as Error).message,
     });

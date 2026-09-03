@@ -1,5 +1,8 @@
 import "server-only";
+import { createLogger } from "@/lib/log";
 import { createAdminClient } from "@/lib/supabase/admin";
+
+const log = createLogger("admin/partners");
 
 /**
  * CRUD e agregados de parceiros para o admin.
@@ -298,7 +301,7 @@ export async function registerPayout(args: {
     // O pagamento existe mas as comissões não foram carimbadas: o valor
     // apareceria como devido de novo no mês seguinte. Log em `error` porque
     // exige conserto manual — e o id do payout é o que permite achá-lo.
-    console.error("[admin/partners] payout created but commissions NOT stamped", {
+    log.error("payout created but commissions NOT stamped", {
       payoutId: payout.id,
       partnerId: args.partnerId,
       error: stampErr.message,

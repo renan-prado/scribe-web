@@ -458,9 +458,57 @@ import estático — que também traz `width`/`height` de graça, sem CLS.
   pela medição aprimorada do GA4 (eventos de histórico), ligada na propriedade.
   Evento personalizado usa `sendGAEvent`, nunca `window.gtag` direto.
 
+## Logging
+
+Um logger, três saídas. `lib/log/` — `createLogger(escopo)` no topo do arquivo,
+e nunca `console.*` em `app/`, `lib/` ou `src/`.
+
+```ts
+import { createLogger } from "@/lib/log";
+const log = createLogger("bible");          // era "[bible] " nas mensagens
+
+log.info("topup", { sessionId, credited }); // aparece em produção
+log.debug("ok", { latencyMs, promptTokens });// some em produção
+log.warn("schema-drop", drop);
+log.error("upstream falhou", err);          // aceita Error direto
+```
+
+- **A mensagem é constante; o que varia vira contexto.** `log.info("saved",
+  { sessionId })`, nunca `log.info(\`saved ${sessionId}\`)`. É o que permite ao
+  reporter alinhar coluna, ao browser dar o objeto expandível, e a uma busca
+  no painel achar todas as ocorrências do mesmo evento.
+- **O nível decide o que existe em PRODUÇÃO**, e essa é a única escolha que o
+  autor da chamada precisa fazer:
+  `info` = rastro que se vai querer numa auditoria (dinheiro, mutação de
+  admin, atribuição de parceiro); `debug` = rastro de execução (pipelines do
+  ao vivo, fila de chunks, o `ok` das rotas de LLM) e NÃO sai em produção;
+  `warn`/`error` sempre saem. O `ok` das rotas de LLM é `debug` de propósito:
+  ele dispara a cada chunk de 30s por usuário ativo, e os tokens que ele
+  mostra já ficam gravados no banco por `recordChatUsage`.
+- **Os reporters são escolhidos por ambiente, não por chamada** (`lib/log/index.ts`):
+  `fancy` do consola no terminal de dev; pastilha CSS com cor derivada do
+  escopo no navegador, com o contexto entregue como OBJETO vivo; e uma linha
+  plana, alinhada e sem cor em produção. A troca é o campo `exports` do
+  pacote `consola` — nenhum código de terminal chega ao bundle do cliente.
+- **Em produção é UMA linha por evento**, e isso é requisito e não estética:
+  o coletor da Vercel trata cada linha de stdout como um registro separado,
+  então quebrar o contexto numa segunda linha o deixaria órfão — sem nível,
+  sem escopo e sem a mensagem a que pertence.
+- **No NAVEGADOR em produção o nível padrão é `warn`.** O console de quem usa
+  o app não é o nosso painel. A escotilha, para depurar com um usuário real
+  sem precisar de deploy: `localStorage.setItem("scriba:log", "debug")`.
+- **A redação de segredos mora em `lib/log/format.ts` e compara por PALAVRA,
+  não por substring.** `apiKey` e `accessToken` são redigidos; `promptTokens`,
+  `completionTokens` e `idempotencyKey` não. Um `/token/` guloso apagaria em
+  silêncio justamente os números que o log das rotas de LLM existe para
+  mostrar — já foi assim por dez minutos, e o teste pegou.
+- `log.child({ sessionId })` gruda contexto; `log.scoped("audit")` abre
+  sub-escopo (`deepening/audit`); `log.time()` devolve o fechador que loga
+  `durationMs`; `log.table()` é no-op em produção.
+
 ## Adding a new feature
 
-- **New API route calling OpenAI**: (1) add a prompt in `lib/prompts/foo.ts`, (2) add the schema + `parseFooFromLLM` in `lib/domain/foo.ts`, (3) create `app/api/foo/route.ts` that reads env from `serverEnv`, invokes `callChat({...})`, and delegates parsing to the domain helper. Log `[foo] ok { latencyMs, finishReason, promptTokens, completionTokens, ... }` on success and `[foo] upstream {fetch failed|error}` on failure. Every new route MUST call `enforceRateLimit(request, RATE_LIMITS.foo, auth.user.id)` right after `requireAuth()` — add a bucket to `RATE_LIMITS` in `lib/rate-limit.ts` sized to the expected client cadence (per-user + per-IP).
+- **New API route calling OpenAI**: (1) add a prompt in `lib/prompts/foo.ts`, (2) add the schema + `parseFooFromLLM` in `lib/domain/foo.ts`, (3) create `app/api/foo/route.ts` that reads env from `serverEnv`, invokes `callChat({...})`, and delegates parsing to the domain helper. Declare `const log = createLogger("foo")` at the top and log `log.debug("ok", { latencyMs, finishReason, promptTokens, completionTokens })` on success, `log.error("upstream error", { status, snippet })` on failure — see "Logging" below. Every new route MUST call `enforceRateLimit(request, RATE_LIMITS.foo, auth.user.id)` right after `requireAuth()` — add a bucket to `RATE_LIMITS` in `lib/rate-limit.ts` sized to the expected client cadence (per-user + per-IP).
 - **New UI element for the session page**: put it under `src/features/partners/
   components/ReferralField.tsx  — campo de código na tela de entrada
   components/ReferralLinkCard.tsx

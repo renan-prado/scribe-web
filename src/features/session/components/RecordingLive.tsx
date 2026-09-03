@@ -50,9 +50,12 @@ import { getSessionState, useSessionStore } from "@/features/session/store";
 import type { ChunkRow, TranscriptState } from "@/features/session/types";
 import { COIN_COSTS } from "@/lib/coins/pricing";
 import type { ChunkEvent, Recorder } from "@/lib/domain/recorder";
-import { devLog } from "@/lib/log";
+import { createLogger } from "@/lib/log";
 import { createRecorder } from "@/lib/recorder";
 import { cn } from "@/lib/utils";
+
+const log = createLogger("session");
+const transcribeLog = createLogger("transcribe");
 
 type Props = {
   /** The row already exists in Supabase — this component only UPDATEs it on stop. */
@@ -169,7 +172,7 @@ export function RecordingLive({
         )
       ) {
         s.setTranscribeTier("escalated");
-        devLog("[transcribe] session escalated", { index });
+        transcribeLog.debug("session escalated", { index });
         toast.warning("Áudio com qualidade baixa detectada.", {
           description: "Ativamos um modelo de transcrição mais preciso para os próximos trechos.",
         });
@@ -247,7 +250,7 @@ export function RecordingLive({
       // observes a valid origin on first render — see AGENTS.md guardrails.
       startedAtRef.current = performance.now();
       getSessionState().setRunning(true);
-      devLog("[session] start", { sessionId, at: new Date().toISOString() });
+      log.debug("start", { sessionId, at: new Date().toISOString() });
     } catch (err) {
       getSessionState().setStartupError((err as Error).message ?? "failed to start");
     }
@@ -269,7 +272,7 @@ export function RecordingLive({
     // indicator) and stops MediaRecorder from consuming any resources.
     await recorderRef.current?.stop();
     recorderRef.current = null;
-    devLog("[session] pause", {
+    log.debug("pause", {
       sessionId,
       at: new Date().toISOString(),
       elapsedMs: pausedElapsedRef.current,
@@ -296,7 +299,7 @@ export function RecordingLive({
       // Re-anchor timer so elapsed picks up from the paused value.
       startedAtRef.current = performance.now() - pausedElapsedRef.current;
       s.setPaused(false);
-      devLog("[session] resume", {
+      log.debug("resume", {
         sessionId,
         at: new Date().toISOString(),
         elapsedMs: pausedElapsedRef.current,
@@ -314,7 +317,7 @@ export function RecordingLive({
     const durationMs = s.paused
       ? pausedElapsedRef.current
       : Math.round(performance.now() - startedAtRef.current);
-    devLog("[session] stop", {
+    log.debug("stop", {
       sessionId,
       at: new Date().toISOString(),
       durationMs,
@@ -398,7 +401,7 @@ export function RecordingLive({
    */
   const discard = useCallback(async () => {
     const s = getSessionState();
-    devLog("[session] discard", { sessionId, at: new Date().toISOString() });
+    log.debug("discard", { sessionId, at: new Date().toISOString() });
     s.setRunning(false);
     s.setPaused(false);
     await recorderRef.current?.stop();
@@ -471,7 +474,7 @@ export function RecordingLive({
         .padStart(2, "0");
       const s = (elapsedSec % 60).toString().padStart(2, "0");
       const c = getSessionState().counters;
-      devLog("[session] rollup", { at: `${m}:${s}`, ...c });
+      log.debug("rollup", { at: `${m}:${s}`, ...c });
     }, 60_000);
     return () => clearInterval(id);
   }, [running]);

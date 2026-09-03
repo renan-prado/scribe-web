@@ -5,6 +5,7 @@ import { isPlanKey, type PlanKey, TOPUP_MAX_QUANTITY } from "@/lib/billing/plans
 import { customerIdOf, priceIdOf, subscriptionPeriodEnd } from "@/lib/billing/stripe";
 import { existingExternalRefs, grantCoins, upsertSubscription } from "@/lib/db/billing";
 import { insertFirstSubscriptionCommission } from "@/lib/db/partners";
+import { createLogger } from "@/lib/log";
 import { COMMISSION_HOLD_DAYS } from "@/lib/partners/economics";
 
 /**
@@ -99,12 +100,13 @@ export async function creditInvoice(
   userId: string,
   source: FulfillSource
 ): Promise<FulfillResult> {
+  const log = createLogger("billing").scoped(source);
   const planned: Array<{ externalRef: string; amount: number; plan: string }> = [];
 
   for (const line of invoiceLines(invoice)) {
     const entitlement = entitlementForPrice(line.priceId);
     if (!entitlement) {
-      console.warn(`[billing:${source}] unknown price on paid invoice — nothing credited`, {
+      log.warn(`unknown price on paid invoice — nothing credited`, {
         invoice: invoice.id,
         priceId: line.priceId,
       });
@@ -138,7 +140,7 @@ export async function creditInvoice(
     balance = next;
     if (isNew) {
       credited += p.amount;
-      console.info(`[billing:${source}] subscription credited`, {
+      log.info(`subscription credited`, {
         userId,
         plan: p.plan,
         amount: p.amount,
@@ -179,6 +181,7 @@ async function accrueCommission(
   userId: string,
   source: FulfillSource
 ): Promise<void> {
+  const log = createLogger("billing").scoped(source);
   try {
     // Valor BRUTO efetivamente pago — depois de cupom e proração, antes das
     // taxas do Stripe. É o número que o parceiro consegue conferir sozinho a
@@ -194,7 +197,7 @@ async function accrueCommission(
       holdDays: COMMISSION_HOLD_DAYS,
     });
   } catch (err) {
-    console.error(`[billing:${source}] partner commission failed — coins were credited`, {
+    log.error(`partner commission failed — coins were credited`, {
       userId,
       invoice: invoice.id,
       error: (err as Error).message,
@@ -242,6 +245,7 @@ export async function syncSubscriptionState(
   userId: string,
   source: FulfillSource
 ): Promise<void> {
+  const log = createLogger("billing").scoped(source);
   const customerId = customerIdOf(subscription.customer);
   if (!customerId) return;
 
@@ -258,7 +262,7 @@ export async function syncSubscriptionState(
     cancelAtPeriodEnd: subscription.cancel_at_period_end ?? false,
   });
 
-  console.info(`[billing:${source}] subscription synced`, {
+  log.info(`subscription synced`, {
     userId,
     status: subscription.status,
     subscription: subscription.id,
@@ -277,13 +281,14 @@ export async function creditCheckoutSession(
   userId: string,
   source: FulfillSource
 ): Promise<FulfillResult> {
+  const log = createLogger("billing").scoped(source);
   const lineItems = await stripe.checkout.sessions.listLineItems(session.id, { limit: 10 });
   const planned: Array<{ externalRef: string; amount: number; quantity: number }> = [];
 
   for (const item of lineItems.data) {
     const entitlement = entitlementForPrice(priceIdOf(item.price ?? null));
     if (entitlement?.kind !== "topup") {
-      console.warn(`[billing:${source}] unknown price on paid checkout — nothing credited`, {
+      log.warn(`unknown price on paid checkout — nothing credited`, {
         session: session.id,
         priceId: priceIdOf(item.price ?? null),
       });
@@ -315,7 +320,7 @@ export async function creditCheckoutSession(
     balance = next;
     if (isNew) {
       credited += p.amount;
-      console.info(`[billing:${source}] topup credited`, {
+      log.info(`topup credited`, {
         userId,
         amount: p.amount,
         quantity: p.quantity,

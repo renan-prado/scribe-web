@@ -7,12 +7,14 @@ import { FeedItemSchema } from "@/lib/domain/feed";
 import { generateFinalSummary } from "@/lib/final-summary/generate";
 import { generateAndSaveHighlights } from "@/lib/highlights/save";
 import { parseJsonBody, UuidSchema } from "@/lib/http/validate";
-import { devLog } from "@/lib/log";
+import { createLogger } from "@/lib/log";
 import { generateAndSavePractices } from "@/lib/practices/save";
 import { enforceRateLimit, RATE_LIMITS } from "@/lib/rate-limit";
 import { generateAndSaveReminders } from "@/lib/reminders/save";
 import { generateAndSaveRereads } from "@/lib/rereads/save";
 import { requireAuth } from "@/lib/supabase/require-auth";
+
+const log = createLogger("final-summary");
 
 // Sermons run 30-90min in practice; the transcript we've observed maxes out
 // around ~150k chars. 300k is 2× headroom without letting a bot smuggle an
@@ -104,7 +106,7 @@ export async function POST(request: Request) {
       const s = await upsertSpeakerByName({ name: speakerName, userId: auth.user.id });
       speakerId = s.id;
     } catch (err) {
-      console.error("[final-summary] speaker upsert failed", {
+      log.error("speaker upsert failed", {
         sessionId,
         error: (err as Error).message,
       });
@@ -117,7 +119,7 @@ export async function POST(request: Request) {
       const l = await upsertLocationByName({ name: speakerLocation, userId: auth.user.id });
       locationId = l.id;
     } catch (err) {
-      console.error("[final-summary] location upsert failed", {
+      log.error("location upsert failed", {
         sessionId,
         error: (err as Error).message,
       });
@@ -139,9 +141,9 @@ export async function POST(request: Request) {
       locationId,
     });
     saved = true;
-    devLog("[final-summary] saved", { sessionId });
+    log.debug("saved", { sessionId });
   } catch (err) {
-    console.error("[final-summary] save failed", { sessionId, error: (err as Error).message });
+    log.error("save failed", { sessionId, error: (err as Error).message });
   }
 
   // Best-effort: gera e persiste "Coloque em prática" (5 itens), "Releia este

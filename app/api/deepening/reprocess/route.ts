@@ -5,9 +5,11 @@ import { getDeepening, updateDeepening } from "@/lib/db/deepenings";
 import { getSession } from "@/lib/db/sessions";
 import { generateDeepening } from "@/lib/deepening/generate";
 import { parseJsonBody, UuidSchema } from "@/lib/http/validate";
-import { devLog } from "@/lib/log";
+import { createLogger } from "@/lib/log";
 import { enforceRateLimit, RATE_LIMITS } from "@/lib/rate-limit";
 import { requireAuth } from "@/lib/supabase/require-auth";
+
+const log = createLogger("deepening-reprocess");
 
 const BodySchema = z.object({ sessionId: UuidSchema }).strict();
 
@@ -55,7 +57,7 @@ export async function POST(request: Request) {
     if (charge.error === "insufficient_balance") {
       return NextResponse.json({ error: "insufficient_balance" }, { status: 402 });
     }
-    console.error("[deepening-reprocess] charge failed", {
+    log.error("charge failed", {
       error: charge.error,
       message: charge.message,
     });
@@ -90,9 +92,9 @@ export async function POST(request: Request) {
   try {
     await updateDeepening(sessionId, payload);
     saved = true;
-    devLog("[deepening-reprocess] saved", { sessionId });
+    log.debug("saved", { sessionId });
   } catch (err) {
-    console.error("[deepening-reprocess] save failed", {
+    log.error("save failed", {
       sessionId,
       error: (err as Error).message,
     });

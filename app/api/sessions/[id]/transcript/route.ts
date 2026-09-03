@@ -4,9 +4,11 @@ import { upsertLocationByName } from "@/lib/db/locations";
 import { getSession, updateSessionTranscript } from "@/lib/db/sessions";
 import { upsertSpeakerByName } from "@/lib/db/speakers";
 import { parseJsonBody, parseUuidParam } from "@/lib/http/validate";
-import { devLog } from "@/lib/log";
+import { createLogger } from "@/lib/log";
 import { enforceRateLimit, RATE_LIMITS } from "@/lib/rate-limit";
 import { requireAuth } from "@/lib/supabase/require-auth";
+
+const log = createLogger("sessions/transcript");
 
 export const runtime = "nodejs";
 export const dynamic = "force-dynamic";
@@ -86,7 +88,7 @@ export async function PUT(request: Request, { params }: { params: Promise<{ id: 
     try {
       speakerId = (await upsertSpeakerByName({ name: speakerName, userId: auth.user.id })).id;
     } catch (err) {
-      console.error("[sessions/transcript] speaker upsert failed", {
+      log.error("speaker upsert failed", {
         error: (err as Error).message,
       });
     }
@@ -95,7 +97,7 @@ export async function PUT(request: Request, { params }: { params: Promise<{ id: 
     try {
       locationId = (await upsertLocationByName({ name: speakerLocation, userId: auth.user.id })).id;
     } catch (err) {
-      console.error("[sessions/transcript] location upsert failed", {
+      log.error("location upsert failed", {
         error: (err as Error).message,
       });
     }
@@ -112,10 +114,10 @@ export async function PUT(request: Request, { params }: { params: Promise<{ id: 
       speakerId,
       locationId,
     });
-    devLog("[sessions/transcript] saved", { id, chars: transcript.length });
+    log.debug("saved", { id, chars: transcript.length });
     return NextResponse.json({ ok: true });
   } catch (err) {
-    console.error("[sessions/transcript] save failed", { id, error: (err as Error).message });
+    log.error("save failed", { id, error: (err as Error).message });
     return NextResponse.json({ error: "save_failed" }, { status: 500 });
   }
 }

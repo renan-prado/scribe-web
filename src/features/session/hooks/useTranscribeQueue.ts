@@ -10,7 +10,9 @@ import {
   putChunk,
   type StoredChunk,
 } from "@/lib/chunk-store";
-import { devLog } from "@/lib/log";
+import { createLogger } from "@/lib/log";
+
+const log = createLogger("queue");
 
 /**
  * Chunks older than this are dropped instead of retried on mount. Keeps the
@@ -130,7 +132,7 @@ export function useTranscribeQueue({
       if (result.ok) {
         pendingRef.current.delete(index);
         void deleteChunk(chunk.sessionId, index);
-        devLog("[queue] chunk uploaded", {
+        log.debug("chunk uploaded", {
           index,
           attempts: chunk.attempts,
           durationMs: chunk.durationMs,
@@ -147,7 +149,7 @@ export function useTranscribeQueue({
       void putChunk(chunk);
       const backoffIdx = Math.min(chunk.attempts - 1, RETRY_BACKOFF_MS.length - 1);
       const delay = RETRY_BACKOFF_MS[Math.max(0, backoffIdx)];
-      devLog("[queue] chunk retry", {
+      log.debug("chunk retry", {
         index,
         attempts: chunk.attempts,
         delay,
@@ -225,7 +227,7 @@ export function useTranscribeQueue({
     pendingRef.current.clear();
     drainResolversRef.current = [];
     void deleteChunksForSession(sessionId);
-    devLog("[queue] cleared", { sessionId });
+    log.debug("cleared", { sessionId });
   }, [sessionId]);
 
   // Orphan recovery + retry triggers.
@@ -235,7 +237,7 @@ export function useTranscribeQueue({
     const recover = async () => {
       // Global prune of anything older than the TTL, regardless of session.
       const removed = await deleteExpiredChunks(ORPHAN_TTL_MS);
-      if (removed > 0) devLog("[queue] pruned expired chunks", { removed });
+      if (removed > 0) log.debug("pruned expired chunks", { removed });
 
       const rows = await listChunksForSession(sessionId);
       if (cancelled) return;
@@ -252,7 +254,7 @@ export function useTranscribeQueue({
         void attempt(row.index);
       }
       if (rows.length > 0) {
-        devLog("[queue] orphan recovery", {
+        log.debug("orphan recovery", {
           sessionId,
           candidates: rows.length,
           enqueued: pendingRef.current.size,

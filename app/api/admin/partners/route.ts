@@ -4,10 +4,12 @@ import { requireAdmin } from "@/lib/auth/require-admin";
 import { isValidDoc, normalizeDoc } from "@/lib/br/documento";
 import { createPartner, listPartners } from "@/lib/db/admin/partners";
 import { parseJsonBody } from "@/lib/http/validate";
-import { devLog } from "@/lib/log";
+import { createLogger } from "@/lib/log";
 import { normalizeSlug } from "@/lib/partners/cookies";
 import { normalizeSocials } from "@/lib/partners/socials";
 import { enforceRateLimit, RATE_LIMITS } from "@/lib/rate-limit";
+
+const log = createLogger("admin/partners");
 
 export const runtime = "nodejs";
 export const dynamic = "force-dynamic";
@@ -82,7 +84,7 @@ export async function GET(request: Request) {
     const partners = await listPartners();
     return NextResponse.json({ partners });
   } catch (err) {
-    console.error("[admin/partners] list failed", { error: (err as Error).message });
+    log.error("list failed", { error: (err as Error).message });
     return NextResponse.json({ error: "list_failed" }, { status: 500 });
   }
 }
@@ -99,7 +101,7 @@ export async function POST(request: Request) {
 
   try {
     const partner = await createPartner(parsed.data);
-    devLog("[admin/partners] created", { id: partner.id, slug: partner.slug });
+    log.info("created", { id: partner.id, slug: partner.slug });
     return NextResponse.json({ partner }, { status: 201 });
   } catch (err) {
     const message = (err as Error).message;
@@ -109,7 +111,7 @@ export async function POST(request: Request) {
     if (message.includes("23505") || message.includes("duplicate key")) {
       return NextResponse.json({ error: "slug_or_email_taken" }, { status: 409 });
     }
-    console.error("[admin/partners] create failed", { error: message });
+    log.error("create failed", { error: message });
     return NextResponse.json({ error: "create_failed" }, { status: 500 });
   }
 }

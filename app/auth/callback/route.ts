@@ -1,9 +1,11 @@
 import { cookies } from "next/headers";
 import { NextResponse } from "next/server";
 import { attachPartner } from "@/lib/db/partners";
-import { devLog } from "@/lib/log";
+import { createLogger } from "@/lib/log";
 import { decodeRef, REF_COOKIE, VISIT_COOKIE } from "@/lib/partners/cookies";
 import { createClient } from "@/lib/supabase/server";
+
+const log = createLogger("auth/callback");
 
 /**
  * OAuth PKCE callback. Google (and any future OAuth provider) redirects
@@ -37,7 +39,7 @@ export async function GET(request: Request) {
   const supabase = await createClient();
   const { data, error } = await supabase.auth.exchangeCodeForSession(code);
   if (error) {
-    console.error("[auth/callback] exchangeCodeForSession failed", error.message);
+    log.error("exchangeCodeForSession failed", { error: error.message });
     return NextResponse.redirect(`${origin}/sign-in?error=exchange_failed`);
   }
 
@@ -77,11 +79,11 @@ async function attachPartnerIfReferred(userId: string | null): Promise<void> {
     if (!ref) return;
 
     const result = await attachPartner({ userId, slug: ref.slug, source: ref.source });
-    devLog("[auth/callback] atribuição de parceiro", { ...ref, result });
+    log.info("atribuição de parceiro", { ...ref, result });
 
     jar.delete(REF_COOKIE);
     jar.delete(VISIT_COOKIE);
   } catch (err) {
-    console.error("[auth/callback] partner attach falhou", { error: (err as Error).message });
+    log.error("partner attach falhou", { error: (err as Error).message });
   }
 }

@@ -1,6 +1,9 @@
 import "server-only";
 
 import { cookies } from "next/headers";
+import { createLogger } from "@/lib/log";
+
+const log = createLogger("fx");
 
 /**
  * Current USD→BRL rate. Preferred source is AwesomeAPI
@@ -62,14 +65,14 @@ export async function getUsdToBrl(): Promise<UsdBrlRate | null> {
       next: { revalidate: 3600, tags: ["fx-usd-brl"] },
     });
     if (!res.ok) {
-      console.warn("[fx] USD-BRL fetch non-ok", { status: res.status });
+      log.warn("USD-BRL fetch non-ok", { status: res.status });
       return readManualCookie();
     }
     const body = (await res.json()) as ApiResponse;
     const bid = body.USDBRL?.bid;
     const rate = bid ? Number.parseFloat(bid) : Number.NaN;
     if (!Number.isFinite(rate) || rate <= 0) {
-      console.warn("[fx] USD-BRL invalid payload", { bid });
+      log.warn("USD-BRL invalid payload", { bid });
       return readManualCookie();
     }
     return {
@@ -78,7 +81,7 @@ export async function getUsdToBrl(): Promise<UsdBrlRate | null> {
       source: "awesomeapi",
     };
   } catch (err) {
-    console.warn("[fx] USD-BRL fetch failed", { error: (err as Error).message });
+    log.warn("USD-BRL fetch failed", { error: (err as Error).message });
     return readManualCookie();
   }
 }

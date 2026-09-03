@@ -12,7 +12,9 @@ import {
   referenceStrictlyContains,
 } from "@/lib/domain/feed";
 import type { SummaryPayload } from "@/lib/domain/summary";
-import { devLog } from "@/lib/log";
+import { createLogger } from "@/lib/log";
+
+const log = createLogger("feed");
 
 export type SessionCounters = {
   bibleCalls: number;
@@ -347,7 +349,7 @@ export const useSessionStore = create<SessionStoreState>()(
         const key = feedItemDedupKey(item);
         if (visibleKeys.has(key)) {
           dedupSuppressedInc++;
-          devLog("[feed] dedup-suppressed", {
+          log.debug("dedup-suppressed", {
             kind: item.kind,
             key,
             reason: "already-visible",
@@ -356,7 +358,7 @@ export const useSessionStore = create<SessionStoreState>()(
         }
         if (queuedKeys.has(key)) {
           dedupSuppressedInc++;
-          devLog("[feed] dedup-suppressed", {
+          log.debug("dedup-suppressed", {
             kind: item.kind,
             key,
             reason: "already-queued",
@@ -375,7 +377,7 @@ export const useSessionStore = create<SessionStoreState>()(
           );
           if (coveredBy) {
             dedupSuppressedInc++;
-            devLog("[feed] dedup-suppressed", {
+            log.debug("dedup-suppressed", {
               kind: item.kind,
               key,
               reason: "covered-by",
@@ -402,7 +404,7 @@ export const useSessionStore = create<SessionStoreState>()(
             currentCitedVerses = currentCitedVerses.filter(
               (i) => !supersededKeys.has(feedItemDedupKey(i))
             );
-            devLog("[feed] supersede", {
+            log.debug("supersede", {
               newer: item.reference,
               removed: [...supersededKeys],
             });
@@ -454,7 +456,7 @@ export const useSessionStore = create<SessionStoreState>()(
       if (removed === 0) return 0;
       const visibleKeys = new Set(s.visibleKeys);
       for (const k of doomed) visibleKeys.delete(k);
-      devLog("[feed] removed by report", { keys, removed });
+      log.debug("removed by report", { keys, removed });
       set({
         feedItems,
         dripQueue,
@@ -474,7 +476,7 @@ export const useSessionStore = create<SessionStoreState>()(
       const visibleKeys = new Set(s.visibleKeys);
       visibleKeys.add(key);
       const lagMs = Date.now() - enqueuedAt;
-      devLog("[feed] +item", {
+      log.debug("+item", {
         kind: item.kind,
         key,
         lagMs,

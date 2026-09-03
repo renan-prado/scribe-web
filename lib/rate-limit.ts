@@ -1,5 +1,8 @@
 import "server-only";
 import { NextResponse } from "next/server";
+import { createLogger } from "@/lib/log";
+
+const log = createLogger("rate-limit");
 
 /**
  * In-memory sliding fixed-window rate limiter. State lives in the process,
@@ -129,7 +132,7 @@ export function enforceRateLimit(
     const ip = getClientIp(request);
     const r = checkRateLimit(`${config.route}:ip:${ip}`, config.perIp.limit, config.perIp.windowMs);
     if (!r.ok) {
-      console.warn("[rate-limit] ip blocked", { route: config.route, ip });
+      log.warn("ip blocked", { route: config.route, ip });
       return rateLimitResponse(r);
     }
   }
@@ -140,7 +143,7 @@ export function enforceRateLimit(
       config.perUser.windowMs
     );
     if (!r.ok) {
-      console.warn("[rate-limit] user blocked", { route: config.route, userId });
+      log.warn("user blocked", { route: config.route, userId });
       return rateLimitResponse(r);
     }
   }

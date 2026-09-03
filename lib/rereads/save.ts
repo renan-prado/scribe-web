@@ -3,7 +3,7 @@ import { upsertRereads } from "@/lib/db/rereads";
 import type { FeedItem } from "@/lib/domain/feed";
 import type { RereadsPayload } from "@/lib/domain/rereads";
 import type { SummaryPayload } from "@/lib/domain/summary";
-import { devLog } from "@/lib/log";
+import { createLogger } from "@/lib/log";
 import { generateRereads } from "@/lib/rereads/generate";
 
 /**
@@ -24,24 +24,25 @@ export async function generateAndSaveRereads(input: {
   finalSummary: SummaryPayload;
   logPrefix: string;
 }): Promise<RereadsPayload | null> {
+  const log = createLogger(input.logPrefix);
   try {
     const result = await generateRereads(input);
     if (!result.ok) return null;
     try {
       await upsertRereads(input.sessionId, result.payload);
-      devLog(`[${input.logPrefix}] saved`, {
+      log.debug(`saved`, {
         sessionId: input.sessionId,
         fillCount: result.fillCount,
       });
     } catch (err) {
-      console.error(`[${input.logPrefix}] save failed`, {
+      log.error(`save failed`, {
         sessionId: input.sessionId,
         error: (err as Error).message,
       });
     }
     return result.payload;
   } catch (err) {
-    console.error(`[${input.logPrefix}] threw`, {
+    log.error(`threw`, {
       sessionId: input.sessionId,
       error: (err as Error).message,
     });

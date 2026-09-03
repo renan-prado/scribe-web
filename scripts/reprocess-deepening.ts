@@ -10,6 +10,9 @@
 import { readFileSync } from "node:fs";
 import { dirname, resolve } from "node:path";
 import { fileURLToPath } from "node:url";
+import { createLogger } from "@/lib/log";
+
+const log = createLogger("reprocess");
 
 // Load .env.local manually — this runs outside Next's env plumbing.
 const __dirname = dirname(fileURLToPath(import.meta.url));
@@ -79,14 +82,18 @@ async function chat(model: string, messages: Msg[], temperature: number): Promis
     usage: { prompt_tokens: number; completion_tokens: number };
   };
   const dt = Date.now() - t0;
-  console.log(
-    `  → ${model} ${dt}ms — finish=${j.choices[0].finish_reason} p=${j.usage.prompt_tokens} c=${j.usage.completion_tokens}`
-  );
+  log.debug("chat", {
+    model,
+    latencyMs: dt,
+    finishReason: j.choices[0].finish_reason,
+    promptTokens: j.usage.prompt_tokens,
+    completionTokens: j.usage.completion_tokens,
+  });
   return j.choices[0].message.content;
 }
 
 (async () => {
-  console.log(`[reprocess] session=${sessionId}`);
+  log.info("sessão", { sessionId });
 
   const sessionRow = (await sbGet(
     `sessions?id=eq.${sessionId}&select=id,title,transcript,final_summary,feed_items`
@@ -99,7 +106,7 @@ async function chat(model: string, messages: Msg[], temperature: number): Promis
   }>;
   if (sessionRow.length === 0) throw new Error("session not found");
   const s = sessionRow[0];
-  console.log(`[reprocess] title="${s.title}"`);
+  log.info("carregada", { title: s.title, chars: s.transcript.length });
 
   const existingRow = (await sbGet(
     `session_deepenings?session_id=eq.${sessionId}&select=payload`
@@ -107,12 +114,13 @@ async function chat(model: string, messages: Msg[], temperature: number): Promis
   const previous = existingRow[0]?.payload as
     | { title?: string; shortSummary?: string; blocks?: unknown[] }
     | undefined;
-  console.log(
-    `[reprocess] existing deepening blocks=${previous?.blocks?.length ?? 0} title="${previous?.title ?? ""}"`
-  );
+  log.info("aprofundamento atual", {
+    blocks: previous?.blocks?.length ?? 0,
+    title: previous?.title ?? "",
+  });
 
   // ─── Passe 1: draft ────────────────────────────────────────────────
-  console.log(`[reprocess] passe 1 (draft)…`);
+  log.info("passe 1 · draft");
   const userMessage = [
     `finalSummary:\n${JSON.stringify(s.final_summary)}`,
     `feedItems:\n${JSON.stringify(s.feed_items)}`,
@@ -127,10 +135,10 @@ async function chat(model: string, messages: Msg[], temperature: number): Promis
     0.6
   );
   const draft = parseDeepeningFromLLM(draftRaw);
-  console.log(`[reprocess] draft blocks=${draft.blocks.length} title="${draft.title}"`);
+  log.info("draft pronto", { blocks: draft.blocks.length, title: draft.title });
 
   // ─── Passe 2: audit ────────────────────────────────────────────────
-  console.log(`[reprocess] passe 2 (audit)…`);
+  log.info("passe 2 · audit");
   const auditUser = [
     `finalSummary:\n${JSON.stringify(s.final_summary)}`,
     `draft:\n${JSON.stringify(draft)}`,
@@ -144,13 +152,13 @@ async function chat(model: string, messages: Msg[], temperature: number): Promis
     0.15
   );
   const audited = parseDeepeningFromLLM(auditedRaw);
-  console.log(`[reprocess] audited blocks=${audited.blocks.length} title="${audited.title}"`);
+  log.info("audit pronto", { blocks: audited.blocks.length, title: audited.title });
 
   // ─── Persistir via service role (bypass RLS) ────────────────────────
   await sbPatch(`session_deepenings?session_id=eq.${sessionId}`, {
     payload: audited,
   });
-  console.log(`[reprocess] persisted.`);
+  log.success("persistido", { sessionId });
 
   // ─── A/B ────────────────────────────────────────────────────────────
   const summarize = (

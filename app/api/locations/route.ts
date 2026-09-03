@@ -1,8 +1,10 @@
 import { NextResponse } from "next/server";
 import { listLocationsWithUsage } from "@/lib/db/locations";
-import { devLog } from "@/lib/log";
+import { createLogger } from "@/lib/log";
 import { enforceRateLimit, RATE_LIMITS } from "@/lib/rate-limit";
 import { requireAuth } from "@/lib/supabase/require-auth";
+
+const log = createLogger("locations");
 
 export const runtime = "nodejs";
 export const dynamic = "force-dynamic";
@@ -28,8 +30,8 @@ export async function GET(request: Request) {
       items: items.map((l) => ({ id: l.id, name: l.name, count: l.usageCount })),
     });
   } catch (err) {
-    console.error("[locations] list failed", { error: (err as Error).message });
-    devLog("[locations] list error");
+    log.error("list failed", { error: (err as Error).message });
+    log.debug("list error");
     return NextResponse.json({ error: "list_failed" }, { status: 500 });
   }
 }

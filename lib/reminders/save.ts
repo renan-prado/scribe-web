@@ -3,7 +3,7 @@ import { upsertReminders } from "@/lib/db/reminders";
 import type { FeedItem } from "@/lib/domain/feed";
 import type { RemindersPayload } from "@/lib/domain/reminders";
 import type { SummaryPayload } from "@/lib/domain/summary";
-import { devLog } from "@/lib/log";
+import { createLogger } from "@/lib/log";
 import { generateReminders } from "@/lib/reminders/generate";
 
 /**
@@ -19,21 +19,22 @@ export async function generateAndSaveReminders(input: {
   finalSummary: SummaryPayload;
   logPrefix: string;
 }): Promise<RemindersPayload | null> {
+  const log = createLogger(input.logPrefix);
   try {
     const result = await generateReminders(input);
     if (!result.ok) return null;
     try {
       await upsertReminders(input.sessionId, result.payload);
-      devLog(`[${input.logPrefix}] saved`, { sessionId: input.sessionId });
+      log.debug(`saved`, { sessionId: input.sessionId });
     } catch (err) {
-      console.error(`[${input.logPrefix}] save failed`, {
+      log.error(`save failed`, {
         sessionId: input.sessionId,
         error: (err as Error).message,
       });
     }
     return result.payload;
   } catch (err) {
-    console.error(`[${input.logPrefix}] threw`, {
+    log.error(`threw`, {
       sessionId: input.sessionId,
       error: (err as Error).message,
     });

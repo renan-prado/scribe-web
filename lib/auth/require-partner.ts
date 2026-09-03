@@ -1,7 +1,10 @@
 import "server-only";
+import { createLogger } from "@/lib/log";
 import { ensurePartnerAllowance } from "@/lib/partners/allowance";
 import { createAdminClient } from "@/lib/supabase/admin";
 import { createClient } from "@/lib/supabase/server";
+
+const log = createLogger("partners");
 
 /**
  * Gate do painel do parceiro, irmão de `require-admin.ts`.
@@ -63,7 +66,7 @@ export async function getCurrentPartner(): Promise<CurrentPartner | null> {
       .eq("id", data.id)
       .is("user_id", null);
     if (linkErr) {
-      console.error("[partners] falha ao vincular parceiro à conta", {
+      log.error("falha ao vincular parceiro à conta", {
         partnerId: data.id,
         error: linkErr.message,
       });
