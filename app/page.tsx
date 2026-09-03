@@ -767,7 +767,11 @@ function Plans() {
             Sem contrato, sem cartão para testar. Cancele em um toque.
           </p>
         </div>
-        <div className="grid items-start gap-4 [&>*:nth-child(2)]:order-first lg:grid-cols-3 lg:gap-[22px] lg:[&>*:nth-child(2)]:order-none">
+        {/* Sem `items-start`: os cards precisam ESTICAR até a altura do mais alto.
+            O Gratuito tem uma vantagem a menos que os pagos, e com o alinhamento
+            ao topo ele ficava visivelmente menor — o que lê como plano
+            inacabado, não como plano mais simples. */}
+        <div className="grid gap-4 [&>*:nth-child(2)]:order-first lg:grid-cols-3 lg:gap-[22px] lg:[&>*:nth-child(2)]:order-none">
           <PlanCard
             name={PLANS.pessoal.name}
             price={formatBrl(PLANS.pessoal.priceCents)}
@@ -934,7 +938,10 @@ function PlanCard({
       <Link
         href={href}
         className={cn(
-          "inline-flex items-center justify-center gap-2 rounded-[24px] p-[15px] text-[12px] font-semibold uppercase tracking-[.04em]",
+          // `mt-auto` cola o botão no rodapé: com os cards esticados, a lista
+          // de vantagens mais curta deixaria o CTA do Gratuito flutuando no
+          // meio, desalinhado dos outros dois.
+          "mt-auto inline-flex items-center justify-center gap-2 rounded-[24px] p-[15px] text-[12px] font-semibold uppercase tracking-[.04em]",
           isPrimary
             ? "scriba-cta bg-[image:var(--scriba-cta)] text-scriba-cta-ink shadow-[0_8px_20px_var(--scriba-cta-shadow)]"
             : "lp-cta-soft bg-scriba-btn-muted text-scriba-ink hover:bg-scriba-btn-muted-hover"
