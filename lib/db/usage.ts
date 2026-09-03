@@ -42,6 +42,9 @@ export type UsageRoute =
   | "study-questions"
   | "study-answers"
   | "study-write"
+  // Os dois cortes do guardião, num modelo barato. Mesma rota para os
+  // dois: separá-los daria duas linhas de custo irrisório cada.
+  | "study-guard"
   | "practices"
   | "rereads"
   | "reminders"

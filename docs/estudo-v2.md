@@ -174,6 +174,8 @@ transcrição + resumo + cards
         │  tema real + 25-30 perguntas de média e alta complexidade
         │  NÃO seleciona. Pergunta sem pudor.
         ▼
+[1b] GUARDIÃO (mini, t=0)          ← corta a pergunta que o resumo já responde
+        ▼
 [2] RESPONDEDOR (LLM, t=0.5)       ← escolhe e responde
         │  descarta a redundante, a rasa, a genérica, a que não sabe responder
         │  responde 10-14 numa chamada só, com todas à vista
@@ -186,6 +188,8 @@ transcrição + resumo + cards
 [4] REDATOR (LLM, t=0.75)          ← artigo corrido, NÃO pergunta-e-resposta
         │  reordena, funde, descarta e desdobra as respostas
         │  abre pelo problema, sustenta uma tese
+        ▼
+[4b] GUARDIÃO (mini, t=0)          ← a tese repete a do resumo? reescreve 1x
         ▼
 [5] SELAGEM (determinístico)       ← sem LLM
         │  bibleQuote.text reescrito da NVI; quote sem obra descartado
@@ -233,6 +237,53 @@ reestabelecerem dez vezes que graça é favor imerecido. Com o conjunto à vista
 cada resposta pressupõe as anteriores — e é isso que produz densidade em vez
 de repetição costurada.
 
+## O guardião — dois cortes contra a repetição do resumo
+
+O modo de falha nº 1 deste produto é o estudo sair dizendo a mesma coisa que o
+resumo já disse. Os três modelos recebem o resumo e são instruídos a não
+repeti-lo; a instrução compete com a inclinação natural do modelo de voltar ao
+ponto mais saliente do contexto, e às vezes perde.
+
+O guardião não instrui — **corta**. Roda num modelo barato
+(`OPENAI_STUDY_GUARD_MODEL`, `gpt-4o-mini` por padrão) a temperatura zero,
+porque as duas tarefas são classificação, não escrita. Custa uma fração de
+centavo e alguns segundos.
+
+**[1b] Filtro de perguntas.** Entre o questionador e o respondedor. Recebe o
+resumo e as 25-30 perguntas, e devolve as que devem morrer: a que o resumo já
+responde, a que apenas reconduz à tese, a que é sobre o sermão em vez de sobre
+o assunto, a genérica, a que se esgota numa definição.
+
+É o corte de melhor rendimento do pipeline, porque ataca na fonte: uma
+pergunta cuja resposta já está no resumo produz, necessariamente, um trecho que
+repete o resumo. Descartada aqui, ela economiza uma resposta E o parágrafo que
+sairia dela.
+
+Salvaguarda: se sobrarem menos de seis perguntas, seguimos com TODAS. Corte
+excessivo significa questionador preguiçoso, e responder duas sobras produziria
+um estudo raquítico — repetição é ruim, mas vazio é pior.
+
+**[4b] Checagem de tese.** Depois do redator. Compara a tese e os títulos de
+seção do resumo com os do artigo, e responde uma coisa só: o estudo está apenas
+repetindo?
+
+Existe porque o filtro [1b] não alcança esta falha. Mesmo partindo de perguntas
+boas, o redator pode colapsar o artigo de volta na tese do sermão na hora de
+amarrar tudo — foi a falha observada em produção, e nenhum filtro de entrada a
+pega.
+
+Quando reprova, dispara **uma** reescrita, com a sobreposição nomeada
+explicitamente numa mensagem separada. Se a segunda tentativa também repetir, o
+estudo é entregue assim mesmo: o usuário já pagou as moedas, e devolver 502
+depois de cobrar é pior que entregar algo imperfeito. O fato fica no log e em
+`/admin/studies`.
+
+Os dois cortes ficam registrados em `StudyRecord.guard`, então o
+`/admin/studies` distingue as duas razões de uma pergunta não ter virado texto:
+**cortada** (o guardião disse que o resumo já respondia — culpa do
+questionador) e **não escolhida** (o respondedor preferiu outras — se ele
+deixou de fora justamente as boas, a culpa é dele).
+
 ## As duas etapas determinísticas são o coração
 
 Nenhuma instrução em linguagem natural — por mais maiúscula, por mais "REGRA
@@ -245,11 +296,12 @@ pedir — julgamento.
 
 ## O que não existe aqui, e por quê
 
-- **Não há passo de auditoria.** Ele existia na primeira versão e foi
-  removido: o artigo fala do ASSUNTO, não do que o pregador disse, então o
+- **Não há passo de auditoria de conteúdo.** Ele existia na primeira versão e
+  foi removido: o artigo fala do ASSUNTO, não do que o pregador disse, então o
   risco de atribuir ao pregador uma posição que ele não defendeu caiu muito. O
   que o auditor de fato pegava — citação sem origem, versículo parafraseado —
-  a selagem pega melhor, porque é código e não instrução.
+  a selagem pega melhor, porque é código e não instrução. O que sobrou de
+  verificação é o guardião, que faz uma pergunta só e a faz barato.
 - **Não há passo de pesquisa.** `callChat` fala com Chat Completions sem
   ferramentas: não há web search nem base indexada. Uma "pesquisa" contra o
   conhecimento paramétrico do modelo é só mais uma chance de inventar, com um
@@ -268,6 +320,7 @@ pedir — julgamento.
 | [1] Questionador | amplitude e ângulos improváveis | `OPENAI_STUDY_QUESTIONS_MODEL` | 0.9 | Queremos as perguntas que um modelo cauteloso não faria |
 | [2] Respondedor | seleção e substância | `OPENAI_STUDY_ANSWERS_MODEL` | 0.5 | É a etapa que carrega os fatos; temperatura alta aqui vira citação inventada |
 | [4] Redator | prosa | `OPENAI_STUDY_WRITE_MODEL` | 0.75 | A substância já está fixada; a temperatura muda como se escreve, não o que se afirma |
+| [1b] [4b] Guardião | classificação | `OPENAI_STUDY_GUARD_MODEL` | 0 | Decidir "isto repete aquilo?" não precisa de modelo caro, e variação aqui produziria cortes inconsistentes |
 
 **Especializar por etapa é a decisão certa; usar três famílias de modelo
 diferentes não é.** O ganho real vem de temperatura e escopo distintos por

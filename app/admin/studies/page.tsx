@@ -88,24 +88,37 @@ export default async function AdminStudiesPage() {
                       {s.record.theme}
                     </span>
                   </div>
-                  {/* Todas as perguntas, com as respondidas em destaque. As
-                      descartadas são metade do diagnóstico: se o respondedor
-                      deixou de fora justamente as boas, o problema é dele. */}
+                  {s.record.guard && s.record.guard.rewrites > 0 ? (
+                    <p className="text-[11px] font-medium text-destructive">
+                      O redator repetiu a tese do resumo e teve de reescrever.
+                    </p>
+                  ) : null}
+                  {/* Todas as perguntas, e por que cada uma não virou texto.
+                      Os dois descartes têm causas diferentes e consertos
+                      diferentes: "cortada" é o guardião dizendo que o resumo já
+                      respondia — culpa do questionador; "não escolhida" é o
+                      respondedor tendo preferido outras — se ele deixou de fora
+                      justamente as boas, a culpa é dele. */}
                   <ol className="flex flex-col gap-1">
                     {s.record.questions.map((q) => {
                       const used = s.record?.answered.includes(q.text) ?? false;
+                      const cut = s.record?.guard?.blockedByGuard.includes(q.text) ?? false;
                       return (
                         <li
                           key={q.text}
                           className={
                             used
                               ? "text-[12.5px] font-medium leading-relaxed text-scriba-ink-strong"
-                              : "text-[12.5px] font-light leading-relaxed text-scriba-ink-mute line-through decoration-scriba-ink-mute/40"
+                              : "text-[12.5px] font-light leading-relaxed text-scriba-ink-mute"
                           }
                         >
-                          {q.text}{" "}
+                          <span className={cut ? "line-through decoration-destructive/50" : ""}>
+                            {q.text}
+                          </span>{" "}
                           <span className="font-normal text-[11px] text-scriba-ink-mute">
-                            ({DEPTH_LABEL[q.depth]})
+                            ({DEPTH_LABEL[q.depth]}
+                            {cut ? " · cortada: o resumo já respondia" : ""}
+                            {!cut && !used ? " · não escolhida" : ""})
                           </span>
                         </li>
                       );

@@ -2,11 +2,14 @@ import "server-only";
 import { recordChatUsage, type UsageRoute } from "@/lib/db/usage";
 import type { FeedItem } from "@/lib/domain/feed";
 import {
+  parseQuestionFilterFromLLM,
   parseStudyAnswersFromLLM,
   parseStudyFromLLM,
   parseStudyQuestionsFromLLM,
+  parseThesisCheckFromLLM,
   type StudyAnswer,
   type StudyPayload,
+  type StudyQuestion,
   type StudyRecord,
   type StudyTopic,
 } from "@/lib/domain/study";
@@ -16,6 +19,10 @@ import { buildLlmMetadata } from "@/lib/llm/metadata";
 import { callChat } from "@/lib/llm/openai";
 import { createLogger } from "@/lib/log";
 import { STUDY_ANSWERS_SYSTEM_PROMPT } from "@/lib/prompts/study-answers";
+import {
+  STUDY_QUESTION_FILTER_SYSTEM_PROMPT,
+  STUDY_THESIS_CHECK_SYSTEM_PROMPT,
+} from "@/lib/prompts/study-guard";
 import { STUDY_QUESTIONS_SYSTEM_PROMPT } from "@/lib/prompts/study-questions";
 import { STUDY_WRITE_SYSTEM_PROMPT } from "@/lib/prompts/study-write";
 import { renderTheologianBriefing, theologiansFor } from "@/lib/prompts/theologians";
@@ -31,11 +38,13 @@ import { sealStudy } from "@/lib/study/seal";
  *
  * Cinco etapas, três de LLM e duas determinísticas:
  *
- *   [1] QUESTIONADOR  LLM  interroga o sermão como um crítico: 25-30 perguntas
- *   [2] RESPONDEDOR   LLM  ESCOLHE as 10-14 que rendem e responde todas juntas
- *   [3] ANCORAGEM     ---  resolve as referências bíblicas citadas na NVI
- *   [4] REDATOR       LLM  transforma as respostas num artigo corrido
- *   [5] SELAGEM       ---  versículo vem da NVI; fonte sem obra é descartada
+ *   [1] QUESTIONADOR  LLM   interroga o sermão como um crítico: 25-30 perguntas
+ *   [1b] GUARDIÃO     mini  corta a pergunta que o resumo já responde
+ *   [2] RESPONDEDOR   LLM   ESCOLHE as 10-14 que rendem e responde todas juntas
+ *   [3] ANCORAGEM     ---   resolve as referências bíblicas citadas na NVI
+ *   [4] REDATOR       LLM   transforma as respostas num artigo corrido
+ *   [4b] GUARDIÃO     mini  se a tese repetir a do resumo, manda reescrever
+ *   [5] SELAGEM       ---   versículo vem da NVI; fonte sem obra é descartada
  *
  * A representação intermediária ser PERGUNTA, e não uma taxonomia de eixos e
  * disciplinas, é a decisão que carrega o resto: uma pergunta é autovalidável —
@@ -46,6 +55,13 @@ import { sealStudy } from "@/lib/study/seal";
  * perguntas**. O passo 1 pergunta sem pudor e NÃO seleciona; a seleção mora no
  * passo 2, com quem vai ter de responder — quem melhor julga se uma pergunta
  * vale é quem precisa respondê-la.
+ *
+ * Os dois passos do guardião (`lib/prompts/study-guard.ts`) existem contra o
+ * modo de falha nº 1 do produto: o estudo sair repetindo o resumo. Os três
+ * modelos do pipeline recebem o resumo e são instruídos a não repeti-lo, e a
+ * instrução às vezes perde para a inclinação natural de voltar ao ponto mais
+ * saliente do contexto. O guardião não instrui — corta. Roda num modelo barato
+ * porque as duas tarefas são classificação, não escrita.
  *
  * Persistência é do chamador. Usado por `/api/deepening` e
  * `/api/deepening/reprocess`.
@@ -146,10 +162,35 @@ export async function generateStudy(input: GenerateStudyInput): Promise<Generate
     latencyMs: questionsResult.data.latencyMs,
   });
 
+  // ── [1b] GUARDIÃO — corta a pergunta que o resumo já responde ────────────
+  // O corte mais barato do pipeline e o de melhor rendimento: uma pergunta
+  // descartada aqui economiza uma resposta E o trecho do artigo que sairia
+  // dela. Melhor-esforço — se o guardião falhar, seguimos com todas.
+  const blocked = await filterQuestions({
+    userId,
+    sessionId,
+    questions: record.questions,
+    finalSummary,
+    log: log.scoped("guard"),
+  });
+  const surviving = record.questions.filter((q) => !blocked.includes(q.text));
+  record.guard = { blockedByGuard: blocked, rewrites: 0 };
+
+  // Se o guardião reprovou quase tudo, o problema está no questionador — e
+  // responder as duas sobras produziria um estudo raquítico. Seguir com todas
+  // é o mal menor: repetição é pior que nada, mas nada é pior que os dois.
+  const questionsForAnswering = surviving.length >= 6 ? surviving : record.questions;
+  if (surviving.length < 6 && blocked.length > 0) {
+    log.warn("guardião cortou perguntas demais — seguindo com todas", {
+      asked: record.questions.length,
+      surviving: surviving.length,
+    });
+  }
+
   // Autores pertinentes ao conjunto dos temas levantados. Respondedor e
   // redator recebem os MESMOS, senão o segundo cita gente que o primeiro não
   // trabalhou.
-  const topics = [...new Set(record.questions.flatMap((q) => q.topics))] as StudyTopic[];
+  const topics = [...new Set(questionsForAnswering.flatMap((q) => q.topics))] as StudyTopic[];
   const authorsBlock = renderTheologianBriefing(theologiansFor(topics));
 
   // ── [2] RESPONDEDOR — seleciona e responde ───────────────────────────────
@@ -170,7 +211,7 @@ export async function generateStudy(input: GenerateStudyInput): Promise<Generate
         role: "user",
         content: [
           `theme:\n${record.theme}`,
-          `questions:\n${JSON.stringify(record.questions)}`,
+          `questions:\n${JSON.stringify(questionsForAnswering)}`,
           `authors:\n${authorsBlock}`,
           `summary:\n${JSON.stringify(finalSummary)}`,
           `transcript:\n${capTranscript(transcript)}`,
@@ -192,7 +233,7 @@ export async function generateStudy(input: GenerateStudyInput): Promise<Generate
 
   record.answered = answers.map((a) => a.question);
   aLog.debug("ok", {
-    asked: record.questions.length,
+    asked: questionsForAnswering.length,
     answered: answers.length,
     withTension: answers.filter((a) => a.tension).length,
     latencyMs: answersResult.data.latencyMs,
@@ -215,48 +256,45 @@ export async function generateStudy(input: GenerateStudyInput): Promise<Generate
   }
 
   // ── [4] REDATOR ──────────────────────────────────────────────────────────
-  const writeModel = serverEnv.OPENAI_STUDY_WRITE_MODEL;
   const wLog = log.scoped("write");
+  const writeArgs = {
+    userId,
+    sessionId,
+    theme: record.theme,
+    answers,
+    anchoredBlock: renderAnchoredPassages(anchored),
+    authorsBlock,
+    finalSummary,
+    log: wLog,
+  };
 
-  const writeResult = await callChat({
-    model: writeModel,
-    // Alta: é a etapa de prosa, e a substância já está fixada nas respostas.
-    // A temperatura aqui muda como o texto é escrito, não o que ele afirma.
-    temperature: 0.75,
-    maxTokens: 16000,
-    timeoutMs: LONG_CALL_TIMEOUT_MS,
-    responseFormat: { type: "json_object" },
-    messages: [
-      { role: "system", content: STUDY_WRITE_SYSTEM_PROMPT },
-      {
-        role: "user",
-        content: [
-          `theme:\n${record.theme}`,
-          `answers:\n${JSON.stringify(answers.map(stripPassages))}`,
-          `anchoredPassages:\n${renderAnchoredPassages(anchored)}`,
-          `authors:\n${authorsBlock}`,
-          `summary:\n${JSON.stringify(finalSummary)}`,
-        ].join("\n\n---\n"),
-      },
-    ],
-    store: true,
-    metadata: buildLlmMetadata({ route: "study-write", userId, sessionId }),
+  const written = await runWriter(writeArgs, null);
+  if (!written.ok) return written.error;
+  let draft = written.payload;
+
+  // ── [4b] GUARDIÃO — a tese avança em relação à do resumo? ────────────────
+  // O filtro do passo 1b não alcança esta falha: mesmo partindo de perguntas
+  // boas, o redator pode colapsar o artigo de volta na tese do sermão na hora
+  // de amarrar tudo. UMA reescrita, com a sobreposição nomeada.
+  const verdict = await checkThesis({
+    userId,
+    sessionId,
+    finalSummary,
+    draft,
+    log: log.scoped("guard"),
   });
 
-  if (!writeResult.ok) return upstreamFailure(wLog, writeResult.error);
-  await recordUsage(sessionId, "study-write", writeModel, writeResult.data);
-
-  const draft = parseStudyFromLLM(writeResult.data.content);
-  wLog.debug("ok", {
-    blocks: draft.blocks.length,
-    latencyMs: writeResult.data.latencyMs,
-    finishReason: writeResult.data.finishReason,
-  });
-  if (writeResult.data.finishReason === "length") {
-    wLog.warn("saída truncada por max_tokens", {
-      completionTokens: writeResult.data.usage.completionTokens,
-    });
+  if (verdict.repeats) {
+    wLog.warn("tese repete o resumo — reescrevendo uma vez", { overlap: verdict.overlap });
+    const retry = await runWriter(writeArgs, verdict.overlap);
+    if (retry.ok && retry.payload.blocks.length > 0) {
+      draft = retry.payload;
+      record.guard = { ...(record.guard ?? { blockedByGuard: [] }), rewrites: 1 };
+    }
+    // Segunda falha não aborta: o usuário já pagou, e entregar um estudo
+    // imperfeito é melhor que cobrar moedas e devolver 502. Fica o warn.
   }
+
   if (draft.blocks.length === 0) {
     wLog.error("redação vazia — abortando");
     return { ok: false, kind: "pipeline", message: "draft_empty" };
@@ -275,9 +313,205 @@ export async function generateStudy(input: GenerateStudyInput): Promise<Generate
     ok: true,
     payload,
     record,
-    latencyMs: writeResult.data.latencyMs,
-    model: writeModel,
+    latencyMs: written.latencyMs,
+    model: serverEnv.OPENAI_STUDY_WRITE_MODEL,
   };
+}
+
+// ── O redator, isolado para poder rodar duas vezes ───────────────────────────
+
+type WriteArgs = {
+  userId: string;
+  sessionId: string;
+  theme: string;
+  answers: StudyAnswer[];
+  anchoredBlock: string;
+  authorsBlock: string;
+  finalSummary: SummaryPayload;
+  log: ReturnType<typeof createLogger>;
+};
+
+type WriteOutcome =
+  | { ok: true; payload: StudyPayload; latencyMs: number }
+  | { ok: false; error: GenerateStudyError };
+
+/**
+ * `avoid` só vem preenchido na segunda tentativa: é a sobreposição que o
+ * guardião nomeou. Ela entra como mensagem SEPARADA, e não costurada no
+ * conteúdo, para o modelo lê-la como correção e não como mais um dado.
+ */
+async function runWriter(args: WriteArgs, avoid: string | null): Promise<WriteOutcome> {
+  const model = serverEnv.OPENAI_STUDY_WRITE_MODEL;
+  const result = await callChat({
+    model,
+    // Alta: é a etapa de prosa, e a substância já está fixada nas respostas.
+    // A temperatura aqui muda como o texto é escrito, não o que ele afirma.
+    temperature: 0.75,
+    maxTokens: 16000,
+    timeoutMs: LONG_CALL_TIMEOUT_MS,
+    responseFormat: { type: "json_object" },
+    messages: [
+      { role: "system", content: STUDY_WRITE_SYSTEM_PROMPT },
+      {
+        role: "user",
+        content: [
+          `theme:\n${args.theme}`,
+          `answers:\n${JSON.stringify(args.answers.map(stripPassages))}`,
+          `anchoredPassages:\n${args.anchoredBlock}`,
+          `authors:\n${args.authorsBlock}`,
+          `resumoQueOLeitorJaLeu:\n${JSON.stringify(args.finalSummary)}`,
+          `teseDoResumo (a sua TEM de ser outra):\n${args.finalSummary.shortSummary}`,
+        ].join("\n\n---\n"),
+      },
+      ...(avoid
+        ? [
+            {
+              role: "user" as const,
+              content: `A versão anterior deste artigo foi recusada: a tese dela apenas repetia a do resumo. Sobreposição apontada: "${avoid}". Escreva de novo, partindo do mesmo material, com uma tese que AVANCE em relação a essa. Mesmo tema, afirmação diferente.`,
+            },
+          ]
+        : []),
+    ],
+    store: true,
+    metadata: buildLlmMetadata({
+      route: "study-write",
+      userId: args.userId,
+      sessionId: args.sessionId,
+    }),
+  });
+
+  if (!result.ok) return { ok: false, error: upstreamFailure(args.log, result.error) };
+  await recordUsage(args.sessionId, "study-write", model, result.data);
+
+  const payload = parseStudyFromLLM(result.data.content);
+  args.log.debug("ok", {
+    blocks: payload.blocks.length,
+    retry: avoid !== null,
+    latencyMs: result.data.latencyMs,
+    finishReason: result.data.finishReason,
+  });
+  if (result.data.finishReason === "length") {
+    args.log.warn("saída truncada por max_tokens", {
+      completionTokens: result.data.usage.completionTokens,
+    });
+  }
+  return { ok: true, payload, latencyMs: result.data.latencyMs };
+}
+
+// ── O guardião ───────────────────────────────────────────────────────────────
+
+/**
+ * Resumo condensado para os prompts do guardião: a tese mais o texto dos
+ * blocos. Mandar o JSON inteiro gastaria tokens num modelo barato para
+ * carregar campos que ele não usa.
+ */
+function condenseSummary(summary: SummaryPayload): string {
+  const body = summary.blocks
+    .map((b) => ("text" in b ? b.text : ""))
+    .filter(Boolean)
+    .join(" ");
+  return `TESE: ${summary.shortSummary}\n\nCONTEÚDO: ${body}`.slice(0, 8000);
+}
+
+async function filterQuestions(args: {
+  userId: string;
+  sessionId: string;
+  questions: StudyQuestion[];
+  finalSummary: SummaryPayload;
+  log: ReturnType<typeof createLogger>;
+}): Promise<string[]> {
+  const model = serverEnv.OPENAI_STUDY_GUARD_MODEL;
+  const result = await callChat({
+    model,
+    // Zero: é classificação. Variação aqui só produziria cortes inconsistentes
+    // entre duas execuções sobre o mesmo material.
+    temperature: 0,
+    maxTokens: 2000,
+    responseFormat: { type: "json_object" },
+    messages: [
+      { role: "system", content: STUDY_QUESTION_FILTER_SYSTEM_PROMPT },
+      {
+        role: "user",
+        content: [
+          `resumo:\n${condenseSummary(args.finalSummary)}`,
+          `perguntas:\n${args.questions.map((q) => q.text).join("\n")}`,
+        ].join("\n\n---\n"),
+      },
+    ],
+    store: true,
+    metadata: buildLlmMetadata({
+      route: "study-guard",
+      userId: args.userId,
+      sessionId: args.sessionId,
+    }),
+  });
+
+  if (!result.ok) {
+    // Melhor-esforço: sem o filtro o estudo ainda sai, só com mais risco de
+    // repetir. Derrubar a geração por causa do guardião seria trocar um
+    // problema de qualidade por um de disponibilidade.
+    args.log.warn("filtro de perguntas falhou — seguindo com todas", {
+      message: result.error.message,
+    });
+    return [];
+  }
+  await recordUsage(args.sessionId, "study-guard", model, result.data);
+
+  const blocked = parseQuestionFilterFromLLM(result.data.content, args.questions);
+  args.log.debug("filtro ok", { asked: args.questions.length, blocked: blocked.length });
+  return blocked;
+}
+
+async function checkThesis(args: {
+  userId: string;
+  sessionId: string;
+  finalSummary: SummaryPayload;
+  draft: StudyPayload;
+  log: ReturnType<typeof createLogger>;
+}): Promise<{ repeats: boolean; overlap: string }> {
+  const model = serverEnv.OPENAI_STUDY_GUARD_MODEL;
+  const headings = (payload: { blocks: { type: string; text?: string }[] }) =>
+    payload.blocks
+      .filter((b) => b.type === "h1")
+      .map((b) => b.text ?? "")
+      .join(" · ");
+
+  const result = await callChat({
+    model,
+    temperature: 0,
+    maxTokens: 500,
+    responseFormat: { type: "json_object" },
+    messages: [
+      { role: "system", content: STUDY_THESIS_CHECK_SYSTEM_PROMPT },
+      {
+        role: "user",
+        content: [
+          `teseDoResumo:\n${args.finalSummary.shortSummary}`,
+          `secoesDoResumo:\n${headings(args.finalSummary)}`,
+          `teseDoEstudo:\n${args.draft.shortSummary}`,
+          `secoesDoEstudo:\n${headings(args.draft)}`,
+        ].join("\n\n---\n"),
+      },
+    ],
+    store: true,
+    metadata: buildLlmMetadata({
+      route: "study-guard",
+      userId: args.userId,
+      sessionId: args.sessionId,
+    }),
+  });
+
+  if (!result.ok) {
+    args.log.warn("checagem de tese falhou — aceitando o texto", {
+      message: result.error.message,
+    });
+    return { repeats: false, overlap: "" };
+  }
+  await recordUsage(args.sessionId, "study-guard", model, result.data);
+
+  const verdict = parseThesisCheckFromLLM(result.data.content);
+  args.log.debug("tese conferida", { repeats: verdict.repeats });
+  return verdict;
 }
 
 // ── Auxiliares ───────────────────────────────────────────────────────────────

@@ -89,9 +89,15 @@ Sem ver as perguntas, não dá para saber em qual dos dois modelos mexer — e a
 descartadas são metade do diagnóstico, porque se o respondedor deixou de fora
 justamente as boas, o problema é dele.
 
-Uma leitura que quem mexer aqui precisa preservar: estudo sem nenhuma fonte não
-é necessariamente pior — é a selagem tendo descartado o que não tinha obra, que
-é o comportamento desejado.
+A tela distingue as DUAS razões de uma pergunta não ter virado texto, e a
+distinção é o diagnóstico: **cortada** (o guardião disse que o resumo já
+respondia — culpa do questionador) e **não escolhida** (o respondedor preferiu
+outras — se ele deixou de fora justamente as boas, a culpa é dele). Quem mexer
+aqui não pode colapsar as duas num "descartada".
+
+Uma leitura que também precisa ser preservada: estudo sem nenhuma fonte não é
+necessariamente pior — é a selagem tendo descartado o que não tinha obra, que é
+o comportamento desejado.
 
 ## Parceiros
 

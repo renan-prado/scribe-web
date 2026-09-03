@@ -145,11 +145,13 @@ estudo  responde  →  agora que entendi o tema, o que preciso aprender sobre el
 Cinco etapas, três de LLM e **duas determinísticas**:
 
 ```
-[1] lib/prompts/study-questions.ts  LLM  interroga o sermão: 25-30 perguntas
-[2] lib/prompts/study-answers.ts    LLM  ESCOLHE as 10-14 que rendem e responde
-[3] lib/study/anchor.ts             ---  resolve as referências citadas na NVI
-[4] lib/prompts/study-write.ts      LLM  vira um artigo corrido
-[5] lib/study/seal.ts               ---  versículo da NVI; fonte sem obra cai
+[1]  lib/prompts/study-questions.ts  LLM   interroga o sermão: 25-30 perguntas
+[1b] lib/prompts/study-guard.ts      mini  corta a que o resumo já responde
+[2]  lib/prompts/study-answers.ts    LLM   ESCOLHE as 10-14 que rendem e responde
+[3]  lib/study/anchor.ts             ---   resolve as referências citadas na NVI
+[4]  lib/prompts/study-write.ts      LLM   vira um artigo corrido
+[4b] lib/prompts/study-guard.ts      mini  tese repetiu o resumo? reescreve 1x
+[5]  lib/study/seal.ts               ---   versículo da NVI; fonte sem obra cai
 ```
 
 Orquestrador: `lib/study/generate.ts`. Chamado por `/api/deepening` e
@@ -186,19 +188,39 @@ cotas mínimas do prompt antigo eram a maior fonte de invenção do sistema: cot
 é concreta, "não invente" é vago, e cota vence. O comprimento vem do número de
 perguntas boas respondidas, nunca de uma instrução para escrever longo.
 
-**Não há passo de auditoria**, e é deliberado: o artigo fala do ASSUNTO, não do
-que o pregador disse, e o que um auditor pegaria — citação sem origem,
-versículo parafraseado — a selagem pega melhor, porque é código.
+**Não há passo de auditoria de conteúdo**, e é deliberado: o artigo fala do
+ASSUNTO, não do que o pregador disse, e o que um auditor pegaria — citação sem
+origem, versículo parafraseado — a selagem pega melhor, porque é código.
+
+**O guardião é a única verificação que sobrou, e ele faz uma pergunta só:
+"isto repete o resumo?"** Roda duas vezes num modelo barato a temperatura zero.
+O corte [1b] mata na fonte (pergunta que o resumo já responde produz,
+necessariamente, parágrafo que repete o resumo); o corte [4b] pega o que o
+primeiro não alcança — o redator colapsando o artigo de volta na tese do
+sermão na hora de amarrar tudo, que foi a falha observada em produção.
+
+Três invariantes do guardião, todas contra o mesmo risco de trocar um problema
+de qualidade por um de disponibilidade:
+
+- **Falha do guardião nunca derruba a geração.** Sem o filtro o estudo ainda
+  sai, só com mais risco de repetir.
+- **Se sobrarem menos de seis perguntas, seguimos com todas.** Corte excessivo
+  é sinal de questionador preguiçoso; responder duas sobras dá estudo
+  raquítico, e vazio é pior que repetido.
+- **[4b] dispara UMA reescrita, nunca duas.** Se a segunda também repetir, o
+  estudo é entregue: o usuário já pagou as moedas, e 502 depois de cobrar é
+  pior que um texto imperfeito. Fica o `warn` e o registro em
+  `StudyRecord.guard`.
 
 As perguntas são **persistidas** (`session_deepenings.plan`, migração 0033 — a
 coluna nasceu guardando um plano de eixos e hoje guarda um `StudyRecord`) e
 lidas em `/admin/studies`. É o que separa "as perguntas eram rasas" de "eram
 boas e foram mal respondidas", que são consertos em modelos diferentes.
 
-Três env vars (`OPENAI_STUDY_QUESTIONS_MODEL`, `_ANSWERS_`, `_WRITE_`) e três
-rotas em `llm_usage_events` (`study-questions` / `study-answers` /
-`study-write`), para dar para subir só o questionador de modelo e medir o
-efeito isoladamente.
+Quatro env vars (`OPENAI_STUDY_QUESTIONS_MODEL`, `_ANSWERS_`, `_WRITE_`,
+`_GUARD_`) e quatro rotas em `llm_usage_events`, para dar para subir só o
+questionador de modelo e medir o efeito isoladamente. O guardião é o único que
+não vale subir: ele classifica, não escreve.
 
 **As chamadas [2] e [4] passam `timeoutMs` explícito de 180s.** O padrão de
 `callChat` é 60s, e essas duas são grandes — um timeout ali abortaria trabalho

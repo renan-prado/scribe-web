@@ -10,6 +10,7 @@ import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/comp
 import { BillingDialog } from "@/features/billing/components/BillingDialog";
 import { CoinCost } from "@/features/coins/components/CoinCost";
 import { useCoinsStore } from "@/features/coins/store";
+import { STUDY_GENERATION_PHASES } from "@/features/session/lib/studyPhases";
 import { COIN_COSTS } from "@/lib/coins/pricing";
 import { minPlanNameFor } from "@/lib/entitlements/features";
 import { cn } from "@/lib/utils";
@@ -254,11 +255,7 @@ export function DeepenButton({ sessionId, hasDeepening, variant, canGenerate }: 
 
   const overlay = (
     <>
-      <PageBlurOverlay
-        open={pending}
-        title="Gerando o estudo"
-        subtitle="Buscando cross-references, distinções doutrinárias e vozes da tradição."
-      />
+      <PageBlurOverlay open={pending} phases={STUDY_GENERATION_PHASES} />
       <BillingDialog open={billingOpen} onOpenChange={setBillingOpen} />
     </>
   );

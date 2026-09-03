@@ -12,6 +12,7 @@ import {
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
 import { useCoinsStore } from "@/features/coins/store";
+import { STUDY_REPROCESS_PHASES } from "@/features/session/lib/studyPhases";
 import { COIN_COSTS } from "@/lib/coins/pricing";
 import { cn } from "@/lib/utils";
 
@@ -73,11 +74,7 @@ export function DeepeningMenu({ sessionId, canReprocess }: DeepeningMenuProps) {
 
   return (
     <>
-      <PageBlurOverlay
-        open={reprocessing}
-        title="Reprocessando o estudo"
-        subtitle="Refazendo cross-references, distinções e vozes da tradição."
-      />
+      <PageBlurOverlay open={reprocessing} phases={STUDY_REPROCESS_PHASES} />
       <DropdownMenu>
         <DropdownMenuTrigger
           className={cn(

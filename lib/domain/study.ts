@@ -119,6 +119,21 @@ export type StudyRecord = {
   questions: StudyQuestion[];
   /** As que o respondedor escolheu responder, na ordem em que respondeu. */
   answered: string[];
+  /** Ausente nos estudos anteriores ao guardião. */
+  guard?: StudyGuard;
+};
+
+/**
+ * O que o guardião cortou. Guardado porque é o sinal mais direto que temos de
+ * que o pipeline está resvalando para cima do resumo: `blockedByGuard` alto
+ * significa questionador preguiçoso, e `rewrites > 0` significa redator que
+ * colapsou de volta na tese do sermão.
+ */
+export type StudyGuard = {
+  /** Perguntas descartadas por já estarem respondidas no resumo. */
+  blockedByGuard: string[];
+  /** Quantas vezes o redator teve de reescrever por repetir a tese (0, 1). */
+  rewrites: number;
 };
 
 // ── Passos 4-5: os blocos ────────────────────────────────────────────────────
@@ -223,7 +238,12 @@ export function parseStudyQuestionsFromLLM(content: string): StudyRecord | null 
   // vazio, que é exatamente o comportamento antigo.
   if (questions.length === 0) return null;
 
-  return { theme: str(src, "theme"), questions, answered: [] };
+  return {
+    theme: str(src, "theme"),
+    questions,
+    answered: [],
+    guard: { blockedByGuard: [], rewrites: 0 },
+  };
 }
 
 export function parseStudyAnswersFromLLM(content: string): StudyAnswer[] {
@@ -330,4 +350,52 @@ export function parseStudyFromLLM(content: string): StudyPayload {
     shortSummary: str(src, "shortSummary"),
     blocks,
   };
+}
+
+// ── O guardião ───────────────────────────────────────────────────────────────
+
+/**
+ * Perguntas que o filtro mandou descartar. Casadas por texto normalizado: o
+ * modelo às vezes devolve a pergunta com pontuação ou caixa diferente, e uma
+ * comparação exata deixaria passar justamente o que ele quis cortar.
+ */
+export function parseQuestionFilterFromLLM(content: string, asked: StudyQuestion[]): string[] {
+  let obj: unknown;
+  try {
+    obj = JSON.parse(content);
+  } catch {
+    return [];
+  }
+  if (!obj || typeof obj !== "object") return [];
+
+  const raw = strArray(obj as Record<string, unknown>, "drop");
+  if (raw.length === 0) return [];
+
+  const norm = (t: string) =>
+    t
+      .normalize("NFD")
+      .replace(/[\u0300-\u036f]/g, "")
+      .toLowerCase()
+      .replace(/[^a-z0-9 ]/g, "")
+      .replace(/\s+/g, " ")
+      .trim();
+
+  const wanted = new Set(raw.map(norm));
+  return asked.filter((q) => wanted.has(norm(q.text))).map((q) => q.text);
+}
+
+export type ThesisVerdict = { repeats: boolean; overlap: string };
+
+export function parseThesisCheckFromLLM(content: string): ThesisVerdict {
+  let obj: unknown;
+  try {
+    obj = JSON.parse(content);
+  } catch {
+    // Falha de parse não pode disparar reescrita: o custo do falso positivo é
+    // o artigo inteiro refeito à toa.
+    return { repeats: false, overlap: "" };
+  }
+  if (!obj || typeof obj !== "object") return { repeats: false, overlap: "" };
+  const src = obj as Record<string, unknown>;
+  return { repeats: src.repeats === true, overlap: str(src, "overlap") };
 }

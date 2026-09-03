@@ -34,6 +34,10 @@ const schema = z.object({
   OPENAI_STUDY_QUESTIONS_MODEL: z.string().default("gpt-4o"),
   OPENAI_STUDY_ANSWERS_MODEL: z.string().default("gpt-4o"),
   OPENAI_STUDY_WRITE_MODEL: z.string().default("gpt-4o"),
+  // O guardião só classifica ("esta pergunta já está respondida no resumo?",
+  // "esta tese repete aquela?"), então roda barato de propósito. Subi-lo de
+  // modelo é desperdício; baixá-lo mais que isso deixa passar repetição.
+  OPENAI_STUDY_GUARD_MODEL: z.string().default("gpt-4o-mini"),
   OPENAI_PRACTICES_MODEL: z.string().default("gpt-4o-mini"),
   OPENAI_REREADS_MODEL: z.string().default("gpt-4o-mini"),
   OPENAI_REMINDERS_MODEL: z.string().default("gpt-4o-mini"),
@@ -80,6 +84,7 @@ const parsed = schema.safeParse({
   OPENAI_STUDY_QUESTIONS_MODEL: process.env.OPENAI_STUDY_QUESTIONS_MODEL,
   OPENAI_STUDY_ANSWERS_MODEL: process.env.OPENAI_STUDY_ANSWERS_MODEL,
   OPENAI_STUDY_WRITE_MODEL: process.env.OPENAI_STUDY_WRITE_MODEL,
+  OPENAI_STUDY_GUARD_MODEL: process.env.OPENAI_STUDY_GUARD_MODEL,
   OPENAI_PRACTICES_MODEL: process.env.OPENAI_PRACTICES_MODEL,
   OPENAI_REREADS_MODEL: process.env.OPENAI_REREADS_MODEL,
   OPENAI_REMINDERS_MODEL: process.env.OPENAI_REMINDERS_MODEL,
