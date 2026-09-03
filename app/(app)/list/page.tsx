@@ -13,6 +13,17 @@ import { SessionCardMenu } from "./SessionCardMenu";
 
 export const metadata: Metadata = { title: "Suas gravações" };
 
+/**
+ * Server Action é um endpoint POST próprio: esta função é chamável por quem
+ * souber o id dela, sem passar por esta página. A autorização aqui é o RLS —
+ * `deleteSession` usa o client do USUÁRIO, e a policy de `sessions` escopa o
+ * delete ao dono, então um id forjado só apaga o que já era de quem chamou.
+ *
+ * Ou seja: trocar `deleteSession` por qualquer coisa que use
+ * `createAdminClient()` transforma isto num IDOR — service-role ignora RLS, e
+ * a proteção some sem nenhum sinal no diff. Se isso for preciso um dia, o
+ * gate de dono tem de vir junto, explícito.
+ */
 async function deleteSessionAction(formData: FormData): Promise<void> {
   "use server";
   const id = formData.get("id");

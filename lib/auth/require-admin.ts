@@ -1,5 +1,6 @@
 import "server-only";
 import { NextResponse } from "next/server";
+import { getCurrentAccount } from "@/lib/db/account";
 import { createClient } from "@/lib/supabase/server";
 
 /**
@@ -35,19 +36,36 @@ export async function requireAdmin(): Promise<AdminResult> {
 }
 
 /**
- * Server-Component variant: throws Next.js notFound() so React tree renders
- * the framework 404 page. Import from a Server Component / layout.
+ * Variante para Server Component / layout: só responde SE a conta é admin,
+ * sem montar resposta HTTP — quem chama decide entre `notFound()` e esconder
+ * um item de menu.
+ *
+ * Lê da mesma consulta memoizada que o perfil e o saldo (lib/db/account.ts),
+ * então o gate do /admin e o item do menu do avatar não custam mais dois
+ * SELECTs além dos que o layout já fazia. `requireAdmin()` acima segue com a
+ * consulta própria de propósito: ele roda em Route Handler, onde `cache()`
+ * não vale, e é o caminho que protege dinheiro — não divide estado com nada.
  */
 export async function isCurrentUserAdmin(): Promise<boolean> {
-  const supabase = await createClient();
-  const {
-    data: { user },
-  } = await supabase.auth.getUser();
-  if (!user) return false;
-  const { data } = await supabase
-    .from("profiles")
-    .select("role, is_active")
-    .eq("id", user.id)
-    .maybeSingle();
-  return !!data && data.role === "admin" && data.is_active !== false;
+  const account = await getCurrentAccount().catch(() => null);
+  return account?.isAdmin ?? false;
+}
+
+/**
+ * Gate para SERVER ACTION.
+ *
+ * Existe porque uma Server Action é um endpoint POST próprio: o gate do
+ * `app/admin/layout.tsx` decide o que RENDERIZA, não o que executa. Quem
+ * souber o id da action a invoca sem nunca ter passado pelo layout — e o id
+ * é um hash estável, embutido no bundle, não um segredo. É o que a própria
+ * documentação do Next diz em "Data Security": autenticação de página não
+ * protege as actions dela, reconfira dentro de cada uma.
+ *
+ * Lança em vez de devolver 403 pelo mesmo motivo do 404 em `requireAdmin`:
+ * não confirmamos a existência da área administrativa para quem não deveria
+ * vê-la. O erro genérico que o Next devolve ao cliente não diz nada.
+ */
+export async function assertAdmin(): Promise<void> {
+  if (await isCurrentUserAdmin()) return;
+  throw new Error("not_found");
 }

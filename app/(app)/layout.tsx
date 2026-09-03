@@ -2,27 +2,30 @@ import type { ReactNode } from "react";
 import { AppHeader } from "@/components/AppHeader";
 import { MobileBottomNav } from "@/components/MobileBottomNav";
 import { ThemeToggle } from "@/components/ThemeToggle";
+import { PrivilegedMenuItems } from "@/features/auth/components/PrivilegedMenuItems";
 import { UserMenu } from "@/features/auth/components/UserMenu";
 import { CoinBalance } from "@/features/coins/components/CoinBalance";
 import { NewRecordingDialog } from "@/features/session/components/NewRecordingDialog";
-import { isCurrentUserAdmin } from "@/lib/auth/require-admin";
 import { isCurrentUserPartner } from "@/lib/auth/require-partner";
 import { INITIAL_COIN_BALANCE } from "@/lib/coins/pricing";
-import { getCurrentBalance } from "@/lib/db/coins";
-import { getCurrentProfile } from "@/lib/db/profiles";
+import { getCurrentAccount } from "@/lib/db/account";
 
 export default async function AppLayout({ children }: { children: ReactNode }) {
-  // `isCurrentUserPartner` também é o ponto onde a mesada mensal de moedas do
-  // parceiro é conferida e creditada — ver lib/partners/allowance.ts. Fica
-  // aqui, e não numa rota, porque é o único caminho por onde todo parceiro
-  // passa ao usar o app.
-  const [profile, isAdmin, isPartner, coinBalance] = await Promise.all([
-    getCurrentProfile().catch(() => null),
-    isCurrentUserAdmin().catch(() => false),
+  // Duas idas ao banco, não quatro: `getCurrentAccount` traz perfil, saldo e
+  // papel da MESMA linha de `profiles` (antes eram três consultas nela, cada
+  // uma precedida do seu próprio `getUser()` na rede).
+  //
+  // `isCurrentUserPartner` continua separado porque lê outra tabela — e é
+  // também o ponto onde a mesada mensal de moedas do parceiro é conferida e
+  // creditada (ver lib/partners/allowance.ts). Fica aqui, e não numa rota,
+  // porque é o único caminho por onde todo parceiro passa ao usar o app.
+  const [account, isPartner] = await Promise.all([
+    getCurrentAccount().catch(() => null),
     isCurrentUserPartner().catch(() => false),
-    getCurrentBalance().catch(() => null),
   ]);
-  const initialBalance = coinBalance ?? INITIAL_COIN_BALANCE;
+  const profile = account?.profile ?? null;
+  const isAdmin = account?.isAdmin ?? false;
+  const initialBalance = account?.coinBalance ?? INITIAL_COIN_BALANCE;
 
   return (
     <>
@@ -42,8 +45,7 @@ export default async function AppLayout({ children }: { children: ReactNode }) {
                   displayName={profile.displayName ?? null}
                   email={profile.email ?? null}
                   avatarUrl={profile.avatarUrl ?? null}
-                  isAdmin={isAdmin}
-                  isPartner={isPartner}
+                  privilegedItems={<PrivilegedMenuItems isAdmin={isAdmin} isPartner={isPartner} />}
                 />
               ) : null}
             </div>

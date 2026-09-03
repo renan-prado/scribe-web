@@ -1,8 +1,8 @@
 "use client";
 
-import { ArrowRight, Handshake, LayoutDashboard, LogOut, User as UserIcon } from "lucide-react";
+import { ArrowRight, LogOut, User as UserIcon } from "lucide-react";
 import Link from "next/link";
-import { useRef } from "react";
+import { type ReactNode, useRef } from "react";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import {
   DropdownMenu,
@@ -11,6 +11,7 @@ import {
   DropdownMenuSeparator,
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
+import { MENU_ITEM_CLASS } from "@/features/auth/lib/menu";
 
 /**
  * Onde o menu está sendo montado. Muda apenas os atalhos do meio — a
@@ -25,14 +26,15 @@ type Props = {
   displayName: string | null;
   email: string | null;
   avatarUrl: string | null;
-  /** Só lidos na variante "app". */
-  isAdmin?: boolean;
-  isPartner?: boolean;
+  /**
+   * Itens de papel (admin / parceiro), renderizados no SERVIDOR e entregues
+   * prontos — ver `PrivilegedMenuItems`. Passam por aqui como `ReactNode` em
+   * vez de booleanos porque um `isAdmin` booleano esconderia o item na tela
+   * mas deixaria o markup dele no bundle de todo mundo.
+   */
+  privilegedItems?: ReactNode;
   variant?: MenuVariant;
 };
-
-const ITEM_CLASS =
-  "rounded-xl px-3 py-2.5 text-[13px] font-medium text-scriba-ink-strong focus:bg-scriba-surface";
 
 function initialsFrom(name: string | null, email: string | null): string {
   const source = name?.trim() || email?.split("@")[0] || "?";
@@ -51,8 +53,7 @@ export function UserMenu({
   displayName,
   email,
   avatarUrl,
-  isAdmin = false,
-  isPartner = false,
+  privilegedItems = null,
   variant = "app",
 }: Props) {
   const signOutFormRef = useRef<HTMLFormElement>(null);
@@ -99,31 +100,18 @@ export function UserMenu({
           <div className="my-1.5 h-px bg-scriba-hairline" />
 
           {variant === "partners" ? (
-            <DropdownMenuItem render={<Link href="/feed" />} className={ITEM_CLASS}>
+            <DropdownMenuItem render={<Link href="/feed" />} className={MENU_ITEM_CLASS}>
               <ArrowRight className="size-4 text-scriba-ink-soft" />
               Ir para o app
             </DropdownMenuItem>
           ) : null}
 
-          <DropdownMenuItem render={<Link href="/profile" />} className={ITEM_CLASS}>
+          <DropdownMenuItem render={<Link href="/profile" />} className={MENU_ITEM_CLASS}>
             <UserIcon className="size-4 text-scriba-ink-soft" />
             Meu perfil
           </DropdownMenuItem>
 
-          {/* Sem este item o parceiro só chega ao painel digitando a URL —
-              o admin manda o link uma vez e depois a área some do mundo dele. */}
-          {variant === "app" && isPartner ? (
-            <DropdownMenuItem render={<Link href="/partners" />} className={ITEM_CLASS}>
-              <Handshake className="size-4 text-scriba-ink-soft" />
-              Área do parceiro
-            </DropdownMenuItem>
-          ) : null}
-          {variant === "app" && isAdmin ? (
-            <DropdownMenuItem render={<Link href="/admin" />} className={ITEM_CLASS}>
-              <LayoutDashboard className="size-4 text-scriba-ink-soft" />
-              Admin
-            </DropdownMenuItem>
-          ) : null}
+          {privilegedItems}
 
           <DropdownMenuSeparator className="my-1.5 bg-scriba-hairline" />
 

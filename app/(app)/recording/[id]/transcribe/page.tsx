@@ -1,7 +1,7 @@
 import type { Metadata } from "next";
 import { notFound, redirect } from "next/navigation";
 import { RecordingTranscribe } from "@/features/session/components/RecordingTranscribe";
-import { getSession } from "@/lib/db/sessions";
+import { getSessionMeta } from "@/lib/db/sessions";
 import { recordingRouteFor } from "@/lib/domain/session";
 
 type PageProps = {
@@ -11,7 +11,7 @@ type PageProps = {
 
 export async function generateMetadata({ params }: PageProps): Promise<Metadata> {
   const { id } = await params;
-  const session = await getSession(id);
+  const session = await getSessionMeta(id);
   const name = session?.title?.trim() || "Gravação";
   return { title: `Transcrevendo: ${name}` };
 }
@@ -21,7 +21,7 @@ type Search = { autostart?: string };
 export default async function RecordingTranscribePage({ params, searchParams }: PageProps) {
   const { id } = await params;
   const { autostart } = await searchParams;
-  const session = await getSession(id);
+  const session = await getSessionMeta(id);
   if (!session) notFound();
 
   // Sessão já encerrada: não há o que gravar aqui, manda pra leitura.

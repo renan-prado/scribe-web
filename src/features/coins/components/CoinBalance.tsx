@@ -100,9 +100,11 @@ export function CoinBalance({
   const prevBalanceRef = useRef(balance);
   const [flash, setFlash] = useState<"debit" | "credit" | null>(null);
 
-  useEffect(() => {
-    void refresh();
-  }, [refresh]);
+  // NÃO há refresh no mount. O saldo já chegou do servidor em `initialBalance`,
+  // renderizado no mesmo request — pedi-lo de novo por HTTP logo depois custava
+  // dois `getUser()` (proxy + rota) e mais um SELECT em `profiles` para receber
+  // de volta o número que acabou de ser desenhado na tela. Os dois sinais
+  // abaixo cobrem o caso em que o saldo muda de verdade sem esta aba saber.
 
   // O pagamento acontece numa ABA NOVA (para não derrubar uma gravação em
   // curso), então esta aba não recebe nenhum evento próprio quando o crédito

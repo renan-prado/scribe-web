@@ -1,4 +1,5 @@
 import "server-only";
+import { cache } from "react";
 import type { FeedItem } from "@/lib/domain/feed";
 import { parseSessionMode, type SessionMode } from "@/lib/domain/session";
 import type { SummaryPayload } from "@/lib/domain/summary";
@@ -55,6 +56,17 @@ export type SessionListItem = {
   mode: SessionMode;
 };
 
+/**
+ * O cabeçalho de uma sessão, sem as três colunas pesadas.
+ *
+ * Existe porque as páginas de GRAVAÇÃO (live/audio/transcribe) e a de estudo
+ * decidem rota e cabeçalho a partir de `mode`, `endedAt`, `title` e o
+ * snapshot do orador — e nenhuma delas renderiza `transcript`, `feedItems`
+ * ou `finalSummary`. Buscar tudo ali significava trazer a transcrição inteira
+ * de um sermão de uma hora para abrir um gravador vazio.
+ */
+export type SessionMeta = Omit<SessionRow, "transcript" | "feedItems" | "finalSummary">;
+
 export type CreateEmptySessionInput = {
   speakerName: string | null;
   speakerLocation: string | null;
@@ -98,6 +110,27 @@ type DbRow = {
 const SELECT_LIST =
   "id, created_at, duration_ms, title, short_summary, speaker_id, location_id, speaker_name, speaker_location, capture_mode";
 const SELECT_FULL = `id, created_at, ended_at, duration_ms, title, short_summary, speaker_id, location_id, speaker_name, speaker_location, capture_mode, transcript, feed_items, final_summary`;
+// O mesmo de SELECT_FULL menos transcript/feed_items/final_summary.
+const SELECT_META =
+  "id, created_at, ended_at, duration_ms, title, short_summary, speaker_id, location_id, speaker_name, speaker_location, capture_mode";
+
+type MetaRow = Omit<DbRow, "transcript" | "feed_items" | "final_summary">;
+
+function rowToMeta(row: MetaRow): SessionMeta {
+  return {
+    id: row.id,
+    createdAt: row.created_at,
+    endedAt: row.ended_at,
+    durationMs: row.duration_ms,
+    title: row.title,
+    shortSummary: row.short_summary,
+    speakerId: row.speaker_id,
+    locationId: row.location_id,
+    speakerName: row.speaker_name,
+    speakerLocation: row.speaker_location,
+    mode: parseSessionMode(row.capture_mode),
+  };
+}
 
 function rowToSession(row: DbRow): SessionRow {
   return {
@@ -261,7 +294,18 @@ export async function listUnfinishedSessions(): Promise<SessionListItem[]> {
   return (data ?? []).map((r) => rowToListItem(r as ListRow));
 }
 
-export async function getSession(id: string): Promise<SessionRow | null> {
+/**
+ * A sessão inteira, incluindo transcrição, feed e resumo.
+ *
+ * Memoizada por render pass: as páginas de `/recording/[id]/*` chamam isto no
+ * `generateMetadata` E no corpo, e o Next só deduplica `fetch()` — consulta
+ * do Supabase, não. Eram duas leituras das colunas mais pesadas do banco por
+ * page view, a segunda apenas para descobrir o `title` da aba.
+ *
+ * Quem não precisa de `transcript`/`feedItems`/`finalSummary` deve chamar
+ * `getSessionMeta`.
+ */
+export const getSession = cache(async (id: string): Promise<SessionRow | null> => {
   const supabase = await createClient();
   const { data, error } = await supabase
     .from("sessions")
@@ -271,7 +315,20 @@ export async function getSession(id: string): Promise<SessionRow | null> {
 
   if (error) throw new Error(`getSession failed: ${error.message}`);
   return data ? rowToSession(data as DbRow) : null;
-}
+});
+
+/** Cabeçalho da sessão, sem as colunas pesadas. Ver {@link SessionMeta}. */
+export const getSessionMeta = cache(async (id: string): Promise<SessionMeta | null> => {
+  const supabase = await createClient();
+  const { data, error } = await supabase
+    .from("sessions")
+    .select(SELECT_META)
+    .eq("id", id)
+    .maybeSingle();
+
+  if (error) throw new Error(`getSessionMeta failed: ${error.message}`);
+  return data ? rowToMeta(data as MetaRow) : null;
+});
 
 export type UpdateSessionMetaInput = {
   title?: string | null;

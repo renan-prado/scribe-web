@@ -1,6 +1,7 @@
 import "server-only";
 import { type ChargeReason, COIN_COST_BY_REASON, INITIAL_COIN_BALANCE } from "@/lib/coins/pricing";
-import { createClient } from "@/lib/supabase/server";
+import { getCurrentAccount } from "@/lib/db/account";
+import { createClient, getAuthUser } from "@/lib/supabase/server";
 
 /**
  * Server-side coin helpers. Balances live on public.profiles.coin_balance;
@@ -13,19 +14,15 @@ import { createClient } from "@/lib/supabase/server";
  */
 
 export async function getCurrentBalance(): Promise<number | null> {
-  const supabase = await createClient();
-  const {
-    data: { user },
-  } = await supabase.auth.getUser();
-  if (!user) return null;
-
-  const { data, error } = await supabase
-    .from("profiles")
-    .select("coin_balance")
-    .eq("id", user.id)
-    .maybeSingle();
-  if (error) throw new Error(`getCurrentBalance failed: ${error.message}`);
-  return (data?.coin_balance as number | undefined) ?? INITIAL_COIN_BALANCE;
+  const account = await getCurrentAccount();
+  if (account) return account.coinBalance;
+  // `null` significa "não há usuário", e SÓ isso. Um usuário autenticado sem
+  // linha em `profiles` não deveria existir (a trigger de 0005 cria uma no
+  // insert em auth.users), mas se existir ele recebe o saldo inicial, não
+  // zero: devolver zero trancaria a gravação de alguém por uma inconsistência
+  // que não é dele.
+  const user = await getAuthUser();
+  return user ? INITIAL_COIN_BALANCE : null;
 }
 
 export type ChargeResult =

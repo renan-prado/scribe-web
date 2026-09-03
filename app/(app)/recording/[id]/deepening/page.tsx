@@ -5,7 +5,7 @@ import { NavLink } from "@/components/NavLink";
 import { BlockRenderer, blockKey } from "@/features/session/components/BlockRenderer";
 import { DeepeningMenu } from "@/features/session/components/DeepeningMenu";
 import { getDeepening } from "@/lib/db/deepenings";
-import { getSession } from "@/lib/db/sessions";
+import { getSessionMeta } from "@/lib/db/sessions";
 
 type PageProps = {
   params: Promise<{ id: string }>;
@@ -13,7 +13,7 @@ type PageProps = {
 
 export async function generateMetadata({ params }: PageProps): Promise<Metadata> {
   const { id } = await params;
-  const [session, deepening] = await Promise.all([getSession(id), getDeepening(id)]);
+  const [session, deepening] = await Promise.all([getSessionMeta(id), getDeepening(id)]);
   const base = session?.title?.trim() || "Sessão sem título";
   const title = deepening?.payload.title?.trim() || `Estudo — ${base}`;
   return { title };
@@ -35,7 +35,7 @@ const DATE_FMT_SHORT = new Intl.DateTimeFormat("pt-BR", {
 
 export default async function RecordingDeepeningPage({ params }: PageProps) {
   const { id } = await params;
-  const [session, deepening] = await Promise.all([getSession(id), getDeepening(id)]);
+  const [session, deepening] = await Promise.all([getSessionMeta(id), getDeepening(id)]);
   if (!session || !deepening) notFound();
 
   const payload = deepening.payload;

@@ -1,8 +1,9 @@
 import "server-only";
+import { cache } from "react";
 import { createLogger } from "@/lib/log";
 import { ensurePartnerAllowance } from "@/lib/partners/allowance";
 import { createAdminClient } from "@/lib/supabase/admin";
-import { createClient } from "@/lib/supabase/server";
+import { getAuthUser } from "@/lib/supabase/server";
 
 const log = createLogger("partners");
 
@@ -23,6 +24,14 @@ const log = createLogger("partners");
  *   - `getPartnerNavLink()` — o menu do avatar dentro do app, que só precisa
  *     saber SE mostra o item. Vem da mesma consulta porque a linha é uma só e
  *     buscá-la parcialmente não economizaria nada.
+ *
+ * Memoizada com `cache()` por render pass. O layout de `/partners` e a página
+ * dentro dele chamavam os dois — o comentário na página dizia "reaproveita a
+ * resolução", e não reaproveitava: eram duas rodadas completas, com dois
+ * `getUser()`, duas consultas service-role e duas conferências de mesada.
+ * Agora é uma. O efeito colateral (vincular a conta na primeira visita,
+ * creditar a mesada) também passa a acontecer uma vez por request, que é o
+ * que sempre se quis.
  */
 
 export type CurrentPartner = {
@@ -38,11 +47,8 @@ export type CurrentPartner = {
 const SELECT =
   "id, user_id, slug, display_name, commission_rate_bps, signup_bonus_coins, monthly_coins, allowance_month, pix_key";
 
-export async function getCurrentPartner(): Promise<CurrentPartner | null> {
-  const supabase = await createClient();
-  const {
-    data: { user },
-  } = await supabase.auth.getUser();
+export const getCurrentPartner = cache(async (): Promise<CurrentPartner | null> => {
+  const user = await getAuthUser();
   if (!user?.email) return null;
 
   // Service-role porque a policy de SELECT em `partners` exige
@@ -93,7 +99,7 @@ export async function getCurrentPartner(): Promise<CurrentPartner | null> {
     monthlyCoins: data.monthly_coins ?? 0,
     pixKey: data.pix_key,
   };
-}
+});
 
 /**
  * `true` quando a conta logada é de um parceiro ativo — o que o menu do avatar
