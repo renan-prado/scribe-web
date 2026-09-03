@@ -731,14 +731,28 @@ function TestimonialCard({ quote, name, title, avatarSrc }: TestimonialCardProps
  * divergido do real (anunciava 2.000/5.000/100 créditos contra 1.000/2.500/50).
  * Preço de tela errado é promessa quebrada na hora do checkout.
  */
-const PLAN_FEATURES = [
+/**
+ * O que cada plano entrega. Copy local de propósito — descreve CAPACIDADES, e
+ * não valores; nome, preço e créditos vêm de `lib/billing/plans.ts`, o mesmo
+ * catálogo do diálogo de compra (ver `app/AGENTS.md`).
+ *
+ * ⚠️ A lista era uma só para os três planos, e passou a mentir no dia em que o
+ * estudo virou exclusivo de plano pago: o card do Gratuito prometia "Gerar
+ * estudos", e o botão respondia 403. **Uma linha aqui é uma promessa que
+ * `lib/entitlements/features.ts` tem de cumprir** — ao mexer numa, confira a
+ * outra.
+ */
+const FREE_FEATURES = [
   "Sermão ao vivo",
   "Resumo organizado",
   "Referências bíblicas",
   "Destaques e principais ideias",
   "Biblioteca de sermões",
-  "Gerar estudos",
 ];
+
+// O estudo é o que separa um plano pago do gratuito — daí ele fechar a lista
+// dos dois pagos, na posição de maior peso visual.
+const PAID_FEATURES = [...FREE_FEATURES, "Estudo aprofundado de cada sermão"];
 
 function Plans() {
   return (
@@ -759,7 +773,8 @@ function Plans() {
             price={formatBrl(PLANS.pessoal.priceCents)}
             priceUnit="/mês"
             hint={`${formatCoins(PLANS.pessoal.coins)} créditos por mês`}
-            features={PLAN_FEATURES}
+            features={PAID_FEATURES}
+            highlightLast
             cta={`Assinar ${PLANS.pessoal.name}`}
             href="/sign-in?next=%2Fbilling%2Fassinar%3Fplan%3Dpessoal"
             variant="soft"
@@ -768,7 +783,7 @@ function Plans() {
             name={PLANS.free.name}
             price="Grátis"
             hint={`${formatCoins(PLANS.free.coins)} créditos para conhecer o Scriba`}
-            features={PLAN_FEATURES}
+            features={FREE_FEATURES}
             cta="Começar grátis"
             href="/sign-in"
             variant="primary"
@@ -779,7 +794,8 @@ function Plans() {
             price={formatBrl(PLANS.estudioso.priceCents)}
             priceUnit="/mês"
             hint={`${formatCoins(PLANS.estudioso.coins)} créditos por mês`}
-            features={PLAN_FEATURES}
+            features={PAID_FEATURES}
+            highlightLast
             cta={`Assinar ${PLANS.estudioso.name}`}
             href="/sign-in?next=%2Fbilling%2Fassinar%3Fplan%3Destudioso"
             variant="soft"
@@ -814,6 +830,12 @@ type PlanCardProps = {
   href: string;
   variant: "primary" | "soft";
   badge?: string;
+  /**
+   * Destaca o ÚLTIMO item da lista. Usado nos planos pagos para o estudo —
+   * o diferencial em relação ao Gratuito — não se perder no meio de cinco
+   * linhas idênticas que os três planos compartilham.
+   */
+  highlightLast?: boolean;
 };
 
 function PlanCard({
@@ -826,6 +848,7 @@ function PlanCard({
   href,
   variant,
   badge,
+  highlightLast,
 }: PlanCardProps) {
   const isPrimary = variant === "primary";
   return (
@@ -868,32 +891,45 @@ function PlanCard({
       </div>
       <div className="h-px bg-scriba-hairline-soft" />
       <div className="flex flex-col gap-2.5 text-[13px] font-light text-scriba-ink-soft lg:text-[13.5px]">
-        {features.map((f) => (
-          <div key={f} className="flex items-start gap-2.5">
-            <svg
-              role="img"
-              aria-label="Incluído"
+        {features.map((f, i) => {
+          const featured = highlightLast === true && i === features.length - 1;
+          return (
+            <div
+              key={f}
               className={cn(
-                "mt-0.5 flex-none",
-                isPrimary ? "text-scriba-blue-ink" : "text-scriba-ink-mute"
+                "flex items-start gap-2.5",
+                featured && "font-medium text-scriba-ink-strong"
               )}
-              width="16"
-              height="16"
-              viewBox="0 0 16 16"
-              fill="none"
-              xmlns="http://www.w3.org/2000/svg"
             >
-              <path
-                d="M3 8.5L6.5 12L13 5"
-                stroke="currentColor"
-                strokeWidth="1.75"
-                strokeLinecap="round"
-                strokeLinejoin="round"
-              />
-            </svg>
-            {f}
-          </div>
-        ))}
+              <svg
+                role="img"
+                aria-label="Incluído"
+                className={cn(
+                  "mt-0.5 flex-none",
+                  featured
+                    ? "text-scriba-green"
+                    : isPrimary
+                      ? "text-scriba-blue-ink"
+                      : "text-scriba-ink-mute"
+                )}
+                width="16"
+                height="16"
+                viewBox="0 0 16 16"
+                fill="none"
+                xmlns="http://www.w3.org/2000/svg"
+              >
+                <path
+                  d="M3 8.5L6.5 12L13 5"
+                  stroke="currentColor"
+                  strokeWidth="1.75"
+                  strokeLinecap="round"
+                  strokeLinejoin="round"
+                />
+              </svg>
+              {f}
+            </div>
+          );
+        })}
       </div>
       <Link
         href={href}
