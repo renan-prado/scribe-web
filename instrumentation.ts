@@ -1,7 +1,12 @@
 export async function register() {
   if (process.env.NEXT_RUNTIME !== "nodejs") return;
-  // Warm the three most-used translations so the first /api/verse call
-  // doesn't pay the 4MB JSON parse cost (~100-200ms per file).
+  // Aquece a NVI — a única tradução que a aplicação lê — para que a primeira
+  // chamada a /api/verse não pague o parse do JSON de 4 MB (~100-200ms).
+  //
+  // Antes daqui saíam TRÊS traduções (NVI, NVT, ARC). Só a NVI tem consumidor
+  // no código: as outras duas eram ~8 MB lidos do disco, parseados e mantidos
+  // vivos em toda instância do servidor — inclusive nas que só iam servir
+  // /feed — sem nunca serem consultadas. Ver lib/bibles/loader.ts.
   const { loadBible } = await import("@/lib/bibles/loader");
-  await Promise.all([loadBible("NVI"), loadBible("NVT"), loadBible("ARC")]);
+  await loadBible();
 }

@@ -19,8 +19,6 @@ export type { VersePayload } from "@/lib/domain/verse";
 export const runtime = "nodejs";
 export const dynamic = "force-dynamic";
 
-const TRANSLATION = "NVI";
-
 export async function POST(request: Request) {
   const auth = await requireAuth();
   if (auth.response) return auth.response;
@@ -41,7 +39,7 @@ export async function POST(request: Request) {
     return NextResponse.json({ reference, text: "" });
   }
 
-  const bible = await loadBible(TRANSLATION);
+  const bible = await loadBible();
   if (!bible) {
     log.debug("miss", { reference, reason: "translation-file-missing" });
     return NextResponse.json({ reference, text: "" });

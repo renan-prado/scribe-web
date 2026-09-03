@@ -1,5 +1,5 @@
 import "server-only";
-import { loadBible } from "@/lib/bibles/loader";
+import { BIBLE_TRANSLATION, loadBible } from "@/lib/bibles/loader";
 import { lookupVerse } from "@/lib/bibles/lookup";
 import { recordChatUsage } from "@/lib/db/usage";
 import type { FeedItem } from "@/lib/domain/feed";
@@ -244,8 +244,6 @@ function countByOrigin(pool: RereadPoolItem[]): Record<string, number> {
   return out;
 }
 
-const RETRIEVAL_TRANSLATION = "NVI";
-
 /**
  * Preenche `text` de cada item que ainda está sem (`related`, `summary` sem
  * texto, ou `ai-fill`) buscando na Bíblia NVI local. Referências sem verso
@@ -260,10 +258,10 @@ async function enrichWithVerseText(
   const missing = payload.items.filter((i) => !i.text.trim());
   if (missing.length === 0) return payload;
 
-  const bible = await loadBible(RETRIEVAL_TRANSLATION);
+  const bible = await loadBible();
   if (!bible) {
     log.warn(`bible not loaded for text enrichment`, {
-      translation: RETRIEVAL_TRANSLATION,
+      translation: BIBLE_TRANSLATION,
     });
     return payload;
   }
