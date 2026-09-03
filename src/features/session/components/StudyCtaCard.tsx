@@ -13,6 +13,12 @@ export type StudyCtaSession = {
   title: string | null;
   speakerName: string | null;
   speakerLocation: string | null;
+  /**
+   * Já formatada no servidor (`shortDate`), como em `SavedSessionView`. O card
+   * é cliente e uma data crua aqui viraria `Intl` no bundle para exibir seis
+   * caracteres.
+   */
+  dateLabel: string | null;
 };
 
 export function StudyCtaCard({
@@ -23,7 +29,10 @@ export function StudyCtaCard({
   canGenerate: boolean;
 }) {
   const title = session.title?.trim() || "Sessão sem título";
-  const byline = [session.speakerName, session.speakerLocation]
+  // Quem pregou · onde · quando. Cada parte cai fora sozinha se faltar: o
+  // sermão pode não ter orador identificado, nem local, e o card continua
+  // legível — a data é a única que sempre existe.
+  const byline = [session.speakerName, session.speakerLocation, session.dateLabel]
     .map((s) => s?.trim())
     .filter((s): s is string => Boolean(s))
     .join(" · ");

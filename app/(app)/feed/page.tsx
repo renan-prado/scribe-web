@@ -106,6 +106,7 @@ export default async function HomePage() {
       title: s.title,
       speakerName: s.speakerName,
       speakerLocation: s.speakerLocation,
+      dateLabel: shortDate(s.createdAt, new Date(s.createdAt).getFullYear() !== now.getFullYear()),
     }));
 
   return (

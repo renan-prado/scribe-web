@@ -53,7 +53,15 @@ const deepenButtonVariants = cva(
   {
     variants: {
       layout: {
+        /** Chip do cabeçalho do resumo — alinha com a etiqueta "Salvo" ao lado. */
         compact: "gap-1.5 px-3 py-1.5 text-[11px]",
+        /**
+         * Card de CTA do feed. Não é largura cheia (ele divide a linha com o
+         * sticker), mas também não é chip: é o único elemento clicável do card
+         * e precisa de alvo de toque de verdade. Daí a altura do "full" com a
+         * largura do "compact".
+         */
+        cta: "gap-2 px-5 py-3 text-[11px]",
         full: "w-full justify-center gap-2 px-4 py-3 text-[11px] sm:flex-1",
       },
       state: {
@@ -80,7 +88,7 @@ export function DeepenButton({ sessionId, hasDeepening, variant, canGenerate }: 
   const insufficient = balance !== null && balance < DEEPENING_COST;
 
   const href = `/recording/${sessionId}/deepening`;
-  const layout = variant === "feed-card" ? "full" : "compact";
+  const layout = variant === "feed-card" ? "full" : variant === "cta-card" ? "cta" : "compact";
 
   if (hasDeepening) {
     if (variant === "summary-header" || variant === "cta-card") {
@@ -202,6 +210,11 @@ export function DeepenButton({ sessionId, hasDeepening, variant, canGenerate }: 
       <span
         aria-hidden
         className="inline-block h-7.5 w-32.5 animate-pulse rounded-full bg-scriba-ink-mute/15"
+      />
+    ) : variant === "cta-card" ? (
+      <span
+        aria-hidden
+        className="inline-block h-10.5 w-44 animate-pulse rounded-full bg-scriba-ink-mute/15"
       />
     ) : (
       <span
