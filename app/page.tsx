@@ -752,7 +752,7 @@ const FREE_FEATURES = [
 
 // O estudo é o que separa um plano pago do gratuito — daí ele fechar a lista
 // dos dois pagos, na posição de maior peso visual.
-const PAID_FEATURES = [...FREE_FEATURES, "Estudo aprofundado de cada sermão"];
+const PAID_FEATURES = [...FREE_FEATURES, "Modo estudo liberado"];
 
 function Plans() {
   return (
@@ -894,7 +894,7 @@ function PlanCard({
         </div>
       </div>
       <div className="h-px bg-scriba-hairline-soft" />
-      <div className="flex flex-col gap-2.5 text-[13px] font-light text-scriba-ink-soft lg:text-[13.5px]">
+      <div className="flex flex-col gap-2.5 pb-4 text-[13px] font-light text-scriba-ink-soft lg:text-[13.5px]">
         {features.map((f, i) => {
           const featured = highlightLast === true && i === features.length - 1;
           return (

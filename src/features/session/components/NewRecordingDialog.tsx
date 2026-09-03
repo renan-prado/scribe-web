@@ -39,7 +39,7 @@ const MODE_COPY: Record<
   }
 > = {
   live: {
-    title: "Modo Estudo",
+    title: "Modo Ao Vivo",
     icon: BookOpenText,
     costPerMinute: COIN_COSTS.liveMinute,
     description: (
