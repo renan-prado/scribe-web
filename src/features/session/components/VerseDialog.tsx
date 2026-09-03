@@ -9,6 +9,7 @@ import {
   DialogTitle,
 } from "@/components/ui/dialog";
 import { useVerseFetch } from "@/features/session/hooks/useVerseFetch";
+import { joinVerses } from "@/lib/domain/verse";
 
 type VerseDialogProps = {
   reference: string | null;
@@ -37,9 +38,9 @@ export function VerseDialog({ reference, onOpenChange }: VerseDialogProps) {
               <div className="h-4 w-11/12 animate-skeleton-shimmer rounded-md bg-muted [animation-delay:120ms]" />
               <div className="h-4 w-3/5 animate-skeleton-shimmer rounded-md bg-muted [animation-delay:240ms]" />
             </div>
-          ) : state.status === "ok" && state.text ? (
+          ) : state.status === "ok" && state.verses.length > 0 ? (
             <blockquote className="text-pretty text-base leading-relaxed text-foreground/90">
-              {state.text}
+              {joinVerses(state.verses)}
             </blockquote>
           ) : state.status === "ok" ? (
             <p className="text-sm text-muted-foreground">

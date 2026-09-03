@@ -43,8 +43,16 @@ export const FEATURES: Record<FeatureKey, FeatureDefinition> = {
     key: "study_generation",
     name: "Gerar estudo",
     description: "Produz o estudo aprofundado de uma sessão já resumida, e o reprocessamento dele.",
-    minPlan: "estudioso",
-    upsell: "O estudo aprofundado faz parte do plano Estudioso.",
+    // "pessoal" e não "estudioso": o estudo é o que diferencia um plano PAGO
+    // do gratuito, e não o plano de cima do plano do meio. Prender a única
+    // funcionalidade exclusiva do produto no degrau mais alto deixava o
+    // Pessoal sem nada que o Gratuito não tivesse — a diferença entre os dois
+    // era só a quantidade de créditos.
+    //
+    // `PLAN_ORDER` faz o Estudioso herdar automaticamente: quem alcança o
+    // degrau mínimo, e qualquer um acima dele, tem acesso.
+    minPlan: "pessoal",
+    upsell: "O estudo aprofundado faz parte dos planos pagos.",
   },
 };
 

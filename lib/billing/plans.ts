@@ -61,6 +61,9 @@ export const PLANS: Record<PlanKey, PlanDisplay> = {
     tagline: "Para acompanhar os cultos da semana",
     highlights: [
       "1.000 créditos por mês",
+      // Ver a nota no plano Estudioso: esta linha é a legenda de
+      // `lib/entitlements/features.ts`, e as duas andam juntas.
+      "Estudo aprofundado de cada sessão",
       "Créditos acumulam de um mês para o outro",
       "Cancele quando quiser",
     ],

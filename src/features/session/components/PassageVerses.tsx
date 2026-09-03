@@ -1,22 +1,32 @@
 "use client";
 
-import { useCallback, useEffect, useState } from "react";
 import { useVerseFetch } from "@/features/session/hooks/useVerseFetch";
-import { cn } from "@/lib/utils";
 
 /**
- * Renders a Bible passage as a stack of numbered verses (Bible-app style:
- * superscript verse number + inline text). Each verse fetches independently
- * via useVerseFetch, so cached verses render instantly and only uncached
- * lines show a skeleton — no whole-passage reload flash when the range
- * grows. Used by both the live feed (via ReadingPassage's sliding window)
- * and the final summary's bibleQuote block.
+ * Uma passagem bíblica como pilha de versículos numerados (estilo app de
+ * Bíblia: número sobrescrito + texto na mesma linha). Usada pelo feed ao vivo,
+ * pelo resumo final e pelo estudo.
  *
- * Progressive-in-order reveal: fetches fire in parallel (fast), but each
- * verse only becomes visible once its own AND every previous verse's fetch
- * has resolved. Prevents v2 from popping in before v1 when the API resolves
- * out of order. Verses that stay "not ready" don't hold the passage back
- * forever — see the readySet CSS-hidden pattern below.
+ * ## Uma busca, um estado
+ *
+ * A versão anterior montava um componente por versículo, cada um com a sua
+ * própria requisição, e revelava os versículos em ordem conforme resolviam.
+ * Isso trouxe dois problemas que este arquivo existe para não repetir:
+ *
+ *   1. **Rate limit.** Sete chamadas para "Isaías 1:11-17"; um estudo com
+ *      dezessete passagens passava de sessenta em segundos. Os versículos
+ *      recusados voltavam vazios e a tela mostrava número sem texto — foi o
+ *      bug reportado em produção.
+ *   2. **UX de montagem.** O bloco aparecia e ia se preenchendo linha a linha,
+ *      empurrando o conteúdo abaixo dele a cada versículo que chegava.
+ *
+ * Agora é UMA busca por passagem e um estado só: ou o esqueleto do bloco
+ * inteiro, ou o texto inteiro. Nada de revelação progressiva — o ganho
+ * aparente dela era efeito colateral de um problema que não existe mais.
+ *
+ * As linhas do esqueleto usam larguras FIXAS por posição (e não aleatórias):
+ * um `Math.random()` aqui daria hidratação divergente entre servidor e
+ * cliente, e o React descartaria o HTML renderizado.
  */
 type PassageVersesProps = {
   bookDisplay: string;
@@ -25,77 +35,50 @@ type PassageVersesProps = {
   endVerse: number;
 };
 
-export function PassageVerses({ bookDisplay, chapter, startVerse, endVerse }: PassageVersesProps) {
-  const [readySet, setReadySet] = useState<Set<number>>(new Set());
-  const handleReady = useCallback((v: number) => {
-    setReadySet((prev) => {
-      if (prev.has(v)) return prev;
-      const next = new Set(prev);
-      next.add(v);
-      return next;
-    });
-  }, []);
+const SKELETON_WIDTHS = ["w-full", "w-[92%]", "w-[97%]", "w-[85%]", "w-[95%]"];
 
-  // maxRevealed = highest N such that every verse in [startVerse..N] has
-  // reported ready. Once a verse further ahead is ready but a lower one
-  // isn't, we wait — visibility is strictly in reading order.
-  let maxRevealed = startVerse - 1;
-  for (let v = startVerse; v <= endVerse; v++) {
-    if (!readySet.has(v)) break;
-    maxRevealed = v;
+export function PassageVerses({ bookDisplay, chapter, startVerse, endVerse }: PassageVersesProps) {
+  const reference =
+    endVerse > startVerse
+      ? `${bookDisplay} ${chapter}:${startVerse}-${endVerse}`
+      : `${bookDisplay} ${chapter}:${startVerse}`;
+
+  const state = useVerseFetch(reference);
+
+  if (state.status === "ok") {
+    return (
+      <div className="flex flex-col gap-1.5 pl-3">
+        {state.verses.map((line) => (
+          <p key={line.verse} className="text-sm leading-relaxed text-foreground/90">
+            <sup className="mr-1.5 select-none align-[0.35em] text-[0.65rem] font-semibold text-muted-foreground">
+              {line.verse}
+            </sup>
+            <span>{line.text}</span>
+          </p>
+        ))}
+      </div>
+    );
   }
 
-  const verses: number[] = [];
-  for (let v = startVerse; v <= endVerse; v++) verses.push(v);
+  // Erro renderiza como ausência, e não como aviso: o cartão em volta já traz
+  // a referência, e uma mensagem de falha no meio de um estudo assusta mais do
+  // que informa. O rastro do problema fica no log do servidor.
+  if (state.status === "error") return null;
 
+  // O esqueleto tem a altura aproximada da passagem real, para o conteúdo
+  // abaixo não pular quando o texto chega.
+  const lineCount = Math.min(Math.max(endVerse - startVerse + 1, 1), 5);
   return (
-    <div className="flex flex-col gap-1.5 pl-3">
-      {verses.map((v) => (
-        <VerseLine
-          key={v}
-          reference={`${bookDisplay} ${chapter}:${v}`}
-          verseNumber={v}
-          hidden={v > maxRevealed}
-          onReady={handleReady}
+    <div aria-hidden className="flex flex-col gap-2 pl-3">
+      {Array.from({ length: lineCount }, (_, i) => (
+        <span
+          // biome-ignore lint/suspicious/noArrayIndexKey: linhas decorativas, sem identidade própria
+          key={i}
+          className={`block h-3 animate-skeleton-shimmer rounded-md bg-muted ${
+            SKELETON_WIDTHS[i % SKELETON_WIDTHS.length]
+          }`}
         />
       ))}
     </div>
-  );
-}
-
-type VerseLineProps = {
-  reference: string;
-  verseNumber: number;
-  hidden: boolean;
-  onReady: (v: number) => void;
-};
-
-function VerseLine({ reference, verseNumber, hidden, onReady }: VerseLineProps) {
-  const state = useVerseFetch(reference);
-  const text = state.status === "ok" ? state.text : "";
-  const loading = state.status === "idle" || state.status === "loading";
-
-  useEffect(() => {
-    // "Ready" = fetch reached a terminal state (ok or error). We include
-    // error so a stubbornly-failing verse doesn't gate the whole passage.
-    if (state.status !== "idle" && state.status !== "loading") {
-      onReady(verseNumber);
-    }
-  }, [state.status, verseNumber, onReady]);
-
-  return (
-    <p className={cn("text-sm leading-relaxed text-foreground/90", hidden && "hidden")}>
-      <sup className="mr-1.5 select-none align-[0.35em] text-[0.65rem] font-semibold text-muted-foreground">
-        {verseNumber}
-      </sup>
-      {text ? (
-        <span>{text}</span>
-      ) : loading ? (
-        <span
-          aria-hidden
-          className="inline-block h-3 w-40 animate-skeleton-shimmer rounded-md bg-muted align-middle"
-        />
-      ) : null}
-    </p>
   );
 }

@@ -611,6 +611,12 @@ canUseFeature(ctx, "study_generation")
 //        ou um override do admin revogou para este usuário
 ```
 
+**O mínimo é `pessoal`, não `estudioso`.** O estudo é o que separa um plano
+PAGO do gratuito, e não o plano de cima do plano do meio: prendê-lo no degrau
+mais alto deixava o Pessoal sem nenhuma capacidade que o Gratuito não tivesse —
+a diferença entre os dois virava só a quantidade de créditos. `PLAN_ORDER` faz
+o Estudioso herdar sozinho.
+
 ## 8.2 Onde mora a regra
 
 O catálogo (`feature → plano mínimo`) mora **em código**, client-safe, em

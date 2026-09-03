@@ -5,6 +5,7 @@ import { PassageVerses } from "@/features/session/components/PassageVerses";
 import { useVerseFetch } from "@/features/session/hooks/useVerseFetch";
 import type { FeedItem } from "@/lib/domain/feed";
 import { feedItemOrigin, parseVerseReference } from "@/lib/domain/feed";
+import { joinVerses } from "@/lib/domain/verse";
 import { cn } from "@/lib/utils";
 import { ScribaAvatar } from "@/shared/brand";
 
@@ -150,7 +151,7 @@ type VerseTextProps = {
 
 function VerseText({ reference, initialText }: VerseTextProps) {
   const state = useVerseFetch(initialText ? null : reference);
-  const text = initialText || (state.status === "ok" ? state.text : "");
+  const text = initialText || (state.status === "ok" ? joinVerses(state.verses) : "");
   if (text) {
     return (
       <blockquote className="border-l-[3px] border-session-verse-border pl-3.5 text-[15px] font-light italic leading-relaxed text-session-verse-text">

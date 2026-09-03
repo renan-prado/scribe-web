@@ -108,6 +108,28 @@ explicam o número escolhido; escreva o seu também.
 Débito de moedas passa por `chargeCoins` (`lib/db/coins.ts`). **Crédito não
 tem rota** — ver `lib/billing/AGENTS.md`.
 
+## `/api/verse` responde em LOTE
+
+A rota devolve `{ passages: [...] }`, com todos os versículos de cada faixa, e
+aceita `reference` (uma) ou `references` (até 24) — o formato de resposta é o
+mesmo nos dois casos, para o cliente não ter dois caminhos de parse.
+
+Ela já foi uma referência por chamada, devolvendo texto corrido, e a UI pedia
+VERSÍCULO A VERSÍCULO: sete requisições para "Isaías 1:11-17". Um estudo com
+dezessete passagens passava das 60/min do `RATE_LIMITS.verse` em segundos, e os
+versículos recusados voltavam vazios — a tela mostrava número sem texto, sem
+nenhum erro visível. O lote é a correção da causa; o limite continua onde
+estava e agora sobra.
+
+Duas invariantes ao mexer aqui:
+
+- **A resposta é uma LISTA de versículos, nunca texto concatenado.** A UI
+  numera cada linha, e juntar no servidor obrigaria o cliente a resegmentar —
+  impossível de fazer certo, porque o ponto final não delimita versículo. Quem
+  precisa de texto corrido usa `joinVerses` (`lib/domain/verse.ts`).
+- **Só voltam os versículos que EXISTEM.** Uma faixa que passa do fim do
+  capítulo devolve menos linhas, não linhas vazias.
+
 ## Server Action é endpoint, não pedaço de página
 
 Uma Server Action é um POST próprio, com id que é hash estável embutido no

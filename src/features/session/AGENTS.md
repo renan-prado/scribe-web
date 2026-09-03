@@ -167,6 +167,31 @@ silêncio o que não bate com o schema, o que está certo nas rotas ao vivo
 PERSISTE o array: o `final-summary` rejeita com 400, para o cliente aprender o
 bug em vez de perder cards calado.
 
+## Texto bíblico na tela
+
+`PassageVerses` faz **uma** busca por passagem e tem **um** estado: ou o
+esqueleto do bloco inteiro, ou o texto inteiro. Não há revelação progressiva.
+
+Ela já teve: um componente por versículo, cada um com a sua requisição,
+revelando em ordem conforme resolviam. Duas coisas quebraram, e as duas são o
+motivo de o arquivo estar como está:
+
+1. **Rate limit.** Um estudo com dezessete passagens passava das 60/min de
+   `/api/verse`. Os versículos recusados voltavam vazios, e a tela mostrava
+   número sem texto — sem erro nenhum visível, porque `requestVerse` não
+   conferia `res.ok` e um 429 virava uma passagem vazia indistinguível de
+   "não existe".
+2. **Montagem aos pedaços.** O bloco aparecia e ia se preenchendo linha a
+   linha, empurrando o conteúdo abaixo a cada versículo que chegava.
+
+O cache do React Query é por PASSAGEM (`["passage", reference]`) e
+`staleTime: Infinity` — texto bíblico não muda, e sem isso voltar para uma
+sessão refazia todas as buscas.
+
+As larguras do esqueleto são fixas por posição, e não sorteadas: um
+`Math.random()` ali daria hidratação divergente e o React descartaria o HTML
+do servidor.
+
 ## Qualidade da transcrição e escalada de modelo
 
 Um chunk volta marcado como `poor` quando qualquer uma de três fontes acusa —

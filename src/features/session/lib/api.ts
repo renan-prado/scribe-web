@@ -3,7 +3,7 @@ import type { HallucinationReview, HallucinationScope } from "@/lib/domain/hallu
 import type { ChunkEvent } from "@/lib/domain/recorder";
 import type { SessionMode } from "@/lib/domain/session";
 import type { SummaryPayload } from "@/lib/domain/summary";
-import type { VersePayload } from "@/lib/domain/verse";
+import { type PassagePayload, parseVerseResponse } from "@/lib/domain/verse";
 
 /**
  * Client-side wrappers around the session's API routes. They centralize URL,
@@ -254,28 +254,34 @@ export async function requestLocationSuggestions(q: string): Promise<EntitySugge
   }
 }
 
-export async function requestVerse(
+/**
+ * Busca UMA passagem inteira — todos os versículos da faixa numa chamada só.
+ *
+ * A versão anterior pedia versículo a versículo, e um estudo com muitas
+ * passagens estourava o rate limit: os versículos recusados voltavam vazios e
+ * a tela ficava com números soltos sem texto.
+ *
+ * `res.ok` é conferido ANTES do corpo, e isso não é zelo: um 429 devolve
+ * `{ error: "rate_limited" }`, que sem esta checagem virava uma passagem vazia
+ * indistinguível de "esse versículo não existe".
+ */
+export async function requestPassage(
   reference: string
-): Promise<{ ok: true; payload: VersePayload } | { ok: false; message: string }> {
+): Promise<{ ok: true; payload: PassagePayload } | { ok: false; message: string }> {
   try {
     const res = await fetch("/api/verse", {
       method: "POST",
       headers: { "content-type": "application/json" },
       body: JSON.stringify({ reference }),
     });
-    const body = (await res.json()) as {
-      reference?: string;
-      text?: string;
-      error?: string;
-    };
-    if (body?.error) return { ok: false, message: body.error };
-    return {
-      ok: true,
-      payload: {
-        reference: body.reference || reference,
-        text: body.text || "",
-      },
-    };
+    if (!res.ok) {
+      const body = (await res.json().catch(() => ({}))) as { error?: string };
+      return { ok: false, message: body.error || `HTTP ${res.status}` };
+    }
+    const parsedBody = parseVerseResponse(await res.json());
+    const passage = parsedBody?.passages[0];
+    if (!passage) return { ok: false, message: "passagem não encontrada" };
+    return { ok: true, payload: passage };
   } catch (err) {
     return { ok: false, message: (err as Error).message || "falha ao buscar" };
   }

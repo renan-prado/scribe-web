@@ -1,3 +1,4 @@
+import type { VerseLine } from "@/lib/domain/verse";
 export type ChunkStatus = "uploading" | "ok" | "silence" | "error";
 
 export type ChunkRow = {
@@ -24,5 +25,5 @@ export type TranscriptState = "listening" | "transcribing" | "idle";
 export type VerseFetchState =
   | { status: "idle" }
   | { status: "loading" }
-  | { status: "ok"; reference: string; text: string }
+  | { status: "ok"; reference: string; verses: VerseLine[] }
   | { status: "error"; message: string };
