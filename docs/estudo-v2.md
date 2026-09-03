@@ -389,14 +389,27 @@ tinha. Ambas revertem em uma linha do catálogo:
 
 # 9. Ordem de implementação
 
-| Passo | Entrega |
-|---|---|
-| 1 | Feature entitlements: catálogo, gate no servidor, UI, admin, docs |
-| 2 | Índice de teólogos com obra, século e tema |
-| 3 | Tipos de bloco novos + `DeepeningPayload` próprio + renderer |
-| 4 | Pipeline de cinco passos + persistência do plano |
-| 5 | Amostra fixa de sessões + planilha dos oito critérios |
-| 6 | (RAG PR 1-2) fontes reais no passo [2] — ver `docs/scriba-rag-*` |
+| Passo | Entrega | Estado |
+|---|---|---|
+| 1 | Feature entitlements: catálogo, gate no servidor, UI, admin, docs | **feito** |
+| 2 | Índice de teólogos com obra, século e tema (`lib/prompts/theologians.ts`) | **feito** |
+| 3 | Tipos de bloco novos + `StudyPayload` próprio + `StudyBlockRenderer` | **feito** |
+| 4 | Pipeline de cinco passos (`lib/study/`) + persistência do plano | **feito** |
+| 5 | Amostra fixa de sessões + planilha dos oito critérios | a fazer |
+| 6 | (RAG PR 1-2) fontes reais no passo [2] — ver `docs/scriba-rag-*` | a fazer |
 
-O passo 1 é independente dos demais e por isso entra primeiro. Os passos 2-4
+O passo 1 é independente dos demais e por isso entrou primeiro. Os passos 2-4
 são um bloco só: nenhum deles isolado muda o que o usuário lê.
+
+## O que o passo 5 ainda precisa
+
+A metade instrumental existe: o plano é persistido em
+`session_deepenings.plan` e `/admin/studies` mostra plano e resultado lado a
+lado. Falta a metade humana — escolher as sessões da amostra e passar a
+preencher a tabela dos oito critérios a cada mudança. Sem isso, a próxima
+rodada de melhoria volta a começar de impressão.
+
+Uma consequência prática de já ter medido pouco: os estudos gerados antes
+desta mudança têm `plan = NULL`, e não há backfill possível. A comparação
+antes/depois é entre estudos NOVOS e a memória dos antigos — o que é
+suficiente para a primeira rodada e insuficiente para a segunda.

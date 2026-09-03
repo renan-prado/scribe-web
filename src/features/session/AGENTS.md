@@ -240,11 +240,23 @@ Sessões nunca encerradas (`ended_at is null`) saem da lista principal e
 aparecem numa faixa "Gravações em aberto" no `/list`, com opção de continuar
 ou apagar — ver `listUnfinishedSessions`.
 
-Depois disso a sessão pode gerar um **aprofundamento** (`/api/deepening`, uma
-vez por sessão — `unique(session_id)` na migração 0009, com uma rota de
-reprocessamento separada) e os cards de acompanhamento — praticar / releia /
-lembra — que alimentam o `/feed` unificado (`lib/db/feed-entries.ts`) por data
-agendada.
+Depois disso a sessão pode gerar o **estudo** (`/api/deepening`, uma vez por
+sessão — `unique(session_id)` na migração 0009, com uma rota de reprocessamento
+separada) e os cards de acompanhamento — praticar / releia / lembra — que
+alimentam o `/feed` unificado (`lib/db/feed-entries.ts`) por data agendada.
+
+O estudo tem duas particularidades que mordem de fora:
+
+- **Ele não fala o vocabulário de blocos do resumo.** `StudyBlock`
+  (`lib/domain/study.ts`) acrescenta `objection`, `distinction`, `reading` e
+  `question`, e reinterpreta `example` — no resumo é "Exemplo do pregador",
+  no estudo é ilustração do próprio estudo. Por isso a página usa
+  `StudyBlockRenderer`, que desenha esses cinco e delega o resto ao
+  `BlockRenderer`. Um bloco novo precisa entrar nos DOIS lugares: no parser e
+  no renderer.
+- **Gerar exige plano `Estudioso`.** LER um estudo salvo, não. O booleano vem
+  do servidor por prop (`canGenerate` / `canReprocess`); a proteção real está
+  em `requireFeature` dentro da rota. Ver `lib/AGENTS.md`.
 
 ## Ao mexer aqui
 

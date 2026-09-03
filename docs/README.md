@@ -41,8 +41,8 @@ saber ao editar código ficam nos `AGENTS.md` de cada pasta, não aqui.
 - **[`estudo-v2.md`](./estudo-v2.md)** — por que o "Gerar estudo" entrega
   pouco valor hoje (sete causas, todas no código, nenhuma resolvível por
   prompt), o pipeline de cinco etapas que substitui a chamada única, e o
-  desenho de entitlements por plano. **Status: §8 (entitlements) implementado;
-  §3-§7 (pipeline) em andamento.**
+  desenho de entitlements por plano. **Status: implementado, exceto a rotina de
+  avaliação da §7 (passo 5 da §9).**
 
 ## Integração
 

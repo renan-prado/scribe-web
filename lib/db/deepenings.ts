@@ -1,5 +1,5 @@
 import "server-only";
-import type { DeepeningPayload } from "@/lib/domain/deepening";
+import type { StudyPayload, StudyPlan } from "@/lib/domain/study";
 import { createClient } from "@/lib/supabase/server";
 
 /**
@@ -10,13 +10,16 @@ import { createClient } from "@/lib/supabase/server";
 
 export type DeepeningRow = {
   sessionId: string;
-  payload: DeepeningPayload;
+  payload: StudyPayload;
+  /** NULL nos estudos anteriores ao pipeline de 5 etapas. Ver migração 0033. */
+  plan: StudyPlan | null;
   createdAt: string;
 };
 
 type DbRow = {
   session_id: string;
-  payload: DeepeningPayload;
+  payload: StudyPayload;
+  plan: StudyPlan | null;
   created_at: string;
 };
 
@@ -24,13 +27,18 @@ export async function getDeepening(sessionId: string): Promise<DeepeningRow | nu
   const supabase = await createClient();
   const { data, error } = await supabase
     .from("session_deepenings")
-    .select("session_id, payload, created_at")
+    .select("session_id, payload, plan, created_at")
     .eq("session_id", sessionId)
     .maybeSingle();
   if (error) throw new Error(`getDeepening failed: ${error.message}`);
   if (!data) return null;
   const row = data as DbRow;
-  return { sessionId: row.session_id, payload: row.payload, createdAt: row.created_at };
+  return {
+    sessionId: row.session_id,
+    payload: row.payload,
+    plan: row.plan ?? null,
+    createdAt: row.created_at,
+  };
 }
 
 export async function hasDeepening(sessionId: string): Promise<boolean> {
@@ -71,7 +79,7 @@ export async function listDeepenings(): Promise<DeepeningListItem[]> {
   if (error) throw new Error(`listDeepenings failed: ${error.message}`);
   type Row = {
     session_id: string;
-    payload: DeepeningPayload;
+    payload: StudyPayload;
     created_at: string;
     session:
       | {
@@ -123,7 +131,11 @@ export async function listDeepenedSessionIds(sessionIds: string[]): Promise<Set<
  * "só pode ser aprofundado uma vez" rule at the DB level — this throws with
  * a distinctive message so the caller can turn it into a 409.
  */
-export async function createDeepening(sessionId: string, payload: DeepeningPayload): Promise<void> {
+export async function createDeepening(
+  sessionId: string,
+  payload: StudyPayload,
+  plan: StudyPlan
+): Promise<void> {
   const supabase = await createClient();
   const {
     data: { user },
@@ -134,6 +146,7 @@ export async function createDeepening(sessionId: string, payload: DeepeningPaylo
     session_id: sessionId,
     user_id: user.id,
     payload,
+    plan,
   });
   if (error) {
     if (error.code === "23505") {
@@ -149,7 +162,11 @@ export async function createDeepening(sessionId: string, payload: DeepeningPaylo
  * pattern used by sessions.updateSessionSummary — RLS scopes the row to the
  * current user, so no explicit ownership filter is needed here.
  */
-export async function updateDeepening(sessionId: string, payload: DeepeningPayload): Promise<void> {
+export async function updateDeepening(
+  sessionId: string,
+  payload: StudyPayload,
+  plan: StudyPlan
+): Promise<void> {
   const supabase = await createClient();
   // .select() forces PostgREST to return the affected rows so we can detect
   // silent 0-row updates (e.g. missing UPDATE RLS policy, wrong session_id).
@@ -158,7 +175,7 @@ export async function updateDeepening(sessionId: string, payload: DeepeningPaylo
   // funcionar mas nunca persistia" bug caught in prod.
   const { data, error } = await supabase
     .from("session_deepenings")
-    .update({ payload })
+    .update({ payload, plan })
     .eq("session_id", sessionId)
     .select("session_id");
   if (error) throw new Error(`updateDeepening failed: ${error.message}`);

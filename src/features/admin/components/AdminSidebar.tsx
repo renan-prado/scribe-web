@@ -4,6 +4,7 @@ import {
   BarChart3,
   Handshake,
   LayoutDashboard,
+  ScrollText,
   ToggleRight,
   TrendingUp,
   Users,
@@ -40,6 +41,7 @@ const NAV: NavItem[] = [
   { href: "/admin/usage", label: "Uso & custos", icon: BarChart3 },
   { href: "/admin/partners", label: "Parceiros", icon: Handshake },
   { href: "/admin/features", label: "Funcionalidades", icon: ToggleRight },
+  { href: "/admin/studies", label: "Estudos", icon: ScrollText },
 ];
 
 type AdminUser = {

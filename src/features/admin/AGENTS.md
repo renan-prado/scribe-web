@@ -75,6 +75,21 @@ Os dois blocos seguintes editam o que precisa mudar sem deploy:
 escrever. Sem isso, um typo cria linha órfã que nunca é lida, e alguém passa a
 tarde procurando por que o switch "não funcionou".
 
+## Estudos (`/admin/studies`)
+
+Não é métrica: é leitura. Cada linha põe a DECISÃO editorial do estudo (o
+plano do passo 1 do pipeline, persistido em `session_deepenings.plan`) ao lado
+do que ela produziu — contagem por tipo de bloco, versículos e as fontes que
+sobreviveram à selagem.
+
+Existe porque dois dos oito critérios de qualidade de `docs/estudo-v2.md` §7
+não são julgáveis lendo só o estudo pronto: "a abordagem escolhida era a
+melhor disponível?" e "a extensão é honesta com o material?".
+
+Duas leituras que a tela deve tornar imediatas, e que quem mexer aqui precisa
+preservar: um estudo `raso` com poucos blocos está CERTO, e um estudo sem
+fontes não é pior — é a selagem tendo descartado o que não tinha obra.
+
 ## Parceiros
 
 O cadastro, a taxa de comissão e o registro de pagamento (PIX) vivem aqui, mas

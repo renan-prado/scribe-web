@@ -133,6 +133,51 @@ ativação, receita, passivo de moedas), e já aceita recorte por período e por
 de parceiro: duas definições do mesmo número um dia discordam, e a discordância
 aparece como um parceiro reclamando do próprio painel.
 
+## O estudo é um pipeline, não uma chamada
+
+`lib/study/` — cinco etapas, três de LLM e **duas determinísticas**:
+
+```
+[1] lib/prompts/study-plan.ts   LLM  decide tema, eixos e disciplina de cada eixo
+[2] lib/study/anchor.ts         ---  resolve toda referência bíblica na NVI
+[3] lib/prompts/study-write.ts  LLM  escreve seguindo o plano
+[4] lib/prompts/study-audit.ts  LLM  corta o que a transcrição não sustenta
+[5] lib/study/seal.ts           ---  reescreve versículo da NVI, descarta fonte sem obra
+```
+
+Orquestrador: `lib/study/generate.ts`. Chamado por `/api/deepening` e
+`/api/deepening/reprocess`.
+
+**A regra de método que este módulo existe para impor: toda restrição que pode
+virar código sai do prompt e vira código.** O pipeline anterior gastava seções
+inteiras de prompt pedindo ao modelo que não parafraseasse a Escritura e não
+inventasse citação — num repositório que já tinha `lookupVerse` e a NVI em
+disco. Hoje o texto de todo `bibleQuote` vem da NVI (nunca do modelo), e todo
+`quote` sem obra nomeável é descartado no passo 5.
+
+Três coisas que parecem faltar e não faltam:
+
+- **Não há cota de nada** — nem de citação, nem de versículo, nem de
+  distinção. As seis cotas mínimas do prompt antigo eram a maior fonte de
+  invenção do sistema: cota é concreta, "não invente" é vago, e cota vence.
+- **O passo 4 não tem cota para fechar.** Ele só corta. Um revisor que
+  acrescenta é uma segunda fonte de invenção, que era o que o auditor antigo
+  fazia.
+- **Estudo curto é resultado válido.** O plano declara `depth`, e `raso`
+  produz oito blocos de propósito.
+
+O plano do passo 1 é **persistido** (`session_deepenings.plan`, migração 0033)
+e lido em `/admin/studies`. Sem isso, "a abordagem escolhida era a melhor?" —
+um dos oito critérios de qualidade — é impossível de julgar.
+
+Três env vars (`OPENAI_STUDY_PLAN_MODEL`, `_WRITE_`, `_AUDIT_`) e não uma:
+é o que permite subir só a redação de modelo e medir o efeito isoladamente.
+As três etapas gravam em `llm_usage_events` com rotas separadas
+(`study-plan` / `study-write` / `study-audit`), então `/admin/usage` mostra
+quanto custa decidir, escrever e revisar.
+
+Diagnóstico das sete causas que motivaram a reforma: `docs/estudo-v2.md`.
+
 ## Entitlements — o que cada plano libera
 
 Dois módulos, e a divisão é a mesma de `billing/plans.ts` × `billing/catalog.ts`:

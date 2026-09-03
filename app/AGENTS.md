@@ -31,7 +31,7 @@ Regras da camada de roteamento. Para a camada de servidor abaixo dela, ver
 /recording/[id]/transcribe gravação modo transcript_only
 /recording/[id]/summary    sessão salva: resumo final
 /recording/[id]/transcript sessão salva transcript_only: só a transcrição
-/recording/[id]/deepening  o estudo teológico da sessão
+/recording/[id]/deepening  o estudo da sessão (gerar exige plano Estudioso)
 /billing/assinar           abre o Checkout (destino do CTA da landing)
 /billing/retorno           volta do Checkout. DECORATIVA: não credita nada
 ```
@@ -47,7 +47,7 @@ a quem não é admin) e `/partners` (gate em `lib/auth/require-partner.ts`).
 `sermon-echo`, `final-summary[/reprocess]`, `deepening[/reprocess]`, `verse`,
 `format-paragraphs`, `hallucination-report`), dados (`sessions`, `feed`,
 `speakers`, `locations`, `coins`), cobrança (`billing/*`, `stripe/webhook`) e
-admin (`admin/users`, `admin/partners`).
+admin (`admin/users`, `admin/partners`, `admin/features`).
 
 ## O proxy é o gate, não a página
 

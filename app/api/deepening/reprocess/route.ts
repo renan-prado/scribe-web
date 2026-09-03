@@ -3,11 +3,11 @@ import { z } from "zod";
 import { chargeCoins } from "@/lib/db/coins";
 import { getDeepening, updateDeepening } from "@/lib/db/deepenings";
 import { getSession } from "@/lib/db/sessions";
-import { generateDeepening } from "@/lib/deepening/generate";
 import { requireFeature } from "@/lib/entitlements/server";
 import { parseJsonBody, UuidSchema } from "@/lib/http/validate";
 import { createLogger } from "@/lib/log";
 import { enforceRateLimit, RATE_LIMITS } from "@/lib/rate-limit";
+import { generateStudy } from "@/lib/study/generate";
 import { requireAuth } from "@/lib/supabase/require-auth";
 
 const log = createLogger("deepening-reprocess");
@@ -71,7 +71,7 @@ export async function POST(request: Request) {
     return NextResponse.json({ error: "charge_failed" }, { status: 500 });
   }
 
-  const result = await generateDeepening({
+  const result = await generateStudy({
     userId: auth.user.id,
     sessionId,
     transcript,
@@ -87,17 +87,20 @@ export async function POST(request: Request) {
         { status: 502 }
       );
     }
+    if (result.kind === "plan") {
+      return NextResponse.json({ error: result.message }, { status: 502 });
+    }
     return NextResponse.json(
       { error: result.message, latencyMs: result.latencyMs },
       { status: 502 }
     );
   }
 
-  const { payload, latencyMs, model } = result;
+  const { payload, plan, latencyMs, model } = result;
 
   let saved = false;
   try {
-    await updateDeepening(sessionId, payload);
+    await updateDeepening(sessionId, payload, plan);
     saved = true;
     log.debug("saved", { sessionId });
   } catch (err) {

@@ -3,11 +3,11 @@ import { z } from "zod";
 import { chargeCoins } from "@/lib/db/coins";
 import { createDeepening, hasDeepening } from "@/lib/db/deepenings";
 import { getSession } from "@/lib/db/sessions";
-import { generateDeepening } from "@/lib/deepening/generate";
 import { requireFeature } from "@/lib/entitlements/server";
 import { parseJsonBody, UuidSchema } from "@/lib/http/validate";
 import { createLogger } from "@/lib/log";
 import { enforceRateLimit, RATE_LIMITS } from "@/lib/rate-limit";
+import { generateStudy } from "@/lib/study/generate";
 import { requireAuth } from "@/lib/supabase/require-auth";
 
 const log = createLogger("deepening");
@@ -70,7 +70,7 @@ export async function POST(request: Request) {
     return NextResponse.json({ error: "charge_failed" }, { status: 500 });
   }
 
-  const result = await generateDeepening({
+  const result = await generateStudy({
     userId: auth.user.id,
     sessionId,
     transcript,
@@ -86,17 +86,24 @@ export async function POST(request: Request) {
         { status: 502 }
       );
     }
+    // "plan" cobre as três paradas duras do pipeline: plano inutilizável,
+    // redação vazia, selagem que esvaziou o estudo. Todas devolvem 502 porque
+    // todas são falha nossa, não do pedido — e nenhuma delas deve gravar um
+    // estudo pela metade.
+    if (result.kind === "plan") {
+      return NextResponse.json({ error: result.message }, { status: 502 });
+    }
     return NextResponse.json(
       { error: result.message, latencyMs: result.latencyMs },
       { status: 502 }
     );
   }
 
-  const { payload, latencyMs, model } = result;
+  const { payload, plan, latencyMs, model } = result;
 
   let saved = false;
   try {
-    await createDeepening(sessionId, payload);
+    await createDeepening(sessionId, payload, plan);
     saved = true;
     log.debug("saved", { sessionId });
   } catch (err) {

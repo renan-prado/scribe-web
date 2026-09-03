@@ -2,8 +2,11 @@ import { ArrowLeft, BookOpen } from "lucide-react";
 import type { Metadata } from "next";
 import { notFound } from "next/navigation";
 import { NavLink } from "@/components/NavLink";
-import { BlockRenderer, blockKey } from "@/features/session/components/BlockRenderer";
 import { DeepeningMenu } from "@/features/session/components/DeepeningMenu";
+import {
+  StudyBlockRenderer,
+  studyBlockKey,
+} from "@/features/session/components/StudyBlockRenderer";
 import { getDeepening } from "@/lib/db/deepenings";
 import { getSessionMeta } from "@/lib/db/sessions";
 import { canCurrentUserUse } from "@/lib/entitlements/server";
@@ -102,9 +105,9 @@ export default async function RecordingDeepeningPage({ params }: PageProps) {
         {payload.blocks.map((block, i) => (
           <div
             // biome-ignore lint/suspicious/noArrayIndexKey: same disambiguation approach as SummaryView
-            key={`${block.type}-${i}-${blockKey(block)}`}
+            key={`${block.type}-${i}-${studyBlockKey(block)}`}
           >
-            <BlockRenderer block={block} />
+            <StudyBlockRenderer block={block} />
           </div>
         ))}
       </div>
