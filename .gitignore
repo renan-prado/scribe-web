@@ -57,3 +57,5 @@ next-env.d.ts
 /compare*.json
 /compare*.txt
 /overview.txt
+
+/tasks*

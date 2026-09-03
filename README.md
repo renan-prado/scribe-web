@@ -1,36 +1,62 @@
-This is a [Next.js](https://nextjs.org) project bootstrapped with [`create-next-app`](https://nextjs.org/docs/app/api-reference/cli/create-next-app).
+# Scriba
 
-## Getting Started
+Transcrição e resumo ao vivo de sermões e aulas bíblicas. O gravador emite
+chunks de áudio que sobem para rotas de API com OpenAI atrás; enquanto a
+pessoa ouve, um feed vai mostrando os versículos citados, destaques da fala e
+contexto. No stop, um resumo estruturado do encontro inteiro.
 
-First, run the development server:
+Next.js 16 (App Router) · React 19 · Supabase · Tailwind v4 · Stripe.
+
+## Rodar localmente
+
+Requer Node 20+ e um `.env.dev` (o modelo é `.env.example` — peça os valores a
+quem já tem o ambiente).
 
 ```bash
-npm run dev
-# or
-yarn dev
-# or
-pnpm dev
-# or
-bun dev
+npm install
+npm run dev          # http://localhost:3000, contra o Supabase e o Stripe de DEV
 ```
 
-Open [http://localhost:3000](http://localhost:3000) with your browser to see the result.
+**Não crie `.env.local`.** O Next o carregaria sozinho, e um `next dev`
+distraído passaria a falar com produção sem avisar. O `scripts/with-env.mjs`
+aborta se encontrar qualquer arquivo dessa família. Detalhes em
+[`docs/ambientes.md`](./docs/ambientes.md).
 
-You can start editing the page by modifying `app/page.tsx`. The page auto-updates as you edit the file.
+## Comandos
 
-This project uses [`next/font`](https://nextjs.org/docs/app/building-your-application/optimizing/fonts) to automatically optimize and load [Geist](https://vercel.com/font), a new font family for Vercel.
+| Comando | O que faz |
+|---|---|
+| `npm run dev` | dev server com `.env.dev` |
+| `npm run prod` | dev server com `.env.prod`. **Dados reais, Stripe LIVE** |
+| `npm run typecheck` | `tsc --noEmit` |
+| `npm run check` | Biome: organiza imports, formata, corrige lint |
+| `npm run db:push` | aplica as migrações no Supabase de dev |
+| `npm run stripe:doctor` | diagnostica a configuração do Stripe |
 
-## Learn More
+Commits seguem [Conventional Commits](https://www.conventionalcommits.org)
+(validado pelo husky).
 
-To learn more about Next.js, take a look at the following resources:
+## Ambientes
 
-- [Next.js Documentation](https://nextjs.org/docs) - learn about Next.js features and API.
-- [Learn Next.js](https://nextjs.org/learn) - an interactive Next.js tutorial.
+Um projeto na Vercel, dois destinos:
 
-You can check out [the Next.js GitHub repository](https://github.com/vercel/next.js) - your feedback and contributions are welcome!
+- `master` → [scriba.cc](https://scriba.cc) (Production)
+- `develop` → [dev.scriba.cc](https://dev.scriba.cc) (Preview)
 
-## Deploy on Vercel
+Cada um com seu Supabase e seu Stripe. Nunca aponte os dois para o mesmo
+banco — o `with-env` recusa.
 
-The easiest way to deploy your Next.js app is to use the [Vercel Platform](https://vercel.com/new?utm_medium=default-template&filter=next.js&utm_source=create-next-app&utm_campaign=create-next-app-readme) from the creators of Next.js.
+## Documentação
 
-Check out our [Next.js deployment documentation](https://nextjs.org/docs/app/building-your-application/deploying) for more details.
+O código é comentado com o **porquê** das decisões, e os cabeçalhos de arquivo
+são a primeira parada. Acima deles:
+
+- **[`AGENTS.md`](./AGENTS.md)** — o índice. Cada pasta relevante tem o seu,
+  com as regras que valem ali (`app/`, `lib/`, `lib/billing/`,
+  `src/features/*/`, `src/shared/`, `supabase/`).
+- **[`docs/`](./docs/README.md)** — guias longos: configuração de ambiente,
+  Stripe, programa de parceiros, bridge React Native.
+
+Esses documentos são escritos para agentes de IA e para pessoas ao mesmo
+tempo. Mudou um comportamento que algum deles descreve? Atualize no mesmo
+commit — um doc errado é pior que doc nenhum, porque é lido com confiança.
