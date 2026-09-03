@@ -16,6 +16,10 @@ const BodySchema = z.object({ sessionId: UuidSchema }).strict();
 
 export const runtime = "nodejs";
 export const dynamic = "force-dynamic";
+// O pipeline do estudo são três chamadas a um modelo de raciocínio e leva
+// perto de quatro minutos. Sem este teto explícito a função morre no padrão
+// da plataforma — e morreria DEPOIS de debitar as moedas.
+export const maxDuration = 300;
 
 /**
  * Single-shot study ("estudo"). Consumes the full transcript, curated feed

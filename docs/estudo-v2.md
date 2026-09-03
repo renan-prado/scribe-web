@@ -197,6 +197,30 @@ transcrição + resumo + cards
 artigo + as perguntas persistidas para avaliação
 ```
 
+## O sermão sai do pipeline depois do passo 1
+
+**Só o questionador vê a transcrição e o resumo.** Dali em diante o material de
+trabalho é um ASSUNTO ("a alegria cristã") e um conjunto de perguntas — o
+respondedor e o redator não recebem o sermão de forma alguma.
+
+É a mudança que mais mexeu no resultado, e ela é de arquitetura, não de prompt.
+Enquanto os dois recebiam o resumo "para não repetir", o estudo saía com as
+seções do sermão e usava até a expressão que o pregador tinha cunhado como
+título de seção. **Entregar o texto a ser evitado a um modelo que vai escrever
+é priming, não proteção:** o que está no contexto sai na saída, e o resumo é o
+artefato mais estruturado que ele recebia.
+
+O questionador também passou a separar duas coisas que antes vinham coladas:
+
+- o **assunto** — como qualquer cristão o nomearia, sem adjetivo de sermão;
+- a **moldura** — o recorte particular deste pregador, suas expressões e
+  imagens.
+
+E cada pergunta passa pelo **teste do estranho**: um cristão que não ouviu este
+sermão entende a pergunta? Se precisa de explicação sobre a pregação, a
+pergunta está presa à moldura e é reescrita. É verificável, ao contrário de
+"não seja genérico".
+
 ## Por que perguntas, e não eixos com disciplinas
 
 A primeira versão desta reforma pedia ao modelo um *plano editorial*: dois ou
@@ -239,6 +263,10 @@ de repetição costurada.
 
 ## O guardião — dois cortes contra a repetição do resumo
 
+> Medido depois: com o sermão fora dos passos 2 e 4, o filtro [1b] tem muito
+> menos trabalho, e o modelo dele precisou subir para conseguir discriminar.
+> Ver a nota de calibragem no fim desta seção.
+
 O modo de falha nº 1 deste produto é o estudo sair dizendo a mesma coisa que o
 resumo já disse. Os três modelos recebem o resumo e são instruídos a não
 repeti-lo; a instrução compete com a inclinação natural do modelo de voltar ao
@@ -263,6 +291,14 @@ Salvaguarda: se sobrarem menos de seis perguntas, seguimos com TODAS. Corte
 excessivo significa questionador preguiçoso, e responder duas sobras produziria
 um estudo raquítico — repetição é ruim, mas vazio é pior.
 
+**Calibragem, medida.** A primeira versão do filtro perguntava "o resumo já
+responde isto?" e reprovava 25 de 25, depois 28 de 28: num estudo sobre o mesmo
+assunto, quase toda pergunta encosta no que o resumo tocou, e o filtro só
+acionava o fallback. O critério foi estreitado para o teste do estranho —
+tratar do mesmo assunto deixou de ser motivo de corte. E mesmo assim o
+`gpt-4o-mini` continuava reprovando 26 de 27; com o mesmo prompt, o `gpt-5-mini`
+reprova 6, em 9 segundos. Era teto de modelo, não de prompt.
+
 **[4b] Checagem de tese.** Depois do redator. Compara a tese e os títulos de
 seção do resumo com os do artigo, e responde uma coisa só: o estudo está apenas
 repetindo?
@@ -277,6 +313,13 @@ explicitamente numa mensagem separada. Se a segunda tentativa também repetir, o
 estudo é entregue assim mesmo: o usuário já pagou as moedas, e devolver 502
 depois de cobrar é pior que entregar algo imperfeito. O fato fica no log e em
 `/admin/studies`.
+
+**A reescrita respeita um prazo.** O pipeline inteiro mede ~255s e a função tem
+teto de 300s; uma reescrita são mais ~100s. Passado
+`REWRITE_DEADLINE_MS` (150s), o veredito vira só sinal — tentar reescrever fora
+do prazo trocaria "estudo com a tese parecida" por "função morta depois de
+debitar as moedas". Com os modelos de hoje ela quase nunca cabe; se um modelo
+mais rápido entrar, ela volta a caber sozinha.
 
 Os dois cortes ficam registrados em `StudyRecord.guard`, então o
 `/admin/studies` distingue as duas razões de uma pergunta não ter virado texto:
@@ -315,27 +358,66 @@ pedir — julgamento.
 
 # 4. Estratégia de modelos
 
-| Etapa | Papel | Env var | Temp. | Por quê |
+| Etapa | Papel | Env var | Modelo | Esforço |
 |---|---|---|---|---|
-| [1] Questionador | amplitude e ângulos improváveis | `OPENAI_STUDY_QUESTIONS_MODEL` | 0.9 | Queremos as perguntas que um modelo cauteloso não faria |
-| [2] Respondedor | seleção e substância | `OPENAI_STUDY_ANSWERS_MODEL` | 0.5 | É a etapa que carrega os fatos; temperatura alta aqui vira citação inventada |
-| [4] Redator | prosa | `OPENAI_STUDY_WRITE_MODEL` | 0.75 | A substância já está fixada; a temperatura muda como se escreve, não o que se afirma |
-| [1b] [4b] Guardião | classificação | `OPENAI_STUDY_GUARD_MODEL` | 0 | Decidir "isto repete aquilo?" não precisa de modelo caro, e variação aqui produziria cortes inconsistentes |
+| [1] Questionador | amplitude e ângulos improváveis | `OPENAI_STUDY_QUESTIONS_MODEL` | `gpt-5.1` | low |
+| [1b] [4b] Guardião | classificação | `OPENAI_STUDY_GUARD_MODEL` | `gpt-5-mini` | low |
+| [2] Respondedor | seleção e substância | `OPENAI_STUDY_ANSWERS_MODEL` | `gpt-5.1` | padrão |
+| [4] Redator | prosa | `OPENAI_STUDY_WRITE_MODEL` | `gpt-5.1` | low |
 
-**Especializar por etapa é a decisão certa; usar três famílias de modelo
-diferentes não é.** O ganho real vem de temperatura e escopo distintos por
-etapa. Manter três env vars separadas permite subir só o questionador — a
-etapa que mais determina a qualidade final — e medir o delta isoladamente.
+## A troca de modelo foi a mudança de maior impacto
 
-Duas notas operacionais:
+Isto foi medido, não estimado. Com `gpt-4o` nas três etapas, sobre o mesmo
+sermão e com os mesmos prompts:
 
-- As chamadas [2] e [4] são grandes (10-14 respostas de até 350 palavras;
-  depois um artigo inteiro). O padrão de `callChat` é 60s, curto demais para
-  elas: ambas passam `timeoutMs` explícito de 180s. Um timeout aqui abortaria
-  trabalho que o usuário já pagou.
-- Só o passo [1] recebe a transcrição inteira — é ele que precisa dela para
-  achar o que perguntar. O [2] recebe uma versão limitada; o [4] não recebe
-  transcrição nenhuma, porque escreve sobre o assunto, não sobre a gravação.
+| | gpt-4o | gpt-5.1 |
+|---|---|---|
+| palavras por resposta | 186 | 420 |
+| palavras do artigo | 723 → 1.330 | 3.100 → 4.000 |
+| blocos | 17 | 55-71 |
+| distinções, objeções, leituras | 0 | várias |
+| seções | rótulos de categoria | temas próprios |
+
+Três rodadas de ajuste de prompt levaram o artigo de 723 para 1.330 palavras e
+pararam ali. A troca de modelo levou para 4.000 na primeira tentativa. **Era
+teto de modelo, e nenhum prompt ia furá-lo** — vale lembrar disso antes da
+próxima rodada de reescrita de prompt.
+
+O estudo é a funcionalidade paga por si mesma e a única que o usuário lê
+inteira. É onde o modelo caro se paga.
+
+## O que a família de raciocínio muda no `callChat`
+
+`gpt-5*` e os modelos `o*` falam um dialeto diferente do Chat Completions, e as
+duas diferenças são erro 400, não aviso:
+
+- `max_tokens` é recusado — o nome é `max_completion_tokens`;
+- `temperature` só aceita o padrão, e mandá-la junto de `reasoning_effort`
+  falha.
+
+`lib/llm/openai.ts` detecta a família por prefixo e troca os parâmetros. Quem
+regula a etapa nesses modelos é `reasoning_effort`, não a temperatura — os
+valores de `temperature` nas rotas seguem valendo se alguém configurar um
+`gpt-4o` de volta.
+
+O esforço por etapa segue a natureza do trabalho: **baixo** para levantar
+perguntas (é divergência, e raciocinar demais CONVERGE), **padrão** para
+responder (é onde os fatos e as distinções se decidem), **baixo** para escrever
+(compor prosa a partir de material pronto não é dedução — o fôlego vem do
+orçamento de blocos do prompt).
+
+## Latência e o teto da função
+
+O pipeline mede **~255s**: 35s perguntando, ~110s respondendo, ~100s
+escrevendo, mais os cortes do guardião.
+
+As rotas declaram `maxDuration = 300` — sem isso a função morreria no padrão da
+plataforma, e morreria DEPOIS de debitar as moedas. As chamadas [2] e [4]
+passam `timeoutMs` de 240s, contra os 60s padrão do `callChat`.
+
+Esse orçamento é o que governa duas decisões acima: o esforço baixo no redator
+e o prazo da reescrita do guardião. Ele também é o primeiro a apertar quando
+alguém quiser um estudo ainda mais longo.
 
 ---
 

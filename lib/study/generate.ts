@@ -56,6 +56,19 @@ import { sealStudy } from "@/lib/study/seal";
  * passo 2, com quem vai ter de responder — quem melhor julga se uma pergunta
  * vale é quem precisa respondê-la.
  *
+ * ## O sermão sai do pipeline depois do passo 1
+ *
+ * Só o questionador vê a transcrição e o resumo. Dali em diante o material de
+ * trabalho é um ASSUNTO ("a alegria cristã") e um conjunto de perguntas — o
+ * respondedor e o redator não recebem o sermão de forma alguma.
+ *
+ * É uma decisão de arquitetura, não de prompt, e ela nasceu de uma medição:
+ * enquanto os dois recebiam o resumo "para não repetir", a expressão que o
+ * pregador cunhou aparecia como título de seção do estudo. Entregar o texto a
+ * ser evitado a um modelo que vai escrever é priming, não proteção — o que
+ * está no contexto sai na saída. Não entregar resolve estruturalmente o que
+ * nenhuma instrução resolvia.
+ *
  * Os dois passos do guardião (`lib/prompts/study-guard.ts`) existem contra o
  * modo de falha nº 1 do produto: o estudo sair repetindo o resumo. Os três
  * modelos do pipeline recebem o resumo e são instruídos a não repeti-lo, e a
@@ -94,30 +107,34 @@ export type GenerateStudyInput = {
 };
 
 /**
- * Teto da transcrição enviada ao passo 2. O passo 1 recebe a íntegra — é ele
- * que precisa dela para achar o que perguntar. Depois disso o material de
- * trabalho são as perguntas e as respostas, e remandar quarenta minutos de
- * fala infla o prompt sem melhorar o texto. O passo 4 não recebe transcrição
- * nenhuma: ele escreve sobre o ASSUNTO, não sobre a gravação.
+ * As chamadas do respondedor e do redator são grandes — 8-11 respostas de até
+ * 500 palavras, e depois um artigo de 4-5 mil palavras num modelo de
+ * raciocínio. Medidas: ~100s cada. O padrão de `callChat` é 60s, e um timeout
+ * aqui aborta um trabalho pelo qual o usuário já pagou moedas.
  */
-const TRANSCRIPT_CAP = 20_000;
+const LONG_CALL_TIMEOUT_MS = 240_000;
 
 /**
- * As chamadas do respondedor e do redator são grandes — 10-14 respostas de até
- * 350 palavras, e depois um artigo inteiro. O padrão de `callChat` é 60s, curto
- * demais para elas, e um timeout aqui aborta um trabalho pelo qual o usuário já
- * pagou moedas.
+ * Depois deste ponto na execução, a reescrita do guardião [4b] não é mais
+ * tentada.
+ *
+ * A rota roda com `maxDuration = 300` (o teto da plataforma), e o pipeline
+ * inteiro mede ~255s com gpt-5.1. Uma reescrita são mais ~100s: tentá-la fora
+ * do prazo trocaria "estudo com a tese parecida" por "função morta depois de
+ * debitar as moedas", que é um estrago maior.
+ *
+ * Consequência assumida: com os modelos de hoje a reescrita quase nunca vai
+ * caber, e o veredito do guardião fica valendo como SINAL (log e
+ * `/admin/studies`). Se um modelo mais rápido entrar no lugar, ela volta a
+ * caber sozinha, sem mudar nada aqui.
  */
-const LONG_CALL_TIMEOUT_MS = 180_000;
-
-function capTranscript(transcript: string): string {
-  if (transcript.length <= TRANSCRIPT_CAP) return transcript;
-  return `${transcript.slice(0, TRANSCRIPT_CAP)}\n\n[transcrição truncada]`;
-}
+const REWRITE_DEADLINE_MS = 150_000;
 
 export async function generateStudy(input: GenerateStudyInput): Promise<GenerateStudyResult> {
   const { userId, sessionId, transcript, feedItems, finalSummary, logPrefix } = input;
   const log = createLogger(logPrefix);
+  const startedAt = Date.now();
+  let totalTokens = 0;
 
   // ── [1] QUESTIONADOR ─────────────────────────────────────────────────────
   const questionsModel = serverEnv.OPENAI_STUDY_QUESTIONS_MODEL;
@@ -129,7 +146,12 @@ export async function generateStudy(input: GenerateStudyInput): Promise<Generate
     // barato — a seleção vem depois. Uma boa pergunta não feita está perdida
     // para sempre.
     temperature: 0.9,
-    maxTokens: 6000,
+    maxTokens: 8000,
+    // Esforço baixo de propósito: levantar trinta perguntas é divergência, não
+    // dedução. O raciocínio profundo aqui custa quase um minuto de espera e
+    // tende a CONVERGIR — e convergir é o oposto do que se quer de quem
+    // pergunta.
+    reasoningEffort: "low",
     responseFormat: { type: "json_object" },
     messages: [
       { role: "system", content: STUDY_QUESTIONS_SYSTEM_PROMPT },
@@ -147,7 +169,12 @@ export async function generateStudy(input: GenerateStudyInput): Promise<Generate
   });
 
   if (!questionsResult.ok) return upstreamFailure(qLog, questionsResult.error);
-  await recordUsage(sessionId, "study-questions", questionsModel, questionsResult.data);
+  totalTokens += await recordUsage(
+    sessionId,
+    "study-questions",
+    questionsModel,
+    questionsResult.data
+  );
 
   const record = parseStudyQuestionsFromLLM(questionsResult.data.content);
   if (!record) {
@@ -202,6 +229,9 @@ export async function generateStudy(input: GenerateStudyInput): Promise<Generate
     // Média: precisa de liberdade para formular, mas é a etapa que carrega os
     // fatos, e temperatura alta aqui vira citação inventada.
     temperature: 0.5,
+    // Sem esforço explícito: o padrão da API já entrega a densidade que esta
+    // etapa precisa, e "medium" media 195s contra ~120s — quase um minuto a
+    // mais de espera, dentro de um orçamento de função que é de 300s.
     maxTokens: 16000,
     timeoutMs: LONG_CALL_TIMEOUT_MS,
     responseFormat: { type: "json_object" },
@@ -210,11 +240,9 @@ export async function generateStudy(input: GenerateStudyInput): Promise<Generate
       {
         role: "user",
         content: [
-          `theme:\n${record.theme}`,
+          `subject:\n${record.theme}`,
           `questions:\n${JSON.stringify(questionsForAnswering)}`,
           `authors:\n${authorsBlock}`,
-          `summary:\n${JSON.stringify(finalSummary)}`,
-          `transcript:\n${capTranscript(transcript)}`,
         ].join("\n\n---\n"),
       },
     ],
@@ -223,7 +251,7 @@ export async function generateStudy(input: GenerateStudyInput): Promise<Generate
   });
 
   if (!answersResult.ok) return upstreamFailure(aLog, answersResult.error);
-  await recordUsage(sessionId, "study-answers", answersModel, answersResult.data);
+  totalTokens += await recordUsage(sessionId, "study-answers", answersModel, answersResult.data);
 
   const answers = parseStudyAnswersFromLLM(answersResult.data.content);
   if (answers.length === 0) {
@@ -232,9 +260,17 @@ export async function generateStudy(input: GenerateStudyInput): Promise<Generate
   }
 
   record.answered = answers.map((a) => a.question);
+  // `avgWords` é a telemetria que revelou o gargalo do pipeline: as respostas
+  // saíam densas e o redator devolvia um quarto disso. Sem medir os dois lados,
+  // "o estudo está raso" não diz em qual etapa mexer.
+  const answerWords = Math.round(
+    answers.reduce((n, a) => n + a.text.split(/\s+/).length, 0) / answers.length
+  );
   aLog.debug("ok", {
     asked: questionsForAnswering.length,
     answered: answers.length,
+    avgWords: answerWords,
+    withSources: answers.filter((a) => a.sources.length > 0).length,
     withTension: answers.filter((a) => a.tension).length,
     latencyMs: answersResult.data.latencyMs,
   });
@@ -264,7 +300,6 @@ export async function generateStudy(input: GenerateStudyInput): Promise<Generate
     answers,
     anchoredBlock: renderAnchoredPassages(anchored),
     authorsBlock,
-    finalSummary,
     log: wLog,
   };
 
@@ -284,7 +319,13 @@ export async function generateStudy(input: GenerateStudyInput): Promise<Generate
     log: log.scoped("guard"),
   });
 
-  if (verdict.repeats) {
+  const elapsed = Date.now() - startedAt;
+  if (verdict.repeats && elapsed > REWRITE_DEADLINE_MS) {
+    wLog.warn("tese repete o resumo, mas não há prazo para reescrever", {
+      overlap: verdict.overlap,
+      elapsedMs: elapsed,
+    });
+  } else if (verdict.repeats) {
     wLog.warn("tese repete o resumo — reescrevendo uma vez", { overlap: verdict.overlap });
     const retry = await runWriter(writeArgs, verdict.overlap);
     if (retry.ok && retry.payload.blocks.length > 0) {
@@ -302,7 +343,16 @@ export async function generateStudy(input: GenerateStudyInput): Promise<Generate
 
   // ── [5] SELAGEM (sem LLM) ────────────────────────────────────────────────
   const { payload, report } = sealStudy(draft, anchored);
-  log.debug("selado", { blocks: payload.blocks.length, ...report });
+  log.info("estudo pronto", {
+    blocks: payload.blocks.length,
+    words: payload.blocks.reduce((n, b) => n + ("text" in b ? b.text.split(/\s+/).length : 0), 0),
+    // Duração e tokens no MESMO evento porque as duas perguntas que se faz
+    // sobre esta rota são "por que demora tanto?" e "quanto custa?", e elas se
+    // respondem juntas. O custo em reais sai em /admin/usage.
+    durationMs: Date.now() - startedAt,
+    totalTokens,
+    ...report,
+  });
 
   if (payload.blocks.length === 0) {
     log.error("selagem esvaziou o estudo");
@@ -327,7 +377,6 @@ type WriteArgs = {
   answers: StudyAnswer[];
   anchoredBlock: string;
   authorsBlock: string;
-  finalSummary: SummaryPayload;
   log: ReturnType<typeof createLogger>;
 };
 
@@ -347,6 +396,10 @@ async function runWriter(args: WriteArgs, avoid: string | null): Promise<WriteOu
     // Alta: é a etapa de prosa, e a substância já está fixada nas respostas.
     // A temperatura aqui muda como o texto é escrito, não o que ele afirma.
     temperature: 0.75,
+    // Baixo: montar prosa a partir de material já pronto é composição, não
+    // dedução. O que o redator precisa é fôlego de escrita, e isso vem do
+    // orçamento de blocos do prompt, não do raciocínio.
+    reasoningEffort: "low",
     maxTokens: 16000,
     timeoutMs: LONG_CALL_TIMEOUT_MS,
     responseFormat: { type: "json_object" },
@@ -355,12 +408,10 @@ async function runWriter(args: WriteArgs, avoid: string | null): Promise<WriteOu
       {
         role: "user",
         content: [
-          `theme:\n${args.theme}`,
+          `subject:\n${args.theme}`,
           `answers:\n${JSON.stringify(args.answers.map(stripPassages))}`,
           `anchoredPassages:\n${args.anchoredBlock}`,
           `authors:\n${args.authorsBlock}`,
-          `resumoQueOLeitorJaLeu:\n${JSON.stringify(args.finalSummary)}`,
-          `teseDoResumo (a sua TEM de ser outra):\n${args.finalSummary.shortSummary}`,
         ].join("\n\n---\n"),
       },
       ...(avoid
@@ -386,6 +437,7 @@ async function runWriter(args: WriteArgs, avoid: string | null): Promise<WriteOu
   const payload = parseStudyFromLLM(result.data.content);
   args.log.debug("ok", {
     blocks: payload.blocks.length,
+    words: payload.blocks.reduce((n, b) => n + ("text" in b ? b.text.split(/\s+/).length : 0), 0),
     retry: avoid !== null,
     latencyMs: result.data.latencyMs,
     finishReason: result.data.finishReason,
@@ -424,9 +476,11 @@ async function filterQuestions(args: {
   const result = await callChat({
     model,
     // Zero: é classificação. Variação aqui só produziria cortes inconsistentes
-    // entre duas execuções sobre o mesmo material.
+    // entre duas execuções sobre o mesmo material. (Num modelo de raciocínio a
+    // temperatura é ignorada — ver `callChat`; o que vale ali é o esforço.)
     temperature: 0,
-    maxTokens: 2000,
+    reasoningEffort: "low",
+    maxTokens: 4000,
     responseFormat: { type: "json_object" },
     messages: [
       { role: "system", content: STUDY_QUESTION_FILTER_SYSTEM_PROMPT },
@@ -479,7 +533,8 @@ async function checkThesis(args: {
   const result = await callChat({
     model,
     temperature: 0,
-    maxTokens: 500,
+    reasoningEffort: "low",
+    maxTokens: 2000,
     responseFormat: { type: "json_object" },
     messages: [
       { role: "system", content: STUDY_THESIS_CHECK_SYSTEM_PROMPT },
@@ -533,7 +588,7 @@ async function recordUsage(
   route: UsageRoute,
   model: string,
   data: ChatOk
-): Promise<void> {
+): Promise<number> {
   await recordChatUsage({
     sessionId,
     route,
@@ -543,6 +598,7 @@ async function recordUsage(
     cachedTokens: data.usage.cachedTokens,
     latencyMs: data.latencyMs,
   });
+  return data.usage.totalTokens ?? 0;
 }
 
 type ChatErr = Extract<Awaited<ReturnType<typeof callChat>>, { ok: false }>["error"];

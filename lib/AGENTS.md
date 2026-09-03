@@ -179,6 +179,15 @@ Quatro decisões que parecem detalhe e não são:
   concordam, o texto AFIRMA; onde divergem, nomeia os lados. A leitura ingênua
   ("não ofenda ninguém") produz "alguns entendem X, outros Y" — o genérico que
   a reforma existe para matar. Vive no campo `tension` de cada resposta.
+- **O sermão sai do pipeline depois do passo 1.** Só o questionador vê a
+  transcrição e o resumo; respondedor e redator recebem um ASSUNTO e as
+  perguntas. Entregar o resumo "para não repetir" a um modelo que vai escrever
+  é priming, não proteção — era assim que a expressão cunhada pelo pregador
+  virava título de seção do estudo.
+- **Ninguém escreve citação entre aspas.** Não temos o texto das obras, e uma
+  frase entre aspas que o autor não escreveu é invenção com aparência de prova.
+  Os autores entram por atribuição em prosa (nomeando a obra) e por blocos
+  `reading`. O tipo `quote` continua existindo para os payloads antigos.
 - **O redator tem licença para reordenar, fundir, descartar e desdobrar.** Sem
   ela, ele tira os pontos de interrogação e entrega um FAQ disfarçado. Teste:
   se o artigo tem tantas seções quanto respostas, ele não fez o trabalho.
@@ -218,9 +227,32 @@ lidas em `/admin/studies`. É o que separa "as perguntas eram rasas" de "eram
 boas e foram mal respondidas", que são consertos em modelos diferentes.
 
 Quatro env vars (`OPENAI_STUDY_QUESTIONS_MODEL`, `_ANSWERS_`, `_WRITE_`,
-`_GUARD_`) e quatro rotas em `llm_usage_events`, para dar para subir só o
-questionador de modelo e medir o efeito isoladamente. O guardião é o único que
-não vale subir: ele classifica, não escreve.
+`_GUARD_`) e quatro rotas em `llm_usage_events`, para dar para trocar uma etapa
+de modelo e medir o efeito isoladamente.
+
+**Os defaults são `gpt-5.1` (e `gpt-5-mini` no guardião), e a escolha foi
+MEDIDA.** Com `gpt-4o`, os mesmos prompts produziam respostas de 186 palavras
+(o prompt pedia 350-500) e um artigo de 723 a 1.330 palavras a partir de 2 mil
+palavras de material. Três rodadas de ajuste de prompt não furaram esse teto; a
+troca de modelo levou o artigo a 4 mil palavras na primeira tentativa. Antes de
+reescrever prompt de novo, pergunte se o teto não é do modelo.
+
+Isso trouxe uma consequência para o `callChat`: a família de raciocínio recusa
+`max_tokens` (é `max_completion_tokens`) e só aceita a `temperature` padrão.
+`lib/llm/openai.ts` detecta por prefixo e troca os parâmetros; quem regula a
+etapa ali é `reasoningEffort`. Um `gpt-4o` configurado de volta continua
+recebendo a temperatura de sempre.
+
+**O orçamento de tempo é apertado.** O pipeline mede ~255s, as rotas declaram
+`maxDuration = 300`, e as chamadas [2] e [4] passam `timeoutMs` de 240s. É esse
+teto que explica o esforço baixo no redator e o prazo da reescrita do guardião
+(`REWRITE_DEADLINE_MS`): estourar a função depois de já ter debitado moedas é
+um estrago maior que entregar um texto imperfeito.
+
+Para medir qualquer uma dessas coisas de novo, o harness é
+`tmp/dev-scripts/study-eval.mts` (roda o pipeline de verdade sobre uma sessão
+real e imprime perguntas, vereditos e o artigo) e `guard-eval.mts` (compara
+modelos só no filtro). Os dois vivem em `tmp/`, que é gitignored.
 
 **As chamadas [2] e [4] passam `timeoutMs` explícito de 180s.** O padrão de
 `callChat` é 60s, e essas duas são grandes — um timeout ali abortaria trabalho

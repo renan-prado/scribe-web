@@ -37,7 +37,28 @@ export type ChatParams = {
   store?: boolean;
   /** Up to 16 string→string entries. Shown in the OpenAI Logs UI. */
   metadata?: Record<string, string>;
+  /**
+   * Só vale nos modelos de raciocínio (gpt-5*, o*). Ignorado pelos demais —
+   * mandá-lo para um gpt-4o é 400 na cara.
+   */
+  reasoningEffort?: "low" | "medium" | "high";
 };
+
+/**
+ * A família de raciocínio (gpt-5*, o1/o3/o4) fala um dialeto diferente do
+ * Chat Completions, e as duas diferenças são erro 400, não aviso:
+ *
+ *   - `max_tokens` é recusado; o nome é `max_completion_tokens`.
+ *   - `temperature` só aceita o padrão. Quem regula a etapa ali é
+ *     `reasoning_effort`.
+ *
+ * A distinção é por PREFIXO porque não há como perguntar à API antes de
+ * chamar, e o custo de errar é a rota falhar em runtime: `gpt-5.1`,
+ * `gpt-5-mini` e `gpt-5-2025-08-07` são todos da mesma família.
+ */
+function isReasoningModel(model: string): boolean {
+  return /^(gpt-5|o1|o3|o4)/.test(model);
+}
 
 export type TranscribeParams = {
   model: string;
@@ -113,8 +134,17 @@ export async function callChat(params: ChatParams): Promise<Result<ChatResult>> 
           },
           body: JSON.stringify({
             model: params.model,
-            temperature: params.temperature,
-            max_tokens: params.maxTokens,
+            ...(isReasoningModel(params.model)
+              ? {
+                  // `temperature` sai FORA: a família de raciocínio aceita
+                  // apenas o padrão, e mandar 0.9 junto de `reasoning_effort`
+                  // é 400. Quem regula a etapa nesses modelos é o esforço, não
+                  // a temperatura — os valores de `temperature` que as rotas
+                  // passam seguem valendo se alguém configurar um gpt-4o.
+                  max_completion_tokens: params.maxTokens,
+                  ...(params.reasoningEffort ? { reasoning_effort: params.reasoningEffort } : {}),
+                }
+              : { temperature: params.temperature, max_tokens: params.maxTokens }),
             response_format: params.responseFormat,
             messages: params.messages,
             store: params.store,

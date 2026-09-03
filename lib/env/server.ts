@@ -31,13 +31,21 @@ const schema = z.object({
   // variáveis e não uma porque a qualidade do estudo é a qualidade das
   // perguntas: dá para subir só o questionador de modelo e medir o efeito
   // isoladamente, que é a única forma honesta de saber se compensou.
-  OPENAI_STUDY_QUESTIONS_MODEL: z.string().default("gpt-4o"),
-  OPENAI_STUDY_ANSWERS_MODEL: z.string().default("gpt-4o"),
-  OPENAI_STUDY_WRITE_MODEL: z.string().default("gpt-4o"),
-  // O guardião só classifica ("esta pergunta já está respondida no resumo?",
-  // "esta tese repete aquela?"), então roda barato de propósito. Subi-lo de
-  // modelo é desperdício; baixá-lo mais que isso deixa passar repetição.
-  OPENAI_STUDY_GUARD_MODEL: z.string().default("gpt-4o-mini"),
+  // gpt-5.1 e não gpt-4o, e a diferença foi MEDIDA sobre um sermão real: com
+  // 4o, as perguntas orbitavam o sermão, as respostas paravam em 190 palavras
+  // quando o prompt pedia 350-500, e o artigo saía com um terço do material
+  // que recebia. Prompt não consertava — era teto de modelo. O estudo é a
+  // única funcionalidade paga por si mesma e a que o usuário lê inteira; é
+  // onde o modelo caro se paga.
+  OPENAI_STUDY_QUESTIONS_MODEL: z.string().default("gpt-5.1"),
+  OPENAI_STUDY_ANSWERS_MODEL: z.string().default("gpt-5.1"),
+  OPENAI_STUDY_WRITE_MODEL: z.string().default("gpt-5.1"),
+  // O guardião só classifica, mas classificar "esta pergunta está presa a
+  // ESTE sermão?" acabou sendo difícil demais para um modelo pequeno de
+  // geração antiga: medido sobre um sermão real, o gpt-4o-mini reprovava 26 de
+  // 27 perguntas com o mesmo prompt em que o gpt-5-mini reprova 6 — e um
+  // filtro que reprova tudo não filtra nada, só aciona o fallback. Custa 9s.
+  OPENAI_STUDY_GUARD_MODEL: z.string().default("gpt-5-mini"),
   OPENAI_PRACTICES_MODEL: z.string().default("gpt-4o-mini"),
   OPENAI_REREADS_MODEL: z.string().default("gpt-4o-mini"),
   OPENAI_REMINDERS_MODEL: z.string().default("gpt-4o-mini"),

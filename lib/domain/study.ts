@@ -90,12 +90,26 @@ export type StudyQuestion = {
 
 // ── Passo 2: as respostas ────────────────────────────────────────────────────
 
+export type StudySource = {
+  author: string;
+  work: string;
+  /** O que o autor argumenta sobre este ponto. */
+  claim: string;
+};
+
 export type StudyAnswer = {
   /** A pergunta respondida, copiada do passo 1. */
   question: string;
   text: string;
   /** Referências bíblicas citadas. Conferidas contra a NVI no passo 3. */
   passages: string[];
+  /**
+   * Os autores em que a resposta se apoia. Não é bibliografia decorativa: é o
+   * material com que o redator monta atribuições e indicações de leitura. Uma
+   * resposta sem fontes vira um trecho sem nenhuma voz além da do modelo — que
+   * foi exatamente o que a primeira avaliação mediu (zero citações no artigo).
+   */
+  sources: StudySource[];
   /**
    * Onde as tradições protestantes divergem de fato, a divergência é
    * CONTEÚDO, não risco a evitar. Vazio quando há consenso — e aí a resposta
@@ -114,7 +128,13 @@ export type StudyAnswer = {
  * consertos completamente diferentes.
  */
 export type StudyRecord = {
+  /** O ASSUNTO, desgrudado da moldura deste sermão: "a alegria cristã". */
   theme: string;
+  /**
+   * Como ESTE sermão recortou o assunto. Guardado só para diagnóstico: se o
+   * artigo ecoar a moldura, dá para ver aqui o que ele estava ecoando.
+   */
+  frame?: string;
   /** TODAS as perguntas levantadas, inclusive as descartadas. */
   questions: StudyQuestion[];
   /** As que o respondedor escolheu responder, na ordem em que respondeu. */
@@ -239,7 +259,10 @@ export function parseStudyQuestionsFromLLM(content: string): StudyRecord | null 
   if (questions.length === 0) return null;
 
   return {
-    theme: str(src, "theme"),
+    // "subject" é o assunto geral; "theme" era o título do sermão na versão
+    // anterior, e é essa troca que tira a moldura do resto do pipeline.
+    theme: str(src, "subject") || str(src, "theme"),
+    frame: str(src, "frame"),
     questions,
     answered: [],
     guard: { blockedByGuard: [], rewrites: 0 },
@@ -264,10 +287,22 @@ export function parseStudyAnswersFromLLM(content: string): StudyAnswer[] {
     const question = str(rec, "question");
     const text = str(rec, "text");
     if (!question || !text) continue;
+    const rawSources = Array.isArray(rec.sources) ? rec.sources : [];
+    const sources: StudySource[] = [];
+    for (const src2 of rawSources) {
+      if (!src2 || typeof src2 !== "object") continue;
+      const sr = src2 as Record<string, unknown>;
+      const author = str(sr, "author");
+      const work = str(sr, "work");
+      // Sem obra a fonte não é conferível, que é o critério do produto inteiro.
+      if (author && work) sources.push({ author, work, claim: str(sr, "claim") });
+    }
+
     answers.push({
       question,
       text,
       passages: strArray(rec, "passages"),
+      sources,
       tension: str(rec, "tension"),
     });
   }
