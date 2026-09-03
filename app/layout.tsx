@@ -110,9 +110,15 @@ export const metadata: Metadata = {
 
 export default function RootLayout({ children }: LayoutProps<"/">) {
   return (
+    // `data-scroll-behavior="smooth"` acompanha o `scroll-behavior: smooth` que
+    // o CSS declara no <html> para as âncoras da landing. Sem ele o Next avisa
+    // no console e, pior, o rolar suave continua valendo na troca de rota — a
+    // página desliza inteira em vez de saltar para o topo. Com o atributo, o
+    // Next desliga o suave só durante a transição e devolve em seguida.
     <html
       lang="pt-BR"
       className={`${geistSans.variable} ${geistMono.variable} ${firaMono.variable} ${poppins.variable} h-full antialiased`}
+      data-scroll-behavior="smooth"
       suppressHydrationWarning
     >
       <head>
