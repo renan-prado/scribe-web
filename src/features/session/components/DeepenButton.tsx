@@ -11,7 +11,7 @@ import { BillingDialog } from "@/features/billing/components/BillingDialog";
 import { CoinCost } from "@/features/coins/components/CoinCost";
 import { useCoinsStore } from "@/features/coins/store";
 import { COIN_COSTS } from "@/lib/coins/pricing";
-import { FEATURES, minPlanNameFor } from "@/lib/entitlements/features";
+import { minPlanNameFor } from "@/lib/entitlements/features";
 import { cn } from "@/lib/utils";
 
 /**
@@ -25,8 +25,9 @@ import { cn } from "@/lib/utils";
  * - "feed-card": full-width button that replaces the placeholder "Aprofundar"
  *   in the ReflectionCard on /feed.
  *
- * `canGenerate=false` (o plano do usuário nao libera "Gerar estudo") troca o
- * botao por um CTA de plano que abre o BillingDialog. LER um estudo ja gerado
+ * `canGenerate=false` (o plano do usuário nao libera "Gerar estudo") mantem a
+ * etiqueta "Gerar estudo" mas troca o livro pelo cadeado, tira o custo em
+ * moedas e abre o BillingDialog em vez de gerar. LER um estudo ja gerado
  * nunca e bloqueado — so a geracao. A decisao vem do servidor via
  * `canCurrentUserUse("study_generation")`; aqui ela so DESENHA. A protecao de
  * verdade esta em `requireFeature` dentro de POST /api/deepening, e o 403 dela
@@ -108,30 +109,26 @@ export function DeepenButton({ sessionId, hasDeepening, variant, canGenerate }: 
   // Plano insuficiente. O botao vira convite, nao parede: abre o mesmo
   // BillingDialog do resto do app. Sem custo em moedas na etiqueta — o preco
   // que importa aqui e o do plano, e mostrar os dois confunde.
+  //
+  // A etiqueta continua sendo "Gerar estudo" — o cadeado no lugar do livro e a
+  // ausencia do custo em moedas ja dizem que ha uma porta antes. Trocar o
+  // rotulo por "Plano Estudioso" fazia o botao anunciar o obstaculo em vez da
+  // acao, e um botao que nomeia o proprio bloqueio convida menos.
+  //
+  // O porque fica a um clique: o BillingDialog explica, e o /studies tem o
+  // convite por extenso. `aria-label` carrega o que o icone sozinho nao diz.
   if (!canGenerate) {
-    const lockedButton = (
-      <button
-        type="button"
-        onClick={() => setBillingOpen(true)}
-        className={deepenButtonVariants({ layout, state: "enabled" })}
-      >
-        <Lock aria-hidden className="size-3.5" />
-        Plano {minPlanNameFor("study_generation")}
-      </button>
-    );
     return (
-      <div
-        className={cn(
-          "flex flex-col gap-1.5",
-          variant === "feed-card" ? "w-full sm:flex-1" : "items-start"
-        )}
-      >
-        {lockedButton}
-        {variant === "summary-header" ? null : (
-          <span className="text-[11px] font-light leading-snug text-scriba-ink-mute">
-            {FEATURES.study_generation.upsell}
-          </span>
-        )}
+      <div className={cn("flex flex-col", variant === "feed-card" ? "w-full sm:flex-1" : "")}>
+        <button
+          type="button"
+          onClick={() => setBillingOpen(true)}
+          aria-label={`Gerar estudo — disponível no plano ${minPlanNameFor("study_generation")}`}
+          className={deepenButtonVariants({ layout, state: "enabled" })}
+        >
+          <Lock aria-hidden className="size-3.5" />
+          Gerar estudo
+        </button>
         <BillingDialog open={billingOpen} onOpenChange={setBillingOpen} />
       </div>
     );

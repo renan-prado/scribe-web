@@ -2,17 +2,17 @@ const STEPS = [
   {
     n: 1,
     title: "Abra um resumo",
-    body: "Vá até uma gravação já concluída e finalizada.",
+    body: "Vá até uma gravação já concluída e finalizada que o tema mais lhe interessar.",
   },
   {
     n: 2,
-    title: "Toque em Gerar estudo",
-    body: "O Scriba lê o sermão e monta um estudo teológico independente sobre o mesmo tema.",
+    title: 'Toque em "Gerar estudo"',
+    body: "O Scriba lê o sermão e monta um estudo independente sobre o mesmo tema.",
   },
   {
     n: 3,
     title: "Volte quando quiser",
-    body: "Todo estudo que você gerar aparece aqui para relembrar ou reprocessar.",
+    body: "Todo estudo que você gerar aparece aqui para ser consultado quando quiser.",
   },
 ];
 
@@ -28,7 +28,7 @@ type StudiesEmptyStateProps = {
  */
 export function StudiesEmptyState({
   sticker = "/stickers/men/012-man.svg",
-  heading = "Nenhum estudo por aqui.",
+  heading = "Olá, nenhum estudo por aqui, ainda...",
 }: StudiesEmptyStateProps = {}) {
   return (
     <div className="overflow-hidden rounded-3xl bg-scriba-paper">
@@ -45,12 +45,12 @@ export function StudiesEmptyState({
           />
         </div>
 
-        <div className="mt-1 flex max-w-[380px] flex-col gap-1.5 sm:mt-1.5">
+        <div className="mt-1 flex max-w-[380px] flex-col gap-4 sm:mt-1.5">
           <h2 className="text-pretty text-[19px] font-semibold leading-tight tracking-tight text-scriba-ink-strong sm:text-[24px]">
             {heading}
           </h2>
           <p className="text-pretty text-[13px] font-light leading-relaxed text-scriba-ink-soft sm:text-sm">
-            Estudos são peças teológicas independentes que o Scriba gera a partir dos seus resumos.
+            Estudos são peças estudos independentes que o Scriba gera a partir dos seus resumos.
             Assim que você gerar o primeiro, ele aparece por aqui.
           </p>
         </div>

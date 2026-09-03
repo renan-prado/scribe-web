@@ -28,7 +28,7 @@ const FEATURE = FEATURES.study_generation;
 const PLAN = PLANS[FEATURE.minPlan];
 
 const WHAT_YOU_GET = [
-  "Um estudo próprio sobre o tema de cada sermão — não um resumo mais longo",
+  "Um estudo próprio sobre o tema de cada gravação, não é apenas um resumo mais longo",
   "Contexto histórico, distinções doutrinárias e as objeções que ficaram de fora",
   "Versículos conferidos e autores citados com a obra onde a frase está",
 ];
@@ -45,7 +45,7 @@ export function StudiesUpsell({ variant }: Props) {
       className="scriba-cta inline-flex items-center justify-center gap-2 rounded-full bg-[image:var(--scriba-cta)] px-5 py-3 text-[11px] font-semibold uppercase tracking-wider text-scriba-cta-ink shadow-[0_5px_14px_var(--scriba-cta-shadow)] transition-colors"
     >
       <BookOpen aria-hidden className="size-3.5" />
-      Assinar o {PLAN.name}
+      Assinar o plano {PLAN.name}
     </button>
   );
 
@@ -81,22 +81,22 @@ export function StudiesUpsell({ variant }: Props) {
           className="h-auto w-[116px] sm:w-[180px]"
         />
 
-        <div className="mt-1 flex max-w-[420px] flex-col gap-2 sm:mt-1.5">
+        <div className="mt-1 flex max-w-[420px] flex-col gap-4 sm:mt-1.5">
           <span className="inline-flex items-center justify-center gap-1.5 text-[10px] font-semibold uppercase tracking-[0.14em] text-scriba-ink-mute">
             <Lock aria-hidden className="size-3" />
             Plano {PLAN.name}
           </span>
           <h2 className="text-pretty text-[19px] font-semibold leading-tight tracking-tight text-scriba-ink-strong sm:text-[24px]">
-            O estudo aprofundado faz parte do {PLAN.name}.
+            O estudo aprofundado faz parte do plano {PLAN.name}.
           </h2>
           <p className="text-pretty text-[13px] font-light leading-relaxed text-scriba-ink-soft sm:text-sm">
-            Depois de cada sermão, o Scriba pode ir além do resumo e escrever um estudo sobre o tema
-            — com o que o pregador não teve tempo de trazer.
+            Depois de cada gravação, o Scriba pode ir além do resumo e escrever um estudo sobre o
+            tema escutado.
           </p>
         </div>
 
         <div className="mt-5">{cta}</div>
-        <p className="mt-2 text-[11px] font-light text-scriba-ink-mute">
+        <p className="mt-4 text-[11px] font-light text-scriba-ink-mute">
           {formatBrl(PLAN.priceCents)} por mês · cancele quando quiser
         </p>
       </div>
