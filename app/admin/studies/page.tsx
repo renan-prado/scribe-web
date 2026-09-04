@@ -64,9 +64,20 @@ export default async function AdminStudiesPage() {
                     sobre “{s.sessionTitle ?? "sessão sem título"}”
                   </span>
                 </div>
-                <span className="text-[11px] font-light text-scriba-ink-mute">
-                  {DATE_FMT.format(new Date(s.createdAt))}
-                </span>
+                <div className="flex items-baseline gap-3">
+                  {/* O par natural desta tela: aqui está a decisão editorial,
+                      lá está o que ela custou — execução por execução, que é o
+                      recorte que importa quando se reprocessa para comparar. */}
+                  <Link
+                    href={`/admin/precificacao?sessionId=${s.sessionId}`}
+                    className="text-[11px] font-medium text-scriba-ink-mute hover:text-scriba-ink hover:underline"
+                  >
+                    custo por execução
+                  </Link>
+                  <span className="text-[11px] font-light text-scriba-ink-mute">
+                    {DATE_FMT.format(new Date(s.createdAt))}
+                  </span>
+                </div>
               </header>
 
               {s.thesis ? (

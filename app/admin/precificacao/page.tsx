@@ -14,6 +14,8 @@ import { AdminInsightsCard } from "@/features/admin/components/AdminInsightsCard
 import { AdminPageHeader } from "@/features/admin/components/AdminPageHeader";
 import { CoinEconomicsForm } from "@/features/admin/components/CoinEconomicsForm";
 import { FxRateBadge } from "@/features/admin/components/FxRateBadge";
+import { SessionRunLookup } from "@/features/admin/components/SessionRunLookup";
+import { SessionRunPanel } from "@/features/admin/components/SessionRunPanel";
 import { readAdminInsights } from "@/lib/admin/insights/store";
 import {
   BILLABLE_ACTION_BY_KEY,
@@ -28,7 +30,9 @@ import {
   ledgerDivergesFromPrice,
 } from "@/lib/coins/economics";
 import { getCoinEconomics, hasCustomCoinEconomics } from "@/lib/coins/settings";
+import { loadSessionRuns } from "@/lib/db/admin/session-runs";
 import { type AdminUsageSummary, loadAdminUsageSummary } from "@/lib/db/admin/usage";
+import { makeMoneyFormatter } from "@/lib/fx/format";
 import { getUsdToBrl, type UsdBrlRate } from "@/lib/fx/usd-brl";
 import { cn } from "@/lib/utils";
 
@@ -93,20 +97,28 @@ function percent(value: number | null): string {
   return `${(value * 100).toFixed(1).replace(".", ",")}%`;
 }
 
+const UUID = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
+
 type PageProps = {
-  searchParams: Promise<{ range?: string }>;
+  searchParams: Promise<{ range?: string; sessionId?: string }>;
 };
 
 export default async function AdminPricingPage({ searchParams }: PageProps) {
   const sp = await searchParams;
   const range = RANGES.some((r) => r.key === sp.range) ? (sp.range as string) : "30d";
+  // Validado aqui e não no componente: um `sessionId` malformado viraria uma
+  // consulta ao Postgres que estoura em vez de devolver vazio.
+  const sessionId = UUID.test(sp.sessionId?.trim() ?? "") ? (sp.sessionId as string).trim() : "";
 
-  const [summary, rate, settings, isCustom, insights] = await Promise.all([
+  const [summary, rate, settings, isCustom, insights, sessionRuns] = await Promise.all([
     loadAdminUsageSummary({ from: rangeToFrom(range) }),
     getUsdToBrl(),
     getCoinEconomics(),
     hasCustomCoinEconomics(),
     readAdminInsights("pricing"),
+    // Melhor-esforço: um id que não existe não pode derrubar a página inteira
+    // de precificação, que é a razão de alguém ter chegado aqui.
+    sessionId ? loadSessionRuns(sessionId).catch(() => null) : Promise.resolve(null),
   ]);
 
   return (
@@ -114,10 +126,27 @@ export default async function AdminPricingPage({ searchParams }: PageProps) {
       <AdminPageHeader
         title="Precificação"
         subtitle="O que cada ação cobra, o que ela custa de verdade, e a margem que sobra."
-        actions={<RangePills current={range} />}
+        actions={<RangePills current={range} sessionId={sessionId} />}
       />
 
       <CoinEconomicsForm settings={settings} isCustom={isCustom} />
+
+      <SessionRunLookup current={sessionId} />
+
+      {sessionId && !sessionRuns ? (
+        <p className="rounded-xl border border-scriba-hairline bg-scriba-paper p-5 text-[13px] font-light text-scriba-ink-mute">
+          Nenhuma sessão com o id <span className="font-mono">{sessionId}</span> neste ambiente.
+        </p>
+      ) : null}
+
+      {sessionRuns ? (
+        <SessionRunPanel
+          report={sessionRuns}
+          usdToBrl={rate?.rate ?? null}
+          settings={settings}
+          money={makeMoneyFormatter(rate)}
+        />
+      ) : null}
 
       <AdminInsightsCard scope="pricing" initial={insights} />
 
@@ -132,13 +161,22 @@ export default async function AdminPricingPage({ searchParams }: PageProps) {
   );
 }
 
-function RangePills({ current }: { current: string }) {
+function RangePills({ current, sessionId }: { current: string; sessionId: string }) {
+  // A sessão inspecionada sobrevive à troca de período: ela não depende do
+  // recorte, e perdê-la a cada clique obrigaria a recolar o id.
+  const href = (key: string) => {
+    const params = new URLSearchParams();
+    if (key !== "30d") params.set("range", key);
+    if (sessionId) params.set("sessionId", sessionId);
+    const qs = params.toString();
+    return qs ? `/admin/precificacao?${qs}` : "/admin/precificacao";
+  };
   return (
     <nav className="flex items-center gap-1 rounded-full border border-scriba-hairline-soft bg-scriba-paper p-1">
       {RANGES.map((r) => (
         <Link
           key={r.key}
-          href={r.key === "30d" ? "/admin/precificacao" : `/admin/precificacao?range=${r.key}`}
+          href={href(r.key)}
           className={cn(
             "rounded-full px-3 py-1 text-[12px] font-medium transition-colors",
             r.key === current

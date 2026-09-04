@@ -58,6 +58,29 @@ A ordenação do "top de usuários" é por **moedas gastas**, não por dólar: d
 mistura modelos de preços diferentes e a lista deixava de responder à pergunta
 que ela existe para responder.
 
+## O inspetor de sessão
+
+`/admin/precificacao?sessionId=<uuid>` abre uma sessão **execução por
+execução** (`lib/db/admin/session-runs.ts`). É a única tela que NÃO agrega, e
+existe por causa de um ponto cego das outras duas: reprocessar um estudo grava
+um segundo conjunto de eventos na mesma sessão, e somados eles viram um número
+que não descreve nem uma execução nem a outra — que é justamente o número que
+se quer comparar ao ajustar modelo ou prompt.
+
+A execução é delimitada pelo evento `study-questions`, o passo 1 do pipeline,
+que roda exatamente uma vez por estudo. É corte exato, não janela de tempo: dois
+reprocessamentos podem ser disparados com minutos de diferença. O intervalo de
+10 minutos no código é só a rede para as linhas legadas de rota `deepening`,
+que não têm passo 1 para abrir.
+
+**Só a última execução tem texto.** `updateDeepening` sobrescreve a linha, então
+as anteriores existem em custo e não em qualidade. A tela diz isso; não repita
+as métricas ao lado de cada execução como se cada uma tivesse sido medida.
+
+As métricas de qualidade vêm de `lib/study/metrics.ts` — client-safe, pura, e a
+MESMA que o harness de avaliação usa. Ela espelha o contrato declarado no prompt
+de `lib/prompts/study-write.ts`: dois lugares, um commit.
+
 **"Moedas gastas" é filtrado por MOTIVO, nunca por `abs(amount)`.**
 `coin_transactions` é o ledger inteiro: `grant_coins` grava
 `subscription_grant`, `topup_pack` e `partner_bonus` com valor POSITIVO, e o
