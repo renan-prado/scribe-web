@@ -360,10 +360,57 @@ pedir — julgamento.
 
 | Etapa | Papel | Env var | Modelo | Esforço |
 |---|---|---|---|---|
-| [1] Questionador | amplitude e ângulos improváveis | `OPENAI_STUDY_QUESTIONS_MODEL` | `gpt-5.1` | low |
+| [1] Questionador | amplitude e ângulos improváveis | `OPENAI_STUDY_QUESTIONS_MODEL` | `gpt-5-mini` | low |
 | [1b] [4b] Guardião | classificação | `OPENAI_STUDY_GUARD_MODEL` | `gpt-5-mini` | low |
 | [2] Respondedor | seleção e substância | `OPENAI_STUDY_ANSWERS_MODEL` | `gpt-5.1` | padrão |
-| [4] Redator | prosa | `OPENAI_STUDY_WRITE_MODEL` | `gpt-5.1` | low |
+| [4] Redator | prosa | `OPENAI_STUDY_WRITE_MODEL` | `gpt-5-mini` | low |
+
+## O modelo caro fica só onde moram os fatos
+
+Os três já foram `gpt-5.1`, e assim o estudo rodava NO PREJUÍZO: **−16% de
+margem**. A medição (dois estudos reais, `llm_usage_events`) mostrou por quê —
+e, mais útil, mostrou ONDE:
+
+| Etapa | Entrada | Saída | Custo | % |
+|---|---:|---:|---:|---:|
+| `study-questions` | 10,4k | 3,4k | $0,046 | 20% |
+| `study-guard` (1b) | 3,2k | 1,0k | $0,003 | 1% |
+| `study-answers` | 4,3k | 8,6k | $0,090 | 40% |
+| `study-write` | 12,3k | 7,4k | $0,088 | 39% |
+| `study-guard` (4b) | 0,8k | 0,2k | $0,001 | 0,3% |
+| **total** | 31k | **20,6k** | **$0,227** | |
+
+**Token de SAÍDA é 85% da conta** ($0,193 de $0,227). Prompt de entrada, cache
+e transcrição enxuta disputam os outros 15% — a decisão está em quantas
+palavras cada etapa escreve, e a que preço.
+
+Daí a assimetria da tabela acima, e ela é a justificativa retroativa de o
+pipeline ser separado em etapas: dá para pôr o modelo caro só onde ele se
+paga.
+
+- **Questionador em mini.** Levantar 25-30 ângulos a temperatura 0.9 é
+  divergência, não dedução, e dois terços das perguntas são descartadas por
+  desenho (o guardião corta, o respondedor escolhe 8-11). Era o pior negócio
+  da tabela: 20% do custo num andaime. A seleção continua com o respondedor
+  grande, que é a rede de proteção.
+- **Respondedor fica em `gpt-5.1`.** É a única etapa que carrega obra,
+  controvérsia, data e referência bíblica. Citação inventada nasce aqui.
+- **Redator em mini.** Ele recebe a substância fixada, as passagens já
+  conferidas contra a NVI (passo 3) e os autores já filtrados, e a selagem
+  (passo 5) ainda descarta o que ele inventar. É composição, não dedução —
+  a mesma razão do `reasoningEffort: "low"` que ele sempre teve.
+
+Esperado: **$0,227 → ~$0,122**, margem −16% → ~38%. Não fecha os 70% da régua
+de `lib/coins/economics.ts` sozinho: o estudo custa 8× um minuto ao vivo em
+moedas e ~35× em dinheiro, então parte do conserto é preço, não custo.
+
+**Não funde o respondedor com o redator para economizar mais.** A ancoragem
+(passo 3) mora entre os dois, e é ela que garante que o redator só vê
+referência que existe. Fundidos, a prosa é escrita ANTES da conferência, e aí
+não há jogada boa: descartar o bloco deixa o parágrafo argumentando sobre um
+versículo que sumiu, e manter é publicar Escritura não conferida. A fusão
+economiza mais ou menos o mesmo que rebaixar o redator — e mata a
+possibilidade de rebaixá-lo.
 
 ## A troca de modelo foi a mudança de maior impacto
 

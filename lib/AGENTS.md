@@ -231,12 +231,23 @@ Quatro env vars (`OPENAI_STUDY_QUESTIONS_MODEL`, `_ANSWERS_`, `_WRITE_`,
 `_GUARD_`) e quatro rotas em `llm_usage_events`, para dar para trocar uma etapa
 de modelo e medir o efeito isoladamente.
 
-**Os defaults são `gpt-5.1` (e `gpt-5-mini` no guardião), e a escolha foi
-MEDIDA.** Com `gpt-4o`, os mesmos prompts produziam respostas de 186 palavras
-(o prompt pedia 350-500) e um artigo de 723 a 1.330 palavras a partir de 2 mil
-palavras de material. Três rodadas de ajuste de prompt não furaram esse teto; a
-troca de modelo levou o artigo a 4 mil palavras na primeira tentativa. Antes de
-reescrever prompt de novo, pergunte se o teto não é do modelo.
+**Nenhum default é `gpt-4o`, e isso foi MEDIDO.** Com 4o, os mesmos prompts
+produziam respostas de 186 palavras (o prompt pedia 350-500) e um artigo de 723
+a 1.330 palavras a partir de 2 mil palavras de material. Três rodadas de ajuste
+de prompt não furaram esse teto; a troca de modelo levou o artigo a 4 mil
+palavras na primeira tentativa. Antes de reescrever prompt de novo, pergunte se
+o teto não é do modelo.
+
+**Mas só o RESPONDEDOR é `gpt-5.1`; questionador e redator rodam em
+`gpt-5-mini`.** Com os três no modelo caro o estudo fechava a −16% de margem, e
+a medição mostrou que token de saída é 85% da conta. O respondedor é a única
+etapa que carrega obra, controvérsia, data e referência bíblica — é onde uma
+invenção vira erro do produto. O questionador levanta um andaime que é
+descartado em dois terços por desenho, e o redator recebe a substância já
+fixada, as passagens já conferidas contra a NVI e os autores já filtrados. **O
+modelo caro fica só onde moram os fatos** — e é essa a justificativa retroativa
+de o pipeline ser separado em etapas. Números e a proibição de fundir [2] com
+[4] em `docs/estudo-v2.md` §4.
 
 Isso trouxe uma consequência para o `callChat`: a família de raciocínio recusa
 `max_tokens` (é `max_completion_tokens`) e só aceita a `temperature` padrão.

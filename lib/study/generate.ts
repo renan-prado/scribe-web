@@ -121,14 +121,17 @@ const LONG_CALL_TIMEOUT_MS = 240_000;
  * tentada.
  *
  * A rota roda com `maxDuration = 300` (o teto da plataforma), e o pipeline
- * inteiro mede ~255s com gpt-5.1. Uma reescrita são mais ~100s: tentá-la fora
- * do prazo trocaria "estudo com a tese parecida" por "função morta depois de
- * debitar as moedas", que é um estrago maior.
+ * inteiro media ~255s quando as três etapas eram gpt-5.1. Uma reescrita são
+ * mais ~100s: tentá-la fora do prazo trocaria "estudo com a tese parecida" por
+ * "função morta depois de debitar as moedas", que é um estrago maior.
  *
- * Consequência assumida: com os modelos de hoje a reescrita quase nunca vai
- * caber, e o veredito do guardião fica valendo como SINAL (log e
- * `/admin/studies`). Se um modelo mais rápido entrar no lugar, ela volta a
- * caber sozinha, sem mudar nada aqui.
+ * Consequência assumida: enquanto as três etapas eram gpt-5.1 a reescrita quase
+ * nunca cabia, e o veredito do guardião valia como SINAL (log e
+ * `/admin/studies`). Com o redator em `gpt-5-mini` ela deve voltar a caber —
+ * este limite foi escrito para que isso acontecesse sozinho, sem mudar nada
+ * aqui. Se as reescritas dispararem, `record.guard.rewrites` em
+ * `/admin/studies` é onde isso aparece, e uma reescrita é uma redação inteira
+ * a mais na conta.
  */
 const REWRITE_DEADLINE_MS = 150_000;
 
@@ -188,14 +191,14 @@ export async function generateStudy(input: GenerateStudyInput): Promise<Generate
     theme: record.theme,
     total: record.questions.length,
     alta: record.questions.filter((q) => q.depth === "alta").length,
-    latencyMs: questionsResult.data.latencyMs,
-  });
-
     // `reasoning` sai ao lado de `completion` porque ele está DENTRO dele: a
     // diferença entre os dois é o que a etapa de fato escreveu. Os dois custam
     // o mesmo, e é isso que se está comparando ao trocar de modelo.
     completionTokens: questionsResult.data.usage.completionTokens,
     reasoningTokens: questionsResult.data.usage.reasoningTokens,
+    latencyMs: questionsResult.data.latencyMs,
+  });
+
   // ── [1b] GUARDIÃO — corta a pergunta que o resumo já responde ────────────
   // O corte mais barato do pipeline e o de melhor rendimento: uma pergunta
   // descartada aqui economiza uma resposta E o trecho do artigo que sairia
@@ -279,13 +282,13 @@ export async function generateStudy(input: GenerateStudyInput): Promise<Generate
     avgWords: answerWords,
     withSources: answers.filter((a) => a.sources.length > 0).length,
     withTension: answers.filter((a) => a.tension).length,
-    latencyMs: answersResult.data.latencyMs,
-  });
-  if (answersResult.data.finishReason === "length") {
     // A etapa sem `reasoningEffort` explícito, e a mais cara do pipeline: é
     // aqui que este par de números decide se há esforço sobrando para cortar.
     completionTokens: answersResult.data.usage.completionTokens,
     reasoningTokens: answersResult.data.usage.reasoningTokens,
+    latencyMs: answersResult.data.latencyMs,
+  });
+  if (answersResult.data.finishReason === "length") {
     aLog.warn("saída truncada por max_tokens", {
       completionTokens: answersResult.data.usage.completionTokens,
     });
@@ -459,11 +462,11 @@ async function runWriter(args: WriteArgs, avoid: string | null): Promise<WriteOu
     blocks: payload.blocks.length,
     words: payload.blocks.reduce((n, b) => n + ("text" in b ? b.text.split(/\s+/).length : 0), 0),
     retry: avoid !== null,
+    completionTokens: result.data.usage.completionTokens,
+    reasoningTokens: result.data.usage.reasoningTokens,
     latencyMs: result.data.latencyMs,
     finishReason: result.data.finishReason,
   });
-    completionTokens: result.data.usage.completionTokens,
-    reasoningTokens: result.data.usage.reasoningTokens,
   if (result.data.finishReason === "length") {
     args.log.warn("saída truncada por max_tokens", {
       completionTokens: result.data.usage.completionTokens,
@@ -618,10 +621,10 @@ async function recordUsage(
     promptTokens: data.usage.promptTokens,
     completionTokens: data.usage.completionTokens,
     cachedTokens: data.usage.cachedTokens,
+    reasoningTokens: data.usage.reasoningTokens,
     latencyMs: data.latencyMs,
   });
   return data.usage.totalTokens ?? 0;
-    reasoningTokens: data.usage.reasoningTokens,
 }
 
 type ChatErr = Extract<Awaited<ReturnType<typeof callChat>>, { ok: false }>["error"];

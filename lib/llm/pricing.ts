@@ -49,6 +49,10 @@ const CHAT_PRICES: Record<string, ChatPricing> = {
   // Os três passos do estudo (perguntar, responder, escrever) e o analista do
   // /admin. Ver OPENAI_STUDY_*_MODEL e OPENAI_ADMIN_INSIGHTS_MODEL.
   "gpt-5.1": { inputPer1M: 1.25, cachedInputPer1M: 0.125, outputPer1M: 10 },
+  // O redator do estudo. Meio-termo deliberado: 2,2x mais barato que o 5.1 na
+  // saída, que é onde está 85% do custo, e mais novo que o gpt-5-mini — que
+  // ficou barato demais e comprimiu o artigo abaixo do contrato do prompt.
+  "gpt-5.4-mini": { inputPer1M: 0.75, cachedInputPer1M: 0.075, outputPer1M: 4.5 },
 };
 
 const AUDIO_PRICES: Record<string, AudioPricing> = {
