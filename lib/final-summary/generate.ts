@@ -115,6 +115,7 @@ export async function generateFinalSummary(
     promptTokens: usage.promptTokens,
     completionTokens: usage.completionTokens,
     cachedTokens: usage.cachedTokens,
+    reasoningTokens: usage.reasoningTokens,
     latencyMs,
   });
 
@@ -185,3 +186,4 @@ export async function generateFinalSummary(
 
   return { ok: true, payload, latencyMs, model };
 }
+        reasoningTokens: enrichmentResult.data.usage.reasoningTokens,

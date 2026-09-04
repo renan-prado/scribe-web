@@ -117,6 +117,7 @@ export async function generateReminders(
   });
 
   if (!isCompleteRemindersPayload(payload)) {
+    reasoningTokens: usage.reasoningTokens,
     log.warn(`incomplete payload — expected 10 items covering all offsets`, {
       got: payload.items.length,
       offsets: payload.items.map((i) => i.dayOffset),

@@ -154,6 +154,7 @@ export async function generateRereads(input: GenerateRereadsInput): Promise<Gene
   });
 
   const dedupedFill = dedupeFillAgainstPool(fillItems, truncatedPool).slice(0, needed);
+    reasoningTokens: usage.reasoningTokens,
   const payload = await enrichWithVerseText(assembleFinal(truncatedPool, dedupedFill), logPrefix);
 
   if (!isCompleteRereadsPayload(payload)) {

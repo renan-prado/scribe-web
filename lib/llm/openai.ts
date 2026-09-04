@@ -13,6 +13,18 @@ export type ChatUsage = {
   completionTokens: number | undefined;
   totalTokens: number | undefined;
   cachedTokens: number | undefined;
+  /**
+   * Tokens de raciocínio. É SUBCONJUNTO de `completionTokens` — não se soma a
+   * ele —, a mesma relação que `cachedTokens` tem com `promptTokens`. Só a
+   * família de raciocínio devolve; `undefined` nos demais.
+   *
+   * Existe porque ele é caro E invisível: é cobrado ao preço de token de
+   * SAÍDA, que é onde está 85% do custo do estudo, e uma etapa que aparece
+   * como "8 mil tokens de saída" pode estar escrevendo cinco mil e pensando
+   * três mil. Sem separar os dois, mexer em `reasoningEffort` é chute: não dá
+   * para saber se há raciocínio sobrando para cortar nem se o corte pegou.
+   */
+  reasoningTokens: number | undefined;
 };
 
 export type ChatResult = {
@@ -187,6 +199,7 @@ export async function callChat(params: ChatParams): Promise<Result<ChatResult>> 
       completion_tokens?: number;
       total_tokens?: number;
       prompt_tokens_details?: { cached_tokens?: number };
+      completion_tokens_details?: { reasoning_tokens?: number };
     };
   } = {};
   try {
@@ -205,6 +218,7 @@ export async function callChat(params: ChatParams): Promise<Result<ChatResult>> 
         completionTokens: parsed.usage?.completion_tokens,
         totalTokens: parsed.usage?.total_tokens,
         cachedTokens: parsed.usage?.prompt_tokens_details?.cached_tokens,
+        reasoningTokens: parsed.usage?.completion_tokens_details?.reasoning_tokens,
       },
       latencyMs,
     },

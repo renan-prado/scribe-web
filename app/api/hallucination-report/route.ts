@@ -162,6 +162,7 @@ export async function POST(request: Request) {
     promptTokens: usage.promptTokens,
     completionTokens: usage.completionTokens,
     cachedTokens: usage.cachedTokens,
+    reasoningTokens: usage.reasoningTokens,
     latencyMs,
   });
   await persistReport({ sessionId, userId: auth.user.id, scope, note, review });

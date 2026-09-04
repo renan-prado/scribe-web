@@ -108,6 +108,7 @@ export async function POST(request: Request) {
     promptTokens: usage.promptTokens,
     completionTokens: usage.completionTokens,
     cachedTokens: usage.cachedTokens,
+    reasoningTokens: usage.reasoningTokens,
     latencyMs,
   });
   return NextResponse.json({ items, latencyMs, model });

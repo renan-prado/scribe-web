@@ -120,6 +120,7 @@ export async function generatePractices(
   });
 
   if (!isCompletePracticesPayload(payload)) {
+    reasoningTokens: usage.reasoningTokens,
     log.warn(`incomplete payload — expected 5 items covering all offsets`, {
       got: payload.items.length,
       offsets: payload.items.map((i) => i.dayOffset),

@@ -191,6 +191,11 @@ export async function generateStudy(input: GenerateStudyInput): Promise<Generate
     latencyMs: questionsResult.data.latencyMs,
   });
 
+    // `reasoning` sai ao lado de `completion` porque ele está DENTRO dele: a
+    // diferença entre os dois é o que a etapa de fato escreveu. Os dois custam
+    // o mesmo, e é isso que se está comparando ao trocar de modelo.
+    completionTokens: questionsResult.data.usage.completionTokens,
+    reasoningTokens: questionsResult.data.usage.reasoningTokens,
   // ── [1b] GUARDIÃO — corta a pergunta que o resumo já responde ────────────
   // O corte mais barato do pipeline e o de melhor rendimento: uma pergunta
   // descartada aqui economiza uma resposta E o trecho do artigo que sairia
@@ -277,6 +282,10 @@ export async function generateStudy(input: GenerateStudyInput): Promise<Generate
     latencyMs: answersResult.data.latencyMs,
   });
   if (answersResult.data.finishReason === "length") {
+    // A etapa sem `reasoningEffort` explícito, e a mais cara do pipeline: é
+    // aqui que este par de números decide se há esforço sobrando para cortar.
+    completionTokens: answersResult.data.usage.completionTokens,
+    reasoningTokens: answersResult.data.usage.reasoningTokens,
     aLog.warn("saída truncada por max_tokens", {
       completionTokens: answersResult.data.usage.completionTokens,
     });
@@ -453,6 +462,8 @@ async function runWriter(args: WriteArgs, avoid: string | null): Promise<WriteOu
     latencyMs: result.data.latencyMs,
     finishReason: result.data.finishReason,
   });
+    completionTokens: result.data.usage.completionTokens,
+    reasoningTokens: result.data.usage.reasoningTokens,
   if (result.data.finishReason === "length") {
     args.log.warn("saída truncada por max_tokens", {
       completionTokens: result.data.usage.completionTokens,
@@ -610,6 +621,7 @@ async function recordUsage(
     latencyMs: data.latencyMs,
   });
   return data.usage.totalTokens ?? 0;
+    reasoningTokens: data.usage.reasoningTokens,
 }
 
 type ChatErr = Extract<Awaited<ReturnType<typeof callChat>>, { ok: false }>["error"];

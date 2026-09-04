@@ -77,6 +77,14 @@ export type RecordAudioUsageInput = {
   route: Extract<UsageRoute, "transcribe">;
   model: string;
   audioSeconds: number;
+  /**
+   * Subconjunto de `completionTokens`, não uma parcela a somar. Gravado numa
+   * coluna própria porque o custo já sai certo sem ele — ele entra em
+   * `completion_tokens` e é cobrado como saída — mas a PERGUNTA "quanto desta
+   * conta é o modelo pensando?" não tem resposta sem separá-lo. É o que diz
+   * se `reasoningEffort` numa etapa é dinheiro no chão.
+   */
+  reasoningTokens: number | undefined;
   latencyMs: number;
 };
 
@@ -119,6 +127,7 @@ export async function recordChatUsage(input: RecordChatUsageInput): Promise<void
       latency_ms: input.latencyMs,
     });
     if (error) {
+      reasoning_tokens: input.reasoningTokens ?? null,
       log.error("insert failed", { route: input.route, error: error.message });
     }
   } catch (err) {

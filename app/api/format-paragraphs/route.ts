@@ -70,6 +70,7 @@ export async function POST(request: Request) {
     promptTokens: result.data.usage.promptTokens,
     completionTokens: result.data.usage.completionTokens,
     cachedTokens: result.data.usage.cachedTokens,
+    reasoningTokens: result.data.usage.reasoningTokens,
     latencyMs: result.data.latencyMs,
   });
   return NextResponse.json({
