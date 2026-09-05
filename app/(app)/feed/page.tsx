@@ -1,4 +1,5 @@
 import type { Metadata } from "next";
+import { InstallAppCard } from "@/components/InstallApp";
 import { NavLink } from "@/components/NavLink";
 import { DeepenButton } from "@/features/session/components/DeepenButton";
 import { PaginatedFeed } from "@/features/session/components/PaginatedFeed";
@@ -127,6 +128,12 @@ export default async function HomePage() {
         )}
 
         <div className="flex flex-col gap-5">
+          {/* O convite para instalar o app. Ele mora AQUI, e não no layout de
+              `(app)`: o feed é a primeira tela de toda sessão de uso e a única
+              em que a pessoa está olhando em volta, não terminando alguma
+              coisa. Some sozinho no desktop, para quem já está dentro do PWA e
+              para quem já dispensou — ver `InstallAppCard`. */}
+          <InstallAppCard />
           {isEmpty ? (
             <SessionsEmptyState showThemeToggle />
           ) : latest ? (

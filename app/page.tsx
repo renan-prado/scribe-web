@@ -14,6 +14,7 @@ import { ScribaMark } from "@/shared/brand";
 import { LandingFooter, LandingHeader } from "@/shared/components/LandingChrome";
 import { LandingJsonLd } from "@/shared/components/LandingJsonLd";
 import { LandingFeedMock, LandingSummaryMock } from "@/shared/components/LandingMocks";
+import { StandaloneHomeGuard } from "@/shared/components/StandaloneHomeGuard";
 import { FAQ_ITEMS } from "@/shared/content/landing-faq";
 
 export const metadata = {
@@ -43,6 +44,9 @@ export default function LandingPage() {
   return (
     <div className="w-full overflow-x-clip bg-background text-scriba-ink-strong antialiased">
       <LandingJsonLd />
+      {/* Dentro do PWA instalado esta página não é destino — ver
+          `StandaloneHomeGuard`. Não custa estaticidade: é cliente puro. */}
+      <StandaloneHomeGuard />
       <LandingHeader onLandingPage />
       {/* O `<main>` é o landmark que faltava — o resto do app já tem um, só a
           LP não tinha. Sem ele, quem navega por leitor de tela não consegue

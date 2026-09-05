@@ -544,8 +544,12 @@ export function RecordingLive({
           />
         </div>
       ) : null}
+      {/* O `env()` soma o indicador de início do iPhone: no PWA instalado o app
+          desenha até a borda física da tela (`viewport-fit=cover`), e um
+          `bottom-6` seco deixaria o botão de parar por baixo da barra do gesto
+          do sistema. Em qualquer outro aparelho o inset é 0. */}
       {running && !paused ? (
-        <div className="fixed bottom-6 left-1/2 z-40 -translate-x-1/2">
+        <div className="fixed bottom-[calc(1.5rem+env(safe-area-inset-bottom))] left-1/2 z-40 -translate-x-1/2">
           <RecordButton
             running={running}
             elapsedMs={elapsedMs}
@@ -571,7 +575,7 @@ export function RecordingLive({
           type="button"
           onClick={resumeAutoFollow}
           className={cn(
-            "fixed bottom-24 left-1/2 z-40 -translate-x-1/2",
+            "fixed bottom-[calc(6rem+env(safe-area-inset-bottom))] left-1/2 z-40 -translate-x-1/2",
             "inline-flex items-center gap-2 rounded-full border border-scriba-hairline bg-scriba-paper/95 px-4 py-2 shadow-lg backdrop-blur",
             "text-xs font-semibold text-scriba-ink",
             "transition-colors outline-none hover:bg-scriba-blue-soft/60 focus-visible:ring-2 focus-visible:ring-ring/40"

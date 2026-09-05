@@ -1,6 +1,7 @@
 "use client";
 
 import { useCallback, useEffect, useState } from "react";
+import { THEME_COLOR } from "@/shared/theme-color";
 
 export type Theme = "light" | "dark";
 
@@ -13,10 +14,29 @@ function readTheme(): Theme {
   return document.documentElement.classList.contains("dark") ? "dark" : "light";
 }
 
+/**
+ * A barra de status do celular no PWA instalado (e a barra de endereço do
+ * Chrome no Android) segue esta meta. Sem esta linha o tema virava e a barra
+ * ficava com a cor do tema anterior até o próximo carregamento — que é
+ * justamente o que mais salta aos olhos num app instalado. O `ThemeScript`
+ * cria a meta antes do primeiro paint; o `createElement` aqui é só para o caso
+ * de alguém remover aquele bootstrap.
+ */
+function applyThemeColorMeta(theme: Theme) {
+  let meta = document.querySelector<HTMLMetaElement>('meta[name="theme-color"]');
+  if (!meta) {
+    meta = document.createElement("meta");
+    meta.name = "theme-color";
+    document.head.appendChild(meta);
+  }
+  meta.content = THEME_COLOR[theme];
+}
+
 function applyTheme(theme: Theme) {
   const root = document.documentElement;
   root.classList.toggle("dark", theme === "dark");
   root.setAttribute("data-theme", theme);
+  applyThemeColorMeta(theme);
   try {
     localStorage.setItem(STORAGE_KEY, theme);
   } catch {

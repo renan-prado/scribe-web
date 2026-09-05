@@ -419,8 +419,10 @@ export function RecordingTranscribe({
         </div>
       ) : null}
 
+      {/* Mesmo `env()` da RecordingLive: o inset do indicador de início do
+          iPhone, diferente de zero só no PWA instalado. */}
       {running && !paused ? (
-        <div className="fixed bottom-6 left-1/2 z-40 -translate-x-1/2">
+        <div className="fixed bottom-[calc(1.5rem+env(safe-area-inset-bottom))] left-1/2 z-40 -translate-x-1/2">
           <RecordButton
             running={running}
             elapsedMs={elapsedMs}
@@ -451,7 +453,7 @@ export function RecordingTranscribe({
             window.scrollTo({ top: document.documentElement.scrollHeight, behavior: "smooth" });
           }}
           className={cn(
-            "fixed bottom-24 left-1/2 z-40 -translate-x-1/2",
+            "fixed bottom-[calc(6rem+env(safe-area-inset-bottom))] left-1/2 z-40 -translate-x-1/2",
             "inline-flex items-center gap-2 rounded-full border border-scriba-hairline bg-scriba-paper/95 px-4 py-2 shadow-lg backdrop-blur",
             "text-xs font-semibold text-scriba-ink outline-none transition-colors",
             "hover:bg-scriba-blue-soft/60 focus-visible:ring-2 focus-visible:ring-ring/40"

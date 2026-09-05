@@ -5,9 +5,9 @@ import { useEffect } from "react";
 /**
  * Register the minimal service worker on the client. Runs once per session;
  * failures are silent (some browsers block SW on http:// contexts, private
- * mode, etc.). See `public/sw.js` for what it actually does (spoiler:
- * essentially nothing — it exists only so browsers treat us as an
- * installable PWA).
+ * mode, etc.). See `public/sw.js` for what it actually does: nos tornar
+ * instaláveis como PWA e servir a tela de `public/offline.html` quando uma
+ * navegação falha sem rede. Ele NÃO cacheia o app — o porquê está lá.
  */
 export function PwaBootstrap(): null {
   useEffect(() => {

@@ -279,6 +279,83 @@ precisa) e bloqueia câmera e geolocalização.
 chamada a `/api/verse` não pague o parse de 4 MB de JSON. É a ÚNICA tradução
 que o código lê — ver `lib/bibles/loader.ts` antes de adicionar outra.
 
-`public/sw.js` existe essencialmente para o navegador nos tratar como PWA
-instalável. Ele nunca é registrado em dev (`PwaBootstrap`): service worker +
-HMR gera loop de código velho difícil de depurar.
+`public/sw.js` faz duas coisas: existir (é requisito para o navegador nos
+tratar como PWA instalável) e servir `public/offline.html` quando uma
+**navegação GET** falha por falta de rede. Ele nunca é registrado em dev
+(`PwaBootstrap`): service worker + HMR gera loop de código velho difícil de
+depurar.
+
+**Ele não cacheia o app, e isso é decisão.** O conteúdo aqui muda a cada
+segundo — transcrição, feed, saldo —, e cache velho não apareceria como bug de
+cache: apareceria como sessão que perdeu texto. O único cache é a casca da tela
+offline (`offline.html` + `pena.svg`), que é estática. `offline.html` está na
+exclusão do `matcher` do proxy porque quem a busca é o `install` do SW, e
+`cache.addAll` REJEITA resposta redirecionada — atrás do proxy, um visitante
+anônimo derrubaria a instalação inteira do service worker.
+
+`offline.html` é o ÚNICO arquivo do projeto onde cor literal é aceitável: sem
+rede, o CSS do Next não carrega. Os valores lá são cópia dos tokens e precisam
+ser atualizados junto com eles.
+
+### A barra de status segue o tema
+
+A cor da barra do sistema no PWA sai de `<meta name="theme-color">`, escrita
+pelo `ThemeScript` antes do primeiro paint e reescrita pelo `useTheme` a cada
+troca de tema. Ela **não** pode ser declarada em `metadata`/`viewport` do Next:
+o tema do Scriba vem do localStorage, não do `prefers-color-scheme`, que é a
+única coisa que uma meta estática sabe expressar. O `theme_color` do manifest é
+o fallback (valor claro). Os dois hexadecimais moram em
+`src/shared/theme-color.ts`.
+
+O `viewport` do root layout declara `viewport-fit=cover` — é o que faz
+`env(safe-area-inset-*)` valer diferente de zero. Quem consome os insets é a
+`MobileBottomNav` e os botões flutuantes de gravação; sem eles o iPhone desenha
+a nav por baixo da barra do gesto do sistema. Zoom fica liberado
+(`maximumScale: 5`): travar o pinch é violação de acessibilidade.
+
+### Estar dentro do app é uma pergunta com resposta
+
+`useIsStandalone` (`src/shared/hooks/use-standalone.ts`) é o único lugar que
+responde "esta janela é o app instalado?". Ele une a media query
+`display-mode` (Android, desktop) com o `navigator.standalone` da Apple, que
+segue sendo a única forma de saber isso no iOS. **Não refaça essa checagem
+solta em outro componente** — quem precisa dela importa o hook.
+
+Ela vale a JANELA, não o aparelho: alguém pode ter o Scriba na tela inicial e
+estar lendo numa aba comum. O `ready` do hook é falso no servidor e no primeiro
+render; quem desenha coisas diferentes para os dois casos espera por ele, senão
+o estado errado pisca.
+
+Dois consumidores hoje:
+
+- `useInstallPrompt` — não oferece instalação a quem já está dentro do app. O
+  convite é o `InstallAppCard`, e ele mora **no `/feed`**, não no layout de
+  `(app)`: é a primeira tela de toda sessão de uso e a única em que a pessoa
+  está olhando em volta em vez de terminando alguma coisa. `sm:hidden`, some
+  para sempre no X, e o `/profile` guarda o caminho permanente
+  (`InstallAppRow`). No Android é o `beforeinstallprompt`; no iOS não existe
+  API e o botão só ENSINA o caminho do menu Compartilhar.
+- `StandaloneHomeGuard` — ver abaixo.
+
+### O app instalado nunca abre na landing
+
+`start_url` é `/sign-in`, e não `/`. Quem tocou no ícone já foi convencido; a
+LP é peça de venda. Com sessão, o proxy encaminha `/sign-in` para `/feed`
+(`AUTH_ONLY_PREFIXES`); sem sessão, é exatamente a tela necessária. O `id: "/"`
+do manifest é o que torna essa linha editável — sem ele a identidade do app
+seria a própria `start_url`, e mudá-la faria o Chrome instalar um app novo.
+
+A `start_url` sozinha não basta: o "Adicionar à Tela de Início" do iOS guarda a
+URL da página ABERTA, que na hora de instalar é quase sempre a landing. Por
+isso o `StandaloneHomeGuard` na LP troca `/` por `/sign-in` quando a janela é o
+app. Ele é cliente puro justamente para não custar a estaticidade da página.
+
+### Splash
+
+Android monta a tela de abertura com o `background_color` do manifest
+(`#1C2349`, o topo do gradiente da hero no tema escuro). **O iOS ignora isso**:
+sem `apple-touch-startup-image` casando exatamente com o aparelho, ele abre o
+app numa tela branca. As imagens saem de `scripts/generate-splash.mjs` e os
+`<link>` de `src/shared/splash.ts` — as duas metades leem o MESMO
+`src/shared/splash-screens.json`, e aparelho novo é uma linha lá mais uma
+rodada do script.

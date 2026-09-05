@@ -320,6 +320,12 @@ export async function proxy(request: NextRequest) {
  * `sw.js` (instalação do PWA) e o `opengraph-image` (prévia dos links no
  * WhatsApp e nas redes).
  *
+ * `offline.html` entrou pelo mesmo motivo, com um detalhe a mais: quem a busca
+ * é o service worker, no `install`, para guardá-la no cache. Atrás do proxy,
+ * um visitante ainda anônimo receberia o 307 para `/sign-in`, e o
+ * `cache.addAll` REJEITA resposta redirecionada — a instalação inteira do SW
+ * falharia, e com ela a instalabilidade do PWA.
+ *
  * São recursos públicos por definição — não existe sessão para renovar neles,
  * então pular o proxy também economiza uma ida ao Supabase por requisição.
  *
@@ -329,6 +335,6 @@ export async function proxy(request: NextRequest) {
  */
 export const config = {
   matcher: [
-    "/((?!_next/static|_next/image|favicon.ico|robots\\.txt|sitemap\\.xml|manifest\\.webmanifest|sw\\.js|llms\\.txt|opengraph-image|.*\\.(?:svg|png|jpg|jpeg|gif|webp|ico)$).*)",
+    "/((?!_next/static|_next/image|favicon.ico|robots\\.txt|sitemap\\.xml|manifest\\.webmanifest|sw\\.js|offline\\.html|llms\\.txt|opengraph-image|.*\\.(?:svg|png|jpg|jpeg|gif|webp|ico)$).*)",
   ],
 };

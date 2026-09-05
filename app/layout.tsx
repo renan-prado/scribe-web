@@ -1,4 +1,4 @@
-import type { Metadata } from "next";
+import type { Metadata, Viewport } from "next";
 import { Fira_Mono, Geist, Geist_Mono, Poppins } from "next/font/google";
 import { Analytics } from "@/components/Analytics";
 import { PageTransition } from "@/components/PageTransition";
@@ -7,6 +7,7 @@ import { PwaBootstrap } from "@/components/PwaBootstrap";
 import { ThemedToaster } from "@/components/ThemedToaster";
 import { ThemeScript } from "@/components/ThemeScript";
 import { IS_INDEXABLE, SITE_DESCRIPTION, SITE_NAME, SITE_TITLE, SITE_URL } from "@/lib/seo";
+import { APPLE_STARTUP_IMAGES } from "@/shared/splash";
 import "./globals.css";
 
 const geistSans = Geist({
@@ -30,6 +31,25 @@ const poppins = Poppins({
   subsets: ["latin"],
   weight: ["300", "400", "500", "600", "700"],
 });
+
+/**
+ * `viewport-fit=cover` é o que faz `env(safe-area-inset-*)` deixar de valer
+ * zero. Sem ele, no iPhone o app instalado desenha a nav inferior por baixo da
+ * barra do indicador de início — o dedo acerta o gesto do sistema, não o botão.
+ * Quem consome os insets é a `MobileBottomNav`.
+ *
+ * O zoom fica LIBERADO de propósito (`maximumScale: 5`, sem `userScalable`):
+ * travar o pinch é a violação de acessibilidade mais comum em PWA, e o app é
+ * lido em letra pequena dentro de igreja.
+ *
+ * `theme-color` NÃO entra aqui — ver `ThemeScript`.
+ */
+export const viewport: Viewport = {
+  width: "device-width",
+  initialScale: 1,
+  maximumScale: 5,
+  viewportFit: "cover",
+};
 
 export const metadata: Metadata = {
   metadataBase: new URL(SITE_URL),
@@ -106,6 +126,23 @@ export const metadata: Metadata = {
     // ele, e o iOS caía no screenshot da página ao salvar na tela inicial.
     apple: [{ url: "/apple-icon.png", sizes: "180x180", type: "image/png" }],
   },
+  // Instalado na tela inicial, o app abre SEM a moldura do Safari. O `capable`
+  // emite `mobile-web-app-capable` (o nome moderno; a variante `apple-` legada
+  // está no <head> abaixo, para iOS anterior ao 16.4).
+  //
+  // `statusBarStyle: "default"` mantém a barra de status OPACA e deixa o
+  // sistema pintá-la com a nossa `theme-color`. A alternativa
+  // (`black-translucent`) empurraria o conteúdo para baixo da barra, e aí o
+  // header do app apareceria por trás do relógio.
+  appleWebApp: {
+    capable: true,
+    title: "Scriba",
+    statusBarStyle: "default",
+    // A tela de abertura no iOS. Sem estes arquivos o iPhone abre o app numa
+    // tela BRANCA vazia — ele ignora o `background_color` do manifest, que é o
+    // que resolve o mesmo problema no Android. Ver `src/shared/splash.ts`.
+    startupImage: APPLE_STARTUP_IMAGES,
+  },
 };
 
 export default function RootLayout({ children }: LayoutProps<"/">) {
@@ -122,6 +159,11 @@ export default function RootLayout({ children }: LayoutProps<"/">) {
       suppressHydrationWarning
     >
       <head>
+        {/* O Next emite só `mobile-web-app-capable` para o `appleWebApp`
+            acima. Esta é a variante legada, que iOS anterior ao 16.4 ainda
+            exige para abrir o atalho da tela inicial sem a moldura do Safari;
+            as duas juntas não geram o aviso de depreciação do Chrome. */}
+        <meta name="apple-mobile-web-app-capable" content="yes" />
         <ThemeScript />
       </head>
       <body className="min-h-full flex flex-col" suppressHydrationWarning>
