@@ -10,6 +10,7 @@ import {
   REREAD_DAY_OFFSETS,
   type RereadDayOffset,
   type RereadItem,
+  type RereadOrigin,
   type RereadsPayload,
 } from "@/lib/domain/rereads";
 import type { SummaryPayload } from "@/lib/domain/summary";
@@ -31,7 +32,25 @@ import { collectRereadPool, type RereadPoolItem, referencesFromPool } from "@/li
  * estado ruim — a UI espera sempre os 10.
  *
  * Falha aqui NÃO deve derrubar a resposta do resumo — o chamador loga e segue.
+ *
+ * ## O texto é resolvido ANTES de o item ganhar um slot
+ *
+ * `withVerseText` roda sobre os CANDIDATOS, não sobre o payload montado, e
+ * descarta quem não tem o que reler. A ordem inversa — montar os dez e buscar
+ * o texto depois — foi o que colocou um card "Judas", sem capítulo e sem
+ * versículo, no feed de um usuário: o item já tinha ocupado o slot quando a
+ * busca falhou, e não havia mais como devolvê-lo. Resolver antes custa a mesma
+ * ida à NVI (que é um objeto em memória) e transforma "card vazio" em "outro
+ * candidato entra no lugar".
  */
+
+/**
+ * Um candidato a slot, antes de ganhar um `dayOffset`. É o `RereadPoolItem` do
+ * `collect.ts` aberto para também acomodar o `ai-fill`, que nasce da chamada de
+ * preenchimento e não do pool — daí os dois passarem pelo mesmo
+ * `withVerseText` e pelo mesmo `assembleFinal`.
+ */
+type RereadCandidate = Omit<RereadPoolItem, "origin"> & { origin: RereadOrigin };
 
 export type GenerateRereadsSuccess = {
   ok: true;
@@ -67,18 +86,20 @@ export async function generateRereads(input: GenerateRereadsInput): Promise<Gene
   const target = REREAD_DAY_OFFSETS.length;
 
   const pool = collectRereadPool(feedItems, finalSummary);
-  const truncatedPool = pool.slice(0, target);
+  const usablePool = await withVerseText(pool, logPrefix);
+  const truncatedPool = usablePool.slice(0, target);
   const needed = target - truncatedPool.length;
 
   log.debug(`pool`, {
     total: pool.length,
+    usable: usablePool.length,
     kept: truncatedPool.length,
     needed,
     byOrigin: countByOrigin(truncatedPool),
   });
 
   if (needed === 0) {
-    const payload = await enrichWithVerseText(assembleFinal(truncatedPool, []), logPrefix);
+    const payload = assembleFinal(truncatedPool, []);
     if (!isCompleteRereadsPayload(payload)) {
       log.warn(`incomplete payload assembly`, {
         got: payload.items.length,
@@ -91,7 +112,12 @@ export async function generateRereads(input: GenerateRereadsInput): Promise<Gene
   const model = serverEnv.OPENAI_REREADS_MODEL;
   const existingRefs = referencesFromPool(truncatedPool);
   const userMessage = [
-    `needed: ${needed}`,
+    // Pedimos FOLGA de propósito. Toda sugestão ainda passa pela NVI, e a que
+    // não resolve é descartada — sem a folga, uma única referência torta do
+    // modelo deixa o payload com nove itens, e nove reprova em
+    // `isCompleteRereadsPayload`: o usuário fica sem releitura nenhuma por
+    // causa de uma. O excedente é cortado logo abaixo e não é persistido.
+    `needed: ${needed + FILL_SLACK}`,
     `existingReferences:\n${JSON.stringify(existingRefs)}`,
     `finalSummary:\n${JSON.stringify(finalSummary)}`,
     `transcript:\n${transcript}`,
@@ -159,8 +185,14 @@ export async function generateRereads(input: GenerateRereadsInput): Promise<Gene
     latencyMs,
   });
 
-  const dedupedFill = dedupeFillAgainstPool(fillItems, truncatedPool).slice(0, needed);
-  const payload = await enrichWithVerseText(assembleFinal(truncatedPool, dedupedFill), logPrefix);
+  const deduped = dedupeFillAgainstPool(fillItems, truncatedPool);
+  const dedupedFill = (
+    await withVerseText(
+      deduped.map((f) => ({ reference: f.reference, text: "", reason: "", origin: "ai-fill" })),
+      logPrefix
+    )
+  ).slice(0, needed);
+  const payload = assembleFinal(truncatedPool, dedupedFill);
 
   if (!isCompleteRereadsPayload(payload)) {
     log.warn(`incomplete payload — expected 10 items covering all offsets`, {
@@ -173,11 +205,18 @@ export async function generateRereads(input: GenerateRereadsInput): Promise<Gene
   return { ok: true, payload, latencyMs, model, fillCount: dedupedFill.length };
 }
 
+/**
+ * Quantas referências a mais pedimos ao modelo além do `needed` real. Duas
+ * bastam: a taxa de referência que não resolve na NVI é baixa, e cada extra é
+ * token pago. Ver o comentário no `userMessage`.
+ */
+const FILL_SLACK = 2;
+
 type FillItemNormalized = { reference: string };
 
 function dedupeFillAgainstPool(
   fill: { reference: string }[],
-  pool: RereadPoolItem[]
+  pool: RereadCandidate[]
 ): FillItemNormalized[] {
   const kept: FillItemNormalized[] = [];
   for (const item of fill) {
@@ -210,39 +249,28 @@ function normalizeRef(ref: string): string {
   return ref.trim().toLowerCase().replace(/\s+/g, "").replace(/[.,]/g, "");
 }
 
-function assembleFinal(pool: RereadPoolItem[], fill: FillItemNormalized[]): RereadsPayload {
+function assembleFinal(pool: RereadCandidate[], fill: RereadCandidate[]): RereadsPayload {
   const items: RereadItem[] = [];
   const offsets = REREAD_DAY_OFFSETS as readonly RereadDayOffset[];
   let cursor = 0;
   // Primeiro os do pool (que já vêm intercalados por origem em collect.ts)
-  // ocupam os offsets ascendentes.
-  for (const p of pool) {
+  // ocupam os offsets ascendentes; depois o fill preenche o restante. Os dois
+  // já passaram por `withVerseText`, então todo item aqui tem texto.
+  for (const candidate of [...pool, ...fill]) {
     if (cursor >= offsets.length) break;
     items.push({
       dayOffset: offsets[cursor],
-      reference: p.reference,
-      text: p.text,
-      reason: p.reason,
-      origin: p.origin,
-    });
-    cursor++;
-  }
-  // Depois o fill preenche o restante.
-  for (const f of fill) {
-    if (cursor >= offsets.length) break;
-    items.push({
-      dayOffset: offsets[cursor],
-      reference: f.reference,
-      text: "",
-      reason: "",
-      origin: "ai-fill",
+      reference: candidate.reference,
+      text: candidate.text,
+      reason: candidate.reason,
+      origin: candidate.origin,
     });
     cursor++;
   }
   return { items };
 }
 
-function countByOrigin(pool: RereadPoolItem[]): Record<string, number> {
+function countByOrigin(pool: RereadCandidate[]): Record<string, number> {
   const out: Record<string, number> = {};
   for (const p of pool) {
     out[p.origin] = (out[p.origin] ?? 0) + 1;
@@ -251,32 +279,49 @@ function countByOrigin(pool: RereadPoolItem[]): Record<string, number> {
 }
 
 /**
- * Preenche `text` de cada item que ainda está sem (`related`, `summary` sem
- * texto, ou `ai-fill`) buscando na Bíblia NVI local. Referências sem verso
- * específico ou que não batem no arquivo NVI ficam com string vazia — a UI
- * simplesmente esconde o bloco do versículo nesses casos.
+ * Resolve o texto de cada candidato e DESCARTA quem fica sem.
+ *
+ * Um candidato sobrevive de dois jeitos: já veio com texto (o pregador leu, ou
+ * o bloco do resumo trouxe a citação), ou a referência aponta versículo e a NVI
+ * responde. Quem não se encaixa em nenhum dos dois — referência de capítulo
+ * inteiro, faixa que passa do fim do capítulo, livro sem número — não tem o que
+ * ser relido, e um card de releitura sem texto para reler é pior que um slot a
+ * menos.
+ *
+ * NVI indisponível derruba tudo que dependia dela, e é o comportamento certo:
+ * a alternativa seria persistir dez cards vazios.
  */
-async function enrichWithVerseText(
-  payload: RereadsPayload,
+async function withVerseText(
+  candidates: RereadCandidate[],
   logPrefix: string
-): Promise<RereadsPayload> {
+): Promise<RereadCandidate[]> {
   const log = createLogger(logPrefix);
-  const missing = payload.items.filter((i) => !i.text.trim());
-  if (missing.length === 0) return payload;
+  const withOwnText = candidates.filter((c) => c.text.trim());
+  const needLookup = candidates.filter((c) => !c.text.trim());
+  if (needLookup.length === 0) return candidates;
 
   const bible = await loadBible();
   if (!bible) {
-    log.warn(`bible not loaded for text enrichment`, {
+    log.warn(`bible not loaded — dropping candidates without text`, {
       translation: BIBLE_TRANSLATION,
+      dropped: needLookup.length,
     });
-    return payload;
+    return withOwnText;
   }
 
   let filled = 0;
-  const items = payload.items.map((item) => {
-    if (item.text.trim()) return item;
-    const parsed = parseVerseReference(item.reference);
-    if (!parsed || parsed.startVerse == null || parsed.endVerse == null) return item;
+  let dropped = 0;
+  const out: RereadCandidate[] = [];
+  for (const candidate of candidates) {
+    if (candidate.text.trim()) {
+      out.push(candidate);
+      continue;
+    }
+    const parsed = parseVerseReference(candidate.reference);
+    if (!parsed || parsed.startVerse == null || parsed.endVerse == null) {
+      dropped++;
+      continue;
+    }
     const { text } = lookupVerse(
       bible,
       parsed.bookDisplay,
@@ -284,11 +329,14 @@ async function enrichWithVerseText(
       parsed.startVerse,
       parsed.endVerse
     );
-    if (!text) return item;
+    if (!text) {
+      dropped++;
+      continue;
+    }
     filled++;
-    return { ...item, text };
-  });
+    out.push({ ...candidate, text });
+  }
 
-  log.debug(`enriched`, { missing: missing.length, filled });
-  return { items };
+  log.debug(`verse text`, { missing: needLookup.length, filled, dropped });
+  return out;
 }

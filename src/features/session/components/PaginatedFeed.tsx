@@ -11,13 +11,7 @@ import {
 } from "@/components/ui/select";
 import type { FeedEntry, FeedOrder } from "@/lib/db/feed-entries-types";
 import { cn } from "@/lib/utils";
-import {
-  buildFooter,
-  HighlightCard,
-  PracticeCard,
-  ReminderCard,
-  RereadCard,
-} from "./FeedEntryCards";
+import { buildFooter, HighlightCard, ReminderCard, RereadCard } from "./FeedEntryCards";
 import { StudyCtaCard, type StudyCtaSession } from "./StudyCtaCard";
 
 const STUDY_CTA_EVERY = 10;
@@ -53,7 +47,7 @@ function computeStudyCtaSlots(itemCount: number, ctaSessionCount: number): Map<n
 }
 
 /**
- * Feed paginado (praticar/releia/lembra) do /feed. Consome GET /api/feed:
+ * Feed paginado (releia / lembra / frase marcante) do /feed. Consome GET /api/feed:
  * SSR entrega a primeira página, o "Ver mais" pede as próximas 10, e o
  * seletor "Ordenar por" refaz do zero em outra ordem.
  *
@@ -136,13 +130,13 @@ export function PaginatedFeed({
   };
 
   return (
-    <div className="flex flex-col gap-4">
+    <div className="flex flex-col gap-5">
       <SortSelector order={order} onChange={setOrder} disabled={state === "loading"} />
 
       {items.length === 0 ? (
         <EmptyFeedNotice />
       ) : (
-        <ol className="flex flex-col gap-3">
+        <ol className="flex flex-col gap-5">
           {(() => {
             const ctaSlots = computeStudyCtaSlots(items.length, studyCtaSessions.length);
             return items.map((entry, index) => {
@@ -152,9 +146,7 @@ export function PaginatedFeed({
               return (
                 <Fragment key={entry.key}>
                   <li>
-                    {entry.kind === "practice" ? (
-                      <PracticeCard item={entry.item as never} footer={footer} />
-                    ) : entry.kind === "reread" ? (
+                    {entry.kind === "reread" ? (
                       <RereadCard item={entry.item as never} footer={footer} />
                     ) : entry.kind === "reminder" ? (
                       <ReminderCard item={entry.item as never} footer={footer} />

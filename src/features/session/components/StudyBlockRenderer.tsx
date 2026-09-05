@@ -1,4 +1,5 @@
 import { BlockRenderer } from "@/features/session/components/BlockRenderer";
+import { RichText } from "@/features/session/components/RichText";
 import type { StudyBlock } from "@/lib/domain/study";
 import { cn } from "@/lib/utils";
 
@@ -112,7 +113,7 @@ export function StudyBlockRenderer({ block }: { block: StudyBlock }) {
         <aside className="relative rounded-2xl border-l-4 border-[var(--session-example-border)] bg-[var(--session-example-bg)] px-5 py-4">
           <span className={`mb-1.5 block ${LABEL} text-scriba-ink-mute`}>Ilustração</span>
           <p className="text-pretty text-sm font-light leading-relaxed text-scriba-ink">
-            {block.text}
+            <RichText>{block.text}</RichText>
           </p>
         </aside>
       );
@@ -123,13 +124,13 @@ export function StudyBlockRenderer({ block }: { block: StudyBlock }) {
           <div className="flex flex-col gap-1.5">
             <span className={`${LABEL} text-scriba-ink-mute`}>Objeção</span>
             <p className="text-pretty text-[15px] font-medium leading-relaxed text-scriba-ink-strong">
-              {block.text}
+              <RichText>{block.text}</RichText>
             </p>
           </div>
           <div className="flex flex-col gap-1.5 border-t border-scriba-hairline pt-3">
             <span className={`${LABEL} text-scriba-green`}>Resposta</span>
             <p className="text-pretty text-[15px] font-light leading-relaxed text-scriba-ink">
-              {block.response}
+              <RichText>{block.response}</RichText>
             </p>
           </div>
         </section>
@@ -151,7 +152,7 @@ export function StudyBlockRenderer({ block }: { block: StudyBlock }) {
             </span>
           </div>
           <p className="text-pretty text-[15px] font-light leading-relaxed text-scriba-ink">
-            {block.text}
+            <RichText>{block.text}</RichText>
           </p>
         </section>
       );
@@ -168,7 +169,7 @@ export function StudyBlockRenderer({ block }: { block: StudyBlock }) {
             <p className="text-xs font-normal text-scriba-ink-mute">{block.author}</p>
             {block.note ? (
               <p className="mt-1 text-pretty text-sm font-light leading-relaxed text-scriba-ink">
-                {block.note}
+                <RichText>{block.note}</RichText>
               </p>
             ) : null}
           </div>

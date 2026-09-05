@@ -9,13 +9,19 @@ const badgeVariants = cva(
   {
     variants: {
       variant: {
-        default: "bg-primary text-primary-foreground [a]:hover:bg-primary/80",
-        secondary: "bg-secondary text-secondary-foreground [a]:hover:bg-secondary/80",
+        // Pastilha escura da paleta, não o preto neutro do shadcn (`bg-primary`):
+        // é a mesma superfície das pastilhas de referência bíblica do resumo e
+        // do feed, e `text-background` acompanha porque `--scriba-ink-strong`
+        // inverte por tema — ver `src/shared/AGENTS.md`.
+        default: "bg-scriba-ink-strong text-background [a]:hover:opacity-85",
+        secondary:
+          "bg-scriba-btn-muted text-scriba-ink [a]:hover:bg-scriba-btn-muted-hover [a]:hover:text-scriba-ink-strong",
         destructive:
           "bg-destructive/10 text-destructive focus-visible:ring-destructive/20 dark:bg-destructive/20 dark:focus-visible:ring-destructive/40 [a]:hover:bg-destructive/20",
-        outline: "border-border text-foreground [a]:hover:bg-muted [a]:hover:text-muted-foreground",
-        ghost: "hover:bg-muted hover:text-muted-foreground dark:hover:bg-muted/50",
-        link: "text-primary underline-offset-4 hover:underline",
+        outline:
+          "border-scriba-hairline text-scriba-ink [a]:hover:bg-scriba-btn-muted [a]:hover:text-scriba-ink-strong",
+        ghost: "hover:bg-scriba-btn-muted hover:text-scriba-ink-strong",
+        link: "text-scriba-blue-ink underline-offset-4 hover:underline",
       },
     },
     defaultVariants: {

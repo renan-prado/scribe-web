@@ -101,7 +101,6 @@ const schema = z.object({
    * pior que capa nenhuma. Ver lib/study/covers.ts.
    */
   GOOGLE_BOOKS_API_KEY: z.string().optional(),
-  OPENAI_PRACTICES_MODEL: z.string().default("gpt-4o-mini"),
   OPENAI_REREADS_MODEL: z.string().default("gpt-4o-mini"),
   OPENAI_REMINDERS_MODEL: z.string().default("gpt-4o-mini"),
   OPENAI_FORMAT_MODEL: z.string().default("gpt-4o-mini"),
@@ -156,7 +155,6 @@ const parsed = schema.safeParse({
   OPENAI_STUDY_WRITE_MODEL: process.env.OPENAI_STUDY_WRITE_MODEL,
   OPENAI_STUDY_GUARD_MODEL: process.env.OPENAI_STUDY_GUARD_MODEL,
   GOOGLE_BOOKS_API_KEY: process.env.GOOGLE_BOOKS_API_KEY,
-  OPENAI_PRACTICES_MODEL: process.env.OPENAI_PRACTICES_MODEL,
   OPENAI_REREADS_MODEL: process.env.OPENAI_REREADS_MODEL,
   OPENAI_REMINDERS_MODEL: process.env.OPENAI_REMINDERS_MODEL,
   OPENAI_FORMAT_MODEL: process.env.OPENAI_FORMAT_MODEL,

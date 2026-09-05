@@ -56,7 +56,7 @@ CAMPOS DE CADA ITEM
 ═══════════════════════════════════════════════════════════════
 
 - "dayOffset": número inteiro exato — 2, 5, 18, 33, 47, 62, 82, 120, 180 ou 260.
-- "title" (máx. 60 caracteres): SEMPRE comece com "Lembra" — ex.: "Lembra do que ele disse sobre solidão?", "Lembra dessa imagem?", "Lembra da frase sobre a viúva?". Se for genérico demais, apenas "Lembra disso?" é aceito. Voz coloquial, direta, como um amigo cutucando a memória. NÃO use "Reflita sobre" ou "Medite em".
+- "title" (máx. 60 caracteres): SEMPRE comece com "Lembra". O sujeito é o LEITOR ou a IDEIA — NUNCA o pregador. "Lembra do que ele disse sobre oração?" está PROIBIDO: o cartão aparece semanas ou meses depois, sozinho no feed, e ali "ele" não tem referente nenhum — o leitor lê e pergunta "ele quem?". Escreva "Lembra do que você ouviu sobre oração?", "Lembra dessa imagem da videira?", "Lembra da frase sobre a viúva?". Se for genérico demais, apenas "Lembra disso?" é aceito. Voz coloquial, direta, como um amigo cutucando a memória. NÃO use "Reflita sobre" ou "Medite em".
 - "text" (2 a 4 frases, ~180-360 caracteres): o corpo do cartão. Se origin="verbatim", explique brevemente o que estava em jogo quando o pastor disse isso e por que vale voltar. Se origin="paraphrase", conte a ideia com suas palavras. Se origin="generated", apresente a sub-ideia como quem redescobre um detalhe. Segunda pessoa direta ("você"/"seu"). Voz conversacional, não didática.
 - "quote" (opcional): APENAS quando origin="verbatim". Deve ser a frase LITERAL do pastor, pinçada de \`speakerHighlight\`, \`speakerEcho\`, \`speakerCitation\` ou de trecho identificável no transcript. Máx. ~200 caracteres. Se cortou uma frase mais longa, indique com reticências. Se origin ≠ "verbatim", OMITA este campo.
 - "origin": "verbatim" | "paraphrase" | "generated" (obrigatório).
@@ -69,6 +69,7 @@ PROIBIÇÕES
 - PROIBIDO usar a TESE CENTRAL do sermão como cartão (essa é o resumo, não uma sub-ideia).
 - PROIBIDO citações bíblicas inventadas. Se referenciar um versículo, use exatamente o que aparece no transcript/summary/feed.
 - PROIBIDO como sujeito ou tema do "text": "o sermão", "o pregador", "a pregação", "o resumo". Fale DIRETAMENTE ao leitor sobre A IDEIA.
+- PROIBIDO, em "title" E em "text", referir o pregador por pronome de terceira pessoa — "ele", "ela", "o pastor", "o orador". O cartão é lido isolado, muito depois da gravação: não há nada na tela que diga quem é "ele". Quando precisar situar a origem da ideia, use a segunda pessoa e o ato de OUVIR ("o que você ouviu sobre…", "aquilo que você escutou…").
 - PROIBIDO markdown (**, *, #, -, >), emojis, aspas decorativas dentro dos campos.
 - PROIBIDO títulos genéricos como "Reflita", "Medite", "Pense". Sempre a fórmula "Lembra…".
 - PROIBIDO em "quote": paráfrase disfarçada de citação. Se não é verbatim, use origin="paraphrase" e omita "quote".
@@ -79,7 +80,7 @@ SELF-CHECK ANTES DE EMITIR
 
 Para cada item:
 1) A sub-ideia é ESPECÍFICA deste sermão (não um lugar-comum cristão)?
-2) O "title" começa com "Lembra"?
+2) O "title" começa com "Lembra", e o sujeito dele é o leitor ou a ideia — nunca "ele"/"o pastor"?
 3) Se origin="verbatim", o "quote" está de fato no material recebido (feedItems ou transcript)?
 4) O cartão faz sentido no offset atribuído — nos offsets tardios, ele é autossuficiente?
 5) O ângulo é DIFERENTE dos outros 9?

@@ -1,5 +1,4 @@
 import type { HighlightItem } from "@/lib/domain/highlights";
-import type { PracticeItem } from "@/lib/domain/practices";
 import type { ReminderItem } from "@/lib/domain/reminders";
 import type { RereadItem } from "@/lib/domain/rereads";
 
@@ -9,7 +8,12 @@ import type { RereadItem } from "@/lib/domain/rereads";
  * "server-only" gate.
  */
 
-export type FeedEntryKind = "practice" | "reread" | "reminder" | "highlight";
+/**
+ * "practice" existiu aqui e saiu junto com o "Coloque em prática". A tabela
+ * `session_practices` continua no banco com os payloads antigos — o recurso foi
+ * retirado da tela, não descartado — mas nada mais a lê.
+ */
+export type FeedEntryKind = "reread" | "reminder" | "highlight";
 
 export type FeedEntrySessionRef = {
   id: string;
@@ -25,7 +29,7 @@ export type FeedEntry = {
   dayOffset: number;
   scheduledAt: string;
   session: FeedEntrySessionRef;
-  item: PracticeItem | RereadItem | ReminderItem | HighlightItem;
+  item: RereadItem | ReminderItem | HighlightItem;
 };
 
 export type FeedOrder = "recent" | "oldest";

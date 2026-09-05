@@ -8,16 +8,24 @@ const buttonVariants = cva(
   {
     variants: {
       variant: {
-        default: "bg-primary text-primary-foreground hover:bg-primary/80",
+        // O botão primário do produto. É o MESMO par de tokens da landing e do
+        // "Gerar estudo" — ver `src/shared/AGENTS.md` §"O botão primário".
+        // Era `bg-primary`, que é o preto neutro que veio do shadcn: como esta
+        // é a variante PADRÃO, todo `<Button>` sem `variant` (o admin inteiro,
+        // o /404) desenhava um botão preto que não pertence à paleta. O hover
+        // vem da classe `.scriba-cta` (um `filter`), porque o fundo é gradiente
+        // e um `hover:bg-*` o chaparia.
+        default:
+          "scriba-cta bg-[image:var(--scriba-cta)] text-scriba-cta-ink shadow-[0_5px_14px_var(--scriba-cta-shadow)]",
         outline:
-          "border-border bg-background hover:bg-muted hover:text-foreground aria-expanded:bg-muted aria-expanded:text-foreground dark:border-input dark:bg-input/30 dark:hover:bg-input/50",
+          "border-scriba-hairline bg-scriba-paper text-scriba-ink hover:bg-scriba-btn-muted hover:text-scriba-ink-strong aria-expanded:bg-scriba-btn-muted aria-expanded:text-scriba-ink-strong",
         secondary:
-          "bg-secondary text-secondary-foreground hover:bg-[color-mix(in_oklch,var(--secondary),var(--foreground)_5%)] aria-expanded:bg-secondary aria-expanded:text-secondary-foreground",
+          "bg-scriba-btn-muted text-scriba-ink hover:bg-scriba-btn-muted-hover hover:text-scriba-ink-strong aria-expanded:bg-scriba-btn-muted-hover aria-expanded:text-scriba-ink-strong",
         ghost:
-          "hover:bg-muted hover:text-foreground aria-expanded:bg-muted aria-expanded:text-foreground dark:hover:bg-muted/50",
+          "text-scriba-ink-soft hover:bg-scriba-btn-muted hover:text-scriba-ink-strong aria-expanded:bg-scriba-btn-muted aria-expanded:text-scriba-ink-strong",
         destructive:
           "bg-destructive/10 text-destructive hover:bg-destructive/20 focus-visible:border-destructive/40 focus-visible:ring-destructive/20 dark:bg-destructive/20 dark:hover:bg-destructive/30 dark:focus-visible:ring-destructive/40",
-        link: "text-primary underline-offset-4 hover:underline",
+        link: "text-scriba-blue-ink underline-offset-4 hover:underline",
       },
       size: {
         default:

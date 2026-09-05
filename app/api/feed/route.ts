@@ -22,7 +22,7 @@ const ExcludeSchema = OptionalUuidSchema;
 /**
  * GET /api/feed?order=recent|oldest&offset=0&limit=10&excludeSessionId=...
  *
- * Feed unificado (praticar/releia/lembra) de todas as sessões do usuário.
+ * Feed unificado (releia / lembra / frase marcante) de todas as sessões.
  * Só entram cards cuja data agendada (createdAt + dayOffset) já venceu.
  *
  * O caller recebe items + hasMore + total; `X-Total-Count` também vai no

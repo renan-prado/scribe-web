@@ -90,6 +90,7 @@
   --color-session-verse-text: var(--session-verse-text);
   --color-session-verse-border: var(--session-verse-border);
   --color-session-chip-ai: var(--session-chip-ai);
+  --color-session-mention-ink: var(--session-mention-ink);
   --color-scriba-gold-ink: var(--scriba-gold-ink);
   --color-auth-btn-border: var(--auth-btn-border);
   --color-auth-btn-border-hover: var(--auth-btn-border-hover);
@@ -171,6 +172,16 @@
   --session-highlight-yellow: #FCE9A6;
   --session-example-bg: #EEF3FB;
   --session-example-border: #D7DFE7;
+  /* MENÇÕES DENTRO DO PARÁGRAFO (ver RichText). Duas cores, dois papéis:
+     `ink` pinta a referência bíblica, que é CLICÁVEL — é a mesma calibragem de
+     `--scriba-blue-ink` (5,03 no papel), porque uma referência que não se
+     distingue do corpo do texto não convida clique nenhum.
+     `wash` é a faixa de marca-texto sob nome próprio, e ela NÃO é interativa:
+     cobre só os 18% de baixo da linha, então o glifo continua sobre o papel e
+     o contraste do parágrafo não muda. As duas trocam de família dentro de
+     `.tone-study` — lá o acento é verde. */
+  --session-mention-ink: #3473AA;
+  --session-mention-wash: #CFE2F5;
 
   /* Scriba palette — used by the redesigned Feed, Library, Live and Summary
      surfaces. Kept as raw hex so the design intent stays 1:1 with the mocks. */
@@ -405,6 +416,8 @@
   --session-highlight-yellow: rgba(250, 190, 40, 0.44);
   --session-example-bg: #1A1B36;
   --session-example-border: #373B60;
+  --session-mention-ink: #8AC6FA;
+  --session-mention-wash: rgba(95, 176, 245, 0.32);
 
   /* Scriba palette — dark colorway */
   --scriba-blue: #5FB0F5;
@@ -693,6 +706,8 @@
     --session-highlight-yellow: #CFEBD9;
     --session-example-bg: #EFF7F1;
     --session-example-border: #CDE4D6;
+    --session-mention-ink: #287C56;
+    --session-mention-wash: #C7E7D4;
   }
   .dark .tone-study {
     --session-surface-quote: linear-gradient(110deg, #16302A, #131F2A, #17352C, #16302A);
@@ -702,6 +717,8 @@
     --session-highlight-yellow: rgba(79, 194, 139, 0.28);
     --session-example-bg: #15251F;
     --session-example-border: #2E4A3C;
+    --session-mention-ink: #6FD9A5;
+    --session-mention-wash: rgba(79, 194, 139, 0.30);
   }
 }
 

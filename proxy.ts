@@ -136,10 +136,11 @@ function isAllowedOrigin(origin: string): boolean {
  *  - `connect-src` restrito é a peça que mais vale contra o risco descrito
  *    acima. Roubar o cookie só serve se der para MANDÁ-LO para algum lugar, e
  *    daqui só saem requisições para nós, para o Supabase e para o GA.
- *  - `script-src` sem `'unsafe-eval'` e com allowlist de host bloqueia o
- *    `<script src="//evil.com">` injetado. NÃO bloqueia inline: `'unsafe-inline'`
- *    é obrigatório enquanto o Next emitir o bootstrap dele inline sem nonce, e
- *    o `ThemeScript` também é inline. Esta é a folga que o nonce fecharia.
+ *  - `script-src` sem `'unsafe-eval'` (em produção — ver a nota adiante) e com
+ *    allowlist de host bloqueia o `<script src="//evil.com">` injetado. NÃO
+ *    bloqueia inline: `'unsafe-inline'` é obrigatório enquanto o Next emitir o
+ *    bootstrap dele inline sem nonce, e o `ThemeScript` também é inline. Esta é
+ *    a folga que o nonce fecharia.
  *  - `object-src 'none'`, `base-uri 'self'` (impede sequestro de URL relativa
  *    por `<base>` injetada) e `form-action 'self'` (impede que um formulário
  *    injetado poste para fora).
@@ -149,12 +150,33 @@ function isAllowedOrigin(origin: string): boolean {
  * `img-src https:` é frouxo de propósito: imagem não executa, e a lista real
  * (avatar do Google, capa do Google Books, sticker local, blob do gravador)
  * mudaria a cada funcionalidade nova, quebrando a tela por um ganho de zero.
+ *
+ * `'unsafe-eval'` SÓ EM DESENVOLVIMENTO, e a exceção é do React, não nossa: o
+ * build de desenvolvimento dele usa `eval()` para remontar callstack vinda de
+ * outro ambiente e outras ferramentas de depuração — sem a diretiva, o
+ * `next dev` derruba um erro de console em toda página. O build de produção do
+ * React nunca chama `eval`, então a folga não precisa existir lá, e é por isso
+ * que ela é condicional em vez de constante: uma CSP de produção com
+ * `'unsafe-eval'` devolve ao atacante exatamente o primitivo que o resto desta
+ * política existe para negar.
+ *
+ * `NODE_ENV` é fixado pelo comando — `next dev` dá "development", `next build`
+ * dá "production" mesmo quando o `scripts/with-env.mjs` injetou o `.env.dev`
+ * (é o caso do `npm run build:dev`). Ou seja: nenhum deploy sai com a folga,
+ * nem o de preview.
  */
 function contentSecurityPolicy(): string {
   const supabase = new URL(clientEnv.NEXT_PUBLIC_SUPABASE_URL).origin;
+  const scriptSrc = [
+    "script-src 'self' 'unsafe-inline'",
+    process.env.NODE_ENV === "development" ? "'unsafe-eval'" : null,
+    "https://www.googletagmanager.com",
+  ]
+    .filter(Boolean)
+    .join(" ");
   return [
     "default-src 'self'",
-    "script-src 'self' 'unsafe-inline' https://www.googletagmanager.com",
+    scriptSrc,
     "style-src 'self' 'unsafe-inline'",
     "img-src 'self' data: blob: https:",
     "font-src 'self' data:",

@@ -22,6 +22,7 @@ REGRAS
 
 1) NÃO repita nenhuma referência de "existingReferences" (nem variações do mesmo trecho — ex.: se já existe "Tiago 1:2-4", não sugira "Tiago 1:3").
 2) Cada "reference" deve ser uma passagem CURTA (1 versículo ou um bloco de 2-6 versos contíguos) que sustente sozinha uma releitura reflexiva de 60-90s.
+2b) TODA referência precisa de LIVRO, CAPÍTULO e VERSÍCULO, no formato "Livro 3:16" ou "Livro 3:16-18". Livro sozinho ("Judas") ou capítulo inteiro ("Romanos 8") são DESCARTADOS: sem versículo não há texto para reler, e o card sai vazio.
 3) Priorize passagens que:
    - Aprofundam a TESE ou o TEMA CENTRAL do sermão (não temas periféricos).
    - Expandem uma linha argumentativa do pregador em outro livro/testamento.

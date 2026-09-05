@@ -35,7 +35,7 @@ export function ThemeToggle({ className, compact = false }: ThemeToggleProps) {
         onClick={toggleTheme}
         className={cn(
           "inline-flex size-9 flex-none items-center justify-center rounded-full",
-          "border border-scriba-hairline bg-scriba-surface text-scriba-ink-mute",
+          "border border-scriba-ink-strong/10 bg-scriba-surface text-scriba-ink-mute dark:border-scriba-ink-strong/20",
           "outline-none transition-colors focus-visible:ring-2 focus-visible:ring-scriba-blue/40",
           "hover:border-scriba-blue-soft hover:text-scriba-blue-ink",
           className
@@ -60,7 +60,7 @@ export function ThemeToggle({ className, compact = false }: ThemeToggleProps) {
       onClick={toggleTheme}
       className={cn(
         "group relative inline-flex h-9 w-[68px] flex-none items-center rounded-full p-1",
-        "border border-scriba-hairline bg-scriba-surface",
+        "border border-scriba-ink-strong/10 bg-scriba-surface dark:border-scriba-ink-strong/20",
         "outline-none transition-colors focus-visible:ring-2 focus-visible:ring-scriba-blue/40",
         "hover:border-scriba-blue-soft",
         className

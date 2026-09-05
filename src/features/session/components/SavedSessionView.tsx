@@ -14,7 +14,6 @@ import {
   DialogTitle,
 } from "@/components/ui/dialog";
 import { useCoinsStore } from "@/features/coins/store";
-import { ColoqueEmPratica } from "@/features/session/components/ColoqueEmPratica";
 import { ConfirmDialog } from "@/features/session/components/ConfirmDialog";
 import { DeepenButton } from "@/features/session/components/DeepenButton";
 import { EntityFieldDialog } from "@/features/session/components/EntityFieldDialog";
@@ -28,7 +27,6 @@ import { TitleDialog } from "@/features/session/components/TitleDialog";
 import { requestLocationSuggestions, requestSpeakerSuggestions } from "@/features/session/lib/api";
 import type { FeedItem } from "@/lib/domain/feed";
 import type { HighlightsPayload } from "@/lib/domain/highlights";
-import type { PracticesPayload } from "@/lib/domain/practices";
 import type { RemindersPayload } from "@/lib/domain/reminders";
 import type { RereadsPayload } from "@/lib/domain/rereads";
 import type { SummaryPayload } from "@/lib/domain/summary";
@@ -69,7 +67,6 @@ type SavedSessionViewProps = {
   transcript: string;
   feedItems: FeedItem[];
   summary: SummaryPayload | null;
-  practices: PracticesPayload | null;
   rereads: RereadsPayload | null;
   reminders: RemindersPayload | null;
   highlights: HighlightsPayload | null;
@@ -90,7 +87,6 @@ export function SavedSessionView({
   transcript,
   feedItems,
   summary,
-  practices,
   rereads,
   reminders,
   highlights,
@@ -290,17 +286,10 @@ export function SavedSessionView({
 
       <SummaryView summary={summary} hasTranscript={transcript.length > 0} running={false} />
 
-      {/* As tres secoes pos-resumo reservam a mesma "canaleta" direita que os
-          blocos do SummaryView reservam pro botao de comentario do Scriba —
-          um placeholder invisivel size-9 alinha a borda direita de todo o
+      {/* A secao pos-resumo reserva a mesma "canaleta" direita que os blocos
+          do SummaryView reservam pro botao de comentario do Scriba — um
+          placeholder invisivel size-9 alinha a borda direita de todo o
           conteudo na mesma coluna. No mobile o placeholder some. */}
-      <div className="flex items-start sm:gap-4">
-        <div className="min-w-0 flex-1">
-          <ColoqueEmPratica practices={practices} />
-        </div>
-        <div aria-hidden className="hidden size-9 shrink-0 sm:block" />
-      </div>
-
       <div className="flex items-start sm:gap-4">
         <div className="min-w-0 flex-1">
           <FeedAgendadoPreview rereads={rereads} reminders={reminders} highlights={highlights} />

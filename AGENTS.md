@@ -25,8 +25,8 @@ chunks de áudio de 15-20s que sobem para rotas de API com OpenAI atrás:
 - **No stop:** `final-summary` roda uma vez sobre a transcrição inteira mais
   os cards curados, e produz o resumo estruturado.
 - **Depois:** `deepening` (estudo teológico sob demanda, uma vez por sessão)
-  e os cards de acompanhamento — praticar / releia / lembra — que alimentam
-  o `/feed`.
+  e os cards de acompanhamento — releia / lembra / frase marcante — que
+  alimentam o `/feed`.
 
 Três modos de captura (`lib/domain/session.ts`), cada um com sua página e seu
 preço por minuto iniciado (`lib/coins/pricing.ts`):

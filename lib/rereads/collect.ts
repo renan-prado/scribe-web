@@ -36,16 +36,20 @@ export function collectRereadPool(
   const related: RereadPoolItem[] = [];
   const summaryPool: RereadPoolItem[] = [];
 
+  const push = (into: RereadPoolItem[], candidate: RereadPoolItem) => {
+    if (isUsableReference(candidate.reference)) into.push(candidate);
+  };
+
   for (const item of feedItems) {
     if (item.kind === "citedVerse") {
-      cited.push({
+      push(cited, {
         reference: item.reference,
         text: item.text ?? "",
         reason: "",
         origin: "cited",
       });
     } else if (item.kind === "relatedVerse") {
-      related.push({
+      push(related, {
         reference: item.reference,
         text: "",
         reason: item.reason ?? "",
@@ -59,14 +63,14 @@ export function collectRereadPool(
       // Duplica muito com cited (o resumo re-cita o que o pastor leu). Não
       // categorizamos como "cited" — se a mesma ref já está lá pelo feed,
       // o dedup abaixo derruba; se não, entra como "summary".
-      summaryPool.push({
+      push(summaryPool, {
         reference: block.reference,
         text: block.text ?? "",
         reason: "",
         origin: "summary",
       });
     } else if (block.type === "relatedVerse") {
-      related.push({
+      push(related, {
         reference: block.reference,
         text: block.text ?? "",
         reason: block.reason ?? "",
@@ -77,6 +81,22 @@ export function collectRereadPool(
 
   const interleaved = roundRobin([cited, related, summaryPool]);
   return dedupeByReference(interleaved);
+}
+
+/**
+ * Uma referência só entra no pool se for uma PASSAGEM — livro e capítulo, no
+ * mínimo.
+ *
+ * O gate existe porque as fontes deste pool não prometem isso. Um `citedVerse`
+ * pode chegar como menção de capítulo sem número, e um `bibleQuote` do resumo
+ * pode trazer só o nome do livro. "Judas" atravessava: `parseVerseReference`
+ * devolvia `null`, a busca na NVI não tinha o que buscar, e o card do /feed
+ * saía com a pastilha "Judas" e nada embaixo — uma releitura sem texto para
+ * reler. O lugar de barrar isso é aqui, antes de o item ocupar um dos dez
+ * slots; barrar na tela só esconde o slot desperdiçado.
+ */
+function isUsableReference(reference: string): boolean {
+  return parseVerseReference(reference) !== null;
 }
 
 function roundRobin<T>(lists: T[][]): T[] {
@@ -144,7 +164,7 @@ function dedupeByReference(pool: RereadPoolItem[]): RereadPoolItem[] {
  * Só as referências normalizadas — usado tanto pra alimentar o prompt de
  * fill quanto pra evitar duplicatas ao mesclar o fill de volta.
  */
-export function referencesFromPool(pool: RereadPoolItem[]): string[] {
+export function referencesFromPool(pool: { reference: string }[]): string[] {
   return pool
     .map((p) => p.reference)
     .filter((r) => {

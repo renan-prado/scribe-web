@@ -192,6 +192,39 @@ As larguras do esqueleto são fixas por posição, e não sorteadas: um
 `Math.random()` ali daria hidratação divergente e o React descartaria o HTML
 do servidor.
 
+## Menções dentro do parágrafo
+
+`RichText` (`components/RichText.tsx`) é o que o resumo e o estudo usam para
+desenhar PROSA. Ele passa o texto por `annotateText` (`lib/domain/annotate.ts`)
+e marca três coisas: referência bíblica, personagem/lugar e figura citada.
+
+**É regex sobre um léxico curado (`lib/domain/lexicon.ts`), não uma etapa de
+IA.** Marcar entidade com LLM seria mais uma chamada por sessão, com custo,
+latência e a chance de o modelo marcar o que não está no texto — para um
+problema que um autômato resolve, igual toda vez.
+
+Quatro decisões que o próximo a mexer precisa conhecer:
+
+- **A passada de referência vem ANTES da de nomes, e exige número de
+  capítulo.** É o que separa o evangelho do apóstolo: "João 3:16" é consumido
+  inteiro pela primeira passada, e a segunda nunca vê aquele "João". Um "João"
+  solto no meio da frase continua sendo o apóstolo.
+- **O casamento é exato — acento e maiúscula inclusive.** O gate do pipeline ao
+  vivo (`lib/bible/detect.ts`) é tolerante porque a entrada dele é fala
+  transcrita; aqui a entrada é texto escrito por um modelo, e tolerância que
+  não é necessária só compra falso positivo.
+- **Só a referência é CLICÁVEL, e por isso só ela é colorida.** Nome próprio
+  ganha a faixa de marca-texto (`--session-mention-wash`) e nada mais — não há
+  para onde ir a partir dele. As três categorias continuam distintas nos dados
+  (`data-mention`), não na tinta: três cores de marcação num parágrafo é uma
+  página de arco-íris, e o realce só funciona enquanto for exceção.
+- **Nunca aplique `RichText` em texto bíblico** (`bibleQuote`, `relatedVerse`)
+  nem em frase de efeito (`highlight`). No primeiro todo nome é personagem e a
+  marcação pintaria o bloco inteiro; a segunda já carrega a faixa amarela.
+
+Os dois tokens (`--session-mention-ink`, `--session-mention-wash`) trocam de
+família dentro de `.tone-study` — no estudo o acento é verde, como o resto.
+
 ## Qualidade da transcrição e escalada de modelo
 
 Um chunk volta marcado como `poor` quando qualquer uma de três fontes acusa —
@@ -267,8 +300,30 @@ ou apagar — ver `listUnfinishedSessions`.
 
 Depois disso a sessão pode gerar o **estudo** (`/api/deepening`, uma vez por
 sessão — `unique(session_id)` na migração 0009, com uma rota de reprocessamento
-separada) e os cards de acompanhamento — praticar / releia / lembra — que
+separada) e os cards de acompanhamento — releia / lembra / frase marcante — que
 alimentam o `/feed` unificado (`lib/db/feed-entries.ts`) por data agendada.
+
+Havia um quarto card, "Coloque em prática" (`session_practices`), gerado junto
+com o resumo. Ele saiu — do prompt, do feed e da página de resumo. A tabela e
+os payloads antigos continuam no banco; ver `supabase/AGENTS.md`.
+
+**Releitura sem texto não existe.** O card de "releia" é a passagem em si; sem
+o texto da NVI embaixo, o que sobra é a pastilha da referência e um retângulo
+vazio. As fontes do pool (`citedVerse` do feed, `bibleQuote` do resumo) NÃO
+prometem uma referência completa — um "Judas", livro sem capítulo, já
+atravessou até o feed de um usuário. Três guardas, em camadas:
+
+1. `collectRereadPool` só admite referência que `parseVerseReference` aceita.
+2. `withVerseText` resolve o texto **antes** de o candidato ganhar um
+   `dayOffset`, e descarta quem fica sem. A ordem importa: montar os dez e
+   buscar o texto depois — como era — não deixa devolver o slot.
+3. `listFeedEntries` esconde item sem texto, para as sessões geradas antes da
+   correção não continuarem vencendo dia após dia.
+
+O preço da guarda 2 é que o pool encolhe, e dez slots com menos candidatos
+reprovam em `isCompleteRereadsPayload`. Por isso a chamada de preenchimento
+pede `needed + FILL_SLACK` referências: uma sugestão torta do modelo não pode
+custar a releitura inteira da sessão.
 
 O estudo tem duas particularidades que mordem de fora:
 

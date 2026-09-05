@@ -67,6 +67,19 @@ tinta branca no claro, pastilha clara com tinta navy no escuro. O hover é um
 o gradiente. A sombra também é token, porque um halo azul sob pastilha branca
 em página escura suja a borda em vez de assentar o botão.
 
+**A variante `default` do `ui/button.tsx` JÁ É esse par**, e a família inteira
+(`outline`, `secondary`, `ghost`, `link`) foi repontada para os tokens
+`--scriba-*`. Elas vinham do shadcn apontando para `--primary` / `--muted` /
+`--border`, que é a escala neutra preto-e-cinza do template: como `default` é a
+variante PADRÃO, todo `<Button>` sem `variant` — o admin inteiro, o /404 —
+desenhava um botão preto que não pertence à paleta. O `ui/badge.tsx` levou o
+mesmo tratamento, com a diferença de que a pastilha escura ali é intencional e
+usa `bg-scriba-ink-strong` + `text-background`, a mesma das referências
+bíblicas.
+
+Os tokens `--primary*` continuam declarados em `globals.css` porque o shadcn os
+pressupõe; simplesmente ninguém mais os pinta.
+
 ### Calibrar tinta
 
 **Tinta de família se calibra pela superfície da família, não pelo papel.**

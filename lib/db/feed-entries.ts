@@ -1,6 +1,5 @@
 import "server-only";
 import type { HighlightsPayload } from "@/lib/domain/highlights";
-import type { PracticesPayload } from "@/lib/domain/practices";
 import type { RemindersPayload } from "@/lib/domain/reminders";
 import type { RereadsPayload } from "@/lib/domain/rereads";
 import { createClient } from "@/lib/supabase/server";
@@ -19,14 +18,18 @@ export type {
 } from "./feed-entries-types";
 
 /**
- * Feed unificado do /feed — junta os três tipos de card gerados junto com o
- * final_summary (praticar / releia / lembra) de TODAS as sessões do usuário
- * em uma única lista, ordenada por data agendada absoluta (createdAt da
+ * Feed unificado do /feed — junta os tipos de card gerados junto com o
+ * final_summary (releia / lembra / frase marcante) de TODAS as sessões do
+ * usuário em uma única lista, ordenada por data agendada absoluta (createdAt da
  * sessão + dayOffset). Só entram itens cuja data agendada já foi alcançada.
  *
- * RLS nas tabelas session_practices / session_rereads / session_reminders
- * já auto-escopa por user_id, então basta emitir os três selects e cruzar
- * em memória com a lista de sessões do próprio usuário.
+ * RLS nas tabelas session_rereads / session_reminders / session_highlights já
+ * auto-escopa por user_id, então basta emitir os selects e cruzar em memória
+ * com a lista de sessões do próprio usuário.
+ *
+ * Havia um quarto: `session_practices`, o "Coloque em prática". A tabela e os
+ * payloads antigos continuam lá — o recurso saiu da tela, não do banco — mas
+ * ninguém mais os lê.
  */
 
 export type ListFeedEntriesInput = {
@@ -50,7 +53,6 @@ export type ListFeedEntriesResult = {
 const DAY_MS = 24 * 60 * 60 * 1000;
 
 const TIEBREAK: Record<FeedEntryKind, number> = {
-  practice: 0,
   reread: 1,
   reminder: 2,
   highlight: 3,
@@ -84,12 +86,11 @@ export async function listFeedEntries(input: ListFeedEntriesInput): Promise<List
   } = await supabase.auth.getUser();
   if (!user) return { items: [], total: 0, hasMore: false };
 
-  const [sessionsRes, practicesRes, rereadsRes, remindersRes, highlightsRes] = await Promise.all([
+  const [sessionsRes, rereadsRes, remindersRes, highlightsRes] = await Promise.all([
     supabase
       .from("sessions")
       .select("id, created_at, title, speaker_name, speaker_location")
       .order("created_at", { ascending: false }),
-    supabase.from("session_practices").select("session_id, payload"),
     supabase.from("session_rereads").select("session_id, payload"),
     supabase.from("session_reminders").select("session_id, payload"),
     supabase.from("session_highlights").select("session_id, payload"),
@@ -97,9 +98,6 @@ export async function listFeedEntries(input: ListFeedEntriesInput): Promise<List
 
   if (sessionsRes.error) {
     throw new Error(`listFeedEntries.sessions failed: ${sessionsRes.error.message}`);
-  }
-  if (practicesRes.error) {
-    throw new Error(`listFeedEntries.practices failed: ${practicesRes.error.message}`);
   }
   if (rereadsRes.error) {
     throw new Error(`listFeedEntries.rereads failed: ${rereadsRes.error.message}`);
@@ -125,30 +123,17 @@ export async function listFeedEntries(input: ListFeedEntriesInput): Promise<List
 
   const entries: FeedEntry[] = [];
 
-  for (const row of (practicesRes.data ?? []) as {
-    session_id: string;
-    payload: PracticesPayload;
-  }[]) {
-    const session = sessions.get(row.session_id);
-    if (!session) continue;
-    for (const item of row.payload?.items ?? []) {
-      const scheduledAt = scheduledAtIso(session.createdAt, item.dayOffset);
-      if (!isEligible(scheduledAt, input.now)) continue;
-      entries.push({
-        kind: "practice",
-        key: `practice:${session.id}:${item.dayOffset}`,
-        dayOffset: item.dayOffset,
-        scheduledAt,
-        session,
-        item,
-      });
-    }
-  }
-
   for (const row of (rereadsRes.data ?? []) as { session_id: string; payload: RereadsPayload }[]) {
     const session = sessions.get(row.session_id);
     if (!session) continue;
     for (const item of row.payload?.items ?? []) {
+      // Releitura sem texto não tem o que ser relido — sobra a pastilha da
+      // referência e nada embaixo. O gerador não produz mais isso (ver
+      // `withVerseText` em `lib/rereads/generate.ts`), mas as sessões geradas
+      // antes da correção ficaram com essas linhas no banco, e elas continuam
+      // vencendo dia após dia. Esconder aqui é o conserto que não pede
+      // migração de dados.
+      if (!item.text?.trim()) continue;
       const scheduledAt = scheduledAtIso(session.createdAt, item.dayOffset);
       if (!isEligible(scheduledAt, input.now)) continue;
       entries.push({

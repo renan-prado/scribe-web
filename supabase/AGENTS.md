@@ -39,8 +39,13 @@ Toda tabela de domínio tem `user_id` referenciando `auth.users(id)` com
 Tabela nova segue o mesmo molde, e o padrão vale também para as tabelas
 filhas de sessão (`session_practices`, `session_rereads`, `session_reminders`,
 `session_highlights`, `session_deepenings`), que é o que permite ao
-`lib/db/feed-entries.ts` emitir três selects e cruzar em memória sem filtrar
-dono na mão.
+`lib/db/feed-entries.ts` emitir os selects e cruzar em memória sem filtrar dono
+na mão.
+
+`session_practices` é a exceção viva: o "Coloque em prática" saiu do produto e
+nada mais lê nem escreve nessa tabela. Ela e os payloads antigos ficaram de
+propósito — o recurso foi retirado da tela para ser repensado, não descartado.
+Não crie migração para dropá-la sem pedido.
 
 **Numa tabela filha, `user_id = auth.uid()` não basta — o `session_id` também
 precisa ser seu** (migração 0040). A policy antiga garantia que a LINHA era

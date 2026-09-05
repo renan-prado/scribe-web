@@ -1,6 +1,7 @@
 import { BookGlyph } from "@/components/icons/BookGlyph";
 import { ChapterMention } from "@/features/session/components/ChapterMention";
 import { PassageVerses } from "@/features/session/components/PassageVerses";
+import { RichText } from "@/features/session/components/RichText";
 import { parseVerseReference } from "@/lib/domain/feed";
 import type { SummaryBlock } from "@/lib/domain/summary";
 import { ScribaAvatar, ScribaMark } from "@/shared/brand";
@@ -30,7 +31,7 @@ export function BlockRenderer({ block }: { block: SummaryBlock }) {
     case "paragraph":
       return (
         <p className="text-pretty text-[15px] font-light leading-[1.72] text-scriba-ink">
-          {block.text}
+          <RichText>{block.text}</RichText>
         </p>
       );
     case "example":
@@ -40,7 +41,7 @@ export function BlockRenderer({ block }: { block: SummaryBlock }) {
             Exemplo do pregador
           </span>
           <p className="text-pretty text-sm font-light leading-relaxed text-scriba-ink">
-            {block.text}
+            <RichText>{block.text}</RichText>
           </p>
         </aside>
       );
@@ -117,7 +118,7 @@ export function BlockRenderer({ block }: { block: SummaryBlock }) {
             Conclusão
           </span>
           <p className="text-pretty text-[15px] font-light leading-[1.7] text-session-verse-text">
-            {block.text}
+            <RichText>{block.text}</RichText>
           </p>
         </section>
       );
@@ -149,7 +150,7 @@ export function BlockRenderer({ block }: { block: SummaryBlock }) {
           </summary>
           <div className="-mt-2 ml-[42px] flex flex-col gap-3.5 rounded-3xl rounded-tl-none bg-scriba-bubble px-5 py-4 text-scriba-bubble-ink">
             <p className="text-pretty text-sm font-light leading-relaxed text-scriba-ink">
-              {block.text}
+              <RichText>{block.text}</RichText>
             </p>
             {block.source ? (
               <p className="text-[11px] font-light italic text-scriba-ink-soft">— {block.source}</p>
@@ -192,7 +193,7 @@ export function BlockRenderer({ block }: { block: SummaryBlock }) {
             ) : null}
             {block.reason ? (
               <p className="text-xs font-normal leading-relaxed text-scriba-ink-soft">
-                {block.reason}
+                <RichText>{block.reason}</RichText>
               </p>
             ) : null}
           </div>

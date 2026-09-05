@@ -9,7 +9,6 @@ import { generateFinalSummary } from "@/lib/final-summary/generate";
 import { generateAndSaveHighlights } from "@/lib/highlights/save";
 import { parseJsonBody, UuidSchema } from "@/lib/http/validate";
 import { createLogger } from "@/lib/log";
-import { generateAndSavePractices } from "@/lib/practices/save";
 import { enforceRateLimit, RATE_LIMITS } from "@/lib/rate-limit";
 import { generateAndSaveReminders } from "@/lib/reminders/save";
 import { generateAndSaveRereads } from "@/lib/rereads/save";
@@ -162,21 +161,11 @@ export async function POST(request: Request) {
     log.error("save failed", { sessionId, error: (err as Error).message });
   }
 
-  // Best-effort: gera e persiste "Coloque em prática" (5 itens), "Releia este
-  // texto" (10 versículos), "Lembra disso?" (10 mini-callbacks) e
-  // "Frases marcantes" (até 12 itens, sem IA) em paralelo após o resumo
-  // estar salvo. Nenhuma delas falhando quebra a resposta do resumo — a UI
-  // trata payloads ausentes como estado normal.
-  const [practices, rereads, reminders, highlights] = await Promise.all([
-    generateAndSavePractices({
-      userId: auth.user.id,
-      sessionId,
-      transcript: text,
-      feedItems,
-      finalSummary: payload,
-      logPrefix: "practices",
-      metadataRoute: "practices",
-    }),
+  // Best-effort: gera e persiste "Releia este texto" (10 versículos), "Lembra
+  // disso?" (10 mini-callbacks) e "Frases marcantes" (até 12 itens, sem IA) em
+  // paralelo após o resumo estar salvo. Nenhuma delas falhando quebra a
+  // resposta do resumo — a UI trata payloads ausentes como estado normal.
+  const [rereads, reminders, highlights] = await Promise.all([
     generateAndSaveRereads({
       userId: auth.user.id,
       sessionId,
@@ -209,7 +198,6 @@ export async function POST(request: Request) {
     model,
     sessionId,
     saved,
-    practices,
     rereads,
     reminders,
     highlights,

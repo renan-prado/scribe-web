@@ -31,29 +31,73 @@ const ChapterDialog = dynamic(
   { ssr: false }
 );
 
-export function ChapterMention({ reference }: { reference: string }) {
-  // DOIS estados, e não um: `hasOpened` decide se o diálogo EXISTE, `open`
-  // decide se ele está aberto. Com um só, fechar desmontaria o componente no
-  // mesmo quadro em que o base-ui começa a animar a saída, e o diálogo sumiria
-  // seco. Depois do primeiro clique ele fica montado — fechado, mas montado.
+/**
+ * O par de estados que as duas menções compartilham.
+ *
+ * São DOIS, e não um: `hasOpened` decide se o diálogo EXISTE, `open` decide se
+ * ele está aberto. Com um só, fechar desmontaria o componente no mesmo quadro
+ * em que o base-ui começa a animar a saída, e o diálogo sumiria seco. Depois do
+ * primeiro clique ele fica montado — fechado, mas montado.
+ */
+function useMentionDialog() {
   const [hasOpened, setHasOpened] = useState(false);
   const [open, setOpen] = useState(false);
+  function show() {
+    setHasOpened(true);
+    setOpen(true);
+  }
+  return { hasOpened, open, setOpen, show };
+}
+
+export function ChapterMention({ reference }: { reference: string }) {
+  const dialog = useMentionDialog();
 
   return (
     <>
       <button
         type="button"
-        onClick={() => {
-          setHasOpened(true);
-          setOpen(true);
-        }}
+        onClick={dialog.show}
         className="inline-flex items-center gap-2 rounded-full bg-scriba-ink-strong px-4 py-1.5 text-xs font-semibold text-background transition-opacity hover:opacity-85 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring/40"
       >
         <BookGlyph className="size-3 border-background" />
         {reference}
       </button>
-      {hasOpened ? (
-        <ChapterDialog reference={reference} open={open} onOpenChange={setOpen} />
+      {dialog.hasOpened ? (
+        <ChapterDialog reference={reference} open={dialog.open} onOpenChange={dialog.setOpen} />
+      ) : null}
+    </>
+  );
+}
+
+/**
+ * A MESMA menção, mas no meio de um parágrafo — o que o `RichText` desenha
+ * quando o anotador acha "João 3:16" dentro da prosa de um resumo ou estudo.
+ *
+ * Mora aqui, e não em arquivo próprio, porque divide o `dynamic()` acima: um
+ * segundo `dynamic(() => import(ChapterDialog))` em outro módulo pediria o
+ * mesmo chunk por dois caminhos.
+ *
+ * A pastilha da `ChapterMention` não serve aqui: ela é um BLOCO, com altura e
+ * fundo sólido, e no meio de uma linha ela quebraria o ritmo da leitura a cada
+ * citação. Uma referência dentro do texto continua sendo texto — muda a cor e
+ * ganha o sublinhado pontilhado de "isto abre algo", que é o vocabulário de
+ * link que o leitor já tem.
+ */
+export function InlineScripture({ reference, text }: { reference: string; text: string }) {
+  const dialog = useMentionDialog();
+
+  return (
+    <>
+      <button
+        type="button"
+        onClick={dialog.show}
+        aria-label={`Abrir ${reference} na NVI`}
+        className="cursor-pointer rounded-sm font-medium text-session-mention-ink underline decoration-dotted decoration-session-mention-ink/50 underline-offset-[3px] transition-colors hover:decoration-solid focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring/40"
+      >
+        {text}
+      </button>
+      {dialog.hasOpened ? (
+        <ChapterDialog reference={reference} open={dialog.open} onOpenChange={dialog.setOpen} />
       ) : null}
     </>
   );

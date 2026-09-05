@@ -1,5 +1,6 @@
 import Link from "next/link";
 import { ThemeToggle } from "@/components/ThemeToggle";
+import { APP_VERSION } from "@/lib/version";
 import { ScribaLogo, ScribaMark } from "@/shared/brand";
 
 type LandingHeaderProps = {
@@ -86,8 +87,11 @@ export function LandingFooter({ onLandingPage = false }: LandingFooterProps) {
             Contato
           </a>
         </div>
-        <div className="text-[12px] font-light text-scriba-ink-mute">
-          © {new Date().getFullYear()} Scriba
+        <div className="flex items-baseline gap-2 text-[12px] font-light text-scriba-ink-mute">
+          <span>© {new Date().getFullYear()} Scriba</span>
+          {/* Sutil de propósito: serve para pedir "qual versão você está
+              vendo?" num suporte, não para ser lido por quem visita. */}
+          <span className="text-[10px] font-light tabular-nums opacity-60">v{APP_VERSION}</span>
         </div>
       </div>
     </footer>
