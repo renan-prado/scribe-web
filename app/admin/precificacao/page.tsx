@@ -172,7 +172,7 @@ function RangePills({ current, sessionId }: { current: string; sessionId: string
     return qs ? `/admin/precificacao?${qs}` : "/admin/precificacao";
   };
   return (
-    <nav className="flex items-center gap-1 rounded-full border border-scriba-hairline-soft bg-scriba-paper p-1">
+    <nav className="flex flex-wrap items-center gap-1 rounded-full border border-scriba-hairline-soft bg-scriba-paper p-1">
       {RANGES.map((r) => (
         <Link
           key={r.key}
@@ -235,7 +235,7 @@ function OverallGrid({ summary, rate, settings }: EconomicsProps) {
       : 0;
 
   return (
-    <section className="grid gap-3 sm:grid-cols-2 lg:grid-cols-4">
+    <section className="grid gap-3 sm:grid-cols-2 xl:grid-cols-4">
       <KpiCard
         tone="blue"
         label="Custo medido"
@@ -295,7 +295,7 @@ function ActionsTable({ summary, rate, settings }: EconomicsProps) {
         <Table>
           <TableHeader>
             <TableRow>
-              <TableHead className="min-w-[19rem]">Ação</TableHead>
+              <TableHead className="min-w-[15rem] sm:min-w-[19rem]">Ação</TableHead>
               <TableHead className="text-right">Cobra hoje</TableHead>
               <TableHead className="text-right">Execuções</TableHead>
               <TableHead className="text-right">Custo medido</TableHead>
@@ -311,8 +311,8 @@ function ActionsTable({ summary, rate, settings }: EconomicsProps) {
           <TableBody>
             {rows.map(({ row, action, economics }) => (
               <TableRow key={row.key}>
-                <TableCell className="align-top whitespace-normal pr-10">
-                  <div className="flex max-w-[19rem] flex-col gap-1">
+                <TableCell className="align-top whitespace-normal pr-6 sm:pr-10">
+                  <div className="flex max-w-[15rem] flex-col gap-1 sm:max-w-[19rem]">
                     <span className="font-medium text-scriba-ink">{action.label}</span>
                     <span className="text-[11px] font-light leading-snug text-scriba-ink-mute">
                       {action.note}

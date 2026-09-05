@@ -99,7 +99,10 @@ export function UsageFilters({ users, routes, current }: Props) {
 
   return (
     <div className="flex flex-col gap-4 p-5 admin-card-surface">
-      <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-5 lg:items-end">
+      {/* Cinco colunas só em xl. Em `lg`, com a sidebar aberta, cada select
+          ficava com ~130px e o nome do usuário truncava antes da arroba — o
+          filtro deixava de dizer quem ele estava filtrando. */}
+      <div className="grid gap-3 sm:grid-cols-2 xl:grid-cols-5 xl:items-end">
         <div className="flex flex-col gap-1.5">
           <Label>Período</Label>
           <Select items={RANGE_OPTIONS} value={range} onValueChange={(v) => setRange(v ?? "30d")}>
@@ -176,7 +179,7 @@ export function UsageFilters({ users, routes, current }: Props) {
           </Select>
         </div>
 
-        <div className="flex gap-2">
+        <div className="flex gap-2 sm:col-span-2 xl:col-span-1">
           <Button onClick={apply} disabled={isPending} className="flex-1">
             {isPending ? "Aplicando…" : "Aplicar"}
           </Button>
@@ -191,12 +194,14 @@ export function UsageFilters({ users, routes, current }: Props) {
           <span className="text-[10px] font-semibold uppercase tracking-[0.1em] text-scriba-blue-ink">
             Sessão
           </span>
-          <span className="truncate font-mono text-[11px] text-scriba-ink">{activeSessionId}</span>
+          <span className="min-w-0 truncate font-mono text-[11px] text-scriba-ink">
+            {activeSessionId}
+          </span>
           <button
             type="button"
             onClick={clearSessionFilter}
             aria-label="Remover filtro de sessão"
-            className="ml-auto inline-flex size-5 items-center justify-center rounded-full text-scriba-blue-ink transition-colors"
+            className="ml-auto inline-flex size-5 shrink-0 items-center justify-center rounded-full text-scriba-blue-ink transition-colors hover:bg-scriba-paper focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-scriba-blue"
           >
             <X className="size-3" />
           </button>

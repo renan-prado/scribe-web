@@ -79,7 +79,7 @@ export function SessionRunPanel({ report, usdToBrl, settings, money }: Props) {
           <h2 className="text-sm font-semibold text-scriba-ink-strong">
             {report.sessionTitle?.trim() || "Sessão sem título"}
           </h2>
-          <span className="font-mono text-[11px] font-light text-scriba-ink-mute">
+          <span className="break-all font-mono text-[11px] font-light text-scriba-ink-mute">
             {report.sessionId}
             {report.captureMode ? ` · ${report.captureMode}` : ""}
           </span>

@@ -127,7 +127,7 @@ export function FeaturesManager({ features, switches, overrides }: Props) {
             preços não é editável pelo painel.
           </p>
         </div>
-        <div className="rounded-xl border border-scriba-hairline bg-scriba-paper">
+        <div className="admin-table admin-card-surface overflow-hidden">
           <Table>
             <TableHeader>
               <TableRow>
@@ -246,7 +246,7 @@ export function FeaturesManager({ features, switches, overrides }: Props) {
         </div>
 
         <form
-          className="flex flex-wrap items-end gap-2 rounded-xl border border-scriba-hairline bg-scriba-paper p-4"
+          className="flex flex-col gap-3 rounded-xl border border-scriba-hairline bg-scriba-paper p-4 sm:flex-row sm:flex-wrap sm:items-end sm:gap-2"
           onSubmit={(e) => {
             e.preventDefault();
             if (!email.trim()) return;
@@ -264,7 +264,7 @@ export function FeaturesManager({ features, switches, overrides }: Props) {
             });
           }}
         >
-          <div className="flex min-w-[220px] flex-1 flex-col gap-1">
+          <div className="flex min-w-0 flex-col gap-1 sm:min-w-[220px] sm:flex-1">
             <span className="text-[11px] font-medium text-scriba-ink-mute">E-mail da conta</span>
             <Input
               type="email"
@@ -281,7 +281,7 @@ export function FeaturesManager({ features, switches, overrides }: Props) {
               value={overrideFeature}
               onValueChange={(v) => setOverrideFeature(v as FeatureKey)}
             >
-              <SelectTrigger className="w-[190px]">
+              <SelectTrigger className="w-full sm:w-[190px]">
                 <SelectValue />
               </SelectTrigger>
               <SelectContent>
@@ -300,7 +300,7 @@ export function FeaturesManager({ features, switches, overrides }: Props) {
               value={granted}
               onValueChange={(v) => setGranted(v as "true" | "false")}
             >
-              <SelectTrigger className="w-[140px]">
+              <SelectTrigger className="w-full sm:w-[140px]">
                 <SelectValue />
               </SelectTrigger>
               <SelectContent>
@@ -312,13 +312,13 @@ export function FeaturesManager({ features, switches, overrides }: Props) {
               </SelectContent>
             </Select>
           </div>
-          <Button type="submit" disabled={busy === "override"}>
+          <Button type="submit" disabled={busy === "override"} className="w-full sm:w-auto">
             {busy === "override" ? <Loader2 className="size-4 animate-spin" /> : null}
             Salvar exceção
           </Button>
         </form>
 
-        <div className="rounded-xl border border-scriba-hairline bg-scriba-paper">
+        <div className="admin-table admin-card-surface overflow-hidden">
           <Table>
             <TableHeader>
               <TableRow>

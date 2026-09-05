@@ -70,14 +70,14 @@ export function PartnersManager({ initialPartners, costPerThousandCoinsCents, li
 
   return (
     <div className="flex flex-col gap-4">
-      <div className="flex flex-wrap items-center justify-between gap-3">
+      <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
         <Input
           value={search}
           onChange={(e) => setSearch(e.target.value)}
           placeholder="Buscar por nome, código ou e-mail"
-          className="max-w-[320px]"
+          className="w-full sm:max-w-[320px]"
         />
-        <Button onClick={() => setCreating(true)}>
+        <Button onClick={() => setCreating(true)} className="self-start sm:self-auto">
           <Plus className="size-4" />
           Novo parceiro
         </Button>
@@ -90,7 +90,7 @@ export function PartnersManager({ initialPartners, costPerThousandCoinsCents, li
             : "Nenhum parceiro corresponde à busca."}
         </p>
       ) : (
-        <div className="overflow-x-auto rounded-2xl border border-scriba-hairline-soft bg-scriba-paper">
+        <div className="admin-table admin-card-surface overflow-hidden">
           <Table>
             <TableHeader>
               <TableRow>

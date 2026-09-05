@@ -593,6 +593,23 @@
   .admin-table tbody tr {
     border-color: var(--scriba-hairline);
   }
+  /* No celular a tabela rola na horizontal, e 1,25rem de cada lado de cada
+     célula é largura gasta em respiro: a mesma tabela pedia duas passadas de
+     rolagem para mostrar o que cabia em uma. O respiro volta a partir de sm. */
+  @media (width < 40rem) {
+    .admin-table th {
+      height: 2.5rem;
+      padding: 0 0.75rem;
+    }
+    .admin-table td {
+      padding: 0.75rem;
+    }
+  }
+  /* Rolar a tabela até o fim no touch não pode virar gesto de "voltar" do
+     navegador nem arrastar a página inteira junto. */
+  .admin-table [data-slot="table-container"] {
+    overscroll-behavior-x: contain;
+  }
 }
 
 @layer components {

@@ -136,7 +136,7 @@ export function AdminInsightsCard({ scope, initial }: Props) {
           />
           Leitura da IA
         </h2>
-        <div className="flex items-center gap-3">
+        <div className="flex flex-wrap items-center gap-x-3 gap-y-1.5">
           {record ? (
             <span className="text-[11px] font-light uppercase tracking-[0.1em] text-scriba-ink-mute">
               {WHEN.format(new Date(record.generatedAt))} · {record.windowDays} dias ·{" "}
@@ -147,7 +147,7 @@ export function AdminInsightsCard({ scope, initial }: Props) {
             type="button"
             onClick={() => run(true)}
             disabled={loading}
-            className="inline-flex items-center gap-1.5 rounded-full border border-scriba-hairline px-3 py-1 text-[11.5px] font-medium text-scriba-ink-soft transition-colors hover:text-scriba-ink disabled:opacity-50"
+            className="inline-flex shrink-0 items-center gap-1.5 rounded-full border border-scriba-hairline px-3 py-1 text-[11.5px] font-medium text-scriba-ink-soft transition-colors hover:text-scriba-ink focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-scriba-blue disabled:opacity-50"
           >
             <RefreshCw className={cn("size-3", loading && "animate-spin")} />
             {loading ? "Analisando…" : "Atualizar"}

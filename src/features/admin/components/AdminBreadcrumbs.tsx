@@ -33,14 +33,20 @@ export function AdminBreadcrumbs() {
 
   return (
     <Breadcrumb>
-      <BreadcrumbList>
+      <BreadcrumbList className="flex-nowrap">
         {trail.map((item, i) => {
           const isLast = i === trail.length - 1;
           return (
             <Fragment key={item.href}>
-              <BreadcrumbItem>
+              {/* Os ancestrais somem no celular: com eles, "Admin › Uso &
+                  custos" empurrava os botões de voltar e sair da faixa. O
+                  título da tela já está no `<h1>` logo abaixo — a trilha é
+                  orientação, não a informação principal. */}
+              <BreadcrumbItem className={isLast ? "min-w-0" : "hidden sm:inline-flex"}>
                 {isLast ? (
-                  <BreadcrumbPage className="text-scriba-ink-strong">{item.label}</BreadcrumbPage>
+                  <BreadcrumbPage className="truncate text-scriba-ink-strong">
+                    {item.label}
+                  </BreadcrumbPage>
                 ) : (
                   <BreadcrumbLink
                     href={item.href}
@@ -50,7 +56,7 @@ export function AdminBreadcrumbs() {
                   </BreadcrumbLink>
                 )}
               </BreadcrumbItem>
-              {isLast ? null : <BreadcrumbSeparator />}
+              {isLast ? null : <BreadcrumbSeparator className="hidden sm:block" />}
             </Fragment>
           );
         })}

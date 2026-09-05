@@ -105,7 +105,7 @@ export default async function AdminMetricsPage() {
         subtitle="Funil, ativação, receita e passivo de moedas — o caminho da visita ao dinheiro."
       />
 
-      <section className="grid gap-3 sm:grid-cols-2 lg:grid-cols-4">
+      <section className="grid gap-3 sm:grid-cols-2 xl:grid-cols-4">
         {tiles.map((t) => (
           <KpiCard key={t.label} {...t} />
         ))}

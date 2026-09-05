@@ -176,7 +176,7 @@ function Kpi({ label, value, hint, tone, icon }: KpiProps) {
       </div>
       <div className="flex items-center gap-2 text-[22px] font-semibold tracking-tight text-scriba-ink-strong">
         {icon}
-        <span>{value}</span>
+        <span className="min-w-0 truncate tabular-nums">{value}</span>
       </div>
       {hint ? <p className="text-[12px] font-light text-scriba-ink-mute">{hint}</p> : null}
     </div>

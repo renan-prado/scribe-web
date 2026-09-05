@@ -18,6 +18,41 @@ que a documentação do Next diz em "Data Security". As actions de câmbio
 O client service-role (`lib/supabase/admin.ts`) BYPASSA a RLS. Ele só entra
 depois de ter afirmado admin, e nunca vai para o navegador.
 
+## A moldura (`app/admin/layout.tsx` + `AdminSidebar`)
+
+Quatro coisas do chrome que quem mexer aqui não pode desfazer:
+
+- **A faixa do topo é `--scriba-surface`, a MESMA cor do conteúdo — não
+  `--scriba-paper`.** Papel é a cor dos CARTÕES; com ela, a faixa lia como um
+  cartão branco colado no alto de uma página cinza, e a hairline de baixo virava
+  a única coisa separando duas superfícies que deveriam ser uma só. O
+  `backdrop-blur` fica porque ela é `sticky` e o conteúdo passa por baixo.
+- **`SidebarInset` precisa de `min-w-0`.** É o que deixa uma tabela larga rolar
+  DENTRO do próprio cartão: sem ele o item flex adota a largura mínima do
+  conteúdo, e quem ganha barra horizontal é a página inteira — a sidebar sai da
+  tela junto.
+- **Voltar ao app e sair existem em DOIS lugares, e é de propósito.** No menu do
+  rodapé da sidebar e como botões na faixa do topo, porque no celular a sidebar
+  é um sheet FECHADO: só no menu, sair do admin exigia abrir a gaveta antes.
+  Sair é sempre um `<form method="post">` para `/auth/sign-out` — a rota que
+  limpa o cookie —, nunca um link.
+- **O `SidebarInset` JÁ é o `<main>` da página.** Um segundo `<main>` dentro
+  dele é HTML inválido e violação de a11y; o wrapper de padding é `<div>`.
+
+No celular, tocar um item da navegação FECHA o sheet (`setOpenMobile(false)`).
+Sem isso a gaveta fica por cima da tela que acabou de carregar, e a única saída
+é tocar no scrim — que parece cancelar o clique que se acabou de dar.
+
+**As quatro tabelas do painel usam a mesma classe**
+(`admin-table admin-card-surface overflow-hidden`, definida em
+`app/globals.css`), e ela encolhe o respiro das células abaixo de `sm`: no
+celular a tabela rola na horizontal, e 1,25rem de cada lado de cada célula é
+largura gasta em nada.
+
+**As grades de KPI viram quatro colunas só em `xl`, não em `lg`.** Em `lg` a
+sidebar já come 16rem, e um "R$ 12.345,67" não cabia nos ~175px que sobravam
+por cartão. Vale para o mesmo motivo na barra de filtros de `/admin/usage`.
+
 ## As telas privilegiadas não vazam no bundle
 
 Os itens de admin e de parceiro do menu do avatar são um **server component**

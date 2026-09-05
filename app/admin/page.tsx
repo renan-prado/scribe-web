@@ -69,7 +69,9 @@ export default async function AdminOverviewPage() {
         subtitle="Panorama de custos, uso e usuários da plataforma."
       />
 
-      <section className="grid gap-3 sm:grid-cols-2 lg:grid-cols-4">
+      {/* Quatro colunas só a partir de xl: em `lg` a sidebar já come 16rem, e
+          um "R$ 12.345,67" a 26px não cabia nos ~175px que sobravam. */}
+      <section className="grid gap-3 sm:grid-cols-2 xl:grid-cols-4">
         {tiles.map((t) => (
           <KpiCard key={t.label} {...t} />
         ))}
