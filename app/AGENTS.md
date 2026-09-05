@@ -326,15 +326,24 @@ estar lendo numa aba comum. O `ready` do hook é falso no servidor e no primeiro
 render; quem desenha coisas diferentes para os dois casos espera por ele, senão
 o estado errado pisca.
 
-Dois consumidores hoje:
+Três consumidores hoje:
 
-- `useInstallPrompt` — não oferece instalação a quem já está dentro do app. O
-  convite é o `InstallAppCard`, e ele mora **no `/feed`**, não no layout de
-  `(app)`: é a primeira tela de toda sessão de uso e a única em que a pessoa
-  está olhando em volta em vez de terminando alguma coisa. `sm:hidden`, some
-  para sempre no X, e o `/profile` guarda o caminho permanente
-  (`InstallAppRow`). No Android é o `beforeinstallprompt`; no iOS não existe
-  API e o botão só ENSINA o caminho do menu Compartilhar.
+- `useInstallPrompt` — não oferece instalação a quem já está dentro do app. No
+  Android é o `beforeinstallprompt`; no iOS não existe API e o botão só ENSINA
+  o caminho do menu Compartilhar. Dois lugares o usam:
+  - `InstallAppCard`, **no `/feed`** e só nele — a primeira tela de toda sessão
+    de uso e a única em que a pessoa está olhando em volta em vez de terminando
+    alguma coisa. `sm:hidden`. O X é dispensa LEVE: some nesta visita e volta na
+    próxima vez que o `/feed` montar — no celular o convite nunca some de vez. O
+    caminho que pode ser adiado de vez é o `/profile` (`InstallAppRow`).
+  - `LandingCta` — o CTA da landing. No celular o botão entra pela instalação
+    em vez de ir direto para o `/sign-in` (o `mobileLabel` troca o texto onde
+    faz sentido — "Instalar app" na hero e no CTA final; o card do Gratuito
+    mantém "Começar grátis"), com o link discreto "ou continuar pelo navegador"
+    abaixo dele na hero. No desktop é o `<Link>` de sempre, com o mesmo texto e
+    as mesmas classes, para o HTML estático não mudar. Cliente puro como o
+    `StandaloneHomeGuard`; o diálogo do iOS entra por `dynamic` e só monta no
+    primeiro toque, para o Dialog do base-ui não pesar no bundle da LP.
 - `StandaloneHomeGuard` — ver abaixo.
 
 ### O app instalado nunca abre na landing

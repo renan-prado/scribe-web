@@ -2,6 +2,7 @@ import Link from "next/link";
 import { ThemeToggle } from "@/components/ThemeToggle";
 import { APP_VERSION } from "@/lib/version";
 import { ScribaLogo, ScribaMark } from "@/shared/brand";
+import { LandingCta } from "@/shared/components/LandingCta";
 
 type LandingHeaderProps = {
   /**
@@ -47,13 +48,13 @@ export function LandingHeader({ onLandingPage = false }: LandingHeaderProps) {
           >
             Entrar
           </Link>
-          <Link
-            href="/sign-in"
+          {/* No celular este botão entra pela instalação do PWA; o texto fica.
+              Ver `LandingCta`. */}
+          <LandingCta
             className="scriba-cta inline-flex items-center justify-center gap-2 rounded-[22px] bg-[image:var(--scriba-cta)] py-3 px-5 text-[12px] font-semibold uppercase tracking-[.04em] text-scriba-cta-ink shadow-[0_5px_14px_var(--scriba-cta-shadow)]"
-          >
-            <ScribaMark size={18} />
-            Começar
-          </Link>
+            icon={<ScribaMark size={18} />}
+            label="Começar"
+          />
         </div>
       </div>
     </div>

@@ -1,7 +1,7 @@
 "use client";
 
 import { Check, Download, Share, SquarePlus, X } from "lucide-react";
-import { type ReactNode, useCallback, useEffect, useState } from "react";
+import { type ReactNode, useCallback, useState } from "react";
 import { Button } from "@/components/ui/button";
 import {
   Dialog,
@@ -33,9 +33,6 @@ import { useInstallPrompt } from "@/shared/hooks/use-install-prompt";
  * Ver `useInstallPrompt` para a detecção.
  */
 
-/** Uma dispensa do card vale para sempre — o /profile continua oferecendo. */
-const DISMISS_KEY = "scriba-install-dismissed";
-
 /**
  * O convite, no formato de card do feed.
  *
@@ -47,31 +44,20 @@ const DISMISS_KEY = "scriba-install-dismissed";
  * `sm:hidden` porque o alvo é o celular — no desktop o próprio navegador
  * oferece a instalação na barra de endereço, e o `/profile` tem a linha
  * permanente.
+ *
+ * O X é dispensa LEVE: some nesta visita e volta na próxima vez que o `/feed`
+ * montar. No celular o convite nunca some de vez — instalar o PWA é o caminho
+ * que queremos —, e quem quer adiar de verdade tem o `/profile`.
  */
 export function InstallAppCard({ className }: { className?: string }) {
   const { method, promptInstall } = useInstallPrompt();
   const [iosOpen, setIosOpen] = useState(false);
-  // Começa escondida: o localStorage só existe no cliente, e mostrar a faixa
-  // para quem já a dispensou — nem que por um frame — é o tipo de piscada que
-  // faz o convite parecer insistente.
-  const [dismissed, setDismissed] = useState(true);
+  // Só o estado desta montagem, sem localStorage: sair do /feed e voltar
+  // remonta o card. Começa visível — não há nada persistido para consultar,
+  // então também não há a piscada que motivava o valor inicial `true` de antes.
+  const [dismissed, setDismissed] = useState(false);
 
-  useEffect(() => {
-    try {
-      setDismissed(localStorage.getItem(DISMISS_KEY) === "1");
-    } catch {
-      setDismissed(false);
-    }
-  }, []);
-
-  const dismiss = useCallback(() => {
-    setDismissed(true);
-    try {
-      localStorage.setItem(DISMISS_KEY, "1");
-    } catch {
-      // modo privado / storage desligado — some nesta sessão e volta depois
-    }
-  }, []);
+  const dismiss = useCallback(() => setDismissed(true), []);
 
   // `method === "none"` já cobre o PWA instalado: `useInstallPrompt` lê o
   // `useIsStandalone` e não oferece instalação a quem está dentro do app.
@@ -142,9 +128,10 @@ export function InstallAppCard({ className }: { className?: string }) {
 }
 
 /**
- * Variante de lista para as "Preferências" do /profile. É o caminho PERMANENTE:
- * a faixa pode ser dispensada para sempre, e sem esta linha quem dispensou
- * ficaria sem nenhuma forma de instalar dentro do produto.
+ * Variante de lista para as "Preferências" do /profile. É o caminho PERMANENTE
+ * e o único no desktop: o card do /feed é `sm:hidden` e sua dispensa é leve
+ * (volta a cada visita), então esta linha é onde a instalação fica sempre à
+ * mão — inclusive para quem prefere adiar.
  */
 export function InstallAppRow({ className }: { className?: string }) {
   const { method, installed, ready, promptInstall } = useInstallPrompt();
@@ -194,7 +181,7 @@ export function InstallAppRow({ className }: { className?: string }) {
  * (Compartilhar e "adicionar") porque a pessoa vai procurá-los na tela, não
  * ler o nome deles.
  */
-function IosInstructionsDialog({
+export function IosInstructionsDialog({
   open,
   onOpenChange,
 }: {

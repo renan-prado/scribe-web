@@ -12,6 +12,7 @@ import avatar6 from "@/shared/assets/avatars/avatar-6.webp";
 import avatar7 from "@/shared/assets/avatars/avatar-7.webp";
 import { ScribaMark } from "@/shared/brand";
 import { LandingFooter, LandingHeader } from "@/shared/components/LandingChrome";
+import { LandingCta } from "@/shared/components/LandingCta";
 import { LandingJsonLd } from "@/shared/components/LandingJsonLd";
 import { LandingFeedMock, LandingSummaryMock } from "@/shared/components/LandingMocks";
 import { StandaloneHomeGuard } from "@/shared/components/StandaloneHomeGuard";
@@ -113,19 +114,23 @@ function Hero() {
             ensinamentos e ajuda a relembrar e colocar em prática ao longo da semana.
           </p>
           <div className="flex flex-col gap-2.5 pt-1 sm:flex-row sm:items-center sm:gap-3.5">
-            <Link
-              href="/sign-in"
-              className="scriba-cta inline-flex items-center justify-center gap-2.5 rounded-[26px] bg-[image:var(--scriba-cta)] py-[17px] px-8 text-[13px] font-semibold uppercase tracking-[.04em] text-scriba-cta-ink shadow-[0_9px_22px_var(--scriba-cta-shadow)]"
-            >
-              <ScribaMark size={20} />
-              Começar grátis
-            </Link>
+            {/* Ordem invertida de propósito: no celular "Conhecer o Scriba" vem
+                primeiro e o "Instalar app" (com o link discreto para seguir no
+                navegador) fica ABAIXO dele. No desktop o `sm:order-*` devolve o
+                CTA para a frente. Ver `LandingCta`. */}
             <a
               href="#recursos"
-              className="lp-cta-outline inline-flex items-center justify-center rounded-[26px] border border-auth-btn-border bg-scriba-paper py-4 px-7 text-[13px] font-medium text-scriba-ink"
+              className="lp-cta-outline inline-flex items-center justify-center rounded-[26px] border border-auth-btn-border bg-scriba-paper py-4 px-7 text-[13px] font-medium text-scriba-ink sm:order-last"
             >
               Conhecer o Scriba
             </a>
+            <LandingCta
+              className="scriba-cta inline-flex items-center justify-center gap-2.5 rounded-[26px] bg-[image:var(--scriba-cta)] py-[17px] px-8 text-[13px] font-semibold uppercase tracking-[.04em] text-scriba-cta-ink shadow-[0_9px_22px_var(--scriba-cta-shadow)] sm:order-first"
+              icon={<ScribaMark size={20} />}
+              label="Começar grátis"
+              mobileLabel="Instalar app"
+              showEscape
+            />
           </div>
           {/* Avatares nunca encolhem (flex-none) e o texto ganha min-w-0 + basis
               própria, então em telas estreitas ele quebra para a linha de baixo
@@ -939,21 +944,27 @@ function PlanCard({
           );
         })}
       </div>
-      <Link
-        href={href}
-        className={cn(
-          // `mt-auto` cola o botão no rodapé: com os cards esticados, a lista
-          // de vantagens mais curta deixaria o CTA do Gratuito flutuando no
-          // meio, desalinhado dos outros dois.
-          "mt-auto inline-flex items-center justify-center gap-2 rounded-[24px] p-[15px] text-[12px] font-semibold uppercase tracking-[.04em]",
-          isPrimary
-            ? "scriba-cta bg-[image:var(--scriba-cta)] text-scriba-cta-ink shadow-[0_8px_20px_var(--scriba-cta-shadow)]"
-            : "lp-cta-soft bg-scriba-btn-muted text-scriba-ink hover:bg-scriba-btn-muted-hover"
-        )}
-      >
-        {isPrimary ? <ScribaMark size={18} /> : null}
-        {cta}
-      </Link>
+      {/* `mt-auto` cola o botão no rodapé: com os cards esticados, a lista de
+          vantagens mais curta deixaria o CTA do Gratuito flutuando no meio,
+          desalinhado dos outros dois. O card Gratuito é o único `primary`, e
+          no celular seu CTA entra pela instalação do PWA (ver `LandingCta`) —
+          mas o texto continua "Começar grátis"; os planos pagos seguem indo
+          para o Checkout. */}
+      {isPrimary ? (
+        <LandingCta
+          className="scriba-cta mt-auto inline-flex items-center justify-center gap-2 rounded-[24px] p-[15px] text-[12px] font-semibold uppercase tracking-[.04em] bg-[image:var(--scriba-cta)] text-scriba-cta-ink shadow-[0_8px_20px_var(--scriba-cta-shadow)]"
+          icon={<ScribaMark size={18} />}
+          label={cta}
+          href={href}
+        />
+      ) : (
+        <Link
+          href={href}
+          className="lp-cta-soft mt-auto inline-flex items-center justify-center gap-2 rounded-[24px] p-[15px] text-[12px] font-semibold uppercase tracking-[.04em] bg-scriba-btn-muted text-scriba-ink hover:bg-scriba-btn-muted-hover"
+        >
+          {cta}
+        </Link>
+      )}
     </div>
   );
 }
@@ -972,15 +983,14 @@ function FinalCTA() {
           </div>
         </div>
         <div className="relative flex flex-none flex-col items-stretch gap-3">
-          <Link
-            href="/sign-in"
+          <LandingCta
             className="lp-cta-yellow inline-flex items-center justify-center gap-2.5 rounded-[26px] bg-scriba-yellow py-[17px] px-[38px] text-[13px] font-semibold uppercase tracking-[.04em] text-scriba-yellow-ink shadow-[0_10px_24px_rgba(0,0,0,.2)]"
-          >
-            {/* currentColor: a pena acompanha o âmbar escuro do texto, em vez de
-                sumir em branco sobre o amarelo */}
-            <ScribaMark size={20} />
-            Começar grátis
-          </Link>
+            // currentColor: a pena acompanha o âmbar escuro do texto, em vez de
+            // sumir em branco sobre o amarelo
+            icon={<ScribaMark size={20} />}
+            label="Começar grátis"
+            mobileLabel="Instalar app"
+          />
           <div className="text-center text-[11px] font-light text-[#AFCBE0] lg:text-[11.5px]">
             Sem cartão de crédito
           </div>
