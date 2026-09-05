@@ -62,9 +62,22 @@ explicitamente nesse `grant`. Coluna que ele não pode, não.
 
 ## RPC: EXECUTE revogado
 
-`grant_coins` e `clawback_coins` são `SECURITY DEFINER` com EXECUTE revogado
-de `anon` e `authenticated` — só `service_role` chama. Verificado: com o anon
-key a RPC devolve 42501.
+`grant_coins`, `clawback_coins`, `attach_partner` e — desde a migração 0037 —
+`charge_coins` são `SECURITY DEFINER` com EXECUTE revogado de `anon` e
+`authenticated`. Só `service_role` chama. Verificado: com o anon key a RPC
+devolve 42501.
+
+`charge_coins` entrou nessa lista tarde, e a lição vale mais que a correção. A
+versão de 0017 tinha `grant execute ... to authenticated` e recebia `p_amount`
+por parâmetro. O cuidado todo estava na ROTA — que deriva o preço de
+`COIN_COST_BY_REASON` e nunca aceita um valor do corpo — e a rota nunca foi o
+único caminho: o anon key é público, e função concedida a `authenticated` está
+publicada em `POST /rest/v1/rpc/`. Dava para debitar 1 moeda por um minuto de 7
+e deixar no ledger uma linha com cara de legítima.
+
+> **A regra na rota não vale nada enquanto a função aceitar quem a rota
+> protege.** Ao escrever um gate em TypeScript, pergunte quem mais alcança o
+> que ele guarda.
 
 Função nova que escreve saldo, comissão ou qualquer coisa que vire dinheiro
 segue o mesmo padrão:

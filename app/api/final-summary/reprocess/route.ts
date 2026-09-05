@@ -51,7 +51,7 @@ export async function POST(request: Request) {
     return NextResponse.json({ error: "empty_transcript" }, { status: 409 });
   }
 
-  const charge = await chargeCoins("reprocess_summary", sessionId);
+  const charge = await chargeCoins("reprocess_summary", sessionId, auth.user.id);
   if (!charge.ok) {
     if (charge.error === "insufficient_balance") {
       return NextResponse.json({ error: "insufficient_balance" }, { status: 402 });

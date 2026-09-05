@@ -65,7 +65,7 @@ export async function POST(request: Request) {
   // can't afford. Any downstream failure below leaves the ledger entry in
   // place (intentional: this is a mechanism-testing pass and refunds add
   // complexity we don't need yet).
-  const charge = await chargeCoins("deepening", sessionId);
+  const charge = await chargeCoins("deepening", sessionId, auth.user.id);
   if (!charge.ok) {
     if (charge.error === "insufficient_balance") {
       return NextResponse.json({ error: "insufficient_balance" }, { status: 402 });

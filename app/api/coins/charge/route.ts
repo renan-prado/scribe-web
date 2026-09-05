@@ -37,7 +37,7 @@ export async function POST(request: Request) {
   const { reason, sessionId: rawSessionId } = parsed.data;
   const sessionId = rawSessionId ?? null;
 
-  const result = await chargeCoins(reason, sessionId);
+  const result = await chargeCoins(reason, sessionId, auth.user.id);
   if (!result.ok) {
     if (result.error === "insufficient_balance") {
       return NextResponse.json({ error: "insufficient_balance" }, { status: 402 });

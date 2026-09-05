@@ -1,16 +1,28 @@
 import "server-only";
 import { type ChargeReason, COIN_COST_BY_REASON, INITIAL_COIN_BALANCE } from "@/lib/coins/pricing";
 import { getCurrentAccount } from "@/lib/db/account";
-import { createClient, getAuthUser } from "@/lib/supabase/server";
+import { createAdminClient } from "@/lib/supabase/admin";
+import { getAuthUser } from "@/lib/supabase/server";
 
 /**
  * Server-side coin helpers. Balances live on public.profiles.coin_balance;
  * every spend goes through the SECURITY DEFINER function charge_coins() so
- * the check + decrement are atomic (see migration 0012).
+ * the check + decrement are atomic (see migration 0017).
  *
- * chargeCoins never sends an amount from the client — it maps a known
- * ChargeReason to the canonical price in COIN_COST_BY_REASON so a spoofed
- * body cannot change the cost.
+ * `chargeCoins` mapeia um `ChargeReason` conhecido para o preço canônico de
+ * COIN_COST_BY_REASON — o cliente escolhe o MOTIVO, nunca o valor.
+ *
+ * **O client é o service-role, e isso é a proteção, não um atalho.** Até a
+ * migração 0037, `charge_coins` tinha EXECUTE para `authenticated` e recebia o
+ * valor por parâmetro: dava para chamar a RPC direto do navegador com o anon
+ * key e debitar 1 moeda por um minuto que custa 7, deixando no ledger uma
+ * linha com cara de legítima. Hoje a função só aceita service_role, e quem
+ * afirma QUEM está pagando é este módulo, com o id que veio de
+ * `requireAuth()`.
+ *
+ * Corolário: `userId` aqui nunca pode sair do corpo de um request. Ele vem do
+ * `auth.user.id` de uma sessão já verificada, e é a única coisa que separa
+ * este caminho de um débito arbitrário na conta de qualquer pessoa.
  */
 
 export async function getCurrentBalance(): Promise<number | null> {
@@ -35,11 +47,13 @@ export type ChargeResult =
 
 export async function chargeCoins(
   reason: ChargeReason,
-  sessionId: string | null
+  sessionId: string | null,
+  userId: string
 ): Promise<ChargeResult> {
   const amount = COIN_COST_BY_REASON[reason];
-  const supabase = await createClient();
-  const { data, error } = await supabase.rpc("charge_coins", {
+  const admin = createAdminClient();
+  const { data, error } = await admin.rpc("charge_coins", {
+    p_user_id: userId,
     p_amount: amount,
     p_reason: reason,
     p_session_id: sessionId,

@@ -63,7 +63,7 @@ export async function POST(request: Request) {
     return NextResponse.json({ error: "deepening_not_found" }, { status: 404 });
   }
 
-  const charge = await chargeCoins("reprocess_deepening", sessionId);
+  const charge = await chargeCoins("reprocess_deepening", sessionId, auth.user.id);
   if (!charge.ok) {
     if (charge.error === "insufficient_balance") {
       return NextResponse.json({ error: "insufficient_balance" }, { status: 402 });
