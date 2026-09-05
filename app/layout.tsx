@@ -1,7 +1,6 @@
 import type { Metadata, Viewport } from "next";
 import { Fira_Mono, Geist, Geist_Mono, Poppins } from "next/font/google";
 import { Analytics } from "@/components/Analytics";
-import { PageTransition } from "@/components/PageTransition";
 import { Providers } from "@/components/Providers";
 import { PwaBootstrap } from "@/components/PwaBootstrap";
 import { ThemedToaster } from "@/components/ThemedToaster";
@@ -168,7 +167,12 @@ export default function RootLayout({ children }: LayoutProps<"/">) {
       </head>
       <body className="min-h-full flex flex-col" suppressHydrationWarning>
         <Providers>
-          <PageTransition>{children}</PageTransition>
+          {/* Sem `key`: este div é o CHÃO de toda rota, e remontá-lo a cada
+              navegação derrubava junto o header e a barra inferior do celular
+              — a moldura piscava a cada toque. A classe fica, e toca uma vez
+              no carregamento completo; quem refaz o fade a cada rota é a
+              `PageTransition` dentro de cada moldura. */}
+          <div className="animate-content-fade flex flex-1 flex-col">{children}</div>
           <ThemedToaster />
           <PwaBootstrap />
         </Providers>

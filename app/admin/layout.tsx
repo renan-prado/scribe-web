@@ -3,6 +3,7 @@ import type { Metadata } from "next";
 import Link from "next/link";
 import { notFound } from "next/navigation";
 import type { ReactNode } from "react";
+import { PageTransition } from "@/components/PageTransition";
 import { Button } from "@/components/ui/button";
 import { Separator } from "@/components/ui/separator";
 import { SidebarInset, SidebarProvider, SidebarTrigger } from "@/components/ui/sidebar";
@@ -80,10 +81,12 @@ export default async function AdminLayout({ children }: { children: ReactNode })
             </form>
           </div>
         </header>
-        {/* `<div>`, não `<main>`: o `SidebarInset` JÁ é o <main> da página. */}
-        <div className="mx-auto flex w-full max-w-[1600px] flex-1 flex-col gap-6 p-4 sm:p-6 lg:p-8">
+        {/* `<div>`, não `<main>`: o `SidebarInset` JÁ é o <main> da página.
+            É `PageTransition` para o fade de troca de rota ficar DENTRO da
+            moldura — sidebar e faixa do topo não podem piscar junto. */}
+        <PageTransition className="mx-auto flex w-full max-w-[1600px] flex-1 flex-col gap-6 p-4 sm:p-6 lg:p-8">
           {children}
-        </div>
+        </PageTransition>
       </SidebarInset>
     </SidebarProvider>
   );

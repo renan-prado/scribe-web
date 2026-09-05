@@ -2,6 +2,7 @@ import type { Metadata } from "next";
 import Link from "next/link";
 import { notFound } from "next/navigation";
 import type { ReactNode } from "react";
+import { PageTransition } from "@/components/PageTransition";
 import { ThemeToggle } from "@/components/ThemeToggle";
 import { AccountDisabled } from "@/features/auth/components/AccountDisabled";
 import { UserMenu } from "@/features/auth/components/UserMenu";
@@ -60,8 +61,10 @@ export default async function PartnersLayout({ children }: { children: ReactNode
           />
         </div>
       </header>
-      <main className="mx-auto flex w-full max-w-[900px] flex-1 flex-col gap-6 p-4 sm:p-6 lg:p-8">
-        {children}
+      {/* O fade de troca de rota vive aqui dentro, não no root layout: assim a
+          faixa do topo (logo, tema, menu do avatar) não pisca junto. */}
+      <main className="mx-auto flex w-full max-w-[900px] flex-1 flex-col p-4 sm:p-6 lg:p-8">
+        <PageTransition className="flex flex-1 flex-col gap-6">{children}</PageTransition>
       </main>
     </div>
   );

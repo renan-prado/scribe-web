@@ -1,6 +1,7 @@
 import type { ReactNode } from "react";
 import { AppHeader } from "@/components/AppHeader";
 import { MobileBottomNav } from "@/components/MobileBottomNav";
+import { PageTransition } from "@/components/PageTransition";
 import { ThemeToggle } from "@/components/ThemeToggle";
 import { AccountDisabled } from "@/features/auth/components/AccountDisabled";
 import { PrivilegedMenuItems } from "@/features/auth/components/PrivilegedMenuItems";
@@ -58,7 +59,10 @@ export default async function AppLayout({ children }: { children: ReactNode }) {
           </>
         }
       />
-      <div className="flex flex-1 flex-col pb-36 sm:pb-0">{children}</div>
+      {/* Só o CONTEÚDO troca com a rota. O header acima e a `MobileBottomNav`
+          abaixo ficam montados: eram eles que sumiam e voltavam a cada toque
+          quando o fade morava no root layout. */}
+      <PageTransition className="flex flex-1 flex-col pb-36 sm:pb-0">{children}</PageTransition>
       <MobileBottomNav />
     </>
   );

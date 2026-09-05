@@ -180,6 +180,25 @@ Nada dentro dela pode usar cor literal: a esfumaçada acima da barra é
 `--scriba-nav-fade`, e o ícone do botão "Gravar" herda `--scriba-cta-ink`
 (pintá-lo de branco o faz sumir no tema escuro, onde o CTA inverte).
 
+## A transição de página envolve o conteúdo, nunca a moldura
+
+`PageTransition` remonta os filhos por `key={pathname}` para reexibir o
+`animate-content-fade`. Ela morava no **root layout**, e por isso derrubava e
+remontava tudo abaixo dela a cada navegação: header, barra inferior e página.
+No desktop lia como um piscar; no celular — e principalmente no PWA, que não
+tem moldura do navegador para ancorar o olho — a barra inferior sumia e voltava
+a cada toque.
+
+Agora **cada moldura instala a sua**, em volta dos próprios `children`:
+`app/(app)/layout.tsx`, `app/admin/layout.tsx` e `app/partners/layout.tsx`. O
+root layout ficou com a classe sem `key` — o fade toca uma vez no carregamento
+completo, para toda rota, e não volta a tocar em navegação de cliente.
+
+**Não devolva a `PageTransition` para o root layout**, e ao criar uma moldura
+nova coloque a dela por dentro. O preço aceito: entre páginas públicas sem
+moldura (landing, termos, privacidade) a navegação de cliente não refaz mais o
+fade — não há nada fixo na tela delas para piscar.
+
 ## Atalhos de papel: dois lugares, um motivo
 
 Admin e parceiro chegam às suas áreas pelo menu do avatar (`PrivilegedMenuItems`)
