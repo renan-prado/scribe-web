@@ -69,6 +69,34 @@ por natureza (Stripe, cron da Vercel, visitante do link de parceiro). Cada uma
 se defende sozinha dentro da própria rota. Remover `/api/stripe` quebra todo o
 faturamento em silêncio.
 
+A allowlist de ORIGEM do CORS é outra coisa e tem outra regra: o padrão de
+preview precisa terminar em `-renanprados-projects.vercel.app`. `vercel.app` é
+namespace público — um padrão que aceite `scribe-*.vercel.app` aceita um
+domínio que qualquer pessoa registra, e o `Access-Control-Allow-Credentials:
+true` está logo ali.
+
+## CSP: por que ela não tem nonce
+
+O proxy emite `Content-Security-Policy` em toda resposta. Ela existe porque o
+cookie de sessão do `@supabase/ssr` é `httpOnly: false` por desenho — o client
+do navegador lê o token com `document.cookie` — então aqui um XSS não vaza
+dados, vaza a sessão, com um refresh token de 400 dias junto.
+
+**Ela não usa nonce, e isso é escolha, não esquecimento.** Nonce muda a cada
+requisição, logo a página que o embute no HTML não pode ser cacheada: usar
+nonce OBRIGA renderização dinâmica, e a LP ser estática é invariante declarada
+na seção abaixo. A troca — proteção contra script inline injetado em troca do
+HTML da landing remontado na origem a cada visita — é decisão de produto, e
+está em aberto de propósito.
+
+Sem nonce, `script-src` precisa de `'unsafe-inline'` e a política compra menos:
+ela bloqueia `<script src>` para host de fora, mas não inline injetado. Quem
+faz o trabalho pesado é o `connect-src` restrito — cookie roubado só vale se
+der para mandá-lo a algum lugar, e daqui só saem requisições para nós, para o
+Supabase e para o GA. Origem nova no cliente (um provedor de analytics, um CDN
+de imagem que responda a `fetch`) entra ali, ou falha em silêncio no navegador
+de quem usa.
+
 ## Receita de uma rota de API nova
 
 Toda rota que chama a OpenAI segue esta ordem, sem exceção:
@@ -85,28 +113,48 @@ export async function POST(request: Request) {
   const limited = enforceRateLimit(request, RATE_LIMITS.foo, auth.user.id);
   if (limited) return limited;                   // 2. cadência
 
-  const parsed = await parseJsonBody(request, FooBodySchema);
-  if (!parsed.ok) return parsed.response;        // 3. Zod, nunca cast
+  const broke = requireBalance(auth.user);       // 3. crédito
+  if (broke) return broke;
 
-  const result = await callChat({                // 4. sempre via lib/llm
+  const parsed = await parseJsonBody(request, FooBodySchema);
+  if (!parsed.ok) return parsed.response;        // 4. Zod, nunca cast
+
+  const result = await callChat({                // 5. sempre via lib/llm
     model: serverEnv.OPENAI_FOO_MODEL,
     messages: [{ role: "system", content: FOO_SYSTEM_PROMPT }, ...],
     store: true,
     metadata: buildLlmMetadata({ route: "foo", userId: auth.user.id, sessionId }),
   });
-  // 5. parseFooFromLLM() do lib/domain, nunca JSON.parse à mão
-  // 6. recordChatUsage() para o custo aparecer em /admin/usage
-  // 7. log.debug("ok", { latencyMs, finishReason, promptTokens, completionTokens })
+  // 6. parseFooFromLLM() do lib/domain, nunca JSON.parse à mão
+  // 7. recordChatUsage() para o custo aparecer em /admin/usage
+  // 8. log.debug("ok", { latencyMs, finishReason, promptTokens, completionTokens })
 }
 ```
 
-Os quatro primeiros passos são obrigatórios e nessa ordem. O bucket em
+Os cinco primeiros passos são obrigatórios e nessa ordem. O bucket em
 `RATE_LIMITS` (`lib/rate-limit.ts`) é dimensionado pela cadência real do
 cliente, com limite por usuário E por IP — os comentários de cada bucket
 explicam o número escolhido; escreva o seu também.
 
-Débito de moedas passa por `chargeCoins` (`lib/db/coins.ts`). **Crédito não
-tem rota** — ver `lib/billing/AGENTS.md`.
+O passo 3 existe porque **a medição de consumo é feita pelo cliente**: quem
+cobra o minuto de gravação é o navegador, chamando `/api/coins/charge`. Sem o
+piso, um cliente que simplesmente não chamasse aquela rota transcrevia de graça
+com saldo zero. `requireBalance` lê o saldo que `requireAuth` já trouxe, então
+não custa consulta nenhuma. Rota que **não** chama modelo (`/api/verse`, que lê
+a NVI do disco) não precisa dele; `/api/hallucination-report` é a exceção
+deliberada — o usuário está reportando um defeito NOSSO, e cortá-lo no saldo
+zero silenciaria justamente o aviso que queremos.
+
+**Rota que recebe `sessionId` confere o dono ANTES do trabalho caro**, com um
+`getSession`/`getSessionMeta` (que passam pela RLS e devolvem `null` para
+sessão alheia). Confiar só na RLS do UPDATE lá no fim significa pagar a chamada
+à OpenAI e descobrir depois — foi o que `/api/final-summary` fazia.
+
+Débito de moedas passa por `chargeCoins` (`lib/db/coins.ts`), que hoje fala com
+a RPC pelo **service-role**: `charge_coins` teve o EXECUTE revogado de
+`authenticated` na migração 0037 porque, com ele, dava para chamar a função
+direto do navegador e escolher o próprio preço. **Crédito não tem rota** — ver
+`lib/billing/AGENTS.md`.
 
 ## `/api/verse` responde em LOTE
 

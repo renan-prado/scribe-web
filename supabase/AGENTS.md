@@ -42,6 +42,21 @@ filhas de sessão (`session_practices`, `session_rereads`, `session_reminders`,
 `lib/db/feed-entries.ts` emitir três selects e cruzar em memória sem filtrar
 dono na mão.
 
+**Numa tabela filha, `user_id = auth.uid()` não basta — o `session_id` também
+precisa ser seu** (migração 0040). A policy antiga garantia que a LINHA era
+minha e não dizia nada sobre para onde ela apontava: dava para inserir uma
+linha própria carimbada com a sessão de outra pessoa, sabendo só o uuid que
+aparece na URL de `/recording/:id/*`. Em cinco das seis tabelas o efeito era
+sujeira no feed de quem inseriu. Em `session_deepenings` era negação de
+serviço com prejuízo: lá existe `unique (session_id)`, a linha do atacante é
+invisível para a vítima sob RLS, e o resultado é a rota conferir "já existe
+estudo?" → não, debitar as moedas, rodar quatro minutos de modelo caro e
+morrer em 23505 na hora de gravar.
+
+> **Toda coluna que APONTA para outra tabela do usuário entra no `with check`,
+> não só a que diz de quem a linha é.** E entra no de UPDATE junto — senão a
+> linha nasce certa e é movida depois.
+
 ## GRANT: o grant diz QUAIS COLUNAS
 
 **RLS não restringe coluna. GRANT sim, e os dois se somam.** É o mecanismo que
@@ -87,6 +102,35 @@ revoke all on function public.minha_funcao(...) from public;
 revoke all on function public.minha_funcao(...) from anon, authenticated;
 grant execute on function public.minha_funcao(...) to service_role;
 ```
+
+**E vale para função de GATILHO também** (migração 0038). No Postgres, EXECUTE
+numa função nova é concedido a PUBLIC por padrão: *não conceder não é o mesmo
+que negar*. `_explode_session_feed_items(uuid, jsonb)` é `security definer`,
+nunca foi revogada, e por isso estava publicada em `POST /rest/v1/rpc/`. Ela
+faz um `delete` seguido de um `insert` em `session_feed_items` a partir de um
+`p_session_id` que VEM DO CHAMADOR, sem RLS porque é definer, e sem conferir
+dono — o `select user_id from sessions` lá dentro serve para carimbar a linha
+nova, não para autorizar. Resultado, reproduzido: com o anon key e **nenhuma
+sessão**, HTTP 204 e o feed da vítima substituído pelo texto do atacante.
+
+> Ao escrever `security definer`, a pergunta não é "quem eu concedi?" e sim
+> "quem eu NÃO revoguei?".
+
+## Policy de INSERT é porta aberta, não conferência
+
+`llm_usage_events` tinha `for insert with check (user_id = auth.uid())` e o
+cabeçalho de 0006 dizia que bastava, porque "a rota chama depois do
+requireAuth()". A policy autoriza a ESCRITA; ela não olha o conteúdo. Com o
+anon key, qualquer sessão logada mandava uma linha de custo inventada
+(`total_cost_usd: 12345.67`) direto para a tabela que alimenta
+`/admin/usage` e `/admin/precificacao` — os números que decidem o preço da
+moeda e que conciliamos com a fatura da OpenAI. Migração 0039 derruba a policy;
+`lib/db/usage.ts` passou a escrever com service-role, recebendo `userId` de
+quem chama.
+
+**Telemetria, contabilidade e qualquer número que a EMPRESA lê são escrita de
+service-role.** Policy de INSERT para `authenticated` só onde a linha é
+conteúdo do próprio usuário.
 
 ## Constraint no lugar de `if`
 

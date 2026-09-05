@@ -148,6 +148,7 @@ export async function generateRereads(input: GenerateRereadsInput): Promise<Gene
     });
   }
   await recordChatUsage({
+    userId,
     sessionId,
     route: metadataRoute,
     model,

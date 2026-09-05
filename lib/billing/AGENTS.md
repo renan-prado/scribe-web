@@ -69,9 +69,18 @@ de metadata e nunca do corpo do request.
 
 ## O banco não confia no cliente
 
-- **`grant_coins` e `clawback_coins` têm EXECUTE revogado de `anon` e
-  `authenticated`.** Só `service_role` chama. Verificado: com o anon key a RPC
-  devolve 42501.
+- **`grant_coins`, `clawback_coins` e `charge_coins` têm EXECUTE revogado de
+  `anon` e `authenticated`.** Só `service_role` chama. Verificado: com o anon
+  key a RPC devolve 42501.
+
+  `charge_coins` só entrou nessa lista na migração 0037. Até lá ela tinha
+  EXECUTE para `authenticated` e recebia `p_amount` de quem chamava: a rota
+  derivava o preço certinho de `COIN_COST_BY_REASON`, e qualquer sessão logada
+  podia ignorar a rota e chamar a RPC direto com o anon key, pagando 1 moeda
+  por um minuto de 7. Não dava para creditar (`p_amount <= 0` sempre levantou),
+  então o buraco era subfaturamento — do tipo que deixa no ledger uma linha
+  indistinguível de uma legítima. **O gate na rota não protege nada que a
+  função conceda por fora dela.**
 - **`profiles` tem GRANT por COLUNA.** `authenticated` só escreve
   `display_name`, `avatar_url` e `email`. `coin_balance`,
   `stripe_customer_id`, `role` e `is_active` estão fora do alcance do cliente
@@ -79,6 +88,13 @@ de metadata e nunca do corpo do request.
   key podia dar `update profiles set coin_balance = 999999 where id = auth.uid()`.
 - **Nunca escreva em `coin_balance` diretamente.** Todo crédito é
   `grant_coins`, todo débito é `chargeCoins`.
+- **A MEDIÇÃO, porém, é do cliente.** Quem conta os minutos e chama
+  `/api/coins/charge` é o navegador. É decisão de produto (só ele sabe quanto
+  tempo o microfone ficou aberto), mas quer dizer que o débito é cooperativo:
+  `lib/coins/require-balance.ts` recusa quem está zerado nas rotas de LLM, e é
+  só isso que impede uma conta grátis de transcrever de graça. Ele **não**
+  impede alguém de gravar 50 minutos pagando 10 — fechar essa folga exigiria
+  contar os segundos de áudio no servidor.
 
 ## Idempotência e ordem de eventos
 

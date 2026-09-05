@@ -1,7 +1,7 @@
 import { NextResponse } from "next/server";
 import { z } from "zod";
 import { upsertLocationByName } from "@/lib/db/locations";
-import { deleteSession, updateSessionMeta } from "@/lib/db/sessions";
+import { deleteSession, getSessionMeta, updateSessionMeta } from "@/lib/db/sessions";
 import { upsertSpeakerByName } from "@/lib/db/speakers";
 import { parseJsonBody, parseUuidParam } from "@/lib/http/validate";
 import { createLogger } from "@/lib/log";
@@ -39,6 +39,15 @@ export async function PATCH(request: Request, { params }: { params: Promise<{ id
 
   const parsed = await parseJsonBody(request, PatchSchema);
   if (!parsed.ok) return parsed.response;
+
+  // Confere o dono ANTES de trabalhar, como manda `app/AGENTS.md`. A RLS já
+  // escopava o UPDATE lá embaixo, então nada de outra pessoa era alterado — mas
+  // um id alheio recebia `{ ok: true }` mesmo assim (UPDATE que casa zero linhas
+  // não é erro no PostgREST), e no caminho ainda criava speaker e location na
+  // conta de quem chamou. 404, não 403: a existência da sessão alheia não é
+  // informação nossa para confirmar.
+  const owned = await getSessionMeta(id).catch(() => null);
+  if (!owned) return NextResponse.json({ error: "not_found" }, { status: 404 });
 
   const title = parsed.data.title === undefined ? undefined : parsed.data.title?.trim() || null;
   const speakerName =
@@ -109,6 +118,12 @@ export async function DELETE(request: Request, { params }: { params: Promise<{ i
   const guarded = parseUuidParam(rawId);
   if (!guarded.ok) return guarded.response;
   const id = guarded.id;
+
+  // Mesma razão do PATCH: a RLS impede o DELETE alheio, mas sem esta leitura a
+  // resposta era `{ ok: true }` para qualquer uuid — inclusive um que nunca
+  // existiu.
+  const owned = await getSessionMeta(id).catch(() => null);
+  if (!owned) return NextResponse.json({ error: "not_found" }, { status: 404 });
 
   try {
     await deleteSession(id);

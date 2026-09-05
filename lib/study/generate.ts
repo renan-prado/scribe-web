@@ -175,6 +175,7 @@ export async function generateStudy(input: GenerateStudyInput): Promise<Generate
 
   if (!questionsResult.ok) return upstreamFailure(qLog, questionsResult.error);
   totalTokens += await recordUsage(
+    userId,
     sessionId,
     "study-questions",
     questionsModel,
@@ -261,7 +262,13 @@ export async function generateStudy(input: GenerateStudyInput): Promise<Generate
   });
 
   if (!answersResult.ok) return upstreamFailure(aLog, answersResult.error);
-  totalTokens += await recordUsage(sessionId, "study-answers", answersModel, answersResult.data);
+  totalTokens += await recordUsage(
+    userId,
+    sessionId,
+    "study-answers",
+    answersModel,
+    answersResult.data
+  );
 
   const answers = parseStudyAnswersFromLLM(answersResult.data.content);
   if (answers.length === 0) {
@@ -455,7 +462,7 @@ async function runWriter(args: WriteArgs, avoid: string | null): Promise<WriteOu
   });
 
   if (!result.ok) return { ok: false, error: upstreamFailure(args.log, result.error) };
-  await recordUsage(args.sessionId, "study-write", model, result.data);
+  await recordUsage(args.userId, args.sessionId, "study-write", model, result.data);
 
   const payload = parseStudyFromLLM(result.data.content);
   args.log.debug("ok", {
@@ -534,7 +541,7 @@ async function filterQuestions(args: {
     });
     return [];
   }
-  await recordUsage(args.sessionId, "study-guard", model, result.data);
+  await recordUsage(args.userId, args.sessionId, "study-guard", model, result.data);
 
   const blocked = parseQuestionFilterFromLLM(result.data.content, args.questions);
   args.log.debug("filtro ok", { asked: args.questions.length, blocked: blocked.length });
@@ -587,7 +594,7 @@ async function checkThesis(args: {
     });
     return { repeats: false, overlap: "" };
   }
-  await recordUsage(args.sessionId, "study-guard", model, result.data);
+  await recordUsage(args.userId, args.sessionId, "study-guard", model, result.data);
 
   const verdict = parseThesisCheckFromLLM(result.data.content);
   args.log.debug("tese conferida", { repeats: verdict.repeats });
@@ -609,12 +616,14 @@ function stripPassages(answer: StudyAnswer): Omit<StudyAnswer, "passages"> {
 type ChatOk = Extract<Awaited<ReturnType<typeof callChat>>, { ok: true }>["data"];
 
 async function recordUsage(
+  userId: string,
   sessionId: string,
   route: UsageRoute,
   model: string,
   data: ChatOk
 ): Promise<number> {
   await recordChatUsage({
+    userId,
     sessionId,
     route,
     model,

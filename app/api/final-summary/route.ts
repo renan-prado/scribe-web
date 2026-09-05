@@ -1,7 +1,8 @@
 import { NextResponse } from "next/server";
 import { z } from "zod";
+import { requireBalance } from "@/lib/coins/require-balance";
 import { upsertLocationByName } from "@/lib/db/locations";
-import { updateSessionFinal } from "@/lib/db/sessions";
+import { getSessionMeta, updateSessionFinal } from "@/lib/db/sessions";
 import { upsertSpeakerByName } from "@/lib/db/speakers";
 import { FeedItemSchema } from "@/lib/domain/feed";
 import { generateFinalSummary } from "@/lib/final-summary/generate";
@@ -56,6 +57,9 @@ export async function POST(request: Request) {
   const limited = enforceRateLimit(request, RATE_LIMITS["final-summary"], auth.user.id);
   if (limited) return limited;
 
+  const broke = requireBalance(auth.user);
+  if (broke) return broke;
+
   const parsed = await parseJsonBody(request, BodySchema);
   if (!parsed.ok) return parsed.response;
   const body = parsed.data;
@@ -65,6 +69,18 @@ export async function POST(request: Request) {
     return NextResponse.json({ error: "empty text" }, { status: 400 });
   }
   const feedItems = body.feedItems ?? [];
+
+  // Dono conferido ANTES do modelo, como já fazem `/reprocess` e `/deepening`.
+  // Sem isto, a rota mais cara do app (até 300 mil caracteres num modelo
+  // grande, 12k tokens de saída) rodava sobre um `sessionId` qualquer e só
+  // descobria que a sessão não era de quem chamou no UPDATE lá embaixo, onde
+  // a RLS filtra em silêncio — trabalho já pago à OpenAI, resposta devolvida,
+  // `saved: false` como único sinal. `getSessionMeta` e não `getSession`: aqui
+  // só interessa a existência da linha, e a transcrição vem no corpo.
+  const meta = await getSessionMeta(sessionId).catch(() => null);
+  if (!meta) {
+    return NextResponse.json({ error: "session_not_found" }, { status: 404 });
+  }
 
   const result = await generateFinalSummary({
     userId: auth.user.id,

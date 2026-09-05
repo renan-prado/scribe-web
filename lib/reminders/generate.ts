@@ -111,6 +111,7 @@ export async function generateReminders(
     });
   }
   await recordChatUsage({
+    userId,
     sessionId,
     route: metadataRoute,
     model,

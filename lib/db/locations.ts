@@ -1,4 +1,5 @@
 import "server-only";
+import { escapeLikeValue } from "@/lib/db/like";
 import type { Location } from "@/lib/domain/location";
 import { createClient } from "@/lib/supabase/server";
 
@@ -48,7 +49,7 @@ export async function listLocationsWithUsage(
     .order("name", { ascending: true })
     .limit(opts.limit ?? 25);
   if (opts.q?.trim()) {
-    q = q.ilike("name", `%${opts.q.trim()}%`);
+    q = q.ilike("name", `%${escapeLikeValue(opts.q.trim())}%`);
   }
   const { data, error } = await q;
   if (error) throw new Error(`listLocationsWithUsage failed: ${error.message}`);
@@ -64,7 +65,7 @@ async function findLocationByNameForUser(name: string, userId: string): Promise<
     .from("locations")
     .select(SELECT)
     .eq("user_id", userId)
-    .ilike("name", name.trim())
+    .ilike("name", escapeLikeValue(name.trim()))
     .limit(1)
     .maybeSingle();
   if (error) throw new Error(`findLocationByName failed: ${error.message}`);

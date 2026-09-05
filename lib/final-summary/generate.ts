@@ -109,6 +109,7 @@ export async function generateFinalSummary(
     });
   }
   await recordChatUsage({
+    userId,
     sessionId,
     route: metadataRoute,
     model,
@@ -184,6 +185,7 @@ export async function generateFinalSummary(
         totalBlocksAfterMerge: payload.blocks.length,
       });
       await recordChatUsage({
+        userId,
         sessionId,
         route: enrichmentRoute,
         model: enrichmentModel,

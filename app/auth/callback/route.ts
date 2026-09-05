@@ -48,8 +48,32 @@ export async function GET(request: Request) {
   const forwardedHost = request.headers.get("x-forwarded-host");
   const isLocal = process.env.NODE_ENV === "development";
   if (isLocal) return NextResponse.redirect(`${origin}${next}`);
-  if (forwardedHost) return NextResponse.redirect(`https://${forwardedHost}${next}`);
+  if (forwardedHost && isTrustedHost(forwardedHost)) {
+    return NextResponse.redirect(`https://${forwardedHost}${next}`);
+  }
   return NextResponse.redirect(`${origin}${next}`);
+}
+
+/**
+ * O `x-forwarded-host` existe aqui porque atrás do proxy da Vercel o `origin`
+ * da requisição é o interno, não o domínio que a pessoa digitou — sem ele o
+ * login em `dev.scriba.cc` devolveria para o host errado.
+ *
+ * Mas é um HEADER: sanitizar o `?next=` logo acima e depois montar a URL de
+ * destino com um valor que vem do pedido desfaz metade do cuidado. Hoje a
+ * Vercel reescreve esse header e só roteia domínios do projeto, então a
+ * proteção real é de infraestrutura, não nossa — a mesma situação que a
+ * allowlist de origem do `proxy.ts` documenta. A lista abaixo é a decisão
+ * voltando para cá; um host não reconhecido cai no `origin`, que é o
+ * comportamento correto e nunca aponta para fora.
+ */
+const TRUSTED_HOSTS = new Set(["scriba.cc", "www.scriba.cc", "dev.scriba.cc"]);
+const TRUSTED_HOST_PATTERNS = [/^scribe-[a-z0-9-]+-renanprados-projects\.vercel\.app$/];
+
+function isTrustedHost(host: string): boolean {
+  const bare = host.split(":")[0].toLowerCase();
+  if (TRUSTED_HOSTS.has(bare)) return true;
+  return TRUSTED_HOST_PATTERNS.some((re) => re.test(bare));
 }
 
 /**

@@ -1,10 +1,11 @@
 import { NextResponse } from "next/server";
+import { requireBalance } from "@/lib/coins/require-balance";
 import { recordAudioUsage } from "@/lib/db/usage";
 import { serverEnv } from "@/lib/env/server";
 import { isUuid } from "@/lib/http/validate";
 import { callTranscribe } from "@/lib/llm/openai";
 import { createLogger } from "@/lib/log";
-import { enforceRateLimit, RATE_LIMITS } from "@/lib/rate-limit";
+import { enforceAudioBudget, enforceRateLimit, RATE_LIMITS } from "@/lib/rate-limit";
 import { requireAuth } from "@/lib/supabase/require-auth";
 import {
   assessmentPenalty,
@@ -18,7 +19,19 @@ const log = createLogger("transcribe");
 export const runtime = "nodejs";
 export const dynamic = "force-dynamic";
 
-const MAX_FILE_BYTES = 25 * 1024 * 1024; // 25 MB — OpenAI's limit
+// 8 MB, e NÃO os 25 MB da OpenAI.
+//
+// O 25 aqui era o limite DELES copiado para cá, e limite de terceiro não é
+// política nossa. Um chunk real tem 15-20s (`RECORDER_MIN/MAX_CHUNK_MS`) e pesa
+// uns 80 KB em opus; o teto do formato permitia 300 vezes isso. E o que se
+// compra com esse excedente não é folga: a OpenAI cobra por MINUTO de áudio, e
+// 25 MB de opus são mais de duas horas de som num único POST — $0,42 por
+// chamada, num endpoint que aceita 40 por minuto.
+//
+// 8 MB cobre cinco minutos a 200 kbps, que é o teto que `MAX_DURATION_MS` já
+// declarava esperar, com margem de sobra para qualquer codec que um navegador
+// escolha. O corte fino é o orçamento de bytes por hora, logo abaixo.
+const MAX_FILE_BYTES = 8 * 1024 * 1024;
 const ALLOWED_EXTENSIONS = new Set(["webm", "mp4", "mp3", "wav", "ogg", "m4a", "flac"]);
 // `prevText` seeds the Whisper prompt with the transcript tail; the recorder
 // sends at most a few hundred chars in practice. Cap defends against a
@@ -33,6 +46,11 @@ export async function POST(request: Request) {
 
   const limited = enforceRateLimit(request, RATE_LIMITS.transcribe, auth.user.id);
   if (limited) return limited;
+
+  // A cobrança por minuto é emitida pelo cliente; este piso é o que impede uma
+  // conta zerada de transcrever de graça só por não chamar /api/coins/charge.
+  const broke = requireBalance(auth.user);
+  if (broke) return broke;
 
   let form: FormData;
   try {
@@ -51,6 +69,12 @@ export async function POST(request: Request) {
   if (file.size > MAX_FILE_BYTES) {
     return NextResponse.json({ error: "file too large" }, { status: 413 });
   }
+  // O limitador por chamada conta REQUISIÇÕES; a OpenAI cobra MINUTOS. Este é o
+  // balde que fecha a diferença — ver `enforceAudioBudget`. Fica depois do
+  // corte de tamanho de propósito: um POST recusado por ser grande demais não
+  // deve consumir o orçamento de quem talvez nem seja o dono do defeito.
+  const overBudget = enforceAudioBudget(auth.user.id, file.size);
+  if (overBudget) return overBudget;
   const chunkIndex = form.get("chunkIndex");
   const prevTextRaw = (form.get("prevText") as string | null) ?? "";
   const prevText =
@@ -79,7 +103,14 @@ export async function POST(request: Request) {
   const escalatedModel = serverEnv.OPENAI_TRANSCRIBE_ESCALATED_MODEL;
   const model = tier === "escalated" ? escalatedModel : standardModel;
 
-  const filename = `chunk-${chunkIndex ?? "x"}.${extension}`;
+  // `chunkIndex` é o único campo do form que ia inteiro para dentro de uma
+  // string, e essa string vira o `filename` do multipart que mandamos para a
+  // OpenAI. O `FormData` do undici percent-encoda aspas e CRLF, então não havia
+  // injeção de cabeçalho ali — verificado. O que faltava era o limite: nada
+  // impedia um `chunkIndex` de um megabyte. Só dígito, no máximo seis.
+  const chunkLabel =
+    typeof chunkIndex === "string" && /^\d{1,6}$/.test(chunkIndex) ? chunkIndex : "x";
+  const filename = `chunk-${chunkLabel}.${extension}`;
   const prompt = prevText ? `${VOCABULARIO_PROMPT} ${prevText}` : VOCABULARIO_PROMPT;
 
   const transcribeWith = (m: string) =>
@@ -108,6 +139,7 @@ export async function POST(request: Request) {
   }
 
   await recordAudioUsage({
+    userId: auth.user.id,
     sessionId,
     route: "transcribe",
     model,
@@ -130,6 +162,7 @@ export async function POST(request: Request) {
     const retry = await transcribeWith(escalatedModel);
     if (retry.ok) {
       await recordAudioUsage({
+        userId: auth.user.id,
         sessionId,
         route: "transcribe",
         model: escalatedModel,

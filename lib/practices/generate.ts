@@ -114,6 +114,7 @@ export async function generatePractices(
     });
   }
   await recordChatUsage({
+    userId,
     sessionId,
     route: metadataRoute,
     model,

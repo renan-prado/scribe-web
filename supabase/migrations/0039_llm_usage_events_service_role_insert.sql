@@ -1,0 +1,41 @@
+-- A telemetria de custo para de aceitar linha escrita pelo cliente.
+--
+-- O BURACO, e é o de 0037 numa terceira roupa. `llm_usage_events` tinha
+--
+--   create policy llm_usage_events_insert_own on public.llm_usage_events
+--     for insert with check (user_id = auth.uid());
+--
+-- e o cabeçalho de 0006 justificava assim: "a rota chama depois do
+-- requireAuth(), então uma policy normal já basta". Não basta, pelo mesmo
+-- motivo de sempre — a policy autoriza a ESCRITA, ela não confere o CONTEÚDO,
+-- e a rota nunca é o único caminho até a tabela. Com o anon key, que é público,
+-- qualquer sessão logada mandava
+--
+--   POST /rest/v1/llm_usage_events
+--   { "user_id": "<o meu>", "route": "transcribe", "model": "gpt-5.1",
+--     "prompt_tokens": 99999999, "total_cost_usd": 12345.67 }
+--
+-- Reproduzido no projeto de dev em 2026-09-05: HTTP 201.
+--
+-- O que se estraga não é dado de usuário — é a CONTABILIDADE. `/admin/usage` e
+-- `/admin/precificacao` somam esta tabela para dizer quanto custou cada rota,
+-- qual a margem por milheiro de moeda e, a partir disso, quanto a moeda deve
+-- custar. Uma linha forjada não vaza nada de ninguém; ela mente para a única
+-- fonte que temos sobre o próprio preço do produto, e mente de um jeito
+-- indistinguível de uma medição legítima. Some com isso o fato de o painel
+-- conciliar estes números com a fatura da OpenAI, e o efeito é uma divergência
+-- que ninguém consegue explicar.
+--
+-- A CORREÇÃO. `lib/db/usage.ts` passa a escrever com service-role, recebendo
+-- `userId` de quem chama — sempre `auth.user.id`, depois do `requireAuth()` da
+-- rota. Sem a policy, `authenticated` não tem por onde inserir: RLS sem policy
+-- de INSERT nega. O SELECT continua como está, escopado por `auth.uid()`, que é
+-- o que permite a pessoa ver o próprio consumo.
+--
+-- De quebra, some um `auth.getUser()` por registro de uso: as duas funções
+-- resolviam o usuário por conta própria, o que era uma ida à rede por chunk
+-- transcrito.
+
+drop policy if exists llm_usage_events_insert_own on public.llm_usage_events;
+
+revoke insert on public.llm_usage_events from anon, authenticated;

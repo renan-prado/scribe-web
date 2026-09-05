@@ -156,6 +156,7 @@ export async function POST(request: Request) {
     completionTokens: usage.completionTokens,
   });
   await recordChatUsage({
+    userId: auth.user.id,
     sessionId,
     route: "hallucination-report",
     model,

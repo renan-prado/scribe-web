@@ -1,5 +1,6 @@
 import { NextResponse } from "next/server";
 import { z } from "zod";
+import { requireBalance } from "@/lib/coins/require-balance";
 import { recordChatUsage } from "@/lib/db/usage";
 import { serverEnv } from "@/lib/env/server";
 import { OptionalUuidSchema, parseJsonBody } from "@/lib/http/validate";
@@ -28,6 +29,9 @@ export async function POST(request: Request) {
 
   const limited = enforceRateLimit(request, RATE_LIMITS["format-paragraphs"], auth.user.id);
   if (limited) return limited;
+
+  const broke = requireBalance(auth.user);
+  if (broke) return broke;
 
   const model = serverEnv.OPENAI_FORMAT_MODEL;
 
@@ -64,6 +68,7 @@ export async function POST(request: Request) {
   }
 
   await recordChatUsage({
+    userId: auth.user.id,
     sessionId,
     route: "format-paragraphs",
     model,

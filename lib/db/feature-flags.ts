@@ -1,4 +1,5 @@
 import "server-only";
+import { escapeLikeValue } from "@/lib/db/like";
 import type { FeatureOverrideRow, FeatureSwitchRow } from "@/lib/entitlements/features";
 import { createLogger } from "@/lib/log";
 import { createAdminClient } from "@/lib/supabase/admin";
@@ -145,7 +146,7 @@ export async function findUserIdByEmail(email: string): Promise<string | null> {
   const { data, error } = await admin
     .from("profiles")
     .select("id")
-    .ilike("email", email.trim())
+    .ilike("email", escapeLikeValue(email.trim()))
     .maybeSingle();
   if (error) throw new Error(`findUserIdByEmail failed: ${error.message}`);
   return (data?.id as string | undefined) ?? null;

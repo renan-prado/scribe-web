@@ -7,7 +7,7 @@ import {
   hasChatPricing,
 } from "@/lib/llm/pricing";
 import { createLogger } from "@/lib/log";
-import { createClient } from "@/lib/supabase/server";
+import { createAdminClient } from "@/lib/supabase/admin";
 
 const log = createLogger("usage");
 
@@ -19,10 +19,26 @@ const log = createLogger("usage");
  * observability write must never surface as a 500 from a working /extract
  * or /transcribe.
  *
- * user_id is injected from the authenticated Supabase session (routes call
- * requireAuth() first); RLS then enforces that the row is written under the
- * correct owner. session_id is optional — on-demand routes (format,
- * lookups) run outside a recording.
+ * `userId` vem de quem CHAMA, sempre de `auth.user.id` depois do
+ * `requireAuth()` da rota, e a escrita usa o service-role. Antes era o
+ * contrário: o client do usuário inseria e a policy
+ * `llm_usage_events_insert_own` (`user_id = auth.uid()`) fazia o escopo. O
+ * problema é que uma policy de INSERT é uma porta ABERTA — ela autoriza a
+ * escrita, não confere o conteúdo. Qualquer sessão logada podia mandar
+ *
+ *   POST /rest/v1/llm_usage_events { user_id: <o meu>, route: 'transcribe',
+ *                                    model: 'gpt-5.1', total_cost_usd: 12345.67 }
+ *
+ * direto com o anon key, e o custo forjado entrava no `/admin/usage` e no
+ * `/admin/precificacao` — os números que decidem o preço da moeda e medem a
+ * margem. Reproduzido em dev: HTTP 201. É a mesma lição de `charge_coins`
+ * (migração 0037): o gate na rota não protege o que a policy concede por fora
+ * dela. A policy foi derrubada na 0039.
+ *
+ * Continuam fire-and-forget: as rotas aguardam para a ordem ser determinística,
+ * mas qualquer falha de insert é capturada e logada — observabilidade quebrada
+ * nunca vira 500 numa rota que funcionou. `sessionId` é opcional: rotas sob
+ * demanda (format, lookups) rodam fora de uma gravação.
  */
 
 export type UsageRoute =
@@ -71,6 +87,8 @@ export type UsageRoute =
   | "transcribe";
 
 export type RecordChatUsageInput = {
+  /** Sempre `auth.user.id`, nunca um valor vindo do corpo da requisição. */
+  userId: string;
   sessionId: string | null;
   route: UsageRoute;
   model: string;
@@ -89,6 +107,8 @@ export type RecordChatUsageInput = {
 };
 
 export type RecordAudioUsageInput = {
+  /** Sempre `auth.user.id`, nunca um valor vindo do corpo da requisição. */
+  userId: string;
   sessionId: string | null;
   route: Extract<UsageRoute, "transcribe">;
   model: string;
@@ -98,11 +118,7 @@ export type RecordAudioUsageInput = {
 
 export async function recordChatUsage(input: RecordChatUsageInput): Promise<void> {
   try {
-    const supabase = await createClient();
-    const {
-      data: { user },
-    } = await supabase.auth.getUser();
-    if (!user) return;
+    const supabase = createAdminClient();
 
     const cost: ChatCost = computeChatCost(
       input.model,
@@ -120,7 +136,7 @@ export async function recordChatUsage(input: RecordChatUsageInput): Promise<void
     const total = prompt !== null && completion !== null ? prompt + completion : null;
 
     const { error } = await supabase.from("llm_usage_events").insert({
-      user_id: user.id,
+      user_id: input.userId,
       session_id: input.sessionId,
       route: input.route,
       model: input.model,
@@ -148,11 +164,7 @@ export async function recordChatUsage(input: RecordChatUsageInput): Promise<void
 
 export async function recordAudioUsage(input: RecordAudioUsageInput): Promise<void> {
   try {
-    const supabase = await createClient();
-    const {
-      data: { user },
-    } = await supabase.auth.getUser();
-    if (!user) return;
+    const supabase = createAdminClient();
 
     const totalUsd = computeAudioCost(input.model, input.audioSeconds);
     if (!hasAudioPricing(input.model)) {
@@ -160,7 +172,7 @@ export async function recordAudioUsage(input: RecordAudioUsageInput): Promise<vo
     }
 
     const { error } = await supabase.from("llm_usage_events").insert({
-      user_id: user.id,
+      user_id: input.userId,
       session_id: input.sessionId,
       route: input.route,
       model: input.model,

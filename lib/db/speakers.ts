@@ -1,4 +1,5 @@
 import "server-only";
+import { escapeLikeValue } from "@/lib/db/like";
 import type { Speaker } from "@/lib/domain/speaker";
 import { createClient } from "@/lib/supabase/server";
 
@@ -49,7 +50,7 @@ export async function listSpeakersWithUsage(
     .order("name", { ascending: true })
     .limit(opts.limit ?? 25);
   if (opts.q?.trim()) {
-    q = q.ilike("name", `%${opts.q.trim()}%`);
+    q = q.ilike("name", `%${escapeLikeValue(opts.q.trim())}%`);
   }
   const { data, error } = await q;
   if (error) throw new Error(`listSpeakersWithUsage failed: ${error.message}`);
@@ -65,7 +66,7 @@ async function findSpeakerByNameForUser(name: string, userId: string): Promise<S
     .from("speakers")
     .select(SELECT)
     .eq("user_id", userId)
-    .ilike("name", name.trim())
+    .ilike("name", escapeLikeValue(name.trim()))
     .limit(1)
     .maybeSingle();
   if (error) throw new Error(`findSpeakerByName failed: ${error.message}`);

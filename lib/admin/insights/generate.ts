@@ -126,6 +126,7 @@ export async function generateAdminInsights(
   // mesmo jeito, e uma falha de formato que não aparecesse no custo seria uma
   // sangria invisível.
   await recordChatUsage({
+    userId: adminId,
     sessionId: null,
     route: "admin-insights",
     model,

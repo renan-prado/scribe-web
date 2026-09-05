@@ -2,6 +2,7 @@ import type { ReactNode } from "react";
 import { AppHeader } from "@/components/AppHeader";
 import { MobileBottomNav } from "@/components/MobileBottomNav";
 import { ThemeToggle } from "@/components/ThemeToggle";
+import { AccountDisabled } from "@/features/auth/components/AccountDisabled";
 import { PrivilegedMenuItems } from "@/features/auth/components/PrivilegedMenuItems";
 import { UserMenu } from "@/features/auth/components/UserMenu";
 import { CoinBalance } from "@/features/coins/components/CoinBalance";
@@ -23,6 +24,11 @@ export default async function AppLayout({ children }: { children: ReactNode }) {
     getCurrentAccount().catch(() => null),
     isCurrentUserPartner().catch(() => false),
   ]);
+  // Conta desativada não renderiza o app: nem header, nem nav, nem children.
+  // O 403 de `requireAuth()` já barra as rotas de API — sem esta metade, a
+  // pessoa navegaria por telas que falham uma a uma sem explicar o motivo.
+  if (account && !account.isActive) return <AccountDisabled />;
+
   const profile = account?.profile ?? null;
   const isAdmin = account?.isAdmin ?? false;
   const initialBalance = account?.coinBalance ?? INITIAL_COIN_BALANCE;

@@ -54,10 +54,20 @@ const STATIC_ALLOWED_ORIGINS = new Set([
 ]);
 // localhost / 127.0.0.1 on any port, plus Vercel preview URLs scoped to this
 // project (e.g. scribe-<hash>-renanprados-projects.vercel.app).
+//
+// O sufixo `-renanprados-projects` NÃO é decoração. O padrão era
+// `scribe-[a-z0-9-]+\.vercel\.app`, e `vercel.app` é um namespace público:
+// qualquer pessoa cria um projeto chamado `scribe-qualquercoisa` e ganha
+// `scribe-qualquercoisa.vercel.app`, que casava. Com
+// `Access-Control-Allow-Credentials: true`, isso é uma origem controlada por
+// terceiro na allowlist. Hoje o estrago é contido pelo `SameSite=Lax` do
+// cookie do Supabase, que não acompanha XHR cross-site — ou seja, a proteção
+// era um default de biblioteca, não uma decisão nossa. Ancorar no slug do time
+// devolve a decisão para cá.
 const ALLOWED_ORIGIN_PATTERNS: RegExp[] = [
   /^https?:\/\/localhost(?::\d+)?$/,
   /^https?:\/\/127\.0\.0\.1(?::\d+)?$/,
-  /^https:\/\/scribe-[a-z0-9-]+\.vercel\.app$/,
+  /^https:\/\/scribe-[a-z0-9-]+-renanprados-projects\.vercel\.app$/,
 ];
 
 const CORS_HEADERS = {
@@ -102,6 +112,78 @@ function isAllowedOrigin(origin: string): boolean {
   return ALLOWED_ORIGIN_PATTERNS.some((re) => re.test(origin));
 }
 
+/**
+ * Content-Security-Policy.
+ *
+ * POR QUE ELA IMPORTA MAIS AQUI DO QUE NUM APP QUALQUER. O cookie de sessão do
+ * `@supabase/ssr` é `httpOnly: false` por DESENHO — o client do navegador lê o
+ * token com `document.cookie`, e não há como ligar o flag sem quebrar a
+ * biblioteca (ver `DEFAULT_COOKIE_OPTIONS` em @supabase/ssr). Ou seja: aqui um
+ * XSS não rouba "alguns dados", rouba a sessão inteira, com um refresh token
+ * que o mesmo default deixa válido por 400 dias.
+ *
+ * POR QUE NÃO TEM NONCE, que é a forma forte. Um nonce muda a cada requisição,
+ * então a página que o carrega no HTML não pode ser cacheada — usar nonce
+ * OBRIGA renderização dinâmica. E `app/page.tsx` ser estática é invariante
+ * declarada deste repositório (ver "Landing page — o que não pode voltar" em
+ * app/AGENTS.md): a LP é a única página que um anônimo carrega, e torná-la
+ * dinâmica devolve `no-store`, `X-Vercel-Cache: MISS` e HTML remontado na
+ * origem a cada visita. Trocar isso por CSP é uma decisão de produto, não de
+ * segurança, e não cabe a esta função tomá-la em silêncio.
+ *
+ * O QUE ESTA VERSÃO COMPRA, então, sem nonce:
+ *
+ *  - `connect-src` restrito é a peça que mais vale contra o risco descrito
+ *    acima. Roubar o cookie só serve se der para MANDÁ-LO para algum lugar, e
+ *    daqui só saem requisições para nós, para o Supabase e para o GA.
+ *  - `script-src` sem `'unsafe-eval'` e com allowlist de host bloqueia o
+ *    `<script src="//evil.com">` injetado. NÃO bloqueia inline: `'unsafe-inline'`
+ *    é obrigatório enquanto o Next emitir o bootstrap dele inline sem nonce, e
+ *    o `ThemeScript` também é inline. Esta é a folga que o nonce fecharia.
+ *  - `object-src 'none'`, `base-uri 'self'` (impede sequestro de URL relativa
+ *    por `<base>` injetada) e `form-action 'self'` (impede que um formulário
+ *    injetado poste para fora).
+ *  - `frame-ancestors 'none'` é o `X-Frame-Options: DENY` do next.config.ts na
+ *    forma que os navegadores modernos leem de verdade.
+ *
+ * `img-src https:` é frouxo de propósito: imagem não executa, e a lista real
+ * (avatar do Google, capa do Google Books, sticker local, blob do gravador)
+ * mudaria a cada funcionalidade nova, quebrando a tela por um ganho de zero.
+ */
+function contentSecurityPolicy(): string {
+  const supabase = new URL(clientEnv.NEXT_PUBLIC_SUPABASE_URL).origin;
+  return [
+    "default-src 'self'",
+    "script-src 'self' 'unsafe-inline' https://www.googletagmanager.com",
+    "style-src 'self' 'unsafe-inline'",
+    "img-src 'self' data: blob: https:",
+    "font-src 'self' data:",
+    // O gravador toca um áudio silencioso de keepalive e reproduz blobs locais.
+    "media-src 'self' blob:",
+    // `sw.js` e qualquer worker que o Next crie a partir de um blob.
+    "worker-src 'self' blob:",
+    `connect-src 'self' ${supabase} ${supabase.replace(/^https:/, "wss:")} https://www.googletagmanager.com https://*.google-analytics.com https://*.analytics.google.com`,
+    "object-src 'none'",
+    "base-uri 'self'",
+    "form-action 'self'",
+    "frame-src 'none'",
+    "frame-ancestors 'none'",
+    "upgrade-insecure-requests",
+  ].join("; ");
+}
+
+const CSP = contentSecurityPolicy();
+
+/**
+ * A CSP entra em TODA resposta que o proxy devolve — inclusive no early-return
+ * do visitante anônimo e nos redirects. Uma política que só cobre o caminho
+ * feliz é uma política que o atacante contorna pedindo outro caminho.
+ */
+function applyCsp<T extends NextResponse>(response: T): T {
+  response.headers.set("Content-Security-Policy", CSP);
+  return response;
+}
+
 function applyCorsHeaders(response: NextResponse, origin: string, allowed: boolean) {
   response.headers.append("Vary", "Origin");
   if (!allowed) return;
@@ -122,6 +204,8 @@ export async function proxy(request: NextRequest) {
   if (isApi && request.method === "OPTIONS") {
     const headers: Record<string, string> = { ...CORS_HEADERS, Vary: "Origin" };
     if (allowedOrigin) headers["Access-Control-Allow-Origin"] = origin;
+    // Sem CSP: a resposta de um preflight não tem corpo nem contexto de
+    // navegação, então não há o que a política governe.
     return new NextResponse(null, { status: 204, headers });
   }
 
@@ -137,7 +221,7 @@ export async function proxy(request: NextRequest) {
   // no meio do handshake violaria o contrato do @supabase/ssr descrito acima.
   const isAnonEntry = earlyPath === "/" || earlyPath.startsWith("/r/");
   if (isAnonEntry && !request.cookies.getAll().some((c) => c.name.startsWith("sb-"))) {
-    return NextResponse.next({ request });
+    return applyCsp(NextResponse.next({ request }));
   }
 
   let supabaseResponse = NextResponse.next({ request });
@@ -178,7 +262,7 @@ export async function proxy(request: NextRequest) {
     }
     const redirect = NextResponse.redirect(url);
     if (isApi) applyCorsHeaders(redirect, origin, allowedOrigin);
-    return redirect;
+    return applyCsp(redirect);
   }
 
   // Quem já está logado não tem o que fazer na landing page — vai para o feed.
@@ -188,7 +272,7 @@ export async function proxy(request: NextRequest) {
   // foi resolvido para os outros guards, então o redirect sai de graça e a
   // página volta a ser estática e cacheável na CDN para o visitante anônimo.
   if (user && pathname === "/") {
-    return NextResponse.redirect(new URL("/feed", request.nextUrl.origin));
+    return applyCsp(NextResponse.redirect(new URL("/feed", request.nextUrl.origin)));
   }
 
   if (user && isAuthOnly(pathname)) {
@@ -197,11 +281,11 @@ export async function proxy(request: NextRequest) {
     // jogá-lo em /feed descartaria a escolha e ele teria de recomeçar.
     const next = safeNextPath(request.nextUrl.searchParams.get("next"));
     const url = new URL(next ?? "/feed", request.nextUrl.origin);
-    return NextResponse.redirect(url);
+    return applyCsp(NextResponse.redirect(url));
   }
 
   if (isApi) applyCorsHeaders(supabaseResponse, origin, allowedOrigin);
-  return supabaseResponse;
+  return applyCsp(supabaseResponse);
 }
 
 /**

@@ -1,4 +1,5 @@
 import { NextResponse } from "next/server";
+import { requireBalance } from "@/lib/coins/require-balance";
 import { recordChatUsage } from "@/lib/db/usage";
 import {
   coerceFeedItemsLoose,
@@ -33,6 +34,9 @@ export async function POST(request: Request) {
 
   const limited = enforceRateLimit(request, RATE_LIMITS["sermon-echo"], auth.user.id);
   if (limited) return limited;
+
+  const broke = requireBalance(auth.user);
+  if (broke) return broke;
 
   const model = serverEnv.OPENAI_ECHO_MODEL;
 
@@ -102,6 +106,7 @@ export async function POST(request: Request) {
     drops: drops.length,
   });
   await recordChatUsage({
+    userId: auth.user.id,
     sessionId,
     route: "sermon-echo",
     model,

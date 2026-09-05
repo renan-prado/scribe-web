@@ -1,6 +1,7 @@
 import { NextResponse } from "next/server";
 import { z } from "zod";
 import { type FeedOrder, listFeedEntries } from "@/lib/db/feed-entries";
+import { OptionalUuidSchema } from "@/lib/http/validate";
 import { createLogger } from "@/lib/log";
 import { enforceRateLimit, RATE_LIMITS } from "@/lib/rate-limit";
 import { requireAuth } from "@/lib/supabase/require-auth";
@@ -13,6 +14,10 @@ export const dynamic = "force-dynamic";
 const OrderSchema = z.enum(["recent", "oldest"]).default("recent");
 const OffsetSchema = z.coerce.number().int().min(0).max(10_000).default(0);
 const LimitSchema = z.coerce.number().int().min(1).max(50).default(10);
+// Os outros três parâmetros passavam por Zod e este ia cru para dentro de um
+// `neq` — o único da rota que chegava ao banco sem forma conferida. A RLS
+// impedia o estrago, mas "a próxima camada segura" não é validação.
+const ExcludeSchema = OptionalUuidSchema;
 
 /**
  * GET /api/feed?order=recent|oldest&offset=0&limit=10&excludeSessionId=...
@@ -39,8 +44,14 @@ export async function GET(request: Request) {
   const orderParsed = OrderSchema.safeParse(orderRaw ?? undefined);
   const offsetParsed = OffsetSchema.safeParse(offsetRaw ?? undefined);
   const limitParsed = LimitSchema.safeParse(limitRaw ?? undefined);
+  const excludeParsed = ExcludeSchema.safeParse(excludeSessionId?.trim() || undefined);
 
-  if (!orderParsed.success || !offsetParsed.success || !limitParsed.success) {
+  if (
+    !orderParsed.success ||
+    !offsetParsed.success ||
+    !limitParsed.success ||
+    !excludeParsed.success
+  ) {
     return NextResponse.json({ error: "invalid_query" }, { status: 400 });
   }
 
@@ -55,7 +66,7 @@ export async function GET(request: Request) {
       offset,
       limit,
       now,
-      excludeSessionId: excludeSessionId?.trim() || null,
+      excludeSessionId: excludeParsed.data ?? null,
     });
     log.debug("ok", {
       order,

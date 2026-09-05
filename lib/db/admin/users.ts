@@ -33,19 +33,34 @@ type ProfileRow = {
 
 const SELECT = "id, display_name, avatar_url, email, role, is_active, created_at";
 
+/**
+ * Teto da listagem do /admin/users. Quando a base passar disto, a tela precisa
+ * de paginação de verdade — e o número aparecer aqui é o que torna esse dia
+ * visível, em vez de a lista simplesmente parar de crescer em silêncio.
+ */
+const ADMIN_USERS_PAGE_SIZE = 1000;
+
 export async function listUsers(): Promise<AdminUser[]> {
   const admin = createAdminClient();
 
+  // O teto é explícito e casa com o `perPage` do enriquecimento logo abaixo.
+  // Sem ele, quem limitava a consulta era o `max-rows` que o Supabase configura
+  // por padrão no PostgREST — um default de plataforma fazendo o papel de uma
+  // decisão nossa, que é justamente o padrão que esta auditoria vem
+  // desmontando. E os dois lados discordarem é pior que qualquer um dos dois:
+  // com mais de mil contas, a lista traria perfis cujo "último acesso" viria
+  // sempre vazio, sem nada na tela dizendo por quê.
   const { data: profiles, error } = await admin
     .from("profiles")
     .select(SELECT)
-    .order("created_at", { ascending: false });
+    .order("created_at", { ascending: false })
+    .limit(ADMIN_USERS_PAGE_SIZE);
   if (error) throw new Error(`listUsers profiles failed: ${error.message}`);
 
   const lastSignIn = new Map<string, string | null>();
   const { data: authData, error: authErr } = await admin.auth.admin.listUsers({
     page: 1,
-    perPage: 1000,
+    perPage: ADMIN_USERS_PAGE_SIZE,
   });
   if (authErr) {
     log.warn("listUsers auth enrichment failed", { error: authErr.message });
@@ -78,8 +93,21 @@ export async function updateUser(id: string, input: UpdateUserInput): Promise<vo
   const admin = createAdminClient();
 
   if (input.email !== undefined) {
+    // O e-mail é IDENTIDADE aqui, não um campo de cadastro: `getCurrentPartner`
+    // resolve o vínculo parceiro↔conta casando o e-mail do login com
+    // `partners.invited_email`. Trocar o e-mail de uma conta pode, portanto,
+    // torná-la parceira — e `updateUserById` grava sem pedir confirmação ao
+    // dono do endereço. É poder legítimo de admin, mas é o tipo de mudança que
+    // alguém precisa conseguir reconstruir depois, então o valor ANTIGO vai
+    // para o log em `info` (a rota registra só os NOMES dos campos alterados).
+    const { data: before } = await admin.auth.admin.getUserById(id);
     const { error } = await admin.auth.admin.updateUserById(id, { email: input.email });
     if (error) throw new Error(`updateUser email failed: ${error.message}`);
+    log.info("e-mail trocado pelo admin", {
+      id,
+      from: before?.user?.email ?? null,
+      to: input.email,
+    });
   }
 
   const profilePatch: Record<string, unknown> = {};

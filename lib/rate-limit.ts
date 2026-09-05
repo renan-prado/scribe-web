@@ -40,22 +40,35 @@ export type RateLimitResult = {
   retryAfterSeconds: number;
 };
 
-export function checkRateLimit(key: string, limit: number, windowMs: number): RateLimitResult {
+/**
+ * `cost` existe para o balde que conta GRANDEZA em vez de eventos.
+ *
+ * A cadência de `/api/transcribe` é limitada por chamada, e chamada não é a
+ * unidade em que a OpenAI cobra — ela cobra por MINUTO de áudio. Duas
+ * requisições idênticas para o limitador podiam custar 20 segundos e duas
+ * horas. Ver `RATE_LIMITS.transcribe` e o uso na rota.
+ */
+export function checkRateLimit(
+  key: string,
+  limit: number,
+  windowMs: number,
+  cost = 1
+): RateLimitResult {
   const now = Date.now();
   const existing = store.get(key);
   if (!existing || existing.resetAt <= now) {
-    const bucket: Bucket = { count: 1, resetAt: now + windowMs };
+    const bucket: Bucket = { count: cost, resetAt: now + windowMs };
     store.set(key, bucket);
     evict(now);
     return {
       ok: true,
       limit,
-      remaining: limit - 1,
+      remaining: Math.max(0, limit - cost),
       resetAt: bucket.resetAt,
       retryAfterSeconds: 0,
     };
   }
-  existing.count++;
+  existing.count += cost;
   if (existing.count > limit) {
     return {
       ok: false,
@@ -71,10 +84,40 @@ export function checkRateLimit(key: string, limit: number, windowMs: number): Ra
   return {
     ok: true,
     limit,
-    remaining: limit - existing.count,
+    remaining: Math.max(0, limit - existing.count),
     resetAt: existing.resetAt,
     retryAfterSeconds: 0,
   };
+}
+
+/**
+ * Orçamento de BYTES de áudio por usuário, para `/api/transcribe`.
+ *
+ * O limitador por chamada não protege o que importa aqui. A OpenAI cobra por
+ * minuto de áudio, e o tamanho do arquivo é o único sinal de duração que o
+ * servidor consegue conferir sem decodificar o áudio — o `durationMs` do
+ * formulário é do cliente e serve só para a nossa telemetria.
+ *
+ * A conta que dimensiona o teto: uma hora de gravação real são ~206 chunks de
+ * 15-20s (`RECORDER_MIN/MAX_CHUNK_MS`), a uns 80 KB cada em opus — perto de
+ * **16 MB por hora**. Dois aparelhos na mesma conta, 32 MB. O teto de 240 MB é
+ * quinze vezes o uso legítimo e inalcançável por acidente; para quem estava
+ * atacando, corta o pior caso de ~$320/hora por conta para ~$4.
+ *
+ * Devolve `null` quando pode seguir.
+ */
+export function enforceAudioBudget(userId: string, bytes: number): NextResponse | null {
+  const r = checkRateLimit(
+    `transcribe:bytes:user:${userId}`,
+    AUDIO_BUDGET_BYTES_PER_HOUR,
+    HOUR,
+    bytes
+  );
+  if (!r.ok) {
+    log.warn("audio budget exceeded", { userId, bytes });
+    return rateLimitResponse(r);
+  }
+  return null;
 }
 
 /**
@@ -153,6 +196,9 @@ export function enforceRateLimit(
 const MIN = 60_000;
 const HOUR = 60 * MIN;
 
+/** Ver `enforceAudioBudget`. 240 MB ≈ 15 horas de gravação real por hora. */
+const AUDIO_BUDGET_BYTES_PER_HOUR = 240 * 1024 * 1024;
+
 /**
  * Per-route limits. Sized against the pipeline cadence documented in
  * AGENTS.md so legitimate recording sessions never trip them, then padded
@@ -212,10 +258,22 @@ export const RATE_LIMITS = {
     perUser: { limit: 60, windowMs: MIN },
     perIp: { limit: 180, windowMs: MIN },
   },
+  // 20 por HORA, e antes eram 30 por MINUTO — noventa vezes mais.
+  //
+  // O número antigo veio do molde das rotas do pipeline ao vivo, que disparam a
+  // cada chunk. Esta não dispara a cada chunk: ela reformata uma transcrição
+  // inteira, de uma vez, e aceita 300 mil caracteres por chamada. Com 1.800
+  // chamadas por hora, uma conta com uma moeda de saldo custava perto de
+  // US$ 100/hora de gpt-4o-mini — a segunda maior exposição do produto, atrás
+  // só do `transcribe`.
+  //
+  // 20/hora é a cadência de uma ação de FIM de sessão, que é o que ela é —
+  // mesmo balde de `sessions-transcript`. Hoje nenhum código de cliente a
+  // chama; o limite é dimensionado para o dia em que voltar a chamar.
   "format-paragraphs": {
     route: "format-paragraphs",
-    perUser: { limit: 30, windowMs: MIN },
-    perIp: { limit: 90, windowMs: MIN },
+    perUser: { limit: 20, windowMs: HOUR },
+    perIp: { limit: 60, windowMs: HOUR },
   },
   // Alerta manual de alucinação: o usuário digita uma nota, então a cadência
   // real é de alguns por sessão. Generoso o bastante para quem está frustrado

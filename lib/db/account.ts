@@ -27,6 +27,12 @@ export type CurrentAccount = {
   profile: Profile;
   coinBalance: number;
   isAdmin: boolean;
+  /**
+   * `false` só quando um admin desativou a conta. É o que os layouts de
+   * `(app)` e `/partners` conferem para barrar a navegação — o equivalente,
+   * do lado das páginas, ao 403 que `requireAuth()` devolve nas rotas.
+   */
+  isActive: boolean;
 };
 
 const SELECT = "id, display_name, avatar_url, email, created_at, coin_balance, role, is_active";
@@ -66,5 +72,8 @@ export const getCurrentAccount = cache(async (): Promise<CurrentAccount | null> 
     },
     coinBalance: row.coin_balance ?? INITIAL_COIN_BALANCE,
     isAdmin: row.role === "admin" && row.is_active !== false,
+    // `!== false` e não `=== true`: null (linha antiga, coluna recém-criada)
+    // é conta ativa. Só a desativação explícita barra alguém.
+    isActive: row.is_active !== false,
   };
 });

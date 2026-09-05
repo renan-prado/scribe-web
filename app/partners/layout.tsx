@@ -3,9 +3,10 @@ import Link from "next/link";
 import { notFound } from "next/navigation";
 import type { ReactNode } from "react";
 import { ThemeToggle } from "@/components/ThemeToggle";
+import { AccountDisabled } from "@/features/auth/components/AccountDisabled";
 import { UserMenu } from "@/features/auth/components/UserMenu";
 import { getCurrentPartner } from "@/lib/auth/require-partner";
-import { getCurrentProfile } from "@/lib/db/profiles";
+import { getCurrentAccount } from "@/lib/db/account";
 import { ScribaLogo } from "@/shared/brand";
 
 export const metadata: Metadata = {
@@ -31,11 +32,17 @@ export const dynamic = "force-dynamic";
  * procurar por onde.
  */
 export default async function PartnersLayout({ children }: { children: ReactNode }) {
-  const [partner, profile] = await Promise.all([
+  const [partner, account] = await Promise.all([
     getCurrentPartner(),
-    getCurrentProfile().catch(() => null),
+    getCurrentAccount().catch(() => null),
   ]);
+  // Desativação vale para o painel do parceiro também: quem foi suspenso no
+  // app não continua acompanhando comissão por outra porta. Vem ANTES do
+  // `notFound()` de propósito — a pessoa desativada precisa da explicação, e
+  // não de um 404 que ela leria como "perdi meu cadastro de parceiro".
+  if (account && !account.isActive) return <AccountDisabled />;
   if (!partner) notFound();
+  const profile = account?.profile ?? null;
 
   return (
     <div className="flex min-h-svh flex-col bg-background">

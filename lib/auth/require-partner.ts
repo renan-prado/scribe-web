@@ -1,5 +1,6 @@
 import "server-only";
 import { cache } from "react";
+import { escapeLikeValue } from "@/lib/db/like";
 import { createLogger } from "@/lib/log";
 import { ensurePartnerAllowance } from "@/lib/partners/allowance";
 import { createAdminClient } from "@/lib/supabase/admin";
@@ -55,13 +56,39 @@ export const getCurrentPartner = cache(async (): Promise<CurrentPartner | null> 
   // `user_id = auth.uid()` — e no primeiro acesso o vínculo ainda não existe,
   // então a própria consulta que o resolveria voltaria vazia.
   const admin = createAdminClient();
-  const { data, error } = await admin
+
+  // DUAS consultas, e não um `.or()` com o e-mail interpolado na string do
+  // filtro. A forma antiga montava `invited_email.ilike.${user.email}` à mão,
+  // o que além do curinga acima deixava a sintaxe do PostgREST (vírgula,
+  // parêntese) ao alcance do valor. Separadas, cada uma diz uma coisa só — e a
+  // segunda passa a exigir `user_id is null`, que a versão com `.or()` não
+  // exigia: um parceiro JÁ vinculado a outra conta, cujo `invited_email`
+  // coincidisse com o meu, voltava para mim e me mostrava o painel dele.
+  const byUser = await admin
     .from("partners")
     .select(SELECT)
-    .or(`user_id.eq.${user.id},invited_email.ilike.${user.email}`)
+    .eq("user_id", user.id)
     .eq("status", "active")
     .maybeSingle();
-  if (error || !data) return null;
+  if (byUser.error) return null;
+
+  const byEmail = byUser.data
+    ? null
+    : await admin
+        .from("partners")
+        .select(SELECT)
+        // `invited_email` é gravado como o admin digitou (unicidade por
+        // `lower(...)`, migração 0029), daí o `ilike` — e daí o escape: sem ele
+        // um e-mail com `%` casaria com QUALQUER parceiro, e esta consulta roda
+        // com service-role. Ver `lib/db/like.ts`.
+        .ilike("invited_email", escapeLikeValue(user.email))
+        .is("user_id", null)
+        .eq("status", "active")
+        .maybeSingle();
+  if (byEmail?.error) return null;
+
+  const data = byUser.data ?? byEmail?.data ?? null;
+  if (!data) return null;
 
   // Primeira visita: grava o vínculo para as próximas leituras passarem pela
   // policy normal, sem depender deste casamento por e-mail.

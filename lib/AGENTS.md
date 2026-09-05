@@ -66,6 +66,14 @@ rota. Os dois devolvem `Result<T>` (nunca lançam) e têm timeout por
   insert é capturada e logada — observabilidade quebrada nunca vira 500 numa
   rota que funcionou. O preço por token está em `llm/pricing.ts`.
 
+  As duas escrevem com **service-role** e recebem `userId` de quem chama
+  (sempre `auth.user.id`, nunca um valor do corpo). Antes escreviam com o
+  client do usuário, sob a policy `user_id = auth.uid()` — e policy de INSERT
+  autoriza a escrita sem conferir o conteúdo: dava para mandar uma linha de
+  custo inventada direto por `POST /rest/v1/llm_usage_events` com o anon key e
+  envenenar `/admin/precificacao`. Migração 0039. De quebra sumiu um
+  `auth.getUser()` por registro — era uma ida à rede por chunk transcrito.
+
 ## Supabase — três clients, três autoridades
 
 | Módulo | Chave | Quem pode usar |
@@ -106,7 +114,18 @@ Next só deduplica `fetch()`, não consulta do Supabase.
 ## Auth e autorização
 
 - `supabase/require-auth.ts` — `requireAuth()` para rota de API: 401 se não há
-  sessão.
+  sessão, **403 `account_disabled` se `profiles.is_active` é `false`**. A
+  conferência mora aqui porque este é o funil por onde toda rota passa; no
+  proxy custaria uma consulta ao banco em todo request do site. O cabeçalho da
+  migração 0007 afirmava que o proxy conferia — nunca conferiu, e por três
+  meses o botão "desativar" do `/admin` pintou a linha de vermelho sem tirar
+  nada de ninguém. As páginas são cobertas pelos layouts de `(app)` e
+  `/partners`, que leem `isActive` da consulta memoizada de `db/account.ts`.
+
+  A mesma consulta traz `coin_balance`, e por isso `auth.user.coinBalance`
+  existe: é o que `coins/require-balance.ts` usa sem custar um segundo SELECT.
+  Linha ausente ou erro de leitura passam — só o `false` LIDO recusa, pelo
+  mesmo princípio de `getCurrentBalance`.
 - `auth/require-admin.ts` — três formas, e a escolha importa:
   - `requireAdmin()` em Route Handler. Responde **404, não 403**: não
     confirmamos a existência da área administrativa a quem não deveria vê-la.
@@ -116,7 +135,15 @@ Next só deduplica `fetch()`, não consulta do Supabase.
   - `assertAdmin()` em **Server Action**. Obrigatório: uma action é um POST
     próprio, e o gate do layout não a protege.
 - `auth/require-partner.ts` — gate do `/partners`, vínculo parceiro↔conta na
-  primeira visita, e o ponto onde a mesada mensal é conferida.
+  primeira visita, e o ponto onde a mesada mensal é conferida. São **duas
+  consultas**, não um `.or()` com o e-mail interpolado no filtro: o valor ia
+  parar dentro de um `ilike`, onde `%` é curinga, e a consulta roda com
+  service-role. Um e-mail com `%` casava com qualquer parceiro e o adotava.
+- `coins/require-balance.ts` — piso de saldo para as rotas de LLM. A cobrança
+  por minuto é emitida pelo NAVEGADOR, então sem ele bastava não chamar
+  `/api/coins/charge` para transcrever de graça. Ele recusa quem está zerado;
+  ele **não** mede consumo — para isso a contagem teria de sair do cliente, que
+  é mudança de produto.
 
 ## db/ — uma linha, uma leitura
 

@@ -1,4 +1,5 @@
 import "server-only";
+import { escapeLikeValue } from "@/lib/db/like";
 import { createLogger } from "@/lib/log";
 import { createAdminClient } from "@/lib/supabase/admin";
 
@@ -218,7 +219,7 @@ export async function linkPartnerToUserByEmail(id: string, email: string): Promi
   const { data: profile } = await admin
     .from("profiles")
     .select("id")
-    .ilike("email", email)
+    .ilike("email", escapeLikeValue(email))
     .maybeSingle();
   if (!profile) return false;
   const { error } = await admin.from("partners").update({ user_id: profile.id }).eq("id", id);
