@@ -15,9 +15,10 @@ import { useInstallPrompt } from "@/shared/hooks/use-install-prompt";
  * culto: a diferença entre abrir uma aba e tocar num ícone é a diferença entre
  * usar e não usar. Por isso o caminho de entrada no mobile é "instale primeiro".
  *
- * - **Desktop (`sm` pra cima):** nada muda. Renderiza o mesmo `<Link>` de
+ * - **Desktop (`lg` pra cima):** nada muda. Renderiza o mesmo `<Link>` de
  *   antes, com o mesmo texto e as mesmas classes — o HTML estático da LP
- *   continua idêntico (ver `app/AGENTS.md`).
+ *   continua idêntico (ver `app/AGENTS.md`). O corte é em `lg`, não `sm`,
+ *   porque o iPad instala o PWA como o iPhone e precisa do mesmo caminho.
  * - **Android/Chromium:** o botão dispara o diálogo nativo (`beforeinstallprompt`);
  *   recusado, cai no `href`.
  * - **iOS:** não há API; o botão abre o passo a passo do menu Compartilhar.
@@ -84,20 +85,21 @@ export function LandingCta({
 
   return (
     <>
-      {/* Desktop: o link de sempre. `max-sm:hidden` some com ele no celular. */}
-      <Link href={href} className={cn(className, "max-sm:hidden")}>
+      {/* Desktop: o link de sempre. `max-lg:hidden` some com ele no celular e
+          no tablet. */}
+      <Link href={href} className={cn(className, "max-lg:hidden")}>
         {icon}
         {label}
       </Link>
-      {/* Mobile: o botão que entra pela instalação. */}
-      <button type="button" onClick={handleMobileClick} className={cn(className, "sm:hidden")}>
+      {/* Mobile e tablet: o botão que entra pela instalação. */}
+      <button type="button" onClick={handleMobileClick} className={cn(className, "lg:hidden")}>
         {icon}
         {mobileLabel ?? label}
       </button>
       {showEscape ? (
         <Link
           href={href}
-          className="text-center text-[12px] font-light text-scriba-ink-mute underline underline-offset-4 sm:hidden"
+          className="text-center text-[12px] font-light text-scriba-ink-mute underline underline-offset-4 lg:hidden"
         >
           ou continuar pelo navegador
         </Link>

@@ -113,19 +113,19 @@ function Hero() {
             O Scriba escuta a pregação com você, transcreve o que é dito, organiza os principais
             ensinamentos e ajuda a relembrar e colocar em prática ao longo da semana.
           </p>
-          <div className="flex flex-col gap-2.5 pt-1 sm:flex-row sm:items-center sm:gap-3.5">
-            {/* Ordem invertida de propósito: no celular "Conhecer o Scriba" vem
-                primeiro e o "Instalar app" (com o link discreto para seguir no
-                navegador) fica ABAIXO dele. No desktop o `sm:order-*` devolve o
-                CTA para a frente. Ver `LandingCta`. */}
+          <div className="flex flex-col gap-2.5 pt-1 lg:flex-row lg:items-center lg:gap-3.5">
+            {/* Ordem invertida de propósito: no celular e no tablet "Conhecer o
+                Scriba" vem primeiro e o "Instalar app" (com o link discreto
+                para seguir no navegador) fica ABAIXO dele. No desktop o
+                `lg:order-*` devolve o CTA para a frente. Ver `LandingCta`. */}
             <a
               href="#recursos"
-              className="lp-cta-outline inline-flex items-center justify-center rounded-[26px] border border-auth-btn-border bg-scriba-paper py-4 px-7 text-[13px] font-medium text-scriba-ink sm:order-last"
+              className="lp-cta-outline inline-flex items-center justify-center rounded-[26px] border border-auth-btn-border bg-scriba-paper py-4 px-7 text-[13px] font-medium text-scriba-ink lg:order-last"
             >
               Conhecer o Scriba
             </a>
             <LandingCta
-              className="scriba-cta inline-flex items-center justify-center gap-2.5 rounded-[26px] bg-[image:var(--scriba-cta)] py-[17px] px-8 text-[13px] font-semibold uppercase tracking-[.04em] text-scriba-cta-ink shadow-[0_9px_22px_var(--scriba-cta-shadow)] sm:order-first"
+              className="scriba-cta inline-flex items-center justify-center gap-2.5 rounded-[26px] bg-[image:var(--scriba-cta)] py-[17px] px-8 text-[13px] font-semibold uppercase tracking-[.04em] text-scriba-cta-ink shadow-[0_9px_22px_var(--scriba-cta-shadow)] lg:order-first"
               icon={<ScribaMark size={20} />}
               label="Começar grátis"
               mobileLabel="Instalar app"

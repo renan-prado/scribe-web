@@ -333,17 +333,22 @@ Três consumidores hoje:
   o caminho do menu Compartilhar. Dois lugares o usam:
   - `InstallAppCard`, **no `/feed`** e só nele — a primeira tela de toda sessão
     de uso e a única em que a pessoa está olhando em volta em vez de terminando
-    alguma coisa. `sm:hidden`. O X é dispensa LEVE: some nesta visita e volta na
-    próxima vez que o `/feed` montar — no celular o convite nunca some de vez. O
-    caminho que pode ser adiado de vez é o `/profile` (`InstallAppRow`).
-  - `LandingCta` — o CTA da landing. No celular o botão entra pela instalação
-    em vez de ir direto para o `/sign-in` (o `mobileLabel` troca o texto onde
-    faz sentido — "Instalar app" na hero e no CTA final; o card do Gratuito
-    mantém "Começar grátis"), com o link discreto "ou continuar pelo navegador"
-    abaixo dele na hero. No desktop é o `<Link>` de sempre, com o mesmo texto e
-    as mesmas classes, para o HTML estático não mudar. Cliente puro como o
-    `StandaloneHomeGuard`; o diálogo do iOS entra por `dynamic` e só monta no
-    primeiro toque, para o Dialog do base-ui não pesar no bundle da LP.
+    alguma coisa. `lg:hidden`. O X é dispensa LEVE: some nesta visita e volta na
+    próxima vez que o `/feed` montar — no celular/tablet o convite nunca some de
+    vez. O caminho que pode ser adiado de vez é o `/profile` (`InstallAppRow`).
+  - `LandingCta` — o CTA da landing. No celular e no tablet o botão entra pela
+    instalação em vez de ir direto para o `/sign-in` (o `mobileLabel` troca o
+    texto onde faz sentido — "Instalar app" na hero e no CTA final; o card do
+    Gratuito mantém "Começar grátis"), com o link discreto "ou continuar pelo
+    navegador" abaixo dele na hero. No desktop é o `<Link>` de sempre, com o
+    mesmo texto e as mesmas classes, para o HTML estático não mudar. Cliente
+    puro como o `StandaloneHomeGuard`; o diálogo do iOS entra por `dynamic` e só
+    monta no primeiro toque, para o Dialog do base-ui não pesar no bundle da LP.
+
+  **O corte é `lg` (1024px), não `sm`.** Todo iPad em retrato cai abaixo dele, e
+  o iPad instala o PWA pelo mesmo menu Compartilhar do iPhone — não tem barra de
+  endereço com atalho de instalação. Tratar tablet como desktop escondia a
+  única porta de instalação que ele tem.
 - `StandaloneHomeGuard` — ver abaixo.
 
 ### O app instalado nunca abre na landing

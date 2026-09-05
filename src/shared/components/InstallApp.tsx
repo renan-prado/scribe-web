@@ -41,13 +41,14 @@ import { useInstallPrompt } from "@/shared/hooks/use-install-prompt";
  * alguma coisa. Espalhá-lo pelo layout inteiro seria o mesmo convite pedindo
  * atenção no meio de uma gravação.
  *
- * `sm:hidden` porque o alvo é o celular — no desktop o próprio navegador
- * oferece a instalação na barra de endereço, e o `/profile` tem a linha
- * permanente.
+ * `lg:hidden` porque o alvo é celular E TABLET — o iPad instala o PWA pelo
+ * mesmo menu Compartilhar do iPhone e não tem barra de endereço com o atalho
+ * de instalação. Só no desktop de verdade (`lg` pra cima) o navegador oferece
+ * isso sozinho, e lá o `/profile` tem a linha permanente.
  *
  * O X é dispensa LEVE: some nesta visita e volta na próxima vez que o `/feed`
- * montar. No celular o convite nunca some de vez — instalar o PWA é o caminho
- * que queremos —, e quem quer adiar de verdade tem o `/profile`.
+ * montar. No celular/tablet o convite nunca some de vez — instalar o PWA é o
+ * caminho que queremos —, e quem quer adiar de verdade tem o `/profile`.
  */
 export function InstallAppCard({ className }: { className?: string }) {
   const { method, promptInstall } = useInstallPrompt();
@@ -66,7 +67,7 @@ export function InstallAppCard({ className }: { className?: string }) {
 
   return (
     <>
-      <div className={cn("sm:hidden", className)}>
+      <div className={cn("lg:hidden", className)}>
         {/* Duas linhas, e não uma: num aparelho de 360px o texto, o botão e o
             X na mesma faixa espremem a frase em três linhas de duas palavras.
             O botão inteiro na segunda linha também é o alvo de toque maior. */}
@@ -129,7 +130,7 @@ export function InstallAppCard({ className }: { className?: string }) {
 
 /**
  * Variante de lista para as "Preferências" do /profile. É o caminho PERMANENTE
- * e o único no desktop: o card do /feed é `sm:hidden` e sua dispensa é leve
+ * e o único no desktop: o card do /feed é `lg:hidden` e sua dispensa é leve
  * (volta a cada visita), então esta linha é onde a instalação fica sempre à
  * mão — inclusive para quem prefere adiar.
  */
