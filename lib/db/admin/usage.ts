@@ -112,6 +112,14 @@ const STUDY_ROUTES = new Set([
 const REPROCESS_SUMMARY_ROUTES = new Set([
   "final-summary-reprocess",
   "summary-enrichment-reprocess",
+  // Reprocessar não reexecuta só o resumo: regenera também praticar, releia e
+  // lembra (ver o Promise.all em app/api/final-summary/reprocess/route.ts).
+  // São 3 chamadas de LLM a mais por reprocessamento, e enquanto elas
+  // gravavam as rotas SEM sufixo o custo delas era lido como custo da
+  // gravação — a margem de `reprocess_summary` saía otimista.
+  "practices-reprocess",
+  "rereads-reprocess",
+  "reminders-reprocess",
 ]);
 
 /**

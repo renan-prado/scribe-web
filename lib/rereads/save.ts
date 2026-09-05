@@ -4,7 +4,7 @@ import type { FeedItem } from "@/lib/domain/feed";
 import type { RereadsPayload } from "@/lib/domain/rereads";
 import type { SummaryPayload } from "@/lib/domain/summary";
 import { createLogger } from "@/lib/log";
-import { generateRereads } from "@/lib/rereads/generate";
+import { type GenerateRereadsInput, generateRereads } from "@/lib/rereads/generate";
 
 /**
  * Wrapper best-effort para gerar + persistir as 10 "Releia este texto".
@@ -22,6 +22,7 @@ export async function generateAndSaveRereads(input: {
   transcript: string;
   feedItems: FeedItem[];
   finalSummary: SummaryPayload;
+  metadataRoute: GenerateRereadsInput["metadataRoute"];
   logPrefix: string;
 }): Promise<RereadsPayload | null> {
   const log = createLogger(input.logPrefix);

@@ -111,6 +111,7 @@ export async function POST(request: Request) {
       feedItems: session.feedItems,
       finalSummary: payload,
       logPrefix: "practices-reprocess",
+      metadataRoute: "practices-reprocess",
     }),
     generateAndSaveRereads({
       userId: auth.user.id,
@@ -119,6 +120,7 @@ export async function POST(request: Request) {
       feedItems: session.feedItems,
       finalSummary: payload,
       logPrefix: "rereads-reprocess",
+      metadataRoute: "rereads-reprocess",
     }),
     generateAndSaveReminders({
       userId: auth.user.id,
@@ -127,6 +129,7 @@ export async function POST(request: Request) {
       feedItems: session.feedItems,
       finalSummary: payload,
       logPrefix: "reminders-reprocess",
+      metadataRoute: "reminders-reprocess",
     }),
     generateAndSaveHighlights({
       sessionId,

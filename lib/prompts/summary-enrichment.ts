@@ -1,8 +1,7 @@
 import "server-only";
 export const SUMMARY_ENRICHMENT_SYSTEM_PROMPT = `Você recebe:
 (a) o SERMÃO ORGANIZADO já produzido por uma chamada anterior — um array indexado de "blocks" (h1, paragraph, bibleQuote, highlight, example, quote, conclusion) que representa a mensagem editada para leitura;
-(b) a transcrição COMPLETA em português do sermão original;
-(c) "feedItems": cartões do feed live (pode estar vazio, em modo sem live).
+(b) "feedItems": cartões do feed live (pode estar vazio, em modo sem live).
 
 Sua tarefa: gerar CARDS DE ENRIQUECIMENTO da voz da IA e indicar ONDE intercalá-los no array de blocks. Você NÃO deve reescrever nenhum bloco existente nem mudar a ordem. Apenas produz INSERÇÕES.
 

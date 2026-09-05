@@ -1,5 +1,5 @@
 import "server-only";
-import { recordChatUsage } from "@/lib/db/usage";
+import { recordChatUsage, type UsageRoute } from "@/lib/db/usage";
 import type { FeedItem } from "@/lib/domain/feed";
 import {
   isCompletePracticesPayload,
@@ -45,12 +45,16 @@ export type GeneratePracticesInput = {
   finalSummary: SummaryPayload;
   feedItems: FeedItem[];
   logPrefix: string;
+  /** Rota gravada na telemetria: "practices" na primeira geração,
+   * "practices-reprocess" quando quem chamou foi o reprocessamento. */
+  metadataRoute: Extract<UsageRoute, "practices" | "practices-reprocess">;
 };
 
 export async function generatePractices(
   input: GeneratePracticesInput
 ): Promise<GeneratePracticesResult> {
-  const { userId, sessionId, transcript, finalSummary, feedItems, logPrefix } = input;
+  const { userId, sessionId, transcript, finalSummary, feedItems, logPrefix, metadataRoute } =
+    input;
   const log = createLogger(logPrefix);
   const model = serverEnv.OPENAI_PRACTICES_MODEL;
 
@@ -72,7 +76,7 @@ export async function generatePractices(
       { role: "user", content: userMessage },
     ],
     store: true,
-    metadata: buildLlmMetadata({ route: "practices", userId, sessionId }),
+    metadata: buildLlmMetadata({ route: metadataRoute, userId, sessionId }),
   });
 
   if (!result.ok) {
@@ -111,16 +115,16 @@ export async function generatePractices(
   }
   await recordChatUsage({
     sessionId,
-    route: "practices",
+    route: metadataRoute,
     model,
     promptTokens: usage.promptTokens,
     completionTokens: usage.completionTokens,
     cachedTokens: usage.cachedTokens,
+    reasoningTokens: usage.reasoningTokens,
     latencyMs,
   });
 
   if (!isCompletePracticesPayload(payload)) {
-    reasoningTokens: usage.reasoningTokens,
     log.warn(`incomplete payload — expected 5 items covering all offsets`, {
       got: payload.items.length,
       offsets: payload.items.map((i) => i.dayOffset),

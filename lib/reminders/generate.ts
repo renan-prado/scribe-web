@@ -1,5 +1,5 @@
 import "server-only";
-import { recordChatUsage } from "@/lib/db/usage";
+import { recordChatUsage, type UsageRoute } from "@/lib/db/usage";
 import type { FeedItem } from "@/lib/domain/feed";
 import {
   isCompleteRemindersPayload,
@@ -41,12 +41,16 @@ export type GenerateRemindersInput = {
   finalSummary: SummaryPayload;
   feedItems: FeedItem[];
   logPrefix: string;
+  /** Rota gravada na telemetria: "reminders" na primeira geração,
+   * "reminders-reprocess" quando quem chamou foi o reprocessamento. */
+  metadataRoute: Extract<UsageRoute, "reminders" | "reminders-reprocess">;
 };
 
 export async function generateReminders(
   input: GenerateRemindersInput
 ): Promise<GenerateRemindersResult> {
-  const { userId, sessionId, transcript, finalSummary, feedItems, logPrefix } = input;
+  const { userId, sessionId, transcript, finalSummary, feedItems, logPrefix, metadataRoute } =
+    input;
   const log = createLogger(logPrefix);
   const model = serverEnv.OPENAI_REMINDERS_MODEL;
 
@@ -68,7 +72,7 @@ export async function generateReminders(
       { role: "user", content: userMessage },
     ],
     store: true,
-    metadata: buildLlmMetadata({ route: "reminders", userId, sessionId }),
+    metadata: buildLlmMetadata({ route: metadataRoute, userId, sessionId }),
   });
 
   if (!result.ok) {
@@ -108,16 +112,16 @@ export async function generateReminders(
   }
   await recordChatUsage({
     sessionId,
-    route: "reminders",
+    route: metadataRoute,
     model,
     promptTokens: usage.promptTokens,
     completionTokens: usage.completionTokens,
     cachedTokens: usage.cachedTokens,
+    reasoningTokens: usage.reasoningTokens,
     latencyMs,
   });
 
   if (!isCompleteRemindersPayload(payload)) {
-    reasoningTokens: usage.reasoningTokens,
     log.warn(`incomplete payload — expected 10 items covering all offsets`, {
       got: payload.items.length,
       offsets: payload.items.map((i) => i.dayOffset),

@@ -4,7 +4,7 @@ import type { FeedItem } from "@/lib/domain/feed";
 import type { PracticesPayload } from "@/lib/domain/practices";
 import type { SummaryPayload } from "@/lib/domain/summary";
 import { createLogger } from "@/lib/log";
-import { generatePractices } from "@/lib/practices/generate";
+import { type GeneratePracticesInput, generatePractices } from "@/lib/practices/generate";
 
 /**
  * Wrapper best-effort para gerar + persistir as 5 "Coloque em prática".
@@ -22,6 +22,7 @@ export async function generateAndSavePractices(input: {
   transcript: string;
   feedItems: FeedItem[];
   finalSummary: SummaryPayload;
+  metadataRoute: GeneratePracticesInput["metadataRoute"];
   logPrefix: string;
 }): Promise<PracticesPayload | null> {
   const log = createLogger(input.logPrefix);

@@ -159,6 +159,7 @@ export async function POST(request: Request) {
       feedItems,
       finalSummary: payload,
       logPrefix: "practices",
+      metadataRoute: "practices",
     }),
     generateAndSaveRereads({
       userId: auth.user.id,
@@ -167,6 +168,7 @@ export async function POST(request: Request) {
       feedItems,
       finalSummary: payload,
       logPrefix: "rereads",
+      metadataRoute: "rereads",
     }),
     generateAndSaveReminders({
       userId: auth.user.id,
@@ -175,6 +177,7 @@ export async function POST(request: Request) {
       feedItems,
       finalSummary: payload,
       logPrefix: "reminders",
+      metadataRoute: "reminders",
     }),
     generateAndSaveHighlights({
       sessionId,

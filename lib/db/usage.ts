@@ -49,9 +49,17 @@ export type UsageRoute =
   // Os dois cortes do guardião, num modelo barato. Mesma rota para os
   // dois: separá-los daria duas linhas de custo irrisório cada.
   | "study-guard"
+  // Os três cards de acompanhamento, e a segunda rota de cada um pelo MESMO
+  // motivo do enriquecimento acima: o reprocessamento regenera os três, e sem
+  // o par o custo dessa regeração caía na linha da gravação. Metade do
+  // trabalho que reprocessar dispara ficava fora do preço de
+  // `reprocess_summary`, que por isso parecia mais barato do que é.
   | "practices"
+  | "practices-reprocess"
   | "rereads"
+  | "rereads-reprocess"
   | "reminders"
+  | "reminders-reprocess"
   | "format-paragraphs"
   | "hallucination-report"
   // A análise diária do próprio painel (/api/admin/insights). Entra aqui, e
@@ -69,14 +77,6 @@ export type RecordChatUsageInput = {
   promptTokens: number | undefined;
   completionTokens: number | undefined;
   cachedTokens: number | undefined;
-  latencyMs: number;
-};
-
-export type RecordAudioUsageInput = {
-  sessionId: string | null;
-  route: Extract<UsageRoute, "transcribe">;
-  model: string;
-  audioSeconds: number;
   /**
    * Subconjunto de `completionTokens`, não uma parcela a somar. Gravado numa
    * coluna própria porque o custo já sai certo sem ele — ele entra em
@@ -85,6 +85,14 @@ export type RecordAudioUsageInput = {
    * se `reasoningEffort` numa etapa é dinheiro no chão.
    */
   reasoningTokens: number | undefined;
+  latencyMs: number;
+};
+
+export type RecordAudioUsageInput = {
+  sessionId: string | null;
+  route: Extract<UsageRoute, "transcribe">;
+  model: string;
+  audioSeconds: number;
   latencyMs: number;
 };
 
@@ -119,6 +127,7 @@ export async function recordChatUsage(input: RecordChatUsageInput): Promise<void
       prompt_tokens: prompt,
       completion_tokens: completion,
       cached_tokens: cached,
+      reasoning_tokens: input.reasoningTokens ?? null,
       total_tokens: total,
       audio_seconds: null,
       input_cost_usd: cost.inputUsd,
@@ -127,7 +136,6 @@ export async function recordChatUsage(input: RecordChatUsageInput): Promise<void
       latency_ms: input.latencyMs,
     });
     if (error) {
-      reasoning_tokens: input.reasoningTokens ?? null,
       log.error("insert failed", { route: input.route, error: error.message });
     }
   } catch (err) {

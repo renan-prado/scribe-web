@@ -4,7 +4,7 @@ import type { FeedItem } from "@/lib/domain/feed";
 import type { RemindersPayload } from "@/lib/domain/reminders";
 import type { SummaryPayload } from "@/lib/domain/summary";
 import { createLogger } from "@/lib/log";
-import { generateReminders } from "@/lib/reminders/generate";
+import { type GenerateRemindersInput, generateReminders } from "@/lib/reminders/generate";
 
 /**
  * Wrapper best-effort para gerar + persistir os 10 "Lembra disso?". Nunca
@@ -17,6 +17,7 @@ export async function generateAndSaveReminders(input: {
   transcript: string;
   feedItems: FeedItem[];
   finalSummary: SummaryPayload;
+  metadataRoute: GenerateRemindersInput["metadataRoute"];
   logPrefix: string;
 }): Promise<RemindersPayload | null> {
   const log = createLogger(input.logPrefix);

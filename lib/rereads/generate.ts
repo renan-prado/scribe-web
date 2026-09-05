@@ -1,7 +1,7 @@
 import "server-only";
 import { BIBLE_TRANSLATION, loadBible } from "@/lib/bibles/loader";
 import { lookupVerse } from "@/lib/bibles/lookup";
-import { recordChatUsage } from "@/lib/db/usage";
+import { recordChatUsage, type UsageRoute } from "@/lib/db/usage";
 import type { FeedItem } from "@/lib/domain/feed";
 import { parseVerseReference, referenceStrictlyContains } from "@/lib/domain/feed";
 import {
@@ -55,10 +55,14 @@ export type GenerateRereadsInput = {
   finalSummary: SummaryPayload;
   feedItems: FeedItem[];
   logPrefix: string;
+  /** Rota gravada na telemetria: "rereads" na primeira geração,
+   * "rereads-reprocess" quando quem chamou foi o reprocessamento. */
+  metadataRoute: Extract<UsageRoute, "rereads" | "rereads-reprocess">;
 };
 
 export async function generateRereads(input: GenerateRereadsInput): Promise<GenerateRereadsResult> {
-  const { userId, sessionId, transcript, finalSummary, feedItems, logPrefix } = input;
+  const { userId, sessionId, transcript, finalSummary, feedItems, logPrefix, metadataRoute } =
+    input;
   const log = createLogger(logPrefix);
   const target = REREAD_DAY_OFFSETS.length;
 
@@ -105,7 +109,7 @@ export async function generateRereads(input: GenerateRereadsInput): Promise<Gene
       { role: "user", content: userMessage },
     ],
     store: true,
-    metadata: buildLlmMetadata({ route: "rereads", userId, sessionId }),
+    metadata: buildLlmMetadata({ route: metadataRoute, userId, sessionId }),
   });
 
   if (!result.ok) {
@@ -145,16 +149,16 @@ export async function generateRereads(input: GenerateRereadsInput): Promise<Gene
   }
   await recordChatUsage({
     sessionId,
-    route: "rereads",
+    route: metadataRoute,
     model,
     promptTokens: usage.promptTokens,
     completionTokens: usage.completionTokens,
     cachedTokens: usage.cachedTokens,
+    reasoningTokens: usage.reasoningTokens,
     latencyMs,
   });
 
   const dedupedFill = dedupeFillAgainstPool(fillItems, truncatedPool).slice(0, needed);
-    reasoningTokens: usage.reasoningTokens,
   const payload = await enrichWithVerseText(assembleFinal(truncatedPool, dedupedFill), logPrefix);
 
   if (!isCompleteRereadsPayload(payload)) {
