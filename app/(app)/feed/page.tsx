@@ -110,50 +110,52 @@ export default async function HomePage() {
     }));
 
   return (
-    <main
-      className={cn(
-        "mx-auto flex w-full max-w-3xl flex-col gap-6 px-4 py-6 sm:gap-8 sm:px-6 sm:py-8",
-        isEmpty && "flex-1 justify-center py-0 sm:py-0"
-      )}
-    >
-      {isEmpty ? null : (
-        <div className="flex flex-col gap-1.5">
-          <h1 className="font-heading text-2xl font-semibold leading-tight tracking-tight text-scriba-ink-strong sm:text-3xl">
-            {greeting}, {firstName}!
-          </h1>
-          <p className="text-sm font-light text-scriba-ink-soft">{dailyPrompt(now.getDate())}</p>
-        </div>
-      )}
+    <div className="flex flex-1 flex-col bg-scriba-surface">
+      <main
+        className={cn(
+          "mx-auto flex w-full max-w-3xl flex-1 flex-col gap-6 px-4 py-6 sm:gap-8 sm:px-6 sm:py-8",
+          isEmpty && "justify-center py-0 sm:py-0"
+        )}
+      >
+        {isEmpty ? null : (
+          <div className="flex flex-col gap-1.5">
+            <h1 className="font-heading text-2xl font-semibold leading-tight tracking-tight text-scriba-ink-strong sm:text-3xl">
+              {greeting}, {firstName}!
+            </h1>
+            <p className="text-sm font-light text-scriba-ink-soft">{dailyPrompt(now.getDate())}</p>
+          </div>
+        )}
 
-      <div className="flex flex-col gap-4">
-        {isEmpty ? (
-          <SessionsEmptyState showThemeToggle />
-        ) : latest ? (
-          <>
-            <ReflectionCard
-              sessionId={latest.id}
-              title={latest.title ?? "Sessão sem título"}
-              speaker={latest.speakerName}
-              date={shortDate(latest.createdAt)}
-              shortSummary={latest.shortSummary}
-              href={`/recording/${latest.id}/summary`}
-              hasDeepening={latestHasDeepening}
-              canGenerateStudy={canGenerateStudy}
-            />
-            <div className="py-2">
-              <div className="h-px bg-scriba-hairline" />
-            </div>
-            <PaginatedFeed
-              initialItems={feedPage.items}
-              initialHasMore={feedPage.hasMore}
-              initialOrder="recent"
-              studyCtaSessions={studyCtaSessions}
-              canGenerateStudy={canGenerateStudy}
-            />
-          </>
-        ) : null}
-      </div>
-    </main>
+        <div className="flex flex-col gap-4">
+          {isEmpty ? (
+            <SessionsEmptyState showThemeToggle />
+          ) : latest ? (
+            <>
+              <ReflectionCard
+                sessionId={latest.id}
+                title={latest.title ?? "Sessão sem título"}
+                speaker={latest.speakerName}
+                date={shortDate(latest.createdAt)}
+                shortSummary={latest.shortSummary}
+                href={`/recording/${latest.id}/summary`}
+                hasDeepening={latestHasDeepening}
+                canGenerateStudy={canGenerateStudy}
+              />
+              <div className="py-2">
+                <div className="h-px bg-scriba-hairline" />
+              </div>
+              <PaginatedFeed
+                initialItems={feedPage.items}
+                initialHasMore={feedPage.hasMore}
+                initialOrder="recent"
+                studyCtaSessions={studyCtaSessions}
+                canGenerateStudy={canGenerateStudy}
+              />
+            </>
+          ) : null}
+        </div>
+      </main>
+    </div>
   );
 }
 
