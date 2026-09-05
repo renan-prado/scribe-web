@@ -78,6 +78,33 @@ function NavLinkContent({ children, contentClassName, spinner }: NavLinkContentP
 }
 
 /**
+ * Troca o próprio conteúdo por um spinner enquanto o `<Link>` que o envolve
+ * está pendente — e devolve o conteúdo quando a rota chega.
+ *
+ * É para navegação em que o ícone JÁ É o alvo do toque, como a barra inferior
+ * do celular: ali não há espaço para um spinner ao lado do rótulo, e um
+ * segundo glifo aparecendo mudaria a largura do item no meio do clique. No
+ * lugar, o próprio ícone gira.
+ *
+ * Precisa estar dentro de um `<Link>` / `<NavLink>` — `useLinkStatus` só
+ * responde lá dentro. O spinner herda a cor do link (`text-current`), então
+ * ele acompanha o estado ativo do item sem receber cor própria.
+ */
+export function LinkPendingSwap({
+  children,
+  className,
+}: {
+  children: ReactNode;
+  className?: string;
+}) {
+  const { pending } = useLinkStatus();
+  if (!pending) return <>{children}</>;
+  return (
+    <Loader2 aria-hidden className={cn("size-4 shrink-0 animate-spin text-current", className)} />
+  );
+}
+
+/**
  * Renders a small inline spinner while the enclosing `<Link>` is pending. Must
  * be a child of a `<Link>` (or `<NavLink>`). Useful when you don't want the
  * default NavLink wrapper — e.g. inside a custom button-shaped link.

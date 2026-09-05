@@ -3,7 +3,7 @@
 import { BookOpen, Mic, User } from "lucide-react";
 import { usePathname } from "next/navigation";
 import type { ReactNode } from "react";
-import { NavLink } from "@/components/NavLink";
+import { LinkPendingSwap, NavLink } from "@/components/NavLink";
 import { NewRecordingDialog } from "@/features/session/components/NewRecordingDialog";
 import { cn } from "@/lib/utils";
 
@@ -191,7 +191,10 @@ function TabLink({
           sem a calha cada item ficava com uma altura diferente. Como a barra
           centraliza item a item, o resultado era um rótulo em cada linha. */}
       <span aria-hidden className="flex h-4 items-center justify-center">
-        {icon}
+        {/* Enquanto a rota não chega, o PRÓPRIO ícone vira o spinner. É o único
+            feedback que cabe aqui: um glifo extra ao lado mudaria a largura do
+            item no meio do toque. Ver `LinkPendingSwap`. */}
+        <LinkPendingSwap>{icon}</LinkPendingSwap>
       </span>
       <span>{label}</span>
     </NavLink>
