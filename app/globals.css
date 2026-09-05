@@ -360,6 +360,18 @@
   --scriba-cta: linear-gradient(135deg, #1976C5 0%, #0D5E9F 100%);
   --scriba-cta-ink: #FFFFFF;
   --scriba-cta-shadow: rgba(79, 168, 240, 0.32);
+  /* A esfumaçada acima da nav inferior do celular, que dissolve o conteúdo
+     rolando por trás dela. Era um `rgba(255,255,255,…)` literal no className da
+     `MobileBottomNav` — no tema escuro, uma névoa BRANCA sobre a página
+     índigo, e é justamente no app instalado que essa faixa fica sempre à
+     vista. Os stops precisam ser do CHÃO da página, não do papel. */
+  --scriba-nav-fade: linear-gradient(
+    to top,
+    rgba(255, 255, 255, 0.98) 0%,
+    rgba(255, 255, 255, 0.75) 40%,
+    rgba(255, 255, 255, 0.35) 75%,
+    rgba(255, 255, 255, 0) 100%
+  );
   --lp-header-h: 71px;
   /* Design-system border widths */
   --border-book: 1.5px;   /* book glyph icon border */
@@ -509,6 +521,14 @@
   --scriba-cta: linear-gradient(135deg, #FFFFFF 0%, #E6EDF5 100%);
   --scriba-cta-ink: #0B2742;
   --scriba-cta-shadow: rgba(0, 0, 0, 0.45);
+  /* O mesmo esfumaçado do claro, na cor do chão daqui (#0F0D1E). */
+  --scriba-nav-fade: linear-gradient(
+    to top,
+    rgba(15, 13, 30, 0.98) 0%,
+    rgba(15, 13, 30, 0.75) 40%,
+    rgba(15, 13, 30, 0.35) 75%,
+    rgba(15, 13, 30, 0) 100%
+  );
 }
 
 /* sm: o header ganha py-[18px] e cresce 8px. */

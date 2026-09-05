@@ -50,6 +50,15 @@ o primeiro paint de todo mundo. O estado persiste em `use-theme.ts`
 Portais fora da árvore de tokens (sonner) precisam do tema resolvido passado
 explicitamente — ver `ThemedToaster`.
 
+**Duas cores vivem FORA do `globals.css`, e as duas são obrigadas a isso.** A
+barra de status do celular (`<meta name="theme-color">`, escrita pelo
+`ThemeScript` e reescrita pelo `useTheme`) e o `theme_color` do manifest são
+lidos pelo navegador antes de qualquer CSS — nenhum dos dois enxerga um `var()`.
+Elas moram em `src/shared/theme-color.ts` e são o espelho de `--scriba-surface`
+nos dois temas: **mudou o token, mude lá no mesmo commit.** A terceira exceção,
+pelo mesmo motivo, é `public/offline.html` — sem rede não há folha de estilo
+para carregar.
+
 O switch (`ThemeToggle` / `ThemeToggleRow`) está exposto em sign-in, sign-up,
 `/profile`, no header logado e no estado vazio do `/feed`. Não espalhe mais
 sem pedido.
@@ -131,7 +140,10 @@ mudar, troque os mestres e regenere, nesta ordem:
 4. `app/favicon.ico` — 16/32/48/64/128/256 no mesmo arquivo.
 5. `app/apple-icon.png` (180, opaco) e `public/brand/icon-{192,512}.png`.
 6. `app/opengraph-image.png` — cópia do banner (com o `.alt.txt` ao lado).
-7. `app/manifest.ts`, `app/layout.tsx` e `LandingJsonLd.tsx` — só apontam, mas
+7. `public/brand/splash/` — `node scripts/generate-splash.mjs`. As telas de
+   abertura do PWA no iOS; o script LÊ o `pena.svg` do passo 2, então rodá-lo
+   antes dele redesenha a marca velha.
+8. `app/manifest.ts`, `app/layout.tsx` e `LandingJsonLd.tsx` — só apontam, mas
    confira se o arquivo apontado ainda existe.
 
 Sobre formatos e precedência de `<link>`, ver `app/AGENTS.md`.
@@ -142,6 +154,45 @@ Sobre formatos e precedência de `<link>`, ver `app/AGENTS.md`.
 um acento decorativo, use o hexágono amarelo já usado no app:
 `clip-path:polygon(50%_0,100%_25%,100%_75%,50%_100%,0_75%,0_25%)` sobre um
 bloco `bg-scriba-yellow`.
+
+## A barra inferior do celular
+
+`MobileBottomNav` é o chrome do app no telefone, e três decisões dela mordem
+quem for mexer:
+
+- **Ela SOME nas três telas de captura** (`/recording/:id/{live,audio,transcribe}`),
+  não só no `live`. No modo transcrição o botão de parar é `fixed` a 24px do
+  rodapé — exatamente onde a barra fica —, e ela cobria o botão: a gravação não
+  tinha como ser pausada nem encerrada pelo celular. Some com ela também evita
+  o toque acidental que navega para fora e mata o MediaRecorder no meio de um
+  sermão.
+- **Todo ícone mora numa calha de altura fixa.** Cada glifo tem a sua altura
+  natural, e como a barra centra item a item, alturas diferentes colocavam cada
+  rótulo numa linha. O item "Perfil" é um glifo de usuário, não a foto: o
+  avatar era o único elemento que mudava de tamanho, de forma e de cor sozinho,
+  e a barra é navegação, não identidade.
+- **O `padding-bottom` é SÓ o `env(safe-area-inset-bottom)`**, sem folga fixa
+  somada. Um piso de 8px ali empurra a fileira inteira para cima do centro —
+  como a altura é `min-h` e a caixa é border-box, o inset cresce a barra em vez
+  de espremer o conteúdo.
+
+Nada dentro dela pode usar cor literal: a esfumaçada acima da barra é
+`--scriba-nav-fade`, e o ícone do botão "Gravar" herda `--scriba-cta-ink`
+(pintá-lo de branco o faz sumir no tema escuro, onde o CTA inverte).
+
+## Atalhos de papel: dois lugares, um motivo
+
+Admin e parceiro chegam às suas áreas pelo menu do avatar (`PrivilegedMenuItems`)
+no desktop e pelo `/profile` (`PrivilegedProfileLinks`, `sm:hidden`) no celular,
+porque o header mobile não tem avatar — sem a segunda porta, quem tem o papel só
+chegava lá digitando a URL.
+
+**Os dois são SERVER components, e é isso que justifica existirem separados.**
+Atrás de um `isAdmin &&` dentro de um componente cliente, as strings "Admin",
+"Área do parceiro", "/admin" e "/partners" viajam no JavaScript de todo usuário
+logado: o booleano esconde o item na tela, não o código que o desenha. Nenhum
+dos dois é controle de acesso — os gates das rotas respondem 404 a quem digitar
+a URL.
 
 ## Select — o rótulo não vem de graça
 

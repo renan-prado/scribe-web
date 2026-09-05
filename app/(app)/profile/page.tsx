@@ -1,9 +1,13 @@
 import { AtSign, CalendarClock, LogOut, User as UserIcon } from "lucide-react";
 import { redirect } from "next/navigation";
 import type { ReactNode } from "react";
+import { InstallAppRow } from "@/components/InstallApp";
 import { ThemeToggleRow } from "@/components/ThemeToggle";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
+import { PrivilegedProfileLinks } from "@/features/auth/components/PrivilegedProfileLinks";
 import { PlanCard } from "@/features/billing/components/PlanCard";
+import { isCurrentUserAdmin } from "@/lib/auth/require-admin";
+import { isCurrentUserPartner } from "@/lib/auth/require-partner";
 import { COIN_RING_REFERENCE } from "@/lib/coins/pricing";
 import { getCurrentBalance } from "@/lib/db/coins";
 import { getCurrentProfile } from "@/lib/db/profiles";
@@ -32,9 +36,15 @@ function initialsFrom(name: string | null, email: string | null): string {
  * a hairline card.
  */
 export default async function ProfilePage() {
-  const [profile, balance] = await Promise.all([
+  // As quatro leituras custam UMA consulta a mais que as duas de antes: perfil,
+  // saldo e papel de admin saem da mesma linha memoizada de `profiles`
+  // (lib/db/account.ts), e `isCurrentUserPartner` é a que o layout de `(app)`
+  // já fez neste mesmo render — `cache()` devolve o resultado dela.
+  const [profile, balance, isAdmin, isPartner] = await Promise.all([
     getCurrentProfile(),
     getCurrentBalance().catch(() => null),
+    isCurrentUserAdmin().catch(() => false),
+    isCurrentUserPartner().catch(() => false),
   ]);
   if (!profile) redirect("/sign-in");
 
@@ -129,12 +139,23 @@ export default async function ProfilePage() {
         </dl>
       </section>
 
+      {/* Só no celular: no desktop estes atalhos vivem no menu do avatar, que
+          o header mobile não tem. Sem esta faixa, admin e parceiro só chegavam
+          às suas áreas digitando a URL. */}
+      <PrivilegedProfileLinks isAdmin={isAdmin} isPartner={isPartner} />
+
       {/* Preferências */}
       <section className="rounded-[28px] bg-scriba-paper p-6 ring-1 ring-scriba-hairline sm:p-7">
         <h2 className="mb-5 text-[11px] font-semibold uppercase tracking-wider text-scriba-ink-mute">
           Preferências
         </h2>
-        <ThemeToggleRow />
+        <div className="flex flex-col gap-5">
+          <ThemeToggleRow />
+          {/* Caminho PERMANENTE para instalar: a faixa do topo do app pode ser
+              dispensada para sempre, e é a única outra porta. Ela some sozinha
+              onde não há o que oferecer — ver `InstallAppRow`. */}
+          <InstallAppRow />
+        </div>
       </section>
 
       <form action="/auth/sign-out" method="post">

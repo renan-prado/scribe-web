@@ -59,11 +59,7 @@ export default async function AppLayout({ children }: { children: ReactNode }) {
         }
       />
       <div className="flex flex-1 flex-col pb-36 sm:pb-0">{children}</div>
-      <MobileBottomNav
-        avatarUrl={profile?.avatarUrl ?? null}
-        displayName={profile?.displayName ?? null}
-        email={profile?.email ?? null}
-      />
+      <MobileBottomNav />
     </>
   );
 }
