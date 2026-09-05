@@ -1,6 +1,7 @@
 "use client";
 
 import { useVerseFetch } from "@/features/session/hooks/useVerseFetch";
+import type { VerseLine } from "@/lib/domain/verse";
 
 /**
  * Uma passagem bíblica como pilha de versículos numerados (estilo app de
@@ -35,6 +36,29 @@ type PassageVersesProps = {
   endVerse: number;
 };
 
+/**
+ * A pilha de versículos numerados, já com o texto em mãos.
+ *
+ * Separada de `PassageVerses` porque o diálogo de capítulo (`ChapterDialog`)
+ * mostra exatamente esta marcação a partir de uma referência SEM faixa —
+ * "Jonas 1" —, que não cabe nas props acima. Duas cópias divergiriam na
+ * primeira vez que alguém mexesse no alinhamento do `sup`.
+ */
+export function VerseLines({ verses }: { verses: VerseLine[] }) {
+  return (
+    <div className="flex flex-col gap-1.5 pl-3">
+      {verses.map((line) => (
+        <p key={line.verse} className="text-sm leading-relaxed text-foreground/90">
+          <sup className="mr-1.5 select-none align-[0.35em] text-[0.65rem] font-semibold text-muted-foreground">
+            {line.verse}
+          </sup>
+          <span>{line.text}</span>
+        </p>
+      ))}
+    </div>
+  );
+}
+
 const SKELETON_WIDTHS = ["w-full", "w-[92%]", "w-[97%]", "w-[85%]", "w-[95%]"];
 
 export function PassageVerses({ bookDisplay, chapter, startVerse, endVerse }: PassageVersesProps) {
@@ -45,20 +69,7 @@ export function PassageVerses({ bookDisplay, chapter, startVerse, endVerse }: Pa
 
   const state = useVerseFetch(reference);
 
-  if (state.status === "ok") {
-    return (
-      <div className="flex flex-col gap-1.5 pl-3">
-        {state.verses.map((line) => (
-          <p key={line.verse} className="text-sm leading-relaxed text-foreground/90">
-            <sup className="mr-1.5 select-none align-[0.35em] text-[0.65rem] font-semibold text-muted-foreground">
-              {line.verse}
-            </sup>
-            <span>{line.text}</span>
-          </p>
-        ))}
-      </div>
-    );
-  }
+  if (state.status === "ok") return <VerseLines verses={state.verses} />;
 
   // Erro renderiza como ausência, e não como aviso: o cartão em volta já traz
   // a referência, e uma mensagem de falha no meio de um estudo assusta mais do

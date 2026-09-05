@@ -1,4 +1,5 @@
 import { BookGlyph } from "@/components/icons/BookGlyph";
+import { ChapterMention } from "@/features/session/components/ChapterMention";
 import { PassageVerses } from "@/features/session/components/PassageVerses";
 import { parseVerseReference } from "@/lib/domain/feed";
 import type { SummaryBlock } from "@/lib/domain/summary";
@@ -46,6 +47,21 @@ export function BlockRenderer({ block }: { block: SummaryBlock }) {
     case "bibleQuote": {
       const parsed = parseVerseReference(block.reference);
       const hasRange = parsed && parsed.startVerse != null && parsed.endVerse != null;
+
+      // MENÇÃO, não citação. Uma referência solta — "Jonas 1", capítulo sem
+      // versículo — não tem o que citar: o pregador NARROU a passagem em vez
+      // de ler um versículo, então não há texto na transcrição, e o capítulo
+      // inteiro não é uma faixa que `PassageVerses` possa buscar na NVI. A
+      // moldura de citação ficava aberta em volta de nada: uma superfície com
+      // gradiente, 26px de raio e 24 de padding para exibir duas palavras.
+      //
+      // A condição é "não há CORPO", e não "a referência é de capítulo": o que
+      // torna a moldura vazia é não ter o que emoldurar. Um capítulo que venha
+      // com texto continua sendo citação de verdade e mantém a moldura.
+      if (!hasRange && !block.text) {
+        return <ChapterMention reference={block.reference} />;
+      }
+
       return (
         <figure className="relative flex flex-col gap-3.5 rounded-[26px] p-6 animate-insight-gradient bg-[image:var(--session-surface-quote)] bg-[size:200%_100%]">
           <figcaption>
@@ -63,11 +79,11 @@ export function BlockRenderer({ block }: { block: SummaryBlock }) {
                 endVerse={parsed.endVerse as number}
               />
             </div>
-          ) : block.text ? (
+          ) : (
             <blockquote className="text-[15px] font-light leading-relaxed text-session-verse-text">
               {block.text}
             </blockquote>
-          ) : null}
+          )}
         </figure>
       );
     }
