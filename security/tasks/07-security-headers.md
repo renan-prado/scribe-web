@@ -184,3 +184,13 @@ ignorado pelo navegador, que é o comportamento correto.
   Vercel serve direto). Se um dia entrar, conferir que ele não REMOVE nenhum
   destes headers nem sobrescreve a CSP — mas hoje não há essa camada para
   auditar.
+
+### Nota de campo (deploy 2026-09-05)
+
+Ao subir o deploy descobri que a **produção já emitia** `Strict-Transport-Security:
+max-age=63072000` — sem `includeSubDomains`, provavelmente um ajuste no nível do
+projeto na Vercel, não no código. Ou seja, o HSTS não estava totalmente ausente
+em prod; o que faltava era estar NO CÓDIGO (fonte única, versionada) e trazer
+`includeSubDomains`. A mudança em `next.config.ts` cobre as duas coisas, e o
+`includeSubDomains` foi o discriminador usado para confirmar que o novo build
+entrou no ar.
