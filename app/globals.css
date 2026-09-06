@@ -364,12 +364,23 @@
      rolando por trás dela. Era um `rgba(255,255,255,…)` literal no className da
      `MobileBottomNav` — no tema escuro, uma névoa BRANCA sobre a página
      índigo, e é justamente no app instalado que essa faixa fica sempre à
-     vista. Os stops precisam ser do CHÃO da página, não do papel. */
+     vista. Os stops precisam ser do CHÃO da página, não do papel.
+
+     São SETE stops para uma faixa de 48px, e o excesso é o ponto: com quatro
+     stops o trecho final ia de 0,35 a zero de uma vez, e o fim da névoa
+     aparecia como uma linha horizontal atravessando a tela. O que tira a
+     dureza é a cauda longa — 0,24 → 0,1 → 0,03 → 0 nos últimos 36% —, não a
+     altura da faixa. O topo da rampa também desceu de 0,98 para 0,92: a nav
+     por baixo é opaca de qualquer jeito, então quase-branco ali só engrossava
+     o véu sem esconder nada a mais. */
   --scriba-nav-fade: linear-gradient(
     to top,
-    rgba(255, 255, 255, 0.98) 0%,
-    rgba(255, 255, 255, 0.75) 40%,
-    rgba(255, 255, 255, 0.35) 75%,
+    rgba(255, 255, 255, 0.92) 0%,
+    rgba(255, 255, 255, 0.7) 22%,
+    rgba(255, 255, 255, 0.45) 44%,
+    rgba(255, 255, 255, 0.24) 64%,
+    rgba(255, 255, 255, 0.1) 80%,
+    rgba(255, 255, 255, 0.03) 92%,
     rgba(255, 255, 255, 0) 100%
   );
   --lp-header-h: 71px;
@@ -521,12 +532,16 @@
   --scriba-cta: linear-gradient(135deg, #FFFFFF 0%, #E6EDF5 100%);
   --scriba-cta-ink: #0B2742;
   --scriba-cta-shadow: rgba(0, 0, 0, 0.45);
-  /* O mesmo esfumaçado do claro, na cor do chão daqui (#0F0D1E). */
+  /* O mesmo esfumaçado do claro, na cor do chão daqui (#0F0D1E). Mesmos sete
+     stops, mesma cauda longa — o motivo está no comentário do tema claro. */
   --scriba-nav-fade: linear-gradient(
     to top,
-    rgba(15, 13, 30, 0.98) 0%,
-    rgba(15, 13, 30, 0.75) 40%,
-    rgba(15, 13, 30, 0.35) 75%,
+    rgba(15, 13, 30, 0.92) 0%,
+    rgba(15, 13, 30, 0.7) 22%,
+    rgba(15, 13, 30, 0.45) 44%,
+    rgba(15, 13, 30, 0.24) 64%,
+    rgba(15, 13, 30, 0.1) 80%,
+    rgba(15, 13, 30, 0.03) 92%,
     rgba(15, 13, 30, 0) 100%
   );
 }

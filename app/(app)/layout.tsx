@@ -61,8 +61,27 @@ export default async function AppLayout({ children }: { children: ReactNode }) {
       />
       {/* Só o CONTEÚDO troca com a rota. O header acima e a `MobileBottomNav`
           abaixo ficam montados: eram eles que sumiam e voltavam a cada toque
-          quando o fade morava no root layout. */}
-      <PageTransition className="flex flex-1 flex-col pb-36 sm:pb-0">{children}</PageTransition>
+          quando o fade morava no root layout.
+
+          A folga de 144px no celular é o espaço que a barra inferior ocupa —
+          sem ela o fim da rolagem fica embaixo da barra. Ela vai no FILHO
+          (`[&>*]`), não neste wrapper, e a diferença é visível: as páginas que
+          pintam o próprio chão o pintam no elemento raiz delas
+          (`bg-scriba-surface` no /feed, /list e /studies), então uma folga
+          aqui fora ficava DEPOIS da tinta e a faixa reservada aparecia num tom
+          diferente do conteúdo — o do `body`. Por dentro, o chão da página se
+          estende por ela.
+
+          Isso pressupõe UM elemento raiz por página, que é como todas as
+          páginas de `(app)` são hoje. Uma página que devolva irmãos no topo
+          ganharia a folga em cada um.
+
+          O `EndOfFeedSticker` (`PaginatedFeed.tsx`) tem um `mt-24 sm:mt-0` que
+          acompanha o `sm:` daqui, mas NÃO o valor: 144px em cima ficou longe
+          demais. Se o `sm:` desta linha mudar, o de lá muda junto. */}
+      <PageTransition className="flex flex-1 flex-col [&>*]:pb-36 sm:[&>*]:pb-0">
+        {children}
+      </PageTransition>
       <MobileBottomNav />
     </>
   );

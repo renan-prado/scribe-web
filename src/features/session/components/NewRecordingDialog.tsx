@@ -81,7 +81,7 @@ const MODE_ORDER = Object.keys(MODE_COPY) as SessionMode[];
 /**
  * Trigger + dialog for starting a new recording session. Renders a Scriba-blue
  * pill button by default ("Gravar sermão") — passing `trigger` overrides that
- * button entirely (used by the mobile bottom nav for the elevated circle).
+ * button entirely (the mobile bottom nav passes a plain tab-style item).
  *
  * The dialog exposes the capture modes as selectable cards: `live` runs the
  * bible/insights/echo pipelines during recording; `audio_only` skips them and

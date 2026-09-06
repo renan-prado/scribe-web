@@ -155,6 +155,19 @@ um acento decorativo, use o hexágono amarelo já usado no app:
 `clip-path:polygon(50%_0,100%_25%,100%_75%,50%_100%,0_75%,0_25%)` sobre um
 bloco `bg-scriba-yellow`.
 
+## Qual item da navegação acende: `nav.ts`
+
+`activeNavKey(pathname)` é a fonte ÚNICA disso, e as duas barras a consultam —
+`AppNav` no desktop e `MobileBottomNav` no celular. Antes cada uma tinha a sua
+comparação e as duas erravam igual: acendiam só na correspondência exata do
+href, então **toda página de detalhe apagava a barra inteira**.
+
+A regra é "o item aceso é a LISTA de onde o conteúdo veio", não o prefixo da
+URL. É o que faz `/recording/:id/deepening` acender **Estudos** e não
+Gravações: a URL segue a sessão porque o estudo é dela, mas quem navega vê um
+estudo e vai procurá-lo de volta em `/studies`. Rota de detalhe nova entra
+nessa função, não num `startsWith` dentro de um componente.
+
 ## A barra inferior do celular
 
 `MobileBottomNav` é o chrome do app no telefone, e três decisões dela mordem
@@ -171,14 +184,56 @@ quem for mexer:
   rótulo numa linha. O item "Perfil" é um glifo de usuário, não a foto: o
   avatar era o único elemento que mudava de tamanho, de forma e de cor sozinho,
   e a barra é navegação, não identidade.
+- **Os cinco ícones são um conjunto só, em `icons/NavGlyphs.tsx`.** São
+  preenchidos (não traçados — `strokeWidth` não faz nada neles) e ocupam quase
+  todo o `viewBox` de 24, e é por isso que os quatro das abas usam um `size`
+  ÚNICO. A barra já misturou formas feitas à mão com glifos do lucide, e aí
+  cada ícone precisava de um `size` próprio: o lucide reserva margem dentro do
+  `viewBox`, então em tamanho igual os dele liam como menores. Ícone novo que
+  destoe se resolve em quanto ele desenha do `viewBox`, não no `size` da barra.
+- **Os glifos pintam com `currentColor` e não levam classe de cor.** É o que
+  justifica serem componente em vez de `<img src="/icons/…">` — `<img>` não
+  herda cor, e o ícone precisa acompanhar o estado ativo do item. A cor desce
+  do `text-*` do `TabLink`, num lugar só; quando cada chamada pintava o seu
+  ícone, a cor do ativo divergiu da do rótulo (o ícone usava `--scriba-blue`,
+  azul de SUPERFÍCIE, e o rótulo `--scriba-blue-ink`). Os SVGs originais ficam
+  em `public/icons/*.svg`, um por componente, com o mesmo nome — desenho novo
+  troca os dois no mesmo commit.
 - **O `padding-bottom` é SÓ o `env(safe-area-inset-bottom)`**, sem folga fixa
   somada. Um piso de 8px ali empurra a fileira inteira para cima do centro —
   como a altura é `min-h` e a caixa é border-box, o inset cresce a barra em vez
   de espremer o conteúdo.
 
+- **O item "Gravar" não tem rótulo: são dois círculos concêntricos.** Um disco
+  de 44px na cor do botão primário (`bg-[image:var(--scriba-cta)]` +
+  `text-scriba-cta-ink`, que inverte com o tema — nunca `text-white` ali),
+  dentro de um anel de 60px em `bg-scriba-blue-soft` que faz as vezes de
+  sombra. No escuro o disco leva `dark:opacity-90` — uma das variantes `dark:`
+  legítimas, porque o valor é opacidade e não cor: a pastilha clara em que o
+  CTA se inverte precisa assentar no fundo escuro. A opacidade vale para o
+  grupo, então o microfone desce junto e o contraste do glifo se mantém.
+  **O anel é um círculo de verdade, não `box-shadow`:** sombra pediria
+  cor literal em `rgba()`, que a barra proíbe, e no escuro borraria em vez de
+  anelar. Ele já foi um círculo de CTA DESLOCADO pra fora da barra e com
+  rótulo, e era isso que incomodava — não a cor, que voltou de propósito para
+  casar com os botões do resto do app. É o ÚNICO item sem calha e sem texto, e
+  é a simetria do círculo que o alinha — a barra centra item a item, então o
+  centro dele coincide com o centro do bloco ícone+rótulo dos outros quatro, e
+  o microfone senta abaixo dos ícones vizinhos de propósito. Sem texto, o nome
+  acessível vem do `aria-label` do `DialogTrigger` — não remova. O
+  `DialogTrigger` recebe `trigger` e vira `display:contents` para o span ser o
+  item flex.
+
 Nada dentro dela pode usar cor literal: a esfumaçada acima da barra é
-`--scriba-nav-fade`, e o ícone do botão "Gravar" herda `--scriba-cta-ink`
-(pintá-lo de branco o faz sumir no tema escuro, onde o CTA inverte).
+`--scriba-nav-fade`.
+
+**A folga que reserva o espaço dela vai no FILHO, não no wrapper.** Em
+`app/(app)/layout.tsx` é `[&>*]:pb-36 sm:[&>*]:pb-0`, e o seletor de filho é o
+ponto: `/feed`, `/list` e `/studies` pintam `bg-scriba-surface` no próprio
+elemento raiz, então uma folga no wrapper fica DEPOIS da tinta e a faixa
+reservada aparece com o tom do `body`, não o do conteúdo. Por dentro, o chão da
+página se estende por ela. Isso pressupõe um elemento raiz por página — se
+criar uma que devolva irmãos no topo, a folga vai em cada um.
 
 ## A transição de página envolve o conteúdo, nunca a moldura
 

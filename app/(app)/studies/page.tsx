@@ -99,8 +99,13 @@ export default async function StudiesPage() {
                           className="flex min-w-0 flex-1 flex-col rounded-md outline-none focus-visible:ring-2 focus-visible:ring-ring/40"
                         >
                           <div className="flex items-start gap-2.5">
-                            <div className="flex size-9 shrink-0 items-center justify-center rounded-lg bg-scriba-green-soft">
-                              <BookOpen className="size-4 text-scriba-green-ink" />
+                            {/* A MESMA pastilha do /list, no par do botão
+                                primário — não a versão verde da família do
+                                estudo. O verde continua no resto da página e
+                                no `.tone-study` da leitura; só esta pastilha
+                                é comum às duas listas. */}
+                            <div className="flex size-9 shrink-0 items-center justify-center rounded-lg bg-[image:var(--scriba-cta)] text-scriba-cta-ink">
+                              <BookOpen className="size-4" />
                             </div>
                             <span className="text-pretty text-[15px] font-semibold leading-tight tracking-tight text-scriba-ink-strong sm:text-base">
                               {s.studyTitle}

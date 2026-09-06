@@ -189,11 +189,23 @@ export default async function LibraryPage() {
                               contentClassName="flex min-w-0 items-center gap-2.5"
                               className="flex min-w-0 flex-1 rounded-md outline-none focus-visible:ring-2 focus-visible:ring-ring/40"
                             >
-                              <div className="flex size-9 shrink-0 items-center justify-center rounded-lg bg-scriba-blue">
+                              {/* O mesmo par do botão primário: gradiente
+                                  azul-escuro com tinta branca no claro,
+                                  pastilha clara com tinta navy no escuro. Era
+                                  `bg-scriba-blue` + `text-white`, o par que o
+                                  `src/shared/AGENTS.md` proíbe — `--scriba-blue`
+                                  é azul de SUPERFÍCIE, e branco sobre ele dá
+                                  2,56:1 no claro e 2,33:1 no escuro.
+
+                                  Sem a classe `.scriba-cta`: isto é uma
+                                  pastilha decorativa dentro do link, não um
+                                  botão, e o hover de lá acende um `box-shadow`
+                                  que não faz sentido num ícone. */}
+                              <div className="flex size-9 shrink-0 items-center justify-center rounded-lg bg-[image:var(--scriba-cta)] text-scriba-cta-ink">
                                 {isTranscriptOnly ? (
-                                  <Captions className="size-4 text-white" />
+                                  <Captions className="size-4" />
                                 ) : (
-                                  <Mic className="size-4 text-white" />
+                                  <Mic className="size-4" />
                                 )}
                               </div>
                               <span className="text-pretty text-[15px] font-semibold leading-tight tracking-tight text-scriba-ink-strong sm:text-base">

@@ -291,9 +291,20 @@ function endMessage(): string {
   return END_MESSAGES[idx];
 }
 
+/**
+ * O `mt-24` afasta o sticker do último card, para ele não ficar colado no
+ * conteúdo. Ele NÃO iguala a folga que reserva o espaço da barra inferior
+ * (`[&>*]:pb-36 sm:[&>*]:pb-0` em `app/(app)/layout.tsx`): espelhar os 144px
+ * foi testado e ficou longe demais. Simetria exata aqui não é o objetivo — a
+ * folga de baixo existe para a barra não cobrir o conteúdo, e essa serve só
+ * para separar.
+ *
+ * O `sm:mt-0` acompanha o `sm:pb-0` do guard: no desktop a barra não existe, a
+ * folga de baixo some, e sem o reset sobraria um buraco no fim da lista.
+ */
 function EndOfFeedSticker() {
   return (
-    <div className="flex flex-col items-center gap-2 py-2 text-center">
+    <div className="mt-24 flex flex-col items-center gap-2 py-2 text-center sm:mt-0">
       {/** biome-ignore lint/performance/noImgElement: local sticker asset */}
       <img
         src="/stickers/woman/013-woman.svg"
