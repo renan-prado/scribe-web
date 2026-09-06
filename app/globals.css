@@ -318,7 +318,7 @@
      continuam os mesmos, e só o fundo ficou mais fundo.
        branco 5,87 · band-ink 5,10 · amarelo 4,52 */
   /* Gradiente, não cor chapada: o azul fecha num índigo que é a mesma família
-     do fundo do tema escuro (`--background` #0F0D1E, `--scriba-paper` #1A1733),
+     do fundo do tema escuro (`--background` #05040B, `--scriba-paper` #121025),
      então a seção pertence ao app em vez de ser um retângulo azul avulso.
      ATENÇÃO: com `background-image` o verificador automático PARA de medir o
      contraste — ele marca "incomplete", não violação. A garantia passa a ser
@@ -395,49 +395,49 @@
 /* ---------------------------------------------------------------------------
    Dark theme.
 
-   Deep indigo (#0F0D1E) ground with four elevation steps:
-     background (#0F0D1E) < surface (#14122A) < paper (#1A1733) < btn/hairline.
+   Deep indigo (#05040B) ground with four elevation steps:
+     background (#05040B) < surface (#0B0A19) < paper (#121025) < btn/hairline.
    Every token defined in :root is redefined here — nothing else in the app
    needs a `dark:` variant, adding `.dark` to <html> is enough.
 --------------------------------------------------------------------------- */
 .dark {
   color-scheme: dark;
-  --background: #0F0D1E;
+  --background: #05040B;
   --foreground: #F2F0FA;
-  --card: #1A1733;
+  --card: #121025;
   --card-foreground: #F2F0FA;
-  --popover: #1A1733;
+  --popover: #121025;
   --popover-foreground: #F2F0FA;
   --primary: #F2F0FA;
-  --primary-foreground: #17142C;
-  --secondary: #231F42;
+  --primary-foreground: #0A0914;
+  --secondary: #1B1833;
   --secondary-foreground: #F2F0FA;
-  --muted: #231F42;
+  --muted: #1B1833;
   --muted-foreground: #9E99BC;
-  --accent: #262148;
+  --accent: #1E1A3A;
   --accent-foreground: #F2F0FA;
   --destructive: #F0564E;
-  --border: #272247;
-  --input: #2E294F;
+  --border: #252047;
+  --input: #2D284F;
   --ring: #5FB0F5;
   --chart-1: #5FB0F5;
   --chart-2: #9E99BC;
   --chart-3: #726D93;
-  --chart-4: #4A4470;
-  --chart-5: #322D57;
-  --sidebar: #14122A;
+  --chart-4: #3F3A62;
+  --chart-5: #272447;
+  --sidebar: #0B0A19;
   --sidebar-foreground: #CFCBE6;
   --sidebar-primary: #5FB0F5;
-  --sidebar-primary-foreground: #0F0D1E;
-  --sidebar-accent: #1B2545;
+  --sidebar-primary-foreground: #05040B;
+  --sidebar-accent: #12192F;
   --sidebar-accent-foreground: #8AC6FA;
-  --sidebar-border: #221E40;
+  --sidebar-border: #201B3E;
   --sidebar-ring: rgba(95, 176, 245, 0.4);
 
   /* Session surfaces */
-  --session-surface-quote: linear-gradient(110deg, #1B2242, #171A35, #1E2549, #1B2242);
+  --session-surface-quote: linear-gradient(110deg, #12172C, #101123, #141930, #12172C);
   --session-highlight-yellow: rgba(250, 190, 40, 0.44);
-  --session-example-bg: #1A1B36;
+  --session-example-bg: #111224;
   --session-example-border: #373B60;
   --session-mention-ink: #8AC6FA;
   --session-mention-wash: rgba(95, 176, 245, 0.32);
@@ -445,49 +445,49 @@
   /* Scriba palette — dark colorway */
   --scriba-blue: #5FB0F5;
   --scriba-blue-hover: #7CC1F8;
-  --scriba-blue-soft: #1B2545;
+  --scriba-blue-soft: #12192F;
   --scriba-green: #4FC28B;
   --scriba-green-hover: #63D19C;
-  --scriba-green-soft: #142E28;
+  --scriba-green-soft: #0D1F1B;
   --scriba-green-ink: #6FD9A5;
   --scriba-green-body: #8CB8A3;
   --scriba-yellow: #F8C64B;
   --scriba-yellow-hover: #FFD469;
-  --scriba-mint: #17302A;
+  --scriba-mint: #10201C;
   --scriba-mint-ink: #A5DCC5;
   --scriba-mint-accent: #7CCBAD;
-  --scriba-rose: #33211D;
+  --scriba-rose: #221614;
   --scriba-rose-ink: #F0C5B5;
   --scriba-rose-accent: #D89E88;
-  --scriba-cream: #322A17;
+  --scriba-cream: #221C10;
   --scriba-cream-ink: #F0DDAB;
   --scriba-cream-accent: #D8B558;
-  --scriba-lilac: #1F2444;
+  --scriba-lilac: #15192E;
   --scriba-lilac-ink: #C2CDEC;
   --scriba-lilac-accent: #94A5D0;
   --scriba-ink-strong: #F2F0FA;
   /* Mesma escala do tema claro, invertida: quatro degraus de ~1,5x, o piso
-     calibrado pelo fundo de MENOR contraste (aqui `--scriba-bubble` #1E1A38, o
+     calibrado pelo fundo de MENOR contraste (aqui `--scriba-bubble` #16132B, o
      mais claro dos fundos escuros). O `mute` vinha de 3,56:1 — o tema escuro
      reprovava exatamente como o claro, só que ninguém tinha medido.
      Contraste sobre paper / surface / bubble / background:
-       ink-strong  15,33 / 16,20 / 14,78 / 16,98
-       ink         10,36 / 10,94 /  9,98 / 11,47
-       ink-soft     6,92 /  7,30 /  6,66 /  7,66
-       ink-mute     4,72 /  4,99 /  4,55 /  5,23   <- piso, pelo bubble */
+       ink-strong  16,53 / 17,37 / 16,02 / 18,10
+       ink         11,17 / 11,74 / 10,82 / 12,23
+       ink-soft     7,45 /  7,84 /  7,23 /  8,16
+       ink-mute     5,09 /  5,35 /  4,94 /  5,58   <- piso, pelo bubble */
   --scriba-ink: #C9C5E3;
   --scriba-ink-soft: #A5A0C1;
   --scriba-ink-mute: #8682A3;
-  --scriba-surface: #14122A;
-  --scriba-hairline: #272247;
-  --scriba-hairline-soft: #221E40;
+  --scriba-surface: #0B0A19;
+  --scriba-hairline: #252047;
+  --scriba-hairline-soft: #201B3E;
   --scriba-yellow-light: #FFE29A;
   --scriba-blue-ink: #8AC6FA;
   --scriba-rose-body: #B99C8F;
   --scriba-mint-body: #8DB2A4;
   --scriba-cream-body: #B7A47A;
-  --scriba-btn-muted: #221E40;
-  --scriba-btn-muted-hover: #2B2750;
+  --scriba-btn-muted: #201B3E;
+  --scriba-btn-muted-hover: #2A264F;
   --scriba-scroll-thumb: rgba(158, 153, 188, 0.3);
   --scriba-scroll-thumb-hover: rgba(158, 153, 188, 0.55);
   --session-typing-dot: #6E7FA0;
@@ -495,36 +495,36 @@
   --session-verse-border: #3E5F82;
   --session-chip-ai: #7E9BBC;
   --scriba-gold-ink: #E8C66E;
-  --auth-btn-border: #2C2752;
-  --auth-btn-border-hover: #3C3670;
-  --auth-btn-bg-hover: #1F1B3B;
+  --auth-btn-border: #2B2653;
+  --auth-btn-border-hover: #3D3773;
+  --auth-btn-bg-hover: #17142F;
   --scriba-mint-dark: #6FD2AA;
-  --scriba-bubble: #1E1A38;
+  --scriba-bubble: #16132B;
   --scriba-bubble-ink: #E7E4F5;
   --scriba-avatar-gradient: linear-gradient(140deg, #4A82EA, #9575F0);
-  --scriba-paper: #1A1733;
+  --scriba-paper: #121025;
   --scriba-rec: #F0564E;
-  /* escuro  #FCA5A5 sobre #331A20 = 8,45 */
+  /* escuro  #FCA5A5 sobre #221115 = 9,55 */
   --scriba-rec-ink: #FCA5A5;
-  --scriba-rec-soft: #331A20;
+  --scriba-rec-soft: #221115;
   --scriba-violet: #9A7CF0;
   --scriba-mint-strong: #6FD2AA;
-  --scriba-gold-soft: #2E2717;
-  --scriba-gold-track: #3D3520;
-  --scriba-flash-debit: #3D2E15;
-  --scriba-flash-credit: #1F3220;
+  --scriba-gold-soft: #1F1A10;
+  --scriba-gold-track: #292315;
+  --scriba-flash-debit: #291F0E;
+  --scriba-flash-credit: #152215;
   --scriba-yellow-ink: #5A4409;
   --session-btn-border: #3A4A66;
   --session-btn-ink: #A9BDD3;
-  --lp-hero: linear-gradient(180deg, #1C2349 0%, #12102A 100%);
-  --lp-hero-auth: linear-gradient(180deg, #191634 0%, #0F0D1E 60%);
+  --lp-hero: linear-gradient(180deg, #0D1326 0%, #070612 100%);
+  --lp-hero-auth: linear-gradient(180deg, #0B0A19 0%, #05040B 60%);
   /* Mesma ideia do tema claro, uma oitava abaixo: o índigo já é o fundo aqui,
      então a banda desce dentro da própria família em vez de virar azul.
-       0% #212B5E · 55% #1A2148 · 100% #141833
-     branco 13,4→17,4 · band-ink 8,0→10,4 · amarelo 10,6→13,7 */
-  --lp-band: linear-gradient(135deg, #212B5E 0%, #1A2148 55%, #141833 100%);
+       0% #101834 · 55% #0C1126 · 100% #080C18
+     branco 17,5→19,5 · band-ink 10,5→11,7 · amarelo 11,0→12,2 */
+  --lp-band: linear-gradient(135deg, #101834 0%, #0C1126 55%, #080C18 100%);
   --lp-band-ink: #B9C9E8;
-  --lp-phone-frame: #0A0817;
+  --lp-phone-frame: #030208;
   /* No escuro o CTA inverte: pastilha clara sobre a página escura, com tinta
      navy. 15,18:1 no início do gradiente e 12,87:1 no fim.
      A sombra inverte junto: halo azul sob pastilha branca em página escura
@@ -532,17 +532,17 @@
   --scriba-cta: linear-gradient(135deg, #FFFFFF 0%, #E6EDF5 100%);
   --scriba-cta-ink: #0B2742;
   --scriba-cta-shadow: rgba(0, 0, 0, 0.45);
-  /* O mesmo esfumaçado do claro, na cor do chão daqui (#0F0D1E). Mesmos sete
+  /* O mesmo esfumaçado do claro, na cor do chão daqui (#05040B). Mesmos sete
      stops, mesma cauda longa — o motivo está no comentário do tema claro. */
   --scriba-nav-fade: linear-gradient(
     to top,
-    rgba(15, 13, 30, 0.92) 0%,
-    rgba(15, 13, 30, 0.7) 22%,
-    rgba(15, 13, 30, 0.45) 44%,
-    rgba(15, 13, 30, 0.24) 64%,
-    rgba(15, 13, 30, 0.1) 80%,
-    rgba(15, 13, 30, 0.03) 92%,
-    rgba(15, 13, 30, 0) 100%
+    rgba(5, 4, 11, 0.92) 0%,
+    rgba(5, 4, 11, 0.7) 22%,
+    rgba(5, 4, 11, 0.45) 44%,
+    rgba(5, 4, 11, 0.24) 64%,
+    rgba(5, 4, 11, 0.1) 80%,
+    rgba(5, 4, 11, 0.03) 92%,
+    rgba(5, 4, 11, 0) 100%
   );
 }
 
@@ -745,12 +745,12 @@
     --session-mention-wash: #C7E7D4;
   }
   .dark .tone-study {
-    --session-surface-quote: linear-gradient(110deg, #16302A, #131F2A, #17352C, #16302A);
+    --session-surface-quote: linear-gradient(110deg, #0F201C, #0D141C, #10231E, #0F201C);
     --session-verse-text: #BCE0CD;
     --session-verse-border: #366B52;
     --session-chip-ai: #7DAE94;
     --session-highlight-yellow: rgba(79, 194, 139, 0.28);
-    --session-example-bg: #15251F;
+    --session-example-bg: #0E1915;
     --session-example-border: #2E4A3C;
     --session-mention-ink: #6FD9A5;
     --session-mention-wash: rgba(79, 194, 139, 0.30);

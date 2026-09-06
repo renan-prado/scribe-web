@@ -21,5 +21,5 @@
  */
 export const THEME_COLOR = {
   light: "#F7FAFD",
-  dark: "#14122A",
+  dark: "#0B0A19",
 } as const;
