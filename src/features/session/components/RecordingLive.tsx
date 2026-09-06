@@ -45,6 +45,7 @@ import { requestDeleteSession, requestFinalSummary } from "@/features/session/li
 import { isSilentBlob } from "@/features/session/lib/audio";
 import { joinOkChunks, shouldEscalateTranscription } from "@/features/session/lib/chunks";
 import { notifyCoinsRecovered, warnLowCoins } from "@/features/session/lib/coinToasts";
+import { reportRecorderError } from "@/features/session/lib/recorderErrors";
 import { tailSentences } from "@/features/session/lib/text";
 import { getSessionState, useSessionStore } from "@/features/session/store";
 import type { ChunkRow, TranscriptState } from "@/features/session/types";
@@ -242,6 +243,7 @@ export function RecordingLive({
       startingIndex: 0,
     });
     rec.onChunk(handleChunk);
+    rec.onError((ev) => reportRecorderError(sessionId, ev));
 
     try {
       await rec.start();
@@ -292,6 +294,7 @@ export function RecordingLive({
       startingIndex: nextChunkIndexRef.current,
     });
     rec.onChunk(handleChunk);
+    rec.onError((ev) => reportRecorderError(sessionId, ev));
 
     try {
       await rec.start();
@@ -441,7 +444,7 @@ export function RecordingLive({
   // Background-recording defenses (silent audio + Media Session + RN bridge)
   // and browser close-confirmation. See hook docs for full rationale.
   useBackgroundKeepalive({
-    enabled: activelyRecording,
+    phase: running ? (paused ? "paused" : "recording") : "idle",
     sessionId,
     label: initialSpeakerName || "Gravando sermão",
     onExternalStop: () => void stop(),

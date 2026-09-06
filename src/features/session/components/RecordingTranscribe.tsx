@@ -31,6 +31,7 @@ import { isSilentBlob } from "@/features/session/lib/audio";
 import { joinOkChunks, shouldEscalateTranscription } from "@/features/session/lib/chunks";
 import { notifyCoinsRecovered, warnLowCoins } from "@/features/session/lib/coinToasts";
 import { defaultRecordingTitle } from "@/features/session/lib/formatting";
+import { reportRecorderError } from "@/features/session/lib/recorderErrors";
 import { tailSentences } from "@/features/session/lib/text";
 import { normalizeLocationInput, normalizeSpeakerInput } from "@/features/session/lib/unknown";
 import { getSessionState, useSessionStore } from "@/features/session/store";
@@ -208,6 +209,7 @@ export function RecordingTranscribe({
       startingIndex: 0,
     });
     rec.onChunk(handleChunk);
+    rec.onError((ev) => reportRecorderError(sessionId, ev));
 
     try {
       await rec.start();
@@ -249,6 +251,7 @@ export function RecordingTranscribe({
       startingIndex: nextChunkIndexRef.current,
     });
     rec.onChunk(handleChunk);
+    rec.onError((ev) => reportRecorderError(sessionId, ev));
     try {
       await rec.start();
       recorderRef.current = rec;
@@ -370,7 +373,7 @@ export function RecordingTranscribe({
   });
 
   useBackgroundKeepalive({
-    enabled: activelyRecording,
+    phase: running ? (paused ? "paused" : "recording") : "idle",
     sessionId,
     label: initialSpeakerName || "Transcrevendo",
     onExternalStop: () => void stop(),

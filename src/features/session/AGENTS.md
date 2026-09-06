@@ -32,7 +32,13 @@ Os três componentes de topo, um por modo: `RecordingLive`,
    `RECORDER_MIN_CHUNK_MS` (15s) e `RECORDER_MAX_CHUNK_MS` (20s). Chunk menor
    reduz o atraso até o primeiro card; grande demais faz uma frase longa
    esperar.
-2. `isSilentBlob` descarta o que é silêncio antes de gastar uma chamada.
+2. `isSilentBlob` descarta o que é silêncio antes de gastar uma chamada. Ele
+   decodifica num **`OfflineAudioContext` único, reusado pela sessão inteira**.
+   Antes era um `new AudioContext()` por chunk, fechado sem `await` — e o do
+   ÚLTIMO chunk nascia no meio do teardown do stop, abrindo uma unidade de
+   áudio nativa no exato instante em que as tracks eram paradas e a shell RN
+   desativava a `AVAudioSession`. Contexto offline renderiza para memória: não
+   toca no hardware, não conta para o limite de contextos do Chrome.
 3. `useTranscribeQueue` persiste o chunk no IndexedDB (`lib/chunk-store.ts`) e
    sobe para `/api/transcribe`, com backoff `[1s, 3s, 10s, 30s, 60s]` cujo
    último valor se repete para sempre. **Não desistimos sozinhos** — parar é
@@ -49,6 +55,23 @@ IndexedDB não existe: o pipeline em memória continua, só sem recuperação.
 `startedAtRef` é semeado por `start()` **antes** de virar `setRunning(true)`,
 para que `useElapsedTimer` veja uma origem válida no primeiro render.
 Preserve essa ordem.
+
+**Só existe UM MediaRecorder, o dos chunks.** Havia um segundo gravando a
+sessão inteira em paralelo, com um `onFinalAudio` que nenhum chamador jamais
+registrou: o áudio era codificado duas vezes, acumulado num array do início ao
+fim, e no stop virava um `new Blob` contíguo (~1 MB/min, então ~50 MB num
+sermão de 50 min) só para ser descartado. Numa WebView React Native, onde o
+heap é bem menor que o de uma aba de Chrome, esse pico caía exatamente no
+instante do "parar". Se um dia quisermos guardar o áudio, ele tem de ir para o
+IndexedDB incrementalmente, como os chunks — nunca se acumular em memória.
+
+**Os três modos registram `rec.onError`** (`lib/recorderErrors.ts`). Por muito
+tempo ninguém registrava, e o recorder emitia falha de encoder para um callback
+nulo: um MediaRecorder morto no meio da pregação é indistinguível, na tela, de
+um trecho em silêncio — o timer segue correndo e nenhum chunk chega. O erro não
+derruba a gravação (`chunk` e `vad` são recuperáveis pelo hard-cut timer); ele
+vai para o logger E para a shell nativa, que é o único caminho até um crash
+report em produção.
 
 ## Os três pipelines ao vivo
 
@@ -277,7 +300,22 @@ uma gravação viva com a aba em segundo plano ou a tela apagada:
    as mensagens sobem para a shell nativa iniciar um foreground service
    (Android) ou ativar a `AVAudioSession` (iOS). Em aba normal,
    `window.ReactNativeWebView` é undefined e tudo vira no-op. O haptic de card
-   novo passa por aqui porque o Safari não implementa `navigator.vibrate`.
+   novo passa por aqui porque o Safari não implementa `navigator.vibrate`; o
+   `recorder:error` passa porque o console da WebView não existe em produção.
+
+   **A ponte é de mão única — o web não lê nada de volta.**
+
+   **Pausa NÃO é parada, e a ponte distingue as duas.** Os eventos saem de
+   TRANSIÇÕES da prop `phase` (`idle` | `recording` | `paused`), num effect
+   próprio — não da limpeza do effect de keepalive. Enquanto saíam de lá, toda
+   pausa emitia `recording:stop` e toda retomada um `recording:start`: a shell,
+   que reage a `stop` DESTRUINDO recursos (foreground service no Android,
+   `AVAudioSession` no iOS), destruía e recriava tudo uma vez por pausa. Pior
+   no congelamento por saldo zerado (`useCoinGuard.onFreeze`), que pausa sem
+   gesto do usuário e talvez com o app em segundo plano — soltar o foreground
+   service ali convida o Android a matar o processo justamente quando a sessão
+   está viva esperando crédito. Numa pausa a captura para, mas a sessão
+   continua; a shell deve segurar o serviço e só trocar o texto da notificação.
 
 `useWakeLock` segura a tela; `useUnloadGuard` pede confirmação antes de fechar
 a aba durante uma gravação.

@@ -4,8 +4,14 @@ import { useEffect, useRef } from "react";
 import { isReactNativeWebView, postNativeEvent } from "@/features/session/lib/nativeBridge";
 import { createSilentWavUrl } from "@/features/session/lib/silentAudio";
 
+/**
+ * `recording` = capturando; `paused` = captura congelada mas a sessão viva
+ * (transcrição, fila e feed seguem); `idle` = não há gravação.
+ */
+export type RecordingPhase = "idle" | "recording" | "paused";
+
 type Args = {
-  enabled: boolean;
+  phase: RecordingPhase;
   sessionId: string;
   label?: string;
   /** Fires when the user hits the media-session "stop"/"pause" hardware button. */
@@ -35,7 +41,10 @@ type Args = {
  *   3. **React Native bridge**. If we're inside a WebView, we tell the shell
  *      to start/stop its own foreground service so the mic stream stays alive
  *      even when the app is fully backgrounded or the screen is locked.
- *      Desktop/mobile browsers ignore this entirely.
+ *      Desktop/mobile browsers ignore this entirely. Os eventos de ciclo
+ *      de vida saem de TRANSIÇÕES de `phase`, não da limpeza do effect de
+ *      keepalive — é o que faz uma pausa emitir `recording:pause` em vez de
+ *      `recording:stop`. Ver `nativeBridge.ts` para o porquê da distinção.
  *
  *   4. **Watchdog re-play**. Some browsers pause `<audio>` on backgrounding —
  *      we listen for `pause` / `visibilitychange` and immediately kick it back
@@ -46,16 +55,56 @@ type Args = {
  * hook still runs but its only iOS benefit is timer-throttling relief while
  * the tab is merely unfocused, not backgrounded.
  */
-export function useBackgroundKeepalive({ enabled, sessionId, label, onExternalStop }: Args): void {
+export function useBackgroundKeepalive({ phase, sessionId, label, onExternalStop }: Args): void {
   const audioRef = useRef<HTMLAudioElement | null>(null);
   const urlRef = useRef<string | null>(null);
   const startedAtRef = useRef<number>(0);
   const heartbeatRef = useRef<ReturnType<typeof setInterval> | null>(null);
   const externalStopRef = useRef<Args["onExternalStop"]>(onExternalStop);
+  const enabled = phase === "recording";
 
   useEffect(() => {
     externalStopRef.current = onExternalStop;
   }, [onExternalStop]);
+
+  /**
+   * Ciclo de vida da shell nativa, num effect PRÓPRIO — separado do keepalive
+   * de mídia abaixo de propósito. O keepalive liga e desliga com a captura
+   * (`enabled`), então usar a limpeza DELE para avisar o nativo transformava
+   * toda pausa num `recording:stop`. Aqui os eventos saem de TRANSIÇÕES de
+   * fase, que é a única coisa que distingue "pausei" de "acabou".
+   */
+  const prevPhaseRef = useRef<RecordingPhase>("idle");
+  useEffect(() => {
+    const prev = prevPhaseRef.current;
+    prevPhaseRef.current = phase;
+    if (prev === phase) return;
+    if (phase === "recording") {
+      postNativeEvent(
+        prev === "paused"
+          ? { type: "recording:resume", sessionId }
+          : { type: "recording:start", sessionId, label }
+      );
+    } else if (phase === "paused") {
+      postNativeEvent({ type: "recording:pause", sessionId });
+    } else {
+      postNativeEvent({ type: "recording:stop", sessionId });
+    }
+  }, [phase, sessionId, label]);
+
+  /**
+   * Desmontar com uma gravação de pé (usuário navegou, aba morreu) é o único
+   * caso em que o `stop` não vem de uma transição de fase. Sem isto a shell
+   * ficaria com o serviço preso para sempre. Effect vazio: roda uma vez, e a
+   * fase é lida do ref no momento da limpeza.
+   */
+  useEffect(() => {
+    return () => {
+      if (prevPhaseRef.current !== "idle") {
+        postNativeEvent({ type: "recording:stop", sessionId });
+      }
+    };
+  }, [sessionId]);
 
   useEffect(() => {
     if (!enabled) return;
@@ -132,9 +181,6 @@ export function useBackgroundKeepalive({ enabled, sessionId, label, onExternalSt
       }
     }
 
-    // Bridge to the RN shell if present.
-    postNativeEvent({ type: "recording:start", sessionId, label });
-
     // Heartbeat so a native shell can time out stale sessions and so the
     // audio element is periodically nudged even if events go quiet.
     heartbeatRef.current = setInterval(() => {
@@ -185,7 +231,6 @@ export function useBackgroundKeepalive({ enabled, sessionId, label, onExternalSt
           // ignore
         }
       }
-      postNativeEvent({ type: "recording:stop", sessionId });
     };
   }, [enabled, sessionId, label]);
 }

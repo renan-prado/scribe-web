@@ -1,6 +1,5 @@
 import type {
   ChunkEvent,
-  FinalAudioEvent,
   Recorder,
   RecorderErrorEvent,
   RecorderErrorSource,
@@ -36,9 +35,7 @@ export function createRecorder(opts: RecorderOptions = {}): Recorder {
 
   let stream: MediaStream | null = null;
   let chunkRecorder: MediaRecorder | null = null;
-  let fullRecorder: MediaRecorder | null = null;
   let chunkParts: BlobPart[] = [];
-  let fullParts: BlobPart[] = [];
   let chunkIndex = opts.startingIndex ?? 0;
   let chunkStartedAt = 0;
   let running = false;
@@ -53,7 +50,6 @@ export function createRecorder(opts: RecorderOptions = {}): Recorder {
 
   let chunkCb: ((ev: ChunkEvent) => void) | null = null;
   let errorCb: ((ev: RecorderErrorEvent) => void) | null = null;
-  let finalCb: ((ev: FinalAudioEvent) => void) | null = null;
 
   const emitError = (source: RecorderErrorSource, message: string) => {
     if (errorCb) errorCb({ source, message });
@@ -171,40 +167,6 @@ export function createRecorder(opts: RecorderOptions = {}): Recorder {
     }
   };
 
-  const startFullRecorder = () => {
-    if (!stream || !picked) return;
-    fullParts = [];
-    let rec: MediaRecorder;
-    try {
-      rec = new MediaRecorder(stream, { mimeType: picked.mimeType });
-    } catch (err) {
-      emitError("full", (err as Error).message ?? "MediaRecorder ctor failed");
-      return;
-    }
-    rec.ondataavailable = (e) => {
-      if (e.data && e.data.size > 0) fullParts.push(e.data);
-    };
-    rec.onerror = (e: ErrorEvent) => {
-      const err = e.error as DOMException | undefined;
-      emitError("full", err?.message ?? "MediaRecorder error");
-    };
-    rec.onstop = () => {
-      if (!picked) return;
-      const blob = new Blob(fullParts, { type: picked.mimeType });
-      if (finalCb) {
-        finalCb({ blob, mimeType: picked.mimeType, extension: picked.extension });
-      }
-    };
-    fullRecorder = rec;
-    try {
-      // timeslice keeps the internal buffer flushing into fullParts so 50 min
-      // recordings do not sit entirely inside the recorder until stop().
-      rec.start(1000);
-    } catch (err) {
-      emitError("full", (err as Error).message ?? "full start failed");
-    }
-  };
-
   const setupVad = () => {
     if (!stream) return;
     try {
@@ -248,7 +210,6 @@ export function createRecorder(opts: RecorderOptions = {}): Recorder {
       }
       running = true;
       setupVad();
-      startFullRecorder();
       startChunkRecorder();
       return { mimeType: picked.mimeType, extension: picked.extension };
     },
@@ -261,11 +222,6 @@ export function createRecorder(opts: RecorderOptions = {}): Recorder {
         if (chunkRecorder && chunkRecorder.state === "recording") chunkRecorder.stop();
       } catch (err) {
         emitError("chunk", (err as Error).message ?? "chunk final stop failed");
-      }
-      try {
-        if (fullRecorder && fullRecorder.state === "recording") fullRecorder.stop();
-      } catch (err) {
-        emitError("full", (err as Error).message ?? "full final stop failed");
       }
       if (visibilityListener) {
         document.removeEventListener("visibilitychange", visibilityListener);
@@ -290,9 +246,6 @@ export function createRecorder(opts: RecorderOptions = {}): Recorder {
     },
     onError(cb) {
       errorCb = cb;
-    },
-    onFinalAudio(cb) {
-      finalCb = cb;
     },
     setChunkTiming(next) {
       if (typeof next.minChunkMs === "number" && next.minChunkMs > 0) {

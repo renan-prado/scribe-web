@@ -29,6 +29,7 @@ import {
 } from "@/features/session/lib/api";
 import { isSilentBlob } from "@/features/session/lib/audio";
 import { notifyCoinsRecovered, warnLowCoins } from "@/features/session/lib/coinToasts";
+import { reportRecorderError } from "@/features/session/lib/recorderErrors";
 import { formatMmSs, tailSentences } from "@/features/session/lib/text";
 import { COIN_COSTS } from "@/lib/coins/pricing";
 import type { ChunkEvent, Recorder } from "@/lib/domain/recorder";
@@ -156,6 +157,7 @@ export function RecordingAudioOnly({
       startingIndex: 0,
     });
     rec.onChunk(handleChunk);
+    rec.onError((ev) => reportRecorderError(sessionId, ev));
     try {
       await rec.start();
       recorderRef.current = rec;
@@ -195,6 +197,7 @@ export function RecordingAudioOnly({
       startingIndex: nextChunkIndexRef.current,
     });
     rec.onChunk(handleChunk);
+    rec.onError((ev) => reportRecorderError(sessionId, ev));
     try {
       await rec.start();
       recorderRef.current = rec;
@@ -276,7 +279,7 @@ export function RecordingAudioOnly({
   // Background-recording defenses (silent audio + Media Session + RN bridge)
   // and browser close-confirmation. See hook docs for full rationale.
   useBackgroundKeepalive({
-    enabled: activelyRecording,
+    phase: running ? (paused ? "paused" : "recording") : "idle",
     sessionId,
     label: initialSpeakerName || "Gravando áudio",
     onExternalStop: () => void stop(),
