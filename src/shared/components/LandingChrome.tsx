@@ -78,15 +78,18 @@ export function LandingFooter({ onLandingPage = false }: LandingFooterProps) {
           <a href={`${prefix}#planos`} className="lp-link-footer">
             Planos
           </a>
+          <Link href="/about" className="lp-link-footer">
+            Sobre
+          </Link>
           <Link href="/terms" className="lp-link-footer">
             Termos de Uso
           </Link>
           <Link href="/privacy" className="lp-link-footer">
             Privacidade
           </Link>
-          <a href="mailto:oi@scriba.app" className="lp-link-footer">
+          <Link href="/contact" className="lp-link-footer">
             Contato
-          </a>
+          </Link>
         </div>
         <div className="flex items-baseline gap-2 text-[12px] font-light text-scriba-ink-mute">
           <span>© {new Date().getFullYear()} Scriba</span>

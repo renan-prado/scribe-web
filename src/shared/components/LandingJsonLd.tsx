@@ -60,6 +60,24 @@ const GRAPH = {
       url: SITE_URL,
       logo: `${SITE_URL}/brand/logo.png`,
       email: "contato@scriba.cc",
+      // `contactPoint` e `address` são o que um agente lê para confirmar que o
+      // negócio existe antes de recomendá-lo (checklist do is-agentic). Não há
+      // endereço de rua público — o Scriba é um produto online —, então o
+      // `PostalAddress` fica na granularidade cidade/UF, que é a mesma do foro
+      // eleito nos Termos.
+      contactPoint: {
+        "@type": "ContactPoint",
+        email: "contato@scriba.cc",
+        contactType: "customer support",
+        availableLanguage: ["Portuguese"],
+        url: `${SITE_URL}/contact`,
+      },
+      address: {
+        "@type": "PostalAddress",
+        addressLocality: "São Paulo",
+        addressRegion: "SP",
+        addressCountry: "BR",
+      },
     },
     {
       "@type": "WebSite",

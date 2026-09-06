@@ -11,13 +11,22 @@ Regras da camada de roteamento. Para a camada de servidor abaixo dela, ver
 /                       landing. ESTÁTICA — ver a seção abaixo
 /sign-in  /sign-up      entrada. /sign-up redireciona para /sign-in
 /terms  /privacy        legais. Datadas; a data também está no sitemap
+/about  /contact        páginas de confiança. Estáticas, chrome da landing
 /auth/callback          troca o code do OAuth por sessão. Valida o ?next=
 /auth/sign-out
 /r/[slug]               link do parceiro: marca a visita e devolve 302
 /api/stripe/webhook     ÚNICA porta de crédito. HMAC no lugar do cookie
 /api/billing/sweep      cron diário da Vercel, guardado por CRON_SECRET
 /robots.txt  /sitemap.xml  /manifest.webmanifest
+/llms.txt  /index.md     resumo do produto para agentes. Fonte única em
+                         src/shared/content/llms.ts; route handlers, não
+                         arquivo estático
 ```
+
+`GET /` com `Accept: text/markdown` é reescrito pelo `proxy.ts` para
+`/index.md` — negociação de conteúdo (acceptmarkdown.com). A resposta Markdown
+leva `Vary: Accept`; a HTML não (o Next é dono desse header nas rotas do App
+Router — ver o comentário no `proxy.ts`).
 
 **Autenticado** (`app/(app)/`, com header, nav e menu do avatar):
 
@@ -57,6 +66,12 @@ o cookie do Supabase e decide o bucket da rota. **Não insira código entre
 quebra o handshake de refresh do `@supabase/ssr`.
 
 - Anônimo em rota protegida → `/sign-in?next=<path>`.
+- Anônimo (ou logado) num caminho que **não é** público nem bate com
+  `KNOWN_APP_PREFIXES` → passa direto, e o Next responde `404`
+  (`app/not-found.tsx`). Sem isso o proxy mandava todo caminho inexistente para
+  `/sign-in` e a Vercel devolvia `200` com a casca do app — um soft-404 que faz
+  agente e rastreador concluírem que qualquer URL existe. **Rota nova numa área
+  nova entra em `KNOWN_APP_PREFIXES` no mesmo commit.**
 - Autenticado em `/sign-in`, `/sign-up` ou `/` → `/feed`.
 - `?next=` passa por `safeNextPath`, e o `/auth/callback` faz a checagem
   equivalente: só caminho relativo, recusando `//host`, `/\host` e `/%2F…`.
@@ -250,6 +265,14 @@ aparece semanas depois, num relatório do Search Console.
   quem PROCURA. "Transcrever sermão" e "estudo bíblico" são os termos reais.
 - `robots.ts`, `sitemap.ts` e `manifest.ts` NÃO podem ficar atrás do muro de
   autenticação — já ficaram.
+- **Conteúdo para agentes** (`/llms.txt`, `/index.md`) sai de
+  `src/shared/content/llms.ts`, um lugar só — mesma regra de `lib/seo.ts`. A
+  seção "Quando usar o Scriba" existe porque o produto não tem API pública: a
+  orientação certa para um agente é mandar a pessoa criar conta. Página nova de
+  confiança (`/about`, `/contact`) entra na lista de `Links` de lá.
+- **Caminho inexistente responde `404` de verdade**, não `307 → /sign-in`. A
+  lógica está no `proxy.ts` (`KNOWN_APP_PREFIXES`); o `app/not-found.tsx`
+  aponta para o sitemap e o `/llms.txt`.
 
 ## Ícones e metadata
 

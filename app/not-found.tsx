@@ -32,6 +32,20 @@ export default function NotFoundPage() {
           Voltar à landing
         </Button>
       </div>
+
+      {/* Ponteiros para quem chegou aqui via rastreador ou agente: a resposta
+          é um 404 de verdade (ver `proxy.ts`), e daqui dá para achar o mapa do
+          site. */}
+      <p className="text-xs leading-relaxed text-scriba-ink-mute">
+        Índice de páginas:{" "}
+        <a href="/sitemap.xml" className="underline underline-offset-2">
+          /sitemap.xml
+        </a>{" "}
+        ·{" "}
+        <a href="/llms.txt" className="underline underline-offset-2">
+          /llms.txt
+        </a>
+      </p>
     </main>
   );
 }

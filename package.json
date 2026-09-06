@@ -19,7 +19,8 @@
     "stripe:doctor": "node scripts/stripe-doctor.mjs .env.dev",
     "stripe:doctor:prod": "node scripts/stripe-doctor.mjs .env.prod",
     "stripe:listen": "node scripts/stripe-listen.mjs",
-    "prepare": "husky"
+    "prepare": "husky",
+    "is:agentic": "npx is-agentic scriba.cc"
   },
   "dependencies": {
     "@base-ui/react": "^1.7.0",

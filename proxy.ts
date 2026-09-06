@@ -10,11 +10,13 @@ import { clientEnv } from "@/lib/env/client";
  * session-refresh handshake.
  *
  * Route buckets:
- *   PUBLIC     — /, /sign-in, /sign-up, /auth/*
- *   PROTECTED  — everything else the matcher lets through
+ *   PUBLIC     — /, /sign-in, /sign-up, /auth/*, /about, /contact, /terms, /privacy
+ *   PROTECTED  — a known app area (KNOWN_APP_PREFIXES) behind the login
+ *   UNKNOWN    — neither: passed through so the Next router answers a real 404
  *
  * Unauth users hitting a protected route → /sign-in?next=<original-path>.
  * Auth users hitting /sign-in or /sign-up → /feed (already in).
+ * `GET /` with `Accept: text/markdown` → rewritten to /index.md.
  */
 
 /**
@@ -38,11 +40,38 @@ const PUBLIC_PREFIXES = [
   "/auth",
   "/terms",
   "/privacy",
+  "/about",
+  "/contact",
   "/r",
   "/api/stripe",
   "/api/billing/sweep",
 ];
 const AUTH_ONLY_PREFIXES = ["/sign-in", "/sign-up"];
+
+/**
+ * Áreas do app que EXISTEM e ficam atrás do login.
+ *
+ * Um caminho que não é público e não bate com nenhuma delas não é rota
+ * nenhuma: deixamos o Next renderizar `app/not-found.tsx` e responder 404 de
+ * verdade, em vez de mandar um `307 → /sign-in` que a Vercel entrega como 200
+ * com a casca do app. Esse soft-404 fazia rastreador e agente concluírem que
+ * TODA URL existe.
+ *
+ * A lista é manual porque o proxy roda antes do roteamento e não enxerga a
+ * árvore de `app/`. Rota nova numa área nova entra aqui no mesmo commit.
+ */
+const KNOWN_APP_PREFIXES = [
+  "/feed",
+  "/list",
+  "/studies",
+  "/profile",
+  "/recording",
+  "/billing",
+  "/admin",
+  "/partners",
+  "/session",
+  "/api",
+];
 
 // `dev.scriba.cc` é o ambiente de desenvolvimento: mesmo projeto na Vercel,
 // domínio fixado no branch `develop`, com env vars de Preview apontando para o
@@ -84,6 +113,32 @@ function isPublic(pathname: string): boolean {
 
 function isAuthOnly(pathname: string): boolean {
   return AUTH_ONLY_PREFIXES.some((p) => pathname === p || pathname.startsWith(`${p}/`));
+}
+
+function isKnownAppPath(pathname: string): boolean {
+  return KNOWN_APP_PREFIXES.some((p) => pathname === p || pathname.startsWith(`${p}/`));
+}
+
+/**
+ * O request prefere Markdown? (negociação de conteúdo — acceptmarkdown.com)
+ *
+ * Só conta `text/markdown` EXPLÍCITO e com q pelo menos igual ao de
+ * `text/html`. O `Accept` de navegador (que lista `text/html` e um curinga
+ * genérico) e um curinga puro continuam recebendo o HTML.
+ */
+function prefersMarkdown(accept: string | null): boolean {
+  if (!accept) return false;
+  const parts = accept.toLowerCase().split(",");
+  const q = (type: string): number | null => {
+    const hit = parts.find((p) => p.trim().startsWith(type));
+    if (hit === undefined) return null;
+    const m = hit.match(/;\s*q=([0-9.]+)/);
+    return m ? Number.parseFloat(m[1]) : 1;
+  };
+  const md = q("text/markdown");
+  if (md === null || md === 0) return false;
+  const html = q("text/html");
+  return html === null || md >= html;
 }
 
 /**
@@ -221,6 +276,24 @@ export async function proxy(request: NextRequest) {
   const isApi = earlyPath.startsWith("/api/");
   const allowedOrigin = origin ? isAllowedOrigin(origin) : false;
 
+  // Negociação de conteúdo Markdown para a landing. Um agente que manda
+  // `Accept: text/markdown` recebe `/index.md` (o mesmo texto de `/llms.txt`)
+  // em vez do HTML da LP. A resposta Markdown leva `Vary: Accept`.
+  //
+  // O HTML da LP NÃO leva `Vary: Accept`: o Next é dono desse header nas rotas
+  // do App Router e descarta o valor que o proxy ou o `next.config` tentam
+  // acrescentar (testado). Não é problema de correção — este proxy roda em todo
+  // request, antes de qualquer cache, então quem pede Markdown SEMPRE cai aqui
+  // e é reescrito; só um cache de terceiro no meio do caminho ficaria sem o
+  // sinal.
+  if (earlyPath === "/" && prefersMarkdown(request.headers.get("accept"))) {
+    const url = request.nextUrl.clone();
+    url.pathname = "/index.md";
+    const rewrite = NextResponse.rewrite(url);
+    rewrite.headers.set("Vary", "Accept");
+    return applyCsp(rewrite);
+  }
+
   // Preflight for API routes: answer before touching Supabase (preflights
   // carry no cookies, so the auth check would just redirect them uselessly).
   if (isApi && request.method === "OPTIONS") {
@@ -276,6 +349,13 @@ export async function proxy(request: NextRequest) {
   const { pathname, search } = request.nextUrl;
 
   if (!user && !isPublic(pathname)) {
+    // Caminho que não é público nem bate com nenhuma área do app: não há rota
+    // nem sessão a proteger. Deixa passar para o Next responder 404 de verdade
+    // (`app/not-found.tsx`), em vez de mandar para o login e devolver 200.
+    if (!isKnownAppPath(pathname)) {
+      if (isApi) applyCorsHeaders(supabaseResponse, origin, allowedOrigin);
+      return applyCsp(supabaseResponse);
+    }
     const url = request.nextUrl.clone();
     url.pathname = "/sign-in";
     url.search = "";
@@ -329,12 +409,17 @@ export async function proxy(request: NextRequest) {
  * São recursos públicos por definição — não existe sessão para renovar neles,
  * então pular o proxy também economiza uma ida ao Supabase por requisição.
  *
+ * `llms\.txt` e `.*\.md$` (hoje só `/index.md`) são conteúdo para agentes,
+ * servidos por route handler a partir de `src/shared/content/llms.ts`. Ficam
+ * fora do gate para serem buscáveis direto; a reescrita de `/` para `/index.md`
+ * por `Accept` acontece no corpo do proxy, antes de o matcher importar.
+ *
  * A lista fica INLINE de propósito: o Next exige que `matcher` seja constante
  * literal para analisá-lo em build-time — montar a string a partir de uma
  * variável faz o matcher inteiro ser IGNORADO, em silêncio.
  */
 export const config = {
   matcher: [
-    "/((?!_next/static|_next/image|favicon.ico|robots\\.txt|sitemap\\.xml|manifest\\.webmanifest|sw\\.js|offline\\.html|llms\\.txt|opengraph-image|.*\\.(?:svg|png|jpg|jpeg|gif|webp|ico)$).*)",
+    "/((?!_next/static|_next/image|favicon.ico|robots\\.txt|sitemap\\.xml|manifest\\.webmanifest|sw\\.js|offline\\.html|llms\\.txt|opengraph-image|.*\\.md$|.*\\.(?:svg|png|jpg|jpeg|gif|webp|ico)$).*)",
   ],
 };
