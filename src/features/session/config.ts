@@ -190,3 +190,15 @@ export const COIN_WARN_MINUTES_CRITICAL = 2;
  * deixa as duas abas visíveis lado a lado. Só roda com a aba visível.
  */
 export const COIN_RECOVERY_POLL_MS = 5_000;
+
+// ---------- BARRA FLUTUANTE DE GRAVAÇÃO ----------
+
+/**
+ * Tempo sem interação até a barra flutuante (minutagem, pausar, parar) entrar
+ * em descanso: quase transparente e sem cor, para sair da frente do feed que
+ * o usuário está lendo. 5s é curto o bastante para a barra não competir com a
+ * leitura e longo o bastante para quem abriu com a intenção de pausar ainda
+ * alcançar o botão aceso. O primeiro toque em cima dela só reacende — não
+ * dispara ação nenhuma —, então adormecer cedo não custa um stop acidental.
+ */
+export const RECORD_CLUSTER_IDLE_MS = 5_000;

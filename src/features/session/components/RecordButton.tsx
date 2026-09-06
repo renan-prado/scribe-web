@@ -1,4 +1,8 @@
+"use client";
+
 import { Mic, Pause, Square, Trash2 } from "lucide-react";
+import { useCallback, useEffect, useRef, useState } from "react";
+import { RECORD_CLUSTER_IDLE_MS } from "@/features/session/config";
 import { formatMmSs } from "@/features/session/lib/text";
 import { cn } from "@/lib/utils";
 
@@ -36,15 +40,60 @@ export function RecordButton({
   pulseWhileRunning = false,
   autoStarting = false,
 }: RecordButtonProps) {
+  /* A barra flutuante mora por cima do feed durante a gravação inteira. Depois
+     de RECORD_CLUSTER_IDLE_MS sem interação ela recolhe para o descanso — quase
+     transparente e sem cor — e o primeiro toque só a reacende, sem disparar
+     ação nenhuma. Quem vai pausar ou parar toca duas vezes; em troca, ninguém
+     encerra uma gravação por encostar na tela enquanto lê. */
+  const [awake, setAwake] = useState(true);
+  const idleTimerRef = useRef<number | null>(null);
+  /* Rearmar por ref, e não por dependência de effect: a contagem precisa
+     recomeçar a cada interação INCLUSIVE quando a barra já está acesa, e um
+     effect só reagendaria na virada do estado. */
+  const wake = useCallback(() => {
+    setAwake(true);
+    if (idleTimerRef.current !== null) window.clearTimeout(idleTimerRef.current);
+    idleTimerRef.current = window.setTimeout(() => setAwake(false), RECORD_CLUSTER_IDLE_MS);
+  }, []);
+
+  useEffect(() => {
+    if (!compact) return;
+    wake();
+    return () => {
+      if (idleTimerRef.current !== null) window.clearTimeout(idleTimerRef.current);
+    };
+  }, [compact, wake]);
+
   if (compact) {
+    const resting = !awake;
     return (
       <div
+        onPointerEnter={wake}
+        onFocusCapture={wake}
         className={cn(
-          "flex items-center gap-2 rounded-full bg-scriba-ink-strong pl-4 pr-3 py-1.5 text-background shadow-[0_10px_24px_rgba(51,65,79,0.28)]"
+          "relative flex items-center gap-2 rounded-full bg-scriba-ink-strong pl-4 pr-3 py-1.5 text-background",
+          "transition-[opacity,filter,box-shadow] duration-700 ease-out motion-reduce:transition-none",
+          resting
+            ? "opacity-30 saturate-0 shadow-none"
+            : "opacity-100 shadow-[0_10px_24px_rgba(51,65,79,0.28)]"
         )}
       >
+        {resting ? (
+          /* Come o toque que reacende: em descanso a barra não é alvo de ação,
+             é alvo de despertar. Fora da ordem de tabulação porque o Tab já cai
+             nos botões reais, e o `onFocusCapture` acima os acende antes. */
+          <button
+            type="button"
+            aria-hidden
+            tabIndex={-1}
+            onClick={wake}
+            className="absolute inset-0 z-10 rounded-full"
+          />
+        ) : null}
         <span className="relative flex size-2.5 items-center justify-center">
-          <span className="absolute inset-0 animate-ping rounded-full bg-scriba-rec/50" />
+          {resting ? null : (
+            <span className="absolute inset-0 animate-ping rounded-full bg-scriba-rec/50" />
+          )}
           <span className="size-2.5 rounded-full bg-scriba-rec" />
         </span>
         <span className="font-mono text-sm font-medium tabular-nums tracking-wider">
