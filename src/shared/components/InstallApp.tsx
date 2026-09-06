@@ -197,10 +197,10 @@ export function IosInstructionsDialog({
       >
         <DialogHeader className="px-6 pt-8">
           <DialogTitle className="font-heading text-base font-semibold text-scriba-ink-strong">
-            Instalar no iPhone
+            Instalação no iPhone
           </DialogTitle>
           <DialogDescription className="text-scriba-ink-soft">
-            No iPhone, quem instala é você — o Safari não deixa o site pedir.
+            Ao instalar o Scriba, ele passa a abrir como um aplicativo.
           </DialogDescription>
         </DialogHeader>
         <ol className="flex flex-col gap-3">
@@ -217,7 +217,7 @@ export function IosInstructionsDialog({
           <IosStep
             n={3}
             icon={<Check className="size-4" />}
-            text="Confirme em “Adicionar”. O Scriba passa a abrir em tela cheia."
+            text="Confirme em “Adicionar”. O Scriba passa a abrir como um aplicativo."
           />
         </ol>
       </DialogContent>

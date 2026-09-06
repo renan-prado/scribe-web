@@ -16,6 +16,7 @@ saber ao editar código ficam nos `AGENTS.md` de cada pasta, não aqui.
 | Por que o estudo entrega pouco, e o que fazer? | [`estudo-v2.md`](./estudo-v2.md) |
 | Qual plano libera qual funcionalidade? | [`estudo-v2.md` §8](./estudo-v2.md) e `lib/entitlements/features.ts` |
 | Como o app fala com a shell React Native? | [`react-native-bridge.md`](./react-native-bridge.md) |
+| O que a Apple exige para aprovar o app na loja? | [`app-store-ios.md`](./app-store-ios.md) |
 
 ## Operação
 
@@ -51,6 +52,11 @@ saber ao editar código ficam nos `AGENTS.md` de cada pasta, não aqui.
   manter a gravação viva com a tela bloqueada ou o app minimizado, porque a
   plataforma web não expõe foreground service. Implementação:
   `src/features/session/lib/nativeBridge.ts`.
+- **[`app-store-ios.md`](./app-store-ios.md)** — os quatro portões da App Store
+  (IAP, minimum functionality, Sign in with Apple, exclusão de conta), o que
+  cada um custa e uma rota sugerida. O irmão de negócio do documento acima: lá
+  está COMO a shell funciona, aqui está o que a Apple cobra para deixá-la
+  entrar. **Status: nada implementado — é documento de decisão.**
 
 ## Exploração — NÃO implementado
 
