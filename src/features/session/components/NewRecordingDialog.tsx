@@ -9,8 +9,8 @@ import {
   type LucideIcon,
   Mic,
 } from "lucide-react";
-import { useRouter } from "next/navigation";
-import { type ReactNode, useState } from "react";
+import { usePathname, useRouter } from "next/navigation";
+import { type ReactNode, useEffect, useState } from "react";
 import { toast } from "sonner";
 import {
   Dialog,
@@ -91,6 +91,7 @@ const MODE_ORDER = Object.keys(MODE_COPY) as SessionMode[];
  */
 export function NewRecordingDialog({ trigger }: { trigger?: ReactNode }) {
   const router = useRouter();
+  const pathname = usePathname();
   const [open, setOpen] = useState(false);
   const [loading, setLoading] = useState(false);
   const [mode, setMode] = useState<SessionMode>("live");
@@ -125,8 +126,31 @@ export function NewRecordingDialog({ trigger }: { trigger?: ReactNode }) {
       toast.error("Não consegui iniciar a sessão", { description: result.error });
       return;
     }
+    // `loading` continua ligado de propósito: a sessão já existe, mas a página
+    // de gravação é dinâmica e leva um instante para montar. Quem fecha os dois
+    // é o effect acima, quando a rota de fato trocar.
     router.push(`/recording/${result.id}/${recordingRouteFor(mode)}?autostart=1`);
   }
+
+  /**
+   * Fecha o diálogo quando a rota troca.
+   *
+   * **Este componente NÃO desmonta ao navegar.** Ele é montado pelo
+   * `app/(app)/layout.tsx` e pela `MobileBottomNav`, e um layout do App Router
+   * sobrevive à troca de rota dentro do próprio grupo. O `handleStart`
+   * empurrava para `/recording/:id/...` e nunca desligava `open` nem
+   * `loading`, contando com um desmonte que nunca acontecia: a gravação
+   * começava atrás de um diálogo aberto escrito "Preparando…", para sempre.
+   *
+   * A regra é mais geral que o defeito, e por isso está escrita assim: um
+   * diálogo montado num layout persistente tem de fechar em QUALQUER navegação
+   * — inclusive a que o usuário dispara pelo menu com ele aberto.
+   */
+  // biome-ignore lint/correctness/useExhaustiveDependencies: só a troca de rota fecha; `open`/`loading` nas deps reabririam a discussão a cada render
+  useEffect(() => {
+    setOpen(false);
+    setLoading(false);
+  }, [pathname]);
 
   const copy = MODE_COPY[mode];
 
