@@ -37,16 +37,35 @@ export const COIN_COSTS = {
   /**
    * Per started minute of audio-only recording.
    *
-   * 6 e não 2: a 2 moedas o minuto de áudio fechava 24,5% de margem — cada
-   * milheiro de moeda debitado custava R$ 10,01 de OpenAI contra os R$ 5,97
-   * que o alvo comporta. O modo dispensa o feed, mas NÃO dispensa a
-   * transcrição nem o resumo final, que é onde o dinheiro está; cobrar menos
-   * da metade do ao vivo era supor uma economia que a medição não mostrou.
-   * Amostra de 50 execuções — vale reconferir quando ela crescer.
+   * **5 é PROVISÓRIO, e é uma decisão de produto contra a medição.** O 6
+   * anterior veio de uma amostra de 50 execuções: a 2 moedas o modo fechava
+   * 24,5% de margem, porque ele dispensa o feed mas NÃO dispensa a transcrição
+   * nem o resumo final, que é onde o dinheiro está. Descer para 5 aperta essa
+   * margem, e aperta num momento em que o custo de STT ACABOU DE DOBRAR
+   * ($0,003 → $0,006 por minuto de áudio — ver docs/transcricao.md). Os dois
+   * movimentos vão na mesma direção.
+   *
+   * Só a transcrição já come R$ 0,032 dos R$ 0,100 que 5 moedas rendem à régua
+   * de `DEFAULT_COIN_PRICE_PER_THOUSAND_BRL`; o resumo final vem por cima.
+   * Reconfira em `/admin/precificacao` assim que houver execução nova medida.
    */
-  audioOnlyMinute: 6,
-  /** Per started minute of transcript-only recording (no LLM beyond STT). */
-  transcriptMinute: 1,
+  audioOnlyMinute: 5,
+  /**
+   * Per started minute of transcript-only recording (no LLM beyond STT).
+   *
+   * **3 é PROVISÓRIO, e corrige um prejuízo.** Era 1, e 1 deixou de pagar a
+   * conta: o modo faz UMA chamada, a de transcrição, e ela passou de $0,003
+   * para $0,006 o minuto de áudio (docs/transcricao.md). À régua de 20 reais o
+   * milheiro, 1 moeda rende R$ 0,020 contra R$ 0,032 de custo — cada minuto
+   * gravado neste modo dava prejuízo. Já era apertado antes (19% de margem);
+   * com o modelo novo virou negativo.
+   *
+   * A 3 moedas o minuto rende R$ 0,060 contra os mesmos R$ 0,032, ~46% de
+   * margem. Fica abaixo dos 70% de `DEFAULT_TARGET_MARGIN_PCT` de propósito:
+   * a régua pediria 6, e sextuplicar o preço do modo mais barato do produto é
+   * decisão maior que a de parar de perder dinheiro.
+   */
+  transcriptMinute: 3,
   /**
    * One-shot cost of running /api/deepening.
    *
