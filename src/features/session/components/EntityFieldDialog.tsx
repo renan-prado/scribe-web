@@ -21,10 +21,27 @@ import { cn } from "@/lib/utils";
  * `initialValue` should already be normalized (empty when the caller detected
  * a placeholder like "Autor desconhecido") — the dialog does not do any
  * placeholder scrubbing itself.
+ *
+ * ## O miolo NÃO rola, e isso é o conserto
+ *
+ * O `DialogContent` recorta o corpo com `overflow-y-auto` — o certo para um
+ * diálogo de texto longo, e errado para este, cujo único filho abre uma lista
+ * ABSOLUTA por fora de si. A lista estourava a caixa do corpo, virava barra de
+ * rolagem numa faixa de ~60px de altura, e o diálogo inteiro se contorcia a
+ * cada tecla digitada: era essa a "responsividade vertical esquisita".
+ *
+ * Por isso as duas classes abaixo. `overflow-visible` no popup E no corpo
+ * (o popup também recorta, então só o corpo não bastaria) deixam a lista
+ * transbordar; quem cuida da altura dela é o próprio `EntityCombobox`, que a
+ * limita em `42dvh` e a vira para cima quando não há espaço embaixo. O teto de
+ * `90dvh` fica de pé para o caso de o erro de salvamento aparecer junto com a
+ * lista num aparelho baixo.
  */
 type EntityFieldDialogProps = {
   open: boolean;
   onOpenChange: (open: boolean) => void;
+  /** Pessoa ou lugar — desce até a lista de sugestões. */
+  kind: "speaker" | "location";
   title: string;
   description?: string;
   placeholder?: string;
@@ -36,6 +53,7 @@ type EntityFieldDialogProps = {
 export function EntityFieldDialog({
   open,
   onOpenChange,
+  kind,
   title,
   description,
   placeholder,
@@ -69,12 +87,16 @@ export function EntityFieldDialog({
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent className="sm:max-w-sm">
+      <DialogContent
+        className="max-h-[90dvh] overflow-visible sm:max-w-sm"
+        bodyClassName="overflow-visible"
+      >
         <DialogHeader>
           <DialogTitle>{title}</DialogTitle>
           {description ? <DialogDescription>{description}</DialogDescription> : null}
         </DialogHeader>
         <EntityCombobox
+          kind={kind}
           value={draft}
           onChange={setDraft}
           placeholder={placeholder}

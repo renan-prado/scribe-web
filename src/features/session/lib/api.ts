@@ -243,6 +243,51 @@ export async function requestSpeakerSuggestions(q: string): Promise<EntitySugges
   }
 }
 
+/** O que a busca de conteúdo achou, e por qual das duas vias. */
+export type ContentSearchResult = {
+  /** Toda sessão que casou no servidor, pela transcrição ou pelo versículo. */
+  ids: string[];
+  /** sessionId → referência citada que casou. Vira a pastilha do cartão. */
+  verses: Map<string, string>;
+};
+
+/**
+ * GET /api/sessions/search?q=... — a metade da busca das listas que não roda no
+ * cliente: o texto da pregação e os versículos citados, que não vão para a
+ * lista e não devem ir.
+ *
+ * As duas vias voltam separadas porque o cartão precisa DIZER por que está ali.
+ * "Trecho na transcrição" e "Jonas 1:1-17" são explicações diferentes, e um
+ * cartão que aparece sem nenhuma — num termo que não bate com nada visível
+ * nele — parece defeito.
+ *
+ * Devolve `null` — e não vazio — quando a rota não procurou (termo curto
+ * demais) ou falhou. A distinção importa: com vazio a UI esconderia todos os
+ * cartões que não casam pelo título, ou seja, uma falha de rede viraria "nada
+ * encontrado".
+ */
+export async function requestContentSearch(q: string): Promise<ContentSearchResult | null> {
+  try {
+    const res = await fetch(`/api/sessions/search?q=${encodeURIComponent(q)}`, { method: "GET" });
+    if (!res.ok) return null;
+    const body = (await res.json()) as {
+      ids?: string[];
+      verses?: { id?: string; reference?: string }[];
+      skipped?: boolean;
+    };
+    if (body.skipped || !Array.isArray(body.ids)) return null;
+    const verses = new Map<string, string>();
+    for (const v of Array.isArray(body.verses) ? body.verses : []) {
+      if (typeof v?.id === "string" && typeof v.reference === "string" && v.reference.trim()) {
+        verses.set(v.id, v.reference.trim());
+      }
+    }
+    return { ids: body.ids, verses };
+  } catch {
+    return null;
+  }
+}
+
 export async function requestLocationSuggestions(q: string): Promise<EntitySuggestion[]> {
   try {
     const url = `/api/locations${q ? `?q=${encodeURIComponent(q)}` : ""}`;

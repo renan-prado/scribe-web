@@ -205,6 +205,7 @@ export function RecordingHeader({ menu }: RecordingHeaderProps) {
       </header>
 
       <EntityFieldDialog
+        kind="speaker"
         open={nameDialogOpen}
         onOpenChange={setNameDialogOpen}
         title={speakerUnknown ? "Adicionar autor" : "Editar autor"}
@@ -216,6 +217,7 @@ export function RecordingHeader({ menu }: RecordingHeaderProps) {
         }}
       />
       <EntityFieldDialog
+        kind="location"
         open={locationDialogOpen}
         onOpenChange={setLocationDialogOpen}
         title={locationUnknown ? "Adicionar local" : "Editar local"}

@@ -243,6 +243,14 @@ export const RATE_LIMITS = {
     perUser: { limit: 10, windowMs: HOUR },
     perIp: { limit: 40, windowMs: HOUR },
   },
+  // Mesma chamada cara do reprocessamento, e ainda mais rara: uma sessão do
+  // modo transcrição só tem o primeiro resumo gerado uma vez. O limite é o
+  // mesmo por não haver motivo para ser mais frouxo.
+  "final-summary-from-transcript": {
+    route: "final-summary-from-transcript",
+    perUser: { limit: 10, windowMs: HOUR },
+    perIp: { limit: 40, windowMs: HOUR },
+  },
   deepening: {
     route: "deepening",
     perUser: { limit: 30, windowMs: HOUR },
@@ -305,6 +313,17 @@ export const RATE_LIMITS = {
     route: "entity-search",
     perUser: { limit: 120, windowMs: MIN },
     perIp: { limit: 300, windowMs: MIN },
+  },
+  // Busca dentro da transcrição, disparada por `useContentSearch` a cada pausa
+  // de 260ms na digitação. O teto teórico dessa cadência é ~230/min, então o
+  // bucket de `entity-search` (120) cortaria um datilógrafo rápido no meio de
+  // uma busca — e um 429 aqui é indistinguível, na tela, de "nada encontrado".
+  // 240 cobre a cadência com folga e continua sendo uma consulta barata (um
+  // `ilike` escopado pela RLS, sem modelo nenhum atrás).
+  "session-search": {
+    route: "session-search",
+    perUser: { limit: 240, windowMs: MIN },
+    perIp: { limit: 600, windowMs: MIN },
   },
   "coins-read": {
     route: "coins-read",

@@ -76,7 +76,7 @@ export type GenerateRereadsInput = {
   logPrefix: string;
   /** Rota gravada na telemetria: "rereads" na primeira geração,
    * "rereads-reprocess" quando quem chamou foi o reprocessamento. */
-  metadataRoute: Extract<UsageRoute, "rereads" | "rereads-reprocess">;
+  metadataRoute: Extract<UsageRoute, "rereads" | "rereads-reprocess" | "rereads-from-transcript">;
 };
 
 export async function generateRereads(input: GenerateRereadsInput): Promise<GenerateRereadsResult> {

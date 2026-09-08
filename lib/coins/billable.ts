@@ -80,11 +80,17 @@ export const BILLABLE_ACTIONS: readonly BillableAction[] = [
   },
   {
     key: "reprocess_summary",
-    label: "Reprocessar resumo",
+    label: "Resumo de sessão salva",
     coins: COIN_COSTS.reprocessSummary,
-    unit: "repro",
-    reasons: ["reprocess_summary"],
-    note: "Reexecução do RESUMO de uma sessão salva — não confundir com reprocessar o estudo, que custa 50 e está na linha acima.",
+    unit: "resumo",
+    // Reprocessar um resumo e gerar o primeiro resumo de uma sessão do modo
+    // transcrição são o MESMO pipeline (`generateFinalSummary` sobre a
+    // transcrição inteira + releia/lembra/frases), pelo mesmo preço, gravando
+    // as mesmas rotas de telemetria. Somá-los é o mesmo argumento da linha do
+    // estudo acima: separar daria um custo por execução inventado. Os motivos
+    // continuam distintos no ledger, onde a pergunta de produto é outra.
+    reasons: ["reprocess_summary", "summary_from_transcript"],
+    note: "Resumo rodado FORA da gravação: reprocessar um resumo existente, ou gerar o primeiro de uma sessão do modo transcrição. Não confundir com reprocessar o estudo, que custa 50 e está na linha acima.",
   },
 ];
 

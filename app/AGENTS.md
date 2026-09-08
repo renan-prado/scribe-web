@@ -39,7 +39,8 @@ Router — ver o comentário no `proxy.ts`).
 /recording/[id]/audio      gravação modo audio_only
 /recording/[id]/transcribe gravação modo transcript_only
 /recording/[id]/summary    sessão salva: resumo final
-/recording/[id]/transcript sessão salva transcript_only: só a transcrição
+/recording/[id]/transcript sessão salva transcript_only: a transcrição, e o
+                           botão que gera o resumo dela sob demanda
 /recording/[id]/deepening  o estudo da sessão (gerar exige plano Estudioso)
 /billing/assinar           abre o Checkout (destino do CTA da landing)
 /billing/retorno           volta do Checkout. DECORATIVA: não credita nada
@@ -53,10 +54,29 @@ quebrem. Não crie link novo apontando para ela.
 a quem não é admin) e `/partners` (gate em `lib/auth/require-partner.ts`).
 
 **API:** `app/api/` — pipelines de LLM (`transcribe`, `bible`, `insights`,
-`sermon-echo`, `final-summary[/reprocess]`, `deepening[/reprocess]`, `verse`,
-`format-paragraphs`, `hallucination-report`), dados (`sessions`, `feed`,
-`speakers`, `locations`, `coins`), cobrança (`billing/*`, `stripe/webhook`) e
-admin (`admin/users`, `admin/partners`, `admin/features`, `admin/insights`).
+`sermon-echo`, `final-summary[/reprocess|/from-transcript]`,
+`deepening[/reprocess]`, `verse`, `format-paragraphs`,
+`hallucination-report`), dados (`sessions[/search]`, `feed`, `speakers`,
+`locations`, `coins`), cobrança (`billing/*`, `stripe/webhook`) e admin
+(`admin/users`, `admin/partners`, `admin/features`, `admin/insights`).
+
+`final-summary/from-transcript` é a terceira porta do MESMO pipeline de resumo:
+ela gera o primeiro resumo de uma sessão gravada no modo transcrição, que sai
+da gravação sem `final_summary`. Cobra `summary_from_transcript` (15, o mesmo
+do reprocessamento — é o mesmo trabalho) e recusa com 409 uma sessão que já
+tem resumo; refazer um resumo existente continua sendo `/reprocess`. Ver
+`src/features/session/AGENTS.md`.
+
+`sessions/search` é a metade SERVIDOR da busca das listas, e responde a DUAS
+perguntas sobre a mesma sessão: o que foi DITO (`ilike` na transcrição) e o que
+foi CITADO (os versículos). A segunda não é busca de texto — "Jonas 1" precisa
+achar o card que diz "Jonas 1:1-17", e o pregador falou "no primeiro capítulo de
+Jonas", que não contém nenhuma das duas strings. Quem compara referência com
+referência é `lib/domain/reference-query.ts`; a peneira por livro é a RPC
+`session_verse_references` (migrações 0041/0042). A resposta separa as duas
+vias porque o cartão mostra POR QUE está ali — "trecho na transcrição" ou a
+referência que casou. Não chama modelo, então não passa por `requireBalance` —
+mesma razão de `/api/verse`.
 
 ## O proxy é o gate, não a página
 

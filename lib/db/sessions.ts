@@ -1,6 +1,8 @@
 import "server-only";
 import { cache } from "react";
+import { escapeLikeValue } from "@/lib/db/like";
 import type { FeedItem } from "@/lib/domain/feed";
+import { type ReferenceQuery, referenceMatchesQuery } from "@/lib/domain/reference-query";
 import { parseSessionMode, type SessionMode } from "@/lib/domain/session";
 import type { SummaryPayload } from "@/lib/domain/summary";
 import { createClient } from "@/lib/supabase/server";
@@ -361,18 +363,120 @@ export async function deleteSession(id: string): Promise<void> {
  * Overwrite only the final_summary payload (plus its derived title and
  * short_summary). Used by POST /api/final-summary/reprocess — transcript,
  * feed_items and duration_ms are preserved as originally captured.
+ *
+ * `keepTitle` existe para o resumo gerado sobre uma sessão do modo
+ * transcrição: ali o título na linha foi ESCOLHIDO pela pessoa no cabeçalho da
+ * gravação (não há LLM naquele modo para gerar um), e sobrescrevê-lo com o do
+ * resumo apagaria em silêncio o que ela digitou. Quem chama decide — a rota de
+ * reprocessamento não passa nada, porque lá o título anterior já veio do
+ * próprio resumo que está sendo refeito.
  */
-export async function updateSessionSummary(id: string, summary: SummaryPayload): Promise<void> {
+export async function updateSessionSummary(
+  id: string,
+  summary: SummaryPayload,
+  opts: { keepTitle?: boolean } = {}
+): Promise<void> {
   const supabase = await createClient();
-  const { error } = await supabase
-    .from("sessions")
-    .update({
-      title: summary.title || null,
-      short_summary: summary.shortSummary || null,
-      final_summary: summary,
-    })
-    .eq("id", id);
+  const patch: Record<string, unknown> = {
+    short_summary: summary.shortSummary || null,
+    final_summary: summary,
+  };
+  if (!opts.keepTitle) patch.title = summary.title || null;
+  const { error } = await supabase.from("sessions").update(patch).eq("id", id);
   if (error) throw new Error(`updateSessionSummary failed: ${error.message}`);
+}
+
+/**
+ * Quais destes ids já têm resumo. Espelha `listDeepenedSessionIds`: uma
+ * consulta de chave a mais para o /list poder mandar uma sessão do modo
+ * transcrição que GANHOU resumo direto para `/summary`, em vez de fazê-la
+ * pousar em `/transcript` só para ser redirecionada.
+ *
+ * `SELECT_LIST` não traz `final_summary` de propósito — é uma das três colunas
+ * pesadas, e trazer o resumo inteiro de cada sessão para desenhar um cartão
+ * seria o oposto do que aquela projeção existe para evitar. Daí a consulta
+ * separada, que lê só a chave: o filtro `not final_summary is null` roda no
+ * Postgres e volta uma lista de uuids.
+ */
+/**
+ * Ids das sessões CONCLUÍDAS cuja transcrição contém `term`.
+ *
+ * A busca das listas é do cliente (ver `src/features/session/lib/search.ts`),
+ * e este é o único pedaço que não pode ser: o texto da pregação não vai para a
+ * lista, e não deve ir. Aqui o `ilike` roda no Postgres, sobre as linhas que a
+ * RLS já escopou ao dono, e volta só a chave — o que a UI faz com ela é
+ * acender o cartão correspondente.
+ *
+ * `escapeLikeValue` porque o termo é digitado por gente: sem ele um `%` deixa
+ * de ser texto e vira "qualquer coisa", e a busca passa a responder outra
+ * pergunta sem avisar ninguém. `limit` existe para o pior caso — um termo de
+ * três letras que casa com o acervo inteiro devolveria a lista toda, que é
+ * exatamente o resultado sem valor.
+ */
+export async function searchSessionIdsByTranscript(term: string, limit = 200): Promise<string[]> {
+  const trimmed = term.trim();
+  if (!trimmed) return [];
+  const supabase = await createClient();
+  const { data, error } = await supabase
+    .from("sessions")
+    .select("id")
+    .not("ended_at", "is", null)
+    .ilike("transcript", `%${escapeLikeValue(trimmed)}%`)
+    .order("created_at", { ascending: false })
+    .limit(limit);
+  if (error) throw new Error(`searchSessionIdsByTranscript failed: ${error.message}`);
+  return (data ?? []).map((r) => r.id as string);
+}
+
+export type SessionVerseHit = { sessionId: string; reference: string };
+
+/**
+ * Sessões que CITARAM a referência procurada.
+ *
+ * A pergunta "onde eu ouvi Jonas 1?" não é uma pergunta de texto: o pregador
+ * disse "no primeiro capítulo de Jonas", a transcrição não contém "Jonas 1", e
+ * o `ilike` acima devolve vazio com toda a confiança do mundo. Quem sabe a
+ * resposta são as REFERÊNCIAS gravadas — o card `citedVerse` e o bloco
+ * `bibleQuote` do resumo —, e compará-las com a busca exige entender as duas
+ * como referência, não como string. Ver `lib/domain/reference-query.ts`.
+ *
+ * O trabalho é dividido de propósito: a RPC peneira por LIVRO (é o que dá para
+ * fazer com índice e sem reescrever o parser em SQL) e `referenceMatchesQuery`
+ * decide capítulo e faixa de versículos aqui, com a mesma função que o feed usa
+ * para deduplicar card. Uma regra, um lugar.
+ *
+ * Uma referência por sessão: a lista mostra a pastilha com a que casou, e a
+ * segunda não caberia na tela nem acrescentaria nada — o cartão já está aceso.
+ */
+export async function searchSessionsByReference(
+  query: ReferenceQuery,
+  limit = 400
+): Promise<SessionVerseHit[]> {
+  const supabase = await createClient();
+  const { data, error } = await supabase
+    .rpc("session_verse_references", { p_books: query.books, p_prefixes: query.prefixes })
+    .limit(limit);
+  if (error) throw new Error(`searchSessionsByReference failed: ${error.message}`);
+
+  const hits = new Map<string, string>();
+  for (const row of (data ?? []) as { session_id: string; reference: string }[]) {
+    if (hits.has(row.session_id)) continue;
+    if (!referenceMatchesQuery(row.reference, query)) continue;
+    hits.set(row.session_id, row.reference.trim());
+  }
+  return [...hits].map(([sessionId, reference]) => ({ sessionId, reference }));
+}
+
+export async function listSessionIdsWithSummary(sessionIds: string[]): Promise<Set<string>> {
+  if (sessionIds.length === 0) return new Set();
+  const supabase = await createClient();
+  const { data, error } = await supabase
+    .from("sessions")
+    .select("id")
+    .in("id", sessionIds)
+    .not("final_summary", "is", null);
+  if (error) throw new Error(`listSessionIdsWithSummary failed: ${error.message}`);
+  return new Set((data ?? []).map((r) => r.id as string));
 }
 
 export type UpdateSessionTranscriptInput = {

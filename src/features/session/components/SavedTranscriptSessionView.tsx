@@ -8,17 +8,11 @@ import { NavLink } from "@/components/NavLink";
 import { ConfirmDialog } from "@/features/session/components/ConfirmDialog";
 import { EntityFieldDialog } from "@/features/session/components/EntityFieldDialog";
 import { SavedTranscriptView } from "@/features/session/components/SavedTranscriptView";
+import { SummarizeTranscriptButton } from "@/features/session/components/SummarizeTranscriptButton";
 import { TitleDialog } from "@/features/session/components/TitleDialog";
 import { requestLocationSuggestions, requestSpeakerSuggestions } from "@/features/session/lib/api";
+import { initialsOf } from "@/features/session/lib/text";
 import { cn } from "@/lib/utils";
-
-function initialsOf(name: string | null): string {
-  if (!name) return "?";
-  const parts = name.trim().split(/\s+/).filter(Boolean);
-  if (parts.length === 0) return "?";
-  if (parts.length === 1) return parts[0][0]?.toUpperCase() ?? "?";
-  return `${parts[0][0] ?? ""}${parts[parts.length - 1][0] ?? ""}`.toUpperCase();
-}
 
 const ADD_BADGE_CLASSES = cn(
   "inline-flex items-center gap-1 rounded-full bg-scriba-ink-mute/10 px-2.5 py-1 text-[11px] font-semibold uppercase tracking-wider text-scriba-ink-soft outline-none transition-colors",
@@ -35,6 +29,8 @@ type Props = {
   speakerName: string | null;
   speakerLocation: string | null;
   transcript: string;
+  /** A sessão já ganhou um resumo sob demanda. Resolvido no servidor. */
+  hasSummary: boolean;
 };
 
 /**
@@ -43,8 +39,16 @@ type Props = {
  * inteira é a transcrição, com o mesmo painel de busca usado no dialog das
  * outras sessões.
  *
- * Nada aqui oferece gerar resumo ou aprofundamento — o usuário escolheu o modo
- * mais barato justamente para não pagar LLM, e a promessa da tela é essa.
+ * O modo continua não gerando resumo SOZINHO — a promessa do preço por minuto
+ * é essa, e ela não mudou. O que a tela ganhou é a porta de saída:
+ * `SummarizeTranscriptButton` roda o resumo sob demanda, uma vez, cobrando à
+ * parte. A escolha do modo é feita ANTES da pregação; descobrir depois que o
+ * resumo fazia falta não pode custar a gravação inteira.
+ *
+ * Com resumo, a sessão passa a ter as duas páginas: esta continua sendo a
+ * leitura da transcrição, e `/summary` ganha o resumo, o estudo e os cards de
+ * acompanhamento. O `/list` manda direto para lá — ver `listSessionIdsWithSummary`.
+ *
  * Título, autor e local seguem editáveis pelo PATCH de meta.
  */
 export function SavedTranscriptSessionView({
@@ -57,6 +61,7 @@ export function SavedTranscriptSessionView({
   speakerName: initialSpeakerName,
   speakerLocation: initialSpeakerLocation,
   transcript,
+  hasSummary,
 }: Props) {
   const router = useRouter();
   const [title, setTitle] = useState(initialTitle);
@@ -175,16 +180,22 @@ export function SavedTranscriptSessionView({
               {durationLabel ? ` · ${durationLabel}` : ""}
             </p>
           </div>
-          <button
-            type="button"
-            onClick={() => setDeleteOpen(true)}
-            className={cn(
-              "inline-flex items-center gap-1.5 rounded-full px-3 py-1.5 text-[11px] font-semibold text-scriba-ink-mute outline-none transition-colors",
-              "hover:bg-destructive/10 hover:text-destructive focus-visible:ring-2 focus-visible:ring-ring/40"
-            )}
-          >
-            Excluir
-          </button>
+          {/* "Gerar resumo" e "Excluir" dividem uma linha só: no celular a
+              coluna da esquerda já ocupa a largura toda, e empilhar mais duas
+              faixas empurraria a transcrição para baixo da dobra. */}
+          <div className="flex flex-wrap items-center gap-2">
+            <SummarizeTranscriptButton sessionId={id} hasSummary={hasSummary} />
+            <button
+              type="button"
+              onClick={() => setDeleteOpen(true)}
+              className={cn(
+                "inline-flex items-center gap-1.5 rounded-full px-3 py-1.5 text-[11px] font-semibold text-scriba-ink-mute outline-none transition-colors",
+                "hover:bg-destructive/10 hover:text-destructive focus-visible:ring-2 focus-visible:ring-ring/40"
+              )}
+            >
+              Excluir
+            </button>
+          </div>
           <p className="text-[11px] font-light text-scriba-ink-mute sm:hidden">
             {createdAtShortLabel}
           </p>
@@ -212,6 +223,7 @@ export function SavedTranscriptSessionView({
         onSave={(v) => patchField("title", v)}
       />
       <EntityFieldDialog
+        kind="speaker"
         open={speakerDialogOpen}
         onOpenChange={setSpeakerDialogOpen}
         title={speakerName?.trim() ? "Editar autor" : "Adicionar autor"}
@@ -221,6 +233,7 @@ export function SavedTranscriptSessionView({
         onSave={(v) => patchField("speakerName", v)}
       />
       <EntityFieldDialog
+        kind="location"
         open={locationDialogOpen}
         onOpenChange={setLocationDialogOpen}
         title={speakerLocation?.trim() ? "Editar local" : "Adicionar local"}

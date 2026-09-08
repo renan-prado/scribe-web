@@ -32,7 +32,13 @@ export function recordingRouteFor(mode: SessionMode): "live" | "audio" | "transc
 /**
  * Segmento de rota da SESSÃO SALVA. Sessões transcript_only não têm resumo,
  * então moram numa página própria de leitura da transcrição.
+ *
+ * `hasSummary` cobre a exceção: uma sessão do modo transcrição pode GANHAR um
+ * resumo depois, sob demanda (`/api/final-summary/from-transcript`), e a partir
+ * daí a página que interessa é a do resumo. Quem não sabe responder (a maior
+ * parte dos chamadores, que só tem o modo em mãos) omite o argumento e continua
+ * caindo em `/transcript` — de onde o cabeçalho leva ao resumo em um toque.
  */
-export function savedRouteFor(mode: SessionMode): "summary" | "transcript" {
-  return mode === "transcript_only" ? "transcript" : "summary";
+export function savedRouteFor(mode: SessionMode, hasSummary = false): "summary" | "transcript" {
+  return mode === "transcript_only" && !hasSummary ? "transcript" : "summary";
 }

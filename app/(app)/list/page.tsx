@@ -1,15 +1,20 @@
-import { BookOpen, Captions, CircleDot, MapPin, Mic, Trash2 } from "lucide-react";
+import { CircleDot, Mic, Trash2 } from "lucide-react";
 import type { Metadata } from "next";
 import { revalidatePath } from "next/cache";
 import { NavLink } from "@/components/NavLink";
 import { RefreshSessionsButton } from "@/features/session/components/RefreshSessionsButton";
 import { SessionsEmptyState } from "@/features/session/components/SessionsEmptyState";
-import { formatDurationShort, groupLabel, shortDate } from "@/features/session/lib/formatting";
+import { shortDate } from "@/features/session/lib/formatting";
 import { listDeepenedSessionIds } from "@/lib/db/deepenings";
-import { deleteSession, listSessions, listUnfinishedSessions } from "@/lib/db/sessions";
-import { recordingRouteFor, savedRouteFor } from "@/lib/domain/session";
+import {
+  deleteSession,
+  listSessionIdsWithSummary,
+  listSessions,
+  listUnfinishedSessions,
+} from "@/lib/db/sessions";
+import { recordingRouteFor } from "@/lib/domain/session";
 import { cn } from "@/lib/utils";
-import { SessionCardMenu } from "./SessionCardMenu";
+import { SessionsBrowser } from "./SessionsBrowser";
 
 export const metadata: Metadata = { title: "Suas gravações" };
 
@@ -44,21 +49,21 @@ export default async function LibraryPage() {
   // numa faixa própria no topo para não sumirem de vista.
   const unfinished = await listUnfinishedSessions().catch(() => []);
 
-  const deepenedIds = await listDeepenedSessionIds(sessions.map((s) => s.id)).catch(
-    () => new Set<string>()
-  );
+  // Duas consultas de CHAVE sobre os mesmos ids, no molde de
+  // `listDeepenedSessionIds`: quais sessões já têm estudo e quais já têm
+  // resumo. A segunda existe porque uma sessão do modo transcrição pode ter
+  // ganhado um resumo depois (ver /api/final-summary/from-transcript), e o
+  // cartão precisa apontar para a página certa sem trazer `final_summary` — uma
+  // das três colunas pesadas — para dentro da lista.
+  //
+  // O agrupamento por período saiu daqui: quem filtra é o `SessionsBrowser`, e
+  // agrupar antes do filtro deixaria seções vazias na tela.
+  const sessionIds = sessions.map((s) => s.id);
+  const [deepenedIds, summarizedIds] = await Promise.all([
+    listDeepenedSessionIds(sessionIds).catch(() => new Set<string>()),
+    listSessionIdsWithSummary(sessionIds).catch(() => new Set<string>()),
+  ]);
   const now = new Date();
-
-  const groups: {
-    label: string;
-    items: (typeof sessions)[number][];
-  }[] = [];
-  for (const s of sessions) {
-    const label = groupLabel(s.createdAt, now);
-    const last = groups[groups.length - 1];
-    if (last?.label === label) last.items.push(s);
-    else groups.push({ label, items: [s] });
-  }
 
   const isEmpty = sessions.length === 0 && unfinished.length === 0 && !loadError;
 
@@ -158,146 +163,13 @@ export default async function LibraryPage() {
             heading="Sem gravações, ainda..."
           />
         ) : sessions.length === 0 ? null : (
-          <div className="flex flex-col gap-6">
-            {groups.map((group) => (
-              <section key={group.label} className="flex flex-col gap-3">
-                <div className="flex items-center gap-3 px-1">
-                  <span className="text-xs font-semibold text-scriba-ink-mute">{group.label}</span>
-                  <span className="h-px flex-1 bg-scriba-hairline" />
-                  <span className="text-[11px] font-light text-scriba-ink-mute">
-                    {group.items.length}
-                  </span>
-                </div>
-                <ul className="grid gap-3 sm:grid-cols-2">
-                  {group.items.map((s) => {
-                    const includeYear = new Date(s.createdAt).getFullYear() !== now.getFullYear();
-                    const isDeepened = deepenedIds.has(s.id);
-                    // Sessões do modo transcrição não têm resumo: abrem na
-                    // página de leitura da transcrição, com CTA e ícone próprios.
-                    const isTranscriptOnly = s.mode === "transcript_only";
-                    const href = `/recording/${s.id}/${savedRouteFor(s.mode)}`;
-                    return (
-                      <li
-                        key={s.id}
-                        className="group flex flex-col rounded-3xl border border-scriba-hairline-soft bg-scriba-paper p-5 shadow-[0_4px_14px_rgba(79,168,240,0.08)] transition-shadow hover:shadow-[0_8px_20px_rgba(79,168,240,0.18)] sm:p-6"
-                      >
-                        <div className="flex flex-1 flex-col gap-2">
-                          <div className="flex items-start gap-2">
-                            <NavLink
-                              href={href}
-                              spinner="overlay"
-                              contentClassName="flex min-w-0 items-center gap-2.5"
-                              className="flex min-w-0 flex-1 rounded-md outline-none focus-visible:ring-2 focus-visible:ring-ring/40"
-                            >
-                              {/* O mesmo par do botão primário: gradiente
-                                  azul-escuro com tinta branca no claro,
-                                  pastilha clara com tinta navy no escuro. Era
-                                  `bg-scriba-blue` + `text-white`, o par que o
-                                  `src/shared/AGENTS.md` proíbe — `--scriba-blue`
-                                  é azul de SUPERFÍCIE, e branco sobre ele dá
-                                  2,56:1 no claro e 2,33:1 no escuro.
-
-                                  Sem a classe `.scriba-cta`: isto é uma
-                                  pastilha decorativa dentro do link, não um
-                                  botão, e o hover de lá acende um `box-shadow`
-                                  que não faz sentido num ícone. */}
-                              <div className="flex size-9 shrink-0 items-center justify-center rounded-lg bg-[image:var(--scriba-cta)] text-scriba-cta-ink">
-                                {isTranscriptOnly ? (
-                                  <Captions className="size-4" />
-                                ) : (
-                                  <Mic className="size-4" />
-                                )}
-                              </div>
-                              <span className="text-pretty text-[15px] font-semibold leading-tight tracking-tight text-scriba-ink-strong sm:text-base">
-                                {s.title?.trim() || "Sessão sem título"}
-                              </span>
-                            </NavLink>
-                            <SessionCardMenu
-                              sessionId={s.id}
-                              href={href}
-                              deleteAction={deleteSessionAction}
-                            />
-                          </div>
-                          {s.shortSummary?.trim() ? (
-                            <p className="text-pretty text-[13px] font-light leading-snug text-scriba-ink-soft">
-                              {s.shortSummary}
-                            </p>
-                          ) : null}
-                        </div>
-                        <div className="mt-4 flex flex-col gap-2">
-                          {s.speakerName?.trim() || s.speakerLocation?.trim() ? (
-                            <span className="flex flex-wrap items-center gap-x-2 gap-y-1">
-                              {s.speakerName?.trim() ? (
-                                <span className="text-[12px] font-medium text-scriba-ink">
-                                  {s.speakerName}
-                                </span>
-                              ) : null}
-                              {s.speakerLocation?.trim() ? (
-                                <>
-                                  <span className="text-scriba-ink-mute">·</span>
-                                  <span className="inline-flex items-center gap-1 text-[11px] font-light text-scriba-ink-mute">
-                                    <MapPin className="size-3" />
-                                    {s.speakerLocation}
-                                  </span>
-                                </>
-                              ) : null}
-                            </span>
-                          ) : null}
-                          <div className="flex flex-col gap-3 border-t border-scriba-hairline pt-3 sm:flex-row sm:items-center sm:gap-2">
-                            <div className="flex flex-wrap items-center gap-x-2 gap-y-1">
-                              <span className="text-[11px] font-light text-scriba-ink-mute">
-                                {shortDate(s.createdAt, includeYear)}
-                              </span>
-                              {formatDurationShort(s.durationMs) ? (
-                                <>
-                                  <span className="size-[3px] rounded-full bg-scriba-ink-mute/60" />
-                                  <span className="text-[11px] font-light text-scriba-ink-mute">
-                                    {formatDurationShort(s.durationMs)}
-                                  </span>
-                                </>
-                              ) : null}
-                              {isTranscriptOnly ? (
-                                <>
-                                  <span className="size-[3px] rounded-full bg-scriba-ink-mute/60" />
-                                  <span
-                                    title="Gravada no modo transcrição — sem resumo"
-                                    className="inline-flex items-center gap-1 rounded-full bg-scriba-cream px-2 py-0.5 text-[10px] font-semibold uppercase tracking-wider text-scriba-cream-accent"
-                                  >
-                                    <Captions className="size-3" />
-                                    Transcrição
-                                  </span>
-                                </>
-                              ) : null}
-                              {isDeepened ? (
-                                <>
-                                  <span className="size-[3px] rounded-full bg-scriba-ink-mute/60" />
-                                  <span
-                                    title="Você já gerou o estudo deste sermão"
-                                    className="inline-flex items-center gap-1 rounded-full bg-scriba-blue-soft px-2 py-0.5 text-[10px] font-semibold uppercase tracking-wider text-scriba-blue-ink"
-                                  >
-                                    <BookOpen className="size-3" />
-                                    Estudo
-                                  </span>
-                                </>
-                              ) : null}
-                            </div>
-                            <div className="sm:ml-auto">
-                              <NavLink
-                                href={href}
-                                className="inline-flex w-full items-center justify-center rounded-full bg-scriba-blue-soft px-4 py-2 text-[11px] font-semibold text-scriba-blue-ink transition-colors hover:bg-scriba-blue-soft/70 sm:w-auto"
-                              >
-                                {isTranscriptOnly ? "Ver transcrição →" : "Ver resumo →"}
-                              </NavLink>
-                            </div>
-                          </div>
-                        </div>
-                      </li>
-                    );
-                  })}
-                </ul>
-              </section>
-            ))}
-          </div>
+          <SessionsBrowser
+            sessions={sessions}
+            deepenedIds={[...deepenedIds]}
+            summarizedIds={[...summarizedIds]}
+            nowIso={now.toISOString()}
+            deleteAction={deleteSessionAction}
+          />
         )}
       </main>
     </div>

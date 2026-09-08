@@ -34,6 +34,12 @@ export default async function RecordingTranscriptPage({ params }: PageProps) {
   if (!session) notFound();
 
   // Só sessões do modo transcrição moram aqui; as outras têm resumo.
+  //
+  // Uma sessão daqui PODE ter ganhado um resumo depois, sob demanda
+  // (`/api/final-summary/from-transcript`). Ela continua morando nesta página —
+  // a transcrição é o que o modo entrega, e a leitura dela não deixou de valer.
+  // O que muda é o cabeçalho, que passa a oferecer "Ver resumo" em vez de
+  // "Gerar resumo"; quem chega pelo /list já é mandado direto para /summary.
   if (session.mode !== "transcript_only") redirect(`/recording/${id}/summary`);
   // Ainda gravando (nada salvo): volta pra tela de captura.
   if (!session.endedAt) redirect(`/recording/${id}/transcribe`);
@@ -51,6 +57,7 @@ export default async function RecordingTranscriptPage({ params }: PageProps) {
       speakerName={session.speakerName}
       speakerLocation={session.speakerLocation}
       transcript={session.transcript}
+      hasSummary={!!session.finalSummary}
     />
   );
 }

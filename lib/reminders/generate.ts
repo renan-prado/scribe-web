@@ -43,7 +43,10 @@ export type GenerateRemindersInput = {
   logPrefix: string;
   /** Rota gravada na telemetria: "reminders" na primeira geração,
    * "reminders-reprocess" quando quem chamou foi o reprocessamento. */
-  metadataRoute: Extract<UsageRoute, "reminders" | "reminders-reprocess">;
+  metadataRoute: Extract<
+    UsageRoute,
+    "reminders" | "reminders-reprocess" | "reminders-from-transcript"
+  >;
 };
 
 export async function generateReminders(

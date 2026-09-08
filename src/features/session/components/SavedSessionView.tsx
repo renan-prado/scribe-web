@@ -25,20 +25,13 @@ import { SessionMenu } from "@/features/session/components/SessionMenu";
 import { SummaryView } from "@/features/session/components/SummaryView";
 import { TitleDialog } from "@/features/session/components/TitleDialog";
 import { requestLocationSuggestions, requestSpeakerSuggestions } from "@/features/session/lib/api";
+import { initialsOf } from "@/features/session/lib/text";
 import type { FeedItem } from "@/lib/domain/feed";
 import type { HighlightsPayload } from "@/lib/domain/highlights";
 import type { RemindersPayload } from "@/lib/domain/reminders";
 import type { RereadsPayload } from "@/lib/domain/rereads";
 import type { SummaryPayload } from "@/lib/domain/summary";
 import { cn } from "@/lib/utils";
-
-function initialsOf(name: string | null): string {
-  if (!name) return "?";
-  const parts = name.trim().split(/\s+/).filter(Boolean);
-  if (parts.length === 0) return "?";
-  if (parts.length === 1) return parts[0][0]?.toUpperCase() ?? "?";
-  return `${parts[0][0] ?? ""}${parts[parts.length - 1][0] ?? ""}`.toUpperCase();
-}
 
 /** Neutral pill matching the "Salvo" / "Estudo" family for "add missing meta"
  * CTAs. Rendered when speaker or location is unknown. */
@@ -356,6 +349,7 @@ export function SavedSessionView({
       />
 
       <EntityFieldDialog
+        kind="speaker"
         open={speakerDialogOpen}
         onOpenChange={setSpeakerDialogOpen}
         title={speakerName?.trim() ? "Editar autor" : "Adicionar autor"}
@@ -365,6 +359,7 @@ export function SavedSessionView({
         onSave={(v) => patchField("speakerName", v)}
       />
       <EntityFieldDialog
+        kind="location"
         open={locationDialogOpen}
         onOpenChange={setLocationDialogOpen}
         title={speakerLocation?.trim() ? "Editar local" : "Adicionar local"}

@@ -120,6 +120,12 @@ const REPROCESS_SUMMARY_ROUTES = new Set([
   "practices-reprocess",
   "rereads-reprocess",
   "reminders-reprocess",
+  // Primeiro resumo de uma sessão do modo transcrição. Mesmo pipeline, mesmo
+  // preço, mesma linha — ver o comentário de `reasons` em lib/coins/billable.ts.
+  "final-summary-from-transcript",
+  "summary-enrichment-from-transcript",
+  "rereads-from-transcript",
+  "reminders-from-transcript",
 ]);
 
 /**

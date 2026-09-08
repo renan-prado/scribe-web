@@ -18,6 +18,13 @@ type ConfirmDialogProps = {
   description: ReactNode;
   confirmLabel: string;
   pendingLabel?: string;
+  /**
+   * Cor do botão de confirmação. O padrão é `destructive` porque o diálogo
+   * nasceu para excluir, mas ele também confirma uma ação CARA (gerar o resumo
+   * de uma transcrição, que debita moedas) — e vermelho ali anunciaria perigo
+   * onde só há preço.
+   */
+  confirmVariant?: "destructive" | "default";
   /** Runs on confirm. If it returns a promise, the confirm button shows a
    * pending state until it settles; a thrown error just clears the pending
    * state and leaves the dialog open (the handler should surface its own toast). */
@@ -25,7 +32,8 @@ type ConfirmDialogProps = {
 };
 
 /**
- * Minimal destructive-action confirmation. Both CTAs live in the footer;
+ * Minimal confirmation dialog for an action worth a second thought — destrutiva
+ * por padrão, ou apenas cara (ver `confirmVariant`). Both CTAs live in the footer;
  * the close (X) affordance is hidden so the only ways out are Cancelar or
  * confirm. While the confirm handler is in flight the dialog can't be
  * dismissed.
@@ -37,6 +45,7 @@ export function ConfirmDialog({
   description,
   confirmLabel,
   pendingLabel,
+  confirmVariant = "destructive",
   onConfirm,
 }: ConfirmDialogProps) {
   const [pending, setPending] = useState(false);
@@ -67,7 +76,7 @@ export function ConfirmDialog({
           >
             Cancelar
           </Button>
-          <Button type="button" variant="destructive" disabled={pending} onClick={handleConfirm}>
+          <Button type="button" variant={confirmVariant} disabled={pending} onClick={handleConfirm}>
             {pending ? (pendingLabel ?? "Excluindo…") : confirmLabel}
           </Button>
         </DialogFooter>

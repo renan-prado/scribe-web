@@ -47,11 +47,18 @@ export type UsageRoute =
   | "sermon-echo"
   | "final-summary"
   | "final-summary-reprocess"
+  // Terceira rota da mesma chamada: o PRIMEIRO resumo de uma sessão gravada no
+  // modo transcrição, gerado sob demanda em /recording/:id/transcript. Separada
+  // das outras duas porque é o único sinal que responde "quantos escolheram o
+  // modo barato e mudaram de ideia?"; no painel de precificação ela soma com o
+  // reprocessamento, que é o mesmo trabalho pelo mesmo preço.
+  | "final-summary-from-transcript"
   // Duas rotas para a MESMA chamada de enriquecimento, escolhidas pelo passe
   // que a disparou. Sem a segunda, metade do custo de reprocessar um resumo
   // caía na linha da gravação e o preço de `reprocess_summary` parecia baixo.
   | "summary-enrichment"
   | "summary-enrichment-reprocess"
+  | "summary-enrichment-from-transcript"
   // As três etapas de LLM do estudo (`lib/study/generate.ts`). Separadas de
   // propósito: é o que permite ver no /admin/usage quanto custa PERGUNTAR,
   // quanto custa RESPONDER e quanto custa ESCREVER — e portanto onde vale
@@ -74,8 +81,10 @@ export type UsageRoute =
   | "practices-reprocess"
   | "rereads"
   | "rereads-reprocess"
+  | "rereads-from-transcript"
   | "reminders"
   | "reminders-reprocess"
+  | "reminders-from-transcript"
   | "format-paragraphs"
   | "hallucination-report"
   // A análise diária do próprio painel (/api/admin/insights). Entra aqui, e

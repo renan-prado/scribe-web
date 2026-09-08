@@ -34,12 +34,20 @@ preço por minuto iniciado (`lib/coins/pricing.ts`):
 | Modo | Página | O que roda | Moedas/min |
 |---|---|---|---|
 | `live` | `/recording/:id/live` | tudo acima | 7 |
-| `audio_only` | `/recording/:id/audio` | transcribe + resumo final | 6 |
-| `transcript_only` | `/recording/:id/transcribe` | só transcribe, sem LLM nem resumo | 1 |
+| `audio_only` | `/recording/:id/audio` | transcribe + resumo final | 5 |
+| `transcript_only` | `/recording/:id/transcribe` | só transcribe, sem LLM nem resumo | 3 |
 
 Cada página redireciona um modo que não é o dela. Sessão salva abre em
 `/recording/:id/summary`, ou `/transcript` no modo transcrição
 (`savedRouteFor`).
+
+**O modo transcrição não gera resumo, mas isso deixou de ser definitivo.** A
+página salva oferece "Gerar resumo" (`/api/final-summary/from-transcript`, 15
+moedas, uma vez), que roda o mesmo pipeline do `final-summary` sobre o texto já
+salvo. A sessão passa então a ter as duas páginas — `/transcript` continua
+sendo a leitura, `/summary` ganha resumo, estudo e cards — e o `/list` aponta
+para a segunda. A escolha do modo é feita ANTES da pregação; o preço por minuto
+é a promessa, não uma porta trancada.
 
 **Stack:** Next.js 16 (App Router) · React 19 · Supabase SSR · Tailwind v4 +
 shadcn sobre base-ui · Zod · Zustand · TanStack Query · Biome · Stripe.

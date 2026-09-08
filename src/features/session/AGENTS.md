@@ -427,9 +427,31 @@ como contexto curado de alta prioridade — versículos citados e destaques do
 pregador têm de atravessar; sugestões da IA só ficam se ainda couberem no
 todo.
 
-Modo `transcript_only` não tem resumo: o texto é salvo por
+Modo `transcript_only` não tem resumo NA HORA DO STOP: o texto é salvo por
 `PUT /api/sessions/:id/transcript` com `final_summary` nulo, e a sessão abre
 em `/recording/:id/transcript`.
+
+**Mas ele pode ganhar um depois.** `SummarizeTranscriptButton` no cabeçalho
+daquela página chama `/api/final-summary/from-transcript`, que roda o MESMO
+`generateFinalSummary` sobre a transcrição salva (com `feedItems: []`, porque
+o modo não tem feed) e grava releia / lembra / frases marcantes junto. Custa
+`summary_from_transcript` — 15 moedas, o mesmo do reprocessamento, porque é o
+mesmo trabalho.
+
+Três consequências que mordem quem for mexer:
+
+- **O gate de rota passou a ser a presença do PAYLOAD, não o modo.**
+  `/recording/:id/summary` só devolve para `/transcript` quando
+  `final_summary` é nulo. Voltar a testar `mode === "transcript_only"` ali
+  esconde o resumo que a pessoa acabou de pagar.
+- **`savedRouteFor(mode, hasSummary)` tem um segundo argumento**, e só o
+  `/list` o passa — via `listSessionIdsWithSummary`, uma consulta de chave no
+  molde de `listDeepenedSessionIds`. Quem só tem o modo em mãos omite e cai em
+  `/transcript`, de onde o cabeçalho leva ao resumo em um toque.
+- **O título da linha é preservado** (`updateSessionSummary(..., { keepTitle })`).
+  Naquele modo não há LLM para gerar título, então o que está na coluna foi
+  escolhido por gente — sobrescrevê-lo com o do resumo apagaria o que ela
+  digitou.
 
 Sessões nunca encerradas (`ended_at is null`) saem da lista principal e
 aparecem numa faixa "Gravações em aberto" no `/list`, com opção de continuar
@@ -486,6 +508,86 @@ O estudo tem duas particularidades que mordem de fora:
   algo que a pessoa não pode fazer. Sem plano MAS com estudos antigos, a lista
   fica e o convite vira faixa acima dela: esconder o que a pessoa já pagou
   para produzir seria confisco.
+
+## As listas: busca e filtros
+
+`/list` e `/studies` têm a MESMA barra (`components/CollectionSearch.tsx`) e o
+mesmo motor (`lib/search.ts`, puro e client-safe). Quem filtra é um componente
+cliente por página — `app/(app)/list/SessionsBrowser.tsx` e
+`app/(app)/studies/StudiesBrowser.tsx` —; as páginas continuam sendo só quem
+BUSCA.
+
+**A filtragem é no CLIENTE, e isso é escolha.** As duas páginas já carregam
+tudo do usuário num render de servidor — não há paginação em lugar nenhum — e
+a escala é a de quem grava um ou dois sermões por semana. Filtrar ali responde
+a cada tecla sem uma ida ao servidor por caractere e sem estado de carregamento
+piscando entre os cartões.
+
+**A exceção é a TRANSCRIÇÃO, e ela é servidor obrigatoriamente.** O texto da
+pregação não vai para a lista (`SELECT_LIST` o exclui de propósito) e não pode
+ir: trazer uma hora de sermão por cartão para desenhar uma lista trocaria a
+busca por um problema pior. Quem procura uma FRASE dita no púlpito passa por
+`GET /api/sessions/search`, que devolve só ids; `useContentSearch` os une ao
+resultado local. Duas invariantes desse hook:
+
+- **`null` não é conjunto vazio.** `null` = "não há resposta de conteúdo" —
+  termo curto, requisição em voo, ou falha. Tratá-lo como `[]` faria cada tecla
+  apagar os resultados por um instante, e uma falha de rede viraria "nada
+  encontrado".
+- **Resposta de consulta velha é descartada** (`seqRef`). Sem isso, a
+  requisição lenta de "gra" chegando depois da de "graça" repinta a lista com
+  o termo anterior, e o usuário não tem como saber que não é o que digitou.
+- **`pending` não é `ids === null`.** O hook diz, separado dos ids, que ainda
+  há resposta a caminho — e as listas usam isso para NÃO desenhar "nenhum
+  resultado" no intervalo entre a tecla e a resposta. Sem essa distinção a
+  tela afirmava o vazio e se desmentia meio segundo depois, quando entrava o
+  cartão que só casa pela transcrição. Espera só o caso VAZIO: havendo
+  resultado local a lista continua desenhada, e quem avisa é o contador
+  ("Procurando…").
+
+**A outra metade servidor é o VERSÍCULO, e ela não é busca de texto.** Procurar
+"Jonas 1" tem de achar a pregação cujo card diz "Jonas 1:1-17" — e o pregador
+disse "no primeiro capítulo de Jonas", então a transcrição não ajuda e nenhuma
+das duas strings é substring da outra. `lib/domain/reference-query.ts` entende
+os dois lados como REFERÊNCIA: resolve o livro pelos apelidos de
+`lib/bibles/books.ts` (acento, abreviação, prefixo — "genesis", "1co", "jona"),
+e compara capítulo e faixa de versículos por interseção, não por igualdade.
+Capítulo sem versículo cobre o capítulo inteiro, dos dois lados.
+
+O trabalho é dividido: a RPC `session_verse_references` peneira por LIVRO nas
+duas fontes que guardam referência — os cards `citedVerse` de
+`session_feed_items` e os blocos `bibleQuote` de `final_summary` — e o
+casamento fino acontece no TypeScript, com `parseVerseReference`, a mesma
+função que o feed usa para deduplicar card. **As duas fontes são obrigatórias:**
+sessão `audio_only` não tem card nenhum (o pipeline bíblico não roda nela), e
+procurar só nos cards perderia um modo inteiro do produto sem nenhum sinal na
+tela.
+
+O cartão que casou SÓ pela transcrição ganha a pastilha "Trecho na
+transcrição"; o que casou por versículo mostra a REFERÊNCIA que casou. Sem elas
+o cartão apareceria na lista sem nenhuma explicação visível para estar ali — e
+a referência ainda responde metade da pergunta de quem procurou "Jonas 1":
+qual pedaço de Jonas 1 foi lido.
+
+**O agrupamento por período foi para dentro do browser**, junto com a
+filtragem. Agrupar no servidor e filtrar no cliente deixa seções vazias na tela
+toda vez que um filtro esvazia um mês. Em troca, `nowIso` desce do servidor por
+prop: `groupLabel` compara com "agora", e um `new Date()` do cliente pode cair
+do outro lado da meia-noite em relação ao HTML servido — o React descartaria a
+página inteira por divergência de hidratação por causa de um rótulo.
+
+As opções de autor e de local saem dos ITENS da lista (`facetOptions`), não das
+tabelas `speakers` / `locations`: um filtro que oferece um nome sem resultado
+atrás é um beco, e o que a lista mostra é o SNAPSHOT em `sessions.speaker_name`
+— renomear um pregador não reescreve o passado, então filtrar pela entidade não
+casaria com o texto na tela.
+
+**A barra aparece sempre que a lista aparece.** Houve um piso de quatro itens
+por página; ele caiu. Rolar até o cartão é mesmo mais rápido numa lista curta,
+mas a busca daqui alcança a TRANSCRIÇÃO, que o cartão não mostra — e uma
+barra que só nasce no quarto item é uma função que se descobre por acidente. O
+que o `CollectionSearch` esconde é a faceta sem nenhuma opção, que não filtra
+nada.
 
 ## Ao mexer aqui
 

@@ -29,3 +29,19 @@ export function formatMmSs(ms: number): string {
   const ss = (total % 60).toString().padStart(2, "0");
   return `${mm}:${ss}`;
 }
+
+/**
+ * Iniciais de um nome próprio, para o avatar de fallback: a primeira letra do
+ * primeiro nome mais a do último. Nome de uma palavra devolve uma letra só,
+ * vazio devolve "?".
+ *
+ * Serve tanto a pessoa quanto a lugar — "Igreja Batista Central" vira "IC",
+ * que é exatamente o tipo de pastilha que se reconhece de relance numa lista.
+ */
+export function initialsOf(name: string | null | undefined): string {
+  if (!name) return "?";
+  const parts = name.trim().split(/\s+/).filter(Boolean);
+  if (parts.length === 0) return "?";
+  if (parts.length === 1) return parts[0][0]?.toUpperCase() ?? "?";
+  return `${parts[0][0] ?? ""}${parts[parts.length - 1][0] ?? ""}`.toUpperCase();
+}

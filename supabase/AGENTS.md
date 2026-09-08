@@ -99,6 +99,19 @@ e deixar no ledger uma linha com cara de legítima.
 > protege.** Ao escrever um gate em TypeScript, pergunte quem mais alcança o
 > que ele guarda.
 
+**Função de LEITURA é outro caso, e o padrão é o oposto.**
+`session_verse_references` (0041/0042) é `security invoker`: ela roda como o
+usuário, então a RLS de `sessions` e de `session_feed_items` é o gate e não há
+o que revogar de `authenticated` — revogar seria tirar a função de quem ela
+existe para servir. O que ela ganha do padrão acima é o `revoke` de `public` e
+`anon` e um `grant` explícito: EXECUTE nasce concedido a PUBLIC, e escrever a
+concessão que se quer é o que impede a próxima função de herdar a que ninguém
+escolheu.
+
+> **Definer é para escrever fora da RLS; invoker é para ler dentro dela.** A
+> pergunta que decide não é "é sensível?", é "esta função precisa enxergar o que
+> o usuário não enxerga?". Se não precisa, definer só adiciona superfície.
+
 Função nova que escreve saldo, comissão ou qualquer coisa que vire dinheiro
 segue o mesmo padrão:
 

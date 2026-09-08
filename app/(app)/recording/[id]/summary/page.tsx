@@ -45,9 +45,15 @@ export default async function RecordingSummaryPage({ params }: PageProps) {
       canCurrentUserUse("study_generation").catch(() => false),
     ]);
   if (!session) notFound();
-  // Sessões do modo transcrição não têm resumo — moram na página de leitura
-  // da transcrição.
-  if (session.mode === "transcript_only") redirect(`/recording/${id}/transcript`);
+  // Sessões do modo transcrição nascem SEM resumo — enquanto for esse o caso,
+  // esta página não tem o que desenhar e a leitura mora em /transcript. O
+  // gate é a ausência do payload, não o modo: depois de a pessoa gerar o
+  // resumo sob demanda (`/api/final-summary/from-transcript`), a sessão passa a
+  // ter resumo, estudo e cards como qualquer outra, e mandá-la de volta para a
+  // transcrição esconderia o que ela acabou de pagar.
+  if (!session.finalSummary && session.mode === "transcript_only") {
+    redirect(`/recording/${id}/transcript`);
+  }
 
   const createdAt = new Date(session.createdAt);
 

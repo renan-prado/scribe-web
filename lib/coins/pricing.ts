@@ -87,6 +87,22 @@ export const COIN_COSTS = {
    */
   reprocessSummary: 15,
   /**
+   * One-shot cost of generating the final summary for a session that was
+   * recorded in `transcript_only` and therefore never had one.
+   *
+   * O MESMO 15 do reprocessamento, e pelo mesmo motivo: é literalmente a mesma
+   * chamada — `generateFinalSummary` sobre a transcrição inteira, num modelo
+   * grande, mais releia/lembra/frases por cima. O que muda é o que existia
+   * antes (nada, em vez de um resumo velho), e isso não altera o custo de um
+   * centavo.
+   *
+   * Preço à parte no ledger porque a PERGUNTA é outra: "quantas pessoas
+   * gravaram no modo barato e mudaram de ideia?" é o sinal de produto que diz
+   * se o modo transcrição está sendo escolhido por engano. Na tela de
+   * precificação as duas somam na mesma linha — ver lib/coins/billable.ts.
+   */
+  summaryFromTranscript: 15,
+  /**
    * Reprocessar roda o MESMO pipeline do zero, então custa o mesmo. Deixá-lo
    * mais barato que a geração abriria uma arbitragem óbvia: gerar uma vez pelo
    * preço cheio e reprocessar indefinidamente pelo preço de banana, pagando 5
@@ -106,6 +122,7 @@ export const CHARGE_REASONS = [
   "deepening",
   "reprocess_summary",
   "reprocess_deepening",
+  "summary_from_transcript",
 ] as const;
 export type ChargeReason = (typeof CHARGE_REASONS)[number];
 
@@ -116,6 +133,7 @@ export const COIN_COST_BY_REASON: Record<ChargeReason, number> = {
   deepening: COIN_COSTS.deepening,
   reprocess_summary: COIN_COSTS.reprocessSummary,
   reprocess_deepening: COIN_COSTS.reprocessDeepening,
+  summary_from_transcript: COIN_COSTS.summaryFromTranscript,
 };
 
 export function isChargeReason(value: unknown): value is ChargeReason {
