@@ -68,7 +68,7 @@ export default async function AdminLayout({ children }: { children: ReactNode })
             dois botões, sair do admin exigia abrir a gaveta antes.
           */}
           <div className="flex shrink-0 items-center gap-1">
-            <Button variant="ghost" size="sm" render={<Link href="/feed" />}>
+            <Button variant="ghost" size="sm" nativeButton={false} render={<Link href="/feed" />}>
               <ArrowUpRight />
               <span className="hidden sm:inline">Voltar ao app</span>
               <span className="sr-only sm:hidden">Voltar ao app</span>
