@@ -5,6 +5,9 @@ import type {
   RecorderErrorSource,
   RecorderOptions,
 } from "@/lib/domain/recorder";
+import { createLogger } from "@/lib/log";
+
+const log = createLogger("recorder");
 
 type MimeCandidate = { mimeType: string; extension: string };
 
@@ -14,6 +17,63 @@ const MIME_CANDIDATES: MimeCandidate[] = [
   { mimeType: "audio/mp4", extension: "m4a" },
   { mimeType: "audio/aac", extension: "aac" },
 ];
+
+/**
+ * O que pedimos ao microfone — e as três coisas que pedimos para ele NÃO fazer.
+ *
+ * Era `{ audio: true }`, e `true` não é neutro: o Chrome liga por padrão
+ * `echoCancellation`, `noiseSuppression` e `autoGainControl`, o pacote do
+ * WebRTC afinado para CHAMADA DE VOZ — uma boca a vinte centímetros do
+ * aparelho, num quarto, e tudo o mais é inimigo. Um salão de igreja é o caso
+ * oposto: a voz chega refletida, de longe, e o "ruído" que a supressão ataca é
+ * a mesma cauda reverberante que carrega a fala.
+ *
+ * Medido: rodar um denoiser espectral (`afftdn`) sobre o áudio de referência
+ * antes de transcrever levou o WER de 11,8% para 21,2%. Compressão e
+ * equalização também pioraram; só normalização de volume ficou neutra. O
+ * modelo de transcrição foi treinado em áudio sujo e usa o que a limpeza
+ * remove — o melhor pré-processamento é nenhum.
+ *
+ * As outras duas seguem a mesma lógica: `autoGainControl` bombeia o ganho
+ * entre a fala e o silêncio (e o modelo transcreve áudio baixo sem perder
+ * nada — 12,9% de WER a 18% do volume original), e `echoCancellation` sem
+ * sinal de referência não tem eco a cancelar, mas em celular costuma arrastar
+ * a captação para o caminho de "voice communication", que é justamente o
+ * processado.
+ *
+ * **Isto ainda não foi confirmado em campo.** A medição acima é um proxy
+ * offline: o denoiser do ffmpeg não é o do WebRTC. Por isso `reportTrackSettings`
+ * loga o que o navegador REALMENTE aplicou — uma gravação real de verdade
+ * responde se o pedido foi aceito. Se um dia isto precisar voltar atrás, é
+ * este objeto, e nada mais.
+ */
+const AUDIO_CONSTRAINTS: MediaTrackConstraints = {
+  echoCancellation: false,
+  noiseSuppression: false,
+  autoGainControl: false,
+};
+
+/**
+ * Constraint é PEDIDO, não garantia: o navegador pode ignorar qualquer uma
+ * sem avisar, e aí a gravação sai processada enquanto o código acredita que
+ * não. `getSettings()` é a única fonte do que valeu de fato.
+ */
+function reportTrackSettings(stream: MediaStream) {
+  try {
+    const track = stream.getAudioTracks()[0];
+    if (!track) return;
+    const s = track.getSettings();
+    log.info("mic", {
+      echoCancellation: s.echoCancellation ?? null,
+      noiseSuppression: s.noiseSuppression ?? null,
+      autoGainControl: s.autoGainControl ?? null,
+      sampleRate: s.sampleRate ?? null,
+      channelCount: s.channelCount ?? null,
+    });
+  } catch {
+    // getSettings não é universal; a ausência do log não pode custar a gravação.
+  }
+}
 
 function pickMime(): MimeCandidate | null {
   if (typeof MediaRecorder === "undefined") return null;
@@ -203,11 +263,19 @@ export function createRecorder(opts: RecorderOptions = {}): Recorder {
       picked = pickMime();
       if (!picked) throw new Error("no supported MediaRecorder mimeType");
       try {
-        stream = await navigator.mediaDevices.getUserMedia({ audio: true });
+        stream = await navigator.mediaDevices.getUserMedia({ audio: AUDIO_CONSTRAINTS });
       } catch (err) {
-        emitError("stream", (err as Error).message ?? "getUserMedia failed");
-        throw err;
+        // Algumas WebViews recusam o objeto de constraints inteiro em vez de
+        // ignorar o que não conhecem. Perder a gravação por causa de um ajuste
+        // de qualidade seria a troca errada: tenta de novo no modo simples.
+        try {
+          stream = await navigator.mediaDevices.getUserMedia({ audio: true });
+        } catch {
+          emitError("stream", (err as Error).message ?? "getUserMedia failed");
+          throw err;
+        }
       }
+      reportTrackSettings(stream);
       running = true;
       setupVad();
       startChunkRecorder();

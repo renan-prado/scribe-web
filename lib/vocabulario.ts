@@ -79,18 +79,26 @@ export const TERMOS_TEOLOGICOS = [
 export const VOCABULARIO_GUIA = [...LIVROS_BIBLICOS, ...TERMOS_TEOLOGICOS];
 
 /**
- * Prompt-guia para o Whisper. Formato importa: o Whisper trata o `prompt` como
- * transcrição prévia e tenta "continuar" a partir dele. Se passamos uma lista
- * plana ("Gênesis, Êxodo, Levítico, ..."), o modelo acredita que alguém acabou
- * de recitar isso e, em áudio curto/silencioso/incerto, ecoa a lista inteira
- * como se fosse fala. Prosa natural elimina o padrão de eco sem perder a dica
- * de vocabulário — o Whisper ainda enxerga os termos e prefere "Filemom" a
- * "Filemão", "Habacuque" a "Abacuque", etc.
+ * Prompt-guia do transcritor. Uma frase, e não a lista dos 66 livros.
+ *
+ * A lista estava lá para o modelo preferir "Filemom" a "Filemão". O que ela
+ * fazia, medido: PIORAVA a transcrição. Sobre um sermão real com transcrição
+ * de referência, o mesmo áudio nos mesmos chunks fecha 12% de WER com esta
+ * frase curta e 17% com a lista inteira — o modelo gasta atenção com 66 nomes
+ * que ninguém falou, e em áudio incerto ainda os ecoa como se fossem fala.
+ *
+ * O `prompt` do endpoint de transcrição é tratado como TRANSCRIÇÃO PRÉVIA:
+ * quanto mais ele se parece com o que acabou de ser dito, mais ajuda. É por
+ * isso que quem carrega o peso aqui é o `prevText` que a rota concatena
+ * depois desta frase — ele é contexto de verdade, e sozinho já entrega os 12%.
+ * Esta frase só ancora o domínio e o registro (fala espontânea de púlpito).
+ *
+ * Se um dia voltar a ideia de guiar vocabulário, o caminho medido NÃO é
+ * listar termos: é deixar o prevText mais longo.
  */
 export const VOCABULARIO_PROMPT =
-  `Transcrição em português brasileiro de uma aula bíblica ou pregação cristã. ` +
-  `Podem aparecer nomes de livros como ${LIVROS_BIBLICOS.join(", ")}, ` +
-  `e termos teológicos como ${TERMOS_TEOLOGICOS.join(", ")}.`;
+  "Transcrição literal de uma pregação cristã em português do Brasil, " +
+  "gravada ao vivo. Fala espontânea, com repetições e interjeições.";
 
 function escapeRegex(s: string): string {
   return s.replace(/[.*+?^${}()|[\]\\]/g, "\\$&");

@@ -435,7 +435,14 @@ Dois módulos com nomes parecidos e papéis distintos:
   foram removidas — 41 MB no bundle de deploy que nenhum caminho de código
   lia. Se um seletor de tradução voltar, o cache precisa virar LRU antes.
 
-## Transcrição — qualidade e escalada
+## Transcrição — qualidade
+
+Tudo desta seção foi MEDIDO contra um sermão real gravado num salão com eco,
+com transcrição de referência feita à mão. Os números, as tabelas e o que foi
+tentado e não funcionou estão em **[`docs/transcricao.md`](../docs/transcricao.md)**.
+Leia antes de mexer em qualquer coisa aqui — as três intuições mais naturais
+(limpar o áudio, guiar o vocabulário, revisar o texto com um LLM) estão todas
+medidas, e as três pioram ou empatam.
 
 `transcription/sanitize.ts` reconhece três assinaturas de alucinação vistas em
 sessões reais: eco do prompt-guia, eco da lista de vocabulário e loop de
@@ -448,8 +455,19 @@ pipelines.
 confiança do modelo (média de logprobs) e densidade de texto por segundo de
 áudio. As três pegam falhas diferentes: fluência alucinada confiante,
 decodificação incerta, e áudio de ruído/música que rende fragmentos esparsos e
-confiantes. `poor` = qualquer uma acusou, e é o sinal que dispara a escalada de
-modelo no servidor.
+confiantes. `poor` = qualquer uma acusou.
+
+**`poor` não troca de modelo.** Já trocou: chunk ruim era reenviado ao
+`gpt-4o-transcribe`. Com `gpt-transcribe` no primeiro degrau esse reenvio
+dobra o custo para entregar um texto pior em todos os cenários medidos, então a
+escalada foi removida — não existe degrau acima. Hoje `poor` faz duas coisas:
+exclui o chunk do `prevText` e dos pipelines, e, repetido, acende o aviso de
+áudio ruim na tela.
+
+**`LOW_CONFIDENCE_AVG_LOGPROB` é calibrado por MODELO.** Trocar
+`OPENAI_TRANSCRIBE_MODEL` sem refazer a tabela de `docs/transcricao.md` §3
+desliga o aviso em silêncio: o valor herdado do `gpt-4o-mini-transcribe` (-0,6)
+nunca disparava com o modelo novo, nem em áudio com 27% de WER.
 
 ## Outros
 

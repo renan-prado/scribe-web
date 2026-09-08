@@ -14,6 +14,7 @@ saber ao editar código ficam nos `AGENTS.md` de cada pasta, não aqui.
 | O que falta configurar nos painéis? | [`checklist-ambiente-dev.md`](./checklist-ambiente-dev.md) |
 | Quais são as regras do programa de parceiros? | [`parceiros.md`](./parceiros.md) |
 | Por que o estudo entrega pouco, e o que fazer? | [`estudo-v2.md`](./estudo-v2.md) |
+| Por que a transcrição erra, e o que já foi tentado? | [`transcricao.md`](./transcricao.md) |
 | Qual plano libera qual funcionalidade? | [`estudo-v2.md` §8](./estudo-v2.md) e `lib/entitlements/features.ts` |
 | Como o app fala com a shell React Native? | [`react-native-bridge.md`](./react-native-bridge.md) |
 | O que a Apple exige para aprovar o app na loja? | [`app-store-ios.md`](./app-store-ios.md) |
@@ -36,6 +37,11 @@ saber ao editar código ficam nos `AGENTS.md` de cada pasta, não aqui.
   **Status: implementado.**
 - **[`parceiros-plano.md`](./parceiros-plano.md)** — o plano técnico do mesmo
   programa e o que ficou de fora. Fases 0 a 7 entregues.
+- **[`transcricao.md`](./transcricao.md)** — por que a transcrição errava em
+  igreja com eco, o que foi medido para corrigir (modelo, prompt, limiares) e o
+  que foi tentado e NÃO funcionou (limpar o áudio, revisar com LLM, modelos de
+  áudio-chat). Leitura obrigatória antes de mexer em `/api/transcribe`,
+  `lib/vocabulario.ts`, `lib/transcription/*` ou `lib/recorder.ts`.
 - **[`melhorias-resumo-sermao.md`](./melhorias-resumo-sermao.md)** — o problema
   de o resumo soar como interpretação da IA em vez de organização do que foi
   dito, e o que fazer a respeito.

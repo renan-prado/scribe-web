@@ -15,24 +15,55 @@ import { type SanitizedTranscription, sanitizeTranscription } from "@/lib/transc
  *     ok) e sem assinatura, mas um chunk não-silencioso que rende quase nenhum
  *     texto é o sinal mais direto de que o modelo não está entendendo o áudio.
  *
- * `poor` = qualquer uma das fontes acusou. É o sinal que dispara a escalada
- * de modelo no servidor e a exclusão do chunk como contexto no cliente.
+ * `poor` = qualquer uma das fontes acusou. É o sinal que exclui o chunk do
+ * contexto (prevText) e dos pipelines no cliente, e que, repetido, acende o
+ * aviso de áudio ruim na tela. Ele NÃO troca de modelo: não existe modelo
+ * melhor que o padrão para escalar — ver o comentário em
+ * `app/api/transcribe/route.ts`.
  */
 
 /**
- * Piso de confiança. Fala limpa costuma ficar acima de -0.3; abaixo de -0.6
- * o modelo está visivelmente chutando. Conservador de propósito: falso
- * negativo custa um chunk ruim no feed, falso positivo custa uma chamada
- * extra ao modelo escalado.
+ * Piso de confiança, calibrado para `gpt-transcribe`.
+ *
+ * O valor anterior era -0.6, herdado do `gpt-4o-mini-transcribe`, e com o
+ * modelo novo ele **nunca disparava**. Medição sobre um sermão real com
+ * transcrição de referência, degradado em passos de reverberação:
+ *
+ * | avgLogprob | WER  |
+ * |-----------:|-----:|
+ * |     -0.046 |  14% |
+ * |     -0.062 |  19% |
+ * |     -0.105 |  27% |
+ * |     -0.118 |  35% |
+ * |     -0.157 |  49% |
+ * |     -0.227 |  85% |
+ *
+ * O `gpt-transcribe` é MUITO mais confiante que o mini: em todo áudio ainda
+ * utilizável ele fica entre -0.045 e -0.073, e a partir de -0.10 a
+ * transcrição já está errando um quarto das palavras. Daí o -0.10 — ele marca
+ * a linha em que o áudio começa a custar conteúdo, não a em que o modelo
+ * desiste.
+ *
+ * Isso não é ajuste fino: com -0.6, o áudio que motivou este trabalho (27% de
+ * WER, chunks a -0.392/-0.105/-0.071) passava inteiro como bom, e o aviso de
+ * qualidade que existe para essa exata situação não aparecia uma vez sequer.
+ *
+ * **Trocar `OPENAI_TRANSCRIBE_MODEL` obriga a recalibrar este número.** Ele é
+ * uma propriedade do decodificador, não do áudio.
  */
-export const LOW_CONFIDENCE_AVG_LOGPROB = -0.6;
+export const LOW_CONFIDENCE_AVG_LOGPROB = -0.1;
 
 /**
- * Piso de densidade: chars de texto limpo por segundo de áudio. Fala contínua
- * em pt-BR rende ~12-16 chars/s; mesmo fala pausada (metade do chunk em
- * silêncio) fica acima de 5. Abaixo de 3, o modelo devolveu fragmentos de um
- * áudio que o gate de silêncio do cliente considerou "com som" — ruído ou
- * música, não fala inteligível.
+ * Piso de densidade: chars de texto limpo por segundo de áudio. Abaixo de 3, o
+ * modelo devolveu fragmentos de um áudio que o gate de silêncio do cliente
+ * considerou "com som" — ruído ou música, não fala inteligível.
+ *
+ * O comentário anterior dizia "fala contínua rende ~12-16 chars/s". Medido num
+ * sermão real, a pregação rende **8**: o púlpito tem pausa retórica, e o ritmo
+ * de quem prega não é o de quem conversa. O piso continua em 3 porque ele é o
+ * detector de CATÁSTROFE (áudio inutilizável mede 2,4-3,4), e subi-lo para
+ * perto de 8 transformaria uma pausa longa em alarme. Quem pega a faixa do
+ * meio — áudio ruim mas ainda com fala — é o logprob acima.
  */
 export const LOW_DENSITY_CHARS_PER_SEC = 3;
 
@@ -68,14 +99,6 @@ export function assessTranscription(
     lowDensity,
     poor: sanitized.suspect || lowConfidence || lowDensity,
   };
-}
-
-/**
- * Quantas assinaturas ruins uma avaliação carrega. Usado para comparar o
- * resultado do modelo padrão com o do modelo escalado e ficar com o melhor.
- */
-export function assessmentPenalty(a: TranscriptionAssessment): number {
-  return (a.suspect ? 1 : 0) + (a.lowConfidence ? 1 : 0) + (a.lowDensity ? 1 : 0);
 }
 
 /** `include[]=logprobs` só é aceito pela família gpt-*-transcribe sem diarize. */

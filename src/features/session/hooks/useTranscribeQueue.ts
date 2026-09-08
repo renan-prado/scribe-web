@@ -52,12 +52,7 @@ type Args = {
    * reflects that recovered audio is being processed.
    */
   onOrphanRecovered?: (chunk: StoredChunk) => void;
-  onSuccess: (index: number, text: string, meta: { suspect: boolean; escalated: boolean }) => void;
-  /**
-   * Tier de transcrição a pedir. Lido no momento de cada tentativa (não no
-   * enqueue) para que chunks já na fila/retry peguem a promoção da sessão.
-   */
-  getTier?: () => "standard" | "escalated";
+  onSuccess: (index: number, text: string, meta: { suspect: boolean }) => void;
 };
 
 export type TranscribeQueue = {
@@ -81,13 +76,11 @@ export function useTranscribeQueue({
   sessionId,
   onOrphanRecovered,
   onSuccess,
-  getTier,
 }: Args): TranscribeQueue {
   const pendingRef = useRef<Map<number, QueueEntry>>(new Map());
   const drainResolversRef = useRef<Array<() => void>>([]);
   const onSuccessRef = useRef(onSuccess);
   const onOrphanRef = useRef(onOrphanRecovered);
-  const getTierRef = useRef(getTier);
 
   useEffect(() => {
     onSuccessRef.current = onSuccess;
@@ -95,10 +88,6 @@ export function useTranscribeQueue({
   useEffect(() => {
     onOrphanRef.current = onOrphanRecovered;
   }, [onOrphanRecovered]);
-  useEffect(() => {
-    getTierRef.current = getTier;
-  }, [getTier]);
-
   const notifyDrained = useCallback(() => {
     if (pendingRef.current.size !== 0) return;
     const resolvers = drainResolversRef.current;
@@ -121,7 +110,6 @@ export function useTranscribeQueue({
         durationMs: chunk.durationMs,
         prevText: chunk.prevText,
         sessionId: chunk.sessionId,
-        tier: getTierRef.current?.() ?? "standard",
       });
 
       // Recheck: caller might have cleared the queue while we were awaiting.
@@ -137,10 +125,7 @@ export function useTranscribeQueue({
           attempts: chunk.attempts,
           durationMs: chunk.durationMs,
         });
-        onSuccessRef.current(index, result.text, {
-          suspect: result.suspect,
-          escalated: result.escalated,
-        });
+        onSuccessRef.current(index, result.text, { suspect: result.suspect });
         notifyDrained();
         return;
       }

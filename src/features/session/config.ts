@@ -152,20 +152,21 @@ export const RECORDER_SILENCE_THRESHOLD = 0.01;
 export const RECORDER_SILENCE_HOLD_MS = 400;
 export const SILENCE_RMS_THRESHOLD = 0.005;
 
-// ---------- TRANSCRIÇÃO (qualidade + escalada de modelo) ----------
+// ---------- TRANSCRIÇÃO (qualidade do áudio) ----------
 
 /**
- * Janela deslizante de chunks OK observada para decidir a promoção da sessão
- * ao modelo de transcrição escalado. Se, entre os últimos
- * TRANSCRIBE_ESCALATION_WINDOW chunks, TRANSCRIBE_ESCALATION_BAD_COUNT ou mais
- * saíram ruins (assinatura de alucinação, baixa confiança, ou o servidor
- * precisou re-transcrever no modelo escalado), a sessão inteira passa a pedir
- * o modelo escalado direto — evita pagar dois modelos por chunk em áudio
- * sabidamente ruim. A promoção é pegajosa: vale até o fim da sessão, e o
- * usuário é avisado por um banner para decidir se continua gastando moedas.
+ * Janela deslizante de chunks OK observada para acender o aviso de áudio ruim.
+ * Se, entre os últimos POOR_AUDIO_WINDOW chunks, POOR_AUDIO_BAD_COUNT ou mais
+ * voltaram `suspect`, o banner sobe e fica até o fim da sessão.
+ *
+ * O aviso é PEGAJOSO e não troca nada sozinho: ele existe para a pessoa
+ * decidir se mexe na captação ou se encerra. Antes ele também prometia
+ * "ativamos um modelo mais preciso" — a escalada de modelo foi removida
+ * porque o modelo "mais preciso" era medidamente pior (ver
+ * `app/api/transcribe/route.ts`), e a promessa saiu junto.
  */
-export const TRANSCRIBE_ESCALATION_WINDOW = 5;
-export const TRANSCRIBE_ESCALATION_BAD_COUNT = 3;
+export const POOR_AUDIO_WINDOW = 5;
+export const POOR_AUDIO_BAD_COUNT = 3;
 
 // ---------- OUTROS ----------
 

@@ -248,7 +248,96 @@ Quatro decisões que o próximo a mexer precisa conhecer:
 Os dois tokens (`--session-mention-ink`, `--session-mention-wash`) trocam de
 família dentro de `.tone-study` — no estudo o acento é verde, como o resto.
 
-## Qualidade da transcrição e escalada de modelo
+## Os três modos oferecem as MESMAS ações
+
+Um modo de gravação não é uma versão reduzida do outro: o que muda é o que o
+Scriba FAZ com o áudio, nunca o que o usuário pode fazer com a gravação. Toda
+tela de captura tem, sem exceção:
+
+| | onde |
+|---|---|
+| `RecordingHeader` (título, autor, local) | topo, com o menu dentro |
+| Ler transcrição (agrupada por minuto) | `SessionMenu` → diálogo |
+| Algo está errado | `SessionMenu` → `HallucinationReportDialog` |
+| **Descartar gravação** | `SessionMenu`, lixeira da barra, `PausedOverlay` |
+| Pausar / parar | barra do gravador e `PausedOverlay` |
+
+**"Descartar" mora em TRÊS lugares de propósito.** A lixeira da barra do
+gravador existia sozinha no modo transcrição, e o usuário relatou que o modo
+não tinha como cancelar — ele tinha: um ícone de 14px numa barra que se apaga
+sozinha depois de alguns segundos parada. Quem procura "como cancelar isto"
+abre o menu de três pontos. Ação destrutiva precisa estar onde se procura por
+ela, não onde coube.
+
+O `audio_only` era o modo fora do padrão — sem cabeçalho, sem descartar, com o
+menu solto num canto e sem sequer usar o store. Ele hoje semeia os metadados no
+store em `start()` (é de lá que o `RecordingHeader` lê) e **lê autor e local do
+STORE na hora de salvar**, não das props: salvar a prop descartaria em silêncio
+o que a pessoa editou durante a gravação.
+
+A ÚNICA diferença legítima entre os três é o que existe para ser mostrado: só o
+`live` tem feed, então só ele tem "Ver conteúdo do live" no menu e a aba
+`Conteúdo`; e o `transcript_only` não tem alternador de visão porque a página
+inteira já é a única visão que ele tem.
+
+## As duas visões de uma gravação
+
+`live` e `audio_only` mostram duas coisas do mesmo momento, e a `RecordingDock`
+é onde se troca entre elas:
+
+| Modo | Aba 1 | Aba 2 |
+|---|---|---|
+| `live` | `Feed` (ou `SummaryView`, parado) | `LiveTranscriptStream` |
+| `audio_only` | o botão grande do microfone | `LiveTranscriptStream` |
+
+**A transcrição usa o `LiveTranscriptStream`, o MESMO do modo transcrição, e
+não o `TranscriptView` do diálogo.** Os dois existem e resolvem coisas
+diferentes: o `TranscriptView` agrupa por minuto, para leitura calma depois; o
+stream dá uma linha por chunk, com o carimbo de tempo, no instante em que o
+`/api/transcribe` responde. Durante a pregação o que se quer conferir é o
+trecho que acabou de chegar. (O diálogo do menu de três pontos continua ali —
+ele serve à leitura, não à conferência.)
+
+**Os dois painéis são MONTADOS E DESMONTADOS, nunca escondidos com `hidden`.**
+A rolagem aqui é a da janela; duas árvores altas empilhadas dariam à página a
+soma das duas alturas, e o autoscroll de cada uma miraria uma posição que não é
+o fim da tela.
+
+### Por que a faixa fica embaixo, e em duas linhas
+
+O conteúdo destas telas cresce por uma hora. **Um alternador no topo obrigaria
+a rolar o sermão inteiro de volta só para trocar de aba** — que é exatamente o
+que ele deveria evitar. Embaixo ele fica no polegar o tempo todo.
+
+As abas já dividiram UMA linha com a barra do gravador, e num telefone de 390px
+não coube: a barra sozinha carrega tempo, pausar, parar e descartar, e o que
+sobrava obrigava as abas a virarem dois ícones sem rótulo. Duas caixinhas mudas
+não contam a ninguém que existe uma transcrição para ler. Empilhadas em duas
+faixas, cada uma tem a largura de que precisa.
+
+De baixo para cima, e a ordem é a regra: **o que sempre está lá primeiro, o que
+às vezes aparece por último.**
+
+```
+1,50rem   barra do gravador          (some quando não está gravando)
+5,75rem   abas                       (descem para 1,50rem sem a barra)
+9,75rem   pílulas transientes        (RECORDING_TRANSIENT_BAND)
+```
+
+Quem crescer o conteúdo dessas telas mexe no `pb-*` da seção junto — hoje
+`pb-44`, dimensionado para a última linha não morrer atrás das duas faixas.
+
+**"Ler novidades" e o contador da aba nunca aparecem juntos**, e é de propósito:
+os dois dizem a mesma coisa. O contador só existe na aba FECHADA; a pílula é
+gateada em `view === "feed"`. Na aba do feed avisa a pílula (que também rola até
+o fim); na da transcrição avisa o contador.
+
+**As abas não recolhem junto com a barra do gravador.** Aquele apagamento por
+inatividade existe para ninguém ENCERRAR um sermão encostando na tela; trocar de
+aba não destrói nada, e cobrar dois toques por isso não compraria segurança
+nenhuma.
+
+## Qualidade da transcrição
 
 Um chunk volta marcado como `poor` quando qualquer uma de três fontes acusa —
 assinatura de alucinação, baixa confiança do modelo, ou densidade de texto por
@@ -256,11 +345,21 @@ segundo baixa demais (ver `lib/AGENTS.md`). Consequências:
 
 - O chunk **não volta como contexto** (`prevText`) e não alimenta os
   pipelines. Sem isso, um loop de repetição se realimenta no chunk seguinte.
-- Se `TRANSCRIBE_ESCALATION_BAD_COUNT` (3) dos últimos
-  `TRANSCRIBE_ESCALATION_WINDOW` (5) chunks saíram ruins, a **sessão inteira**
-  passa a pedir o modelo escalado direto — evita pagar dois modelos por chunk
-  em áudio sabidamente ruim. A promoção é pegajosa até o fim da sessão, e o
-  usuário vê um banner para decidir se continua gastando moedas.
+- Se `POOR_AUDIO_BAD_COUNT` (3) dos últimos `POOR_AUDIO_WINDOW` (5) chunks
+  saíram ruins, a sessão acende o banner de áudio ruim. Ele é **pegajoso** até
+  o fim da sessão — um trecho bom depois de dez ruins não significa que o
+  microfone melhorou, e aviso que pisca é pior que aviso nenhum.
+
+**O banner não troca nada sozinho, e a mensagem não pode voltar a prometer que
+troca.** Ela já dizia "ativamos um modelo mais preciso": havia uma escalada de
+modelo, e ela foi removida porque o modelo "mais preciso" era medidamente pior
+(`docs/transcricao.md` §1). O que o aviso pede hoje é a única coisa que a
+pessoa na cadeira ainda pode fazer — aproximar o aparelho de quem fala.
+
+**A captação é onde está o ganho que sobra.** `lib/recorder.ts` pede ao
+navegador para NÃO aplicar supressão de ruído, cancelamento de eco nem controle
+automático de ganho: limpar o áudio antes de transcrever piora o resultado em
+quase 10 pontos de WER. Ver `docs/transcricao.md`, "O que NÃO funcionou".
 
 O usuário também pode acionar o alerta manual de alucinação
 (`HallucinationReportDialog` → `/api/hallucination-report`), que roda uma

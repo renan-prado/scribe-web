@@ -7,11 +7,7 @@ import { callTranscribe } from "@/lib/llm/openai";
 import { createLogger } from "@/lib/log";
 import { enforceAudioBudget, enforceRateLimit, RATE_LIMITS } from "@/lib/rate-limit";
 import { requireAuth } from "@/lib/supabase/require-auth";
-import {
-  assessmentPenalty,
-  assessTranscription,
-  modelSupportsLogprobs,
-} from "@/lib/transcription/quality";
+import { assessTranscription, modelSupportsLogprobs } from "@/lib/transcription/quality";
 import { VOCABULARIO_PROMPT } from "@/lib/vocabulario";
 
 const log = createLogger("transcribe");
@@ -95,13 +91,7 @@ export async function POST(request: Request) {
   if (!ALLOWED_EXTENSIONS.has(extension)) {
     return NextResponse.json({ error: "unsupported file type" }, { status: 415 });
   }
-  // Sessão já promovida pelo client (sequência de chunks ruins) transcreve
-  // direto no modelo escalado — evita pagar mini + escalado em todo chunk de
-  // uma sessão com áudio sabidamente ruim.
-  const tier = form.get("tier") === "escalated" ? "escalated" : "standard";
-  const standardModel = serverEnv.OPENAI_TRANSCRIBE_MODEL;
-  const escalatedModel = serverEnv.OPENAI_TRANSCRIBE_ESCALATED_MODEL;
-  const model = tier === "escalated" ? escalatedModel : standardModel;
+  const model = serverEnv.OPENAI_TRANSCRIBE_MODEL;
 
   // `chunkIndex` é o único campo do form que ia inteiro para dentro de uma
   // string, e essa string vira o `filename` do multipart que mandamos para a
@@ -113,17 +103,14 @@ export async function POST(request: Request) {
   const filename = `chunk-${chunkLabel}.${extension}`;
   const prompt = prevText ? `${VOCABULARIO_PROMPT} ${prevText}` : VOCABULARIO_PROMPT;
 
-  const transcribeWith = (m: string) =>
-    callTranscribe({
-      model: m,
-      file,
-      filename,
-      prompt,
-      language: "pt",
-      include: modelSupportsLogprobs(m) ? ["logprobs"] : undefined,
-    });
-
-  const result = await transcribeWith(model);
+  const result = await callTranscribe({
+    model,
+    file,
+    filename,
+    prompt,
+    language: "pt",
+    include: modelSupportsLogprobs(model) ? ["logprobs"] : undefined,
+  });
 
   if (!result.ok) {
     if (result.error.kind === "fetch") {
@@ -149,48 +136,24 @@ export async function POST(request: Request) {
 
   // Rede de segurança em três frentes (ver lib/transcription/quality):
   // sanitização determinística de assinaturas de alucinação + piso de
-  // confiança via logprobs + piso de densidade de texto por segundo de
-  // áudio. `poor` marca o chunk como suspeito para o client
-  // (fora do prevText/pipelines) e, no tier standard, dispara uma segunda
-  // tentativa com o modelo escalado usando o MESMO áudio.
-  let assessment = assessTranscription(result.data.text, result.data.avgLogprob, audioSeconds);
-  let chosenModel = model;
-  let latencyMs = result.data.latencyMs;
-  let escalated = tier === "escalated";
+  // confiança via logprobs + piso de densidade de texto por segundo de áudio.
+  //
+  // `poor` marca o chunk como suspeito: o cliente o mantém fora do prevText e
+  // dos pipelines, e uma sequência deles acende o aviso de áudio ruim.
+  //
+  // **Não há segunda tentativa em outro modelo, e a ausência é deliberada.**
+  // Havia uma: chunk `poor` era reenviado ao `gpt-4o-transcribe`. Medido
+  // contra um sermão real com transcrição de referência, o modelo "escalado"
+  // perde para o padrão em TODOS os cenários — 16% de WER contra 14% no áudio
+  // limpo, e 37% contra 16% sob reverberação forte, que é exatamente quando a
+  // escalada disparava. A segunda chamada dobrava o custo do chunk para
+  // entregar um texto pior.
+  const assessment = assessTranscription(result.data.text, result.data.avgLogprob, audioSeconds);
 
-  if (tier === "standard" && assessment.poor && escalatedModel !== standardModel) {
-    const retry = await transcribeWith(escalatedModel);
-    if (retry.ok) {
-      await recordAudioUsage({
-        userId: auth.user.id,
-        sessionId,
-        route: "transcribe",
-        model: escalatedModel,
-        audioSeconds,
-        latencyMs: retry.data.latencyMs,
-      });
-      const retryAssessment = assessTranscription(
-        retry.data.text,
-        retry.data.avgLogprob,
-        audioSeconds
-      );
-      // Empate favorece o modelo escalado: mesma contagem de assinaturas
-      // ruins, mas decodificação mais robusta por trás.
-      if (assessmentPenalty(retryAssessment) <= assessmentPenalty(assessment)) {
-        assessment = retryAssessment;
-        chosenModel = escalatedModel;
-      }
-      latencyMs += retry.data.latencyMs;
-      escalated = true;
-    }
-  }
-
-  if (assessment.poor || escalated) {
+  if (assessment.poor) {
     log.warn("quality", {
       chunkIndex: chunkIndex ?? null,
-      tier,
-      chosenModel,
-      escalated,
+      model,
       promptEcho: assessment.promptEcho,
       vocabEcho: assessment.vocabEcho,
       repetitionLoop: assessment.repetitionLoop,
@@ -205,8 +168,7 @@ export async function POST(request: Request) {
   return NextResponse.json({
     text: assessment.text,
     suspect: assessment.poor,
-    escalated,
-    latencyMs,
-    model: chosenModel,
+    latencyMs: result.data.latencyMs,
+    model,
   });
 }

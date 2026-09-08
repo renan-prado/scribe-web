@@ -1,5 +1,6 @@
 "use client";
 
+import { FileText, LayoutList } from "lucide-react";
 import { useRouter } from "next/navigation";
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { toast } from "sonner";
@@ -15,20 +16,26 @@ import { ConfirmDialog } from "@/features/session/components/ConfirmDialog";
 import { Feed } from "@/features/session/components/Feed";
 import { FinalizingOverlay } from "@/features/session/components/FinalizingOverlay";
 import { HallucinationReportDialog } from "@/features/session/components/HallucinationReportDialog";
+import { LiveTranscriptStream } from "@/features/session/components/LiveTranscriptStream";
 import { PausedOverlay } from "@/features/session/components/PausedOverlay";
 import { RecordButton } from "@/features/session/components/RecordButton";
+import {
+  RECORDING_TRANSIENT_BAND,
+  RecordingDock,
+} from "@/features/session/components/RecordingDock";
 import { RecordingHeader } from "@/features/session/components/RecordingHeader";
+import { RecordingViewTabs } from "@/features/session/components/RecordingViewTabs";
 import { SessionMenu } from "@/features/session/components/SessionMenu";
 import { StatusPhrases } from "@/features/session/components/StatusPhrases";
 import { SummaryView } from "@/features/session/components/SummaryView";
 import { TranscriptView } from "@/features/session/components/TranscriptView";
 import {
+  POOR_AUDIO_BAD_COUNT,
+  POOR_AUDIO_WINDOW,
   RECORDER_MAX_CHUNK_MS,
   RECORDER_MIN_CHUNK_MS,
   RECORDER_SILENCE_HOLD_MS,
   RECORDER_SILENCE_THRESHOLD,
-  TRANSCRIBE_ESCALATION_BAD_COUNT,
-  TRANSCRIBE_ESCALATION_WINDOW,
 } from "@/features/session/config";
 import { useBackgroundKeepalive } from "@/features/session/hooks/useBackgroundKeepalive";
 import { useBiblePipeline } from "@/features/session/hooks/useBiblePipeline";
@@ -43,7 +50,7 @@ import { useVersePrefetcher } from "@/features/session/hooks/useVerseFetch";
 import { useWakeLock } from "@/features/session/hooks/useWakeLock";
 import { requestDeleteSession, requestFinalSummary } from "@/features/session/lib/api";
 import { isSilentBlob } from "@/features/session/lib/audio";
-import { joinOkChunks, shouldEscalateTranscription } from "@/features/session/lib/chunks";
+import { joinOkChunks, shouldWarnPoorAudio } from "@/features/session/lib/chunks";
 import { notifyCoinsRecovered, warnLowCoins } from "@/features/session/lib/coinToasts";
 import { reportRecorderError } from "@/features/session/lib/recorderErrors";
 import { tailSentences } from "@/features/session/lib/text";
@@ -57,6 +64,10 @@ import { cn } from "@/lib/utils";
 
 const log = createLogger("session");
 const transcribeLog = createLogger("transcribe");
+
+/** Amarram cada aba ao seu `role="tabpanel"` (`aria-controls`/`aria-labelledby`). */
+const LIVE_PANEL_ID = "recording-live-feed";
+const TRANSCRIPT_PANEL_ID = "recording-live-transcript";
 
 type Props = {
   /** The row already exists in Supabase — this component only UPDATEs it on stop. */
@@ -100,9 +111,15 @@ export function RecordingLive({
   const insightsInFlight = useSessionStore((s) => s.insightsInFlight);
   const autoFollow = useSessionStore((s) => s.autoFollow);
   const pendingNew = useSessionStore((s) => s.pendingNew);
-  const transcribeTier = useSessionStore((s) => s.transcribeTier);
+  const audioQuality = useSessionStore((s) => s.audioQuality);
 
   // ---- ui-local state (dialog open flags) ----
+  /**
+   * Qual das duas visões está na tela. O feed é o padrão porque é o produto do
+   * modo ao vivo; a transcrição existe para conferir o que o microfone ouviu —
+   * e ela ficava só atrás do menu de três pontos, num diálogo.
+   */
+  const [view, setView] = useState<"feed" | "transcript">("feed");
   const [transcriptOpen, setTranscriptOpen] = useState(false);
   const [liveFeedOpen, setLiveFeedOpen] = useState(false);
   const [reportOpen, setReportOpen] = useState(false);
@@ -159,27 +176,25 @@ export function RecordingLive({
         status: "ok",
         text,
         suspect: meta.suspect,
-        escalated: meta.escalated,
       });
-      // Promoção da sessão ao modelo escalado quando o áudio se mostra ruim
-      // de forma sustentada. Pegajosa até o fim da sessão; o banner acima do
-      // feed avisa o usuário para que ele decida se continua.
+      // Aviso de áudio ruim quando a captação se mostra ruim de forma
+      // sustentada. Pegajoso até o fim da sessão; o banner acima do feed é
+      // para o usuário decidir se mexe no microfone ou se encerra.
       if (
-        s.transcribeTier === "standard" &&
-        shouldEscalateTranscription(
+        s.audioQuality === "ok" &&
+        shouldWarnPoorAudio(
           useSessionStore.getState().chunks,
-          TRANSCRIBE_ESCALATION_WINDOW,
-          TRANSCRIBE_ESCALATION_BAD_COUNT
+          POOR_AUDIO_WINDOW,
+          POOR_AUDIO_BAD_COUNT
         )
       ) {
-        s.setTranscribeTier("escalated");
-        transcribeLog.debug("session escalated", { index });
+        s.setAudioQuality("poor");
+        transcribeLog.debug("poor audio", { index });
         toast.warning("Áudio com qualidade baixa detectada.", {
-          description: "Ativamos um modelo de transcrição mais preciso para os próximos trechos.",
+          description: "Aproxime o aparelho de quem está falando, se der.",
         });
       }
     },
-    getTier: () => useSessionStore.getState().transcribeTier,
   });
 
   const handleChunk = useCallback(
@@ -534,6 +549,25 @@ export function RecordingLive({
     }
   }, [running, feedItems.length, scrollToBottom]);
 
+  /**
+   * Trocar de aba troca a altura da página inteira, e a posição de rolagem
+   * sobrevive à troca: quem estava acompanhando o fim do feed aterrissava no
+   * meio da transcrição. Salto seco (`behavior: "auto"`), não suave — animar
+   * uma rolagem entre dois conteúdos diferentes só mostra o conteúdo errado
+   * passando. Quem NÃO estava no fim é deixado no topo da aba nova, que é
+   * onde a leitura recomeça.
+   *
+   * `view` é o gatilho; `autoFollow` entra como leitura do momento da troca.
+   */
+  // biome-ignore lint/correctness/useExhaustiveDependencies: só a troca de aba dispara — reagir a autoFollow religaria o salto a cada rolagem
+  useEffect(() => {
+    if (!hasStarted) return;
+    window.scrollTo({
+      top: getSessionState().autoFollow ? document.documentElement.scrollHeight : 0,
+      behavior: "auto",
+    });
+  }, [view, hasStarted]);
+
   return (
     <main className="mx-auto flex flex-1 w-full max-w-3xl flex-col gap-6 px-4 py-8 sm:gap-8 sm:px-6 sm:py-10">
       {!hasStarted ? (
@@ -547,22 +581,48 @@ export function RecordingLive({
           />
         </div>
       ) : null}
-      {/* O `env()` soma o indicador de início do iPhone: no PWA instalado o app
-          desenha até a borda física da tela (`viewport-fit=cover`), e um
-          `bottom-6` seco deixaria o botão de parar por baixo da barra do gesto
-          do sistema. Em qualquer outro aparelho o inset é 0. */}
-      {running && !paused ? (
-        <div className="fixed bottom-[calc(1.5rem+env(safe-area-inset-bottom))] left-1/2 z-40 -translate-x-1/2">
-          <RecordButton
-            running={running}
-            elapsedMs={elapsedMs}
-            onStart={start}
-            onStop={stop}
-            onPause={pause}
-            onDiscard={() => setDiscardOpen(true)}
-            compact
-          />
-        </div>
+      {hasStarted ? (
+        <RecordingDock
+          tabs={
+            <RecordingViewTabs
+              label="Visão da gravação"
+              value={view}
+              onChange={setView}
+              tabs={[
+                {
+                  value: "feed",
+                  label: "Conteúdo",
+                  icon: <LayoutList />,
+                  panelId: LIVE_PANEL_ID,
+                  // O contador só aparece na aba FECHADA: é o que impede a
+                  // transcrição de esconder que chegou cartão novo. Na aba
+                  // aberta quem avisa é a pílula "Ler novidades", e é por isso
+                  // que os dois nunca aparecem juntos.
+                  badge: pendingNew,
+                },
+                {
+                  value: "transcript",
+                  label: "Transcrição",
+                  icon: <FileText />,
+                  panelId: TRANSCRIPT_PANEL_ID,
+                },
+              ]}
+            />
+          }
+          control={
+            running && !paused ? (
+              <RecordButton
+                running={running}
+                elapsedMs={elapsedMs}
+                onStart={start}
+                onStop={stop}
+                onPause={pause}
+                onDiscard={() => setDiscardOpen(true)}
+                compact
+              />
+            ) : null
+          }
+        />
       ) : null}
       {running && paused ? (
         <PausedOverlay
@@ -573,12 +633,12 @@ export function RecordingLive({
           outOfCoins={coinGuard.outOfCoins}
         />
       ) : null}
-      {running && !autoFollow && pendingNew > 0 ? (
+      {running && view === "feed" && !autoFollow && pendingNew > 0 ? (
         <button
           type="button"
           onClick={resumeAutoFollow}
           className={cn(
-            "fixed bottom-[calc(6rem+env(safe-area-inset-bottom))] left-1/2 z-40 -translate-x-1/2",
+            RECORDING_TRANSIENT_BAND,
             "inline-flex items-center gap-2 rounded-full border border-scriba-hairline bg-scriba-paper/95 px-4 py-2 shadow-lg backdrop-blur",
             "text-xs font-semibold text-scriba-ink",
             "transition-colors outline-none hover:bg-scriba-blue-soft/60 focus-visible:ring-2 focus-visible:ring-ring/40"
@@ -598,7 +658,7 @@ export function RecordingLive({
       ) : null}
 
       {hasStarted ? (
-        <section className="relative flex w-full min-h-70 self-stretch flex-col gap-6 pb-32 sm:p-6 sm:pb-32">
+        <section className="relative flex w-full min-h-70 self-stretch flex-col gap-6 pb-44 sm:p-6 sm:pb-44">
           <RecordingHeader
             menu={
               <SessionMenu
@@ -607,40 +667,66 @@ export function RecordingLive({
                 onOpenTranscript={() => setTranscriptOpen(true)}
                 onOpenLiveFeed={() => setLiveFeedOpen(true)}
                 onReportHallucination={() => setReportOpen(true)}
+                onDiscard={running ? () => setDiscardOpen(true) : undefined}
               />
             }
           />
           <div className="h-px w-full bg-scriba-hairline" />
-          {running && transcribeTier === "escalated" ? (
+          {running && audioQuality === "poor" ? (
             <div
               role="status"
               className="rounded-xl border border-amber-300 bg-amber-50 px-4 py-3 text-sm text-amber-900"
             >
               <p className="font-semibold">Áudio com qualidade baixa</p>
               <p className="mt-1">
-                A transcrição pode conter erros. Ativamos um modelo mais preciso para os próximos
-                trechos — se possível, aproxime o aparelho do som ou verifique o microfone. Você
-                pode continuar ou encerrar a gravação.
+                A transcrição pode conter erros. Se possível, aproxime o aparelho da caixa de som ou
+                de quem está falando — distância e eco são o que mais atrapalham. Você pode
+                continuar ou encerrar a gravação.
               </p>
             </div>
           ) : null}
-          <div className="flex-1">
-            {running || (!summary && !finalizing) ? (
-              <Feed
-                items={feedItems}
-                running={running}
-                hasTranscript={transcript.length > 0}
-                suggesting={insightsInFlight}
-              />
-            ) : (
-              <SummaryView
-                summary={summary}
-                hasTranscript={transcript.length > 0}
-                running={running}
-              />
-            )}
-          </div>
-          {running ? (
+          {/* Os dois painéis são MONTADOS E DESMONTADOS, não escondidos com
+              `hidden`. A rolagem aqui é a da janela, e duas árvores altas
+              empilhadas dariam à página a soma das duas alturas — o fim do
+              feed cairia no meio da barra de rolagem, e o autoscroll da
+              transcrição miraria uma posição que não é o fim da tela. */}
+          {view === "feed" ? (
+            <div
+              id={LIVE_PANEL_ID}
+              role="tabpanel"
+              aria-labelledby={`${LIVE_PANEL_ID}-tab`}
+              className="flex-1"
+            >
+              {running || (!summary && !finalizing) ? (
+                <Feed
+                  items={feedItems}
+                  running={running}
+                  hasTranscript={transcript.length > 0}
+                  suggesting={insightsInFlight}
+                />
+              ) : (
+                <SummaryView
+                  summary={summary}
+                  hasTranscript={transcript.length > 0}
+                  running={running}
+                />
+              )}
+            </div>
+          ) : (
+            /* O MESMO componente do modo transcrição, e não o TranscriptView do
+               diálogo: o que se quer conferir durante a pregação é o trecho que
+               acabou de chegar, com o carimbo de tempo dele. Agrupar por minuto
+               é leitura calma, e serve depois. */
+            <div
+              id={TRANSCRIPT_PANEL_ID}
+              role="tabpanel"
+              aria-labelledby={`${TRANSCRIPT_PANEL_ID}-tab`}
+              className="flex-1"
+            >
+              <LiveTranscriptStream rows={chunkRows} running={running} follow={autoFollow} />
+            </div>
+          )}
+          {running && view === "feed" ? (
             <div ref={bottomRef} className="pt-2 scroll-mb-24">
               <StatusPhrases hasSummary={feedItems.length > 0} />
             </div>

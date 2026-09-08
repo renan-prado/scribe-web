@@ -11,14 +11,14 @@ export type ChunkRow = {
    * transcript, mas o chunk não alimenta prevText nem os pipelines ao vivo
    * — reutilizá-lo como contexto realimentaria a alucinação. */
   suspect?: boolean;
-  /** O servidor precisou re-transcrever este chunk no modelo escalado (o
-   * resultado do modelo padrão saiu ruim). Conta como sinal de áudio ruim na
-   * janela que decide a promoção da sessão, mesmo quando o texto final ficou
-   * limpo. */
-  escalated?: boolean;
 };
 
-export type TranscribeTier = "standard" | "escalated";
+/**
+ * Veredito acumulado sobre o áudio da sessão. `poor` acende o aviso na tela;
+ * ele NÃO troca de modelo (não existe modelo melhor para escalar — ver
+ * `app/api/transcribe/route.ts`).
+ */
+export type AudioQuality = "ok" | "poor";
 
 export type TranscriptState = "listening" | "transcribing" | "idle";
 

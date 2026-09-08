@@ -8,13 +8,17 @@ import type { ChunkRow } from "@/features/session/types";
  * and the final summary keep suspect chunks (their text already came cleaned).
  */
 /**
- * Decide se a sessão deve ser promovida ao modelo de transcrição escalado:
- * entre os últimos `window` chunks OK, `minBad`+ saíram ruins — suspeitos
- * (assinatura de alucinação / baixa confiança) ou re-transcritos pelo
- * servidor no modelo escalado. Janela parcial conta: 3 chunks, todos ruins,
- * já promovem.
+ * Decide se a sessão deve acender o aviso de áudio ruim: entre os últimos
+ * `window` chunks OK, `minBad`+ voltaram `suspect` do servidor (assinatura de
+ * alucinação, baixa confiança ou baixa densidade). Janela parcial conta: 3
+ * chunks, todos ruins, já acendem.
+ *
+ * Um chunk isolado ruim é comum e não vale interromper ninguém — quem prega
+ * vira de costas, alguém tosse. O que importa é a SEQUÊNCIA: ela significa
+ * que a captação, e não o momento, está ruim, e é a única coisa que a pessoa
+ * na cadeira ainda pode consertar (aproximar o aparelho, trocar de lugar).
  */
-export function shouldEscalateTranscription(
+export function shouldWarnPoorAudio(
   chunks: Record<number, ChunkRow>,
   window: number,
   minBad: number
@@ -23,8 +27,7 @@ export function shouldEscalateTranscription(
     .filter((r) => r.status === "ok")
     .sort((a, b) => a.index - b.index)
     .slice(-window);
-  const bad = recent.filter((r) => r.suspect || r.escalated).length;
-  return bad >= minBad;
+  return recent.filter((r) => r.suspect).length >= minBad;
 }
 
 export function joinOkChunks(

@@ -3,6 +3,13 @@
 import { useRouter } from "next/navigation";
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { toast } from "sonner";
+import {
+  Dialog,
+  DialogContent,
+  DialogDescription,
+  DialogHeader,
+  DialogTitle,
+} from "@/components/ui/dialog";
 import { BillingDialog } from "@/features/billing/components/BillingDialog";
 import { ConfirmDialog } from "@/features/session/components/ConfirmDialog";
 import { FinalizingOverlay } from "@/features/session/components/FinalizingOverlay";
@@ -12,13 +19,14 @@ import { PausedOverlay } from "@/features/session/components/PausedOverlay";
 import { RecordButton } from "@/features/session/components/RecordButton";
 import { RecordingHeader } from "@/features/session/components/RecordingHeader";
 import { SessionMenu } from "@/features/session/components/SessionMenu";
+import { TranscriptView } from "@/features/session/components/TranscriptView";
 import {
+  POOR_AUDIO_BAD_COUNT,
+  POOR_AUDIO_WINDOW,
   RECORDER_MAX_CHUNK_MS,
   RECORDER_MIN_CHUNK_MS,
   RECORDER_SILENCE_HOLD_MS,
   RECORDER_SILENCE_THRESHOLD,
-  TRANSCRIBE_ESCALATION_BAD_COUNT,
-  TRANSCRIBE_ESCALATION_WINDOW,
 } from "@/features/session/config";
 import { useBackgroundKeepalive } from "@/features/session/hooks/useBackgroundKeepalive";
 import { useCoinGuard } from "@/features/session/hooks/useCoinGuard";
@@ -28,14 +36,14 @@ import { useUnloadGuard } from "@/features/session/hooks/useUnloadGuard";
 import { useWakeLock } from "@/features/session/hooks/useWakeLock";
 import { requestDeleteSession, requestSaveTranscript } from "@/features/session/lib/api";
 import { isSilentBlob } from "@/features/session/lib/audio";
-import { joinOkChunks, shouldEscalateTranscription } from "@/features/session/lib/chunks";
+import { joinOkChunks, shouldWarnPoorAudio } from "@/features/session/lib/chunks";
 import { notifyCoinsRecovered, warnLowCoins } from "@/features/session/lib/coinToasts";
 import { defaultRecordingTitle } from "@/features/session/lib/formatting";
 import { reportRecorderError } from "@/features/session/lib/recorderErrors";
 import { tailSentences } from "@/features/session/lib/text";
 import { normalizeLocationInput, normalizeSpeakerInput } from "@/features/session/lib/unknown";
 import { getSessionState, useSessionStore } from "@/features/session/store";
-import type { ChunkRow } from "@/features/session/types";
+import type { ChunkRow, TranscriptState } from "@/features/session/types";
 import { COIN_COSTS } from "@/lib/coins/pricing";
 import type { ChunkEvent, Recorder } from "@/lib/domain/recorder";
 import { createLogger } from "@/lib/log";
@@ -97,10 +105,18 @@ export function RecordingTranscribe({
   const finalizing = useSessionStore((s) => s.finalizing);
   const startupError = useSessionStore((s) => s.startupError);
   const chunks = useSessionStore((s) => s.chunks);
-  const transcribeTier = useSessionStore((s) => s.transcribeTier);
+  const audioQuality = useSessionStore((s) => s.audioQuality);
 
   const [reportOpen, setReportOpen] = useState(false);
   const [discardOpen, setDiscardOpen] = useState(false);
+  /**
+   * A leitura calma, agrupada por minuto. NÃO é duplicação da página: a página
+   * é o `LiveTranscriptStream`, um trecho por linha na ordem em que chegaram, e
+   * serve para CONFERIR o que o microfone ouviu agora. Este diálogo junta os
+   * trechos em parágrafos por minuto, que é o que se quer para reler. Os três
+   * modos oferecem os dois.
+   */
+  const [transcriptOpen, setTranscriptOpen] = useState(false);
   const [billingOpen, setBillingOpen] = useState(false);
   const [follow, setFollow] = useState(true);
   /** O stop rodou mas o PUT falhou: o texto está só na tela. */
@@ -135,24 +151,22 @@ export function RecordingTranscribe({
         status: "ok",
         text,
         suspect: meta.suspect,
-        escalated: meta.escalated,
       });
       if (
-        s.transcribeTier === "standard" &&
-        shouldEscalateTranscription(
+        s.audioQuality === "ok" &&
+        shouldWarnPoorAudio(
           useSessionStore.getState().chunks,
-          TRANSCRIBE_ESCALATION_WINDOW,
-          TRANSCRIBE_ESCALATION_BAD_COUNT
+          POOR_AUDIO_WINDOW,
+          POOR_AUDIO_BAD_COUNT
         )
       ) {
-        s.setTranscribeTier("escalated");
-        log.debug("session escalated", { index });
+        s.setAudioQuality("poor");
+        log.debug("poor audio", { index });
         toast.warning("Áudio com qualidade baixa detectada.", {
-          description: "Ativamos um modelo de transcrição mais preciso para os próximos trechos.",
+          description: "Aproxime o aparelho de quem está falando, se der.",
         });
       }
     },
-    getTier: () => useSessionStore.getState().transcribeTier,
   });
 
   const handleChunk = useCallback(
@@ -360,8 +374,9 @@ export function RecordingTranscribe({
     router.replace("/list");
   }, [router, sessionId, transcribeQueue, initialSpeakerName, initialSpeakerLocation]);
 
-  // Cobrança: 1 moeda por minuto iniciado — o modo mais barato, já que só paga
-  // a transcrição. Ao esgotar, congela em vez de encerrar.
+  // Cobrança: `COIN_COSTS.transcriptMinute` moedas/min iniciado — o modo mais
+  // barato, já que só paga a transcrição. Ao esgotar, congela em vez de
+  // encerrar.
   const coinGuard = useCoinGuard({
     enabled: activelyRecording,
     reason: "transcript_minute",
@@ -407,6 +422,11 @@ export function RecordingTranscribe({
   }, [running]);
 
   const hasStarted = running || chunkRows.length > 0;
+  const transcriptState: TranscriptState = running
+    ? chunkRows.some((r) => r.status === "uploading")
+      ? "transcribing"
+      : "listening"
+    : "idle";
 
   return (
     <main className="mx-auto flex w-full max-w-3xl flex-1 flex-col gap-6 px-4 py-8 sm:gap-8 sm:px-6 sm:py-10">
@@ -477,26 +497,27 @@ export function RecordingTranscribe({
           <RecordingHeader
             menu={
               <SessionMenu
-                hasTranscript={false}
+                hasTranscript={transcript.length > 0}
                 hasLiveFeed={false}
-                onOpenTranscript={() => undefined}
+                onOpenTranscript={() => setTranscriptOpen(true)}
                 onOpenLiveFeed={() => undefined}
                 onReportHallucination={() => setReportOpen(true)}
+                onDiscard={running ? () => setDiscardOpen(true) : undefined}
               />
             }
           />
           <div className="h-px w-full bg-scriba-hairline" />
 
-          {running && transcribeTier === "escalated" ? (
+          {running && audioQuality === "poor" ? (
             <div
               role="status"
               className="rounded-xl border border-amber-300 bg-amber-50 px-4 py-3 text-sm text-amber-900"
             >
               <p className="font-semibold">Áudio com qualidade baixa</p>
               <p className="mt-1">
-                A transcrição pode conter erros. Ativamos um modelo mais preciso para os próximos
-                trechos — se possível, aproxime o aparelho do som. Você pode continuar ou encerrar a
-                gravação.
+                A transcrição pode conter erros. Se possível, aproxime o aparelho da caixa de som ou
+                de quem está falando — distância e eco são o que mais atrapalham. Você pode
+                continuar ou encerrar a gravação.
               </p>
             </div>
           ) : null}
@@ -543,6 +564,18 @@ export function RecordingTranscribe({
         getLiveContext={() => ({ text: transcript, feedItems: [] })}
         onStopRecording={running ? () => void stop() : undefined}
       />
+
+      <Dialog open={transcriptOpen} onOpenChange={setTranscriptOpen}>
+        <DialogContent className="sm:max-w-2xl">
+          <DialogHeader>
+            <DialogTitle>Transcrição</DialogTitle>
+            <DialogDescription>Texto bruto capturado pelo microfone.</DialogDescription>
+          </DialogHeader>
+          <div className="max-h-[60vh] overflow-y-auto pr-2">
+            <TranscriptView rows={chunkRows} state={transcriptState} />
+          </div>
+        </DialogContent>
+      </Dialog>
 
       <BillingDialog open={billingOpen} onOpenChange={setBillingOpen} />
 

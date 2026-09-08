@@ -90,7 +90,7 @@ memória, por instância**: em serverless o limite efetivo é
 
 | Rota | Modelo | Custo de UMA chamada | Teto/hora (antes) | Uma noite (8h, uma conta) |
 |---|---|---|---|---|
-| `transcribe` | `gpt-4o-mini-transcribe`, $0,003/min de ÁUDIO | até **$0,42** (25 MB de opus ≈ 2h de som) | 40/min = 2.400 | **~$8.000** |
+| `transcribe` | `gpt-transcribe`, $0,006/min de ÁUDIO | até **$0,42** (25 MB de opus ≈ 2h de som) | 40/min = 2.400 | **~$8.000** |
 | `format-paragraphs` | `gpt-4o-mini` | ~$0,056 (300k chars entram e saem) | 30/min = 1.800 | **~$800** |
 | `final-summary` | `gpt-4o` | ~$0,31 (75k tokens in + 12k out) | 20/hora | ~$50 |
 | `bible` / `insights` | `gpt-4.1-mini`, entrada de 12k chars | ~$0,002 | 60 e 30/min | ~$3 |

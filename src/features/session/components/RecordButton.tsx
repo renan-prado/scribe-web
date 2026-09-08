@@ -27,6 +27,16 @@ type RecordButtonProps = {
    * to fire but running is still false. Suppresses the "toque para começar"
    * idle prompt so the user doesn't see it flash before the recorder mounts. */
   autoStarting?: boolean;
+  /**
+   * Círculo grande sem AÇÃO: só o pulso de "estamos ouvindo". Usado pelo modo
+   * áudio enquanto grava, onde quem comanda é a barra flutuante.
+   *
+   * Existe porque o contrário — círculo clicável E barra na mesma tela — dá
+   * dois jeitos de parar a gravação, e um deles não tem o descanso por
+   * inatividade que a barra tem justamente para evitar o stop acidental. Antes
+   * de `running`, o círculo continua sendo o convite para começar.
+   */
+  indicator?: boolean;
 };
 
 export function RecordButton({
@@ -39,6 +49,7 @@ export function RecordButton({
   compact = false,
   pulseWhileRunning = false,
   autoStarting = false,
+  indicator = false,
 }: RecordButtonProps) {
   /* A barra flutuante mora por cima do feed durante a gravação inteira. Depois
      de RECORD_CLUSTER_IDLE_MS sem interação ela recolhe para o descanso — quase
@@ -68,7 +79,15 @@ export function RecordButton({
     const resting = !awake;
     return (
       <div
-        onPointerEnter={wake}
+        // `pointerType`, e não `wake` direto: no TOQUE o `pointerenter` dispara
+        // no mesmo gesto que vira `click`, e entre um e outro o React já
+        // rerenderizou — a cortina saía do caminho e o toque que era para
+        // apenas ACENDER caía no botão de baixo, pausando ou parando a
+        // gravação. No mouse não há esse problema (hover não é clique), e ali
+        // acender ao aproximar continua sendo o certo.
+        onPointerEnter={(e) => {
+          if (e.pointerType === "mouse") wake();
+        }}
         onFocusCapture={wake}
         className={cn(
           "relative flex items-center gap-2 rounded-full bg-scriba-ink-strong pl-4 pr-3 py-1.5 text-background",
@@ -122,7 +141,11 @@ export function RecordButton({
           onClick={onStop}
           aria-label="Parar gravação"
           className={cn(
-            "inline-flex items-center gap-1.5 rounded-full bg-scriba-rec/90 px-3 py-1.5 text-sm font-medium outline-none transition-colors",
+            // `text-white` fixo, e NÃO o `text-background` que a barra herda:
+            // `--scriba-rec` é o mesmo vermelho nos dois temas, então a tinta
+            // sobre ele também precisa ser a mesma. Herdando, no tema escuro o
+            // quadrado de parar saía quase preto sobre o vermelho.
+            "inline-flex items-center gap-1.5 rounded-full bg-scriba-rec/90 px-3 py-1.5 text-sm font-medium text-white outline-none transition-colors",
             "hover:bg-scriba-rec focus-visible:ring-2 focus-visible:ring-white/40 active:scale-95"
           )}
         >
@@ -149,6 +172,13 @@ export function RecordButton({
     );
   }
   const showRecordingPulse = running && pulseWhileRunning;
+  const asIndicator = indicator && running;
+  const circleClasses = cn(
+    "relative flex size-24 items-center justify-center rounded-full scriba-cta bg-[image:var(--scriba-cta)] text-scriba-cta-ink outline-none transition-colors duration-300 ease-out",
+    !running && "animate-scriba-halo",
+    !asIndicator && " active:scale-95",
+    "focus-visible:ring-4 focus-visible:ring-scriba-blue/40"
+  );
   return (
     <div className="relative flex flex-col items-center gap-5">
       <div className="relative flex size-24 items-center justify-center">
@@ -158,25 +188,26 @@ export function RecordButton({
             className="absolute inset-0 animate-ping rounded-full bg-scriba-blue/50 [animation-duration:2.4s]"
           />
         ) : null}
-        <button
-          type="button"
-          onClick={running ? onStop : onStart}
-          aria-label={running ? "Parar gravação" : "Iniciar gravação"}
-          className={cn(
-            "relative flex size-24 items-center justify-center rounded-full scriba-cta bg-[image:var(--scriba-cta)] text-scriba-cta-ink outline-none transition-colors duration-300 ease-out",
-            !running && "animate-scriba-halo",
-            " active:scale-95",
-            "focus-visible:ring-4 focus-visible:ring-scriba-blue/40"
-          )}
-        >
-          {running ? (
-            <Square className="size-7 fill-current" />
-          ) : (
+        {asIndicator ? (
+          <div role="status" aria-label="Gravando" className={circleClasses}>
             <Mic className="size-8" strokeWidth={2.2} />
-          )}
-        </button>
+          </div>
+        ) : (
+          <button
+            type="button"
+            onClick={running ? onStop : onStart}
+            aria-label={running ? "Parar gravação" : "Iniciar gravação"}
+            className={circleClasses}
+          >
+            {running ? (
+              <Square className="size-7 fill-current" />
+            ) : (
+              <Mic className="size-8" strokeWidth={2.2} />
+            )}
+          </button>
+        )}
       </div>
-      {running && onPause ? (
+      {running && onPause && !asIndicator ? (
         <button
           type="button"
           onClick={onPause}

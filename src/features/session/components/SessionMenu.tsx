@@ -31,6 +31,19 @@ type SessionMenuProps = {
   reprocessing?: boolean;
   /** Abre o alerta de alucinação ("Algo está errado"). */
   onReportHallucination?: () => void;
+  /**
+   * Descartar a gravação EM ANDAMENTO — apaga a sessão sem gerar resumo. O
+   * chamador é quem abre a confirmação; este menu só dispara.
+   *
+   * Existe apesar de a barra do gravador já ter uma lixeira, e não é
+   * duplicação inútil: aquela lixeira é um ícone de 14px numa barra que se
+   * apaga sozinha depois de alguns segundos parada. Quem procura "como
+   * cancelar isto" abre o menu de três pontos — foi exatamente o que aconteceu
+   * no modo transcrição, que TINHA a ação e parecia não ter.
+   *
+   * Diferente de `onDelete`: aquele apaga um resumo já salvo.
+   */
+  onDiscard?: () => void;
 };
 
 const REPROCESS_COST = COIN_COSTS.reprocessSummary;
@@ -45,6 +58,7 @@ export function SessionMenu({
   onReprocess,
   reprocessing,
   onReportHallucination,
+  onDiscard,
 }: SessionMenuProps) {
   const balance = useCoinsStore((s) => s.balance);
   const insufficient = balance !== null && balance < REPROCESS_COST;
@@ -108,6 +122,15 @@ export function SessionMenu({
             <DropdownMenuItem onClick={onReportHallucination} className="gap-2">
               <TriangleAlert className="size-4" />
               Algo está errado
+            </DropdownMenuItem>
+          </>
+        ) : null}
+        {onDiscard ? (
+          <>
+            <DropdownMenuSeparator />
+            <DropdownMenuItem variant="destructive" onClick={onDiscard} className="gap-2">
+              <Trash2 className="size-4" />
+              Descartar gravação
             </DropdownMenuItem>
           </>
         ) : null}
