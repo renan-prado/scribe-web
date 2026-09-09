@@ -19,6 +19,7 @@ import {
   type AdminUsageSummary,
   listUsersForFilter,
   loadAdminUsageSummary,
+  type UsageByVersion,
   type UsageFilters as UsageFiltersType,
 } from "@/lib/db/admin/usage";
 import { SESSION_MODES, type SessionMode } from "@/lib/domain/session";
@@ -71,6 +72,7 @@ type SearchParams = {
   route?: string;
   sessionId?: string;
   mode?: string;
+  version?: string;
 };
 
 function parseModeFilter(value: string | undefined): SessionMode | undefined {
@@ -93,6 +95,7 @@ export default async function AdminUsagePage({ searchParams }: PageProps) {
     route: sp.route || undefined,
     sessionId: sp.sessionId?.trim() || undefined,
     mode: parseModeFilter(sp.mode),
+    version: sp.version?.trim() || undefined,
   };
 
   const [summary, users, rate, insights] = await Promise.all([
@@ -118,17 +121,20 @@ export default async function AdminUsagePage({ searchParams }: PageProps) {
       <UsageFilters
         users={users}
         routes={routeUniverse}
+        versions={summary.versions}
         current={{
           range,
           userId: sp.userId ?? "",
           route: sp.route ?? "",
           sessionId: sp.sessionId ?? "",
           mode: sp.mode ?? "",
+          version: sp.version ?? "",
         }}
       />
 
       <TotalsGrid summary={summary} money={money} costPerThousandCoins={costPerThousandCoins} />
       <UnpricedNote summary={summary} />
+      <VersionsTable summary={summary} money={money} filteredRoute={sp.route ?? ""} />
       <AdminInsightsCard scope="usage" initial={insights} />
       <RouteAndUserTables summary={summary} money={money} />
       <SessionsTable
@@ -197,9 +203,22 @@ type TotalsGridProps = {
   costPerThousandCoins: CostPerThousandCoinsFormatter;
 };
 
+/**
+ * Os dois KPIs de MOEDA somem sob um filtro de rota ou de versão, e a ausência
+ * é o ponto: `coin_transactions` não tem nenhuma das duas colunas — o débito é
+ * por minuto de gravação, por estudo, por reprocessamento, nunca por chamada
+ * de LLM. Com o custo recortado e a moeda inteira, "custo por 1.000 moedas"
+ * viraria uma fatia dividida por um total: um número sempre baixo, com cara de
+ * margem folgada, que ninguém investiga porque a conta parece boa.
+ *
+ * Um travessão com o motivo ao lado é pior de ler e melhor de confiar.
+ */
 function TotalsGrid({ summary, money, costPerThousandCoins }: TotalsGridProps) {
-  const { totals, overallCostPerCoinUsd } = summary;
+  const { totals, overallCostPerCoinUsd, coinsScoped } = summary;
   const audioMin = totals.totalAudioSeconds > 0 ? totals.totalAudioSeconds / 60 : 0;
+  const coinHint = coinsScoped
+    ? undefined
+    : "Moeda não é debitada por rota nem por versão — este corte não se aplica.";
   return (
     <section className="grid gap-3 sm:grid-cols-2 lg:grid-cols-3">
       <Kpi
@@ -216,18 +235,225 @@ function TotalsGrid({ summary, money, costPerThousandCoins }: TotalsGridProps) {
       />
       <Kpi
         label="Moedas gastas"
-        value={INT.format(totals.totalCoins)}
+        value={coinsScoped ? INT.format(totals.totalCoins) : "—"}
+        hint={coinHint}
         icon={<CoinMark size={22} />}
         tone={KPI_TONES[2]}
       />
       <Kpi
         label="Custo por 1.000 moedas"
-        value={costPerThousandCoins(overallCostPerCoinUsd)}
-        hint="Total gasto ÷ moedas debitadas × 1.000"
+        value={coinsScoped ? costPerThousandCoins(overallCostPerCoinUsd) : "—"}
+        hint={coinHint ?? "Total gasto ÷ moedas debitadas × 1.000"}
         icon={<CoinMark size={22} />}
         tone={KPI_TONES[3]}
       />
     </section>
+  );
+}
+
+/**
+ * Amostra abaixo da qual uma variação percentual é ruído com cara de sinal.
+ * Duas chamadas caras numa versão recém-subida produzem "+340%" em vermelho, e
+ * esse vermelho é lido como regressão — quando o que ele diz é "ainda não deu
+ * tempo de medir".
+ */
+const THIN_SAMPLE_EVENTS = 20;
+
+const MOMENT_FMT = new Intl.DateTimeFormat("pt-BR", {
+  day: "2-digit",
+  month: "short",
+  hour: "2-digit",
+  minute: "2-digit",
+});
+
+function formatMoment(iso: string): string {
+  if (!iso) return "—";
+  const d = new Date(iso);
+  return Number.isNaN(d.getTime()) ? "—" : MOMENT_FMT.format(d);
+}
+
+function formatLatency(ms: number | null): string {
+  if (ms == null) return "—";
+  if (ms < 1000) return `${Math.round(ms)}ms`;
+  return `${(ms / 1000).toFixed(1).replace(".", ",")}s`;
+}
+
+/**
+ * A variação contra a versão anterior. Subir é PIOR nas duas métricas em que
+ * ela aparece (custo e latência), então uma cor só basta: rosa marca a piora,
+ * menta marca a melhora. Empate técnico (menos de 1%) sai neutro — pintar meio
+ * ponto percentual acenderia a coluna inteira, e aí nenhuma linha chama
+ * atenção.
+ */
+function Delta({ value, thin }: { value: number | null; thin: boolean }) {
+  if (value == null) return <span className="text-[11px] text-scriba-ink-mute">—</span>;
+  const pct = `${value > 0 ? "+" : "−"}${(Math.abs(value) * 100).toFixed(1).replace(".", ",")}%`;
+  if (thin) {
+    return (
+      <span
+        className="text-[11px] font-light text-scriba-ink-mute"
+        title={`Menos de ${THIN_SAMPLE_EVENTS} chamadas de um dos lados — amostra fina demais para concluir.`}
+      >
+        {pct}
+      </span>
+    );
+  }
+  const tone =
+    Math.abs(value) < 0.01
+      ? "text-scriba-ink-mute"
+      : value > 0
+        ? "text-scriba-rose-accent"
+        : "text-scriba-mint-accent";
+  return <span className={cn("text-[11px] font-semibold tabular-nums", tone)}>{pct}</span>;
+}
+
+/**
+ * O corte por VERSÃO — a tabela que responde "depois da 0.5.0, ficou mais caro
+ * ou mais lento?".
+ *
+ * Todos os outros cortes desta página são de ESPAÇO (rota, usuário, sessão);
+ * este é de TEMPO, com um marcador que sabe quando o deploy subiu — coisa que
+ * data não sabe. O marcador é `llm_usage_events.app_version`, carimbado pelo
+ * build a partir do `package.json`, e ele só separa alguma coisa se a versão
+ * SUBIR a cada entrega: é para isso que existe `npm run release`.
+ *
+ * **A leitura correta é uma ROTA de cada vez**, e o aviso no topo diz isso
+ * porque a armadilha é silenciosa: sem fixar a rota, o custo médio por chamada
+ * de uma versão muda só porque a MISTURA de rotas mudou entre dois deploys —
+ * uma semana com mais estudos gerados parece "a 0.6.0 encareceu tudo".
+ *
+ * O custo sai por MIL chamadas pela mesma razão que o custo por moeda sai por
+ * milheiro (ver `lib/fx/format.ts`): uma chamada custa na casa do milésimo de
+ * real, e em duas casas decimais todas as versões empatariam em "R$ 0,00" —
+ * justamente a diferença que esta tabela existe para mostrar.
+ */
+function VersionsTable({
+  summary,
+  money,
+  filteredRoute,
+}: {
+  summary: AdminUsageSummary;
+  money: MoneyFormatter;
+  filteredRoute: string;
+}) {
+  const rows = summary.byVersion;
+  if (rows.length === 0) return null;
+
+  return (
+    <section className="flex flex-col gap-2">
+      <SectionLabel>Por versão</SectionLabel>
+      <p className="text-[12px] font-light leading-relaxed text-scriba-ink-mute">
+        {filteredRoute ? (
+          <>
+            Comparando a rota <span className="font-mono">{filteredRoute}</span> versão a versão —
+            que é como esta tabela se lê.
+          </>
+        ) : (
+          <>
+            <strong className="font-semibold text-scriba-ink">
+              Filtre uma rota antes de concluir
+            </strong>{" "}
+            qualquer coisa daqui: sem isso, o custo médio por chamada muda quando a MISTURA de rotas
+            muda entre dois deploys, e uma semana com mais estudos gerados parece uma versão que
+            encareceu.
+          </>
+        )}
+      </p>
+      {rows.length === 1 ? (
+        <p className="text-[12px] font-light leading-relaxed text-scriba-ink-mute">
+          Só uma versão gravou chamadas no período. A comparação começa a existir no próximo{" "}
+          <span className="font-mono">npm run release</span>.
+        </p>
+      ) : null}
+      <div className={TABLE_SURFACE}>
+        <Table>
+          <TableHeader>
+            <TableRow>
+              <TableHead>Versão</TableHead>
+              <TableHead>No ar</TableHead>
+              <TableHead className="text-right">Chamadas</TableHead>
+              <TableHead className="text-right">Custo</TableHead>
+              <TableHead className="text-right" title="Custo total ÷ chamadas × 1.000">
+                Por 1.000 chamadas
+              </TableHead>
+              <TableHead className="text-right">Latência média</TableHead>
+              <TableHead className="text-right" title="Entrada + saída, só nas chamadas de chat">
+                Tokens/chamada
+              </TableHead>
+            </TableRow>
+          </TableHeader>
+          <TableBody>
+            {rows.map((row, index) => (
+              <VersionRow
+                key={row.version ?? "__none__"}
+                row={row}
+                previous={rows[index + 1]}
+                money={money}
+              />
+            ))}
+          </TableBody>
+        </Table>
+      </div>
+    </section>
+  );
+}
+
+function VersionRow({
+  row,
+  previous,
+  money,
+}: {
+  row: UsageByVersion;
+  previous: UsageByVersion | undefined;
+  money: MoneyFormatter;
+}) {
+  const thin = row.events < THIN_SAMPLE_EVENTS || (previous?.events ?? 0) < THIN_SAMPLE_EVENTS;
+  return (
+    <TableRow>
+      <TableCell>
+        {row.version ? (
+          <span className="font-mono text-xs font-semibold text-scriba-ink-strong">
+            v{row.version}
+          </span>
+        ) : (
+          <span
+            className="text-[12px] font-light text-scriba-ink-mute"
+            title="Chamadas anteriores à migração 0044. Não há como saber que código as produziu, e chutar mentiria justamente na comparação."
+          >
+            Antes da medição
+          </span>
+        )}
+      </TableCell>
+      <TableCell>
+        <span className="block whitespace-nowrap text-[11.5px] text-scriba-ink">
+          {formatMoment(row.firstSeen)}
+        </span>
+        <span className="block whitespace-nowrap text-[10.5px] font-light text-scriba-ink-mute">
+          até {formatMoment(row.lastSeen)}
+        </span>
+      </TableCell>
+      <TableCell className="text-right tabular-nums">{INT.format(row.events)}</TableCell>
+      <TableCell className="text-right font-mono text-xs">
+        {money(row.totalCostUsd, "fine")}
+      </TableCell>
+      <TableCell className="text-right">
+        <span className="block font-mono text-xs text-scriba-ink">
+          {money(row.costPerEventUsd * 1000, "fine")}
+        </span>
+        <Delta value={row.costPerEventDelta} thin={thin} />
+      </TableCell>
+      <TableCell className="text-right">
+        <span className="block font-mono text-xs text-scriba-ink">
+          {formatLatency(row.avgLatencyMs)}
+        </span>
+        <Delta value={row.latencyDelta} thin={thin} />
+      </TableCell>
+      <TableCell className="text-right font-mono text-xs text-scriba-ink-soft">
+        {row.avgTokensPerChatEvent == null
+          ? "—"
+          : INT.format(Math.round(row.avgTokensPerChatEvent))}
+      </TableCell>
+    </TableRow>
   );
 }
 
@@ -365,6 +591,7 @@ function sessionFilterHref(filters: SearchParams, sessionId: string): string {
   if (filters.userId) p.set("userId", filters.userId);
   if (filters.route) p.set("route", filters.route);
   if (filters.mode) p.set("mode", filters.mode);
+  if (filters.version) p.set("version", filters.version);
   p.set("sessionId", sessionId);
   return `/admin/usage?${p.toString()}`;
 }

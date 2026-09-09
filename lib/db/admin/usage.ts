@@ -1,4 +1,5 @@
 import "server-only";
+import { sortVersionsDesc } from "@/lib/app-version";
 import {
   BILLABLE_ACTIONS,
   type BillableActionKey,
@@ -72,6 +73,50 @@ export type UsageBySession = {
   mode: SessionMode | null;
 };
 export type UsageByDay = { day: string; totalCostUsd: number; events: number };
+
+/**
+ * Uma linha por VERSÃO do app (`llm_usage_events.app_version`, carimbada em
+ * `lib/db/usage.ts`). É o corte que responde "depois da 0.5.0, isto ficou mais
+ * caro ou mais lento?" — a pergunta que aparece toda vez que um prompt é
+ * reescrito ou um modelo é trocado, e a única que nenhum dos outros cortes
+ * desta tela sabia responder, porque todos eles são recortes de ESPAÇO (rota,
+ * usuário, sessão) e este é de TEMPO com um marcador confiável.
+ *
+ * A data sozinha não serve como marcador: ela sabe quando a chamada aconteceu,
+ * não quando o deploy subiu. Por isso `firstSeen` é MEDIDO — é o primeiro
+ * evento que a versão gravou, não uma data de release digitada em algum lugar.
+ *
+ * Não há coluna de moedas aqui, e a ausência é decisão: `coin_transactions`
+ * não carrega versão e o débito é por minuto de gravação, não por chamada. Uma
+ * coluna "custo por 1.000 moedas" por versão seria custo filtrado dividido por
+ * moeda não filtrada — um número que parece margem e não é nada.
+ */
+export type UsageByVersion = {
+  /** `null` = chamadas anteriores à migração 0044. Sem backfill possível. */
+  version: string | null;
+  events: number;
+  totalCostUsd: number;
+  /**
+   * Publicado por MIL chamadas na tela, pela mesma razão do custo por moeda em
+   * `lib/fx/format.ts`: uma chamada custa na casa do milésimo de real, e em
+   * duas casas decimais toda versão empataria em "R$ 0,00" — justamente a
+   * diferença que esta tabela existe para mostrar.
+   */
+  costPerEventUsd: number;
+  avgLatencyMs: number | null;
+  /** Só das chamadas de chat; `transcribe` não tem token e diluiria a média. */
+  avgTokensPerChatEvent: number | null;
+  audioSeconds: number;
+  firstSeen: string;
+  lastSeen: string;
+  /**
+   * Variação do custo por chamada contra a versão imediatamente ANTERIOR desta
+   * mesma lista — já com os filtros ativos aplicados. `null` na versão mais
+   * antiga e quando a anterior não tem base para comparar.
+   */
+  costPerEventDelta: number | null;
+  latencyDelta: number | null;
+};
 
 /**
  * Uma linha por AÇÃO cobrável (ver lib/coins/billable.ts), mais a linha
@@ -167,6 +212,13 @@ export type UsageFilters = {
    * routes like verse / format-paragraphs) are excluded when the filter is on.
    */
   mode?: SessionMode;
+  /**
+   * Versão do app que originou a chamada (`llm_usage_events.app_version`).
+   * Aplicada em MEMÓRIA, não no SQL, e de propósito: a lista de versões do
+   * seletor é montada das mesmas linhas, e filtrar no banco a reduziria à
+   * versão já escolhida — o filtro se trancaria depois do primeiro uso.
+   */
+  version?: string;
   from?: string;
   to?: string;
 };
@@ -178,7 +230,10 @@ export type AdminUsageSummary = {
   bySession: UsageBySession[];
   byDay: UsageByDay[];
   byAction: UsageByAction[];
+  byVersion: UsageByVersion[];
   routes: string[];
+  /** Todas as versões vistas no período, da mais nova para a mais antiga. */
+  versions: string[];
   /**
    * Custo do milheiro de moeda no agregado — e ele sai SÓ do custo cobrável.
    *
@@ -213,6 +268,17 @@ export type AdminUsageSummary = {
   unpricedEvents: number;
   /** Os modelos por trás desse número, para o aviso poder nomeá-los. */
   unpricedModels: string[];
+  /**
+   * Se os números de MOEDA respeitam os filtros ativos.
+   *
+   * `coin_transactions` não tem rota nem versão: o débito é por minuto de
+   * gravação, por estudo, por reprocessamento — nunca por chamada de LLM.
+   * Com um desses dois filtros ligados, o custo é recortado e a moeda não é, e
+   * "custo por 1.000 moedas" vira custo de uma fatia dividido pelo total do
+   * período: um número que parece margem, sempre baixo, e que ninguém
+   * investiga porque a conta parece boa. Falso aqui, a tela mostra "—".
+   */
+  coinsScoped: boolean;
 };
 
 type EventRow = {
@@ -224,6 +290,8 @@ type EventRow = {
   prompt_tokens: number | null;
   completion_tokens: number | null;
   audio_seconds: number | string | null;
+  latency_ms: number | null;
+  app_version: string | null;
   created_at: string;
 };
 
@@ -279,7 +347,7 @@ export async function loadAdminUsageSummary(
   let query = admin
     .from("llm_usage_events")
     .select(
-      "route, model, user_id, session_id, total_cost_usd, prompt_tokens, completion_tokens, audio_seconds, created_at"
+      "route, model, user_id, session_id, total_cost_usd, prompt_tokens, completion_tokens, audio_seconds, latency_ms, app_version, created_at"
     )
     .order("created_at", { ascending: false })
     .limit(50_000);
@@ -312,7 +380,17 @@ export async function loadAdminUsageSummary(
   const { data: events, error } = await query;
   if (error) throw new Error(`loadAdminUsageSummary events failed: ${error.message}`);
 
-  const rows = (events ?? []) as EventRow[];
+  // O universo de versões sai das linhas ANTES do recorte por versão, e é isso
+  // que mantém o seletor da tela com todas as opções depois de escolher uma —
+  // filtrar no SQL o deixaria com um item só a partir do primeiro clique.
+  const scanned = (events ?? []) as EventRow[];
+  const versionUniverse = new Set<string>();
+  for (const row of scanned) {
+    if (row.app_version) versionUniverse.add(row.app_version);
+  }
+  const rows = filters.version
+    ? scanned.filter((row) => row.app_version === filters.version)
+    : scanned;
 
   // Ledger de moedas cobradas — autoritativo do que o usuário gastou. É a base
   // do "custo por moeda": totalUsd / totalCoins gastos no mesmo escopo.
@@ -376,6 +454,19 @@ export async function loadAdminUsageSummary(
   const sessionAgg = new Map<string, { cost: number; events: number }>();
   const dayMap = new Map<string, UsageByDay>();
   const routeUniverse = new Set<string>();
+  type VersionAgg = {
+    events: number;
+    cost: number;
+    latencySum: number;
+    latencyEvents: number;
+    chatTokens: number;
+    chatEvents: number;
+    audioSeconds: number;
+    firstSeen: string;
+    lastSeen: string;
+  };
+  // Chave "" = `app_version` nulo, as chamadas anteriores à migração 0044.
+  const versionMap = new Map<string, VersionAgg>();
 
   for (const row of rows) {
     accumulate(totals, row);
@@ -415,6 +506,37 @@ export async function loadAdminUsageSummary(
       sAgg.events += 1;
       sessionAgg.set(row.session_id, sAgg);
     }
+
+    const versionKey = row.app_version ?? "";
+    const vAgg = versionMap.get(versionKey) ?? {
+      events: 0,
+      cost: 0,
+      latencySum: 0,
+      latencyEvents: 0,
+      chatTokens: 0,
+      chatEvents: 0,
+      audioSeconds: 0,
+      firstSeen: row.created_at,
+      lastSeen: row.created_at,
+    };
+    vAgg.events += 1;
+    vAgg.cost += rowCost;
+    if (row.latency_ms != null && row.latency_ms > 0) {
+      vAgg.latencySum += row.latency_ms;
+      vAgg.latencyEvents += 1;
+    }
+    // Só as chamadas de chat entram na média de token: `transcribe` não tem
+    // token nenhum, e incluí-la faria a média cair quando a transcrição
+    // aumentasse — o oposto do que o número diz.
+    if (row.audio_seconds == null) {
+      vAgg.chatEvents += 1;
+      vAgg.chatTokens += (row.prompt_tokens ?? 0) + (row.completion_tokens ?? 0);
+    } else {
+      vAgg.audioSeconds += toNumber(row.audio_seconds);
+    }
+    if (row.created_at < vAgg.firstSeen) vAgg.firstSeen = row.created_at;
+    if (row.created_at > vAgg.lastSeen) vAgg.lastSeen = row.created_at;
+    versionMap.set(versionKey, vAgg);
 
     const day = row.created_at.slice(0, 10);
     const dAgg = dayMap.get(day) ?? { day, totalCostUsd: 0, events: 0 };
@@ -555,6 +677,48 @@ export async function loadAdminUsageSummary(
     .sort((a, b) => b.totalCostUsd - a.totalCostUsd);
   const byDay = Array.from(dayMap.values()).sort((a, b) => a.day.localeCompare(b.day));
 
+  // Da mais nova para a mais antiga, com o balde sem versão ("antes da
+  // medição") sempre por último — ele não tem lugar na linha do tempo e
+  // ordená-lo junto o colocaria antes de tudo, como se fosse a versão zero.
+  const orderedVersionKeys = [
+    ...sortVersionsDesc(Array.from(versionMap.keys()).filter((k) => k !== "")),
+    ...(versionMap.has("") ? [""] : []),
+  ];
+  const byVersion: UsageByVersion[] = orderedVersionKeys.map((key, index) => {
+    const agg = versionMap.get(key) as VersionAgg;
+    const costPerEventUsd = agg.events > 0 ? agg.cost / agg.events : 0;
+    const avgLatencyMs = agg.latencyEvents > 0 ? agg.latencySum / agg.latencyEvents : null;
+    // A comparação é sempre contra o VIZINHO mais antigo desta lista, e não
+    // contra a versão anterior do repositório: uma versão que não gravou
+    // evento nenhum no período não tem com o que ser comparada, e inventar
+    // uma linha vazia para ela produziria uma variação de −100%.
+    const previousKey = orderedVersionKeys[index + 1];
+    const previous = previousKey === undefined ? undefined : versionMap.get(previousKey);
+    const previousCostPerEvent =
+      previous && previous.events > 0 ? previous.cost / previous.events : null;
+    const previousLatency =
+      previous && previous.latencyEvents > 0 ? previous.latencySum / previous.latencyEvents : null;
+    return {
+      version: key === "" ? null : key,
+      events: agg.events,
+      totalCostUsd: agg.cost,
+      costPerEventUsd,
+      avgLatencyMs,
+      avgTokensPerChatEvent: agg.chatEvents > 0 ? agg.chatTokens / agg.chatEvents : null,
+      audioSeconds: agg.audioSeconds,
+      firstSeen: agg.firstSeen,
+      lastSeen: agg.lastSeen,
+      costPerEventDelta:
+        previousCostPerEvent && previousCostPerEvent > 0
+          ? (costPerEventUsd - previousCostPerEvent) / previousCostPerEvent
+          : null,
+      latencyDelta:
+        avgLatencyMs !== null && previousLatency !== null && previousLatency > 0
+          ? (avgLatencyMs - previousLatency) / previousLatency
+          : null,
+    } satisfies UsageByVersion;
+  });
+
   return {
     totals,
     byRoute,
@@ -562,13 +726,16 @@ export async function loadAdminUsageSummary(
     bySession,
     byDay,
     byAction,
+    byVersion,
     routes: Array.from(routeUniverse).sort(),
+    versions: sortVersionsDesc(Array.from(versionUniverse)),
     overallCostPerCoinUsd,
     billableCostUsd,
     unchargedCostUsd,
     internalCostUsd,
     unpricedEvents,
     unpricedModels: Array.from(unpricedModels).sort(),
+    coinsScoped: !filters.route && !filters.version,
   };
 }
 

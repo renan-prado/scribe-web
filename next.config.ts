@@ -1,4 +1,25 @@
+import { readFileSync } from "node:fs";
 import type { NextConfig } from "next";
+
+/**
+ * A versão do `package.json`, lida no BUILD e embutida no bundle.
+ *
+ * É o carimbo de `llm_usage_events.app_version` e o filtro do `/admin/usage`.
+ * Ela sai daqui, e não de uma variável de ambiente, porque variável de
+ * ambiente é digitada: um número no painel da Vercel discordaria do
+ * `package.json` no primeiro deploy em que alguém esquecesse de mexer nos
+ * dois. Derivada, ela não tem como discordar.
+ *
+ * Se o arquivo não puder ser lido, o build QUEBRA — e é o certo: um build que
+ * sobe sem saber a própria versão contamina a série inteira de medição com um
+ * rótulo falso, e isso só apareceria semanas depois, ao comparar duas versões
+ * que nunca existiram.
+ */
+const appVersion = (
+  JSON.parse(readFileSync(new URL("./package.json", import.meta.url), "utf8")) as {
+    version: string;
+  }
+).version;
 
 const securityHeaders = [
   { key: "X-Frame-Options", value: "DENY" },
@@ -41,6 +62,9 @@ const nextConfig: NextConfig = {
   // vulnerabilidade — é impressão digital: anuncia o framework para quem
   // procura alvos por versão conhecida, sem nenhum ganho para quem usa o app.
   poweredByHeader: false,
+  // Ver `lib/app-version.ts`: o único consumidor, e o lugar onde está escrito
+  // por que este número não passa pelo schema Zod de env.
+  env: { NEXT_PUBLIC_APP_VERSION: appVersion },
   async headers() {
     return [{ source: "/(.*)", headers: securityHeaders }];
   },

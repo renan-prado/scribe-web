@@ -93,6 +93,44 @@ A ordenação do "top de usuários" é por **moedas gastas**, não por dólar: d
 mistura modelos de preços diferentes e a lista deixava de responder à pergunta
 que ela existe para responder.
 
+## O corte por VERSÃO (`/admin/usage`)
+
+Rota, usuário e sessão são cortes de ESPAÇO — dizem onde o dinheiro foi. A
+tabela "Por versão" é o corte de TEMPO, e responde à outra pergunta: **depois
+daquela mudança, ficou melhor ou pior?**
+
+Data não serve de marcador — ela sabe quando a CHAMADA aconteceu, não quando o
+DEPLOY subiu. O marcador é `llm_usage_events.app_version` (migração `0044`),
+carimbado por `recordChatUsage`/`recordAudioUsage` a partir do `package.json`.
+Ele só separa alguma coisa se a versão SUBIR a cada entrega, e é por isso que
+`npm run release` antes de todo push é regra do `AGENTS.md` da raiz, não
+sugestão: sem o bump as linhas se fundem numa só, **sem erro nenhum na tela**.
+
+Cinco decisões dessa tela, todas contra o mesmo risco de mostrar um número que
+parece resposta e não é:
+
+- **A leitura correta é uma ROTA de cada vez**, e o aviso acima da tabela diz
+  isso. Sem fixar a rota, o custo médio por chamada muda só porque a MISTURA de
+  rotas mudou entre dois deploys: uma semana com mais estudos gerados parece
+  uma versão que encareceu tudo.
+- **Não há coluna de moedas por versão.** `coin_transactions` não carrega
+  versão, e o débito é por minuto de gravação, não por chamada.
+- **Pelo mesmo motivo, os dois KPIs de moeda no topo viram `—` sob filtro de
+  rota ou de versão** (`summary.coinsScoped`). Custo recortado dividido por
+  moeda inteira é um número sempre baixo, com cara de margem folgada — o tipo de
+  mentira que ninguém investiga porque a conta parece boa.
+- **Variação com menos de 20 chamadas de um dos lados sai cinza**, e abaixo de
+  1% sai neutra. "+340%" em vermelho sobre duas chamadas é lido como regressão
+  quando o que ele diz é "ainda não deu tempo de medir".
+- **`app_version` nulo é linha própria, sempre por último.** São as chamadas
+  anteriores à migração; não há backfill possível, e chutar a versão de hoje
+  mentiria justamente na comparação.
+
+O seletor de versão do filtro lista TODAS as versões do período mesmo depois de
+uma ser escolhida: o recorte é aplicado em memória, e não no SQL, senão o
+filtro se trancaria depois do primeiro clique. Guia completo em
+[`docs/versionamento.md`](../../../docs/versionamento.md).
+
 ## O inspetor de sessão
 
 `/admin/precificacao?sessionId=<uuid>` abre uma sessão **execução por

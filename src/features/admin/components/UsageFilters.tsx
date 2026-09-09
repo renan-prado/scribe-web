@@ -17,7 +17,16 @@ import {
 type Props = {
   users: { id: string; displayName: string | null; email: string | null }[];
   routes: string[];
-  current: { range: string; userId: string; route: string; sessionId: string; mode: string };
+  /** Da mais nova para a mais antiga — a ordem já vem pronta do servidor. */
+  versions: string[];
+  current: {
+    range: string;
+    userId: string;
+    route: string;
+    sessionId: string;
+    mode: string;
+    version: string;
+  };
 };
 
 const ANY = "__any__";
@@ -39,13 +48,14 @@ const MODE_OPTIONS: SelectOption[] = [
   { value: "transcript_only", label: "Transcrição" },
 ];
 
-export function UsageFilters({ users, routes, current }: Props) {
+export function UsageFilters({ users, routes, versions, current }: Props) {
   const router = useRouter();
   const searchParams = useSearchParams();
   const [range, setRange] = useState(current.range);
   const [userId, setUserId] = useState(current.userId || ANY);
   const [route, setRoute] = useState(current.route || ANY);
   const [mode, setMode] = useState(current.mode || ANY);
+  const [version, setVersion] = useState(current.version || ANY);
   const [isPending, startTransition] = useTransition();
 
   const activeSessionId = current.sessionId?.trim() ?? "";
@@ -61,6 +71,10 @@ export function UsageFilters({ users, routes, current }: Props) {
     { value: ANY, label: "Todas" },
     ...routes.map((r) => ({ value: r, label: r })),
   ];
+  const versionOptions: SelectOption[] = [
+    { value: ANY, label: "Todas" },
+    ...versions.map((v) => ({ value: v, label: `v${v}` })),
+  ];
 
   function apply() {
     const params = new URLSearchParams(searchParams.toString());
@@ -72,6 +86,8 @@ export function UsageFilters({ users, routes, current }: Props) {
     else params.delete("route");
     if (mode && mode !== ANY) params.set("mode", mode);
     else params.delete("mode");
+    if (version && version !== ANY) params.set("version", version);
+    else params.delete("version");
     // Session filter is set from the Sessions table row, not from an input here.
 
     const qs = params.toString();
@@ -85,6 +101,7 @@ export function UsageFilters({ users, routes, current }: Props) {
     setUserId(ANY);
     setRoute(ANY);
     setMode(ANY);
+    setVersion(ANY);
     startTransition(() => router.push("/admin/usage"));
   }
 
@@ -99,10 +116,12 @@ export function UsageFilters({ users, routes, current }: Props) {
 
   return (
     <div className="flex flex-col gap-4 p-5 admin-card-surface">
-      {/* Cinco colunas só em xl. Em `lg`, com a sidebar aberta, cada select
+      {/* Três colunas só em xl. Em `lg`, com a sidebar aberta, cada select
           ficava com ~130px e o nome do usuário truncava antes da arroba — o
-          filtro deixava de dizer quem ele estava filtrando. */}
-      <div className="grid gap-3 sm:grid-cols-2 xl:grid-cols-5 xl:items-end">
+          filtro deixava de dizer quem ele estava filtrando. Com o sexto campo
+          (versão) as cinco de antes passariam do mesmo limite, então a barra
+          vira duas fileiras de três em vez de uma de seis. */}
+      <div className="grid gap-3 sm:grid-cols-2 xl:grid-cols-3 xl:items-end">
         <div className="flex flex-col gap-1.5">
           <Label>Período</Label>
           <Select items={RANGE_OPTIONS} value={range} onValueChange={(v) => setRange(v ?? "30d")}>
@@ -171,6 +190,30 @@ export function UsageFilters({ users, routes, current }: Props) {
             </SelectTrigger>
             <SelectContent>
               {MODE_OPTIONS.map((o) => (
+                <SelectItem key={o.value} value={o.value}>
+                  {o.label}
+                </SelectItem>
+              ))}
+            </SelectContent>
+          </Select>
+        </div>
+
+        {/* A versão fica ao lado da rota de propósito: a leitura que este
+            filtro existe para permitir é "uma rota, versão contra versão".
+            Sem fixar a rota, o custo médio por chamada muda só porque a
+            MISTURA de rotas mudou entre um deploy e outro. */}
+        <div className="flex flex-col gap-1.5">
+          <Label>Versão</Label>
+          <Select
+            items={versionOptions}
+            value={version === ANY ? undefined : version}
+            onValueChange={(v) => setVersion(v ?? ANY)}
+          >
+            <SelectTrigger className="w-full">
+              <SelectValue placeholder="Todas" />
+            </SelectTrigger>
+            <SelectContent>
+              {versionOptions.map((o) => (
                 <SelectItem key={o.value} value={o.value}>
                   {o.label}
                 </SelectItem>

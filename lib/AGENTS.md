@@ -26,8 +26,8 @@ Client-safe de propósito: `coins/pricing.ts`, `coins/billable.ts`,
 `coins/economics.ts`, `billing/plans.ts`, `entitlements/features.ts`,
 `partners/economics.ts`, `br/documento.ts`,
 `domain/*` (tipos e schemas), `bible/detect.ts`, `bible/guard.ts`,
-`deploy.ts`, `seo.ts`, `utils.ts`, `vocabulario.ts`, `chunk-store.ts`
-(IndexedDB, só roda no browser).
+`app-version.ts`, `deploy.ts`, `seo.ts`, `utils.ts`, `vocabulario.ts`,
+`chunk-store.ts` (IndexedDB, só roda no browser).
 
 ## Env — estrito de propósito
 
@@ -73,6 +73,10 @@ rota. Os dois devolvem `Result<T>` (nunca lançam) e têm timeout por
   custo inventada direto por `POST /rest/v1/llm_usage_events` com o anon key e
   envenenar `/admin/precificacao`. Migração 0039. De quebra sumiu um
   `auth.getUser()` por registro — era uma ida à rede por chunk transcrito.
+
+  As duas também carimbam `app_version` (migração 0044), o que torna a tabela
+  comparável DEPLOY A DEPLOY em `/admin/usage` — mas só enquanto a versão subir
+  a cada entrega. Ver a seção "Versão e release" do `AGENTS.md` da raiz.
 
 ## Supabase — três clients, três autoridades
 
@@ -511,6 +515,15 @@ nunca disparava com o modelo novo, nem em áudio com 27% de WER.
 
 ## Outros
 
+- `app-version.ts` — **client-safe**. `APP_VERSION` sai do `package.json` pelo
+  `env` do `next.config.ts`, e é o mesmo número que carimba
+  `llm_usage_events.app_version` e rotula o filtro do `/admin/usage`. Ele **não**
+  está no schema Zod de `env/client.ts` de propósito: aquele schema valida o que
+  uma PESSOA configura, e declarar esta ali convidaria alguém a criar a variável
+  à mão — dois números de versão que um dia discordam. `compareVersions` existe
+  porque "0.10.0" ordena antes de "0.9.0" como texto, em silêncio, justo na
+  tabela que existe para dizer o que veio antes. O número só é um corte útil se
+  SUBIR a cada entrega: ver `npm run release` e `docs/versionamento.md`.
 - `deploy.ts` — `IS_PRODUCTION_DEPLOY` (`VERCEL_ENV === "production"`). É a
   chave de GA4 e de indexação. Ler `process.env` não torna a rota dinâmica.
 - `seo.ts` — fonte única de domínio, título e descrição. Ver `app/AGENTS.md`.

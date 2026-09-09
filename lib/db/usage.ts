@@ -1,4 +1,5 @@
 import "server-only";
+import { APP_VERSION } from "@/lib/app-version";
 import {
   type ChatCost,
   computeAudioCost,
@@ -149,6 +150,7 @@ export async function recordChatUsage(input: RecordChatUsageInput): Promise<void
       session_id: input.sessionId,
       route: input.route,
       model: input.model,
+      app_version: APP_VERSION,
       prompt_tokens: prompt,
       completion_tokens: completion,
       cached_tokens: cached,
@@ -185,6 +187,7 @@ export async function recordAudioUsage(input: RecordAudioUsageInput): Promise<vo
       session_id: input.sessionId,
       route: input.route,
       model: input.model,
+      app_version: APP_VERSION,
       prompt_tokens: null,
       completion_tokens: null,
       total_tokens: null,

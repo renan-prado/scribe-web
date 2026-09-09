@@ -112,6 +112,7 @@ use o hexágono amarelo já usado no app (ver `src/shared/AGENTS.md`).
 | `npm run typecheck` | `tsc --noEmit`. Rode antes de commitar |
 | `npm test` | `node --test` sobre `lib/**/*.test.ts` — só a camada financeira |
 | `npm run check` | Biome check + write (imports, format, lint) |
+| `npm run release` | Sobe a versão, escreve o `CHANGELOG.md` e cria a tag. **Antes de todo push** |
 | `npm run lint` / `format` | subcomandos do Biome |
 | `npm run db:push` | migrações no Supabase de **dev** |
 | `npm run db:push:prod -- --yes` | o mesmo em **produção** |
@@ -123,6 +124,41 @@ use o hexágono amarelo já usado no app (ver `src/shared/AGENTS.md`).
 `db:push:prod` é a única exceção — sempre confirme antes.
 
 Commits seguem Conventional Commits (`commitlint` no husky).
+
+## Versão e release — antes de todo push
+
+> **Toda vez que for empurrar trabalho, rode `npm run release` antes do push.**
+
+Não é burocracia: a versão do `package.json` é carimbada em cada chamada de
+LLM (`llm_usage_events.app_version`) e é o eixo da tabela **"Por versão"** do
+`/admin/usage`, que compara custo por chamada e latência de um deploy para o
+outro. **Sem o bump, todo evento de todo deploy nasce com o mesmo rótulo**, as
+linhas se fundem numa só, e a pergunta "depois daquela mudança ficou pior?"
+deixa de ter onde ser respondida — sem erro nenhum na tela, que é o pior jeito
+de uma medição falhar.
+
+A ordem é sempre esta, e o `release` RECUSA uma árvore suja para garanti-la:
+
+```bash
+git commit -m "feat(escopo): ..."        # 1. o trabalho, primeiro
+npm run release                          # 2. versão + CHANGELOG + tag anotada
+git push --follow-tags origin develop    # 3. a tag vai junto
+```
+
+O degrau sai dos próprios commits: algum `feat` sobe o **minor**, o resto sobe
+o **patch**. `feat!`/`BREAKING CHANGE` sobe o minor enquanto o major for 0 e
+avisa — ir para `1.0.0` é decisão de produto (`npm run release major`). Para
+ver sem escrever: `npm run release -- --dry-run`.
+
+**Um release por entrega, na `develop`.** O `master` recebe a mesma versão pelo
+`merge --ff-only` de sempre; dois releases criariam duas versões dividindo o
+mesmo tráfego, e o painel mostraria duas linhas onde houve um deploy só.
+
+`CHANGELOG.md` é GERADO — não edite à mão. Ele existe porque `0.6.0` sozinho
+não é resposta: quando o painel disser que uma versão encareceu uma rota, é o
+CHANGELOG que diz o que mudou e a tag que abre o código exato
+(`git diff v0.5.0 v0.6.0 -- lib/prompts/`). Guia completo em
+[`docs/versionamento.md`](docs/versionamento.md).
 
 ## Ambientes
 

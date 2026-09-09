@@ -11,6 +11,7 @@ saber ao editar código ficam nos `AGENTS.md` de cada pasta, não aqui.
 | Como mexer em código de X? | o `AGENTS.md` da pasta de X — comece pelo da raiz |
 | Como ligar o Stripe do zero? | [`stripe-setup.md`](./stripe-setup.md) |
 | Como funcionam dev e produção? | [`ambientes.md`](./ambientes.md) |
+| Por que subir a versão antes de dar push? | [`versionamento.md`](./versionamento.md) |
 | O que falta configurar nos painéis? | [`checklist-ambiente-dev.md`](./checklist-ambiente-dev.md) |
 | Quais são as regras do programa de parceiros? | [`parceiros.md`](./parceiros.md) |
 | Como o painel sabe quanto ganhamos, gastamos e devemos? | [`financeiro.md`](./financeiro.md) |
@@ -27,6 +28,11 @@ saber ao editar código ficam nos `AGENTS.md` de cada pasta, não aqui.
 - **[`checklist-ambiente-dev.md`](./checklist-ambiente-dev.md)** — o trabalho
   manual em painéis externos (GoDaddy, Google Cloud, Supabase, Vercel) que não
   dá para automatizar do repositório.
+- **[`versionamento.md`](./versionamento.md)** — por que `npm run release` roda
+  antes de todo push: a versão do `package.json` é carimbada em cada chamada de
+  LLM e é o eixo da tabela "Por versão" do `/admin/usage`. Sem o bump, a
+  comparação entre deploys deixa de existir sem nenhum erro na tela. Traz o
+  fluxo, a regra do degrau e como ler a tabela. **Status: implementado.**
 - **[`stripe-setup.md`](./stripe-setup.md)** — ligar a cobrança do zero:
   objetos a criar no Stripe, as variáveis, e as armadilhas conhecidas.
   Ferramentas: `npm run stripe:doctor` e `npm run stripe:listen`.
