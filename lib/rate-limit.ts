@@ -251,6 +251,16 @@ export const RATE_LIMITS = {
     perUser: { limit: 10, windowMs: HOUR },
     perIp: { limit: 40, windowMs: HOUR },
   },
+  // A importação do YouTube. Limite de resumo (10/hora), não de gravação: ela
+  // roda o mesmo `generateFinalSummary` sobre uma transcrição inteira e cobra
+  // 25 moedas. O que ela tem a mais é uma chamada de provedor PAGA que acontece
+  // ANTES da cobrança — um link inválido em rajada não debita moeda nenhuma,
+  // mas queima crédito da Supadata, e é esse o abuso que este bucket corta.
+  "youtube-import": {
+    route: "youtube-import",
+    perUser: { limit: 10, windowMs: HOUR },
+    perIp: { limit: 40, windowMs: HOUR },
+  },
   deepening: {
     route: "deepening",
     perUser: { limit: 30, windowMs: HOUR },

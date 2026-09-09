@@ -40,6 +40,8 @@ export type SessionRow = {
   speakerName: string | null;
   speakerLocation: string | null;
   mode: SessionMode;
+  /** Origem externa da transcrição — a URL do vídeo, no modo youtube. */
+  sourceUrl: string | null;
   transcript: string;
   feedItems: FeedItem[];
   finalSummary: SummaryPayload | null;
@@ -56,6 +58,7 @@ export type SessionListItem = {
   speakerName: string | null;
   speakerLocation: string | null;
   mode: SessionMode;
+  sourceUrl: string | null;
 };
 
 /**
@@ -75,6 +78,8 @@ export type CreateEmptySessionInput = {
   speakerId?: string | null;
   locationId?: string | null;
   mode?: SessionMode;
+  /** Só o modo youtube preenche. Ver `sessions.source_url` (migração 0048). */
+  sourceUrl?: string | null;
 };
 
 export type UpdateSessionFinalInput = {
@@ -100,6 +105,7 @@ type DbRow = {
   speaker_name: string | null;
   speaker_location: string | null;
   capture_mode: string | null;
+  source_url: string | null;
   transcript: string;
   feed_items: FeedItem[] | null;
   final_summary: SummaryPayload | null;
@@ -110,11 +116,11 @@ type DbRow = {
 // required for ordered-set aggregate mode"). The column is physically named
 // `capture_mode`; we keep the API-side field name as `mode` for callers.
 const SELECT_LIST =
-  "id, created_at, duration_ms, title, short_summary, speaker_id, location_id, speaker_name, speaker_location, capture_mode";
-const SELECT_FULL = `id, created_at, ended_at, duration_ms, title, short_summary, speaker_id, location_id, speaker_name, speaker_location, capture_mode, transcript, feed_items, final_summary`;
+  "id, created_at, duration_ms, title, short_summary, speaker_id, location_id, speaker_name, speaker_location, capture_mode, source_url";
+const SELECT_FULL = `id, created_at, ended_at, duration_ms, title, short_summary, speaker_id, location_id, speaker_name, speaker_location, capture_mode, source_url, transcript, feed_items, final_summary`;
 // O mesmo de SELECT_FULL menos transcript/feed_items/final_summary.
 const SELECT_META =
-  "id, created_at, ended_at, duration_ms, title, short_summary, speaker_id, location_id, speaker_name, speaker_location, capture_mode";
+  "id, created_at, ended_at, duration_ms, title, short_summary, speaker_id, location_id, speaker_name, speaker_location, capture_mode, source_url";
 
 type MetaRow = Omit<DbRow, "transcript" | "feed_items" | "final_summary">;
 
@@ -131,6 +137,7 @@ function rowToMeta(row: MetaRow): SessionMeta {
     speakerName: row.speaker_name,
     speakerLocation: row.speaker_location,
     mode: parseSessionMode(row.capture_mode),
+    sourceUrl: row.source_url,
   };
 }
 
@@ -147,6 +154,7 @@ function rowToSession(row: DbRow): SessionRow {
     speakerName: row.speaker_name,
     speakerLocation: row.speaker_location,
     mode: parseSessionMode(row.capture_mode),
+    sourceUrl: row.source_url,
     transcript: row.transcript,
     feedItems: Array.isArray(row.feed_items) ? row.feed_items : [],
     finalSummary: row.final_summary,
@@ -178,6 +186,7 @@ export async function createEmptySession(input: CreateEmptySessionInput): Promis
       speaker_name: input.speakerName,
       speaker_location: input.speakerLocation,
       capture_mode: input.mode ?? "live",
+      source_url: input.sourceUrl ?? null,
       transcript: "",
       feed_items: [],
     })
@@ -235,6 +244,7 @@ type ListRow = {
   speaker_name: string | null;
   speaker_location: string | null;
   capture_mode: string | null;
+  source_url: string | null;
 };
 
 function rowToListItem(r: ListRow): SessionListItem {
@@ -249,6 +259,7 @@ function rowToListItem(r: ListRow): SessionListItem {
     speakerName: r.speaker_name,
     speakerLocation: r.speaker_location,
     mode: parseSessionMode(r.capture_mode),
+    sourceUrl: r.source_url,
   };
 }
 

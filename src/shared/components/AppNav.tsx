@@ -11,7 +11,7 @@ const LINKS = [
   {
     key: "recordings" as const,
     href: "/recordings",
-    label: "Gravações",
+    label: "Biblioteca",
     icon: List,
     tone: "blue" as const,
   },

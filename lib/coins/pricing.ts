@@ -103,6 +103,45 @@ export const COIN_COSTS = {
    */
   summaryFromTranscript: 15,
   /**
+   * One-shot cost of importing a YouTube video: legenda + resumo completo.
+   *
+   * **25 e FIXO, o único preço do produto que não é por minuto.** Os três modos
+   * de captura cobram por minuto porque o custo deles É por minuto — cada
+   * minuto de áudio é uma chamada de STT. Uma importação não tem STT: a legenda
+   * já existe, custa ~R$ 0,03 de provedor por vídeo (1 crédito da Supadata,
+   * qualquer que seja a duração), e o que sobra é exatamente a mesma chamada de
+   * `summaryFromTranscript`. Cobrar por minuto de vídeo seria cobrar por um
+   * trabalho que não fazemos.
+   *
+   * A conta, na régua de `DEFAULT_COIN_PRICE_PER_THOUSAND_BRL`: R$ 0,105 de
+   * resumo (o número MEDIDO que fixou `summaryFromTranscript` em 15) mais
+   * R$ 0,03 de legenda dá R$ 0,135 num vídeo típico. A régua pediria 23 para os
+   * 70% de `DEFAULT_TARGET_MARGIN_PCT`; 25 fica acima dela de propósito, porque
+   * o custo do resumo cresce com a transcrição na ENTRADA e a receita aqui não
+   * cresce com nada. As margens ao longo da faixa:
+   *
+   * | duração | margem |
+   * |---|---|
+   * | 30 min | ~70% |
+   * | 60 min | ~65% |
+   * | 120 min | ~56% |
+   *
+   * **É `YOUTUBE_MAX_DURATION_MS` que segura a ponta dessa tabela**, e os dois
+   * andam sempre juntos: subir o teto sem mexer no preço é escolher a linha de
+   * baixo da tabela para todo mundo. Ver `lib/domain/youtube.ts`.
+   *
+   * 25 também é metade de `INITIAL_COIN_BALANCE`, e isso não é coincidência:
+   * quem acabou de criar conta importa dois sermões antes de precisar comprar.
+   * É a única porta do produto que não exige esperar até domingo.
+   *
+   * **Sabendo que ele canibaliza o Modo Resumo.** Os mesmos 45 minutos custam
+   * 225 moedas gravados e 25 importados, e para uma igreja que transmite ao
+   * vivo os dois caminhos existem. A margem se sustenta nos dois (o custo cai
+   * junto com o preço); a receita por sermão, não. Foi decisão de produto
+   * tomada com o número à vista, não um efeito colateral que ninguém viu.
+   */
+  youtubeImport: 25,
+  /**
    * Reprocessar roda o MESMO pipeline do zero, então custa o mesmo. Deixá-lo
    * mais barato que a geração abriria uma arbitragem óbvia: gerar uma vez pelo
    * preço cheio e reprocessar indefinidamente pelo preço de banana, pagando 5
@@ -123,6 +162,7 @@ export const CHARGE_REASONS = [
   "reprocess_summary",
   "reprocess_deepening",
   "summary_from_transcript",
+  "youtube_import",
 ] as const;
 export type ChargeReason = (typeof CHARGE_REASONS)[number];
 
@@ -134,6 +174,7 @@ export const COIN_COST_BY_REASON: Record<ChargeReason, number> = {
   reprocess_summary: COIN_COSTS.reprocessSummary,
   reprocess_deepening: COIN_COSTS.reprocessDeepening,
   summary_from_transcript: COIN_COSTS.summaryFromTranscript,
+  youtube_import: COIN_COSTS.youtubeImport,
 };
 
 export function isChargeReason(value: unknown): value is ChargeReason {

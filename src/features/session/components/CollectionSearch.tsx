@@ -1,7 +1,7 @@
 "use client";
 
-import { Search, SlidersHorizontal, X } from "lucide-react";
-import { useId } from "react";
+import { ChevronDown, Search, SlidersHorizontal, X } from "lucide-react";
+import { useId, useState } from "react";
 import {
   Select,
   SelectContent,
@@ -27,10 +27,36 @@ import { cn } from "@/lib/utils";
  * "×", a outra com um link. Os facetas ficam configuráveis (`/studies` não tem
  * local) e o resto é o mesmo componente.
  *
- * ## Por que os filtros ficam SEMPRE visíveis
+ * ## Os filtros ficam sempre visíveis NO DESKTOP, e recolhidos no celular
  *
- * Não há "abrir filtros". Eles são três seletores curtos, e escondê-los atrás
- * de um botão trocaria um toque por dois em troca de três centímetros de tela.
+ * No desktop não há "abrir filtros": são três seletores curtos numa fileira que
+ * já tem espaço sobrando, e escondê-los trocaria um toque por dois em troca de
+ * nada.
+ *
+ * No celular a conta se inverte. Ali eles não são uma fileira — são uma grade
+ * de duas colunas com até três linhas, empilhada entre a busca e o primeiro
+ * cartão, e é a primeira coisa que se vê ao abrir a lista. O custo deixa de ser
+ * "três centímetros de tela" e passa a ser metade da primeira dobra gasta com
+ * controles que a maioria das visitas não usa.
+ *
+ * Então abaixo de `sm` a grade fica atrás de um botão "Filtros", e TRÊS COISAS
+ * continuam fora dele — são justamente as que tornam o estado recolhido
+ * honesto:
+ *
+ *  - **a busca**, que é o que a barra existe para oferecer;
+ *  - **o contador**, sem o qual uma lista filtrada é indistinguível de uma
+ *    lista curta;
+ *  - **"Limpar"**, para desfazer um filtro sem ter de abrir o painel que o
+ *    escondeu.
+ *
+ * O botão CONTA os filtros ativos ("Filtros · 2") e o painel já nasce aberto
+ * quando algum está ligado. Sem as duas coisas, recolher viraria esconder: a
+ * pessoa volta para a lista, vê menos cartões do que esperava, e o motivo está
+ * atrás de um toque que ela não sabe que precisa dar.
+ *
+ * O contador do botão ignora o texto da BUSCA de propósito — aquele campo está
+ * visível e cheio, e somá-lo faria o botão acusar "1" apontando para um painel
+ * onde nada está ligado.
  *
  * E a barra também não some quando a lista é curta. Havia um piso de quatro
  * itens em cada página, com o argumento de que rolar é mais rápido que
@@ -142,9 +168,22 @@ export function CollectionSearch({
   onClear,
 }: Props) {
   const inputId = useId();
+  const panelId = useId();
   // Uma faceta sem opção nenhuma não filtra nada — ver o cabeçalho. A conta
   // sai daqui porque a grade do celular precisa saber QUANTAS sobraram.
   const visibleFacets = facets.filter((facet) => facet.options.length > 0);
+
+  // Quantos SELETORES estão ligados. Não conta o texto da busca: aquele campo
+  // fica visível e cheio, e somá-lo faria o botão acusar "1" apontando para um
+  // painel onde nada está ligado.
+  const activeCount =
+    visibleFacets.filter((facet) => facet.value !== FACET_ALL).length + (range !== "all" ? 1 : 0);
+
+  // Nasce ABERTO quando já há filtro ligado. É o que impede o recolhimento de
+  // virar esconderijo: sem isso a pessoa volta para a lista, vê menos cartões
+  // do que esperava, e o motivo está atrás de um toque que ela não sabe que
+  // precisa dar. Inicializador, não efeito — depois disso o painel é dela.
+  const [filtersOpen, setFiltersOpen] = useState(() => activeCount > 0);
 
   return (
     <section
@@ -193,9 +232,47 @@ export function CollectionSearch({
           className="hidden size-3.5 shrink-0 text-scriba-ink-mute sm:block"
         />
 
+        {/* O gatilho do celular. `sm:hidden` porque no desktop a grade nunca
+            se recolhe — ver o cabeçalho. */}
+        <button
+          type="button"
+          onClick={() => setFiltersOpen((open) => !open)}
+          aria-expanded={filtersOpen}
+          aria-controls={panelId}
+          className={cn(
+            "inline-flex min-h-9 items-center justify-between gap-2 rounded-xl border px-3 text-[13px] font-medium outline-none transition-colors sm:hidden",
+            "focus-visible:ring-2 focus-visible:ring-ring/40",
+            activeCount > 0
+              ? "border-scriba-blue-soft bg-scriba-blue-soft/60 text-scriba-blue-ink"
+              : "border-input text-scriba-ink-soft"
+          )}
+        >
+          <span className="inline-flex items-center gap-2">
+            <SlidersHorizontal aria-hidden className="size-3.5 shrink-0" />
+            Filtros
+            {activeCount > 0 ? (
+              <span className="tabular-nums font-semibold">· {activeCount}</span>
+            ) : null}
+          </span>
+          <ChevronDown
+            aria-hidden
+            className={cn(
+              "size-4 shrink-0 transition-transform duration-150",
+              filtersOpen && "rotate-180"
+            )}
+          />
+        </button>
+
         {/* Grade de duas colunas no celular, itens soltos da fileira no `sm`.
-            O `sm:contents` é o que evita duas versões do mesmo markup. */}
-        <div className="grid grid-cols-2 gap-2 sm:contents">
+            O `sm:contents` é o que evita duas versões do mesmo markup — e é
+            também o que faz o recolhimento valer SÓ no celular: `hidden` e
+            `grid` são utilitários base, `sm:contents` é variante responsiva e
+            portanto vem depois na folha, então a partir de `sm` a grade se
+            dissolve na fileira independentemente do estado do botão. */}
+        <div
+          id={panelId}
+          className={cn("grid-cols-2 gap-2 sm:contents", filtersOpen ? "grid" : "hidden")}
+        >
           {visibleFacets.map((facet) => {
             const options: SelectOption[] = [
               { value: FACET_ALL, label: facet.allLabel },

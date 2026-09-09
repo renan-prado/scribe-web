@@ -26,6 +26,30 @@ comportamento com estado reusável em `hooks/`.
 Os três componentes de topo, um por modo: `RecordingLive`,
 `RecordingAudioOnly`, `RecordingTranscribe`.
 
+**E `YoutubeImport`, que não é um deles.** O modo `youtube` mora na mesma casa
+(`/recording/:id/youtube`) e cumpre o mesmo papel no fluxo — é para onde o
+diálogo empurra, e de onde a sessão sai pronta —, mas NADA desta pasta se
+aplica a ele: sem recorder, sem chunks, sem VAD, sem IndexedDB, sem `store.ts`,
+sem cronômetro e sem cobrança por minuto. Ele dispara `POST /api/youtube/import`
+ao montar e espera. `isCaptureMode(mode)` (`lib/domain/session.ts`) é a pergunta
+a fazer antes de assumir que um modo tem microfone — não teste `!== "youtube"`
+solto, que erra em silêncio no dia em que entrar uma segunda origem importada.
+
+Duas decisões dele que parecem detalhe:
+
+- **A tela de espera não tem barra de progresso**, e sim frases que avançam por
+  tempo. Não há progresso real para medir (a rota é uma requisição só, e SSE é
+  coisa que o produto deliberadamente não tem); barra inventada que trava em
+  90% é pior que texto honesto.
+- **O link NÃO é colado no `NewRecordingDialog`.** Ele já foi: um card de modo
+  com um `<input>` embutido, no meio de uma lista de irmãos do mesmo tamanho.
+  Duas coisas quebraram, e as duas são o motivo de `/importar` existir como
+  página — o card tinha de crescer no meio da fileira, e o rodapé do diálogo
+  precisava mentir sobre a unidade do preço ("/min" num modo que cobra por
+  vídeo). Escolher COMO capturar e escolher QUAL vídeo são duas perguntas.
+  O diálogo itera sobre `CAPTURE_MODES`, não sobre `SESSION_MODES`, e é o tipo
+  que impede o modo importado de voltar para lá por distração.
+
 ## O caminho de um chunk
 
 1. `createRecorder` (`lib/recorder.ts`) fatia o áudio por VAD entre

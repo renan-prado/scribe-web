@@ -209,6 +209,11 @@ const ACTION_BY_MODE: Record<SessionMode, BillableActionKey> = {
   live: "live",
   audio_only: "audio_only",
   transcript_only: "transcript_only",
+  // A importação do YouTube não precisa de uma lista de rotas própria como o
+  // estudo e o reprocessamento acima: as rotas dela sempre trazem sessionId, e
+  // o MODO da sessão já é o discriminador exato. `final-summary-youtube` e
+  // companhia caem aqui pelo caminho normal.
+  youtube: "youtube",
 };
 
 const ACTION_BY_REASON = new Map<ChargeReason, BillableActionKey>(

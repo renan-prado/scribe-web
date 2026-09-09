@@ -23,6 +23,7 @@ export const BILLABLE_ACTION_KEYS = [
   "live",
   "audio_only",
   "transcript_only",
+  "youtube",
   "study",
   "reprocess_summary",
 ] as const;
@@ -65,6 +66,18 @@ export const BILLABLE_ACTIONS: readonly BillableAction[] = [
     unit: "minuto",
     reasons: ["transcript_minute"],
     note: "Só transcrição. Nenhuma chamada de LLM além do STT.",
+  },
+  {
+    key: "youtube",
+    label: "Importação do YouTube",
+    coins: COIN_COSTS.youtubeImport,
+    // "vídeo" e não "minuto": esta é a única ação cobrável do produto cuja
+    // unidade não é o minuto, e a coluna "por ..." do painel precisa dizer
+    // isso — 25 moedas por minuto seria um preço absurdo, e é o que a linha
+    // pareceria estar afirmando se herdasse a unidade das três de cima.
+    unit: "vídeo",
+    reasons: ["youtube_import"],
+    note: "Legenda do vídeo pela Supadata (~1 crédito, R$ 0,03) e o resumo completo por cima. Nenhum minuto de STT. O custo cresce com a DURAÇÃO do vídeo e o preço não — é o teto de 2h em lib/domain/youtube.ts que segura a margem.",
   },
   {
     key: "study",

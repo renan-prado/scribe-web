@@ -49,7 +49,10 @@ export type GenerateFinalSummaryInput = {
   /** Metadata route tag on the OpenAI store record + usage rows. */
   metadataRoute: Extract<
     UsageRoute,
-    "final-summary" | "final-summary-reprocess" | "final-summary-from-transcript"
+    | "final-summary"
+    | "final-summary-reprocess"
+    | "final-summary-from-transcript"
+    | "final-summary-youtube"
   >;
 };
 
@@ -134,7 +137,9 @@ export async function generateFinalSummary(
         ? "summary-enrichment-reprocess"
         : metadataRoute === "final-summary-from-transcript"
           ? "summary-enrichment-from-transcript"
-          : "summary-enrichment";
+          : metadataRoute === "final-summary-youtube"
+            ? "summary-enrichment-youtube"
+            : "summary-enrichment";
     // A transcrição NÃO entra aqui, e essa é a única economia deste pipeline
     // que foi medida sem custo de qualidade. O enriquecimento já recebe os
     // `blocks` — que são a mensagem inteira, editada — mais os cartões do

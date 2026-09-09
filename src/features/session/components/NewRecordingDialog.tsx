@@ -25,11 +25,19 @@ import { CoinCost } from "@/features/coins/components/CoinCost";
 import { useCoinsStore } from "@/features/coins/store";
 import { requestCreateSession } from "@/features/session/lib/api";
 import { COIN_COSTS } from "@/lib/coins/pricing";
-import { recordingRouteFor, type SessionMode } from "@/lib/domain/session";
+import { CAPTURE_MODES, type CaptureMode, recordingRouteFor } from "@/lib/domain/session";
 import { cn } from "@/lib/utils";
 
+/**
+ * Os três modos que GRAVAM. `CaptureMode` e não `SessionMode`: a importação do
+ * YouTube não cabe aqui — ela não grava, não cobra por minuto e precisa de uma
+ * URL antes de existir, e por isso mora em `/importar`, com porta própria na
+ * Biblioteca. Tentar acomodá-la nesta lista foi o que produziu um card com um
+ * campo de texto dentro e um rodapé que precisava mentir sobre a unidade do
+ * preço.
+ */
 const MODE_COPY: Record<
-  SessionMode,
+  CaptureMode,
   {
     title: string;
     icon: LucideIcon;
@@ -76,7 +84,7 @@ const MODE_COPY: Record<
   },
 };
 
-const MODE_ORDER = Object.keys(MODE_COPY) as SessionMode[];
+const MODE_ORDER = CAPTURE_MODES;
 
 /**
  * Trigger + dialog for starting a new recording session. Renders a Scriba-blue
@@ -94,7 +102,7 @@ export function NewRecordingDialog({ trigger }: { trigger?: ReactNode }) {
   const pathname = usePathname();
   const [open, setOpen] = useState(false);
   const [loading, setLoading] = useState(false);
-  const [mode, setMode] = useState<SessionMode>("live");
+  const [mode, setMode] = useState<CaptureMode>("live");
   /** Compra de créditos a partir do próprio diálogo — evita mandar o usuário
    * para outra tela só para descobrir como destravar a gravação. */
   const [billingOpen, setBillingOpen] = useState(false);
@@ -193,82 +201,88 @@ export function NewRecordingDialog({ trigger }: { trigger?: ReactNode }) {
             const active = mode === m;
             const { title, icon: Icon, costPerMinute, description, idealFor } = MODE_COPY[m];
             return (
-              <label
-                key={m}
-                className={cn(
-                  "relative flex flex-col gap-3.5 rounded-2xl border p-4 text-left transition-colors",
-                  active
-                    ? "border-scriba-blue bg-scriba-blue-soft/40 shadow-[0_6px_18px_rgba(79,168,240,0.16)]"
-                    : "border-scriba-hairline bg-scriba-paper hover:border-scriba-blue/45 hover:bg-scriba-surface/60",
-                  "has-[:focus-visible]:ring-4 has-[:focus-visible]:ring-scriba-blue/25",
-                  loading ? "cursor-not-allowed opacity-70" : "cursor-pointer"
-                )}
-              >
-                <input
-                  type="radio"
-                  name="recording-mode"
-                  value={m}
-                  checked={active}
-                  onChange={() => setMode(m)}
-                  disabled={loading}
-                  className="sr-only"
-                />
-                <div className="flex items-center gap-2.5">
-                  {/* Selecionado usa o gradiente do CTA, não `bg-scriba-blue`.
+              // O campo de URL fica FORA do <label>, e não dentro do card.
+              // Um <input> dentro de um label cujo controle é o radio faz o
+              // clique no campo ser encaminhado ao radio — o foco pulava do
+              // campo de texto para o botão de opção no primeiro toque, e não
+              // dava para digitar no celular.
+              <div key={m} className="flex min-w-0 flex-col gap-2">
+                <label
+                  className={cn(
+                    "relative flex flex-col gap-3.5 rounded-2xl border p-4 text-left transition-colors",
+                    active
+                      ? "border-scriba-blue bg-scriba-blue-soft/40 shadow-[0_6px_18px_rgba(79,168,240,0.16)]"
+                      : "border-scriba-hairline bg-scriba-paper hover:border-scriba-blue/45 hover:bg-scriba-surface/60",
+                    "has-[:focus-visible]:ring-4 has-[:focus-visible]:ring-scriba-blue/25",
+                    loading ? "cursor-not-allowed opacity-70" : "cursor-pointer"
+                  )}
+                >
+                  <input
+                    type="radio"
+                    name="recording-mode"
+                    value={m}
+                    checked={active}
+                    onChange={() => setMode(m)}
+                    disabled={loading}
+                    className="sr-only"
+                  />
+                  <div className="flex items-center gap-2.5">
+                    {/* Selecionado usa o gradiente do CTA, não `bg-scriba-blue`.
                       Ícone branco sobre o azul de superfície dá 2,56:1 no claro
                       e 2,33:1 no escuro — reprova até os 3:1 que a WCAG 1.4.11
                       pede para objeto gráfico, então não era opção. O gradiente
                       resolve e ainda amarra o disco ao botão "Gravar". */}
-                  <span
-                    aria-hidden
-                    className={cn(
-                      "flex size-8 shrink-0 items-center justify-center rounded-xl transition-colors",
-                      active
-                        ? "bg-[image:var(--scriba-cta)] text-scriba-cta-ink"
-                        : "bg-scriba-surface text-scriba-ink-soft"
-                    )}
-                  >
-                    <Icon className="size-4" strokeWidth={2.2} />
-                  </span>
-                  <span className="min-w-0 flex-1 text-[15px] font-semibold text-scriba-ink">
-                    {title}
-                  </span>
-                  <span
-                    aria-hidden
-                    className={cn(
-                      "flex size-5 shrink-0 items-center justify-center rounded-full border transition-colors",
-                      active
-                        ? "border-transparent bg-[image:var(--scriba-cta)] text-scriba-cta-ink"
-                        : "border-scriba-hairline"
-                    )}
-                  >
-                    {active ? <Check className="size-3" strokeWidth={3} /> : null}
-                  </span>
-                </div>
-
-                <p className="text-pretty text-[13px] font-light leading-relaxed text-scriba-ink-soft">
-                  {description}
-                </p>
-
-                <div className="flex flex-wrap items-center justify-between gap-x-3 gap-y-2">
-                  <span className="inline-flex items-center gap-1.5 rounded-full border border-scriba-yellow/40 bg-scriba-yellow/15 px-2.5 py-0.5 text-[11px] font-medium text-scriba-ink">
-                    <span aria-hidden className="coin-hex block size-[7px] bg-scriba-yellow" />
-                    <span>
-                      <span className="text-scriba-ink-soft">Para</span> {idealFor}
-                    </span>
-                  </span>
-                  {/* Below 425px the price would crowd the "Ideal para" chip — the
-                      start button already shows the cost of the selected mode. */}
-                  <span className="inline-flex shrink-0 items-center gap-1 text-[11px] font-semibold tabular-nums text-scriba-ink-soft max-[425px]:hidden">
                     <span
                       aria-hidden
-                      className="coin-hex block h-[10.25px] w-[9px] bg-scriba-yellow"
-                    />
-                    {costPerMinute}
-                    <span className="font-medium opacity-70">/min</span>
-                  </span>
-                </div>
-              </label>
+                      className={cn(
+                        "flex size-8 shrink-0 items-center justify-center rounded-xl transition-colors",
+                        active
+                          ? "bg-[image:var(--scriba-cta)] text-scriba-cta-ink"
+                          : "bg-scriba-surface text-scriba-ink-soft"
+                      )}
+                    >
+                      <Icon className="size-4" strokeWidth={2.2} />
+                    </span>
+                    <span className="min-w-0 flex-1 text-[15px] font-semibold text-scriba-ink">
+                      {title}
+                    </span>
+                    <span
+                      aria-hidden
+                      className={cn(
+                        "flex size-5 shrink-0 items-center justify-center rounded-full border transition-colors",
+                        active
+                          ? "border-transparent bg-[image:var(--scriba-cta)] text-scriba-cta-ink"
+                          : "border-scriba-hairline"
+                      )}
+                    >
+                      {active ? <Check className="size-3" strokeWidth={3} /> : null}
+                    </span>
+                  </div>
+
+                  <p className="text-pretty text-[13px] font-light leading-relaxed text-scriba-ink-soft">
+                    {description}
+                  </p>
+
+                  <div className="flex flex-wrap items-center justify-between gap-x-3 gap-y-2">
+                    <span className="inline-flex items-center gap-1.5 rounded-full border border-scriba-yellow/40 bg-scriba-yellow/15 px-2.5 py-0.5 text-[11px] font-medium text-scriba-ink">
+                      <span aria-hidden className="coin-hex block size-[7px] bg-scriba-yellow" />
+                      <span>
+                        <span className="text-scriba-ink-soft">Para</span> {idealFor}
+                      </span>
+                    </span>
+                    {/* Below 425px the price would crowd the "Ideal para" chip — the
+                      start button already shows the cost of the selected mode. */}
+                    <span className="inline-flex shrink-0 items-center gap-1 text-[11px] font-semibold tabular-nums text-scriba-ink-soft max-[425px]:hidden">
+                      <span
+                        aria-hidden
+                        className="coin-hex block h-[10.25px] w-[9px] bg-scriba-yellow"
+                      />
+                      {costPerMinute}
+                      <span className="font-medium opacity-70">/min</span>
+                    </span>
+                  </div>
+                </label>
+              </div>
             );
           })}
         </fieldset>

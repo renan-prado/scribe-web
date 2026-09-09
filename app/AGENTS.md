@@ -38,6 +38,8 @@ Router — ver o comentário no `proxy.ts`).
 /recording/[id]/live       gravação modo live
 /recording/[id]/audio      gravação modo audio_only
 /recording/[id]/transcribe gravação modo transcript_only
+/importar                  cola o link do vídeo e cria a sessão modo youtube
+/recording/[id]/youtube    importação modo youtube: espera a legenda + resumo
 /recording/[id]/summary    sessão salva: resumo final
 /recording/[id]/transcript sessão salva transcript_only: a transcrição, e o
                            botão que gera o resumo dela sob demanda
@@ -74,6 +76,17 @@ que grava seria disparado por qualquer prefetch do router. Nenhuma das duas
 rotas cobra moedas, pela mesma razão de `hallucination-report`: quem está nos
 ajudando a melhorar o produto não paga por isso. Ver
 `src/features/feedback/AGENTS.md`.
+
+`youtube/import` é a QUARTA porta do mesmo pipeline de resumo, e a única cuja
+transcrição não veio de um microfone: ela busca a legenda do vídeo em
+`sessions.source_url`, grava como transcrição e roda resumo + releia/lembra/
+frases por cima. A ordem dentro dela é `dono → já importada? → legenda →
+duração → COBRA → resumo`, e a legenda vir ANTES da cobrança é uma inversão
+deliberada em relação a `/reprocess` e `/api/deepening` — ela é a chamada
+barata (~R$ 0,03) e é ela que diz se o vídeo é importável, então cobrar antes
+obrigaria a estornar três recusas rotineiras. A regra que aquelas rotas
+protegem continua valendo: a chamada CARA (o resumo) só roda depois do débito.
+Ver o cabeçalho da rota.
 
 `final-summary/from-transcript` é a terceira porta do MESMO pipeline de resumo:
 ela gera o primeiro resumo de uma sessão gravada no modo transcrição, que sai

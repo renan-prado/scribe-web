@@ -84,7 +84,7 @@ export function MobileBottomNav() {
         <TabLink href="/feed" label="Feed" active={current === "feed"} icon={FeedGlyph} />
         <TabLink
           href="/recordings"
-          label="Gravações"
+          label="Biblioteca"
           active={current === "recordings"}
           icon={ListGlyph}
         />

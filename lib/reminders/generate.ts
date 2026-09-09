@@ -45,7 +45,7 @@ export type GenerateRemindersInput = {
    * "reminders-reprocess" quando quem chamou foi o reprocessamento. */
   metadataRoute: Extract<
     UsageRoute,
-    "reminders" | "reminders-reprocess" | "reminders-from-transcript"
+    "reminders" | "reminders-reprocess" | "reminders-from-transcript" | "reminders-youtube"
   >;
 };
 

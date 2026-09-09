@@ -54,12 +54,26 @@ export type UsageRoute =
   // modo barato e mudaram de ideia?"; no painel de precificação ela soma com o
   // reprocessamento, que é o mesmo trabalho pelo mesmo preço.
   | "final-summary-from-transcript"
+  // Quarta rota da mesma chamada: o resumo de um vídeo do YouTube importado.
+  // Separada das outras três pelo motivo de sempre — é a única forma de o
+  // /admin/precificacao medir o custo real de uma importação contra as 25
+  // moedas que ela cobra, e esse preço é FIXO enquanto o custo cresce com a
+  // duração do vídeo. Fundida com `from-transcript`, a linha que diria "vídeo
+  // longo demais para 25" ficaria diluída na de quem mudou de ideia sobre o
+  // modo transcrição.
+  | "final-summary-youtube"
+  // A limpeza do título do vídeo (`lib/youtube/metadata.ts`). Rota própria
+  // apesar de custar trocados, porque é a única chamada de LLM do produto que
+  // roda sobre METADADO e não sobre o sermão: fundida com a do resumo, um dia
+  // alguém leria o custo por importação sem saber que há duas chamadas ali.
+  | "youtube-metadata"
   // Duas rotas para a MESMA chamada de enriquecimento, escolhidas pelo passe
   // que a disparou. Sem a segunda, metade do custo de reprocessar um resumo
   // caía na linha da gravação e o preço de `reprocess_summary` parecia baixo.
   | "summary-enrichment"
   | "summary-enrichment-reprocess"
   | "summary-enrichment-from-transcript"
+  | "summary-enrichment-youtube"
   // As três etapas de LLM do estudo (`lib/study/generate.ts`). Separadas de
   // propósito: é o que permite ver no /admin/usage quanto custa PERGUNTAR,
   // quanto custa RESPONDER e quanto custa ESCREVER — e portanto onde vale
@@ -83,9 +97,11 @@ export type UsageRoute =
   | "rereads"
   | "rereads-reprocess"
   | "rereads-from-transcript"
+  | "rereads-youtube"
   | "reminders"
   | "reminders-reprocess"
   | "reminders-from-transcript"
+  | "reminders-youtube"
   | "format-paragraphs"
   | "hallucination-report"
   // A análise diária do próprio painel (/api/admin/insights). Entra aqui, e

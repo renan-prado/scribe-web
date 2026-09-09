@@ -86,6 +86,7 @@ const KNOWN_APP_PREFIXES = [
   "/studies",
   "/profile",
   "/indicar",
+  "/importar",
   "/recording",
   "/billing",
   "/admin",

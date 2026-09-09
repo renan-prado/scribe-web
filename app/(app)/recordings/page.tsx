@@ -2,6 +2,7 @@ import { CircleDot, Mic, Trash2 } from "lucide-react";
 import type { Metadata } from "next";
 import { revalidatePath } from "next/cache";
 import { NavLink } from "@/components/NavLink";
+import { ImportYoutubeButton } from "@/features/session/components/ImportYoutubeButton";
 import { RefreshSessionsButton } from "@/features/session/components/RefreshSessionsButton";
 import { SessionsEmptyState } from "@/features/session/components/SessionsEmptyState";
 import { shortDate } from "@/features/session/lib/formatting";
@@ -16,7 +17,7 @@ import { recordingRouteFor } from "@/lib/domain/session";
 import { cn } from "@/lib/utils";
 import { SessionsBrowser } from "./SessionsBrowser";
 
-export const metadata: Metadata = { title: "Suas gravações" };
+export const metadata: Metadata = { title: "Sua biblioteca" };
 
 /**
  * Server Action é um endpoint POST próprio: esta função é chamável por quem
@@ -79,13 +80,20 @@ export default async function LibraryPage() {
           <div className="flex items-start justify-between gap-4">
             <div className="flex flex-col gap-1.5">
               <h1 className="font-heading text-2xl font-semibold leading-tight tracking-tight text-scriba-ink-strong sm:text-3xl">
-                Suas gravações
+                Sua biblioteca
               </h1>
               <p className="text-sm font-light text-scriba-ink-soft">
-                Tudo o que você ouviu e registrou com o Scriba.
+                Tudo o que você ouviu, registrou e importou com o Scriba.
               </p>
             </div>
-            {sessions.length > 0 ? <RefreshSessionsButton /> : null}
+            <div className="flex shrink-0 items-center gap-2">
+              {/* A porta da importação. Ela mora AQUI e não no diálogo de
+                  gravação porque o botão "Gravar" volta a dizer só o que faz —
+                  e este é o lugar onde a pessoa está olhando o acervo e pode
+                  querer acrescentar algo que não vai ser gravado. */}
+              <ImportYoutubeButton />
+              {sessions.length > 0 ? <RefreshSessionsButton /> : null}
+            </div>
           </div>
         )}
 
@@ -94,7 +102,7 @@ export default async function LibraryPage() {
             <div className="flex items-center gap-3 px-1">
               <span className="inline-flex items-center gap-1.5 text-xs font-semibold text-scriba-cream-accent">
                 <CircleDot className="size-3.5" />
-                Gravações em aberto
+                Em aberto
               </span>
               <span className="h-px flex-1 bg-scriba-hairline" />
               <span className="text-[11px] font-light text-scriba-ink-mute">
@@ -102,9 +110,10 @@ export default async function LibraryPage() {
               </span>
             </div>
             <p className="px-1 text-[12px] font-light leading-relaxed text-scriba-ink-soft">
-              Estas gravações nunca foram encerradas. Você pode voltar para elas e continuar, ou
-              apagá-las. Trechos de áudio que ficaram pendentes no aparelho são reenviados ao abrir
-              a sessão (até 24h depois).
+              Estas sessões nunca foram encerradas — uma gravação interrompida, ou uma importação
+              que não chegou ao fim. Você pode voltar para elas e continuar, ou apagá-las. Trechos
+              de áudio que ficaram pendentes no aparelho são reenviados ao abrir a sessão (até 24h
+              depois).
             </p>
             <ul className="grid gap-3 sm:grid-cols-2">
               {unfinished.map((s) => {

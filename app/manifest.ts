@@ -71,9 +71,9 @@ export default function manifest(): MetadataRoute.Manifest {
         icons: [{ src: "/brand/icon-192.png", sizes: "192x192", type: "image/png" }],
       },
       {
-        name: "Gravações",
-        short_name: "Gravações",
-        description: "Suas sessões salvas",
+        name: "Biblioteca",
+        short_name: "Biblioteca",
+        description: "Suas sessões salvas e importadas",
         url: "/recordings",
         icons: [{ src: "/brand/icon-192.png", sizes: "192x192", type: "image/png" }],
       },

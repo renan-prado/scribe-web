@@ -41,6 +41,38 @@ Cada página redireciona um modo que não é o dela. Sessão salva abre em
 `/recording/:id/summary`, ou `/transcript` no modo transcrição
 (`savedRouteFor`).
 
+**E um quarto modo que NÃO captura nada: `youtube`.** A pessoa cola o link em
+`/importar`, `/recording/:id/youtube` chama `/api/youtube/import`, e a legenda
+que o YouTube já tem vira a transcrição — sobre a qual roda o MESMO pipeline de
+`from-transcript` (resumo, releia, lembra, frases). Sem áudio, sem chunks, sem
+STT. Sessão importada abre em `/summary` como qualquer outra.
+
+O preço dele é o único que não é por minuto: **25 moedas por vídeo**, cobradas
+uma vez, com teto de 2 horas de duração. Cobrar por minuto seria cobrar por um
+STT que não acontece — a legenda custa ~R$ 0,03 de provedor, e o que sobra é
+exatamente a chamada de `summaryFromTranscript`. O teto existe porque o custo
+do resumo cresce com a transcrição na entrada e a receita não; `COIN_COSTS.youtubeImport`
+e `YOUTUBE_MAX_DURATION_MS` andam sempre juntos.
+
+**A legenda vem de um PROVEDOR PAGO, e isso não é preguiça.** Extrair legenda
+do YouTube a partir de um servidor deixou de funcionar: o `timedtext` pune
+reputação de IP de datacenter desde o fim de 2024, então o mesmo código roda na
+máquina de quem escreveu e devolve bot-check na Vercel. `SUPADATA_API_KEY` é
+opcional — sem ela só `/api/youtube/import` responde 503. Ver
+`lib/youtube/supadata.ts`.
+
+**Ele NÃO está no diálogo "Gravar".** Aquele diálogo oferece `CAPTURE_MODES` —
+os três que ligam o microfone e cobram por minuto. O YouTube entra pela
+Biblioteca (`/recordings` → "Importar" → `/importar`), e a separação é o que
+permite ao botão "Gravar" continuar dizendo só o que faz e ao preço não precisar
+de duas unidades no mesmo rodapé.
+
+**O título do vídeo passa por um `mini` antes de virar título da sessão.** Um
+título de canal de igreja traz pregador, tema, data e hora colados por um
+separador que pode ser a LETRA `I` — e `author_name` do oEmbed é a IGREJA, não
+o autor. `lib/youtube/metadata.ts` separa os três; falha dele devolve o título
+cru, e em nenhum caminho o canal vira `speaker_name`. Ver `docs/youtube.md` §3.
+
 **O modo transcrição não gera resumo, mas isso deixou de ser definitivo.** A
 página salva oferece "Gerar resumo" (`/api/final-summary/from-transcript`, 15
 moedas, uma vez), que roda o mesmo pipeline do `final-summary` sobre o texto já

@@ -2,6 +2,7 @@
 
 import { BookOpen, Captions, FileText, Loader2, MapPin, Mic, SearchX } from "lucide-react";
 import { useMemo, useState } from "react";
+import { YoutubeIcon } from "@/components/icons/YoutubeIcon";
 import { NavLink } from "@/components/NavLink";
 import { CollectionSearch, FACET_ALL } from "@/features/session/components/CollectionSearch";
 import { useContentSearch } from "@/features/session/hooks/useContentSearch";
@@ -208,6 +209,10 @@ export function SessionsBrowser({
                 // tenham ganhado um sob demanda, e então elas abrem no resumo
                 // como qualquer outra.
                 const isTranscriptOnly = s.mode === "transcript_only";
+                // Importada do YouTube: nunca passou por microfone nenhum, e o
+                // cartão precisa dizer isso — o ícone de mic e a duração lidos
+                // juntos sugerem uma gravação que a pessoa fez, e ela não fez.
+                const isYoutube = s.mode === "youtube";
                 const hasSummary = summarized.has(s.id);
                 const href = `/recording/${s.id}/${savedRouteFor(s.mode, hasSummary)}`;
                 // A referência que casou. Aparece mesmo quando o cartão já
@@ -247,7 +252,9 @@ export function SessionsBrowser({
                               botão, e o hover de lá acende um `box-shadow`
                               que não faz sentido num ícone. */}
                           <div className="flex size-9 shrink-0 items-center justify-center rounded-lg bg-[image:var(--scriba-cta)] text-scriba-cta-ink">
-                            {isTranscriptOnly && !hasSummary ? (
+                            {isYoutube ? (
+                              <YoutubeIcon className="size-4" />
+                            ) : isTranscriptOnly && !hasSummary ? (
                               <Captions className="size-4" />
                             ) : (
                               <Mic className="size-4" />
@@ -318,6 +325,18 @@ export function SessionsBrowser({
                               >
                                 <Captions className="size-3" />
                                 Transcrição
+                              </span>
+                            </>
+                          ) : null}
+                          {isYoutube ? (
+                            <>
+                              <span className="size-[3px] rounded-full bg-scriba-ink-mute/60" />
+                              <span
+                                title="Importada de um vídeo do YouTube"
+                                className="inline-flex items-center gap-1 rounded-full bg-scriba-cream px-2 py-0.5 text-[10px] font-semibold uppercase tracking-wider text-scriba-cream-accent"
+                              >
+                                <YoutubeIcon className="size-3" />
+                                YouTube
                               </span>
                             </>
                           ) : null}

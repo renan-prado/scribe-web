@@ -129,6 +129,9 @@ export async function requestCreateSession(body: {
   speakerName?: string | null;
   speakerLocation?: string | null;
   mode?: SessionMode;
+  /** Só o modo youtube manda. A URL do vídeo, validada antes por
+   * `parseYoutubeUrl` — a rota revalida com a mesma régua. */
+  sourceUrl?: string | null;
 }): Promise<{ id: string } | { error: string }> {
   try {
     const res = await fetch("/api/sessions", {
@@ -392,5 +395,38 @@ export async function uploadChunk(input: {
     return { ok: true, text: body.text ?? "", suspect: body.suspect === true };
   } catch (err) {
     return { ok: false, message: (err as Error).message ?? "network error" };
+  }
+}
+
+/**
+ * POST /api/youtube/import. Busca a legenda do vídeo em `source_url`, cobra as
+ * moedas e roda o resumo inteiro. A resposta demora — é a mesma espera de um
+ * resumo final sobre uma pregação de uma hora.
+ *
+ * Devolve o `error` cru da rota em vez de uma frase pronta: quem sabe traduzir
+ * `no_captions` em português é a TELA, que tem espaço para explicar o que
+ * fazer, e o mesmo código serve ao botão de tentar de novo.
+ */
+export async function requestYoutubeImport(body: {
+  sessionId: string;
+}): Promise<{ ok: true } | { ok: false; error: string; status: number }> {
+  try {
+    const res = await fetch("/api/youtube/import", {
+      method: "POST",
+      headers: { "content-type": "application/json" },
+      body: JSON.stringify(body),
+    });
+    if (res.ok) return { ok: true };
+
+    const raw = (await res.json().catch(() => ({}))) as { error?: string };
+    // 409 `session_already_imported` NÃO é erro para quem chama: significa que
+    // um POST anterior chegou ao fim e a sessão está pronta. A página recarrega
+    // depois de uma queda de rede e cai exatamente aqui — tratá-lo como falha
+    // mostraria um erro em cima de uma importação que deu certo.
+    if (res.status === 409 && raw?.error === "session_already_imported") return { ok: true };
+
+    return { ok: false, error: raw?.error || `http_${res.status}`, status: res.status };
+  } catch (err) {
+    return { ok: false, error: (err as Error).message || "network_error", status: 0 };
   }
 }

@@ -18,6 +18,7 @@ saber ao editar código ficam nos `AGENTS.md` de cada pasta, não aqui.
 | Como o painel sabe quanto ganhamos, gastamos e devemos? | [`financeiro.md`](./financeiro.md) |
 | Por que o estudo entrega pouco, e o que fazer? | [`estudo-v2.md`](./estudo-v2.md) |
 | Por que a transcrição erra, e o que já foi tentado? | [`transcricao.md`](./transcricao.md) |
+| Por que importar do YouTube custa 25 e não um preço por minuto? | [`youtube.md`](./youtube.md) |
 | Qual plano libera qual funcionalidade? | [`estudo-v2.md` §8](./estudo-v2.md) e `lib/entitlements/features.ts` |
 | Como o app fala com a shell React Native? | [`react-native-bridge.md`](./react-native-bridge.md) |
 | O que a Apple exige para aprovar o app na loja? | [`app-store-ios.md`](./app-store-ios.md) |
@@ -56,6 +57,15 @@ saber ao editar código ficam nos `AGENTS.md` de cada pasta, não aqui.
   que foi tentado e NÃO funcionou (limpar o áudio, revisar com LLM, modelos de
   áudio-chat). Leitura obrigatória antes de mexer em `/api/transcribe`,
   `lib/vocabulario.ts`, `lib/transcription/*` ou `lib/recorder.ts`.
+- **[`youtube.md`](./youtube.md)** — o modo que não grava: por que a legenda vem
+  de um provedor PAGO (o `timedtext` bloqueia IP de datacenter desde 2024, e as
+  três alternativas óbvias estão descartadas com o motivo de cada uma), por que
+  só aceitamos legenda que já existe, por que o título do vídeo precisa de uma
+  chamada de LLM para ser separado em pregação / pregador / igreja (o separador
+  do caso real era a LETRA `I`, e o canal não é o autor), a conta que fixou as
+  25 moedas por vídeo com teto de 2h, e a canibalização do Modo Resumo que foi
+  assumida de olhos abertos. Leitura obrigatória antes de mexer no preço, no
+  teto ou em `lib/youtube/*`. **Status: implementado.**
 - **[`financeiro.md`](./financeiro.md)** — o desenho do `/admin/financeiro`: o
   que já é medido e por isso NÃO se digita, o modelo de dados das cinco tabelas,
   a separação entre competência e caixa, o modelo de projeção com crescimento e

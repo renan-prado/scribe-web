@@ -112,6 +112,15 @@ const schema = z.object({
   OPENAI_REREADS_MODEL: z.string().default("gpt-4o-mini"),
   OPENAI_REMINDERS_MODEL: z.string().default("gpt-4o-mini"),
   OPENAI_FORMAT_MODEL: z.string().default("gpt-4o-mini"),
+  /**
+   * Separa o título de um vídeo do YouTube em pregação / pregador / igreja.
+   *
+   * `mini` e não um modelo grande porque a tarefa é EXTRAÇÃO, não julgamento:
+   * tudo que a resposta precisa conter já está na linha de entrada, e o prompt
+   * traz cinco exemplos resolvidos. O que o modelo faz aqui é reconhecer que
+   * um `I` entre espaços virou separador — e para isso um mini basta.
+   */
+  OPENAI_YOUTUBE_METADATA_MODEL: z.string().default("gpt-4o-mini"),
   /** Auditoria do alerta de alucinação. Julga se um card se sustenta na
    * transcrição — evento raro e de alto impacto, então vale o modelo bom. */
   OPENAI_HALLUCINATION_MODEL: z.string().default("gpt-4o"),
@@ -142,6 +151,23 @@ const schema = z.object({
   /** Base absoluta para as URLs de retorno do Checkout. Em produção é
    * https://scriba.cc; na Vercel cai no VERCEL_URL; local, no localhost. */
   APP_URL: z.string().url().optional(),
+  /**
+   * Chave da Supadata, o provedor de legendas do modo YouTube.
+   *
+   * **OPCIONAL pelo mesmo motivo das do Stripe:** o app tem de subir num
+   * ambiente sem ela (dev local recém-clonado, preview, primeiro deploy). Quem
+   * a consome é `lib/youtube/supadata.ts`, que devolve `provider_unavailable`
+   * e faz `/api/youtube/import` responder 503 — em vez de derrubar o processo
+   * inteiro no import por causa de um modo que a maioria das sessões não usa.
+   *
+   * Ela existe porque extrair legenda do YouTube A PARTIR DE UM SERVIDOR não
+   * funciona mais: desde o fim de 2024 o `timedtext` pune reputação de IP de
+   * datacenter, e o mesmo código que roda na máquina de quem escreveu devolve
+   * 429 e página de bot-check na Vercel. As alternativas eram proxy residencial
+   * próprio (infra + manutenção do parser a cada mudança de formato) ou um
+   * provedor hospedado. Ver `lib/youtube/supadata.ts`.
+   */
+  SUPADATA_API_KEY: z.string().min(1).optional(),
   /** Guarda de /api/billing/sweep (varredura periódica de pagamentos). Na
    * Vercel, basta a env var existir: o cron envia
    * `Authorization: Bearer <CRON_SECRET>` sozinho. Sem ela, a rota responde
@@ -165,6 +191,7 @@ const parsed = schema.safeParse({
   OPENAI_REREADS_MODEL: process.env.OPENAI_REREADS_MODEL,
   OPENAI_REMINDERS_MODEL: process.env.OPENAI_REMINDERS_MODEL,
   OPENAI_FORMAT_MODEL: process.env.OPENAI_FORMAT_MODEL,
+  OPENAI_YOUTUBE_METADATA_MODEL: process.env.OPENAI_YOUTUBE_METADATA_MODEL,
   OPENAI_HALLUCINATION_MODEL: process.env.OPENAI_HALLUCINATION_MODEL,
   OPENAI_ADMIN_INSIGHTS_MODEL: process.env.OPENAI_ADMIN_INSIGHTS_MODEL,
   SUPABASE_SERVICE_ROLE_KEY: process.env.SUPABASE_SERVICE_ROLE_KEY,
@@ -181,6 +208,14 @@ const parsed = schema.safeParse({
         ? `https://${process.env.VERCEL_URL}`
         : "http://localhost:3000"),
   CRON_SECRET: process.env.CRON_SECRET,
+  // `|| undefined` e não o valor cru: esta variável nasce VAZIA no `.env.dev`
+  // de quem clona o repositório e no painel da Vercel de quem ainda não criou
+  // conta no provedor. Para o Zod, `""` é um valor PRESENTE que falha o
+  // `.min(1)` — `.optional()` só perdoa `undefined` —, e o efeito é o pior
+  // possível: o boot inteiro morre com "Too small" por causa de um modo que a
+  // maioria das sessões não usa. Linha em branco significa "não configurado",
+  // que é exatamente o caso que o `.optional()` existe para cobrir.
+  SUPADATA_API_KEY: process.env.SUPADATA_API_KEY || undefined,
 });
 
 if (!parsed.success) {
