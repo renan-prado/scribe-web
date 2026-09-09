@@ -1,6 +1,7 @@
 import type { Metadata } from "next";
 import { InstallAppCard } from "@/components/InstallApp";
 import { NavLink } from "@/components/NavLink";
+import { InviteFriendCard } from "@/features/referrals/components/InviteFriendCard";
 import { DeepenButton } from "@/features/session/components/DeepenButton";
 import { PaginatedFeed } from "@/features/session/components/PaginatedFeed";
 import { SessionsEmptyState } from "@/features/session/components/SessionsEmptyState";
@@ -151,6 +152,13 @@ export default async function HomePage() {
               <div className="py-2">
                 <div className="h-px bg-scriba-hairline" />
               </div>
+              {/* O convite para indicar um amigo. Fica abaixo da reflexão e
+                  acima do feed porque é onde a pessoa já terminou de ler o que
+                  veio buscar. Aparece "de tempos em tempos": dispensado, ele
+                  tira uma soneca de duas semanas — ver `InviteFriendCard`. Só
+                  para quem já gravou alguma coisa: convidar alguém para um
+                  produto que a gente ainda não usou é pedir demais. */}
+              <InviteFriendCard />
               <PaginatedFeed
                 initialItems={feedPage.items}
                 initialHasMore={feedPage.hasMore}

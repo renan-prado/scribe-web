@@ -20,10 +20,12 @@ type Props = {
   link: string;
   code: string;
   bonusCoins: number;
+  /** Moedas que o PARCEIRO ganha por cadastro. 0 esconde a frase. */
+  rewardCoins: number;
   ratePct: number;
 };
 
-export function ReferralLinkCard({ link, code, bonusCoins, ratePct }: Props) {
+export function ReferralLinkCard({ link, code, bonusCoins, rewardCoins, ratePct }: Props) {
   return (
     <section className="flex flex-col gap-4 rounded-2xl border border-scriba-hairline-soft bg-scriba-paper p-5">
       <div className="flex flex-col gap-1">
@@ -36,6 +38,16 @@ export function ReferralLinkCard({ link, code, bonusCoins, ratePct }: Props) {
             {ratePct.toLocaleString("pt-BR")}%
           </strong>{" "}
           da primeira mensalidade de cada pessoa que assinar.
+          {rewardCoins > 0 ? (
+            <>
+              {" "}
+              E{" "}
+              <strong className="font-medium text-scriba-ink-strong">
+                +{rewardCoins} moedas para você
+              </strong>{" "}
+              a cada cadastro, mesmo os que ainda não assinaram.
+            </>
+          ) : null}
         </p>
       </div>
 

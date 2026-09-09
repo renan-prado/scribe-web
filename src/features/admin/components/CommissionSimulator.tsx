@@ -29,6 +29,8 @@ import { cn } from "@/lib/utils";
 type Props = {
   rateBps: number;
   bonusCoins: number;
+  /** Moedas que o PARCEIRO ganha por cadastro. Entram na conta do mês 1. */
+  rewardCoins: number;
   /** Custo medido de 1.000 moedas, em centavos de BRL. Vem do /admin. */
   costPerThousandCoinsCents: number;
   /** Conversão real deste parceiro, quando já houver dados. */
@@ -38,6 +40,7 @@ type Props = {
 export function CommissionSimulator({
   rateBps,
   bonusCoins,
+  rewardCoins,
   costPerThousandCoinsCents,
   measuredConversionRate,
 }: Props) {
@@ -54,6 +57,7 @@ export function CommissionSimulator({
       rateBps,
       costPerThousandCoinsCents,
       bonusCoins,
+      rewardCoins,
       conversionRate,
       bonusUsageRate: ASSUMED_BONUS_USAGE_RATE,
     }),

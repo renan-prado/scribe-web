@@ -679,6 +679,23 @@
     transition: filter 0.18s ease, box-shadow 0.18s ease;
     &:hover { filter: brightness(0.95); box-shadow: 0 14px 30px var(--scriba-cta-shadow); }
   }
+  /* A pílula do hero, antes de saber se a visita veio de uma indicação.
+     Quem decide é o `HeroEyebrowScript`, que marca `data-scriba-ref` no
+     `<html>` ANTES do primeiro paint; estas regras são o efeito dessa decisão.
+
+     O `display` mora AQUI, e não em utilitário do Tailwind, de propósito:
+     utilitário vive numa @layer posterior e venceria estas regras por ordem de
+     camada, independentemente de especificidade — a mesma armadilha anotada
+     em `.lp-cta-soft` logo abaixo. Um `contents` vindo de utilitário no
+     `.lp-eyebrow-idle` deixaria a frase padrão visível DEBAIXO do esqueleto.
+
+     Sem o atributo (a esmagadora maioria das visitas, e todo mundo sem JS): a
+     frase de sempre, no primeiro quadro, sem esqueleto e sem requisição. */
+  .lp-eyebrow-idle { display: contents; }
+  .lp-eyebrow-pending { display: none; }
+  [data-scriba-ref] .lp-eyebrow-idle { display: none; }
+  [data-scriba-ref] .lp-eyebrow-pending { display: inline-flex; }
+
   .lp-cta-yellow {
     transition: filter 0.18s ease, box-shadow 0.18s ease;
     &:hover { filter: brightness(0.96); box-shadow: 0 14px 30px rgba(0,0,0,0.28); }

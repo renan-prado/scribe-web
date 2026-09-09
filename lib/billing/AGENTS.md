@@ -134,6 +134,13 @@ aprofundar e reprocessar são cobranças únicas dentro da rota. O cliente nunca
 envia valor: manda um `reason` de `CHARGE_REASONS` e o servidor resolve o
 custo em `COIN_COST_BY_REASON`.
 
+Os motivos de CRÉDITO em `GrantReason` (`lib/db/billing.ts`) incluem os três da
+indicação: `referral_signup` e `referral_subscription` (as duas pontas do
+programa aberto, ambas para quem INDICA) e `partner_signup_reward` (a do
+parceiro, que acumula antes de virar saldo). Todos passam por `grant_coins`,
+com `external_ref` derivado do usuário INDICADO — é o que torna "uma vez por
+pessoa, para sempre" uma constraint em vez de um `if`.
+
 `COIN_RING_REFERENCE` (300) não é o brinde de cadastro (50) de propósito: com
 um plano que enche a conta com 1.000+, ancorar o medidor em 50 o deixaria
 cravado em 100% para sempre.
@@ -141,10 +148,17 @@ cravado em 100% para sempre.
 O que acontece quando o saldo acaba NO MEIO de uma gravação está em
 `src/features/session/AGENTS.md` — a captura congela, não encerra.
 
-## Comissão de parceiro
+## Comissão de parceiro e recompensa de indicação
 
-Ela nasce DENTRO de `fulfill.ts`, no `creditInvoice`. O porquê e as demais
-regras estão em `src/features/partners/AGENTS.md`.
+As duas nascem DENTRO de `fulfill.ts`, no `creditInvoice`, e pela mesma razão:
+é por ali que passam os quatro caminhos de crédito. Cada uma no seu try/catch —
+falha em remunerar quem indicou não pode derrubar o crédito de moedas de quem
+PAGOU, nem devolver 5xx ao Stripe por um problema que não é do comprador.
+
+Uma pessoa nunca gera as duas: a atribuição é exclusiva (migração 0045), então
+`award_referral_subscription` devolve 0 para todo assinante que veio de
+parceiro. O porquê e as demais regras estão em
+`src/features/partners/AGENTS.md` e `src/features/referrals/AGENTS.md`.
 
 ## Rotas e proxy
 

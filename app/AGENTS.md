@@ -246,6 +246,23 @@ numa página cujo conteúdo é idêntico para todo anônimo. O `no-store` ainda
 derrubava o bfcache, então voltar para a LP recarregava tudo. O redirect de
 quem já está logado mora no `proxy.ts`, que já tem o usuário resolvido.
 
+**Quando a LP precisar mesmo se personalizar, o caminho é o do `HeroEyebrow`.**
+O selo "indicado por Fulano" que substitui a frase de efeito do hero depende de
+um cookie — e resolvê-lo no servidor custaria tudo que o parágrafo acima
+descreve. O desenho: as rotas de link gravam um cookie-PISTA legível por JS
+(`scriba_ref_hint=1`, sem nome nem código dentro), um componente cliente só
+consulta `/api/referral/active` SE a pista existir, e a resposta é `no-store`.
+Assim os 99% que não vieram de link nenhum não pagam requisição alguma, e o
+HTML continua saindo da CDN. Quem veio indicado não vê a frase padrão em momento
+algum: um script antes do primeiro paint (irmão do `ThemeScript`) marca o
+`<html>`, e o CSS mostra um esqueleto até a resposta chegar. A pílula tem
+altura fixa nos três estados, então nada salta.
+
+Quem garante que a pista existe é o `healReferralHint` do `proxy.ts`: um cookie
+novo não retroage aos 30 dias de atribuições que já estavam em circulação, e
+sem essa cura o selo não aparecia para exatamente quem já tinha clicado num
+link. Detalhes em `src/features/referrals/AGENTS.md`.
+
 **A LP não importa componente `"use client"` de `src/features/`.** As telas
 dentro dos mockups de celular são markup estático em
 `src/shared/components/LandingMocks.tsx`. Antes elas montavam o `<Feed>` e o
@@ -257,7 +274,12 @@ server component (o `BlockRenderer`, por exemplo) continua liberado: ele não
 custa bundle. O preço — mexer no `FeedItemCard` não atualiza mais a LP — é
 aceito de propósito: as duas telas mudam por razões diferentes.
 
-**Imagens:** nada de `<img>` para host externo. Sete avatares de
+**Imagens:** nada de `<img>` para host externo — e a exceção aparente confirma
+a regra: a foto de quem indicou (`lh3.googleusercontent.com`) entra por
+`next/image` com `remotePatterns` no `next.config.ts`, ou seja, servida
+otimizada e redimensionada A PARTIR DO NOSSO domínio, com width/height. Um host
+só, e fechado: `remotePatterns` frouxo transforma `/_next/image` em proxy de
+imagem aberto para qualquer um lavar tráfego pela nossa conta. Sete avatares de
 `mockmind-api.uifaces.co` (1024×1024 para desenhar círculos de 34px) custavam
 724 KB, e o React 19 ainda os promovia a `<link rel="preload" as="image">`,
 disputando a banda inicial com o CSS. Hoje são sete WebP de 136px em

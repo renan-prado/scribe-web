@@ -24,8 +24,8 @@ aconteceu com `DEFAULT_PARTNER_MONTHLY_COINS`, que teve de mudar de
 
 Client-safe de propósito: `coins/pricing.ts`, `coins/billable.ts`,
 `coins/economics.ts`, `billing/plans.ts`, `entitlements/features.ts`,
-`partners/economics.ts`, `br/documento.ts`,
-`domain/*` (tipos e schemas), `bible/detect.ts`, `bible/guard.ts`,
+`partners/economics.ts`, `referrals/economics.ts`, `referrals/cookies.ts`,
+`br/documento.ts`, `domain/*` (tipos e schemas), `bible/detect.ts`, `bible/guard.ts`,
 `app-version.ts`, `deploy.ts`, `seo.ts`, `utils.ts`, `vocabulario.ts`,
 `chunk-store.ts` (IndexedDB, só roda no browser).
 

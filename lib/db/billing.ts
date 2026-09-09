@@ -164,7 +164,17 @@ export type GrantReason =
   | "partner_bonus"
   // Mesada mensal do PRÓPRIO parceiro, para ele conseguir usar o produto que
   // divulga. Renovada por check preguiçoso — ver lib/partners/allowance.ts.
-  | "partner_allowance";
+  | "partner_allowance"
+  // As duas pontas do "Indique a um amigo" (migração 0045), ambas para quem
+  // INDICA — o convidado não ganha nada além das 50 de boas-vindas, e é isso
+  // que mantém o link do parceiro como a melhor oferta da casa.
+  | "referral_signup"
+  | "referral_subscription"
+  // A recompensa por cadastro do PARCEIRO. Diferente das duas de cima, ela
+  // ACUMULA antes de virar moeda: `partners.user_id` nasce nulo, então no
+  // momento do cadastro do indicado pode não haver conta para creditar. Ver
+  // `flush_partner_signup_rewards`.
+  | "partner_signup_reward";
 
 /**
  * ÚNICA porta de crédito da aplicação.

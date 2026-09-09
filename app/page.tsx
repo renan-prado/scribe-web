@@ -11,6 +11,8 @@ import avatar5 from "@/shared/assets/avatars/avatar-5.webp";
 import avatar6 from "@/shared/assets/avatars/avatar-6.webp";
 import avatar7 from "@/shared/assets/avatars/avatar-7.webp";
 import { ScribaMark } from "@/shared/brand";
+import { HeroEyebrow } from "@/shared/components/HeroEyebrow";
+import { HeroEyebrowScript } from "@/shared/components/HeroEyebrowScript";
 import { LandingFooter, LandingHeader } from "@/shared/components/LandingChrome";
 import { LandingCta } from "@/shared/components/LandingCta";
 import { LandingJsonLd } from "@/shared/components/LandingJsonLd";
@@ -100,12 +102,18 @@ function Hero() {
       <div className="pointer-events-none absolute -bottom-[120px] -left-[160px] hidden h-[520px] w-[520px] rounded-full bg-[radial-gradient(circle,rgba(248,198,75,.16)_0%,rgba(248,198,75,0)_70%)] lg:block" />
       <div className="relative mx-auto flex max-w-[1200px] flex-col gap-10 px-5 pb-2 pt-[calc(var(--lp-header-h)+2.25rem)] sm:px-10 lg:grid lg:grid-cols-[minmax(0,1fr)_430px] lg:gap-14 lg:pb-24 lg:pt-[calc(var(--lp-header-h)+5.5rem)]">
         <div className="flex min-w-0 flex-col gap-4 lg:gap-6">
-          <div className="inline-flex items-center gap-2 self-start rounded-[22px] border border-scriba-hairline bg-scriba-paper px-3.5 py-[7px] pl-[9px] shadow-[0_4px_12px_rgba(79,168,240,.1)]">
-            <div className="h-[5px] w-2.5 rounded-[3px] bg-scriba-yellow" />
-            <div className="text-[10.5px] font-semibold tracking-[.03em] text-scriba-ink-soft">
-              Ouça, relembre e coloque em prática.
-            </div>
-          </div>
+          {/* A pílula é um componente CLIENTE porque ela se personaliza para
+              quem chegou por um link de indicação ("Indicado por Fulano", com
+              foto) — e a LP não pode ler cookie sem deixar de ser estática.
+              Ver o cabeçalho de `HeroEyebrow`. Não arrasta bundle: é um
+              componente de `src/shared/`, sem nada de `src/features/`.
+
+              O script vem ANTES dela no documento, e a ordem é o ponto: ele
+              roda enquanto o parser ainda não chegou na pílula, então o estado
+              inicial (frase ou esqueleto) já está decidido no primeiro paint.
+              Mesmo padrão do `ThemeScript`. */}
+          <HeroEyebrowScript />
+          <HeroEyebrow />
           <h1 className="text-pretty text-[36px] font-semibold leading-[1.08] tracking-[-.025em] text-scriba-ink-strong lg:text-[60px] lg:leading-[1.06]">
             O sermão não termina quando você sai da igreja.
           </h1>

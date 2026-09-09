@@ -26,6 +26,7 @@ import type { AdminPartnerWithStats } from "@/lib/db/admin/partners";
 import {
   DEFAULT_COMMISSION_BPS,
   DEFAULT_PARTNER_MONTHLY_COINS,
+  DEFAULT_PARTNER_SIGNUP_REWARD_COINS,
   DEFAULT_SIGNUP_BONUS_COINS,
 } from "@/lib/partners/economics";
 import { normalizeHandle, SOCIAL_LABELS, SOCIAL_NETWORKS } from "@/lib/partners/socials";
@@ -87,6 +88,9 @@ export function PartnerDialog({ partner, costPerThousandCoinsCents, onClose, onS
   const [bonusCoins, setBonusCoins] = useState(
     String(partner?.signupBonusCoins ?? DEFAULT_SIGNUP_BONUS_COINS)
   );
+  const [rewardCoins, setRewardCoins] = useState(
+    String(partner?.signupRewardCoins ?? DEFAULT_PARTNER_SIGNUP_REWARD_COINS)
+  );
   const [monthlyCoins, setMonthlyCoins] = useState(
     String(partner?.monthlyCoins ?? DEFAULT_PARTNER_MONTHLY_COINS)
   );
@@ -140,6 +144,7 @@ export function PartnerDialog({ partner, costPerThousandCoinsCents, onClose, onS
         pixKey: pixKey.trim() || null,
         commissionRateBps: rateBps,
         signupBonusCoins: bonus,
+        signupRewardCoins: Math.max(0, Math.round(Number(rewardCoins || 0))),
         monthlyCoins: Math.max(0, Math.round(Number(monthlyCoins || 0))),
         bonusBudgetCoins: budget.trim() ? Math.max(0, Math.round(Number(budget))) : null,
         status,
@@ -295,11 +300,30 @@ export function PartnerDialog({ partner, costPerThousandCoinsCents, onClose, onS
                 placeholder="sem teto"
               />
             </Field>
+            {/* O "Teto de bônus" ao lado NÃO limita este campo: ele existe
+                para conter o custo do brinde ao INDICADO. Misturar as duas
+                contas faria um orçamento estourado calar a remuneração do
+                parceiro sem que ele entendesse por quê. Ver a migração 0045. */}
+            <Field
+              label="Moedas ao parceiro por cadastro"
+              id="p-reward"
+              hint="Cai na conta dele na próxima visita ao app. 0 = desliga."
+            >
+              <Input
+                id="p-reward"
+                type="number"
+                min={0}
+                step={10}
+                value={rewardCoins}
+                onChange={(e) => setRewardCoins(e.target.value)}
+              />
+            </Field>
           </div>
 
           <CommissionSimulator
             rateBps={rateBps}
             bonusCoins={bonus}
+            rewardCoins={Math.max(0, Math.round(Number(rewardCoins || 0)))}
             costPerThousandCoinsCents={costPerThousandCoinsCents}
             measuredConversionRate={measuredConversion}
           />

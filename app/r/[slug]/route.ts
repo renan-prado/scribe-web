@@ -1,16 +1,18 @@
 import { type NextRequest, NextResponse } from "next/server";
 import { recordPartnerClick } from "@/lib/db/partners";
 import { createLogger } from "@/lib/log";
+import { enforceRateLimit, RATE_LIMITS } from "@/lib/rate-limit";
 import {
   encodeRef,
   normalizeSlug,
   REF_COOKIE,
   REF_COOKIE_MAX_AGE,
+  REF_HINT_COOKIE,
   refCookieOptions,
+  refHintCookieOptions,
   VISIT_COOKIE,
   VISIT_COOKIE_MAX_AGE,
-} from "@/lib/partners/cookies";
-import { enforceRateLimit, RATE_LIMITS } from "@/lib/rate-limit";
+} from "@/lib/referrals/cookies";
 
 const log = createLogger("partners/r");
 
@@ -55,7 +57,17 @@ export async function GET(request: NextRequest, ctx: { params: Promise<{ slug: s
   // A indicação sobrevive 30 dias e é RENOVADA a cada visita: quem acompanha
   // o parceiro e clica de novo antes de decidir não deve perder a atribuição
   // por causa do relógio do primeiro clique.
-  response.cookies.set(REF_COOKIE, encodeRef(slug, "link"), refCookieOptions(REF_COOKIE_MAX_AGE));
+  response.cookies.set(
+    REF_COOKIE,
+    encodeRef(slug, "link", "partner"),
+    refCookieOptions(REF_COOKIE_MAX_AGE)
+  );
+
+  // A pista que o selo "indicado por" do hero da landing page procura. Ela não
+  // carrega nada — é um "1" — e existe só para que os outros 99% dos
+  // visitantes, que não vieram de link nenhum, não paguem uma requisição para
+  // ouvir "não há indicação". Ver `REF_HINT_COOKIE`.
+  response.cookies.set(REF_HINT_COOKIE, "1", refHintCookieOptions(REF_COOKIE_MAX_AGE));
 
   // Contagem de cliques. O redirect JÁ está montado: daqui para baixo é tudo
   // métrica, e nada pode impedir a pessoa de chegar na landing page.

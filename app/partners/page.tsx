@@ -90,6 +90,7 @@ export default async function PartnerDashboardPage() {
               link={link}
               code={partner.slug}
               bonusCoins={partner.signupBonusCoins}
+              rewardCoins={partner.signupRewardCoins}
               ratePct={partner.commissionRateBps / 100}
             />
 
@@ -123,6 +124,26 @@ export default async function PartnerDashboardPage() {
               assinatura daqui a duas semanas. O mês em curso quase sempre parece menor do que vai
               ser.
             </Callout>
+
+            {/* As moedas por cadastro. Ficam ao lado da mesada porque são a
+                mesma promessa — "você não fica na mão" —, e separadas dela
+                porque a mesada é cortesia fixa e esta é resultado do trabalho
+                dele. Some quando o parceiro não tem essa condição no acordo. */}
+            {partner.signupRewardCoins > 0 ? (
+              <section className="flex items-start gap-3 rounded-2xl border border-scriba-hairline-soft bg-scriba-paper p-5">
+                <CoinMark size={22} />
+                <div className="flex flex-col gap-0.5">
+                  <h2 className="text-[13.5px] font-semibold text-scriba-ink-strong">
+                    {INT.format(summary.signupRewardCoins)} moedas ganhas por cadastro
+                  </h2>
+                  <p className="text-[12px] font-light leading-[1.5] text-scriba-ink-soft">
+                    São {INT.format(partner.signupRewardCoins)} moedas para você a cada pessoa que
+                    cria a conta pelo seu link — antes e independentemente de ela assinar. Caem no
+                    seu saldo quando você abre o app.
+                  </p>
+                </div>
+              </section>
+            ) : null}
 
             {partner.monthlyCoins > 0 ? (
               <section className="flex items-start gap-3 rounded-2xl border border-scriba-hairline-soft bg-scriba-cream p-5">

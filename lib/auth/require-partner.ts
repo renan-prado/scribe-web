@@ -1,6 +1,7 @@
 import "server-only";
 import { cache } from "react";
 import { escapeLikeValue } from "@/lib/db/like";
+import { flushPartnerSignupRewards } from "@/lib/db/referrals";
 import { createLogger } from "@/lib/log";
 import { ensurePartnerAllowance } from "@/lib/partners/allowance";
 import { createAdminClient } from "@/lib/supabase/admin";
@@ -41,12 +42,13 @@ export type CurrentPartner = {
   displayName: string;
   commissionRateBps: number;
   signupBonusCoins: number;
+  signupRewardCoins: number;
   monthlyCoins: number;
   pixKey: string | null;
 };
 
 const SELECT =
-  "id, user_id, slug, display_name, commission_rate_bps, signup_bonus_coins, monthly_coins, allowance_month, pix_key";
+  "id, user_id, slug, display_name, commission_rate_bps, signup_bonus_coins, signup_reward_coins, monthly_coins, allowance_month, pix_key";
 
 export const getCurrentPartner = cache(async (): Promise<CurrentPartner | null> => {
   const user = await getAuthUser();
@@ -117,12 +119,23 @@ export const getCurrentPartner = cache(async (): Promise<CurrentPartner | null> 
     allowanceMonth: (data.allowance_month as string | null) ?? null,
   });
 
+  // E, no mesmo caminho preguiçoso e pelo mesmo motivo, as moedas que ele
+  // ganhou por cadastro (migração 0045). Elas ACUMULAM em vez de serem
+  // creditadas na hora porque `partners.user_id` nasce nulo — o parceiro é
+  // cadastrado antes de existir como conta, e pode divulgar o link antes do
+  // primeiro login. Não há perda em esperar: moeda só serve dentro do app.
+  //
+  // A função nunca lança, como a mesada. Falhar em creditar não pode derrubar
+  // a navegação de quem só queria abrir o feed.
+  await flushPartnerSignupRewards(data.id, user.id);
+
   return {
     id: data.id,
     slug: data.slug,
     displayName: data.display_name,
     commissionRateBps: data.commission_rate_bps,
     signupBonusCoins: data.signup_bonus_coins,
+    signupRewardCoins: data.signup_reward_coins ?? 0,
     monthlyCoins: data.monthly_coins ?? 0,
     pixKey: data.pix_key,
   };

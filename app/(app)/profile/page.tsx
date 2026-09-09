@@ -1,4 +1,12 @@
-import { AtSign, CalendarClock, LogOut, User as UserIcon } from "lucide-react";
+import {
+  AtSign,
+  CalendarClock,
+  ChevronRight,
+  LogOut,
+  User as UserIcon,
+  UserPlus,
+} from "lucide-react";
+import Link from "next/link";
 import { redirect } from "next/navigation";
 import type { ReactNode } from "react";
 import { InstallAppRow } from "@/components/InstallApp";
@@ -11,6 +19,7 @@ import { isCurrentUserPartner } from "@/lib/auth/require-partner";
 import { COIN_RING_REFERENCE } from "@/lib/coins/pricing";
 import { getCurrentBalance } from "@/lib/db/coins";
 import { getCurrentProfile } from "@/lib/db/profiles";
+import { REFERRAL_SIGNUP_COINS } from "@/lib/referrals/economics";
 
 export const metadata = {
   title: "Perfil",
@@ -118,6 +127,27 @@ export default async function ProfilePage() {
       </section>
 
       <PlanCard />
+
+      {/* A porta para `/indicar`. Fica logo abaixo do plano de propósito: é
+          onde a pessoa acabou de olhar quanto tem e quanto custa, que é o
+          momento em que "dá para ganhar moedas de graça" é uma informação e
+          não um anúncio. O outro caminho é o card do `/feed`. */}
+      <Link
+        href="/indicar"
+        className="flex items-center gap-3.5 rounded-[28px] bg-scriba-paper p-5 ring-1 ring-scriba-hairline outline-none transition-colors hover:bg-scriba-surface focus-visible:ring-2 focus-visible:ring-ring/40 sm:p-6"
+      >
+        <span className="flex size-11 flex-none items-center justify-center rounded-2xl bg-scriba-cream text-scriba-cream-body">
+          <UserPlus aria-hidden className="size-5" />
+        </span>
+        <span className="flex min-w-0 flex-1 flex-col gap-0.5">
+          <span className="text-sm font-semibold text-scriba-ink-strong">Indique a um amigo</span>
+          <span className="text-xs font-light leading-relaxed text-scriba-ink-soft">
+            {REFERRAL_SIGNUP_COINS} moedas por amigo que criar a conta pelo seu link — e mais quando
+            ele assinar.
+          </span>
+        </span>
+        <ChevronRight aria-hidden className="size-4 flex-none text-scriba-ink-mute" />
+      </Link>
 
       {/* Account info */}
       <section className="rounded-[28px] bg-scriba-paper p-6 ring-1 ring-scriba-hairline sm:p-7">

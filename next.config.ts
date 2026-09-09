@@ -65,6 +65,28 @@ const nextConfig: NextConfig = {
   // Ver `lib/app-version.ts`: o único consumidor, e o lugar onde está escrito
   // por que este número não passa pelo schema Zod de env.
   env: { NEXT_PUBLIC_APP_VERSION: appVersion },
+  images: {
+    /**
+     * A foto de perfil do Google, e só ela.
+     *
+     * `app/AGENTS.md` proíbe `<img>` apontando para host externo, e a proibição
+     * continua valendo: sete avatares de 1024px vindos de fora custavam 724 KB
+     * e ainda eram promovidos a `<link rel="preload">` pelo React 19,
+     * disputando a banda inicial com o CSS. O que entra aqui NÃO é uma exceção
+     * a essa regra — é o caminho que a respeita: com o `remotePattern`, o
+     * `next/image` serve a imagem otimizada, redimensionada e a partir do NOSSO
+     * domínio, com width/height conhecidos e sem CLS.
+     *
+     * Um host só, e fechado: `remotePatterns` frouxo (`**`) transforma
+     * `/_next/image` num proxy de imagem aberto, que qualquer um usa para
+     * lavar tráfego pela nossa conta.
+     *
+     * Quem consome: o selo "indicado por Fulano" no hero da landing page e na
+     * tela de entrada. Sem foto, a tela desenha as iniciais — ver
+     * `ReferrerAvatar`.
+     */
+    remotePatterns: [{ protocol: "https", hostname: "lh3.googleusercontent.com", pathname: "/**" }],
+  },
   async headers() {
     return [{ source: "/(.*)", headers: securityHeaders }];
   },

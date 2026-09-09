@@ -5,6 +5,7 @@ import { isPlanKey, type PlanKey, TOPUP_MAX_QUANTITY } from "@/lib/billing/plans
 import { customerIdOf, priceIdOf, subscriptionPeriodEnd } from "@/lib/billing/stripe";
 import { existingExternalRefs, grantCoins, upsertSubscription } from "@/lib/db/billing";
 import { insertFirstSubscriptionCommission } from "@/lib/db/partners";
+import { awardReferralSubscription } from "@/lib/db/referrals";
 import { createLogger } from "@/lib/log";
 import { COMMISSION_HOLD_DAYS } from "@/lib/partners/economics";
 
@@ -161,6 +162,7 @@ export async function creditInvoice(
   // seguraria de qualquer forma; isto só evita a ida ao banco.)
   if (credited > 0) {
     await accrueCommission(invoice, userId, source);
+    await accrueReferralReward(userId, source);
   }
 
   return { credited, balance };
@@ -200,6 +202,34 @@ async function accrueCommission(
     log.error(`partner commission failed — coins were credited`, {
       userId,
       invoice: invoice.id,
+      error: (err as Error).message,
+    });
+  }
+}
+
+/**
+ * A recompensa de quem indicou este assinante — a outra ponta do mesmo evento
+ * que produz a comissão do parceiro, e por isso pendurada no mesmo lugar.
+ *
+ * Uma pessoa nunca gera as duas: a atribuição é exclusiva (ver a migração
+ * 0045), então `award_referral_subscription` devolve 0 para todo assinante que
+ * veio de parceiro — e para a esmagadora maioria, que não veio de indicação
+ * nenhuma.
+ *
+ * O try/catch, de novo, é a parte importante e pela mesma razão da comissão:
+ * uma falha aqui NÃO pode derrubar o crédito de moedas que acabou de
+ * acontecer. As moedas do comprador são contrato com ele; a recompensa de
+ * quem o indicou é interna e reconciliável depois. Sem o catch, o webhook
+ * devolveria 5xx, o Stripe reentregaria, e quem PAGOU ficaria sem saldo por
+ * causa de um problema que não é dele.
+ */
+async function accrueReferralReward(userId: string, source: FulfillSource): Promise<void> {
+  const log = createLogger("billing").scoped(source);
+  try {
+    await awardReferralSubscription(userId);
+  } catch (err) {
+    log.error("recompensa de indicação falhou — as moedas foram creditadas", {
+      userId,
       error: (err as Error).message,
     });
   }

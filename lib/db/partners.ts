@@ -102,6 +102,14 @@ export type PartnerPublic = {
   slug: string;
   displayName: string;
   signupBonusCoins: number;
+  /**
+   * A foto do parceiro, para o selo "indicado por" do hero e da tela de
+   * entrada. Vem do avatar do Google da conta LIGADA a ele — `partners` não
+   * guarda foto, e `partners.user_id` nasce nulo, então um parceiro que ainda
+   * não fez o primeiro login simplesmente não tem uma. A tela desenha as
+   * iniciais nesse caso, que é um desfecho normal e não um erro.
+   */
+  avatarUrl: string | null;
 };
 
 /** Resolve um slug para exibição. `null` quando não existe ou está suspenso. */
@@ -109,7 +117,7 @@ export async function getPartnerPublicBySlug(slug: string): Promise<PartnerPubli
   const admin = createAdminClient();
   const { data, error } = await admin
     .from("partners")
-    .select("slug, display_name, signup_bonus_coins")
+    .select("slug, display_name, signup_bonus_coins, user_id")
     .ilike("slug", slug)
     .eq("status", "active")
     .maybeSingle();
@@ -118,10 +126,25 @@ export async function getPartnerPublicBySlug(slug: string): Promise<PartnerPubli
     return null;
   }
   if (!data) return null;
+
+  // Segunda consulta, e não um embed do PostgREST: `partners.user_id` aponta
+  // para `auth.users`, não para `profiles`, então não há FK que o PostgREST
+  // possa seguir sozinho. Só acontece quando há conta ligada.
+  let avatarUrl: string | null = null;
+  if (data.user_id) {
+    const { data: profile } = await admin
+      .from("profiles")
+      .select("avatar_url")
+      .eq("id", data.user_id)
+      .maybeSingle();
+    avatarUrl = (profile?.avatar_url as string | null) ?? null;
+  }
+
   return {
     slug: data.slug,
     displayName: data.display_name,
     signupBonusCoins: data.signup_bonus_coins,
+    avatarUrl,
   };
 }
 

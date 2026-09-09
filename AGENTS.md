@@ -59,10 +59,12 @@ app/          rotas, API, proxy, SEO, landing         → app/AGENTS.md
 lib/          servidor: LLM, DB, env, log, auth        → lib/AGENTS.md
   billing/    Stripe, moedas e crédito                 → lib/billing/AGENTS.md
   entitlements/ o que cada plano libera                → lib/AGENTS.md
+  referrals/  cookies e números da indicação           → src/features/referrals/AGENTS.md
   finance/    a conta do painel financeiro (pura)      → docs/financeiro.md
 src/features/
   session/    gravação, pipelines ao vivo, feed        → src/features/session/AGENTS.md
   partners/   programa de divulgadores                 → src/features/partners/AGENTS.md
+  referrals/  indique a um amigo                       → src/features/referrals/AGENTS.md
   admin/      painel interno, métricas, parceiros      → src/features/admin/AGENTS.md
   billing/    diálogo de compra e retorno do checkout  → lib/billing/AGENTS.md
 src/shared/   tema, tokens, marca, a11y, UI base       → src/shared/AGENTS.md

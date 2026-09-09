@@ -5,9 +5,9 @@ import { isValidDoc, normalizeDoc } from "@/lib/br/documento";
 import { createPartner, listPartners } from "@/lib/db/admin/partners";
 import { parseJsonBody } from "@/lib/http/validate";
 import { createLogger } from "@/lib/log";
-import { normalizeSlug } from "@/lib/partners/cookies";
 import { normalizeSocials } from "@/lib/partners/socials";
 import { enforceRateLimit, RATE_LIMITS } from "@/lib/rate-limit";
+import { normalizeSlug } from "@/lib/referrals/cookies";
 
 const log = createLogger("admin/partners");
 
@@ -67,6 +67,7 @@ export const PartnerBodySchema = z
     // aceitar um número que o CHECK do banco recusaria.
     commissionRateBps: z.number().int().min(0).max(10_000).optional(),
     signupBonusCoins: z.number().int().min(0).max(100_000).optional(),
+    signupRewardCoins: z.number().int().min(0).max(100_000).optional(),
     monthlyCoins: z.number().int().min(0).max(100_000).optional(),
     bonusBudgetCoins: z.number().int().min(0).nullable().optional(),
     status: z.enum(["active", "suspended"]).optional(),

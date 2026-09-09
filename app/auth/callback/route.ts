@@ -1,8 +1,9 @@
 import { cookies } from "next/headers";
 import { NextResponse } from "next/server";
 import { attachPartner } from "@/lib/db/partners";
+import { attachReferrer } from "@/lib/db/referrals";
 import { createLogger } from "@/lib/log";
-import { decodeRef, REF_COOKIE, VISIT_COOKIE } from "@/lib/partners/cookies";
+import { decodeRef, REF_COOKIE, REF_HINT_COOKIE, VISIT_COOKIE } from "@/lib/referrals/cookies";
 import { createClient } from "@/lib/supabase/server";
 
 const log = createLogger("auth/callback");
@@ -43,7 +44,7 @@ export async function GET(request: Request) {
     return NextResponse.redirect(`${origin}/sign-in?error=exchange_failed`);
   }
 
-  await attachPartnerIfReferred(data.user?.id ?? null);
+  await attachReferralIfAny(data.user?.id ?? null);
 
   const forwardedHost = request.headers.get("x-forwarded-host");
   const isLocal = process.env.NODE_ENV === "development";
@@ -77,37 +78,50 @@ function isTrustedHost(host: string): boolean {
 }
 
 /**
- * Vincula a conta ao parceiro que a indicou, se houver indicação ativa, e
- * credita o bônus. Roda no primeiro login de quem chegou por `/r/<slug>` ou
- * digitou um código na tela de entrada.
+ * Vincula a conta a quem a indicou, se houver indicação ativa, e credita o que
+ * cada programa manda creditar. Roda no primeiro login de quem chegou por
+ * `/r/<slug>`, por `/i/<codigo>` ou digitou um código na tela de entrada.
  *
  * É aqui, e não no trigger de criação do perfil, porque o cookie só existe no
  * contexto da requisição — o trigger do banco roda dentro do Supabase Auth e
  * não enxerga o navegador.
  *
- * NADA aqui pode impedir o login. Toda recusa (`already_attributed`,
- * `not_new`, `unknown_slug`, `self_referral`) é normal e vira log; uma
- * exceção inesperada é engolida pelo try/catch. A pessoa está no meio da
- * entrada no app, e perder um bônus é ruim — não entrar é pior.
+ * **UM cookie, portanto UMA atribuição.** Os dois programas gravam no mesmo
+ * `scriba_ref`, então quem clicou no link de um parceiro e depois no de um
+ * amigo tem um padrinho só: o último. A exclusividade é reforçada no banco —
+ * `attach_partner` e `attach_referrer` conferem a coluna um do outro antes de
+ * gravar a sua.
  *
- * O cookie é apagado nos dois desfechos. Ele já cumpriu o papel: a atribuição
- * agora vive em `profiles.partner_id`, que é permanente. Deixá-lo por mais 30
+ * NADA aqui pode impedir o login. Toda recusa (`already_attributed`,
+ * `not_new`, `unknown_slug`/`unknown_code`, `self_referral`, `capped`) é
+ * normal e vira log; uma exceção inesperada é engolida pelo try/catch. A
+ * pessoa está no meio da entrada no app, e perder um bônus é ruim — não entrar
+ * é pior.
+ *
+ * Os cookies são apagados em qualquer desfecho. Eles já cumpriram o papel: a
+ * atribuição agora vive em `profiles`, e é permanente. Deixá-los por mais 30
  * dias faria toda visita seguinte a `/auth/callback` (um novo login em outro
  * aparelho, por exemplo) tentar de novo uma atribuição já resolvida.
  */
-async function attachPartnerIfReferred(userId: string | null): Promise<void> {
+async function attachReferralIfAny(userId: string | null): Promise<void> {
   if (!userId) return;
   try {
     const jar = await cookies();
     const ref = decodeRef(jar.get(REF_COOKIE)?.value);
     if (!ref) return;
 
-    const result = await attachPartner({ userId, slug: ref.slug, source: ref.source });
-    log.info("atribuição de parceiro", { ...ref, result });
+    if (ref.program === "friend") {
+      const result = await attachReferrer({ userId, code: ref.code, source: ref.source });
+      log.info("atribuição de indicação", { ...ref, result });
+    } else {
+      const result = await attachPartner({ userId, slug: ref.slug, source: ref.source });
+      log.info("atribuição de parceiro", { ...ref, result });
+    }
 
     jar.delete(REF_COOKIE);
     jar.delete(VISIT_COOKIE);
+    jar.delete(REF_HINT_COOKIE);
   } catch (err) {
-    log.error("partner attach falhou", { error: (err as Error).message });
+    log.error("attach de indicação falhou", { error: (err as Error).message });
   }
 }

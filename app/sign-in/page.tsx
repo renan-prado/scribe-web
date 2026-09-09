@@ -1,9 +1,7 @@
-import { cookies } from "next/headers";
 import { AuthShell } from "@/features/auth/components/AuthShell";
 import { GoogleSignInButton } from "@/features/auth/components/GoogleSignInButton";
-import { ReferralField } from "@/features/partners/components/ReferralField";
-import { getPartnerPublicBySlug } from "@/lib/db/partners";
-import { decodeRef, REF_COOKIE } from "@/lib/partners/cookies";
+import { ReferralField } from "@/features/referrals/components/ReferralField";
+import { readActiveReferral } from "@/lib/referrals/active";
 
 export const metadata = {
   title: "Entrar ou criar conta · Scriba",
@@ -15,6 +13,15 @@ type Search = { next?: string; error?: string };
 
 export default async function SignInPage({ searchParams }: { searchParams: Promise<Search> }) {
   const { next, error } = await searchParams;
+  // A indicação ativa, resolvida no SERVIDOR: o cookie é httpOnly, então esta
+  // leitura só pode acontecer aqui — e é de propósito. Duplicá-la num cookie
+  // legível por JS só para a tela mostrar o nome criaria dois valores para a
+  // mesma coisa, e o dia em que eles divergissem a tela anunciaria um padrinho
+  // diferente do que seria de fato creditado.
+  //
+  // Ao contrário do hero da landing page, aqui não há salto nem requisição
+  // extra: esta página já é dinâmica (ela lê cookie de qualquer forma), então o
+  // rosto de quem indicou vem no HTML.
   const referral = await readActiveReferral();
   const target = typeof next === "string" && next.startsWith("/") ? next : "/feed";
   const errorMessage =
@@ -49,25 +56,4 @@ export default async function SignInPage({ searchParams }: { searchParams: Promi
       </p>
     </AuthShell>
   );
-}
-
-/**
- * Resolve a indicação ativa para exibição.
- *
- * O cookie é httpOnly, então esta leitura só pode acontecer no servidor — e é
- * de propósito. Passar o resultado por prop mantém uma fonte de verdade: se a
- * indicação fosse duplicada num cookie legível por JS só para a tela mostrar
- * o nome, os dois valores poderiam divergir e o usuário veria um parceiro
- * diferente do que seria de fato creditado.
- */
-async function readActiveReferral(): Promise<{
-  partnerName: string;
-  bonusCoins: number;
-} | null> {
-  const jar = await cookies();
-  const ref = decodeRef(jar.get(REF_COOKIE)?.value);
-  if (!ref) return null;
-  const partner = await getPartnerPublicBySlug(ref.slug);
-  if (!partner) return null;
-  return { partnerName: partner.displayName, bonusCoins: partner.signupBonusCoins };
 }

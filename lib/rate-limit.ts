@@ -382,4 +382,19 @@ export const RATE_LIMITS = {
     route: "partner-link",
     perIp: { limit: 120, windowMs: MIN },
   },
+  // O link de indicação de usuário comum (/i/<codigo>). Mesmo teto do link de
+  // parceiro: é o mesmo gesto — um humano abrindo um link recebido —, e o que
+  // ele guarda é o mesmo, a gravação de um cookie de atribuição.
+  "referral-link": {
+    route: "referral-link",
+    perIp: { limit: 120, windowMs: MIN },
+  },
+  // A leitura do selo "indicado por" no hero da landing page. Anônima e por
+  // IP, com folga para uma família atrás do mesmo NAT abrindo o mesmo link —
+  // ela dispara uma vez por carregamento de LP de quem tem a pista, e nunca
+  // para os demais.
+  "referral-active": {
+    route: "referral-active",
+    perIp: { limit: 60, windowMs: MIN },
+  },
 } as const satisfies Record<string, RateLimitConfig>;

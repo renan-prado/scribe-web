@@ -24,6 +24,13 @@ export type PartnerPanelSummary = {
   availableCents: number;
   paidCents: number;
   conversionRate: number;
+  /**
+   * Moedas que o parceiro ganhou por cadastro (migração 0045) — as já
+   * creditadas e as ainda acumuladas, somadas. A distinção entre uma e outra
+   * não interessa a ele: a liberação acontece na visita em que ele lê este
+   * número, então a soma é o que ele vê no saldo.
+   */
+  signupRewardCoins: number;
 };
 
 export type PartnerMonthlyRow = {
@@ -48,7 +55,7 @@ export async function loadPartnerPanel(partnerId: string): Promise<{
 }> {
   const admin = createAdminClient();
 
-  const [clicksRes, signupsRes, commissionsRes, payoutsRes] = await Promise.all([
+  const [clicksRes, signupsRes, commissionsRes, payoutsRes, rewardsRes] = await Promise.all([
     admin.from("partner_clicks").select("clicks, uniques").eq("partner_id", partnerId),
     admin.from("profiles").select("id", { count: "exact", head: true }).eq("partner_id", partnerId),
     admin
@@ -61,6 +68,11 @@ export async function loadPartnerPanel(partnerId: string): Promise<{
       .eq("partner_id", partnerId)
       .order("paid_at", { ascending: false })
       .limit(24),
+    admin
+      .from("referral_rewards")
+      .select("coins")
+      .eq("beneficiary_partner_id", partnerId)
+      .eq("program", "partner"),
   ]);
 
   let clicks = 0;
@@ -70,12 +82,16 @@ export async function loadPartnerPanel(partnerId: string): Promise<{
     uniqueVisitors += row.uniques as number;
   }
 
+  let signupRewardCoins = 0;
+  for (const row of rewardsRes.data ?? []) signupRewardCoins += row.coins as number;
+
   const now = Date.now();
   const summary: PartnerPanelSummary = {
     clicks,
     uniqueVisitors,
     signups: signupsRes.count ?? 0,
     subscribers: 0,
+    signupRewardCoins,
     pendingCents: 0,
     availableCents: 0,
     paidCents: 0,

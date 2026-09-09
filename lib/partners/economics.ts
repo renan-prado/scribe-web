@@ -50,6 +50,32 @@ export const DEFAULT_COMMISSION_BPS = 3000;
 export const DEFAULT_SIGNUP_BONUS_COINS = 150;
 
 /**
+ * Moedas que o PARCEIRO ganha por cada cadastro atribuído a ele — a resposta
+ * para "não quero ficar na mão trazendo lead que não assina".
+ *
+ * 50, o mesmo valor do programa aberto de indicação
+ * (`REFERRAL_SIGNUP_COINS`), e por coerência: é o mesmo fato econômico — uma
+ * conta nova entrou por causa de alguém. O que separa os dois programas é o
+ * que vem DEPOIS (o parceiro leva 30% da primeira mensalidade em dinheiro; o
+ * amigo, 200 moedas), não o cadastro em si.
+ *
+ * Efeito na conta do programa, com 150 moedas de bônus ao indicado já
+ * somadas (200 mintadas por cadastro), custo medido de R$ 2,69 o milheiro:
+ * o mês 1 por assinante Pessoal cai de R$ 6,83 para R$ 5,76 no cenário
+ * realista (5% de conversão, 40% de uso). No pessimista (3% e 100%) ele fica
+ * negativo em R$ 7,87 e se paga em 15 dias do mês 2 — a mesma aritmética que
+ * `simulatePartnerEconomics` mostra no cadastro antes de salvar.
+ *
+ * Espelha o DEFAULT de `partners.signup_reward_coins` (migração 0045) e é
+ * editável por parceiro, como a taxa e o bônus.
+ *
+ * ELAS ACUMULAM antes de virar saldo: `partners.user_id` nasce nulo, então no
+ * momento do cadastro do indicado pode não haver conta para creditar. Ver
+ * `flush_partner_signup_rewards`.
+ */
+export const DEFAULT_PARTNER_SIGNUP_REWARD_COINS = 50;
+
+/**
  * Mesada mensal padrão do PRÓPRIO parceiro — ~100 min de gravação com live.
  *
  * Mora aqui, e não em `allowance.ts`, porque o cadastro do admin é um client
@@ -91,6 +117,15 @@ export type SimulationInput = {
   costPerThousandCoinsCents: number;
   /** Moedas dadas a cada indicado que se cadastra. */
   bonusCoins: number;
+  /**
+   * Moedas dadas AO PARCEIRO a cada cadastro (migração 0045). Amortiza como o
+   * bônus — é pago por cadastro, e só uma fração deles vira assinante —, mas
+   * SEM a fração de uso: o parceiro é um usuário ativo por definição do
+   * programa (é essa a razão de existir da mesada), então tratá-lo como se
+   * gastasse 40% do que ganha subestimaria o custo justamente na conta que
+   * existe para não subestimar nada.
+   */
+  rewardCoins: number;
   /** Conversão cadastro → assinante, 0..1. */
   conversionRate: number;
   /** Fração dos indicados que efetivamente gasta o bônus, 0..1. */
@@ -105,9 +140,10 @@ export type Simulation = {
   /** Custo das moedas do próprio plano. */
   planCoinsCostCents: number;
   /**
-   * Custo do bônus AMORTIZADO por assinante conquistado. O bônus é pago a
-   * todo indicado que se cadastra, inclusive aos que nunca assinam — então
-   * quanto pior a conversão, mais caro ele fica por assinante.
+   * Custo AMORTIZADO por assinante conquistado das moedas pagas no CADASTRO —
+   * o bônus ao indicado mais a recompensa ao parceiro. As duas são pagas a
+   * todo cadastro, inclusive aos que nunca assinam, então quanto pior a
+   * conversão, mais caras elas ficam por assinante.
    */
   bonusCostCents: number;
   /** Resultado do primeiro mês, já descontado tudo acima. */
@@ -127,10 +163,11 @@ export type Simulation = {
  *
  * Duas armadilhas que ela existe para tornar visíveis:
  *
- * 1. **O bônus costuma custar mais que a comissão.** Ele é pago a todo
- *    cadastro, e só uma fração vira assinante. A 5% de conversão, 150 moedas
- *    por cadastro viram um custo por assinante maior que 30% da mensalidade.
- *    Quem olha só o percentual do parceiro está olhando a variável errada.
+ * 1. **As moedas do cadastro costumam custar mais que a comissão.** Elas são
+ *    pagas a todo cadastro — as do indicado E as do parceiro —, e só uma
+ *    fração vira assinante. A 5% de conversão, 200 moedas por cadastro viram
+ *    um custo por assinante maior que 30% da mensalidade. Quem olha só o
+ *    percentual do parceiro está olhando a variável errada.
  *
  * 2. **O mês 1 não é o negócio inteiro.** Comissão e bônus são pagos UMA vez;
  *    a margem se repete todo mês enquanto a pessoa ficar. Por isso um mês 1
@@ -148,7 +185,9 @@ export function simulatePartnerEconomics(input: SimulationInput): Simulation {
   // amortizar. Devolvemos o custo bruto do bônus em vez de Infinity, para que
   // a UI mostre um número em vez de quebrar.
   const conversion = Math.max(0, Math.min(1, input.conversionRate));
-  const rawBonusCost = coinCost(Math.round(input.bonusCoins * input.bonusUsageRate));
+  const signupCoins =
+    Math.round(input.bonusCoins * input.bonusUsageRate) + Math.max(0, input.rewardCoins);
+  const rawBonusCost = coinCost(signupCoins);
   const bonusCost = conversion > 0 ? Math.round(rawBonusCost / conversion) : rawBonusCost;
 
   const recurring = input.priceCents - fee - planCoinsCost;

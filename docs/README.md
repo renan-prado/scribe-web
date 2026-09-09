@@ -14,6 +14,7 @@ saber ao editar código ficam nos `AGENTS.md` de cada pasta, não aqui.
 | Por que subir a versão antes de dar push? | [`versionamento.md`](./versionamento.md) |
 | O que falta configurar nos painéis? | [`checklist-ambiente-dev.md`](./checklist-ambiente-dev.md) |
 | Quais são as regras do programa de parceiros? | [`parceiros.md`](./parceiros.md) |
+| Quanto se ganha indicando um amigo, e por que esses números? | [`indicacao.md`](./indicacao.md) |
 | Como o painel sabe quanto ganhamos, gastamos e devemos? | [`financeiro.md`](./financeiro.md) |
 | Por que o estudo entrega pouco, e o que fazer? | [`estudo-v2.md`](./estudo-v2.md) |
 | Por que a transcrição erra, e o que já foi tentado? | [`transcricao.md`](./transcricao.md) |
@@ -44,6 +45,12 @@ saber ao editar código ficam nos `AGENTS.md` de cada pasta, não aqui.
   **Status: implementado.**
 - **[`parceiros-plano.md`](./parceiros-plano.md)** — o plano técnico do mesmo
   programa e o que ficou de fora. Fases 0 a 7 entregues.
+- **[`indicacao.md`](./indicacao.md)** — o programa ABERTO de indicação: quanto
+  se ganha por cadastro e por assinatura, a régua que diz se um valor de bônus
+  é financeiramente seguro (e por que 50 e não 150), e por que o convidado não
+  ganha nada — é o que mantém o link do parceiro como a melhor oferta da casa.
+  Traz também as moedas por cadastro que o parceiro passou a receber.
+  **Status: implementado.**
 - **[`transcricao.md`](./transcricao.md)** — por que a transcrição errava em
   igreja com eco, o que foi medido para corrigir (modelo, prompt, limiares) e o
   que foi tentado e NÃO funcionou (limpar o áudio, revisar com LLM, modelos de

@@ -6,10 +6,13 @@ import {
   applyReferralCode,
   clearReferralCode,
   type ReferralActionState,
-} from "@/lib/partners/actions";
+} from "@/lib/referrals/actions";
+import { ReferrerAvatar } from "@/shared/components/ReferrerAvatar";
 
 /**
- * Campo de código de indicação da tela de entrada.
+ * Campo de código de indicação da tela de entrada — o mesmo para os DOIS
+ * programas: o código de um parceiro e o de um amigo entram aqui, e quem
+ * decide qual é qual é a server action.
  *
  * Fica FECHADO por padrão, atrás de um link discreto. A esmagadora maioria de
  * quem chega aqui não tem código nenhum, e um campo vazio à vista sugere que
@@ -18,12 +21,22 @@ import {
  *
  * O componente não lê nem escreve cookie: o valor é gravado por uma server
  * action (`applyReferralCode`), que valida o código antes de aceitar. Este
- * arquivo cuida só do estado do formulário. Ver lib/partners/cookies.ts.
+ * arquivo cuida só do estado do formulário. Ver lib/referrals/cookies.ts.
+ *
+ * **A confirmação fala de moedas só quando há moedas.** No programa de amigos
+ * quem ganha é quem indica, não quem chega — prometer um bônus que não vem
+ * seria a pior forma possível de estrear a relação com o produto. O que a
+ * pessoa vê nesse caso é o rosto e o nome de quem a trouxe, que é o que o
+ * convite dela dizia.
  */
 
 type Props = {
   /** Indicação já ativa, vinda do cookie e resolvida no servidor. */
-  active: { partnerName: string; bonusCoins: number } | null;
+  active: {
+    name: string;
+    avatarUrl: string | null;
+    bonusCoins: number;
+  } | null;
 };
 
 const initialState: ReferralActionState = { status: "idle" };
@@ -37,17 +50,33 @@ export function ReferralField({ active }: Props) {
   // confirmação aparece na hora, sem esperar o refresh.
   const confirmed =
     active ??
-    (state.status === "ok" && state.partnerName
-      ? { partnerName: state.partnerName, bonusCoins: state.bonusCoins ?? 0 }
+    (state.status === "ok" && state.name
+      ? {
+          name: state.name,
+          avatarUrl: state.avatarUrl ?? null,
+          bonusCoins: state.bonusCoins ?? 0,
+        }
       : null);
 
   if (confirmed) {
     return (
       <div className="flex items-start gap-2.5 rounded-2xl bg-scriba-cream px-4 py-3 text-left">
-        <CoinMark size={18} className="mt-px flex-none" />
+        {/* A foto de quem indicou quando ela existe; as iniciais quando não —
+            um parceiro que ainda não fez o primeiro login não tem avatar. A
+            moeda volta ao lugar do rosto quando há bônus a anunciar. */}
+        {confirmed.bonusCoins > 0 && !confirmed.avatarUrl ? (
+          <CoinMark size={18} className="mt-px flex-none" />
+        ) : (
+          <ReferrerAvatar
+            name={confirmed.name}
+            avatarUrl={confirmed.avatarUrl}
+            size={22}
+            className="mt-px"
+          />
+        )}
         <div className="flex flex-col gap-1">
           <p className="text-[12.5px] leading-[1.5] text-scriba-cream-body">
-            Indicado por <strong className="font-medium">{confirmed.partnerName}</strong>.
+            Indicado por <strong className="font-medium">{confirmed.name}</strong>.
             {confirmed.bonusCoins > 0 ? (
               <>
                 {" "}
@@ -94,7 +123,7 @@ export function ReferralField({ active }: Props) {
           autoCapitalize="none"
           autoCorrect="off"
           spellCheck={false}
-          placeholder="ex.: joao"
+          placeholder="ex.: joao ou k7m3q2r"
           aria-describedby={state.status === "idle" ? undefined : "referral-code-status"}
           className="min-w-0 flex-1 rounded-2xl border border-scriba-hairline bg-background px-4 py-2.5 text-[13px] text-scriba-ink-strong placeholder:text-scriba-ink-mute focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring/40"
         />

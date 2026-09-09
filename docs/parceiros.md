@@ -5,8 +5,13 @@ precisa saber (pode ser enviada como está). A última seção, **Pendências**,
 interna.
 
 Status: **implementado**. O plano técnico e o que ficou de fora estão em
-[`parceiros-plano.md`](./parceiros-plano.md); as invariantes de código, na
-seção "Parceiros divulgadores" do `AGENTS.md`.
+[`parceiros-plano.md`](./parceiros-plano.md); as invariantes de código, em
+[`src/features/partners/AGENTS.md`](../src/features/partners/AGENTS.md).
+
+O programa ABERTO de indicação, disponível a todo usuário, é o irmão deste e
+está em [`indicacao.md`](./indicacao.md). Ele deliberadamente NÃO dá bônus a
+quem é convidado — é o que mantém as 150 moedas do link de parceiro como a
+melhor oferta da casa.
 
 ---
 
@@ -70,6 +75,24 @@ inteiro, de graça"*.
 O bônus é creditado uma única vez por conta, no momento do cadastro.
 
 ---
+
+## Moedas por cadastro
+
+**50 moedas para o parceiro a cada pessoa que cria conta pelo link ou código
+dele** — antes e independentemente de ela assinar. Configurável por parceiro no
+cadastro (0 desliga).
+
+Existe porque a comissão sozinha deixava o parceiro meses sem nada: ele traz
+tráfego, o tráfego vira cadastro, e o cadastro leva tempo para virar assinante
+(quando vira). Quem está divulgando precisa ver o resultado do próprio trabalho
+antes disso.
+
+As moedas caem no saldo dele **na primeira vez que ele abre o app** depois do
+cadastro do indicado. Elas ficam guardadas até lá porque o parceiro pode ser
+cadastrado e começar a divulgar antes mesmo do primeiro login — e não há perda
+nenhuma em esperar, já que moeda só serve dentro do app.
+
+O painel mostra o total acumulado na aba de divulgação.
 
 ## O que o parceiro recebe para usar
 
@@ -203,10 +226,16 @@ Ponto de ruptura: o Pessoal só empata se o custo do milheiro subir para
 R$ 18,72 — 7× o atual. Há folga grande para variação de câmbio e de preço de
 modelo.
 
-### O custo dominante é o bônus, não a comissão
+### O custo dominante são as moedas do cadastro, não a comissão
 
-O bônus de 150 moedas custa **R$ 0,40** e é pago em **todo cadastro
-indicado**, inclusive nos que nunca assinam. Amortizado por assinante
+Cada cadastro indicado emite **200 moedas** — 150 de bônus ao indicado mais 50
+de recompensa ao parceiro (esta última desde a migração 0045) — e custa
+**R$ 0,54**, pago em **todo cadastro**, inclusive nos que nunca assinam.
+
+A tabela abaixo é a do bônus de 150 sozinho, porque é ele que varia com a
+fração de uso; a recompensa do parceiro entra integralmente (ele é usuário
+ativo por desenho do programa) e soma R$ 0,135 ÷ conversão por assinante —
+R$ 2,69 a 5%, R$ 4,48 a 3%. Amortizado por assinante
 conquistado, com `c` = taxa de conversão cadastro→assinante e `u` = fração dos
 indicados que efetivamente gastam as moedas:
 
@@ -222,12 +251,18 @@ vigiar — não o percentual do parceiro.
 
 ### Resultado do mês 1 por assinante Pessoal (c = 5%, u = 40%)
 
+Já com as 50 moedas de recompensa ao parceiro descontadas:
+
 | comissão | valor ao parceiro | resultado mês 1 | conversões p/ R$ 50 |
 |---|---|---|---|
-| 20% | R$ 3,98 | R$ 8,82 | 13 |
-| 30% | R$ 5,97 | R$ 6,83 | 9 |
-| 40% | R$ 7,96 | R$ 4,84 | 7 |
-| 50% | R$ 9,95 | R$ 2,85 | 6 |
+| 20% | R$ 3,98 | R$ 7,75 | 13 |
+| 30% | R$ 5,97 | R$ 5,76 | 9 |
+| 40% | R$ 7,96 | R$ 3,77 | 7 |
+| 50% | R$ 9,95 | R$ 1,78 | 6 |
+
+No cenário pessimista (c = 3%, u = 100%) a 30%, o mês 1 fica em −R$ 7,87 e se
+paga em 15 dias do mês 2. O simulador do cadastro mostra esse número antes de
+salvar — ele inclui as duas pontas.
 
 Do mês 2 em diante a margem é limpa: R$ 16,03/mês, sem comissão e sem bônus.
 Seis meses de permanência = R$ 96 de margem bruta, contra uma comissão única.
@@ -253,6 +288,10 @@ Em base de LTV, mesmo 50% custa ~10% — a restrição real não é margem.
   mas vale reconferir a tabela acima a cada trimestre.
 - **Teto de bônus por parceiro.** Como login é só Google (e, no futuro, Apple),
   o custo de criar contas em massa é alto e o risco é baixo — mas um orçamento
-  configurável por parceiro no admin continua sendo barato de ter.
+  configurável por parceiro no admin continua sendo barato de ter. **Ele existe
+  e limita só o bônus ao INDICADO**: as moedas por cadastro do parceiro passam
+  por fora dele de propósito, para um orçamento estourado não virar um corte de
+  remuneração que ninguém anunciou. Se um teto para essa ponta fizer falta, ele
+  nasce como coluna própria.
 - **Prazo do programa.** Se as condições podem mudar, o regulamento precisa
   dizer com quanta antecedência.

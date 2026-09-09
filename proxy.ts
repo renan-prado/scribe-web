@@ -1,6 +1,12 @@
 import { createServerClient } from "@supabase/ssr";
 import { type NextRequest, NextResponse } from "next/server";
 import { clientEnv } from "@/lib/env/client";
+import {
+  REF_COOKIE,
+  REF_COOKIE_MAX_AGE,
+  REF_HINT_COOKIE,
+  refHintCookieOptions,
+} from "@/lib/referrals/cookies";
 
 /**
  * Next.js 16 proxy (formerly middleware). Refreshes the Supabase auth cookie
@@ -30,10 +36,16 @@ import { clientEnv } from "@/lib/env/client";
 // cron da Vercel não tem cookie de sessão), autenticado por CRON_SECRET dentro
 // da própria rota.
 //
-// "/r" é o link do parceiro (/r/<slug>): quem chega por ele é, por definição,
-// um visitante anônimo vindo de fora. Sem esta entrada, o proxy responderia
-// 307 para /sign-in e o link de divulgação levaria a uma tela de login em vez
-// da landing page. Ver app/r/[slug]/route.ts.
+// "/r" é o link do parceiro (/r/<slug>) e "/i" o link de indicação de um
+// usuário comum (/i/<codigo>): quem chega por eles é, por definição, um
+// visitante anônimo vindo de fora. Sem estas entradas, o proxy responderia 307
+// para /sign-in e o link de divulgação levaria a uma tela de login em vez da
+// landing page. Ver app/r/[slug]/route.ts e app/i/[code]/route.ts.
+//
+// "/api/referral" responde ao selo "indicado por Fulano" do hero da LP, que é
+// montado no cliente porque a landing page é estática. Também anônima por
+// definição, e ela não expõe nada que o visitante já não tenha recebido junto
+// com o link. Ver app/api/referral/active/route.ts.
 const PUBLIC_PREFIXES = [
   "/sign-in",
   "/sign-up",
@@ -43,6 +55,8 @@ const PUBLIC_PREFIXES = [
   "/about",
   "/contact",
   "/r",
+  "/i",
+  "/api/referral",
   "/api/stripe",
   "/api/billing/sweep",
 ];
@@ -71,6 +85,7 @@ const KNOWN_APP_PREFIXES = [
   "/recordings",
   "/studies",
   "/profile",
+  "/indicar",
   "/recording",
   "/billing",
   "/admin",
@@ -267,6 +282,34 @@ function applyCsp<T extends NextResponse>(response: T): T {
   return response;
 }
 
+/**
+ * Recria o cookie-PISTA da indicação quando ele falta e a atribuição existe.
+ *
+ * O selo "indicado por Fulano" do hero da landing page só pergunta ao servidor
+ * quem indicou SE `scriba_ref_hint` estiver presente — é o que evita uma
+ * requisição por visita para os 99% que não vieram de link nenhum (ver
+ * `src/features/referrals/AGENTS.md`). A pista, porém, nasceu depois do cookie
+ * de atribuição: **todo visitante que já tinha um `scriba_ref` vivo quando
+ * isto entrou no ar não tem pista nenhuma**, e são 30 dias de gente nessa
+ * situação. Para eles o selo simplesmente não aparecia — sem erro em lugar
+ * nenhum, que é o pior jeito de uma funcionalidade falhar.
+ *
+ * A cura mora AQUI porque o proxy é o único lugar que roda em toda requisição,
+ * já lê e escreve cookies, e **não custa a estaticidade da landing page**: ele
+ * roda antes do cache de qualquer forma, e o HTML continua saindo da CDN. Um
+ * `cookies()` dentro de `app/page.tsx` faria o oposto.
+ *
+ * Também cobre a divergência acidental — pista apagada por limpeza parcial,
+ * navegador que perdeu um cookie e não o outro. Quem manda continua sendo o
+ * `httpOnly`: a pista só diz que EXISTE indicação, nunca de quem.
+ */
+function healReferralHint(request: NextRequest, response: NextResponse): NextResponse {
+  if (!request.cookies.has(REF_COOKIE)) return response;
+  if (request.cookies.has(REF_HINT_COOKIE)) return response;
+  response.cookies.set(REF_HINT_COOKIE, "1", refHintCookieOptions(REF_COOKIE_MAX_AGE));
+  return response;
+}
+
 function applyCorsHeaders(response: NextResponse, origin: string, allowed: boolean) {
   response.headers.append("Vary", "Origin");
   if (!allowed) return;
@@ -320,9 +363,10 @@ export async function proxy(request: NextRequest) {
   //
   // O early-return fica aqui em cima, ANTES do `createServerClient`. Enfiá-lo
   // no meio do handshake violaria o contrato do @supabase/ssr descrito acima.
-  const isAnonEntry = earlyPath === "/" || earlyPath.startsWith("/r/");
+  const isAnonEntry =
+    earlyPath === "/" || earlyPath.startsWith("/r/") || earlyPath.startsWith("/i/");
   if (isAnonEntry && !request.cookies.getAll().some((c) => c.name.startsWith("sb-"))) {
-    return applyCsp(NextResponse.next({ request }));
+    return applyCsp(healReferralHint(request, NextResponse.next({ request })));
   }
 
   let supabaseResponse = NextResponse.next({ request });
@@ -393,7 +437,10 @@ export async function proxy(request: NextRequest) {
   }
 
   if (isApi) applyCorsHeaders(supabaseResponse, origin, allowedOrigin);
-  return applyCsp(supabaseResponse);
+  // O early-return acima cobre o visitante anônimo, que é quem vê a landing
+  // page. Este cobre quem chega com um cookie `sb-*` velho e por isso passa
+  // pelo caminho completo — a pista é a mesma e curá-la duas vezes não custa.
+  return applyCsp(healReferralHint(request, supabaseResponse));
 }
 
 /**
