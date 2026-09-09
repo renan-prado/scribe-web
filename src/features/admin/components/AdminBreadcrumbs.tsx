@@ -20,6 +20,7 @@ const LABELS: Record<string, string> = {
   partners: "Parceiros",
   features: "Funcionalidades",
   studies: "Estudos",
+  feedback: "Feedback",
   financeiro: "Financeiro",
   lancamentos: "Lançamentos",
   recorrentes: "Custos recorrentes",

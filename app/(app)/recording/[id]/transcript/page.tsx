@@ -1,5 +1,7 @@
 import type { Metadata } from "next";
 import { notFound, redirect } from "next/navigation";
+import { FeedbackPrompt } from "@/features/feedback/components/FeedbackPrompt";
+import { FEEDBACK_DELAY_TRANSCRIPT_MS } from "@/features/feedback/config";
 import { SavedTranscriptSessionView } from "@/features/session/components/SavedTranscriptSessionView";
 import { formatDurationLong } from "@/features/session/lib/formatting";
 import { getSession } from "@/lib/db/sessions";
@@ -48,17 +50,23 @@ export default async function RecordingTranscriptPage({ params }: PageProps) {
   const createdAt = new Date(session.createdAt);
 
   return (
-    <SavedTranscriptSessionView
-      id={id}
-      title={session.title?.trim() || "Gravação sem título"}
-      createdAtLabel={DATE_FMT.format(createdAt)}
-      createdAtShortLabel={DATE_FMT_SHORT.format(createdAt)}
-      durationLabel={formatDurationLong(session.durationMs)}
-      durationMs={session.durationMs}
-      speakerName={session.speakerName}
-      speakerLocation={session.speakerLocation}
-      transcript={session.transcript}
-      hasSummary={!!session.finalSummary}
-    />
+    <>
+      <SavedTranscriptSessionView
+        id={id}
+        title={session.title?.trim() || "Gravação sem título"}
+        createdAtLabel={DATE_FMT.format(createdAt)}
+        createdAtShortLabel={DATE_FMT_SHORT.format(createdAt)}
+        durationLabel={formatDurationLong(session.durationMs)}
+        durationMs={session.durationMs}
+        speakerName={session.speakerName}
+        speakerLocation={session.speakerLocation}
+        transcript={session.transcript}
+        hasSummary={!!session.finalSummary}
+      />
+      {/* A pesquisa da 1ª, 3ª e 8ª gravação. Aqui ela pergunta sobre a
+          TRANSCRIÇÃO — o modo transcrição não gera resumo, e é o que a pessoa
+          tem na tela. Ver `FeedbackPrompt`. */}
+      <FeedbackPrompt kind="recording" sessionId={id} delayMs={FEEDBACK_DELAY_TRANSCRIPT_MS} />
+    </>
   );
 }

@@ -14,6 +14,7 @@ import { ThemeToggleRow } from "@/components/ThemeToggle";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { PrivilegedProfileLinks } from "@/features/auth/components/PrivilegedProfileLinks";
 import { PlanCard } from "@/features/billing/components/PlanCard";
+import { ProfileFeedbackRow } from "@/features/feedback/components/ProfileFeedbackRow";
 import { isCurrentUserAdmin } from "@/lib/auth/require-admin";
 import { isCurrentUserPartner } from "@/lib/auth/require-partner";
 import { COIN_RING_REFERENCE } from "@/lib/coins/pricing";
@@ -148,6 +149,11 @@ export default async function ProfilePage() {
         </span>
         <ChevronRight aria-hidden className="size-4 flex-none text-scriba-ink-mute" />
       </Link>
+
+      {/* A porta que a PESSOA procura, ao lado da que ela é convidada a usar.
+          As três janelas automáticas perguntam na hora que nós escolhemos; o
+          momento em que alguém tem algo a dizer é dele. */}
+      <ProfileFeedbackRow />
 
       {/* Account info */}
       <section className="rounded-[28px] bg-scriba-paper p-6 ring-1 ring-scriba-hairline sm:p-7">

@@ -1,6 +1,7 @@
 # src/features/admin — painel interno
 
-Telas de `/admin`: métricas de produto, uso de LLM, usuários e parceiros.
+Telas de `/admin`: métricas de produto, uso de LLM, usuários, parceiros e o
+feedback dos usuários.
 
 ## O gate
 
@@ -339,6 +340,44 @@ aqui não pode colapsar as duas num "descartada".
 Uma leitura que também precisa ser preservada: estudo sem nenhuma fonte não é
 necessariamente pior — é a selagem tendo descartado o que não tinha obra, que é
 o comportamento desejado.
+
+## Feedback (`/admin/feedback`)
+
+A nota que os usuários deram a cada parte do produto, e o que escreveram
+junto. A coleta é da pesquisa de satisfação — ver
+[`src/features/feedback/AGENTS.md`](../feedback/AGENTS.md) para quando e como
+a pergunta é feita.
+
+Três blocos, e a ORDEM é a mensagem:
+
+- **A taxa de resposta vem PRIMEIRO, antes de qualquer nota.** As médias
+  abaixo são de quem se dispôs a responder, e essa amostra é sistematicamente
+  mais gentil que a realidade: 4,0 sobre 12 respostas de 90 perguntas parece
+  um produto adorado. É a mesma regra dos avisos antes dos números no
+  financeiro, contra o mesmo risco — uma conta boa demais é a que ninguém
+  investiga. É por isso que `feedback_prompts` guarda também as perguntas
+  IGNORADAS; sem o denominador, o numerador mente.
+- **A nota é por TÓPICO, e nunca uma soma.** Sugestões ao vivo, resumo,
+  transcrição, estudo e experiência geral são cinco peças com consertos
+  diferentes; uma "nota do Scriba" que as misturasse não apontaria para lugar
+  nenhum. Tópico sem resposta mostra `—`, jamais zero — zero é uma nota abaixo
+  de "ruim", que não existe na escala, e um painel que o exibe convida a
+  concluir que a parte é péssima quando o que houve foi silêncio.
+- **A distribuição fica ao lado da média**, porque quatro "razoável" e uma
+  mistura de "ruim" com "excelente" dão o mesmo 2,5 e pedem coisas opostas.
+
+O terceiro bloco são os comentários, **inteiros e sem truncamento**: a média
+diz que algo está errado, só o texto diz o quê, e cortar a frase de alguém
+para caber num card perde justamente a parte que o número não tem.
+
+**Quem lista agrupa por `submission_id`.** O comentário é do ENVIO e se repete
+nas linhas de nota daquele envio (ver o cabeçalho de `0047_feedback.sql`); sem
+o agrupamento, uma janela do modo Ao Vivo aparece como duas pessoas dizendo
+exatamente a mesma frase.
+
+A escala é texto no banco e vira número em UM lugar só —
+`FEEDBACK_RATING_SCORE`, em `lib/domain/feedback.ts`, o mesmo módulo que
+desenha os chips no navegador.
 
 ## Financeiro (`/admin/financeiro`)
 

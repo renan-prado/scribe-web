@@ -150,6 +150,15 @@ quem chama.
 service-role.** Policy de INSERT para `authenticated` só onde a linha é
 conteúdo do próprio usuário.
 
+`feedback_prompts` e `feedback_responses` (0047) são o caso em que a linha é as
+DUAS coisas — o comentário é do usuário, e a nota é o número que decide o que
+consertamos em seguida. Ficaram com RLS ligada e nenhuma policy, como
+`referral_rewards`: com uma policy de INSERT, o anon key mandaria mil linhas
+"excelente" (ou mil "ruim") direto para a tabela que orienta o roadmap, sem
+passar por rota nenhuma. E o marco da pesquisa também não é do cliente — se o
+navegador dissesse "esta é a minha 1ª gravação", a janela apareceria quando ele
+quisesse, e a amostra deixaria de ser a que escolhemos medir.
+
 ## Constraint no lugar de `if`
 
 As regras que não podem falhar são estruturais, não condicionais no servidor —
@@ -161,6 +170,7 @@ uma constraint vale para caminhos de código que ainda não existem:
 | `stripe_events` PK = id do evento | reentrega do Stripe é descartada |
 | `partner_commissions.referred_user_id` UNIQUE | uma comissão por pessoa na vida |
 | `session_deepenings` unique(session_id) | um aprofundamento por sessão |
+| `feedback_prompts_once` unique(user_id, kind, session_id) | a pesquisa não volta depois de fechada |
 | CHECK https em `partner_payouts.receipt_url` | comprovante é link, não recado |
 
 O contexto de negócio de cada uma está em `lib/billing/AGENTS.md` e

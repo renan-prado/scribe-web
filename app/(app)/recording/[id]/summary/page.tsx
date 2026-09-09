@@ -1,5 +1,7 @@
 import type { Metadata } from "next";
 import { notFound, redirect } from "next/navigation";
+import { FeedbackPrompt } from "@/features/feedback/components/FeedbackPrompt";
+import { FEEDBACK_DELAY_SUMMARY_MS } from "@/features/feedback/config";
 import { SavedSessionView } from "@/features/session/components/SavedSessionView";
 import { formatDurationLong } from "@/features/session/lib/formatting";
 import { hasDeepening } from "@/lib/db/deepenings";
@@ -58,23 +60,28 @@ export default async function RecordingSummaryPage({ params }: PageProps) {
   const createdAt = new Date(session.createdAt);
 
   return (
-    <SavedSessionView
-      id={id}
-      title={session.title?.trim() || "Sessão sem título"}
-      createdAtLabel={DATE_FMT.format(createdAt)}
-      createdAtShortLabel={DATE_FMT_SHORT.format(createdAt)}
-      durationLabel={formatDurationLong(session.durationMs)}
-      durationMs={session.durationMs}
-      speakerName={session.speakerName}
-      speakerLocation={session.speakerLocation}
-      transcript={session.transcript}
-      feedItems={session.feedItems}
-      summary={session.finalSummary}
-      rereads={rereadsRow?.payload ?? null}
-      reminders={remindersRow?.payload ?? null}
-      highlights={highlightsRow?.payload ?? null}
-      hasDeepening={deepeningExists}
-      canGenerateStudy={canGenerateStudy}
-    />
+    <>
+      <SavedSessionView
+        id={id}
+        title={session.title?.trim() || "Sessão sem título"}
+        createdAtLabel={DATE_FMT.format(createdAt)}
+        createdAtShortLabel={DATE_FMT_SHORT.format(createdAt)}
+        durationLabel={formatDurationLong(session.durationMs)}
+        durationMs={session.durationMs}
+        speakerName={session.speakerName}
+        speakerLocation={session.speakerLocation}
+        transcript={session.transcript}
+        feedItems={session.feedItems}
+        summary={session.finalSummary}
+        rereads={rereadsRow?.payload ?? null}
+        reminders={remindersRow?.payload ?? null}
+        highlights={highlightsRow?.payload ?? null}
+        hasDeepening={deepeningExists}
+        canGenerateStudy={canGenerateStudy}
+      />
+      {/* A pesquisa da 1ª, 3ª e 8ª gravação. Ela não desenha nada até o
+          servidor dizer que é uma delas — ver `FeedbackPrompt`. */}
+      <FeedbackPrompt kind="recording" sessionId={id} delayMs={FEEDBACK_DELAY_SUMMARY_MS} />
+    </>
   );
 }

@@ -63,8 +63,17 @@ a quem não é admin) e `/partners` (gate em `lib/auth/require-partner.ts`).
 `sermon-echo`, `final-summary[/reprocess|/from-transcript]`,
 `deepening[/reprocess]`, `verse`, `format-paragraphs`,
 `hallucination-report`), dados (`sessions[/search]`, `feed`, `speakers`,
-`locations`, `coins`), cobrança (`billing/*`, `stripe/webhook`) e admin
-(`admin/users`, `admin/partners`, `admin/features`, `admin/insights`).
+`locations`, `coins`, `feedback[/prompt]`), cobrança (`billing/*`,
+`stripe/webhook`) e admin (`admin/users`, `admin/partners`, `admin/features`,
+`admin/insights`).
+
+`feedback/prompt` é **POST e não GET porque ESCREVE**: quando a resposta é
+"sim, pergunte", a pergunta já nasce registrada em `feedback_prompts` — é o
+que impede a janela de voltar quando a pessoa reabre a mesma página, e um GET
+que grava seria disparado por qualquer prefetch do router. Nenhuma das duas
+rotas cobra moedas, pela mesma razão de `hallucination-report`: quem está nos
+ajudando a melhorar o produto não paga por isso. Ver
+`src/features/feedback/AGENTS.md`.
 
 `final-summary/from-transcript` é a terceira porta do MESMO pipeline de resumo:
 ela gera o primeiro resumo de uma sessão gravada no modo transcrição, que sai

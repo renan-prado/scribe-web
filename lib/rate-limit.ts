@@ -335,6 +335,24 @@ export const RATE_LIMITS = {
     perUser: { limit: 60, windowMs: MIN },
     perIp: { limit: 180, windowMs: MIN },
   },
+  // A consulta "devo perguntar agora?", disparada ao abrir uma sessão salva ou
+  // um estudo. Não chama modelo nenhum — são duas leituras e, em três casos na
+  // vida do usuário, uma escrita. O balde é largo porque um 429 aqui é
+  // invisível (a janela simplesmente não aparece) e apertá-lo custaria a
+  // pergunta em vez de proteger alguma coisa.
+  "feedback-prompt": {
+    route: "feedback-prompt",
+    perUser: { limit: 60, windowMs: MIN },
+    perIp: { limit: 180, windowMs: MIN },
+  },
+  // O envio da nota. A cadência legítima é de alguns por MÊS por pessoa; o
+  // teto existe para que a tabela que orienta o roadmap não possa ser inundada
+  // por uma conta só.
+  "feedback-write": {
+    route: "feedback-write",
+    perUser: { limit: 10, windowMs: HOUR },
+    perIp: { limit: 40, windowMs: HOUR },
+  },
   // Cobrança: cada clique abre UMA sessão de checkout/portal no Stripe, que é
   // uma chamada paga de API e um objeto persistido lá. Apertado de propósito —
   // uso legítimo são alguns cliques por hora, e um limite baixo aqui é a

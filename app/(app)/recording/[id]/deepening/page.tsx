@@ -2,6 +2,8 @@ import { ArrowLeft, BookOpen } from "lucide-react";
 import type { Metadata } from "next";
 import { notFound } from "next/navigation";
 import { NavLink } from "@/components/NavLink";
+import { FeedbackPrompt } from "@/features/feedback/components/FeedbackPrompt";
+import { FEEDBACK_DELAY_STUDY_MS } from "@/features/feedback/config";
 import { DeepeningMenu } from "@/features/session/components/DeepeningMenu";
 import {
   StudyBlockRenderer,
@@ -111,6 +113,11 @@ export default async function RecordingDeepeningPage({ params }: PageProps) {
           </div>
         ))}
       </div>
+
+      {/* A pesquisa do 1º, 3º e 8º estudo. O atraso é o maior dos três: uma
+          nota dada antes de a pessoa ter lido a tese central é sobre a espera,
+          não sobre o estudo. Ver `FeedbackPrompt`. */}
+      <FeedbackPrompt kind="study" sessionId={id} delayMs={FEEDBACK_DELAY_STUDY_MS} />
     </main>
   );
 }

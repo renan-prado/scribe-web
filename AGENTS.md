@@ -66,6 +66,7 @@ src/features/
   partners/   programa de divulgadores                 → src/features/partners/AGENTS.md
   referrals/  indique a um amigo                       → src/features/referrals/AGENTS.md
   admin/      painel interno, métricas, parceiros      → src/features/admin/AGENTS.md
+  feedback/   a pesquisa de satisfação e a nota          → src/features/feedback/AGENTS.md
   billing/    diálogo de compra e retorno do checkout  → lib/billing/AGENTS.md
 src/shared/   tema, tokens, marca, a11y, UI base       → src/shared/AGENTS.md
 supabase/     migrações, RLS, GRANT, RPC               → supabase/AGENTS.md
