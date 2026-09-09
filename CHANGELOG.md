@@ -9,6 +9,20 @@ Gerado por `npm run release` a partir dos Conventional Commits. `feat` sobe o
 minor; o resto sobe o patch. Não edite à mão — a próxima execução escreve por
 cima do topo do arquivo.
 
+## 0.3.0 — 2026-09-09 — desde v0.2.0
+
+### Novidades
+
+- **admin:** margem por versão, recortando a moeda pela janela em que ela esteve no ar (`78861bc`)
+
+### Correções
+
+- **session:** a barra de filtros das listas ganha um layout próprio no celular (`a182487`)
+
+### Outros
+
+- **app:** /list vira /recordings, e o caminho antigo responde 308 (`3666333`)
+
 ## 0.2.0 — 2026-09-09 — desde v0.1.0
 
 ### Novidades
