@@ -351,7 +351,7 @@ export function RecordingTranscribe({
       getSessionState().setFinalizing(false);
       toast.warning("Nenhuma fala foi capturada.", { description: "A gravação foi descartada." });
       void requestDeleteSession(sessionId);
-      router.replace("/list");
+      router.replace("/recordings");
       return;
     }
 
@@ -371,7 +371,7 @@ export function RecordingTranscribe({
     await requestDeleteSession(sessionId);
     s.reset({ speakerName: initialSpeakerName, speakerLocation: initialSpeakerLocation });
     toast.success("Gravação descartada.");
-    router.replace("/list");
+    router.replace("/recordings");
   }, [router, sessionId, transcribeQueue, initialSpeakerName, initialSpeakerLocation]);
 
   // Cobrança: `COIN_COSTS.transcriptMinute` moedas/min iniciado — o modo mais

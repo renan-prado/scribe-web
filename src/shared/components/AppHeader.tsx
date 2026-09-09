@@ -9,7 +9,7 @@ import { ScribaLogo } from "@/shared/brand";
 
 // As três telas com fundo `scriba-surface` (ver seus `page.tsx`) — o header
 // precisa da mesma cor aqui para não deixar costura entre ele e o conteúdo.
-const SURFACE_ROUTES = ["/feed", "/list", "/studies"];
+const SURFACE_ROUTES = ["/feed", "/recordings", "/studies"];
 
 export function AppHeader({ actions }: { actions?: ReactNode }) {
   const pathname = usePathname();

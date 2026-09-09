@@ -18,7 +18,7 @@ import {
 import type { DeepeningListItem } from "@/lib/db/deepenings";
 
 /**
- * A lista de estudos do `/studies`, com a mesma busca do `/list`.
+ * A lista de estudos do `/studies`, com a mesma busca do `/recordings`.
  *
  * ## O que a busca alcança aqui
  *
@@ -27,7 +27,7 @@ import type { DeepeningListItem } from "@/lib/db/deepenings";
  * fora: ele é um jsonb de quatro mil palavras por linha, e trazê-lo para a
  * lista custaria mais do que a busca vale.
  *
- * A transcrição do sermão, essa entra — pela mesma rota do `/list`
+ * A transcrição do sermão, essa entra — pela mesma rota do `/recordings`
  * (`/api/sessions/search`), porque estudo e sessão compartilham a chave. E é
  * uma busca que faz sentido justamente aqui: o estudo NÃO repete o sermão (o
  * pipeline foi desenhado para isso — ver `lib/AGENTS.md`), então procurar
@@ -127,8 +127,8 @@ export function StudiesBrowser({ studies, nowIso }: Props) {
         onClear={clearAll}
       />
 
-      {/* Mesma regra do `/list`: enquanto a metade servidor da busca não
-        responde, a tela não afirma que não há nada. Ver o comentário lá. */}
+      {/* Mesma regra do `/recordings`: enquanto a metade servidor da busca
+        não responde, a tela não afirma que não há nada. Ver o comentário lá. */}
       {filtered.length === 0 && searching ? (
         <div className="flex flex-col items-center gap-2 rounded-3xl border border-dashed border-scriba-hairline px-6 py-12 text-center">
           <Loader2 aria-hidden className="size-6 animate-spin text-scriba-ink-mute" />
@@ -190,7 +190,7 @@ export function StudiesBrowser({ studies, nowIso }: Props) {
                       className="flex min-w-0 flex-1 flex-col rounded-md outline-none focus-visible:ring-2 focus-visible:ring-ring/40"
                     >
                       <div className="flex items-start gap-2.5">
-                        {/* A MESMA pastilha do /list, no par do botão
+                        {/* A MESMA pastilha do /recordings, no par do botão
                             primário — não a versão verde da família do
                             estudo. O verde continua no resto da página e
                             no `.tone-study` da leitura; só esta pastilha

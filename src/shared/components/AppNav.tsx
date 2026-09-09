@@ -8,7 +8,13 @@ import { activeNavKey } from "@/shared/nav";
 
 const LINKS = [
   { key: "feed" as const, href: "/feed", label: "Feed", icon: Rss, tone: "blue" as const },
-  { key: "list" as const, href: "/list", label: "Gravações", icon: List, tone: "blue" as const },
+  {
+    key: "recordings" as const,
+    href: "/recordings",
+    label: "Gravações",
+    icon: List,
+    tone: "blue" as const,
+  },
   {
     key: "studies" as const,
     href: "/studies",
@@ -34,7 +40,8 @@ export function AppNav() {
   // Quem decide é `activeNavKey`, compartilhado com a `MobileBottomNav`. A
   // comparação que morava aqui era `pathname.startsWith(href)`, e por isso a
   // página de uma gravação ou de um estudo não acendia item nenhum: elas
-  // moram em `/recording/:id/*`, que não começa com `/list` nem `/studies`.
+  // moram em `/recording/:id/*`, que não começa com `/recordings` nem
+  // `/studies`.
   const current = activeNavKey(pathname ?? "");
   return (
     <nav className="hidden items-center gap-1 sm:flex">

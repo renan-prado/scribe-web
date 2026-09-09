@@ -47,7 +47,8 @@ type Props = {
  *
  * Com resumo, a sessão passa a ter as duas páginas: esta continua sendo a
  * leitura da transcrição, e `/summary` ganha o resumo, o estudo e os cards de
- * acompanhamento. O `/list` manda direto para lá — ver `listSessionIdsWithSummary`.
+ * acompanhamento. O `/recordings` manda direto para lá — ver
+ * `listSessionIdsWithSummary`.
  *
  * Título, autor e local seguem editáveis pelo PATCH de meta.
  */
@@ -79,7 +80,7 @@ export function SavedTranscriptSessionView({
       toast.error("Não foi possível excluir. Tente novamente.");
       return;
     }
-    router.push("/list");
+    router.push("/recordings");
   }
 
   async function patchField(field: "title" | "speakerName" | "speakerLocation", value: string) {
@@ -99,7 +100,7 @@ export function SavedTranscriptSessionView({
   return (
     <main className="mx-auto flex min-h-svh w-full max-w-3xl flex-col gap-6 px-4 py-8 sm:gap-8 sm:px-6 sm:py-10">
       <NavLink
-        href="/list"
+        href="/recordings"
         className="-mx-1 inline-flex w-fit items-center rounded-md px-1 py-0.5 text-xs font-medium text-scriba-ink-mute transition-colors hover:text-scriba-ink focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring/40"
       >
         <ArrowLeft className="size-3.5" />

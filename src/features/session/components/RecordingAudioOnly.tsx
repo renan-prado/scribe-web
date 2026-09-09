@@ -302,7 +302,7 @@ export function RecordingAudioOnly({
         description: "A gravação foi descartada sem gerar resumo.",
       });
       void requestDeleteSession(sessionId);
-      router.replace("/list");
+      router.replace("/recordings");
       return;
     }
 
@@ -353,7 +353,7 @@ export function RecordingAudioOnly({
       speakerLocation: initialSpeakerLocation,
     });
     toast.success("Gravação descartada.");
-    router.replace("/list");
+    router.replace("/recordings");
   }, [router, sessionId, initialSpeakerName, initialSpeakerLocation]);
 
   // Cobrança: `COIN_COSTS.audioOnlyMinute` moedas/min iniciado. Pausado não debita; `useCoinTick`

@@ -67,10 +67,10 @@ export default async function AppLayout({ children }: { children: ReactNode }) {
           sem ela o fim da rolagem fica embaixo da barra. Ela vai no FILHO
           (`[&>*]`), não neste wrapper, e a diferença é visível: as páginas que
           pintam o próprio chão o pintam no elemento raiz delas
-          (`bg-scriba-surface` no /feed, /list e /studies), então uma folga
-          aqui fora ficava DEPOIS da tinta e a faixa reservada aparecia num tom
-          diferente do conteúdo — o do `body`. Por dentro, o chão da página se
-          estende por ela.
+          (`bg-scriba-surface` no /feed, /recordings e /studies), então uma
+          folga aqui fora ficava DEPOIS da tinta e a faixa reservada aparecia
+          num tom diferente do conteúdo — o do `body`. Por dentro, o chão da
+          página se estende por ela.
 
           Isso pressupõe UM elemento raiz por página, que é como todas as
           páginas de `(app)` são hoje. Uma página que devolva irmãos no topo

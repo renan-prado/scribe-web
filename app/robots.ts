@@ -32,7 +32,7 @@ export default function robots(): MetadataRoute.Robots {
         "/sign-up",
         "/feed",
         "/profile",
-        "/list",
+        "/recordings",
         "/studies",
         "/recording/",
         "/session/",

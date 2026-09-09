@@ -45,9 +45,9 @@ Cada página redireciona um modo que não é o dela. Sessão salva abre em
 página salva oferece "Gerar resumo" (`/api/final-summary/from-transcript`, 15
 moedas, uma vez), que roda o mesmo pipeline do `final-summary` sobre o texto já
 salvo. A sessão passa então a ter as duas páginas — `/transcript` continua
-sendo a leitura, `/summary` ganha resumo, estudo e cards — e o `/list` aponta
-para a segunda. A escolha do modo é feita ANTES da pregação; o preço por minuto
-é a promessa, não uma porta trancada.
+sendo a leitura, `/summary` ganha resumo, estudo e cards — e o `/recordings`
+aponta para a segunda. A escolha do modo é feita ANTES da pregação; o preço por
+minuto é a promessa, não uma porta trancada.
 
 **Stack:** Next.js 16 (App Router) · React 19 · Supabase SSR · Tailwind v4 +
 shadcn sobre base-ui · Zod · Zustand · TanStack Query · Biome · Stripe.

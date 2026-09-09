@@ -371,7 +371,7 @@ export function RecordingLive({
         description: "A gravação foi descartada sem gerar resumo.",
       });
       void requestDeleteSession(sessionId);
-      router.replace("/list");
+      router.replace("/recordings");
       return;
     }
 
@@ -432,7 +432,7 @@ export function RecordingLive({
       speakerLocation: initialSpeakerLocation,
     });
     toast.success("Gravação descartada.");
-    router.replace("/list");
+    router.replace("/recordings");
   }, [
     router,
     sessionId,

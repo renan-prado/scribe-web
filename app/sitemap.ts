@@ -10,9 +10,9 @@ import { SITE_URL } from "@/lib/seo";
  * ranquear e o `?next=` multiplica variantes da mesma página. Ambas seguem
  * rastreáveis (só não são candidatas a índice) — ver `app/robots.ts`.
  *
- * O resto do app (/feed, /list, /studies, /recording/*, /billing/*) está atrás
- * do `proxy.ts`: para um rastreador aquilo é `307 → /sign-in`, então listar
- * qualquer uma delas seria pedir um erro de cobertura.
+ * O resto do app (/feed, /recordings, /studies, /recording/*, /billing/*) está
+ * atrás do `proxy.ts`: para um rastreador aquilo é `307 → /sign-in`, então
+ * listar qualquer uma delas seria pedir um erro de cobertura.
  */
 
 /** Data das páginas legais — bate com o "Última atualização" renderizado nelas.

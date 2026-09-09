@@ -59,10 +59,16 @@ const AUTH_ONLY_PREFIXES = ["/sign-in", "/sign-up"];
  *
  * A lista é manual porque o proxy roda antes do roteamento e não enxerga a
  * árvore de `app/`. Rota nova numa área nova entra aqui no mesmo commit.
+ *
+ * `/list` fica DE FORA, e isso é escolha, não esquecimento: ele existe (é o
+ * nome antigo do `/recordings`, em `app/list/page.tsx`) mas só para responder
+ * 308. Deixando-o passar, o redirect acontece ANTES do gate e o visitante
+ * anônimo chega ao login já com `?next=/recordings` — o destino vivo. Listado,
+ * ele guardaria no `?next=` um caminho que só existe para ser abandonado.
  */
 const KNOWN_APP_PREFIXES = [
   "/feed",
-  "/list",
+  "/recordings",
   "/studies",
   "/profile",
   "/recording",

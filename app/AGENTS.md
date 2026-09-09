@@ -32,7 +32,7 @@ Router — ver o comentário no `proxy.ts`).
 
 ```
 /feed                    cards de acompanhamento de TODAS as sessões
-/list                    sessões salvas + faixa "Gravações em aberto"
+/recordings              sessões salvas + faixa "Gravações em aberto"
 /studies                 aprofundamentos gerados
 /profile
 /recording/[id]/live       gravação modo live
@@ -49,6 +49,12 @@ Router — ver o comentário no `proxy.ts`).
 `app/session/[id]` é rota LEGADA: um `permanentRedirect` para
 `/recording/:id/summary`, preservado para que link antigo e bookmark não
 quebrem. Não crie link novo apontando para ela.
+
+`app/list` é o mesmo caso, e pela mesma razão: `/list` virou `/recordings`, e um
+308 mantém de pé o bookmark, o atalho do PWA já instalado e o link que alguém
+mandou por mensagem. As duas moram FORA do grupo `(app)` de propósito —
+redirect não precisa de header, de nav nem das duas consultas ao banco do
+`app/(app)/layout.tsx`, que renderiza em paralelo com a página.
 
 **Restrito:** `/admin/*` (gate em `app/admin/layout.tsx`, responde `notFound()`
 a quem não é admin) e `/partners` (gate em `lib/auth/require-partner.ts`).
@@ -222,9 +228,9 @@ privilegiada reconfere a autorização dentro de si** — `assertAdmin()` nas
 actions de admin (ver `lib/auth/require-admin.ts`).
 
 Quando a proteção real for a RLS e não a página, escreva isso no código: o
-`deleteSessionAction` do `/list` está protegido pela policy, e trocar o client
-do usuário pelo service-role ali o transformaria num IDOR sem sinal nenhum no
-diff.
+`deleteSessionAction` do `/recordings` está protegido pela policy, e trocar o
+client do usuário pelo service-role ali o transformaria num IDOR sem sinal
+nenhum no diff.
 
 ## Landing page — o que não pode voltar
 

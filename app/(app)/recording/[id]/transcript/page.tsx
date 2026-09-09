@@ -39,7 +39,8 @@ export default async function RecordingTranscriptPage({ params }: PageProps) {
   // (`/api/final-summary/from-transcript`). Ela continua morando nesta página —
   // a transcrição é o que o modo entrega, e a leitura dela não deixou de valer.
   // O que muda é o cabeçalho, que passa a oferecer "Ver resumo" em vez de
-  // "Gerar resumo"; quem chega pelo /list já é mandado direto para /summary.
+  // "Gerar resumo"; quem chega pelo /recordings já é mandado direto para
+  // /summary.
   if (session.mode !== "transcript_only") redirect(`/recording/${id}/summary`);
   // Ainda gravando (nada salvo): volta pra tela de captura.
   if (!session.endedAt) redirect(`/recording/${id}/transcribe`);

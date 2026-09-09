@@ -16,8 +16,8 @@
  *
  * Os valores espelham `--scriba-surface` em `:root` e em `.dark`: é a
  * superfície que fica logo abaixo da barra nas telas de lista (`/feed`,
- * `/list`, `/studies`), onde o encontro entre as duas é visível. **Se o token
- * mudar em `app/globals.css`, mude aqui no mesmo commit.**
+ * `/recordings`, `/studies`), onde o encontro entre as duas é visível. **Se o
+ * token mudar em `app/globals.css`, mude aqui no mesmo commit.**
  */
 export const THEME_COLOR = {
   light: "#F7FAFD",

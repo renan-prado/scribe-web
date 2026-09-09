@@ -240,7 +240,7 @@ de erro genérico).
 - **dev (`dev.scriba.cc`):** `Disallow: /` e nada mais. O `IS_INDEXABLE` faz o
   ambiente de preview **não vazar** o mapa de caminhos de produção. ✅
 - **prod (`scriba.cc`):** lista em `Disallow` os caminhos privados —
-  `/admin`, `/api/`, `/auth/`, `/feed`, `/profile`, `/list`, `/studies`,
+  `/admin`, `/api/`, `/auth/`, `/feed`, `/profile`, `/recordings`, `/studies`,
   `/recording/`, `/session/`, `/billing/`.
 
 | Achado | Categoria | Análise |

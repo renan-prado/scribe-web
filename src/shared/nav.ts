@@ -15,7 +15,7 @@
  * para quem navega, o que está na tela é um estudo, e é em `/studies` que ele
  * vai procurar de volta.
  */
-export type NavKey = "feed" | "list" | "studies" | "profile";
+export type NavKey = "feed" | "recordings" | "studies" | "profile";
 
 /** O estudo de uma sessão. Precisa ser testado ANTES do `/recording/` geral. */
 const DEEPENING_ROUTE = /^\/recording\/[^/]+\/deepening$/;
@@ -27,6 +27,6 @@ export function activeNavKey(pathname: string): NavKey | null {
   if (DEEPENING_ROUTE.test(pathname)) return "studies";
   // Todo o resto de `/recording/:id/*` — resumo, transcrição e as três telas
   // de captura — pertence à lista de gravações.
-  if (pathname.startsWith("/list") || pathname.startsWith("/recording/")) return "list";
+  if (pathname.startsWith("/recordings") || pathname.startsWith("/recording/")) return "recordings";
   return null;
 }

@@ -445,17 +445,17 @@ Três consequências que mordem quem for mexer:
   `final_summary` é nulo. Voltar a testar `mode === "transcript_only"` ali
   esconde o resumo que a pessoa acabou de pagar.
 - **`savedRouteFor(mode, hasSummary)` tem um segundo argumento**, e só o
-  `/list` o passa — via `listSessionIdsWithSummary`, uma consulta de chave no
-  molde de `listDeepenedSessionIds`. Quem só tem o modo em mãos omite e cai em
-  `/transcript`, de onde o cabeçalho leva ao resumo em um toque.
+  `/recordings` o passa — via `listSessionIdsWithSummary`, uma consulta de
+  chave no molde de `listDeepenedSessionIds`. Quem só tem o modo em mãos omite
+  e cai em `/transcript`, de onde o cabeçalho leva ao resumo em um toque.
 - **O título da linha é preservado** (`updateSessionSummary(..., { keepTitle })`).
   Naquele modo não há LLM para gerar título, então o que está na coluna foi
   escolhido por gente — sobrescrevê-lo com o do resumo apagaria o que ela
   digitou.
 
 Sessões nunca encerradas (`ended_at is null`) saem da lista principal e
-aparecem numa faixa "Gravações em aberto" no `/list`, com opção de continuar
-ou apagar — ver `listUnfinishedSessions`.
+aparecem numa faixa "Gravações em aberto" no `/recordings`, com opção de
+continuar ou apagar — ver `listUnfinishedSessions`.
 
 Depois disso a sessão pode gerar o **estudo** (`/api/deepening`, uma vez por
 sessão — `unique(session_id)` na migração 0009, com uma rota de reprocessamento
@@ -511,9 +511,10 @@ O estudo tem duas particularidades que mordem de fora:
 
 ## As listas: busca e filtros
 
-`/list` e `/studies` têm a MESMA barra (`components/CollectionSearch.tsx`) e o
-mesmo motor (`lib/search.ts`, puro e client-safe). Quem filtra é um componente
-cliente por página — `app/(app)/list/SessionsBrowser.tsx` e
+`/recordings` e `/studies` têm a MESMA barra
+(`components/CollectionSearch.tsx`) e o mesmo motor (`lib/search.ts`, puro e
+client-safe). Quem filtra é um componente cliente por página —
+`app/(app)/recordings/SessionsBrowser.tsx` e
 `app/(app)/studies/StudiesBrowser.tsx` —; as páginas continuam sendo só quem
 BUSCA.
 

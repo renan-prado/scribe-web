@@ -16,8 +16,8 @@ export const dynamic = "force-dynamic";
  * A metade da busca das listas que não pode rodar no cliente. São DUAS
  * perguntas sobre a mesma sessão, e nenhuma delas cabe no que a lista carrega:
  *
- * - **O que foi DITO** — `ilike` na transcrição, que não viaja para `/list`
- *   nem para `/studies`, e não deve viajar.
+ * - **O que foi DITO** — `ilike` na transcrição, que não viaja para
+ *   `/recordings` nem para `/studies`, e não deve viajar.
  * - **O que foi CITADO** — os versículos. `Jonas 1` não é texto para ser
  *   procurado com `%like%`: o pregador disse "no primeiro capítulo de Jonas",
  *   e o card gravado diz "Jonas 1:1-17". Quem responde é

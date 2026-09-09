@@ -229,8 +229,8 @@ Nada dentro dela pode usar cor literal: a esfumaçada acima da barra é
 
 **A folga que reserva o espaço dela vai no FILHO, não no wrapper.** Em
 `app/(app)/layout.tsx` é `[&>*]:pb-36 sm:[&>*]:pb-0`, e o seletor de filho é o
-ponto: `/feed`, `/list` e `/studies` pintam `bg-scriba-surface` no próprio
-elemento raiz, então uma folga no wrapper fica DEPOIS da tinta e a faixa
+ponto: `/feed`, `/recordings` e `/studies` pintam `bg-scriba-surface` no
+próprio elemento raiz, então uma folga no wrapper fica DEPOIS da tinta e a faixa
 reservada aparece com o tom do `body`, não o do conteúdo. Por dentro, o chão da
 página se estende por ela. Isso pressupõe um elemento raiz por página — se
 criar uma que devolva irmãos no topo, a folga vai em cada um.
@@ -294,14 +294,14 @@ navegador** — não pelo Lighthouse, cujo relatório mostra uma amostra.
   e medir em seguida lê valores antes do recálculo e reporta as cores do tema
   anterior.
 - **A área logada precisa de sessão E de dados.** Com a conta vazia o axe não
-  vê a faixa creme do `/list`, nem o `SummaryView`, nem o seletor do `/feed` —
-  três famílias de token passaram meses reprovando sem aparecer. Semeie sessão
-  antes de auditar.
+  vê a faixa creme do `/recordings`, nem o `SummaryView`, nem o seletor do
+  `/feed` — três famílias de token passaram meses reprovando sem aparecer.
+  Semeie sessão antes de auditar.
 
 Estado da última auditoria (axe-core 4.10, claro e escuro):
 
 ```
-/feed  /list  /studies  /profile
+/feed  /recordings  /studies  /profile
 /recording/{id}/{summary,deepening,live}    0 violações (eram 32)
 /  /sign-in  /terms  /privacy               0 violações
 ```

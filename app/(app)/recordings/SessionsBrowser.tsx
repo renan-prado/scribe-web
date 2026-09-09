@@ -20,7 +20,7 @@ import { savedRouteFor } from "@/lib/domain/session";
 import { SessionCardMenu } from "./SessionCardMenu";
 
 /**
- * A lista de gravações salvas do `/list`, com busca e filtros.
+ * A lista de gravações salvas do `/recordings`, com busca e filtros.
  *
  * ## Por que é um componente cliente, e o que ficou no servidor
  *

@@ -74,7 +74,7 @@ export default function manifest(): MetadataRoute.Manifest {
         name: "Gravações",
         short_name: "Gravações",
         description: "Suas sessões salvas",
-        url: "/list",
+        url: "/recordings",
         icons: [{ src: "/brand/icon-192.png", sizes: "192x192", type: "image/png" }],
       },
       {

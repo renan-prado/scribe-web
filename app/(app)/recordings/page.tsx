@@ -34,7 +34,7 @@ async function deleteSessionAction(formData: FormData): Promise<void> {
   const id = formData.get("id");
   if (typeof id !== "string" || !id) return;
   await deleteSession(id);
-  revalidatePath("/list");
+  revalidatePath("/recordings");
 }
 
 export default async function LibraryPage() {

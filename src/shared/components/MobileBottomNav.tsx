@@ -82,7 +82,12 @@ export function MobileBottomNav() {
         className="pointer-events-auto flex min-h-18 items-center justify-around bg-scriba-paper pb-[env(safe-area-inset-bottom)] shadow-[0_-6px_22px_rgba(79,168,240,0.12)]"
       >
         <TabLink href="/feed" label="Feed" active={current === "feed"} icon={FeedGlyph} />
-        <TabLink href="/list" label="Gravações" active={current === "list"} icon={ListGlyph} />
+        <TabLink
+          href="/recordings"
+          label="Gravações"
+          active={current === "recordings"}
+          icon={ListGlyph}
+        />
         {/* O "Gravar" é DOIS círculos concêntricos, sem rótulo: um disco escuro
             com o microfone claro, e um anel pálido em volta que faz as vezes de
             sombra. Ele fica dentro da barra — já foi um círculo em cor de CTA

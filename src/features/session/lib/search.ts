@@ -1,6 +1,7 @@
 /**
- * A busca das listas — `/list` e `/studies`. Helpers PUROS e client-safe: a
- * filtragem roda no navegador, sobre a lista que a página já entregou.
+ * A busca das listas — `/recordings` e `/studies`. Helpers PUROS e
+ * client-safe: a filtragem roda no navegador, sobre a lista que a página já
+ * entregou.
  *
  * ## Por que no cliente
  *

@@ -108,7 +108,7 @@ export function SavedSessionView({
       toast.error("Não foi possível excluir. Tente novamente.");
       return;
     }
-    router.push("/list");
+    router.push("/recordings");
   }
 
   async function handleReprocess() {
@@ -162,7 +162,7 @@ export function SavedSessionView({
         subtitle="Refazendo os pontos centrais e enriquecendo com contexto."
       />
       <NavLink
-        href="/list"
+        href="/recordings"
         className="-mx-1 inline-flex w-fit items-center rounded-md px-1 py-0.5 text-xs font-medium text-scriba-ink-mute transition-colors hover:text-scriba-ink focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring/40"
       >
         <ArrowLeft className="size-3.5" />
