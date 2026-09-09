@@ -107,8 +107,11 @@ export function InviteFriendCard({ className }: { className?: string }) {
           <X className="size-3.5" />
         </button>
       </div>
+      {/* `?de=feed` só ENDEREÇA o botão de voltar da outra página — ver o
+          cabeçalho de `/indicar`. Não muda nada além do destino de um link, e
+          o valor é conferido contra uma lista fechada do outro lado. */}
       <Link
-        href="/indicar"
+        href="/indicar?de=feed"
         onClick={() => snooze(ACCEPT_DAYS)}
         className="scriba-cta inline-flex h-10 w-full items-center justify-center rounded-full bg-[image:var(--scriba-cta)] text-[12px] font-semibold uppercase tracking-[.04em] text-scriba-cta-ink transition-[filter]"
       >

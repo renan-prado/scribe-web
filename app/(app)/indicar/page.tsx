@@ -1,7 +1,8 @@
-import { Gift, TriangleAlert, UserPlus } from "lucide-react";
+import { ArrowLeft, Gift, TriangleAlert, UserPlus } from "lucide-react";
 import type { Metadata } from "next";
 import { redirect } from "next/navigation";
 import { CoinMark } from "@/components/icons/CoinMark";
+import { NavLink } from "@/components/NavLink";
 import { InviteLinkCard } from "@/features/referrals/components/InviteLinkCard";
 import { appUrl } from "@/lib/billing/stripe";
 import { getCurrentProfile } from "@/lib/db/profiles";
@@ -31,8 +32,33 @@ const INT = new Intl.NumberFormat("pt-BR");
  *
  * O código é gerado na PRIMEIRA visita (`ensureReferralCode`), não no cadastro
  * de toda conta — a maioria das pessoas nunca vai abrir esta página.
+ *
+ * **O botão de voltar segue de ONDE a pessoa veio**, e por isso existe o
+ * `?de=feed`. Esta página tem duas portas — o cartão do `/profile` e o card do
+ * `/feed` —, e um destino fixo mandaria metade das visitas para uma tela em
+ * que elas não estavam. O parâmetro só ENDEREÇA, como o `?plan=` do checkout:
+ * ele é conferido contra uma lista FECHADA de dois destinos, então nada que
+ * alguém digite na URL vira um caminho novo. Valor desconhecido, ausente ou
+ * forjado cai no perfil, que é onde esta página mora na navegação.
+ *
+ * `router.back()` foi descartado: quem abre o link direto (compartilhado,
+ * PWA aberto do zero) não tem histórico dentro do app, e o botão o jogaria
+ * para fora do Scriba. Um link de verdade também funciona sem JavaScript e
+ * pode ser aberto em outra aba.
  */
-export default async function IndicarPage() {
+
+/** Os únicos destinos que o `?de=` alcança. */
+const ORIGENS = {
+  feed: { href: "/feed", label: "Voltar ao feed" },
+  perfil: { href: "/profile", label: "Voltar ao perfil" },
+} as const;
+
+type Search = { de?: string };
+
+export default async function IndicarPage({ searchParams }: { searchParams: Promise<Search> }) {
+  const { de } = await searchParams;
+  const origem = de === "feed" ? ORIGENS.feed : ORIGENS.perfil;
+
   const profile = await getCurrentProfile();
   if (!profile) redirect("/sign-in");
 
@@ -45,6 +71,17 @@ export default async function IndicarPage() {
 
   return (
     <main className="mx-auto flex w-full max-w-2xl flex-col gap-6 px-4 py-8 sm:gap-8 sm:px-6 sm:py-12">
+      {/* Mesmo idioma dos outros "voltar" do app (a página de estudo e a
+          sessão salva): `NavLink` com a seta, acima do cabeçalho, e o destino
+          escrito no rótulo — ninguém clica sem saber onde vai parar. */}
+      <NavLink
+        href={origem.href}
+        className="-mx-1 inline-flex w-fit items-center rounded-md px-1 py-0.5 text-xs font-medium text-scriba-ink-mute transition-colors hover:text-scriba-ink focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring/40"
+      >
+        <ArrowLeft className="size-3.5" />
+        {origem.label}
+      </NavLink>
+
       <header className="flex flex-col gap-2">
         <h1 className="font-heading text-2xl font-semibold tracking-tight text-scriba-ink-strong sm:text-3xl">
           Indique a um amigo
