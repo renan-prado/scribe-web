@@ -355,6 +355,46 @@ já pagou seria confisco.
 
 Diagnóstico e desenho completos: `docs/estudo-v2.md` §8.
 
+## Finanças — a conta mora fora da tela
+
+`lib/finance/` é PURO e CLIENT-SAFE, e é a única implementação da aritmética do
+`/admin/financeiro`. Quatro módulos, nenhum deles tocando banco:
+
+| Módulo | Papel |
+|---|---|
+| `money.ts` | centavos inteiros, conversão de moeda, arredondamento, formatação |
+| `recurrence.ts` | equivalente mensal/anual, ocorrências, próxima cobrança |
+| `measured.ts` | crédito do ledger → receita em reais; custo de IA por mês |
+| `aggregate.ts` | a visão mensal, os compromissos e os indicadores |
+| `projection.ts` | o modelo de crescimento × churn dos cenários |
+
+Ser puro é o que torna cada número TESTÁVEL sem banco: `npm test` roda
+`node --test` sobre `lib/**/*.test.ts` (93 casos hoje). É o único test runner
+do repositório e ele existe só por causa desta camada — a regra de "não
+adicione testes sem pedido" continua valendo para o resto.
+
+Três invariantes que atravessam os cinco módulos:
+
+- **Dinheiro é inteiro em centavos**, e o arredondamento acontece UMA vez, na
+  fronteira. Doze meses de projeção compõem qualquer erro de float justamente
+  na ponta longa, que é a que se olha para decidir.
+- **Percentual é basis point inteiro**, nunca fração. 7,5% é `750`.
+- **Valor em dólar sem cotação é `null`, jamais `0`.** Um zero soma e some do
+  total; `null` obriga quem chama a dizer quantos ficaram de fora.
+
+`lib/db/admin/finance.ts` é a camada de banco (service-role, atrás de
+`requireAdmin()`) e `finance-overview.ts` monta o snapshot que as seis telas
+consomem. Nenhum dos dois calcula nada. Os tipos e schemas Zod são
+client-safe, em `lib/domain/finance.ts`.
+
+**ARMADILHA DO ZOD 4 que este código pagou:** `.partial()` LANÇA sobre um
+objeto com `.refine()`, e lança no IMPORT — o `tsc` passa e o `next build`
+quebra na coleta de rotas. Por isso os schemas de escrita vêm em duas metades:
+o objeto cru e o refinado. Ver o cabeçalho de `lib/domain/finance.ts`.
+
+Contexto de negócio e o desenho completo: `docs/financeiro.md` e
+`src/features/admin/AGENTS.md`.
+
 ## Validação de entrada
 
 `http/validate.ts` — `parseJsonBody(request, schema)` devolve

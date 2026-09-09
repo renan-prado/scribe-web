@@ -59,6 +59,7 @@ app/          rotas, API, proxy, SEO, landing         → app/AGENTS.md
 lib/          servidor: LLM, DB, env, log, auth        → lib/AGENTS.md
   billing/    Stripe, moedas e crédito                 → lib/billing/AGENTS.md
   entitlements/ o que cada plano libera                → lib/AGENTS.md
+  finance/    a conta do painel financeiro (pura)      → docs/financeiro.md
 src/features/
   session/    gravação, pipelines ao vivo, feed        → src/features/session/AGENTS.md
   partners/   programa de divulgadores                 → src/features/partners/AGENTS.md
@@ -109,6 +110,7 @@ use o hexágono amarelo já usado no app (ver `src/shared/AGENTS.md`).
 | `npm run dev` | Next dev com `.env.dev` |
 | `npm run prod` | Next dev com `.env.prod`. **Dados reais, Stripe LIVE.** Só para reproduzir bug de produção |
 | `npm run typecheck` | `tsc --noEmit`. Rode antes de commitar |
+| `npm test` | `node --test` sobre `lib/**/*.test.ts` — só a camada financeira |
 | `npm run check` | Biome check + write (imports, format, lint) |
 | `npm run lint` / `format` | subcomandos do Biome |
 | `npm run db:push` | migrações no Supabase de **dev** |
@@ -146,8 +148,13 @@ Production **e** Preview). Guia completo em `docs/ambientes.md`.
 Não adicione sem pedido — o usuário sabe e adiou:
 
 - Respostas em streaming (SSE).
-- Test runner ou testes.
 - Framework de i18n. As strings pt-BR ficam inline por enquanto.
+
+**Testes existem em UM lugar só, e continuam não sendo o padrão do
+repositório.** `npm test` roda `node --test` sobre `lib/**/*.test.ts`, e hoje
+isso é `lib/finance/*` — aritmética de dinheiro, pura e sem banco, onde um erro
+de arredondamento vira decisão de negócio errada. Não acrescente teste em outra
+camada sem pedido; a ausência deles no resto é escolha, não dívida.
 
 ## Como estes documentos funcionam
 

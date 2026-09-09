@@ -14,6 +14,7 @@
     "format": "biome format --write .",
     "check": "biome check --write .",
     "typecheck": "tsc --noEmit",
+    "test": "node --import tsx --test \"lib/**/*.test.ts\"",
     "db:push": "node scripts/db-push.mjs dev",
     "db:push:prod": "node scripts/db-push.mjs prod",
     "stripe:doctor": "node scripts/stripe-doctor.mjs .env.dev",
@@ -54,6 +55,7 @@
     "@types/react-dom": "^19",
     "husky": "^9.1.7",
     "tailwindcss": "^4",
+    "tsx": "^4.23.13",
     "typescript": "^5"
   }
 }

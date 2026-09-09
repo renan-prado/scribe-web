@@ -3,12 +3,18 @@
 import {
   ArrowUpRight,
   BarChart3,
+  CalendarClock,
   ChevronsUpDown,
   Handshake,
   Landmark,
   LayoutDashboard,
+  LineChart,
+  ListOrdered,
   LogOut,
+  PiggyBank,
+  Receipt,
   ScrollText,
+  SlidersHorizontal,
   ToggleRight,
   TrendingUp,
   User as UserIcon,
@@ -57,6 +63,28 @@ const NAV: NavItem[] = [
   { href: "/admin/partners", label: "Parceiros", icon: Handshake },
   { href: "/admin/features", label: "Funcionalidades", icon: ToggleRight },
   { href: "/admin/studies", label: "Estudos", icon: ScrollText },
+];
+
+/**
+ * O financeiro é um GRUPO próprio, não mais seis itens na lista do painel.
+ *
+ * Com quatorze itens seguidos, a navegação vira uma parede em que nada é
+ * encontrado por reconhecimento — e as seis telas daqui respondem a uma
+ * pergunta ("como está o dinheiro?") que é de outra ordem que as oito de cima
+ * ("como está o produto?"). O rótulo do grupo é o que diz isso sem gastar uma
+ * linha explicando.
+ *
+ * "Visão geral" repete o rótulo do primeiro item do outro grupo, e é
+ * proposital: dentro do seu grupo, cada uma é a visão geral da sua pergunta.
+ * O `exact` existe para ela não ficar ativa nas cinco filhas.
+ */
+const FINANCE_NAV: NavItem[] = [
+  { href: "/admin/financeiro", label: "Visão geral", icon: PiggyBank, exact: true },
+  { href: "/admin/financeiro/lancamentos", label: "Lançamentos", icon: ListOrdered },
+  { href: "/admin/financeiro/recorrentes", label: "Custos recorrentes", icon: CalendarClock },
+  { href: "/admin/financeiro/compromissos", label: "Compromissos", icon: Receipt },
+  { href: "/admin/financeiro/projecoes", label: "Projeções", icon: LineChart },
+  { href: "/admin/financeiro/configuracoes", label: "Configurações", icon: SlidersHorizontal },
 ];
 
 type AdminUser = {
@@ -108,24 +136,30 @@ export function AdminSidebar({
           <SidebarGroupLabel>Painel</SidebarGroupLabel>
           <SidebarGroupContent>
             <SidebarMenu>
-              {NAV.map(({ href, label, icon: Icon, exact }) => {
-                const active = exact
-                  ? pathname === href
-                  : pathname === href || pathname.startsWith(`${href}/`);
-                return (
-                  <SidebarMenuItem key={href}>
-                    <SidebarMenuButton
-                      isActive={active}
-                      tooltip={label}
-                      onClick={closeOnMobile}
-                      render={<Link href={href} />}
-                    >
-                      <Icon />
-                      <span>{label}</span>
-                    </SidebarMenuButton>
-                  </SidebarMenuItem>
-                );
-              })}
+              {NAV.map((item) => (
+                <NavRow
+                  key={item.href}
+                  item={item}
+                  pathname={pathname}
+                  onNavigate={closeOnMobile}
+                />
+              ))}
+            </SidebarMenu>
+          </SidebarGroupContent>
+        </SidebarGroup>
+
+        <SidebarGroup>
+          <SidebarGroupLabel>Financeiro</SidebarGroupLabel>
+          <SidebarGroupContent>
+            <SidebarMenu>
+              {FINANCE_NAV.map((item) => (
+                <NavRow
+                  key={item.href}
+                  item={item}
+                  pathname={pathname}
+                  onNavigate={closeOnMobile}
+                />
+              ))}
             </SidebarMenu>
           </SidebarGroupContent>
         </SidebarGroup>
@@ -204,6 +238,32 @@ export function AdminSidebar({
 
       <SidebarRail />
     </Sidebar>
+  );
+}
+
+function NavRow({
+  item,
+  pathname,
+  onNavigate,
+}: {
+  item: NavItem;
+  pathname: string;
+  onNavigate: () => void;
+}) {
+  const { href, label, icon: Icon, exact } = item;
+  const active = exact ? pathname === href : pathname === href || pathname.startsWith(`${href}/`);
+  return (
+    <SidebarMenuItem>
+      <SidebarMenuButton
+        isActive={active}
+        tooltip={label}
+        onClick={onNavigate}
+        render={<Link href={href} />}
+      >
+        <Icon />
+        <span>{label}</span>
+      </SidebarMenuButton>
+    </SidebarMenuItem>
   );
 }
 

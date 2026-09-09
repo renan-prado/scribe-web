@@ -266,6 +266,66 @@ Uma leitura que também precisa ser preservada: estudo sem nenhuma fonte não é
 necessariamente pior — é a selagem tendo descartado o que não tinha obra, que é
 o comportamento desejado.
 
+## Financeiro (`/admin/financeiro`)
+
+Seis telas atrás de um `SidebarGroup` próprio. A área inteira responde a uma
+pergunta que as outras oito não respondem: **quanto o Scriba ganha, gasta e
+deve, e para onde isso vai.** Desenho completo em [`docs/financeiro.md`](../../../docs/financeiro.md);
+o que não pode ser desfeito está aqui.
+
+**Metade do painel é MEDIDA e não se digita.** Receita de assinatura sai dos
+créditos de `coin_transactions` (`lib/finance/measured.ts`), custo de IA de
+`llm_usage_events`, taxa do Stripe de `lib/partners/economics.ts` e comissão
+de `partner_commissions`. O que se lança à mão são as cinco tabelas de
+`0043_finance.sql`, e elas guardam só o que ninguém mede por nós — Vercel,
+Supabase, domínio, ferramentas, impostos, dívidas.
+
+> A armadilha da área, e ela está dita na tela: lançar "assinaturas de
+> setembro, R$ 5.000" à mão CONTA DUAS VEZES. `buildFinanceOverview` devolve
+> um aviso quando um mês tem receita medida e receita lançada.
+
+**Uma conta, um lugar.** Toda aritmética mora em `lib/finance/*` — puro,
+client-safe e coberto por `npm test`. Nenhuma página calcula nada: elas
+recebem `FinanceOverview` de `lib/db/admin/finance-overview.ts`. É a mesma
+regra de `lib/db/admin/metrics.ts`, pelo mesmo motivo.
+
+Cinco coisas que quem mexer aqui não pode desfazer:
+
+- **Os DOIS regimes têm nomes diferentes e nunca somam.** Competência ("quanto
+  o Scriba custa por mês", com a anual rateada em doze) e caixa ("quanto saiu
+  da conta", com a anual inteira no mês da cobrança). Um total sem dizer de
+  qual regime ele é não significa nada.
+- **A fatura real de um contrato SUBSTITUI a provisão dele no mês.** É o que o
+  campo `recurringId` do lançamento existe para fazer. Sem ele, o mês em que
+  alguém registra a fatura da Vercel aparece com o custo dobrado.
+- **Câmbio congela na liquidação e flutua enquanto pendente.** Uma despesa em
+  dólar já paga custou o que custou; reconvertê-la faz o lucro de julho mudar
+  porque o dólar mexeu em setembro. Uma dívida é o oposto — vale a cotação de
+  hoje, que é quando ela seria quitada.
+- **Sem cotação, um valor em dólar vale `null`, nunca zero.** Zero soma e some
+  do total sem avisar; `null` obriga a tela a dizer quantos ficaram de fora.
+  Vale para toda a camada (`lib/finance/money.ts`).
+- **Os avisos vêm ANTES dos números.** Um painel financeiro erra em silêncio, e
+  o sintoma é sempre uma conta boa demais — que é a que ninguém investiga. É a
+  mesma razão do aviso de modelo sem preço em `/admin/usage`.
+
+**A projeção roda no CLIENTE, e isso não é cálculo no frontend.** O componente
+chama `project()` de `lib/finance/projection.ts`, o único lugar onde a fórmula
+existe e o mesmo que os testes exercitam. Rodar ali é o que permite mexer numa
+premissa sem round-trip; nada do que sai dela é persistido. O que se GRAVA em
+`finance_scenarios` são as premissas — nunca o resultado, que envelheceria em
+silêncio enquanto a base (assinantes, ARPU, custo por cliente) muda sozinha.
+
+**Dívida não é um tipo.** É um lançamento com `status <> 'paid'` e
+`due_date`; `/admin/financeiro/compromissos` é um recorte da mesma tabela. Um
+terceiro `kind` daria três somas para o mesmo dinheiro e a primeira quitação
+faria as três discordarem.
+
+**Categoria não se apaga, arquiva-se.** Sem categoria, um custo é tratado como
+variável — apagar "Infraestrutura" faria o custo fixo de todo o histórico
+despencar sem nada indicando por quê. Por isso não existe `DELETE` na rota de
+categorias, e por isso trocar a `nature` de uma categoria tem log próprio.
+
 ## Parceiros
 
 O cadastro, a taxa de comissão e o registro de pagamento (PIX) vivem aqui, mas

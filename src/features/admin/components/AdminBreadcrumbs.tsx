@@ -20,6 +20,12 @@ const LABELS: Record<string, string> = {
   partners: "Parceiros",
   features: "Funcionalidades",
   studies: "Estudos",
+  financeiro: "Financeiro",
+  lancamentos: "Lançamentos",
+  recorrentes: "Custos recorrentes",
+  compromissos: "Compromissos",
+  projecoes: "Projeções",
+  configuracoes: "Configurações",
 };
 
 export function AdminBreadcrumbs() {
