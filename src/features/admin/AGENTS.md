@@ -113,12 +113,14 @@ parece resposta e não é:
   isso. Sem fixar a rota, o custo médio por chamada muda só porque a MISTURA de
   rotas mudou entre dois deploys: uma semana com mais estudos gerados parece
   uma versão que encareceu tudo.
-- **Não há coluna de moedas por versão.** `coin_transactions` não carrega
-  versão, e o débito é por minuto de gravação, não por chamada.
-- **Pelo mesmo motivo, os dois KPIs de moeda no topo viram `—` sob filtro de
-  rota ou de versão** (`summary.coinsScoped`). Custo recortado dividido por
-  moeda inteira é um número sempre baixo, com cara de margem folgada — o tipo de
-  mentira que ninguém investiga porque a conta parece boa.
+- **Não há coluna de moedas por versão na tabela.** O débito é por minuto de
+  gravação, não por chamada — não há como ratear uma cobrança de minuto entre
+  as chamadas que ela pagou.
+- **Os dois KPIs de moeda no topo viram `—` sob filtro de ROTA**
+  (`summary.coinsScoped`). Custo recortado dividido por moeda inteira é um
+  número sempre baixo, com cara de margem folgada — o tipo de mentira que
+  ninguém investiga porque a conta parece boa. Sob filtro de VERSÃO eles
+  continuam, pela regra da janela abaixo.
 - **Variação com menos de 20 chamadas de um dos lados sai cinza**, e abaixo de
   1% sai neutra. "+340%" em vermelho sobre duas chamadas é lido como regressão
   quando o que ele diz é "ainda não deu tempo de medir".
@@ -128,8 +130,35 @@ parece resposta e não é:
 
 O seletor de versão do filtro lista TODAS as versões do período mesmo depois de
 uma ser escolhida: o recorte é aplicado em memória, e não no SQL, senão o
-filtro se trancaria depois do primeiro clique. Guia completo em
-[`docs/versionamento.md`](../../../docs/versionamento.md).
+filtro se trancaria depois do primeiro clique.
+
+Antes da primeira versão carimbada o seletor aparece DESABILITADO, com o motivo
+no `title` — nunca escondido. A primeira versão dele sumia da tela nesse caso, e
+o efeito era o oposto do pretendido: a funcionalidade desaparecia exatamente
+quando alguém ia procurá-la (o estado de todo ambiente no dia em que isto sobe),
+e a leitura virava "não foi feito" em vez de "ainda não há o que comparar".
+
+### A regra da janela, e por que precificação também tem o filtro
+
+`llm_usage_events` tem carimbo de versão; `coin_transactions` **não**. Margem
+precisa dos dois lados, e recortar só o custo daria uma fatia dividida pela
+receita do mês inteiro. A regra é uma frase:
+
+> A versão recorta pelo **carimbo** onde há carimbo (chamadas de LLM) e pela
+> **janela** em que ela esteve no ar onde não há (o ledger de moedas).
+
+A janela é medida — do primeiro evento da versão ao primeiro da seguinte
+(`VersionWindow` em `lib/db/admin/usage.ts`); a mais nova tem fim aberto. É o
+que permite `/admin/precificacao` ter o mesmo filtro e responder "esta mudança
+melhorou a margem da ação?", que é a pergunta daquela tela. Ela **mostra o
+intervalo resolvido** numa faixa sob o cabeçalho: um recorte de seis horas no
+ar é indistinguível de um de um mês, e os dois levam a decisões opostas.
+
+Uma versão sem evento no período zera moeda e custo JUNTOS — zerar só o custo
+produziria margem de 100%. A imprecisão conhecida é o rollout, em que a Vercel
+serve as duas versões por alguns minutos.
+
+Guia completo em [`docs/versionamento.md`](../../../docs/versionamento.md).
 
 ## O inspetor de sessão
 
@@ -174,6 +203,13 @@ O vocabulário está em `lib/coins/billable.ts` (client-safe) e a conta em
 `lib/db/admin/usage.ts`, junto do resto da agregação: **é a mesma passada pelas
 mesmas linhas** que alimenta `/admin/usage`. Uma segunda consulta de custo é
 uma segunda definição do mesmo número.
+
+Ela também aceita o filtro de **versão**, ao lado das pílulas de período, e ali
+ele responde "esta mudança melhorou a margem da ação?". Quem recorta a moeda
+junto com o custo é a janela em que a versão esteve no ar — ver "A regra da
+janela" na seção do corte por versão, acima. A faixa azul sob o cabeçalho
+(`VersionWindowNote`) mostra o intervalo resolvido, e ela não é decoração: sem
+ela, seis horas no ar e um mês no ar produzem números indistinguíveis.
 
 **Há DUAS margens, e a coluna mostra a da DECISÃO.** `marginAtCurrentPrice` é
 custo de uma execução contra o que a ação cobra hoje; `realizedMargin` é custo

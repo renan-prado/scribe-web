@@ -16,6 +16,7 @@ import { CoinEconomicsForm } from "@/features/admin/components/CoinEconomicsForm
 import { FxRateBadge } from "@/features/admin/components/FxRateBadge";
 import { SessionRunLookup } from "@/features/admin/components/SessionRunLookup";
 import { SessionRunPanel } from "@/features/admin/components/SessionRunPanel";
+import { VersionPicker } from "@/features/admin/components/VersionPicker";
 import { readAdminInsights } from "@/lib/admin/insights/store";
 import {
   BILLABLE_ACTION_BY_KEY,
@@ -100,7 +101,7 @@ function percent(value: number | null): string {
 const UUID = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
 
 type PageProps = {
-  searchParams: Promise<{ range?: string; sessionId?: string }>;
+  searchParams: Promise<{ range?: string; sessionId?: string; version?: string }>;
 };
 
 export default async function AdminPricingPage({ searchParams }: PageProps) {
@@ -109,9 +110,10 @@ export default async function AdminPricingPage({ searchParams }: PageProps) {
   // Validado aqui e não no componente: um `sessionId` malformado viraria uma
   // consulta ao Postgres que estoura em vez de devolver vazio.
   const sessionId = UUID.test(sp.sessionId?.trim() ?? "") ? (sp.sessionId as string).trim() : "";
+  const version = sp.version?.trim() ?? "";
 
   const [summary, rate, settings, isCustom, insights, sessionRuns] = await Promise.all([
-    loadAdminUsageSummary({ from: rangeToFrom(range) }),
+    loadAdminUsageSummary({ from: rangeToFrom(range), version: version || undefined }),
     getUsdToBrl(),
     getCoinEconomics(),
     hasCustomCoinEconomics(),
@@ -126,8 +128,15 @@ export default async function AdminPricingPage({ searchParams }: PageProps) {
       <AdminPageHeader
         title="Precificação"
         subtitle="O que cada ação cobra, o que ela custa de verdade, e a margem que sobra."
-        actions={<RangePills current={range} sessionId={sessionId} />}
+        actions={
+          <>
+            <VersionPicker versions={summary.versions} current={version} />
+            <RangePills current={range} sessionId={sessionId} version={version} />
+          </>
+        }
       />
+
+      <VersionWindowNote summary={summary} />
 
       <CoinEconomicsForm settings={settings} isCustom={isCustom} />
 
@@ -161,13 +170,23 @@ export default async function AdminPricingPage({ searchParams }: PageProps) {
   );
 }
 
-function RangePills({ current, sessionId }: { current: string; sessionId: string }) {
-  // A sessão inspecionada sobrevive à troca de período: ela não depende do
-  // recorte, e perdê-la a cada clique obrigaria a recolar o id.
+function RangePills({
+  current,
+  sessionId,
+  version,
+}: {
+  current: string;
+  sessionId: string;
+  version: string;
+}) {
+  // A sessão inspecionada e a versão sobrevivem à troca de período: nenhuma das
+  // duas depende do recorte, e perdê-las a cada clique obrigaria a recolar o id
+  // e a reescolher a versão.
   const href = (key: string) => {
     const params = new URLSearchParams();
     if (key !== "30d") params.set("range", key);
     if (sessionId) params.set("sessionId", sessionId);
+    if (version) params.set("version", version);
     const qs = params.toString();
     return qs ? `/admin/precificacao?${qs}` : "/admin/precificacao";
   };
@@ -188,6 +207,53 @@ function RangePills({ current, sessionId }: { current: string; sessionId: string
         </Link>
       ))}
     </nav>
+  );
+}
+
+const WINDOW_FMT = new Intl.DateTimeFormat("pt-BR", {
+  day: "2-digit",
+  month: "short",
+  hour: "2-digit",
+  minute: "2-digit",
+});
+
+function formatWindowMoment(iso: string): string {
+  const d = new Date(iso);
+  return Number.isNaN(d.getTime()) ? "—" : WINDOW_FMT.format(d);
+}
+
+/**
+ * A faixa que explica o recorte por versão, e ela não é decoração.
+ *
+ * Preço é cobrado por AÇÃO, e uma ação tem dois lados que vêm de tabelas
+ * diferentes: o CUSTO sai de `llm_usage_events`, que carrega o carimbo de
+ * versão, e a MOEDA sai de `coin_transactions`, que não carrega — o débito é
+ * por minuto de gravação, não por chamada de LLM. Recortar só o custo daria
+ * margem de uma fatia dividida pela receita do mês inteiro: sempre péssima, e
+ * errada.
+ *
+ * Por isso a versão recorta pelo CARIMBO de um lado e pela JANELA em que ela
+ * esteve no ar do outro (ver `VersionWindow` em `lib/db/admin/usage.ts`). A
+ * janela precisa aparecer na TELA: um número recortado por uma versão que
+ * ficou seis horas no ar é indistinguível de um recortado por um mês, e as
+ * duas leituras levam a decisões de preço opostas.
+ */
+function VersionWindowNote({ summary }: { summary: AdminUsageSummary }) {
+  const w = summary.versionWindow;
+  if (!w) return null;
+  return (
+    <section className="rounded-2xl border border-scriba-blue-soft bg-scriba-blue-soft/40 p-4">
+      <p className="text-[12.5px] font-light leading-relaxed text-scriba-ink">
+        Tudo abaixo é o recorte da <span className="font-mono font-semibold">v{w.version}</span>:
+        custo pelas chamadas que ela carimbou, moedas pelo período em que ela esteve no ar —{" "}
+        <span className="font-medium">
+          {formatWindowMoment(w.startsAt)}
+          {w.endsAt ? ` a ${formatWindowMoment(w.endsAt)}` : " até agora"}
+        </span>
+        . O ledger de moedas não guarda versão; a janela é a única forma de recortar os dois lados
+        da margem pela mesma fatia de calendário.
+      </p>
+    </section>
   );
 }
 

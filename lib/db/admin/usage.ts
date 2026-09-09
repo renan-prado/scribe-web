@@ -75,6 +75,32 @@ export type UsageBySession = {
 export type UsageByDay = { day: string; totalCostUsd: number; events: number };
 
 /**
+ * O intervalo em que uma versão esteve no ar, MEDIDO: começa no primeiro
+ * evento que ela gravou e termina no primeiro evento da versão seguinte.
+ *
+ * Ele existe porque metade do painel não tem carimbo de versão para ler.
+ * `coin_transactions` não tem — o débito é por minuto de gravação, por estudo,
+ * por reprocessamento, nunca por chamada de LLM —, e sem alguma forma de
+ * recortar a moeda junto com o custo, toda margem sob filtro de versão seria
+ * custo de uma fatia dividido por receita do mês inteiro.
+ *
+ * Daí a regra única, e ela cabe numa frase:
+ *
+ *   a versão recorta pelo CARIMBO onde há carimbo (as chamadas de LLM) e pela
+ *   JANELA em que ela esteve no ar onde não há (o ledger de moedas).
+ *
+ * `endsAt` é `null` na versão mais nova: ela ainda está no ar. A imprecisão
+ * conhecida é a janela de rollout — durante alguns minutos a Vercel serve as
+ * duas versões —, e ela é pequena demais para trocar por um modelo mais
+ * complicado que teria de adivinhar a mesma coisa.
+ */
+export type VersionWindow = {
+  version: string;
+  startsAt: string;
+  endsAt: string | null;
+};
+
+/**
  * Uma linha por VERSÃO do app (`llm_usage_events.app_version`, carimbada em
  * `lib/db/usage.ts`). É o corte que responde "depois da 0.5.0, isto ficou mais
  * caro ou mais lento?" — a pergunta que aparece toda vez que um prompt é
@@ -235,6 +261,12 @@ export type AdminUsageSummary = {
   /** Todas as versões vistas no período, da mais nova para a mais antiga. */
   versions: string[];
   /**
+   * A janela resolvida do filtro de versão, e `null` quando não há filtro. A
+   * tela MOSTRA este intervalo: sem ele, um número recortado por uma versão
+   * que ficou seis horas no ar é indistinguível de um recortado por um mês.
+   */
+  versionWindow: VersionWindow | null;
+  /**
    * Custo do milheiro de moeda no agregado — e ele sai SÓ do custo cobrável.
    *
    * Somar aqui o gasto sem cobrança e o custo interno do painel produzia um
@@ -271,12 +303,16 @@ export type AdminUsageSummary = {
   /**
    * Se os números de MOEDA respeitam os filtros ativos.
    *
-   * `coin_transactions` não tem rota nem versão: o débito é por minuto de
-   * gravação, por estudo, por reprocessamento — nunca por chamada de LLM.
-   * Com um desses dois filtros ligados, o custo é recortado e a moeda não é, e
-   * "custo por 1.000 moedas" vira custo de uma fatia dividido pelo total do
-   * período: um número que parece margem, sempre baixo, e que ninguém
-   * investiga porque a conta parece boa. Falso aqui, a tela mostra "—".
+   * `coin_transactions` não tem rota nem versão. A VERSÃO ainda assim recorta,
+   * pela janela de tempo em que ela esteve no ar (ver `VersionWindow`) — é
+   * aproximação, mas é a mesma fatia de calendário dos dois lados, e é o que
+   * permite ler margem por versão.
+   *
+   * A ROTA não tem esse recurso: rota não é um intervalo, é um pedaço de cada
+   * execução. Com ela ligada o custo é recortado e a moeda não, e "custo por
+   * 1.000 moedas" vira custo de uma fatia dividido pelo total do período — um
+   * número que parece margem, sempre baixo, que ninguém investiga porque a
+   * conta parece boa. Falso aqui, a tela mostra "—".
    */
   coinsScoped: boolean;
 };
@@ -392,6 +428,38 @@ export async function loadAdminUsageSummary(
     ? scanned.filter((row) => row.app_version === filters.version)
     : scanned;
 
+  // A janela de cada versão sai dos MESMOS eventos, sem consulta extra: o
+  // primeiro evento de uma versão é o momento em que ela começou a atender.
+  // Ordenadas da mais nova para a mais antiga, a janela de cada uma termina
+  // onde a de cima começa.
+  const firstSeenByVersion = new Map<string, string>();
+  for (const row of scanned) {
+    if (!row.app_version) continue;
+    const seen = firstSeenByVersion.get(row.app_version);
+    if (seen === undefined || row.created_at < seen) {
+      firstSeenByVersion.set(row.app_version, row.created_at);
+    }
+  }
+  const versionsNewestFirst = sortVersionsDesc(Array.from(firstSeenByVersion.keys()));
+  let versionWindow: VersionWindow | null = null;
+  if (filters.version) {
+    const index = versionsNewestFirst.indexOf(filters.version);
+    const startsAt = index === -1 ? null : (firstSeenByVersion.get(filters.version) ?? null);
+    if (startsAt !== null) {
+      // O vizinho de cima é a versão SEGUINTE (a lista é decrescente). O
+      // `> startsAt` protege contra rollback: uma versão mais alta que voltou
+      // a rodar depois produziria uma janela de duração negativa, e o recorte
+      // de moedas ficaria vazio sem nenhum sinal na tela.
+      const newer =
+        index > 0 ? (firstSeenByVersion.get(versionsNewestFirst[index - 1]) ?? null) : null;
+      versionWindow = {
+        version: filters.version,
+        startsAt,
+        endsAt: newer !== null && newer > startsAt ? newer : null,
+      };
+    }
+  }
+
   // Ledger de moedas cobradas — autoritativo do que o usuário gastou. É a base
   // do "custo por moeda": totalUsd / totalCoins gastos no mesmo escopo.
   let coinQuery = admin
@@ -426,6 +494,15 @@ export async function loadAdminUsageSummary(
     const reason = r.reason;
     if (!isChargeReason(reason)) continue;
     if (modeSessionIds && (r.session_id == null || !modeSessionIds.has(r.session_id))) continue;
+    // Recorte por versão: aqui é pela JANELA, porque o ledger não tem carimbo.
+    // Um filtro de versão que não resolveu janela nenhuma (a versão não gravou
+    // evento no período) zera as moedas junto com o custo — deixá-las inteiras
+    // ao lado de um custo zerado produziria margem de 100%.
+    if (filters.version) {
+      if (versionWindow === null) continue;
+      if (r.created_at < versionWindow.startsAt) continue;
+      if (versionWindow.endsAt !== null && r.created_at >= versionWindow.endsAt) continue;
+    }
     const spent = Math.abs(toNumber(r.amount));
     if (spent === 0) continue;
     coinsTotal += spent;
@@ -729,13 +806,14 @@ export async function loadAdminUsageSummary(
     byVersion,
     routes: Array.from(routeUniverse).sort(),
     versions: sortVersionsDesc(Array.from(versionUniverse)),
+    versionWindow,
     overallCostPerCoinUsd,
     billableCostUsd,
     unchargedCostUsd,
     internalCostUsd,
     unpricedEvents,
     unpricedModels: Array.from(unpricedModels).sort(),
-    coinsScoped: !filters.route && !filters.version,
+    coinsScoped: !filters.route,
   };
 }
 

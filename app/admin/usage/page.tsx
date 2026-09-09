@@ -204,21 +204,28 @@ type TotalsGridProps = {
 };
 
 /**
- * Os dois KPIs de MOEDA somem sob um filtro de rota ou de versão, e a ausência
- * é o ponto: `coin_transactions` não tem nenhuma das duas colunas — o débito é
- * por minuto de gravação, por estudo, por reprocessamento, nunca por chamada
- * de LLM. Com o custo recortado e a moeda inteira, "custo por 1.000 moedas"
- * viraria uma fatia dividida por um total: um número sempre baixo, com cara de
- * margem folgada, que ninguém investiga porque a conta parece boa.
+ * Os dois KPIs de MOEDA somem sob um filtro de ROTA, e a ausência é o ponto:
+ * `coin_transactions` não tem coluna de rota — o débito é por minuto de
+ * gravação, por estudo, por reprocessamento, nunca por chamada de LLM. Com o
+ * custo recortado e a moeda inteira, "custo por 1.000 moedas" viraria uma
+ * fatia dividida por um total: um número sempre baixo, com cara de margem
+ * folgada, que ninguém investiga porque a conta parece boa. Um travessão com o
+ * motivo ao lado é pior de ler e melhor de confiar.
  *
- * Um travessão com o motivo ao lado é pior de ler e melhor de confiar.
+ * A VERSÃO é diferente, e por isso continua somando: ela é um intervalo de
+ * tempo, e o ledger tem data. As moedas do recorte são as do período em que a
+ * versão esteve no ar (ver `VersionWindow`) — aproximação, mas a mesma fatia
+ * de calendário dos dois lados, que é o que permite ler margem por versão. O
+ * cartão diz isso, porque um número aproximado sem etiqueta é lido como exato.
  */
 function TotalsGrid({ summary, money, costPerThousandCoins }: TotalsGridProps) {
   const { totals, overallCostPerCoinUsd, coinsScoped } = summary;
   const audioMin = totals.totalAudioSeconds > 0 ? totals.totalAudioSeconds / 60 : 0;
-  const coinHint = coinsScoped
-    ? undefined
-    : "Moeda não é debitada por rota nem por versão — este corte não se aplica.";
+  const coinHint = !coinsScoped
+    ? "Moeda não é debitada por rota — este corte não se aplica."
+    : summary.versionWindow
+      ? "Moedas do período em que a versão esteve no ar: o ledger não guarda versão."
+      : undefined;
   return (
     <section className="grid gap-3 sm:grid-cols-2 lg:grid-cols-3">
       <Kpi

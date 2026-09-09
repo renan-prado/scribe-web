@@ -155,10 +155,10 @@ Quatro coisas que a tabela deliberadamente não faz:
 - **Não tem coluna de moedas.** `coin_transactions` não carrega versão, e o
   débito é por minuto de gravação, não por chamada. Uma coluna "custo por 1.000
   moedas" por versão seria custo filtrado dividido por moeda inteira.
-- **Pelo mesmo motivo, os dois KPIs de moeda no topo da página viram `—`
-  quando há filtro de rota ou de versão.** O número que apareceria ali é sempre
-  baixo e tem cara de margem folgada — o tipo de mentira que ninguém
-  investiga, porque a conta parece boa.
+- **Os dois KPIs de moeda no topo da página viram `—` quando há filtro de
+  ROTA.** O número que apareceria ali é sempre baixo e tem cara de margem
+  folgada — o tipo de mentira que ninguém investiga, porque a conta parece boa.
+  Sob filtro de VERSÃO eles continuam somando, pela regra da §7.
 - **Variação com menos de 20 chamadas de um dos lados sai cinza**, não colorida.
   Duas chamadas caras numa versão recém-subida produzem "+340%" em vermelho, e
   esse vermelho é lido como regressão quando o que ele diz é "ainda não deu
@@ -170,11 +170,44 @@ O seletor de versão do filtro lista TODAS as versões do período mesmo depois 
 uma ser escolhida — o recorte é aplicado em memória, e não no SQL, justamente
 para o filtro não se trancar depois do primeiro clique.
 
-## 7. O que fica de fora, e por quê
+Antes da primeira versão carimbada o seletor aparece DESABILITADO, com o motivo
+no `title` — nunca escondido. A primeira versão dele sumia da tela nesse caso, e
+o efeito era o oposto do pretendido: a funcionalidade desaparecia exatamente
+quando alguém ia procurá-la (o estado de todo ambiente no dia em que isto sobe),
+e a leitura virava "não foi feito" em vez de "ainda não há o que comparar".
 
-- **`/admin/precificacao` não tem filtro de versão.** Ela responde "este preço
-  se paga?", e preço é cobrado por AÇÃO — que atravessa várias rotas e vários
-  deploys. Um recorte por versão ali produziria margem de um pedaço de mês.
+## 7. A regra da janela — como a moeda entra no recorte
+
+Metade do painel não tem carimbo de versão para ler. `llm_usage_events` tem;
+`coin_transactions` **não** — o débito é por minuto de gravação, por estudo,
+por reprocessamento, nunca por chamada de LLM. E margem precisa dos dois lados:
+recortar só o custo daria uma fatia dividida pela receita do mês inteiro.
+
+Daí a regra única, e ela cabe numa frase:
+
+> A versão recorta pelo **CARIMBO** onde há carimbo (as chamadas de LLM) e pela
+> **JANELA** em que ela esteve no ar onde não há (o ledger de moedas).
+
+A janela é MEDIDA, como todo o resto: começa no primeiro evento que a versão
+gravou e termina no primeiro evento da versão seguinte (`VersionWindow`, em
+`lib/db/admin/usage.ts`). A mais nova tem fim aberto — ela ainda está no ar.
+
+Três consequências:
+
+- **`/admin/precificacao` tem o filtro**, e é ele que responde "esta mudança
+  melhorou a margem da ação?". A tela mostra o intervalo resolvido numa faixa
+  logo abaixo do cabeçalho, porque um número recortado por uma versão que ficou
+  seis horas no ar é indistinguível de um recortado por um mês — e as duas
+  leituras levam a decisões de preço opostas.
+- **Uma versão sem nenhum evento no período zera moeda e custo juntos.** Zerar
+  só o custo produziria margem de 100%.
+- **A imprecisão conhecida é o rollout.** Durante alguns minutos a Vercel serve
+  as duas versões, e as moedas daquele intervalo caem toda na mais antiga. É
+  pequena demais para justificar um modelo que teria de adivinhar a mesma coisa
+  com mais passos.
+
+## 8. O que fica de fora, e por quê
+
 - **Nada é carimbado com o SHA do commit.** A tag já leva ao código exato, e
   uma segunda coluna de identidade só teria valor se a versão parasse de subir
   a cada entrega — que é o problema a resolver, não a contornar.
