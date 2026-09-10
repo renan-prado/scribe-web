@@ -40,9 +40,27 @@ Quatro coisas do chrome que quem mexer aqui não pode desfazer:
 - **O `SidebarInset` JÁ é o `<main>` da página.** Um segundo `<main>` dentro
   dele é HTML inválido e violação de a11y; o wrapper de padding é `<div>`.
 
-No celular, tocar um item da navegação FECHA o sheet (`setOpenMobile(false)`).
-Sem isso a gaveta fica por cima da tela que acabou de carregar, e a única saída
-é tocar no scrim — que parece cancelar o clique que se acabou de dar.
+No celular, a gaveta fecha sozinha — mas na TROCA DE ROTA, não no clique
+(`useEffect` sobre `pathname`). Fechar no clique deixava um vão sem sinal
+nenhum: a gaveta some, a rota do admin (toda `force-dynamic`) leva um segundo
+ou mais no servidor, e nada na tela diz que alguma coisa está acontecendo — a
+reação natural é tocar de novo. Fechando na troca, o item clicado fica à vista
+com o **ícone virado spinner** (`LinkPendingSwap`, o mesmo da barra inferior do
+celular) até a página chegar. O que não mudou é a razão original: a gaveta não
+pode ficar por cima da tela que acabou de carregar.
+
+O ícone é o lugar do spinner porque ele já ocupa aquele espaço — um indicador
+ao lado empurraria o rótulo a cada clique. E `useLinkStatus`, que é o que
+`LinkPendingSwap` usa por dentro, só funciona DENTRO da árvore de um `<Link>`:
+quem põe o componente lá é o `render={<Link/>}` do `SidebarMenuButton`. Fora de
+um Link ele devolve `pending: false` para sempre, em silêncio.
+
+**O `SidebarTrigger` tem 44px no celular** (`size-11 sm:size-7`), contra os
+28px do `size="icon-sm"` do shadcn. Ele é o ÚNICO jeito de abrir a gaveta no
+telefone — o `SidebarRail`, a faixa arrastável, é `sm:flex` e não existe no
+toque —, e um alvo de 28px encostado no canto superior esquerdo erra na maioria
+dos toques de polegar. Errava tantas vezes seguidas que parecia botão quebrado.
+44px é o mínimo do WCAG 2.5.5 e cabe folgado nos 56px da faixa.
 
 **As quatro tabelas do painel usam a mesma classe**
 (`admin-table admin-card-surface overflow-hidden`, definida em

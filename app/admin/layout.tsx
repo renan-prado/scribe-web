@@ -54,7 +54,18 @@ export default async function AdminLayout({ children }: { children: ReactNode })
           baixo.
         */}
         <header className="sticky top-0 z-30 flex h-14 shrink-0 items-center gap-1 border-b border-scriba-hairline bg-scriba-surface/85 px-3 backdrop-blur-md sm:gap-2 sm:px-4">
-          <SidebarTrigger className="-ml-1 shrink-0" />
+          {/*
+            44px no celular, e não os 28px do `size="icon-sm"` do shadcn. Este
+            é o ÚNICO jeito de abrir a gaveta no telefone — a sidebar lá é um
+            sheet fechado, e o `SidebarRail` (a faixa arrastável) é `sm:flex`,
+            então não existe no toque. Um alvo de 28px encostado no canto
+            superior esquerdo erra na maioria dos toques de polegar: falhava
+            tantas vezes seguidas que parecia botão quebrado, não alvo pequeno.
+            44px é o mínimo do WCAG 2.5.5 e cabe folgado nos 56px da faixa.
+            No desktop volta a 28px, onde o ponteiro acerta e o peso visual de
+            um quadrado grande ao lado do breadcrumb incomodaria.
+          */}
+          <SidebarTrigger className="-ml-1 size-11 shrink-0 touch-manipulation sm:size-7" />
           {/* `data-vertical:`, e não `data-[orientation=vertical]:` — o
               Separator do base-ui emite o atributo `data-vertical`, então o
               seletor antigo nunca casava e o traço ia de topo a base da faixa. */}

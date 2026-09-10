@@ -23,7 +23,8 @@ import {
 } from "lucide-react";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
-import { type ComponentProps, useRef } from "react";
+import { type ComponentProps, useEffect, useRef } from "react";
+import { LinkPendingSwap } from "@/components/NavLink";
 import {
   DropdownMenu,
   DropdownMenuContent,
@@ -107,6 +108,19 @@ export function AdminSidebar({
   const closeOnMobile = () => {
     if (isMobile) setOpenMobile(false);
   };
+
+  // Os itens de navegação NÃO fecham no clique; fecham quando a rota troca.
+  // A diferença aparece no celular: fechando no clique, a gaveta some antes de
+  // a página chegar e o toque some com ela — nenhuma tela dá sinal de que
+  // alguma coisa está carregando. Fechando na TROCA, o item clicado fica à
+  // vista girando o spinner do `LinkPendingSwap` pelo tempo que a rota do admin
+  // (toda `force-dynamic`) levar, e a gaveta sai exatamente quando há o que
+  // mostrar atrás dela. Navegação instantânea (rota já em cache) fecha no mesmo
+  // quadro, como antes.
+  // biome-ignore lint/correctness/useExhaustiveDependencies: é a TROCA de rota que fecha a gaveta; `pathname` é a dependência, não o alvo da leitura
+  useEffect(() => {
+    setOpenMobile(false);
+  }, [pathname, setOpenMobile]);
   const shownName = user.displayName?.trim() || user.email?.split("@")[0] || "Admin";
   const initials = initialsFrom(user.displayName, user.email);
   const signOutFormRef = useRef<HTMLFormElement>(null);
@@ -139,12 +153,7 @@ export function AdminSidebar({
           <SidebarGroupContent>
             <SidebarMenu>
               {NAV.map((item) => (
-                <NavRow
-                  key={item.href}
-                  item={item}
-                  pathname={pathname}
-                  onNavigate={closeOnMobile}
-                />
+                <NavRow key={item.href} item={item} pathname={pathname} />
               ))}
             </SidebarMenu>
           </SidebarGroupContent>
@@ -155,12 +164,7 @@ export function AdminSidebar({
           <SidebarGroupContent>
             <SidebarMenu>
               {FINANCE_NAV.map((item) => (
-                <NavRow
-                  key={item.href}
-                  item={item}
-                  pathname={pathname}
-                  onNavigate={closeOnMobile}
-                />
+                <NavRow key={item.href} item={item} pathname={pathname} />
               ))}
             </SidebarMenu>
           </SidebarGroupContent>
@@ -243,26 +247,27 @@ export function AdminSidebar({
   );
 }
 
-function NavRow({
-  item,
-  pathname,
-  onNavigate,
-}: {
-  item: NavItem;
-  pathname: string;
-  onNavigate: () => void;
-}) {
+function NavRow({ item, pathname }: { item: NavItem; pathname: string }) {
   const { href, label, icon: Icon, exact } = item;
   const active = exact ? pathname === href : pathname === href || pathname.startsWith(`${href}/`);
   return (
     <SidebarMenuItem>
-      <SidebarMenuButton
-        isActive={active}
-        tooltip={label}
-        onClick={onNavigate}
-        render={<Link href={href} />}
-      >
-        <Icon />
+      <SidebarMenuButton isActive={active} tooltip={label} render={<Link href={href} />}>
+        {/* O ÍCONE vira spinner enquanto a rota carrega.
+            Toda tela do admin é `force-dynamic` — consulta ao banco, câmbio, às
+            vezes seis buscas em paralelo —, então o prefetch do `<Link>` não
+            tem shell estático para entregar e a navegação BLOQUEIA no servidor
+            por um segundo ou mais. Sem sinal nesse intervalo o clique parece
+            não ter acontecido, e a reação natural é clicar de novo.
+
+            É o mesmo `LinkPendingSwap` da barra inferior do celular, e pelo
+            mesmo motivo: o ícone já existe e já ocupa o espaço, então trocá-lo
+            não mexe em uma linha do layout — um indicador ao lado empurraria o
+            rótulo a cada clique. Ele só responde DENTRO da árvore de um
+            `<Link>`, e quem o põe lá é o `render={<Link/>}` acima. */}
+        <LinkPendingSwap>
+          <Icon />
+        </LinkPendingSwap>
         <span>{label}</span>
       </SidebarMenuButton>
     </SidebarMenuItem>
