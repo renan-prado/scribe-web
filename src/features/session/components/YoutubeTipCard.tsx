@@ -4,7 +4,6 @@ import { X } from "lucide-react";
 import Link from "next/link";
 import { useEffect, useRef, useState } from "react";
 import { YoutubeIcon } from "@/components/icons/YoutubeIcon";
-import { COIN_COSTS } from "@/lib/coins/pricing";
 import { cn } from "@/lib/utils";
 
 /**
@@ -140,7 +139,7 @@ export function YoutubeTipCard({
             <YoutubeIcon className="size-4" />
           </span>
           <p className="text-pretty text-[15px] font-semibold leading-snug text-scriba-ink-strong">
-            A pregação está no YouTube?
+            Viu algo de interessante no YouTube?
           </p>
           {/* O X vive na LINHA do título, não solto no canto do card: no
               desktop o sticker ocupa a direita inteira, e um botão absoluto ali
@@ -155,9 +154,8 @@ export function YoutubeTipCard({
           </button>
         </div>
         <p className="text-pretty text-[13px] font-light leading-relaxed text-scriba-ink">
-          Cole o link e o Scriba aproveita a legenda que o vídeo já tem para escrever o resumo, os
-          cards e o estudo, sem precisar gravar nada. São {COIN_COSTS.youtubeImport} moedas por
-          vídeo, cobradas uma vez.
+          Copie e cole o link do vídeo para dentro do Scriba e organizamos um resumo organizado para
+          você.
         </p>
         <div className="mt-1">
           <Link
