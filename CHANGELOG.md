@@ -9,6 +9,12 @@ Gerado por `npm run release` a partir dos Conventional Commits. `feat` sobe o
 minor; o resto sobe o patch. Não edite à mão, a próxima execução escreve por
 cima do topo do arquivo.
 
+## 0.13.2, 2026-09-10, desde v0.13.1
+
+### Correções
+
+- **copy:** tira a repetição no card do YouTube (`ced7e93`)
+
 ## 0.13.1, 2026-09-10, desde v0.13.0
 
 ### Correções
