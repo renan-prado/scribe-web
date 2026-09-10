@@ -15,6 +15,7 @@ import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { PrivilegedProfileLinks } from "@/features/auth/components/PrivilegedProfileLinks";
 import { PlanCard } from "@/features/billing/components/PlanCard";
 import { ProfileFeedbackRow } from "@/features/feedback/components/ProfileFeedbackRow";
+import { ProfileTourRow } from "@/features/tour/components/ProfileTourRow";
 import { isCurrentUserAdmin } from "@/lib/auth/require-admin";
 import { isCurrentUserPartner } from "@/lib/auth/require-partner";
 import { COIN_RING_REFERENCE } from "@/lib/coins/pricing";
@@ -154,6 +155,12 @@ export default async function ProfilePage() {
           As três janelas automáticas perguntam na hora que nós escolhemos; o
           momento em que alguém tem algo a dizer é dele. */}
       <ProfileFeedbackRow />
+
+      {/* O caminho de volta para as apresentações. Ele existe porque o tour é
+          gravado no instante em que aparece: quem recarregou a página no
+          primeiro passo não veria o resto nunca mais. Ver
+          `src/features/tour/AGENTS.md`. */}
+      <ProfileTourRow />
 
       {/* Account info */}
       <section className="rounded-[28px] bg-scriba-paper p-6 ring-1 ring-scriba-hairline sm:p-7">

@@ -166,6 +166,11 @@ export function NewRecordingDialog({ trigger }: { trigger?: ReactNode }) {
     <Dialog open={open} onOpenChange={setOpen}>
       <DialogTrigger
         aria-label="Nova gravação"
+        // O alvo do passo "Gravar" do tour do /feed. Com `trigger` próprio
+        // (a barra do celular) este nó é `display:contents` e não tem caixa,
+        // então quem o holofote acha é o span de lá, que carrega o mesmo
+        // atributo. Ver `resolveAnchor`.
+        data-tour="nav-record"
         className={cn(
           trigger
             ? "contents"

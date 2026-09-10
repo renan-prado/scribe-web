@@ -363,6 +363,26 @@ export const RATE_LIMITS = {
     perUser: { limit: 10, windowMs: HOUR },
     perIp: { limit: 40, windowMs: HOUR },
   },
+  // "Posso mostrar este tour agora?". Só quem AINDA não viu o tour daquela
+  // tela chega a fazer a chamada, o mapa que o layout entrega já responde
+  // "não" no navegador para todo mundo que viu, então a cadência legítima é
+  // de algumas por conta na vida. O balde é largo mesmo assim porque um 429
+  // aqui é invisível na tela (o tour simplesmente não abre) e o que ele
+  // protegeria são duas leituras e uma escrita minúscula.
+  "tour-start": {
+    route: "tour-start",
+    perUser: { limit: 60, windowMs: MIN },
+    perIp: { limit: 180, windowMs: MIN },
+  },
+  // O desfecho (terminou / fechou no meio) e o "Rever os tours" do /profile.
+  // Um tour aberto gera no máximo um desfecho, e o reset é um clique
+  // deliberado; o teto existe para que a taxa de conclusão por tour não possa
+  // ser distorcida por uma conta só.
+  "tour-write": {
+    route: "tour-write",
+    perUser: { limit: 30, windowMs: MIN },
+    perIp: { limit: 90, windowMs: MIN },
+  },
   // Cobrança: cada clique abre UMA sessão de checkout/portal no Stripe, que é
   // uma chamada paga de API e um objeto persistido lá. Apertado de propósito,
   // uso legítimo são alguns cliques por hora, e um limite baixo aqui é a

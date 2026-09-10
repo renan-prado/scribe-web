@@ -4,6 +4,8 @@ import { FeedbackPrompt } from "@/features/feedback/components/FeedbackPrompt";
 import { FEEDBACK_DELAY_SUMMARY_MS } from "@/features/feedback/config";
 import { SavedSessionView } from "@/features/session/components/SavedSessionView";
 import { formatDurationLong } from "@/features/session/lib/formatting";
+import { TourTrigger } from "@/features/tour/components/TourTrigger";
+import { TOUR_DELAY_RESULT_MS } from "@/features/tour/config";
 import { hasDeepening } from "@/lib/db/deepenings";
 import { getHighlights } from "@/lib/db/highlights";
 import { getReminders } from "@/lib/db/reminders";
@@ -82,6 +84,11 @@ export default async function RecordingSummaryPage({ params }: PageProps) {
       {/* A pesquisa da 1ª, 3ª e 8ª gravação. Ela não desenha nada até o
           servidor dizer que é uma delas, ver `FeedbackPrompt`. */}
       <FeedbackPrompt kind="recording" sessionId={id} delayMs={FEEDBACK_DELAY_SUMMARY_MS} />
+      {/* A apresentação do resumo salvo. Ela e a pesquisa acima disputam a
+          mesma tela, e quem cede é a pesquisa: o `FeedbackPrompt` só começa a
+          contar o atraso dele depois que o tour sai. Ver
+          `src/features/tour/AGENTS.md`. */}
+      <TourTrigger tour="summary" delayMs={TOUR_DELAY_RESULT_MS} />
     </>
   );
 }

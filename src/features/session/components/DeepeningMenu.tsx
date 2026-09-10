@@ -82,6 +82,8 @@ export function DeepeningMenu({ sessionId, canReprocess }: DeepeningMenuProps) {
             "hover:bg-scriba-green-soft/60 hover:text-scriba-ink focus-visible:ring-2 focus-visible:ring-ring/40"
           )}
           aria-label="Mais opções"
+          // Alvo do passo "Refazer o estudo" do tour do estudo pronto.
+          data-tour="study-menu"
         >
           <MoreVertical className="size-4" />
         </DropdownMenuTrigger>

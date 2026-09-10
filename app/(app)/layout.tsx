@@ -8,9 +8,13 @@ import { PrivilegedMenuItems } from "@/features/auth/components/PrivilegedMenuIt
 import { UserMenu } from "@/features/auth/components/UserMenu";
 import { CoinBalance } from "@/features/coins/components/CoinBalance";
 import { NewRecordingDialog } from "@/features/session/components/NewRecordingDialog";
+import { TourProvider } from "@/features/tour/components/TourProvider";
 import { isCurrentUserPartner } from "@/lib/auth/require-partner";
 import { INITIAL_COIN_BALANCE } from "@/lib/coins/pricing";
 import { getCurrentAccount } from "@/lib/db/account";
+import { listSeenTours } from "@/lib/db/tours";
+import type { TourSeenMap } from "@/lib/domain/tour";
+import { getAuthUser } from "@/lib/supabase/server";
 
 export default async function AppLayout({ children }: { children: ReactNode }) {
   // Duas idas ao banco, não quatro: `getCurrentAccount` traz perfil, saldo e
@@ -21,9 +25,15 @@ export default async function AppLayout({ children }: { children: ReactNode }) {
   // também o ponto onde a mesada mensal de moedas do parceiro é conferida e
   // creditada (ver lib/partners/allowance.ts). Fica aqui, e não numa rota,
   // porque é o único caminho por onde todo parceiro passa ao usar o app.
-  const [account, isPartner] = await Promise.all([
+  // `getAuthUser` é `cache()`, então pedir o id aqui não custa uma ida a mais
+  // à rede: é a MESMA chamada que `getCurrentAccount` faz por dentro. É o que
+  // permite ao mapa de tours entrar no mesmo `Promise.all` em vez de esperar
+  // o perfil chegar para só então começar.
+  const user = await getAuthUser();
+  const [account, isPartner, seenTours] = await Promise.all([
     getCurrentAccount().catch(() => null),
     isCurrentUserPartner().catch(() => false),
+    user ? listSeenTours(user.id).catch((): TourSeenMap => ({})) : Promise.resolve({}),
   ]);
   // Conta desativada não renderiza o app: nem header, nem nav, nem children.
   // O 403 de `requireAuth()` já barra as rotas de API, sem esta metade, a
@@ -35,7 +45,11 @@ export default async function AppLayout({ children }: { children: ReactNode }) {
   const initialBalance = account?.coinBalance ?? INITIAL_COIN_BALANCE;
 
   return (
-    <>
+    /* O provider dos tours envolve a moldura INTEIRA, e não só o conteúdo:
+       parte dos alvos que o holofote recorta mora no header e na barra
+       inferior (o botão "Gravar"), e o overlay precisa estar vivo enquanto
+       eles estão na tela. Ver `src/features/tour/AGENTS.md`. */
+    <TourProvider seen={seenTours}>
       <AppHeader
         actions={
           <>
@@ -83,6 +97,6 @@ export default async function AppLayout({ children }: { children: ReactNode }) {
         {children}
       </PageTransition>
       <MobileBottomNav />
-    </>
+    </TourProvider>
   );
 }

@@ -9,6 +9,8 @@ import {
   StudyBlockRenderer,
   studyBlockKey,
 } from "@/features/session/components/StudyBlockRenderer";
+import { TourTrigger } from "@/features/tour/components/TourTrigger";
+import { TOUR_DELAY_RESULT_MS } from "@/features/tour/config";
 import { getDeepening } from "@/lib/db/deepenings";
 import { getSessionMeta } from "@/lib/db/sessions";
 import { canCurrentUserUse } from "@/lib/entitlements/server";
@@ -95,7 +97,10 @@ export default async function RecordingDeepeningPage({ params }: PageProps) {
 
       <div className="flex flex-col gap-7">
         {payload.shortSummary ? (
-          <div className="-mb-2 flex flex-col gap-2 border-l-[2.5px] border-scriba-green pl-4">
+          <div
+            data-tour="study-thesis"
+            className="-mb-2 flex flex-col gap-2 border-l-[2.5px] border-scriba-green pl-4"
+          >
             <span className="text-[10px] font-semibold uppercase tracking-[0.14em] text-scriba-green">
               Tese central
             </span>
@@ -118,6 +123,9 @@ export default async function RecordingDeepeningPage({ params }: PageProps) {
           nota dada antes de a pessoa ter lido a tese central é sobre a espera,
           não sobre o estudo. Ver `FeedbackPrompt`. */}
       <FeedbackPrompt kind="study" sessionId={id} delayMs={FEEDBACK_DELAY_STUDY_MS} />
+      {/* A apresentação do estudo pronto. Mesma disputa do /summary: enquanto
+          o tour está na tela, a pesquisa não conta o atraso dela. */}
+      <TourTrigger tour="study" delayMs={TOUR_DELAY_RESULT_MS} />
     </main>
   );
 }

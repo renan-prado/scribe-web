@@ -96,6 +96,7 @@ export function DeepenButton({ sessionId, hasDeepening, variant, canGenerate }: 
       return (
         <NavLink
           href={href}
+          data-tour="deepen"
           className="inline-flex items-center gap-1.5 rounded-full bg-scriba-blue-soft px-3 py-1.5 text-[11px] font-semibold uppercase tracking-wider text-scriba-blue-ink transition-colors hover:bg-scriba-blue-soft/80 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-scriba-blue/40"
         >
           <BookOpen aria-hidden className="size-3.5" />
@@ -106,6 +107,7 @@ export function DeepenButton({ sessionId, hasDeepening, variant, canGenerate }: 
     return (
       <NavLink
         href={href}
+        data-tour="deepen"
         contentClassName="inline-flex items-center justify-center gap-1.5"
         className="inline-flex w-full items-center justify-center rounded-full scriba-cta bg-[image:var(--scriba-cta)] px-4 py-3 text-[11px] font-semibold uppercase tracking-wider text-scriba-cta-ink shadow-[0_5px_14px_var(--scriba-cta-shadow)] transition-colors sm:flex-1"
       >
@@ -140,6 +142,7 @@ export function DeepenButton({ sessionId, hasDeepening, variant, canGenerate }: 
       >
         <button
           type="button"
+          data-tour="deepen"
           onClick={() => setBillingOpen(true)}
           aria-label={`Gerar estudo, disponível no plano ${minPlanNameFor("study_generation")}`}
           className={deepenButtonVariants({ layout, state: "enabled" })}
@@ -190,6 +193,12 @@ export function DeepenButton({ sessionId, hasDeepening, variant, canGenerate }: 
   const button = (
     <button
       type="button"
+      // Alvo do passo "Gerar estudo" do tour do resumo salvo. Ele fica nos
+      // três estados que o botão TEM na tela (gerar, ver, e o convite de
+      // plano), e some nos transitórios (carregando, gerando): o passo é
+      // descartado quando o alvo não está lá, e um tour disparado no meio de
+      // um spinner não é um caso que valha código a mais. Ver `resolveSteps`.
+      data-tour="deepen"
       onClick={handleClick}
       disabled={pending || insufficient}
       aria-disabled={insufficient}

@@ -72,6 +72,9 @@ export function SessionMenu({
           "hover:bg-scriba-blue-soft/60 hover:text-scriba-ink focus-visible:ring-2 focus-visible:ring-ring/40"
         )}
         aria-label="Mais opções"
+        // Alvo do passo "Transcrição e mais opções" do tour do resumo salvo. O
+        // mesmo menu aparece na tela de gravação, que não tem tour nenhum.
+        data-tour="session-menu"
       >
         <MoreVertical className="size-4" />
       </DropdownMenuTrigger>

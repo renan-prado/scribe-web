@@ -404,6 +404,16 @@
     rgba(255, 255, 255, 0.03) 92%,
     rgba(255, 255, 255, 0) 100%
   );
+  /* O escurecido do tour, e o anel que sobra em volta do elemento recortado.
+     Ele NÃO é o mesmo scrim do `DialogOverlay` (black/10), e a diferença é
+     necessária: aqui o véu não cobre a tela inteira, ele contorna um buraco,
+     e um véu tão claro quanto o do diálogo deixaria o buraco invisível, o
+     recorte só existe se houver contraste entre o dentro e o fora. Os dois
+     valores são consumidos por `var()` num `box-shadow` inline
+     (`TourSpotlight`), que é o único jeito de um furo com canto arredondado
+     não virar quatro divs remendadas. */
+  --scriba-tour-scrim: rgba(15, 23, 42, 0.55);
+  --scriba-tour-ring: rgba(47, 107, 216, 0.55);
   --lp-header-h: 71px;
   /* Design-system border widths */
   --border-book: 1.5px;   /* book glyph icon border */
@@ -565,6 +575,12 @@
     rgba(5, 4, 11, 0.03) 92%,
     rgba(5, 4, 11, 0) 100%
   );
+  /* No escuro o véu do tour ESCURECE menos, não mais: o chão já é #05040B, e
+     repetir a opacidade do claro apagaria a página inteira em volta do furo,
+     deixando o recorte sem contexto nenhum. O anel clareia junto, pelo mesmo
+     motivo do CTA invertido: azul de superfície sobre página escura some. */
+  --scriba-tour-scrim: rgba(2, 2, 8, 0.72);
+  --scriba-tour-ring: rgba(124, 168, 245, 0.6);
 }
 
 /* sm: o header ganha py-[18px] e cresce 8px. */

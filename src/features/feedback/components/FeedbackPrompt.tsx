@@ -3,6 +3,7 @@
 import { useEffect, useRef, useState } from "react";
 import { FeedbackDialog } from "@/features/feedback/components/FeedbackDialog";
 import { checkFeedbackPrompt, type FeedbackPromptInfo } from "@/features/feedback/lib/api";
+import { useTour } from "@/features/tour/components/TourProvider";
 
 type Props = {
   kind: "recording" | "study";
@@ -28,6 +29,15 @@ type Props = {
  * A aba escondida (celular bloqueado no bolso enquanto o resumo termina) é
  * tratada como saída: a janela abriria sem ninguém para vê-la, e o marco
  * queimaria em silêncio. Ela volta na próxima abertura da tela.
+ *
+ * **O TOUR TEM PREFERÊNCIA, e a pesquisa espera.** As duas coisas moram nas
+ * mesmas telas (`/summary`, `/deepening`) e as duas abrem sozinhas; juntas,
+ * não são duas perguntas, são uma parede. Enquanto um tour está aberto o
+ * relógio daqui nem começa, e ele recomeça do zero quando a tela fica livre,
+ * o que também protege o marco: perguntar não é só mostrar uma janela, é
+ * GASTAR a 1ª, a 3ª ou a 8ª gravação da vida de alguém, e gastá-la atrás de um
+ * balão é gastá-la sem receber resposta nenhuma. Quem cede é a pesquisa porque
+ * o tour é uma vez na vida e ela ainda terá outros dois marcos.
  */
 export function FeedbackPrompt({ kind, sessionId, delayMs }: Props) {
   const [prompt, setPrompt] = useState<FeedbackPromptInfo | null>(null);
@@ -35,9 +45,10 @@ export function FeedbackPrompt({ kind, sessionId, delayMs }: Props) {
   // Guarda contra a montagem dupla do StrictMode em dev: sem ele, a primeira
   // chamada registra a pergunta e a segunda recebe "já perguntei".
   const firedRef = useRef(false);
+  const { activeTour } = useTour();
 
   useEffect(() => {
-    if (firedRef.current) return;
+    if (firedRef.current || activeTour !== null) return;
     let cancelled = false;
 
     const timer = window.setTimeout(async () => {
@@ -53,7 +64,7 @@ export function FeedbackPrompt({ kind, sessionId, delayMs }: Props) {
       cancelled = true;
       window.clearTimeout(timer);
     };
-  }, [kind, sessionId, delayMs]);
+  }, [kind, sessionId, delayMs, activeTour]);
 
   if (!prompt) return null;
 

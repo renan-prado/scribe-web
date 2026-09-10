@@ -23,6 +23,8 @@ export function ImportYoutubeButton() {
     <NavLink
       href="/importar"
       spinner="none"
+      // O alvo do passo "Importar do YouTube" do tour da Biblioteca.
+      data-tour="recordings-import"
       className="inline-flex h-9 shrink-0 items-center gap-2 rounded-full border border-scriba-hairline bg-scriba-paper px-3.5 text-[13px] font-semibold text-scriba-ink transition-colors hover:border-scriba-blue/45 hover:bg-scriba-surface/60 focus-visible:outline-none focus-visible:ring-4 focus-visible:ring-scriba-blue/25"
       contentClassName="flex items-center gap-2"
     >

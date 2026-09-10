@@ -6,6 +6,8 @@ import { ImportYoutubeButton } from "@/features/session/components/ImportYoutube
 import { RefreshSessionsButton } from "@/features/session/components/RefreshSessionsButton";
 import { SessionsEmptyState } from "@/features/session/components/SessionsEmptyState";
 import { shortDate } from "@/features/session/lib/formatting";
+import { TourTrigger } from "@/features/tour/components/TourTrigger";
+import { TOUR_DELAY_LIST_MS } from "@/features/tour/config";
 import { listDeepenedSessionIds } from "@/lib/db/deepenings";
 import {
   deleteSession,
@@ -98,7 +100,7 @@ export default async function LibraryPage() {
         )}
 
         {unfinished.length > 0 ? (
-          <section className="flex flex-col gap-3">
+          <section data-tour="recordings-unfinished" className="flex flex-col gap-3">
             <div className="flex items-center gap-3 px-1">
               <span className="inline-flex items-center gap-1.5 text-xs font-semibold text-scriba-cream-accent">
                 <CircleDot className="size-3.5" />
@@ -181,6 +183,10 @@ export default async function LibraryPage() {
           />
         )}
       </main>
+      {/* A apresentação da Biblioteca. Fora do estado vazio: sem sessão
+          nenhuma não há busca nem faixa "Em aberto" na tela, e o tour ficaria
+          reduzido a uma frase sobre uma lista que não existe. */}
+      <TourTrigger tour="recordings" delayMs={TOUR_DELAY_LIST_MS} enabled={!isEmpty} />
     </div>
   );
 }

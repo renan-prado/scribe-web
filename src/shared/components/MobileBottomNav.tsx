@@ -142,7 +142,13 @@ export function MobileBottomNav() {
             `display:contents`, então é este span que é o item flex. */}
         <NewRecordingDialog
           trigger={
-            <span className="-translate-y-1 flex size-16 items-center justify-center rounded-full bg-scriba-blue-soft">
+            <span
+              // O alvo do passo "Gravar" do tour do /feed no celular. O
+              // `DialogTrigger` que envolve isto é `display:contents` e não
+              // tem caixa para o holofote recortar, ver `resolveAnchor`.
+              data-tour="nav-record"
+              className="-translate-y-1 flex size-16 items-center justify-center rounded-full bg-scriba-blue-soft"
+            >
               <span className="flex size-12 items-center justify-center rounded-full scriba-cta bg-[image:var(--scriba-cta)] text-scriba-cta-ink dark:opacity-90">
                 <Mic aria-hidden className="size-5.5 opacity-90 dark:opacity-100" strokeWidth={2} />
               </span>

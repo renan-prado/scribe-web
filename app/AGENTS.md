@@ -70,7 +70,7 @@ a quem não é admin) e `/partners` (gate em `lib/auth/require-partner.ts`).
 `sermon-echo`, `final-summary[/reprocess|/from-transcript]`,
 `deepening[/reprocess]`, `verse`, `format-paragraphs`,
 `hallucination-report`), dados (`sessions[/search]`, `feed`, `speakers`,
-`locations`, `coins`, `feedback[/prompt]`), cobrança (`billing/*`,
+`locations`, `coins`, `feedback[/prompt]`, `tour/{start,finish,reset}`), cobrança (`billing/*`,
 `stripe/webhook`) e admin (`admin/users`, `admin/partners`, `admin/features`,
 `admin/insights`).
 
@@ -81,6 +81,12 @@ que grava seria disparado por qualquer prefetch do router. Nenhuma das duas
 rotas cobra moedas, pela mesma razão de `hallucination-report`: quem está nos
 ajudando a melhorar o produto não paga por isso. Ver
 `src/features/feedback/AGENTS.md`.
+
+`tour/start` é POST pela MESMA razão que `feedback/prompt`: quando a resposta é
+"pode mostrar", o tour já nasce registrado em `user_tours`, e é isso que impede
+a apresentação de voltar toda vez que a pessoa reabre a tela. As três rotas de
+tour não cobram moedas e não chamam modelo nenhum. Ver
+`src/features/tour/AGENTS.md`.
 
 `youtube/import` é a QUARTA porta do mesmo pipeline de resumo, e a única cuja
 transcrição não veio de um microfone: ela busca a legenda do vídeo em

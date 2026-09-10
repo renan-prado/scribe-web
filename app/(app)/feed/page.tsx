@@ -7,6 +7,8 @@ import { PaginatedFeed } from "@/features/session/components/PaginatedFeed";
 import { SessionsEmptyState } from "@/features/session/components/SessionsEmptyState";
 import { YoutubeTipCard } from "@/features/session/components/YoutubeTipCard";
 import { shortDate } from "@/features/session/lib/formatting";
+import { TourTrigger } from "@/features/tour/components/TourTrigger";
+import { TOUR_DELAY_LIST_MS } from "@/features/tour/config";
 import { hasDeepening, listDeepenedSessionIds } from "@/lib/db/deepenings";
 import { type ListFeedEntriesResult, listFeedEntries } from "@/lib/db/feed-entries";
 import { getCurrentProfile } from "@/lib/db/profiles";
@@ -171,17 +173,28 @@ export default async function HomePage() {
                   para quem já gravou alguma coisa: convidar alguém para um
                   produto que a gente ainda não usou é pedir demais. */}
               <InviteFriendCard />
-              <PaginatedFeed
-                initialItems={feedPage.items}
-                initialHasMore={feedPage.hasMore}
-                initialOrder="recent"
-                studyCtaSessions={studyCtaSessions}
-                canGenerateStudy={canGenerateStudy}
-              />
+              {/* O alvo do passo "O que volta para você". A div existe só
+                  para o holofote ter o que recortar: o `PaginatedFeed` desenha
+                  vários cartões irmãos, e recortar o primeiro deles apontaria
+                  para um cartão, não para a lista. */}
+              <div data-tour="feed-entries">
+                <PaginatedFeed
+                  initialItems={feedPage.items}
+                  initialHasMore={feedPage.hasMore}
+                  initialOrder="recent"
+                  studyCtaSessions={studyCtaSessions}
+                  canGenerateStudy={canGenerateStudy}
+                />
+              </div>
             </>
           ) : null}
         </div>
       </main>
+      {/* A apresentação do Início, uma vez por pessoa. Ela não roda no estado
+          vazio: sem gravação nenhuma, os dois alvos do meio não existem, e
+          `resolveSteps` faria o tour encolher para duas frases soltas. Ver
+          `src/features/tour/AGENTS.md`. */}
+      <TourTrigger tour="feed" delayMs={TOUR_DELAY_LIST_MS} enabled={!isEmpty} />
     </div>
   );
 }
@@ -212,7 +225,10 @@ function ReflectionCard({
     "“A nossa confiança em Deus não nasce da ausência de incertezas, mas de saber quem Ele é.”";
   const speakerLine = [speaker, date].filter(Boolean).join(" · ");
   return (
-    <article className="flex flex-col gap-4 rounded-[24px] border border-scriba-ink-strong/20 bg-scriba-paper p-6 shadow-[0_6px_22px_rgba(79,168,240,0.13)]">
+    <article
+      data-tour="feed-reflection"
+      className="flex flex-col gap-4 rounded-[24px] border border-scriba-ink-strong/20 bg-scriba-paper p-6 shadow-[0_6px_22px_rgba(79,168,240,0.13)]"
+    >
       <div className="flex items-center gap-2">
         <div className="h-1.5 w-6 rounded-full bg-scriba-hairline" />
         <span className="text-[11px] font-semibold uppercase tracking-wider text-scriba-ink-mute">

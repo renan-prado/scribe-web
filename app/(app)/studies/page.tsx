@@ -1,6 +1,8 @@
 import type { Metadata } from "next";
 import { StudiesEmptyState } from "@/features/session/components/StudiesEmptyState";
 import { StudiesUpsell } from "@/features/session/components/StudiesUpsell";
+import { TourTrigger } from "@/features/tour/components/TourTrigger";
+import { TOUR_DELAY_LIST_MS } from "@/features/tour/config";
 import { listDeepenings } from "@/lib/db/deepenings";
 import { canCurrentUserUse } from "@/lib/entitlements/server";
 import { cn } from "@/lib/utils";
@@ -66,6 +68,14 @@ export default async function StudiesPage() {
           <StudiesBrowser studies={studies} nowIso={now.toISOString()} />
         )}
       </main>
+      {/* A apresentação dos Estudos. Ela não roda para quem chegou na tela de
+          convite (`showUpsellState`): ali a página INTEIRA já é uma explicação,
+          e um tour por cima dela seria a mesma coisa dita duas vezes. */}
+      <TourTrigger
+        tour="studies"
+        delayMs={TOUR_DELAY_LIST_MS}
+        enabled={!isEmpty && !showUpsellState}
+      />
     </div>
   );
 }

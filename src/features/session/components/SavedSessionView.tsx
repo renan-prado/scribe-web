@@ -169,7 +169,11 @@ export function SavedSessionView({
         Voltar
       </NavLink>
 
-      <header className="flex flex-col gap-3">
+      {/* O holofote do passo "Título, autor e local são seus" recorta o
+          cabeçalho INTEIRO, e não só o título: os três campos editáveis moram
+          aqui, e apontar para um deles deixaria os outros dois sem explicação
+          na única tela em que eles aparecem. */}
+      <header data-tour="summary-header" className="flex flex-col gap-3">
         <div className="flex items-center justify-between gap-3">
           {speakerName?.trim() ? (
             <button
@@ -283,7 +287,7 @@ export function SavedSessionView({
           do SummaryView reservam pro botao de comentario do Scriba, um
           placeholder invisivel size-9 alinha a borda direita de todo o
           conteudo na mesma coluna. No mobile o placeholder some. */}
-      <div className="flex items-start sm:gap-4">
+      <div data-tour="summary-followups" className="flex items-start sm:gap-4">
         <div className="min-w-0 flex-1">
           <FeedAgendadoPreview rereads={rereads} reminders={reminders} highlights={highlights} />
         </div>

@@ -197,6 +197,10 @@ export function RecordButton({
             type="button"
             onClick={running ? onStop : onStart}
             aria-label={running ? "Parar gravação" : "Iniciar gravação"}
+            // Alvo do primeiro passo dos tours de captura. Eles só rodam ANTES
+            // de a gravação começar (ver `TourTrigger`), então o atributo aqui
+            // sempre aponta para o botão no estado "iniciar".
+            data-tour="record-button"
             className={circleClasses}
           >
             {running ? (

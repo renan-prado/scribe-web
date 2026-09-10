@@ -188,6 +188,10 @@ export function CollectionSearch({
   return (
     <section
       aria-label="Buscar e filtrar"
+      // O alvo do passo "busque pelo que foi dito" dos tours da Biblioteca e
+      // dos Estudos. As duas telas montam UM `CollectionSearch` cada, então o
+      // mesmo atributo serve aos dois sem ambiguidade.
+      data-tour="collection-search"
       className="flex flex-col gap-3 rounded-2xl border border-scriba-hairline-soft bg-scriba-paper p-3 sm:p-4"
     >
       <div className="relative">

@@ -56,6 +56,8 @@ import { reportRecorderError } from "@/features/session/lib/recorderErrors";
 import { tailSentences } from "@/features/session/lib/text";
 import { getSessionState, useSessionStore } from "@/features/session/store";
 import type { ChunkRow, TranscriptState } from "@/features/session/types";
+import { TourTrigger } from "@/features/tour/components/TourTrigger";
+import { TOUR_DELAY_CAPTURE_MS } from "@/features/tour/config";
 import { COIN_COSTS } from "@/lib/coins/pricing";
 import type { ChunkEvent, Recorder } from "@/lib/domain/recorder";
 import { createLogger } from "@/lib/log";
@@ -791,6 +793,17 @@ export function RecordingLive({
           </div>
         </DialogContent>
       </Dialog>
+      {/* A apresentação deste modo de captura, ANTES de a gravação começar.
+          O `enabled` é o portão, e ele confere as duas coisas: `hasStarted`
+          pega quem já gravou algo, e `autoStart` pega o caminho em que a
+          gravação começa sozinha ao chegar na página, onde `hasStarted` ainda
+          é falso durante o tempo do atraso. Um balão por cima de uma pregação
+          em andamento é o pior defeito que esta pasta poderia ter. */}
+      <TourTrigger
+        tour="capture_live"
+        delayMs={TOUR_DELAY_CAPTURE_MS}
+        enabled={!hasStarted && !autoStart}
+      />
     </main>
   );
 }
