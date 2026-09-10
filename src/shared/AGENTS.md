@@ -89,6 +89,35 @@ bíblicas.
 Os tokens `--primary*` continuam declarados em `globals.css` porque o shadcn os
 pressupõe; simplesmente ninguém mais os pinta.
 
+### Pressionado: o hover que não existe no celular
+
+Num aparelho de toque não há estado intermediário — o dedo encosta e a ação
+acontece —, então **todo `hover:` deste repositório é código morto no celular**.
+O que sobrava era uma tela em que tocar não produzia reação nenhuma até a
+próxima página chegar, e a resposta natural de quem usa é tocar de novo: é
+assim que um clique vira três.
+
+Duas camadas cobrem isso, e a ordem entre elas é o desenho:
+
+1. **O piso, genérico**, em `@layer base` do `globals.css`: dentro de
+   `@media (hover: none)`, todo `a`, `button`, `summary` e `[role]` de menu/aba
+   cai para `opacity: .62` enquanto `:active`. Opacidade porque é a única
+   propriedade que funciona sobre qualquer superfície do produto — gradiente,
+   papel, vidro esfumaçado — sem saber a cor de baixo. Sem transição: retorno
+   de toque atrasado é pior que retorno nenhum.
+2. **O pressionado próprio de cada componente**, em utilitário ou na classe
+   (`.scriba-cta` escurece e ACHATA a sombra; `Button` tem
+   `active:translate-y-px`; `SidebarMenuButton` tem `active:bg-sidebar-accent`).
+   Utilitário e `@layer components` vencem `@layer base` por ordem de camada,
+   então escrever um `active:` específico simplesmente tira o piso do caminho —
+   é para isso que ele mora na camada mais fraca.
+
+`hover: none` e não `pointer: coarse`: o que decide é a ausência de HOVER, não
+a grossura do ponteiro — um notebook com tela sensível continua tendo mouse.
+
+**O piso só alcança elemento SEMÂNTICO.** Um `<div onClick>` não ganha retorno
+nenhum, e isso é bom: é mais um motivo para ele não existir.
+
 ### Calibrar tinta
 
 **Tinta de família se calibra pela superfície da família, não pelo papel.**

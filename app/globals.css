@@ -574,6 +574,45 @@
     cursor: default;
   }
 
+  /* PRESSIONADO — o feedback que substitui o hover onde ele não existe.
+     Num aparelho de toque não há estado intermediário: o dedo encosta e a
+     ação acontece. Todo `hover:` escrito neste repositório é, ali, código
+     morto — e o que sobra é uma tela em que tocar um item não produz REAÇÃO
+     NENHUMA até a próxima página chegar. A resposta natural de quem usa é
+     tocar de novo, que é como um clique vira três.
+
+     Por isso a regra é GENÉRICA e mora no @layer base: ela é o PISO, não o
+     estilo final. Base perde para qualquer `active:` de componente escrito em
+     utilitário (camada posterior vence, independentemente de especificidade),
+     então quem quiser um pressionado próprio — o `.scriba-cta` logo abaixo, o
+     `SidebarMenuButton`, o `Button` com seu `translate-y-px` — simplesmente o
+     escreve, e este some do caminho.
+
+     `hover: none` e não `pointer: coarse`: o que decide é a AUSÊNCIA de hover,
+     não a grossura do ponteiro. Um notebook com tela sensível continua tendo
+     mouse, e lá o hover já dá o retorno.
+
+     Opacidade, e não transform: é a única propriedade que funciona sobre
+     qualquer superfície do produto — gradiente, papel, vidro esfumaçado — sem
+     precisar saber a cor de fundo de quem está sendo tocado. Sem transição de
+     propósito: retorno de toque atrasado é pior que retorno nenhum.
+
+     Vale para elemento SEMÂNTICO. Um `<div onClick>` continua sem retorno
+     algum aqui, e isso é bom: é mais um motivo para não existir. */
+  @media (hover: none) {
+    a:active,
+    summary:active,
+    button:not(:disabled):not([aria-disabled="true"]):active,
+    [role="button"]:not([aria-disabled="true"]):active,
+    [role="menuitem"]:active,
+    [role="menuitemradio"]:active,
+    [role="menuitemcheckbox"]:active,
+    [role="option"]:active,
+    [role="tab"]:active {
+      opacity: 0.62;
+    }
+  }
+
   /* Scrollbar sutil, em toda a aplicação.
      Duas trilhas, porque nenhuma sozinha cobre todos os navegadores:
      - Padrão (`scrollbar-width`/`scrollbar-color`): Chromium, Firefox e Safari
@@ -678,6 +717,11 @@
   .scriba-cta {
     transition: filter 0.18s ease, box-shadow 0.18s ease;
     &:hover { filter: brightness(0.95); box-shadow: 0 14px 30px var(--scriba-cta-shadow); }
+    /* O pressionado do botão PRIMÁRIO é próprio, e vale nos dois mundos: no
+       toque ele substitui o hover que nunca acontece; no mouse ele confirma o
+       clique. Escurece mais que o hover e ACHATA a sombra — o botão afunda em
+       vez de só mudar de cor, que é o que se espera de algo apertado. */
+    &:active { filter: brightness(0.88); box-shadow: 0 2px 6px var(--scriba-cta-shadow); }
   }
   /* A pílula do hero, antes de saber se a visita veio de uma indicação.
      Quem decide é o `HeroEyebrowScript`, que marca `data-scriba-ref` no
@@ -699,10 +743,12 @@
   .lp-cta-yellow {
     transition: filter 0.18s ease, box-shadow 0.18s ease;
     &:hover { filter: brightness(0.96); box-shadow: 0 14px 30px rgba(0,0,0,0.28); }
+    &:active { filter: brightness(0.9); box-shadow: 0 2px 6px rgba(0,0,0,0.28); }
   }
   .lp-cta-outline {
     transition: background-color 0.18s ease, border-color 0.18s ease, color 0.18s ease;
     &:hover { background-color: var(--auth-btn-bg-hover); border-color: var(--auth-btn-border-hover); color: var(--scriba-ink-strong); }
+    &:active { background-color: var(--auth-btn-bg-hover); border-color: var(--auth-btn-border-hover); color: var(--scriba-ink-strong); }
   }
   .lp-cta-soft {
     /* Only the transition lives here. The hover background CANNOT: this is
