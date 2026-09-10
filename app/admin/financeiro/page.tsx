@@ -190,9 +190,11 @@ export default async function FinanceOverviewPage() {
         subtitle={
           fxSource === "manual"
             ? "Competência · câmbio manual"
-            : fxSource === "awesomeapi"
-              ? `Competência · câmbio ${usdBrl?.toFixed(2).replace(".", ",")}`
-              : "Competência"
+            : fxSource === "stored"
+              ? `Competência · câmbio guardado ${usdBrl?.toFixed(2).replace(".", ",")}`
+              : fxSource
+                ? `Competência · câmbio ${usdBrl?.toFixed(2).replace(".", ",")}`
+                : "Competência"
         }
       >
         {overview.months.length === 0 ? (

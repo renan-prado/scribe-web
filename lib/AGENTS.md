@@ -527,9 +527,15 @@ nunca disparava com o modelo novo, nem em áudio com 27% de WER.
 - `deploy.ts` — `IS_PRODUCTION_DEPLOY` (`VERCEL_ENV === "production"`). É a
   chave de GA4 e de indexação. Ler `process.env` não torna a rota dinâmica.
 - `seo.ts` — fonte única de domínio, título e descrição. Ver `app/AGENTS.md`.
-- `fx/usd-brl.ts` — câmbio USD→BRL da AwesomeAPI, cacheado 1h. Quando o
-  upstream falha, cai num valor que o admin digitou e ficou num cookie
-  server-readable. O custo por moeda é sempre MEDIDO, nunca constante.
+- `fx/usd-brl.ts` — câmbio USD→BRL, cacheado 1h, em quatro degraus:
+  AwesomeAPI → Frankfurter (BCE) → valor manual num cookie do admin → **a
+  última cotação guardada em `usd_brl_rates`** (migração 0049, escrita por
+  `db/fx-rates.ts` a cada leitura viva). O último degrau existe porque o painel
+  passou dias com TODO campo em real em branco: o câmbio multiplica cada um
+  deles, as duas fontes que havia (upstream + cookie) falharam juntas, e
+  "dólar sem cotação é null, jamais 0" fez o resto — sem erro nenhum na tela.
+  Depois da primeira leitura guardada, o pior caso é o câmbio de ontem, e a
+  tela DIZ que é. O custo por moeda é sempre MEDIDO, nunca constante.
 - `coins/billable.ts` + `coins/economics.ts` — o que é uma AÇÃO cobrável e a
   conta de margem por milheiro de moeda, os dois client-safe. `pricing.ts` diz
   quanto custa em moedas; `billable.ts` diz o que é uma coisa (gerar e

@@ -101,8 +101,25 @@ O mesmo vale para a conta do programa de parceiros: ela mora em
 `/admin/usage` lê `llm_usage_events`, alimentada por `recordChatUsage` /
 `recordAudioUsage` em cada rota de LLM. O preço por token está em
 `lib/llm/pricing.ts`; a conversão para reais usa o câmbio de
-`lib/fx/usd-brl.ts`, que busca na AwesomeAPI e cai num valor manual persistido
-em cookie quando o upstream falha.
+`lib/fx/usd-brl.ts`.
+
+**O câmbio tem QUATRO degraus, e o quarto existe por um sinistro real:**
+AwesomeAPI → Frankfurter (BCE) → valor manual no cookie do admin → a última
+cotação guardada em `usd_brl_rates` (migração 0049). O painel passou dias com
+TODO campo em real em branco — custo por rota, custo por 1.000 moedas, margem
+por ação, passivo de moedas — e o card da IA abriu com "painel está cego de
+margem". Não havia defeito de medição: as 328 chamadas do período estavam
+gravadas com o custo em dólar certo. O que faltava era o multiplicador. As duas
+únicas fontes de então falhavam juntas com facilidade (o upstream limita por IP
+e o de saída da Vercel é compartilhado; o cookie vale por NAVEGADOR e nunca
+tinha sido digitado), e "dólar sem cotação é `null`, jamais zero" fez o resto —
+**sem erro nenhum na tela**.
+
+Duas consequências para quem mexer aqui: toda leitura viva bem-sucedida GRAVA a
+cotação do dia (é assim que a série nasce, sem cron), e o pior caso deixou de
+ser "sem câmbio" e passou a ser "o câmbio de ontem" — com o `FxRateBadge`
+dizendo que é, e oferecendo o campo manual ao lado. Um câmbio velho erra na
+segunda casa; a ausência dele apaga a coluna inteira.
 
 **O custo por moeda é sempre MEDIDO** (uso real + câmbio), nunca uma
 constante. O painel mostra custo por 1.000 moedas porque por unidade o número

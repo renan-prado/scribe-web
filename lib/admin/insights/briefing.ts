@@ -49,6 +49,19 @@ const BRL = new Intl.NumberFormat("pt-BR", {
   maximumFractionDigits: 4,
 });
 
+/**
+ * De onde saiu a cotação, em português, porque quem lê esta linha é um modelo
+ * que vai escrever para o admin — "stored" viraria "stored" no card. O rótulo
+ * de cada uma diz o quanto ela pode estar velha, que é a única coisa que muda
+ * a leitura de uma margem.
+ */
+const FX_SOURCE_LABEL: Record<UsdBrlRate["source"], string> = {
+  awesomeapi: "cotação viva do dia",
+  frankfurter: "referência do BCE, último dia útil",
+  manual: "valor digitado pelo admin",
+  stored: "última cotação guardada — as fontes vivas não responderam agora",
+};
+
 function money(brl: number | null): string {
   return brl == null ? "sem câmbio" : BRL.format(brl);
 }
@@ -67,7 +80,7 @@ function rulerBlock(settings: CoinEconomicsSettings, rate: UsdBrlRate | null): s
     "── A RÉGUA (simulação — o admin digitou; não cobra nada de ninguém) ──",
     `[RÉGUA] valor de venda da moeda: ${BRL.format(settings.pricePerThousandBrl)} por ${INT.format(COINS_PER_COST_UNIT)} moedas`,
     `[RÉGUA] margem alvo: ${settings.targetMarginPct}%`,
-    `[MEDIDO] câmbio USD→BRL usado nesta conversão: ${rate ? rate.rate.toFixed(4) : "indisponível — os valores em real estão ausentes"}${rate?.source ? ` (${rate.source})` : ""}`,
+    `[MEDIDO] câmbio USD→BRL usado nesta conversão: ${rate ? `${rate.rate.toFixed(4)} (${FX_SOURCE_LABEL[rate.source]})` : "indisponível — nenhuma fonte respondeu, e por isso TODO valor em real deste briefing está ausente. Isso é falha de cotação, não de medição: o custo em dólar de cada chamada está gravado e correto"}`,
     "",
     "Para referência de mercado (preços reais, no Stripe):",
     `[MEDIDO] pacote avulso: ${formatBrl(TOPUP.priceCents)} por ${INT.format(TOPUP.coins)} moedas`,

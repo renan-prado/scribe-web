@@ -12,7 +12,7 @@ import {
   type MeasuredInputs,
 } from "@/lib/finance/aggregate";
 import { todayIso } from "@/lib/finance/recurrence";
-import { getUsdToBrl } from "@/lib/fx/usd-brl";
+import { getUsdToBrl, type UsdBrlRate } from "@/lib/fx/usd-brl";
 import {
   getFinanceSettings,
   listCategories,
@@ -45,7 +45,7 @@ export type FinanceSnapshot = {
   measured: MeasuredInputs;
   usdBrl: number | null;
   /** De onde veio a cotação, para a tela poder dizer. */
-  fxSource: "awesomeapi" | "manual" | null;
+  fxSource: UsdBrlRate["source"] | null;
   today: string;
 };
 
