@@ -1,7 +1,8 @@
 # src/features/admin: painel interno
 
-Telas de `/admin`: métricas de produto, uso de LLM, usuários, parceiros e o
-feedback dos usuários.
+Telas de `/admin`: métricas de produto, uso de LLM, usuários, parceiros, o
+feedback dos usuários e a leitura do que eles receberam (resumo, transcrição e
+estudo de cada sessão).
 
 ## O gate
 
@@ -351,6 +352,49 @@ Os dois blocos seguintes editam o que precisa mudar sem deploy:
 `POST /api/admin/features` valida `feature` contra `isFeatureKey` antes de
 escrever. Sem isso, um typo cria linha órfã que nunca é lida, e alguém passa a
 tarde procurando por que o switch "não funcionou".
+
+## Sessões (`/admin/sessions`)
+
+Não é métrica nem custo: é o CONTEÚDO. A lista traz todas as sessões, de todo
+mundo, e `/admin/sessions/[id]` abre uma delas em abas, resumo, transcrição,
+estudo e o feed do ao vivo.
+
+Ela existe porque as outras telas respondem em volta do texto e nunca sobre
+ele: `/admin/usage` diz quanto custou, `/admin/metricas` quantas foram,
+`/admin/feedback` que nota deram. Uma nota "razoável" não distingue um resumo
+que inventou uma citação de uma transcrição que perdeu o meio da pregação, e
+nos primeiros usuários o texto é a única evidência de qualidade que existe.
+
+Quatro coisas que quem mexer aqui não pode desfazer:
+
+- **A leitura usa os componentes DO PRODUTO** (`SummaryView`,
+  `SavedTranscriptView`, `StudyBlockRenderer`, `Feed`). Um renderizador só do
+  painel mostraria um texto que ninguém viu, e a pergunta desta tela é sobre o
+  que a pessoa VIU. De quebra, bloco novo no resumo aparece aqui sem ninguém
+  vir mexer. O `ReaderSurface` fixa a coluna em `max-w-3xl` pela mesma razão:
+  solto na largura do painel, o mesmo resumo vira linha de 180 caracteres.
+- **`SummaryView` NÃO é montado quando não há resumo.** Sem payload e com
+  transcrição ele desenha o esqueleto de CARREGAMENTO, que no painel se lê
+  como tela travada em vez de sessão sem resumo. A ausência tem texto próprio.
+- **A tela só LÊ.** Nada de reprocessar, editar ou apagar daqui: o conserto de
+  um resumo ruim é prompt e modelo, e uma correção manual produziria um
+  conteúdo que o dono não gerou e não sabe que mudou. `lib/db/admin/sessions.ts`
+  não exporta escrita nenhuma, e não deve passar a exportar.
+- **A lista mostra sim/não, não prévia.** Um trecho de resumo cortado numa
+  célula convida a julgar qualidade por meia frase, que é o julgamento que a
+  leitura existe para substituir. E `short_summary` é o que responde "tem
+  resumo?", justamente para não arrastar cem `final_summary` inteiros só para
+  desenhar um ícone.
+
+O `SESSIONS` da listagem tem teto (`ADMIN_SESSIONS_PAGE_SIZE`, 100) e a tela
+DIZ o teto no rodapé, mesma regra do `/admin/users`: o dia em que a base passar
+disso precisa ser visível, e não a lista parando de crescer em silêncio.
+
+A pílula de modo é uma só, `SessionModeBadge`, compartilhada com a tabela de
+sessões do `/admin/usage`. Ela nasceu lá e virou componente quando a segunda
+tela precisou dela, com a divergência que duas cópias sempre produzem já
+consumada: `youtube` tinha entrado em `SESSION_MODES` e a cópia de lá continuava
+desenhando "-", que se lê como "sessão sem modo".
 
 ## Estudos (`/admin/studies`)
 

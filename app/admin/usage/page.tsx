@@ -13,6 +13,7 @@ import { AdminInsightsCard } from "@/features/admin/components/AdminInsightsCard
 import { AdminPageHeader } from "@/features/admin/components/AdminPageHeader";
 import { CopyButton } from "@/features/admin/components/CopyButton";
 import { FxRateBadge } from "@/features/admin/components/FxRateBadge";
+import { SessionModeBadge } from "@/features/admin/components/SessionModeBadge";
 import { UsageFilters } from "@/features/admin/components/UsageFilters";
 import { readAdminInsights } from "@/lib/admin/insights/store";
 import {
@@ -603,31 +604,6 @@ function sessionFilterHref(filters: SearchParams, sessionId: string): string {
   return `/admin/usage?${p.toString()}`;
 }
 
-function ModeBadge({ mode }: { mode: SessionMode | null }) {
-  if (mode === "live") {
-    return (
-      <span className="inline-flex items-center rounded-full bg-scriba-mint px-2 py-0.5 text-[10px] font-semibold uppercase tracking-[0.08em] text-scriba-mint-accent">
-        Com live
-      </span>
-    );
-  }
-  if (mode === "audio_only") {
-    return (
-      <span className="inline-flex items-center rounded-full bg-scriba-cream px-2 py-0.5 text-[10px] font-semibold uppercase tracking-[0.08em] text-scriba-cream-accent">
-        Sem live
-      </span>
-    );
-  }
-  if (mode === "transcript_only") {
-    return (
-      <span className="inline-flex items-center rounded-full bg-scriba-hairline-soft px-2 py-0.5 text-[10px] font-semibold uppercase tracking-[0.08em] text-scriba-ink-soft">
-        Transcrição
-      </span>
-    );
-  }
-  return <span className="text-[10px] text-muted-foreground">-</span>;
-}
-
 type SessionsTableProps = {
   summary: AdminUsageSummary;
   money: MoneyFormatter;
@@ -684,16 +660,26 @@ function SessionsTable({ summary, money, costPerThousandCoins, filters }: Sessio
                         {s.createdAt ? DATE_FMT.format(new Date(s.createdAt)) : ""}
                       </span>
                     </Link>
-                    <span className="mt-0.5 flex items-center font-mono text-[0.65rem] text-scriba-ink-mute/70">
+                    <span className="mt-0.5 flex items-center gap-1.5 font-mono text-[0.65rem] text-scriba-ink-mute/70">
                       {s.sessionId.slice(0, 8)}…
                       <CopyButton value={s.sessionId} />
+                      {/* O custo desta linha ao lado do CONTEÚDO que ele
+                          pagou. O título já leva ao recorte por sessão desta
+                          mesma tela, então a leitura precisa de porta
+                          própria. */}
+                      <Link
+                        href={`/admin/sessions/${s.sessionId}`}
+                        className="font-sans text-[0.7rem] font-medium text-scriba-ink-mute hover:text-scriba-ink hover:underline"
+                      >
+                        ler
+                      </Link>
                     </span>
                   </TableCell>
                   <TableCell className="text-xs text-muted-foreground">
                     {s.ownerDisplayName || (s.userId ? s.userId.slice(0, 8) : "-")}
                   </TableCell>
                   <TableCell>
-                    <ModeBadge mode={s.mode} />
+                    <SessionModeBadge mode={s.mode} />
                   </TableCell>
                   <TableCell className="text-right">{formatDuration(s.durationMs)}</TableCell>
                   <TableCell className="text-right">{INT.format(s.events)}</TableCell>

@@ -12,6 +12,7 @@ import {
   ListOrdered,
   LogOut,
   MessageSquareHeart,
+  Mic,
   PiggyBank,
   Receipt,
   ScrollText,
@@ -64,6 +65,7 @@ const NAV: NavItem[] = [
   { href: "/admin/precificacao", label: "Precificação", icon: Landmark },
   { href: "/admin/partners", label: "Parceiros", icon: Handshake },
   { href: "/admin/features", label: "Funcionalidades", icon: ToggleRight },
+  { href: "/admin/sessions", label: "Sessões", icon: Mic },
   { href: "/admin/studies", label: "Estudos", icon: ScrollText },
   { href: "/admin/feedback", label: "Feedback", icon: MessageSquareHeart },
 ];

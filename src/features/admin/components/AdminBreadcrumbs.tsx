@@ -19,6 +19,7 @@ const LABELS: Record<string, string> = {
   metricas: "Métricas",
   partners: "Parceiros",
   features: "Funcionalidades",
+  sessions: "Sessões",
   studies: "Estudos",
   feedback: "Feedback",
   financeiro: "Financeiro",
@@ -29,12 +30,17 @@ const LABELS: Record<string, string> = {
   configuracoes: "Configurações",
 };
 
+const UUID = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
+
 export function AdminBreadcrumbs() {
   const pathname = usePathname();
   const parts = pathname.split("/").filter(Boolean);
   const trail = parts.map((seg, i) => {
     const href = `/${parts.slice(0, i + 1).join("/")}`;
-    const label = LABELS[seg] ?? seg;
+    // Um uuid inteiro na trilha empurra tudo o mais para fora da faixa e não
+    // informa nada: os oito primeiros dígitos são o que o resto do painel já
+    // usa para falar de uma sessão.
+    const label = LABELS[seg] ?? (UUID.test(seg) ? `${seg.slice(0, 8)}…` : seg);
     return { href, label };
   });
 
