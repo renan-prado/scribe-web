@@ -7,7 +7,7 @@ import { IS_INDEXABLE, SITE_URL } from "@/lib/seo";
  * 1. O arquivo estático era o MESMO nos dois ambientes, então `dev.scriba.cc`
  *    anunciava `Allow: /` e apontava para o sitemap de produção. Aqui o
  *    ambiente decide: fora de produção sai `Disallow: /` e nenhum sitemap.
- * 2. O domínio deixa de ser texto solto — vem de `lib/seo.ts`, o mesmo que
+ * 2. O domínio deixa de ser texto solto: vem de `lib/seo.ts`, o mesmo que
  *    alimenta o `metadataBase` e o sitemap.
  *
  * O bloqueio é de RASTREIO, não de segurança: quem protege as rotas privadas é
@@ -30,6 +30,11 @@ export default function robots(): MetadataRoute.Robots {
         "/auth/",
         "/sign-in",
         "/sign-up",
+        // Não é página: é o desvio que marca o cookie de pré-parceiro e
+        // redireciona para o login. Rastreá-la só gasta orçamento para chegar
+        // numa tela que já é `noindex`, e a página que queremos indexada,
+        // `/parceiros`, continua liberada.
+        "/parceiros/entrar",
         "/feed",
         "/profile",
         "/recordings",

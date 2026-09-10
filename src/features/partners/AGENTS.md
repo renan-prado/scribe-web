@@ -1,11 +1,11 @@
-# src/features/partners — programa de divulgadores
+# src/features/partners: programa de divulgadores
 
 Indicação por convite. Regras de negócio em `docs/parceiros.md`, plano técnico
 em `docs/parceiros-plano.md`. Migrações: `0029_partners.sql`,
 `0030_partner_allowance_and_receipt.sql` e `0045_referrals.sql` (as moedas por
 cadastro).
 
-**O irmão aberto deste programa é `src/features/referrals/`** — leia o
+**O irmão aberto deste programa é `src/features/referrals/`**, leia o
 `AGENTS.md` de lá antes de mexer aqui. Os dois dividem o cookie de atribuição,
 o campo de código da tela de entrada e o selo "indicado por"; é nessa fronteira
 que moram os bugs possíveis.
@@ -19,6 +19,12 @@ src/features/partners/components/   ReferralField (tela de entrada),
                                     ReferralLinkCard, PartnerTabs,
                                     EarningsByPlan, RefreshPanelButton
 app/r/[slug]/route.ts               o link de divulgação
+app/parceiros/page.tsx              a página PÚBLICA de convite
+app/parceiros/regulamento/page.tsx  as regras que obrigam
+app/parceiros/entrar/route.ts       marca o pré-parceiro e manda ao login
+lib/db/prospects.ts                 pré-parceiros: attach, lista, promoção
+lib/partners/prospect-actions.ts    descartar candidato (assertAdmin)
+components/ProspectNotice.tsx       o selo da tela de entrada
 app/partners/{layout,page}.tsx      o painel
 lib/referrals/cookies.ts             nomes, prazos e opções dos cookies
 lib/partners/economics.ts           a conta do programa (client-safe)
@@ -30,11 +36,38 @@ lib/db/partner-panel.ts             agregados do painel
 lib/db/admin/partners.ts            CRUD + registerPayout
 ```
 
+## O pré-parceiro NÃO é um parceiro
+
+`partner_prospects` é tabela própria, e não um `status` em `partners`, porque
+uma linha de `partners` tem slug (que é um link público e único), taxa, PIX e
+orçamento: ela existe para PAGAR alguém. Emitir tudo isso para cada visitante
+que clicou num botão encheria o espaço de slugs de gente que nunca vai
+divulgar. Promover é o que cria a linha de `partners`, e continua manual.
+
+Três invariantes, todas do banco (migração 0050):
+
+- **`user_id` é PRIMARY KEY.** "Uma vez por pessoa na vida" é constraint, como
+  em `partner_commissions.referred_user_id`. Cookie apagado, duas abas, caminho
+  de código que ainda não existe, nada credita duas vezes.
+- **A cortesia não empilha com o bônus de indicação.** A RPC recusa
+  (`already_attributed`) quem já tem `partner_id` ou `referred_by_user_id`, e a
+  tela de entrada só mostra o selo quando NÃO há indicação ativa, anunciar os
+  dois seria prometer moeda que a RPC não vai creditar.
+- **O teto é GLOBAL e é o guarda-costas desta funcionalidade.** A página é
+  pública: sem ele, cada conta Google nova vale 500 moedas de graça. Ele vive
+  em `economics.ts` e viaja como PARÂMETRO até a RPC (service_role-only),
+  porque é decisão de produto e não deve exigir migração para mudar.
+
+**Promover é cadastrar.** Não existe um segundo caminho de criação de parceiro:
+o botão do admin abre o MESMO diálogo com o e-mail preenchido, e quem carimba
+`status = 'promoted'` é `createPartner`. Um botão de promoção separado seria
+uma segunda forma de criar parceiro, e as duas um dia divergiriam.
+
 ## A comissão nasce dentro de `fulfill.ts`
 
 No `creditInvoice`, e **não numa rota**. É por ali que passam os quatro
 caminhos de crédito (webhook, reconciliação, resumo, sweep); pendurá-la em um
-deles faria uma compra recuperada pelos outros três não comissionar —
+deles faria uma compra recuperada pelos outros três não comissionar,
 justamente a compra que já deu trabalho.
 
 O `try/catch` em volta é obrigatório: falha de comissão não pode derrubar o
@@ -52,11 +85,11 @@ usuário fica sem saldo por um problema que não é dele.
   ganhou.
 - **A atribuição é imutável.** `profiles.partner_id` é gravado uma vez, por
   `attach_partner()`. As três colunas de atribuição ficam fora do GRANT de
-  coluna concedido a `authenticated` em 0026 — `partner_id` decide para quem
+  coluna concedido a `authenticated` em 0026, `partner_id` decide para quem
   vai dinheiro.
 - **`attach_partner()` recusa conta que não é nova.** Sem essa checagem, um
   usuário antigo que abrisse `/r/<slug>` seria vinculado no login seguinte e
-  ganharia moedas de graça — de novo a cada link diferente que abrisse.
+  ganharia moedas de graça, de novo a cada link diferente que abrisse.
 - **A atribuição é EXCLUSIVA entre os dois programas.** `attach_partner()`
   recusa quem já tem `referred_by_user_id`, e `attach_referrer()` recusa quem
   já tem `partner_id` (migração 0045). Uma conta tem um padrinho só; o cookie
@@ -79,10 +112,10 @@ parecem cosméticos e não são:
 - **Redireciona mesmo com slug inválido.** Um 404 puniria o visitante por um
   erro que não é dele.
 - **A landing continua estática.** O clique é gravado NA ROTA, nunca em
-  `app/page.tsx` — ver `app/AGENTS.md`.
+  `app/page.tsx`, ver `app/AGENTS.md`.
 
 Os cookies são `httpOnly` e `sameSite: "lax"`, com nomes e prazos só em
-`lib/referrals/cookies.ts` — que serve aos DOIS programas, e por isso mudou de
+`lib/referrals/cookies.ts`, que serve aos DOIS programas, e por isso mudou de
 `lib/partners/` para lá. A única exceção ao `httpOnly` é o cookie-PISTA
 (`scriba_ref_hint`), que vale `1` e existe para o selo do hero da landing page
 não precisar perguntar ao servidor em toda visita anônima; ele não carrega nome
@@ -91,15 +124,32 @@ Google, que é exatamente o único momento em que ele importa. **Nenhum código
 de navegador lê ou escreve esses cookies:** a tela de entrada recebe a
 indicação por prop, resolvida no servidor.
 
+## A página pública e o painel são rotas diferentes de propósito
+
+`/parceiros` é a página de convite: PÚBLICA, estática, servida da CDN para
+alguém que ainda não tem conta. `/partners` é o painel, atrás do login. O par
+está em `PUBLIC_PREFIXES` e `KNOWN_APP_PREFIXES` do `proxy.ts`
+respectivamente, e o idioma é a pista de qual é qual.
+
+**Nenhum número é redigitado nas páginas públicas**, nem os minutos: elas leem
+`economics.ts`, `plans.ts`, `pricing.ts` e `cookies.ts`. A tabela de minutos de
+`docs/parceiros.md` mostra por quê, ela ficou dois preços desatualizada sem
+que nada quebrasse. E a prévia do painel na `/parceiros` é markup próprio, não
+o painel real: os componentes daqui são `"use client"` e não podem entrar no
+bundle de uma página de venda.
+
+Mudou uma regra? Mude `docs/parceiros.md` E `app/parceiros/regulamento/page.tsx`
+no mesmo commit.
+
 ## O painel nunca expõe uma pessoa
 
-Só agregados — nem no HTML, nem numa rota. Não crie endpoint que liste
+Só agregados, nem no HTML, nem numa rota. Não crie endpoint que liste
 indicados.
 
 ## As moedas por cadastro
 
 O parceiro ganha `partners.signup_reward_coins` (50 por padrão, editável) por
-cada conta atribuída a ele — antes e independentemente de a pessoa assinar. É a
+cada conta atribuída a ele, antes e independentemente de a pessoa assinar. É a
 resposta ao "não quero ficar na mão trazendo lead que não converte".
 
 **Elas ACUMULAM em vez de serem creditadas na hora**, e isso não é preguiça de
@@ -116,7 +166,7 @@ parceiro, um orçamento estourado viraria um corte de pagamento que ninguém
 anunciou. Se um teto para as moedas dele for necessário, nasce como coluna
 própria.
 
-O simulador do cadastro do admin já inclui estas moedas na conta do mês 1 —
+O simulador do cadastro do admin já inclui estas moedas na conta do mês 1,
 elas amortizam como o bônus, mas sem a fração de uso, porque o parceiro é
 usuário ativo por desenho do programa (é essa a razão da mesada).
 
@@ -124,13 +174,13 @@ usuário ativo por desenho do programa (é essa a razão da mesada).
 
 Crédito, logo passa por `grant_coins`. `lib/partners/allowance.ts`, com
 renovação **preguiçosa** (sem cron): o crédito sai quando o parceiro aparece,
-disparado por `getCurrentPartner()` — que o layout de `(app)` chama para
+disparado por `getCurrentPartner()`, que o layout de `(app)` chama para
 decidir o item "Área do parceiro" no menu, e é por isso o único caminho por
 onde todo parceiro passa.
 
 Duas travas, nesta ordem: `partners.allowance_month` (comparação em memória,
 evita ir ao banco em toda visita) e `coin_transactions.external_ref` UNIQUE
-(`partner_allowance:<id>:<AAAA-MM>` — a trava de verdade). Discordando as
+(`partner_allowance:<id>:<AAAA-MM>`, a trava de verdade). Discordando as
 duas, quem manda é o ledger.
 
 **A função nunca lança.** Ela roda no caminho de render de todas as páginas do
@@ -139,7 +189,7 @@ feed.
 
 **Número que a TELA lê fica em `economics.ts`, não em `allowance.ts`.** O
 cadastro do admin é client component, e importar constante de um módulo
-`server-only` arrasta o Supabase com service-role para o bundle do navegador —
+`server-only` arrasta o Supabase com service-role para o bundle do navegador,
 o build recusa, corretamente. Foi o que aconteceu com
 `DEFAULT_PARTNER_MONTHLY_COINS`.
 
@@ -154,12 +204,12 @@ que pagamento e comissões sempre fechem.
 
 **`PAYOUT_MINIMUM_CENTS` é política, não trava.** O botão de pagar aparece com
 qualquer valor disponível e o diálogo apenas AVISA abaixo do mínimo. A regra
-do próprio programa — saldo pago integralmente a quem sai — descreve um
+do próprio programa, saldo pago integralmente a quem sai, descreve um
 pagamento que quase sempre nasce abaixo dele; escondendo o botão, a saída
 seria mexer no banco à mão.
 
 **O comprovante do PIX é um LINK, não um upload.** `partner_payouts.receipt_url`,
-com https obrigatório num CHECK da coluna e no schema da rota — um "mandei no
+com https obrigatório num CHECK da coluna e no schema da rota, um "mandei no
 zap" salvo ali vira botão quebrado no painel do parceiro.
 
 ## A conta mora num lugar só

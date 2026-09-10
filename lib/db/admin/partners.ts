@@ -1,5 +1,6 @@
 import "server-only";
 import { escapeLikeValue } from "@/lib/db/like";
+import { markProspectsPromoted } from "@/lib/db/prospects";
 import { createLogger } from "@/lib/log";
 import { createAdminClient } from "@/lib/supabase/admin";
 
@@ -9,14 +10,14 @@ const log = createLogger("admin/partners");
  * CRUD e agregados de parceiros para o admin.
  *
  * Tudo pelo service-role, depois de `requireAdmin()`. As tabelas de parceiro
- * têm policy só de SELECT (e só das próprias linhas) — não existe policy de
+ * têm policy só de SELECT (e só das próprias linhas), não existe policy de
  * escrita em nenhuma delas, o que é a forma mais forte de dizer que o cliente
  * nunca escreve aqui.
  *
  * Sobre o pagamento: `registerPayout` é o passo que faz o "a receber" do
  * painel voltar a zero. Sem ele, o total devido seria um SUM() de comissões
  * que nunca diminui, e o primeiro PIX pago deixaria o número mentindo para
- * sempre — a mesma razão pela qual o saldo de moedas é derivado do ledger em
+ * sempre, a mesma razão pela qual o saldo de moedas é derivado do ledger em
  * vez de contado à mão.
  */
 
@@ -47,7 +48,7 @@ export type PartnerStats = {
   subscribers: number;
   /** Comissões dentro da carência de 30 dias. */
   pendingCents: number;
-  /** Já fora da carência e ainda não pagas — é o que entra no próximo PIX. */
+  /** Já fora da carência e ainda não pagas, é o que entra no próximo PIX. */
   availableCents: number;
   paidCents: number;
   reversedCents: number;
@@ -184,7 +185,20 @@ export async function createPartner(input: PartnerInput): Promise<AdminPartner> 
     .select(SELECT)
     .single();
   if (error) throw new Error(`createPartner failed: ${error.message}`);
-  return toPartner(data as PartnerRow);
+  const partner = toPartner(data as PartnerRow);
+
+  // Se este e-mail já era um pré-parceiro, ele deixa de ser candidato pendente
+  // AQUI, e não num segundo botão: promover é justamente cadastrar a pessoa
+  // como parceiro, e um passo manual extra seria esquecido exatamente nos dias
+  // corridos, deixando na lista de pendentes gente que já está no programa.
+  // Não pode derrubar a criação, que é a operação que importa.
+  try {
+    await markProspectsPromoted(input.invitedEmail, partner.id);
+  } catch {
+    // silêncio proposital: ver acima
+  }
+
+  return partner;
 }
 
 export async function updatePartner(
@@ -260,7 +274,7 @@ export class PayoutStampError extends Error {
  * mesmo valor pendente depois de já ter recebido.
  *
  * Só comissões fora da carência e ainda não quitadas entram. O valor pago é o
- * que estava disponível NO MOMENTO — não um número digitado à mão — para que
+ * que estava disponível NO MOMENTO, não um número digitado à mão, para que
  * a linha de pagamento e as comissões que ela quita sempre fechem.
  */
 export async function registerPayout(args: {
@@ -307,7 +321,7 @@ export async function registerPayout(args: {
   if (stampErr) {
     // O pagamento existe mas as comissões não foram carimbadas: o valor
     // apareceria como devido de novo no mês seguinte. Log em `error` porque
-    // exige conserto manual — e o id do payout é o que permite achá-lo.
+    // exige conserto manual, e o id do payout é o que permite achá-lo.
     log.error("payout created but commissions NOT stamped", {
       payoutId: payout.id,
       partnerId: args.partnerId,
@@ -360,7 +374,7 @@ async function loadSignups(admin: AdminClient, ids: string[]): Promise<Map<strin
  *
  * Conta quem TEM comissão registrada, e não quem tem assinatura ativa. São
  * perguntas diferentes: a comissão é sobre a primeira assinatura e não some
- * quando a pessoa cancela — que é justamente o número que o parceiro precisa
+ * quando a pessoa cancela, que é justamente o número que o parceiro precisa
  * ver, porque é o que ele foi pago para trazer.
  */
 async function loadSubscribers(admin: AdminClient, ids: string[]): Promise<Map<string, number>> {

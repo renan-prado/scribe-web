@@ -1,9 +1,16 @@
 import { cookies } from "next/headers";
 import { NextResponse } from "next/server";
 import { attachPartner } from "@/lib/db/partners";
+import { attachPartnerProspect } from "@/lib/db/prospects";
 import { attachReferrer } from "@/lib/db/referrals";
 import { createLogger } from "@/lib/log";
-import { decodeRef, REF_COOKIE, REF_HINT_COOKIE, VISIT_COOKIE } from "@/lib/referrals/cookies";
+import {
+  decodeRef,
+  PROSPECT_COOKIE,
+  REF_COOKIE,
+  REF_HINT_COOKIE,
+  VISIT_COOKIE,
+} from "@/lib/referrals/cookies";
 import { createClient } from "@/lib/supabase/server";
 
 const log = createLogger("auth/callback");
@@ -23,7 +30,7 @@ export async function GET(request: Request) {
   // Mesma sanitização do proxy: só caminho relativo, recusando as formas que
   // o navegador resolve como host externo ("//evil.com", "/\evil.com",
   // "/%2Fevil.com"). Um `next` frouxo aqui é um open redirect assinado pelo
-  // nosso domínio, logo depois do login — o vetor clássico de phishing.
+  // nosso domínio, logo depois do login, o vetor clássico de phishing.
   const rawNext = searchParams.get("next") ?? "/feed";
   const next =
     rawNext.startsWith("/") &&
@@ -44,7 +51,13 @@ export async function GET(request: Request) {
     return NextResponse.redirect(`${origin}/sign-in?error=exchange_failed`);
   }
 
+  // A ORDEM é a regra, não acaso: a indicação vem primeiro porque ela decide
+  // DINHEIRO (a comissão de quem indicou) e o brinde de 150 moedas. O
+  // pré-parceiro roda depois e se recusa sozinho quando encontra uma atribuição
+  // já gravada, é assim que os dois brindes de boas-vindas não se empilham
+  // sem que ninguém tenha decidido isso. Ver a migração 0050.
   await attachReferralIfAny(data.user?.id ?? null);
+  await attachProspectIfAny(data.user?.id ?? null);
 
   const forwardedHost = request.headers.get("x-forwarded-host");
   const isLocal = process.env.NODE_ENV === "development";
@@ -57,13 +70,13 @@ export async function GET(request: Request) {
 
 /**
  * O `x-forwarded-host` existe aqui porque atrás do proxy da Vercel o `origin`
- * da requisição é o interno, não o domínio que a pessoa digitou — sem ele o
+ * da requisição é o interno, não o domínio que a pessoa digitou, sem ele o
  * login em `dev.scriba.cc` devolveria para o host errado.
  *
  * Mas é um HEADER: sanitizar o `?next=` logo acima e depois montar a URL de
  * destino com um valor que vem do pedido desfaz metade do cuidado. Hoje a
  * Vercel reescreve esse header e só roteia domínios do projeto, então a
- * proteção real é de infraestrutura, não nossa — a mesma situação que a
+ * proteção real é de infraestrutura, não nossa, a mesma situação que a
  * allowlist de origem do `proxy.ts` documenta. A lista abaixo é a decisão
  * voltando para cá; um host não reconhecido cai no `origin`, que é o
  * comportamento correto e nunca aponta para fora.
@@ -83,19 +96,19 @@ function isTrustedHost(host: string): boolean {
  * `/r/<slug>`, por `/i/<codigo>` ou digitou um código na tela de entrada.
  *
  * É aqui, e não no trigger de criação do perfil, porque o cookie só existe no
- * contexto da requisição — o trigger do banco roda dentro do Supabase Auth e
+ * contexto da requisição, o trigger do banco roda dentro do Supabase Auth e
  * não enxerga o navegador.
  *
  * **UM cookie, portanto UMA atribuição.** Os dois programas gravam no mesmo
  * `scriba_ref`, então quem clicou no link de um parceiro e depois no de um
- * amigo tem um padrinho só: o último. A exclusividade é reforçada no banco —
+ * amigo tem um padrinho só: o último. A exclusividade é reforçada no banco,
  * `attach_partner` e `attach_referrer` conferem a coluna um do outro antes de
  * gravar a sua.
  *
  * NADA aqui pode impedir o login. Toda recusa (`already_attributed`,
  * `not_new`, `unknown_slug`/`unknown_code`, `self_referral`, `capped`) é
  * normal e vira log; uma exceção inesperada é engolida pelo try/catch. A
- * pessoa está no meio da entrada no app, e perder um bônus é ruim — não entrar
+ * pessoa está no meio da entrada no app, e perder um bônus é ruim, não entrar
  * é pior.
  *
  * Os cookies são apagados em qualquer desfecho. Eles já cumpriram o papel: a
@@ -123,5 +136,37 @@ async function attachReferralIfAny(userId: string | null): Promise<void> {
     jar.delete(REF_HINT_COOKIE);
   } catch (err) {
     log.error("attach de indicação falhou", { error: (err as Error).message });
+  }
+}
+
+/**
+ * Registra quem chegou por `/parceiros` como PRÉ-PARCEIRO e credita a cortesia.
+ *
+ * Sem compromisso nenhum dos dois lados: a pessoa não prometeu divulgar, e nós
+ * não prometemos aceitá-la no programa. O que a linha em `partner_prospects`
+ * guarda é "esta pessoa se interessou", a promoção a parceiro de verdade é um
+ * cadastro manual no admin, depois, se as duas partes quiserem.
+ *
+ * Toda a regra está na RPC (janela de conta nova, recusa de bônus empilhado,
+ * teto global). Aqui, como no irmão acima, NADA pode impedir o login: todo
+ * desfecho vira log, e uma exceção inesperada é engolida. Perder um brinde é
+ * ruim; não conseguir entrar é pior.
+ *
+ * O cookie é apagado em qualquer desfecho, inclusive nos "não". Um `capped` ou
+ * `already_attributed` não muda com o tempo, e deixar o cookie vivo faria todo
+ * login futuro em outro aparelho tentar de novo o que já foi decidido.
+ */
+async function attachProspectIfAny(userId: string | null): Promise<void> {
+  if (!userId) return;
+  try {
+    const jar = await cookies();
+    if (jar.get(PROSPECT_COOKIE)?.value !== "1") return;
+
+    const result = await attachPartnerProspect(userId);
+    log.info("pré-parceiro", { result });
+
+    jar.delete(PROSPECT_COOKIE);
+  } catch (err) {
+    log.error("attach de pré-parceiro falhou", { error: (err as Error).message });
   }
 }

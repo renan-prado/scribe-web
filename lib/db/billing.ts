@@ -100,7 +100,7 @@ export async function setStripeCustomerId(userId: string, customerId: string): P
 
 /**
  * Resolve o dono de um customer do Stripe. É assim que o webhook descobre a
- * quem creditar — nunca por um id vindo do payload do cliente. Procura no
+ * quem creditar, nunca por um id vindo do payload do cliente. Procura no
  * profiles (vínculo canônico) e, se falhar, na tabela de assinaturas.
  */
 export async function findUserIdByCustomerId(customerId: string): Promise<string | null> {
@@ -159,14 +159,14 @@ export type GrantReason =
   | "refund_reversal_block"
   // Bônus de indicação, creditado por `attach_partner()` no primeiro login de
   // quem chegou pelo link ou pelo código de um parceiro. Some às moedas de
-  // boas-vindas (que vêm do DEFAULT da coluna e não geram lançamento) —
+  // boas-vindas (que vêm do DEFAULT da coluna e não geram lançamento),
   // este, como todo crédito, é uma linha explícita no ledger.
   | "partner_bonus"
   // Mesada mensal do PRÓPRIO parceiro, para ele conseguir usar o produto que
-  // divulga. Renovada por check preguiçoso — ver lib/partners/allowance.ts.
+  // divulga. Renovada por check preguiçoso, ver lib/partners/allowance.ts.
   | "partner_allowance"
   // As duas pontas do "Indique a um amigo" (migração 0045), ambas para quem
-  // INDICA — o convidado não ganha nada além das 50 de boas-vindas, e é isso
+  // INDICA, o convidado não ganha nada além das 50 de boas-vindas, e é isso
   // que mantém o link do parceiro como a melhor oferta da casa.
   | "referral_signup"
   | "referral_subscription"
@@ -174,14 +174,18 @@ export type GrantReason =
   // ACUMULA antes de virar moeda: `partners.user_id` nasce nulo, então no
   // momento do cadastro do indicado pode não haver conta para creditar. Ver
   // `flush_partner_signup_rewards`.
-  | "partner_signup_reward";
+  | "partner_signup_reward"
+  // Cortesia do PRÉ-PARCEIRO: quem chegou por /parceiros e criou conta sem
+  // compromisso, para conhecer o produto antes de topar divulgá-lo. Teto
+  // global em `lib/partners/economics.ts`, ver migração 0050.
+  | "partner_prospect_bonus";
 
 /**
  * ÚNICA porta de crédito da aplicação.
  *
  * `externalRef` é a chave de idempotência e deve identificar unicamente o
  * fato econômico no Stripe (linha de fatura, sessão de checkout). Com ela,
- * reentregas do webhook — que o Stripe faz de propósito — creditam uma vez só.
+ * reentregas do webhook, que o Stripe faz de propósito, creditam uma vez só.
  *
  * Retorna o saldo resultante, ou null se a RPC falhar (o chamador deve
  * devolver não-2xx para o Stripe reentregar).
@@ -219,7 +223,7 @@ export async function grantCoins(args: {
  * Quais destes `external_ref` já existem no ledger.
  *
  * Serve para responder com precisão "este crédito aconteceu AGORA ou já
- * estava lá?" — `grant_coins` devolve o saldo nos dois casos, então comparar
+ * estava lá?", `grant_coins` devolve o saldo nos dois casos, então comparar
  * saldos não distingue um do outro. A resposta importa porque é ela que
  * decide o que a tela de retorno diz ao usuário depois de pagar.
  */
@@ -239,7 +243,7 @@ export async function existingExternalRefs(refs: string[]): Promise<Set<string>>
  * origem do crédito no ledger ('invoice:in_xxx:' ou 'checkout:cs_xxx:').
  *
  * Nunca deixa o saldo negativo: se a pessoa já gastou tudo, deduzimos o que
- * houver e o resto vira prejuízo — mas prejuízo LOGADO, que é o ponto. O
+ * houver e o resto vira prejuízo, mas prejuízo LOGADO, que é o ponto. O
  * caminho silencioso (não estornar nada) é o que transforma chargeback em
  * modelo de negócio para quem abusa.
  */
@@ -268,7 +272,7 @@ export async function clawbackCoins(args: {
 /**
  * Trava de idempotência de evento. Retorna `true` na PRIMEIRA vez que este
  * event id aparece e `false` em qualquer reentrega. A PK da tabela é o id do
- * evento, então duas entregas concorrentes disputam o insert e só uma vence —
+ * evento, então duas entregas concorrentes disputam o insert e só uma vence,
  * não dá para creditar duas vezes nem com paralelismo.
  */
 export async function claimStripeEvent(eventId: string, type: string): Promise<boolean> {

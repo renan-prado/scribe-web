@@ -44,6 +44,12 @@ import { CommissionSimulator } from "./CommissionSimulator";
 
 type Props = {
   partner: AdminPartnerWithStats | null;
+  /**
+   * Valores iniciais quando se está PROMOVENDO um candidato de `/parceiros`.
+   * Só vale na criação (`partner === null`): num cadastro existente, o que está
+   * gravado manda.
+   */
+  prefill?: { email: string; displayName: string } | null;
   costPerThousandCoinsCents: number;
   onClose: () => void;
   onSaved: () => void;
@@ -51,9 +57,9 @@ type Props = {
 
 const ERROR_MESSAGES: Record<string, string> = {
   slug_or_email_taken: "Já existe um parceiro com esse código ou e-mail.",
-  create_failed: "Não consegui criar o parceiro. Nada foi salvo — tente de novo.",
-  update_failed: "Não consegui salvar as alterações. Nada foi alterado — tente de novo.",
-  invalid_doc: "CPF ou CNPJ inválido — confira os dígitos.",
+  create_failed: "Não consegui criar o parceiro. Nada foi salvo, tente de novo.",
+  update_failed: "Não consegui salvar as alterações. Nada foi alterado, tente de novo.",
+  invalid_doc: "CPF ou CNPJ inválido, confira os dígitos.",
   invalid_input: "Algum campo não passou na validação: confira código, e-mail e documento.",
   invalid_json: "Não consegui enviar os dados. Tente de novo.",
 };
@@ -71,11 +77,21 @@ const STATUS_OPTIONS: SelectOption[] = [
   { value: "suspended", label: "Suspenso" },
 ];
 
-export function PartnerDialog({ partner, costPerThousandCoinsCents, onClose, onSaved }: Props) {
+export function PartnerDialog({
+  partner,
+  prefill,
+  costPerThousandCoinsCents,
+  onClose,
+  onSaved,
+}: Props) {
   const isNew = partner === null;
 
-  const [displayName, setDisplayName] = useState(partner?.displayName ?? "");
-  const [invitedEmail, setInvitedEmail] = useState(partner?.invitedEmail ?? "");
+  const [displayName, setDisplayName] = useState(
+    partner?.displayName ?? (isNew ? (prefill?.displayName ?? "") : "")
+  );
+  const [invitedEmail, setInvitedEmail] = useState(
+    partner?.invitedEmail ?? (isNew ? (prefill?.email ?? "") : "")
+  );
   const [slug, setSlug] = useState(partner?.slug ?? "");
   const [socials, setSocials] = useState<Record<string, string>>(() =>
     Object.fromEntries(SOCIAL_NETWORKS.map((n) => [n, partner?.socials[n] ?? ""]))
@@ -113,12 +129,12 @@ export function PartnerDialog({ partner, costPerThousandCoinsCents, onClose, onS
   const docComplete = docDigits.length === 11 || docDigits.length === 14;
   const docValid = docComplete && isValidDoc(doc);
   const docBlocking = docDigits.length > 0 && !docValid;
-  // A mensagem só aparece quando já dá para julgar — ao completar os dígitos
+  // A mensagem só aparece quando já dá para julgar, ao completar os dígitos
   // ou ao sair do campo. Gritar "faltam 10 dígitos" na primeira tecla é ruído.
   const docError =
     docBlocking && (docComplete || docBlurred)
       ? docComplete
-        ? "Dígitos não conferem — confira o número."
+        ? "Dígitos não conferem, confira o número."
         : "Documento incompleto."
       : undefined;
 
@@ -373,7 +389,7 @@ export function PartnerDialog({ partner, costPerThousandCoinsCents, onClose, onS
 /**
  * Campo de @ com o arroba desenhado FORA do input.
  *
- * O arroba é parte do endereço na fala ("arroba joão") e não do dado — o que
+ * O arroba é parte do endereço na fala ("arroba joão") e não do dado, o que
  * guardamos é só o handle. Deixá-lo como afixo visual resolve os dois lados:
  * quem digita vê o formato certo, e quem cola a URL inteira do Instagram não
  * precisa saber que ela vai ser reduzida (a normalização faz isso ao salvar).

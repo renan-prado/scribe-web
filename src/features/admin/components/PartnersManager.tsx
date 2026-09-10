@@ -16,10 +16,12 @@ import {
 } from "@/components/ui/table";
 import { formatBrl } from "@/lib/billing/plans";
 import type { AdminPartnerWithStats } from "@/lib/db/admin/partners";
+import type { AdminProspect } from "@/lib/db/prospects";
 import { COMMISSION_HOLD_DAYS, PAYOUT_MINIMUM_CENTS } from "@/lib/partners/economics";
 import { CopyButton } from "./CopyButton";
 import { PartnerDialog } from "./PartnerDialog";
 import { PayoutDialog } from "./PayoutDialog";
+import { ProspectsPanel } from "./ProspectsPanel";
 
 /**
  * Lista de parceiros com o funil e o dinheiro de cada um.
@@ -27,23 +29,25 @@ import { PayoutDialog } from "./PayoutDialog";
  * As três colunas de dinheiro são o mesmo valor em três estágios, e ler uma
  * pela outra é o erro fácil:
  *
- *   A liberar  — comissão nascida há menos de 30 dias. O pagamento que a
+ *   A liberar, comissão nascida há menos de 30 dias. O pagamento que a
  *                originou ainda pode ser contestado, então o dinheiro existe
  *                mas não pode sair.
- *   Disponível — passou a carência e ainda não foi paga. É EXATAMENTE o que
+ *   Disponível, passou a carência e ainda não foi paga. É EXATAMENTE o que
  *                sai no próximo PIX, e é a única coluna que o operador precisa
  *                olhar para pagar.
- *   Pago       — já quitada por um `partner_payouts`.
+ *   Pago, já quitada por um `partner_payouts`.
  *
  * O botão de PIX aparece com QUALQUER valor disponível. O mínimo de saque é
  * política do pagamento de rotina, não uma trava: quem sai do programa com
  * R$ 12 tem direito ao dinheiro, e o operador precisa conseguir pagá-lo. O
- * aviso de "abaixo do mínimo" mora no diálogo, onde é lido antes de confirmar
- * — escondendo o botão, a única saída seria mexer no banco à mão.
+ * aviso de "abaixo do mínimo" mora no diálogo, onde é lido antes de confirmar,
+ * escondendo o botão, a única saída seria mexer no banco à mão.
  */
 
 type Props = {
   initialPartners: AdminPartnerWithStats[];
+  /** Candidatos vindos de /parceiros, ainda não avaliados. */
+  prospects: AdminProspect[];
   costPerThousandCoinsCents: number;
   /** Prefixo do link de indicação, já com o domínio (ex.: https://scriba.cc/r). */
   linkBase: string;
@@ -51,10 +55,18 @@ type Props = {
 
 const pct = (n: number) => `${(n * 100).toFixed(1).replace(".", ",")}%`;
 
-export function PartnersManager({ initialPartners, costPerThousandCoinsCents, linkBase }: Props) {
+export function PartnersManager({
+  initialPartners,
+  prospects,
+  costPerThousandCoinsCents,
+  linkBase,
+}: Props) {
   const [search, setSearch] = useState("");
   const [editing, setEditing] = useState<AdminPartnerWithStats | null>(null);
   const [creating, setCreating] = useState(false);
+  // Promover um candidato é abrir o diálogo NORMAL de cadastro já preenchido,
+  // não há um segundo caminho de criação que pudesse divergir deste.
+  const [prefill, setPrefill] = useState<{ email: string; displayName: string } | null>(null);
   const [paying, setPaying] = useState<AdminPartnerWithStats | null>(null);
   const router = useRouter();
 
@@ -70,6 +82,13 @@ export function PartnersManager({ initialPartners, costPerThousandCoinsCents, li
 
   return (
     <div className="flex flex-col gap-4">
+      <ProspectsPanel
+        prospects={prospects}
+        onPromote={(email, displayName) => {
+          setPrefill({ email, displayName });
+          setCreating(true);
+        }}
+      />
       <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
         <Input
           value={search}
@@ -103,7 +122,7 @@ export function PartnersManager({ initialPartners, costPerThousandCoinsCents, li
                 </TableHead>
                 <TableHead
                   className="text-right"
-                  title="Já fora da carência e ainda não pago — é o que sai no próximo PIX"
+                  title="Já fora da carência e ainda não pago, é o que sai no próximo PIX"
                 >
                   Disponível
                 </TableHead>
@@ -118,7 +137,7 @@ export function PartnersManager({ initialPartners, costPerThousandCoinsCents, li
                 const link = `${linkBase}/${p.slug}`;
                 // O botão aparece com qualquer valor disponível. O mínimo de
                 // saque é política de rotina, não trava: o caso que ele mais
-                // atrapalharia é o parceiro que sai do programa com R$ 12 —
+                // atrapalharia é o parceiro que sai do programa com R$ 12,
                 // esse dinheiro é dele, e o operador precisa conseguir pagar.
                 const canPay = p.stats.availableCents > 0;
                 const belowMinimum = p.stats.availableCents < PAYOUT_MINIMUM_CENTS;
@@ -179,7 +198,7 @@ export function PartnersManager({ initialPartners, costPerThousandCoinsCents, li
                             onClick={() => setPaying(p)}
                             title={
                               belowMinimum
-                                ? `Registrar PIX enviado — abaixo do mínimo de ${formatBrl(PAYOUT_MINIMUM_CENTS)}`
+                                ? `Registrar PIX enviado, abaixo do mínimo de ${formatBrl(PAYOUT_MINIMUM_CENTS)}`
                                 : "Registrar PIX enviado"
                             }
                             className={belowMinimum ? "text-scriba-ink-mute" : undefined}
@@ -203,11 +222,11 @@ export function PartnersManager({ initialPartners, costPerThousandCoinsCents, li
 
       <p className="text-[11.5px] font-light leading-[1.6] text-scriba-ink-mute">
         <strong className="font-semibold">A liberar</strong> são comissões dentro da carência de{" "}
-        {COMMISSION_HOLD_DAYS} dias — o prazo em que o pagamento que as gerou ainda pode ser
+        {COMMISSION_HOLD_DAYS} dias, o prazo em que o pagamento que as gerou ainda pode ser
         contestado. <strong className="font-semibold">Disponível</strong> é o que já venceu a
         carência e ainda não foi pago: é esse o valor que sai no próximo PIX, e é o que o botão de
         pagamento registra. O mínimo de {formatBrl(PAYOUT_MINIMUM_CENTS)} é a regra do pagamento
-        mensal de rotina — abaixo dele o valor normalmente acumula, mas o botão continua ali e avisa
+        mensal de rotina, abaixo dele o valor normalmente acumula, mas o botão continua ali e avisa
         antes de confirmar, para quando pagar valer a pena mesmo assim.
       </p>
 
@@ -225,14 +244,17 @@ export function PartnersManager({ initialPartners, costPerThousandCoinsCents, li
       {(creating || editing) && (
         <PartnerDialog
           partner={editing}
+          prefill={prefill}
           costPerThousandCoinsCents={costPerThousandCoinsCents}
           onClose={() => {
             setCreating(false);
             setEditing(null);
+            setPrefill(null);
           }}
           onSaved={() => {
             setCreating(false);
             setEditing(null);
+            setPrefill(null);
             router.refresh();
           }}
         />

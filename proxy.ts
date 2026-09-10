@@ -11,14 +11,15 @@ import {
 /**
  * Next.js 16 proxy (formerly middleware). Refreshes the Supabase auth cookie
  * on every non-static request and gates protected routes. Follows the
- * @supabase/ssr contract — do NOT insert code between createServerClient and
+ * @supabase/ssr contract, do NOT insert code between createServerClient and
  * supabase.auth.getUser(), as rewriting cookies mid-flight breaks the
  * session-refresh handshake.
  *
  * Route buckets:
- *   PUBLIC     — /, /sign-in, /sign-up, /auth/*, /about, /contact, /terms, /privacy
- *   PROTECTED  — a known app area (KNOWN_APP_PREFIXES) behind the login
- *   UNKNOWN    — neither: passed through so the Next router answers a real 404
+ *   PUBLIC, /, /sign-in, /sign-up, /auth/*, /about, /contact, /terms, /privacy,
+ *                /parceiros/*
+ *   PROTECTED, a known app area (KNOWN_APP_PREFIXES) behind the login
+ *   UNKNOWN, neither: passed through so the Next router answers a real 404
  *
  * Unauth users hitting a protected route → /sign-in?next=<original-path>.
  * Auth users hitting /sign-in or /sign-up → /feed (already in).
@@ -29,7 +30,7 @@ import {
  * `/api/stripe` entra aqui porque o webhook do Stripe chega SEM cookie de
  * sessão: sem a exceção, este proxy responderia com um 307 para /sign-in e
  * toda entrega de evento falharia silenciosamente. A rota se defende sozinha
- * verificando a assinatura HMAC do payload — ser pública é requisito, não
+ * verificando a assinatura HMAC do payload, ser pública é requisito, não
  * descuido. Ver app/api/stripe/webhook/route.ts.
  */
 // "/api/billing/sweep" segue o mesmo padrão do webhook: público no proxy (o
@@ -41,6 +42,14 @@ import {
 // visitante anônimo vindo de fora. Sem estas entradas, o proxy responderia 307
 // para /sign-in e o link de divulgação levaria a uma tela de login em vez da
 // landing page. Ver app/r/[slug]/route.ts e app/i/[code]/route.ts.
+//
+// "/parceiros" é a página de CONVITE do programa de parceiros, pública por
+// definição: quem a lê ainda não tem conta. Ela não se confunde com
+// "/partners", que é o PAINEL e segue atrás do login, em KNOWN_APP_PREFIXES,
+// o par é proposital, e o idioma é a pista: a página de venda fala português
+// como toda página pública (/importar, /indicar), o painel mantém o nome da
+// feature. Como `isPublic` casa por prefixo, "/parceiros/regulamento" entra
+// junto.
 //
 // "/api/referral" responde ao selo "indicado por Fulano" do hero da LP, que é
 // montado no cliente porque a landing page é estática. Também anônima por
@@ -54,6 +63,7 @@ const PUBLIC_PREFIXES = [
   "/privacy",
   "/about",
   "/contact",
+  "/parceiros",
   "/r",
   "/i",
   "/api/referral",
@@ -77,7 +87,7 @@ const AUTH_ONLY_PREFIXES = ["/sign-in", "/sign-up"];
  * `/list` fica DE FORA, e isso é escolha, não esquecimento: ele existe (é o
  * nome antigo do `/recordings`, em `app/list/page.tsx`) mas só para responder
  * 308. Deixando-o passar, o redirect acontece ANTES do gate e o visitante
- * anônimo chega ao login já com `?next=/recordings` — o destino vivo. Listado,
+ * anônimo chega ao login já com `?next=/recordings`, o destino vivo. Listado,
  * ele guardaria no `?next=` um caminho que só existe para ser abandonado.
  */
 const KNOWN_APP_PREFIXES = [
@@ -112,7 +122,7 @@ const STATIC_ALLOWED_ORIGINS = new Set([
 // `scribe-qualquercoisa.vercel.app`, que casava. Com
 // `Access-Control-Allow-Credentials: true`, isso é uma origem controlada por
 // terceiro na allowlist. Hoje o estrago é contido pelo `SameSite=Lax` do
-// cookie do Supabase, que não acompanha XHR cross-site — ou seja, a proteção
+// cookie do Supabase, que não acompanha XHR cross-site, ou seja, a proteção
 // era um default de biblioteca, não uma decisão nossa. Ancorar no slug do time
 // devolve a decisão para cá.
 const ALLOWED_ORIGIN_PATTERNS: RegExp[] = [
@@ -142,7 +152,7 @@ function isKnownAppPath(pathname: string): boolean {
 }
 
 /**
- * O request prefere Markdown? (negociação de conteúdo — acceptmarkdown.com)
+ * O request prefere Markdown? (negociação de conteúdo, acceptmarkdown.com)
  *
  * Só conta `text/markdown` EXPLÍCITO e com q pelo menos igual ao de
  * `text/html`. O `Accept` de navegador (que lista `text/html` e um curinga
@@ -167,7 +177,7 @@ function prefersMarkdown(accept: string | null): boolean {
  * Sanitiza um `?next=` antes de redirecionar para ele.
  *
  * Exige caminho relativo à nossa origem e recusa as formas que os navegadores
- * resolvem como host externo — `//evil.com`, `/\evil.com`, `/%2F...`. Sem
+ * resolvem como host externo, `//evil.com`, `/\evil.com`, `/%2F...`. Sem
  * isso, um link `/sign-in?next=...` publicado por terceiros viraria um
  * open redirect com a credibilidade do nosso domínio, que é o vetor clássico
  * de phishing sobre fluxo de login.
@@ -193,16 +203,16 @@ function isAllowedOrigin(origin: string): boolean {
  * Content-Security-Policy.
  *
  * POR QUE ELA IMPORTA MAIS AQUI DO QUE NUM APP QUALQUER. O cookie de sessão do
- * `@supabase/ssr` é `httpOnly: false` por DESENHO — o client do navegador lê o
+ * `@supabase/ssr` é `httpOnly: false` por DESENHO, o client do navegador lê o
  * token com `document.cookie`, e não há como ligar o flag sem quebrar a
  * biblioteca (ver `DEFAULT_COOKIE_OPTIONS` em @supabase/ssr). Ou seja: aqui um
  * XSS não rouba "alguns dados", rouba a sessão inteira, com um refresh token
  * que o mesmo default deixa válido por 400 dias.
  *
  * POR QUE NÃO TEM NONCE, que é a forma forte. Um nonce muda a cada requisição,
- * então a página que o carrega no HTML não pode ser cacheada — usar nonce
+ * então a página que o carrega no HTML não pode ser cacheada, usar nonce
  * OBRIGA renderização dinâmica. E `app/page.tsx` ser estática é invariante
- * declarada deste repositório (ver "Landing page — o que não pode voltar" em
+ * declarada deste repositório (ver "Landing page, o que não pode voltar" em
  * app/AGENTS.md): a LP é a única página que um anônimo carrega, e torná-la
  * dinâmica devolve `no-store`, `X-Vercel-Cache: MISS` e HTML remontado na
  * origem a cada visita. Trocar isso por CSP é uma decisão de produto, não de
@@ -213,7 +223,7 @@ function isAllowedOrigin(origin: string): boolean {
  *  - `connect-src` restrito é a peça que mais vale contra o risco descrito
  *    acima. Roubar o cookie só serve se der para MANDÁ-LO para algum lugar, e
  *    daqui só saem requisições para nós, para o Supabase e para o GA.
- *  - `script-src` sem `'unsafe-eval'` (em produção — ver a nota adiante) e com
+ *  - `script-src` sem `'unsafe-eval'` (em produção, ver a nota adiante) e com
  *    allowlist de host bloqueia o `<script src="//evil.com">` injetado. NÃO
  *    bloqueia inline: `'unsafe-inline'` é obrigatório enquanto o Next emitir o
  *    bootstrap dele inline sem nonce, e o `ThemeScript` também é inline. Esta é
@@ -230,14 +240,14 @@ function isAllowedOrigin(origin: string): boolean {
  *
  * `'unsafe-eval'` SÓ EM DESENVOLVIMENTO, e a exceção é do React, não nossa: o
  * build de desenvolvimento dele usa `eval()` para remontar callstack vinda de
- * outro ambiente e outras ferramentas de depuração — sem a diretiva, o
+ * outro ambiente e outras ferramentas de depuração, sem a diretiva, o
  * `next dev` derruba um erro de console em toda página. O build de produção do
  * React nunca chama `eval`, então a folga não precisa existir lá, e é por isso
  * que ela é condicional em vez de constante: uma CSP de produção com
  * `'unsafe-eval'` devolve ao atacante exatamente o primitivo que o resto desta
  * política existe para negar.
  *
- * `NODE_ENV` é fixado pelo comando — `next dev` dá "development", `next build`
+ * `NODE_ENV` é fixado pelo comando, `next dev` dá "development", `next build`
  * dá "production" mesmo quando o `scripts/with-env.mjs` injetou o `.env.dev`
  * (é o caso do `npm run build:dev`). Ou seja: nenhum deploy sai com a folga,
  * nem o de preview.
@@ -274,7 +284,7 @@ function contentSecurityPolicy(): string {
 const CSP = contentSecurityPolicy();
 
 /**
- * A CSP entra em TODA resposta que o proxy devolve — inclusive no early-return
+ * A CSP entra em TODA resposta que o proxy devolve, inclusive no early-return
  * do visitante anônimo e nos redirects. Uma política que só cobre o caminho
  * feliz é uma política que o atacante contorna pedindo outro caminho.
  */
@@ -287,12 +297,12 @@ function applyCsp<T extends NextResponse>(response: T): T {
  * Recria o cookie-PISTA da indicação quando ele falta e a atribuição existe.
  *
  * O selo "indicado por Fulano" do hero da landing page só pergunta ao servidor
- * quem indicou SE `scriba_ref_hint` estiver presente — é o que evita uma
+ * quem indicou SE `scriba_ref_hint` estiver presente, é o que evita uma
  * requisição por visita para os 99% que não vieram de link nenhum (ver
  * `src/features/referrals/AGENTS.md`). A pista, porém, nasceu depois do cookie
  * de atribuição: **todo visitante que já tinha um `scriba_ref` vivo quando
  * isto entrou no ar não tem pista nenhuma**, e são 30 dias de gente nessa
- * situação. Para eles o selo simplesmente não aparecia — sem erro em lugar
+ * situação. Para eles o selo simplesmente não aparecia, sem erro em lugar
  * nenhum, que é o pior jeito de uma funcionalidade falhar.
  *
  * A cura mora AQUI porque o proxy é o único lugar que roda em toda requisição,
@@ -300,7 +310,7 @@ function applyCsp<T extends NextResponse>(response: T): T {
  * roda antes do cache de qualquer forma, e o HTML continua saindo da CDN. Um
  * `cookies()` dentro de `app/page.tsx` faria o oposto.
  *
- * Também cobre a divergência acidental — pista apagada por limpeza parcial,
+ * Também cobre a divergência acidental, pista apagada por limpeza parcial,
  * navegador que perdeu um cookie e não o outro. Quem manda continua sendo o
  * `httpOnly`: a pista só diz que EXISTE indicação, nunca de quem.
  */
@@ -332,7 +342,7 @@ export async function proxy(request: NextRequest) {
   //
   // O HTML da LP NÃO leva `Vary: Accept`: o Next é dono desse header nas rotas
   // do App Router e descarta o valor que o proxy ou o `next.config` tentam
-  // acrescentar (testado). Não é problema de correção — este proxy roda em todo
+  // acrescentar (testado). Não é problema de correção, este proxy roda em todo
   // request, antes de qualquer cache, então quem pede Markdown SEMPRE cai aqui
   // e é reescrito; só um cache de terceiro no meio do caminho ficaria sem o
   // sinal.
@@ -356,7 +366,7 @@ export async function proxy(request: NextRequest) {
 
   // Visitante anônimo na landing page ou chegando por um link de parceiro:
   // não há sessão para renovar nem rota a proteger, então saímos ANTES de
-  // instanciar o client — economiza uma ida ao Supabase nas duas rotas de
+  // instanciar o client, economiza uma ida ao Supabase nas duas rotas de
   // entrada do site, que são justamente as que decidem se a pessoa fica. A
   // ausência de cookie `sb-*` é o sinal barato de "não há sessão": o
   // @supabase/ssr guarda o token em cookies com esse prefixo, e sem nenhum
@@ -418,7 +428,7 @@ export async function proxy(request: NextRequest) {
     return applyCsp(redirect);
   }
 
-  // Quem já está logado não tem o que fazer na landing page — vai para o feed.
+  // Quem já está logado não tem o que fazer na landing page, vai para o feed.
   //
   // Esta checagem MORAVA em `app/page.tsx`, e era só por causa dela que a LP
   // precisava ser uma rota dinâmica (ver o comentário lá). Aqui o `user` já
@@ -440,7 +450,7 @@ export async function proxy(request: NextRequest) {
   if (isApi) applyCorsHeaders(supabaseResponse, origin, allowedOrigin);
   // O early-return acima cobre o visitante anônimo, que é quem vê a landing
   // page. Este cobre quem chega com um cookie `sb-*` velho e por isso passa
-  // pelo caminho completo — a pista é a mesma e curá-la duas vezes não custa.
+  // pelo caminho completo, a pista é a mesma e curá-la duas vezes não custa.
   return applyCsp(healReferralHint(request, supabaseResponse));
 }
 
@@ -457,10 +467,10 @@ export async function proxy(request: NextRequest) {
  * `offline.html` entrou pelo mesmo motivo, com um detalhe a mais: quem a busca
  * é o service worker, no `install`, para guardá-la no cache. Atrás do proxy,
  * um visitante ainda anônimo receberia o 307 para `/sign-in`, e o
- * `cache.addAll` REJEITA resposta redirecionada — a instalação inteira do SW
+ * `cache.addAll` REJEITA resposta redirecionada, a instalação inteira do SW
  * falharia, e com ela a instalabilidade do PWA.
  *
- * São recursos públicos por definição — não existe sessão para renovar neles,
+ * São recursos públicos por definição, não existe sessão para renovar neles,
  * então pular o proxy também economiza uma ida ao Supabase por requisição.
  *
  * `llms\.txt` e `.*\.md$` (hoje só `/index.md`) são conteúdo para agentes,
@@ -469,7 +479,7 @@ export async function proxy(request: NextRequest) {
  * por `Accept` acontece no corpo do proxy, antes de o matcher importar.
  *
  * A lista fica INLINE de propósito: o Next exige que `matcher` seja constante
- * literal para analisá-lo em build-time — montar a string a partir de uma
+ * literal para analisá-lo em build-time, montar a string a partir de uma
  * variável faz o matcher inteiro ser IGNORADO, em silêncio.
  */
 export const config = {

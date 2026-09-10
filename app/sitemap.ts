@@ -4,21 +4,26 @@ import { SITE_URL } from "@/lib/seo";
 /**
  * Só entra aqui URL que responde 200 e é indexável.
  *
- * `/sign-up` saiu porque é um `redirect("/sign-in")` — sitemap apontando para
+ * `/sign-up` saiu porque é um `redirect("/sign-in")`, sitemap apontando para
  * redirect vira "Página com redirecionamento" no Search Console, e nenhuma das
  * duas indexa. `/sign-in` saiu porque é tela de login: não tem conteúdo para
  * ranquear e o `?next=` multiplica variantes da mesma página. Ambas seguem
- * rastreáveis (só não são candidatas a índice) — ver `app/robots.ts`.
+ * rastreáveis (só não são candidatas a índice), ver `app/robots.ts`.
  *
  * O resto do app (/feed, /recordings, /studies, /recording/*, /billing/*) está
  * atrás do `proxy.ts`: para um rastreador aquilo é `307 → /sign-in`, então
  * listar qualquer uma delas seria pedir um erro de cobertura.
  */
 
-/** Data das páginas legais — bate com o "Última atualização" renderizado nelas.
+/** Data das páginas legais, bate com o "Última atualização" renderizado nelas.
  * Fixa de propósito: `new Date()` marcaria cada deploy como alteração de
  * conteúdo em documento que não mudou, e o Google aprende a ignorar o campo. */
 const LEGAL_LAST_MODIFIED = new Date("2026-08-28");
+
+/** Mesma regra da data acima, para a página de convite dos parceiros e o
+ * regulamento dela: bate com o "Última atualização" renderizado no
+ * regulamento, e muda só quando o texto muda. */
+const PARTNERS_LAST_MODIFIED = new Date("2026-09-10");
 
 export default function sitemap(): MetadataRoute.Sitemap {
   return [
@@ -39,6 +44,18 @@ export default function sitemap(): MetadataRoute.Sitemap {
       lastModified: LEGAL_LAST_MODIFIED,
       changeFrequency: "yearly",
       priority: 0.4,
+    },
+    {
+      url: `${SITE_URL}/parceiros`,
+      lastModified: PARTNERS_LAST_MODIFIED,
+      changeFrequency: "monthly",
+      priority: 0.6,
+    },
+    {
+      url: `${SITE_URL}/parceiros/regulamento`,
+      lastModified: PARTNERS_LAST_MODIFIED,
+      changeFrequency: "yearly",
+      priority: 0.3,
     },
     {
       url: `${SITE_URL}/privacy`,

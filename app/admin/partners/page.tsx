@@ -4,6 +4,7 @@ import { PartnersManager } from "@/features/admin/components/PartnersManager";
 import { appUrl } from "@/lib/billing/stripe";
 import { listPartners } from "@/lib/db/admin/partners";
 import { loadAdminUsageSummary } from "@/lib/db/admin/usage";
+import { listProspects } from "@/lib/db/prospects";
 import { getUsdToBrl } from "@/lib/fx/usd-brl";
 
 export const metadata: Metadata = { title: "Parceiros" };
@@ -17,8 +18,9 @@ export const dynamic = "force-dynamic";
  * levaria a decidir uma taxa com base numa margem que não existe mais.
  */
 export default async function AdminPartnersPage() {
-  const [partners, usage, rate] = await Promise.all([
+  const [partners, prospects, usage, rate] = await Promise.all([
     listPartners(),
+    listProspects(),
     loadAdminUsageSummary(),
     getUsdToBrl(),
   ]);
@@ -36,6 +38,7 @@ export default async function AdminPartnersPage() {
       />
       <PartnersManager
         initialPartners={partners}
+        prospects={prospects}
         costPerThousandCoinsCents={costPerThousandCoinsCents}
         linkBase={appUrl("/r")}
       />
