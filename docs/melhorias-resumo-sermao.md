@@ -143,6 +143,14 @@ Nessa seção, a IA pode ir além da mensagem, pois o usuário está solicitando
 
 ## Como apresentar comentários no meio do conteúdo
 
+> **Estado atual: os comentários do Scriba NÃO existem mais no resumo.** Esta
+> seção foi implementada (`contextCard` e `relatedVerse`, gerados por uma
+> segunda chamada de LLM e escondidos atrás de um botão de balão) e depois
+> removida inteira: a camada custava a chamada mais cara do produto depois do
+> próprio resumo e o leitor não a abria. O resumo hoje é só a voz do pregador
+> organizada. O que segue vale como registro do desenho, não do código, ver
+> `src/features/session/AGENTS.md`, seção "Depois do stop".
+
 Contextos e comentários do Scriba podem aparecer próximos ao trecho relacionado, mas nunca devem se confundir com a voz original.
 
 Eles devem usar blocos visualmente distintos e claramente identificados, por exemplo:

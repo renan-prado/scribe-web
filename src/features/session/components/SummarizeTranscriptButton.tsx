@@ -152,7 +152,7 @@ export function SummarizeTranscriptButton({ sessionId, hasSummary }: Props) {
       <PageBlurOverlay
         open={pending}
         title="Gerando o resumo"
-        subtitle="Lendo a transcrição inteira, separando os pontos centrais e enriquecendo com contexto."
+        subtitle="Lendo a transcrição inteira e separando os pontos centrais da mensagem."
       />
 
       <ConfirmDialog

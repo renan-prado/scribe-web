@@ -9,9 +9,9 @@ Sua tarefa: produzir o SERMÃO ORGANIZADO em JSON. O objetivo NÃO é resumir "s
 ESCOPO: SÓ O CORPO DO SERMÃO
 ═══════════════════════════════════════════════════════════════════
 
-Sua única responsabilidade nesta chamada é o CORPO DO SERMÃO: os tipos de bloco listados abaixo (h1, h2, paragraph, bibleQuote, highlight, example, quote, conclusion). NÃO emita nenhum outro tipo.
+Sua única responsabilidade é o CORPO DO SERMÃO: os tipos de bloco listados abaixo (h1, h2, paragraph, bibleQuote, highlight, example, quote, conclusion). NÃO emita nenhum outro tipo.
 
-Uma SEGUNDA chamada, executada depois desta com seu output como entrada, se encarrega de intercalar contextos históricos, notas exegéticas e versículos correlatos da voz da IA. Você NÃO precisa se preocupar em enriquecer o material, foque em fazer o sermão organizado sair fiel à mensagem. Silêncio da voz IA nesta etapa é o comportamento correto.
+Esta é a ÚNICA chamada. Não há etapa posterior de enriquecimento, e não é para você fazer o papel dela: nada de contexto histórico, nota exegética, versículo correlato que o pregador não citou ou comentário da voz da IA. O resumo é a mensagem dele, organizada. Silêncio da voz IA é o comportamento correto do começo ao fim.
 
 FORMATO DE SAÍDA: retorne SOMENTE um objeto JSON válido, sem markdown ao redor, sem comentários:
 {
@@ -61,7 +61,7 @@ TIPOS DE BLOCO PERMITIDOS
 - { "type": "quote", "text": "...", "author": "..." }: citação de terceiro DITA pelo pregador (não sua sugestão). Todo quote DEVE ser precedido por um "paragraph" curto de lead-in.
 - { "type": "conclusion", "text": "..." }: conclusão sintetizando o discurso inteiro e o principal chamado/aplicação. OBRIGATÓRIO no final de "blocks". Escrita na voz da mensagem, não em meta.
 
-QUALQUER OUTRO TIPO (contextCard, relatedVerse, etc.) SERÁ IGNORADO. Não perca tokens gerando-os.
+QUALQUER OUTRO TIPO SERÁ IGNORADO. Não perca tokens gerando-os.
 
 ═══════════════════════════════════════════════════════════════════
 FLUXO TÍPICO DE UM MOVIMENTO
@@ -86,7 +86,7 @@ Quando feedItems vier NÃO VAZIO, são o "highlight reel" curado da sessão live
 - Todo "citedVerse" DEVE virar "bibleQuote" no lugar do sermão em que foi lido. OBRIGATÓRIO.
 - Todo "speakerHighlight" DEVE virar "highlight" no ponto correspondente. Se dois são essencialmente iguais, mantenha o mais forte.
 - Todo "speakerCitation" DEVE virar "quote" com autor correto e lead-in.
-- "context", "relatedVerse", "suggestedQuote" do feed são responsabilidade da 2ª chamada, IGNORE aqui.
+- "context", "relatedVerse", "suggestedQuote" do feed são cartões da voz da IA, não do pregador: IGNORE aqui. O sermão organizado é só a voz de quem pregou.
 
 Quando feedItems vier VAZIO (modo sem live), gere o sermão organizado a partir apenas da transcrição, com a mesma qualidade e densidade.
 
@@ -153,4 +153,4 @@ REGRAS FINAIS
 - NÃO repita literalmente o "shortSummary" no primeiro parágrafo.
 - Feche SEMPRE com "conclusion" sobre o tema dominante, incluindo o principal chamado/aplicação.
 - A ordem dos blocks segue a ordem real da mensagem, não reorganize.
-- NÃO emita blocos do tipo contextCard, relatedVerse ou qualquer outro fora da lista permitida. Eles serão adicionados pela 2ª chamada.`;
+- NÃO emita nenhum bloco fora da lista permitida acima. Não há segunda chamada: o que sair daqui é o resumo inteiro.`;

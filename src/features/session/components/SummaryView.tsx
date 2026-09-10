@@ -1,14 +1,19 @@
 "use client";
 
 import { BlockRenderer, blockKey } from "@/features/session/components/BlockRenderer";
-import { type CommentBlock, ScribaCommentGroup } from "@/features/session/components/ScribaComment";
 import { SummarySkeleton } from "@/features/session/components/skeletons";
-import type { SummaryBlock, SummaryPayload } from "@/lib/domain/summary";
+import type { SummaryPayload } from "@/lib/domain/summary";
 
 /**
  * Renders the final summary produced by /api/final-summary. Purely presentational,
  * the page decides when to mount it (only after the recording has stopped and the
  * final payload has arrived).
+ *
+ * A lista é PLANA. Houve um agrupamento aqui, cada bloco primário casado com os
+ * comentários do Scriba que vinham depois dele e um botão de balão à direita
+ * abrindo o popover. Os comentários saíram do produto inteiro (ver
+ * `lib/domain/summary.ts`), e com eles o agrupamento, o botão e o placeholder
+ * invisível que reservava a largura dele para alinhar as linhas.
  */
 type SummaryViewProps = {
   summary: SummaryPayload | null;
@@ -16,37 +21,10 @@ type SummaryViewProps = {
   running: boolean;
 };
 
-type BlockGroup = { primary: SummaryBlock; comments: CommentBlock[] };
-
-function isCommentBlock(b: SummaryBlock): b is CommentBlock {
-  return b.type === "contextCard" || b.type === "relatedVerse";
-}
-
-/**
- * Groups each Scriba comment (contextCard/relatedVerse) with the preceding
- * primary block. Orphan comments (comment appears before any primary) render
- * standalone as their own group.
- */
-function groupBlocks(blocks: SummaryBlock[]): BlockGroup[] {
-  const groups: BlockGroup[] = [];
-  for (const b of blocks) {
-    if (isCommentBlock(b)) {
-      const last = groups[groups.length - 1];
-      if (last && !isCommentBlock(last.primary)) {
-        last.comments.push(b);
-        continue;
-      }
-    }
-    groups.push({ primary: b, comments: [] });
-  }
-  return groups;
-}
-
 export function SummaryView({ summary, hasTranscript, running }: SummaryViewProps) {
   const hasBody = summary && (summary.shortSummary.length > 0 || summary.blocks.length > 0);
 
   if (hasBody) {
-    const groups = groupBlocks(summary!.blocks);
     return (
       <div className="flex flex-col gap-7">
         {summary!.shortSummary ? (
@@ -62,30 +40,13 @@ export function SummaryView({ summary, hasTranscript, running }: SummaryViewProp
             </p>
           </div>
         ) : null}
-        {groups.map((g, i) => {
-          const key = `${g.primary.type}-${i}-${blockKey(g.primary)}`;
-          if (g.comments.length > 0) {
-            return (
-              <div key={key} className="animate-content-fade">
-                <ScribaCommentGroup comments={g.comments}>
-                  <BlockRenderer block={g.primary} />
-                </ScribaCommentGroup>
-              </div>
-            );
-          }
-          // Sem comentários: mantém o mesmo layout row do ScribaCommentGroup no
-          // desktop com um placeholder invisível do tamanho do botão. Assim TODA
-          // linha do resumo termina no mesmo eixo vertical, evitando as
-          // "curvas" causadas por alguns blocos correrem até a borda e outros
-          // ficarem espremidos pelo botão. No mobile o placeholder some (nesse
-          // breakpoint o botão de comentário fica embaixo do bloco, não à
-          // direita, então não há espaço a reservar).
+        {summary!.blocks.map((block, i) => {
+          // A posição entra na chave de propósito: dois `highlight` com o
+          // mesmo começo de texto existem, e `blockKey` sozinho os colidiria.
+          const key = `${block.type}-${i}-${blockKey(block)}`;
           return (
-            <div key={key} className="animate-content-fade flex items-start sm:gap-4">
-              <div className="min-w-0 flex-1">
-                <BlockRenderer block={g.primary} />
-              </div>
-              <div aria-hidden className="hidden size-9 shrink-0 sm:block" />
+            <div key={key} className="animate-content-fade min-w-0">
+              <BlockRenderer block={block} />
             </div>
           );
         })}

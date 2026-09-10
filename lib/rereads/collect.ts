@@ -58,6 +58,10 @@ export function collectRereadPool(
     }
   }
 
+  // Só `bibleQuote`. O resumo já teve uma segunda fonte de versículo aqui, o
+  // bloco `relatedVerse` que o enriquecimento inseria; ele saiu do produto
+  // (ver `lib/domain/summary.ts`), e com ele a única origem `related` vinda do
+  // resumo. `related` continua existindo, alimentado pelo feed ao vivo.
   for (const block of summary.blocks) {
     if (block.type === "bibleQuote") {
       // Duplica muito com cited (o resumo re-cita o que o pastor leu). Não
@@ -68,13 +72,6 @@ export function collectRereadPool(
         text: block.text ?? "",
         reason: "",
         origin: "summary",
-      });
-    } else if (block.type === "relatedVerse") {
-      push(related, {
-        reference: block.reference,
-        text: block.text ?? "",
-        reason: block.reason ?? "",
-        origin: "related",
       });
     }
   }

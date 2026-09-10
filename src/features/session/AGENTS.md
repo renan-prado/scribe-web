@@ -460,6 +460,26 @@ como contexto curado de alta prioridade, versículos citados e destaques do
 pregador têm de atravessar; sugestões da IA só ficam se ainda couberem no
 todo.
 
+**Voltou a ser uma chamada só.** Houve uma segunda, o "enriquecimento": ela
+recebia os blocks já organizados e devolvia inserções de `contextCard`
+(contexto histórico, nota exegética, área doutrinária) e `relatedVerse`
+("leia também"), os **comentários do Scriba**, que o `SummaryView` agrupava
+com o bloco anterior e escondia atrás de um botão de balão. Saiu inteiro:
+prompt, tipos de bloco, `ScribaComment`, o hook `use-read-flag` que marcava o
+balão como lido, a env var do modelo e as quatro rotas `summary-enrichment*`
+de `UsageRoute`. Era a segunda chamada mais cara do produto, o sermão inteiro
+de novo na entrada, por uma camada que o leitor não abria.
+
+O que ficou no resumo é só a voz do pregador: `bibleQuote` com a referência,
+`highlight` com a frase marcante, `example`, `quote` e a `conclusion`. Nada
+disso veio do enriquecimento e nada disso mudou.
+
+Resumos ANTIGOS continuam com aqueles dois blocos no `final_summary`, nada os
+apaga; `BlockRenderer` devolve `null` para tipo que não conhece, então eles
+simplesmente não desenham. As linhas de `summary-enrichment*` também continuam
+em `llm_usage_events`, e `lib/db/admin/usage.ts` continua lendo-as, para o
+custo histórico de reprocessar resumo não migrar para a linha da gravação.
+
 Modo `transcript_only` não tem resumo NA HORA DO STOP: o texto é salvo por
 `PUT /api/sessions/:id/transcript` com `final_summary` nulo, e a sessão abre
 em `/recording/:id/transcript`.

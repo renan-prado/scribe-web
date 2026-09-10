@@ -3,9 +3,9 @@ import { z } from "zod";
 /**
  * "Releia este texto", 10 versículos separados junto com o final_summary
  * para serem relidos ao longo do tempo. Sempre que possível reaproveitamos
- * o que já apareceu (citedVerse do feed, relatedVerse do feed, bibleQuote/
- * relatedVerse do summary); a IA só é chamada para completar até 10 quando
- * o pool disponível não cobre todos os slots.
+ * o que já apareceu (citedVerse do feed, relatedVerse do feed, bibleQuote do
+ * summary); a IA só é chamada para completar até 10 quando o pool disponível
+ * não cobre todos os slots.
  *
  * Todos os itens são agendados no futuro:
  *   1, 2, 4, 7, 16, 22, 30, 45, 60, 90 dias.
@@ -32,8 +32,9 @@ const RereadDayOffsetSchema = z.union([
 /**
  * Origem do item.
  * - `cited`: o pastor leu na gravação (feed citedVerse), âncora mais forte.
- * - `related`: sugerido pela IA no live (feed relatedVerse) ou pelo
- *    enrichment do resumo (summary block relatedVerse).
+ * - `related`: sugerido pela IA no live (feed relatedVerse). Já vinha também
+ *    do enriquecimento do resumo, que saiu do produto; itens `related` de
+ *    payloads antigos continuam válidos.
  * - `summary`: apareceu como citação no bloco bibleQuote do resumo.
  * - `ai-fill`: gerado pelo LLM só para completar os 10 quando o pool
  *    reaproveitável não cobria todos os slots.

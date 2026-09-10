@@ -300,7 +300,7 @@ link. Detalhes em `src/features/referrals/AGENTS.md`.
 dentro dos mockups de celular são markup estático em
 `src/shared/components/LandingMocks.tsx`. Antes elas montavam o `<Feed>` e o
 `<SummaryView>` reais, o que arrastava `FeedItemCard`, `VerseDialog` (com o
-Dialog do base-ui), `useVerseFetch`, `PassageVerses`, `ScribaComment` e os
+Dialog do base-ui), `useVerseFetch`, `PassageVerses` e os
 skeletons para o bundle da landing, o app de gravação inteiro baixado para
 exibir cinco cards que nunca mudam e nunca respondem a clique. Reusar um
 server component (o `BlockRenderer`, por exemplo) continua liberado: ele não

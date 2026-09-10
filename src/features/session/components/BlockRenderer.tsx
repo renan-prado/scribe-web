@@ -4,13 +4,11 @@ import { PassageVerses } from "@/features/session/components/PassageVerses";
 import { RichText } from "@/features/session/components/RichText";
 import { parseVerseReference } from "@/lib/domain/feed";
 import type { SummaryBlock } from "@/lib/domain/summary";
-import { ScribaAvatar, ScribaMark } from "@/shared/brand";
+import { ScribaMark } from "@/shared/brand";
 
 export function blockKey(block: SummaryBlock): string {
   if (block.type === "bibleQuote") return `${block.reference}-${block.text.slice(0, 24)}`;
   if (block.type === "quote") return `${block.text.slice(0, 24)}-${block.author ?? ""}`;
-  if (block.type === "contextCard") return `${block.label}-${block.text.slice(0, 24)}`;
-  if (block.type === "relatedVerse") return `${block.reference}-${block.reason.slice(0, 24)}`;
   return block.text.slice(0, 32);
 }
 
@@ -135,71 +133,9 @@ export function BlockRenderer({ block }: { block: SummaryBlock }) {
           ) : null}
         </figure>
       );
-    case "contextCard":
-      return (
-        <details open className="group animate-content-fade">
-          <summary className="flex cursor-pointer list-none items-start gap-2.5 [&::-webkit-details-marker]:hidden">
-            <ScribaAvatar />
-            <span className="mt-0.5 text-xs font-semibold text-scriba-ink-soft">Scriba</span>
-            <span
-              aria-hidden
-              className="mt-0.5 text-[10px] text-scriba-ink-mute transition-transform group-open:rotate-180"
-            >
-              ⌄
-            </span>
-          </summary>
-          <div className="-mt-2 ml-[42px] flex flex-col gap-3.5 rounded-3xl rounded-tl-none bg-scriba-bubble px-5 py-4 text-scriba-bubble-ink">
-            <p className="text-pretty text-sm font-light leading-relaxed text-scriba-ink">
-              <RichText>{block.text}</RichText>
-            </p>
-            {block.source ? (
-              <p className="text-[11px] font-light italic text-scriba-ink-soft">- {block.source}</p>
-            ) : null}
-          </div>
-        </details>
-      );
-    case "relatedVerse": {
-      const parsed = parseVerseReference(block.reference);
-      const hasRange = parsed && parsed.startVerse != null && parsed.endVerse != null;
-      return (
-        <details open className="group animate-content-fade">
-          <summary className="flex cursor-pointer list-none items-start gap-2.5 [&::-webkit-details-marker]:hidden">
-            <ScribaAvatar />
-            <span className="mt-0.5 text-xs font-semibold text-scriba-ink-soft">Scriba</span>
-            <span
-              aria-hidden
-              className="mt-0.5 text-[10px] text-scriba-ink-mute transition-transform group-open:rotate-180"
-            >
-              ⌄
-            </span>
-          </summary>
-          <div className="-mt-2 ml-[42px] flex flex-col gap-3.5 rounded-3xl rounded-tl-none bg-scriba-bubble px-5 py-4 text-scriba-bubble-ink">
-            <span className="text-[10px] font-semibold uppercase tracking-[0.14em] text-scriba-ink-soft">
-              Leia também · {block.reference}
-            </span>
-            {hasRange ? (
-              <div className="text-[15px] font-light leading-relaxed text-session-verse-text">
-                <PassageVerses
-                  bookDisplay={parsed.bookDisplay}
-                  chapter={parsed.chapter}
-                  startVerse={parsed.startVerse as number}
-                  endVerse={parsed.endVerse as number}
-                />
-              </div>
-            ) : block.text ? (
-              <blockquote className="border-l-[3px] border-session-verse-border pl-3.5 text-[15px] font-light italic leading-relaxed text-session-verse-text">
-                {block.text}
-              </blockquote>
-            ) : null}
-            {block.reason ? (
-              <p className="text-xs font-normal leading-relaxed text-scriba-ink-soft">
-                <RichText>{block.reason}</RichText>
-              </p>
-            ) : null}
-          </div>
-        </details>
-      );
-    }
+    // Tipo desconhecido não desenha. Hoje isso cobre os resumos ANTIGOS, que
+    // ainda trazem `contextCard` e `relatedVerse` no `final_summary`, os
+    // comentários do Scriba que saíram do produto (ver `lib/domain/summary.ts`).
     default:
       return null;
   }

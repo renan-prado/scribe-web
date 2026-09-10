@@ -14,7 +14,7 @@ import { z } from "zod";
  * - `verbatim`: cita literalmente uma frase que o pastor falou (via
  *   speakerHighlight/speakerEcho/speakerCitation do feed).
  * - `paraphrase`: reformula uma ideia que apareceu no feed ou no resumo
- *   (highlight/contextCard/example blocks) com voz autoral.
+ *   (blocos highlight/example) com voz autoral.
  * - `generated`: sub-ideia extraída pela IA direto do transcript, quando as
  *   fontes acima não davam material para os 10 slots.
  */

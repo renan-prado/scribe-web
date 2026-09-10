@@ -1,29 +1,28 @@
 import "server-only";
 import { recordChatUsage, type UsageRoute } from "@/lib/db/usage";
 import type { FeedItem } from "@/lib/domain/feed";
-import {
-  mergeEnrichmentIntoBlocks,
-  parseEnrichmentFromLLM,
-  parseSummaryFromLLM,
-  type SummaryPayload,
-} from "@/lib/domain/summary";
+import { parseSummaryFromLLM, type SummaryPayload } from "@/lib/domain/summary";
 import { serverEnv } from "@/lib/env/server";
 import { buildLlmMetadata } from "@/lib/llm/metadata";
 import { callChat } from "@/lib/llm/openai";
 import { createLogger } from "@/lib/log";
 import { FINAL_SUMMARY_SYSTEM_PROMPT } from "@/lib/prompts/final-summary";
-import { SUMMARY_ENRICHMENT_SYSTEM_PROMPT } from "@/lib/prompts/summary-enrichment";
 
 /**
  * Shared LLM chain that produces a final SummaryPayload from a transcript +
  * curated feed items. Used by:
  *   - POST /api/final-summary          (first pass, right after stop)
  *   - POST /api/final-summary/reprocess (re-run on a saved session)
+ *   - POST /api/final-summary/from-transcript
+ *   - a importação do YouTube (`lib/youtube/*`)
  *
- * Runs the two-shot flow: sermon-organizer prompt then optional enrichment
- * that layers contextCard + relatedVerse into the blocks. Enrichment failure
- * is best-effort, the caller still gets a valid summary, just without AI
- * cards. Both calls emit usage telemetry via recordChatUsage.
+ * **É UMA chamada só.** Havia uma segunda, o "enriquecimento", que recebia os
+ * blocks já organizados e devolvia inserções de `contextCard` e `relatedVerse`,
+ * os comentários do Scriba que a tela desenhava num balão. Ela saiu inteira:
+ * prompt, tipos de bloco, rotas de telemetria (`summary-enrichment*`) e o
+ * componente. Era a segunda chamada mais cara do produto (entrada com o sermão
+ * inteiro de novo) para uma camada que o usuário não usava. Se um dia voltar,
+ * volta como decisão de produto, não como "faltou algo aqui".
  */
 
 export type GenerateFinalSummarySuccess = {
@@ -61,7 +60,6 @@ export async function generateFinalSummary(
 ): Promise<GenerateFinalSummaryResult> {
   const { userId, sessionId, transcript, feedItems, logPrefix, metadataRoute } = input;
   const log = createLogger(logPrefix);
-  const enrichmentLog = log.scoped("enrichment");
   const model = serverEnv.OPENAI_FINAL_SUMMARY_MODEL;
 
   const userMessage = `feedItems:\n${JSON.stringify(feedItems)}\n\n---\ntranscript:\n${transcript}`;
@@ -125,88 +123,6 @@ export async function generateFinalSummary(
     reasoningTokens: usage.reasoningTokens,
     latencyMs,
   });
-
-  if (payload.blocks.length > 0) {
-    const enrichmentModel = serverEnv.OPENAI_SUMMARY_ENRICHMENT_MODEL;
-    // O enriquecimento herda o passe que o chamou. Marcado sempre como
-    // "summary-enrichment", metade do custo de um reprocessamento ia parar na
-    // linha da gravação e o preço de reprocessar resumo parecia mais barato do
-    // que é, ver /admin/precificacao.
-    const enrichmentRoute: UsageRoute =
-      metadataRoute === "final-summary-reprocess"
-        ? "summary-enrichment-reprocess"
-        : metadataRoute === "final-summary-from-transcript"
-          ? "summary-enrichment-from-transcript"
-          : metadataRoute === "final-summary-youtube"
-            ? "summary-enrichment-youtube"
-            : "summary-enrichment";
-    // A transcrição NÃO entra aqui, e essa é a única economia deste pipeline
-    // que foi medida sem custo de qualidade. O enriquecimento já recebe os
-    // `blocks`, que são a mensagem inteira, editada, mais os cartões do
-    // feed; a transcrição bruta era a terceira cópia do mesmo sermão no mesmo
-    // prompt. Ela sozinha respondia por 54% da entrada desta chamada (11.822
-    // → 5.410 tokens numa sessão de 30 min) numa etapa em que a entrada é
-    // ~80% da conta. Medido sobre uma sessão real: as mesmas 6 inserções, o
-    // mesmo texto em cada uma, mudando só três posições de índice.
-    //
-    // Se você for devolvê-la, devolva o parágrafo (b) ao prompt junto, ele
-    // descreve os insumos que esta mensagem entrega, e os dois têm de contar
-    // a mesma história.
-    const indexedBlocks = payload.blocks.map((block, index) => ({ index, ...block }));
-    const enrichmentUserMessage =
-      `blocks (indexed):\n${JSON.stringify(indexedBlocks)}\n\n---\n` +
-      `feedItems:\n${JSON.stringify(feedItems)}`;
-
-    const enrichmentResult = await callChat({
-      model: enrichmentModel,
-      temperature: 0.5,
-      maxTokens: 6000,
-      responseFormat: { type: "json_object" },
-      messages: [
-        { role: "system", content: SUMMARY_ENRICHMENT_SYSTEM_PROMPT },
-        { role: "user", content: enrichmentUserMessage },
-      ],
-      store: true,
-      metadata: buildLlmMetadata({
-        route: enrichmentRoute,
-        userId,
-        sessionId,
-      }),
-    });
-
-    if (!enrichmentResult.ok) {
-      const err = enrichmentResult.error;
-      const kind = err.kind === "fetch" ? "fetch" : "upstream";
-      enrichmentLog.warn(`failed, sermon returned without AI cards`, {
-        kind,
-        message: err.message,
-      });
-    } else {
-      const insertions = parseEnrichmentFromLLM(enrichmentResult.data.content);
-      if (insertions.length > 0) {
-        payload.blocks = mergeEnrichmentIntoBlocks(payload.blocks, insertions);
-      }
-      enrichmentLog.debug(`ok`, {
-        latencyMs: enrichmentResult.data.latencyMs,
-        finishReason: enrichmentResult.data.finishReason,
-        promptTokens: enrichmentResult.data.usage.promptTokens,
-        completionTokens: enrichmentResult.data.usage.completionTokens,
-        insertions: insertions.length,
-        totalBlocksAfterMerge: payload.blocks.length,
-      });
-      await recordChatUsage({
-        userId,
-        sessionId,
-        route: enrichmentRoute,
-        model: enrichmentModel,
-        promptTokens: enrichmentResult.data.usage.promptTokens,
-        completionTokens: enrichmentResult.data.usage.completionTokens,
-        cachedTokens: enrichmentResult.data.usage.cachedTokens,
-        reasoningTokens: enrichmentResult.data.usage.reasoningTokens,
-        latencyMs: enrichmentResult.data.latencyMs,
-      });
-    }
-  }
 
   return { ok: true, payload, latencyMs, model };
 }

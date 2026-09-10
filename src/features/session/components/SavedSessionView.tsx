@@ -159,7 +159,7 @@ export function SavedSessionView({
       <PageBlurOverlay
         open={reprocessing}
         title="Reprocessando o resumo"
-        subtitle="Refazendo os pontos centrais e enriquecendo com contexto."
+        subtitle="Refazendo os pontos centrais da mensagem."
       />
       <NavLink
         href="/recordings"

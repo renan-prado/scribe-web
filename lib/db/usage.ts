@@ -67,13 +67,12 @@ export type UsageRoute =
   // roda sobre METADADO e não sobre o sermão: fundida com a do resumo, um dia
   // alguém leria o custo por importação sem saber que há duas chamadas ali.
   | "youtube-metadata"
-  // Duas rotas para a MESMA chamada de enriquecimento, escolhidas pelo passe
-  // que a disparou. Sem a segunda, metade do custo de reprocessar um resumo
-  // caía na linha da gravação e o preço de `reprocess_summary` parecia baixo.
-  | "summary-enrichment"
-  | "summary-enrichment-reprocess"
-  | "summary-enrichment-from-transcript"
-  | "summary-enrichment-youtube"
+  // As quatro rotas do ENRIQUECIMENTO do resumo ("summary-enrichment" e os
+  // sufixos -reprocess / -from-transcript / -youtube) saíram daqui junto com a
+  // segunda chamada que as escrevia, ver `lib/final-summary/generate.ts`. As
+  // linhas continuam no banco e continuam sendo LIDAS por
+  // `lib/db/admin/usage.ts`; como no caso do estudo abaixo, o tipo governa só
+  // o que se ESCREVE daqui em diante.
   // As três etapas de LLM do estudo (`lib/study/generate.ts`). Separadas de
   // propósito: é o que permite ver no /admin/usage quanto custa PERGUNTAR,
   // quanto custa RESPONDER e quanto custa ESCREVER, e portanto onde vale
@@ -87,9 +86,9 @@ export type UsageRoute =
   // Os dois cortes do guardião, num modelo barato. Mesma rota para os
   // dois: separá-los daria duas linhas de custo irrisório cada.
   | "study-guard"
-  // Os três cards de acompanhamento, e a segunda rota de cada um pelo MESMO
-  // motivo do enriquecimento acima: o reprocessamento regenera os três, e sem
-  // o par o custo dessa regeração caía na linha da gravação. Metade do
+  // Os três cards de acompanhamento, e a segunda rota de cada um porque o
+  // reprocessamento regenera os três, e sem o par o custo dessa regeração
+  // caía na linha da gravação. Metade do
   // trabalho que reprocessar dispara ficava fora do preço de
   // `reprocess_summary`, que por isso parecia mais barato do que é.
   | "practices"

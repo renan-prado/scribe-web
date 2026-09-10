@@ -117,7 +117,7 @@
   --color-auth-btn-border-hover: var(--auth-btn-border-hover);
   --color-auth-btn-bg-hover: var(--auth-btn-bg-hover);
   --color-scriba-mint-dark: var(--scriba-mint-dark);
-  /* Scriba AI chat bubble tokens (feed + summary comments) */
+  /* Scriba AI chat bubble tokens (cards de autoria da IA no feed ao vivo) */
   --color-scriba-bubble: var(--scriba-bubble);
   --color-scriba-bubble-ink: var(--scriba-bubble-ink);
   /* Elevated surface ("paper"). White in light, raised indigo in dark, this is
@@ -127,7 +127,6 @@
   --color-scriba-rec: var(--scriba-rec);
   --color-scriba-rec-ink: var(--scriba-rec-ink);
   --color-scriba-rec-soft: var(--scriba-rec-soft);
-  --color-scriba-violet: var(--scriba-violet);
   --color-scriba-mint-strong: var(--scriba-mint-strong);
   --color-scriba-gold-soft: var(--scriba-gold-soft);
   --color-scriba-gold-track: var(--scriba-gold-track);
@@ -311,7 +310,6 @@
        claro  #B91C1C sobre #FCEEEE = 5,73 */
   --scriba-rec-ink: #B91C1C;
   --scriba-rec-soft: #FCEEEE;
-  --scriba-violet: #7C5CE0;
   --scriba-mint-strong: #4E9C7F;
   --scriba-gold-soft: #FFF9E8;
   --scriba-gold-track: #F0E4C6;
@@ -538,7 +536,6 @@
   /* escuro  #FCA5A5 sobre #221115 = 9,55 */
   --scriba-rec-ink: #FCA5A5;
   --scriba-rec-soft: #221115;
-  --scriba-violet: #9A7CF0;
   --scriba-mint-strong: #6FD2AA;
   --scriba-gold-soft: #1F1A10;
   --scriba-gold-track: #292315;

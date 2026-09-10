@@ -25,7 +25,7 @@ import { collectRereadPool, type RereadPoolItem, referencesFromPool } from "@/li
  * Gera 10 sugestões de "Releia este texto" para uma sessão. Reaproveita:
  *   - citedVerse do feed live (o pastor leu)
  *   - relatedVerse do feed live (IA sugeriu junto)
- *   - bibleQuote / relatedVerse do final_summary
+ *   - bibleQuote do final_summary
  *
  * Só chama o LLM se o pool reaproveitado não cobrir os 10 slots. Um payload
  * incompleto (menos de 10 offsets) é tratado como falha para não persistir

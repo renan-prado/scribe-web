@@ -8,8 +8,8 @@ import { ScribaAvatar } from "@/shared/brand";
  * Antes a LP montava os componentes REAIS, `<Feed>` e `<SummaryView>`, para
  * desenhar estas duas telas. Fidelidade de graça, mas o custo era o bundle: os
  * dois são `"use client"` e arrastavam junto `FeedItemCard`, `VerseDialog`
- * (com o Dialog do base-ui), `useVerseFetch`, `PassageVerses`, `ScribaComment`
- * e os skeletons. A landing page, a única rota que um visitante anônimo
+ * (com o Dialog do base-ui), `useVerseFetch`, `PassageVerses` e os
+ * skeletons. A landing page, a única rota que um visitante anônimo
  * carrega, e a que decide se ele fica, baixava o app de gravação inteiro para
  * exibir cinco cards que nunca mudam e nunca respondem a clique.
  *
@@ -159,9 +159,8 @@ const DEMO_SHORT_SUMMARY =
 
 /**
  * Só tipos de bloco que o `BlockRenderer` desenha sem tocar na rede.
- * Nada de `bibleQuote` (puxaria `PassageVerses`, que busca o texto do
- * versículo) nem de `contextCard`/`relatedVerse` (agrupariam em
- * `ScribaCommentGroup`, que é client). Manter assim ao editar a demo.
+ * Nada de `bibleQuote`: ele puxaria `PassageVerses`, que busca o texto do
+ * versículo. Manter assim ao editar a demo.
  */
 const DEMO_BLOCKS: SummaryBlock[] = [
   { type: "h1", text: "A água viva para corações sedentos" },

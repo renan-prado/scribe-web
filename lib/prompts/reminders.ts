@@ -31,7 +31,7 @@ Ao decidir o CONTEÚDO de cada cartão, siga esta ordem de preferência:
 
 1) VERBATIM (preferido): pegue uma frase MARCANTE que o pastor efetivamente disse, está em feedItems como \`speakerHighlight\`, \`speakerEcho\` ou \`speakerCitation\`. Coloque a frase EXATA no campo "quote" e escreva um "text" curto que explique por que ela vale ser lembrada. origin = "verbatim".
 
-2) PARAPHRASE: reformule com voz autoral uma ideia que aparece em finalSummary (bloco \`highlight\`, \`example\`, \`contextCard\`) ou em feedItems (\`context\`). Sem "quote", o texto reformula em vez de citar. origin = "paraphrase".
+2) PARAPHRASE: reformule com voz autoral uma ideia que aparece em finalSummary (bloco \`highlight\` ou \`example\`) ou em feedItems (\`context\`). Sem "quote", o texto reformula em vez de citar. origin = "paraphrase".
 
 3) GENERATED: se você já esgotou verbatim + paraphrase e ainda faltam slots, extraia uma sub-ideia diretamente do transcript e escreva original. origin = "generated". Só use quando estritamente necessário para completar os 10.
 

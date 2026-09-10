@@ -290,8 +290,10 @@ O `ended_at` que esse UPDATE grava é também o que faz um POST repetido bater n
 - **Conciliação:** o cabeçalho `x-billable-requests` de cada resposta vai para
   o log (`supadata` scope, nível debug). Se a fatura deles divergir do número
   de importações do nosso ledger, é ali que a diferença aparece.
-- **Telemetria:** quatro rotas próprias em `llm_usage_events`
-  (`final-summary-youtube`, `summary-enrichment-youtube`, `rereads-youtube`,
-  `reminders-youtube`), somadas na ação `youtube` de `/admin/precificacao`.
+- **Telemetria:** três rotas próprias em `llm_usage_events`
+  (`final-summary-youtube`, `rereads-youtube` e `reminders-youtube`), somadas
+  na ação `youtube` de `/admin/precificacao`. Houve uma quarta,
+  `summary-enrichment-youtube`, do enriquecimento que saiu do produto; as
+  linhas antigas continuam no banco e continuam sendo lidas.
   Elas são separadas justamente para a pergunta "vídeo longo está comendo a
   margem?" ter onde ser respondida.

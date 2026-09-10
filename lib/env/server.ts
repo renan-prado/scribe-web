@@ -33,7 +33,6 @@ const schema = z.object({
   OPENAI_INSIGHTS_MODEL: z.string().default("gpt-4.1-mini"),
   OPENAI_ECHO_MODEL: z.string().default("gpt-4o-mini"),
   OPENAI_FINAL_SUMMARY_MODEL: z.string().default("gpt-4o"),
-  OPENAI_SUMMARY_ENRICHMENT_MODEL: z.string().default("gpt-4o"),
   // O estudo é um pipeline de três chamadas com papéis distintos: quem
   // PERGUNTA, quem RESPONDE e quem ESCREVE (ver docs/estudo-v2.md). Três
   // variáveis e não uma porque a qualidade do estudo é a qualidade das
@@ -182,7 +181,6 @@ const parsed = schema.safeParse({
   OPENAI_INSIGHTS_MODEL: process.env.OPENAI_INSIGHTS_MODEL,
   OPENAI_ECHO_MODEL: process.env.OPENAI_ECHO_MODEL,
   OPENAI_FINAL_SUMMARY_MODEL: process.env.OPENAI_FINAL_SUMMARY_MODEL,
-  OPENAI_SUMMARY_ENRICHMENT_MODEL: process.env.OPENAI_SUMMARY_ENRICHMENT_MODEL,
   OPENAI_STUDY_QUESTIONS_MODEL: process.env.OPENAI_STUDY_QUESTIONS_MODEL,
   OPENAI_STUDY_ANSWERS_MODEL: process.env.OPENAI_STUDY_ANSWERS_MODEL,
   OPENAI_STUDY_WRITE_MODEL: process.env.OPENAI_STUDY_WRITE_MODEL,

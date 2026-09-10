@@ -7,7 +7,7 @@ antes de editar.
 brand/       a pena e o logotipo. UM arquivo tem o <path>
 ui/          primitivas shadcn sobre base-ui
 components/  chrome do app: header, nav, providers, tema, analytics, LP mocks
-hooks/       use-theme, use-mobile, use-read-flag
+hooks/       use-theme, use-mobile
 icons/       glifos próprios
 assets/      avatares WebP da landing
 content/     copy estruturada (FAQ da landing)

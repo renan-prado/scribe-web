@@ -180,6 +180,13 @@ const STUDY_ROUTES = new Set([
   "study-audit",
 ]);
 
+/**
+ * Inclui as rotas LEGADAS do enriquecimento do resumo (`summary-enrichment-*`),
+ * pelo mesmo motivo de `STUDY_ROUTES` acima: a segunda chamada saiu do código
+ * (ver `lib/final-summary/generate.ts`), as linhas dela continuam no banco, e
+ * tirá-las daqui jogaria o custo histórico de reprocessar resumo dentro da
+ * linha da gravação, sem erro nenhum na tela.
+ */
 const REPROCESS_SUMMARY_ROUTES = new Set([
   "final-summary-reprocess",
   "summary-enrichment-reprocess",
