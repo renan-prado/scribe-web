@@ -9,6 +9,13 @@ Gerado por `npm run release` a partir dos Conventional Commits. `feat` sobe o
 minor; o resto sobe o patch. Não edite à mão, a próxima execução escreve por
 cima do topo do arquivo.
 
+## 0.12.0, 2026-09-10, desde v0.11.0
+
+### Novidades
+
+- **resumo:** resumos mais densos e teto de tempo próprio na chamada (`b91b3d6`)
+- **resumo:** remover os comentários do Scriba do resumo final (`c32d44c`)
+
 ## 0.11.0, 2026-09-10, desde v0.10.0
 
 ### Novidades
