@@ -9,6 +9,17 @@ Gerado por `npm run release` a partir dos Conventional Commits. `feat` sobe o
 minor; o resto sobe o patch. Não edite à mão, a próxima execução escreve por
 cima do topo do arquivo.
 
+## 0.9.0, 2026-09-10, desde v0.8.0
+
+### Novidades
+
+- **lp:** o CTA do celular oferece a escolha, em vez de empurrar o app (`aab1b7b`)
+- **parceiros:** pré-parceiro ganha moedas para conhecer o produto (`3f5f1e0`)
+
+### Outros
+
+- troca todo travessão por vírgula, dois-pontos ou hífen (`f7b4025`)
+
 ## 0.8.0: 2026-09-10, desde v0.7.0
 
 ### Novidades
