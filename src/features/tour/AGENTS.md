@@ -67,6 +67,15 @@ está sempre em `display: none`. Um `querySelector` cru recortaria um retângulo
 de tamanho zero no canto da tela, sem erro nenhum no console. Ver
 `lib/anchors.ts`.
 
+**No celular, o balão encosta no rodapé, e por isso o alvo PRESO ao viewport
+tem tratamento próprio.** A correção normal, quando o alvo cairia embaixo do
+balão, é rolar a página; ela não move um elemento `fixed`, e o passo do
+"Gravar" do tour do `/feed`, cujo alvo mora na `MobileBottomNav`, terminava com
+o balão pousado exatamente em cima do botão de que estava falando. Quando rolar
+não tem como resolver, alvo preso (`isPinnedToViewport`) ou página que já rolou
+o que podia neste passo, o balão sobe para CIMA do alvo. Quem mexer na posição
+do balão precisa manter as duas saídas: a que rola e a que troca de lado.
+
 **Nenhum tour roda com o microfone ligado.** Os três tours de captura têm
 `enabled={!hasStarted && !autoStart}`, e as duas metades são necessárias:
 `autostart=1` faz a gravação começar sozinha ao chegar na página, quando

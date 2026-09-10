@@ -42,6 +42,29 @@ export function resolveAnchor(selector: string | undefined): HTMLElement | null 
 }
 
 /**
+ * O alvo acompanha a rolagem da página, ou está preso ao viewport?
+ *
+ * A pergunta existe por causa do "Gravar" do celular: ele mora na
+ * `MobileBottomNav`, que é `fixed … bottom-0`. No celular o balão do tour
+ * encosta no rodapé, e a correção que o `TourRunner` faz quando o alvo cairia
+ * embaixo dele é ROLAR a página, o que não move um centímetro um elemento
+ * preso ao viewport. O resultado era o balão pousado exatamente em cima do
+ * botão de que ele estava falando, sem nada na tela explicando por quê.
+ *
+ * `sticky` conta como preso: enquanto está grudado ele se comporta como
+ * `fixed`, e errar para o lado de "não vai adiantar rolar" só faz o balão
+ * escolher o outro lado do alvo, que nunca é pior.
+ */
+export function isPinnedToViewport(el: HTMLElement | null): boolean {
+  if (!el || typeof window === "undefined") return false;
+  for (let node: HTMLElement | null = el; node; node = node.parentElement) {
+    const position = getComputedStyle(node).position;
+    if (position === "fixed" || position === "sticky") return true;
+  }
+  return false;
+}
+
+/**
  * Os passos que esta tela, AGORA, tem como mostrar.
  *
  * Passo sem âncora entra sempre: ele fala da tela, não de um elemento. Passo

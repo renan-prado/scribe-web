@@ -4,7 +4,7 @@ import { X } from "lucide-react";
 import { useCallback, useEffect, useId, useLayoutEffect, useRef, useState } from "react";
 import { createPortal } from "react-dom";
 import { Button } from "@/components/ui/button";
-import { resolveAnchor } from "@/features/tour/lib/anchors";
+import { isPinnedToViewport, resolveAnchor } from "@/features/tour/lib/anchors";
 import type { TourStep } from "@/lib/domain/tour";
 import { cn } from "@/lib/utils";
 
@@ -43,6 +43,15 @@ import { cn } from "@/lib/utils";
  * a PÁGINA que rola para o alvo caber acima dele, uma vez por passo. No
  * desktop o balão nasce abaixo do alvo, sobe para cima dele quando não há
  * espaço, e só então recorre ao centro.
+ *
+ * **Mas rolar não resolve todo alvo, e o "Gravar" é a prova.** No celular ele
+ * mora na `MobileBottomNav`, `fixed bottom-0`: rolar a página não o tira de
+ * baixo do balão encostado no rodapé, e o passo que fala do botão terminava
+ * com o balão pousado exatamente em cima dele. Quando a correção por rolagem
+ * não tem como funcionar, porque o alvo está preso ao viewport, ou porque ela
+ * já foi tentada neste passo e o alvo continua coberto (uma página que não
+ * tem mais para onde rolar), o balão sobe para CIMA do alvo. É o mesmo
+ * recurso do desktop, aplicado quando o rodapé deixa de ser uma opção.
  */
 
 type Props = {
@@ -51,7 +60,14 @@ type Props = {
   onClose: (step: number, outcome: "completed" | "dismissed") => void;
 };
 
-type Rect = { top: number; left: number; width: number; height: number };
+type Rect = {
+  top: number;
+  left: number;
+  width: number;
+  height: number;
+  /** `fixed`/`sticky`: rolar a página não muda a posição deste alvo. */
+  pinned: boolean;
+};
 
 /** Folga entre o alvo e o recorte: o furo colado no botão parece um erro. */
 const HOLE_PADDING = 8;
@@ -97,6 +113,7 @@ export function TourRunner({ steps, onClose }: Props) {
       left: r.left - HOLE_PADDING,
       width: r.width + HOLE_PADDING * 2,
       height: r.height + HOLE_PADDING * 2,
+      pinned: isPinnedToViewport(el),
     });
   }, [step]);
 
@@ -162,18 +179,31 @@ export function TourRunner({ steps, onClose }: Props) {
     }
 
     if (vw < NARROW_VIEWPORT) {
-      const top = vh - height - MARGIN;
-      // O alvo não pode ficar embaixo do balão. Uma correção por passo, ver
-      // `scrolledForRef`.
-      const limit = top - GAP;
-      if (rect.top + rect.height > limit && scrolledForRef.current !== index) {
+      const left = (vw - width) / 2;
+      const bottom = vh - height - MARGIN;
+      // O alvo não pode ficar embaixo do balão.
+      const limit = bottom - GAP;
+      if (rect.top + rect.height <= limit) {
+        setCard({ width, left, top: bottom });
+        return;
+      }
+      // Ele está. Rolar a página resolve, uma vez por passo (ver
+      // `scrolledForRef`, senão o ajuste dispara a medição que dispara o
+      // ajuste), e desde que o alvo role junto com ela.
+      if (!rect.pinned && scrolledForRef.current !== index) {
         scrolledForRef.current = index;
         window.scrollBy({
           top: rect.top + rect.height - limit + GAP,
           behavior: prefersReducedMotion() ? "auto" : "smooth",
         });
+        setCard({ width, left, top: bottom });
+        return;
       }
-      setCard({ width, left: (vw - width) / 2, top });
+      // Alvo preso ao viewport, ou página sem mais para onde rolar. O rodapé
+      // deixou de ser uma opção: o balão sobe para cima do alvo. O `max`
+      // é o caso em que nem acima cabe, e aí ele encosta no topo, um balão
+      // fora da tela é pior que um balão perto demais do furo.
+      setCard({ width, left, top: Math.max(MARGIN, rect.top - height - GAP) });
       return;
     }
 
