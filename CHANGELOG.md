@@ -9,6 +9,18 @@ Gerado por `npm run release` a partir dos Conventional Commits. `feat` sobe o
 minor; o resto sobe o patch. Não edite à mão — a próxima execução escreve por
 cima do topo do arquivo.
 
+## 0.8.0 — 2026-09-10 — desde v0.7.0
+
+### Novidades
+
+- **ui:** estado pressionado para aparelhos sem hover (`98326b5`)
+- **youtube:** importação a 30 moedas e card de descoberta no feed (`1c36e7a`)
+
+### Correções
+
+- **admin:** guarda a cotação do dia para o painel não ficar sem câmbio (`d46975a`)
+- **admin:** alvo de toque e spinner no menu do painel (`756f39f`)
+
 ## 0.7.0 — 2026-09-09 — desde v0.6.0
 
 ### Novidades
