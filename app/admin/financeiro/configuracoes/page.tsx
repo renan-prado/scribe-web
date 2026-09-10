@@ -30,7 +30,7 @@ export default async function FinanceSettingsPage() {
       <FinanceNotices
         tone="info"
         warnings={[
-          "O câmbio do histórico e das dívidas continua vindo de /admin/uso — este aqui é só o das projeções, e existe para uma projeção de 12 meses não mudar de resultado porque o dólar oscilou.",
+          "O câmbio do histórico e das dívidas continua vindo de /admin/uso, este aqui é só o das projeções, e existe para uma projeção de 12 meses não mudar de resultado porque o dólar oscilou.",
         ]}
       />
 

@@ -10,7 +10,7 @@ import type { NextConfig } from "next";
  * `package.json` no primeiro deploy em que alguém esquecesse de mexer nos
  * dois. Derivada, ela não tem como discordar.
  *
- * Se o arquivo não puder ser lido, o build QUEBRA — e é o certo: um build que
+ * Se o arquivo não puder ser lido, o build QUEBRA, e é o certo: um build que
  * sobe sem saber a própria versão contamina a série inteira de medição com um
  * rótulo falso, e isso só apareceria semanas depois, ao comparar duas versões
  * que nunca existiram.
@@ -38,18 +38,18 @@ const securityHeaders = [
     // por man-in-the-middle na primeira requisição de uma sessão futura.
     //
     // Sobre http (o `next dev` em localhost) o header é IGNORADO pelo
-    // navegador — HSTS só é honrado sobre https —, então emiti-lo sempre não
+    // navegador, HSTS só é honrado sobre https, então emiti-lo sempre não
     // tem efeito colateral em desenvolvimento.
     //
     // `includeSubDomains` é seguro AQUI e merece uma linha, porque
     // `dev.scriba.cc` é subdomínio de `scriba.cc` na mesma conta Vercel: os
     // dois são servidos SÓ sobre https pela plataforma, então forçar https no
-    // subdomínio não quebra nada — quebraria se algum subdomínio precisasse
+    // subdomínio não quebra nada, quebraria se algum subdomínio precisasse
     // responder em http, e nenhum precisa.
     //
     // `preload` foi deixado DE FORA de propósito. Ele embute o domínio na lista
     // hardcoded dos navegadores, é uma porta de mão única (remover leva meses)
-    // e exige inscrição em hstspreload.org — é uma decisão do dono do domínio,
+    // e exige inscrição em hstspreload.org, é uma decisão do dono do domínio,
     // não um default que esta auditoria deva tomar. Ligar depois é só
     // acrescentar `; preload` e submeter o domínio.
     key: "Strict-Transport-Security",
@@ -59,7 +59,7 @@ const securityHeaders = [
 
 const nextConfig: NextConfig = {
   // Remove o `X-Powered-By: Next.js` que o framework adiciona por padrão. Não é
-  // vulnerabilidade — é impressão digital: anuncia o framework para quem
+  // vulnerabilidade, é impressão digital: anuncia o framework para quem
   // procura alvos por versão conhecida, sem nenhum ganho para quem usa o app.
   poweredByHeader: false,
   // Ver `lib/app-version.ts`: o único consumidor, e o lugar onde está escrito
@@ -73,7 +73,7 @@ const nextConfig: NextConfig = {
      * continua valendo: sete avatares de 1024px vindos de fora custavam 724 KB
      * e ainda eram promovidos a `<link rel="preload">` pelo React 19,
      * disputando a banda inicial com o CSS. O que entra aqui NÃO é uma exceção
-     * a essa regra — é o caminho que a respeita: com o `remotePattern`, o
+     * a essa regra, é o caminho que a respeita: com o `remotePattern`, o
      * `next/image` serve a imagem otimizada, redimensionada e a partir do NOSSO
      * domínio, com width/height conhecidos e sem CLS.
      *
@@ -82,7 +82,7 @@ const nextConfig: NextConfig = {
      * lavar tráfego pela nossa conta.
      *
      * Quem consome: o selo "indicado por Fulano" no hero da landing page e na
-     * tela de entrada. Sem foto, a tela desenha as iniciais — ver
+     * tela de entrada. Sem foto, a tela desenha as iniciais, ver
      * `ReferrerAvatar`.
      */
     remotePatterns: [{ protocol: "https", hostname: "lh3.googleusercontent.com", pathname: "/**" }],

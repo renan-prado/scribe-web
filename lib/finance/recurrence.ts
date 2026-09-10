@@ -1,10 +1,10 @@
 /**
- * Recorrência e calendário — CLIENT-SAFE e puro.
+ * Recorrência e calendário, CLIENT-SAFE e puro.
  *
  * Duas contas moram aqui, e a especificação (§8) pede as duas porque elas
  * respondem perguntas diferentes:
  *
- *   EQUIVALENTE MENSAL  R$ 1.200/ano ≈ R$ 100/mês. É o custo PROVISIONADO —
+ *   EQUIVALENTE MENSAL  R$ 1.200/ano ≈ R$ 100/mês. É o custo PROVISIONADO,
  *                       a régua para comparar um domínio anual com a Vercel
  *                       mensal e para somar "quanto o Scriba custa por mês".
  *   OCORRÊNCIA          o domínio anual sai do caixa em MARÇO, inteiro, e nos
@@ -17,7 +17,7 @@
  *
  * DATAS SÃO STRINGS `YYYY-MM-DD`, e a aritmética é feita em UTC. `new Date(
  * "2026-09-09")` é meia-noite UTC; formatá-la com o fuso local do Brasil
- * devolve o dia 8. Toda função aqui compara e monta strings — nenhuma delega
+ * devolve o dia 8. Toda função aqui compara e monta strings, nenhuma delega
  * ao fuso da máquina que roda o código.
  */
 
@@ -100,7 +100,7 @@ function daysInMonth(key: string): number {
  *
  * O dia é GRAMPEADO ao fim do mês: um contrato que começa em 31 de janeiro
  * cobra em 28 de fevereiro, não em 3 de março. Sem o clamp, `new Date(2026, 1,
- * 31)` transborda em silêncio e a cobrança pula para o mês seguinte — o tipo
+ * 31)` transborda em silêncio e a cobrança pula para o mês seguinte, o tipo
  * de bug que só aparece em fevereiro e só em alguns anos.
  */
 export function chargeDateInMonth(key: string, anchorDay: number): string {
@@ -114,7 +114,7 @@ export function chargeDateInMonth(key: string, anchorDay: number): string {
  * mensal sem que o resultado dependa do mês em que se olha.
  *
  * Arredonda uma vez, aqui. R$ 80/ano vira R$ 6,67/mês, e doze desses somam
- * R$ 80,04 — quatro centavos de diferença contra o valor anual real. Isso é
+ * R$ 80,04, quatro centavos de diferença contra o valor anual real. Isso é
  * inerente ao rateio, e é por isso que o custo ANUAL equivalente é calculado a
  * partir do valor original (`annualEquivalentCents`) e não multiplicando o
  * mensal por doze.
@@ -123,7 +123,7 @@ export function monthlyEquivalentCents(amountCents: number, cadence: Cadence): n
   return Math.round(amountCents / MONTHS_PER_CADENCE[cadence]);
 }
 
-/** Custo anual equivalente. Sai do valor ORIGINAL — ver a nota acima. */
+/** Custo anual equivalente. Sai do valor ORIGINAL, ver a nota acima. */
 export function annualEquivalentCents(amountCents: number, cadence: Cadence): number {
   return Math.round((amountCents * 12) / MONTHS_PER_CADENCE[cadence]);
 }
@@ -140,7 +140,7 @@ export function isActiveInMonth(recurring: FinanceRecurring, key: string): boole
  * Este mês tem cobrança desta recorrência?
  *
  * A cadência conta a partir do mês de início: uma trimestral que começou em
- * janeiro cobra em janeiro, abril, julho e outubro — não em todo mês divisível
+ * janeiro cobra em janeiro, abril, julho e outubro, não em todo mês divisível
  * por três do calendário.
  */
 export function hasChargeInMonth(recurring: FinanceRecurring, key: string): boolean {

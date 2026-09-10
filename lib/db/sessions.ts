@@ -13,7 +13,7 @@ import { createClient } from "@/lib/supabase/server";
  *
  * Ownership (user_id) and RLS are deferred to the auth phase.
  *
- * feed_items stays a jsonb column here — it carries every kind including
+ * feed_items stays a jsonb column here, it carries every kind including
  * AI-authored ones (relatedVerse, context, suggestedQuote). Speaker-sourced
  * kinds (citedVerse, speakerHighlight, speakerEcho, speakerCitation) are
  * additionally projected into public.session_feed_items by a Postgres
@@ -40,7 +40,7 @@ export type SessionRow = {
   speakerName: string | null;
   speakerLocation: string | null;
   mode: SessionMode;
-  /** Origem externa da transcrição — a URL do vídeo, no modo youtube. */
+  /** Origem externa da transcrição, a URL do vídeo, no modo youtube. */
   sourceUrl: string | null;
   transcript: string;
   feedItems: FeedItem[];
@@ -66,7 +66,7 @@ export type SessionListItem = {
  *
  * Existe porque as páginas de GRAVAÇÃO (live/audio/transcribe) e a de estudo
  * decidem rota e cabeçalho a partir de `mode`, `endedAt`, `title` e o
- * snapshot do orador — e nenhuma delas renderiza `transcript`, `feedItems`
+ * snapshot do orador, e nenhuma delas renderiza `transcript`, `feedItems`
  * ou `finalSummary`. Buscar tudo ali significava trazer a transcrição inteira
  * de um sermão de uma hora para abrir um gravador vazio.
  */
@@ -111,7 +111,7 @@ type DbRow = {
   final_summary: SummaryPayload | null;
 };
 
-// `mode` is a Postgres ordered-set aggregate function name — PostgREST tries
+// `mode` is a Postgres ordered-set aggregate function name, PostgREST tries
 // to parse `select=mode` as a call to that aggregate ("WITHIN GROUP is
 // required for ordered-set aggregate mode"). The column is physically named
 // `capture_mode`; we keep the API-side field name as `mode` for callers.
@@ -167,7 +167,7 @@ function rowToSession(row: DbRow): SessionRow {
  * point (speaker + location snapshot); transcript/feedItems/summary land
  * later via updateSessionFinal on stop.
  *
- * user_id is pulled from the authenticated Supabase session — RLS then
+ * user_id is pulled from the authenticated Supabase session, RLS then
  * enforces that only the owner can read/update this row.
  */
 export async function createEmptySession(input: CreateEmptySessionInput): Promise<string> {
@@ -265,7 +265,7 @@ function rowToListItem(r: ListRow): SessionListItem {
 
 /**
  * Sessões CONCLUÍDAS. `ended_at` só é preenchido por updateSessionFinal /
- * updateSessionTranscript, ou seja, ao encerrar de verdade — filtrar por ele
+ * updateSessionTranscript, ou seja, ao encerrar de verdade, filtrar por ele
  * tira da lista as gravações que ficaram no meio do caminho, que passam a
  * viver em `listUnfinishedSessions`.
  */
@@ -286,7 +286,7 @@ export async function listSessions(filter: ListSessionsFilter = {}): Promise<Ses
 }
 
 /**
- * Gravações EM ABERTO — a linha existe, mas nunca foi encerrada. Acontece
+ * Gravações EM ABERTO, a linha existe, mas nunca foi encerrada. Acontece
  * quando o navegador fecha no meio, quando a bateria acaba, ou quando a pessoa
  * sai da página com a gravação congelada por falta de crédito.
  *
@@ -311,7 +311,7 @@ export async function listUnfinishedSessions(): Promise<SessionListItem[]> {
  * A sessão inteira, incluindo transcrição, feed e resumo.
  *
  * Memoizada por render pass: as páginas de `/recording/[id]/*` chamam isto no
- * `generateMetadata` E no corpo, e o Next só deduplica `fetch()` — consulta
+ * `generateMetadata` E no corpo, e o Next só deduplica `fetch()`, consulta
  * do Supabase, não. Eram duas leituras das colunas mais pesadas do banco por
  * page view, a segunda apenas para descobrir o `title` da aba.
  *
@@ -372,13 +372,13 @@ export async function deleteSession(id: string): Promise<void> {
 
 /**
  * Overwrite only the final_summary payload (plus its derived title and
- * short_summary). Used by POST /api/final-summary/reprocess — transcript,
+ * short_summary). Used by POST /api/final-summary/reprocess, transcript,
  * feed_items and duration_ms are preserved as originally captured.
  *
  * `keepTitle` existe para o resumo gerado sobre uma sessão do modo
  * transcrição: ali o título na linha foi ESCOLHIDO pela pessoa no cabeçalho da
  * gravação (não há LLM naquele modo para gerar um), e sobrescrevê-lo com o do
- * resumo apagaria em silêncio o que ela digitou. Quem chama decide — a rota de
+ * resumo apagaria em silêncio o que ela digitou. Quem chama decide, a rota de
  * reprocessamento não passa nada, porque lá o título anterior já veio do
  * próprio resumo que está sendo refeito.
  */
@@ -403,7 +403,7 @@ export async function updateSessionSummary(
  * transcrição que GANHOU resumo direto para `/summary`, em vez de fazê-la
  * pousar em `/transcript` só para ser redirecionada.
  *
- * `SELECT_LIST` não traz `final_summary` de propósito — é uma das três colunas
+ * `SELECT_LIST` não traz `final_summary` de propósito, é uma das três colunas
  * pesadas, e trazer o resumo inteiro de cada sessão para desenhar um cartão
  * seria o oposto do que aquela projeção existe para evitar. Daí a consulta
  * separada, que lê só a chave: o filtro `not final_summary is null` roda no
@@ -415,12 +415,12 @@ export async function updateSessionSummary(
  * A busca das listas é do cliente (ver `src/features/session/lib/search.ts`),
  * e este é o único pedaço que não pode ser: o texto da pregação não vai para a
  * lista, e não deve ir. Aqui o `ilike` roda no Postgres, sobre as linhas que a
- * RLS já escopou ao dono, e volta só a chave — o que a UI faz com ela é
+ * RLS já escopou ao dono, e volta só a chave, o que a UI faz com ela é
  * acender o cartão correspondente.
  *
  * `escapeLikeValue` porque o termo é digitado por gente: sem ele um `%` deixa
  * de ser texto e vira "qualquer coisa", e a busca passa a responder outra
- * pergunta sem avisar ninguém. `limit` existe para o pior caso — um termo de
+ * pergunta sem avisar ninguém. `limit` existe para o pior caso, um termo de
  * três letras que casa com o acervo inteiro devolveria a lista toda, que é
  * exatamente o resultado sem valor.
  */
@@ -447,8 +447,8 @@ export type SessionVerseHit = { sessionId: string; reference: string };
  * A pergunta "onde eu ouvi Jonas 1?" não é uma pergunta de texto: o pregador
  * disse "no primeiro capítulo de Jonas", a transcrição não contém "Jonas 1", e
  * o `ilike` acima devolve vazio com toda a confiança do mundo. Quem sabe a
- * resposta são as REFERÊNCIAS gravadas — o card `citedVerse` e o bloco
- * `bibleQuote` do resumo —, e compará-las com a busca exige entender as duas
+ * resposta são as REFERÊNCIAS gravadas, o card `citedVerse` e o bloco
+ * `bibleQuote` do resumo, e compará-las com a busca exige entender as duas
  * como referência, não como string. Ver `lib/domain/reference-query.ts`.
  *
  * O trabalho é dividido de propósito: a RPC peneira por LIVRO (é o que dá para
@@ -457,7 +457,7 @@ export type SessionVerseHit = { sessionId: string; reference: string };
  * para deduplicar card. Uma regra, um lugar.
  *
  * Uma referência por sessão: a lista mostra a pastilha com a que casou, e a
- * segunda não caberia na tela nem acrescentaria nada — o cartão já está aceso.
+ * segunda não caberia na tela nem acrescentaria nada, o cartão já está aceso.
  */
 export async function searchSessionsByReference(
   query: ReferenceQuery,
@@ -495,10 +495,10 @@ export type UpdateSessionTranscriptInput = {
   durationMs: number | null;
   /** Título escolhido pelo usuário no header da gravação (ou o padrão
    * "Gravação dia N de mês"). Modo transcrição não roda LLM, então não há
-   * título gerado — este é o único que a sessão terá. */
+   * título gerado, este é o único que a sessão terá. */
   title: string | null;
   /** Preview curto para o card da lista: as primeiras frases da própria
-   * transcrição, cortadas no servidor. Não é um resumo — é um trecho. */
+   * transcrição, cortadas no servidor. Não é um resumo, é um trecho. */
   shortSummary: string | null;
   speakerName: string | null;
   speakerLocation: string | null;
@@ -508,7 +508,7 @@ export type UpdateSessionTranscriptInput = {
 
 /**
  * Fecha uma sessão do modo transcrição: grava o texto capturado, a duração e
- * o título. `final_summary` fica null de propósito — é o que distingue uma
+ * o título. `final_summary` fica null de propósito, é o que distingue uma
  * sessão transcript_only salva de uma sessão com resumo, e o que faz a página
  * salva renderizar a transcrição em vez do SummaryView.
  */

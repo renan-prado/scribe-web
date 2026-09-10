@@ -12,7 +12,7 @@ export const runtime = "nodejs";
 export const dynamic = "force-dynamic";
 
 /**
- * Configurações financeiras — linha única.
+ * Configurações financeiras, linha única.
  *
  * Diferente da régua de simulação de moedas (`lib/coins/settings.ts`), que é
  * um COOKIE porque é preferência de quem está olhando, isto é fato da empresa:

@@ -6,7 +6,7 @@ import { createClient } from "@/lib/supabase/server";
 /**
  * Server-side admin gate. Returns `{ user, response: null }` on success,
  * or `{ user: null, response: 404 }` if the current request is not from
- * an admin. 404 (not 403) is intentional — do not confirm the existence
+ * an admin. 404 (not 403) is intentional, do not confirm the existence
  * of admin surface area to unauthorized callers.
  */
 
@@ -37,14 +37,14 @@ export async function requireAdmin(): Promise<AdminResult> {
 
 /**
  * Variante para Server Component / layout: só responde SE a conta é admin,
- * sem montar resposta HTTP — quem chama decide entre `notFound()` e esconder
+ * sem montar resposta HTTP, quem chama decide entre `notFound()` e esconder
  * um item de menu.
  *
  * Lê da mesma consulta memoizada que o perfil e o saldo (lib/db/account.ts),
  * então o gate do /admin e o item do menu do avatar não custam mais dois
  * SELECTs além dos que o layout já fazia. `requireAdmin()` acima segue com a
  * consulta própria de propósito: ele roda em Route Handler, onde `cache()`
- * não vale, e é o caminho que protege dinheiro — não divide estado com nada.
+ * não vale, e é o caminho que protege dinheiro, não divide estado com nada.
  */
 export async function isCurrentUserAdmin(): Promise<boolean> {
   const account = await getCurrentAccount().catch(() => null);
@@ -56,7 +56,7 @@ export async function isCurrentUserAdmin(): Promise<boolean> {
  *
  * Existe porque uma Server Action é um endpoint POST próprio: o gate do
  * `app/admin/layout.tsx` decide o que RENDERIZA, não o que executa. Quem
- * souber o id da action a invoca sem nunca ter passado pelo layout — e o id
+ * souber o id da action a invoca sem nunca ter passado pelo layout, e o id
  * é um hash estável, embutido no bundle, não um segredo. É o que a própria
  * documentação do Next diz em "Data Security": autenticação de página não
  * protege as actions dela, reconfira dentro de cada uma.

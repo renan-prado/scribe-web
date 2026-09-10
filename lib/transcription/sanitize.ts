@@ -4,12 +4,12 @@ import { stripVocabHallucination } from "@/lib/vocabulario";
  * Assinaturas conhecidas de alucinação do modelo de transcrição em áudio
  * ruim/silêncio, observadas em sessões reais:
  *
- *  1. Eco do prompt-guia — o modelo devolve o texto do VOCABULARIO_PROMPT
+ *  1. Eco do prompt-guia, o modelo devolve o texto do VOCABULARIO_PROMPT
  *     como se fosse fala ("Transcrição em português brasileiro de uma aula
  *     bíblica..."). Como o texto é nosso, a remoção é determinística.
- *  2. Eco da lista de vocabulário — runs de livros bíblicos separados por
+ *  2. Eco da lista de vocabulário: runs de livros bíblicos separados por
  *     vírgula (tratado por stripVocabHallucination).
- *  3. Loop de repetição — a mesma sentença repetida N vezes seguidas
+ *  3. Loop de repetição: a mesma sentença repetida N vezes seguidas
  *     ("A Bíblia diz que a pressão é muito grande." ×7). Agravado pelo
  *     prevText, que realimenta o loop no chunk seguinte.
  *
@@ -54,7 +54,7 @@ export function stripPromptEcho(text: string): { text: string; found: boolean } 
 /**
  * Colapsa runs de sentenças idênticas consecutivas (comparação normalizada:
  * caixa e espaços ignorados) com REPEAT_MIN_RUN+ ocorrências para uma única.
- * Runs de 2 são preservados — repetição retórica dupla é comum em pregação;
+ * Runs de 2 são preservados, repetição retórica dupla é comum em pregação;
  * 3+ idênticas e contíguas é assinatura de loop de decodificação, não de fala.
  */
 export function collapseRepeatedSentences(text: string): { text: string; found: boolean } {

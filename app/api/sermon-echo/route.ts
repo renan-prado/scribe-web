@@ -25,7 +25,7 @@ export const dynamic = "force-dynamic";
  * Live "sermon echo" pipeline: picks ONE literal phrase the speaker just said
  * from the recent transcript tail. Fires from the client whenever the visible
  * feed accumulates a run of AI-authored cards without a speaker-origin card
- * breaking it up — the echo is the reality check that reminds the listener
+ * breaking it up, the echo is the reality check that reminds the listener
  * they're hearing an actual sermon, not a wall of AI commentary.
  */
 export async function POST(request: Request) {
@@ -132,7 +132,7 @@ function formatSermonAt(ms: number | undefined): string {
 /**
  * Collapse the existing feed into just what the echo prompt needs: prior
  * speaker phrases (highlight OR echo) so the model doesn't repeat them. Capped
- * to the most recent N to keep prompt tokens bounded — older phrases are
+ * to the most recent N to keep prompt tokens bounded, older phrases are
  * already off-screen and unlikely to be re-uttered.
  */
 const RECENT_DEDUP_WINDOW = 16;

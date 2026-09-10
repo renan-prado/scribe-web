@@ -38,7 +38,7 @@ export default async function RecordingTranscriptPage({ params }: PageProps) {
   // Só sessões do modo transcrição moram aqui; as outras têm resumo.
   //
   // Uma sessão daqui PODE ter ganhado um resumo depois, sob demanda
-  // (`/api/final-summary/from-transcript`). Ela continua morando nesta página —
+  // (`/api/final-summary/from-transcript`). Ela continua morando nesta página,
   // a transcrição é o que o modo entrega, e a leitura dela não deixou de valer.
   // O que muda é o cabeçalho, que passa a oferecer "Ver resumo" em vez de
   // "Gerar resumo"; quem chega pelo /recordings já é mandado direto para
@@ -64,7 +64,7 @@ export default async function RecordingTranscriptPage({ params }: PageProps) {
         hasSummary={!!session.finalSummary}
       />
       {/* A pesquisa da 1ª, 3ª e 8ª gravação. Aqui ela pergunta sobre a
-          TRANSCRIÇÃO — o modo transcrição não gera resumo, e é o que a pessoa
+          TRANSCRIÇÃO, o modo transcrição não gera resumo, e é o que a pessoa
           tem na tela. Ver `FeedbackPrompt`. */}
       <FeedbackPrompt kind="recording" sessionId={id} delayMs={FEEDBACK_DELAY_TRANSCRIPT_MS} />
     </>

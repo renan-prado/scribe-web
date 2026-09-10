@@ -23,19 +23,19 @@ const INT = new Intl.NumberFormat("pt-BR");
  * A página do "Indique a um amigo".
  *
  * Página própria, e não um cartão no `/profile`, porque aqui há uma OFERTA a
- * explicar. O convidado não ganha moedas neste programa — quem ganha é quem
- * indica —, então o texto que faz alguém compartilhar é o único argumento que
+ * explicar. O convidado não ganha moedas neste programa, quem ganha é quem
+ * indica, então o texto que faz alguém compartilhar é o único argumento que
  * sobra. Espremido entre o saldo e os dados da conta, ele não caberia.
  *
  * SÓ AGREGADOS, como no painel do parceiro: "3 amigos entraram", nunca "estes
  * 3". Ver `lib/db/referrals.ts`.
  *
  * O código é gerado na PRIMEIRA visita (`ensureReferralCode`), não no cadastro
- * de toda conta — a maioria das pessoas nunca vai abrir esta página.
+ * de toda conta, a maioria das pessoas nunca vai abrir esta página.
  *
  * **O botão de voltar segue de ONDE a pessoa veio**, e por isso existe o
- * `?de=feed`. Esta página tem duas portas — o cartão do `/profile` e o card do
- * `/feed` —, e um destino fixo mandaria metade das visitas para uma tela em
+ * `?de=feed`. Esta página tem duas portas, o cartão do `/profile` e o card do
+ * `/feed`, e um destino fixo mandaria metade das visitas para uma tela em
  * que elas não estavam. O parâmetro só ENDEREÇA, como o `?plan=` do checkout:
  * ele é conferido contra uma lista FECHADA de dois destinos, então nada que
  * alguém digite na URL vira um caminho novo. Valor desconhecido, ausente ou
@@ -73,7 +73,7 @@ export default async function IndicarPage({ searchParams }: { searchParams: Prom
     <main className="mx-auto flex w-full max-w-2xl flex-col gap-6 px-4 py-8 sm:gap-8 sm:px-6 sm:py-12">
       {/* Mesmo idioma dos outros "voltar" do app (a página de estudo e a
           sessão salva): `NavLink` com a seta, acima do cabeçalho, e o destino
-          escrito no rótulo — ninguém clica sem saber onde vai parar. */}
+          escrito no rótulo, ninguém clica sem saber onde vai parar. */}
       <NavLink
         href={origem.href}
         className="-mx-1 inline-flex w-fit items-center rounded-md px-1 py-0.5 text-xs font-medium text-scriba-ink-mute transition-colors hover:text-scriba-ink focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring/40"
@@ -88,8 +88,7 @@ export default async function IndicarPage({ searchParams }: { searchParams: Prom
         </h1>
         <p className="text-[13.5px] font-light leading-[1.6] text-scriba-ink-soft">
           Alguém da sua igreja ainda anota sermão no papel? Mande o Scriba para essa pessoa. Cada
-          amigo que entra pelo seu link vira moeda na sua conta — e mais moedas ainda se ele
-          assinar.
+          amigo que entra pelo seu link vira moeda na sua conta, e mais moedas ainda se ele assinar.
         </p>
       </header>
 
@@ -132,7 +131,7 @@ export default async function IndicarPage({ searchParams }: { searchParams: Prom
         <h2 className="text-[13px] font-semibold text-scriba-ink-strong">Como funciona</h2>
         <ul className="flex flex-col gap-2 text-[12.5px] font-light leading-[1.5] text-scriba-ink-soft">
           <li>
-            As moedas do cadastro caem assim que seu amigo cria a conta pelo seu link — não precisa
+            As moedas do cadastro caem assim que seu amigo cria a conta pelo seu link, não precisa
             esperar nada.
           </li>
           <li>
@@ -144,14 +143,13 @@ export default async function IndicarPage({ searchParams }: { searchParams: Prom
           </li>
           <li>
             {/* O teto é o sinal que separa "indiquei meus amigos" de "estou
-                divulgando" — e a segunda coisa tem um programa próprio, com
+                divulgando", e a segunda coisa tem um programa próprio, com
                 comissão em dinheiro. Dizê-lo aqui evita a descoberta pelo
                 silêncio: um mês em que as moedas simplesmente param de vir. */}
             São até {REFERRAL_MONTHLY_SIGNUP_CAP} cadastros premiados por mês
             {remaining < REFERRAL_MONTHLY_SIGNUP_CAP ? (
               <>
-                {" "}
-                —{" "}
+                {", "}
                 <strong className="font-medium text-scriba-ink-strong">
                   {remaining === 0
                     ? "você já chegou ao limite deste mês"

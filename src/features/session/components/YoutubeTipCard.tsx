@@ -12,12 +12,12 @@ import { cn } from "@/lib/utils";
  *
  * ## Por que ele precisa existir
  *
- * A importação entra pela Biblioteca, num botão secundário ao lado do título —
+ * A importação entra pela Biblioteca, num botão secundário ao lado do título,
  * de propósito, para o botão "Gravar" continuar dizendo só o que faz (ver o
  * `AGENTS.md` da raiz). O preço dessa separação é que a funcionalidade só é
  * encontrada por quem foi até `/recordings` e reparou num botão que não é o
- * principal. Quem usa o app pelo `/feed` — que é a primeira tela de toda
- * sessão de uso — pode nunca descobrir que a pregação de domingo, que já está
+ * principal. Quem usa o app pelo `/feed`, que é a primeira tela de toda
+ * sessão de uso, pode nunca descobrir que a pregação de domingo, que já está
  * no canal da igreja, vira resumo sem gravar nada.
  *
  * Este card é a única porta de descoberta dela. Não é promoção: é a resposta a
@@ -26,7 +26,7 @@ import { cn } from "@/lib/utils";
  * ## "Algumas poucas vezes", e o que faz ele parar
  *
  * Três exibições, espaçadas por quatro dias. Um aviso de descoberta que
- * aparece sempre deixa de ser aviso e vira mobília — a pessoa aprende a não
+ * aparece sempre deixa de ser aviso e vira mobília, a pessoa aprende a não
  * ver aquele retângulo, e o dia em que ele disser outra coisa também não será
  * lido. Três é o bastante para pegar quem só abre o app aos domingos, e pouco
  * o bastante para nunca virar paisagem.
@@ -34,7 +34,7 @@ import { cn } from "@/lib/utils";
  * Quatro razões o encerram, e todas são a mesma: a pessoa já sabe.
  *
  * 1. **Já importou algum vídeo.** Decidido no SERVIDOR (`alreadyImported`), e
- *    é o sinal mais forte que existe — quem usou não precisa ser ensinado.
+ *    é o sinal mais forte que existe, quem usou não precisa ser ensinado.
  *    Vindo `true`, nada é lido do `localStorage` e o componente não renderiza.
  * 2. **Clicou em importar.** Encontrou a porta; o resto é com ela.
  * 3. **Dispensou no X.** Um pedido explícito para não ver de novo.
@@ -43,7 +43,7 @@ import { cn } from "@/lib/utils";
  * A contagem é `localStorage`, como a soneca do `InviteFriendCard`, e degrada
  * do mesmo jeito: sem storage (janela anônima, cookies bloqueados) o card se
  * comporta como "nunca foi visto" e aparece de novo. Degradar para "aparece
- * sempre" é melhor que degradar para "nunca aparece" — e o gate do servidor,
+ * sempre" é melhor que degradar para "nunca aparece", e o gate do servidor,
  * que é o que realmente importa, continua valendo.
  *
  * ## Ele começa ESCONDIDO
@@ -156,7 +156,7 @@ export function YoutubeTipCard({
         </div>
         <p className="text-pretty text-[13px] font-light leading-relaxed text-scriba-ink">
           Cole o link e o Scriba aproveita a legenda que o vídeo já tem para escrever o resumo, os
-          cards e o estudo — sem precisar gravar nada. São {COIN_COSTS.youtubeImport} moedas por
+          cards e o estudo, sem precisar gravar nada. São {COIN_COSTS.youtubeImport} moedas por
           vídeo, cobradas uma vez.
         </p>
         <div className="mt-1">

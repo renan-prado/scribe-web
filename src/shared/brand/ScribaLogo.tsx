@@ -5,11 +5,11 @@ type ScribaLogoProps = {
   /** Lado da pena em px. O texto acompanha por `textClassName`. */
   size?: number;
   textClassName?: string;
-  /** Rótulo secundário sob a palavra — hoje só o "Admin" da sidebar. */
+  /** Rótulo secundário sob a palavra, hoje só o "Admin" da sidebar. */
   subtitle?: string;
   /**
    * `gradient` (padrão) pinta pena e palavra com `--scriba-cta`, o mesmo
-   * gradiente do botão primário. `ink` volta a herdar o `color` do container —
+   * gradiente do botão primário. `ink` volta a herdar o `color` do container,
    * use quando o logotipo tiver de assumir a cor de onde está.
    */
   variant?: "gradient" | "ink";
@@ -29,12 +29,12 @@ const GAP = 4;
  *    do SVG seguido de uma palavra órfã em minúscula.
  *
  * 2. Pena e palavra recebem SEMPRE o mesmo tratamento. Pintar uma das metades
- *    sozinha é o que as desencontra — ver o commit "pena e palavra do logo
+ *    sozinha é o que as desencontra, ver o commit "pena e palavra do logo
  *    voltam a ter a mesma cor".
  *
  * 3. No modo gradiente, o degradê é UM só atravessando o logotipo inteiro, não
  *    um por metade. Isso não sai de graça: são dois elementos (a palavra usa
- *    `background-clip: text`, a pena usa máscara — gradiente de CSS não entra
+ *    `background-clip: text`, a pena usa máscara, gradiente de CSS não entra
  *    em `fill` de SVG), e cada um pintaria o próprio degradê do começo, o que
  *    deixa a pena escura ao lado de uma palavra clara. A correção é dar aos
  *    dois a MESMA caixa de fundo (`backgroundSize`) e deslocar a da palavra
@@ -53,7 +53,7 @@ export function ScribaLogo({
 }: ScribaLogoProps) {
   const grad = variant === "gradient";
   // Largura de referência do degradê. Não precisa ser a largura exata do
-  // logotipo — precisa ser a MESMA nas duas metades, e larga o bastante para
+  // logotipo, precisa ser a MESMA nas duas metades, e larga o bastante para
   // cobrir o conjunto. ~4x a pena cobre "pena + scriba" em todos os tamanhos
   // em uso (17px a 28px).
   const sweep = size * 4;

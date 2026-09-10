@@ -6,7 +6,7 @@ import { SummarySkeleton } from "@/features/session/components/skeletons";
 import type { SummaryBlock, SummaryPayload } from "@/lib/domain/summary";
 
 /**
- * Renders the final summary produced by /api/final-summary. Purely presentational —
+ * Renders the final summary produced by /api/final-summary. Purely presentational,
  * the page decides when to mount it (only after the recording has stopped and the
  * final payload has arrived).
  */

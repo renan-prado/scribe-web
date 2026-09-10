@@ -6,7 +6,7 @@ import { lookupVerse } from "@/lib/bibles/lookup";
 import { parseVerseReference } from "@/lib/domain/feed";
 
 /**
- * PASSO 3 — a ANCORAGEM. Sem LLM.
+ * PASSO 3, a ANCORAGEM. Sem LLM.
  *
  * Toda referência bíblica que o respondedor citou é resolvida contra a NVI
  * local.
@@ -14,7 +14,7 @@ import { parseVerseReference } from "@/lib/domain/feed";
  * chegar ao redator.
  *
  * É a metade determinística do pipeline, e a razão de ela existir é simples:
- * o prompt anterior gastava uma seção inteira ("BIBLEQUOTE — REGRA DE OURO")
+ * o prompt anterior gastava uma seção inteira ("BIBLEQUOTE, REGRA DE OURO")
  * pedindo ao modelo que não parafraseasse a Escritura, num repositório que já
  * tem `lookupVerse` e a NVI em disco, usados por `/api/verse` e pelos
  * `rereads`. Nenhuma instrução em linguagem natural, por mais maiúscula,
@@ -27,7 +27,7 @@ import { parseVerseReference } from "@/lib/domain/feed";
 export type AnchoredPassage = {
   /** A referência normalizada, como será exibida. */
   reference: string;
-  /** Texto real da NVI. Nunca vazio — sem texto a passagem não é ancorada. */
+  /** Texto real da NVI. Nunca vazio, sem texto a passagem não é ancorada. */
   text: string;
 };
 
@@ -35,7 +35,7 @@ export type AnchoredPassage = {
  * Resolve uma referência solta ("Marcos 4:35-41", "Salmos 23") para o texto
  * real. `null` quando o livro, o capítulo ou o verso não existem.
  *
- * Referência sem verso ("Salmos 23") resolve o capítulo INTEIRO — é o que a
+ * Referência sem verso ("Salmos 23") resolve o capítulo INTEIRO, é o que a
  * pessoa quis dizer, e `CHAPTER_VERSE_COUNTS` já sabe onde ele termina.
  */
 export async function anchorReference(raw: string): Promise<AnchoredPassage | null> {
@@ -74,7 +74,7 @@ export async function anchorReference(raw: string): Promise<AnchoredPassage | nu
  * Limite de passagens ancoradas por estudo. Doze respostas podem citar trinta
  * referências; mandar o capítulo inteiro de cada uma para o redator infla o
  * prompt sem melhorar o texto. O corte segue a ordem das respostas, que já é
- * ordem de prioridade — a primeira resposta é a mais importante.
+ * ordem de prioridade, a primeira resposta é a mais importante.
  */
 const MAX_ANCHORED = 18;
 
@@ -112,5 +112,5 @@ export async function anchorReferences(refs: string[]): Promise<{
 /** Bloco que entra no prompt do redator. */
 export function renderAnchoredPassages(list: AnchoredPassage[]): string {
   if (list.length === 0) return "(nenhuma passagem conferida)";
-  return list.map((p) => `${p.reference} — ${p.text}`).join("\n\n");
+  return list.map((p) => `${p.reference}, ${p.text}`).join("\n\n");
 }

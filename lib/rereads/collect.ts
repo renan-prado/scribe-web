@@ -4,7 +4,7 @@ import type { RereadOrigin } from "@/lib/domain/rereads";
 import type { SummaryPayload } from "@/lib/domain/summary";
 
 /**
- * Um item candidato a virar releitura. Só origens não-IA — a chamada de
+ * Um item candidato a virar releitura. Só origens não-IA, a chamada de
  * fill vira `ai-fill` num passo separado.
  */
 export type RereadPoolItem = {
@@ -61,7 +61,7 @@ export function collectRereadPool(
   for (const block of summary.blocks) {
     if (block.type === "bibleQuote") {
       // Duplica muito com cited (o resumo re-cita o que o pastor leu). Não
-      // categorizamos como "cited" — se a mesma ref já está lá pelo feed,
+      // categorizamos como "cited", se a mesma ref já está lá pelo feed,
       // o dedup abaixo derruba; se não, entra como "summary".
       push(summaryPool, {
         reference: block.reference,
@@ -84,14 +84,14 @@ export function collectRereadPool(
 }
 
 /**
- * Uma referência só entra no pool se for uma PASSAGEM — livro e capítulo, no
+ * Uma referência só entra no pool se for uma PASSAGEM, livro e capítulo, no
  * mínimo.
  *
  * O gate existe porque as fontes deste pool não prometem isso. Um `citedVerse`
  * pode chegar como menção de capítulo sem número, e um `bibleQuote` do resumo
  * pode trazer só o nome do livro. "Judas" atravessava: `parseVerseReference`
  * devolvia `null`, a busca na NVI não tinha o que buscar, e o card do /feed
- * saía com a pastilha "Judas" e nada embaixo — uma releitura sem texto para
+ * saía com a pastilha "Judas" e nada embaixo, uma releitura sem texto para
  * reler. O lugar de barrar isso é aqui, antes de o item ocupar um dos dez
  * slots; barrar na tela só esconde o slot desperdiçado.
  */
@@ -126,7 +126,7 @@ function normalizeRef(ref: string): string {
  * Remove duplicatas exatas por referência normalizada. Depois, remove
  * qualquer item cuja referência é estritamente contida por outro item já
  * mantido (ex.: `Tiago 1:1` cai se `Tiago 1:1-4` está presente). O primeiro
- * item vence — o round-robin já ordenou por prioridade cited > related > summary.
+ * item vence, o round-robin já ordenou por prioridade cited > related > summary.
  */
 function dedupeByReference(pool: RereadPoolItem[]): RereadPoolItem[] {
   const seen = new Set<string>();
@@ -161,7 +161,7 @@ function dedupeByReference(pool: RereadPoolItem[]): RereadPoolItem[] {
 }
 
 /**
- * Só as referências normalizadas — usado tanto pra alimentar o prompt de
+ * Só as referências normalizadas, usado tanto pra alimentar o prompt de
  * fill quanto pra evitar duplicatas ao mesclar o fill de volta.
  */
 export function referencesFromPool(pool: { reference: string }[]): string[] {

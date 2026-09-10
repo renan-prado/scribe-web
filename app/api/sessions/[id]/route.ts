@@ -41,7 +41,7 @@ export async function PATCH(request: Request, { params }: { params: Promise<{ id
   if (!parsed.ok) return parsed.response;
 
   // Confere o dono ANTES de trabalhar, como manda `app/AGENTS.md`. A RLS já
-  // escopava o UPDATE lá embaixo, então nada de outra pessoa era alterado — mas
+  // escopava o UPDATE lá embaixo, então nada de outra pessoa era alterado, mas
   // um id alheio recebia `{ ok: true }` mesmo assim (UPDATE que casa zero linhas
   // não é erro no PostgREST), e no caminho ainda criava speaker e location na
   // conta de quem chamou. 404, não 403: a existência da sessão alheia não é
@@ -58,8 +58,8 @@ export async function PATCH(request: Request, { params }: { params: Promise<{ id
       : parsed.data.speakerLocation?.trim() || null;
 
   // Promote free-text speaker/location into per-user entities so future edits
-  // can autocomplete against them. Fall through silently if entity save fails
-  // — the session meta patch is what the user is waiting on.
+  // can autocomplete against them. Fall through silently if entity save fails,
+  // the session meta patch is what the user is waiting on.
   let speakerId: string | null | undefined;
   let locationId: string | null | undefined;
   if (speakerName !== undefined) {
@@ -120,7 +120,7 @@ export async function DELETE(request: Request, { params }: { params: Promise<{ i
   const id = guarded.id;
 
   // Mesma razão do PATCH: a RLS impede o DELETE alheio, mas sem esta leitura a
-  // resposta era `{ ok: true }` para qualquer uuid — inclusive um que nunca
+  // resposta era `{ ok: true }` para qualquer uuid, inclusive um que nunca
   // existiu.
   const owned = await getSessionMeta(id).catch(() => null);
   if (!owned) return NextResponse.json({ error: "not_found" }, { status: 404 });

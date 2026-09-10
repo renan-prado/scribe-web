@@ -1,5 +1,5 @@
 /**
- * Constantes de SEO — fonte única para metadata, sitemap, robots e JSON-LD.
+ * Constantes de SEO, fonte única para metadata, sitemap, robots e JSON-LD.
  *
  * Existe para que domínio, nome e descrição não sejam redigitados em cinco
  * arquivos: um `metadataBase` divergindo do `Sitemap:` do robots.txt é o tipo
@@ -12,16 +12,16 @@ export const SITE_URL = "https://scriba.cc";
 export const SITE_NAME = "Scriba";
 
 /**
- * Título e descrição — o par que o Google mostra no resultado de busca.
+ * Título e descrição, o par que o Google mostra no resultado de busca.
  *
  * Escritos com o vocabulário de quem PROCURA, não com o da marca. A LP falava
  * "Grave, entenda e viva o sermão": ótimo como promessa, invisível numa busca,
  * porque ninguém digita isso. "Transcrever sermão" e "estudo bíblico" são os
- * termos reais — e, até esta mudança, a única aparição da palavra
+ * termos reais, e, até esta mudança, a única aparição da palavra
  * "transcrição" na página inteira era numa frase que a NEGAVA.
  *
  * Limites práticos antes do Google truncar: ~60 caracteres no título, ~155 na
- * descrição. Ambos abaixo respeitam isso — conferir ao editar.
+ * descrição. Ambos abaixo respeitam isso, conferir ao editar.
  */
 export const SITE_TITLE = "Scriba | Transcreva e organize sermões e estudos bíblicos";
 
@@ -33,7 +33,7 @@ export const SITE_DESCRIPTION =
  *
  * `dev.scriba.cc` é um Preview da Vercel com domínio fixo (ver docs/ambientes.md):
  * é HTML público, servido de um domínio próprio, e a Vercel NÃO manda
- * `X-Robots-Tag: noindex` nesse caso — verificado. Sem esta checagem, o
+ * `X-Robots-Tag: noindex` nesse caso, verificado. Sem esta checagem, o
  * ambiente de desenvolvimento entra no índice competindo com scriba.cc por
  * conteúdo idêntico.
  */

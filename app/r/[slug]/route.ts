@@ -25,7 +25,7 @@ export const dynamic = "force-dynamic";
  * Marca a visita e manda para a landing page. Três coisas explicam o formato:
  *
  * 1. **Por que uma rota, e não `/?ref=<slug>`.** A landing page é ESTÁTICA, e
- *    isso não é detalhe de performance — é a página que decide se o visitante
+ *    isso não é detalhe de performance, é a página que decide se o visitante
  *    fica. Ler cookie dentro de `app/page.tsx` faria o Next marcar a rota como
  *    dinâmica, e a resposta passaria a sair com `no-store`, remontada na origem
  *    a cada visita. Aqui o efeito colateral mora numa rota própria e a LP
@@ -33,7 +33,7 @@ export const dynamic = "force-dynamic";
  *
  * 2. **Por que 302, e não 307/308.** É um redirect temporário e sem cache: um
  *    308 seria memorizado pelo navegador e as próximas visitas ao link nem
- *    chegariam ao servidor — o parceiro perderia a contagem a partir do
+ *    chegariam ao servidor, o parceiro perderia a contagem a partir do
  *    segundo clique da mesma pessoa.
  *
  * 3. **Por que slug inválido também redireciona.** Quem clica num link velho
@@ -64,7 +64,7 @@ export async function GET(request: NextRequest, ctx: { params: Promise<{ slug: s
   );
 
   // A pista que o selo "indicado por" do hero da landing page procura. Ela não
-  // carrega nada — é um "1" — e existe só para que os outros 99% dos
+  // carrega nada, é um "1", e existe só para que os outros 99% dos
   // visitantes, que não vieram de link nenhum, não paguem uma requisição para
   // ouvir "não há indicação". Ver `REF_HINT_COOKIE`.
   response.cookies.set(REF_HINT_COOKIE, "1", refHintCookieOptions(REF_COOKIE_MAX_AGE));
@@ -73,7 +73,7 @@ export async function GET(request: NextRequest, ctx: { params: Promise<{ slug: s
   // métrica, e nada pode impedir a pessoa de chegar na landing page.
   const limited = enforceRateLimit(request, RATE_LIMITS["partner-link"]);
   if (limited) {
-    log.warn("clique não contado — rate limit", { slug });
+    log.warn("clique não contado, rate limit", { slug });
     return response;
   }
 

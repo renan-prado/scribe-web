@@ -7,15 +7,15 @@ import { createClient, getAuthUser } from "@/lib/supabase/server";
 /**
  * A linha de `profiles` do usuário corrente, lida UMA vez por request.
  *
- * Existe porque três perguntas diferentes — "quem é essa pessoa?", "quanto
- * ela tem de saldo?" e "ela é admin?" — moravam em três módulos e viravam
+ * Existe porque três perguntas diferentes, "quem é essa pessoa?", "quanto
+ * ela tem de saldo?" e "ela é admin?", moravam em três módulos e viravam
  * três SELECTs na MESMA linha, cada um precedido de um `getUser()` próprio.
  * O layout de `(app)` fazia os três em todo page view, e a página fazia o
  * primeiro de novo.
  *
  * Só o SELECT é combinado. `getCurrentProfile`, `getCurrentBalance` e
  * `isCurrentUserAdmin` continuam existindo com a assinatura de sempre e
- * agora leem daqui — quem chama não precisou mudar, e o gate de admin não
+ * agora leem daqui, quem chama não precisou mudar, e o gate de admin não
  * ficou mais frouxo por passar a compartilhar a consulta.
  *
  * As colunas `role`, `is_active` e `coin_balance` são LEGÍVEIS pelo próprio
@@ -29,7 +29,7 @@ export type CurrentAccount = {
   isAdmin: boolean;
   /**
    * `false` só quando um admin desativou a conta. É o que os layouts de
-   * `(app)` e `/partners` conferem para barrar a navegação — o equivalente,
+   * `(app)` e `/partners` conferem para barrar a navegação, o equivalente,
    * do lado das páginas, ao 403 que `requireAuth()` devolve nas rotas.
    */
   isActive: boolean;

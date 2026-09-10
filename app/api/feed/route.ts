@@ -15,7 +15,7 @@ const OrderSchema = z.enum(["recent", "oldest"]).default("recent");
 const OffsetSchema = z.coerce.number().int().min(0).max(10_000).default(0);
 const LimitSchema = z.coerce.number().int().min(1).max(50).default(10);
 // Os outros três parâmetros passavam por Zod e este ia cru para dentro de um
-// `neq` — o único da rota que chegava ao banco sem forma conferida. A RLS
+// `neq`, o único da rota que chegava ao banco sem forma conferida. A RLS
 // impedia o estrago, mas "a próxima camada segura" não é validação.
 const ExcludeSchema = OptionalUuidSchema;
 

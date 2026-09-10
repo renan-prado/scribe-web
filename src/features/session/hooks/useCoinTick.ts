@@ -12,19 +12,19 @@ import type { ChargeReason } from "@/lib/coins/pricing";
  *
  * Este hook é a mecânica pura de cobrança e não decide o que fazer quando o
  * saldo acaba. Quem decide é `useCoinGuard`, que o embrulha e responde
- * CONGELANDO a captura (pause) em vez de encerrá-la — as páginas de gravação
+ * CONGELANDO a captura (pause) em vez de encerrá-la, as páginas de gravação
  * usam o guard, não este hook diretamente.
  *
  * **Pause-aware billing:** across `enabled` toggles for the same session
  * (pause → resume), we remember the last successful charge timestamp so
  * resuming does NOT trigger an immediate re-charge. Instead the first tick
- * after resume waits for whatever is left in the previous minute — the user
+ * after resume waits for whatever is left in the previous minute, the user
  * pays for started clock-minutes of *active* recording, not per pause bounce.
  * If enough time elapsed while paused (>60s), the first tick fires
  * immediately, honoring the started-minute policy.
  *
  * The interval id is torn down when `enabled` flips false OR when the hook
- * unmounts — no stray ticks after the recorder is stopped or paused.
+ * unmounts, no stray ticks after the recorder is stopped or paused.
  */
 export function useCoinTick({
   enabled,
@@ -42,10 +42,10 @@ export function useCoinTick({
   const onDepletedRef = useRef(onDepleted);
   onDepletedRef.current = onDepleted;
 
-  // Reset billing bookkeeping when the session identity changes — a new
+  // Reset billing bookkeeping when the session identity changes, a new
   // recording is billed from scratch even if the hook stays mounted. The
   // effect body only mutates refs (no render), but sessionId is a legit
-  // trigger here — that's why it's in the dep list.
+  // trigger here, that's why it's in the dep list.
   // biome-ignore lint/correctness/useExhaustiveDependencies: sessionId change is the trigger; ref mutations are intentional
   useEffect(() => {
     lastChargedAtRef.current = null;

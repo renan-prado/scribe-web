@@ -98,7 +98,7 @@ describe("hasChargeInMonth", () => {
   });
 
   it("trimestral conta a partir do MÊS DE INÍCIO, não do calendário", () => {
-    // Começou em fevereiro: cobra fev, mai, ago, nov — não jan/abr/jul/out.
+    // Começou em fevereiro: cobra fev, mai, ago, nov, não jan/abr/jul/out.
     const r = recurring({ cadence: "quarterly", startDate: "2026-02-01" });
     assert.equal(hasChargeInMonth(r, "2026-02"), true);
     assert.equal(hasChargeInMonth(r, "2026-03"), false);

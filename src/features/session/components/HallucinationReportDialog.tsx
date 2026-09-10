@@ -57,13 +57,13 @@ type Props = {
 };
 
 /**
- * "Algo está errado" — o usuário percebeu que o Scriba entendeu errado e
+ * "Algo está errado", o usuário percebeu que o Scriba entendeu errado e
  * descreve o problema em uma nota curta. A auditoria cruza a nota com a
  * transcrição e responde na própria janela: remove os cards sem apoio no que
  * foi dito, sugere encerrar a gravação, sugere reprocessar o resumo, ou
  * explica por que não dá para agir sozinha.
  *
- * O usuário ouviu o pregador e nós não — por isso a janela nunca discute com
+ * O usuário ouviu o pregador e nós não, por isso a janela nunca discute com
  * ele: ou age, ou explica o limite. E a decisão de encerrar (que interrompe a
  * cobrança de moedas) fica sempre na mão dele, nunca automática.
  */
@@ -83,7 +83,7 @@ export function HallucinationReportDialog({
   const [removed, setRemoved] = useState(0);
   const [error, setError] = useState("");
 
-  // Cada abertura começa limpa — um veredito antigo na tela faria o usuário
+  // Cada abertura começa limpa, um veredito antigo na tela faria o usuário
   // achar que a nota nova já foi analisada.
   useEffect(() => {
     if (!open) return;

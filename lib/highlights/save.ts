@@ -8,7 +8,7 @@ import { createLogger } from "@/lib/log";
 
 /**
  * Best-effort: extrai frases marcantes do feed do ao vivo + summary final e
- * persiste como série agendada no /feed. Sem chamada de LLM — puro
+ * persiste como série agendada no /feed. Sem chamada de LLM, puro
  * reciclagem, então o único caminho de falha é a escrita no banco. Retorna
  * o payload para o route incluir na resposta (nunca lança).
  */

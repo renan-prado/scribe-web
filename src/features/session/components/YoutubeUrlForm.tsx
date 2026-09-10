@@ -27,7 +27,7 @@ import { cn } from "@/lib/utils";
  * A tela não cria a sessão e não importa nada: ela valida o link e cria a linha
  * (`mode: "youtube"`), depois empurra para `/recording/:id/youtube`, que é onde
  * a cobrança e o trabalho acontecem. É a mesma divisão dos três modos de
- * gravação — o diálogo cria a linha, a página de gravação faz o trabalho.
+ * gravação, o diálogo cria a linha, a página de gravação faz o trabalho.
  */
 
 const MAX_HOURS = Math.round(YOUTUBE_MAX_DURATION_MS / 3_600_000);
@@ -45,7 +45,7 @@ export function YoutubeUrlForm() {
   const balanceLoading = balance === null;
   const insufficient = balance !== null && balance < cost;
   const valid = isYoutubeVideoUrl(url);
-  /** Só acusa link inválido depois de a pessoa ter digitado algo de verdade —
+  /** Só acusa link inválido depois de a pessoa ter digitado algo de verdade,
    * um erro em vermelho no primeiro caractere é ruído, não ajuda. */
   const touched = url.trim().length > 6;
   const blocked = insufficient || !valid;
@@ -63,8 +63,8 @@ export function YoutubeUrlForm() {
     setLoading(true);
 
     // Segunda conferência de saldo: outra aba pode ter gasto moedas enquanto
-    // esta tela estava aberta. O botão já está desabilitado por `insufficient`
-    // — isto pega só a corrida.
+    // esta tela estava aberta. O botão já está desabilitado por `insufficient`,
+    // isto pega só a corrida.
     const fresh = await refresh();
     if (fresh !== null && fresh < cost) {
       setLoading(false);
@@ -106,7 +106,7 @@ export function YoutubeUrlForm() {
             Importar do YouTube
           </h1>
           <p className="text-pretty text-sm font-light leading-relaxed text-scriba-ink-soft">
-            O Scriba lê a legenda do vídeo e monta o mesmo resumo estruturado das gravações — com
+            O Scriba lê a legenda do vídeo e monta o mesmo resumo estruturado das gravações, com
             estudo, releia e frases marcantes.
           </p>
         </div>
@@ -180,7 +180,7 @@ export function YoutubeUrlForm() {
               role="alert"
               className="rounded-2xl border border-scriba-cream-accent/40 bg-scriba-cream px-4 py-3 text-center text-[12px] font-light leading-relaxed text-scriba-cream-ink"
             >
-              Você tem <strong className="font-semibold">{balance} créditos</strong> — importar um
+              Você tem <strong className="font-semibold">{balance} créditos</strong>, importar um
               vídeo custa {cost}. Adicione créditos para começar.
             </p>
             <button

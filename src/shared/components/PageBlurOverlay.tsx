@@ -4,7 +4,7 @@ import { useEffect, useState } from "react";
 
 /**
  * Overlay full-screen com fundo branco translúcido + backdrop-blur usado
- * durante ações pesadas como "Gerar estudo" e "Reprocessar" — dá feedback
+ * durante ações pesadas como "Gerar estudo" e "Reprocessar", dá feedback
  * visual claro de que a página está bloqueada esperando o servidor, sem
  * exigir um Dialog.
  *
@@ -19,7 +19,7 @@ import { useEffect, useState } from "react";
  * `title`/`subtitle`: o overlay avança sozinho conforme o tempo previsto de
  * cada etapa.
  *
- * ⚠️ **É cronômetro, não telemetria.** O servidor não reporta progresso — não
+ * ⚠️ **É cronômetro, não telemetria.** O servidor não reporta progresso, não
  * há SSE no app, e é uma ausência deliberada. As durações em `holdMs` são
  * estimativas calibradas pelas latências que aparecem no log de cada etapa.
  * Duas consequências assumidas: se o servidor responder antes, o consumidor

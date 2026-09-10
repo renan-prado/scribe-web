@@ -23,7 +23,7 @@ const ORPHAN_TTL_MS = 24 * 60 * 60 * 1_000;
 
 /**
  * Retry backoff between upload attempts. The last value is repeated forever
- * (until success or the tab dies). We don't give up on our own — the user
+ * (until success or the tab dies). We don't give up on our own, the user
  * can always stop the recording, which triggers a drain with a soft timeout.
  */
 const RETRY_BACKOFF_MS = [1_000, 3_000, 10_000, 30_000, 60_000];
@@ -262,7 +262,7 @@ export function useTranscribeQueue({
       // Cancel pending retry timers on unmount so we don't touch React state
       // after the hook is gone. In-flight fetches will resolve into no-ops
       // because their pendingRef lookup will still be present but the caller
-      // is unmounted — worst case a duplicate upload if the tab is remounted
+      // is unmounted, worst case a duplicate upload if the tab is remounted
       // for the same sessionId, which the queue on the new mount will
       // reconcile via the IDB list.
       for (const entry of pendingRef.current.values()) {

@@ -1,20 +1,20 @@
 -- LLM usage events: one row per upstream call (OpenAI chat / audio).
 --
 -- Written by the server routes after a successful upstream response so we can
--- compute per-session and per-user cost over time — how much a minute of live
+-- compute per-session and per-user cost over time, how much a minute of live
 -- transcription really costs, how much each pipeline contributes, and where
 -- unexpected spikes come from.
 --
 -- Design notes:
 --   * user_id is denormalized (RLS is scoped directly by it) so aggregate
 --     queries hit the (user_id, created_at) index without joining sessions.
---   * session_id is nullable — on-demand routes (format-paragraphs, ad-hoc
+--   * session_id is nullable, on-demand routes (format-paragraphs, ad-hoc
 --     verse lookups) run outside a recording, and we still want to see them.
 --   * Costs (usd) are computed on the server against the model+usage at the
 --     time of the call and STORED. Prices change; we want the historical
 --     record to reflect what we actually spent, not what today's rates say.
 --   * Writes happen from the same authenticated request that made the LLM
---     call, so a normal INSERT policy (user_id = auth.uid()) is enough — no
+--     call, so a normal INSERT policy (user_id = auth.uid()) is enough, no
 --     need for SECURITY DEFINER helpers.
 
 create table if not exists public.llm_usage_events (

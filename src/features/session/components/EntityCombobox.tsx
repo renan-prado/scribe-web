@@ -9,13 +9,13 @@ import { cn } from "@/lib/utils";
 /**
  * Autocomplete input backed by a per-user search endpoint. Fetches suggestions
  * on mount and on every keystroke (debounced), sorted by how often the user
- * has recorded with each entity. Free-text is always allowed — hitting Enter
+ * has recorded with each entity. Free-text is always allowed, hitting Enter
  * or blurring commits whatever is in the input.
  *
  * The dropdown is a plain absolute-positioned list (not a Portal) so it lives
  * inside the parent Dialog and inherits its overlay stacking without extra
  * portal wiring. O preço disso é que o contêiner que o abriga NÃO pode ter
- * `overflow` recortando — ver o `bodyClassName` do `EntityFieldDialog`.
+ * `overflow` recortando, ver o `bodyClassName` do `EntityFieldDialog`.
  *
  * ## Por que a lista tem avatar
  *
@@ -23,12 +23,12 @@ import { cn } from "@/lib/utils";
  * semana tem os mesmos cinco pregadores e as mesmas duas igrejas. Uma lista de
  * nomes em texto corrido obriga a LER cada linha; a pastilha de iniciais dá
  * uma âncora visual que se reconhece antes da leitura, e é a mesma pastilha
- * que o cabeçalho da sessão já mostra — a lista e a tela passam a falar a
+ * que o cabeçalho da sessão já mostra, a lista e a tela passam a falar a
  * mesma língua.
  *
  * A FORMA distingue as duas famílias, não o glifo: pessoa é círculo azul,
  * lugar é quadrado de canto arredondado na família verde. Os dois levam
- * INICIAIS, e é isso que faz a pastilha valer — um alfinete de mapa seria
+ * INICIAIS, e é isso que faz a pastilha valer, um alfinete de mapa seria
  * idêntico nas cinco igrejas da lista, que é exatamente a leitura que a
  * pastilha existe para encurtar.
  *
@@ -37,14 +37,14 @@ import { cn } from "@/lib/utils";
  * Texto livre sempre foi aceito (Enter ou blur comitam), mas nada na tela
  * dizia isso: com uma lista de sugestões aberta, o usuário que digita um nome
  * novo fica esperando um item que nunca vai aparecer. A linha final torna o
- * caminho visível e dá a ele um alvo de toque — no celular, "Enter" está
+ * caminho visível e dá a ele um alvo de toque, no celular, "Enter" está
  * atrás do teclado virtual.
  */
 type EntityKind = "speaker" | "location";
 
 type EntityComboboxProps = {
   id?: string;
-  /** Pessoa ou lugar — decide a forma da pastilha e os textos da lista. */
+  /** Pessoa ou lugar, decide a forma da pastilha e os textos da lista. */
   kind: EntityKind;
   value: string;
   onChange: (value: string) => void;
@@ -58,7 +58,7 @@ type EntityComboboxProps = {
 /** Altura máxima da lista. `dvh` para que ela encolha junto com o teclado
  *  virtual em vez de ficar presa atrás dele. */
 const LIST_MAX_HEIGHT = "min(17rem, 42dvh)";
-/** Abaixo disto não vale abrir para baixo — a lista vira uma fresta. */
+/** Abaixo disto não vale abrir para baixo, a lista vira uma fresta. */
 const MIN_SPACE_BELOW_PX = 180;
 
 function normalize(s: string): string {
@@ -70,7 +70,7 @@ function normalize(s: string): string {
 
 /**
  * Marca o trecho que casou com a busca. O casamento é feito no texto SEM
- * acento, mas as fatias saem do texto original — senão "Joao" acenderia o
+ * acento, mas as fatias saem do texto original, senão "Joao" acenderia o
  * nome inteiro com os acentos comidos.
  */
 function highlight(name: string, query: string) {
@@ -142,7 +142,7 @@ export function EntityCombobox({
 
   const trimmed = value.trim();
   // Só oferece "usar o que foi digitado" quando ainda não existe uma sugestão
-  // com exatamente esse nome — repetir a mesma opção duas vezes na lista faz o
+  // com exatamente esse nome, repetir a mesma opção duas vezes na lista faz o
   // usuário parar para escolher entre duas coisas iguais.
   const showFreeText =
     trimmed.length > 0 && !suggestions.some((s) => normalize(s.name) === normalize(trimmed));
@@ -150,13 +150,13 @@ export function EntityCombobox({
   const hasList = open && (rowCount > 0 || loading);
 
   /**
-   * A lista abre para CIMA quando não há altura embaixo — num telefone em
+   * A lista abre para CIMA quando não há altura embaixo, num telefone em
    * paisagem, ou com o teclado virtual ocupando metade da tela, ela abria por
    * baixo do próprio diálogo e o campo virava um beco sem saída.
    *
    * Medido no momento de ABRIR, e não num effect: um `useEffect` roda depois
    * da pintura, então a lista apareceria embaixo e daria um pulo para cima. É
-   * também o único instante em que a medida muda — o teclado virtual sobe no
+   * também o único instante em que a medida muda, o teclado virtual sobe no
    * foco, que é justamente quando isto roda.
    */
   const openList = useCallback(() => {

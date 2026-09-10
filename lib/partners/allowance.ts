@@ -10,7 +10,7 @@ const log = createLogger("partners");
  *
  * Existe por uma razão de produto, não de contabilidade: quem divulga precisa
  * usar. Um parceiro sem saldo não grava, e quem não grava para de ter o que
- * contar — o programa morre em silêncio, sem que nada apareça num painel.
+ * contar, o programa morre em silêncio, sem que nada apareça num painel.
  *
  * RENOVAÇÃO PREGUIÇOSA, sem cron. O crédito acontece quando o parceiro
  * aparece, exatamente como o check de assinatura vencida em
@@ -18,9 +18,9 @@ const log = createLogger("partners");
  * resolver um problema que só importa quando a pessoa está na tela.
  *
  * DUAS TRAVAS, em ordem de custo:
- *   1. `partners.allowance_month` — comparação em memória, sobre uma linha
+ *   1. `partners.allowance_month`: comparação em memória, sobre uma linha
  *      que o chamador já carregou. É o que evita ir ao banco em toda visita.
- *   2. `coin_transactions.external_ref` UNIQUE — a trava de verdade. Duas
+ *   2. `coin_transactions.external_ref` UNIQUE: a trava de verdade. Duas
  *      abas abertas no mesmo segundo passam as duas pela trava 1; só uma
  *      credita.
  *
@@ -43,7 +43,7 @@ export function allowanceIsDue(
 }
 
 /**
- * Credita a mesada do mês, se devida. Devolve as moedas creditadas AGORA — 0
+ * Credita a mesada do mês, se devida. Devolve as moedas creditadas AGORA, 0
  * quando não havia nada a fazer.
  *
  * Nunca lança: é chamada no caminho de renderização de todas as páginas do

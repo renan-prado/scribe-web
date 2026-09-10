@@ -2,7 +2,7 @@
 --
 -- `llm_usage_events` guarda o custo resolvido no momento da chamada, de
 -- propósito: preço muda, e o histórico tem de refletir o que gastamos. A
--- exceção é quando o número nunca refletiu gasto nenhum — foi o caso aqui.
+-- exceção é quando o número nunca refletiu gasto nenhum, foi o caso aqui.
 --
 -- Três defeitos em `lib/llm/pricing.ts`, todos corrigidos no mesmo commit:
 --
@@ -14,11 +14,11 @@
 --   2. `gpt-5` (5/15) e `gpt-5-mini` (0,5/2) estavam com preços que a OpenAI
 --      não cobra. O correto é 1,25/10 e 0,25/2. O `gpt-5-mini` roda o guardião
 --      do estudo (study-guard), então o custo do estudo estava SUPERestimado
---      aqui — erro no sentido oposto ao de cima, na mesma tela.
+--      aqui, erro no sentido oposto ao de cima, na mesma tela.
 --   3. O token de entrada em cache era cobrado a 50% do fresco para todo
 --      modelo. Só o 4o cobra isso: a família 4.1 cobra 25% e a família 5
 --      cobra 10%. Afeta as rotas de prompt grande e estável, que são as do
---      feed ao vivo — de novo, superestimando.
+--      feed ao vivo, de novo, superestimando.
 --
 -- Só linhas de CHAT entram (audio_seconds is null): a tabela de STT não mudou.
 -- Modelos fora da lista abaixo ficam intocados, inclusive as duas variantes de

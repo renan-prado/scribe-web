@@ -1,6 +1,6 @@
-# 09 — Vazão de dados (information exposure e descoberta de rotas)
+# 09: Vazão de dados (information exposure e descoberta de rotas)
 
-**Status:** ✅ Concluído — nenhuma correção de código necessária. Um achado categoria B (Informational), sem ação de obscuridade. Ver "Rodada 2026-09-05".
+**Status:** ✅ Concluído, nenhuma correção de código necessária. Um achado categoria B (Informational), sem ação de obscuridade. Ver "Rodada 2026-09-05".
 
 ## Objetivo
 
@@ -182,7 +182,7 @@ Dê preferência a **controle de acesso real, remoção de informações sensív
 
 - [x] `app/robots.ts` e `app/sitemap.ts` não listam nem excluem
       explicitamente rotas administrativas de um jeito que confirme a
-      existência delas para quem lê o arquivo — se `/admin` aparecer em
+      existência delas para quem lê o arquivo, se `/admin` aparecer em
       `Disallow`, tratar como exposição de informação (categoria B), e
       resolver testando se `/admin` de fato bloqueia sem sessão de admin
       (categoria C, se falhar).
@@ -193,12 +193,12 @@ Dê preferência a **controle de acesso real, remoção de informações sensív
       `401`/`403` correto não vaza corpo com detalhe interno (nome de
       tabela, stack trace, versão de lib).
 - [x] Nenhuma referência a domínio de staging/interno vaza em HTML/JS
-      público — `dev.scriba.cc` é esperado ser conhecido (é o preview
+      público, `dev.scriba.cc` é esperado ser conhecido (é o preview
       público do projeto), então não é achado por si só; o que importa é
       se esse domínio expõe algo que produção não expõe (ex.: dados reais
       atrás de proteção mais fraca).
 - [x] Distinguir claramente, para cada achado, entre as quatro categorias
-      do prompt (A/B/C/D) antes de decidir severidade — não escalar
+      do prompt (A/B/C/D) antes de decidir severidade, não escalar
       informação pública legítima a HIGH só por aparecer numa varredura.
 
 ## Áreas do repositório a inspecionar
@@ -210,7 +210,7 @@ Dê preferência a **controle de acesso real, remoção de informações sensív
 ## Critério de aceite
 
 Cada achado carrega a classificação A/B/C/D do próprio prompt, e a "seção
-de prioridade de correção" final só lista itens de categoria B, C ou D —
+de prioridade de correção" final só lista itens de categoria B, C ou D,
 nunca uma correção que seja apenas remover algo do `robots.txt` ou trocar
 de nome uma rota.
 
@@ -220,35 +220,35 @@ de nome uma rota.
 
 Sondagem com `curl` contra `npm run dev` e contra `scriba.cc`.
 
-### 1. Endpoints de descoberta — todos negativos
+### 1. Endpoints de descoberta: todos negativos
 
 | Recurso | Resultado |
 |---|---|
-| `/sitemap.xml` | 200 — lista SÓ `/`, `/privacy`, `/terms` (todas públicas). Nenhuma URL privada, de preview ou com id |
-| `/manifest.webmanifest` | 200 — nome, ícones, cores. Nenhuma rota interna |
+| `/sitemap.xml` | 200, lista SÓ `/`, `/privacy`, `/terms` (todas públicas). Nenhuma URL privada, de preview ou com id |
+| `/manifest.webmanifest` | 200, nome, ícones, cores. Nenhuma rota interna |
 | `/.well-known/security.txt`, `/security.txt` | 307 (não existem) |
-| `*.map` (source map) | dev 404, **prod 403** — não servidos |
+| `*.map` (source map) | dev 404, **prod 403**, não servidos |
 | `/build-manifest.json`, `/routes-manifest.json`, `/_next/routes-manifest.json` | 307 (não expostos) |
-| `/api/health`, `/healthz`, `/graphql`, `/api/openapi.json`, `/swagger` | 307 — não existem (o proxy trata path desconhecido como protegido → redireciona) |
+| `/api/health`, `/healthz`, `/graphql`, `/api/openapi.json`, `/swagger` | 307, não existem (o proxy trata path desconhecido como protegido → redireciona) |
 
 Não há Swagger/OpenAPI, GraphQL (logo, sem introspection), health check nem
 listagem de diretório. Sem página de erro com stack (tarefa 08 confirmou corpo
 de erro genérico).
 
-### 2. robots.txt — a única classificação a fazer
+### 2. robots.txt: a única classificação a fazer
 
 - **dev (`dev.scriba.cc`):** `Disallow: /` e nada mais. O `IS_INDEXABLE` faz o
   ambiente de preview **não vazar** o mapa de caminhos de produção. ✅
-- **prod (`scriba.cc`):** lista em `Disallow` os caminhos privados —
+- **prod (`scriba.cc`):** lista em `Disallow` os caminhos privados,
   `/admin`, `/api/`, `/auth/`, `/feed`, `/profile`, `/recordings`, `/studies`,
   `/recording/`, `/session/`, `/billing/`.
 
 | Achado | Categoria | Análise |
 |---|---|---|
-| `robots.txt` de prod nomeia `/admin` e os demais caminhos autenticados | **B — Information Exposure** | Confirma a existência de `/admin` a quem lê o arquivo. Mas: (1) são caminhos previsíveis de qualquer SaaS, não segredo; (2) o controle de acesso é REAL — `/admin` → **307 → /sign-in** sem sessão, e **404** para autenticado não-admin (tarefa 02); (3) a lista existe para ECONOMIZAR orçamento de rastreio em páginas que respondem `307`, que é o uso legítimo do `Disallow`. Não é categoria C (o acesso não está quebrado) nem D |
+| `robots.txt` de prod nomeia `/admin` e os demais caminhos autenticados | **B, Information Exposure** | Confirma a existência de `/admin` a quem lê o arquivo. Mas: (1) são caminhos previsíveis de qualquer SaaS, não segredo; (2) o controle de acesso é REAL, `/admin` → **307 → /sign-in** sem sessão, e **404** para autenticado não-admin (tarefa 02); (3) a lista existe para ECONOMIZAR orçamento de rastreio em páginas que respondem `307`, que é o uso legítimo do `Disallow`. Não é categoria C (o acesso não está quebrado) nem D |
 
 **Correção: nenhuma.** Tirar `/admin` do `robots.txt` seria exatamente a
-obscuridade que este arquivo proíbe chamar de correção — com o custo real de
+obscuridade que este arquivo proíbe chamar de correção, com o custo real de
 desperdiçar orçamento de rastreio. A proteção correta (auth no servidor) já
 está no lugar e foi verificada. Fica registrado como Informational aceito.
 
@@ -256,13 +256,13 @@ está no lugar e foi verificada. Fica registrado como Informational aceito.
 
 | Recurso | Categoria |
 |---|---|
-| `/sitemap.xml`, `/manifest.webmanifest`, `/`, `/privacy`, `/terms` | **A** — público legítimo, sem informação sensível |
-| `robots.txt` de prod nomeando caminhos privados | **B** — exposição menor, acesso protegido |
-| `/admin`, `/api/admin/*` | não é achado — 307/404 sem privilégio (controle de acesso íntegro) |
-| `dev.scriba.cc` | **A** — preview público por desenho; não expõe nada além da produção (mesma auth, mesma RLS) |
+| `/sitemap.xml`, `/manifest.webmanifest`, `/`, `/privacy`, `/terms` | **A**, público legítimo, sem informação sensível |
+| `robots.txt` de prod nomeando caminhos privados | **B**, exposição menor, acesso protegido |
+| `/admin`, `/api/admin/*` | não é achado, 307/404 sem privilégio (controle de acesso íntegro) |
+| `dev.scriba.cc` | **A**, preview público por desenho; não expõe nada além da produção (mesma auth, mesma RLS) |
 
 ### Prioridade de correção
 
 **Vazia.** Nenhum achado de categoria C ou D. O único item (B) se resolve com
-o controle de acesso que já existe, não com obscuridade — portanto não entra
+o controle de acesso que já existe, não com obscuridade, portanto não entra
 como correção a fazer.

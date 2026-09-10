@@ -1,7 +1,7 @@
 import "server-only";
 
 /**
- * Limpa o título de um vídeo do YouTube — separa a pregação, o pregador e a
+ * Limpa o título de um vídeo do YouTube, separa a pregação, o pregador e a
  * igreja do amontoado que os canais publicam.
  *
  * ## Por que existe
@@ -14,7 +14,7 @@ import "server-only";
  *     autor:   "batistadopovo"
  *
  * Duas coisas erradas de uma vez. O título é três informações coladas por uma
- * LETRA I usada como separador, e o "autor" é a IGREJA — o sermão é do Yago
+ * LETRA I usada como separador, e o "autor" é a IGREJA, o sermão é do Yago
  * Martins. Ver `lib/prompts/youtube-metadata.ts` para por que isto não é uma
  * regex.
  *
@@ -45,7 +45,7 @@ const ROUTE: Extract<UsageRoute, "youtube-metadata"> = "youtube-metadata";
 
 /**
  * 20s. Extração de três campos a partir de uma linha de texto mede 1-2s; vinte
- * segundos é o ponto em que ficar esperando custa mais do que o enfeite vale —
+ * segundos é o ponto em que ficar esperando custa mais do que o enfeite vale,
  * e esta chamada acontece DEPOIS da cobrança, na janela entre o débito e a
  * gravação da transcrição, que é a que interessa manter curta.
  */
@@ -56,7 +56,7 @@ export type CleanYoutubeMetadataInput = {
   sessionId: string;
   /** O `title` cru do oEmbed. */
   rawTitle: string;
-  /** O `author_name` cru do oEmbed — o nome do CANAL. */
+  /** O `author_name` cru do oEmbed, o nome do CANAL. */
   channel: string | null;
 };
 
@@ -71,7 +71,7 @@ export async function cleanYoutubeMetadata(
    * `speaker_location` quer dizer "onde isto foi pregado", e nos outros três
    * modos quem responde isso é uma PESSOA digitando. Aqui é suposição nossa: o
    * canal que publicou provavelmente é a igreja, mas o vídeo não afirmou isso
-   * em lugar nenhum. O prefixo é o que separa o que sabemos do que deduzimos —
+   * em lugar nenhum. O prefixo é o que separa o que sabemos do que deduzimos,
    * sem ele a tela mostra "Batista do Povo" com a mesma cara de um local que
    * alguém confirmou.
    */
@@ -145,7 +145,7 @@ export async function cleanYoutubeMetadata(
   const metadata: YoutubeMetadata = {
     title: parsed.title,
     speakerName: parsed.speakerName,
-    // O canal como igreja é um palpite bom o bastante para ser o padrão — o que
+    // O canal como igreja é um palpite bom o bastante para ser o padrão, o que
     // ele nunca pode ser é o AUTOR, que era o bug. Aqui ele entra CRU (sem
     // decapitalizar "batistadopovo") porque este ramo só roda quando o modelo
     // não devolveu local nenhum; quando ele devolve, já vem prefixado e
@@ -162,7 +162,7 @@ export async function cleanYoutubeMetadata(
     speakerLocation: metadata.speakerLocation,
     // Marca o caso em que o vídeo não tinha tema próprio e o resumo vai criar
     // um. É o sinal que diz se o prompt está conservador demais, devolvendo
-    // null onde havia título — se este número subir, o exemplo do "Culto de
+    // null onde havia título, se este número subir, o exemplo do "Culto de
     // Domingo" no prompt está pegando mais do que devia.
     titleFromSummary: metadata.title === null,
   });

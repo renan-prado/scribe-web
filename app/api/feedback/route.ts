@@ -25,7 +25,7 @@ const BodySchema = z
   .object({
     /**
      * A pergunta que o servidor abriu. Ausente no feedback do /profile, que
-     * não nasce de pergunta nossa — é a pessoa que procurou o botão.
+     * não nasce de pergunta nossa, é a pessoa que procurou o botão.
      */
     promptId: UuidSchema.optional(),
     answers: z
@@ -39,11 +39,11 @@ const BodySchema = z
   .strict();
 
 /**
- * POST /api/feedback — a nota que o usuário deu.
+ * POST /api/feedback, a nota que o usuário deu.
  *
  * O corpo carrega o MÍNIMO: qual pergunta, as notas e o texto. Superfície e
  * sessão são reconstruídas a partir da linha de `feedback_prompts` que o
- * próprio servidor escreveu (`loadOpenFeedbackPrompt`) — um corpo que
+ * próprio servidor escreveu (`loadOpenFeedbackPrompt`), um corpo que
  * afirmasse "isto é sobre o estudo da sessão X" não teria como ser desmentido,
  * e a tabela que orienta o roadmap passaria a aceitar o que o navegador
  * quisesse dizer.

@@ -47,7 +47,7 @@ export function AdminBreadcrumbs() {
             <Fragment key={item.href}>
               {/* Os ancestrais somem no celular: com eles, "Admin › Uso &
                   custos" empurrava os botões de voltar e sair da faixa. O
-                  título da tela já está no `<h1>` logo abaixo — a trilha é
+                  título da tela já está no `<h1>` logo abaixo, a trilha é
                   orientação, não a informação principal. */}
               <BreadcrumbItem className={isLast ? "min-w-0" : "hidden sm:inline-flex"}>
                 {isLast ? (

@@ -41,7 +41,7 @@ function initialsFrom(name: string | null, email: string | null): string {
 /**
  * /profile lives inside `(app)` so the shared AppHeader (with the CoinBalance
  * chip) sits on top for free. Layout uses the scriba tokens for a soft,
- * grouped look — an identity hero on top, the coin balance card below it as
+ * grouped look, an identity hero on top, the coin balance card below it as
  * the biggest visual anchor, then an "Informações da conta" list grouped in
  * a hairline card.
  */
@@ -49,7 +49,7 @@ export default async function ProfilePage() {
   // As quatro leituras custam UMA consulta a mais que as duas de antes: perfil,
   // saldo e papel de admin saem da mesma linha memoizada de `profiles`
   // (lib/db/account.ts), e `isCurrentUserPartner` é a que o layout de `(app)`
-  // já fez neste mesmo render — `cache()` devolve o resultado dela.
+  // já fez neste mesmo render, `cache()` devolve o resultado dela.
   const [profile, balance, isAdmin, isPartner] = await Promise.all([
     getCurrentProfile(),
     getCurrentBalance().catch(() => null),
@@ -143,7 +143,7 @@ export default async function ProfilePage() {
         <span className="flex min-w-0 flex-1 flex-col gap-0.5">
           <span className="text-sm font-semibold text-scriba-ink-strong">Indique a um amigo</span>
           <span className="text-xs font-light leading-relaxed text-scriba-ink-soft">
-            {REFERRAL_SIGNUP_COINS} moedas por amigo que criar a conta pelo seu link — e mais quando
+            {REFERRAL_SIGNUP_COINS} moedas por amigo que criar a conta pelo seu link, e mais quando
             ele assinar.
           </span>
         </span>
@@ -165,7 +165,7 @@ export default async function ProfilePage() {
           <InfoRow
             icon={<AtSign className="size-4" />}
             label="Email"
-            value={profile.email ?? "—"}
+            value={profile.email ?? "-"}
           />
           <InfoRow
             icon={<CalendarClock className="size-4" />}
@@ -189,7 +189,7 @@ export default async function ProfilePage() {
           <ThemeToggleRow />
           {/* Caminho PERMANENTE para instalar: a faixa do topo do app pode ser
               dispensada para sempre, e é a única outra porta. Ela some sozinha
-              onde não há o que oferecer — ver `InstallAppRow`. */}
+              onde não há o que oferecer, ver `InstallAppRow`. */}
           <InstallAppRow />
         </div>
       </section>
@@ -210,7 +210,7 @@ export default async function ProfilePage() {
 /**
  * Uma linha "rótulo / valor" da lista de informações da conta.
  *
- * O wrapper é um <div> contendo APENAS <dt> e <dd> — é a única forma de
+ * O wrapper é um <div> contendo APENAS <dt> e <dd>, é a única forma de
  * agrupamento que o HTML aceita dentro de um <dl>. Antes o ícone era irmão
  * deles e o par ficava dois níveis abaixo do <dl>, o que invalidava a lista
  * inteira (axe: `dlitem` + `definition-list`, 7 nós). O ícone agora mora

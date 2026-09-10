@@ -23,7 +23,7 @@ export const dynamic = "force-dynamic";
 
 /**
  * Live "bible" pipeline: só emite citedVerse. O cliente já filtrou via regex
- * que há sinal de menção bíblica no trecho antes de chamar — a rota confirma
+ * que há sinal de menção bíblica no trecho antes de chamar, a rota confirma
  * e normaliza a referência, ou devolve items vazio em caso de falso alarme.
  */
 export async function POST(request: Request) {
@@ -131,7 +131,7 @@ function formatSermonAt(ms: number | undefined): string {
 /**
  * Compacta o feed no mínimo que o prompt do bible precisa pra dedup. Passa
  * TODAS as citedVerses (a regra de "contido-em" precisa do histórico
- * completo) e nenhum outro kind — bible não emite mais nada.
+ * completo) e nenhum outro kind, bible não emite mais nada.
  */
 function summarizeExistingForPrompt(items: FeedItem[]) {
   const citedVerses: string[] = [];

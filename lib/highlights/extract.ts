@@ -19,10 +19,10 @@ import type { SummaryPayload } from "@/lib/domain/summary";
  * (citações com autor têm o material mais "cardable"; echoes são o refrão,
  * frequentemente redundantes com highlights).
  *
- * Dedup por texto normalizado — a mesma frase às vezes vira highlight E
+ * Dedup por texto normalizado, a mesma frase às vezes vira highlight E
  * echo, e não queremos dois cards iguais espaçados no tempo.
  *
- * Textos curtíssimos (<20 chars) são descartados — não fazem sentido como
+ * Textos curtíssimos (<20 chars) são descartados, não fazem sentido como
  * "card marcante" (ex: "Amém!").
  */
 

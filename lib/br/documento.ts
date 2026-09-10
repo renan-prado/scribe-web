@@ -5,14 +5,14 @@
  * admin e recusa o número no servidor. Duas implementações dessa conta é como
  * se descobre que a tela aceitava o que a rota rejeitava.
  *
- * O que é guardado no banco são só os DÍGITOS. Máscara é apresentação — se ela
+ * O que é guardado no banco são só os DÍGITOS. Máscara é apresentação, se ela
  * for para o banco, "123.456.789-09" e "12345678909" viram duas pessoas
  * diferentes na hora de conferir um pagamento.
  *
  * A validação é o dígito verificador, não uma consulta à Receita: ela pega o
  * erro que realmente acontece (dígito trocado ao copiar), e não diz nada sobre
- * o CPF existir ou pertencer a quem disse. Para o que precisamos — não mandar
- * PIX para um documento digitado errado — é o bastante.
+ * o CPF existir ou pertencer a quem disse. Para o que precisamos, não mandar
+ * PIX para um documento digitado errado, é o bastante.
  */
 
 export type DocKind = "cpf" | "cnpj";
@@ -21,7 +21,7 @@ export function onlyDigits(value: string): string {
   return value.replace(/\D/g, "");
 }
 
-/** Aplica a máscara conforme o tamanho — CPF até 11 dígitos, CNPJ acima. */
+/** Aplica a máscara conforme o tamanho, CPF até 11 dígitos, CNPJ acima. */
 export function formatDoc(value: string): string {
   const d = onlyDigits(value).slice(0, 14);
   if (d.length <= 11) {
@@ -38,7 +38,7 @@ export function formatDoc(value: string): string {
 }
 
 /**
- * Dígitos verificadores por soma ponderada — o mesmo algoritmo para os dois
+ * Dígitos verificadores por soma ponderada, o mesmo algoritmo para os dois
  * documentos, mudando só os pesos e onde a base termina.
  */
 function checkDigit(base: string, startWeight: number): number {
@@ -56,7 +56,7 @@ export function isValidCpf(value: string): boolean {
   const d = onlyDigits(value);
   if (d.length !== 11) return false;
   // 111.111.111-11 e companhia passam na conta dos dígitos e são inválidos
-  // na prática — é o erro típico de quem preenche um formulário só para
+  // na prática, é o erro típico de quem preenche um formulário só para
   // seguir adiante.
   if (/^(\d)\1{10}$/.test(d)) return false;
 
@@ -97,7 +97,7 @@ export function isValidDoc(value: string): boolean {
 
 /**
  * Forma canônica para o banco: só dígitos, ou `null` quando o campo está
- * vazio. Documento é opcional no cadastro — o parceiro pode ser cadastrado
+ * vazio. Documento é opcional no cadastro, o parceiro pode ser cadastrado
  * antes de mandar os dados dele.
  */
 export function normalizeDoc(value: string | null | undefined): string | null {

@@ -6,11 +6,11 @@ import { createClient } from "@/lib/supabase/server";
 /**
  * Persistence for reusable speaker entities. Sessions link to a speaker
  * via sessions.speaker_id but ALSO keep speaker_name as a snapshot of
- * what was captured at recording time — renaming a speaker here does
+ * what was captured at recording time, renaming a speaker here does
  * not rewrite history in past sessions.
  *
  * All reads/writes are user-scoped by RLS (user_id column). Case-insensitive
- * uniqueness on (user_id, lower(name)) enforced by index — see 0019.
+ * uniqueness on (user_id, lower(name)) enforced by index, see 0019.
  */
 
 type DbRow = {

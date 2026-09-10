@@ -4,7 +4,7 @@
  * De um lado, o custo MEDIDO: o que a OpenAI cobrou de fato, somado dos
  * eventos de `llm_usage_events` e convertido a real pelo câmbio do dia. Do
  * outro, a receita IMPLÍCITA: quanto vale a moeda que a ação debita. Nenhum
- * dos dois é constante no código — o custo é medição, e o valor da moeda é
+ * dos dois é constante no código, o custo é medição, e o valor da moeda é
  * ajustável no painel justamente para simular um preço que ainda não existe.
  *
  * O que é POR MOEDA é publicado por MILHEIRO. Uma moeda custa na casa do
@@ -14,8 +14,8 @@
  * arquivo reusa aquela constante em vez de escolher a sua.
  *
  * **Há DUAS margens aqui, e confundi-las já produziu uma tela que se
- * contradizia.** `marginAtCurrentPrice` é a da decisão — custo de uma execução
- * contra o que a ação cobra hoje; `realizedMargin` é a histórica — custo
+ * contradizia.** `marginAtCurrentPrice` é a da decisão, custo de uma execução
+ * contra o que a ação cobra hoje; `realizedMargin` é a histórica, custo
  * contra as moedas que o ledger de fato debitou. Elas empatam na operação
  * normal e divergem quando o período pega uma mudança de preço. A sugestão de
  * preço sai da primeira, e é por isso que a coluna "Margem" da tela também
@@ -33,8 +33,8 @@ export { COINS_PER_COST_UNIT };
  * Valor de venda da moeda, quando ninguém ajustou nada.
  *
  * É o pacote avulso (R$ 10,00 por 500 moedas = R$ 20,00 o milheiro), e não a
- * média dos planos, por duas razões: é o preço MARGINAL — o que o usuário
- * paga quando o saldo acaba, que é quando ele realmente compra — e é um
+ * média dos planos, por duas razões: é o preço MARGINAL, o que o usuário
+ * paga quando o saldo acaba, que é quando ele realmente compra, e é um
  * número fixo. Uma média ponderada do mix vendido mudaria sozinha a cada mês,
  * e duas medições de margem em meses diferentes deixariam de ser comparáveis.
  */
@@ -76,7 +76,7 @@ export type ActionEconomicsInput = {
 export type ActionEconomics = {
   /** Custo do milheiro de moeda desta ação, em real. */
   costPerThousandCoinsBrl: number | null;
-  /** Receita do milheiro — igual para toda ação; é a régua. */
+  /** Receita do milheiro, igual para toda ação; é a régua. */
   revenuePerThousandCoinsBrl: number;
   /** Custo de uma execução, em real. */
   costPerExecutionBrl: number | null;
@@ -85,14 +85,14 @@ export type ActionEconomics = {
   /**
    * A MARGEM DA DECISÃO: quanto sobra de uma execução ao preço que a ação
    * cobra HOJE. É a única que responde "continuo cobrando 7 moedas o minuto?",
-   * e a única coerente com `suggestedCoinsPerExecution` — as duas saem do
+   * e a única coerente com `suggestedCoinsPerExecution`, as duas saem do
    * mesmo custo por execução. 0–1; null sem câmbio ou sem execução medida.
    */
   marginAtCurrentPrice: number | null;
   /**
    * A margem que de fato SAIU: custo medido contra as moedas que o ledger
-   * debitou no período. Responde outra pergunta — "as moedas que já vendi se
-   * pagaram?" — e diverge da de cima sempre que as moedas debitadas não batem
+   * debitou no período. Responde outra pergunta, "as moedas que já vendi se
+   * pagaram?", e diverge da de cima sempre que as moedas debitadas não batem
    * com execuções × preço de hoje. Ver `ledgerCoinsPerExecution`.
    */
   realizedMargin: number | null;
@@ -100,7 +100,7 @@ export type ActionEconomics = {
    * Quanto o ledger cobrou, em média, por execução. Bate com o preço de hoje
    * na operação normal; diverge quando o período pega uma mudança de preço
    * (lançamentos antigos ao preço velho) ou quando houve cobrança sem execução
-   * medida — e é a divergência que explica as duas margens não conversarem.
+   * medida, e é a divergência que explica as duas margens não conversarem.
    */
   ledgerCoinsPerExecution: number | null;
   /** Moedas por execução que fechariam a margem alvo. Null nos mesmos casos. */
@@ -124,11 +124,11 @@ export function computeActionEconomics(input: ActionEconomicsInput): ActionEcono
   const costPerExecutionBrl =
     totalCostBrl != null && executions > 0 ? totalCostBrl / executions : null;
 
-  // DUAS margens, porque são duas perguntas — e por muito tempo houve só a
+  // DUAS margens, porque são duas perguntas, e por muito tempo houve só a
   // segunda, o que produzia uma tela que se contradizia.
   //
   // O caso que revelou: o estudo custava R$ 0,2361 por execução e cobrava 50
-  // moedas (R$ 1,00 à régua) — 76% de margem, ótimo. Mas o ledger do período
+  // moedas (R$ 1,00 à régua), 76% de margem, ótimo. Mas o ledger do período
   // trazia 180 moedas em 18 execuções, 10 por lançamento, porque metade das
   // linhas era anterior à subida de 5 para 50. A margem do milheiro saía −18%
   // e a mesma linha sugeria BAIXAR o preço para 40. As duas estavam certas
@@ -136,7 +136,7 @@ export function computeActionEconomics(input: ActionEconomicsInput): ActionEcono
   //
   // A de cima decide preço: ela e a sugestão saem do mesmo custo por execução,
   // então nunca podem se contradizer. A de baixo é histórica, e a divergência
-  // entre as duas é informação — não ruído a esconder.
+  // entre as duas é informação, não ruído a esconder.
   const marginAtCurrentPrice =
     costPerExecutionBrl != null && revenuePerExecutionBrl > 0
       ? 1 - costPerExecutionBrl / revenuePerExecutionBrl
@@ -172,7 +172,7 @@ export function computeActionEconomics(input: ActionEconomicsInput): ActionEcono
 
 /**
  * O ledger cobrou algo diferente do preço de hoje? Acima de 2% de diferença a
- * tela mostra a margem realizada ao lado da de decisão — abaixo disso é
+ * tela mostra a margem realizada ao lado da de decisão, abaixo disso é
  * arredondamento de um lançamento estornado, e poluiria toda linha.
  */
 export function ledgerDivergesFromPrice(

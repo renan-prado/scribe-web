@@ -21,7 +21,7 @@ export const maxDuration = 300;
  *
  * **A conferência de validade é feita DE NOVO aqui**, e não só no card que
  * dispara a requisição. O card decide o que renderizar; a rota decide o que
- * GASTAR — e são duas coisas diferentes no instante em que dois admins abrem o
+ * GASTAR, e são duas coisas diferentes no instante em que dois admins abrem o
  * painel ao mesmo tempo, ou em que alguém recarrega a página três vezes. Sem
  * esta reconferência, "uma vez por dia" seria "uma vez por aba".
  *
@@ -59,7 +59,7 @@ export async function POST(request: Request) {
     // devolveu), e o card mostra uma mensagem diferente para cada caso.
     //
     // O `detail` vai junto de propósito. É a mensagem do upstream, e esta rota
-    // já está atrás de `requireAdmin()` — quem a lê é quem vai consertar. Sem
+    // já está atrás de `requireAdmin()`, quem a lê é quem vai consertar. Sem
     // ele, timeout e 401 chegam à tela com o mesmo texto.
     return NextResponse.json({ error: outcome.reason, detail: outcome.detail }, { status: 502 });
   }

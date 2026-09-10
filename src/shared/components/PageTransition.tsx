@@ -9,7 +9,7 @@ import { cn } from "@/lib/utils";
  *
  * **Ela envolve o CONTEÚDO da página, nunca a moldura.** Enquanto morava no
  * root layout, o `key={pathname}` derrubava e remontava tudo o que estava
- * abaixo dela — header, barra inferior do celular e página —, e a animação
+ * abaixo dela, header, barra inferior do celular e página, e a animação
  * corria por cima do conjunto. No desktop isso passava como um piscar; no
  * celular, e principalmente no PWA, a barra inferior SUMIA e voltava a cada
  * toque, porque ela é o elemento fixo que o olho está seguindo.

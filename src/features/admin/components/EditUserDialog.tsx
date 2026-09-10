@@ -23,8 +23,8 @@ import {
 } from "@/components/ui/select";
 import type { AdminUser } from "@/lib/db/admin/users";
 
-// `items` no Root é o que faz o gatilho mostrar o rótulo em vez do valor cru
-// — sem ele, "Situação" exibia "active". Ver shared/ui/select.
+// `items` no Root é o que faz o gatilho mostrar o rótulo em vez do valor cru,
+// sem ele, "Situação" exibia "active". Ver shared/ui/select.
 const ROLE_OPTIONS: SelectOption[] = [
   { value: "user", label: "Usuário" },
   { value: "admin", label: "Administrador" },

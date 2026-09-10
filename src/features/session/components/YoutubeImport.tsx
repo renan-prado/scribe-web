@@ -15,7 +15,7 @@ import { cn } from "@/lib/utils";
 const log = createLogger("session:youtube");
 
 /**
- * A tela de espera de uma importação do YouTube — a única "gravação" do
+ * A tela de espera de uma importação do YouTube, a única "gravação" do
  * produto em que o usuário não faz nada além de esperar.
  *
  * Ela dispara `POST /api/youtube/import` ao montar e fica de pé até a resposta
@@ -25,7 +25,7 @@ const log = createLogger("session:youtube");
  * **Ela não mostra barra de progresso, e sim uma sequência de frases.** Não há
  * progresso REAL para mostrar: a rota é uma requisição só, e o servidor não
  * emite eventos (streaming é uma das coisas que o produto deliberadamente não
- * tem — ver o AGENTS.md da raiz). Uma barra teria de ser inventada, e barra
+ * tem, ver o AGENTS.md da raiz). Uma barra teria de ser inventada, e barra
  * inventada que trava em 90% é pior que texto honesto. As frases avançam por
  * TEMPO e dizem o que está acontecendo de verdade, na ordem em que acontece.
  */
@@ -48,14 +48,14 @@ const STEPS = [
   // A última não tem sucessora de propósito: passado esse ponto ninguém sabe
   // quanto falta, e trocar a frase de novo só sugeriria um progresso que não
   // está sendo medido.
-  { atMs: 110_000, label: "Quase lá — finalizando o resumo…" },
+  { atMs: 110_000, label: "Quase lá, finalizando o resumo…" },
 ] as const;
 
 /** As mensagens de recusa. Cada uma diz o que houve E o que fazer. */
 const ERROR_COPY: Record<string, { title: string; body: string; retry: boolean }> = {
   no_captions: {
     title: "Esse vídeo não tem legendas",
-    body: "O Scriba lê a legenda que o YouTube já tem — sem ela, não há texto para resumir. Vídeos de canais maiores quase sempre têm legenda automática. Tente outro link.",
+    body: "O Scriba lê a legenda que o YouTube já tem, sem ela, não há texto para resumir. Vídeos de canais maiores quase sempre têm legenda automática. Tente outro link.",
     retry: false,
   },
   video_not_found: {
@@ -75,7 +75,7 @@ const ERROR_COPY: Record<string, { title: string; body: string; retry: boolean }
   },
   invalid_url: {
     title: "Esse link não é de um vídeo",
-    body: "Links de canal e de playlist não funcionam aqui — o Scriba precisa do endereço de um vídeo específico.",
+    body: "Links de canal e de playlist não funcionam aqui, o Scriba precisa do endereço de um vídeo específico.",
     retry: false,
   },
   provider_unavailable: {
@@ -90,7 +90,7 @@ const ERROR_COPY: Record<string, { title: string; body: string; retry: boolean }
   },
   summary_failed: {
     title: "O resumo falhou",
-    body: "A transcrição do vídeo foi salva e está na sua gravação — só o resumo não saiu. Abra a gravação para gerá-lo de novo.",
+    body: "A transcrição do vídeo foi salva e está na sua gravação, só o resumo não saiu. Abra a gravação para gerá-lo de novo.",
     retry: false,
   },
 };
@@ -111,7 +111,7 @@ export function YoutubeImport({ sessionId, sourceUrl }: Props) {
   /**
    * Trava de UMA importação por montagem.
    *
-   * O Strict Mode do React 19 monta, desmonta e remonta todo effect em dev — e
+   * O Strict Mode do React 19 monta, desmonta e remonta todo effect em dev, e
    * sem esta trava a segunda montagem dispara um segundo POST. Ele bateria no
    * 409 de `session_already_imported` ou perderia a corrida com o primeiro,
    * mas contar com isso é contar com o servidor para consertar um bug do
@@ -143,7 +143,7 @@ export function YoutubeImport({ sessionId, sourceUrl }: Props) {
       setBillingOpen(true);
       return;
     }
-    // O resumo falhou DEPOIS da cobrança — mas a transcrição está salva, então
+    // O resumo falhou DEPOIS da cobrança, mas a transcrição está salva, então
     // a sessão existe e é legível. O saldo mudou.
     if (result.error === "summary_failed") void refreshCoins();
 
@@ -172,7 +172,7 @@ export function YoutubeImport({ sessionId, sourceUrl }: Props) {
       error === "insufficient_balance"
         ? {
             title: "Saldo insuficiente",
-            body: `A importação de um vídeo custa ${COIN_COSTS.youtubeImport} moedas. Nenhuma moeda foi debitada — adicione créditos e tente de novo.`,
+            body: `A importação de um vídeo custa ${COIN_COSTS.youtubeImport} moedas. Nenhuma moeda foi debitada, adicione créditos e tente de novo.`,
             retry: true,
           }
         : (ERROR_COPY[error] ?? FALLBACK_ERROR);

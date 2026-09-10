@@ -30,7 +30,7 @@ import { cn } from "@/lib/utils";
 
 /**
  * Os três modos que GRAVAM. `CaptureMode` e não `SessionMode`: a importação do
- * YouTube não cabe aqui — ela não grava, não cobra por minuto e precisa de uma
+ * YouTube não cabe aqui, ela não grava, não cobra por minuto e precisa de uma
  * URL antes de existir, e por isso mora em `/importar`, com porta própria na
  * Biblioteca. Tentar acomodá-la nesta lista foi o que produziu um card com um
  * campo de texto dentro e um rodapé que precisava mentir sobre a unidade do
@@ -88,7 +88,7 @@ const MODE_ORDER = CAPTURE_MODES;
 
 /**
  * Trigger + dialog for starting a new recording session. Renders a Scriba-blue
- * pill button by default ("Gravar sermão") — passing `trigger` overrides that
+ * pill button by default ("Gravar sermão"), passing `trigger` overrides that
  * button entirely (the mobile bottom nav passes a plain tab-style item).
  *
  * The dialog exposes the capture modes as selectable cards: `live` runs the
@@ -103,7 +103,7 @@ export function NewRecordingDialog({ trigger }: { trigger?: ReactNode }) {
   const [open, setOpen] = useState(false);
   const [loading, setLoading] = useState(false);
   const [mode, setMode] = useState<CaptureMode>("live");
-  /** Compra de créditos a partir do próprio diálogo — evita mandar o usuário
+  /** Compra de créditos a partir do próprio diálogo, evita mandar o usuário
    * para outra tela só para descobrir como destravar a gravação. */
   const [billingOpen, setBillingOpen] = useState(false);
   const balance = useCoinsStore((s) => s.balance);
@@ -118,7 +118,7 @@ export function NewRecordingDialog({ trigger }: { trigger?: ReactNode }) {
 
     // Second-chance preflight: refetch balance in case a concurrent tab spent
     // coins while this dialog was open. The button is already disabled when
-    // `insufficient` — this catches races only.
+    // `insufficient`, this catches races only.
     const fresh = await refresh();
     if (fresh !== null && fresh < minCost) {
       setLoading(false);
@@ -151,8 +151,8 @@ export function NewRecordingDialog({ trigger }: { trigger?: ReactNode }) {
    * começava atrás de um diálogo aberto escrito "Preparando…", para sempre.
    *
    * A regra é mais geral que o defeito, e por isso está escrita assim: um
-   * diálogo montado num layout persistente tem de fechar em QUALQUER navegação
-   * — inclusive a que o usuário dispara pelo menu com ele aberto.
+   * diálogo montado num layout persistente tem de fechar em QUALQUER navegação,
+   * inclusive a que o usuário dispara pelo menu com ele aberto.
    */
   // biome-ignore lint/correctness/useExhaustiveDependencies: só a troca de rota fecha; `open`/`loading` nas deps reabririam a discussão a cada render
   useEffect(() => {
@@ -203,7 +203,7 @@ export function NewRecordingDialog({ trigger }: { trigger?: ReactNode }) {
             return (
               // O campo de URL fica FORA do <label>, e não dentro do card.
               // Um <input> dentro de um label cujo controle é o radio faz o
-              // clique no campo ser encaminhado ao radio — o foco pulava do
+              // clique no campo ser encaminhado ao radio, o foco pulava do
               // campo de texto para o botão de opção no primeiro toque, e não
               // dava para digitar no celular.
               <div key={m} className="flex min-w-0 flex-col gap-2">
@@ -229,7 +229,7 @@ export function NewRecordingDialog({ trigger }: { trigger?: ReactNode }) {
                   <div className="flex items-center gap-2.5">
                     {/* Selecionado usa o gradiente do CTA, não `bg-scriba-blue`.
                       Ícone branco sobre o azul de superfície dá 2,56:1 no claro
-                      e 2,33:1 no escuro — reprova até os 3:1 que a WCAG 1.4.11
+                      e 2,33:1 no escuro, reprova até os 3:1 que a WCAG 1.4.11
                       pede para objeto gráfico, então não era opção. O gradiente
                       resolve e ainda amarra o disco ao botão "Gravar". */}
                     <span
@@ -270,7 +270,7 @@ export function NewRecordingDialog({ trigger }: { trigger?: ReactNode }) {
                         <span className="text-scriba-ink-soft">Para</span> {idealFor}
                       </span>
                     </span>
-                    {/* Below 425px the price would crowd the "Ideal para" chip — the
+                    {/* Below 425px the price would crowd the "Ideal para" chip, the
                       start button already shows the cost of the selected mode. */}
                     <span className="inline-flex shrink-0 items-center gap-1 text-[11px] font-semibold tabular-nums text-scriba-ink-soft max-[425px]:hidden">
                       <span
@@ -327,7 +327,7 @@ export function NewRecordingDialog({ trigger }: { trigger?: ReactNode }) {
                   role="alert"
                   className="rounded-2xl border border-scriba-cream-accent/40 bg-scriba-cream px-4 py-3 text-center text-[12px] font-light leading-relaxed text-scriba-cream-ink"
                 >
-                  Você tem <strong className="font-semibold">{balance} créditos</strong> — o{" "}
+                  Você tem <strong className="font-semibold">{balance} créditos</strong>, o{" "}
                   {copy.title} custa {minCost} por minuto. Adicione créditos para começar.
                 </p>
                 <button

@@ -9,7 +9,7 @@ Next.js 16 (App Router) · React 19 · Supabase · Tailwind v4 · Stripe.
 
 ## Rodar localmente
 
-Requer Node 20+ e um `.env.dev` (o modelo é `.env.example` — peça os valores a
+Requer Node 20+ e um `.env.dev` (o modelo é `.env.example`, peça os valores a
 quem já tem o ambiente).
 
 ```bash
@@ -44,19 +44,19 @@ Um projeto na Vercel, dois destinos:
 - `develop` → [dev.scriba.cc](https://dev.scriba.cc) (Preview)
 
 Cada um com seu Supabase e seu Stripe. Nunca aponte os dois para o mesmo
-banco — o `with-env` recusa.
+banco, o `with-env` recusa.
 
 ## Documentação
 
 O código é comentado com o **porquê** das decisões, e os cabeçalhos de arquivo
 são a primeira parada. Acima deles:
 
-- **[`AGENTS.md`](./AGENTS.md)** — o índice. Cada pasta relevante tem o seu,
+- **[`AGENTS.md`](./AGENTS.md)**: o índice. Cada pasta relevante tem o seu,
   com as regras que valem ali (`app/`, `lib/`, `lib/billing/`,
   `src/features/*/`, `src/shared/`, `supabase/`).
-- **[`docs/`](./docs/README.md)** — guias longos: configuração de ambiente,
+- **[`docs/`](./docs/README.md)**: guias longos: configuração de ambiente,
   Stripe, programa de parceiros, bridge React Native.
 
 Esses documentos são escritos para agentes de IA e para pessoas ao mesmo
 tempo. Mudou um comportamento que algum deles descreve? Atualize no mesmo
-commit — um doc errado é pior que doc nenhum, porque é lido com confiança.
+commit, um doc errado é pior que doc nenhum, porque é lido com confiança.

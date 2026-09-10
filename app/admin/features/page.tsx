@@ -9,7 +9,7 @@ export const dynamic = "force-dynamic";
 
 /**
  * A matriz `funcionalidade × plano` é LEITURA. Ela é desenhada a partir de
- * `lib/entitlements/features.ts`, e mudá-la é um deploy — ver o comentário no
+ * `lib/entitlements/features.ts`, e mudá-la é um deploy, ver o comentário no
  * topo daquele arquivo e o da migração 0032.
  *
  * O que esta tela edita são as duas exceções de runtime: desligar uma feature

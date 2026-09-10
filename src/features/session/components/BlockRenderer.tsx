@@ -49,8 +49,8 @@ export function BlockRenderer({ block }: { block: SummaryBlock }) {
       const parsed = parseVerseReference(block.reference);
       const hasRange = parsed && parsed.startVerse != null && parsed.endVerse != null;
 
-      // MENÇÃO, não citação. Uma referência solta — "Jonas 1", capítulo sem
-      // versículo — não tem o que citar: o pregador NARROU a passagem em vez
+      // MENÇÃO, não citação. Uma referência solta, "Jonas 1", capítulo sem
+      // versículo, não tem o que citar: o pregador NARROU a passagem em vez
       // de ler um versículo, então não há texto na transcrição, e o capítulo
       // inteiro não é uma faixa que `PassageVerses` possa buscar na NVI. A
       // moldura de citação ficava aberta em volta de nada: uma superfície com
@@ -130,7 +130,7 @@ export function BlockRenderer({ block }: { block: SummaryBlock }) {
           </blockquote>
           {block.author ? (
             <figcaption className="text-xs font-normal text-scriba-ink-mute">
-              — {block.author}
+              {block.author}
             </figcaption>
           ) : null}
         </figure>
@@ -153,7 +153,7 @@ export function BlockRenderer({ block }: { block: SummaryBlock }) {
               <RichText>{block.text}</RichText>
             </p>
             {block.source ? (
-              <p className="text-[11px] font-light italic text-scriba-ink-soft">— {block.source}</p>
+              <p className="text-[11px] font-light italic text-scriba-ink-soft">- {block.source}</p>
             ) : null}
           </div>
         </details>

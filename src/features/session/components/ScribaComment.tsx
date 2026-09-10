@@ -49,7 +49,7 @@ function ContextBody({ block }: { block: Extract<CommentBlock, { type: "contextC
     <>
       <p className="text-pretty text-sm font-light leading-relaxed text-scriba-ink">{block.text}</p>
       {block.source ? (
-        <p className="text-[11px] font-light italic text-scriba-ink-soft">— {block.source}</p>
+        <p className="text-[11px] font-light italic text-scriba-ink-soft">- {block.source}</p>
       ) : null}
     </>
   );

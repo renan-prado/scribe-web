@@ -8,7 +8,7 @@ export const SummaryBlockSchema = z.discriminatedUnion("type", [
   z.object({ type: z.literal("highlight"), text: z.string() }),
   z.object({ type: z.literal("example"), text: z.string() }),
   z.object({ type: z.literal("quote"), text: z.string(), author: z.string().optional() }),
-  // AI-voice blocks — rendered as visually-distinct collapsible cards so the
+  // AI-voice blocks, rendered as visually-distinct collapsible cards so the
   // reader can distinguish sermon content (speaker's voice) from Scriba
   // enrichment. Emitted only by /api/final-summary.
   z.object({
@@ -137,7 +137,7 @@ export function parseSummaryFromLLM(content: string, phase: SummaryPhase): Summa
  * Insertion output from the enrichment call. Each entry says: insert `block`
  * AFTER the block at `afterBlockIndex` in the original organized-sermon array.
  * Index -1 means "at the very beginning". Only contextCard and relatedVerse
- * are valid enrichment types — anything else is rejected by parseEnrichment.
+ * are valid enrichment types, anything else is rejected by parseEnrichment.
  */
 const EnrichmentBlockSchema = z.discriminatedUnion("type", [
   z.object({
@@ -163,7 +163,7 @@ export type EnrichmentInsertion = {
 
 /**
  * Parse the enrichment LLM output. Silently drops malformed entries (bad
- * type, missing fields, non-integer index) — enrichment is best-effort, we
+ * type, missing fields, non-integer index), enrichment is best-effort, we
  * never fail the whole final-summary just because one card was wrong.
  */
 export function parseEnrichmentFromLLM(content: string): EnrichmentInsertion[] {
@@ -189,7 +189,7 @@ export function parseEnrichmentFromLLM(content: string): EnrichmentInsertion[] {
     if (!blockCandidate || typeof blockCandidate !== "object") continue;
     // Trim string fields before validating so the discriminated union sees
     // clean input. contextCard.label/text and relatedVerse.reference are
-    // required non-empty in practice — enforce here since the schema uses
+    // required non-empty in practice, enforce here since the schema uses
     // z.string() (which allows empty).
     const normalized = normalizeEnrichmentBlock(blockCandidate as Record<string, unknown>);
     if (!normalized) continue;
@@ -202,7 +202,7 @@ export function parseEnrichmentFromLLM(content: string): EnrichmentInsertion[] {
 
 // contextCards that name a specific historical figure or use a vague-tradition
 // phrase without a concrete `source` are dropped. Prompt-level guidance keeps
-// failing here — the model repeatedly writes "reformadores como Lutero…" with
+// failing here, the model repeatedly writes "reformadores como Lutero…" with
 // no attribution. Silent drop is more reliable than another prompt round.
 const UNSOURCED_ATTRIBUTION_PATTERN = new RegExp(
   [

@@ -52,7 +52,7 @@ function isConcreteSource(source: string): boolean {
  * (matches BlockRenderer's bibleQuote/conclusion). AI-authored items render as
  * a chat bubble from a diamond avatar with a dashed outline.
  *
- * speakerHighlight and speakerEcho break out of the card frame entirely — see
+ * speakerHighlight and speakerEcho break out of the card frame entirely, see
  * HighlightBlock / EchoBlock.
  */
 type FeedItemCardProps = {
@@ -218,7 +218,7 @@ function FeedItemBody({ item, onOpenVerse, isAi }: FeedItemBodyProps) {
           <blockquote className="border-l-[3px] border-session-verse-border pl-3.5 text-[15px] font-light italic leading-relaxed text-session-verse-text">
             {item.text}
           </blockquote>
-          <p className="text-xs font-medium text-scriba-ink-soft">— {item.author}</p>
+          <p className="text-xs font-medium text-scriba-ink-soft">- {item.author}</p>
         </>
       );
     case "relatedVerse":
@@ -254,7 +254,7 @@ function FeedItemBody({ item, onOpenVerse, isAi }: FeedItemBodyProps) {
             {item.text}
           </p>
           {item.source && isConcreteSource(item.source) ? (
-            <p className="text-[11px] italic font-light text-scriba-ink-mute">— {item.source}</p>
+            <p className="text-[11px] italic font-light text-scriba-ink-mute">- {item.source}</p>
           ) : null}
         </>
       );
@@ -264,7 +264,7 @@ function FeedItemBody({ item, onOpenVerse, isAi }: FeedItemBodyProps) {
           <blockquote className="text-sm font-light italic leading-relaxed text-scriba-ink">
             {item.text}
           </blockquote>
-          <p className="text-xs font-medium text-scriba-ink-soft">— {item.author}</p>
+          <p className="text-xs font-medium text-scriba-ink-soft">- {item.author}</p>
           {item.reason ? (
             <p className="text-[11px] font-light leading-relaxed text-scriba-ink-mute">
               {item.reason}

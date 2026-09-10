@@ -19,10 +19,10 @@ const log = createLogger("insights");
 /**
  * INSIGHTS pipeline. Fires every INSIGHTS_CHUNK_INTERVAL successfully
  * transcribed chunks (chunk-count-based, not time-based). O primeiro disparo
- * da sessão usa INSIGHTS_FIRST_FIRE_CHUNK (warmup) — o feed mostra algo útil
+ * da sessão usa INSIGHTS_FIRST_FIRE_CHUNK (warmup), o feed mostra algo útil
  * já no início em vez de esperar um intervalo inteiro.
  *
- * insightsInFlight is intentionally NOT in the effect deps — re-triggering
+ * insightsInFlight is intentionally NOT in the effect deps, re-triggering
  * on flight changes would cause unnecessary re-runs. State is read via
  * getState() inside the effect instead.
  */

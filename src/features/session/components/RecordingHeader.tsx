@@ -85,7 +85,7 @@ function TitleDialog({ open, onOpenChange, initialValue, onSave }: TitleDialogPr
 /**
  * Header bar for the live recording page. Owned state (title, speakerName,
  * speakerLocation, saved, recording start time) all lives in the session
- * store — the header reads and writes it directly instead of drilling
+ * store, the header reads and writes it directly instead of drilling
  * callbacks from RecordingLive. Only `menu` is drilled because it's a
  * ReactNode composed by the caller.
  *

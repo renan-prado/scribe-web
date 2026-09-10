@@ -1,4 +1,4 @@
--- Coin balance ("moedas") — a per-account spendable balance used to gate
+-- Coin balance ("moedas"), a per-account spendable balance used to gate
 -- recording and aprofundar. Initial grant is 100 for every profile; there is
 -- no top-up flow yet (this is a mechanism-testing pass).
 --
@@ -8,7 +8,7 @@
 --   * aprofundamento:       10 coins flat, single-shot on POST /api/deepening
 --
 -- Recording modes tick every 60s from the client. Debits are atomic via
--- charge_coins() below — the balance check + decrement happens inside a
+-- charge_coins() below, the balance check + decrement happens inside a
 -- single UPDATE with a `coin_balance >= amount` predicate so two concurrent
 -- ticks can't drop below zero.
 --
@@ -41,7 +41,7 @@ create policy coin_transactions_select_own on public.coin_transactions
 -- Atomic charge: check balance >= amount and decrement in the same UPDATE.
 -- Raises 'insufficient_balance' if no row matched (i.e. balance was too low).
 -- SECURITY DEFINER so the ledger insert bypasses the (absent) INSERT policy
--- on coin_transactions — writes only ever happen through this function.
+-- on coin_transactions, writes only ever happen through this function.
 create or replace function public.charge_coins(
   p_amount     int,
   p_reason     text,

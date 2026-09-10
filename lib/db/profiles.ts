@@ -8,7 +8,7 @@ import type { Profile } from "@/lib/domain/profile";
  * reads here always find a row for a signed-in user.
  *
  * A leitura em si mora em `lib/db/account.ts`, que traz perfil, saldo e papel
- * na mesma linha — eram três SELECTs na mesma linha de `profiles`, cada um
+ * na mesma linha, eram três SELECTs na mesma linha de `profiles`, cada um
  * com o seu próprio `getUser()`. Ver o cabeçalho de lá.
  */
 

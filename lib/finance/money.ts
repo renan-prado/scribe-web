@@ -1,5 +1,5 @@
 /**
- * Dinheiro do controle financeiro — CLIENT-SAFE, e a única aritmética
+ * Dinheiro do controle financeiro, CLIENT-SAFE, e a única aritmética
  * monetária da área.
  *
  * Três regras que valem para tudo que este arquivo toca:
@@ -12,7 +12,7 @@
  *    `Math.round` (meio para cima, simétrico o bastante para valores que já
  *    são positivos) no instante em que o resultado vira um centavo. Arredondar
  *    a cada passo intermediário faz a soma das partes deixar de bater com o
- *    todo — que é como um painel financeiro perde a confiança de quem o lê.
+ *    todo, que é como um painel financeiro perde a confiança de quem o lê.
  * 3. **Toda comparação é feita em BRL.** O painel tem uma moeda de
  *    apresentação só. Somar dólar com real "porque os dois são dinheiro" é o
  *    erro que produz um total plausível e errado.
@@ -33,7 +33,7 @@ export type FxContext = {
 
 /**
  * Converte para centavos de BRL. Devolve `null` quando o valor está em dólar e
- * não há cotação — e `null` é deliberado: um dólar convertido a zero soma zero
+ * não há cotação, e `null` é deliberado: um dólar convertido a zero soma zero
  * e some do total sem avisar, e um total que esconde uma despesa é pior que um
  * total que se recusa a existir. A UI mostra "sem cotação" onde isso acontece.
  */
@@ -52,7 +52,7 @@ export function toBrlCents(
  *
  * Liquidado usa `fxRate` (o câmbio do dia do pagamento); qualquer outro estado
  * usa a cotação viva. Um lançamento liquidado em dólar SEM `fxRate` gravado
- * cai na cotação viva também — é o melhor palpite disponível, e é o caso dos
+ * cai na cotação viva também, é o melhor palpite disponível, e é o caso dos
  * dados importados à mão.
  */
 export function entryAmountBrlCents(entry: FinanceEntry, fx: FxContext): number | null {
@@ -78,7 +78,7 @@ export function entryRemainingBrlCents(entry: FinanceEntry, fx: FxContext): numb
 /**
  * Soma que IGNORA o que não deu para converter, e informa quantos ignorou.
  *
- * A alternativa — tratar não-convertível como zero — daria um total redondo
+ * A alternativa, tratar não-convertível como zero, daria um total redondo
  * que nunca denuncia o buraco. Aqui o chamador recebe `unconvertible` e a tela
  * consegue dizer "3 lançamentos em dólar fora deste total, falta a cotação".
  */
@@ -103,7 +103,7 @@ export function applyBps(cents: number, bps: number): number {
   return Math.round((cents * bps) / 10_000);
 }
 
-/** Margem como fração (0,62 = 62%). `null` quando não há receita — dividir por
+/** Margem como fração (0,62 = 62%). `null` quando não há receita, dividir por
  * zero devolveria `Infinity`, que a tela renderizaria como um número. */
 export function marginRatio(revenueCents: number, costCents: number): number | null {
   if (revenueCents <= 0) return null;
@@ -140,7 +140,7 @@ const USD = new Intl.NumberFormat("en-US", {
  * conseguir dizer qual das duas.
  */
 export function formatBrlCents(cents: number | null): string {
-  if (cents === null) return "—";
+  if (cents === null) return "-";
   return BRL.format(cents / 100);
 }
 
@@ -152,13 +152,13 @@ export function formatNativeCents(cents: number, currency: Currency): string {
 
 /** Fração → "62,4%". `null` vira travessão pelo mesmo motivo acima. */
 export function formatPercent(ratio: number | null, digits = 1): string {
-  if (ratio === null || !Number.isFinite(ratio)) return "—";
+  if (ratio === null || !Number.isFinite(ratio)) return "-";
   return `${(ratio * 100).toFixed(digits).replace(".", ",")}%`;
 }
 
-/** Fração com sinal — para variação mês a mês, onde o sinal é a informação. */
+/** Fração com sinal, para variação mês a mês, onde o sinal é a informação. */
 export function formatSignedPercent(ratio: number | null, digits = 1): string {
-  if (ratio === null || !Number.isFinite(ratio)) return "—";
+  if (ratio === null || !Number.isFinite(ratio)) return "-";
   const sign = ratio > 0 ? "+" : "";
   return `${sign}${(ratio * 100).toFixed(digits).replace(".", ",")}%`;
 }
@@ -175,9 +175,9 @@ export function formatBps(bps: number): string {
  *
  * Aceita "1.234,56" (pt-BR), "1234.56" (en-US), "R$ 1.234,56" e "1234". A
  * ambiguidade real é o ponto: em "1.234" ele é separador de milhar, em "1.23"
- * é decimal. A regra aplicada — se existe vírgula, ela é o decimal e o ponto é
- * milhar; se não existe, um ponto seguido de exatamente três dígitos é milhar
- * — é a que acerta os dois casos que aparecem de fato num campo em português.
+ * é decimal. A regra aplicada, se existe vírgula, ela é o decimal e o ponto é
+ * milhar; se não existe, um ponto seguido de exatamente três dígitos é milhar,
+ * é a que acerta os dois casos que aparecem de fato num campo em português.
  *
  * Devolve `null` para o que não é número. Nunca `0`: um campo em branco tratado
  * como zero grava uma despesa de R$ 0,00 que ninguém pediu.

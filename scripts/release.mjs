@@ -9,11 +9,11 @@
  * POR QUE ISTO EXISTE, e não é burocracia de release:
  *
  * `llm_usage_events.app_version` carimba a versão em cada chamada de LLM, e o
- * `/admin/usage` compara VERSÃO CONTRA VERSÃO — custo por chamada, latência,
+ * `/admin/usage` compara VERSÃO CONTRA VERSÃO, custo por chamada, latência,
  * tokens. Esse corte só separa alguma coisa se a versão SUBIR a cada entrega.
  * Sem o bump, todo evento de todo deploy nasce com o mesmo rótulo, as linhas
  * da tabela se fundem numa só, e a pergunta "depois da 0.5.0 ficou pior?" não
- * tem onde ser respondida — sem erro nenhum na tela, que é o pior jeito de uma
+ * tem onde ser respondida, sem erro nenhum na tela, que é o pior jeito de uma
  * medição falhar.
  *
  * A régua vem dos Conventional Commits que o `commitlint` já obriga, e ela é a
@@ -81,13 +81,13 @@ if (unknown.length > 0) {
 // A entrega vem ANTES do release, sempre: o CHANGELOG desta versão precisa
 // conseguir descrever o commit que acabou de ser feito, e ele só existe depois
 // de commitado. Uma árvore suja aqui quase sempre significa que o trabalho
-// ainda não foi commitado — e o release entraria descrevendo uma versão que
+// ainda não foi commitado, e o release entraria descrevendo uma versão que
 // não é a que vai subir.
 const dirty = git(["status", "--porcelain"]);
 if (dirty && !dryRun) {
   die(
     "Há mudanças não commitadas.",
-    "Commite o trabalho primeiro — o CHANGELOG desta versão precisa descrevê-lo."
+    "Commite o trabalho primeiro, o CHANGELOG desta versão precisa descrevê-lo."
   );
 }
 
@@ -122,7 +122,7 @@ const commits = raw
 if (commits.length === 0) {
   die(
     lastTag ? `Nenhum commit desde ${lastTag}.` : "Nenhum commit para versionar.",
-    "Não há o que entregar — nada foi escrito."
+    "Não há o que entregar, nada foi escrito."
   );
 }
 
@@ -143,7 +143,7 @@ const derived = hasBreaking || hasFeat ? "minor" : "patch";
 const level = forced ?? derived;
 
 // Enquanto o major for 0, quebra de contrato sobe o minor: a semântica do
-// semver para 0.x é justamente essa, e promover a 1.0.0 é decisão de produto —
+// semver para 0.x é justamente essa, e promover a 1.0.0 é decisão de produto,
 // ela declara estabilidade a quem consome, e nenhum commit sabe declarar isso.
 if (hasBreaking && major === 0 && level !== "major") {
   console.log("  ! Há commit marcado como BREAKING. Em 0.x isso sobe o MINOR.");
@@ -182,8 +182,8 @@ for (const section of SECTIONS) {
 }
 
 const today = new Date().toISOString().slice(0, 10);
-const compared = lastTag ? ` — desde ${lastTag}` : "";
-const entry = `## ${next} — ${today}${compared}\n\n${blocks.join("\n\n")}\n`;
+const compared = lastTag ? `, desde ${lastTag}` : "";
+const entry = `## ${next}, ${today}${compared}\n\n${blocks.join("\n\n")}\n`;
 
 const HEADER = `# Changelog
 
@@ -193,7 +193,7 @@ latência são comparados versão a versão. Quando aquela tabela disser que a
 0.6.0 ficou mais cara, é esta lista que responde POR QUÊ.
 
 Gerado por \`npm run release\` a partir dos Conventional Commits. \`feat\` sobe o
-minor; o resto sobe o patch. Não edite à mão — a próxima execução escreve por
+minor; o resto sobe o patch. Não edite à mão, a próxima execução escreve por
 cima do topo do arquivo.
 `;
 

@@ -3,7 +3,7 @@
 -- PostgREST parses `select=mode` as a call to the Postgres ordered-set
 -- aggregate `mode()`, which fails with "WITHIN GROUP is required for
 -- ordered-set aggregate mode". Renaming the physical column sidesteps the
--- conflict — the JS/TS surface still exposes the field as `mode`, but the
+-- conflict, the JS/TS surface still exposes the field as `mode`, but the
 -- underlying column is unambiguous to the parser.
 
 alter table public.sessions rename column mode to capture_mode;

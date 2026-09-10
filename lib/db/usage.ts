@@ -16,7 +16,7 @@ const log = createLogger("usage");
  * Persist a single upstream LLM call into public.llm_usage_events.
  *
  * These helpers are fire-and-forget: routes await them so ordering in tests
- * is deterministic, but any insert failure is caught and logged — a broken
+ * is deterministic, but any insert failure is caught and logged, a broken
  * observability write must never surface as a 500 from a working /extract
  * or /transcribe.
  *
@@ -24,20 +24,20 @@ const log = createLogger("usage");
  * `requireAuth()` da rota, e a escrita usa o service-role. Antes era o
  * contrário: o client do usuário inseria e a policy
  * `llm_usage_events_insert_own` (`user_id = auth.uid()`) fazia o escopo. O
- * problema é que uma policy de INSERT é uma porta ABERTA — ela autoriza a
+ * problema é que uma policy de INSERT é uma porta ABERTA, ela autoriza a
  * escrita, não confere o conteúdo. Qualquer sessão logada podia mandar
  *
  *   POST /rest/v1/llm_usage_events { user_id: <o meu>, route: 'transcribe',
  *                                    model: 'gpt-5.1', total_cost_usd: 12345.67 }
  *
  * direto com o anon key, e o custo forjado entrava no `/admin/usage` e no
- * `/admin/precificacao` — os números que decidem o preço da moeda e medem a
+ * `/admin/precificacao`, os números que decidem o preço da moeda e medem a
  * margem. Reproduzido em dev: HTTP 201. É a mesma lição de `charge_coins`
  * (migração 0037): o gate na rota não protege o que a policy concede por fora
  * dela. A policy foi derrubada na 0039.
  *
  * Continuam fire-and-forget: as rotas aguardam para a ordem ser determinística,
- * mas qualquer falha de insert é capturada e logada — observabilidade quebrada
+ * mas qualquer falha de insert é capturada e logada, observabilidade quebrada
  * nunca vira 500 numa rota que funcionou. `sessionId` é opcional: rotas sob
  * demanda (format, lookups) rodam fora de uma gravação.
  */
@@ -55,7 +55,7 @@ export type UsageRoute =
   // reprocessamento, que é o mesmo trabalho pelo mesmo preço.
   | "final-summary-from-transcript"
   // Quarta rota da mesma chamada: o resumo de um vídeo do YouTube importado.
-  // Separada das outras três pelo motivo de sempre — é a única forma de o
+  // Separada das outras três pelo motivo de sempre, é a única forma de o
   // /admin/precificacao medir o custo real de uma importação contra as 30
   // moedas que ela cobra, e esse preço é FIXO enquanto o custo cresce com a
   // duração do vídeo. Fundida com `from-transcript`, a linha que diria "vídeo
@@ -76,7 +76,7 @@ export type UsageRoute =
   | "summary-enrichment-youtube"
   // As três etapas de LLM do estudo (`lib/study/generate.ts`). Separadas de
   // propósito: é o que permite ver no /admin/usage quanto custa PERGUNTAR,
-  // quanto custa RESPONDER e quanto custa ESCREVER — e portanto onde vale
+  // quanto custa RESPONDER e quanto custa ESCREVER, e portanto onde vale
   // subir ou baixar de modelo. Um "deepening" único não respondia a isso.
   // As linhas antigas ("deepening", "deepening-audit", "study-plan",
   // "study-audit") continuam no banco; o tipo governa só o que se ESCREVE
@@ -107,7 +107,7 @@ export type UsageRoute =
   // A análise diária do próprio painel (/api/admin/insights). Entra aqui, e
   // não fora da telemetria, porque é dólar de verdade saindo: fora da tabela,
   // o custo somado do painel deixaria de bater com a fatura da OpenAI. Ela é
-  // atribuída à ação `internal` em lib/db/admin/usage.ts — não a `unbilled` —
+  // atribuída à ação `internal` em lib/db/admin/usage.ts, não a `unbilled`,
   // para não parecer gasto de usuário que ninguém cobrou.
   | "admin-insights"
   | "transcribe";
@@ -123,8 +123,8 @@ export type RecordChatUsageInput = {
   cachedTokens: number | undefined;
   /**
    * Subconjunto de `completionTokens`, não uma parcela a somar. Gravado numa
-   * coluna própria porque o custo já sai certo sem ele — ele entra em
-   * `completion_tokens` e é cobrado como saída — mas a PERGUNTA "quanto desta
+   * coluna própria porque o custo já sai certo sem ele, ele entra em
+   * `completion_tokens` e é cobrado como saída, mas a PERGUNTA "quanto desta
    * conta é o modelo pensando?" não tem resposta sem separá-lo. É o que diz
    * se `reasoningEffort` numa etapa é dinheiro no chão.
    */

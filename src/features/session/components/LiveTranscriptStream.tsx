@@ -9,13 +9,13 @@ import { cn } from "@/lib/utils";
 /**
  * A transcrição acontecendo. Diferente do TranscriptView (que agrupa por
  * minuto para leitura calma dentro de um dialog), aqui CADA CHUNK é uma linha
- * própria que entra na tela no instante em que o /api/transcribe responde —
+ * própria que entra na tela no instante em que o /api/transcribe responde,
  * é o feedback principal do modo transcrição, então a granularidade do chunk
  * é o ponto, não um detalhe.
  *
  * Chunks ainda em voo aparecem como skeleton na posição em que o texto vai
  * cair, de modo que a lista nunca "pula" quando a resposta chega. Chunks de
- * silêncio somem — não têm texto para mostrar e só criariam buracos.
+ * silêncio somem, não têm texto para mostrar e só criariam buracos.
  *
  * Autoscroll: enquanto `follow` estiver ligado, cada linha nova rola a
  * janela até o fim. O chamador desliga isso quando o usuário sobe a página
@@ -36,7 +36,7 @@ export function LiveTranscriptStream({
   );
   const lastKey = visible.at(-1)?.index ?? -1;
 
-  // biome-ignore lint/correctness/useExhaustiveDependencies: lastKey é o gatilho — cada chunk novo re-ancora o scroll
+  // biome-ignore lint/correctness/useExhaustiveDependencies: lastKey é o gatilho, cada chunk novo re-ancora o scroll
   useEffect(() => {
     if (!follow) return;
     bottomRef.current?.scrollIntoView({ behavior: "smooth", block: "end" });

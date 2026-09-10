@@ -8,8 +8,8 @@ import type { RereadsPayload } from "@/lib/domain/rereads";
  * Card único que anuncia tudo o que foi separado para aparecer no feed do
  * usuário nos próximos dias/meses depois do sermão. Substitui os teasers
  * antes espalhados em `ReleiaEsteTexto variant="summary"` +
- * `LembraDisso variant="summary"` e adiciona a linha de "frases em destaque"
- * — nenhum destes itens é para hoje, então não faz sentido cada um ter seu
+ * `LembraDisso variant="summary"` e adiciona a linha de "frases em destaque",
+ * nenhum destes itens é para hoje, então não faz sentido cada um ter seu
  * card separado.
  *
  * Cada linha só renderiza se o payload correspondente existir e tiver itens;

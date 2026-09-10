@@ -21,7 +21,7 @@ type ConfirmDialogProps = {
   /**
    * Cor do botão de confirmação. O padrão é `destructive` porque o diálogo
    * nasceu para excluir, mas ele também confirma uma ação CARA (gerar o resumo
-   * de uma transcrição, que debita moedas) — e vermelho ali anunciaria perigo
+   * de uma transcrição, que debita moedas), e vermelho ali anunciaria perigo
    * onde só há preço.
    */
   confirmVariant?: "destructive" | "default";
@@ -32,7 +32,7 @@ type ConfirmDialogProps = {
 };
 
 /**
- * Minimal confirmation dialog for an action worth a second thought — destrutiva
+ * Minimal confirmation dialog for an action worth a second thought, destrutiva
  * por padrão, ou apenas cara (ver `confirmVariant`). Both CTAs live in the footer;
  * the close (X) affordance is hidden so the only ways out are Cancelar or
  * confirm. While the confirm handler is in flight the dialog can't be

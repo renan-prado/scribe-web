@@ -47,7 +47,7 @@ const LEVEL_WARN = 1;
  * No navegador em produção o padrão é `warn`: o console de quem usa o app não
  * é o nosso painel, e o rastro de execução de uma gravação ao vivo lá dentro
  * é barulho para o usuário e detalhe interno exposto de graça. A escotilha de
- * saída é o localStorage — é o que permite pedir a alguém com um bug real
+ * saída é o localStorage, é o que permite pedir a alguém com um bug real
  * "roda isto e me manda o console" sem precisar de um deploy.
  *
  *   localStorage.setItem("scriba:log", "debug")   // e recarregar a página
@@ -63,7 +63,7 @@ function resolveLevel(): number {
       if (override === "info") return LEVEL_INFO;
       if (override === "silent") return -999;
     } catch {
-      // localStorage bloqueado (aba anônima, cookies desligados) — segue o padrão.
+      // localStorage bloqueado (aba anônima, cookies desligados), segue o padrão.
     }
     return isProduction ? LEVEL_WARN : LEVEL_DEBUG;
   }
@@ -72,7 +72,7 @@ function resolveLevel(): number {
 
 /**
  * `reporters` só é passado quando temos um nosso. Omitir a chave é o que
- * deixa o consola instalar o reporter `fancy` dele — o desenho bonito do
+ * deixa o consola instalar o reporter `fancy` dele, o desenho bonito do
  * terminal em dev que não faz sentido reescrever à mão.
  */
 const root: ConsolaInstance = createConsola({
@@ -99,7 +99,7 @@ export interface Logger {
   success(message: string, context?: LogContext): void;
   /** Algo saiu do trilho mas o fluxo seguiu. Aparece em produção. */
   warn(message: string, context?: LogContext): void;
-  /** Falhou. Aceita um Error direto — a forma que sai de um `catch`. */
+  /** Falhou. Aceita um Error direto, a forma que sai de um `catch`. */
   error(message: string, context?: LogContext | Error): void;
   /** Rastro de execução. NÃO aparece em produção. */
   debug(message: string, context?: LogContext): void;
@@ -116,7 +116,7 @@ export interface Logger {
    */
   time(label?: string, level?: "debug" | "info"): (message: string, context?: LogContext) => void;
 
-  /** Tabela — só em desenvolvimento, no-op em produção. */
+  /** Tabela, só em desenvolvimento, no-op em produção. */
   table(rows: readonly LogContext[]): void;
 }
 
@@ -124,7 +124,7 @@ function make(scope: string, bound: LogContext | undefined): Logger {
   // A tag do consola é a string INTEIRA do escopo, não uma cadeia de
   // `withTag`. Encadear faria o terminal imprimir `billing:checkout` (o
   // separador do consola) enquanto a linha de produção diria
-  // `billing/checkout` — e `/` é o separador que este projeto já usava nos
+  // `billing/checkout`, e `/` é o separador que este projeto já usava nos
   // colchetes desde antes deste módulo existir.
   const consola = scope === "app" ? root : root.withTag(scope);
   /** Contexto grudado + contexto da chamada, sem criar objeto quando não há. */
@@ -161,7 +161,7 @@ function make(scope: string, bound: LogContext | undefined): Logger {
       if (isProduction || rows.length === 0) return;
       // console.table desenha de verdade nos dois ambientes; o reporter do
       // consola não tem equivalente, então esta é a exceção que fala direto
-      // com o console — e só em dev, onde a tabela é para olho humano.
+      // com o console, e só em dev, onde a tabela é para olho humano.
       console.table(rows.map((row) => ({ ...bound, ...row })));
     },
   };
@@ -170,7 +170,7 @@ function make(scope: string, bound: LogContext | undefined): Logger {
 /**
  * Cria o logger de um módulo. O escopo é o mesmo nome que já vivia entre
  * colchetes nas mensagens (`"[bible] ok"` → `createLogger("bible")`), e agora
- * ele é um CAMPO — por isso o reporter consegue alinhar coluna, escolher cor
+ * ele é um CAMPO, por isso o reporter consegue alinhar coluna, escolher cor
  * e, um dia, filtrar. Declare um por arquivo, no topo, ao lado dos imports.
  */
 export function createLogger(scope: string, context?: LogContext): Logger {

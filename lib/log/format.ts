@@ -2,7 +2,7 @@
  * Serialização de contexto compartilhada pelos três reporters.
  *
  * Um log só é útil se couber na tela. As funções aqui existem para que um
- * objeto de contexto vire `chave=valor` curto e estável — o mesmo objeto
+ * objeto de contexto vire `chave=valor` curto e estável, o mesmo objeto
  * produz sempre o mesmo texto, em dev, no browser e em produção.
  */
 
@@ -19,7 +19,7 @@ export type LogLevelName = "error" | "warn" | "info" | "success" | "debug";
  *
  * A comparação é por PALAVRA, não por substring, e a diferença não é
  * teórica: `/token/` casa com `promptTokens`, `completionTokens` e
- * `cachedTokens` — os três números que todo log de rota da OpenAI existe
+ * `cachedTokens`, os três números que todo log de rota da OpenAI existe
  * para mostrar. Uma redação gulosa aqui apaga exatamente o dado que se
  * queria ver, e apaga em silêncio.
  */
@@ -65,7 +65,7 @@ function isSensitive(key: string): boolean {
   return parts.some((part) => SENSITIVE_WORDS.has(part));
 }
 
-/** Acima disso o valor é truncado — uma transcrição inteira num log cega. */
+/** Acima disso o valor é truncado, uma transcrição inteira num log cega. */
 const MAX_VALUE_CHARS = 180;
 
 const truncate = (text: string) =>
@@ -80,7 +80,7 @@ export function formatValue(value: unknown): string {
   if (value === undefined) return "undefined";
 
   if (typeof value === "string") {
-    // Aspas só quando o valor tem espaço — senão `chave=valor` fica poluído.
+    // Aspas só quando o valor tem espaço, senão `chave=valor` fica poluído.
     return /\s/.test(value) ? `"${truncate(value)}"` : truncate(value);
   }
   if (typeof value === "number" || typeof value === "boolean" || typeof value === "bigint") {
@@ -102,7 +102,7 @@ export function formatValue(value: unknown): string {
  * objeto quando não há nada a esconder (o caso comum não aloca).
  *
  * A redação mora aqui, e não em cada reporter, porque o reporter `fancy` do
- * consola inspeciona o objeto CRU — redigir só na hora de virar texto deixava
+ * consola inspeciona o objeto CRU, redigir só na hora de virar texto deixava
  * o terminal de desenvolvimento imprimindo a chave por extenso.
  */
 export function redact(context: LogContext): LogContext {
@@ -135,7 +135,7 @@ export function formatContext(context: LogContext | undefined): string {
 
 /**
  * Separa o que é contexto do que é um Error solto. `log.error("falhou", err)`
- * e `log.error("falhou", { err })` têm de sair iguais — a primeira forma é a
+ * e `log.error("falhou", { err })` têm de sair iguais, a primeira forma é a
  * que sai naturalmente de um `catch`, e recusá-la só faria o autor da chamada
  * embrulhar o erro à mão em todo `catch` do app.
  */

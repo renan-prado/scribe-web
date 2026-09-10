@@ -14,8 +14,8 @@ import { createLogger } from "@/lib/log";
 import { REMINDERS_SYSTEM_PROMPT } from "@/lib/prompts/reminders";
 
 /**
- * Gera 10 mini-cartões "Lembra disso?" para uma sessão. Chamada única de LLM
- * — o prompt orienta a MISTURAR fontes (verbatim de feed, paráfrase de
+ * Gera 10 mini-cartões "Lembra disso?" para uma sessão. Chamada única de LLM,
+ * o prompt orienta a MISTURAR fontes (verbatim de feed, paráfrase de
  * summary/context, generated do transcript). O caller trata falha/incompleto
  * como best-effort.
  */
@@ -126,7 +126,7 @@ export async function generateReminders(
   });
 
   if (!isCompleteRemindersPayload(payload)) {
-    log.warn(`incomplete payload — expected 10 items covering all offsets`, {
+    log.warn(`incomplete payload, expected 10 items covering all offsets`, {
       got: payload.items.length,
       offsets: payload.items.map((i) => i.dayOffset),
     });

@@ -1,10 +1,10 @@
 /**
- * A conta do painel financeiro — CLIENT-SAFE, pura e a ÚNICA implementação.
+ * A conta do painel financeiro, CLIENT-SAFE, pura e a ÚNICA implementação.
  *
  * Recebe o que já foi lido do banco e devolve tudo que as telas mostram. Não
  * abre consulta, não formata, não sabe o que é React. É o que permite testar
  * cada número com um `node --test` e sem banco (`lib/finance/*.test.ts`), e é
- * o que impede uma segunda definição de "lucro" nascer dentro de um `.tsx` —
+ * o que impede uma segunda definição de "lucro" nascer dentro de um `.tsx`,
  * o mesmo princípio que `lib/db/admin/metrics.ts` estabeleceu para as métricas
  * de produto.
  *
@@ -92,7 +92,7 @@ import {
 export type MeasuredInputs = {
   /** Receita por mês (`YYYY-MM` → centavos de BRL), dos créditos do ledger. */
   revenueByMonthCents: Record<string, number>;
-  /** Créditos que não casaram com nenhum item do catálogo — receita perdida
+  /** Créditos que não casaram com nenhum item do catálogo, receita perdida
    * do total. Contados para a tela poder avisar em vez de mentir por omissão. */
   unmappedCreditEvents: number;
   /** Custo de IA por mês, em centavos de BRL. */
@@ -186,7 +186,7 @@ export type FinanceOverview = {
     items: RecurringSummary[];
   };
   commitments: {
-    /** Despesas firmadas e não liquidadas — o que devemos. */
+    /** Despesas firmadas e não liquidadas, o que devemos. */
     payableCents: number;
     /** Vencidas: parte do acima cujo `dueDate` já passou. */
     overdueCents: number;
@@ -194,7 +194,7 @@ export type FinanceOverview = {
     dueNext30Cents: number;
     /** Receitas firmadas e não recebidas. */
     receivableCents: number;
-    /** Comissões de parceiro devidas — medidas, não lançadas. */
+    /** Comissões de parceiro devidas, medidas, não lançadas. */
     partnerOwedCents: number;
     unconvertible: number;
   };
@@ -330,7 +330,7 @@ function buildMonth({
     const brl = entryAmountBrlCents(entry, fx);
 
     // Competência: `paid` e `pending` são firmes; `planned` fica de fora dos
-    // totais e aparece numa linha própria (§14 — realizado × previsto).
+    // totais e aparece numa linha própria (§14, realizado × previsto).
     if (monthKey(entry.competenceDate) === key) {
       if (brl === null) {
         unconvertible += 1;
@@ -401,7 +401,7 @@ function buildMonth({
 
   const revenueCents = revenueMeasured + revenueManual;
   const expenseCents = expenseMeasured + expenseManual + provisioned;
-  // IA e taxa são custo variável por definição — escalam com uso e com receita.
+  // IA e taxa são custo variável por definição, escalam com uso e com receita.
   variable += expenseMeasured;
 
   const grossProfitCents = revenueCents - expenseCents;
@@ -614,7 +614,7 @@ function buildIndicators({
  * plausível quando falta a cotação do dólar, quando alguém lançou a receita de
  * assinatura que o ledger já contava, ou quando nenhum custo recorrente foi
  * cadastrado. Nos três casos a tela precisa DIZER, porque o sintoma é sempre o
- * mesmo — uma conta boa demais, que é a que ninguém investiga.
+ * mesmo, uma conta boa demais, que é a que ninguém investiga.
  */
 function buildWarnings({
   entries,
@@ -650,7 +650,7 @@ function buildWarnings({
   // painel consegue produzir sozinho: "MRR R$ 109,70" no card de indicadores e
   // "Receita do mês R$ 0,00" três centímetros acima. Acontece quando as
   // assinaturas não nasceram de um checkout do Stripe (base semeada à mão, ou
-  // migrada) — o ledger é a única fonte com DATA, e sem ela não há histórico.
+  // migrada), o ledger é a única fonte com DATA, e sem ela não há histórico.
   if (measured.mrrCents > 0 && months.every((m) => m.revenueMeasuredCents === 0)) {
     warnings.push(
       "Há assinaturas ativas (MRR acima de zero) e nenhum crédito de assinatura no ledger do período: a receita medida aparece zerada. Verifique se essas assinaturas passaram pelo checkout do Stripe."

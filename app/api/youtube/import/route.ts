@@ -29,7 +29,7 @@ export const dynamic = "force-dynamic";
 /**
  * O mesmo teto das rotas do estudo. Uma importação é legenda (1-3s) mais o
  * pipeline inteiro do resumo sobre uma transcrição que pode ter duas horas de
- * pregação — o padrão de 60s não cobre isso, e estourar a função DEPOIS de
+ * pregação, o padrão de 60s não cobre isso, e estourar a função DEPOIS de
  * debitar as 30 moedas é o pior desfecho possível.
  */
 export const maxDuration = 300;
@@ -39,13 +39,13 @@ export const maxDuration = 300;
  *
  * Transforma um vídeo do YouTube numa sessão salva: busca a legenda pelo
  * provedor, grava como transcrição, e roda por cima o MESMO pipeline de
- * `/api/final-summary/from-transcript` — resumo, releia, lembra e frases
+ * `/api/final-summary/from-transcript`, resumo, releia, lembra e frases
  * marcantes. Sem áudio, sem chunks, sem STT.
  *
  * A linha da sessão já existe quando esta rota é chamada: o diálogo a criou
  * com `mode: "youtube"` e a URL em `source_url`, e o cliente foi para
  * `/recording/:id/youtube`, que dispara isto. Essa ordem é o que faz um reload
- * no meio da importação não perder nada — e é a mesma dos três modos de
+ * no meio da importação não perder nada, e é a mesma dos três modos de
  * captura, onde a linha nasce antes do primeiro segundo de áudio.
  *
  * ## A ORDEM, que é o assunto desta rota
@@ -59,18 +59,18 @@ export const maxDuration = 300;
  * motivos, e os dois são sobre esta rota especificamente:
  *
  * 1. **A legenda é a chamada barata** (~R$ 0,03, 1 crédito de provedor); o
- *    resumo é a cara. A regra que aquelas rotas protegem — não deixar a chamada
- *    CARA rodar antes do débito — continua valendo, e é o débito estar entre a
+ *    resumo é a cara. A regra que aquelas rotas protegem, não deixar a chamada
+ *    CARA rodar antes do débito, continua valendo, e é o débito estar entre a
  *    legenda e o resumo que a cumpre.
  * 2. **É a legenda que diz se o vídeo é importável.** A duração sai do último
  *    segmento dela (ver `lib/youtube/supadata.ts`); "sem legenda", "longo
  *    demais" e "curto demais" só são conhecidos depois. Cobrar antes obrigaria
- *    a estornar três recusas rotineiras — e estorno é o caminho onde um erro
+ *    a estornar três recusas rotineiras, e estorno é o caminho onde um erro
  *    de contagem vira moeda criada do nada.
  *
  * Depois da cobrança o comportamento é o das outras: falha do modelo NÃO
  * estorna. Aqui isso dói menos que lá, porque a transcrição é gravada assim que
- * o pagamento passa — quem pagou e viu o resumo falhar continua com o texto do
+ * o pagamento passa, quem pagou e viu o resumo falhar continua com o texto do
  * sermão inteiro na mão, e `/api/final-summary/from-transcript` é o caminho de
  * recuperação que já existe.
  */
@@ -95,7 +95,7 @@ export async function POST(request: Request) {
     return NextResponse.json({ error: "session_not_youtube" }, { status: 409 });
   }
   // Já importada. É o que impede pagar duas vezes pelo mesmo vídeo quando a
-  // página é recarregada depois de a importação ter terminado — e a página faz
+  // página é recarregada depois de a importação ter terminado, e a página faz
   // exatamente isso, porque não tem como saber sozinha se o POST anterior
   // chegou ao fim.
   if (session.endedAt) {
@@ -137,7 +137,7 @@ export async function POST(request: Request) {
   }
 
   // Enfeite, e best-effort: título e canal para a sessão nascer com o nome que
-  // a pessoa reconhece na lista. Falha aqui não interrompe nada — ver
+  // a pessoa reconhece na lista. Falha aqui não interrompe nada, ver
   // `lib/youtube/oembed.ts`.
   const info = await fetchYoutubeVideoInfo(parsedUrl.canonicalUrl);
 
@@ -160,7 +160,7 @@ export async function POST(request: Request) {
   //
   // Roda DEPOIS da cobrança de propósito, mesmo custando trocados: tudo que
   // acontece antes do débito é sobre decidir se o vídeo é importável, e esta
-  // etapa não decide nada — ela embeleza. Um caminho de recusa que já tivesse
+  // etapa não decide nada, ela embeleza. Um caminho de recusa que já tivesse
   // gasto uma chamada de LLM seria a única exceção a essa leitura, por nada.
   //
   // Best-effort como o oEmbed: sem `info` não há o que limpar, e qualquer
@@ -189,14 +189,14 @@ export async function POST(request: Request) {
       // Null e não um trecho da legenda: legenda automática do YouTube vem sem
       // pontuação, e as primeiras frases dela viram um cartão ilegível na
       // lista. O resumo preenche este campo logo abaixo, e até lá a sessão
-      // aparece só com o título — que é o que o modo transcrição faz quando
+      // aparece só com o título, que é o que o modo transcrição faz quando
       // não há resumo, pelo mesmo motivo de legibilidade.
       shortSummary: null,
-      // O CANAL não é o autor — ele é a igreja. Foi assim que "batistadopovo"
+      // O CANAL não é o autor, ele é a igreja. Foi assim que "batistadopovo"
       // virou o pregador de um sermão do Yago Martins no primeiro teste do
       // modo. Quem separa os dois é `cleanYoutubeMetadata`, e sem ela o autor
       // fica nulo, que é o mesmo estado de uma gravação em que ninguém digitou
-      // o nome — honesto, e corrigível pelo usuário na própria tela.
+      // o nome, honesto, e corrigível pelo usuário na própria tela.
       speakerName: meta?.speakerName ?? null,
       speakerLocation: meta?.speakerLocation ?? null,
     });
@@ -218,7 +218,7 @@ export async function POST(request: Request) {
   });
 
   if (!result.ok) {
-    // A sessão JÁ está salva e legível — este 502 diz "o resumo falhou", não
+    // A sessão JÁ está salva e legível, este 502 diz "o resumo falhou", não
     // "a importação falhou". O cliente manda para `/summary`, que oferece
     // gerar o resumo a partir da transcrição.
     log.error("summary failed", { sessionId, message: result.message });
@@ -231,7 +231,7 @@ export async function POST(request: Request) {
   const { payload, latencyMs, model } = result;
 
   // `keepTitle` quando sobrou um título do vídeo: ele é o que a pessoa
-  // reconhece na lista de gravações — foi olhando para ele que ela escolheu
+  // reconhece na lista de gravações, foi olhando para ele que ela escolheu
   // aquele link.
   //
   // Quando NÃO sobrou, o do resumo é melhor, e esse caso é intencional: um
@@ -250,7 +250,7 @@ export async function POST(request: Request) {
 
   // Best-effort, mesmo padrão das outras rotas de resumo: releia (10
   // versículos), lembra (10 mini-callbacks) e frases marcantes (até 12, sem
-  // IA). Nenhuma falhando derruba o resumo — a UI trata payload ausente como
+  // IA). Nenhuma falhando derruba o resumo, a UI trata payload ausente como
   // normal.
   const [rereads, reminders, highlights] = await Promise.all([
     generateAndSaveRereads({

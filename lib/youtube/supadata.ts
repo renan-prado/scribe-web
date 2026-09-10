@@ -2,7 +2,7 @@ import "server-only";
 
 /**
  * A implementação Supadata de `fetchYoutubeTranscript`. O único arquivo do
- * repositório que sabe o nome do provedor de legendas — ver `transcript.ts`
+ * repositório que sabe o nome do provedor de legendas, ver `transcript.ts`
  * para o contrato e o porquê da indireção.
  *
  * ## Por que um provedor pago para algo que parece grátis
@@ -10,7 +10,7 @@ import "server-only";
  * A legenda do YouTube é pública e o endpoint `timedtext` é aberto. Não
  * funciona do servidor: desde o fim de 2024 o YouTube pune reputação de IP de
  * datacenter e continua servindo IP residencial normalmente. O efeito é o pior
- * possível de depurar — `youtube-transcript` e afins funcionam na máquina de
+ * possível de depurar, `youtube-transcript` e afins funcionam na máquina de
  * quem escreveu e devolvem 429 e página de bot-check depois de ~100 requisições
  * a partir da Vercel. A API oficial (`captions.download`) exige OAuth do DONO
  * do vídeo, então não serve. E o navegador esbarra em CORS.
@@ -27,7 +27,7 @@ import "server-only";
  * resumo, não esta chamada.
  *
  * O modo `generate` (Whisper deles, para vídeo sem legenda) custa 2 créditos
- * por MINUTO e volta assíncrono. Está fora — ver `transcript.ts`.
+ * por MINUTO e volta assíncrono. Está fora, ver `transcript.ts`.
  */
 
 import { serverEnv } from "@/lib/env/server";
@@ -67,7 +67,7 @@ function asFiniteNumber(value: unknown): number {
  * Junta os segmentos num texto corrido e mede onde o último termina.
  *
  * **Pedimos `text=false` de propósito, mesmo querendo texto corrido.** Com
- * `text=true` a Supadata devolve a string já montada e NENHUM tempo — e é do
+ * `text=true` a Supadata devolve a string já montada e NENHUM tempo, e é do
  * `offset + duration` do último segmento que sai a duração do vídeo, que é o
  * que decide se ele cabe no teto e o que vai para `sessions.duration_ms`. A
  * alternativa era uma segunda chamada de metadados, custando um segundo
@@ -93,14 +93,14 @@ export async function fetchSupadataTranscript(videoUrl: string): Promise<Youtube
   const apiKey = serverEnv.SUPADATA_API_KEY;
   if (!apiKey) {
     // Configuração ausente, não falha do usuário. A rota vira 503 e a tela diz
-    // "importação indisponível", nunca "esse vídeo não tem legenda" — que é a
+    // "importação indisponível", nunca "esse vídeo não tem legenda", que é a
     // mensagem errada e mandaria a pessoa tentar outro link para sempre.
     //
     // A `message` nomeia a VARIÁVEL de propósito: sem ela o log sai como
     // `provider_unavailable, message: undefined`, e quem estiver com o dev de
     // pé precisa abrir este arquivo para descobrir que o problema é uma linha
     // em branco no `.env`. O ambiente entra junto porque o erro mais provável
-    // não é a chave não existir — é ela existir só no `.env.prod`, que é o
+    // não é a chave não existir, é ela existir só no `.env.prod`, que é o
     // arquivo que `npm run dev` NÃO lê.
     return {
       ok: false,
@@ -136,7 +136,7 @@ export async function fetchSupadataTranscript(videoUrl: string): Promise<Youtube
 
   // Cabeçalho que a Supadata devolve com quantos créditos a chamada consumiu.
   // Vai para o log porque é a única forma de conciliar a fatura deles com o
-  // número de importações do nosso ledger — se um dia divergir, é aqui que a
+  // número de importações do nosso ledger, se um dia divergir, é aqui que a
   // diferença aparece.
   const billed = response.headers.get("x-billable-requests");
 
@@ -168,7 +168,7 @@ export async function fetchSupadataTranscript(videoUrl: string): Promise<Youtube
   }
 
   // 200 com jobId em vez de conteúdo é a resposta assíncrona do modo
-  // `generate`. Pedimos `native`, então não deveria acontecer — mas se o
+  // `generate`. Pedimos `native`, então não deveria acontecer, mas se o
   // provedor mudar o default, o tratamento certo é recusar, e não seguir com
   // `content` indefinido e gravar uma transcrição vazia por cima da sessão.
   if (!Array.isArray(body.content)) {

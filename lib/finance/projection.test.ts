@@ -42,7 +42,7 @@ describe("modelo de clientes", () => {
     const r = project(BASIS, { ...FLAT, growthBps: 1_000, churnBps: 500 });
     assert.equal(r.months[0].customers, 105);
     assert.equal(r.months[1].customers, 110); // 110,25
-    // 100 × 1,05^12 = 179,58 — e NÃO 100 + 12×5 = 160.
+    // 100 × 1,05^12 = 179,58, e NÃO 100 + 12×5 = 160.
     assert.equal(r.months[11].customers, 180);
   });
 

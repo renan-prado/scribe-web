@@ -31,7 +31,7 @@ import { readAdminInsights, writeAdminInsights } from "./store";
  * `maxTokens` é generoso, e o motivo não é o tamanho do texto: nos modelos de
  * raciocínio o orçamento é COMPARTILHADO com os tokens de raciocínio, que aqui
  * são a maior parte. Medido num briefing real, em `medium`: 6.005 tokens de
- * saída, dos quais 5.078 de raciocínio — o JSON em si é menos de mil. Um teto
+ * saída, dos quais 5.078 de raciocínio, o JSON em si é menos de mil. Um teto
  * apertado corta no meio do objeto, o parser descarta tudo e a chamada inteira
  * é desperdiçada, que sai bem mais caro que a folga.
  */
@@ -45,7 +45,7 @@ const log = createLogger("admin/insights");
  *   high              203s       15.182
  *   medium             83s        5.078
  *
- * O teto era 180s e o esforço era `high` — ou seja, a chamada estourava por
+ * O teto era 180s e o esforço era `high`, ou seja, a chamada estourava por
  * 23 segundos e o card mostrava "a OpenAI não respondeu a tempo" em toda
  * tentativa. O conserto é o esforço, não o teto: 203s de espera por um card
  * seria inaceitável mesmo se coubesse, e a resposta em `medium` não é pior
@@ -63,7 +63,7 @@ const MAX_TOKENS = 24_000;
  * não respondeu a tempo"), e isso custou uma rodada inteira de diagnóstico: o
  * card dizia a mesma coisa para timeout, 400 e 401, e não havia como saber
  * qual era sem abrir o terminal do servidor. Numa tela que só o admin vê, o
- * texto do upstream não é vazamento — é o dado que encurta o conserto.
+ * texto do upstream não é vazamento, é o dado que encurta o conserto.
  */
 export type GenerateOutcome =
   | {
@@ -72,7 +72,7 @@ export type GenerateOutcome =
       /**
        * Não-nulo quando a análise SAIU mas não foi gravada.
        *
-       * A leitura já foi paga — 85 segundos de modelo de raciocínio — e
+       * A leitura já foi paga, 85 segundos de modelo de raciocínio, e
        * descartá-la porque o INSERT falhou é queimar dólar por um problema que
        * não é dela. Ela vai para a tela do mesmo jeito, avisando que não
        * sobreviverá ao reload. Foi assim que a tabela faltando em produção se
@@ -85,7 +85,7 @@ export type GenerateOutcome =
 function describe(error: { kind: string; status?: number; message: string }): string {
   if (error.kind === "http") return `HTTP ${error.status}: ${error.message.slice(0, 300)}`;
   // O abort do timeout chega aqui como falha de fetch, indistinguível de queda
-  // de rede — daí os dois nomes na mesma frase.
+  // de rede, daí os dois nomes na mesma frase.
   return `rede ou timeout (${TIMEOUT_MS / 1000}s): ${error.message.slice(0, 300)}`;
 }
 
@@ -104,7 +104,7 @@ export async function generateAdminInsights(
     ],
     temperature: 0.4,
     maxTokens: MAX_TOKENS,
-    // `medium` é uma decisão MEDIDA, não uma economia — ver TIMEOUT_MS. A
+    // `medium` é uma decisão MEDIDA, não uma economia, ver TIMEOUT_MS. A
     // tarefa é aritmética sobre uma dúzia de números cruzados, e o esforço
     // médio dá conta dela em 83s; o alto gasta 15 mil tokens de raciocínio,
     // leva 203s e chega nos mesmos achados.
@@ -147,7 +147,7 @@ export async function generateAdminInsights(
       ok: false,
       reason: "unparseable",
       // `finish_reason: "length"` aqui significa que o teto de tokens cortou o
-      // JSON — é a diferença entre "suba o MAX_TOKENS" e "conserte o prompt".
+      // JSON, é a diferença entre "suba o MAX_TOKENS" e "conserte o prompt".
       detail: `finish_reason=${result.data.finishReason}, ${result.data.content.length} caracteres`,
     };
   }
@@ -172,7 +172,7 @@ export async function generateAdminInsights(
     });
   } catch (err) {
     persistError = (err as Error).message;
-    log.error("gravação falhou — devolvendo a leitura mesmo assim", { scope, error: persistError });
+    log.error("gravação falhou, devolvendo a leitura mesmo assim", { scope, error: persistError });
   }
 
   return {

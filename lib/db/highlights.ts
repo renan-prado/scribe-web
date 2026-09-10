@@ -3,7 +3,7 @@ import type { HighlightsPayload } from "@/lib/domain/highlights";
 import { createClient } from "@/lib/supabase/server";
 
 /**
- * Persistência para session_highlights — frases marcantes do sermão
+ * Persistência para session_highlights, frases marcantes do sermão
  * recicladas sem IA e agendadas para o feed. Uma linha por session_id
  * (unique constraint em SQL); o reprocess sobrescreve o payload via upsert.
  */
@@ -43,7 +43,7 @@ export async function getHighlights(sessionId: string): Promise<HighlightsRow | 
 /**
  * Upsert por session_id. Reprocess reescreve o payload inteiro; primeira
  * geração cria a linha. `.select()` força o PostgREST a retornar a linha
- * afetada — sem isso, uma RLS quebrada devolveria data:null sem erro.
+ * afetada, sem isso, uma RLS quebrada devolveria data:null sem erro.
  */
 export async function upsertHighlights(
   sessionId: string,

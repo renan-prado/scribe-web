@@ -11,11 +11,11 @@ const log = createLogger("billing/sweep");
 export const runtime = "nodejs";
 export const dynamic = "force-dynamic";
 // Uma passada percorre até ~200 objetos do Stripe com uma chamada de crédito
-// idempotente para cada pago — folga sobre o timeout default.
+// idempotente para cada pago, folga sobre o timeout default.
 export const maxDuration = 300;
 
 /**
- * Varredura periódica de pagamentos — a terceira e última linha de defesa do
+ * Varredura periódica de pagamentos, a terceira e última linha de defesa do
  * crédito (as duas primeiras: webhook e reconciliação no retorno do checkout).
  * Percorre os pagamentos das últimas horas no Stripe e credita qualquer um
  * que não esteja no ledger. Ver `lib/billing/sweep.ts`.
@@ -24,14 +24,14 @@ export const maxDuration = 300;
  * o método que o cron da Vercel usa.
  *
  * AUTENTICAÇÃO: rota pública no proxy (o cron não tem cookie de sessão),
- * guardada por `CRON_SECRET` — a Vercel injeta o valor da env var
+ * guardada por `CRON_SECRET`, a Vercel injeta o valor da env var
  * automaticamente como `Authorization: Bearer <CRON_SECRET>` nas requisições
  * de cron. Comparação em tempo constante; sem a variável configurada, a rota
  * responde 503 e não faz nada.
  *
  * Vale notar o que um invasor ganharia se acertasse o segredo: o poder de
  * mandar o servidor conferir pagamentos REAIS no Stripe e creditar os donos
- * LEGÍTIMOS — ou seja, nada além de gastar nossa cota de API. Ainda assim o
+ * LEGÍTIMOS, ou seja, nada além de gastar nossa cota de API. Ainda assim o
  * segredo existe, porque rota pública sem autenticação é convite para flood.
  */
 

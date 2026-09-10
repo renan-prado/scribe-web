@@ -1,7 +1,7 @@
 -- Estorno de créditos após refund ou chargeback.
 --
 -- POR QUE ISTO EXISTE: num sistema de créditos, a fraude mais provável não é
--- forjar um webhook (isso a assinatura HMAC já barra) — é a legítima:
+-- forjar um webhook (isso a assinatura HMAC já barra), é a legítima:
 -- comprar R$ 10 de créditos, gastar tudo em transcrição (que nos custa
 -- dinheiro de verdade em API), e então abrir um chargeback no cartão. Sem
 -- estorno automático, o prejuízo é 100% nosso e passa despercebido.
@@ -14,7 +14,7 @@
 --
 -- Regras:
 --   * Nunca deixa o saldo negativo. Se o usuário já gastou, deduzimos o que
---     ainda houver e registramos a diferença no log — a perda existe, mas fica
+--     ainda houver e registramos a diferença no log, a perda existe, mas fica
 --     visível em vez de silenciosa.
 --   * Idempotente: o lançamento de estorno usa external_ref
 --     'clawback:<prefixo>', que é UNIQUE. Reentrega do evento não deduz de novo.

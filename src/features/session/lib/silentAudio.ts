@@ -2,7 +2,7 @@
  * Build an object-URL for a tiny silent WAV file we can loop through an
  * `<audio>` element. Playing silent audio during a capture session is the
  * cheapest way to convince Chromium/WebKit/Blink that "media is actively
- * playing" — which in turn:
+ * playing", which in turn:
  *   - defeats background-tab timer throttling (setInterval keeps its cadence),
  *   - lets Media Session lock-screen controls appear on Android,
  *   - prevents the OS from aggressively suspending Chrome under memory pressure,

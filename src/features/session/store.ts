@@ -45,7 +45,7 @@ const INITIAL_COUNTERS: SessionCounters = {
 type DripEntry = { item: FeedItem; enqueuedAt: number };
 
 export type EnqueueResult = {
-  /** True if any item was pushed onto the drip queue — the caller needs to
+  /** True if any item was pushed onto the drip queue, the caller needs to
    * schedule the drain timer if it isn't already running. */
   hasDripAdd: boolean;
 };
@@ -183,7 +183,7 @@ export type SessionStoreState = {
   enqueueFeedItems: (incoming: FeedItem[]) => EnqueueResult;
 
   /**
-   * Remove feed items by dedup key — from the visible feed, from the drip
+   * Remove feed items by dedup key, from the visible feed, from the drip
    * queue, and from `visibleKeys`. Usada pela auditoria do alerta de
    * alucinação, que identifica cards sem apoio na transcrição. É a única
    * remoção retroativa fora do RANGE SUPERSEDE de citedVerse, e acontece
@@ -195,7 +195,7 @@ export type SessionStoreState = {
   removeFeedItemsByKey: (keys: string[]) => number;
 
   /**
-   * Attempt to drain the head of the drip queue. Callers own the setTimeout —
+   * Attempt to drain the head of the drip queue. Callers own the setTimeout,
    * this action performs at most one drip on this call.
    *
    * Returns:
@@ -414,7 +414,7 @@ export const useSessionStore = create<SessionStoreState>()(
         queuedKeys.add(key);
         const entry = { item, enqueuedAt: Date.now() };
         if (item.kind === "citedVerse") {
-          // citedVerse fura fila de itens de IA — precisa aparecer perto do
+          // citedVerse fura fila de itens de IA, precisa aparecer perto do
           // momento em que o pregador leu. Mantém FIFO entre citedVerses.
           const insertAt = dripQueue.findIndex((e) => e.item.kind !== "citedVerse");
           if (insertAt === -1) {
@@ -496,6 +496,6 @@ export const useSessionStore = create<SessionStoreState>()(
   }))
 );
 
-/** Non-hook access to the current state — for use inside callbacks/effects that
+/** Non-hook access to the current state, for use inside callbacks/effects that
  * must read the latest value without adding a store subscription. */
 export const getSessionState = () => useSessionStore.getState();

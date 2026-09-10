@@ -1,6 +1,6 @@
-# Scriba RAG — TODOs futuros
+# Scriba RAG: TODOs futuros
 
-> Lista viva de tudo que foi conscientemente adiado da POC (Fases A-C) mas precisa acontecer eventualmente. Cada item tem um GATILHO — o sinal que indica "hora de fazer".
+> Lista viva de tudo que foi conscientemente adiado da POC (Fases A-C) mas precisa acontecer eventualmente. Cada item tem um GATILHO, o sinal que indica "hora de fazer".
 >
 > Referência: `scriba-rag-knowledge-architecture.md` (GPT) e `scriba-rag-proposta-claude.md` (Claude).
 >
@@ -12,7 +12,7 @@
 
 - **Não** implemente nada daqui sem checar o gatilho.
 - Ao concluir um item, mover para uma seção "Feito" no final (com data + PR/commit) em vez de deletar.
-- Ao descobrir um TODO novo durante a POC, **adicione aqui imediatamente** — não confie na memória.
+- Ao descobrir um TODO novo durante a POC, **adicione aqui imediatamente**, não confie na memória.
 - Ao decidir que um item nunca vai acontecer, mover para "Descartado" com justificativa.
 
 ---
@@ -21,7 +21,7 @@
 
 **O que é**: indexar automaticamente cada `final_summary`, `session_deepening` e `session_feed_items.speakerHighlight` como fontes RAG do próprio usuário.
 
-**Por que adiado**: quer validar retrieval sobre conteúdo externo antes de ligar auto-indexação (custo + volume). Também: qualidade do conteúdo pessoal depende da qualidade teológica de quem o usuário ouve — precisa ser CONTRAPESO ao conteúdo curado, não substituto.
+**Por que adiado**: quer validar retrieval sobre conteúdo externo antes de ligar auto-indexação (custo + volume). Também: qualidade do conteúdo pessoal depende da qualidade teológica de quem o usuário ouve, precisa ser CONTRAPESO ao conteúdo curado, não substituto.
 
 **Gatilho**: Fases A-C concluídas + eval do Aprofundar V2 mostrando ganho consistente.
 
@@ -29,12 +29,12 @@
 - [ ] Adicionar `source_type IN ('session_summary', 'session_deepening', 'session_highlight')` já no CHECK de `knowledge_sources` no PR 1 (deixa infra pronta, sem indexar).
 - [ ] Hook em `createDeepening()` que enfileira indexação (não bloqueia resposta).
 - [ ] Hook em `finalizeSession()` idem para `final_summary`.
-- [ ] Migration adicionando `knowledge_sources.owner_user_id` (nullable — global se null, do usuário se preenchido).
+- [ ] Migration adicionando `knowledge_sources.owner_user_id` (nullable, global se null, do usuário se preenchido).
 - [ ] Atualizar RLS para: user vê seus próprios chunks + globais; admin vê tudo.
 - [ ] Filtro no `match_knowledge` para escopo (`only_global | only_mine | both`).
 - [ ] UI no admin/usuário: pesquisar "meus sermões passados sobre X".
 - [ ] **Contrapeso teológico obrigatório**: no Aprofundar V2, garantir mistura mínima (ex: ≥50% dos chunks retornados vêm de fontes editoriais curadas, não do próprio corpus do usuário). Evita amplificação de teologia problemática se o pastor do usuário for ruim.
-- [ ] Tracking de custo — cada auto-indexação vira linha em `llm_usage_events` com `route='embedding_autoindex'`.
+- [ ] Tracking de custo: cada auto-indexação vira linha em `llm_usage_events` com `route='embedding_autoindex'`.
 
 ---
 
@@ -42,14 +42,14 @@
 
 **O que é**: quando `/api/bible` emite `citedVerse` com book/chapter/verse resolvidos, fazer lookup estruturado (SQL, sem embedding) na biblioteca por comentário/contexto sobre aquela passagem, e emitir um card enriquecido no chunk seguinte.
 
-**Por que adiado**: Ao Vivo é território estável — mexer é onde mais dá pra estragar UX. E só faz sentido quando a biblioteca tem conteúdo relevante (comentários bíblicos indexados por metadata).
+**Por que adiado**: Ao Vivo é território estável, mexer é onde mais dá pra estragar UX. E só faz sentido quando a biblioteca tem conteúdo relevante (comentários bíblicos indexados por metadata).
 
 **Gatilho**: biblioteca tem ≥1 comentário bíblico completo indexado por metadata + evals mostram que Aprofundar V2 ganha.
 
 **TODOs**:
 - [ ] Nova rota `/api/bible/context` (ou modificação do `/api/bible`) que faz lookup `WHERE metadata->>'bibleBook' = $1 AND (metadata->>'chapter')::int = $2 LIMIT 3`.
 - [ ] Novo `feedItemKind`: `verseContext` (ou expandir `context` existente com metadata de origem).
-- [ ] Dispatch em background após `citedVerse` emit — não bloqueia o feed.
+- [ ] Dispatch em background após `citedVerse` emit, não bloqueia o feed.
 - [ ] Rate limit próprio (max 1 context card por citedVerse por 60s).
 - [ ] Regra visual: card claramente marcado como "contexto adicional", não "o pregador disse".
 - [ ] Toggle no user profile: "trazer contexto adicional durante o Ao Vivo" (default: off até estabilizar).
@@ -125,7 +125,7 @@
 
 **O que é**: ao cadastrar uma fonte editorial, LLM sugere temas, passagens bíblicas mencionadas, tradição. Admin revisa checkboxes.
 
-**Por que adiado**: no início a curadoria é single-user (Renan) — mais rápido preencher manualmente. Vale automatizar quando o volume de novas fontes por semana justificar.
+**Por que adiado**: no início a curadoria é single-user (Renan), mais rápido preencher manualmente. Vale automatizar quando o volume de novas fontes por semana justificar.
 
 **Gatilho**: ≥5 novas fontes cadastradas por semana durante 2+ semanas.
 
@@ -138,14 +138,14 @@
 
 ## 8. Reindexação em massa (script CLI, não UI)
 
-**O que é**: quando trocarmos embedding model, chunker version, ou algoritmo de limpeza — precisa reindexar toda biblioteca sem quebrar rate limit.
+**O que é**: quando trocarmos embedding model, chunker version, ou algoritmo de limpeza, precisa reindexar toda biblioteca sem quebrar rate limit.
 
 **Por que adiado**: só precisa quando pela primeira vez formos mudar algo global.
 
 **Gatilho**: primeira migração de embedding model OU primeira mudança de chunker que exija reprocessar tudo.
 
 **TODOs**:
-- [ ] Script `scripts/reindex-knowledge.ts` — args: `--source-type`, `--dry-run`, `--batch-size` (default 20), `--concurrency` (default 3).
+- [ ] Script `scripts/reindex-knowledge.ts`, args: `--source-type`, `--dry-run`, `--batch-size` (default 20), `--concurrency` (default 3).
 - [ ] Backoff exponencial em 429 da OpenAI.
 - [ ] Progress bar + resumo final (indexed / failed / skipped).
 - [ ] Prompt de confirmação com estimativa de custo (`chunks * tokens_médios * $/1M`).
@@ -164,8 +164,8 @@
 
 **TODOs**:
 - [ ] Decidir estratégia:
-  - **Opção A**: colunas paralelas (`embedding_512`, `embedding_1536`, `embedding_3072`) — simples mas rígido.
-  - **Opção B**: tabela separada `knowledge_chunk_embeddings(chunk_id, model, dimensions, embedding)` — flexível, +1 join.
+  - **Opção A**: colunas paralelas (`embedding_512`, `embedding_1536`, `embedding_3072`), simples mas rígido.
+  - **Opção B**: tabela separada `knowledge_chunk_embeddings(chunk_id, model, dimensions, embedding)`, flexível, +1 join.
 - [ ] `match_knowledge` recebe param `model` e filtra apenas chunks daquele modelo.
 - [ ] Playground: dropdown "modelo de embedding".
 - [ ] Comparar recall/precision em queries idênticas.
@@ -212,7 +212,7 @@
 **Gatilho**: usuários reclamando de resultados enviesados em tópicos específicos (eleição, batismo, escatologia, dons).
 
 **TODOs**:
-- [ ] `knowledge_chunks.stance` (nullable) — só preencher em chunks sobre tópicos genuinamente controversos.
+- [ ] `knowledge_chunks.stance` (nullable): só preencher em chunks sobre tópicos genuinamente controversos.
 - [ ] Vocabulário controlado: `reformed | arminian | dispensationalist | covenantal | continuationist | cessationist | ...`.
 - [ ] `user.tradition_preferences` (opt-in, JSON de weights).
 - [ ] Post-processing no rank: balancear stance vs. relevância.
@@ -222,7 +222,7 @@
 
 ## 13. Observabilidade de retrieval (`knowledge_search_runs`)
 
-**O que é**: log persistente de cada busca — query, embedding, filtros, chunks retornados, scores.
+**O que é**: log persistente de cada busca, query, embedding, filtros, chunks retornados, scores.
 
 **Por que adiado**: enquanto o volume de retrieval é baixo, `llm_usage_events` + logs devLog cobrem. Fazer isso desde já é overhead sem retorno.
 
@@ -231,7 +231,7 @@
 **TODOs**:
 - [ ] Migration `knowledge_search_runs(id, at, query, query_embedding, filters, top_chunk_ids, top_scores, latency_ms, called_from)`.
 - [ ] Wrapper em `searchKnowledge()` que loga async.
-- [ ] Retenção limitada (30-90 dias) — não guardar embeddings indefinidamente.
+- [ ] Retenção limitada (30-90 dias), não guardar embeddings indefinidamente.
 - [ ] Dashboard admin: top queries, taxa de "chunks retornados vs. usados".
 
 ---
@@ -261,7 +261,7 @@
 **Gatilho**: já ter ≥1000 chunks de qualidade em ≥3 tradições distintas + demanda comercial evidente.
 
 **TODOs**:
-- [ ] Modelagem: coleção vs. tag — decidir.
+- [ ] Modelagem: coleção vs. tag, decidir.
 - [ ] Billing: coleção como add-on de assinatura.
 - [ ] UI: seletor "quais bibliotecas o Scriba pode consultar pra mim".
 
@@ -269,7 +269,7 @@
 
 ## 16. Contaminação do Resumo (guardrail)
 
-**O que é**: garantir que `/api/final-summary` NUNCA receba `FONTES DE APOIO` — o resumo tem que ficar 100% fiel à transcrição, não pode ser enriquecido.
+**O que é**: garantir que `/api/final-summary` NUNCA receba `FONTES DE APOIO`, o resumo tem que ficar 100% fiel à transcrição, não pode ser enriquecido.
 
 **Por que adiado**: não é adiado, é uma REGRA a preservar. Registrado aqui pra não esquecer de codificar quando o RAG começar a virar componente reutilizável.
 
@@ -309,7 +309,7 @@
 
 **TODOs**:
 - [ ] Medir latência p50/p95 no shadow mode.
-- [ ] Considerar streaming (SSE) — mas isso conflita com "single-shot JSON" atual do Aprofundar. Reprojeto grande.
+- [ ] Considerar streaming (SSE): mas isso conflita com "single-shot JSON" atual do Aprofundar. Reprojeto grande.
 - [ ] Considerar UX: skeleton com "buscando fontes teológicas..." em vez de spinner mudo.
 - [ ] Paralelizar `analyzeSermon` + primeira query de embedding (só primeiro passage já dispara embed enquanto analyze roda).
 
@@ -327,7 +327,7 @@
 - [ ] `evals/rag/*.jsonl` com queries + expected_source_ids ou expected_bible_refs.
 - [ ] Script `npm run eval:rag` que roda e printa scorecard (precision@k, MRR).
 - [ ] Documentar processo: "antes de mergear mudança em `lib/knowledge/`, rode eval e cole resultado no PR".
-- [ ] Eventual: eval de generation (dado sermão + fontes, avalia qualidade da resposta) — mais caro, provavelmente LLM-as-judge.
+- [ ] Eventual: eval de generation (dado sermão + fontes, avalia qualidade da resposta), mais caro, provavelmente LLM-as-judge.
 
 ---
 
@@ -350,7 +350,7 @@ Muitas coisas do §92 do doc do GPT que caem em polish depois de PR 2:
 
 ## 21. Perícope segmentation vs. janela fixa
 
-**O que é**: chunking bíblico melhor que "5-10 versos consecutivos" — respeitar unidades retóricas reais (perícopes).
+**O que é**: chunking bíblico melhor que "5-10 versos consecutivos", respeitar unidades retóricas reais (perícopes).
 
 **Por que adiado**: janela fixa funciona bem o suficiente pra POC.
 
@@ -381,10 +381,10 @@ Muitas coisas do §92 do doc do GPT que caem em polish depois de PR 2:
 
 ## Descartado (nunca implementar)
 
-*(Vazio por enquanto — mover coisas pra cá quando decidirmos NÃO fazer.)*
+*(Vazio por enquanto, mover coisas pra cá quando decidirmos NÃO fazer.)*
 
 ---
 
 ## Feito
 
-*(Vazio por enquanto — mover coisas pra cá quando concluídas, com data + PR.)*
+*(Vazio por enquanto, mover coisas pra cá quando concluídas, com data + PR.)*

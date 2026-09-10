@@ -23,7 +23,7 @@ export const runtime = "nodejs";
 export const dynamic = "force-dynamic";
 
 /**
- * Webhook do Stripe — o ÚNICO lugar do sistema que credita moedas.
+ * Webhook do Stripe, o ÚNICO lugar do sistema que credita moedas.
  *
  * Rota pública por necessidade (o Stripe não tem cookie de sessão). Ela está
  * na allowlist do proxy.ts; sem isso o Next redirecionaria para /sign-in e
@@ -34,20 +34,20 @@ export const dynamic = "force-dynamic";
  *    poderia dar POST num JSON de "pagamento aprovado". Nada é lido do corpo
  *    antes da verificação passar.
  * 2. IDEMPOTÊNCIA DE EVENTO. `claimStripeEvent` insere o id do evento numa
- *    tabela com PK — a reentrega (que o Stripe faz de propósito, e um atacante
+ *    tabela com PK, a reentrega (que o Stripe faz de propósito, e um atacante
  *    poderia tentar replicar reenviando um payload assinado legítimo) sai como
  *    duplicata e não credita.
  * 3. IDEMPOTÊNCIA DE CRÉDITO. Cada lançamento carrega um `external_ref` UNIQUE
  *    derivado da linha de fatura / sessão de checkout. Mesmo que dois eventos
  *    DIFERENTES apontem para o mesmo dinheiro, o crédito acontece uma vez.
  * 4. VALOR DERIVADO, NUNCA RECEBIDO. Quantas moedas creditar sai de
- *    `entitlementForPrice(priceId)` — o catálogo server-only. O `metadata` do
+ *    `entitlementForPrice(priceId)`, o catálogo server-only. O `metadata` do
  *    evento é usado só para diagnóstico. Um Price desconhecido credita ZERO.
  * 5. DONO DERIVADO, NUNCA RECEBIDO. A quem creditar sai de
  *    `findUserIdByCustomerId(customer)`, isto é, do vínculo que NÓS gravamos
  *    quando o usuário autenticado criou o customer.
  * 6. SÓ DINHEIRO DE VERDADE CREDITA. Assinatura credita em `invoice.paid`
- *    (fatura efetivamente liquidada), não em `checkout.session.completed` —
+ *    (fatura efetivamente liquidada), não em `checkout.session.completed`,
  *    que dispara também quando o pagamento fica pendente. Avulso exige
  *    `payment_status === "paid"`.
  *
@@ -83,7 +83,7 @@ async function handleCheckoutCompleted(
   stripe: Stripe,
   session: Stripe.Checkout.Session
 ): Promise<void> {
-  // Assinaturas são creditadas por invoice.paid — aqui só o avulso.
+  // Assinaturas são creditadas por invoice.paid, aqui só o avulso.
   if (session.mode !== "payment") return;
   if (session.payment_status !== "paid") {
     log.info("checkout not paid yet", {
@@ -123,7 +123,7 @@ async function handleSubscriptionChanged(
 
   // O Stripe NÃO garante ordem de entrega: um `subscription.updated` atrasado
   // (retry de rede, reentrega) pode carregar estado mais velho que o já
-  // aplicado — um "active" antigo chegando depois do "canceled" reativaria o
+  // aplicado, um "active" antigo chegando depois do "canceled" reativaria o
   // plano na nossa tabela. Por isso o payload do evento serve só de GATILHO;
   // o estado gravado vem de uma busca fresca na API, que devolve o presente.
   // Se a busca falhar, o payload entra como fallback: estado possivelmente
@@ -132,7 +132,7 @@ async function handleSubscriptionChanged(
   try {
     subscription = await stripe.subscriptions.retrieve(eventSubscription.id);
   } catch (err) {
-    log.warn("subscription refetch failed — using event payload", {
+    log.warn("subscription refetch failed, using event payload", {
       subscription: eventSubscription.id,
       error: (err as Error).message,
     });
@@ -152,7 +152,7 @@ async function handleSubscriptionChanged(
  * O crédito original é reencontrado pelo PREFIXO do external_ref no ledger:
  * uma cobrança ligada a fatura vira 'invoice:<id>:'; uma compra avulsa vira
  * 'checkout:<id>:'. Para a segunda, a sessão de checkout é buscada pelo
- * payment_intent — a mesma chave que o Stripe usa para ligar a cobrança.
+ * payment_intent, a mesma chave que o Stripe usa para ligar a cobrança.
  */
 async function handleMoneyBack(
   stripe: Stripe,
@@ -198,7 +198,7 @@ async function handleMoneyBack(
   }
 
   // A comissão do parceiro acompanha o dinheiro: se o pagamento voltou atrás,
-  // ela também volta. Sem isto, um chargeback custaria duas vezes — as moedas
+  // ela também volta. Sem isto, um chargeback custaria duas vezes, as moedas
   // já consumidas E a comissão paga sobre uma venda que não existiu.
   //
   // Roda ANTES do clawback e fora do laço: é uma comissão por pessoa,
@@ -217,7 +217,7 @@ async function handleMoneyBack(
     const balance = await clawbackCoins({ userId, refPrefix: prefix, reason });
     if (balance === null) throw new Error("clawback_coins failed");
     // Nível de log alto de propósito: se o saldo resultante for 0, é sinal de
-    // que os créditos já tinham sido consumidos — vale olhar a conta.
+    // que os créditos já tinham sido consumidos, vale olhar a conta.
     log.warn("coins clawed back", {
       userId,
       reason,
@@ -263,7 +263,7 @@ export async function POST(request: Request) {
     return NextResponse.json({ error: "payload_too_large" }, { status: 413 });
   }
 
-  // Corpo CRU — qualquer reserialização quebra a assinatura HMAC.
+  // Corpo CRU, qualquer reserialização quebra a assinatura HMAC.
   const raw = await request.text();
 
   let event: Stripe.Event;
@@ -327,7 +327,7 @@ export async function POST(request: Request) {
       }
     }
   } catch (err) {
-    // Solta a trava para que a reentrega do Stripe tenha efeito — caso
+    // Solta a trava para que a reentrega do Stripe tenha efeito, caso
     // contrário um erro transitório perderia o crédito para sempre.
     await releaseStripeEvent(event.id);
     log.error("handler failed", {

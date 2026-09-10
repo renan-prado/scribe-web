@@ -13,7 +13,7 @@ import "server-only";
  *
  * O separador ali é a **letra I maiúscula**, não um pipe. Nenhuma regra
  * textual distingue esse `I` de um `I` legítimo dentro de um título sem errar
- * em outro vídeo — e essa é só a variação mais chamativa. Na prática os canais
+ * em outro vídeo, e essa é só a variação mais chamativa. Na prática os canais
  * usam `|`, `I`, `l`, `-`, `–`, `//`, `•`, colchetes e parênteses, em qualquer
  * ordem, com o pregador ora antes ora depois do tema.
  *
@@ -41,10 +41,10 @@ Retorne SOMENTE um objeto JSON válido, sem markdown e sem comentários:
   "speakerLocation": "string ou null"
 }
 
-Use null — nunca string vazia, nunca "desconhecido", nunca "N/A" — sempre que a informação não estiver presente. Um null honesto é melhor que um palpite.
+Use null, nunca string vazia, nunca "desconhecido", nunca "N/A", sempre que a informação não estiver presente. Um null honesto é melhor que um palpite.
 
 ═══════════════════════════════════════════════════════════════════
-title — o nome da PREGAÇÃO, só ele
+title, o nome da PREGAÇÃO, só ele
 ═══════════════════════════════════════════════════════════════════
 
 Tire tudo que não é o tema da mensagem:
@@ -56,12 +56,12 @@ Tire tudo que não é o tema da mensagem:
 - numeração de série e episódio ("#12", "Parte 3", "Ep. 4", "| 05")
 - hashtags, emojis e texto em CAIXA ALTA que seja só chamariz
 
-O que sobra é o título. Preserve as palavras EXATAS do original — corrija apenas a caixa quando o original estiver todo em maiúsculas ("POR SEIS VEZES FOI MELHOR SER PAGÃO" vira "Por seis vezes foi melhor ser pagão"). Não reescreva, não encurte, não melhore.
+O que sobra é o título. Preserve as palavras EXATAS do original, corrija apenas a caixa quando o original estiver todo em maiúsculas ("POR SEIS VEZES FOI MELHOR SER PAGÃO" vira "Por seis vezes foi melhor ser pagão"). Não reescreva, não encurte, não melhore.
 
-**Se não sobrar um tema de verdade, devolva null.** Um vídeo chamado "Culto de Domingo - 09.03.2025" não tem título de pregação: ele tem data e rótulo. Devolver null é o certo — outra etapa cria um título a partir do conteúdo, e ela faz isso melhor do que qualquer coisa que você extraia daí.
+**Se não sobrar um tema de verdade, devolva null.** Um vídeo chamado "Culto de Domingo - 09.03.2025" não tem título de pregação: ele tem data e rótulo. Devolver null é o certo, outra etapa cria um título a partir do conteúdo, e ela faz isso melhor do que qualquer coisa que você extraia daí.
 
 ═══════════════════════════════════════════════════════════════════
-speakerName — quem pregou
+speakerName, quem pregou
 ═══════════════════════════════════════════════════════════════════
 
 O nome da pessoa **COM o título eclesiástico**, exatamente como ele aparece na fonte: "Pr. Yago Martins" continua "Pr. Yago Martins"; "Bispo Macedo" continua "Bispo Macedo"; "Rev. Augustus Nicodemus" continua "Rev. Augustus Nicodemus".
@@ -81,10 +81,10 @@ O nome pode estar no título OU ser o próprio nome do canal, quando o canal é 
 
 Sem nome de pessoa em lugar nenhum, devolva null. Nunca use o nome da igreja aqui.
 
-(Isto vale só para "speakerName". No "title", o pregador e o título dele saem fora junto com o resto — ver acima.)
+(Isto vale só para "speakerName". No "title", o pregador e o título dele saem fora junto com o resto, ver acima.)
 
 ═══════════════════════════════════════════════════════════════════
-speakerLocation — a igreja ou ministério
+speakerLocation, a igreja ou ministério
 ═══════════════════════════════════════════════════════════════════
 
 Onde a mensagem foi pregada, ou o ministério que a publicou. A fonte pode ser o TÍTULO ou o CANAL, e **a forma da resposta depende de qual foi**:
@@ -93,9 +93,9 @@ Onde a mensagem foi pregada, ou o ministério que a publicou. A fonte pode ser o
 
 **Veio do TÍTULO → devolva limpo, sem prefixo.** Se o título diz "IPB Goiânia", a igreja está declarada e o nome vai como está. Título vence canal quando os dois aparecem.
 
-Nomes de canal vêm grudados e em minúsculas — separe as palavras e use maiúsculas de nome próprio antes de prefixar. **Só separe o que você reconhece com segurança**: diante de um punhado de letras que não formam palavras conhecidas, use o nome do canal como veio (ainda com o "Canal " na frente).
+Nomes de canal vêm grudados e em minúsculas, separe as palavras e use maiúsculas de nome próprio antes de prefixar. **Só separe o que você reconhece com segurança**: diante de um punhado de letras que não formam palavras conhecidas, use o nome do canal como veio (ainda com o "Canal " na frente).
 
-Se o canal é pessoal (o nome de uma pessoa) e o título não menciona igreja nenhuma, devolva null — "Canal Yago Martins" não é lugar nenhum.
+Se o canal é pessoal (o nome de uma pessoa) e o título não menciona igreja nenhuma, devolva null, "Canal Yago Martins" não é lugar nenhum.
 
 ═══════════════════════════════════════════════════════════════════
 EXEMPLOS
@@ -109,7 +109,7 @@ Título: "A GRAÇA QUE TRANSFORMA | Culto de Domingo | 12/01/2025"
 Canal: "Igreja Batista Central"
 → {"title": "A graça que transforma", "speakerName": null, "speakerLocation": "Canal Igreja Batista Central"}
 
-Título: "Como ler Romanos 8 — Estudo #4"
+Título: "Como ler Romanos 8, Estudo #4"
 Canal: "Douglas Gonçalves"
 → {"title": "Como ler Romanos 8", "speakerName": "Douglas Gonçalves", "speakerLocation": null}
 
@@ -121,4 +121,4 @@ Título: "Quem é o Espírito Santo? - Rev. Augustus Nicodemus - IPB Goiânia"
 Canal: "Fiel TV"
 → {"title": "Quem é o Espírito Santo?", "speakerName": "Rev. Augustus Nicodemus", "speakerLocation": "IPB Goiânia"}
 
-(Repare no último: a igreja está DECLARADA no título, então vai sem "Canal " — e o canal "Fiel TV", que só publicou, é descartado.)`;
+(Repare no último: a igreja está DECLARADA no título, então vai sem "Canal ", e o canal "Fiel TV", que só publicou, é descartado.)`;

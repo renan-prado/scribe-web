@@ -5,7 +5,7 @@ import { createAdminClient } from "@/lib/supabase/admin";
 /**
  * Leitura dos estudos gerados, para a tela de avaliação do `/admin`.
  *
- * A qualidade do estudo é a qualidade das perguntas — e é por isso que esta
+ * A qualidade do estudo é a qualidade das perguntas, e é por isso que esta
  * tela existe. Vendo as 25-30 perguntas levantadas ao lado das 10-14 que o
  * respondedor escolheu, dá para separar duas falhas que se parecem no texto
  * final e têm consertos opostos: pergunta rasa (mexer no questionador) e
@@ -14,7 +14,7 @@ import { createAdminClient } from "@/lib/supabase/admin";
  * Persistir as perguntas (migração 0033) sem lugar nenhum de lê-las teria
  * sido guardar evidência num cofre sem chave.
  *
- * Service-role porque a tela é transversal a usuários — só é alcançada depois
+ * Service-role porque a tela é transversal a usuários, só é alcançada depois
  * de `isCurrentUserAdmin()`.
  */
 
@@ -30,7 +30,7 @@ export type AdminStudyRow = {
   record: StudyRecord | null;
   totalBlocks: number;
   counts: StudyBlockCounts;
-  /** Fontes que sobreviveram à selagem — "autor, obra". */
+  /** Fontes que sobreviveram à selagem, "autor, obra". */
   sources: string[];
   /** Referências bíblicas exibidas, todas conferidas contra a NVI. */
   verses: string[];

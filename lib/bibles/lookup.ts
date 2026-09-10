@@ -40,11 +40,11 @@ export function lookupVerse(
 
 /**
  * A mesma busca, mas versículo a versículo. É o que a UI precisa: ela numera
- * cada linha, e um texto concatenado obrigaria o cliente a resegmentar — que
+ * cada linha, e um texto concatenado obrigaria o cliente a resegmentar, que
  * não tem como dar certo, porque o ponto final não delimita versículo.
  *
  * Devolve SÓ os que existem. Pedir 1:11-17 num capítulo de 15 versículos
- * devolve cinco linhas, e não sete com duas vazias — que era exatamente o que
+ * devolve cinco linhas, e não sete com duas vazias, que era exatamente o que
  * a tela mostrava quando cada versículo era uma requisição própria.
  */
 export function lookupPassage(

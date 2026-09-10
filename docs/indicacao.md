@@ -8,7 +8,7 @@ em [`src/features/referrals/AGENTS.md`](../src/features/referrals/AGENTS.md).
 
 O irmão fechado deste programa é o de parceiros
 ([`parceiros.md`](./parceiros.md)), e as diferenças entre os dois não são
-acidentais — estão explicadas na seção "Por que os dois programas existem".
+acidentais, estão explicadas na seção "Por que os dois programas existem".
 
 ---
 
@@ -16,7 +16,7 @@ acidentais — estão explicadas na seção "Por que os dois programas existem".
 
 Todo usuário do Scriba tem um link próprio (`scriba.cc/i/<codigo>`) e um código
 de sete caracteres. Quem cria conta por esse link ou digita esse código vira
-uma indicação — e **quem indicou ganha moedas**.
+uma indicação, e **quem indicou ganha moedas**.
 
 Não há inscrição: o link existe para toda conta, e aparece em `/indicar`.
 
@@ -32,7 +32,7 @@ Não há inscrição: o link existe para toda conta, e aparece em `/indicar`.
 50 moedas são ~7 minutos de Modo Completo; 200 são ~28 minutos, quase um culto
 inteiro.
 
-**Quem é convidado não ganha moedas extras** — recebe as 50 de boas-vindas de
+**Quem é convidado não ganha moedas extras**, recebe as 50 de boas-vindas de
 qualquer conta nova. É a diferença deliberada em relação ao link de parceiro,
 que dá 150 (ver "Por que os dois programas existem").
 
@@ -44,7 +44,7 @@ que dá 150 (ver "Por que os dois programas existem").
   indicado cancelar e voltar a assinar meses depois, não há segunda
   recompensa.
 - **Só contam contas NOVAS.** Quem já usa o Scriba não vira indicação de
-  ninguém ao abrir um link — a conta precisa ser criada logo em seguida.
+  ninguém ao abrir um link, a conta precisa ser criada logo em seguida.
 - **O vínculo é permanente e exclusivo.** Uma conta pertence a quem a indicou
   para sempre, e nunca a duas pessoas: quem chegou por um parceiro não pode
   também ser indicação de um amigo, e vice-versa. Vale o último link clicado
@@ -58,16 +58,16 @@ que dá 150 (ver "Por que os dois programas existem").
 
 ## Onde o usuário encontra isso
 
-- **`/indicar`** — o link, o botão de compartilhar (folha nativa do celular), o
+- **`/indicar`**: o link, o botão de compartilhar (folha nativa do celular), o
   código para ditar, e os contadores: quantos entraram, quantos assinaram,
   quantas moedas rendeu.
-- **`/profile`** — o atalho para a página, logo abaixo do cartão de plano.
-- **`/feed`** — um card que aparece de tempos em tempos. Dispensado, ele tira
+- **`/profile`**: o atalho para a página, logo abaixo do cartão de plano.
+- **`/feed`**: um card que aparece de tempos em tempos. Dispensado, ele tira
   uma soneca de duas semanas; aceito, de um mês.
 
 ## O selo "indicado por"
 
-Quem abre um link de indicação — de amigo ou de parceiro — vê, no lugar da
+Quem abre um link de indicação, de amigo ou de parceiro, vê, no lugar da
 frase de efeito do topo da landing page, **a foto e o nome de quem indicou**. O
 mesmo aparece na tela de entrada.
 
@@ -113,7 +113,7 @@ depender de isso não voltar a acontecer.
 | 3% | R$ 4,48 | R$ 0,54 | +R$ 11,01 |
 | 1% | R$ 13,45 | R$ 0,54 | +R$ 2,04 |
 
-Positivo até a 1% de conversão — o programa de parceiros não sobrevive a 3%. A
+Positivo até a 1% de conversão, o programa de parceiros não sobrevive a 3%. A
 diferença toda está em não pagar bônus ao convidado.
 
 ### O custo de um cadastro que nunca converte
@@ -123,14 +123,14 @@ então a exposição máxima de uma conta é 10 cadastros × 50 moedas = R$ 1,35
 mês. Não existe cauda.
 
 Para comparação, um cadastro por anúncio no Meta custa de R$ 3 a R$ 15. Mesmo
-com conversão zero, este é o canal mais barato disponível — e é essa a
+com conversão zero, este é o canal mais barato disponível, e é essa a
 justificativa do programa, não a receita que ele traz.
 
 ### Por que o teto mensal não é antifraude
 
 O login é só Google, criar conta em massa custa caro, e o prêmio é R$ 0,135.
 Farmar não paga o trabalho. O teto existe como **sinal de produto**: quem
-estoura 10 cadastros num mês não está indicando amigos, está divulgando — e o
+estoura 10 cadastros num mês não está indicando amigos, está divulgando, e o
 lugar dessa pessoa é o programa de parceiros, onde há comissão em dinheiro.
 
 ---
@@ -148,7 +148,7 @@ lugar dessa pessoa é o programa de parceiros, onde há comissão em dinheiro.
 
 O parceiro tem audiência, emite nota e recebe PIX; o amigo mandou um link no
 grupo da igreja. O link do parceiro precisa continuar sendo a **melhor oferta
-da casa** — é o que ele anuncia publicamente e o que sustenta a negociação. Por
+da casa**, é o que ele anuncia publicamente e o que sustenta a negociação. Por
 isso o programa aberto não dá bônus ao convidado: se desse, a vantagem
 exclusiva do parceiro sumiria sem que ninguém tivesse decidido isso.
 
@@ -158,7 +158,7 @@ exclusiva do parceiro sumiria sem que ninguém tivesse decidido isso.
 
 Junto deste programa, o parceiro passou a ganhar **50 moedas por cadastro
 atribuído** (`partners.signup_reward_coins`, editável por parceiro no admin,
-0 desliga). Antes ele só recebia quando o indicado assinava — e quem traz
+0 desliga). Antes ele só recebia quando o indicado assinava, e quem traz
 tráfego que ainda não converteu ficava meses sem nada.
 
 Efeito na conta do programa dele, com 200 moedas emitidas por cadastro (150 ao
@@ -172,10 +172,10 @@ indicado + 50 ao parceiro):
 
 O simulador do cadastro do admin já mostra esse efeito antes de salvar: as
 moedas ao parceiro entram na mesma amortização do bônus, sem a fração de uso
-(o parceiro é usuário ativo por desenho do programa — é essa a razão da
+(o parceiro é usuário ativo por desenho do programa, é essa a razão da
 mesada).
 
-**Elas acumulam antes de virar saldo.** `partners.user_id` nasce nulo — o
+**Elas acumulam antes de virar saldo.** `partners.user_id` nasce nulo, o
 parceiro é cadastrado antes de existir como conta e pode divulgar o link antes
 do primeiro login. A liberação acontece na primeira visita dele ao app, pelo
 mesmo caminho preguiçoso da mesada. Não há perda: moeda só serve dentro do app.
@@ -188,7 +188,7 @@ mesmo caminho preguiçoso da mesada. Não há perda: moeda só serve dentro do a
   `/r/<slug>`. O parceiro precisa do topo do funil porque otimizar divulgação é
   o trabalho dele; quem manda o link no grupo da igreja não vai. Se um dia o
   painel de `/indicar` precisar de "N pessoas abriram seu link", a tabela é um
-  espelho de `partner_clicks` — e a escrita anônima que ela exige é o custo a
+  espelho de `partner_clicks`, e a escrita anônima que ela exige é o custo a
   pesar antes.
 - **Revisão das premissas.** O custo do milheiro é MEDIDO, não configurado:
   muda com câmbio e com preço de modelo. As tabelas acima valem uma reconferida

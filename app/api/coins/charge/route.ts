@@ -21,7 +21,7 @@ export const dynamic = "force-dynamic";
 
 /**
  * Atomic coin debit. Body: { reason, sessionId? }. The cost is derived from
- * the reason on the server — clients never send amounts. Returns 402 with
+ * the reason on the server, clients never send amounts. Returns 402 with
  * `{ error: "insufficient_balance" }` when the caller can't afford the
  * charge; recording clients treat that as a signal to stop capturing.
  */

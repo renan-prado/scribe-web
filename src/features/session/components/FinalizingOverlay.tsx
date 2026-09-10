@@ -1,6 +1,6 @@
 type Props = {
   /** Sobrescreve a copy padrão (resumo). O modo transcrição só está salvando
-   * texto — prometer "gerando o resumo" ali seria mentira. */
+   * texto, prometer "gerando o resumo" ali seria mentira. */
   title?: string;
   subtitle?: string;
 };

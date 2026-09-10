@@ -5,7 +5,7 @@ const schema = z.object({
   NEXT_PUBLIC_SUPABASE_ANON_KEY: z.string().min(1),
   // Opcional como as do Stripe: sem ela o app sobe normalmente e o
   // `Analytics` não renderiza nada. Ela vive SÓ no escopo Production da
-  // Vercel — ver src/shared/components/Analytics.tsx.
+  // Vercel, ver src/shared/components/Analytics.tsx.
   NEXT_PUBLIC_GA_ID: z
     .string()
     .startsWith("G-", "O id de medição do GA4 começa com 'G-'")

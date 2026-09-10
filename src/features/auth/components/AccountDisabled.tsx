@@ -3,7 +3,7 @@ import { AuthShell } from "@/features/auth/components/AuthShell";
 /**
  * Tela de conta desativada.
  *
- * Aparece no lugar do app inteiro quando `profiles.is_active` é `false` — o
+ * Aparece no lugar do app inteiro quando `profiles.is_active` é `false`, o
  * lado visível do 403 que `requireAuth()` devolve nas rotas de API. As duas
  * pontas existem porque uma sozinha não basta: barrar só as páginas deixaria
  * as rotas abertas a um cliente scriptado, e barrar só as rotas deixaria a
@@ -11,7 +11,7 @@ import { AuthShell } from "@/features/auth/components/AuthShell";
  *
  * Diz o motivo em vez de devolver 404. O 404 do `/admin` existe para não
  * confirmar a existência de uma área a quem não deveria vê-la; aqui é o
- * oposto — a pessoa precisa saber que a conta foi suspensa e a quem falar,
+ * oposto, a pessoa precisa saber que a conta foi suspensa e a quem falar,
  * senão o suporte recebe "o site quebrou" em vez de "por que fui suspenso".
  *
  * O botão de sair é a única ação: sem ele, sair da conta exigiria limpar

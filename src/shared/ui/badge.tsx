@@ -12,7 +12,7 @@ const badgeVariants = cva(
         // Pastilha escura da paleta, não o preto neutro do shadcn (`bg-primary`):
         // é a mesma superfície das pastilhas de referência bíblica do resumo e
         // do feed, e `text-background` acompanha porque `--scriba-ink-strong`
-        // inverte por tema — ver `src/shared/AGENTS.md`.
+        // inverte por tema, ver `src/shared/AGENTS.md`.
         default: "bg-scriba-ink-strong text-background [a]:hover:opacity-85",
         secondary:
           "bg-scriba-btn-muted text-scriba-ink [a]:hover:bg-scriba-btn-muted-hover [a]:hover:text-scriba-ink-strong",

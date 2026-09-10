@@ -2,7 +2,7 @@
 -- produto, colhida no instante em que acabaram de usá-la.
 --
 -- POR QUE ISTO NÃO É `hallucination_reports` (0024). Aquela tabela guarda o
--- relato de um DEFEITO — o usuário viu algo errado e escreveu para consertar.
+-- relato de um DEFEITO, o usuário viu algo errado e escreveu para consertar.
 -- Esta guarda a IMPRESSÃO de quem não tem defeito nenhum a relatar, que é
 -- justamente quem nunca escreve espontaneamente. Uma pergunta feita na hora
 -- certa é o único jeito de ouvir essa maioria silenciosa.
@@ -11,7 +11,7 @@
 -- gravação, e na 1ª, 3ª e 8ª geração de estudo:
 --
 --   * a 1ª é a primeira impressão, que nunca mais existe;
---   * a 3ª é depois de o encanto passar e o hábito não ter se formado — a
+--   * a 3ª é depois de o encanto passar e o hábito não ter se formado, a
 --     janela em que a pessoa desiste;
 --   * a 8ª é a opinião de quem já é usuário e sabe do que está falando.
 --
@@ -19,7 +19,7 @@
 -- a partir daí não há mais como perguntar nada.
 --
 -- =====================================================================
--- 1) `profiles.feedback_started_at` — de onde a contagem começa
+-- 1) `profiles.feedback_started_at`, de onde a contagem começa
 -- =====================================================================
 -- "1ª gravação" precisa de uma origem, e a origem NÃO pode ser a primeira
 -- gravação da vida da pessoa: no dia em que isto sobe, quem já tem quarenta
@@ -29,8 +29,8 @@
 --
 -- Uma coluna `not null default now()` faz as duas coisas de uma vez, e é por
 -- isso que ela é uma coluna e não uma constante no código: o `ALTER` avalia o
--- `now()` UMA vez e carimba nele todas as linhas existentes — o instante do
--- deploy —, enquanto cada perfil novo recebe o `now()` do próprio insert.
+-- `now()` UMA vez e carimba nele todas as linhas existentes, o instante do
+-- deploy, enquanto cada perfil novo recebe o `now()` do próprio insert.
 -- Nenhum backfill, nenhuma data mágica em TypeScript que alguém teria de
 -- lembrar de apagar um ano depois.
 --
@@ -42,21 +42,21 @@ alter table public.profiles
   add column if not exists feedback_started_at timestamptz not null default now();
 
 -- =====================================================================
--- 2) `feedback_prompts` — o livro-razão das PERGUNTAS
+-- 2) `feedback_prompts`, o livro-razão das PERGUNTAS
 -- =====================================================================
 -- Uma linha por vez que o diálogo foi ABERTO, respondido ou não. Ela existe
 -- por três razões, e nenhuma delas é decoração:
 --
 --   1. `unique (user_id, kind, session_id)` é a única coisa que impede a
---      mesma pergunta de voltar. Sem ela, reabrir a página do resumo — que é
---      exatamente o que alguém faz ao reler a própria pregação — traria o
+--      mesma pergunta de voltar. Sem ela, reabrir a página do resumo, que é
+--      exatamente o que alguém faz ao reler a própria pregação, traria o
 --      diálogo de novo, e uma pergunta que insiste depois de fechada é a
 --      forma mais rápida de ensinar o usuário a ignorá-la para sempre.
 --   2. `ordinal` congela QUAL marco aquela pergunta foi. O ordinal é derivado
 --      (a enésima sessão desde `feedback_started_at`), e derivar de novo mais
 --      tarde dá outro número assim que uma sessão do meio é apagada.
 --   3. `answered_at` nulo é a taxa de resposta. Sem as perguntas ignoradas na
---      tabela, as notas que sobram são as de quem se dispôs a responder —
+--      tabela, as notas que sobram são as de quem se dispôs a responder,
 --      e essa amostra é sistematicamente mais gentil do que a realidade.
 --
 -- `kind` é 'recording' | 'study', e `session_id` identifica os dois: um
@@ -78,14 +78,14 @@ create index if not exists feedback_prompts_user_idx
   on public.feedback_prompts (user_id, created_at desc);
 
 -- =====================================================================
--- 3) `feedback_responses` — a nota, uma linha por NOTA
+-- 3) `feedback_responses`, a nota, uma linha por NOTA
 -- =====================================================================
 -- O átomo é (tópico, nota), não (diálogo). O modo Ao Vivo pergunta DUAS
--- coisas na mesma janela — as sugestões durante a pregação e o resumo do fim
--- —, e elas são produtos diferentes com consertos diferentes: um pipeline ao
+-- coisas na mesma janela, as sugestões durante a pregação e o resumo do fim
+--, e elas são produtos diferentes com consertos diferentes: um pipeline ao
 -- vivo ruim e um resumo ruim não se corrigem no mesmo lugar. Guardá-las numa
--- linha só (duas colunas de nota, ou um jsonb) faria a pergunta do painel —
--- "qual é a nota de cada coisa?" — virar um `case` em vez de um `group by`.
+-- linha só (duas colunas de nota, ou um jsonb) faria a pergunta do painel,
+-- "qual é a nota de cada coisa?", virar um `case` em vez de um `group by`.
 --
 -- `submission_id` é o que reagrupa as linhas de um mesmo envio. O COMENTÁRIO
 -- é do envio, não do tópico (a pessoa escreve um texto só), e por isso ele se
@@ -135,7 +135,7 @@ create index if not exists feedback_responses_created_idx
 -- 4) RLS ligada, NENHUMA policy
 -- =====================================================================
 -- As duas tabelas são escritas com service-role, a partir de rotas que já
--- passaram por `requireAuth()` e que derivam o `user_id` da sessão — nunca do
+-- passaram por `requireAuth()` e que derivam o `user_id` da sessão, nunca do
 -- corpo. É a regra que a migração 0039 escreveu com sangue:
 --
 --   > Telemetria, contabilidade e qualquer número que a EMPRESA lê são
@@ -144,13 +144,13 @@ create index if not exists feedback_responses_created_idx
 --
 -- Aqui a linha é os DOIS: o comentário é conteúdo da pessoa, e a nota é o
 -- número que decide o que consertamos em seguida. Com uma policy de INSERT,
--- o anon key aceitaria mil linhas "excelente" — ou mil "ruim" — direto na
+-- o anon key aceitaria mil linhas "excelente", ou mil "ruim", direto na
 -- tabela que orienta o roadmap, sem passar por rota nenhuma. Não há leitura
 -- pelo cliente porque não há tela em que o usuário releia o próprio feedback:
 -- ele responde e a janela fecha.
 --
 -- O ordinal e o marco também não são do cliente. Se o navegador dissesse
--- "esta é a minha 1ª gravação", o diálogo apareceria quando ele quisesse — e
+-- "esta é a minha 1ª gravação", o diálogo apareceria quando ele quisesse, e
 -- a amostra deixaria de ser a que escolhemos medir.
 
 alter table public.feedback_prompts   enable row level security;

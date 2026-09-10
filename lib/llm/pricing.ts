@@ -8,13 +8,13 @@
  * Keep both canonical IDs and the aliases we see in serverEnv.OPENAI_*_MODEL
  * defaults.
  *
- * **Um modelo que falta aqui não custa zero — ele custa e o painel não vê.**
+ * **Um modelo que falta aqui não custa zero, ele custa e o painel não vê.**
  * `computeChatCost` devolve 0 para modelo desconhecido, e esse zero entra no
  * banco como se fosse medição. Foi o que aconteceu com o gpt-5.1, padrão das
  * três etapas do estudo e do próprio analista do /admin desde que existem:
  * toda margem calculada sobre essas rotas saiu inflada. Ao trocar o default de
  * um `OPENAI_*_MODEL` em lib/env/server.ts, confira que o modelo novo está
- * nesta tabela ANTES do deploy — o painel avisa (`unpricedModels`), mas só
+ * nesta tabela ANTES do deploy, o painel avisa (`unpricedModels`), mas só
  * depois de o dinheiro já ter sido gasto.
  */
 
@@ -24,7 +24,7 @@ export type ChatPricing = {
    * Preço do token de entrada que bateu no cache automático da OpenAI. NÃO é
    * uma fração fixa do de entrada: é 50% no 4o, 25% na família 4.1 e 10% na
    * família 5. Era uma constante única de 50% aqui, e ela superestimava o
-   * custo de toda rota com prompt grande e estável — que são justamente as do
+   * custo de toda rota com prompt grande e estável, que são justamente as do
    * feed ao vivo, onde a margem é decidida.
    */
   cachedInputPer1M: number;
@@ -50,7 +50,7 @@ const CHAT_PRICES: Record<string, ChatPricing> = {
   // /admin. Ver OPENAI_STUDY_*_MODEL e OPENAI_ADMIN_INSIGHTS_MODEL.
   "gpt-5.1": { inputPer1M: 1.25, cachedInputPer1M: 0.125, outputPer1M: 10 },
   // O redator do estudo. Meio-termo deliberado: 2,2x mais barato que o 5.1 na
-  // saída, que é onde está 85% do custo, e mais novo que o gpt-5-mini — que
+  // saída, que é onde está 85% do custo, e mais novo que o gpt-5-mini, que
   // ficou barato demais e comprimiu o artigo abaixo do contrato do prompt.
   "gpt-5.4-mini": { inputPer1M: 0.75, cachedInputPer1M: 0.075, outputPer1M: 4.5 },
 };
@@ -59,7 +59,7 @@ const AUDIO_PRICES: Record<string, AudioPricing> = {
   "whisper-1": { perMinute: 0.006 },
   "gpt-4o-transcribe": { perMinute: 0.006 },
   "gpt-4o-mini-transcribe": { perMinute: 0.003 },
-  // Env default is the alias "gpt-transcribe" — treat as the full model.
+  // Env default is the alias "gpt-transcribe", treat as the full model.
   "gpt-transcribe": { perMinute: 0.006 },
 };
 

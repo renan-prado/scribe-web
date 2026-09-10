@@ -1,9 +1,9 @@
-# Estudo V2 — diagnóstico e nova arquitetura de geração
+# Estudo V2: diagnóstico e nova arquitetura de geração
 
 > Resposta à task `tasks/001-modo-gerar-estudo`. Este documento é a análise que
 > precede a implementação. O que já está decidido sobre a camada de
 > conhecimento (RAG) está em `docs/scriba-rag-proposta-claude.md` e não é
-> reaberto aqui — os dois planos são ortogonais, e o ponto de encontro está
+> reaberto aqui, os dois planos são ortogonais, e o ponto de encontro está
 > marcado na §3.
 
 ## O que existia antes desta reforma
@@ -23,7 +23,7 @@ auditor.**
 
 ---
 
-# 1. Diagnóstico — por que o estudo entrega pouco
+# 1. Diagnóstico: por que o estudo entrega pouco
 
 Sete causas. Nenhuma se resolve reescrevendo o prompt, e é por isso que as
 rodadas anteriores de ajuste de prompt não moveram a agulha.
@@ -37,7 +37,7 @@ espaço dizendo o que **é** um bom estudo.
 
 Um modelo otimizando para não violar quarenta proibições escreve
 defensivamente: frases curtas, afirmações hedged, escolhas seguras. O resultado
-tem exatamente a textura que a task descreve — "texto teológico genérico". As
+tem exatamente a textura que a task descreve, "texto teológico genérico". As
 proibições foram acrescentadas uma a uma para matar sintomas (h1 genérico,
 palavra grega reciclada, autoexame vazado), e cada uma cobrou seu preço em
 ambição.
@@ -48,23 +48,23 @@ ambição.
 versículos novos, ≥2 distinções doutrinárias, ≥1 autoexame, ≥2 highlights.
 
 O prompt tenta desarmar isso com "se não consegue, não invente". Mas a
-instrução de cota e a instrução de abstenção competem, e cota vence — cota é
+instrução de cota e a instrução de abstenção competem, e cota vence, cota é
 concreta e verificável, abstenção é vaga. Pior: **o auditor reimpõe as mesmas
-cotas** (`Passo C — VERIFICAÇÃO DE COTAS`). O segundo passe, que existe para
+cotas** (`Passo C, VERIFICAÇÃO DE COTAS`). O segundo passe, que existe para
 reduzir invenção, adiciona pressão para inventar.
 
 É o mecanismo pelo qual sermões pobres em material recebem estudos ricos em
-material fabricado — o que a task chama de "preencher lacunas artificialmente".
+material fabricado, o que a task chama de "preencher lacunas artificialmente".
 
 ## 1.3 A whitelist de autores restringe o nome, não a afirmação
 
 Quarenta e oito nomes, sem obra, sem tema, sem século, sem posição. O modelo
 escolhe qualquer um por qualquer motivo, e a única verificação possível é
-`author ∈ whitelist` — justamente o campo que quase nunca está errado. O erro
+`author ∈ whitelist`, justamente o campo que quase nunca está errado. O erro
 mora no `text`: a formulação atribuída.
 
 Consequência prática: a whitelist garante que a citação inventada será
-atribuída a um autor real. É o pior dos mundos — empresta credibilidade a uma
+atribuída a um autor real. É o pior dos mundos, empresta credibilidade a uma
 afirmação não verificada. E é exatamente o sintoma "nomes jogados no texto"
 que a task descreve.
 
@@ -74,10 +74,10 @@ que a task descreve.
 `NVI.json`. É usado por `/api/verse` e por `lib/rereads/generate.ts`.
 **Não é usado pelo estudo.** Todo `bibleQuote.text` de um estudo é prosa
 gerada, e o prompt gasta uma seção inteira ("REGRA DE OURO") pedindo ao modelo
-que não parafraseie a Escritura — um problema já resolvido no repositório,
+que não parafraseie a Escritura, um problema já resolvido no repositório,
 resolvido de novo, e pior, por instrução.
 
-## 1.5 Não existe etapa de decisão — tudo acontece numa inferência só
+## 1.5 Não existe etapa de decisão: tudo acontece numa inferência só
 
 A parte mais importante do pedido é:
 
@@ -87,7 +87,7 @@ Hoje essa decisão acontece implicitamente, dentro do mesmo forward pass que
 escolhe o tema, seleciona a abordagem, recupera conhecimento, escreve 15-25
 blocos e roda um self-check de 9 itens. É uma decisão que ninguém consegue
 ler, logar, avaliar ou corrigir. Quando sai errada, o único instrumento
-disponível é acrescentar mais uma proibição ao prompt — o que nos trouxe até a
+disponível é acrescentar mais uma proibição ao prompt, o que nos trouxe até a
 §1.1.
 
 ## 1.6 O auditor não tem como auditar
@@ -96,7 +96,7 @@ Ele recebe `finalSummary` + `draft`. Sem transcrição, sem plano, sem texto
 bíblico. Logo:
 
 - **não pode** verificar fidelidade ao sermão (critério nº 2 da task);
-- **não pode** verificar se uma palavra grega pertence ao texto pregado — só
+- **não pode** verificar se uma palavra grega pertence ao texto pregado, só
   pode adivinhar pelo tema;
 - **não pode** verificar citação nenhuma.
 
@@ -120,7 +120,7 @@ mais longo porque, estruturalmente, **é** um resumo mais longo.
 
 Nada mede se um estudo ficou bom. `hallucination_reports` cobre `live` e
 `summary`, não `deepening`. Sem sinal, a única evidência disponível é a
-impressão do usuário — que é como esta task começou.
+impressão do usuário, que é como esta task começou.
 
 ---
 
@@ -131,7 +131,7 @@ formulário preenchido. Três compromissos:
 
 **a) O estudo declara o que escolheu aprofundar.** Abre nomeando o ponto do
 sermão de onde parte e a razão de valer profundidade ali. Não é meta-texto
-sobre o sermão — é o contrato: o leitor sabe na primeira linha que não vai
+sobre o sermão, é o contrato: o leitor sabe na primeira linha que não vai
 reler o resumo.
 
 **b) Todo apoio externo é rastreável.** Citação sem obra localizável não entra.
@@ -147,7 +147,7 @@ contexto histórico-cultural e conexões canônicas.
 Corolário desagradável e necessário: **nem todo sermão rende um estudo de 25
 blocos**, e o produto precisa parar de fingir que rende. Um estudo honesto de
 8 blocos densos é a entrega correta para um sermão raso, e é melhor que 25
-blocos de enchimento — que é o que o usuário recebe hoje.
+blocos de enchimento, que é o que o usuário recebe hoje.
 
 ---
 
@@ -161,7 +161,7 @@ estudo  responde  →  agora que entendi o tema, o que preciso aprender sobre el
 ```
 
 O estudo, então, não é uma versão mais elaborada do resumo. É a resposta às
-perguntas que o sermão deixou em aberto — e por isso a representação
+perguntas que o sermão deixou em aberto, e por isso a representação
 intermediária do pipeline é uma lista de **perguntas**.
 
 Cinco etapas, três chamadas de modelo, duas determinísticas:
@@ -200,7 +200,7 @@ artigo + as perguntas persistidas para avaliação
 ## O sermão sai do pipeline depois do passo 1
 
 **Só o questionador vê a transcrição e o resumo.** Dali em diante o material de
-trabalho é um ASSUNTO ("a alegria cristã") e um conjunto de perguntas — o
+trabalho é um ASSUNTO ("a alegria cristã") e um conjunto de perguntas, o
 respondedor e o redator não recebem o sermão de forma alguma.
 
 É a mudança que mais mexeu no resultado, e ela é de arquitetura, não de prompt.
@@ -212,8 +212,8 @@ artefato mais estruturado que ele recebia.
 
 O questionador também passou a separar duas coisas que antes vinham coladas:
 
-- o **assunto** — como qualquer cristão o nomearia, sem adjetivo de sermão;
-- a **moldura** — o recorte particular deste pregador, suas expressões e
+- o **assunto**, como qualquer cristão o nomearia, sem adjetivo de sermão;
+- a **moldura**, o recorte particular deste pregador, suas expressões e
   imagens.
 
 E cada pergunta passa pelo **teste do estranho**: um cristão que não ouviu este
@@ -248,7 +248,7 @@ Ele gera 25-30 e entrega todas. Duas razões:
   definições; as perguntas interessantes aparecem depois da décima. Perguntar
   é barato, e uma boa pergunta não feita está perdida para sempre.
 - **Quem melhor julga se uma pergunta vale é quem vai ter de respondê-la.** A
-  seleção mora no passo 2, que descarta a redundante, a rasa e — sobretudo — a
+  seleção mora no passo 2, que descarta a redundante, a rasa e, sobretudo, a
   que ele não conseguiria responder bem. Uma resposta vaga é pior que uma
   pergunta não respondida: ocupa espaço fingindo que ensina.
 
@@ -258,10 +258,10 @@ Selecionar num quarto modelo pagaria latência sem comprar qualidade.
 
 Responder pergunta a pergunta, isoladamente, faz dez respostas sobre graça
 reestabelecerem dez vezes que graça é favor imerecido. Com o conjunto à vista,
-cada resposta pressupõe as anteriores — e é isso que produz densidade em vez
+cada resposta pressupõe as anteriores, e é isso que produz densidade em vez
 de repetição costurada.
 
-## O guardião — dois cortes contra a repetição do resumo
+## O guardião: dois cortes contra a repetição do resumo
 
 > Medido depois: com o sermão fora dos passos 2 e 4, o filtro [1b] tem muito
 > menos trabalho, e o modelo dele precisou subir para conseguir discriminar.
@@ -272,7 +272,7 @@ resumo já disse. Os três modelos recebem o resumo e são instruídos a não
 repeti-lo; a instrução compete com a inclinação natural do modelo de voltar ao
 ponto mais saliente do contexto, e às vezes perde.
 
-O guardião não instrui — **corta**. Roda num modelo barato
+O guardião não instrui, **corta**. Roda num modelo barato
 (`OPENAI_STUDY_GUARD_MODEL`, `gpt-4o-mini` por padrão) a temperatura zero,
 porque as duas tarefas são classificação, não escrita. Custa uma fração de
 centavo e alguns segundos.
@@ -289,12 +289,12 @@ sairia dela.
 
 Salvaguarda: se sobrarem menos de seis perguntas, seguimos com TODAS. Corte
 excessivo significa questionador preguiçoso, e responder duas sobras produziria
-um estudo raquítico — repetição é ruim, mas vazio é pior.
+um estudo raquítico, repetição é ruim, mas vazio é pior.
 
 **Calibragem, medida.** A primeira versão do filtro perguntava "o resumo já
 responde isto?" e reprovava 25 de 25, depois 28 de 28: num estudo sobre o mesmo
 assunto, quase toda pergunta encosta no que o resumo tocou, e o filtro só
-acionava o fallback. O critério foi estreitado para o teste do estranho —
+acionava o fallback. O critério foi estreitado para o teste do estranho,
 tratar do mesmo assunto deixou de ser motivo de corte. E mesmo assim o
 `gpt-4o-mini` continuava reprovando 26 de 27; com o mesmo prompt, o `gpt-5-mini`
 reprova 6, em 9 segundos. Era teto de modelo, não de prompt.
@@ -305,7 +305,7 @@ repetindo?
 
 Existe porque o filtro [1b] não alcança esta falha. Mesmo partindo de perguntas
 boas, o redator pode colapsar o artigo de volta na tese do sermão na hora de
-amarrar tudo — foi a falha observada em produção, e nenhum filtro de entrada a
+amarrar tudo, foi a falha observada em produção, e nenhum filtro de entrada a
 pega.
 
 Quando reprova, dispara **uma** reescrita, com a sobreposição nomeada
@@ -316,33 +316,33 @@ depois de cobrar é pior que entregar algo imperfeito. O fato fica no log e em
 
 **A reescrita respeita um prazo.** O pipeline inteiro mede ~255s e a função tem
 teto de 300s; uma reescrita são mais ~100s. Passado
-`REWRITE_DEADLINE_MS` (150s), o veredito vira só sinal — tentar reescrever fora
+`REWRITE_DEADLINE_MS` (150s), o veredito vira só sinal, tentar reescrever fora
 do prazo trocaria "estudo com a tese parecida" por "função morta depois de
 debitar as moedas". Com os modelos de hoje ela quase nunca cabe; se um modelo
 mais rápido entrar, ela volta a caber sozinha.
 
 Os dois cortes ficam registrados em `StudyRecord.guard`, então o
 `/admin/studies` distingue as duas razões de uma pergunta não ter virado texto:
-**cortada** (o guardião disse que o resumo já respondia — culpa do
-questionador) e **não escolhida** (o respondedor preferiu outras — se ele
+**cortada** (o guardião disse que o resumo já respondia, culpa do
+questionador) e **não escolhida** (o respondedor preferiu outras, se ele
 deixou de fora justamente as boas, a culpa é dele).
 
 ## As duas etapas determinísticas são o coração
 
-Nenhuma instrução em linguagem natural — por mais maiúscula, por mais "REGRA
-DE OURO" — consegue o que uma consulta a `NVI.json` consegue de graça: garantir
+Nenhuma instrução em linguagem natural, por mais maiúscula, por mais "REGRA
+DE OURO", consegue o que uma consulta a `NVI.json` consegue de graça: garantir
 que o versículo está certo.
 
 Regra geral que passa a valer: **toda restrição que pode virar código sai do
 prompt e vira código.** O que sobra no prompt é o que só linguagem consegue
-pedir — julgamento.
+pedir, julgamento.
 
 ## O que não existe aqui, e por quê
 
 - **Não há passo de auditoria de conteúdo.** Ele existia na primeira versão e
   foi removido: o artigo fala do ASSUNTO, não do que o pregador disse, então o
   risco de atribuir ao pregador uma posição que ele não defendeu caiu muito. O
-  que o auditor de fato pegava — citação sem origem, versículo parafraseado —
+  que o auditor de fato pegava, citação sem origem, versículo parafraseado,
   a selagem pega melhor, porque é código e não instrução. O que sobrou de
   verificação é o guardião, que faz uma pergunta só e a faz barato.
 - **Não há passo de pesquisa.** `callChat` fala com Chat Completions sem
@@ -368,7 +368,7 @@ pedir — julgamento.
 ## O modelo caro fica só onde moram os fatos
 
 Os três já foram `gpt-5.1`, e assim o estudo rodava NO PREJUÍZO: **−16% de
-margem**. A medição (dois estudos reais, `llm_usage_events`) mostrou por quê —
+margem**. A medição (dois estudos reais, `llm_usage_events`) mostrou por quê,
 e, mais útil, mostrou ONDE:
 
 | Etapa | Entrada | Saída | Custo | % |
@@ -381,7 +381,7 @@ e, mais útil, mostrou ONDE:
 | **total** | 31k | **20,6k** | **$0,227** | |
 
 **Token de SAÍDA é 85% da conta** ($0,193 de $0,227). Prompt de entrada, cache
-e transcrição enxuta disputam os outros 15% — a decisão está em quantas
+e transcrição enxuta disputam os outros 15%, a decisão está em quantas
 palavras cada etapa escreve, e a que preço.
 
 Daí a assimetria da tabela acima, e ela é a justificativa retroativa de o
@@ -397,7 +397,7 @@ paga.
   controvérsia, data e referência bíblica. Citação inventada nasce aqui.
 - **Redator em mini.** Ele recebe a substância fixada, as passagens já
   conferidas contra a NVI (passo 3) e os autores já filtrados, e a selagem
-  (passo 5) ainda descarta o que ele inventar. É composição, não dedução —
+  (passo 5) ainda descarta o que ele inventar. É composição, não dedução,
   a mesma razão do `reasoningEffort: "low"` que ele sempre teve.
 
 Esperado: **$0,227 → ~$0,122**, margem −16% → ~38%. Não fecha os 70% da régua
@@ -409,7 +409,7 @@ moedas e ~35× em dinheiro, então parte do conserto é preço, não custo.
 referência que existe. Fundidos, a prosa é escrita ANTES da conferência, e aí
 não há jogada boa: descartar o bloco deixa o parágrafo argumentando sobre um
 versículo que sumiu, e manter é publicar Escritura não conferida. A fusão
-economiza mais ou menos o mesmo que rebaixar o redator — e mata a
+economiza mais ou menos o mesmo que rebaixar o redator, e mata a
 possibilidade de rebaixá-lo.
 
 ## A troca de modelo foi a mudança de maior impacto
@@ -427,7 +427,7 @@ sermão e com os mesmos prompts:
 
 Três rodadas de ajuste de prompt levaram o artigo de 723 para 1.330 palavras e
 pararam ali. A troca de modelo levou para 4.000 na primeira tentativa. **Era
-teto de modelo, e nenhum prompt ia furá-lo** — vale lembrar disso antes da
+teto de modelo, e nenhum prompt ia furá-lo**, vale lembrar disso antes da
 próxima rodada de reescrita de prompt.
 
 O estudo é a funcionalidade paga por si mesma e a única que o usuário lê
@@ -438,19 +438,19 @@ inteira. É onde o modelo caro se paga.
 `gpt-5*` e os modelos `o*` falam um dialeto diferente do Chat Completions, e as
 duas diferenças são erro 400, não aviso:
 
-- `max_tokens` é recusado — o nome é `max_completion_tokens`;
+- `max_tokens` é recusado: o nome é `max_completion_tokens`;
 - `temperature` só aceita o padrão, e mandá-la junto de `reasoning_effort`
   falha.
 
 `lib/llm/openai.ts` detecta a família por prefixo e troca os parâmetros. Quem
-regula a etapa nesses modelos é `reasoning_effort`, não a temperatura — os
+regula a etapa nesses modelos é `reasoning_effort`, não a temperatura, os
 valores de `temperature` nas rotas seguem valendo se alguém configurar um
 `gpt-4o` de volta.
 
 O esforço por etapa segue a natureza do trabalho: **baixo** para levantar
 perguntas (é divergência, e raciocinar demais CONVERGE), **padrão** para
 responder (é onde os fatos e as distinções se decidem), **baixo** para escrever
-(compor prosa a partir de material pronto não é dedução — o fôlego vem do
+(compor prosa a partir de material pronto não é dedução, o fôlego vem do
 orçamento de blocos do prompt).
 
 ## Latência e o teto da função
@@ -458,7 +458,7 @@ orçamento de blocos do prompt).
 O pipeline mede **~255s**: 35s perguntando, ~110s respondendo, ~100s
 escrevendo, mais os cortes do guardião.
 
-As rotas declaram `maxDuration = 300` — sem isso a função morreria no padrão da
+As rotas declaram `maxDuration = 300`, sem isso a função morreria no padrão da
 plataforma, e morreria DEPOIS de debitar as moedas. As chamadas [2] e [4]
 passam `timeoutMs` de 240s, contra os 60s padrão do `callChat`.
 
@@ -482,7 +482,7 @@ Staples Lewis" são a mesma pessoa).
 **A chave é opcional, e o caso sem chave é o normal.** Sem
 `GOOGLE_BOOKS_API_KEY`, o resolvedor devolve vazio sem chamar ninguém e a UI
 desenha uma **capa tipográfica**: título e autor sobre um tom da paleta,
-escolhido por hash do título — a mesma obra sai com a mesma cor em qualquer
+escolhido por hash do título, a mesma obra sai com a mesma cor em qualquer
 estudo. Ela não é placeholder degradado; é a forma padrão, e por isso carrega o
 título em vez de um ícone genérico.
 
@@ -512,7 +512,7 @@ Reprocessar custa o mesmo 50, e não pode custar menos: reprocessar roda o
 pipeline inteiro de novo, e um preço menor abriria a arbitragem de gerar uma
 vez pelo preço cheio e reprocessar indefinidamente barato.
 
-O custo real por estudo é MEDIDO em `/admin/usage` — as três etapas gravam com
+O custo real por estudo é MEDIDO em `/admin/usage`, as três etapas gravam com
 rotas separadas, então dá para ver quanto custa perguntar, responder e
 escrever, e decidir onde baixar de modelo se a conta não fechar.
 
@@ -529,22 +529,22 @@ título, tese e de três a seis seções.
 
 Ao vocabulário do resumo, quatro tipos que hoje não teriam como existir:
 
-- `objection` — uma objeção honesta, pelo lado mais forte dela, com a resposta.
+- `objection`: uma objeção honesta, pelo lado mais forte dela, com a resposta.
   É o que mais faltava: nenhum bloco do resumo comporta tensão.
-- `distinction` — `{ a, b, text }`: dois conceitos que costumam ser colapsados.
-- `reading` — `{ author, title, note }`: indicação de leitura. Campos separados
+- `distinction`: `{ a, b, text }`: dois conceitos que costumam ser colapsados.
+- `reading`: `{ author, title, note }`: indicação de leitura. Campos separados
   justamente para que autor e obra possam ser validados em código.
-- `question` — pergunta em aberto, **no máximo duas e só no fecho**. O limite é
+- `question`: pergunta em aberto, **no máximo duas e só no fecho**. O limite é
   a regra número um do redator em forma de tipo: o texto é artigo, não
   questionário.
 
-Cada um sai do modelo com campos, não com prosa — é o que permite à selagem
+Cada um sai do modelo com campos, não com prosa, é o que permite à selagem
 conferir. Mesmo princípio de `bibleQuote.reference` vs `text`.
 
 ## 5.2 Não há cota de nada
 
 Nem de citação, nem de versículo, nem de seção. O comprimento vem do número de
-perguntas boas respondidas, não de uma instrução para escrever longo — pedir
+perguntas boas respondidas, não de uma instrução para escrever longo, pedir
 "escreva longo" é o pedido que produz enchimento. A instrução ao redator é a
 inversa: não corte substância para encurtar, e não escreva parágrafo que não
 carrega ideia nova.
@@ -552,7 +552,7 @@ carrega ideia nova.
 ## 5.3 A armadilha do redator
 
 Ele pode simplesmente tirar os pontos de interrogação e entregar um FAQ
-disfarçado — um parágrafo por resposta, na ordem em que vieram. Três
+disfarçado, um parágrafo por resposta, na ordem em que vieram. Três
 instruções existem só para impedir isso: licença explícita para **reordenar,
 fundir, descartar e desdobrar** respostas; a exigência de uma **tese** que
 atravessa o texto; e a ordem de **abrir pelo problema, nunca pela definição**.
@@ -569,16 +569,16 @@ reforma existe para matar.
 
 A regra tem duas metades, e a primeira é a que importa:
 
-- **Onde as tradições protestantes concordam** — e é a maior parte do
-  evangelho — **afirme com convicção, sem ressalva.** Encher de "alguns creem
+- **Onde as tradições protestantes concordam**: e é a maior parte do
+  evangelho, **afirme com convicção, sem ressalva.** Encher de "alguns creem
   que" o que a Igreja crê há vinte séculos é covardia, não prudência.
-- **Onde divergem de fato** — soberania e livre-arbítrio, batismo, dons,
-  perseverança, escatologia — **a divergência vira conteúdo**: nomeie os lados
+- **Onde divergem de fato**: soberania e livre-arbítrio, batismo, dons,
+  perseverança, escatologia, **a divergência vira conteúdo**: nomeie os lados
   e explique o que cada um está protegendo. "Reformados e arminianos separam
   águas aqui, e a diferença é esta" ensina; "há várias visões" não ensina nada.
 
 O respondedor registra isso no campo `tension` de cada resposta, e o redator o
-usa. Vazio significa consenso — e aí o texto afirma.
+usa. Vazio significa consenso, e aí o texto afirma.
 
 ---
 
@@ -592,11 +592,11 @@ Regra única, aplicada em código na selagem:
 Na prática:
 
 - `quote` passa a exigir `author` **e** `work` (obra nomeável). Sem `work`, o
-  bloco é descartado no passo [5] — não "avaliado", descartado.
+  bloco é descartado no passo [5], não "avaliado", descartado.
 - `reading` exige `author` e `title`.
 - `author` é validado contra um índice em `lib/prompts/theologians.ts` que
   substitui a whitelist plana: cada autor com século, tradição, obras
-  principais e temas. O índice serve a dois propósitos — filtrar na selagem e,
+  principais e temas. O índice serve a dois propósitos, filtrar na selagem e,
   sobretudo, **entrar no prompt de redação já filtrado por tema**: o modelo
   recebe os oito a doze autores pertinentes ao eixo, com obra e assunto, em vez
   de 48 nomes soltos. É o ataque direto ao "nomes jogados no texto".
@@ -612,7 +612,7 @@ indexado diz", com `source_id` no bloco. A estrutura de campos proposta aqui já
 # 7. Critérios de qualidade
 
 Oito critérios, avaliados por leitura humana sobre uma **amostra fixa** de
-sessões — reaproveitar as mesmas sessões a cada rodada é o que torna a
+sessões, reaproveitar as mesmas sessões a cada rodada é o que torna a
 comparação possível. Nota 1-5, exceto os binários.
 
 | # | Critério | Como se mede |
@@ -627,9 +627,9 @@ comparação possível. Nota 1-5, exceto os binários.
 | 8 | **Honestidade de extensão** | Estudo curto para sermão raso conta a favor, não contra |
 
 O critério 5 é o único já perseguido hoje (via anti-template) e sozinho não
-resolveu nada — está na lista para não regredir, não como meta.
+resolveu nada, está na lista para não regredir, não como meta.
 
-**As perguntas são persistidas junto com o estudo** — todas, com marcação de
+**As perguntas são persistidas junto com o estudo**, todas, com marcação de
 quais foram respondidas. É o que separa duas falhas que se parecem no texto
 final e têm consertos opostos: as perguntas eram rasas (mexer no questionador)
 ou eram boas e foram mal respondidas (mexer no respondedor). Sem esse dado, a
@@ -639,7 +639,7 @@ próxima rodada de melhoria volta a partir de impressão.
 
 # 8. Planos e feature entitlements
 
-## 8.1 Flag e entitlement são coisas diferentes — e a distinção vale
+## 8.1 Flag e entitlement são coisas diferentes: e a distinção vale
 
 - **Entitlement**: "este plano dá direito a isto". Muda com contrato, dura
   enquanto a assinatura vive, e negá-lo é uma decisão de produto que o usuário
@@ -660,7 +660,7 @@ canUseFeature(ctx, "study_generation")
 
 **O mínimo é `pessoal`, não `estudioso`.** O estudo é o que separa um plano
 PAGO do gratuito, e não o plano de cima do plano do meio: prendê-lo no degrau
-mais alto deixava o Pessoal sem nenhuma capacidade que o Gratuito não tivesse —
+mais alto deixava o Pessoal sem nenhuma capacidade que o Gratuito não tivesse,
 a diferença entre os dois virava só a quantidade de créditos. `PLAN_ORDER` faz
 o Estudioso herdar sozinho.
 
@@ -673,10 +673,10 @@ grátis a uma feature paga. O admin **vê** a matriz; não a edita.
 
 O que o admin edita é o que faz sentido editar em runtime:
 
-- **kill switch por feature** — desligar para todos durante um incidente;
-- **override por usuário** — conceder a um beta tester, revogar de um abusador.
+- **kill switch por feature**: desligar para todos durante um incidente;
+- **override por usuário**: conceder a um beta tester, revogar de um abusador.
 
-Ambos em `feature_overrides`, com `service_role` como único escritor — o mesmo
+Ambos em `feature_overrides`, com `service_role` como único escritor, o mesmo
 padrão de `grant_coins`.
 
 ## 8.3 A proteção mora no servidor
@@ -684,7 +684,7 @@ padrão de `grant_coins`.
 Esconder o botão é UX, não segurança. `POST /api/deepening` passa a chamar
 `requireFeature("study_generation")` **antes de cobrar moedas**, e responde 403
 `feature_not_available`. O botão também é escondido, porque oferecer o que vai
-dar 403 é um bug de produto — mas a ordem importa: servidor primeiro.
+dar 403 é um bug de produto, mas a ordem importa: servidor primeiro.
 
 ## 8.4 Duas decisões de produto que a implementação assume
 
@@ -693,7 +693,7 @@ tinha. Ambas revertem em uma linha do catálogo:
 
 1. **Estudos já gerados continuam legíveis** por qualquer plano. Só a *geração*
    é restrita. Retirar acesso a conteúdo já pago seria confisco.
-2. **`reprocess_deepening` segue a mesma regra da geração** — é geração com
+2. **`reprocess_deepening` segue a mesma regra da geração**, é geração com
    outro nome.
 
 ---
@@ -707,17 +707,17 @@ tinha. Ambas revertem em uma linha do catálogo:
 | 3 | Tipos de bloco novos + `StudyPayload` próprio + `StudyBlockRenderer` | **feito** |
 | 4 | Pipeline questionador → respondedor → redator (`lib/study/`) | **feito** |
 | 5 | Amostra fixa de sessões + planilha dos oito critérios | a fazer |
-| 6 | (RAG PR 1-2) fontes reais no passo [3] — ver `docs/scriba-rag-*` | a fazer |
+| 6 | (RAG PR 1-2) fontes reais no passo [3], ver `docs/scriba-rag-*` | a fazer |
 
 ## O que o passo 5 ainda precisa
 
 A metade instrumental existe: as perguntas são persistidas em
 `session_deepenings.plan` e `/admin/studies` mostra as levantadas, as
-escolhidas e o resultado lado a lado. Falta a metade humana — escolher as sessões da amostra e passar a
+escolhidas e o resultado lado a lado. Falta a metade humana, escolher as sessões da amostra e passar a
 preencher a tabela dos oito critérios a cada mudança. Sem isso, a próxima
 rodada de melhoria volta a começar de impressão.
 
 Uma consequência prática de já ter medido pouco: os estudos gerados antes
 desta mudança têm `plan = NULL`, e não há backfill possível. A comparação
-antes/depois é entre estudos NOVOS e a memória dos antigos — o que é
+antes/depois é entre estudos NOVOS e a memória dos antigos, o que é
 suficiente para a primeira rodada e insuficiente para a segunda.

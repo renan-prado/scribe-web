@@ -2,7 +2,7 @@
 --
 -- A versão de 0027 lia o saldo (SELECT), calculava a dedução e então fazia o
 -- UPDATE. Entre o SELECT e o UPDATE, um `charge_coins` concorrente (um tick de
--- gravação, por exemplo) podia baixar o saldo — e o lançamento no ledger
+-- gravação, por exemplo) podia baixar o saldo, e o lançamento no ledger
 -- registrava uma dedução maior do que a efetivamente aplicada, descolando o
 -- ledger do saldo real.
 --

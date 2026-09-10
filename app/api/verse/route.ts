@@ -15,7 +15,7 @@ const log = createLogger("verse");
  * Texto bíblico para uma ou mais passagens, em UMA resposta.
  *
  * A rota aceitava uma referência por chamada e devolvia texto corrido, e a UI
- * pedia VERSÍCULO A VERSÍCULO — sete requisições para "Isaías 1:11-17". Um
+ * pedia VERSÍCULO A VERSÍCULO, sete requisições para "Isaías 1:11-17". Um
  * estudo com dezessete blocos de passagem passava de sessenta chamadas em
  * poucos segundos e batia no rate limit; os versículos que voltavam 429
  * simplesmente não apareciam, e a tela ficava com números soltos sem texto.

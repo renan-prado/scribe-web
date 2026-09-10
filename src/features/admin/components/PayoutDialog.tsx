@@ -23,7 +23,7 @@ import { PAYOUT_MINIMUM_CENTS } from "@/lib/partners/economics";
  *
  * Substitui um `window.confirm`, e não é preciosismo: o confirm não tinha onde
  * receber o link do comprovante, e o comprovante é a única prova de que o
- * pagamento saiu — hoje ele vive no Drive de quem pagou, o que quer dizer que
+ * pagamento saiu, hoje ele vive no Drive de quem pagou, o que quer dizer que
  * some quando essa pessoa não está por perto.
  *
  * O VALOR NÃO É EDITÁVEL, aqui nem na rota. Ele é a soma das comissões
@@ -32,8 +32,8 @@ import { PAYOUT_MINIMUM_CENTS } from "@/lib/partners/economics";
  * diferença não teria onde aparecer depois.
  *
  * Abaixo do mínimo de saque o diálogo AVISA e segue. A regra do mínimo existe
- * para o pagamento mensal de rotina — um PIX de R$ 4 custa mais trabalho do
- * que vale —, mas ela não pode virar uma trava: o parceiro que deixa o
+ * para o pagamento mensal de rotina, um PIX de R$ 4 custa mais trabalho do
+ * que vale, mas ela não pode virar uma trava: o parceiro que deixa o
  * programa recebe o saldo integral, e esse pagamento é sempre pequeno.
  */
 
@@ -49,14 +49,14 @@ type Props = {
  * importa nesse instante: **o que eu faço agora?**
  *
  * Por isso nenhuma delas é um código, e a de `payout_stamp_failed` diz
- * explicitamente para NÃO tentar de novo — repetir criaria um segundo
+ * explicitamente para NÃO tentar de novo, repetir criaria um segundo
  * pagamento sobre as mesmas comissões.
  */
 const ERROR_MESSAGES: Record<string, string> = {
   nothing_due:
-    "Nada disponível para pagar agora. Se você acabou de registrar, o valor já saiu da fila — atualize a página para conferir.",
+    "Nada disponível para pagar agora. Se você acabou de registrar, o valor já saiu da fila, atualize a página para conferir.",
   payout_stamp_failed:
-    "O pagamento foi gravado, mas as comissões NÃO foram marcadas como pagas. Não registre de novo (pagaria em dobro) — avise o time para corrigir à mão.",
+    "O pagamento foi gravado, mas as comissões NÃO foram marcadas como pagas. Não registre de novo (pagaria em dobro), avise o time para corrigir à mão.",
   payout_failed:
     "Não consegui gravar o pagamento, e nada foi marcado como pago. O PIX que você enviou continua valendo: tente registrar de novo.",
   invalid_input: "O link do comprovante precisa ser um endereço https válido.",
@@ -152,8 +152,8 @@ export function PayoutDialog({ partner, onClose, onDone }: Props) {
               />
               <p className="text-[12px] font-light leading-[1.55] text-scriba-cream-body">
                 Abaixo do mínimo de {formatBrl(PAYOUT_MINIMUM_CENTS)} do pagamento de rotina. Se não
-                houver motivo para pagar agora — saída do programa, acerto pontual —, o valor
-                acumula para o mês seguinte e não se perde.
+                houver motivo para pagar agora, saída do programa, acerto pontual, o valor acumula
+                para o mês seguinte e não se perde.
               </p>
             </div>
           ) : null}
@@ -175,7 +175,7 @@ export function PayoutDialog({ partner, onClose, onDone }: Props) {
               </p>
             ) : (
               <p className="text-[11px] font-light text-scriba-ink-mute">
-                Opcional. Um link do Drive já serve — o parceiro vê no painel dele.
+                Opcional. Um link do Drive já serve, o parceiro vê no painel dele.
               </p>
             )}
           </div>
@@ -186,7 +186,7 @@ export function PayoutDialog({ partner, onClose, onDone }: Props) {
               id="payout-note"
               value={note}
               onChange={(e) => setNote(e.target.value)}
-              placeholder="Opcional — só para nós"
+              placeholder="Opcional, só para nós"
             />
           </div>
         </div>

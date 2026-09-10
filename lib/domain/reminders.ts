@@ -1,9 +1,9 @@
 import { z } from "zod";
 
 /**
- * "Lembra disso?" — 10 mini-callbacks para uma sessão, agendados no futuro
+ * "Lembra disso?", 10 mini-callbacks para uma sessão, agendados no futuro
  * para o usuário revisitar sub-ideias específicas do sermão. Não é a tese
- * central (isso já vai no resumo) — são pontos LATERAIS marcantes: uma frase
+ * central (isso já vai no resumo), são pontos LATERAIS marcantes: uma frase
  * de efeito, uma citação, um exemplo, um pequeno insight teológico.
  *
  * Cadência: 2, 5, 18, 33, 47, 62, 82, 120, 180, 260 dias. O tail longo até

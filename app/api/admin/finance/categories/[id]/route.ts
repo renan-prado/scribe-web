@@ -15,7 +15,7 @@ const PatchSchema = CategoryInputSchema.partial();
 
 /**
  * Não existe DELETE aqui, e é deliberado. Apagar uma categoria deixaria os
- * lançamentos que apontavam para ela com `category_id` nulo — e sem categoria
+ * lançamentos que apontavam para ela com `category_id` nulo, e sem categoria
  * um custo é tratado como VARIÁVEL por `lib/finance/aggregate.ts`, então
  * apagar "Infraestrutura" faria o custo fixo do histórico inteiro despencar
  * sem que nada indicasse por quê. O que a tela oferece é ARQUIVAR: some do

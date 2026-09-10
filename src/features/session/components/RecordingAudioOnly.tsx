@@ -65,10 +65,10 @@ const AUTO_FOLLOW_BOTTOM_PX = 140;
 /**
  * Audio-only capture. Same chunk-upload/transcribe backbone as the live view
  * but with no live enrichment pipelines (bible/insights/echo), no feed, no
- * header — just the pulsing record button centered on the page. On stop, the
+ * header, just the pulsing record button centered on the page. On stop, the
  * final summary runs once and the user lands on /summary.
  *
- * Kept intentionally simple: no session store, no dedup — chunks accumulate
+ * Kept intentionally simple: no session store, no dedup, chunks accumulate
  * locally into `transcriptRef` because the only consumer of the transcript
  * is the single final-summary call.
  */
@@ -103,7 +103,7 @@ export function RecordingAudioOnly({
   const [startupError, setStartupError] = useState("");
   const [qualityPoor, setQualityPoor] = useState(false);
   /**
-   * Espelho do estado acima, e o equivalente local do `audioQuality` do store —
+   * Espelho do estado acima, e o equivalente local do `audioQuality` do store,
    * este modo não usa o session store. Precisa ser ref porque quem o lê é o
    * `handleChunk`, um useCallback estável: ler o state ali devolveria sempre o
    * valor do primeiro render, e o aviso subiria uma vez por chunk ruim em vez
@@ -114,14 +114,14 @@ export function RecordingAudioOnly({
   const [billingOpen, setBillingOpen] = useState(false);
   const [discardOpen, setDiscardOpen] = useState(false);
   /**
-   * A leitura calma, agrupada por minuto — a mesma que o live e o modo
+   * A leitura calma, agrupada por minuto, a mesma que o live e o modo
    * transcrição oferecem. Não é duplicação da aba: a aba é o fluxo de trechos
    * na ordem em que chegaram, para CONFERIR; o diálogo junta em parágrafos,
    * para reler.
    */
   const [transcriptOpen, setTranscriptOpen] = useState(false);
   /**
-   * Qual das duas visões está na tela. O microfone é o padrão — este modo
+   * Qual das duas visões está na tela. O microfone é o padrão, este modo
    * existe para quem quer gravar e guardar o telefone.
    */
   const [view, setView] = useState<"mic" | "transcript">("mic");
@@ -129,8 +129,8 @@ export function RecordingAudioOnly({
    * Espelho de `chunksRef` para RENDER, e a razão de os dois existirem: o ref
    * segue sendo a fonte do texto que vai para o resumo final, porque quem o lê
    * é um `useCallback` estável e um state ali seria sempre o do primeiro
-   * render. O array abaixo não tem esse problema — ninguém o lê dentro de
-   * callback — e é o que a transcrição na tela consome.
+   * render. O array abaixo não tem esse problema, ninguém o lê dentro de
+   * callback, e é o que a transcrição na tela consome.
    */
   const [chunkRows, setChunkRows] = useState<ChunkRow[]>([]);
   /** Autoscroll da transcrição; desliga quando o usuário sobe para reler. */
@@ -166,7 +166,7 @@ export function RecordingAudioOnly({
         { index: ev.index, status: "uploading", text: "", startedAtMs },
       ]);
       // Chunks suspeitos (assinatura de alucinação detectada no servidor) não
-      // entram no hint — realimentá-los tende a repetir a alucinação.
+      // entram no hint, realimentá-los tende a repetir a alucinação.
       const previousText = assembleTranscript({ excludeSuspect: true });
       const prevHint = tailSentences(previousText, 2);
       const result = await uploadChunkWithRetry(ev, prevHint, sessionId);
@@ -205,7 +205,7 @@ export function RecordingAudioOnly({
     chunksRef.current = new Map();
     setChunkRows([]);
     setFollow(true);
-    // Este modo não guarda running/paused no store — mas o `RecordingHeader`
+    // Este modo não guarda running/paused no store, mas o `RecordingHeader`
     // lê título, autor, local e início DE LÁ, e é o mesmo header dos outros
     // dois modos. Semear aqui é o que dá a este modo a edição de metadados que
     // ele nunca teve; sem isso o header desenharia os dados da sessão anterior.
@@ -232,7 +232,7 @@ export function RecordingAudioOnly({
       await rec.start();
       recorderRef.current = rec;
       // startedAtRef MUST be seeded before setRunning(true) so useElapsedTimer
-      // observes a valid origin on first render — see AGENTS.md guardrails.
+      // observes a valid origin on first render, see AGENTS.md guardrails.
       startedAtRef.current = performance.now();
       setRunning(true);
       setPaused(false);
@@ -295,7 +295,7 @@ export function RecordingAudioOnly({
 
     const transcript = assembleTranscript();
     if (!transcript) {
-      // Nothing intelligible was captured — skip the final-summary LLM call
+      // Nothing intelligible was captured, skip the final-summary LLM call
       // and delete the empty session row so the user doesn't see it in their
       // history.
       toast.warning("Nenhuma fala foi capturada.", {
@@ -337,7 +337,7 @@ export function RecordingAudioOnly({
 
   /**
    * Encerrar SEM gerar resumo, apagando a sessão. Mesmo fluxo dos outros dois
-   * modos — este era o único que não o tinha, e quem começava uma gravação por
+   * modos, este era o único que não o tinha, e quem começava uma gravação por
    * engano só podia parar e esperar um resumo que não queria (pagando por ele).
    * Quem abre a confirmação é o chamador; aqui já é o "sim".
    */
@@ -427,7 +427,7 @@ export function RecordingAudioOnly({
         <p className="font-semibold">Áudio com qualidade baixa</p>
         <p className="mt-1">
           A transcrição pode conter erros. Se possível, aproxime o aparelho da caixa de som ou de
-          quem está falando — distância e eco são o que mais atrapalham. Você pode continuar ou
+          quem está falando, distância e eco são o que mais atrapalham. Você pode continuar ou
           encerrar a gravação.
         </p>
       </div>
@@ -463,7 +463,7 @@ export function RecordingAudioOnly({
           aria-labelledby={`${MIC_PANEL_ID}-tab`}
           className="flex flex-1 flex-col items-center justify-center gap-10 pb-28"
         >
-          {/* Enquanto grava, o círculo é só o pulso de "estamos ouvindo" — quem
+          {/* Enquanto grava, o círculo é só o pulso de "estamos ouvindo", quem
               comanda é a barra flutuante, igual aos outros dois modos. Antes de
               começar ele continua sendo o convite para tocar. */}
           <RecordButton
@@ -526,7 +526,7 @@ export function RecordingAudioOnly({
           }
           // A barra vale nas DUAS abas. Ela já esteve presa à da transcrição,
           // e o resultado era o modo áudio sem pausar, parar ou descartar
-          // enquanto o microfone estava na tela — a mesma barra que os outros
+          // enquanto o microfone estava na tela, a mesma barra que os outros
           // dois modos têm o tempo todo.
           control={
             running && !paused ? (
@@ -550,7 +550,7 @@ export function RecordingAudioOnly({
         sessionId={sessionId}
         scope="live"
         // Modo áudio: não há feed para corrigir, então a auditoria julga só a
-        // qualidade da transcrição — o desfecho útil aqui é encerrar ou seguir.
+        // qualidade da transcrição, o desfecho útil aqui é encerrar ou seguir.
         getLiveContext={() => ({ text: assembleTranscript(), feedItems: [] })}
         onStopRecording={() => void stop()}
       />

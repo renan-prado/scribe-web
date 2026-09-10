@@ -3,18 +3,18 @@ import type { OverlayPhase } from "@/components/PageBlurOverlay";
 /**
  * As fases mostradas enquanto o estudo é gerado.
  *
- * Elas espelham o pipeline real de `lib/study/generate.ts` — perguntar,
- * responder, escrever, conferir — e não uma barra de progresso decorativa. O
+ * Elas espelham o pipeline real de `lib/study/generate.ts`, perguntar,
+ * responder, escrever, conferir, e não uma barra de progresso decorativa. O
  * usuário espera cerca de quatro minutos; dizer o que está acontecendo transforma
  * a espera em expectativa, e ainda explica por que o estudo custa moedas.
  *
  * ⚠️ Os tempos são ESTIMATIVA, não medição: não há SSE no app, então o
  * servidor não reporta em que etapa está. Os valores vêm das latências
- * medidas com `tmp/dev-scripts/study-eval.mts` — hoje ~255s no total, num
+ * medidas com `tmp/dev-scripts/study-eval.mts`, hoje ~255s no total, num
  * modelo de raciocínio. Trocar o modelo do pipeline muda estes números.
  *
  * Se a geração terminar antes, o overlay some no meio de uma fase; se demorar
- * mais, a última fica de pé — por isso a última é a única frase escrita para
+ * mais, a última fica de pé, por isso a última é a única frase escrita para
  * envelhecer parada.
  *
  * Ao mudar o pipeline, mude estas fases junto: um overlay que anuncia uma
@@ -49,7 +49,7 @@ export const STUDY_GENERATION_PHASES: OverlayPhase[] = [
 ];
 
 /**
- * Reprocessar roda exatamente o mesmo pipeline — as fases são as mesmas, e só
+ * Reprocessar roda exatamente o mesmo pipeline, as fases são as mesmas, e só
  * a primeira muda de nome para o usuário entender que o estudo antigo será
  * substituído, não complementado.
  */

@@ -22,7 +22,7 @@ type SessionsEmptyStateProps = {
   sticker?: string;
   heading?: string;
   /**
-   * Shows the light/dark switch in the card corner. Only /feed turns this on —
+   * Shows the light/dark switch in the card corner. Only /feed turns this on,
    * it's the one empty surface a signed-in user lands on with nothing else to
    * do, which makes it the natural home for the theme control.
    */

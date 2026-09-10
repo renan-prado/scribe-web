@@ -2,7 +2,7 @@ import "server-only";
 import type { StudyTopic } from "@/lib/domain/study";
 
 /**
- * Índice de teólogos — substitui a whitelist plana que o prompt antigo
+ * Índice de teólogos, substitui a whitelist plana que o prompt antigo
  * carregava.
  *
  * A whitelist antiga tinha 48 nomes e mais nada. Ela restringia o CAMPO
@@ -19,12 +19,12 @@ import type { StudyTopic } from "@/lib/domain/study";
  *      sugerido junto do seu assunto e do seu livro tem chance muito maior de
  *      ser citado por pertinência do que de ser jogado no texto.
  *   2. FILTRAR NA SAÍDA. A selagem (`lib/study/seal.ts`) descarta todo bloco
- *      `quote` cujo autor não está aqui — e, mais importante, todo `quote` sem
+ *      `quote` cujo autor não está aqui, e, mais importante, todo `quote` sem
  *      `work` declarada.
  *
  * `works` NÃO é bibliografia completa: são as obras pelas quais o autor é
  * lembrado, as que um leitor consegue localizar. Se a citação não está numa
- * delas, o redator é instruído a declarar a obra mesmo assim — e é isso que
+ * delas, o redator é instruído a declarar a obra mesmo assim, e é isso que
  * um humano confere em um minuto.
  */
 
@@ -33,7 +33,7 @@ export type Theologian = {
   /** Século(s) de atuação, para o redator situar a voz. */
   era: string;
   tradition: string;
-  /** Obras pelas quais é lembrado — as localizáveis, não a bibliografia. */
+  /** Obras pelas quais é lembrado, as localizáveis, não a bibliografia. */
   works: string[];
   topics: StudyTopic[];
 };
@@ -401,7 +401,7 @@ function normalize(name: string): string {
   return name.normalize("NFD").replace(/[̀-ͯ]/g, "").toLowerCase().trim();
 }
 
-/** `null` quando o nome não está no índice — a selagem descarta o bloco. */
+/** `null` quando o nome não está no índice, a selagem descarta o bloco. */
 export function findTheologian(name: string | null | undefined): Theologian | null {
   if (!name) return null;
   return BY_NAME.get(normalize(name)) ?? null;
@@ -433,6 +433,6 @@ function dedupe(list: Theologian[]): Theologian[] {
 /** Bloco de texto que entra nos prompts. Uma linha por autor. */
 export function renderTheologianBriefing(list: Theologian[]): string {
   return list
-    .map((t) => `- ${t.name} (${t.era}, ${t.tradition}) — obras: ${t.works.join("; ")}`)
+    .map((t) => `- ${t.name} (${t.era}, ${t.tradition}), obras: ${t.works.join("; ")}`)
     .join("\n");
 }

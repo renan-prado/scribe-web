@@ -47,7 +47,7 @@
   --radius-3xl: calc(var(--radius) * 2.2);
   --radius-4xl: calc(var(--radius) * 2.6);
 
-  /* Scriba brand palette — exposes --scriba-* CSS vars as Tailwind utilities.
+  /* Scriba brand palette, exposes --scriba-* CSS vars as Tailwind utilities.
      Use text-scriba-blue, bg-scriba-blue-soft, border-scriba-hairline, etc. */
   --color-scriba-blue: var(--scriba-blue);
   --color-scriba-blue-hover: var(--scriba-blue-hover);
@@ -78,7 +78,7 @@
   --color-scriba-surface: var(--scriba-surface);
   --color-scriba-hairline: var(--scriba-hairline);
   --color-scriba-hairline-soft: var(--scriba-hairline-soft);
-  /* Surface-tinted body text — one per palette swatch, for tile/card interiors */
+  /* Surface-tinted body text, one per palette swatch, for tile/card interiors */
   --color-scriba-yellow-light: var(--scriba-yellow-light);
   --color-scriba-blue-ink: var(--scriba-blue-ink);
   --color-scriba-rose-body: var(--scriba-rose-body);
@@ -99,7 +99,7 @@
   /* Scriba AI chat bubble tokens (feed + summary comments) */
   --color-scriba-bubble: var(--scriba-bubble);
   --color-scriba-bubble-ink: var(--scriba-bubble-ink);
-  /* Elevated surface ("paper"). White in light, raised indigo in dark — this is
+  /* Elevated surface ("paper"). White in light, raised indigo in dark, this is
      the token every card/sheet/dialog uses instead of a literal `bg-white`, so
      the whole app flips with a single `.dark` on <html>. */
   --color-scriba-paper: var(--scriba-paper);
@@ -173,27 +173,27 @@
   --session-example-bg: #EEF3FB;
   --session-example-border: #D7DFE7;
   /* MENÇÕES DENTRO DO PARÁGRAFO (ver RichText). Duas cores, dois papéis:
-     `ink` pinta a referência bíblica, que é CLICÁVEL — é a mesma calibragem de
+     `ink` pinta a referência bíblica, que é CLICÁVEL, é a mesma calibragem de
      `--scriba-blue-ink` (5,03 no papel), porque uma referência que não se
      distingue do corpo do texto não convida clique nenhum.
      `wash` é a faixa de marca-texto sob nome próprio, e ela NÃO é interativa:
      cobre só os 18% de baixo da linha, então o glifo continua sobre o papel e
      o contraste do parágrafo não muda. As duas trocam de família dentro de
-     `.tone-study` — lá o acento é verde. */
+     `.tone-study`, lá o acento é verde. */
   --session-mention-ink: #3473AA;
   --session-mention-wash: #CFE2F5;
 
-  /* Scriba palette — used by the redesigned Feed, Library, Live and Summary
+  /* Scriba palette, used by the redesigned Feed, Library, Live and Summary
      surfaces. Kept as raw hex so the design intent stays 1:1 with the mocks. */
   --scriba-blue: #4FA8F0;
   --scriba-blue-hover: #3E97DF;
   --scriba-blue-soft: #EAF4FE;
-  /* Study (aprofundamento) palette — greens matched 1:1 to the blue tokens so
+  /* Study (aprofundamento) palette, greens matched 1:1 to the blue tokens so
      study surfaces read as a distinct, but co-equal, colorway to summaries. */
   --scriba-green: #4FC28B;
   --scriba-green-hover: #3EB07A;
   --scriba-green-soft: #E8F6EF;
-  /* 4,59:1 sobre `--scriba-green-soft`, o pior fundo em que aparece — o papel
+  /* 4,59:1 sobre `--scriba-green-soft`, o pior fundo em que aparece, o papel
      branco é mais folgado. Era #2E8F63 (3,61:1) e reprovava AA. */
   --scriba-green-ink: #287C56;
   --scriba-green-body: #6E9E85;
@@ -212,18 +212,18 @@
   --scriba-lilac-ink: #3F5170;
   --scriba-lilac-accent: #6E82A8;
   --scriba-ink-strong: #33414F;
-  /* ESCALA DE TINTA — quatro degraus, todos acima de AA, espaçados por igual.
+  /* ESCALA DE TINTA, quatro degraus, todos acima de AA, espaçados por igual.
      Ver `--scriba-ink-strong` logo acima: ele é o topo e não muda.
 
      O texto pequeno exige 4,5:1, e o piso da escala (`mute`) precisa disso
-     contra o fundo MAIS ESCURO em que aparece — `--scriba-bubble` (#F5F8FB),
+     contra o fundo MAIS ESCURO em que aparece, `--scriba-bubble` (#F5F8FB),
      não o papel branco. Calibrar pelo branco deixaria os chips dentro dos
      balões reprovando.
 
      Os quatro valores não foram escolhidos um a um: são uma progressão
      geométrica de ~1,3x entre 4,5 e 10,45. Ajustar só o `mute` para AA (a
-     tentativa anterior) o encostava no `soft` — 1,14x de diferença, ou seja,
-     dois níveis que ninguém distingue — e o app perdia um degrau da escala.
+     tentativa anterior) o encostava no `soft`, 1,14x de diferença, ou seja,
+     dois níveis que ninguém distingue, e o app perdia um degrau da escala.
      Empurrar a escala inteira resolve os dois problemas de uma vez.
 
      Contraste sobre paper / surface / bubble:
@@ -241,11 +241,11 @@
   --scriba-hairline: #EDF2F7;
   --scriba-hairline-soft: #EEF4FA;
   --scriba-yellow-light: #FFDF8C;
-  /* AZUL PARA TEXTO — não confundir com `--scriba-blue`, que é o azul de
+  /* AZUL PARA TEXTO, não confundir com `--scriba-blue`, que é o azul de
      SUPERFÍCIE (fundo de botão, borda, badge).
      A mesma cor não serve para as duas coisas: #4FA8F0 é excelente como fundo
      e dá 2,56:1 como tinta sobre papel, bem abaixo do mínimo AA. O app usava o
-     token de superfície como cor de texto em 73 lugares — daí `text-scriba-blue`
+     token de superfície como cor de texto em 73 lugares, daí `text-scriba-blue`
      ter virado `text-scriba-blue-ink` em toda parte.
      Calibrado pelo pior fundo em que aparece, `--scriba-blue-soft` (#EAF4FE),
      não pelo papel branco.
@@ -257,7 +257,7 @@
   --scriba-btn-muted: #F4F8FC;
   --scriba-btn-muted-hover: #E8EEF6;
   /* Scrollbar. Consumido só pelas regras de `::-webkit-scrollbar` /
-     `scrollbar-color` no @layer base — não vira utilitário no @theme porque
+     `scrollbar-color` no @layer base, não vira utilitário no @theme porque
      ninguém pinta um elemento com essa cor. */
   --scriba-scroll-thumb: rgba(124, 138, 153, 0.3);
   --scriba-scroll-thumb-hover: rgba(124, 138, 153, 0.55);
@@ -302,18 +302,18 @@
   /* Landing/auth hero wash */
   --lp-hero: linear-gradient(180deg, #F6FBFF 0%, #FFFFFF 100%);
   --lp-hero-auth: linear-gradient(180deg, #F6FBFF 0%, #FFFFFF 60%);
-  /* "Sua biblioteca" band — the one full-bleed blue section. In light it is the
+  /* "Sua biblioteca" band, the one full-bleed blue section. In light it is the
      primary blue; in dark that same primary reads as a lit slab dropped into a
      dark page, so the dark colorway swaps it for a deep blue lifted just above
      the page ground. */
   /* A banda azul da seção "Biblioteca" carrega texto por cima, e isso muda o
-     que a cor precisa ser. Era o mesmo #4FA8F0 do resto da marca — sobre ele,
+     que a cor precisa ser. Era o mesmo #4FA8F0 do resto da marca, sobre ele,
      NENHUM texto claro é legível: branco puro dá 2,56:1, e o azul-claro e o
      amarelo do acento ficam ainda piores. O problema não tinha conserto do
      lado da tinta, porque o branco já é o extremo; o fundo é que tinha de
      descer.
-     #0F67AF é o ponto em que o texto MAIS CLARO da seção — o label amarelo de
-     11px, o caso mais difícil — alcança 4,5:1. Escolhido assim para que
+     #0F67AF é o ponto em que o texto MAIS CLARO da seção, o label amarelo de
+     11px, o caso mais difícil, alcança 4,5:1. Escolhido assim para que
      nenhuma cor de texto precisasse mudar: branco, `--lp-band-ink` e o amarelo
      continuam os mesmos, e só o fundo ficou mais fundo.
        branco 5,87 · band-ink 5,10 · amarelo 4,52 */
@@ -321,12 +321,12 @@
      do fundo do tema escuro (`--background` #05040B, `--scriba-paper` #121025),
      então a seção pertence ao app em vez de ser um retângulo azul avulso.
      ATENÇÃO: com `background-image` o verificador automático PARA de medir o
-     contraste — ele marca "incomplete", não violação. A garantia passa a ser
+     contraste, ele marca "incomplete", não violação. A garantia passa a ser
      destes números, conferidos no ponto MAIS CLARO (0%), que é o pior caso:
        0%   #0F67AF  branco 5,87 · amarelo 4,52 · band-ink 5,10
        55%  #124E8C  branco 8,42 · amarelo 6,49 · band-ink 7,32
        100% #1A2F63  branco 12,88 · amarelo 9,93 · band-ink 11,20
-     Ao clarear QUALQUER parada, recalcule — sobretudo contra o amarelo de
+     Ao clarear QUALQUER parada, recalcule, sobretudo contra o amarelo de
      11px, que é o texto mais claro da seção e o primeiro a reprovar. */
   --lp-band: linear-gradient(135deg, #0F67AF 0%, #124E8C 55%, #1A2F63 100%);
   --lp-band-ink: #E2F1FF;
@@ -337,39 +337,39 @@
   /* Altura do header da LP. O hero se puxa para cima por exatamente este valor
      e devolve o mesmo tanto em padding, então o conteúdo fica na mesma posição
      enquanto o fundo passa por baixo do header translúcido. */
-  /* Tinta sobre o azul da marca. Era branco, e branco sobre #4FA8F0 dá 2,56:1
-     — reprovado no botão mais importante da landing ("COMEÇAR GRÁTIS") e, sem
+  /* Tinta sobre o azul da marca. Era branco, e branco sobre #4FA8F0 dá 2,56:1,
+     reprovado no botão mais importante da landing ("COMEÇAR GRÁTIS") e, sem
      ninguém ter notado, também nos cards do NewRecordingDialog, que usam o
      mesmo par sobre `bg-scriba-blue` (a mesma cor). Azul-escuro sobre o mesmo
      fundo dá 5,92:1.
      Escurecer o AZUL seria a outra saída, mas mudaria a cor da marca em toda a
-     LP para ganhar 4,53:1 — passar raspando e pagando mais caro. Aqui o
+     LP para ganhar 4,53:1, passar raspando e pagando mais caro. Aqui o
      #4FA8F0 fica intacto; o que muda é a tinta por cima. É também o valor que o
      tema escuro já usava, então a paleta não ganha cor nova. */
   /* Fundo do CTA da landing. Gradiente para que o botão continue parecendo
      azul VIVO mesmo tendo de escurecer: texto branco de 13px exige 4,5:1, e
-     sobre o #4FA8F0 da marca o branco dá 2,56:1 — não havia como manter o azul
+     sobre o #4FA8F0 da marca o branco dá 2,56:1, não havia como manter o azul
      claro e a letra branca ao mesmo tempo. As duas paradas passam:
        #1976C5 (4,73) → #0D5E9F (6,73)
      Mesma ressalva do `--lp-band`: gradiente não é medido automaticamente. */
-  /* O BOTÃO PRIMÁRIO DO PRODUTO — a landing e a área logada usam este par,
+  /* O BOTÃO PRIMÁRIO DO PRODUTO, a landing e a área logada usam este par,
      não dois. Era `--lp-cta`, exclusivo da LP, enquanto a área logada pintava
      `bg-scriba-blue` com `text-white`: 2,56:1, reprovando AA em 21 botões.
-     Azul de superfície não sustenta tinta branca — o mesmo diagnóstico que
+     Azul de superfície não sustenta tinta branca, o mesmo diagnóstico que
      obrigou a `--lp-band` a descer. */
   --scriba-cta: linear-gradient(135deg, #1976C5 0%, #0D5E9F 100%);
   --scriba-cta-ink: #FFFFFF;
   --scriba-cta-shadow: rgba(79, 168, 240, 0.32);
   /* A esfumaçada acima da nav inferior do celular, que dissolve o conteúdo
      rolando por trás dela. Era um `rgba(255,255,255,…)` literal no className da
-     `MobileBottomNav` — no tema escuro, uma névoa BRANCA sobre a página
+     `MobileBottomNav`, no tema escuro, uma névoa BRANCA sobre a página
      índigo, e é justamente no app instalado que essa faixa fica sempre à
      vista. Os stops precisam ser do CHÃO da página, não do papel.
 
      São SETE stops para uma faixa de 48px, e o excesso é o ponto: com quatro
      stops o trecho final ia de 0,35 a zero de uma vez, e o fim da névoa
      aparecia como uma linha horizontal atravessando a tela. O que tira a
-     dureza é a cauda longa — 0,24 → 0,1 → 0,03 → 0 nos últimos 36% —, não a
+     dureza é a cauda longa, 0,24 → 0,1 → 0,03 → 0 nos últimos 36%, não a
      altura da faixa. O topo da rampa também desceu de 0,98 para 0,92: a nav
      por baixo é opaca de qualquer jeito, então quase-branco ali só engrossava
      o véu sem esconder nada a mais. */
@@ -387,7 +387,7 @@
   /* Design-system border widths */
   --border-book: 1.5px;   /* book glyph icon border */
   --border-fine: 1.4px;   /* fine phone frame border */
-  /* Sidebar layout tokens — consumed by w-(--sidebar-width) etc. in sidebar.tsx */
+  /* Sidebar layout tokens, consumed by w-(--sidebar-width) etc. in sidebar.tsx */
   --sidebar-width: 16rem;
   --sidebar-width-icon: 3rem;
 }
@@ -397,7 +397,7 @@
 
    Deep indigo (#05040B) ground with four elevation steps:
      background (#05040B) < surface (#0B0A19) < paper (#121025) < btn/hairline.
-   Every token defined in :root is redefined here — nothing else in the app
+   Every token defined in :root is redefined here, nothing else in the app
    needs a `dark:` variant, adding `.dark` to <html> is enough.
 --------------------------------------------------------------------------- */
 .dark {
@@ -442,7 +442,7 @@
   --session-mention-ink: #8AC6FA;
   --session-mention-wash: rgba(95, 176, 245, 0.32);
 
-  /* Scriba palette — dark colorway */
+  /* Scriba palette, dark colorway */
   --scriba-blue: #5FB0F5;
   --scriba-blue-hover: #7CC1F8;
   --scriba-blue-soft: #12192F;
@@ -468,7 +468,7 @@
   --scriba-ink-strong: #F2F0FA;
   /* Mesma escala do tema claro, invertida: quatro degraus de ~1,5x, o piso
      calibrado pelo fundo de MENOR contraste (aqui `--scriba-bubble` #16132B, o
-     mais claro dos fundos escuros). O `mute` vinha de 3,56:1 — o tema escuro
+     mais claro dos fundos escuros). O `mute` vinha de 3,56:1, o tema escuro
      reprovava exatamente como o claro, só que ninguém tinha medido.
      Contraste sobre paper / surface / bubble / background:
        ink-strong  16,53 / 17,37 / 16,02 / 18,10
@@ -533,7 +533,7 @@
   --scriba-cta-ink: #0B2742;
   --scriba-cta-shadow: rgba(0, 0, 0, 0.45);
   /* O mesmo esfumaçado do claro, na cor do chão daqui (#05040B). Mesmos sete
-     stops, mesma cauda longa — o motivo está no comentário do tema claro. */
+     stops, mesma cauda longa, o motivo está no comentário do tema claro. */
   --scriba-nav-fade: linear-gradient(
     to top,
     rgba(5, 4, 11, 0.92) 0%,
@@ -574,18 +574,18 @@
     cursor: default;
   }
 
-  /* PRESSIONADO — o feedback que substitui o hover onde ele não existe.
+  /* PRESSIONADO, o feedback que substitui o hover onde ele não existe.
      Num aparelho de toque não há estado intermediário: o dedo encosta e a
      ação acontece. Todo `hover:` escrito neste repositório é, ali, código
-     morto — e o que sobra é uma tela em que tocar um item não produz REAÇÃO
+     morto, e o que sobra é uma tela em que tocar um item não produz REAÇÃO
      NENHUMA até a próxima página chegar. A resposta natural de quem usa é
      tocar de novo, que é como um clique vira três.
 
      Por isso a regra é GENÉRICA e mora no @layer base: ela é o PISO, não o
      estilo final. Base perde para qualquer `active:` de componente escrito em
      utilitário (camada posterior vence, independentemente de especificidade),
-     então quem quiser um pressionado próprio — o `.scriba-cta` logo abaixo, o
-     `SidebarMenuButton`, o `Button` com seu `translate-y-px` — simplesmente o
+     então quem quiser um pressionado próprio, o `.scriba-cta` logo abaixo, o
+     `SidebarMenuButton`, o `Button` com seu `translate-y-px`, simplesmente o
      escreve, e este some do caminho.
 
      `hover: none` e não `pointer: coarse`: o que decide é a AUSÊNCIA de hover,
@@ -593,7 +593,7 @@
      mouse, e lá o hover já dá o retorno.
 
      Opacidade, e não transform: é a única propriedade que funciona sobre
-     qualquer superfície do produto — gradiente, papel, vidro esfumaçado — sem
+     qualquer superfície do produto, gradiente, papel, vidro esfumaçado, sem
      precisar saber a cor de fundo de quem está sendo tocado. Sem transição de
      propósito: retorno de toque atrasado é pior que retorno nenhum.
 
@@ -616,13 +616,13 @@
   /* Scrollbar sutil, em toda a aplicação.
      Duas trilhas, porque nenhuma sozinha cobre todos os navegadores:
      - Padrão (`scrollbar-width`/`scrollbar-color`): Chromium, Firefox e Safari
-       18.2+. `scrollbar-color` é herdado — o <html> basta; `scrollbar-width`
+       18.2+. `scrollbar-color` é herdado, o <html> basta; `scrollbar-width`
        NÃO é, daí o seletor universal, senão só a página raiz afinava.
      - Legado (`::-webkit-scrollbar`): Safari antigo. O Chromium ignora esses
        pseudo-elementos assim que uma das propriedades padrão está definida,
        então as duas trilhas não brigam.
      A borda transparente + `background-clip: content-box` deixa o polegar com
-     4px visíveis numa pista de 10px — fino e com folga, em vez de colado no
+     4px visíveis numa pista de 10px, fino e com folga, em vez de colado no
      conteúdo. A cor sai de token, então acompanha o dark. */
   html {
     scrollbar-color: var(--scriba-scroll-thumb) transparent;
@@ -652,7 +652,7 @@
     --sidebar-width: 18rem;
   }
 
-  /* Admin table treatment — white surface with generous cell padding and a
+  /* Admin table treatment, white surface with generous cell padding and a
      tinted Scriba header row. Applied via the ADMIN_TABLE_SURFACE constant
      so /admin/users and /admin/usage tables stay visually consistent. */
   .admin-table {
@@ -703,7 +703,7 @@
   /* A pena pintada com o gradiente do CTA. Um `linear-gradient` do CSS não
      entra num `fill` de SVG, então a pena vira MÁSCARA: o fundo é o próprio
      `--scriba-cta` e o desenho recorta. Assim o gradiente continua definido
-     num lugar só — reproduzi-lo como `<linearGradient>` dentro do SVG seria
+     num lugar só, reproduzi-lo como `<linearGradient>` dentro do SVG seria
      uma segunda cópia, e cópia de cor diverge. Usa o mesmo
      `public/brand/pena.svg` dos consumos de fora do React. */
   .scriba-mark-gradient {
@@ -712,14 +712,14 @@
     mask: url("/brand/pena.svg") center / contain no-repeat;
   }
   /* Botão primário: landing E área logada. O hover é `filter`, não cor de
-     fundo — o fundo é gradiente e inverte por tema, então clarear/escurecer
+     fundo, o fundo é gradiente e inverte por tema, então clarear/escurecer
      serve aos dois sem um segundo par de tokens. */
   .scriba-cta {
     transition: filter 0.18s ease, box-shadow 0.18s ease;
     &:hover { filter: brightness(0.95); box-shadow: 0 14px 30px var(--scriba-cta-shadow); }
     /* O pressionado do botão PRIMÁRIO é próprio, e vale nos dois mundos: no
        toque ele substitui o hover que nunca acontece; no mouse ele confirma o
-       clique. Escurece mais que o hover e ACHATA a sombra — o botão afunda em
+       clique. Escurece mais que o hover e ACHATA a sombra, o botão afunda em
        vez de só mudar de cor, que é o que se espera de algo apertado. */
     &:active { filter: brightness(0.88); box-shadow: 0 2px 6px var(--scriba-cta-shadow); }
   }
@@ -729,7 +729,7 @@
 
      O `display` mora AQUI, e não em utilitário do Tailwind, de propósito:
      utilitário vive numa @layer posterior e venceria estas regras por ordem de
-     camada, independentemente de especificidade — a mesma armadilha anotada
+     camada, independentemente de especificidade, a mesma armadilha anotada
      em `.lp-cta-soft` logo abaixo. Um `contents` vindo de utilitário no
      `.lp-eyebrow-idle` deixaria a frase padrão visível DEBAIXO do esqueleto.
 
@@ -753,7 +753,7 @@
   .lp-cta-soft {
     /* Only the transition lives here. The hover background CANNOT: this is
        @layer components, and the element also carries the `bg-scriba-btn-muted`
-       utility from @layer utilities — a later layer beats an earlier one no
+       utility from @layer utilities, a later layer beats an earlier one no
        matter the specificity, so any background-color set here is dead code.
        The hover fill is applied as a `hover:bg-scriba-btn-muted-hover` utility
        on the element itself, competing inside the same layer. */
@@ -795,7 +795,7 @@
   /* Scoped tone override for /studies + /recording/[id]/deepening surfaces.
      Rebinds the shared session-* tokens (used by BlockRenderer for bibleQuote,
      conclusion, relatedVerse) to the green colorway without touching the
-     tokens themselves — summary surfaces keep the blue palette globally. */
+     tokens themselves, summary surfaces keep the blue palette globally. */
   .tone-study {
     --session-surface-quote: linear-gradient(110deg, #F1FAF5, #F9FDFB, #ECF7F1, #F1FAF5);
     --session-verse-text: #2F5E48;
@@ -898,7 +898,7 @@
     }
   }
 
-  /* Só `opacity` e `transform` — as duas únicas propriedades que o navegador
+  /* Só `opacity` e `transform`, as duas únicas propriedades que o navegador
      anima na GPU, sem repintar a cada quadro.
      Havia um `filter: blur(2px)` aqui. Um único filtro tira a animação inteira
      do compositor, e esta é a animação de entrada MAIS usada do app: o

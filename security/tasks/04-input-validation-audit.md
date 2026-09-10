@@ -1,6 +1,6 @@
-# 04 — Auditoria de input
+# 04: Auditoria de input
 
-**Status:** ✅ Concluído — 3 achados (LOW/INFORMATIONAL), corrigidos e reverificados. Ver "Rodada 2026-09-05".
+**Status:** ✅ Concluído, 3 achados (LOW/INFORMATIONAL), corrigidos e reverificados. Ver "Rodada 2026-09-05".
 
 ## Objetivo
 
@@ -36,9 +36,9 @@ payload | severity | fix.
 ## Checklist de validação
 
 - [x] Toda query ao Supabase usa o client (`.from().select()/.insert()`,
-      RPC parametrizado) — nenhuma string interpolada montando SQL cru.
+      RPC parametrizado), nenhuma string interpolada montando SQL cru.
 - [x] Todo `route.ts` em `app/api/**` valida o corpo da requisição com Zod
-      (ou equivalente) antes de usar qualquer campo — checar em especial
+      (ou equivalente) antes de usar qualquer campo, checar em especial
       `app/api/coins/charge`, `app/api/deepening`,
       `app/api/deepening/reprocess`, `app/api/final-summary/reprocess`
       (arquivos alterados recentemente, ver `git status`) e
@@ -50,11 +50,11 @@ payload | severity | fix.
       `execSync`) com string vinda de input de usuário em `app/`, `lib/`,
       `src/` ou `scripts/`.
 - [x] Transcrição, resumo e cards do feed (conteúdo gerado por LLM a partir
-      de fala do usuário) são renderizados como texto — se algum componente
+      de fala do usuário) são renderizados como texto, se algum componente
       usa `dangerouslySetInnerHTML` ou um markdown renderer, confirmar que
       passa por sanitização (ex.: DOMPurify) antes.
 - [x] Nenhum endpoint aceita e persiste dado sem qualquer validação de
-      schema — "sem validação nenhuma" é a categoria mais fácil de virar
+      schema, "sem validação nenhuma" é a categoria mais fácil de virar
       RCE ou corrupção de dado indiretamente.
 
 ## Áreas do repositório a inspecionar
@@ -67,25 +67,25 @@ payload | severity | fix.
 ## Critério de aceite
 
 Cada payload de exemplo listado na saída do prompt deixa de funcionar depois
-da correção — reproduzir o ataque e confirmar falha antes de fechar.
+da correção, reproduzir o ataque e confirmar falha antes de fechar.
 
 ---
 
 ## Rodada 2026-09-05
 
-### 1. Onde input de usuário chega — e onde ele NÃO chega
+### 1. Onde input de usuário chega: e onde ele NÃO chega
 
 O que a varredura procurou e **não achou nenhuma ocorrência**, o que já é a
 resposta da metade do prompt:
 
 | Sink | Ocorrências em `app/` `lib/` `src/` |
 |---|---|
-| SQL montado por concatenação ou template literal | **zero** — toda consulta passa pelo client (`.from().select()`) ou por RPC com parâmetro nomeado |
+| SQL montado por concatenação ou template literal | **zero**, toda consulta passa pelo client (`.from().select()`) ou por RPC com parâmetro nomeado |
 | `eval(` / `new Function(` | **zero** (os `\.exec(` que a busca traz são `RegExp.prototype.exec`) |
-| `child_process` / `execSync` / shell | **zero** em `app/`, `lib/`, `src/`. Em `scripts/` existem três, e as três recebem argv em ARRAY, com argumentos do próprio desenvolvedor no terminal — não há caminho de usuário até lá |
-| Renderizador de markdown | **zero** — não há dependência disso no `package.json` |
+| `child_process` / `execSync` / shell | **zero** em `app/`, `lib/`, `src/`. Em `scripts/` existem três, e as três recebem argv em ARRAY, com argumentos do próprio desenvolvedor no terminal, não há caminho de usuário até lá |
+| Renderizador de markdown | **zero**, não há dependência disso no `package.json` |
 | `dangerouslySetInnerHTML` | duas, e as duas com conteúdo de compilação: `LandingJsonLd` (JSON-LD serializado de uma constante) e `ThemeScript` (script literal). Nenhum dado de usuário ou de LLM |
-| Path de arquivo derivado de input | **zero** — nada é escrito em disco. O áudio do chunk vai direto para a OpenAI e o texto vai para o banco |
+| Path de arquivo derivado de input | **zero**, nada é escrito em disco. O áudio do chunk vai direto para a OpenAI e o texto vai para o banco |
 
 Transcrição, resumo, cards e estudo são renderizados como **nó de texto do
 React**, que escapa por construção. Não existe sink de HTML para onde um
@@ -104,9 +104,9 @@ tamanho.
 
 | Arquivo:linha | Fonte | Onde chegava | Payload | Sev. | Correção |
 |---|---|---|---|---|---|
-| `app/api/feed/route.ts:37` | `?excludeSessionId=` | um `neq` no banco, sem forma conferida — era o único parâmetro da rota que escapava do Zod (`order`, `offset` e `limit` já passavam) | `GET /api/feed?excludeSessionId=nao-e-uuid` → 200, com o valor indo cru para a consulta | LOW | ✅ `OptionalUuidSchema`; agora **400 `invalid_query`** |
+| `app/api/feed/route.ts:37` | `?excludeSessionId=` | um `neq` no banco, sem forma conferida, era o único parâmetro da rota que escapava do Zod (`order`, `offset` e `limit` já passavam) | `GET /api/feed?excludeSessionId=nao-e-uuid` → 200, com o valor indo cru para a consulta | LOW | ✅ `OptionalUuidSchema`; agora **400 `invalid_query`** |
 | `lib/db/{locations,speakers}.ts`, `lib/db/feature-flags.ts:148`, `lib/db/admin/partners.ts:221` | nome digitado e e-mail digitado | dentro de um `ilike`, onde `%` e `_` são CURINGAS | `?q=%` devolvia a lista inteira em vez do que casa com "%". Nos dois de e-mail é pior: rodam com **service-role**, sem RLS, e resolvem e-mail → `id` que vira permissão (exceção de feature, vínculo de parceiro) | LOW | ✅ `escapeLikeValue` extraído de `require-partner.ts` para `lib/db/like.ts` e aplicado nos cinco pontos |
-| `app/api/transcribe/route.ts:88` | campo `chunkIndex` do multipart | interpolado no `filename` que mandamos para a OpenAI, sem forma nem tamanho | Injeção de cabeçalho multipart **não** acontece — verificado: o `FormData` do undici percent-encoda `"` e CRLF (`filename="chunk-0%22%0D%0AX-Injected: 1…"`). O que faltava era limite: nada impedia um `chunkIndex` de um megabyte | INFORMATIONAL | ✅ `/^\d{1,6}$/`, senão `"x"` |
+| `app/api/transcribe/route.ts:88` | campo `chunkIndex` do multipart | interpolado no `filename` que mandamos para a OpenAI, sem forma nem tamanho | Injeção de cabeçalho multipart **não** acontece, verificado: o `FormData` do undici percent-encoda `"` e CRLF (`filename="chunk-0%22%0D%0AX-Injected: 1…"`). O que faltava era limite: nada impedia um `chunkIndex` de um megabyte | INFORMATIONAL | ✅ `/^\d{1,6}$/`, senão `"x"` |
 
 ### 4. Reverificação
 
@@ -116,7 +116,7 @@ GET /api/feed?excludeSessionId=00000000-0000-4000-8000-…     → 200
 GET /api/feed                                                → 200  (caminho normal intacto)
 ```
 
-Para o curinga, três locais semeados na conta de teste — "Igreja Central",
+Para o curinga, três locais semeados na conta de teste, "Igreja Central",
 "Assembleia do Bairro" e "100% Fé":
 
 ```

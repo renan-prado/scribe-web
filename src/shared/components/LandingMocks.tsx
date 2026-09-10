@@ -5,16 +5,16 @@ import { ScribaAvatar } from "@/shared/brand";
 /**
  * As telas de demonstração dentro dos mockups de celular da landing page.
  *
- * Antes a LP montava os componentes REAIS — `<Feed>` e `<SummaryView>` — para
+ * Antes a LP montava os componentes REAIS, `<Feed>` e `<SummaryView>`, para
  * desenhar estas duas telas. Fidelidade de graça, mas o custo era o bundle: os
  * dois são `"use client"` e arrastavam junto `FeedItemCard`, `VerseDialog`
  * (com o Dialog do base-ui), `useVerseFetch`, `PassageVerses`, `ScribaComment`
- * e os skeletons. A landing page — a única rota que um visitante anônimo
- * carrega, e a que decide se ele fica — baixava o app de gravação inteiro para
+ * e os skeletons. A landing page, a única rota que um visitante anônimo
+ * carrega, e a que decide se ele fica, baixava o app de gravação inteiro para
  * exibir cinco cards que nunca mudam e nunca respondem a clique.
  *
  * Aqui o markup é estático e roda no servidor: zero JS no cliente. O preço é
- * ter de reproduzir o visual à mão, e é um preço real — mexer no `FeedItemCard`
+ * ter de reproduzir o visual à mão, e é um preço real, mexer no `FeedItemCard`
  * NÃO atualiza mais estas telas. É a troca certa mesmo assim, porque a LP e o
  * feed ao vivo têm razões diferentes para mudar: o feed muda quando o produto
  * muda, a LP quando a mensagem muda.
@@ -57,7 +57,7 @@ function AiCard({ label, children }: { label: string; children: React.ReactNode 
 
 /**
  * Card originado da FALA do pregador: superfície de gradiente em vez do balão
- * tracejado. A distinção visual é a convenção do feed — ver AGENTS.md.
+ * tracejado. A distinção visual é a convenção do feed, ver AGENTS.md.
  */
 function SpeakerCard({ label, children }: { label: string; children: React.ReactNode }) {
   return (
@@ -74,7 +74,7 @@ export function LandingFeedMock() {
   return (
     <div className="flex flex-col gap-4 px-4 pb-8 pt-3">
       <div className="flex flex-col gap-4">
-        {/* speakerHighlight — quebra a moldura do card (HighlightBlock) */}
+        {/* speakerHighlight, quebra a moldura do card (HighlightBlock) */}
         <figure className="animate-content-fade mt-2 mb-6 flex flex-col items-center gap-1.5 px-4 text-center sm:mb-8 sm:px-8">
           <span
             aria-hidden
@@ -98,7 +98,7 @@ export function LandingFeedMock() {
             um encontro improvável em revelação.
           </p>
           <p className="text-[11px] font-light italic text-scriba-ink-mute">
-            — Contexto histórico de João 4
+            Contexto histórico de João 4
           </p>
         </AiCard>
 
@@ -108,7 +108,7 @@ export function LandingFeedMock() {
             Fizeste-nos para Ti, e inquieto está o nosso coração enquanto não repousa em Ti.
           </blockquote>
           <p className="text-xs font-medium text-scriba-ink-soft">
-            — Agostinho, citado pelo pregador
+            Agostinho, citado pelo pregador
           </p>
         </SpeakerCard>
 
@@ -118,13 +118,13 @@ export function LandingFeedMock() {
             O meu povo cometeu dois males: abandonou a mim, a fonte de água viva, e cavou as suas
             próprias cisternas.
           </blockquote>
-          <p className="text-xs font-medium text-scriba-ink-soft">— Jeremias 2:13</p>
+          <p className="text-xs font-medium text-scriba-ink-soft">- Jeremias 2:13</p>
           <p className="text-[11px] font-light leading-relaxed text-scriba-ink-mute">
             Conecta a água viva oferecida por Jesus às falsas fontes onde buscamos satisfação.
           </p>
         </AiCard>
 
-        {/* speakerEcho — EchoBlock */}
+        {/* speakerEcho, EchoBlock */}
         <figure className="animate-content-fade my-2 flex flex-col gap-2 border-l-2 border-scriba-hairline py-1 pl-4">
           <figcaption className="text-[10px] font-semibold uppercase tracking-[0.14em] text-scriba-ink-mute">
             Frase para relembrar
@@ -134,7 +134,7 @@ export function LandingFeedMock() {
           </blockquote>
         </figure>
 
-        {/* Indicador de "digitando" — na LP é decorativo e fixo, então some o
+        {/* Indicador de "digitando", na LP é decorativo e fixo, então some o
             `role="status"` do original: não há nada a anunciar a um leitor de
             tela numa captura de tela parada. */}
         <div className="animate-content-fade flex items-start gap-2.5" aria-hidden>

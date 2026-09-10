@@ -10,20 +10,20 @@ import { serverEnv } from "@/lib/env/server";
 
 /**
  * Catálogo SERVER-ONLY: a ponte entre uma chave de plano/pacote e o Price ID
- * do Stripe, e — no sentido inverso — entre um Price ID pago e quantas moedas
+ * do Stripe, e, no sentido inverso, entre um Price ID pago e quantas moedas
  * ele vale.
  *
  * O sentido inverso (`entitlementForPrice`) é o coração da segurança do
  * crédito. O webhook NUNCA lê "quantas moedas" do metadata da sessão de
  * checkout (metadata é escrito por nós, mas nada impede um evento forjado…
- * exceto a assinatura — e mesmo assim preferimos não depender disso). Ele
+ * exceto a assinatura, e mesmo assim preferimos não depender disso). Ele
  * pega o Price ID que o Stripe confirmou como PAGO, procura aqui, e credita
  * o que ESTE arquivo diz. Se o Price não estiver no catálogo, nada é
  * creditado e o evento é logado como suspeito.
  *
  * Consequência prática: criar um Price novo no dashboard do Stripe não gera
  * crédito nenhum até alguém apontar a env var correspondente para ele. É o
- * comportamento que queremos — um Price desconhecido é uma anomalia, não uma
+ * comportamento que queremos, um Price desconhecido é uma anomalia, não uma
  * oportunidade.
  */
 
@@ -46,7 +46,7 @@ export function priceIdForTopup(): string | null {
 /**
  * Mapa reverso Price ID → direito adquirido. Construído a cada chamada em vez
  * de no módulo porque as env vars podem ser injetadas depois do primeiro
- * import em alguns runtimes — e o custo é irrelevante (3 entradas).
+ * import em alguns runtimes, e o custo é irrelevante (3 entradas).
  */
 function entitlementIndex(): Map<string, Entitlement> {
   const index = new Map<string, Entitlement>();
@@ -79,7 +79,7 @@ function entitlementIndex(): Map<string, Entitlement> {
 
 /**
  * Resolve um Price ID pago para o direito que ele confere. `null` significa
- * "não reconheço este preço" — o chamador NÃO deve creditar nada.
+ * "não reconheço este preço", o chamador NÃO deve creditar nada.
  */
 export function entitlementForPrice(priceId: string | null | undefined): Entitlement | null {
   if (!priceId) return null;

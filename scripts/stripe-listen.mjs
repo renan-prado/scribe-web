@@ -15,7 +15,7 @@
  * 1. CONTEXTO. O CLI atual abre em modo LIVE e responde "You're in live mode…
  *    run 'stripe switch context' to select a sandbox". Seguir essa sugestão é
  *    armadilha: sandboxes são ambientes SEPARADOS do test mode clássico, com
- *    produtos e preços próprios — cair num deles dá "preço não existe nesta
+ *    produtos e preços próprios, cair num deles dá "preço não existe nesta
  *    conta/modo". Aqui passamos `--api-key` com a chave que a própria
  *    aplicação usa, então o CLI escuta exatamente o ambiente certo.
  *
@@ -58,7 +58,7 @@ if (apiKey.startsWith("sk_live")) {
   console.error(
     [
       "✗ STRIPE_SECRET_KEY é uma chave LIVE.",
-      "  `stripe listen` encaminha eventos de TESTE — com uma chave live nada bateria,",
+      "  `stripe listen` encaminha eventos de TESTE, com uma chave live nada bateria,",
       "  e você estaria a um clique de uma cobrança real em desenvolvimento.",
       "  Use a chave sk_test_... da mesma conta. Veja docs/stripe-setup.md, passo 6.",
     ].join("\n")
@@ -69,7 +69,7 @@ if (apiKey.startsWith("sk_live")) {
 // No Windows o `stripe` costuma ser um `.cmd` (instalação via npm), e o
 // `spawn` do Node não executa .cmd/.bat sem passar pelo shell. Como o shell
 // reintroduz o risco de injeção pela linha de comando, conferimos antes que a
-// chave é só [A-Za-z0-9_] — se o .env.dev tiver algo estranho, preferimos
+// chave é só [A-Za-z0-9_], se o .env.dev tiver algo estranho, preferimos
 // abortar a mandar isso para um interpretador.
 const needsShell = process.platform === "win32";
 if (needsShell && !/^sk_(test|live)_[A-Za-z0-9]+$/.test(apiKey)) {
@@ -134,7 +134,7 @@ function checkSecret(text) {
       [
         "",
         "✓ STRIPE_WEBHOOK_SECRET atualizado no .env.dev.",
-        "  REINICIE o `npm run dev` — o Next só lê env vars ao subir.",
+        "  REINICIE o `npm run dev`, o Next só lê env vars ao subir.",
         "",
       ].join("\n")
     );
@@ -148,7 +148,7 @@ function checkSecret(text) {
       "│ ATENÇÃO: o STRIPE_WEBHOOK_SECRET do .env.dev NÃO é este.",
       "│",
       "│ Do jeito que está, o webhook responde 400 e NENHUM pagamento",
-      "│ vira crédito — sem erro visível na tela.",
+      "│ vira crédito, sem erro visível na tela.",
       "│",
       "│ Cole no .env.dev e reinicie o `npm run dev`:",
       "│",
@@ -161,7 +161,7 @@ function checkSecret(text) {
   );
 }
 
-// Repassamos tudo que o CLI escreve, para não esconder nada do usuário — só
+// Repassamos tudo que o CLI escreve, para não esconder nada do usuário, só
 // espiamos de passagem em busca do segredo. O CLI usa stderr para a linha de
 // boas-vindas em algumas versões, então observamos os dois canais.
 child.stdout.on("data", (buf) => {

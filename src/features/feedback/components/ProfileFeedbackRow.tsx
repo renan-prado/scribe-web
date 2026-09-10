@@ -6,12 +6,12 @@ import { FeedbackDialog } from "@/features/feedback/components/FeedbackDialog";
 import { FEEDBACK_TOPICS_BY_SURFACE } from "@/lib/domain/feedback";
 
 /**
- * "Dar feedback" no /profile — a porta que a própria pessoa procura.
+ * "Dar feedback" no /profile, a porta que a própria pessoa procura.
  *
  * Ela existe porque as três janelas automáticas (1ª, 3ª e 8ª gravação) são
  * NOSSA escolha de momento, e o momento em que alguém tem algo a dizer é dela.
  * Sem este botão, quem se incomodou na décima gravação não tem para onde
- * levar isso — e essa é exatamente a pessoa que ainda está aqui.
+ * levar isso, e essa é exatamente a pessoa que ainda está aqui.
  *
  * Não passa por `feedback_prompts`: não há marco a queimar nem pergunta a
  * marcar como respondida, e por isso o envio vai sem `promptId`. O servidor

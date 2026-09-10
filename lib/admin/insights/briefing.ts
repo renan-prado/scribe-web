@@ -23,7 +23,7 @@ import { stripeFeeCents } from "@/lib/partners/economics";
  * 1. **Nada é calculado aqui.** Margem sai de `computeActionEconomics`, funil e
  *    passivo saem de `loadAdminMetrics`, custo sai de `loadAdminUsageSummary`.
  *    Uma segunda aritmética de margem, escrita para "formatar melhor para o
- *    modelo", seria uma segunda definição do número — e o dia em que ela
+ *    modelo", seria uma segunda definição do número, e o dia em que ela
  *    discordasse da tabela apareceria como um insight contradizendo a tela
  *    logo acima dele.
  *
@@ -33,7 +33,7 @@ import { stripeFeeCents } from "@/lib/partners/economics";
  *    cookie que o admin girou e que não cobra nada de ninguém.
  *
  * 3. **É texto, não JSON.** JSON de agregado vira, na cabeça do modelo, uma
- *    tabela para transcrever de volta — e transcrição é exatamente o modo de
+ *    tabela para transcrever de volta, e transcrição é exatamente o modo de
  *    falha do card. Texto rotulado, com a unidade colada no número, produz
  *    frase em vez de listagem.
  *
@@ -51,7 +51,7 @@ const BRL = new Intl.NumberFormat("pt-BR", {
 
 /**
  * De onde saiu a cotação, em português, porque quem lê esta linha é um modelo
- * que vai escrever para o admin — "stored" viraria "stored" no card. O rótulo
+ * que vai escrever para o admin, "stored" viraria "stored" no card. O rótulo
  * de cada uma diz o quanto ela pode estar velha, que é a única coisa que muda
  * a leitura de uma margem.
  */
@@ -59,7 +59,7 @@ const FX_SOURCE_LABEL: Record<UsdBrlRate["source"], string> = {
   awesomeapi: "cotação viva do dia",
   frankfurter: "referência do BCE, último dia útil",
   manual: "valor digitado pelo admin",
-  stored: "última cotação guardada — as fontes vivas não responderam agora",
+  stored: "última cotação guardada, as fontes vivas não responderam agora",
 };
 
 function money(brl: number | null): string {
@@ -67,7 +67,7 @@ function money(brl: number | null): string {
 }
 
 function pct(ratio: number | null): string {
-  return ratio == null ? "—" : `${(ratio * 100).toFixed(1).replace(".", ",")}%`;
+  return ratio == null ? "-" : `${(ratio * 100).toFixed(1).replace(".", ",")}%`;
 }
 
 function windowFrom(): string {
@@ -77,10 +77,10 @@ function windowFrom(): string {
 /** Os dois lados da régua, escritos uma vez e reusados nos três escopos. */
 function rulerBlock(settings: CoinEconomicsSettings, rate: UsdBrlRate | null): string {
   return [
-    "── A RÉGUA (simulação — o admin digitou; não cobra nada de ninguém) ──",
+    "── A RÉGUA (simulação, o admin digitou; não cobra nada de ninguém) ──",
     `[RÉGUA] valor de venda da moeda: ${BRL.format(settings.pricePerThousandBrl)} por ${INT.format(COINS_PER_COST_UNIT)} moedas`,
     `[RÉGUA] margem alvo: ${settings.targetMarginPct}%`,
-    `[MEDIDO] câmbio USD→BRL usado nesta conversão: ${rate ? `${rate.rate.toFixed(4)} (${FX_SOURCE_LABEL[rate.source]})` : "indisponível — nenhuma fonte respondeu, e por isso TODO valor em real deste briefing está ausente. Isso é falha de cotação, não de medição: o custo em dólar de cada chamada está gravado e correto"}`,
+    `[MEDIDO] câmbio USD→BRL usado nesta conversão: ${rate ? `${rate.rate.toFixed(4)} (${FX_SOURCE_LABEL[rate.source]})` : "indisponível, nenhuma fonte respondeu, e por isso TODO valor em real deste briefing está ausente. Isso é falha de cotação, não de medição: o custo em dólar de cada chamada está gravado e correto"}`,
     "",
     "Para referência de mercado (preços reais, no Stripe):",
     `[MEDIDO] pacote avulso: ${formatBrl(TOPUP.priceCents)} por ${INT.format(TOPUP.coins)} moedas`,
@@ -124,7 +124,7 @@ function actionsBlock(
       settings,
     });
     lines.push(
-      `${action.label} — cobra ${action.coins} moedas por ${action.unit}. ` +
+      `${action.label}, cobra ${action.coins} moedas por ${action.unit}. ` +
         `${INT.format(row.executions)} execuções, ${INT.format(row.coins)} moedas debitadas, ` +
         `${INT.format(row.events)} chamadas de LLM. ` +
         `Custo total ${money(rate ? row.totalCostUsd * rate.rate : null)}; ` +
@@ -133,9 +133,9 @@ function actionsBlock(
         `MARGEM AO PREÇO DE HOJE ${pct(e.marginAtCurrentPrice)} (é esta que decide preço). ` +
         `Margem realizada sobre as moedas debitadas: ${pct(e.realizedMargin)}. ` +
         (ledgerDivergesFromPrice(e.ledgerCoinsPerExecution, action.coins)
-          ? `ATENÇÃO: o ledger cobrou em média ${e.ledgerCoinsPerExecution?.toFixed(1)} moedas por ${action.unit} no período, e não as ${action.coins} de hoje — houve mudança de preço dentro da janela, ou cobrança sem execução medida. É por isso que as duas margens discordam. `
+          ? `ATENÇÃO: o ledger cobrou em média ${e.ledgerCoinsPerExecution?.toFixed(1)} moedas por ${action.unit} no período, e não as ${action.coins} de hoje, houve mudança de preço dentro da janela, ou cobrança sem execução medida. É por isso que as duas margens discordam. `
           : "") +
-        `Para fechar o alvo cobraria ${e.suggestedCoinsPerExecution == null ? "—" : Math.max(1, Math.ceil(e.suggestedCoinsPerExecution))} moedas/${action.unit}. ` +
+        `Para fechar o alvo cobraria ${e.suggestedCoinsPerExecution == null ? "-" : Math.max(1, Math.ceil(e.suggestedCoinsPerExecution))} moedas/${action.unit}. ` +
         `(${action.note})`
     );
   }
@@ -155,7 +155,7 @@ function actionsBlock(
   const internal = summary.byAction.find((a) => a.key === "internal");
   if (internal && internal.events > 0) {
     lines.push(
-      `[MEDIDO] CUSTO INTERNO DO PAINEL: ${money(rate ? internal.totalCostUsd * rate.rate : null)} em ${INT.format(internal.events)} chamadas — esta própria análise. Despesa operacional, nunca terá moeda atrás.`
+      `[MEDIDO] CUSTO INTERNO DO PAINEL: ${money(rate ? internal.totalCostUsd * rate.rate : null)} em ${INT.format(internal.events)} chamadas, esta própria análise. Despesa operacional, nunca terá moeda atrás.`
     );
   }
 
@@ -166,17 +166,17 @@ function routesBlock(summary: AdminUsageSummary, rate: UsdBrlRate | null): strin
   const lines: string[] = [
     "── POR ROTA E MODELO [MEDIDO] ── (ordenado por custo, top 20)",
     "Cada rota é uma etapa do produto. O modelo entre parênteses é o que ela",
-    "rodou de fato no período — é onde uma troca de modelo se decide.",
+    "rodou de fato no período, é onde uma troca de modelo se decide.",
   ];
   for (const r of summary.byRoute.slice(0, 20)) {
     const models = r.models
       .map(
         (m) =>
-          `${m.model}${m.priced ? "" : " [SEM PREÇO NA TABELA — custo gravado como zero]"}: ${INT.format(m.events)} chamadas, ${money(rate ? m.totalCostUsd * rate.rate : null)}`
+          `${m.model}${m.priced ? "" : " [SEM PREÇO NA TABELA, custo gravado como zero]"}: ${INT.format(m.events)} chamadas, ${money(rate ? m.totalCostUsd * rate.rate : null)}`
       )
       .join(" | ");
     lines.push(
-      `${r.route}: ${INT.format(r.events)} chamadas, ${money(rate ? r.totalCostUsd * rate.rate : null)} — ${models}`
+      `${r.route}: ${INT.format(r.events)} chamadas, ${money(rate ? r.totalCostUsd * rate.rate : null)}, ${models}`
     );
   }
   return lines.join("\n");
@@ -207,7 +207,7 @@ function usersAndSessionsBlock(summary: AdminUsageSummary, rate: UsdBrlRate | nu
     const worst = sorted.slice(-5).reverse();
     lines.push(
       "",
-      `Custo por ${INT.format(COINS_PER_COST_UNIT)} moedas nas ${INT.format(withCoins.length)} sessões recentes com cobrança — mediana ${money(rate ? median * COINS_PER_COST_UNIT * rate.rate : null)}.`,
+      `Custo por ${INT.format(COINS_PER_COST_UNIT)} moedas nas ${INT.format(withCoins.length)} sessões recentes com cobrança, mediana ${money(rate ? median * COINS_PER_COST_UNIT * rate.rate : null)}.`,
       "As cinco mais caras:"
     );
     for (const s of worst) {
@@ -238,7 +238,7 @@ function totalsBlock(summary: AdminUsageSummary, rate: UsdBrlRate | null): strin
     `Moedas debitadas dos usuários: ${INT.format(totals.totalCoins)}.`,
     `Custo por ${INT.format(COINS_PER_COST_UNIT)} moedas, no agregado: ${money(costPerThousand)}.`,
     "  Esse agregado sai SÓ do custo cobrável: as duas linhas de fora estão",
-    "  discriminadas acima. NÃO as some de volta para 'corrigir' a margem —",
+    "  discriminadas acima. NÃO as some de volta para 'corrigir' a margem,",
     "  elas saem do lucro, não do preço de uma ação, e misturadas produzem um",
     "  número que contradiz todas as margens por ação sem que nenhuma esteja",
     "  errada. Se elas forem grandes, o item é sobre gasto gratuito, e não sobre",
@@ -300,8 +300,8 @@ export type Briefing = {
 };
 
 /**
- * Monta o briefing do escopo. Uma passada só pelos eventos — o mesmo
- * `loadAdminUsageSummary` que alimenta as três telas — porque duas passadas
+ * Monta o briefing do escopo. Uma passada só pelos eventos, o mesmo
+ * `loadAdminUsageSummary` que alimenta as três telas, porque duas passadas
  * seriam duas verdades.
  */
 export async function buildInsightsBriefing(scope: AdminInsightScope): Promise<Briefing> {

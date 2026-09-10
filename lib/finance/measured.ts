@@ -1,5 +1,5 @@
 /**
- * A ponte entre o ledger de moedas e a RECEITA em reais — client-safe e pura.
+ * A ponte entre o ledger de moedas e a RECEITA em reais, client-safe e pura.
  *
  * O Scriba não guarda um histórico de faturas em reais. O que ele guarda, com
  * data e por conta, é o CRÉDITO de moedas que cada pagamento confirmado gerou
@@ -18,7 +18,7 @@
  * É o preço de TABELA, não o valor cobrado. Um cupom, um upgrade rateado pelo
  * Stripe ou uma mudança de preço no meio do caminho fariam o valor real
  * divergir. Hoje o Scriba não tem cupom nem preço promocional, então os dois
- * coincidem — mas é coincidência de configuração, não garantia estrutural.
+ * coincidem, mas é coincidência de configuração, não garantia estrutural.
  *
  * O caminho para eliminá-la, quando fizer diferença, é gravar `amount_paid` do
  * invoice numa coluna de `coin_transactions` no momento do fulfill. É uma
@@ -26,7 +26,7 @@
  * foi feita agora: ela não conserta o histórico, só o futuro.
  *
  * Quando uma quantidade de moedas não casa com nenhum item do catálogo, este
- * módulo NÃO chuta um valor proporcional — ele conta o evento e o devolve em
+ * módulo NÃO chuta um valor proporcional, ele conta o evento e o devolve em
  * `unmapped`. Um crédito de origem desconhecida virando receita estimada é
  * exatamente o tipo de número que ninguém audita depois.
  */
@@ -50,7 +50,7 @@ export function isRevenueReversalReason(value: string): boolean {
 
 /**
  * Quanto vale, em centavos de BRL, um crédito de `coins` moedas com este
- * motivo. `null` quando não casa com nada do catálogo — ver o cabeçalho.
+ * motivo. `null` quando não casa com nada do catálogo, ver o cabeçalho.
  *
  * Assinatura: a quantidade creditada é exatamente `PLANS[plano].coins` (uma
  * fatura, uma unidade), então a busca é por igualdade. Pacote avulso: pode vir
@@ -129,7 +129,7 @@ export type UsageCostRow = { createdAt: string; costUsd: number };
  * A conversão usa UMA cotação para toda a série, e isso é uma escolha: o
  * histórico de câmbio não existe no banco, e reconverter tudo pela cotação de
  * hoje ao menos deixa os meses comparáveis entre si. Um mês convertido pela
- * cotação da época e outro pela de hoje seria pior — a variação do dólar
+ * cotação da época e outro pela de hoje seria pior, a variação do dólar
  * apareceria como variação de custo do produto.
  */
 export function aggregateAiCostByMonth(

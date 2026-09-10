@@ -11,8 +11,8 @@ export const dynamic = "force-dynamic";
 /**
  * "Quem me indicou?", para o selo do hero da landing page.
  *
- * ESTA ROTA EXISTE PORQUE A LP É ESTÁTICA. `app/page.tsx` não pode ler cookie
- * — uma leitura ali marca a rota como dinâmica e a resposta passa a sair com
+ * ESTA ROTA EXISTE PORQUE A LP É ESTÁTICA. `app/page.tsx` não pode ler cookie,
+ * uma leitura ali marca a rota como dinâmica e a resposta passa a sair com
  * `no-store` e `X-Vercel-Cache: MISS`, HTML remontado na origem a cada visita
  * anônima, numa página cujo conteúdo é idêntico para todo mundo (ver "Landing
  * page" em `app/AGENTS.md`). O efeito colateral fica aqui, e a LP continua
@@ -21,7 +21,7 @@ export const dynamic = "force-dynamic";
  * PÚBLICA, e por definição: quem chega por um link de indicação ainda não tem
  * conta. Está na allowlist do `proxy.ts` pelo mesmo motivo de `/r` e `/i`.
  *
- * O que ela devolve é o que o visitante já sabe — o nome e a foto de quem
+ * O que ela devolve é o que o visitante já sabe, o nome e a foto de quem
  * mandou o link. Nunca id, nunca e-mail, nunca nada que permita ir de um
  * código a uma pessoa: quem monta a resposta é `readActiveReferral`, sobre os
  * tipos `Public` de `lib/db/*`.

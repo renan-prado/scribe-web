@@ -11,14 +11,14 @@ export const runtime = "nodejs";
 export const dynamic = "force-dynamic";
 
 /**
- * URL do portal de faturamento do Stripe — onde o usuário troca de plano,
+ * URL do portal de faturamento do Stripe, onde o usuário troca de plano,
  * atualiza o cartão, baixa recibos e cancela.
  *
  * Não recebe corpo nenhum. O customer é lido do profiles do usuário
  * autenticado, então não há como pedir o portal de outra conta: enviar um id
  * qualquer não muda nada porque nada é lido do request.
  *
- * Toda mudança feita lá dentro volta para nós como webhook assinado — a UI
+ * Toda mudança feita lá dentro volta para nós como webhook assinado, a UI
  * nunca "acredita" no que aconteceu no portal.
  */
 export async function POST(request: Request) {

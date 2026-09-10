@@ -35,7 +35,7 @@ export function formatMmSs(ms: number): string {
  * primeiro nome mais a do último. Nome de uma palavra devolve uma letra só,
  * vazio devolve "?".
  *
- * Serve tanto a pessoa quanto a lugar — "Igreja Batista Central" vira "IC",
+ * Serve tanto a pessoa quanto a lugar, "Igreja Batista Central" vira "IC",
  * que é exatamente o tipo de pastilha que se reconhece de relance numa lista.
  */
 export function initialsOf(name: string | null | undefined): string {

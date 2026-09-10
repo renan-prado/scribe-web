@@ -15,7 +15,7 @@ import { cn } from "@/lib/utils";
  * em que dispara o webhook, então o saldo pode levar alguns segundos para
  * subir. Em vez de mentir ("créditos adicionados!") ou de deixar o usuário no
  * escuro, esta tela faz polling curto do saldo e só troca o discurso quando o
- * número de fato mudou — o que também serve de prova, para o usuário, de que
+ * número de fato mudou, o que também serve de prova, para o usuário, de que
  * o crédito veio do servidor e não da URL.
  *
  * Se o webhook demorar mais que a janela de polling, mostramos uma mensagem
@@ -27,18 +27,18 @@ const POLL_MS = 2_000;
 const MAX_POLLS = 15; // ~30s
 
 /**
- * Os quatro estados possíveis desta tela. Existem como um valor só — e não
- * como ternários espalhados — porque a versão anterior calculava o texto e o
+ * Os quatro estados possíveis desta tela. Existem como um valor só, e não
+ * como ternários espalhados, porque a versão anterior calculava o texto e o
  * ícone separadamente e eles saíram do ar: a tela dizia "Pagamento recebido"
  * com o spinner ainda girando embaixo, ou seja, anunciava sucesso e desenhava
  * espera. Com um `stage` único, ícone e copy não têm como divergir.
  *
- *  pending  — polling em andamento, saldo ainda não mudou
- *  credited — vimos o saldo subir: melhor desfecho possível
- *  received — o polling expirou sem ver o crédito. O pagamento existe e o
+ *  pending, polling em andamento, saldo ainda não mudou
+ *  credited, vimos o saldo subir: melhor desfecho possível
+ *  received, o polling expirou sem ver o crédito. O pagamento existe e o
  *             webhook vai processá-lo com ou sem esta aba aberta; não é erro,
- *             então também é sucesso — só sem o número para mostrar
- *  canceled — o usuário desistiu no Stripe
+ *             então também é sucesso, só sem o número para mostrar
+ *  canceled, o usuário desistiu no Stripe
  */
 type Stage = "pending" | "credited" | "received" | "canceled";
 
@@ -67,7 +67,7 @@ export function CheckoutReturn({
   const setBalanceInStore = useCoinsStore((s) => s.setBalance);
   const refreshSummary = useBillingStore((s) => s.refresh);
 
-  /** Saldo observado ao abrir a tela — a referência para detectar o crédito. */
+  /** Saldo observado ao abrir a tela, a referência para detectar o crédito. */
   const baselineRef = useRef<number | null>(null);
   const [credited, setCredited] = useState<number | null>(null);
   const [settled, setSettled] = useState(canceled);
@@ -79,7 +79,7 @@ export function CheckoutReturn({
     try {
       window.opener?.postMessage({ type: "scriba:coins-updated" }, window.location.origin);
     } catch {
-      // cross-origin ou sem opener — o refresh no focus cobre.
+      // cross-origin ou sem opener, o refresh no focus cobre.
     }
   }, []);
 
@@ -108,7 +108,7 @@ export function CheckoutReturn({
     /**
      * Antes de ficar esperando o webhook, PERGUNTAMOS. A reconciliação
      * confirma a sessão direto com o Stripe e credita se o webhook não tiver
-     * creditado — é o que impede "paguei e não recebi" quando a entrega do
+     * creditado, é o que impede "paguei e não recebi" quando a entrega do
      * evento falha. Quando o webhook funciona normalmente, esta chamada volta
      * com `credited: 0` e o polling segue como antes.
      */
@@ -175,7 +175,7 @@ export function CheckoutReturn({
     : credited !== null
       ? `${formatCoins(credited)} créditos entraram na sua conta. Saldo atual: ${formatCoins(balance ?? 0)}.`
       : settled
-        ? "Seu pagamento foi registrado e os créditos entram assim que a confirmação chegar — em geral, poucos segundos. Pode fechar esta aba."
+        ? "Seu pagamento foi registrado e os créditos entram assim que a confirmação chegar, em geral, poucos segundos. Pode fechar esta aba."
         : kind === "subscription"
           ? "Estamos ativando sua assinatura. Isso leva alguns segundos."
           : "Estamos confirmando a compra. Isso leva alguns segundos.";

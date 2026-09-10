@@ -5,20 +5,20 @@ import { REF_HINT_COOKIE } from "@/lib/referrals/cookies";
  *
  * Irmão do `ThemeScript`, e existe pelo mesmo motivo: o estado depende de algo
  * que só o navegador sabe (lá o localStorage, aqui um cookie), e descobrir
- * isso depois da hidratação produz uma troca visível na cara de quem chegou —
+ * isso depois da hidratação produz uma troca visível na cara de quem chegou,
  * "Ouça, relembre e coloque em prática." aparecendo por um instante e virando
  * "Indicado por Fulano". Numa pílula de 30px acima do `<h1>`, esse pisca é
  * exatamente o tipo de detalhe que faz a página parecer improvisada.
  *
  * O script marca `data-scriba-ref` no `<html>` e o CSS (`app/globals.css`,
  * `.lp-eyebrow-*`) decide qual dos dois filhos da pílula aparece. Quem tem
- * indicação vê o esqueleto desde o primeiro quadro; quem não tem — a
- * esmagadora maioria — vê a frase de sempre, sem esqueleto nenhum e sem
+ * indicação vê o esqueleto desde o primeiro quadro; quem não tem, a
+ * esmagadora maioria, vê a frase de sempre, sem esqueleto nenhum e sem
  * requisição nenhuma. **É por isso que a decisão não pode ser um `useState`
  * inicializado no efeito:** o React só roda depois do paint, e aí o dano já
  * está feito.
  *
- * Ele lê a PISTA (`scriba_ref_hint`), nunca o cookie de atribuição — aquele é
+ * Ele lê a PISTA (`scriba_ref_hint`), nunca o cookie de atribuição, aquele é
  * `httpOnly` e continua sendo a única fonte de "quem indicou". A pista diz
  * apenas que existe indicação a resolver.
  *

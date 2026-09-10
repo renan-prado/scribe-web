@@ -280,7 +280,7 @@ export function SavedSessionView({
       <SummaryView summary={summary} hasTranscript={transcript.length > 0} running={false} />
 
       {/* A secao pos-resumo reserva a mesma "canaleta" direita que os blocos
-          do SummaryView reservam pro botao de comentario do Scriba — um
+          do SummaryView reservam pro botao de comentario do Scriba, um
           placeholder invisivel size-9 alinha a borda direita de todo o
           conteudo na mesma coluna. No mobile o placeholder some. */}
       <div className="flex items-start sm:gap-4">

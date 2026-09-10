@@ -5,7 +5,7 @@ import { formatContext, type LogContext } from "./format";
  * Reporter do console do navegador.
  *
  * O devtools sabe fazer duas coisas que um terminal não faz: pintar com CSS
- * (`%c`) e renderizar um objeto EXPANDÍVEL. Este reporter usa as duas — a
+ * (`%c`) e renderizar um objeto EXPANDÍVEL. Este reporter usa as duas, a
  * pastilha do escopo é CSS, e o contexto vai como objeto vivo no fim da
  * chamada, não como texto. Quem lê vê a linha curta e abre o objeto só quando
  * quer o detalhe.
@@ -47,7 +47,7 @@ export const browserReporter: ConsolaReporter = {
     const levelCss = `${PILL}background:${level.badge};color:${level.ink};margin-left:4px;`;
     const messageCss = `color:${level.ink};font-weight:500;margin-left:6px;`;
 
-    // O nível só ganha pastilha própria quando não é o `info` do dia a dia —
+    // O nível só ganha pastilha própria quando não é o `info` do dia a dia,
     // senão toda linha viraria duas etiquetas e o escopo perderia o destaque.
     const showLevel = logObj.type !== "info" && logObj.type !== "log";
 

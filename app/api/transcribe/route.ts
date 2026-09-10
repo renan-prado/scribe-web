@@ -21,7 +21,7 @@ export const dynamic = "force-dynamic";
 // política nossa. Um chunk real tem 15-20s (`RECORDER_MIN/MAX_CHUNK_MS`) e pesa
 // uns 80 KB em opus; o teto do formato permitia 300 vezes isso. E o que se
 // compra com esse excedente não é folga: a OpenAI cobra por MINUTO de áudio, e
-// 25 MB de opus são mais de duas horas de som num único POST — $0,42 por
+// 25 MB de opus são mais de duas horas de som num único POST, $0,42 por
 // chamada, num endpoint que aceita 40 por minuto.
 //
 // 8 MB cobre cinco minutos a 200 kbps, que é o teto que `MAX_DURATION_MS` já
@@ -66,7 +66,7 @@ export async function POST(request: Request) {
     return NextResponse.json({ error: "file too large" }, { status: 413 });
   }
   // O limitador por chamada conta REQUISIÇÕES; a OpenAI cobra MINUTOS. Este é o
-  // balde que fecha a diferença — ver `enforceAudioBudget`. Fica depois do
+  // balde que fecha a diferença, ver `enforceAudioBudget`. Fica depois do
   // corte de tamanho de propósito: um POST recusado por ser grande demais não
   // deve consumir o orçamento de quem talvez nem seja o dono do defeito.
   const overBudget = enforceAudioBudget(auth.user.id, file.size);
@@ -96,7 +96,7 @@ export async function POST(request: Request) {
   // `chunkIndex` é o único campo do form que ia inteiro para dentro de uma
   // string, e essa string vira o `filename` do multipart que mandamos para a
   // OpenAI. O `FormData` do undici percent-encoda aspas e CRLF, então não havia
-  // injeção de cabeçalho ali — verificado. O que faltava era o limite: nada
+  // injeção de cabeçalho ali, verificado. O que faltava era o limite: nada
   // impedia um `chunkIndex` de um megabyte. Só dígito, no máximo seis.
   const chunkLabel =
     typeof chunkIndex === "string" && /^\d{1,6}$/.test(chunkIndex) ? chunkIndex : "x";
@@ -144,7 +144,7 @@ export async function POST(request: Request) {
   // **Não há segunda tentativa em outro modelo, e a ausência é deliberada.**
   // Havia uma: chunk `poor` era reenviado ao `gpt-4o-transcribe`. Medido
   // contra um sermão real com transcrição de referência, o modelo "escalado"
-  // perde para o padrão em TODOS os cenários — 16% de WER contra 14% no áudio
+  // perde para o padrão em TODOS os cenários, 16% de WER contra 14% no áudio
   // limpo, e 37% contra 16% sob reverberação forte, que é exatamente quando a
   // escalada disparava. A segunda chamada dobrava o custo do chunk para
   // entregar um texto pior.

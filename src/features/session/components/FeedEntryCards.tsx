@@ -151,7 +151,7 @@ export function HighlightCard({ item, footer }: { item: HighlightItem; footer: F
         </blockquote>
         {item.author ? (
           <figcaption className="mt-1 text-xs font-medium text-scriba-ink-soft">
-            — {item.author}
+            {item.author}
           </figcaption>
         ) : null}
       </figure>

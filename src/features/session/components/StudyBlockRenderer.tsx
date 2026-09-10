@@ -8,7 +8,7 @@ import { cn } from "@/lib/utils";
  * com o resumo, e desenha ele mesmo os cinco que não existem lá.
  *
  * Quatro tipos são novos (`objection`, `distinction`, `reading`, `question`) e
- * o quinto — `example` — é reinterpretado: no resumo ele é "Exemplo do
+ * o quinto, `example`, é reinterpretado: no resumo ele é "Exemplo do
  * pregador", porque veio do sermão; aqui é uma ilustração que o próprio estudo
  * traz, e a etiqueta errada era um dos sinais de que estudo e resumo eram a
  * mesma coisa por dentro. Ver `docs/estudo-v2.md` §1.7 e §5.1.
@@ -34,7 +34,7 @@ export function studyBlockKey(block: StudyBlock): string {
 const LABEL = "text-[10px] font-semibold uppercase tracking-[0.14em]";
 
 /**
- * Paleta das capas tipográficas. Tokens existentes, nunca cor literal —
+ * Paleta das capas tipográficas. Tokens existentes, nunca cor literal,
  * `src/shared/AGENTS.md`. Índice escolhido pelo título, não sorteado: a mesma
  * obra tem de sair com a mesma cor toda vez que aparecer, em qualquer estudo.
  */
@@ -58,7 +58,7 @@ function toneFor(seed: string): string {
  *
  * Duas formas, e a tipográfica NÃO é um placeholder degradado: ela é o caso
  * comum. `coverUrl` só existe quando `GOOGLE_BOOKS_API_KEY` está configurada e
- * a API confirmou o par autor+título (ver `lib/study/covers.ts`) — sem chave,
+ * a API confirmou o par autor+título (ver `lib/study/covers.ts`), sem chave,
  * toda capa é tipográfica, e o bloco tem de parecer intencional assim.
  *
  * Daí ela carregar o TÍTULO, e não um ícone genérico: uma lombada com o nome
@@ -92,7 +92,7 @@ function BookCover({
       aria-hidden
       className={cn(
         "flex h-[84px] w-14 shrink-0 flex-col justify-between rounded-md px-2 py-2 shadow-[0_2px_8px_rgba(0,0,0,0.08)]",
-        // A borda esquerda mais grossa é a lombada — é o que faz o retângulo
+        // A borda esquerda mais grossa é a lombada, é o que faz o retângulo
         // ser lido como livro sem precisar de ilustração.
         "border-l-[3px] border-black/10",
         toneFor(title)
@@ -188,7 +188,7 @@ export function StudyBlockRenderer({ block }: { block: StudyBlock }) {
 
     default:
       // Os blocos que o estudo divide com o resumo. `StudyBlock` é estrutural-
-      // mente compatível com `SummaryBlock` neles — `quote` só ganhou `work`,
+      // mente compatível com `SummaryBlock` neles, `quote` só ganhou `work`,
       // que o renderer compartilhado ignora.
       return <BlockRenderer block={block} />;
   }

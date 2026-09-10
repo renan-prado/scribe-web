@@ -25,7 +25,7 @@ import { cn } from "@/lib/utils";
  *
  * Existe para uma pergunta que nenhuma outra tela responde: **o que mudou
  * entre a execução de ontem e a de agora?** Os cards acima e `/admin/usage`
- * agregam, e um reprocessamento soma na mesma sessão — o número resultante não
+ * agregam, e um reprocessamento soma na mesma sessão, o número resultante não
  * descreve nenhuma das duas execuções.
  *
  * Três leituras que a tela precisa preservar:
@@ -35,8 +35,8 @@ import { cn } from "@/lib/utils";
  *      qualidade. A tela diz isso em vez de repetir as métricas ao lado de
  *      cada execução como se cada uma tivesse sido medida.
  *   2. **Raciocínio nulo não é raciocínio zero.** Nulo é chamada anterior à
- *      migração 0036, ou modelo que não raciocina. Zero MEDIDO é informação —
- *      é o caso do respondedor — e some se os dois virarem "0".
+ *      migração 0036, ou modelo que não raciocina. Zero MEDIDO é informação,
+ *      é o caso do respondedor, e some se os dois virarem "0".
  *   3. **A margem sai de `computeActionEconomics`**, a mesma conta dos cards
  *      acima, com a régua que o admin girou. Uma segunda fórmula de margem
  *      nesta página acabaria discordando da primeira.
@@ -52,7 +52,7 @@ const DATE_FMT = new Intl.DateTimeFormat("pt-BR", {
 const INT = new Intl.NumberFormat("pt-BR");
 
 function secs(ms: number | null): string {
-  if (!ms || ms <= 0) return "—";
+  if (!ms || ms <= 0) return "-";
   if (ms < 60_000) return `${Math.round(ms / 1000)}s`;
   return `${Math.floor(ms / 60_000)}m ${Math.round((ms % 60_000) / 1000)}s`;
 }
@@ -166,7 +166,7 @@ function RunCard({
           <Figure label="Custo" value={money(run.totalCostUsd)} />
           <Figure
             label={`Margem a ${COIN_COSTS.deepening} moedas`}
-            value={margin == null ? "—" : `${(margin * 100).toFixed(1).replace(".", ",")}%`}
+            value={margin == null ? "-" : `${(margin * 100).toFixed(1).replace(".", ",")}%`}
             tone={margin == null ? undefined : margin <= 0 ? "bad" : "good"}
           />
           <Figure
@@ -281,7 +281,7 @@ function QualityCard({
         <h3 className="text-sm font-semibold text-scriba-ink-strong">{title}</h3>
         <span className="text-[11px] font-light text-scriba-ink-mute">
           {runCount > 1
-            ? "Do estudo SALVO — ou seja, da última execução. Reprocessar sobrescreve o texto, então as anteriores existem em custo, não em qualidade."
+            ? "Do estudo SALVO, ou seja, da última execução. Reprocessar sobrescreve o texto, então as anteriores existem em custo, não em qualidade."
             : "Contra o contrato declarado no prompt do redator."}
         </span>
       </header>
@@ -291,7 +291,7 @@ function QualityCard({
           <ContractStat
             key={row.label}
             label={row.label}
-            value={row.value == null ? "—" : (row.fmt ?? ((n: number) => INT.format(n)))(row.value)}
+            value={row.value == null ? "-" : (row.fmt ?? ((n: number) => INT.format(n)))(row.value)}
             range={row.range}
             verdict={judge(row.value, row.range)}
           />

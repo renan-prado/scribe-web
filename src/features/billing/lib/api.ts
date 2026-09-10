@@ -52,11 +52,11 @@ export function checkoutErrorMessage(error: string): string {
     case "topup_unavailable":
       return "O pagamento ainda não está disponível. Tente de novo em instantes.";
     // Erro de configuração no Stripe (preço do tipo errado, arquivado ou
-    // inexistente). O log do servidor diz qual variável consertar — a mensagem
+    // inexistente). O log do servidor diz qual variável consertar, a mensagem
     // aqui só evita que o usuário fique tentando de novo à toa.
     case "price_misconfigured":
     case "payment_methods_unavailable":
-      return "O pagamento está temporariamente indisponível. Já registramos o erro — tente mais tarde.";
+      return "O pagamento está temporariamente indisponível. Já registramos o erro, tente mais tarde.";
     case "already_subscribed":
       return "Você já tem uma assinatura ativa. Use “Gerenciar assinatura” para trocar de plano.";
     case "no_customer":
@@ -81,7 +81,7 @@ export function checkoutErrorMessage(error: string): string {
  *    bloqueado.
  *  - SEM `noopener`. Com essa flag `window.open` devolve `null` por
  *    especificação, e perderíamos a referência necessária para redirecionar a
- *    aba — o código cairia no fallback e mataria a gravação. O opener fica
+ *    aba, o código cairia no fallback e mataria a gravação. O opener fica
  *    exposto ao checkout.stripe.com, que é uma origem confiável.
  */
 export function openCheckoutWindow(): Window | null {

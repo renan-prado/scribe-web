@@ -8,7 +8,7 @@ import { cn } from "@/lib/utils";
  * a barra do gravador na outra.
  *
  * **Elas moram embaixo porque em cima não serviriam.** O conteúdo destas telas
- * cresce por uma hora — um controle no topo obrigaria a rolar o sermão inteiro
+ * cresce por uma hora, um controle no topo obrigaria a rolar o sermão inteiro
  * de volta só para trocar de aba, que é o problema que ele deveria resolver.
  * Aqui fica no alcance do polegar o tempo todo, sem depender de onde a página
  * está.
@@ -17,13 +17,13 @@ import { cn } from "@/lib/utils";
  * do gravador, e num telefone de 390px não cabia: a barra sozinha carrega
  * tempo, pausar, parar e descartar, e o que sobrava obrigava as abas a ficarem
  * só de ícone. Duas caixinhas mudas ao lado de um cronômetro não anunciam que
- * existe uma transcrição para ler — que é a única razão de este controle
+ * existe uma transcrição para ler, que é a única razão de este controle
  * existir. Empilhadas, cada uma tem a largura que precisa e os rótulos ficam.
  *
  * Sem barra de gravador (sessão parada), as abas descem para a faixa dela: uma
  * pílula flutuando acima do nada denuncia que falta alguma coisa ali.
  *
- * O `env(safe-area-inset-bottom)` é o inset do indicador de início do iPhone —
+ * O `env(safe-area-inset-bottom)` é o inset do indicador de início do iPhone,
  * diferente de zero só no PWA instalado.
  *
  * A moldura de largura total é `pointer-events-none` de propósito: ela existe

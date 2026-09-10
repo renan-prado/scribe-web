@@ -23,7 +23,7 @@ export const dynamic = "force-dynamic";
  *
  * Gera o resumo final de uma sessão que foi gravada no modo transcrição e
  * portanto nunca teve um. Roda `generateFinalSummary` sobre a transcrição já
- * salva na linha — sem `feedItems`, porque aquele modo não tem feed — e grava
+ * salva na linha, sem `feedItems`, porque aquele modo não tem feed, e grava
  * o payload, mais releia / lembra / frases marcantes, exatamente como as
  * outras duas rotas de resumo.
  *
@@ -32,19 +32,19 @@ export const dynamic = "force-dynamic";
  * O modo transcrição foi desenhado como o modo BARATO: só STT, nenhuma chamada
  * de LLM, e a página salva prometia isso. Mas a escolha do modo é feita ANTES
  * da pregação, e a pessoa só descobre que queria o resumo depois de ouvi-la.
- * Sem esta rota, a única saída era gravar de novo — impossível. A promessa que
+ * Sem esta rota, a única saída era gravar de novo, impossível. A promessa que
  * o modo faz é sobre o que ele COBRA por minuto, não sobre o que nunca poderá
  * ser feito com o texto depois.
  *
  * ## Ordem
  *
- * A conferência de dono vem antes da cobrança, e a cobrança antes do modelo —
+ * A conferência de dono vem antes da cobrança, e a cobrança antes do modelo,
  * mesmo padrão de `/reprocess` e `/api/deepening`. O 409 de
  * `session_already_summarized` é o que impede pagar duas vezes pelo mesmo
  * trabalho: quem quer refazer um resumo que já existe usa `/reprocess`, e é lá
  * que a semântica de sobrescrever mora.
  *
- * Uma falha do modelo DEPOIS da cobrança não estorna, também como as outras —
+ * Uma falha do modelo DEPOIS da cobrança não estorna, também como as outras,
  * a alternativa (cobrar no fim) deixa a chamada cara acontecer com saldo zero.
  *
  * ## O modo NÃO é conferido, e isso é deliberado
@@ -56,7 +56,7 @@ export const dynamic = "force-dynamic";
  * que ela tem. Exigir o modo trocaria uma recuperação por um beco.
  *
  * O preço disso é que o motivo `summary_from_transcript` no ledger mede "sessão
- * encerrada que ganhou resumo depois", e não estritamente "modo transcrição" —
+ * encerrada que ganhou resumo depois", e não estritamente "modo transcrição",
  * o botão só existe em `/transcript`, então na prática as duas coisas coincidem,
  * mas quem for ler aquele número deve saber da diferença.
  */
@@ -129,8 +129,8 @@ export async function POST(request: Request) {
   const { payload, latencyMs, model } = result;
 
   // `keepTitle` quando a pessoa já nomeou a gravação. No modo transcrição o
-  // título da linha é sempre humano — ou o que ela digitou no cabeçalho, ou o
-  // "Gravação dia N de mês" que o cliente gera no stop —, então o único caso em
+  // título da linha é sempre humano, ou o que ela digitou no cabeçalho, ou o
+  // "Gravação dia N de mês" que o cliente gera no stop, então o único caso em
   // que o título do resumo é uma melhora é o da linha sem título nenhum.
   const keepTitle = !!session.title?.trim();
 
@@ -145,7 +145,7 @@ export async function POST(request: Request) {
 
   // Best-effort, mesmo padrão das outras duas rotas: releia (10 versículos),
   // lembra (10 mini-callbacks) e frases marcantes (até 12, sem IA). Nenhuma
-  // delas falhando derruba o resumo — a UI trata payload ausente como normal.
+  // delas falhando derruba o resumo, a UI trata payload ausente como normal.
   const [rereads, reminders, highlights] = await Promise.all([
     generateAndSaveRereads({
       userId: auth.user.id,

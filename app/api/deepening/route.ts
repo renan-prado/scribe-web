@@ -18,13 +18,13 @@ export const runtime = "nodejs";
 export const dynamic = "force-dynamic";
 // O pipeline do estudo são três chamadas a um modelo de raciocínio e leva
 // perto de quatro minutos. Sem este teto explícito a função morre no padrão
-// da plataforma — e morreria DEPOIS de debitar as moedas.
+// da plataforma, e morreria DEPOIS de debitar as moedas.
 export const maxDuration = 300;
 
 /**
  * Single-shot study ("estudo"). Consumes the full transcript, curated feed
  * items AND the final_summary already produced for the session, and produces
- * a standalone theological study on the same theme — not a repackage of the
+ * a standalone theological study on the same theme, not a repackage of the
  * sermon. Persisted in session_deepenings (unique per session_id).
  */
 export async function POST(request: Request) {
@@ -34,7 +34,7 @@ export async function POST(request: Request) {
   const limited = enforceRateLimit(request, RATE_LIMITS.deepening, auth.user.id);
   if (limited) return limited;
 
-  // Gate de plano ANTES de qualquer trabalho — e, principalmente, antes de
+  // Gate de plano ANTES de qualquer trabalho, e, principalmente, antes de
   // cobrar. Esconder o botão é UX; isto é a proteção. Ver
   // lib/entitlements/features.ts.
   const gated = await requireFeature("study_generation");
@@ -60,7 +60,7 @@ export async function POST(request: Request) {
     return NextResponse.json({ error: "deepening_already_exists" }, { status: 409 });
   }
 
-  // Charge coins BEFORE we call the LLM — a 402 here means the account is
+  // Charge coins BEFORE we call the LLM, a 402 here means the account is
   // dry and there's no point spending upstream tokens on a request the user
   // can't afford. Any downstream failure below leaves the ledger entry in
   // place (intentional: this is a mechanism-testing pass and refunds add
@@ -92,7 +92,7 @@ export async function POST(request: Request) {
     }
     // "pipeline" cobre as paradas duras: nenhuma pergunta utilizável, nenhuma
     // resposta, redação vazia, selagem que esvaziou o estudo. Todas devolvem
-    // 502 porque todas são falha nossa, não do pedido — e nenhuma delas deve
+    // 502 porque todas são falha nossa, não do pedido, e nenhuma delas deve
     // gravar um estudo pela metade.
     if (result.kind === "pipeline") {
       return NextResponse.json({ error: result.message }, { status: 502 });

@@ -22,7 +22,7 @@ import {
  * própria tela, então serve qualquer página do painel sem saber qual é.
  *
  * A lista chega PRONTA do servidor, ordenada da mais nova para a mais antiga
- * por `sortVersionsDesc` — ordenar aqui daria "0.10.0" antes de "0.9.0", que é
+ * por `sortVersionsDesc`, ordenar aqui daria "0.10.0" antes de "0.9.0", que é
  * o erro que a comparação inteira existe para não cometer.
  */
 export function VersionPicker({ versions, current }: { versions: string[]; current: string }) {
@@ -45,19 +45,19 @@ export function VersionPicker({ versions, current }: { versions: string[]; curre
     startTransition(() => router.push(qs ? `${pathname}?${qs}` : pathname));
   }
 
-  // Sem nenhuma versão gravada, ele aparece DESABILITADO — nunca escondido.
+  // Sem nenhuma versão gravada, ele aparece DESABILITADO, nunca escondido.
   //
   // A primeira versão deste componente sumia da tela nesse caso, com o
   // argumento de que um seletor de uma opção só não controla nada. O efeito era
   // o oposto: a funcionalidade desaparecia exatamente quando alguém ia
   // procurá-la pela primeira vez (antes da medição começar, que é o estado de
-  // TODO ambiente no dia em que isto sobe), e a leitura era "não foi feito" —
+  // TODO ambiente no dia em que isto sobe), e a leitura era "não foi feito",
   // não "ainda não há o que comparar". Some com o controle e some com a
   // explicação junto.
   //
   // Desabilitado com o motivo no `title` diz as duas coisas ao mesmo tempo:
   // existe, e ainda não tem o que oferecer. É também o que a barra de filtros
-  // de /admin/usage já fazia — lá o campo sempre esteve na tela.
+  // de /admin/usage já fazia, lá o campo sempre esteve na tela.
   const empty = versions.length === 0;
 
   return (

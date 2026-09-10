@@ -36,7 +36,7 @@ type ChunkTiming = {
  * sermão completo em paralelo aos chunks, com um `onFinalAudio` que ninguém
  * nunca registrou: o áudio era codificado duas vezes, acumulado na memória do
  * início ao fim, e no stop virava um `new Blob` contíguo de dezenas de MB para
- * ser descartado. Numa WebView — heap bem menor que o de uma aba de Chrome —
+ * ser descartado. Numa WebView, heap bem menor que o de uma aba de Chrome,
  * esse pico caía exatamente no instante em que o usuário aperta "parar".
  *
  * Se um dia quisermos guardar o áudio, ele precisa ir para o IndexedDB

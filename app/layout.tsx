@@ -34,14 +34,14 @@ const poppins = Poppins({
 /**
  * `viewport-fit=cover` é o que faz `env(safe-area-inset-*)` deixar de valer
  * zero. Sem ele, no iPhone o app instalado desenha a nav inferior por baixo da
- * barra do indicador de início — o dedo acerta o gesto do sistema, não o botão.
+ * barra do indicador de início, o dedo acerta o gesto do sistema, não o botão.
  * Quem consome os insets é a `MobileBottomNav`.
  *
  * O zoom fica LIBERADO de propósito (`maximumScale: 5`, sem `userScalable`):
  * travar o pinch é a violação de acessibilidade mais comum em PWA, e o app é
  * lido em letra pequena dentro de igreja.
  *
- * `theme-color` NÃO entra aqui — ver `ThemeScript`.
+ * `theme-color` NÃO entra aqui, ver `ThemeScript`.
  */
 export const viewport: Viewport = {
   width: "device-width",
@@ -101,8 +101,8 @@ export const metadata: Metadata = {
   //
   // Eles NÃO bastam sozinhos, e é por isso que `app/favicon.ico` voltou a
   // existir (agora com a marca certa, não a do scaffold): o Google não
-  // aceita SVG como favicon — a lista dele é BMP, GIF, ICO, PNG, JPEG, PPM
-  // e TIFF — e um rastreador não avalia `media`. Sem o .ico o site ficava
+  // aceita SVG como favicon, a lista dele é BMP, GIF, ICO, PNG, JPEG, PPM
+  // e TIFF, e um rastreador não avalia `media`. Sem o .ico o site ficava
   // sem nenhum ícone indexável, e a busca seguia mostrando o antigo.
   // Os dois convivem: o .ico entra pela convenção de arquivo e este bloco
   // continua valendo para o navegador.
@@ -138,7 +138,7 @@ export const metadata: Metadata = {
     title: "Scriba",
     statusBarStyle: "default",
     // A tela de abertura no iOS. Sem estes arquivos o iPhone abre o app numa
-    // tela BRANCA vazia — ele ignora o `background_color` do manifest, que é o
+    // tela BRANCA vazia, ele ignora o `background_color` do manifest, que é o
     // que resolve o mesmo problema no Android. Ver `src/shared/splash.ts`.
     startupImage: APPLE_STARTUP_IMAGES,
   },
@@ -148,7 +148,7 @@ export default function RootLayout({ children }: LayoutProps<"/">) {
   return (
     // `data-scroll-behavior="smooth"` acompanha o `scroll-behavior: smooth` que
     // o CSS declara no <html> para as âncoras da landing. Sem ele o Next avisa
-    // no console e, pior, o rolar suave continua valendo na troca de rota — a
+    // no console e, pior, o rolar suave continua valendo na troca de rota, a
     // página desliza inteira em vez de saltar para o topo. Com o atributo, o
     // Next desliga o suave só durante a transição e devolve em seguida.
     <html
@@ -168,8 +168,8 @@ export default function RootLayout({ children }: LayoutProps<"/">) {
       <body className="min-h-full flex flex-col" suppressHydrationWarning>
         <Providers>
           {/* Sem `key`: este div é o CHÃO de toda rota, e remontá-lo a cada
-              navegação derrubava junto o header e a barra inferior do celular
-              — a moldura piscava a cada toque. A classe fica, e toca uma vez
+              navegação derrubava junto o header e a barra inferior do celular,
+              a moldura piscava a cada toque. A classe fica, e toca uma vez
               no carregamento completo; quem refaz o fade a cada rota é a
               `PageTransition` dentro de cada moldura. */}
           <div className="animate-content-fade flex flex-1 flex-col">{children}</div>

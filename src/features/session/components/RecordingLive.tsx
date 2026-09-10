@@ -70,7 +70,7 @@ const LIVE_PANEL_ID = "recording-live-feed";
 const TRANSCRIPT_PANEL_ID = "recording-live-transcript";
 
 type Props = {
-  /** The row already exists in Supabase — this component only UPDATEs it on stop. */
+  /** The row already exists in Supabase, this component only UPDATEs it on stop. */
   sessionId: string;
   initialSpeakerName: string;
   initialSpeakerLocation: string;
@@ -93,7 +93,7 @@ export function RecordingLive({
    * to re-anchor `startedAtRef` on resume so the timer picks up where it
    * stopped (paused time is not counted). */
   const pausedElapsedRef = useRef<number>(0);
-  /** Next chunk index to hand to the new recorder created on resume — keeps
+  /** Next chunk index to hand to the new recorder created on resume, keeps
    * chunk indices monotonically increasing across pauses so nothing overwrites
    * previously stored transcript rows. */
   const nextChunkIndexRef = useRef<number>(0);
@@ -116,7 +116,7 @@ export function RecordingLive({
   // ---- ui-local state (dialog open flags) ----
   /**
    * Qual das duas visões está na tela. O feed é o padrão porque é o produto do
-   * modo ao vivo; a transcrição existe para conferir o que o microfone ouviu —
+   * modo ao vivo; a transcrição existe para conferir o que o microfone ouviu,
    * e ela ficava só atrás do menu de três pontos, num diálogo.
    */
   const [view, setView] = useState<"feed" | "transcript">("feed");
@@ -124,7 +124,7 @@ export function RecordingLive({
   const [liveFeedOpen, setLiveFeedOpen] = useState(false);
   const [reportOpen, setReportOpen] = useState(false);
   const [discardOpen, setDiscardOpen] = useState(false);
-  /** Diálogo de compra aberto sem sair da página — sair mataria o recorder. */
+  /** Diálogo de compra aberto sem sair da página, sair mataria o recorder. */
   const [billingOpen, setBillingOpen] = useState(false);
 
   const activelyRecording = running && !paused;
@@ -159,7 +159,7 @@ export function RecordingLive({
     onOrphanRecovered: (chunk) => {
       // Recovered chunks land at index-order in the transcript. We don't know
       // their original startedAtMs offset (the previous session's clock is
-      // gone), so we seed 0 — the transcript view sorts by index anyway.
+      // gone), so we seed 0, the transcript view sorts by index anyway.
       useSessionStore.getState().upsertChunk({
         index: chunk.index,
         status: "uploading",
@@ -264,7 +264,7 @@ export function RecordingLive({
       await rec.start();
       recorderRef.current = rec;
       // startedAtRef MUST be seeded before setRunning(true) so useElapsedTimer
-      // observes a valid origin on first render — see AGENTS.md guardrails.
+      // observes a valid origin on first render, see AGENTS.md guardrails.
       startedAtRef.current = performance.now();
       getSessionState().setRunning(true);
       log.debug("start", { sessionId, at: new Date().toISOString() });
@@ -276,7 +276,7 @@ export function RecordingLive({
   const pause = useCallback(async () => {
     const s = getSessionState();
     if (!s.running || s.paused) return;
-    // Freeze the elapsed timer at its current value — startedAtRef is now
+    // Freeze the elapsed timer at its current value, startedAtRef is now
     // stale and will be re-anchored on resume.
     pausedElapsedRef.current = Math.max(0, performance.now() - startedAtRef.current);
     // Next chunk index the RESUMED recorder should start at. Uses the max
@@ -331,7 +331,7 @@ export function RecordingLive({
   const stop = useCallback(async () => {
     const s = getSessionState();
     if (!s.running) return;
-    // While paused, startedAtRef is stale — use the frozen elapsed instead.
+    // While paused, startedAtRef is stale, use the frozen elapsed instead.
     const durationMs = s.paused
       ? pausedElapsedRef.current
       : Math.round(performance.now() - startedAtRef.current);
@@ -347,7 +347,7 @@ export function RecordingLive({
     await recorderRef.current?.stop();
     recorderRef.current = null;
 
-    // Drain the transcribe queue before running final-summary — without this,
+    // Drain the transcribe queue before running final-summary, without this,
     // chunks still in retry-backoff would be missing from the LLM input and
     // the summary would silently exclude parts of the sermon.
     if (transcribeQueue.pendingCount() > 0) {
@@ -443,7 +443,7 @@ export function RecordingLive({
   ]);
 
   // Cobrança: `COIN_COSTS.liveMinute` moedas/min iniciado. O primeiro débito sai no t=0; os demais
-  // a cada 60s. Ao esgotar, a captura é CONGELADA (pause), não encerrada —
+  // a cada 60s. Ao esgotar, a captura é CONGELADA (pause), não encerrada,
   // o transcript, a fila de chunks e o feed continuam vivos esperando o
   // crédito. Ver `useCoinGuard` para o porquê da mudança.
   const coinGuard = useCoinGuard({
@@ -552,14 +552,14 @@ export function RecordingLive({
   /**
    * Trocar de aba troca a altura da página inteira, e a posição de rolagem
    * sobrevive à troca: quem estava acompanhando o fim do feed aterrissava no
-   * meio da transcrição. Salto seco (`behavior: "auto"`), não suave — animar
+   * meio da transcrição. Salto seco (`behavior: "auto"`), não suave, animar
    * uma rolagem entre dois conteúdos diferentes só mostra o conteúdo errado
    * passando. Quem NÃO estava no fim é deixado no topo da aba nova, que é
    * onde a leitura recomeça.
    *
    * `view` é o gatilho; `autoFollow` entra como leitura do momento da troca.
    */
-  // biome-ignore lint/correctness/useExhaustiveDependencies: só a troca de aba dispara — reagir a autoFollow religaria o salto a cada rolagem
+  // biome-ignore lint/correctness/useExhaustiveDependencies: só a troca de aba dispara, reagir a autoFollow religaria o salto a cada rolagem
   useEffect(() => {
     if (!hasStarted) return;
     window.scrollTo({
@@ -680,14 +680,14 @@ export function RecordingLive({
               <p className="font-semibold">Áudio com qualidade baixa</p>
               <p className="mt-1">
                 A transcrição pode conter erros. Se possível, aproxime o aparelho da caixa de som ou
-                de quem está falando — distância e eco são o que mais atrapalham. Você pode
-                continuar ou encerrar a gravação.
+                de quem está falando, distância e eco são o que mais atrapalham. Você pode continuar
+                ou encerrar a gravação.
               </p>
             </div>
           ) : null}
           {/* Os dois painéis são MONTADOS E DESMONTADOS, não escondidos com
               `hidden`. A rolagem aqui é a da janela, e duas árvores altas
-              empilhadas dariam à página a soma das duas alturas — o fim do
+              empilhadas dariam à página a soma das duas alturas, o fim do
               feed cairia no meio da barra de rolagem, e o autoscroll da
               transcrição miraria uma posição que não é o fim da tela. */}
           {view === "feed" ? (

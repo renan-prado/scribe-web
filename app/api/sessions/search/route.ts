@@ -16,14 +16,14 @@ export const dynamic = "force-dynamic";
  * A metade da busca das listas que não pode rodar no cliente. São DUAS
  * perguntas sobre a mesma sessão, e nenhuma delas cabe no que a lista carrega:
  *
- * - **O que foi DITO** — `ilike` na transcrição, que não viaja para
+ * - **O que foi DITO**: `ilike` na transcrição, que não viaja para
  *   `/recordings` nem para `/studies`, e não deve viajar.
- * - **O que foi CITADO** — os versículos. `Jonas 1` não é texto para ser
+ * - **O que foi CITADO**: os versículos. `Jonas 1` não é texto para ser
  *   procurado com `%like%`: o pregador disse "no primeiro capítulo de Jonas",
  *   e o card gravado diz "Jonas 1:1-17". Quem responde é
  *   `lib/domain/reference-query.ts`, comparando referência com referência.
  *
- * A resposta separa as duas porque a lista mostra POR QUE o cartão está ali —
+ * A resposta separa as duas porque a lista mostra POR QUE o cartão está ali,
  * "trecho na transcrição" ou a referência que casou. Um cartão que aparece sem
  * explicação, num termo que não bate com nada visível nele, parece defeito.
  *
@@ -31,7 +31,7 @@ export const dynamic = "force-dynamic";
  * referência (`parseReferenceQuery` devolve `null` para "graça"), então a busca
  * comum continua sendo uma consulta só.
  *
- * Não chama modelo nenhum — é `ilike` mais uma RPC de leitura —, então não
+ * Não chama modelo nenhum, é `ilike` mais uma RPC de leitura, então não
  * passa por `requireBalance`, pela mesma razão de `/api/verse`. O bucket é
  * próprio e generoso (240/min): a cadência vem de um debounce de 260ms, cujo
  * teto teórico passa dos 120/min de `entity-search`, e um 429 aqui é
@@ -40,7 +40,7 @@ export const dynamic = "force-dynamic";
  * O piso de 3 caracteres não é economia: `%a%` casa com todo sermão já
  * gravado, e uma lista que não exclui nada é indistinguível de uma busca
  * quebrada. Abaixo dele a resposta é uma lista vazia com `skipped: true`, para
- * o cliente saber que ninguém procurou — e não que nada foi encontrado.
+ * o cliente saber que ninguém procurou, e não que nada foi encontrado.
  */
 const MIN_TERM_LENGTH = 3;
 

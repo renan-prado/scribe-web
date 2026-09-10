@@ -7,7 +7,7 @@
 //    vez do dinossauro do Chrome.
 //
 // **O app continua SEM cache de conteúdo, de propósito.** Ele é feito de dados
-// que mudam a cada segundo — transcrição, feed, saldo de moedas — e um cache
+// que mudam a cada segundo, transcrição, feed, saldo de moedas, e um cache
 // velho aqui não apareceria como bug de cache: apareceria como uma sessão que
 // perdeu texto. O único cache que existe é a casca da página offline, que é
 // estática e não fala com o servidor.
@@ -30,7 +30,7 @@ self.addEventListener("install", (event) => {
         cache.addAll(OFFLINE_ASSETS.map((url) => new Request(url, { cache: "reload" })))
       )
       // A instalação NÃO pode falhar por causa disto. Um SW que não instala é
-      // um app que deixa de ser instalável — trocar a tela offline pelo
+      // um app que deixa de ser instalável, trocar a tela offline pelo
       // dinossauro é um preço muito menor.
       .catch(() => {})
   );
@@ -68,7 +68,7 @@ self.addEventListener("fetch", (event) => {
         return await fetch(request);
       } catch {
         // Só se chega aqui SEM REDE. Erro do servidor (500, 404) devolve uma
-        // resposta normal e nem passa por este catch — a tela offline mentiria.
+        // resposta normal e nem passa por este catch, a tela offline mentiria.
         const cache = await caches.open(CACHE);
         const cached = await cache.match(OFFLINE_URL);
         return cached ?? Response.error();

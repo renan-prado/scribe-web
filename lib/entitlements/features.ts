@@ -1,5 +1,5 @@
 /**
- * Catálogo de funcionalidades por plano — parte CLIENT-SAFE.
+ * Catálogo de funcionalidades por plano, parte CLIENT-SAFE.
  *
  * Este é o ÚNICO lugar onde existe a frase "esta funcionalidade exige tal
  * plano". Nenhuma rota, componente ou consulta deve comparar `plan ===
@@ -8,8 +8,8 @@
  * ⚠️ O catálogo mora em CÓDIGO, não no banco. É a mesma decisão de
  * `lib/billing/catalog.ts`, pelo mesmo motivo: uma linha errada numa tabela
  * não pode virar acesso grátis a uma funcionalidade paga. O `/admin` MOSTRA
- * esta matriz; não a edita. O que ele edita — kill switch e exceção por
- * pessoa — está em `feature_switches` / `feature_overrides` e entra aqui
+ * esta matriz; não a edita. O que ele edita, kill switch e exceção por
+ * pessoa, está em `feature_switches` / `feature_overrides` e entra aqui
  * como CONTEXTO, nunca como regra.
  *
  * Ser client-safe é requisito, não conveniência: a UI precisa do mesmo mapa
@@ -46,7 +46,7 @@ export const FEATURES: Record<FeatureKey, FeatureDefinition> = {
     // "pessoal" e não "estudioso": o estudo é o que diferencia um plano PAGO
     // do gratuito, e não o plano de cima do plano do meio. Prender a única
     // funcionalidade exclusiva do produto no degrau mais alto deixava o
-    // Pessoal sem nada que o Gratuito não tivesse — a diferença entre os dois
+    // Pessoal sem nada que o Gratuito não tivesse, a diferença entre os dois
     // era só a quantidade de créditos.
     //
     // `PLAN_ORDER` faz o Estudioso herdar automaticamente: quem alcança o
@@ -63,7 +63,7 @@ export function planMeetsFeature(plan: PlanKey, key: FeatureKey): boolean {
   return PLAN_ORDER.indexOf(plan) >= PLAN_ORDER.indexOf(FEATURES[key].minPlan);
 }
 
-/** Nome de tela do plano mínimo — para a frase de upsell. */
+/** Nome de tela do plano mínimo, para a frase de upsell. */
 export function minPlanNameFor(key: FeatureKey): string {
   return PLANS[FEATURES[key].minPlan].name;
 }
@@ -79,7 +79,7 @@ export type FeatureDenial =
 export type FeatureAccess = { allowed: true } | { allowed: false; reason: FeatureDenial };
 
 export type FeatureContext = {
-  /** Plano EFETIVO — já resolvido contra o status da assinatura. */
+  /** Plano EFETIVO, já resolvido contra o status da assinatura. */
   plan: PlanKey;
   /** `false` quando existe linha em `feature_switches` com enabled=false. */
   enabled?: boolean;
@@ -91,7 +91,7 @@ export type FeatureContext = {
  * A decisão. Precedência: kill switch → override → plano.
  *
  * O kill switch vencer o override é deliberado: ele existe para incidente, e
- * um incidente não abre exceção para ninguém — nem para o beta tester que
+ * um incidente não abre exceção para ninguém, nem para o beta tester que
  * tinha `granted = true`.
  */
 export function evaluateFeature(key: FeatureKey, ctx: FeatureContext): FeatureAccess {
@@ -110,7 +110,7 @@ export function canUseFeature(key: FeatureKey, ctx: FeatureContext): boolean {
  * O que o servidor entrega ao cliente: já decidido, sem as razões internas
  * além da que a UI precisa para escolher a mensagem.
  *
- * Note que `reason` não é segredo — o usuário descobre a mesma coisa clicando
+ * Note que `reason` não é segredo, o usuário descobre a mesma coisa clicando
  * e recebendo 403. Mandá-la junto é o que permite dizer "faz parte do plano
  * Estudioso" em vez de "indisponível".
  */
@@ -133,7 +133,7 @@ export function emptySnapshot(): EntitlementSnapshot {
 /**
  * Formas das duas tabelas de runtime, aqui e não em `lib/db/feature-flags.ts`
  * porque a tela do `/admin` é um componente cliente e não pode importar de um
- * módulo `server-only` — nem para tipo. Ver a regra de fronteira no AGENTS.md
+ * módulo `server-only`, nem para tipo. Ver a regra de fronteira no AGENTS.md
  * da raiz.
  */
 export type FeatureSwitchRow = {

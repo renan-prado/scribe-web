@@ -10,13 +10,13 @@
 --   comissão de parceiro→ `partner_commissions` / `partner_payouts`
 --
 -- Digitar qualquer um desses à mão criaria uma SEGUNDA definição do mesmo
--- número — o erro que `lib/db/admin/metrics.ts` existe para não cometer. Estas
+-- número, o erro que `lib/db/admin/metrics.ts` existe para não cometer. Estas
 -- tabelas guardam só o que ninguém mede por nós: Vercel, Supabase, domínio,
 -- ferramentas, impostos, dívidas com plataformas e receitas fora do Stripe.
 --
 -- CINCO TABELAS, E O CORTE ENTRE ELAS É CONCEITUAL, não de formulário:
 --
---   finance_categories  o vocabulário. Também é ONDE mora "fixo × variável" —
+--   finance_categories  o vocabulário. Também é ONDE mora "fixo × variável",
 --                       a natureza é da categoria, não do lançamento, senão a
 --                       mesma despesa vira fixa numa linha e variável na outra.
 --   finance_recurring   o CONTRATO ("Vercel, R$ 200, todo mês"). É um plano de
@@ -34,7 +34,7 @@
 -- recorrência fosse um campo do lançamento, "quanto gastamos em setembro"
 -- precisaria expandir templates dentro da mesma tabela que já guarda fatos, e
 -- não haveria como registrar "a fatura da Vercel veio R$ 213 este mês". Com as
--- duas separadas, o contrato PREVÊ e o lançamento REALIZA — e `recurring_id`
+-- duas separadas, o contrato PREVÊ e o lançamento REALIZA, e `recurring_id`
 -- amarra os dois, de modo que um mês com lançamento real não conta o previsto
 -- em dobro. É a distinção do §14 da especificação (realizado × previsto ×
 -- projetado) virando estrutura em vez de convenção.
@@ -44,14 +44,14 @@
 -- terceiro `kind` daria três somas para o mesmo dinheiro (a despesa, o
 -- compromisso e o pagamento dele) e a primeira quitação faria as três
 -- discordarem. `paid_cents` cobre o pagamento parcial, e o restante é
--- `amount_cents - paid_cents` — derivado, nunca digitado.
+-- `amount_cents - paid_cents`, derivado, nunca digitado.
 --
--- SUPERFÍCIE DE ATAQUE — o que este arquivo fecha. Estas cinco tabelas são o
+-- SUPERFÍCIE DE ATAQUE, o que este arquivo fecha. Estas cinco tabelas são o
 -- interior da empresa: margem, dívida, saldo em caixa e o custo real de cada
 -- fornecedor. Seguem o molde de `admin_insights` (0034), não o de
 -- `feature_switches`: RLS ligada, NENHUMA policy e NENHUM grant para `anon`
 -- nem para `authenticated`. Sem policy, a tabela é inalcançável pelo PostgREST
--- com a chave anon — só o `service_role`, atrás de `requireAdmin()`, lê e
+-- com a chave anon, só o `service_role`, atrás de `requireAdmin()`, lê e
 -- escreve. Uma policy de SELECT para `authenticated` aqui publicaria o balanço
 -- do Scriba para qualquer conta cadastrada.
 
@@ -70,7 +70,7 @@ create table if not exists public.finance_categories (
   -- FIXO × VARIÁVEL mora aqui e em nenhum outro lugar. Fixo é o que não escala
   -- com uso (Vercel, domínio); variável é o que escala (IA, taxas, impostos).
   -- Na categoria e não no lançamento porque o par (categoria, natureza) é uma
-  -- decisão contábil da empresa — permitir sobrescrever por linha produziria
+  -- decisão contábil da empresa, permitir sobrescrever por linha produziria
   -- "custo fixo" somando duas coisas diferentes no mesmo mês.
   nature      text not null default 'variable' check (nature in ('fixed', 'variable')),
   sort_order  integer not null default 100,
@@ -126,13 +126,13 @@ create table if not exists public.finance_entries (
   --
   -- Uma despesa em dólar já paga custou o que custou: reconvertê-la com a
   -- cotação de hoje reescreve o passado, e o lucro de julho passa a mudar
-  -- porque o dólar mexeu em setembro. Uma dívida ainda não paga é o oposto —
+  -- porque o dólar mexeu em setembro. Uma dívida ainda não paga é o oposto,
   -- ela vale a cotação de HOJE, porque é hoje que ela seria quitada.
   --
   -- Por isso a coluna é nula enquanto `status <> 'paid'`, e a camada de
   -- leitura (`lib/finance/money.ts`) converte pendentes com o câmbio vivo.
   fx_rate         numeric(12, 6) check (fx_rate is null or fx_rate > 0),
-  -- Pagamento parcial. O que ainda se deve é `amount_cents - paid_cents` —
+  -- Pagamento parcial. O que ainda se deve é `amount_cents - paid_cents`,
   -- derivado, nunca digitado, pela mesma razão de o saldo de moedas sair do
   -- ledger em vez de ser contado à mão.
   paid_cents      bigint not null default 0 check (paid_cents >= 0),
@@ -208,7 +208,7 @@ create table if not exists public.finance_settings (
   -- primeiro insert distraído cria uma segunda configuração e metade do painel
   -- passa a ler a errada.
   id                 text primary key default 'default' check (id = 'default'),
-  -- Saldo em caixa hoje. É o que transforma burn rate em RUNWAY — sem ele, o
+  -- Saldo em caixa hoje. É o que transforma burn rate em RUNWAY, sem ele, o
   -- painel sabe quanto queima por mês e não sabe por quanto tempo aguenta.
   cash_balance_cents bigint not null default 0,
   cash_balance_at    date,
@@ -231,7 +231,7 @@ insert into public.finance_settings (id) values ('default') on conflict (id) do 
 --
 -- As categorias nascem prontas porque um cadastro financeiro que começa vazio
 -- obriga quem for lançar a primeira despesa a inventar a taxonomia inteira
--- antes — e a taxonomia inventada com pressa é a que depois não se consegue
+-- antes, e a taxonomia inventada com pressa é a que depois não se consegue
 -- comparar mês a mês. `nature` já vem decidido pelo mesmo motivo.
 
 insert into public.finance_categories (slug, name, kind, nature, sort_order) values

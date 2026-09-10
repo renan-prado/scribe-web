@@ -17,7 +17,7 @@ import {
 type Props = {
   users: { id: string; displayName: string | null; email: string | null }[];
   routes: string[];
-  /** Da mais nova para a mais antiga — a ordem já vem pronta do servidor. */
+  /** Da mais nova para a mais antiga, a ordem já vem pronta do servidor. */
   versions: string[];
   current: {
     range: string;
@@ -33,7 +33,7 @@ const ANY = "__any__";
 
 // Cada Select declara suas opções UMA vez e passa a mesma lista para o `items`
 // do Root e para o map dos itens. Sem o `items`, o gatilho mostra o valor cru
-// ("30d", "audio_only") em vez do rótulo — ver o cabeçalho de shared/ui/select.
+// ("30d", "audio_only") em vez do rótulo, ver o cabeçalho de shared/ui/select.
 const RANGE_OPTIONS: SelectOption[] = [
   { value: "7d", label: "Últimos 7 dias" },
   { value: "30d", label: "Últimos 30 dias" },
@@ -117,7 +117,7 @@ export function UsageFilters({ users, routes, versions, current }: Props) {
   return (
     <div className="flex flex-col gap-4 p-5 admin-card-surface">
       {/* Três colunas só em xl. Em `lg`, com a sidebar aberta, cada select
-          ficava com ~130px e o nome do usuário truncava antes da arroba — o
+          ficava com ~130px e o nome do usuário truncava antes da arroba, o
           filtro deixava de dizer quem ele estava filtrando. Com o sexto campo
           (versão) as cinco de antes passariam do mesmo limite, então a barra
           vira duas fileiras de três em vez de uma de seis. */}

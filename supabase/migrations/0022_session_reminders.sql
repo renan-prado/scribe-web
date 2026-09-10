@@ -1,7 +1,7 @@
 -- Session reminders ("Lembra disso?"): 10 mini-callbacks que resgatam
 -- sub-ideias do sermão ao longo do tempo. Diferente de "praticar" (ação) e
 -- "releia" (texto bíblico), aqui o card é uma volta a alguma IDEIA específica
--- que apareceu na pregação — pode ser verbatim (frase do pastor via
+-- que apareceu na pregação, pode ser verbatim (frase do pastor via
 -- speakerHighlight/echo/citation do feed), paráfrase (contextCard/highlight
 -- do resumo) ou uma sub-ideia gerada pela IA a partir do transcript.
 --
@@ -11,7 +11,7 @@
 -- espalhados para dar variedade ao feed. O tail longo (até 260 dias) serve
 -- como gancho para o usuário voltar a revisitar sermões antigos.
 --
--- payload segue o schema RemindersPayload em lib/domain/reminders.ts —
+-- payload segue o schema RemindersPayload em lib/domain/reminders.ts,
 -- { items: ReminderItem[10] }. Uma linha por sessão (unique session_id),
 -- reprocess_summary sobrescreve.
 

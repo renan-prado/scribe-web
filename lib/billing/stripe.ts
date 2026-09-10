@@ -7,7 +7,7 @@ import { serverEnv } from "@/lib/env/server";
  *
  * Devolve `null` quando `STRIPE_SECRET_KEY` não está no ambiente, em vez de
  * lançar no import: um deploy sem Stripe configurado precisa continuar
- * gravando e resumindo normalmente — só as rotas de cobrança respondem 503.
+ * gravando e resumindo normalmente, só as rotas de cobrança respondem 503.
  *
  * `apiVersion` fica de fora de propósito: o SDK já fixa a versão com a qual
  * seus tipos foram gerados (ver node_modules/stripe/VERSION). Cravar uma

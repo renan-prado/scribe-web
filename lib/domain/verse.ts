@@ -4,7 +4,7 @@ import { z } from "zod";
  * Uma passagem, versículo a versículo.
  *
  * ⚠️ A forma é uma LISTA e não um texto corrido de propósito: a UI numera cada
- * versículo, e concatenar no servidor obrigaria o cliente a resegmentar — que
+ * versículo, e concatenar no servidor obrigaria o cliente a resegmentar, que
  * é impossível de fazer certo (o ponto final não delimita versículo).
  */
 const VerseLineSchema = z.object({
@@ -26,8 +26,8 @@ const PassagePayloadSchema = z.object({
 export type PassagePayload = z.infer<typeof PassagePayloadSchema>;
 
 /**
- * Resposta de `POST /api/verse`. Sempre uma lista, mesmo para uma passagem só
- * — assim o cliente tem um caminho único, e pedir cinco passagens de uma vez é
+ * Resposta de `POST /api/verse`. Sempre uma lista, mesmo para uma passagem só,
+ * assim o cliente tem um caminho único, e pedir cinco passagens de uma vez é
  * a mesma chamada de pedir uma.
  */
 const VerseResponseSchema = z.object({
@@ -45,7 +45,7 @@ export function parseVerseResponse(raw: unknown): VerseResponse | null {
  * Os versículos como texto corrido, sem numeração.
  *
  * Existe para os dois lugares que mostram a passagem como uma citação só
- * (`VerseDialog` e o card do feed) — a numeração ali disputaria a atenção com
+ * (`VerseDialog` e o card do feed), a numeração ali disputaria a atenção com
  * um texto de duas linhas. O caminho inverso não existe de propósito: juntar é
  * trivial, separar de volta é impossível de fazer certo, porque o ponto final
  * não delimita versículo.

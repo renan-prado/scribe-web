@@ -25,9 +25,9 @@ const DATE_FMT = new Intl.DateTimeFormat("pt-BR", {
 });
 
 function formatDate(iso: string | null): string {
-  if (!iso) return "—";
+  if (!iso) return "-";
   const d = new Date(iso);
-  return Number.isNaN(d.getTime()) ? "—" : DATE_FMT.format(d);
+  return Number.isNaN(d.getTime()) ? "-" : DATE_FMT.format(d);
 }
 
 type Props = {
@@ -112,7 +112,7 @@ export function UsersManager({ initialUsers, currentUserId }: Props) {
               </TableRow>
             ) : (
               filtered.map((u) => {
-                const label = u.displayName?.trim() || u.email?.split("@")[0] || "—";
+                const label = u.displayName?.trim() || u.email?.split("@")[0] || "-";
                 const isMe = u.id === currentUserId;
                 return (
                   <TableRow key={u.id}>
@@ -126,7 +126,7 @@ export function UsersManager({ initialUsers, currentUserId }: Props) {
                             </Badge>
                           ) : null}
                         </span>
-                        <span className="text-xs text-muted-foreground">{u.email || "—"}</span>
+                        <span className="text-xs text-muted-foreground">{u.email || "-"}</span>
                       </div>
                     </TableCell>
                     <TableCell>

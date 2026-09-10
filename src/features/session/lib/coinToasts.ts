@@ -5,7 +5,7 @@ import { toast } from "sonner";
 /**
  * Avisos de saldo durante uma gravação. Ficam num arquivo próprio porque os
  * três modos de captura (live, áudio, transcrição) precisam exatamente do
- * mesmo texto e do mesmo botão de ação — divergir aqui seria confundir o
+ * mesmo texto e do mesmo botão de ação, divergir aqui seria confundir o
  * usuário conforme o modo.
  *
  * O botão "Adicionar créditos" abre o diálogo de compra na PRÓPRIA página: em

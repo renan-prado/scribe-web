@@ -1,6 +1,6 @@
-# src/shared — tema, marca, UI base e acessibilidade
+# src/shared: tema, marca, UI base e acessibilidade
 
-O que é comum às features. Se algo aqui muda, muda em todas as telas — leia
+O que é comum às features. Se algo aqui muda, muda em todas as telas, leia
 antes de editar.
 
 ```
@@ -43,20 +43,20 @@ Uma variante `dark:` é a ferramenta certa para o caso raro que não é paleta
 **O padrão é o tema CLARO**, não o `prefers-color-scheme` do sistema. O escuro
 é uma opção que o usuário liga; quem nunca escolheu vê a mesma interface da
 landing page, onde a marca foi calibrada. A decisão mora no `ThemeScript`
-(`app/layout.tsx`, roda antes do primeiro paint) — trocar o fallback ali muda
+(`app/layout.tsx`, roda antes do primeiro paint), trocar o fallback ali muda
 o primeiro paint de todo mundo. O estado persiste em `use-theme.ts`
 (localStorage `scriba-theme`); mantenha a chave em sincronia entre os dois.
 
 Portais fora da árvore de tokens (sonner) precisam do tema resolvido passado
-explicitamente — ver `ThemedToaster`.
+explicitamente, ver `ThemedToaster`.
 
 **Duas cores vivem FORA do `globals.css`, e as duas são obrigadas a isso.** A
 barra de status do celular (`<meta name="theme-color">`, escrita pelo
 `ThemeScript` e reescrita pelo `useTheme`) e o `theme_color` do manifest são
-lidos pelo navegador antes de qualquer CSS — nenhum dos dois enxerga um `var()`.
+lidos pelo navegador antes de qualquer CSS, nenhum dos dois enxerga um `var()`.
 Elas moram em `src/shared/theme-color.ts` e são o espelho de `--scriba-surface`
 nos dois temas: **mudou o token, mude lá no mesmo commit.** A terceira exceção,
-pelo mesmo motivo, é `public/offline.html` — sem rede não há folha de estilo
+pelo mesmo motivo, é `public/offline.html`, sem rede não há folha de estilo
 para carregar.
 
 O switch (`ThemeToggle` / `ThemeToggleRow`) está exposto em sign-in, sign-up,
@@ -72,7 +72,7 @@ sem pedido.
 
 O CTA é gradiente (`bg-[image:var(--scriba-cta)]`) e INVERTE: azul-escuro com
 tinta branca no claro, pastilha clara com tinta navy no escuro. O hover é um
-`filter` na classe `.scriba-cta`, não uma cor de fundo — um `hover:bg-*` chapa
+`filter` na classe `.scriba-cta`, não uma cor de fundo, um `hover:bg-*` chapa
 o gradiente. A sombra também é token, porque um halo azul sob pastilha branca
 em página escura suja a borda em vez de assentar o botão.
 
@@ -80,7 +80,7 @@ em página escura suja a borda em vez de assentar o botão.
 (`outline`, `secondary`, `ghost`, `link`) foi repontada para os tokens
 `--scriba-*`. Elas vinham do shadcn apontando para `--primary` / `--muted` /
 `--border`, que é a escala neutra preto-e-cinza do template: como `default` é a
-variante PADRÃO, todo `<Button>` sem `variant` — o admin inteiro, o /404 —
+variante PADRÃO, todo `<Button>` sem `variant`, o admin inteiro, o /404,
 desenhava um botão preto que não pertence à paleta. O `ui/badge.tsx` levou o
 mesmo tratamento, com a diferença de que a pastilha escura ali é intencional e
 usa `bg-scriba-ink-strong` + `text-background`, a mesma das referências
@@ -91,8 +91,8 @@ pressupõe; simplesmente ninguém mais os pinta.
 
 ### Pressionado: o hover que não existe no celular
 
-Num aparelho de toque não há estado intermediário — o dedo encosta e a ação
-acontece —, então **todo `hover:` deste repositório é código morto no celular**.
+Num aparelho de toque não há estado intermediário, o dedo encosta e a ação
+acontece, então **todo `hover:` deste repositório é código morto no celular**.
 O que sobrava era uma tela em que tocar não produzia reação nenhuma até a
 próxima página chegar, e a resposta natural de quem usa é tocar de novo: é
 assim que um clique vira três.
@@ -102,18 +102,18 @@ Duas camadas cobrem isso, e a ordem entre elas é o desenho:
 1. **O piso, genérico**, em `@layer base` do `globals.css`: dentro de
    `@media (hover: none)`, todo `a`, `button`, `summary` e `[role]` de menu/aba
    cai para `opacity: .62` enquanto `:active`. Opacidade porque é a única
-   propriedade que funciona sobre qualquer superfície do produto — gradiente,
-   papel, vidro esfumaçado — sem saber a cor de baixo. Sem transição: retorno
+   propriedade que funciona sobre qualquer superfície do produto, gradiente,
+   papel, vidro esfumaçado, sem saber a cor de baixo. Sem transição: retorno
    de toque atrasado é pior que retorno nenhum.
 2. **O pressionado próprio de cada componente**, em utilitário ou na classe
    (`.scriba-cta` escurece e ACHATA a sombra; `Button` tem
    `active:translate-y-px`; `SidebarMenuButton` tem `active:bg-sidebar-accent`).
    Utilitário e `@layer components` vencem `@layer base` por ordem de camada,
-   então escrever um `active:` específico simplesmente tira o piso do caminho —
+   então escrever um `active:` específico simplesmente tira o piso do caminho,
    é para isso que ele mora na camada mais fraca.
 
 `hover: none` e não `pointer: coarse`: o que decide é a ausência de HOVER, não
-a grossura do ponteiro — um notebook com tela sensível continua tendo mouse.
+a grossura do ponteiro, um notebook com tela sensível continua tendo mouse.
 
 **O piso só alcança elemento SEMÂNTICO.** Um `<div onClick>` não ganha retorno
 nenhum, e isso é bom: é mais um motivo para ele não existir.
@@ -122,7 +122,7 @@ nenhum, e isso é bom: é mais um motivo para ele não existir.
 
 **Tinta de família se calibra pela superfície da família, não pelo papel.**
 `--scriba-*-accent`, `-body` e `-dark` aparecem sobre `--scriba-cream`,
-`--scriba-mint` etc., que são mais escuros que o branco — medir no papel dá
+`--scriba-mint` etc., que são mais escuros que o branco, medir no papel dá
 falso OK. E o piso da escala neutra é `--session-example-bg` (#EEF3FB), a
 superfície mais escura do tema claro, não o `--scriba-bubble`.
 
@@ -136,43 +136,43 @@ profundo levantado só um pouco acima do chão, e o mockup de celular ganha uma
 moldura quase preta para manter a borda. **Não pinte uma seção da LP com
 `bg-scriba-blue`.**
 
-## Marca — a pena mora em um lugar só
+## Marca: a pena mora em um lugar só
 
 A pena e o logotipo saem de `brand/`, e o `<path>` do desenho existe em **um**
 arquivo: `ScribaMark.tsx`. Não cole o path em outro lugar, nem crie um SVG
 inline "só desta vez".
 
-- `ScribaMark` — a pena sozinha, pintando com `currentColor`.
-- `ScribaLogo` — pena + a palavra "scriba" em Poppins (`--font-poppins`), com
+- `ScribaMark`: a pena sozinha, pintando com `currentColor`.
+- `ScribaLogo`: pena + a palavra "scriba" em Poppins (`--font-poppins`), com
   `subtitle` opcional (hoje só o "Admin" da sidebar).
-- `ScribaAvatar` — a pena branca no disco com gradiente, usada quando o Scriba
+- `ScribaAvatar`: a pena branca no disco com gradiente, usada quando o Scriba
   fala como autor (cards de IA no feed e nos blocos de estudo).
 
 **A cor do logotipo vem do CONTAINER, nunca de uma classe própria em cada
 metade.** Pena e palavra são uma marca só: o `<path>` usa `currentColor` e o
 texto herda o `color`. Pintar um dos dois separadamente é exatamente o que os
-desencontra — já aconteceu, e o conserto virou commit.
+desencontra, já aconteceu, e o conserto virou commit.
 
-**Os consumos de fora do React vivem em `public/brand/`** — `pena.svg` e os
-dois favicons — porque favicon, manifest e dados estruturados não passam por
+**Os consumos de fora do React vivem em `public/brand/`**, `pena.svg` e os
+dois favicons, porque favicon, manifest e dados estruturados não passam por
 componente. Eles NÃO se atualizam sozinhos quando `ScribaMark` muda.
 
 Os MESTRES são `public/brand/logo.png` (quadrado, opaco) e
 `public/brand/banner-preview.png` (1200×630). Todo o resto de raster é
-derivado deles por `sharp` — não desenhe um tamanho à mão. Quando a marca
+derivado deles por `sharp`, não desenhe um tamanho à mão. Quando a marca
 mudar, troque os mestres e regenere, nesta ordem:
 
-1. `src/shared/brand/ScribaMark.tsx` — a aplicação inteira (o `<path>`).
-2. `public/brand/pena.svg` — a mesma pena para consumo externo e para a
+1. `src/shared/brand/ScribaMark.tsx`: a aplicação inteira (o `<path>`).
+2. `public/brand/pena.svg`: a mesma pena para consumo externo e para a
    máscara do logotipo em gradiente.
-3. `public/brand/favicon-{light,dark}-theme.svg` — a aba, por tema.
-4. `app/favicon.ico` — 16/32/48/64/128/256 no mesmo arquivo.
+3. `public/brand/favicon-{light,dark}-theme.svg`: a aba, por tema.
+4. `app/favicon.ico`: 16/32/48/64/128/256 no mesmo arquivo.
 5. `app/apple-icon.png` (180, opaco) e `public/brand/icon-{192,512}.png`.
-6. `app/opengraph-image.png` — cópia do banner (com o `.alt.txt` ao lado).
-7. `public/brand/splash/` — `node scripts/generate-splash.mjs`. As telas de
+6. `app/opengraph-image.png`: cópia do banner (com o `.alt.txt` ao lado).
+7. `public/brand/splash/`: `node scripts/generate-splash.mjs`. As telas de
    abertura do PWA no iOS; o script LÊ o `pena.svg` do passo 2, então rodá-lo
    antes dele redesenha a marca velha.
-8. `app/manifest.ts`, `app/layout.tsx` e `LandingJsonLd.tsx` — só apontam, mas
+8. `app/manifest.ts`, `app/layout.tsx` e `LandingJsonLd.tsx`, só apontam, mas
    confira se o arquivo apontado ainda existe.
 
 Sobre formatos e precedência de `<link>`, ver `app/AGENTS.md`.
@@ -186,7 +186,7 @@ bloco `bg-scriba-yellow`.
 
 ## Qual item da navegação acende: `nav.ts`
 
-`activeNavKey(pathname)` é a fonte ÚNICA disso, e as duas barras a consultam —
+`activeNavKey(pathname)` é a fonte ÚNICA disso, e as duas barras a consultam,
 `AppNav` no desktop e `MobileBottomNav` no celular. Antes cada uma tinha a sua
 comparação e as duas erravam igual: acendiam só na correspondência exata do
 href, então **toda página de detalhe apagava a barra inteira**.
@@ -204,7 +204,7 @@ quem for mexer:
 
 - **Ela SOME nas três telas de captura** (`/recording/:id/{live,audio,transcribe}`),
   não só no `live`. No modo transcrição o botão de parar é `fixed` a 24px do
-  rodapé — exatamente onde a barra fica —, e ela cobria o botão: a gravação não
+  rodapé, exatamente onde a barra fica, e ela cobria o botão: a gravação não
   tinha como ser pausada nem encerrada pelo celular. Some com ela também evita
   o toque acidental que navega para fora e mata o MediaRecorder no meio de um
   sermão.
@@ -214,42 +214,42 @@ quem for mexer:
   avatar era o único elemento que mudava de tamanho, de forma e de cor sozinho,
   e a barra é navegação, não identidade.
 - **Os cinco ícones são um conjunto só, em `icons/NavGlyphs.tsx`.** São
-  preenchidos (não traçados — `strokeWidth` não faz nada neles) e ocupam quase
+  preenchidos (não traçados, `strokeWidth` não faz nada neles) e ocupam quase
   todo o `viewBox` de 24, e é por isso que os quatro das abas usam um `size`
   ÚNICO. A barra já misturou formas feitas à mão com glifos do lucide, e aí
   cada ícone precisava de um `size` próprio: o lucide reserva margem dentro do
   `viewBox`, então em tamanho igual os dele liam como menores. Ícone novo que
   destoe se resolve em quanto ele desenha do `viewBox`, não no `size` da barra.
 - **Os glifos pintam com `currentColor` e não levam classe de cor.** É o que
-  justifica serem componente em vez de `<img src="/icons/…">` — `<img>` não
+  justifica serem componente em vez de `<img src="/icons/…">`, `<img>` não
   herda cor, e o ícone precisa acompanhar o estado ativo do item. A cor desce
   do `text-*` do `TabLink`, num lugar só; quando cada chamada pintava o seu
   ícone, a cor do ativo divergiu da do rótulo (o ícone usava `--scriba-blue`,
   azul de SUPERFÍCIE, e o rótulo `--scriba-blue-ink`). Os SVGs originais ficam
-  em `public/icons/*.svg`, um por componente, com o mesmo nome — desenho novo
+  em `public/icons/*.svg`, um por componente, com o mesmo nome, desenho novo
   troca os dois no mesmo commit.
 - **O `padding-bottom` é SÓ o `env(safe-area-inset-bottom)`**, sem folga fixa
-  somada. Um piso de 8px ali empurra a fileira inteira para cima do centro —
+  somada. Um piso de 8px ali empurra a fileira inteira para cima do centro,
   como a altura é `min-h` e a caixa é border-box, o inset cresce a barra em vez
   de espremer o conteúdo.
 
 - **O item "Gravar" não tem rótulo: são dois círculos concêntricos.** Um disco
   de 44px na cor do botão primário (`bg-[image:var(--scriba-cta)]` +
-  `text-scriba-cta-ink`, que inverte com o tema — nunca `text-white` ali),
+  `text-scriba-cta-ink`, que inverte com o tema, nunca `text-white` ali),
   dentro de um anel de 60px em `bg-scriba-blue-soft` que faz as vezes de
-  sombra. No escuro o disco leva `dark:opacity-90` — uma das variantes `dark:`
+  sombra. No escuro o disco leva `dark:opacity-90`, uma das variantes `dark:`
   legítimas, porque o valor é opacidade e não cor: a pastilha clara em que o
   CTA se inverte precisa assentar no fundo escuro. A opacidade vale para o
   grupo, então o microfone desce junto e o contraste do glifo se mantém.
   **O anel é um círculo de verdade, não `box-shadow`:** sombra pediria
   cor literal em `rgba()`, que a barra proíbe, e no escuro borraria em vez de
   anelar. Ele já foi um círculo de CTA DESLOCADO pra fora da barra e com
-  rótulo, e era isso que incomodava — não a cor, que voltou de propósito para
+  rótulo, e era isso que incomodava, não a cor, que voltou de propósito para
   casar com os botões do resto do app. É o ÚNICO item sem calha e sem texto, e
-  é a simetria do círculo que o alinha — a barra centra item a item, então o
+  é a simetria do círculo que o alinha, a barra centra item a item, então o
   centro dele coincide com o centro do bloco ícone+rótulo dos outros quatro, e
   o microfone senta abaixo dos ícones vizinhos de propósito. Sem texto, o nome
-  acessível vem do `aria-label` do `DialogTrigger` — não remova. O
+  acessível vem do `aria-label` do `DialogTrigger`, não remova. O
   `DialogTrigger` recebe `trigger` e vira `display:contents` para o span ser o
   item flex.
 
@@ -261,7 +261,7 @@ Nada dentro dela pode usar cor literal: a esfumaçada acima da barra é
 ponto: `/feed`, `/recordings` e `/studies` pintam `bg-scriba-surface` no
 próprio elemento raiz, então uma folga no wrapper fica DEPOIS da tinta e a faixa
 reservada aparece com o tom do `body`, não o do conteúdo. Por dentro, o chão da
-página se estende por ela. Isso pressupõe um elemento raiz por página — se
+página se estende por ela. Isso pressupõe um elemento raiz por página, se
 criar uma que devolva irmãos no topo, a folga vai em cada um.
 
 ## A transição de página envolve o conteúdo, nunca a moldura
@@ -269,35 +269,35 @@ criar uma que devolva irmãos no topo, a folga vai em cada um.
 `PageTransition` remonta os filhos por `key={pathname}` para reexibir o
 `animate-content-fade`. Ela morava no **root layout**, e por isso derrubava e
 remontava tudo abaixo dela a cada navegação: header, barra inferior e página.
-No desktop lia como um piscar; no celular — e principalmente no PWA, que não
-tem moldura do navegador para ancorar o olho — a barra inferior sumia e voltava
+No desktop lia como um piscar; no celular, e principalmente no PWA, que não
+tem moldura do navegador para ancorar o olho, a barra inferior sumia e voltava
 a cada toque.
 
 Agora **cada moldura instala a sua**, em volta dos próprios `children`:
 `app/(app)/layout.tsx`, `app/admin/layout.tsx` e `app/partners/layout.tsx`. O
-root layout ficou com a classe sem `key` — o fade toca uma vez no carregamento
+root layout ficou com a classe sem `key`, o fade toca uma vez no carregamento
 completo, para toda rota, e não volta a tocar em navegação de cliente.
 
 **Não devolva a `PageTransition` para o root layout**, e ao criar uma moldura
 nova coloque a dela por dentro. O preço aceito: entre páginas públicas sem
 moldura (landing, termos, privacidade) a navegação de cliente não refaz mais o
-fade — não há nada fixo na tela delas para piscar.
+fade, não há nada fixo na tela delas para piscar.
 
 ## Atalhos de papel: dois lugares, um motivo
 
 Admin e parceiro chegam às suas áreas pelo menu do avatar (`PrivilegedMenuItems`)
 no desktop e pelo `/profile` (`PrivilegedProfileLinks`, `sm:hidden`) no celular,
-porque o header mobile não tem avatar — sem a segunda porta, quem tem o papel só
+porque o header mobile não tem avatar, sem a segunda porta, quem tem o papel só
 chegava lá digitando a URL.
 
 **Os dois são SERVER components, e é isso que justifica existirem separados.**
 Atrás de um `isAdmin &&` dentro de um componente cliente, as strings "Admin",
 "Área do parceiro", "/admin" e "/partners" viajam no JavaScript de todo usuário
 logado: o booleano esconde o item na tela, não o código que o desenha. Nenhum
-dos dois é controle de acesso — os gates das rotas respondem 404 a quem digitar
+dos dois é controle de acesso, os gates das rotas respondem 404 a quem digitar
 a URL.
 
-## Select — o rótulo não vem de graça
+## Select: o rótulo não vem de graça
 
 `<SelectValue />` do base-ui renderiza o **valor cru**, não o rótulo do item.
 Um select de situação mostra "active" no gatilho e "Ativo" na lista aberta, e
@@ -305,7 +305,7 @@ o bug reaparece em cada `Select` novo porque a composição parece completa.
 
 Não tem conserto dentro do nosso wrapper: os `<SelectItem>` moram no Portal e
 só montam quando a lista abre, então o gatilho não conhece o rótulo antes do
-primeiro clique. As duas saídas — e todo `Select` do app usa uma delas:
+primeiro clique. As duas saídas, e todo `Select` do app usa uma delas:
 
 1. `items={OPTIONS}` no Root, com a MESMA lista alimentando o map dos itens.
 2. `<SelectValue>{(v) => LABELS[v]}</SelectValue>`, quando o rótulo do gatilho
@@ -317,14 +317,14 @@ Detalhes no cabeçalho de `src/shared/ui/select.tsx`.
 ## Acessibilidade
 
 Meta: **zero violações WCAG 2.0/2.1 A+AA**, medidas com **axe-core rodando no
-navegador** — não pelo Lighthouse, cujo relatório mostra uma amostra.
+navegador**, não pelo Lighthouse, cujo relatório mostra uma amostra.
 
 - **Cada tema é medido com a página CARREGADA nele.** Alternar `.dark` via JS
   e medir em seguida lê valores antes do recálculo e reporta as cores do tema
   anterior.
 - **A área logada precisa de sessão E de dados.** Com a conta vazia o axe não
   vê a faixa creme do `/recordings`, nem o `SummaryView`, nem o seletor do
-  `/feed` — três famílias de token passaram meses reprovando sem aparecer.
+  `/feed`, três famílias de token passaram meses reprovando sem aparecer.
   Semeie sessão antes de auditar.
 
 Estado da última auditoria (axe-core 4.10, claro e escuro):
@@ -344,22 +344,22 @@ respeite `prefers-reduced-motion` (o bloco já existe no `globals.css`).
 
 - **O gtag NÃO entra no `<head>` na mão.** `components/Analytics.tsx` usa o
   `GoogleAnalytics` de `@next/third-parties/google`, que emite os mesmos dois
-  scripts por `next/script` com `afterInteractive` — depois da hidratação, sem
+  scripts por `next/script` com `afterInteractive`, depois da hidratação, sem
   disputar o primeiro paint com o CSS e o JS da landing, e sem duplicar a tag
   quando o layout re-renderiza entre navegações.
 - **Duas condições para medir:** `IS_PRODUCTION_DEPLOY` e `NEXT_PUBLIC_GA_ID`.
   Faltando qualquer uma, o componente devolve `null`. Localhost, `npm run prod`
-  e `dev.scriba.cc` portanto não medem — nem que a variável vaze para o escopo
+  e `dev.scriba.cc` portanto não medem, nem que a variável vaze para o escopo
   errado do painel da Vercel. Para validar uma tag: DebugView do GA4 contra
   `scriba.cc`.
 - Ler `process.env` não torna rota dinâmica: a LP continua `○ Static` com o
-  `<Analytics />` no root layout — conferido no output do build.
+  `<Analytics />` no root layout, conferido no output do build.
 - **Não escrevemos pageview.** As navegações do App Router viram `page_view`
   pela medição aprimorada do GA4 (eventos de histórico), ligada na
   propriedade. Evento personalizado usa `sendGAEvent`, nunca `window.gtag`.
 
 ## LandingMocks
 
-`components/LandingMocks.tsx` é markup estático PRÓPRIO — não os componentes
+`components/LandingMocks.tsx` é markup estático PRÓPRIO, não os componentes
 do app. Isso é deliberado e tem preço: mexer no `FeedItemCard` não atualiza
 mais a landing. O porquê está em `app/AGENTS.md`.

@@ -8,7 +8,7 @@ import { createClient } from "@/lib/supabase/server";
 /**
  * Persistência das DUAS coisas de entitlement que mudam em runtime: o kill
  * switch por feature e a exceção por pessoa. O mapa `feature → plano mínimo`
- * NÃO está aqui — mora em `lib/entitlements/features.ts`, em código.
+ * NÃO está aqui, mora em `lib/entitlements/features.ts`, em código.
  *
  * Divisão de clientes igual à de `lib/db/billing.ts`: leitura do próprio
  * usuário pelo cliente com cookie (a RLS escopa), toda escrita pelo
@@ -27,7 +27,7 @@ export async function getFeatureSwitches(): Promise<Record<string, boolean>> {
   if (error) {
     // Falha de leitura não pode DERRUBAR feature paga: sem linha = ligada, e
     // é isso que devolvemos. O plano continua sendo o gate real.
-    log.warn("switches read failed — assuming all enabled", { error: error.message });
+    log.warn("switches read failed, assuming all enabled", { error: error.message });
     return {};
   }
   const out: Record<string, boolean> = {};
@@ -46,7 +46,7 @@ export async function getOwnFeatureOverrides(): Promise<Record<string, boolean>>
     // Perder um `granted = true` tira acesso de um beta tester; perder um
     // `granted = false` devolve acesso a quem paga. Nenhum dos dois cria
     // acesso grátis, que é o que não pode acontecer.
-    log.warn("overrides read failed — falling back to plan", { error: error.message });
+    log.warn("overrides read failed, falling back to plan", { error: error.message });
     return {};
   }
   const out: Record<string, boolean> = {};
@@ -74,8 +74,8 @@ export async function listFeatureSwitches(): Promise<FeatureSwitchRow[]> {
 }
 
 /**
- * Liga ou desliga uma feature para todo mundo. Escreve sempre — inclusive ao
- * religar — porque a linha guarda quem mexeu e quando, e essa é a única
+ * Liga ou desliga uma feature para todo mundo. Escreve sempre, inclusive ao
+ * religar, porque a linha guarda quem mexeu e quando, e essa é a única
  * trilha que temos de um incidente.
  */
 export async function setFeatureSwitch(args: {
@@ -116,7 +116,7 @@ export async function listFeatureOverrides(): Promise<FeatureOverrideRow[]> {
   }[];
   if (rows.length === 0) return [];
 
-  // Um SELECT só para todos os donos — a lista de exceções é curta por
+  // Um SELECT só para todos os donos, a lista de exceções é curta por
   // natureza, mas N+1 numa tela de admin envelhece mal.
   const ids = [...new Set(rows.map((r) => r.user_id))];
   const { data: profiles } = await admin
@@ -175,7 +175,7 @@ export async function setFeatureOverride(args: {
   log.info("override set", { feature: args.feature, granted: args.granted });
 }
 
-/** Remove a exceção — a pessoa volta a ser decidida pelo plano. */
+/** Remove a exceção, a pessoa volta a ser decidida pelo plano. */
 export async function clearFeatureOverride(userId: string, feature: string): Promise<void> {
   const admin = createAdminClient();
   const { error } = await admin

@@ -8,7 +8,7 @@ import { clearCoinEconomics, setCoinEconomics } from "@/lib/coins/settings-actio
 
 /**
  * A RÉGUA da tela de precificação: quanto vale a moeda que vendemos e qual
- * margem se está perseguindo. É o único bloco editável da página — todo o
+ * margem se está perseguindo. É o único bloco editável da página, todo o
  * resto é medição.
  *
  * O que se digita aqui não cobra nada de ninguém. O preço que o usuário paga é
@@ -18,7 +18,7 @@ import { clearCoinEconomics, setCoinEconomics } from "@/lib/coins/settings-actio
  * moeda" dentro do painel se parece MUITO com um campo que muda preço.
  *
  * Server component: o submit é uma Server Action, e a autorização real é o
- * `assertAdmin()` dentro dela — este formulário estar em /admin não protege
+ * `assertAdmin()` dentro dela, este formulário estar em /admin não protege
  * nada.
  */
 
@@ -96,7 +96,7 @@ export function CoinEconomicsForm({ settings, isCustom }: Props) {
 
       <p className="text-[11.5px] font-light leading-relaxed text-scriba-ink-mute">
         Simulação, não cobrança: o que o usuário paga é o Price do Stripe e as moedas creditadas
-        saem do catálogo em código. O padrão é o pacote avulso —{" "}
+        saem do catálogo em código. O padrão é o pacote avulso,{" "}
         <span className="font-mono">
           R$ {BRL_INPUT.format(DEFAULT_COIN_ECONOMICS.pricePerThousandBrl)}
         </span>{" "}

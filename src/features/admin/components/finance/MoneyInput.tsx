@@ -8,18 +8,18 @@ import { parseMoneyToCents } from "@/lib/finance/money";
 /**
  * Campo de dinheiro que guarda CENTAVOS INTEIROS e mostra texto.
  *
- * O estado interno é a string que a pessoa digitou, não o número — um campo
+ * O estado interno é a string que a pessoa digitou, não o número, um campo
  * controlado por centavos reformata a cada tecla e torna impossível apagar a
  * vírgula para corrigi-la. A conversão acontece na digitação (para o
  * formulário sempre ter o valor) e o texto fica como está até o blur.
  *
  * `type="text"`, e não `type="number"`: o campo numérico do navegador usa o
  * separador decimal do LOCALE do sistema, então "1,50" digitado num Windows
- * em inglês vira campo inválido e valor vazio — sem mensagem nenhuma. O
+ * em inglês vira campo inválido e valor vazio, sem mensagem nenhuma. O
  * `inputMode="decimal"` continua abrindo o teclado numérico no celular.
  *
  * `parseMoneyToCents` devolve `null` para o que não é número, e `null` sobe
- * como `null` — nunca como zero. Um campo em branco tratado como zero grava um
+ * como `null`, nunca como zero. Um campo em branco tratado como zero grava um
  * lançamento de R$ 0,00 que ninguém pediu.
  */
 export function MoneyInput({
@@ -77,7 +77,7 @@ function centsToText(cents: number | null): string {
  * Campo de percentual que guarda BASIS POINTS.
  *
  * Mesma razão do acima: o estado é texto, o valor é inteiro. 7,5% vira 750, e
- * nunca 0.075 — ver o cabeçalho de `lib/finance/money.ts` sobre por que
+ * nunca 0.075, ver o cabeçalho de `lib/finance/money.ts` sobre por que
  * percentual não vive em float neste código.
  */
 export function PercentInput({

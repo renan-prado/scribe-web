@@ -3,7 +3,7 @@
   <head>
     <meta charset="utf-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
-    <title>Sem conexão — Scriba</title>
+    <title>Sem conexão, Scriba</title>
     <!--
       A tela que o app mostra quando o aparelho está offline. Quem a serve é o
       `public/sw.js`, do cache, quando uma navegação falha na rede.
@@ -13,7 +13,7 @@
       Next não carrega, e a página apareceria como HTML pelado. Pelo mesmo
       motivo os valores abaixo são cópias dos tokens de `app/globals.css`
       (`--background`, `--scriba-paper`, `--scriba-ink-strong`, `--scriba-blue-ink`,
-      `--scriba-hairline`) — se a paleta mudar lá, atualize aqui no mesmo commit.
+      `--scriba-hairline`), se a paleta mudar lá, atualize aqui no mesmo commit.
 
       A pena continua vindo de `public/brand/pena.svg`, por máscara CSS, para não
       duplicar o `<path>` da marca mais uma vez (ver src/shared/AGENTS.md).
@@ -111,13 +111,13 @@
       <h1>Você está sem conexão</h1>
       <p>
         O Scriba precisa de internet para transcrever e resumir. Assim que a
-        conexão voltar, é só tentar de novo — nada do que já foi gravado se
+        conexão voltar, é só tentar de novo, nada do que já foi gravado se
         perde.
       </p>
       <button type="button" id="retry">Tentar de novo</button>
     </main>
     <script>
-      // Mesma chave e mesmo padrão claro do `ThemeScript` — ver
+      // Mesma chave e mesmo padrão claro do `ThemeScript`, ver
       // src/shared/components/ThemeScript.tsx.
       try {
         var t = localStorage.getItem("scriba-theme");

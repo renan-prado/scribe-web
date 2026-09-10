@@ -39,7 +39,7 @@ import { EntryDialog } from "./EntryDialog";
  *
  * O FILTRO É CLIENTE, e é uma decisão de tamanho: a tela recebe todos os
  * lançamentos do servidor e recorta em memória. Enquanto isto for um controle
- * financeiro interno de uma empresa pequena — dezenas de lançamentos por mês —
+ * financeiro interno de uma empresa pequena, dezenas de lançamentos por mês,
  * um round-trip por mudança de filtro custaria mais em latência do que economiza
  * em dados. O dia em que a lista passar de alguns milhares de linhas, a rota
  * `GET /api/admin/finance/entries` já aceita os mesmos filtros: é trocar o
@@ -196,7 +196,7 @@ export function EntriesManager({ entries, categories, recurring, usdBrl }: Props
       {filtered.length === 0 ? (
         <p className="rounded-2xl border border-scriba-hairline-soft bg-scriba-paper p-8 text-center text-sm font-light text-scriba-ink-mute">
           {entries.length === 0
-            ? "Nenhum lançamento cadastrado ainda. Comece pelos custos recorrentes — eles respondem sozinhos quanto o Scriba custa por mês."
+            ? "Nenhum lançamento cadastrado ainda. Comece pelos custos recorrentes, eles respondem sozinhos quanto o Scriba custa por mês."
             : "Nenhum lançamento corresponde aos filtros."}
         </p>
       ) : (
@@ -231,7 +231,7 @@ export function EntriesManager({ entries, categories, recurring, usdBrl }: Props
                       ) : null}
                     </TableCell>
                     <TableCell className="text-[12.5px] text-scriba-ink-soft">
-                      {entry.categoryId ? (categoryName.get(entry.categoryId) ?? "—") : "—"}
+                      {entry.categoryId ? (categoryName.get(entry.categoryId) ?? "-") : "-"}
                     </TableCell>
                     <TableCell>
                       <StatusBadge status={entry.status} kind={entry.kind} />

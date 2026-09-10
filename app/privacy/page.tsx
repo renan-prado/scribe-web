@@ -31,7 +31,7 @@ export default function PrivacyPage() {
               religiosos em tempo real, com apoio de inteligência artificial. Esta Política de
               Privacidade descreve como coletamos, usamos, compartilhamos, armazenamos e protegemos
               dados pessoais tratados no âmbito do serviço, em conformidade com a{" "}
-              <strong>Lei Geral de Proteção de Dados (Lei nº 13.709/2018 — LGPD)</strong> e com o{" "}
+              <strong>Lei Geral de Proteção de Dados (Lei nº 13.709/2018, LGPD)</strong> e com o{" "}
               <strong>Marco Civil da Internet (Lei nº 12.965/2014)</strong>.
             </p>
             <p className="mt-2">
@@ -85,7 +85,7 @@ export default function PrivacyPage() {
               <li>
                 <strong>Dados de uso e diagnóstico:</strong> páginas visitadas, ações realizadas,
                 horários, tipo de dispositivo, sistema operacional, navegador, endereço IP e logs de
-                erro — usados para segurança, prevenção a fraudes e melhoria do serviço.
+                erro, usados para segurança, prevenção a fraudes e melhoria do serviço.
               </li>
               <li>
                 <strong>Dados de pagamento:</strong> tratados diretamente por provedores autorizados
@@ -96,7 +96,7 @@ export default function PrivacyPage() {
             <p className="mt-2">
               O Scriba não solicita, tampouco incentiva o envio de{" "}
               <strong>dados pessoais sensíveis</strong> (origem racial, convicção religiosa, opinião
-              política, dado de saúde etc. — art. 5º, II, da LGPD). Contudo, o próprio contexto
+              política, dado de saúde etc., art. 5º, II, da LGPD). Contudo, o próprio contexto
               religioso e o conteúdo dos sermões podem revelar convicção religiosa; ao utilizar o
               Scriba, você fornece consentimento específico para o tratamento incidental desses
               dados na finalidade estrita de prestação do serviço.
@@ -172,7 +172,7 @@ export default function PrivacyPage() {
             </p>
             <ul className="mt-2 list-disc space-y-1.5 pl-5">
               <li>
-                <strong>OpenAI</strong> — processamento de áudio para transcrição e geração de
+                <strong>OpenAI</strong>, processamento de áudio para transcrição e geração de
                 resumos e materiais. Dados tratados conforme a{" "}
                 <a
                   href="https://openai.com/policies/privacy-policy"
@@ -186,7 +186,7 @@ export default function PrivacyPage() {
                 modelos por padrão.
               </li>
               <li>
-                <strong>Supabase</strong> — banco de dados, autenticação e armazenamento. Consulte a{" "}
+                <strong>Supabase</strong>, banco de dados, autenticação e armazenamento. Consulte a{" "}
                 <a
                   href="https://supabase.com/privacy"
                   target="_blank"
@@ -258,7 +258,7 @@ export default function PrivacyPage() {
                 Revisão de decisões automatizadas que afetem seus interesses (art. 20 da LGPD).
               </li>
               <li>
-                Peticionar à Autoridade Nacional de Proteção de Dados (ANPD) —{" "}
+                Peticionar à Autoridade Nacional de Proteção de Dados (ANPD),{" "}
                 <a
                   href="https://www.gov.br/anpd"
                   target="_blank"

@@ -3,7 +3,7 @@ import type { RemindersPayload } from "@/lib/domain/reminders";
 import { createClient } from "@/lib/supabase/server";
 
 /**
- * Persistência para session_reminders — o "Lembra disso?" gerado junto com o
+ * Persistência para session_reminders, o "Lembra disso?" gerado junto com o
  * final_summary. Uma linha por session_id (unique constraint em SQL). O
  * reprocess do resumo sobrescreve o payload via upsert.
  */
@@ -43,7 +43,7 @@ export async function getReminders(sessionId: string): Promise<RemindersRow | nu
 /**
  * Upsert por session_id. Reprocess reescreve o payload inteiro; primeira
  * geração cria a linha. .select() força o PostgREST a retornar a linha
- * afetada — sem isso, uma RLS quebrada retornaria data:null sem erro.
+ * afetada, sem isso, uma RLS quebrada retornaria data:null sem erro.
  */
 export async function upsertReminders(sessionId: string, payload: RemindersPayload): Promise<void> {
   const supabase = await createClient();

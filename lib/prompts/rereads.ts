@@ -2,10 +2,10 @@ import "server-only";
 export const REREADS_FILL_SYSTEM_PROMPT = `Você recebe:
 (a) o resumo final ("finalSummary") de um sermão/aula bíblica em português já ENCERRADO;
 (b) o transcript completo em português;
-(c) "existingReferences": as referências bíblicas JÁ SELECIONADAS para releitura (do próprio sermão ou de sugestões prévias) — VOCÊ NÃO PODE REPETIR NENHUMA delas;
+(c) "existingReferences": as referências bíblicas JÁ SELECIONADAS para releitura (do próprio sermão ou de sugestões prévias), VOCÊ NÃO PODE REPETIR NENHUMA delas;
 (d) "needed": quantas referências ADICIONAIS você precisa sugerir para completar 10 versículos ao todo.
 
-Sua tarefa: sugerir exatamente "needed" versículos bíblicos que valem uma releitura à luz DESTE sermão. NÃO copie o texto bíblico — apenas a referência.
+Sua tarefa: sugerir exatamente "needed" versículos bíblicos que valem uma releitura à luz DESTE sermão. NÃO copie o texto bíblico, apenas a referência.
 
 Retorne SOMENTE um objeto JSON válido, sem markdown, sem texto antes ou depois:
 
@@ -20,7 +20,7 @@ Retorne SOMENTE um objeto JSON válido, sem markdown, sem texto antes ou depois:
 REGRAS
 ═══════════════════════════════════════════════════════════════
 
-1) NÃO repita nenhuma referência de "existingReferences" (nem variações do mesmo trecho — ex.: se já existe "Tiago 1:2-4", não sugira "Tiago 1:3").
+1) NÃO repita nenhuma referência de "existingReferences" (nem variações do mesmo trecho, ex.: se já existe "Tiago 1:2-4", não sugira "Tiago 1:3").
 2) Cada "reference" deve ser uma passagem CURTA (1 versículo ou um bloco de 2-6 versos contíguos) que sustente sozinha uma releitura reflexiva de 60-90s.
 2b) TODA referência precisa de LIVRO, CAPÍTULO e VERSÍCULO, no formato "Livro 3:16" ou "Livro 3:16-18". Livro sozinho ("Judas") ou capítulo inteiro ("Romanos 8") são DESCARTADOS: sem versículo não há texto para reler, e o card sai vazio.
 3) Priorize passagens que:
@@ -34,6 +34,6 @@ REGRAS
 PROIBIÇÕES:
 - Nada de markdown, emojis, aspas decorativas.
 - Nada de texto bíblico.
-- Nada de campos extras (ex.: "reason", "text", "note") — só "reference".
+- Nada de campos extras (ex.: "reason", "text", "note"), só "reference".
 - Nada de passagens longas (capítulo inteiro; máx. 6 versos contíguos).
 - Nada de refs meta ("leia todo o livro de X", "veja o Salmo Y").`;

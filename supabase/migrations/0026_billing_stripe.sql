@@ -4,17 +4,17 @@
 -- MODELO (decidido com o usuário):
 --   * Saldo ÚNICO em profiles.coin_balance. Créditos ACUMULAM (rollover):
 --     toda fatura paga soma a franquia do plano ao saldo, sem reset e sem teto.
---   * Cancelar/falhar pagamento NÃO zera nada — o usuário gasta o que tem,
+--   * Cancelar/falhar pagamento NÃO zera nada, o usuário gasta o que tem,
 --     só para de receber a recarga mensal.
 --   * Plano gratuito = os 50 créditos de boas-vindas do cadastro. Não é uma
 --     assinatura no Stripe; é só a ausência de uma.
 --
--- SUPERFÍCIE DE ATAQUE — o que este arquivo fecha:
+-- SUPERFÍCIE DE ATAQUE, o que este arquivo fecha:
 --   1. Crédito forjado pelo cliente. `grant_coins()` é SECURITY DEFINER com
 --      EXECUTE revogado de public/anon/authenticated: só o service_role (que
 --      vive exclusivamente no servidor, atrás da verificação de assinatura do
 --      webhook) consegue chamar.
---   2. Replay de webhook. `stripe_events` tem o id do evento como PK — a
+--   2. Replay de webhook. `stripe_events` tem o id do evento como PK, a
 --      segunda entrega do mesmo evento colide e é descartada. Em segunda
 --      camada, `coin_transactions.external_ref` é UNIQUE, então mesmo dois
 --      eventos distintos que apontem para a mesma fatura creditam uma vez só.
@@ -97,7 +97,7 @@ alter table public.stripe_events enable row level security;
 -- 6) Ledger: referência externa para idempotência ---------------------------
 -- external_ref carrega a origem canônica do crédito no Stripe
 -- (ex.: 'in_1A2B3C:si_xxx' para uma linha de fatura, 'cs_test_xxx' para um
--- pacote avulso). UNIQUE simples — no Postgres NULL nunca colide com NULL,
+-- pacote avulso). UNIQUE simples, no Postgres NULL nunca colide com NULL,
 -- então os débitos existentes (que não têm ref) continuam livres.
 
 alter table public.coin_transactions
@@ -108,7 +108,7 @@ create unique index if not exists coin_transactions_external_ref_key
 
 -- 7) grant_coins(): o único caminho de crédito ------------------------------
 -- Insere o lançamento no ledger ANTES de mexer no saldo. Se o external_ref já
--- existir, o insert não acontece, a função sai cedo e devolve o saldo atual —
+-- existir, o insert não acontece, a função sai cedo e devolve o saldo atual,
 -- o crédito nunca é aplicado duas vezes, mesmo com duas entregas simultâneas
 -- do mesmo webhook (o índice UNIQUE serializa a corrida).
 

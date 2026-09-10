@@ -14,7 +14,7 @@ type RecordButtonProps = {
   /** When provided, adds a pause action to the control cluster. Omit on the
    * idle/empty state where pause has no meaning. */
   onPause?: () => void;
-  /** When provided (compact cluster only), adds a discard action — end the
+  /** When provided (compact cluster only), adds a discard action, end the
    * recording without generating or saving a summary. The caller is expected
    * to gate it behind a confirmation dialog. */
   onDiscard?: () => void;
@@ -23,7 +23,7 @@ type RecordButtonProps = {
    * view where the big button is the only element on screen and needs the
    * pulse to signal "we're listening". */
   pulseWhileRunning?: boolean;
-  /** Landed here from NewRecordingDialog with autostart=1 — start() is about
+  /** Landed here from NewRecordingDialog with autostart=1, start() is about
    * to fire but running is still false. Suppresses the "toque para começar"
    * idle prompt so the user doesn't see it flash before the recorder mounts. */
   autoStarting?: boolean;
@@ -31,7 +31,7 @@ type RecordButtonProps = {
    * Círculo grande sem AÇÃO: só o pulso de "estamos ouvindo". Usado pelo modo
    * áudio enquanto grava, onde quem comanda é a barra flutuante.
    *
-   * Existe porque o contrário — círculo clicável E barra na mesma tela — dá
+   * Existe porque o contrário, círculo clicável E barra na mesma tela, dá
    * dois jeitos de parar a gravação, e um deles não tem o descanso por
    * inatividade que a barra tem justamente para evitar o stop acidental. Antes
    * de `running`, o círculo continua sendo o convite para começar.
@@ -52,8 +52,8 @@ export function RecordButton({
   indicator = false,
 }: RecordButtonProps) {
   /* A barra flutuante mora por cima do feed durante a gravação inteira. Depois
-     de RECORD_CLUSTER_IDLE_MS sem interação ela recolhe para o descanso — quase
-     transparente e sem cor — e o primeiro toque só a reacende, sem disparar
+     de RECORD_CLUSTER_IDLE_MS sem interação ela recolhe para o descanso, quase
+     transparente e sem cor, e o primeiro toque só a reacende, sem disparar
      ação nenhuma. Quem vai pausar ou parar toca duas vezes; em troca, ninguém
      encerra uma gravação por encostar na tela enquanto lê. */
   const [awake, setAwake] = useState(true);
@@ -81,7 +81,7 @@ export function RecordButton({
       <div
         // `pointerType`, e não `wake` direto: no TOQUE o `pointerenter` dispara
         // no mesmo gesto que vira `click`, e entre um e outro o React já
-        // rerenderizou — a cortina saía do caminho e o toque que era para
+        // rerenderizou, a cortina saía do caminho e o toque que era para
         // apenas ACENDER caía no botão de baixo, pausando ou parando a
         // gravação. No mouse não há esse problema (hover não é clique), e ali
         // acender ao aproximar continua sendo o certo.

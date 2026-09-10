@@ -5,19 +5,19 @@ import { commissionCents, PAYOUT_MINIMUM_CENTS } from "@/lib/partners/economics"
  * Quanto o parceiro ganha por cada tipo de assinatura.
  *
  * Server component: são só números derivados do catálogo público de planos e
- * da taxa dele — nada aqui precisa de interação, e mantê-lo fora do bundle é
+ * da taxa dele, nada aqui precisa de interação, e mantê-lo fora do bundle é
  * de graça.
  *
  * Existe porque "30% da primeira mensalidade" é uma fórmula, não um valor. O
  * parceiro não vai fazer essa conta de cabeça antes de gravar um vídeo, e sem
  * ela ele também não sabe que indicar um Estudioso vale mais que o dobro de um
- * Pessoal — que é exatamente o tipo de coisa que muda o que ele fala.
+ * Pessoal, que é exatamente o tipo de coisa que muda o que ele fala.
  *
  * O mínimo de saque é mencionado no rodapé, em uma frase, e NÃO como um
  * "faltam N assinantes" por linha: junto do valor da comissão, aquele número
  * era lido como se o parceiro precisasse de N assinantes para ganhar aquilo.
  *
- * Os valores saem de `lib/billing/plans.ts` — o MESMO catálogo do checkout e
+ * Os valores saem de `lib/billing/plans.ts`, o MESMO catálogo do checkout e
  * da landing. Número de comissão calculado sobre preço copiado à mão é uma
  * promessa que quebra na hora do pagamento.
  */
@@ -69,9 +69,9 @@ export function EarningsByPlan({ rateBps }: Props) {
       </ul>
 
       <p className="text-[11.5px] font-light leading-[1.5] text-scriba-ink-mute">
-        A conta é sobre o valor cheio da mensalidade — o mesmo preço que aparece na página de
-        planos, então você consegue conferir sozinho. {formatBrl(PAYOUT_MINIMUM_CENTS)} é o mínimo
-        para um pagamento sair; abaixo disso o saldo acumula para o mês seguinte e não se perde.
+        A conta é sobre o valor cheio da mensalidade, o mesmo preço que aparece na página de planos,
+        então você consegue conferir sozinho. {formatBrl(PAYOUT_MINIMUM_CENTS)} é o mínimo para um
+        pagamento sair; abaixo disso o saldo acumula para o mês seguinte e não se perde.
       </p>
     </section>
   );

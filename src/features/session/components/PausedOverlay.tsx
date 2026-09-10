@@ -10,7 +10,7 @@ type Props = {
   elapsedMs: number;
   onResume: () => void;
   onStop: () => void;
-  /** End the recording and discard it — no summary, session row deleted. The
+  /** End the recording and discard it, no summary, session row deleted. The
    * caller gates this behind a confirmation dialog. */
   onDiscard?: () => void;
   /**
@@ -25,13 +25,13 @@ type Props = {
  * Softly-veiled overlay shown while the session is paused. Preserves the feed
  * behind a blur so the user knows their work is intact; the CTAs make the
  * only reasonable next actions explicit: resume capture or stop and generate
- * the summary. While visible, coin billing and OpenAI pipelines are frozen —
+ * the summary. While visible, coin billing and OpenAI pipelines are frozen,
  * see `useCoinTick`, `useBackgroundKeepalive`, and the `paused` flag in the
  * session store.
  *
  * Em `outOfCoins`, o mesmo overlay vira a tela de "acabou o crédito": o botão
  * de retomar sai (não há o que retomar sem saldo), entra o de comprar, e o
- * texto deixa explícito que NADA foi perdido — a gravação está esperando, não
+ * texto deixa explícito que NADA foi perdido, a gravação está esperando, não
  * encerrada. Assim que o crédito entra, `useCoinGuard` derruba a flag e o
  * overlay volta ao estado normal de pausa, com "Retomar" ativo.
  */
@@ -82,7 +82,7 @@ export function PausedOverlay({
         </p>
         <p className="max-w-sm text-pretty text-sm font-light leading-relaxed text-scriba-ink-soft">
           {outOfCoins
-            ? "A gravação está congelada, não encerrada — tudo o que foi capturado até agora continua aqui. Adicione créditos e retome de onde parou, ou encerre agora e gere o resumo do que já temos."
+            ? "A gravação está congelada, não encerrada, tudo o que foi capturado até agora continua aqui. Adicione créditos e retome de onde parou, ou encerre agora e gere o resumo do que já temos."
             : "Nada está sendo capturado agora. Nenhuma moeda é consumida enquanto estiver pausado."}
         </p>
       </div>
@@ -133,7 +133,7 @@ export function PausedOverlay({
 
       {outOfCoins ? (
         <p className="max-w-xs text-pretty text-[11px] font-light leading-relaxed text-scriba-ink-mute">
-          O pagamento abre numa aba nova. Esta gravação continua aqui — o saldo se atualiza sozinho
+          O pagamento abre numa aba nova. Esta gravação continua aqui, o saldo se atualiza sozinho
           quando a compra for confirmada.
         </p>
       ) : null}

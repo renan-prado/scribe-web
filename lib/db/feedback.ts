@@ -14,7 +14,7 @@ import { createAdminClient } from "@/lib/supabase/admin";
 /**
  * A decisão de PERGUNTAR, e o registro da resposta.
  *
- * Tudo aqui roda com service-role e recebe o `userId` de quem chama — as duas
+ * Tudo aqui roda com service-role e recebe o `userId` de quem chama, as duas
  * tabelas de `0047_feedback.sql` têm RLS ligada e nenhuma policy, de propósito.
  * O cliente não escolhe quando é perguntado nem o que vai para a tabela que
  * orienta o roadmap; ele responde a uma janela que o servidor abriu.
@@ -45,7 +45,7 @@ function surfaceForMode(mode: SessionMode): FeedbackSurface {
 }
 
 /**
- * Decide se ESTA visita merece a janela — e, se merecer, já grava a pergunta.
+ * Decide se ESTA visita merece a janela, e, se merecer, já grava a pergunta.
  *
  * Devolve `null` na esmagadora maioria das chamadas, e isso é o caminho
  * normal: só três sessões e três estudos na vida de cada pessoa passam daqui.
@@ -55,7 +55,7 @@ function surfaceForMode(mode: SessionMode): FeedbackSurface {
  *   1. **A sessão (ou o estudo) é do usuário e está terminada.** Service-role
  *      não tem RLS atrás dela; o `user_id` no filtro é o gate.
  *   2. **Ela nasceu depois de `profiles.feedback_started_at`.** É o que faz a
- *      contagem começar hoje para quem já tinha quarenta gravações — sem
+ *      contagem começar hoje para quem já tinha quarenta gravações, sem
  *      isso, quem mais usa o produto seria exatamente quem nunca é ouvido.
  *   3. **O ordinal é 1, 3 ou 8.** Contado no banco, nunca no cliente.
  *   4. **A pergunta ainda não foi feita.** `feedback_prompts_once` decide;
@@ -78,7 +78,7 @@ export async function resolveFeedbackPrompt(input: {
     .eq("id", userId)
     .maybeSingle();
   if (profileError || !profile) {
-    log.warn("perfil não lido — sem pergunta", { userId, error: profileError?.message });
+    log.warn("perfil não lido, sem pergunta", { userId, error: profileError?.message });
     return null;
   }
   const startedAt = profile.feedback_started_at as string;
@@ -128,7 +128,7 @@ export async function resolveFeedbackPrompt(input: {
     .maybeSingle();
 
   if (insertError) {
-    // 23505 é a pergunta já feita — o caso comum de quem reabre a página.
+    // 23505 é a pergunta já feita, o caso comum de quem reabre a página.
     if (insertError.code !== "23505") {
       log.error("falha ao registrar pergunta", { userId, kind, error: insertError.message });
     }
@@ -152,7 +152,7 @@ export async function resolveFeedbackPrompt(input: {
  * `lte` sobre o carimbo da própria linha, e não um `count` do total: contar
  * tudo daria o ordinal de HOJE a uma sessão de semanas atrás, e o marco
  * mudaria a cada gravação nova. Aqui ele é uma propriedade da sessão, estável
- * enquanto as anteriores existirem — e é por isso que `feedback_prompts.ordinal`
+ * enquanto as anteriores existirem, e é por isso que `feedback_prompts.ordinal`
  * o congela assim que a pergunta é feita.
  */
 async function countUpTo(input: {
@@ -187,7 +187,7 @@ async function countUpTo(input: {
  *
  * Existe para que o cliente não precise mandar nem uma nem outra. Ele devolve
  * só o `promptId` que recebeu, e o servidor reconstrói o resto da linha que
- * ele mesmo escreveu — um corpo que dissesse `surface: "study"` sobre a sessão
+ * ele mesmo escreveu, um corpo que dissesse `surface: "study"` sobre a sessão
  * de outra pessoa não teria como ser desmentido.
  *
  * `null` quando a pergunta não é dele, não existe, ou já foi respondida. A
@@ -225,13 +225,13 @@ export type FeedbackAnswer = { topic: FeedbackTopic; rating: FeedbackRating };
 /**
  * Grava as notas de um envio e marca a pergunta como respondida.
  *
- * As linhas nascem juntas, com o mesmo `submission_id` e o mesmo comentário —
+ * As linhas nascem juntas, com o mesmo `submission_id` e o mesmo comentário,
  * ver o porquê da repetição no cabeçalho da migração. `app_version` entra
  * aqui, e não como default da coluna, pelo mesmo motivo de
  * `llm_usage_events`: quem sabe a versão é o processo que está rodando.
  *
  * `promptId` é opcional porque o feedback do /profile não nasce de pergunta
- * nossa — é a pessoa que procurou o botão.
+ * nossa, é a pessoa que procurou o botão.
  */
 export async function saveFeedbackResponse(input: {
   userId: string;

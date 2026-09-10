@@ -17,7 +17,7 @@ export default async function AppLayout({ children }: { children: ReactNode }) {
   // papel da MESMA linha de `profiles` (antes eram três consultas nela, cada
   // uma precedida do seu próprio `getUser()` na rede).
   //
-  // `isCurrentUserPartner` continua separado porque lê outra tabela — e é
+  // `isCurrentUserPartner` continua separado porque lê outra tabela, e é
   // também o ponto onde a mesada mensal de moedas do parceiro é conferida e
   // creditada (ver lib/partners/allowance.ts). Fica aqui, e não numa rota,
   // porque é o único caminho por onde todo parceiro passa ao usar o app.
@@ -26,7 +26,7 @@ export default async function AppLayout({ children }: { children: ReactNode }) {
     isCurrentUserPartner().catch(() => false),
   ]);
   // Conta desativada não renderiza o app: nem header, nem nav, nem children.
-  // O 403 de `requireAuth()` já barra as rotas de API — sem esta metade, a
+  // O 403 de `requireAuth()` já barra as rotas de API, sem esta metade, a
   // pessoa navegaria por telas que falham uma a uma sem explicar o motivo.
   if (account && !account.isActive) return <AccountDisabled />;
 
@@ -63,13 +63,13 @@ export default async function AppLayout({ children }: { children: ReactNode }) {
           abaixo ficam montados: eram eles que sumiam e voltavam a cada toque
           quando o fade morava no root layout.
 
-          A folga de 144px no celular é o espaço que a barra inferior ocupa —
+          A folga de 144px no celular é o espaço que a barra inferior ocupa,
           sem ela o fim da rolagem fica embaixo da barra. Ela vai no FILHO
           (`[&>*]`), não neste wrapper, e a diferença é visível: as páginas que
           pintam o próprio chão o pintam no elemento raiz delas
           (`bg-scriba-surface` no /feed, /recordings e /studies), então uma
           folga aqui fora ficava DEPOIS da tinta e a faixa reservada aparecia
-          num tom diferente do conteúdo — o do `body`. Por dentro, o chão da
+          num tom diferente do conteúdo, o do `body`. Por dentro, o chão da
           página se estende por ela.
 
           Isso pressupõe UM elemento raiz por página, que é como todas as

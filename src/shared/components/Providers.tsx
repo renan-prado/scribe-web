@@ -8,7 +8,7 @@ function makeQueryClient() {
     defaultOptions: {
       queries: {
         // Bible verses and other refs are effectively immutable per
-        // (reference, translation) — no need to refetch on window focus.
+        // (reference, translation), no need to refetch on window focus.
         staleTime: 5 * 60 * 1000,
         refetchOnWindowFocus: false,
         retry: 1,

@@ -5,7 +5,7 @@
 -- ao final do próprio resumo; os demais são revelados no feed home nos dias
 -- indicados após o resumo (na fase de validação atual, todos ficam visíveis).
 --
--- payload segue o schema PracticesPayload em lib/domain/practices.ts —
+-- payload segue o schema PracticesPayload em lib/domain/practices.ts,
 -- { items: PracticeItem[5] }. Uma prática por sessão (unique session_id),
 -- reprocess_summary sobrescreve.
 

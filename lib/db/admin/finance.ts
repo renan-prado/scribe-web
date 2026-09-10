@@ -35,7 +35,7 @@ import { createAdminClient } from "@/lib/supabase/admin";
  * Leitura e escrita das cinco tabelas financeiras, e a montagem do lado MEDIDO
  * do painel.
  *
- * Tudo com service-role, depois de `requireAdmin()` — as tabelas de 0043 não
+ * Tudo com service-role, depois de `requireAdmin()`, as tabelas de 0043 não
  * têm policy nenhuma, então não existe outro caminho. Nenhuma conta é feita
  * aqui: a aritmética inteira mora em `lib/finance/*`, que é puro e testável
  * sem banco. Este módulo só busca linhas e as converte para os tipos de
@@ -43,7 +43,7 @@ import { createAdminClient } from "@/lib/supabase/admin";
  *
  * A exceção aparente é `loadMeasuredInputs`, e ela não é exceção: as somas que
  * ele faz são de `lib/finance/measured.ts`, e os números de assinatura vêm de
- * `loadAdminMetrics` — a MESMA implementação que desenha `/admin/metricas`.
+ * `loadAdminMetrics`, a MESMA implementação que desenha `/admin/metricas`.
  * Uma segunda consulta de MRR aqui seria uma segunda definição de MRR, e um
  * dia o painel financeiro e o de métricas discordariam sobre a mesma receita.
  */
@@ -288,7 +288,7 @@ function toEntry(row: EntryRow): FinanceEntry {
     categoryId: row.category_id,
     amountCents: Number(row.amount_cents),
     currency: row.currency,
-    // `numeric` volta como STRING no supabase-js — o driver não a converte em
+    // `numeric` volta como STRING no supabase-js, o driver não a converte em
     // number para não perder precisão. Um `Number()` esquecido aqui faz
     // `amount * fxRate` virar concatenação de strings.
     fxRate: row.fx_rate === null ? null : Number(row.fx_rate),
@@ -331,7 +331,7 @@ export async function listEntries(filters: EntryFilters = {}): Promise<FinanceEn
  * 1. `paid` sem `settledAt` recebe a data de competência. O CHECK da migração
  *    recusaria a linha, e um 500 na cara de quem lançou uma despesa paga é
  *    pior do que assumir a única data que ele já informou.
- * 2. `paid` em BRL nunca guarda câmbio — não há o que congelar.
+ * 2. `paid` em BRL nunca guarda câmbio: não há o que congelar.
  * 3. Sair de `paid` LIMPA `settledAt`, `fxRate` e `paidCents`: um lançamento
  *    que voltou a ser pendente carregando o câmbio do dia em que esteve pago
  *    seria convertido pela cotação errada para sempre.
@@ -563,7 +563,7 @@ export async function updateFinanceSettings(input: SettingsInput): Promise<Finan
  * Quatro fontes, todas já existentes: o ledger de moedas (receita datada),
  * `llm_usage_events` (custo de IA), `loadAdminMetrics` (MRR, ARPU, assinantes
  * ativos) e `partner_commissions` (comissão paga e devida). Nenhuma consulta
- * nova de MRR — ver o cabeçalho do arquivo.
+ * nova de MRR, ver o cabeçalho do arquivo.
  *
  * `monthsBack` recorta as duas séries pesadas. Sem ele, um ano de eventos de
  * LLM viria inteiro para calcular doze meses.
@@ -631,12 +631,12 @@ async function loadUsageCosts(admin: AdminClient, since: string): Promise<UsageC
 /**
  * MRR, ARPU e assinantes ativos.
  *
- * A conta é a MESMA de `lib/db/admin/metrics.ts` — plano ativo × preço do
- * plano —, mas rodando sobre uma consulta enxuta em vez de todo o funil:
+ * A conta é a MESMA de `lib/db/admin/metrics.ts`, plano ativo × preço do
+ * plano, mas rodando sobre uma consulta enxuta em vez de todo o funil:
  * `loadAdminMetrics` carrega perfis, sessões e o ledger inteiro para responder
  * perguntas de produto que esta tela não faz, e chamá-lo aqui custaria quatro
  * consultas grandes por render. A aritmética continua vindo de `PLANS` e
- * `isActiveStatus`, que são a definição — não há um segundo preço em lugar
+ * `isActiveStatus`, que são a definição, não há um segundo preço em lugar
  * nenhum.
  */
 async function loadSubscriptionSnapshot(admin: AdminClient): Promise<{
@@ -673,7 +673,7 @@ async function loadSubscriptionSnapshot(admin: AdminClient): Promise<{
 /**
  * Comissões de parceiro: quanto já saiu e quanto ainda se deve.
  *
- * Devido é TUDO que não foi pago nem estornado — inclusive o que ainda está na
+ * Devido é TUDO que não foi pago nem estornado, inclusive o que ainda está na
  * carência de 30 dias. Do ponto de vista financeiro a carência não muda a
  * obrigação, só a data em que ela pode ser quitada: o dinheiro é do parceiro
  * assim que a comissão nasce. O painel de parceiros separa as duas fatias
@@ -690,7 +690,7 @@ async function loadPartnerTotals(
   if (error) {
     // Um erro aqui não pode derrubar o painel inteiro: comissão é uma fatia do
     // passivo, não a conta toda. Zerar e seguir é pior que avisar, mas melhor
-    // que uma tela em branco — e o erro sobe no log de quem chamou.
+    // que uma tela em branco, e o erro sobe no log de quem chamou.
     return { paidCents: 0, owedCents: 0 };
   }
   let paidCents = 0;

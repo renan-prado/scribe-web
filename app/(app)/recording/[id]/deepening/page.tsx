@@ -21,7 +21,7 @@ export async function generateMetadata({ params }: PageProps): Promise<Metadata>
   const { id } = await params;
   const [session, deepening] = await Promise.all([getSessionMeta(id), getDeepening(id)]);
   const base = session?.title?.trim() || "Sessão sem título";
-  const title = deepening?.payload.title?.trim() || `Estudo — ${base}`;
+  const title = deepening?.payload.title?.trim() || `Estudo, ${base}`;
   return { title };
 }
 
@@ -41,7 +41,7 @@ const DATE_FMT_SHORT = new Intl.DateTimeFormat("pt-BR", {
 
 export default async function RecordingDeepeningPage({ params }: PageProps) {
   const { id } = await params;
-  // LER um estudo ja gerado nao e restrito por plano — so gerar e reprocessar.
+  // LER um estudo ja gerado nao e restrito por plano, so gerar e reprocessar.
   // Tirar acesso a conteudo que a pessoa ja pagou seria confisco.
   const [session, deepening, canReprocess] = await Promise.all([
     getSessionMeta(id),
@@ -52,7 +52,7 @@ export default async function RecordingDeepeningPage({ params }: PageProps) {
 
   const payload = deepening.payload;
   const sessionTitle = session.title?.trim() || "Sessão sem título";
-  const deepeningTitle = payload.title?.trim() || `Estudo — ${sessionTitle}`;
+  const deepeningTitle = payload.title?.trim() || `Estudo, ${sessionTitle}`;
 
   return (
     <main className="tone-study mx-auto flex min-h-svh w-full max-w-3xl flex-col gap-6 px-4 py-8 sm:gap-8 sm:px-6 sm:py-10">

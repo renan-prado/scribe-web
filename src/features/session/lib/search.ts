@@ -1,19 +1,19 @@
 /**
- * A busca das listas — `/recordings` e `/studies`. Helpers PUROS e
+ * A busca das listas, `/recordings` e `/studies`. Helpers PUROS e
  * client-safe: a filtragem roda no navegador, sobre a lista que a página já
  * entregou.
  *
  * ## Por que no cliente
  *
  * As duas páginas já carregam TODAS as sessões (e todos os estudos) do usuário
- * num render de servidor — não há paginação em lugar nenhum, e a escala é a de
+ * num render de servidor, não há paginação em lugar nenhum, e a escala é a de
  * quem grava um ou dois sermões por semana. Filtrar isso no cliente responde
  * instantaneamente a cada tecla, sem uma ida ao servidor por caractere e sem
  * um estado de carregamento piscando entre os cartões.
  *
  * A exceção é o texto da PREGAÇÃO: transcrição não vem nas listas (é uma das
  * três colunas pesadas, ver `SELECT_LIST` em `lib/db/sessions.ts`) e não pode
- * vir — trazer uma hora de sermão por cartão para desenhar uma lista seria
+ * vir, trazer uma hora de sermão por cartão para desenhar uma lista seria
  * trocar a busca por um problema pior. Quem procura uma FRASE dita no púlpito
  * passa por `/api/sessions/search`, e os ids que voltam entram na mesma
  * peneira. Ver `useContentSearch`.
@@ -46,7 +46,7 @@ export function searchTokens(query: string): string[] {
 
 /**
  * Todo termo precisa aparecer em algum lugar do palheiro. `haystack` já vem
- * normalizado por quem chama — normalizar aqui repetiria o trabalho a cada
+ * normalizado por quem chama, normalizar aqui repetiria o trabalho a cada
  * tecla, para cada cartão da lista.
  */
 export function matchesAllTokens(normalizedHaystack: string, tokens: string[]): boolean {
@@ -101,7 +101,7 @@ export function isWithinRange(iso: string, range: DateRangeKey, now: Date): bool
  * As opções de um filtro saem dos ITENS da lista, não das tabelas `speakers` /
  * `locations`. Duas razões: um filtro que oferece um nome sem nenhum resultado
  * atrás é um beco, e o snapshot em `sessions.speaker_name` é o que a lista
- * mostra — renomear um pregador não reescreve o passado (ver o cabeçalho de
+ * mostra, renomear um pregador não reescreve o passado (ver o cabeçalho de
  * `lib/db/speakers.ts`), então filtrar pela entidade não casaria com o texto na
  * tela.
  *

@@ -3,7 +3,7 @@ import Link from "next/link";
 import { Button } from "@/components/ui/button";
 
 export const metadata = {
-  title: { absolute: "Página não encontrada — Scriba" },
+  title: { absolute: "Página não encontrada, Scriba" },
 };
 
 export default function NotFoundPage() {

@@ -8,7 +8,7 @@ import { createLogger } from "@/lib/log";
 import { createAdminClient } from "@/lib/supabase/admin";
 
 /**
- * Leitura e escrita de `admin_insights` — uma linha por escopo, substituída a
+ * Leitura e escrita de `admin_insights`, uma linha por escopo, substituída a
  * cada geração. O porquê de não haver histórico está no cabeçalho da migração
  * `0034_admin_insights.sql`.
  *
@@ -18,7 +18,7 @@ import { createAdminClient } from "@/lib/supabase/admin";
  * **A leitura revalida.** O payload é jsonb gravado por uma versão anterior do
  * tipo, e um card que confia no que está no banco quebra a página inteira no
  * dia em que um campo mudar de nome. Falha de parse aqui devolve `null`, que a
- * tela trata como "ainda não gerado" — e a próxima geração conserta a linha.
+ * tela trata como "ainda não gerado", e a próxima geração conserta a linha.
  */
 
 const log = createLogger("admin/insights");
@@ -37,7 +37,7 @@ function toRecord(row: Row): AdminInsightsRecord | null {
   // caminho mais curto para ter UMA validação, e não duas que divergem.
   const payload = parseAdminInsightsFromLLM(JSON.stringify(row.payload));
   if (!payload) {
-    log.warn("payload gravado não passou no parser — tratando como ausente", { scope: row.scope });
+    log.warn("payload gravado não passou no parser, tratando como ausente", { scope: row.scope });
     return null;
   }
   return {

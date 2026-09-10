@@ -25,13 +25,13 @@ import {
  * A leitura completa do painel financeiro, montada uma vez por request.
  *
  * Existe para que as seis telas de `/admin/financeiro` não repitam a mesma
- * sequência de seis buscas mais a montagem do contexto de câmbio — e, mais
+ * sequência de seis buscas mais a montagem do contexto de câmbio, e, mais
  * importante, para que nenhuma delas seja tentada a calcular "só este número
  * aqui" por conta própria. Tudo que qualquer tela mostra sai do
  * `FinanceOverview` devolvido daqui, e a aritmética inteira é a de
  * `lib/finance/aggregate.ts`.
  *
- * O câmbio vem de `getUsdToBrl()` — o MESMO de `/admin/usage`, com o mesmo
+ * O câmbio vem de `getUsdToBrl()`, o MESMO de `/admin/usage`, com o mesmo
  * fallback manual em cookie. Uma segunda fonte de cotação faria a mesma
  * despesa em dólar valer coisas diferentes em duas telas do mesmo painel.
  */

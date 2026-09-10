@@ -1,13 +1,13 @@
 import { cn } from "@/lib/utils";
 
 /**
- * A pena — a marca do Scriba.
+ * A pena, a marca do Scriba.
  *
  * Este arquivo é o ÚNICO lugar do código onde o `<path>` da pena existe. Antes
  * dele o mesmo desenho estava copiado inline em sete componentes, e o resultado
  * foi previsível: a aplicação inteira ficou com uma pena antiga (o traço de
  * 155×155) enquanto os favicons já usavam outra. Trocar a marca virou uma
- * caçada. Se precisar da pena em algum lugar novo, importe daqui — não cole o
+ * caçada. Se precisar da pena em algum lugar novo, importe daqui, não cole o
  * path de novo.
  *
  * O desenho é o mesmo de `public/brand/pena.svg`, que existe para os consumos

@@ -1,11 +1,11 @@
--- Session deepenings: one optional per-session "aprofundamento" — a denser,
+-- Session deepenings: one optional per-session "aprofundamento", a denser,
 -- more theological pass over the same transcript + feed items + already-
 -- generated final_summary. Produced on-demand from /summary at a fixed cost
 -- (10 coins, enforced client-side/UI for now). One aprofundamento per session
--- max — the unique(session_id) constraint below is what makes "só pode ser
+-- max, the unique(session_id) constraint below is what makes "só pode ser
 -- aprofundado uma vez" a hard rule, not just a UI convention.
 --
--- payload has the same shape as sessions.final_summary (SummaryPayload — see
+-- payload has the same shape as sessions.final_summary (SummaryPayload, see
 -- lib/domain/summary.ts), so the same BlockRenderer/SummaryView can render it
 -- with no branching.
 

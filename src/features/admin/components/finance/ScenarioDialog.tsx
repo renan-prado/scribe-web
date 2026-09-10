@@ -24,7 +24,7 @@ import { MoneyInput, PercentInput } from "./MoneyInput";
  * Três campos são OPCIONAIS de propósito, e o vazio deles significa "use o
  * medido": ticket (usa o ARPU real), alíquota (herda das configurações) e
  * custo fixo extra (soma zero). Preencher os três transformaria o cenário
- * numa planilha desconectada da realidade do produto — que é exatamente o que
+ * numa planilha desconectada da realidade do produto, que é exatamente o que
  * a projeção deste painel existe para não ser.
  */
 
@@ -170,7 +170,7 @@ export function ScenarioDialog({ scenario, measuredArpuCents, onClose }: Props) 
             <Field
               label="Custo fixo extra"
               htmlFor="sc-fixed"
-              hint="Soma ao custo fixo medido — uma contratação planejada, por exemplo."
+              hint="Soma ao custo fixo medido, uma contratação planejada, por exemplo."
             >
               <MoneyInput
                 id="sc-fixed"

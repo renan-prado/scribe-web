@@ -15,7 +15,7 @@ type ThemeToggleProps = {
 };
 
 /**
- * Light/dark switch — a pill track with both glyphs printed on it and a raised
+ * Light/dark switch, a pill track with both glyphs printed on it and a raised
  * thumb that slides over the active one.
  *
  * Everything downstream reacts to the `.dark` class this writes onto <html>;

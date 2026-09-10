@@ -19,11 +19,11 @@ const log = createLogger("billing:summary");
  * O sistema tem três linhas de defesa para o mesmo dinheiro, em ordem de
  * latência:
  *
- *   1. WEBHOOK — segundos. O caminho normal.
- *   2. RECONCILIAÇÃO no retorno do checkout — segundos, mas depende de o
+ *   1. WEBHOOK: segundos. O caminho normal.
+ *   2. RECONCILIAÇÃO no retorno do checkout: segundos, mas depende de o
  *      usuário voltar para a aba. Cobre compras; NÃO cobre renovações
  *      mensais, que não têm página de retorno.
- *   3. ESTE ARQUIVO — minutos a um dia. Cobre o que sobrou: renovações cujo
+ *   3. ESTE ARQUIVO: minutos a um dia. Cobre o que sobrou: renovações cujo
  *      webhook falhou, compras cuja aba de retorno nunca carregou, espelho de
  *      assinatura defasado.
  *
@@ -37,7 +37,7 @@ const log = createLogger("billing:summary");
 // ---------------------------------------------------------------------------
 
 /**
- * Cooldown em memória por usuário. Em serverless cada instância tem o seu —
+ * Cooldown em memória por usuário. Em serverless cada instância tem o seu,
  * está ótimo assim: é uma economia de chamadas ao Stripe, não uma trava de
  * correção (a correção vem da idempotência). 15 min segura o caso patológico
  * de uma assinatura past_due com period_end no passado, que sem isto
@@ -55,7 +55,7 @@ const ACTIVEISH = new Set(["active", "trialing", "past_due"]);
 
 /**
  * True quando vale a pena conferir esta assinatura no Stripe: ela se diz viva,
- * mas o período que conhecemos já acabou — ou a renovação aconteceu e o
+ * mas o período que conhecemos já acabou, ou a renovação aconteceu e o
  * webhook perdeu (crédito faltando!), ou ela foi cancelada e o webhook perdeu
  * (espelho mentindo "renova em..."). Nos dois casos a resposta está no Stripe.
  */
@@ -68,7 +68,7 @@ export function subscriptionLooksStale(sub: SubscriptionRecord | null): boolean 
 
 /**
  * Confere uma assinatura vencida direto no Stripe: ressincroniza o espelho e
- * credita faturas pagas que ainda não estejam no ledger. Melhor-esforço — um
+ * credita faturas pagas que ainda não estejam no ledger. Melhor-esforço, um
  * erro aqui nunca deve derrubar o read que a disparou.
  *
  * Retorna quantas moedas foram recuperadas (0 no caso normal).
@@ -126,9 +126,9 @@ export type SweepReport = {
   windowHours: number;
   checkoutSessionsSeen: number;
   invoicesSeen: number;
-  /** Moedas creditadas nesta passada — no regime normal, sempre 0. */
+  /** Moedas creditadas nesta passada, no regime normal, sempre 0. */
   coinsRecovered: number;
-  /** Pagamentos de dono desconhecido — exigem olhar humano. */
+  /** Pagamentos de dono desconhecido, exigem olhar humano. */
   unresolved: string[];
 };
 
@@ -137,7 +137,7 @@ export type SweepReport = {
  * no ledger. É a rede final: pega renovações perdidas, compras cuja aba de
  * retorno nunca abriu, e qualquer coisa que os caminhos rápidos deixaram cair.
  *
- * `coinsRecovered > 0` numa passada é sinal de incidente nas outras camadas —
+ * `coinsRecovered > 0` numa passada é sinal de incidente nas outras camadas,
  * o valor é logado em `warn` de propósito para não passar batido.
  */
 export async function sweepRecentPayments(

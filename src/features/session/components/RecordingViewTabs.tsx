@@ -11,7 +11,7 @@ export type RecordingViewTab<T extends string> = {
   panelId: string;
   /**
    * Novidades ainda não vistas na aba que está FECHADA. Só faz sentido no item
-   * não selecionado — é o que impede a transcrição de esconder que chegou
+   * não selecionado, é o que impede a transcrição de esconder que chegou
    * cartão novo no feed.
    */
   badge?: number;
@@ -101,7 +101,7 @@ export function RecordingViewTabs<T extends string>({
             {tab.icon}
             {/* O rótulo NÃO some no telefone. Ele já sumiu, quando as abas
                 dividiam a linha com a barra do gravador, e duas caixinhas mudas
-                não contam a ninguém que existe uma transcrição para ler — a
+                não contam a ninguém que existe uma transcrição para ler, a
                 largura para os dois é o que a faixa própria comprou. */}
             {tab.label}
             {badge > 0 ? (

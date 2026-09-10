@@ -1,17 +1,17 @@
 import { cn } from "@/lib/utils";
 
 /**
- * O glifo do YouTube — retângulo arredondado com o triângulo vazado.
+ * O glifo do YouTube, retângulo arredondado com o triângulo vazado.
  *
  * **Existe porque o lucide-react v1 não tem.** Os ícones de marca saíram da
  * biblioteca, e `Youtube` não é mais um export (o build quebra com TS2305). O
  * substituto genérico que estava aqui antes era o `MonitorPlay`, que diz
- * "vídeo" e não diz "YouTube" — e num diálogo onde o modo se chama YouTube, a
+ * "vídeo" e não diz "YouTube", e num diálogo onde o modo se chama YouTube, a
  * marca é a informação.
  *
  * **`currentColor`, não o vermelho da marca.** Ele mora no mesmo disco que os
  * outros três ícones de modo (`BookOpenText`, `FileText`, `Captions`), e aquele
- * disco troca de fundo quando o card é selecionado — vai de `bg-scriba-surface`
+ * disco troca de fundo quando o card é selecionado, vai de `bg-scriba-surface`
  * para o gradiente do CTA. Um vermelho fixo brigaria com o gradiente
  * selecionado e quebraria a fileira quando não selecionado; herdando a cor, o
  * card do YouTube se comporta como os outros três e continua reconhecível pela

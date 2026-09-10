@@ -12,7 +12,7 @@ import type { PassagePayload } from "@/lib/domain/verse";
  * nada.
  *
  * A chave é a passagem inteira ("Isaías 1:11-17"), não o versículo. Antes era
- * uma entrada por versículo e uma requisição por entrada — sete chamadas para
+ * uma entrada por versículo e uma requisição por entrada, sete chamadas para
  * essa referência, e um estudo com muitas passagens estourava o rate limit.
  */
 export function passageQueryOptions(reference: string) {
@@ -31,7 +31,7 @@ export function passageQueryOptions(reference: string) {
 }
 
 /**
- * Prefetcher estável para aquecer o cache — usado pelo pipeline ao vivo, para
+ * Prefetcher estável para aquecer o cache, usado pelo pipeline ao vivo, para
  * que o texto já esteja em memória quando o card correspondente montar.
  */
 export function useVersePrefetcher() {

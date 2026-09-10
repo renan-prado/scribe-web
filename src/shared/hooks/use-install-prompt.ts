@@ -5,8 +5,8 @@ import { useIsStandalone } from "@/shared/hooks/use-standalone";
 
 /**
  * O evento que o Chrome/Edge disparam quando o site cumpre os requisitos de
- * instalação. Ele NÃO está no lib.dom do TypeScript porque não é padrão — é
- * uma extensão do Chromium — daí o tipo escrito à mão.
+ * instalação. Ele NÃO está no lib.dom do TypeScript porque não é padrão, é
+ * uma extensão do Chromium, daí o tipo escrito à mão.
  */
 type BeforeInstallPromptEvent = Event & {
   prompt: () => Promise<void>;
@@ -19,7 +19,7 @@ export type InstallMethod =
   | "prompt"
   /** iOS: não existe API. Só dá para ENSINAR o caminho do menu Compartilhar. */
   | "ios"
-  /** Já instalado, ou navegador que não instala nada — não ofereça. */
+  /** Já instalado, ou navegador que não instala nada, não ofereça. */
   | "none";
 
 function readIsIos(): boolean {
@@ -31,11 +31,11 @@ function readIsIos(): boolean {
 
 /**
  * Estado da instalação do PWA. Quem só quer saber se a janela atual é o app
- * instalado usa `useIsStandalone` direto — este hook é para quem OFERECE a
+ * instalado usa `useIsStandalone` direto, este hook é para quem OFERECE a
  * instalação.
  *
- * `beforeinstallprompt` chega quando quer — normalmente alguns segundos após o
- * load —, então o componente que consome isto precisa aguentar `method` mudar
+ * `beforeinstallprompt` chega quando quer, normalmente alguns segundos após o
+ * load, então o componente que consome isto precisa aguentar `method` mudar
  * de "none" para "prompt" no meio da vida da página.
  */
 export function useInstallPrompt() {
@@ -51,7 +51,7 @@ export function useInstallPrompt() {
 
     const onBeforeInstall = (event: Event) => {
       // Sem o preventDefault o Chrome mostra a própria barrinha e o evento se
-      // perde — é ele que nos dá o direito de chamar `prompt()` depois.
+      // perde, é ele que nos dá o direito de chamar `prompt()` depois.
       event.preventDefault();
       setDeferred(event as BeforeInstallPromptEvent);
     };
@@ -75,7 +75,7 @@ export function useInstallPrompt() {
    * Abre o diálogo nativo. Devolve `true` se o usuário aceitou.
    *
    * O evento é de uso ÚNICO: recusado, o Chrome só manda outro depois de um
-   * tempo. Por isso ele é descartado nos dois desfechos — insistir com o mesmo
+   * tempo. Por isso ele é descartado nos dois desfechos, insistir com o mesmo
    * objeto não faz nada.
    */
   const promptInstall = useCallback(async () => {

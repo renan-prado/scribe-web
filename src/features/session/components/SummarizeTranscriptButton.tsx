@@ -14,7 +14,7 @@ import { COIN_COSTS } from "@/lib/coins/pricing";
 import { cn } from "@/lib/utils";
 
 /**
- * "Gerar resumo" na página de uma sessão gravada no modo TRANSCRIÇÃO — o único
+ * "Gerar resumo" na página de uma sessão gravada no modo TRANSCRIÇÃO, o único
  * modo que sai da gravação sem `final_summary`.
  *
  * Duas faces, como o `DeepenButton`:
@@ -27,7 +27,7 @@ import { cn } from "@/lib/utils";
  * pegou o modo mais barato justamente para não pagar LLM, e a página inteira
  * dizia que resumo não haveria. Um toque que debita 15 moedas sem avisar seria
  * lido como cobrança indevida. O diálogo diz o preço uma vez e some para
- * sempre — a ação só existe uma vez por sessão.
+ * sempre, a ação só existe uma vez por sessão.
  *
  * O saldo insuficiente desabilita o botão com a mesma tooltip do estudo. A
  * proteção de verdade continua no servidor: `chargeCoins` devolve 402, e o 402
@@ -37,7 +37,7 @@ export const SUMMARY_FROM_TRANSCRIPT_COST = COIN_COSTS.summaryFromTranscript;
 
 type Props = {
   sessionId: string;
-  /** A sessão já tem `final_summary` — resolvido no servidor. */
+  /** A sessão já tem `final_summary`, resolvido no servidor. */
   hasSummary: boolean;
 };
 
@@ -81,7 +81,7 @@ export function SummarizeTranscriptButton({ sessionId, hasSummary }: Props) {
       }
       if (body.error === "session_already_summarized") {
         // A tela está velha (outra aba já gerou). Levar para o resumo é a
-        // resposta certa — dizer "falhou" mentiria sobre o que existe.
+        // resposta certa, dizer "falhou" mentiria sobre o que existe.
         router.push(href);
         return;
       }
@@ -159,7 +159,7 @@ export function SummarizeTranscriptButton({ sessionId, hasSummary }: Props) {
         open={confirmOpen}
         onOpenChange={setConfirmOpen}
         title="Gerar o resumo desta transcrição?"
-        description={`Esta gravação foi feita no modo transcrição, que não inclui resumo. Gerar um agora custa ${SUMMARY_FROM_TRANSCRIPT_COST} moedas e roda uma vez sobre o texto completo — depois ela passa a abrir no resumo, e o estudo fica disponível.`}
+        description={`Esta gravação foi feita no modo transcrição, que não inclui resumo. Gerar um agora custa ${SUMMARY_FROM_TRANSCRIPT_COST} moedas e roda uma vez sobre o texto completo, depois ela passa a abrir no resumo, e o estudo fica disponível.`}
         confirmLabel="Gerar resumo"
         pendingLabel="Gerando…"
         confirmVariant="default"

@@ -1,5 +1,5 @@
 /**
- * Coin ("moeda") pricing — the single source of truth mirrored by the
+ * Coin ("moeda") pricing, the single source of truth mirrored by the
  * corresponding SQL migration (0017_coin_balance.sql / 0026_billing_stripe.sql).
  * Client-safe: this module is imported by both the API routes and the UI so
  * the price shown on a button matches the amount the server actually debits.
@@ -30,7 +30,7 @@ export const COIN_COSTS = {
    *
    * 7 e não 5: medido sobre a janela do painel, o minuto ao vivo fechava 63%
    * de margem contra o alvo de 70% da régua. Ele paga transcrição MAIS os três
-   * pipelines do feed — é o minuto mais caro do produto, e era o mais barato
+   * pipelines do feed, é o minuto mais caro do produto, e era o mais barato
    * por moeda.
    */
   liveMinute: 7,
@@ -42,7 +42,7 @@ export const COIN_COSTS = {
    * 24,5% de margem, porque ele dispensa o feed mas NÃO dispensa a transcrição
    * nem o resumo final, que é onde o dinheiro está. Descer para 5 aperta essa
    * margem, e aperta num momento em que o custo de STT ACABOU DE DOBRAR
-   * ($0,003 → $0,006 por minuto de áudio — ver docs/transcricao.md). Os dois
+   * ($0,003 → $0,006 por minuto de áudio, ver docs/transcricao.md). Os dois
    * movimentos vão na mesma direção.
    *
    * Só a transcrição já come R$ 0,032 dos R$ 0,100 que 5 moedas rendem à régua
@@ -56,7 +56,7 @@ export const COIN_COSTS = {
    * **3 é PROVISÓRIO, e corrige um prejuízo.** Era 1, e 1 deixou de pagar a
    * conta: o modo faz UMA chamada, a de transcrição, e ela passou de $0,003
    * para $0,006 o minuto de áudio (docs/transcricao.md). À régua de 20 reais o
-   * milheiro, 1 moeda rende R$ 0,020 contra R$ 0,032 de custo — cada minuto
+   * milheiro, 1 moeda rende R$ 0,020 contra R$ 0,032 de custo, cada minuto
    * gravado neste modo dava prejuízo. Já era apertado antes (19% de margem);
    * com o modelo novo virou negativo.
    *
@@ -70,7 +70,7 @@ export const COIN_COSTS = {
    * One-shot cost of running /api/deepening.
    *
    * 50 e não 5: o estudo deixou de ser uma chamada de LLM e virou um pipeline
-   * de cinco etapas — três delas num modelo de raciocínio — que produz um
+   * de cinco etapas, três delas num modelo de raciocínio, que produz um
    * artigo de três a quatro mil palavras e leva perto de quatro minutos. É a
    * ação mais cara do produto por uma ordem de grandeza, e a única restrita a
    * um plano (ver lib/entitlements/features.ts).
@@ -81,7 +81,7 @@ export const COIN_COSTS = {
    * session.
    *
    * 15 e não 5: a 5 moedas o reprocessamento rodava NO PREJUÍZO (−5,4% de
-   * margem) — ele reexecuta o resumo inteiro sobre a transcrição completa,
+   * margem), ele reexecuta o resumo inteiro sobre a transcrição completa,
    * num modelo grande, e 5 moedas não pagavam a chamada. A régua pedia 18
    * para fechar os 70%; 15 é a decisão do produto, e deixa a margem em ~65%.
    */
@@ -91,7 +91,7 @@ export const COIN_COSTS = {
    * recorded in `transcript_only` and therefore never had one.
    *
    * O MESMO 15 do reprocessamento, e pelo mesmo motivo: é literalmente a mesma
-   * chamada — `generateFinalSummary` sobre a transcrição inteira, num modelo
+   * chamada, `generateFinalSummary` sobre a transcrição inteira, num modelo
    * grande, mais releia/lembra/frases por cima. O que muda é o que existia
    * antes (nada, em vez de um resumo velho), e isso não altera o custo de um
    * centavo.
@@ -99,14 +99,14 @@ export const COIN_COSTS = {
    * Preço à parte no ledger porque a PERGUNTA é outra: "quantas pessoas
    * gravaram no modo barato e mudaram de ideia?" é o sinal de produto que diz
    * se o modo transcrição está sendo escolhido por engano. Na tela de
-   * precificação as duas somam na mesma linha — ver lib/coins/billable.ts.
+   * precificação as duas somam na mesma linha, ver lib/coins/billable.ts.
    */
   summaryFromTranscript: 15,
   /**
    * One-shot cost of importing a YouTube video: legenda + resumo completo.
    *
    * **30 e FIXO, o único preço do produto que não é por minuto.** Os três modos
-   * de captura cobram por minuto porque o custo deles É por minuto — cada
+   * de captura cobram por minuto porque o custo deles É por minuto, cada
    * minuto de áudio é uma chamada de STT. Uma importação não tem STT: a legenda
    * já existe, custa ~R$ 0,03 de provedor por vídeo (1 crédito da Supadata,
    * qualquer que seja a duração), e o que sobra é exatamente a mesma chamada de
@@ -116,7 +116,7 @@ export const COIN_COSTS = {
    * A conta, na régua de `DEFAULT_COIN_PRICE_PER_THOUSAND_BRL`: R$ 0,105 de
    * resumo (o número MEDIDO que fixou `summaryFromTranscript` em 15) mais
    * R$ 0,03 de legenda dá R$ 0,135 num vídeo típico. A régua pediria 23 para os
-   * 70% de `DEFAULT_TARGET_MARGIN_PCT` NESSE vídeo típico — mas o custo do
+   * 70% de `DEFAULT_TARGET_MARGIN_PCT` NESSE vídeo típico, mas o custo do
    * resumo cresce com a transcrição na ENTRADA e a receita aqui não cresce com
    * nada, então o preço tem de ser fixado pela ponta longa, não pelo meio.
    *
@@ -130,14 +130,14 @@ export const COIN_COSTS = {
    * | 120 min | ~56% | ~63% |
    *
    * A 30 o alvo de 70% passa a valer na faixa em que quase todo sermão cai (até
-   * uma hora), e só o vídeo de duas horas — o teto — fica abaixo dele.
+   * uma hora), e só o vídeo de duas horas, o teto, fica abaixo dele.
    *
    * **É `YOUTUBE_MAX_DURATION_MS` que segura a ponta dessa tabela**, e os dois
    * andam sempre juntos: subir o teto sem mexer no preço é escolher a linha de
    * baixo da tabela para todo mundo. Ver `lib/domain/youtube.ts`.
    *
    * Com `INITIAL_COIN_BALANCE` em 50, uma conta nova importa UM vídeo e ainda
-   * fica com 20 moedas — o suficiente para experimentar um pedaço de gravação
+   * fica com 20 moedas, o suficiente para experimentar um pedaço de gravação
    * depois. Era metade do saldo (dois vídeos) a 25, e trocar o segundo vídeo
    * grátis por sete pontos de margem é a decisão que este número carrega: a
    * porta que não exige esperar até domingo continua aberta, só não duas vezes.
@@ -160,7 +160,7 @@ export const COIN_COSTS = {
 
 /**
  * Reason strings persisted in coin_transactions.reason. The server maps each
- * reason to its cost in COIN_COST_BY_REASON — clients never send an amount.
+ * reason to its cost in COIN_COST_BY_REASON, clients never send an amount.
  */
 export const CHARGE_REASONS = [
   "live_minute",

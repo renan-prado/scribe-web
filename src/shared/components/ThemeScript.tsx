@@ -4,14 +4,14 @@ import { THEME_COLOR } from "@/shared/theme-color";
  * Render-blocking theme bootstrap.
  *
  * Runs before first paint so a escolha do usuário já está aplicada quando o
- * documento renderiza — sem piscar de tema.
+ * documento renderiza, sem piscar de tema.
  *
  * O padrão é CLARO, não o `prefers-color-scheme` do sistema. O tema escuro do
  * Scriba é uma opção, não o retrato do SO: quem nunca escolheu vê a mesma
  * interface da landing page, que é onde a marca foi calibrada. O toggle
  * continua mandando e a escolha persiste.
  *
- * Ele também escreve a `<meta name="theme-color">` — a cor da barra de status
+ * Ele também escreve a `<meta name="theme-color">`, a cor da barra de status
  * do celular. Ela NÃO pode ser declarada em `metadata`/`viewport` do Next:
  * seria uma tag estática, e o tema daqui não vem do `prefers-color-scheme`
  * (que a meta sabe expressar por `media`) e sim do localStorage. Escrevendo-a

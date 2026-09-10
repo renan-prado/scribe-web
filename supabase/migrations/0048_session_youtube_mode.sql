@@ -1,11 +1,11 @@
 -- Modo "youtube": a sessão que NÃO grava nada.
 --
 -- A transcrição vem pronta das legendas de um vídeo do YouTube e o resumo roda
--- sobre ela — o mesmo `generateFinalSummary` de /api/final-summary/from-transcript,
+-- sobre ela, o mesmo `generateFinalSummary` de /api/final-summary/from-transcript,
 -- mais releia / lembra / frases marcantes. Sem áudio, sem chunks, sem STT.
 --
 -- Preço: FIXO por vídeo (reason 'youtube_import'), e não por minuto como os
--- três modos de captura — não há minuto de transcrição para contar, e o único
+-- três modos de captura, não há minuto de transcrição para contar, e o único
 -- custo que escala com a duração é a transcrição na entrada do resumo. A tabela
 -- de custos continua derivada do reason em @/lib/coins/pricing.ts; o SQL não
 -- precisa saber o valor. O teto de duração que protege esse preço fixo mora em

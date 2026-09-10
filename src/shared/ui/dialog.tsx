@@ -33,19 +33,19 @@ function DialogOverlay({ className, ...props }: DialogPrimitive.Backdrop.Props) 
 
 /**
  * Layout de três faixas: `DialogHeader` e `DialogFooter` ficam fixos e SÓ o
- * miolo rola. Os dois são içados para fora da área rolável — basta declará-los
+ * miolo rola. Os dois são içados para fora da área rolável, basta declará-los
  * como filhos do `DialogContent`, na ordem que fizer sentido ler.
  *
  * O popup, portanto, não rola; quem rola é a div do meio (`dialog-body`). Além
  * de manter título e ações sempre à vista, isso tira o scrollbar de cima da
  * borda arredondada: o corpo leva `mx-2` (e `mt/mb-2` quando encosta na borda),
- * e é essa margem — não um padding do popup — que afasta a barra do canto. O
+ * e é essa margem, não um padding do popup, que afasta a barra do canto. O
  * padding do corpo completa os 16px de respiro de sempre.
  *
  * A folga só existe onde há borda de dialog: na emenda com header ou footer
  * não há canto arredondado, então ali entra padding cheio (`pt-4`/`pb-4`) e o
  * vão entre as faixas continua sendo os mesmos 16px. Por isso o popup não tem
- * padding nenhum — as três faixas cuidam do próprio respiro, e a faixa do
+ * padding nenhum, as três faixas cuidam do próprio respiro, e a faixa do
  * footer sangra até as bordas sem precisar de margem negativa.
  *
  * `className` veste o popup (largura, raio, fundo); `bodyClassName` veste a
@@ -115,7 +115,7 @@ function DialogContent({
   );
 }
 
-/** Faixa fixa do topo — `DialogContent` a iça para fora da área rolável. Leva o
+/** Faixa fixa do topo, `DialogContent` a iça para fora da área rolável. Leva o
  *  padding cheio porque o popup não tem nenhum; o vão até o conteúdo fica por
  *  conta do `pt-4` do corpo. */
 function DialogHeader({ className, ...props }: React.ComponentProps<"div">) {

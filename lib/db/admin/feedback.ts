@@ -12,18 +12,18 @@ import { createAdminClient } from "@/lib/supabase/admin";
 /**
  * A leitura do feedback, para `/admin/feedback`.
  *
- * Service-role porque a tela é transversal a usuários — e porque as tabelas de
+ * Service-role porque a tela é transversal a usuários, e porque as tabelas de
  * `0047_feedback.sql` têm RLS ligada e nenhuma policy, então não há outro
  * caminho. Só é alcançada depois de `isCurrentUserAdmin()`.
  *
  * A tela responde a DUAS perguntas, e é por isso que este módulo devolve duas
  * coisas que não se somam:
  *
- *   * **A nota de cada coisa** — a média por tópico, que é o número. Cada
+ *   * **A nota de cada coisa**, a média por tópico, que é o número. Cada
  *     tópico é uma peça com um conserto próprio (o pipeline ao vivo, o resumo,
  *     a transcrição, o estudo), e uma "nota do Scriba" que os misturasse não
  *     apontaria para lugar nenhum.
- *   * **O que as pessoas escreveram** — os comentários, que é o diagnóstico.
+ *   * **O que as pessoas escreveram**, os comentários, que é o diagnóstico.
  *     Uma média de 2,4 diz que algo está errado; só o texto diz o quê.
  *
  * A taxa de resposta vem junto por uma razão de honestidade: as notas que
@@ -43,7 +43,7 @@ const MAX_SUBMISSIONS = 120;
 export type FeedbackTopicStats = {
   topic: FeedbackTopic;
   count: number;
-  /** 1..4, ou `null` quando ninguém respondeu — nunca zero. Ver `averageRating`. */
+  /** 1..4, ou `null` quando ninguém respondeu, nunca zero. Ver `averageRating`. */
   average: number | null;
   distribution: Record<FeedbackRating, number>;
 };
@@ -117,7 +117,7 @@ export async function loadAdminFeedback(): Promise<AdminFeedbackOverview> {
   }
 
   // Todos os tópicos aparecem, inclusive os sem resposta. Um tópico ausente da
-  // tabela é indistinguível de um tópico que ninguém respondeu — e os dois
+  // tabela é indistinguível de um tópico que ninguém respondeu, e os dois
   // pedem coisas diferentes de quem lê.
   const topics: FeedbackTopicStats[] = FEEDBACK_TOPICS.map((topic) => {
     const ratings = byTopic.get(topic) ?? [];
@@ -158,7 +158,7 @@ export async function loadAdminFeedback(): Promise<AdminFeedbackOverview> {
   const submissions = allSubmissions.slice(0, MAX_SUBMISSIONS);
 
   // Quem escreveu. Consulta à parte porque `feedback_responses.user_id`
-  // referencia `auth.users`, não `profiles` — não há relação declarada para o
+  // referencia `auth.users`, não `profiles`, não há relação declarada para o
   // PostgREST embutir, e inventar uma FK para uma tela de leitura seria pagar
   // um índice para não escrever um segundo select.
   const ownerBySubmission = new Map(rows.map((r) => [r.submission_id, r.user_id]));

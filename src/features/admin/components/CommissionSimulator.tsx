@@ -19,7 +19,7 @@ import { cn } from "@/lib/utils";
  * meses sem atingir o mínimo de saque.
  *
  * É AVISO, não bloqueio. Pode haver razão comercial para uma taxa agressiva
- * num parceiro específico — o que não pode é ela ser escolhida sem que a
+ * num parceiro específico, o que não pode é ela ser escolhida sem que a
  * consequência apareça.
  *
  * A conta vem inteira de `lib/partners/economics.ts`, o mesmo módulo que o
@@ -64,7 +64,7 @@ export function CommissionSimulator({
   }));
 
   // O aviso segue o cenário PIOR dos dois planos: se o Pessoal fica negativo,
-  // a taxa é arriscada mesmo que o Estudioso continue folgado — e é o Pessoal
+  // a taxa é arriscada mesmo que o Estudioso continue folgado, e é o Pessoal
   // que a maioria assina.
   const worst = sims.reduce((a, b) => (a.sim.month1Cents <= b.sim.month1Cents ? a : b));
 
@@ -124,8 +124,8 @@ export function CommissionSimulator({
           </>
         ) : (
           <>
-            Premissa de conversão: {ASSUMED_CONVERSION_RATE * 100}% (chute conservador — ainda não
-            há dado real deste parceiro).
+            Premissa de conversão: {ASSUMED_CONVERSION_RATE * 100}% (chute conservador, ainda não há
+            dado real deste parceiro).
           </>
         )}{" "}
         Custo de 1.000 moedas: {formatBrl(costPerThousandCoinsCents)}, medido. &quot;Saque&quot; é

@@ -1,9 +1,9 @@
-# 02 — Teste de autenticação
+# 02: Teste de autenticação
 
-**Status:** ✅ Concluído — 2 achados LOW de código corrigidos e reverificados.
+**Status:** ✅ Concluído, 2 achados LOW de código corrigidos e reverificados.
 O achado MEDIUM desta rodada ("provedor de e-mail LIGADO em prod") foi
 **refutado pela tarefa 06**: batendo nos endpoints reais, todos os fluxos de
-e-mail recusam com `email_provider_disabled` nos dois ambientes — o `email:true`
+e-mail recusam com `email_provider_disabled` nos dois ambientes, o `email:true`
 do `/auth/v1/settings` era enganoso. Ver a correção no fim desta seção e o
 detalhe em `06-rate-limit-bruteforce.md`.
 
@@ -44,12 +44,12 @@ is CRITICAL.
 
 - [x] Toda rota em `app/api/**/route.ts` que não seja pública de propósito
       (ex.: `app/api/stripe/webhook`, que se autentica pela assinatura do
-      Stripe, não por sessão) passa por `lib/supabase/require-auth.ts` — ou
-      equivalente — antes de tocar em dado de usuário.
+      Stripe, não por sessão) passa por `lib/supabase/require-auth.ts`, ou
+      equivalente, antes de tocar em dado de usuário.
 - [x] Nenhuma rota lê um `userId`/`accountId` do corpo da requisição para
-      decidir de quem é o dado — o ID vem sempre da sessão verificada no
+      decidir de quem é o dado, o ID vem sempre da sessão verificada no
       servidor.
-- [x] `app/api/admin/*` exige não só sessão válida, mas papel de admin —
+- [x] `app/api/admin/*` exige não só sessão válida, mas papel de admin,
       confirme que `canCurrentUserUse`/checagem equivalente roda no servidor,
       não só esconde o link no `app/admin` (UI).
 - [x] `app/partners/layout.tsx` e as rotas de parceiro fazem a mesma
@@ -74,7 +74,7 @@ is CRITICAL.
 ## Áreas do repositório a inspecionar
 
 - `lib/supabase/require-auth.ts`
-- `lib/entitlements/` (quem decide o que cada plano libera — ver
+- `lib/entitlements/` (quem decide o que cada plano libera, ver
   `AGENTS.md` na raiz: nunca deve haver `plan === "..."` solto fora daqui)
 - `app/api/admin/**`, `app/admin/**`
 - `app/partners/layout.tsx`, `app/api/**` sob rotas de parceiro
@@ -95,7 +95,7 @@ Ataque real, não leitura: duas contas de teste criadas no Supabase de **dev**
 cookie `sb-<ref>-auth-token` montado no mesmo formato do `@supabase/ssr`, e as
 rotas batidas com `curl` contra `npm run dev`.
 
-### 1. Inventário de sessão — 34 rotas
+### 1. Inventário de sessão: 34 rotas
 
 As 28 rotas de dado de usuário responderam **307** (o proxy manda para
 `/sign-in`) sem cookie, e o `requireAuth`/`requireAdmin` de dentro reconfere.
@@ -114,10 +114,10 @@ As seis restantes são públicas de propósito e cada uma se defende sozinha:
 
 | Fluxo | Fraqueza | Passo do exploit | Severidade | Correção |
 |---|---|---|---|---|
-| `PATCH` e `DELETE /api/sessions/:id` | devolviam **200 para sessão alheia** | B: `PATCH /api/sessions/<id de A>` `{"title":"HACKED"}` → `{"ok":true}`. A RLS bloqueou a escrita (conferido com service-role: `title` seguiu `null`, dono inalterado, linha não apagada), mas o PATCH ainda promovia speaker/location na conta de B, e a resposta mentia | LOW | ✅ `getSessionMeta` antes do trabalho, 404 se não é do chamador — `app/api/sessions/[id]/route.ts`. Reverificado: 404 para B, 404 para uuid inexistente, 200 + efeito real para o dono |
-| `/auth/callback` | montava o redirect com `https://${x-forwarded-host}` sem validar o header | não reproduzível: o ramo só roda fora de `NODE_ENV=development`, o header não é definível cross-origin e a Vercel o reescreve. O risco era a proteção ser de infraestrutura, não nossa — igual ao que `proxy.ts` já documenta para a allowlist de origem | LOW | ✅ allowlist de host (`scriba.cc`, `www.`, `dev.`, previews `-renanprados-projects`), com queda para o `origin` — `app/auth/callback/route.ts` |
-| ~~Supabase Auth de **produção**: provedor e-mail LIGADO~~ | **REFUTADO na tarefa 06** | Baseei-me em `/auth/v1/settings` → `"email":true`. Mas os endpoints REAIS (`token?grant_type=password`, `signup`, `otp`, `recover`) recusam com `email_provider_disabled` **nos dois ambientes** — 12 tentativas em prod, 12 recusas. O `settings` mentia; não há superfície de senha | ~~MEDIUM~~ → INFORMATIONAL | Sem correção de código. Ver item 6 da tarefa 06 |
-| Senha vazada (HIBP) e comprimento mínimo | Sem objeto: não há login por senha (acima), logo não há senha a proteger | — | INFORMATIONAL | Nada a fazer enquanto o provedor de e-mail seguir desligado |
+| `PATCH` e `DELETE /api/sessions/:id` | devolviam **200 para sessão alheia** | B: `PATCH /api/sessions/<id de A>` `{"title":"HACKED"}` → `{"ok":true}`. A RLS bloqueou a escrita (conferido com service-role: `title` seguiu `null`, dono inalterado, linha não apagada), mas o PATCH ainda promovia speaker/location na conta de B, e a resposta mentia | LOW | ✅ `getSessionMeta` antes do trabalho, 404 se não é do chamador, `app/api/sessions/[id]/route.ts`. Reverificado: 404 para B, 404 para uuid inexistente, 200 + efeito real para o dono |
+| `/auth/callback` | montava o redirect com `https://${x-forwarded-host}` sem validar o header | não reproduzível: o ramo só roda fora de `NODE_ENV=development`, o header não é definível cross-origin e a Vercel o reescreve. O risco era a proteção ser de infraestrutura, não nossa, igual ao que `proxy.ts` já documenta para a allowlist de origem | LOW | ✅ allowlist de host (`scriba.cc`, `www.`, `dev.`, previews `-renanprados-projects`), com queda para o `origin`, `app/auth/callback/route.ts` |
+| ~~Supabase Auth de **produção**: provedor e-mail LIGADO~~ | **REFUTADO na tarefa 06** | Baseei-me em `/auth/v1/settings` → `"email":true`. Mas os endpoints REAIS (`token?grant_type=password`, `signup`, `otp`, `recover`) recusam com `email_provider_disabled` **nos dois ambientes**, 12 tentativas em prod, 12 recusas. O `settings` mentia; não há superfície de senha | ~~MEDIUM~~ → INFORMATIONAL | Sem correção de código. Ver item 6 da tarefa 06 |
+| Senha vazada (HIBP) e comprimento mínimo | Sem objeto: não há login por senha (acima), logo não há senha a proteger | - | INFORMATIONAL | Nada a fazer enquanto o provedor de e-mail seguir desligado |
 
 **Nenhum endpoint confia em id vindo do cliente.** O único `userId` de corpo de
 requisição está em `POST /api/admin/features` (exceção por pessoa), que é o
@@ -130,7 +130,7 @@ propósito da rota e roda atrás de `requireAdmin()`.
   `session_not_found` **antes** de qualquer chamada à OpenAI; A na mesma sessão
   recebe `session_not_finalized`, ou seja, a leitura enxergou a linha. O gate é
   o `getSession`/`getSessionMeta` com o client do usuário (RLS).
-- **Admin:** `GET /api/admin/users` com sessão comum → **404** (não 403 — não
+- **Admin:** `GET /api/admin/users` com sessão comum → **404** (não 403, não
   confirmamos a existência da área). `app/admin/layout.tsx` faz `notFound()`, e
   as três actions privilegiadas (`coins/settings-actions.ts`, `fx/actions.ts`)
   chamam `assertAdmin()` dentro de si.
@@ -154,7 +154,7 @@ autenticam, os quatro recusam com `email_provider_disabled`, em dev E em prod.
 O campo do `settings` não reflete o estado operacional do provedor.
 
 Consequência: não há superfície de força bruta, de reset, de signup por e-mail
-nem de senha vazada — porque não há senha. A única porta de entrada é o OAuth
+nem de senha vazada, porque não há senha. A única porta de entrada é o OAuth
 do Google, nos dois ambientes.
 
 **Único resíduo, INFORMATIONAL (opcional):** o `settings` reportar `email:true`

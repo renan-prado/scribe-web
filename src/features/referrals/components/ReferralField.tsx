@@ -10,13 +10,13 @@ import {
 import { ReferrerAvatar } from "@/shared/components/ReferrerAvatar";
 
 /**
- * Campo de código de indicação da tela de entrada — o mesmo para os DOIS
+ * Campo de código de indicação da tela de entrada, o mesmo para os DOIS
  * programas: o código de um parceiro e o de um amigo entram aqui, e quem
  * decide qual é qual é a server action.
  *
  * Fica FECHADO por padrão, atrás de um link discreto. A esmagadora maioria de
  * quem chega aqui não tem código nenhum, e um campo vazio à vista sugere que
- * falta alguma coisa para entrar — atrito exatamente no passo que menos pode
+ * falta alguma coisa para entrar, atrito exatamente no passo que menos pode
  * ter atrito.
  *
  * O componente não lê nem escreve cookie: o valor é gravado por uma server
@@ -24,7 +24,7 @@ import { ReferrerAvatar } from "@/shared/components/ReferrerAvatar";
  * arquivo cuida só do estado do formulário. Ver lib/referrals/cookies.ts.
  *
  * **A confirmação fala de moedas só quando há moedas.** No programa de amigos
- * quem ganha é quem indica, não quem chega — prometer um bônus que não vem
+ * quem ganha é quem indica, não quem chega, prometer um bônus que não vem
  * seria a pior forma possível de estrear a relação com o produto. O que a
  * pessoa vê nesse caso é o rosto e o nome de quem a trouxe, que é o que o
  * convite dela dizia.
@@ -46,7 +46,7 @@ export function ReferralField({ active }: Props) {
   const [open, setOpen] = useState(false);
 
   // Depois de um envio bem-sucedido, o servidor revalida a página e `active`
-  // chega preenchido. Até lá, o retorno da própria action já serve — assim a
+  // chega preenchido. Até lá, o retorno da própria action já serve, assim a
   // confirmação aparece na hora, sem esperar o refresh.
   const confirmed =
     active ??
@@ -61,7 +61,7 @@ export function ReferralField({ active }: Props) {
   if (confirmed) {
     return (
       <div className="flex items-start gap-2.5 rounded-2xl bg-scriba-cream px-4 py-3 text-left">
-        {/* A foto de quem indicou quando ela existe; as iniciais quando não —
+        {/* A foto de quem indicou quando ela existe; as iniciais quando não,
             um parceiro que ainda não fez o primeiro login não tem avatar. A
             moeda volta ao lugar do rosto quando há bônus a anunciar. */}
         {confirmed.bonusCoins > 0 && !confirmed.avatarUrl ? (

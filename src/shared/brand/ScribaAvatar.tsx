@@ -2,7 +2,7 @@ import { cn } from "@/lib/utils";
 import { ScribaMark } from "@/shared/brand/ScribaMark";
 
 /**
- * A pena dentro do disco com gradiente — o "rosto" do Scriba quando ele fala
+ * A pena dentro do disco com gradiente, o "rosto" do Scriba quando ele fala
  * como autor: avatar dos cartões escritos pela IA no feed e nos blocos de
  * estudo.
  *

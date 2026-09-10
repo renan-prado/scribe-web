@@ -10,7 +10,7 @@ import { Label } from "@/components/ui/label";
 /**
  * O campo que abre uma sessão execução por execução.
  *
- * Aceita o UUID cru OU a URL da gravação colada do navegador — que é como o id
+ * Aceita o UUID cru OU a URL da gravação colada do navegador, que é como o id
  * chega até a mão de quem está testando. Exigir que a pessoa recorte o UUID de
  * dentro de `/recording/<id>/deepening` é atrito por nada.
  */
@@ -41,7 +41,7 @@ export function SessionRunLookup({ current }: { current: string }) {
      * A versão anterior era um `items-end` sobre duas colunas, e a coluna da
      * esquerda tinha rótulo + campo + ajuda: alinhar pelo fim dela punha os
      * botões na altura do PARÁGRAFO, uns 18px abaixo do campo. Parecia
-     * desalinhamento aleatório e não era — era o alinhamento pedido, sobre a
+     * desalinhamento aleatório e não era, era o alinhamento pedido, sobre a
      * caixa errada. Compensar com margem no botão só teria escondido isso até
      * o texto de ajuda mudar de altura (ele muda: o aviso de ID inválido é
      * mais longo e quebra em duas linhas no celular).
@@ -97,7 +97,7 @@ export function SessionRunLookup({ current }: { current: string }) {
         }
       >
         {invalid
-          ? "Não achei um ID aqui — cole a URL da gravação ou o UUID."
+          ? "Não achei um ID aqui, cole a URL da gravação ou o UUID."
           : "Cada reprocessamento aparece como uma execução separada."}
       </p>
     </form>

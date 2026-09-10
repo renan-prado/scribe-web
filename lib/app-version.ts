@@ -1,5 +1,5 @@
 /**
- * A versão do app — o marcador que separa "antes" de "depois" nas medições.
+ * A versão do app, o marcador que separa "antes" de "depois" nas medições.
  *
  * Client-safe de propósito: o mesmo número carimba os eventos de LLM no
  * servidor (`lib/db/usage.ts`) e rotula o filtro do `/admin/usage`, e uma
@@ -9,7 +9,7 @@
  * embutido no bundle como `NEXT_PUBLIC_APP_VERSION`. Ela NÃO está no schema Zod
  * de `lib/env/client.ts`, e isso é decisão, não esquecimento: aquele schema
  * valida o que uma PESSOA configura em `.env` e no painel da Vercel, e
- * declarar esta ali convidaria alguém a criar a variável à mão — dois números
+ * declarar esta ali convidaria alguém a criar a variável à mão, dois números
  * de versão que um dia discordam. Aqui ela é derivada, nunca digitada.
  *
  * O valor só é um corte útil se SUBIR a cada entrega: ver `npm run release` e
@@ -18,7 +18,7 @@
  */
 
 /**
- * Sentinela para o contexto que não passou pelo build do Next — `node --test`,
+ * Sentinela para o contexto que não passou pelo build do Next, `node --test`,
  * um script solto em `tmp/`. Não é null: null na coluna `app_version` já
  * significa "anterior à medição", e uma linha que nasce hoje sem versão é um
  * problema diferente, que merece nome próprio quando aparecer no painel.
@@ -40,7 +40,7 @@ function parse(version: string): Parsed {
 
 /**
  * Ordena versões como VERSÕES, não como texto: "0.10.0" vem depois de
- * "0.9.0", e a ordenação do Postgres (ou um `.sort()` cru) diria o contrário —
+ * "0.9.0", e a ordenação do Postgres (ou um `.sort()` cru) diria o contrário,
  * silenciosamente, e justo na tabela que existe para dizer o que veio antes.
  *
  * Negativo quando `a` é mais antiga. Uma versão com sufixo (`0.2.0-rc.1`) é
@@ -60,7 +60,7 @@ export function compareVersions(a: string, b: string): number {
   return pa.pre.localeCompare(pb.pre);
 }
 
-/** Da mais nova para a mais antiga — a ordem em que o painel lê. */
+/** Da mais nova para a mais antiga, a ordem em que o painel lê. */
 export function sortVersionsDesc(versions: readonly string[]): string[] {
   return [...versions].sort((a, b) => compareVersions(b, a));
 }

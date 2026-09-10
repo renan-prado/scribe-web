@@ -1,13 +1,13 @@
 #!/usr/bin/env node
 /**
- * Gera as telas de abertura do PWA no iOS — `public/brand/splash/*.png`.
+ * Gera as telas de abertura do PWA no iOS, `public/brand/splash/*.png`.
  *
  * **Por que existem arquivos em vez de uma cor.** O Android monta o splash
  * sozinho a partir do `background_color` e do ícone do manifest. O iOS não lê
  * nada disso: sem um `<link rel="apple-touch-startup-image">` com media query
  * casando EXATAMENTE com o aparelho, ele abre o app numa tela branca vazia. Por
  * isso é uma imagem por resolução, e por isso um aparelho novo precisa de uma
- * linha nova em `SCREENS` — sem ela o iPhone volta ao branco, em silêncio.
+ * linha nova em `SCREENS`, sem ela o iPhone volta ao branco, em silêncio.
  *
  * O desenho é o mesmo da hero da landing no tema escuro
  * (`--lp-hero` de `.dark`: #1C2349 → #12102A) com a pena por cima no gradiente
@@ -27,7 +27,7 @@ const OUT_DIR = join(ROOT, "public", "brand", "splash");
 const PENA = join(ROOT, "public", "brand", "pena.svg");
 // A MESMA lista que `src/shared/splash.ts` usa para montar os <link>. Se as
 // duas metades divergirem, o iPhone procura uma imagem que não existe e abre
-// no branco — sem erro nenhum.
+// no branco, sem erro nenhum.
 const SCREENS_JSON = join(ROOT, "src", "shared", "splash-screens.json");
 
 /** Fundo: os dois stops de `--lp-hero` no tema escuro. */
@@ -40,7 +40,7 @@ function splashFileName({ w, h }) {
 
 function buildSvg({ w, h }, pathData) {
   // 30% do menor lado. É a CAIXA, não o desenho: a pena ocupa cerca de três
-  // quartos do próprio viewBox, então na tela ela sai perto de 22% da largura —
+  // quartos do próprio viewBox, então na tela ela sai perto de 22% da largura,
   // a proporção de marca que uma tela de abertura pede.
   const mark = Math.round(Math.min(w, h) * 0.3);
   const scale = mark / 166; // o viewBox da pena

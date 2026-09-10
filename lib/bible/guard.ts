@@ -2,12 +2,12 @@ import { detectBibleMentions } from "@/lib/bible/detect";
 import { parseVerseReference } from "@/lib/domain/feed";
 
 /**
- * Bible guard — camada 2 do gate de `/api/bible`.
+ * Bible guard, camada 2 do gate de `/api/bible`.
  *
  * A camada 1 (regex barato em `hasBibleMention`) filtra chunks sem qualquer
  * sinal de menção bíblica. Quando ela passa, chamamos este guard para decidir
  * se vale mesmo acordar o LLM. Em vez de bool, retornamos uma soma de sinais
- * ponderados — assim os pesos podem ser calibrados via telemetria sem
+ * ponderados, assim os pesos podem ser calibrados via telemetria sem
  * reescrever a lógica.
  *
  * Sinais positivos (indicam anúncio ou continuação real de leitura):
@@ -24,7 +24,7 @@ import { parseVerseReference } from "@/lib/domain/feed";
  *   -3  bookRepeatNoNumber    mesmo livro do currentReading, sem número
  *   -2  pastTenseNear         "li", "lemos", "acabei de ler" perto do match
  *
- * Cada sinal contribui no máximo uma vez por chamada — se o mesmo livro é
+ * Cada sinal contribui no máximo uma vez por chamada, se o mesmo livro é
  * mencionado 3x, `bookWithNumber` soma +4, não +12.
  */
 
@@ -146,13 +146,13 @@ const CONGREGATIONAL_CUES: readonly RegExp[] = [
   /\bvamos abrir juntos\b/,
   /\babra(?:m)? (?:as )?biblias?\b/,
   /\bacompanhe(?:m)? (?:comigo|na biblia|na sua biblia)\b/,
-  // Infinitivo — "convido a abrir a bíblia", "queria abrir nossa bíblia"
+  // Infinitivo, "convido a abrir a bíblia", "queria abrir nossa bíblia"
   /\babrir (?:a |as |nossa |nossas |sua |suas |minha |o )?biblias?\b/,
-  // Anúncio litúrgico do evangelho — "Evangelho de São Mateus", "Evangelho segundo João"
+  // Anúncio litúrgico do evangelho, "Evangelho de São Mateus", "Evangelho segundo João"
   /\bevangelho (?:de |segundo )(?:sao |são )?[a-zà-ÿ]+/i,
-  // Anúncio litúrgico de leitura — "leitura da carta aos coríntios", "leitura do livro de..."
+  // Anúncio litúrgico de leitura, "leitura da carta aos coríntios", "leitura do livro de..."
   /\bleitura d[aoe] (?:primeira |segunda |terceira |i |ii |iii )?(?:carta|epistola|livro|evangelho|profeta|salmo)/i,
-  // Marcadores de recitação — "diz assim a palavra do Senhor/de Deus"
+  // Marcadores de recitação, "diz assim a palavra do Senhor/de Deus"
   /\bdiz (?:assim )?a? palavra d[eo] (?:deus|senhor)\b/,
 ];
 
@@ -426,7 +426,7 @@ function candidateMatchesRef(
 
 /**
  * Executa a análise ponderada. Sempre roda depois de `hasBibleMention` ter
- * passado — nunca antes.
+ * passado, nunca antes.
  */
 export function scoreBibleGuard(text: string, ctx: GuardContext, threshold: number): GuardResult {
   const normalized = stripAccents(text).toLowerCase();

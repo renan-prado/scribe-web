@@ -5,7 +5,7 @@ import { z } from "zod";
  *
  * Client-safe: o card que renderiza isto é um componente cliente (ele precisa
  * do botão "atualizar" e do estado de carregando), e o parser roda nas DUAS
- * pontas — na geração, antes de persistir, e na leitura, porque o que ficou
+ * pontas, na geração, antes de persistir, e na leitura, porque o que ficou
  * gravado ontem pode não casar com o tipo de hoje.
  *
  * ## A forma tem uma tese
@@ -13,7 +13,7 @@ import { z } from "zod";
  * `finding` e `action` são campos SEPARADOS de propósito. Pedindo um parágrafo
  * livre, o modelo escreve análise: um texto bem-educado que descreve o número
  * que o admin acabou de ler na tabela logo acima. Separando, ele tem de
- * terminar cada item com uma frase no imperativo — e um item cuja ação seria
+ * terminar cada item com uma frase no imperativo, e um item cuja ação seria
  * "continue observando" fica visivelmente vazio, que é o sinal de que aquele
  * item não devia existir.
  *
@@ -39,7 +39,7 @@ export const MAX_INSIGHTS = 5;
 const InsightSchema = z.object({
   title: z.string().min(1).max(80),
   severity: z.enum(INSIGHT_SEVERITIES),
-  /** O número e o que ele diz. Precisa CITAR o número — ver o prompt. */
+  /** O número e o que ele diz. Precisa CITAR o número, ver o prompt. */
   finding: z.string().min(1).max(600),
   /** O que fazer. Imperativo, específico, e com o valor sugerido quando houver. */
   action: z.string().min(1).max(400),
@@ -68,7 +68,7 @@ export type AdminInsightsRecord = {
 const SEVERITY_ORDER: Record<InsightSeverity, number> = { critical: 0, warning: 1, ok: 2 };
 
 /**
- * Parse do JSON do LLM. Devolve `null` quando não sobrou nada utilizável — um
+ * Parse do JSON do LLM. Devolve `null` quando não sobrou nada utilizável, um
  * card vazio é melhor que um card com um item alucinado, e o chamador trata
  * `null` como "não gerou" em vez de persistir lixo.
  *
@@ -114,7 +114,7 @@ function sort(payload: AdminInsightsPayload): AdminInsightsPayload {
  * A janela de análise é FIXA, e não o filtro de período que a tela mostra.
  *
  * /admin/precificacao tem pílulas de 7/30/90 dias, e amarrar o insight a elas
- * daria quatro caches por escopo — quatro chamadas de modelo de raciocínio por
+ * daria quatro caches por escopo, quatro chamadas de modelo de raciocínio por
  * dia, para responder a mesma pergunta. Trinta dias é a janela em que a
  * pergunta de preço tem resposta: sete dias não cobrem um mês de assinatura, e
  * noventa diluem uma troca de modelo feita semana passada.

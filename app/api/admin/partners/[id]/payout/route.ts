@@ -15,7 +15,7 @@ export const dynamic = "force-dynamic";
  * Registra que um PIX foi enviado e quita as comissões correspondentes.
  *
  * O corpo NÃO aceita valor. O montante é o que estava disponível no instante
- * da chamada, somado pelo servidor a partir das próprias comissões — assim a
+ * da chamada, somado pelo servidor a partir das próprias comissões, assim a
  * linha de pagamento e as comissões que ela quita sempre fecham. Um valor
  * digitado à mão abriria a possibilidade de o total pago divergir do total
  * quitado, e essa diferença não teria onde aparecer.
@@ -25,7 +25,7 @@ const BodySchema = z
     /** Mês de referência (AAAA-MM-DD, dia 1). Só rótulo. */
     period: z.string().regex(/^\d{4}-\d{2}-\d{2}$/),
     note: z.string().trim().max(500).nullable().optional(),
-    // O comprovante mora fora daqui (Drive, banco) — guardamos o endereço.
+    // O comprovante mora fora daqui (Drive, banco), guardamos o endereço.
     // Só https, e o mesmo CHECK existe na coluna: um "mandei no zap" salvo
     // neste campo vira um botão quebrado no painel do parceiro.
     receiptUrl: z
@@ -76,7 +76,7 @@ export async function POST(request: Request, { params }: { params: Promise<{ id:
       error: (err as Error).message,
     });
     // Código próprio para o meio-caminho: o pagamento existe, as comissões não
-    // foram quitadas. A tela precisa dizer "não tente de novo" — repetir
+    // foram quitadas. A tela precisa dizer "não tente de novo", repetir
     // pagaria em dobro.
     if (err instanceof PayoutStampError) {
       return NextResponse.json(

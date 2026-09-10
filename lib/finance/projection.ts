@@ -1,10 +1,10 @@
 /**
- * Projeção financeira — CLIENT-SAFE, pura e determinística.
+ * Projeção financeira, CLIENT-SAFE, pura e determinística.
  *
  * O que este arquivo NÃO faz é a parte importante: ele não projeta "receita de
  * hoje × número de meses". Essa conta é a que todo mundo escreve primeiro e é
  * a que não serve para decidir nada, porque ela ignora as duas forças que de
- * fato movem um SaaS — a base entra e a base sai.
+ * fato movem um SaaS, a base entra e a base sai.
  *
  * ============================================================================
  * O MODELO
@@ -15,11 +15,11 @@
  * Crescimento e churn incidem sobre a base do mês ANTERIOR, na mesma
  * composição, porque é assim que os dois competem: 10% de crescimento com 5%
  * de churn não é 5% de crescimento líquido sobre a base inicial, é 5% ao mês
- * COMPOSTO — e a diferença entre as duas leituras, em doze meses, é o dobro.
+ * COMPOSTO, e a diferença entre as duas leituras, em doze meses, é o dobro.
  *
  * Os novos absolutos existem à parte porque nem toda aquisição é proporcional
- * à base: uma campanha traz N pessoas, não N%. Com a base pequena — que é o
- * caso do Scriba hoje — o termo percentual sozinho projeta estagnação eterna,
+ * à base: uma campanha traz N pessoas, não N%. Com a base pequena, que é o
+ * caso do Scriba hoje, o termo percentual sozinho projeta estagnação eterna,
  * porque 10% de 30 clientes é 3.
  *
  *   receita[n]  = clientes[n] · ticket
@@ -33,7 +33,7 @@
  * DE ONDE VÊM OS NÚMEROS, e por que isso é o que separa projeção de chute
  * ============================================================================
  *
- * As PREMISSAS (crescimento, churn, novos por mês) são hipóteses do cenário —
+ * As PREMISSAS (crescimento, churn, novos por mês) são hipóteses do cenário,
  * alguém digitou. A BASE é medida:
  *
  *   clientes                → assinaturas vivas (`subscriptions`)
@@ -44,7 +44,7 @@
  *
  * Nenhum desses cinco é digitado. É por isso que a projeção do Scriba pode
  * dizer "o custo por cliente é R$ X" com um número que veio de `llm_usage_
- * events` em vez de um palpite — e é por isso que ela vale alguma coisa.
+ * events` em vez de um palpite, e é por isso que ela vale alguma coisa.
  *
  * ============================================================================
  * O ARREDONDAMENTO
@@ -70,7 +70,7 @@ export type ProjectionBasis = {
   fixedCostCents: number;
   /**
    * Custo variável por cliente por mês, em centavos. Medido: o custo de IA do
-   * período dividido pelos assinantes ativos. Quando não há assinante, é 0 —
+   * período dividido pelos assinantes ativos. Quando não há assinante, é 0,
    * e a projeção diz isso em vez de inventar um custo por cliente.
    */
   variableCostPerCustomerCents: number;
@@ -98,7 +98,7 @@ export type ProjectionAssumptions = {
 
 export type ProjectedMonth = {
   month: string;
-  /** Índice a partir de 1 — "mês 1", "mês 2". */
+  /** Índice a partir de 1, "mês 1", "mês 2". */
   index: number;
   customers: number;
   revenueCents: number;
@@ -155,7 +155,7 @@ export function project(
   for (let i = 1; i <= assumptions.horizonMonths; i += 1) {
     // A base do mês anterior sofre as duas forças; a aquisição absoluta entra
     // depois, porque um cliente que chegou este mês não pode dar churn neste
-    // mesmo mês — ele ainda não completou um ciclo de cobrança.
+    // mesmo mês, ele ainda não completou um ciclo de cobrança.
     customers = Math.max(0, customers * (1 + growth - churn) + assumptions.newCustomersPerMonth);
 
     const revenueCents = Math.round(customers * ticket);
@@ -215,7 +215,7 @@ export function project(
  *
  * Responde à pergunta do §10 da especificação ("em quanto tempo determinadas
  * despesas ou investimentos serão recuperados?"). Devolve `null` quando o
- * lucro acumulado não alcança o valor dentro do horizonte — e `null` é a
+ * lucro acumulado não alcança o valor dentro do horizonte, e `null` é a
  * resposta honesta: "mais de 12 meses" não é a mesma coisa que "nunca", e
  * inventar uma extrapolação além do horizonte projetado seria projetar sobre
  * projeção.
@@ -232,7 +232,7 @@ export function monthsToRecover(result: ProjectionResult, investmentCents: numbe
  * Custo variável por cliente, MEDIDO.
  *
  * Sai daqui e não de dentro de `project` porque ele é uma leitura do passado,
- * não uma premissa — e porque a tela precisa mostrar o número separado, para
+ * não uma premissa, e porque a tela precisa mostrar o número separado, para
  * quem lê saber que ele foi medido e não digitado.
  */
 export function measuredVariableCostPerCustomer(
@@ -248,7 +248,7 @@ export function measuredVariableCostPerCustomer(
  *
  * `lib/partners/economics.ts` calcula a taxa do Stripe em centavos sobre um
  * valor; aqui ela vira um percentual para poder incidir sobre uma receita
- * projetada que ainda não existe. Sem MRR medido, devolve 0 — um percentual
+ * projetada que ainda não existe. Sem MRR medido, devolve 0, um percentual
  * inventado entraria em toda linha da projeção.
  */
 export function measuredPaymentFeeBps(stripeFeeCents: number, mrrCents: number): number {

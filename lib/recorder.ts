@@ -19,11 +19,11 @@ const MIME_CANDIDATES: MimeCandidate[] = [
 ];
 
 /**
- * O que pedimos ao microfone — e as três coisas que pedimos para ele NÃO fazer.
+ * O que pedimos ao microfone, e as três coisas que pedimos para ele NÃO fazer.
  *
  * Era `{ audio: true }`, e `true` não é neutro: o Chrome liga por padrão
  * `echoCancellation`, `noiseSuppression` e `autoGainControl`, o pacote do
- * WebRTC afinado para CHAMADA DE VOZ — uma boca a vinte centímetros do
+ * WebRTC afinado para CHAMADA DE VOZ, uma boca a vinte centímetros do
  * aparelho, num quarto, e tudo o mais é inimigo. Um salão de igreja é o caso
  * oposto: a voz chega refletida, de longe, e o "ruído" que a supressão ataca é
  * a mesma cauda reverberante que carrega a fala.
@@ -32,18 +32,18 @@ const MIME_CANDIDATES: MimeCandidate[] = [
  * antes de transcrever levou o WER de 11,8% para 21,2%. Compressão e
  * equalização também pioraram; só normalização de volume ficou neutra. O
  * modelo de transcrição foi treinado em áudio sujo e usa o que a limpeza
- * remove — o melhor pré-processamento é nenhum.
+ * remove, o melhor pré-processamento é nenhum.
  *
  * As outras duas seguem a mesma lógica: `autoGainControl` bombeia o ganho
  * entre a fala e o silêncio (e o modelo transcreve áudio baixo sem perder
- * nada — 12,9% de WER a 18% do volume original), e `echoCancellation` sem
+ * nada, 12,9% de WER a 18% do volume original), e `echoCancellation` sem
  * sinal de referência não tem eco a cancelar, mas em celular costuma arrastar
  * a captação para o caminho de "voice communication", que é justamente o
  * processado.
  *
  * **Isto ainda não foi confirmado em campo.** A medição acima é um proxy
  * offline: o denoiser do ffmpeg não é o do WebRTC. Por isso `reportTrackSettings`
- * loga o que o navegador REALMENTE aplicou — uma gravação real de verdade
+ * loga o que o navegador REALMENTE aplicou, uma gravação real de verdade
  * responde se o pedido foi aceito. Se um dia isto precisar voltar atrás, é
  * este objeto, e nada mais.
  */
@@ -241,13 +241,13 @@ export function createRecorder(opts: RecorderOptions = {}): Recorder {
       source.connect(analyser);
 
       // Some browsers auto-suspend AudioContexts when the tab goes into the
-      // background — that would silently break VAD chunk cutting. Resume as
+      // background, that would silently break VAD chunk cutting. Resume as
       // soon as we're visible again (and speculatively on every visibility
       // event, since resume() on a running context is a no-op).
       visibilityListener = () => {
         if (audioContext && audioContext.state === "suspended") {
           audioContext.resume().catch(() => {
-            // ignore — will retry on next visibility change
+            // ignore, will retry on next visibility change
           });
         }
       };

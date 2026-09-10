@@ -11,14 +11,14 @@
 --   )
 --
 -- O `set null` do delete tenta produzir exatamente a linha que o CHECK
--- proíbe — nenhum beneficiário —, então o DELETE em `auth.users` é abortado
+-- proíbe, nenhum beneficiário, então o DELETE em `auth.users` é abortado
 -- pelo banco. Uma exclusão de conta que trava é o pior desfecho possível:
 -- ninguém liga o erro à tabela de recompensas, e a exclusão de conta é
 -- requisito da App Store (docs/app-store-ios.md).
 --
 -- A correção é CASCADE, e não afrouxar o CHECK. Uma linha sem beneficiário
 -- não significaria nada: ela existe para dizer "fulano ganhou X moedas por
--- ter trazido sicrano". Sumindo o fulano, some com ela — como já acontece com
+-- ter trazido sicrano". Sumindo o fulano, some com ela, como já acontece com
 -- `partner_commissions.referred_user_id`, que é cascade desde a 0029, e como
 -- acontece com o próprio `coin_transactions` do usuário apagado. O histórico
 -- não fica meio apagado: fica coerente.

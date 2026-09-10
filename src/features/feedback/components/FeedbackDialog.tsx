@@ -44,7 +44,7 @@ type Props = {
   topics: readonly FeedbackTopic[];
   /** Ausente no feedback do /profile, que não nasce de pergunta nossa. */
   promptId?: string;
-  /** Chamado depois de um envio gravado — hoje, para agradecer e fechar. */
+  /** Chamado depois de um envio gravado, hoje, para agradecer e fechar. */
   onSubmitted?: () => void;
 };
 
@@ -52,18 +52,18 @@ type Props = {
  * A janela que pergunta a nota.
  *
  * Três decisões desenham tudo o que ela é, e todas vêm da mesma restrição: a
- * pessoa acabou de gerar um resumo e quer LER o resumo — a pergunta é uma
+ * pessoa acabou de gerar um resumo e quer LER o resumo, a pergunta é uma
  * interrupção, e uma interrupção que custa caro não é respondida, é fechada.
  *
  * 1. **A nota é um toque, e o texto é opcional.** Quatro chips grandes num
  *    grid resolvem a janela em um gesto. O campo de texto fica abaixo, sem
- *    obrigação nenhuma — quem tem uma frase escreve, quem não tem já
+ *    obrigação nenhuma, quem tem uma frase escreve, quem não tem já
  *    respondeu. Nas três janelas AUTOMÁTICAS ele só entra depois da primeira
  *    nota; no /profile ele já vem aberto, porque lá a pessoa clicou em "Dar
  *    feedback" justamente para escrever. Ver `selfInitiated`.
  * 2. **Só o primeiro tópico começa visível quando há dois.** No modo Ao Vivo
  *    são duas perguntas; mostrá-las juntas faz a janela parecer um
- *    formulário. A segunda entra assim que a primeira é respondida — e o
+ *    formulário. A segunda entra assim que a primeira é respondida, e o
  *    "enviar" só acende quando as duas têm nota.
  * 3. **Fechar é sempre gratuito, e "Agora não" é um botão de verdade.** Uma
  *    janela cujo único caminho de saída é responder ensina a pessoa a não ler
@@ -87,7 +87,7 @@ export function FeedbackDialog({
   const [done, setDone] = useState(false);
 
   // Cada abertura começa limpa. Uma nota antiga na tela faria a pessoa achar
-  // que já respondeu — e um agradecimento antigo, que a pergunta não é séria.
+  // que já respondeu, e um agradecimento antigo, que a pergunta não é séria.
   useEffect(() => {
     if (!open) return;
     setRatings({});
@@ -103,7 +103,7 @@ export function FeedbackDialog({
     return () => window.clearTimeout(timer);
   }, [done, onOpenChange]);
 
-  // A segunda pergunta só aparece depois de a primeira ter nota — e as
+  // A segunda pergunta só aparece depois de a primeira ter nota, e as
   // anteriores continuam na tela para a pessoa poder mudar de ideia.
   const answeredCount = topics.filter((t) => ratings[t]).length;
   const visibleTopics = topics.slice(0, Math.min(answeredCount + 1, topics.length));
@@ -114,7 +114,7 @@ export function FeedbackDialog({
    * A janela do /profile foi ABERTA pela pessoa; as outras três a
    * interrompem. É a diferença que decide o que aparece de saída.
    *
-   * Nas automáticas o campo de texto só entra depois da primeira nota — com
+   * Nas automáticas o campo de texto só entra depois da primeira nota, com
    * ele aberto, a janela chega parecendo formulário, e o que se quer da
    * maioria é o toque. Aqui é o oposto: quem clicou em "Dar feedback" clicou
    * para ESCREVER, e esconder a caixa atrás de um chip é fazer a pessoa
@@ -172,7 +172,7 @@ export function FeedbackDialog({
             {visibleTopics.map((topic) => (
               <fieldset key={topic} className="flex flex-col">
                 {/* `mb-3` no lugar de um `gap` no fieldset, e não é preferência:
-                    a legend de um fieldset é a "rendered legend" do CSS — ela
+                    a legend de um fieldset é a "rendered legend" do CSS, ela
                     sai do fluxo normal para ser posicionada na borda de cima da
                     caixa, então NENHUM `gap` do container flex a alcança. Com
                     `gap-2.5` no fieldset, a pergunta ficava colada nos chips e o
@@ -220,7 +220,7 @@ export function FeedbackDialog({
                   className="text-[12px] font-medium text-scriba-ink-soft"
                 >
                   {/* "Mais alguma coisa?" pressupõe que algo já foi dito, e no
-                      /profile a caixa é a PRIMEIRA coisa da janela — ali a
+                      /profile a caixa é a PRIMEIRA coisa da janela, ali a
                       pergunta seria sobre um contexto que não existe. */}
                   {selfInitiated ? "O que você quer nos contar?" : "Quer contar mais alguma coisa?"}{" "}
                   <span className="font-light text-scriba-ink-mute">(opcional)</span>

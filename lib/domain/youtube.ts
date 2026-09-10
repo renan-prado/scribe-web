@@ -2,7 +2,7 @@
  * O que o produto entende por "um link do YouTube". Client-safe de propósito:
  * o diálogo de nova gravação precisa recusar um link ruim ANTES de criar linha
  * no banco e gastar uma chamada de provedor, e a rota precisa recusar o mesmo
- * link com a mesma régua — as duas leem daqui.
+ * link com a mesma régua, as duas leem daqui.
  *
  * Nada aqui fala com o YouTube. Isto é parse de string; quem busca a legenda é
  * `lib/youtube/` (server-only).
@@ -14,13 +14,13 @@
  * **2 horas, e o motivo é o preço ser FIXO.** O modo YouTube cobra
  * `COIN_COSTS.youtubeImport` por vídeo, não por minuto: o custo do resumo
  * cresce com a transcrição na entrada, e a receita não. Aos 30 min a margem
- * fecha ~70%, aos 60 ~65%, aos 120 ~56% — e a partir daí ela desce rápido.
+ * fecha ~70%, aos 60 ~65%, aos 120 ~56%, e a partir daí ela desce rápido.
  * O teto é o que impede uma live de seis horas de ser importada pelo preço de
  * um sermão de meia hora.
  *
  * Não é um limite técnico: `gpt-4o` aguenta a transcrição de duas horas com
  * folga de contexto. Se um dia o preço virar escalonado por faixa, este número
- * sobe junto — os dois andam sempre no mesmo passo.
+ * sobe junto, os dois andam sempre no mesmo passo.
  */
 export const YOUTUBE_MAX_DURATION_MS = 2 * 60 * 60 * 1000;
 
@@ -28,7 +28,7 @@ export const YOUTUBE_MAX_DURATION_MS = 2 * 60 * 60 * 1000;
  * Piso de tamanho da legenda para valer um resumo.
  *
  * Um vídeo de 40 segundos tem legenda válida e transcrição de trinta palavras.
- * O resumo sai, custa o mesmo que qualquer outro, e não diz nada — e a pessoa
+ * O resumo sai, custa o mesmo que qualquer outro, e não diz nada, e a pessoa
  * pagou o preço cheio por ele. Recusar antes de cobrar é mais honesto que
  * entregar um resumo vazio.
  */
@@ -44,7 +44,7 @@ const YOUTUBE_HOSTS = new Set([
   "www.youtu.be",
 ]);
 
-/** 11 caracteres do alfabeto base64url — o formato do id de vídeo. */
+/** 11 caracteres do alfabeto base64url, o formato do id de vídeo. */
 const VIDEO_ID_RE = /^[A-Za-z0-9_-]{11}$/;
 
 /**
@@ -64,7 +64,7 @@ export type ParsedYoutubeUrl = {
  * `youtu.be/`, `/shorts/`, `/live/`, `/embed/`, com ou sem esquema, com ou sem
  * parâmetros de playlist e rastreamento pendurados.
  *
- * Devolve `null` para tudo o que não for um vídeo — inclusive URLs de canal e
+ * Devolve `null` para tudo o que não for um vídeo, inclusive URLs de canal e
  * de playlist, que são links legítimos do YouTube e não são o que este modo
  * importa. Quem chama transforma o `null` na mensagem de erro.
  */
@@ -87,9 +87,9 @@ export function parseYoutubeUrl(raw: string): ParsedYoutubeUrl | null {
   const segments = url.pathname.split("/").filter(Boolean);
   const isShortHost = url.hostname.toLowerCase().endsWith("youtu.be");
 
-  // youtu.be/<id> — o id é o primeiro (e único) segmento.
-  // youtube.com/<embed|shorts|live|v>/<id> — o id vem depois do prefixo.
-  // youtube.com/watch?v=<id> — o id vem da query.
+  // youtu.be/<id>, o id é o primeiro (e único) segmento.
+  // youtube.com/<embed|shorts|live|v>/<id>, o id vem depois do prefixo.
+  // youtube.com/watch?v=<id>, o id vem da query.
   const candidate = isShortHost
     ? segments[0]
     : segments.length >= 2 && PATH_PREFIXES.includes(segments[0].toLowerCase())
@@ -134,7 +134,7 @@ const MAX_FIELD_CHARS = 200;
  * limite.
  *
  * A lista de nulos textuais não é preciosismo. O prompt pede `null` e a maior
- * parte das vezes recebe `null` — mas `"null"`, `"N/A"` e `"desconhecido"`
+ * parte das vezes recebe `null`, mas `"null"`, `"N/A"` e `"desconhecido"`
  * aparecem, e cada um deles gravado vira um cartão em `/recordings` anunciando
  * que o autor do sermão se chama "Desconhecido".
  */
@@ -165,7 +165,7 @@ function cleanField(value: unknown): string | null {
  *
  * Nunca lança e nunca devolve parcial-inválido: cada campo que não sobrevive
  * vira `null` em silêncio, independentemente dos outros. É o comportamento
- * certo aqui porque os três são ENFEITE — quem chama já tem o título cru do
+ * certo aqui porque os três são ENFEITE, quem chama já tem o título cru do
  * oEmbed como alternativa, e o resumo sabe gerar um título sozinho. Nada nesta
  * função pode ser motivo para uma importação falhar.
  */

@@ -1,5 +1,5 @@
 /**
- * As AÇÕES cobráveis do produto — a unidade em que a precificação é decidida.
+ * As AÇÕES cobráveis do produto, a unidade em que a precificação é decidida.
  *
  * `pricing.ts` responde "quanto custa" em moedas; este arquivo responde "o que
  * é uma coisa". São perguntas diferentes: `deepening` e `reprocess_deepening`
@@ -9,7 +9,7 @@
  * lançamento contábil onde o usuário precisa ver decisões de preço.
  *
  * Client-safe: a tela de precificação lê daqui e a agregação server-only
- * também. É o mesmo motivo de `lib/partners/economics.ts` ser client-safe —
+ * também. É o mesmo motivo de `lib/partners/economics.ts` ser client-safe,
  * duas cópias da conta é como se descobre tarde que uma delas estava errada.
  *
  * O mapeamento ROTA → ação NÃO mora aqui, e sim em `lib/db/admin/usage.ts`:
@@ -73,11 +73,11 @@ export const BILLABLE_ACTIONS: readonly BillableAction[] = [
     coins: COIN_COSTS.youtubeImport,
     // "vídeo" e não "minuto": esta é a única ação cobrável do produto cuja
     // unidade não é o minuto, e a coluna "por ..." do painel precisa dizer
-    // isso — 30 moedas por minuto seria um preço absurdo, e é o que a linha
+    // isso, 30 moedas por minuto seria um preço absurdo, e é o que a linha
     // pareceria estar afirmando se herdasse a unidade das três de cima.
     unit: "vídeo",
     reasons: ["youtube_import"],
-    note: "Legenda do vídeo pela Supadata (~1 crédito, R$ 0,03) e o resumo completo por cima. Nenhum minuto de STT. O custo cresce com a DURAÇÃO do vídeo e o preço não — é o teto de 2h em lib/domain/youtube.ts que segura a margem.",
+    note: "Legenda do vídeo pela Supadata (~1 crédito, R$ 0,03) e o resumo completo por cima. Nenhum minuto de STT. O custo cresce com a DURAÇÃO do vídeo e o preço não, é o teto de 2h em lib/domain/youtube.ts que segura a margem.",
   },
   {
     key: "study",
@@ -87,9 +87,9 @@ export const BILLABLE_ACTIONS: readonly BillableAction[] = [
     reasons: ["deepening", "reprocess_deepening"],
     // Gerar e reprocessar rodam `generateStudy` com as MESMAS rotas de
     // telemetria, então o custo dos dois é indistinguível no banco. Como o
-    // preço também é o mesmo, somá-los não perde informação nenhuma — separar
+    // preço também é o mesmo, somá-los não perde informação nenhuma, separar
     // as linhas é que daria um custo por execução inventado.
-    note: "Gerar E reprocessar estudo, somados — 50 moedas cada. Mesmo pipeline, custo indistinguível na telemetria.",
+    note: "Gerar E reprocessar estudo, somados, 50 moedas cada. Mesmo pipeline, custo indistinguível na telemetria.",
   },
   {
     key: "reprocess_summary",
@@ -114,7 +114,7 @@ export const BILLABLE_ACTION_BY_KEY: Record<BillableActionKey, BillableAction> =
 /**
  * Custo que NÃO tem ação cobrável atrás dele: chamadas fora de uma gravação
  * (consulta de versículo avulsa, formatação de parágrafo) e eventos cuja
- * sessão foi apagada. Não é uma ação — é a linha que mostra quanto o produto
+ * sessão foi apagada. Não é uma ação, é a linha que mostra quanto o produto
  * gasta sem cobrar, e ela precisa aparecer ou o custo por moeda fica otimista.
  */
 export const UNBILLED_ACTION_KEY = "unbilled" as const;
@@ -122,7 +122,7 @@ export const UNBILLED_ACTION_KEY = "unbilled" as const;
 /**
  * Custo que o PRÓPRIO PAINEL gera: hoje, a análise diária de
  * `/api/admin/insights`. Separado de `unbilled` porque as duas linhas têm
- * consertos opostos — gasto sem cobrança é preço mal ajustado (a resposta é
+ * consertos opostos, gasto sem cobrança é preço mal ajustado (a resposta é
  * cobrar por aquilo, ou parar de oferecer de graça), e custo interno é
  * despesa operacional nossa, que nunca vai ter moeda atrás.
  *
@@ -137,7 +137,7 @@ export type UsageActionKey =
   | typeof UNBILLED_ACTION_KEY
   | typeof INTERNAL_ACTION_KEY;
 
-/** As duas chaves que não são ação cobrável — não entram na tabela de margem. */
+/** As duas chaves que não são ação cobrável, não entram na tabela de margem. */
 export const NON_BILLABLE_ACTION_KEYS: readonly UsageActionKey[] = [
   UNBILLED_ACTION_KEY,
   INTERNAL_ACTION_KEY,

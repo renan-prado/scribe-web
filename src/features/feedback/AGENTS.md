@@ -1,4 +1,4 @@
-# src/features/feedback — a pesquisa de satisfação
+# src/features/feedback: a pesquisa de satisfação
 
 A janela que pergunta "como foi para você?" no instante em que a pessoa acabou
 de usar cada parte do produto, e o botão "Dar feedback" do `/profile`.
@@ -12,7 +12,7 @@ lib/api.ts                    as duas chamadas, ambas falhando em silêncio
 ```
 
 O vocabulário (escala, tópicos, superfícies, limites) mora em
-`lib/domain/feedback.ts` — client-safe, porque é o mesmo que desenha os chips
+`lib/domain/feedback.ts`, client-safe, porque é o mesmo que desenha os chips
 no navegador e as médias do `/admin/feedback`. A decisão de perguntar mora em
 `lib/db/feedback.ts`, e as tabelas em `supabase/migrations/0047_feedback.sql`,
 cujo cabeçalho tem o raciocínio do schema.
@@ -24,14 +24,14 @@ pasta desce daí, e nenhuma delas é preferência estética:
 
 - **Três vezes na vida, nunca mais.** 1ª, 3ª e 8ª gravação; 1ª, 3º e 8º
   estudo. A 1ª é a primeira impressão, que não existe duas vezes; a 3ª é
-  depois de o encanto passar e antes de o hábito se formar — a janela em que
+  depois de o encanto passar e antes de o hábito se formar, a janela em que
   se desiste; a 8ª é a opinião de quem já sabe do que está falando. Perguntar
   em toda gravação treinaria a pessoa a fechar o diálogo sem ler, e a partir
   daí não há mais como perguntar nada.
 - **A nota é um toque; o texto é opcional e só aparece depois dela.** Com o
-  campo de texto aberto de saída, a janela abre parecendo formulário — e o que
+  campo de texto aberto de saída, a janela abre parecendo formulário, e o que
   se quer da maioria é o toque, não a redação. **A exceção é o /profile**, onde
-  a caixa já vem aberta: ali a janela não interrompeu ninguém — a pessoa clicou
+  a caixa já vem aberta: ali a janela não interrompeu ninguém, a pessoa clicou
   em "Dar feedback" para ESCREVER, e esconder a caixa atrás de um chip é fazer
   com que ela procure o que veio usar. É a mesma distinção que dá nome ao
   `selfInitiated` do diálogo, e ela também troca o rótulo do campo: "quer
@@ -47,7 +47,7 @@ pasta desce daí, e nenhuma delas é preferência estética:
 
 **O cliente não decide NADA sobre quando é perguntado.** Ele diz qual sessão
 está na tela; `resolveFeedbackPrompt` responde. Ordinal, marco e superfície
-são derivados no servidor, e o envio nem sequer manda a superfície — ela é
+são derivados no servidor, e o envio nem sequer manda a superfície, ela é
 reconstruída da linha de `feedback_prompts` que o próprio servidor escreveu.
 Um corpo que dissesse "isto é sobre o estudo da sessão X" não teria como ser
 desmentido, e a tabela que orienta o roadmap passaria a aceitar o que o
@@ -56,7 +56,7 @@ navegador quisesse dizer.
 **A pergunta é REGISTRADA no momento em que é feita, e por isso o
 `FeedbackPrompt` chama o servidor DEPOIS do atraso, não antes.** Perguntar
 cedo e esperar para mostrar gastaria o marco de quem fechou a aba em três
-segundos — e aquela pessoa nunca mais seria perguntada sobre a primeira
+segundos, e aquela pessoa nunca mais seria perguntada sobre a primeira
 gravação da vida dela. Pela mesma razão, sair da página antes do prazo não
 consome nada, e aba escondida (celular no bolso enquanto o resumo termina) é
 tratada como saída.
@@ -65,13 +65,13 @@ tratada como saída.
 gravação da vida.** No dia em que isto subiu, quem já tinha quarenta sessões
 teria passado dos três marcos sem nunca ter sido perguntado. A coluna nasceu
 `not null default now()`, o que carimba o instante do deploy em quem já
-existia e o instante do cadastro em quem chegar depois — sem backfill e sem
+existia e o instante do cadastro em quem chegar depois, sem backfill e sem
 data mágica em TypeScript.
 
 **Os tópicos do modo Ao Vivo são DOIS, e não viram um.** As sugestões durante
 a pregação e o resumo do fim são produtos diferentes com consertos diferentes;
 quem gostou dos cards e achou o resumo fraco precisa poder dizer isso. A
-segunda pergunta só aparece depois de a primeira ter nota — é o que evita a
+segunda pergunta só aparece depois de a primeira ter nota, é o que evita a
 janela abrir com cara de formulário.
 
 **`summary` é o mesmo tópico no modo Ao Vivo e no modo Áudio.** É o mesmo
@@ -82,7 +82,7 @@ sem responder nenhuma pergunta nova.
 queimar nem pergunta a marcar como respondida, então o envio vai sem
 `promptId` e o servidor o trata como feedback geral (tópico `overall`, sem
 sessão). Ele existe porque as três janelas automáticas são NOSSA escolha de
-momento, e o momento em que alguém tem algo a dizer é dele — quem se incomodou
+momento, e o momento em que alguém tem algo a dizer é dele, quem se incomodou
 na décima gravação é exatamente a pessoa que ainda está aqui.
 
 ## Onde o gatilho está montado

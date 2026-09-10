@@ -14,7 +14,7 @@ import { LIVROS_BIBLICOS } from "@/lib/vocabulario";
  *  - Padrões `<livro> <cap>[:<verso>[-<verso>]]` quando aparecem juntos.
  *
  * Retorna a lista de matches para uso em logs/diagnóstico. O chamador só
- * precisa saber se `.length > 0`. Não valida referência de fato — isso é
+ * precisa saber se `.length > 0`. Não valida referência de fato, isso é
  * responsabilidade do LLM.
  */
 

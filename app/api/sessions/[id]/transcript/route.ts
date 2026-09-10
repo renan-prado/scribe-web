@@ -28,7 +28,7 @@ const BodySchema = z
 
 /**
  * Corta as primeiras frases da transcrição para servir de preview no card da
- * lista. Não é um resumo — modo transcrição não chama LLM nenhum além do
+ * lista. Não é um resumo, modo transcrição não chama LLM nenhum além do
  * transcribe. Quebra na fronteira de palavra e sufixa reticências.
  */
 function transcriptPreview(transcript: string): string | null {
@@ -46,7 +46,7 @@ function transcriptPreview(transcript: string): string | null {
  * Fecha uma sessão do modo transcrição. É o análogo do POST /api/final-summary
  * para os outros modos, mas sem nenhuma chamada de LLM: recebe o texto que o
  * cliente montou a partir dos chunks já transcritos e grava a linha.
- * `final_summary` permanece null — é isso que marca a sessão como "só
+ * `final_summary` permanece null, é isso que marca a sessão como "só
  * transcrição" para a página salva e para a lista.
  */
 export async function PUT(request: Request, { params }: { params: Promise<{ id: string }> }) {
@@ -81,7 +81,7 @@ export async function PUT(request: Request, { params }: { params: Promise<{ id: 
   const speakerLocation = parsed.data.speakerLocation?.trim() || null;
 
   // Promove autor/local a entidades reutilizáveis, como faz o PATCH de meta.
-  // Falha aqui não impede o save — o texto é o que o usuário está esperando.
+  // Falha aqui não impede o save, o texto é o que o usuário está esperando.
   let speakerId: string | null | undefined;
   let locationId: string | null | undefined;
   if (speakerName) {

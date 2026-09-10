@@ -45,7 +45,7 @@ describe("toBrlCents", () => {
     assert.equal(toBrlCents(10_000, "USD", 5.5), 55_000);
   });
 
-  it("devolve null — e não zero — sem cotação", () => {
+  it("devolve null, e não zero, sem cotação", () => {
     assert.equal(toBrlCents(10_000, "USD", null), null);
     assert.equal(toBrlCents(10_000, "USD", 0), null);
     assert.equal(toBrlCents(10_000, "USD", Number.NaN), null);
@@ -63,7 +63,7 @@ describe("entryAmountBrlCents", () => {
     assert.equal(entryAmountBrlCents(paid, { usdBrl: 6.0 }), 50_000);
   });
 
-  it("pendente usa o câmbio VIVO — é hoje que ele seria pago", () => {
+  it("pendente usa o câmbio VIVO, é hoje que ele seria pago", () => {
     const pending = entry({ status: "pending", currency: "USD", fxRate: 5.0 });
     assert.equal(entryAmountBrlCents(pending, { usdBrl: 6.0 }), 60_000);
   });
@@ -139,7 +139,7 @@ describe("parseMoneyToCents", () => {
     assert.equal(parseMoneyToCents("200"), 20_000);
   });
 
-  it("devolve null — nunca zero — para o que não é número", () => {
+  it("devolve null, nunca zero, para o que não é número", () => {
     assert.equal(parseMoneyToCents(""), null);
     assert.equal(parseMoneyToCents("   "), null);
     assert.equal(parseMoneyToCents("abc"), null);
@@ -148,8 +148,8 @@ describe("parseMoneyToCents", () => {
 
 describe("formatação", () => {
   it("null vira travessão, não R$ 0,00", () => {
-    assert.equal(formatBrlCents(null), "—");
-    assert.equal(formatPercent(null), "—");
+    assert.equal(formatBrlCents(null), "-");
+    assert.equal(formatPercent(null), "-");
   });
   it("zero continua sendo zero", () => {
     assert.match(formatBrlCents(0), /0,00/);

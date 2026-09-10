@@ -22,14 +22,14 @@ export default async function FinanceEntriesPage() {
     <div className="flex flex-col gap-6">
       <AdminPageHeader
         title="Lançamentos"
-        subtitle="Receitas e despesas cadastradas à mão — o que o painel não consegue medir sozinho."
+        subtitle="Receitas e despesas cadastradas à mão, o que o painel não consegue medir sozinho."
       />
 
       <FinanceNotices
         tone="info"
         warnings={[
           "Não lance aqui a receita das assinaturas nem o custo da OpenAI: os dois já são medidos (ledger de créditos e llm_usage_events) e entram sozinhos nos totais.",
-          "A fatura de um contrato recorrente deve ser vinculada a ele no formulário — assim ela substitui a provisão do mês em vez de somar por cima.",
+          "A fatura de um contrato recorrente deve ser vinculada a ele no formulário, assim ela substitui a provisão do mês em vez de somar por cima.",
         ]}
       />
 

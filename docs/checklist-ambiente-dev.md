@@ -1,7 +1,7 @@
-# Checklist — o que falta para o ambiente de dev funcionar
+# Checklist: o que falta para o ambiente de dev funcionar
 
 Trabalho manual em painéis externos. O código, as migrações e os arquivos de
-ambiente já estão prontos — o que sobra aqui não dá para automatizar do repo.
+ambiente já estão prontos, o que sobra aqui não dá para automatizar do repo.
 
 Guia conceitual (por que cada coisa é assim): `docs/ambientes.md`.
 
@@ -31,16 +31,16 @@ branch de dev             develop
 ```
 
 Os segredos (service_role, chaves do Stripe) estão em `.env.dev` na raiz do
-repo. **Não copie nenhum deles para dentro deste arquivo** — ele vai para o git.
+repo. **Não copie nenhum deles para dentro deste arquivo**, ele vai para o git.
 
 ---
 
-## 1. GoDaddy — o CNAME de `dev.scriba.cc`
+## 1. GoDaddy: o CNAME de `dev.scriba.cc`
 
 Os nameservers de `scriba.cc` são da GoDaddy (`ns45`/`ns46.domaincontrol.com`),
 então a Vercel não consegue criar registro sozinha: ela só sabe dizer qual
 falta. Enquanto o registro não existir, o painel mostra **Invalid
-Configuration** — que é o estado esperado, não um erro.
+Configuration**, que é o estado esperado, não um erro.
 
 **Meus Produtos → `scriba.cc` → DNS → Registros → Adicionar novo registro**
 
@@ -54,7 +54,7 @@ Configuration** — que é o estado esperado, não um erro.
 Três armadilhas da interface da GoDaddy:
 
 - **No campo Nome vai só `dev`**, não `dev.scriba.cc`. A GoDaddy concatena o
-  domínio sozinha — quem digita o nome completo acaba com
+  domínio sozinha, quem digita o nome completo acaba com
   `dev.scriba.cc.scriba.cc`, que resolve para nada e não dá nenhum aviso.
 - **O ponto final** que aparece no painel da Vercel (`…-017.com.`) a GoDaddy
   adiciona sozinha. Cole sem ele.
@@ -72,7 +72,7 @@ nslookup -type=CNAME dev.scriba.cc 8.8.8.8
 ```
 
 Quando devolver o `vercel-dns-017.com`, volte ao painel da Vercel e clique em
-**Refresh**. O certificado TLS ela emite sozinha logo depois — não precisa
+**Refresh**. O certificado TLS ela emite sozinha logo depois, não precisa
 fazer nada para isso.
 
 **Não** troque os nameservers para a Vercel (a aba "Vercel DNS" no mesmo
@@ -82,7 +82,7 @@ CNAME acima basta.
 
 ---
 
-## 2. Google Cloud Console — autorizar o projeto de dev
+## 2. Google Cloud Console: autorizar o projeto de dev
 
 O botão de login usa `signInWithOAuth({ provider: "google" })`
 (`src/features/auth/components/GoogleSignInButton.tsx`). Sem Google, não há
@@ -92,7 +92,7 @@ Cada projeto Supabase tem a **sua própria** URL de callback, e o Google só
 redireciona para URLs que estejam explicitamente listadas. A de produção já
 está lá; a de dev não.
 
-**Use o mesmo OAuth Client que a produção usa** — é o caminho mais curto e a
+**Use o mesmo OAuth Client que a produção usa**, é o caminho mais curto e a
 tela de consentimento é a mesma. (Um client separado só faria sentido se você
 quisesse isolar métricas ou o consent screen, o que não é o caso hoje.)
 
@@ -112,7 +112,7 @@ http://localhost:3000
 https://dev.scriba.cc
 ```
 
-Salvar. **Copie o Client ID e o Client Secret** — vão para o §3.
+Salvar. **Copie o Client ID e o Client Secret**, vão para o §3.
 
 Dois pontos que costumam morder:
 
@@ -120,7 +120,7 @@ Dois pontos que costumam morder:
   algumas horas. Se der `redirect_uri_mismatch` logo depois de salvar, espere
   antes de sair procurando erro de digitação.
 - **Publishing status da tela de consentimento.** Se estiver em **Testing**, só
-  os e-mails cadastrados em *Test users* conseguem entrar — e o erro que
+  os e-mails cadastrados em *Test users* conseguem entrar, e o erro que
   aparece (`access_denied`) não diz isso. Como a produção funciona, ela
   provavelmente já está **In production**; se não estiver, ou publique ou
   acrescente o seu e-mail em *Test users*. Confira em *APIs e Serviços → Tela de
@@ -128,13 +128,13 @@ Dois pontos que costumam morder:
 
 ---
 
-## 3. Supabase — dashboard do projeto de dev
+## 3. Supabase: dashboard do projeto de dev
 
 Tudo aqui é no projeto **`bpyibejicgswgxvbpsvg` ("[DEV] Scriba")**. Confira o
 seletor de projeto no topo antes de cada mudança: os dois painéis são
 idênticos, e mexer no de produção sem perceber é fácil.
 
-O schema já está aplicado. O que falta é só o que mora no painel — provedores,
+O schema já está aplicado. O que falta é só o que mora no painel, provedores,
 URLs e chaves não vêm em migração.
 
 ### 3.1 Authentication → Sign In / Providers → Google
@@ -156,8 +156,8 @@ devolve `"google": false`; o de produção devolve `true`.
 
 O app manda `redirectTo = <origin>/auth/callback?next=…`
 (`src/features/auth/lib/authUrl.ts`), e o Supabase recusa qualquer redirect que
-não bata com a lista. Sem isso o login "funciona" — o Google aceita, a sessão é
-criada — e o usuário cai numa página em branco, que é o sintoma mais confuso
+não bata com a lista. Sem isso o login "funciona", o Google aceita, a sessão é
+criada, e o usuário cai numa página em branco, que é o sintoma mais confuso
 desse fluxo inteiro.
 
 > Se quiser garantia, abra o mesmo painel do projeto de **produção** numa aba ao
@@ -169,7 +169,7 @@ desse fluxo inteiro.
 "Confirm email" está **ligado** (`mailer_autoconfirm: false`). Sugestão:
 **desligar em dev**.
 
-Não é preguiça — o SMTP embutido do Supabase entrega poucos e-mails por hora,
+Não é preguiça, o SMTP embutido do Supabase entrega poucos e-mails por hora,
 e ao estourar o limite ele para de enviar sem erro visível: o cadastro parece
 ter funcionado e o e-mail nunca chega. Em dev, onde você vai criar usuário
 descartável a toda hora, isso vira meia hora perdida. Em produção fica ligado.
@@ -177,7 +177,7 @@ descartável a toda hora, isso vira meia hora perdida. Em produção fica ligado
 ### 3.4 Primeiro usuário e moedas
 
 Cadastre-se normalmente pelo app. O trigger `on_auth_user_created` (migração
-0005) cria o `profiles` sozinho, já com `coin_balance = 50` (migração 0026) —
+0005) cria o `profiles` sozinho, já com `coin_balance = 50` (migração 0026),
 suficiente para gravar alguns minutos.
 
 Para mais moedas ou acesso ao `/admin`, use o **SQL Editor do projeto de dev**.
@@ -201,17 +201,17 @@ update public.profiles
 ```
 
 Se `grant_coins` for chamada duas vezes com o mesmo `external_ref`, a segunda
-não credita — é a mesma trava de idempotência que impede um webhook reentregue
+não credita, é a mesma trava de idempotência que impede um webhook reentregue
 de creditar duas vezes.
 
 ---
 
-## 4. Vercel — variáveis de Preview
+## 4. Vercel: variáveis de Preview
 
 O domínio já está criado e apontado para o branch `develop`; falta o DNS (§1) e
 faltam as variáveis. **Sem elas o deploy de preview nem sobe**: `lib/env/client.ts`
 e `lib/env/server.ts` fazem `throw` no import quando a validação Zod falha, o
-que é de propósito — falhar no boot é melhor que falhar na primeira gravação.
+que é de propósito, falhar no boot é melhor que falhar na primeira gravação.
 
 **Settings → Environment Variables → Add**, escopo **Preview**, e em *Branch*
 escolha **`develop`**.
@@ -223,16 +223,16 @@ escolha **`develop`**.
 | Variável | Valor | De onde tirar |
 |---|---|---|
 | `NEXT_PUBLIC_SUPABASE_URL` | `https://bpyibejicgswgxvbpsvg.supabase.co` | aqui mesmo |
-| `NEXT_PUBLIC_SUPABASE_ANON_KEY` | — | `.env.dev` |
-| `SUPABASE_SERVICE_ROLE_KEY` | — | `.env.dev` |
-| `OPENAI_API_KEY` | — | `.env.dev` (mesma de prod) |
+| `NEXT_PUBLIC_SUPABASE_ANON_KEY` | - | `.env.dev` |
+| `SUPABASE_SERVICE_ROLE_KEY` | - | `.env.dev` |
+| `OPENAI_API_KEY` | - | `.env.dev` (mesma de prod) |
 | `STRIPE_SECRET_KEY` | `sk_test_…` | `.env.dev` |
 | `STRIPE_PRICE_PESSOAL` | `price_…` (teste) | `.env.dev` |
 | `STRIPE_PRICE_ESTUDIOSO` | `price_…` (teste) | `.env.dev` |
 | `STRIPE_PRICE_TOPUP_500` | `price_…` (teste) | `.env.dev` |
-| `STRIPE_WEBHOOK_SECRET` | ver §6 | — |
+| `STRIPE_WEBHOOK_SECRET` | ver §6 | - |
 | `APP_URL` | `https://dev.scriba.cc` | aqui mesmo |
-| `CRON_SECRET` | — | `.env.dev` |
+| `CRON_SECRET` | - | `.env.dev` |
 
 Quatro observações que evitam retrabalho:
 
@@ -240,10 +240,10 @@ Quatro observações que evitam retrabalho:
   `VERCEL_URL`, que é a URL aleatória do deploy. O Checkout devolveria o usuário
   para `scriba-abc123-….vercel.app` em vez de `dev.scriba.cc`.
 - **`STRIPE_WEBHOOK_SECRET` só depois do §6.** Enquanto não existir, as rotas
-  `/api/billing/*` respondem 503 `billing_unavailable` — o app funciona, só não
+  `/api/billing/*` respondem 503 `billing_unavailable`, o app funciona, só não
   vende. Se preferir, deixe a variável fora por ora; ela é opcional no schema.
 - **`NEXT_PUBLIC_*` são inlinadas no bundle em tempo de build.** Mudar depois de
-  deployar exige um **redeploy** — não basta salvar a variável.
+  deployar exige um **redeploy**, não basta salvar a variável.
 - **Não copie as de produção.** Se o preview subir com a `NEXT_PUBLIC_SUPABASE_URL`
   de prod, tudo parece funcionar e você estará gravando sermão de teste no banco
   real dos usuários.
@@ -251,7 +251,7 @@ Quatro observações que evitam retrabalho:
 ### 4.1 Deployment Protection
 
 Previews nascem protegidos por login da Vercel. Do jeito que está,
-`dev.scriba.cc` vai pedir autenticação para quem não estiver no time — e vai
+`dev.scriba.cc` vai pedir autenticação para quem não estiver no time, e vai
 barrar também o webhook do Stripe, que chega **sem cookie**.
 
 **Settings → Deployment Protection → Vercel Authentication**
@@ -284,12 +284,12 @@ curl -H "Authorization: Bearer <CRON_SECRET do .env.dev>" \
 
 Depois de §1–§4, nesta ordem:
 
-1. **DNS** — `nslookup -type=CNAME dev.scriba.cc 8.8.8.8` devolve o
+1. **DNS**: `nslookup -type=CNAME dev.scriba.cc 8.8.8.8` devolve o
    `vercel-dns-017.com`, e o painel da Vercel sai de "Invalid Configuration".
-2. **Deploy** — precisa existir pelo menos um deploy do branch `develop`. O
+2. **Deploy**: precisa existir pelo menos um deploy do branch `develop`. O
    domínio está preso a ele: sem deploy, resolve mas não serve nada. Um push em
    `develop` (ou *Redeploy* no painel) resolve.
-3. **Local** — reinicie o `npm run dev`. O banner tem de mostrar
+3. **Local**: reinicie o `npm run dev`. O banner tem de mostrar
    `supabase  bpyibejicgswgxvbpsvg`. Se mostrar `chnzfeisfaneuyuyzjvy`, você
    está falando com produção.
 4. **Login com Google em `http://localhost:3000/sign-in`.** É este passo que
@@ -305,7 +305,7 @@ for testar **compra** dentro de `dev.scriba.cc`.
 
 ---
 
-## 6. Depois (opcional) — Stripe de teste em `dev.scriba.cc`
+## 6. Depois (opcional): Stripe de teste em `dev.scriba.cc`
 
 Não é necessário para desenvolver: na sua máquina, `npm run stripe:listen` já
 resolve o webhook local, e é assim que o fluxo de compra vem sendo testado.
@@ -326,12 +326,12 @@ silêncio.
    `customer.subscription.updated`, `customer.subscription.deleted`,
    `charge.refunded`, `charge.dispute.created`.
 4. Copie o **signing secret** desse endpoint (`whsec_…`) para a variável
-   `STRIPE_WEBHOOK_SECRET` de **Preview** na Vercel — e faça redeploy.
+   `STRIPE_WEBHOOK_SECRET` de **Preview** na Vercel, e faça redeploy.
 
 > **Existem três `whsec_` diferentes e nada no formato os distingue:** o do
 > `stripe listen` (sua máquina), o deste endpoint de teste (`dev.scriba.cc`) e o
 > do endpoint live (`scriba.cc`). Usar o errado é a falha mais silenciosa do
-> sistema inteiro — o cartão passa, a tela mostra sucesso, o webhook devolve 400
+> sistema inteiro, o cartão passa, a tela mostra sucesso, o webhook devolve 400
 > e o saldo do usuário não muda. Não reaproveite o do `.env.dev` aqui.
 
 Contexto completo em `docs/stripe-setup.md`.
@@ -342,11 +342,11 @@ Contexto completo em `docs/stripe-setup.md`.
 
 Duas coisas que ficaram para você decidir, nenhuma bloqueia o acima:
 
-- **`.env.local.bak`** na raiz — é o `.env.local` antigo, renomeado. O conteúdo
+- **`.env.local.bak`** na raiz, é o `.env.local` antigo, renomeado. O conteúdo
   já está distribuído em `.env.dev` e `.env.prod`. Apague quando conferir.
 - **Migrações `0012`–`0016`** (pgvector + `knowledge_sources` /
   `knowledge_chunks` / `match_knowledge`) foram removidas do repo quando o RAG
-  saiu do escopo. As tabelas continuam no banco de **produção**, órfãs — nenhum
+  saiu do escopo. As tabelas continuam no banco de **produção**, órfãs, nenhum
   código as usa. O projeto de dev nasceu sem elas, refletindo o schema que o
   código realmente precisa. Se quiser paridade exata, os arquivos estão em
   `git show 985ae2d`.

@@ -16,13 +16,13 @@ import type { VerseLine } from "@/lib/domain/verse";
  *
  *   1. **Rate limit.** Sete chamadas para "Isaías 1:11-17"; um estudo com
  *      dezessete passagens passava de sessenta em segundos. Os versículos
- *      recusados voltavam vazios e a tela mostrava número sem texto — foi o
+ *      recusados voltavam vazios e a tela mostrava número sem texto, foi o
  *      bug reportado em produção.
  *   2. **UX de montagem.** O bloco aparecia e ia se preenchendo linha a linha,
  *      empurrando o conteúdo abaixo dele a cada versículo que chegava.
  *
  * Agora é UMA busca por passagem e um estado só: ou o esqueleto do bloco
- * inteiro, ou o texto inteiro. Nada de revelação progressiva — o ganho
+ * inteiro, ou o texto inteiro. Nada de revelação progressiva, o ganho
  * aparente dela era efeito colateral de um problema que não existe mais.
  *
  * As linhas do esqueleto usam larguras FIXAS por posição (e não aleatórias):
@@ -40,8 +40,8 @@ type PassageVersesProps = {
  * A pilha de versículos numerados, já com o texto em mãos.
  *
  * Separada de `PassageVerses` porque o diálogo de capítulo (`ChapterDialog`)
- * mostra exatamente esta marcação a partir de uma referência SEM faixa —
- * "Jonas 1" —, que não cabe nas props acima. Duas cópias divergiriam na
+ * mostra exatamente esta marcação a partir de uma referência SEM faixa,
+ * "Jonas 1", que não cabe nas props acima. Duas cópias divergiriam na
  * primeira vez que alguém mexesse no alinhamento do `sup`.
  */
 export function VerseLines({ verses }: { verses: VerseLine[] }) {

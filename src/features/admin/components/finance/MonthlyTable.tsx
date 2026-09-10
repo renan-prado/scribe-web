@@ -7,7 +7,7 @@ import { formatMonthKeyShort } from "@/lib/finance/recurrence";
  *
  * Tabela e não gráfico como peça principal: a pergunta que ela responde é
  * "quanto exatamente", e um gráfico responde "para onde". O gráfico existe
- * logo acima, em `MonthlyBars`, para a leitura de relance — os dois juntos,
+ * logo acima, em `MonthlyBars`, para a leitura de relance, os dois juntos,
  * porque a especificação pede as duas leituras e elas não competem.
  *
  * A tabela é TRANSPOSTA em relação ao instinto: as métricas são as linhas e os
@@ -83,7 +83,7 @@ export function MonthlyTable({ months }: { months: MonthlyRow[] }) {
     },
     {
       label: "Previsto (a pagar)",
-      hint: "Lançamentos com status Previsto — fora dos totais acima",
+      hint: "Lançamentos com status Previsto, fora dos totais acima",
       pick: (m) => formatBrlCents(m.plannedExpenseCents),
       muted: true,
     },
@@ -158,7 +158,7 @@ function valueClass(strong?: boolean, muted?: boolean, signed = 0): string {
  *
  * Barras e não linha: a comparação que interessa é entre duas grandezas DENTRO
  * do mesmo mês, e uma linha convida a ler a inclinação, que é a pergunta da
- * tabela. A escala é comum aos dois lados — normalizar cada série pelo próprio
+ * tabela. A escala é comum aos dois lados, normalizar cada série pelo próprio
  * máximo faria uma despesa pequena parecer do tamanho de uma receita grande.
  */
 export function MonthlyBars({ months }: { months: MonthlyRow[] }) {

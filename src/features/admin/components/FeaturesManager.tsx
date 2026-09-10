@@ -34,10 +34,10 @@ import type {
 /**
  * Painel de funcionalidades. Três blocos, e a ordem conta:
  *
- *   1. A MATRIZ — só leitura. É o retrato de `lib/entitlements/features.ts`.
+ *   1. A MATRIZ: só leitura. É o retrato de `lib/entitlements/features.ts`.
  *      Quem chega aqui querendo saber "o que o Estudioso tem" lê isto.
- *   2. O KILL SWITCH — o botão de incidente. Vence override.
- *   3. AS EXCEÇÕES — por pessoa, por e-mail.
+ *   2. O KILL SWITCH: o botão de incidente. Vence override.
+ *   3. AS EXCEÇÕES: por pessoa, por e-mail.
  *
  * A matriz vir primeiro e não ter botão nenhum é intencional: é o que impede
  * alguém de procurar aqui o lugar de "liberar o estudo pro plano Pessoal".
@@ -59,7 +59,7 @@ const EFFECT_OPTIONS: SelectOption<"true" | "false">[] = [
 
 function formatDate(iso: string): string {
   const d = new Date(iso);
-  return Number.isNaN(d.getTime()) ? "—" : DATE_FMT.format(d);
+  return Number.isNaN(d.getTime()) ? "-" : DATE_FMT.format(d);
 }
 
 type Props = {
@@ -117,13 +117,13 @@ export function FeaturesManager({ features, switches, overrides }: Props) {
 
   return (
     <div className="flex flex-col gap-8">
-      {/* 1 — matriz, só leitura */}
+      {/* 1, matriz, só leitura */}
       <section className="flex flex-col gap-3">
         <div className="flex flex-col gap-1">
           <h2 className="text-sm font-semibold text-scriba-ink-strong">Matriz de planos</h2>
           <p className="text-xs font-light text-scriba-ink-mute">
             Definida em <code className="font-mono">lib/entitlements/features.ts</code>. Mudar qual
-            plano libera o quê é um deploy, não um clique — pelo mesmo motivo que o catálogo de
+            plano libera o quê é um deploy, não um clique, pelo mesmo motivo que o catálogo de
             preços não é editável pelo painel.
           </p>
         </div>
@@ -169,7 +169,7 @@ export function FeaturesManager({ features, switches, overrides }: Props) {
                       )}
                     </TableCell>
                     <TableCell className="text-xs text-scriba-ink-mute">
-                      {count === 0 ? "—" : `${count}`}
+                      {count === 0 ? "-" : `${count}`}
                     </TableCell>
                   </TableRow>
                 );
@@ -179,7 +179,7 @@ export function FeaturesManager({ features, switches, overrides }: Props) {
         </div>
       </section>
 
-      {/* 2 — kill switch */}
+      {/* 2, kill switch */}
       <section className="flex flex-col gap-3">
         <div className="flex flex-col gap-1">
           <h2 className="text-sm font-semibold text-scriba-ink-strong">Kill switch</h2>
@@ -235,7 +235,7 @@ export function FeaturesManager({ features, switches, overrides }: Props) {
         </div>
       </section>
 
-      {/* 3 — exceções por pessoa */}
+      {/* 3, exceções por pessoa */}
       <section className="flex flex-col gap-3">
         <div className="flex flex-col gap-1">
           <h2 className="text-sm font-semibold text-scriba-ink-strong">Exceções por pessoa</h2>

@@ -11,7 +11,7 @@ type PageProps = {
  * Para onde o Stripe devolve o usuário depois do Checkout.
  *
  * Nada nesta URL é tratado como fato. `?status=sucesso` é só o que o Stripe
- * devolve — digitar isso à mão não produz um crédito sequer. O `?cs=` também
+ * devolve, digitar isso à mão não produz um crédito sequer. O `?cs=` também
  * não autoriza nada: é um endereço, e POST /api/billing/reconcile só age
  * depois de buscar a sessão na API do Stripe e conferir que ela pertence ao
  * usuário autenticado e foi de fato paga.

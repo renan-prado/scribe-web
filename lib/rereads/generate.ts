@@ -29,15 +29,15 @@ import { collectRereadPool, type RereadPoolItem, referencesFromPool } from "@/li
  *
  * Só chama o LLM se o pool reaproveitado não cobrir os 10 slots. Um payload
  * incompleto (menos de 10 offsets) é tratado como falha para não persistir
- * estado ruim — a UI espera sempre os 10.
+ * estado ruim, a UI espera sempre os 10.
  *
- * Falha aqui NÃO deve derrubar a resposta do resumo — o chamador loga e segue.
+ * Falha aqui NÃO deve derrubar a resposta do resumo, o chamador loga e segue.
  *
  * ## O texto é resolvido ANTES de o item ganhar um slot
  *
  * `withVerseText` roda sobre os CANDIDATOS, não sobre o payload montado, e
- * descarta quem não tem o que reler. A ordem inversa — montar os dez e buscar
- * o texto depois — foi o que colocou um card "Judas", sem capítulo e sem
+ * descarta quem não tem o que reler. A ordem inversa, montar os dez e buscar
+ * o texto depois, foi o que colocou um card "Judas", sem capítulo e sem
  * versículo, no feed de um usuário: o item já tinha ocupado o slot quando a
  * busca falhou, e não havia mais como devolvê-lo. Resolver antes custa a mesma
  * ida à NVI (que é um objeto em memória) e transforma "card vazio" em "outro
@@ -47,7 +47,7 @@ import { collectRereadPool, type RereadPoolItem, referencesFromPool } from "@/li
 /**
  * Um candidato a slot, antes de ganhar um `dayOffset`. É o `RereadPoolItem` do
  * `collect.ts` aberto para também acomodar o `ai-fill`, que nasce da chamada de
- * preenchimento e não do pool — daí os dois passarem pelo mesmo
+ * preenchimento e não do pool, daí os dois passarem pelo mesmo
  * `withVerseText` e pelo mesmo `assembleFinal`.
  */
 type RereadCandidate = Omit<RereadPoolItem, "origin"> & { origin: RereadOrigin };
@@ -116,7 +116,7 @@ export async function generateRereads(input: GenerateRereadsInput): Promise<Gene
   const existingRefs = referencesFromPool(truncatedPool);
   const userMessage = [
     // Pedimos FOLGA de propósito. Toda sugestão ainda passa pela NVI, e a que
-    // não resolve é descartada — sem a folga, uma única referência torta do
+    // não resolve é descartada, sem a folga, uma única referência torta do
     // modelo deixa o payload com nove itens, e nove reprova em
     // `isCompleteRereadsPayload`: o usuário fica sem releitura nenhuma por
     // causa de uma. O excedente é cortado logo abaixo e não é persistido.
@@ -198,7 +198,7 @@ export async function generateRereads(input: GenerateRereadsInput): Promise<Gene
   const payload = assembleFinal(truncatedPool, dedupedFill);
 
   if (!isCompleteRereadsPayload(payload)) {
-    log.warn(`incomplete payload — expected 10 items covering all offsets`, {
+    log.warn(`incomplete payload, expected 10 items covering all offsets`, {
       got: payload.items.length,
       offsets: payload.items.map((i) => i.dayOffset),
     });
@@ -286,8 +286,8 @@ function countByOrigin(pool: RereadCandidate[]): Record<string, number> {
  *
  * Um candidato sobrevive de dois jeitos: já veio com texto (o pregador leu, ou
  * o bloco do resumo trouxe a citação), ou a referência aponta versículo e a NVI
- * responde. Quem não se encaixa em nenhum dos dois — referência de capítulo
- * inteiro, faixa que passa do fim do capítulo, livro sem número — não tem o que
+ * responde. Quem não se encaixa em nenhum dos dois, referência de capítulo
+ * inteiro, faixa que passa do fim do capítulo, livro sem número, não tem o que
  * ser relido, e um card de releitura sem texto para reler é pior que um slot a
  * menos.
  *
@@ -305,7 +305,7 @@ async function withVerseText(
 
   const bible = await loadBible();
   if (!bible) {
-    log.warn(`bible not loaded — dropping candidates without text`, {
+    log.warn(`bible not loaded, dropping candidates without text`, {
       translation: BIBLE_TRANSLATION,
       dropped: needLookup.length,
     });

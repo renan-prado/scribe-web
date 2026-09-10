@@ -50,7 +50,7 @@ export const BOOK_ABBREVS: Record<string, string> = {
   esdras: "Ed",
   neemias: "Ne",
   ester: "Et",
-  // Jó — "jo" after diacritic strip (distinct from "joao")
+  // Jó, "jo" after diacritic strip (distinct from "joao")
   jo: "Jó",
   job: "Jó",
   salmo: "Sl",
@@ -85,7 +85,7 @@ export const BOOK_ABBREVS: Record<string, string> = {
   mateus: "Mt",
   marcos: "Mc",
   lucas: "Lc",
-  // João (gospel) — "joao" after diacritic strip
+  // João (gospel), "joao" after diacritic strip
   joao: "Jo",
   atos: "At",
   "atos dos apostolos": "At",
@@ -169,7 +169,7 @@ export function abbrevFor(fullName: string): string | null {
 
 /**
  * Number of verses in a given chapter of a book, or null when the book/chapter
- * isn't recognized. Client-safe (no fs/network) — reads from the generated
+ * isn't recognized. Client-safe (no fs/network), reads from the generated
  * chapter-lengths.ts metadata. Used by ReadingPassage to cap lookahead prefetch
  * so we don't burn /api/verse calls on verses that don't exist (e.g. Matthew 3
  * only has 17 verses, prefetching v18-v23 is pure waste).

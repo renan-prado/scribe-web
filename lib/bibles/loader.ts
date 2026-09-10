@@ -10,13 +10,13 @@ export type Bible = BibleBook[];
 
 /**
  * A aplicação inteira lê UMA tradução. A constante existe para que o número
- * apareça no log e no texto de tela vindo de um lugar só — não para sugerir
+ * apareça no log e no texto de tela vindo de um lugar só, não para sugerir
  * que trocá-la basta: o arquivo da tradução tem de estar em `lib/bibles/`, e
  * hoje só a NVI está.
  *
  * As outras dez traduções foram removidas: eram 41 MB no bundle de deploy que
  * nenhum caminho de código lia. Se um seletor de tradução voltar a existir,
- * o cache aqui embaixo precisa virar um LRU antes — ver o comentário dele.
+ * o cache aqui embaixo precisa virar um LRU antes, ver o comentário dele.
  */
 export const BIBLE_TRANSLATION = "NVI";
 
@@ -48,7 +48,7 @@ export async function loadBible(): Promise<Bible | null> {
     } catch (err) {
       // Antes este catch era mudo, e uma falha de empacotamento (o JSON não
       // subir junto com a função) viraria "versículo não encontrado" em vez
-      // de erro — silêncio no lugar exato onde se procuraria a causa.
+      // de erro, silêncio no lugar exato onde se procuraria a causa.
       log.error("falha ao carregar a Bíblia", {
         translation: BIBLE_TRANSLATION,
         path: BIBLE_PATH,

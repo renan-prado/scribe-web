@@ -7,7 +7,7 @@
 --
 -- e o cabeçalho de 0006 justificava assim: "a rota chama depois do
 -- requireAuth(), então uma policy normal já basta". Não basta, pelo mesmo
--- motivo de sempre — a policy autoriza a ESCRITA, ela não confere o CONTEÚDO,
+-- motivo de sempre, a policy autoriza a ESCRITA, ela não confere o CONTEÚDO,
 -- e a rota nunca é o único caminho até a tabela. Com o anon key, que é público,
 -- qualquer sessão logada mandava
 --
@@ -17,7 +17,7 @@
 --
 -- Reproduzido no projeto de dev em 2026-09-05: HTTP 201.
 --
--- O que se estraga não é dado de usuário — é a CONTABILIDADE. `/admin/usage` e
+-- O que se estraga não é dado de usuário, é a CONTABILIDADE. `/admin/usage` e
 -- `/admin/precificacao` somam esta tabela para dizer quanto custou cada rota,
 -- qual a margem por milheiro de moeda e, a partir disso, quanto a moeda deve
 -- custar. Uma linha forjada não vaza nada de ninguém; ela mente para a única
@@ -27,7 +27,7 @@
 -- que ninguém consegue explicar.
 --
 -- A CORREÇÃO. `lib/db/usage.ts` passa a escrever com service-role, recebendo
--- `userId` de quem chama — sempre `auth.user.id`, depois do `requireAuth()` da
+-- `userId` de quem chama, sempre `auth.user.id`, depois do `requireAuth()` da
 -- rota. Sem a policy, `authenticated` não tem por onde inserir: RLS sem policy
 -- de INSERT nega. O SELECT continua como está, escopado por `auth.uid()`, que é
 -- o que permite a pessoa ver o próprio consumo.

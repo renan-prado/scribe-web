@@ -17,7 +17,7 @@ function readTheme(): Theme {
 /**
  * A barra de status do celular no PWA instalado (e a barra de endereço do
  * Chrome no Android) segue esta meta. Sem esta linha o tema virava e a barra
- * ficava com a cor do tema anterior até o próximo carregamento — que é
+ * ficava com a cor do tema anterior até o próximo carregamento, que é
  * justamente o que mais salta aos olhos num app instalado. O `ThemeScript`
  * cria a meta antes do primeiro paint; o `createElement` aqui é só para o caso
  * de alguém remover aquele bootstrap.
@@ -40,7 +40,7 @@ function applyTheme(theme: Theme) {
   try {
     localStorage.setItem(STORAGE_KEY, theme);
   } catch {
-    // private mode / storage disabled — the in-memory class still applies
+    // private mode / storage disabled, the in-memory class still applies
   }
   window.dispatchEvent(new CustomEvent<Theme>(CHANGE_EVENT, { detail: theme }));
 }
@@ -48,7 +48,7 @@ function applyTheme(theme: Theme) {
 /**
  * Reads and writes the `.dark` class on <html>.
  *
- * `mounted` is false on the server and on the very first client render — use it
+ * `mounted` is false on the server and on the very first client render, use it
  * to suppress transitions so the control snaps to the real state instead of
  * animating from a wrong default.
  */
@@ -73,7 +73,7 @@ export function useTheme() {
     setThemeState(next);
   }, []);
 
-  // Reads the live DOM instead of the updater's `current` — a state updater must
+  // Reads the live DOM instead of the updater's `current`, a state updater must
   // stay pure, and applyTheme dispatches an event that re-renders other
   // subscribers (the Toaster) synchronously.
   const toggleTheme = useCallback(() => {

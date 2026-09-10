@@ -1,7 +1,7 @@
 -- Procurar por VERSÍCULO nas listas: "Jonas 1" tem de achar a pregação que
 -- citou Jonas 1:1-17.
 --
--- O QUE FALTAVA. A busca de `/list` e `/studies` casa texto — título, resumo
+-- O QUE FALTAVA. A busca de `/list` e `/studies` casa texto, título, resumo
 -- curto, autor, local (no cliente) e a transcrição (`/api/sessions/search`).
 -- Um versículo citado não está em nenhum desses lugares: ele é um card
 -- `citedVerse`, e o que o pregador FALOU na hora ("no primeiro capítulo de
@@ -13,13 +13,13 @@
 --
 --   1. As duas fontes. Sessão do modo `live` tem os cards em
 --      `session_feed_items` (projeção de 0004, com verse_book/chapter/start/end
---      já separados e indexados). Sessão `audio_only` NÃO TEM CARDS — nela o
+--      já separados e indexados). Sessão `audio_only` NÃO TEM CARDS, nela o
 --      pipeline bíblico não roda, e os versículos existem só como blocos
 --      `bibleQuote` dentro de `final_summary`. Procurar só na primeira perderia
 --      um modo inteiro do produto, e ninguém desconfiaria: a lista responderia
 --      normalmente, só que sem metade das gravações.
---   2. O acento. `verse_book` guarda a grafia do modelo — "gênesis", "joão",
---      "coríntios" —, e quem digita numa busca escreve "genesis", "joao",
+--   2. O acento. `verse_book` guarda a grafia do modelo, "gênesis", "joão",
+--      "coríntios", e quem digita numa busca escreve "genesis", "joao",
 --      "corintios". `translate()` resolve isso sem depender da extensão
 --      `unaccent`, que é um pedido de infraestrutura para um problema de vinte
 --      e quatro letras.
@@ -28,19 +28,19 @@
 -- devolve as referências daquele livro e mais nada. Quem decide se "Jonas 1:3"
 -- responde a "Jonas 1" é `referenceMatchesQuery` em
 -- `lib/domain/reference-query.ts`, do lado do TypeScript, junto de
--- `parseVerseReference` — a mesma regra de faixa que o feed já usa para
+-- `parseVerseReference`, a mesma regra de faixa que o feed já usa para
 -- deduplicar card. Reescrevê-la em SQL seria uma segunda implementação da
 -- coisa mais fácil de discordar em silêncio.
 --
 -- SEGURANÇA. `security invoker`: a função lê como quem chamou, então a RLS de
 -- `sessions` e de `session_feed_items` é a mesma de sempre e não há aqui o
--- buraco que 0037 e 0038 fecharam — não existe caminho por onde ela devolva
+-- buraco que 0037 e 0038 fecharam, não existe caminho por onde ela devolva
 -- linha de outra pessoa. Ela também não escreve nada.
 --
 -- ÍNDICE. `sfi_verse_lookup_idx (verse_book, verse_chapter) where kind =
 -- 'citedVerse'` não é usado, porque o `translate()` do lado da coluna impede.
 -- É aceito: a varredura já vem recortada pela RLS (as linhas de UM usuário), e
--- a alternativa — coluna gerada sem acento mais índice — é peso que só se paga
+-- a alternativa, coluna gerada sem acento mais índice, é peso que só se paga
 -- quando alguém tiver dezenas de milhares de cards. Se um dia doer, o lugar é
 -- `verse_book_ascii` gerada, e esta função passa a comparar com ela.
 
@@ -95,7 +95,7 @@ as $$
 $$;
 
 -- Leitura pura e `security invoker`: quem chama é o usuário logado, e a RLS
--- já é o gate. O `revoke` de `public`/`anon` é a higiene de 0038 — EXECUTE
+-- já é o gate. O `revoke` de `public`/`anon` é a higiene de 0038, EXECUTE
 -- nasce concedido a PUBLIC, e não conceder não é o mesmo que negar.
 revoke all on function public._ascii_lower(text) from public;
 revoke all on function public._ascii_lower(text) from anon;

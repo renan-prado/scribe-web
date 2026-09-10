@@ -4,11 +4,11 @@ import { parseVerseReference } from "@/lib/domain/feed";
 /**
  * Entender "Jonas 1" como REFERÊNCIA, e não como duas palavras soltas.
  *
- * A busca das listas casa texto: título, resumo curto, autor, local e — pela
- * rota — a transcrição. Um versículo citado não é nenhuma dessas coisas. Ele é
+ * A busca das listas casa texto: título, resumo curto, autor, local e, pela
+ * rota, a transcrição. Um versículo citado não é nenhuma dessas coisas. Ele é
  * um card (`citedVerse`, projetado em `session_feed_items`) ou um bloco
  * `bibleQuote` do resumo, e a única forma de reencontrá-lo é comparar
- * REFERÊNCIA com REFERÊNCIA — livro, capítulo, faixa de versículos —, não
+ * REFERÊNCIA com REFERÊNCIA, livro, capítulo, faixa de versículos, não
  * string com string.
  *
  * Comparar string com string falha em todas as pontas ao mesmo tempo:
@@ -28,7 +28,7 @@ import { parseVerseReference } from "@/lib/domain/feed";
  */
 
 export type ReferenceQuery = {
-  /** Livro canônico — a abreviação da NVI, `Jn` para Jonas. */
+  /** Livro canônico, a abreviação da NVI, `Jn` para Jonas. */
   abbrev: string;
   chapter?: number;
   startVerse?: number;
@@ -65,7 +65,7 @@ const ALIASES_BY_ABBREV = ((): Map<string, string[]> => {
  * Grafia normalizada → abreviação, incluindo as abreviações como entrada.
  *
  * **`BOOK_ABBREVS` entra PRIMEIRO e nunca é sobrescrito.** A normalização tira
- * o acento, e aí "Jó" e a abreviação "Jo" (João) viram a mesma chave — colisão
+ * o acento, e aí "Jó" e a abreviação "Jo" (João) viram a mesma chave, colisão
  * que o `books.ts` já resolveu de propósito, mandando "jo" para Jó. Deixar a
  * abreviação derivada vencer reabriria a decisão em silêncio, do lado errado:
  * quem procura "Jó 3" receberia João 3.
@@ -86,7 +86,7 @@ const ABBREV_BY_NAME = ((): Map<string, string> => {
  * Três tentativas, da mais segura para a mais generosa. O prefixo ("jona",
  * "apoca") só vale a partir de três letras e só quando UM livro responde: com
  * dois candidatos a busca escolheria por conta própria, e escolher errado é
- * pior que não achar — o usuário reescreve o que digitou, mas não desconfia de
+ * pior que não achar, o usuário reescreve o que digitou, mas não desconfia de
  * um resultado que parece certo.
  */
 export function resolveBookAbbrev(raw: string): string | null {
@@ -118,7 +118,7 @@ export function resolveBookAbbrev(raw: string): string | null {
  * Os números ficam ancorados no FIM justamente porque metade dos livros começa
  * com um: em "1 corintios" o 1 é do nome, em "1co 13" o 13 é do capítulo. Quem
  * decide não é a posição do dígito, é o que sobra quando os números finais
- * saem — e o que sobra tem de ser um livro conhecido, senão isto aqui não é
+ * saem, e o que sobra tem de ser um livro conhecido, senão isto aqui não é
  * uma referência e a busca segue sendo textual.
  */
 export function parseReferenceQuery(raw: string): ReferenceQuery | null {
@@ -149,7 +149,7 @@ export function parseReferenceQuery(raw: string): ReferenceQuery | null {
  *
  * Regra de faixa: as duas se INTERSECTAM, não uma contém a outra. Procurar
  * "Jonas 1:3" tem de achar o card "Jonas 1:1-17", e procurar "Jonas 1:1-17"
- * tem de achar o card "Jonas 1:3" — o pregador leu um pedaço, o usuário lembra
+ * tem de achar o card "Jonas 1:3", o pregador leu um pedaço, o usuário lembra
  * do outro.
  *
  * Referência sem versículo (capítulo inteiro) casa com qualquer versículo

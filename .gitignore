@@ -30,7 +30,7 @@ yarn-debug.log*
 yarn-error.log*
 .pnpm-debug.log*
 
-# env files — .env.dev e .env.prod carregam segredos reais e ficam fora do git.
+# env files: .env.dev e .env.prod carregam segredos reais e ficam fora do git.
 # O modelo sem valores é a única exceção. Ver docs/ambientes.md.
 .env*
 !.env.example

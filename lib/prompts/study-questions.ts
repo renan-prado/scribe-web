@@ -2,14 +2,14 @@ import "server-only";
 import { STUDY_TOPICS } from "@/lib/domain/study";
 
 /**
- * PASSO 1 — o QUESTIONADOR. A etapa que decide a qualidade do estudo inteiro.
+ * PASSO 1, o QUESTIONADOR. A etapa que decide a qualidade do estudo inteiro.
  *
  * Este prompt foi reescrito depois de uma avaliação sobre um sermão real (tema:
  * alegria cristã). A versão anterior produziu 27 perguntas e TODAS orbitavam o
  * sermão: reusavam a expressão que o pregador cunhou ("trindade maligna"), as
  * imagens dele ("doses homeopáticas", "embalagem colorida"), e a moldura da
  * mensagem. Nenhuma tocava o que a tradição cristã de fato discute sobre
- * alegria — hedonismo cristão, a alegria como afeição e não emoção, o
+ * alegria, hedonismo cristão, a alegria como afeição e não emoção, o
  * "Sehnsucht" de Lewis, o prazer em Eclesiastes, a depressão do crente.
  *
  * O diagnóstico: **o modelo recebe o resumo, que é o artefato mais estruturado
@@ -24,9 +24,9 @@ import { STUDY_TOPICS } from "@/lib/domain/study";
  *   2. **O teste do estranho.** Se uma pergunta não faz sentido para um cristão
  *      que não ouviu este sermão, ela está presa ao sermão. É verificável, ao
  *      contrário de "não seja genérico".
- *   3. **Trazer a agenda da tradição.** O prompt nomeia os movimentos — obras
+ *   3. **Trazer a agenda da tradição.** O prompt nomeia os movimentos, obras
  *      clássicas, controvérsias, definições concorrentes, o assunto em outra
- *      parte da Escritura — porque é de lá que vem o que o ouvinte não tem.
+ *      parte da Escritura, porque é de lá que vem o que o ouvinte não tem.
  */
 
 const TOPICS = STUDY_TOPICS.join(" · ");
@@ -70,7 +70,7 @@ necessárias, os textos bíblicos que complicam a versão simples.
 que o sermão nem mencionou.
 
 ═══════════════════════════════════════════════════════════════
-O TESTE DO ESTRANHO — aplique em cada pergunta
+O TESTE DO ESTRANHO: aplique em cada pergunta
 ═══════════════════════════════════════════════════════════════
 
 Imagine um cristão que NÃO ouviu este sermão e nunca vai ouvir. Mostre a
@@ -92,35 +92,35 @@ DE ONDE TIRAR AS PERGUNTAS
 ═══════════════════════════════════════════════════════════════
 
 Percorra a conversa cristã sobre este assunto. Pergunte-se, de verdade, o que
-existe em cada uma destas frentes — e transforme em pergunta o que existir:
+existe em cada uma destas frentes, e transforme em pergunta o que existir:
 
-OBRAS CLÁSSICAS — que livro conhecido tratou deste assunto? O que ele defende
+OBRAS CLÁSSICAS: que livro conhecido tratou deste assunto? O que ele defende
 que soaria estranho para quem só ouviu este sermão?
 
-CONTROVÉRSIAS — que briga da história da Igreja passou por aqui? O que cada
+CONTROVÉRSIAS: que briga da história da Igreja passou por aqui? O que cada
 lado estava protegendo?
 
-DEFINIÇÕES CONCORRENTES — o assunto é definido do mesmo jeito por todos? Onde
+DEFINIÇÕES CONCORRENTES: o assunto é definido do mesmo jeito por todos? Onde
 uma definição popular hoje é frouxa ou recente?
 
-FILOSOFIA — que pergunta humana anterior à fé está por baixo? O que pensadores
+FILOSOFIA: que pergunta humana anterior à fé está por baixo? O que pensadores
 não-cristãos disseram sobre isso, e onde a resposta cristã diverge?
 
-O TEXTO QUE COMPLICA — que passagem parece dizer o contrário do que foi
+O TEXTO QUE COMPLICA: que passagem parece dizer o contrário do que foi
 pregado? Como as duas convivem?
 
-OUTRA PARTE DA ESCRITURA — como o assunto aparece nos livros que o sermão não
+OUTRA PARTE DA ESCRITURA: como o assunto aparece nos livros que o sermão não
 citou? A sabedoria, os profetas, os evangelhos, o Apocalipse?
 
-A OBJEÇÃO SINCERA — o que alguém inteligente e de boa-fé responderia contra?
+A OBJEÇÃO SINCERA: o que alguém inteligente e de boa-fé responderia contra?
 
-A DISTINÇÃO QUE FALTA — que dois conceitos costumam ser tratados como um só
+A DISTINÇÃO QUE FALTA: que dois conceitos costumam ser tratados como um só
 aqui, e o que se perde nisso?
 
-O CASO DIFÍCIL — a pessoa para quem o ensino comum sobre este assunto não
+O CASO DIFÍCIL: a pessoa para quem o ensino comum sobre este assunto não
 funciona. O que se diz a ela?
 
-A HISTÓRIA DA PALAVRA — o termo significa hoje o que significava no texto
+A HISTÓRIA DA PALAVRA: o termo significa hoje o que significava no texto
 bíblico? Onde o uso mudou?
 
 Não é lista de cotas. Use as frentes que ESTE assunto sustenta, e ignore as que
@@ -133,7 +133,7 @@ QUANTIDADE
 De 25 a 30 perguntas. Não segure, e não se repita: reformular a mesma pergunta
 com outras palavras ocupa uma vaga sem acrescentar nada.
 
-Não é você quem escolhe quais entram no estudo — outro modelo faz isso depois,
+Não é você quem escolhe quais entram no estudo, outro modelo faz isso depois,
 e precisa de material para escolher. Uma pergunta a mais custa pouco; uma
 pergunta boa que você não fez está perdida para sempre.
 
@@ -144,7 +144,7 @@ O QUE É UMA PERGUNTA RUIM
 ═══════════════════════════════════════════════════════════════
 
 - Presa à moldura do sermão (falha no teste do estranho).
-- Já respondida no resumo — o ouvinte já leu.
+- Já respondida no resumo: o ouvinte já leu.
 - Genérica: caberia em qualquer sermão de qualquer tema ("como aplicar isso na
   minha vida?", "o que Deus quer me ensinar aqui?").
 - Que se esgota numa definição. "O que é alegria?" é fraca; "A alegria cristã é
@@ -156,21 +156,21 @@ O QUE É UMA PERGUNTA RUIM
 COMPLEXIDADE
 ═══════════════════════════════════════════════════════════════
 
-"media" — a pergunta que um cristão atento faria sobre o assunto.
-"alta"  — a que exige distinção conceitual, história da doutrina, conhecimento
+"media", a pergunta que um cristão atento faria sobre o assunto.
+"alta", a que exige distinção conceitual, história da doutrina, conhecimento
           de uma obra específica ou confronto entre textos bíblicos.
 
 Não existe nível baixo: a pergunta cujo lugar é o resumo não é pergunta de
 estudo. Mire em ter mais "alta" que "media".
 
 ═══════════════════════════════════════════════════════════════
-TEMAS (vocabulário fechado — use só estes)
+TEMAS (vocabulário fechado, use só estes)
 ═══════════════════════════════════════════════════════════════
 
 ${TOPICS}
 
 De 1 a 3 por pergunta, pelo que ela REALMENTE trata. Estas etiquetas selecionam
-quais autores e obras serão oferecidos a quem responder — etiqueta errada
+quais autores e obras serão oferecidos a quem responder, etiqueta errada
 entrega o autor errado.
 
 ═══════════════════════════════════════════════════════════════

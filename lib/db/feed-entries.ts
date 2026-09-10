@@ -18,7 +18,7 @@ export type {
 } from "./feed-entries-types";
 
 /**
- * Feed unificado do /feed — junta os tipos de card gerados junto com o
+ * Feed unificado do /feed, junta os tipos de card gerados junto com o
  * final_summary (releia / lembra / frase marcante) de TODAS as sessões do
  * usuário em uma única lista, ordenada por data agendada absoluta (createdAt da
  * sessão + dayOffset). Só entram itens cuja data agendada já foi alcançada.
@@ -28,7 +28,7 @@ export type {
  * com a lista de sessões do próprio usuário.
  *
  * Havia um quarto: `session_practices`, o "Coloque em prática". A tabela e os
- * payloads antigos continuam lá — o recurso saiu da tela, não do banco — mas
+ * payloads antigos continuam lá, o recurso saiu da tela, não do banco, mas
  * ninguém mais os lê.
  */
 
@@ -38,7 +38,7 @@ export type ListFeedEntriesInput = {
   limit: number;
   now: Date;
   /**
-   * Sessão a esconder do feed paginado — o /feed a exibe fixa no topo via
+   * Sessão a esconder do feed paginado, o /feed a exibe fixa no topo via
    * ReflectionCard. Evita duplicar o card da última gravação em dois lugares.
    */
   excludeSessionId?: string | null;
@@ -127,7 +127,7 @@ export async function listFeedEntries(input: ListFeedEntriesInput): Promise<List
     const session = sessions.get(row.session_id);
     if (!session) continue;
     for (const item of row.payload?.items ?? []) {
-      // Releitura sem texto não tem o que ser relido — sobra a pastilha da
+      // Releitura sem texto não tem o que ser relido, sobra a pastilha da
       // referência e nada embaixo. O gerador não produz mais isso (ver
       // `withVerseText` em `lib/rereads/generate.ts`), mas as sessões geradas
       // antes da correção ficaram com essas linhas no banco, e elas continuam

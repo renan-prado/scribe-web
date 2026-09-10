@@ -5,7 +5,7 @@ import { z } from "zod";
  * flavors: items EXTRACTED from what the speaker actually said (rendered with
  * the "recording" treatment) and items SUGGESTED by the LLM to enrich the
  * reflection (rendered with the "ai" treatment). The origin is derived from
- * the kind — see `feedItemOrigin` — so the wire schema stays flat.
+ * the kind, see `feedItemOrigin`, so the wire schema stays flat.
  */
 
 const CitedVerseSchema = z.object({
@@ -100,7 +100,7 @@ export function feedItemDedupKey(item: FeedItem): string {
     case "speakerHighlight":
     case "speakerEcho":
       // Shared prefix so an echo and a highlight of the same phrase collide in
-      // dedup — extract and sermon-echo can both surface the same sentence,
+      // dedup, extract and sermon-echo can both surface the same sentence,
       // and we only want one card for it.
       return `speakerText:${normalizeText(item.text)}`;
     case "speakerCitation":
@@ -118,11 +118,11 @@ function normalizeReference(ref: string): string {
 
 /**
  * Coerce an untrusted client-supplied array into valid FeedItems. Silently
- * drops entries that don't match the schema — used on live-pipeline routes
+ * drops entries that don't match the schema, used on live-pipeline routes
  * (bible/insights/sermon-echo) where the array is *only* prompt dedup
  * context and a malformed entry shouldn't fail the whole request.
  *
- * Callers that persist the array (final-summary) MUST NOT use this — they
+ * Callers that persist the array (final-summary) MUST NOT use this, they
  * should reject with 400 so the client learns its bug instead of silently
  * losing cards.
  */
@@ -169,13 +169,13 @@ export function parseVerseReference(ref: string): ParsedVerseReference | null {
 /**
  * React key for feed items that stays stable when a citedVerse range grows.
  * `feedItemDedupKey` uses the exact reference, which changes when
- * `Tiago 1:1` gets superseded by `Tiago 1:1-4` — that would remount the
+ * `Tiago 1:1` gets superseded by `Tiago 1:1-4`, that would remount the
  * card and blank the whole verse text. Keying by book+chapter+startVerse
  * lets React reconcile the passage in place as its end grows; individual
  * verse paragraphs each key on their verse number so already-rendered
  * ones stay mounted.
  *
- * Including startVerse is important — two non-overlapping passages in the
+ * Including startVerse is important, two non-overlapping passages in the
  * same chapter (e.g. `Romanos 7:1` and `Romanos 7:14-25` from a preacher
  * jumping around) must render as separate cards, not collide on one key.
  */
@@ -191,7 +191,7 @@ export function feedItemStableKey(item: FeedItem): string {
 }
 
 /**
- * True when `broader` strictly covers `narrower` — same book/chapter, and
+ * True when `broader` strictly covers `narrower`, same book/chapter, and
  * narrower's verse range fits inside broader's. Chapter-only refs never cover
  * verse-specific refs (matches the extract-prompt exception at lib/prompts/extract.ts).
  * Exact equality returns false; those are handled by the exact-key dedup path.
@@ -259,7 +259,7 @@ export type FeedParseResult = {
  * the transient `thinking` note.
  *
  * `drops` surfaces per-item rejections (bad shape, disallowed kind, dedup) so
- * the route can log them — otherwise a model that drifts into the wrong shape
+ * the route can log them, otherwise a model that drifts into the wrong shape
  * loses items silently.
  */
 export function parseBibleFromLLM(

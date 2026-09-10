@@ -100,12 +100,12 @@ export default async function HomePage() {
       ];
   const isEmpty = sessions.length === 0;
   // Quem já importou um vídeo não precisa aprender que dá para importar. O
-  // sinal está aqui de graça — `listSessions` já traz o modo de cada sessão —,
+  // sinal está aqui de graça, `listSessions` já traz o modo de cada sessão,
   // e ele é o único dos quatro que encerram o card que não depende do
   // `localStorage` de um navegador específico.
   const hasImported = sessions.some((s) => s.mode === "youtube");
 
-  // Sessões sem estudo — usadas para intercalar o card "Gerar estudo" no feed.
+  // Sessões sem estudo, usadas para intercalar o card "Gerar estudo" no feed.
   // Excluímos a sessão do topo (ReflectionCard) para não duplicar o CTA.
   const studyCtaSessions = sessions
     .filter((s) => s.id !== latest?.id && !deepenedIds.has(s.id))
@@ -139,7 +139,7 @@ export default async function HomePage() {
               `(app)`: o feed é a primeira tela de toda sessão de uso e a única
               em que a pessoa está olhando em volta, não terminando alguma
               coisa. Some sozinho no desktop, para quem já está dentro do PWA e
-              para quem já dispensou — ver `InstallAppCard`. */}
+              para quem já dispensou, ver `InstallAppCard`. */}
           <InstallAppCard />
           {isEmpty ? (
             <SessionsEmptyState showThemeToggle />
@@ -162,12 +162,12 @@ export default async function HomePage() {
                   de indicação de propósito: aprender o que o produto faz vem
                   antes de recomendá-lo a alguém. Só aparece para quem nunca
                   importou (o gate é o servidor, logo acima), e no máximo três
-                  vezes — ver `YoutubeTipCard`. */}
+                  vezes, ver `YoutubeTipCard`. */}
               <YoutubeTipCard alreadyImported={hasImported} />
               {/* O convite para indicar um amigo. Fica abaixo da reflexão e
                   acima do feed porque é onde a pessoa já terminou de ler o que
                   veio buscar. Aparece "de tempos em tempos": dispensado, ele
-                  tira uma soneca de duas semanas — ver `InviteFriendCard`. Só
+                  tira uma soneca de duas semanas, ver `InviteFriendCard`. Só
                   para quem já gravou alguma coisa: convidar alguém para um
                   produto que a gente ainda não usou é pedir demais. */}
               <InviteFriendCard />

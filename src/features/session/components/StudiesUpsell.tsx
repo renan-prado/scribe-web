@@ -12,16 +12,16 @@ import { FEATURES } from "@/lib/entitlements/features";
  *
  * Duas variantes, e a escolha entre elas é a regra de produto inteira:
  *
- *   - "full": a pessoa nunca gerou um estudo. A página inteira vira o convite
- *     — não faz sentido explicar como gerar algo que ela não pode gerar, que
+ *   - "full": a pessoa nunca gerou um estudo. A página inteira vira o convite,
+ *     não faz sentido explicar como gerar algo que ela não pode gerar, que
  *     é o que o `StudiesEmptyState` faz.
  *   - "banner": a pessoa TEM estudos, gerados quando ainda podia. A lista
  *     continua ali e o convite fica acima dela. Esconder conteúdo que a pessoa
- *     já pagou para produzir seria confisco — só a GERAÇÃO é restrita.
+ *     já pagou para produzir seria confisco, só a GERAÇÃO é restrita.
  *
  * A copy nomeia o plano e o preço lidos de `lib/billing/plans.ts`, o mesmo
  * catálogo do diálogo de compra e da landing. Preço de tela próprio aqui seria
- * promessa quebrada no checkout — já aconteceu com os créditos.
+ * promessa quebrada no checkout, já aconteceu com os créditos.
  */
 
 const FEATURE = FEATURES.study_generation;

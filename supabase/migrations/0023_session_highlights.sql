@@ -1,7 +1,7 @@
 -- Session highlights: frases marcantes recicladas SEM IA a partir do próprio
 -- feed do ao vivo (speakerCitation/speakerHighlight/speakerEcho) + quote
 -- blocks do resumo final. Diferente das outras séries (practices/rereads/
--- reminders), aqui não há chamada de LLM — o extractor apenas prioriza,
+-- reminders), aqui não há chamada de LLM, o extractor apenas prioriza,
 -- deduplica e distribui as frases no tempo.
 --
 -- Cadência agendada: distribuição logarítmica entre 3 e 365 dias, calculada
@@ -9,7 +9,7 @@
 -- sessão). Assim uma pregação enxuta ainda cobre o tail de 1 ano, e uma
 -- densa distribui naturalmente os cards ao longo do intervalo.
 --
--- payload segue o schema HighlightsPayload em lib/domain/highlights.ts —
+-- payload segue o schema HighlightsPayload em lib/domain/highlights.ts,
 -- { items: HighlightItem[] }. Uma linha por sessão (unique session_id),
 -- reprocess_summary sobrescreve.
 

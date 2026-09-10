@@ -9,17 +9,17 @@
 -- Os dois falham juntos com facilidade, e falham em SILÊNCIO: quando a
 -- AwesomeAPI não responde (ela limita por IP, e o IP de saída da Vercel é
 -- compartilhado) e nenhum cookie foi digitado naquele navegador, `getUsdToBrl()`
--- devolve `null` — e a regra "valor em dólar sem cotação é null, jamais 0"
+-- devolve `null`, e a regra "valor em dólar sem cotação é null, jamais 0"
 -- (lib/AGENTS.md) faz o resto do painel apagar CADA campo em real. Foi o que
 -- aconteceu: 328 chamadas medidas, custo em dólar gravado direito, e a tela
--- inteira exibindo "sem câmbio". Nenhum erro, nenhum alerta — só o painel cego
+-- inteira exibindo "sem câmbio". Nenhum erro, nenhum alerta, só o painel cego
 -- justamente na pergunta que ele existe para responder ("os preços em moedas se
 -- pagam?").
 --
 -- O cookie é um plano B ruim por desenho: ele vale por NAVEGADOR, some com a
 -- limpeza de dados, não existe na primeira visita de uma máquina nova e nunca
 -- foi digitado por ninguém. Uma linha no banco vale para o painel inteiro,
--- sobrevive a deploy e é escrita SOZINHA — toda vez que a cotação viva chega, o
+-- sobrevive a deploy e é escrita SOZINHA, toda vez que a cotação viva chega, o
 -- valor dela fica guardado. Depois da primeira leitura bem-sucedida, o painel
 -- nunca mais fica sem câmbio: no máximo fica com o de ontem, dito na tela.
 --
@@ -27,26 +27,26 @@
 -- interessa o intradiário: o que o painel converte é o custo agregado de uma
 -- janela de dias. Guardar a série diária, em vez de só "o último valor", é o
 -- que abre a porta para converter cada mês pela cotação DA ÉPOCA em vez de pela
--- de hoje — hoje `lib/finance/measured.ts` usa uma cotação só para toda a série
+-- de hoje, hoje `lib/finance/measured.ts` usa uma cotação só para toda a série
 -- porque histórico nenhum existia, e o cabeçalho de `aggregateAiCostByMonth`
 -- diz isso. Esta tabela é o começo desse histórico; ela nasce vazia, e o dia
 -- em que houver meses inteiros aqui a conversão pode passar a ser por mês.
 --
--- SUPERFÍCIE DE ATAQUE — o que este arquivo fecha. O câmbio é MULTIPLICADOR de
+-- SUPERFÍCIE DE ATAQUE, o que este arquivo fecha. O câmbio é MULTIPLICADOR de
 -- todo número em real do painel: quem escrevesse uma linha aqui decidiria a
 -- margem que o admin lê, e portanto o preço que ele vai fixar. Mesmo molde de
--- `admin_insights` (0034): RLS ligada, NENHUMA policy e nenhum grant — a tabela
+-- `admin_insights` (0034): RLS ligada, NENHUMA policy e nenhum grant, a tabela
 -- é inalcançável pelo PostgREST com a chave anon, e só o service_role escreve
 -- (de `lib/fx/usd-brl.ts`, no caminho que já roda atrás de `requireAdmin()`).
 
 create table if not exists public.usd_brl_rates (
   -- O dia da cotação, em UTC, como a rota o viu. PK: a segunda leitura do
-  -- mesmo dia sobrescreve a primeira, e é isso que se quer — a mais recente é
+  -- mesmo dia sobrescreve a primeira, e é isso que se quer, a mais recente é
   -- a melhor estimativa do dia, e não há intradiário a preservar.
   day        date primary key,
   -- 4 casas: é a precisão que a AwesomeAPI devolve em `bid` ("5.1305").
   rate       numeric(10, 4) not null check (rate > 0),
-  -- Quem disse. Hoje só "awesomeapi" grava aqui — o valor manual continua no
+  -- Quem disse. Hoje só "awesomeapi" grava aqui, o valor manual continua no
   -- cookie, porque ele é a opinião de UMA pessoa sobre um número e não deve
   -- virar histórico medido. Sem CHECK, pela mesma razão de `admin_insights.scope`.
   source     text not null,

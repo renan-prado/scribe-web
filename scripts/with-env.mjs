@@ -7,13 +7,13 @@
  *
  * As variáveis entram em `process.env` do processo pai e são herdadas pelo
  * filho. Isso importa: `@next/env` só preenche chaves que AINDA NÃO existem em
- * `process.env` (ver `processEnv` em @next/env — a condição é
+ * `process.env` (ver `processEnv` em @next/env, a condição é
  * `typeof initialEnv[key] === "undefined"`). Ou seja, o que definimos aqui
  * ganha de qualquer arquivo que o Next porventura encontre. Mesmo assim
  * abortamos se um desses arquivos existir: preferimos não depender de uma
  * regra de precedência para não vazar produção para dentro do dev.
  *
- * Antes de subir qualquer coisa, o script confere a COERÊNCIA do arquivo — a
+ * Antes de subir qualquer coisa, o script confere a COERÊNCIA do arquivo, a
  * classe de erro que mais dói aqui não é a variável ausente (essa o Zod pega no
  * boot), é a variável presente e errada: chave live num ambiente de teste,
  * `.env.dev` apontando para o Supabase de produção. Nenhuma delas quebra nada
@@ -35,7 +35,7 @@ const BLUE = "\x1b[94m";
 
 /**
  * A marca em blocos, impressa antes de qualquer outra coisa. Sai em azul no
- * dev e em VERMELHO em `npm run prod` — a mesma cor da moldura de aviso logo
+ * dev e em VERMELHO em `npm run prod`, a mesma cor da moldura de aviso logo
  * abaixo, para que a troca de ambiente se veja antes de se ler uma palavra.
  */
 const WORDMARK = [
@@ -73,7 +73,7 @@ if (strays.length > 0) {
     `estes arquivos são carregados pelo Next automaticamente: ${strays.join(", ")}`,
     "",
     "  Com eles na pasta, as variáveis que este script NÃO definir vêm deles em",
-    "  silêncio — que é exatamente como um `npm run dev` acaba escrevendo no",
+    "  silêncio, que é exatamente como um `npm run dev` acaba escrevendo no",
     `  Supabase de produção. Mova o conteúdo para ${ENV_TARGETS.dev} / ${ENV_TARGETS.prod}`,
     "  e apague os originais.",
   ]);
@@ -113,7 +113,7 @@ if (isProd) {
   }
 } else {
   // Chave live em dev é abortar, não avisar: `stripe listen` só encaminha
-  // eventos de TESTE, então o webhook local nunca confirmaria a compra — e o
+  // eventos de TESTE, então o webhook local nunca confirmaria a compra, e o
   // cartão teria sido cobrado de verdade no caminho.
   if (stripeKey.startsWith("sk_live")) {
     problems.push([
@@ -123,7 +123,7 @@ if (isProd) {
     ]);
   }
   if (appUrl && !appUrlIsLocal) {
-    warnings.push(`APP_URL=${appUrl} — o retorno do Checkout não volta para a sua máquina.`);
+    warnings.push(`APP_URL=${appUrl}, o retorno do Checkout não volta para a sua máquina.`);
   }
 }
 
@@ -171,7 +171,7 @@ if (isProd) {
     [
       "",
       `${RED}${BOLD}  ╔${"═".repeat(56)}╗`,
-      "  ║  PRODUÇÃO — este processo fala com os dados REAIS.      ║",
+      "  ║  PRODUÇÃO, este processo fala com os dados REAIS.      ║",
       `  ╚${"═".repeat(56)}╝${RESET}`,
     ].join("\n")
   );

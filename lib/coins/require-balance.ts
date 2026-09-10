@@ -6,12 +6,12 @@ import { NextResponse } from "next/server";
  *
  * POR QUE EXISTE. A cobrança por minuto de gravação é emitida pelo NAVEGADOR
  * (`src/features/coins/store.ts` → POST /api/coins/charge). Isso é uma decisão
- * de produto razoável — só o cliente sabe quanto tempo o microfone ficou
- * aberto — mas fazia da medição inteira uma gentileza: `transcribe`, `bible`,
+ * de produto razoável, só o cliente sabe quanto tempo o microfone ficou
+ * aberto, mas fazia da medição inteira uma gentileza: `transcribe`, `bible`,
  * `insights`, `sermon-echo`, `format-paragraphs` e `final-summary` tinham
  * `requireAuth` e rate limit, e mais nada. Um cliente que simplesmente NUNCA
  * chamasse /api/coins/charge transcrevia de graça, com saldo zero, limitado só
- * pelo balde em memória — que é por instância, e portanto vale
+ * pelo balde em memória, que é por instância, e portanto vale
  * `limite × instâncias`.
  *
  * O que este gate faz e o que ele NÃO faz: ele recusa quem está sem crédito.
@@ -22,7 +22,7 @@ import { NextResponse } from "next/server";
  * a conta grátis, de saldo zero, rodando um script.
  *
  * `null` é "não sei" e passa. Vem de linha de `profiles` ausente ou de erro de
- * leitura, e é o mesmo princípio de `getCurrentBalance` — uma inconsistência
+ * leitura, e é o mesmo princípio de `getCurrentBalance`, uma inconsistência
  * nossa não tranca a gravação de quem não tem culpa dela. Só o zero LIDO
  * recusa.
  *

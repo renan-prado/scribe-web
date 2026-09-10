@@ -2,7 +2,7 @@
 --
 -- O BURACO. As seis tabelas filhas de sessão têm a policy de INSERT no molde
 -- da casa, `with check (user_id = auth.uid())`. Ela garante que a linha é MINHA
--- — e não diz nada sobre o `session_id` que eu escrevo dentro dela. Qualquer
+--, e não diz nada sobre o `session_id` que eu escrevo dentro dela. Qualquer
 -- sessão logada podia inserir uma linha própria apontando para a sessão de
 -- outra pessoa, bastando conhecer o uuid, que é o que aparece na URL de
 -- `/recording/:id/*`.
@@ -13,13 +13,13 @@
 -- `[]`).
 --
 -- Em `session_deepenings` é outra coisa, porque lá existe `unique (session_id)`
--- — uma sessão, um estudo. A sequência, reproduzida em dev em 2026-09-05:
+--, uma sessão, um estudo. A sequência, reproduzida em dev em 2026-09-05:
 --
 --   1. B insere `{user_id: B, session_id: <sessão de A>, payload: {}}`  → 201
 --   2. A pede o estudo. A rota chama `hasDeepening(sessionId)`, que roda com o
 --      client de A: a linha de B está escondida pela RLS, então volta VAZIO e a
 --      rota segue                                                      → []
---   3. A rota debita as moedas de A e roda o pipeline inteiro — três chamadas
+--   3. A rota debita as moedas de A e roda o pipeline inteiro, três chamadas
 --      a modelo de raciocínio, perto de quatro minutos
 --   4. `createDeepening` esbarra na unique                             → 23505
 --
@@ -30,7 +30,7 @@
 --
 -- A CORREÇÃO é dizer no `with check` o que a policy sempre quis dizer: a linha
 -- é minha E a sessão a que ela se refere é minha. A subconsulta em `sessions`
--- roda como o próprio usuário, então ela já é a RLS de `sessions` — não há
+-- roda como o próprio usuário, então ela já é a RLS de `sessions`, não há
 -- caminho por onde ela devolva o id de outra pessoa.
 --
 -- Vale para UPDATE também. Sem isso, uma linha legítima podia ser MOVIDA para a
@@ -38,7 +38,7 @@
 --
 -- `session_id` é nullable em algumas destas tabelas? Não: as seis o declaram
 -- `not null` com FK para `public.sessions`. Ainda assim o predicado é escrito
--- para tolerar null (`session_id is null or ...`) — se um dia uma coluna dessas
+-- para tolerar null (`session_id is null or ...`), se um dia uma coluna dessas
 -- afrouxar, o comportamento continua sendo "não bloqueia o que não aponta para
 -- ninguém", nunca "aceita qualquer coisa".
 
@@ -158,7 +158,7 @@ create policy session_highlights_update_own on public.session_highlights
   );
 
 -- ── hallucination_reports ─────────────────────────────────────────────────
--- Só INSERT: a tabela não tem policy de UPDATE, e é assim que se quer — um
+-- Só INSERT: a tabela não tem policy de UPDATE, e é assim que se quer, um
 -- relato de defeito não se reescreve depois de enviado.
 drop policy if exists hallucination_reports_insert_own on public.hallucination_reports;
 create policy hallucination_reports_insert_own on public.hallucination_reports

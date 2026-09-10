@@ -23,7 +23,7 @@ export const dynamic = "force-dynamic";
  * Stripe e credita se o webhook ainda não creditou.
  *
  * POR QUE EXISTE. O webhook é o caminho normal, mas é um caminho que pode
- * falhar em silêncio — o listener fora do ar em desenvolvimento, um deploy no
+ * falhar em silêncio, o listener fora do ar em desenvolvimento, um deploy no
  * meio do pagamento, o endpoint respondendo 5xx até o Stripe esgotar os
  * retries. Em todos esses casos o dinheiro sai da conta do usuário e o crédito
  * não entra, sem erro em lugar nenhum. Um segundo caminho, disparado no
@@ -43,7 +43,7 @@ export const dynamic = "force-dynamic";
  *  3. PAGAMENTO CONFERIDO. Só `payment_status === "paid"` (ou fatura de
  *     assinatura efetivamente liquidada) segue adiante.
  *  4. VALOR DERIVADO. As moedas saem de `entitlementForPrice`, o mesmo
- *     catálogo server-only do webhook — via `lib/billing/fulfill`, que é
+ *     catálogo server-only do webhook, via `lib/billing/fulfill`, que é
  *     literalmente o mesmo código.
  *  5. IDEMPOTÊNCIA. O `external_ref` UNIQUE é compartilhado com o webhook.
  *     Rodar os dois sobre o mesmo pagamento credita uma vez só; chamar esta
@@ -122,7 +122,7 @@ export async function POST(request: Request) {
     }
 
     if (session.mode === "subscription") {
-      // Em assinatura o crédito nasce da FATURA, não da sessão — então
+      // Em assinatura o crédito nasce da FATURA, não da sessão, então
       // buscamos a fatura mais recente da assinatura criada por este checkout.
       const subscriptionId =
         typeof session.subscription === "string"
@@ -136,7 +136,7 @@ export async function POST(request: Request) {
       // `subscriptions` alimenta o guard anti-cobrança-dupla do checkout e o
       // plano exibido na UI. Se o webhook perdeu o subscription.created e a
       // reconciliação creditasse sem sincronizar, o usuário pagante ficaria
-      // marcado como "free" — e o checkout deixaria ele assinar DE NOVO.
+      // marcado como "free", e o checkout deixaria ele assinar DE NOVO.
       try {
         const subscription = await stripe.subscriptions.retrieve(subscriptionId);
         await syncSubscriptionState(subscription, auth.user.id, "reconcile");

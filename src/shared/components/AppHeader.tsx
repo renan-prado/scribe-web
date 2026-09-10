@@ -7,7 +7,7 @@ import { AppNav } from "@/components/AppNav";
 import { cn } from "@/lib/utils";
 import { ScribaLogo } from "@/shared/brand";
 
-// As três telas com fundo `scriba-surface` (ver seus `page.tsx`) — o header
+// As três telas com fundo `scriba-surface` (ver seus `page.tsx`), o header
 // precisa da mesma cor aqui para não deixar costura entre ele e o conteúdo.
 const SURFACE_ROUTES = ["/feed", "/recordings", "/studies"];
 

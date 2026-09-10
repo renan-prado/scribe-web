@@ -21,12 +21,12 @@ export const metadata: Metadata = { title: "Sua biblioteca" };
 
 /**
  * Server Action é um endpoint POST próprio: esta função é chamável por quem
- * souber o id dela, sem passar por esta página. A autorização aqui é o RLS —
+ * souber o id dela, sem passar por esta página. A autorização aqui é o RLS,
  * `deleteSession` usa o client do USUÁRIO, e a policy de `sessions` escopa o
  * delete ao dono, então um id forjado só apaga o que já era de quem chamou.
  *
  * Ou seja: trocar `deleteSession` por qualquer coisa que use
- * `createAdminClient()` transforma isto num IDOR — service-role ignora RLS, e
+ * `createAdminClient()` transforma isto num IDOR, service-role ignora RLS, e
  * a proteção some sem nenhum sinal no diff. Se isso for preciso um dia, o
  * gate de dono tem de vir junto, explícito.
  */
@@ -45,7 +45,7 @@ export default async function LibraryPage() {
 
   const sessions = sessionsResult.ok ? sessionsResult.sessions : [];
   const loadError = sessionsResult.ok ? null : sessionsResult.message;
-  // Gravações que nunca foram encerradas — fechou o navegador, acabou a
+  // Gravações que nunca foram encerradas, fechou o navegador, acabou a
   // bateria, ou o crédito congelou a captura e a pessoa saiu da página. Ficam
   // numa faixa própria no topo para não sumirem de vista.
   const unfinished = await listUnfinishedSessions().catch(() => []);
@@ -54,8 +54,8 @@ export default async function LibraryPage() {
   // `listDeepenedSessionIds`: quais sessões já têm estudo e quais já têm
   // resumo. A segunda existe porque uma sessão do modo transcrição pode ter
   // ganhado um resumo depois (ver /api/final-summary/from-transcript), e o
-  // cartão precisa apontar para a página certa sem trazer `final_summary` — uma
-  // das três colunas pesadas — para dentro da lista.
+  // cartão precisa apontar para a página certa sem trazer `final_summary`, uma
+  // das três colunas pesadas, para dentro da lista.
   //
   // O agrupamento por período saiu daqui: quem filtra é o `SessionsBrowser`, e
   // agrupar antes do filtro deixaria seções vazias na tela.
@@ -88,7 +88,7 @@ export default async function LibraryPage() {
             </div>
             <div className="flex shrink-0 items-center gap-2">
               {/* A porta da importação. Ela mora AQUI e não no diálogo de
-                  gravação porque o botão "Gravar" volta a dizer só o que faz —
+                  gravação porque o botão "Gravar" volta a dizer só o que faz,
                   e este é o lugar onde a pessoa está olhando o acervo e pode
                   querer acrescentar algo que não vai ser gravado. */}
               <ImportYoutubeButton />
@@ -110,9 +110,9 @@ export default async function LibraryPage() {
               </span>
             </div>
             <p className="px-1 text-[12px] font-light leading-relaxed text-scriba-ink-soft">
-              Estas sessões nunca foram encerradas — uma gravação interrompida, ou uma importação
-              que não chegou ao fim. Você pode voltar para elas e continuar, ou apagá-las. Trechos
-              de áudio que ficaram pendentes no aparelho são reenviados ao abrir a sessão (até 24h
+              Estas sessões nunca foram encerradas, uma gravação interrompida, ou uma importação que
+              não chegou ao fim. Você pode voltar para elas e continuar, ou apagá-las. Trechos de
+              áudio que ficaram pendentes no aparelho são reenviados ao abrir a sessão (até 24h
               depois).
             </p>
             <ul className="grid gap-3 sm:grid-cols-2">

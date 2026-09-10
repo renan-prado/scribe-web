@@ -8,7 +8,7 @@ import type { BillingSummary, PlanKey } from "@/lib/billing/plans";
  * Espelha o desenho do `useCoinsStore`: uma única fonte para o diálogo de
  * moedas, o card do /profile e o overlay de saldo esgotado.
  *
- * `summary === null` significa "ainda não carregado" — os consumidores usam
+ * `summary === null` significa "ainda não carregado", os consumidores usam
  * isso para mostrar esqueleto em vez de assumir plano gratuito.
  *
  * Este store é APENAS leitura de estado. Nada aqui muda plano ou saldo; toda
@@ -26,7 +26,7 @@ type BillingStoreState = {
  *
  * O chip do header e o diálogo de créditos costumam pedir o resumo no mesmo
  * instante. Antes, a segunda chamada devolvia o valor VELHO na hora (`return
- * get().summary`, quase sempre `null`) — quem esperava por ela montava a tela
+ * get().summary`, quase sempre `null`), quem esperava por ela montava a tela
  * com plano "free" e corrigia meio segundo depois, trocando os cards de plano
  * na frente do usuário. Devolver a mesma promise faz todo mundo acordar junto,
  * já com o dado fresco, e continua fazendo só um request.

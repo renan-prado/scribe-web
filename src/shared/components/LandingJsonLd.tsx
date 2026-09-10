@@ -6,12 +6,12 @@ import { FAQ_ITEMS } from "@/shared/content/landing-faq";
  * Dados estruturados (schema.org) da landing page.
  *
  * É o que permite ao Google mostrar preço e avaliação no resultado de busca em
- * vez de só título e descrição — e é o formato que os buscadores de IA leem
+ * vez de só título e descrição, e é o formato que os buscadores de IA leem
  * primeiro para decidir o que o produto faz.
  *
  * Os preços saem de `lib/billing/plans.ts`, o MESMO catálogo dos cards de
  * `/#planos`. Vale aqui a regra que já vale para a LP: a página não tem números
- * próprios. Um preço avulso neste arquivo seria pior que na tela — ficaria
+ * próprios. Um preço avulso neste arquivo seria pior que na tela, ficaria
  * invisível para quem revisa a LP e continuaria sendo exibido no Google.
  */
 
@@ -26,7 +26,7 @@ const OFFERS = [
     return {
       "@type": "Offer",
       name: plan.name,
-      description: `${plan.tagline} — ${plan.coins} créditos.`,
+      description: `${plan.tagline}, ${plan.coins} créditos.`,
       price: priceFromCents(plan.priceCents),
       priceCurrency: "BRL",
       ...(plan.priceCents > 0 && {
@@ -62,7 +62,7 @@ const GRAPH = {
       email: "contato@scriba.cc",
       // `contactPoint` e `address` são o que um agente lê para confirmar que o
       // negócio existe antes de recomendá-lo (checklist do is-agentic). Não há
-      // endereço de rua público — o Scriba é um produto online —, então o
+      // endereço de rua público, o Scriba é um produto online, então o
       // `PostalAddress` fica na granularidade cidade/UF, que é a mesma do foro
       // eleito nos Termos.
       contactPoint: {
@@ -113,7 +113,7 @@ const GRAPH = {
     },
     {
       // As respostas são as MESMAS strings renderizadas na seção "Perguntas
-      // frequentes" — ambas leem `FAQ_ITEMS`. O Google compara o dado
+      // frequentes", ambas leem `FAQ_ITEMS`. O Google compara o dado
       // estruturado com o texto visível, e responder aqui algo que não está
       // na página custa o rich result do site inteiro, não só deste bloco.
       "@type": "FAQPage",
@@ -131,7 +131,7 @@ const GRAPH = {
 export function LandingJsonLd() {
   const json = JSON.stringify(GRAPH);
   // JSON-LD só existe como conteúdo de <script type="application/ld+json">, e o
-  // payload é uma constante serializada no servidor — nada aqui vem do usuário.
+  // payload é uma constante serializada no servidor, nada aqui vem do usuário.
   // biome-ignore lint/security/noDangerouslySetInnerHtml: ver comentário acima.
   return <script type="application/ld+json" dangerouslySetInnerHTML={{ __html: json }} />;
 }

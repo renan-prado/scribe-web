@@ -35,7 +35,7 @@ export async function PATCH(request: Request, { params }: { params: Promise<{ id
   const parsed = await parseJsonBody(request, PatchSchema);
   if (!parsed.ok) return parsed.response;
 
-  // Guardrail: admin cannot demote or deactivate themselves — prevents
+  // Guardrail: admin cannot demote or deactivate themselves, prevents
   // locking the last admin out of the platform.
   if (id === auth.user.id) {
     if (parsed.data.role === "user") {

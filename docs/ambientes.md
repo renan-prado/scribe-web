@@ -33,7 +33,7 @@ Porque o carregamento automático é justamente o problema. O Next lê sozinho
 `.env`, `.env.local`, `.env.development[.local]` e `.env.production[.local]`
 (ver `loadEnvConfig` em `@next/env`). Com um `.env.local` na pasta, um `next dev`
 distraído sobe apontando para o Supabase e o Stripe de **produção** sem dizer
-nada — e num app onde crédito é dinheiro, "sem dizer nada" é o pior modo de
+nada, e num app onde crédito é dinheiro, "sem dizer nada" é o pior modo de
 falhar.
 
 Com nomes que o Next ignora, subir sem escolher ambiente simplesmente não
@@ -44,12 +44,12 @@ seriam preenchidas por ele pelas costas.
 
 > Se você vier de uma checkout antiga com `.env.local`, mova o conteúdo para
 > `.env.dev` / `.env.prod` e apague o original. O modelo sem valores está em
-> `.env.example` — é o único arquivo da família que vai para o git.
+> `.env.example`, é o único arquivo da família que vai para o git.
 
 ### O que o `with-env` confere antes de subir
 
 A variável **ausente** o Zod pega no boot. A classe de erro que este script
-cobre é a outra: a variável **presente e errada** — que não quebra nada na
+cobre é a outra: a variável **presente e errada**, que não quebra nada na
 hora, só depois e em cima de dados reais.
 
 - `sk_live_…` no `.env.dev` → **aborta**. Um checkout dali cobraria de verdade
@@ -59,7 +59,7 @@ hora, só depois e em cima de dados reais.
 - `sk_test_…` no `.env.prod`, `APP_URL` local em prod, `APP_URL` remota em dev
   → avisa, mas deixa passar.
 
-E imprime sempre um cabeçalho dizendo em que ambiente você está — vermelho e
+E imprime sempre um cabeçalho dizendo em que ambiente você está, vermelho e
 com moldura quando é produção.
 
 ---
@@ -88,7 +88,7 @@ Duas armadilhas que os scripts já cobrem:
   `SCRIBA_ENV` para o caso de você precisar depurar isso.
 - **O CLI do Supabase guarda um único projeto vinculado por pasta**
   (`supabase/.temp/`). O `db-push.mjs` deriva o ref do arquivo de ambiente e
-  religa antes de aplicar, então vale o script que você digitou — não um
+  religa antes de aplicar, então vale o script que você digitou, não um
   `supabase link` que alguém rodou semana passada.
 
 ---
@@ -117,7 +117,7 @@ npm run db:push
 
 Ele religa o CLI no projeto de dev e aplica `supabase/migrations/` do zero.
 Já foi rodado: as 23 migrações estão aplicadas, e os três invariantes de
-cobrança foram conferidos contra o projeto novo — `grant_coins` e
+cobrança foram conferidos contra o projeto novo, `grant_coins` e
 `clawback_coins` devolvem `42501` com a anon key, e um
 `update profiles set coin_balance` com a mesma chave também.
 
@@ -141,7 +141,7 @@ cobrança foram conferidos contra o projeto novo — `grant_coins` e
 Sem isso, o `exchangeCodeForSession` de `app/auth/callback/route.ts` até
 funciona, mas o Supabase recusa o redirect de volta e o login morre em branco.
 
-**Authentication → Providers → Google** — hoje está **desligado** no projeto de
+**Authentication → Providers → Google**, hoje está **desligado** no projeto de
 dev (`GET /auth/v1/settings` devolve `"google": false`; em produção, `true`).
 
 O app usa `signInWithOAuth({ provider: "google" })`
@@ -150,13 +150,13 @@ estar ligado ou não há como entrar.
 
 1. No Google Cloud Console, no mesmo OAuth Client que a produção usa, adicione
    em *Authorized redirect URIs*:
-   `https://bpyibejicgswgxvbpsvg.supabase.co/auth/v1/callback`
-   — cada projeto Supabase tem a sua, e é ela que o Google valida.
+   `https://bpyibejicgswgxvbpsvg.supabase.co/auth/v1/callback`,
+   cada projeto Supabase tem a sua, e é ela que o Google valida.
 2. Cole *Client ID* e *Client Secret* no provedor Google do Supabase de dev.
 
 **Authentication → Providers → Email**: "Confirm email" está **ligado**
 (`mailer_autoconfirm: false`). Desligar em dev poupa a ida à caixa de entrada a
-cada usuário de teste — e evita esbarrar no limite do SMTP embutido do Supabase,
+cada usuário de teste, e evita esbarrar no limite do SMTP embutido do Supabase,
 que é de poucos e-mails por hora e some sem aviso. É uma escolha de
 conveniência; em produção fica ligado.
 
@@ -166,7 +166,7 @@ Cadastre-se normalmente. O trigger `on_auth_user_created` (migração 0005) cria
 o `profiles` sozinho, já com `coin_balance` = 50 (migração 0026), suficiente
 para gravar alguns minutos.
 
-Para mais moedas ou para virar admin, use o **SQL Editor** do projeto de dev —
+Para mais moedas ou para virar admin, use o **SQL Editor** do projeto de dev,
 `grant_coins` tem EXECUTE revogado de `anon`/`authenticated` de propósito, e o
 editor roda como `postgres`:
 
@@ -187,7 +187,7 @@ update public.profiles set role = 'admin'
 ## 4. Stripe por ambiente
 
 Já estava resolvido, só não estava separado. Produtos e preços **não são
-compartilhados** entre live e teste — por isso `.env.dev` e `.env.prod` têm IDs
+compartilhados** entre live e teste, por isso `.env.dev` e `.env.prod` têm IDs
 de preço diferentes, e trocar só a chave dá "preço não existe nesta conta/modo".
 
 O guia completo é `docs/stripe-setup.md`. O que mudou aqui:
@@ -199,7 +199,7 @@ O guia completo é `docs/stripe-setup.md`. O que mudou aqui:
 Se o ambiente de dev na Vercel (`dev.scriba.cc`) for fazer compras de teste,
 cadastre um segundo endpoint de webhook **em modo teste** apontando para
 `https://dev.scriba.cc/api/stripe/webhook` e use o signing secret dele na env
-var de Preview — não o do `stripe listen`, que só vale para a sua máquina.
+var de Preview, não o do `stripe listen`, que só vale para a sua máquina.
 
 ---
 
@@ -239,17 +239,17 @@ aleatória do deploy, e o retorno do Checkout leva para lá em vez de
 
 ### 5.3 Duas consequências desta escolha
 
-**Deployment Protection.** Previews nascem protegidos por login da Vercel —
+**Deployment Protection.** Previews nascem protegidos por login da Vercel,
 `dev.scriba.cc` vai pedir autenticação a quem não estiver no time. Para deixar
 aberto: *Settings → Deployment Protection → Vercel Authentication → Disabled*
 (ou "Only Preview Deployments" desligado). Enquanto estiver ligado, o webhook de
-teste do Stripe **também** é barrado, porque chega sem cookie — se for testar
+teste do Stripe **também** é barrado, porque chega sem cookie, se for testar
 compra em `dev.scriba.cc`, ou desative a proteção ou cadastre um bypass em
 *Protection Bypass for Automation*.
 
 **O cron não roda.** `vercel.json` agenda `/api/billing/sweep` diariamente, e
 crons da Vercel só executam em deploys de **produção**. Em `dev.scriba.cc` a
-varredura não existe. Isso é aceitável — ela é a quarta linha de defesa do
+varredura não existe. Isso é aceitável, ela é a quarta linha de defesa do
 crédito, e as três de cima (webhook, reconciliação no retorno, check preguiçoso
 no `summary`) funcionam normalmente. Para exercitá-la em dev, chame na mão:
 
@@ -261,7 +261,7 @@ curl -H "Authorization: Bearer $CRON_SECRET" http://localhost:3000/api/billing/s
 
 `proxy.ts` valida a origem contra `STATIC_ALLOWED_ORIGINS`, onde
 `https://dev.scriba.cc` já está. Um subdomínio novo que precise falar com a API
-tem de ser adicionado lá — não há wildcard, de propósito.
+tem de ser adicionado lá, não há wildcard, de propósito.
 
 ---
 
@@ -270,7 +270,7 @@ tem de ser adicionado lá — não há wildcard, de propósito.
 `blog.`, `admin.`, `auth.` e `partners.scriba.cc` não são deste trabalho, mas o
 que foi feito aqui não atrapalha nenhum deles: `dev.` é um domínio ligado a um
 branch, não uma estrutura de roteamento. Quando chegar a hora, cada um vira ou
-um projeto separado na Vercel (blog, partners — deploys e times independentes)
+um projeto separado na Vercel (blog, partners, deploys e times independentes)
 ou um rewrite no projeto atual (admin, que já existe em `/admin` e
 compartilha sessão). `auth.` é o caso que exige cuidado de verdade: cookie de
 sessão em subdomínio pai muda a configuração do Supabase SSR e do `proxy.ts`,

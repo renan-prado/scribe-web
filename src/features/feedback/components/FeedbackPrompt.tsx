@@ -7,7 +7,7 @@ import { checkFeedbackPrompt, type FeedbackPromptInfo } from "@/features/feedbac
 type Props = {
   kind: "recording" | "study";
   sessionId: string;
-  /** Ver `src/features/feedback/config.ts` — um valor por superfície. */
+  /** Ver `src/features/feedback/config.ts`, um valor por superfície. */
   delayMs: number;
 };
 
@@ -19,7 +19,7 @@ type Props = {
  * Ele pergunta ao servidor DEPOIS do atraso, não antes. É uma inversão que
  * parece detalhe e não é: a chamada é o que REGISTRA a pergunta
  * (`feedback_prompts`), então perguntar cedo e esperar para mostrar gastaria o
- * marco de alguém que fechou a aba em três segundos — e aquela pessoa nunca
+ * marco de alguém que fechou a aba em três segundos, e aquela pessoa nunca
  * mais seria perguntada sobre a primeira gravação da vida dela.
  *
  * Por isso também o `cancelled`: sair da página antes do prazo não consome

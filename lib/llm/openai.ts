@@ -14,8 +14,8 @@ export type ChatUsage = {
   totalTokens: number | undefined;
   cachedTokens: number | undefined;
   /**
-   * Tokens de raciocínio. É SUBCONJUNTO de `completionTokens` — não se soma a
-   * ele —, a mesma relação que `cachedTokens` tem com `promptTokens`. Só a
+   * Tokens de raciocínio. É SUBCONJUNTO de `completionTokens`, não se soma a
+   * ele, a mesma relação que `cachedTokens` tem com `promptTokens`. Só a
    * família de raciocínio devolve; `undefined` nos demais.
    *
    * Existe porque ele é caro E invisível: é cobrado ao preço de token de
@@ -50,7 +50,7 @@ export type ChatParams = {
   /** Up to 16 string→string entries. Shown in the OpenAI Logs UI. */
   metadata?: Record<string, string>;
   /**
-   * Só vale nos modelos de raciocínio (gpt-5*, o*). Ignorado pelos demais —
+   * Só vale nos modelos de raciocínio (gpt-5*, o*). Ignorado pelos demais,
    * mandá-lo para um gpt-4o é 400 na cara.
    */
   reasoningEffort?: "low" | "medium" | "high";
@@ -81,7 +81,7 @@ export type TranscribeParams = {
   timeoutMs?: number;
   /** Extra payload to request. `logprobs` only works with the gpt-*-transcribe
    * family em response_format json (não suportado por whisper-1 nem pelos
-   * modelos -diarize) — o caller decide quando pedir. */
+   * modelos -diarize), o caller decide quando pedir. */
   include?: "logprobs"[];
 };
 
@@ -116,11 +116,11 @@ function parseRetryAfterMs(body: string): number | null {
 /**
  * Call the OpenAI Chat Completions endpoint. Wraps fetch with an abort-based
  * timeout and returns a Result so callers can format their own error responses
- * and success logs. Does no logging itself — the calling route owns that.
+ * and success logs. Does no logging itself, the calling route owns that.
  *
  * 429 (rate limit) responses are retried up to twice with the delay the
  * OpenAI error message suggests (or a small linear backoff). Under a busy
- * live session — extract + suggest + parallel verse fetches — TPM is easy
+ * live session, extract + suggest + parallel verse fetches, TPM is easy
  * to bump into; a short wait usually clears it far cheaper than surfacing
  * an empty payload to the UI.
  */
@@ -151,7 +151,7 @@ export async function callChat(params: ChatParams): Promise<Result<ChatResult>> 
                   // `temperature` sai FORA: a família de raciocínio aceita
                   // apenas o padrão, e mandar 0.9 junto de `reasoning_effort`
                   // é 400. Quem regula a etapa nesses modelos é o esforço, não
-                  // a temperatura — os valores de `temperature` que as rotas
+                  // a temperatura, os valores de `temperature` que as rotas
                   // passam seguem valendo se alguém configurar um gpt-4o.
                   max_completion_tokens: params.maxTokens,
                   ...(params.reasoningEffort ? { reasoning_effort: params.reasoningEffort } : {}),
@@ -205,7 +205,7 @@ export async function callChat(params: ChatParams): Promise<Result<ChatResult>> 
   try {
     parsed = JSON.parse(raw);
   } catch {
-    // fall through — content stays empty
+    // fall through, content stays empty
   }
 
   return {

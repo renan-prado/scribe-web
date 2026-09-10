@@ -1,7 +1,7 @@
 import { LLMS_MARKDOWN } from "@/shared/content/llms";
 
 /**
- * `/llms.txt` — o resumo do produto para agentes e buscadores de IA.
+ * `/llms.txt`, o resumo do produto para agentes e buscadores de IA.
  *
  * Route handler, e não `public/llms.txt`, para o texto sair de um lugar só
  * (`src/shared/content/llms.ts`, compartilhado com `/index.md` e com a

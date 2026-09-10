@@ -11,7 +11,7 @@ import { formatContext, type LogContext } from "./format";
  * UMA linha é requisito, não estética. O coletor da Vercel trata cada linha
  * de stdout como um registro separado: quebrar o contexto numa segunda linha
  * o transformaria numa entrada órfã, sem nível, sem escopo e sem a mensagem a
- * que pertence — buscável, mas desgarrada justamente na hora do incidente.
+ * que pertence, buscável, mas desgarrada justamente na hora do incidente.
  * O alinhamento por colunas dá a leitura em bloco que a segunda linha daria.
  */
 
@@ -28,7 +28,7 @@ const LEVEL_LABEL: Record<string, string> = {
   log: "INFO ",
 };
 
-/** `HH:mm:ss.SSS` em UTC — o fuso do runtime da Vercel. */
+/** `HH:mm:ss.SSS` em UTC, o fuso do runtime da Vercel. */
 function stamp(date: Date): string {
   return date.toISOString().slice(11, 23);
 }

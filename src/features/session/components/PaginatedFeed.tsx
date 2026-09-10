@@ -52,7 +52,7 @@ function computeStudyCtaSlots(itemCount: number, ctaSessionCount: number): Map<n
  * seletor "Ordenar por" refaz do zero em outra ordem.
  *
  * Quando `hasMore=false`, exibimos um sticker + copy sutil convidando o
- * usuário a gravar de novo — não empurra CTA, só sinaliza fim de fila.
+ * usuário a gravar de novo, não empurra CTA, só sinaliza fim de fila.
  */
 
 const PAGE_SIZE = 10;
@@ -295,7 +295,7 @@ function endMessage(): string {
  * O `mt-24` afasta o sticker do último card, para ele não ficar colado no
  * conteúdo. Ele NÃO iguala a folga que reserva o espaço da barra inferior
  * (`[&>*]:pb-36 sm:[&>*]:pb-0` em `app/(app)/layout.tsx`): espelhar os 144px
- * foi testado e ficou longe demais. Simetria exata aqui não é o objetivo — a
+ * foi testado e ficou longe demais. Simetria exata aqui não é o objetivo, a
  * folga de baixo existe para a barra não cobrir o conteúdo, e essa serve só
  * para separar.
  *

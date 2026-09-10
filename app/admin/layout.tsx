@@ -12,7 +12,7 @@ import { AdminSidebar } from "@/features/admin/components/AdminSidebar";
 import { isCurrentUserAdmin } from "@/lib/auth/require-admin";
 import { createClient } from "@/lib/supabase/server";
 
-export const metadata: Metadata = { title: { default: "Admin", template: "%s — Admin" } };
+export const metadata: Metadata = { title: { default: "Admin", template: "%s, Admin" } };
 export const dynamic = "force-dynamic";
 
 export default async function AdminLayout({ children }: { children: ReactNode }) {
@@ -42,7 +42,7 @@ export default async function AdminLayout({ children }: { children: ReactNode })
       {/*
         `min-w-0` é o que permite a uma tabela larga rolar DENTRO do próprio
         cartão. Sem ele o item flex adota a largura mínima do conteúdo e é a
-        PÁGINA que ganha barra horizontal — a sidebar sai da tela junto.
+        PÁGINA que ganha barra horizontal, a sidebar sai da tela junto.
       */}
       <SidebarInset className="min-w-0 bg-scriba-surface">
         {/*
@@ -56,7 +56,7 @@ export default async function AdminLayout({ children }: { children: ReactNode })
         <header className="sticky top-0 z-30 flex h-14 shrink-0 items-center gap-1 border-b border-scriba-hairline bg-scriba-surface/85 px-3 backdrop-blur-md sm:gap-2 sm:px-4">
           {/*
             44px no celular, e não os 28px do `size="icon-sm"` do shadcn. Este
-            é o ÚNICO jeito de abrir a gaveta no telefone — a sidebar lá é um
+            é o ÚNICO jeito de abrir a gaveta no telefone, a sidebar lá é um
             sheet fechado, e o `SidebarRail` (a faixa arrastável) é `sm:flex`,
             então não existe no toque. Um alvo de 28px encostado no canto
             superior esquerdo erra na maioria dos toques de polegar: falhava
@@ -66,7 +66,7 @@ export default async function AdminLayout({ children }: { children: ReactNode })
             um quadrado grande ao lado do breadcrumb incomodaria.
           */}
           <SidebarTrigger className="-ml-1 size-11 shrink-0 touch-manipulation sm:size-7" />
-          {/* `data-vertical:`, e não `data-[orientation=vertical]:` — o
+          {/* `data-vertical:`, e não `data-[orientation=vertical]:`, o
               Separator do base-ui emite o atributo `data-vertical`, então o
               seletor antigo nunca casava e o traço ia de topo a base da faixa. */}
           <Separator orientation="vertical" className="mx-2 hidden data-vertical:h-4 sm:block" />
@@ -84,7 +84,7 @@ export default async function AdminLayout({ children }: { children: ReactNode })
               <span className="hidden sm:inline">Voltar ao app</span>
               <span className="sr-only sm:hidden">Voltar ao app</span>
             </Button>
-            {/* Sair é um POST — o `/auth/sign-out` limpa o cookie e redireciona. */}
+            {/* Sair é um POST, o `/auth/sign-out` limpa o cookie e redireciona. */}
             <form action="/auth/sign-out" method="post" className="flex">
               <Button type="submit" variant="ghost" size="icon-sm" aria-label="Sair da conta">
                 <LogOut />
@@ -94,7 +94,7 @@ export default async function AdminLayout({ children }: { children: ReactNode })
         </header>
         {/* `<div>`, não `<main>`: o `SidebarInset` JÁ é o <main> da página.
             É `PageTransition` para o fade de troca de rota ficar DENTRO da
-            moldura — sidebar e faixa do topo não podem piscar junto. */}
+            moldura, sidebar e faixa do topo não podem piscar junto. */}
         <PageTransition className="mx-auto flex w-full max-w-[1600px] flex-1 flex-col gap-6 p-4 sm:p-6 lg:p-8">
           {children}
         </PageTransition>

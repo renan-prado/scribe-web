@@ -13,7 +13,7 @@ import { cn } from "@/lib/utils";
  * Existe porque a intenção precisa sobreviver ao login: um visitante clica em
  * "Assinar Pessoal" sem ter conta, passa pelo Google, e tem de voltar
  * exatamente para onde parou. O caminho é
- * `/sign-in?next=/billing/assinar?plan=pessoal` — o `next` já era suportado
+ * `/sign-in?next=/billing/assinar?plan=pessoal`, o `next` já era suportado
  * pelo fluxo de auth; esta página é o destino que faltava.
  *
  * A chave do plano viaja pela URL, e isso é seguro: ela só ENDEREÇA. Quem
@@ -21,7 +21,7 @@ import { cn } from "@/lib/utils";
  * (`lib/billing/catalog.ts`). Trocar `?plan=` na barra de endereço muda qual
  * plano é oferecido, nunca quanto ele custa nem quanto credita.
  *
- * Aqui a navegação é na MESMA aba — ao contrário do diálogo de créditos, que
+ * Aqui a navegação é na MESMA aba, ao contrário do diálogo de créditos, que
  * abre em aba nova para não matar uma gravação em curso. Nesta página não há
  * nada para preservar: ela existe só para repassar o usuário ao Stripe.
  */
@@ -39,7 +39,7 @@ export function StartSubscription({ plan }: { plan: PaidPlanKey }) {
     // Sem flag de "cancelled" aqui, e isso é deliberado. Com ela, o
     // desmonta-remonta do strict mode em dev deixava a página travada no
     // spinner para sempre: o cleanup marcava cancelled, a segunda execução
-    // saía cedo pelo firedRef, e a resposta da primeira era descartada — nem
+    // saía cedo pelo firedRef, e a resposta da primeira era descartada, nem
     // redirect, nem erro. Como o firedRef já garante uma única requisição,
     // a resposta dela sempre deve ser aplicada. Um setState depois de
     // desmontar é no-op no React 18+, e o redirect é o que queremos de toda

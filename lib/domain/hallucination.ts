@@ -1,7 +1,7 @@
 import { z } from "zod";
 
 /**
- * "Alertar alucinação" — o usuário percebeu que o Scriba entendeu errado e
+ * "Alertar alucinação", o usuário percebeu que o Scriba entendeu errado e
  * escreve uma nota curta explicando o que está errado. A nota vai para o LLM
  * junto com a transcrição e o material já produzido (cards do feed ao vivo,
  * ou o resumo salvo); ele decide entre corrigir (apontando quais cards não se
@@ -18,13 +18,13 @@ export const HALLUCINATION_SCOPES = ["live", "summary"] as const;
 export type HallucinationScope = (typeof HALLUCINATION_SCOPES)[number];
 
 export const HALLUCINATION_VERDICTS = [
-  /** Encontrou cards que não se sustentam na transcrição — devem sair do feed. */
+  /** Encontrou cards que não se sustentam na transcrição, devem sair do feed. */
   "corrected",
   /** A transcrição em si está comprometida; seguir gravando só gasta moedas. */
   "suggest_stop",
   /** Resumo salvo: o material tem conserto, mas exige reprocessar. */
   "suggest_reprocess",
-  /** Nada a corrigir automaticamente — o relato fica registrado. */
+  /** Nada a corrigir automaticamente, o relato fica registrado. */
   "acknowledged",
 ] as const;
 export type HallucinationVerdict = (typeof HALLUCINATION_VERDICTS)[number];
@@ -36,7 +36,7 @@ export type HallucinationReview = {
   /**
    * Chaves de dedup dos itens do feed que devem sair da tela (apenas no
    * escopo "live"). O servidor traduz os índices devolvidos pelo LLM para
-   * chaves — índices sozinhos escorregariam se o feed crescesse entre o envio
+   * chaves, índices sozinhos escorregariam se o feed crescesse entre o envio
    * e a resposta.
    */
   removeKeys: string[];
@@ -64,7 +64,7 @@ const NOTHING_REMOVED_MESSAGE =
  * devolve null para índices fora da lista (alucinação do próprio corretor).
  *
  * Um veredito "corrected" que não aponta nenhum item válido é rebaixado para
- * "acknowledged" — dizer "corrigi" sem remover nada seria mentir para o
+ * "acknowledged", dizer "corrigi" sem remover nada seria mentir para o
  * usuário justamente na tela em que ele veio reclamar de invenção.
  */
 export function parseHallucinationReviewFromLLM(
@@ -88,7 +88,7 @@ export function parseHallucinationReviewFromLLM(
     if (key && !removeKeys.includes(key)) removeKeys.push(key);
   }
 
-  // Rebaixa "corrigi" que não removeu nada — e troca a mensagem junto, senão
+  // Rebaixa "corrigi" que não removeu nada, e troca a mensagem junto, senão
   // ela afirmaria uma remoção que não aconteceu.
   if (parsed.data.verdict === "corrected" && removeKeys.length === 0) {
     return { verdict: "acknowledged", message: NOTHING_REMOVED_MESSAGE, removeKeys: [] };

@@ -6,7 +6,7 @@
 -- nullable column keeps the raw number around so future audits can slice
 -- cost by cache-hit ratio.
 --
--- Historical rows stay NULL — we didn't know the value before this
+-- Historical rows stay NULL, we didn't know the value before this
 -- migration, so any dashboard filtering on cached_tokens should treat NULL
 -- as "unknown", not zero.
 

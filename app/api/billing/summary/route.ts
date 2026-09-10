@@ -18,7 +18,7 @@ export const dynamic = "force-dynamic";
  * viva mas o período que conhecemos já venceu, ou a renovação aconteceu e o
  * webhook perdeu (crédito faltando), ou ela foi cancelada e o espelho está
  * mentindo. Este endpoint é aberto exatamente quando o usuário estranha o
- * saldo — o melhor momento possível para conferir no Stripe e se curar.
+ * saldo, o melhor momento possível para conferir no Stripe e se curar.
  * Cooldown de 15 min por usuário; no regime normal (webhook saudável) o
  * período nunca está vencido e nada disso roda.
  *
@@ -38,7 +38,7 @@ export async function GET(request: Request) {
   const stripe = getStripe();
   if (stripe && subscription?.stripeSubscriptionId && subscriptionLooksStale(subscription)) {
     await lazySubscriptionCheck(stripe, auth.user.id, subscription.stripeSubscriptionId);
-    // O check pode ter mudado plano/status/period_end — relê o espelho.
+    // O check pode ter mudado plano/status/period_end, relê o espelho.
     subscription = await getOwnSubscription().catch(() => subscription);
   }
 

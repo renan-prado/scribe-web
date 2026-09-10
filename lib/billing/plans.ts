@@ -1,5 +1,5 @@
 /**
- * Catálogo de planos — parte CLIENT-SAFE.
+ * Catálogo de planos, parte CLIENT-SAFE.
  *
  * Aqui mora só o que a UI precisa desenhar: nome, quantas moedas o plano dá,
  * quanto custa (em centavos, para formatar) e o texto de venda.
@@ -38,7 +38,7 @@ export type PlanDisplay = {
   name: string;
   /** Moedas creditadas a cada fatura paga. Rollover: somam ao saldo. */
   coins: number;
-  /** Centavos de BRL. Apenas legenda — a cobrança é a do Price no Stripe. */
+  /** Centavos de BRL. Apenas legenda, a cobrança é a do Price no Stripe. */
   priceCents: number;
   tagline: string;
   highlights: string[];
@@ -77,7 +77,7 @@ export const PLANS: Record<PlanKey, PlanDisplay> = {
     highlights: [
       "2.500 créditos por mês",
       // O que este plano DESTRAVA, e não só quanto ele dá. A regra em si está
-      // em `lib/entitlements/features.ts` — esta linha é a legenda dela, e as
+      // em `lib/entitlements/features.ts`, esta linha é a legenda dela, e as
       // duas precisam andar juntas: prometer aqui o que o catálogo não libera
       // é promessa quebrada depois do pagamento, como já foi com os créditos.
       "Estudo aprofundado de cada sessão",
@@ -109,7 +109,7 @@ export type TopupKey = typeof TOPUP.key;
  * Teto de unidades por compra avulsa. Existe por dois motivos: evita um erro
  * de digitação virar uma cobrança de milhares de reais, e limita o estrago de
  * um cartão roubado numa única sessão de checkout. O servidor reaplica este
- * clamp — o valor aqui é só para a UI não oferecer o que será rejeitado.
+ * clamp, o valor aqui é só para a UI não oferecer o que será rejeitado.
  */
 export const TOPUP_MAX_QUANTITY = 20;
 
@@ -119,7 +119,7 @@ export function formatBrl(cents: number): string {
   return BRL.format(cents / 100);
 }
 
-/** Formata milhares como "1.000" — usado nos números de crédito. */
+/** Formata milhares como "1.000", usado nos números de crédito. */
 const NUM = new Intl.NumberFormat("pt-BR");
 export function formatCoins(n: number): string {
   return NUM.format(n);
@@ -146,7 +146,7 @@ export type BillingSummary = {
   currentPeriodEnd: string | null;
   cancelAtPeriodEnd: boolean;
   balance: number;
-  /** False quando o servidor está sem Stripe configurado — a UI esconde as
+  /** False quando o servidor está sem Stripe configurado, a UI esconde as
    * opções de compra em vez de oferecer botões que vão dar 503. */
   configured: boolean;
 };

@@ -72,7 +72,7 @@ const NAV: NavItem[] = [
  * O financeiro é um GRUPO próprio, não mais seis itens na lista do painel.
  *
  * Com quatorze itens seguidos, a navegação vira uma parede em que nada é
- * encontrado por reconhecimento — e as seis telas daqui respondem a uma
+ * encontrado por reconhecimento, e as seis telas daqui respondem a uma
  * pergunta ("como está o dinheiro?") que é de outra ordem que as oito de cima
  * ("como está o produto?"). O rótulo do grupo é o que diz isso sem gastar uma
  * linha explicando.
@@ -103,7 +103,7 @@ export function AdminSidebar({
   const pathname = usePathname();
   // No celular a sidebar é um sheet sobre a página: sem fechá-la na navegação
   // ela fica por cima da tela que acabou de carregar, e o único jeito de sair é
-  // tocar no scrim — que parece cancelar o clique que se acabou de dar.
+  // tocar no scrim, que parece cancelar o clique que se acabou de dar.
   const { isMobile, setOpenMobile } = useSidebar();
   const closeOnMobile = () => {
     if (isMobile) setOpenMobile(false);
@@ -111,7 +111,7 @@ export function AdminSidebar({
 
   // Os itens de navegação NÃO fecham no clique; fecham quando a rota troca.
   // A diferença aparece no celular: fechando no clique, a gaveta some antes de
-  // a página chegar e o toque some com ela — nenhuma tela dá sinal de que
+  // a página chegar e o toque some com ela, nenhuma tela dá sinal de que
   // alguma coisa está carregando. Fechando na TROCA, o item clicado fica à
   // vista girando o spinner do `LinkPendingSwap` pelo tempo que a rota do admin
   // (toda `force-dynamic`) levar, e a gaveta sai exatamente quando há o que
@@ -254,15 +254,15 @@ function NavRow({ item, pathname }: { item: NavItem; pathname: string }) {
     <SidebarMenuItem>
       <SidebarMenuButton isActive={active} tooltip={label} render={<Link href={href} />}>
         {/* O ÍCONE vira spinner enquanto a rota carrega.
-            Toda tela do admin é `force-dynamic` — consulta ao banco, câmbio, às
-            vezes seis buscas em paralelo —, então o prefetch do `<Link>` não
+            Toda tela do admin é `force-dynamic`, consulta ao banco, câmbio, às
+            vezes seis buscas em paralelo, então o prefetch do `<Link>` não
             tem shell estático para entregar e a navegação BLOQUEIA no servidor
             por um segundo ou mais. Sem sinal nesse intervalo o clique parece
             não ter acontecido, e a reação natural é clicar de novo.
 
             É o mesmo `LinkPendingSwap` da barra inferior do celular, e pelo
             mesmo motivo: o ícone já existe e já ocupa o espaço, então trocá-lo
-            não mexe em uma linha do layout — um indicador ao lado empurraria o
+            não mexe em uma linha do layout, um indicador ao lado empurraria o
             rótulo a cada clique. Ele só responde DENTRO da árvore de um
             `<Link>`, e quem o põe lá é o `render={<Link/>}` acima. */}
         <LinkPendingSwap>

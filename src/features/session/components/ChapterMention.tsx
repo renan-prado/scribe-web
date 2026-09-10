@@ -5,13 +5,13 @@ import { useState } from "react";
 import { BookGlyph } from "@/components/icons/BookGlyph";
 
 /**
- * A menção de capítulo do resumo — "Jonas 1" — como pastilha clicável que
+ * A menção de capítulo do resumo, "Jonas 1", como pastilha clicável que
  * abre o capítulo inteiro.
  *
  * Ela existe porque uma referência sem versículo não tem o que citar: o
  * pregador NARROU a passagem em vez de ler, então não há texto na transcrição,
  * e a moldura de citação do `bibleQuote` ficava aberta em volta de nada. A
- * pastilha é a mesma de dentro daquela moldura, de propósito — o que sai é a
+ * pastilha é a mesma de dentro daquela moldura, de propósito, o que sai é a
  * caixa, não a identidade visual da referência.
  *
  * ## O diálogo entra por `dynamic`, e isso não é adorno
@@ -19,7 +19,7 @@ import { BookGlyph } from "@/components/icons/BookGlyph";
  * `BlockRenderer` é um server component, e a LANDING o reusa exatamente por
  * isso (ver `app/AGENTS.md` e `src/shared/components/LandingMocks.tsx`). Um
  * import estático daqui até `ChapterDialog` arrastaria o Dialog do base-ui e o
- * React Query para o bundle da página que um anônimo carrega primeiro — que é
+ * React Query para o bundle da página que um anônimo carrega primeiro, que é
  * a regressão que aquele documento descreve em detalhe. Com `dynamic`, o
  * diálogo é um chunk à parte, buscado no primeiro clique.
  *
@@ -37,7 +37,7 @@ const ChapterDialog = dynamic(
  * São DOIS, e não um: `hasOpened` decide se o diálogo EXISTE, `open` decide se
  * ele está aberto. Com um só, fechar desmontaria o componente no mesmo quadro
  * em que o base-ui começa a animar a saída, e o diálogo sumiria seco. Depois do
- * primeiro clique ele fica montado — fechado, mas montado.
+ * primeiro clique ele fica montado, fechado, mas montado.
  */
 function useMentionDialog() {
   const [hasOpened, setHasOpened] = useState(false);
@@ -70,7 +70,7 @@ export function ChapterMention({ reference }: { reference: string }) {
 }
 
 /**
- * A MESMA menção, mas no meio de um parágrafo — o que o `RichText` desenha
+ * A MESMA menção, mas no meio de um parágrafo, o que o `RichText` desenha
  * quando o anotador acha "João 3:16" dentro da prosa de um resumo ou estudo.
  *
  * Mora aqui, e não em arquivo próprio, porque divide o `dynamic()` acima: um
@@ -79,7 +79,7 @@ export function ChapterMention({ reference }: { reference: string }) {
  *
  * A pastilha da `ChapterMention` não serve aqui: ela é um BLOCO, com altura e
  * fundo sólido, e no meio de uma linha ela quebraria o ritmo da leitura a cada
- * citação. Uma referência dentro do texto continua sendo texto — muda a cor e
+ * citação. Uma referência dentro do texto continua sendo texto, muda a cor e
  * ganha o sublinhado pontilhado de "isto abre algo", que é o vocabulário de
  * link que o leitor já tem.
  */

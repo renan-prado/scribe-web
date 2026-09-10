@@ -56,7 +56,7 @@ const log = createLogger("session:transcribe");
 const AUTO_FOLLOW_BOTTOM_PX = 160;
 
 type Props = {
-  /** A linha já existe no Supabase — este componente só faz UPDATE no stop. */
+  /** A linha já existe no Supabase, este componente só faz UPDATE no stop. */
   sessionId: string;
   initialSpeakerName: string;
   initialSpeakerLocation: string;
@@ -66,7 +66,7 @@ type Props = {
 
 /**
  * Modo transcrição: o mesmo backbone de captura/transcrição dos outros modos,
- * mas SEM nenhuma chamada de LLM além do /api/transcribe — sem bible, sem
+ * mas SEM nenhuma chamada de LLM além do /api/transcribe, sem bible, sem
  * insights, sem echo e sem resumo final. Em troca, o que nos outros modos fica
  * escondido num dialog vira a tela inteira: cada chunk aparece assim que volta
  * transcrito.
@@ -76,7 +76,7 @@ type Props = {
  * é isso que marca a sessão como "só transcrição" no resto do app.
  *
  * Usa o session store (e não refs locais como o RecordingAudioOnly) porque
- * precisa do RecordingHeader — título/autor/local editáveis durante a gravação,
+ * precisa do RecordingHeader, título/autor/local editáveis durante a gravação,
  * que aqui são os ÚNICOS metadados que a sessão vai ter: não existe LLM pra
  * inventar um título depois.
  */
@@ -228,7 +228,7 @@ export function RecordingTranscribe({
     try {
       await rec.start();
       recorderRef.current = rec;
-      // startedAtRef DEVE ser semeado antes de setRunning(true) — ver
+      // startedAtRef DEVE ser semeado antes de setRunning(true), ver
       // guardrails do AGENTS.md.
       startedAtRef.current = performance.now();
       getSessionState().setRunning(true);
@@ -313,7 +313,7 @@ export function RecordingTranscribe({
       setSaveFailed(true);
       toast.error("Não consegui salvar a transcrição.", {
         description:
-          "O texto continua nesta tela — toque em “Salvar transcrição” para tentar de novo.",
+          "O texto continua nesta tela, toque em “Salvar transcrição” para tentar de novo.",
       });
       return false;
     } finally {
@@ -334,7 +334,7 @@ export function RecordingTranscribe({
     await recorderRef.current?.stop();
     recorderRef.current = null;
 
-    // Drena a fila antes de salvar — sem isso, chunks ainda em retry ficariam
+    // Drena a fila antes de salvar, sem isso, chunks ainda em retry ficariam
     // de fora do texto gravado, e aqui não há resumo posterior que pudesse
     // disfarçar o buraco.
     if (transcribeQueue.pendingCount() > 0) {
@@ -374,7 +374,7 @@ export function RecordingTranscribe({
     router.replace("/recordings");
   }, [router, sessionId, transcribeQueue, initialSpeakerName, initialSpeakerLocation]);
 
-  // Cobrança: `COIN_COSTS.transcriptMinute` moedas/min iniciado — o modo mais
+  // Cobrança: `COIN_COSTS.transcriptMinute` moedas/min iniciado, o modo mais
   // barato, já que só paga a transcrição. Ao esgotar, congela em vez de
   // encerrar.
   const coinGuard = useCoinGuard({
@@ -516,8 +516,8 @@ export function RecordingTranscribe({
               <p className="font-semibold">Áudio com qualidade baixa</p>
               <p className="mt-1">
                 A transcrição pode conter erros. Se possível, aproxime o aparelho da caixa de som ou
-                de quem está falando — distância e eco são o que mais atrapalham. Você pode
-                continuar ou encerrar a gravação.
+                de quem está falando, distância e eco são o que mais atrapalham. Você pode continuar
+                ou encerrar a gravação.
               </p>
             </div>
           ) : null}

@@ -9,19 +9,19 @@ const log = createLogger("partners");
  *
  * Tudo aqui passa pelo service-role: as duas funções do banco têm EXECUTE
  * revogado de `anon`/`authenticated`, exatamente como `grant_coins`. Mesmo
- * padrão de `lib/db/billing.ts` — o servidor é a única porta.
+ * padrão de `lib/db/billing.ts`, o servidor é a única porta.
  */
 
 /**
  * Resultado de `attach_partner`. Só `ok` credita bônus; os demais são
  * recusas NORMAIS, e nenhuma delas pode quebrar o login:
  *
- *   already_attributed — a conta já pertence a um parceiro (o vínculo é
+ *   already_attributed, a conta já pertence a um parceiro (o vínculo é
  *                        permanente, e o primeiro vale)
- *   not_new            — conta antiga demais; um usuário de meses atrás
+ *   not_new, conta antiga demais; um usuário de meses atrás
  *                        abrindo um link não vira indicação (nem ganha bônus)
- *   unknown_slug       — link velho, código digitado errado, parceiro suspenso
- *   self_referral      — o parceiro usando o próprio link
+ *   unknown_slug, link velho, código digitado errado, parceiro suspenso
+ *   self_referral, o parceiro usando o próprio link
  */
 export type AttachPartnerResult =
   | "ok"
@@ -71,7 +71,7 @@ export async function attachPartner(args: {
 
 /**
  * Contabiliza uma visita ao link do parceiro. `unique` distingue "abriu de
- * novo" de "pessoa diferente" — sem isso, um link em stories reaberto pela
+ * novo" de "pessoa diferente", sem isso, um link em stories reaberto pela
  * mesma pessoa infla o topo do funil e o painel do parceiro vira ficção.
  *
  * Slug desconhecido é ignorado em silêncio pela própria função do banco.
@@ -90,13 +90,13 @@ export async function recordPartnerClick(slug: string, unique: boolean): Promise
 }
 
 /**
- * Dados de um parceiro que podem ser mostrados a um VISITANTE anônimo — hoje,
+ * Dados de um parceiro que podem ser mostrados a um VISITANTE anônimo, hoje,
  * na tela de login, para confirmar "você foi indicado por Fulano e vai ganhar
  * N moedas".
  *
  * O nome do tipo é literal: `Public` significa que este objeto atravessa a
  * fronteira do servidor. Não acrescente e-mail, documento, chave PIX, taxa de
- * comissão nem orçamento aqui — é a mesma tabela que guarda tudo isso.
+ * comissão nem orçamento aqui, é a mesma tabela que guarda tudo isso.
  */
 export type PartnerPublic = {
   slug: string;
@@ -104,7 +104,7 @@ export type PartnerPublic = {
   signupBonusCoins: number;
   /**
    * A foto do parceiro, para o selo "indicado por" do hero e da tela de
-   * entrada. Vem do avatar do Google da conta LIGADA a ele — `partners` não
+   * entrada. Vem do avatar do Google da conta LIGADA a ele, `partners` não
    * guarda foto, e `partners.user_id` nasce nulo, então um parceiro que ainda
    * não fez o primeiro login simplesmente não tem uma. A tela desenha as
    * iniciais nesse caso, que é um desfecho normal e não um erro.
@@ -152,7 +152,7 @@ export async function getPartnerPublicBySlug(slug: string): Promise<PartnerPubli
  * Registra a comissão da PRIMEIRA assinatura de um indicado.
  *
  * Devolve o valor em centavos quando a comissão foi criada agora, e `0`
- * quando não havia o que criar — porque o usuário não veio de parceiro, ou
+ * quando não havia o que criar, porque o usuário não veio de parceiro, ou
  * porque a comissão dele já existe. Os dois casos são normais e nenhum é erro.
  *
  * A regra "uma vez por pessoa, para sempre" NÃO é verificada aqui: ela é a
@@ -187,7 +187,7 @@ export async function insertFirstSubscriptionCommission(args: {
     });
     return 0;
   }
-  if (!profile?.partner_id) return 0; // não veio de parceiro — o caso comum
+  if (!profile?.partner_id) return 0; // não veio de parceiro, o caso comum
 
   const { data: partner, error: partnerErr } = await admin
     .from("partners")
@@ -202,10 +202,10 @@ export async function insertFirstSubscriptionCommission(args: {
     return 0;
   }
 
-  // Parceiro suspenso não acumula. A atribuição do usuário permanece — se a
+  // Parceiro suspenso não acumula. A atribuição do usuário permanece, se a
   // suspensão for revertida, as assinaturas seguintes voltam a comissionar.
   if (partner.status !== "active") {
-    log.warn("commission skipped — partner not active", {
+    log.warn("commission skipped, partner not active", {
       partnerId: partner.id,
       status: partner.status,
     });
@@ -213,10 +213,10 @@ export async function insertFirstSubscriptionCommission(args: {
   }
 
   // Auto-indicação. Já é barrada no vínculo (`attach_partner`), mas o parceiro
-  // pode ter ligado a conta DEPOIS de ela ter sido atribuída a ele — e aí a
+  // pode ter ligado a conta DEPOIS de ela ter sido atribuída a ele, e aí a
   // checagem de lá não teve como acontecer.
   if (partner.user_id && partner.user_id === args.userId) {
-    log.warn("commission skipped — self referral", { partnerId: partner.id });
+    log.warn("commission skipped, self referral", { partnerId: partner.id });
     return 0;
   }
 
@@ -240,7 +240,7 @@ export async function insertFirstSubscriptionCommission(args: {
 
   if (error) {
     // 23505 = a comissão desta pessoa já existe. É o funcionamento normal da
-    // regra "uma vez por pessoa" — não é erro e não merece log de erro.
+    // regra "uma vez por pessoa", não é erro e não merece log de erro.
     if (error.code === "23505") return 0;
     log.error("commission insert failed", {
       partnerId: partner.id,
@@ -267,7 +267,7 @@ export async function insertFirstSubscriptionCommission(args: {
  *
  * Uma comissão JÁ PAGA não é revertida: o dinheiro saiu daqui por PIX e a
  * linha não pode fingir que isso não aconteceu. O caso vira log em `warn`
- * para conferência manual — mesmo tratamento que o clawback de moedas dá a
+ * para conferência manual, mesmo tratamento que o clawback de moedas dá a
  * créditos que já foram gastos. A carência de 30 dias existe justamente para
  * tornar esse caso raro.
  */
@@ -292,7 +292,7 @@ export async function reverseCommissionForUser(
   if (!row || row.status === "reversed") return;
 
   if (row.payout_id) {
-    log.warn("commission already PAID — manual settlement needed", {
+    log.warn("commission already PAID, manual settlement needed", {
       commissionId: row.id,
       partnerId: row.partner_id,
       amountCents: row.commission_cents,

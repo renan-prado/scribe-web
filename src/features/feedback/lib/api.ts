@@ -17,7 +17,7 @@ export type FeedbackPromptInfo = {
 };
 
 /**
- * "Devo perguntar agora?". Devolve `null` na esmagadora maioria das chamadas —
+ * "Devo perguntar agora?". Devolve `null` na esmagadora maioria das chamadas,
  * é o caminho normal, não um erro.
  */
 export async function checkFeedbackPrompt(body: {

@@ -5,12 +5,12 @@
 -- (bibleQuote/relatedVerse blocks). Só usa a IA para completar até 10 quando
 -- o pool não cobre todos os slots.
 --
--- Todos os itens são agendados no futuro — cadência:
+-- Todos os itens são agendados no futuro, cadência:
 --   1, 2, 4, 7, 16, 22, 30, 45, 60, 90 dias após a sessão.
 -- Colisão intencional com "praticar" só nos dias 1 e 7; os demais offsets
 -- ficam intercalados para variar o conteúdo do feed home.
 --
--- payload segue o schema RereadsPayload em lib/domain/rereads.ts —
+-- payload segue o schema RereadsPayload em lib/domain/rereads.ts,
 -- { items: RereadItem[10] }. Uma linha por sessão (unique session_id),
 -- reprocess_summary sobrescreve.
 

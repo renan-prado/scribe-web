@@ -17,12 +17,12 @@ import { useVerseFetch } from "@/features/session/hooks/useVerseFetch";
  * Irmão do `VerseDialog`, e separado dele de propósito: aquele mostra UM
  * versículo que a IA sugeriu, com o texto corrido de `joinVerses` e o subtítulo
  * dizendo de onde veio. Aqui é o capítulo que o PREGADOR citou, em dezenas de
- * versículos numerados — juntá-los num parágrafo só daria um bloco ilegível.
+ * versículos numerados, juntá-los num parágrafo só daria um bloco ilegível.
  * Fundir os dois num componente com bandeira seria um `if` para cada linha.
  *
  * Não precisa de rota nova: `/api/verse` já trata referência sem versículo
  * como capítulo inteiro (`ref.startVerse ?? 1` até o primeiro buraco), e
- * `useVerseFetch` cacheia por referência com `staleTime` infinito — reabrir o
+ * `useVerseFetch` cacheia por referência com `staleTime` infinito, reabrir o
  * mesmo capítulo não repete a busca.
  *
  * A rolagem é do `DialogContent`, que já tem `max-h-[85dvh]` e um corpo com

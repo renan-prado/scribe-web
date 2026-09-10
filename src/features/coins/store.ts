@@ -5,11 +5,11 @@ import type { ChargeReason } from "@/lib/coins/pricing";
 
 /**
  * Central store for the current user's coin balance. Replaces the old
- * `scriba:coin-balance` CustomEvent bus — every consumer now subscribes to
+ * `scriba:coin-balance` CustomEvent bus, every consumer now subscribes to
  * this store, so a single refresh/charge propagates to the header chip, the
  * NewRecordingDialog gate, the DeepenButton state, etc. simultaneously.
  *
- * `balance === null` means "unknown yet" — used by consumers to distinguish
+ * `balance === null` means "unknown yet", used by consumers to distinguish
  * initial-loading from actually-zero when gating buttons.
  */
 

@@ -1,7 +1,7 @@
 import { z } from "zod";
 
 /**
- * "Releia este texto" — 10 versículos separados junto com o final_summary
+ * "Releia este texto", 10 versículos separados junto com o final_summary
  * para serem relidos ao longo do tempo. Sempre que possível reaproveitamos
  * o que já apareceu (citedVerse do feed, relatedVerse do feed, bibleQuote/
  * relatedVerse do summary); a IA só é chamada para completar até 10 quando
@@ -31,7 +31,7 @@ const RereadDayOffsetSchema = z.union([
 
 /**
  * Origem do item.
- * - `cited`: o pastor leu na gravação (feed citedVerse) — âncora mais forte.
+ * - `cited`: o pastor leu na gravação (feed citedVerse), âncora mais forte.
  * - `related`: sugerido pela IA no live (feed relatedVerse) ou pelo
  *    enrichment do resumo (summary block relatedVerse).
  * - `summary`: apareceu como citação no bloco bibleQuote do resumo.

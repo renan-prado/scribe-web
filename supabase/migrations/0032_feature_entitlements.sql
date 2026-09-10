@@ -9,14 +9,14 @@
 --
 -- Esta migração cria só as duas coisas que precisam mudar em runtime:
 --
---   1. `feature_switches` — o kill switch. Uma linha por feature que
+--   1. `feature_switches`, o kill switch. Uma linha por feature que
 --      alguém desligou. AUSÊNCIA DE LINHA SIGNIFICA LIGADA: assim, uma
 --      feature nova nasce funcionando e a tabela só cresce quando há
 --      incidente. O inverso (linha obrigatória por feature) faria toda
---      feature nova depender de um INSERT para existir — e um deploy que
+--      feature nova depender de um INSERT para existir, e um deploy que
 --      esquecesse o INSERT sairia com a feature morta em produção.
 --
---   2. `feature_overrides` — a exceção por pessoa. `granted = true` libera
+--   2. `feature_overrides`, a exceção por pessoa. `granted = true` libera
 --      para um beta tester abaixo do plano mínimo; `granted = false` revoga
 --      de um abusador que paga. Sem linha = decide o plano.
 --
@@ -28,15 +28,15 @@
 -- O kill switch vencer o override é deliberado: ele existe para incidente,
 -- e um incidente não abre exceção para ninguém.
 --
--- SUPERFÍCIE DE ATAQUE — o que este arquivo fecha:
+-- SUPERFÍCIE DE ATAQUE, o que este arquivo fecha:
 --   * Auto-concessão via PostgREST. `authenticated` recebe SELECT e nada
 --     mais nas duas tabelas. Sem GRANT de INSERT/UPDATE/DELETE, nem uma
---     policy permissiva devolveria escrita — RLS filtra linha, GRANT decide
+--     policy permissiva devolveria escrita, RLS filtra linha, GRANT decide
 --     se o verbo existe. Toda escrita passa pelo service_role, a partir de
 --     `/api/admin/features`, que já roda atrás de `requireAdmin()`.
 --   * Leitura do override alheio. A policy escopa por `auth.uid()`: o
 --     usuário vê a própria exceção, nunca a de outro.
---   * `feature_switches` é legível por qualquer autenticado de propósito —
+--   * `feature_switches` é legível por qualquer autenticado de propósito,
 --     é configuração global, não segredo, e o cliente já saberia que a
 --     feature está fora no instante em que o botão sumisse.
 

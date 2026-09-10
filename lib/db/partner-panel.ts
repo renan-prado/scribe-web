@@ -5,7 +5,7 @@ import { createAdminClient } from "@/lib/supabase/admin";
  * Números do painel do parceiro.
  *
  * A regra que rege este arquivo inteiro: **só agregados**. Nenhuma função aqui
- * devolve uma linha que represente uma pessoa — sem e-mail, sem nome, sem id,
+ * devolve uma linha que represente uma pessoa, sem e-mail, sem nome, sem id,
  * sem data que permita identificar quem se cadastrou. O parceiro vê "12
  * cadastros", nunca "estes 12". Dado exposto não desexpõe, e não há motivo de
  * negócio para ele saber quem são.
@@ -25,7 +25,7 @@ export type PartnerPanelSummary = {
   paidCents: number;
   conversionRate: number;
   /**
-   * Moedas que o parceiro ganhou por cadastro (migração 0045) — as já
+   * Moedas que o parceiro ganhou por cadastro (migração 0045), as já
    * creditadas e as ainda acumuladas, somadas. A distinção entre uma e outra
    * não interessa a ele: a liberação acontece na visita em que ele lê este
    * número, então a soma é o que ele vê no saldo.

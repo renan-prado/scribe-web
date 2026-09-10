@@ -7,7 +7,7 @@ import { AlertTriangle, Info } from "lucide-react";
  * levou `/admin/usage` a abrir com o aviso de modelo sem preço: um painel
  * financeiro erra em SILÊNCIO. Sem cotação do dólar, sem custo recorrente
  * cadastrado ou com a receita de assinatura lançada duas vezes, o total
- * continua sendo um número plausível — e o sintoma é sempre uma conta boa
+ * continua sendo um número plausível, e o sintoma é sempre uma conta boa
  * demais, que é a que ninguém investiga.
  *
  * Amarelo e não vermelho: nada aqui está quebrado, e um vermelho que aparece

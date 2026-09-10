@@ -22,7 +22,7 @@ function writeFlag(key: string): void {
   try {
     window.localStorage.setItem(storageKey(key), "1");
   } catch {
-    // storage unavailable (private mode, quota) — silently drop
+    // storage unavailable (private mode, quota), silently drop
   }
 }
 
@@ -31,7 +31,7 @@ function writeFlag(key: string): void {
  *
  * Returns `[read, markRead]`. `read` is:
  * - `undefined` before hydration (server render + first client render, before
- *   the localStorage effect fires) — lets callers avoid a flash of the
+ *   the localStorage effect fires), lets callers avoid a flash of the
  *   "unread" indicator for values that will resolve to `true`;
  * - `true` if the key was previously marked read;
  * - `false` otherwise.

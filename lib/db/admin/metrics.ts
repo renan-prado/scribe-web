@@ -8,13 +8,13 @@ import { createAdminClient } from "@/lib/supabase/admin";
  * Métricas de produto do admin: o funil inteiro, da visita ao dinheiro.
  *
  * Antes disso o /admin sabia dizer quantos usuários existem e quanto a OpenAI
- * custou — mas não quantos assinam, quantos gravaram alguma coisa, nem se as
+ * custou, mas não quantos assinam, quantos gravaram alguma coisa, nem se as
  * moedas de boas-vindas estão sendo usadas. Este módulo fecha essa lacuna sem
  * nenhuma tabela nova: tudo sai de `profiles`, `subscriptions`,
  * `coin_transactions` e `sessions`, que já registram o que interessa.
  *
  * Existe ANTES das telas de parceiro de propósito. Toda métrica do parceiro é
- * uma métrica de produto filtrada por `partner_id` — construir as duas coisas
+ * uma métrica de produto filtrada por `partner_id`, construir as duas coisas
  * separadamente daria duas definições de "conversão" que um dia discordariam,
  * e a discordância apareceria como um parceiro reclamando do próprio painel.
  * Por isso o filtro `partnerId` está aqui embaixo, e não numa cópia.
@@ -38,7 +38,7 @@ export type FunnelMetrics = {
   activated: number;
   /** Gastou ao menos uma moeda (sinal mais forte que "abriu o app"). */
   spentAny: number;
-  /** Zerou o saldo inicial — o indício mais forte de intenção de compra. */
+  /** Zerou o saldo inicial, o indício mais forte de intenção de compra. */
   exhaustedFreeCoins: number;
   /** Assinou alguma vez (inclui quem já cancelou). */
   everSubscribed: number;
@@ -62,7 +62,7 @@ export type RevenueMetrics = {
   /** Receita média por assinante ativo. */
   arpuCents: number;
   activeByPlan: Record<PlanKey, number>;
-  /** Assinaturas com cancelamento agendado — churn que já é conhecido. */
+  /** Assinaturas com cancelamento agendado, churn que já é conhecido. */
   cancelScheduled: number;
   /** Estimativa de taxa do Stripe sobre o MRR. */
   stripeFeeCents: number;
@@ -74,7 +74,7 @@ export type CoinLiability = {
   /**
    * Moedas creditadas e ainda não gastas. Como os créditos acumulam de um mês
    * para o outro, este saldo é custo de OpenAI já vendido e ainda não
-   * incorrido — a métrica que ninguém lembra de olhar até ela doer.
+   * incorrido, a métrica que ninguém lembra de olhar até ela doer.
    */
   outstanding: number;
   /** O mesmo saldo convertido pelo custo medido, em centavos de BRL. */
@@ -138,7 +138,7 @@ export async function loadAdminMetrics(
   const createdAt = new Map(profiles.map((p) => [p.id, p.created_at]));
 
   // Sem contas no recorte, devolvemos zeros em vez de rodar consultas com
-  // `in([])` — que o PostgREST trata como "sem filtro" e devolveria a base
+  // `in([])`, que o PostgREST trata como "sem filtro" e devolveria a base
   // inteira. É uma pegadinha silenciosa: o número sairia grande, não vazio.
   if (userIds.length === 0) return emptyMetrics();
 
@@ -257,7 +257,7 @@ async function loadSessionUserIds(
 
 /**
  * Agrega o ledger de moedas. `amount` é assinado: positivo credita, negativo
- * gasta — a mesma convenção de `coin_transactions` desde 0017.
+ * gasta, a mesma convenção de `coin_transactions` desde 0017.
  */
 async function loadCoinAggregates(
   admin: AdminClient,
@@ -293,7 +293,7 @@ async function loadCoinAggregates(
 /**
  * Assinaturas das contas do recorte. SEM filtro de data de propósito: a
  * pergunta é "esta coorte de cadastros converteu?", e a assinatura acontece
- * depois — recortá-la pela mesma janela do cadastro descartaria exatamente as
+ * depois, recortá-la pela mesma janela do cadastro descartaria exatamente as
  * conversões que interessam.
  */
 async function loadSubscriptions(

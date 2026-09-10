@@ -3,7 +3,7 @@ import type { ChunkRow } from "@/features/session/types";
 /**
  * Join transcribed ("ok") chunks into one normalized transcript string, in
  * index order. With `excludeSuspect`, chunks the server flagged as carrying a
- * hallucination signature are left out — the live pipelines and the prevText
+ * hallucination signature are left out, the live pipelines and the prevText
  * hint use this so a bad chunk can't contaminate context. The transcript view
  * and the final summary keep suspect chunks (their text already came cleaned).
  */
@@ -13,7 +13,7 @@ import type { ChunkRow } from "@/features/session/types";
  * alucinação, baixa confiança ou baixa densidade). Janela parcial conta: 3
  * chunks, todos ruins, já acendem.
  *
- * Um chunk isolado ruim é comum e não vale interromper ninguém — quem prega
+ * Um chunk isolado ruim é comum e não vale interromper ninguém, quem prega
  * vira de costas, alguém tosse. O que importa é a SEQUÊNCIA: ela significa
  * que a captação, e não o momento, está ruim, e é a única coisa que a pessoa
  * na cadeira ainda pode consertar (aproximar o aparelho, trocar de lugar).

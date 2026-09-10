@@ -14,7 +14,7 @@ import {
 import { MENU_ITEM_CLASS } from "@/features/auth/lib/menu";
 
 /**
- * Onde o menu está sendo montado. Muda apenas os atalhos do meio — a
+ * Onde o menu está sendo montado. Muda apenas os atalhos do meio, a
  * identidade e o "Sair da conta" são iguais nos dois, e é justamente por isso
  * que existe um componente só: o botão de sair é o motivo de o parceiro ter de
  * ir até o app para deslogar, e duplicar essa parte convidaria os dois a
@@ -28,7 +28,7 @@ type Props = {
   avatarUrl: string | null;
   /**
    * Itens de papel (admin / parceiro), renderizados no SERVIDOR e entregues
-   * prontos — ver `PrivilegedMenuItems`. Passam por aqui como `ReactNode` em
+   * prontos, ver `PrivilegedMenuItems`. Passam por aqui como `ReactNode` em
    * vez de booleanos porque um `isAdmin` booleano esconderia o item na tela
    * mas deixaria o markup dele no bundle de todo mundo.
    */

@@ -7,7 +7,7 @@ import { COIN_COSTS, INITIAL_COIN_BALANCE } from "@/lib/coins/pricing";
  * Mora fora de `app/page.tsx` porque tem DOIS consumidores que precisam dizer
  * exatamente a mesma coisa: a seção visível e o JSON-LD `FAQPage`
  * (`LandingJsonLd`). O Google trata rich result cuja resposta estruturada não
- * bate com o texto da página como spam estrutural — e a punição é a página
+ * bate com o texto da página como spam estrutural, e a punição é a página
  * inteira perder o snippet, não só o bloco divergente.
  *
  * Os números saem de `lib/coins/pricing.ts` e `lib/billing/plans.ts`, pela

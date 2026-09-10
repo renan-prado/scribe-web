@@ -8,14 +8,14 @@ export type ChunkRow = {
   startedAtMs: number;
   /** O servidor detectou qualidade ruim neste chunk (assinatura de alucinação
    * ou baixa confiança nos logprobs). O texto já veio limpo e continua no
-   * transcript, mas o chunk não alimenta prevText nem os pipelines ao vivo
-   * — reutilizá-lo como contexto realimentaria a alucinação. */
+   * transcript, mas o chunk não alimenta prevText nem os pipelines ao vivo,
+   * reutilizá-lo como contexto realimentaria a alucinação. */
   suspect?: boolean;
 };
 
 /**
  * Veredito acumulado sobre o áudio da sessão. `poor` acende o aviso na tela;
- * ele NÃO troca de modelo (não existe modelo melhor para escalar — ver
+ * ele NÃO troca de modelo (não existe modelo melhor para escalar, ver
  * `app/api/transcribe/route.ts`).
  */
 export type AudioQuality = "ok" | "poor";

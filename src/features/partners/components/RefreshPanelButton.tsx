@@ -8,7 +8,7 @@ import { cn } from "@/lib/utils";
 /**
  * Recarrega os números do painel sem recarregar a página.
  *
- * `router.refresh()` refaz o server component e troca só o que mudou — o
+ * `router.refresh()` refaz o server component e troca só o que mudou, o
  * estado do cliente (aba aberta, rolagem) sobrevive. Um F5 perderia os dois.
  *
  * Existe porque o funil tem defasagem de horas: o parceiro publica, manda o

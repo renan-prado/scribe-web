@@ -18,7 +18,7 @@ import { COMMISSION_HOLD_DAYS } from "@/lib/partners/economics";
  *
  *   1. o webhook (`/api/stripe/webhook`), o caminho normal;
  *   2. a reconciliação (`/api/billing/reconcile`), o caminho de recuperação
- *      para quando o webhook não chega — listener fora do ar em dev, deploy
+ *      para quando o webhook não chega, listener fora do ar em dev, deploy
  *      no meio do pagamento, retries esgotados em produção.
  *
  * Se essas duas cópias divergissem, um dos caminhos creditaria valores
@@ -35,7 +35,7 @@ import { COMMISSION_HOLD_DAYS } from "@/lib/partners/economics";
  */
 
 /**
- * Quem está pedindo o crédito/sync — só para os logs contarem a história
+ * Quem está pedindo o crédito/sync, só para os logs contarem a história
  * certa. Hoje são cinco origens: o webhook (caminho normal), a reconciliação
  * da página de retorno, o guard anti-dupla do checkout, o check preguiçoso do
  * resumo de cobrança e a varredura periódica do cron.
@@ -60,7 +60,7 @@ type LineLike = {
  * Normaliza as linhas de uma fatura. Na API atual o preço vive em
  * `pricing.price_details.price`; versões anteriores expunham `line.price`.
  * Lemos as duas formas para que uma atualização de API não interrompa
- * silenciosamente os créditos — um crédito que para de acontecer sem erro é
+ * silenciosamente os créditos, um crédito que para de acontecer sem erro é
  * exatamente o tipo de falha que ninguém percebe.
  */
 export function invoiceLines(invoice: Stripe.Invoice): LineLike[] {
@@ -93,7 +93,7 @@ export function invoiceShouldGrant(invoice: Stripe.Invoice): boolean {
 
 /**
  * Credita as linhas de assinatura de uma fatura paga.
- * Lança se a RPC falhar — o chamador decide se devolve 5xx (webhook, para o
+ * Lança se a RPC falhar, o chamador decide se devolve 5xx (webhook, para o
  * Stripe reentregar) ou um erro ao usuário (reconciliação).
  */
 export async function creditInvoice(
@@ -107,7 +107,7 @@ export async function creditInvoice(
   for (const line of invoiceLines(invoice)) {
     const entitlement = entitlementForPrice(line.priceId);
     if (!entitlement) {
-      log.warn(`unknown price on paid invoice — nothing credited`, {
+      log.warn(`unknown price on paid invoice, nothing credited`, {
         invoice: invoice.id,
         priceId: line.priceId,
       });
@@ -155,7 +155,7 @@ export async function creditInvoice(
   // por onde os quatro caminhos de crédito passam (webhook, reconciliação,
   // check preguiçoso do resumo e varredura do cron). Pendurá-la em qualquer
   // um deles isoladamente significaria que uma compra recuperada pelos outros
-  // três não comissionaria — e essa é exatamente a compra que já deu trabalho.
+  // três não comissionaria, e essa é exatamente a compra que já deu trabalho.
   //
   // Só quando ALGO foi creditado agora: a segunda passada sobre o mesmo
   // pagamento não deve nem tentar. (A constraint UNIQUE em `referred_user_id`
@@ -174,7 +174,7 @@ export async function creditInvoice(
  * O try/catch é a parte importante: uma falha aqui NÃO pode derrubar o
  * crédito de moedas que acabou de acontecer. As moedas são contrato com o
  * usuário e ele está esperando o saldo; a comissão é interna e reconciliável
- * depois — inclusive porque, sem o catch, o webhook devolveria 5xx, o Stripe
+ * depois, inclusive porque, sem o catch, o webhook devolveria 5xx, o Stripe
  * reentregaria, e o usuário ficaria sem saldo por causa de um problema que
  * não é dele.
  */
@@ -185,7 +185,7 @@ async function accrueCommission(
 ): Promise<void> {
   const log = createLogger("billing").scoped(source);
   try {
-    // Valor BRUTO efetivamente pago — depois de cupom e proração, antes das
+    // Valor BRUTO efetivamente pago, depois de cupom e proração, antes das
     // taxas do Stripe. É o número que o parceiro consegue conferir sozinho a
     // partir do preço público, e é isso que o torna auditável para ele.
     const grossCents = invoice.amount_paid ?? 0;
@@ -199,7 +199,7 @@ async function accrueCommission(
       holdDays: COMMISSION_HOLD_DAYS,
     });
   } catch (err) {
-    log.error(`partner commission failed — coins were credited`, {
+    log.error(`partner commission failed, coins were credited`, {
       userId,
       invoice: invoice.id,
       error: (err as Error).message,
@@ -208,12 +208,12 @@ async function accrueCommission(
 }
 
 /**
- * A recompensa de quem indicou este assinante — a outra ponta do mesmo evento
+ * A recompensa de quem indicou este assinante, a outra ponta do mesmo evento
  * que produz a comissão do parceiro, e por isso pendurada no mesmo lugar.
  *
  * Uma pessoa nunca gera as duas: a atribuição é exclusiva (ver a migração
  * 0045), então `award_referral_subscription` devolve 0 para todo assinante que
- * veio de parceiro — e para a esmagadora maioria, que não veio de indicação
+ * veio de parceiro, e para a esmagadora maioria, que não veio de indicação
  * nenhuma.
  *
  * O try/catch, de novo, é a parte importante e pela mesma razão da comissão:
@@ -228,7 +228,7 @@ async function accrueReferralReward(userId: string, source: FulfillSource): Prom
   try {
     await awardReferralSubscription(userId);
   } catch (err) {
-    log.error("recompensa de indicação falhou — as moedas foram creditadas", {
+    log.error("recompensa de indicação falhou, as moedas foram creditadas", {
       userId,
       error: (err as Error).message,
     });
@@ -261,7 +261,7 @@ export function planFromSubscription(subscription: Stripe.Subscription): PlanKey
  * Compartilhado entre webhook e reconciliação pelo mesmo motivo do crédito:
  * a tabela `subscriptions` alimenta o guard anti-cobrança-dupla do checkout e
  * o plano mostrado na UI. Se só o webhook a escrevesse, um evento perdido
- * deixaria o usuário pagante marcado como "free" — e o checkout deixaria ele
+ * deixaria o usuário pagante marcado como "free", e o checkout deixaria ele
  * assinar DE NOVO, cobrando duas mensalidades. A reconciliação, ao creditar,
  * também cura o espelho.
  *
@@ -284,7 +284,7 @@ export async function syncSubscriptionState(
     userId,
     stripeCustomerId: customerId,
     stripeSubscriptionId: subscription.id,
-    // Cancelada volta a 'free' na nossa tabela; o SALDO permanece intacto —
+    // Cancelada volta a 'free' na nossa tabela; o SALDO permanece intacto,
     // o modelo acordado é "gasta o que tem, só não recarrega mais".
     plan: canceled ? "free" : planFromSubscription(subscription),
     status: subscription.status,
@@ -318,7 +318,7 @@ export async function creditCheckoutSession(
   for (const item of lineItems.data) {
     const entitlement = entitlementForPrice(priceIdOf(item.price ?? null));
     if (entitlement?.kind !== "topup") {
-      log.warn(`unknown price on paid checkout — nothing credited`, {
+      log.warn(`unknown price on paid checkout, nothing credited`, {
         session: session.id,
         priceId: priceIdOf(item.price ?? null),
       });
@@ -333,7 +333,7 @@ export async function creditCheckoutSession(
   }
 
   // Consultar o ledger ANTES é o que distingue "creditei agora" de "o outro
-  // caminho já tinha creditado" — `grant_coins` devolve o saldo nos dois casos.
+  // caminho já tinha creditado", `grant_coins` devolve o saldo nos dois casos.
   const already = await existingExternalRefs(planned.map((p) => p.externalRef));
   let credited = 0;
   let balance: number | null = null;

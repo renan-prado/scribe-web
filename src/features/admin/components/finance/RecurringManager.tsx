@@ -36,7 +36,7 @@ import { RecurringDialog } from "./RecurringDialog";
  *
  * Cancelados continuam na lista, embaixo e apagados. Tirá-los da tela faria a
  * pergunta "o que a gente cortou e quanto isso economizou?" não ter onde ser
- * respondida — e essa é uma das poucas perguntas em que um painel financeiro
+ * respondida, e essa é uma das poucas perguntas em que um painel financeiro
  * de fato ajuda a decidir.
  */
 
@@ -87,7 +87,7 @@ export function RecurringManager({ recurring, summaries, categories }: Props) {
               {item.description}
             </span>
             <span className="block text-[11.5px] font-light text-scriba-ink-mute">
-              {item.counterparty ?? summary?.categoryName ?? "—"}
+              {item.counterparty ?? summary?.categoryName ?? "-"}
               {summary ? ` · ${NATURE_LABELS[summary.nature]}` : ""}
             </span>
           </TableCell>
@@ -106,7 +106,7 @@ export function RecurringManager({ recurring, summaries, categories }: Props) {
             {formatBrlCents(summary?.annualEquivalentCents ?? null)}
           </TableCell>
           <TableCell className="whitespace-nowrap text-right font-mono text-xs text-scriba-ink-soft">
-            {summary?.nextChargeDate ? formatDate(summary.nextChargeDate) : "—"}
+            {summary?.nextChargeDate ? formatDate(summary.nextChargeDate) : "-"}
           </TableCell>
           <TableCell className="text-right">
             <div className="flex justify-end gap-1">
@@ -146,7 +146,7 @@ export function RecurringManager({ recurring, summaries, categories }: Props) {
       {recurring.length === 0 ? (
         <p className="rounded-2xl border border-scriba-hairline-soft bg-scriba-paper p-8 text-center text-sm font-light text-scriba-ink-mute">
           Nenhum custo recorrente cadastrado. Enquanto esta lista estiver vazia, a única despesa que
-          o painel enxerga é a de IA — e ela é medida, não lançada.
+          o painel enxerga é a de IA, e ela é medida, não lançada.
         </p>
       ) : (
         <div className="admin-table admin-card-surface overflow-hidden rounded-2xl border border-scriba-hairline-soft">
@@ -172,7 +172,7 @@ export function RecurringManager({ recurring, summaries, categories }: Props) {
                     colSpan={7}
                     className="bg-scriba-surface text-[11px] font-semibold uppercase tracking-[0.1em] text-scriba-ink-mute"
                   >
-                    Cancelados — fora dos totais, mantidos para comparação
+                    Cancelados, fora dos totais, mantidos para comparação
                   </TableCell>
                 </TableRow>
               ) : null}

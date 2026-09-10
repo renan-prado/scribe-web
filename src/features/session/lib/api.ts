@@ -130,7 +130,7 @@ export async function requestCreateSession(body: {
   speakerLocation?: string | null;
   mode?: SessionMode;
   /** Só o modo youtube manda. A URL do vídeo, validada antes por
-   * `parseYoutubeUrl` — a rota revalida com a mesma régua. */
+   * `parseYoutubeUrl`, a rota revalida com a mesma régua. */
   sourceUrl?: string | null;
 }): Promise<{ id: string } | { error: string }> {
   try {
@@ -176,7 +176,7 @@ export async function requestSaveTranscript(body: {
 }
 
 /**
- * DELETE /api/sessions/:id. Discards a session row and its associated data —
+ * DELETE /api/sessions/:id. Discards a session row and its associated data,
  * used when the user stops a recording that captured zero transcribable speech
  * so the empty row created up-front doesn't linger in their history.
  */
@@ -232,7 +232,7 @@ export async function requestHallucinationReview(body: {
 export type EntitySuggestion = { id: string; name: string; count: number };
 
 /**
- * GET /api/speakers?q=... — search the current user's speakers, ordered by
+ * GET /api/speakers?q=..., search the current user's speakers, ordered by
  * how often they appear in past recordings.
  */
 export async function requestSpeakerSuggestions(q: string): Promise<EntitySuggestion[]> {
@@ -255,16 +255,16 @@ export type ContentSearchResult = {
 };
 
 /**
- * GET /api/sessions/search?q=... — a metade da busca das listas que não roda no
+ * GET /api/sessions/search?q=..., a metade da busca das listas que não roda no
  * cliente: o texto da pregação e os versículos citados, que não vão para a
  * lista e não devem ir.
  *
  * As duas vias voltam separadas porque o cartão precisa DIZER por que está ali.
  * "Trecho na transcrição" e "Jonas 1:1-17" são explicações diferentes, e um
- * cartão que aparece sem nenhuma — num termo que não bate com nada visível
- * nele — parece defeito.
+ * cartão que aparece sem nenhuma, num termo que não bate com nada visível
+ * nele, parece defeito.
  *
- * Devolve `null` — e não vazio — quando a rota não procurou (termo curto
+ * Devolve `null`, e não vazio, quando a rota não procurou (termo curto
  * demais) ou falhou. A distinção importa: com vazio a UI esconderia todos os
  * cartões que não casam pelo título, ou seja, uma falha de rede viraria "nada
  * encontrado".
@@ -303,7 +303,7 @@ export async function requestLocationSuggestions(q: string): Promise<EntitySugge
 }
 
 /**
- * Busca UMA passagem inteira — todos os versículos da faixa numa chamada só.
+ * Busca UMA passagem inteira, todos os versículos da faixa numa chamada só.
  *
  * A versão anterior pedia versículo a versículo, e um estudo com muitas
  * passagens estourava o rate limit: os versículos recusados voltavam vazios e
@@ -400,7 +400,7 @@ export async function uploadChunk(input: {
 
 /**
  * POST /api/youtube/import. Busca a legenda do vídeo em `source_url`, cobra as
- * moedas e roda o resumo inteiro. A resposta demora — é a mesma espera de um
+ * moedas e roda o resumo inteiro. A resposta demora, é a mesma espera de um
  * resumo final sobre uma pregação de uma hora.
  *
  * Devolve o `error` cru da rota em vez de uma frase pronta: quem sabe traduzir
@@ -421,7 +421,7 @@ export async function requestYoutubeImport(body: {
     const raw = (await res.json().catch(() => ({}))) as { error?: string };
     // 409 `session_already_imported` NÃO é erro para quem chama: significa que
     // um POST anterior chegou ao fim e a sessão está pronta. A página recarrega
-    // depois de uma queda de rede e cai exatamente aqui — tratá-lo como falha
+    // depois de uma queda de rede e cai exatamente aqui, tratá-lo como falha
     // mostraria um erro em cima de uma importação que deu certo.
     if (res.status === 409 && raw?.error === "session_already_imported") return { ok: true };
 

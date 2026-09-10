@@ -31,7 +31,7 @@ export function StudyCtaCard({
   const title = session.title?.trim() || "Sessão sem título";
   // Quem pregou · onde · quando. Cada parte cai fora sozinha se faltar: o
   // sermão pode não ter orador identificado, nem local, e o card continua
-  // legível — a data é a única que sempre existe.
+  // legível, a data é a única que sempre existe.
   const byline = [session.speakerName, session.speakerLocation, session.dateLabel]
     .map((s) => s?.trim())
     .filter((s): s is string => Boolean(s))

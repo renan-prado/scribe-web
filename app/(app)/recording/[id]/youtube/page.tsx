@@ -18,7 +18,7 @@ export async function generateMetadata({ params }: PageProps): Promise<Metadata>
 /**
  * O lugar de uma sessão do modo YouTube ENQUANTO ela é importada.
  *
- * Ocupa a mesma casa das três páginas de gravação — `/recording/:id/<modo>` —
+ * Ocupa a mesma casa das três páginas de gravação, `/recording/:id/<modo>`,
  * porque cumpre o mesmo papel no fluxo: é para onde o diálogo empurra, e é de
  * onde a sessão sai pronta. Só que aqui não há microfone, cronômetro nem botão:
  * o trabalho é do servidor, e a página existe para esperar por ele.
@@ -36,7 +36,7 @@ export default async function RecordingYoutubePage({ params }: PageProps) {
     redirect(`/recording/${id}/${recordingRouteFor(session.mode)}`);
   }
 
-  // Já importada — `ended_at` só é preenchido quando a transcrição foi gravada.
+  // Já importada, `ended_at` só é preenchido quando a transcrição foi gravada.
   // Voltar aqui (um "atrás" do navegador, um link velho) não pode redisparar
   // uma rota que cobra; a rota também recusa com 409, e este redirect é o que
   // evita a tela de espera piscando antes da recusa.

@@ -14,18 +14,18 @@ const log = createLogger("fx");
  *
  * QUATRO FONTES, NESTA ORDEM:
  *
- *   1. AwesomeAPI — cotação viva do mercado brasileiro, sem chave, cacheada 1h;
- *   2. Frankfurter — cotação de referência do BCE, sem chave, atualizada em
+ *   1. AwesomeAPI: cotação viva do mercado brasileiro, sem chave, cacheada 1h;
+ *   2. Frankfurter: cotação de referência do BCE, sem chave, atualizada em
  *      dia útil. Segunda fonte VIVA, não terceira opção;
  *   3. o valor que o admin digitou à mão, num cookie server-readable;
  *   4. a última cotação guardada em `usd_brl_rates` (migração 0049).
  *
  * OS DEGRAUS 2 E 4 EXISTEM POR UM SINISTRO REAL. O painel passou dias exibindo
- * "sem câmbio" em cada campo em real — com 328 chamadas medidas e o custo em
+ * "sem câmbio" em cada campo em real, com 328 chamadas medidas e o custo em
  * dólar gravado corretamente no banco. Só havia o degrau 1 e o cookie: o
  * upstream limita por IP e o IP de saída da Vercel é compartilhado, o cookie
  * vale por NAVEGADOR e nunca havia sido digitado, e as duas únicas fontes
- * falhavam juntas. O resultado era `null`, sem erro nenhum na tela — o pior
+ * falhavam juntas. O resultado era `null`, sem erro nenhum na tela, o pior
  * jeito de uma medição falhar.
  *
  * Uma fonte a mais consertaria o incidente daquele dia; ela não conserta a
@@ -144,7 +144,7 @@ async function persist(rate: number, source: UsdBrlSource): Promise<void> {
   // Aguardado, e não solto com `void`: numa função serverless o trabalho que
   // sobra depois da resposta pode simplesmente não acontecer, e um plano B que
   // grava "quase sempre" não é plano B. O custo é UM upsert por instância a
-  // cada cotação nova — a guarda acima é o que impede que seja um por render.
+  // cada cotação nova, a guarda acima é o que impede que seja um por render.
   await saveUsdBrlRate(rate, source);
 }
 
@@ -169,6 +169,6 @@ export async function getUsdToBrl(): Promise<UsdBrlRate | null> {
     return { rate: stored.rate, fetchedAt: stored.fetchedAt, source: "stored" };
   }
 
-  log.warn("nenhuma fonte de câmbio respondeu — o painel fica sem valores em real");
+  log.warn("nenhuma fonte de câmbio respondeu, o painel fica sem valores em real");
   return null;
 }

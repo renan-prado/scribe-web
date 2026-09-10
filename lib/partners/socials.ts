@@ -7,7 +7,7 @@
  * o mesmo perfil aparece de três jeitos e não dá para montar um link a partir
  * do que está no banco.
  *
- * A normalização é deliberadamente burra — só extrai o último segmento de
+ * A normalização é deliberadamente burra, só extrai o último segmento de
  * caminho e tira o arroba. Não valida se o perfil existe nem se a rede é a
  * certa: isso exigiria bater na rede social, e o custo de errar aqui é um link
  * quebrado numa tela interna, não dinheiro.
@@ -30,7 +30,7 @@ const PROFILE_URL: Record<SocialNetwork, (handle: string) => string> = {
 
 /**
  * Devolve o handle sem `@`, sem domínio e sem query string. String vazia
- * quando não sobrou nada aproveitável — o chamador trata isso como "não
+ * quando não sobrou nada aproveitável, o chamador trata isso como "não
  * informado".
  */
 export function normalizeHandle(input: string): string {

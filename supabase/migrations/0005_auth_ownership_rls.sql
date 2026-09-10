@@ -16,7 +16,7 @@
 --   -- inherits automatically. No manual sync needed after the claim.
 --
 -- With RLS on and user_id NULL, those rows are invisible to every request
--- until claimed — no data leak.
+-- until claimed, no data leak.
 
 -- 1) Ownership columns ------------------------------------------------------
 
@@ -79,7 +79,7 @@ after insert on auth.users
 for each row execute function public.handle_new_auth_user();
 
 -- 3) Extend the explode function to carry sessions.user_id ------------------
--- Signature unchanged (session_id, feed_items) — the user_id lookup is done
+-- Signature unchanged (session_id, feed_items), the user_id lookup is done
 -- inside so no callers need to change. Runs SECURITY DEFINER so the trigger
 -- can write to session_feed_items regardless of the invoker's RLS.
 

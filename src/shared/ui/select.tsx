@@ -16,7 +16,7 @@ import { cn } from "@/lib/utils";
  *
  * As duas saídas suportadas, e todo `Select` do app usa uma delas:
  *
- *   1. `items` no Root — o jeito da biblioteca. Declare as opções uma vez e
+ *   1. `items` no Root: o jeito da biblioteca. Declare as opções uma vez e
  *      passe a mesma lista para o Root e para o map dos itens:
  *
  *        const OPTIONS = [{ value: "active", label: "Ativo" }, ...];
@@ -27,7 +27,7 @@ import { cn } from "@/lib/utils";
  *          </SelectContent>
  *        </Select>
  *
- *   2. `<SelectValue>{(v) => LABELS[v]}</SelectValue>` — função como filho,
+ *   2. `<SelectValue>{(v) => LABELS[v]}</SelectValue>`: função como filho,
  *      quando o rótulo do gatilho é diferente do da lista.
  *
  * Um `<SelectValue />` pelado só está correto quando o valor JÁ É o texto que

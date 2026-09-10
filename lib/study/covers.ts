@@ -7,7 +7,7 @@ import { createLogger } from "@/lib/log";
  *
  * ⚠️ **A URL nunca vem do modelo.** Um link inventado é indistinguível de um
  * link real até alguém clicar, e o custo de errar aqui é levar o leitor a um
- * 404 ou — pior — à capa de outro livro. Só entra no payload o que uma API
+ * 404 ou, pior, à capa de outro livro. Só entra no payload o que uma API
  * externa confirmou pelo par autor+título.
  *
  * ## Por que Google Books, e por que atrás de uma env var
@@ -15,7 +15,7 @@ import { createLogger } from "@/lib/log";
  * Medido contra os 41 livros do índice de teólogos:
  *
  *   - **Open Library**, busca estrita: 2 de 41. Busca livre: acha capa, mas do
- *     livro ERRADO — "Alegria em Deus" (Piper) devolveu a capa de "I e II
+ *     livro ERRADO, "Alegria em Deus" (Piper) devolveu a capa de "I e II
  *     Pedro"; "A Cruz de Cristo" (Stott) devolveu "Testemunho da Verdade".
  *     Capa errada ao lado de uma indicação de leitura é pior que capa nenhuma:
  *     manda a pessoa procurar outro livro na livraria.
@@ -23,7 +23,7 @@ import { createLogger } from "@/lib/log";
  *     zeros da primeira medição eram quota, não ausência de acervo.
  *
  * Ou seja: sem chave não há fonte confiável para teologia em português. Por
- * isso a busca é OPCIONAL — sem `GOOGLE_BOOKS_API_KEY` o resolvedor devolve
+ * isso a busca é OPCIONAL, sem `GOOGLE_BOOKS_API_KEY` o resolvedor devolve
  * `null` sem chamar ninguém, e a UI desenha a capa tipográfica. Configurar a
  * chave liga as capas reais sem tocar em mais nada.
  */
@@ -45,7 +45,7 @@ export type CoverQuery = { author: string; title: string };
 
 /**
  * `null` quando não há chave, quando a API não responde, ou quando o volume
- * encontrado não confere com o que pedimos. Silêncio é a resposta correta —
+ * encontrado não confere com o que pedimos. Silêncio é a resposta correta,
  * quem chama simplesmente não recebe `coverUrl`.
  */
 export async function resolveCover(query: CoverQuery): Promise<string | null> {
@@ -138,7 +138,7 @@ function normalize(v: string): string {
 /**
  * O volume devolvido é mesmo o que pedimos?
  *
- * Título: exige que um dos dois contenha o outro depois de normalizado — cobre
+ * Título: exige que um dos dois contenha o outro depois de normalizado, cobre
  * subtítulo ("Confissões" ⊂ "Confissões de Santo Agostinho") sem aceitar outro
  * livro do mesmo autor.
  *

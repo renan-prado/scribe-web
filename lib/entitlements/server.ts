@@ -19,7 +19,7 @@ import {
  *
  * Regra que este módulo existe para impor: **esconder o botão não é
  * proteção**. Toda rota que executa uma funcionalidade paga chama
- * `requireFeature` antes de fazer qualquer coisa cara ou irreversível — e
+ * `requireFeature` antes de fazer qualquer coisa cara ou irreversível, e
  * antes de cobrar moedas, sempre. A UI usa o snapshot só para não oferecer o
  * que vai dar 403.
  */
@@ -28,7 +28,7 @@ import {
  * O plano que vale AGORA. Não é `subscription.plan`: uma assinatura cancelada
  * mantém o plano gravado na linha para efeito de histórico, e ler esse campo
  * direto daria acesso vitalício a quem cancelou. `isActiveStatus` inclui
- * `past_due` de propósito — o Stripe ainda está tentando cobrar, e ninguém
+ * `past_due` de propósito, o Stripe ainda está tentando cobrar, e ninguém
  * perde acesso no primeiro retry falho.
  */
 export const getCurrentPlan = cache(async (): Promise<PlanKey> => {
@@ -40,11 +40,11 @@ export const getCurrentPlan = cache(async (): Promise<PlanKey> => {
 /**
  * Snapshot completo do usuário autenticado. Memoizado por request (`cache()`),
  * então o layout, a página e o componente podem pedir sem multiplicar
- * consultas — mesmo motivo de `lib/db/account.ts`.
+ * consultas, mesmo motivo de `lib/db/account.ts`.
  *
  * ⚠️ `cache()` só vale em Server Component / Server Action. Em Route Handler
  * cada chamada refaz as consultas; é o que `requireFeature` faz, e é
- * deliberado — o caminho que protege dinheiro não divide estado com nada.
+ * deliberado, o caminho que protege dinheiro não divide estado com nada.
  */
 export const getCurrentEntitlements = cache(async (): Promise<EntitlementSnapshot> => {
   return resolveEntitlements();
@@ -79,7 +79,7 @@ export async function canCurrentUserUse(key: FeatureKey): Promise<boolean> {
  * pronta quando não.
  *
  * 403 e não 404: diferente do `/admin`, a existência do "Gerar estudo" não é
- * segredo nenhum — ele está anunciado na página de planos. Esconder o motivo
+ * segredo nenhum, ele está anunciado na página de planos. Esconder o motivo
  * aqui só produziria um erro que ninguém sabe resolver, e o caminho de
  * resolução é justamente o que queremos oferecer (assinar).
  */

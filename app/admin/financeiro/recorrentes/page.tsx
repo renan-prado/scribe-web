@@ -15,7 +15,7 @@ const INT = new Intl.NumberFormat("pt-BR");
  * Custos recorrentes (§8).
  *
  * O topo responde de uma vez à pergunta que dá nome à área: quanto o Scriba
- * custa por mês. E ele soma EQUIVALENTES MENSAIS, não cobranças do mês — um
+ * custa por mês. E ele soma EQUIVALENTES MENSAIS, não cobranças do mês, um
  * mês sem a cobrança anual do domínio não é um mês mais barato.
  *
  * O custo de IA aparece ao lado, medido, porque sem ele o número do topo
@@ -36,7 +36,7 @@ export default async function FinanceRecurringPage() {
     {
       label: "Fixos",
       value: formatBrlCents(summary.fixedMonthlyCents),
-      hint: "Não escalam com uso — o piso do produto",
+      hint: "Não escalam com uso, o piso do produto",
       tone: "cream",
     },
     {
@@ -48,7 +48,7 @@ export default async function FinanceRecurringPage() {
     {
       label: "IA e taxas do mês",
       value: formatBrlCents(current.expenseMeasuredCents),
-      hint: "Medido — não é contrato, varia com o uso",
+      hint: "Medido, não é contrato, varia com o uso",
       tone: "mint",
     },
   ];

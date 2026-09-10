@@ -20,12 +20,12 @@ const schema = z.object({
    * O transcritor. `gpt-transcribe` e NÃO o `gpt-4o-mini-transcribe` que era o
    * padrão: medido contra um sermão real gravado num salão com eco e microfone
    * distante, com transcrição de referência feita à mão, o mini fecha 27% de
-   * WER e o gpt-transcribe 12%. A distância aumenta com a acústica — sob
+   * WER e o gpt-transcribe 12%. A distância aumenta com a acústica, sob
    * reverberação forte o mini vai a 70% e o gpt-transcribe fica em 16%.
    *
    * Não existe degrau acima deste. `gpt-4o-transcribe` perde para ele em TODOS
    * os cenários medidos (16% no limpo, 37% com reverb), então a escalada de
-   * modelo que existia aqui foi removida em vez de repontada — ver
+   * modelo que existia aqui foi removida em vez de repontada, ver
    * `docs/transcricao.md`.
    */
   OPENAI_TRANSCRIBE_MODEL: z.string().default("gpt-transcribe"),
@@ -43,7 +43,7 @@ const schema = z.object({
   // Nenhuma delas é `gpt-4o`, e a diferença foi MEDIDA sobre um sermão real:
   // com 4o, as perguntas orbitavam o sermão, as respostas paravam em 190
   // palavras quando o prompt pedia 350-500, e o artigo saía com um terço do
-  // material que recebia. Prompt não consertava — era teto de modelo.
+  // material que recebia. Prompt não consertava, era teto de modelo.
   //
   // Os três já foram `gpt-5.1`. O estudo fechava a −16% de MARGEM assim
   // ($0,227 por estudo contra R$ 1,00 de receita a 50 moedas), e a medição
@@ -55,7 +55,7 @@ const schema = z.object({
   //
   //   - QUESTIONADOR em mini: levantar 25-30 ângulos a temperatura alta é
   //     divergência, não dedução, e dois terços das perguntas são descartadas
-  //     por desenho — pagar $10/M por andaime era o pior negócio da tabela. A
+  //     por desenho, pagar $10/M por andaime era o pior negócio da tabela. A
   //     seleção continua sendo feita pelo respondedor grande, que é a rede.
   //   - RESPONDEDOR fica: é a única etapa que carrega obra, controvérsia,
   //     data e referência bíblica. Citação inventada nasce aqui, e é o pior
@@ -63,7 +63,7 @@ const schema = z.object({
   //   - REDATOR: ele recebe a substância já fixada, as passagens já conferidas
   //     contra a NVI (`lib/study/anchor.ts`) e os autores já filtrados, e a
   //     selagem ainda descarta o que ele inventar. Compor prosa de material
-  //     pronto é composição, não dedução — mesma razão do
+  //     pronto é composição, não dedução, mesma razão do
   //     `reasoningEffort: "low"` que ele já usava.
   //
   // O redator é `gpt-5.4-mini`, e os três candidatos foram medidos sobre o
@@ -82,11 +82,11 @@ const schema = z.object({
   //
   // O `gpt-5.1` não é a alternativa, e não por preço: a 354s ele ESTOURA o
   // `maxDuration = 300` da rota. Com o respondedor medindo 170-185s, o redator
-  // não tem mais 147s de orçamento — voltar para ele é trocar margem de 35%
+  // não tem mais 147s de orçamento, voltar para ele é trocar margem de 35%
   // por uma função que morre depois de debitar as moedas.
   //
   // Fica a diferença que o 5.4-mini não cobre: 108 palavras por parágrafo
-  // contra 140, e 6 passagens ancoradas contra 16 — ou seja, ele aproveita
+  // contra 140, e 6 passagens ancoradas contra 16, ou seja, ele aproveita
   // menos o trabalho do passo 3. Nenhum dos três cumpre o "4 a 6 parágrafos
   // por seção" do prompt (3,3 · 3,6 · 2,6), o que faz disso um problema de
   // PROMPT, não de modelo.
@@ -96,14 +96,14 @@ const schema = z.object({
   // O guardião só classifica, mas classificar "esta pergunta está presa a
   // ESTE sermão?" acabou sendo difícil demais para um modelo pequeno de
   // geração antiga: medido sobre um sermão real, o gpt-4o-mini reprovava 26 de
-  // 27 perguntas com o mesmo prompt em que o gpt-5-mini reprova 6 — e um
+  // 27 perguntas com o mesmo prompt em que o gpt-5-mini reprova 6, e um
   // filtro que reprova tudo não filtra nada, só aciona o fallback. Custa 9s.
   OPENAI_STUDY_GUARD_MODEL: z.string().default("gpt-5-mini"),
   /**
    * Capa dos livros indicados no estudo. OPCIONAL: sem ela o resolvedor
    * devolve null sem chamar ninguém e a UI desenha uma capa tipográfica.
    *
-   * Sem chave, a API do Google responde 429 a toda chamada — foi medido. E as
+   * Sem chave, a API do Google responde 429 a toda chamada, foi medido. E as
    * alternativas gratuitas não têm acervo de teologia em português: a busca
    * livre na Open Library devolve a capa de OUTRO livro do mesmo autor, que é
    * pior que capa nenhuma. Ver lib/study/covers.ts.
@@ -118,15 +118,15 @@ const schema = z.object({
    * `mini` e não um modelo grande porque a tarefa é EXTRAÇÃO, não julgamento:
    * tudo que a resposta precisa conter já está na linha de entrada, e o prompt
    * traz cinco exemplos resolvidos. O que o modelo faz aqui é reconhecer que
-   * um `I` entre espaços virou separador — e para isso um mini basta.
+   * um `I` entre espaços virou separador, e para isso um mini basta.
    */
   OPENAI_YOUTUBE_METADATA_MODEL: z.string().default("gpt-4o-mini"),
   /** Auditoria do alerta de alucinação. Julga se um card se sustenta na
-   * transcrição — evento raro e de alto impacto, então vale o modelo bom. */
+   * transcrição, evento raro e de alto impacto, então vale o modelo bom. */
   OPENAI_HALLUCINATION_MODEL: z.string().default("gpt-4o"),
   /**
    * O analista financeiro do /admin. Roda no máximo uma vez por dia por tela,
-   * disparado por um admin, sobre um briefing de números já agregados —
+   * disparado por um admin, sobre um briefing de números já agregados,
    * volume ínfimo, e a tarefa é aritmética cruzada, não redação. É o lugar do
    * modelo caro: um insight errado sobre margem custa mais que a chamada.
    */
@@ -136,7 +136,7 @@ const schema = z.object({
   /* ---- Stripe (billing) ----------------------------------------------
    * Deliberadamente OPCIONAIS: o app precisa subir num ambiente sem Stripe
    * configurado (dev local, preview, primeiro deploy). Quem consome estas
-   * variáveis é `lib/billing/stripe.ts`, que devolve `null` quando faltam —
+   * variáveis é `lib/billing/stripe.ts`, que devolve `null` quando faltam,
    * e as rotas /api/billing/* respondem 503 `billing_unavailable` em vez de
    * derrubar o processo inteiro no import.
    *
@@ -157,7 +157,7 @@ const schema = z.object({
    * **OPCIONAL pelo mesmo motivo das do Stripe:** o app tem de subir num
    * ambiente sem ela (dev local recém-clonado, preview, primeiro deploy). Quem
    * a consome é `lib/youtube/supadata.ts`, que devolve `provider_unavailable`
-   * e faz `/api/youtube/import` responder 503 — em vez de derrubar o processo
+   * e faz `/api/youtube/import` responder 503, em vez de derrubar o processo
    * inteiro no import por causa de um modo que a maioria das sessões não usa.
    *
    * Ela existe porque extrair legenda do YouTube A PARTIR DE UM SERVIDOR não
@@ -211,7 +211,7 @@ const parsed = schema.safeParse({
   // `|| undefined` e não o valor cru: esta variável nasce VAZIA no `.env.dev`
   // de quem clona o repositório e no painel da Vercel de quem ainda não criou
   // conta no provedor. Para o Zod, `""` é um valor PRESENTE que falha o
-  // `.min(1)` — `.optional()` só perdoa `undefined` —, e o efeito é o pior
+  // `.min(1)`, `.optional()` só perdoa `undefined`, e o efeito é o pior
   // possível: o boot inteiro morre com "Too small" por causa de um modo que a
   // maioria das sessões não usa. Linha em branco significa "não configurado",
   // que é exatamente o caso que o `.optional()` existe para cobrir.

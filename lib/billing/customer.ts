@@ -5,7 +5,7 @@ import { getStripeCustomerId, setStripeCustomerId } from "@/lib/db/billing";
 /**
  * Resolve (ou cria) o Customer do Stripe de um usuário.
  *
- * O id do customer NUNCA vem do request — é lido do profiles do usuário
+ * O id do customer NUNCA vem do request, é lido do profiles do usuário
  * autenticado ou criado na hora. É o que garante que uma sessão de checkout
  * sempre cobre e credite a MESMA conta que a iniciou: mesmo que alguém forje
  * o corpo do POST, o customer usado é o dele.

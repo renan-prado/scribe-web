@@ -12,7 +12,7 @@ import { createAdminClient } from "@/lib/supabase/admin";
  * AJUSTANDO o pipeline: "o que mudou entre a execução de ontem e a de agora?"
  *
  * Reprocessar um estudo grava um segundo conjunto de eventos na MESMA sessão.
- * Somados, os dois viram um número que não descreve nem um nem outro — e é
+ * Somados, os dois viram um número que não descreve nem um nem outro, e é
  * exatamente esse número que as outras telas mostravam. Separar as execuções é
  * a razão de este módulo existir.
  *
@@ -20,7 +20,7 @@ import { createAdminClient } from "@/lib/supabase/admin";
  *
  * **Abre em todo evento `study-questions`**, que é o passo 1 do pipeline e
  * roda exatamente uma vez por estudo (`lib/study/generate.ts`). É um corte
- * exato, não uma heurística de tempo — o que importa quando duas execuções
+ * exato, não uma heurística de tempo, o que importa quando duas execuções
  * podem ser disparadas com minutos de diferença.
  *
  * O intervalo de 10 minutos é só a rede para o que veio ANTES do pipeline
@@ -29,7 +29,7 @@ import { createAdminClient } from "@/lib/supabase/admin";
  * do outro apareceriam fundidos. Não existe caminho no produto que produza
  * isso hoje.
  *
- * Service-role porque a tela é transversal a usuários — só é alcançada depois
+ * Service-role porque a tela é transversal a usuários, só é alcançada depois
  * de `isCurrentUserAdmin()`.
  */
 
@@ -56,7 +56,7 @@ export type RunStep = {
   cachedTokens: number | null;
   /**
    * Subconjunto de `completionTokens`, cobrado como saída. NULL nas chamadas
-   * anteriores à migração 0036 e em todo modelo que não raciocina — nulo é
+   * anteriores à migração 0036 e em todo modelo que não raciocina, nulo é
    * "não medido", nunca zero medido.
    */
   reasoningTokens: number | null;
@@ -71,8 +71,8 @@ export type SessionRun = {
   steps: RunStep[];
   totalCostUsd: number;
   /**
-   * Soma das latências das chamadas. NÃO é o relógio de parede da rota — fora
-   * fica a ancoragem, as capas e a persistência —, mas é o que se compara
+   * Soma das latências das chamadas. NÃO é o relógio de parede da rota, fora
+   * fica a ancoragem, as capas e a persistência, mas é o que se compara
    * contra o `maxDuration = 300` da rota, porque é o que domina.
    */
   llmMs: number;
@@ -83,7 +83,7 @@ export type SessionRunsReport = {
   sessionId: string;
   sessionTitle: string | null;
   captureMode: string | null;
-  /** Da mais recente para a mais antiga — é a que se acabou de rodar. */
+  /** Da mais recente para a mais antiga, é a que se acabou de rodar. */
   runs: SessionRun[];
   /** Custo de tudo o que NÃO é estudo: transcrição, feed ao vivo, resumo. */
   otherCostUsd: number;

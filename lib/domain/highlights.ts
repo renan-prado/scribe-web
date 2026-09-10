@@ -1,7 +1,7 @@
 import { z } from "zod";
 
 /**
- * Highlights — frases marcantes do sermão recicladas SEM IA para o feed
+ * Highlights, frases marcantes do sermão recicladas SEM IA para o feed
  * agendado. Fonte: os itens de fala já capturados durante o ao vivo
  * (`speakerCitation`, `speakerHighlight`, `speakerEcho`) e citações do
  * resumo final (`blocks[type=quote]`).
@@ -43,8 +43,8 @@ export type HighlightsPayload = z.infer<typeof HighlightsPayloadSchema>;
 
 /**
  * Distribui N frases entre [MIN, MAX] em progressão geométrica. Para N=1
- * devolve [MIN]. Para N>=2, `offset[i] = round(MIN * (MAX/MIN)^(i/(N-1)))`
- * — garante primeiro em MIN e último em MAX, com espaçamento exponencial.
+ * devolve [MIN]. Para N>=2, `offset[i] = round(MIN * (MAX/MIN)^(i/(N-1)))`,
+ * garante primeiro em MIN e último em MAX, com espaçamento exponencial.
  *
  * Se dois offsets consecutivos colapsam no mesmo dia (arredondamento), o
  * segundo é empurrado +1 para evitar colisão visual no mesmo dia.

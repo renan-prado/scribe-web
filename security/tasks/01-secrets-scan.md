@@ -1,4 +1,4 @@
-# 01 — Varredura de secrets
+# 01: Varredura de secrets
 
 **Status:** ✅ Concluído (última rodada: ver `CHECKLIST.md`)
 
@@ -38,14 +38,14 @@ burned, hiding it now is not enough.
 - [ ] Nenhum `sk_live_`, `sk_test_`, service-role key do Supabase, ou chave da
       OpenAI aparece hardcoded em `lib/`, `app/`, `src/`, ou em `scripts/`.
 - [ ] `git log -p --all -- .env*` e `git log -S"sk_live_" --all` (e
-      equivalentes para outras chaves) não retornam nada — se retornarem, a
+      equivalentes para outras chaves) não retornam nada, se retornarem, a
       chave está queimada mesmo que o arquivo tenha sido apagado depois.
 - [ ] Toda variável exposta ao cliente usa o prefixo `NEXT_PUBLIC_` de
-      propósito — nenhuma chave de servidor (`serverEnv` em
+      propósito, nenhuma chave de servidor (`serverEnv` em
       `lib/env/server.ts`) vaza para um componente `"use client"` ou para o
       bundle do navegador.
 - [ ] A anon key do Supabase (pública por design) não está fazendo trabalho
-      privilegiado — ou seja, RLS cobre tudo que ela consegue alcançar (ver
+      privilegiado, ou seja, RLS cobre tudo que ela consegue alcançar (ver
       tarefa 03). Uma anon key não é um secret que precisa rotação, mas se
       ela sozinha permite escrever/ler dado de outro usuário, o problema é
       RLS, não a chave.

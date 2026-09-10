@@ -10,7 +10,7 @@
 --   * O indicado ganha um bônus de moedas no cadastro (150 por padrão), que
 --     SOMA às 50 de boas-vindas.
 --   * O parceiro ganha um percentual da PRIMEIRA mensalidade paga por cada
---     indicado — uma vez por pessoa, para sempre.
+--     indicado, uma vez por pessoa, para sempre.
 --
 -- DUAS INVARIANTES ESTRUTURAIS, e nenhuma delas depende de `if` no
 -- servidor:
@@ -23,7 +23,7 @@
 --      que a comissão nasce. A taxa é editável por parceiro, e mudá-la
 --      amanhã não pode reescrever o que ele já ganhou.
 --
--- SUPERFÍCIE DE ATAQUE — o que este arquivo fecha:
+-- SUPERFÍCIE DE ATAQUE, o que este arquivo fecha:
 --   * Auto-atribuição via PostgREST. As três colunas novas em `profiles`
 --     ficam fora do GRANT de coluna concedido a `authenticated` em 0026
 --     (que lista display_name/avatar_url/email e mais nada). Um usuário com
@@ -33,7 +33,7 @@
 --     revogado de anon/authenticated, exatamente como `grant_coins()`. E ela
 --     credita CHAMANDO `grant_coins`, não escrevendo no saldo: o bônus entra
 --     pela mesma porta única de crédito que todo o resto do dinheiro.
---   * Bônus retroativo. A função recusa contas que não são novas — sem isso,
+--   * Bônus retroativo. A função recusa contas que não são novas, sem isso,
 --     qualquer usuário antigo que abrisse um link de parceiro seria vinculado
 --     e ganharia moedas de graça, quantas vezes quisesse trocar de link.
 --   * Auto-indicação. O parceiro não gera comissão para si mesmo.
@@ -54,7 +54,7 @@ create table if not exists public.partners (
   user_id               uuid unique references auth.users(id) on delete set null,
   invited_email         text not null,
   -- Serve ao mesmo tempo como caminho do link (/r/<slug>) e como código
-  -- digitável no cadastro. Guardado sempre em minúsculas — a resolução
+  -- digitável no cadastro. Guardado sempre em minúsculas, a resolução
   -- normaliza a entrada antes de comparar, para "JOAO" e "joao" serem o
   -- mesmo parceiro.
   slug                  text not null,
@@ -65,7 +65,7 @@ create table if not exists public.partners (
   doc                   text,
   pix_key               text,
   -- Basis points: 3000 = 30,00%. Inteiro em vez de numeric para que a
-  -- aritmética de dinheiro seja exata. Editável por parceiro — o simulador
+  -- aritmética de dinheiro seja exata. Editável por parceiro, o simulador
   -- do admin mostra o efeito no mês 1 antes de salvar.
   commission_rate_bps   int  not null default 3000
     check (commission_rate_bps between 0 and 10000),
@@ -103,7 +103,7 @@ alter table public.partners
 
 -- 2) Cliques no link ---------------------------------------------------------
 -- Rollup diário, não evento cru. O painel só mostra agregado e o volume não
--- justifica uma linha por visita — mas a distinção clicks/uniques importa: um
+-- justifica uma linha por visita, mas a distinção clicks/uniques importa: um
 -- link em stories é reaberto várias vezes pela mesma pessoa, e sem a coluna
 -- `uniques` o funil do parceiro vira ficção otimista.
 
@@ -185,7 +185,7 @@ create index if not exists partner_commissions_payable_idx
 -- Estas colunas ficam fora do alcance do cliente de graça: 0026 revogou
 -- UPDATE de `authenticated` em profiles e reconcedeu apenas
 -- (display_name, avatar_url, email). Toda coluna nova nasce, portanto, não
--- escrevível pelo anon key — que é exatamente o que queremos aqui, já que
+-- escrevível pelo anon key, que é exatamente o que queremos aqui, já que
 -- `partner_id` decide para quem vai dinheiro.
 
 alter table public.profiles
@@ -248,7 +248,7 @@ $$;
 --
 -- A JANELA DE CONTA NOVA é o detalhe que mais fácil se esqueceria. Sem ela,
 -- um usuário de um ano atrás que abrisse /r/joao seria vinculado no login
--- seguinte e ganharia 150 moedas — de novo a cada link diferente que abrisse.
+-- seguinte e ganharia 150 moedas, de novo a cada link diferente que abrisse.
 -- Trinta minutos cobrem com folga o roundtrip do OAuth e o consentimento.
 
 create or replace function public.attach_partner(
@@ -313,7 +313,7 @@ begin
    where id = p_user_id;
 
   -- Orçamento estourado: vincula sem bônus. O parceiro continua ganhando a
-  -- comissão se a pessoa assinar — o teto limita o custo do brinde, não o
+  -- comissão se a pessoa assinar, o teto limita o custo do brinde, não o
   -- programa.
   v_bonus := v_partner.signup_bonus_coins;
   if v_partner.bonus_budget_coins is not null

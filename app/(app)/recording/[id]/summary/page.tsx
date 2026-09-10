@@ -47,7 +47,7 @@ export default async function RecordingSummaryPage({ params }: PageProps) {
       canCurrentUserUse("study_generation").catch(() => false),
     ]);
   if (!session) notFound();
-  // Sessões do modo transcrição nascem SEM resumo — enquanto for esse o caso,
+  // Sessões do modo transcrição nascem SEM resumo, enquanto for esse o caso,
   // esta página não tem o que desenhar e a leitura mora em /transcript. O
   // gate é a ausência do payload, não o modo: depois de a pessoa gerar o
   // resumo sob demanda (`/api/final-summary/from-transcript`), a sessão passa a
@@ -80,7 +80,7 @@ export default async function RecordingSummaryPage({ params }: PageProps) {
         canGenerateStudy={canGenerateStudy}
       />
       {/* A pesquisa da 1ª, 3ª e 8ª gravação. Ela não desenha nada até o
-          servidor dizer que é uma delas — ver `FeedbackPrompt`. */}
+          servidor dizer que é uma delas, ver `FeedbackPrompt`. */}
       <FeedbackPrompt kind="recording" sessionId={id} delayMs={FEEDBACK_DELAY_SUMMARY_MS} />
     </>
   );

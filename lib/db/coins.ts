@@ -10,7 +10,7 @@ import { getAuthUser } from "@/lib/supabase/server";
  * the check + decrement are atomic (see migration 0017).
  *
  * `chargeCoins` mapeia um `ChargeReason` conhecido para o preço canônico de
- * COIN_COST_BY_REASON — o cliente escolhe o MOTIVO, nunca o valor.
+ * COIN_COST_BY_REASON, o cliente escolhe o MOTIVO, nunca o valor.
  *
  * **O client é o service-role, e isso é a proteção, não um atalho.** Até a
  * migração 0037, `charge_coins` tinha EXECUTE para `authenticated` e recebia o

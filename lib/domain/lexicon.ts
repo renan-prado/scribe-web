@@ -1,11 +1,11 @@
 /**
- * O léxico das MENÇÕES — os nomes próprios que o `annotateText` reconhece
+ * O léxico das MENÇÕES, os nomes próprios que o `annotateText` reconhece
  * dentro de um parágrafo de resumo ou de estudo. Client-safe: o anotador roda
  * no render, e o `SummaryView` é `"use client"`.
  *
  * Três decisões governam estas listas:
  *
- * 1. **O casamento é EXATO — acentos e maiúscula inclusive.** É o que separa
+ * 1. **O casamento é EXATO, acentos e maiúscula inclusive.** É o que separa
  *    "Jó" de "jó", "Roma" de "roma" e "Marcos" (o evangelista) de "marcos"
  *    (as balizas). Um casamento tolerante a acento, como o do gate do pipeline
  *    ao vivo (`lib/bible/detect.ts`), existe porque LÁ a entrada é transcrição
@@ -21,7 +21,7 @@
  *
  * 3. **A lista é curada, não exaustiva.** Ela cobre quem de fato aparece em
  *    pregação, não os 3.400 nomes próprios da Bíblia. Um nome que falta é uma
- *    palavra sem marcação — invisível. Um nome errado é uma marcação errada no
+ *    palavra sem marcação, invisível. Um nome errado é uma marcação errada no
  *    meio do texto, que o leitor vê. O custo dos dois lados não é o mesmo.
  *
  * Os nomes de FIGURAS CITADAS repetem parte do índice de
@@ -43,7 +43,7 @@ export const BIBLE_PEOPLE = [
   "Matusalém",
   "Noé",
   // "Sete" e "Sem" (os filhos) ficaram DE FORA: em início de frase eles são
-  // indistinguíveis do numeral e da preposição — "Sete pessoas…", "Sem ele…".
+  // indistinguíveis do numeral e da preposição, "Sete pessoas…", "Sem ele…".
   // Um nome que falta é invisível; um falso positivo é uma marcação errada no
   // meio do parágrafo.
   "Cam",
@@ -195,7 +195,7 @@ export const BIBLE_PEOPLE = [
   "Demas",
 ];
 
-/** Lugares bíblicos — cidades, regiões, montes e rios. */
+/** Lugares bíblicos, cidades, regiões, montes e rios. */
 export const BIBLE_PLACES = [
   "Éden",
   "Ur dos Caldeus",
@@ -267,7 +267,7 @@ export const BIBLE_PLACES = [
 ];
 
 /**
- * Gente citada NO texto — teólogos, reformadores, pastores, filósofos. É a
+ * Gente citada NO texto, teólogos, reformadores, pastores, filósofos. É a
  * categoria de "citações" do produto: quem é trazido para dentro do argumento,
  * mas não faz parte da narrativa bíblica.
  *

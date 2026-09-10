@@ -1,11 +1,11 @@
 import type { UsdBrlRate } from "./usd-brl";
 
 /**
- * Money formatter — always renders with 2 decimal places for consistency
+ * Money formatter, always renders with 2 decimal places for consistency
  * across the app. BRL when we have a live rate, USD as fallback.
  *
  * The `_precision` parameter is accepted for backward compatibility with
- * existing call sites but ignored — sub-cent precision was creating noise
+ * existing call sites but ignored, sub-cent precision was creating noise
  * in the dashboard and the user asked for uniform 2-decimal display.
  */
 
@@ -44,7 +44,7 @@ export const COINS_PER_COST_UNIT = 1000;
 export function makeCostPerThousandCoinsFormatter(rate: UsdBrlRate | null) {
   const money = makeMoneyFormatter(rate);
   return (usdPerCoin: number | null): string =>
-    usdPerCoin == null ? "—" : money(usdPerCoin * COINS_PER_COST_UNIT);
+    usdPerCoin == null ? "-" : money(usdPerCoin * COINS_PER_COST_UNIT);
 }
 
 export type CostPerThousandCoinsFormatter = ReturnType<typeof makeCostPerThousandCoinsFormatter>;

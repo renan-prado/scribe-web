@@ -31,7 +31,7 @@ import { EntryDialog } from "./EntryDialog";
 /**
  * Compromissos e dívidas (§9).
  *
- * DÍVIDA NÃO É UM TIPO DE LANÇAMENTO — é um lançamento que ainda não foi
+ * DÍVIDA NÃO É UM TIPO DE LANÇAMENTO, é um lançamento que ainda não foi
  * liquidado. Esta tela é um RECORTE da mesma tabela, não uma entidade
  * paralela, e a decisão está no cabeçalho da migração 0043: um terceiro tipo
  * daria três somas para o mesmo dinheiro (a despesa, o compromisso e o
@@ -52,7 +52,7 @@ type Props = {
   recurring: FinanceRecurring[];
   usdBrl: number | null;
   today: string;
-  /** Comissões de parceiro devidas — medidas, não lançadas. Ver a nota abaixo. */
+  /** Comissões de parceiro devidas, medidas, não lançadas. Ver a nota abaixo. */
   partnerOwedCents: number;
 };
 
@@ -108,7 +108,7 @@ export function CommitmentsManager({
             Além disso, há{" "}
             <strong className="font-mono font-semibold">{formatBrlCents(partnerOwedCents)}</strong>{" "}
             em comissões de parceiro a pagar. Esse valor é <strong>medido</strong> em
-            `partner_commissions` e já entra no total de compromissos da visão geral — não o lance
+            `partner_commissions` e já entra no total de compromissos da visão geral, não o lance
             aqui à mão.
           </p>
         ) : null}
@@ -238,7 +238,7 @@ function CommitmentTable({
                       : "whitespace-nowrap font-mono text-xs text-scriba-ink-soft"
                   }
                 >
-                  {entry.dueDate ? formatDate(entry.dueDate) : "—"}
+                  {entry.dueDate ? formatDate(entry.dueDate) : "-"}
                   {overdue ? <span className="ml-1.5 font-sans font-normal">vencido</span> : null}
                 </TableCell>
                 <TableCell className="text-right">

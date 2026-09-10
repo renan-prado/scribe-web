@@ -4,7 +4,7 @@
  * porquê está no cabeçalho da barra. Existe um `public/icons/recording.svg`
  * para ele, sem componente correspondente de propósito.
  *
- * São PREENCHIDOS, não traçados — não têm `stroke`, e por isso `strokeWidth`
+ * São PREENCHIDOS, não traçados, não têm `stroke`, e por isso `strokeWidth`
  * não faz nada aqui. Quem vier do lucide vai estranhar: lá o peso se ajusta
  * pela espessura do traço; aqui o desenho é sólido e o único controle é o
  * tamanho.
@@ -12,17 +12,17 @@
  * **Todos pintam com `currentColor`**, o que é a razão de existirem como
  * componente em vez de `<img src="/icons/feed.svg">`: um `<img>` não herda cor
  * nenhuma, e a barra precisa que o ícone acompanhe o estado ativo do item.
- * Nenhum deles recebe classe de cor própria — a cor desce do `text-*` do
+ * Nenhum deles recebe classe de cor própria, a cor desce do `text-*` do
  * `<TabLink>` que os envolve. Não acrescente `text-…` aqui dentro.
  *
  * Os originais estão em `public/icons/*.svg`, com o mesmo nome de cada
  * componente. Ao trocar um desenho, troque os DOIS: o arquivo é a fonte que o
  * designer edita, este arquivo é o que a aplicação renderiza. Do SVG original
- * saem o `<?xml?>`, o `id`/`data-name` do editor e o `width`/`height` de 512 —
+ * saem o `<?xml?>`, o `id`/`data-name` do editor e o `width`/`height` de 512,
  * o tamanho aqui vem sempre do `className`.
  *
  * O `viewBox` é 24 nos cinco, e ao contrário dos glifos do lucide estes ocupam
- * a caixa quase inteira — por isso a barra usa um `size` ÚNICO para os quatro
+ * a caixa quase inteira, por isso a barra usa um `size` ÚNICO para os quatro
  * das abas. Quanto cada um desenha, de 24:
  *
  * | glifo   | largura | altura |
@@ -34,7 +34,7 @@
  *
  * O `profile` é o que menos preenche a caixa, e a 16px ele lê como um tico
  * menor que os vizinhos. Já foi compensado com um `scale` de 1,18 aqui dentro
- * e ficou PIOR — a silhueta cresce mas continua estreita, e o que se ganha em
+ * e ficou PIOR, a silhueta cresce mas continua estreita, e o que se ganha em
  * massa se perde em um glifo alto demais para a fileira. Ficou como está.
  *
  * Ao trocar um desenho, MEÇA esta tabela de novo antes de concluir que o

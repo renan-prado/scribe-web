@@ -8,7 +8,7 @@
 --     na primeira vez que ele abre /indicar. O link é `scriba.cc/i/<codigo>`.
 --   * Quem INDICA ganha moedas duas vezes por pessoa: no cadastro dela e, uma
 --     única vez, quando ela assina. Quem é indicado NÃO ganha nada além das
---     50 de boas-vindas — é o que mantém o link do parceiro (150 moedas) como
+--     50 de boas-vindas, é o que mantém o link do parceiro (150 moedas) como
 --     a melhor oferta da casa.
 --   * O parceiro passa a ganhar moedas por cadastro também
 --     (`partners.signup_reward_coins`), para não ficar sem nada enquanto traz
@@ -17,7 +17,7 @@
 -- AS INVARIANTES, e nenhuma delas é um `if` no servidor:
 --
 --   1. `referral_rewards.external_ref` é UNIQUE, e o valor deriva do
---      INDICADO — `referral-signup:<uuid>` e `referral-subscription:<uuid>`.
+--      INDICADO, `referral-signup:<uuid>` e `referral-subscription:<uuid>`.
 --      É assim que "uma vez por pessoa, para sempre" existe: cancelar e
 --      reassinar seis meses depois colide e não credita nada. Mesma filosofia
 --      de `partner_commissions.referred_user_id` e de
@@ -38,13 +38,13 @@
 -- pessoa e por isso é COLUNA), e duplicá-la aqui criaria a segunda cópia de um
 -- número que a tela também precisa mostrar. A fonte única é
 -- `lib/referrals/economics.ts`; estas funções só executam. É seguro porque
--- elas têm EXECUTE revogado de anon/authenticated — quem passa o valor é o
+-- elas têm EXECUTE revogado de anon/authenticated, quem passa o valor é o
 -- nosso servidor, nunca um navegador.
 
 -- 1) O código de cada usuário ------------------------------------------------
 -- Sete caracteres de um alfabeto sem ambiguidade visual (sem 0/O, sem 1/l/i):
 -- este código é ditado em conversa e digitado à mão na tela de entrada, e um
--- "zero ou ó?" custa uma indicação. 31^7 ≈ 27 bilhões de combinações — a
+-- "zero ou ó?" custa uma indicação. 31^7 ≈ 27 bilhões de combinações, a
 -- colisão é tratada por retry na geração, não por sorte.
 
 alter table public.profiles
@@ -93,7 +93,7 @@ create index if not exists profiles_referred_by_idx
 --     NULL (o parceiro é cadastrado antes de existir como conta), então no
 --     momento do cadastro do indicado pode não haver ninguém para creditar.
 --     A linha nasce com `credited_at` nulo e é liberada na primeira visita do
---     parceiro ao app — mesmo caminho preguiçoso da mesada, e sem perda: moeda
+--     parceiro ao app, mesmo caminho preguiçoso da mesada, e sem perda: moeda
 --     só serve dentro do app de qualquer forma.
 
 create table if not exists public.referral_rewards (
@@ -139,7 +139,7 @@ alter table public.partners
 
 -- 5) generate_referral_code() ------------------------------------------------
 -- O alfabeto é espelhado em `lib/referrals/economics.ts`, que é quem valida a
--- entrada digitada antes de ela vir ao banco. Se um dia mudar, mudam os dois —
+-- entrada digitada antes de ela vir ao banco. Se um dia mudar, mudam os dois,
 -- mesma relação de `lib/coins/pricing.ts` com as migrações de cobrança.
 
 create or replace function public.generate_referral_code()
@@ -160,7 +160,7 @@ $$;
 
 -- 6) ensure_referral_code() --------------------------------------------------
 -- Preguiçosa, como a mesada: o código nasce quando alguém abre /indicar, não
--- no trigger de criação do perfil. Duas razões — não mexer no trigger de
+-- no trigger de criação do perfil. Duas razões, não mexer no trigger de
 -- `auth.users` (que roda dentro do Supabase Auth e é o caminho mais caro de
 -- depurar quando quebra), e não gerar código para contas que nunca vão indicar
 -- ninguém.
@@ -220,8 +220,8 @@ $$;
 --   ok | already_attributed | not_new | unknown_code | self_referral | capped
 --
 -- `capped` VINCULA MAS NÃO CREDITA. O teto mensal existe para que uma conta
--- que traz 40 cadastros num mês seja tratada como o que ela é — um divulgador,
--- que deveria estar no programa de parceiros — sem que a atribuição se perca
+-- que traz 40 cadastros num mês seja tratada como o que ela é, um divulgador,
+-- que deveria estar no programa de parceiros, sem que a atribuição se perca
 -- pelo caminho: a recompensa por ASSINATURA continua valendo para todas essas
 -- pessoas, porque assinatura sempre paga a própria conta.
 
@@ -328,7 +328,7 @@ $$;
 -- 8) award_referral_subscription() -------------------------------------------
 -- A segunda recompensa: paga UMA vez, quando o indicado paga a PRIMEIRA
 -- fatura. Chamada de dentro de `creditInvoice` (lib/billing/fulfill.ts), no
--- mesmo ponto e pelo mesmo motivo da comissão do parceiro — é por ali que
+-- mesmo ponto e pelo mesmo motivo da comissão do parceiro, é por ali que
 -- passam os quatro caminhos de crédito, e pendurá-la em um deles faria uma
 -- compra recuperada pelos outros três não recompensar ninguém.
 --
@@ -385,7 +385,7 @@ $$;
 --
 -- Um `grant_coins` por linha, e não um pelo total, porque é o `external_ref`
 -- de cada linha que torna a operação idempotente. Somar tudo num crédito só
--- exigiria inventar uma chave nova para a soma — e chave inventada é
+-- exigiria inventar uma chave nova para a soma, e chave inventada é
 -- exatamente onde o crédito duplo mora.
 --
 -- `skip locked` porque duas abas do parceiro abrindo o app no mesmo segundo
@@ -430,7 +430,7 @@ $$;
 -- 10) attach_partner(), agora com a recompensa do parceiro -------------------
 -- Recriada INTEIRA (a 0029 é a versão anterior) por duas mudanças:
 --
---   a) confere `referred_by_user_id` além de `partner_id` — a atribuição é
+--   a) confere `referred_by_user_id` além de `partner_id`, a atribuição é
 --      exclusiva, e quem chegou por um amigo não vira indicado de parceiro
 --      num segundo login;
 --   b) acumula a recompensa por cadastro do parceiro no livro-razão novo.
@@ -500,7 +500,7 @@ begin
    where id = p_user_id;
 
   -- Orçamento estourado: vincula sem bônus. O parceiro continua ganhando a
-  -- comissão se a pessoa assinar — o teto limita o custo do brinde, não o
+  -- comissão se a pessoa assinar, o teto limita o custo do brinde, não o
   -- programa.
   v_bonus := v_partner.signup_bonus_coins;
   if v_partner.bonus_budget_coins is not null
@@ -564,7 +564,7 @@ grant execute on function public.flush_partner_signup_rewards(uuid, uuid) to ser
 -- 12) RLS --------------------------------------------------------------------
 -- RLS ligado e NENHUMA policy: é a forma mais forte de dizer que o cliente não
 -- toca nesta tabela. O painel de /indicar monta os contadores no servidor, com
--- service-role, e devolve só números — mesma regra do painel do parceiro, pela
+-- service-role, e devolve só números, mesma regra do painel do parceiro, pela
 -- mesma razão: `referred_user_id` é uma pessoa, e não há motivo de negócio
 -- para quem indicou saber quem ela é além do que já sabe.
 

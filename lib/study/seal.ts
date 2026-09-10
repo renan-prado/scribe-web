@@ -5,24 +5,24 @@ import type { AnchoredPassage } from "@/lib/study/anchor";
 import { coverKey } from "@/lib/study/covers";
 
 /**
- * PASSO 5 — a SELAGEM. Sem LLM.
+ * PASSO 5, a SELAGEM. Sem LLM.
  *
  * O último passo do pipeline, e o único que não pode falhar por prompt. Ele
  * aplica em código as três regras que o prompt anterior pedia com maiúsculas e
  * o modelo obedecia quando dava:
  *
  *   1. O texto de todo `bibleQuote` é REESCRITO a partir da NVI. O que o
- *      modelo escreveu no campo é ignorado — inclusive quando está certo, para
+ *      modelo escreveu no campo é ignorado, inclusive quando está certo, para
  *      que nunca haja dúvida sobre a procedência do que o leitor lê como
  *      Escritura. Referência fora das ancoradas: bloco removido.
  *   2. Todo `quote` sem obra nomeável, ou com autor fora do índice, é
- *      REMOVIDO. Não avaliado, não sinalizado — removido. Ver
+ *      REMOVIDO. Não avaliado, não sinalizado, removido. Ver
  *      `docs/estudo-v2.md` §6: uma fonte só entra se um humano conseguir
  *      conferi-la em menos de um minuto.
  *   3. Todo `reading` sem autor conhecido é removido pela mesma razão.
  *
  * Também limpa markdown que escapou e garante que o documento termine em
- * `conclusion` — duas coisas que o prompt pedia e que não custam nada aqui.
+ * `conclusion`, duas coisas que o prompt pedia e que não custam nada aqui.
  *
  * `SealReport` existe para o log: quantos blocos caíram e por quê. Sem isso,
  * uma regressão no redator (começa a citar sem obra) some silenciosamente

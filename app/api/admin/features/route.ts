@@ -21,7 +21,7 @@ export const dynamic = "force-dynamic";
  * As DUAS únicas coisas de entitlement que se editam em runtime: o kill
  * switch por feature e a exceção por pessoa.
  *
- * O que esta rota NÃO faz — e nunca deve fazer — é mexer no mapa
+ * O que esta rota NÃO faz, e nunca deve fazer, é mexer no mapa
  * `feature → plano mínimo`. Ele mora em `lib/entitlements/features.ts`, em
  * código, pelo mesmo motivo que o mapa `Price ID → moedas` mora em
  * `lib/billing/catalog.ts`: um endpoint que reescreve o valor de um plano é

@@ -12,7 +12,7 @@ import { feedItemStableKey } from "@/lib/domain/feed";
  * reordered. Clicking a verse-bearing card opens the shared verse dialog.
  *
  * `suggesting` renders a WhatsApp-style typing indicator at the end of the
- * feed while the AI-authored pipeline is in flight — makes the wait feel
+ * feed while the AI-authored pipeline is in flight, makes the wait feel
  * conversational rather than dead.
  */
 type FeedProps = {
@@ -92,7 +92,7 @@ function chapterOf(reference: string): string {
 
 /**
  * When consecutive citedVerse items reference the same chapter (e.g. "Salmo
- * 119:1" followed by "Salmo 119:1-3"), only keep the later one — it supersedes
+ * 119:1" followed by "Salmo 119:1-3"), only keep the later one, it supersedes
  * the earlier narrower reference.
  */
 function dedupeConsecutiveChapters(items: FeedItem[]): FeedItem[] {

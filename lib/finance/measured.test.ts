@@ -104,7 +104,7 @@ describe("aggregateAiCostByMonth", () => {
   it("soma em ponto flutuante e arredonda UMA vez no fim", () => {
     // Três centavos de dólar a 5,00: 0,01×3×5 = 0,15 → 15 centavos. Arredondar
     // linha a linha daria 5+5+5 = 15 aqui, mas a 5,555 daria 6+6+6 = 18 contra
-    // os 17 corretos — é esse o caso que o arredondamento único protege.
+    // os 17 corretos, é esse o caso que o arredondamento único protege.
     const out = aggregateAiCostByMonth(
       [
         { createdAt: "2026-09-01T00:00:00Z", costUsd: 0.01 },

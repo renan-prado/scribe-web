@@ -5,13 +5,13 @@
  *
  * **Por que estes hexadecimais existem fora do `globals.css`.** Quem lê
  * `<meta name="theme-color">` é o navegador, antes de aplicar qualquer CSS, e
- * o manifest é JSON — nenhum dos dois enxerga um `var(--scriba-surface)`. Não
+ * o manifest é JSON, nenhum dos dois enxerga um `var(--scriba-surface)`. Não
  * há como derivar um do outro, então este arquivo é o ÚNICO lugar onde a cor
  * pode estar duplicada, e os três consumidores importam daqui:
  *
- * - `ThemeScript` — escreve a meta antes do primeiro paint;
- * - `useTheme` — reescreve a meta quando o usuário troca de tema;
- * - `app/manifest.ts` — o `theme_color`, que é o fallback de quem abre o app
+ * - `ThemeScript`: escreve a meta antes do primeiro paint;
+ * - `useTheme`: reescreve a meta quando o usuário troca de tema;
+ * - `app/manifest.ts`: o `theme_color`, que é o fallback de quem abre o app
  *   sem JS e a cor da tela de splash na instalação.
  *
  * Os valores espelham `--scriba-surface` em `:root` e em `.dark`: é a

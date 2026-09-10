@@ -14,14 +14,14 @@ import { DATE_RANGES, type DateRangeKey } from "@/features/session/lib/search";
 import { cn } from "@/lib/utils";
 
 /**
- * A barra de busca das duas listas — `/recordings` e `/studies`. Só DESENHA:
+ * A barra de busca das duas listas, `/recordings` e `/studies`. Só DESENHA:
  * quem filtra é o browser de cada página, com os helpers de
  * `src/features/session/lib/search.ts`.
  *
  * ## Uma barra para as duas páginas
  *
  * As listas mostram coisas diferentes (gravações e estudos) mas se procuram
- * pelas mesmas chaves — quem pregou, onde, quando. Duas barras parecidas é
+ * pelas mesmas chaves, quem pregou, onde, quando. Duas barras parecidas é
  * como duas telas de busca começam a divergir em detalhes que ninguém decidiu:
  * uma ganha o contador de resultados, a outra não; uma limpa os filtros com um
  * "×", a outra com um link. Os facetas ficam configuráveis (`/studies` não tem
@@ -33,14 +33,14 @@ import { cn } from "@/lib/utils";
  * já tem espaço sobrando, e escondê-los trocaria um toque por dois em troca de
  * nada.
  *
- * No celular a conta se inverte. Ali eles não são uma fileira — são uma grade
+ * No celular a conta se inverte. Ali eles não são uma fileira, são uma grade
  * de duas colunas com até três linhas, empilhada entre a busca e o primeiro
  * cartão, e é a primeira coisa que se vê ao abrir a lista. O custo deixa de ser
  * "três centímetros de tela" e passa a ser metade da primeira dobra gasta com
  * controles que a maioria das visitas não usa.
  *
  * Então abaixo de `sm` a grade fica atrás de um botão "Filtros", e TRÊS COISAS
- * continuam fora dele — são justamente as que tornam o estado recolhido
+ * continuam fora dele, são justamente as que tornam o estado recolhido
  * honesto:
  *
  *  - **a busca**, que é o que a barra existe para oferecer;
@@ -54,7 +54,7 @@ import { cn } from "@/lib/utils";
  * pessoa volta para a lista, vê menos cartões do que esperava, e o motivo está
  * atrás de um toque que ela não sabe que precisa dar.
  *
- * O contador do botão ignora o texto da BUSCA de propósito — aquele campo está
+ * O contador do botão ignora o texto da BUSCA de propósito, aquele campo está
  * visível e cheio, e somá-lo faria o botão acusar "1" apontando para um painel
  * onde nada está ligado.
  *
@@ -66,26 +66,26 @@ import { cn } from "@/lib/utils";
  * que aparece sozinha no quarto cartão é uma função que se descobre por
  * acidente, quando se descobre.
  *
- * O que some é uma FACETA vazia — um seletor que só oferece "todos os autores"
+ * O que some é uma FACETA vazia, um seletor que só oferece "todos os autores"
  * não filtra nada. UMA opção já basta para ele valer: quando parte dos itens
  * não tem autor, escolher o único nome disponível divide a lista.
  *
- * O contador à direita é a peça que fecha o ciclo — sem ele, uma combinação de
+ * O contador à direita é a peça que fecha o ciclo, sem ele, uma combinação de
  * filtros que não devolve nada é indistinguível de uma lista que não carregou.
  *
  * ## No celular a barra tem OUTRO layout, não o mesmo espremido
  *
  * A fileira única com `flex-wrap` é o desenho do desktop. No celular ela se
  * desmanchava: os gatilhos são `w-fit`, então cada um tinha a largura do
- * próprio texto, e o teto era `max-w-[46vw]` — medido no VIEWPORT, enquanto a
+ * próprio texto, e o teto era `max-w-[46vw]`, medido no VIEWPORT, enquanto a
  * barra vive dentro de `px-4` da página mais `p-3` do cartão. Dois seletores de
  * 46vw não cabiam nos ~91% que sobram, então quebravam de linha em pontos que
  * mudavam A CADA ESCOLHA (escolher "Todos os autores" e escolher um nome longo
  * dão larguras diferentes), e o contador, com `ml-auto`, ia parar sozinho na
  * última linha que calhasse. Era isso o "meio quebrado".
  *
- * Aqui embaixo de `sm` os seletores viram uma GRADE de duas colunas — largura
- * previsível, sem reflow ao escolher — e "Limpar" e o contador ganham a linha
+ * Aqui embaixo de `sm` os seletores viram uma GRADE de duas colunas, largura
+ * previsível, sem reflow ao escolher, e "Limpar" e o contador ganham a linha
  * de baixo, o contador à esquerda porque é ele que se lê. O `sm:contents`
  * dissolve os dois invólucros no `sm`, e a fileira do desktop volta a ser
  * exatamente a de antes, sem markup duplicado.
@@ -94,11 +94,11 @@ import { cn } from "@/lib/utils";
  *
  *  - **O campo de busca é 16px no celular** (`text-base sm:text-sm`). Abaixo
  *    disso o Safari do iOS dá zoom na página ao focar o input, e sair do zoom
- *    é manual — a barra "funcionava" e ainda assim quebrava a tela.
+ *    é manual, a barra "funcionava" e ainda assim quebrava a tela.
  *  - **Os gatilhos têm 36px de altura no celular** (`min-h-9`), contra os 28
  *    do `size="sm"`. É `min-height` de propósito: `h-7` vem de uma variante
  *    `data-[size=sm]` do `SelectTrigger`, que ganha de um `h-*` solto por
- *    especificidade — `min-h` não disputa com ela, só levanta o piso.
+ *    especificidade, `min-h` não disputa com ela, só levanta o piso.
  */
 
 /** O valor "sem filtro" de um faceta. Sentinela porque `""` no base-ui Select
@@ -108,7 +108,7 @@ export const FACET_ALL = "__all__";
 export type Facet = {
   /** Rótulo curto, usado no `aria-label` e na opção "todos". */
   label: string;
-  /** "Todos os autores" / "Todos os locais" — a opção neutra da lista. */
+  /** "Todos os autores" / "Todos os locais", a opção neutra da lista. */
   allLabel: string;
   value: string;
   options: string[];
@@ -122,7 +122,7 @@ type Props = {
   facets: Facet[];
   range: DateRangeKey;
   onRangeChange: (value: DateRangeKey) => void;
-  /** "3 de 24 gravações" — já formatado por quem chama. */
+  /** "3 de 24 gravações", já formatado por quem chama. */
   countLabel: string;
   /** Verdadeiro quando algo está filtrando; liga o botão "Limpar". */
   filtering: boolean;
@@ -142,7 +142,7 @@ const RANGE_OPTIONS: SelectOption<DateRangeKey>[] = DATE_RANGES.map((r) => ({
  */
 const TRIGGER = "min-h-9 w-full min-w-0 sm:min-h-0 sm:w-fit";
 
-/** Um filtro ATIVO se acende — é o que distingue "todos" de uma escolha. */
+/** Um filtro ATIVO se acende, é o que distingue "todos" de uma escolha. */
 const TRIGGER_ON = "border-scriba-blue-soft bg-scriba-blue-soft/60 text-scriba-blue-ink";
 
 /**
@@ -169,7 +169,7 @@ export function CollectionSearch({
 }: Props) {
   const inputId = useId();
   const panelId = useId();
-  // Uma faceta sem opção nenhuma não filtra nada — ver o cabeçalho. A conta
+  // Uma faceta sem opção nenhuma não filtra nada, ver o cabeçalho. A conta
   // sai daqui porque a grade do celular precisa saber QUANTAS sobraram.
   const visibleFacets = facets.filter((facet) => facet.options.length > 0);
 
@@ -182,7 +182,7 @@ export function CollectionSearch({
   // Nasce ABERTO quando já há filtro ligado. É o que impede o recolhimento de
   // virar esconderijo: sem isso a pessoa volta para a lista, vê menos cartões
   // do que esperava, e o motivo está atrás de um toque que ela não sabe que
-  // precisa dar. Inicializador, não efeito — depois disso o painel é dela.
+  // precisa dar. Inicializador, não efeito, depois disso o painel é dela.
   const [filtersOpen, setFiltersOpen] = useState(() => activeCount > 0);
 
   return (
@@ -233,7 +233,7 @@ export function CollectionSearch({
         />
 
         {/* O gatilho do celular. `sm:hidden` porque no desktop a grade nunca
-            se recolhe — ver o cabeçalho. */}
+            se recolhe, ver o cabeçalho. */}
         <button
           type="button"
           onClick={() => setFiltersOpen((open) => !open)}
@@ -264,7 +264,7 @@ export function CollectionSearch({
         </button>
 
         {/* Grade de duas colunas no celular, itens soltos da fileira no `sm`.
-            O `sm:contents` é o que evita duas versões do mesmo markup — e é
+            O `sm:contents` é o que evita duas versões do mesmo markup, e é
             também o que faz o recolhimento valer SÓ no celular: `hidden` e
             `grid` são utilitários base, `sm:contents` é variante responsiva e
             portanto vem depois na folha, então a partir de `sm` a grade se

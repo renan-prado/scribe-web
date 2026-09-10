@@ -3,7 +3,7 @@ import type { StudyPayload, StudyRecord } from "@/lib/domain/study";
 import { createClient } from "@/lib/supabase/server";
 
 /**
- * Persistence for session deepenings — the on-demand "aprofundamento" a user
+ * Persistence for session deepenings, the on-demand "aprofundamento" a user
  * can generate once per session. See migration 0009: unique(session_id) is the
  * hard rule; UI/API only surface it.
  */
@@ -15,7 +15,7 @@ export type DeepeningRow = {
    * As perguntas que originaram o estudo e o recorte respondido. A coluna se
    * chama `plan` desde a migração 0033, quando o passo 1 do pipeline ainda era
    * um plano de eixos; hoje guarda um `StudyRecord`. NULL nos estudos
-   * anteriores ao pipeline — não há backfill possível.
+   * anteriores ao pipeline, não há backfill possível.
    */
   plan: StudyRecord | null;
   createdAt: string;
@@ -133,7 +133,7 @@ export async function listDeepenedSessionIds(sessionIds: string[]): Promise<Set<
 
 /**
  * Insert the deepening. The unique(session_id) constraint enforces the
- * "só pode ser aprofundado uma vez" rule at the DB level — this throws with
+ * "só pode ser aprofundado uma vez" rule at the DB level, this throws with
  * a distinctive message so the caller can turn it into a 409.
  */
 export async function createDeepening(
@@ -164,7 +164,7 @@ export async function createDeepening(
 /**
  * Overwrite the payload of an existing deepening. Used by /api/deepening/reprocess
  * to re-run the study prompt on demand. Matches the update-by-session_id
- * pattern used by sessions.updateSessionSummary — RLS scopes the row to the
+ * pattern used by sessions.updateSessionSummary, RLS scopes the row to the
  * current user, so no explicit ownership filter is needed here.
  */
 export async function updateDeepening(
@@ -176,7 +176,7 @@ export async function updateDeepening(
   // .select() forces PostgREST to return the affected rows so we can detect
   // silent 0-row updates (e.g. missing UPDATE RLS policy, wrong session_id).
   // Without it, Supabase happily returns { data: null, error: null } even
-  // when the update matched nothing — which masked the "reprocess parecia
+  // when the update matched nothing, which masked the "reprocess parecia
   // funcionar mas nunca persistia" bug caught in prod.
   const { data, error } = await supabase
     .from("session_deepenings")

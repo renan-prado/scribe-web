@@ -13,7 +13,7 @@ import {
 
 type Props = {
   sessionId: string;
-  /** Página da sessão salva — /summary nos modos com resumo, /transcript no
+  /** Página da sessão salva, /summary nos modos com resumo, /transcript no
    * modo transcrição. */
   href: string;
   deleteAction: (formData: FormData) => Promise<void>;

@@ -1,6 +1,6 @@
 /**
  * Feedback tátil do feed ao vivo. Um toque curto quando um card novo fica
- * visível — o ouvinte percebe sem precisar olhar a tela o tempo todo.
+ * visível, o ouvinte percebe sem precisar olhar a tela o tempo todo.
  *
  * Dois caminhos, ambos best-effort:
  * - `navigator.vibrate` (Android/Chrome). Só funciona depois de um gesto do
@@ -27,6 +27,6 @@ export function vibrateNewCard(): void {
   try {
     navigator.vibrate?.(NEW_CARD_PATTERN);
   } catch {
-    // engolido — alguns browsers lançam se a página não tem user activation
+    // engolido, alguns browsers lançam se a página não tem user activation
   }
 }

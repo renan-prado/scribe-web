@@ -1,11 +1,11 @@
 import { LLMS_MARKDOWN } from "@/shared/content/llms";
 
 /**
- * `/index.md` — a landing page em Markdown.
+ * `/index.md`, a landing page em Markdown.
  *
  * Dois consumidores: um agente que busca a URL direto, e o `proxy.ts`, que
  * reescreve `GET /` para cá quando o `Accept` do request prefere
- * `text/markdown` (negociação de conteúdo — acceptmarkdown.com). O `Vary:
+ * `text/markdown` (negociação de conteúdo, acceptmarkdown.com). O `Vary:
  * Accept` acompanha a resposta para caches e validadores que inspecionam o
  * header. O conteúdo é o mesmo de `/llms.txt`.
  *

@@ -1,6 +1,6 @@
 -- session_deepenings ganhou a rota /api/deepening/reprocess, que faz UPDATE
 -- no payload. A migração original (0009) só criou policies para SELECT,
--- INSERT e DELETE — sem UPDATE, o Supabase silenciosamente retornava 0
+-- INSERT e DELETE, sem UPDATE, o Supabase silenciosamente retornava 0
 -- linhas afetadas, sem erro, e o reprocess parecia funcionar mas nunca
 -- persistia nada.
 --

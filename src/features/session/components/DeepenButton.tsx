@@ -16,7 +16,7 @@ import { minPlanNameFor } from "@/lib/entitlements/features";
 import { cn } from "@/lib/utils";
 
 /**
- * Two-state button — before/after the aprofundamento exists.
+ * Two-state button, before/after the aprofundamento exists.
  * - `hasDeepening=false`: blue solid CTA with the coin cost. Clicking POSTs to
  *   /api/deepening; on success we navigate to /recording/{id}/deepening.
  * - `hasDeepening=true`: neutral "Ver aprofundamento" link with no cost.
@@ -29,7 +29,7 @@ import { cn } from "@/lib/utils";
  * `canGenerate=false` (o plano do usuário nao libera "Gerar estudo") mantem a
  * etiqueta "Gerar estudo" mas troca o livro pelo cadeado, tira o custo em
  * moedas e abre o BillingDialog em vez de gerar. LER um estudo ja gerado
- * nunca e bloqueado — so a geracao. A decisao vem do servidor via
+ * nunca e bloqueado, so a geracao. A decisao vem do servidor via
  * `canCurrentUserUse("study_generation")`; aqui ela so DESENHA. A protecao de
  * verdade esta em `requireFeature` dentro de POST /api/deepening, e o 403 dela
  * cai no mesmo dialogo caso o estado da tela esteja velho.
@@ -54,7 +54,7 @@ const deepenButtonVariants = cva(
   {
     variants: {
       layout: {
-        /** Chip do cabeçalho do resumo — alinha com a etiqueta "Salvo" ao lado. */
+        /** Chip do cabeçalho do resumo, alinha com a etiqueta "Salvo" ao lado. */
         compact: "gap-1.5 px-3 py-1.5 text-[11px]",
         /**
          * Card de CTA do feed. Não é largura cheia (ele divide a linha com o
@@ -116,10 +116,10 @@ export function DeepenButton({ sessionId, hasDeepening, variant, canGenerate }: 
   }
 
   // Plano insuficiente. O botao vira convite, nao parede: abre o mesmo
-  // BillingDialog do resto do app. Sem custo em moedas na etiqueta — o preco
+  // BillingDialog do resto do app. Sem custo em moedas na etiqueta, o preco
   // que importa aqui e o do plano, e mostrar os dois confunde.
   //
-  // A etiqueta continua sendo "Gerar estudo" — o cadeado no lugar do livro e a
+  // A etiqueta continua sendo "Gerar estudo", o cadeado no lugar do livro e a
   // ausencia do custo em moedas ja dizem que ha uma porta antes. Trocar o
   // rotulo por "Plano Estudioso" fazia o botao anunciar o obstaculo em vez da
   // acao, e um botao que nomeia o proprio bloqueio convida menos.
@@ -141,7 +141,7 @@ export function DeepenButton({ sessionId, hasDeepening, variant, canGenerate }: 
         <button
           type="button"
           onClick={() => setBillingOpen(true)}
-          aria-label={`Gerar estudo — disponível no plano ${minPlanNameFor("study_generation")}`}
+          aria-label={`Gerar estudo, disponível no plano ${minPlanNameFor("study_generation")}`}
           className={deepenButtonVariants({ layout, state: "enabled" })}
         >
           <Lock aria-hidden className="size-3.5" />
@@ -204,7 +204,7 @@ export function DeepenButton({ sessionId, hasDeepening, variant, canGenerate }: 
     </button>
   );
 
-  // Skeleton while the initial balance fetch is pending — matches the pill
+  // Skeleton while the initial balance fetch is pending, matches the pill
   // shape exactly so the actual button drops in without a layout shift.
   const skeleton =
     variant === "summary-header" ? (
@@ -224,7 +224,7 @@ export function DeepenButton({ sessionId, hasDeepening, variant, canGenerate }: 
       />
     );
 
-  // Base UI's Tooltip only reacts to hover/focus on its trigger — a disabled
+  // Base UI's Tooltip only reacts to hover/focus on its trigger, a disabled
   // <button> stops pointer events, so we wrap it in a focusable span that
   // keeps the tooltip reachable while the button itself stays non-clickable.
   const wrapped = balanceLoading ? (

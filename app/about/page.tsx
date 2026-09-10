@@ -57,7 +57,7 @@ export default function AboutPage() {
             <ul className="list-disc space-y-1.5 pl-5">
               <li>
                 <strong>Durante o sermão:</strong> a transcrição aparece conforme a fala avança, e
-                um feed ao vivo acrescenta cartões — versículos citados (com o texto da passagem),
+                um feed ao vivo acrescenta cartões, versículos citados (com o texto da passagem),
                 contexto histórico, frases marcantes e sugestões de leitura. Nada é reescrito: o
                 feed só cresce.
               </li>
@@ -71,9 +71,9 @@ export default function AboutPage() {
               </li>
             </ul>
             <p className="mt-2">
-              Há três modos de captura — ao vivo, somente áudio e somente transcrição —, cada um com
-              um custo por minuto diferente, cobrado em créditos. A conta começa gratuita, com
-              créditos de boas-vindas e sem cartão.
+              Há três modos de captura, ao vivo, somente áudio e somente transcrição, cada um com um
+              custo por minuto diferente, cobrado em créditos. A conta começa gratuita, com créditos
+              de boas-vindas e sem cartão.
             </p>
           </section>
 
@@ -85,7 +85,7 @@ export default function AboutPage() {
               As transcrições, os versículos reconhecidos e os resumos são produzidos com apoio de
               modelos de inteligência artificial (atualmente da OpenAI). Esses modelos podem errar,
               inclusive em citações bíblicas e teológicas. O Scriba não é fonte doutrinária oficial
-              e não substitui aconselhamento pastoral, teológico ou profissional — revise o que for
+              e não substitui aconselhamento pastoral, teológico ou profissional, revise o que for
               ensinar ou publicar. O áudio bruto não é retido após o processamento; a transcrição e
               o resumo ficam na sua conta, privados por padrão.
             </p>

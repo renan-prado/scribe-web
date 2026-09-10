@@ -5,10 +5,10 @@ export default function manifest(): MetadataRoute.Manifest {
   return {
     // `id` fixa a identidade do app instalado. Sem ele o navegador usa a
     // `start_url` como identidade, e mudar a start_url amanhã faria o Chrome
-    // tratar o Scriba como um app NOVO — o usuário ficaria com dois ícones e
+    // tratar o Scriba como um app NOVO, o usuário ficaria com dois ícones e
     // sem os dados do primeiro.
     id: "/",
-    name: "Scriba — Transcrição de sermões",
+    name: "Scriba, Transcrição de sermões",
     short_name: "Scriba",
     description: "Transcrição e resumo de sermões em tempo real",
     // **O app instalado NUNCA abre na landing page.** Quem tocou no ícone já
@@ -19,7 +19,7 @@ export default function manifest(): MetadataRoute.Manifest {
     //
     // O `id: "/"` acima é o que permite mexer nesta linha: sem ele a
     // identidade do app seria a `start_url`, e mudá-la faria o Chrome tratar o
-    // Scriba como um app novo — dois ícones na tela inicial.
+    // Scriba como um app novo, dois ícones na tela inicial.
     start_url: "/sign-in",
     scope: "/",
     display: "standalone",
@@ -29,7 +29,7 @@ export default function manifest(): MetadataRoute.Manifest {
     // A tela de abertura do Android: fundo desta cor, o ícone no meio, o nome
     // embaixo. É o topo do gradiente da hero da landing no tema escuro
     // (`--lp-hero` de `.dark`), a mesma tinta das telas de abertura do iOS que
-    // `scripts/generate-splash.mjs` desenha — o app abre igual nos dois
+    // `scripts/generate-splash.mjs` desenha, o app abre igual nos dois
     // sistemas. Era `#ffffff`, que dava um clarão branco antes do primeiro
     // paint. Mudou aqui? Mude lá.
     background_color: "#1C2349",
@@ -46,13 +46,13 @@ export default function manifest(): MetadataRoute.Manifest {
     // segunda janela durante a gravação significa duas abas disputando o
     // microfone e dois cronômetros cobrando moedas.
     launch_handler: { client_mode: "navigate-existing" },
-    // Prefer the app window when the OS resolves a Scriba link — matters for
+    // Prefer the app window when the OS resolves a Scriba link, matters for
     // "share to Scriba" style flows once we ship them.
     prefer_related_applications: false,
     // PNG, não SVG: o Chrome não aceita SVG para instalar o PWA nem para o
     // atalho na tela inicial, e ficava sem ícone utilizável. O `maskable`
     // reusa o mesmo arquivo porque o logo é um quadrado cheio e a pena tem
-    // ~32% de margem de cada lado — bem dentro da zona segura de 10% que o
+    // ~32% de margem de cada lado, bem dentro da zona segura de 10% que o
     // Android recorta.
     icons: [
       { src: "/brand/icon-192.png", sizes: "192x192", type: "image/png", purpose: "any" },
@@ -60,7 +60,7 @@ export default function manifest(): MetadataRoute.Manifest {
       { src: "/brand/icon-512.png", sizes: "512x512", type: "image/png", purpose: "maskable" },
     ],
     // Atalhos do toque longo no ícone (Android) e do menu de contexto do dock
-    // (desktop). São as três abas da nav — não incluem "gravar" porque começar
+    // (desktop). São as três abas da nav, não incluem "gravar" porque começar
     // uma gravação é um DIÁLOGO (modo, local, pregador), não uma rota.
     shortcuts: [
       {

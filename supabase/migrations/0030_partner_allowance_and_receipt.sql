@@ -2,14 +2,14 @@
 --
 -- 1) MESADA DE MOEDAS. Um parceiro que não consegue gravar não consegue
 --    divulgar: ele precisa do produto na mão para falar dele. A "assinatura de
---    parceiro" é uma mesada mensal de moedas, renovada por check preguiçoso —
+--    parceiro" é uma mesada mensal de moedas, renovada por check preguiçoso,
 --    o mesmo padrão de `/api/billing/summary`, que confere a assinatura vencida
 --    quando o usuário aparece, em vez de manter um cron para isso.
 --
 --    A idempotência REAL continua sendo `coin_transactions.external_ref`
 --    (UNIQUE): a mesada de um mês tem ref `partner_allowance:<id>:<AAAA-MM>` e,
 --    tentada duas vezes, credita uma. `allowance_month` abaixo é só o portão
---    BARATO — ele evita a ida ao ledger em toda visita, não a duplicata. Se as
+--    BARATO, ele evita a ida ao ledger em toda visita, não a duplicata. Se as
 --    duas coisas discordarem, quem manda é o ledger.
 --
 -- 2) COMPROVANTE DO PIX. O pagamento é manual e o comprovante mora hoje no

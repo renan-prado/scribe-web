@@ -23,7 +23,7 @@ export const dynamic = "force-dynamic";
  *
  * Re-runs the final-summary LLM chain on an already-saved session, using the
  * transcript and curated feed items already stored on the row. Overwrites the
- * previous final_summary payload. Costs `reprocess_summary` coins — charged
+ * previous final_summary payload. Costs `reprocess_summary` coins, charged
  * before the LLM call, following the same pattern as /api/deepening (a 402
  * here means the account is dry; downstream LLM failures do not refund).
  */
@@ -99,7 +99,7 @@ export async function POST(request: Request) {
   }
 
   // Regenera "Releia este texto" (10), "Lembra disso?" (10) e "Frases
-  // marcantes" (até 12, sem IA) em paralelo com o resumo atualizado — upsert
+  // marcantes" (até 12, sem IA) em paralelo com o resumo atualizado, upsert
   // sobrescreve o payload anterior de cada. Best-effort, mesmo padrão do route
   // de primeira geração.
   const [rereads, reminders, highlights] = await Promise.all([

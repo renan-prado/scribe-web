@@ -13,7 +13,7 @@ export const dynamic = "force-dynamic";
 
 /**
  * `EntryPatchSchema` é o objeto CRU parcial com o refinamento reaplicado numa
- * versão tolerante a campos ausentes — no Zod 4, `.partial()` sobre um schema
+ * versão tolerante a campos ausentes, no Zod 4, `.partial()` sobre um schema
  * já refinado lança no import. Ver o cabeçalho em `lib/domain/finance.ts`.
  */
 const PatchSchema = EntryPatchSchema;

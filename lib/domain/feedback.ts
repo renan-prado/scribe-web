@@ -1,5 +1,5 @@
 /**
- * O vocabulário do feedback dos usuários — escala, tópicos e superfícies.
+ * O vocabulário do feedback dos usuários, escala, tópicos e superfícies.
  *
  * Client-safe de propósito: os mesmos rótulos desenham os chips do diálogo no
  * navegador e as médias do `/admin/feedback` no servidor. Uma segunda cópia
@@ -7,7 +7,7 @@
  * significados, e a média deixaria de comparar coisas iguais.
  *
  * A escala é TEXTO no banco (ver `0047_feedback.sql`); o número existe só
- * aqui, para a média. Trocar a escala é trocar este arquivo — e nesse dia as
+ * aqui, para a média. Trocar a escala é trocar este arquivo, e nesse dia as
  * notas antigas passam a ser de outra régua, o que a tela precisa dizer.
  */
 
@@ -16,7 +16,7 @@
  *
  * Uma escala ímpar (1-5, "regular" no centro) recebe o voto de quem não quer
  * pensar, e a moda cai no centro em todo produto que já se mediu. Com quatro,
- * a pessoa é obrigada a cair de um lado — que é a informação que a pergunta
+ * a pessoa é obrigada a cair de um lado, que é a informação que a pergunta
  * existe para colher.
  */
 export const FEEDBACK_RATINGS = ["ruim", "razoavel", "boa", "excelente"] as const;
@@ -30,7 +30,7 @@ export const FEEDBACK_RATING_LABEL: Record<FeedbackRating, string> = {
   excelente: "Excelente",
 };
 
-/** O emoji do chip. Ele carrega o tom antes da leitura — quem só bate o olho
+/** O emoji do chip. Ele carrega o tom antes da leitura, quem só bate o olho
  * na janela já sabe qual ponta é qual sem ler as quatro palavras. */
 export const FEEDBACK_RATING_EMOJI: Record<FeedbackRating, string> = {
   ruim: "😕",
@@ -62,16 +62,16 @@ export type FeedbackSurface = (typeof FEEDBACK_SURFACES)[number];
  * SOBRE O QUE é a nota. É o eixo do painel: cada tópico é uma peça do produto
  * com um conserto próprio, e por isso eles não se somam numa nota geral.
  *
- * `summary` é o mesmo tópico no modo Ao Vivo e no modo Áudio de propósito —
+ * `summary` é o mesmo tópico no modo Ao Vivo e no modo Áudio de propósito,
  * é o mesmo pipeline (`final-summary`) produzindo o mesmo artefato. Separá-los
  * partiria a amostra ao meio sem responder nenhuma pergunta nova.
  */
 export const FEEDBACK_TOPICS = [
   /** Os cards que aparecem DURANTE a pregação (bible, insights, sermon-echo). */
   "live_suggestions",
-  /** O resumo estruturado do fim — modos `live` e `audio_only`. */
+  /** O resumo estruturado do fim, modos `live` e `audio_only`. */
   "summary",
-  /** O texto transcrito em si — modo `transcript_only`. */
+  /** O texto transcrito em si, modo `transcript_only`. */
   "transcript",
   /** O estudo aprofundado gerado sob demanda. */
   "study",
@@ -110,7 +110,7 @@ export const FEEDBACK_TOPIC_QUESTION: Record<FeedbackTopic, string> = {
 /**
  * Os tópicos de cada superfície, na ordem em que o diálogo pergunta.
  *
- * O Ao Vivo pergunta DUAS coisas porque entrega duas — e quem gostou dos
+ * O Ao Vivo pergunta DUAS coisas porque entrega duas, e quem gostou dos
  * cards e achou o resumo fraco não tem como dizer isso numa nota só. As
  * outras superfícies entregam uma coisa; perguntar duas ali seria inventar
  * uma pergunta para preencher a janela.
@@ -126,7 +126,7 @@ export const FEEDBACK_TOPICS_BY_SURFACE: Record<FeedbackSurface, readonly Feedba
 /**
  * Limite do texto livre. O mesmo 300 de `MAX_HALLUCINATION_NOTE_CHARS`, pela
  * mesma razão: o valor está em dizer O QUE incomodou, não em escrever um
- * relatório — e um campo que aceita mil caracteres faz quem tem uma frase
+ * relatório, e um campo que aceita mil caracteres faz quem tem uma frase
  * achar que a frase é pouco e não escrever nada.
  */
 export const MAX_FEEDBACK_COMMENT_CHARS = 300;
@@ -153,7 +153,7 @@ export const FEEDBACK_SURFACE_INTRO: Record<FeedbackSurface, string> = {
 };
 
 /**
- * A média de um conjunto de notas, em 1..4 — ou `null` quando não há nota.
+ * A média de um conjunto de notas, em 1..4, ou `null` quando não há nota.
  *
  * `null` e não zero: zero é uma nota abaixo de "ruim", que não existe na
  * escala, e um painel que mostra 0,00 onde ninguém respondeu convida a

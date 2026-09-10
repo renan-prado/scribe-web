@@ -35,7 +35,7 @@ function formatFetchedAt(raw: string): string {
 
 /**
  * O formulário do valor manual. Aparece nos DOIS casos em que a cotação viva
- * não veio — sem nenhuma cotação, e rodando com a última guardada —, porque em
+ * não veio, sem nenhuma cotação, e rodando com a última guardada, porque em
  * ambos existe a mesma pergunta a fazer a quem está olhando: "o número de hoje
  * é outro?".
  */
@@ -70,7 +70,7 @@ export function FxRateBadge({ rate }: { rate: UsdBrlRate | null }) {
     return (
       <div className="flex flex-col gap-1.5">
         <p className="text-[0.7rem] text-muted-foreground">
-          Não consegui obter a cotação do dia e não há nenhuma guardada — todos os valores em real
+          Não consegui obter a cotação do dia e não há nenhuma guardada, todos os valores em real
           estão em branco. Preencha manualmente:
         </p>
         <ManualRateForm />

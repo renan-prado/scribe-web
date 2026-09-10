@@ -25,7 +25,7 @@ import { SessionCardMenu } from "./SessionCardMenu";
  *
  * ## Por que é um componente cliente, e o que ficou no servidor
  *
- * A página continua sendo quem BUSCA — sessões, quais têm estudo, quais têm
+ * A página continua sendo quem BUSCA, sessões, quais têm estudo, quais têm
  * resumo. O que desceu para cá é só o desenho da lista, porque filtrar exige
  * estado e responder a cada tecla exige que o estado seja local. O agrupamento
  * por período veio junto: agrupar no servidor e filtrar aqui deixaria seções
@@ -33,12 +33,12 @@ import { SessionCardMenu } from "./SessionCardMenu";
  *
  * `nowIso` vem do servidor de propósito. `groupLabel` compara com "agora", e
  * um `new Date()` calculado no cliente pode cair do outro lado da meia-noite em
- * relação ao HTML que o servidor mandou — o React descartaria a marcação por
+ * relação ao HTML que o servidor mandou, o React descartaria a marcação por
  * divergência de hidratação, numa página inteira, por causa de um rótulo.
  *
  * ## O que a busca alcança
  *
- * Título, resumo curto, autor, local — tudo que o cartão mostra — mais a
+ * Título, resumo curto, autor, local, tudo que o cartão mostra, mais a
  * TRANSCRIÇÃO, que o cartão não mostra e a lista não carrega: essa metade vem
  * de `/api/sessions/search` por `useContentSearch` e entra como união. O
  * cartão que casou só pela transcrição ganha a pastilha "trecho na
@@ -163,7 +163,7 @@ export function SessionsBrowser({
       {/* Nada na tela E resposta a caminho não é "não encontrei": metade desta
         busca mora no servidor (a transcrição), e afirmar o vazio antes dela
         chegar é uma tela que se desmente sozinha meio segundo depois. Só o
-        caso VAZIO espera — com resultados locais na tela a lista continua
+        caso VAZIO espera, com resultados locais na tela a lista continua
         desenhada, e os cartões por transcrição somam quando chegam. */}
       {filtered.length === 0 && searching ? (
         <div className="flex flex-col items-center gap-2 rounded-3xl border border-dashed border-scriba-hairline px-6 py-12 text-center">
@@ -179,9 +179,8 @@ export function SessionsBrowser({
           <SearchX aria-hidden className="size-6 text-scriba-ink-mute" />
           <p className="text-sm font-medium text-scriba-ink">Nenhuma gravação com esse recorte.</p>
           <p className="max-w-sm text-[13px] font-light leading-relaxed text-scriba-ink-soft">
-            A busca também procura dentro da transcrição e nos versículos citados — tente uma
-            palavra que o pregador tenha dito, uma referência como “Jonas 1”, ou solte um dos
-            filtros.
+            A busca também procura dentro da transcrição e nos versículos citados, tente uma palavra
+            que o pregador tenha dito, uma referência como “Jonas 1”, ou solte um dos filtros.
           </p>
           <button
             type="button"
@@ -205,18 +204,18 @@ export function SessionsBrowser({
               {group.items.map((s) => {
                 const includeYear = new Date(s.createdAt).getFullYear() !== now.getFullYear();
                 const isDeepened = deepened.has(s.id);
-                // Sessões do modo transcrição não têm resumo — a menos que
+                // Sessões do modo transcrição não têm resumo, a menos que
                 // tenham ganhado um sob demanda, e então elas abrem no resumo
                 // como qualquer outra.
                 const isTranscriptOnly = s.mode === "transcript_only";
                 // Importada do YouTube: nunca passou por microfone nenhum, e o
-                // cartão precisa dizer isso — o ícone de mic e a duração lidos
+                // cartão precisa dizer isso, o ícone de mic e a duração lidos
                 // juntos sugerem uma gravação que a pessoa fez, e ela não fez.
                 const isYoutube = s.mode === "youtube";
                 const hasSummary = summarized.has(s.id);
                 const href = `/recording/${s.id}/${savedRouteFor(s.mode, hasSummary)}`;
                 // A referência que casou. Aparece mesmo quando o cartão já
-                // casaria pelo título: ela não é justificativa, é informação —
+                // casaria pelo título: ela não é justificativa, é informação,
                 // dizer QUAL versículo daquele capítulo o pregador citou é
                 // metade do que se quer saber ao procurar por "Jonas 1".
                 const verseHit = tokens.length > 0 ? (verseRefs.get(s.id) ?? null) : null;
@@ -243,7 +242,7 @@ export function SessionsBrowser({
                               azul-escuro com tinta branca no claro,
                               pastilha clara com tinta navy no escuro. Era
                               `bg-scriba-blue` + `text-white`, o par que o
-                              `src/shared/AGENTS.md` proíbe — `--scriba-blue`
+                              `src/shared/AGENTS.md` proíbe, `--scriba-blue`
                               é azul de SUPERFÍCIE, e branco sobre ele dá
                               2,56:1 no claro e 2,33:1 no escuro.
 

@@ -49,25 +49,25 @@ import { sealStudy } from "@/lib/study/seal";
  *   [5] SELAGEM       ---   versículo vem da NVI; fonte sem obra é descartada
  *
  * A representação intermediária ser PERGUNTA, e não uma taxonomia de eixos e
- * disciplinas, é a decisão que carrega o resto: uma pergunta é autovalidável —
- * dá para ler e saber se presta — enquanto um eixo com abordagem escolhida é
+ * disciplinas, é a decisão que carrega o resto: uma pergunta é autovalidável,
+ * dá para ler e saber se presta, enquanto um eixo com abordagem escolhida é
  * um formulário preenchido que nada diz sobre a qualidade do que virá.
  *
  * Daí a assimetria de esforço: **a qualidade do estudo é a qualidade das
  * perguntas**. O passo 1 pergunta sem pudor e NÃO seleciona; a seleção mora no
- * passo 2, com quem vai ter de responder — quem melhor julga se uma pergunta
+ * passo 2, com quem vai ter de responder, quem melhor julga se uma pergunta
  * vale é quem precisa respondê-la.
  *
  * ## O sermão sai do pipeline depois do passo 1
  *
  * Só o questionador vê a transcrição e o resumo. Dali em diante o material de
- * trabalho é um ASSUNTO ("a alegria cristã") e um conjunto de perguntas — o
+ * trabalho é um ASSUNTO ("a alegria cristã") e um conjunto de perguntas, o
  * respondedor e o redator não recebem o sermão de forma alguma.
  *
  * É uma decisão de arquitetura, não de prompt, e ela nasceu de uma medição:
  * enquanto os dois recebiam o resumo "para não repetir", a expressão que o
  * pregador cunhou aparecia como título de seção do estudo. Entregar o texto a
- * ser evitado a um modelo que vai escrever é priming, não proteção — o que
+ * ser evitado a um modelo que vai escrever é priming, não proteção, o que
  * está no contexto sai na saída. Não entregar resolve estruturalmente o que
  * nenhuma instrução resolvia.
  *
@@ -75,7 +75,7 @@ import { sealStudy } from "@/lib/study/seal";
  * modo de falha nº 1 do produto: o estudo sair repetindo o resumo. Os três
  * modelos do pipeline recebem o resumo e são instruídos a não repeti-lo, e a
  * instrução às vezes perde para a inclinação natural de voltar ao ponto mais
- * saliente do contexto. O guardião não instrui — corta. Roda num modelo barato
+ * saliente do contexto. O guardião não instrui, corta. Roda num modelo barato
  * porque as duas tarefas são classificação, não escrita.
  *
  * Persistência é do chamador. Usado por `/api/deepening` e
@@ -109,7 +109,7 @@ export type GenerateStudyInput = {
 };
 
 /**
- * As chamadas do respondedor e do redator são grandes — 8-11 respostas de até
+ * As chamadas do respondedor e do redator são grandes, 8-11 respostas de até
  * 500 palavras, e depois um artigo de 4-5 mil palavras num modelo de
  * raciocínio. Medidas: ~100s cada. O padrão de `callChat` é 60s, e um timeout
  * aqui aborta um trabalho pelo qual o usuário já pagou moedas.
@@ -127,7 +127,7 @@ const LONG_CALL_TIMEOUT_MS = 240_000;
  *
  * Consequência assumida: enquanto as três etapas eram gpt-5.1 a reescrita quase
  * nunca cabia, e o veredito do guardião valia como SINAL (log e
- * `/admin/studies`). Com o redator em `gpt-5-mini` ela deve voltar a caber —
+ * `/admin/studies`). Com o redator em `gpt-5-mini` ela deve voltar a caber,
  * este limite foi escrito para que isso acontecesse sozinho, sem mudar nada
  * aqui. Se as reescritas dispararem, `record.guard.rewrites` em
  * `/admin/studies` é onde isso aparece, e uma reescrita é uma redação inteira
@@ -148,13 +148,13 @@ export async function generateStudy(input: GenerateStudyInput): Promise<Generate
   const questionsResult = await callChat({
     model: questionsModel,
     // Alta: aqui queremos amplitude e ângulos improváveis. Perguntar demais é
-    // barato — a seleção vem depois. Uma boa pergunta não feita está perdida
+    // barato, a seleção vem depois. Uma boa pergunta não feita está perdida
     // para sempre.
     temperature: 0.9,
     maxTokens: 8000,
     // Esforço baixo de propósito: levantar trinta perguntas é divergência, não
     // dedução. O raciocínio profundo aqui custa quase um minuto de espera e
-    // tende a CONVERGIR — e convergir é o oposto do que se quer de quem
+    // tende a CONVERGIR, e convergir é o oposto do que se quer de quem
     // pergunta.
     reasoningEffort: "low",
     responseFormat: { type: "json_object" },
@@ -184,7 +184,7 @@ export async function generateStudy(input: GenerateStudyInput): Promise<Generate
 
   const record = parseStudyQuestionsFromLLM(questionsResult.data.content);
   if (!record) {
-    qLog.error("nenhuma pergunta utilizável — abortando");
+    qLog.error("nenhuma pergunta utilizável, abortando");
     return { ok: false, kind: "pipeline", message: "questions_unusable" };
   }
 
@@ -200,10 +200,10 @@ export async function generateStudy(input: GenerateStudyInput): Promise<Generate
     latencyMs: questionsResult.data.latencyMs,
   });
 
-  // ── [1b] GUARDIÃO — corta a pergunta que o resumo já responde ────────────
+  // ── [1b] GUARDIÃO, corta a pergunta que o resumo já responde ────────────
   // O corte mais barato do pipeline e o de melhor rendimento: uma pergunta
   // descartada aqui economiza uma resposta E o trecho do artigo que sairia
-  // dela. Melhor-esforço — se o guardião falhar, seguimos com todas.
+  // dela. Melhor-esforço, se o guardião falhar, seguimos com todas.
   const blocked = await filterQuestions({
     userId,
     sessionId,
@@ -214,12 +214,12 @@ export async function generateStudy(input: GenerateStudyInput): Promise<Generate
   const surviving = record.questions.filter((q) => !blocked.includes(q.text));
   record.guard = { blockedByGuard: blocked, rewrites: 0 };
 
-  // Se o guardião reprovou quase tudo, o problema está no questionador — e
+  // Se o guardião reprovou quase tudo, o problema está no questionador, e
   // responder as duas sobras produziria um estudo raquítico. Seguir com todas
   // é o mal menor: repetição é pior que nada, mas nada é pior que os dois.
   const questionsForAnswering = surviving.length >= 6 ? surviving : record.questions;
   if (surviving.length < 6 && blocked.length > 0) {
-    log.warn("guardião cortou perguntas demais — seguindo com todas", {
+    log.warn("guardião cortou perguntas demais, seguindo com todas", {
       asked: record.questions.length,
       surviving: surviving.length,
     });
@@ -231,7 +231,7 @@ export async function generateStudy(input: GenerateStudyInput): Promise<Generate
   const topics = [...new Set(questionsForAnswering.flatMap((q) => q.topics))] as StudyTopic[];
   const authorsBlock = renderTheologianBriefing(theologiansFor(topics));
 
-  // ── [2] RESPONDEDOR — seleciona e responde ───────────────────────────────
+  // ── [2] RESPONDEDOR, seleciona e responde ───────────────────────────────
   const answersModel = serverEnv.OPENAI_STUDY_ANSWERS_MODEL;
   const aLog = log.scoped("answers");
 
@@ -241,7 +241,7 @@ export async function generateStudy(input: GenerateStudyInput): Promise<Generate
     // fatos, e temperatura alta aqui vira citação inventada.
     temperature: 0.5,
     // Sem esforço explícito: o padrão da API já entrega a densidade que esta
-    // etapa precisa, e "medium" media 195s contra ~120s — quase um minuto a
+    // etapa precisa, e "medium" media 195s contra ~120s, quase um minuto a
     // mais de espera, dentro de um orçamento de função que é de 300s.
     maxTokens: 16000,
     timeoutMs: LONG_CALL_TIMEOUT_MS,
@@ -272,7 +272,7 @@ export async function generateStudy(input: GenerateStudyInput): Promise<Generate
 
   const answers = parseStudyAnswersFromLLM(answersResult.data.content);
   if (answers.length === 0) {
-    aLog.error("nenhuma resposta — abortando");
+    aLog.error("nenhuma resposta, abortando");
     return { ok: false, kind: "pipeline", message: "answers_empty" };
   }
 
@@ -328,7 +328,7 @@ export async function generateStudy(input: GenerateStudyInput): Promise<Generate
   if (!written.ok) return written.error;
   let draft = written.payload;
 
-  // ── [4b] GUARDIÃO — a tese avança em relação à do resumo? ────────────────
+  // ── [4b] GUARDIÃO, a tese avança em relação à do resumo? ────────────────
   // O filtro do passo 1b não alcança esta falha: mesmo partindo de perguntas
   // boas, o redator pode colapsar o artigo de volta na tese do sermão na hora
   // de amarrar tudo. UMA reescrita, com a sobreposição nomeada.
@@ -347,7 +347,7 @@ export async function generateStudy(input: GenerateStudyInput): Promise<Generate
       elapsedMs: elapsed,
     });
   } else if (verdict.repeats) {
-    wLog.warn("tese repete o resumo — reescrevendo uma vez", { overlap: verdict.overlap });
+    wLog.warn("tese repete o resumo, reescrevendo uma vez", { overlap: verdict.overlap });
     const retry = await runWriter(writeArgs, verdict.overlap);
     if (retry.ok && retry.payload.blocks.length > 0) {
       draft = retry.payload;
@@ -358,7 +358,7 @@ export async function generateStudy(input: GenerateStudyInput): Promise<Generate
   }
 
   if (draft.blocks.length === 0) {
-    wLog.error("redação vazia — abortando");
+    wLog.error("redação vazia, abortando");
     return { ok: false, kind: "pipeline", message: "draft_empty" };
   }
 
@@ -509,7 +509,7 @@ async function filterQuestions(args: {
     model,
     // Zero: é classificação. Variação aqui só produziria cortes inconsistentes
     // entre duas execuções sobre o mesmo material. (Num modelo de raciocínio a
-    // temperatura é ignorada — ver `callChat`; o que vale ali é o esforço.)
+    // temperatura é ignorada, ver `callChat`; o que vale ali é o esforço.)
     temperature: 0,
     reasoningEffort: "low",
     maxTokens: 4000,
@@ -536,7 +536,7 @@ async function filterQuestions(args: {
     // Melhor-esforço: sem o filtro o estudo ainda sai, só com mais risco de
     // repetir. Derrubar a geração por causa do guardião seria trocar um
     // problema de qualidade por um de disponibilidade.
-    args.log.warn("filtro de perguntas falhou — seguindo com todas", {
+    args.log.warn("filtro de perguntas falhou, seguindo com todas", {
       message: result.error.message,
     });
     return [];
@@ -589,7 +589,7 @@ async function checkThesis(args: {
   });
 
   if (!result.ok) {
-    args.log.warn("checagem de tese falhou — aceitando o texto", {
+    args.log.warn("checagem de tese falhou, aceitando o texto", {
       message: result.error.message,
     });
     return { repeats: false, overlap: "" };

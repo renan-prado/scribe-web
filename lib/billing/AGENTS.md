@@ -1,4 +1,4 @@
-# Moedas e Stripe — invariantes que não se negociam
+# Moedas e Stripe: invariantes que não se negociam
 
 Crédito ("moeda") é dinheiro. Cada regra abaixo existe para que nenhuma
 mudança futura reabra um caminho de crédito grátis, e várias delas já foram um
@@ -14,33 +14,33 @@ Guia de configuração, chaves e armadilhas conhecidas: `docs/stripe-setup.md`.
 lib/billing/plans.ts     catálogo CLIENT-SAFE: nome, moedas, preço de tela
 lib/billing/catalog.ts   server-only: chave↔Price ID e Price ID↔moedas
 lib/billing/stripe.ts    o client (null se não configurado) + helpers
-lib/billing/customer.ts  getOrCreateCustomer — nunca aceita id do request
+lib/billing/customer.ts  getOrCreateCustomer, nunca aceita id do request
 lib/billing/fulfill.ts   O ÚNICO lugar que credita
 lib/billing/sweep.ts     varredura de recuperação
 lib/db/billing.ts        assinaturas, grantCoins, clawbackCoins, idempotência
-lib/db/coins.ts          chargeCoins — o DÉBITO
+lib/db/coins.ts          chargeCoins, o DÉBITO
 lib/coins/pricing.ts     client-safe: quanto cada ação CUSTA
 ```
 
-## Todo crédito passa por `fulfill.ts` — sem exceção
+## Todo crédito passa por `fulfill.ts`: sem exceção
 
 Quatro pontos de entrada, três linhas de defesa em ordem de latência:
 
-1. **`POST /api/stripe/webhook`** — segundos, o caminho normal.
-2. **`POST /api/billing/reconcile`** — no retorno do checkout, cobre compras
+1. **`POST /api/stripe/webhook`**: segundos, o caminho normal.
+2. **`POST /api/billing/reconcile`**: no retorno do checkout, cobre compras
    cujo webhook falhou.
-3. **Check preguiçoso em `GET /api/billing/summary`** — assinatura viva com
+3. **Check preguiçoso em `GET /api/billing/summary`**: assinatura viva com
    `current_period_end` vencido dispara conferência no Stripe (cooldown de
    15min), cobrindo renovações perdidas exatamente quando o usuário estranha
    o saldo.
-4. **`GET /api/billing/sweep`** — cron diário (`vercel.json`), varre pagamentos
+4. **`GET /api/billing/sweep`**: cron diário (`vercel.json`), varre pagamentos
    recentes no Stripe e credita o que não estiver no ledger. Guardado por
    `CRON_SECRET` (comparação em tempo constante) e público no proxy como o
    webhook. `coinsRecovered > 0` numa passada = incidente nas camadas de cima.
 
 Tudo idempotente pelo `external_ref` UNIQUE: os quatro caminhos sobre o mesmo
 pagamento creditam UMA vez. **Um quinto caminho, se surgir, também usa
-`fulfill.ts`** — duas implementações de "quanto creditar" um dia divergem.
+`fulfill.ts`**, duas implementações de "quanto creditar" um dia divergem.
 
 ## O que o cliente pode dizer
 
@@ -53,7 +53,7 @@ Price fora do catálogo credita zero.**
 **A intenção de plano sobrevive ao login.** O CTA da landing aponta para
 `/sign-in?next=%2Fbilling%2Fassinar%3Fplan%3D<plano>`, e `/billing/assinar`
 (dentro de `(app)`, logo protegida) abre o Checkout. A chave viaja pela URL e
-isso é seguro — ela só ENDEREÇA. Trocar `?plan=` muda qual plano é oferecido,
+isso é seguro, ela só ENDEREÇA. Trocar `?plan=` muda qual plano é oferecido,
 nunca quanto custa. Sobre o `?next=`, ver `app/AGENTS.md`.
 
 **A reconciliação não afrouxa nada.** Ela recebe um `cs_...`, mas o id só
@@ -78,13 +78,13 @@ de metadata e nunca do corpo do request.
   derivava o preço certinho de `COIN_COST_BY_REASON`, e qualquer sessão logada
   podia ignorar a rota e chamar a RPC direto com o anon key, pagando 1 moeda
   por um minuto de 7. Não dava para creditar (`p_amount <= 0` sempre levantou),
-  então o buraco era subfaturamento — do tipo que deixa no ledger uma linha
+  então o buraco era subfaturamento, do tipo que deixa no ledger uma linha
   indistinguível de uma legítima. **O gate na rota não protege nada que a
   função conceda por fora dela.**
 - **`profiles` tem GRANT por COLUNA.** `authenticated` só escreve
   `display_name`, `avatar_url` e `email`. `coin_balance`,
-  `stripe_customer_id`, `role` e `is_active` estão fora do alcance do cliente
-  — RLS não restringe coluna, GRANT sim. Antes disso, um usuário com o anon
+  `stripe_customer_id`, `role` e `is_active` estão fora do alcance do cliente,
+  RLS não restringe coluna, GRANT sim. Antes disso, um usuário com o anon
   key podia dar `update profiles set coin_balance = 999999 where id = auth.uid()`.
 - **Nunca escreva em `coin_balance` diretamente.** Todo crédito é
   `grant_coins`, todo débito é `chargeCoins`.
@@ -93,7 +93,7 @@ de metadata e nunca do corpo do request.
   tempo o microfone ficou aberto), mas quer dizer que o débito é cooperativo:
   `lib/coins/require-balance.ts` recusa quem está zerado nas rotas de LLM, e é
   só isso que impede uma conta grátis de transcrever de graça. Ele **não**
-  impede alguém de gravar 50 minutos pagando 10 — fechar essa folga exigiria
+  impede alguém de gravar 50 minutos pagando 10, fechar essa folga exigiria
   contar os segundos de áudio no servidor.
 
 ## Idempotência e ordem de eventos
@@ -109,7 +109,7 @@ e as linhas são relidas da API do Stripe, não do payload.
 
 **O espelho `subscriptions` se cura em três pontos** (webhook, reconciliação e
 o guard do checkout), sempre via `syncSubscriptionState`, e sempre a partir de
-uma busca FRESCA na API — nunca do payload de um evento, porque o Stripe não
+uma busca FRESCA na API, nunca do payload de um evento, porque o Stripe não
 garante ordem de entrega e um `updated` atrasado sobrescreveria estado novo. O
 guard anti-cobrança-dupla do checkout NUNCA confia só no espelho local: antes
 de criar assinatura, ele confere no Stripe se já existe uma viva.
@@ -120,7 +120,7 @@ negativo e loga em `warn` quando os créditos já tinham sido gastos.
 
 ## Preço de tela
 
-`plans.ts` é a fonte única de nome, preço e créditos — lido pelo diálogo de
+`plans.ts` é a fonte única de nome, preço e créditos, lido pelo diálogo de
 compra, pelo `/profile` E pelos cards de `/#planos` na landing. A landing não
 tem números próprios: antes disso ela anunciava 2.000/5.000/100 créditos
 contra os 1.000/2.500/50 reais, e preço de tela errado é promessa quebrada no
@@ -138,7 +138,7 @@ Os motivos de CRÉDITO em `GrantReason` (`lib/db/billing.ts`) incluem os três d
 indicação: `referral_signup` e `referral_subscription` (as duas pontas do
 programa aberto, ambas para quem INDICA) e `partner_signup_reward` (a do
 parceiro, que acumula antes de virar saldo). Todos passam por `grant_coins`,
-com `external_ref` derivado do usuário INDICADO — é o que torna "uma vez por
+com `external_ref` derivado do usuário INDICADO, é o que torna "uma vez por
 pessoa, para sempre" uma constraint em vez de um `if`.
 
 `COIN_RING_REFERENCE` (300) não é o brinde de cadastro (50) de propósito: com
@@ -146,12 +146,12 @@ um plano que enche a conta com 1.000+, ancorar o medidor em 50 o deixaria
 cravado em 100% para sempre.
 
 O que acontece quando o saldo acaba NO MEIO de uma gravação está em
-`src/features/session/AGENTS.md` — a captura congela, não encerra.
+`src/features/session/AGENTS.md`, a captura congela, não encerra.
 
 ## Comissão de parceiro e recompensa de indicação
 
 As duas nascem DENTRO de `fulfill.ts`, no `creditInvoice`, e pela mesma razão:
-é por ali que passam os quatro caminhos de crédito. Cada uma no seu try/catch —
+é por ali que passam os quatro caminhos de crédito. Cada uma no seu try/catch,
 falha em remunerar quem indicou não pode derrubar o crédito de moedas de quem
 PAGOU, nem devolver 5xx ao Stripe por um problema que não é do comprador.
 
@@ -168,5 +168,5 @@ requisito, não descuido. `/api/billing/sweep` segue o mesmo padrão com o
 `CRON_SECRET`. Não remova nenhuma das duas.
 
 Sem `STRIPE_SECRET_KEY` configurada, as rotas de billing respondem 503
-`billing_unavailable` — o app sobe normalmente. Diagnóstico:
+`billing_unavailable`, o app sobe normalmente. Diagnóstico:
 `npm run stripe:doctor`.

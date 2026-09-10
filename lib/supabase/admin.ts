@@ -4,7 +4,7 @@ import { clientEnv } from "@/lib/env/client";
 import { serverEnv } from "@/lib/env/server";
 
 /**
- * Service-role Supabase client. BYPASSES RLS — never expose to the browser
+ * Service-role Supabase client. BYPASSES RLS, never expose to the browser
  * or return raw responses to unauthenticated requests. Only server code that
  * has already asserted admin authorization (see `requireAdmin`) may use it.
  *

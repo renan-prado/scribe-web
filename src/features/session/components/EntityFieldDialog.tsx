@@ -19,12 +19,12 @@ import { cn } from "@/lib/utils";
  * shows entries relevant to that field.
  *
  * `initialValue` should already be normalized (empty when the caller detected
- * a placeholder like "Autor desconhecido") — the dialog does not do any
+ * a placeholder like "Autor desconhecido"), the dialog does not do any
  * placeholder scrubbing itself.
  *
  * ## O miolo NÃO rola, e isso é o conserto
  *
- * O `DialogContent` recorta o corpo com `overflow-y-auto` — o certo para um
+ * O `DialogContent` recorta o corpo com `overflow-y-auto`, o certo para um
  * diálogo de texto longo, e errado para este, cujo único filho abre uma lista
  * ABSOLUTA por fora de si. A lista estourava a caixa do corpo, virava barra de
  * rolagem numa faixa de ~60px de altura, e o diálogo inteiro se contorcia a
@@ -40,7 +40,7 @@ import { cn } from "@/lib/utils";
 type EntityFieldDialogProps = {
   open: boolean;
   onOpenChange: (open: boolean) => void;
-  /** Pessoa ou lugar — desce até a lista de sugestões. */
+  /** Pessoa ou lugar, desce até a lista de sugestões. */
   kind: "speaker" | "location";
   title: string;
   description?: string;

@@ -18,7 +18,7 @@ export function useWakeLock({ enabled }: { enabled: boolean }): void {
     try {
       sentinelRef.current = await wl.request("screen");
     } catch {
-      // ignore — user gesture requirements or hardware refusal
+      // ignore, user gesture requirements or hardware refusal
     }
   }, []);
 

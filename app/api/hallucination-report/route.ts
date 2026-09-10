@@ -24,7 +24,7 @@ export const runtime = "nodejs";
 export const dynamic = "force-dynamic";
 
 /** Cauda de transcrição enviada ao auditor no escopo live. Cobre vários
- * minutos de fala — o suficiente para julgar os cards visíveis sem inflar o
+ * minutos de fala, o suficiente para julgar os cards visíveis sem inflar o
  * prompt com a sessão inteira. */
 const LIVE_TRANSCRIPT_CHARS = 6_000;
 /** No escopo summary a transcrição vem do banco e pode ser longa; cortamos
@@ -66,7 +66,7 @@ function itemForPrompt(item: FeedItem, index: number): Record<string, unknown> {
  * reprocessar o resumo, ou apenas registrar.
  *
  * Não cobra moedas de propósito: o usuário está reportando um defeito NOSSO.
- * Cobrar por isso ensinaria exatamente o comportamento errado — deixar o
+ * Cobrar por isso ensinaria exatamente o comportamento errado, deixar o
  * problema passar em silêncio. A proteção contra abuso é o rate limit.
  */
 export async function POST(request: Request) {
@@ -83,7 +83,7 @@ export async function POST(request: Request) {
   const model = serverEnv.OPENAI_HALLUCINATION_MODEL;
 
   // No escopo live nada foi persistido ainda, então a transcrição e os cards
-  // vêm do cliente. No escopo summary a sessão já está salva — lemos do banco
+  // vêm do cliente. No escopo summary a sessão já está salva, lemos do banco
   // em vez de confiar no que o cliente manda.
   let transcript = "";
   let items: FeedItem[] = [];
@@ -134,7 +134,7 @@ export async function POST(request: Request) {
         snippet: result.error.snippet.slice(0, 300),
       });
     }
-    // O alerta do usuário é registrado mesmo quando a auditoria falha — é o
+    // O alerta do usuário é registrado mesmo quando a auditoria falha, é o
     // dado que não dá para recuperar depois.
     await persistReport({ sessionId, userId: auth.user.id, scope, note, review: null });
     return NextResponse.json({ error: "upstream_failed" }, { status: 502 });

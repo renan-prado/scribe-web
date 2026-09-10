@@ -9,18 +9,18 @@ import { cn } from "@/lib/utils";
  *
  * Mora em `src/shared/` e não em `src/features/referrals/` por uma razão de
  * bundle: quem usa isto é o hero da LANDING PAGE, e `app/AGENTS.md` proíbe a
- * LP de importar componente cliente de `src/features/` — foi assim que o app
+ * LP de importar componente cliente de `src/features/`, foi assim que o app
  * de gravação inteiro passou a ser baixado para desenhar cinco cards estáticos.
  * `LandingCta` e `StandaloneHomeGuard` moram aqui pelo mesmo motivo.
  *
  * TRÊS estados, e o terceiro é o que costuma faltar:
  *
- * 1. **Tem foto** — `next/image`, servida do nosso domínio pelo
+ * 1. **Tem foto**: `next/image`, servida do nosso domínio pelo
  *    `remotePattern` do `lh3.googleusercontent.com` (ver `next.config.ts`).
  *    Com `width`/`height`, então sem CLS.
- * 2. **Não tem foto** — parceiro que ainda não fez o primeiro login não tem
+ * 2. **Não tem foto**: parceiro que ainda não fez o primeiro login não tem
  *    avatar nenhum. Desenha a inicial. É desfecho normal, não erro.
- * 3. **Tinha foto e ela não carregou** — URL do Google expirada, conta que
+ * 3. **Tinha foto e ela não carregou**: URL do Google expirada, conta que
  *    trocou de imagem, rede ruim. Sem o `onError` abaixo, isto vira um
  *    quadrado quebrado no elemento mais visível da página; com ele, cai no
  *    estado 2, que já é bonito.

@@ -22,8 +22,8 @@ const log = createLogger("bible-guard");
 
 /**
  * BIBLE pipeline. Gate em duas camadas:
- *   1. `hasBibleMention` — regex barato: sem menção, sai.
- *   2. `scoreBibleGuard` — soma sinais ponderados (livro+número, verbo de
+ *   1. `hasBibleMention`: regex barato: sem menção, sai.
+ *   2. `scoreBibleGuard`: soma sinais ponderados (livro+número, verbo de
  *      leitura, anáfora demonstrativa, cooldown, etc.). Só chama a rota se
  *      passar do threshold.
  *
@@ -107,7 +107,7 @@ export function useBiblePipeline({
           if (item.kind !== "citedVerse") continue;
           if (item.text === "") {
             // Chapter-only pré-supõe leitura a partir do v.1 (o card renderiza
-            // o verso 1) — aquece o cache com ele em vez de pular o prefetch.
+            // o verso 1), aquece o cache com ele em vez de pular o prefetch.
             prefetchVerse(item.reference.includes(":") ? item.reference : `${item.reference}:1`);
           }
           const parsed = parseVerseReference(item.reference);
@@ -121,7 +121,7 @@ export function useBiblePipeline({
             book: canonicalBookStem(latestRef.bookDisplay),
             bookDisplay: latestRef.bookDisplay,
             chapter: latestRef.chapter,
-            // Chapter-only assume leitura a partir do v.1 — deixa o sinal
+            // Chapter-only assume leitura a partir do v.1, deixa o sinal
             // verseProgression do guard armado pra quando o pastor disser
             // "versículo N" logo em seguida.
             verse: latestRef.startVerse ?? latestRef.endVerse ?? 1,

@@ -20,7 +20,7 @@ export const dynamic = "force-dynamic";
  * saber em qual dos dois modelos mexer.
  *
  * Uma leitura que a tela precisa preservar: estudo sem nenhuma fonte não é
- * necessariamente pior — é a selagem tendo descartado o que não tinha obra,
+ * necessariamente pior, é a selagem tendo descartado o que não tinha obra,
  * que é o comportamento desejado.
  */
 
@@ -66,7 +66,7 @@ export default async function AdminStudiesPage() {
                 </div>
                 <div className="flex items-baseline gap-3">
                   {/* O par natural desta tela: aqui está a decisão editorial,
-                      lá está o que ela custou — execução por execução, que é o
+                      lá está o que ela custou, execução por execução, que é o
                       recorte que importa quando se reprocessa para comparar. */}
                   <Link
                     href={`/admin/precificacao?sessionId=${s.sessionId}`}
@@ -107,8 +107,8 @@ export default async function AdminStudiesPage() {
                   {/* Todas as perguntas, e por que cada uma não virou texto.
                       Os dois descartes têm causas diferentes e consertos
                       diferentes: "cortada" é o guardião dizendo que o resumo já
-                      respondia — culpa do questionador; "não escolhida" é o
-                      respondedor tendo preferido outras — se ele deixou de fora
+                      respondia, culpa do questionador; "não escolhida" é o
+                      respondedor tendo preferido outras, se ele deixou de fora
                       justamente as boas, a culpa é dele. */}
                   <ol className="flex flex-col gap-1">
                     {s.record.questions.map((q) => {
@@ -138,7 +138,7 @@ export default async function AdminStudiesPage() {
                 </div>
               ) : (
                 <p className="text-[11px] font-light italic text-scriba-ink-mute">
-                  Gerado antes do pipeline atual — sem perguntas registradas.
+                  Gerado antes do pipeline atual, sem perguntas registradas.
                 </p>
               )}
 
@@ -149,11 +149,11 @@ export default async function AdminStudiesPage() {
                   value={
                     Object.entries(s.counts)
                       .map(([type, n]) => `${type}×${n}`)
-                      .join(" · ") || "—"
+                      .join(" · ") || "-"
                   }
                 />
-                <Stat label="Versículos" value={s.verses.join(" · ") || "—"} />
-                <Stat label="Fontes" value={s.sources.join(" · ") || "—"} />
+                <Stat label="Versículos" value={s.verses.join(" · ") || "-"} />
+                <Stat label="Fontes" value={s.sources.join(" · ") || "-"} />
               </dl>
             </li>
           ))}

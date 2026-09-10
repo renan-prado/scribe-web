@@ -6,8 +6,8 @@
 -- cada eixo deve ser tratado.
 --
 -- Essa decisão precisa ser PERSISTIDA, e não é sentimentalismo de log. Ela é o
--- que torna a qualidade do estudo avaliável: o critério 4 da §7 do documento —
--- "a abordagem escolhida era a melhor disponível?" — é impossível de julgar
+-- que torna a qualidade do estudo avaliável: o critério 4 da §7 do documento,
+-- "a abordagem escolhida era a melhor disponível?", é impossível de julgar
 -- sem ver a escolha. Antes, ela acontecia dentro de um forward pass e morria
 -- ali; a única evidência sobre qualidade era a impressão de quem lia.
 --
@@ -22,7 +22,7 @@
 -- jsonb e não colunas: o formato do plano vai mudar junto com o pipeline, e
 -- nenhuma consulta filtra por dentro dele. Quando alguma passar a filtrar (por
 -- `depth`, provavelmente, para comparar estudos rasos com densos), o caminho é
--- um índice de expressão — não normalizar.
+-- um índice de expressão, não normalizar.
 
 alter table public.session_deepenings
   add column if not exists plan jsonb;

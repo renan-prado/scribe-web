@@ -17,7 +17,7 @@ export const dynamic = "force-dynamic";
  * `requireAdmin()` primeiro e sempre, nas duas verbos. Não basta a área ser
  * invisível no menu: as tabelas de 0043 guardam margem, dívida e saldo em
  * caixa, e uma rota sem gate é alcançável por quem souber a URL. O 404 (não
- * 403) é a mesma decisão do resto do `/admin` — não confirmamos a existência
+ * 403) é a mesma decisão do resto do `/admin`, não confirmamos a existência
  * da área a quem não deveria vê-la.
  *
  * A escrita passa por `EntryInputSchema` inteiro. Cast e `typeof` na mão são

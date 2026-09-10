@@ -22,13 +22,13 @@ const log = createLogger("partners");
  * conta só ganha id quando a pessoa entra pela primeira vez.
  *
  * Duas entradas, uma resolução:
- *   - `getCurrentPartner()` — o painel. Tudo que a tela mostra.
- *   - `getPartnerNavLink()` — o menu do avatar dentro do app, que só precisa
+ *   - `getCurrentPartner()`: o painel. Tudo que a tela mostra.
+ *   - `getPartnerNavLink()`: o menu do avatar dentro do app, que só precisa
  *     saber SE mostra o item. Vem da mesma consulta porque a linha é uma só e
  *     buscá-la parcialmente não economizaria nada.
  *
  * Memoizada com `cache()` por render pass. O layout de `/partners` e a página
- * dentro dele chamavam os dois — o comentário na página dizia "reaproveita a
+ * dentro dele chamavam os dois, o comentário na página dizia "reaproveita a
  * resolução", e não reaproveitava: eram duas rodadas completas, com dois
  * `getUser()`, duas consultas service-role e duas conferências de mesada.
  * Agora é uma. O efeito colateral (vincular a conta na primeira visita,
@@ -55,14 +55,14 @@ export const getCurrentPartner = cache(async (): Promise<CurrentPartner | null> 
   if (!user?.email) return null;
 
   // Service-role porque a policy de SELECT em `partners` exige
-  // `user_id = auth.uid()` — e no primeiro acesso o vínculo ainda não existe,
+  // `user_id = auth.uid()`, e no primeiro acesso o vínculo ainda não existe,
   // então a própria consulta que o resolveria voltaria vazia.
   const admin = createAdminClient();
 
   // DUAS consultas, e não um `.or()` com o e-mail interpolado na string do
   // filtro. A forma antiga montava `invited_email.ilike.${user.email}` à mão,
   // o que além do curinga acima deixava a sintaxe do PostgREST (vírgula,
-  // parêntese) ao alcance do valor. Separadas, cada uma diz uma coisa só — e a
+  // parêntese) ao alcance do valor. Separadas, cada uma diz uma coisa só, e a
   // segunda passa a exigir `user_id is null`, que a versão com `.or()` não
   // exigia: um parceiro JÁ vinculado a outra conta, cujo `invited_email`
   // coincidisse com o meu, voltava para mim e me mostrava o painel dele.
@@ -80,7 +80,7 @@ export const getCurrentPartner = cache(async (): Promise<CurrentPartner | null> 
         .from("partners")
         .select(SELECT)
         // `invited_email` é gravado como o admin digitou (unicidade por
-        // `lower(...)`, migração 0029), daí o `ilike` — e daí o escape: sem ele
+        // `lower(...)`, migração 0029), daí o `ilike`, e daí o escape: sem ele
         // um e-mail com `%` casaria com QUALQUER parceiro, e esta consulta roda
         // com service-role. Ver `lib/db/like.ts`.
         .ilike("invited_email", escapeLikeValue(user.email))
@@ -109,7 +109,7 @@ export const getCurrentPartner = cache(async (): Promise<CurrentPartner | null> 
   }
 
   // A mesada é conferida aqui porque este é o único ponto por onde todo
-  // parceiro passa — o painel e o menu do app chamam os dois esta resolução.
+  // parceiro passa, o painel e o menu do app chamam os dois esta resolução.
   // O `allowance_month` da linha que acabamos de ler decide, sem ida extra ao
   // banco no caso normal (já creditado neste mês).
   await ensurePartnerAllowance({
@@ -121,7 +121,7 @@ export const getCurrentPartner = cache(async (): Promise<CurrentPartner | null> 
 
   // E, no mesmo caminho preguiçoso e pelo mesmo motivo, as moedas que ele
   // ganhou por cadastro (migração 0045). Elas ACUMULAM em vez de serem
-  // creditadas na hora porque `partners.user_id` nasce nulo — o parceiro é
+  // creditadas na hora porque `partners.user_id` nasce nulo, o parceiro é
   // cadastrado antes de existir como conta, e pode divulgar o link antes do
   // primeiro login. Não há perda em esperar: moeda só serve dentro do app.
   //
@@ -142,7 +142,7 @@ export const getCurrentPartner = cache(async (): Promise<CurrentPartner | null> 
 });
 
 /**
- * `true` quando a conta logada é de um parceiro ativo — o que o menu do avatar
+ * `true` quando a conta logada é de um parceiro ativo, o que o menu do avatar
  * precisa saber para oferecer "Área do parceiro".
  *
  * Sem isso o parceiro só chega ao painel digitando a URL, que é como ele

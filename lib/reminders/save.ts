@@ -8,7 +8,7 @@ import { type GenerateRemindersInput, generateReminders } from "@/lib/reminders/
 
 /**
  * Wrapper best-effort para gerar + persistir os 10 "Lembra disso?". Nunca
- * lança — falha vira null e é logada; o chamador continua respondendo ao
+ * lança, falha vira null e é logada; o chamador continua respondendo ao
  * cliente normalmente. Devolve o payload para o route incluir na resposta.
  */
 export async function generateAndSaveReminders(input: {

@@ -22,7 +22,7 @@ import { SUMMARY_ENRICHMENT_SYSTEM_PROMPT } from "@/lib/prompts/summary-enrichme
  *
  * Runs the two-shot flow: sermon-organizer prompt then optional enrichment
  * that layers contextCard + relatedVerse into the blocks. Enrichment failure
- * is best-effort — the caller still gets a valid summary, just without AI
+ * is best-effort, the caller still gets a valid summary, just without AI
  * cards. Both calls emit usage telemetry via recordChatUsage.
  */
 
@@ -44,7 +44,7 @@ export type GenerateFinalSummaryInput = {
   sessionId: string;
   transcript: string;
   feedItems: FeedItem[];
-  /** Log tag — "final-summary" or "final-summary-reprocess". */
+  /** Log tag, "final-summary" or "final-summary-reprocess". */
   logPrefix: string;
   /** Metadata route tag on the OpenAI store record + usage rows. */
   metadataRoute: Extract<
@@ -131,7 +131,7 @@ export async function generateFinalSummary(
     // O enriquecimento herda o passe que o chamou. Marcado sempre como
     // "summary-enrichment", metade do custo de um reprocessamento ia parar na
     // linha da gravação e o preço de reprocessar resumo parecia mais barato do
-    // que é — ver /admin/precificacao.
+    // que é, ver /admin/precificacao.
     const enrichmentRoute: UsageRoute =
       metadataRoute === "final-summary-reprocess"
         ? "summary-enrichment-reprocess"
@@ -142,14 +142,14 @@ export async function generateFinalSummary(
             : "summary-enrichment";
     // A transcrição NÃO entra aqui, e essa é a única economia deste pipeline
     // que foi medida sem custo de qualidade. O enriquecimento já recebe os
-    // `blocks` — que são a mensagem inteira, editada — mais os cartões do
+    // `blocks`, que são a mensagem inteira, editada, mais os cartões do
     // feed; a transcrição bruta era a terceira cópia do mesmo sermão no mesmo
     // prompt. Ela sozinha respondia por 54% da entrada desta chamada (11.822
     // → 5.410 tokens numa sessão de 30 min) numa etapa em que a entrada é
     // ~80% da conta. Medido sobre uma sessão real: as mesmas 6 inserções, o
     // mesmo texto em cada uma, mudando só três posições de índice.
     //
-    // Se você for devolvê-la, devolva o parágrafo (b) ao prompt junto — ele
+    // Se você for devolvê-la, devolva o parágrafo (b) ao prompt junto, ele
     // descreve os insumos que esta mensagem entrega, e os dois têm de contar
     // a mesma história.
     const indexedBlocks = payload.blocks.map((block, index) => ({ index, ...block }));
@@ -177,7 +177,7 @@ export async function generateFinalSummary(
     if (!enrichmentResult.ok) {
       const err = enrichmentResult.error;
       const kind = err.kind === "fetch" ? "fetch" : "upstream";
-      enrichmentLog.warn(`failed — sermon returned without AI cards`, {
+      enrichmentLog.warn(`failed, sermon returned without AI cards`, {
         kind,
         message: err.message,
       });

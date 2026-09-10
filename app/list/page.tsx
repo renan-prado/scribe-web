@@ -1,7 +1,7 @@
 import { permanentRedirect } from "next/navigation";
 
 /**
- * Rota LEGADA. `/list` virou `/recordings` — o caminho passou a dizer o que a
+ * Rota LEGADA. `/list` virou `/recordings`, o caminho passou a dizer o que a
  * página mostra, em vez de dizer que ela é uma lista.
  *
  * Mora FORA do grupo `(app)` de propósito, no molde de `app/session/[id]`: um
@@ -10,7 +10,7 @@ import { permanentRedirect } from "next/navigation";
  * pô-la dentro do grupo pagaria essas consultas em toda visita a um link
  * antigo.
  *
- * `permanentRedirect` responde 308 — o navegador e o rastreador guardam a
+ * `permanentRedirect` responde 308, o navegador e o rastreador guardam a
  * troca. É o mesmo 308 que um `redirects()` do `next.config.ts` daria, com a
  * vantagem de a razão morar ao lado da rota.
  *

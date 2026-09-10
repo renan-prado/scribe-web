@@ -9,7 +9,7 @@ import { type GenerateRereadsInput, generateRereads } from "@/lib/rereads/genera
 /**
  * Wrapper best-effort para gerar + persistir as 10 "Releia este texto".
  * Usado por /api/final-summary (primeira geração) e por /api/final-summary/reprocess
- * (regeração). Nunca lança — falha vira null e é logada; o chamador continua
+ * (regeração). Nunca lança, falha vira null e é logada; o chamador continua
  * respondendo ao cliente normalmente.
  *
  * Devolve o payload persistido para o route incluir na resposta (evita um

@@ -20,12 +20,12 @@ import { normalizeReferralCode } from "@/lib/referrals/economics";
 const log = createLogger("referrals");
 
 /**
- * Grava um código de indicação digitado na tela de login — de PARCEIRO ou de
+ * Grava um código de indicação digitado na tela de login, de PARCEIRO ou de
  * amigo, o mesmo campo para os dois.
  *
  * Existe porque a atribuição por link falha num caso muito comum e nada
  * exótico: a pessoa vê o vídeo no celular e vai criar a conta no notebook. O
- * cookie ficou no outro aparelho. Sem este campo, a indicação some — e o
+ * cookie ficou no outro aparelho. Sem este campo, a indicação some, e o
  * parceiro reclama, com razão, de ter vendido mais do que o painel mostra.
  *
  * É uma server action, e não um `document.cookie`, porque o cookie é
@@ -35,7 +35,7 @@ const log = createLogger("referrals");
  * **A ordem de resolução é parceiro primeiro, amigo depois**, e ela importa
  * num caso de borda real: um código de amigo tem 7 caracteres minúsculos
  * alfanuméricos, e um slug de parceiro ADMITE essa forma. Se as duas coisas
- * coincidirem, ganha o parceiro — é a relação comercial, com comissão em
+ * coincidirem, ganha o parceiro, é a relação comercial, com comissão em
  * dinheiro e um acordo assinado atrás dela, e é a única das duas cujo
  * identificador alguém escolheu à mão (o admin, que pode evitar a colisão).
  */
@@ -43,7 +43,7 @@ const log = createLogger("referrals");
 export type ReferralActionState = {
   status: "idle" | "ok" | "invalid" | "rate_limited";
   program?: "partner" | "friend";
-  /** Nome de quem indicou — a tela confirma para quem o crédito vai. */
+  /** Nome de quem indicou, a tela confirma para quem o crédito vai. */
   name?: string;
   avatarUrl?: string | null;
   /** Moedas que QUEM CHEGA ganha. 0 no programa de amigos. */
@@ -59,7 +59,7 @@ export async function applyReferralCode(
   // Sem sessão para identificar quem chama, então o balde é por IP. Apertado
   // de propósito: este é o único endpoint público que confirma se um código
   // existe, e sem limite ele viraria um oráculo para enumerar por força bruta
-  // a lista de slugs de parceiro — e, agora, o espaço de códigos de usuário.
+  // a lista de slugs de parceiro, e, agora, o espaço de códigos de usuário.
   const ip = getClientIp(await headers());
   const limit = checkRateLimit(`referral-code:ip:${ip}`, 20, 10 * MIN);
   if (!limit.ok) {
@@ -114,7 +114,7 @@ async function writeRef(id: string, program: "partner" | "friend"): Promise<void
   revalidatePath("/sign-in");
 }
 
-/** Desfaz a indicação — para quem digitou o código errado. */
+/** Desfaz a indicação, para quem digitou o código errado. */
 export async function clearReferralCode(): Promise<void> {
   const jar = await cookies();
   jar.delete(REF_COOKIE);

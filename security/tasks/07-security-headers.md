@@ -1,16 +1,16 @@
-# 07 — Security headers e configuração HTTP
+# 07: Security headers e configuração HTTP
 
-**Status:** ✅ Concluído — HSTS e supressão do `X-Powered-By` adicionados; CSP já existia (trabalho recente) e foi conferida. Ver "Rodada 2026-09-05".
+**Status:** ✅ Concluído, HSTS e supressão do `X-Powered-By` adicionados; CSP já existia (trabalho recente) e foi conferida. Ver "Rodada 2026-09-05".
 
 ## Ponto de partida conhecido
 
 `next.config.ts` já define `X-Frame-Options: DENY`,
 `X-Content-Type-Options: nosniff`, `Referrer-Policy:
 strict-origin-when-cross-origin` e `Permissions-Policy` (microfone liberado
-para o próprio site, câmera/geolocalização bloqueadas — necessário para a
+para o próprio site, câmera/geolocalização bloqueadas, necessário para a
 gravação). **Não existe `Strict-Transport-Security` nem
 `Content-Security-Policy` configurados hoje.** Isso não é uma descoberta a
-ser feita pela IA — é o estado atual, use como ponto de partida para decidir
+ser feita pela IA, é o estado atual, use como ponto de partida para decidir
 prioridade.
 
 ## Prompt para a IA
@@ -67,24 +67,24 @@ Não recomende simplesmente adicionar headers sem avaliar se seus valores são c
 ## Checklist de validação
 
 - [x] Confirmar que o `headers()` de `next.config.ts` (fonte `/(.*)`) chega
-      de fato em todas as respostas relevantes na Vercel — inclusive
-      `app/api/**` — e que Cloudflare/CDN, se existir na frente, não
+      de fato em todas as respostas relevantes na Vercel, inclusive
+      `app/api/**`, e que Cloudflare/CDN, se existir na frente, não
       remove nenhum deles.
 - [x] Se o CSP for adicionado, ele precisa listar de propósito: domínio do
       Supabase (auth + storage), domínio do Stripe (`js.stripe.com`,
       `api.stripe.com` para checkout embutido, se usado), e qualquer
-      script de terceiro real do app — testar em `/recording/:id/live`
+      script de terceiro real do app, testar em `/recording/:id/live`
       (gravação usa `MediaRecorder`/microfone) e no fluxo de checkout do
       Stripe antes de travar a policy, porque um CSP mal calibrado quebra
       esses dois fluxos primeiro.
 - [x] HSTS, se adicionado, considera que `dev.scriba.cc` e `scriba.cc` são
-      domínios/ambientes diferentes na mesma conta Vercel — decidir
+      domínios/ambientes diferentes na mesma conta Vercel, decidir
       `includeSubDomains`/`preload` com isso em mente.
 - [x] Cookies de sessão do Supabase SSR mantêm `Secure` + `HttpOnly` +
       `SameSite=Lax` (ou mais estrito) em produção.
 - [x] Nenhuma resposta expõe versão de framework/servidor além do que a
       própria Vercel já adiciona por padrão (não há como remover
-      totalmente o que a plataforma injeta — focar no que o app controla).
+      totalmente o que a plataforma injeta, focar no que o app controla).
 - [x] Todo tráfego HTTP redireciona para HTTPS (isso é padrão da Vercel,
       mas confirmar que nenhum rewrite/redirect customizado quebra isso).
 
@@ -92,12 +92,12 @@ Não recomende simplesmente adicionar headers sem avaliar se seus valores são c
 
 - `next.config.ts`
 - Qualquer configuração de proxy/CDN fora do repositório (Cloudflare, se
-  usado — documentar separadamente, não é código deste repo)
+  usado, documentar separadamente, não é código deste repo)
 - Fluxo de checkout do Stripe (`app/api/stripe/**`, `app/api/billing/**`)
 
 ## Critério de aceite
 
-CSP e HSTS adicionados sem quebrar gravação ao vivo nem checkout — testado
+CSP e HSTS adicionados sem quebrar gravação ao vivo nem checkout, testado
 manualmente nos dois fluxos depois da mudança, não só verificado por
 inspeção do header.
 
@@ -119,14 +119,14 @@ contra o `npm run dev`.
 | `Referrer-Policy: strict-origin-when-cross-origin` | idem | ✅ |
 | `Permissions-Policy` (mic self, câmera/geo off) | idem | ✅ |
 | `Content-Security-Policy` | `proxy.ts`, toda resposta do proxy | ✅ (sem nonce, por decisão documentada) |
-| `Strict-Transport-Security` | — | ❌ **ausente** |
+| `Strict-Transport-Security` | - | ❌ **ausente** |
 | `X-Powered-By: Next.js` | default do framework | ⚠️ vazava o framework |
 
 ### 2. Achados e correção
 
 | Header | Sev. | Correção |
 |---|---|---|
-| HSTS ausente | MEDIUM | ✅ `Strict-Transport-Security: max-age=63072000; includeSubDomains` em `next.config.ts` (`/(.*)`, chega a HTML e API). `includeSubDomains` é seguro porque `dev.scriba.cc` é subdomínio de `scriba.cc` e os dois só respondem https na Vercel. `preload` deixado de fora de propósito — porta de mão única, decisão do dono do domínio |
+| HSTS ausente | MEDIUM | ✅ `Strict-Transport-Security: max-age=63072000; includeSubDomains` em `next.config.ts` (`/(.*)`, chega a HTML e API). `includeSubDomains` é seguro porque `dev.scriba.cc` é subdomínio de `scriba.cc` e os dois só respondem https na Vercel. `preload` deixado de fora de propósito, porta de mão única, decisão do dono do domínio |
 | `X-Powered-By: Next.js` | LOW | ✅ `poweredByHeader: false` |
 
 ### 3. CSP: calibrada e não quebra os dois fluxos de risco
@@ -139,7 +139,7 @@ realmente faz:
   'self' blob:` e `worker-src 'self' blob:`; o upload vai para `/api/transcribe`
   (coberto por `connect-src 'self'`); Supabase auth/realtime em `connect-src`
   (https + wss). Tudo presente.
-- **Checkout do Stripe:** é **redirect**, não embutido —
+- **Checkout do Stripe:** é **redirect**, não embutido,
   `window.location.href = session.url` manda o navegador para
   `checkout.stripe.com` (`app/api/billing/checkout/route.ts:229` devolve
   `{ url }`, `StartSubscription.tsx:53` navega). Uma navegação de página
@@ -149,7 +149,7 @@ realmente faz:
 
 ### 4. Headers na resposta real (dev)
 
-`curl -D -` na landing (estática) E numa rota de API (401) — os dois trazem o
+`curl -D -` na landing (estática) E numa rota de API (401), os dois trazem o
 conjunto completo:
 
 ```
@@ -167,13 +167,13 @@ ignorado pelo navegador, que é o comportamento correto.
 ### 5. Notas de cobertura
 
 - **Arquivos fora do matcher do proxy** (`robots.txt`, `sitemap.xml`,
-  `manifest.webmanifest`, `sw.js`, imagens, `opengraph-image`) não recebem CSP
-  — só os headers do `next.config.ts`. É aceitável: nenhum é contexto de
+  `manifest.webmanifest`, `sw.js`, imagens, `opengraph-image`) não recebem CSP,
+  só os headers do `next.config.ts`. É aceitável: nenhum é contexto de
   navegação HTML; são texto/imagem que não executam script.
 - **Redirect http→https** é da plataforma (Vercel), reforçado agora pelo
   `upgrade-insecure-requests` da CSP e pelo HSTS.
 - **`frame-ancestors 'none'` + `X-Frame-Options: DENY`**: redundância
-  proposital — o primeiro é o que navegador moderno lê, o segundo cobre o
+  proposital, o primeiro é o que navegador moderno lê, o segundo cobre o
   legado. Clickjacking fechado nos dois.
 
 ### 6. O que fica fora do código
@@ -182,13 +182,13 @@ ignorado pelo navegador, que é o comportamento correto.
   domínio em hstspreload.org. Opt-in do dono do domínio.
 - **Cloudflare/WAF na frente da Vercel:** não há evidência de um no projeto (a
   Vercel serve direto). Se um dia entrar, conferir que ele não REMOVE nenhum
-  destes headers nem sobrescreve a CSP — mas hoje não há essa camada para
+  destes headers nem sobrescreve a CSP, mas hoje não há essa camada para
   auditar.
 
 ### Nota de campo (deploy 2026-09-05)
 
 Ao subir o deploy descobri que a **produção já emitia** `Strict-Transport-Security:
-max-age=63072000` — sem `includeSubDomains`, provavelmente um ajuste no nível do
+max-age=63072000`, sem `includeSubDomains`, provavelmente um ajuste no nível do
 projeto na Vercel, não no código. Ou seja, o HSTS não estava totalmente ausente
 em prod; o que faltava era estar NO CÓDIGO (fonte única, versionada) e trazer
 `includeSubDomains`. A mudança em `next.config.ts` cobre as duas coisas, e o

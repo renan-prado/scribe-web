@@ -1,11 +1,11 @@
-# src/features/session — a gravação
+# src/features/session: a gravação
 
 O coração do produto. Esta pasta contém o gravador, os pipelines ao vivo, o
 feed e as telas de sessão salva.
 
 **Antes de mudar ritmo, cadência ou threshold:** os números estão todos em
 `config.ts`, cada um com o raciocínio ao lado. Leia o comentário da constante
-antes de trocar o valor — quase todos foram calibrados contra sessões reais.
+antes de trocar o valor, quase todos foram calibrados contra sessões reais.
 
 ## Anatomia
 
@@ -27,12 +27,12 @@ Os três componentes de topo, um por modo: `RecordingLive`,
 `RecordingAudioOnly`, `RecordingTranscribe`.
 
 **E `YoutubeImport`, que não é um deles.** O modo `youtube` mora na mesma casa
-(`/recording/:id/youtube`) e cumpre o mesmo papel no fluxo — é para onde o
-diálogo empurra, e de onde a sessão sai pronta —, mas NADA desta pasta se
+(`/recording/:id/youtube`) e cumpre o mesmo papel no fluxo, é para onde o
+diálogo empurra, e de onde a sessão sai pronta, mas NADA desta pasta se
 aplica a ele: sem recorder, sem chunks, sem VAD, sem IndexedDB, sem `store.ts`,
 sem cronômetro e sem cobrança por minuto. Ele dispara `POST /api/youtube/import`
 ao montar e espera. `isCaptureMode(mode)` (`lib/domain/session.ts`) é a pergunta
-a fazer antes de assumir que um modo tem microfone — não teste `!== "youtube"`
+a fazer antes de assumir que um modo tem microfone, não teste `!== "youtube"`
 solto, que erra em silêncio no dia em que entrar uma segunda origem importada.
 
 Duas decisões dele que parecem detalhe:
@@ -44,14 +44,14 @@ Duas decisões dele que parecem detalhe:
 - **O link NÃO é colado no `NewRecordingDialog`.** Ele já foi: um card de modo
   com um `<input>` embutido, no meio de uma lista de irmãos do mesmo tamanho.
   Duas coisas quebraram, e as duas são o motivo de `/importar` existir como
-  página — o card tinha de crescer no meio da fileira, e o rodapé do diálogo
+  página, o card tinha de crescer no meio da fileira, e o rodapé do diálogo
   precisava mentir sobre a unidade do preço ("/min" num modo que cobra por
   vídeo). Escolher COMO capturar e escolher QUAL vídeo são duas perguntas.
   O diálogo itera sobre `CAPTURE_MODES`, não sobre `SESSION_MODES`, e é o tipo
   que impede o modo importado de voltar para lá por distração.
 - **Ficar fora do diálogo cobra um preço, e `YoutubeTipCard` é quem o paga.**
   A porta da importação é um botão secundário em `/recordings`; quem vive no
-  `/feed` pode nunca esbarrar nela. O card ensina que ela existe — no `/feed`,
+  `/feed` pode nunca esbarrar nela. O card ensina que ela existe, no `/feed`,
   **no máximo três vezes**, espaçadas por quatro dias, e nunca para quem já
   importou algum vídeo (esse gate é do SERVIDOR: `sessions.some(mode ===
   "youtube")`, decidido em `app/(app)/feed/page.tsx`). Um aviso de descoberta
@@ -67,21 +67,21 @@ Duas decisões dele que parecem detalhe:
    esperar.
 2. `isSilentBlob` descarta o que é silêncio antes de gastar uma chamada. Ele
    decodifica num **`OfflineAudioContext` único, reusado pela sessão inteira**.
-   Antes era um `new AudioContext()` por chunk, fechado sem `await` — e o do
+   Antes era um `new AudioContext()` por chunk, fechado sem `await`, e o do
    ÚLTIMO chunk nascia no meio do teardown do stop, abrindo uma unidade de
    áudio nativa no exato instante em que as tracks eram paradas e a shell RN
    desativava a `AVAudioSession`. Contexto offline renderiza para memória: não
    toca no hardware, não conta para o limite de contextos do Chrome.
 3. `useTranscribeQueue` persiste o chunk no IndexedDB (`lib/chunk-store.ts`) e
    sobe para `/api/transcribe`, com backoff `[1s, 3s, 10s, 30s, 60s]` cujo
-   último valor se repete para sempre. **Não desistimos sozinhos** — parar é
+   último valor se repete para sempre. **Não desistimos sozinhos**, parar é
    decisão do usuário, e o stop dispara um drain com timeout suave.
 4. O chunk volta com texto e um veredito de qualidade. Ver "Qualidade" abaixo.
 5. Os pipelines observam a transcrição acumulada e decidem se chamam.
 
 **A persistência em IndexedDB existe para o caso em que a aba morre.** Um
 chunk que não subiu vira buraco na transcrição; guardado, a fila o retoma
-depois — inclusive num reload da mesma URL de sessão (recuperação silenciosa
+depois, inclusive num reload da mesma URL de sessão (recuperação silenciosa
 de órfãos, com TTL de 24h para não acumular). Tudo degrada em silêncio onde
 IndexedDB não existe: o pipeline em memória continua, só sem recuperação.
 
@@ -96,12 +96,12 @@ fim, e no stop virava um `new Blob` contíguo (~1 MB/min, então ~50 MB num
 sermão de 50 min) só para ser descartado. Numa WebView React Native, onde o
 heap é bem menor que o de uma aba de Chrome, esse pico caía exatamente no
 instante do "parar". Se um dia quisermos guardar o áudio, ele tem de ir para o
-IndexedDB incrementalmente, como os chunks — nunca se acumular em memória.
+IndexedDB incrementalmente, como os chunks, nunca se acumular em memória.
 
 **Os três modos registram `rec.onError`** (`lib/recorderErrors.ts`). Por muito
 tempo ninguém registrava, e o recorder emitia falha de encoder para um callback
 nulo: um MediaRecorder morto no meio da pregação é indistinguível, na tela, de
-um trecho em silêncio — o timer segue correndo e nenhum chunk chega. O erro não
+um trecho em silêncio, o timer segue correndo e nenhum chunk chega. O erro não
 derruba a gravação (`chunk` e `vad` são recuperáveis pelo hard-cut timer); ele
 vai para o logger E para a shell nativa, que é o único caminho até um crash
 report em produção.
@@ -109,7 +109,7 @@ report em produção.
 ## Os três pipelines ao vivo
 
 Cada um é um hook, coordenado por flags de voo no store (`bibleInFlight`,
-`insightsInFlight`, `finalizing`). **Todos são ADITIVOS** — só acrescentam a
+`insightsInFlight`, `finalizing`). **Todos são ADITIVOS**, só acrescentam a
 `feedItems`; nada é reescrito ou reordenado durante a gravação. O dedup por
 `feedItemDedupKey` protege contra itens equivalentes chegando de chamadas
 sobrepostas.
@@ -118,11 +118,11 @@ sobrepostas.
 
 Único emissor de `citedVerse`. Gate de duas camadas antes de gastar a chamada:
 
-1. **`hasBibleMention`** (`lib/bible/detect.ts`) — regex barato: livros com
+1. **`hasBibleMention`** (`lib/bible/detect.ts`), regex barato: livros com
    acento opcional e ordinal em número, romano ou extenso; dispara também em
    `capítulo` / `versículo` / `verso` mesmo sem livro no trecho. Sem menção,
    sai.
-2. **`scoreBibleGuard`** (`lib/bible/guard.ts`) — soma sinais ponderados e só
+2. **`scoreBibleGuard`** (`lib/bible/guard.ts`), soma sinais ponderados e só
    chama se `score >= BIBLE_GUARD_THRESHOLD` (4):
 
    | Sinal | Peso |
@@ -142,7 +142,7 @@ sobrepostas.
    a exigir um sinal forte, ou dois médios que se somem.
 
 O contexto do guard vem do store: `currentReading` (livro/capítulo/verso mais
-recente resolvido, TTL de 5min — é o que faz "versículo 10" sozinho valer
+recente resolvido, TTL de 5min, é o que faz "versículo 10" sozinho valer
 `continuationHit`) e `lastBibleEmit` (cooldown de 90s, cujo `duplicateEmit`
 de −5 mata sozinho um `bookWithNumber`, impedindo re-disparo enquanto o
 pregador segue discutindo a mesma passagem). Os dois são atualizados após um
@@ -153,17 +153,17 @@ retorno com `citedVerse` parseável. Skips por camada contam separado em
 
 Emite os outros cinco tipos: `speakerHighlight`, `speakerCitation`,
 `relatedVerse`, `context`, `suggestedQuote`. Dispara a cada
-`INSIGHTS_CHUNK_INTERVAL` (6) chunks OK — contagem de chunks, não tempo. O
+`INSIGHTS_CHUNK_INTERVAL` (6) chunks OK, contagem de chunks, não tempo. O
 PRIMEIRO disparo da sessão usa `INSIGHTS_FIRST_FIRE_CHUNK` (1): sem esse
 warmup, o primeiro card só apareceria depois de 2min, o que lê como "não está
 funcionando".
 
 Dois gates de economia: `INSIGHTS_MIN_TAIL_DELTA_CHARS` (tick em quase
 silêncio vira no-op) e `INSIGHTS_QUEUE_BACKPRESSURE` (se a fila de drip já tem
-2 pendentes, pula — enquanto os cards antigos não aparecem, gerar mais só
+2 pendentes, pula, enquanto os cards antigos não aparecem, gerar mais só
 gasta token e produz insight fora do momento).
 
-`insightsInFlight` NÃO está nas deps do effect de propósito — re-disparar na
+`insightsInFlight` NÃO está nas deps do effect de propósito, re-disparar na
 mudança de voo causaria re-runs desnecessários. O estado é lido por
 `getState()` dentro do effect.
 
@@ -197,9 +197,9 @@ da fila:
 `scheduleDrainIfIdle` sempre reagenda, para que um `citedVerse` que fura fila
 substitua o timer pendente de gap longo.
 
-**Exceção ao "só acrescenta" — RANGE SUPERSEDE para `citedVerse`.** Quando uma
+**Exceção ao "só acrescenta", RANGE SUPERSEDE para `citedVerse`.** Quando uma
 referência que chega contém estritamente uma já visível (mesmo livro e
-capítulo, faixa maior — `Tiago 1:1-4` chegando com `Tiago 1:1` na tela), o
+capítulo, faixa maior, `Tiago 1:1-4` chegando com `Tiago 1:1` na tela), o
 card mais estreito é removido, para que um único card acompanhe a passagem
 conforme o pregador lê. A contenção é ASSIMÉTRICA: referência de capítulo
 inteiro nunca cobre uma com versículo (`João 4` não substitui `João 4:7`),
@@ -208,14 +208,14 @@ casando com a regra do prompt. Ver `referenceStrictlyContains` em
 
 Na direção inversa, sim: um `citedVerse` de capítulo só renderiza assumindo
 que a leitura começa no versículo 1, e uma referência com versículo para o
-mesmo livro/capítulo SUBSTITUI o card assumido (`referenceResolvesChapterOnly`)
-— o versículo falado corrige a suposição.
+mesmo livro/capítulo SUBSTITUI o card assumido (`referenceResolvesChapterOnly`),
+o versículo falado corrige a suposição.
 
 **Convenção visual.** Cards ORIGINADOS do pregador (`citedVerse`,
 `speakerHighlight`, `speakerEcho`, `speakerCitation`) usam a superfície de
 gradiente de citação; cards de autoria da IA (`relatedVerse`, `context`,
 `suggestedQuote`) usam a superfície tracejada. A origem é DERIVADA do `kind`
-por `feedItemOrigin` — não acrescente um campo `origin`.
+por `feedItemOrigin`, não acrescente um campo `origin`.
 
 **`coerceFeedItemsLoose` só serve para contexto de prompt.** Ele descarta em
 silêncio o que não bate com o schema, o que está certo nas rotas ao vivo
@@ -234,14 +234,14 @@ motivo de o arquivo estar como está:
 
 1. **Rate limit.** Um estudo com dezessete passagens passava das 60/min de
    `/api/verse`. Os versículos recusados voltavam vazios, e a tela mostrava
-   número sem texto — sem erro nenhum visível, porque `requestVerse` não
+   número sem texto, sem erro nenhum visível, porque `requestVerse` não
    conferia `res.ok` e um 429 virava uma passagem vazia indistinguível de
    "não existe".
 2. **Montagem aos pedaços.** O bloco aparecia e ia se preenchendo linha a
    linha, empurrando o conteúdo abaixo a cada versículo que chegava.
 
 O cache do React Query é por PASSAGEM (`["passage", reference]`) e
-`staleTime: Infinity` — texto bíblico não muda, e sem isso voltar para uma
+`staleTime: Infinity`, texto bíblico não muda, e sem isso voltar para uma
 sessão refazia todas as buscas.
 
 As larguras do esqueleto são fixas por posição, e não sorteadas: um
@@ -256,7 +256,7 @@ e marca três coisas: referência bíblica, personagem/lugar e figura citada.
 
 **É regex sobre um léxico curado (`lib/domain/lexicon.ts`), não uma etapa de
 IA.** Marcar entidade com LLM seria mais uma chamada por sessão, com custo,
-latência e a chance de o modelo marcar o que não está no texto — para um
+latência e a chance de o modelo marcar o que não está no texto, para um
 problema que um autômato resolve, igual toda vez.
 
 Quatro decisões que o próximo a mexer precisa conhecer:
@@ -265,12 +265,12 @@ Quatro decisões que o próximo a mexer precisa conhecer:
   capítulo.** É o que separa o evangelho do apóstolo: "João 3:16" é consumido
   inteiro pela primeira passada, e a segunda nunca vê aquele "João". Um "João"
   solto no meio da frase continua sendo o apóstolo.
-- **O casamento é exato — acento e maiúscula inclusive.** O gate do pipeline ao
+- **O casamento é exato, acento e maiúscula inclusive.** O gate do pipeline ao
   vivo (`lib/bible/detect.ts`) é tolerante porque a entrada dele é fala
   transcrita; aqui a entrada é texto escrito por um modelo, e tolerância que
   não é necessária só compra falso positivo.
 - **Só a referência é CLICÁVEL, e por isso só ela é colorida.** Nome próprio
-  ganha a faixa de marca-texto (`--session-mention-wash`) e nada mais — não há
+  ganha a faixa de marca-texto (`--session-mention-wash`) e nada mais, não há
   para onde ir a partir dele. As três categorias continuam distintas nos dados
   (`data-mention`), não na tinta: três cores de marcação num parágrafo é uma
   página de arco-íris, e o realce só funciona enquanto for exceção.
@@ -279,7 +279,7 @@ Quatro decisões que o próximo a mexer precisa conhecer:
   marcação pintaria o bloco inteiro; a segunda já carrega a faixa amarela.
 
 Os dois tokens (`--session-mention-ink`, `--session-mention-wash`) trocam de
-família dentro de `.tone-study` — no estudo o acento é verde, como o resto.
+família dentro de `.tone-study`, no estudo o acento é verde, como o resto.
 
 ## Os três modos oferecem as MESMAS ações
 
@@ -297,12 +297,12 @@ tela de captura tem, sem exceção:
 
 **"Descartar" mora em TRÊS lugares de propósito.** A lixeira da barra do
 gravador existia sozinha no modo transcrição, e o usuário relatou que o modo
-não tinha como cancelar — ele tinha: um ícone de 14px numa barra que se apaga
+não tinha como cancelar, ele tinha: um ícone de 14px numa barra que se apaga
 sozinha depois de alguns segundos parada. Quem procura "como cancelar isto"
 abre o menu de três pontos. Ação destrutiva precisa estar onde se procura por
 ela, não onde coube.
 
-O `audio_only` era o modo fora do padrão — sem cabeçalho, sem descartar, com o
+O `audio_only` era o modo fora do padrão, sem cabeçalho, sem descartar, com o
 menu solto num canto e sem sequer usar o store. Ele hoje semeia os metadados no
 store em `start()` (é de lá que o `RecordingHeader` lê) e **lê autor e local do
 STORE na hora de salvar**, não das props: salvar a prop descartaria em silêncio
@@ -328,7 +328,7 @@ não o `TranscriptView` do diálogo.** Os dois existem e resolvem coisas
 diferentes: o `TranscriptView` agrupa por minuto, para leitura calma depois; o
 stream dá uma linha por chunk, com o carimbo de tempo, no instante em que o
 `/api/transcribe` responde. Durante a pregação o que se quer conferir é o
-trecho que acabou de chegar. (O diálogo do menu de três pontos continua ali —
+trecho que acabou de chegar. (O diálogo do menu de três pontos continua ali,
 ele serve à leitura, não à conferência.)
 
 **Os dois painéis são MONTADOS E DESMONTADOS, nunca escondidos com `hidden`.**
@@ -339,7 +339,7 @@ o fim da tela.
 ### Por que a faixa fica embaixo, e em duas linhas
 
 O conteúdo destas telas cresce por uma hora. **Um alternador no topo obrigaria
-a rolar o sermão inteiro de volta só para trocar de aba** — que é exatamente o
+a rolar o sermão inteiro de volta só para trocar de aba**, que é exatamente o
 que ele deveria evitar. Embaixo ele fica no polegar o tempo todo.
 
 As abas já dividiram UMA linha com a barra do gravador, e num telefone de 390px
@@ -357,7 +357,7 @@ De baixo para cima, e a ordem é a regra: **o que sempre está lá primeiro, o q
 9,75rem   pílulas transientes        (RECORDING_TRANSIENT_BAND)
 ```
 
-Quem crescer o conteúdo dessas telas mexe no `pb-*` da seção junto — hoje
+Quem crescer o conteúdo dessas telas mexe no `pb-*` da seção junto, hoje
 `pb-44`, dimensionado para a última linha não morrer atrás das duas faixas.
 
 **"Ler novidades" e o contador da aba nunca aparecem juntos**, e é de propósito:
@@ -372,7 +372,7 @@ nenhuma.
 
 ## Qualidade da transcrição
 
-Um chunk volta marcado como `poor` quando qualquer uma de três fontes acusa —
+Um chunk volta marcado como `poor` quando qualquer uma de três fontes acusa,
 assinatura de alucinação, baixa confiança do modelo, ou densidade de texto por
 segundo baixa demais (ver `lib/AGENTS.md`). Consequências:
 
@@ -380,14 +380,14 @@ segundo baixa demais (ver `lib/AGENTS.md`). Consequências:
   pipelines. Sem isso, um loop de repetição se realimenta no chunk seguinte.
 - Se `POOR_AUDIO_BAD_COUNT` (3) dos últimos `POOR_AUDIO_WINDOW` (5) chunks
   saíram ruins, a sessão acende o banner de áudio ruim. Ele é **pegajoso** até
-  o fim da sessão — um trecho bom depois de dez ruins não significa que o
+  o fim da sessão, um trecho bom depois de dez ruins não significa que o
   microfone melhorou, e aviso que pisca é pior que aviso nenhum.
 
 **O banner não troca nada sozinho, e a mensagem não pode voltar a prometer que
 troca.** Ela já dizia "ativamos um modelo mais preciso": havia uma escalada de
 modelo, e ela foi removida porque o modelo "mais preciso" era medidamente pior
 (`docs/transcricao.md` §1). O que o aviso pede hoje é a única coisa que a
-pessoa na cadeira ainda pode fazer — aproximar o aparelho de quem fala.
+pessoa na cadeira ainda pode fazer, aproximar o aparelho de quem fala.
 
 **A captação é onde está o ganho que sobra.** `lib/recorder.ts` pede ao
 navegador para NÃO aplicar supressão de ruído, cancelamento de eco nem controle
@@ -402,7 +402,7 @@ o modelo bom.
 ## Saldo durante a gravação
 
 `useCoinGuard`, usado pelos três modos. Acabar o saldo no meio de um sermão
-**congela** a captura, não a encerra — antes ela finalizava e disparava o
+**congela** a captura, não a encerra, antes ela finalizava e disparava o
 resumo com metade do conteúdo, sem chance de reagir.
 
 Fluxo: aviso em 5 min e 2 min restantes (cada degrau uma vez, rearmado se o
@@ -427,24 +427,24 @@ uma gravação viva com a aba em segundo plano ou a tela apagada:
    pressão de memória. É por isso que o `Permissions-Policy` do
    `next.config.ts` libera `autoplay=(self)`.
 2. **Media Session** com metadata e `playbackState`, o que também dá o botão
-   de parar do sistema — tratado por `onExternalStop`.
-3. **`nativeBridge`** — quando o app roda dentro de uma WebView React Native,
+   de parar do sistema, tratado por `onExternalStop`.
+3. **`nativeBridge`**: quando o app roda dentro de uma WebView React Native,
    as mensagens sobem para a shell nativa iniciar um foreground service
    (Android) ou ativar a `AVAudioSession` (iOS). Em aba normal,
    `window.ReactNativeWebView` é undefined e tudo vira no-op. O haptic de card
    novo passa por aqui porque o Safari não implementa `navigator.vibrate`; o
    `recorder:error` passa porque o console da WebView não existe em produção.
 
-   **A ponte é de mão única — o web não lê nada de volta.**
+   **A ponte é de mão única, o web não lê nada de volta.**
 
    **Pausa NÃO é parada, e a ponte distingue as duas.** Os eventos saem de
    TRANSIÇÕES da prop `phase` (`idle` | `recording` | `paused`), num effect
-   próprio — não da limpeza do effect de keepalive. Enquanto saíam de lá, toda
+   próprio, não da limpeza do effect de keepalive. Enquanto saíam de lá, toda
    pausa emitia `recording:stop` e toda retomada um `recording:start`: a shell,
    que reage a `stop` DESTRUINDO recursos (foreground service no Android,
    `AVAudioSession` no iOS), destruía e recriava tudo uma vez por pausa. Pior
    no congelamento por saldo zerado (`useCoinGuard.onFreeze`), que pausa sem
-   gesto do usuário e talvez com o app em segundo plano — soltar o foreground
+   gesto do usuário e talvez com o app em segundo plano, soltar o foreground
    service ali convida o Android a matar o processo justamente quando a sessão
    está viva esperando crédito. Numa pausa a captura para, mas a sessão
    continua; a shell deve segurar o serviço e só trocar o texto da notificação.
@@ -456,7 +456,7 @@ a aba durante uma gravação.
 
 O resumo final é **single-shot**: `/api/final-summary` roda uma vez com a
 transcrição completa mais os `feedItems` acumulados. O prompt trata o feed
-como contexto curado de alta prioridade — versículos citados e destaques do
+como contexto curado de alta prioridade, versículos citados e destaques do
 pregador têm de atravessar; sugestões da IA só ficam se ainda couberem no
 todo.
 
@@ -468,7 +468,7 @@ em `/recording/:id/transcript`.
 daquela página chama `/api/final-summary/from-transcript`, que roda o MESMO
 `generateFinalSummary` sobre a transcrição salva (com `feedItems: []`, porque
 o modo não tem feed) e grava releia / lembra / frases marcantes junto. Custa
-`summary_from_transcript` — 15 moedas, o mesmo do reprocessamento, porque é o
+`summary_from_transcript`, 15 moedas, o mesmo do reprocessamento, porque é o
 mesmo trabalho.
 
 Três consequências que mordem quem for mexer:
@@ -478,37 +478,37 @@ Três consequências que mordem quem for mexer:
   `final_summary` é nulo. Voltar a testar `mode === "transcript_only"` ali
   esconde o resumo que a pessoa acabou de pagar.
 - **`savedRouteFor(mode, hasSummary)` tem um segundo argumento**, e só o
-  `/recordings` o passa — via `listSessionIdsWithSummary`, uma consulta de
+  `/recordings` o passa, via `listSessionIdsWithSummary`, uma consulta de
   chave no molde de `listDeepenedSessionIds`. Quem só tem o modo em mãos omite
   e cai em `/transcript`, de onde o cabeçalho leva ao resumo em um toque.
 - **O título da linha é preservado** (`updateSessionSummary(..., { keepTitle })`).
   Naquele modo não há LLM para gerar título, então o que está na coluna foi
-  escolhido por gente — sobrescrevê-lo com o do resumo apagaria o que ela
+  escolhido por gente, sobrescrevê-lo com o do resumo apagaria o que ela
   digitou.
 
 Sessões nunca encerradas (`ended_at is null`) saem da lista principal e
 aparecem numa faixa "Gravações em aberto" no `/recordings`, com opção de
-continuar ou apagar — ver `listUnfinishedSessions`.
+continuar ou apagar, ver `listUnfinishedSessions`.
 
 Depois disso a sessão pode gerar o **estudo** (`/api/deepening`, uma vez por
-sessão — `unique(session_id)` na migração 0009, com uma rota de reprocessamento
-separada) e os cards de acompanhamento — releia / lembra / frase marcante — que
+sessão, `unique(session_id)` na migração 0009, com uma rota de reprocessamento
+separada) e os cards de acompanhamento, releia / lembra / frase marcante, que
 alimentam o `/feed` unificado (`lib/db/feed-entries.ts`) por data agendada.
 
 Havia um quarto card, "Coloque em prática" (`session_practices`), gerado junto
-com o resumo. Ele saiu — do prompt, do feed e da página de resumo. A tabela e
+com o resumo. Ele saiu, do prompt, do feed e da página de resumo. A tabela e
 os payloads antigos continuam no banco; ver `supabase/AGENTS.md`.
 
 **Releitura sem texto não existe.** O card de "releia" é a passagem em si; sem
 o texto da NVI embaixo, o que sobra é a pastilha da referência e um retângulo
 vazio. As fontes do pool (`citedVerse` do feed, `bibleQuote` do resumo) NÃO
-prometem uma referência completa — um "Judas", livro sem capítulo, já
+prometem uma referência completa, um "Judas", livro sem capítulo, já
 atravessou até o feed de um usuário. Três guardas, em camadas:
 
 1. `collectRereadPool` só admite referência que `parseVerseReference` aceita.
 2. `withVerseText` resolve o texto **antes** de o candidato ganhar um
    `dayOffset`, e descarta quem fica sem. A ordem importa: montar os dez e
-   buscar o texto depois — como era — não deixa devolver o slot.
+   buscar o texto depois, como era, não deixa devolver o slot.
 3. `listFeedEntries` esconde item sem texto, para as sessões geradas antes da
    correção não continuarem vencendo dia após dia.
 
@@ -521,7 +521,7 @@ O estudo tem duas particularidades que mordem de fora:
 
 - **Ele não fala o vocabulário de blocos do resumo.** `StudyBlock`
   (`lib/domain/study.ts`) acrescenta `objection`, `distinction`, `reading` e
-  `question`, e reinterpreta `example` — no resumo é "Exemplo do pregador",
+  `question`, e reinterpreta `example`, no resumo é "Exemplo do pregador",
   no estudo é ilustração do próprio estudo. Por isso a página usa
   `StudyBlockRenderer`, que desenha esses cinco e delega o resto ao
   `BlockRenderer`. Um bloco novo precisa entrar nos DOIS lugares: no parser e
@@ -529,7 +529,7 @@ O estudo tem duas particularidades que mordem de fora:
 
   O `question` tem limite de dois blocos, e só no fecho. Não é estética: o
   estudo é um ARTIGO, e o pipeline que o produz passa por uma etapa de
-  perguntas — sem esse limite, o redator devolve o andaime como se fosse o
+  perguntas, sem esse limite, o redator devolve o andaime como se fosse o
   produto, e o texto vira um FAQ.
 - **Gerar exige plano `Estudioso`.** LER um estudo salvo, não. O booleano vem
   do servidor por prop (`canGenerate` / `canReprocess`); a proteção real está
@@ -537,7 +537,7 @@ O estudo tem duas particularidades que mordem de fora:
 
   Consequência na tela: o `/studies` tem TRÊS estados, não dois. Sem plano e
   sem nenhum estudo, a página inteira é o convite (`StudiesUpsell` variante
-  `full`) — o `StudiesEmptyState`, que ensina a gerar, seria instrução para
+  `full`), o `StudiesEmptyState`, que ensina a gerar, seria instrução para
   algo que a pessoa não pode fazer. Sem plano MAS com estudos antigos, a lista
   fica e o convite vira faixa acima dela: esconder o que a pessoa já pagou
   para produzir seria confisco.
@@ -546,13 +546,13 @@ O estudo tem duas particularidades que mordem de fora:
 
 `/recordings` e `/studies` têm a MESMA barra
 (`components/CollectionSearch.tsx`) e o mesmo motor (`lib/search.ts`, puro e
-client-safe). Quem filtra é um componente cliente por página —
+client-safe). Quem filtra é um componente cliente por página,
 `app/(app)/recordings/SessionsBrowser.tsx` e
-`app/(app)/studies/StudiesBrowser.tsx` —; as páginas continuam sendo só quem
+`app/(app)/studies/StudiesBrowser.tsx`; as páginas continuam sendo só quem
 BUSCA.
 
 **A filtragem é no CLIENTE, e isso é escolha.** As duas páginas já carregam
-tudo do usuário num render de servidor — não há paginação em lugar nenhum — e
+tudo do usuário num render de servidor, não há paginação em lugar nenhum, e
 a escala é a de quem grava um ou dois sermões por semana. Filtrar ali responde
 a cada tecla sem uma ida ao servidor por caractere e sem estado de carregamento
 piscando entre os cartões.
@@ -564,7 +564,7 @@ busca por um problema pior. Quem procura uma FRASE dita no púlpito passa por
 `GET /api/sessions/search`, que devolve só ids; `useContentSearch` os une ao
 resultado local. Duas invariantes desse hook:
 
-- **`null` não é conjunto vazio.** `null` = "não há resposta de conteúdo" —
+- **`null` não é conjunto vazio.** `null` = "não há resposta de conteúdo",
   termo curto, requisição em voo, ou falha. Tratá-lo como `[]` faria cada tecla
   apagar os resultados por um instante, e uma falha de rede viraria "nada
   encontrado".
@@ -572,7 +572,7 @@ resultado local. Duas invariantes desse hook:
   requisição lenta de "gra" chegando depois da de "graça" repinta a lista com
   o termo anterior, e o usuário não tem como saber que não é o que digitou.
 - **`pending` não é `ids === null`.** O hook diz, separado dos ids, que ainda
-  há resposta a caminho — e as listas usam isso para NÃO desenhar "nenhum
+  há resposta a caminho, e as listas usam isso para NÃO desenhar "nenhum
   resultado" no intervalo entre a tecla e a resposta. Sem essa distinção a
   tela afirmava o vazio e se desmentia meio segundo depois, quando entrava o
   cartão que só casa pela transcrição. Espera só o caso VAZIO: havendo
@@ -580,17 +580,17 @@ resultado local. Duas invariantes desse hook:
   ("Procurando…").
 
 **A outra metade servidor é o VERSÍCULO, e ela não é busca de texto.** Procurar
-"Jonas 1" tem de achar a pregação cujo card diz "Jonas 1:1-17" — e o pregador
+"Jonas 1" tem de achar a pregação cujo card diz "Jonas 1:1-17", e o pregador
 disse "no primeiro capítulo de Jonas", então a transcrição não ajuda e nenhuma
 das duas strings é substring da outra. `lib/domain/reference-query.ts` entende
 os dois lados como REFERÊNCIA: resolve o livro pelos apelidos de
-`lib/bibles/books.ts` (acento, abreviação, prefixo — "genesis", "1co", "jona"),
+`lib/bibles/books.ts` (acento, abreviação, prefixo, "genesis", "1co", "jona"),
 e compara capítulo e faixa de versículos por interseção, não por igualdade.
 Capítulo sem versículo cobre o capítulo inteiro, dos dois lados.
 
 O trabalho é dividido: a RPC `session_verse_references` peneira por LIVRO nas
-duas fontes que guardam referência — os cards `citedVerse` de
-`session_feed_items` e os blocos `bibleQuote` de `final_summary` — e o
+duas fontes que guardam referência, os cards `citedVerse` de
+`session_feed_items` e os blocos `bibleQuote` de `final_summary`, e o
 casamento fino acontece no TypeScript, com `parseVerseReference`, a mesma
 função que o feed usa para deduplicar card. **As duas fontes são obrigatórias:**
 sessão `audio_only` não tem card nenhum (o pipeline bíblico não roda nela), e
@@ -599,7 +599,7 @@ tela.
 
 O cartão que casou SÓ pela transcrição ganha a pastilha "Trecho na
 transcrição"; o que casou por versículo mostra a REFERÊNCIA que casou. Sem elas
-o cartão apareceria na lista sem nenhuma explicação visível para estar ali — e
+o cartão apareceria na lista sem nenhuma explicação visível para estar ali, e
 a referência ainda responde metade da pergunta de quem procurou "Jonas 1":
 qual pedaço de Jonas 1 foi lido.
 
@@ -607,18 +607,18 @@ qual pedaço de Jonas 1 foi lido.
 filtragem. Agrupar no servidor e filtrar no cliente deixa seções vazias na tela
 toda vez que um filtro esvazia um mês. Em troca, `nowIso` desce do servidor por
 prop: `groupLabel` compara com "agora", e um `new Date()` do cliente pode cair
-do outro lado da meia-noite em relação ao HTML servido — o React descartaria a
+do outro lado da meia-noite em relação ao HTML servido, o React descartaria a
 página inteira por divergência de hidratação por causa de um rótulo.
 
 As opções de autor e de local saem dos ITENS da lista (`facetOptions`), não das
 tabelas `speakers` / `locations`: um filtro que oferece um nome sem resultado
-atrás é um beco, e o que a lista mostra é o SNAPSHOT em `sessions.speaker_name`
-— renomear um pregador não reescreve o passado, então filtrar pela entidade não
+atrás é um beco, e o que a lista mostra é o SNAPSHOT em `sessions.speaker_name`,
+renomear um pregador não reescreve o passado, então filtrar pela entidade não
 casaria com o texto na tela.
 
 **A barra aparece sempre que a lista aparece.** Houve um piso de quatro itens
 por página; ele caiu. Rolar até o cartão é mesmo mais rápido numa lista curta,
-mas a busca daqui alcança a TRANSCRIÇÃO, que o cartão não mostra — e uma
+mas a busca daqui alcança a TRANSCRIÇÃO, que o cartão não mostra, e uma
 barra que só nasce no quarto item é uma função que se descobre por acidente. O
 que o `CollectionSearch` esconde é a faceta sem nenhuma opção, que não filtra
 nada.
@@ -626,7 +626,7 @@ nada.
 ## Ao mexer aqui
 
 Mantenha as predicados dos guards e os arrays de dependência dos effects
-intactos, a menos que a mudança seja intencional — as omissões nas deps de
+intactos, a menos que a mudança seja intencional, as omissões nas deps de
 `useInsightsPipeline` e `useBiblePipeline` são deliberadas e estão comentadas.
 
 Mudou uma cadência? Atualize o comentário da constante em `config.ts` junto,

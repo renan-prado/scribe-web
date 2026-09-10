@@ -9,7 +9,7 @@ import { MENU_ITEM_CLASS } from "@/features/auth/lib/menu";
  * É um SERVER component de propósito, e é essa a única razão de ele existir
  * separado do `UserMenu`. Enquanto estes dois itens moravam lá dentro, atrás
  * de um `isAdmin &&`, as strings "Admin", "Área do parceiro", "/admin" e
- * "/partners" viajavam no chunk de JavaScript que TODO usuário logado baixa —
+ * "/partners" viajavam no chunk de JavaScript que TODO usuário logado baixa,
  * o `false` escondia o item na tela, não o código que o desenha. Conferido no
  * build: o chunk do UserMenu continha as quatro.
  *
@@ -17,7 +17,7 @@ import { MENU_ITEM_CLASS } from "@/features/auth/lib/menu";
  * quem não é admin nem parceiro recebe `null` e nunca vê os nomes. Os ícones
  * do lucide saem do bundle compartilhado pela mesma razão.
  *
- * Isso NÃO é o controle de acesso — esse mora nos gates de `/admin` e
+ * Isso NÃO é o controle de acesso, esse mora nos gates de `/admin` e
  * `/partners`, que respondem 404 para quem digitar a URL. Aqui é só não
  * anunciar a existência da porta.
  */
@@ -32,7 +32,7 @@ export function PrivilegedMenuItems({
 
   return (
     <>
-      {/* Sem este item o parceiro só chega ao painel digitando a URL —
+      {/* Sem este item o parceiro só chega ao painel digitando a URL,
           o admin manda o link uma vez e depois a área some do mundo dele. */}
       {isPartner ? (
         <DropdownMenuItem render={<Link href="/partners" />} className={MENU_ITEM_CLASS}>

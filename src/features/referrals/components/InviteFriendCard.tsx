@@ -19,7 +19,7 @@ import { cn } from "@/lib/utils";
  *
  * Dispensar não some para sempre nem volta na próxima visita: guarda uma data
  * no `localStorage` e o card reaparece depois dela. Duas semanas quando a
- * pessoa fecha o card, um mês quando ela ACEITA e vai para `/indicar` — quem
+ * pessoa fecha o card, um mês quando ela ACEITA e vai para `/indicar`, quem
  * acabou de mandar o link para os amigos não precisa ser lembrado na semana
  * seguinte.
  *
@@ -33,7 +33,7 @@ import { cn } from "@/lib/utils";
  * O oposto do `InstallAppCard`, e de propósito: aquele não persiste nada, então
  * não tem o que consultar; este tem. Renderizar visível e sumir depois que o
  * efeito lê o `localStorage` produziria exatamente a piscada que o comentário
- * daquele arquivo evita — um card aparecendo e se retirando na cara de quem
+ * daquele arquivo evita, um card aparecendo e se retirando na cara de quem
  * pediu para não vê-lo. Esperar um quadro é mais barato.
  *
  * `localStorage` indisponível (janela anônima, cookies bloqueados, iOS em modo
@@ -107,7 +107,7 @@ export function InviteFriendCard({ className }: { className?: string }) {
           <X className="size-3.5" />
         </button>
       </div>
-      {/* `?de=feed` só ENDEREÇA o botão de voltar da outra página — ver o
+      {/* `?de=feed` só ENDEREÇA o botão de voltar da outra página, ver o
           cabeçalho de `/indicar`. Não muda nada além do destino de um link, e
           o valor é conferido contra uma lista fechada do outro lado. */}
       <Link

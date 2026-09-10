@@ -61,7 +61,7 @@ export function parseUuidParam(
 
 /** Zod schema for a UUID string (matches PostgreSQL uuid type). */
 export const UuidSchema = z.string().regex(UUID_RE, "invalid_uuid");
-/** Optional UUID field for request bodies — accepts undefined only, not null. */
+/** Optional UUID field for request bodies, accepts undefined only, not null. */
 export const OptionalUuidSchema = UuidSchema.optional();
 
 /**
@@ -69,7 +69,7 @@ export const OptionalUuidSchema = UuidSchema.optional();
  * sermon-echo). All three accept the same shape: recent transcript tail +
  * existing feed for prompt dedup + timing metadata + session id.
  *
- * `existingItems` is deliberately typed as `unknown[]` here — validation of
+ * `existingItems` is deliberately typed as `unknown[]` here, validation of
  * individual items happens via `coerceFeedItemsLoose` in the route, which
  * silently drops malformed entries so a single bad card can't fail the
  * whole live tick.

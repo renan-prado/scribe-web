@@ -21,7 +21,7 @@ export const dynamic = "force-dynamic";
 /**
  * Abre uma sessão de Stripe Checkout e devolve a URL hospedada.
  *
- * O corpo aceito é o MÍNIMO possível — uma chave de plano, ou o pacote avulso
+ * O corpo aceito é o MÍNIMO possível, uma chave de plano, ou o pacote avulso
  * com uma quantidade. Repare no que ele NÃO aceita: preço, moeda, quantidade
  * de créditos, id de customer, id de price. Tudo isso o servidor resolve:
  *
@@ -32,7 +32,7 @@ export const dynamic = "force-dynamic";
  * Ou seja: nem o valor nem o crédito passam pelo navegador em nenhum momento.
  * O retorno é só uma URL do domínio do Stripe.
  *
- * Também não creditamos nada no `success_url`. Ele é puramente cosmético — a
+ * Também não creditamos nada no `success_url`. Ele é puramente cosmético, a
  * pessoa pode forjar `?checkout=success` à vontade que não acontece nada. O
  * crédito só existe depois de um evento assinado chegar em
  * POST /api/stripe/webhook.
@@ -53,7 +53,7 @@ const BodySchema = z.discriminatedUnion("kind", [
 function urls(kind: "subscription" | "topup") {
   return {
     // `{CHECKOUT_SESSION_ID}` é substituído pelo Stripe no redirect. A tela de
-    // retorno usa esse id para pedir a reconciliação — que confere a sessão
+    // retorno usa esse id para pedir a reconciliação, que confere a sessão
     // direto na API do Stripe e credita se o webhook não tiver creditado.
     // O id sozinho não autoriza nada: /api/billing/reconcile recusa qualquer
     // sessão cujo customer não seja o do usuário autenticado.
@@ -69,10 +69,10 @@ function urls(kind: "subscription" | "topup") {
  * Existe porque a confusão é fácil de cometer e difícil de diagnosticar: criar
  * o pacote avulso como preço recorrente (ou o plano como preço único) faz o
  * Stripe responder um erro genérico de API, que virava "não consegui abrir o
- * pagamento" na tela — sem dizer o que consertar. Pior: o erro só aparece na
+ * pagamento" na tela, sem dizer o que consertar. Pior: o erro só aparece na
  * primeira compra, e reaparece quando os produtos são recriados em modo live.
  *
- * Custa uma chamada extra ao Stripe por clique em comprar — barato para um
+ * Custa uma chamada extra ao Stripe por clique em comprar, barato para um
  * gesto explícito do usuário, e a mensagem que sai do outro lado diz
  * exatamente qual variável está apontando para o preço errado.
  */
@@ -169,7 +169,7 @@ export async function POST(request: Request) {
         return NextResponse.json({ error: "already_subscribed" }, { status: 409 });
       }
 
-      // O espelho local disse "sem assinatura" — mas ele pode estar defasado
+      // O espelho local disse "sem assinatura", mas ele pode estar defasado
       // (webhook perdido). A conferência final é com quem tem a verdade: se o
       // Stripe conhece uma assinatura viva deste customer, bloqueia a segunda
       // cobrança E cura o espelho no caminho. `incomplete` fica de fora de
@@ -183,7 +183,7 @@ export async function POST(request: Request) {
       });
       const live = existing.data.find((sub) => BLOCKING_STATUSES.has(sub.status));
       if (live) {
-        log.warn("local mirror was stale — healing and blocking", {
+        log.warn("local mirror was stale, healing and blocking", {
           userId: auth.user.id,
           subscription: live.id,
           status: live.status,
@@ -277,7 +277,7 @@ export async function POST(request: Request) {
     if (message.includes("payment method types")) {
       log.error(
         "a conta do Stripe não tem método de pagamento disponível para esta moeda. " +
-          "Rode `node scripts/stripe-doctor.mjs` — em geral é `charges_enabled: false` " +
+          "Rode `node scripts/stripe-doctor.mjs`, em geral é `charges_enabled: false` " +
           "(conta em análise ou com dados pendentes) ou nenhum método ligado em " +
           "dashboard.stripe.com/settings/payment_methods.",
         { error: message }

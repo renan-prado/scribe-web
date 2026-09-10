@@ -34,7 +34,7 @@ export default function ContactPage() {
                 {CONTACT_EMAIL}
               </a>
               . Costumamos responder em até 2 dias úteis. Descreva o que aconteceu com o máximo de
-              detalhe possível — se for um problema numa gravação, diga a data e o modo de captura
+              detalhe possível, se for um problema numa gravação, diga a data e o modo de captura
               usado.
             </p>
           </section>

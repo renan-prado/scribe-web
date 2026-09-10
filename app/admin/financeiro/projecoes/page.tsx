@@ -21,7 +21,7 @@ export const dynamic = "force-dynamic";
  * A BASE É MONTADA AQUI, no servidor, a partir do que já foi medido; as
  * premissas vêm dos cenários; a composição das duas é `project()`, que roda no
  * cliente para o ajuste de uma premissa não custar um round-trip. A fórmula
- * existe num lugar só — `lib/finance/projection.ts` — e é a mesma que os
+ * existe num lugar só, `lib/finance/projection.ts`, e é a mesma que os
  * testes exercitam.
  *
  * O CUSTO VARIÁVEL POR CLIENTE sai do ÚLTIMO MÊS FECHADO, não do corrente: no
@@ -30,7 +30,7 @@ export const dynamic = "force-dynamic";
  *
  * A projeção começa no mês SEGUINTE. O corrente já tem meia realidade dentro
  * dele, e misturá-la com premissa produziria um primeiro mês que não é nem
- * realizado nem projetado — exatamente o que o §14 pede para não fazer.
+ * realizado nem projetado, exatamente o que o §14 pede para não fazer.
  */
 export default async function FinanceProjectionsPage() {
   const [{ overview, settings, measured, usdBrl }, scenarios] = await Promise.all([
@@ -73,7 +73,7 @@ export default async function FinanceProjectionsPage() {
   }
   if (overview.recurring.fixedMonthlyCents === 0) {
     gaps.push(
-      "Nenhum custo fixo cadastrado. Sem os contratos recorrentes, a projeção mostra lucro que não existe — comece por Custos recorrentes."
+      "Nenhum custo fixo cadastrado. Sem os contratos recorrentes, a projeção mostra lucro que não existe, comece por Custos recorrentes."
     );
   }
   if (settings.cashBalanceCents === 0) {

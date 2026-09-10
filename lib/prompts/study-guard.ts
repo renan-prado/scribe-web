@@ -1,12 +1,12 @@
 import "server-only";
 
 /**
- * O GUARDIÃO — dois cortes baratos contra o modo de falha nº 1 do estudo:
+ * O GUARDIÃO, dois cortes baratos contra o modo de falha nº 1 do estudo:
  * **sair dizendo a mesma coisa que o resumo já disse.**
  *
  * Os três modelos do pipeline recebem o resumo e são instruídos a não repeti-lo.
  * Instrução não basta: ela compete com a inclinação natural do modelo de voltar
- * ao ponto central do sermão, que é o ponto mais saliente do contexto inteiro —
+ * ao ponto central do sermão, que é o ponto mais saliente do contexto inteiro,
  * e às vezes perde. O guardião não instrui: ele CORTA.
  *
  * Rodam num modelo barato (`OPENAI_STUDY_GUARD_MODEL`, gpt-4o-mini por padrão)
@@ -17,23 +17,23 @@ import "server-only";
  *
  * Eles pegam falhas diferentes, em pontos diferentes do encanamento:
  *
- *   [A] FILTRO DE PERGUNTAS — entre o questionador e o respondedor. O
+ *   [A] FILTRO DE PERGUNTAS, entre o questionador e o respondedor. O
  *       critério dele é ESTREITO de propósito, e já foi largo demais: pedindo
  *       "descarte o que o resumo já responde", ele cortava 25 de 25 e 28 de 28
  *       em sermões reais, porque num estudo sobre o mesmo assunto quase toda
  *       pergunta encosta no que o resumo tocou. Um filtro que reprova tudo não
- *       filtra nada — só aciona o fallback.
+ *       filtra nada, só aciona o fallback.
  *
  *       Hoje ele procura uma coisa só: a pergunta PRESA ao sermão, medida
  *       pelo teste do estranho ("um cristão que não ouviu isto entende a
  *       pergunta?"). Tratar do mesmo assunto deixou de ser motivo de corte.
  *
- *   [B] CHECAGEM DA TESE — depois do redator. Existe porque [A] não é
+ *   [B] CHECAGEM DA TESE, depois do redator. Existe porque [A] não é
  *       suficiente: mesmo partindo de perguntas boas, o redator pode colapsar
  *       o artigo de volta na tese do sermão na hora de amarrar tudo. É a
  *       falha que o usuário relatou, e nenhum filtro de entrada a pega.
  *
- * O corte [B] não descarta o estudo — o usuário já pagou. Ele dispara UMA
+ * O corte [B] não descarta o estudo, o usuário já pagou. Ele dispara UMA
  * reescrita, com a sobreposição nomeada explicitamente. Se a segunda tentativa
  * também repetir, o estudo é entregue assim mesmo e o fato vai para o log e
  * para o `/admin/studies`: entregar algo imperfeito é melhor que cobrar moedas
@@ -47,7 +47,7 @@ Sua única tarefa é dizer quais perguntas devem ser DESCARTADAS. Você não res
 Retorne SOMENTE um objeto JSON válido, sem markdown, sem texto antes ou depois.
 
 ═══════════════════════════════════════════════════════════════
-O QUE VOCÊ ESTÁ PROCURANDO — E O QUE NÃO ESTÁ
+O QUE VOCÊ ESTÁ PROCURANDO: E O QUE NÃO ESTÁ
 ═══════════════════════════════════════════════════════════════
 
 As perguntas que sobrarem viram um estudo sobre o MESMO ASSUNTO do sermão. É
@@ -55,13 +55,13 @@ esperado, e é correto, que elas tratem do mesmo tema, citem os mesmos textos
 bíblicos e cheguem perto das mesmas doutrinas.
 
 **Tratar do mesmo assunto NÃO é motivo de descarte.** Se fosse, não sobraria
-pergunta nenhuma — e um estudo vazio é pior que um estudo parecido.
+pergunta nenhuma, e um estudo vazio é pior que um estudo parecido.
 
 Você procura uma coisa só, e ela é estreita: a pergunta **presa a este sermão
 específico** ou **cuja resposta inteira já está escrita no resumo**.
 
 ═══════════════════════════════════════════════════════════════
-O TESTE DO ESTRANHO — o seu critério principal
+O TESTE DO ESTRANHO: o seu critério principal
 ═══════════════════════════════════════════════════════════════
 
 Imagine um cristão que NÃO ouviu este sermão e nunca vai ouvir. Mostre a
@@ -100,7 +100,7 @@ CALIBRAGEM
 O normal é descartar de 3 a 10 perguntas de uma lista de 25 a 30.
 
 Se você estiver descartando mais da metade, provavelmente está usando
-"trata do mesmo assunto" como critério — e esse não é o critério. Releia o
+"trata do mesmo assunto" como critério, e esse não é o critério. Releia o
 teste do estranho e recomece.
 
 Se não houver nada a descartar, devolva a lista vazia. É um resultado
@@ -131,7 +131,7 @@ O leitor já absorveu o resumo. O estudo existe para AVANÇAR: responder o que o
 resumo deixou em aberto, trazer o que o pregador não teve tempo de trazer.
 
 Responda "repeats": true quando a tese do estudo é, na substância, a mesma
-afirmação da tese do resumo — mesmo escrita com palavras melhores. Reformular
+afirmação da tese do resumo, mesmo escrita com palavras melhores. Reformular
 não é avançar.
 
 Responda "repeats": false quando a tese do estudo afirma algo que a do resumo

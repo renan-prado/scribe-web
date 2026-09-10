@@ -35,19 +35,19 @@ import {
 import { MoneyInput } from "./MoneyInput";
 
 /**
- * O formulário de lançamento — criar e editar.
+ * O formulário de lançamento, criar e editar.
  *
  * Três decisões de forma que não são estéticas:
  *
  * 1. **A data de COMPETÊNCIA é obrigatória e vem primeiro; a de liquidação só
  *    aparece quando o status é liquidado.** São as duas datas que separam os
  *    dois regimes do painel (ver `lib/finance/aggregate.ts`), e pedir as duas
- *    sempre faria a pessoa preencher a mesma coisa em dois campos — que é
+ *    sempre faria a pessoa preencher a mesma coisa em dois campos, que é
  *    exatamente como as duas passam a significar a mesma coisa.
  * 2. **O vínculo com um contrato recorrente é oferecido explicitamente.** É o
  *    que impede a fatura real e a provisão do contrato de somarem no mesmo
  *    mês. Sem o campo, a única forma de evitar a dobra seria não lançar a
- *    fatura — e aí o valor real nunca entraria.
+ *    fatura, e aí o valor real nunca entraria.
  * 3. **O câmbio só é pedido para dólar JÁ liquidado.** Enquanto pendente, a
  *    conversão usa a cotação viva; congelar antes da hora gravaria a cotação
  *    do dia em que alguém abriu o formulário.
@@ -302,7 +302,7 @@ export function EntryDialog({
             </Field>
           </div>
 
-          {/* O câmbio só existe para dólar já liquidado — ver o cabeçalho. */}
+          {/* O câmbio só existe para dólar já liquidado, ver o cabeçalho. */}
           {currency === "USD" && status === "paid" ? (
             <Field
               label="Câmbio do dia (USD → BRL)"
@@ -373,7 +373,7 @@ export function EntryDialog({
           {recurringOptions.length > 1 ? (
             <Field
               label="Fatura de um contrato recorrente"
-              hint="Vinculado, este lançamento SUBSTITUI a provisão do contrato no mês — sem isso o custo conta duas vezes."
+              hint="Vinculado, este lançamento SUBSTITUI a provisão do contrato no mês, sem isso o custo conta duas vezes."
             >
               <Select
                 items={recurringOptions}

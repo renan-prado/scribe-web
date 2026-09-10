@@ -17,7 +17,7 @@ import { cn } from "@/lib/utils";
  *
  * A análise é um modelo de raciocínio sobre o agregado inteiro: ~85 segundos,
  * medido. Gerá-la dentro do render da página faria a primeira visita do dia
- * ficar um minuto e meio em branco — e não a de quem pediu o insight, a de
+ * ficar um minuto e meio em branco, e não a de quem pediu o insight, a de
  * quem só queria conferir o MRR. Então o servidor entrega o que já está
  * gravado (uma leitura de uma linha) e este componente decide, já com a tela
  * desenhada, se vale disparar a geração.
@@ -29,7 +29,7 @@ import { cn } from "@/lib/utils";
  *
  * `firedRef` existe porque o efeito roda duas vezes no StrictMode do dev, e
  * dois disparos aqui são duas chamadas de modelo caro. A rota reconfere a
- * validade do lado dela — esta guarda é a primeira das duas, não a única.
+ * validade do lado dela, esta guarda é a primeira das duas, não a única.
  */
 
 const SEVERITY: Record<
@@ -104,7 +104,7 @@ export function AdminInsightsCard({ scope, initial }: Props) {
         };
         setRecord(body.record);
         // A leitura chegou; se ela não foi GRAVADA, isso é um aviso ao lado do
-        // texto, não um erro no lugar dele — o conteúdo é o mesmo e já foi pago.
+        // texto, não um erro no lugar dele, o conteúdo é o mesmo e já foi pago.
         setFailure(
           body.persistError
             ? { status: "unsaved", detail: body.persistError }
@@ -204,7 +204,7 @@ export function AdminInsightsCard({ scope, initial }: Props) {
       ) : (
         <p className="text-[12.5px] font-light leading-relaxed text-scriba-ink-mute">
           {loading
-            ? "Lendo os números do período — leva cerca de 90 segundos."
+            ? "Lendo os números do período, leva cerca de 90 segundos."
             : "Ainda sem leitura para esta tela."}
         </p>
       )}
@@ -212,7 +212,7 @@ export function AdminInsightsCard({ scope, initial }: Props) {
       <StatusNote failure={failure} hasRecord={record != null} />
 
       <p className="text-[11px] font-light leading-relaxed text-scriba-ink-mute">
-        Gerada uma vez por dia sobre os últimos {record?.windowDays ?? 30} dias — os mesmos números
+        Gerada uma vez por dia sobre os últimos {record?.windowDays ?? 30} dias, os mesmos números
         das tabelas desta página, não uma segunda consulta. Margem citada aqui depende da régua da
         moeda, que é simulação; custo é medido.
       </p>
@@ -224,7 +224,7 @@ export function AdminInsightsCard({ scope, initial }: Props) {
  * O erro mostra o que o upstream disse, e não uma frase de conforto.
  *
  * A versão anterior dizia "a OpenAI não respondeu a tempo" para QUALQUER falha
- * de upstream — timeout, 400, 401 — e o diagnóstico só existia no terminal do
+ * de upstream, timeout, 400, 401, e o diagnóstico só existia no terminal do
  * servidor. Acabou custando uma rodada inteira de investigação de um timeout
  * que a própria mensagem já teria entregue se trouxesse o número.
  */
@@ -234,8 +234,8 @@ function StatusNote({ failure, hasRecord }: { failure: Failure; hasRecord: boole
     return (
       <div className="flex flex-col gap-1">
         <p className="text-[12px] font-light text-scriba-cream-accent">
-          A leitura acima foi gerada, mas não pôde ser gravada — ela some ao recarregar a página, e
-          a próxima visita vai pagar a análise de novo.
+          A leitura acima foi gerada, mas não pôde ser gravada, ela some ao recarregar a página, e a
+          próxima visita vai pagar a análise de novo.
         </p>
         {failure.detail ? (
           <p className="font-mono text-[11px] leading-snug text-scriba-ink-mute">

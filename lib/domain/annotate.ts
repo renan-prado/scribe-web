@@ -8,13 +8,13 @@ import { LIVROS_BIBLICOS } from "@/lib/vocabulario";
  * Client-safe e SEM IA: é varredura de regex sobre um léxico curado
  * (`lib/domain/lexicon.ts`). Uma etapa de LLM para "marcar as entidades" seria
  * mais uma chamada por sessão, com custo, latência e a chance de o modelo
- * marcar coisa que não está no texto — para um problema que um autômato
+ * marcar coisa que não está no texto, para um problema que um autômato
  * resolve, com o mesmo resultado toda vez.
  *
  * ## Duas passadas, nesta ordem
  *
  * 1. **Referência bíblica.** Exige NÚMERO de capítulo: "João 3:16" e "Romanos 8"
- *    casam, "João" sozinho não. É o que separa o evangelho do apóstolo — e é
+ *    casam, "João" sozinho não. É o que separa o evangelho do apóstolo, e é
  *    por isso que esta passada vem primeiro: ela consome "João 3:16" inteiro,
  *    e a passada de nomes nunca chega a ver aquele "João".
  * 2. **Nome próprio**, só nos vãos que sobraram da primeira.
@@ -25,7 +25,7 @@ import { LIVROS_BIBLICOS } from "@/lib/vocabulario";
  * existe, porque nenhum dos dois é caractere de palavra para o motor de regex.
  * Um `\bJosé\b` simplesmente não casa no fim de uma frase. A direita é
  * resolvida com lookahead sobre uma classe de letras explícita; a esquerda é
- * conferida no código, olhando o caractere anterior — `lookbehind` resolveria
+ * conferida no código, olhando o caractere anterior, `lookbehind` resolveria
  * em uma linha, mas construir a RegExp lançaria em navegador antigo, e um
  * throw no import em branco a página inteira.
  */
@@ -59,7 +59,7 @@ const BOOK_ALTERNATION = [...LIVROS_BIBLICOS, "Salmo"].sort(byLengthDesc).map(es
 /**
  * `<livro> <capítulo>[:<versículo>[-<versículo>]]`.
  *
- * O capítulo é obrigatório — ver a nota sobre a ordem das passadas acima. O
+ * O capítulo é obrigatório, ver a nota sobre a ordem das passadas acima. O
  * intervalo aceita hífen e travessão porque o modelo escreve os dois. O ponto
  * como separador de versículo ("João 3.16") ficou de FORA: ele transformaria
  * "Romanos 8. 15 pessoas…" numa referência, e o texto de resumo escreve com

@@ -1,5 +1,5 @@
 /**
- * Vocabulário do controle financeiro — CLIENT-SAFE.
+ * Vocabulário do controle financeiro, CLIENT-SAFE.
  *
  * Tipos, schemas Zod e rótulos em português. Vive em `lib/domain/` pela regra
  * do repositório: o cliente nunca importa de uma rota de `app/api`, então o que
@@ -35,7 +35,7 @@ export type CostNature = (typeof COST_NATURES)[number];
  *   planned → PREVISTO. Sabemos que deve acontecer, nada foi firmado.
  *
  * O que NÃO está aqui é "projetado": projeção não é lançamento, é o resultado
- * de premissas (`finance_scenarios`) e não se guarda — se recalcula.
+ * de premissas (`finance_scenarios`) e não se guarda, se recalcula.
  */
 export const ENTRY_STATUSES = ["paid", "pending", "planned"] as const;
 export type EntryStatus = (typeof ENTRY_STATUSES)[number];
@@ -58,7 +58,7 @@ export const MONTHS_PER_CADENCE: Record<Cadence, number> = {
 };
 
 // ---------------------------------------------------------------------------
-// Rótulos (pt-BR inline, como o resto do app — ver AGENTS.md da raiz)
+// Rótulos (pt-BR inline, como o resto do app, ver AGENTS.md da raiz)
 // ---------------------------------------------------------------------------
 
 export const KIND_LABELS: Record<FinanceKind, string> = {
@@ -85,7 +85,7 @@ export const ENTRY_STATUS_LABELS: Record<EntryStatus, string> = {
 
 /**
  * O mesmo status lido do lado da receita. "Pago" e "Recebido" são o mesmo
- * estado do banco — a especificação lista os quatro como se fossem quatro
+ * estado do banco, a especificação lista os quatro como se fossem quatro
  * estados, e não são: o que muda é a direção do dinheiro, que já está em
  * `kind`. Guardar quatro produziria combinações sem sentido ("receita paga").
  */
@@ -223,7 +223,7 @@ export type CategoryInput = z.infer<typeof CategoryInputSchema>;
 /**
  * ARMADILHA DO ZOD 4, e é a razão de cada schema abaixo vir em DUAS metades.
  *
- * `.partial()` LANÇA sobre um objeto que tem `.refine()` — e lança no import do
+ * `.partial()` LANÇA sobre um objeto que tem `.refine()`, e lança no import do
  * módulo, não na validação, então o `tsc` passa e o build quebra na coleta de
  * rotas. Por isso o objeto cru fica separado: a criação usa o objeto refinado,
  * o PATCH usa `.partial()` do objeto CRU e reaplica o refinamento numa versão
@@ -269,7 +269,7 @@ const EntryFieldsSchema = z
     amountCents: AmountSchema,
     currency: z.enum(CURRENCIES),
     /**
-     * O câmbio usado. Só é aceito do cliente para lançamentos JÁ liquidados —
+     * O câmbio usado. Só é aceito do cliente para lançamentos JÁ liquidados,
      * é o registro de quanto o dólar valia no dia. Para o resto, a rota o
      * ignora e a leitura converte com a cotação viva. Ver `lib/finance/money.ts`.
      */
@@ -292,7 +292,7 @@ export type EntryInput = z.infer<typeof EntryInputSchema>;
 
 /**
  * O PATCH só consegue comparar os dois valores quando ambos vêm no corpo. Um
- * PATCH que muda só `paidCents` escapa daqui — e é o CHECK
+ * PATCH que muda só `paidCents` escapa daqui, e é o CHECK
  * `finance_entries_paid_within_amount` da migração 0043 que o pega, porque ele
  * enxerga a linha inteira e nenhum caminho de código escapa dele.
  */

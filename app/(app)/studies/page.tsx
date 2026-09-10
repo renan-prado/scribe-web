@@ -50,7 +50,7 @@ export default async function StudiesPage() {
         )}
 
         {/* Tem estudos mas perdeu (ou nunca teve) o plano: a lista fica, o
-          convite entra acima dela. Só a GERAÇÃO é restrita — ver
+          convite entra acima dela. Só a GERAÇÃO é restrita, ver
           lib/entitlements/features.ts. */}
         {!canGenerate && studies.length > 0 ? <StudiesUpsell variant="banner" /> : null}
 

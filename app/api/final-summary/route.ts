@@ -20,7 +20,7 @@ const log = createLogger("final-summary");
 // around ~150k chars. 300k is 2× headroom without letting a bot smuggle an
 // unbounded prompt through this endpoint (which is expensive: gpt-4-class
 // model, 12k output tokens).
-// feedItems is strictly validated — this array is persisted to the DB, so a
+// feedItems is strictly validated, this array is persisted to the DB, so a
 // malformed entry from a compromised client would poison future reads.
 // 2000 items is far above any real recording; the live feed rarely tops 150.
 const MAX_TEXT_CHARS = 300_000;
@@ -73,7 +73,7 @@ export async function POST(request: Request) {
   // Sem isto, a rota mais cara do app (até 300 mil caracteres num modelo
   // grande, 12k tokens de saída) rodava sobre um `sessionId` qualquer e só
   // descobria que a sessão não era de quem chamou no UPDATE lá embaixo, onde
-  // a RLS filtra em silêncio — trabalho já pago à OpenAI, resposta devolvida,
+  // a RLS filtra em silêncio, trabalho já pago à OpenAI, resposta devolvida,
   // `saved: false` como único sinal. `getSessionMeta` e não `getSession`: aqui
   // só interessa a existência da linha, e a transcrição vem no corpo.
   const meta = await getSessionMeta(sessionId).catch(() => null);
@@ -105,14 +105,14 @@ export async function POST(request: Request) {
 
   const { payload, latencyMs, model } = result;
 
-  // Fill the row created at start. Never fail the request on save error —
+  // Fill the row created at start. Never fail the request on save error,
   // the user already sat through the recording; return the summary and log
   // for investigation. RLS scopes the update to the session's owner.
   const speakerName = body.speakerName?.trim() || null;
   const speakerLocation = body.speakerLocation?.trim() || null;
 
   // Promote speaker/location free-text into per-user entities so they show up
-  // in future autocomplete lists ranked by usage. Best-effort — the actual
+  // in future autocomplete lists ranked by usage. Best-effort, the actual
   // session save must not fail on an entity upsert glitch.
   let speakerId: string | null | undefined;
   let locationId: string | null | undefined;
@@ -164,7 +164,7 @@ export async function POST(request: Request) {
   // Best-effort: gera e persiste "Releia este texto" (10 versículos), "Lembra
   // disso?" (10 mini-callbacks) e "Frases marcantes" (até 12 itens, sem IA) em
   // paralelo após o resumo estar salvo. Nenhuma delas falhando quebra a
-  // resposta do resumo — a UI trata payloads ausentes como estado normal.
+  // resposta do resumo, a UI trata payloads ausentes como estado normal.
   const [rereads, reminders, highlights] = await Promise.all([
     generateAndSaveRereads({
       userId: auth.user.id,

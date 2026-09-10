@@ -1,7 +1,7 @@
 import "server-only";
 
 /**
- * A INTERFACE de "buscar a legenda de um vídeo" — o contrato que a rota
+ * A INTERFACE de "buscar a legenda de um vídeo", o contrato que a rota
  * conhece, sem nome de provedor dentro.
  *
  * Ela existe porque o provedor é a peça deste modo com maior chance de ser
@@ -9,7 +9,7 @@ import "server-only";
  * por trimestre, e a razão de existirem (o YouTube bloquear IP de datacenter)
  * é uma corrida que nenhum deles ganha para sempre. Trocar de fornecedor tem
  * de ser escrever um segundo arquivo ao lado de `supadata.ts` e mudar UMA
- * linha no `fetchYoutubeTranscript` do fim — não caçar `x-api-key` espalhado
+ * linha no `fetchYoutubeTranscript` do fim, não caçar `x-api-key` espalhado
  * por dentro de uma rota que também cobra moedas e chama a OpenAI.
  *
  * Os erros são um union FECHADO, e é ele que a rota traduz em status HTTP e em
@@ -43,7 +43,7 @@ export type YoutubeTranscriptResult =
       /**
        * Duração do vídeo em ms, DERIVADA do fim do último segmento de legenda.
        *
-       * É uma aproximação por baixo — a legenda acaba quando a fala acaba, e
+       * É uma aproximação por baixo, a legenda acaba quando a fala acaba, e
        * o vídeo pode seguir com música por mais um minuto. Serve para as duas
        * coisas que precisam dela: recusar o que passa de
        * `YOUTUBE_MAX_DURATION_MS` e preencher `sessions.duration_ms`, e em
@@ -61,7 +61,7 @@ export type YoutubeTranscriptResult =
  * Busca a legenda de `videoUrl`. Nunca lança: toda falha vira um `ok: false`
  * com um motivo do union acima.
  *
- * **`mode: "native"` — só legenda que JÁ EXISTE no YouTube.** A Supadata sabe
+ * **`mode: "native"`, só legenda que JÁ EXISTE no YouTube.** A Supadata sabe
  * transcrever o áudio com Whisper quando não há legenda, e essa porta está
  * fechada de propósito: ela custa 2 créditos por MINUTO (contra 1 por vídeo),
  * volta assíncrona (202 + jobId, com polling e uma tela de espera que precisa
@@ -71,7 +71,7 @@ export type YoutubeTranscriptResult =
  *
  * A cobertura disso é alta em canal de igreja: o YouTube gera legenda
  * automática em português para praticamente todo upload. O que ela não tem é
- * pontuação — o resumo aguenta, a leitura crua da transcrição sofre, e é por
+ * pontuação, o resumo aguenta, a leitura crua da transcrição sofre, e é por
  * isso que a sessão importada abre em `/summary`.
  */
 export async function fetchYoutubeTranscript(videoUrl: string): Promise<YoutubeTranscriptResult> {

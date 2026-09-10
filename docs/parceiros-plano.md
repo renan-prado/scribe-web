@@ -1,10 +1,10 @@
-# Programa de Parceiros — plano de execução
+# Programa de Parceiros: plano de execução
 
 Regras de negócio em [`parceiros.md`](./parceiros.md). Este documento é o
 plano técnico: o que construir, em que ordem, e onde encostar no código que
 já existe.
 
-Branch: `feat/parceiros`. **Fases 0 a 7 entregues** — o que cada uma resolveu
+Branch: `feat/parceiros`. **Fases 0 a 7 entregues**, o que cada uma resolveu
 está no corpo do commit correspondente. As invariantes que precisam sobreviver
 a refactors foram promovidas para o `AGENTS.md`.
 
@@ -29,7 +29,7 @@ a refactors foram promovidas para o `AGENTS.md`.
 
 ---
 
-## Fase 0 — Migração `0029_partners.sql`
+## Fase 0: Migração `0029_partners.sql`
 
 ### Tabelas
 
@@ -88,18 +88,18 @@ attribution_source     text null      -- 'link' | 'code'
 ```
 
 ⚠️ `profiles` tem **GRANT por coluna** (ver AGENTS.md). As três colunas novas
-ficam **fora** do alcance de `authenticated` — senão o usuário troca o próprio
+ficam **fora** do alcance de `authenticated`, senão o usuário troca o próprio
 parceiro usando o anon key.
 
 ### Funções
 
-**`attach_partner(p_user_id, p_slug) → text`** — SECURITY DEFINER, atômica.
+**`attach_partner(p_user_id, p_slug) → text`**, SECURITY DEFINER, atômica.
 Faz tudo o que o vínculo precisa em uma ida ao banco:
 
 1. `select ... for update` no profile;
 2. se `partner_id` não é null → retorna `already_attributed`;
 3. se o usuário foi criado há mais de N minutos → `not_new` (impede que um
-   usuário antigo clicando num link seja atribuído e ganhe bônus retroativo —
+   usuário antigo clicando num link seja atribuído e ganhe bônus retroativo,
    buraco fácil de deixar aberto);
 4. resolve o slug para um parceiro `active`; se não achar → `unknown_slug`;
 5. se `partner.user_id = p_user_id` → `self_referral`;
@@ -107,7 +107,7 @@ Faz tudo o que o vínculo precisa em uma ida ao banco:
 7. grava o vínculo e chama `grant_coins(..., 'partner_bonus', 'partner-bonus:<uid>')`;
 8. retorna `ok`.
 
-**`record_partner_click(p_slug, p_unique bool)`** — SECURITY DEFINER, um
+**`record_partner_click(p_slug, p_unique bool)`**, SECURITY DEFINER, um
 `insert ... on conflict do update` no rollup diário. Sem tabela de evento cru:
 o volume não justifica e o painel só mostra agregado.
 
@@ -130,7 +130,7 @@ parceiro devolve 0 linhas e `rpc('attach_partner')` devolve 42501.
 
 Dois cookies novos, e nenhuma string solta no meio do código.
 
-**`lib/partners/cookies.ts`** — nome, TTL e opções de cada cookie em
+**`lib/partners/cookies.ts`**, nome, TTL e opções de cada cookie em
 constantes exportadas, no mesmo padrão de `MANUAL_FX_COOKIE`
 (`lib/fx/usd-brl.ts`) e do `SIDEBAR_COOKIE_NAME` do shadcn:
 
@@ -143,7 +143,7 @@ export const refCookieOptions = { httpOnly: true, sameSite: "lax",
   secure: process.env.NODE_ENV === "production", path: "/" } as const;
 ```
 
-**Os dois são `httpOnly`.** O cliente nunca faz `document.cookie` — escrita e
+**Os dois são `httpOnly`.** O cliente nunca faz `document.cookie`, escrita e
 leitura acontecem só no servidor. Isso tem duas consequências no desenho:
 
 1. **O campo de código do `/sign-up` não escreve o cookie direto.** Ele chama
@@ -152,25 +152,25 @@ leitura acontecem só no servidor. Isso tem duas consequências no desenho:
 2. **Para a UI saber que há indicação ativa** (mostrar "você foi indicado, vai
    ganhar 150 moedas"), o server component do `/sign-up` lê `cookies()` e
    passa por prop. Nada de criar um segundo cookie legível por JS só para
-   exibir — seria estado duplicado e uma superfície a mais para adulterar.
+   exibir, seria estado duplicado e uma superfície a mais para adulterar.
 
 **Hook e store, onde cada um entra.** `useReferralField()`
-(`src/features/partners/hooks/`) cuida do **estado do formulário** — valor
-digitado, validação, pendência do submit — e não do cookie. Store zustand só
+(`src/features/partners/hooks/`) cuida do **estado do formulário**, valor
+digitado, validação, pendência do submit, e não do cookie. Store zustand só
 se o estado precisar cruzar componentes distantes, como em
 `src/features/coins/store.ts`; um campo de formulário não precisa, e criar um
 store para ele é cerimônia sem ganho.
 
 ---
 
-## Fase 1 — Captura do clique
+## Fase 1: Captura do clique
 
-- **`app/r/[slug]/route.ts`** — rota dinâmica. Seta o cookie `scriba_ref`
+- **`app/r/[slug]/route.ts`**: rota dinâmica. Seta o cookie `scriba_ref`
   (30 dias, `httpOnly`, `sameSite=lax`, `secure`), seta `scriba_visit` (24h,
   para deduplicar), chama `record_partner_click` e devolve `302` para `/`.
-  Slug inexistente redireciona para `/` sem gravar nada — link velho não pode
+  Slug inexistente redireciona para `/` sem gravar nada, link velho não pode
   virar erro na cara do visitante.
-- **`proxy.ts`** — `/r` entra em `PUBLIC_PREFIXES`. O early-return de `/`
+- **`proxy.ts`**: `/r` entra em `PUBLIC_PREFIXES`. O early-return de `/`
   continua intacto: o clique é gravado em `/r/<slug>`, não na LP.
 - `sameSite=lax` é obrigatório: o retorno do OAuth do Google é uma navegação
   de terceiro para o nosso domínio, e `strict` faria o cookie sumir exatamente
@@ -181,22 +181,22 @@ continua marcando `/` como `○ Static`.
 
 ---
 
-## Fase 2 — Atribuição e bônus
+## Fase 2: Atribuição e bônus
 
-- **Campo de código no `/sign-up`** — input opcional. Como o login é só
+- **Campo de código no `/sign-up`**: input opcional. Como o login é só
   Google, o valor digitado é gravado no mesmo cookie `scriba_ref` **antes** do
   redirect para o OAuth (`src/features/auth/components/`). O código atravessa
   o roundtrip do Google porque é cookie de primeira parte no mesmo host.
-- **`app/auth/callback/route.ts`** — depois do `exchangeCodeForSession`, se
+- **`app/auth/callback/route.ts`**: depois do `exchangeCodeForSession`, se
   existir cookie `scriba_ref`, chama `attach_partner`. Sai cedo quando não há
   cookie: custo zero para o login normal.
-- **`lib/db/partners.ts`** — wrappers tipados sobre as duas RPCs, no padrão de
+- **`lib/db/partners.ts`**: wrappers tipados sobre as duas RPCs, no padrão de
   `lib/db/billing.ts`.
 - **`GrantReason`** ganha `"partner_bonus"` (`lib/db/billing.ts:152`).
 - **Extrato de moedas** passa a mostrar a linha "bônus de indicação".
 
 O bônus **soma** às 50 de boas-vindas (que vêm do `DEFAULT` da coluna, sem
-linha no ledger). O bônus, ao contrário, é uma linha explícita — como todo
+linha no ledger). O bônus, ao contrário, é uma linha explícita, como todo
 crédito.
 
 **Verificação:** dois logins seguidos com o mesmo cookie creditam uma vez só
@@ -205,22 +205,22 @@ atribuído.
 
 ---
 
-## Fase 3 — Comissão
+## Fase 3: Comissão
 
-- **`lib/billing/fulfill.ts`** — `creditInvoice()` ganha, depois do
+- **`lib/billing/fulfill.ts`**: `creditInvoice()` ganha, depois do
   `grantCoins`, uma chamada a `accruePartnerCommission({ invoice, userId,
-  entitlement, source })`. Só para `entitlement.kind === "subscription"` —
+  entitlement, source })`. Só para `entitlement.kind === "subscription"`,
   avulso não comissiona, por decisão de negócio.
   Um erro na comissão **não pode derrubar o crédito de moedas**: try/catch,
   log em `error`, e segue. Moeda é contrato com o usuário; comissão é
   reconciliável depois.
-- **`lib/db/partners.ts`** — `insertCommission()` com
+- **`lib/db/partners.ts`**: `insertCommission()` com
   `on conflict (referred_user_id) do nothing`. `status = 'pending'`,
   `available_at = now() + 30 days`.
-- **`app/api/stripe/webhook/route.ts`** — onde hoje chama `clawbackCoins` em
+- **`app/api/stripe/webhook/route.ts`**: onde hoje chama `clawbackCoins` em
   `charge.refunded` / `charge.dispute.created`, chama também
   `reversePartnerCommission(userId)`. Se a comissão já tiver `payout_id` (foi
-  paga), não reverte: loga em `warn` — mesmo padrão do clawback quando as
+  paga), não reverte: loga em `warn`, mesmo padrão do clawback quando as
   moedas já foram gastas.
 - **Promoção `pending → available`** resolvida em query
   (`status = 'pending' and available_at <= now()`), não por cron. Menos peça
@@ -231,7 +231,7 @@ reassinar continua uma linha; reembolsar marca `reversed`.
 
 ---
 
-## Fase 4 — Métricas de produto no admin (base)
+## Fase 4: Métricas de produto no admin (base)
 
 Independente do programa de parceiros, mas **pré-requisito das telas dele**:
 toda métrica do parceiro é uma métrica de produto filtrada por `partner_id`.
@@ -239,23 +239,23 @@ Construir a base uma vez evita duas implementações divergentes de "conversão"
 
 Hoje o `/admin` mostra usuários, custo e custo por 1.000 moedas
 (`loadAdminUsageSummary`). Falta o funil inteiro. Tudo é derivável do que já
-existe — `profiles.created_at`, `subscriptions`, `coin_transactions`,
-`sessions` — sem nenhuma tabela nova.
+existe, `profiles.created_at`, `subscriptions`, `coin_transactions`,
+`sessions`, sem nenhuma tabela nova.
 
 **`lib/db/admin/metrics.ts`**, com recorte por período e por coorte:
 
-- **Aquisição** — cadastros por dia/semana/mês.
-- **Ativação** — % que gravou ao menos uma sessão; moedas gastas nos 7
+- **Aquisição**: cadastros por dia/semana/mês.
+- **Ativação**: % que gravou ao menos uma sessão; moedas gastas nos 7
   primeiros dias; distribuição do consumo das 50 moedas iniciais (gastou 0 /
   1–25 / 26–50 / zerou o saldo). Quem zera o saldo é o sinal mais forte de
   intenção de compra que temos.
-- **Conversão** — cadastro → assinante (%), por coorte de mês; tempo médio até
+- **Conversão**: cadastro → assinante (%), por coorte de mês; tempo médio até
   a primeira assinatura; mix Pessoal × Estudioso.
-- **Receita** — assinantes ativos, MRR, ARPU, receita de avulso, cancelamentos
+- **Receita**: assinantes ativos, MRR, ARPU, receita de avulso, cancelamentos
   agendados (`cancel_at_period_end`) e churn mensal.
-- **Margem** — receita − Stripe − custo de moedas, reusando o câmbio e o custo
+- **Margem**: receita − Stripe − custo de moedas, reusando o câmbio e o custo
   medido que o `/admin` já calcula.
-- **Passivo de moedas** — moedas creditadas menos gastas. Como os créditos
+- **Passivo de moedas**: moedas creditadas menos gastas. Como os créditos
   acumulam de um mês para o outro, o saldo não gasto é custo de OpenAI já
   vendido e ainda não incorrido. É a métrica que ninguém lembra de olhar até
   ela doer.
@@ -264,11 +264,11 @@ Tela: `/admin/metricas`, no padrão de `/admin/usage`.
 
 ---
 
-## Fase 5 — Admin de parceiros (`/admin/partners`)
+## Fase 5: Admin de parceiros (`/admin/partners`)
 
 - Lista, cadastro e edição de parceiro (nome, e-mail do convite, redes, slug,
   CPF/PIX, **taxa**, bônus, teto, status).
-- Métricas por parceiro — o mesmo `metrics.ts` da Fase 4, filtrado.
+- Métricas por parceiro: o mesmo `metrics.ts` da Fase 4, filtrado.
 - **Registro de pagamento**: seleciona parceiro, período e valor; cria a linha
   em `partner_payouts` e carimba as comissões `available` com o `payout_id`.
   É este passo que faz o "a receber" do painel voltar a zero.
@@ -279,9 +279,9 @@ Tela: `/admin/metricas`, no padrão de `/admin/usage`.
 ### Simulador de comissão
 
 A taxa é editável por parceiro, então o formulário precisa mostrar a
-consequência **enquanto** o número é digitado — nunca depois de salvo.
+consequência **enquanto** o número é digitado, nunca depois de salvo.
 
-**`lib/partners/economics.ts`** — função pura, client-safe, sem segredo:
+**`lib/partners/economics.ts`**, função pura, client-safe, sem segredo:
 
 ```ts
 simulatePartner({
@@ -294,7 +294,7 @@ simulatePartner({
 ```
 
 Ela é a **única** implementação da conta. As tabelas de `parceiros.md`, o
-painel do parceiro e este formulário leem daqui — três cópias divergentes de
+painel do parceiro e este formulário leem daqui, três cópias divergentes de
 "quanto sobra" é como se descobre tarde que uma delas estava errada.
 
 O `costPerThousandCoins` vem **medido** de `loadAdminUsageSummary`, não
@@ -315,7 +315,7 @@ um parceiro específico; o que não pode é ela ser escolhida às cegas.
 
 ---
 
-## Fase 6 — Painel do parceiro (`/partners`)
+## Fase 6: Painel do parceiro (`/partners`)
 
 Estrutura espelhando `app/admin/`:
 
@@ -328,7 +328,7 @@ lib/auth/require-partner.ts -- irmão de lib/auth/require-admin.ts
 
 Fica **fora** de `(app)` (shell próprio, como o admin), e o `proxy.ts` já o
 protege por não estar na allowlist pública. O gate por papel mora no
-`layout.tsx`, **não no proxy** — proxy com leitura de papel custa uma ida ao
+`layout.tsx`, **não no proxy**, proxy com leitura de papel custa uma ida ao
 banco em toda requisição do site.
 
 Conteúdo: link e código com botão de copiar (reusar
@@ -339,7 +339,7 @@ Só agregados. Nenhuma query toca `profiles` além de `count(*)`.
 
 ---
 
-## Fase 7 — Documentação
+## Fase 7: Documentação
 
 - `AGENTS.md`: seção "Parceiros" com as invariantes (comissão só via
   `fulfill.ts`; `referred_user_id` UNIQUE; atribuição imutável; o painel nunca
@@ -389,4 +389,4 @@ existe em produção:
 3. O primeiro PIX de verdade, conferindo que o valor do painel bate com o que
    foi enviado.
 4. As variáveis de ambiente: nenhuma nova foi criada, mas vale confirmar que
-   `APP_URL` está correta em produção — é dela que sai o link do parceiro.
+   `APP_URL` está correta em produção, é dela que sai o link do parceiro.

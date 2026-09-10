@@ -46,7 +46,7 @@ import { MoneyInput } from "./MoneyInput";
  *
  * A DATA DE INÍCIO ancora as ocorrências: o dia dela é o dia da cobrança, e o
  * mês dela é o marco a partir do qual a cadência conta. Uma trimestral que
- * começa em fevereiro cobra fev/mai/ago/nov, não jan/abr/jul/out — a legenda
+ * começa em fevereiro cobra fev/mai/ago/nov, não jan/abr/jul/out, a legenda
  * do campo diz isso, porque a leitura natural é a do calendário.
  */
 

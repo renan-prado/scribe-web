@@ -1,4 +1,4 @@
-# Scriba — Arquitetura de Conhecimento, RAG, Retrieval e Admin
+# Scriba: Arquitetura de Conhecimento, RAG, Retrieval e Admin
 
 > Documento consolidado das decisões, ideias e recomendações discutidas sobre como aumentar a profundidade e o valor dos conteúdos gerados pelo Scriba.
 >
@@ -10,9 +10,9 @@
 
 O Scriba já possui três experiências que estão funcionando bem:
 
-1. **Ao vivo** — acompanha a reflexão enquanto o áudio é gravado, identifica informações relevantes, referências, frases importantes e gera contexto durante a mensagem.
-2. **Resumo** — recebe a gravação/transcrição e produz um documento organizado do sermão.
-3. **Aprofundar** — pega um sermão já processado e produz uma camada adicional de estudo, conexões, contexto e aplicação.
+1. **Ao vivo**: acompanha a reflexão enquanto o áudio é gravado, identifica informações relevantes, referências, frases importantes e gera contexto durante a mensagem.
+2. **Resumo**: recebe a gravação/transcrição e produz um documento organizado do sermão.
+3. **Aprofundar**: pega um sermão já processado e produz uma camada adicional de estudo, conexões, contexto e aplicação.
 
 A sensação atual é que essas experiências estão **boas, mas ainda não excelentes**.
 
@@ -58,7 +58,7 @@ modelo
 conteúdo mais profundo
 ```
 
-Essa arquitetura é normalmente chamada de **RAG — Retrieval-Augmented Generation**.
+Essa arquitetura é normalmente chamada de **RAG, Retrieval-Augmented Generation**.
 
 ---
 
@@ -133,9 +133,9 @@ modelo mais caro
 Uma divisão de esforço razoável neste estágio seria aproximadamente:
 
 ```text
-70% — base de conhecimento + retrieval + organização
-20% — prompts + pipeline + avaliações
-10% — escolha e comparação de modelos
+70%, base de conhecimento + retrieval + organização
+20%, prompts + pipeline + avaliações
+10%, escolha e comparação de modelos
 ```
 
 Esses percentuais não são regras rígidas. Eles representam a prioridade sugerida.
@@ -2229,7 +2229,7 @@ Escolha um sermão que você conhece muito bem.
 
 Teste duas versões.
 
-## Versão A — atual
+## Versão A: atual
 
 ```text
 sermão
@@ -2239,7 +2239,7 @@ modelo
 aprofundamento
 ```
 
-## Versão B — RAG
+## Versão B: RAG
 
 ```text
 sermão
@@ -2528,7 +2528,7 @@ A interface pode fazer polling simples do status ou reagir a atualizações do b
 
 ---
 
-# 64. Processamento em background — quando realmente necessário
+# 64. Processamento em background: quando realmente necessário
 
 Com poucos textos, a própria requisição pode funcionar.
 
@@ -2600,9 +2600,9 @@ Mais tarde o playground pode mostrar três abas lado a lado.
 ## Keyword
 
 ```text
-Sofrimento — match forte
-Providência — match médio
-Romanos 8:28 — match exato
+Sofrimento, match forte
+Providência, match médio
+Romanos 8:28, match exato
 ```
 
 ## Hybrid
@@ -2716,7 +2716,7 @@ Só depois conectar isso ao Aprofundar.
 
 # 70. Roadmap sugerido
 
-## Fase 0 — Preparação
+## Fase 0: Preparação
 
 - habilitar pgvector;
 - criar `knowledge_sources`;
@@ -2724,7 +2724,7 @@ Só depois conectar isso ao Aprofundar.
 - centralizar configuração do embedding;
 - definir status de indexação.
 
-## Fase 1 — Conteúdo manual
+## Fase 1: Conteúdo manual
 
 - criar `/admin/knowledge`;
 - criar cadastro de texto/markdown;
@@ -2733,7 +2733,7 @@ Só depois conectar isso ao Aprofundar.
 - gerar embeddings;
 - exibir chunks.
 
-## Fase 2 — Playground sem geração
+## Fase 2: Playground sem geração
 
 - criar `/admin/knowledge/playground`;
 - campo de query;
@@ -2742,14 +2742,14 @@ Só depois conectar isso ao Aprofundar.
 - retornar top 10;
 - mostrar score, fonte e conteúdo.
 
-## Fase 3 — Playground com geração
+## Fase 3: Playground com geração
 
 - botão “Gerar resposta com estes resultados”;
 - prompt controlado;
 - mostrar exatamente quais chunks foram enviados;
 - comparar respostas.
 
-## Fase 4 — Aprofundar + RAG
+## Fase 4: Aprofundar + RAG
 
 - analisar tese;
 - extrair passagens;
@@ -2760,14 +2760,14 @@ Só depois conectar isso ao Aprofundar.
 - enviar melhores fontes;
 - produzir aprofundamento.
 
-## Fase 5 — Evals
+## Fase 5: Evals
 
 - 20–30 casos fixos;
 - avaliação de retrieval;
 - avaliação de geração;
 - comparação antes/depois.
 
-## Fase 6 — Metadata estruturada
+## Fase 6: Metadata estruturada
 
 - livros bíblicos;
 - capítulos;
@@ -2777,26 +2777,26 @@ Só depois conectar isso ao Aprofundar.
 - tipo de fonte;
 - prioridade editorial.
 
-## Fase 7 — Hybrid search
+## Fase 7: Hybrid search
 
 - full-text search;
 - semantic search;
 - metadata filtering;
 - fusion/ranking.
 
-## Fase 8 — Reranking
+## Fase 8: Reranking
 
 - buscar muitos candidatos;
 - rerankear;
 - selecionar pequeno conjunto final.
 
-## Fase 9 — Outras experiências
+## Fase 9: Outras experiências
 
 - pequenos usos no Ao vivo;
 - contexto bíblico estruturado;
 - possíveis enriquecimentos separados do Resumo.
 
-## Fase 10 — Biblioteca avançada
+## Fase 10: Biblioteca avançada
 
 - conteúdo licenciado;
 - coleções editoriais;
@@ -3797,11 +3797,11 @@ Se isso já fizer o Aprofundar ficar claramente melhor, existe uma base sólida 
 
 As decisões deste documento são baseadas principalmente na arquitetura discutida para o Scriba. Para confirmar detalhes técnicos atuais, foram consultadas as documentações oficiais de:
 
-- OpenAI — modelo `text-embedding-3-small` e API de embeddings;
-- Supabase — AI & Vectors;
-- Supabase — Semantic Search;
-- Supabase — Hybrid Search;
-- Supabase — pgvector;
-- Supabase — Vector Indexes.
+- OpenAI: modelo `text-embedding-3-small` e API de embeddings;
+- Supabase: AI & Vectors;
+- Supabase: Semantic Search;
+- Supabase: Hybrid Search;
+- Supabase: pgvector;
+- Supabase: Vector Indexes.
 
 Como APIs, preços e recomendações de infraestrutura podem mudar, é recomendado revisar a documentação oficial antes de consolidar decisões que dependam de custo, limites ou APIs específicas.

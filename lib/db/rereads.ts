@@ -3,7 +3,7 @@ import type { RereadsPayload } from "@/lib/domain/rereads";
 import { createClient } from "@/lib/supabase/server";
 
 /**
- * Persistência para session_rereads — o "Releia este texto" gerado junto com
+ * Persistência para session_rereads, o "Releia este texto" gerado junto com
  * o final_summary. Uma linha por session_id (unique constraint em SQL). O
  * reprocess do resumo sobrescreve o payload via upsert.
  */
@@ -43,7 +43,7 @@ export async function getRereads(sessionId: string): Promise<RereadsRow | null> 
 /**
  * Upsert por session_id. Reprocess reescreve o payload inteiro; primeira
  * geração cria a linha. .select() força o PostgREST a retornar a linha
- * afetada — sem isso, uma RLS quebrada retornaria data:null sem erro.
+ * afetada, sem isso, uma RLS quebrada retornaria data:null sem erro.
  */
 export async function upsertRereads(sessionId: string, payload: RereadsPayload): Promise<void> {
   const supabase = await createClient();

@@ -20,7 +20,7 @@ export const dynamic = "force-dynamic";
  * O link de indicação de um usuário comum: `scriba.cc/i/<codigo>`.
  *
  * Irmã de `app/r/[slug]/route.ts`, e deliberadamente igual a ela nas três
- * decisões que parecem cosméticas e não são — 302 em vez de 308 (um
+ * decisões que parecem cosméticas e não são, 302 em vez de 308 (um
  * permanente seria memorizado pelo navegador e as visitas seguintes nem
  * chegariam ao servidor), redirect também para código inválido (quem clica num
  * link velho não tem nada com isso), e o efeito colateral numa ROTA para a
@@ -29,7 +29,7 @@ export const dynamic = "force-dynamic";
  * DUAS diferenças em relação à do parceiro, e as duas são de propósito:
  *
  * 1. **Não conta clique.** O parceiro precisa do topo do funil para saber se o
- *    conteúdo dele converte — é o trabalho dele. Quem manda o link no grupo da
+ *    conteúdo dele converte, é o trabalho dele. Quem manda o link no grupo da
  *    igreja não vai otimizar campanha nenhuma, e um rollup de visitas por
  *    usuário seria uma tabela e uma escrita anônima a mais para alimentar um
  *    número que ninguém usaria para decidir nada.
@@ -50,8 +50,8 @@ export async function GET(request: NextRequest, ctx: { params: Promise<{ code: s
     return NextResponse.redirect(home, 302);
   }
 
-  // O balde é por IP porque não há sessão. Ele não protege o redirect — que
-  // acontece de qualquer forma — e sim o cookie: sem limite, um script poderia
+  // O balde é por IP porque não há sessão. Ele não protege o redirect, que
+  // acontece de qualquer forma, e sim o cookie: sem limite, um script poderia
   // varrer o espaço de códigos procurando quais existem. Como esta rota não
   // consulta o banco, a varredura não devolveria nada de todo modo; o limite é
   // a segunda tranca da mesma porta.

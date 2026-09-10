@@ -14,7 +14,7 @@ import { MoneyInput, PercentInput } from "./MoneyInput";
  *
  * SALDO EM CAIXA é o que transforma burn rate em RUNWAY. Sem ele, o painel
  * sabe dizer quanto o Scriba queima por mês e não sabe dizer por quanto tempo
- * aguenta — que é a única das duas perguntas que muda uma decisão. É digitado
+ * aguenta, que é a única das duas perguntas que muda uma decisão. É digitado
  * porque não temos integração bancária, e a data ao lado existe para o painel
  * conseguir dizer há quanto tempo o número não é conferido: um saldo de três
  * meses atrás lido como se fosse de hoje é pior que saldo nenhum.
@@ -22,7 +22,7 @@ import { MoneyInput, PercentInput } from "./MoneyInput";
  * CÂMBIO DAS PROJEÇÕES é separado do câmbio vivo de `lib/fx/usd-brl.ts` de
  * propósito. O vivo converte o histórico e as dívidas; este fixa a hipótese de
  * doze meses. Sem a separação, uma projeção mudaria de resultado entre dois
- * carregamentos da mesma página porque o dólar mexeu — e a leitura seria "a
+ * carregamentos da mesma página porque o dólar mexeu, e a leitura seria "a
  * conta está instável", não "o dólar subiu".
  */
 
@@ -77,7 +77,7 @@ export function FinanceSettingsForm({ settings }: { settings: FinanceSettings })
       <div>
         <h2 className="text-[14px] font-semibold text-scriba-ink-strong">Parâmetros financeiros</h2>
         <p className="text-[12px] font-light text-scriba-ink-mute">
-          Valem para todo mundo que abrir o painel — não são preferência de navegador.
+          Valem para todo mundo que abrir o painel, não são preferência de navegador.
         </p>
       </div>
 

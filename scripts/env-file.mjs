@@ -2,13 +2,13 @@
  * Leitura dos arquivos de ambiente do projeto.
  *
  * Existem exatamente DOIS: `.env.dev` e `.env.prod`. Nenhum dos dois é
- * carregado automaticamente pelo Next — a escolha é sempre explícita, feita
+ * carregado automaticamente pelo Next, a escolha é sempre explícita, feita
  * por `scripts/with-env.mjs` a partir do script de npm que você rodou.
  *
  * Por que não usar os nomes que o Next reconhece sozinho (`.env.local`,
  * `.env.development.local`, …)? Porque o carregamento automático é o problema.
  * Com `.env.local` na pasta, um `next dev` distraído sobe apontando para o
- * Supabase e o Stripe de PRODUÇÃO sem dizer nada — e num app onde crédito é
+ * Supabase e o Stripe de PRODUÇÃO sem dizer nada, e num app onde crédito é
  * dinheiro, "sem dizer nada" é o pior modo de falhar. Com nomes que o Next
  * ignora, subir sem escolher ambiente simplesmente não funciona: o Zod de
  * `lib/env/server.ts` derruba o processo no import.
@@ -42,7 +42,7 @@ export const AUTOLOADED_BY_NEXT = [
 
 /**
  * Parser mínimo de `.env`: uma variável por linha, `#` comenta a linha inteira,
- * aspas nas pontas são removidas. Deliberadamente sem interpolação de `$VAR` —
+ * aspas nas pontas são removidas. Deliberadamente sem interpolação de `$VAR`,
  * um segredo não deve depender do valor de outro.
  */
 export function parseEnvFile(fullPath) {

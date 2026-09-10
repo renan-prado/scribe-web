@@ -39,7 +39,7 @@ type Props = {
  * inteira é a transcrição, com o mesmo painel de busca usado no dialog das
  * outras sessões.
  *
- * O modo continua não gerando resumo SOZINHO — a promessa do preço por minuto
+ * O modo continua não gerando resumo SOZINHO, a promessa do preço por minuto
  * é essa, e ela não mudou. O que a tela ganhou é a porta de saída:
  * `SummarizeTranscriptButton` roda o resumo sob demanda, uma vez, cobrando à
  * parte. A escolha do modo é feita ANTES da pregação; descobrir depois que o
@@ -47,7 +47,7 @@ type Props = {
  *
  * Com resumo, a sessão passa a ter as duas páginas: esta continua sendo a
  * leitura da transcrição, e `/summary` ganha o resumo, o estudo e os cards de
- * acompanhamento. O `/recordings` manda direto para lá — ver
+ * acompanhamento. O `/recordings` manda direto para lá, ver
  * `listSessionIdsWithSummary`.
  *
  * Título, autor e local seguem editáveis pelo PATCH de meta.

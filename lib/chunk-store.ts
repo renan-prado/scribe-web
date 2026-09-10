@@ -4,12 +4,12 @@
  * Rationale: when the tab backgrounds or dies before a chunk has been
  * uploaded to /api/transcribe, we lose the audio and leave a hole in the
  * transcript. Persisting every emitted chunk here lets the upload queue
- * retry it later — including after a full reload of the same session URL
+ * retry it later, including after a full reload of the same session URL
  * ("silent" orphan recovery, capped at 24h to avoid stale accumulation).
  *
  * All operations degrade gracefully when IndexedDB is unavailable (older
  * browsers, private mode on some engines, storage disabled). Callers should
- * check {@link isChunkStoreAvailable} once and skip persistence if false —
+ * check {@link isChunkStoreAvailable} once and skip persistence if false,
  * the in-memory pipeline still works, just without crash recovery.
  */
 
@@ -23,7 +23,7 @@ export type StoredChunk = {
   blob: Blob;
   mimeType: string;
   extension: string;
-  /** performance.now() at chunk start — used to reconstruct sermonAtMs on recovery. */
+  /** performance.now() at chunk start, used to reconstruct sermonAtMs on recovery. */
   startedAt: number;
   durationMs: number;
   /** Snapshot of the tail-hint sent to /api/transcribe. Preserved so orphan
@@ -108,7 +108,7 @@ export async function deleteChunk(sessionId: string, index: number): Promise<voi
 
 /**
  * Delete every persisted chunk for one session. Used when a live recording is
- * discarded — the session row is gone, so its pending audio must not linger in
+ * discarded, the session row is gone, so its pending audio must not linger in
  * IDB where orphan recovery would keep retrying uploads for a dead session.
  */
 export async function deleteChunksForSession(sessionId: string): Promise<void> {

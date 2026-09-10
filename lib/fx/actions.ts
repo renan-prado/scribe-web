@@ -12,7 +12,7 @@ const ONE_YEAR_SECONDS = 365 * 24 * 60 * 60;
  * Read back by `getUsdToBrl()` when the AwesomeAPI fetch fails.
  * Accepts pt-BR ("5,42") or en-US ("5.42") decimal notation.
  *
- * O `assertAdmin()` é a autorização REAL destas duas actions — o formulário
+ * O `assertAdmin()` é a autorização REAL destas duas actions, o formulário
  * só aparecer em /admin/usage não protege nada. Ver o cabeçalho da função.
  */
 export async function setManualUsdBrlRate(formData: FormData): Promise<void> {

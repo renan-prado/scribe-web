@@ -18,7 +18,7 @@ export const runtime = "nodejs";
 export const dynamic = "force-dynamic";
 // O pipeline do estudo são três chamadas a um modelo de raciocínio e leva
 // perto de quatro minutos. Sem este teto explícito a função morre no padrão
-// da plataforma — e morreria DEPOIS de debitar as moedas.
+// da plataforma, e morreria DEPOIS de debitar as moedas.
 export const maxDuration = 300;
 
 /**
@@ -26,7 +26,7 @@ export const maxDuration = 300;
  *
  * Re-runs the study prompt on an already-generated deepening, overwriting
  * the persisted payload. Same inputs as /api/deepening (transcript + feed
- * items + final_summary). Costs `reprocess_deepening` coins — charged before
+ * items + final_summary). Costs `reprocess_deepening` coins, charged before
  * the LLM call, following the same pattern as /api/final-summary/reprocess.
  */
 export async function POST(request: Request) {
@@ -36,7 +36,7 @@ export async function POST(request: Request) {
   const limited = enforceRateLimit(request, RATE_LIMITS["deepening-reprocess"], auth.user.id);
   if (limited) return limited;
 
-  // Gate de plano ANTES de qualquer trabalho — e, principalmente, antes de
+  // Gate de plano ANTES de qualquer trabalho, e, principalmente, antes de
   // cobrar. Esconder o botão é UX; isto é a proteção. Ver
   // lib/entitlements/features.ts.
   const gated = await requireFeature("study_generation");

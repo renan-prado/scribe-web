@@ -7,7 +7,7 @@ import "server-only";
  * daqui devolve `null` e a importação segue: sem título, o resumo gera um; sem
  * canal, `speaker_name` fica nulo, exatamente como numa gravação em que
  * ninguém digitou o nome do pregador. Nada nesta função pode virar motivo para
- * recusar um vídeo — se um dia virar, o modo passa a quebrar por causa de um
+ * recusar um vídeo, se um dia virar, o modo passa a quebrar por causa de um
  * campo decorativo.
  *
  * ## Por que este endpoint funciona onde o `timedtext` não funciona
@@ -15,13 +15,13 @@ import "server-only";
  * O oEmbed é serviço de metadado público, pensado para ser chamado por
  * servidor de terceiro (é o que monta o preview de um link colado em qualquer
  * lugar). Ele não passa pelo antifraude que fechou o `timedtext` para IP de
- * datacenter — medido daqui, 200 com título e canal. Não custa chave nem
+ * datacenter, medido daqui, 200 com título e canal. Não custa chave nem
  * crédito, e é por isso que a duração do vídeo NÃO vem dele: o oEmbed não
  * devolve duração, e a resposta para essa pergunta sai de graça do último
  * segmento da legenda (ver `supadata.ts`).
  *
  * Se um dia ele endurecer também, o sintoma correto é sessão importada com
- * título gerado pelo resumo — não erro na tela.
+ * título gerado pelo resumo, não erro na tela.
  */
 
 import { createLogger } from "@/lib/log";

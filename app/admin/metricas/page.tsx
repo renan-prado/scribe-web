@@ -40,7 +40,7 @@ export default async function AdminMetricsPage() {
   ]);
 
   // USD/moeda → centavos de BRL por 1.000 moedas. Sem câmbio disponível o
-  // passivo aparece zerado em vez de errado — a tela diz que falta a cotação.
+  // passivo aparece zerado em vez de errado, a tela diz que falta a cotação.
   const costPerThousandCents =
     rate && usage.overallCostPerCoinUsd
       ? Math.round(usage.overallCostPerCoinUsd * 1000 * rate.rate * 100)
@@ -102,7 +102,7 @@ export default async function AdminMetricsPage() {
     <div className="flex flex-col gap-6">
       <AdminPageHeader
         title="Métricas"
-        subtitle="Funil, ativação, receita e passivo de moedas — o caminho da visita ao dinheiro."
+        subtitle="Funil, ativação, receita e passivo de moedas, o caminho da visita ao dinheiro."
       />
 
       <section className="grid gap-3 sm:grid-cols-2 xl:grid-cols-4">
@@ -156,7 +156,7 @@ export default async function AdminMetricsPage() {
             {/* Quem zera o saldo é o sinal mais forte de intenção de compra que
                 temos: a pessoa consumiu tudo o que era grátis e quis mais. */}
             <p className="text-[11.5px] font-light leading-[1.5] text-scriba-ink-mute">
-              Quem zera o saldo é o sinal mais forte de intenção de compra — consumiu tudo o que era
+              Quem zera o saldo é o sinal mais forte de intenção de compra, consumiu tudo o que era
               grátis e quis continuar.
             </p>
           </ListCard>
@@ -210,7 +210,7 @@ export default async function AdminMetricsPage() {
           {/* Mediana e não média: um único usuário que assinou depois de um ano
               deslocaria a média e faria o número mentir sobre o caso típico. */}
           <p className="text-[11.5px] font-light leading-[1.5] text-scriba-ink-mute">
-            Mediana, não média — um caso extremo não deve mover o número típico.
+            Mediana, não média, um caso extremo não deve mover o número típico.
           </p>
         </ListCard>
       </section>

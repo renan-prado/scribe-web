@@ -23,14 +23,14 @@ import type { DeepeningListItem } from "@/lib/db/deepenings";
  * ## O que a busca alcança aqui
  *
  * Título e abertura do ESTUDO, mais o título, o autor e a data do SERMÃO que o
- * originou — os dois blocos que o cartão mostra. O corpo do estudo fica de
+ * originou, os dois blocos que o cartão mostra. O corpo do estudo fica de
  * fora: ele é um jsonb de quatro mil palavras por linha, e trazê-lo para a
  * lista custaria mais do que a busca vale.
  *
- * A transcrição do sermão, essa entra — pela mesma rota do `/recordings`
+ * A transcrição do sermão, essa entra, pela mesma rota do `/recordings`
  * (`/api/sessions/search`), porque estudo e sessão compartilham a chave. E é
  * uma busca que faz sentido justamente aqui: o estudo NÃO repete o sermão (o
- * pipeline foi desenhado para isso — ver `lib/AGENTS.md`), então procurar
+ * pipeline foi desenhado para isso, ver `lib/AGENTS.md`), então procurar
  * pelo que o pregador disse é a única forma de reencontrar um estudo pela
  * pregação que o gerou.
  *
@@ -144,7 +144,7 @@ export function StudiesBrowser({ studies, nowIso }: Props) {
           <p className="text-sm font-medium text-scriba-ink">Nenhum estudo com esse recorte.</p>
           <p className="max-w-sm text-[13px] font-light leading-relaxed text-scriba-ink-soft">
             A busca também procura na transcrição e nos versículos do sermão que originou cada
-            estudo — tente uma palavra que o pregador tenha dito, uma referência como “Jonas 1”, ou
+            estudo, tente uma palavra que o pregador tenha dito, uma referência como “Jonas 1”, ou
             solte um dos filtros.
           </p>
           <button
@@ -191,7 +191,7 @@ export function StudiesBrowser({ studies, nowIso }: Props) {
                     >
                       <div className="flex items-start gap-2.5">
                         {/* A MESMA pastilha do /recordings, no par do botão
-                            primário — não a versão verde da família do
+                            primário, não a versão verde da família do
                             estudo. O verde continua no resto da página e
                             no `.tone-study` da leitura; só esta pastilha
                             é comum às duas listas. */}

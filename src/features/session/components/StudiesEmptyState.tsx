@@ -23,7 +23,7 @@ type StudiesEmptyStateProps = {
 
 /**
  * Empty state da lista de estudos (/studies). Segue a mesma casca visual do
- * SessionsEmptyState — sticker + heading + steps — mas com passos que
+ * SessionsEmptyState, sticker + heading + steps, mas com passos que
  * refletem o fluxo de geração de estudo, não o de gravação.
  */
 export function StudiesEmptyState({

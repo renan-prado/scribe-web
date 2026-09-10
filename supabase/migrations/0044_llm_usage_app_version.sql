@@ -1,7 +1,7 @@
 -- Carimba em cada chamada de LLM a VERSÃO do app que a fez.
 --
 -- A tabela já responde "quanto custou" e "onde". O que ela nunca respondeu é
--- "isso mudou DEPOIS do quê?" — a pergunta que aparece toda vez que um prompt
+-- "isso mudou DEPOIS do quê?", a pergunta que aparece toda vez que um prompt
 -- é reescrito, um modelo é trocado ou uma etapa é cortada. Sem um marcador, a
 -- única régua disponível é a data, e data não sabe quando o deploy subiu.
 --
@@ -12,7 +12,7 @@
 -- bump, todo evento nasce com o mesmo rótulo e o filtro não separa nada.
 --
 -- NULO é honesto e permanente: são as chamadas anteriores a esta migração.
--- Não há backfill possível — ninguém sabe qual código as produziu, e chutar a
+-- Não há backfill possível, ninguém sabe qual código as produziu, e chutar a
 -- versão de hoje faria a comparação mentir exatamente onde ela é usada. O
 -- painel mostra essa fatia como "antes da medição", separada.
 --

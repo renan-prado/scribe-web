@@ -107,7 +107,7 @@ export default function TermsPage() {
             <p>
               Você mantém todos os direitos sobre o conteúdo que grava e transcreve ("Conteúdo do
               Usuário"). Ao usar o Scriba, você nos concede uma licença mundial, limitada, não
-              exclusiva, não transferível e revogável — exclusivamente para processar, armazenar,
+              exclusiva, não transferível e revogável, exclusivamente para processar, armazenar,
               transmitir e exibir o Conteúdo do Usuário com o único propósito de fornecer, manter e
               melhorar o Serviço.
             </p>
@@ -254,10 +254,10 @@ export default function TermsPage() {
               final de cada ciclo, salvo cancelamento prévio pelo próprio usuário.
             </p>
             <p className="mt-2">
-              Cancelamentos entram em vigor no fim do período já pago — não há reembolso
-              proporcional pelo período restante, exceto quando exigido pelo Código de Defesa do
-              Consumidor (Lei nº 8.078/1990), em especial pelo direito de arrependimento no prazo de
-              7 (sete) dias para contratações à distância.
+              Cancelamentos entram em vigor no fim do período já pago, não há reembolso proporcional
+              pelo período restante, exceto quando exigido pelo Código de Defesa do Consumidor (Lei
+              nº 8.078/1990), em especial pelo direito de arrependimento no prazo de 7 (sete) dias
+              para contratações à distância.
             </p>
             <p className="mt-2">
               Créditos não utilizados podem expirar conforme regras específicas do plano. Alterações
@@ -271,8 +271,8 @@ export default function TermsPage() {
             </h2>
             <p>
               Você pode encerrar sua conta a qualquer momento pelas configurações do perfil ou
-              solicitando por e-mail. Podemos suspender ou encerrar contas — total ou parcialmente,
-              com ou sem aviso prévio conforme a gravidade — em caso de: (i) violação destes Termos;
+              solicitando por e-mail. Podemos suspender ou encerrar contas, total ou parcialmente,
+              com ou sem aviso prévio conforme a gravidade, em caso de: (i) violação destes Termos;
               (ii) risco à segurança da plataforma ou de outros usuários; (iii) determinação legal
               ou judicial; (iv) inatividade prolongada; (v) inadimplência.
             </p>
@@ -287,8 +287,8 @@ export default function TermsPage() {
               13. Propriedade intelectual
             </h2>
             <p>
-              O Scriba — incluindo marca, logotipos, identidade visual, código-fonte, banco de
-              dados, prompts, arquitetura, textos, layouts e materiais originais — é de titularidade
+              O Scriba, incluindo marca, logotipos, identidade visual, código-fonte, banco de dados,
+              prompts, arquitetura, textos, layouts e materiais originais, é de titularidade
               exclusiva de seus criadores e está protegido pela Lei nº 9.610/1998 (Direitos
               Autorais), Lei nº 9.279/1996 (Propriedade Industrial) e demais normas aplicáveis.
               Estes Termos não transferem nenhum direito de propriedade intelectual ao usuário, além

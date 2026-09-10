@@ -21,7 +21,7 @@ import { useSessionStore } from "@/features/session/store";
  *   Warmup curto pro primeiro card, reduz ansiedade inicial.
  * - Caso geral → FEED_MIN_GAP_MS (longo, ~90s).
  *
- * `scheduleDrainIfIdle` sempre reagenda — quando um citedVerse fura fila
+ * `scheduleDrainIfIdle` sempre reagenda, quando um citedVerse fura fila
  * (`enqueueFeedItems` prepend), o timer pendente com o gap longo é
  * substituído por um com o gap curto.
  */
@@ -39,7 +39,7 @@ export function useDrainTimer() {
   const drainOne = useCallback(() => {
     drainTimerRef.current = null;
     const { drained, hasMore } = useSessionStore.getState().drainOne();
-    // Único ponto em que um card se torna visível ao vivo — vibra aqui pra
+    // Único ponto em que um card se torna visível ao vivo, vibra aqui pra
     // o haptic acompanhar o que o ouvinte vê, não a chegada da resposta da API.
     if (drained) vibrateNewCard();
     if (drained && hasMore) {

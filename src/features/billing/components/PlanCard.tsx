@@ -16,7 +16,7 @@ import { cn } from "@/lib/utils";
 
 /**
  * Card de plano do /profile: mostra em que plano a pessoa está, quando renova
- * (ou quando expira, se ela cancelou) e dá os dois caminhos possíveis —
+ * (ou quando expira, se ela cancelou) e dá os dois caminhos possíveis,
  * assinar/trocar (diálogo de compra) ou administrar no portal do Stripe.
  *
  * Todo o estado vem de GET /api/billing/summary, que por sua vez lê o espelho
@@ -128,7 +128,7 @@ export function PlanCard() {
           ) : (
             <p className="text-[12px] font-light leading-relaxed text-scriba-ink-soft">
               {plan === "free"
-                ? "Assine para receber créditos todo mês — eles acumulam de um mês para o outro e não expiram."
+                ? "Assine para receber créditos todo mês, eles acumulam de um mês para o outro e não expiram."
                 : "Sua assinatura não está ativa no momento. O saldo que você já tem continua disponível."}
             </p>
           )}

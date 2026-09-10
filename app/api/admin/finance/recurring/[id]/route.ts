@@ -48,7 +48,7 @@ export async function PATCH(request: Request, { params }: { params: Promise<{ id
 /**
  * Apagar um contrato NÃO apaga os lançamentos que ele gerou: a FK é
  * `on delete set null`, então as faturas já lançadas continuam contando e só
- * perdem o vínculo. É o comportamento certo — cancelar a Vercel não desfaz os
+ * perdem o vínculo. É o comportamento certo, cancelar a Vercel não desfaz os
  * dez meses que já foram pagos. Para tirar o custo do futuro sem perder o
  * histórico, o caminho é marcar `status = 'cancelled'`, e é o que a tela
  * oferece primeiro.

@@ -84,13 +84,13 @@ export const VOCABULARIO_GUIA = [...LIVROS_BIBLICOS, ...TERMOS_TEOLOGICOS];
  * A lista estava lá para o modelo preferir "Filemom" a "Filemão". O que ela
  * fazia, medido: PIORAVA a transcrição. Sobre um sermão real com transcrição
  * de referência, o mesmo áudio nos mesmos chunks fecha 12% de WER com esta
- * frase curta e 17% com a lista inteira — o modelo gasta atenção com 66 nomes
+ * frase curta e 17% com a lista inteira, o modelo gasta atenção com 66 nomes
  * que ninguém falou, e em áudio incerto ainda os ecoa como se fossem fala.
  *
  * O `prompt` do endpoint de transcrição é tratado como TRANSCRIÇÃO PRÉVIA:
  * quanto mais ele se parece com o que acabou de ser dito, mais ajuda. É por
  * isso que quem carrega o peso aqui é o `prevText` que a rota concatena
- * depois desta frase — ele é contexto de verdade, e sozinho já entrega os 12%.
+ * depois desta frase, ele é contexto de verdade, e sozinho já entrega os 12%.
  * Esta frase só ancora o domínio e o registro (fala espontânea de púlpito).
  *
  * Se um dia voltar a ideia de guiar vocabulário, o caminho medido NÃO é
@@ -115,7 +115,7 @@ const VOCAB_ECHO_PATTERN = new RegExp(
  * Rede de segurança contra o eco de vocabulário do Whisper. Detecta runs de
  * 5+ tokens consecutivos separados por vírgula, todos pertencentes ao
  * VOCABULARIO_GUIA, e os remove. Em fala real é implausível recitar 5+ livros
- * bíblicos ou termos teológicos em sequência limpa por vírgula — o padrão é
+ * bíblicos ou termos teológicos em sequência limpa por vírgula, o padrão é
  * assinatura de alucinação, não de conteúdo. Preserva texto real ao redor e
  * limpa vírgulas/espaços órfãos resultantes.
  */

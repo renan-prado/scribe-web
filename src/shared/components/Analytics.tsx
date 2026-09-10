@@ -3,7 +3,7 @@ import { IS_PRODUCTION_DEPLOY } from "@/lib/deploy";
 import { clientEnv } from "@/lib/env/client";
 
 /**
- * Google Analytics 4 — só no deploy de produção.
+ * Google Analytics 4, só no deploy de produção.
  *
  * O snippet que o Google entrega (`<script async src=".../gtag/js">` mais um
  * inline com o `gtag('config', ...)`) funciona, mas entra no `<head>`
@@ -24,7 +24,7 @@ import { clientEnv } from "@/lib/env/client";
  *
  * O outro lado da moeda: não dá para conferir a medição fora de produção. Para
  * validar uma tag nova, use o DebugView do GA4 contra `scriba.cc` depois do
- * deploy — ou troque esta condição temporariamente, sem commitar.
+ * deploy, ou troque esta condição temporariamente, sem commitar.
  *
  * **Não há código nosso de pageview.** O App Router navega por
  * `history.pushState`, e a medição aprimorada do GA4 ("alterações de página
@@ -33,7 +33,7 @@ import { clientEnv } from "@/lib/env/client";
  * opção na propriedade antes de escrever um listener aqui.
  *
  * Para eventos personalizados, use `sendGAEvent` de `@next/third-parties/google`
- * dentro de um componente client — não chame `window.gtag` na mão.
+ * dentro de um componente client, não chame `window.gtag` na mão.
  */
 export function Analytics() {
   const gaId = clientEnv.NEXT_PUBLIC_GA_ID;

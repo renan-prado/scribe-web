@@ -9,7 +9,7 @@ const log = createLogger("fx/db");
  *
  * As duas funções são fire-and-forget no espírito de `db/usage.ts`: nenhuma
  * lança, e falha de banco vira `warn` + `null`. O câmbio é infraestrutura de
- * LEITURA do painel — uma indisponibilidade dele não pode virar 500 numa tela
+ * LEITURA do painel, uma indisponibilidade dele não pode virar 500 numa tela
  * que, no pior caso, deve mostrar "sem câmbio" e seguir viva.
  *
  * Service-role porque a tabela não tem policy nenhuma (ver o cabeçalho da
@@ -24,7 +24,7 @@ export type StoredUsdBrlRate = {
   fetchedAt: string;
 };
 
-/** `YYYY-MM-DD` do instante dado, em UTC — a chave da tabela. */
+/** `YYYY-MM-DD` do instante dado, em UTC, a chave da tabela. */
 function utcDay(at: Date): string {
   return at.toISOString().slice(0, 10);
 }
@@ -53,7 +53,7 @@ export async function saveUsdBrlRate(rate: number, source: string): Promise<void
 
 /**
  * A última cotação guardada, de qualquer dia. É o plano B do painel quando a
- * cotação viva não vem — o câmbio de ontem erra na segunda casa; a ausência
+ * cotação viva não vem, o câmbio de ontem erra na segunda casa; a ausência
  * dele apaga a coluna inteira.
  */
 export async function readLatestUsdBrlRate(): Promise<StoredUsdBrlRate | null> {

@@ -4,12 +4,12 @@ import { type SanitizedTranscription, sanitizeTranscription } from "@/lib/transc
  * Avaliação de qualidade de um chunk transcrito. Combina duas fontes:
  *
  *  1. Assinaturas de alucinação detectadas pela sanitização determinística
- *     (eco de prompt, eco de vocabulário, loop de repetição) — pegam o caso
+ *     (eco de prompt, eco de vocabulário, loop de repetição), pegam o caso
  *     em que o modelo alucina texto FLUENTE com confiança alta.
- *  2. Confiança do próprio modelo (média de logprobs por token) — pega o
+ *  2. Confiança do próprio modelo (média de logprobs por token), pega o
  *     caso oposto: decodificação incerta/embolada de áudio ruim, que sai
  *     sem assinatura conhecida mas com probabilidade baixa.
- *  3. Densidade de texto por segundo de áudio — pega o caso que escapa dos
+ *  3. Densidade de texto por segundo de áudio: pega o caso que escapa dos
  *     dois acima: áudio dominado por ruído/música em que o modelo só decodifica
  *     fragmentos esparsos. Os fragmentos saem CONFIANTES (poucos tokens, logprob
  *     ok) e sem assinatura, mas um chunk não-silencioso que rende quase nenhum
@@ -18,7 +18,7 @@ import { type SanitizedTranscription, sanitizeTranscription } from "@/lib/transc
  * `poor` = qualquer uma das fontes acusou. É o sinal que exclui o chunk do
  * contexto (prevText) e dos pipelines no cliente, e que, repetido, acende o
  * aviso de áudio ruim na tela. Ele NÃO troca de modelo: não existe modelo
- * melhor que o padrão para escalar — ver o comentário em
+ * melhor que o padrão para escalar, ver o comentário em
  * `app/api/transcribe/route.ts`.
  */
 
@@ -40,7 +40,7 @@ import { type SanitizedTranscription, sanitizeTranscription } from "@/lib/transc
  *
  * O `gpt-transcribe` é MUITO mais confiante que o mini: em todo áudio ainda
  * utilizável ele fica entre -0.045 e -0.073, e a partir de -0.10 a
- * transcrição já está errando um quarto das palavras. Daí o -0.10 — ele marca
+ * transcrição já está errando um quarto das palavras. Daí o -0.10, ele marca
  * a linha em que o áudio começa a custar conteúdo, não a em que o modelo
  * desiste.
  *
@@ -56,14 +56,14 @@ export const LOW_CONFIDENCE_AVG_LOGPROB = -0.1;
 /**
  * Piso de densidade: chars de texto limpo por segundo de áudio. Abaixo de 3, o
  * modelo devolveu fragmentos de um áudio que o gate de silêncio do cliente
- * considerou "com som" — ruído ou música, não fala inteligível.
+ * considerou "com som", ruído ou música, não fala inteligível.
  *
  * O comentário anterior dizia "fala contínua rende ~12-16 chars/s". Medido num
  * sermão real, a pregação rende **8**: o púlpito tem pausa retórica, e o ritmo
  * de quem prega não é o de quem conversa. O piso continua em 3 porque ele é o
  * detector de CATÁSTROFE (áudio inutilizável mede 2,4-3,4), e subi-lo para
  * perto de 8 transformaria uma pausa longa em alarme. Quem pega a faixa do
- * meio — áudio ruim mas ainda com fala — é o logprob acima.
+ * meio, áudio ruim mas ainda com fala, é o logprob acima.
  */
 export const LOW_DENSITY_CHARS_PER_SEC = 3;
 

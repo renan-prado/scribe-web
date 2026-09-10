@@ -14,7 +14,7 @@ import { ReferrerAvatar } from "@/shared/components/ReferrerAvatar";
  * `app/page.tsx` é ESTÁTICA por invariante declarada (ver "Landing page" em
  * `app/AGENTS.md`): nada nela pode ler cookie, sessão ou header. Uma leitura
  * ali marca a rota como dinâmica e a resposta passa a sair com `no-store` e
- * `X-Vercel-Cache: MISS` — HTML remontado na origem a cada visita anônima,
+ * `X-Vercel-Cache: MISS`, HTML remontado na origem a cada visita anônima,
  * numa página cujo conteúdo é idêntico para todo mundo, e ainda sem bfcache.
  * Pagar isso na única página que converte, para personalizar uma pílula de
  * 30px, seria péssimo negócio.
@@ -35,7 +35,7 @@ import { ReferrerAvatar } from "@/shared/components/ReferrerAvatar";
  *
  * A troca de estado inicial é feita por CSS (`.lp-eyebrow-idle` /
  * `.lp-eyebrow-pending` em `app/globals.css`), e não por estado do React,
- * justamente porque o React só age depois do paint — que é o problema que
+ * justamente porque o React só age depois do paint, que é o problema que
  * estamos resolvendo. O HTML servido é o mesmo para todo mundo, então a página
  * continua saindo da CDN.
  *
@@ -47,10 +47,10 @@ import { ReferrerAvatar } from "@/shared/components/ReferrerAvatar";
  * nenhuma. Só quem realmente veio de um link pergunta ao servidor QUEM indicou.
  *
  * A pista não carrega nome nem foto de propósito. Se carregasse, teríamos dois
- * lugares dizendo quem é o padrinho — e o dia em que eles divergissem, a
+ * lugares dizendo quem é o padrinho, e o dia em que eles divergissem, a
  * página anunciaria uma pessoa e o cadastro creditaria outra. Quem responde
  * continua sendo o cookie `httpOnly`, lido no servidor. Quem RECRIA a pista
- * quando ela falta é o `proxy.ts` — ver `healReferralHint`.
+ * quando ela falta é o `proxy.ts`, ver `healReferralHint`.
  */
 
 type Referral = {
@@ -68,7 +68,7 @@ const DEFAULT_TAGLINE = "Ouça, relembre e coloque em prática.";
  * A rota é local e responde em milissegundos, mas "responde rápido" não é
  * garantia: rede de igreja, aba em segundo plano, um deploy no meio do
  * caminho. Um esqueleto eterno no elemento mais visível da página é pior que
- * não personalizar nada — e é o único desfecho que não se resolve sozinho.
+ * não personalizar nada, e é o único desfecho que não se resolve sozinho.
  */
 const SETTLE_TIMEOUT_MS = 4000;
 
@@ -84,7 +84,7 @@ function hasReferralHint(): boolean {
 
 /**
  * Limpeza do atributo que o script escreveu. **Só depois que o React assumiu**
- * — ver o efeito de `settled` lá embaixo.
+ * ver o efeito de `settled` lá embaixo.
  */
 function clearHintAttribute(): void {
   document.documentElement.removeAttribute(HINT_ATTR);
@@ -108,14 +108,14 @@ export function HeroEyebrow() {
 
     // NÃO mexe no atributo aqui. Ele é o que esconde a frase padrão, e o
     // `setState` abaixo é ASSÍNCRONO: entre um `removeAttribute` síncrono e o
-    // commit do React, o DOM ainda é o par frase+esqueleto — só que sem o
+    // commit do React, o DOM ainda é o par frase+esqueleto, só que sem o
     // atributo que escondia a frase. O navegador pinta essa janela, e o
     // resultado é o pisca que este componente inteiro existe para evitar:
     // esqueleto → "Ouça, relembre…" → "Indicado por Fulano". Já aconteceu.
     //
     // Depois do commit o atributo não governa mais nada: o estado resolvido
     // não renderiza nenhuma das duas classes `.lp-eyebrow-*`. A limpeza vira,
-    // então, higiene — e mora no efeito de `settled`.
+    // então, higiene, e mora no efeito de `settled`.
     const settle = (found: Referral | null) => {
       if (done) return;
       done = true;
@@ -137,7 +137,7 @@ export function HeroEyebrow() {
         // **`AbortError` NÃO é resposta.** Ele diz "desisti da pergunta", e
         // tratá-lo como "não há indicação" foi um bug de verdade: em
         // desenvolvimento o StrictMode monta o efeito, executa a limpeza (que
-        // aborta) e monta de novo — então a primeira tentativa caía aqui em
+        // aborta) e monta de novo, então a primeira tentativa caía aqui em
         // ~300ms, resolvia para a frase padrão, e a segunda trazia o selo
         // depois. O resultado era exatamente o pisca triplo que este
         // componente existe para evitar: esqueleto → "Ouça, relembre…" →
@@ -146,14 +146,14 @@ export function HeroEyebrow() {
         // está saindo.
         //
         // Quem aborta POR DECISÃO nossa (o timeout) chama `settle(null)`
-        // explicitamente logo depois — este ramo não precisa fazê-lo por ele.
+        // explicitamente logo depois, este ramo não precisa fazê-lo por ele.
         // Pelo NOME, e não por `instanceof DOMException`: o navegador rejeita
         // com DOMException, mas polyfills e o runtime de teste rejeitam com um
         // Error comum de mesmo nome, e um `instanceof` que falha aqui traz o
         // pisca de volta em silêncio.
         if ((err as { name?: string } | null)?.name === "AbortError") return;
         // Rede ruim, rota fora do ar, JSON quebrado: aí sim, frase padrão. O
-        // selo é um adorno de conversão — nunca uma razão para a landing page
+        // selo é um adorno de conversão, nunca uma razão para a landing page
         // parecer quebrada.
         settle(null);
       })
@@ -167,7 +167,7 @@ export function HeroEyebrow() {
 
   // A limpeza do atributo, depois do commit que tirou as duas classes do DOM.
   // Efeito separado de propósito: é a dependência em `settled` que garante a
-  // ORDEM — remover antes é o bug descrito acima.
+  // ORDEM, remover antes é o bug descrito acima.
   useEffect(() => {
     if (settled) clearHintAttribute();
   }, [settled]);
@@ -184,14 +184,14 @@ export function HeroEyebrow() {
           </>
         ) : (
           // Resolvido e sem indicação: a frase volta a ser a única coisa aqui,
-          // sem classe nenhuma governando — o atributo do `<html>` já foi
+          // sem classe nenhuma governando, o atributo do `<html>` já foi
           // removido e o CSS não tem mais o que decidir.
           <Tagline />
         )
       ) : (
         // Antes da resposta os DOIS estados convivem no HTML e o CSS escolhe,
         // porque a escolha precisa acontecer antes do primeiro paint. As
-        // classes definem o próprio `display` em `app/globals.css` — nada de
+        // classes definem o próprio `display` em `app/globals.css`, nada de
         // utilitário de display aqui: utilitário mora numa @layer posterior e
         // venceria a regra, que é a armadilha anotada no `.lp-cta-soft`.
         <>
@@ -208,7 +208,7 @@ export function HeroEyebrow() {
   );
 }
 
-/** A frase de sempre — o estado padrão da pílula, e o destino de todo erro. */
+/** A frase de sempre, o estado padrão da pílula, e o destino de todo erro. */
 function Tagline() {
   return (
     <>

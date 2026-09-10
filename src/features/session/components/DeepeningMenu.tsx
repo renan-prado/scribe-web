@@ -19,7 +19,7 @@ import { cn } from "@/lib/utils";
 type DeepeningMenuProps = {
   sessionId: string;
   /**
-   * Reprocessar e gerar de novo — mesma feature, mesmo gate
+   * Reprocessar e gerar de novo, mesma feature, mesmo gate
    * (`study_generation`). Quando o plano nao libera, o menu inteiro some: ele
    * nao tem outro item, e um menu com uma opcao morta e pior que menu nenhum.
    * A protecao real esta em POST /api/deepening/reprocess.
@@ -31,7 +31,7 @@ const REPROCESS_COST = COIN_COSTS.reprocessDeepening;
 
 /**
  * Menu compacto no cabeçalho da página de estudo. Hoje só oferece
- * "Reprocessar estudo" — refazer a chamada de LLM sobreescrevendo o payload
+ * "Reprocessar estudo", refazer a chamada de LLM sobreescrevendo o payload
  * salvo, cobrando `reprocess_deepening` moedas.
  */
 export function DeepeningMenu({ sessionId, canReprocess }: DeepeningMenuProps) {
@@ -92,7 +92,7 @@ export function DeepeningMenu({ sessionId, canReprocess }: DeepeningMenuProps) {
             className="gap-2"
             aria-label={
               insufficient
-                ? `Reprocessar (moedas insuficientes — custa ${REPROCESS_COST})`
+                ? `Reprocessar (moedas insuficientes, custa ${REPROCESS_COST})`
                 : `Reprocessar (custa ${REPROCESS_COST} moedas)`
             }
           >

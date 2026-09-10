@@ -38,7 +38,7 @@ export async function POST(request: Request) {
   const limited = enforceRateLimit(request, RATE_LIMITS["sessions-write"], auth.user.id);
   if (limited) return limited;
 
-  // Empty body is intentional — user may not have typed a speaker/location
+  // Empty body is intentional, user may not have typed a speaker/location
   // yet. Try to parse; on any body-shape error fall back to defaults.
   const parsed = await parseJsonBody(request, CreateSessionSchema.optional());
   if (!parsed.ok) return parsed.response;
@@ -51,7 +51,7 @@ export async function POST(request: Request) {
   // O modo youtube não existe sem um vídeo: a linha nasceria com `source_url`
   // nulo e a página de importação não teria o que importar. Recusar aqui é o
   // que impede uma sessão órfã de aparecer em "Gravações em aberto" para
-  // sempre — ela nunca poderia ser encerrada.
+  // sempre, ela nunca poderia ser encerrada.
   //
   // A URL é NORMALIZADA para a forma canônica antes de ser gravada, e não
   // guardada como veio: `youtu.be/x?si=…`, `m.youtube.com/watch?v=x&list=…` e

@@ -9,7 +9,7 @@
  * Com dois ambientes, esse estado invisível passa a ser um risco: você roda
  * `supabase db push`, ele acha que ainda está no dev, e estava no prod. Aqui o
  * vínculo é derivado do arquivo de ambiente a cada execução e reajustado antes
- * do push, então o que manda é o script de npm que você digitou — não um
+ * do push, então o que manda é o script de npm que você digitou, não um
  * `supabase link` que alguém rodou semana passada.
  *
  * Para produção o `--yes` é obrigatório: migração em banco com dados de gente
@@ -41,7 +41,7 @@ const isProd = target === "prod";
 const env = readEnvTarget(target);
 if (!env) die([`não achei ${ENV_TARGETS[target]}. Veja docs/ambientes.md.`]);
 
-// O ref é o subdomínio da URL do projeto — não precisa ser uma variável
+// O ref é o subdomínio da URL do projeto, não precisa ser uma variável
 // separada, e duas fontes para o mesmo fato acabam divergindo.
 const url = env.NEXT_PUBLIC_SUPABASE_URL ?? "";
 const ref = env.SUPABASE_PROJECT_REF ?? url.match(/^https:\/\/([a-z0-9]+)\.supabase\.co/)?.[1];
@@ -64,8 +64,8 @@ if (isProd && !confirmed) {
 
 console.log(
   isProd
-    ? `\n${RED}▸ PRODUÇÃO — migrando ${ref}${RESET}\n`
-    : `\n${GREEN}▸ dev — migrando ${ref}${RESET}\n`
+    ? `\n${RED}▸ PRODUÇÃO: migrando ${ref}${RESET}\n`
+    : `\n${GREEN}▸ dev: migrando ${ref}${RESET}\n`
 );
 
 /* ── vínculo ──────────────────────────────────────────────────────── */
@@ -74,7 +74,7 @@ const refFile = path.resolve(process.cwd(), "supabase/.temp/project-ref");
 const linkedRef = fs.existsSync(refFile) ? fs.readFileSync(refFile, "utf8").trim() : null;
 
 // `supabase link` pede a senha do banco interativamente; o CLI aceita
-// SUPABASE_DB_PASSWORD para pular o prompt. Deixamos opcional — sem ela, o
+// SUPABASE_DB_PASSWORD para pular o prompt. Deixamos opcional, sem ela, o
 // prompt aparece e você digita, o que é perfeitamente razoável.
 const childEnv = { ...process.env };
 if (env.SUPABASE_DB_PASSWORD) childEnv.SUPABASE_DB_PASSWORD = env.SUPABASE_DB_PASSWORD;
@@ -95,7 +95,7 @@ if (linkedRef !== ref) {
       "  Instale o CLI: https://supabase.com/docs/guides/cli",
     ]);
   }
-  if (linked.status !== 0) die(["`supabase link` falhou — veja a saída acima."]);
+  if (linked.status !== 0) die(["`supabase link` falhou, veja a saída acima."]);
 }
 
 /* ── push ─────────────────────────────────────────────────────────── */

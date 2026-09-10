@@ -9,7 +9,7 @@ const buttonVariants = cva(
     variants: {
       variant: {
         // O botão primário do produto. É o MESMO par de tokens da landing e do
-        // "Gerar estudo" — ver `src/shared/AGENTS.md` §"O botão primário".
+        // "Gerar estudo", ver `src/shared/AGENTS.md` §"O botão primário".
         // Era `bg-primary`, que é o preto neutro que veio do shadcn: como esta
         // é a variante PADRÃO, todo `<Button>` sem `variant` (o admin inteiro,
         // o /404) desenhava um botão preto que não pertence à paleta. O hover

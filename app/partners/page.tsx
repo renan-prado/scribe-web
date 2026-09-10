@@ -25,7 +25,7 @@ const DATE_FMT = new Intl.DateTimeFormat("pt-BR", {
 /**
  * O painel que o parceiro vê.
  *
- * Só números. Nenhuma linha aqui identifica uma pessoa que se cadastrou — nem
+ * Só números. Nenhuma linha aqui identifica uma pessoa que se cadastrou, nem
  * nome, nem e-mail, nem data. Ele vê "12 cadastros", nunca "estes 12".
  *
  * A nota sobre defasagem no rodapé do funil não é enfeite: uma visita de hoje
@@ -34,7 +34,7 @@ const DATE_FMT = new Intl.DateTimeFormat("pt-BR", {
  *
  * O DINHEIRO FICA FORA DAS ABAS. É a pergunta que traz o parceiro aqui, e as
  * abas existem para organizar o resto (como divulgar, o histórico, o que já
- * caiu na conta) — não para esconder a resposta atrás de um clique.
+ * caiu na conta), não para esconder a resposta atrás de um clique.
  */
 export default async function PartnerDashboardPage() {
   // O layout já garantiu que existe parceiro; esta chamada reaproveita a
@@ -126,7 +126,7 @@ export default async function PartnerDashboardPage() {
             </Callout>
 
             {/* As moedas por cadastro. Ficam ao lado da mesada porque são a
-                mesma promessa — "você não fica na mão" —, e separadas dela
+                mesma promessa, "você não fica na mão", e separadas dela
                 porque a mesada é cortesia fixa e esta é resultado do trabalho
                 dele. Some quando o parceiro não tem essa condição no acordo. */}
             {partner.signupRewardCoins > 0 ? (
@@ -138,7 +138,7 @@ export default async function PartnerDashboardPage() {
                   </h2>
                   <p className="text-[12px] font-light leading-[1.5] text-scriba-ink-soft">
                     São {INT.format(partner.signupRewardCoins)} moedas para você a cada pessoa que
-                    cria a conta pelo seu link — antes e independentemente de ela assinar. Caem no
+                    cria a conta pelo seu link, antes e independentemente de ela assinar. Caem no
                     seu saldo quando você abre o app.
                   </p>
                 </div>
@@ -154,7 +154,7 @@ export default async function PartnerDashboardPage() {
                   </h2>
                   <p className="text-[12px] font-light leading-[1.5] text-scriba-cream-body">
                     Elas caem sozinhas na sua conta no começo de cada mês. São para você usar o
-                    Scriba de verdade — é bem mais fácil falar de algo que se usa.
+                    Scriba de verdade, é bem mais fácil falar de algo que se usa.
                   </p>
                 </div>
               </section>
@@ -225,7 +225,7 @@ export default async function PartnerDashboardPage() {
             )}
             {partner.pixKey ? null : (
               <p className="rounded-xl bg-scriba-cream px-3 py-2 text-[12px] leading-[1.5] text-scriba-cream-body">
-                Falta cadastrar sua chave PIX. Sem ela não conseguimos pagar — fale com a equipe do
+                Falta cadastrar sua chave PIX. Sem ela não conseguimos pagar, fale com a equipe do
                 Scriba.
               </p>
             )}
@@ -315,7 +315,7 @@ function Panel({ title, children }: { title: string; children: React.ReactNode }
  * Ressalva de leitura, destacada do conteúdo que ela ressalva.
  *
  * Solta no fim do cartão do funil, a nota sobre defasagem virava rodapé e não
- * era lida — justamente por quem mais precisa dela: o parceiro que publicou
+ * era lida, justamente por quem mais precisa dela: o parceiro que publicou
  * ontem e abre o painel esperando ver número. Em caixa própria, com a barra e
  * o ícone, ela para de parecer letra miúda.
  */

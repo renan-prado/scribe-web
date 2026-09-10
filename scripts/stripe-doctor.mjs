@@ -5,7 +5,7 @@
  *   npm run stripe:doctor
  *
  * Não cobra nada e não altera nada de valor. A única escrita é, em modo de
- * TESTE, criar uma Checkout Session de sondagem e expirá-la em seguida — é o
+ * TESTE, criar uma Checkout Session de sondagem e expirá-la em seguida, é o
  * único jeito de responder com CERTEZA "o checkout funciona?", em vez de
  * deduzir a resposta a partir de flags da conta. Em modo live essa etapa é
  * pulada.
@@ -68,7 +68,7 @@ const appUrlIsLocal = appUrl.startsWith("http://localhost") || appUrl.startsWith
 if (isLiveKey && appUrlIsLocal) {
   problems.push(
     [
-      "Chave LIVE com APP_URL local. Em desenvolvimento use a chave de TESTE (sk_test_...) —",
+      "Chave LIVE com APP_URL local. Em desenvolvimento use a chave de TESTE (sk_test_...),",
       "  além do risco de cobrar de verdade, `stripe listen` só encaminha eventos de TESTE,",
       "  então o webhook local nunca receberia a confirmação e o crédito não entraria.",
     ].join("\n")
@@ -105,7 +105,7 @@ if (due.length > 0) console.log(`pendências:      ${due.join(", ")}`);
 if (disabled) console.log(`bloqueio:        ${disabled}`);
 
 // `charges_enabled` é um fato da conta REAL e vem `false` nos dois modos
-// enquanto a ativação não sai. Só bloqueia dinheiro de verdade — em modo de
+// enquanto a ativação não sai. Só bloqueia dinheiro de verdade, em modo de
 // teste é irrelevante. Por isso o mesmo fato vira problema com chave live e
 // apenas observação com chave de teste.
 if (!account.charges_enabled) {
@@ -122,7 +122,7 @@ if (!account.charges_enabled) {
   } else {
     bucket.push(
       [
-        "A conta ainda não cobra de verdade, e não há nada pendente da sua parte —",
+        "A conta ainda não cobra de verdade, e não há nada pendente da sua parte,",
         "  é a análise do Stripe, que costuma levar de horas a alguns dias.",
         "  Não afeta o modo de teste.",
       ].join("\n")
@@ -182,7 +182,7 @@ for (const { key, kind, label } of EXPECTED) {
       problems.push(
         [
           `${key} é um preço de ${mode}, mas a chave é de ${isLiveKey ? "LIVE" : "TESTE"}.`,
-          "  Produtos e preços NÃO são compartilhados entre os modos — recrie no modo certo.",
+          "  Produtos e preços NÃO são compartilhados entre os modos, recrie no modo certo.",
         ].join("\n")
       );
     }
@@ -209,7 +209,7 @@ for (const { key, kind, label } of EXPECTED) {
 console.log("\n── Webhook ──────────────────────────────────────────");
 // Existem TRÊS segredos de webhook possíveis e nenhum prefixo os distingue: o
 // do `stripe listen`, o de um endpoint de teste no dashboard e o do endpoint
-// live. Usar o errado dá a falha mais silenciosa do fluxo inteiro — o Stripe
+// live. Usar o errado dá a falha mais silenciosa do fluxo inteiro, o Stripe
 // cobra, a tela mostra sucesso, e o webhook devolve 400 sem ninguém olhar.
 // O Stripe não expõe o segredo pela API, então não dá para conferir daqui;
 // dá, porém, para dizer QUAL deles deveria estar em uso, que é onde o erro mora.
@@ -236,7 +236,7 @@ try {
     if (isLiveKey) {
       problems.push(
         [
-          "Nenhum endpoint de webhook cadastrado em modo LIVE — em produção nada vira crédito.",
+          "Nenhum endpoint de webhook cadastrado em modo LIVE, em produção nada vira crédito.",
           "  Crie em https://dashboard.stripe.com/webhooks apontando para",
           `  ${expectedEndpointUrl ?? `https://SEU-DOMINIO${WEBHOOK_PATH}`}`,
           "  e use o signing secret DELE em STRIPE_WEBHOOK_SECRET.",
@@ -248,7 +248,7 @@ try {
           "Sem endpoint cadastrado em teste, STRIPE_WEBHOOK_SECRET tem de ser o que o",
           "  `stripe listen` imprime ao subir ('Your webhook signing secret is whsec_...').",
           "  Se for outro (o do endpoint live, por exemplo), o webhook responde 400 e a",
-          "  tabela stripe_events fica VAZIA mesmo com o pagamento aprovado — sintoma:",
+          "  tabela stripe_events fica VAZIA mesmo com o pagamento aprovado, sintoma:",
           "  compra concluída no Stripe, saldo do usuário intacto.",
         ].join("\n")
       );
@@ -281,7 +281,7 @@ try {
 if (!env.STRIPE_WEBHOOK_SECRET) {
   problems.push(
     [
-      "STRIPE_WEBHOOK_SECRET ausente — sem ele nenhum pagamento vira crédito.",
+      "STRIPE_WEBHOOK_SECRET ausente, sem ele nenhum pagamento vira crédito.",
       "  Local: `stripe listen --forward-to localhost:3000/api/stripe/webhook` e use o whsec_ impresso.",
       "  Produção: docs/stripe-setup.md, passo 5.",
     ].join("\n")
@@ -292,7 +292,7 @@ if (!env.STRIPE_WEBHOOK_SECRET) {
   if (isLiveKey) {
     notes.push(
       [
-        "Com chave LIVE, o whsec_ tem de ser o do endpoint criado no dashboard em modo live —",
+        "Com chave LIVE, o whsec_ tem de ser o do endpoint criado no dashboard em modo live,",
         "  o do `stripe listen` só vale para eventos de TESTE.",
       ].join("\n")
     );
@@ -303,11 +303,11 @@ console.log(`app url: ${appUrl || "(padrão do código)"}`);
 
 console.log("\n── Checkout de verdade ──────────────────────────────");
 if (isLiveKey) {
-  console.log("pulado (chave live — não abrimos sessão de cobrança real só para sondar)");
+  console.log("pulado (chave live, não abrimos sessão de cobrança real só para sondar)");
 } else if (!env.STRIPE_PRICE_TOPUP_500) {
   console.log("pulado (sem STRIPE_PRICE_TOPUP_500)");
 } else {
-  // A prova definitiva. Se esta sessão nasce, o checkout funciona — vale mais
+  // A prova definitiva. Se esta sessão nasce, o checkout funciona, vale mais
   // que qualquer dedução a partir das flags acima.
   try {
     const probe = await stripe.checkout.sessions.create({
@@ -316,7 +316,7 @@ if (isLiveKey) {
       success_url: "https://example.com/ok",
       cancel_url: "https://example.com/cancel",
     });
-    console.log(`✓ sessão criada — métodos: ${(probe.payment_method_types ?? []).join(", ")}`);
+    console.log(`✓ sessão criada, métodos: ${(probe.payment_method_types ?? []).join(", ")}`);
     await stripe.checkout.sessions.expire(probe.id).catch(() => {});
     console.log("  (sondagem expirada, nada ficou pendurado)");
   } catch (err) {
@@ -324,7 +324,7 @@ if (isLiveKey) {
     problems.push(
       [
         `O Stripe recusou criar uma sessão de checkout: ${first}`,
-        "  Esta é a falha real — o que estiver acima é contexto para entendê-la.",
+        "  Esta é a falha real, o que estiver acima é contexto para entendê-la.",
       ].join("\n")
     );
     console.log(`✗ ${first}`);

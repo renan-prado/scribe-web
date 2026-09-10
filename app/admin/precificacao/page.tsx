@@ -41,18 +41,18 @@ export const metadata: Metadata = { title: "Precificação" };
 export const dynamic = "force-dynamic";
 
 /**
- * Custo por AÇÃO — a tela que responde "continuo cobrando 7 moedas o minuto?".
+ * Custo por AÇÃO, a tela que responde "continuo cobrando 7 moedas o minuto?".
  *
  * /admin/usage já responde "para onde o dinheiro foi": rota, usuário, sessão.
  * Nenhum daqueles cortes responde à pergunta de preço, porque preço não é
- * cobrado por rota — é cobrado por ação, e uma ação é várias rotas (o Modo Ao
+ * cobrado por rota, é cobrado por ação, e uma ação é várias rotas (o Modo Ao
  * Vivo é transcrição + três pipelines + resumo + os cards de acompanhamento).
  * Somar rota por rota à mão para chegar no minuto é exatamente o trabalho que
  * esta tela existe para não ter de ser refeito toda vez.
  *
  * Tudo o que é por MOEDA é publicado por MILHEIRO, pela razão que já governa
  * `lib/fx/format.ts`: uma moeda custa na casa do centésimo de centavo, e em
- * duas casas decimais todas as ações empatariam em "R$ 0,00" — que é justamente
+ * duas casas decimais todas as ações empatariam em "R$ 0,00", que é justamente
  * a diferença que a tela existe para mostrar. É o milheiro que faz o número
  * caber em REAL E CENTAVO, e por isso ele sai com duas casas, iguais às de
  * `/admin/usage`. As quatro casas ficaram só onde ainda fazem falta: o custo de
@@ -86,15 +86,15 @@ function rangeToFrom(range: string): string | undefined {
 }
 
 function money(value: number | null): string {
-  return value == null ? "—" : BRL.format(value);
+  return value == null ? "-" : BRL.format(value);
 }
 
 function moneyFine(value: number | null): string {
-  return value == null ? "—" : BRL_FINE.format(value);
+  return value == null ? "-" : BRL_FINE.format(value);
 }
 
 function percent(value: number | null): string {
-  if (value == null) return "—";
+  if (value == null) return "-";
   return `${(value * 100).toFixed(1).replace(".", ",")}%`;
 }
 
@@ -219,7 +219,7 @@ const WINDOW_FMT = new Intl.DateTimeFormat("pt-BR", {
 
 function formatWindowMoment(iso: string): string {
   const d = new Date(iso);
-  return Number.isNaN(d.getTime()) ? "—" : WINDOW_FMT.format(d);
+  return Number.isNaN(d.getTime()) ? "-" : WINDOW_FMT.format(d);
 }
 
 /**
@@ -227,7 +227,7 @@ function formatWindowMoment(iso: string): string {
  *
  * Preço é cobrado por AÇÃO, e uma ação tem dois lados que vêm de tabelas
  * diferentes: o CUSTO sai de `llm_usage_events`, que carrega o carimbo de
- * versão, e a MOEDA sai de `coin_transactions`, que não carrega — o débito é
+ * versão, e a MOEDA sai de `coin_transactions`, que não carrega, o débito é
  * por minuto de gravação, não por chamada de LLM. Recortar só o custo daria
  * margem de uma fatia dividida pela receita do mês inteiro: sempre péssima, e
  * errada.
@@ -245,7 +245,7 @@ function VersionWindowNote({ summary }: { summary: AdminUsageSummary }) {
     <section className="rounded-2xl border border-scriba-blue-soft bg-scriba-blue-soft/40 p-4">
       <p className="text-[12.5px] font-light leading-relaxed text-scriba-ink">
         Tudo abaixo é o recorte da <span className="font-mono font-semibold">v{w.version}</span>:
-        custo pelas chamadas que ela carimbou, moedas pelo período em que ela esteve no ar —{" "}
+        custo pelas chamadas que ela carimbou, moedas pelo período em que ela esteve no ar,{" "}
         <span className="font-medium">
           {formatWindowMoment(w.startsAt)}
           {w.endsAt ? ` a ${formatWindowMoment(w.endsAt)}` : " até agora"}
@@ -267,7 +267,7 @@ type EconomicsProps = {
  * O agregado. Vem antes da tabela porque é a leitura que decide se há um
  * problema de preço em algum lugar; a tabela diz ONDE ele está.
  *
- * A margem daqui é COBRÁVEL contra COBRÁVEL — `overallCostPerCoinUsd` já
+ * A margem daqui é COBRÁVEL contra COBRÁVEL, `overallCostPerCoinUsd` já
  * exclui o gasto sem cobrança e as chamadas do próprio painel. Enquanto os
  * incluía, este cartão respondia a uma pergunta diferente da de cada linha da
  * tabela abaixo, e a diferença aparecia como uma margem agregada pior que
@@ -386,7 +386,7 @@ function ActionsTable({ summary, rate, settings }: EconomicsProps) {
                     {/* Os motivos do ledger, à vista. Sem eles, uma linha que
                         soma duas cobranças ("Estudo aprofundado" carrega
                         reprocessar estudo junto) parece contradizer o preço
-                        que o menu do app mostra — e a discordância aparente
+                        que o menu do app mostra, e a discordância aparente
                         vira uma investigação de meia hora. */}
                     <span className="flex flex-wrap gap-1">
                       {action.reasons.map((reason) => (
@@ -404,7 +404,7 @@ function ActionsTable({ summary, rate, settings }: EconomicsProps) {
                   {INT.format(action.coins)}/{action.unit}
                 </TableCell>
                 <TableCell className="text-right align-top tabular-nums">
-                  {row.executions > 0 ? INT.format(row.executions) : "—"}
+                  {row.executions > 0 ? INT.format(row.executions) : "-"}
                   <span className="block text-[10px] font-light text-scriba-ink-mute">
                     {row.coins > 0 ? `${INT.format(row.coins)} moedas` : "sem cobrança"}
                   </span>
@@ -441,12 +441,12 @@ function ActionsTable({ summary, rate, settings }: EconomicsProps) {
       </div>
       <p className="text-[11.5px] font-light leading-relaxed text-scriba-ink-mute">
         Uma execução é um lançamento no ledger: um minuto INICIADO de gravação, um estudo, um
-        reprocessamento. A margem é a de UMA execução ao preço que a ação cobra hoje — a mesma base
+        reprocessamento. A margem é a de UMA execução ao preço que a ação cobra hoje, a mesma base
         da sugestão ao lado, para as duas colunas nunca se contradizerem. Quando aparece uma segunda
         linha “realizada”, é porque o ledger cobrou no período algo diferente do preço atual (uma
-        mudança de preço dentro da janela, ou cobrança sem execução medida) — e aí a diferença entre
-        as duas é o achado. O detalhe por rota e por modelo — onde vale trocar de modelo em vez de
-        mexer no preço — está em{" "}
+        mudança de preço dentro da janela, ou cobrança sem execução medida), e aí a diferença entre
+        as duas é o achado. O detalhe por rota e por modelo, onde vale trocar de modelo em vez de
+        mexer no preço, está em{" "}
         <Link href="/admin/usage" className="underline underline-offset-2 hover:text-scriba-ink">
           Uso &amp; custos
         </Link>
@@ -459,8 +459,8 @@ function ActionsTable({ summary, rate, settings }: EconomicsProps) {
 /**
  * A margem AO PREÇO DE HOJE, mais a realizada quando as duas discordam.
  *
- * A coluna já mostrou só a realizada — custo contra as moedas que o ledger
- * debitou — e isso a punha em contradição direta com a coluna vizinha: o
+ * A coluna já mostrou só a realizada, custo contra as moedas que o ledger
+ * debitou, e isso a punha em contradição direta com a coluna vizinha: o
  * Estudo aprofundado aparecia com -18% de margem e, ao lado, a sugestão de
  * COBRAR MENOS. Nenhuma das duas estava com defeito de cálculo; elas
  * respondiam a perguntas diferentes, e a tela não dizia qual era qual.
@@ -497,7 +497,7 @@ function MarginCell({
 
 function MarginBadge({ margin, target }: { margin: number | null; target: number }) {
   if (margin == null) {
-    return <span className="text-xs text-scriba-ink-mute">—</span>;
+    return <span className="text-xs text-scriba-ink-mute">-</span>;
   }
   const tone =
     margin < 0
@@ -519,7 +519,7 @@ function MarginBadge({ margin, target }: { margin: number | null; target: number
 
 /**
  * O número que fecha a pergunta. Vem arredondado PARA CIMA e em moeda inteira
- * porque é assim que o preço existe no produto — sugerir "4,3 moedas/min" seria
+ * porque é assim que o preço existe no produto, sugerir "4,3 moedas/min" seria
  * devolver a decisão em uma unidade que `COIN_COSTS` não sabe representar.
  */
 function SuggestedPrice({
@@ -532,7 +532,7 @@ function SuggestedPrice({
   unit: string;
 }) {
   if (suggested == null) {
-    return <span className="text-xs text-scriba-ink-mute">—</span>;
+    return <span className="text-xs text-scriba-ink-mute">-</span>;
   }
   const rounded = Math.max(1, Math.ceil(suggested));
   const delta = rounded - current;
@@ -553,7 +553,7 @@ function SuggestedPrice({
 }
 
 /**
- * O gasto sem cobrança. Não é uma ação e não tem margem — é o que sai do
+ * O gasto sem cobrança. Não é uma ação e não tem margem, é o que sai do
  * bolso sem entrar no ledger, e some completamente se a tela só listar o que
  * é cobrável.
  */
@@ -573,7 +573,7 @@ function UnbilledNote({ summary, rate }: { summary: AdminUsageSummary; rate: Usd
         em {INT.format(unbilled.events)} chamadas ({percent(share)} do custo do período) que não têm
         ação cobrável atrás: consulta de versículo e formatação fora de uma gravação, e eventos cuja
         sessão foi apagada. Nenhuma moeda foi debitada por eles, então este custo não aparece em
-        margem nenhuma acima — ele sai inteiro do lucro.
+        margem nenhuma acima, ele sai inteiro do lucro.
       </p>
       {/* O custo do PAINEL fica numa frase à parte, e não somado acima, porque
           os dois têm consertos opostos: gasto sem cobrança é preço mal
@@ -583,7 +583,7 @@ function UnbilledNote({ summary, rate }: { summary: AdminUsageSummary; rate: Usd
       {internal && internal.events > 0 ? (
         <p className="mt-2 text-[12.5px] font-light leading-relaxed text-scriba-ink-mute">
           À parte disso, {money(rate ? internal.totalCostUsd * rate.rate : null)} em{" "}
-          {INT.format(internal.events)} chamadas são do próprio painel — a leitura da IA desta e das
+          {INT.format(internal.events)} chamadas são do próprio painel, a leitura da IA desta e das
           outras telas. Despesa operacional, não gasto de usuário.
         </p>
       ) : null}

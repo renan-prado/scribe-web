@@ -6,7 +6,7 @@ const log = createLogger("rate-limit");
 
 /**
  * In-memory sliding fixed-window rate limiter. State lives in the process,
- * so on serverless (Vercel Fluid Compute) each instance keeps its own map —
+ * so on serverless (Vercel Fluid Compute) each instance keeps its own map,
  * the effective limit is `limit * activeInstances`. Enough to blunt casual
  * abuse and burst attacks; upgrade to Upstash if we ever need strict global
  * quotas or per-account billing enforcement.
@@ -44,7 +44,7 @@ export type RateLimitResult = {
  * `cost` existe para o balde que conta GRANDEZA em vez de eventos.
  *
  * A cadência de `/api/transcribe` é limitada por chamada, e chamada não é a
- * unidade em que a OpenAI cobra — ela cobra por MINUTO de áudio. Duas
+ * unidade em que a OpenAI cobra, ela cobra por MINUTO de áudio. Duas
  * requisições idênticas para o limitador podiam custar 20 segundos e duas
  * horas. Ver `RATE_LIMITS.transcribe` e o uso na rota.
  */
@@ -95,11 +95,11 @@ export function checkRateLimit(
  *
  * O limitador por chamada não protege o que importa aqui. A OpenAI cobra por
  * minuto de áudio, e o tamanho do arquivo é o único sinal de duração que o
- * servidor consegue conferir sem decodificar o áudio — o `durationMs` do
+ * servidor consegue conferir sem decodificar o áudio, o `durationMs` do
  * formulário é do cliente e serve só para a nossa telemetria.
  *
  * A conta que dimensiona o teto: uma hora de gravação real são ~206 chunks de
- * 15-20s (`RECORDER_MIN/MAX_CHUNK_MS`), a uns 80 KB cada em opus — perto de
+ * 15-20s (`RECORDER_MIN/MAX_CHUNK_MS`), a uns 80 KB cada em opus, perto de
  * **16 MB por hora**. Dois aparelhos na mesma conta, 32 MB. O teto de 240 MB é
  * quinze vezes o uso legítimo e inalcançável por acidente; para quem estava
  * atacando, corta o pior caso de ~$320/hora por conta para ~$4.
@@ -205,7 +205,7 @@ const AUDIO_BUDGET_BYTES_PER_HOUR = 240 * 1024 * 1024;
  * for retries. Anything meaningfully higher than these numbers is either
  * a bug on the client or abuse.
  *
- * - transcribe fires roughly every 30s per active recording — 40/min covers
+ * - transcribe fires roughly every 30s per active recording, 40/min covers
  *   ~20min of continuous audio with headroom for parallel sessions on the
  *   same account (mobile + desktop).
  * - bible/insights/echo are chunk-driven; cadence bounded by transcribe.
@@ -254,7 +254,7 @@ export const RATE_LIMITS = {
   // A importação do YouTube. Limite de resumo (10/hora), não de gravação: ela
   // roda o mesmo `generateFinalSummary` sobre uma transcrição inteira e cobra
   // 30 moedas. O que ela tem a mais é uma chamada de provedor PAGA que acontece
-  // ANTES da cobrança — um link inválido em rajada não debita moeda nenhuma,
+  // ANTES da cobrança, um link inválido em rajada não debita moeda nenhuma,
   // mas queima crédito da Supadata, e é esse o abuso que este bucket corta.
   "youtube-import": {
     route: "youtube-import",
@@ -276,16 +276,16 @@ export const RATE_LIMITS = {
     perUser: { limit: 60, windowMs: MIN },
     perIp: { limit: 180, windowMs: MIN },
   },
-  // 20 por HORA, e antes eram 30 por MINUTO — noventa vezes mais.
+  // 20 por HORA, e antes eram 30 por MINUTO, noventa vezes mais.
   //
   // O número antigo veio do molde das rotas do pipeline ao vivo, que disparam a
   // cada chunk. Esta não dispara a cada chunk: ela reformata uma transcrição
   // inteira, de uma vez, e aceita 300 mil caracteres por chamada. Com 1.800
   // chamadas por hora, uma conta com uma moeda de saldo custava perto de
-  // US$ 100/hora de gpt-4o-mini — a segunda maior exposição do produto, atrás
+  // US$ 100/hora de gpt-4o-mini, a segunda maior exposição do produto, atrás
   // só do `transcribe`.
   //
-  // 20/hora é a cadência de uma ação de FIM de sessão, que é o que ela é —
+  // 20/hora é a cadência de uma ação de FIM de sessão, que é o que ela é,
   // mesmo balde de `sessions-transcript`. Hoje nenhum código de cliente a
   // chama; o limite é dimensionado para o dia em que voltar a chamar.
   "format-paragraphs": {
@@ -327,7 +327,7 @@ export const RATE_LIMITS = {
   // Busca dentro da transcrição, disparada por `useContentSearch` a cada pausa
   // de 260ms na digitação. O teto teórico dessa cadência é ~230/min, então o
   // bucket de `entity-search` (120) cortaria um datilógrafo rápido no meio de
-  // uma busca — e um 429 aqui é indistinguível, na tela, de "nada encontrado".
+  // uma busca, e um 429 aqui é indistinguível, na tela, de "nada encontrado".
   // 240 cobre a cadência com folga e continua sendo uma consulta barata (um
   // `ilike` escopado pela RLS, sem modelo nenhum atrás).
   "session-search": {
@@ -346,7 +346,7 @@ export const RATE_LIMITS = {
     perIp: { limit: 180, windowMs: MIN },
   },
   // A consulta "devo perguntar agora?", disparada ao abrir uma sessão salva ou
-  // um estudo. Não chama modelo nenhum — são duas leituras e, em três casos na
+  // um estudo. Não chama modelo nenhum, são duas leituras e, em três casos na
   // vida do usuário, uma escrita. O balde é largo porque um 429 aqui é
   // invisível (a janela simplesmente não aparece) e apertá-lo custaria a
   // pergunta em vez de proteger alguma coisa.
@@ -364,7 +364,7 @@ export const RATE_LIMITS = {
     perIp: { limit: 40, windowMs: HOUR },
   },
   // Cobrança: cada clique abre UMA sessão de checkout/portal no Stripe, que é
-  // uma chamada paga de API e um objeto persistido lá. Apertado de propósito —
+  // uma chamada paga de API e um objeto persistido lá. Apertado de propósito,
   // uso legítimo são alguns cliques por hora, e um limite baixo aqui é a
   // primeira barreira contra alguém rodando um script de criação de sessões.
   "billing-write": {
@@ -373,7 +373,7 @@ export const RATE_LIMITS = {
     perIp: { limit: 40, windowMs: 10 * MIN },
   },
   // Reconciliação pós-checkout. A tela de retorno chama uma vez; os retries
-  // são raros. Apertado porque cada chamada bate na API do Stripe — e porque
+  // são raros. Apertado porque cada chamada bate na API do Stripe, e porque
   // é o único endpoint autenticado capaz de creditar, ainda que só um
   // pagamento comprovadamente pago e pertencente ao próprio chamador.
   "billing-reconcile": {
@@ -402,7 +402,7 @@ export const RATE_LIMITS = {
   },
   // Link de parceiro (/r/<slug>). Público e sem sessão, então só por IP.
   // Generoso porque um link em stories é aberto muitas vezes em sequência e
-  // uma operadora móvel coloca muita gente atrás do mesmo IP — bloquear um
+  // uma operadora móvel coloca muita gente atrás do mesmo IP, bloquear um
   // visitante legítimo custa uma conversão. O limite existe contra o script
   // que tentaria inflar o funil de um parceiro, e o custo de estourá-lo é
   // baixo: o redirect acontece do mesmo jeito, só o clique não é contado.
@@ -411,14 +411,14 @@ export const RATE_LIMITS = {
     perIp: { limit: 120, windowMs: MIN },
   },
   // O link de indicação de usuário comum (/i/<codigo>). Mesmo teto do link de
-  // parceiro: é o mesmo gesto — um humano abrindo um link recebido —, e o que
+  // parceiro: é o mesmo gesto, um humano abrindo um link recebido, e o que
   // ele guarda é o mesmo, a gravação de um cookie de atribuição.
   "referral-link": {
     route: "referral-link",
     perIp: { limit: 120, windowMs: MIN },
   },
   // A leitura do selo "indicado por" no hero da landing page. Anônima e por
-  // IP, com folga para uma família atrás do mesmo NAT abrindo o mesmo link —
+  // IP, com folga para uma família atrás do mesmo NAT abrindo o mesmo link,
   // ela dispara uma vez por carregamento de LP de quem tem a pista, e nunca
   // para os demais.
   "referral-active": {

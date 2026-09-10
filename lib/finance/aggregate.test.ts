@@ -318,7 +318,7 @@ describe("avisos", () => {
     assert.ok(overview.warnings.some((w) => w.includes("duas vezes")));
   });
 
-  it("acusa MRR sem nenhum crédito no ledger — a contradição mais visível da tela", () => {
+  it("acusa MRR sem nenhum crédito no ledger, a contradição mais visível da tela", () => {
     const overview = build({
       measured: { ...NO_MEASUREMENT, mrrCents: 10_970, activeSubscribers: 3 },
     });

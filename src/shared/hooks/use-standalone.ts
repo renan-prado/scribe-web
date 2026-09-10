@@ -3,14 +3,14 @@
 import { useEffect, useState } from "react";
 
 /**
- * O app está rodando COMO app — instalado na tela inicial, sem a moldura do
+ * O app está rodando COMO app, instalado na tela inicial, sem a moldura do
  * navegador?
  *
  * Não existe uma API só para isso, então a resposta é a união de duas:
  *
  * - `display-mode: standalone` é a media query padrão, e vale no Android e no
  *   desktop. `fullscreen` e `minimal-ui` entram junto porque são os outros
- *   modos que o nosso `display_override` pode acabar resolvendo — em qualquer
+ *   modos que o nosso `display_override` pode acabar resolvendo, em qualquer
  *   um deles o usuário está no app, não numa aba.
  * - `navigator.standalone` é a propriedade proprietária da Apple, e continua
  *   sendo a ÚNICA forma de saber isso no iOS.
@@ -31,7 +31,7 @@ export function readStandalone(): boolean {
 /**
  * Versão React do `readStandalone`.
  *
- * `ready` é falso no servidor e no primeiro render do cliente — não há como
+ * `ready` é falso no servidor e no primeiro render do cliente, não há como
  * saber a resposta antes de haver um `window`. **Quem desenha coisas
  * diferentes para os dois casos precisa esperar por ele**, senão o HTML do
  * servidor discorda do primeiro render e o React descarta a árvore (ou, pior,

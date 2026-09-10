@@ -44,7 +44,7 @@ const DATE_FMT = new Intl.DateTimeFormat("pt-BR", {
 });
 
 function formatDuration(ms: number | null): string {
-  if (!ms || ms <= 0) return "—";
+  if (!ms || ms <= 0) return "-";
   const totalSec = Math.round(ms / 1000);
   const m = Math.floor(totalSec / 60);
   const s = totalSec % 60;
@@ -205,7 +205,7 @@ type TotalsGridProps = {
 
 /**
  * Os dois KPIs de MOEDA somem sob um filtro de ROTA, e a ausência é o ponto:
- * `coin_transactions` não tem coluna de rota — o débito é por minuto de
+ * `coin_transactions` não tem coluna de rota, o débito é por minuto de
  * gravação, por estudo, por reprocessamento, nunca por chamada de LLM. Com o
  * custo recortado e a moeda inteira, "custo por 1.000 moedas" viraria uma
  * fatia dividida por um total: um número sempre baixo, com cara de margem
@@ -214,7 +214,7 @@ type TotalsGridProps = {
  *
  * A VERSÃO é diferente, e por isso continua somando: ela é um intervalo de
  * tempo, e o ledger tem data. As moedas do recorte são as do período em que a
- * versão esteve no ar (ver `VersionWindow`) — aproximação, mas a mesma fatia
+ * versão esteve no ar (ver `VersionWindow`), aproximação, mas a mesma fatia
  * de calendário dos dois lados, que é o que permite ler margem por versão. O
  * cartão diz isso, porque um número aproximado sem etiqueta é lido como exato.
  */
@@ -222,7 +222,7 @@ function TotalsGrid({ summary, money, costPerThousandCoins }: TotalsGridProps) {
   const { totals, overallCostPerCoinUsd, coinsScoped } = summary;
   const audioMin = totals.totalAudioSeconds > 0 ? totals.totalAudioSeconds / 60 : 0;
   const coinHint = !coinsScoped
-    ? "Moeda não é debitada por rota — este corte não se aplica."
+    ? "Moeda não é debitada por rota, este corte não se aplica."
     : summary.versionWindow
       ? "Moedas do período em que a versão esteve no ar: o ledger não guarda versão."
       : undefined;
@@ -242,14 +242,14 @@ function TotalsGrid({ summary, money, costPerThousandCoins }: TotalsGridProps) {
       />
       <Kpi
         label="Moedas gastas"
-        value={coinsScoped ? INT.format(totals.totalCoins) : "—"}
+        value={coinsScoped ? INT.format(totals.totalCoins) : "-"}
         hint={coinHint}
         icon={<CoinMark size={22} />}
         tone={KPI_TONES[2]}
       />
       <Kpi
         label="Custo por 1.000 moedas"
-        value={coinsScoped ? costPerThousandCoins(overallCostPerCoinUsd) : "—"}
+        value={coinsScoped ? costPerThousandCoins(overallCostPerCoinUsd) : "-"}
         hint={coinHint ?? "Total gasto ÷ moedas debitadas × 1.000"}
         icon={<CoinMark size={22} />}
         tone={KPI_TONES[3]}
@@ -261,7 +261,7 @@ function TotalsGrid({ summary, money, costPerThousandCoins }: TotalsGridProps) {
 /**
  * Amostra abaixo da qual uma variação percentual é ruído com cara de sinal.
  * Duas chamadas caras numa versão recém-subida produzem "+340%" em vermelho, e
- * esse vermelho é lido como regressão — quando o que ele diz é "ainda não deu
+ * esse vermelho é lido como regressão, quando o que ele diz é "ainda não deu
  * tempo de medir".
  */
 const THIN_SAMPLE_EVENTS = 20;
@@ -274,13 +274,13 @@ const MOMENT_FMT = new Intl.DateTimeFormat("pt-BR", {
 });
 
 function formatMoment(iso: string): string {
-  if (!iso) return "—";
+  if (!iso) return "-";
   const d = new Date(iso);
-  return Number.isNaN(d.getTime()) ? "—" : MOMENT_FMT.format(d);
+  return Number.isNaN(d.getTime()) ? "-" : MOMENT_FMT.format(d);
 }
 
 function formatLatency(ms: number | null): string {
-  if (ms == null) return "—";
+  if (ms == null) return "-";
   if (ms < 1000) return `${Math.round(ms)}ms`;
   return `${(ms / 1000).toFixed(1).replace(".", ",")}s`;
 }
@@ -288,18 +288,18 @@ function formatLatency(ms: number | null): string {
 /**
  * A variação contra a versão anterior. Subir é PIOR nas duas métricas em que
  * ela aparece (custo e latência), então uma cor só basta: rosa marca a piora,
- * menta marca a melhora. Empate técnico (menos de 1%) sai neutro — pintar meio
+ * menta marca a melhora. Empate técnico (menos de 1%) sai neutro, pintar meio
  * ponto percentual acenderia a coluna inteira, e aí nenhuma linha chama
  * atenção.
  */
 function Delta({ value, thin }: { value: number | null; thin: boolean }) {
-  if (value == null) return <span className="text-[11px] text-scriba-ink-mute">—</span>;
+  if (value == null) return <span className="text-[11px] text-scriba-ink-mute">-</span>;
   const pct = `${value > 0 ? "+" : "−"}${(Math.abs(value) * 100).toFixed(1).replace(".", ",")}%`;
   if (thin) {
     return (
       <span
         className="text-[11px] font-light text-scriba-ink-mute"
-        title={`Menos de ${THIN_SAMPLE_EVENTS} chamadas de um dos lados — amostra fina demais para concluir.`}
+        title={`Menos de ${THIN_SAMPLE_EVENTS} chamadas de um dos lados, amostra fina demais para concluir.`}
       >
         {pct}
       </span>
@@ -315,23 +315,23 @@ function Delta({ value, thin }: { value: number | null; thin: boolean }) {
 }
 
 /**
- * O corte por VERSÃO — a tabela que responde "depois da 0.5.0, ficou mais caro
+ * O corte por VERSÃO, a tabela que responde "depois da 0.5.0, ficou mais caro
  * ou mais lento?".
  *
  * Todos os outros cortes desta página são de ESPAÇO (rota, usuário, sessão);
- * este é de TEMPO, com um marcador que sabe quando o deploy subiu — coisa que
+ * este é de TEMPO, com um marcador que sabe quando o deploy subiu, coisa que
  * data não sabe. O marcador é `llm_usage_events.app_version`, carimbado pelo
  * build a partir do `package.json`, e ele só separa alguma coisa se a versão
  * SUBIR a cada entrega: é para isso que existe `npm run release`.
  *
  * **A leitura correta é uma ROTA de cada vez**, e o aviso no topo diz isso
  * porque a armadilha é silenciosa: sem fixar a rota, o custo médio por chamada
- * de uma versão muda só porque a MISTURA de rotas mudou entre dois deploys —
+ * de uma versão muda só porque a MISTURA de rotas mudou entre dois deploys,
  * uma semana com mais estudos gerados parece "a 0.6.0 encareceu tudo".
  *
  * O custo sai por MIL chamadas pela mesma razão que o custo por moeda sai por
  * milheiro (ver `lib/fx/format.ts`): uma chamada custa na casa do milésimo de
- * real, e em duas casas decimais todas as versões empatariam em "R$ 0,00" —
+ * real, e em duas casas decimais todas as versões empatariam em "R$ 0,00",
  * justamente a diferença que esta tabela existe para mostrar.
  */
 function VersionsTable({
@@ -352,7 +352,7 @@ function VersionsTable({
       <p className="text-[12px] font-light leading-relaxed text-scriba-ink-mute">
         {filteredRoute ? (
           <>
-            Comparando a rota <span className="font-mono">{filteredRoute}</span> versão a versão —
+            Comparando a rota <span className="font-mono">{filteredRoute}</span> versão a versão,
             que é como esta tabela se lê.
           </>
         ) : (
@@ -457,7 +457,7 @@ function VersionRow({
       </TableCell>
       <TableCell className="text-right font-mono text-xs text-scriba-ink-soft">
         {row.avgTokensPerChatEvent == null
-          ? "—"
+          ? "-"
           : INT.format(Math.round(row.avgTokensPerChatEvent))}
       </TableCell>
     </TableRow>
@@ -468,7 +468,7 @@ function VersionRow({
  * O aviso que precede qualquer leitura desta tela: chamadas cujo modelo não
  * está em `lib/llm/pricing.ts` gravaram custo ZERO.
  *
- * Ele não é decoração de robustez — é a única forma de o painel dizer que está
+ * Ele não é decoração de robustez, é a única forma de o painel dizer que está
  * mentindo. Sem ele, um modelo novo configurado por env var faz o custo de uma
  * etapa inteira desaparecer, a margem daquela ação sobe, e a tela de
  * precificação recomenda BAIXAR um preço que já não se paga. O sintoma é uma
@@ -489,8 +489,8 @@ function UnpricedNote({ summary }: { summary: AdminUsageSummary }) {
         preços interna e gravaram custo <span className="font-mono">R$ 0,00</span>:{" "}
         <span className="font-mono">{summary.unpricedModels.join(", ")}</span>. Todo custo e toda
         margem desta tela e da de precificação estão baixos na proporção do que elas consumiram.
-        Acrescente esses modelos a <span className="font-mono">lib/llm/pricing.ts</span> — os
-        eventos já gravados continuarão em zero.
+        Acrescente esses modelos a <span className="font-mono">lib/llm/pricing.ts</span>, os eventos
+        já gravados continuarão em zero.
       </p>
     </section>
   );
@@ -575,7 +575,7 @@ function RouteAndUserTables({ summary, money }: RouteAndUserTablesProps) {
                       </div>
                     </TableCell>
                     <TableCell className="text-right font-mono text-xs">
-                      {u.totalCoins > 0 ? INT.format(u.totalCoins) : "—"}
+                      {u.totalCoins > 0 ? INT.format(u.totalCoins) : "-"}
                     </TableCell>
                     <TableCell className="text-right">{INT.format(u.events)}</TableCell>
                     <TableCell className="text-right font-mono text-xs">
@@ -625,7 +625,7 @@ function ModeBadge({ mode }: { mode: SessionMode | null }) {
       </span>
     );
   }
-  return <span className="text-[10px] text-muted-foreground">—</span>;
+  return <span className="text-[10px] text-muted-foreground">-</span>;
 }
 
 type SessionsTableProps = {
@@ -690,7 +690,7 @@ function SessionsTable({ summary, money, costPerThousandCoins, filters }: Sessio
                     </span>
                   </TableCell>
                   <TableCell className="text-xs text-muted-foreground">
-                    {s.ownerDisplayName || (s.userId ? s.userId.slice(0, 8) : "—")}
+                    {s.ownerDisplayName || (s.userId ? s.userId.slice(0, 8) : "-")}
                   </TableCell>
                   <TableCell>
                     <ModeBadge mode={s.mode} />
@@ -699,7 +699,7 @@ function SessionsTable({ summary, money, costPerThousandCoins, filters }: Sessio
                   <TableCell className="text-right">{INT.format(s.events)}</TableCell>
                   <TableCell className="text-right">{money(s.totalCostUsd, "fine")}</TableCell>
                   <TableCell className="text-right tabular-nums">
-                    {s.coins > 0 ? INT.format(s.coins) : "—"}
+                    {s.coins > 0 ? INT.format(s.coins) : "-"}
                   </TableCell>
                   <TableCell className="text-right">
                     {costPerThousandCoins(s.costPerCoinUsd)}

@@ -5,13 +5,13 @@ import { LinkPendingSwap, NavLink } from "@/components/NavLink";
  * A porta da importação, no cabeçalho da Biblioteca.
  *
  * **Secundária de propósito.** O botão primário do app continua sendo "Gravar",
- * no header e no centro da nav — gravar ao vivo é o produto, e importar é o
+ * no header e no centro da nav, gravar ao vivo é o produto, e importar é o
  * atalho para o que já está online. Um segundo CTA cheio ao lado daquele
  * disputaria a atenção sem ter a mesma importância.
  *
  * **`spinner="none"` + `LinkPendingSwap`, e não o spinner padrão do `NavLink`.**
  * O rótulo é `sm:inline`: no celular este botão é só o ícone, e o
- * `spinner="inline"` ACRESCENTA um segundo glifo ao lado do conteúdo — o botão
+ * `spinner="inline"` ACRESCENTA um segundo glifo ao lado do conteúdo, o botão
  * crescia no meio do toque, empurrando o "atualizar" que fica ao lado. Trocando
  * o ícone pelo spinner a largura não muda. É o mesmo motivo pelo qual a
  * `MobileBottomNav` usa este componente; ver o cabeçalho de `LinkPendingSwap`.

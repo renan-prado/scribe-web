@@ -7,7 +7,7 @@ import { Tabs, TabsList, TabsPanel, TabsTab } from "@/components/ui/tabs";
  * As três seções do painel do parceiro.
  *
  * Recebe os painéis já RENDERIZADOS pelo servidor. É o que permite a página
- * continuar sendo um server component — os dados são buscados uma vez, e este
+ * continuar sendo um server component, os dados são buscados uma vez, e este
  * componente só decide qual pedaço está visível. Trocar de aba não vai ao
  * servidor.
  *

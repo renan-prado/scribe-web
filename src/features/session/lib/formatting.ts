@@ -1,6 +1,6 @@
 /**
  * Session-scope date/duration formatters shared between the library list,
- * feed, and summary pages. Portuguese labels are inline — no i18n framework
+ * feed, and summary pages. Portuguese labels are inline, no i18n framework
  * yet.
  */
 
@@ -38,7 +38,7 @@ function capitalize(s: string): string {
   return s.charAt(0).toUpperCase() + s.slice(1);
 }
 
-/** "3 mai" or "3 mai 2024" — compact date, optional year. */
+/** "3 mai" or "3 mai 2024", compact date, optional year. */
 export function shortDate(iso: string, includeYear = false): string {
   const d = new Date(iso);
   const base = `${d.getDate()} ${MONTHS_PT_SHORT[d.getMonth()]}`;
@@ -46,7 +46,7 @@ export function shortDate(iso: string, includeYear = false): string {
 }
 
 /**
- * "Esta semana" / "Semana passada" / "Maio" / "Maio 2024" — used to group
+ * "Esta semana" / "Semana passada" / "Maio" / "Maio 2024", used to group
  * sessions in the library list into rolling time buckets.
  */
 export function groupLabel(iso: string, now: Date): string {
@@ -68,7 +68,7 @@ export function groupLabel(iso: string, now: Date): string {
 }
 
 /**
- * "hoje" / "ontem" / "há 3 dias" / "há 2 semanas" / "há 1 mês" — compact
+ * "hoje" / "ontem" / "há 3 dias" / "há 2 semanas" / "há 1 mês", compact
  * relative-time label. Used in the feed to indicate when a sermon was
  * recorded without showing the raw date.
  */
@@ -92,7 +92,7 @@ export function relativeShort(iso: string, now: Date): string {
 }
 
 /**
- * "Hoje" / "Em 1 dia" / "Em 15 dias" / "Em 4 meses" / "Em 9 meses" —
+ * "Hoje" / "Em 1 dia" / "Em 15 dias" / "Em 4 meses" / "Em 9 meses",
  * rótulo de janela agendada. Usado nos cards do feed (praticar/releia/lembra)
  * onde o dayOffset determina quando o item aparecerá. Passa a meses quando
  * ficaria feio em dias (≥ 100).
@@ -105,7 +105,7 @@ export function dayOffsetLabel(dayOffset: number): string {
   return months === 1 ? "Em 1 mês" : `Em ${months} meses`;
 }
 
-/** "5 min" or "45s" — compact form used in the library list. */
+/** "5 min" or "45s", compact form used in the library list. */
 export function formatDurationShort(ms: number | null): string {
   if (!ms || ms <= 0) return "";
   const totalSec = Math.round(ms / 1000);
@@ -115,7 +115,7 @@ export function formatDurationShort(ms: number | null): string {
   return `${m} min`;
 }
 
-/** "5m 07s" or "45s" — verbose form used on the summary page. */
+/** "5m 07s" or "45s", verbose form used on the summary page. */
 export function formatDurationLong(ms: number | null): string {
   if (!ms || ms <= 0) return "";
   const totalSec = Math.round(ms / 1000);
@@ -126,7 +126,7 @@ export function formatDurationLong(ms: number | null): string {
 }
 
 /**
- * "Gravação dia 12 de março" — título padrão de uma gravação enquanto o
+ * "Gravação dia 12 de março", título padrão de uma gravação enquanto o
  * usuário não digita um. No modo transcrição não há LLM para gerar título, então
  * este é o valor que efetivamente vai para o banco no stop.
  */

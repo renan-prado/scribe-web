@@ -12,7 +12,7 @@ import { useState } from "react";
  * nasce; **copiar** serve ao desktop e a quem quer colar num lugar que a folha
  * nativa não oferece.
  *
- * `navigator.share` não existe em todo navegador — no desktop, quase nunca. Em
+ * `navigator.share` não existe em todo navegador, no desktop, quase nunca. Em
  * vez de esconder o botão (o que deixaria a tela diferente para cada pessoa
  * sem explicação), ele cai em copiar e diz que copiou. Compartilhar cancelado
  * pelo usuário é `AbortError` e NÃO é erro: silêncio é a resposta certa.
@@ -71,7 +71,7 @@ export function InviteLinkCard({ link, code, signupCoins, subscriptionCoins }: P
           <strong className="font-medium text-scriba-ink-strong">
             +{subscriptionCoins} moedas
           </strong>{" "}
-          — uma vez por amigo.
+          uma vez por amigo.
         </p>
       </div>
 

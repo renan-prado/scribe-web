@@ -1,8 +1,8 @@
 -- charge_coins() sai do alcance do cliente.
 --
 -- O BURACO. A versão de 0017 tinha `grant execute ... to authenticated` e
--- recebia `p_amount` de quem chama. A rota /api/coins/charge é cuidadosa — ela
--- deriva o preço de COIN_COST_BY_REASON e nunca aceita um valor do corpo —
+-- recebia `p_amount` de quem chama. A rota /api/coins/charge é cuidadosa, ela
+-- deriva o preço de COIN_COST_BY_REASON e nunca aceita um valor do corpo,
 -- mas a rota nunca foi o único caminho até a função: o anon key é público, e
 -- uma função com EXECUTE para `authenticated` está exposta em
 -- POST /rest/v1/rpc/charge_coins. Qualquer sessão logada podia fazer
@@ -10,7 +10,7 @@
 --   supabase.rpc('charge_coins', { p_amount: 1, p_reason: 'live_minute', ... })
 --
 -- e gravar no ledger um minuto de gravação `live` (7 moedas) pagando 1. Não
--- dava para creditar — `p_amount <= 0` sempre levantou exceção — então o
+-- dava para creditar, `p_amount <= 0` sempre levantou exceção, então o
 -- estrago era subfaturamento, e subfaturamento que deixa no banco uma linha
 -- com cara de legítima.
 --
@@ -18,7 +18,7 @@
 -- `attach_partner` já seguiam, e que supabase/AGENTS.md manda seguir: função
 -- que escreve saldo tem EXECUTE revogado de anon/authenticated e só o
 -- service_role chama. Quem passa a afirmar quem está pagando é o servidor,
--- depois de `requireAuth()` — por isso a assinatura ganha `p_user_id` e perde
+-- depois de `requireAuth()`, por isso a assinatura ganha `p_user_id` e perde
 -- o `auth.uid()`, que é sempre null sob service_role.
 --
 -- O preço continua morando em lib/coins/pricing.ts, e é essa a razão de não

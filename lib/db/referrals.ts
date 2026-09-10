@@ -14,26 +14,26 @@ const log = createLogger("referrals");
  *
  * Tudo aqui passa pelo service-role: as funções do banco têm EXECUTE revogado
  * de `anon`/`authenticated`, exatamente como `grant_coins` e `attach_partner`.
- * Mesmo padrão de `lib/db/partners.ts` — o servidor é a única porta.
+ * Mesmo padrão de `lib/db/partners.ts`, o servidor é a única porta.
  *
  * **As moedas são passadas por PARÂMETRO**, lidas de
  * `lib/referrals/economics.ts`. Ver o cabeçalho da migração: a régua do
  * programa aberto é global e a tela precisa mostrá-la, então duplicá-la numa
- * tabela criaria dois lugares para o mesmo número — e um dia eles discordam.
+ * tabela criaria dois lugares para o mesmo número, e um dia eles discordam.
  */
 
 /**
  * Resultado de `attach_referrer`. Só `ok` credita; os demais são recusas
  * NORMAIS, e nenhuma delas pode quebrar o login:
  *
- *   already_attributed — a conta já tem dono (parceiro OU amigo). O vínculo é
+ *   already_attributed, a conta já tem dono (parceiro OU amigo). O vínculo é
  *                        permanente e exclusivo, e o primeiro vale.
- *   not_new            — conta antiga demais; quem já usa o app não vira
+ *   not_new, conta antiga demais; quem já usa o app não vira
  *                        indicação de ninguém ao abrir um link
- *   unknown_code       — código inexistente, digitado errado, ou de uma conta
+ *   unknown_code, código inexistente, digitado errado, ou de uma conta
  *                        desativada
- *   self_referral      — a pessoa usando o próprio link
- *   capped             — VINCULOU, mas quem indicou já bateu o teto do mês, e
+ *   self_referral, a pessoa usando o próprio link
+ *   capped, VINCULOU, mas quem indicou já bateu o teto do mês, e
  *                        por isso não recebeu moedas agora. A recompensa por
  *                        assinatura desta pessoa continua valendo.
  */
@@ -60,7 +60,7 @@ const ATTACH_RESULTS: readonly string[] = [
  * e o crédito passa por `grant_coins` com `external_ref` único).
  *
  * NÃO lança. Uma falha vira `unknown_code` e um log: a pessoa está no meio do
- * login, e alguém perder 50 moedas é ruim — não entrar no app é pior.
+ * login, e alguém perder 50 moedas é ruim, não entrar no app é pior.
  */
 export async function attachReferrer(args: {
   userId: string;
@@ -87,12 +87,12 @@ export async function attachReferrer(args: {
 
 /**
  * A recompensa da PRIMEIRA assinatura de um indicado. Devolve as moedas
- * creditadas agora — 0 quando não havia o que fazer, que é o caso comum (a
+ * creditadas agora, 0 quando não havia o que fazer, que é o caso comum (a
  * esmagadora maioria dos assinantes não veio de indicação).
  *
  * A regra "uma vez por pessoa, para sempre" não é conferida aqui: é o
  * `external_ref` UNIQUE do livro-razão. Cancelar e reassinar seis meses depois
- * colide na constraint e não credita nada — a regra vale inclusive para os
+ * colide na constraint e não credita nada, a regra vale inclusive para os
  * caminhos de crédito que ainda não existem.
  */
 export async function awardReferralSubscription(referredUserId: string): Promise<number> {
@@ -122,7 +122,7 @@ export async function awardReferralSubscription(referredUserId: string): Promise
  * nunca vão indicar ninguém, e não mexemos no trigger de criação de perfil,
  * que roda dentro do Supabase Auth.
  *
- * Devolve `null` se a geração falhar — a página de indicação mostra um estado
+ * Devolve `null` se a geração falhar, a página de indicação mostra um estado
  * de erro em vez de um link quebrado. Um código errado divulgado é pior que
  * nenhum: ele atribui a outra pessoa.
  */
@@ -168,12 +168,12 @@ export async function flushPartnerSignupRewards(
 }
 
 /**
- * O que pode ser mostrado a um VISITANTE ANÔNIMO sobre quem o indicou — no
+ * O que pode ser mostrado a um VISITANTE ANÔNIMO sobre quem o indicou, no
  * selo do hero da landing page e na tela de entrada.
  *
  * O nome do tipo é literal: `Public` significa que este objeto atravessa a
  * fronteira do servidor e é entregue a alguém que não está logado. Por isso
- * ele carrega o PRIMEIRO NOME e mais nada — nunca id, nunca e-mail, nunca o
+ * ele carrega o PRIMEIRO NOME e mais nada, nunca id, nunca e-mail, nunca o
  * nome completo. A pessoa indicada já sabe quem a convidou; um estranho que
  * abra o link não precisa saber mais do que o convite dizia.
  */
@@ -207,7 +207,7 @@ export async function getReferrerPublicByCode(code: string): Promise<ReferrerPub
  *
  * A conta vem do Google, então `display_name` quase sempre existe; quando não
  * existe, o pedaço do e-mail antes do `@` é o que a pessoa reconheceria como
- * si mesma. E o e-mail INTEIRO nunca sai daqui — expor endereço de alguém num
+ * si mesma. E o e-mail INTEIRO nunca sai daqui, expor endereço de alguém num
  * selo público seria um vazamento por conveniência.
  */
 function firstNameOf(displayName: string | null, email: string | null): string {
@@ -222,8 +222,8 @@ function firstNameOf(displayName: string | null, email: string | null): string {
  *
  * SÓ AGREGADOS, pela mesma regra do painel do parceiro
  * (`lib/db/partner-panel.ts`): nenhuma função aqui devolve linha que
- * represente uma pessoa. Quem indicou vê "3 amigos entraram", nunca "estes 3"
- * — e isso não é excesso de zelo, é que o dado não tem por que trafegar: quem
+ * represente uma pessoa. Quem indicou vê "3 amigos entraram", nunca "estes 3",
+ * e isso não é excesso de zelo, é que o dado não tem por que trafegar: quem
  * mandou o link já sabe para quem mandou.
  *
  * `head: true` com `count: "exact"` para que nem linha trafegue, e para que um
@@ -236,7 +236,7 @@ export type ReferralPanel = {
   subscribers: number;
   /** Moedas somadas das duas recompensas. */
   coinsEarned: number;
-  /** Cadastros premiados no mês corrente — o numerador do teto. */
+  /** Cadastros premiados no mês corrente, o numerador do teto. */
   signupsThisMonth: number;
 };
 

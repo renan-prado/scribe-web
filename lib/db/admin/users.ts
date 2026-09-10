@@ -6,7 +6,7 @@ const log = createLogger("admin.users");
 
 /**
  * Admin-side user management. All functions here assume the caller has
- * already been authorized via `requireAdmin` — they use the service-role
+ * already been authorized via `requireAdmin`, they use the service-role
  * client and will happily return everyone's data.
  */
 
@@ -35,7 +35,7 @@ const SELECT = "id, display_name, avatar_url, email, role, is_active, created_at
 
 /**
  * Teto da listagem do /admin/users. Quando a base passar disto, a tela precisa
- * de paginação de verdade — e o número aparecer aqui é o que torna esse dia
+ * de paginação de verdade, e o número aparecer aqui é o que torna esse dia
  * visível, em vez de a lista simplesmente parar de crescer em silêncio.
  */
 const ADMIN_USERS_PAGE_SIZE = 1000;
@@ -45,7 +45,7 @@ export async function listUsers(): Promise<AdminUser[]> {
 
   // O teto é explícito e casa com o `perPage` do enriquecimento logo abaixo.
   // Sem ele, quem limitava a consulta era o `max-rows` que o Supabase configura
-  // por padrão no PostgREST — um default de plataforma fazendo o papel de uma
+  // por padrão no PostgREST, um default de plataforma fazendo o papel de uma
   // decisão nossa, que é justamente o padrão que esta auditoria vem
   // desmontando. E os dois lados discordarem é pior que qualquer um dos dois:
   // com mais de mil contas, a lista traria perfis cujo "último acesso" viria
@@ -96,7 +96,7 @@ export async function updateUser(id: string, input: UpdateUserInput): Promise<vo
     // O e-mail é IDENTIDADE aqui, não um campo de cadastro: `getCurrentPartner`
     // resolve o vínculo parceiro↔conta casando o e-mail do login com
     // `partners.invited_email`. Trocar o e-mail de uma conta pode, portanto,
-    // torná-la parceira — e `updateUserById` grava sem pedir confirmação ao
+    // torná-la parceira, e `updateUserById` grava sem pedir confirmação ao
     // dono do endereço. É poder legítimo de admin, mas é o tipo de mudança que
     // alguém precisa conseguir reconstruir depois, então o valor ANTIGO vai
     // para o log em `info` (a rota registra só os NOMES dos campos alterados).

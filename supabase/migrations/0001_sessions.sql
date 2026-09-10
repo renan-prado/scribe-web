@@ -4,7 +4,7 @@
 -- lib/domain/summary.ts). title / short_summary are denormalized off
 -- final_summary so listing views don't have to parse the jsonb.
 --
--- RLS is intentionally NOT enabled yet — the app runs single-user in local
+-- RLS is intentionally NOT enabled yet, the app runs single-user in local
 -- testing with the anon key. BEFORE exposing this to any other user, enable
 -- RLS and add policies keyed on auth.uid().
 

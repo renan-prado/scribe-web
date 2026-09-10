@@ -9,7 +9,7 @@ import { createClient } from "@/lib/supabase/server";
  * speaker_location as the historical snapshot.
  *
  * All reads/writes are user-scoped by RLS (user_id column). Case-insensitive
- * uniqueness on (user_id, lower(name)) enforced by index — see 0019.
+ * uniqueness on (user_id, lower(name)) enforced by index, see 0019.
  */
 
 type DbRow = {

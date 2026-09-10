@@ -38,12 +38,12 @@ import {
  * A coluna que importa é NATUREZA, e ela não é decoração: é a categoria que
  * decide se um custo entra em "fixo" ou em "variável" na visão mensal e na
  * base das projeções (ver `lib/finance/aggregate.ts`). Trocar a natureza de
- * "Infraestrutura" reescreve a leitura de TODO o histórico — por isso a
+ * "Infraestrutura" reescreve a leitura de TODO o histórico, por isso a
  * mudança tem log próprio na rota, e por isso ela mora aqui, numa tela de
  * configuração, e não dentro do formulário de lançamento.
  *
  * NÃO EXISTE EXCLUIR. Apagar uma categoria deixaria os lançamentos dela com
- * `category_id` nulo, e sem categoria um custo vira variável — o custo fixo do
+ * `category_id` nulo, e sem categoria um custo vira variável, o custo fixo do
  * histórico inteiro despencaria sem nada indicando por quê. Arquivar tira do
  * formulário e mantém o passado legível.
  */
@@ -181,7 +181,7 @@ export function CategoriesManager({ categories }: { categories: FinanceCategory[
         <div>
           <h2 className="text-[14px] font-semibold text-scriba-ink-strong">Categorias</h2>
           <p className="text-[12px] font-light leading-[1.5] text-scriba-ink-mute">
-            A natureza da categoria é o que decide se um custo entra em fixo ou variável — mudá-la
+            A natureza da categoria é o que decide se um custo entra em fixo ou variável, mudá-la
             reescreve a leitura de todo o histórico.
           </p>
         </div>
@@ -253,7 +253,7 @@ export function CategoriesManager({ categories }: { categories: FinanceCategory[
                   colSpan={4}
                   className="bg-scriba-surface text-[11px] font-semibold uppercase tracking-[0.1em] text-scriba-ink-mute"
                 >
-                  Arquivadas — fora dos formulários, ainda explicando o histórico
+                  Arquivadas, fora dos formulários, ainda explicando o histórico
                 </TableCell>
               </TableRow>
             ) : null}

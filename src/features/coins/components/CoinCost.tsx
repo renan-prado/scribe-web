@@ -1,16 +1,16 @@
 /**
- * Pastilha com o custo em moedas de uma ação — o hexágono cheio mais o número,
+ * Pastilha com o custo em moedas de uma ação, o hexágono cheio mais o número,
  * dimensionada para sentar DENTRO de um botão.
  *
  * `suffix` entra depois do número (ex.: "/min") para preços por minuto, de modo
  * que a mesma pastilha mostre custo fixo e custo por tempo.
  *
  * **Tudo aqui pinta com `currentColor`, e isso não é preguiça.** Era branco
- * cravado — `bg-white/18`, `text-white` e o hexágono `bg-white` —, escrito
+ * cravado, `bg-white/18`, `text-white` e o hexágono `bg-white`, escrito
  * quando o botão primário era sempre azul. Ele deixou de ser: `--scriba-cta`
  * INVERTE, e no tema escuro vira uma pastilha quase branca. O resultado era
  * branco sobre branco, com a moeda sumindo do botão "Gravar" e do "Gerar
- * estudo" — visível só no escuro, que é justamente onde ninguém repara ao
+ * estudo", visível só no escuro, que é justamente onde ninguém repara ao
  * escrever o componente.
  *
  * Herdando a tinta, ela acompanha `--scriba-cta-ink` sozinha (branca sobre o

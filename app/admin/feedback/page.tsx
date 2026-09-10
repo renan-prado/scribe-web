@@ -17,20 +17,20 @@ export const metadata: Metadata = { title: "Feedback" };
 export const dynamic = "force-dynamic";
 
 /**
- * O que os usuários acharam — a nota de cada parte do produto, e o que
+ * O que os usuários acharam, a nota de cada parte do produto, e o que
  * escreveram junto.
  *
  * A tela tem TRÊS blocos e a ordem é a mensagem:
  *
  *   1. **A taxa de resposta vem primeiro**, antes de qualquer nota. As médias
  *      abaixo são de quem se dispôs a responder, e essa amostra é
- *      sistematicamente mais gentil que a realidade — 4,0 sobre 12 respostas
+ *      sistematicamente mais gentil que a realidade, 4,0 sobre 12 respostas
  *      de 90 perguntas parece um produto adorado. É a mesma regra dos avisos
  *      antes dos números no financeiro, contra o mesmo risco: uma conta boa
  *      demais é a que ninguém investiga.
  *   2. **A nota de cada coisa, uma por tópico, e nunca uma soma.** Cada tópico
  *      é uma peça com conserto próprio; uma "nota do Scriba" que os misturasse
- *      não apontaria para lugar nenhum. Tópico sem resposta aparece como "—",
+ *      não apontaria para lugar nenhum. Tópico sem resposta aparece como "-",
  *      não como zero: zero é uma nota abaixo de "ruim", que não existe.
  *   3. **O que as pessoas escreveram**, na íntegra e em ordem. É o
  *      diagnóstico: a média diz que algo está errado, só o texto diz o quê.
@@ -81,12 +81,12 @@ export default async function AdminFeedbackPage() {
         <div className="flex flex-wrap items-baseline gap-x-6 gap-y-2">
           <Metric label="Perguntas feitas" value={INT.format(asked)} />
           <Metric label="Respondidas" value={INT.format(answered)} />
-          <Metric label="Taxa de resposta" value={rate === null ? "—" : `${AVG.format(rate)}%`} />
+          <Metric label="Taxa de resposta" value={rate === null ? "-" : `${AVG.format(rate)}%`} />
           <Metric label="Envios" value={INT.format(data.totalSubmissions)} />
         </div>
         <p className="text-[12px] font-light leading-relaxed text-scriba-ink-mute">
           As médias abaixo são de quem <strong className="font-medium">escolheu</strong> responder.
-          Quanto menor a taxa acima, mais gentil que a realidade essa amostra tende a ser — leia as
+          Quanto menor a taxa acima, mais gentil que a realidade essa amostra tende a ser, leia as
           duas coisas juntas. Os envios do <em>/profile</em> não nascem de pergunta nossa e por isso
           não entram no denominador.
         </p>
@@ -109,7 +109,7 @@ export default async function AdminFeedbackPage() {
 
               <div className="flex items-baseline gap-2">
                 <span className="text-[26px] font-semibold tabular-nums tracking-tight text-scriba-ink-strong">
-                  {t.average === null ? "—" : AVG.format(t.average)}
+                  {t.average === null ? "-" : AVG.format(t.average)}
                 </span>
                 <span className="text-[11px] font-light text-scriba-ink-mute">
                   {t.average === null
@@ -213,7 +213,7 @@ export default async function AdminFeedbackPage() {
                   </p>
                 ) : (
                   <p className="text-[12px] font-light italic text-scriba-ink-mute">
-                    Sem comentário — só a nota.
+                    Sem comentário, só a nota.
                   </p>
                 )}
               </li>

@@ -19,14 +19,14 @@ const BodySchema = z
   .strict();
 
 /**
- * POST /api/feedback/prompt — "devo perguntar agora?"
+ * POST /api/feedback/prompt, "devo perguntar agora?"
  *
  * POST, e não GET, porque ela ESCREVE: quando a resposta é sim, a pergunta já
  * nasce registrada em `feedback_prompts`. É o que impede a janela de voltar
  * quando a pessoa reabre a mesma página, e um GET que grava seria disparado
  * por qualquer prefetch do router.
  *
- * O cliente não manda ordinal, marco nem superfície — ele diz apenas qual
+ * O cliente não manda ordinal, marco nem superfície, ele diz apenas qual
  * sessão está na tela. Tudo o que decide mora em `resolveFeedbackPrompt`; do
  * contrário o navegador escolheria quando é perguntado, e a amostra deixaria
  * de ser a que escolhemos medir.
@@ -53,7 +53,7 @@ export async function POST(request: Request) {
     return NextResponse.json({ prompt });
   } catch (err) {
     // A janela é um extra sobre uma tela que já entregou o que a pessoa veio
-    // buscar. Um erro aqui vira "não perguntar" e some — derrubar a leitura do
+    // buscar. Um erro aqui vira "não perguntar" e some, derrubar a leitura do
     // resumo por causa da pesquisa de satisfação seria trocar o produto pela
     // medição dele.
     log.error("falha ao resolver pergunta", { error: (err as Error).message });

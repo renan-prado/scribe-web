@@ -6,17 +6,17 @@
  * forma de responder "o estudo piorou?" sem reler os dois textos inteiros.
  *
  * **Por que estas métricas e não o tamanho.** Uma contagem de palavras sozinha
- * mente nos dois sentidos. Ela infla quando o modelo empilha versículos — o
+ * mente nos dois sentidos. Ela infla quando o modelo empilha versículos, o
  * texto de `bibleQuote` vem da NVI, não do redator, e por isso NÃO entra em
  * `authoredWords`. E ela esconde o modo de falha real, que é o modelo subir de
  * 5 para 7 seções mantendo os mesmos 18 parágrafos: mais título, menos corpo,
  * mesmo total. É `paragraphsPerSection` que enxerga isso, e foi ele que
- * revelou que o contrato antigo era aritmeticamente impossível — 5×4×120 dá um
+ * revelou que o contrato antigo era aritmeticamente impossível, 5×4×120 dá um
  * piso de 2.400 palavras, e a linha seguinte do prompt anunciava 1.800 a 3.000.
  *
  * ⚠️ **`STUDY_CONTRACT` ESPELHA `lib/prompts/study-write.ts`.** Os números não
  * são interpolados no prompt: aquele texto é lido e ajustado por gente, e
- * costurar variáveis nele o tornaria ilegível — que é a única qualidade que
+ * costurar variáveis nele o tornaria ilegível, que é a única qualidade que
  * um prompt não pode perder. Mesma convenção de `lib/coins/pricing.ts` com a
  * migração SQL: dois lugares, um commit. Ao mexer num, mexa no outro.
  */
@@ -35,7 +35,7 @@ export const STUDY_CONTRACT = {
    * Passagens ancoradas usadas. Tem piso porque a lista que chega ao redator
    * já foi conferida contra a NVI no passo 3: usá-la é de graça, e é o único
    * caminho de Escritura para dentro do texto. Um redator que ignora a lista
-   * desperdiça a etapa que garante a procedência — medido, foi o que aconteceu
+   * desperdiça a etapa que garante a procedência, medido, foi o que aconteceu
    * ao baixar o modelo do redator (16 → 6).
    */
   bibleQuotes: { min: 10, max: 16 },
@@ -62,13 +62,13 @@ export type StudyMetrics = {
   scriptureWords: number;
   sections: number;
   paragraphs: number;
-  /** `null` quando não há seção — divisão por zero não é zero. */
+  /** `null` quando não há seção, divisão por zero não é zero. */
   paragraphsPerSection: number | null;
   wordsPerParagraph: number | null;
   bibleQuotes: number;
   /**
    * Blocos que não são corpo corrido: distinção, objeção, exemplo, destaque,
-   * leitura, citação, pergunta. É o proxy de RIQUEZA — um artigo só de
+   * leitura, citação, pergunta. É o proxy de RIQUEZA, um artigo só de
    * "paragraph" desperdiçou o material que veio das notas.
    */
   structuredBlocks: number;
@@ -81,7 +81,7 @@ function words(text: string | undefined): number {
   return text.split(/\s+/).filter(Boolean).length;
 }
 
-/** Todo texto autoral de um bloco — alguns têm mais de um campo de prosa. */
+/** Todo texto autoral de um bloco, alguns têm mais de um campo de prosa. */
 function authoredWordsOf(block: StudyBlock): number {
   switch (block.type) {
     case "bibleQuote":

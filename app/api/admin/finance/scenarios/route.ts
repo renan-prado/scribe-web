@@ -12,7 +12,7 @@ export const runtime = "nodejs";
 export const dynamic = "force-dynamic";
 
 /**
- * Cenários de projeção — as PREMISSAS, nunca o resultado.
+ * Cenários de projeção, as PREMISSAS, nunca o resultado.
  *
  * O resultado não é gravado em lugar nenhum: ele é recalculado a cada leitura
  * por `lib/finance/projection.ts`, porque a base dele (assinantes de hoje,

@@ -62,7 +62,7 @@ function Odometer({ value, minWidth = 3 }: { value: number; minWidth?: number })
         const hidden = i < firstReal;
         const delay = (digits.length - 1 - i) * 60;
         return (
-          // biome-ignore lint/suspicious/noArrayIndexKey: positional digit slots — order is stable, index is the correct key
+          // biome-ignore lint/suspicious/noArrayIndexKey: positional digit slots, order is stable, index is the correct key
           <span key={`slot-${i}`} className={cn("inline-block", hidden && "invisible")}>
             <DigitColumn digit={d} delayMs={delay} />
           </span>
@@ -101,7 +101,7 @@ export function CoinBalance({
   const [flash, setFlash] = useState<"debit" | "credit" | null>(null);
 
   // NÃO há refresh no mount. O saldo já chegou do servidor em `initialBalance`,
-  // renderizado no mesmo request — pedi-lo de novo por HTTP logo depois custava
+  // renderizado no mesmo request, pedi-lo de novo por HTTP logo depois custava
   // dois `getUser()` (proxy + rota) e mais um SELECT em `profiles` para receber
   // de volta o número que acabou de ser desenhado na tela. Os dois sinais
   // abaixo cobrem o caso em que o saldo muda de verdade sem esta aba saber.

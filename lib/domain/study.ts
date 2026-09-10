@@ -1,5 +1,5 @@
 /**
- * O estudo ("Gerar estudo") — tipos, roteiro e parsers.
+ * O estudo ("Gerar estudo"), tipos, roteiro e parsers.
  *
  * Client-safe: o renderer precisa da união de blocos e o `/admin` precisa das
  * perguntas. Nada aqui toca segredo.
@@ -28,7 +28,7 @@
 /**
  * Vocabulário FECHADO de temas. Fechado de propósito: é o que permite juntar
  * "esta pergunta trata de X" com "este autor escreveu sobre X" por igualdade
- * de string — sem embedding, e sem deixar ao modelo a decisão de quem é
+ * de string, sem embedding, e sem deixar ao modelo a decisão de quem é
  * pertinente, que é a que ele mais erra.
  */
 export const STUDY_TOPICS = [
@@ -71,8 +71,8 @@ export function isStudyTopic(v: unknown): v is StudyTopic {
 // ── Passo 1: as perguntas ────────────────────────────────────────────────────
 
 /**
- * `media` — a pergunta que um ouvinte atento faria ao sair do culto.
- * `alta`  — a que exige distinção conceitual, história da doutrina ou tensão
+ * `media`, a pergunta que um ouvinte atento faria ao sair do culto.
+ * `alta`, a que exige distinção conceitual, história da doutrina ou tensão
  *           entre textos para ser respondida.
  *
  * Não há nível "baixa" de propósito: a pergunta cuja resposta já está no
@@ -84,7 +84,7 @@ export type StudyQuestion = {
   text: string;
   topics: StudyTopic[];
   depth: StudyQuestionDepth;
-  /** Por que ela importa. Curto — serve ao respondedor na hora de escolher. */
+  /** Por que ela importa. Curto, serve ao respondedor na hora de escolher. */
   why: string;
 };
 
@@ -106,13 +106,13 @@ export type StudyAnswer = {
   /**
    * Os autores em que a resposta se apoia. Não é bibliografia decorativa: é o
    * material com que o redator monta atribuições e indicações de leitura. Uma
-   * resposta sem fontes vira um trecho sem nenhuma voz além da do modelo — que
+   * resposta sem fontes vira um trecho sem nenhuma voz além da do modelo, que
    * foi exatamente o que a primeira avaliação mediu (zero citações no artigo).
    */
   sources: StudySource[];
   /**
    * Onde as tradições protestantes divergem de fato, a divergência é
-   * CONTEÚDO, não risco a evitar. Vazio quando há consenso — e aí a resposta
+   * CONTEÚDO, não risco a evitar. Vazio quando há consenso, e aí a resposta
    * afirma com convicção em vez de hedgear.
    */
   tension: string;
@@ -124,7 +124,7 @@ export type StudyAnswer = {
  *
  * Sem isto, avaliar o estudo exige adivinhar o que o modelo pensou. Com isto,
  * dá para ler as trinta perguntas, ver quais o respondedor escolheu, e
- * descobrir se o problema estava na pergunta ou na resposta — que são
+ * descobrir se o problema estava na pergunta ou na resposta, que são
  * consertos completamente diferentes.
  */
 export type StudyRecord = {
@@ -167,7 +167,7 @@ export type StudyBlock =
   | { type: "example"; text: string }
   /**
    * `work` é OBRIGATÓRIA. Um `quote` sem obra nomeável é descartado na
-   * selagem — não avaliado, descartado. Ver `docs/estudo-v2.md` §6.
+   * selagem, não avaliado, descartado. Ver `docs/estudo-v2.md` §6.
    */
   | { type: "quote"; text: string; author: string; work: string }
   /** Uma objeção honesta, com a resposta. */
@@ -181,7 +181,7 @@ export type StudyBlock =
    * inventado é indistinguível de um real até alguém clicar.
    */
   | { type: "reading"; author: string; title: string; note: string; coverUrl?: string }
-  /** Pergunta em aberto. No máximo duas, e só no fecho — o texto é artigo,
+  /** Pergunta em aberto. No máximo duas, e só no fecho, o texto é artigo,
    *  não questionário. */
   | { type: "question"; text: string }
   | { type: "conclusion"; text: string };
@@ -220,7 +220,7 @@ function strArray(rec: Record<string, unknown>, key: string): string[] {
 /**
  * Teto de perguntas aceitas do passo 1. Alto de propósito: o questionador é
  * instruído a perguntar sem pudor, e é o respondedor quem seleciona. Cortar
- * cedo demais aqui seria fazer a seleção pelo critério errado — ordem de
+ * cedo demais aqui seria fazer a seleção pelo critério errado, ordem de
  * geração em vez de qualidade.
  */
 const MAX_QUESTIONS = 40;
@@ -316,7 +316,7 @@ export function parseStudyAnswersFromLLM(content: string): StudyAnswer[] {
 
 /**
  * Payload do redator. Só descarta o que está estruturalmente quebrado (campo
- * obrigatório vazio, tipo desconhecido) — a verificação de fonte é da selagem.
+ * obrigatório vazio, tipo desconhecido), a verificação de fonte é da selagem.
  */
 export function parseStudyFromLLM(content: string): StudyPayload {
   let obj: unknown;
@@ -362,7 +362,7 @@ export function parseStudyFromLLM(content: string): StudyPayload {
       }
       case "objection": {
         const response = str(rec, "response");
-        // Objeção sem resposta é provocação solta — não entra.
+        // Objeção sem resposta é provocação solta, não entra.
         if (text && response) blocks.push({ type: "objection", text, response });
         break;
       }

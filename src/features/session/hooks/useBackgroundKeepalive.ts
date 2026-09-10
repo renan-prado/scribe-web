@@ -43,15 +43,15 @@ type Args = {
  *      even when the app is fully backgrounded or the screen is locked.
  *      Desktop/mobile browsers ignore this entirely. Os eventos de ciclo
  *      de vida saem de TRANSIÇÕES de `phase`, não da limpeza do effect de
- *      keepalive — é o que faz uma pausa emitir `recording:pause` em vez de
+ *      keepalive, é o que faz uma pausa emitir `recording:pause` em vez de
  *      `recording:stop`. Ver `nativeBridge.ts` para o porquê da distinção.
  *
- *   4. **Watchdog re-play**. Some browsers pause `<audio>` on backgrounding —
+ *   4. **Watchdog re-play**. Some browsers pause `<audio>` on backgrounding,
  *      we listen for `pause` / `visibilitychange` and immediately kick it back
  *      into playback while the caller still wants us running.
  *
  * On iOS Safari (not the RN shell), background mic capture is blocked at the
- * platform layer (WebKit bug 226620) and no web trick can defeat it — this
+ * platform layer (WebKit bug 226620) and no web trick can defeat it, this
  * hook still runs but its only iOS benefit is timer-throttling relief while
  * the tab is merely unfocused, not backgrounded.
  */
@@ -68,7 +68,7 @@ export function useBackgroundKeepalive({ phase, sessionId, label, onExternalStop
   }, [onExternalStop]);
 
   /**
-   * Ciclo de vida da shell nativa, num effect PRÓPRIO — separado do keepalive
+   * Ciclo de vida da shell nativa, num effect PRÓPRIO, separado do keepalive
    * de mídia abaixo de propósito. O keepalive liga e desliga com a captura
    * (`enabled`), então usar a limpeza DELE para avisar o nativo transformava
    * toda pausa num `recording:stop`. Aqui os eventos saem de TRANSIÇÕES de
@@ -118,7 +118,7 @@ export function useBackgroundKeepalive({ phase, sessionId, label, onExternalStop
     const audio = new Audio(url);
     audio.loop = true;
     audio.preload = "auto";
-    audio.volume = 1; // silence — value doesn't matter, but 1 keeps OSes happy
+    audio.volume = 1; // silence, value doesn't matter, but 1 keeps OSes happy
     audio.setAttribute("playsinline", "true");
     audio.setAttribute("aria-hidden", "true");
     audio.crossOrigin = "anonymous";
@@ -133,7 +133,7 @@ export function useBackgroundKeepalive({ phase, sessionId, label, onExternalStop
     tryPlay();
 
     const onPause = () => {
-      // Something (backgrounding, headphone unplug, another tab) paused us —
+      // Something (backgrounding, headphone unplug, another tab) paused us,
       // if the caller still wants keepalive, resume immediately.
       tryPlay();
     };
@@ -144,7 +144,7 @@ export function useBackgroundKeepalive({ phase, sessionId, label, onExternalStop
     };
     document.addEventListener("visibilitychange", onVis);
 
-    // Also resume on any user interaction — first tap after iOS lock/unlock,
+    // Also resume on any user interaction, first tap after iOS lock/unlock,
     // for example. Passive listeners so we don't affect scrolling perf.
     const resumeEvents = ["pointerdown", "touchstart", "keydown"] as const;
     const onInteract = () => {
@@ -154,7 +154,7 @@ export function useBackgroundKeepalive({ phase, sessionId, label, onExternalStop
       window.addEventListener(evt, onInteract, { passive: true });
     }
 
-    // Media Session — the OS-visible "we're recording" surface.
+    // Media Session, the OS-visible "we're recording" surface.
     if ("mediaSession" in navigator) {
       try {
         navigator.mediaSession.metadata = new MediaMetadata({

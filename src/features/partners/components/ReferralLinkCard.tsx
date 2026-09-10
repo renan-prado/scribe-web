@@ -12,7 +12,7 @@ import { useState } from "react";
  * em vídeo e a pessoa vai criar a conta em outro aparelho, situação em que o
  * link não acompanha.
  *
- * Sem essa explicação, a tendência é divulgar só o link — e perder toda a
+ * Sem essa explicação, a tendência é divulgar só o link, e perder toda a
  * audiência que assiste no celular e assina no computador.
  */
 
@@ -32,7 +32,7 @@ export function ReferralLinkCard({ link, code, bonusCoins, rewardCoins, ratePct 
         <h2 className="text-[14px] font-semibold text-scriba-ink-strong">Seu link e seu código</h2>
         <p className="text-[12.5px] font-light leading-[1.5] text-scriba-ink-soft">
           Quem entra por qualquer um dos dois ganha{" "}
-          <strong className="font-medium text-scriba-ink-strong">+{bonusCoins} moedas</strong> — o
+          <strong className="font-medium text-scriba-ink-strong">+{bonusCoins} moedas</strong>, o
           bastante para gravar um culto inteiro de graça. Você recebe{" "}
           <strong className="font-medium text-scriba-ink-strong">
             {ratePct.toLocaleString("pt-BR")}%
@@ -53,7 +53,7 @@ export function ReferralLinkCard({ link, code, bonusCoins, rewardCoins, ratePct 
 
       <CopyRow
         label="Link"
-        hint="Para bio, descrição de vídeo, stories — onde dá para clicar."
+        hint="Para bio, descrição de vídeo, stories, onde dá para clicar."
         value={link}
       />
       <CopyRow

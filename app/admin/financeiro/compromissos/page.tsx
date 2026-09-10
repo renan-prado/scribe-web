@@ -12,7 +12,7 @@ export const dynamic = "force-dynamic";
 /**
  * Compromissos e dívidas (§9).
  *
- * Um recorte de `finance_entries`, não uma entidade paralela — a razão está no
+ * Um recorte de `finance_entries`, não uma entidade paralela, a razão está no
  * cabeçalho de `CommitmentsManager` e na migração 0043.
  */
 export default async function FinanceCommitmentsPage() {
@@ -50,7 +50,7 @@ export default async function FinanceCommitmentsPage() {
     <div className="flex flex-col gap-6">
       <AdminPageHeader
         title="Compromissos e dívidas"
-        subtitle="O que devemos, para quem, até quando — e quanto já foi pago."
+        subtitle="O que devemos, para quem, até quando, e quanto já foi pago."
       />
 
       <section className="grid gap-3 sm:grid-cols-2 xl:grid-cols-4">
@@ -70,7 +70,7 @@ export default async function FinanceCommitmentsPage() {
       <FinanceNotices
         tone="info"
         warnings={[
-          "Uma dívida é um lançamento não liquidado, não um tipo à parte: o que aparece aqui está na mesma lista de Lançamentos, filtrado. Ao registrar um pagamento parcial, o restante é recalculado — nunca digitado.",
+          "Uma dívida é um lançamento não liquidado, não um tipo à parte: o que aparece aqui está na mesma lista de Lançamentos, filtrado. Ao registrar um pagamento parcial, o restante é recalculado, nunca digitado.",
         ]}
       />
 

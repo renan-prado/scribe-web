@@ -30,7 +30,7 @@ export type UsageTotals = {
 /**
  * Um modelo dentro de uma rota. A quebra existe para o analista de
  * `/admin/insights` poder dizer "a rota X está num modelo caro para o que ela
- * faz" — a pergunta mais barata de responder que este painel tem, e a única
+ * faz", a pergunta mais barata de responder que este painel tem, e a única
  * que não dá para responder olhando só o custo por rota.
  *
  * `priced = false` quando o modelo não está em `lib/llm/pricing.ts`: o custo
@@ -48,7 +48,7 @@ export type UsageByRoute = {
   route: string;
   events: number;
   totalCostUsd: number;
-  /** Ordenada por custo. Quase sempre um item só — uma rota, um modelo. */
+  /** Ordenada por custo. Quase sempre um item só, uma rota, um modelo. */
   models: UsageByModel[];
 };
 export type UsageByUser = {
@@ -79,8 +79,8 @@ export type UsageByDay = { day: string; totalCostUsd: number; events: number };
  * evento que ela gravou e termina no primeiro evento da versão seguinte.
  *
  * Ele existe porque metade do painel não tem carimbo de versão para ler.
- * `coin_transactions` não tem — o débito é por minuto de gravação, por estudo,
- * por reprocessamento, nunca por chamada de LLM —, e sem alguma forma de
+ * `coin_transactions` não tem, o débito é por minuto de gravação, por estudo,
+ * por reprocessamento, nunca por chamada de LLM, e sem alguma forma de
  * recortar a moeda junto com o custo, toda margem sob filtro de versão seria
  * custo de uma fatia dividido por receita do mês inteiro.
  *
@@ -90,8 +90,8 @@ export type UsageByDay = { day: string; totalCostUsd: number; events: number };
  *   JANELA em que ela esteve no ar onde não há (o ledger de moedas).
  *
  * `endsAt` é `null` na versão mais nova: ela ainda está no ar. A imprecisão
- * conhecida é a janela de rollout — durante alguns minutos a Vercel serve as
- * duas versões —, e ela é pequena demais para trocar por um modelo mais
+ * conhecida é a janela de rollout, durante alguns minutos a Vercel serve as
+ * duas versões, e ela é pequena demais para trocar por um modelo mais
  * complicado que teria de adivinhar a mesma coisa.
  */
 export type VersionWindow = {
@@ -103,19 +103,19 @@ export type VersionWindow = {
 /**
  * Uma linha por VERSÃO do app (`llm_usage_events.app_version`, carimbada em
  * `lib/db/usage.ts`). É o corte que responde "depois da 0.5.0, isto ficou mais
- * caro ou mais lento?" — a pergunta que aparece toda vez que um prompt é
+ * caro ou mais lento?", a pergunta que aparece toda vez que um prompt é
  * reescrito ou um modelo é trocado, e a única que nenhum dos outros cortes
  * desta tela sabia responder, porque todos eles são recortes de ESPAÇO (rota,
  * usuário, sessão) e este é de TEMPO com um marcador confiável.
  *
  * A data sozinha não serve como marcador: ela sabe quando a chamada aconteceu,
- * não quando o deploy subiu. Por isso `firstSeen` é MEDIDO — é o primeiro
+ * não quando o deploy subiu. Por isso `firstSeen` é MEDIDO, é o primeiro
  * evento que a versão gravou, não uma data de release digitada em algum lugar.
  *
  * Não há coluna de moedas aqui, e a ausência é decisão: `coin_transactions`
  * não carrega versão e o débito é por minuto de gravação, não por chamada. Uma
  * coluna "custo por 1.000 moedas" por versão seria custo filtrado dividido por
- * moeda não filtrada — um número que parece margem e não é nada.
+ * moeda não filtrada, um número que parece margem e não é nada.
  */
 export type UsageByVersion = {
   /** `null` = chamadas anteriores à migração 0044. Sem backfill possível. */
@@ -125,7 +125,7 @@ export type UsageByVersion = {
   /**
    * Publicado por MIL chamadas na tela, pela mesma razão do custo por moeda em
    * `lib/fx/format.ts`: uma chamada custa na casa do milésimo de real, e em
-   * duas casas decimais toda versão empataria em "R$ 0,00" — justamente a
+   * duas casas decimais toda versão empataria em "R$ 0,00", justamente a
    * diferença que esta tabela existe para mostrar.
    */
   costPerEventUsd: number;
@@ -137,7 +137,7 @@ export type UsageByVersion = {
   lastSeen: string;
   /**
    * Variação do custo por chamada contra a versão imediatamente ANTERIOR desta
-   * mesma lista — já com os filtros ativos aplicados. `null` na versão mais
+   * mesma lista, já com os filtros ativos aplicados. `null` na versão mais
    * antiga e quando a anterior não tem base para comparar.
    */
   costPerEventDelta: number | null;
@@ -147,7 +147,7 @@ export type UsageByVersion = {
 /**
  * Uma linha por AÇÃO cobrável (ver lib/coins/billable.ts), mais a linha
  * `unbilled` do que se gastou sem cobrar. É o corte que responde "este preço
- * se paga?" — o de rota responde "onde o dinheiro foi", que é outra pergunta.
+ * se paga?", o de rota responde "onde o dinheiro foi", que é outra pergunta.
  * A conversão para real e a margem ficam com `lib/coins/economics.ts`; aqui só
  * saem números medidos.
  */
@@ -187,12 +187,12 @@ const REPROCESS_SUMMARY_ROUTES = new Set([
   // lembra (ver o Promise.all em app/api/final-summary/reprocess/route.ts).
   // São 3 chamadas de LLM a mais por reprocessamento, e enquanto elas
   // gravavam as rotas SEM sufixo o custo delas era lido como custo da
-  // gravação — a margem de `reprocess_summary` saía otimista.
+  // gravação, a margem de `reprocess_summary` saía otimista.
   "practices-reprocess",
   "rereads-reprocess",
   "reminders-reprocess",
   // Primeiro resumo de uma sessão do modo transcrição. Mesmo pipeline, mesmo
-  // preço, mesma linha — ver o comentário de `reasons` em lib/coins/billable.ts.
+  // preço, mesma linha, ver o comentário de `reasons` em lib/coins/billable.ts.
   "final-summary-from-transcript",
   "summary-enrichment-from-transcript",
   "rereads-from-transcript",
@@ -201,7 +201,7 @@ const REPROCESS_SUMMARY_ROUTES = new Set([
 
 /**
  * Rotas que o painel dispara para si mesmo. Não são gasto de usuário e nunca
- * terão moeda atrás — ver `INTERNAL_ACTION_KEY`.
+ * terão moeda atrás, ver `INTERNAL_ACTION_KEY`.
  */
 const INTERNAL_ROUTES = new Set(["admin-insights"]);
 
@@ -222,7 +222,7 @@ const ACTION_BY_REASON = new Map<ChargeReason, BillableActionKey>(
 
 /**
  * Toda rota que não é do estudo nem do reprocessamento de resumo está dentro
- * do preço por minuto da gravação — inclusive as gratuitas (praticar, releia,
+ * do preço por minuto da gravação, inclusive as gratuitas (praticar, releia,
  * lembra, formatação). Sem sessão para dizer o modo, o custo cai em
  * `unbilled`: é gasto real que ninguém pagou, e ele PRECISA aparecer.
  */
@@ -247,7 +247,7 @@ export type UsageFilters = {
    * Versão do app que originou a chamada (`llm_usage_events.app_version`).
    * Aplicada em MEMÓRIA, não no SQL, e de propósito: a lista de versões do
    * seletor é montada das mesmas linhas, e filtrar no banco a reduziria à
-   * versão já escolhida — o filtro se trancaria depois do primeiro uso.
+   * versão já escolhida, o filtro se trancaria depois do primeiro uso.
    */
   version?: string;
   from?: string;
@@ -272,17 +272,17 @@ export type AdminUsageSummary = {
    */
   versionWindow: VersionWindow | null;
   /**
-   * Custo do milheiro de moeda no agregado — e ele sai SÓ do custo cobrável.
+   * Custo do milheiro de moeda no agregado, e ele sai SÓ do custo cobrável.
    *
    * Somar aqui o gasto sem cobrança e o custo interno do painel produzia um
    * número que não responde pergunta nenhuma: ele misturava "o preço das ações
    * se paga?" com "quanto o produto dá de graça?", e a resposta piorava toda
-   * vez que um admin abria a tela de insights — a própria análise entrava na
+   * vez que um admin abria a tela de insights, a própria análise entrava na
    * conta. Pior, ele contradizia as margens por ação logo abaixo, que sempre
    * foram cobráveis contra cobráveis.
    *
    * As duas fatias excluídas não sumiram: estão em `unchargedCostUsd` e
-   * `internalCostUsd`, ao lado, porque continuam saindo do lucro — só não são
+   * `internalCostUsd`, ao lado, porque continuam saindo do lucro, só não são
    * problema de PREÇO.
    */
   overallCostPerCoinUsd: number | null;
@@ -298,7 +298,7 @@ export type AdminUsageSummary = {
   internalCostUsd: number;
   /**
    * Chamadas cujo modelo não está em `lib/llm/pricing.ts`. Elas gravaram custo
-   * ZERO, então todo total acima está subestimado — e ninguém descobre isso
+   * ZERO, então todo total acima está subestimado, e ninguém descobre isso
    * olhando um painel que só mostra somas. É o número que precisa ser dito
    * antes de qualquer decisão de preço.
    */
@@ -309,15 +309,15 @@ export type AdminUsageSummary = {
    * Se os números de MOEDA respeitam os filtros ativos.
    *
    * `coin_transactions` não tem rota nem versão. A VERSÃO ainda assim recorta,
-   * pela janela de tempo em que ela esteve no ar (ver `VersionWindow`) — é
+   * pela janela de tempo em que ela esteve no ar (ver `VersionWindow`), é
    * aproximação, mas é a mesma fatia de calendário dos dois lados, e é o que
    * permite ler margem por versão.
    *
    * A ROTA não tem esse recurso: rota não é um intervalo, é um pedaço de cada
    * execução. Com ela ligada o custo é recortado e a moeda não, e "custo por
-   * 1.000 moedas" vira custo de uma fatia dividido pelo total do período — um
+   * 1.000 moedas" vira custo de uma fatia dividido pelo total do período, um
    * número que parece margem, sempre baixo, que ninguém investiga porque a
-   * conta parece boa. Falso aqui, a tela mostra "—".
+   * conta parece boa. Falso aqui, a tela mostra "-".
    */
   coinsScoped: boolean;
 };
@@ -422,7 +422,7 @@ export async function loadAdminUsageSummary(
   if (error) throw new Error(`loadAdminUsageSummary events failed: ${error.message}`);
 
   // O universo de versões sai das linhas ANTES do recorte por versão, e é isso
-  // que mantém o seletor da tela com todas as opções depois de escolher uma —
+  // que mantém o seletor da tela com todas as opções depois de escolher uma,
   // filtrar no SQL o deixaria com um item só a partir do primeiro clique.
   const scanned = (events ?? []) as EventRow[];
   const versionUniverse = new Set<string>();
@@ -465,7 +465,7 @@ export async function loadAdminUsageSummary(
     }
   }
 
-  // Ledger de moedas cobradas — autoritativo do que o usuário gastou. É a base
+  // Ledger de moedas cobradas, autoritativo do que o usuário gastou. É a base
   // do "custo por moeda": totalUsd / totalCoins gastos no mesmo escopo.
   let coinQuery = admin
     .from("coin_transactions")
@@ -493,7 +493,7 @@ export async function loadAdminUsageSummary(
     // "Moedas gastas" é o que o usuário CONSUMIU, e o ledger guarda também o
     // que ele comprou: grant_coins grava `subscription_grant` e `topup_pack`
     // com amount POSITIVO, e o estorno grava um negativo que é devolução de
-    // crédito, não consumo. O motivo é o que separa os dois — um |amount| sobre
+    // crédito, não consumo. O motivo é o que separa os dois, um |amount| sobre
     // a tabela inteira somava mil moedas creditadas como mil gastas, e o custo
     // por moeda saía uma fração do que é.
     const reason = r.reason;
@@ -501,7 +501,7 @@ export async function loadAdminUsageSummary(
     if (modeSessionIds && (r.session_id == null || !modeSessionIds.has(r.session_id))) continue;
     // Recorte por versão: aqui é pela JANELA, porque o ledger não tem carimbo.
     // Um filtro de versão que não resolveu janela nenhuma (a versão não gravou
-    // evento no período) zera as moedas junto com o custo — deixá-las inteiras
+    // evento no período) zera as moedas junto com o custo, deixá-las inteiras
     // ao lado de um custo zerado produziria margem de 100%.
     if (filters.version) {
       if (versionWindow === null) continue;
@@ -609,7 +609,7 @@ export async function loadAdminUsageSummary(
     }
     // Só as chamadas de chat entram na média de token: `transcribe` não tem
     // token nenhum, e incluí-la faria a média cair quando a transcrição
-    // aumentasse — o oposto do que o número diz.
+    // aumentasse, o oposto do que o número diz.
     if (row.audio_seconds == null) {
       vAgg.chatEvents += 1;
       vAgg.chatTokens += (row.prompt_tokens ?? 0) + (row.completion_tokens ?? 0);
@@ -760,7 +760,7 @@ export async function loadAdminUsageSummary(
   const byDay = Array.from(dayMap.values()).sort((a, b) => a.day.localeCompare(b.day));
 
   // Da mais nova para a mais antiga, com o balde sem versão ("antes da
-  // medição") sempre por último — ele não tem lugar na linha do tempo e
+  // medição") sempre por último, ele não tem lugar na linha do tempo e
   // ordená-lo junto o colocaria antes de tudo, como se fosse a versão zero.
   const orderedVersionKeys = [
     ...sortVersionsDesc(Array.from(versionMap.keys()).filter((k) => k !== "")),
@@ -823,7 +823,7 @@ export async function loadAdminUsageSummary(
 }
 
 /**
- * Cheap list for the user filter dropdown — no aggregate work.
+ * Cheap list for the user filter dropdown, no aggregate work.
  */
 export async function listUsersForFilter(): Promise<
   { id: string; displayName: string | null; email: string | null }[]

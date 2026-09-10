@@ -10,7 +10,7 @@
 -- rows here instead.
 --
 -- AI-authored items (relatedVerse, context, suggestedQuote) stay in the
--- jsonb only — those are one-shot enrichment we don't filter across
+-- jsonb only, those are one-shot enrichment we don't filter across
 -- sessions. Feed item shapes live in lib/domain/feed.ts.
 
 create table if not exists public.session_feed_items (

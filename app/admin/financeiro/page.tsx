@@ -24,7 +24,7 @@ const INT = new Intl.NumberFormat("pt-BR");
  *
  * Ela responde, em ordem, às perguntas do topo da especificação: quanto
  * entrou, quanto saiu, quanto sobrou, quanto devemos e por quanto tempo o
- * caixa aguenta. Nada aqui é calculado na página — tudo vem de
+ * caixa aguenta. Nada aqui é calculado na página, tudo vem de
  * `buildFinanceOverview`, que é puro e testado.
  *
  * OS AVISOS VÊM ANTES DOS NÚMEROS, e não depois. Um painel financeiro erra em
@@ -77,11 +77,11 @@ export default async function FinanceOverviewPage() {
   ];
 
   // A ausência de cotação é a única coisa que impede a leitura, então ela é a
-  // única que aparece em vermelho. O resto é amarelo — ver `FinanceNotices`.
+  // única que aparece em vermelho. O resto é amarelo, ver `FinanceNotices`.
   const blocking =
     usdBrl === null
       ? [
-          "Sem cotação do dólar. Informe uma manualmente em /admin/usage — sem ela, todo valor em US$ fica fora dos totais.",
+          "Sem cotação do dólar. Informe uma manualmente em /admin/usage, sem ela, todo valor em US$ fica fora dos totais.",
         ]
       : [];
 
@@ -140,8 +140,8 @@ export default async function FinanceOverviewPage() {
               pagantes, então ele inclui o que os usuários gratuitos consomem.
               É de propósito: é o custo que a base paga tem de cobrir. */}
           <p className="text-[11.5px] font-light leading-[1.5] text-scriba-ink-mute">
-            O custo por assinante divide o custo total do mês — inclusive o que a base gratuita
-            consome — pelos assinantes pagantes. É o que eles precisam cobrir.
+            O custo por assinante divide o custo total do mês, inclusive o que a base gratuita
+            consome, pelos assinantes pagantes. É o que eles precisam cobrir.
           </p>
         </ListCard>
 
@@ -178,7 +178,7 @@ export default async function FinanceOverviewPage() {
             </p>
           ) : (
             <p className="text-[11.5px] font-light text-scriba-ink-mute">
-              Informe o saldo em caixa nas configurações — sem ele não há runway.
+              Informe o saldo em caixa nas configurações, sem ele não há runway.
             </p>
           )}
           <QuickLink href="/admin/financeiro/configuracoes">Configurações</QuickLink>
@@ -209,7 +209,7 @@ export default async function FinanceOverviewPage() {
             <p className="text-[11.5px] font-light leading-[1.55] text-scriba-ink-mute">
               A tabela está em <strong>competência</strong>: cada valor pertence ao mês que ele
               descreve, e uma cobrança anual entra rateada em doze. A linha “Caixa do mês” é o outro
-              regime — o que efetivamente entrou e saiu, com a anual inteira no mês em que foi
+              regime, o que efetivamente entrou e saiu, com a anual inteira no mês em que foi
               cobrada.
             </p>
           </div>
@@ -247,7 +247,7 @@ export default async function FinanceOverviewPage() {
       <p className="flex items-start gap-2 text-[11.5px] font-light leading-[1.55] text-scriba-ink-mute">
         <Landmark className="mt-0.5 size-3.5 shrink-0" />
         <span>
-          Receita de assinatura e custo de IA são <strong>medidos</strong> — saem do ledger de
+          Receita de assinatura e custo de IA são <strong>medidos</strong>, saem do ledger de
           créditos e de <code>llm_usage_events</code>, as mesmas fontes de /admin/métricas e
           /admin/uso. O que se lança à mão aqui é só o que ninguém mede por nós.
         </span>

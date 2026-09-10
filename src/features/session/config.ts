@@ -30,7 +30,7 @@ export const BIBLE_GUARD_THRESHOLD = 4;
 export const BIBLE_GUARD_COOLDOWN_MS = 90_000;
 
 /**
- * TTL do `currentReading` — enquanto fresco, triggers isolados
+ * TTL do `currentReading`, enquanto fresco, triggers isolados
  * ("versículo 10", "no verso seguinte") disparam continuationHit (+3),
  * resolvendo a leitura pausada em que o pastor anuncia livro+capítulo
  * uma vez e depois só cita versos.
@@ -45,7 +45,7 @@ export const BIBLE_GUARD_VERB_WINDOW_WORDS = 6;
 
 /**
  * Crescimento mínimo da transcrição (em chars) entre duas chamadas de bible.
- * Aplicado *após* o guard passar — impede re-fire no mesmo tail quando o LLM
+ * Aplicado *após* o guard passar, impede re-fire no mesmo tail quando o LLM
  * responde items: 0 (nesse caso `lastBibleEmit` não atualiza e o sinal
  * `duplicateEmit` não dispara, então sem esse gate o effect re-executa
  * imediatamente ao flip de `bibleInFlight`).
@@ -56,7 +56,7 @@ export const BIBLE_MIN_TAIL_DELTA_CHARS = 40;
 
 /**
  * Cadência do /api/insights em número de chunks OK. Com chunks de 15-20s,
- * 6 chunks equivalem a ~90-120s (1.5-2min) de fala — a cadência-alvo de
+ * 6 chunks equivalem a ~90-120s (1.5-2min) de fala, a cadência-alvo de
  * ~1 card a cada 1:30-2min no feed live. O FEED_MIN_GAP_MS de 90s segura
  * o ritmo quando uma call retorna 2 itens de uma vez.
  */
@@ -66,7 +66,7 @@ export const INSIGHTS_CHUNK_INTERVAL = 6;
  * Warmup: chunks OK exigidos pro PRIMEIRO disparo de insights da sessão.
  * Sem ele, o primeiro card só apareceria após INSIGHTS_CHUNK_INTERVAL chunks
  * (2min+), o que lê como "não está funcionando". Disparar já no primeiro
- * chunk deixa o prompt decidir se o trecho curto rende algo útil — se
+ * chunk deixa o prompt decidir se o trecho curto rende algo útil, se
  * retornar 0 items, o próximo tick volta à cadência normal.
  */
 export const INSIGHTS_FIRST_FIRE_CHUNK = 1;
@@ -94,7 +94,7 @@ export const INSIGHTS_MIN_TAIL_DELTA_CHARS = 200;
  * a cada disparo pra o ritmo não parecer mecânico.
  *
  * ECHO_MIN_TAIL_DELTA_CHARS controla o gate: se a transcrição não cresceu
- * o suficiente desde o último eco, não há material novo — pula e economiza.
+ * o suficiente desde o último eco, não há material novo, pula e economiza.
  */
 export const ECHO_STREAK_MIN = 3;
 export const ECHO_STREAK_MAX = 5;
@@ -114,14 +114,14 @@ export const FEED_MIN_GAP_MS = 90_000; // 90s
 /**
  * Gap curto pro PRIMEIRO card da sessão. Enquanto `feedItems` estiver vazio,
  * o drain usa esse valor em vez de FEED_MIN_GAP_MS. Reduz a ansiedade inicial
- * ("será que está funcionando?") sem afetar o ritmo depois — após o primeiro
+ * ("será que está funcionando?") sem afetar o ritmo depois, após o primeiro
  * drain, a fila volta ao gap longo.
  */
 export const FEED_FIRST_CARD_GAP_MS = 20_000; // 20s
 
 /**
  * Gap aplicado quando o head da drip queue é um `citedVerse`. ZERO de
- * propósito: a citação vem do próprio pregador lendo — uma vez identificada,
+ * propósito: a citação vem do próprio pregador lendo, uma vez identificada,
  * aparece imediatamente, sem nenhum pacing de fila. O atraso restante é só o
  * inevitável (fechamento do chunk de áudio + transcrição + call do bible).
  * Combina com o "furar-fila" no `enqueueFeedItems` (citedVerse é inserido
@@ -132,7 +132,7 @@ export const FEED_CITED_VERSE_GAP_MS = 0;
 /**
  * Se a fila de drip já tem esse número de items pendentes, o insights tick
  * pula a chamada. Backpressure: enquanto os cards antigos não aparecem, não
- * faz sentido gerar mais material — economiza tokens e evita que insights
+ * faz sentido gerar mais material, economiza tokens e evita que insights
  * geradas há vários minutos apareçam fora do momento certo. Reduzido pra 2
  * porque cada call agora retorna no máximo 2 itens; segurar 2 na fila já
  * significa uma call inteira aguardando.
@@ -161,7 +161,7 @@ export const SILENCE_RMS_THRESHOLD = 0.005;
  *
  * O aviso é PEGAJOSO e não troca nada sozinho: ele existe para a pessoa
  * decidir se mexe na captação ou se encerra. Antes ele também prometia
- * "ativamos um modelo mais preciso" — a escalada de modelo foi removida
+ * "ativamos um modelo mais preciso", a escalada de modelo foi removida
  * porque o modelo "mais preciso" era medidamente pior (ver
  * `app/api/transcribe/route.ts`), e a promessa saiu junto.
  */
@@ -187,7 +187,7 @@ export const COIN_WARN_MINUTES_CRITICAL = 2;
 /**
  * Cadência do polling de saldo enquanto a gravação está congelada por falta de
  * crédito. O pagamento acontece noutra aba, então não há evento local para
- * escutar — o `focus` da janela cobre o caso comum e este intervalo cobre quem
+ * escutar, o `focus` da janela cobre o caso comum e este intervalo cobre quem
  * deixa as duas abas visíveis lado a lado. Só roda com a aba visível.
  */
 export const COIN_RECOVERY_POLL_MS = 5_000;
@@ -199,7 +199,7 @@ export const COIN_RECOVERY_POLL_MS = 5_000;
  * em descanso: quase transparente e sem cor, para sair da frente do feed que
  * o usuário está lendo. 5s é curto o bastante para a barra não competir com a
  * leitura e longo o bastante para quem abriu com a intenção de pausar ainda
- * alcançar o botão aceso. O primeiro toque em cima dela só reacende — não
- * dispara ação nenhuma —, então adormecer cedo não custa um stop acidental.
+ * alcançar o botão aceso. O primeiro toque em cima dela só reacende, não
+ * dispara ação nenhuma, então adormecer cedo não custa um stop acidental.
  */
 export const RECORD_CLUSTER_IDLE_MS = 5_000;

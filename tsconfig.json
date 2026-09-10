@@ -36,6 +36,6 @@
   ],
   // `tmp/` é gitignored e guarda os harnesses de avaliação (ver lib/AGENTS.md).
   // Sem excluí-la aqui, um script de uma tarde quebra `npm run typecheck` do
-  // projeto inteiro — o `include` acima pega `**/*.mts`.
+  // projeto inteiro, o `include` acima pega `**/*.mts`.
   "exclude": ["node_modules", "tmp"]
 }

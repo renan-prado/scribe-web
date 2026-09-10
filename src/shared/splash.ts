@@ -6,12 +6,12 @@ import SCREENS from "@/shared/splash-screens.json";
  * O Android monta o splash sozinho, com o `background_color` e o ícone do
  * manifest. **O iOS não lê nada disso**: sem um `apple-touch-startup-image`
  * cuja media query case EXATAMENTE com o aparelho, ele abre o app numa tela
- * branca vazia — que é o que o Scriba fazia. Por isso é uma imagem por
+ * branca vazia, que é o que o Scriba fazia. Por isso é uma imagem por
  * resolução.
  *
  * A lista de resoluções mora em `splash-screens.json` porque os arquivos PNG
  * saem dela também: `scripts/generate-splash.mjs` lê o MESMO json. Aparelho
- * novo é uma linha lá e rodar o script — as duas metades não podem divergir,
+ * novo é uma linha lá e rodar o script, as duas metades não podem divergir,
  * senão ou sobra imagem que ninguém pede, ou falta a que o iPhone procura (e
  * aí ele volta ao branco, sem avisar).
  */

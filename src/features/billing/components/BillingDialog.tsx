@@ -49,9 +49,9 @@ import { cn } from "@/lib/utils";
  * A ordem é intencional: a assinatura é a oferta principal e ocupa o corpo do
  * diálogo; a compra única fica recolhida atrás de um link discreto, para não
  * competir com os planos. Ela só aparece aberta quando não há plano nenhum a
- * oferecer (usuário já no topo) — aí é a única compra possível.
+ * oferecer (usuário já no topo), aí é a única compra possível.
  *
- * O checkout SEMPRE abre em aba nova (ver `openCheckoutWindow`) — enquanto
+ * O checkout SEMPRE abre em aba nova (ver `openCheckoutWindow`), enquanto
  * uma gravação está em curso, sair desta página destruiria o MediaRecorder e
  * o transcript ainda não salvo. Quando o usuário volta para cá, o `focus` da
  * janela dispara um refresh do saldo, então o número no header se atualiza
@@ -66,13 +66,13 @@ type Props = {
   onOpenChange?: (open: boolean) => void;
   /**
    * Conteúdo do gatilho. O próprio `DialogTrigger` já é o <button>, então
-   * passe só o visual aqui — embrulhar num botão próprio aninharia dois
+   * passe só o visual aqui, embrulhar num botão próprio aninharia dois
    * botões e quebraria o HTML.
    */
   trigger?: ReactNode;
   triggerClassName?: string;
   triggerLabel?: string;
-  /** Aviso opcional no topo — usado pelo overlay de "créditos acabaram". */
+  /** Aviso opcional no topo, usado pelo overlay de "créditos acabaram". */
   notice?: ReactNode;
 };
 
@@ -104,14 +104,14 @@ export function BillingDialog({
   /**
    * O pacote avulso fica recolhido: a assinatura é o caminho principal e a
    * compra única só aparece para quem procura por ela. Quando não há plano
-   * nenhum para oferecer (usuário já no topo), abre direto — senão o diálogo
+   * nenhum para oferecer (usuário já no topo), abre direto, senão o diálogo
    * não ofereceria nada.
    */
   const [topupOpen, setTopupOpen] = useState(false);
   /**
    * Só montamos as opções de compra com plano e saldo já em mãos. Sem isso a
    * tela abria assumindo "free", desenhava os dois planos e depois removia o
-   * que o usuário já assina — conteúdo trocando na frente de quem lê.
+   * que o usuário já assina, conteúdo trocando na frente de quem lê.
    */
   const [ready, setReady] = useState(false);
   const [pending, setPending] = useState<null | "topup" | PaidPlanKey | "portal">(null);
@@ -149,7 +149,7 @@ export function BillingDialog({
   }, [isOpen]);
 
   // O pagamento acontece noutra aba. Quando esta volta ao foco, ressincroniza
-  // saldo e plano — é o que faz o número subir "sozinho" depois da compra.
+  // saldo e plano, é o que faz o número subir "sozinho" depois da compra.
   useEffect(() => {
     if (!isOpen) return;
     const onFocus = () => {
@@ -164,7 +164,7 @@ export function BillingDialog({
     async (payload: Parameters<typeof requestCheckout>[0], key: "topup" | PaidPlanKey) => {
       if (pending) return;
       setPending(key);
-      // Abrir a janela DENTRO do gesto do clique — depois do await o navegador
+      // Abrir a janela DENTRO do gesto do clique, depois do await o navegador
       // já não considera isso uma ação do usuário e bloqueia o popup.
       const win = openCheckoutWindow();
       const result = await requestCheckout(payload);
@@ -178,7 +178,7 @@ export function BillingDialog({
       if (outcome === "blocked") {
         toast.error("Seu navegador bloqueou a janela de pagamento.", {
           description:
-            "Libere pop-ups para este site e tente de novo — não podemos sair desta página sem interromper a gravação.",
+            "Libere pop-ups para este site e tente de novo, não podemos sair desta página sem interromper a gravação.",
         });
         return;
       }
@@ -215,7 +215,7 @@ export function BillingDialog({
   );
 
   // Sem plano nenhum para oferecer (usuário já no topo), o avulso é a única
-  // compra possível — recolhê-lo deixaria o diálogo sem ação.
+  // compra possível, recolhê-lo deixaria o diálogo sem ação.
   const topupExpanded = topupOpen || upgradeTargets.length === 0;
 
   const totalCoins = TOPUP.coins * quantity;
@@ -465,7 +465,7 @@ export function BillingDialog({
 }
 
 /**
- * Esqueleto com a silhueta de dois cards de plano — o pior caso do que vem
+ * Esqueleto com a silhueta de dois cards de plano, o pior caso do que vem
  * depois. Reservar o espaço maior evita que o diálogo pule de altura quando o
  * conteúdo real entra.
  */

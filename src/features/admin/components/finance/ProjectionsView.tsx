@@ -33,14 +33,14 @@ import { ScenarioDialog } from "./ScenarioDialog";
  * A PROJEÇÃO É CALCULADA NO CLIENTE, e isso não contradiz "não faça cálculos
  * importantes no frontend". O que a regra proíbe é uma SEGUNDA implementação
  * do cálculo dentro de um componente; aqui o componente chama `project()` de
- * `lib/finance/projection.ts` — o mesmo módulo puro que os testes exercitam, e
+ * `lib/finance/projection.ts`, o mesmo módulo puro que os testes exercitam, e
  * o único lugar onde a fórmula existe. Rodar no cliente é o que permite
  * arrastar uma premissa e ver o resultado sem um round-trip por tecla, e nada
  * do que sai daqui é persistido nem cobra ninguém.
  *
  * A BASE vem do servidor e é MEDIDA. As premissas são do cenário e foram
  * digitadas. A tela diz qual é qual, porque a distinção é a diferença entre
- * uma projeção e um chute — e é ela que impede alguém de ler "R$ 40 mil no mês
+ * uma projeção e um chute, e é ela que impede alguém de ler "R$ 40 mil no mês
  * 12" como previsão.
  */
 
@@ -109,9 +109,9 @@ export function ProjectionsView({ scenarios, basis, basisLabels }: Props) {
           </span>
         </div>
         <p className="text-[12.5px] font-light leading-[1.55] text-scriba-ink-soft">
-          Estes cinco números não são premissa — saem das assinaturas vivas, do custo de IA
-          realmente incorrido e dos contratos recorrentes cadastrados. É o que separa uma projeção
-          de uma multiplicação.
+          Estes cinco números não são premissa, saem das assinaturas vivas, do custo de IA realmente
+          incorrido e dos contratos recorrentes cadastrados. É o que separa uma projeção de uma
+          multiplicação.
         </p>
         <dl className="grid gap-3 sm:grid-cols-2 xl:grid-cols-5">
           <BasisTile label="Assinantes hoje" value={basisLabels.customers} />
@@ -130,7 +130,7 @@ export function ProjectionsView({ scenarios, basis, basisLabels }: Props) {
               Cenários, lado a lado
             </h2>
             <p className="text-[12px] font-light text-scriba-ink-mute">
-              Projeção baseada em premissas — não é previsão.
+              Projeção baseada em premissas, não é previsão.
             </p>
           </div>
           <Button onClick={() => setCreating(true)}>
@@ -223,7 +223,7 @@ export function ProjectionsView({ scenarios, basis, basisLabels }: Props) {
                       scenarios={scenarios}
                       pick={(s) => {
                         const result = results.get(s.id);
-                        if (!result) return "—";
+                        if (!result) return "-";
                         const months = monthsToRecover(result, investmentCents);
                         return months === null ? "além do horizonte" : `${months} mês(es)`;
                       }}

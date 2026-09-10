@@ -13,7 +13,7 @@ import { cn } from "@/lib/utils";
 
 /**
  * Renomeia uma sessão já salva. O save é assíncrono (PATCH na API), então o
- * botão fica em estado pendente até a resposta e a falha vira toast — a
+ * botão fica em estado pendente até a resposta e a falha vira toast, a
  * variante do RecordingHeader é síncrona porque lá o título só vive no store
  * até o fim da gravação.
  */
