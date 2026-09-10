@@ -66,7 +66,7 @@ export type YoutubeTranscriptResult =
  * fechada de propósito: ela custa 2 créditos por MINUTO (contra 1 por vídeo),
  * volta assíncrona (202 + jobId, com polling e uma tela de espera que precisa
  * sobreviver a um reload), e faria um vídeo de duas horas custar mais em
- * provedor do que as 25 moedas rendem inteiras. Vídeo sem legenda é recusado
+ * provedor do que as 30 moedas rendem inteiras. Vídeo sem legenda é recusado
  * ANTES da cobrança, com uma frase que diz o que houve.
  *
  * A cobertura disso é alta em canal de igreja: o YouTube gera legenda

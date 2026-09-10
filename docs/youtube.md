@@ -46,7 +46,7 @@ legenda, e essa porta está **fechada**:
 - custa **2 créditos por minuto** contra 1 por vídeo;
 - volta assíncrona (202 + `jobId`), exigindo polling e uma tela de espera que
   sobreviva a reload;
-- num vídeo de duas horas o provedor sozinho custaria mais do que as 25 moedas
+- num vídeo de duas horas o provedor sozinho custaria mais do que as 30 moedas
   rendem inteiras.
 
 Vídeo sem legenda é recusado **antes da cobrança**, com uma frase que diz o que
@@ -171,12 +171,24 @@ microfone) e o YouTube entra pela Biblioteca, num botão secundário ao lado do
 título. O botão primário do app continua sendo "Gravar": gravar ao vivo é o
 produto, importar é o atalho para o que já está online.
 
+### Como alguém DESCOBRE que isso existe
+
+Uma porta secundária numa tela que nem todo mundo abre é uma porta que muita
+gente nunca vê. Quem paga essa conta é o `YoutubeTipCard`, no `/feed`: um card
+que ensina a funcionalidade **no máximo três vezes**, espaçadas por quatro
+dias, e nunca para quem já importou algum vídeo — o gate é do servidor
+(`sessions.some(mode === "youtube")`), não do `localStorage`.
+
+Três exibições, e não "sempre": um aviso de descoberta que aparece toda visita
+vira mobília, e a pessoa aprende a não ver aquele retângulo. Clicar em importar
+ou dispensar no X também o encerram — as duas coisas dizem que ela já sabe.
+
 A limpeza roda **depois da cobrança**, entre o débito e a gravação da
 transcrição. Antes do débito só acontece o que decide se o vídeo é importável —
 e esta etapa não decide nada, ela embeleza. Falha dela devolve o título cru; o
 que ela nunca faz, em nenhum caminho de erro, é deixar o canal virar autor.
 
-## 4. A conta das 25 moedas
+## 4. A conta das 30 moedas
 
 Régua: `DEFAULT_COIN_PRICE_PER_THOUSAND_BRL` = R$ 20 o milheiro (1 moeda =
 R$ 0,020), alvo de 70% em `DEFAULT_TARGET_MARGIN_PCT`.
@@ -187,15 +199,21 @@ R$ 0,020), alvo de 70% em `DEFAULT_TARGET_MARGIN_PCT`.
 | resumo + releia/lembra/frases | R$ 0,105 | **medido** — é o número que fixou `summaryFromTranscript` em 15 moedas |
 | **total, vídeo típico** | **~R$ 0,135** | |
 
-A régua pediria **23**. O preço é **25**, e fica acima dela de propósito: o
-custo do resumo cresce com a transcrição na **entrada** e a receita não cresce
-com nada.
+A régua pediria **23** para o vídeo típico. O preço é **30**, e fica acima dela
+de propósito: o custo do resumo cresce com a transcrição na **entrada** e a
+receita não cresce com nada, então quem fixa o preço é a ponta longa da faixa,
+não o meio dela.
 
-| duração | receita | margem |
-|---|---:|---:|
-| 30 min | R$ 0,50 | ~70% |
-| 60 min | R$ 0,50 | ~65% |
-| 120 min | R$ 0,50 | ~56% |
+**O preço foi 25 até a v0.7.x, e a 25 a régua só fechava no vídeo curto:**
+
+| duração | receita a 25 | margem a 25 | receita a 30 | margem a 30 |
+|---|---:|---:|---:|---:|
+| 30 min | R$ 0,50 | ~70% | R$ 0,60 | ~75% |
+| 60 min | R$ 0,50 | ~65% | R$ 0,60 | ~71% |
+| 120 min | R$ 0,50 | ~56% | R$ 0,60 | ~63% |
+
+A 30, o alvo de 70% passa a valer na faixa em que quase todo sermão cai (até uma
+hora); só o vídeo de duas horas — o teto — segue abaixo dele.
 
 **É o teto de 2 horas que segura a última linha dessa tabela.**
 `COIN_COSTS.youtubeImport` e `YOUTUBE_MAX_DURATION_MS` andam sempre juntos:
@@ -209,18 +227,22 @@ não tem STT: a legenda já existe e custa o mesmo num vídeo de dez minutos e n
 de duas horas. Cobrar por minuto de vídeo seria cobrar por um trabalho que não
 fazemos.
 
-### O que 25 compra de graça
+### O que 30 compra de graça
 
-25 é metade de `INITIAL_COIN_BALANCE`, e isso não é coincidência: quem acabou de
-criar conta importa **dois sermões** antes de precisar comprar. É a única porta
-do produto que não exige esperar até domingo — todas as outras dependem de
-haver uma pregação acontecendo na frente do microfone.
+Com `INITIAL_COIN_BALANCE` em 50, quem acabou de criar conta importa **um
+sermão** e ainda fica com 20 moedas para experimentar um pedaço de gravação. É a
+única porta do produto que não exige esperar até domingo — todas as outras
+dependem de haver uma pregação acontecendo na frente do microfone.
+
+A 25 eram **dois** sermões (metade do saldo cada). Trocar o segundo vídeo grátis
+por sete pontos de margem foi a decisão deste preço: a porta continua aberta,
+só não duas vezes.
 
 ## 5. O risco assumido: canibalização
 
-Os mesmos 45 minutos custam **225 moedas gravados** no Modo Resumo e **25
+Os mesmos 45 minutos custam **225 moedas gravados** no Modo Resumo e **30
 importados**. Para uma igreja que transmite ao vivo, os dois caminhos existem, e
-o segundo é 9× mais barato.
+o segundo é 7,5× mais barato.
 
 A margem se sustenta nos dois — o custo cai junto com o preço, porque a
 diferença inteira é o STT que não rodamos. O que cai é a **receita por sermão**.

@@ -56,10 +56,10 @@ export type UsageRoute =
   | "final-summary-from-transcript"
   // Quarta rota da mesma chamada: o resumo de um vídeo do YouTube importado.
   // Separada das outras três pelo motivo de sempre — é a única forma de o
-  // /admin/precificacao medir o custo real de uma importação contra as 25
+  // /admin/precificacao medir o custo real de uma importação contra as 30
   // moedas que ela cobra, e esse preço é FIXO enquanto o custo cresce com a
   // duração do vídeo. Fundida com `from-transcript`, a linha que diria "vídeo
-  // longo demais para 25" ficaria diluída na de quem mudou de ideia sobre o
+  // longo demais para 30" ficaria diluída na de quem mudou de ideia sobre o
   // modo transcrição.
   | "final-summary-youtube"
   // A limpeza do título do vídeo (`lib/youtube/metadata.ts`). Rota própria

@@ -30,7 +30,7 @@ export const dynamic = "force-dynamic";
  * O mesmo teto das rotas do estudo. Uma importação é legenda (1-3s) mais o
  * pipeline inteiro do resumo sobre uma transcrição que pode ter duas horas de
  * pregação — o padrão de 60s não cobre isso, e estourar a função DEPOIS de
- * debitar as 25 moedas é o pior desfecho possível.
+ * debitar as 30 moedas é o pior desfecho possível.
  */
 export const maxDuration = 300;
 

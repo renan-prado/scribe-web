@@ -49,6 +49,15 @@ Duas decisões dele que parecem detalhe:
   vídeo). Escolher COMO capturar e escolher QUAL vídeo são duas perguntas.
   O diálogo itera sobre `CAPTURE_MODES`, não sobre `SESSION_MODES`, e é o tipo
   que impede o modo importado de voltar para lá por distração.
+- **Ficar fora do diálogo cobra um preço, e `YoutubeTipCard` é quem o paga.**
+  A porta da importação é um botão secundário em `/recordings`; quem vive no
+  `/feed` pode nunca esbarrar nela. O card ensina que ela existe — no `/feed`,
+  **no máximo três vezes**, espaçadas por quatro dias, e nunca para quem já
+  importou algum vídeo (esse gate é do SERVIDOR: `sessions.some(mode ===
+  "youtube")`, decidido em `app/(app)/feed/page.tsx`). Um aviso de descoberta
+  que aparece sempre vira mobília, e o dia em que ele disser outra coisa
+  também não será lido. A contagem é `localStorage`, como a soneca do
+  `InviteFriendCard`, e degrada para "aparece de novo" quando não há storage.
 
 ## O caminho de um chunk
 

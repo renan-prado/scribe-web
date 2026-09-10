@@ -63,7 +63,7 @@ saber ao editar código ficam nos `AGENTS.md` de cada pasta, não aqui.
   só aceitamos legenda que já existe, por que o título do vídeo precisa de uma
   chamada de LLM para ser separado em pregação / pregador / igreja (o separador
   do caso real era a LETRA `I`, e o canal não é o autor), a conta que fixou as
-  25 moedas por vídeo com teto de 2h, e a canibalização do Modo Resumo que foi
+  30 moedas por vídeo com teto de 2h, e a canibalização do Modo Resumo que foi
   assumida de olhos abertos. Leitura obrigatória antes de mexer no preço, no
   teto ou em `lib/youtube/*`. **Status: implementado.**
 - **[`financeiro.md`](./financeiro.md)** — o desenho do `/admin/financeiro`: o

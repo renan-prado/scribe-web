@@ -47,7 +47,7 @@ que o YouTube já tem vira a transcrição — sobre a qual roda o MESMO pipelin
 `from-transcript` (resumo, releia, lembra, frases). Sem áudio, sem chunks, sem
 STT. Sessão importada abre em `/summary` como qualquer outra.
 
-O preço dele é o único que não é por minuto: **25 moedas por vídeo**, cobradas
+O preço dele é o único que não é por minuto: **30 moedas por vídeo**, cobradas
 uma vez, com teto de 2 horas de duração. Cobrar por minuto seria cobrar por um
 STT que não acontece — a legenda custa ~R$ 0,03 de provedor, e o que sobra é
 exatamente a chamada de `summaryFromTranscript`. O teto existe porque o custo

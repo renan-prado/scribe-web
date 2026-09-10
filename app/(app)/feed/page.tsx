@@ -5,6 +5,7 @@ import { InviteFriendCard } from "@/features/referrals/components/InviteFriendCa
 import { DeepenButton } from "@/features/session/components/DeepenButton";
 import { PaginatedFeed } from "@/features/session/components/PaginatedFeed";
 import { SessionsEmptyState } from "@/features/session/components/SessionsEmptyState";
+import { YoutubeTipCard } from "@/features/session/components/YoutubeTipCard";
 import { shortDate } from "@/features/session/lib/formatting";
 import { hasDeepening, listDeepenedSessionIds } from "@/lib/db/deepenings";
 import { type ListFeedEntriesResult, listFeedEntries } from "@/lib/db/feed-entries";
@@ -98,6 +99,11 @@ export default async function HomePage() {
         new Set<string>(),
       ];
   const isEmpty = sessions.length === 0;
+  // Quem já importou um vídeo não precisa aprender que dá para importar. O
+  // sinal está aqui de graça — `listSessions` já traz o modo de cada sessão —,
+  // e ele é o único dos quatro que encerram o card que não depende do
+  // `localStorage` de um navegador específico.
+  const hasImported = sessions.some((s) => s.mode === "youtube");
 
   // Sessões sem estudo — usadas para intercalar o card "Gerar estudo" no feed.
   // Excluímos a sessão do topo (ReflectionCard) para não duplicar o CTA.
@@ -152,6 +158,12 @@ export default async function HomePage() {
               <div className="py-2">
                 <div className="h-px bg-scriba-hairline" />
               </div>
+              {/* Ensina que dá para importar do YouTube. Vem ANTES do convite
+                  de indicação de propósito: aprender o que o produto faz vem
+                  antes de recomendá-lo a alguém. Só aparece para quem nunca
+                  importou (o gate é o servidor, logo acima), e no máximo três
+                  vezes — ver `YoutubeTipCard`. */}
+              <YoutubeTipCard alreadyImported={hasImported} />
               {/* O convite para indicar um amigo. Fica abaixo da reflexão e
                   acima do feed porque é onde a pessoa já terminou de ler o que
                   veio buscar. Aparece "de tempos em tempos": dispensado, ele

@@ -73,7 +73,7 @@ export const BILLABLE_ACTIONS: readonly BillableAction[] = [
     coins: COIN_COSTS.youtubeImport,
     // "vídeo" e não "minuto": esta é a única ação cobrável do produto cuja
     // unidade não é o minuto, e a coluna "por ..." do painel precisa dizer
-    // isso — 25 moedas por minuto seria um preço absurdo, e é o que a linha
+    // isso — 30 moedas por minuto seria um preço absurdo, e é o que a linha
     // pareceria estar afirmando se herdasse a unidade das três de cima.
     unit: "vídeo",
     reasons: ["youtube_import"],

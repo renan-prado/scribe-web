@@ -105,7 +105,7 @@ export const COIN_COSTS = {
   /**
    * One-shot cost of importing a YouTube video: legenda + resumo completo.
    *
-   * **25 e FIXO, o único preço do produto que não é por minuto.** Os três modos
+   * **30 e FIXO, o único preço do produto que não é por minuto.** Os três modos
    * de captura cobram por minuto porque o custo deles É por minuto — cada
    * minuto de áudio é uma chamada de STT. Uma importação não tem STT: a legenda
    * já existe, custa ~R$ 0,03 de provedor por vídeo (1 crédito da Supadata,
@@ -116,31 +116,39 @@ export const COIN_COSTS = {
    * A conta, na régua de `DEFAULT_COIN_PRICE_PER_THOUSAND_BRL`: R$ 0,105 de
    * resumo (o número MEDIDO que fixou `summaryFromTranscript` em 15) mais
    * R$ 0,03 de legenda dá R$ 0,135 num vídeo típico. A régua pediria 23 para os
-   * 70% de `DEFAULT_TARGET_MARGIN_PCT`; 25 fica acima dela de propósito, porque
-   * o custo do resumo cresce com a transcrição na ENTRADA e a receita aqui não
-   * cresce com nada. As margens ao longo da faixa:
+   * 70% de `DEFAULT_TARGET_MARGIN_PCT` NESSE vídeo típico — mas o custo do
+   * resumo cresce com a transcrição na ENTRADA e a receita aqui não cresce com
+   * nada, então o preço tem de ser fixado pela ponta longa, não pelo meio.
    *
-   * | duração | margem |
-   * |---|---|
-   * | 30 min | ~70% |
-   * | 60 min | ~65% |
-   * | 120 min | ~56% |
+   * **Era 25, e 25 só alcançava a régua no vídeo curto.** As margens ao longo
+   * da faixa, antes e depois:
+   *
+   * | duração | a 25 | a 30 |
+   * |---|---|---|
+   * | 30 min | ~70% | ~75% |
+   * | 60 min | ~65% | ~71% |
+   * | 120 min | ~56% | ~63% |
+   *
+   * A 30 o alvo de 70% passa a valer na faixa em que quase todo sermão cai (até
+   * uma hora), e só o vídeo de duas horas — o teto — fica abaixo dele.
    *
    * **É `YOUTUBE_MAX_DURATION_MS` que segura a ponta dessa tabela**, e os dois
    * andam sempre juntos: subir o teto sem mexer no preço é escolher a linha de
    * baixo da tabela para todo mundo. Ver `lib/domain/youtube.ts`.
    *
-   * 25 também é metade de `INITIAL_COIN_BALANCE`, e isso não é coincidência:
-   * quem acabou de criar conta importa dois sermões antes de precisar comprar.
-   * É a única porta do produto que não exige esperar até domingo.
+   * Com `INITIAL_COIN_BALANCE` em 50, uma conta nova importa UM vídeo e ainda
+   * fica com 20 moedas — o suficiente para experimentar um pedaço de gravação
+   * depois. Era metade do saldo (dois vídeos) a 25, e trocar o segundo vídeo
+   * grátis por sete pontos de margem é a decisão que este número carrega: a
+   * porta que não exige esperar até domingo continua aberta, só não duas vezes.
    *
    * **Sabendo que ele canibaliza o Modo Resumo.** Os mesmos 45 minutos custam
-   * 225 moedas gravados e 25 importados, e para uma igreja que transmite ao
+   * 225 moedas gravados e 30 importados, e para uma igreja que transmite ao
    * vivo os dois caminhos existem. A margem se sustenta nos dois (o custo cai
    * junto com o preço); a receita por sermão, não. Foi decisão de produto
    * tomada com o número à vista, não um efeito colateral que ninguém viu.
    */
-  youtubeImport: 25,
+  youtubeImport: 30,
   /**
    * Reprocessar roda o MESMO pipeline do zero, então custa o mesmo. Deixá-lo
    * mais barato que a geração abriria uma arbitragem óbvia: gerar uma vez pelo
