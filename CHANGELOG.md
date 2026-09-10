@@ -9,6 +9,16 @@ Gerado por `npm run release` a partir dos Conventional Commits. `feat` sobe o
 minor; o resto sobe o patch. Não edite à mão, a próxima execução escreve por
 cima do topo do arquivo.
 
+## 0.13.0, 2026-09-10, desde v0.12.0
+
+### Novidades
+
+- **biblioteca:** porta de importar do YouTube na biblioteca vazia (`0e3e2b9`)
+
+### Correções
+
+- **tour:** balão não pousa mais em cima do alvo preso ao viewport (`d912cd4`)
+
 ## 0.12.0, 2026-09-10, desde v0.11.0
 
 ### Novidades
