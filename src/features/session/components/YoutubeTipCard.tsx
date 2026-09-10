@@ -154,8 +154,7 @@ export function YoutubeTipCard({
           </button>
         </div>
         <p className="text-pretty text-[13px] font-light leading-relaxed text-scriba-ink">
-          Copie e cole o link do vídeo para dentro do Scriba e organizamos um resumo organizado para
-          você.
+          Copie e cole o link do vídeo para dentro do Scriba e organizamos um resumo para você.
         </p>
         <div className="mt-1">
           <Link
