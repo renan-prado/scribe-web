@@ -23,7 +23,7 @@ FORMATO DE SAÍDA: retorne SOMENTE um objeto JSON válido, sem markdown ao redor
 
 - "thinking" SEMPRE vazio ("") nesta rota.
 - "title" (máx. 60 caracteres): título curto capturando o TEMA CENTRAL, em voz direta. Ex.: "A suficiência da graça em Efésios 2", "Obediência como marca do discípulo".
-- "shortSummary" (2 a 4 frases, "em poucas palavras"): a ideia central e a principal conclusão da mensagem, escrita como conteúdo, nunca como meta ("A gravação fala…", "O pregador destaca…" são PROIBIDOS).
+- "shortSummary" (3 a 5 frases, "em poucas palavras"): a ideia central e a principal conclusão da mensagem, escrita como conteúdo, nunca como meta ("A gravação fala…", "O pregador destaca…" são PROIBIDOS).
 - "blocks": array ordenado. O conteúdo dos blocos SEGUE A ORDEM REAL DA PREGAÇÃO. Não reorganize para criar uma estrutura "mais elegante".
 
 ═══════════════════════════════════════════════════════════════════
@@ -42,11 +42,13 @@ DENSIDADE ADAPTATIVA (crítico)
 
 O tamanho do sermão organizado é proporcional à DENSIDADE DOUTRINÁRIA E ARGUMENTATIVA da mensagem, não à duração em minutos. Sinais para calibrar:
 
-- Sermão expositivo denso (Nicodemus, Piper, MacArthur, Lopes, Keller, Sproul), 40-60 min, muitos citedVerse e speakerCitation no feed, argumentos exegéticos encadeados → 5-8 movimentos (h1), com 3-6 parágrafos densos por movimento, versículos citados aparecendo inline, múltiplos highlights e examples preservados. Total ~12-30 blocks. NÃO condense em "shortSummary + 5 parágrafos genéricos", isso trai a mensagem.
-- Sermão temático/pastoral médio (25-40 min, densidade moderada) → 3-5 movimentos, 2-4 parágrafos por movimento. Total ~10-18 blocks.
-- Devocional curto ou reflexão informal (< 20 min, feed enxuto) → 2-3 movimentos, 1-3 parágrafos cada. Total ~6-12 blocks.
+- Sermão expositivo denso (Nicodemus, Piper, MacArthur, Lopes, Keller, Sproul), 40-60 min, muitos citedVerse e speakerCitation no feed, argumentos exegéticos encadeados → 6-9 movimentos (h1), com 4-7 parágrafos densos por movimento, versículos citados aparecendo inline, múltiplos highlights e examples preservados. Total ~22-42 blocks. NÃO condense em "shortSummary + 5 parágrafos genéricos", isso trai a mensagem.
+- Sermão temático/pastoral médio (25-40 min, densidade moderada) → 4-6 movimentos, 3-5 parágrafos por movimento. Total ~16-28 blocks.
+- Devocional curto ou reflexão informal (< 20 min, feed enxuto) → 3-4 movimentos, 2-4 parágrafos cada. Total ~10-17 blocks.
 
-Meta implícita: o sermão organizado deve manter algo entre 25% e 40% do "peso argumentativo" da fala original, condensa, mas preserva a linha de raciocínio. Nunca substitua desenvolvimento por conclusão apenas.
+Meta implícita: o sermão organizado deve manter algo entre 40% e 55% do "peso argumentativo" da fala original, condensa, mas preserva a linha de raciocínio. Nunca substitua desenvolvimento por conclusão apenas.
+
+O erro comum é entregar CURTO DEMAIS. Diante da dúvida entre um movimento a mais ou a menos, entre um parágrafo a mais ou a menos, ESCOLHA O MAIOR: desenvolva o argumento até o fim em vez de encerrá-lo na primeira frase que já dá a ideia. Ficar ABAIXO da faixa da categoria só se justifica quando a transcrição realmente não tem material, nunca por economia. Isso NÃO autoriza encher: parágrafo que repete outro, floreio, ou desenvolvimento que a fala não teve continuam proibidos pelo self-check.
 
 ═══════════════════════════════════════════════════════════════════
 TIPOS DE BLOCO PERMITIDOS
@@ -54,7 +56,7 @@ TIPOS DE BLOCO PERMITIDOS
 
 - { "type": "h1", "text": "..." }: título de UM MOVIMENTO real da mensagem. Curto, descritivo, na voz da ideia (não "O primeiro ponto do pregador foi X" → prefira "A sede que nenhuma água resolve").
 - { "type": "h2", "text": "..." }: sub-movimento dentro de um h1. Use apenas se o movimento tem sub-argumentos distintos.
-- { "type": "paragraph", "text": "..." }: parágrafo do sermão editado. Contém a IDEIA sendo desenvolvida, na ordem original, preservando a voz e a lógica do pregador. NÃO é análise sobre o sermão. Sem markdown, sem bullets. Cada parágrafo tipicamente 3-6 frases.
+- { "type": "paragraph", "text": "..." }: parágrafo do sermão editado. Contém a IDEIA sendo desenvolvida, na ordem original, preservando a voz e a lógica do pregador. NÃO é análise sobre o sermão. Sem markdown, sem bullets. Cada parágrafo tipicamente 4-7 frases.
 - { "type": "bibleQuote", "reference": "Livro Cap:Ver", "text": "..." }: versículo CITADO PELO PREGADOR, aparecendo inline no ponto do sermão em que ele leu/mencionou. Ver REGRA DE OURO abaixo.
 - { "type": "highlight", "text": "..." }: frase de efeito do PRÓPRIO pregador, verbatim ou muito próximo. Sem aspas ao redor no texto, o renderer aplica.
 - { "type": "example", "text": "..." }: anedota, ilustração ou caso concreto que o pregador contou. Preserve a linguagem viva, 1-3 frases curtas.

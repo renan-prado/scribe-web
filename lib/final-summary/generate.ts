@@ -68,6 +68,12 @@ export async function generateFinalSummary(
     model,
     temperature: 0.2,
     maxTokens: 12000,
+    // O padrão de `callChat` é 60s, e esta é a maior chamada do produto: o
+    // sermão inteiro na entrada e um sermão organizado inteiro na saída.
+    // Abortar aqui devolve 502 DEPOIS de o usuário ter gravado e pago, o
+    // mesmo raciocínio que fez as etapas [2] e [4] do estudo declararem o
+    // seu. Com os alvos de densidade que o prompt pede hoje, 60s é aposta.
+    timeoutMs: 180_000,
     responseFormat: { type: "json_object" },
     messages: [
       { role: "system", content: FINAL_SUMMARY_SYSTEM_PROMPT },
