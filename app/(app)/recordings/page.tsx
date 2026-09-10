@@ -169,9 +169,15 @@ export default async function LibraryPage() {
             Não consegui carregar as gravações: {loadError}
           </div>
         ) : sessions.length === 0 && unfinished.length === 0 ? (
+          /* O cabeçalho não é renderizado no estado vazio, e com ele some o
+             único botão de "Importar" do app: "Gravar" está no header e na
+             barra inferior, `/importar` não está em lugar nenhum. Por isso a
+             porta desce para dentro do card, com o rótulo por extenso. */
           <SessionsEmptyState
             sticker="/stickers/woman/018-woman.svg"
             heading="Sem gravações, ainda..."
+            body="Comece pela primeira gravação e o Scriba passa a montar seu feed a partir do que você ouvir. Ou traga uma pregação que já está no YouTube: o resumo sai do vídeo, sem gravar nada."
+            action={<ImportYoutubeButton fullLabel />}
           />
         ) : sessions.length === 0 ? null : (
           <SessionsBrowser

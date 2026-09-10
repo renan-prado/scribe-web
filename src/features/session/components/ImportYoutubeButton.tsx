@@ -1,5 +1,6 @@
 import { YoutubeIcon } from "@/components/icons/YoutubeIcon";
 import { LinkPendingSwap, NavLink } from "@/components/NavLink";
+import { cn } from "@/lib/utils";
 
 /**
  * A porta da importação, no cabeçalho da Biblioteca.
@@ -16,9 +17,16 @@ import { LinkPendingSwap, NavLink } from "@/components/NavLink";
  * o ícone pelo spinner a largura não muda. É o mesmo motivo pelo qual a
  * `MobileBottomNav` usa este componente; ver o cabeçalho de `LinkPendingSwap`.
  *
+ * **`fullLabel`.** No cabeçalho o rótulo é `sm:inline` porque ali o botão tem
+ * o título da Biblioteca ao lado e o "atualizar" à direita, contexto de sobra
+ * para um ícone sozinho no celular. No estado VAZIO não há nada disso: o card
+ * é a tela inteira e este é o único caminho para `/importar`, então o rótulo
+ * aparece sempre, e por extenso, porque "Importar" solto no meio de um card
+ * que fala de gravação não diz importar o quê.
+ *
  * Server component: é um link, não tem estado.
  */
-export function ImportYoutubeButton() {
+export function ImportYoutubeButton({ fullLabel = false }: { fullLabel?: boolean } = {}) {
   return (
     <NavLink
       href="/importar"
@@ -31,7 +39,9 @@ export function ImportYoutubeButton() {
       <LinkPendingSwap className="size-4 text-scriba-ink-soft">
         <YoutubeIcon className="size-4 text-scriba-ink-soft" />
       </LinkPendingSwap>
-      <span className="hidden sm:inline">Importar</span>
+      <span className={cn(fullLabel ? "inline" : "hidden sm:inline")}>
+        {fullLabel ? "Importar do YouTube" : "Importar"}
+      </span>
     </NavLink>
   );
 }

@@ -58,6 +58,13 @@ Duas decisões dele que parecem detalhe:
   que aparece sempre vira mobília, e o dia em que ele disser outra coisa
   também não será lido. A contagem é `localStorage`, como a soneca do
   `InviteFriendCard`, e degrada para "aparece de novo" quando não há storage.
+- **A Biblioteca VAZIA precisa da sua própria porta.** O cabeçalho onde o botão
+  de importar mora não é renderizado quando não há sessão nenhuma, e sem uma
+  segunda porta `/importar` some do app inteiro justamente para quem ainda não
+  gravou nada, "Gravar" está no header e na barra inferior, importar não estaria
+  em lugar algum. Daí o slot `action` do `SessionsEmptyState` e o `fullLabel` do
+  `ImportYoutubeButton`, dentro de um card que ocupa a tela, "Importar" sozinho
+  não diz importar o quê.
 
 ## O caminho de um chunk
 

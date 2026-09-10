@@ -1,3 +1,4 @@
+import type { ReactNode } from "react";
 import { ThemeToggle } from "@/components/ThemeToggle";
 
 const STEPS = [
@@ -21,6 +22,19 @@ const STEPS = [
 type SessionsEmptyStateProps = {
   sticker?: string;
   heading?: string;
+  /** Substitui o parágrafo padrão, que fala só de gravar. */
+  body?: string;
+  /**
+   * Um caminho de saída, desenhado logo abaixo do texto.
+   *
+   * A Biblioteca vazia usa isto para a importação do YouTube: o botão dela
+   * mora no cabeçalho, e o cabeçalho não é renderizado quando não há sessão
+   * nenhuma, então sem este slot `/importar` fica SEM porta no app inteiro,
+   * "Gravar" está no header e na barra inferior, importar não está em lugar
+   * nenhum. E é justamente quem não tem nada gravado que mais ganha em trazer
+   * uma pregação que já está online.
+   */
+  action?: ReactNode;
   /**
    * Shows the light/dark switch in the card corner. Only /feed turns this on,
    * it's the one empty surface a signed-in user lands on with nothing else to
@@ -32,6 +46,8 @@ type SessionsEmptyStateProps = {
 export function SessionsEmptyState({
   sticker = "/stickers/men/019-man.svg",
   heading = "Nada de novo por aqui.",
+  body = "Nenhum sermão gravado ainda. Comece pela primeira gravação e o Scriba passa a montar seu feed a partir do que você ouvir.",
+  action,
   showThemeToggle = false,
 }: SessionsEmptyStateProps = {}) {
   return (
@@ -59,10 +75,11 @@ export function SessionsEmptyState({
             {heading}
           </h2>
           <p className="text-pretty text-[13px] font-light leading-relaxed text-scriba-ink-soft sm:text-sm">
-            Nenhum sermão gravado ainda. Comece pela primeira gravação e o Scriba passa a montar seu
-            feed a partir do que você ouvir.
+            {body}
           </p>
         </div>
+
+        {action ? <div className="mt-4 flex justify-center sm:mt-5">{action}</div> : null}
       </div>
 
       <div className="border-t border-scriba-hairline-soft bg-scriba-surface px-5 py-4 sm:px-12 sm:py-6">
