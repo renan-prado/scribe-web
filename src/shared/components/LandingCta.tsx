@@ -8,79 +8,81 @@ import { cn } from "@/lib/utils";
 import { useInstallPrompt } from "@/shared/hooks/use-install-prompt";
 
 /**
- * O CTA da landing que, NO CELULAR, entra primeiro pela instalação do PWA em
- * vez de mandar direto para o `/sign-in`.
+ * O CTA da landing que, NO CELULAR, pergunta antes de decidir por quem clicou.
  *
- * O PWA É o app — não há loja — e quem grava um sermão está de pé no meio de um
- * culto: a diferença entre abrir uma aba e tocar num ícone é a diferença entre
- * usar e não usar. Por isso o caminho de entrada no mobile é "instale primeiro".
+ * O PWA É o app: não há loja, e quem grava um sermão está de pé no meio de um
+ * culto, onde a diferença entre abrir uma aba e tocar num ícone é a diferença
+ * entre usar e não usar. Mas o botão já disse "Instalar app" na hero, e isso
+ * cobrava uma decisão de compromisso de quem tinha acabado de chegar: o
+ * primeiro toque da página pedia espaço no telefone antes de o produto ter
+ * mostrado qualquer coisa.
+ *
+ * Agora **o rótulo é o mesmo nos dois lados** ("Começar grátis", "Começar"), e
+ * a instalação virou uma das duas saídas do `InstallChoiceDialog`, aberto pelo
+ * toque. A oferta não sumiu, deixou de ser pedágio.
  *
  * - **Desktop (`lg` pra cima):** nada muda. Renderiza o mesmo `<Link>` de
- *   antes, com o mesmo texto e as mesmas classes — o HTML estático da LP
+ *   antes, com o mesmo texto e as mesmas classes, o HTML estático da LP
  *   continua idêntico (ver `app/AGENTS.md`). O corte é em `lg`, não `sm`,
  *   porque o iPad instala o PWA como o iPhone e precisa do mesmo caminho.
- * - **Android/Chromium:** o botão dispara o diálogo nativo (`beforeinstallprompt`);
- *   recusado, cai no `href`.
- * - **iOS:** não há API; o botão abre o passo a passo do menu Compartilhar.
- * - **Navegador que não instala (Firefox Android…):** o clique cai no `href`.
- *   O link "continuar no navegador" (`escape`) é a saída visível.
+ * - **Android/Chromium:** o diálogo oferece "Instalar o app" (que dispara o
+ *   `beforeinstallprompt` nativo) e "Usar no navegador".
+ * - **iOS:** não há API de instalação, então o diálogo já mostra o passo a
+ *   passo do menu Compartilhar, com "Usar no navegador" abaixo dele.
+ * - **Navegador que não instala (Firefox Android…) ou app já instalado:** o
+ *   clique vai direto para o `href`. Um diálogo de escolha com uma opção só
+ *   seria um toque a mais para chegar no mesmo lugar.
  *
  * É cliente puro, como o `StandaloneHomeGuard`, e não custa a estaticidade da
- * página. O diálogo do iOS entra por `dynamic` e só é montado depois do
- * primeiro toque — sem isso o Dialog do base-ui pesaria no bundle que o
- * anônimo baixa primeiro (mesma razão do `ChapterDialog`).
+ * página. O diálogo entra por `dynamic` e só é montado depois do primeiro
+ * toque: sem isso o Dialog do base-ui pesaria no bundle que o anônimo baixa
+ * primeiro (mesma razão do `ChapterDialog`).
  */
-const IosInstructionsDialog = dynamic(
-  () => import("./InstallApp").then((m) => m.IosInstructionsDialog),
+const InstallChoiceDialog = dynamic(
+  () => import("./InstallApp").then((m) => m.InstallChoiceDialog),
   { ssr: false }
 );
 
 type LandingCtaProps = {
-  /** As classes EXATAS do CTA que ele substitui — link e botão as compartilham. */
+  /** As classes EXATAS do CTA que ele substitui, link e botão as compartilham. */
   className: string;
-  /** Texto no desktop, e no mobile quando a instalação não é oferecida. */
+  /** O texto do botão. É o MESMO no desktop e no celular, de propósito. */
   label: string;
-  /** Texto no mobile quando o botão instala o app. Cai em `label` se ausente. */
-  mobileLabel?: string;
   /** Ícone à esquerda do texto (a pena da marca, geralmente). */
   icon?: ReactNode;
   /** Destino do caminho "navegador". */
   href?: string;
-  /** Renderiza o link discreto "continuar no navegador" abaixo (só no mobile). */
-  showEscape?: boolean;
 };
 
-export function LandingCta({
-  className,
-  label,
-  mobileLabel,
-  icon,
-  href = "/sign-in",
-  showEscape = false,
-}: LandingCtaProps) {
+export function LandingCta({ className, label, icon, href = "/sign-in" }: LandingCtaProps) {
   const router = useRouter();
   const { method, promptInstall } = useInstallPrompt();
   // Dois estados: `armed` decide se o diálogo EXISTE (chunk baixado), `open` se
-  // está aberto — fechar não pode desmontar no mesmo quadro da animação de saída.
+  // está aberto, fechar não pode desmontar no mesmo quadro da animação de saída.
   const [armed, setArmed] = useState(false);
-  const [iosOpen, setIosOpen] = useState(false);
+  const [open, setOpen] = useState(false);
+
+  function goToBrowser() {
+    setOpen(false);
+    router.push(href);
+  }
 
   function handleMobileClick() {
-    if (method === "ios") {
-      setArmed(true);
-      setIosOpen(true);
+    // Nada a oferecer (app já instalado, ou navegador que não instala): o
+    // caminho de sempre, sem perguntar.
+    if (method === "none") {
+      router.push(href);
       return;
     }
-    if (method === "prompt") {
-      void promptInstall().then((accepted) => {
-        // Recusou o diálogo nativo: segue para o navegador em vez de deixar o
-        // toque sem resposta.
-        if (!accepted) router.push(href);
-      });
-      return;
-    }
-    // Navegador sem instalação: o caminho de sempre.
-    router.push(href);
+    setArmed(true);
+    setOpen(true);
+  }
+
+  function handleInstall() {
+    // O evento nativo é de uso único e o desfecho não muda o destino: aceitar
+    // instala em segundo plano, recusar não pode deixar o toque sem resposta.
+    // Nos dois casos a pessoa segue para onde o botão prometia levá-la.
+    void promptInstall().then(goToBrowser);
   }
 
   return (
@@ -91,20 +93,20 @@ export function LandingCta({
         {icon}
         {label}
       </Link>
-      {/* Mobile e tablet: o botão que entra pela instalação. */}
+      {/* Mobile e tablet: o botão que abre a escolha. */}
       <button type="button" onClick={handleMobileClick} className={cn(className, "lg:hidden")}>
         {icon}
-        {mobileLabel ?? label}
+        {label}
       </button>
-      {showEscape ? (
-        <Link
-          href={href}
-          className="text-center text-[12px] font-light text-scriba-ink-mute underline underline-offset-4 lg:hidden"
-        >
-          ou continuar pelo navegador
-        </Link>
+      {armed ? (
+        <InstallChoiceDialog
+          open={open}
+          onOpenChange={setOpen}
+          method={method}
+          onInstall={handleInstall}
+          onBrowser={goToBrowser}
+        />
       ) : null}
-      {armed ? <IosInstructionsDialog open={iosOpen} onOpenChange={setIosOpen} /> : null}
     </>
   );
 }

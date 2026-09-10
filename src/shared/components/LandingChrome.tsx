@@ -1,5 +1,6 @@
 import Link from "next/link";
 import { ThemeToggle } from "@/components/ThemeToggle";
+import { cn } from "@/lib/utils";
 import { APP_VERSION } from "@/lib/version";
 import { ScribaLogo, ScribaMark } from "@/shared/brand";
 import { LandingCta } from "@/shared/components/LandingCta";
@@ -48,8 +49,8 @@ export function LandingHeader({ onLandingPage = false }: LandingHeaderProps) {
           >
             Entrar
           </Link>
-          {/* No celular este botão entra pela instalação do PWA; o texto fica.
-              Ver `LandingCta`. */}
+          {/* No celular este botão abre a escolha entre instalar e seguir no
+              navegador; o texto é o mesmo nos dois lados. Ver `LandingCta`. */}
           <LandingCta
             className="scriba-cta inline-flex items-center justify-center gap-2 rounded-[22px] bg-[image:var(--scriba-cta)] py-3 px-5 text-[12px] font-semibold uppercase tracking-[.04em] text-scriba-cta-ink shadow-[0_5px_14px_var(--scriba-cta-shadow)]"
             icon={<ScribaMark size={18} />}
@@ -81,6 +82,9 @@ export function LandingFooter({ onLandingPage = false }: LandingFooterProps) {
           <Link href="/about" className="lp-link-footer">
             Sobre
           </Link>
+          <Link href="/parceiros" className="lp-link-footer">
+            Parceiros
+          </Link>
           <Link href="/terms" className="lp-link-footer">
             Termos de Uso
           </Link>
@@ -99,5 +103,33 @@ export function LandingFooter({ onLandingPage = false }: LandingFooterProps) {
         </div>
       </div>
     </footer>
+  );
+}
+
+type SectionLabelProps = {
+  children: React.ReactNode;
+  color?: "blue" | "mute" | "yellow-light";
+};
+
+/**
+ * A pequena etiqueta em caixa alta que abre cada seção das páginas de venda.
+ *
+ * Mora aqui, e não em `app/page.tsx`, desde que a LP deixou de ser a única:
+ * `/parceiros` usa a mesma linguagem visual, e duas cópias de um átomo de
+ * tipografia é como as duas páginas começam a divergir em tracking e peso sem
+ * ninguém decidir isso.
+ */
+export function SectionLabel({ children, color = "mute" }: SectionLabelProps) {
+  return (
+    <div
+      className={cn(
+        "text-[11px] font-semibold uppercase tracking-[.12em]",
+        color === "blue" && "text-scriba-blue-ink",
+        color === "mute" && "text-scriba-ink-mute",
+        color === "yellow-light" && "text-scriba-yellow-light"
+      )}
+    >
+      {children}
+    </div>
   );
 }

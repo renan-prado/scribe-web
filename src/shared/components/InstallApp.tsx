@@ -1,6 +1,6 @@
 "use client";
 
-import { Check, Download, Share, SquarePlus, X } from "lucide-react";
+import { Check, Download, Globe, Share, SquarePlus, X } from "lucide-react";
 import { type ReactNode, useCallback, useState } from "react";
 import { Button } from "@/components/ui/button";
 import {
@@ -12,13 +12,13 @@ import {
 } from "@/components/ui/dialog";
 import { cn } from "@/lib/utils";
 import { ScribaMark } from "@/shared/brand";
-import { useInstallPrompt } from "@/shared/hooks/use-install-prompt";
+import { type InstallMethod, useInstallPrompt } from "@/shared/hooks/use-install-prompt";
 
 /**
  * O convite para instalar o Scriba na tela inicial.
  *
  * Não existe app nas lojas, e não vai existir tão cedo: o PWA É o app. Quem
- * grava um sermão está de pé, no meio de um culto, com o celular na mão — a
+ * grava um sermão está de pé, no meio de um culto, com o celular na mão, a
  * diferença entre abrir uma aba e tocar num ícone é a diferença entre usar e
  * não usar.
  *
@@ -41,20 +41,20 @@ import { useInstallPrompt } from "@/shared/hooks/use-install-prompt";
  * alguma coisa. Espalhá-lo pelo layout inteiro seria o mesmo convite pedindo
  * atenção no meio de uma gravação.
  *
- * `lg:hidden` porque o alvo é celular E TABLET — o iPad instala o PWA pelo
+ * `lg:hidden` porque o alvo é celular E TABLET, o iPad instala o PWA pelo
  * mesmo menu Compartilhar do iPhone e não tem barra de endereço com o atalho
  * de instalação. Só no desktop de verdade (`lg` pra cima) o navegador oferece
  * isso sozinho, e lá o `/profile` tem a linha permanente.
  *
  * O X é dispensa LEVE: some nesta visita e volta na próxima vez que o `/feed`
- * montar. No celular/tablet o convite nunca some de vez — instalar o PWA é o
- * caminho que queremos —, e quem quer adiar de verdade tem o `/profile`.
+ * montar. No celular/tablet o convite nunca some de vez, instalar o PWA é o
+ * caminho que queremos, e quem quer adiar de verdade tem o `/profile`.
  */
 export function InstallAppCard({ className }: { className?: string }) {
   const { method, promptInstall } = useInstallPrompt();
   const [iosOpen, setIosOpen] = useState(false);
   // Só o estado desta montagem, sem localStorage: sair do /feed e voltar
-  // remonta o card. Começa visível — não há nada persistido para consultar,
+  // remonta o card. Começa visível, não há nada persistido para consultar,
   // então também não há a piscada que motivava o valor inicial `true` de antes.
   const [dismissed, setDismissed] = useState(false);
 
@@ -80,7 +80,7 @@ export function InstallAppCard({ className }: { className?: string }) {
               <span className="text-sm font-semibold text-scriba-ink-strong">
                 Conheça nosso app!
               </span>
-              {/* A mesma frase nos dois sistemas — o que muda entre eles é o
+              {/* A mesma frase nos dois sistemas, o que muda entre eles é o
                   rótulo do botão, porque no iPhone ele ensina em vez de
                   instalar. */}
               <span className="text-xs leading-relaxed text-scriba-ink-soft">
@@ -106,7 +106,7 @@ export function InstallAppCard({ className }: { className?: string }) {
               // Aceitou: dispensa gravada, some para sempre. Recusou: a faixa
               // some desta página também (o evento do Chrome é de uso único, e
               // sem ele `method` volta a "none"), mas pode reaparecer numa
-              // visita futura — só o X é definitivo.
+              // visita futura, só o X é definitivo.
               void promptInstall().then((accepted) => {
                 if (accepted) dismiss();
               });
@@ -132,7 +132,7 @@ export function InstallAppCard({ className }: { className?: string }) {
  * Variante de lista para as "Preferências" do /profile. É o caminho PERMANENTE
  * e o único no desktop: o card do /feed é `lg:hidden` e sua dispensa é leve
  * (volta a cada visita), então esta linha é onde a instalação fica sempre à
- * mão — inclusive para quem prefere adiar.
+ * mão, inclusive para quem prefere adiar.
  */
 export function InstallAppRow({ className }: { className?: string }) {
   const { method, installed, ready, promptInstall } = useInstallPrompt();
@@ -203,23 +203,105 @@ export function IosInstructionsDialog({
             Ao instalar o Scriba, ele passa a abrir como um aplicativo.
           </DialogDescription>
         </DialogHeader>
-        <ol className="flex flex-col gap-3">
-          <IosStep
-            n={1}
-            icon={<Share className="size-4" />}
-            text="Toque em Compartilhar, na barra de baixo do Safari."
-          />
-          <IosStep
-            n={2}
-            icon={<SquarePlus className="size-4" />}
-            text="Role a lista e escolha “Adicionar à Tela de Início”."
-          />
-          <IosStep
-            n={3}
-            icon={<Check className="size-4" />}
-            text="Confirme em “Adicionar”. O Scriba passa a abrir como um aplicativo."
-          />
-        </ol>
+        <IosSteps />
+      </DialogContent>
+    </Dialog>
+  );
+}
+
+/**
+ * Os três passos, sem diálogo em volta.
+ *
+ * Vive separado porque o `InstallChoiceDialog` os mostra INLINE: no iPhone não
+ * há botão que instale, então empilhar um segundo diálogo por cima do primeiro
+ * só para exibir o mesmo texto seria um toque a mais para chegar na mesma tela.
+ */
+function IosSteps() {
+  return (
+    <ol className="flex flex-col gap-3">
+      <IosStep
+        n={1}
+        icon={<Share className="size-4" />}
+        text="Toque em Compartilhar, na barra de baixo do Safari."
+      />
+      <IosStep
+        n={2}
+        icon={<SquarePlus className="size-4" />}
+        text="Role a lista e escolha “Adicionar à Tela de Início”."
+      />
+      <IosStep
+        n={3}
+        icon={<Check className="size-4" />}
+        text="Confirme em “Adicionar”. O Scriba passa a abrir como um aplicativo."
+      />
+    </ol>
+  );
+}
+
+/**
+ * A escolha que o CTA da landing abre no celular: instalar ou seguir no
+ * navegador.
+ *
+ * Ele existe porque o botão da LP voltou a dizer o que promete ("Começar
+ * grátis"), e não "Instalar app". Empurrar a instalação no primeiro toque é
+ * pedir uma decisão de compromisso a quem ainda não viu o produto; perguntar
+ * DEPOIS do toque mantém a instalação à mão sem transformá-la em pedágio.
+ * Quem quer só entrar tem o segundo botão, no mesmo lugar e sem hierarquia
+ * escondida.
+ *
+ * **No iPhone não há um primeiro botão.** A Apple não expõe API de instalação,
+ * então o que existe para oferecer é o caminho do menu Compartilhar, e ele
+ * aparece aqui mesmo, aberto: um botão "Instalar" que só abrisse outro diálogo
+ * com o passo a passo seria um toque cobrado por nada.
+ *
+ * `method === "none"` (navegador que não instala, ou app já instalado) NÃO
+ * chega aqui: o `LandingCta` navega direto, porque um diálogo de escolha com
+ * uma opção só é uma pergunta sem pergunta.
+ */
+export function InstallChoiceDialog({
+  open,
+  onOpenChange,
+  method,
+  onInstall,
+  onBrowser,
+}: {
+  open: boolean;
+  onOpenChange: (open: boolean) => void;
+  method: InstallMethod;
+  onInstall: () => void;
+  onBrowser: () => void;
+}) {
+  const isIos = method === "ios";
+
+  return (
+    <Dialog open={open} onOpenChange={onOpenChange}>
+      <DialogContent
+        className="rounded-[28px] bg-scriba-paper"
+        bodyClassName="flex flex-col gap-4 px-6 pb-6"
+      >
+        <DialogHeader className="px-6 pt-8">
+          <DialogTitle className="font-heading text-base font-semibold text-scriba-ink-strong">
+            Como você quer usar o Scriba?
+          </DialogTitle>
+          <DialogDescription className="text-scriba-ink-soft">
+            {isIos
+              ? "Você pode instalar o Scriba no seu iPhone ou usar direto pelo navegador."
+              : "Você pode instalar o Scriba no seu celular ou usar direto pelo navegador."}
+          </DialogDescription>
+        </DialogHeader>
+        {isIos ? <IosSteps /> : null}
+        <div className="flex flex-col gap-2.5">
+          {isIos ? null : (
+            <Button className="h-11 w-full rounded-full" onClick={onInstall}>
+              <Download aria-hidden className="size-4" />
+              Instalar o app
+            </Button>
+          )}
+          <Button variant="outline" className="h-11 w-full rounded-full" onClick={onBrowser}>
+            <Globe aria-hidden className="size-4" />
+            Usar no navegador
+          </Button>
+        </div>
       </DialogContent>
     </Dialog>
   );

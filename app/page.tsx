@@ -13,7 +13,7 @@ import avatar7 from "@/shared/assets/avatars/avatar-7.webp";
 import { ScribaMark } from "@/shared/brand";
 import { HeroEyebrow } from "@/shared/components/HeroEyebrow";
 import { HeroEyebrowScript } from "@/shared/components/HeroEyebrowScript";
-import { LandingFooter, LandingHeader } from "@/shared/components/LandingChrome";
+import { LandingFooter, LandingHeader, SectionLabel } from "@/shared/components/LandingChrome";
 import { LandingCta } from "@/shared/components/LandingCta";
 import { LandingJsonLd } from "@/shared/components/LandingJsonLd";
 import { LandingFeedMock, LandingSummaryMock } from "@/shared/components/LandingMocks";
@@ -29,14 +29,14 @@ export const metadata = {
 };
 
 /**
- * A landing page é ESTÁTICA de propósito — nada aqui pode ler cookie, sessão
+ * A landing page é ESTÁTICA de propósito, nada aqui pode ler cookie, sessão
  * ou header, ou o Next volta a marcá-la como dinâmica.
  *
  * Antes ela chamava `supabase.auth.getUser()` para mandar quem já está logado
  * para `/feed`. Bastava isso para tornar a rota dinâmica, e o efeito ia longe:
  * cada visita anônima respondia `Cache-Control: private, no-store` com
  * `X-Vercel-Cache: MISS`, ou seja, HTML remontado do zero na origem, com duas
- * idas ao Supabase — uma no `proxy.ts` e outra aqui — antes do primeiro byte.
+ * idas ao Supabase, uma no `proxy.ts` e outra aqui, antes do primeiro byte.
  * Numa página cujo conteúdo é o MESMO para todo visitante deslogado. O
  * `no-store` ainda derrubava o bfcache (voltar para a LP recarregava tudo).
  *
@@ -47,11 +47,11 @@ export default function LandingPage() {
   return (
     <div className="w-full overflow-x-clip bg-background text-scriba-ink-strong antialiased">
       <LandingJsonLd />
-      {/* Dentro do PWA instalado esta página não é destino — ver
+      {/* Dentro do PWA instalado esta página não é destino, ver
           `StandaloneHomeGuard`. Não custa estaticidade: é cliente puro. */}
       <StandaloneHomeGuard />
       <LandingHeader onLandingPage />
-      {/* O `<main>` é o landmark que faltava — o resto do app já tem um, só a
+      {/* O `<main>` é o landmark que faltava, o resto do app já tem um, só a
           LP não tinha. Sem ele, quem navega por leitor de tela não consegue
           pular o header e cair direto no conteúdo. Não leva classe nenhuma: o
           hero sobe atrás do header por margem negativa, e qualquer coisa que
@@ -78,14 +78,14 @@ export default function LandingPage() {
  * Avatares servidos do nosso próprio bundle, não de `mockmind-api.uifaces.co`.
  *
  * O externo custava 724 KB: sete JPEG de 1024×1024 para desenhar círculos de
- * 34 px. Pior que o peso era a prioridade — o React 19 emite
+ * 34 px. Pior que o peso era a prioridade, o React 19 emite
  * `<link rel="preload" as="image">` para todo `<img>` renderizado no servidor,
  * então os 724 KB disputavam a banda inicial COM o CSS, antes do primeiro
  * paint. Era a maior linha do relatório do Lighthouse ("723 KiB").
  *
  * Reduzidos a 136 px (4× o tamanho de tela) em WebP, os sete somam 20 KB, e o
  * `next/image` ainda gera as variantes do srcset a partir daí. O import
- * estático também dá `width`/`height` de graça — sem reserva de espaço, sete
+ * estático também dá `width`/`height` de graça, sem reserva de espaço, sete
  * avatares chegando tarde empurrariam o texto ao lado e viraria CLS.
  */
 const HERO_AVATARS: readonly StaticImageData[] = [avatar1, avatar2, avatar3, avatar4];
@@ -104,7 +104,7 @@ function Hero() {
         <div className="flex min-w-0 flex-col gap-4 lg:gap-6">
           {/* A pílula é um componente CLIENTE porque ela se personaliza para
               quem chegou por um link de indicação ("Indicado por Fulano", com
-              foto) — e a LP não pode ler cookie sem deixar de ser estática.
+              foto), e a LP não pode ler cookie sem deixar de ser estática.
               Ver o cabeçalho de `HeroEyebrow`. Não arrasta bundle: é um
               componente de `src/shared/`, sem nada de `src/features/`.
 
@@ -122,23 +122,22 @@ function Hero() {
             ensinamentos e ajuda a relembrar e colocar em prática ao longo da semana.
           </p>
           <div className="flex flex-col gap-2.5 pt-1 lg:flex-row lg:items-center lg:gap-3.5">
-            {/* Ordem invertida de propósito: no celular e no tablet "Conhecer o
-                Scriba" vem primeiro e o "Instalar app" (com o link discreto
-                para seguir no navegador) fica ABAIXO dele. No desktop o
-                `lg:order-*` devolve o CTA para a frente. Ver `LandingCta`. */}
+            {/* O CTA vem primeiro nos dois lados. A ordem já foi invertida no
+                celular, quando este botão dizia "Instalar app": pedir espaço no
+                telefone antes de mostrar o produto era invasivo o bastante para
+                valer ceder a primeira posição. Agora ele diz o que promete e a
+                instalação é uma das saídas do diálogo. Ver `LandingCta`. */}
+            <LandingCta
+              className="scriba-cta inline-flex items-center justify-center gap-2.5 rounded-[26px] bg-[image:var(--scriba-cta)] py-[17px] px-8 text-[13px] font-semibold uppercase tracking-[.04em] text-scriba-cta-ink shadow-[0_9px_22px_var(--scriba-cta-shadow)]"
+              icon={<ScribaMark size={20} />}
+              label="Começar grátis"
+            />
             <a
               href="#recursos"
-              className="lp-cta-outline inline-flex items-center justify-center rounded-[26px] border border-auth-btn-border bg-scriba-paper py-4 px-7 text-[13px] font-medium text-scriba-ink lg:order-last"
+              className="lp-cta-outline inline-flex items-center justify-center rounded-[26px] border border-auth-btn-border bg-scriba-paper py-4 px-7 text-[13px] font-medium text-scriba-ink"
             >
               Conhecer o Scriba
             </a>
-            <LandingCta
-              className="scriba-cta inline-flex items-center justify-center gap-2.5 rounded-[26px] bg-[image:var(--scriba-cta)] py-[17px] px-8 text-[13px] font-semibold uppercase tracking-[.04em] text-scriba-cta-ink shadow-[0_9px_22px_var(--scriba-cta-shadow)] lg:order-first"
-              icon={<ScribaMark size={20} />}
-              label="Começar grátis"
-              mobileLabel="Instalar app"
-              showEscape
-            />
           </div>
           {/* Avatares nunca encolhem (flex-none) e o texto ganha min-w-0 + basis
               própria, então em telas estreitas ele quebra para a linha de baixo
@@ -154,7 +153,7 @@ function Hero() {
                   width={34}
                   height={34}
                   // Estes quatro estão acima da dobra e o `next/image` adia por
-                  // padrão — o Next chega a avisar no console que um deles vira
+                  // padrão, o Next chega a avisar no console que um deles vira
                   // o elemento de LCP. `eager` (e não `priority`) porque só
                   // queremos tirar o adiamento: `priority` devolveria o
                   // `<link rel="preload">` que motivou toda esta mudança. São
@@ -231,8 +230,8 @@ const PROBLEMS: {
 /**
  * Definição em texto corrido do produto.
  *
- * A LP inteira era escrita por evocação — "o sermão não termina quando você
- * sai da igreja" — e em nenhum ponto dizia o que o Scriba É. Isso funciona
+ * A LP inteira era escrita por evocação, "o sermão não termina quando você
+ * sai da igreja", e em nenhum ponto dizia o que o Scriba É. Isso funciona
  * para quem já chegou pelo boca a boca e falha para quem chega pela busca:
  * sem uma frase declarativa, nem o leitor nem o buscador conseguem
  * classificar o produto. Esta seção responde às quatro perguntas nessa ordem:
@@ -306,7 +305,7 @@ function WhatIsScriba() {
 /**
  * As perguntas vêm de `src/shared/content/landing-faq.ts`, o mesmo módulo que
  * alimenta o JSON-LD `FAQPage`. Um texto aqui divergente do dado estruturado
- * derruba o rich result da página inteira — por isso a fonte é única.
+ * derruba o rich result da página inteira, por isso a fonte é única.
  */
 function Faq() {
   return (
@@ -466,7 +465,7 @@ function StepCard({ step, title, body, icon }: StepCardProps) {
   );
 }
 
-/** Chip tinting for the summary tiles — one swatch per block of the resumo. */
+/** Chip tinting for the summary tiles, one swatch per block of the resumo. */
 const TILE_CLASSES = {
   blue: "bg-scriba-blue-soft text-scriba-blue-ink",
   rose: "bg-scriba-rose text-scriba-rose-accent",
@@ -560,7 +559,7 @@ function Resumo() {
               você entender, encontrar e relembrar o que realmente importa.
             </p>
           </div>
-          {/* Cartões de papel com um chip colorido por bloco — a cor vira
+          {/* Cartões de papel com um chip colorido por bloco, a cor vira
               acento e não fundo, o que mantém a leitura calma e funciona igual
               nos dois temas. */}
           <div className="grid grid-cols-1 gap-3 sm:grid-cols-2 sm:gap-3.5">
@@ -653,7 +652,7 @@ type BiblioCardProps = {
 
 function BiblioCard({ title, subtitle, badge }: BiblioCardProps) {
   return (
-    // O véu era `bg-white/[.16]`, que CLAREAVA a banda — e o card é justamente
+    // O véu era `bg-white/[.16]`, que CLAREAVA a banda, e o card é justamente
     // onde ficam os textos menores da seção, então ele piorava o contraste
     // exatamente onde a régua é mais dura. Escurecer em vez de clarear inverte
     // isso: o cartão continua se destacando do fundo, agora para baixo.
@@ -741,7 +740,7 @@ function TestimonialCard({ quote, name, title, avatarSrc }: TestimonialCardProps
 }
 
 /**
- * Capacidades do produto — iguais em todos os planos; o que muda entre eles é
+ * Capacidades do produto, iguais em todos os planos; o que muda entre eles é
  * quantos créditos vêm por mês. Nome, preço e créditos NÃO moram aqui: saem de
  * `lib/billing/plans.ts`, o mesmo catálogo que o diálogo de compra e o
  * /profile leem. Antes disso a LP tinha números próprios, e eles já haviam
@@ -749,14 +748,14 @@ function TestimonialCard({ quote, name, title, avatarSrc }: TestimonialCardProps
  * Preço de tela errado é promessa quebrada na hora do checkout.
  */
 /**
- * O que cada plano entrega. Copy local de propósito — descreve CAPACIDADES, e
+ * O que cada plano entrega. Copy local de propósito, descreve CAPACIDADES, e
  * não valores; nome, preço e créditos vêm de `lib/billing/plans.ts`, o mesmo
  * catálogo do diálogo de compra (ver `app/AGENTS.md`).
  *
  * ⚠️ A lista era uma só para os três planos, e passou a mentir no dia em que o
  * estudo virou exclusivo de plano pago: o card do Gratuito prometia "Gerar
  * estudos", e o botão respondia 403. **Uma linha aqui é uma promessa que
- * `lib/entitlements/features.ts` tem de cumprir** — ao mexer numa, confira a
+ * `lib/entitlements/features.ts` tem de cumprir**, ao mexer numa, confira a
  * outra.
  */
 const FREE_FEATURES = [
@@ -767,7 +766,7 @@ const FREE_FEATURES = [
   "Biblioteca de sermões",
 ];
 
-// O estudo é o que separa um plano pago do gratuito — daí ele fechar a lista
+// O estudo é o que separa um plano pago do gratuito, daí ele fechar a lista
 // dos dois pagos, na posição de maior peso visual.
 const PAID_FEATURES = [...FREE_FEATURES, "Modo estudo liberado"];
 
@@ -786,7 +785,7 @@ function Plans() {
         </div>
         {/* Sem `items-start`: os cards precisam ESTICAR até a altura do mais alto.
             O Gratuito tem uma vantagem a menos que os pagos, e com o alinhamento
-            ao topo ele ficava visivelmente menor — o que lê como plano
+            ao topo ele ficava visivelmente menor, o que lê como plano
             inacabado, não como plano mais simples. */}
         <div className="grid gap-4 [&>*:nth-child(2)]:order-first lg:grid-cols-3 lg:gap-[22px] lg:[&>*:nth-child(2)]:order-none">
           <PlanCard
@@ -824,7 +823,7 @@ function Plans() {
         </div>
         <p className="text-center text-[12.5px] font-light leading-[1.6] text-scriba-ink-mute lg:text-[13px]">
           Precisou de mais no meio do mês? Compre {formatCoins(TOPUP.coins)} créditos avulsos por{" "}
-          {formatBrl(TOPUP.priceCents)}, quantas vezes quiser — sem assinatura, e eles não expiram.
+          {formatBrl(TOPUP.priceCents)}, quantas vezes quiser, sem assinatura, e eles não expiram.
         </p>
       </div>
     </section>
@@ -852,8 +851,8 @@ type PlanCardProps = {
   variant: "primary" | "soft";
   badge?: string;
   /**
-   * Destaca o ÚLTIMO item da lista. Usado nos planos pagos para o estudo —
-   * o diferencial em relação ao Gratuito — não se perder no meio de cinco
+   * Destaca o ÚLTIMO item da lista. Usado nos planos pagos para o estudo,
+   * o diferencial em relação ao Gratuito, não se perder no meio de cinco
    * linhas idênticas que os três planos compartilham.
    */
   highlightLast?: boolean;
@@ -955,9 +954,9 @@ function PlanCard({
       {/* `mt-auto` cola o botão no rodapé: com os cards esticados, a lista de
           vantagens mais curta deixaria o CTA do Gratuito flutuando no meio,
           desalinhado dos outros dois. O card Gratuito é o único `primary`, e
-          no celular seu CTA entra pela instalação do PWA (ver `LandingCta`) —
-          mas o texto continua "Começar grátis"; os planos pagos seguem indo
-          para o Checkout. */}
+          no celular seu CTA abre a escolha entre instalar e seguir no navegador
+          (ver `LandingCta`); os planos pagos seguem indo direto para o
+          Checkout. */}
       {isPrimary ? (
         <LandingCta
           className="scriba-cta mt-auto inline-flex items-center justify-center gap-2 rounded-[24px] p-[15px] text-[12px] font-semibold uppercase tracking-[.04em] bg-[image:var(--scriba-cta)] text-scriba-cta-ink shadow-[0_8px_20px_var(--scriba-cta-shadow)]"
@@ -997,7 +996,6 @@ function FinalCTA() {
             // sumir em branco sobre o amarelo
             icon={<ScribaMark size={20} />}
             label="Começar grátis"
-            mobileLabel="Instalar app"
           />
           <div className="text-center text-[11px] font-light text-[#AFCBE0] lg:text-[11.5px]">
             Sem cartão de crédito
@@ -1005,26 +1003,6 @@ function FinalCTA() {
         </div>
       </div>
     </section>
-  );
-}
-
-type SectionLabelProps = {
-  children: React.ReactNode;
-  color?: "blue" | "mute" | "yellow-light";
-};
-
-function SectionLabel({ children, color = "mute" }: SectionLabelProps) {
-  return (
-    <div
-      className={cn(
-        "text-[11px] font-semibold uppercase tracking-[.12em]",
-        color === "blue" && "text-scriba-blue-ink",
-        color === "mute" && "text-scriba-ink-mute",
-        color === "yellow-light" && "text-scriba-yellow-light"
-      )}
-    >
-      {children}
-    </div>
   );
 }
 
@@ -1095,7 +1073,7 @@ function LiveDot() {
     // As três cores eram literais (`bg-red-600/[.08]`, `bg-[#DC2626]`,
     // `text-[#B91C1C]`) e por isso não trocavam com o tema: no escuro o texto
     // ficava a 2,55:1 sobre o fundo do mockup. Agora são tokens, conferidos nos
-    // dois temas — claro 5,73:1, escuro 7,03:1.
+    // dois temas, claro 5,73:1, escuro 7,03:1.
     <div className="flex items-center gap-1.5 rounded-full bg-scriba-rec-soft px-2.5 py-1">
       <span className="size-1.5 rounded-full bg-scriba-rec shadow-[0_0_0_4px_rgba(220,38,38,.15)]" />
       <span className="text-[10px] font-bold tracking-[.08em] text-scriba-rec-ink">AO VIVO</span>
