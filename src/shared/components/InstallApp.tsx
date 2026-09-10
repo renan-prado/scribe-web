@@ -1,7 +1,7 @@
 "use client";
 
 import { Check, Download, Globe, Share, SquarePlus, X } from "lucide-react";
-import { type ReactNode, useCallback, useState } from "react";
+import { type ReactNode, useCallback, useEffect, useState } from "react";
 import { Button } from "@/components/ui/button";
 import {
   Dialog,
@@ -41,10 +41,12 @@ import { type InstallMethod, useInstallPrompt } from "@/shared/hooks/use-install
  * alguma coisa. Espalhá-lo pelo layout inteiro seria o mesmo convite pedindo
  * atenção no meio de uma gravação.
  *
- * `lg:hidden` porque o alvo é celular E TABLET, o iPad instala o PWA pelo
- * mesmo menu Compartilhar do iPhone e não tem barra de endereço com o atalho
- * de instalação. Só no desktop de verdade (`lg` pra cima) o navegador oferece
- * isso sozinho, e lá o `/profile` tem a linha permanente.
+ * `no-touch:hidden` porque o alvo é o APARELHO, não a largura da janela. Aqui
+ * já se usou `lg:hidden`, e o iPad DEITADO caía fora: 1024px é desktop para o
+ * breakpoint e continua sendo um tablet que instala o PWA pelo menu
+ * Compartilhar. No desktop de verdade o navegador oferece a instalação
+ * sozinho, e lá o `/profile` tem a linha permanente. Ver a variante `touch`
+ * em `app/globals.css`.
  *
  * O X é dispensa LEVE: some nesta visita e volta na próxima vez que o `/feed`
  * montar. No celular/tablet o convite nunca some de vez, instalar o PWA é o
@@ -67,7 +69,7 @@ export function InstallAppCard({ className }: { className?: string }) {
 
   return (
     <>
-      <div className={cn("lg:hidden", className)}>
+      <div className={cn("no-touch:hidden", className)}>
         {/* Duas linhas, e não uma: num aparelho de 360px o texto, o botão e o
             X na mesma faixa espremem a frase em três linhas de duas palavras.
             O botão inteiro na segunda linha também é o alvo de toque maior. */}
@@ -130,7 +132,8 @@ export function InstallAppCard({ className }: { className?: string }) {
 
 /**
  * Variante de lista para as "Preferências" do /profile. É o caminho PERMANENTE
- * e o único no desktop: o card do /feed é `lg:hidden` e sua dispensa é leve
+ * e o único no desktop: o card do /feed só existe em aparelho de toque e sua
+ * dispensa é leve
  * (volta a cada visita), então esta linha é onde a instalação fica sempre à
  * mão, inclusive para quem prefere adiar.
  */
@@ -197,7 +200,7 @@ export function IosInstructionsDialog({
       >
         <DialogHeader className="px-6 pt-8">
           <DialogTitle className="font-heading text-base font-semibold text-scriba-ink-strong">
-            Instalação no iPhone
+            Instalar no iPhone ou iPad
           </DialogTitle>
           <DialogDescription className="text-scriba-ink-soft">
             Ao instalar o Scriba, ele passa a abrir como um aplicativo.
@@ -212,9 +215,13 @@ export function IosInstructionsDialog({
 /**
  * Os três passos, sem diálogo em volta.
  *
- * Vive separado porque o `InstallChoiceDialog` os mostra INLINE: no iPhone não
- * há botão que instale, então empilhar um segundo diálogo por cima do primeiro
- * só para exibir o mesmo texto seria um toque a mais para chegar na mesma tela.
+ * Vive separado porque o `InstallChoiceDialog` os mostra DENTRO de si, no
+ * lugar da escolha, quando o "Instalar o app" é tocado num aparelho da Apple.
+ * Empilhar um segundo diálogo por cima do primeiro só para exibir o mesmo
+ * texto piscaria duas molduras na tela para chegar na mesma informação.
+ *
+ * A barra do Safari não tem lugar fixo (embaixo no iPhone, em cima no iPad),
+ * então o passo 1 não diz onde ela fica: diz o que procurar.
  */
 function IosSteps() {
   return (
@@ -222,7 +229,7 @@ function IosSteps() {
       <IosStep
         n={1}
         icon={<Share className="size-4" />}
-        text="Toque em Compartilhar, na barra de baixo do Safari."
+        text="Toque em Compartilhar, na barra do Safari."
       />
       <IosStep
         n={2}
@@ -239,8 +246,8 @@ function IosSteps() {
 }
 
 /**
- * A escolha que o CTA da landing abre no celular: instalar ou seguir no
- * navegador.
+ * A escolha que o CTA da landing abre num aparelho de toque: instalar ou
+ * seguir no navegador.
  *
  * Ele existe porque o botão da LP voltou a dizer o que promete ("Começar
  * grátis"), e não "Instalar app". Empurrar a instalação no primeiro toque é
@@ -249,10 +256,17 @@ function IosSteps() {
  * Quem quer só entrar tem o segundo botão, no mesmo lugar e sem hierarquia
  * escondida.
  *
- * **No iPhone não há um primeiro botão.** A Apple não expõe API de instalação,
- * então o que existe para oferecer é o caminho do menu Compartilhar, e ele
- * aparece aqui mesmo, aberto: um botão "Instalar" que só abrisse outro diálogo
- * com o passo a passo seria um toque cobrado por nada.
+ * **A escolha é a MESMA nos dois sistemas**, e é isso que o `step` protege. A
+ * Apple não expõe API de instalação, então no iPhone o passo a passo do menu
+ * Compartilhar é tudo o que existe para oferecer, mas ele só aparece DEPOIS
+ * do "Instalar o app". Mostrá-lo de saída trocava a pergunta por uma aula: o
+ * aparelho da Apple via três passos e um botão onde o Android via duas
+ * opções, e a mesma decisão chegava com duas caras diferentes. Aqui o segundo
+ * toque é o que muda de plataforma, não o primeiro.
+ *
+ * O `step` volta para "choice" quando o diálogo ABRE, e não quando ele fecha,
+ * porque fechar tem animação de saída: resetar ali trocaria o conteúdo na
+ * frente de quem está vendo o diálogo se despedir.
  *
  * `method === "none"` (navegador que não instala, ou app já instalado) NÃO
  * chega aqui: o `LandingCta` navega direto, porque um diálogo de escolha com
@@ -271,7 +285,23 @@ export function InstallChoiceDialog({
   onInstall: () => void;
   onBrowser: () => void;
 }) {
-  const isIos = method === "ios";
+  const [step, setStep] = useState<"choice" | "ios">("choice");
+
+  useEffect(() => {
+    if (open) setStep("choice");
+  }, [open]);
+
+  function handleInstall() {
+    // No iPhone/iPad o botão não instala: ele ENSINA, que é tudo o que a
+    // plataforma permite. No Android ele dispara o diálogo nativo.
+    if (method === "ios") {
+      setStep("ios");
+      return;
+    }
+    onInstall();
+  }
+
+  const showingSteps = step === "ios";
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
@@ -281,22 +311,25 @@ export function InstallChoiceDialog({
       >
         <DialogHeader className="px-6 pt-8">
           <DialogTitle className="font-heading text-base font-semibold text-scriba-ink-strong">
-            Como você quer usar o Scriba?
+            {showingSteps ? "Instalar no iPhone ou iPad" : "Como você quer usar o Scriba?"}
           </DialogTitle>
           <DialogDescription className="text-scriba-ink-soft">
-            {isIos
-              ? "Você pode instalar o Scriba no seu iPhone ou usar direto pelo navegador."
-              : "Você pode instalar o Scriba no seu celular ou usar direto pelo navegador."}
+            {showingSteps
+              ? "A instalação é feita pelo menu Compartilhar do Safari. São três toques:"
+              : "Você pode instalar o Scriba no seu aparelho ou usar direto pelo navegador."}
           </DialogDescription>
         </DialogHeader>
-        {isIos ? <IosSteps /> : null}
+        {showingSteps ? <IosSteps /> : null}
         <div className="flex flex-col gap-2.5">
-          {isIos ? null : (
-            <Button className="h-11 w-full rounded-full" onClick={onInstall}>
+          {showingSteps ? null : (
+            <Button className="h-11 w-full rounded-full" onClick={handleInstall}>
               <Download aria-hidden className="size-4" />
               Instalar o app
             </Button>
           )}
+          {/* O caminho do navegador continua à mão mesmo no passo a passo:
+              quem abriu as instruções e desistiu delas não pode ficar sem
+              saída a não ser fechar o diálogo e tocar no CTA de novo. */}
           <Button variant="outline" className="h-11 w-full rounded-full" onClick={onBrowser}>
             <Globe aria-hidden className="size-4" />
             Usar no navegador

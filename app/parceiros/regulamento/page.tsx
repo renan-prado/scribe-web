@@ -27,7 +27,7 @@ export const metadata: Metadata = {
  *
  * Mesma forma das páginas legais (`/terms`, `/privacy`): datada, numerada,
  * larga o suficiente para ser lida e estreita o suficiente para ser lida até o
- * fim. Ela é a versão que OBRIGA — `/parceiros` resume, e um resumo que
+ * fim. Ela é a versão que OBRIGA, `/parceiros` resume, e um resumo que
  * discorde daqui é o resumo que está errado.
  *
  * **Os números vêm dos mesmos módulos que o produto usa para cobrar e pagar**
@@ -35,7 +35,7 @@ export const metadata: Metadata = {
  * percentual redigitado é a pior forma possível de um número divergir: ele
  * continua verdadeiro na tela e falso no PIX.
  *
- * Ao mudar QUALQUER regra aqui, atualize `docs/parceiros.md` no mesmo commit —
+ * Ao mudar QUALQUER regra aqui, atualize `docs/parceiros.md` no mesmo commit,
  * aquele documento é o que a equipe envia por e-mail, e dois textos com a
  * mesma autoridade dizendo coisas diferentes é como um parceiro descobre uma
  * condição que ninguém anunciou.
@@ -203,8 +203,8 @@ export default function PartnersTermsPage() {
               próprio destes.
             </p>
             <p className="mt-2">
-              O Parceiro é livre para publicar o link nos canais que mantiver — biografia de perfil,
-              descrição de vídeo, transmissões, mensagens a seus seguidores, materiais impressos —
+              O Parceiro é livre para publicar o link nos canais que mantiver, biografia de perfil,
+              descrição de vídeo, transmissões, mensagens a seus seguidores, materiais impressos,
               desde que respeitadas as vedações da cláusula 11 e as regras da plataforma em que
               publicar.
             </p>
@@ -242,8 +242,8 @@ export default function PartnersTermsPage() {
               <li>
                 A marcação depende de recursos do navegador do visitante (cookies). Sua perda por
                 limpeza de dados, navegação anônima, troca de dispositivo ou bloqueio por extensões
-                não gera direito a Comissão nem a revisão de atribuição — razão pela qual o código
-                de indicação existe.
+                não gera direito a Comissão nem a revisão de atribuição, razão pela qual o código de
+                indicação existe.
               </li>
             </ul>
           </Section>
@@ -481,8 +481,8 @@ export default function PartnersTermsPage() {
 
           <Section n={14} title="Alteração das condições">
             <p>
-              O Scriba pode alterar as condições do Programa — percentual padrão, valores em moedas,
-              carência, mínimo de pagamento e demais regras — mediante comunicação ao Parceiro com{" "}
+              O Scriba pode alterar as condições do Programa, percentual padrão, valores em moedas,
+              carência, mínimo de pagamento e demais regras, mediante comunicação ao Parceiro com{" "}
               <strong>antecedência mínima de 30 dias</strong> por e-mail ou aviso no painel.
             </p>
             <p className="mt-2">
@@ -508,7 +508,7 @@ export default function PartnersTermsPage() {
               solicitados.
             </p>
             <p className="mt-2">
-              Os dados pessoais do próprio Parceiro — nome, e-mail, chave PIX, CPF ou CNPJ — são
+              Os dados pessoais do próprio Parceiro, nome, e-mail, chave PIX, CPF ou CNPJ, são
               tratados para execução deste Regulamento e cumprimento de obrigações legais e fiscais,
               nos termos da Lei nº 13.709/2018 (LGPD) e da{" "}
               <Link href="/privacy" className="text-scriba-blue-ink underline underline-offset-2">

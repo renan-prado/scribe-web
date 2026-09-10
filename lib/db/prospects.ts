@@ -7,7 +7,7 @@ import { createAdminClient } from "@/lib/supabase/admin";
  * O pré-parceiro: quem chegou por `/parceiros`, criou conta sem compromisso e
  * ganha moedas para conhecer o produto antes de decidir se vai divulgá-lo.
  *
- * Toda a regra mora na RPC `attach_partner_prospect` (migração 0050) — a janela
+ * Toda a regra mora na RPC `attach_partner_prospect` (migração 0050), a janela
  * de conta nova, a recusa de quem já ganhou bônus por indicação, o teto global e
  * o crédito, tudo numa transação só. Aqui só passamos os dois números de
  * `economics.ts` e traduzimos o resultado.
@@ -52,7 +52,7 @@ export type AdminProspect = {
  *
  * Duas consultas em vez de um join porque `profiles` e `partner_prospects` são
  * lidas pelo service_role e o PostgREST só faria o embed com uma FK declarada
- * entre elas — que não existe de propósito: a chave de `partner_prospects` é
+ * entre elas, que não existe de propósito: a chave de `partner_prospects` é
  * `auth.users`, não `profiles`.
  */
 export async function listProspects(): Promise<AdminProspect[]> {
@@ -94,7 +94,7 @@ export async function listProspects(): Promise<AdminProspect[]> {
  * Chamado quando o admin CRIA um parceiro: se o e-mail do convite é o de alguém
  * que já tinha se cadastrado como pré-parceiro, aquela linha deixa de ser um
  * candidato pendente. Fazer isso aqui, e não num botão separado, é o que impede
- * a lista de candidatos de continuar mostrando gente que já virou parceiro —
+ * a lista de candidatos de continuar mostrando gente que já virou parceiro,
  * um segundo passo manual seria esquecido exatamente nos dias corridos.
  *
  * Nunca lança: falhar em carimbar não pode derrubar a criação do parceiro, que
@@ -120,7 +120,7 @@ export async function markProspectsPromoted(email: string, partnerId: string): P
     .eq("user_id", profile.id);
 }
 
-/** Descarta um candidato — some da lista de pendentes, a linha fica. */
+/** Descarta um candidato, some da lista de pendentes, a linha fica. */
 export async function declineProspect(userId: string): Promise<void> {
   const admin = createAdminClient();
   await admin.from("partner_prospects").update({ status: "declined" }).eq("user_id", userId);

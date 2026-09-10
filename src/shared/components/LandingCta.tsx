@@ -21,17 +21,24 @@ import { useInstallPrompt } from "@/shared/hooks/use-install-prompt";
  * a instalação virou uma das duas saídas do `InstallChoiceDialog`, aberto pelo
  * toque. A oferta não sumiu, deixou de ser pedágio.
  *
- * - **Desktop (`lg` pra cima):** nada muda. Renderiza o mesmo `<Link>` de
- *   antes, com o mesmo texto e as mesmas classes, o HTML estático da LP
- *   continua idêntico (ver `app/AGENTS.md`). O corte é em `lg`, não `sm`,
- *   porque o iPad instala o PWA como o iPhone e precisa do mesmo caminho.
+ * - **Desktop:** nada muda. Renderiza o mesmo `<Link>` de antes, com o mesmo
+ *   texto e as mesmas classes, o HTML estático da LP continua idêntico (ver
+ *   `app/AGENTS.md`).
  * - **Android/Chromium:** o diálogo oferece "Instalar o app" (que dispara o
  *   `beforeinstallprompt` nativo) e "Usar no navegador".
- * - **iOS:** não há API de instalação, então o diálogo já mostra o passo a
- *   passo do menu Compartilhar, com "Usar no navegador" abaixo dele.
+ * - **iOS:** o diálogo é o MESMO, com os mesmos dois botões. Como não há API
+ *   de instalação, "Instalar o app" troca o conteúdo do diálogo pelo passo a
+ *   passo do menu Compartilhar, em vez de instalar.
  * - **Navegador que não instala (Firefox Android…) ou app já instalado:** o
  *   clique vai direto para o `href`. Um diálogo de escolha com uma opção só
  *   seria um toque a mais para chegar no mesmo lugar.
+ *
+ * **Quem separa os dois lados é `touch`/`no-touch`, não um breakpoint.** O
+ * corte já foi `lg` (1024px), escolhido para pegar o iPad em retrato, e o
+ * mesmo iPad DEITADO mede 1024px: caía no bucket "desktop" e perdia a única
+ * porta de instalação que tem, sem nada na tela dizendo por quê. Não existe
+ * largura que separe um tablet deitado de um notebook; o que separa é o
+ * hover. Ver a variante em `app/globals.css`.
  *
  * É cliente puro, como o `StandaloneHomeGuard`, e não custa a estaticidade da
  * página. O diálogo entra por `dynamic` e só é montado depois do primeiro
@@ -87,14 +94,18 @@ export function LandingCta({ className, label, icon, href = "/sign-in" }: Landin
 
   return (
     <>
-      {/* Desktop: o link de sempre. `max-lg:hidden` some com ele no celular e
-          no tablet. */}
-      <Link href={href} className={cn(className, "max-lg:hidden")}>
+      {/* Desktop: o link de sempre. `touch:hidden` some com ele em qualquer
+          aparelho de toque, seja um celular de 360px ou um iPad deitado. */}
+      <Link href={href} className={cn(className, "touch:hidden")}>
         {icon}
         {label}
       </Link>
-      {/* Mobile e tablet: o botão que abre a escolha. */}
-      <button type="button" onClick={handleMobileClick} className={cn(className, "lg:hidden")}>
+      {/* Celular e tablet: o botão que abre a escolha. */}
+      <button
+        type="button"
+        onClick={handleMobileClick}
+        className={cn(className, "no-touch:hidden")}
+      >
         {icon}
         {label}
       </button>

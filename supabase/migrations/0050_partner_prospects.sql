@@ -3,7 +3,7 @@
 --
 -- POR QUE UMA TABELA NOVA, E NÃO UM STATUS EM `partners`.
 -- Uma linha em `partners` tem slug (que é o link público), taxa de comissão,
--- chave PIX e orçamento de bônus — ou seja, ela EXISTE para pagar alguém. Um
+-- chave PIX e orçamento de bônus, ou seja, ela EXISTE para pagar alguém. Um
 -- pré-parceiro não tem nada disso: ele é um candidato que ainda não foi
 -- avaliado, e emitir um slug para cada visitante que clicou num botão encheria
 -- o espaço de links públicos (que é único) de gente que nunca vai divulgar.
@@ -18,14 +18,14 @@
 --
 -- O TETO É GLOBAL, e é o ponto mais importante deste arquivo.
 -- `/parceiros` é uma página PÚBLICA: qualquer pessoa com uma conta Google nova
--- pode passar por ela e pedir as moedas. Diferente do bônus de indicação — que
+-- pode passar por ela e pedir as moedas. Diferente do bônus de indicação, que
 -- só existe se um parceiro real divulgou um link e tem `bonus_budget_coins`
--- para segurá-lo —, aqui não há ninguém do outro lado limitando nada. Sem um
+-- para segurá-lo, aqui não há ninguém do outro lado limitando nada. Sem um
 -- teto, isto é uma torneira aberta: cada conta nova vale moedas de graça, e o
 -- único custo do atacante é criar contas Google.
 --
 -- O teto vive em `lib/partners/economics.ts` e chega aqui como PARÂMETRO, não
--- como número gravado na migração — é decisão de produto que muda sem deploy de
+-- como número gravado na migração, é decisão de produto que muda sem deploy de
 -- schema. A função é service_role-only, então o valor sempre vem do nosso
 -- servidor. Estourado o teto, a pessoa AINDA vira pré-parceiro (queremos saber
 -- quem se interessou); só não recebe as moedas.
@@ -38,7 +38,7 @@ create table if not exists public.partner_prospects (
   -- que houver um segundo caminho (um convite direto por e-mail, por exemplo).
   source        text not null default 'landing',
   -- Quanto foi efetivamente creditado. 0 quando o teto global já estava cheio.
-  -- É a coluna que o teto SOMA, e por isso ela é o registro de controle — o
+  -- É a coluna que o teto SOMA, e por isso ela é o registro de controle, o
   -- livro-razão continua sendo `coin_transactions`.
   coins_granted int not null default 0 check (coins_granted >= 0),
   status        text not null default 'new'
@@ -49,7 +49,7 @@ create table if not exists public.partner_prospects (
 );
 
 comment on table public.partner_prospects is
-  'Candidatos a parceiro que criaram conta por /parceiros. Sem slug, sem comissão, sem PIX — ver 0050.';
+  'Candidatos a parceiro que criaram conta por /parceiros. Sem slug, sem comissão, sem PIX, ver 0050.';
 comment on column public.partner_prospects.coins_granted is
   'Moedas de cortesia efetivamente creditadas. 0 = teto global estourado. Controle, não ledger.';
 
@@ -58,19 +58,19 @@ create index if not exists partner_prospects_status_idx
 
 -- attach_partner_prospect() ---------------------------------------------------
 -- Irmã de `attach_partner()`, e escrita no mesmo molde: valida, grava e credita
--- na MESMA transação, devolvendo um código em vez de lançar exceção — porque
+-- na MESMA transação, devolvendo um código em vez de lançar exceção, porque
 -- quase todo "não" aqui é normal e não pode derrubar o login de ninguém.
 --
 --   ok | already_prospect | not_new | already_partner | already_attributed | capped
 --
 -- A JANELA DE CONTA NOVA (30 min) é a mesma de `attach_partner`, e pelo mesmo
 -- motivo: sem ela, um usuário de um ano atrás que abrisse /parceiros ganharia
--- as moedas no login seguinte — e de novo a cada vez que limpasse o cookie.
+-- as moedas no login seguinte, e de novo a cada vez que limpasse o cookie.
 --
 -- `already_attributed` recusa quem JÁ ganhou bônus por ter entrado pelo link de
 -- um parceiro ou de um amigo. Não é mesquinhez: são dois brindes de boas-vindas
 -- para a mesma conta nova, e empilhá-los transforma "conheça o produto" em
--- "junte cupons". Quem indicou continua com a comissão intacta — o que esta
+-- "junte cupons". Quem indicou continua com a comissão intacta, o que esta
 -- linha recusa é o SEGUNDO bônus, não a atribuição.
 
 create or replace function public.attach_partner_prospect(
@@ -120,7 +120,7 @@ begin
   -- O teto global. `for update` na soma não existe em SQL, então a serialização
   -- vem da trava do perfil acima somada ao PRIMARY KEY da tabela: dois cadastros
   -- diferentes podem ler a mesma soma e furar o teto em uma linha, no pior caso.
-  -- É aceitável — o teto existe para conter ordem de grandeza, não centavos.
+  -- É aceitável, o teto existe para conter ordem de grandeza, não centavos.
   select coalesce(sum(coins_granted), 0) into v_spent from public.partner_prospects;
 
   v_coins := greatest(coalesce(p_coins, 0), 0);

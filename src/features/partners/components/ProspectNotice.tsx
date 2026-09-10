@@ -9,14 +9,14 @@ import { CoinMark } from "@/shared/icons/CoinMark";
  * genérica desperdiça a única coisa que a pessoa acabou de ler. Quem clicou em
  * "Conhecer a plataforma" veio por causa de uma oferta específica, e chegar num
  * "Entrar no Scriba" sem menção nenhuma a ela é o momento em que metade
- * desiste — a oferta parecia boa demais e a tela seguinte não a confirma.
+ * desiste, a oferta parecia boa demais e a tela seguinte não a confirma.
  *
  * **A palavra que mais importa aqui é "sem compromisso".** O medo de quem
  * clica não é o preço (não há), é o de estar assinando alguma coisa: uma
  * exclusividade, uma meta, uma cobrança depois. O selo diz o que a pessoa
  * ganha e, na mesma frase, o que ela NÃO está aceitando.
  *
- * Server component puro — sem estado, sem client boundary. Ele não decide nada:
+ * Server component puro, sem estado, sem client boundary. Ele não decide nada:
  * quem lê o cookie é a página, e quem credita é `attach_partner_prospect`.
  */
 export function ProspectNotice() {
@@ -36,7 +36,7 @@ export function ProspectNotice() {
       <p className="text-pretty text-[12px] font-light leading-[1.55] text-scriba-cream-body">
         Criando sua conta agora, as moedas entram no seu saldo para você usar o Scriba de verdade e
         decidir se faz sentido divulgá-lo.{" "}
-        <strong className="font-semibold">Você não está se comprometendo com nada</strong> — sem
+        <strong className="font-semibold">Você não está se comprometendo com nada</strong>: sem
         meta, sem exclusividade e sem cartão. Se depois quiser entrar no programa, a gente conversa.
       </p>
     </div>

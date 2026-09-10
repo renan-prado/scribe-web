@@ -115,6 +115,16 @@ Duas camadas cobrem isso, e a ordem entre elas é o desenho:
 `hover: none` e não `pointer: coarse`: o que decide é a ausência de HOVER, não
 a grossura do ponteiro, um notebook com tela sensível continua tendo mouse.
 
+**O mesmo critério está exposto como variante: `touch:` e `no-touch:`**
+(declaradas em `app/globals.css`, ao lado da `dark`). Use-as onde a pergunta é
+"isto é um celular ou tablet?", que NÃO é a mesma pergunta que "a viewport é
+pequena?". Quem confundiu as duas foi o convite de instalar o PWA: ele cortava
+em `lg` (1024px) para pegar o iPad em retrato, e o mesmo iPad deitado mede
+1024px, entrava no bucket "desktop" e perdia a única porta de instalação que
+tem. Não há breakpoint que separe um tablet deitado de um notebook. Para
+largura de viewport, que é sobre o LAYOUT caber, os breakpoints continuam
+sendo a ferramenta certa.
+
 **O piso só alcança elemento SEMÂNTICO.** Um `<div onClick>` não ganha retorno
 nenhum, e isso é bom: é mais um motivo para ele não existir.
 

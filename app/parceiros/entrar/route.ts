@@ -17,7 +17,7 @@ export const dynamic = "force-dynamic";
  * `/sign-in`.
  *
  * **Existe uma rota no meio pela mesma razão que `/r/<slug>`:** `/parceiros` é
- * ESTÁTICA e não pode escrever cookie sem deixar de ser — o que custaria a ela
+ * ESTÁTICA e não pode escrever cookie sem deixar de ser, o que custaria a ela
  * o mesmo que custaria à landing page (HTML remontado na origem a cada visita,
  * `no-store`, bfcache derrubado). O efeito colateral mora aqui, e as duas
  * páginas continuam saindo da CDN.
@@ -28,14 +28,14 @@ export const dynamic = "force-dynamic";
  * ganhou outro bônus de boas-vindas. Ver a migração 0050.
  *
  * 302, não 308, pelo motivo de sempre: um permanente seria memorizado pelo
- * navegador e as próximas visitas nem chegariam ao servidor — o cookie deixaria
+ * navegador e as próximas visitas nem chegariam ao servidor, o cookie deixaria
  * de ser renovado para quem voltou uma semana depois para decidir.
  */
 export async function GET(request: NextRequest) {
   const signIn = new URL("/sign-in", request.nextUrl.origin);
   const response = NextResponse.redirect(signIn, 302);
 
-  // O rate limit aqui não protege o crédito — quem protege é a RPC, que exige
+  // O rate limit aqui não protege o crédito, quem protege é a RPC, que exige
   // conta nova, recusa repetição por PRIMARY KEY e respeita o teto global. Ele
   // corta a rajada boba: um script batendo nesta rota só gastaria banda nossa.
   const limited = enforceRateLimit(request, RATE_LIMITS["partner-link"]);

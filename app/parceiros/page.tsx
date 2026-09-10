@@ -30,7 +30,7 @@ export const metadata: Metadata = {
  *
  * É a LP da landing page vista de outro lado: mesma linguagem visual, mesmo
  * chrome, outra pergunta. A `/` responde "por que eu usaria isso?"; esta
- * responde "por que eu FALARIA disso?" — e a segunda só se responde depois da
+ * responde "por que eu FALARIA disso?", e a segunda só se responde depois da
  * primeira, por isso a página explica o produto antes de falar em dinheiro.
  *
  * **Estática, pelas mesmas razões da `/`** (ver `app/AGENTS.md` § Landing
@@ -40,7 +40,7 @@ export const metadata: Metadata = {
  *
  * **E ela não tem números próprios.** Percentual, carência, mínimo de saque,
  * moedas e preços saem de `lib/partners/economics.ts`, `lib/billing/plans.ts`
- * e `lib/coins/pricing.ts` — os mesmos módulos que o painel do parceiro e o
+ * e `lib/coins/pricing.ts`, os mesmos módulos que o painel do parceiro e o
  * simulador do admin leem. Um número redigitado aqui vira, semanas depois,
  * uma promessa que o painel desmente para a pessoa que confiou nela. A regra
  * inclui os MINUTOS: "500 moedas dão ~100 min" era verdade quando o minuto ao
@@ -53,7 +53,7 @@ export const metadata: Metadata = {
 /**
  * O CTA não vai direto para `/sign-in`: passa por `/parceiros/entrar`, que
  * marca o visitante como pré-parceiro num cookie e só então redireciona. É o
- * mesmo desenho de `/r/<slug>`, e pela mesma razão — esta página é estática e
+ * mesmo desenho de `/r/<slug>`, e pela mesma razão, esta página é estática e
  * não pode escrever cookie sem deixar de ser. Sem esse desvio, a tela de
  * entrada não teria como saber que a pessoa veio daqui, e as moedas de
  * cortesia nunca seriam creditadas.
@@ -149,7 +149,7 @@ function Hero() {
 
 /**
  * O cartão do convite. Ele existe para responder, sem rolagem, a pergunta que
- * traz alguém a esta página: "o que eu ganho com isso?" — e responde nas duas
+ * traz alguém a esta página: "o que eu ganho com isso?", e responde nas duas
  * moedas do programa, o dinheiro e as moedas do app, porque só uma das duas
  * chega rápido.
  */
@@ -237,11 +237,11 @@ function TryFirst() {
             Ninguém consegue falar bem de um app que nunca abriu. Por isso o primeiro passo não é
             assinar nada: crie sua conta pela página de parceiros e{" "}
             {formatCoins(PARTNER_PROSPECT_COINS)} moedas entram no seu saldo para você usar o Scriba
-            de verdade. <strong className="font-medium">Sem compromisso nenhum</strong> — você não
+            de verdade. <strong className="font-medium">Sem compromisso nenhum</strong>: você não
             está entrando no programa, está conhecendo o produto.
           </p>
           <p className="max-w-[520px] text-pretty text-[13.5px] font-light leading-[1.62] text-scriba-ink-mute lg:text-[14.5px]">
-            Se você concluir que o Scriba não combina com o seu público, é só não voltar — não há
+            Se você concluir que o Scriba não combina com o seu público, é só não voltar, não há
             nada a cancelar e ninguém sai no prejuízo. Se concluir que combina, aí sim a gente
             conversa sobre link, comissão e painel.
           </p>
@@ -261,7 +261,7 @@ function TryFirst() {
             </div>
             <p className="text-pretty text-[13px] font-light leading-[1.6] text-scriba-cream-body">
               São cerca de <strong className="font-semibold">{liveMinutes} minutos</strong> de
-              gravação no Modo Completo, com feed ao vivo e resumo final — ou {audioMinutes} minutos
+              gravação no Modo Completo, com feed ao vivo e resumo final, ou {audioMinutes} minutos
               no Modo Áudio. Dá para o culto de domingo e o estudo do meio da semana.
             </p>
           </div>
@@ -481,7 +481,7 @@ function HowYouEarn() {
         <strong className="font-semibold text-scriba-ink-strong">
           {formatCoins(REFERRED_TOTAL_COINS)} moedas
         </strong>{" "}
-        em vez de {formatCoins(INITIAL_COIN_BALANCE)} — a melhor oferta que o Scriba tem, e ela só
+        em vez de {formatCoins(INITIAL_COIN_BALANCE)}, a melhor oferta que o Scriba tem, e ela só
         existe pelo link de um parceiro. É o que você tem para anunciar.
       </p>
 
@@ -578,8 +578,8 @@ function EarnCard({
  * A prévia do painel é markup ESTÁTICO, não o painel real.
  *
  * Mesma decisão dos mockups de celular da `/` (ver `app/AGENTS.md`): importar
- * a tela de verdade traria `PartnerTabs`, `EarningsByPlan` e o `RefreshPanelButton`
- * — todos `"use client"`, todos inúteis aqui — para o bundle de uma página que
+ * a tela de verdade traria `PartnerTabs`, `EarningsByPlan` e o `RefreshPanelButton`,
+ * todos `"use client"`, todos inúteis aqui, para o bundle de uma página que
  * ninguém clica. O preço é conhecido: mexer no painel não atualiza esta prévia.
  */
 function Panel() {
@@ -593,12 +593,12 @@ function Panel() {
           </h2>
           <p className="max-w-[520px] text-pretty text-[14px] font-light leading-[1.65] text-scriba-ink-soft lg:text-[15.5px]">
             Assim que você entra no programa, uma área sua aparece no menu do app. Ela responde
-            primeiro a pergunta que importa — quanto você tem a receber — e só depois mostra de onde
+            primeiro a pergunta que importa, quanto você tem a receber, e só depois mostra de onde
             esse valor veio.
           </p>
           <ul className="flex flex-col gap-2.5 pt-1">
             {[
-              "Quantas pessoas abriram seu link — uma contagem por pessoa, por dia.",
+              "Quantas pessoas abriram seu link, uma contagem por pessoa, por dia.",
               "Quantas delas criaram conta, e quantas dessas viraram assinantes.",
               "Quanto está em carência, quanto entra no próximo PIX e quanto você já recebeu.",
               "O histórico mês a mês, com o comprovante de cada pagamento.",
@@ -622,7 +622,7 @@ function Panel() {
               O painel mostra apenas números.
             </strong>{" "}
             Nome, e-mail ou qualquer dado de quem se cadastrou pelo seu link nunca aparecem para
-            você — nem no painel, nem em relatório nenhum. Você vê "12 cadastros", nunca "estes 12".
+            você, nem no painel, nem em relatório nenhum. Você vê "12 cadastros", nunca "estes 12".
           </p>
         </div>
         <PanelMock />
@@ -779,11 +779,11 @@ const RULES: { title: string; body: string }[] = [
   },
   {
     title: `Carência de ${COMMISSION_HOLD_DAYS} dias`,
-    body: `Toda comissão espera ${COMMISSION_HOLD_DAYS} dias antes de ficar disponível — é o prazo em que a cobrança ainda pode ser contestada no cartão. Havendo reembolso ou contestação, aquela comissão é cancelada.`,
+    body: `Toda comissão espera ${COMMISSION_HOLD_DAYS} dias antes de ficar disponível, é o prazo em que a cobrança ainda pode ser contestada no cartão. Havendo reembolso ou contestação, aquela comissão é cancelada.`,
   },
   {
     title: "Você não indica a si mesmo",
-    body: "Sua própria conta nunca gera comissão nem bônus. Contas criadas em massa, tráfego comprado e promessa falsa sobre o produto encerram a participação — e comissão de indicação fraudulenta não é paga.",
+    body: "Sua própria conta nunca gera comissão nem bônus. Contas criadas em massa, tráfego comprado e promessa falsa sobre o produto encerram a participação, e comissão de indicação fraudulenta não é paga.",
   },
 ];
 
@@ -799,8 +799,8 @@ function Rules() {
           O que você precisa saber antes de publicar o primeiro link.
         </h2>
         <p className="text-pretty text-[14px] font-light leading-[1.62] text-scriba-ink-soft lg:text-[15.5px]">
-          Aqui está o essencial, em português claro. O texto completo — com definições, obrigações,
-          condutas vedadas, impostos e desligamento — está no regulamento.
+          Aqui está o essencial, em português claro. O texto completo, com definições, obrigações,
+          condutas vedadas, impostos e desligamento, está no regulamento.
         </p>
       </div>
       <div className="grid gap-3.5 sm:grid-cols-2 lg:grid-cols-3 lg:gap-[22px]">
@@ -834,7 +834,7 @@ const STEPS: { n: string; title: string; body: string }[] = [
   {
     n: "01",
     title: "Conheça, sem compromisso",
-    body: `Crie sua conta por esta página e ganhe ${formatCoins(PARTNER_PROSPECT_COINS)} moedas. Grave um culto, importe um vídeo do YouTube, leia um resumo. Você não entrou em programa nenhum ainda — só está vendo se o produto faz sentido para o seu público.`,
+    body: `Crie sua conta por esta página e ganhe ${formatCoins(PARTNER_PROSPECT_COINS)} moedas. Grave um culto, importe um vídeo do YouTube, leia um resumo. Você não entrou em programa nenhum ainda, só está vendo se o produto faz sentido para o seu público.`,
   },
   {
     n: "02",
@@ -901,11 +901,11 @@ const FAQ: { question: string; answer: string }[] = [
   {
     question: "Sou obrigado a falar só do Scriba?",
     answer:
-      "Não há exclusividade nem meta mínima. Você publica quando e onde fizer sentido — bio, descrição de vídeo, stories, grupo de WhatsApp, boletim da igreja.",
+      "Não há exclusividade nem meta mínima. Você publica quando e onde fizer sentido, bio, descrição de vídeo, stories, grupo de WhatsApp, boletim da igreja.",
   },
   {
     question: "Quando o dinheiro cai na conta?",
-    answer: `Cada comissão espera ${COMMISSION_HOLD_DAYS} dias — é o tempo em que a cobrança ainda pode ser contestada no cartão. Passado o prazo, ela fica disponível e entra no PIX do mês seguinte, desde que o total disponível tenha chegado a ${formatBrl(PAYOUT_MINIMUM_CENTS)}.`,
+    answer: `Cada comissão espera ${COMMISSION_HOLD_DAYS} dias, é o tempo em que a cobrança ainda pode ser contestada no cartão. Passado o prazo, ela fica disponível e entra no PIX do mês seguinte, desde que o total disponível tenha chegado a ${formatBrl(PAYOUT_MINIMUM_CENTS)}.`,
   },
   {
     question: `E se eu não juntar os ${formatBrl(PAYOUT_MINIMUM_CENTS)}?`,
@@ -915,7 +915,7 @@ const FAQ: { question: string; answer: string }[] = [
   {
     question: "Eu vejo quem se cadastrou pelo meu link?",
     answer:
-      "Não. O painel mostra só números — nenhum nome, e-mail ou dado de quem criou a conta chega até você. É uma decisão de projeto, não uma limitação técnica.",
+      "Não. O painel mostra só números, nenhum nome, e-mail ou dado de quem criou a conta chega até você. É uma decisão de projeto, não uma limitação técnica.",
   },
 ];
 

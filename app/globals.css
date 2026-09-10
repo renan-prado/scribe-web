@@ -4,6 +4,27 @@
 
 @custom-variant dark (&:is(.dark *));
 
+/* APARELHO DE TOQUE, e não "tela estreita".
+
+   `touch:` e `no-touch:` respondem "isto é um celular ou tablet?", que é uma
+   pergunta diferente de "a viewport é pequena?". Quem tentou responder a
+   primeira com a segunda foi o convite de instalar o PWA: ele usava `lg`
+   (1024px) porque o iPad em RETRATO cai abaixo disso. Só que o mesmo iPad
+   DEITADO tem 1024px de largura, entra no bucket "desktop" e perde a única
+   porta de instalação que ele tem, sem nada na tela dizendo por quê. Não há
+   breakpoint que separe um iPad deitado de um notebook: os dois medem igual.
+
+   O que os separa é o HOVER, o mesmo critério do pressionado lá embaixo no
+   @layer base, e pela mesma razão: um notebook com tela sensível continua
+   tendo mouse, e é o mouse, não a grossura do dedo, que decide se a interface
+   de apontar existe. `pointer: coarse` erraria justamente nele.
+
+   Use isto onde o alvo é o APARELHO (instalar o app, um alvo de toque maior).
+   Para largura de viewport, que é sobre o LAYOUT caber, os breakpoints
+   continuam sendo a ferramenta certa. */
+@custom-variant touch (@media (hover: none));
+@custom-variant no-touch (@media (hover: hover));
+
 @theme inline {
   --color-background: var(--background);
   --color-foreground: var(--foreground);

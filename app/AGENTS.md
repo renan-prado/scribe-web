@@ -442,22 +442,25 @@ Três consumidores hoje:
   o caminho do menu Compartilhar. Dois lugares o usam:
   - `InstallAppCard`, **no `/feed`** e só nele, a primeira tela de toda sessão
     de uso e a única em que a pessoa está olhando em volta em vez de terminando
-    alguma coisa. `lg:hidden`. O X é dispensa LEVE: some nesta visita e volta na
+    alguma coisa. `no-touch:hidden`. O X é dispensa LEVE: some nesta visita e volta na
     próxima vez que o `/feed` montar, no celular/tablet o convite nunca some de
     vez. O caminho que pode ser adiado de vez é o `/profile` (`InstallAppRow`).
   - `LandingCta`: o CTA da landing. **O rótulo é o MESMO no celular e no
     desktop** ("Começar grátis" na hero e no CTA final, "Começar" no header,
-    o `cta` do catálogo no card do Gratuito). No celular e no tablet o toque
-    não navega: abre o `InstallChoiceDialog`, com "Instalar o app" e "Usar no
-    navegador" lado a lado. No iPhone não há o primeiro botão, porque não há
-    API de instalação: o diálogo já mostra ABERTO o passo a passo do menu
-    Compartilhar, e "Usar no navegador" fica abaixo dele. Quem não tem nada a
-    escolher (`method === "none"`: app já instalado, ou navegador que não
-    instala) vai direto para o `href`, sem diálogo. No desktop é o `<Link>` de
-    sempre, com o mesmo texto e as mesmas classes, para o HTML estático não
-    mudar. Cliente puro como o `StandaloneHomeGuard`; o diálogo entra por
-    `dynamic` e só monta no primeiro toque, para o Dialog do base-ui não pesar
-    no bundle da LP.
+    o `cta` do catálogo no card do Gratuito). Em aparelho de toque o CTA não
+    navega: abre o `InstallChoiceDialog`, com "Instalar o app" e "Usar no
+    navegador" lado a lado. **Os dois botões são os mesmos nos dois sistemas.**
+    O que muda é o que o primeiro FAZ: no Android ele dispara o
+    `beforeinstallprompt`; no iPhone e no iPad, onde não existe API de
+    instalação, ele troca o conteúdo do diálogo pelo passo a passo do menu
+    Compartilhar. Mostrar os passos DE SAÍDA no aparelho da Apple, como já foi
+    feito, trocava a pergunta por uma aula: a mesma decisão chegava com duas
+    caras conforme o sistema. Quem não tem nada a escolher
+    (`method === "none"`: app já instalado, ou navegador que não instala) vai
+    direto para o `href`, sem diálogo. No desktop é o `<Link>` de sempre, com o
+    mesmo texto e as mesmas classes, para o HTML estático não mudar. Cliente
+    puro como o `StandaloneHomeGuard`; o diálogo entra por `dynamic` e só monta
+    no primeiro toque, para o Dialog do base-ui não pesar no bundle da LP.
 
     A versão anterior trocava o texto por "Instalar app" no celular e mandava
     "Conhecer o Scriba" para a frente na coluna, para compensar. Era o primeiro
@@ -466,10 +469,18 @@ Três consumidores hoje:
     transformá-la em pedágio**, e foi o que devolveu o CTA à primeira posição
     também no celular.
 
-  **O corte é `lg` (1024px), não `sm`.** Todo iPad em retrato cai abaixo dele, e
-  o iPad instala o PWA pelo mesmo menu Compartilhar do iPhone, não tem barra de
-  endereço com atalho de instalação. Tratar tablet como desktop escondia a
-  única porta de instalação que ele tem.
+  **O corte é `touch`/`no-touch`, não um breakpoint.** A pergunta aqui é "isto
+  é um celular ou tablet?", e nenhuma largura responde: o corte já foi `lg`
+  (1024px), escolhido porque o iPad em RETRATO cai abaixo dele, e o mesmo iPad
+  DEITADO mede 1024px. Ele caía no bucket "desktop" e perdia a única porta de
+  instalação que tem, sem nada na tela dizendo por quê. Não existe largura que
+  separe um tablet deitado de um notebook; o que separa é o HOVER, o mesmo
+  critério do pressionado, e pela mesma razão (um notebook com tela sensível
+  continua tendo mouse). As variantes moram em `app/globals.css`, ao lado da
+  `dark`.
+
+  Isso vale onde o alvo é o APARELHO. Para largura de viewport, que é sobre o
+  LAYOUT caber, os breakpoints continuam sendo a ferramenta certa.
 - `StandaloneHomeGuard`: ver abaixo.
 
 ### O app instalado nunca abre na landing

@@ -26,7 +26,7 @@ import { declineProspectAction } from "@/lib/partners/prospect-actions";
  * primeiro e os resolvidos só aparecem sob demanda: uma lista que cresce para
  * sempre deixa de ser lida em duas semanas.
  *
- * "Cadastrar como parceiro" não faz nada de especial — ele abre o MESMO diálogo
+ * "Cadastrar como parceiro" não faz nada de especial, ele abre o MESMO diálogo
  * de sempre, já com o e-mail preenchido. Salvar cria a linha de `partners` e é
  * `createPartner` quem carimba o candidato como promovido, pelo e-mail. Não há
  * um segundo caminho de promoção que possa divergir do cadastro normal.
@@ -101,7 +101,7 @@ export function ProspectsPanel({ prospects, onPromote }: Props) {
                   <TableCell>
                     <div className="flex flex-col gap-0.5">
                       <span className="text-[13px] font-medium text-scriba-ink-strong">
-                        {p.displayName ?? "—"}
+                        {p.displayName ?? "-"}
                       </span>
                       <span className="text-[11.5px] font-light text-scriba-ink-mute">
                         {p.email ?? "sem e-mail no perfil"}
@@ -117,7 +117,7 @@ export function ProspectsPanel({ prospects, onPromote }: Props) {
                     ) : (
                       // O zero não é detalhe: significa que o TETO GLOBAL estava
                       // cheio quando a pessoa entrou. Ela se cadastrou esperando
-                      // moedas e não recebeu — quem olha esta tela precisa ver
+                      // moedas e não recebeu, quem olha esta tela precisa ver
                       // isso, não um "0" que se lê como "ainda não processou".
                       <span className="text-scriba-rose-accent">0 · teto cheio</span>
                     )}
