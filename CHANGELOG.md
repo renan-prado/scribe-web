@@ -9,6 +9,12 @@ Gerado por `npm run release` a partir dos Conventional Commits. `feat` sobe o
 minor; o resto sobe o patch. Não edite à mão, a próxima execução escreve por
 cima do topo do arquivo.
 
+## 0.16.0, 2026-09-11, desde v0.15.0
+
+### Novidades
+
+- **conta:** exclusão da própria conta em /profile/delete (`4b557ee`)
+
 ## 0.15.0, 2026-09-11, desde v0.14.0
 
 ### Novidades
