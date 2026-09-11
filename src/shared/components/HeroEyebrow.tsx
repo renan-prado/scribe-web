@@ -188,7 +188,7 @@ export function HeroEyebrow() {
         // utilitário de mesmo nome: utilitário mora numa @layer posterior e
         // venceria a regra que a esconde, a armadilha anotada no
         // `.lp-cta-soft`. Ver o bloco `.lp-eyebrow*` em `app/globals.css`.
-        "lp-eyebrow min-h-[32px] items-center gap-2 self-center rounded-[22px] border border-scriba-hairline bg-scriba-paper px-3.5 py-[7px] pl-[9px] shadow-[0_4px_12px_rgba(79,168,240,.1)]",
+        "lp-eyebrow min-h-[32px] items-center gap-2 self-center rounded-[22px] border border-scriba-hairline bg-scriba-paper px-3.5 py-[7px] pl-[9px] shadow-[0_4px_12px_var(--scriba-shadow)]",
         // Até o React assumir, quem manda é o CSS: sem `data-scriba-ref` no
         // `<html>` esta classe esconde a pílula INTEIRA, e é assim que a
         // esmagadora maioria das visitas nunca vê esqueleto nenhum.

@@ -37,7 +37,7 @@ export function buildFooter(session: {
 
 function CardShell({ children }: { children: ReactNode }) {
   return (
-    <article className="flex flex-col gap-2 rounded-2xl border border-scriba-ink-strong/20 bg-[image:var(--feed-card)] bg-[size:200%_100%] p-6 shadow-[0_2px_10px_rgba(79,168,240,0.06)]">
+    <article className="flex flex-col gap-2 rounded-2xl border border-scriba-ink-strong/20 bg-[image:var(--feed-card)] bg-[size:200%_100%] p-6 shadow-[0_2px_10px_var(--scriba-shadow-soft)]">
       {children}
     </article>
   );

@@ -224,7 +224,7 @@ export function NewRecordingDialog({ trigger }: { trigger?: ReactNode }) {
                   className={cn(
                     "relative flex flex-col gap-3.5 rounded-2xl border p-4 text-left transition-colors",
                     active
-                      ? "border-scriba-blue bg-scriba-blue-soft/40 shadow-[0_6px_18px_rgba(79,168,240,0.16)]"
+                      ? "border-scriba-blue bg-scriba-blue-soft/40 shadow-[0_6px_18px_var(--scriba-shadow)]"
                       : "border-scriba-hairline bg-scriba-paper hover:border-scriba-blue/45 hover:bg-scriba-surface/60",
                     "has-[:focus-visible]:ring-4 has-[:focus-visible]:ring-scriba-blue/25",
                     loading ? "cursor-not-allowed opacity-70" : "cursor-pointer"
@@ -318,7 +318,7 @@ export function NewRecordingDialog({ trigger }: { trigger?: ReactNode }) {
                 aria-disabled={insufficient}
                 aria-label={loading ? "Preparando sessão" : "Gravar"}
                 className={cn(
-                  "mt-1 inline-flex w-full items-center justify-center gap-2.5 rounded-full px-7 py-3.5 text-[15px] font-semibold shadow-[0_10px_24px_rgba(79,168,240,0.32)] transition-colors",
+                  "mt-1 inline-flex w-full items-center justify-center gap-2.5 rounded-full px-7 py-3.5 text-[15px] font-semibold shadow-[0_10px_24px_var(--scriba-shadow)] transition-colors",
                   insufficient
                     ? "cursor-not-allowed bg-scriba-ink-mute/25 text-scriba-ink-mute shadow-none"
                     : "scriba-cta bg-[image:var(--scriba-cta)] text-scriba-cta-ink",

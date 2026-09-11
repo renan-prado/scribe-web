@@ -94,6 +94,25 @@ separa da lista: ele é o resumo do que acabou de acontecer, não mais uma
 entrada dela. Ele também é o único sem sombra nenhuma, o halo azul de
 `shadow-[0_6px_22px_rgba(79,168,240,.13)]` saiu nos dois temas.
 
+### A sombra das superfícies
+
+**É `--scriba-shadow-soft` / `--scriba-shadow`, nunca um `rgba()` colorido.**
+As sombras de card, de nav inferior, de caixa do admin e do cartão de login
+eram todas o mesmo azul literal, `rgba(79, 168, 240, ...)`, sobra da paleta
+antiga. No claro isso passava; no ESCURO não: azul claro difuso sobre um chão
+quase preto não lê como sombra, lê como BRILHO em volta da caixa, e a nav
+inferior ganhava uma linha acesa por cima em vez de descolar do conteúdo.
+
+Os dois degraus existem porque as chamadas já usavam dois: `soft` para o que só
+precisa descolar do fundo (cards do feed, campos, pastilhas), o outro para o que
+precisa flutuar (a nav, o cartão do login, o modo selecionado do diálogo de
+gravar). E os valores INVERTEM de intensidade com o tema: 0.06 / 0.12 no claro,
+0.35 / 0.5 no escuro, porque o mesmo preto fraco que assenta uma caixa branca
+simplesmente some sobre `#0A0A0A`.
+
+O par continua separado de `--scriba-cta-shadow`, que é a sombra do BOTÃO e
+acompanha o gradiente dele.
+
 `text-white` / `bg-white` literais só são aceitáveis sobre uma superfície que
 é a MESMA cor nos dois temas (`bg-scriba-blue`, `bg-scriba-rec`,
 `bg-scriba-yellow`, os gradientes fixos da landing). Qualquer coisa sobre

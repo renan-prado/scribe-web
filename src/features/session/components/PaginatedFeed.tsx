@@ -253,7 +253,7 @@ function SortSelector({
           aria-labelledby="feed-order-label"
           size="sm"
           className={cn(
-            "gap-1.5 rounded-full border-scriba-hairline-soft bg-scriba-paper pl-3 pr-2 text-[11px] font-semibold text-scriba-ink shadow-[0_1px_3px_rgba(79,168,240,0.05)] hover:border-scriba-blue-soft",
+            "gap-1.5 rounded-full border-scriba-hairline-soft bg-scriba-paper pl-3 pr-2 text-[11px] font-semibold text-scriba-ink shadow-[0_1px_3px_var(--scriba-shadow-soft)] hover:border-scriba-blue-soft",
             disabled && "opacity-60"
           )}
         >

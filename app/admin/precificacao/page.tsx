@@ -562,7 +562,7 @@ function UnbilledNote({ summary, rate }: { summary: AdminUsageSummary; rate: Usd
   const share =
     summary.totals.totalCostUsd > 0 ? unbilled.totalCostUsd / summary.totals.totalCostUsd : 0;
   return (
-    <section className="rounded-2xl border border-scriba-hairline-soft bg-scriba-paper p-5 shadow-[0_4px_14px_rgba(79,168,240,0.06)]">
+    <section className="rounded-2xl border border-scriba-hairline-soft bg-scriba-paper p-5 shadow-[0_4px_14px_var(--scriba-shadow-soft)]">
       <h2 className="text-[14px] font-semibold text-scriba-ink-strong">Gasto sem cobrança</h2>
       <p className="mt-1 text-[12.5px] font-light leading-relaxed text-scriba-ink-soft">
         <span className="font-mono font-medium text-scriba-ink-strong">

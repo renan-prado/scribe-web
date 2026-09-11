@@ -120,7 +120,7 @@ export function YoutubeTipCard({
   return (
     <article
       className={cn(
-        "relative my-2 flex flex-col items-stretch gap-3 overflow-hidden rounded-[24px] border border-scriba-ink-strong/20 bg-[image:var(--feed-card)] bg-[size:200%_100%] p-6 shadow-[0_2px_10px_rgba(79,168,240,0.08)] sm:flex-row sm:pl-6 sm:pr-2",
+        "relative my-2 flex flex-col items-stretch gap-3 overflow-hidden rounded-[24px] border border-scriba-ink-strong/20 bg-[image:var(--feed-card)] bg-[size:200%_100%] p-6 shadow-[0_2px_10px_var(--scriba-shadow-soft)] sm:flex-row sm:pl-6 sm:pr-2",
         className
       )}
     >

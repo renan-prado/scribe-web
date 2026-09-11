@@ -79,7 +79,7 @@ export function MobileBottomNav() {
           livre embaixo (`viewport-fit=cover`, ver `app/layout.tsx`). */}
       <nav
         aria-label="Navegação principal"
-        className="pointer-events-auto flex min-h-18 items-center justify-around bg-scriba-paper pb-[env(safe-area-inset-bottom)] shadow-[0_-6px_22px_rgba(79,168,240,0.12)]"
+        className="pointer-events-auto flex min-h-18 items-center justify-around bg-scriba-paper pb-[env(safe-area-inset-bottom)] shadow-[0_-6px_22px_var(--scriba-shadow)]"
       >
         <TabLink href="/feed" label="Feed" active={current === "feed"} icon={FeedGlyph} />
         <TabLink

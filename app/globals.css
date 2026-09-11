@@ -380,6 +380,16 @@
   --scriba-cta: linear-gradient(135deg, #262626 0%, #171717 100%);
   --scriba-cta-ink: #FAFAFA;
   --scriba-cta-shadow: rgba(0, 0, 0, 0.18);
+  /* A sombra das SUPERFÍCIES (cards do feed, nav inferior, caixas do admin,
+     cartão do login). Era azul literal, `rgba(79, 168, 240, ...)`, resquício da
+     paleta antiga: no tema escuro azul sobre chão quase preto não lê como
+     sombra, lê como BRILHO em volta da caixa, e a nav inferior ficava com uma
+     linha acesa por cima. Preto nos dois temas, e mais denso no escuro, onde
+     uma sombra fraca simplesmente some. Dois degraus porque as chamadas já
+     usavam dois: o `soft` para o que só precisa descolar do fundo, o outro
+     para o que precisa flutuar. */
+  --scriba-shadow-soft: rgba(0, 0, 0, 0.06);
+  --scriba-shadow: rgba(0, 0, 0, 0.12);
   /* A esfumaçada acima da nav inferior, na cor do CHÃO da página (branco).
      Sete stops, cauda longa, o porquê está em src/shared/AGENTS.md. */
   --scriba-nav-fade: linear-gradient(
@@ -558,6 +568,10 @@
   --scriba-cta: linear-gradient(135deg, #FAFAFA 0%, #E5E5E5 100%);
   --scriba-cta-ink: #171717;
   --scriba-cta-shadow: rgba(0, 0, 0, 0.5);
+  /* Ver `:root`. No escuro a sombra precisa ser bem mais densa: o chão já é
+     quase preto, e o mesmo 0.06 do claro não aparece de jeito nenhum. */
+  --scriba-shadow-soft: rgba(0, 0, 0, 0.35);
+  --scriba-shadow: rgba(0, 0, 0, 0.5);
   --scriba-nav-fade: linear-gradient(
     to top,
     rgba(10, 10, 10, 0.92) 0%,

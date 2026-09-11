@@ -37,7 +37,7 @@ type Props = {
 
 export function CoinEconomicsForm({ settings, isCustom }: Props) {
   return (
-    <section className="flex flex-col gap-3 rounded-2xl border border-scriba-hairline-soft bg-scriba-paper p-5 shadow-[0_4px_14px_rgba(79,168,240,0.06)]">
+    <section className="flex flex-col gap-3 rounded-2xl border border-scriba-hairline-soft bg-scriba-paper p-5 shadow-[0_4px_14px_var(--scriba-shadow-soft)]">
       <div className="flex items-baseline justify-between gap-3">
         <h2 className="flex items-center gap-2 text-[14px] font-semibold text-scriba-ink-strong">
           <CoinMark size={16} />A régua
