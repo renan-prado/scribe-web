@@ -9,6 +9,14 @@ Gerado por `npm run release` a partir dos Conventional Commits. `feat` sobe o
 minor; o resto sobe o patch. Não edite à mão, a próxima execução escreve por
 cima do topo do arquivo.
 
+## 0.14.0, 2026-09-11, desde v0.13.2
+
+### Novidades
+
+- **parceiros:** 20 moedas por cadastro, pagamento no dia 30 e a conta feita na LP (`dec7acb`)
+- **lp:** hero em coluna única, página enxuta e planos que dizem a ausência (`4051b78`)
+- **tema:** paleta neutra do shadcn, escuro por padrão e admin no dashboard-01 (`bfbbd18`)
+
 ## 0.13.2, 2026-09-10, desde v0.13.1
 
 ### Correções
