@@ -9,6 +9,12 @@ Gerado por `npm run release` a partir dos Conventional Commits. `feat` sobe o
 minor; o resto sobe o patch. Não edite à mão, a próxima execução escreve por
 cima do topo do arquivo.
 
+## 0.15.0, 2026-09-11, desde v0.14.0
+
+### Novidades
+
+- **admin:** cupons de convite, leitura da IA numa página só e fim da tela de estudos (`ce35851`)
+
 ## 0.14.0, 2026-09-11, desde v0.13.2
 
 ### Novidades
