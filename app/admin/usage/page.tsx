@@ -151,7 +151,7 @@ export default async function AdminUsagePage({ searchParams }: PageProps) {
 
 const SURFACE_CARD = "flex flex-col gap-1 p-5 admin-card-surface";
 
-const TABLE_SURFACE = "admin-table admin-card-surface overflow-hidden";
+const TABLE_SURFACE = "admin-table";
 
 const KPI_TONES = [
   { badge: "bg-scriba-blue-soft", label: "text-scriba-blue-ink" },

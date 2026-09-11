@@ -136,7 +136,7 @@ function HighlightBlock({ text }: { text: string }) {
         "
       </span>
       <blockquote className="text-pretty text-lg font-medium leading-relaxed text-scriba-ink-strong sm:text-xl">
-        <span className="bg-[linear-gradient(transparent_58%,var(--session-highlight-yellow)_58%)] px-1 py-0.5 [box-decoration-break:clone] [-webkit-box-decoration-break:clone]">
+        <span className="highlight-phrase px-1 py-0.5 [box-decoration-break:clone] [-webkit-box-decoration-break:clone]">
           {text}
         </span>
       </blockquote>
@@ -193,7 +193,7 @@ function FeedItemBody({ item, onOpenVerse, isAi }: FeedItemBodyProps) {
             type="button"
             onClick={() => onOpenVerse(item.reference)}
             className={cn(
-              "self-start inline-flex items-center rounded-full bg-scriba-ink-strong px-4 py-1.5 text-xs font-semibold text-background transition-opacity outline-none",
+              "self-start inline-flex items-center veil-chip rounded-full px-4 py-1.5 text-xs font-medium transition-opacity outline-none",
               "hover:opacity-85 focus-visible:ring-2 focus-visible:ring-ring/40"
             )}
           >

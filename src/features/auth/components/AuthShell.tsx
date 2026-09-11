@@ -1,5 +1,4 @@
 import Link from "next/link";
-import { ThemeToggle } from "@/components/ThemeToggle";
 import { ScribaLogo } from "@/shared/brand";
 
 /**
@@ -35,7 +34,6 @@ export function AuthShell({ title, subtitle, children, footer }: AuthShellProps)
           <ScribaLogo size={28} textClassName="text-[22px]" />
         </Link>
         <div className="flex items-center gap-3 sm:gap-4">
-          <ThemeToggle />
           <Link
             href="/"
             className="text-[13px] font-light text-scriba-ink-soft transition-colors hover:text-scriba-ink-strong"

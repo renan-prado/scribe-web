@@ -37,7 +37,7 @@ export function buildFooter(session: {
 
 function CardShell({ children }: { children: ReactNode }) {
   return (
-    <article className="flex flex-col gap-2 rounded-2xl border border-scriba-ink-strong/20 bg-scriba-paper p-6 shadow-[0_2px_10px_rgba(79,168,240,0.06)]">
+    <article className="flex flex-col gap-2 rounded-2xl border border-scriba-ink-strong/20 bg-[image:var(--feed-card)] bg-[size:200%_100%] p-6 shadow-[0_2px_10px_rgba(79,168,240,0.06)]">
       {children}
     </article>
   );
@@ -77,10 +77,10 @@ function CardFooter({ footer }: { footer: FeedCardFooter }) {
 
 export function RereadCard({ item, footer }: { item: RereadItem; footer: FeedCardFooter }) {
   return (
-    <article className="relative flex flex-col gap-3.5 rounded-[26px] border border-scriba-ink-strong/20 p-6 animate-insight-gradient bg-[image:var(--session-surface-quote)] bg-[size:200%_100%]">
+    <article className="relative flex flex-col gap-3.5 rounded-[26px] border border-scriba-ink-strong/20 p-6 animate-insight-gradient bg-[image:var(--feed-card)] bg-[size:200%_100%]">
       <div className="flex flex-wrap items-center gap-2">
-        <span className="inline-flex items-center gap-2 rounded-full bg-scriba-ink-strong px-4 py-1.5 text-xs font-semibold text-background">
-          <BookGlyph className="size-3 border-background" />
+        <span className="inline-flex items-center gap-2 veil-chip rounded-full px-4 py-1.5 text-xs font-medium">
+          <BookGlyph className="size-3" />
           {item.reference}
         </span>
       </div>
@@ -107,16 +107,38 @@ export function RereadCard({ item, footer }: { item: RereadItem; footer: FeedCar
   );
 }
 
+/**
+ * O `title` do lembrete vem do modelo, e `lib/prompts/reminders.ts` aceita
+ * "Lembra disso?" como fallback GENÉRICO quando não há nada específico a
+ * lembrar. Nesse caso o cartão imprimia a mesma frase duas vezes: uma na
+ * sobrancelha e outra logo abaixo, em corpo semibold.
+ *
+ * Duas coisas consertam isso, e são independentes de propósito. A
+ * sobrancelha virou uma CATEGORIA ("Para lembrar") em vez de repetir a
+ * pergunta do cartão, que é o que uma sobrancelha deve ser; e o título
+ * genérico deixa de ser impresso, porque ele não acrescenta nada ao que a
+ * sobrancelha já disse. Um título específico ("Lembra dessa imagem da
+ * videira?") continua aparecendo normalmente.
+ *
+ * O conserto é de LEITURA, não de dado: as linhas já geradas seguem no banco
+ * com o título genérico, e mexer no prompt não as alcançaria.
+ */
+const GENERIC_REMINDER_TITLE = /^lembra\s+disso\s*[?!.]*$/i;
+
 export function ReminderCard({ item, footer }: { item: ReminderItem; footer: FeedCardFooter }) {
+  const title = item.title.trim();
+  const showTitle = title.length > 0 && !GENERIC_REMINDER_TITLE.test(title);
   return (
     <CardShell>
-      <CardHeaderRow Icon={MessageCircleQuestion} label="Lembra disso?" />
-      <p className="text-pretty text-base font-semibold leading-snug text-scriba-ink-strong">
-        {item.title}
-      </p>
+      <CardHeaderRow Icon={MessageCircleQuestion} label="Para lembrar" />
+      {showTitle ? (
+        <p className="text-pretty text-base font-semibold leading-snug text-scriba-ink-strong">
+          {title}
+        </p>
+      ) : null}
       {item.quote ? (
         <blockquote className="text-pretty text-[13px] font-medium italic leading-snug text-scriba-ink-strong my-2">
-          <span className="bg-[linear-gradient(transparent_58%,var(--session-highlight-yellow)_58%)] px-1 py-0.5 [box-decoration-break:clone] [-webkit-box-decoration-break:clone]">
+          <span className="highlight-phrase px-1 py-0.5 [box-decoration-break:clone] [-webkit-box-decoration-break:clone]">
             {item.quote}
           </span>
         </blockquote>
@@ -145,7 +167,7 @@ export function HighlightCard({ item, footer }: { item: HighlightItem; footer: F
           "
         </span>
         <blockquote className="text-pretty text-lg font-medium leading-relaxed text-scriba-ink-strong">
-          <span className="bg-[linear-gradient(transparent_58%,var(--session-highlight-yellow)_58%)] px-1 py-0.5 [box-decoration-break:clone] [-webkit-box-decoration-break:clone]">
+          <span className="highlight-phrase px-1 py-0.5 [box-decoration-break:clone] [-webkit-box-decoration-break:clone]">
             {item.text}
           </span>
         </blockquote>

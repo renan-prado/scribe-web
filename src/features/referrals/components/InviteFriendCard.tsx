@@ -78,7 +78,7 @@ export function InviteFriendCard({ className }: { className?: string }) {
   return (
     <div
       className={cn(
-        "flex flex-col gap-4 rounded-[24px] bg-scriba-paper px-4 py-5 ring-1 ring-scriba-hairline sm:px-5",
+        "flex flex-col gap-4 rounded-[24px] bg-[image:var(--feed-card)] bg-[size:200%_100%] px-4 py-5 ring-1 ring-scriba-hairline sm:px-5",
         className
       )}
     >
@@ -113,7 +113,23 @@ export function InviteFriendCard({ className }: { className?: string }) {
       <Link
         href="/indicar?de=feed"
         onClick={() => snooze(ACCEPT_DAYS)}
-        className="scriba-cta inline-flex h-10 w-full items-center justify-center rounded-full bg-[image:var(--scriba-cta)] text-[12px] font-semibold uppercase tracking-[.04em] text-scriba-cta-ink transition-[filter]"
+        // Largura cheia só no CELULAR, onde ela é alvo de polegar. A partir
+        // de `sm` o cartão ocupa a coluna inteira do feed e a mesma pílula
+        // vira uma faixa de ponta a ponta com duas palavras no meio, que lê
+        // como banner, não como botão. O `self-start` é necessário: num
+        // container `flex-col`, `w-auto` sozinho continua esticando pelo
+        // `align-items: stretch` padrão.
+        // O recuo de `sm` para cima alinha o botão com o TEXTO, não com a
+        // borda do cartão: o disco da moeda empurra o texto para a direita, e
+        // um botão encostado na borda lia como desencaixado da coluna a que
+        // pertence. A conta é a do próprio cabeçalho, `size-10` (2.5rem) mais
+        // o `gap-3.5` (0.875rem) da linha = 3.375rem; **mexeu no tamanho do
+        // disco ou no gap, refaça a soma aqui.**
+        //
+        // No CELULAR não há recuo: ali a pílula é de ponta a ponta porque é
+        // alvo de polegar, e recuá-la 54px a encolheria justamente onde ela
+        // precisa ser grande.
+        className="scriba-cta inline-flex h-10 w-full items-center justify-center rounded-full bg-[image:var(--scriba-cta)] text-[12px] font-semibold uppercase tracking-[.04em] text-scriba-cta-ink transition-[filter] sm:ms-[3.375rem] sm:h-9 sm:w-auto sm:self-start sm:px-6"
       >
         Pegar meu link
       </Link>

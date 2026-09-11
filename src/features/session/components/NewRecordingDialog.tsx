@@ -175,7 +175,15 @@ export function NewRecordingDialog({ trigger }: { trigger?: ReactNode }) {
           trigger
             ? "contents"
             : cn(
-                "inline-flex h-8.5 items-center gap-2 rounded-full scriba-cta bg-[image:var(--scriba-cta)] px-4 text-[13px] font-semibold text-scriba-cta-ink shadow-[0_8px_20px_var(--scriba-cta-shadow)] transition-colors",
+                // SEM sombra, nos três estados. A de repouso
+                // (`shadow-[0_8px_20px_var(--scriba-cta-shadow)]`) saiu daqui;
+                // as de hover e de pressionado vêm da classe `.scriba-cta` em
+                // `globals.css`, que é compartilhada com o CTA da landing e
+                // não pode perdê-las, então são anuladas por utilitário, que
+                // vence a camada `components`. O `filter: brightness` da mesma
+                // classe FICA: é ele que dá o retorno de toque e de clique
+                // agora que o botão não afunda mais por sombra.
+                "inline-flex h-8.5 items-center gap-2 rounded-full scriba-cta bg-[image:var(--scriba-cta)] px-4 text-[13px] font-semibold text-scriba-cta-ink transition-colors hover:shadow-none active:shadow-none",
                 "focus-visible:outline-none focus-visible:ring-4 focus-visible:ring-scriba-blue/30"
               )
         )}

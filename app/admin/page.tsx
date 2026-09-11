@@ -3,6 +3,7 @@ import { CoinMark } from "@/components/icons/CoinMark";
 import {
   EmptyState,
   KpiCard,
+  KpiGrid,
   type KpiTile,
   ListCard,
   QuickLink,
@@ -39,25 +40,21 @@ export default async function AdminOverviewPage() {
       label: "Usuários",
       value: INT.format(users.length),
       hint: `${INT.format(activeUsers)} ativos · ${INT.format(adminUsers)} admins`,
-      tone: "blue",
     },
     {
       label: "Custo total",
       value: money(summaryAll.totals.totalCostUsd),
       hint: `${INT.format(summaryAll.totals.totalEvents)} chamadas ao total`,
-      tone: "rose",
     },
     {
       label: "Últimos 30 dias",
       value: money(summary30d.totals.totalCostUsd),
       hint: `${INT.format(summary30d.totals.totalEvents)} chamadas`,
-      tone: "mint",
     },
     {
       label: "Custo por 1.000 moedas",
       value: costPerThousandCoins(summaryAll.overallCostPerCoinUsd),
       hint: `${INT.format(summaryAll.totals.totalCoins)} moedas debitadas`,
-      tone: "cream",
       icon: <CoinMark size={22} />,
     },
   ];
@@ -69,13 +66,11 @@ export default async function AdminOverviewPage() {
         subtitle="Panorama de custos, uso e usuários da plataforma."
       />
 
-      {/* Quatro colunas só a partir de xl: em `lg` a sidebar já come 16rem, e
-          um "R$ 12.345,67" a 26px não cabia nos ~175px que sobravam. */}
-      <section className="grid gap-3 sm:grid-cols-2 xl:grid-cols-4">
+      <KpiGrid>
         {tiles.map((t) => (
           <KpiCard key={t.label} {...t} />
         ))}
-      </section>
+      </KpiGrid>
 
       <section className="grid gap-4 lg:grid-cols-2">
         <ListCard title="Top usuários" subtitle="Moedas gastas · últimos 30 dias">

@@ -200,7 +200,7 @@ export function EntriesManager({ entries, categories, recurring, usdBrl }: Props
             : "Nenhum lançamento corresponde aos filtros."}
         </p>
       ) : (
-        <div className="admin-table admin-card-surface overflow-hidden rounded-2xl border border-scriba-hairline-soft">
+        <div className="admin-table">
           <Table>
             <TableHeader>
               <TableRow>

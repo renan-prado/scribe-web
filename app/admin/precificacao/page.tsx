@@ -9,7 +9,7 @@ import {
   TableHeader,
   TableRow,
 } from "@/components/ui/table";
-import { KpiCard, type Tone } from "@/features/admin/components/AdminCards";
+import { KpiCard, KpiGrid, type KpiTrend } from "@/features/admin/components/AdminCards";
 import { AdminInsightsCard } from "@/features/admin/components/AdminInsightsCard";
 import { AdminPageHeader } from "@/features/admin/components/AdminPageHeader";
 import { CoinEconomicsForm } from "@/features/admin/components/CoinEconomicsForm";
@@ -284,8 +284,14 @@ function OverallGrid({ summary, rate, settings }: EconomicsProps) {
   const margin =
     costPerThousand != null ? 1 - costPerThousand / settings.pricePerThousandBrl : null;
 
-  const marginTone: Tone =
-    margin != null && margin < settings.targetMarginPct / 100 ? "rose" : "mint";
+  // Era a COR do cartão (rosa abaixo do alvo, verde acima). Virou pastilha:
+  // o alvo é o que decide, e agora ele está escrito, não subentendido no tom.
+  const marginTrend: KpiTrend | undefined =
+    margin != null
+      ? margin < settings.targetMarginPct / 100
+        ? { direction: "down", label: "abaixo do alvo" }
+        : { direction: "up", label: "no alvo" }
+      : undefined;
 
   const totalCostBrl = rate ? totals.totalCostUsd * rate.rate : null;
   const impliedRevenue = (totals.totalCoins / COINS_PER_COST_UNIT) * settings.pricePerThousandBrl;
@@ -301,9 +307,8 @@ function OverallGrid({ summary, rate, settings }: EconomicsProps) {
       : 0;
 
   return (
-    <section className="grid gap-3 sm:grid-cols-2 xl:grid-cols-4">
+    <KpiGrid>
       <KpiCard
-        tone="blue"
         label="Custo medido"
         value={money(totalCostBrl)}
         hint={
@@ -313,26 +318,24 @@ function OverallGrid({ summary, rate, settings }: EconomicsProps) {
         }
       />
       <KpiCard
-        tone="cream"
         label="Moedas gastas"
         value={INT.format(totals.totalCoins)}
         hint={`${money(impliedRevenue)} de receita implícita à régua atual`}
         icon={<CoinMark size={22} />}
       />
       <KpiCard
-        tone="rose"
         label={`Custo por ${INT.format(COINS_PER_COST_UNIT)} moedas`}
         value={money(costPerThousand)}
         hint={`só o custo cobrável, contra ${BRL.format(settings.pricePerThousandBrl)} de receita`}
         icon={<CoinMark size={22} />}
       />
       <KpiCard
-        tone={marginTone}
+        trend={marginTrend}
         label="Margem realizada"
         value={percent(margin)}
         hint={`moedas debitadas contra o custo cobrável · alvo de ${percent(settings.targetMarginPct / 100)}`}
       />
-    </section>
+    </KpiGrid>
   );
 }
 
@@ -357,7 +360,7 @@ function ActionsTable({ summary, rate, settings }: EconomicsProps) {
       <h2 className="text-[11px] font-semibold uppercase tracking-[0.14em] text-scriba-ink-mute">
         Por ação cobrável
       </h2>
-      <div className="admin-table admin-card-surface overflow-hidden">
+      <div className="admin-table">
         <Table>
           <TableHeader>
             <TableRow>

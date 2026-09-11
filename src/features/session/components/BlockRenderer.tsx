@@ -64,8 +64,8 @@ export function BlockRenderer({ block }: { block: SummaryBlock }) {
       return (
         <figure className="relative flex flex-col gap-3.5 rounded-[26px] p-6 animate-insight-gradient bg-[image:var(--session-surface-quote)] bg-[size:200%_100%]">
           <figcaption>
-            <span className="inline-flex items-center gap-2 rounded-full bg-scriba-ink-strong px-4 py-1.5 text-xs font-semibold text-background">
-              <BookGlyph className="size-3 border-background" />
+            <span className="inline-flex items-center gap-2 veil-chip rounded-full px-4 py-1.5 text-xs font-medium">
+              <BookGlyph className="size-3" />
               {block.reference}
             </span>
           </figcaption>
@@ -96,7 +96,7 @@ export function BlockRenderer({ block }: { block: SummaryBlock }) {
             "
           </span>
           <blockquote className="text-pretty text-lg font-semibold leading-relaxed text-scriba-ink-strong sm:text-xl">
-            <span className="bg-[linear-gradient(transparent_58%,var(--session-highlight-yellow)_58%)] px-1 py-0.5 [box-decoration-break:clone] [-webkit-box-decoration-break:clone]">
+            <span className="highlight-phrase px-1 py-0.5 [box-decoration-break:clone] [-webkit-box-decoration-break:clone]">
               {block.text}
             </span>
           </blockquote>

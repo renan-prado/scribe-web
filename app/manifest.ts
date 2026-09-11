@@ -37,7 +37,7 @@ export default function manifest(): MetadataRoute.Manifest {
     // `ThemeScript`). Este valor é o fallback: com JS, a
     // `<meta name="theme-color">` que o bootstrap escreve tem precedência e
     // acompanha a troca de tema. Ver `src/shared/theme-color.ts`.
-    theme_color: THEME_COLOR.light,
+    theme_color: THEME_COLOR.dark,
     lang: "pt-BR",
     dir: "ltr",
     categories: ["productivity", "utilities", "education"],

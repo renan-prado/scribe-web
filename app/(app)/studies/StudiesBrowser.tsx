@@ -181,21 +181,46 @@ export function StudiesBrowser({ studies, nowIso }: Props) {
                 return (
                   <li
                     key={s.sessionId}
-                    className="group flex flex-col rounded-3xl border border-scriba-hairline-soft bg-scriba-paper p-5 shadow-[0_4px_14px_rgba(79,194,139,0.08)] transition-shadow hover:shadow-[0_8px_20px_rgba(79,194,139,0.18)] sm:p-6"
+                    // CARTÃO INTEIRO CLICÁVEL, por "stretched link": quem
+                    // carrega o destino continua sendo o `<a>` do título, e é
+                    // o `::after` dele que se estica até as bordas deste
+                    // `<li>`. Envolver o cartão num `<a>` seria mais simples e
+                    // está errado: o menu de contexto é um `<button>`, e botão
+                    // dentro de link é HTML inválido e armadilha de teclado.
+                    //
+                    // `relative` aqui é o que dá ao `::after` uma caixa para
+                    // preencher, e por isso o link precisa deixar de ser
+                    // `relative` (ver o `static` lá embaixo).
+                    //
+                    // O retorno visual mora no próprio `::after`, como um véu
+                    // de `--scriba-ink-strong`, que INVERTE por tema: escurece
+                    // no claro e clareia no escuro, uma declaração só para os
+                    // dois. Tinta chapada não serviria, o fundo do cartão é
+                    // `background-image` e uma cor de fundo ficaria por baixo
+                    // dele, invisível.
+                    //
+                    // `:active` alcança os ANCESTRAIS do elemento acionado, é
+                    // o que faz `group-active:` funcionar a partir de um <li>
+                    // e o que dá retorno ao toque no celular, onde `hover:` é
+                    // código morto (ver `src/shared/AGENTS.md`).
+                    className="group relative flex flex-col rounded-3xl border border-scriba-hairline-soft bg-[image:var(--feed-card)] bg-[size:200%_100%] p-5 transition-colors hover:border-scriba-ink-strong/20 sm:p-6"
                   >
                     <NavLink
                       href={`/recording/${s.sessionId}/deepening`}
                       spinner="overlay"
                       contentClassName="flex min-w-0 flex-1 flex-col gap-3"
-                      className="flex min-w-0 flex-1 flex-col rounded-md outline-none focus-visible:ring-2 focus-visible:ring-ring/40"
+                      // Ver o cartão do /recordings: `static` derruba o
+                      // `relative` do `spinner="overlay"` para o `::after`
+                      // se medir pelo <li>.
+                      className="static flex min-w-0 flex-1 flex-col rounded-md outline-none after:absolute after:inset-0 after:rounded-3xl after:transition-colors focus-visible:ring-2 focus-visible:ring-ring/40 group-hover:after:bg-scriba-ink-strong/[0.035] group-active:after:bg-scriba-ink-strong/[0.07]"
                     >
                       <div className="flex items-start gap-2.5">
-                        {/* A MESMA pastilha do /recordings, no par do botão
-                            primário, não a versão verde da família do
-                            estudo. O verde continua no resto da página e
-                            no `.tone-study` da leitura; só esta pastilha
-                            é comum às duas listas. */}
-                        <div className="flex size-9 shrink-0 items-center justify-center rounded-lg bg-[image:var(--scriba-cta)] text-scriba-cta-ink">
+                        {/* A MESMA pastilha do /recordings, agora o véu
+                            (`.veil-chip`), não a versão verde da família do
+                            estudo. O verde continua no resto da página e no
+                            `.tone-study` da leitura; só esta pastilha é comum
+                            às duas listas. */}
+                        <div className="veil-chip flex size-9 shrink-0 items-center justify-center rounded-lg">
                           <BookOpen className="size-4" />
                         </div>
                         <span className="text-pretty text-[15px] font-semibold leading-tight tracking-tight text-scriba-ink-strong sm:text-base">

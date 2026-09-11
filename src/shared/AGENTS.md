@@ -15,6 +15,46 @@ content/     copy estruturada (FAQ da landing)
 
 ## Tema
 
+> **BRANCH `test/tema-shadcn`: o produto está monocromático.** Os tokens
+> `--scriba-*` e `--session-*` foram remapeados para a escala neutra do shadcn
+> (`neutral` do Tailwind) em `:root` e `.dark`, e o tema escuro trocou o índigo
+> pelos valores DEFAULT do template. Nenhum `.tsx` mudou: o remap inteiro cabe
+> em `app/globals.css`, que é o que este documento sempre prometeu.
+>
+> O que o texto abaixo descreve continua sendo a ESTRUTURA correta (as três
+> superfícies, a escala de tinta de quatro degraus, o par do CTA, a regra de
+> nunca escrever cor literal). O que mudou foram os VALORES, e por isso os
+> argumentos de calibragem que você vai ler adiante, "branco sobre `--scriba-blue`
+> dá 2,56:1", "o piso da escala se mede pelo `--scriba-bubble`", seguem válidos
+> como método mesmo com os números antigos: eles são a razão de cada token
+> existir, e é deles que você precisa se o teste for revertido
+> (`git checkout master -- app/globals.css`).
+>
+> **Duas cores sobreviveram, e as duas por serem SEMÂNTICAS:** o vermelho
+> (`--scriba-rec*`, `destructive`) e o amarelo da MOEDA (`--scriba-yellow*` e
+> `--scriba-gold-*`, mais `--session-highlight-yellow`, que `.tone-study`
+> deixou de sobrescrever: o cinza que sobrara ali era resíduo da passagem
+> monocromática, e um marcador cinza ao lado de um amarelo em outra tela lia
+> como defeito).
+>
+> O marca-texto no ESCURO é um amarelo queimado, e o valor está preso pelo
+> contraste, não pelo gosto: a faixa cobre só os 42% de baixo da linha, a
+> tinta do parágrafo ali é quase branca, e branco só se sustenta sobre amarelo
+> escuro. Composto sobre o cartão, o valor atual dá #836927, 5,0:1; o teto
+> para manter AA é ~#8D7029, indistinguível a olho nu. Usar o creme do tema
+> claro daria 1,2:1. **Clarear exige cobrir a linha inteira e inverter a tinta,
+> o que é outro desenho, não outro valor** — foi testado e desfeito. O saldo, o preço por
+> minuto e o marca-texto se identificam por essa cor em toda a interface; cinza
+> ali não é simplificação, é informação a menos. `--scriba-flash-debit` voltou
+> ao âmbar da mesma família e `--scriba-flash-credit` ficou neutro, o que
+> devolve a distinção sem trazer um terceiro matiz.
+>
+> O que ainda custa informação, e está anotado no `globals.css`: as quatro
+> famílias de tile (mint/rose/cream/lilac) têm valores IDÊNTICOS, então o tipo
+> de card só se distingue pelo rótulo; e `.tone-study` virou meio degrau de
+> luminância no lugar do verde contra azul. A landing (`--lp-hero`, `--lp-band`,
+> `--lp-band-ink`, `--lp-phone-frame`) ficou FORA e mantém a marca.
+
 Claro e escuro por uma única classe `.dark` no `<html>`. **Não existe ramo de
 tema por componente.**
 
@@ -32,6 +72,28 @@ Superfícies, do fundo para a frente:
 | `bg-scriba-surface` | a faixa rebaixada entre o chão e o papel |
 | `bg-scriba-paper` | a superfície elevada: cards, diálogos, sheets, popovers |
 
+**O `/feed` é a exceção, e tem token próprio: `--feed-card`.** Os cartões de
+lá (reflexão, releia, lembra, frase marcante, instalar o app, indicar um amigo)
+não usam `bg-scriba-paper`, e sim `bg-[image:var(--feed-card)]`, porque no tema
+ESCURO todos precisam da mesma superfície da citação bíblica, o degradê de
+`--session-surface-quote`, que é o que dá relevo ao cartão sobre um chão quase
+preto. No CLARO ele é branco chapado: ali o relevo já vem do contraste com
+`--scriba-surface`, e um degradê cinza sobre papel só sujaria a leitura.
+
+É gradiente nos DOIS temas mesmo quando é branco (quatro paradas iguais), senão
+o mesmo cartão precisaria de `bg-*` num tema e `bg-[image:*]` no outro. No
+escuro o valor é `var(--session-surface-quote)` por referência, não por cópia:
+a regra é "a mesma da citação bíblica", e precisa continuar valendo quando
+aquela mudar.
+
+**Um cartão do feed NÃO usa o token, e é o de cima: a reflexão sobre a última
+gravação** (`ReflectionCard`, em `app/(app)/feed/page.tsx`). Ele fica no
+`bg-scriba-paper` de sempre, o que no claro dá o mesmo branco de todos e no
+escuro o deixa um degrau ABAIXO do degradê dos outros. É esse degrau que o
+separa da lista: ele é o resumo do que acabou de acontecer, não mais uma
+entrada dela. Ele também é o único sem sombra nenhuma, o halo azul de
+`shadow-[0_6px_22px_rgba(79,168,240,.13)]` saiu nos dois temas.
+
 `text-white` / `bg-white` literais só são aceitáveis sobre uma superfície que
 é a MESMA cor nos dois temas (`bg-scriba-blue`, `bg-scriba-rec`,
 `bg-scriba-yellow`, os gradientes fixos da landing). Qualquer coisa sobre
@@ -40,12 +102,23 @@ Superfícies, do fundo para a frente:
 Uma variante `dark:` é a ferramenta certa para o caso raro que não é paleta
 (opacidade de scrim de modal). Se o valor é uma cor, prefira token.
 
-**O padrão é o tema CLARO**, não o `prefers-color-scheme` do sistema. O escuro
-é uma opção que o usuário liga; quem nunca escolheu vê a mesma interface da
-landing page, onde a marca foi calibrada. A decisão mora no `ThemeScript`
-(`app/layout.tsx`, roda antes do primeiro paint), trocar o fallback ali muda
-o primeiro paint de todo mundo. O estado persiste em `use-theme.ts`
-(localStorage `scriba-theme`); mantenha a chave em sincronia entre os dois.
+**O padrão é o tema ESCURO**, e continua NÃO sendo o `prefers-color-scheme` do
+sistema: o tema é decisão de produto, não retrato do SO. Quem nunca escolheu vê
+escuro, na landing e na área logada.
+
+A decisão mora em DOIS lugares que precisam concordar, e a ordem entre eles é o
+desenho: **o `<html>` do root layout nasce com `class="dark"`**, e o
+`ThemeScript` (no `<head>`, antes do primeiro paint) REMOVE a classe de quem
+escolheu claro. A inversão é o que mantém a piscada fora da maioria das
+visitas: enquanto o padrão era claro, o HTML servido já era o padrão; com o
+padrão escuro e o HTML nascendo claro, TODA visita começaria branca e
+escureceria. De quebra, quem está sem JS agora recebe escuro em vez de claro.
+
+Quatro arquivos carregam esse padrão e mudam JUNTOS: `app/layout.tsx` (a
+classe), `ThemeScript` (o fallback e a `<meta name="theme-color">`),
+`use-theme.ts` (o estado inicial e a chave `scriba-theme` do localStorage) e
+`app/manifest.ts` (`theme_color`, que é o que o navegador usa sem JS).
+`public/offline.html` tem o quinto, o seu próprio bootstrap inline.
 
 Portais fora da árvore de tokens (sonner) precisam do tema resolvido passado
 explicitamente, ver `ThemedToaster`.
@@ -59,9 +132,16 @@ nos dois temas: **mudou o token, mude lá no mesmo commit.** A terceira exceçã
 pelo mesmo motivo, é `public/offline.html`, sem rede não há folha de estilo
 para carregar.
 
-O switch (`ThemeToggle` / `ThemeToggleRow`) está exposto em sign-in, sign-up,
-`/profile`, no header logado e no estado vazio do `/feed`. Não espalhe mais
-sem pedido.
+O switch existe em DOIS lugares, e só: **`/profile`** (`ThemeToggleRow`) e o
+**estado vazio do `/feed`** (`SessionsEmptyState showThemeToggle`). Saiu do
+header logado, do header de parceiros, do `AuthShell` (sign-in e sign-up) e do
+header da landing.
+
+A consequência precisa estar à vista de quem for mexer: **fora da área logada
+não há mais como trocar de tema.** Visitante da landing, quem está no sign-in e
+quem está no sign-up veem escuro e pronto; o caminho para o claro é entrar e ir
+ao perfil. Foi uma decisão explícita, não um esquecimento. Não espalhe mais sem
+pedido, e não devolva um deles sem lembrar que o padrão hoje é escuro.
 
 ### O botão primário
 
@@ -83,11 +163,34 @@ em página escura suja a borda em vez de assentar o botão.
 variante PADRÃO, todo `<Button>` sem `variant`, o admin inteiro, o /404,
 desenhava um botão preto que não pertence à paleta. O `ui/badge.tsx` levou o
 mesmo tratamento, com a diferença de que a pastilha escura ali é intencional e
-usa `bg-scriba-ink-strong` + `text-background`, a mesma das referências
-bíblicas.
+usa `bg-scriba-ink-strong` + `text-background`.
+
+**A referência bíblica ("Jonas 1:7-10") NÃO é mais essa pastilha.** Ela usava
+o mesmo par, e chapada na tinta mais forte da escala pesava mais que o
+versículo que anunciava, no escuro sobretudo, onde um retângulo branco sólido
+vira o objeto mais luminoso do cartão. Virou `.veil-chip`, em
+`app/globals.css`: um véu da própria tinta sobre a superfície de baixo
+(`--veil-bg`, degradê de cima para baixo) com um anel de 1px (`--veil-ring`) e
+tinta `--scriba-ink`, um degrau abaixo do topo.
+
+**O véu virou TRATAMENTO, não componente**, e é por isso que o nome descreve o
+efeito: ele veste também os ícones de tipo (YouTube, transcrição, gravação,
+estudo) dos cartões de `/recordings` e `/studies`. Lá eles eram
+`bg-[image:var(--scriba-cta)]`, o gradiente do BOTÃO primário, um bloco com o
+peso de uma ação para marcar o TIPO da sessão, que é informação passiva.
+
+Como é OPACIDADE e não cor, ela funciona sobre qualquer fundo em que apareça
+(o degradê da citação, o papel, o `--feed-card`) sem um valor por superfície.
+O anel é `box-shadow: inset` e não `border`, senão 1px mudaria a altura da
+pastilha e a linha de base do `<figcaption>` junto. Os quatro lugares que a
+desenham (`BlockRenderer`, `ChapterMention`, `FeedEntryCards`, `FeedItemCard`)
+usam a classe; forma e interação seguem em utilitário no ponto de uso.
 
 Os tokens `--primary*` continuam declarados em `globals.css` porque o shadcn os
-pressupõe; simplesmente ninguém mais os pinta.
+pressupõe. Fora do admin ninguém os pinta; **dentro dele, o gradiente dos
+cartões de KPI é `from-primary/5`**, de propósito, porque é assim que o bloco
+`dashboard-01` desenha e é o `--primary` que faz o degradê acompanhar o tema.
+Ver `src/features/admin/AGENTS.md`.
 
 ### Pressionado: o hover que não existe no celular
 
@@ -138,13 +241,22 @@ superfície mais escura do tema claro, não o `--scriba-bubble`.
 
 ### A landing tem tokens próprios
 
-As faixas full-bleed usam `--lp-hero`, `--lp-band` / `--lp-band-ink` e
-`--lp-phone-frame` em vez de reaproveitar `--scriba-blue`. O azul primário
-funciona como laje de página inteira só no claro; no escuro ele lê como um
-painel iluminado jogado numa página escura, então a faixa vira um azul
-profundo levantado só um pouco acima do chão, e o mockup de celular ganha uma
-moldura quase preta para manter a borda. **Não pinte uma seção da LP com
-`bg-scriba-blue`.**
+As faixas full-bleed usam `--lp-hero`, `--lp-band` / `--lp-band-ink` /
+`--lp-band-cta` e `--lp-phone-frame` em vez de reaproveitar cor de componente.
+**Não pinte uma seção da LP com `bg-scriba-blue`.**
+
+**A faixa é ESCURA nos dois temas, e é isso que obriga o par de botão dela a
+ser fixo.** `--scriba-cta` inverte por tema; usado ali, o tema claro poria um
+botão quase preto sobre uma laje quase preta. Por isso `--lp-band-cta` /
+`--lp-band-cta-ink` valem o mesmo no claro e no escuro. Contraste da tinta no
+ponto mais claro da faixa: 9,2:1 no claro, 8,4:1 no escuro.
+
+**Os dois halos radiais do hero (o azul e o dourado) ficaram FORA da paleta
+neutra, de propósito.** São o único acento cromático que restou nas duas
+landings, e é deles que vem a sensação de que a marca continua ali; o que
+mudou embaixo deles foi o chão, que deixou de ser azul. São os únicos `rgba()`
+de marca que sobrevivem num `className` deste repositório, e não são
+precedente: apagá-los apaga a cor da página inteira.
 
 ## Marca: a pena mora em um lugar só
 
@@ -223,10 +335,17 @@ quem for mexer:
   rótulo numa linha. O item "Perfil" é um glifo de usuário, não a foto: o
   avatar era o único elemento que mudava de tamanho, de forma e de cor sozinho,
   e a barra é navegação, não identidade.
-- **Os cinco ícones são um conjunto só, em `icons/NavGlyphs.tsx`.** São
-  preenchidos (não traçados, `strokeWidth` não faz nada neles) e ocupam quase
-  todo o `viewBox` de 24, e é por isso que os quatro das abas usam um `size`
-  ÚNICO. A barra já misturou formas feitas à mão com glifos do lucide, e aí
+- **Os cinco ícones são um conjunto só, em `icons/NavGlyphs.tsx`, e três deles
+  também desenham a barra do DESKTOP.** Feed, Biblioteca e Estudos usam os
+  mesmos glifos no `AppNav`; antes eram lucide lá (`Rss` / `List` / `BookOpen`)
+  e o mesmo destino tinha dois desenhos conforme o aparelho. O `profile` não
+  vai junto: no desktop aquele lugar é o avatar do `UserMenu`.
+  São preenchidos (não traçados, `strokeWidth` não faz nada neles) e ocupam
+  quase todo o `viewBox` de 24, e é por isso que os quatro das abas usam um
+  `size` ÚNICO **dentro desta barra** — entre as duas barras ele MUDA: 20px
+  aqui, 12px no `AppNav`, que é o que iguala o peso do lucide de 14px que
+  estava lá (o lucide reserva ~2px de margem de cada lado do `viewBox`, o
+  glifo não). A barra já misturou formas feitas à mão com glifos do lucide, e aí
   cada ícone precisava de um `size` próprio: o lucide reserva margem dentro do
   `viewBox`, então em tamanho igual os dele liam como menores. Ícone novo que
   destoe se resolve em quanto ele desenha do `viewBox`, não no `size` da barra.

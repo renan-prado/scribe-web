@@ -83,7 +83,7 @@ export function LandingFeedMock() {
             "
           </span>
           <blockquote className="text-pretty text-lg font-medium leading-relaxed text-scriba-ink-strong sm:text-xl">
-            <span className="bg-[linear-gradient(transparent_58%,var(--session-highlight-yellow)_58%)] px-1 py-0.5 [box-decoration-break:clone] [-webkit-box-decoration-break:clone]">
+            <span className="highlight-phrase px-1 py-0.5 [box-decoration-break:clone] [-webkit-box-decoration-break:clone]">
               Jesus não oferece apenas água para a sede. Ele revela a sede que aquela mulher ainda
               não sabia nomear.
             </span>

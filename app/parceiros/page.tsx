@@ -155,7 +155,7 @@ function Hero() {
  */
 function InviteCard() {
   return (
-    <div className="flex min-w-0 flex-col gap-4 rounded-[26px] border border-scriba-hairline bg-scriba-paper p-6 shadow-[0_16px_40px_rgba(79,168,240,.12)] sm:p-8">
+    <div className="flex min-w-0 flex-col gap-4 rounded-[26px] border border-scriba-hairline bg-scriba-paper p-6 shadow-[0_16px_40px_rgba(0,0,0,.12)] sm:p-8">
       <div className="text-[11px] font-semibold uppercase tracking-[.12em] text-scriba-ink-mute">
         O que o programa inclui
       </div>
@@ -406,7 +406,7 @@ function WhatToShow() {
           {SHOWCASE.map((item) => (
             <div
               key={item.title}
-              className="lp-lift flex flex-col gap-3 rounded-[24px] border border-scriba-hairline bg-scriba-paper p-6 shadow-[0_8px_26px_rgba(79,168,240,.09)] sm:rounded-[26px] sm:p-8"
+              className="lp-lift flex flex-col gap-3 rounded-[24px] border border-scriba-hairline bg-scriba-paper p-6 shadow-[0_8px_26px_rgba(0,0,0,.09)] sm:rounded-[26px] sm:p-8"
             >
               <span
                 className={cn(
@@ -549,7 +549,7 @@ function EarnCard({
       className={cn(
         "flex flex-col gap-2 rounded-[24px] bg-scriba-paper p-6 sm:rounded-[26px] sm:p-8",
         strong
-          ? "border-[1.5px] border-scriba-blue shadow-[0_16px_40px_rgba(79,168,240,.16)]"
+          ? "border-[1.5px] border-scriba-blue shadow-[0_16px_40px_rgba(0,0,0,.16)]"
           : "border border-scriba-hairline"
       )}
     >
@@ -633,7 +633,7 @@ function Panel() {
 
 function PanelMock() {
   return (
-    <div className="flex flex-col gap-3 rounded-[26px] border border-scriba-hairline bg-scriba-paper p-5 shadow-[0_16px_40px_rgba(79,168,240,.12)] sm:p-6">
+    <div className="flex flex-col gap-3 rounded-[26px] border border-scriba-hairline bg-scriba-paper p-5 shadow-[0_16px_40px_rgba(0,0,0,.12)] sm:p-6">
       <div className="flex items-center justify-between gap-3">
         <div className="flex flex-col">
           <span className="text-[15px] font-semibold tracking-tight text-scriba-ink-strong">
@@ -670,7 +670,7 @@ function PanelMock() {
             className={cn(
               "flex-1 rounded-[12px] py-1.5 text-center text-[11.5px] font-medium",
               i === 0
-                ? "bg-scriba-paper text-scriba-ink-strong shadow-[0_2px_6px_rgba(79,168,240,.12)]"
+                ? "bg-scriba-paper text-scriba-ink-strong shadow-[0_2px_6px_rgba(0,0,0,.12)]"
                 : "text-scriba-ink-mute"
             )}
           >
@@ -862,7 +862,7 @@ function HowToJoin() {
           {STEPS.map((step) => (
             <div
               key={step.n}
-              className="lp-lift flex flex-col gap-3 rounded-[24px] border border-scriba-hairline bg-scriba-paper p-6 shadow-[0_8px_26px_rgba(79,168,240,.09)] sm:rounded-[26px] sm:p-8"
+              className="lp-lift flex flex-col gap-3 rounded-[24px] border border-scriba-hairline bg-scriba-paper p-6 shadow-[0_8px_26px_rgba(0,0,0,.09)] sm:rounded-[26px] sm:p-8"
             >
               <span className="flex size-10 items-center justify-center rounded-[14px] bg-scriba-blue-soft text-[13px] font-semibold text-scriba-blue-ink">
                 {step.n}
@@ -973,7 +973,7 @@ function FinalCta() {
         <div className="relative flex flex-none flex-col items-stretch gap-3">
           <Link
             href={PROSPECT_ENTRY}
-            className="lp-cta-yellow inline-flex items-center justify-center gap-2.5 rounded-[26px] bg-scriba-yellow py-[17px] px-[38px] text-[13px] font-semibold uppercase tracking-[.04em] text-scriba-yellow-ink shadow-[0_10px_24px_rgba(0,0,0,.2)]"
+            className="lp-cta-yellow inline-flex items-center justify-center gap-2.5 rounded-[26px] bg-lp-band-cta py-[17px] px-[38px] text-[13px] font-semibold uppercase tracking-[.04em] text-lp-band-cta-ink shadow-[0_10px_24px_rgba(0,0,0,.2)]"
           >
             <ScribaMark size={20} />
             Criar conta grátis

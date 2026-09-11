@@ -57,9 +57,9 @@ export function ChapterMention({ reference }: { reference: string }) {
       <button
         type="button"
         onClick={dialog.show}
-        className="inline-flex items-center gap-2 rounded-full bg-scriba-ink-strong px-4 py-1.5 text-xs font-semibold text-background transition-opacity hover:opacity-85 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring/40"
+        className="inline-flex items-center gap-2 veil-chip rounded-full px-4 py-1.5 text-xs font-medium transition-opacity hover:opacity-85 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring/40"
       >
-        <BookGlyph className="size-3 border-background" />
+        <BookGlyph className="size-3" />
         {reference}
       </button>
       {dialog.hasOpened ? (

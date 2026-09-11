@@ -10,7 +10,7 @@ const STORAGE_KEY = "scriba-theme";
 const CHANGE_EVENT = "scriba-theme-change";
 
 function readTheme(): Theme {
-  if (typeof document === "undefined") return "light";
+  if (typeof document === "undefined") return "dark";
   return document.documentElement.classList.contains("dark") ? "dark" : "light";
 }
 
@@ -53,7 +53,8 @@ function applyTheme(theme: Theme) {
  * animating from a wrong default.
  */
 export function useTheme() {
-  const [theme, setThemeState] = useState<Theme>("light");
+  // O padrão do produto, o mesmo do `ThemeScript` e do `<html class="dark">`.
+  const [theme, setThemeState] = useState<Theme>("dark");
   const [mounted, setMounted] = useState(false);
 
   useEffect(() => {

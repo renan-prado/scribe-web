@@ -1,5 +1,5 @@
 import type { Metadata } from "next";
-import { KpiCard, type KpiTile } from "@/features/admin/components/AdminCards";
+import { KpiCard, KpiGrid, type KpiTile } from "@/features/admin/components/AdminCards";
 import { AdminPageHeader } from "@/features/admin/components/AdminPageHeader";
 import { CommitmentsManager } from "@/features/admin/components/finance/CommitmentsManager";
 import { FinanceNotices } from "@/features/admin/components/finance/FinanceNotices";
@@ -24,25 +24,25 @@ export default async function FinanceCommitmentsPage() {
       label: "Total a pagar",
       value: formatBrlCents(commitments.payableCents),
       hint: `inclui ${formatBrlCents(commitments.partnerOwedCents)} de comissões de parceiro`,
-      tone: "rose",
     },
     {
       label: "Vencido",
       value: formatBrlCents(commitments.overdueCents),
       hint: commitments.overdueCents > 0 ? "precisa de ação" : "nada em atraso",
-      tone: commitments.overdueCents > 0 ? "rose" : "mint",
+      trend: {
+        direction: commitments.overdueCents > 0 ? "down" : "up",
+        label: commitments.overdueCents > 0 ? "em atraso" : "em dia",
+      },
     },
     {
       label: "Vence em 30 dias",
       value: formatBrlCents(commitments.dueNext30Cents),
       hint: "o que sai do caixa no próximo mês",
-      tone: "cream",
     },
     {
       label: "A receber",
       value: formatBrlCents(commitments.receivableCents),
       hint: "receitas firmadas que ainda não entraram",
-      tone: "mint",
     },
   ];
 
@@ -53,11 +53,11 @@ export default async function FinanceCommitmentsPage() {
         subtitle="O que devemos, para quem, até quando, e quanto já foi pago."
       />
 
-      <section className="grid gap-3 sm:grid-cols-2 xl:grid-cols-4">
+      <KpiGrid>
         {tiles.map((t) => (
           <KpiCard key={t.label} {...t} />
         ))}
-      </section>
+      </KpiGrid>
 
       {commitments.unconvertible > 0 ? (
         <FinanceNotices

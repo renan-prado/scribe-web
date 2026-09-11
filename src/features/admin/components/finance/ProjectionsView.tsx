@@ -144,7 +144,7 @@ export function ProjectionsView({ scenarios, basis, basisLabels }: Props) {
             Nenhum cenário cadastrado.
           </p>
         ) : (
-          <div className="admin-table admin-card-surface overflow-hidden rounded-2xl border border-scriba-hairline-soft">
+          <div className="admin-table">
             <div data-slot="table-container" className="w-full overflow-x-auto">
               <table className="w-full caption-bottom text-sm">
                 <thead>
@@ -368,7 +368,7 @@ function ComparisonRow({
 function MonthTable({ result }: { result: ProjectionResult | undefined }) {
   if (!result) return null;
   return (
-    <div className="admin-table admin-card-surface overflow-hidden rounded-2xl border border-scriba-hairline-soft">
+    <div className="admin-table">
       <Table>
         <TableHeader>
           <TableRow>

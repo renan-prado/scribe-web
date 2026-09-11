@@ -1,5 +1,5 @@
 import type { Metadata } from "next";
-import { KpiCard, type KpiTile } from "@/features/admin/components/AdminCards";
+import { KpiCard, KpiGrid, type KpiTile } from "@/features/admin/components/AdminCards";
 import { AdminPageHeader } from "@/features/admin/components/AdminPageHeader";
 import { FinanceNotices } from "@/features/admin/components/finance/FinanceNotices";
 import { RecurringManager } from "@/features/admin/components/finance/RecurringManager";
@@ -31,25 +31,21 @@ export default async function FinanceRecurringPage() {
       label: "Custo recorrente / mês",
       value: formatBrlCents(summary.monthlyCents),
       hint: `${formatBrlCents(summary.annualCents)} por ano · ${INT.format(summary.activeCount)} contratos ativos`,
-      tone: "rose",
     },
     {
       label: "Fixos",
       value: formatBrlCents(summary.fixedMonthlyCents),
       hint: "Não escalam com uso, o piso do produto",
-      tone: "cream",
     },
     {
       label: "Variáveis (contratos)",
       value: formatBrlCents(summary.variableMonthlyCents),
       hint: "Contratos cuja categoria é variável",
-      tone: "blue",
     },
     {
       label: "IA e taxas do mês",
       value: formatBrlCents(current.expenseMeasuredCents),
       hint: "Medido, não é contrato, varia com o uso",
-      tone: "mint",
     },
   ];
 
@@ -60,11 +56,11 @@ export default async function FinanceRecurringPage() {
         subtitle="Os contratos que se repetem, com o equivalente mensal de cada um."
       />
 
-      <section className="grid gap-3 sm:grid-cols-2 xl:grid-cols-4">
+      <KpiGrid>
         {tiles.map((t) => (
           <KpiCard key={t.label} {...t} />
         ))}
-      </section>
+      </KpiGrid>
 
       <FinanceNotices
         tone="info"

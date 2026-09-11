@@ -235,7 +235,7 @@ export function CategoriesManager({ categories }: { categories: FinanceCategory[
         </div>
       </div>
 
-      <div className="admin-table admin-card-surface overflow-hidden rounded-2xl border border-scriba-hairline-soft">
+      <div className="admin-table">
         <Table>
           <TableHeader>
             <TableRow>

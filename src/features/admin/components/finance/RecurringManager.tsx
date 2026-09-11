@@ -149,7 +149,7 @@ export function RecurringManager({ recurring, summaries, categories }: Props) {
           o painel enxerga é a de IA, e ela é medida, não lançada.
         </p>
       ) : (
-        <div className="admin-table admin-card-surface overflow-hidden rounded-2xl border border-scriba-hairline-soft">
+        <div className="admin-table">
           <Table>
             <TableHeader>
               <TableRow>

@@ -73,7 +73,7 @@ export function InstallAppCard({ className }: { className?: string }) {
         {/* Duas linhas, e não uma: num aparelho de 360px o texto, o botão e o
             X na mesma faixa espremem a frase em três linhas de duas palavras.
             O botão inteiro na segunda linha também é o alvo de toque maior. */}
-        <div className="flex flex-col gap-5 rounded-[24px] bg-scriba-paper px-4 py-6 ring-1 ring-scriba-hairline">
+        <div className="flex flex-col gap-5 rounded-[24px] bg-[image:var(--feed-card)] bg-[size:200%_100%] px-4 py-6 ring-1 ring-scriba-hairline">
           <div className="flex items-start gap-4">
             <span className="flex size-10 flex-none items-center justify-center rounded-2xl bg-scriba-blue-soft text-scriba-blue-ink">
               <ScribaMark className="size-5" />

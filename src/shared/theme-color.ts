@@ -20,6 +20,6 @@
  * token mudar em `app/globals.css`, mude aqui no mesmo commit.**
  */
 export const THEME_COLOR = {
-  light: "#F7FAFD",
-  dark: "#0B0A19",
+  light: "#FAFAFA",
+  dark: "#111111",
 } as const;

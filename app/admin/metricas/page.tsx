@@ -3,6 +3,7 @@ import { CoinMark } from "@/components/icons/CoinMark";
 import {
   EmptyState,
   KpiCard,
+  KpiGrid,
   type KpiTile,
   ListCard,
 } from "@/features/admin/components/AdminCards";
@@ -54,19 +55,16 @@ export default async function AdminMetricsPage() {
       label: "Cadastros",
       value: INT.format(funnel.signups),
       hint: `${INT.format(funnel.activated)} gravaram algo · ${pct(funnel.activationRate)} de ativação`,
-      tone: "blue",
     },
     {
       label: "Assinantes ativos",
       value: INT.format(funnel.activeSubscribers),
       hint: `${pct(funnel.conversionRate)} de conversão · ${INT.format(revenue.cancelScheduled)} com cancelamento agendado`,
-      tone: "mint",
     },
     {
       label: "MRR",
       value: formatBrl(revenue.mrrCents),
       hint: `ARPU ${formatBrl(revenue.arpuCents)} · Stripe ~${formatBrl(revenue.stripeFeeCents)}/mês`,
-      tone: "cream",
     },
     {
       label: "Moedas em circulação",
@@ -74,7 +72,6 @@ export default async function AdminMetricsPage() {
       hint: costPerThousandCents
         ? `${formatBrl(liability.outstandingCostCents)} de custo já vendido`
         : "sem cotação do dólar para converter",
-      tone: "rose",
       icon: <CoinMark size={22} />,
     },
   ];
@@ -105,11 +102,11 @@ export default async function AdminMetricsPage() {
         subtitle="Funil, ativação, receita e passivo de moedas, o caminho da visita ao dinheiro."
       />
 
-      <section className="grid gap-3 sm:grid-cols-2 xl:grid-cols-4">
+      <KpiGrid>
         {tiles.map((t) => (
           <KpiCard key={t.label} {...t} />
         ))}
-      </section>
+      </KpiGrid>
 
       <AdminInsightsCard scope="metrics" initial={insights} />
 

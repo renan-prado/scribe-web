@@ -127,7 +127,7 @@ export function FeaturesManager({ features, switches, overrides }: Props) {
             preços não é editável pelo painel.
           </p>
         </div>
-        <div className="admin-table admin-card-surface overflow-hidden">
+        <div className="admin-table">
           <Table>
             <TableHeader>
               <TableRow>
@@ -318,7 +318,7 @@ export function FeaturesManager({ features, switches, overrides }: Props) {
           </Button>
         </form>
 
-        <div className="admin-table admin-card-surface overflow-hidden">
+        <div className="admin-table">
           <Table>
             <TableHeader>
               <TableRow>

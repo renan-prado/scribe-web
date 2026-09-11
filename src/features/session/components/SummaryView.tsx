@@ -34,7 +34,7 @@ export function SummaryView({ summary, hasTranscript, running }: SummaryViewProp
             </span>
             <p
               key={summary!.shortSummary}
-              className="animate-content-fade text-pretty text-lg font-medium leading-snug text-scriba-ink-strong text-balance"
+              className="animate-content-fade text-pretty text-lg font-normal leading-snug text-scriba-ink-strong text-balance"
             >
               {summary!.shortSummary}
             </p>

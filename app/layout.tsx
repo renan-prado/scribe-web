@@ -153,7 +153,11 @@ export default function RootLayout({ children }: LayoutProps<"/">) {
     // Next desliga o suave só durante a transição e devolve em seguida.
     <html
       lang="pt-BR"
-      className={`${geistSans.variable} ${geistMono.variable} ${firaMono.variable} ${poppins.variable} h-full antialiased`}
+      // `dark` fixo aqui é o PADRÃO do produto, e o `ThemeScript` no <head>
+      // logo abaixo tira a classe de quem escolheu claro. Nascer escuro e
+      // clarear a minoria é o que mantém a piscada fora da maioria das
+      // visitas, e é o que dá tema escuro a quem está sem JS. Ver `ThemeScript`.
+      className={`dark ${geistSans.variable} ${geistMono.variable} ${firaMono.variable} ${poppins.variable} h-full antialiased`}
       data-scroll-behavior="smooth"
       suppressHydrationWarning
     >

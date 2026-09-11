@@ -31,8 +31,15 @@ export default async function AdminLayout({ children }: { children: ReactNode })
   };
 
   return (
-    <SidebarProvider>
+    // `--header-height` como variável é o padrão do bloco `dashboard-01`: a
+    // faixa do topo e o `group-has-data-[collapsible=icon]` leem o mesmo valor.
+    // 14 (56px), e não os 12 (48px) do bloco, porque o `SidebarTrigger` tem
+    // 44px no celular por WCAG 2.5.5 e precisa de folga em volta.
+    <SidebarProvider
+      style={{ "--header-height": "calc(var(--spacing) * 14)" } as React.CSSProperties}
+    >
       <AdminSidebar
+        variant="inset"
         user={{
           displayName: meta.full_name ?? meta.name ?? null,
           email: user?.email ?? null,
@@ -43,17 +50,20 @@ export default async function AdminLayout({ children }: { children: ReactNode })
         `min-w-0` é o que permite a uma tabela larga rolar DENTRO do próprio
         cartão. Sem ele o item flex adota a largura mínima do conteúdo e é a
         PÁGINA que ganha barra horizontal, a sidebar sai da tela junto.
+
+        A cor saiu daqui: com `variant="inset"` quem pinta o chão é o wrapper
+        (`bg-sidebar`, por `has-data-[variant=inset]`), e o `SidebarInset` é o
+        retângulo de canto arredondado em `bg-background` por cima dele. Era
+        `bg-scriba-surface` fixo, que anulava justamente o degrau que o inset
+        existe para criar.
       */}
-      <SidebarInset className="min-w-0 bg-scriba-surface">
+      <SidebarInset className="min-w-0">
         {/*
-          A faixa é da MESMA cor do conteúdo (`--scriba-surface`), não do papel
-          dos cartões: com `bg-scriba-paper` ela lia como um cartão branco
-          colado no topo de uma página cinza, e a borda inferior virava a única
-          coisa a separar duas superfícies que deveriam ser a mesma. O
-          `backdrop-blur` continua porque ela é `sticky` e o conteúdo passa por
-          baixo.
+          A faixa herda o chão do inset e se separa pela borda, como a
+          `SiteHeader` do bloco. O `backdrop-blur` e o `sticky` continuam,
+          porque aqui, ao contrário do bloco, o conteúdo passa por baixo dela.
         */}
-        <header className="sticky top-0 z-30 flex h-14 shrink-0 items-center gap-1 border-b border-scriba-hairline bg-scriba-surface/85 px-3 backdrop-blur-md sm:gap-2 sm:px-4">
+        <header className="sticky top-0 z-30 flex h-(--header-height) shrink-0 items-center gap-1 border-b bg-background/85 px-3 backdrop-blur-md sm:gap-2 sm:px-4">
           {/*
             44px no celular, e não os 28px do `size="icon-sm"` do shadcn. Este
             é o ÚNICO jeito de abrir a gaveta no telefone, a sidebar lá é um
@@ -95,7 +105,11 @@ export default async function AdminLayout({ children }: { children: ReactNode })
         {/* `<div>`, não `<main>`: o `SidebarInset` JÁ é o <main> da página.
             É `PageTransition` para o fade de troca de rota ficar DENTRO da
             moldura, sidebar e faixa do topo não podem piscar junto. */}
-        <PageTransition className="mx-auto flex w-full max-w-[1600px] flex-1 flex-col gap-6 p-4 sm:p-6 lg:p-8">
+        {/* O ritmo do `dashboard-01`: `gap-4 py-4` que abre para `gap-6 py-6`
+            em `md`, e `px-4 lg:px-6` na horizontal. O `max-w-[1600px]` não é
+            do bloco, e fica: sem ele uma tabela de finanças se estica por um
+            monitor inteiro e a linha deixa de ser lida de ponta a ponta. */}
+        <PageTransition className="mx-auto flex w-full max-w-[1600px] flex-1 flex-col gap-4 px-4 py-4 md:gap-6 md:py-6 lg:px-6">
           {children}
         </PageTransition>
       </SidebarInset>

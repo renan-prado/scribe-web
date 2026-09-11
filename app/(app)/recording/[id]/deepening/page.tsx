@@ -101,10 +101,10 @@ export default async function RecordingDeepeningPage({ params }: PageProps) {
             data-tour="study-thesis"
             className="-mb-2 flex flex-col gap-2 border-l-[2.5px] border-scriba-green pl-4"
           >
-            <span className="text-[10px] font-semibold uppercase tracking-[0.14em] text-scriba-green">
+            <span className="text-[10px] font-semibold uppercase tracking-[0.14em] text-scriba-ink-mute">
               Tese central
             </span>
-            <p className="text-pretty text-lg font-medium leading-snug text-scriba-ink-strong text-balance">
+            <p className="text-pretty text-lg font-normal leading-snug text-scriba-ink-strong text-balance">
               {payload.shortSummary}
             </p>
           </div>

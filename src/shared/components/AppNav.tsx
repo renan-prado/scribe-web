@@ -1,25 +1,34 @@
 "use client";
 
-import { BookOpen, List, Rss } from "lucide-react";
 import { usePathname } from "next/navigation";
+import { FeedGlyph, ListGlyph, StudyGlyph } from "@/components/icons/NavGlyphs";
 import { NavLink } from "@/components/NavLink";
 import { cn } from "@/lib/utils";
 import { activeNavKey } from "@/shared/nav";
 
+/**
+ * Os MESMOS glifos da barra inferior do celular (`@/components/icons/NavGlyphs`),
+ * e não os `Rss` / `List` / `BookOpen` do lucide que estavam aqui. Feed,
+ * Biblioteca e Estudos passam a ter um desenho só nas duas barras; quem usa o
+ * app no celular e no navegador via dois ícones diferentes para o mesmo lugar.
+ *
+ * O `profile` do conjunto não entra: no desktop aquele lugar é o avatar do
+ * `UserMenu`, não um item desta barra.
+ */
 const LINKS = [
-  { key: "feed" as const, href: "/feed", label: "Feed", icon: Rss, tone: "blue" as const },
+  { key: "feed" as const, href: "/feed", label: "Feed", icon: FeedGlyph, tone: "blue" as const },
   {
     key: "recordings" as const,
     href: "/recordings",
     label: "Biblioteca",
-    icon: List,
+    icon: ListGlyph,
     tone: "blue" as const,
   },
   {
     key: "studies" as const,
     href: "/studies",
     label: "Estudos",
-    icon: BookOpen,
+    icon: StudyGlyph,
     tone: "green" as const,
   },
 ];
@@ -57,7 +66,17 @@ export function AppNav() {
               active ? toneClasses.active : toneClasses.idle
             )}
           >
-            <Icon size={14} strokeWidth={2} aria-hidden />
+            {/* 12px, e não os 14 que o lucide usava aqui. Os glifos são
+                PREENCHIDOS e ocupam o `viewBox` de 24 quase inteiro, enquanto
+                o lucide reserva ~2px de margem de cada lado: no mesmo `size` o
+                glifo lê como um ícone maior e mais pesado que o traço que ele
+                substituiu. 24/20 é a razão, e 14 ÷ 1,2 ≈ 12.
+
+                É o mesmo diagnóstico que a `MobileBottomNav` já tinha
+                registrado quando misturava as duas famílias, ver o cabeçalho
+                de `NavGlyphs`. Eles também não aceitam `strokeWidth`, não têm
+                traço, e o `aria-hidden` já vem de dentro do componente. */}
+            <Icon className="size-3" />
             {label}
           </NavLink>
         );

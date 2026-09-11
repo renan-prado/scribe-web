@@ -9,10 +9,16 @@ const badgeVariants = cva(
   {
     variants: {
       variant: {
-        // Pastilha escura da paleta, não o preto neutro do shadcn (`bg-primary`):
-        // é a mesma superfície das pastilhas de referência bíblica do resumo e
-        // do feed, e `text-background` acompanha porque `--scriba-ink-strong`
-        // inverte por tema, ver `src/shared/AGENTS.md`.
+        // Pastilha escura da paleta, não o preto neutro do shadcn (`bg-primary`),
+        // e `text-background` acompanha porque `--scriba-ink-strong` inverte por
+        // tema, ver `src/shared/AGENTS.md`.
+        //
+        // Já foi a MESMA superfície das pastilhas de referência bíblica; não é
+        // mais. Elas viraram um véu translúcido (`.veil-chip`) porque ali a
+        // pastilha é um RÓTULO e chapada pesava mais que o versículo. Aqui o
+        // chapado é o ponto: um `<Badge>` sem variante marca estado, e estado
+        // precisa saltar. Se as duas voltarem a convergir, que seja por
+        // decisão, não por alguém copiar daqui para lá.
         default: "bg-scriba-ink-strong text-background [a]:hover:opacity-85",
         secondary:
           "bg-scriba-btn-muted text-scriba-ink [a]:hover:bg-scriba-btn-muted-hover [a]:hover:text-scriba-ink-strong",

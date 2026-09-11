@@ -3,6 +3,7 @@ import type { Metadata } from "next";
 import {
   EmptyState,
   KpiCard,
+  KpiGrid,
   type KpiTile,
   ListCard,
   QuickLink,
@@ -46,15 +47,20 @@ export default async function FinanceOverviewPage() {
       label: "Receita do mês",
       value: formatBrlCents(current.revenueCents),
       hint: previous
-        ? `${formatSignedPercent(revenueGrowth)} contra ${formatMonthKey(previous.month)}`
+        ? `contra ${formatMonthKey(previous.month)}`
         : "sem mês anterior para comparar",
-      tone: "mint",
+      trend:
+        revenueGrowth != null
+          ? {
+              direction: revenueGrowth >= 0 ? "up" : "down",
+              label: formatSignedPercent(revenueGrowth),
+            }
+          : undefined,
     },
     {
       label: "Despesas do mês",
       value: formatBrlCents(current.expenseCents),
       hint: `${formatBrlCents(current.fixedCents)} fixos · ${formatBrlCents(current.variableCents)} variáveis`,
-      tone: "rose",
     },
     {
       label: "Lucro do mês",
@@ -63,7 +69,13 @@ export default async function FinanceOverviewPage() {
         current.taxCents > 0
           ? `margem ${formatPercent(current.marginRatio)} · ${formatBrlCents(current.taxCents)} de imposto`
           : `margem ${formatPercent(current.marginRatio)} · sem alíquota configurada`,
-      tone: current.netProfitCents >= 0 ? "blue" : "rose",
+      // O sinal do lucro era a COR do cartão (azul contra rosa). Agora é a
+      // pastilha, que diz para que lado o número anda em vez de esperar que
+      // quem lê já saiba o que rosa queria dizer ali.
+      trend: {
+        direction: current.netProfitCents >= 0 ? "up" : "down",
+        label: current.netProfitCents >= 0 ? "no azul" : "no vermelho",
+      },
     },
     {
       label: "A pagar",
@@ -72,7 +84,6 @@ export default async function FinanceOverviewPage() {
         commitments.overdueCents > 0
           ? `${formatBrlCents(commitments.overdueCents)} já vencido`
           : `${formatBrlCents(commitments.dueNext30Cents)} nos próximos 30 dias`,
-      tone: "cream",
     },
   ];
 
@@ -95,11 +106,11 @@ export default async function FinanceOverviewPage() {
       <FinanceNotices warnings={blocking} tone="danger" />
       <FinanceNotices warnings={overview.warnings} />
 
-      <section className="grid gap-3 sm:grid-cols-2 xl:grid-cols-4">
+      <KpiGrid>
         {tiles.map((t) => (
           <KpiCard key={t.label} {...t} />
         ))}
-      </section>
+      </KpiGrid>
 
       <section className="grid gap-4 lg:grid-cols-3">
         <ListCard title="Recorrentes" subtitle="Compromisso mensal">

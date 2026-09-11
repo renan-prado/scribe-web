@@ -84,7 +84,7 @@ export default async function AdminSessionsPage({ searchParams }: PageProps) {
         current={{ userId: sp.userId ?? "", mode: sp.mode ?? "", q: sp.q ?? "" }}
       />
 
-      <div className="admin-table admin-card-surface overflow-hidden">
+      <div className="admin-table">
         <Table>
           <TableHeader>
             <TableRow>

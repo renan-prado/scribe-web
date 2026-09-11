@@ -91,7 +91,7 @@ export function UsersManager({ initialUsers, currentUserId }: Props) {
         </span>
       </div>
 
-      <div className="admin-table admin-card-surface overflow-hidden">
+      <div className="admin-table">
         <Table>
           <TableHeader>
             <TableRow>

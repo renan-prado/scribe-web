@@ -16,14 +16,13 @@ export function AdminPageHeader({ title, subtitle, actions }: AdminPageHeaderPro
   return (
     <header className="flex flex-col gap-3 sm:flex-row sm:flex-wrap sm:items-end sm:justify-between sm:gap-4">
       <div className="flex min-w-0 flex-col gap-1">
-        <h1 className="text-[22px] font-semibold tracking-tight text-scriba-ink-strong sm:text-[26px] lg:text-[28px]">
-          {title}
-        </h1>
-        {subtitle ? (
-          <p className="text-[13px] font-light leading-relaxed text-scriba-ink-soft sm:text-[13.5px]">
-            {subtitle}
-          </p>
-        ) : null}
+        {/* `text-2xl font-semibold tracking-tight` + descrição em
+            `text-muted-foreground text-sm`: é a mesma dupla do `CardHeader`
+            do bloco, uma oitava acima. A escala em pixels e o `font-light`
+            saíram porque eram uma tipografia própria do painel, e o ponto
+            desta passagem é o painel deixar de ter uma. */}
+        <h1 className="text-2xl font-semibold tracking-tight">{title}</h1>
+        {subtitle ? <p className="text-sm text-muted-foreground">{subtitle}</p> : null}
       </div>
       {actions ? <div className="flex flex-wrap items-center gap-2">{actions}</div> : null}
     </header>

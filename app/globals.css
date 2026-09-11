@@ -145,6 +145,8 @@
      utilitário. */
   --color-scriba-cta-ink: var(--scriba-cta-ink);
   --color-lp-band-ink: var(--lp-band-ink);
+  --color-lp-band-cta: var(--lp-band-cta);
+  --color-lp-band-cta-ink: var(--lp-band-cta-ink);
   --color-lp-phone-frame: var(--lp-phone-frame);
 }
 
@@ -174,224 +176,207 @@
   --chart-4: oklch(0.371 0 0);
   --chart-5: oklch(0.269 0 0);
   --radius: 0.625rem;
-  /* Sidebar tokens tuned to the Scriba palette: soft blue background,
-     ink-strong text, blue-soft hover, scriba-blue accents. */
-  --sidebar: #F8FBFE;
-  --sidebar-foreground: #33414F;
-  --sidebar-primary: #4FA8F0;
-  --sidebar-primary-foreground: #ffffff;
-  --sidebar-accent: #EAF4FE;
-  --sidebar-accent-foreground: #3E86C4;
-  --sidebar-border: #EEF4FA;
-  --sidebar-ring: rgba(79, 168, 240, 0.4);
+  /* Sidebar: escala neutra do shadcn, sem tintura de marca. */
+  --sidebar: oklch(0.985 0 0);
+  --sidebar-foreground: oklch(0.145 0 0);
+  --sidebar-primary: oklch(0.205 0 0);
+  --sidebar-primary-foreground: oklch(0.985 0 0);
+  --sidebar-accent: oklch(0.97 0 0);
+  --sidebar-accent-foreground: oklch(0.205 0 0);
+  --sidebar-border: oklch(0.922 0 0);
+  --sidebar-ring: oklch(0.708 0 0);
 
-  /* Session-specific tokens.
-     The quote gradient wraps bibleQuote / conclusion / supportingContent
-     surfaces; the highlight yellow paints the "frase de efeito" span. */
-  --session-surface-quote: linear-gradient(110deg, #EAF4FE, #F6FAFF, #E6F1FD, #EAF4FE);
+  /* -------------------------------------------------------------------------
+     TESTE: paleta monocromática sobre a escala neutra do shadcn.
+
+     Os valores abaixo são os degraus `neutral` do Tailwind, os mesmos que as
+     variáveis oklch do shadcn resolvem:
+       #FFFFFF · #FAFAFA(.985) · #F5F5F5(.97) · #E5E5E5(.922) · #D4D4D4(.87)
+       #A1A1A1(.708) · #737373(.556) · #525252(.439) · #404040(.371)
+       #262626(.269) · #171717(.205) · #0A0A0A(.145)
+
+     Duas cores sobreviveram, as duas SEMÂNTICAS, não decorativas: o vermelho
+     (destructive / gravando) e o AMARELO DA MOEDA, a família
+     `--scriba-yellow*` / `--scriba-gold-*`, que é como o saldo, o preço e o
+     marca-texto se identificam em toda a interface. Tudo o mais é cinza,
+     inclusive as quatro famílias de tile
+     (mint/rose/cream/lilac), que passam a ter valores IDÊNTICOS: o tipo de
+     card deixa de se distinguir por cor e passa a depender do rótulo.
+
+     A landing (`--lp-hero`, `--lp-band`, `--lp-band-ink`, `--lp-phone-frame`)
+     ficou FORA do teste e mantém a paleta de marca.
+  ------------------------------------------------------------------------- */
+
+  /* Sessão: citações, versos, menções */
+  --session-surface-quote: linear-gradient(110deg, #F5F5F5, #FAFAFA, #F2F2F2, #F5F5F5);
+
+  /* A SUPERFÍCIE DOS CARTÕES DO /feed.
+
+     Um token só para os dois temas, porque a resposta muda entre eles: no
+     ESCURO todo cartão do feed usa exatamente a superfície da citação bíblica
+     (`--session-surface-quote`), o degradê que dá relevo ao cartão sobre um
+     chão quase preto; no CLARO ele é branco chapado, porque ali o relevo já
+     vem do contraste com `--scriba-surface`, e um degradê cinza sobre papel
+     só sujaria a leitura.
+
+     É GRADIENTE nos dois, mesmo quando é branco: os cartões entram por
+     `bg-[image:var(--feed-card)]`, e uma cor chapada num tema com uma imagem
+     no outro exigiria dois utilitários diferentes no mesmo `className`.
+     Quatro paradas iguais é como um gradiente fica chapado.
+
+     No escuro ele é `var(--session-surface-quote)` LITERALMENTE, não uma
+     cópia dos valores: a regra é "a mesma da citação bíblica", então precisa
+     continuar sendo a mesma no dia em que aquela mudar. */
+  --feed-card: linear-gradient(110deg, #FFFFFF, #FFFFFF, #FFFFFF, #FFFFFF);
+
   --session-highlight-yellow: #FCE9A6;
-  --session-example-bg: #EEF3FB;
-  --session-example-border: #D7DFE7;
-  /* MENÇÕES DENTRO DO PARÁGRAFO (ver RichText). Duas cores, dois papéis:
-     `ink` pinta a referência bíblica, que é CLICÁVEL, é a mesma calibragem de
-     `--scriba-blue-ink` (5,03 no papel), porque uma referência que não se
-     distingue do corpo do texto não convida clique nenhum.
-     `wash` é a faixa de marca-texto sob nome próprio, e ela NÃO é interativa:
-     cobre só os 18% de baixo da linha, então o glifo continua sobre o papel e
-     o contraste do parágrafo não muda. As duas trocam de família dentro de
-     `.tone-study`, lá o acento é verde. */
-  --session-mention-ink: #3473AA;
-  --session-mention-wash: #CFE2F5;
+  --session-example-bg: #F5F5F5;
+  --session-example-border: #E5E5E5;
+  --session-mention-ink: #171717;
+  --session-mention-wash: #E5E5E5;
 
-  /* Scriba palette, used by the redesigned Feed, Library, Live and Summary
-     surfaces. Kept as raw hex so the design intent stays 1:1 with the mocks. */
-  --scriba-blue: #4FA8F0;
-  --scriba-blue-hover: #3E97DF;
-  --scriba-blue-soft: #EAF4FE;
-  /* Study (aprofundamento) palette, greens matched 1:1 to the blue tokens so
-     study surfaces read as a distinct, but co-equal, colorway to summaries. */
-  --scriba-green: #4FC28B;
-  --scriba-green-hover: #3EB07A;
-  --scriba-green-soft: #E8F6EF;
-  /* 4,59:1 sobre `--scriba-green-soft`, o pior fundo em que aparece, o papel
-     branco é mais folgado. Era #2E8F63 (3,61:1) e reprovava AA. */
-  --scriba-green-ink: #287C56;
-  --scriba-green-body: #6E9E85;
+  /* O VÉU: o tratamento de pastilha translúcida, usado pela referência
+     bíblica ("Jonas 1:7-10") e pelos ícones de tipo dos cartões de
+     /recordings e /studies.
+
+     Era `bg-scriba-ink-strong` + `text-background`: uma pastilha CHAPADA na
+     tinta mais forte da escala, ou seja, quase preta no claro e quase branca
+     no escuro. Ela é um rótulo, não uma ação, e chapada daquele jeito pesava
+     mais que o versículo que estava anunciando, no escuro principalmente, em
+     que um retângulo branco sólido é o objeto mais luminoso do cartão.
+
+     Agora é um véu da PRÓPRIA tinta sobre a superfície de baixo, em degradê
+     de cima para baixo, com um anel de 1px da mesma família. Como é opacidade
+     e não cor, ela funciona sobre qualquer um dos fundos em que aparece (o
+     degradê da citação, o papel, o `--feed-card`) sem precisar de um valor por
+     superfície.
+
+     A tinta é `--scriba-ink`, um degrau abaixo do topo da escala, e não uma
+     cor nova: o rótulo desce um nível em relação ao corpo do versículo em vez
+     de subir dois. Contraste no pior fundo de cada tema: 8,5:1 no claro,
+     8,2:1 no escuro. */
+  --veil-bg: linear-gradient(180deg, rgba(23, 23, 23, 0.07), rgba(23, 23, 23, 0.035));
+  --veil-ring: rgba(23, 23, 23, 0.12);
+
+  /* Azul da marca -> primário neutro. `--scriba-blue` é SUPERFÍCIE (fundo de
+     botão, anel de foco, borda); `--scriba-blue-ink` é TINTA. */
+  --scriba-blue: #171717;
+  --scriba-blue-hover: #262626;
+  --scriba-blue-soft: #F5F5F5;
+  /* Verde do aprofundamento -> mesma escala neutra. */
+  --scriba-green: #262626;
+  --scriba-green-hover: #404040;
+  --scriba-green-soft: #F5F5F5;
+  --scriba-green-ink: #171717;
+  --scriba-green-body: #6B6B6B;
   --scriba-yellow: #F8C64B;
   --scriba-yellow-hover: #F2B92F;
-  --scriba-mint: #E4EFEA;
-  --scriba-mint-ink: #2F5A49;
-  --scriba-mint-accent: #447461;
-  --scriba-rose: #FAEAE5;
-  --scriba-rose-ink: #6E4636;
-  --scriba-rose-accent: #A8715C;
-  --scriba-cream: #FDF3DD;
-  --scriba-cream-ink: #6B5A2A;
-  --scriba-cream-accent: #896B1D;
-  --scriba-lilac: #EAF0FB;
-  --scriba-lilac-ink: #3F5170;
-  --scriba-lilac-accent: #6E82A8;
-  --scriba-ink-strong: #33414F;
-  /* ESCALA DE TINTA, quatro degraus, todos acima de AA, espaçados por igual.
-     Ver `--scriba-ink-strong` logo acima: ele é o topo e não muda.
-
-     O texto pequeno exige 4,5:1, e o piso da escala (`mute`) precisa disso
-     contra o fundo MAIS ESCURO em que aparece, `--scriba-bubble` (#F5F8FB),
-     não o papel branco. Calibrar pelo branco deixaria os chips dentro dos
-     balões reprovando.
-
-     Os quatro valores não foram escolhidos um a um: são uma progressão
-     geométrica de ~1,3x entre 4,5 e 10,45. Ajustar só o `mute` para AA (a
-     tentativa anterior) o encostava no `soft`, 1,14x de diferença, ou seja,
-     dois níveis que ninguém distingue, e o app perdia um degrau da escala.
-     Empurrar a escala inteira resolve os dois problemas de uma vez.
-
-     Contraste sobre paper / surface / bubble:
-       ink-strong  10,45 / 9,97 / 9,80
-       ink          8,00 / 7,64 / 7,50
-       ink-soft     6,05 / 5,78 / 5,68
-       ink-mute     4,82 / 4,60 / 4,52   <- o piso, calibrado pelo bubble
-
-     Ao mexer em QUALQUER um: recalcule os outros três. O valor de um degrau
-     isolado não quer dizer nada; o que importa é a escala. */
-  --scriba-ink: #445261;
-  --scriba-ink-soft: #566474;
-  --scriba-ink-mute: #5E7183;
-  --scriba-surface: #F7FAFD;
-  --scriba-hairline: #EDF2F7;
-  --scriba-hairline-soft: #EEF4FA;
+  /* As quatro famílias de tile, agora indistinguíveis por cor. */
+  --scriba-mint: #F5F5F5;
+  --scriba-mint-ink: #171717;
+  --scriba-mint-accent: #525252;
+  --scriba-rose: #F5F5F5;
+  --scriba-rose-ink: #171717;
+  --scriba-rose-accent: #525252;
+  --scriba-cream: #F5F5F5;
+  --scriba-cream-ink: #171717;
+  --scriba-cream-accent: #525252;
+  --scriba-lilac: #F5F5F5;
+  --scriba-lilac-ink: #171717;
+  --scriba-lilac-accent: #525252;
+  /* ESCALA DE TINTA, quatro degraus, recalibrada para a nova superfície mais
+     escura do tema claro (`#F5F5F5`, que agora é o piso, no lugar do antigo
+     #EEF3FB). Progressão de ~1,4x, o piso em AA contra o pior fundo.
+       Contraste sobre paper(#FFF) / surface(#FAFAFA) / bubble(#F5F5F5)
+         ink-strong  17,9 / 17,4 / 16,4
+         ink         10,4 / 10,1 /  9,5
+         ink-soft     7,8 /  7,6 /  7,2
+         ink-mute     5,3 /  5,2 /  4,9   <- o piso, calibrado pelo bubble
+     Mexeu num, recalcule os quatro. */
+  --scriba-ink-strong: #171717;
+  --scriba-ink: #404040;
+  --scriba-ink-soft: #525252;
+  --scriba-ink-mute: #6B6B6B;
+  --scriba-surface: #FAFAFA;
+  --scriba-hairline: #E5E5E5;
+  --scriba-hairline-soft: #F0F0F0;
   --scriba-yellow-light: #FFDF8C;
-  /* AZUL PARA TEXTO, não confundir com `--scriba-blue`, que é o azul de
-     SUPERFÍCIE (fundo de botão, borda, badge).
-     A mesma cor não serve para as duas coisas: #4FA8F0 é excelente como fundo
-     e dá 2,56:1 como tinta sobre papel, bem abaixo do mínimo AA. O app usava o
-     token de superfície como cor de texto em 73 lugares, daí `text-scriba-blue`
-     ter virado `text-scriba-blue-ink` em toda parte.
-     Calibrado pelo pior fundo em que aparece, `--scriba-blue-soft` (#EAF4FE),
-     não pelo papel branco.
-       branco 5,03 · surface 4,80 · blue-soft 4,52 */
-  --scriba-blue-ink: #3473AA;
-  --scriba-rose-body: #A08373;
-  --scriba-mint-body: #597066;
-  --scriba-cream-body: #7D6E44;
-  --scriba-btn-muted: #F4F8FC;
-  --scriba-btn-muted-hover: #E8EEF6;
-  /* Scrollbar. Consumido só pelas regras de `::-webkit-scrollbar` /
-     `scrollbar-color` no @layer base, não vira utilitário no @theme porque
-     ninguém pinta um elemento com essa cor. */
-  --scriba-scroll-thumb: rgba(124, 138, 153, 0.3);
-  --scriba-scroll-thumb-hover: rgba(124, 138, 153, 0.55);
-  /* Session feed color tokens */
-  --session-typing-dot: #9BB6CC;
-  --session-verse-text: #3E5164;
-  --session-verse-border: #9FCBEC;
-  --session-chip-ai: #7FA9CC;
-  /* Coin/gold tokens */
-  /* 4,57:1 sobre `--scriba-gold-soft`. Era #B07F13 (3,39:1). */
+  /* Era o azul de texto (links, referências). No monocromático ele é a própria
+     tinta forte: o que distingue um link deixa de ser a cor. */
+  --scriba-blue-ink: #171717;
+  --scriba-rose-body: #6B6B6B;
+  --scriba-mint-body: #6B6B6B;
+  --scriba-cream-body: #6B6B6B;
+  --scriba-btn-muted: #F5F5F5;
+  --scriba-btn-muted-hover: #E5E5E5;
+  /* Scrollbar */
+  --scriba-scroll-thumb: rgba(0, 0, 0, 0.22);
+  --scriba-scroll-thumb-hover: rgba(0, 0, 0, 0.42);
+  /* Feed ao vivo */
+  --session-typing-dot: #A1A1A1;
+  --session-verse-text: #404040;
+  --session-verse-border: #D4D4D4;
+  --session-chip-ai: #737373;
+  /* Moedas */
   --scriba-gold-ink: #946B10;
-  /* Auth surface tokens */
-  --auth-btn-border: #DFEAF4;
-  --auth-btn-border-hover: #C9D9E8;
-  --auth-btn-bg-hover: #F6FAFE;
-  /* Mint saved-state token */
-  --scriba-mint-dark: #3B765F;
-  /* Scriba AI chat bubble tokens (feed + summary) */
-  --scriba-bubble: #F5F8FB;
-  --scriba-bubble-ink: #2A3542;
-  --scriba-avatar-gradient: linear-gradient(140deg, #2F6BD8, #7C5CE0);
-  /* Elevated surface + accents that used to be hardcoded in className strings.
-     Every one of these has a `.dark` counterpart below. */
+  /* Auth */
+  --auth-btn-border: #E5E5E5;
+  --auth-btn-border-hover: #D4D4D4;
+  --auth-btn-bg-hover: #FAFAFA;
+  /* Estado "salvo" */
+  --scriba-mint-dark: #171717;
+  /* Balão de fala da IA */
+  --scriba-bubble: #F5F5F5;
+  --scriba-bubble-ink: #171717;
+  /* O disco do avatar continua escuro nos DOIS temas: a pena dentro dele é
+     branca e pintada com `currentColor`, não tem variante clara. */
+  --scriba-avatar-gradient: linear-gradient(140deg, #404040, #171717);
   --scriba-paper: #ffffff;
+  /* VERMELHO: a única cor que sobrevive ao teste, porque é semântica
+     (gravando / destrutivo), não decorativa. Valores inalterados. */
   --scriba-rec: #F0564E;
-  /* Chip "AO VIVO". As três cores eram literais no className
-     (`bg-red-600/[.08]`, `bg-[#DC2626]`, `text-[#B91C1C]`), então NÃO
-     invertiam: no tema escuro o texto vinha a 2,55:1 sobre o fundo escuro do
-     mockup. Agora são tokens, e o par de cada tema é conferido.
-       claro  #B91C1C sobre #FCEEEE = 5,73 */
   --scriba-rec-ink: #B91C1C;
   --scriba-rec-soft: #FCEEEE;
-  --scriba-mint-strong: #4E9C7F;
+  --scriba-mint-strong: #525252;
   --scriba-gold-soft: #FFF9E8;
   --scriba-gold-track: #F0E4C6;
+  /* O débito volta ao âmbar da família da moeda; o crédito fica neutro, que
+     é a distinção de volta sem trazer um TERCEIRO matiz para o teste. */
   --scriba-flash-debit: #FCE1B8;
-  --scriba-flash-credit: #DDEFCB;
+  --scriba-flash-credit: #E5E5E5;
   --scriba-yellow-ink: #5A4409;
-  --session-btn-border: #B9CEDF;
-  --session-btn-ink: #5B7183;
-  /* Landing/auth hero wash */
-  --lp-hero: linear-gradient(180deg, #F6FBFF 0%, #FFFFFF 100%);
-  --lp-hero-auth: linear-gradient(180deg, #F6FBFF 0%, #FFFFFF 60%);
-  /* "Sua biblioteca" band, the one full-bleed blue section. In light it is the
-     primary blue; in dark that same primary reads as a lit slab dropped into a
-     dark page, so the dark colorway swaps it for a deep blue lifted just above
-     the page ground. */
-  /* A banda azul da seção "Biblioteca" carrega texto por cima, e isso muda o
-     que a cor precisa ser. Era o mesmo #4FA8F0 do resto da marca, sobre ele,
-     NENHUM texto claro é legível: branco puro dá 2,56:1, e o azul-claro e o
-     amarelo do acento ficam ainda piores. O problema não tinha conserto do
-     lado da tinta, porque o branco já é o extremo; o fundo é que tinha de
-     descer.
-     #0F67AF é o ponto em que o texto MAIS CLARO da seção, o label amarelo de
-     11px, o caso mais difícil, alcança 4,5:1. Escolhido assim para que
-     nenhuma cor de texto precisasse mudar: branco, `--lp-band-ink` e o amarelo
-     continuam os mesmos, e só o fundo ficou mais fundo.
-       branco 5,87 · band-ink 5,10 · amarelo 4,52 */
-  /* Gradiente, não cor chapada: o azul fecha num índigo que é a mesma família
-     do fundo do tema escuro (`--background` #05040B, `--scriba-paper` #121025),
-     então a seção pertence ao app em vez de ser um retângulo azul avulso.
-     ATENÇÃO: com `background-image` o verificador automático PARA de medir o
-     contraste, ele marca "incomplete", não violação. A garantia passa a ser
-     destes números, conferidos no ponto MAIS CLARO (0%), que é o pior caso:
-       0%   #0F67AF  branco 5,87 · amarelo 4,52 · band-ink 5,10
-       55%  #124E8C  branco 8,42 · amarelo 6,49 · band-ink 7,32
-       100% #1A2F63  branco 12,88 · amarelo 9,93 · band-ink 11,20
-     Ao clarear QUALQUER parada, recalcule, sobretudo contra o amarelo de
-     11px, que é o texto mais claro da seção e o primeiro a reprovar. */
-  --lp-band: linear-gradient(135deg, #0F67AF 0%, #124E8C 55%, #1A2F63 100%);
-  --lp-band-ink: #E2F1FF;
-  /* Phone bezel. White in light (it reads as a shadowed white device); a near
-     black bezel in dark, so the mockup keeps a visible edge against the band
-     instead of dissolving into it. */
-  --lp-phone-frame: #ffffff;
-  /* Altura do header da LP. O hero se puxa para cima por exatamente este valor
-     e devolve o mesmo tanto em padding, então o conteúdo fica na mesma posição
-     enquanto o fundo passa por baixo do header translúcido. */
-  /* Tinta sobre o azul da marca. Era branco, e branco sobre #4FA8F0 dá 2,56:1,
-     reprovado no botão mais importante da landing ("COMEÇAR GRÁTIS") e, sem
-     ninguém ter notado, também nos cards do NewRecordingDialog, que usam o
-     mesmo par sobre `bg-scriba-blue` (a mesma cor). Azul-escuro sobre o mesmo
-     fundo dá 5,92:1.
-     Escurecer o AZUL seria a outra saída, mas mudaria a cor da marca em toda a
-     LP para ganhar 4,53:1, passar raspando e pagando mais caro. Aqui o
-     #4FA8F0 fica intacto; o que muda é a tinta por cima. É também o valor que o
-     tema escuro já usava, então a paleta não ganha cor nova. */
-  /* Fundo do CTA da landing. Gradiente para que o botão continue parecendo
-     azul VIVO mesmo tendo de escurecer: texto branco de 13px exige 4,5:1, e
-     sobre o #4FA8F0 da marca o branco dá 2,56:1, não havia como manter o azul
-     claro e a letra branca ao mesmo tempo. As duas paradas passam:
-       #1976C5 (4,73) → #0D5E9F (6,73)
-     Mesma ressalva do `--lp-band`: gradiente não é medido automaticamente. */
-  /* O BOTÃO PRIMÁRIO DO PRODUTO, a landing e a área logada usam este par,
-     não dois. Era `--lp-cta`, exclusivo da LP, enquanto a área logada pintava
-     `bg-scriba-blue` com `text-white`: 2,56:1, reprovando AA em 21 botões.
-     Azul de superfície não sustenta tinta branca, o mesmo diagnóstico que
-     obrigou a `--lp-band` a descer. */
-  --scriba-cta: linear-gradient(135deg, #1976C5 0%, #0D5E9F 100%);
-  --scriba-cta-ink: #FFFFFF;
-  --scriba-cta-shadow: rgba(79, 168, 240, 0.32);
-  /* A esfumaçada acima da nav inferior do celular, que dissolve o conteúdo
-     rolando por trás dela. Era um `rgba(255,255,255,…)` literal no className da
-     `MobileBottomNav`, no tema escuro, uma névoa BRANCA sobre a página
-     índigo, e é justamente no app instalado que essa faixa fica sempre à
-     vista. Os stops precisam ser do CHÃO da página, não do papel.
+  --session-btn-border: #D4D4D4;
+  --session-btn-ink: #525252;
+  /* Landing/auth hero wash. O da AUTH entra no teste (sign-in e sign-up são
+     porta do produto); os tokens `--lp-*` da landing, logo abaixo, não. */
+  /* A LANDING ENTROU NO TEMA. Ela tinha ficado de fora do remap, e o que
+     sobrou foi um azul de marca vivendo ao lado de um produto neutro: o lavado
+     do hero, a faixa full-bleed e a moldura do celular.
 
-     São SETE stops para uma faixa de 48px, e o excesso é o ponto: com quatro
-     stops o trecho final ia de 0,35 a zero de uma vez, e o fim da névoa
-     aparecia como uma linha horizontal atravessando a tela. O que tira a
-     dureza é a cauda longa, 0,24 → 0,1 → 0,03 → 0 nos últimos 36%, não a
-     altura da faixa. O topo da rampa também desceu de 0,98 para 0,92: a nav
-     por baixo é opaca de qualquer jeito, então quase-branco ali só engrossava
-     o véu sem esconder nada a mais. */
+     O que NÃO entrou, de propósito, são os dois halos radiais do hero, o azul
+     e o dourado. Eles são o único acento cromático que restou na página, e é
+     deles que vem a sensação de que a marca continua ali; o que mudou embaixo
+     deles foi o CHÃO, que deixou de ser azul. */
+  --lp-hero: linear-gradient(180deg, #FAFAFA 0%, #FFFFFF 100%);
+  --lp-hero-auth: linear-gradient(180deg, #FAFAFA 0%, #FFFFFF 60%);
+  /* FORA DO TESTE: a banda full-bleed e a moldura do celular da landing
+     mantêm a paleta de marca. Ver o comentário longo no git em v0.13.2. */
+  /* A faixa full-bleed. Ela é ESCURA nos dois temas, e é por isso que o par
+     de botão dela é fixo: ao contrário de `--scriba-cta`, que inverte, aqui
+     inverter deixaria um botão quase preto sobre uma laje quase preta no tema
+     claro. Contraste da tinta no ponto mais claro da faixa (0%): 9,2:1. */
+  --lp-band: linear-gradient(135deg, #2E2E2E 0%, #1F1F1F 55%, #141414 100%);
+  --lp-band-ink: #D4D4D4;
+  --lp-band-cta: #FAFAFA;
+  --lp-band-cta-ink: #171717;
+  --lp-phone-frame: #ffffff;
+  /* O BOTÃO PRIMÁRIO. Continua gradiente porque é consumido por
+     `bg-[image:var(--scriba-cta)]`, mas agora entre dois cinzas escuros. */
+  --scriba-cta: linear-gradient(135deg, #262626 0%, #171717 100%);
+  --scriba-cta-ink: #FAFAFA;
+  --scriba-cta-shadow: rgba(0, 0, 0, 0.18);
+  /* A esfumaçada acima da nav inferior, na cor do CHÃO da página (branco).
+     Sete stops, cauda longa, o porquê está em src/shared/AGENTS.md. */
   --scriba-nav-fade: linear-gradient(
     to top,
     rgba(255, 255, 255, 0.92) 0%,
@@ -402,16 +387,9 @@
     rgba(255, 255, 255, 0.03) 92%,
     rgba(255, 255, 255, 0) 100%
   );
-  /* O escurecido do tour, e o anel que sobra em volta do elemento recortado.
-     Ele NÃO é o mesmo scrim do `DialogOverlay` (black/10), e a diferença é
-     necessária: aqui o véu não cobre a tela inteira, ele contorna um buraco,
-     e um véu tão claro quanto o do diálogo deixaria o buraco invisível, o
-     recorte só existe se houver contraste entre o dentro e o fora. Os dois
-     valores são consumidos por `var()` num `box-shadow` inline
-     (`TourSpotlight`), que é o único jeito de um furo com canto arredondado
-     não virar quatro divs remendadas. */
-  --scriba-tour-scrim: rgba(15, 23, 42, 0.55);
-  --scriba-tour-ring: rgba(47, 107, 216, 0.55);
+  /* Tour: véu e anel do recorte. Consumidos por var() num box-shadow inline. */
+  --scriba-tour-scrim: rgba(10, 10, 10, 0.55);
+  --scriba-tour-ring: rgba(23, 23, 23, 0.55);
   --lp-header-h: 71px;
   /* Design-system border widths */
   --border-book: 1.5px;   /* book glyph icon border */
@@ -422,162 +400,169 @@
 }
 
 /* ---------------------------------------------------------------------------
-   Dark theme.
+   Tema escuro.
 
-   Deep indigo (#05040B) ground with four elevation steps:
-     background (#05040B) < surface (#0B0A19) < paper (#121025) < btn/hairline.
-   Every token defined in :root is redefined here, nothing else in the app
-   needs a `dark:` variant, adding `.dark` to <html> is enough.
+   TESTE: escala neutra do shadcn no lugar do índigo. Quatro degraus de
+   elevação, agora todos acromáticos:
+     background (#0A0A0A) < surface (#111111) < paper (#171717) < hairline (#262626).
+   Todo token de `:root` é redefinido aqui, nada no app precisa de `dark:`.
 --------------------------------------------------------------------------- */
 .dark {
   color-scheme: dark;
-  --background: #05040B;
-  --foreground: #F2F0FA;
-  --card: #121025;
-  --card-foreground: #F2F0FA;
-  --popover: #121025;
-  --popover-foreground: #F2F0FA;
-  --primary: #F2F0FA;
-  --primary-foreground: #0A0914;
-  --secondary: #1B1833;
-  --secondary-foreground: #F2F0FA;
-  --muted: #1B1833;
-  --muted-foreground: #9E99BC;
-  --accent: #1E1A3A;
-  --accent-foreground: #F2F0FA;
-  --destructive: #F0564E;
-  --border: #252047;
-  --input: #2D284F;
-  --ring: #5FB0F5;
-  --chart-1: #5FB0F5;
-  --chart-2: #9E99BC;
-  --chart-3: #726D93;
-  --chart-4: #3F3A62;
-  --chart-5: #272447;
-  --sidebar: #0B0A19;
-  --sidebar-foreground: #CFCBE6;
-  --sidebar-primary: #5FB0F5;
-  --sidebar-primary-foreground: #05040B;
-  --sidebar-accent: #12192F;
-  --sidebar-accent-foreground: #8AC6FA;
-  --sidebar-border: #201B3E;
-  --sidebar-ring: rgba(95, 176, 245, 0.4);
+  /* Base shadcn, valores DEFAULT do template (neutral). */
+  --background: oklch(0.145 0 0);
+  --foreground: oklch(0.985 0 0);
+  --card: oklch(0.205 0 0);
+  --card-foreground: oklch(0.985 0 0);
+  --popover: oklch(0.205 0 0);
+  --popover-foreground: oklch(0.985 0 0);
+  --primary: oklch(0.922 0 0);
+  --primary-foreground: oklch(0.205 0 0);
+  --secondary: oklch(0.269 0 0);
+  --secondary-foreground: oklch(0.985 0 0);
+  --muted: oklch(0.269 0 0);
+  --muted-foreground: oklch(0.708 0 0);
+  --accent: oklch(0.269 0 0);
+  --accent-foreground: oklch(0.985 0 0);
+  --destructive: oklch(0.704 0.191 22.216);
+  --border: oklch(1 0 0 / 10%);
+  --input: oklch(1 0 0 / 15%);
+  --ring: oklch(0.556 0 0);
+  --chart-1: oklch(0.269 0 0);
+  --chart-2: oklch(0.371 0 0);
+  --chart-3: oklch(0.439 0 0);
+  --chart-4: oklch(0.556 0 0);
+  --chart-5: oklch(0.708 0 0);
+  --sidebar: oklch(0.205 0 0);
+  --sidebar-foreground: oklch(0.985 0 0);
+  --sidebar-primary: oklch(0.922 0 0);
+  --sidebar-primary-foreground: oklch(0.205 0 0);
+  --sidebar-accent: oklch(0.269 0 0);
+  --sidebar-accent-foreground: oklch(0.985 0 0);
+  --sidebar-border: oklch(1 0 0 / 10%);
+  --sidebar-ring: oklch(0.556 0 0);
 
-  /* Session surfaces */
-  --session-surface-quote: linear-gradient(110deg, #12172C, #101123, #141930, #12172C);
+  /* Sessão */
+  --session-surface-quote: linear-gradient(110deg, #262626, #202020, #2A2A2A, #262626);
+
+  /* Ver o comentário em `:root`: aqui ele é a superfície da citação
+     bíblica, por referência e não por cópia. */
+  --feed-card: var(--session-surface-quote);
+
+  /* O amarelo QUEIMADO, e ele é assim por obrigação. A faixa cobre os 42% de
+     baixo da linha, onde a tinta do parágrafo é quase branca, e branco só se
+     sustenta sobre amarelo escuro: composto sobre o cartão isto dá #836927,
+     5,0:1 com o branco. O teto para manter AA fica por volta de #8D7029, dez
+     por cento mais claro e indistinguível a olho nu; o creme do tema claro
+     (#FCE9A6) daria 1,2:1 e apagaria a frase inteira dentro da faixa.
+     Clarear aqui exigiria cobrir a linha toda e inverter a tinta, o que é
+     outro desenho, não outro valor. */
   --session-highlight-yellow: rgba(250, 190, 40, 0.44);
-  --session-example-bg: #111224;
-  --session-example-border: #373B60;
-  --session-mention-ink: #8AC6FA;
-  --session-mention-wash: rgba(95, 176, 245, 0.32);
+  --session-example-bg: #1C1C1C;
+  --session-example-border: #333333;
+  --session-mention-ink: #FAFAFA;
+  --session-mention-wash: rgba(255, 255, 255, 0.22);
 
-  /* Scriba palette, dark colorway */
-  --scriba-blue: #5FB0F5;
-  --scriba-blue-hover: #7CC1F8;
-  --scriba-blue-soft: #12192F;
-  --scriba-green: #4FC28B;
-  --scriba-green-hover: #63D19C;
-  --scriba-green-soft: #0D1F1B;
-  --scriba-green-ink: #6FD9A5;
-  --scriba-green-body: #8CB8A3;
+  /* Ver o comentário em `:root`. O véu inverte: branco a 14%, não preto. */
+  --veil-bg: linear-gradient(180deg, rgba(250, 250, 250, 0.14), rgba(250, 250, 250, 0.05));
+  --veil-ring: rgba(250, 250, 250, 0.16);
+
+  /* Paleta monocromática, tema escuro. Quatro degraus de elevação:
+     background(#0A0A0A) < surface(#111111) < paper(#171717) < btn/hairline(#262626) */
+  --scriba-blue: #FAFAFA;
+  --scriba-blue-hover: #E5E5E5;
+  --scriba-blue-soft: #262626;
+  --scriba-green: #E5E5E5;
+  --scriba-green-hover: #D4D4D4;
+  --scriba-green-soft: #262626;
+  --scriba-green-ink: #FAFAFA;
+  --scriba-green-body: #949494;
   --scriba-yellow: #F8C64B;
   --scriba-yellow-hover: #FFD469;
-  --scriba-mint: #10201C;
-  --scriba-mint-ink: #A5DCC5;
-  --scriba-mint-accent: #7CCBAD;
-  --scriba-rose: #221614;
-  --scriba-rose-ink: #F0C5B5;
-  --scriba-rose-accent: #D89E88;
-  --scriba-cream: #221C10;
-  --scriba-cream-ink: #F0DDAB;
-  --scriba-cream-accent: #D8B558;
-  --scriba-lilac: #15192E;
-  --scriba-lilac-ink: #C2CDEC;
-  --scriba-lilac-accent: #94A5D0;
-  --scriba-ink-strong: #F2F0FA;
-  /* Mesma escala do tema claro, invertida: quatro degraus de ~1,5x, o piso
-     calibrado pelo fundo de MENOR contraste (aqui `--scriba-bubble` #16132B, o
-     mais claro dos fundos escuros). O `mute` vinha de 3,56:1, o tema escuro
-     reprovava exatamente como o claro, só que ninguém tinha medido.
-     Contraste sobre paper / surface / bubble / background:
-       ink-strong  16,53 / 17,37 / 16,02 / 18,10
-       ink         11,17 / 11,74 / 10,82 / 12,23
-       ink-soft     7,45 /  7,84 /  7,23 /  8,16
-       ink-mute     5,09 /  5,35 /  4,94 /  5,58   <- piso, pelo bubble */
-  --scriba-ink: #C9C5E3;
-  --scriba-ink-soft: #A5A0C1;
-  --scriba-ink-mute: #8682A3;
-  --scriba-surface: #0B0A19;
-  --scriba-hairline: #252047;
-  --scriba-hairline-soft: #201B3E;
+  --scriba-mint: #262626;
+  --scriba-mint-ink: #FAFAFA;
+  --scriba-mint-accent: #B4B4B4;
+  --scriba-rose: #262626;
+  --scriba-rose-ink: #FAFAFA;
+  --scriba-rose-accent: #B4B4B4;
+  --scriba-cream: #262626;
+  --scriba-cream-ink: #FAFAFA;
+  --scriba-cream-accent: #B4B4B4;
+  --scriba-lilac: #262626;
+  --scriba-lilac-ink: #FAFAFA;
+  --scriba-lilac-accent: #B4B4B4;
+  /* Mesma escala do claro, invertida, ~1,4x por degrau, piso calibrado pelo
+     fundo de MENOR contraste do tema (o bubble, #262626).
+       Contraste sobre paper(#171717) / bubble(#262626) / background(#0A0A0A)
+         ink-strong  16,8 / 14,5 / 19,3
+         ink         11,9 / 10,2 / 13,6
+         ink-soft     8,5 /  7,3 /  9,7
+         ink-mute     5,8 /  5,0 /  6,6   <- o piso */
+  --scriba-ink-strong: #FAFAFA;
+  --scriba-ink: #D4D4D4;
+  --scriba-ink-soft: #B4B4B4;
+  --scriba-ink-mute: #949494;
+  --scriba-surface: #111111;
+  --scriba-hairline: #262626;
+  --scriba-hairline-soft: #1F1F1F;
   --scriba-yellow-light: #FFE29A;
-  --scriba-blue-ink: #8AC6FA;
-  --scriba-rose-body: #B99C8F;
-  --scriba-mint-body: #8DB2A4;
-  --scriba-cream-body: #B7A47A;
-  --scriba-btn-muted: #201B3E;
-  --scriba-btn-muted-hover: #2A264F;
-  --scriba-scroll-thumb: rgba(158, 153, 188, 0.3);
-  --scriba-scroll-thumb-hover: rgba(158, 153, 188, 0.55);
-  --session-typing-dot: #6E7FA0;
-  --session-verse-text: #C6D6E6;
-  --session-verse-border: #3E5F82;
-  --session-chip-ai: #7E9BBC;
+  --scriba-blue-ink: #FAFAFA;
+  --scriba-rose-body: #949494;
+  --scriba-mint-body: #949494;
+  --scriba-cream-body: #949494;
+  --scriba-btn-muted: #262626;
+  --scriba-btn-muted-hover: #333333;
+  --scriba-scroll-thumb: rgba(255, 255, 255, 0.22);
+  --scriba-scroll-thumb-hover: rgba(255, 255, 255, 0.42);
+  --session-typing-dot: #737373;
+  --session-verse-text: #D4D4D4;
+  --session-verse-border: #525252;
+  --session-chip-ai: #8C8C8C;
   --scriba-gold-ink: #E8C66E;
-  --auth-btn-border: #2B2653;
-  --auth-btn-border-hover: #3D3773;
-  --auth-btn-bg-hover: #17142F;
-  --scriba-mint-dark: #6FD2AA;
-  --scriba-bubble: #16132B;
-  --scriba-bubble-ink: #E7E4F5;
-  --scriba-avatar-gradient: linear-gradient(140deg, #4A82EA, #9575F0);
-  --scriba-paper: #121025;
+  --auth-btn-border: #262626;
+  --auth-btn-border-hover: #404040;
+  --auth-btn-bg-hover: #171717;
+  --scriba-mint-dark: #FAFAFA;
+  --scriba-bubble: #262626;
+  --scriba-bubble-ink: #FAFAFA;
+  --scriba-avatar-gradient: linear-gradient(140deg, #525252, #262626);
+  --scriba-paper: #171717;
+  /* VERMELHO semântico, inalterado. */
   --scriba-rec: #F0564E;
-  /* escuro  #FCA5A5 sobre #221115 = 9,55 */
   --scriba-rec-ink: #FCA5A5;
   --scriba-rec-soft: #221115;
-  --scriba-mint-strong: #6FD2AA;
+  --scriba-mint-strong: #B4B4B4;
   --scriba-gold-soft: #1F1A10;
   --scriba-gold-track: #292315;
   --scriba-flash-debit: #291F0E;
-  --scriba-flash-credit: #152215;
+  --scriba-flash-credit: #333333;
   --scriba-yellow-ink: #5A4409;
-  --session-btn-border: #3A4A66;
-  --session-btn-ink: #A9BDD3;
-  --lp-hero: linear-gradient(180deg, #0D1326 0%, #070612 100%);
-  --lp-hero-auth: linear-gradient(180deg, #0B0A19 0%, #05040B 60%);
-  /* Mesma ideia do tema claro, uma oitava abaixo: o índigo já é o fundo aqui,
-     então a banda desce dentro da própria família em vez de virar azul.
-       0% #101834 · 55% #0C1126 · 100% #080C18
-     branco 17,5→19,5 · band-ink 10,5→11,7 · amarelo 11,0→12,2 */
-  --lp-band: linear-gradient(135deg, #101834 0%, #0C1126 55%, #080C18 100%);
-  --lp-band-ink: #B9C9E8;
-  --lp-phone-frame: #030208;
-  /* No escuro o CTA inverte: pastilha clara sobre a página escura, com tinta
-     navy. 15,18:1 no início do gradiente e 12,87:1 no fim.
-     A sombra inverte junto: halo azul sob pastilha branca em página escura
-     suja a borda em vez de assentar o botão. */
-  --scriba-cta: linear-gradient(135deg, #FFFFFF 0%, #E6EDF5 100%);
-  --scriba-cta-ink: #0B2742;
-  --scriba-cta-shadow: rgba(0, 0, 0, 0.45);
-  /* O mesmo esfumaçado do claro, na cor do chão daqui (#05040B). Mesmos sete
-     stops, mesma cauda longa, o motivo está no comentário do tema claro. */
+  --session-btn-border: #404040;
+  --session-btn-ink: #B4B4B4;
+  --lp-hero: linear-gradient(180deg, #141414 0%, #0A0A0A 100%);
+  --lp-hero-auth: linear-gradient(180deg, #141414 0%, #0A0A0A 60%);
+  /* Ver `:root`. A faixa desce uma oitava, como já fazia. 8,4:1 no 0%. */
+  --lp-band: linear-gradient(135deg, #1A1A1A 0%, #121212 55%, #0A0A0A 100%);
+  --lp-band-ink: #B4B4B4;
+  --lp-band-cta: #FAFAFA;
+  --lp-band-cta-ink: #171717;
+  --lp-phone-frame: #050505;
+  /* O CTA inverte, como no shadcn: pastilha clara com tinta escura. */
+  --scriba-cta: linear-gradient(135deg, #FAFAFA 0%, #E5E5E5 100%);
+  --scriba-cta-ink: #171717;
+  --scriba-cta-shadow: rgba(0, 0, 0, 0.5);
   --scriba-nav-fade: linear-gradient(
     to top,
-    rgba(5, 4, 11, 0.92) 0%,
-    rgba(5, 4, 11, 0.7) 22%,
-    rgba(5, 4, 11, 0.45) 44%,
-    rgba(5, 4, 11, 0.24) 64%,
-    rgba(5, 4, 11, 0.1) 80%,
-    rgba(5, 4, 11, 0.03) 92%,
-    rgba(5, 4, 11, 0) 100%
+    rgba(10, 10, 10, 0.92) 0%,
+    rgba(10, 10, 10, 0.7) 22%,
+    rgba(10, 10, 10, 0.45) 44%,
+    rgba(10, 10, 10, 0.24) 64%,
+    rgba(10, 10, 10, 0.1) 80%,
+    rgba(10, 10, 10, 0.03) 92%,
+    rgba(10, 10, 10, 0) 100%
   );
-  /* No escuro o véu do tour ESCURECE menos, não mais: o chão já é #05040B, e
-     repetir a opacidade do claro apagaria a página inteira em volta do furo,
-     deixando o recorte sem contexto nenhum. O anel clareia junto, pelo mesmo
-     motivo do CTA invertido: azul de superfície sobre página escura some. */
-  --scriba-tour-scrim: rgba(2, 2, 8, 0.72);
-  --scriba-tour-ring: rgba(124, 168, 245, 0.6);
+  --scriba-tour-scrim: rgba(0, 0, 0, 0.72);
+  --scriba-tour-ring: rgba(250, 250, 250, 0.5);
 }
 
 /* sm: o header ganha py-[18px] e cresce 8px. */
@@ -686,50 +671,87 @@
     --sidebar-width: 18rem;
   }
 
-  /* Admin table treatment, white surface with generous cell padding and a
-     tinted Scriba header row. Applied via the ADMIN_TABLE_SURFACE constant
-     so /admin/users and /admin/usage tables stay visually consistent. */
+  /* A TABELA DO `dashboard-01`.
+
+     Antes daqui saía um tratamento próprio: cabeçalho de 3rem em versalete
+     espaçado, células de 1rem por 1.25rem, papel no thead e no tbody. Era
+     bonito e era OUTRA tabela, com respiro maior e hierarquia própria. A
+     estética do bloco do shadcn é o contrário disso, e de propósito: o que
+     carrega o desenho não é o respiro da célula, é a moldura, um retângulo de
+     canto arredondado com uma borda de 1px, e o cabeçalho em `--muted` dentro
+     dela.
+
+     O `sticky` no thead é o do bloco. Ele gruda dentro deste contêiner, não
+     na janela, porque o `overflow: hidden` da moldura já cria um contexto de
+     rolagem, e isso vale para o bloco original também: o efeito é o cabeçalho
+     ficar no topo da tabela, não acompanhar a rolagem da página.
+
+     O respiro das células NÃO está aqui: ele mora num `@layer utilities`
+     logo abaixo, e o motivo (que é uma armadilha de cascata, não gosto) está
+     escrito lá. */
   .admin-table {
-    background: var(--scriba-paper);
-  }
-  .admin-table table {
-    background: var(--scriba-paper);
+    overflow: hidden;
+    border: 1px solid var(--border);
+    border-radius: var(--radius);
+    background: var(--card);
   }
   .admin-table thead {
-    background: var(--scriba-paper);
-    border-bottom: 1px solid var(--scriba-hairline);
-  }
-  .admin-table th {
-    height: 3rem;
-    padding: 0 1.25rem;
-    font-size: 11px;
-    font-weight: 600;
-    letter-spacing: 0.08em;
-    text-transform: uppercase;
-    color: var(--scriba-ink-mute);
-  }
-  .admin-table td {
-    padding: 1rem 1.25rem;
-  }
-  .admin-table tbody tr {
-    border-color: var(--scriba-hairline);
-  }
-  /* No celular a tabela rola na horizontal, e 1,25rem de cada lado de cada
-     célula é largura gasta em respiro: a mesma tabela pedia duas passadas de
-     rolagem para mostrar o que cabia em uma. O respiro volta a partir de sm. */
-  @media (width < 40rem) {
-    .admin-table th {
-      height: 2.5rem;
-      padding: 0 0.75rem;
-    }
-    .admin-table td {
-      padding: 0.75rem;
-    }
+    position: sticky;
+    top: 0;
+    z-index: 10;
+    background: var(--muted);
   }
   /* Rolar a tabela até o fim no touch não pode virar gesto de "voltar" do
      navegador nem arrastar a página inteira junto. */
   .admin-table [data-slot="table-container"] {
     overscroll-behavior-x: contain;
+  }
+}
+
+/* O RESPIRO DAS CÉLULAS, e por que ele mora em `utilities` e não em `base`.
+
+   A `<Table>` de `ui/table.tsx` traz `h-10 px-2` no `th` e `p-2` no `td`, e
+   esses são UTILITÁRIOS. Entre camadas não existe desempate por
+   especificidade: `utilities` vem depois de `base` e ganha, ponto. Uma regra
+   `.admin-table td { padding: … }` escrita lá em cima é sobrescrita pelo
+   `p-2` por mais específica que pareça, e falha em SILÊNCIO, a tabela
+   simplesmente continua com 8px e nada acusa.
+
+   Este arquivo já tinha caído nisso: a versão anterior da tabela do admin
+   declarava `height: 3rem; padding: 0 1.25rem` no `th` em `@layer base`, e
+   esse pedaço nunca valeu, só o `font-size`, o versalete e a cor pegavam,
+   porque para esses não havia utilitário concorrente. O respiro de 1.25rem
+   que o `AGENTS.md` descrevia nunca esteve na tela.
+
+   Daqui, dentro da MESMA camada dos utilitários, a especificidade volta a
+   decidir, e `.admin-table td` (0,1,1) ganha de `.p-2` (0,1,0).
+
+   Os números: 1rem na horizontal, 0.75rem na vertical. O `p-2` do shadcn é
+   calibrado para as tabelas curtas do exemplo; as daqui carregam moeda, data e
+   porcentagem em dez ou doze colunas, e a 8px a régua que separa um
+   "R$ 1.234,56" do seguinte passa a ser a borda da linha, não o espaço. Abaixo
+   de `sm` a horizontal cai para 0.75rem: a tabela rola de lado no celular, e
+   ali cada 0.25rem em cada lado de cada célula é largura que some do que se lê
+   numa passada.
+
+   O lugar de mexer em respiro é AQUI, para as 15 tabelas de uma vez. Um `px-`
+   avulso numa `<TableCell>` devolve ao painel duas tabelas com medidas
+   diferentes, que é o que a classe única existe para impedir. */
+@layer utilities {
+  .admin-table th {
+    height: 2.75rem;
+    padding: 0 1rem;
+  }
+  .admin-table td {
+    padding: 0.75rem 1rem;
+  }
+  @media (width < 40rem) {
+    .admin-table th {
+      padding: 0 0.75rem;
+    }
+    .admin-table td {
+      padding: 0.75rem;
+    }
   }
 }
 
@@ -748,6 +770,33 @@
   /* Botão primário: landing E área logada. O hover é `filter`, não cor de
      fundo, o fundo é gradiente e inverte por tema, então clarear/escurecer
      serve aos dois sem um segundo par de tokens. */
+/* O véu. Nasceu como a pastilha da referência bíblica e virou tratamento:
+     hoje veste também os ícones de tipo (YouTube, transcrição, gravação,
+     estudo) dos cartões de /recordings e /studies. Por isso o nome descreve o
+     EFEITO e não o componente, os dois usos são a mesma superfície com formas
+     diferentes.
+
+     Só a superfície mora aqui; forma, respiro e interação continuam em
+     utilitário no ponto de uso, como no `.scriba-cta` logo abaixo.
+
+     O anel é `box-shadow: inset`, e não `border`: uma borda de 1px mudaria a
+     altura da pastilha e, com ela, a linha de base do `<figcaption>` em que
+     ela vive. O inset pinta por dentro e não mexe na caixa. */
+/* A faixa de marca-texto da frase de efeito, compartilhada pelos cinco
+     lugares que a desenham. Era a mesma `bg-[linear-gradient(…)]` copiada
+     inteira em cada um; o desenho não mudou, só deixou de existir em cinco
+     cópias. */
+  .highlight-phrase {
+    background-image: linear-gradient(
+      transparent 58%,
+      var(--session-highlight-yellow) 58%
+    );
+  }
+  .veil-chip {
+    background-image: var(--veil-bg);
+    color: var(--scriba-ink);
+    box-shadow: inset 0 0 0 1px var(--veil-ring);
+  }
   .scriba-cta {
     transition: filter 0.18s ease, box-shadow 0.18s ease;
     &:hover { filter: brightness(0.95); box-shadow: 0 14px 30px var(--scriba-cta-shadow); }
@@ -807,14 +856,14 @@
   }
   .lp-lift {
     transition: box-shadow 0.25s ease, border-color 0.25s ease;
-    &:hover { box-shadow: 0 16px 36px rgba(79,168,240,0.18); border-color: #D9E7F5; }
+    &:hover { box-shadow: 0 16px 36px rgba(0,0,0,0.10); border-color: var(--scriba-hairline); }
   }
   .lp-tile {
     transition: box-shadow 0.25s ease, filter 0.25s ease;
-    &:hover { box-shadow: 0 10px 22px rgba(79,168,240,0.14); filter: brightness(0.98); }
+    &:hover { box-shadow: 0 10px 22px rgba(0,0,0,0.08); filter: brightness(0.98); }
   }
-  .phone-frame { box-shadow: 0 26px 54px rgba(29,90,140,0.22); }
-  .phone-frame-dark { box-shadow: 0 30px 62px rgba(20,66,105,0.34); }
+  .phone-frame { box-shadow: 0 26px 54px rgba(0,0,0,0.16); }
+  .phone-frame-dark { box-shadow: 0 30px 62px rgba(0,0,0,0.42); }
   .phone-mask {
     mask-image: linear-gradient(180deg, #000 82%, transparent 100%);
     -webkit-mask-image: linear-gradient(180deg, #000 82%, transparent 100%);
@@ -822,35 +871,40 @@
   .coin-hex {
     clip-path: polygon(50% 0, 100% 25%, 100% 75%, 50% 100%, 0 75%, 0 25%);
   }
+  /* O mesmo desenho do `<Card>` de `ui/card.tsx`, para o punhado de blocos do
+     admin que ainda são `<div>` e não passaram pelo componente. Alvo a abater:
+     quando o último deles virar `<Card>`, esta classe sai. */
   .admin-card-surface {
-    @apply rounded-2xl border border-scriba-hairline-soft bg-scriba-paper shadow-[0_4px_14px_rgba(79,168,240,0.06)];
+    @apply rounded-xl border bg-card text-card-foreground shadow-sm;
   }
 
   /* Scoped tone override for /studies + /recording/[id]/deepening surfaces.
      Rebinds the shared session-* tokens (used by BlockRenderer for bibleQuote,
-     conclusion, relatedVerse) to the green colorway without touching the
-     tokens themselves, summary surfaces keep the blue palette globally. */
+     conclusion, relatedVerse) without touching the tokens themselves.
+
+     TESTE monocromático: a diferença entre estudo e resumo, que era verde
+     contra azul, virou meio degrau de luminância. Na prática as duas
+     superfícies quase não se distinguem mais, o bloco continua aqui só para
+     que a classe não fique apontando para nada. */
   .tone-study {
-    --session-surface-quote: linear-gradient(110deg, #F1FAF5, #F9FDFB, #ECF7F1, #F1FAF5);
-    --session-verse-text: #2F5E48;
-    --session-verse-border: #B4E3C7;
-    --session-chip-ai: #7DAE94;
-    --session-highlight-yellow: #CFEBD9;
-    --session-example-bg: #EFF7F1;
-    --session-example-border: #CDE4D6;
-    --session-mention-ink: #287C56;
-    --session-mention-wash: #C7E7D4;
+    --session-surface-quote: linear-gradient(110deg, #F0F0F0, #F7F7F7, #EDEDED, #F0F0F0);
+    --session-verse-text: #404040;
+    --session-verse-border: #C4C4C4;
+    --session-chip-ai: #737373;
+    --session-example-bg: #F0F0F0;
+    --session-example-border: #DCDCDC;
+    --session-mention-ink: #171717;
+    --session-mention-wash: #DCDCDC;
   }
   .dark .tone-study {
-    --session-surface-quote: linear-gradient(110deg, #0F201C, #0D141C, #10231E, #0F201C);
-    --session-verse-text: #BCE0CD;
-    --session-verse-border: #366B52;
-    --session-chip-ai: #7DAE94;
-    --session-highlight-yellow: rgba(79, 194, 139, 0.28);
-    --session-example-bg: #0E1915;
-    --session-example-border: #2E4A3C;
-    --session-mention-ink: #6FD9A5;
-    --session-mention-wash: rgba(79, 194, 139, 0.30);
+    --session-surface-quote: linear-gradient(110deg, #2E2E2E, #282828, #323232, #2E2E2E);
+    --session-verse-text: #D4D4D4;
+    --session-verse-border: #5C5C5C;
+    --session-chip-ai: #8C8C8C;
+    --session-example-bg: #232323;
+    --session-example-border: #3C3C3C;
+    --session-mention-ink: #FAFAFA;
+    --session-mention-wash: rgba(255, 255, 255, 0.26);
   }
 }
 
@@ -880,13 +934,13 @@
 
   @keyframes scriba-halo {
     0% {
-      box-shadow: 0 0 0 0 rgba(79, 168, 240, 0.45);
+      box-shadow: 0 0 0 0 rgba(115, 115, 115, 0.45);
     }
     70% {
-      box-shadow: 0 0 0 26px rgba(79, 168, 240, 0);
+      box-shadow: 0 0 0 26px rgba(115, 115, 115, 0);
     }
     100% {
-      box-shadow: 0 0 0 0 rgba(79, 168, 240, 0);
+      box-shadow: 0 0 0 0 rgba(115, 115, 115, 0);
     }
   }
 

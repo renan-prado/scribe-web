@@ -179,7 +179,7 @@ export function StudyBlockRenderer({ block }: { block: StudyBlock }) {
     case "question":
       return (
         <figure className="flex flex-col gap-2 border-l-[2.5px] border-scriba-green pl-4">
-          <span className={`${LABEL} text-scriba-green`}>Para continuar pensando</span>
+          <span className={`${LABEL} text-scriba-ink-mute`}>Para continuar pensando</span>
           <blockquote className="text-pretty text-[17px] font-medium leading-snug text-scriba-ink-strong">
             {block.text}
           </blockquote>

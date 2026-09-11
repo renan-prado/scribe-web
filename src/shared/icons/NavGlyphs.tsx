@@ -4,6 +4,17 @@
  * porquê está no cabeçalho da barra. Existe um `public/icons/recording.svg`
  * para ele, sem componente correspondente de propósito.
  *
+ * **Três deles também desenham a barra do DESKTOP** (`AppNav`): feed, list e
+ * study. Era lucide lá (`Rss` / `List` / `BookOpen`), e o mesmo destino tinha
+ * dois ícones conforme o aparelho. O `profile` fica só no celular, porque no
+ * desktop aquele lugar é o avatar do `UserMenu`.
+ *
+ * Consequência de terem dois consumidores: **o `size` não é um número só.** A
+ * barra do celular usa 20px (`size-5`) contra um rótulo de 10px; o `AppNav`
+ * usa 12px (`size-3`) contra um rótulo de 14px, que é o que iguala o peso do
+ * lucide de 14px que estava lá, pela razão de preenchimento explicada abaixo.
+ * Ao trocar um desenho, confira os DOIS.
+ *
  * São PREENCHIDOS, não traçados, não têm `stroke`, e por isso `strokeWidth`
  * não faz nada aqui. Quem vier do lucide vai estranhar: lá o peso se ajusta
  * pela espessura do traço; aqui o desenho é sólido e o único controle é o

@@ -22,13 +22,18 @@ depois de ter afirmado admin, e nunca vai para o navegador.
 
 ## A moldura (`app/admin/layout.tsx` + `AdminSidebar`)
 
-Quatro coisas do chrome que quem mexer aqui não pode desfazer:
+Cinco coisas do chrome que quem mexer aqui não pode desfazer:
 
-- **A faixa do topo é `--scriba-surface`, a MESMA cor do conteúdo, não
-  `--scriba-paper`.** Papel é a cor dos CARTÕES; com ela, a faixa lia como um
-  cartão branco colado no alto de uma página cinza, e a hairline de baixo virava
-  a única coisa separando duas superfícies que deveriam ser uma só. O
-  `backdrop-blur` fica porque ela é `sticky` e o conteúdo passa por baixo.
+- **A sidebar é `variant="inset"`, e é ela que cria o degrau de superfície.**
+  O wrapper pinta `bg-sidebar` e o `SidebarInset` é o retângulo arredondado em
+  `bg-background` por cima. A faixa do topo NÃO pinta cor própria: ela herda o
+  chão do inset e se separa pela borda de baixo, como a `SiteHeader` do bloco.
+  Antes era `bg-scriba-surface` fixo nos dois, o que anulava justamente o
+  degrau que o inset existe para criar. O `backdrop-blur` fica porque ela é
+  `sticky` e o conteúdo passa por baixo, o que no bloco original não acontece.
+- **A altura da faixa é `--header-height`, declarada no `SidebarProvider`**, e
+  vale 56px, não os 48px do bloco: o `SidebarTrigger` tem 44px no celular por
+  WCAG 2.5.5 (ver abaixo) e precisa de folga em volta.
 - **`SidebarInset` precisa de `min-w-0`.** É o que deixa uma tabela larga rolar
   DENTRO do próprio cartão: sem ele o item flex adota a largura mínima do
   conteúdo, e quem ganha barra horizontal é a página inteira, a sidebar sai da
@@ -63,15 +68,61 @@ toque, e um alvo de 28px encostado no canto superior esquerdo erra na maioria
 dos toques de polegar. Errava tantas vezes seguidas que parecia botão quebrado.
 44px é o mínimo do WCAG 2.5.5 e cabe folgado nos 56px da faixa.
 
-**As quatro tabelas do painel usam a mesma classe**
-(`admin-table admin-card-surface overflow-hidden`, definida em
-`app/globals.css`), e ela encolhe o respiro das células abaixo de `sm`: no
-celular a tabela rola na horizontal, e 1,25rem de cada lado de cada célula é
-largura gasta em nada.
+## A estética: o bloco `dashboard-01` do shadcn
 
-**As grades de KPI viram quatro colunas só em `xl`, não em `lg`.** Em `lg` a
-sidebar já come 16rem, e um "R$ 12.345,67" não cabia nos ~175px que sobravam
-por cartão. Vale para o mesmo motivo na barra de filtros de `/admin/usage`.
+O painel tinha uma linguagem visual PRÓPRIA, cabeçalho de tabela em versalete
+espaçado, células de 1,25rem, cartões de KPI com pastilha colorida, título em
+`text-[22px] font-light`. Ela foi trocada pela do bloco `dashboard-01`
+(`npx shadcn@latest add dashboard-01`). O que quem mexer aqui precisa saber:
+
+**As 15 tabelas usam UMA classe, `admin-table`.** Ela é a MOLDURA
+(`overflow: hidden`, borda de 1px, canto arredondado, `bg-card`, `thead`
+`sticky` em `bg-muted`) mais o RESPIRO das células, 1rem na horizontal e
+0.75rem na vertical, caindo para 0.75rem na horizontal abaixo de `sm` porque
+ali a tabela rola de lado. O `p-2` que a `<Table>` do shadcn traz é calibrado
+para as tabelas curtas do bloco de exemplo; as daqui carregam moeda, data e
+porcentagem em dez ou doze colunas. **O lugar de mexer em respiro é a classe**,
+nunca um `px-` avulso numa `<TableCell>`, ou o painel volta a ter tabelas com
+medidas diferentes.
+
+> **O respiro mora num `@layer utilities`, e isso não é capricho.** `h-10
+> px-2` e `p-2` vêm da `<Table>` como UTILITÁRIOS, e entre camadas não há
+> desempate por especificidade: `utilities` vem depois de `base` e ganha. Uma
+> regra de padding escrita em `@layer base` é engolida em SILÊNCIO, a tabela
+> continua com 8px e nada acusa. **Já aconteceu neste arquivo**: a tabela
+> anterior à reforma declarava `height: 3rem; padding: 0 1.25rem` no `th` em
+> `@layer base`, e só o `font-size`, o versalete e a cor pegavam, porque para
+> esses não havia utilitário concorrente. O respiro de 1,25rem que este
+> documento descrevia nunca esteve na tela.
+
+**Os KPIs são `<Card>` dentro de `<KpiGrid>`, e o gradiente mora na GRADE.**
+`*:data-[slot=card]:bg-gradient-to-t from-primary/5 to-card` alcança todo
+filho com slot de cartão; é por isso que `ui/card.tsx` emite `data-slot`, e é
+por isso que um KPI solto fora da grade fica chapado. No escuro o gradiente é
+desligado (`dark:*:data-[slot=card]:bg-card`), como no bloco.
+
+**A cor deixou de ser o sinal.** Cada KPI trazia um `tone` (`blue` / `rose` /
+`mint` / `cream`) e, nos dois ou três lugares em que aquilo significava alguma
+coisa (`netProfitCents >= 0 ? "blue" : "rose"`), o significado dependia de quem
+lia saber o que rosa queria dizer. O sinal agora é o `trend` do `KpiCard`, a
+pastilha de tendência do `CardAction`, com texto: "no vermelho", "em atraso",
+"abaixo do alvo". Um KPI sem tendência simplesmente não tem pastilha; não
+invente porcentagem para preencher o espaço.
+
+**As grades de KPI viram quatro colunas só em `xl`, não no `@5xl/main` do
+bloco.** Em `lg` a sidebar já come 16rem, e um "R$ 12.345,67" não cabia nos
+~175px que sobravam por cartão. Vale para o mesmo motivo na barra de filtros de
+`/admin/usage`.
+
+**O `max-w-[1600px]` do conteúdo não é do bloco e fica.** Sem ele uma tabela de
+finanças se estica por um monitor inteiro e a linha deixa de ser lida de ponta
+a ponta.
+
+O que deste bloco NÃO foi trazido, e por quê: arrastar linha (`@dnd-kit`),
+escolher colunas e paginar (`@tanstack/react-table`) e o gráfico de área
+(`recharts`). São quatro dependências novas e a reescrita das 15 tabelas, não
+estética. `.admin-card-surface` sobrevive como o mesmo desenho do `<Card>`
+para os blocos que ainda são `<div>`; quando o último virar `<Card>`, ela sai.
 
 ## As telas privilegiadas não vazam no bundle
 

@@ -109,7 +109,7 @@ export function PartnersManager({
             : "Nenhum parceiro corresponde à busca."}
         </p>
       ) : (
-        <div className="admin-table admin-card-surface overflow-hidden">
+        <div className="admin-table">
           <Table>
             <TableHeader>
               <TableRow>

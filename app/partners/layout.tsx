@@ -3,7 +3,6 @@ import Link from "next/link";
 import { notFound } from "next/navigation";
 import type { ReactNode } from "react";
 import { PageTransition } from "@/components/PageTransition";
-import { ThemeToggle } from "@/components/ThemeToggle";
 import { AccountDisabled } from "@/features/auth/components/AccountDisabled";
 import { UserMenu } from "@/features/auth/components/UserMenu";
 import { getCurrentPartner } from "@/lib/auth/require-partner";
@@ -52,7 +51,6 @@ export default async function PartnersLayout({ children }: { children: ReactNode
           <ScribaLogo size={26} textClassName="text-[19px]" subtitle="Parceiros" />
         </Link>
         <div className="flex items-center gap-3">
-          <ThemeToggle compact />
           <UserMenu
             variant="partners"
             displayName={profile?.displayName ?? partner.displayName}

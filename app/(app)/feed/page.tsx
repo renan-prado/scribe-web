@@ -227,7 +227,7 @@ function ReflectionCard({
   return (
     <article
       data-tour="feed-reflection"
-      className="flex flex-col gap-4 rounded-[24px] border border-scriba-ink-strong/20 bg-scriba-paper p-6 shadow-[0_6px_22px_rgba(79,168,240,0.13)]"
+      className="flex flex-col gap-4 rounded-[24px] border border-scriba-ink-strong/20 bg-scriba-paper p-6"
     >
       <div className="flex items-center gap-2">
         <div className="h-1.5 w-6 rounded-full bg-scriba-hairline" />

@@ -1,7 +1,7 @@
 "use client";
 
 import { ArrowDownWideNarrow, ArrowUpNarrowWide, Loader2 } from "lucide-react";
-import { Fragment, useCallback, useEffect, useState } from "react";
+import { Fragment, useCallback, useEffect, useRef, useState } from "react";
 import {
   Select,
   SelectContent,
@@ -48,8 +48,23 @@ function computeStudyCtaSlots(itemCount: number, ctaSessionCount: number): Map<n
 
 /**
  * Feed paginado (releia / lembra / frase marcante) do /feed. Consome GET /api/feed:
- * SSR entrega a primeira página, o "Ver mais" pede as próximas 10, e o
- * seletor "Ordenar por" refaz do zero em outra ordem.
+ * SSR entrega a primeira página, a rolagem pede as próximas 10, e o seletor
+ * "Ordenar por" refaz do zero em outra ordem.
+ *
+ * **A paginação é automática, por `IntersectionObserver`.** Havia um botão
+ * "Ver mais"; ele saiu. Três detalhes do jeito automático, todos aprendidos
+ * de modos de falhar diferentes:
+ *
+ * 1. **A sentinela fica SEMPRE montada**, mesmo sem mais páginas. Se ela
+ *    aparecesse só com `hasMore`, o observer seria criado antes de o elemento
+ *    existir, e o `ref` chegaria nulo no efeito de montagem.
+ * 2. **Uma página que chega VAZIA encerra a lista**, mesmo que a API diga
+ *    `hasMore: true`. Sem isso o contador de itens não avança, o efeito abaixo
+ *    dispara de novo e o feed entra num laço de requisições sem nada na tela
+ *    mudando, que é o pior tipo de laço: invisível.
+ * 3. **Erro NÃO tenta de novo sozinho.** A rede falhando com carregamento
+ *    automático vira uma rajada contra um servidor que já está mal; ali o
+ *    botão "Tentar de novo" continua existindo, e é o único que sobrou.
  *
  * Quando `hasMore=false`, exibimos um sticker + copy sutil convidando o
  * usuário a gravar de novo, não empurra CTA, só sinaliza fim de fila.
@@ -111,7 +126,9 @@ export function PaginatedFeed({
           total: number;
         };
         setItems((prev) => (replace ? body.items : [...prev, ...body.items]));
-        setHasMore(body.hasMore);
+        // Página vazia encerra a lista mesmo com `hasMore: true`, ver o
+        // cabeçalho: é o que impede o laço silencioso de requisições.
+        setHasMore(body.hasMore && body.items.length > 0);
         setState("idle");
       } catch {
         setState("error");
@@ -125,9 +142,41 @@ export function PaginatedFeed({
     void fetchPage(order, 0, true);
   }, [order, initialOrder, fetchPage]);
 
-  const onLoadMore = () => {
+  // A sentinela e o carregador ficam em `ref` para que o observer seja criado
+  // UMA vez: recriá-lo a cada render (o carregador muda junto com `items`)
+  // faria o navegador reavaliar a interseção do zero a cada página, e uma
+  // sentinela ainda visível dispararia de novo no mesmo quadro.
+  const sentinelRef = useRef<HTMLDivElement | null>(null);
+  const inViewRef = useRef(false);
+  const loadMoreRef = useRef<() => void>(() => {});
+  loadMoreRef.current = () => {
+    if (!hasMore || state !== "idle") return;
     void fetchPage(order, items.length, false);
   };
+
+  useEffect(() => {
+    const el = sentinelRef.current;
+    if (!el || typeof IntersectionObserver === "undefined") return;
+    const io = new IntersectionObserver(
+      (entries) => {
+        inViewRef.current = entries[0]?.isIntersecting ?? false;
+        if (inViewRef.current) loadMoreRef.current();
+      },
+      // Puxa a próxima página uma tela antes do fim, para o conteúdo chegar
+      // antes de o usuário encostar no fundo e ver o vazio.
+      { rootMargin: "600px 0px" }
+    );
+    io.observe(el);
+    return () => io.disconnect();
+  }, []);
+
+  // O observer só avisa quando a interseção MUDA. Numa tela alta, a sentinela
+  // continua visível depois de a página chegar, e sem isto o feed pararia de
+  // crescer até o usuário rolar um pixel.
+  // biome-ignore lint/correctness/useExhaustiveDependencies: o alvo é a MUDANÇA de página/estado; o carregador vive num ref de propósito
+  useEffect(() => {
+    if (inViewRef.current) loadMoreRef.current();
+  }, [items.length, state, hasMore]);
 
   return (
     <div className="flex flex-col gap-5">
@@ -166,11 +215,13 @@ export function PaginatedFeed({
         </ol>
       )}
 
+      {/* Sempre montada, com ou sem próxima página. Ver o cabeçalho. */}
+      <div ref={sentinelRef} aria-hidden className="h-px w-full" />
+
       <FeedTail
         state={state}
         hasMore={hasMore}
         hasAnyItems={items.length > 0}
-        onLoadMore={onLoadMore}
         onRetry={() => void fetchPage(order, items.length, false)}
       />
     </div>
@@ -222,13 +273,11 @@ function FeedTail({
   state,
   hasMore,
   hasAnyItems,
-  onLoadMore,
   onRetry,
 }: {
   state: FetchState;
   hasMore: boolean;
   hasAnyItems: boolean;
-  onLoadMore: () => void;
   onRetry: () => void;
 }) {
   if (state === "error") {
@@ -249,26 +298,13 @@ function FeedTail({
   }
 
   if (hasMore) {
+    // Sem botão: o que sobra é o AVISO de que mais coisa está vindo. O
+    // `role="status"` é o que substitui, para quem usa leitor de tela, o
+    // controle que a rolagem automática tirou da tela.
     return (
-      <div className="flex justify-center pt-1">
-        <button
-          type="button"
-          onClick={onLoadMore}
-          disabled={state === "loading"}
-          className={cn(
-            "inline-flex items-center gap-2 rounded-full border border-scriba-hairline-soft bg-scriba-paper px-5 py-2.5 text-[11px] font-semibold uppercase tracking-wider text-scriba-ink-soft transition-colors hover:border-scriba-blue-soft hover:text-scriba-blue-ink",
-            state === "loading" && "opacity-60"
-          )}
-        >
-          {state === "loading" ? (
-            <>
-              <Loader2 className="size-3.5 animate-spin" aria-hidden />
-              Carregando
-            </>
-          ) : (
-            "Ver mais"
-          )}
-        </button>
+      <div className="flex justify-center py-3" role="status">
+        <Loader2 className="size-4 animate-spin text-scriba-ink-mute" aria-hidden />
+        <span className="sr-only">Carregando mais itens do feed</span>
       </div>
     );
   }

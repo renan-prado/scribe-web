@@ -448,7 +448,7 @@ type StepCardProps = {
 
 function StepCard({ step, title, body, icon }: StepCardProps) {
   return (
-    <div className="lp-lift flex flex-col gap-3.5 rounded-[24px] border border-scriba-hairline bg-scriba-paper p-6 shadow-[0_8px_26px_rgba(79,168,240,.09)] sm:rounded-[26px] sm:p-8">
+    <div className="lp-lift flex flex-col gap-3.5 rounded-[24px] border border-scriba-hairline bg-scriba-paper p-6 shadow-[0_8px_26px_rgba(0,0,0,.09)] sm:rounded-[26px] sm:p-8">
       <div className="flex items-center justify-between">
         <div className="text-[11px] font-semibold uppercase tracking-[.1em] text-scriba-ink-mute">
           {step}
@@ -566,7 +566,7 @@ function Resumo() {
             {SUMMARY_BLOCKS.map((b) => (
               <div
                 key={b.title}
-                className="lp-lift flex flex-col gap-2.5 rounded-[20px] border border-scriba-hairline bg-scriba-paper p-4 shadow-[0_4px_16px_rgba(79,168,240,.06)] sm:p-5"
+                className="lp-lift flex flex-col gap-2.5 rounded-[20px] border border-scriba-hairline bg-scriba-paper p-4 shadow-[0_4px_16px_rgba(0,0,0,.06)] sm:p-5"
               >
                 <div className="flex items-center gap-2.5">
                   <span
@@ -714,7 +714,7 @@ type TestimonialCardProps = {
 
 function TestimonialCard({ quote, name, title, avatarSrc }: TestimonialCardProps) {
   return (
-    <div className="flex flex-col gap-3.5 rounded-[24px] border border-scriba-hairline bg-scriba-paper p-6 shadow-[0_8px_24px_rgba(79,168,240,.08)] sm:rounded-[26px] sm:p-8">
+    <div className="flex flex-col gap-3.5 rounded-[24px] border border-scriba-hairline bg-scriba-paper p-6 shadow-[0_8px_24px_rgba(0,0,0,.08)] sm:rounded-[26px] sm:p-8">
       <div className="text-pretty text-[15px] font-normal leading-[1.55] text-scriba-ink sm:text-[16.5px]">
         {quote}
       </div>
@@ -876,7 +876,7 @@ function PlanCard({
       className={cn(
         "relative flex flex-col gap-[22px] rounded-[24px] bg-scriba-paper p-6 sm:rounded-[26px] sm:p-8",
         isPrimary
-          ? "border-[1.5px] border-scriba-blue shadow-[0_16px_40px_rgba(79,168,240,.18)]"
+          ? "border-[1.5px] border-scriba-blue shadow-[0_16px_40px_rgba(0,0,0,.18)]"
           : "border border-scriba-hairline"
       )}
     >
@@ -979,25 +979,34 @@ function PlanCard({
 function FinalCTA() {
   return (
     <section className="mx-auto max-w-[1200px] px-5 py-11 sm:px-10 sm:py-24">
-      <div className="relative flex flex-col gap-4 overflow-hidden rounded-[30px] bg-[linear-gradient(135deg,#33414F_0%,#1F5E92_100%)] p-9 text-white sm:gap-3.5 sm:rounded-[34px] lg:flex-row lg:items-center lg:justify-between lg:gap-12 lg:p-16">
-        <div className="pointer-events-none absolute -top-[90px] right-[60px] h-[340px] w-[340px] rounded-full bg-[radial-gradient(circle,rgba(248,198,75,.22)_0%,rgba(248,198,75,0)_70%)]" />
+      {/* A MESMA faixa da seção "Sua biblioteca" e do bloco final dos
+          parceiros (`--lp-band`), não mais um gradiente azul escrito à mão
+          aqui. Eram três literais, `#33414F`/`#1F5E92` no fundo e
+          `#CFE4F3`/`#AFCBE0` nos textos, que não trocavam com o tema e eram o
+          "azulzão" que sobrou da paleta antiga. */}
+      <div className="relative flex flex-col gap-4 overflow-hidden rounded-[30px] bg-[image:var(--lp-band)] p-9 text-white sm:gap-3.5 sm:rounded-[34px] lg:flex-row lg:items-center lg:justify-between lg:gap-12 lg:p-16">
+        {/* Azul, como os halos do hero: com o botão amarelo fora daqui, o
+            dourado deste halo era a última coisa amarela do bloco e ficava
+            sozinho. O `.22` é o do halo original, não o `.16` do hero: aqui
+            ele brilha sobre a faixa escura, não sobre o chão da página. */}
+        <div className="pointer-events-none absolute -top-[90px] right-[60px] h-[340px] w-[340px] rounded-full bg-[radial-gradient(circle,rgba(79,168,240,.22)_0%,rgba(79,168,240,0)_70%)]" />
         <div className="relative flex max-w-[620px] flex-col gap-3">
           <div className="text-pretty text-[28px] font-semibold leading-[1.16] tracking-[-.022em] lg:text-[38px]">
             Neste domingo, ouça sem medo de esquecer.
           </div>
-          <div className="text-[14px] font-light leading-[1.6] text-[#CFE4F3] lg:text-[16px] lg:leading-[1.62]">
+          <div className="text-[14px] font-light leading-[1.6] text-lp-band-ink lg:text-[16px] lg:leading-[1.62]">
             Crie sua conta em menos de um minuto e grave seu primeiro sermão.
           </div>
         </div>
         <div className="relative flex flex-none flex-col items-stretch gap-3">
           <LandingCta
-            className="lp-cta-yellow inline-flex items-center justify-center gap-2.5 rounded-[26px] bg-scriba-yellow py-[17px] px-[38px] text-[13px] font-semibold uppercase tracking-[.04em] text-scriba-yellow-ink shadow-[0_10px_24px_rgba(0,0,0,.2)]"
+            className="lp-cta-yellow inline-flex items-center justify-center gap-2.5 rounded-[26px] bg-lp-band-cta py-[17px] px-[38px] text-[13px] font-semibold uppercase tracking-[.04em] text-lp-band-cta-ink shadow-[0_10px_24px_rgba(0,0,0,.2)]"
             // currentColor: a pena acompanha o âmbar escuro do texto, em vez de
             // sumir em branco sobre o amarelo
             icon={<ScribaMark size={20} />}
             label="Começar grátis"
           />
-          <div className="text-center text-[11px] font-light text-[#AFCBE0] lg:text-[11.5px]">
+          <div className="text-center text-[11px] font-light text-lp-band-ink lg:text-[11.5px]">
             Sem cartão de crédito
           </div>
         </div>
@@ -1032,7 +1041,7 @@ function PhoneFrame({ children, dark = false, chrome }: PhoneFrameProps) {
             />
           </div>
         </div>
-        <div className="absolute left-1/2 top-[12px] z-10 h-6.5 w-26 -translate-x-1/2 rounded-[16px] bg-[#0B1220]" />
+        <div className="absolute left-1/2 top-[12px] z-10 h-6.5 w-26 -translate-x-1/2 rounded-[16px] bg-[#050505]" />
         {chrome ? (
           <div className="absolute inset-x-0 top-11 z-[5] bg-scriba-paper/95 backdrop-blur">
             {chrome}
@@ -1097,7 +1106,7 @@ function LibraryMock() {
             {group.items.map((s) => (
               <li
                 key={s.title}
-                className="rounded-3xl border border-scriba-hairline-soft bg-scriba-paper p-4 shadow-[0_4px_14px_rgba(79,168,240,0.08)]"
+                className="rounded-3xl border border-scriba-hairline-soft bg-scriba-paper p-4 shadow-[0_4px_14px_rgba(0,0,0,0.08)]"
               >
                 <div className="flex min-w-0 flex-col gap-1.5">
                   <span className="text-pretty text-[15px] font-semibold leading-tight tracking-tight text-scriba-ink-strong">

@@ -1,5 +1,4 @@
 import Link from "next/link";
-import { ThemeToggle } from "@/components/ThemeToggle";
 import { cn } from "@/lib/utils";
 import { APP_VERSION } from "@/lib/version";
 import { ScribaLogo, ScribaMark } from "@/shared/brand";
@@ -38,11 +37,6 @@ export function LandingHeader({ onLandingPage = false }: LandingHeaderProps) {
           </a>
         </div>
         <div className="flex items-center gap-2 sm:gap-3.5">
-          {/* Mobile/tablet: botão-ícone compacto pra não brigar com o CTA em
-              telas estreitas. No desktop (lg) vira o pill completo, junto do
-              "Entrar" e da navegação. */}
-          <ThemeToggle compact className="lg:hidden" />
-          <ThemeToggle className="hidden lg:inline-flex" />
           <Link
             href="/sign-in"
             className="lp-link hidden px-1 py-2.5 text-[13.5px] font-medium text-scriba-ink-soft lg:inline"
