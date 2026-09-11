@@ -43,6 +43,45 @@ export const COMMISSION_HOLD_DAYS = 30;
  */
 export const PAYOUT_MINIMUM_CENTS = 5000;
 
+/**
+ * O dia do mês em que o pagamento de rotina sai.
+ *
+ * **Uma data, e não "uma vez por mês".** A frase antiga era verdadeira e
+ * inútil: quem está esperando dinheiro quer saber QUANDO, e "mensalmente" não
+ * responde isso. Uma data fixa transforma a espera em contagem, e é a
+ * diferença entre um programa que parece organizado e um que parece depender
+ * de alguém lembrar.
+ *
+ * Como todo mês tem um dia 30 menos fevereiro, ver `payoutDayForMonth`.
+ */
+export const PAYOUT_DAY_OF_MONTH = 30;
+
+/**
+ * O dia do pagamento no mês pedido, já resolvido para fevereiro.
+ *
+ * Fevereiro não tem dia 30, e a alternativa, empurrar para 1º de março,
+ * atrasaria o único pagamento do ano que cai num mês curto. Antecipar para o
+ * último dia do mês mantém a promessa ("todo mês, no fim") e ainda respeita o
+ * ano bissexto sozinho: `new Date(ano, mes + 1, 0)` é o último dia do mês, 28
+ * ou 29 conforme o ano.
+ *
+ * `month` é 0-based, como no `Date` do JS, para não existirem duas convenções
+ * de mês no mesmo arquivo.
+ */
+export function payoutDayForMonth(year: number, month: number): number {
+  const lastDay = new Date(year, month + 1, 0).getDate();
+  return Math.min(PAYOUT_DAY_OF_MONTH, lastDay);
+}
+
+/**
+ * A frase do pagamento, escrita UMA vez e usada em toda tela que fala dele.
+ *
+ * Ela existe porque a regra já apareceu com três redações diferentes em três
+ * telas ("mensalmente", "uma vez por mês", "no PIX do mês seguinte"), e três
+ * redações da mesma regra é como uma delas fica para trás quando a regra muda.
+ */
+export const PAYOUT_SCHEDULE_LABEL = `todo dia ${PAYOUT_DAY_OF_MONTH} (ou no último dia do mês, em fevereiro)`;
+
 /** Taxa de comissão padrão, em basis points (3000 = 30,00%). */
 export const DEFAULT_COMMISSION_BPS = 3000;
 
@@ -53,27 +92,39 @@ export const DEFAULT_SIGNUP_BONUS_COINS = 150;
  * Moedas que o PARCEIRO ganha por cada cadastro atribuído a ele, a resposta
  * para "não quero ficar na mão trazendo lead que não assina".
  *
- * 50, o mesmo valor do programa aberto de indicação
- * (`REFERRAL_SIGNUP_COINS`), e por coerência: é o mesmo fato econômico, uma
- * conta nova entrou por causa de alguém. O que separa os dois programas é o
- * que vem DEPOIS (o parceiro leva 30% da primeira mensalidade em dinheiro; o
- * amigo, 200 moedas), não o cadastro em si.
+ * **20, e já foi 50.** O valor antigo vinha por COERÊNCIA com o programa aberto
+ * de indicação (`REFERRAL_SIGNUP_COINS`, também 50), sob o argumento de que é
+ * o mesmo fato econômico, uma conta nova entrou por causa de alguém. A
+ * coerência era verdadeira e custava caro: o cadastro é o evento mais
+ * frequente do programa, o único que não depende de ninguém assinar nada, e
+ * cada um deles minta moeda que vira custo de inferência depois. O que separa
+ * os dois programas é o que vem DEPOIS, e é justamente aí que eles deixam de
+ * ser o mesmo caso: o parceiro leva 30% da primeira mensalidade EM DINHEIRO, o
+ * amigo leva 200 moedas. Quem já recebe dinheiro não precisa da mesma moeda
+ * que quem não recebe.
  *
- * Efeito na conta do programa, com 150 moedas de bônus ao indicado já
- * somadas (200 mintadas por cadastro), custo medido de R$ 2,69 o milheiro:
- * o mês 1 por assinante Pessoal cai de R$ 6,83 para R$ 5,76 no cenário
- * realista (5% de conversão, 40% de uso). No pessimista (3% e 100%) ele fica
- * negativo em R$ 7,87 e se paga em 15 dias do mês 2, a mesma aritmética que
+ * Em 20 a recompensa continua existindo, que é o ponto dela ("não quero ficar
+ * na mão trazendo lead que não assina"), sem disputar espaço com a comissão.
+ *
+ * Efeito na conta do programa, medido quando ela ainda valia 50, com 150
+ * moedas de bônus ao indicado já somadas (200 mintadas por cadastro) e custo
+ * de R$ 2,69 o milheiro: o mês 1 por assinante Pessoal caía de R$ 6,83 para
+ * R$ 5,76 no cenário realista (5% de conversão, 40% de uso). No pessimista (3%
+ * e 100%) ficava negativo em R$ 7,87 e se pagava em 15 dias do mês 2. Com 20
+ * as duas pontas melhoram; a aritmética exata é a que
  * `simulatePartnerEconomics` mostra no cadastro antes de salvar.
  *
- * Espelha o DEFAULT de `partners.signup_reward_coins` (migração 0045) e é
- * editável por parceiro, como a taxa e o bônus.
+ * Espelha o DEFAULT de `partners.signup_reward_coins` (migração 0045, alterado
+ * para 20 na 0052) e é editável por parceiro, como a taxa e o bônus. **A
+ * migração mexeu só no padrão:** parceiro já cadastrado mantém o valor que
+ * negociou, porque mudá-lo aqui alteraria em silêncio um combinado de quem já
+ * está divulgando.
  *
  * ELAS ACUMULAM antes de virar saldo: `partners.user_id` nasce nulo, então no
  * momento do cadastro do indicado pode não haver conta para creditar. Ver
  * `flush_partner_signup_rewards`.
  */
-export const DEFAULT_PARTNER_SIGNUP_REWARD_COINS = 50;
+export const DEFAULT_PARTNER_SIGNUP_REWARD_COINS = 20;
 
 /**
  * Mesada mensal padrão do PRÓPRIO parceiro, ~100 min de gravação com live.

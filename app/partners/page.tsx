@@ -9,7 +9,11 @@ import { getCurrentPartner } from "@/lib/auth/require-partner";
 import { formatBrl } from "@/lib/billing/plans";
 import { appUrl } from "@/lib/billing/stripe";
 import { loadPartnerPanel } from "@/lib/db/partner-panel";
-import { COMMISSION_HOLD_DAYS, PAYOUT_MINIMUM_CENTS } from "@/lib/partners/economics";
+import {
+  COMMISSION_HOLD_DAYS,
+  PAYOUT_DAY_OF_MONTH,
+  PAYOUT_MINIMUM_CENTS,
+} from "@/lib/partners/economics";
 
 export const metadata: Metadata = { title: "Painel" };
 export const dynamic = "force-dynamic";
@@ -71,8 +75,8 @@ export default async function PartnerDashboardPage() {
           value={formatBrl(summary.availableCents)}
           hint={
             summary.availableCents >= PAYOUT_MINIMUM_CENTS
-              ? "Entra no próximo pagamento"
-              : `Mínimo de ${formatBrl(PAYOUT_MINIMUM_CENTS)} para sacar`
+              ? `Entra no PIX do dia ${PAYOUT_DAY_OF_MONTH}`
+              : `Faltam ${formatBrl(PAYOUT_MINIMUM_CENTS - summary.availableCents)} para o mínimo`
           }
           strong
         />
@@ -96,24 +100,38 @@ export default async function PartnerDashboardPage() {
 
             <section className="flex flex-col gap-3 rounded-2xl border border-scriba-hairline-soft bg-scriba-paper p-5">
               <h2 className="text-[14px] font-semibold text-scriba-ink-strong">Seu funil</h2>
+              {/* Cada degrau mostra a taxa em relação ao degrau ANTERIOR, não
+                  ao topo do funil. É o que o parceiro consegue agir: "de quem
+                  abriu, quantos criaram conta" e "de quem criou conta, quantos
+                  assinaram" são duas perguntas diferentes, com duas causas
+                  diferentes, e uma taxa sobre as visitas misturaria as duas num
+                  número que não diz onde melhorar.
+
+                  O primeiro degrau não tem taxa porque não há degrau antes
+                  dele: visitas é o que entra. No lugar dela vai a PROCEDÊNCIA,
+                  que é a outra coisa que o número não diz sozinho — de onde
+                  vieram essas visitas —, e ela vale para os três degraus, por
+                  isso fica no primeiro. */}
               <div className="grid gap-4 sm:grid-cols-3">
                 <Step
                   label="Visitas"
                   value={INT.format(summary.uniqueVisitors)}
-                  hint={`${INT.format(summary.clicks)} aberturas no total`}
+                  hint="pelo seu link ou código"
                 />
                 <Step
                   label="Cadastros"
                   value={INT.format(summary.signups)}
-                  hint="Criaram conta pelo seu link ou código"
+                  hint={
+                    summary.uniqueVisitors > 0
+                      ? `${pct(summary.signups / summary.uniqueVisitors)} das visitas`
+                      : undefined
+                  }
                 />
                 <Step
                   label="Assinantes"
                   value={INT.format(summary.subscribers)}
                   hint={
-                    summary.signups > 0
-                      ? `${(summary.conversionRate * 100).toFixed(1).replace(".", ",")}% dos cadastros`
-                      : "Ainda sem cadastros"
+                    summary.signups > 0 ? `${pct(summary.conversionRate)} dos cadastros` : undefined
                   }
                 />
               </div>
@@ -286,7 +304,24 @@ function Money({
   );
 }
 
-function Step({ label, value, hint }: { label: string; value: string; hint: string }) {
+/**
+ * Uma taxa do funil, com uma casa decimal e vírgula.
+ *
+ * Arredondar para inteiro esconderia a diferença entre 0% e "alguém converteu,
+ * mas pouca gente", que é justamente a distinção que importa no começo, quando
+ * os números são pequenos.
+ */
+function pct(ratio: number): string {
+  return `${(ratio * 100).toFixed(1).replace(".", ",")}%`;
+}
+
+/**
+ * Um degrau do funil. O `hint` é OPCIONAL: sem taxa a calcular, o degrau
+ * simplesmente não tem terceira linha, e não uma frase inventada para ocupar o
+ * espaço. Os três ficam desalinhados por baixo, o que é honesto — o primeiro
+ * degrau realmente tem menos a dizer.
+ */
+function Step({ label, value, hint }: { label: string; value: string; hint?: string }) {
   return (
     <div className="flex flex-col gap-0.5">
       <span className="text-[11px] font-medium uppercase tracking-[0.1em] text-scriba-ink-mute">
@@ -295,7 +330,9 @@ function Step({ label, value, hint }: { label: string; value: string; hint: stri
       <span className="text-[24px] font-semibold tracking-tight text-scriba-ink-strong">
         {value}
       </span>
-      <span className="text-[11.5px] font-light leading-[1.4] text-scriba-ink-soft">{hint}</span>
+      {hint ? (
+        <span className="text-[11.5px] font-light leading-[1.4] text-scriba-ink-soft">{hint}</span>
+      ) : null}
     </div>
   );
 }

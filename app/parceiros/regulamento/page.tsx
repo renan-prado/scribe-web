@@ -10,6 +10,7 @@ import {
   DEFAULT_PARTNER_SIGNUP_REWARD_COINS,
   DEFAULT_SIGNUP_BONUS_COINS,
   PARTNER_PROSPECT_COINS,
+  PAYOUT_DAY_OF_MONTH,
   PAYOUT_MINIMUM_CENTS,
 } from "@/lib/partners/economics";
 import { REF_COOKIE_MAX_AGE } from "@/lib/referrals/cookies";
@@ -351,10 +352,14 @@ export default function PartnersTermsPage() {
                 integrar o saldo disponível, exibido no painel do Parceiro.
               </li>
               <li>
-                <strong>Pagamento.</strong> Realizado por PIX, mensalmente, sobre o total
-                disponível, mediante chave PIX válida e dados fiscais previamente informados pelo
-                Parceiro. Sem esses dados o pagamento não pode ser efetuado, e a ausência deles não
-                configura mora do Scriba.
+                <strong>Pagamento.</strong> Realizado por PIX{" "}
+                <strong>
+                  todo dia {PAYOUT_DAY_OF_MONTH}, ou no último dia do mês quando ele não existir
+                  (fevereiro)
+                </strong>
+                , sobre o total disponível naquela data, mediante chave PIX válida e dados fiscais
+                previamente informados pelo Parceiro. Sem esses dados o pagamento não pode ser
+                efetuado, e a ausência deles não configura mora do Scriba.
               </li>
               <li>
                 <strong>Valor mínimo de {formatBrl(PAYOUT_MINIMUM_CENTS)}.</strong> Abaixo desse

@@ -189,7 +189,8 @@ padrão do programa, e pode ser negociado individualmente.
 
 - Toda comissão passa por uma **carência de 30 dias** antes de ficar
   disponível. É o prazo em que um pagamento ainda pode ser contestado.
-- O pagamento é feito **manualmente, por PIX**, uma vez por mês, sobre o total
+- O pagamento é feito **manualmente, por PIX**, **todo dia 30** (ou no último
+  dia do mês, em fevereiro: `payoutDayForMonth`), sobre o total
   disponível.
 - O painel mostra as duas colunas separadas: **a liberar** (dentro da
   carência) e **disponível** (pronto para o próximo pagamento).

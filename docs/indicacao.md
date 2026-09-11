@@ -67,9 +67,10 @@ que dá 150 (ver "Por que os dois programas existem").
 
 ## O selo "indicado por"
 
-Quem abre um link de indicação, de amigo ou de parceiro, vê, no lugar da
-frase de efeito do topo da landing page, **a foto e o nome de quem indicou**. O
-mesmo aparece na tela de entrada.
+Quem abre um link de indicação, de amigo ou de parceiro, vê, numa pílula acima
+do título da landing page, **a foto e o nome de quem indicou**. O mesmo aparece
+na tela de entrada. Para quem não veio de link nenhum a pílula não existe: ela
+não tem outro assunto.
 
 É o que substitui, no programa aberto, o bônus de moedas que o convidado não
 ganha: a persuasão deixa de ser dinheiro e vira prova social. Quem chega não
@@ -141,7 +142,7 @@ lugar dessa pessoa é o programa de parceiros, onde há comissão em dinheiro.
 |---|---|---|
 | entrada | por convite da equipe | toda conta tem |
 | o convidado ganha | 150 moedas | nada além das 50 de boas-vindas |
-| quem indica ganha por cadastro | 50 moedas | 50 moedas |
+| quem indica ganha por cadastro | 20 moedas | 50 moedas |
 | quem indica ganha por assinatura | **30% da 1ª mensalidade, em dinheiro** | 200 moedas |
 | teto | orçamento de bônus, por parceiro | 10 cadastros premiados por mês |
 | painel | `/partners`, com PIX e comprovantes | `/indicar`, três contadores |
@@ -156,19 +157,34 @@ exclusiva do parceiro sumiria sem que ninguém tivesse decidido isso.
 
 ## As moedas por cadastro do parceiro
 
-Junto deste programa, o parceiro passou a ganhar **50 moedas por cadastro
+Junto deste programa, o parceiro passou a ganhar moedas **por cadastro
 atribuído** (`partners.signup_reward_coins`, editável por parceiro no admin,
 0 desliga). Antes ele só recebia quando o indicado assinava, e quem traz
 tráfego que ainda não converteu ficava meses sem nada.
 
-Efeito na conta do programa dele, com 200 moedas emitidas por cadastro (150 ao
-indicado + 50 ao parceiro):
+**Hoje são 20, e já foram 50.** As 50 vinham por coerência com o programa
+aberto (`REFERRAL_SIGNUP_COINS`, também 50), sob o argumento de que é o mesmo
+fato econômico, uma conta nova entrou por causa de alguém. A coerência era
+verdadeira e cara: o cadastro é o evento MAIS frequente do programa, o único
+que não depende de ninguém assinar, e cada um minta moeda que vira custo de
+inferência depois. E os dois casos deixam de ser o mesmo exatamente no que vem
+DEPOIS: o parceiro leva 30% da primeira mensalidade em dinheiro, o amigo leva
+200 moedas. Quem já recebe dinheiro não precisa da mesma moeda que quem não
+recebe. Migração 0052; ela mexeu só no DEFAULT, parceiro já cadastrado mantém
+o valor que negociou.
 
-| cenário | mês 1 antes | mês 1 agora |
+Efeito na conta do programa dele, MEDIDO quando a recompensa ainda era 50, com
+200 moedas emitidas por cadastro (150 ao indicado + 50 ao parceiro):
+
+| cenário | mês 1 antes | mês 1 com 50 |
 |---|---|---|
 | realista (c=5%, u=40%) | +R$ 6,83 | **+R$ 5,76** |
 | pessimista (c=3%, u=40%) | +R$ 2,89 | +R$ 1,72 |
 | pessimista (c=3%, u=100%) | −R$ 1,90 | −R$ 7,87 → paga em 15 dias do mês 2 |
+
+Com 20 as três linhas melhoram, e a coluna da direita passa a ser um piso, não
+o número atual. A tabela fica como está porque é ela que documenta a decisão
+original; quem quiser o valor de hoje roda o simulador.
 
 O simulador do cadastro do admin já mostra esse efeito antes de salvar: as
 moedas ao parceiro entram na mesma amortização do bônus, sem a fração de uso

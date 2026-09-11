@@ -1,0 +1,32 @@
+-- A recompensa em moedas por cadastro do parceiro cai de 50 para 20.
+--
+-- POR QUE. O programa paga o parceiro em duas moedas, dinheiro (30% da
+-- primeira mensalidade) e moedas do app, e as duas nunca tiveram o mesmo peso
+-- para quem divulga: o que decide alguém a falar do produto é o dinheiro. As
+-- 50 moedas foram calibradas por COERÊNCIA com o programa aberto de indicação
+-- (`REFERRAL_SIGNUP_COINS`, também 50), não por resposta do parceiro, e a
+-- coerência custava caro: o cadastro é o evento MAIS FREQUENTE do programa, o
+-- único que não depende de ninguém assinar nada, e cada um deles minta moeda
+-- que vira custo de inferência lá na frente.
+--
+-- 20 mantém a recompensa existindo, que é o ponto dela ("não fico na mão
+-- trazendo gente que não assina"), e devolve a hierarquia: ela é um bônus, não
+-- a proposta. A `/parceiros` foi reescrita no mesmo commit para dizer isso na
+-- mesma ordem.
+--
+-- ISTO MUDA SÓ O PADRÃO, NÃO OS ACORDOS JÁ FECHADOS. `signup_reward_coins` é
+-- coluna por parceiro justamente porque o número é negociado no convite (ver
+-- migração 0045), e mexer nela retroativamente mudaria, sem avisar, o combinado
+-- de quem já está divulgando. Quem já existe continua no valor que tem; o novo
+-- padrão vale para quem entrar a partir daqui. Se um dia a decisão for aplicar
+-- a todos, é um UPDATE explícito, tomado como decisão de produto:
+--
+--   update public.partners set signup_reward_coins = 20
+--   where signup_reward_coins = 50;
+--
+-- Espelha `DEFAULT_PARTNER_SIGNUP_REWARD_COINS` em `lib/partners/economics.ts`,
+-- que é quem a tela lê. Os dois andam juntos, como sempre nesta família de
+-- constantes.
+
+alter table public.partners
+  alter column signup_reward_coins set default 20;
