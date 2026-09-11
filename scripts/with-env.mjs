@@ -23,7 +23,13 @@
 import { spawn } from "node:child_process";
 import fs from "node:fs";
 import path from "node:path";
-import { AUTOLOADED_BY_NEXT, ENV_TARGETS, parseEnvFile, resolveEnvPath } from "./env-file.mjs";
+import {
+  AUTOLOADED_BY_NEXT,
+  ENV_TARGETS,
+  parseEnvFile,
+  resolveEnvPath,
+  supabaseProjectRef,
+} from "./env-file.mjs";
 
 const RESET = "\x1b[0m";
 const RED = "\x1b[31m";
@@ -127,13 +133,32 @@ if (isProd) {
   }
 }
 
+// Domínio customizado sem o ref declarado. Não quebra nada AGORA, e é por isso
+// que está aqui: `npm run db:push` perde o projeto a religar, e o nome do
+// cookie de sessão (lib/supabase/cookie.ts) cai no padrão do supabase-js, que é
+// o primeiro rótulo do host, ou seja, "sb-auth-auth-token" em vez do ref. Todo
+// mundo que estava logado é deslogado no deploy, sem erro nenhum na tela.
+const supabaseHost = (env.NEXT_PUBLIC_SUPABASE_URL ?? "").replace(/^https?:\/\//, "");
+if (supabaseHost && !/\.supabase\.co\/?$/.test(supabaseHost) && !supabaseProjectRef(env)) {
+  problems.push([
+    `${ENV_TARGETS[target]} usa um domínio customizado (${supabaseHost}) sem declarar o ref.`,
+    "  Acrescente NEXT_PUBLIC_SUPABASE_PROJECT_REF=<ref> ao arquivo",
+    "  (Supabase → Project Settings → General → Reference ID). Ver docs/ambientes.md §7.",
+  ]);
+}
+
 // O erro mais caro de todos: os dois arquivos apontando para o MESMO banco.
 // Aí "ambiente separado" vira uma etiqueta sem nada por trás.
+//
+// A comparação é pelo PROJECT REF, não pela URL: com domínio customizado as
+// duas URLs podem ser diferentes e o projeto ser o mesmo, que é exatamente o
+// caso que este guard existe para pegar.
 const otherPath = resolveEnvPath(isProd ? "dev" : "prod");
 if (fs.existsSync(otherPath)) {
   const other = parseEnvFile(otherPath);
-  const mine = env.NEXT_PUBLIC_SUPABASE_URL;
-  if (mine && mine === other.NEXT_PUBLIC_SUPABASE_URL) {
+  const mine = supabaseProjectRef(env) ?? env.NEXT_PUBLIC_SUPABASE_URL;
+  const theirs = supabaseProjectRef(other) ?? other.NEXT_PUBLIC_SUPABASE_URL;
+  if (mine && mine === theirs) {
     problems.push([
       `.env.dev e .env.prod apontam para o MESMO Supabase (${mine}).`,
       "  Não há ambiente separado nenhum: um `npm run dev` escreve no banco real.",
@@ -154,7 +179,13 @@ if (problems.length > 0) {
 
 /* ── 4. banner ────────────────────────────────────────────────────── */
 
-const supabaseRef = (env.NEXT_PUBLIC_SUPABASE_URL ?? "").match(/https:\/\/([a-z0-9]+)\./)?.[1];
+const supabaseRef = supabaseProjectRef(env);
+// Com domínio customizado o host não diz mais qual é o projeto, e o projeto não
+// diz mais por onde o app fala com ele. O banner mostra os dois.
+const supabaseVia =
+  supabaseHost && !/\.supabase\.co\/?$/.test(supabaseHost)
+    ? `${DIM} via ${supabaseHost}${RESET}`
+    : "";
 const stripeMode = stripeKey.startsWith("sk_live")
   ? `${RED}LIVE (cobranças reais)${RESET}`
   : stripeKey
@@ -183,7 +214,7 @@ console.log(
   [
     `${DIM}  ${line}${RESET}`,
     `  arquivo   ${ENV_TARGETS[target]}`,
-    `  supabase  ${supabaseRef ?? "(ausente)"}`,
+    `  supabase  ${supabaseRef ?? "(ausente)"}${supabaseVia}`,
     `  stripe    ${stripeMode}`,
     `  app url   ${appUrl || "(padrão do código)"}`,
     `${DIM}  ${line}${RESET}`,

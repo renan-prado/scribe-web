@@ -3,6 +3,7 @@ import { createServerClient } from "@supabase/ssr";
 import { cookies } from "next/headers";
 import { cache } from "react";
 import { clientEnv } from "@/lib/env/client";
+import { SUPABASE_AUTH_COOKIE } from "@/lib/supabase/cookie";
 
 /**
  * Client do Supabase para código de servidor, e o resolvedor de usuário que
@@ -31,6 +32,9 @@ export const createClient = cache(async () => {
     clientEnv.NEXT_PUBLIC_SUPABASE_URL,
     clientEnv.NEXT_PUBLIC_SUPABASE_ANON_KEY,
     {
+      // O nome do cookie é FIXADO, não derivado da URL. Ver
+      // lib/supabase/cookie.ts.
+      cookieOptions: { name: SUPABASE_AUTH_COOKIE },
       cookies: {
         getAll() {
           return cookieStore.getAll();

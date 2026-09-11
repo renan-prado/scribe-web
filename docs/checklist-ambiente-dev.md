@@ -80,6 +80,11 @@ painel). Funciona, mas migra a zona inteira: se houver e-mail no domínio, os MX
 vão junto e é fácil derrubar o e-mail sem perceber. Para um subdomínio só, o
 CNAME acima basta.
 
+> As três armadilhas acima valem para **todo** registro desta zona, inclusive o
+> `CNAME auth → <ref>.supabase.co` do domínio customizado do Supabase em
+> produção, que não é deste checklist e está em
+> [`ambientes.md` §7](./ambientes.md).
+
 ---
 
 ## 2. Google Cloud Console: autorizar o projeto de dev

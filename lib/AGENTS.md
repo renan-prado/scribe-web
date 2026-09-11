@@ -25,9 +25,10 @@ aconteceu com `DEFAULT_PARTNER_MONTHLY_COINS`, que teve de mudar de
 Client-safe de propósito: `coins/pricing.ts`, `coins/billable.ts`,
 `coins/economics.ts`, `billing/plans.ts`, `entitlements/features.ts`,
 `partners/economics.ts`, `referrals/economics.ts`, `referrals/cookies.ts`,
-`br/documento.ts`, `domain/*` (tipos e schemas), `bible/detect.ts`, `bible/guard.ts`,
-`app-version.ts`, `deploy.ts`, `seo.ts`, `utils.ts`, `vocabulario.ts`,
-`chunk-store.ts` (IndexedDB, só roda no browser).
+`br/documento.ts`, `domain/*` (tipos e schemas), `bible/detect.ts`,
+`bible/guard.ts`, `supabase/cookie.ts`, `app-version.ts`, `deploy.ts`,
+`seo.ts`, `utils.ts`, `vocabulario.ts`, `chunk-store.ts` (IndexedDB, só roda
+no browser).
 
 ## Env: estrito de propósito
 
@@ -85,6 +86,18 @@ rota. Os dois devolvem `Result<T>` (nunca lançam) e têm timeout por
 | `supabase/client.ts` | anon | browser |
 | `supabase/server.ts` | anon + cookie | server components, rotas, actions |
 | `supabase/admin.ts` | **service-role** | só depois de ter afirmado admin |
+
+**O nome do cookie de sessão é FIXADO, não derivado da URL.**
+`supabase/cookie.ts` (client-safe) monta `sb-<project ref>-auth-token` a partir
+de `NEXT_PUBLIC_SUPABASE_PROJECT_REF`, e os TRÊS lugares que instanciam um
+client com cookie, `supabase/client.ts`, `supabase/server.ts` e o `proxy.ts` da
+raiz, passam esse nome em `cookieOptions`. O padrão do supabase-js seria
+`sb-<primeiro rótulo do host>-auth-token`, o que amarra o cookie à URL: em
+produção a URL é o domínio customizado `https://auth.scriba.cc`, e sem a fixação
+o nome viraria `sb-auth-auth-token`, diferente do que está no navegador de quem
+já entrou. Nenhum erro apareceria na tela; toda sessão ativa cairia no deploy.
+Um client novo com cookie lê o nome daqui, não reinventa. Ver
+`docs/ambientes.md` §7.
 
 `createAdminClient()` BYPASSA a RLS. Ele nunca vai ao navegador e nunca serve
 request que não passou por `requireAdmin()`. Trocar um client do usuário por

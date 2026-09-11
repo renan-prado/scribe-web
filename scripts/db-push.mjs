@@ -19,7 +19,7 @@
 import { spawnSync } from "node:child_process";
 import fs from "node:fs";
 import path from "node:path";
-import { ENV_TARGETS, readEnvTarget } from "./env-file.mjs";
+import { ENV_TARGETS, readEnvTarget, supabaseProjectRef } from "./env-file.mjs";
 
 const RED = "\x1b[31m";
 const YELLOW = "\x1b[33m";
@@ -41,15 +41,18 @@ const isProd = target === "prod";
 const env = readEnvTarget(target);
 if (!env) die([`não achei ${ENV_TARGETS[target]}. Veja docs/ambientes.md.`]);
 
-// O ref é o subdomínio da URL do projeto, não precisa ser uma variável
-// separada, e duas fontes para o mesmo fato acabam divergindo.
-const url = env.NEXT_PUBLIC_SUPABASE_URL ?? "";
-const ref = env.SUPABASE_PROJECT_REF ?? url.match(/^https:\/\/([a-z0-9]+)\.supabase\.co/)?.[1];
+// O ref sai da URL do projeto enquanto ela for a do supabase.co, e da
+// `NEXT_PUBLIC_SUPABASE_PROJECT_REF` quando ela for um domínio customizado
+// (`https://auth.scriba.cc`), onde o ref não aparece em lugar nenhum. Uma
+// função só decide isso, ver `supabaseProjectRef` em env-file.mjs.
+const ref = supabaseProjectRef(env);
 
 if (!ref) {
   die([
     `não consegui descobrir o project ref a partir de ${ENV_TARGETS[target]}.`,
-    "  Esperava NEXT_PUBLIC_SUPABASE_URL=https://<ref>.supabase.co",
+    "  Com a URL padrão, basta NEXT_PUBLIC_SUPABASE_URL=https://<ref>.supabase.co.",
+    "  Com domínio customizado, declare NEXT_PUBLIC_SUPABASE_PROJECT_REF=<ref>",
+    "  (Supabase → Project Settings → General → Reference ID).",
   ]);
 }
 

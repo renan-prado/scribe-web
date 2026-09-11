@@ -54,8 +54,13 @@ hora, só depois e em cima de dados reais.
 
 - `sk_live_…` no `.env.dev` → **aborta**. Um checkout dali cobraria de verdade
   e o crédito nem entraria, porque `stripe listen` só encaminha eventos de teste.
-- `.env.dev` e `.env.prod` com o **mesmo** `NEXT_PUBLIC_SUPABASE_URL` → aborta.
-  Ambiente separado com o mesmo banco é uma etiqueta sem nada por trás.
+- `.env.dev` e `.env.prod` no **mesmo projeto Supabase** → aborta. A comparação
+  é pelo project ref, não pela URL: com domínio customizado (§7) duas URLs
+  diferentes podem ser o mesmo banco, e ambiente separado com o mesmo banco é
+  uma etiqueta sem nada por trás.
+- URL de Supabase que **não é** `*.supabase.co` sem
+  `NEXT_PUBLIC_SUPABASE_PROJECT_REF` → aborta. Sem o ref, `db:push` perde o
+  projeto e o cookie de sessão troca de nome em silêncio (§7.2).
 - `sk_test_…` no `.env.prod`, `APP_URL` local em prod, `APP_URL` remota em dev
   → avisa, mas deixa passar.
 
@@ -272,6 +277,104 @@ que foi feito aqui não atrapalha nenhum deles: `dev.` é um domínio ligado a u
 branch, não uma estrutura de roteamento. Quando chegar a hora, cada um vira ou
 um projeto separado na Vercel (blog, partners, deploys e times independentes)
 ou um rewrite no projeto atual (admin, que já existe em `/admin` e
-compartilha sessão). `auth.` é o caso que exige cuidado de verdade: cookie de
-sessão em subdomínio pai muda a configuração do Supabase SSR e do `proxy.ts`,
-e é melhor decidir isso com o problema na frente.
+compartilha sessão). `auth.` deixou de ser futuro e virou a §7 abaixo, com um
+sentido diferente do que esta seção supunha: ele não é um domínio da Vercel
+nem uma rota nossa, é o **domínio customizado do próprio Supabase**.
+
+---
+
+## 7. `auth.scriba.cc`: o domínio customizado do Supabase
+
+Em produção, `NEXT_PUBLIC_SUPABASE_URL` é `https://auth.scriba.cc`, não
+`https://chnzfeisfaneuyuyzjvy.supabase.co`. É o recurso **Custom Domain** do
+Supabase (add-on pago, por projeto): o mesmo projeto passa a atender por um
+host nosso, e a URL do supabase.co continua funcionando em paralelo.
+
+O host se chama `auth` porque o login é o que aparece para quem usa, mas ele
+serve o projeto INTEIRO: `/auth/v1`, `/rest/v1`, `/storage/v1` e o realtime
+passam todos por ele. Não é um proxy nosso; não há rota deste repositório
+envolvida.
+
+### 7.1 Por que
+
+O passo do Google no login mostra o host que vai receber o consentimento.
+Com a URL padrão, quem entra lê `chnzfeisfaneuyuyzjvy.supabase.co`, um nome
+que não diz nada e que se parece exatamente com o que um phishing usaria.
+Com o domínio próprio, lê `auth.scriba.cc`.
+
+### 7.2 O que o ref deixou de dizer, e a variável que nasceu disso
+
+Enquanto a URL foi `https://<ref>.supabase.co`, o project ref estava dentro
+dela, e **duas coisas liam o ref de lá sem dizer**:
+
+1. `npm run db:push`, que deriva dali o projeto a religar no CLI;
+2. o **nome do cookie de sessão**. O supabase-js monta `sb-<primeiro rótulo do
+   host>-auth-token` (`defaultStorageKey`); com `<ref>.supabase.co` o primeiro
+   rótulo é o ref, e a coincidência escondeu a dependência.
+
+Com `auth.scriba.cc` o ref some da URL, e é por isso que
+`NEXT_PUBLIC_SUPABASE_PROJECT_REF` existe. Ela é redundante em dev (que segue
+no supabase.co) e obrigatória onde a URL é customizada, o `with-env` ABORTA se
+encontrar um domínio customizado sem ela.
+
+**O nome do cookie é fixado no ref, em `lib/supabase/cookie.ts`**, e os três
+clients (`lib/supabase/client.ts`, `lib/supabase/server.ts`, `proxy.ts`)
+passam esse nome em `cookieOptions`. Sem isso, o padrão viraria
+`sb-auth-auth-token`, um nome diferente do que está no navegador de quem já
+entrou: nenhum erro na tela, o cookie antigo simplesmente deixa de ser
+procurado, e **toda sessão ativa cai no deploy**. Fixado no ref, a URL pode
+mudar de novo sem derrubar ninguém.
+
+A CSP do `proxy.ts` não precisou de nada: `connect-src` já é derivado de
+`NEXT_PUBLIC_SUPABASE_URL`.
+
+### 7.3 O passo a passo (fora do repositório)
+
+Nenhum destes passos é feito por código, e a ORDEM importa: o Google antes da
+ativação, senão o login quebra entre um e outro.
+
+1. **Supabase** → *Project Settings → General* → assine o add-on **Custom
+   Domain** no projeto de produção.
+2. **GoDaddy** (DNS de `scriba.cc`): `CNAME auth → chnzfeisfaneuyuyzjvy.supabase.co`,
+   mais os TXT de verificação que o próximo passo imprimir. Se o CNAME de
+   `auth` estiver com proxy/forwarding ligado, desligue: a verificação precisa
+   resolver direto.
+3. **CLI**, com o Supabase CLI logado:
+
+   ```bash
+   # o create imprime os registros TXT que faltam no GoDaddy
+   supabase domains create --project-ref chnzfeisfaneuyuyzjvy --custom-hostname auth.scriba.cc --experimental
+   supabase domains reverify --project-ref chnzfeisfaneuyuyzjvy --experimental
+   supabase domains activate --project-ref chnzfeisfaneuyuyzjvy --experimental
+   ```
+
+   `reverify` confere o DNS (pode levar minutos
+   até propagar); `activate` só funciona depois que ele passa.
+4. **Google Cloud Console** → o OAuth Client usado em produção → *Authorized
+   redirect URIs* → **ACRESCENTE** (sem remover a antiga):
+   `https://auth.scriba.cc/auth/v1/callback`. As duas convivem, e é isso que
+   permite ativar sem janela de login quebrado. Este passo vai ANTES do
+   `activate`: o Supabase Auth passa a anunciar o host novo no instante em que
+   o domínio sobe.
+5. **Vercel** → *Settings → Environment Variables*, escopo **Production**:
+   - `NEXT_PUBLIC_SUPABASE_URL` = `https://auth.scriba.cc`
+   - `NEXT_PUBLIC_SUPABASE_PROJECT_REF` = `chnzfeisfaneuyuyzjvy`
+
+   As duas são `NEXT_PUBLIC_`, ou seja, **embutidas no build**: mudar o valor
+   no painel não muda nada até o próximo deploy.
+6. Redeploy da `master`.
+
+O escopo **Preview** não muda: `dev.scriba.cc` continua no projeto de dev, em
+`bpyibejicgswgxvbpsvg.supabase.co`, sem domínio customizado e sem a variável
+do ref, que lá é redundante.
+
+### 7.4 O que NÃO mudou
+
+- **`APP_URL` continua `https://scriba.cc`.** Ela é a base das URLs do nosso
+  app (retorno do Checkout, `/auth/callback`), e essas nunca passaram pelo
+  Supabase.
+- **As *Redirect URLs* do Supabase** (*Authentication → URL Configuration*)
+  continuam apontando para `scriba.cc`: elas dizem para onde o Supabase pode
+  devolver a pessoa, e o destino segue sendo o nosso site.
+- **A anon key e a service-role key são as mesmas.** Elas são do projeto, não
+  do host.

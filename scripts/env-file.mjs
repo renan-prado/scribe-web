@@ -76,3 +76,21 @@ export function readEnvTarget(target, cwd = process.cwd()) {
   if (!fs.existsSync(full)) return null;
   return parseEnvFile(full);
 }
+
+/**
+ * O project ref do Supabase de um arquivo de ambiente.
+ *
+ * Enquanto a URL do projeto for `https://<ref>.supabase.co`, o ref está nela e
+ * `NEXT_PUBLIC_SUPABASE_PROJECT_REF` é redundante. Com um domínio customizado
+ * (`https://auth.scriba.cc`) o ref some da URL, e é por isso que a variável
+ * existe: é o `supabase link` do `npm run db:push` e o nome do cookie de
+ * sessão (`lib/supabase/cookie.ts`) que dependem dele.
+ *
+ * A variável VENCE a URL, e não o contrário: quando as duas discordam, quem
+ * escreveu a variável estava dizendo algo que a URL não podia dizer.
+ */
+export function supabaseProjectRef(env) {
+  const declared = env.NEXT_PUBLIC_SUPABASE_PROJECT_REF;
+  if (declared) return declared;
+  return (env.NEXT_PUBLIC_SUPABASE_URL ?? "").match(/^https:\/\/([a-z0-9]{20})\.supabase\.co/)?.[1];
+}

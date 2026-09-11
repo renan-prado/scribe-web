@@ -7,6 +7,7 @@ import {
   REF_HINT_COOKIE,
   refHintCookieOptions,
 } from "@/lib/referrals/cookies";
+import { SUPABASE_AUTH_COOKIE } from "@/lib/supabase/cookie";
 
 /**
  * Next.js 16 proxy (formerly middleware). Refreshes the Supabase auth cookie
@@ -408,6 +409,9 @@ export async function proxy(request: NextRequest) {
     clientEnv.NEXT_PUBLIC_SUPABASE_URL,
     clientEnv.NEXT_PUBLIC_SUPABASE_ANON_KEY,
     {
+      // O nome do cookie é FIXADO, não derivado da URL. Ver
+      // lib/supabase/cookie.ts.
+      cookieOptions: { name: SUPABASE_AUTH_COOKIE },
       cookies: {
         getAll() {
           return request.cookies.getAll();

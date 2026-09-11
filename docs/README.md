@@ -11,6 +11,7 @@ saber ao editar código ficam nos `AGENTS.md` de cada pasta, não aqui.
 | Como mexer em código de X? | o `AGENTS.md` da pasta de X, comece pelo da raiz |
 | Como ligar o Stripe do zero? | [`stripe-setup.md`](./stripe-setup.md) |
 | Como funcionam dev e produção? | [`ambientes.md`](./ambientes.md) |
+| Por que o login sai por `auth.scriba.cc`? | [`ambientes.md` §7](./ambientes.md) |
 | Por que subir a versão antes de dar push? | [`versionamento.md`](./versionamento.md) |
 | O que falta configurar nos painéis? | [`checklist-ambiente-dev.md`](./checklist-ambiente-dev.md) |
 | Quais são as regras do programa de parceiros? | [`parceiros.md`](./parceiros.md) |
