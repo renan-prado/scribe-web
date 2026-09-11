@@ -280,16 +280,16 @@ derrubava o bfcache, então voltar para a LP recarregava tudo. O redirect de
 quem já está logado mora no `proxy.ts`, que já tem o usuário resolvido.
 
 **Quando a LP precisar mesmo se personalizar, o caminho é o do `HeroEyebrow`.**
-O selo "indicado por Fulano" que substitui a frase de efeito do hero depende de
+O selo "indicado por Fulano" que aparece acima do título do hero depende de
 um cookie, e resolvê-lo no servidor custaria tudo que o parágrafo acima
 descreve. O desenho: as rotas de link gravam um cookie-PISTA legível por JS
 (`scriba_ref_hint=1`, sem nome nem código dentro), um componente cliente só
 consulta `/api/referral/active` SE a pista existir, e a resposta é `no-store`.
 Assim os 99% que não vieram de link nenhum não pagam requisição alguma, e o
-HTML continua saindo da CDN. Quem veio indicado não vê a frase padrão em momento
-algum: um script antes do primeiro paint (irmão do `ThemeScript`) marca o
-`<html>`, e o CSS mostra um esqueleto até a resposta chegar. A pílula tem
-altura fixa nos três estados, então nada salta.
+HTML continua saindo da CDN. A pílula nasce ESCONDIDA e só existe quando há
+indicação a anunciar: um script antes do primeiro paint (irmão do
+`ThemeScript`) marca o `<html>`, e o CSS mostra um esqueleto de altura fixa
+até a resposta chegar, então nem quem veio indicado vê o título saltar.
 
 Quem garante que a pista existe é o `healReferralHint` do `proxy.ts`: um cookie
 novo não retroage aos 30 dias de atribuições que já estavam em circulação, e
@@ -312,12 +312,17 @@ a regra: a foto de quem indicou (`lh3.googleusercontent.com`) entra por
 `next/image` com `remotePatterns` no `next.config.ts`, ou seja, servida
 otimizada e redimensionada A PARTIR DO NOSSO domínio, com width/height. Um host
 só, e fechado: `remotePatterns` frouxo transforma `/_next/image` em proxy de
-imagem aberto para qualquer um lavar tráfego pela nossa conta. Sete avatares de
-`mockmind-api.uifaces.co` (1024×1024 para desenhar círculos de 34px) custavam
-724 KB, e o React 19 ainda os promovia a `<link rel="preload" as="image">`,
-disputando a banda inicial com o CSS. Hoje são sete WebP de 136px em
-`src/shared/assets/avatars/` (20 KB no total) servidos por `next/image` com
-import estático, que também traz `width`/`height` de graça, sem CLS.
+imagem aberto para qualquer um lavar tráfego pela nossa conta.
+
+A LP já teve sete avatares de `mockmind-api.uifaces.co`, 1024×1024 para
+desenhar círculos de 34px, 724 KB que o React 19 ainda promovia a
+`<link rel="preload" as="image">`, disputando a banda inicial com o CSS.
+Viraram sete WebP de 136px no nosso bundle, e depois sumiram junto com os
+depoimentos e a linha de prova social; os arquivos foram apagados no mesmo
+commit, porque asset sem consumidor volta a ser usado por engano. **A regra que
+eles deixaram continua valendo: imagem decorativa nova entra por import
+estático, em WebP, no tamanho de tela vezes quatro** — o import dá
+`width`/`height` de graça, e é isso que evita CLS.
 
 **As duas regras acima valem para `/parceiros` também.** Ela é a segunda página
 que um anônimo carrega, é estática pelas mesmas razões, e sua prévia do painel

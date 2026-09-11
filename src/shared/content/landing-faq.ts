@@ -26,41 +26,31 @@ export const FAQ_ITEMS: FaqItem[] = [
   {
     question: "O que é o Scriba?",
     answer:
-      "O Scriba é um aplicativo web que transcreve sermões, estudos bíblicos e mensagens da igreja enquanto eles acontecem. Durante a pregação ele reconhece os versículos citados e destaca as frases principais; ao final, entrega um resumo organizado com a ideia central, os pontos principais, as passagens lidas e aplicações para a semana.",
+      "O Scriba é um app que transcreve pregações, estudos bíblicos e mensagens da igreja enquanto eles acontecem. Durante a mensagem ele reconhece os versículos citados e destaca as frases principais; ao final, entrega um resumo organizado com a ideia central, os pontos principais, as passagens lidas e aplicações para a semana.",
   },
   {
     question: "Para quem o Scriba foi feito?",
     answer:
-      "Para quem ouve, e não para quem prega. Membros que querem lembrar do domingo durante a semana, líderes de grupo pequeno preparando a reunião, estudantes de teologia e qualquer pessoa que acompanhe pregações e queira revisá-las depois.",
+      "Para quem ouve e deseja retornar na mensagem. Membros da igreja, alunos da EBD, estudantes de teologia e qualquer pessoa que acompanhe pregações e queira revisá-las depois.",
   },
   {
     question: "Preciso instalar algum aplicativo?",
     answer:
-      "Não. O Scriba roda no navegador do celular ou do computador, sem passar por loja de aplicativos. Se quiser, dá para adicioná-lo à tela inicial e abrir como um app comum.",
+      "Não, necessariamente. O Scriba roda no navegador do celular ou do computador. Porém, indicamos adicioná-lo à tela inicial e abrir como um app comum para desfrutar melhor dos recursos oferecidos.",
   },
   {
     question: "Como funciona a transcrição?",
     answer:
-      "Você toca em gravar e deixa o celular captando o áudio. O som é enviado em blocos curtos e o texto volta para a tela em poucos segundos, enquanto a pregação continua. Não é preciso gravador, cabo nem acesso à mesa de som.",
+      "Você inicia a gravação e deixa o celular captando o áudio. Uma IA dedicada entende o que está sendo dito e transforma em um texto organizado.",
   },
   {
-    question: "O Scriba encontra os versículos sozinho?",
+    question: "O que acontece com o áudio gravado?",
     answer:
-      "Sim. Quando o pregador anuncia ou lê uma passagem, o Scriba reconhece a referência e mostra o texto do versículo na hora, sem você precisar digitar nada nem procurar na Bíblia.",
-  },
-  {
-    question: "O que acontece com o áudio da pregação?",
-    answer:
-      "O áudio bruto não é retido nos nossos servidores depois de processado: fica apenas o texto da transcrição e o resumo, dentro da sua conta e visíveis só para você. Cada gravação pode ser apagada quando você quiser.",
+      "O áudio não é salvo em nossos servidores: ficamos apenas o texto da transcrição e o resumo, dentro da sua conta e visíveis só para você. Cada gravação pode ser apagada quando você quiser.",
   },
   {
     question: "Quanto custa usar o Scriba?",
     answer: `A conta começa com ${INITIAL_COIN_BALANCE} créditos grátis, sem cartão. Cada minuto gravado consome créditos conforme o modo escolhido: ${COIN_COSTS.liveMinute} no modo ao vivo, com feed e resumo, ${COIN_COSTS.audioOnlyMinute} no modo somente áudio e ${COIN_COSTS.transcriptMinute} no modo somente transcrição. Os planos mensais recarregam a conta a partir de ${formatCoins(PLANS.pessoal.coins)} créditos por mês, e o que sobra acumula para o mês seguinte.`,
-  },
-  {
-    question: "Dá para usar fora do culto de domingo?",
-    answer:
-      "Sim. Estudo bíblico, reunião de célula, encontro de jovens, congresso, aula de seminário ou uma palestra que você queira registrar: havendo alguém falando, o Scriba transcreve e resume.",
   },
   {
     question: "O Scriba funciona sem internet?",

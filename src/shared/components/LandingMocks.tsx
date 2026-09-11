@@ -197,7 +197,30 @@ const DEMO_BLOCKS: SummaryBlock[] = [
   },
 ];
 
-export function LandingSummaryMock() {
+/**
+ * Os mesmos blocos, sem o título e o parágrafo de abertura.
+ *
+ * É o que o hero mostra. Lá o mockup aparece CORTADO, uns 600px de tela, e na
+ * ordem completa a frase marcante começa a 584px: a única cor do resumo caía
+ * bem na borda do corte, ou fora dele. Tirando os dois blocos entre a ideia
+ * central e o `highlight`, o amarelo sobe para o meio do que está visível.
+ *
+ * `slice(2)` e não um filtro por tipo: o corte é POSICIONAL, "os dois
+ * primeiros blocos", e um filtro por `type` levaria junto o outro `h1`/
+ * parágrafo se a demo crescer.
+ *
+ * Só o hero usa isto. A seção "O resumo" mostra a ordem inteira, que é a
+ * ordem de verdade.
+ */
+const HERO_BLOCKS: SummaryBlock[] = DEMO_BLOCKS.slice(2);
+
+type LandingSummaryMockProps = {
+  /** `true` no hero, onde o corte manda. Ver `HERO_BLOCKS`. */
+  lead?: boolean;
+};
+
+export function LandingSummaryMock({ lead = false }: LandingSummaryMockProps) {
+  const blocks = lead ? HERO_BLOCKS : DEMO_BLOCKS;
   return (
     <div className="flex flex-col gap-4 px-4 pb-8 pt-3">
       <div className="flex flex-col gap-7">
@@ -211,15 +234,20 @@ export function LandingSummaryMock() {
         </div>
         {/* `blockKey` já é único nesta lista fixa (os textos são todos
             distintos), então não precisa do índice para desempatar. */}
-        {DEMO_BLOCKS.map((block) => (
-          <div
-            key={`${block.type}-${blockKey(block)}`}
-            className="animate-content-fade flex items-start sm:gap-4"
-          >
-            <div className="min-w-0 flex-1">
-              <BlockRenderer block={block} />
-            </div>
-            <div aria-hidden className="hidden size-9 shrink-0 sm:block" />
+        {/* Um bloco por linha, ocupando a tela inteira do aparelho.
+
+            Aqui já houve uma coluna de conteúdo ao lado de um espaçador de
+            36px, sobra para o botão de ação que cada bloco tem no app de
+            verdade. No mockup não há botão nenhum, e o espaçador era
+            `hidden sm:block`: uma media query de VIEWPORT dentro de um
+            telefone que mede 390px em qualquer tela. No celular ele sumia e
+            estava tudo certo; do `sm` para cima ele comia 52px (36 + o gap)
+            só do lado direito, então todo bloco centrado, a frase marcante
+            inclusive, ficava 26px à esquerda do meio da tela, e mais estreito
+            do que precisava. Parecia desalinhado e espremido, e era. */}
+        {blocks.map((block) => (
+          <div key={`${block.type}-${blockKey(block)}`} className="animate-content-fade min-w-0">
+            <BlockRenderer block={block} />
           </div>
         ))}
       </div>

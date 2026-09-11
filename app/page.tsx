@@ -1,22 +1,14 @@
-import Image, { type StaticImageData } from "next/image";
 import Link from "next/link";
-import { formatBrl, formatCoins, PLANS, TOPUP } from "@/lib/billing/plans";
+import { formatBrl, formatCoins, PLANS } from "@/lib/billing/plans";
 import { SITE_DESCRIPTION, SITE_TITLE } from "@/lib/seo";
 import { cn } from "@/lib/utils";
-import avatar1 from "@/shared/assets/avatars/avatar-1.webp";
-import avatar2 from "@/shared/assets/avatars/avatar-2.webp";
-import avatar3 from "@/shared/assets/avatars/avatar-3.webp";
-import avatar4 from "@/shared/assets/avatars/avatar-4.webp";
-import avatar5 from "@/shared/assets/avatars/avatar-5.webp";
-import avatar6 from "@/shared/assets/avatars/avatar-6.webp";
-import avatar7 from "@/shared/assets/avatars/avatar-7.webp";
 import { ScribaMark } from "@/shared/brand";
 import { HeroEyebrow } from "@/shared/components/HeroEyebrow";
 import { HeroEyebrowScript } from "@/shared/components/HeroEyebrowScript";
 import { LandingFooter, LandingHeader, SectionLabel } from "@/shared/components/LandingChrome";
 import { LandingCta } from "@/shared/components/LandingCta";
 import { LandingJsonLd } from "@/shared/components/LandingJsonLd";
-import { LandingFeedMock, LandingSummaryMock } from "@/shared/components/LandingMocks";
+import { LandingSummaryMock } from "@/shared/components/LandingMocks";
 import { StandaloneHomeGuard } from "@/shared/components/StandaloneHomeGuard";
 import { FAQ_ITEMS } from "@/shared/content/landing-faq";
 
@@ -59,12 +51,9 @@ export default function LandingPage() {
           esse encaixe. */}
       <main>
         <Hero />
-        <WhatIsScriba />
         <Problem />
-        <HowItWorks />
         <Resumo />
         <Biblioteca />
-        <Testimonials />
         <Plans />
         <Faq />
         <FinalCTA />
@@ -75,115 +64,129 @@ export default function LandingPage() {
 }
 
 /**
- * Avatares servidos do nosso próprio bundle, não de `mockmind-api.uifaces.co`.
- *
- * O externo custava 724 KB: sete JPEG de 1024×1024 para desenhar círculos de
- * 34 px. Pior que o peso era a prioridade, o React 19 emite
- * `<link rel="preload" as="image">` para todo `<img>` renderizado no servidor,
- * então os 724 KB disputavam a banda inicial COM o CSS, antes do primeiro
- * paint. Era a maior linha do relatório do Lighthouse ("723 KiB").
- *
- * Reduzidos a 136 px (4× o tamanho de tela) em WebP, os sete somam 20 KB, e o
- * `next/image` ainda gera as variantes do srcset a partir daí. O import
- * estático também dá `width`/`height` de graça, sem reserva de espaço, sete
- * avatares chegando tarde empurrariam o texto ao lado e viraria CLS.
- */
-const HERO_AVATARS: readonly StaticImageData[] = [avatar1, avatar2, avatar3, avatar4];
-
-/**
  * O hero sobe por trás do header (margem negativa = `--lp-header-h`) e devolve
  * o mesmo valor no padding do conteúdo, então o gradiente corre sob o header
  * translúcido sem deslocar nada do que está escrito.
+ *
+ * ## Por que uma coluna só, centrada
+ *
+ * Ele já foi duas colunas, texto à esquerda e telefone à direita. Numa tela de
+ * 1200px isso dava 430px para o mockup e obrigava o título a caber em ~600px,
+ * ou seja, a promessa da página competia por largura com a imagem dela. Em
+ * coluna única o título ganha a linha inteira, a leitura desce numa ordem só
+ * (pílula → promessa → explicação → botão → prova social → produto) e o
+ * telefone deixa de ser um vizinho para virar o DESFECHO da dobra.
+ *
+ * O telefone é CORTADO no fim da seção, de propósito. Inteiro ele mede ~702px
+ * e empurraria tudo o que vem depois para longe da primeira rolagem; cortado
+ * na borda de baixo ele mostra o suficiente para se reconhecer como produto e
+ * ainda deixa visível que há página embaixo. Quem faz o corte é a altura fixa
+ * do invólucro com `overflow-hidden`, e é ela que precisa mudar junto se a
+ * escala do `PhoneFrame` mudar: o `origin-top` existe para que a redução
+ * encoste no topo, e não sobre folga no meio do recorte.
  */
 function Hero() {
   return (
     <section className="relative mt-[calc(var(--lp-header-h)*-1)] overflow-hidden bg-[image:var(--lp-hero)]">
-      <div className="pointer-events-none absolute -top-[180px] -right-[140px] h-[620px] w-[620px] rounded-full bg-[radial-gradient(circle,rgba(79,168,240,.16)_0%,rgba(79,168,240,0)_70%)]" />
-      <div className="pointer-events-none absolute -bottom-[120px] -left-[160px] hidden h-[520px] w-[520px] rounded-full bg-[radial-gradient(circle,rgba(248,198,75,.16)_0%,rgba(248,198,75,0)_70%)] lg:block" />
-      <div className="relative mx-auto flex max-w-[1200px] flex-col gap-10 px-5 pb-2 pt-[calc(var(--lp-header-h)+2.25rem)] sm:px-10 lg:grid lg:grid-cols-[minmax(0,1fr)_430px] lg:gap-14 lg:pb-24 lg:pt-[calc(var(--lp-header-h)+5.5rem)]">
-        <div className="flex min-w-0 flex-col gap-4 lg:gap-6">
-          {/* A pílula é um componente CLIENTE porque ela se personaliza para
-              quem chegou por um link de indicação ("Indicado por Fulano", com
-              foto), e a LP não pode ler cookie sem deixar de ser estática.
-              Ver o cabeçalho de `HeroEyebrow`. Não arrasta bundle: é um
-              componente de `src/shared/`, sem nada de `src/features/`.
+      {/* Os dois halos acompanharam a composição: com o texto no eixo, o azul
+          vem de cima pelo centro e o dourado fica atrás do telefone. Ver
+          "Os dois halos radiais do hero" em `src/shared/AGENTS.md`. */}
+      <div className="pointer-events-none absolute -top-[260px] left-1/2 h-[720px] w-[720px] -translate-x-1/2 rounded-full bg-[radial-gradient(circle,rgba(79,168,240,.16)_0%,rgba(79,168,240,0)_70%)]" />
+      <div className="pointer-events-none absolute -bottom-[180px] left-1/2 hidden h-[560px] w-[560px] -translate-x-1/2 rounded-full bg-[radial-gradient(circle,rgba(248,198,75,.16)_0%,rgba(248,198,75,0)_70%)] lg:block" />
+      <div className="relative mx-auto flex max-w-[780px] flex-col items-center gap-4 px-5 text-center pt-[calc(var(--lp-header-h)+2.25rem)] sm:px-10 lg:gap-6 lg:pt-[calc(var(--lp-header-h)+5rem)]">
+        {/* A pílula é um componente CLIENTE porque ela se personaliza para
+            quem chegou por um link de indicação ("Indicado por Fulano", com
+            foto), e a LP não pode ler cookie sem deixar de ser estática.
+            Ver o cabeçalho de `HeroEyebrow`. Não arrasta bundle: é um
+            componente de `src/shared/`, sem nada de `src/features/`.
 
-              O script vem ANTES dela no documento, e a ordem é o ponto: ele
-              roda enquanto o parser ainda não chegou na pílula, então o estado
-              inicial (frase ou esqueleto) já está decidido no primeiro paint.
-              Mesmo padrão do `ThemeScript`. */}
-          <HeroEyebrowScript />
-          <HeroEyebrow />
-          <h1 className="text-pretty text-[36px] font-semibold leading-[1.08] tracking-[-.025em] text-scriba-ink-strong lg:text-[60px] lg:leading-[1.06]">
-            O sermão não termina quando você sai da igreja.
-          </h1>
-          <p className="max-w-[520px] text-pretty text-[14.5px] font-light leading-[1.62] text-scriba-ink-soft lg:text-[17.5px]">
-            O Scriba escuta a pregação com você, transcreve o que é dito, organiza os principais
-            ensinamentos e ajuda a relembrar e colocar em prática ao longo da semana.
-          </p>
-          <div className="flex flex-col gap-2.5 pt-1 lg:flex-row lg:items-center lg:gap-3.5">
-            {/* O CTA vem primeiro nos dois lados. A ordem já foi invertida no
-                celular, quando este botão dizia "Instalar app": pedir espaço no
-                telefone antes de mostrar o produto era invasivo o bastante para
-                valer ceder a primeira posição. Agora ele diz o que promete e a
-                instalação é uma das saídas do diálogo. Ver `LandingCta`. */}
-            <LandingCta
-              className="scriba-cta inline-flex items-center justify-center gap-2.5 rounded-[26px] bg-[image:var(--scriba-cta)] py-[17px] px-8 text-[13px] font-semibold uppercase tracking-[.04em] text-scriba-cta-ink shadow-[0_9px_22px_var(--scriba-cta-shadow)]"
-              icon={<ScribaMark size={20} />}
-              label="Começar grátis"
-            />
-            <a
-              href="#recursos"
-              className="lp-cta-outline inline-flex items-center justify-center rounded-[26px] border border-auth-btn-border bg-scriba-paper py-4 px-7 text-[13px] font-medium text-scriba-ink"
-            >
-              Conhecer o Scriba
-            </a>
-          </div>
-          {/* Avatares nunca encolhem (flex-none) e o texto ganha min-w-0 + basis
-              própria, então em telas estreitas ele quebra para a linha de baixo
-              em vez de espremer as fotos. */}
-          <div className="flex flex-wrap items-center gap-x-3.5 gap-y-2 pt-1.5 sm:gap-x-5 sm:pt-3.5">
-            <div className="flex flex-none">
-              {HERO_AVATARS.map((a, i) => (
-                <Image
-                  key={a.src}
-                  src={a}
-                  alt=""
-                  aria-hidden
-                  width={34}
-                  height={34}
-                  // Estes quatro estão acima da dobra e o `next/image` adia por
-                  // padrão, o Next chega a avisar no console que um deles vira
-                  // o elemento de LCP. `eager` (e não `priority`) porque só
-                  // queremos tirar o adiamento: `priority` devolveria o
-                  // `<link rel="preload">` que motivou toda esta mudança. São
-                  // 10 KB somados, não vale adiar. Os dos depoimentos, bem
-                  // abaixo da dobra, seguem `lazy`.
-                  loading="eager"
-                  className={cn(
-                    "size-[31px] flex-none rounded-full border-2 border-scriba-paper object-cover sm:size-[34px]",
-                    i > 0 && "-ml-[9px]"
-                  )}
-                />
-              ))}
-            </div>
-            <div className="min-w-0 flex-1 basis-[200px] text-pretty text-[11.5px] font-light leading-[1.5] text-scriba-ink-soft sm:text-[12.5px]">
-              <span className="font-semibold text-scriba-ink">15 sermões</span> registrados por
-              membros do Scriba.
-            </div>
-          </div>
+            O script vem ANTES dela no documento, e a ordem é o ponto: ele
+            roda enquanto o parser ainda não chegou na pílula, então o estado
+            inicial (frase ou esqueleto) já está decidido no primeiro paint.
+            Mesmo padrão do `ThemeScript`. */}
+        <HeroEyebrowScript />
+        <HeroEyebrow />
+        {/* Os três tamanhos são medidos, não escolhidos no olho: a frase tem
+            60 caracteres, e o que decide cada degrau é quanto de margem sobra
+            nas pontas da linha mais larga. No celular, 34px punha a segunda
+            linha a 5px da borda e quebrava o título em QUATRO linhas de
+            larguras muito diferentes (331, 294, 251, 242): sobra assimétrica
+            nas pontas é lida como texto torto, mesmo com o bloco perfeitamente
+            centrado. Em 27px são três linhas de 300/286/308 num vão de 340, e
+            o título volta a ter margem dos dois lados. */}
+        <h1 className="text-balance text-[27px] font-normal leading-[1.22] tracking-[-.02em] text-scriba-ink-strong sm:text-[40px] sm:leading-[1.14] sm:tracking-[-.025em] lg:text-[56px] lg:leading-[1.08]">
+          Uma IA que anota tudo enquanto você presta atenção na mensagem
+        </h1>
+        {/* No celular a medida é MENOR que o vão disponível, e o texto é
+            balanceado em vez de "pretty": no vão inteiro (340px) as linhas
+            fechavam a 6px da borda, com a última sobrando curta, e um bloco
+            que encosta nas duas pontas parece espremido mesmo estando
+            centrado. Em 320px com `text-balance` saem cinco linhas quase
+            iguais (230/232/232/221/246), com margem real dos dois lados. Do
+            `sm` para cima o vão já é folgado e vale a regra normal. */}
+        <p className="max-w-[320px] text-balance text-[14.5px] font-light leading-[1.62] text-scriba-ink-soft sm:max-w-[580px] sm:text-pretty lg:text-[17.5px]">
+          Enquanto você se concentra na pregação, aula da EBD, palestra, conversa entre amigos, o
+          Scriba monta um resumo organizado para você revisitar quando quiser.
+        </p>
+        {/* O `pt` aqui é somado ao `gap` da coluna: o botão fica mais longe das
+            duas frases do que as frases ficam uma da outra, e é essa diferença
+            que separa "o que estamos dizendo" de "o que fazer a respeito".
+
+            **Um destino só.** Aqui já houve um segundo botão, "Conhecer o
+            Scriba", ancorando em `#recursos`. Num hero centrado ele passou a
+            dividir o eixo com o CTA, e o que ele oferecia (rolar a página) é o
+            que a pessoa faz sozinha de qualquer jeito: era uma escolha cobrada
+            de quem ainda não tem como escolher. As âncoras continuam no header,
+            para quem realmente quer pular. Ver `LandingCta`. */}
+        <div className="flex w-full flex-col pt-5 sm:w-auto lg:pt-7">
+          <LandingCta
+            className="scriba-cta inline-flex items-center justify-center gap-2.5 rounded-[26px] bg-[image:var(--scriba-cta)] py-[17px] px-8 text-[13px] font-semibold uppercase tracking-[.04em] text-scriba-cta-ink shadow-[0_9px_22px_var(--scriba-cta-shadow)]"
+            icon={<ScribaMark size={20} />}
+            label="Começar agora"
+          />
         </div>
-        <div className="-mx-5 flex min-w-0 justify-center overflow-hidden sm:mx-0 sm:overflow-visible">
+      </div>
+      {/* O recorte do telefone. A altura é menor que a do mockup escalado em
+          cada faixa (~527px, ~632px e 702px), e é essa diferença que produz o
+          corte na borda de baixo da seção.
+
+          **O que o corte precisa alcançar é a frase marcante.** O topo do
+          resumo é texto cinza (ideia central, título, um parágrafo); o amarelo
+          do `highlight` é a única cor do mockup, e é ele que faz a dobra
+          parecer um produto em vez de um bloco de texto. Ao mexer nestas
+          alturas, confira no navegador que a faixa amarela continua inteira
+          dentro do recorte nas três faixas. */}
+      <div className="relative mt-9 h-[496px] overflow-hidden sm:mt-11 sm:h-[596px] lg:mt-14 lg:h-[660px]">
+        {/* A borda do recorte, esfumada. Sem isto o aparelho termina numa
+            linha reta no meio de um parágrafo, e o corte parece falha de
+            renderização em vez de escolha. O gradiente vai do transparente ao
+            chão do hero (`--lp-hero` termina no mesmo tom em que o fundo da
+            página continua), então ele apaga o telefone sem desenhar uma
+            faixa própria por cima.
+
+            Fica ACIMA do telefone (z-10) e não recebe clique. As três alturas
+            são medidas para o esmaecimento COMEÇAR depois que a frase
+            marcante termina (ela fecha a 364px, 436px e 485px do topo do
+            recorte, uma medida por escala, e o esmaecimento abre a 384px,
+            468px e 516px): mais alto e ele apaga a única cor da dobra, mais
+            baixo e
+            vira uma borda borrada, que é o mesmo problema com outro nome.
+            Por isso as alturas do recorte logo acima e as daqui andam
+            juntas. */}
+        <div
+          aria-hidden
+          className="pointer-events-none absolute inset-x-0 bottom-0 z-10 h-28 bg-[linear-gradient(180deg,transparent_0%,var(--lp-hero-fade)_70%,var(--lp-hero-fade)_100%)] sm:h-32 lg:h-36"
+        />
+        <div className="flex justify-center">
+          {/* O MESMO mockup da seção "O resumo", e de propósito: o hero promete
+              um resumo organizado, então o que ele mostra é o resumo, não o
+              feed ao vivo que estava aqui antes. A seção lá embaixo explica em
+              texto o que esta imagem já adiantou. */}
           <PhoneFrame
-            chrome={
-              <PhoneChrome
-                subtitle="Culto de domingo"
-                title="Ensinamentos ao vivo"
-                right={<LiveDot />}
-              />
-            }
+            className="origin-top"
+            chrome={<PhoneChrome subtitle="Resumo · 41 min" title="A sede que só Cristo cura" />}
           >
-            <LandingFeedMock />
+            <LandingSummaryMock lead />
           </PhoneFrame>
         </div>
       </div>
@@ -228,81 +231,6 @@ const PROBLEMS: {
 ];
 
 /**
- * Definição em texto corrido do produto.
- *
- * A LP inteira era escrita por evocação, "o sermão não termina quando você
- * sai da igreja", e em nenhum ponto dizia o que o Scriba É. Isso funciona
- * para quem já chegou pelo boca a boca e falha para quem chega pela busca:
- * sem uma frase declarativa, nem o leitor nem o buscador conseguem
- * classificar o produto. Esta seção responde às quatro perguntas nessa ordem:
- * o que é, para quem, o que faz, que problema resolve.
- *
- * Marcação semântica de propósito: `<dl>` com termo e definição diz a
- * estrutura, coisa que quatro `<div>` empilhadas não fazem.
- */
-const DEFINITIONS: { term: string; detail: string }[] = [
-  {
-    term: "Para quem é",
-    detail:
-      "Membros que querem lembrar do domingo durante a semana, líderes de grupo pequeno, estudantes de teologia e quem acompanha pregações e quer revisá-las depois.",
-  },
-  {
-    term: "O que ele faz",
-    detail:
-      "Transcreve a fala em tempo real, reconhece os versículos citados, guarda as frases marcantes e escreve o resumo assim que a pregação termina.",
-  },
-  {
-    term: "Onde funciona",
-    detail:
-      "No navegador do celular ou do computador, sem instalar nada: culto, estudo bíblico, célula, congresso ou aula de seminário.",
-  },
-  {
-    term: "Que problema resolve",
-    detail:
-      "Anotar tira você da mensagem; não anotar apaga a mensagem alguns dias depois. O Scriba anota no seu lugar e devolve organizado.",
-  },
-];
-
-function WhatIsScriba() {
-  return (
-    <section id="o-que-e" className="border-y border-scriba-hairline-soft bg-scriba-surface">
-      <div className="mx-auto grid max-w-[1200px] gap-8 px-5 py-12 sm:px-10 sm:py-20 lg:grid-cols-[1fr_1.15fr] lg:gap-16">
-        <div className="flex flex-col gap-4">
-          <SectionLabel color="blue">O que é o Scriba</SectionLabel>
-          <h2 className="text-pretty text-[27px] font-semibold leading-[1.18] tracking-[-.02em] text-scriba-ink-strong lg:text-[38px]">
-            Um aplicativo que ouve a pregação e escreve por você.
-          </h2>
-          <p className="max-w-[520px] text-pretty text-[14.5px] font-light leading-[1.65] text-scriba-ink-soft lg:text-[16px]">
-            O Scriba transcreve sermões, estudos bíblicos e mensagens da igreja enquanto eles
-            acontecem. Enquanto o pregador fala, ele reconhece as passagens lidas e separa o que foi
-            dito de mais importante. Quando a pregação termina, o resumo já está pronto: ideia
-            central, pontos principais, versículos citados e aplicações para a semana.
-          </p>
-        </div>
-        <dl className="flex flex-col">
-          {DEFINITIONS.map((d, i) => (
-            <div
-              key={d.term}
-              className={cn(
-                "flex flex-col gap-1.5 py-4 sm:flex-row sm:gap-8 sm:py-[18px]",
-                i > 0 && "border-t border-scriba-hairline"
-              )}
-            >
-              <dt className="flex-none text-[13px] font-semibold leading-[1.5] text-scriba-ink-strong sm:w-[168px] sm:text-[13.5px]">
-                {d.term}
-              </dt>
-              <dd className="min-w-0 text-pretty text-[13.5px] font-light leading-[1.62] text-scriba-ink-soft sm:text-[14.5px]">
-                {d.detail}
-              </dd>
-            </div>
-          ))}
-        </dl>
-      </div>
-    </section>
-  );
-}
-
-/**
  * As perguntas vêm de `src/shared/content/landing-faq.ts`, o mesmo módulo que
  * alimenta o JSON-LD `FAQPage`. Um texto aqui divergente do dado estruturado
  * derruba o rich result da página inteira, por isso a fonte é única.
@@ -316,7 +244,7 @@ function Faq() {
       <div className="flex flex-col gap-3 lg:items-center lg:text-center">
         <SectionLabel color="blue">Perguntas frequentes</SectionLabel>
         <h2 className="text-pretty text-[29px] font-semibold leading-[1.16] tracking-[-.022em] text-scriba-ink-strong lg:text-[40px]">
-          O que costumam perguntar antes do primeiro domingo.
+          O que costumam perguntar...
         </h2>
       </div>
       <div className="grid gap-x-[52px] gap-y-0 lg:grid-cols-2">
@@ -385,83 +313,6 @@ function Problem() {
         </ol>
       </div>
     </section>
-  );
-}
-
-function HowItWorks() {
-  return (
-    <section id="como-funciona" className="border-y border-scriba-hairline-soft bg-scriba-surface">
-      <div className="mx-auto flex max-w-[1200px] flex-col gap-6 px-5 py-12 sm:px-10 sm:py-[92px] lg:gap-[52px]">
-        <div className="flex max-w-[640px] flex-col gap-3">
-          <SectionLabel color="blue">Como funciona</SectionLabel>
-          <h2 className="text-pretty text-[29px] font-semibold leading-[1.16] tracking-[-.02em] text-scriba-ink-strong lg:text-[42px]">
-            Três passos, e o resto acontece sozinho.
-          </h2>
-        </div>
-        <div className="grid gap-3.5 lg:grid-cols-3 lg:gap-[22px]">
-          <StepCard
-            step="Passo 01"
-            title="Acompanhe ao vivo"
-            body="Enquanto você ouve, o Scriba identifica versículos e citações, explica contextos e destaca as frases mais importantes da pregação em tempo real."
-            icon={
-              <div className="flex size-11 items-center justify-center rounded-full bg-scriba-blue animate-scriba-halo">
-                <div className="flex items-center gap-[2.5px]">
-                  <span className="h-2.5 w-[2.5px] rounded-[2px] bg-scriba-paper" />
-                  <span className="h-4.5 w-[2.5px] rounded-[2px] bg-scriba-paper" />
-                  <span className="h-[13px] w-[2.5px] rounded-[2px] bg-scriba-paper" />
-                </div>
-              </div>
-            }
-          />
-          <StepCard
-            step="Passo 02"
-            title="Tenha tudo organizado"
-            body="Depois do amém, você recebe um resumo completo com o tema central, os principais ensinamentos, versículos citados, frases marcantes e aplicações práticas."
-            icon={
-              <div className="flex size-11 items-center justify-center rounded-full bg-scriba-mint">
-                <div className="h-4 w-4 rounded-[5px] border-[2.5px] border-scriba-mint-accent" />
-              </div>
-            }
-          />
-          <StepCard
-            step="Passo 03"
-            title="Continue a reflexão"
-            body="Durante a semana, o Scriba ajuda você a relembrar a mensagem, colocá-la em prática e fazer conexões com outros sermões."
-            icon={
-              <div className="flex size-11 items-center justify-center rounded-full bg-scriba-cream">
-                <div className="h-4 w-4 rounded-full border-[2.5px] border-t-transparent border-scriba-cream-accent" />
-              </div>
-            }
-          />
-        </div>
-      </div>
-    </section>
-  );
-}
-
-type StepCardProps = {
-  step: string;
-  title: string;
-  body: string;
-  icon: React.ReactNode;
-};
-
-function StepCard({ step, title, body, icon }: StepCardProps) {
-  return (
-    <div className="lp-lift flex flex-col gap-3.5 rounded-[24px] border border-scriba-hairline bg-scriba-paper p-6 shadow-[0_8px_26px_rgba(0,0,0,.09)] sm:rounded-[26px] sm:p-8">
-      <div className="flex items-center justify-between">
-        <div className="text-[11px] font-semibold uppercase tracking-[.1em] text-scriba-ink-mute">
-          {step}
-        </div>
-        {icon}
-      </div>
-      <div className="text-[19px] font-semibold leading-[1.28] tracking-[-.012em] text-scriba-ink sm:text-[21px]">
-        {title}
-      </div>
-      <div className="text-pretty text-[13.5px] font-light leading-[1.6] text-scriba-ink-soft sm:text-[14px] sm:leading-[1.62]">
-        {body}
-      </div>
-    </div>
   );
 }
 
@@ -555,7 +406,7 @@ function Resumo() {
               Mais que transcrição: a mensagem, organizada.
             </h2>
             <p className="max-w-[520px] text-pretty text-[14.5px] font-light leading-[1.62] text-scriba-ink-soft lg:text-[16px] lg:leading-[1.65]">
-              Ao final do sermão, o Scriba transforma tudo o que foi dito em um resumo claro, para
+              Ao final da mensagem, o Scriba transforma tudo o que foi dito em um resumo claro, para
               você entender, encontrar e relembrar o que realmente importa.
             </p>
           </div>
@@ -604,9 +455,16 @@ function Biblioteca() {
           <h2 className="text-pretty text-[29px] font-semibold leading-[1.16] tracking-[-.022em] lg:text-[40px]">
             Anos de pregação, finalmente buscáveis.
           </h2>
+          {/* ⚠️ O que esta seção promete é o que `/api/sessions/search` faz, e
+              nada além: procurar no que foi DITO e casar REFERÊNCIA bíblica
+              com referência. Ela já prometeu que o Scriba "cruza sermões
+              distantes no tempo e mostra quando dois deles falam da mesma
+              coisa", e isso nunca foi desfeito na cópia quando a
+              funcionalidade saiu do produto. Ao mexer aqui, confira a rota
+              antes de escrever o verbo. */}
           <p className="max-w-[500px] text-pretty text-[14.5px] font-light leading-[1.62] text-lp-band-ink lg:text-[16px] lg:leading-[1.65]">
-            Busque por tema, versículo ou pregador. O Scriba também cruza sermões distantes no tempo
-            e mostra quando dois deles falam da mesma coisa.
+            Busque por tema, versículo ou pregador. O que o pregador disse fica procurável, e uma
+            referência encontra o sermão mesmo quando ela foi citada de outro jeito.
           </p>
           <div className="flex flex-col gap-2.5 pt-1 sm:pt-2">
             <BiblioCard
@@ -615,9 +473,9 @@ function Biblioteca() {
               badge="3 resultados"
             />
             <BiblioCard
-              title="Conexões automáticas"
-              subtitle="Ansiedade · Confiança · Providência"
-              badge="Novo"
+              title="Busca por versículo"
+              subtitle="João 4 · Isaías 55 · Salmo 42"
+              badge="Acha a citação"
             />
           </div>
         </div>
@@ -669,76 +527,6 @@ function BiblioCard({ title, subtitle, badge }: BiblioCardProps) {
   );
 }
 
-function Testimonials() {
-  return (
-    <section className="mx-auto flex max-w-[1200px] flex-col gap-6 px-5 py-11 sm:px-10 sm:py-24 lg:gap-10">
-      <div className="flex flex-col gap-3 lg:items-center lg:text-center">
-        <SectionLabel color="blue">Depoimentos</SectionLabel>
-        <h2 className="text-pretty text-[29px] font-semibold leading-[1.16] tracking-[-.022em] text-scriba-ink-strong lg:text-[40px]">
-          O que dizem quem já ouve com o Scriba.
-        </h2>
-        <p className="max-w-[520px] text-pretty text-[13.5px] font-light leading-[1.6] text-scriba-ink-soft lg:text-[15.5px]">
-          Membros, líderes de grupo e pastores contam o que mudou depois do primeiro domingo.
-        </p>
-      </div>
-      <div className="grid gap-3.5 lg:grid-cols-3 lg:gap-[22px]">
-        <TestimonialCard
-          quote={`"Parei de anotar e comecei a ouvir de verdade. Na quarta-feira o app me devolve exatamente o ponto que eu precisava."`}
-          name="Mateus Ribeiro"
-          title="Membro · Igreja Batista Central"
-          avatarSrc={avatar5}
-        />
-        <TestimonialCard
-          quote={`"Uso com meu grupo pequeno. Chegamos na reunião falando do mesmo sermão, com as mesmas perguntas."`}
-          name="Ana Laura Prado"
-          title="Líder de grupo pequeno"
-          avatarSrc={avatar6}
-        />
-        <TestimonialCard
-          quote={`"Sei o que a igreja tem ouvido nos últimos dois anos. Isso mudou como eu planejo a pregação."`}
-          name="Pr. João Silva"
-          title="Pastor titular"
-          avatarSrc={avatar7}
-        />
-      </div>
-    </section>
-  );
-}
-
-type TestimonialCardProps = {
-  quote: string;
-  name: string;
-  title: string;
-  avatarSrc: StaticImageData;
-};
-
-function TestimonialCard({ quote, name, title, avatarSrc }: TestimonialCardProps) {
-  return (
-    <div className="flex flex-col gap-3.5 rounded-[24px] border border-scriba-hairline bg-scriba-paper p-6 shadow-[0_8px_24px_rgba(0,0,0,.08)] sm:rounded-[26px] sm:p-8">
-      <div className="text-pretty text-[15px] font-normal leading-[1.55] text-scriba-ink sm:text-[16.5px]">
-        {quote}
-      </div>
-      <div className="mt-auto flex items-center gap-2.5 border-t border-scriba-hairline pt-[13px] sm:gap-[11px] sm:pt-[15px]">
-        <Image
-          src={avatarSrc}
-          alt=""
-          aria-hidden
-          width={34}
-          height={34}
-          loading="lazy"
-          className="size-8 flex-none rounded-full object-cover sm:size-[34px]"
-        />
-        <div className="flex flex-col gap-px">
-          <div className="text-[12.5px] font-semibold text-scriba-ink sm:text-[13px]">{name}</div>
-          <div className="text-[11px] font-light text-scriba-ink-mute sm:text-[11.5px]">
-            {title}
-          </div>
-        </div>
-      </div>
-    </div>
-  );
-}
-
 /**
  * Capacidades do produto, iguais em todos os planos; o que muda entre eles é
  * quantos créditos vêm por mês. Nome, preço e créditos NÃO moram aqui: saem de
@@ -758,17 +546,37 @@ function TestimonialCard({ quote, name, title, avatarSrc }: TestimonialCardProps
  * `lib/entitlements/features.ts` tem de cumprir**, ao mexer numa, confira a
  * outra.
  */
-const FREE_FEATURES = [
-  "Sermão ao vivo",
-  "Resumo organizado",
-  "Referências bíblicas",
-  "Destaques e principais ideias",
-  "Biblioteca de sermões",
+type PlanFeature = {
+  label: string;
+  /** `false` desenha a linha como AUSENTE: X apagado no lugar do check. */
+  included: boolean;
+};
+
+/** O que os três planos têm em comum. */
+const BASE_FEATURES: PlanFeature[] = [
+  { label: "Sermão comentado", included: true },
+  { label: "Resumo organizado", included: true },
+  { label: "Referências bíblicas", included: true },
+  { label: "Biblioteca de sermões", included: true },
 ];
 
-// O estudo é o que separa um plano pago do gratuito, daí ele fechar a lista
-// dos dois pagos, na posição de maior peso visual.
-const PAID_FEATURES = [...FREE_FEATURES, "Modo estudo liberado"];
+/**
+ * O estudo é o que separa um plano pago do gratuito, e por isso ele fecha as
+ * TRÊS listas, inclusive a do Gratuito, onde aparece apagada e com um X no
+ * lugar do check.
+ *
+ * A ausência é dita, não omitida. Antes o Gratuito simplesmente tinha uma
+ * linha a menos, e uma lista mais curta se lê como "tem menos coisa", não
+ * como "esta coisa específica não vem" — quem comparava os cards de relance
+ * não via o que estava faltando, e a diferença entre pagar e não pagar era
+ * justamente ela. O 403 que o botão de estudo devolve depois do cadastro é o
+ * que essa linha existe para antecipar. Ver `lib/entitlements/features.ts`.
+ */
+const STUDY_FEATURE = "Estudos bíblicos";
+
+const FREE_FEATURES: PlanFeature[] = [...BASE_FEATURES, { label: STUDY_FEATURE, included: false }];
+
+const PAID_FEATURES: PlanFeature[] = [...BASE_FEATURES, { label: STUDY_FEATURE, included: true }];
 
 function Plans() {
   return (
@@ -821,10 +629,6 @@ function Plans() {
             variant="soft"
           />
         </div>
-        <p className="text-center text-[12.5px] font-light leading-[1.6] text-scriba-ink-mute lg:text-[13px]">
-          Precisou de mais no meio do mês? Compre {formatCoins(TOPUP.coins)} créditos avulsos por{" "}
-          {formatBrl(TOPUP.priceCents)}, quantas vezes quiser, sem assinatura, e eles não expiram.
-        </p>
       </div>
     </section>
   );
@@ -843,7 +647,7 @@ type PlanCardProps = {
   price: string;
   priceUnit?: string;
   hint: string;
-  features: string[];
+  features: PlanFeature[];
   cta: string;
   /** Destino do CTA. Nos planos pagos carrega a intenção via `?next=`, para
    * que a escolha sobreviva ao login e o usuário caia direto no Checkout. */
@@ -852,8 +656,9 @@ type PlanCardProps = {
   badge?: string;
   /**
    * Destaca o ÚLTIMO item da lista. Usado nos planos pagos para o estudo,
-   * o diferencial em relação ao Gratuito, não se perder no meio de cinco
-   * linhas idênticas que os três planos compartilham.
+   * o diferencial em relação ao Gratuito, não se perder no meio das linhas
+   * idênticas que os três planos compartilham. A linha AUSENTE do Gratuito se
+   * distingue sozinha, pelo X, e não precisa desta chave.
    */
   highlightLast?: boolean;
 };
@@ -915,22 +720,33 @@ function PlanCard({
           const featured = highlightLast === true && i === features.length - 1;
           return (
             <div
-              key={f}
+              key={f.label}
               className={cn(
                 "flex items-start gap-2.5",
-                featured && "font-medium text-scriba-ink-strong"
+                featured && "font-medium text-scriba-ink-strong",
+                // A linha ausente é APAGADA, não alarmada. Ela já foi vermelha,
+                // e vermelho num card de preço lê como erro, não como "este
+                // plano não tem": puxava mais atenção que o próprio valor, num
+                // lugar onde o que queremos é que a pessoa compare e siga.
+                //
+                // Quem carrega o aviso é a FORMA, o X, único na coluna inteira
+                // e por isso visível de relance mesmo em cinza. A cor só
+                // reforça, recuando a linha um degrau em relação às outras.
+                !f.included && "text-scriba-ink-mute"
               )}
             >
               <svg
                 role="img"
-                aria-label="Incluído"
+                aria-label={f.included ? "Incluído" : "Não incluído"}
                 className={cn(
                   "mt-0.5 flex-none",
-                  featured
-                    ? "text-scriba-green"
-                    : isPrimary
-                      ? "text-scriba-blue-ink"
-                      : "text-scriba-ink-mute"
+                  !f.included
+                    ? "text-scriba-ink-mute"
+                    : featured
+                      ? "text-scriba-green"
+                      : isPrimary
+                        ? "text-scriba-blue-ink"
+                        : "text-scriba-ink-mute"
                 )}
                 width="16"
                 height="16"
@@ -939,14 +755,14 @@ function PlanCard({
                 xmlns="http://www.w3.org/2000/svg"
               >
                 <path
-                  d="M3 8.5L6.5 12L13 5"
+                  d={f.included ? "M3 8.5L6.5 12L13 5" : "M4 4L12 12M12 4L4 12"}
                   stroke="currentColor"
                   strokeWidth="1.75"
                   strokeLinecap="round"
                   strokeLinejoin="round"
                 />
               </svg>
-              {f}
+              {f.label}
             </div>
           );
         })}
@@ -992,10 +808,10 @@ function FinalCTA() {
         <div className="pointer-events-none absolute -top-[90px] right-[60px] h-[340px] w-[340px] rounded-full bg-[radial-gradient(circle,rgba(79,168,240,.22)_0%,rgba(79,168,240,0)_70%)]" />
         <div className="relative flex max-w-[620px] flex-col gap-3">
           <div className="text-pretty text-[28px] font-semibold leading-[1.16] tracking-[-.022em] lg:text-[38px]">
-            Neste domingo, ouça sem medo de esquecer.
+            Use Scriba e ouça sem medo de esquecer.
           </div>
           <div className="text-[14px] font-light leading-[1.6] text-lp-band-ink lg:text-[16px] lg:leading-[1.62]">
-            Crie sua conta em menos de um minuto e grave seu primeiro sermão.
+            Crie sua conta em menos de um minuto e grave a primeira mensagem.
           </div>
         </div>
         <div className="relative flex flex-none flex-col items-stretch gap-3">
@@ -1021,14 +837,22 @@ type PhoneFrameProps = {
   children: React.ReactNode;
   dark?: boolean;
   chrome?: React.ReactNode;
+  /**
+   * Só para ajustar a ÂNCORA da redução (`origin-*`) de quem recorta o
+   * mockup, hoje o hero. A moldura em si (largura, raio, escala, cor) não se
+   * customiza de fora: ela é a mesma nas três aparições, e é isso que faz as
+   * três parecerem o mesmo aparelho.
+   */
+  className?: string;
 };
 
-function PhoneFrame({ children, dark = false, chrome }: PhoneFrameProps) {
+function PhoneFrame({ children, dark = false, chrome, className }: PhoneFrameProps) {
   return (
     <div
       className={cn(
         "relative w-[390px] flex-none scale-[.75] rounded-[44px] bg-lp-phone-frame p-[11px] sm:scale-90 lg:scale-100",
-        dark ? "phone-frame-dark" : "phone-frame"
+        dark ? "phone-frame-dark" : "phone-frame",
+        className
       )}
     >
       <div className="phone-mask relative h-[680px] overflow-hidden rounded-[34px] bg-scriba-paper">
@@ -1073,19 +897,6 @@ function PhoneChrome({ title, subtitle, right }: PhoneChromeProps) {
         </span>
       </div>
       {right}
-    </div>
-  );
-}
-
-function LiveDot() {
-  return (
-    // As três cores eram literais (`bg-red-600/[.08]`, `bg-[#DC2626]`,
-    // `text-[#B91C1C]`) e por isso não trocavam com o tema: no escuro o texto
-    // ficava a 2,55:1 sobre o fundo do mockup. Agora são tokens, conferidos nos
-    // dois temas, claro 5,73:1, escuro 7,03:1.
-    <div className="flex items-center gap-1.5 rounded-full bg-scriba-rec-soft px-2.5 py-1">
-      <span className="size-1.5 rounded-full bg-scriba-rec shadow-[0_0_0_4px_rgba(220,38,38,.15)]" />
-      <span className="text-[10px] font-bold tracking-[.08em] text-scriba-rec-ink">AO VIVO</span>
     </div>
   );
 }

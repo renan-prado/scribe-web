@@ -25,15 +25,19 @@ export function LandingHeader({ onLandingPage = false }: LandingHeaderProps) {
         >
           <ScribaLogo size={28} textClassName="text-[22px]" className="text-scriba-ink-strong" />
         </Link>
+        {/* Três âncoras, e cada uma precisa existir na landing. Aqui já houve
+            um "Como funciona" apontando para `#como-funciona`; a seção saiu da
+            página e o link foi junto, no mesmo commit. Um item de menu que
+            rola para lugar nenhum é pior que um menu menor. */}
         <div className="hidden items-center gap-8 text-[13.5px] text-scriba-ink-soft lg:flex">
-          <a href={`${prefix}#como-funciona`} className="lp-nav">
-            Como funciona
-          </a>
           <a href={`${prefix}#recursos`} className="lp-nav">
             Recursos
           </a>
           <a href={`${prefix}#planos`} className="lp-nav">
             Planos
+          </a>
+          <a href={`${prefix}#perguntas`} className="lp-nav">
+            Perguntas frequentes
           </a>
         </div>
         <div className="flex items-center gap-2 sm:gap-3.5">

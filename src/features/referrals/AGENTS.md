@@ -108,10 +108,14 @@ O desenho é de quatro peças, e cada uma existe por uma razão:
 
 ## Por que existe um esqueleto, e por que ele não é estado do React
 
-A primeira versão mostrava a frase padrão e a trocava quando a resposta
-chegava. Quem vinha indicado lia "Ouça, relembre e coloque em prática." e a via
-sumir, um pisca no elemento acima do `<h1>`, que é a pior posição possível
-para um.
+A primeira versão mostrava uma frase padrão ("Ouça, relembre e coloque em
+prática.") e a trocava quando a resposta chegava. Quem vinha indicado lia a
+frase e a via sumir, um pisca no elemento acima do `<h1>`, que é a pior posição
+possível para um. A frase depois saiu da página inteira, quando o hero virou
+coluna única centrada, e **hoje a pílula só existe se houver indicação**: o
+estado padrão dela deixou de ser uma frase e passou a ser a ausência. O
+problema de sincronia continuou o mesmo, só trocou de forma, agora o que
+saltaria é o `<h1>` empurrado por uma pílula que entra tarde.
 
 Não dá para consertar isso com `useState`: **o React só age depois do paint**,
 e o paint é o problema. Por isso o estado inicial é decidido pelo script (peça
@@ -119,25 +123,30 @@ e o paint é o problema. Por isso o estado inicial é decidido pelo script (peç
 
 | pista | primeiro paint | depois da resposta |
 |---|---|---|
-| ausente (99% das visitas) | a frase padrão | nada muda, e não há requisição |
+| ausente (99% das visitas) | nada | nada muda, e não há requisição |
 | presente | **esqueleto** | "Indicado por Fulano" |
-| presente, sem indicação viva | esqueleto | a frase padrão |
+| presente, sem indicação viva | esqueleto | nada, a pílula some |
 
-Sem JavaScript nada disso roda e a frase padrão aparece, o desfecho certo: o
+Sem JavaScript nada disso roda e a pílula fica escondida, o desfecho certo: o
 selo é enfeite de conversão, e a LP tem de funcionar sem ele.
 
-**O `display` das duas classes mora no `globals.css`, nunca num utilitário do
-Tailwind.** Utilitário vive numa `@layer` posterior e vence a regra por ordem
-de camada, independentemente de especificidade, a armadilha que o comentário
-do `.lp-cta-soft` já documentava. Um `contents` de utilitário no
-`.lp-eyebrow-idle` deixaria a frase padrão visível DEBAIXO do esqueleto, que é
-exatamente o pisca que estamos evitando.
+**O `display` da pílula mora no `globals.css` nos DOIS estados, nunca num
+utilitário do Tailwind** — daí existir `.lp-eyebrow` ao lado de
+`.lp-eyebrow-pending`. Utilitário vive numa `@layer` posterior e vence a regra
+por ordem de camada, independentemente de especificidade, a armadilha que o
+comentário do `.lp-cta-soft` já documentava. Já custou um bug: com um
+`inline-flex` do Tailwind na própria pílula, o `none` do `globals.css` não
+valia nada e as 99% das visitas sem indicação viam o esqueleto piscar.
+
+A classe também SAI assim que o React resolve o selo. Ela é governada por um
+atributo do `<html>` que o componente remove logo depois, e uma pílula que
+continuasse dependendo dele desapareceria no instante da limpeza.
 
 **`AbortError` NÃO é resposta**, e confundir os dois foi um bug entregue duas
 vezes. Abortar diz "desisti da pergunta"; tratá-lo como "não há indicação" faz
 a pílula resolver para a frase padrão e depois trocar de novo quando a
-requisição de verdade chega, o pisca triplo (esqueleto → frase → selo) que o
-esqueleto existia para eliminar. Em desenvolvimento isso acontece SEMPRE: o
+requisição de verdade chega, o pisca triplo (esqueleto → pílula sumindo → selo
+entrando) que o esqueleto existia para eliminar. Em desenvolvimento isso acontece SEMPRE: o
 StrictMode monta o efeito, roda a limpeza (que aborta) e monta outra vez.
 
 A checagem é pelo NOME do erro, não por `instanceof DOMException`: o navegador

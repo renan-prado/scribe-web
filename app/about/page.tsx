@@ -45,8 +45,8 @@ export default function AboutPage() {
               Para quem foi feito
             </h2>
             <p>
-              Para quem ouve, e não para quem prega. Membros que querem lembrar do domingo durante a
-              semana, líderes de célula e pequenos grupos preparando a discussão, estudantes de
+              Para quem ouve, e não para quem prega. Membros que querem lembrar da mensagem durante
+              a semana, líderes de célula e pequenos grupos preparando a discussão, estudantes de
               teologia e qualquer pessoa que acompanhe pregações e queira revisá-las depois. O
               vocabulário é bíblico e teológico, em português do Brasil.
             </p>

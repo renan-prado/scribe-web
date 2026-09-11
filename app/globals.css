@@ -359,6 +359,11 @@
      deles foi o CHÃO, que deixou de ser azul. */
   --lp-hero: linear-gradient(180deg, #FAFAFA 0%, #FFFFFF 100%);
   --lp-hero-auth: linear-gradient(180deg, #FAFAFA 0%, #FFFFFF 60%);
+  /* A cor SÓLIDA em que `--lp-hero` termina. O hero esfuma o celular
+     recortado contra ela, e o valor precisa bater com o 100% do gradiente
+     acima: um tom fora do lugar desenha uma faixa visível exatamente onde a
+     ideia era não haver borda nenhuma. Mexeu num, mexa no outro. */
+  --lp-hero-fade: #FFFFFF;
   /* FORA DO TESTE: a banda full-bleed e a moldura do celular da landing
      mantêm a paleta de marca. Ver o comentário longo no git em v0.13.2. */
   /* A faixa full-bleed. Ela é ESCURA nos dois temas, e é por isso que o par
@@ -541,6 +546,8 @@
   --session-btn-ink: #B4B4B4;
   --lp-hero: linear-gradient(180deg, #141414 0%, #0A0A0A 100%);
   --lp-hero-auth: linear-gradient(180deg, #141414 0%, #0A0A0A 60%);
+  /* Ver `:root`: o fim do gradiente acima, agora no escuro. */
+  --lp-hero-fade: #0A0A0A;
   /* Ver `:root`. A faixa desce uma oitava, como já fazia. 8,4:1 no 0%. */
   --lp-band: linear-gradient(135deg, #1A1A1A 0%, #121212 55%, #0A0A0A 100%);
   --lp-band-ink: #B4B4B4;
@@ -806,21 +813,25 @@
        vez de só mudar de cor, que é o que se espera de algo apertado. */
     &:active { filter: brightness(0.88); box-shadow: 0 2px 6px var(--scriba-cta-shadow); }
   }
-  /* A pílula do hero, antes de saber se a visita veio de uma indicação.
-     Quem decide é o `HeroEyebrowScript`, que marca `data-scriba-ref` no
-     `<html>` ANTES do primeiro paint; estas regras são o efeito dessa decisão.
+  /* A pílula do hero, antes de saber se a visita veio de uma indicação. Ela
+     só tem o que dizer quando existe indicação, então o padrão é NÃO APARECER;
+     quem a revela é o `HeroEyebrowScript`, que marca `data-scriba-ref` no
+     `<html>` ANTES do primeiro paint.
 
-     O `display` mora AQUI, e não em utilitário do Tailwind, de propósito:
-     utilitário vive numa @layer posterior e venceria estas regras por ordem de
-     camada, independentemente de especificidade, a mesma armadilha anotada
-     em `.lp-cta-soft` logo abaixo. Um `contents` vindo de utilitário no
-     `.lp-eyebrow-idle` deixaria a frase padrão visível DEBAIXO do esqueleto.
+     **O `display` dos DOIS estados mora aqui, e a pílula não leva utilitário
+     de display nenhum.** Utilitário vive numa @layer posterior e vence estas
+     regras por ordem de camada, independentemente de especificidade, a mesma
+     armadilha anotada em `.lp-cta-soft` logo abaixo. Já custou um bug: com
+     `inline-flex` do Tailwind na própria pílula, o `none` daqui não valia nada
+     e TODA visita via o esqueleto piscar. Por isso o estado resolvido também
+     ganhou classe própria, `.lp-eyebrow`, em vez de herdar o utilitário.
 
-     Sem o atributo (a esmagadora maioria das visitas, e todo mundo sem JS): a
-     frase de sempre, no primeiro quadro, sem esqueleto e sem requisição. */
-  .lp-eyebrow-idle { display: contents; }
+     Sem o atributo (a esmagadora maioria das visitas, e todo mundo sem JS):
+     nada no lugar, no primeiro quadro, sem esqueleto e sem requisição. */
+  .lp-eyebrow { display: inline-flex; }
+  /* Depois de `.lp-eyebrow` de propósito: as duas têm a mesma especificidade,
+     então quem decide é a ordem, e o pendente é que precisa vencer. */
   .lp-eyebrow-pending { display: none; }
-  [data-scriba-ref] .lp-eyebrow-idle { display: none; }
   [data-scriba-ref] .lp-eyebrow-pending { display: inline-flex; }
 
   .lp-cta-yellow {
