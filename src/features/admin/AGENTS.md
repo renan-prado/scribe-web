@@ -1,8 +1,9 @@
 # src/features/admin: painel interno
 
-Telas de `/admin`: métricas de produto, uso de LLM, usuários, parceiros, o
-feedback dos usuários e a leitura do que eles receberam (resumo, transcrição e
-estudo de cada sessão).
+Telas de `/admin`: métricas de produto, uso de LLM, usuários, parceiros,
+cupons de convite, o feedback dos usuários e a leitura do que eles receberam
+(resumo, transcrição e estudo de cada sessão), mais a leitura que a IA faz de
+tudo isso.
 
 ## O gate
 
@@ -334,48 +335,113 @@ mesmas rotas de telemetria, então o custo é indistinguível no banco; como o
 preço também é o mesmo, somá-los não perde nada, separá-los daria um custo por
 execução inventado.
 
-## A leitura da IA (`AdminInsightsCard`)
+## A leitura da IA (`/admin/insights`)
 
-As três telas de dinheiro, precificação, uso e métricas, carregam o mesmo
-card, com escopos diferentes. Ele não tem número próprio: `lib/admin/insights/
-briefing.ts` monta o briefing a partir de `loadAdminUsageSummary`,
-`loadAdminMetrics` e `computeActionEconomics`, os MESMOS que desenham as
-tabelas ao lado. Uma segunda aritmética "só para o prompt" produziria um
-insight contradizendo a tela logo acima dele.
+Uma análise que um modelo escreve sobre os números do painel. Ela não tem
+número próprio: `lib/admin/insights/briefing.ts` monta o briefing a partir de
+`loadAdminUsageSummary`, `loadAdminMetrics` e `computeActionEconomics`, os
+MESMOS que desenham as tabelas das outras telas. Uma segunda aritmética "só
+para o prompt" produziria um insight contradizendo uma tabela do painel.
 
-Quatro coisas que quem mexer aqui não pode desfazer:
+**Ela já foi três, e a mudança é o que este trecho precisa ensinar.** Havia um
+card lateral em `/admin/precificacao`, `/admin/usage` e `/admin/metricas`, cada
+um com o seu recorte (`pricing`, `usage`, `metrics`), e cada um DISPARANDO a
+geração sozinho quando a linha gravada passava de 24 horas. Dois defeitos que só
+aparecem com o painel em uso:
 
+- **as três diziam quase a mesma coisa**, porque saem dos mesmos eventos, só
+  recortados diferente. E nenhuma podia concluir sobre o negócio, porque cada
+  uma via um terço dele: uma rota cara é a margem de uma ação, que é o preço de
+  um plano, que é o passivo de moedas. A divisão que existia para evitar três
+  respostas genéricas produzia três respostas parecidas E incompletas.
+- **ninguém as pedia.** A chamada de LLM mais cara do produto rodava porque
+  alguém abriu uma tela para conferir o MRR.
+
+Hoje é UMA leitura geral, com página própria, e ela **só roda no clique**.
+
+Seis coisas que quem mexer aqui não pode desfazer:
+
+- **Nada gera sozinho.** Sem disparo automático, a conferência de validade
+  ("já tem menos de 24h?") deixou de existir no card e na rota: não há o que
+  proteger contra recarregar a página, porque recarregar não gera nada. Se
+  alguém ressuscitar o disparo automático, a conferência tem de voltar JUNTO,
+  nos dois lugares, senão "uma vez por dia" vira "uma vez por aba".
 - **O card diz ao modelo o que é MEDIDO e o que é RÉGUA.** Custo vem de
   `llm_usage_events` × câmbio; o valor da moeda e a margem alvo vêm do cookie
   de simulação. Um analista que trate os dois como igualmente factuais escreve
   "a margem é 62%" onde o correto é "é 62% SE a moeda valer os R$ 20 que você
   digitou", e é assim que uma simulação vira decisão de preço. Está no prompt
   e nas etiquetas do briefing; as duas metades são necessárias.
-- **A geração é disparada do CLIENTE, depois do render.** São ~85s num modelo
-  de raciocínio; gerar dentro do server component faria a primeira visita do
-  dia esperar um minuto e meio, e não a de quem queria o insight, a de quem só
-  ia conferir o MRR.
 - **O esforço de raciocínio é `medium`, e isso foi MEDIDO.** Sobre um briefing
   real de 2.697 tokens de entrada: `high` leva 203s e gasta 15.182 tokens de
   raciocínio; `medium` leva 83s com 5.078 e chega nos mesmos cinco achados. Com
-  `high` e o teto de 180s da primeira versão, TODA geração estourava, e o card
+  `high` e o teto de 180s da primeira versão, TODA geração estourava, e a tela
   dizia "a OpenAI não respondeu a tempo" sem dizer por quantos segundos.
 - **A mensagem de erro mostra o que o upstream disse.** Timeout, 400 e 401
   chegavam à tela com a mesma frase, e o diagnóstico só existia no terminal do
   servidor. Numa tela atrás de `requireAdmin()`, o texto do upstream não é
   vazamento: é o que encurta o conserto.
-- **A validade é conferida DUAS vezes**, no card e na rota. O card decide o que
-  renderizar; a rota decide o que GASTAR, e são coisas diferentes no instante
-  em que alguém recarrega a página três vezes.
-- **A janela é fixa em 30 dias**, e não as pílulas de período da tela. Amarrar
-  o insight ao filtro daria quatro chamadas de modelo caro por dia por tela,
-  para responder a mesma pergunta.
+- **A janela é fixa em 30 dias**, e não as pílulas de período das outras telas.
+  Amarrar a leitura ao filtro daria quatro chamadas de modelo caro para
+  responder a mesma pergunta.
+- **A tabela `admin_insights` tem uma linha só.** A coluna `scope` sobrevive
+  como PK, com o valor constante `general` (ver `lib/admin/insights/store.ts`);
+  as três linhas antigas foram apagadas pela migração 0054.
 
 O custo dela é gravado como qualquer outra rota (`admin-insights` em
 `llm_usage_events`), na ação `internal`, separada de `unbilled` porque os dois
 têm consertos opostos: gasto sem cobrança é preço mal ajustado, custo interno é
 despesa nossa que nunca vai ter moeda atrás. Somados, a tela sugeriria cobrar
 do usuário por uma chamada que só o admin dispara.
+
+## Cupons de convite (`/admin/cupons`)
+
+Um link que credita moedas na conta criada por ele: `scriba.cc/c/<codigo>`.
+Existe para uma coisa que nenhum dos três programas de indicação faz, **chamar
+uma pessoa escolhida para testar o produto**. `partners` paga comissão a quem
+divulga, `referral_rewards` premia quem trouxe um amigo e `partner_prospects`
+dá cortesia a quem se candidatou a divulgador; os três descrevem uma relação
+com alguém de fora. O cupom é o admin abrindo a porta para quem ele quer, com
+um saldo dentro. Migração `0055_signup_coupons.sql`.
+
+O que não pode ser desfeito:
+
+- **Todo cupom tem TETO de usos**, `max_redemptions` é NOT NULL. Um link
+  público que credita moedas é uma torneira, e o custo de abusá-la é criar
+  contas Google. O teto do pré-parceiro é GLOBAL porque lá a porta é uma página
+  só; aqui ela é emitida uma a uma, então o teto é por cupom. Convidar mais
+  gente é emitir outro cupom, o que é barato e deixa rastro de por quê.
+- **Uma redenção por pessoa na vida**, e isso é a PK de
+  `signup_coupon_redemptions`, não um `if`. O crédito ainda passa por
+  `grant_coins` com `external_ref` derivado do usuário, que é a segunda tranca.
+- **A regra inteira mora na RPC** `redeem_signup_coupon`: janela de conta nova
+  (30 min, a mesma de `attach_partner`), cupom inativo/expirado/esgotado, e o
+  crédito, tudo numa transação, com a linha do cupom travada por `for update`,
+  que é o que torna o teto exato. `lib/db/coupons.ts` só traduz o resultado.
+- **O cupom NÃO recusa quem já ganhou bônus de indicação ou de pré-parceiro**,
+  ao contrário de `attach_partner_prospect`. Lá os dois lados são promoções
+  abertas a quem passar; aqui é um ato deliberado sobre uma pessoa escolhida, e
+  negá-lo em silêncio porque ela clicou num link de parceiro semana passada
+  faria o convite falhar exatamente onde ele foi mais intencional.
+- **Cupom resgatado não se apaga, desativa-se.** `redemptions.code` é
+  `on delete restrict`: apagar o cupom apagaria o registro de quem o usou, e o
+  crédito ficaria sem explicação no extrato da pessoa. O painel só oferece
+  "Apagar" enquanto a contagem é zero, e a rota devolve 409 se alguém insistir.
+- **O valor de um cupom emitido não se edita.** Um link que já circula
+  prometendo 200 moedas não pode passar a valer 20 sem que ninguém saiba: quem
+  quer mudar desativa aquele e emite outro. A rota simplesmente não tem essa
+  ação.
+- **O selo da tela de entrada só aparece se o cupom AINDA for resgatável.**
+  `getCouponPublicByCode` devolve `null` para inativo, expirado ou esgotado,
+  exatamente as três recusas da RPC. Anunciar um bônus que ela vai negar é
+  prometer moeda que não será creditada, e a pessoa descobre isso depois de já
+  ter criado a conta.
+
+O cookie é `scriba_coupon` (`lib/referrals/cookies.ts`, junto dos outros três),
+carrega só o CÓDIGO, é `httpOnly` e vale 30 dias. Ele é separado do
+`scriba_ref` pela mesma razão que o do pré-parceiro: o `scriba_ref` decide para
+onde vai DINHEIRO, e uma promoção não pode disputar espaço com a atribuição de
+comissão.
 
 ## Modelo sem preço na tabela
 
@@ -447,29 +513,27 @@ tela precisou dela, com a divergência que duas cópias sempre produzem já
 consumada: `youtube` tinha entrado em `SESSION_MODES` e a cópia de lá continuava
 desenhando "-", que se lê como "sessão sem modo".
 
-## Estudos (`/admin/studies`)
+## O que saiu: `/admin/studies`
 
-Não é métrica: é leitura. Cada linha mostra as 25-30 perguntas que o
-questionador levantou, as respondidas em destaque, as descartadas riscadas,
-ao lado do que saiu: contagem por tipo de bloco, versículos conferidos e as
-fontes que sobreviveram à selagem.
+A tela de avaliação do estudo (as 25-30 perguntas do questionador, as
+respondidas, as cortadas pelo guardião e as não escolhidas) foi **removida do
+painel**. Ela era leitura diagnóstica, não métrica, e quem quisesse o
+diagnóstico precisava abrir uma tela que ninguém abria.
 
-A razão de ser é diagnóstica. Um estudo ruim tem duas causas que se parecem no
-texto final e têm consertos opostos: **as perguntas eram rasas** (mexer no
-questionador) ou **eram boas e foram mal respondidas** (mexer no respondedor).
-Sem ver as perguntas, não dá para saber em qual dos dois modelos mexer, e as
-descartadas são metade do diagnóstico, porque se o respondedor deixou de fora
-justamente as boas, o problema é dele.
+**O dado continua existindo**, e essa é a parte que quem mexer aqui precisa
+saber: `session_deepenings.plan` continua guardando o `StudyRecord` inteiro
+(migração 0033), o pipeline continua gravando-o e `lib/db/admin/sessions.ts` e
+`session-runs.ts` continuam lendo-o. O que saiu foi a página e o
+`lib/db/admin/studies.ts` que só ela usava. `/admin/sessions/[id]` mostra a
+CONTAGEM ("11 de 27 perguntas respondidas") e nada mais.
 
-A tela distingue as DUAS razões de uma pergunta não ter virado texto, e a
-distinção é o diagnóstico: **cortada** (o guardião disse que o resumo já
-respondia, culpa do questionador) e **não escolhida** (o respondedor preferiu
-outras, se ele deixou de fora justamente as boas, a culpa é dele). Quem mexer
-aqui não pode colapsar as duas num "descartada".
-
-Uma leitura que também precisa ser preservada: estudo sem nenhuma fonte não é
-necessariamente pior, é a selagem tendo descartado o que não tinha obra, que é
-o comportamento desejado.
+Se a pergunta "as perguntas eram rasas ou foram mal respondidas?" voltar a ser
+urgente, o caminho é ler o `plan` da sessão direto no banco, ou ressuscitar a
+tela a partir do git. O que não vale é desenhar meia dúzia de perguntas numa
+aba de leitura e chamar isso de diagnóstico: a distinção que importava era
+entre **cortada** (o guardião disse que o resumo já respondia, culpa do
+questionador) e **não escolhida** (o respondedor preferiu outras, culpa dele),
+e uma lista que as colapse num "descartada" não responde nada.
 
 ## Feedback (`/admin/feedback`)
 

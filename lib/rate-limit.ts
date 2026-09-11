@@ -437,6 +437,16 @@ export const RATE_LIMITS = {
     route: "referral-link",
     perIp: { limit: 120, windowMs: MIN },
   },
+  // O link de um cupom de cadastro (/c/<codigo>). Mesmo teto dos outros dois
+  // links de entrada, pelo mesmo motivo: é um humano abrindo um link recebido,
+  // e o que ele guarda é um cookie. Aqui o limite carrega um segundo papel, o
+  // código é escolhido pelo admin (legível, ditável ao telefone), então ele é
+  // adivinhável de um jeito que um uuid não seria, e este balde é o que torna
+  // caro varrer o espaço de códigos.
+  "coupon-link": {
+    route: "coupon-link",
+    perIp: { limit: 120, windowMs: MIN },
+  },
   // A leitura do selo "indicado por" no hero da landing page. Anônima e por
   // IP, com folga para uma família atrás do mesmo NAT abrindo o mesmo link,
   // ela dispara uma vez por carregamento de LP de quem tem a pista, e nunca

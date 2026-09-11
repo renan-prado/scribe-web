@@ -97,6 +97,7 @@ src/features/
   session/    gravação, pipelines ao vivo, feed        → src/features/session/AGENTS.md
   partners/   programa de divulgadores                 → src/features/partners/AGENTS.md
   referrals/  indique a um amigo                       → src/features/referrals/AGENTS.md
+  coupons/    o selo do cupom de convite                → src/features/coupons/AGENTS.md
   admin/      painel interno, métricas, parceiros      → src/features/admin/AGENTS.md
   feedback/   a pesquisa de satisfação e a nota          → src/features/feedback/AGENTS.md
   tour/       as apresentações das telas logadas         → src/features/tour/AGENTS.md

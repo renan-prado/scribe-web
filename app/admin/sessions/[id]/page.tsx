@@ -33,10 +33,9 @@ export const dynamic = "force-dynamic";
  *
  * **Só lê.** Não há botão de reprocessar, de apagar nem de editar: o conserto
  * de um resumo ruim é prompt e modelo, não uma correção manual no conteúdo de
- * alguém, que o dono não pediu e não saberia que houve. Os dois links do
- * cabeçalho vão para as telas que respondem as perguntas vizinhas, quanto
- * custou (`/admin/precificacao`) e que perguntas o estudo levantou
- * (`/admin/studies`).
+ * alguém, que o dono não pediu e não saberia que houve. O link do cabeçalho vai
+ * para a tela que responde a pergunta vizinha: quanto esta sessão custou
+ * (`/admin/precificacao?sessionId=…`).
  *
  * O `SummaryView` NÃO é usado quando não há resumo: sem payload e com
  * transcrição, ele desenha o esqueleto de carregamento, e no painel isso se
@@ -109,18 +108,17 @@ export default async function AdminSessionReaderPage({ params }: PageProps) {
               <h2 className="font-heading text-2xl font-semibold leading-tight tracking-tight text-scriba-ink-strong">
                 {study.payload.title?.trim() || "Estudo sem título"}
               </h2>
-              {/* As PERGUNTAS do estudo moram em /admin/studies, que já as
-                  mostra ao lado das descartadas. Repeti-las aqui seria uma
-                  segunda leitura da mesma evidência, com o risco de as duas
-                  divergirem no dia em que o registro mudar de forma. */}
+              {/* A CONTAGEM, não as perguntas. O registro inteiro continua em
+                  `session_deepenings.plan`, mas a tela que o lia (/admin/studies)
+                  saiu do painel: desenhá-lo aqui seria trazer de volta, numa aba
+                  de leitura, a tela que foi retirada. A contagem fica porque ela
+                  qualifica o texto ao lado, um estudo de 11 perguntas não se lê
+                  como um de 3. */}
               {study.record ? (
-                <Link
-                  href="/admin/studies"
-                  className="w-fit text-[11px] font-medium text-scriba-ink-mute hover:text-scriba-ink hover:underline"
-                >
+                <span className="w-fit text-[11px] font-medium text-scriba-ink-mute">
                   {study.record.answered.length} de {study.record.questions.length} perguntas
-                  respondidas, ver quais em Estudos
-                </Link>
+                  respondidas
+                </span>
               ) : null}
             </div>
             {study.payload.shortSummary ? (

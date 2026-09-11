@@ -1,9 +1,6 @@
 import { NextResponse } from "next/server";
-import { z } from "zod";
-import { generateAdminInsights, readAdminInsights } from "@/lib/admin/insights/generate";
+import { generateAdminInsights } from "@/lib/admin/insights/generate";
 import { requireAdmin } from "@/lib/auth/require-admin";
-import { isAdminInsightScope, isInsightStale } from "@/lib/domain/admin-insights";
-import { parseJsonBody } from "@/lib/http/validate";
 import { createLogger } from "@/lib/log";
 import { enforceRateLimit, RATE_LIMITS } from "@/lib/rate-limit";
 
@@ -12,28 +9,26 @@ const log = createLogger("api/admin/insights");
 export const runtime = "nodejs";
 export const dynamic = "force-dynamic";
 // O modelo de raciocínio sobre o agregado inteiro mede 40-90s; o teto do
-// `callChat` é 180s. A função precisa sobreviver ao pior caso, ou o admin vê
+// `callChat` é 240s. A função precisa sobreviver ao pior caso, ou o admin vê
 // um 504 depois de a OpenAI já ter cobrado a chamada.
 export const maxDuration = 300;
 
 /**
- * Gera a análise de UMA tela do painel.
+ * Gera A leitura da IA sobre os números do painel. Uma só, geral.
  *
- * **A conferência de validade é feita DE NOVO aqui**, e não só no card que
- * dispara a requisição. O card decide o que renderizar; a rota decide o que
- * GASTAR, e são duas coisas diferentes no instante em que dois admins abrem o
- * painel ao mesmo tempo, ou em que alguém recarrega a página três vezes. Sem
- * esta reconferência, "uma vez por dia" seria "uma vez por aba".
+ * **Ela roda exatamente quando alguém clica**, e isso é a mudança que este
+ * arquivo carrega. Antes havia três leituras, uma por tela de dinheiro, e o
+ * card de cada tela DISPARAVA a geração sozinho quando a linha gravada passava
+ * de 24 horas. A rota reconferia a validade para que "uma vez por dia" não
+ * virasse "uma vez por aba", e nada disso era pedido por ninguém: quem abria
+ * `/admin/metricas` para conferir o MRR pagava um modelo de raciocínio.
  *
- * `force` pula a conferência: é o botão de atualizar, um pedido explícito de
- * quem está olhando. O rate limit de admin é o teto dele.
+ * Sem disparo automático, a conferência de validade some junto: não há o que
+ * proteger contra recarregar a página, porque recarregar não gera nada. O que
+ * limita o clique repetido é o `RATE_LIMITS.admin`, e o que a tela mostra
+ * enquanto isso é a data da leitura anterior, para a decisão de gerar de novo
+ * ser de quem está olhando.
  */
-
-const BodySchema = z.object({
-  scope: z.string().refine(isAdminInsightScope, "unknown_scope"),
-  force: z.boolean().optional(),
-});
-
 export async function POST(request: Request) {
   const auth = await requireAdmin();
   if (auth.response) return auth.response;
@@ -41,22 +36,11 @@ export async function POST(request: Request) {
   const limited = enforceRateLimit(request, RATE_LIMITS.admin, auth.user.id);
   if (limited) return limited;
 
-  const parsed = await parseJsonBody(request, BodySchema);
-  if (!parsed.ok) return parsed.response;
-  const { scope, force } = parsed.data;
-
-  if (!force) {
-    const existing = await readAdminInsights(scope);
-    if (existing && !isInsightStale(existing.generatedAt)) {
-      return NextResponse.json({ record: existing, reused: true, persistError: null });
-    }
-  }
-
-  const outcome = await generateAdminInsights(scope, auth.user.id);
+  const outcome = await generateAdminInsights(auth.user.id);
   if (!outcome.ok) {
-    log.warn("geração falhou", { scope, reason: outcome.reason, detail: outcome.detail });
+    log.warn("geração falhou", { reason: outcome.reason, detail: outcome.detail });
     // 502 e não 500: o que falhou foi o upstream (ou o formato que ele
-    // devolveu), e o card mostra uma mensagem diferente para cada caso.
+    // devolveu), e a tela mostra uma mensagem diferente para cada caso.
     //
     // O `detail` vai junto de propósito. É a mensagem do upstream, e esta rota
     // já está atrás de `requireAdmin()`, quem a lê é quem vai consertar. Sem
@@ -66,7 +50,6 @@ export async function POST(request: Request) {
 
   return NextResponse.json({
     record: outcome.record,
-    reused: false,
     persistError: outcome.persistError,
   });
 }

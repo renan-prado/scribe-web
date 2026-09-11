@@ -1,30 +1,36 @@
 import "server-only";
-import {
-  type AdminInsightScope,
-  type AdminInsightsRecord,
-  parseAdminInsightsFromLLM,
-} from "@/lib/domain/admin-insights";
+import { type AdminInsightsRecord, parseAdminInsightsFromLLM } from "@/lib/domain/admin-insights";
 import { createLogger } from "@/lib/log";
 import { createAdminClient } from "@/lib/supabase/admin";
 
 /**
- * Leitura e escrita de `admin_insights`, uma linha por escopo, substituída a
- * cada geração. O porquê de não haver histórico está no cabeçalho da migração
- * `0034_admin_insights.sql`.
+ * Leitura e escrita de `admin_insights`, substituída a cada geração. O porquê
+ * de não haver histórico está no cabeçalho da migração `0034_admin_insights.sql`.
+ *
+ * **A tabela tem uma linha, e a chave dela é uma constante.** Ela nasceu com
+ * uma linha por TELA (`pricing`, `usage`, `metrics`), quando a leitura era três
+ * cards espalhados pelo painel; hoje é uma leitura só, em `/admin/insights`, e
+ * `INSIGHTS_ROW_KEY` é o que sobrou da coluna `scope`. A coluna fica porque ela
+ * é a PK da tabela e porque o dia em que houver um segundo tipo de leitura (um
+ * resumo semanal, digamos) ela já é o lugar certo, mas ninguém fora deste
+ * arquivo precisa conhecê-la. As três linhas antigas foram apagadas pela
+ * migração 0054.
  *
  * A tabela não tem policy nenhuma e nenhum GRANT: só o service-role chega
  * nela, e ele só é alcançado depois de `requireAdmin()` / `isCurrentUserAdmin`.
  *
  * **A leitura revalida.** O payload é jsonb gravado por uma versão anterior do
- * tipo, e um card que confia no que está no banco quebra a página inteira no
- * dia em que um campo mudar de nome. Falha de parse aqui devolve `null`, que a
- * tela trata como "ainda não gerado", e a próxima geração conserta a linha.
+ * tipo, e uma tela que confia no que está no banco quebra inteira no dia em que
+ * um campo mudar de nome. Falha de parse aqui devolve `null`, que a tela trata
+ * como "ainda não gerado", e a próxima geração conserta a linha.
  */
 
 const log = createLogger("admin/insights");
 
+/** A chave da única linha. Ver o cabeçalho. */
+const INSIGHTS_ROW_KEY = "general";
+
 type Row = {
-  scope: string;
   payload: unknown;
   model: string;
   window_days: number;
@@ -37,11 +43,10 @@ function toRecord(row: Row): AdminInsightsRecord | null {
   // caminho mais curto para ter UMA validação, e não duas que divergem.
   const payload = parseAdminInsightsFromLLM(JSON.stringify(row.payload));
   if (!payload) {
-    log.warn("payload gravado não passou no parser, tratando como ausente", { scope: row.scope });
+    log.warn("payload gravado não passou no parser, tratando como ausente");
     return null;
   }
   return {
-    scope: row.scope as AdminInsightScope,
     payload,
     model: row.model,
     windowDays: row.window_days,
@@ -50,26 +55,23 @@ function toRecord(row: Row): AdminInsightsRecord | null {
   };
 }
 
-export async function readAdminInsights(
-  scope: AdminInsightScope
-): Promise<AdminInsightsRecord | null> {
+export async function readAdminInsights(): Promise<AdminInsightsRecord | null> {
   const admin = createAdminClient();
   const { data, error } = await admin
     .from("admin_insights")
-    .select("scope, payload, model, window_days, cost_usd, generated_at")
-    .eq("scope", scope)
+    .select("payload, model, window_days, cost_usd, generated_at")
+    .eq("scope", INSIGHTS_ROW_KEY)
     .maybeSingle();
   if (error) {
-    // Um card de análise não pode derrubar a tela que ele comenta. A página
-    // renderiza sem ele e o botão de atualizar continua ali.
-    log.warn("leitura falhou", { scope, error: error.message });
+    // A leitura da IA não pode derrubar a página que a hospeda. Ela renderiza
+    // sem o texto e com o botão de gerar no lugar de sempre.
+    log.warn("leitura falhou", { error: error.message });
     return null;
   }
   return data ? toRecord(data as Row) : null;
 }
 
 export async function writeAdminInsights(record: {
-  scope: AdminInsightScope;
   payload: unknown;
   model: string;
   windowDays: number;
@@ -80,7 +82,7 @@ export async function writeAdminInsights(record: {
   const generatedAt = new Date().toISOString();
   const { error } = await admin.from("admin_insights").upsert(
     {
-      scope: record.scope,
+      scope: INSIGHTS_ROW_KEY,
       payload: record.payload,
       model: record.model,
       window_days: record.windowDays,
@@ -91,6 +93,6 @@ export async function writeAdminInsights(record: {
     { onConflict: "scope" }
   );
   if (error) throw new Error(`writeAdminInsights failed: ${error.message}`);
-  log.info("gerado", { scope: record.scope, model: record.model, costUsd: record.costUsd });
+  log.info("gerado", { model: record.model, costUsd: record.costUsd });
   return generatedAt;
 }

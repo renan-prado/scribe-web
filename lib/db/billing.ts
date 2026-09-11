@@ -178,7 +178,12 @@ export type GrantReason =
   // Cortesia do PRÉ-PARCEIRO: quem chegou por /parceiros e criou conta sem
   // compromisso, para conhecer o produto antes de topar divulgá-lo. Teto
   // global em `lib/partners/economics.ts`, ver migração 0050.
-  | "partner_prospect_bonus";
+  | "partner_prospect_bonus"
+  // Cupom de cadastro: o admin emitiu um link (`/c/<codigo>`) para convidar
+  // alguém nominalmente, e a conta criada por ele nasce com as moedas do cupom.
+  // Diferente dos bônus acima, o valor é POR CUPOM e o teto é por cupom, não
+  // global; ver migração 0055.
+  | "signup_coupon";
 
 /**
  * ÚNICA porta de crédito da aplicação.

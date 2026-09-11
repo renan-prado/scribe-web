@@ -1,10 +1,13 @@
 import { cookies } from "next/headers";
 import { NextResponse } from "next/server";
+import { redeemSignupCoupon } from "@/lib/db/coupons";
 import { attachPartner } from "@/lib/db/partners";
 import { attachPartnerProspect } from "@/lib/db/prospects";
 import { attachReferrer } from "@/lib/db/referrals";
+import { normalizeCouponCode } from "@/lib/domain/coupon";
 import { createLogger } from "@/lib/log";
 import {
+  COUPON_COOKIE,
   decodeRef,
   PROSPECT_COOKIE,
   REF_COOKIE,
@@ -56,8 +59,14 @@ export async function GET(request: Request) {
   // pré-parceiro roda depois e se recusa sozinho quando encontra uma atribuição
   // já gravada, é assim que os dois brindes de boas-vindas não se empilham
   // sem que ninguém tenha decidido isso. Ver a migração 0050.
+  //
+  // O cupom é o terceiro e NÃO participa dessa recusa: ele é um convite que o
+  // admin emitiu para uma pessoa escolhida, com teto próprio, e negá-lo em
+  // silêncio porque a pessoa clicou num link de parceiro semana passada faria o
+  // convite falhar exatamente onde ele foi mais intencional. Ver a migração 0055.
   await attachReferralIfAny(data.user?.id ?? null);
   await attachProspectIfAny(data.user?.id ?? null);
+  await redeemCouponIfAny(data.user?.id ?? null);
 
   const forwardedHost = request.headers.get("x-forwarded-host");
   const isLocal = process.env.NODE_ENV === "development";
@@ -136,6 +145,37 @@ async function attachReferralIfAny(userId: string | null): Promise<void> {
     jar.delete(REF_HINT_COOKIE);
   } catch (err) {
     log.error("attach de indicação falhou", { error: (err as Error).message });
+  }
+}
+
+/**
+ * Resgata o cupom de cadastro, se a visita trouxe um.
+ *
+ * Toda a regra está na RPC `redeem_signup_coupon` (janela de conta nova, cupom
+ * inativo, expirado ou esgotado, uma vez por pessoa, e o crédito por
+ * `grant_coins`). Aqui, como nos dois irmãos acima, NADA pode impedir o login:
+ * todo desfecho vira log e uma exceção inesperada é engolida. Perder um brinde
+ * é ruim; não conseguir entrar é pior.
+ *
+ * O cookie é apagado em QUALQUER desfecho, inclusive nos "não". Um `exhausted`
+ * ou um `expired` não muda com o tempo, e deixar o cookie vivo faria todo login
+ * futuro em outro aparelho tentar de novo o que já foi decidido.
+ */
+async function redeemCouponIfAny(userId: string | null): Promise<void> {
+  if (!userId) return;
+  try {
+    const jar = await cookies();
+    // Normaliza de novo aqui: o valor veio de um cookie, e cookie é entrada do
+    // cliente. Um código impossível nem chega a custar uma ida ao banco.
+    const code = normalizeCouponCode(jar.get(COUPON_COOKIE)?.value);
+    if (!code) return;
+
+    const result = await redeemSignupCoupon(userId, code);
+    log.info("cupom de cadastro", { code, result });
+
+    jar.delete(COUPON_COOKIE);
+  } catch (err) {
+    log.error("resgate de cupom falhou", { error: (err as Error).message });
   }
 }
 

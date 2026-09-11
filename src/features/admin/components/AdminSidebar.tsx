@@ -3,6 +3,7 @@
 import {
   ArrowUpRight,
   BarChart3,
+  Brain,
   CalendarClock,
   ChevronsUpDown,
   Handshake,
@@ -15,8 +16,8 @@ import {
   Mic,
   PiggyBank,
   Receipt,
-  ScrollText,
   SlidersHorizontal,
+  Ticket,
   ToggleRight,
   TrendingUp,
   User as UserIcon,
@@ -66,8 +67,9 @@ const NAV: NavItem[] = [
   { href: "/admin/partners", label: "Parceiros", icon: Handshake },
   { href: "/admin/features", label: "Funcionalidades", icon: ToggleRight },
   { href: "/admin/sessions", label: "Sessões", icon: Mic },
-  { href: "/admin/studies", label: "Estudos", icon: ScrollText },
   { href: "/admin/feedback", label: "Feedback", icon: MessageSquareHeart },
+  { href: "/admin/cupons", label: "Cupons", icon: Ticket },
+  { href: "/admin/insights", label: "Leitura da IA", icon: Brain },
 ];
 
 /**

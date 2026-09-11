@@ -1,10 +1,6 @@
 import "server-only";
 import { recordChatUsage } from "@/lib/db/usage";
-import {
-  type AdminInsightScope,
-  type AdminInsightsRecord,
-  parseAdminInsightsFromLLM,
-} from "@/lib/domain/admin-insights";
+import { type AdminInsightsRecord, parseAdminInsightsFromLLM } from "@/lib/domain/admin-insights";
 import { serverEnv } from "@/lib/env/server";
 import { buildLlmMetadata } from "@/lib/llm/metadata";
 import { callChat } from "@/lib/llm/openai";
@@ -17,13 +13,14 @@ import { readAdminInsights, writeAdminInsights } from "./store";
 /**
  * A geração: briefing → modelo → parser → banco, e a telemetria no fim.
  *
- * **É a chamada de LLM mais cara do produto por execução, e a única que roda
- * sem ninguém pedindo.** Daí as três defesas:
+ * **É a chamada de LLM mais cara do produto por execução.** Ela já foi também a
+ * única que rodava sem ninguém pedir: o card das telas de dinheiro a disparava
+ * sozinho quando a linha gravada passava de um dia, três vezes, uma por escopo.
+ * Hoje só roda no CLIQUE, e as defesas que sobraram são estas:
  *
- *   - o chamador confere a validade ANTES (o card só dispara quando a linha
- *     está velha ou não existe), e a rota confere DE NOVO, porque dois admins
- *     abrindo o painel ao mesmo tempo são duas requisições;
+ *   - uma leitura só, geral, em vez de uma por tela: um clique paga uma chamada;
  *   - a janela é fixa em 30 dias, então não há uma geração por filtro de tela;
+ *   - o rate limit de admin é o teto do dedo nervoso;
  *   - o custo é gravado em `llm_usage_events` como qualquer outra rota, na
  *     ação `internal`. Uma análise de custo que não contabiliza a si mesma é
  *     exatamente o tipo de omissão que ela existe para pegar.
@@ -89,17 +86,14 @@ function describe(error: { kind: string; status?: number; message: string }): st
   return `rede ou timeout (${TIMEOUT_MS / 1000}s): ${error.message.slice(0, 300)}`;
 }
 
-export async function generateAdminInsights(
-  scope: AdminInsightScope,
-  adminId: string
-): Promise<GenerateOutcome> {
+export async function generateAdminInsights(adminId: string): Promise<GenerateOutcome> {
   const model = serverEnv.OPENAI_ADMIN_INSIGHTS_MODEL;
-  const briefing = await buildInsightsBriefing(scope);
+  const briefing = await buildInsightsBriefing();
 
   const result = await callChat({
     model,
     messages: [
-      { role: "system", content: adminInsightsSystemPrompt(scope) },
+      { role: "system", content: adminInsightsSystemPrompt() },
       { role: "user", content: briefing.text },
     ],
     temperature: 0.4,
@@ -112,11 +106,11 @@ export async function generateAdminInsights(
     responseFormat: { type: "json_object" },
     timeoutMs: TIMEOUT_MS,
     store: true,
-    metadata: { ...buildLlmMetadata({ route: "admin-insights", userId: adminId }), scope },
+    metadata: buildLlmMetadata({ route: "admin-insights", userId: adminId }),
   });
 
   if (!result.ok) {
-    log.error("upstream falhou", { scope, model, error: result.error });
+    log.error("upstream falhou", { model, error: result.error });
     return { ok: false, reason: "upstream", detail: describe(result.error) };
   }
 
@@ -139,7 +133,6 @@ export async function generateAdminInsights(
 
   if (!payload) {
     log.warn("resposta não passou no parser", {
-      scope,
       finishReason: result.data.finishReason,
       chars: result.data.content.length,
     });
@@ -163,7 +156,6 @@ export async function generateAdminInsights(
   let persistError: string | null = null;
   try {
     generatedAt = await writeAdminInsights({
-      scope,
       payload,
       model,
       windowDays: briefing.windowDays,
@@ -172,12 +164,12 @@ export async function generateAdminInsights(
     });
   } catch (err) {
     persistError = (err as Error).message;
-    log.error("gravação falhou, devolvendo a leitura mesmo assim", { scope, error: persistError });
+    log.error("gravação falhou, devolvendo a leitura mesmo assim", { error: persistError });
   }
 
   return {
     ok: true,
-    record: { scope, payload, model, windowDays: briefing.windowDays, costUsd, generatedAt },
+    record: { payload, model, windowDays: briefing.windowDays, costUsd, generatedAt },
     persistError,
   };
 }

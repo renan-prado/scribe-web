@@ -9,13 +9,11 @@ import {
   TableHeader,
   TableRow,
 } from "@/components/ui/table";
-import { AdminInsightsCard } from "@/features/admin/components/AdminInsightsCard";
 import { AdminPageHeader } from "@/features/admin/components/AdminPageHeader";
 import { CopyButton } from "@/features/admin/components/CopyButton";
 import { FxRateBadge } from "@/features/admin/components/FxRateBadge";
 import { SessionModeBadge } from "@/features/admin/components/SessionModeBadge";
 import { UsageFilters } from "@/features/admin/components/UsageFilters";
-import { readAdminInsights } from "@/lib/admin/insights/store";
 import {
   type AdminUsageSummary,
   listUsersForFilter,
@@ -99,11 +97,10 @@ export default async function AdminUsagePage({ searchParams }: PageProps) {
     version: sp.version?.trim() || undefined,
   };
 
-  const [summary, users, rate, insights] = await Promise.all([
+  const [summary, users, rate] = await Promise.all([
     loadAdminUsageSummary(filters),
     listUsersForFilter(),
     getUsdToBrl(),
-    readAdminInsights("usage"),
   ]);
 
   const money = makeMoneyFormatter(rate);
@@ -136,7 +133,6 @@ export default async function AdminUsagePage({ searchParams }: PageProps) {
       <TotalsGrid summary={summary} money={money} costPerThousandCoins={costPerThousandCoins} />
       <UnpricedNote summary={summary} />
       <VersionsTable summary={summary} money={money} filteredRoute={sp.route ?? ""} />
-      <AdminInsightsCard scope="usage" initial={insights} />
       <RouteAndUserTables summary={summary} money={money} />
       <SessionsTable
         summary={summary}

@@ -254,9 +254,11 @@ de qualidade por um de disponibilidade:
   `StudyRecord.guard`.
 
 As perguntas são **persistidas** (`session_deepenings.plan`, migração 0033, a
-coluna nasceu guardando um plano de eixos e hoje guarda um `StudyRecord`) e
-lidas em `/admin/studies`. É o que separa "as perguntas eram rasas" de "eram
-boas e foram mal respondidas", que são consertos em modelos diferentes.
+coluna nasceu guardando um plano de eixos e hoje guarda um `StudyRecord`). É o
+que separa "as perguntas eram rasas" de "eram boas e foram mal respondidas",
+que são consertos em modelos diferentes. A tela que as lia (`/admin/studies`)
+saiu do painel; o registro continua gravado, e quem precisar do diagnóstico o
+lê direto do banco. Ver `src/features/admin/AGENTS.md`.
 
 Quatro env vars (`OPENAI_STUDY_QUESTIONS_MODEL`, `_ANSWERS_`, `_WRITE_`,
 `_GUARD_`) e quatro rotas em `llm_usage_events`, para dar para trocar uma etapa
@@ -541,12 +543,19 @@ nunca disparava com o modelo novo, nem em áudio com 27% de WER.
   quanto custa em moedas; `billable.ts` diz o que é uma coisa (gerar e
   reprocessar estudo são dois motivos no ledger e um produto só). Alimentam
   `/admin/precificacao`, ver `src/features/admin/AGENTS.md`.
-- `admin/insights/`: server-only, a leitura de um modelo sobre os números de
-  `/admin/precificacao`, `/admin/usage` e `/admin/metricas`. `briefing.ts`
-  monta os números (sem calcular nada: tudo vem de `db/admin/*` e
-  `coins/economics.ts`), `generate.ts` chama o modelo e `store.ts` grava a
-  linha em `admin_insights`. O tipo e o parser são client-safe, em
-  `domain/admin-insights.ts`. Ver `src/features/admin/AGENTS.md`.
+- `admin/insights/`: server-only, a leitura que um modelo faz dos números do
+  painel inteiro, em `/admin/insights`. UMA leitura, gerada só no clique; já
+  foram três, uma por tela de dinheiro, e cada uma se disparava sozinha. O
+  porquê está em `src/features/admin/AGENTS.md`. `briefing.ts` monta os números
+  (sem calcular nada: tudo vem de `db/admin/*` e `coins/economics.ts`),
+  `generate.ts` chama o modelo e `store.ts` grava a única linha de
+  `admin_insights`. O tipo e o parser são client-safe, em
+  `domain/admin-insights.ts`.
+- `db/coupons.ts` + `domain/coupon.ts`: os cupons de convite (`/c/<codigo>`,
+  migração 0055). O segundo é client-safe (formato do código, limites e o
+  caminho do link, lidos pelo formulário do painel); o primeiro é service-role e
+  só traduz o resultado de `redeem_signup_coupon`, onde a regra inteira mora.
+  Ver `src/features/admin/AGENTS.md`.
 - `coins/settings.ts`: server-only, lê do cookie o valor de venda da moeda e a
   margem alvo que o admin girou. É régua de SIMULAÇÃO: não cobra, não credita e
   não pode virar tabela. Escrita por `coins/settings-actions.ts`, com

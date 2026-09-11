@@ -1,7 +1,13 @@
 /**
- * Cookies de indicação, nome, prazo e opções em um lugar só, para os DOIS
- * programas: o de parceiros (`/r/<slug>`) e o "Indique a um amigo"
- * (`/i/<codigo>`).
+ * Cookies de ENTRADA, nome, prazo e opções em um lugar só: os dois programas de
+ * indicação (o de parceiros, `/r/<slug>`, e o "Indique a um amigo",
+ * `/i/<codigo>`), o pré-parceiro (`/parceiros/entrar`) e o cupom de cadastro
+ * (`/c/<code>`).
+ *
+ * Estar todos aqui é o que torna visível o que cada um decide, e o que impede o
+ * próximo de virar mais um campo dentro do `scriba_ref`. **Só o `scriba_ref` é
+ * de ATRIBUIÇÃO**, ou seja, só ele decide para quem vai dinheiro; os outros dois
+ * decidem um brinde de boas-vindas para quem chega.
  *
  * Mora em `lib/referrals/` e não em `lib/partners/` justamente porque é
  * compartilhado: o cookie é UM só, e quem chega por um link de amigo depois de
@@ -58,6 +64,31 @@ export const REF_COOKIE_MAX_AGE = 30 * 24 * 60 * 60;
  */
 export const PROSPECT_COOKIE = "scriba_prospect";
 export const PROSPECT_COOKIE_MAX_AGE = REF_COOKIE_MAX_AGE;
+
+/**
+ * "Esta visita veio de um cupom de cadastro." O valor é o CÓDIGO do cupom, e
+ * não um `1`, porque cada cupom vale um número diferente de moedas (migração
+ * 0055).
+ *
+ * **Terceiro cookie, e pela mesma razão que o segundo:** o `scriba_ref` decide
+ * para quem vai DINHEIRO (comissão, moedas de quem indica) e é exclusivo por
+ * conta, com regra de precedência entre dois programas. Este decide só quantas
+ * moedas a conta NOVA ganha, num convite que o admin emitiu nominalmente.
+ * Enfiar os dois no mesmo cookie faria uma promoção disputar espaço com a
+ * atribuição de pagamento, e um bug aqui passaria a poder desviar comissão.
+ *
+ * Consequência aceita, e ela é deliberada: quem clicou num link de parceiro e
+ * depois num cupom tem os DOIS cookies vivos, e ganha as duas coisas. Ver o
+ * cabeçalho da migração 0055, o cupom é um ato intencional sobre uma pessoa
+ * escolhida, e tem teto próprio.
+ *
+ * Mesma janela de 30 dias e mesmo `httpOnly` dos outros: quem escreve é a rota
+ * `/c/<code>`, quem lê é a tela de entrada (server component) e o
+ * `/auth/callback`. Nenhum código de navegador o toca, e não há por que tocar:
+ * o que a tela mostra é o VALOR do cupom, resolvido no servidor, não o código.
+ */
+export const COUPON_COOKIE = "scriba_coupon";
+export const COUPON_COOKIE_MAX_AGE = REF_COOKIE_MAX_AGE;
 
 /**
  * Marca de visita recente, usada só para deduplicar o contador de cliques.

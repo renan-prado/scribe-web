@@ -36,8 +36,8 @@ import "server-only";
  * O corte [B] não descarta o estudo, o usuário já pagou. Ele dispara UMA
  * reescrita, com a sobreposição nomeada explicitamente. Se a segunda tentativa
  * também repetir, o estudo é entregue assim mesmo e o fato vai para o log e
- * para o `/admin/studies`: entregar algo imperfeito é melhor que cobrar moedas
- * e devolver 502.
+ * para o `StudyRecord.guard` da sessão: entregar algo imperfeito é melhor que
+ * cobrar moedas e devolver 502.
  */
 
 export const STUDY_QUESTION_FILTER_SYSTEM_PROMPT = `Você é um filtro. Recebe o RESUMO de um sermão e uma lista de PERGUNTAS que outro modelo levantou sobre o assunto tratado nele.

@@ -126,12 +126,12 @@ const LONG_CALL_TIMEOUT_MS = 240_000;
  * "função morta depois de debitar as moedas", que é um estrago maior.
  *
  * Consequência assumida: enquanto as três etapas eram gpt-5.1 a reescrita quase
- * nunca cabia, e o veredito do guardião valia como SINAL (log e
- * `/admin/studies`). Com o redator em `gpt-5-mini` ela deve voltar a caber,
- * este limite foi escrito para que isso acontecesse sozinho, sem mudar nada
- * aqui. Se as reescritas dispararem, `record.guard.rewrites` em
- * `/admin/studies` é onde isso aparece, e uma reescrita é uma redação inteira
- * a mais na conta.
+ * nunca cabia, e o veredito do guardião valia como SINAL (o log e o
+ * `StudyRecord.guard` gravado na sessão). Com o redator em `gpt-5-mini` ela
+ * deve voltar a caber, este limite foi escrito para que isso acontecesse
+ * sozinho, sem mudar nada aqui. Se as reescritas dispararem, quem acusa é
+ * `record.guard.rewrites`, e uma reescrita é uma redação inteira a mais na
+ * conta.
  */
 const REWRITE_DEADLINE_MS = 150_000;
 

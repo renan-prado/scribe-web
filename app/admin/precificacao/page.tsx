@@ -10,14 +10,12 @@ import {
   TableRow,
 } from "@/components/ui/table";
 import { KpiCard, KpiGrid, type KpiTrend } from "@/features/admin/components/AdminCards";
-import { AdminInsightsCard } from "@/features/admin/components/AdminInsightsCard";
 import { AdminPageHeader } from "@/features/admin/components/AdminPageHeader";
 import { CoinEconomicsForm } from "@/features/admin/components/CoinEconomicsForm";
 import { FxRateBadge } from "@/features/admin/components/FxRateBadge";
 import { SessionRunLookup } from "@/features/admin/components/SessionRunLookup";
 import { SessionRunPanel } from "@/features/admin/components/SessionRunPanel";
 import { VersionPicker } from "@/features/admin/components/VersionPicker";
-import { readAdminInsights } from "@/lib/admin/insights/store";
 import {
   BILLABLE_ACTION_BY_KEY,
   type BillableActionKey,
@@ -112,12 +110,11 @@ export default async function AdminPricingPage({ searchParams }: PageProps) {
   const sessionId = UUID.test(sp.sessionId?.trim() ?? "") ? (sp.sessionId as string).trim() : "";
   const version = sp.version?.trim() ?? "";
 
-  const [summary, rate, settings, isCustom, insights, sessionRuns] = await Promise.all([
+  const [summary, rate, settings, isCustom, sessionRuns] = await Promise.all([
     loadAdminUsageSummary({ from: rangeToFrom(range), version: version || undefined }),
     getUsdToBrl(),
     getCoinEconomics(),
     hasCustomCoinEconomics(),
-    readAdminInsights("pricing"),
     // Melhor-esforço: um id que não existe não pode derrubar a página inteira
     // de precificação, que é a razão de alguém ter chegado aqui.
     sessionId ? loadSessionRuns(sessionId).catch(() => null) : Promise.resolve(null),
@@ -156,8 +153,6 @@ export default async function AdminPricingPage({ searchParams }: PageProps) {
           money={makeMoneyFormatter(rate)}
         />
       ) : null}
-
-      <AdminInsightsCard scope="pricing" initial={insights} />
 
       <OverallGrid summary={summary} rate={rate} settings={settings} />
 

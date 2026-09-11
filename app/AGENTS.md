@@ -20,6 +20,9 @@ Regras da camada de roteamento. Para a camada de servidor abaixo dela, ver
 /auth/callback          troca o code do OAuth por sessão. Valida o ?next=
 /auth/sign-out
 /r/[slug]               link do parceiro: marca a visita e devolve 302
+/i/[code]               link de indicação de um usuário comum. 302 para a LP
+/c/[code]               link de um CUPOM de convite: grava o cookie e manda
+                        para /sign-in, onde a tela diz quanto ele vale
 /api/stripe/webhook     ÚNICA porta de crédito. HMAC no lugar do cookie
 /api/billing/sweep      cron diário da Vercel, guardado por CRON_SECRET
 /robots.txt  /sitemap.xml  /manifest.webmanifest
@@ -66,13 +69,22 @@ redirect não precisa de header, de nav nem das duas consultas ao banco do
 **Restrito:** `/admin/*` (gate em `app/admin/layout.tsx`, responde `notFound()`
 a quem não é admin) e `/partners` (gate em `lib/auth/require-partner.ts`).
 
+As três rotas de link de entrada (`/r`, `/i`, `/c`) são irmãs e seguem as
+mesmas decisões: são ROTAS e não páginas (para nenhuma delas custar a
+estaticidade da LP), respondem 302 e não 308, e redirecionam também quando o
+identificador é impossível. A única que difere no destino é `/c`, que vai para
+`/sign-in` em vez da landing: um cupom é convite nominal, quem o abriu já disse
+sim, e pôr a página de vendas no caminho é pôr um argumento diante de quem já
+foi convencido. Nenhuma das três entra no `sitemap.ts` nem no `/llms.txt`, elas
+não são conteúdo, são efeito colateral com redirect.
+
 **API:** `app/api/`, pipelines de LLM (`transcribe`, `bible`, `insights`,
 `sermon-echo`, `final-summary[/reprocess|/from-transcript]`,
 `deepening[/reprocess]`, `verse`, `format-paragraphs`,
 `hallucination-report`), dados (`sessions[/search]`, `feed`, `speakers`,
 `locations`, `coins`, `feedback[/prompt]`, `tour/{start,finish,reset}`), cobrança (`billing/*`,
 `stripe/webhook`) e admin (`admin/users`, `admin/partners`, `admin/features`,
-`admin/insights`).
+`admin/coupons`, `admin/insights`).
 
 `feedback/prompt` é **POST e não GET porque ESCREVE**: quando a resposta é
 "sim, pergunte", a pergunta já nasce registrada em `feedback_prompts`, é o

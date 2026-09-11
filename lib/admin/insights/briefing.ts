@@ -11,12 +11,24 @@ import { INITIAL_COIN_BALANCE } from "@/lib/coins/pricing";
 import { getCoinEconomics } from "@/lib/coins/settings";
 import { loadAdminMetrics } from "@/lib/db/admin/metrics";
 import { type AdminUsageSummary, loadAdminUsageSummary } from "@/lib/db/admin/usage";
-import { type AdminInsightScope, INSIGHTS_WINDOW_DAYS } from "@/lib/domain/admin-insights";
+import { INSIGHTS_WINDOW_DAYS } from "@/lib/domain/admin-insights";
 import { getUsdToBrl, type UsdBrlRate } from "@/lib/fx/usd-brl";
 import { stripeFeeCents } from "@/lib/partners/economics";
 
 /**
  * O BRIEFING: os números que o analista de `/admin/insights` recebe.
+ *
+ * Ele é UM só, e atravessa as três telas de dinheiro de uma vez: totais, custo
+ * por ação, custo por rota e modelo, concentração por conta e sessão, funil,
+ * receita e passivo. Já foram três briefings, um por tela, e a divisão não
+ * sobreviveu ao uso: as perguntas se cruzam (uma rota cara é a margem de uma
+ * ação, que é o preço de um plano, que é o passivo de moedas), então recortar a
+ * entrada obrigava cada leitura a concluir sem metade do que precisava, e
+ * produzia três textos parecidos pelos quais se pagava três vezes.
+ *
+ * Ele é GRANDE de propósito, e essa é a metade barata da conta: o que custa
+ * nesta chamada é o raciocínio, e ele fica pior, não melhor, com o número que
+ * falta.
  *
  * Três decisões governam este arquivo, e as três são sobre confiança:
  *
@@ -74,7 +86,7 @@ function windowFrom(): string {
   return new Date(Date.now() - INSIGHTS_WINDOW_DAYS * 24 * 60 * 60 * 1000).toISOString();
 }
 
-/** Os dois lados da régua, escritos uma vez e reusados nos três escopos. */
+/** Os dois lados da régua: o que se mede e o que o admin digitou. */
 function rulerBlock(settings: CoinEconomicsSettings, rate: UsdBrlRate | null): string {
   return [
     "── A RÉGUA (simulação, o admin digitou; não cobra nada de ninguém) ──",
@@ -300,11 +312,17 @@ export type Briefing = {
 };
 
 /**
- * Monta o briefing do escopo. Uma passada só pelos eventos, o mesmo
- * `loadAdminUsageSummary` que alimenta as três telas, porque duas passadas
- * seriam duas verdades.
+ * Monta o briefing. Uma passada só pelos eventos, o mesmo
+ * `loadAdminUsageSummary` que alimenta as três telas de dinheiro, porque duas
+ * passadas seriam duas verdades.
+ *
+ * A ORDEM dos blocos é a ordem de leitura pretendida, e não é arbitrária: o
+ * aviso de custo subestimado vem ANTES de qualquer número (uma conta boa demais
+ * é a que ninguém investiga), os totais antes do detalhe, e o funil por último,
+ * porque ele só significa alguma coisa depois de se saber quanto uma conta
+ * custa.
  */
-export async function buildInsightsBriefing(scope: AdminInsightScope): Promise<Briefing> {
+export async function buildInsightsBriefing(): Promise<Briefing> {
   const [summary, rate, settings] = await Promise.all([
     loadAdminUsageSummary({ from: windowFrom() }),
     getUsdToBrl(),
@@ -313,29 +331,22 @@ export async function buildInsightsBriefing(scope: AdminInsightScope): Promise<B
 
   const head = `Período analisado: últimos ${INSIGHTS_WINDOW_DAYS} dias, até ${new Date().toISOString().slice(0, 10)}.`;
 
-  const parts: string[] = [head, "", rulerBlock(settings, rate), unpricedBlock(summary), ""];
-
-  if (scope === "pricing") {
-    parts.push(
-      totalsBlock(summary, rate),
-      "",
-      actionsBlock(summary, rate, settings),
-      "",
-      routesBlock(summary, rate)
-    );
-  } else if (scope === "usage") {
-    parts.push(
-      totalsBlock(summary, rate),
-      "",
-      routesBlock(summary, rate),
-      "",
-      usersAndSessionsBlock(summary, rate),
-      "",
-      actionsBlock(summary, rate, settings)
-    );
-  } else {
-    parts.push(totalsBlock(summary, rate), "", await metricsBlock(summary, rate));
-  }
+  const parts: string[] = [
+    head,
+    "",
+    rulerBlock(settings, rate),
+    unpricedBlock(summary),
+    "",
+    totalsBlock(summary, rate),
+    "",
+    actionsBlock(summary, rate, settings),
+    "",
+    routesBlock(summary, rate),
+    "",
+    usersAndSessionsBlock(summary, rate),
+    "",
+    await metricsBlock(summary, rate),
+  ];
 
   return { text: parts.join("\n"), windowDays: INSIGHTS_WINDOW_DAYS };
 }

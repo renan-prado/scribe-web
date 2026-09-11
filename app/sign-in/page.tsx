@@ -1,10 +1,13 @@
 import { cookies } from "next/headers";
 import { AuthShell } from "@/features/auth/components/AuthShell";
 import { GoogleSignInButton } from "@/features/auth/components/GoogleSignInButton";
+import { CouponNotice } from "@/features/coupons/components/CouponNotice";
 import { ProspectNotice } from "@/features/partners/components/ProspectNotice";
 import { ReferralField } from "@/features/referrals/components/ReferralField";
+import { getCouponPublicByCode } from "@/lib/db/coupons";
+import { normalizeCouponCode } from "@/lib/domain/coupon";
 import { readActiveReferral } from "@/lib/referrals/active";
-import { PROSPECT_COOKIE } from "@/lib/referrals/cookies";
+import { COUPON_COOKIE, PROSPECT_COOKIE } from "@/lib/referrals/cookies";
 
 export const metadata = {
   title: "Entrar ou criar conta · Scriba",
@@ -32,7 +35,19 @@ export default async function SignInPage({ searchParams }: { searchParams: Promi
   // quando NÃO há indicação ativa, quem veio pelo link de um parceiro já tem
   // um brinde a caminho, e `attach_partner_prospect` recusa o segundo; anunciar
   // os dois seria prometer moeda que não vai ser creditada.
-  const isProspect = !referral && (await cookies()).get(PROSPECT_COOKIE)?.value === "1";
+  const jar = await cookies();
+  const isProspect = !referral && jar.get(PROSPECT_COOKIE)?.value === "1";
+  // O cupom é resolvido no servidor pelo mesmo motivo que a indicação: o cookie
+  // é httpOnly e carrega só o CÓDIGO, nunca o valor. Quem diz quanto ele vale é
+  // o banco, e só enquanto o cupom ainda for resgatável (ativo, não expirado,
+  // não esgotado): são as três recusas de `redeem_signup_coupon`, e anunciar um
+  // bônus que ela vai negar é prometer moeda que não será creditada.
+  //
+  // Ao contrário do pré-parceiro, o selo do cupom aparece MESMO havendo
+  // indicação ativa, porque os dois são de fato creditados (ver a migração
+  // 0055): esconder um deles faria a tela prometer menos do que vai entregar.
+  const couponCode = normalizeCouponCode(jar.get(COUPON_COOKIE)?.value);
+  const coupon = couponCode ? await getCouponPublicByCode(couponCode) : null;
   const target = typeof next === "string" && next.startsWith("/") ? next : "/feed";
   const errorMessage =
     error === "exchange_failed"
@@ -43,14 +58,23 @@ export default async function SignInPage({ searchParams }: { searchParams: Promi
 
   return (
     <AuthShell
-      title={isProspect ? "Conheça o Scriba por dentro" : "Entrar no Scriba"}
+      title={
+        coupon
+          ? "Seu convite está aqui"
+          : isProspect
+            ? "Conheça o Scriba por dentro"
+            : "Entrar no Scriba"
+      }
       subtitle={
-        isProspect
-          ? "Crie sua conta com o Google e receba moedas para usar o app antes de decidir qualquer coisa."
-          : "Use sua conta Google para entrar. Se ainda não tem uma conta, ela é criada automaticamente no primeiro acesso, grátis, sem cartão."
+        coupon
+          ? "Crie sua conta com o Google e as moedas do convite entram no seu saldo na hora."
+          : isProspect
+            ? "Crie sua conta com o Google e receba moedas para usar o app antes de decidir qualquer coisa."
+            : "Use sua conta Google para entrar. Se ainda não tem uma conta, ela é criada automaticamente no primeiro acesso, grátis, sem cartão."
       }
       footer={<>Primeira vez por aqui? É só continuar com o Google. Sua conta é criada na hora.</>}
     >
+      {coupon ? <CouponNotice coins={coupon.coins} /> : null}
       {isProspect ? <ProspectNotice /> : null}
       <GoogleSignInButton next={target} label="Continuar com Google" />
       <ReferralField active={referral} />

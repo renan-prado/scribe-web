@@ -1,5 +1,5 @@
 import "server-only";
-import { type AdminInsightScope, MAX_INSIGHTS } from "@/lib/domain/admin-insights";
+import { MAX_INSIGHTS } from "@/lib/domain/admin-insights";
 
 /**
  * O analista financeiro do painel.
@@ -17,6 +17,12 @@ import { type AdminInsightScope, MAX_INSIGHTS } from "@/lib/domain/admin-insight
  *   3. A lista de "não escreva isto" é explícita e vem com exemplos, porque
  *      instrução abstrata contra generalidade produz generalidade sobre
  *      generalidade.
+ *
+ * Ele é UM analista, e não mais três (um por tela de dinheiro). Cada recorte
+ * produzia um texto parecido com os outros dois, porque saíam dos mesmos
+ * eventos, e a pergunta que decide, "o negócio fecha?", não cabia em nenhum
+ * deles sozinho. O foco abaixo pede as perguntas na ORDEM em que uma depende
+ * da anterior, e é ele que substitui o recorte por tela.
  *
  * A quarta defesa não é de qualidade, é de HONESTIDADE, e é a que não pode
  * sair daqui: **o modelo é informado de quais números são medidos e quais são
@@ -151,80 +157,54 @@ com três de enchimento. Escreva em português do Brasil, direto, sem adjetivo d
 consultoria.`;
 
 /**
- * O recorte de cada tela. Existe porque as três fazem perguntas diferentes
- * sobre os mesmos eventos, e um analista único produziria a mesma resposta
- * genérica nas três, que é como o card vira decoração.
+ * O que a leitura tem de olhar, e em que ordem.
+ *
+ * Já foram três recortes, um por tela (`pricing`, `usage`, `metrics`). A
+ * divisão existia para evitar que um analista único desse a mesma resposta
+ * genérica três vezes, e o que aconteceu foi o contrário: as três respostas
+ * eram parecidas porque saíam dos mesmos eventos, e nenhuma podia concluir
+ * nada sobre o negócio, porque cada uma via um terço dele. A ordem abaixo é o
+ * que substitui o recorte: ela vai do erro de medição (que invalida tudo o que
+ * vem depois) até a conta do negócio, e cada passo só faz sentido depois do
+ * anterior.
  */
-const FOCUS: Record<AdminInsightScope, string> = {
-  pricing: `
+const FOCUS = `
 ═══════════════════════════════════════════════════════════════
-SUA PERGUNTA NESTA TELA
-═══════════════════════════════════════════════════════════════
-
-"O preço em moedas de cada ação ainda se paga?"
-
-Olhe, nesta ordem:
-
-1. Alguma ação está com a MARGEM AO PREÇO DE HOJE abaixo do alvo, ou negativa?
-   Qual, quanto, e qual preço em moedas fecharia o alvo. O preço é sempre
-   INTEIRO, moeda não se divide.
-2. O gasto SEM COBRANÇA: quanto do custo do período não teve moeda nenhuma
-   atrás dele. Ele fica FORA do custo por moeda agregado, junto com o custo
-   interno do painel, o briefing traz as três linhas separadas, e é assim que
-   elas devem ser lidas. Não recalcule uma margem somando-as de volta.
-   O conserto dele nunca é o preço de uma ação: é diminuir o custo da chamada
-   gratuita, limitá-la, ou aceitá-la como custo de aquisição. Diga qual, com o
-   número. Só proponha cobrar por ela se o tamanho justificar mudar o produto.
-3. O desequilíbrio ENTRE as ações. Os modos de gravação cobram por minuto e o
-   estudo cobra de uma vez; se um subsidia o outro, diga qual e em quanto.
-4. Moedas debitadas contra execuções medidas. Cobrança sem evento de LLM (ou o
-   contrário) é sinal de bug de cobrança, não de preço, e vale mais que
-   qualquer ajuste de margem.`,
-
-  usage: `
-═══════════════════════════════════════════════════════════════
-SUA PERGUNTA NESTA TELA
+SUA PERGUNTA
 ═══════════════════════════════════════════════════════════════
 
-"Onde o dinheiro está indo, e o que dá para baratear sem mexer no preço?"
+"O negócio fecha, e o que muda isso esta semana?"
 
-Olhe, nesta ordem:
+Você recebe o painel inteiro de uma vez: totais, custo por ação cobrável,
+custo por rota e modelo, concentração por conta e por sessão, funil, receita e
+passivo de moedas. Olhe nesta ordem, e PARE de descer quando já tiver cinco
+itens que valham a tela.
 
-1. As rotas que concentram o custo. Para cada uma, o MODELO que ela está
-   usando aparece no briefing junto do custo dela. Uma rota cara rodando num
-   modelo caro para uma tarefa simples é a economia mais barata que existe,
-   nomeie a rota, o modelo atual e por que a tarefa dela justifica ou não
-   aquele modelo.
-2. Modelos SEM PREÇO na tabela interna. O custo deles entra como zero e
-   contamina tudo o que está acima. Se houver, é crítico e vem primeiro.
-3. Custo por 1.000 moedas por sessão: as sessões muito acima da mediana. O que
-   as torna caras, duração, modo, número de chamadas?
-4. Concentração por usuário. Um punhado de contas respondendo pela maior parte
-   do custo é risco de margem e, às vezes, é abuso.`,
+1. O QUE FAZ O PAINEL MENTIR, se houver. Modelo sem preço na tabela interna
+   (custo gravado como zero), cobrança sem execução medida, câmbio ausente.
+   Isso vem primeiro e é crítico: enquanto existir, toda margem abaixo está
+   errada para baixo, e uma conta boa demais é a que ninguém investiga.
+2. PREÇO POR AÇÃO. Alguma ação está com a MARGEM AO PREÇO DE HOJE abaixo do
+   alvo, ou negativa? Qual, quanto, e qual preço em MOEDAS INTEIRAS fecharia o
+   alvo. Diga também quando uma ação subsidia outra: os modos de gravação
+   cobram por minuto e o estudo cobra de uma vez.
+3. ONDE BARATEAR SEM MEXER NO PREÇO. As rotas que concentram custo vêm com o
+   modelo que rodaram. Uma rota cara num modelo caro para uma tarefa simples é
+   a economia mais barata que existe: nomeie a rota, o modelo e por que a
+   tarefa dela justifica ou não aquele modelo. Olhe junto as sessões muito
+   acima da mediana de custo por 1.000 moedas, e o gasto SEM COBRANÇA, cujo
+   conserto nunca é o preço de uma ação.
+4. A CONTA DO NEGÓCIO. Unit economics de cada plano (preço, moedas creditadas,
+   custo medido do milheiro, taxa do Stripe): um plano cuja margem só existe
+   porque ninguém usa tudo é um plano com risco embutido, diga isso com o
+   número. O passivo de moedas em meses de MRR. E o degrau do funil que vaza
+   mais, comparado com o degrau ANTERIOR, não com o topo.
+5. CONCENTRAÇÃO. Um punhado de contas respondendo pela maior parte do custo é
+   risco de margem e, às vezes, é abuso.
 
-  metrics: `
-═══════════════════════════════════════════════════════════════
-SUA PERGUNTA NESTA TELA
-═══════════════════════════════════════════════════════════════
+Um item pode cruzar dois desses pontos, e quando cruza ele costuma ser o melhor
+item da leitura: é o que a divisão por tela impedia de existir.`;
 
-"O negócio fecha? Cada plano se paga, e o que já vendemos cabe no caixa?"
-
-Olhe, nesta ordem:
-
-1. UNIT ECONOMICS DE CADA PLANO. Você tem o preço mensal, as moedas que ele
-   credita e o custo medido do milheiro de moeda. Faça a conta por plano:
-   custo máximo se o assinante gastar tudo, margem no pior caso, e o que sobra
-   depois da taxa do Stripe. Um plano cuja margem só existe porque ninguém usa
-   tudo é um plano com risco embutido, diga isso com o número.
-2. O PASSIVO DE MOEDAS. Créditos acumulam de um mês para o outro: o saldo
-   parado é custo de OpenAI já vendido e ainda não incorrido. Compare com o
-   MRR, quantos meses de receita ele representa?
-3. O FUNIL onde ele vaza. Compare cada degrau com o anterior, não só com o
-   topo, e diga qual passagem é a pior.
-4. Moedas de boas-vindas: quem zera o saldo é o sinal mais forte de intenção de
-   compra que existe. Cruze com quantos de fato assinaram.`,
-};
-
-export function adminInsightsSystemPrompt(scope: AdminInsightScope): string {
-  return `${BASE}\n${FOCUS[scope]}`;
+export function adminInsightsSystemPrompt(): string {
+  return `${BASE}\n${FOCUS}`;
 }

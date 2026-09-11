@@ -122,6 +122,7 @@ export default async function AdminOverviewPage() {
           <QuickLink href="/admin/users">Gerenciar usuários</QuickLink>
           <QuickLink href="/admin/metricas">Métricas do produto</QuickLink>
           <QuickLink href="/admin/usage">Ver uso detalhado</QuickLink>
+          <QuickLink href="/admin/insights">Leitura da IA</QuickLink>
         </div>
         <FxRateBadge rate={rate} />
       </div>

@@ -311,8 +311,8 @@ pega.
 Quando reprova, dispara **uma** reescrita, com a sobreposição nomeada
 explicitamente numa mensagem separada. Se a segunda tentativa também repetir, o
 estudo é entregue assim mesmo: o usuário já pagou as moedas, e devolver 502
-depois de cobrar é pior que entregar algo imperfeito. O fato fica no log e em
-`/admin/studies`.
+depois de cobrar é pior que entregar algo imperfeito. O fato fica no log e no
+`StudyRecord.guard` da sessão.
 
 **A reescrita respeita um prazo.** O pipeline inteiro mede ~255s e a função tem
 teto de 300s; uma reescrita são mais ~100s. Passado
@@ -321,11 +321,13 @@ do prazo trocaria "estudo com a tese parecida" por "função morta depois de
 debitar as moedas". Com os modelos de hoje ela quase nunca cabe; se um modelo
 mais rápido entrar, ela volta a caber sozinha.
 
-Os dois cortes ficam registrados em `StudyRecord.guard`, então o
-`/admin/studies` distingue as duas razões de uma pergunta não ter virado texto:
+Os dois cortes ficam registrados em `StudyRecord.guard`, e é esse registro que
+distingue as duas razões de uma pergunta não ter virado texto:
 **cortada** (o guardião disse que o resumo já respondia, culpa do
 questionador) e **não escolhida** (o respondedor preferiu outras, se ele
-deixou de fora justamente as boas, a culpa é dele).
+deixou de fora justamente as boas, a culpa é dele). A tela do painel que os
+mostrava lado a lado (`/admin/studies`) foi removida; o dado continua no
+`session_deepenings.plan`.
 
 ## As duas etapas determinísticas são o coração
 
@@ -712,8 +714,9 @@ tinha. Ambas revertem em uma linha do catálogo:
 ## O que o passo 5 ainda precisa
 
 A metade instrumental existe: as perguntas são persistidas em
-`session_deepenings.plan` e `/admin/studies` mostra as levantadas, as
-escolhidas e o resultado lado a lado. Falta a metade humana, escolher as sessões da amostra e passar a
+`session_deepenings.plan`, com as levantadas, as escolhidas e o resultado no
+mesmo registro (a tela que os desenhava lado a lado, `/admin/studies`, saiu do
+painel; a leitura hoje é direta no banco). Falta a metade humana, escolher as sessões da amostra e passar a
 preencher a tabela dos oito critérios a cada mudança. Sem isso, a próxima
 rodada de melhoria volta a começar de impressão.
 

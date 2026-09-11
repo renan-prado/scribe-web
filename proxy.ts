@@ -17,7 +17,8 @@ import {
  *
  * Route buckets:
  *   PUBLIC, /, /sign-in, /sign-up, /auth/*, /about, /contact, /terms, /privacy,
- *                /parceiros/*
+ *                /parceiros/*, e as três rotas de link de entrada: /r/*, /i/*,
+ *                /c/*
  *   PROTECTED, a known app area (KNOWN_APP_PREFIXES) behind the login
  *   UNKNOWN, neither: passed through so the Next router answers a real 404
  *
@@ -51,12 +52,19 @@ import {
 // feature. Como `isPublic` casa por prefixo, "/parceiros/regulamento" entra
 // junto.
 //
+// "/c" é o link de um CUPOM de cadastro (/c/<codigo>, migração 0055): o admin
+// emite o convite, quem o recebe ainda não tem conta, e a rota grava o cookie e
+// manda para /sign-in. Sem esta entrada o convite levaria a um 307 para a mesma
+// /sign-in, mas sem passar pela rota, ou seja, sem o cookie e sem as moedas.
+// Ver app/c/[code]/route.ts.
+//
 // "/api/referral" responde ao selo "indicado por Fulano" do hero da LP, que é
 // montado no cliente porque a landing page é estática. Também anônima por
 // definição, e ela não expõe nada que o visitante já não tenha recebido junto
 // com o link. Ver app/api/referral/active/route.ts.
 const PUBLIC_PREFIXES = [
   "/sign-in",
+  "/c",
   "/sign-up",
   "/auth",
   "/terms",
@@ -375,7 +383,10 @@ export async function proxy(request: NextRequest) {
   // O early-return fica aqui em cima, ANTES do `createServerClient`. Enfiá-lo
   // no meio do handshake violaria o contrato do @supabase/ssr descrito acima.
   const isAnonEntry =
-    earlyPath === "/" || earlyPath.startsWith("/r/") || earlyPath.startsWith("/i/");
+    earlyPath === "/" ||
+    earlyPath.startsWith("/r/") ||
+    earlyPath.startsWith("/i/") ||
+    earlyPath.startsWith("/c/");
   if (isAnonEntry && !request.cookies.getAll().some((c) => c.name.startsWith("sb-"))) {
     return applyCsp(healReferralHint(request, NextResponse.next({ request })));
   }
