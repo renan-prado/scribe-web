@@ -20,6 +20,12 @@ import { SITE_URL } from "@/lib/seo";
  * conteúdo em documento que não mudou, e o Google aprende a ignorar o campo. */
 const LEGAL_LAST_MODIFIED = new Date("2026-08-28");
 
+/** A política de privacidade anda sozinha desde que ganhou a seção sobre a
+ * exclusão de conta pelo próprio usuário (§12, `/profile/delete`): ela mudou,
+ * os termos não, e um único constante para as duas datava de novo um
+ * documento intocado, exatamente o que a nota acima evita. */
+const PRIVACY_LAST_MODIFIED = new Date("2026-09-11");
+
 /** Mesma regra da data acima, para a página de convite dos parceiros e o
  * regulamento dela: bate com o "Última atualização" renderizado no
  * regulamento, e muda só quando o texto muda. */
@@ -59,7 +65,7 @@ export default function sitemap(): MetadataRoute.Sitemap {
     },
     {
       url: `${SITE_URL}/privacy`,
-      lastModified: LEGAL_LAST_MODIFIED,
+      lastModified: PRIVACY_LAST_MODIFIED,
       changeFrequency: "yearly",
       priority: 0.3,
     },

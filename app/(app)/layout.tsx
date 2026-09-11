@@ -42,6 +42,14 @@ export default async function AppLayout({ children }: { children: ReactNode }) {
   const profile = account?.profile ?? null;
   const isAdmin = account?.isAdmin ?? false;
   const initialBalance = account?.coinBalance ?? INITIAL_COIN_BALANCE;
+  // O saldo só existe para quem tem CONTA, e o teste é a sessão, não o perfil:
+  // `getCurrentAccount` devolve null também quando a leitura falha, e nesse
+  // caso o certo é o chip aparecer com o fallback, não sumir no meio de uma
+  // gravação. Sem sessão nenhuma, porém, o fallback vira uma mentira educada,
+  // um "50 moedas" exibido a quem não tem conta alguma. Isso não era visível
+  // até `/profile/delete` passar a renderizar para anônimos (ver a página e o
+  // `proxy.ts`); é a única rota de `(app)` que chega aqui sem usuário.
+  const hasSession = user !== null;
 
   return (
     /* O provider dos tours envolve a moldura INTEIRA, e não só o conteúdo:
@@ -53,11 +61,11 @@ export default async function AppLayout({ children }: { children: ReactNode }) {
         actions={
           <>
             <div className="flex items-center gap-2 sm:hidden">
-              <CoinBalance initialBalance={initialBalance} />
+              {hasSession ? <CoinBalance initialBalance={initialBalance} /> : null}
             </div>
             <div className="hidden items-center gap-3 sm:flex">
-              <NewRecordingDialog />
-              <CoinBalance initialBalance={initialBalance} />
+              {hasSession ? <NewRecordingDialog /> : null}
+              {hasSession ? <CoinBalance initialBalance={initialBalance} /> : null}
               {profile ? (
                 <UserMenu
                   displayName={profile.displayName ?? null}

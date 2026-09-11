@@ -8,7 +8,7 @@ export const metadata: Metadata = {
   alternates: { canonical: "/privacy" },
 };
 
-const LAST_UPDATED = "28 de agosto de 2026";
+const LAST_UPDATED = "11 de setembro de 2026";
 const CONTACT_EMAIL = "contato@scriba.cc";
 
 export default function PrivacyPage() {
@@ -340,7 +340,15 @@ export default function PrivacyPage() {
               <li>
                 <strong>Após a exclusão da conta:</strong> os dados pessoais e as transcrições
                 associadas são removidos em até 30 dias, ressalvadas as hipóteses de guarda
-                obrigatória.
+                obrigatória. Você mesmo pode excluir sua conta e todos esses dados a qualquer
+                momento, sem pedir nada a ninguém, em{" "}
+                <Link
+                  href="/profile/delete"
+                  className="text-scriba-blue-ink underline underline-offset-2"
+                >
+                  scriba.cc/profile/delete
+                </Link>
+                ; nesse caso a remoção é imediata.
               </li>
               <li>
                 <strong>Logs de acesso à aplicação:</strong> mantidos por no mínimo 6 meses, em

@@ -420,6 +420,17 @@ export const RATE_LIMITS = {
     perUser: { limit: 60, windowMs: MIN },
     perIp: { limit: 120, windowMs: MIN },
   },
+  // Exclusão da própria conta. A cadência legítima é UMA por conta na vida, e
+  // o segundo pedido já não tem quem o autentique. O balde é apertado porque a
+  // rota faz uma chamada ao Stripe antes de qualquer coisa, e porque ela é a
+  // única ação irreversível que um usuário comum dispara sozinho: um script
+  // martelando aqui com um cookie roubado não deve ter mais que uma tentativa
+  // por minuto.
+  "account-delete": {
+    route: "account-delete",
+    perUser: { limit: 5, windowMs: 10 * MIN },
+    perIp: { limit: 20, windowMs: 10 * MIN },
+  },
   // Link de parceiro (/r/<slug>). Público e sem sessão, então só por IP.
   // Generoso porque um link em stories é aberto muitas vezes em sequência e
   // uma operadora móvel coloca muita gente atrás do mesmo IP, bloquear um

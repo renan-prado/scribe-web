@@ -210,6 +210,22 @@ export default async function ProfilePage() {
           Sair da conta
         </button>
       </form>
+
+      {/* A porta de saída DEFINITIVA, e ela é de propósito a última linha da
+          página, discreta e sem cartão: exigência da LGPD, da App Store e da
+          Play Store (ver `docs/app-store-ios.md`), não algo que se ofereça a
+          quem só veio conferir o saldo. Um botão vermelho do tamanho dos
+          outros seria clicado por engano ao lado de "Sair da conta", que é a
+          ação vizinha com que ela mais se confunde. Quem explica o que
+          acontece é a própria `/profile/delete`, não este rótulo. */}
+      <div className="pb-2 text-center">
+        <Link
+          href="/profile/delete"
+          className="text-xs font-medium text-scriba-ink-mute underline underline-offset-4 outline-none transition-colors hover:text-scriba-rec-ink focus-visible:text-scriba-rec-ink"
+        >
+          Excluir minha conta e meus dados
+        </Link>
+      </div>
     </main>
   );
 }

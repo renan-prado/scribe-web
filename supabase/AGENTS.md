@@ -42,6 +42,18 @@ filhas de sessão (`session_practices`, `session_rereads`, `session_reminders`,
 `lib/db/feed-entries.ts` emitir os selects e cruzar em memória sem filtrar dono
 na mão.
 
+**Duas tabelas fogem do `on delete cascade`, e a exceção tem nome: elas são a
+CONTABILIDADE.** `coin_transactions` (o dinheiro que entrou) e
+`llm_usage_events` (o custo de cada chamada) passaram a `on delete set null` na
+migração 0056, quando a exclusão de conta virou coisa que o próprio usuário faz
+(`/profile/delete`). Com o cascade, cancelar a conta apagava também a receita e
+o custo que ela já tinha gerado: o faturamento do mês passado e o custo por
+versão do `/admin/usage` encolhiam sozinhos, sem erro nenhum na tela. A linha
+fica, o vínculo com a pessoa some, e a policy de select (`user_id = auth.uid()`)
+torna a linha órfã invisível para todo cliente, porque `null = <uuid>` nunca é
+true. **Tabela nova segue o cascade**, a menos que o que ela guarda continue
+sendo verdade sobre o CAIXA depois que o dono foi embora.
+
 `session_practices` é a exceção viva: o "Coloque em prática" saiu do produto e
 nada mais lê nem escreve nessa tabela. Ela e os payloads antigos ficaram de
 propósito, o recurso foi retirado da tela para ser repensado, não descartado.

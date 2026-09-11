@@ -332,7 +332,13 @@ export type AdminUsageSummary = {
 type EventRow = {
   route: string;
   model: string | null;
-  user_id: string;
+  /**
+   * Nulo quando o dono APAGOU a conta: a migração 0056 trocou o cascade por
+   * `on delete set null` para que o custo histórico não encolhesse a cada
+   * exclusão. A linha continua valendo para totais, rota, dia e versão, e sai
+   * só das agregações por usuário, que é onde ela não teria a quem somar.
+   */
+  user_id: string | null;
   session_id: string | null;
   total_cost_usd: number | string;
   prompt_tokens: number | null;
@@ -486,7 +492,8 @@ export async function loadAdminUsageSummary(
   const { data: coinRows, error: coinErr } = await coinQuery;
   if (coinErr) throw new Error(`loadAdminUsageSummary coins failed: ${coinErr.message}`);
   type CoinRow = {
-    user_id: string;
+    /** Nulo para conta excluída, ver `EventRow.user_id`. */
+    user_id: string | null;
     session_id: string | null;
     amount: number | string;
     reason: string;
@@ -518,7 +525,7 @@ export async function loadAdminUsageSummary(
     const spent = Math.abs(toNumber(r.amount));
     if (spent === 0) continue;
     coinsTotal += spent;
-    coinsByUser.set(r.user_id, (coinsByUser.get(r.user_id) ?? 0) + spent);
+    if (r.user_id) coinsByUser.set(r.user_id, (coinsByUser.get(r.user_id) ?? 0) + spent);
     if (r.session_id) {
       coinsBySession.set(r.session_id, (coinsBySession.get(r.session_id) ?? 0) + spent);
     }
@@ -584,10 +591,15 @@ export async function loadAdminUsageSummary(
     perRoute.set(model, modelAgg);
     modelMap.set(row.route, perRoute);
 
-    const uAgg = userMap.get(row.user_id) ?? { cost: 0, events: 0 };
-    uAgg.cost += rowCost;
-    uAgg.events += 1;
-    userMap.set(row.user_id, uAgg);
+    // Conta excluída não entra no ranking por usuário: não há perfil para
+    // nomear a linha, e "quem mais gastou" é uma pergunta sobre gente que
+    // ainda está aqui. O custo dela já foi contado nos totais acima.
+    if (row.user_id) {
+      const uAgg = userMap.get(row.user_id) ?? { cost: 0, events: 0 };
+      uAgg.cost += rowCost;
+      uAgg.events += 1;
+      userMap.set(row.user_id, uAgg);
+    }
 
     if (row.session_id) {
       const sAgg = sessionAgg.get(row.session_id) ?? { cost: 0, events: 0 };

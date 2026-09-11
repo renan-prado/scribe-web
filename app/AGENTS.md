@@ -23,6 +23,8 @@ Regras da camada de roteamento. Para a camada de servidor abaixo dela, ver
 /i/[code]               link de indicação de um usuário comum. 302 para a LP
 /c/[code]               link de um CUPOM de convite: grava o cookie e manda
                         para /sign-in, onde a tela diz quanto ele vale
+/profile/delete         a página que apaga a conta. Pública de propósito, é a
+                        URL da ficha das lojas; o botão só aparece logado
 /api/stripe/webhook     ÚNICA porta de crédito. HMAC no lugar do cookie
 /api/billing/sweep      cron diário da Vercel, guardado por CRON_SECRET
 /robots.txt  /sitemap.xml  /manifest.webmanifest
@@ -43,6 +45,7 @@ Router, ver o comentário no `proxy.ts`).
 /recordings              sessões salvas + faixa "Gravações em aberto"
 /studies                 aprofundamentos gerados
 /profile
+/profile/delete          excluir a conta. A rota está no bucket PÚBLICO acima
 /recording/[id]/live       gravação modo live
 /recording/[id]/audio      gravação modo audio_only
 /recording/[id]/transcribe gravação modo transcript_only
@@ -82,9 +85,19 @@ não são conteúdo, são efeito colateral com redirect.
 `sermon-echo`, `final-summary[/reprocess|/from-transcript]`,
 `deepening[/reprocess]`, `verse`, `format-paragraphs`,
 `hallucination-report`), dados (`sessions[/search]`, `feed`, `speakers`,
-`locations`, `coins`, `feedback[/prompt]`, `tour/{start,finish,reset}`), cobrança (`billing/*`,
+`locations`, `coins`, `feedback[/prompt]`, `tour/{start,finish,reset}`), conta
+(`account/delete`), cobrança (`billing/*`,
 `stripe/webhook`) e admin (`admin/users`, `admin/partners`, `admin/features`,
 `admin/coupons`, `admin/insights`).
+
+`account/delete` é a ÚNICA rota autenticada que se recusa a usar
+`requireAuth()`, e a exceção é o ponto dela: `requireAuth` responde 403 a quem
+um admin desativou, e quem foi banido é exatamente quem mais quer sair. Ela usa
+`getAuthUser()` direto, não lê saldo e não chama modelo nenhum, então não há o
+que `is_active` protegesse ali. Cancela a assinatura no Stripe ANTES de apagar
+(`lib/account/delete-account.ts`): a ordem inversa deixaria uma cobrança
+recorrente viva num `customer` que nenhum usuário resolve mais. Ver
+`app/(app)/profile/delete/page.tsx` e `docs/app-store-ios.md`, Portão 4.
 
 `feedback/prompt` é **POST e não GET porque ESCREVE**: quando a resposta é
 "sim, pergunte", a pergunta já nasce registrada em `feedback_prompts`, é o

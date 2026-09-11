@@ -62,8 +62,19 @@ import {
 // montado no cliente porque a landing page é estática. Também anônima por
 // definição, e ela não expõe nada que o visitante já não tenha recebido junto
 // com o link. Ver app/api/referral/active/route.ts.
+// "/profile/delete" é a exceção mais estranha desta lista, e tem uma razão
+// única: é a URL que vai no formulário de Segurança dos Dados da Play Store (e
+// no equivalente da App Store), e o revisor a abre SEM ter conta no produto.
+// Protegida como o resto de "/profile", o que ele veria era um 307 para a tela
+// de login, sem uma palavra sobre exclusão de conta, que é motivo registrado
+// de recusa da ficha. Pública, ele lê a explicação inteira; o BOTÃO que apaga
+// continua aparecendo só para quem está logado, e quem apaga de verdade é
+// `/api/account/delete`, que exige sessão. O prefixo casa por segmento, então
+// "/profile" segue protegido e só esta folha escapa. Ver
+// `app/(app)/profile/delete/page.tsx` e `docs/app-store-ios.md`.
 const PUBLIC_PREFIXES = [
   "/sign-in",
+  "/profile/delete",
   "/c",
   "/sign-up",
   "/auth",

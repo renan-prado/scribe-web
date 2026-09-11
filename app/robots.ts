@@ -23,7 +23,13 @@ export default function robots(): MetadataRoute.Robots {
   return {
     rules: {
       userAgent: "*",
-      allow: "/",
+      // "/profile/delete" é a única folha liberada dentro de uma área
+      // bloqueada, e a regra mais específica é a que vale (o Google resolve
+      // conflito pelo caminho mais longo). Ela é pública de verdade, ver a
+      // nota em `proxy.ts`, e é a URL que as lojas de aplicativo pedem na
+      // ficha: uma URL que o robots manda ignorar é uma URL que ninguém
+      // encontra quando precisa dela.
+      allow: ["/", "/profile/delete"],
       disallow: [
         "/api/",
         "/admin",

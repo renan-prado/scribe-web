@@ -282,24 +282,30 @@ App que permite criar conta **precisa permitir excluí-la de dentro do app**.
 Não vale "mande um e-mail para o suporte", não vale link para uma página de
 formulário. Precisa ser um caminho dentro do app que apague a conta e os dados.
 
-Hoje `app/(app)/profile/page.tsx` não tem nada disso, não há nenhuma rota de
-exclusão de conta no repositório.
+**FEITO.** O caminho é `/profile` → "Excluir minha conta e meus
+dados" → `/profile/delete`, e ele apaga de verdade:
 
-O que precisa existir:
+- `app/(app)/profile/delete/page.tsx` diz o que some, o que a lei nos obriga a
+  guardar e qual conta será apagada, e exige que a pessoa digite `EXCLUIR`.
+- `POST /api/account/delete` → `lib/account/delete-account.ts` cancela a
+  assinatura no Stripe **antes** de `auth.admin.deleteUser`. A ordem é a regra
+  da função: apagar primeiro deixaria uma cobrança recorrente viva num
+  `customer` que `findUserIdByCustomerId` não resolve mais. Cancelamento que
+  falha ABORTA a exclusão.
+- O Customer do Stripe NÃO é apagado: ele amarra as notas já emitidas, que têm
+  prazo legal de guarda (a ressalva que a própria `/privacy` §12 faz).
+- O saldo de moedas morre com a conta, sem reembolso, e a tela avisa.
+- A migração `0056` tirou `coin_transactions` e `llm_usage_events` do cascade e
+  as pôs em `on delete set null`: a receita do mês passado e o custo por versão
+  do `/admin/usage` não podem encolher porque alguém cancelou a conta. É o
+  "sobreviver anonimizado" que este portão pedia.
 
-- Uma ação em `/profile` com confirmação clara do que será apagado.
-- Uma rota que apague o usuário e o que pende dele, sessões, transcrições,
-  cards de feed, estudos.
-- Uma decisão sobre o que fazer com a assinatura ativa e com o saldo de
-  moedas. Excluir conta com assinatura viva no Stripe sem cancelar a
-  assinatura é cobrar alguém que não existe mais.
-- Uma decisão sobre o histórico financeiro. `coin_transactions` e o ledger de
-  crédito provavelmente precisam sobreviver anonimizados, por obrigação
-  contábil, o que é compatível com a regra, desde que os dados pessoais
-  sumam.
-
-Esse portão vale a pena resolver **independentemente do app**: a mesma
-exigência vem da LGPD, e o site também está sem.
+**A página é PÚBLICA**, única folha de `/profile` em `PUBLIC_PREFIXES` no
+`proxy.ts`, porque a política de exclusão de conta do **Google Play** pede uma
+URL para a ficha da loja e o revisor a abre sem ter conta. Anônimo lê a
+explicação inteira e encontra o botão de entrar; o botão que apaga só aparece
+logado, e a rota exige sessão. A URL para colar no formulário de Segurança dos
+Dados é `https://scriba.cc/profile/delete`.
 
 ---
 
@@ -334,7 +340,8 @@ aprovado.
 
 1. **Portões 3 e 4 primeiro, no site.** Sign in with Apple e exclusão de conta
    são baratos, valem por si (LGPD), e não dependem de nenhuma decisão sobre o
-   app. Feitos, dois dos quatro portões já estão fechados.
+   app. Feitos, dois dos quatro portões já estão fechados. O 4 já está
+   fechado; sobra o 3.
 2. **Portão 1 pela saída B.** Primeira versão do app sem nenhuma compra. Custa
    zero de engenharia e zero de comissão, e a Apple aceita porque os 50
    créditos iniciais fazem o app funcionar sem pagamento nenhum.
