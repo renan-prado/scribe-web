@@ -54,7 +54,7 @@ Duas decisões dele que parecem detalhe:
   `/feed` pode nunca esbarrar nela. O card ensina que ela existe, no `/feed`,
   **no máximo três vezes**, espaçadas por quatro dias, e nunca para quem já
   importou algum vídeo (esse gate é do SERVIDOR: `sessions.some(mode ===
-  "youtube")`, decidido em `app/(app)/feed/page.tsx`). Um aviso de descoberta
+  "youtube")`, decidido em `app/v2/home/page.tsx`). Um aviso de descoberta
   que aparece sempre vira mobília, e o dia em que ele disser outra coisa
   também não será lido. A contagem é `localStorage`, como a soneca do
   `InviteFriendCard`, e degrada para "aparece de novo" quando não há storage.
@@ -571,12 +571,15 @@ O estudo tem duas particularidades que mordem de fora:
 
 ## As listas: busca e filtros
 
-`/recordings` e `/studies` têm a MESMA barra
+`/v2/home` e `/v2/studies` têm a MESMA barra
 (`components/CollectionSearch.tsx`) e o mesmo motor (`lib/search.ts`, puro e
 client-safe). Quem filtra é um componente cliente por página,
-`app/(app)/recordings/SessionsBrowser.tsx` e
-`app/(app)/studies/StudiesBrowser.tsx`; as páginas continuam sendo só quem
-BUSCA.
+`app/v2/home/LibraryBrowser.tsx` e `app/v2/studies/StudiesBrowser.tsx`; as
+páginas continuam sendo só quem BUSCA.
+
+A diferença entre as duas: na Biblioteca a barra fica atrás da lupa do
+cabeçalho e fechá-la limpa os filtros (ver `app/AGENTS.md`); nos Estudos ela é
+permanente, como era no `/recordings`.
 
 **O CARTÃO de uma sessão salva não é de nenhuma das duas**, ele é o
 `components/SessionCard.tsx`, e mora aqui porque duas telas o desenham: a

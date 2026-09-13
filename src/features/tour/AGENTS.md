@@ -132,8 +132,8 @@ O contrato entre o passo e a tela é um seletor CSS, e a convenção é
 | `data-tour` | Onde vive |
 |---|---|
 | `nav-record` | `NewRecordingDialog` (header) e `MobileBottomNav` |
-| `feed-reflection`, `feed-entries` | `app/(app)/feed/page.tsx` |
-| `recordings-unfinished` | `app/(app)/recordings/page.tsx` |
+| `feed-reflection`, `feed-entries` | DORMENTE, ver abaixo |
+| `recordings-unfinished` | DORMENTE, ver abaixo |
 | `recordings-import` | `ImportYoutubeButton` |
 | `collection-search` | `CollectionSearch` (serve à Biblioteca e aos Estudos) |
 | `summary-header`, `summary-followups` | `SavedSessionView` |
@@ -153,3 +153,17 @@ Não há tela de administração dos tours. `completed_at`, `dismissed_at` e
 `last_step` estão sendo gravados desde o primeiro dia justamente para que a
 pergunta "qual tour as pessoas abandonam, e em que passo?" tenha resposta
 quando alguém for olhar; a tela que a mostra é trabalho de outro dia.
+
+## Dois tours DORMENTES: `feed` e `recordings`
+
+Eles continuam declarados em `lib/domain/tour.ts` e nenhuma tela os dispara: os
+alvos que recortavam (`feed-reflection`, `feed-entries`,
+`recordings-unfinished`, `recordings-import`) moravam no `/feed` e no
+`/recordings`, que saíram quando o v2 virou o app (ver `app/AGENTS.md`).
+
+**Não foram apagados de propósito.** `user_tours` tem linhas com essas chaves,
+de gente que já os viu, e `isTourKey` é quem valida o que entra pelas rotas de
+tour; remover a chave transformaria linha existente em valor desconhecido para
+ganhar o quê — uma constante a menos. Quando a Biblioteca do v2 ganhar a sua
+apresentação, ela reaproveita a chave `feed` e a versão sobe, que é exatamente
+o mecanismo que o resto deste documento descreve para reexibir um tour mudado.

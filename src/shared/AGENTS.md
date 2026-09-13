@@ -86,13 +86,11 @@ escuro o valor é `var(--session-surface-quote)` por referência, não por cópi
 a regra é "a mesma da citação bíblica", e precisa continuar valendo quando
 aquela mudar.
 
-**Um cartão do feed NÃO usa o token, e é o de cima: a reflexão sobre a última
-gravação** (`ReflectionCard`, em `app/(app)/feed/page.tsx`). Ele fica no
-`bg-scriba-paper` de sempre, o que no claro dá o mesmo branco de todos e no
-escuro o deixa um degrau ABAIXO do degradê dos outros. É esse degrau que o
-separa da lista: ele é o resumo do que acabou de acontecer, não mais uma
-entrada dela. Ele também é o único sem sombra nenhuma, o halo azul de
-`shadow-[0_6px_22px_rgba(79,168,240,.13)]` saiu nos dois temas.
+**O `ReflectionCard` descrito aqui não existe mais.** Ele era o cartão do topo
+do `/feed`, a reflexão sobre a última gravação, e saiu junto com a página quando
+o v2 virou o app (ver `app/AGENTS.md`). O token `--feed-card` continua vivo e
+continua sendo o que descreve o parágrafo acima: quem o usa hoje são os cartões
+de acompanhamento (`FeedEntryCards`) e o `SessionCard` da Biblioteca.
 
 ### A sombra das superfícies
 
@@ -406,11 +404,16 @@ Nada dentro dela pode usar cor literal: a esfumaçada acima da barra é
 
 **A folga que reserva o espaço dela vai no FILHO, não no wrapper.** Em
 `app/(app)/layout.tsx` é `[&>*]:pb-36 sm:[&>*]:pb-0`, e o seletor de filho é o
-ponto: `/feed`, `/recordings` e `/studies` pintam `bg-scriba-surface` no
-próprio elemento raiz, então uma folga no wrapper fica DEPOIS da tinta e a faixa
-reservada aparece com o tom do `body`, não o do conteúdo. Por dentro, o chão da
-página se estende por ela. Isso pressupõe um elemento raiz por página, se
-criar uma que devolva irmãos no topo, a folga vai em cada um.
+ponto: uma página que pinte o próprio chão no elemento raiz faria a folga ficar
+DEPOIS da tinta, e a faixa reservada apareceria com o tom do `body`, não o do
+conteúdo. Por dentro, o chão da página se estende por ela. Isso pressupõe um
+elemento raiz por página, se criar uma que devolva irmãos no topo, a folga vai
+em cada um.
+
+**Esta barra só aparece no que restou de `(app)`** (cobrança, indicação,
+`/profile/delete`): o v2 não tem nav inferior, quem navega lá usa a gaveta da
+`TopBar`. Os destinos dela já apontam para dentro do v2, senão cada toque
+pagaria um 308.
 
 ## A transição de página envolve o conteúdo, nunca a moldura
 
