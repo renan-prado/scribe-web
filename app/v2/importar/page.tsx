@@ -1,5 +1,6 @@
 import type { Metadata } from "next";
 import { YoutubeUrlForm } from "@/features/session/components/YoutubeUrlForm";
+import { TopBar } from "../components/TopBar";
 
 export const metadata: Metadata = { title: "Importar do YouTube" };
 
@@ -11,9 +12,14 @@ export const metadata: Metadata = { title: "Importar do YouTube" };
  * primeira. Ver o cabeçalho de `YoutubeUrlForm`.
  *
  * Ela não lê nada do servidor, a linha da sessão só nasce quando o formulário
- * é enviado. Fica em `(app)` pelo header, pela nav e pelo saldo de moedas, que
- * o formulário consulta.
+ * é enviado. O saldo de moedas, que o formulário consulta, vem da gaveta da
+ * `TopBar`.
  */
 export default function ImportarPage() {
-  return <YoutubeUrlForm />;
+  return (
+    <main className="mx-auto flex w-full max-w-[640px] flex-1 flex-col px-4 pb-10">
+      <TopBar title="Importar" />
+      <YoutubeUrlForm />
+    </main>
+  );
 }

@@ -38,26 +38,132 @@ Regras da camada de roteamento. Para a camada de servidor abaixo dela, ver
 leva `Vary: Accept`; a HTML não (o Next é dono desse header nas rotas do App
 Router, ver o comentário no `proxy.ts`).
 
-**Autenticado** (`app/(app)/`, com header, nav e menu do avatar):
+**Autenticado, o que SOBROU em `app/(app)/`** (com o header e a nav antigos):
 
 ```
-/feed                    cards de acompanhamento de TODAS as sessões
-/recordings              sessões salvas + faixa "Gravações em aberto"
-/studies                 aprofundamentos gerados
-/profile
 /profile/delete          excluir a conta. A rota está no bucket PÚBLICO acima
 /recording/[id]/live       gravação modo live
 /recording/[id]/audio      gravação modo audio_only
 /recording/[id]/transcribe gravação modo transcript_only
-/importar                  cola o link do vídeo e cria a sessão modo youtube
 /recording/[id]/youtube    importação modo youtube: espera a legenda + resumo
-/recording/[id]/summary    sessão salva: resumo final
 /recording/[id]/transcript sessão salva transcript_only: a transcrição, e o
                            botão que gera o resumo dela sob demanda
 /recording/[id]/deepening  o estudo da sessão (gerar exige plano Estudioso)
+/indicar                   indique a um amigo
 /billing/assinar           abre o Checkout (destino do CTA da landing)
 /billing/retorno           volta do Checkout. DECORATIVA: não credita nada
 ```
+
+Estas são as telas que o v2 ainda NÃO refez: as quatro de captura (o v2 tem um
+gravador só, `audio_only`), a transcrição, o estudo, a indicação e a cobrança.
+Elas mantêm a moldura antiga, e os links da nav dela já apontam para dentro do
+v2 para não pagarem um 308 a cada toque.
+
+**Redirects 308 para o v2** (fora de `(app)`: redirect não precisa de header
+nem das consultas do layout):
+
+```
+/feed         → /v2/home       /studies   → /v2/studies
+/recordings   → /v2/home       /importar  → /v2/importar
+/list         → /v2/home       /profile   → /v2/profile
+/recording/[id]/summary → /v2/summary/[id]
+```
+
+O último é o endereço mais linkado do produto: é onde as quatro telas de
+captura desembocam no stop, é o destino de `savedRouteFor` espalhado pelo
+código, e é o que está no bookmark de quem já usa o Scriba.
+
+`/profile` é a única que ficou DENTRO de `(app)`, e o motivo é a irmã:
+`/profile/delete` é pública e mora em `app/(app)/profile/delete`. Tirar a folha
+de lá arrastaria a pasta, e a página de exclusão de conta — cujo endereço está
+registrado na ficha da Play Store — mudaria junto.
+
+**Scriba v2** (`app/v2/`, atrás do login, MOLDURA PRÓPRIA). **É o app.**
+
+```
+/v2/home                 "Biblioteca": o acervo agrupado por mês e o botão
+                         de gravar. É a primeira tela do v2
+/v2/summary/[id]         o resumo da sessão. MESMO `SavedSessionView` do
+                         /recording/:id/summary, sem header, sem nav e sem o
+                         botão de gravar
+/v2/recording            o gravador: onda, pausar, parar e apagar. Grava UM
+                         arquivo (sem chunks) e, no stop, cria a sessão,
+                         transcreve e resume. Com ?auto=1 (o botão do
+                         /v2/home) abre o microfone sozinho; sem ele, espera
+                         o toque
+/v2/studies              aprofundamentos gerados
+/v2/profile              a conta, o saldo e o plano
+/v2/importar             cola o link do vídeo e cria a sessão modo youtube
+```
+
+As três últimas foram MOVIDAS de `(app)`, não copiadas: o corpo delas é o
+mesmo, só a moldura mudou (a `TopBar` do v2 no lugar do `AppHeader`). Duas
+cópias da mesma tela é como elas começam a divergir em detalhes que ninguém
+decidiu.
+
+O v2 é a pele nova do produto, e mora fora do grupo `(app)` de propósito: nada
+dele herda o header, a `MobileBottomNav` ou o `TourProvider`, e nada do app de
+hoje muda quando ele muda. O chrome dele é a `TopBar` (`app/v2/components/`),
+usada por `/v2/home` e `/v2/recording`: ela é um SERVER component (lê perfil e
+saldo com `getCurrentAccount`), então quem a renderiza é sempre a página, nunca
+um componente cliente. O hambúrguer dela abre a gaveta com avatar e saldo (o
+`CoinBalance` de verdade) na mesma linha, três destinos (Biblioteca, Estudos,
+Perfil) e, colado no rodapé e longe deles, o Sair — um POST para
+`/auth/sign-out`, como no resto do app. Estudos e Perfil ainda apontam para as
+telas do app atual. A cor dele vem de tokens no namespace `--v2-*`
+(`app/globals.css`), declarados só em `:root` porque o v2 nasce preto nos dois
+temas.
+
+**O v2 é o destino de quem loga** (`proxy.ts`, `/auth/callback`, `/sign-in` e os
+atalhos do `manifest.ts` apontam para `/v2/home`). O que ainda não foi refeito
+continua na moldura antiga, listado acima.
+
+O `/v2/home` inverte a ordem do app de hoje: o ACERVO é a primeira tela (hoje
+ele mora em `/recordings`, e a primeira é o feed de acompanhamento), e gravar é
+o botão no rodapé. O LAYOUT vem do gravador nativo do Android, o print está em
+`public/prints/new-release/`: barra do topo, blocos por mês, e embaixo uma
+faixa que escurece até o preto (`--v2-dock-fade`) com o botão vermelho no meio.
+
+A BUSCA dela é a mesma do `/recordings`, barra e motor (`CollectionSearch` e
+`lib/search.ts`), com o mesmo alcance, incluindo a transcrição pelo servidor. O
+que muda é que ali ela é permanente e aqui fica atrás da lupa: a Biblioteca é a
+primeira tela do app, e quem abre o Scriba quase sempre quer o último sermão,
+não uma busca. Fechá-la LIMPA os filtros, senão a lista reabriria recortada por
+uma escolha de dois dias atrás. O botão mora na `TopBar` e o estado no
+`LibraryBrowser`, então um `SearchScope` (contexto) envolve os dois na página;
+a `TopBar` continua renderizando no servidor mesmo passando por dentro dele.
+A faixa fica sempre; o BOTÃO some ao rolar para baixo e volta ao rolar para
+cima.
+
+O botão de gravar mora na PÁGINA do `/v2/home`, não no layout do v2, e é o que
+o mantém fora do `/v2/summary`: uma tela de leitura não oferece gravar. Pelo
+mesmo motivo o `/v2/summary` não leva o `TourTrigger` (a apresentação depende do
+`TourProvider`, que é do layout de `(app)`) nem o `FeedbackPrompt` (a pesquisa é
+do app em produção, e disparada de uma tela em obras contaminaria a amostra).
+O único link do v2 que ainda devolve alguém ao app de hoje é o da TRANSCRIÇÃO,
+que não tem tela nova; ele sai quando `/v2/transcript` existir.
+
+O `/v2/recording` inverte a ORDEM do gravador de hoje, e é essa a ideia dele.
+Lá a sessão nasce antes da primeira palavra e o áudio sobe em pedaços de 15-20s
+durante a pregação, porque o feed ao vivo precisa do texto na hora. Aqui não há
+feed: o áudio fica inteiro no aparelho, num arquivo só (pausar e retomar usam o
+`pause()`/`resume()` do `MediaRecorder`, que não corta nada), e **nada existe no
+servidor até o stop**. No stop, em sequência: cria a sessão (`audio_only`),
+manda o arquivo inteiro para `/api/transcribe`, manda o texto para
+`/api/final-summary` e abre `/v2/summary/:id`. Apagar pergunta antes e não
+deixa rastro, porque não há rastro a deixar.
+
+**Duas dívidas conhecidas, e elas são o que separa esta tela de virar a porta
+de gravação de verdade.** A primeira: ela NÃO cobra moedas, enquanto o app
+debita por minuto iniciado do cliente (`src/features/coins/store.ts`,
+`COIN_COSTS.audioOnlyMinute`) — as rotas exigem saldo, mas ninguém paga. A
+segunda: `/api/transcribe` recusa acima de 8 MB, o que a 24 kbps dá ~44
+minutos; um sermão de uma hora precisa de fatiamento no servidor, que não
+existe. As duas estão escritas no cabeçalho do `AudioStudio`. O CARTÃO, não, é o mesmo `SessionCard` da Biblioteca
+(`src/features/session/components/`), que saiu de dentro do `SessionsBrowser`
+para não existir em duas cópias. Hambúrguer, busca e o botão de gravar existem
+sem ação de propósito: o lugar deles na tela é a decisão que esta página tomou,
+o que eles abrem vem depois.
 
 `app/session/[id]` é rota LEGADA: um `permanentRedirect` para
 `/recording/:id/summary`, preservado para que link antigo e bookmark não

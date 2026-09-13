@@ -17,5 +17,5 @@ import { permanentRedirect } from "next/navigation";
  * Link novo aponta para `/recordings` direto.
  */
 export default function LegacyListPage() {
-  permanentRedirect("/recordings");
+  permanentRedirect("/v2/home");
 }

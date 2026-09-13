@@ -44,7 +44,7 @@ export default async function RecordingYoutubePage({ params }: PageProps) {
 
   // Sem URL não há o que importar. Acontece se a linha foi criada fora do
   // diálogo; a rota devolveria `invalid_url` e a tela de erro seria um beco.
-  if (!session.sourceUrl) redirect("/recordings");
+  if (!session.sourceUrl) redirect("/v2/home");
 
   return <YoutubeImport sessionId={session.id} sourceUrl={session.sourceUrl} />;
 }

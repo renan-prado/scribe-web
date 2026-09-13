@@ -48,7 +48,7 @@ export default async function SignInPage({ searchParams }: { searchParams: Promi
   // 0055): esconder um deles faria a tela prometer menos do que vai entregar.
   const couponCode = normalizeCouponCode(jar.get(COUPON_COOKIE)?.value);
   const coupon = couponCode ? await getCouponPublicByCode(couponCode) : null;
-  const target = typeof next === "string" && next.startsWith("/") ? next : "/feed";
+  const target = typeof next === "string" && next.startsWith("/") ? next : "/v2/home";
   const errorMessage =
     error === "exchange_failed"
       ? "Não consegui completar o login. Tente novamente."

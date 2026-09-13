@@ -6,6 +6,7 @@ import { TOUR_DELAY_LIST_MS } from "@/features/tour/config";
 import { listDeepenings } from "@/lib/db/deepenings";
 import { canCurrentUserUse } from "@/lib/entitlements/server";
 import { cn } from "@/lib/utils";
+import { TopBar } from "../components/TopBar";
 import { StudiesBrowser } from "./StudiesBrowser";
 
 export const metadata: Metadata = { title: "Seus estudos" };
@@ -31,25 +32,19 @@ export default async function StudiesPage() {
   const showUpsellState = isEmpty && !canGenerate;
 
   return (
-    <div className="flex flex-1 flex-col bg-scriba-surface">
+    <div className="flex flex-1 flex-col">
       <main
         className={cn(
-          "mx-auto flex w-full max-w-4xl flex-1 flex-col gap-6 px-4 py-6 sm:gap-8 sm:px-6 sm:py-8",
-          isEmpty && "justify-center py-0 sm:py-0"
+          "mx-auto flex w-full max-w-[640px] flex-1 flex-col gap-6 px-4 pb-10",
+          isEmpty && "justify-center"
         )}
       >
-        {isEmpty ? null : (
-          <div className="flex items-start justify-between gap-4">
-            <div className="flex flex-col gap-1.5">
-              <h1 className="font-heading text-2xl font-semibold leading-tight tracking-tight text-scriba-ink-strong sm:text-3xl">
-                Seus estudos
-              </h1>
-              <p className="text-sm font-light text-scriba-ink-soft">
-                Estudos teológicos que o Scriba gerou a partir dos seus sermões.
-              </p>
-            </div>
-          </div>
-        )}
+        {/* O título da página é o da barra, e por isso o cabeçalho gordo saiu:
+            ele repetia "Seus estudos" logo abaixo da `TopBar` que já diz
+            "Estudos". A frase de apoio foi junto — ela explicava o que a lista
+            mostra para quem chegava sem contexto, e no v2 quem chega aqui veio
+            pelo menu, que tem o mesmo nome. */}
+        <TopBar title="Estudos" />
 
         {/* Tem estudos mas perdeu (ou nunca teve) o plano: a lista fica, o
           convite entra acima dela. Só a GERAÇÃO é restrita, ver

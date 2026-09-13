@@ -100,9 +100,21 @@ export function BlockRenderer({ block }: { block: SummaryBlock }) {
               {block.text}
             </span>
           </blockquote>
+          {/* O `mt-[25px]` iguala esta aspa à de cima, e o número saiu da
+              MÉTRICA da fonte, não do olho: numa caixa de 36px com
+              `leading-none`, a tinta do glifo `"` ocupa da linha 1,5 até a
+              9,5, ou seja, ela nasce colada no topo da caixa e sobram 26,5px
+              vazios embaixo dela. Em cima isso é exatamente o que afasta a
+              aspa do texto; embaixo, é o que a cola nele, o vazio fica do
+              lado de fora. Medido na tela: 32,5px acima contra 7,8px abaixo.
+              Com a margem, 32,5 contra 32,8.
+
+              Não depende do breakpoint: o texto cresce no `sm:`, o glifo não,
+              e a conta é toda dentro da caixa dele. Se o `text-4xl` daqui
+              mudar, este número muda junto. */}
           <span
             aria-hidden
-            className="select-none text-4xl font-semibold leading-none text-scriba-hairline-soft"
+            className="mt-[25px] select-none text-4xl font-semibold leading-none text-scriba-hairline-soft"
           >
             "
           </span>

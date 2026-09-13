@@ -138,7 +138,7 @@ export function AdminSidebar({
               size="lg"
               tooltip="Voltar para o app"
               onClick={closeOnMobile}
-              render={<Link href="/feed" />}
+              render={<Link href="/v2/home" />}
             >
               <ScribaLogo
                 size={26}
@@ -213,7 +213,7 @@ export function AdminSidebar({
                 className="min-w-[15rem] rounded-2xl border-none bg-scriba-paper p-2 shadow-[0_18px_40px_rgba(51,65,79,0.14)] ring-1 ring-scriba-hairline"
               >
                 <DropdownMenuItem
-                  render={<Link href="/feed" />}
+                  render={<Link href="/v2/home" />}
                   onClick={closeOnMobile}
                   className={MENU_ITEM_CLASS}
                 >
@@ -221,7 +221,7 @@ export function AdminSidebar({
                   Voltar ao app
                 </DropdownMenuItem>
                 <DropdownMenuItem
-                  render={<Link href="/profile" />}
+                  render={<Link href="/v2/profile" />}
                   onClick={closeOnMobile}
                   className={MENU_ITEM_CLASS}
                 >

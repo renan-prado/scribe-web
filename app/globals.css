@@ -148,6 +148,19 @@
   --color-lp-band-cta: var(--lp-band-cta);
   --color-lp-band-cta-ink: var(--lp-band-cta-ink);
   --color-lp-phone-frame: var(--lp-phone-frame);
+  /* Scriba v2 (/v2/*): a pele nova, desenhada do zero sobre fundo preto. Os
+     tokens dela vivem num namespace próprio (`--v2-*`) para que mexer nela
+     nunca mexa no app atual, e o inverso também. Ver `app/v2/AGENTS.md`. */
+  --color-v2-bg: var(--v2-bg);
+  --color-v2-card: var(--v2-card);
+  --color-v2-card-hover: var(--v2-card-hover);
+  --color-v2-wave: var(--v2-wave);
+  --color-v2-rec: var(--v2-rec);
+  --color-v2-rec-hover: var(--v2-rec-hover);
+  --color-v2-rec-ink: var(--v2-rec-ink);
+  --color-v2-ink: var(--v2-ink);
+  --color-v2-ink-soft: var(--v2-ink-soft);
+  --color-v2-ink-mute: var(--v2-ink-mute);
 }
 
 :root {
@@ -412,6 +425,61 @@
   /* Sidebar layout tokens, consumed by w-(--sidebar-width) etc. in sidebar.tsx */
   --sidebar-width: 16rem;
   --sidebar-width-icon: 3rem;
+  /* Scriba v2 (/v2/*).
+     Declarado SÓ aqui e de propósito: o `.dark` abaixo redefine todo token
+     de `:root`, este é a exceção. O v2 nasce preto nos dois temas, então
+     redefini-lo lá seria escrever o mesmo valor duas vezes e dar a impressão
+     de que ele acompanha o tema. Se um dia o v2 ganhar tema claro, é aqui
+     que a exceção deixa de valer. */
+  --v2-bg: #000000;
+  /* Um degrau só acima do preto. É o realce dos botões da barra do topo; o
+     CARTÃO da lista não usa este token, ele é o `SessionCard` do app atual e
+     traz a própria paleta (ver `app/v2/layout.tsx`). */
+  --v2-card: #1A1A1A;
+  --v2-card-hover: #242424;
+  /* As barras da onda do microfone (`/v2/recording`). Elas não usam a tinta de
+     texto: a onda é um DESENHO, e no repouso ela cai para 30% de opacidade,
+     um cinza que já nasce apagado sumiria de vez. */
+  --v2-wave: #EDEDED;
+  --v2-ink: #F5F5F5;
+  --v2-ink-soft: #D4D4D4;
+  --v2-ink-mute: #8C8C8C;
+  /* O botão de gravar. Vermelho é a única cor saturada da tela, e é
+     deliberado: ele é a ÚNICA ação da página. */
+  --v2-rec: #D83E36;
+  --v2-rec-hover: #E64C44;
+  --v2-rec-ink: #FFFFFF;
+  /* O chão do botão de gravar: uma faixa que escurece até o preto embaixo e
+     some em transparente em cima. Ela SUBSTITUIU a sombra que o botão tinha:
+     uma sombra separa o botão do que está atrás dele num ponto só, a faixa
+     separa a barra inteira do conteúdo, e de quebra o texto do último cartão
+     mergulha nela em vez de ser cortado por uma borda.
+
+     GRADIENTE entra por `bg-[image:var(--v2-dock-fade)]`, não vira utilitário
+     de cor, mesma regra do `--scriba-nav-fade` e do `--scriba-cta`.
+
+     As dez paradas não são preciosismo: a interpolação entre duas paradas só
+     é reta na conta, e no gradiente longo o olho vê a faixa de transição como
+     uma borda. Quanto mais paradas, mais macia a curva.
+
+     **Ela NÃO chega ao preto chapado**, para em 82% embaixo. Sobre o fundo da
+     página isso é invisível, os dois são pretos; a diferença aparece onde há
+     cartão atrás, e é ela que se quer: o cartão continua LÁ, escurecido, em vez
+     de apagado por uma tarja. Uma faixa sólida separa recortando, esta separa
+     por profundidade. */
+  --v2-dock-fade: linear-gradient(
+    to top,
+    rgba(0, 0, 0, 0.82) 0%,
+    rgba(0, 0, 0, 0.76) 12%,
+    rgba(0, 0, 0, 0.66) 24%,
+    rgba(0, 0, 0, 0.54) 36%,
+    rgba(0, 0, 0, 0.4) 48%,
+    rgba(0, 0, 0, 0.27) 60%,
+    rgba(0, 0, 0, 0.16) 72%,
+    rgba(0, 0, 0, 0.08) 83%,
+    rgba(0, 0, 0, 0.03) 92%,
+    rgba(0, 0, 0, 0) 100%
+  );
 }
 
 /* ---------------------------------------------------------------------------
@@ -944,6 +1012,20 @@
   --animate-insight-gradient: insight-gradient 12s ease-in-out infinite;
   --animate-consolidate-pulse: consolidate-pulse 1.6s ease-in-out infinite;
   --animate-ai-spin: ai-spin 2.4s ease-in-out infinite;
+  /* O BOTÃO de gravar do v2 sumindo e voltando com a rolagem. Quem vai e vem é
+     só ele: a faixa de gradiente atrás fica sempre (ver `RecordDock`).
+     As duas são ASSIMÉTRICAS de propósito: sumir é só opacidade e quase
+     instantâneo (45ms, três quadros a 60Hz), porque o que sai da frente não
+     precisa ser anunciado e qualquer demora ali é sentida como atraso da
+     rolagem; voltar é mais demorado e tem zoom, que é o que faz o olho
+     encontrar o botão de novo sem procurar.
+
+     A saída é `linear`, não `ease-in`: numa animação tão curta a aceleração
+     do `ease-in` gasta metade do tempo quase parada no opaco, e o que se sente
+     é atraso, não suavidade. O `forwards` segura o zero, senão o botão
+     reapareceria ao fim da animação. */
+  --animate-v2-rec-in: v2-rec-in 200ms cubic-bezier(0.22, 1, 0.36, 1);
+  --animate-v2-rec-out: v2-rec-out 45ms linear forwards;
 
   @keyframes record-halo {
     0%,
@@ -1019,6 +1101,26 @@
      deste blur ("a propriedade relacionada com o filtro pode mover píxeis").
      Como o desfoque durava 0,5 s sobre texto que já estava surgindo em
      `opacity`, o custo era permanente e o ganho visual, quase nulo. */
+  @keyframes v2-rec-in {
+    from {
+      opacity: 0;
+      transform: scale(0.72);
+    }
+    to {
+      opacity: 1;
+      transform: scale(1);
+    }
+  }
+
+  @keyframes v2-rec-out {
+    from {
+      opacity: 1;
+    }
+    to {
+      opacity: 0;
+    }
+  }
+
   @keyframes content-fade {
     from {
       opacity: 0;

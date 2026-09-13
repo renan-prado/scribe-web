@@ -2,7 +2,9 @@
  * Os glifos das quatro ABAS da barra inferior do celular (`MobileBottomNav`).
  * O microfone do botão central NÃO está aqui: ele é o `Mic` do lucide, e o
  * porquê está no cabeçalho da barra. Existe um `public/icons/recording.svg`
- * para ele, sem componente correspondente de propósito.
+ * para ele, sem componente correspondente de propósito. (O `MicGlyph` ao lado
+ * é de outro botão, o de gravar do v2, e o cabeçalho dele explica por que lá o
+ * sólido serve e aqui não.)
  *
  * **Três deles também desenham a barra do DESKTOP** (`AppNav`): feed, list e
  * study. Era lucide lá (`Rss` / `List` / `BookOpen`), e o mesmo destino tinha

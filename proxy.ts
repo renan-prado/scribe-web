@@ -24,7 +24,7 @@ import { SUPABASE_AUTH_COOKIE } from "@/lib/supabase/cookie";
  *   UNKNOWN, neither: passed through so the Next router answers a real 404
  *
  * Unauth users hitting a protected route → /sign-in?next=<original-path>.
- * Auth users hitting /sign-in or /sign-up → /feed (already in).
+ * Auth users hitting /sign-in or /sign-up → /v2/home (already in).
  * `GET /` with `Accept: text/markdown` → rewritten to /index.md.
  */
 
@@ -111,6 +111,10 @@ const AUTH_ONLY_PREFIXES = ["/sign-in", "/sign-up"];
  * ele guardaria no `?next=` um caminho que só existe para ser abandonado.
  */
 const KNOWN_APP_PREFIXES = [
+  // As quatro primeiras são REDIRECTS 308 para dentro do v2 (ver `app/feed`,
+  // `app/recordings`, `app/studies`, `app/importar`). Continuam listadas de
+  // propósito: sem elas, o anônimo que abre um bookmark antigo levaria 404 em
+  // vez do login, e o redirect nem chegaria a rodar.
   "/feed",
   "/recordings",
   "/studies",
@@ -123,6 +127,10 @@ const KNOWN_APP_PREFIXES = [
   "/partners",
   "/session",
   "/api",
+  // "/v2" é o app. A Biblioteca, o gravador, o resumo, os estudos, o perfil e a
+  // importação moram todos aqui, e as rotas antigas redirecionam para cá.
+  // Protegida como o resto: é tela de quem já entrou.
+  "/v2",
 ];
 
 // `dev.scriba.cc` é o ambiente de desenvolvimento: mesmo projeto na Vercel,
@@ -454,22 +462,22 @@ export async function proxy(request: NextRequest) {
     return applyCsp(redirect);
   }
 
-  // Quem já está logado não tem o que fazer na landing page, vai para o feed.
+  // Quem já está logado não tem o que fazer na landing page, vai para o app.
   //
   // Esta checagem MORAVA em `app/page.tsx`, e era só por causa dela que a LP
   // precisava ser uma rota dinâmica (ver o comentário lá). Aqui o `user` já
   // foi resolvido para os outros guards, então o redirect sai de graça e a
   // página volta a ser estática e cacheável na CDN para o visitante anônimo.
   if (user && pathname === "/") {
-    return applyCsp(NextResponse.redirect(new URL("/feed", request.nextUrl.origin)));
+    return applyCsp(NextResponse.redirect(new URL("/v2/home", request.nextUrl.origin)));
   }
 
   if (user && isAuthOnly(pathname)) {
     // Preserva a INTENÇÃO. Um usuário já logado que clica em "Assinar Pessoal"
     // na landing page chega aqui com `?next=/billing/assinar?plan=pessoal`;
-    // jogá-lo em /feed descartaria a escolha e ele teria de recomeçar.
+    // jogá-lo em /v2/home descartaria a escolha e ele teria de recomeçar.
     const next = safeNextPath(request.nextUrl.searchParams.get("next"));
-    const url = new URL(next ?? "/feed", request.nextUrl.origin);
+    const url = new URL(next ?? "/v2/home", request.nextUrl.origin);
     return applyCsp(NextResponse.redirect(url));
   }
 

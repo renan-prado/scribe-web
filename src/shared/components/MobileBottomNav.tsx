@@ -81,9 +81,9 @@ export function MobileBottomNav() {
         aria-label="Navegação principal"
         className="pointer-events-auto flex min-h-18 items-center justify-around bg-scriba-paper pb-[env(safe-area-inset-bottom)] shadow-[0_-6px_22px_var(--scriba-shadow)]"
       >
-        <TabLink href="/feed" label="Feed" active={current === "feed"} icon={FeedGlyph} />
+        <TabLink href="/v2/home" label="Feed" active={current === "feed"} icon={FeedGlyph} />
         <TabLink
-          href="/recordings"
+          href="/v2/home"
           label="Biblioteca"
           active={current === "recordings"}
           icon={ListGlyph}
@@ -156,7 +156,7 @@ export function MobileBottomNav() {
           }
         />
         <TabLink
-          href="/studies"
+          href="/v2/studies"
           label="Estudos"
           active={current === "studies"}
           activeClass="text-scriba-green-ink"
@@ -168,7 +168,7 @@ export function MobileBottomNav() {
             que desalinhava a fileira. Aqui a barra é navegação, não
             identidade: a foto continua no /profile, que é o destino do item. */}
         <TabLink
-          href="/profile"
+          href="/v2/profile"
           label="Perfil"
           active={current === "profile"}
           icon={ProfileGlyph}

@@ -578,6 +578,36 @@ client-safe). Quem filtra é um componente cliente por página,
 `app/(app)/studies/StudiesBrowser.tsx`; as páginas continuam sendo só quem
 BUSCA.
 
+**O CARTÃO de uma sessão salva não é de nenhuma das duas**, ele é o
+`components/SessionCard.tsx`, e mora aqui porque duas telas o desenham: a
+Biblioteca e o `/v2/home` (ver `app/AGENTS.md`). Ele saiu de dentro do
+`SessionsBrowser` no dia em que a segunda apareceu, e o motivo é o de sempre:
+cartão copiado é cartão que diverge no primeiro ajuste. As pastilhas de BUSCA
+(`verseHit`, `transcriptOnlyHit`) são props opcionais porque só a Biblioteca
+busca; o resto do que ele mostra é da sessão, não da tela. O menu de contexto
+(`SessionCardMenu`) veio junto, pelo mesmo motivo.
+
+A única diferença entre as duas telas é a prop `header`, e ela existe porque o
+v2 está sendo desenhado enquanto o app de hoje está em produção: `"mode"` (o
+padrão, a Biblioteca) abre pelo disco do MODO, joga autor e local para a linha
+de baixo e fecha o cartão com data, duração e pastilhas (modo, estudo);
+`"speaker"` (o `/v2/home`) abre pelo AUTOR, no mesmo empilhamento do cabeçalho
+do `/summary`, avatar + nome, título, e local · data na mesma linha, e o rodapé
+fica só com a ação. Duração e pastilhas saíram de lá porque nenhuma das duas
+muda o que a pessoa faz na lista. Sem autor, o empilhado perde a LINHA do autor
+e não o empilhamento: um avatar "?" seria um rosto inventado para ninguém, mas
+trocar a anatomia do cartão no meio da lista é pior. Quando o v2 virar o app,
+uma das duas some.
+
+O `SavedSessionView` ganhou o mesmo tratamento pelo `/v2/summary/:id`, e pelo
+mesmo motivo: `meta="compact"` põe local e data na MESMA linha (com a data já
+simplificada em `createdAtShortLabel`, "6 set") e tira a duração, que é do
+arquivo e não do sermão; `lead="card"` desenha a IDEIA CENTRAL com a roupa do
+bloco `conclusion`, superfície em degradê e a marca do Scriba na pastilha,
+porque as duas são o que a IA escreve SOBRE o sermão, uma abrindo e a outra
+fechando a leitura. Os padrões (`"full"` e `"rule"`) são o `/summary` de hoje,
+intocado.
+
 **A filtragem é no CLIENTE, e isso é escolha.** As duas páginas já carregam
 tudo do usuário num render de servidor, não há paginação em lugar nenhum, e
 a escala é a de quem grava um ou dois sermões por semana. Filtrar ali responde

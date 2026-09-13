@@ -66,6 +66,27 @@ type SavedSessionViewProps = {
   hasDeepening: boolean;
   /** Ver `lib/entitlements/server.ts`. */
   canGenerateStudy: boolean;
+  /** Para onde o "Voltar" leva. O padrão é a Biblioteca do app atual; o
+   * `/v2/summary/:id` passa o Início do v2, senão o único caminho de volta
+   * desta tela jogaria a pessoa para fora da pele nova. */
+  backHref?: string;
+  /**
+   * Quanta ficha técnica o cabeçalho mostra.
+   *
+   * - `"full"` (padrão): local numa linha, e a data por extenso com a duração
+   *   noutra (curta no celular, longa no desktop).
+   * - `"compact"` (o `/v2/summary`): local e data na MESMA linha, separados
+   *   por um ponto, e a duração sai. É o cabeçalho do cartão do `/v2/home`
+   *   repetido aqui, para que abrir um cartão não pareça trocar de produto; e
+   *   a duração some porque ela é do arquivo, não do sermão, ninguém abre um
+   *   resumo para saber quantos minutos ele durou.
+   *
+   * Em `"compact"` quem manda a data já manda SIMPLIFICADA, em
+   * `createdAtShortLabel`, "6 set" em vez de "06 de set. de 2026".
+   */
+  meta?: "full" | "compact";
+  /** Ver `SummaryView`. O `/v2/summary` passa `"card"`. */
+  lead?: "rule" | "card";
 };
 
 export function SavedSessionView({
@@ -85,6 +106,9 @@ export function SavedSessionView({
   highlights,
   hasDeepening,
   canGenerateStudy,
+  backHref = "/recordings",
+  meta = "full",
+  lead = "rule",
 }: SavedSessionViewProps) {
   const [feedOpen, setFeedOpen] = useState(false);
   const [transcriptOpen, setTranscriptOpen] = useState(false);
@@ -162,7 +186,7 @@ export function SavedSessionView({
         subtitle="Refazendo os pontos centrais da mensagem."
       />
       <NavLink
-        href="/recordings"
+        href={backHref}
         className="-mx-1 inline-flex w-fit items-center rounded-md px-1 py-0.5 text-xs font-medium text-scriba-ink-mute transition-colors hover:text-scriba-ink focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring/40"
       >
         <ArrowLeft className="size-3.5" />
@@ -247,21 +271,38 @@ export function SavedSessionView({
               >
                 <MapPin className="size-3" />
                 {speakerLocation}
+                {meta === "compact" ? (
+                  <>
+                    <span className="size-[3px] rounded-full bg-scriba-ink-mute/60" />
+                    {createdAtShortLabel}
+                  </>
+                ) : null}
               </button>
             ) : (
-              <button
-                type="button"
-                onClick={() => setLocationDialogOpen(true)}
-                className={cn(ADD_BADGE_CLASSES, "w-fit")}
-              >
-                <Plus className="size-3" strokeWidth={2.5} />
-                Adicionar local
-              </button>
+              <span className="inline-flex w-fit items-center gap-1.5">
+                <button
+                  type="button"
+                  onClick={() => setLocationDialogOpen(true)}
+                  className={cn(ADD_BADGE_CLASSES, "w-fit")}
+                >
+                  <Plus className="size-3" strokeWidth={2.5} />
+                  Adicionar local
+                </button>
+                {meta === "compact" ? (
+                  <span className="text-xs font-light text-scriba-ink-mute">
+                    {createdAtShortLabel}
+                  </span>
+                ) : null}
+              </span>
             )}
-            <p className="hidden text-[11px] font-light text-scriba-ink-mute sm:block">
-              {createdAtLabel}
-              {durationLabel ? ` · ${durationLabel}` : ""}
-            </p>
+            {/* A ficha longa (data por extenso + duração) é do cabeçalho
+                `full`. No `compact` a data já subiu para a linha do local. */}
+            {meta === "full" ? (
+              <p className="hidden text-[11px] font-light text-scriba-ink-mute sm:block">
+                {createdAtLabel}
+                {durationLabel ? ` · ${durationLabel}` : ""}
+              </p>
+            ) : null}
           </div>
           {summary ? (
             <DeepenButton
@@ -272,16 +313,24 @@ export function SavedSessionView({
             />
           ) : null}
           {/* No mobile a data fica abaixo do botão "Gerar estudo"; no desktop
-              ela mora na coluna esquerda, sob o local. */}
-          <p className="text-[11px] font-light text-scriba-ink-mute sm:hidden">
-            {createdAtShortLabel}
-          </p>
+              ela mora na coluna esquerda, sob o local. No `compact` ela não
+              está em nenhum dos dois: mora na linha do local, como no cartão. */}
+          {meta === "full" ? (
+            <p className="text-[11px] font-light text-scriba-ink-mute sm:hidden">
+              {createdAtShortLabel}
+            </p>
+          ) : null}
         </div>
       </header>
 
       <div className="h-px w-full bg-scriba-hairline" />
 
-      <SummaryView summary={summary} hasTranscript={transcript.length > 0} running={false} />
+      <SummaryView
+        summary={summary}
+        hasTranscript={transcript.length > 0}
+        running={false}
+        lead={lead}
+      />
 
       {/* A secao pos-resumo reserva a mesma "canaleta" direita que os blocos
           do SummaryView reservam pro botao de comentario do Scriba, um

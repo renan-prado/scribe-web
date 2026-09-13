@@ -49,7 +49,7 @@ const INT = new Intl.NumberFormat("pt-BR");
 
 /** Os únicos destinos que o `?de=` alcança. */
 const ORIGENS = {
-  feed: { href: "/feed", label: "Voltar ao feed" },
+  feed: { href: "/v2/home", label: "Voltar à biblioteca" },
   perfil: { href: "/profile", label: "Voltar ao perfil" },
 } as const;
 

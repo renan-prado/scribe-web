@@ -67,14 +67,14 @@ export default function manifest(): MetadataRoute.Manifest {
         name: "Feed",
         short_name: "Feed",
         description: "Os cards de acompanhamento das suas sessões",
-        url: "/feed",
+        url: "/v2/home",
         icons: [{ src: "/brand/icon-192.png", sizes: "192x192", type: "image/png" }],
       },
       {
         name: "Biblioteca",
         short_name: "Biblioteca",
         description: "Suas sessões salvas e importadas",
-        url: "/recordings",
+        url: "/v2/home",
         icons: [{ src: "/brand/icon-192.png", sizes: "192x192", type: "image/png" }],
       },
       {

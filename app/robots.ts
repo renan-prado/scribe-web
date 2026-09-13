@@ -41,6 +41,7 @@ export default function robots(): MetadataRoute.Robots {
         // numa tela que já é `noindex`, e a página que queremos indexada,
         // `/parceiros`, continua liberada.
         "/parceiros/entrar",
+        "/v2/",
         "/feed",
         "/profile",
         "/recordings",

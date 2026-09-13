@@ -47,7 +47,7 @@ export default async function DeleteAccountPage() {
     <main className="mx-auto flex w-full max-w-2xl flex-col gap-6 px-4 py-8 sm:px-6 sm:py-12">
       <div>
         <Link
-          href="/profile"
+          href="/v2/profile"
           className="inline-flex items-center gap-1.5 text-sm font-medium text-scriba-ink-soft outline-none transition-colors hover:text-scriba-ink-strong focus-visible:text-scriba-ink-strong"
         >
           <ArrowLeft aria-hidden className="size-4" />
