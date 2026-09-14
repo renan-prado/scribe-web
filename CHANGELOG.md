@@ -9,6 +9,16 @@ Gerado por `npm run release` a partir dos Conventional Commits. `feat` sobe o
 minor; o resto sobe o patch. Não edite à mão, a próxima execução escreve por
 cima do topo do arquivo.
 
+## 0.20.0, 2026-09-14, desde v0.19.0
+
+### Novidades
+
+- **home:** a Biblioteca vazia ensina o caminho, e não só o estado (`5882e39`)
+
+### Correções
+
+- **tour:** o passo da busca da Biblioteca aponta para a lupa, não para a barra (`4d6dca4`)
+
 ## 0.19.0, 2026-09-14, desde v0.18.1
 
 ### Novidades
