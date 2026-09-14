@@ -1,7 +1,7 @@
 "use client";
 
 import { Loader2, SearchX } from "lucide-react";
-import { useMemo, useState } from "react";
+import { useCallback, useEffect, useMemo, useState } from "react";
 import { CollectionSearch, FACET_ALL } from "@/features/session/components/CollectionSearch";
 import { StudyNote } from "@/features/session/components/StudyNote";
 import { useContentSearch } from "@/features/session/hooks/useContentSearch";
@@ -16,6 +16,7 @@ import {
   searchTokens,
 } from "@/features/session/lib/search";
 import type { DeepeningListItem } from "@/lib/db/deepenings";
+import { useSearchScope } from "../components/SearchScope";
 
 /**
  * A lista de estudos do `/studies`, com a mesma busca do `/recordings`.
@@ -45,6 +46,9 @@ type Props = {
 };
 
 export function StudiesBrowser({ studies, nowIso }: Props) {
+  // A barra vive atrás da LUPA do cabeçalho, como na Biblioteca: quem abre os
+  // Estudos quase sempre quer o último estudo, não uma busca. Ver `SearchScope`.
+  const { open, setOpen } = useSearchScope();
   const [query, setQuery] = useState("");
   const [speaker, setSpeaker] = useState<string>(FACET_ALL);
   const [range, setRange] = useState<DateRangeKey>("all");
@@ -97,41 +101,52 @@ export function StudiesBrowser({ studies, nowIso }: Props) {
 
   const filtering = query.trim().length > 0 || speaker !== FACET_ALL || range !== "all";
 
-  function clearAll() {
+  const clearAll = useCallback(() => {
     setQuery("");
     setSpeaker(FACET_ALL);
     setRange("all");
-  }
+  }, []);
+
+  // Fechar a busca LIMPA os filtros, e a limpeza é reação ao fechamento, não
+  // algo que o botão faz: quem fecha é a lupa do cabeçalho, que não conhece
+  // estes filtros. Sem isto a lista volta certa e os seletores guardam a
+  // escolha antiga, então a busca REABRE recortada por um autor escolhido há
+  // dois dias. Mesma decisão do `LibraryBrowser`.
+  useEffect(() => {
+    if (!open) clearAll();
+  }, [open, clearAll]);
 
   return (
     <div className="flex flex-col gap-6">
-      <CollectionSearch
-        query={query}
-        onQueryChange={setQuery}
-        placeholder="Buscar por tema, autor, versículo ou algo dito na pregação"
-        facets={[
-          {
-            label: "Autor",
-            allLabel: "Todos os autores",
-            value: speaker,
-            options: speakerOptions,
-            onChange: setSpeaker,
-          },
-        ]}
-        range={range}
-        onRangeChange={setRange}
-        countLabel={
-          searching
-            ? "Procurando…"
-            : resultLabel(filtered.length, studies.length, ["estudo", "estudos"])
-        }
-        filtering={filtering}
-        onClear={clearAll}
-      />
+      {open ? (
+        <CollectionSearch
+          query={query}
+          onQueryChange={setQuery}
+          placeholder="Buscar por tema, autor, versículo ou algo dito na pregação"
+          facets={[
+            {
+              label: "Autor",
+              allLabel: "Todos os autores",
+              value: speaker,
+              options: speakerOptions,
+              onChange: setSpeaker,
+            },
+          ]}
+          range={range}
+          onRangeChange={setRange}
+          countLabel={
+            searching
+              ? "Procurando…"
+              : resultLabel(filtered.length, studies.length, ["estudo", "estudos"])
+          }
+          filtering={filtering}
+          onClear={clearAll}
+        />
+      ) : null}
 
       {/* Mesma regra do `/recordings`: enquanto a metade servidor da busca
         não responde, a tela não afirma que não há nada. Ver o comentário lá. */}
-      {filtered.length === 0 && searching ? (
+      {open && filtered.length === 0 && searching ? (
         <div className="flex flex-col items-center gap-2 rounded-3xl border border-dashed border-scriba-hairline px-6 py-12 text-center">
           <Loader2 aria-hidden className="size-6 animate-spin text-scriba-ink-mute" />
           <p className="text-sm font-medium text-scriba-ink">Procurando…</p>
@@ -140,7 +155,7 @@ export function StudiesBrowser({ studies, nowIso }: Props) {
             cada estudo, e essa parte vem do servidor.
           </p>
         </div>
-      ) : filtered.length === 0 ? (
+      ) : open && filtered.length === 0 ? (
         <div className="flex flex-col items-center gap-2 rounded-3xl border border-dashed border-scriba-hairline px-6 py-12 text-center">
           <SearchX aria-hidden className="size-6 text-scriba-ink-mute" />
           <p className="text-sm font-medium text-scriba-ink">Nenhum estudo com esse recorte.</p>
@@ -149,9 +164,13 @@ export function StudiesBrowser({ studies, nowIso }: Props) {
             estudo, tente uma palavra que o pregador tenha dito, uma referência como “Jonas 1”, ou
             solte um dos filtros.
           </p>
+          {/* FECHA a barra, e o fechamento é que limpa (ver o efeito acima):
+              com a lista vazia por causa do recorte, o que a pessoa quer é o
+              acervo de volta, não o formulário zerado à espera de outra
+              tentativa. Mesma decisão do `LibraryBrowser`. */}
           <button
             type="button"
-            onClick={clearAll}
+            onClick={() => setOpen(false)}
             className="mt-1 inline-flex items-center rounded-full bg-scriba-green-soft px-4 py-2 text-[11px] font-semibold text-scriba-mint-dark transition-colors hover:bg-scriba-green-soft/70"
           >
             Limpar busca

@@ -67,9 +67,6 @@ type Props = {
   footer: ReactNode;
   /** A linha que explica um casamento invisível da busca. Ver o cabeçalho. */
   hint?: ReactNode;
-  /** O menu do canto. Ele fica ACIMA do véu do link, senão o véu o cobre e o
-   *  menu deixa de abrir. */
-  action?: ReactNode;
 };
 
 /**
@@ -121,7 +118,7 @@ function noteOf(id: string): (typeof NOTES)[number] {
   return NOTES[Math.abs(hash) % NOTES.length];
 }
 
-export function PostItNote({ colorKey, href, eyebrow, title, footer, hint, action }: Props) {
+export function PostItNote({ colorKey, href, eyebrow, title, footer, hint }: Props) {
   const note = noteOf(colorKey);
 
   return (
@@ -132,99 +129,92 @@ export function PostItNote({ colorKey, href, eyebrow, title, footer, hint, actio
       // sai da margem do próprio item — e os dois andam JUNTOS, senão o mural
       // fica com vão maior num eixo que no outro e as colunas deixam de
       // parecer o mesmo mural.
-      //
-      // CARTÃO INTEIRO CLICÁVEL por "stretched link": quem carrega o destino é
-      // o `<a>` do título, e é o `::after` dele que se estica até estas bordas.
-      // Envolver o cartão num `<a>` seria mais simples e está errado: o menu de
-      // contexto é um `<button>`, e botão dentro de link é HTML inválido e
-      // armadilha de teclado. O `relative` daqui é o que dá ao `::after` uma
-      // caixa para preencher.
-      //
-      // O retorno ao toque é um véu de PRETO por cima, igual nas quatro cores:
-      // um véu branco clarearia o cartão escuro e lavaria os três claros, e
-      // seriam quatro tratamentos onde basta um. `:active` alcança os
-      // ancestrais do elemento acionado, é o que faz `group-active:` funcionar
-      // a partir de um `<li>` e o que dá retorno no celular, onde `hover:` é
-      // código morto (ver `src/shared/AGENTS.md`).
-      className={`group relative mb-4 flex break-inside-avoid flex-col rounded-2xl p-4 ${note.bg} ${note.ring}`}
+      className={`mb-4 break-inside-avoid rounded-2xl ${note.bg} ${note.ring}`}
     >
-      <div className="flex items-start gap-1">
-        <NavLink
-          href={href}
-          spinner="overlay"
-          // `gap-3` entre a moldura e o título, e não o respiro mínimo de
-          // antes: são DUAS informações de naturezas diferentes (quem pregou,
-          // sobre o quê), e coladas elas liam como uma linha de cabeçalho
-          // quebrada ao meio. O vão é o que diz que a segunda começa algo novo.
-          contentClassName="flex min-w-0 flex-col gap-3"
-          // `static` derruba o `relative` que o `spinner="overlay"` põe no
-          // link: sem isso o `::after` se mediria pelo próprio link e o alvo
-          // pararia na linha do título. O `cn` do NavLink é tailwind-merge,
-          // então a classe passada aqui vence a de lá. De brinde, o véu de
-          // "carregando" do overlay passa a cobrir o cartão inteiro.
-          //
-          // O FOCO é `outline-current`, e a tinta do cartão desce até aqui
-          // (`note.ink` no próprio link) só para alimentá-lo: um anel de cor
-          // fixa some em três das quatro faces — branco nas claras, preto na
-          // escura —, e o teclado é justamente quem não tem outra pista de onde
-          // está. Com `currentColor` ele herda a tinta que já foi calibrada
-          // contra aquele papel.
-          className={`static flex min-w-0 flex-1 rounded-md outline-none after:absolute after:inset-0 after:rounded-2xl after:transition-colors focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-current group-hover:after:bg-black/[0.06] group-active:after:bg-black/[0.12] ${note.ink}`}
-        >
-          {/* `font-light`, o MESMO peso da data. Os dois já usavam a mesma
-              tinta, mas peso diferente é cor diferente aos olhos: a moldura
-              saía mais escura que a data sem que nenhum token dissesse isso.
-              As duas linhas são o mesmo tipo de informação — o entorno do
-              título — e por isso têm de pesar igual. */}
-          {eyebrow ? (
-            <span className={`truncate text-[11px] font-light leading-none ${note.mute}`}>
-              {eyebrow}
-            </span>
-          ) : null}
-          {/* SEM BOLD. Num post-it o título é o próprio conteúdo, não a
-              manchete de um bloco com resumo embaixo: o peso regular é o que
-              faz a lista parecer um mural de anotações em vez de uma lista de
-              resultados.
+      {/* O CARTÃO É O LINK, um `<a>` em volta de tudo — e isso é o que sobrou
+          quando o menu de três pontinhos saiu do post-it. Enquanto ele existia,
+          o cartão inteiro era clicável por "stretched link" (o `::after` do
+          link do título esticado até as bordas do `<li>`, com o menu por cima
+          num `z-10`), porque botão dentro de link é HTML inválido e armadilha
+          de teclado. Sem botão nenhum lá dentro, aquele arranjo era mecanismo
+          sem a razão que o justificava: quatro classes afinadas entre si
+          (`static`, `after:inset-0`, `group-hover:`, `z-10`) para fazer o que
+          um `<a>` em volta faz sozinho.
 
-              **E o TAMANHO é quem faz a hierarquia no lugar do peso.** Sem
-              negrito, 15px ficava no mesmo plano da moldura e da data, e o
-              cartão lia como três linhas de metadado; a 17px o título volta a
-              ser a coisa que se lê primeiro sem precisar engrossar.
+          O retorno ao toque é um véu de PRETO por cima, igual nas quatro cores:
+          um véu branco clarearia o cartão escuro e lavaria os três claros, e
+          seriam quatro tratamentos onde basta um. `active:` no próprio link é o
+          que dá retorno no celular, onde `hover:` é código morto (ver
+          `src/shared/AGENTS.md`).
 
-              **Entrelinha 1,5, e não a apertada de manchete.** Numa coluna
-              estreita um título quebra em três ou quatro linhas, e a 1,375 elas
-              se colavam num bloco que se lê como parágrafo. O ar entre elas é o
-              que devolve ao cartão a cara de anotação em vez de resultado de
-              busca — mas 1,625 já era ar demais: o título se desmontava em
-              linhas soltas que não liam como uma frase só. `text-pretty` evita
-              a última linha com uma palavra só. */}
-          <span
-            className={`text-pretty text-[17px] font-normal leading-normal tracking-tight ${note.ink}`}
-          >
-            {title}
+          O FOCO é `outline-current`, e a tinta do cartão desce até aqui
+          (`note.ink` no próprio link) só para alimentá-lo: um anel de cor fixa
+          some em três das quatro faces — branco nas claras, preto na escura —,
+          e o teclado é justamente quem não tem outra pista de onde está. Com
+          `currentColor` ele herda a tinta já calibrada contra aquele papel.
+
+          `spinner="overlay"`: o véu de "carregando" cobre o cartão inteiro,
+          que agora é o próprio link. */}
+      <NavLink
+        href={href}
+        spinner="overlay"
+        contentClassName="flex min-w-0 flex-col"
+        className={`flex flex-col rounded-2xl p-4 outline-none transition-colors hover:bg-black/[0.06] focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-current active:bg-black/[0.12] ${note.ink}`}
+      >
+        {/* `gap-3` entre a moldura e o título, e não o respiro mínimo de antes:
+            são DUAS informações de naturezas diferentes (quem pregou, sobre o
+            quê), e coladas elas liam como uma linha de cabeçalho quebrada ao
+            meio. O vão é o que diz que a segunda começa algo novo.
+
+            `font-light` na moldura, o MESMO peso da data. Os dois já usavam a
+            mesma tinta, mas peso diferente é cor diferente aos olhos: a moldura
+            saía mais escura que a data sem que nenhum token dissesse isso. As
+            duas linhas são o mesmo tipo de informação — o entorno do título — e
+            por isso têm de pesar igual. */}
+        {eyebrow ? (
+          <span className={`mb-3 truncate text-[11px] font-light leading-none ${note.mute}`}>
+            {eyebrow}
           </span>
-        </NavLink>
-        {action ? (
-          // Acima do `::after` do link, senão o véu cobre o botão e o menu
-          // deixa de abrir. `-mr-1 -mt-1` puxa o alvo de 32px para o canto sem
-          // comer o padding do texto ao lado.
-          <div className={`relative z-10 -mr-1 -mt-1 ${note.mute}`}>{action}</div>
         ) : null}
-      </div>
+        {/* SEM BOLD. Num post-it o título é o próprio conteúdo, não a manchete
+            de um bloco com resumo embaixo: o peso regular é o que faz a lista
+            parecer um mural de anotações em vez de uma lista de resultados.
 
-      {hint ? (
-        <span className={`mt-3 flex items-center gap-1.5 text-[11px] font-light ${note.mute}`}>
-          {hint}
+            **E o TAMANHO é quem faz a hierarquia no lugar do peso.** Sem
+            negrito, 15px ficava no mesmo plano da moldura e da data, e o cartão
+            lia como três linhas de metadado; a 17px o título volta a ser a
+            coisa que se lê primeiro sem precisar engrossar.
+
+            **Entrelinha 1,5, e não a apertada de manchete.** Numa coluna
+            estreita um título quebra em três ou quatro linhas, e a 1,375 elas
+            se colavam num bloco que se lê como parágrafo. O ar entre elas é o
+            que devolve ao cartão a cara de anotação em vez de resultado de
+            busca — mas 1,625 já era ar demais: o título se desmontava em linhas
+            soltas que não liam como uma frase só. `text-pretty` evita a última
+            linha com uma palavra só. */}
+        <span
+          className={`text-pretty text-[17px] font-normal leading-normal tracking-tight ${note.ink}`}
+        >
+          {title}
         </span>
-      ) : null}
 
-      {/* A data ANCORADA na base (`mt-auto`), com um respiro mínimo. No masonry
-          os cartões de uma mesma faixa raramente têm a mesma altura, e uma data
-          que flutua logo abaixo do título faz cada cartão terminar num lugar
-          diferente. Presa embaixo, ela vira a linha de base do mural. */}
-      <span className={`mt-6 inline-flex items-center gap-1.5 text-[11px] font-light ${note.mute}`}>
-        {footer}
-      </span>
+        {hint ? (
+          <span className={`mt-3 flex items-center gap-1.5 text-[11px] font-light ${note.mute}`}>
+            {hint}
+          </span>
+        ) : null}
+
+        {/* A data ANCORADA na base (`mt-auto`), com um respiro mínimo. No
+            masonry os cartões de uma mesma faixa raramente têm a mesma altura,
+            e uma data que flutua logo abaixo do título faz cada cartão terminar
+            num lugar diferente. Presa embaixo, ela vira a linha de base do
+            mural. */}
+        <span
+          className={`mt-6 inline-flex items-center gap-1.5 text-[11px] font-light ${note.mute}`}
+        >
+          {footer}
+        </span>
+      </NavLink>
     </li>
   );
 }

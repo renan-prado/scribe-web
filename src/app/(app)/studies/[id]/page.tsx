@@ -1,10 +1,11 @@
-import { ArrowLeft, BookOpen } from "lucide-react";
+import { BookOpen } from "lucide-react";
 import type { Metadata } from "next";
 import { notFound } from "next/navigation";
-import { NavLink } from "@/components/NavLink";
 import { FeedbackPrompt } from "@/features/feedback/components/FeedbackPrompt";
 import { FEEDBACK_DELAY_STUDY_MS } from "@/features/feedback/config";
+import { BackToTop } from "@/features/session/components/BackToTop";
 import { DeepeningMenu } from "@/features/session/components/DeepeningMenu";
+import { LeadIdea } from "@/features/session/components/LeadIdea";
 import {
   StudyBlockRenderer,
   studyBlockKey,
@@ -14,6 +15,8 @@ import { TOUR_DELAY_RESULT_MS } from "@/features/tour/config";
 import { getDeepening } from "@/lib/db/deepenings";
 import { getSessionMeta } from "@/lib/db/sessions";
 import { canCurrentUserUse } from "@/lib/entitlements/server";
+import { LibrarySearchLink } from "../../components/LibrarySearchLink";
+import { TopBar } from "../../components/TopBar";
 
 type PageProps = {
   params: Promise<{ id: string }>;
@@ -57,14 +60,13 @@ export default async function RecordingDeepeningPage({ params }: PageProps) {
   const deepeningTitle = payload.title?.trim() || `Estudo, ${sessionTitle}`;
 
   return (
-    <main className="tone-study mx-auto flex min-h-svh w-full max-w-3xl flex-col gap-6 px-4 py-8 sm:gap-8 sm:px-6 sm:py-10">
-      <NavLink
-        href={`/summary/${id}`}
-        className="-mx-1 inline-flex w-fit items-center rounded-md px-1 py-0.5 text-xs font-medium text-scriba-ink-mute transition-colors hover:text-scriba-ink focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring/40"
-      >
-        <ArrowLeft className="size-3.5" />
-        Voltar ao resumo
-      </NavLink>
+    <main className="tone-study mx-auto flex min-h-svh w-full max-w-3xl flex-col gap-6 px-4 pt-2 pb-8 sm:gap-8 sm:px-6 sm:pb-10">
+      {/* A barra do app, a MESMA do `/summary`, e não o link "Voltar ao
+          resumo" de 12px que ficava aqui: o estudo é a segunda tela de
+          leitura do produto, e ela trocava o cabeçalho do app por outro no
+          meio da mesma jornada. O voltar aponta para o RESUMO, que é de onde
+          se chega aqui, e não para a Biblioteca. */}
+      <TopBar backHref={`/summary/${id}`} trailing={<LibrarySearchLink />} />
 
       <header className="flex flex-col gap-3">
         <div className="flex items-center justify-between gap-3">
@@ -96,19 +98,15 @@ export default async function RecordingDeepeningPage({ params }: PageProps) {
       <div className="h-px w-full bg-scriba-hairline" />
 
       <div className="flex flex-col gap-7">
-        {payload.shortSummary ? (
-          <div
-            data-tour="study-thesis"
-            className="-mb-2 flex flex-col gap-2 border-l-[2.5px] border-scriba-green pl-4"
-          >
-            <span className="text-[10px] font-semibold uppercase tracking-[0.14em] text-scriba-ink-mute">
-              Tese central
-            </span>
-            <p className="text-pretty text-lg font-normal leading-snug text-scriba-ink-strong text-balance">
-              {payload.shortSummary}
-            </p>
-          </div>
-        ) : null}
+        {/* O MESMO componente da "Ideia central" do `/summary`, na roupa de
+            cartão. Dentro de `.tone-study` ele nasce verde sozinho, os tokens
+            de sessão é que trocam de família. */}
+        <LeadIdea
+          label="Tese central"
+          text={payload.shortSummary}
+          variant="card"
+          tourId="study-thesis"
+        />
         {payload.blocks.map((block, i) => (
           <div
             // biome-ignore lint/suspicious/noArrayIndexKey: same disambiguation approach as SummaryView
@@ -126,6 +124,9 @@ export default async function RecordingDeepeningPage({ params }: PageProps) {
       {/* A apresentação do estudo pronto. Mesma disputa do /summary: enquanto
           o tour está na tela, a pesquisa não conta o atraso dela. */}
       <TourTrigger tour="study" delayMs={TOUR_DELAY_RESULT_MS} />
+      {/* A tela mais longa do produto: um estudo passa de dez mil palavras, e
+          sem isto o caminho de volta ao topo é rolar tudo de novo. */}
+      <BackToTop />
     </main>
   );
 }

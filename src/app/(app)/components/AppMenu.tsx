@@ -134,14 +134,14 @@ export function AppMenu({
               /* Uma ESTANTE, não uma casa: a tela se chama Biblioteca, e o
                  `House` dizia "início" — o nome antigo dela, de quando o acervo
                  não era a primeira tela. */
-              icon={<Library className="size-4" />}
+              icon={<Library className="size-5" />}
               onNavigate={() => setOpen(false)}
             >
               Biblioteca
             </MenuItem>
             <MenuItem
               href="/studies"
-              icon={<BookOpen className="size-4" />}
+              icon={<BookOpen className="size-5" />}
               onNavigate={() => setOpen(false)}
             >
               Estudos
@@ -152,7 +152,7 @@ export function AppMenu({
                 separação é a mesma do app atual, ver `app/AGENTS.md`. */}
             <MenuItem
               href="/importar"
-              icon={<YoutubeIcon className="size-4" />}
+              icon={<YoutubeIcon className="size-5" />}
               onNavigate={() => setOpen(false)}
             >
               Importar do YouTube
@@ -194,8 +194,12 @@ function MenuItem({
       href={href}
       onClick={onNavigate}
       spinner="none"
-      contentClassName="flex items-center gap-3"
-      className="rounded-xl px-3 py-3 text-sm font-medium text-v2-ink-soft transition-colors hover:bg-v2-card-hover hover:text-v2-ink focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-v2-ink-mute"
+      contentClassName="flex items-center gap-3.5"
+      // 16px com glifo de 20px, e não os 14/16 de antes: a gaveta abre por
+      // cima da tela inteira e tem três linhas. Num painel desses, texto de
+      // lista de configurações lê como se os destinos fossem miudezas — o
+      // tamanho aqui é o que diz que estas três linhas SÃO a navegação do app.
+      className="rounded-xl px-3 py-3 text-base font-medium text-v2-ink-soft transition-colors hover:bg-v2-card-hover hover:text-v2-ink focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-v2-ink-mute"
     >
       {icon}
       {children}

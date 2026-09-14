@@ -91,10 +91,11 @@ export const TOURS: Record<TourKey, TourDefinition> = {
       {
         /**
          * O alvo é a LUPA do cabeçalho (`SearchToggle`), e não a barra de
-         * busca: na Biblioteca a barra só é montada depois do clique nela, e
-         * enquanto este passo apontou para `[data-tour="collection-search"]`
-         * ele foi descartado em TODA visita, sem erro nenhum na tela. Nos
-         * Estudos a barra é permanente, e lá o passo continua nela.
+         * busca: a barra só é montada depois do clique nela, e enquanto este
+         * passo apontou para `[data-tour="collection-search"]` ele foi
+         * descartado em TODA visita, sem erro nenhum na tela. Vale para as
+         * duas listas — os Estudos passaram a esconder a barra atrás da lupa
+         * como a Biblioteca sempre fez, e o passo de lá mudou de alvo junto.
          *
          * O conserto não sobe a `version`: o passo é o mesmo passo, escrito no
          * primeiro dia, que nunca chegou a aparecer. Subir a versão aqui
@@ -178,10 +179,19 @@ export const TOURS: Record<TourKey, TourDefinition> = {
         body: "A partir de qualquer resumo você pode pedir um estudo: contexto da passagem, tese central e desdobramentos. Ele é gerado uma vez por sessão e mora aqui.",
       },
       {
+        /**
+         * A LUPA, pela mesma razão do passo irmão na Biblioteca: a barra
+         * (`[data-tour="collection-search"]`) agora nasce fechada aqui também,
+         * e um passo ancorado nela seria descartado em silêncio.
+         *
+         * Trocar o alvo NÃO sobe a `version`: é o mesmo passo, dizendo a mesma
+         * coisa, apontando para onde a busca passou a morar. Subir a versão
+         * reabriria o tour inteiro dos Estudos na cara de toda a base.
+         */
         id: "search",
-        anchor: '[data-tour="collection-search"]',
+        anchor: '[data-tour="studies-search"]',
         title: "Busque por tema ou versículo",
-        body: "Serve para reencontrar aquele estudo do qual você só lembra de um trecho.",
+        body: "A lupa procura pelo estudo do qual você só lembra de um trecho — por tema, por autor ou por um versículo.",
       },
     ],
   },

@@ -110,15 +110,6 @@ export function sealStudy(
         });
         break;
       }
-      case "distinction": {
-        blocks.push({
-          type: "distinction",
-          a: clean(block.a),
-          b: clean(block.b),
-          text: clean(block.text),
-        });
-        break;
-      }
       case "objection": {
         blocks.push({
           type: "objection",

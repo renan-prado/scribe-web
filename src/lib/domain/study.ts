@@ -172,8 +172,6 @@ export type StudyBlock =
   | { type: "quote"; text: string; author: string; work: string }
   /** Uma objeção honesta, com a resposta. */
   | { type: "objection"; text: string; response: string }
-  /** Dois conceitos que costumam ser colapsados, e a diferença. */
-  | { type: "distinction"; a: string; b: string; text: string }
   /**
    * Indicação de leitura. Campos separados para poderem ser validados, e
    * `coverUrl` NUNCA vem do modelo: é resolvido no servidor
@@ -364,12 +362,6 @@ export function parseStudyFromLLM(content: string): StudyPayload {
         const response = str(rec, "response");
         // Objeção sem resposta é provocação solta, não entra.
         if (text && response) blocks.push({ type: "objection", text, response });
-        break;
-      }
-      case "distinction": {
-        const a = str(rec, "a");
-        const b2 = str(rec, "b");
-        if (a && b2 && text) blocks.push({ type: "distinction", a, b: b2, text });
         break;
       }
       case "reading": {

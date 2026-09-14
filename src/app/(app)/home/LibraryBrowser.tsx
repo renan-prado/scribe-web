@@ -16,8 +16,8 @@ import {
   searchTokens,
 } from "@/features/session/lib/search";
 import type { SessionListItem } from "@/lib/db/sessions";
+import { useSearchScope } from "../components/SearchScope";
 import { monthGroupLabel } from "../lib/format";
-import { useSearchScope } from "./SearchScope";
 
 /**
  * A lista da Biblioteca do v2, com a mesma busca e os mesmos filtros do
@@ -69,7 +69,6 @@ import { useSearchScope } from "./SearchScope";
 type Props = {
   sessions: SessionListItem[];
   nowIso: string;
-  deleteAction: (formData: FormData) => Promise<void>;
 };
 
 /** Toda sessão salva abre no resumo. */
@@ -77,7 +76,7 @@ function v2Href(id: string): string {
   return `/summary/${id}`;
 }
 
-export function LibraryBrowser({ sessions, nowIso, deleteAction }: Props) {
+export function LibraryBrowser({ sessions, nowIso }: Props) {
   const { open, setOpen } = useSearchScope();
   const [query, setQuery] = useState("");
   const [speaker, setSpeaker] = useState<string>(FACET_ALL);
@@ -246,13 +245,7 @@ export function LibraryBrowser({ sessions, nowIso, deleteAction }: Props) {
                 fronteira de um bloco. */}
             <ul className="columns-2 gap-4">
               {group.items.map((s) => (
-                <LibraryNote
-                  key={s.id}
-                  session={s}
-                  now={now}
-                  deleteAction={deleteAction}
-                  buildHref={v2Href}
-                />
+                <LibraryNote key={s.id} session={s} now={now} buildHref={v2Href} />
               ))}
             </ul>
           </section>

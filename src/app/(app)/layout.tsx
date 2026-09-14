@@ -26,6 +26,20 @@ import { getAuthUser } from "@/lib/supabase/server";
  * pintam sozinhos (ver `LibraryNote`) —, mas o `/summary` e o `/studies` ainda
  * dependem, e é por eles que a classe fica.
  *
+ * **O topo respeita o RECORTE do aparelho** (`env(safe-area-inset-top)`).
+ * Instalado na tela inicial, o Scriba desenha por baixo da barra de status do
+ * sistema — o `viewport-fit=cover` do root layout é o que pede isso, e quem
+ * pede também paga: sem o respiro, a hora e a bateria do iPhone pousavam em
+ * cima do hambúrguer. O inset vale ZERO numa aba comum de navegador, então a
+ * conta é a mesma folga de sempre no desktop e a altura exata do recorte no
+ * aparelho de quem instalou. Ele fica no LAYOUT, e não em cada tela: é do
+ * aparelho, não da página, e repetido em seis lugares bastaria esquecer um
+ * para a barra de status voltar a cobrir uma tela só.
+ *
+ * O irmão dele é o `env(safe-area-inset-bottom)`, que cada tela paga no
+ * próprio rodapé (ver `RecordDock`): embaixo a folga depende do que a página
+ * põe ali, em cima é sempre a mesma barra.
+ *
  * **O `TourProvider` mora AQUI, e não em cada página**, por duas razões que não
  * são organização: o overlay é um só (duas páginas capazes de abrir o próprio
  * empilhariam dois véus), e o mapa do que já foi visto sobrevive à navegação,
@@ -42,7 +56,9 @@ export default async function AppLayout({ children }: { children: ReactNode }) {
 
   return (
     <TourProvider seen={seenTours}>
-      <div className="dark flex flex-1 flex-col bg-v2-bg">{children}</div>
+      <div className="dark flex flex-1 flex-col bg-v2-bg pt-[env(safe-area-inset-top)]">
+        {children}
+      </div>
     </TourProvider>
   );
 }

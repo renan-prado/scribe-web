@@ -19,7 +19,7 @@ pessoa quiser, aprofundar.
 | `components/SummaryView.tsx` + `BlockRenderer.tsx` | os blocos do resumo |
 | `components/StudyBlockRenderer.tsx` | os blocos a MAIS que o estudo tem |
 | `components/PostItNote.tsx` | a casca do post-it dos dois murais: cor, cartão clicável, anatomia |
-| `components/LibraryNote.tsx` + `SessionCardMenu.tsx` | o post-it de uma sessão na Biblioteca (autor, título, data) |
+| `components/LibraryNote.tsx` | o post-it de uma sessão na Biblioteca (autor, título, data) |
 | `components/StudyNote.tsx` | o post-it de um estudo, a mesma casca com outro recheio |
 | `components/CollectionSearch.tsx` + `src/lib/search.ts` | a barra e o motor das duas listas |
 | `components/YoutubeUrlForm.tsx` + `YoutubeImport.tsx` | colar o link, e esperar a importação |
@@ -117,11 +117,18 @@ usa o modelo bom, e não cobra moeda: o usuário está reportando um defeito nos
 Duas particularidades que mordem de fora:
 
 - **Ele não fala o vocabulário de blocos do resumo.** `StudyBlock`
-  (`src/lib/domain/study.ts`) acrescenta `objection`, `distinction`, `reading` e
-  `question`, e reinterpreta `example` — no resumo é "Exemplo do pregador", no
-  estudo é ilustração do próprio estudo. Por isso a página usa
-  `StudyBlockRenderer`, que desenha esses cinco e delega o resto ao
-  `BlockRenderer`. Um bloco novo precisa entrar nos DOIS lugares.
+  (`src/lib/domain/study.ts`) acrescenta `objection`, `reading` e `question`, e
+  reinterpreta `example` — no resumo é "Exemplo do pregador", no estudo é
+  ilustração do próprio estudo. Por isso a página usa `StudyBlockRenderer`, que
+  desenha esses quatro e delega o resto ao `BlockRenderer`. Um bloco novo
+  precisa entrar nos DOIS lugares.
+
+  **Havia um quinto, o `distinction`** (`{ a, b, text }`, duas pastilhas com um
+  "não é" no meio), e ele saiu do produto: do prompt, do parser, da selagem e
+  da tela. Os estudos já gerados continuam com ele salvo no jsonb e não foram
+  migrados — o bloco cai no `default` do renderer, o `BlockRenderer` devolve
+  `null` para tipo que não conhece, e ele some da tela sem erro. É a mesma
+  porta por onde saíram os blocos do feed ao vivo.
 
   O `question` tem limite de dois blocos, e só no fecho. Não é estética: o
   estudo é um ARTIGO, e o pipeline que o produz passa por uma etapa de
@@ -145,8 +152,14 @@ motor (`src/lib/search.ts`, puro e client-safe). Quem filtra é um componente
 cliente por página (`LibraryBrowser`, `StudiesBrowser`); as páginas continuam
 sendo só quem BUSCA no banco.
 
-A diferença: na Biblioteca a barra fica atrás da lupa do cabeçalho e fechá-la
-limpa os filtros; nos Estudos ela é permanente.
+**Nas DUAS a barra fica atrás da lupa do cabeçalho**, e fechá-la limpa os
+filtros. Nos Estudos ela já foi permanente, e a diferença não se sustentava:
+quem abre qualquer uma das listas quase sempre quer o último item, não uma
+busca, e uma barra montada por padrão come a primeira dobra dos cartões. O
+estado (`SearchScope`) mora num provider porque a lupa está na `TopBar` e os
+filtros na lista, ramos diferentes da árvore. **O passo de busca do tour aponta
+para a LUPA nas duas telas** — ancorado na barra, ele é descartado em silêncio
+porque ela ainda não existe quando o tour abre.
 
 **Lista vazia e busca sem resultado são DUAS telas, não uma.** As duas páginas
 têm um estado vazio de verdade (`SessionsEmptyState`, `StudiesEmptyState`, sobre

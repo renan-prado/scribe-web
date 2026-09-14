@@ -3,7 +3,6 @@ import { YoutubeIcon } from "@/components/icons/YoutubeIcon";
 import type { SessionListItem } from "@/lib/db/sessions";
 import { shortDate } from "../lib/formatting";
 import { PostItNote } from "./PostItNote";
-import { SessionCardMenu } from "./SessionCardMenu";
 
 /**
  * O post-it de uma SESSÃO salva, o cartão da Biblioteca. É o `<li>` inteiro:
@@ -27,6 +26,13 @@ import { SessionCardMenu } from "./SessionCardMenu";
  * pelo pregador tanto quanto pelo tema. Sem autor a linha simplesmente não
  * existe — um avatar "?" seria um rosto inventado para ninguém.
  *
+ * **O menu de três pontinhos SAIU do cartão.** Ele ocupava o canto superior
+ * direito, que numa coluna de ~150px é onde o título quebra, e trocava duas
+ * linhas de título por um atalho para Editar e Remover — as duas coisas que o
+ * menu do `/summary` já oferece, na tela em que a pessoa está olhando o que
+ * vai editar ou apagar. Com ele foram o `SessionCardMenu`, a Server Action de
+ * apagar da `/home` e o `deleteAction` que descia página adentro.
+ *
  * **O MODO é a quarta coisa**, e ele fica no rodapé, à esquerda da data:
  * microfone para o que foi gravado, o play para o que veio do YouTube, no tom
  * apagado da própria data — informação passiva, não pastilha. Marcar só o
@@ -40,18 +46,12 @@ type Props = {
    * outro lado da virada do ano em relação ao HTML e derrubar a hidratação da
    * página inteira por causa de um "2025" a mais na data. */
   now: Date;
-  deleteAction: (formData: FormData) => Promise<void>;
   /** Para onde o cartão aponta. Toda sessão salva abre no resumo; quem passa a
    * função é quem sabe o prefixo da rota. */
   buildHref?: (id: string) => string;
 };
 
-export function LibraryNote({
-  session: s,
-  now,
-  deleteAction,
-  buildHref = (id) => `/summary/${id}`,
-}: Props) {
+export function LibraryNote({ session: s, now, buildHref = (id) => `/summary/${id}` }: Props) {
   const includeYear = new Date(s.createdAt).getFullYear() !== now.getFullYear();
   const href = buildHref(s.id);
 
@@ -61,7 +61,6 @@ export function LibraryNote({
       href={href}
       eyebrow={s.speakerName?.trim() || null}
       title={s.title?.trim() || "Sessão sem título"}
-      action={<SessionCardMenu sessionId={s.id} href={href} deleteAction={deleteAction} />}
       footer={
         <>
           {/* O rótulo mora no `<span>`, não no `<svg>`: o `YoutubeIcon` já
@@ -74,16 +73,27 @@ export function LibraryNote({
             aria-label={
               s.mode === "youtube" ? "Importada de um vídeo do YouTube" : "Gravada pelo microfone"
             }
-            // `-translate-y-[1.5px]`: `items-center` alinha o ícone pela CAIXA
-            // da linha, e a caixa de "8 set" tem embaixo um vão de descida que
-            // nenhuma daquelas letras usa. Centrado por ela, o glifo cai 1,5px
-            // abaixo do miolo do texto — visível, porque os dois são a mesma
-            // frase. `translate` e não margem: com `items-center` a margem
-            // negativa desloca só metade do que se pede.
-            className="flex shrink-0 -translate-y-[1.5px]"
+            className="flex shrink-0"
           >
+            {/* O ACERTO DE ALTURA é de cada glifo, e os dois números são
+                diferentes de propósito.
+
+                O problema comum: `items-center` alinha o ícone pela CAIXA da
+                linha, e a caixa de "8 set" tem embaixo um vão de descida que
+                nenhuma daquelas letras usa — centrado por ela, o glifo cai
+                abaixo do miolo do texto. `translate` e não margem: com
+                `items-center` a margem negativa desloca só metade do que se
+                pede.
+
+                A diferença entre os dois é ÓPTICA, não geométrica: as duas
+                tintas são centradas no próprio `viewBox` (medido), mas o
+                YouTube é um retângulo cheio, com aresta reta em cima e
+                embaixo, e o microfone é uma cápsula estreita com um pé. Subir
+                os dois 1,5px deixava o retângulo visivelmente alto enquanto a
+                cápsula caía certa. Medido no print: a 1,5px o miolo do glifo
+                do YouTube ficava ~1,1px acima do miolo dos dígitos. */}
             {s.mode === "youtube" ? (
-              <YoutubeIcon className="size-3.5" />
+              <YoutubeIcon className="size-3.5 -translate-y-[0.5px]" />
             ) : (
               /* O `MicGlyph`, o MESMO microfone do botão de gravar, e não o
                  `Mic` do lucide: o glifo que a pessoa aperta para gravar e o
@@ -93,7 +103,7 @@ export function LibraryNote({
                  ao lado, e ocupa 23 de 32 na altura — quase a mesma extensão
                  vertical do vizinho, que é o que mantém a coluna de ícones
                  alinhada. */
-              <MicGlyph className="size-3.5" />
+              <MicGlyph className="size-3.5 -translate-y-[1.5px]" />
             )}
           </span>
           {shortDate(s.createdAt, includeYear)}

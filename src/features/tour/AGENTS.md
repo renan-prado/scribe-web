@@ -134,8 +134,9 @@ O contrato entre o passo e a tela é um seletor CSS, e a convenção é
 
 | `data-tour` | Onde vive |
 |---|---|
-| `library-search` | a LUPA da `TopBar` (`SearchToggle`, em `home/SearchScope.tsx`) |
-| `collection-search` | `CollectionSearch` — só o tour dos Estudos o usa |
+| `library-search` | a LUPA da `TopBar` na Biblioteca (`SearchToggle`, em `(app)/components/SearchScope.tsx`) |
+| `studies-search` | a mesma lupa nos Estudos — o `tourId` é prop, a tela é que o nomeia |
+| `collection-search` | `CollectionSearch`, a barra. Nenhum tour aponta para ela, e é de propósito |
 | `record-dock` | `src/app/home/RecordDock.tsx` |
 | `record-button` | `src/app/recording/AudioStudio.tsx` |
 | `summary-header` | `SavedSessionView` |
@@ -150,8 +151,10 @@ mudar de lugar, mude o atributo com ele.
 
 **E um atributo que EXISTE no código pode não existir na tela.** O passo
 `search` do `library` apontou para `[data-tour="collection-search"]` desde o
-primeiro dia e nunca apareceu uma vez: na Biblioteca aquela barra só é montada
-depois do clique na lupa, e o tour abre com ela fechada. Um alvo condicional
+primeiro dia e nunca apareceu uma vez: aquela barra só é montada depois do
+clique na lupa, e o tour abre com ela fechada. O passo irmão dos Estudos
+aparecia — lá a barra era permanente —, e parou de aparecer no dia em que ela
+foi para trás da lupa também; mudou de alvo no mesmo commit. Um alvo condicional
 serve de âncora para o passo que fala DELE (o botão de gerar estudo, a faixa
 "Em aberto"); para o passo que fala de um recurso, a âncora é o que abre o
 recurso, e esse está sempre na tela.

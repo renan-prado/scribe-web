@@ -108,9 +108,12 @@ export function AccountMenu({
           {variant === "row" ? (
             <>
               <span className="flex min-w-0 flex-1 flex-col leading-tight">
-                <span className="truncate text-sm font-semibold text-v2-ink">{name}</span>
+                {/* 15px: a linha da conta mora no rodapé da gaveta, e com os
+                    destinos a 16px o nome de quem está logado não pode ser o
+                    menor texto do painel. */}
+                <span className="truncate text-[15px] font-semibold text-v2-ink">{name}</span>
                 {showEmail ? (
-                  <span className="truncate text-xs font-light text-v2-ink-mute">{email}</span>
+                  <span className="truncate text-[13px] font-light text-v2-ink-mute">{email}</span>
                 ) : null}
               </span>
               <ChevronsUpDown className="size-4 shrink-0 text-v2-ink-mute" />

@@ -88,8 +88,6 @@ function authoredWordsOf(block: StudyBlock): number {
       return 0; // vem da NVI
     case "objection":
       return words(block.text) + words(block.response);
-    case "distinction":
-      return words(block.a) + words(block.b) + words(block.text);
     case "reading":
       return words(block.note);
     case "quote":

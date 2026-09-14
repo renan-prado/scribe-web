@@ -129,7 +129,10 @@ versões. Dentro dele: o saldo (o `CoinBalance` de verdade, que abre o
 Sair, separado.
 
 A gaveta do hambúrguer ficou com a forma da sidebar do `/admin`: **logotipo em
-cima, destinos no meio, conta no rodapé.** Os destinos são três, e só os do
+cima, destinos no meio, conta no rodapé.** Os destinos são 16px com glifo de
+20px (e a conta, 15px): a gaveta abre por cima da tela inteira e tem três
+linhas, e a 14/16 elas liam como itens de uma lista de configurações em vez da
+navegação do app. Os destinos são três, e só os do
 produto — Biblioteca, Estudos e Importar do YouTube; perfil, saldo e papéis são
 CONTA, e sair dali foi o que impediu "Perfil" de aparecer duas vezes na mesma
 gaveta.
@@ -202,6 +205,16 @@ fora do primeiro olhar. Sobreviveu o MODO, como glifo ao lado da data: microfone
 para o gravado, play para o importado. Marcar só o YouTube seria marcar a
 exceção, e o cartão sem glifo diria "não é YouTube" em vez de "gravado".
 
+**O cartão é um `<a>` em volta de tudo**, e o menu de três pontinhos que
+morava no canto superior direito SAIU. Ele comia a largura onde o título
+quebra — numa coluna de ~150px, duas linhas de título — para oferecer Editar e
+Remover, que o menu do `/summary` já tem, na tela em que se vê o que vai ser
+editado ou apagado. Com ele foram o `SessionCardMenu`, a Server Action de
+apagar da `/home` e o `deleteAction` que descia página adentro. E foi ele
+também que segurava o "stretched link" (`::after` esticado + `z-10` no menu),
+que existia porque botão dentro de link é HTML inválido: sem botão nenhum lá
+dentro, aquilo era mecanismo sem a razão que o justificava.
+
 **A cor de um cartão sai do HASH DO ID, nunca da posição na lista.** Pelo
 índice, gravar um sermão novo repinta o acervo inteiro e o cartão amarelo de
 ontem é verde hoje; cor de post-it é memória visual, e instável ela é só ruído.
@@ -250,8 +263,11 @@ encostado no hambúrguer lia como legenda dele em vez de nome da tela.
 A busca fica atrás da lupa, e não permanente: quem abre o Scriba quase sempre
 quer o último sermão, não uma busca. Fechá-la LIMPA os filtros, senão a lista
 reabriria recortada por uma escolha de dois dias atrás. O botão mora na `TopBar`
-e o estado no `LibraryBrowser`, então um `SearchScope` (contexto) envolve os
-dois na página.
+e o estado na lista, então um `SearchScope` (contexto) envolve os dois na
+página. **Vale para os Estudos também**, onde a barra já foi permanente: a lupa
+é a mesma (`SearchToggle`, com rótulo e alvo de tour por prop), e lá ela só
+aparece quando há algum estudo — sem lista montada, o botão abriria uma barra
+sem onde existir.
 
 O botão de gravar mora na PÁGINA do `/home`, não no layout, e é o que o
 mantém fora do `/summary`: uma tela de leitura não oferece gravar.
@@ -668,6 +684,13 @@ O `viewport` do root layout declara `viewport-fit=cover`, é o que faz
 `RecordDock` e o rodapé de cada tela; sem eles o iPhone desenha o botão de
 gravar por baixo da barra do gesto do sistema. Zoom fica liberado
 (`maximumScale: 5`): travar o pinch é violação de acessibilidade.
+
+**Em cima quem paga é o LAYOUT do `(app)`**, com `pt-[env(safe-area-inset-top)]`
+uma vez só: `viewport-fit=cover` manda a página passar por baixo da barra de
+status, e sem esse respiro a hora e a bateria do iPhone instalado pousam em
+cima do hambúrguer. Embaixo a folga é de cada tela, porque depende do que ela
+põe ali; em cima é sempre a mesma barra, e repetido em seis páginas bastaria
+esquecer uma.
 
 ### Estar dentro do app é uma pergunta com resposta
 

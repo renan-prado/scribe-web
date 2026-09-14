@@ -57,6 +57,12 @@ export function StudyNote({ study: s, now, verseHit, transcriptHit }: Props) {
       href={`/studies/${s.sessionId}`}
       eyebrow={s.sessionSpeakerName?.trim() || null}
       title={s.studyTitle}
+      // `-translate-y-[0.5px]` nos dois glifos, o mesmo acerto do post-it da
+      // Biblioteca: o `items-center` alinha pela caixa da linha, que tem
+      // embaixo um vão de descida que estas letras não usam. Meio pixel, e não
+      // 1,5, porque são glifos de caixa cheia como o do YouTube, não a cápsula
+      // estreita do microfone — ver `LibraryNote`.
+      //
       // A linha que explica um casamento invisível. Ela é da COR do cartão, e
       // não uma pastilha azul ou verde: sobre quatro papéis diferentes, uma
       // pastilha de cor fixa some em uns e grita em outros — e o que ela diz é
@@ -64,12 +70,12 @@ export function StudyNote({ study: s, now, verseHit, transcriptHit }: Props) {
       hint={
         verseHit ? (
           <>
-            <BookOpen aria-hidden className="size-3.5 shrink-0 -translate-y-[1.5px]" />
+            <BookOpen aria-hidden className="size-3.5 shrink-0 -translate-y-[0.5px]" />
             {verseHit}
           </>
         ) : transcriptHit ? (
           <>
-            <FileText aria-hidden className="size-3.5 shrink-0 -translate-y-[1.5px]" />
+            <FileText aria-hidden className="size-3.5 shrink-0 -translate-y-[0.5px]" />
             Trecho na transcrição
           </>
         ) : null

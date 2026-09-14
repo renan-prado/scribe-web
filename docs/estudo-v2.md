@@ -529,13 +529,18 @@ título, tese e de três a seis seções.
 
 ## 5.1 Blocos novos
 
-Ao vocabulário do resumo, quatro tipos que hoje não teriam como existir:
+Ao vocabulário do resumo, três tipos que hoje não teriam como existir:
 
 - `objection`: uma objeção honesta, pelo lado mais forte dela, com a resposta.
   É o que mais faltava: nenhum bloco do resumo comporta tensão.
-- `distinction`: `{ a, b, text }`: dois conceitos que costumam ser colapsados.
 - `reading`: `{ author, title, note }`: indicação de leitura. Campos separados
   justamente para que autor e obra possam ser validados em código.
+- ~~`distinction`~~: `{ a, b, text }`, dois conceitos que costumam ser
+  colapsados. **Removido.** Desenhado, era um quadro azul com duas pastilhas e
+  um "não é" entre elas, e ele parava a leitura para dizer em forma de diagrama
+  o que a prosa dizia melhor no parágrafo seguinte. O prompt agora manda a
+  distinção entrar em PROSA. Estudo antigo que o tem salvo não foi migrado: o
+  renderer ignora tipo que não conhece.
 - `question`: pergunta em aberto, **no máximo duas e só no fecho**. O limite é
   a regra número um do redator em forma de tipo: o texto é artigo, não
   questionário.

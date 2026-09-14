@@ -7,11 +7,17 @@ import { cn } from "@/lib/utils";
  * Renderer do ESTUDO. Delega ao `BlockRenderer` os blocos que o estudo divide
  * com o resumo, e desenha ele mesmo os cinco que não existem lá.
  *
- * Quatro tipos são novos (`objection`, `distinction`, `reading`, `question`) e
- * o quinto, `example`, é reinterpretado: no resumo ele é "Exemplo do
- * pregador", porque veio do sermão; aqui é uma ilustração que o próprio estudo
- * traz, e a etiqueta errada era um dos sinais de que estudo e resumo eram a
- * mesma coisa por dentro. Ver `docs/estudo-v2.md` §1.7 e §5.1.
+ * Três tipos são novos (`objection`, `reading`, `question`) e o quarto,
+ * `example`, é reinterpretado: no resumo ele é "Exemplo do pregador", porque
+ * veio do sermão; aqui é uma ilustração que o próprio estudo traz, e a
+ * etiqueta errada era um dos sinais de que estudo e resumo eram a mesma coisa
+ * por dentro. Ver `docs/estudo-v2.md` §1.7 e §5.1.
+ *
+ * **O `distinction` foi REMOVIDO**, e os estudos antigos que o têm salvo
+ * continuam intactos no banco: o bloco cai no `default` daqui, vai parar no
+ * `BlockRenderer`, que devolve `null` para tipo que não conhece, e some da
+ * tela sem erro nenhum. É a mesma porta por onde saíram os blocos do feed ao
+ * vivo — payload velho não se migra, se deixa de desenhar.
  */
 
 export function studyBlockKey(block: StudyBlock): string {
@@ -20,8 +26,6 @@ export function studyBlockKey(block: StudyBlock): string {
       return `${block.reference}-${block.text.slice(0, 24)}`;
     case "quote":
       return `${block.author}-${block.text.slice(0, 24)}`;
-    case "distinction":
-      return `${block.a}-${block.b}`;
     case "reading":
       return `${block.author}-${block.title}`;
     case "objection":
@@ -133,27 +137,6 @@ export function StudyBlockRenderer({ block }: { block: StudyBlock }) {
               <RichText>{block.response}</RichText>
             </p>
           </div>
-        </section>
-      );
-
-    case "distinction":
-      return (
-        <section className="flex flex-col gap-3 rounded-2xl bg-scriba-blue-soft/50 px-5 py-4">
-          <span className={`${LABEL} text-scriba-ink-mute`}>Distinção</span>
-          <div className="flex flex-wrap items-center gap-2">
-            <span className="rounded-full bg-scriba-paper px-3 py-1 text-[13px] font-semibold text-scriba-ink-strong">
-              {block.a}
-            </span>
-            <span aria-hidden className="text-[11px] font-medium text-scriba-ink-mute">
-              não é
-            </span>
-            <span className="rounded-full bg-scriba-paper px-3 py-1 text-[13px] font-semibold text-scriba-ink-strong">
-              {block.b}
-            </span>
-          </div>
-          <p className="text-pretty text-[15px] font-light leading-relaxed text-scriba-ink">
-            <RichText>{block.text}</RichText>
-          </p>
         </section>
       );
 

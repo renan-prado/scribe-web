@@ -2,11 +2,12 @@
 
 import { Search, X } from "lucide-react";
 import { createContext, type ReactNode, useContext, useMemo, useState } from "react";
-import { TOPBAR_CHIP_CLASS } from "../components/chip";
+import { TOPBAR_CHIP_CLASS } from "./chip";
 
 /**
- * O estado da busca da Biblioteca, compartilhado entre o BOTÃO (que mora na
- * `TopBar`) e a LISTA (que mora no `LibraryBrowser`).
+ * O estado da busca de uma LISTA, compartilhado entre o BOTÃO (que mora na
+ * `TopBar`) e a lista em si — o `LibraryBrowser` na Biblioteca, o
+ * `StudiesBrowser` nos Estudos.
  *
  * Ele existe por causa dessa distância: os dois estão em ramos diferentes da
  * árvore, com um server component no meio, então nenhum dos dois pode segurar
@@ -51,27 +52,36 @@ export function useSearchScope(): SearchScopeValue {
 }
 
 /**
- * O botão da lupa, que abre e fecha a barra.
+ * O botão da lupa, que abre e fecha a barra. As duas telas de lista montam o
+ * seu, e por isso o rótulo e o alvo do tour vêm de fora: o que se procura numa
+ * é gravação, na outra é estudo, e um `aria-label` genérico ("Buscar") não diz
+ * a quem não vê a tela em que lista ele está.
  *
  * Ele TROCA de glifo quando aberto, e isso não é enfeite: a lupa aberta e a
  * lupa fechada seriam o mesmo botão dizendo a mesma coisa em dois estados
  * diferentes, e a pessoa que abriu sem querer não teria como saber por onde
  * desfazer. O "×" é a saída.
  */
-export function SearchToggle() {
+export function SearchToggle({
+  label = "Buscar gravações",
+  tourId = "library-search",
+}: {
+  label?: string;
+  tourId?: string;
+} = {}) {
   const { open, setOpen } = useSearchScope();
   return (
     <button
       type="button"
       onClick={() => setOpen(!open)}
-      aria-label={open ? "Fechar busca" : "Buscar gravações"}
+      aria-label={open ? "Fechar busca" : label}
       aria-expanded={open}
-      // O alvo do passo "busque pela sua biblioteca" do tour `library`, e é a
-      // LUPA, não a barra: a barra (`CollectionSearch`, com o
-      // `data-tour="collection-search"` que serve aos Estudos) só é montada
-      // depois deste clique, então um tour ancorado nela descartava o passo em
-      // toda visita, em silêncio. Ver `src/features/tour/AGENTS.md`.
-      data-tour="library-search"
+      // O alvo do passo de busca do tour da tela, e é a LUPA, não a barra: a
+      // barra (`CollectionSearch`) só é montada depois deste clique, então um
+      // tour ancorado nela descarta o passo em toda visita, em silêncio — foi
+      // o que aconteceu na Biblioteca por meses. Ver
+      // `src/features/tour/AGENTS.md`.
+      data-tour={tourId}
       // O chip da barra, o mesmo do hambúrguer e do voltar. Ver `chip.ts`.
       className={TOPBAR_CHIP_CLASS}
     >

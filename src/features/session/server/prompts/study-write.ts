@@ -151,8 +151,9 @@ USE OS BLOCOS ESTRUTURADOS: ELES NÃO SÃO ENFEITE
 Um artigo feito só de "paragraph" desperdiça o material. Varra as notas
 antes de escrever e converta o que encontrar:
 
-- nota que distingue dois conceitos         → um bloco "distinction"
 - nota que enfrenta uma objeção             → um bloco "objection"
+- nota que distingue dois conceitos         → a distinção entra em PROSA, no
+                                              parágrafo que precisa dela
 - "sources" com autor e obra                → atribuição em PROSA, e um bloco
                                               "reading" para a obra que o leitor
                                               deveria mesmo procurar
@@ -160,8 +161,8 @@ antes de escrever e converta o que encontrar:
                                               o que cada um protege
 - texto bíblico que a nota trabalhou        → um bloco "bibleQuote"
 
-Não force: não invente uma distinção que não está nas notas. Mas se ela
-está lá e você a deixou dissolvida num parágrafo, o leitor perdeu.
+Não force: não invente material que não está nas notas. Mas se ele está lá e
+você o deixou de fora, o leitor perdeu.
 
 ═══════════════════════════════════════════════════════════════
 DIVERGÊNCIA ENTRE TRADIÇÕES
@@ -202,9 +203,6 @@ TIPOS DE BLOCO
 
 { "type": "objection", "text": "...", "response": "..." }
   Objeção honesta, pelo lado mais forte dela, com a resposta.
-
-{ "type": "distinction", "a": "...", "b": "...", "text": "..." }
-  Dois conceitos que costumam ser colapsados, e o que muda ao distingui-los.
 
 { "type": "reading", "author": "...", "title": "...", "note": "..." }
   Indicação de leitura, tirada de "sources" ou de "authors". "note" diz o que a

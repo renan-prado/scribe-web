@@ -1,30 +1,13 @@
 import type { Metadata } from "next";
-import { revalidatePath } from "next/cache";
 import { TourTrigger } from "@/features/tour/components/TourTrigger";
 import { TOUR_DELAY_LIST_MS } from "@/features/tour/config";
-import { deleteSession, listSessions, type SessionListItem } from "@/lib/db/sessions";
+import { listSessions, type SessionListItem } from "@/lib/db/sessions";
+import { SearchScope, SearchToggle } from "../components/SearchScope";
 import { TopBar } from "../components/TopBar";
 import { LibraryBrowser } from "./LibraryBrowser";
 import { RecordDock } from "./RecordDock";
-import { SearchScope, SearchToggle } from "./SearchScope";
 
 export const metadata: Metadata = { title: "Biblioteca" };
-
-/**
- * Server Action é um endpoint POST próprio, chamável por quem souber o id dela.
- * A autorização aqui é o RLS: `deleteSession` usa o client do USUÁRIO, e a
- * policy de `sessions` escopa o delete ao dono, então um id forjado só apaga o
- * que já era de quem chamou. Mesma decisão (e mesmo aviso) do `/recordings`:
- * trocar por `createAdminClient()` transforma isto num IDOR sem nenhum sinal no
- * diff.
- */
-async function deleteSessionAction(formData: FormData): Promise<void> {
-  "use server";
-  const id = formData.get("id");
-  if (typeof id !== "string" || !id) return;
-  await deleteSession(id);
-  revalidatePath("/home");
-}
 
 /**
  * O Início do v2: a lista de tudo que a pessoa gravou ou importou, agrupada por
@@ -69,11 +52,7 @@ export default async function V2HomePage({
           que o traga inteiro para a luz. Ver `RecordDock`. */}
       <main className="mx-auto flex w-full max-w-[640px] flex-1 flex-col gap-6 px-4 pt-2 pb-[calc(7.5rem+env(safe-area-inset-bottom))]">
         <TopBar title="Biblioteca" trailing={<SearchToggle />} />
-        <LibraryBrowser
-          sessions={sessions}
-          nowIso={new Date().toISOString()}
-          deleteAction={deleteSessionAction}
-        />
+        <LibraryBrowser sessions={sessions} nowIso={new Date().toISOString()} />
       </main>
       <RecordDock />
       {/* A apresentação da Biblioteca, e a primeira que qualquer pessoa vê: é
