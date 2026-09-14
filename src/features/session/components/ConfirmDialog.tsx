@@ -10,6 +10,9 @@ import {
   DialogHeader,
   DialogTitle,
 } from "@/components/ui/dialog";
+import { createLogger } from "@/lib/log";
+
+const log = createLogger("confirm-dialog");
 
 type ConfirmDialogProps = {
   open: boolean;
@@ -55,6 +58,18 @@ export function ConfirmDialog({
     setPending(true);
     try {
       await onConfirm();
+      // FECHA no sucesso. Até aqui quem fechava era o `router.push` de cada
+      // chamador, e por isso nenhum deles fechava de propósito: todos saíam da
+      // página logo depois de confirmar. O primeiro que FICA (apagar uma
+      // gravação pendente, em `/v2/recording`) revelou que o diálogo nunca
+      // soube se fechar sozinho — o botão apagava a gravação e a caixa
+      // continuava lá, parecendo que nada aconteceu.
+      onOpenChange(false);
+    } catch (err) {
+      // Continua aberto para uma nova tentativa; o handler mostra o próprio
+      // aviso (é o contrato descrito em `onConfirm`). O log existe para o erro
+      // não sumir junto com a exceção.
+      log.warn("confirm failed", { title, error: String(err) });
     } finally {
       setPending(false);
     }

@@ -50,7 +50,12 @@ export const useCoinsStore = create<CoinsStoreState>((set) => ({
       const res = await fetch("/api/coins/charge", {
         method: "POST",
         headers: { "content-type": "application/json" },
-        body: JSON.stringify({ reason, sessionId }),
+        // A chave é OMITIDA quando não há sessão, nunca mandada como `null`:
+        // o schema da rota é `OptionalUuidSchema`, que aceita ausente e recusa
+        // nulo. O gravador do v2 cobra ANTES de a sessão existir (ela nasce no
+        // stop), então mandava `sessionId: null` todo minuto e levava 400 em
+        // todos — a gravação inteira saía de graça, sem sinal nenhum na tela.
+        body: JSON.stringify(sessionId ? { reason, sessionId } : { reason }),
       });
       const body = (await res.json().catch(() => ({}))) as {
         balance?: number;

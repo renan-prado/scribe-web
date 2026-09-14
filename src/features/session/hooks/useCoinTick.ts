@@ -3,6 +3,9 @@
 import { useEffect, useRef } from "react";
 import { getCoinsState } from "@/features/coins/store";
 import type { ChargeReason } from "@/lib/coins/pricing";
+import { createLogger } from "@/lib/log";
+
+const log = createLogger("coins/tick");
 
 /**
  * Charges the caller once every 60s while `enabled` is true. First debit fires
@@ -77,6 +80,13 @@ export function useCoinTick({
       } else if (res.error === "insufficient_balance") {
         depletedRef.current = true;
         onDepletedRef.current();
+      } else {
+        // Qualquer outra falha é RECEITA PERDIDA, e era engolida em silêncio:
+        // o gravador do v2 passou a existir mandando `sessionId: null`, levou
+        // 400 em todo minuto de toda gravação, e nada em lugar nenhum disse
+        // isso — só apareceu quando alguém abriu a aba de rede. Cobrança que
+        // falha sem ruído é o pior jeito de uma medição falhar.
+        log.warn("charge failed", { reason, sessionId, error: res.error, message: res.message });
       }
     }
 
