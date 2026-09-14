@@ -9,6 +9,12 @@ Gerado por `npm run release` a partir dos Conventional Commits. `feat` sobe o
 minor; o resto sobe o patch. Não edite à mão, a próxima execução escreve por
 cima do topo do arquivo.
 
+## 0.21.0, 2026-09-14, desde v0.20.0
+
+### Novidades
+
+- **app:** uma barra do topo só, e os Estudos viram mural de post-its (`bf918fa`)
+
 ## 0.20.0, 2026-09-14, desde v0.19.0
 
 ### Novidades
