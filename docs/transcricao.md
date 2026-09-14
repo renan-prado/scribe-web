@@ -135,7 +135,7 @@ volume fica dentro do ruído da medição, e não vale o código.
 No `gpt-4o-mini-transcribe` o estrago era ainda maior (29,0% → 38,8% com
 denoise; 42,0% com a cadeia completa).
 
-**É por isso que `lib/recorder.ts` desliga `noiseSuppression`,
+**É por isso que `lib/audio-constraints.ts` desliga `noiseSuppression`,
 `echoCancellation` e `autoGainControl`.** `getUserMedia({ audio: true })` liga
 os três por padrão: é o pacote do WebRTC afinado para chamada de voz, e uma
 igreja é o caso oposto do quarto com a boca a vinte centímetros do aparelho.
@@ -220,31 +220,25 @@ como não ser: `gpt-4o-mini-transcribe` é o único modelo nesse preço e é o q
 desaba com eco.
 
 Onde isso aperta, à régua de R$ 20,00 o milheiro de moeda
-(`lib/coins/economics.ts`) e câmbio de ~R$ 5,40:
+(`lib/coins/economics.ts`) e câmbio de ~R$ 5,40: a 5 moedas o minuto, a
+gravação rende R$ 0,100 e o STT come R$ 0,032 dele. Sobram R$ 0,068 para o
+resumo final, que é a única outra chamada do minuto.
 
-| modo | moedas/min | receita/min | custo de STT/min | sobra para o resto |
-|---|---:|---:|---:|---:|
-| `live` | 7 | R$ 0,140 | R$ 0,032 | R$ 0,108 |
-| `audio_only` | 6 | R$ 0,120 | R$ 0,032 | R$ 0,088 |
-| `transcript_only` | 1 | **R$ 0,020** | **R$ 0,032** | **-** |
+**Isto é aritmética, não medição.** `/admin/precificacao` mostra o número real
+assim que houver execução nova medida.
 
-**`transcript_only` passa a dar prejuízo**: 1 moeda por minuto não cobre a
-única chamada que o modo faz. Já estava apertado (19% de margem ao preço
-antigo); agora está negativo. Para os 70% de margem que
-`DEFAULT_TARGET_MARGIN_PCT` usa como régua, seriam ~6 moedas/min.
-
-Os outros dois modos continuam positivos, com a margem reduzida pela diferença.
-`/admin/precificacao` mostra o número real assim que houver medição nova, a
-tabela acima é aritmética, não medição.
-
-**Isso é decisão de preço, não de engenharia, e não foi tomada aqui.**
+> **Nota histórica.** Quando esta medição foi feita havia três modos de captura,
+> a 7, 6 e 1 moeda o minuto. O de 1 moeda (`transcript_only`, só transcrição)
+> passou a dar PREJUÍZO com a troca de modelo: a única chamada que ele fazia
+> custava R$ 0,032 contra R$ 0,020 de receita. Ele foi para 3 moedas e depois
+> deixou de existir junto com os outros dois. O que sobrou é um modo só, a 5.
 
 ## Como refazer a medição
 
 O laboratório não está no repositório (é descartável, e depende de `ffmpeg`).
 O que ele precisa fazer:
 
-1. Fatiar o áudio reproduzindo o VAD de `lib/recorder.ts`, RMS sobre 2048
+1. Fatiar o áudio reproduzindo o VAD do gravador, RMS sobre 2048
    amostras a cada 50ms, corte no primeiro silêncio de 400ms depois de
    `RECORDER_MIN_CHUNK_MS`, corte forçado em `RECORDER_MAX_CHUNK_MS`. Medir
    sobre o arquivo inteiro dá um número que o produto nunca vê.

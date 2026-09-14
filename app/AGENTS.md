@@ -38,115 +38,83 @@ Regras da camada de roteamento. Para a camada de servidor abaixo dela, ver
 leva `Vary: Accept`; a HTML não (o Next é dono desse header nas rotas do App
 Router, ver o comentário no `proxy.ts`).
 
-**Autenticado, o que SOBROU em `app/(app)/`** (com o header e a nav antigos):
+**O app, atrás do login** (`app/v2/`, moldura própria):
 
 ```
-/profile/delete          excluir a conta. A rota está no bucket PÚBLICO acima
-/recording/[id]/live       gravação modo live
-/recording/[id]/audio      gravação modo audio_only
-/recording/[id]/transcribe gravação modo transcript_only
-/recording/[id]/youtube    importação modo youtube: espera a legenda + resumo
-/recording/[id]/transcript sessão salva transcript_only: a transcrição, e o
-                           botão que gera o resumo dela sob demanda
-/recording/[id]/deepening  o estudo da sessão (gerar exige plano Estudioso)
-/indicar                   indique a um amigo
-/billing/assinar           abre o Checkout (destino do CTA da landing)
-/billing/retorno           volta do Checkout. DECORATIVA: não credita nada
+/v2/home             "Biblioteca": o acervo agrupado por mês e o botão de
+                     gravar. É onde cai quem loga
+/v2/recording        o gravador: onda, pausar, parar e apagar. Um modo só
+/v2/summary/[id]     o resumo da sessão. O destino de TUDO que o app faz
+/v2/studies          a lista de estudos gerados
+/v2/studies/[id]     um estudo (gerar exige plano Estudioso; ler, não)
+/v2/importar         cola o link do vídeo e cria a sessão modo youtube
+/v2/importar/[id]    a importação rodando: legenda + resumo
+/v2/profile          a conta, o saldo e o plano
+/v2/indicar          indique a um amigo
+/v2/assinar          abre o Checkout (destino do CTA da landing)
+/v2/retorno          volta do Checkout. DECORATIVA: não credita nada
 ```
 
-Estas são as telas que o v2 ainda NÃO refez: as quatro de captura (o v2 tem um
-gravador só, `audio_only`), a transcrição, o estudo, a indicação e a cobrança.
-Elas mantêm a moldura antiga, e os links da nav dela já apontam para dentro do
-v2 para não pagarem um 308 a cada toque.
+A moldura é `app/v2/layout.tsx`, e ela quase não desenha: não há header nem
+barra de navegação, cada tela renderiza a sua própria `TopBar`. Ela garante o
+chão preto e monta o `TourProvider`.
 
-**Redirects 308 para o v2** (fora de `(app)`: redirect não precisa de header
-nem das consultas do layout):
+**A `TopBar` é um SERVER component** (`app/v2/components/`): ela lê perfil e
+saldo com `getCurrentAccount`, então quem a renderiza é sempre a PÁGINA, nunca
+um componente cliente. O canto direito dela é um SLOT, porque o que vai ali
+depende da tela: a Biblioteca passa o gatilho da busca, a gravação passa o
+relógio. O hambúrguer abre a gaveta com avatar e saldo (o `CoinBalance` de
+verdade) na mesma linha, quatro destinos, os atalhos de admin/parceiro quando
+houver, e — colado no rodapé e longe deles — o Sair, um POST para
+`/auth/sign-out`.
 
-```
-/feed         → /v2/home       /studies   → /v2/studies
-/recordings   → /v2/home       /importar  → /v2/importar
-/list         → /v2/home       /profile   → /v2/profile
-/recording/[id]/summary → /v2/summary/[id]
-```
+A cor vem de tokens no namespace `--v2-*` (`app/globals.css`), declarados só em
+`:root` porque o app nasce preto nos dois temas.
 
-O último é o endereço mais linkado do produto: é onde as quatro telas de
-captura desembocam no stop, é o destino de `savedRouteFor` espalhado pelo
-código, e é o que está no bookmark de quem já usa o Scriba.
-
-`/profile` é a única que ficou DENTRO de `(app)`, e o motivo é a irmã:
-`/profile/delete` é pública e mora em `app/(app)/profile/delete`. Tirar a folha
-de lá arrastaria a pasta, e a página de exclusão de conta — cujo endereço está
-registrado na ficha da Play Store — mudaria junto.
-
-**Scriba v2** (`app/v2/`, atrás do login, MOLDURA PRÓPRIA). **É o app.**
+**Redirects 308** (fora da moldura: redirect não precisa da consulta do layout):
 
 ```
-/v2/home                 "Biblioteca": o acervo agrupado por mês e o botão
-                         de gravar. É a primeira tela do v2
-/v2/summary/[id]         o resumo da sessão. MESMO `SavedSessionView` do
-                         /recording/:id/summary, sem header, sem nav e sem o
-                         botão de gravar
-/v2/recording            o gravador: onda, pausar, parar e apagar. Grava um
-                         áudio só (fragmentado no IndexedDB para não se
-                         perder) e, no stop, cria a sessão, transcreve e
-                         resume. Com ?auto=1 (o botão do /v2/home) abre o
-                         microfone sozinho; sem ele, espera o toque
-/v2/studies              aprofundamentos gerados
-/v2/profile              a conta, o saldo e o plano
-/v2/importar             cola o link do vídeo e cria a sessão modo youtube
+/feed /recordings /list  → /v2/home      /studies  → /v2/studies
+/importar                → /v2/importar  /profile  → /v2/profile
+/indicar                 → /v2/indicar
+/billing/assinar         → /v2/assinar   /billing/retorno → /v2/retorno
+/recording/[id]/summary  → /v2/summary/[id]
+/recording/[id]/deepening → /v2/studies/[id]
+/recording/[id]/youtube  → /v2/importar/[id]
+/session/[id]            → /v2/summary/[id]
 ```
 
-As três últimas foram MOVIDAS de `(app)`, não copiadas: o corpo delas é o
-mesmo, só a moldura mudou (a `TopBar` do v2 no lugar do `AppHeader`). Duas
-cópias da mesma tela é como elas começam a divergir em detalhes que ninguém
-decidiu.
+`/recording/:id/summary` é o endereço mais linkado do produto: era onde toda
+gravação desembocava no stop, e é o que está no bookmark de quem já usa o
+Scriba. `/billing/assinar` e `/billing/retorno` repassam a query à mão — o
+`?plan=` carrega a escolha feita na landing, e o `?cs=` é o que permite
+reconciliar um pagamento cujo webhook não chegou.
 
-O v2 é a pele nova do produto, e mora fora do grupo `(app)` de propósito: nada
-dele herda o header, a `MobileBottomNav` ou o `TourProvider`, e nada do app de
-hoje muda quando ele muda. O chrome dele é a `TopBar` (`app/v2/components/`),
-usada por `/v2/home` e `/v2/recording`: ela é um SERVER component (lê perfil e
-saldo com `getCurrentAccount`), então quem a renderiza é sempre a página, nunca
-um componente cliente. O hambúrguer dela abre a gaveta com avatar e saldo (o
-`CoinBalance` de verdade) na mesma linha, três destinos (Biblioteca, Estudos,
-Perfil) e, colado no rodapé e longe deles, o Sair — um POST para
-`/auth/sign-out`, como no resto do app. Estudos e Perfil ainda apontam para as
-telas do app atual. A cor dele vem de tokens no namespace `--v2-*`
-(`app/globals.css`), declarados só em `:root` porque o v2 nasce preto nos dois
-temas.
+`/profile` e `/profile/delete` ficam fora da moldura sem mudar de endereço. A
+segunda é pública (é a URL da ficha da Play Store) e não depende mais de onde o
+resto do app está.
 
-**O v2 é o destino de quem loga** (`proxy.ts`, `/auth/callback`, `/sign-in` e os
-atalhos do `manifest.ts` apontam para `/v2/home`). O que ainda não foi refeito
-continua na moldura antiga, listado acima.
+## A Biblioteca e o gravador
 
-O `/v2/home` inverte a ordem do app de hoje: o ACERVO é a primeira tela (hoje
-ele mora em `/recordings`, e a primeira é o feed de acompanhamento), e gravar é
-o botão no rodapé. O LAYOUT vem do gravador nativo do Android, o print está em
-`public/prints/new-release/`: barra do topo, blocos por mês, e embaixo uma
-faixa que escurece até o preto (`--v2-dock-fade`) com o botão vermelho no meio.
+O `/v2/home` põe o ACERVO como primeira tela e gravar como o botão no rodapé. O
+LAYOUT vem do gravador nativo do Android (print em `public/prints/new-release/`):
+barra no topo, blocos por mês, e embaixo uma faixa que escurece até o preto
+(`--v2-dock-fade`) com o botão vermelho no meio. A faixa fica sempre; o BOTÃO
+some ao rolar para baixo e volta ao rolar para cima.
 
-A BUSCA dela é a mesma do `/recordings`, barra e motor (`CollectionSearch` e
-`lib/search.ts`), com o mesmo alcance, incluindo a transcrição pelo servidor. O
-que muda é que ali ela é permanente e aqui fica atrás da lupa: a Biblioteca é a
-primeira tela do app, e quem abre o Scriba quase sempre quer o último sermão,
-não uma busca. Fechá-la LIMPA os filtros, senão a lista reabriria recortada por
-uma escolha de dois dias atrás. O botão mora na `TopBar` e o estado no
-`LibraryBrowser`, então um `SearchScope` (contexto) envolve os dois na página;
-a `TopBar` continua renderizando no servidor mesmo passando por dentro dele.
-A faixa fica sempre; o BOTÃO some ao rolar para baixo e volta ao rolar para
-cima.
+A busca fica atrás da lupa, e não permanente: quem abre o Scriba quase sempre
+quer o último sermão, não uma busca. Fechá-la LIMPA os filtros, senão a lista
+reabriria recortada por uma escolha de dois dias atrás. O botão mora na `TopBar`
+e o estado no `LibraryBrowser`, então um `SearchScope` (contexto) envolve os
+dois na página.
 
-O botão de gravar mora na PÁGINA do `/v2/home`, não no layout do v2, e é o que
-o mantém fora do `/v2/summary`: uma tela de leitura não oferece gravar. Pelo
-mesmo motivo o `/v2/summary` não leva o `TourTrigger` (a apresentação depende do
-`TourProvider`, que é do layout de `(app)`) nem o `FeedbackPrompt` (a pesquisa é
-do app em produção, e disparada de uma tela em obras contaminaria a amostra).
-O único link do v2 que ainda devolve alguém ao app de hoje é o da TRANSCRIÇÃO,
-que não tem tela nova; ele sai quando `/v2/transcript` existir.
+O botão de gravar mora na PÁGINA do `/v2/home`, não no layout, e é o que o
+mantém fora do `/v2/summary`: uma tela de leitura não oferece gravar.
 
-**O `/v2/recording` grava UM áudio e transcreve UMA vez.** O app de hoje
-transcreve a cada 15-20s porque o feed ao vivo precisa do texto na hora; aqui
-não há feed, e herdar aquela cadência custaria ~206 chamadas de transcrição por
-hora de sermão para entregar exatamente o mesmo resumo.
+**O `/v2/recording` grava UM áudio e transcreve UMA vez.** O produto já
+transcreveu a cada 15-20s, porque havia um feed ao vivo que precisava do texto
+na hora; sem ele, aquela cadência custaria ~206 chamadas por hora de sermão
+para entregar exatamente o mesmo resumo.
 
 O áudio é fatiado mesmo assim, mas por OUTRO motivo e em outra escala, e os dois
 cortes não se confundem:
@@ -176,16 +144,6 @@ mostrava um aviso educado, e o coletor comia a única cópia do que foi dito.
 sessão nasce de um `POST` no stop — sem ele o áudio fica guardado esperando, o
 que é bem melhor que sumir, mas não é funcionar offline.
 
-`app/session/[id]` é rota LEGADA: um `permanentRedirect` para
-`/recording/:id/summary`, preservado para que link antigo e bookmark não
-quebrem. Não crie link novo apontando para ela.
-
-`app/list` é o mesmo caso, e pela mesma razão: `/list` virou `/recordings`, e um
-308 mantém de pé o bookmark, o atalho do PWA já instalado e o link que alguém
-mandou por mensagem. As duas moram FORA do grupo `(app)` de propósito,
-redirect não precisa de header, de nav nem das duas consultas ao banco do
-`app/(app)/layout.tsx`, que renderiza em paralelo com a página.
-
 **Restrito:** `/admin/*` (gate em `app/admin/layout.tsx`, responde `notFound()`
 a quem não é admin) e `/partners` (gate em `lib/auth/require-partner.ts`).
 
@@ -198,14 +156,12 @@ sim, e pôr a página de vendas no caminho é pôr um argumento diante de quem j
 foi convencido. Nenhuma das três entra no `sitemap.ts` nem no `/llms.txt`, elas
 não são conteúdo, são efeito colateral com redirect.
 
-**API:** `app/api/`, pipelines de LLM (`transcribe`, `bible`, `insights`,
-`sermon-echo`, `final-summary[/reprocess|/from-transcript]`,
-`deepening[/reprocess]`, `verse`, `format-paragraphs`,
-`hallucination-report`), dados (`sessions[/search]`, `feed`, `speakers`,
-`locations`, `coins`, `feedback[/prompt]`, `tour/{start,finish,reset}`), conta
-(`account/delete`), cobrança (`billing/*`,
-`stripe/webhook`) e admin (`admin/users`, `admin/partners`, `admin/features`,
-`admin/coupons`, `admin/insights`).
+**API:** `app/api/`, LLM (`transcribe`, `final-summary[/reprocess]`,
+`deepening[/reprocess]`, `youtube/import`, `verse`, `hallucination-report`),
+dados (`sessions[/search]`, `speakers`, `locations`, `coins`,
+`feedback[/prompt]`, `tour/{start,finish,reset}`), conta (`account/delete`),
+cobrança (`billing/*`, `stripe/webhook`) e admin (`admin/users`,
+`admin/partners`, `admin/features`, `admin/coupons`, `admin/insights`).
 
 `account/delete` é a ÚNICA rota autenticada que se recusa a usar
 `requireAuth()`, e a exceção é o ponto dela: `requireAuth` responde 403 a quem
@@ -214,7 +170,7 @@ um admin desativou, e quem foi banido é exatamente quem mais quer sair. Ela usa
 que `is_active` protegesse ali. Cancela a assinatura no Stripe ANTES de apagar
 (`lib/account/delete-account.ts`): a ordem inversa deixaria uma cobrança
 recorrente viva num `customer` que nenhum usuário resolve mais. Ver
-`app/(app)/profile/delete/page.tsx` e `docs/app-store-ios.md`, Portão 4.
+`app/profile/delete/page.tsx` e `docs/app-store-ios.md`, Portão 4.
 
 `feedback/prompt` é **POST e não GET porque ESCREVE**: quando a resposta é
 "sim, pergunte", a pergunta já nasce registrada em `feedback_prompts`, é o
@@ -230,10 +186,10 @@ a apresentação de voltar toda vez que a pessoa reabre a tela. As três rotas d
 tour não cobram moedas e não chamam modelo nenhum. Ver
 `src/features/tour/AGENTS.md`.
 
-`youtube/import` é a QUARTA porta do mesmo pipeline de resumo, e a única cuja
+`youtube/import` é a outra porta do mesmo pipeline de resumo, e a única cuja
 transcrição não veio de um microfone: ela busca a legenda do vídeo em
-`sessions.source_url`, grava como transcrição e roda resumo + releia/lembra/
-frases por cima. A ordem dentro dela é `dono → já importada? → legenda →
+`sessions.source_url`, grava como transcrição e roda o resumo por cima. A ordem
+dentro dela é `dono → já importada? → legenda →
 duração → COBRA → resumo`, e a legenda vir ANTES da cobrança é uma inversão
 deliberada em relação a `/reprocess` e `/api/deepening`, ela é a chamada
 barata (~R$ 0,03) e é ela que diz se o vídeo é importável, então cobrar antes
@@ -241,18 +197,11 @@ obrigaria a estornar três recusas rotineiras. A regra que aquelas rotas
 protegem continua valendo: a chamada CARA (o resumo) só roda depois do débito.
 Ver o cabeçalho da rota.
 
-`final-summary/from-transcript` é a terceira porta do MESMO pipeline de resumo:
-ela gera o primeiro resumo de uma sessão gravada no modo transcrição, que sai
-da gravação sem `final_summary`. Cobra `summary_from_transcript` (15, o mesmo
-do reprocessamento, é o mesmo trabalho) e recusa com 409 uma sessão que já
-tem resumo; refazer um resumo existente continua sendo `/reprocess`. Ver
-`src/features/session/AGENTS.md`.
-
 `sessions/search` é a metade SERVIDOR da busca das listas, e responde a DUAS
 perguntas sobre a mesma sessão: o que foi DITO (`ilike` na transcrição) e o que
-foi CITADO (os versículos). A segunda não é busca de texto, "Jonas 1" precisa
-achar o card que diz "Jonas 1:1-17", e o pregador falou "no primeiro capítulo de
-Jonas", que não contém nenhuma das duas strings. Quem compara referência com
+foi CITADO (os versículos). A segunda não é busca de texto: "Jonas 1" precisa
+achar o resumo que cita "Jonas 1:1-17", e o pregador falou "no primeiro capítulo
+de Jonas", que não contém nenhuma das duas strings. Quem compara referência com
 referência é `lib/domain/reference-query.ts`; a peneira por livro é a RPC
 `session_verse_references` (migrações 0041/0042). A resposta separa as duas
 vias porque o cartão mostra POR QUE está ali, "trecho na transcrição" ou a
@@ -403,7 +352,7 @@ privilegiada reconfere a autorização dentro de si**, `assertAdmin()` nas
 actions de admin (ver `lib/auth/require-admin.ts`).
 
 Quando a proteção real for a RLS e não a página, escreva isso no código: o
-`deleteSessionAction` do `/recordings` está protegido pela policy, e trocar o
+`deleteSessionAction` da Biblioteca está protegido pela policy, e trocar o
 client do usuário pelo service-role ali o transformaria num IDOR sem sinal
 nenhum no diff.
 
@@ -570,9 +519,9 @@ o fallback (valor claro). Os dois hexadecimais moram em
 `src/shared/theme-color.ts`.
 
 O `viewport` do root layout declara `viewport-fit=cover`, é o que faz
-`env(safe-area-inset-*)` valer diferente de zero. Quem consome os insets é a
-`MobileBottomNav` e os botões flutuantes de gravação; sem eles o iPhone desenha
-a nav por baixo da barra do gesto do sistema. Zoom fica liberado
+`env(safe-area-inset-*)` valer diferente de zero. Quem consome os insets é o
+`RecordDock` e o rodapé de cada tela; sem eles o iPhone desenha o botão de
+gravar por baixo da barra do gesto do sistema. Zoom fica liberado
 (`maximumScale: 5`): travar o pinch é violação de acessibilidade.
 
 ### Estar dentro do app é uma pergunta com resposta

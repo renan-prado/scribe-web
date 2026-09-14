@@ -1,7 +1,7 @@
 "use client";
 
 import { useCallback, useEffect, useRef, useState } from "react";
-import { AUDIO_CONSTRAINTS } from "@/lib/recorder";
+import { AUDIO_CONSTRAINTS, reportTrackSettings } from "@/lib/audio-constraints";
 
 /**
  * A captação do `/v2/recording`: um arquivo, transcrito de uma vez só no fim.
@@ -248,6 +248,9 @@ export function useAudioCapture({ onLevels, onFragment, startedAtRef }: Options)
         }
       }
       streamRef.current = stream;
+      // Constraint é PEDIDO, não garantia: sem este log, uma gravação sai
+      // processada e nada no código diz que saiu. Ver `lib/audio-constraints.ts`.
+      reportTrackSettings(stream);
 
       const ctx = new AudioContext();
       ctxRef.current = ctx;

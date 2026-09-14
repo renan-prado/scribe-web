@@ -1,7 +1,7 @@
 # src/features/feedback: a pesquisa de satisfação
 
 A janela que pergunta "como foi para você?" no instante em que a pessoa acabou
-de usar cada parte do produto, e o botão "Dar feedback" do `/profile`.
+de usar cada parte do produto, e o botão "Dar feedback" do `/v2/profile`.
 
 ```
 config.ts                     os três atrasos, um por superfície
@@ -30,7 +30,7 @@ pasta desce daí, e nenhuma delas é preferência estética:
   daí não há mais como perguntar nada.
 - **A nota é um toque; o texto é opcional e só aparece depois dela.** Com o
   campo de texto aberto de saída, a janela abre parecendo formulário, e o que
-  se quer da maioria é o toque, não a redação. **A exceção é o /profile**, onde
+  se quer da maioria é o toque, não a redação. **A exceção é o /v2/profile**, onde
   a caixa já vem aberta: ali a janela não interrompeu ninguém, a pessoa clicou
   em "Dar feedback" para ESCREVER, e esconder a caixa atrás de um chip é fazer
   com que ela procure o que veio usar. É a mesma distinção que dá nome ao
@@ -68,17 +68,17 @@ teria passado dos três marcos sem nunca ter sido perguntado. A coluna nasceu
 existia e o instante do cadastro em quem chegar depois, sem backfill e sem
 data mágica em TypeScript.
 
-**Os tópicos do modo Ao Vivo são DOIS, e não viram um.** As sugestões durante
-a pregação e o resumo do fim são produtos diferentes com consertos diferentes;
-quem gostou dos cards e achou o resumo fraco precisa poder dizer isso. A
-segunda pergunta só aparece depois de a primeira ter nota, é o que evita a
-janela abrir com cara de formulário.
+**Toda gravação pergunta a mesma coisa: como foi o resumo.** Já houve três
+superfícies, uma por modo de captura — `live` perguntava também sobre os cards
+que apareciam durante a pregação, e `transcript` sobre a transcrição crua. Os
+dois modos deixaram de existir; as duas superfícies continuam no enum porque há
+notas antigas gravadas com elas, e o painel as lê. Nenhuma nota nova nasce com
+uma das duas.
 
-**`summary` é o mesmo tópico no modo Ao Vivo e no modo Áudio.** É o mesmo
-pipeline produzindo o mesmo artefato; separá-los partiria a amostra ao meio
-sem responder nenhuma pergunta nova.
+A importação do YouTube cai na MESMA superfície, e é o certo: a pergunta é sobre
+o resumo, que é o mesmo dos dois lados.
 
-**O botão do `/profile` não passa por `feedback_prompts`.** Não há marco a
+**O botão do `/v2/profile` não passa por `feedback_prompts`.** Não há marco a
 queimar nem pergunta a marcar como respondida, então o envio vai sem
 `promptId` e o servidor o trata como feedback geral (tópico `overall`, sem
 sessão). Ele existe porque as três janelas automáticas são NOSSA escolha de
@@ -89,13 +89,10 @@ na décima gravação é exatamente a pessoa que ainda está aqui.
 
 | Página | `kind` | Atraso | Pergunta sobre |
 |---|---|---|---|
-| `/recording/:id/summary` | `recording` | 5s | sugestões ao vivo + resumo, ou só o resumo |
-| `/recording/:id/transcript` | `recording` | 2,5s | a transcrição |
-| `/recording/:id/deepening` | `study` | 8s | o estudo |
+| `/v2/summary/:id` | `recording` | 5s | o resumo |
+| `/v2/studies/:id` | `study` | 8s | o estudo |
 
-Os três atrasos e o porquê de cada um estão em `config.ts`. Uma sessão do modo
-transcrição que ganhou resumo depois aparece nas DUAS páginas; o
-`feedback_prompts_once` garante que ela é perguntada uma vez só.
+Os atrasos e o porquê de cada um estão em `config.ts`.
 
 ## O painel
 

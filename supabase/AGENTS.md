@@ -37,10 +37,9 @@ fecha.
 Toda tabela de domínio tem `user_id` referenciando `auth.users(id)` com
 `on delete cascade`, RLS ligada e policies auto-escopadas por `auth.uid()`.
 Tabela nova segue o mesmo molde, e o padrão vale também para as tabelas
-filhas de sessão (`session_practices`, `session_rereads`, `session_reminders`,
-`session_highlights`, `session_deepenings`), que é o que permite ao
-`lib/db/feed-entries.ts` emitir os selects e cruzar em memória sem filtrar dono
-na mão.
+filhas de sessão (`session_deepenings`, `session_rereads`, `session_reminders`,
+`session_highlights`, `session_practices`), que é o que permite emitir os
+selects e cruzar em memória sem filtrar dono na mão.
 
 **Duas tabelas fogem do `on delete cascade`, e a exceção tem nome: elas são a
 CONTABILIDADE.** `coin_transactions` (o dinheiro que entrou) e
@@ -54,17 +53,25 @@ torna a linha órfã invisível para todo cliente, porque `null = <uuid>` nunca 
 true. **Tabela nova segue o cascade**, a menos que o que ela guarda continue
 sendo verdade sobre o CAIXA depois que o dono foi embora.
 
-`session_practices` é a exceção viva: o "Coloque em prática" saiu do produto e
-nada mais lê nem escreve nessa tabela. Ela e os payloads antigos ficaram de
-propósito, o recurso foi retirado da tela para ser repensado, não descartado.
-Não crie migração para dropá-la sem pedido.
+**Quatro dessas cinco são HISTÓRICO, e é deliberado.** `session_practices`
+("Coloque em prática"), `session_rereads` ("Releia este texto"),
+`session_reminders` ("Lembra disso?") e `session_highlights` (frases marcantes)
+eram os cards de acompanhamento gerados junto com o resumo, e alimentavam um
+`/feed` que não existe mais. Nada lê nem escreve nelas hoje.
+
+As tabelas e os payloads ficaram de propósito: o que elas guardam foi retirado
+da tela para ser repensado, não descartado, e `drop table` é irreversível. **Não
+crie migração para dropá-las sem pedido.** O mesmo vale para
+`sessions.feed_items` e a projeção `session_feed_items` (0004), com uma razão a
+mais: a segunda ainda é LIDA, pela busca por versículo (0041), e apagá-la tiraria
+das sessões antigas uma busca que hoje funciona.
 
 **Numa tabela filha, `user_id = auth.uid()` não basta, o `session_id` também
 precisa ser seu** (migração 0040). A policy antiga garantia que a LINHA era
 minha e não dizia nada sobre para onde ela apontava: dava para inserir uma
 linha própria carimbada com a sessão de outra pessoa, sabendo só o uuid que
-aparece na URL de `/recording/:id/*`. Em cinco das seis tabelas o efeito era
-sujeira no feed de quem inseriu. Em `session_deepenings` era negação de
+aparecia na URL da sessão. Em cinco das seis tabelas o efeito era sujeira no
+feed de quem inseriu. Em `session_deepenings` era negação de
 serviço com prejuízo: lá existe `unique (session_id)`, a linha do atacante é
 invisível para a vítima sob RLS, e o resultado é a rota conferir "já existe
 estudo?" → não, debitar as moedas, rodar quatro minutos de modelo caro e

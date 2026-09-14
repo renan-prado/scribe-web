@@ -211,7 +211,7 @@ trocamos um contorno por outro. O caminho é `AVAudioSession` em `playAndRecord`
 com background mode `audio`, e o recorder nativo fatiando por VAD.
 
 O ponto bom é que **existe uma costura limpa**: `createRecorder`
-(`lib/recorder.ts`) já é a fronteira, e os três componentes de gravação a
+(`lib/audio-constraints.ts` + `app/v2/recording/`) já é a fronteira, e a tela de gravação a
 consomem pela mesma porta. Ela vira uma interface com duas implementações,
 web e nativa. `useTranscribeQueue`, o
 IndexedDB, os três pipelines e o feed não mudam; continuam recebendo chunk. O
@@ -225,7 +225,7 @@ equivalente.
 
 **3. Notificações locais para o `/feed`.** O encaixe mais natural que o projeto
 tem. Os cards de releia / lembra / frase marcante já são agendados por data
-absoluta (`createdAt + dayOffset`, em `lib/db/feed-entries.ts`), a agenda
+absoluta (`createdAt + dayOffset`), a agenda
 inteira é conhecida no momento em que a sessão fecha. Não precisa de APNs, nem
 servidor de push, nem certificado: quando o `final-summary` termina, o bridge
 manda a lista e o nativo agenda tudo localmente. Zero infraestrutura nova, e é
@@ -241,7 +241,7 @@ existe no nativo.
 o versículo para reler na tela de início. Reforça o item 3.
 
 **6. App Intents / Siri e o Botão de Ação.** "Ei Siri, gravar sermão". Barato,
-e o `NewRecordingDialog` já coleta modo/local/pregador, o intent preenche o
+e a tela de gravação já coleta local/pregador, o intent preenche o
 modo padrão e abre direto na gravação.
 
 O haptic que já existe (`haptics:tap` no `nativeBridge`) fica, mas sozinho não
@@ -285,7 +285,7 @@ formulário. Precisa ser um caminho dentro do app que apague a conta e os dados.
 **FEITO.** O caminho é `/profile` → "Excluir minha conta e meus
 dados" → `/profile/delete`, e ele apaga de verdade:
 
-- `app/(app)/profile/delete/page.tsx` diz o que some, o que a lei nos obriga a
+- `app/profile/delete/page.tsx` diz o que some, o que a lei nos obriga a
   guardar e qual conta será apagada, e exige que a pessoa digite `EXCLUIR`.
 - `POST /api/account/delete` → `lib/account/delete-account.ts` cancela a
   assinatura no Stripe **antes** de `auth.admin.deleteUser`. A ordem é a regra

@@ -25,10 +25,8 @@ aconteceu com `DEFAULT_PARTNER_MONTHLY_COINS`, que teve de mudar de
 Client-safe de propósito: `coins/pricing.ts`, `coins/billable.ts`,
 `coins/economics.ts`, `billing/plans.ts`, `entitlements/features.ts`,
 `partners/economics.ts`, `referrals/economics.ts`, `referrals/cookies.ts`,
-`br/documento.ts`, `domain/*` (tipos e schemas), `bible/detect.ts`,
-`bible/guard.ts`, `supabase/cookie.ts`, `app-version.ts`, `deploy.ts`,
-`seo.ts`, `utils.ts`, `vocabulario.ts`, `chunk-store.ts` (IndexedDB, só roda
-no browser).
+`br/documento.ts`, `domain/*` (tipos e schemas), `supabase/cookie.ts`,
+`app-version.ts`, `deploy.ts`, `seo.ts`, `utils.ts`, `vocabulario.ts`.
 
 ## Env: estrito de propósito
 
@@ -73,7 +71,7 @@ rota. Os dois devolvem `Result<T>` (nunca lançam) e têm timeout por
   autoriza a escrita sem conferir o conteúdo: dava para mandar uma linha de
   custo inventada direto por `POST /rest/v1/llm_usage_events` com o anon key e
   envenenar `/admin/precificacao`. Migração 0039. De quebra sumiu um
-  `auth.getUser()` por registro, era uma ida à rede por chunk transcrito.
+  `auth.getUser()` por registro, era uma ida à rede por trecho transcrito.
 
   As duas também carimbam `app_version` (migração 0044), o que torna a tabela
   comparável DEPLOY A DEPLOY em `/admin/usage`, mas só enquanto a versão subir
@@ -111,7 +109,7 @@ nunca. Isso é o oposto de cache persistente: nada sobrevive à resposta.
 
 O motivo: `supabase.auth.getUser()` NÃO é decode local do JWT, é um
 `GET /auth/v1/user` na rede, toda vez (é por validar no servidor de auth que
-ele é preferível a `getSession()`). Sem memoização, um load de `/feed` fazia
+ele é preferível a `getSession()`). Sem memoização, um load da Biblioteca fazia
 OITO dessas idas. Hoje faz duas.
 
 **Prefira `getAuthUser()` a `(await createClient()).auth.getUser()`.** É a
@@ -121,10 +119,10 @@ mesma coisa, cobrada uma vez por request em vez de uma por chamador.
 árvore de render. Lá o comportamento é o de antes: uma chamada, uma ida à
 rede. Nada quebra, só não há o que deduplicar.
 
-**Leituras de sessão têm duas larguras.** `getSession` traz `transcript`,
-`feed_items` e `final_summary`; `getSessionMeta` não. As quatro páginas que
-nunca renderizam transcrição (live, audio, transcribe, deepening) usam a
-segunda, abrir um gravador vazio não deve trazer o sermão inteiro. Ambas são
+**Leituras de sessão têm duas larguras.** `getSession` traz `transcript` e
+`final_summary`; `getSessionMeta` não. Quem nunca renderiza a transcrição (a
+importação do YouTube, o estudo) usa a segunda: abrir uma tela de espera não
+deve trazer o sermão inteiro. Ambas são
 memoizadas porque `generateMetadata` e o corpo da página chamavam as duas, e o
 Next só deduplica `fetch()`, não consulta do Supabase.
 
@@ -136,8 +134,8 @@ Next só deduplica `fetch()`, não consulta do Supabase.
   proxy custaria uma consulta ao banco em todo request do site. O cabeçalho da
   migração 0007 afirmava que o proxy conferia, nunca conferiu, e por três
   meses o botão "desativar" do `/admin` pintou a linha de vermelho sem tirar
-  nada de ninguém. As páginas são cobertas pelos layouts de `(app)` e
-  `/partners`, que leem `isActive` da consulta memoizada de `db/account.ts`.
+  nada de ninguém. As páginas são cobertas pela `TopBar` do app e pelo layout
+  de `/partners`, que leem `isActive` da consulta memoizada de `db/account.ts`.
 
   A mesma consulta traz `coin_balance`, e por isso `auth.user.coinBalance`
   existe: é o que `coins/require-balance.ts` usa sem custar um segundo SELECT.
@@ -456,10 +454,9 @@ log.error("upstream falhou", err);            // aceita Error direto
 - **O nível decide o que EXISTE em produção**, e é a única escolha que quem
   chama precisa fazer. `info` = rastro que se vai querer numa auditoria
   (dinheiro, mutação de admin, atribuição de parceiro). `debug` = rastro de
-  execução (pipelines ao vivo, fila de chunks, o `ok` das rotas de LLM) e não
-  sai em produção. `warn`/`error` sempre saem. O `ok` das rotas de LLM é
-  `debug` de propósito: dispara a cada chunk por usuário ativo, e os tokens
-  que ele mostra já ficam no banco por `recordChatUsage`.
+  execução (o `ok` das rotas de LLM) e não sai em produção. `warn`/`error`
+  sempre saem. O `ok` das rotas de LLM é `debug` de propósito: os tokens que ele
+  mostra já ficam no banco por `recordChatUsage`.
 - **Os reporters são escolhidos por ambiente, não por chamada**
   (`log/index.ts`): `fancy` do consola no terminal; pastilha CSS com cor
   derivada do escopo no navegador, com o contexto entregue como OBJETO vivo; e
@@ -482,17 +479,20 @@ log.error("upstream falhou", err);            // aceita Error direto
 
 ## Bíblia
 
-Dois módulos com nomes parecidos e papéis distintos:
+`lib/bibles/` é **server-only**: a tradução em si. `loader.ts` lê a NVI do disco
+na primeira chamada e a mantém em memória pelo tempo do processo (~4 MB de
+JSON), deduplicando chamadas concorrentes. `BIBLE_TRANSLATION` existe para o
+número sair de um lugar só, **não** para sugerir que trocá-la basta: o arquivo
+precisa estar em `lib/bibles/`, e hoje só a NVI está. As outras dez foram
+removidas — 41 MB no bundle de deploy que nenhum caminho de código lia. Se um
+seletor de tradução voltar, o cache precisa virar LRU antes.
 
-- `bible/detect.ts` + `bible/guard.ts`, **client-safe**, são o gate de duas
-  camadas do pipeline ao vivo. Explicados em `src/features/session/AGENTS.md`.
-- `bibles/`: **server-only**, a tradução em si. `loader.ts` lê a NVI do disco
-  na primeira chamada e a mantém em memória pelo tempo do processo (~4 MB de
-  JSON), deduplicando chamadas concorrentes. `BIBLE_TRANSLATION` existe para o
-  número sair de um lugar só, **não** para sugerir que trocá-la basta: o
-  arquivo precisa estar em `lib/bibles/`, e hoje só a NVI está. As outras dez
-  foram removidas, 41 MB no bundle de deploy que nenhum caminho de código
-  lia. Se um seletor de tradução voltar, o cache precisa virar LRU antes.
+Quem entende uma REFERÊNCIA ("João 3:16", "Romanos 8") é
+`lib/domain/reference.ts`, client-safe: a tela do resumo usa para transformar
+uma referência escrita no meio de um parágrafo num link, e o servidor usa o
+mesmo parser em `/api/verse`, no ancoramento do estudo e na busca por
+versículo. Um segundo parser em qualquer uma dessas pontas faria a tela e o
+banco discordarem sobre o que "Romanos 8" significa.
 
 ## Transcrição: qualidade
 
@@ -505,10 +505,9 @@ medidas, e as três pioram ou empatam.
 
 `transcription/sanitize.ts` reconhece três assinaturas de alucinação vistas em
 sessões reais: eco do prompt-guia, eco da lista de vocabulário e loop de
-repetição (agravado pelo `prevText`, que realimenta o loop no chunk seguinte).
-Qualquer assinatura marca o chunk como `suspect`: o texto limpo ainda vale
-para a transcrição, mas o chunk não volta como contexto nem alimenta os
-pipelines.
+repetição (agravado pelo `prevText`, que realimenta o loop na parte seguinte).
+Qualquer assinatura marca a parte como `suspect`: o texto limpo ainda vale para
+a transcrição, mas ela não volta como contexto na emenda.
 
 `transcription/quality.ts` cruza três fontes, assinatura determinística,
 confiança do modelo (média de logprobs) e densidade de texto por segundo de
@@ -516,12 +515,11 @@ confiança do modelo (média de logprobs) e densidade de texto por segundo de
 decodificação incerta, e áudio de ruído/música que rende fragmentos esparsos e
 confiantes. `poor` = qualquer uma acusou.
 
-**`poor` não troca de modelo.** Já trocou: chunk ruim era reenviado ao
-`gpt-4o-transcribe`. Com `gpt-transcribe` no primeiro degrau esse reenvio
+**`poor` não troca de modelo.** Já trocou: áudio ruim era reenviado ao
+`gpt-4o-transcribe`. Com `gpt-transcribe` no primeiro degrau, esse reenvio
 dobra o custo para entregar um texto pior em todos os cenários medidos, então a
 escalada foi removida, não existe degrau acima. Hoje `poor` faz duas coisas:
-exclui o chunk do `prevText` e dos pipelines, e, repetido, acende o aviso de
-áudio ruim na tela.
+exclui a parte do `prevText` da emenda seguinte.
 
 **`LOW_CONFIDENCE_AVG_LOGPROB` é calibrado por MODELO.** Trocar
 `OPENAI_TRANSCRIBE_MODEL` sem refazer a tabela de `docs/transcricao.md` §3
@@ -573,8 +571,6 @@ nunca disparava com o modelo novo, nem em áudio com 27% de WER.
   margem alvo que o admin girou. É régua de SIMULAÇÃO: não cobra, não credita e
   não pode virar tabela. Escrita por `coins/settings-actions.ts`, com
   `assertAdmin()` dentro de cada action.
-- `chunk-store.ts`: IndexedDB dos chunks de áudio à espera de upload. Degrada
-  em silêncio onde IndexedDB não existe. Ver `src/features/session/AGENTS.md`.
 - `br/documento.ts`: CPF/CNPJ com máscara e dígito verificador, client-safe,
   validado nas DUAS pontas. O banco guarda só os dígitos: gravada,
   "123.456.789-09" e "12345678909" viram duas pessoas na hora de conferir um

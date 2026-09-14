@@ -118,8 +118,8 @@ formas por extenso e abreviadas, masculino e feminino); ela é de RECONHECIMENTO
 nunca de conversão.
 
 **Local que veio do CANAL leva "Canal " na frente.** `speaker_location` quer
-dizer "onde isto foi pregado", e nos outros três modos quem responde é uma
-pessoa digitando. Aqui é dedução nossa: o canal que publicou provavelmente é a
+dizer "onde isto foi pregado", e numa gravação quem responde é uma pessoa
+digitando. Aqui é dedução nossa: o canal que publicou provavelmente é a
 igreja, mas o vídeo não afirmou isso. "Canal Batista do Povo" é honesto;
 "Batista do Povo" seco afirma um lugar que ninguém confirmou. Quando a igreja
 está DECLARADA no título, a última linha da tabela, ela vai limpa, sem
@@ -151,33 +151,32 @@ título cru volta.
   ganho incerto, é a primeira escotilha a abrir se a extração se mostrar fraca.
 - **Nada é ligado às entidades reutilizáveis** (`speakers` / `locations`). A
   importação preenche só os snapshots `speaker_name` / `speaker_location`, como
-  os outros modos fazem por padrão. Agrupar imports sob "Yago Martins" exigiria
+  a gravação faz por padrão. Agrupar imports sob "Yago Martins" exigiria
   casamento aproximado de nome, que é problema próprio.
 - **"PARTE 3" é descartado** junto com o resto da numeração de série. É uma
   perda pequena e deliberada; o título fica "Romanos 8".
 
 ### Onde o link é colado
 
-Em `/importar`, uma página própria, não no diálogo de gravação.
+Em `/v2/importar`, uma página própria, alcançada pela gaveta do hambúrguer.
 
-Já esteve lá, como um card de modo com um `<input>` dentro, e duas coisas
-quebraram: o card precisava crescer no meio de uma fileira de irmãos do mesmo
-tamanho, e o rodapé do diálogo tinha de mentir sobre a unidade do preço ("/min"
-num modo que cobra por vídeo). Escolher COMO capturar e escolher QUAL vídeo são
-duas perguntas.
+Já esteve dentro de um diálogo de escolha de modo, como um card com um `<input>`
+dentro, e duas coisas quebraram: o card precisava crescer no meio de uma fileira
+de irmãos do mesmo tamanho, e o rodapé tinha de mentir sobre a unidade do preço
+("/min" num modo que cobra por vídeo). Escolher COMO capturar e escolher QUAL
+vídeo são duas perguntas.
 
-Hoje o diálogo "Gravar" itera sobre `CAPTURE_MODES` (os três que ligam o
-microfone) e o YouTube entra pela Biblioteca, num botão secundário ao lado do
-título. O botão primário do app continua sendo "Gravar": gravar ao vivo é o
-produto, importar é o atalho para o que já está online.
+Hoje não há diálogo nenhum: o botão do rodapé da Biblioteca liga o microfone
+direto, e o YouTube é um item do menu. **A separação continua sendo o ponto**:
+aquele botão cobra por minuto e liga um microfone; este traz uma legenda que já
+existe, por um preço fechado por vídeo.
 
 ### Como alguém DESCOBRE que isso existe
 
-Uma porta secundária numa tela que nem todo mundo abre é uma porta que muita
-gente nunca vê. Quem paga essa conta é o `YoutubeTipCard`, no `/feed`: um card
-que ensina a funcionalidade **no máximo três vezes**, espaçadas por quatro
-dias, e nunca para quem já importou algum vídeo, o gate é do servidor
-(`sessions.some(mode === "youtube")`), não do `localStorage`.
+Um item de menu numa gaveta que nem todo mundo abre é uma porta que muita gente
+nunca vê. **Hoje ninguém paga essa conta**: havia um card no `/feed` que ensinava
+a funcionalidade até três vezes, espaçadas por quatro dias, e ele saiu junto com
+a página. É dívida conhecida, não decisão.
 
 Três exibições, e não "sempre": um aviso de descoberta que aparece toda visita
 vira mobília, e a pessoa aprende a não ver aquele retângulo. Clicar em importar
@@ -221,7 +220,7 @@ subir o teto sem mexer no preço é escolher a linha de baixo para todo mundo.
 
 ### Por que não por minuto
 
-Os três modos de captura cobram por minuto porque o custo deles **é** por
+A gravação cobra por minuto porque o custo dela **é** por
 minuto, cada minuto de áudio é uma chamada de STT a US$ 0,006. Uma importação
 não tem STT: a legenda já existe e custa o mesmo num vídeo de dez minutos e num
 de duas horas. Cobrar por minuto de vídeo seria cobrar por um trabalho que não
@@ -240,8 +239,8 @@ só não duas vezes.
 
 ## 5. O risco assumido: canibalização
 
-Os mesmos 45 minutos custam **225 moedas gravados** no Modo Resumo e **30
-importados**. Para uma igreja que transmite ao vivo, os dois caminhos existem, e
+Os mesmos 45 minutos custam **225 moedas gravados** e **30 importados**. Para
+uma igreja que transmite ao vivo, os dois caminhos existem, e
 o segundo é 7,5× mais barato.
 
 A margem se sustenta nos dois, o custo cai junto com o preço, porque a

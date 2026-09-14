@@ -72,9 +72,9 @@ Superfícies, do fundo para a frente:
 | `bg-scriba-surface` | a faixa rebaixada entre o chão e o papel |
 | `bg-scriba-paper` | a superfície elevada: cards, diálogos, sheets, popovers |
 
-**O `/feed` é a exceção, e tem token próprio: `--feed-card`.** Os cartões de
-lá (reflexão, releia, lembra, frase marcante, instalar o app, indicar um amigo)
-não usam `bg-scriba-paper`, e sim `bg-[image:var(--feed-card)]`, porque no tema
+**O cartão de sessão é a exceção, e tem token próprio: `--feed-card`.** O
+`SessionCard` da Biblioteca não usa `bg-scriba-paper`, e sim
+`bg-[image:var(--feed-card)]`, porque no tema
 ESCURO todos precisam da mesma superfície da citação bíblica, o degradê de
 `--session-surface-quote`, que é o que dá relevo ao cartão sobre um chão quase
 preto. No CLARO ele é branco chapado: ali o relevo já vem do contraste com
@@ -86,11 +86,10 @@ escuro o valor é `var(--session-surface-quote)` por referência, não por cópi
 a regra é "a mesma da citação bíblica", e precisa continuar valendo quando
 aquela mudar.
 
-**O `ReflectionCard` descrito aqui não existe mais.** Ele era o cartão do topo
-do `/feed`, a reflexão sobre a última gravação, e saiu junto com a página quando
-o v2 virou o app (ver `app/AGENTS.md`). O token `--feed-card` continua vivo e
-continua sendo o que descreve o parágrafo acima: quem o usa hoje são os cartões
-de acompanhamento (`FeedEntryCards`) e o `SessionCard` da Biblioteca.
+**O nome do token é HISTÓRICO.** Ele nasceu para os cartões de um `/feed` que
+não existe mais, e ficou porque o que ele descreve continua valendo, palavra por
+palavra, para o cartão de sessão. Renomeá-lo tocaria `globals.css`, o tema claro
+e o escuro para trocar uma string.
 
 ### A sombra das superfícies
 
@@ -149,10 +148,15 @@ nos dois temas: **mudou o token, mude lá no mesmo commit.** A terceira exceçã
 pelo mesmo motivo, é `public/offline.html`, sem rede não há folha de estilo
 para carregar.
 
-O switch existe em DOIS lugares, e só: **`/profile`** (`ThemeToggleRow`) e o
-**estado vazio do `/feed`** (`SessionsEmptyState showThemeToggle`). Saiu do
-header logado, do header de parceiros, do `AuthShell` (sign-in e sign-up) e do
-header da landing.
+O switch existe em UM lugar, e só: **`/v2/profile`** (`ThemeToggleRow`). Saiu
+do header logado, do header de parceiros, do `AuthShell` (sign-in e sign-up) e
+do header da landing.
+
+**E hoje ele governa menos do que parece:** a moldura do app declara `dark` no
+nó raiz (ver `app/v2/layout.tsx`), então todas as telas logadas desenham escuro
+qualquer que seja a escolha. O que ainda responde ao switch é o `/admin`, o
+`/partners` e as páginas de conta fora da moldura. Quando o app ganhar tema
+claro próprio, aquela linha sai e o switch volta a valer em tudo.
 
 A consequência precisa estar à vista de quem for mexer: **fora da área logada
 não há mais como trocar de tema.** Visitante da landing, quem está no sign-in e
@@ -191,8 +195,8 @@ vira o objeto mais luminoso do cartão. Virou `.veil-chip`, em
 tinta `--scriba-ink`, um degrau abaixo do topo.
 
 **O véu virou TRATAMENTO, não componente**, e é por isso que o nome descreve o
-efeito: ele veste também os ícones de tipo (YouTube, transcrição, gravação,
-estudo) dos cartões de `/recordings` e `/studies`. Lá eles eram
+efeito: ele veste também os ícones de tipo (YouTube, gravação, estudo) dos cartões da
+Biblioteca e dos Estudos. Lá eles eram
 `bg-[image:var(--scriba-cta)]`, o gradiente do BOTÃO primário, um bloco com o
 peso de uma ação para marcar o TIPO da sessão, que é informação passiva.
 
@@ -200,8 +204,8 @@ Como é OPACIDADE e não cor, ela funciona sobre qualquer fundo em que apareça
 (o degradê da citação, o papel, o `--feed-card`) sem um valor por superfície.
 O anel é `box-shadow: inset` e não `border`, senão 1px mudaria a altura da
 pastilha e a linha de base do `<figcaption>` junto. Os quatro lugares que a
-desenham (`BlockRenderer`, `ChapterMention`, `FeedEntryCards`, `FeedItemCard`)
-usam a classe; forma e interação seguem em utilitário no ponto de uso.
+desenham (`BlockRenderer`, `ChapterMention`, `SessionCard`) usam a classe;
+forma e interação seguem em utilitário no ponto de uso.
 
 Os tokens `--primary*` continuam declarados em `globals.css` porque o shadcn os
 pressupõe. Fora do admin ninguém os pinta; **dentro dele, o gradiente dos
@@ -323,97 +327,16 @@ um acento decorativo, use o hexágono amarelo já usado no app:
 `clip-path:polygon(50%_0,100%_25%,100%_75%,50%_100%,0_75%,0_25%)` sobre um
 bloco `bg-scriba-yellow`.
 
-## Qual item da navegação acende: `nav.ts`
+## A navegação do app não mora aqui
 
-`activeNavKey(pathname)` é a fonte ÚNICA disso, e as duas barras a consultam,
-`AppNav` no desktop e `MobileBottomNav` no celular. Antes cada uma tinha a sua
-comparação e as duas erravam igual: acendiam só na correspondência exata do
-href, então **toda página de detalhe apagava a barra inteira**.
+**Não há barra de navegação em `src/shared/`.** Havia `AppNav` (desktop),
+`MobileBottomNav` (celular), `nav.ts` (qual item acende) e `NavGlyphs.tsx` (os
+cinco ícones) — as quatro saíram junto com a moldura antiga. Quem navega hoje
+usa a gaveta do hambúrguer (`app/v2/components/V2Menu.tsx`), e quem grava usa o
+botão do `RecordDock`, que mora na página da Biblioteca.
 
-A regra é "o item aceso é a LISTA de onde o conteúdo veio", não o prefixo da
-URL. É o que faz `/recording/:id/deepening` acender **Estudos** e não
-Gravações: a URL segue a sessão porque o estudo é dela, mas quem navega vê um
-estudo e vai procurá-lo de volta em `/studies`. Rota de detalhe nova entra
-nessa função, não num `startsWith` dentro de um componente.
-
-## A barra inferior do celular
-
-`MobileBottomNav` é o chrome do app no telefone, e três decisões dela mordem
-quem for mexer:
-
-- **Ela SOME nas três telas de captura** (`/recording/:id/{live,audio,transcribe}`),
-  não só no `live`. No modo transcrição o botão de parar é `fixed` a 24px do
-  rodapé, exatamente onde a barra fica, e ela cobria o botão: a gravação não
-  tinha como ser pausada nem encerrada pelo celular. Some com ela também evita
-  o toque acidental que navega para fora e mata o MediaRecorder no meio de um
-  sermão.
-- **Todo ícone mora numa calha de altura fixa.** Cada glifo tem a sua altura
-  natural, e como a barra centra item a item, alturas diferentes colocavam cada
-  rótulo numa linha. O item "Perfil" é um glifo de usuário, não a foto: o
-  avatar era o único elemento que mudava de tamanho, de forma e de cor sozinho,
-  e a barra é navegação, não identidade.
-- **Os cinco ícones são um conjunto só, em `icons/NavGlyphs.tsx`, e três deles
-  também desenham a barra do DESKTOP.** Feed, Biblioteca e Estudos usam os
-  mesmos glifos no `AppNav`; antes eram lucide lá (`Rss` / `List` / `BookOpen`)
-  e o mesmo destino tinha dois desenhos conforme o aparelho. O `profile` não
-  vai junto: no desktop aquele lugar é o avatar do `UserMenu`.
-  São preenchidos (não traçados, `strokeWidth` não faz nada neles) e ocupam
-  quase todo o `viewBox` de 24, e é por isso que os quatro das abas usam um
-  `size` ÚNICO **dentro desta barra** — entre as duas barras ele MUDA: 20px
-  aqui, 12px no `AppNav`, que é o que iguala o peso do lucide de 14px que
-  estava lá (o lucide reserva ~2px de margem de cada lado do `viewBox`, o
-  glifo não). A barra já misturou formas feitas à mão com glifos do lucide, e aí
-  cada ícone precisava de um `size` próprio: o lucide reserva margem dentro do
-  `viewBox`, então em tamanho igual os dele liam como menores. Ícone novo que
-  destoe se resolve em quanto ele desenha do `viewBox`, não no `size` da barra.
-- **Os glifos pintam com `currentColor` e não levam classe de cor.** É o que
-  justifica serem componente em vez de `<img src="/icons/…">`, `<img>` não
-  herda cor, e o ícone precisa acompanhar o estado ativo do item. A cor desce
-  do `text-*` do `TabLink`, num lugar só; quando cada chamada pintava o seu
-  ícone, a cor do ativo divergiu da do rótulo (o ícone usava `--scriba-blue`,
-  azul de SUPERFÍCIE, e o rótulo `--scriba-blue-ink`). Os SVGs originais ficam
-  em `public/icons/*.svg`, um por componente, com o mesmo nome, desenho novo
-  troca os dois no mesmo commit.
-- **O `padding-bottom` é SÓ o `env(safe-area-inset-bottom)`**, sem folga fixa
-  somada. Um piso de 8px ali empurra a fileira inteira para cima do centro,
-  como a altura é `min-h` e a caixa é border-box, o inset cresce a barra em vez
-  de espremer o conteúdo.
-
-- **O item "Gravar" não tem rótulo: são dois círculos concêntricos.** Um disco
-  de 44px na cor do botão primário (`bg-[image:var(--scriba-cta)]` +
-  `text-scriba-cta-ink`, que inverte com o tema, nunca `text-white` ali),
-  dentro de um anel de 60px em `bg-scriba-blue-soft` que faz as vezes de
-  sombra. No escuro o disco leva `dark:opacity-90`, uma das variantes `dark:`
-  legítimas, porque o valor é opacidade e não cor: a pastilha clara em que o
-  CTA se inverte precisa assentar no fundo escuro. A opacidade vale para o
-  grupo, então o microfone desce junto e o contraste do glifo se mantém.
-  **O anel é um círculo de verdade, não `box-shadow`:** sombra pediria
-  cor literal em `rgba()`, que a barra proíbe, e no escuro borraria em vez de
-  anelar. Ele já foi um círculo de CTA DESLOCADO pra fora da barra e com
-  rótulo, e era isso que incomodava, não a cor, que voltou de propósito para
-  casar com os botões do resto do app. É o ÚNICO item sem calha e sem texto, e
-  é a simetria do círculo que o alinha, a barra centra item a item, então o
-  centro dele coincide com o centro do bloco ícone+rótulo dos outros quatro, e
-  o microfone senta abaixo dos ícones vizinhos de propósito. Sem texto, o nome
-  acessível vem do `aria-label` do `DialogTrigger`, não remova. O
-  `DialogTrigger` recebe `trigger` e vira `display:contents` para o span ser o
-  item flex.
-
-Nada dentro dela pode usar cor literal: a esfumaçada acima da barra é
-`--scriba-nav-fade`.
-
-**A folga que reserva o espaço dela vai no FILHO, não no wrapper.** Em
-`app/(app)/layout.tsx` é `[&>*]:pb-36 sm:[&>*]:pb-0`, e o seletor de filho é o
-ponto: uma página que pinte o próprio chão no elemento raiz faria a folga ficar
-DEPOIS da tinta, e a faixa reservada apareceria com o tom do `body`, não o do
-conteúdo. Por dentro, o chão da página se estende por ela. Isso pressupõe um
-elemento raiz por página, se criar uma que devolva irmãos no topo, a folga vai
-em cada um.
-
-**Esta barra só aparece no que restou de `(app)`** (cobrança, indicação,
-`/profile/delete`): o v2 não tem nav inferior, quem navega lá usa a gaveta da
-`TopBar`. Os destinos dela já apontam para dentro do v2, senão cada toque
-pagaria um 308.
+A esfumaçada que ficava acima da barra (`--scriba-nav-fade`) e a do rodapé do
+app (`--v2-dock-fade`) continuam em `app/globals.css`.
 
 ## A transição de página envolve o conteúdo, nunca a moldura
 
@@ -425,9 +348,13 @@ tem moldura do navegador para ancorar o olho, a barra inferior sumia e voltava
 a cada toque.
 
 Agora **cada moldura instala a sua**, em volta dos próprios `children`:
-`app/(app)/layout.tsx`, `app/admin/layout.tsx` e `app/partners/layout.tsx`. O
-root layout ficou com a classe sem `key`, o fade toca uma vez no carregamento
-completo, para toda rota, e não volta a tocar em navegação de cliente.
+`app/admin/layout.tsx` e `app/partners/layout.tsx`. O root layout ficou com a
+classe sem `key` — o fade toca uma vez no carregamento completo, para toda rota,
+e não volta a tocar em navegação de cliente.
+
+**O app (`app/v2/layout.tsx`) NÃO tem `PageTransition`**, e não é esquecimento:
+ele não tem chrome fixo para piscar (cada tela desenha a própria `TopBar`), e um
+fade por rota ali só atrasaria a leitura.
 
 **Não devolva a `PageTransition` para o root layout**, e ao criar uma moldura
 nova coloque a dela por dentro. O preço aceito: entre páginas públicas sem
@@ -474,17 +401,20 @@ navegador**, não pelo Lighthouse, cujo relatório mostra uma amostra.
   e medir em seguida lê valores antes do recálculo e reporta as cores do tema
   anterior.
 - **A área logada precisa de sessão E de dados.** Com a conta vazia o axe não
-  vê a faixa creme do `/recordings`, nem o `SummaryView`, nem o seletor do
-  `/feed`, três famílias de token passaram meses reprovando sem aparecer.
-  Semeie sessão antes de auditar.
+  vê os cartões da Biblioteca nem o `SummaryView`: três famílias de token
+  passaram meses reprovando sem aparecer. Semeie sessão antes de auditar.
 
 Estado da última auditoria (axe-core 4.10, claro e escuro):
 
 ```
-/feed  /recordings  /studies  /profile
-/recording/{id}/{summary,deepening,live}    0 violações (eram 32)
+/v2/{home,studies,profile,recording}        0 violações (eram 32)
+/v2/{summary,studies}/{id}                  0 violações
 /  /sign-in  /terms  /privacy               0 violações
 ```
+
+**Essa auditoria é anterior à moldura escura do app.** As telas logadas hoje
+desenham sempre no tema escuro, então a metade "clara" do resultado acima vale
+para o que está fora da moldura. Refaça antes de confiar nela.
 
 Na prática, ao escrever componente novo: `focus-visible:ring-2` em tudo que
 recebe foco (não `outline-none` sozinho), `aria-label` em botão que só tem

@@ -1,5 +1,4 @@
 import type { HallucinationReview } from "@/lib/domain/hallucination";
-import type { ChunkEvent } from "@/lib/domain/recorder";
 import type { SessionMode } from "@/lib/domain/session";
 import type { SummaryPayload } from "@/lib/domain/summary";
 import { type PassagePayload, parseVerseResponse } from "@/lib/domain/verse";
@@ -212,69 +211,6 @@ export async function requestPassage(
     return { ok: true, payload: passage };
   } catch (err) {
     return { ok: false, message: (err as Error).message || "falha ao buscar" };
-  }
-}
-
-/**
- * Legacy retry wrapper used by the audio-only recorder, which does not go
- * through the transcribe queue. Live mode uses {@link uploadChunk} directly
- * via `useTranscribeQueue`.
- */
-export async function uploadChunkWithRetry(
-  ev: ChunkEvent,
-  prevText: string,
-  sessionId?: string
-): Promise<{ ok: true; text: string; suspect: boolean } | { ok: false; message: string }> {
-  const backoffMs = [500, 1500];
-  let last: { ok: false; message: string } = { ok: false, message: "unknown error" };
-  for (let attempt = 0; attempt <= backoffMs.length; attempt++) {
-    const res = await uploadChunk({
-      blob: ev.blob,
-      index: ev.index,
-      extension: ev.extension,
-      durationMs: ev.durationMs,
-      prevText,
-      sessionId,
-    });
-    if (res.ok) return res;
-    last = res;
-    if (attempt < backoffMs.length) {
-      await new Promise((r) => setTimeout(r, backoffMs[attempt]));
-    }
-  }
-  return last;
-}
-
-/**
- * Upload a single recorder chunk to /api/transcribe. Single-attempt: the
- * transcribe queue (useTranscribeQueue) owns retry cadence, persistence, and
- * visibility/online triggers, so this helper stays a thin fetch wrapper.
- */
-export async function uploadChunk(input: {
-  blob: Blob;
-  index: number;
-  extension: string;
-  durationMs: number;
-  prevText: string;
-  sessionId?: string;
-}): Promise<{ ok: true; text: string; suspect: boolean } | { ok: false; message: string }> {
-  try {
-    const form = new FormData();
-    const filename = `chunk-${input.index}.${input.extension}`;
-    form.append("file", input.blob, filename);
-    form.append("chunkIndex", String(input.index));
-    form.append("extension", input.extension);
-    form.append("prevText", input.prevText);
-    form.append("durationMs", String(input.durationMs));
-    if (input.sessionId) form.append("sessionId", input.sessionId);
-    const res = await fetch("/api/transcribe", { method: "POST", body: form });
-    const body = await res.json();
-    if (!res.ok) {
-      return { ok: false, message: body?.error ?? `HTTP ${res.status}` };
-    }
-    return { ok: true, text: body.text ?? "", suspect: body.suspect === true };
-  } catch (err) {
-    return { ok: false, message: (err as Error).message ?? "network error" };
   }
 }
 

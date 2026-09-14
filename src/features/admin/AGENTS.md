@@ -283,9 +283,15 @@ não recrie a soma numa tela.
 
 Responde a UMA pergunta que `/admin/usage` não responde: **continuo cobrando 5
 moedas o minuto?** Preço não é cobrado por rota, é cobrado por AÇÃO, e uma
-ação é várias rotas (o Modo Ao Vivo é transcrição + três pipelines + resumo +
-os cards de acompanhamento). Somar rota a rota à mão para chegar no minuto era
-o trabalho que esta tela existe para não ser refeito.
+ação é várias rotas (um minuto gravado é transcrição + a fatia dele no resumo
+final). Somar rota a rota à mão para chegar no minuto era o trabalho que esta
+tela existe para não ser refeito.
+
+**As ações são quatro: gravação, importação do YouTube, estudo e resumo de
+sessão salva.** Os motivos de ledger LEGADOS (os três modos de captura antigos,
+o resumo sob demanda do modo transcrição) continuam somando nas linhas certas —
+ver o comentário de `reasons` em `billable.ts`. Reescrever motivo em ledger de
+dinheiro é apagar o que de fato aconteceu.
 
 O vocabulário está em `lib/coins/billable.ts` (client-safe) e a conta em
 `lib/coins/economics.ts`. O mapeamento ROTA → ação mora em
@@ -566,7 +572,7 @@ para caber num card perde justamente a parte que o número não tem.
 
 **Quem lista agrupa por `submission_id`.** O comentário é do ENVIO e se repete
 nas linhas de nota daquele envio (ver o cabeçalho de `0047_feedback.sql`); sem
-o agrupamento, uma janela do modo Ao Vivo aparece como duas pessoas dizendo
+o agrupamento, uma janela com dois tópicos aparece como duas pessoas dizendo
 exatamente a mesma frase.
 
 A escala é texto no banco e vira número em UM lugar só,

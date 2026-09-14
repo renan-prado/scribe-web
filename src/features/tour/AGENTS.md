@@ -6,10 +6,10 @@ chega naquela tela pela primeira vez.
 
 ```
 config.ts                      os três atrasos, um por tipo de tela
-components/TourProvider        o dono do estado; mora no layout de (app)
+components/TourProvider        o dono do estado; mora no layout do app
 components/TourRunner          o overlay: o véu com furo e o balão
 components/TourTrigger         o gatilho, montado no fim de cada tela
-components/ProfileTourRow      "Rever os tours", no /profile
+components/ProfileTourRow      "Rever os tours", no /v2/profile
 lib/anchors.ts                 achar o elemento de que o passo fala
 lib/api.ts                     as três chamadas, duas em silêncio
 ```
@@ -22,11 +22,11 @@ raciocínio do schema.
 
 ## A regra que governa tudo: uma vez por pessoa, por TELA
 
-Não existe "o" tour do Scriba. A Biblioteca, o resumo salvo, o estudo e cada
-modo de captura ensinam coisas diferentes, e quem chega pelo link de um resumo
-pode levar semanas até abrir a Biblioteca. **Uma flag única de "já fez o
-onboarding" gastaria a explicação de cinco telas na primeira delas**, e é por
-isso que a chave primária de `user_tours` é `(user_id, tour)`.
+Não existe "o" tour do Scriba. A Biblioteca, a gravação, o resumo salvo, a
+lista de estudos e o estudo pronto ensinam coisas diferentes, e quem chega pelo
+link de um resumo pode levar semanas até abrir a Biblioteca. **Uma flag única de
+"já fez o onboarding" gastaria a explicação de cinco telas na primeira delas**, e
+é por isso que a chave primária de `user_tours` é `(user_id, tour)`.
 
 Tudo aqui desce daí, e nada é preferência estética:
 
@@ -61,29 +61,28 @@ que travasse no alvo ausente seria um tour que só funciona na conta de quem o
 escreveu. E se não sobrar passo nenhum, **nada é registrado**: a tela ainda não
 tem o que mostrar, e o tour espera a próxima visita.
 
-**O alvo é o primeiro elemento VISÍVEL do seletor, não o primeiro.** O botão
-"Gravar" existe duas vezes (header do desktop, barra do celular) e um deles
-está sempre em `display: none`. Um `querySelector` cru recortaria um retângulo
-de tamanho zero no canto da tela, sem erro nenhum no console. Ver
-`lib/anchors.ts`.
+**O alvo é o primeiro elemento VISÍVEL do seletor, não o primeiro.** Parte dos
+alvos é desenhada duas vezes, em versões que se escondem por `display: none`
+conforme a largura da tela. Um `querySelector` cru recortaria um retângulo de
+tamanho zero no canto da tela, sem erro nenhum no console. Ver `lib/anchors.ts`.
 
 **No celular, o balão encosta no rodapé, e por isso o alvo PRESO ao viewport
 tem tratamento próprio.** A correção normal, quando o alvo cairia embaixo do
 balão, é rolar a página; ela não move um elemento `fixed`, e o passo do
-"Gravar" do tour do `/feed`, cujo alvo mora na `MobileBottomNav`, terminava com
-o balão pousado exatamente em cima do botão de que estava falando. Quando rolar
+"Gravar", cujo alvo mora no `RecordDock`, terminava com o balão pousado
+exatamente em cima do botão de que estava falando. Quando rolar
 não tem como resolver, alvo preso (`isPinnedToViewport`) ou página que já rolou
 o que podia neste passo, o balão sobe para CIMA do alvo. Quem mexer na posição
 do balão precisa manter as duas saídas: a que rola e a que troca de lado.
 
-**Nenhum tour roda com o microfone ligado.** Os três tours de captura têm
-`enabled={!hasStarted && !autoStart}`, e as duas metades são necessárias:
-`autostart=1` faz a gravação começar sozinha ao chegar na página, quando
-`hasStarted` ainda é falso durante o tempo do atraso. Um balão por cima de uma
-pregação em andamento é o pior defeito que esta pasta poderia ter.
+**Nenhum tour roda com o microfone ligado.** O tour da gravação tem
+`enabled={auto !== "1"}`: quem chega pelo botão do dock leva `?auto=1`, que abre
+o microfone sozinho, e ali o tour simplesmente não dispara. Quem abre a tela pelo
+endereço direto vê. Um balão por cima de uma pregação em andamento é o pior
+defeito que esta pasta poderia ter.
 
 **O tour tem preferência sobre a pesquisa de satisfação.** As duas moram nas
-mesmas telas (`/summary`, `/deepening`) e as duas abrem sozinhas. Enquanto um
+mesmas telas (o resumo e o estudo) e as duas abrem sozinhas. Enquanto um
 tour está aberto, o `FeedbackPrompt` nem começa a contar o atraso dele, e
 recomeça do zero quando a tela fica livre. Não é só cortesia visual: perguntar
 é GASTAR a 1ª, a 3ª ou a 8ª gravação da vida de alguém, e gastá-la atrás de um
@@ -97,25 +96,23 @@ decisão existir.
 
 **O overlay é UM, e mora no layout.** Duas páginas capazes de abrir o próprio
 véu empilhariam dois no dia em que alguém montasse dois gatilhos por engano. O
-`TourProvider` envolve a moldura inteira porque parte dos alvos (o "Gravar")
-mora no header e na barra inferior.
+`TourProvider` envolve a moldura inteira (`app/v2/layout.tsx`) também porque o
+mapa do que já foi visto sobrevive à navegação: o layout não é refeito ao andar
+entre as telas, então o `seen` que veio do servidor continua valendo.
 
 **O balão vai para o `body`, num portal.** `position: fixed` deixa de ser
-relativo ao viewport dentro de um ancestral com `transform`, e o layout de
-`(app)` tem o `PageTransition`, que anima deslocamento a cada troca de rota.
+relativo ao viewport dentro de um ancestral com `transform`, e o `/admin` e o
+`/partners` têm o `PageTransition`, que anima deslocamento a cada troca de rota.
 
 ## Onde os gatilhos estão montados
 
 | Tela | `tour` | Atraso | Portão |
 |---|---|---|---|
-| `/feed` | `feed` | 1,2s | não roda no estado vazio |
-| `/recordings` | `recordings` | 1,2s | não roda no estado vazio |
-| `/studies` | `studies` | 1,2s | nem vazio, nem na tela de convite |
-| `/recording/:id/summary` | `summary` | 3s | — |
-| `/recording/:id/deepening` | `study` | 3s | — |
-| `/recording/:id/live` | `capture_live` | 0,7s | antes de a gravação começar |
-| `/recording/:id/audio` | `capture_audio` | 0,7s | idem |
-| `/recording/:id/transcribe` | `capture_transcribe` | 0,7s | idem |
+| `/v2/home` | `library` | 1,2s | — |
+| `/v2/studies` | `studies` | 1,2s | nem vazio, nem na tela de convite |
+| `/v2/summary/:id` | `summary` | 3s | — |
+| `/v2/studies/:id` | `study` | 3s | — |
+| `/v2/recording` | `recording` | 0,7s | só sem `?auto=1` |
 
 Os atrasos e o porquê de cada um estão em `config.ts`.
 
@@ -131,17 +128,14 @@ O contrato entre o passo e a tela é um seletor CSS, e a convenção é
 
 | `data-tour` | Onde vive |
 |---|---|
-| `nav-record` | `NewRecordingDialog` (header) e `MobileBottomNav` |
-| `feed-reflection`, `feed-entries` | DORMENTE, ver abaixo |
-| `recordings-unfinished` | DORMENTE, ver abaixo |
-| `recordings-import` | `ImportYoutubeButton` |
 | `collection-search` | `CollectionSearch` (serve à Biblioteca e aos Estudos) |
-| `summary-header`, `summary-followups` | `SavedSessionView` |
+| `record-dock` | `app/v2/home/RecordDock.tsx` |
+| `record-button` | `app/v2/recording/AudioStudio.tsx` |
+| `summary-header` | `SavedSessionView` |
 | `session-menu` | `SessionMenu` |
 | `deepen` | `DeepenButton`, nos três estados permanentes |
-| `study-thesis` | `app/(app)/recording/[id]/deepening/page.tsx` |
+| `study-thesis` | `app/v2/studies/[id]/page.tsx` |
 | `study-menu` | `DeepeningMenu` |
-| `record-button` | `RecordButton` |
 
 Um atributo que some não quebra nada: o passo simplesmente deixa de aparecer, o
 que é a pior forma de a explicação falhar, porque não avisa. Quando um alvo
@@ -154,16 +148,19 @@ Não há tela de administração dos tours. `completed_at`, `dismissed_at` e
 pergunta "qual tour as pessoas abandonam, e em que passo?" tenha resposta
 quando alguém for olhar; a tela que a mostra é trabalho de outro dia.
 
-## Dois tours DORMENTES: `feed` e `recordings`
+## As chaves foram TROCADAS, não renomeadas
 
-Eles continuam declarados em `lib/domain/tour.ts` e nenhuma tela os dispara: os
-alvos que recortavam (`feed-reflection`, `feed-entries`,
-`recordings-unfinished`, `recordings-import`) moravam no `/feed` e no
-`/recordings`, que saíram quando o v2 virou o app (ver `app/AGENTS.md`).
+Os cinco tours de hoje são `library`, `recording`, `summary`, `studies` e
+`study`. Eram oito, e cinco descreviam telas que deixaram de existir: `feed` (o
+Início), `recordings` (a Biblioteca antes de virar a primeira tela) e os três
+`capture_*`, um por modo de gravação.
 
-**Não foram apagados de propósito.** `user_tours` tem linhas com essas chaves,
-de gente que já os viu, e `isTourKey` é quem valida o que entra pelas rotas de
-tour; remover a chave transformaria linha existente em valor desconhecido para
-ganhar o quê — uma constante a menos. Quando a Biblioteca do v2 ganhar a sua
-apresentação, ela reaproveita a chave `feed` e a versão sobe, que é exatamente
-o mecanismo que o resto deste documento descreve para reexibir um tour mudado.
+**As chaves novas não reaproveitam os nomes antigos, e isso é decisão.** O
+mecanismo de `version` existe para reexibir um tour MUDADO; aqui a tela é outra,
+e quem viu a apresentação do `recordings` viu outra coisa. Reaproveitar a chave
+e subir a versão daria o mesmo efeito prático com uma mentira no meio: a tabela
+diria que a pessoa viu a versão 1 de um tour que ela nunca viu.
+
+As linhas antigas continuam em `user_tours` sem chave correspondente, inertes. A
+coluna `tour` é texto SEM `check` de valores justamente para isso (ver o
+cabeçalho de `0051_user_tours.sql`), então nada no banco precisou mudar.
