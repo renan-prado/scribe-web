@@ -103,9 +103,10 @@ const GRAPH = {
       inLanguage: "pt-BR",
       publisher: { "@id": `${SITE_URL}/#organization` },
       featureList: [
-        "Transcrição de sermões ao vivo",
-        "Detecção automática de citações bíblicas",
+        "Transcrição de sermões gravados pelo celular",
         "Resumo estruturado ao final da pregação",
+        "Versículos citados com o texto da passagem",
+        "Importação de vídeos do YouTube",
         "Estudos gerados a partir do sermão",
         "Biblioteca de sermões gravados",
       ],

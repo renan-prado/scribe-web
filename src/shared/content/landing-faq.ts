@@ -26,7 +26,7 @@ export const FAQ_ITEMS: FaqItem[] = [
   {
     question: "O que é o Scriba?",
     answer:
-      "O Scriba é um app que transcreve pregações, estudos bíblicos e mensagens da igreja enquanto eles acontecem. Durante a mensagem ele reconhece os versículos citados e destaca as frases principais; ao final, entrega um resumo organizado com a ideia central, os pontos principais, as passagens lidas e aplicações para a semana.",
+      "O Scriba é um app que grava pregações, estudos bíblicos e mensagens da igreja e entrega, ao final, um resumo organizado: a ideia central, os pontos principais, as passagens lidas, as frases marcantes e aplicações para a semana.",
   },
   {
     question: "Para quem o Scriba foi feito?",

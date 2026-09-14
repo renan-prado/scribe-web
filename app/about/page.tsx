@@ -56,24 +56,24 @@ export default function AboutPage() {
             <h2 className="mb-3 text-base font-semibold text-scriba-ink-strong">Como funciona</h2>
             <ul className="list-disc space-y-1.5 pl-5">
               <li>
-                <strong>Durante o sermão:</strong> a transcrição aparece conforme a fala avança, e
-                um feed ao vivo acrescenta cartões, versículos citados (com o texto da passagem),
-                contexto histórico, frases marcantes e sugestões de leitura. Nada é reescrito: o
-                feed só cresce.
+                <strong>Durante o sermão:</strong> o celular grava e a tela fica quieta. É de
+                propósito: o Scriba é para quem quer prestar atenção na pregação, não olhar o
+                aparelho.
               </li>
               <li>
-                <strong>Depois do amém:</strong> um resumo único e estruturado é gerado a partir da
-                transcrição inteira somada aos cartões do feed.
+                <strong>Depois do amém:</strong> o áudio é transcrito e um resumo único e
+                estruturado é gerado a partir da transcrição inteira.
               </li>
               <li>
-                <strong>Durante a semana:</strong> a partir de um sermão salvo você gera estudos de
-                aprofundamento, revê a transcrição formatada e consulta qualquer versículo citado.
+                <strong>Durante a semana:</strong> a partir de um sermão salvo você gera um estudo
+                de aprofundamento, relê a transcrição e consulta qualquer versículo citado.
               </li>
             </ul>
             <p className="mt-2">
-              Há três modos de captura, ao vivo, somente áudio e somente transcrição, cada um com um
-              custo por minuto diferente, cobrado em créditos. A conta começa gratuita, com créditos
-              de boas-vindas e sem cartão.
+              A cobrança é em créditos, por minuto iniciado de gravação, com a transcrição e o
+              resumo já inclusos. Você também pode importar um vídeo do YouTube e receber o mesmo
+              resumo a partir da legenda, por um preço fechado por vídeo. A conta começa gratuita,
+              com créditos de boas-vindas e sem cartão.
             </p>
           </section>
 

@@ -179,9 +179,8 @@ function Hero() {
         />
         <div className="flex justify-center">
           {/* O MESMO mockup da seção "O resumo", e de propósito: o hero promete
-              um resumo organizado, então o que ele mostra é o resumo, não o
-              feed ao vivo que estava aqui antes. A seção lá embaixo explica em
-              texto o que esta imagem já adiantou. */}
+              um resumo organizado, então o que ele mostra é o resumo. A seção
+              lá embaixo explica em texto o que esta imagem já adiantou. */}
           <PhoneFrame
             className="origin-top"
             chrome={<PhoneChrome subtitle="Resumo · 41 min" title="A sede que só Cristo cura" />}
