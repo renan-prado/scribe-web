@@ -9,6 +9,34 @@ Gerado por `npm run release` a partir dos Conventional Commits. `feat` sobe o
 minor; o resto sobe o patch. Não edite à mão, a próxima execução escreve por
 cima do topo do arquivo.
 
+## 0.19.0, 2026-09-14, desde v0.18.1
+
+### Novidades
+
+- **db:** as tabelas do que o produto deixou de fazer (`460d291`)
+- **scriba:** um modo de captura só (`5739d3c`)
+- **v2:** relógio de gravação no canto direito do cabeçalho (`6c9e76e`)
+- **v2:** fatia o áudio em pedaços e acaba com o teto de 44 minutos (`e87489b`)
+
+### Correções
+
+- **landing:** a copy pública para de vender o que não existe (`3a7a63a`)
+- **coins:** a cobrança do gravador do v2 falhava em todo minuto (`c6dfbdd`)
+- **v2:** volta a transcrever uma vez só, fatiando apenas para não perder áudio (`56bdf74`)
+- **audio:** desliga o processamento do microfone no gravador do v2 (`7e87be8`)
+- **v2:** guarda o áudio no aparelho antes de enviá-lo (`9e9c9d4`)
+
+### Outros
+
+- **tour:** a Biblioteca não promete mais que nada é apagado sozinho (`9ecb02b`)
+- **admin:** o menu passa a ter uma pergunta por item, não um recorte (`f739cb7`)
+- cada assunto passa a morar inteiro em src/features/ (`76d3bb1`)
+- **lib:** tira do lib/ o que não é camada de servidor (`9fe76f3`)
+- o /v2 sai das URLs e o código inteiro vai para src/ (`ba808b8`)
+- os AGENTS.md param de descrever um produto que não existe (`3a13c10`)
+- **admin:** o painel e os processos param de medir o que não roda (`d54f4f2`)
+- **app:** o grupo (app) acaba, o v2 é a única moldura (`a0737d5`)
+
 ## 0.18.1, 2026-09-13, desde v0.18.0
 
 ### Outros
