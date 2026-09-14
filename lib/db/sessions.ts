@@ -440,10 +440,14 @@ export type SessionVerseHit = { sessionId: string; reference: string };
  * `bibleQuote` do resumo, e compará-las com a busca exige entender as duas
  * como referência, não como string. Ver `lib/domain/reference-query.ts`.
  *
- * O trabalho é dividido de propósito: a RPC peneira por LIVRO (é o que dá para
- * fazer com índice e sem reescrever o parser em SQL) e `referenceMatchesQuery`
- * decide capítulo e faixa de versículos aqui, com a mesma função que o feed usa
- * para deduplicar card. Uma regra, um lugar.
+ * O trabalho é dividido de propósito: a RPC peneira por PREFIXO de livro (é o
+ * que dá para fazer sem reescrever o parser em SQL) e `referenceMatchesQuery`
+ * decide capítulo e faixa de versículos aqui. Uma regra, um lugar.
+ *
+ * `p_books` continua sendo enviado e a RPC não o usa mais: ele era a peneira da
+ * projeção `session_feed_items`, que foi dropada na migração 0058 junto com os
+ * cards do feed ao vivo. Hoje a única fonte de referência é o bloco
+ * `bibleQuote` do resumo, e toda sessão tem resumo.
  *
  * Uma referência por sessão: a lista mostra a pastilha com a que casou, e a
  * segunda não caberia na tela nem acrescentaria nada, o cartão já está aceso.

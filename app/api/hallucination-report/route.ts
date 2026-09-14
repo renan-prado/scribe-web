@@ -149,9 +149,6 @@ async function persistReport(input: {
       note: input.note,
       verdict: input.review?.verdict ?? null,
       message: input.review?.message ?? null,
-      // Coluna de 0004 do relatório: contava cards removidos do feed ao vivo.
-      // Não há mais feed nem remoção automática; fica zerada para as linhas novas.
-      removed_count: 0,
     });
     if (error) {
       log.error("insert failed", { error: error.message });

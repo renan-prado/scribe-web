@@ -173,15 +173,14 @@ dois lados como REFERÊNCIA: resolve o livro pelos apelidos de
 `lib/bibles/books.ts` ("genesis", "1co", "jona") e compara capítulo e faixa de
 versículos por interseção, não por igualdade.
 
-O trabalho é dividido: a RPC `session_verse_references` peneira por LIVRO nas
-duas fontes que guardam referência, e o casamento fino acontece no TypeScript,
-com `parseVerseReference` (`lib/domain/reference.ts`).
+O trabalho é dividido: a RPC `session_verse_references` peneira por prefixo de
+livro, e o casamento fino (capítulo, faixa de versículos) acontece no
+TypeScript, com `parseVerseReference` (`lib/domain/reference.ts`).
 
-**As duas fontes são os blocos `bibleQuote` de `final_summary` E a projeção
-`session_feed_items`.** A segunda é só HISTÓRICO: ela era alimentada pelos cards
-do feed ao vivo, nada mais a escreve, e ela fica porque é a única coisa que
-responde à busca por versículo nas sessões gravadas no modo `live`. Tirá-la
-apagaria uma busca que hoje funciona.
+**A fonte é o bloco `bibleQuote` do resumo, e só.** Já foram duas: a projeção
+`session_feed_items` guardava os cards `citedVerse` do feed ao vivo, e era ela
+que respondia pelas sessões gravadas naquele modo. Ela foi dropada na migração
+0058, e a RPC passou a ler só o resumo — que toda sessão tem.
 
 O cartão que casou SÓ pela transcrição ganha a pastilha "Trecho na
 transcrição"; o que casou por versículo mostra a REFERÊNCIA que casou. Sem elas

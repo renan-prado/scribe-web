@@ -37,8 +37,7 @@ fecha.
 Toda tabela de domínio tem `user_id` referenciando `auth.users(id)` com
 `on delete cascade`, RLS ligada e policies auto-escopadas por `auth.uid()`.
 Tabela nova segue o mesmo molde, e o padrão vale também para as tabelas
-filhas de sessão (`session_deepenings`, `session_rereads`, `session_reminders`,
-`session_highlights`, `session_practices`), que é o que permite emitir os
+filhas de sessão (hoje só `session_deepenings`), que é o que permite emitir os
 selects e cruzar em memória sem filtrar dono na mão.
 
 **Duas tabelas fogem do `on delete cascade`, e a exceção tem nome: elas são a
@@ -53,18 +52,17 @@ torna a linha órfã invisível para todo cliente, porque `null = <uuid>` nunca 
 true. **Tabela nova segue o cascade**, a menos que o que ela guarda continue
 sendo verdade sobre o CAIXA depois que o dono foi embora.
 
-**Quatro dessas cinco são HISTÓRICO, e é deliberado.** `session_practices`
-("Coloque em prática"), `session_rereads` ("Releia este texto"),
-`session_reminders` ("Lembra disso?") e `session_highlights` (frases marcantes)
-eram os cards de acompanhamento gerados junto com o resumo, e alimentavam um
-`/feed` que não existe mais. Nada lê nem escreve nelas hoje.
+**Cinco tabelas irmãs dela foram DROPADAS na 0058**, e o motivo de registrar
+isso aqui é que as migrações antigas continuam falando delas:
+`session_practices`, `session_rereads`, `session_reminders` e
+`session_highlights` eram os cards de acompanhamento, e `session_feed_items` era
+a projeção dos cards do feed ao vivo. Saíram junto com `sessions.feed_items`, o
+gatilho que as sincronizava e `hallucination_reports.removed_count`.
 
-As tabelas e os payloads ficaram de propósito: o que elas guardam foi retirado
-da tela para ser repensado, não descartado, e `drop table` é irreversível. **Não
-crie migração para dropá-las sem pedido.** O mesmo vale para
-`sessions.feed_items` e a projeção `session_feed_items` (0004), com uma razão a
-mais: a segunda ainda é LIDA, pela busca por versículo (0041), e apagá-la tiraria
-das sessões antigas uma busca que hoje funciona.
+**Migração antiga NÃO é reescrita para refletir isso**, e essa é a regra da
+pasta: uma migração é o registro do que aconteceu naquele dia. `0004` cria uma
+tabela que `0058` derruba, e as duas continuam no histórico. Quem quiser saber o
+que EXISTE hoje lê o schema, não a pasta.
 
 **Numa tabela filha, `user_id = auth.uid()` não basta, o `session_id` também
 precisa ser seu** (migração 0040). A policy antiga garantia que a LINHA era
