@@ -1,6 +1,7 @@
 "use client";
 
 import { useCallback, useEffect, useRef, useState } from "react";
+import { AUDIO_CONSTRAINTS } from "@/lib/recorder";
 
 /**
  * A captação do `/v2/recording`: o microfone, a onda e **um arquivo só**.
@@ -53,9 +54,13 @@ const WAVE_BANDS = Math.ceil(WAVE_BARS / 2);
  * A faixa de frequência que a onda escuta, em Hz.
  *
  * Não é o espectro inteiro de propósito. O analyser entrega de 0 a 24kHz, e as
- * duas pontas disso são silêncio em fala: abaixo de ~80Hz é ruído de sala (e o
- * `noiseSuppression` come o que sobra), acima de ~8kHz a voz humana quase não
- * tem energia. Desenhar essas duas pontas é gastar barras para mostrar zero.
+ * duas pontas disso são silêncio em fala: abaixo de ~80Hz é ruído de sala,
+ * acima de ~8kHz a voz humana quase não tem energia. Desenhar essas duas pontas
+ * é gastar barras para mostrar zero.
+ *
+ * Com o `noiseSuppression` DESLIGADO (ver `start`), este corte passou a ser a
+ * única coisa entre o ar-condicionado da sala e a onda na tela — é ele que
+ * segura o grave de máquina, e é por isso que o piso de 80Hz não é decoração.
  */
 const WAVE_HZ_MIN = 80;
 const WAVE_HZ_MAX = 8000;
@@ -204,12 +209,31 @@ export function useAudioCapture({ onLevels }: Options) {
       return;
     }
     try {
-      const stream = await navigator.mediaDevices.getUserMedia({
-        // O trio que todo navegador implementa. Sem `echoCancellation` a onda
-        // reage ao próprio alto-falante do aparelho; sem `noiseSuppression`
-        // ela dança sozinha com o ar-condicionado da sala.
-        audio: { echoCancellation: true, noiseSuppression: true, autoGainControl: true },
-      });
+      // `echoCancellation`, `noiseSuppression` e `autoGainControl` DESLIGADOS,
+      // e a constraint vem de `lib/recorder.ts` para existir num lugar só. O
+      // porquê está lá: limpar o áudio antes de transcrever levou o WER de
+      // 11,8% para 21,2% na medição, o modelo foi treinado em áudio sujo e usa
+      // o que a limpeza remove.
+      //
+      // Aqui eles estavam LIGADOS, justificados pela onda (sem supressão ela
+      // dança com o ar-condicionado da sala). Só que o `MediaStream` é o mesmo
+      // que vai para o `MediaRecorder`: o preço da animação mais comportada era
+      // a transcrição de todo mundo. A onda ficou mais nervosa e está certo
+      // assim — se incomodar, o lugar de acertar é a compressão do nível, no
+      // laço abaixo, que não custa qualidade nenhuma.
+      let stream: MediaStream;
+      try {
+        stream = await navigator.mediaDevices.getUserMedia({ audio: AUDIO_CONSTRAINTS });
+      } catch (err) {
+        // Algumas WebViews recusam o objeto de constraints inteiro em vez de
+        // ignorar o que não conhecem. Perder a gravação por causa de um ajuste
+        // de qualidade seria a troca errada, mesmo fallback do `lib/recorder`.
+        try {
+          stream = await navigator.mediaDevices.getUserMedia({ audio: true });
+        } catch {
+          throw err;
+        }
+      }
       streamRef.current = stream;
 
       const ctx = new AudioContext();

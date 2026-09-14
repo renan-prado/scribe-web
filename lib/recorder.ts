@@ -46,8 +46,15 @@ const MIME_CANDIDATES: MimeCandidate[] = [
  * loga o que o navegador REALMENTE aplicou, uma gravação real de verdade
  * responde se o pedido foi aceito. Se um dia isto precisar voltar atrás, é
  * este objeto, e nada mais.
+ *
+ * **É EXPORTADO porque precisa ser um só.** O gravador do v2 abria o microfone
+ * por conta própria e pedia os três LIGADOS, para a onda na tela não dançar com
+ * o ar-condicionado da sala — uma decisão cosmética tomada sobre o mesmo
+ * `MediaStream` que alimenta o `MediaRecorder`, ou seja, pagando a qualidade da
+ * transcrição pela estética da animação, sem que nada no código dissesse que
+ * havia uma troca ali. Quem abre microfone neste repositório usa ESTE objeto.
  */
-const AUDIO_CONSTRAINTS: MediaTrackConstraints = {
+export const AUDIO_CONSTRAINTS: MediaTrackConstraints = {
   echoCancellation: false,
   noiseSuppression: false,
   autoGainControl: false,
