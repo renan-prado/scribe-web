@@ -14,14 +14,14 @@ import { ThemeToggleRow } from "@/components/ThemeToggle";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { PrivilegedProfileLinks } from "@/features/auth/components/PrivilegedProfileLinks";
 import { PlanCard } from "@/features/billing/components/PlanCard";
+import { COIN_RING_REFERENCE } from "@/features/coins/pricing";
 import { ProfileFeedbackRow } from "@/features/feedback/components/ProfileFeedbackRow";
+import { REFERRAL_SIGNUP_COINS } from "@/features/referrals/economics";
 import { ProfileTourRow } from "@/features/tour/components/ProfileTourRow";
 import { isCurrentUserAdmin } from "@/lib/auth/require-admin";
 import { isCurrentUserPartner } from "@/lib/auth/require-partner";
-import { COIN_RING_REFERENCE } from "@/lib/coins/pricing";
 import { getCurrentBalance } from "@/lib/db/coins";
 import { getCurrentProfile } from "@/lib/db/profiles";
-import { REFERRAL_SIGNUP_COINS } from "@/lib/referrals/economics";
 import { TopBar } from "../components/TopBar";
 
 export const metadata = {

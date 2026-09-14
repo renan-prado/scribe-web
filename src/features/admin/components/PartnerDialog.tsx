@@ -21,15 +21,15 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
-import type { AdminPartnerWithStats } from "@/lib/db/admin/partners";
-import { formatDoc, isValidDoc, normalizeDoc, onlyDigits } from "@/lib/domain/documento";
+import type { AdminPartnerWithStats } from "@/features/admin/server/db/partners";
 import {
   DEFAULT_COMMISSION_BPS,
   DEFAULT_PARTNER_MONTHLY_COINS,
   DEFAULT_PARTNER_SIGNUP_REWARD_COINS,
   DEFAULT_SIGNUP_BONUS_COINS,
-} from "@/lib/partners/economics";
-import { normalizeHandle, SOCIAL_LABELS, SOCIAL_NETWORKS } from "@/lib/partners/socials";
+} from "@/features/partners/economics";
+import { normalizeHandle, SOCIAL_LABELS, SOCIAL_NETWORKS } from "@/features/partners/socials";
+import { formatDoc, isValidDoc, normalizeDoc, onlyDigits } from "@/lib/domain/documento";
 import { cn } from "@/lib/utils";
 import { CommissionSimulator } from "./CommissionSimulator";
 

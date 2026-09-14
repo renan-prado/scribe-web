@@ -1,5 +1,5 @@
 import { NextResponse } from "next/server";
-import { appUrl, getStripe, isBillingConfigured } from "@/lib/billing/stripe";
+import { appUrl, getStripe, isBillingConfigured } from "@/features/billing/server/stripe";
 import { getStripeCustomerId } from "@/lib/db/billing";
 import { createLogger } from "@/lib/log";
 import { enforceRateLimit, RATE_LIMITS } from "@/lib/rate-limit";

@@ -1,4 +1,4 @@
-import { REF_HINT_COOKIE } from "@/lib/referrals/cookies";
+import { REF_HINT_COOKIE } from "@/features/referrals/cookies";
 
 /**
  * Decide ANTES DO PRIMEIRO PAINT se a pílula do hero vai falar de indicação.

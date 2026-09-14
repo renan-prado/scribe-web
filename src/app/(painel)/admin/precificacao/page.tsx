@@ -16,21 +16,21 @@ import { FxRateBadge } from "@/features/admin/components/FxRateBadge";
 import { SessionRunLookup } from "@/features/admin/components/SessionRunLookup";
 import { SessionRunPanel } from "@/features/admin/components/SessionRunPanel";
 import { VersionPicker } from "@/features/admin/components/VersionPicker";
+import { loadSessionRuns } from "@/features/admin/server/db/session-runs";
+import { type AdminUsageSummary, loadAdminUsageSummary } from "@/features/admin/server/db/usage";
 import {
   BILLABLE_ACTION_BY_KEY,
   type BillableActionKey,
   NON_BILLABLE_ACTION_KEYS,
-} from "@/lib/coins/billable";
+} from "@/features/coins/billable";
 import {
   type ActionEconomics,
   COINS_PER_COST_UNIT,
   type CoinEconomicsSettings,
   computeActionEconomics,
   ledgerDivergesFromPrice,
-} from "@/lib/coins/economics";
-import { getCoinEconomics, hasCustomCoinEconomics } from "@/lib/coins/settings";
-import { loadSessionRuns } from "@/lib/db/admin/session-runs";
-import { type AdminUsageSummary, loadAdminUsageSummary } from "@/lib/db/admin/usage";
+} from "@/features/coins/economics";
+import { getCoinEconomics, hasCustomCoinEconomics } from "@/features/coins/server/settings";
 import { makeMoneyFormatter } from "@/lib/fx/format";
 import { getUsdToBrl, type UsdBrlRate } from "@/lib/fx/usd-brl";
 import { cn } from "@/lib/utils";

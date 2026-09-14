@@ -68,7 +68,7 @@ O código é comentado com o **porquê** das decisões, e os cabeçalhos de arqu
 são a primeira parada. Acima deles:
 
 - **[`AGENTS.md`](./AGENTS.md)**: o índice. Cada pasta relevante tem o seu,
-  com as regras que valem ali (`src/app/`, `src/lib/`, `src/lib/billing/`,
+  com as regras que valem ali (`src/app/`, `src/lib/`, `src/features/billing/server/`,
   `src/features/*/`, `src/shared/`, `supabase/`).
 - **[`docs/`](./docs/README.md)**: guias longos: configuração de ambiente,
   Stripe, programa de parceiros, bridge React Native, e a auditoria de

@@ -1,6 +1,6 @@
 import { NextResponse } from "next/server";
+import { getFinanceSettings, updateFinanceSettings } from "@/features/admin/server/db/finance";
 import { requireAdmin } from "@/lib/auth/require-admin";
-import { getFinanceSettings, updateFinanceSettings } from "@/lib/db/admin/finance";
 import { SettingsInputSchema } from "@/lib/domain/finance";
 import { parseJsonBody } from "@/lib/http/validate";
 import { createLogger } from "@/lib/log";

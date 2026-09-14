@@ -1,6 +1,6 @@
 import { NextResponse } from "next/server";
+import { listUsers } from "@/features/admin/server/db/users";
 import { requireAdmin } from "@/lib/auth/require-admin";
-import { listUsers } from "@/lib/db/admin/users";
 import { createLogger } from "@/lib/log";
 import { enforceRateLimit, RATE_LIMITS } from "@/lib/rate-limit";
 

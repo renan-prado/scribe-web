@@ -22,6 +22,8 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
+import { formatBrlCents, formatNativeCents } from "@/features/admin/finance/money";
+import { annualEquivalentCents, monthlyEquivalentCents } from "@/features/admin/finance/recurrence";
 import {
   CADENCE_LABELS,
   CADENCES,
@@ -32,8 +34,6 @@ import {
   type FinanceRecurring,
   type RecurringStatus,
 } from "@/lib/domain/finance";
-import { formatBrlCents, formatNativeCents } from "@/lib/finance/money";
-import { annualEquivalentCents, monthlyEquivalentCents } from "@/lib/finance/recurrence";
 import { MoneyInput } from "./MoneyInput";
 
 /**

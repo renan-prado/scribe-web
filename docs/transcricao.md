@@ -220,7 +220,7 @@ como não ser: `gpt-4o-mini-transcribe` é o único modelo nesse preço e é o q
 desaba com eco.
 
 Onde isso aperta, à régua de R$ 20,00 o milheiro de moeda
-(`src/lib/coins/economics.ts`) e câmbio de ~R$ 5,40: a 5 moedas o minuto, a
+(`src/features/coins/economics.ts`) e câmbio de ~R$ 5,40: a 5 moedas o minuto, a
 gravação rende R$ 0,100 e o STT come R$ 0,032 dele. Sobram R$ 0,068 para o
 resumo final, que é a única outra chamada do minuto.
 

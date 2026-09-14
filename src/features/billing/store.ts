@@ -1,7 +1,7 @@
 "use client";
 
 import { create } from "zustand";
-import type { BillingSummary, PlanKey } from "@/lib/billing/plans";
+import type { BillingSummary, PlanKey } from "@/features/billing/plans";
 
 /**
  * Estado de cobrança compartilhado (plano, status, se o Stripe está ligado).

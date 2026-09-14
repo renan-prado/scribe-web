@@ -1,5 +1,5 @@
 import { NextResponse } from "next/server";
-import { generateAdminInsights } from "@/lib/admin/insights/generate";
+import { generateAdminInsights } from "@/features/admin/server/insights/generate";
 import { requireAdmin } from "@/lib/auth/require-admin";
 import { createLogger } from "@/lib/log";
 import { enforceRateLimit, RATE_LIMITS } from "@/lib/rate-limit";

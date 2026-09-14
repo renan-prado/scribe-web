@@ -1,19 +1,19 @@
 import { ExternalLink, Info } from "lucide-react";
 import type { Metadata } from "next";
 import { CoinMark } from "@/components/icons/CoinMark";
+import { formatBrl } from "@/features/billing/plans";
+import { appUrl } from "@/features/billing/server/stripe";
 import { EarningsByPlan } from "@/features/partners/components/EarningsByPlan";
 import { PartnerTabs } from "@/features/partners/components/PartnerTabs";
 import { ReferralLinkCard } from "@/features/partners/components/ReferralLinkCard";
 import { RefreshPanelButton } from "@/features/partners/components/RefreshPanelButton";
-import { getCurrentPartner } from "@/lib/auth/require-partner";
-import { formatBrl } from "@/lib/billing/plans";
-import { appUrl } from "@/lib/billing/stripe";
-import { loadPartnerPanel } from "@/lib/db/partner-panel";
 import {
   COMMISSION_HOLD_DAYS,
   PAYOUT_DAY_OF_MONTH,
   PAYOUT_MINIMUM_CENTS,
-} from "@/lib/partners/economics";
+} from "@/features/partners/economics";
+import { getCurrentPartner } from "@/lib/auth/require-partner";
+import { loadPartnerPanel } from "@/lib/db/partner-panel";
 
 export const metadata: Metadata = { title: "Painel" };
 export const dynamic = "force-dynamic";

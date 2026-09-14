@@ -5,8 +5,8 @@ import {
   creditInvoice,
   invoiceShouldGrant,
   syncSubscriptionState,
-} from "@/lib/billing/fulfill";
-import { customerIdOf, getStripe, isBillingConfigured } from "@/lib/billing/stripe";
+} from "@/features/billing/server/fulfill";
+import { customerIdOf, getStripe, isBillingConfigured } from "@/features/billing/server/stripe";
 import { getStripeCustomerId } from "@/lib/db/billing";
 import { parseJsonBody } from "@/lib/http/validate";
 import { createLogger } from "@/lib/log";

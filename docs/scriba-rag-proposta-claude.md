@@ -27,7 +27,7 @@ Registrado no topo pra evitar reabrir debate depois. Coisas adiadas estão em `d
 
 **Mas o documento foi escrito sem conhecer o repositório**, então três coisas grandes precisam ser corrigidas antes de virar plano:
 
-1. **O Aprofundar já existe** (`src/app/api/deepening/route.ts`, prompt em `src/lib/prompts/deepening.ts`, schema, tabela `session_deepenings`, custo já rastreado). Não é feature a construir; é rota a modificar. Isso encurta drasticamente a "Fase 4" do roadmap dele.
+1. **O Aprofundar já existe** (`src/app/api/deepening/route.ts`, prompt em `src/features/session/server/prompts/deepening.ts`, schema, tabela `session_deepenings`, custo já rastreado). Não é feature a construir; é rota a modificar. Isso encurta drasticamente a "Fase 4" do roadmap dele.
 2. **11 traduções da Bíblia já estão no repo** (`src/lib/bibles/*.json`, ACF, ARA, ARC, KJA, KJF, NAA, NBV, NTLH, NVI, NVT, OL). O "conteúdo bíblico" da biblioteca é grátis, licenciado, e já foi versificado. O GPT tratou como algo a indexar do zero.
 3. **O guard bíblico do live já extrai referência estruturada** (`book + chapter + verse`) via `src/lib/bible/guard.ts` + `src/lib/domain/feed.ts::parseVerseReference`. Isso é matéria-prima direta para o retrieval híbrido (metadata-first) que o GPT descreve como "futuro". Não é futuro, o pipeline live já produz o sinal.
 
@@ -51,7 +51,7 @@ Contexto factual que muda o plano. Nada aqui é opinião, é o que está no repo
 ### 1.1 O Aprofundar já é rota, prompt, schema, tabela
 
 - `src/app/api/deepening/route.ts`: rota `POST` autenticada, único por sessão (unique constraint), modelo default `gpt-4o`, `maxTokens: 16000`, responseFormat JSON.
-- `src/lib/prompts/deepening.ts`: 65 linhas de prompt teológico já com regras de voz, regra-de-ouro para bibleQuote, tipos de bloco.
+- `src/features/session/server/prompts/deepening.ts`: 65 linhas de prompt teológico já com regras de voz, regra-de-ouro para bibleQuote, tipos de bloco.
 - `src/lib/domain/deepening.ts`: reusa `SummaryPayload` (mesmo renderer).
 - `src/lib/db/deepenings.ts`: persistência.
 - Migration `0009_session_deepenings.sql`.
@@ -374,7 +374,7 @@ app/api/admin/knowledge/generate/route.ts, top-K + prompt experimental
 Modificações:
 ```
 app/api/deepening/v2/route.ts, nova rota
-lib/prompts/deepening-v2.ts, v1 + bloco "FONTES DE APOIO"
+src/features/session/server/prompts/deepening-v2.ts, v1 + bloco "FONTES DE APOIO"
 lib/knowledge/queries-from-sermon.ts, extrai passagens/temas
 supabase/migrations/0016_session_deepenings_variant.sql,
                                                 add coluna variant

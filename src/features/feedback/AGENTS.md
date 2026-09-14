@@ -96,7 +96,7 @@ Os atrasos e o porquê de cada um estão em `config.ts`.
 
 ## O painel
 
-`/admin/feedback` lê de `src/lib/db/admin/feedback.ts`. Duas coisas de lá valem
+`/admin/feedback` lê de `src/features/admin/server/db/feedback.ts`. Duas coisas de lá valem
 repetir aqui, porque elas restringem o que esta pasta pode mudar:
 
 - **A taxa de resposta vem antes das notas.** As médias são de quem escolheu

@@ -19,7 +19,7 @@ sobe inteiro, é transcrito de uma vez e vira um resumo estruturado. A partir do
 resumo, quem tem plano `Estudioso` pede um estudo teológico, uma vez por sessão.
 
 **Um modo de captura só, `audio`**, a 5 moedas por minuto iniciado
-(`src/lib/coins/pricing.ts`). Já foram três — `live` (com um feed de cartões
+(`src/features/coins/pricing.ts`). Já foram três — `live` (com um feed de cartões
 durante a pregação), `audio_only` e `transcript_only` (sem resumo) — e três eram
 dois a mais.
 
@@ -39,12 +39,12 @@ YouTube a partir de um servidor deixou de funcionar: o `timedtext` pune
 reputação de IP de datacenter desde o fim de 2024, então o mesmo código roda na
 máquina de quem escreveu e devolve bot-check na Vercel. `SUPADATA_API_KEY` é
 opcional; sem ela `/api/youtube/import` responde 503. Ver
-`src/lib/youtube/supadata.ts`.
+`src/features/session/server/youtube/supadata.ts`.
 
 **O título do vídeo passa por um `mini` antes de virar título da sessão.** Um
 título de canal de igreja traz pregador, tema, data e hora colados por um
 separador que pode ser a LETRA `I`, e `author_name` do oEmbed é a IGREJA, não o
-autor. `src/lib/youtube/metadata.ts` separa os três; falha dele devolve o título
+autor. `src/features/session/server/youtube/metadata.ts` separa os três; falha dele devolve o título
 cru, e em nenhum caminho o canal vira `speaker_name`. Ver `docs/youtube.md` §3.
 
 **Stack:** Next.js 16 (App Router) · React 19 · Supabase SSR · Tailwind v4 +
@@ -66,26 +66,39 @@ src/
     api/
   proxy.ts      o gate de rota (o "middleware" do Next 16)
   instrumentation.ts
-  lib/          servidor: LLM, DB, env, log, auth     → src/lib/AGENTS.md
-    billing/    Stripe, moedas e crédito              → src/lib/billing/AGENTS.md
-    entitlements/ o que cada plano libera             → src/lib/AGENTS.md
-    finance/    a conta do painel financeiro (pura)   → docs/financeiro.md
-  features/
-    session/    resumo, estudo, cartões, busca        → src/features/session/AGENTS.md
-    partners/   programa de divulgadores              → src/features/partners/AGENTS.md
-    referrals/  indique a um amigo                    → src/features/referrals/AGENTS.md
-    coupons/    o selo do cupom de convite            → src/features/coupons/AGENTS.md
-    admin/      painel interno, métricas, parceiros   → src/features/admin/AGENTS.md
-    feedback/   a pesquisa de satisfação e a nota     → src/features/feedback/AGENTS.md
-    tour/       as apresentações das telas logadas    → src/features/tour/AGENTS.md
-    billing/    diálogo de compra e retorno           → src/lib/billing/AGENTS.md
-  shared/       tema, tokens, marca, a11y, UI base    → src/shared/AGENTS.md
+
+  features/     UM ASSUNTO POR PASTA, da tela ao banco
+    session/    gravação, resumo, estudo, YouTube, busca → session/AGENTS.md
+    billing/    Stripe, planos e crédito                 → billing/AGENTS.md
+    coins/      preço em moedas e a conta de margem
+    admin/      painel interno, métricas, finanças       → admin/AGENTS.md
+    partners/   programa de divulgadores                 → partners/AGENTS.md
+    referrals/  indique a um amigo                       → referrals/AGENTS.md
+    coupons/    o selo do cupom de convite               → coupons/AGENTS.md
+    feedback/   a pesquisa de satisfação e a nota        → feedback/AGENTS.md
+    tour/       as apresentações das telas logadas       → tour/AGENTS.md
+    auth/       entrar, sair e apagar a conta
+
+  lib/          o ENCANAMENTO, e mais nada               → src/lib/AGENTS.md
+    db/ domain/ supabase/ env/ log/ http/ llm/ fx/ auth/
+    bibles/ entitlements/ + 5 arquivos soltos
+  shared/       tema, tokens, marca, a11y, UI base       → src/shared/AGENTS.md
   scripts/      release, db:push, with-env, doctor
-supabase/       migrações, RLS, GRANT, RPC            → supabase/AGENTS.md
-docs/           guias longos + a auditoria de segurança → docs/README.md
+supabase/       migrações, RLS, GRANT, RPC               → supabase/AGENTS.md
+docs/           guias longos + a auditoria de segurança  → docs/README.md
 ```
 
-**O gravador mora em `src/app/(app)/recording/`, não em `src/features/session/`.**
+**Uma feature mora INTEIRA na pasta dela**, da tela ao acesso ao banco. Dentro,
+`server/` guarda o que leva `import "server-only"` e a raiz guarda o que é
+client-safe — a divisão é essa, não é por gosto. `lib/` ficou com o que não sabe
+o que é um sermão.
+
+A exceção é `lib/db/`, que não foi recortado por feature: `db/sessions.ts` é
+lido pela sessão, pelo painel e por meia dúzia de rotas, e dividi-lo trocaria
+uma camada coesa por três donos discutindo. Só `db/admin/*` foi junto, porque
+só o painel o lia.
+
+**O gravador mora em `src/app/(app)/recording/`, e é a exceção à regra acima.**
 São dois arquivos (`AudioStudio.tsx` e `useAudioCapture.ts`); a pasta `session` é
 tudo o que vem DEPOIS de a sessão existir.
 
@@ -178,7 +191,7 @@ mesmo tráfego, e o painel mostraria duas linhas onde houve um deploy só.
 `CHANGELOG.md` é GERADO, não edite à mão. Ele existe porque `0.6.0` sozinho não
 é resposta: quando o painel disser que uma versão encareceu uma rota, é o
 CHANGELOG que diz o que mudou e a tag que abre o código exato
-(`git diff v0.5.0 v0.6.0 -- lib/prompts/`). Guia completo em
+(`git diff v0.5.0 v0.6.0 -- src/features/session/server/prompts/`). Guia completo em
 [`docs/versionamento.md`](docs/versionamento.md).
 
 ## Ambientes
@@ -211,7 +224,7 @@ Não adicione sem pedido, o usuário sabe e adiou:
 
 **Testes existem em UM lugar só, e continuam não sendo o padrão do
 repositório.** `npm test` roda `node --test` sobre `src/lib/**/*.test.ts`, e hoje
-isso é `src/lib/finance/*`: aritmética de dinheiro, pura e sem banco, onde um erro
+isso é `src/features/admin/finance/*`: aritmética de dinheiro, pura e sem banco, onde um erro
 de arredondamento vira decisão de negócio errada. Não acrescente teste em outra
 camada sem pedido; a ausência deles no resto é escolha, não dívida.
 

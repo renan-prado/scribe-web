@@ -14,14 +14,14 @@ import {
   TableHeader,
   TableRow,
 } from "@/components/ui/table";
+import type { RecurringSummary } from "@/features/admin/finance/aggregate";
+import { formatBrlCents, formatNativeCents } from "@/features/admin/finance/money";
 import {
   CADENCE_LABELS,
   type FinanceCategory,
   type FinanceRecurring,
   NATURE_LABELS,
 } from "@/lib/domain/finance";
-import type { RecurringSummary } from "@/lib/finance/aggregate";
-import { formatBrlCents, formatNativeCents } from "@/lib/finance/money";
 import { formatDate } from "./EntriesManager";
 import { RecurringDialog } from "./RecurringDialog";
 

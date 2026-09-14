@@ -14,9 +14,9 @@ import {
 } from "@/components/ui/dialog";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
-import { formatBrl } from "@/lib/billing/plans";
-import type { AdminPartnerWithStats } from "@/lib/db/admin/partners";
-import { PAYOUT_MINIMUM_CENTS } from "@/lib/partners/economics";
+import type { AdminPartnerWithStats } from "@/features/admin/server/db/partners";
+import { formatBrl } from "@/features/billing/plans";
+import { PAYOUT_MINIMUM_CENTS } from "@/features/partners/economics";
 
 /**
  * Registro do PIX já enviado.

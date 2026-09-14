@@ -19,15 +19,15 @@ Scriba o banco já sabe**. A resposta é: quase todo o que se move sozinho.
 
 | O que | Onde já está | Como vira dinheiro |
 |---|---|---|
-| Receita de assinatura e pacotes | `coin_transactions` (`subscription_grant`, `topup_pack`) | `src/lib/finance/measured.ts` casa a quantidade de moedas com `PLANS`/`TOPUP` |
+| Receita de assinatura e pacotes | `coin_transactions` (`subscription_grant`, `topup_pack`) | `src/features/admin/finance/measured.ts` casa a quantidade de moedas com `PLANS`/`TOPUP` |
 | Custo de IA | `llm_usage_events` × `src/lib/llm/pricing.ts` | × câmbio de `src/lib/fx/usd-brl.ts` |
-| Taxa de pagamento | - | `stripeFeeCents` de `src/lib/partners/economics.ts` |
+| Taxa de pagamento | - | `stripeFeeCents` de `src/features/partners/economics.ts` |
 | Comissão de parceiro | `partner_commissions` / `partner_payouts` | direto, em centavos |
-| MRR, ARPU, assinantes | `subscriptions` × `PLANS` | mesma conta de `src/lib/db/admin/metrics.ts` |
+| MRR, ARPU, assinantes | `subscriptions` × `PLANS` | mesma conta de `src/features/admin/server/db/metrics.ts` |
 
 **Nada disso é digitado.** Digitar seria criar uma segunda definição de um
 número que já existe, e duas definições do mesmo número um dia discordam, a
-lição que `src/lib/db/admin/metrics.ts` já tinha aprendido com as telas de
+lição que `src/features/admin/server/db/metrics.ts` já tinha aprendido com as telas de
 parceiro.
 
 O que se lança à mão são as despesas que ninguém mede por nós: Vercel,
@@ -302,14 +302,14 @@ Mutação de dinheiro por admin é logada em `info`, com o `id` de quem fez.
 
 | Módulo | O que faz | Testado |
 |---|---|---|
-| `src/lib/finance/money.ts` | centavos, câmbio, arredondamento, formatação, parse | ✅ |
-| `src/lib/finance/recurrence.ts` | equivalentes, ocorrências, próxima cobrança | ✅ |
-| `src/lib/finance/measured.ts` | ledger → receita; custo de IA por mês | ✅ |
-| `src/lib/finance/aggregate.ts` | visão mensal, compromissos, indicadores, avisos | ✅ |
-| `src/lib/finance/projection.ts` | cenários, payback, entradas medidas | ✅ |
+| `src/features/admin/finance/money.ts` | centavos, câmbio, arredondamento, formatação, parse | ✅ |
+| `src/features/admin/finance/recurrence.ts` | equivalentes, ocorrências, próxima cobrança | ✅ |
+| `src/features/admin/finance/measured.ts` | ledger → receita; custo de IA por mês | ✅ |
+| `src/features/admin/finance/aggregate.ts` | visão mensal, compromissos, indicadores, avisos | ✅ |
+| `src/features/admin/finance/projection.ts` | cenários, payback, entradas medidas | ✅ |
 | `src/lib/domain/finance.ts` | tipos, schemas Zod, rótulos (client-safe) | - |
-| `src/lib/db/admin/finance.ts` | CRUD e o lado medido (service-role) | - |
-| `src/lib/db/admin/finance-overview.ts` | o snapshot que as telas consomem | - |
+| `src/features/admin/server/db/finance.ts` | CRUD e o lado medido (service-role) | - |
+| `src/features/admin/server/db/finance-overview.ts` | o snapshot que as telas consomem | - |
 
 Os cinco primeiros são **puros e client-safe**: nenhuma página calcula nada, e
 cada número é verificável com `npm test` sem banco.

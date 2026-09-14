@@ -58,7 +58,7 @@ saber ao editar código ficam nos `AGENTS.md` de cada pasta, não aqui.
   igreja com eco, o que foi medido para corrigir (modelo, prompt, limiares) e o
   que foi tentado e NÃO funcionou (limpar o áudio, revisar com LLM, modelos de
   áudio-chat). Leitura obrigatória antes de mexer em `/api/transcribe`,
-  `src/lib/vocabulario.ts`, `src/lib/transcription/*` ou `src/app/(app)/recording/`.
+  `src/lib/vocabulario.ts`, `src/features/session/lib/transcription/*` ou `src/app/(app)/recording/`.
 - **[`youtube.md`](./youtube.md)**: o modo que não grava: por que a legenda vem
   de um provedor PAGO (o `timedtext` bloqueia IP de datacenter desde 2024, e as
   três alternativas óbvias estão descartadas com o motivo de cada uma), por que
@@ -67,7 +67,7 @@ saber ao editar código ficam nos `AGENTS.md` de cada pasta, não aqui.
   do caso real era a LETRA `I`, e o canal não é o autor), a conta que fixou as
   30 moedas por vídeo com teto de 2h, e a canibalização do Modo Resumo que foi
   assumida de olhos abertos. Leitura obrigatória antes de mexer no preço, no
-  teto ou em `src/lib/youtube/*`. **Status: implementado.**
+  teto ou em `src/features/session/server/youtube/*`. **Status: implementado.**
 - **[`financeiro.md`](./financeiro.md)**: o desenho do `/admin/financeiro`: o
   que já é medido e por isso NÃO se digita, o modelo de dados das cinco tabelas,
   a separação entre competência e caixa, o modelo de projeção com crescimento e

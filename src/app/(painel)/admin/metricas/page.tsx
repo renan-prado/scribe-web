@@ -8,10 +8,10 @@ import {
   ListCard,
 } from "@/features/admin/components/AdminCards";
 import { AdminPageHeader } from "@/features/admin/components/AdminPageHeader";
-import { formatBrl, PLANS } from "@/lib/billing/plans";
-import { INITIAL_COIN_BALANCE } from "@/lib/coins/pricing";
-import { loadAdminMetrics } from "@/lib/db/admin/metrics";
-import { loadAdminUsageSummary } from "@/lib/db/admin/usage";
+import { loadAdminMetrics } from "@/features/admin/server/db/metrics";
+import { loadAdminUsageSummary } from "@/features/admin/server/db/usage";
+import { formatBrl, PLANS } from "@/features/billing/plans";
+import { INITIAL_COIN_BALANCE } from "@/features/coins/pricing";
 import { getUsdToBrl } from "@/lib/fx/usd-brl";
 
 export const metadata: Metadata = { title: "Métricas" };

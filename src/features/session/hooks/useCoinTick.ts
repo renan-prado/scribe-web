@@ -1,8 +1,8 @@
 "use client";
 
 import { useEffect, useRef } from "react";
+import type { ChargeReason } from "@/features/coins/pricing";
 import { getCoinsState } from "@/features/coins/store";
-import type { ChargeReason } from "@/lib/coins/pricing";
 import { createLogger } from "@/lib/log";
 
 const log = createLogger("coins/tick");

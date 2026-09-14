@@ -6,9 +6,9 @@ import { useRouter } from "next/navigation";
 import { useCallback, useEffect, useRef, useState } from "react";
 import { YoutubeIcon } from "@/components/icons/YoutubeIcon";
 import { BillingDialog } from "@/features/billing/components/BillingDialog";
+import { COIN_COSTS } from "@/features/coins/pricing";
 import { useCoinsStore } from "@/features/coins/store";
 import { requestYoutubeImport } from "@/features/session/lib/api";
-import { COIN_COSTS } from "@/lib/coins/pricing";
 import { createLogger } from "@/lib/log";
 import { cn } from "@/lib/utils";
 

@@ -55,7 +55,7 @@ raiz):
   seguido em todo lugar que mexe em moedas/crédito.
 - **Custo real por chamada de IA**: cada chunk de áudio em `/api/transcribe`
   e cada pipeline de enriquecimento (`bible`, `insights`, `sermon-echo`,
-  `deepening`, `final-summary`) chama a OpenAI. `src/lib/coins/pricing.ts`
+  `deepening`, `final-summary`) chama a OpenAI. `src/features/coins/pricing.ts`
   define o preço por minuto; a tarefa 05 existe por causa disso.
 - **Cron de billing só roda em produção** (`/api/billing/sweep`, Vercel
   Cron não existe em dev), então testes de rate limit/abuso nesse endpoint

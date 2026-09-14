@@ -1,5 +1,10 @@
 import { NextResponse } from "next/server";
-import { requireBalance } from "@/lib/coins/require-balance";
+import { requireBalance } from "@/features/coins/server/require-balance";
+import {
+  assessTranscription,
+  modelSupportsLogprobs,
+} from "@/features/session/lib/transcription/quality";
+import { VOCABULARIO_PROMPT } from "@/features/session/lib/transcription/vocabulario";
 import { recordAudioUsage } from "@/lib/db/usage";
 import { serverEnv } from "@/lib/env/server";
 import { isUuid } from "@/lib/http/validate";
@@ -7,8 +12,6 @@ import { callTranscribe } from "@/lib/llm/openai";
 import { createLogger } from "@/lib/log";
 import { enforceAudioBudget, enforceRateLimit, RATE_LIMITS } from "@/lib/rate-limit";
 import { requireAuth } from "@/lib/supabase/require-auth";
-import { assessTranscription, modelSupportsLogprobs } from "@/lib/transcription/quality";
-import { VOCABULARIO_PROMPT } from "@/lib/transcription/vocabulario";
 
 const log = createLogger("transcribe");
 

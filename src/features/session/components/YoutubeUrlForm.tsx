@@ -8,9 +8,9 @@ import { toast } from "sonner";
 import { YoutubeIcon } from "@/components/icons/YoutubeIcon";
 import { BillingDialog } from "@/features/billing/components/BillingDialog";
 import { CoinCost } from "@/features/coins/components/CoinCost";
+import { COIN_COSTS } from "@/features/coins/pricing";
 import { useCoinsStore } from "@/features/coins/store";
 import { requestCreateSession } from "@/features/session/lib/api";
-import { COIN_COSTS } from "@/lib/coins/pricing";
 import { isYoutubeVideoUrl, YOUTUBE_MAX_DURATION_MS } from "@/lib/domain/youtube";
 import { cn } from "@/lib/utils";
 

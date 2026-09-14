@@ -1,6 +1,10 @@
 import { NextResponse } from "next/server";
 import { z } from "zod";
-import { COIN_COSTS } from "@/lib/coins/pricing";
+import { COIN_COSTS } from "@/features/coins/pricing";
+import { generateFinalSummary } from "@/features/session/server/final-summary";
+import { cleanYoutubeMetadata } from "@/features/session/server/youtube/metadata";
+import { fetchYoutubeVideoInfo } from "@/features/session/server/youtube/oembed";
+import { fetchYoutubeTranscript } from "@/features/session/server/youtube/transcript";
 import { chargeCoins } from "@/lib/db/coins";
 import { getSession, updateSessionSummary, updateSessionTranscript } from "@/lib/db/sessions";
 import {
@@ -8,14 +12,10 @@ import {
   YOUTUBE_MAX_DURATION_MS,
   YOUTUBE_MIN_TRANSCRIPT_CHARS,
 } from "@/lib/domain/youtube";
-import { generateFinalSummary } from "@/lib/final-summary/generate";
 import { parseJsonBody, UuidSchema } from "@/lib/http/validate";
 import { createLogger } from "@/lib/log";
 import { enforceRateLimit, RATE_LIMITS } from "@/lib/rate-limit";
 import { requireAuth } from "@/lib/supabase/require-auth";
-import { cleanYoutubeMetadata } from "@/lib/youtube/metadata";
-import { fetchYoutubeVideoInfo } from "@/lib/youtube/oembed";
-import { fetchYoutubeTranscript } from "@/lib/youtube/transcript";
 
 const log = createLogger("youtube-import");
 

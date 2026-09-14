@@ -1,6 +1,6 @@
 import { NextResponse } from "next/server";
+import { deleteRecurring, updateRecurring } from "@/features/admin/server/db/finance";
 import { requireAdmin } from "@/lib/auth/require-admin";
-import { deleteRecurring, updateRecurring } from "@/lib/db/admin/finance";
 import { RecurringPatchSchema } from "@/lib/domain/finance";
 import { parseJsonBody, parseUuidParam } from "@/lib/http/validate";
 import { createLogger } from "@/lib/log";

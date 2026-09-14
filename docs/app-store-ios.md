@@ -88,7 +88,7 @@ A comparação honesta não é "0% contra 15%": é contra o que o Stripe já lev
 A tabela abaixo assume uma taxa Stripe de ~3,99% + R$ 0,39 no cartão nacional,
 **confira a taxa real da conta antes de usar isto para decidir.** O custo
 por milheiro de moeda (R$ 5,97) é o alvo da régua descrita em
-`src/lib/coins/pricing.ts`.
+`src/features/coins/pricing.ts`.
 
 | Produto | Preço | Líquido Stripe | Líquido Apple 15% | Líquido Apple 30% |
 |---|---|---|---|---|
@@ -121,10 +121,10 @@ custo real. Quatro frentes:
 
 1. **Cadastrar cada produto no App Store Connect.** `pessoal`, `estudioso` e
    `topup500` viram produtos com identificador próprio no painel da Apple, com
-   preço e descrição. É o espelho de `src/lib/billing/catalog.ts`, mantido à mão
+   preço e descrição. É o espelho de `src/features/billing/server/catalog.ts`, mantido à mão
    noutro lugar, com o risco de divergência que isso sempre traz.
 
-2. **Um quinto caminho de crédito.** O `src/lib/billing/AGENTS.md` já prevê:
+2. **Um quinto caminho de crédito.** O `src/features/billing/AGENTS.md` já prevê:
    *"um quinto caminho, se surgir, também usa `fulfill.ts`"*. O IAP é esse
    quinto. A Apple envia *App Store Server Notifications* ao nosso servidor,
    o equivalente ao webhook do Stripe. O fluxo é o mesmo de sempre: validar,
@@ -136,7 +136,7 @@ custo real. Quatro frentes:
    Stripe e atualiza `current_period_end`. Com IAP quem renova é a Apple, e o
    Stripe não sabe de nada. A tabela de assinaturas precisa passar a guardar a
    **origem** de cada assinatura, e as três linhas de defesa descritas em
-   `src/lib/billing/AGENTS.md` (reconcile, check preguiçoso no `summary`, sweep)
+   `src/features/billing/AGENTS.md` (reconcile, check preguiçoso no `summary`, sweep)
    precisam saber contra qual provedor conferir.
 
 4. **O usuário não cancela dentro do app.** Assinatura comprada pela Apple só

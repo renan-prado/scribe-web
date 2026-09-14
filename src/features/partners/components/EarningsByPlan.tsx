@@ -1,5 +1,5 @@
-import { formatBrl, PAID_PLAN_KEYS, PLANS } from "@/lib/billing/plans";
-import { commissionCents, PAYOUT_MINIMUM_CENTS } from "@/lib/partners/economics";
+import { formatBrl, PAID_PLAN_KEYS, PLANS } from "@/features/billing/plans";
+import { commissionCents, PAYOUT_MINIMUM_CENTS } from "@/features/partners/economics";
 
 /**
  * Quanto o parceiro ganha por cada tipo de assinatura.

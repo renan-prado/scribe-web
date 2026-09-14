@@ -61,7 +61,7 @@ STRIPE_SECRET_KEY=sk_test_...
 ```
 
 > Essa chave dá acesso total à sua conta Stripe. Ela nunca vai para o
-> navegador: só é lida em `src/lib/billing/stripe.ts`, que é server-only.
+> navegador: só é lida em `src/features/billing/server/stripe.ts`, que é server-only.
 > Não existe nenhuma chave publicável (`pk_`) neste projeto, o pagamento
 > acontece inteiramente no domínio do Stripe.
 
@@ -134,7 +134,7 @@ O usuário pode comprar mais de um pacote de uma vez (até 20): a quantidade vai
 como `quantity` na linha do checkout e o Stripe multiplica o valor sozinho.
 
 > **Importante:** o valor cobrado é sempre o que está no Stripe. Os números em
-> `src/lib/billing/plans.ts` (`priceCents`) são só a legenda mostrada na tela. Se
+> `src/features/billing/plans.ts` (`priceCents`) são só a legenda mostrada na tela. Se
 > você mudar o preço no Stripe, atualize lá também, senão a tela mente.
 > Já a **quantidade de créditos** vem do código (`coins`), e o webhook só
 > credita para preços que estão nas variáveis acima. Um preço criado no

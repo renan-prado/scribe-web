@@ -1,7 +1,7 @@
 import { type NextRequest, NextResponse } from "next/server";
+import { readActiveReferral } from "@/features/referrals/server/active";
 import { createLogger } from "@/lib/log";
 import { enforceRateLimit, RATE_LIMITS } from "@/lib/rate-limit";
-import { readActiveReferral } from "@/lib/referrals/active";
 
 const log = createLogger("referrals/active");
 

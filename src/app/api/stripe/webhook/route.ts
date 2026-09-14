@@ -5,8 +5,8 @@ import {
   creditInvoice,
   invoiceShouldGrant,
   syncSubscriptionState,
-} from "@/lib/billing/fulfill";
-import { customerIdOf, getStripe, isBillingConfigured } from "@/lib/billing/stripe";
+} from "@/features/billing/server/fulfill";
+import { customerIdOf, getStripe, isBillingConfigured } from "@/features/billing/server/stripe";
 import {
   claimStripeEvent,
   clawbackCoins,

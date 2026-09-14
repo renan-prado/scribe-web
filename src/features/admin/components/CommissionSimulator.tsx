@@ -1,13 +1,13 @@
 "use client";
 
-import { formatBrl, PLANS } from "@/lib/billing/plans";
+import { formatBrl, PLANS } from "@/features/billing/plans";
 import {
   ASSUMED_BONUS_USAGE_RATE,
   ASSUMED_CONVERSION_RATE,
   PAYOUT_MINIMUM_CENTS,
   type Simulation,
   simulatePartnerEconomics,
-} from "@/lib/partners/economics";
+} from "@/features/partners/economics";
 import { cn } from "@/lib/utils";
 
 /**

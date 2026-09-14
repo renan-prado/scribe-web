@@ -1,6 +1,6 @@
-import type { MonthlyRow } from "@/lib/finance/aggregate";
-import { formatBrlCents, formatPercent } from "@/lib/finance/money";
-import { formatMonthKeyShort } from "@/lib/finance/recurrence";
+import type { MonthlyRow } from "@/features/admin/finance/aggregate";
+import { formatBrlCents, formatPercent } from "@/features/admin/finance/money";
+import { formatMonthKeyShort } from "@/features/admin/finance/recurrence";
 
 /**
  * A visão mês a mês (§7 da especificação), em COMPETÊNCIA.

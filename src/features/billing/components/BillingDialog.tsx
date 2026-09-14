@@ -26,9 +26,6 @@ import {
   requestBillingPortal,
   requestCheckout,
 } from "@/features/billing/lib/api";
-import { getBillingState, useBillingStore } from "@/features/billing/store";
-import { getCoinsState, useCoinsStore } from "@/features/coins/store";
-import { useRecordingStore } from "@/features/session/recording-store";
 import {
   formatBrl,
   formatCoins,
@@ -38,7 +35,10 @@ import {
   PLANS,
   TOPUP,
   TOPUP_MAX_QUANTITY,
-} from "@/lib/billing/plans";
+} from "@/features/billing/plans";
+import { getBillingState, useBillingStore } from "@/features/billing/store";
+import { getCoinsState, useCoinsStore } from "@/features/coins/store";
+import { useRecordingStore } from "@/features/session/recording-store";
 import { cn } from "@/lib/utils";
 
 /**

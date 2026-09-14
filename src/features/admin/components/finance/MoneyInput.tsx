@@ -2,8 +2,8 @@
 
 import { useState } from "react";
 import { Input } from "@/components/ui/input";
+import { parseMoneyToCents } from "@/features/admin/finance/money";
 import type { Currency } from "@/lib/domain/finance";
-import { parseMoneyToCents } from "@/lib/finance/money";
 
 /**
  * Campo de dinheiro que guarda CENTAVOS INTEIROS e mostra texto.

@@ -3,7 +3,7 @@
 import { BookOpen, Lock } from "lucide-react";
 import { useState } from "react";
 import { BillingDialog } from "@/features/billing/components/BillingDialog";
-import { formatBrl, PLANS } from "@/lib/billing/plans";
+import { formatBrl, PLANS } from "@/features/billing/plans";
 import { FEATURES } from "@/lib/entitlements/features";
 
 /**

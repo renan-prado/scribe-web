@@ -1,8 +1,8 @@
 import { NextResponse } from "next/server";
 import { z } from "zod";
+import { generateFinalSummary } from "@/features/session/server/final-summary";
 import { chargeCoins } from "@/lib/db/coins";
 import { getSession, updateSessionSummary } from "@/lib/db/sessions";
-import { generateFinalSummary } from "@/lib/final-summary/generate";
 import { parseJsonBody, UuidSchema } from "@/lib/http/validate";
 import { createLogger } from "@/lib/log";
 import { enforceRateLimit, RATE_LIMITS } from "@/lib/rate-limit";

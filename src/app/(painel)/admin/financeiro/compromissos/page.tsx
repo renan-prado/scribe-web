@@ -3,8 +3,8 @@ import { KpiCard, KpiGrid, type KpiTile } from "@/features/admin/components/Admi
 import { AdminPageHeader } from "@/features/admin/components/AdminPageHeader";
 import { CommitmentsManager } from "@/features/admin/components/finance/CommitmentsManager";
 import { FinanceNotices } from "@/features/admin/components/finance/FinanceNotices";
-import { loadFinanceSnapshot } from "@/lib/db/admin/finance-overview";
-import { formatBrlCents } from "@/lib/finance/money";
+import { formatBrlCents } from "@/features/admin/finance/money";
+import { loadFinanceSnapshot } from "@/features/admin/server/db/finance-overview";
 
 export const metadata: Metadata = { title: "Compromissos" };
 export const dynamic = "force-dynamic";

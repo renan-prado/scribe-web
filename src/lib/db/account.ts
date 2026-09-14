@@ -1,6 +1,6 @@
 import "server-only";
 import { cache } from "react";
-import { INITIAL_COIN_BALANCE } from "@/lib/coins/pricing";
+import { INITIAL_COIN_BALANCE } from "@/features/coins/pricing";
 import type { Profile } from "@/lib/domain/profile";
 import { createClient, getAuthUser } from "@/lib/supabase/server";
 

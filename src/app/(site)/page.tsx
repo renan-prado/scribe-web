@@ -1,5 +1,5 @@
 import Link from "next/link";
-import { formatBrl, formatCoins, PLANS } from "@/lib/billing/plans";
+import { formatBrl, formatCoins, PLANS } from "@/features/billing/plans";
 import { SITE_DESCRIPTION, SITE_TITLE } from "@/lib/seo";
 import { cn } from "@/lib/utils";
 import { ScribaMark } from "@/shared/brand";

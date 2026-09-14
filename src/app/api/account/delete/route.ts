@@ -1,6 +1,6 @@
 import { NextResponse } from "next/server";
 import { z } from "zod";
-import { deleteAccount } from "@/lib/account/delete-account";
+import { deleteAccount } from "@/features/auth/server/delete-account";
 import { DELETE_CONFIRMATION } from "@/lib/domain/account";
 import { parseJsonBody } from "@/lib/http/validate";
 import { createLogger } from "@/lib/log";

@@ -1,7 +1,7 @@
 import { timingSafeEqual } from "node:crypto";
 import { NextResponse } from "next/server";
-import { getStripe, isBillingConfigured } from "@/lib/billing/stripe";
-import { sweepRecentPayments } from "@/lib/billing/sweep";
+import { getStripe, isBillingConfigured } from "@/features/billing/server/stripe";
+import { sweepRecentPayments } from "@/features/billing/server/sweep";
 import { serverEnv } from "@/lib/env/server";
 import { createLogger } from "@/lib/log";
 import { enforceRateLimit, RATE_LIMITS } from "@/lib/rate-limit";

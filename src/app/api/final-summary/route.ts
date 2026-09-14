@@ -1,10 +1,10 @@
 import { NextResponse } from "next/server";
 import { z } from "zod";
-import { requireBalance } from "@/lib/coins/require-balance";
+import { requireBalance } from "@/features/coins/server/require-balance";
+import { generateFinalSummary } from "@/features/session/server/final-summary";
 import { upsertLocationByName } from "@/lib/db/locations";
 import { getSessionMeta, updateSessionFinal } from "@/lib/db/sessions";
 import { upsertSpeakerByName } from "@/lib/db/speakers";
-import { generateFinalSummary } from "@/lib/final-summary/generate";
 import { parseJsonBody, UuidSchema } from "@/lib/http/validate";
 import { createLogger } from "@/lib/log";
 import { enforceRateLimit, RATE_LIMITS } from "@/lib/rate-limit";

@@ -17,7 +17,7 @@
  * DESENHAR; o servidor usa para DECIDIR (`lib/entitlements/server.ts`).
  */
 
-import { PLAN_ORDER, PLANS, type PlanKey } from "@/lib/billing/plans";
+import { PLAN_ORDER, PLANS, type PlanKey } from "@/features/billing/plans";
 
 export const FEATURE_KEYS = ["study_generation"] as const;
 export type FeatureKey = (typeof FEATURE_KEYS)[number];

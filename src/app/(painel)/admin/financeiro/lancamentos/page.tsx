@@ -2,7 +2,7 @@ import type { Metadata } from "next";
 import { AdminPageHeader } from "@/features/admin/components/AdminPageHeader";
 import { EntriesManager } from "@/features/admin/components/finance/EntriesManager";
 import { FinanceNotices } from "@/features/admin/components/finance/FinanceNotices";
-import { loadFinanceSnapshot } from "@/lib/db/admin/finance-overview";
+import { loadFinanceSnapshot } from "@/features/admin/server/db/finance-overview";
 
 export const metadata: Metadata = { title: "Lançamentos" };
 export const dynamic = "force-dynamic";

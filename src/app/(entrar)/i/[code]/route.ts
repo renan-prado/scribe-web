@@ -1,6 +1,4 @@
 import { type NextRequest, NextResponse } from "next/server";
-import { createLogger } from "@/lib/log";
-import { enforceRateLimit, RATE_LIMITS } from "@/lib/rate-limit";
 import {
   encodeRef,
   REF_COOKIE,
@@ -8,8 +6,10 @@ import {
   REF_HINT_COOKIE,
   refCookieOptions,
   refHintCookieOptions,
-} from "@/lib/referrals/cookies";
-import { normalizeReferralCode } from "@/lib/referrals/economics";
+} from "@/features/referrals/cookies";
+import { normalizeReferralCode } from "@/features/referrals/economics";
+import { createLogger } from "@/lib/log";
+import { enforceRateLimit, RATE_LIMITS } from "@/lib/rate-limit";
 
 const log = createLogger("referrals/i");
 

@@ -12,8 +12,11 @@ import {
 import { AdminPageHeader } from "@/features/admin/components/AdminPageHeader";
 import { SessionModeBadge } from "@/features/admin/components/SessionModeBadge";
 import { SessionReaderFilters } from "@/features/admin/components/SessionReaderFilters";
-import { ADMIN_SESSIONS_PAGE_SIZE, listSessionsForAdmin } from "@/lib/db/admin/sessions";
-import { listUsersForFilter } from "@/lib/db/admin/usage";
+import {
+  ADMIN_SESSIONS_PAGE_SIZE,
+  listSessionsForAdmin,
+} from "@/features/admin/server/db/sessions";
+import { listUsersForFilter } from "@/features/admin/server/db/usage";
 import { SESSION_MODES, type SessionMode } from "@/lib/domain/session";
 
 export const metadata: Metadata = { title: "Sessões" };

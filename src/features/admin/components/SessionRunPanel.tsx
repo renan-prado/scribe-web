@@ -7,17 +7,17 @@ import {
   TableRow,
 } from "@/components/ui/table";
 import { EmptyState } from "@/features/admin/components/AdminCards";
-import { type CoinEconomicsSettings, computeActionEconomics } from "@/lib/coins/economics";
-import { COIN_COSTS } from "@/lib/coins/pricing";
-import type { SessionRun, SessionRunsReport } from "@/lib/db/admin/session-runs";
-import type { MoneyFormatter } from "@/lib/fx/format";
+import type { SessionRun, SessionRunsReport } from "@/features/admin/server/db/session-runs";
+import { type CoinEconomicsSettings, computeActionEconomics } from "@/features/coins/economics";
+import { COIN_COSTS } from "@/features/coins/pricing";
 import {
   type ContractRange,
   type ContractVerdict,
   judge,
   STUDY_CONTRACT,
   type StudyMetrics,
-} from "@/lib/study/metrics";
+} from "@/features/session/lib/study-metrics";
+import type { MoneyFormatter } from "@/lib/fx/format";
 import { cn } from "@/lib/utils";
 
 /**

@@ -14,10 +14,10 @@ import {
   TableHeader,
   TableRow,
 } from "@/components/ui/table";
-import { formatBrl } from "@/lib/billing/plans";
-import type { AdminPartnerWithStats } from "@/lib/db/admin/partners";
+import type { AdminPartnerWithStats } from "@/features/admin/server/db/partners";
+import { formatBrl } from "@/features/billing/plans";
+import { COMMISSION_HOLD_DAYS, PAYOUT_MINIMUM_CENTS } from "@/features/partners/economics";
 import type { AdminProspect } from "@/lib/db/prospects";
-import { COMMISSION_HOLD_DAYS, PAYOUT_MINIMUM_CENTS } from "@/lib/partners/economics";
 import { CopyButton } from "./CopyButton";
 import { PartnerDialog } from "./PartnerDialog";
 import { PayoutDialog } from "./PayoutDialog";

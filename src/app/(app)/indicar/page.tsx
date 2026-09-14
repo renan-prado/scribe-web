@@ -3,16 +3,16 @@ import type { Metadata } from "next";
 import { redirect } from "next/navigation";
 import { CoinMark } from "@/components/icons/CoinMark";
 import { NavLink } from "@/components/NavLink";
+import { appUrl } from "@/features/billing/server/stripe";
 import { InviteLinkCard } from "@/features/referrals/components/InviteLinkCard";
-import { appUrl } from "@/lib/billing/stripe";
-import { getCurrentProfile } from "@/lib/db/profiles";
-import { ensureReferralCode, loadReferralPanel } from "@/lib/db/referrals";
 import {
   REFERRAL_MONTHLY_SIGNUP_CAP,
   REFERRAL_SIGNUP_COINS,
   REFERRAL_SUBSCRIPTION_COINS,
   referralPath,
-} from "@/lib/referrals/economics";
+} from "@/features/referrals/economics";
+import { getCurrentProfile } from "@/lib/db/profiles";
+import { ensureReferralCode, loadReferralPanel } from "@/lib/db/referrals";
 
 export const metadata: Metadata = { title: "Indique a um amigo" };
 export const dynamic = "force-dynamic";

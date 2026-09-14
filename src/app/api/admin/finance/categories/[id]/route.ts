@@ -1,6 +1,6 @@
 import { NextResponse } from "next/server";
+import { updateCategory } from "@/features/admin/server/db/finance";
 import { requireAdmin } from "@/lib/auth/require-admin";
-import { updateCategory } from "@/lib/db/admin/finance";
 import { CategoryInputSchema } from "@/lib/domain/finance";
 import { parseJsonBody, parseUuidParam } from "@/lib/http/validate";
 import { createLogger } from "@/lib/log";

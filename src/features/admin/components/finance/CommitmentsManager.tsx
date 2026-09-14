@@ -11,6 +11,13 @@ import {
   TableHeader,
   TableRow,
 } from "@/components/ui/table";
+import {
+  entryAmountBrlCents,
+  entryPaidBrlCents,
+  entryRemainingBrlCents,
+  formatBrlCents,
+  formatNativeCents,
+} from "@/features/admin/finance/money";
 import type {
   EntryStatus,
   FinanceCategory,
@@ -18,13 +25,6 @@ import type {
   FinanceKind,
   FinanceRecurring,
 } from "@/lib/domain/finance";
-import {
-  entryAmountBrlCents,
-  entryPaidBrlCents,
-  entryRemainingBrlCents,
-  formatBrlCents,
-  formatNativeCents,
-} from "@/lib/finance/money";
 import { formatDate, StatusBadge } from "./EntriesManager";
 import { EntryDialog } from "./EntryDialog";
 

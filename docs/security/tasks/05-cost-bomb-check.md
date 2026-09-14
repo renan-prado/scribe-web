@@ -40,7 +40,7 @@ damage from one night | severity | the exact limiter to add.
       `reprocess`), `src/app/api/final-summary` (+ `reprocess`),
       `src/app/api/hallucination-report`, `src/app/api/format-paragraphs`, exige
       sessão válida antes de processar.
-- [x] Cobrança de moedas (`src/lib/coins/pricing.ts`, `src/app/api/coins/charge`,
+- [x] Cobrança de moedas (`src/features/coins/pricing.ts`, `src/app/api/coins/charge`,
       `src/lib/db/coins.ts`) acontece **antes** de disparar a chamada cara à
       OpenAI, ou existe reconciliação que impede terminar com saldo
       negativo indefinidamente, conferir se falha fechado (nega a
@@ -66,7 +66,7 @@ damage from one night | severity | the exact limiter to add.
 
 ## Áreas do repositório a inspecionar
 
-- `src/lib/coins/pricing.ts`, `src/lib/db/coins.ts`, `src/app/api/coins/**`
+- `src/features/coins/pricing.ts`, `src/lib/db/coins.ts`, `src/app/api/coins/**`
 - Todas as rotas de pipeline de IA listadas acima
 - `src/app/api/billing/**`
 - `src/lib/domain/session.ts` (os três modos de captura e seus preços)
@@ -147,7 +147,7 @@ passou a ser confiável com a migração 0040 desta rodada.
 - **A medição continua sendo do cliente.** `requireBalance` recusa quem está
   zerado; ele não impede gravar 50 minutos pagando 10. Fechar isso exigiria
   contar segundos de áudio no servidor por sessão, mudança de produto, não de
-  segurança. Está escrito no cabeçalho de `src/lib/coins/require-balance.ts`.
+  segurança. Está escrito no cabeçalho de `src/features/coins/server/require-balance.ts`.
 - **O balde é por instância.** Todo teto acima vale `× instâncias ativas`. Se
   um dia isso precisar ser estrito, o caminho é Upstash, já anotado em
   `src/lib/AGENTS.md`.

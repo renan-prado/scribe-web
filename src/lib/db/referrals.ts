@@ -1,10 +1,10 @@
 import "server-only";
-import { createLogger } from "@/lib/log";
 import {
   REFERRAL_MONTHLY_SIGNUP_CAP,
   REFERRAL_SIGNUP_COINS,
   REFERRAL_SUBSCRIPTION_COINS,
-} from "@/lib/referrals/economics";
+} from "@/features/referrals/economics";
+import { createLogger } from "@/lib/log";
 import { createAdminClient } from "@/lib/supabase/admin";
 
 const log = createLogger("referrals");

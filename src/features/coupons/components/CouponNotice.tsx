@@ -1,4 +1,4 @@
-import { formatCoins } from "@/lib/billing/plans";
+import { formatCoins } from "@/features/billing/plans";
 import { CoinMark } from "@/shared/icons/CoinMark";
 
 /**

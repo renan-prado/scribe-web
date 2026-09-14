@@ -25,7 +25,7 @@
  *    meio do texto, que o leitor vê. O custo dos dois lados não é o mesmo.
  *
  * Os nomes de FIGURAS CITADAS repetem parte do índice de
- * `lib/prompts/theologians.ts`, e a repetição é consciente: aquele índice é
+ * `src/features/session/server/prompts/theologians.ts`, e a repetição é consciente: aquele índice é
  * `server-only` e carrega obra, século e tema para MONTAR o prompt; este aqui é
  * uma lista de strings para RECONHECER no texto pronto, e inclui gente que
  * nunca entraria naquele índice (filósofos, historiadores). Ao acrescentar um

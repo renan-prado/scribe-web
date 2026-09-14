@@ -25,6 +25,11 @@ pessoa quiser, aprofundar.
 | `components/PassageVerses.tsx` + `RichText.tsx` | texto bíblico e menções dentro do parágrafo |
 | `hooks/useCoinTick.ts` | o débito por minuto, durante a gravação |
 | `recording-store.ts` | um booleano: há gravação viva nesta aba? |
+| `server/final-summary.ts` | a chamada única que vira o resumo |
+| `server/study/` | as cinco etapas do estudo (ver `src/lib/AGENTS.md`) |
+| `server/youtube/` | oEmbed, legenda pela Supadata e a limpeza do título |
+| `server/prompts/` | todo system prompt do assunto |
+| `lib/transcription/` | sanitize e o veredito de qualidade de uma parte |
 
 ## Texto bíblico na tela
 
@@ -90,7 +95,7 @@ que abasteciam um `/feed`. **Tudo isso saiu**, e o histórico importa por um
 motivo prático: os payloads antigos continuam no banco, e o `BlockRenderer`
 devolve `null` para tipo que não conhece, então eles simplesmente não desenham.
 As linhas de custo também continuam em `llm_usage_events`, e
-`src/lib/db/admin/usage.ts` continua lendo-as pelo nome, para o custo histórico não
+`src/features/admin/server/db/usage.ts` continua lendo-as pelo nome, para o custo histórico não
 migrar para a linha errada do painel.
 
 O que fica no resumo é a voz do pregador: `bibleQuote` com a referência,

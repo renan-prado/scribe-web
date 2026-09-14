@@ -21,7 +21,7 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
-import type { AdminUser } from "@/lib/db/admin/users";
+import type { AdminUser } from "@/features/admin/server/db/users";
 
 // `items` no Root é o que faz o gatilho mostrar o rótulo em vez do valor cru,
 // sem ele, "Situação" exibia "active". Ver shared/ui/select.

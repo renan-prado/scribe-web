@@ -10,8 +10,8 @@ import {
   openCheckoutWindow,
   requestBillingPortal,
 } from "@/features/billing/lib/api";
+import { formatBrl, formatCoins, isActiveStatus, PLANS } from "@/features/billing/plans";
 import { getBillingState, useBillingStore } from "@/features/billing/store";
-import { formatBrl, formatCoins, isActiveStatus, PLANS } from "@/lib/billing/plans";
 import { cn } from "@/lib/utils";
 
 /**

@@ -1,13 +1,13 @@
 import { NextResponse } from "next/server";
 import { z } from "zod";
+import { createPartner, listPartners } from "@/features/admin/server/db/partners";
+import { normalizeSocials } from "@/features/partners/socials";
+import { normalizeSlug } from "@/features/referrals/cookies";
 import { requireAdmin } from "@/lib/auth/require-admin";
-import { createPartner, listPartners } from "@/lib/db/admin/partners";
 import { isValidDoc, normalizeDoc } from "@/lib/domain/documento";
 import { parseJsonBody } from "@/lib/http/validate";
 import { createLogger } from "@/lib/log";
-import { normalizeSocials } from "@/lib/partners/socials";
 import { enforceRateLimit, RATE_LIMITS } from "@/lib/rate-limit";
-import { normalizeSlug } from "@/lib/referrals/cookies";
 
 const log = createLogger("admin/partners");
 

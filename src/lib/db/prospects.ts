@@ -1,6 +1,9 @@
 import "server-only";
+import {
+  PARTNER_PROSPECT_BUDGET_COINS,
+  PARTNER_PROSPECT_COINS,
+} from "@/features/partners/economics";
 import { escapeLikeValue } from "@/lib/db/like";
-import { PARTNER_PROSPECT_BUDGET_COINS, PARTNER_PROSPECT_COINS } from "@/lib/partners/economics";
 import { createAdminClient } from "@/lib/supabase/admin";
 
 /**

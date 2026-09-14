@@ -3,7 +3,7 @@ import { AdminPageHeader } from "@/features/admin/components/AdminPageHeader";
 import { CategoriesManager } from "@/features/admin/components/finance/CategoriesManager";
 import { FinanceNotices } from "@/features/admin/components/finance/FinanceNotices";
 import { FinanceSettingsForm } from "@/features/admin/components/finance/FinanceSettingsForm";
-import { getFinanceSettings, listCategories } from "@/lib/db/admin/finance";
+import { getFinanceSettings, listCategories } from "@/features/admin/server/db/finance";
 
 export const metadata: Metadata = { title: "Configurações financeiras" };
 export const dynamic = "force-dynamic";

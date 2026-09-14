@@ -1,6 +1,6 @@
 import { NextResponse } from "next/server";
+import { deleteEntry, updateEntry } from "@/features/admin/server/db/finance";
 import { requireAdmin } from "@/lib/auth/require-admin";
-import { deleteEntry, updateEntry } from "@/lib/db/admin/finance";
 import { EntryPatchSchema } from "@/lib/domain/finance";
 import { parseJsonBody, parseUuidParam } from "@/lib/http/validate";
 import { createLogger } from "@/lib/log";

@@ -10,8 +10,8 @@ import {
 } from "@/features/admin/components/AdminCards";
 import { AdminPageHeader } from "@/features/admin/components/AdminPageHeader";
 import { FxRateBadge } from "@/features/admin/components/FxRateBadge";
-import { loadAdminUsageSummary } from "@/lib/db/admin/usage";
-import { listUsers } from "@/lib/db/admin/users";
+import { loadAdminUsageSummary } from "@/features/admin/server/db/usage";
+import { listUsers } from "@/features/admin/server/db/users";
 import { makeCostPerThousandCoinsFormatter, makeMoneyFormatter } from "@/lib/fx/format";
 import { getUsdToBrl } from "@/lib/fx/usd-brl";
 

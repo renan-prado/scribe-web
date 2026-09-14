@@ -4,31 +4,49 @@ Quase tudo aqui é `server-only`. As exceções client-safe estão marcadas
 abaixo, e a distinção não é estilística: importar um módulo `server-only` a
 partir de um `"use client"` é erro de BUILD, e é assim que tem de ser.
 
-## O mapa: são 23 pastas, e elas não são todas a mesma coisa
+## O que fica aqui, e o que foi embora
 
-`lib/` não é uma pasta de "bibliotecas". É a camada de servidor inteira, e ela
-tem três tipos de morador. Saber em qual deles você está é o que decide onde
-pôr código novo:
+`lib/` é o ENCANAMENTO e os DADOS. Nove pastas e cinco arquivos, e nenhum deles
+sabe o que é um sermão:
 
-| | Pastas | O que são |
-|---|---|---|
-| **Encanamento** | `env` `log` `http` `supabase` `llm` `fx` + `rate-limit.ts` `utils.ts` `deploy.ts` `app-version.ts` `seo.ts` | não sabem nada sobre sermão. Todo o resto depende deles, e eles não dependem de ninguém |
-| **Dados** | `db` `domain` | `domain` é o vocabulário (tipos, schemas, parsers) e é CLIENT-SAFE; `db` é o acesso, e é `server-only`. Quase todo arquivo do repositório importa de um dos dois |
-| **Assunto** | `billing` `coins` `entitlements` `partners` `referrals` `finance` `study` `final-summary` `transcription` `youtube` `bibles` `prompts` `auth` `account` `admin` | as regras do negócio, uma pasta por assunto |
+| | |
+|---|---|
+| `env` `log` `http` `supabase` `llm` `fx` `auth` | infraestrutura: config, logging, validação, os três clients do Supabase, a chamada de LLM, câmbio e os gates de autorização |
+| `db` | o acesso ao banco. `server-only`, uma função por consulta |
+| `domain` | o VOCABULÁRIO: tipos, schemas Zod e parsers. **Client-safe**, é o que as duas pontas dividem |
+| `bibles` | a NVI em disco. Dado, não regra |
+| `entitlements` | qual plano libera o quê. Política que atravessa tudo |
+| `rate-limit.ts` `utils.ts` `deploy.ts` `app-version.ts` `seo.ts` | cinco concerns soltos, cada um de uma linha só |
 
-**A terceira linha tem uma costura conhecida, e vale dizê-la em voz alta:**
-metade daqueles assuntos tem uma METADE DE TELA em `src/features/` com o mesmo
-nome (`billing`, `partners`, `referrals`, `admin`), e mais um pedaço em
-`lib/db/`. Uma feature em três lugares é três lugares para procurar. Juntá-las
-sob `src/features/<assunto>/{components,server}` é o caminho óbvio e está em
-aberto; enquanto não for feito, o atalho é: **`src/features/X` desenha, `lib/X`
-decide, `lib/db/X` persiste.**
+**As REGRAS DE NEGÓCIO saíram daqui.** Eram catorze pastas (`billing`, `coins`,
+`partners`, `referrals`, `study`, `youtube`, `final-summary`, `transcription`,
+`finance`, `admin`, `prompts`, `account`…) e cada uma tinha uma metade de tela
+em `src/features/` com o mesmo nome, mais um pedaço em `lib/db/`. Uma feature em
+três lugares é três lugares para procurar, e nada no código dizia que os três
+eram a mesma coisa.
 
-**O que NÃO mora aqui, e já morou:** código de navegador. `capture-store.ts`
-(IndexedDB) e `audio-constraints.ts` mudaram para
-`src/app/(app)/recording/`, ao lado do único arquivo que os usa. Um módulo que
-só roda no browser numa pasta cujo cabeçalho diz "camada de servidor" é o tipo
-de coisa que faz alguém importá-lo do lado errado.
+Hoje cada assunto mora inteiro em `src/features/<assunto>/`:
+
+```
+src/features/billing/
+  components/   a tela
+  plans.ts      client-safe: nome, preço e créditos de cada plano
+  server/       server-only: Stripe, catálogo, fulfillment, sweep
+```
+
+**A convenção é `server/` para o que leva `import "server-only"`, e a raiz da
+feature para o que é client-safe.** Não é organização por gosto: o que decide é
+se o módulo pode ser importado de um `"use client"`. Um arquivo na raiz da
+feature que ganhe `server-only` muda para `server/` no mesmo commit — senão a
+pasta passa a mentir sobre o que se pode importar de onde.
+
+**`lib/db/` NÃO foi dividido junto**, e isso é decisão. `db/sessions.ts` é lido
+pela sessão, pelo painel e por meia dúzia de rotas; recortá-lo por feature
+trocaria uma camada coesa por três donos discutindo. A exceção é `db/admin/*`,
+que só o painel lia, e que foi junto para `features/admin/server/db/`.
+
+**Regra prática:** `features/X` desenha E decide; `lib/db` persiste; `lib/*`
+não sabe que X existe.
 
 ## Fronteira servidor/cliente
 
@@ -203,7 +221,7 @@ aparece como um parceiro reclamando do próprio painel.
 
 ## O estudo é um pipeline, não uma chamada
 
-A definição de produto que governa `src/lib/study/`:
+A definição de produto que governa `src/features/session/server/study/`:
 
 ```
 resumo  responde  →  o que foi ensinado nesta pregação?
@@ -213,16 +231,16 @@ estudo  responde  →  agora que entendi o tema, o que preciso aprender sobre el
 Cinco etapas, três de LLM e **duas determinísticas**:
 
 ```
-[1]  lib/prompts/study-questions.ts  LLM   interroga o sermão: 25-30 perguntas
-[1b] lib/prompts/study-guard.ts      mini  corta a que o resumo já responde
-[2]  lib/prompts/study-answers.ts    LLM   ESCOLHE as 10-14 que rendem e responde
+[1]  src/features/session/server/prompts/study-questions.ts  LLM   interroga o sermão: 25-30 perguntas
+[1b] src/features/session/server/prompts/study-guard.ts      mini  corta a que o resumo já responde
+[2]  src/features/session/server/prompts/study-answers.ts    LLM   ESCOLHE as 10-14 que rendem e responde
 [3]  lib/study/anchor.ts             ---   resolve as referências citadas na NVI
-[4]  lib/prompts/study-write.ts      LLM   vira um artigo corrido
-[4b] lib/prompts/study-guard.ts      mini  tese repetiu o resumo? reescreve 1x
+[4]  src/features/session/server/prompts/study-write.ts      LLM   vira um artigo corrido
+[4b] src/features/session/server/prompts/study-guard.ts      mini  tese repetiu o resumo? reescreve 1x
 [5]  lib/study/seal.ts               ---   versículo da NVI; fonte sem obra cai
 ```
 
-Orquestrador: `src/lib/study/generate.ts`. Chamado por `/api/deepening` e
+Orquestrador: `src/features/session/server/study/generate.ts`. Chamado por `/api/deepening` e
 `/api/deepening/reprocess`.
 
 **A representação intermediária é PERGUNTA, não taxonomia.** A versão anterior
@@ -330,7 +348,7 @@ teto que explica o esforço baixo no redator e o prazo da reescrita do guardião
 (`REWRITE_DEADLINE_MS`): estourar a função depois de já ter debitado moedas é
 um estrago maior que entregar um texto imperfeito.
 
-**A capa do bloco `reading` não vem do modelo.** `src/lib/study/covers.ts` resolve
+**A capa do bloco `reading` não vem do modelo.** `src/features/session/server/study/covers.ts` resolve
 contra a Google Books API e confere autor+título antes de deixar a URL entrar
 no payload, o parser de `domain/study.ts` DESCARTA um `coverUrl` que venha do
 LLM, de propósito. Sem `GOOGLE_BOOKS_API_KEY` (opcional) nada é chamado e a UI
@@ -399,7 +417,7 @@ Diagnóstico e desenho completos: `docs/estudo-v2.md` §8.
 
 ## Finanças: a conta mora fora da tela
 
-`src/lib/finance/` é PURO e CLIENT-SAFE, e é a única implementação da aritmética do
+`src/features/admin/finance/` é PURO e CLIENT-SAFE, e é a única implementação da aritmética do
 `/admin/financeiro`. Quatro módulos, nenhum deles tocando banco:
 
 | Módulo | Papel |
@@ -424,7 +442,7 @@ Três invariantes que atravessam os cinco módulos:
 - **Valor em dólar sem cotação é `null`, jamais `0`.** Um zero soma e some do
   total; `null` obriga quem chama a dizer quantos ficaram de fora.
 
-`src/lib/db/admin/finance.ts` é a camada de banco (service-role, atrás de
+`src/features/admin/server/db/finance.ts` é a camada de banco (service-role, atrás de
 `requireAdmin()`) e `finance-overview.ts` monta o snapshot que as seis telas
 consomem. Nenhum dos dois calcula nada. Os tipos e schemas Zod são
 client-safe, em `src/lib/domain/finance.ts`.

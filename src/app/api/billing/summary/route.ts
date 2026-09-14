@@ -1,7 +1,7 @@
 import { NextResponse } from "next/server";
-import type { BillingSummary } from "@/lib/billing/plans";
-import { getStripe, isBillingConfigured } from "@/lib/billing/stripe";
-import { lazySubscriptionCheck, subscriptionLooksStale } from "@/lib/billing/sweep";
+import type { BillingSummary } from "@/features/billing/plans";
+import { getStripe, isBillingConfigured } from "@/features/billing/server/stripe";
+import { lazySubscriptionCheck, subscriptionLooksStale } from "@/features/billing/server/sweep";
 import { getOwnSubscription } from "@/lib/db/billing";
 import { getCurrentBalance } from "@/lib/db/coins";
 import { enforceRateLimit, RATE_LIMITS } from "@/lib/rate-limit";

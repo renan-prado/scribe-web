@@ -1,6 +1,6 @@
 "use client";
 
-import type { PaidPlanKey } from "@/lib/billing/plans";
+import type { PaidPlanKey } from "@/features/billing/plans";
 
 /**
  * Wrappers tipados das rotas de cobrança.

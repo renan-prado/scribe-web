@@ -1,5 +1,6 @@
 import { NextResponse } from "next/server";
 import { z } from "zod";
+import { HALLUCINATION_SYSTEM_PROMPT } from "@/features/session/server/prompts/hallucination";
 import { getSession } from "@/lib/db/sessions";
 import { recordChatUsage } from "@/lib/db/usage";
 import {
@@ -11,7 +12,6 @@ import { parseJsonBody, UuidSchema } from "@/lib/http/validate";
 import { buildLlmMetadata } from "@/lib/llm/metadata";
 import { callChat } from "@/lib/llm/openai";
 import { createLogger } from "@/lib/log";
-import { HALLUCINATION_SYSTEM_PROMPT } from "@/lib/prompts/hallucination";
 import { enforceRateLimit, RATE_LIMITS } from "@/lib/rate-limit";
 import { requireAuth } from "@/lib/supabase/require-auth";
 import { createClient } from "@/lib/supabase/server";

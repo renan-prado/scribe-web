@@ -3,9 +3,9 @@
 import { CircleCheck, CircleSlash, Loader2 } from "lucide-react";
 import Link from "next/link";
 import { useCallback, useEffect, useRef, useState } from "react";
+import { formatCoins } from "@/features/billing/plans";
 import { useBillingStore } from "@/features/billing/store";
 import { useCoinsStore } from "@/features/coins/store";
-import { formatCoins } from "@/lib/billing/plans";
 import { cn } from "@/lib/utils";
 
 /**

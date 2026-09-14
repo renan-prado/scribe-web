@@ -16,15 +16,20 @@ import {
   TableRow,
 } from "@/components/ui/table";
 import { Tabs, TabsList, TabsPanel, TabsTab } from "@/components/ui/tabs";
-import type { FinanceScenario } from "@/lib/domain/finance";
-import { formatBps, formatBrlCents, formatPercent, parseMoneyToCents } from "@/lib/finance/money";
+import {
+  formatBps,
+  formatBrlCents,
+  formatPercent,
+  parseMoneyToCents,
+} from "@/features/admin/finance/money";
 import {
   monthsToRecover,
   type ProjectionBasis,
   type ProjectionResult,
   project,
-} from "@/lib/finance/projection";
-import { formatMonthKey, formatMonthKeyShort } from "@/lib/finance/recurrence";
+} from "@/features/admin/finance/projection";
+import { formatMonthKey, formatMonthKeyShort } from "@/features/admin/finance/recurrence";
+import type { FinanceScenario } from "@/lib/domain/finance";
 import { ScenarioDialog } from "./ScenarioDialog";
 
 /**

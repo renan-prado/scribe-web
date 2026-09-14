@@ -115,8 +115,8 @@ parecem cosméticos e não são:
   `src/app/page.tsx`, ver `src/app/AGENTS.md`.
 
 Os cookies são `httpOnly` e `sameSite: "lax"`, com nomes e prazos só em
-`src/lib/referrals/cookies.ts`, que serve aos DOIS programas, e por isso mudou de
-`src/lib/partners/` para lá. A única exceção ao `httpOnly` é o cookie-PISTA
+`src/features/referrals/cookies.ts`, que serve aos DOIS programas, e por isso mudou de
+`src/features/partners/` para lá. A única exceção ao `httpOnly` é o cookie-PISTA
 (`scriba_ref_hint`), que vale `1` e existe para o selo do hero da landing page
 não precisar perguntar ao servidor em toda visita anônima; ele não carrega nome
 nem código, justamente para não haver dois lugares dizendo quem é o padrinho. `strict` faria o cookie sumir na volta do OAuth do
@@ -172,7 +172,7 @@ usuário ativo por desenho do programa (é essa a razão da mesada).
 
 ## A mesada mensal
 
-Crédito, logo passa por `grant_coins`. `src/lib/partners/allowance.ts`, com
+Crédito, logo passa por `grant_coins`. `src/features/partners/server/allowance.ts`, com
 renovação **preguiçosa** (sem cron): o crédito sai quando o parceiro aparece,
 disparado por `getCurrentPartner()`, que o layout de `(app)` chama para
 decidir o item "Área do parceiro" no menu, e é por isso o único caminho por
@@ -214,11 +214,11 @@ zap" salvo ali vira botão quebrado no painel do parceiro.
 
 ## A conta mora num lugar só
 
-`src/lib/partners/economics.ts` é a ÚNICA implementação. Simulador do admin,
+`src/features/partners/economics.ts` é a ÚNICA implementação. Simulador do admin,
 painel do parceiro e as tabelas do doc leem dela. O custo por moeda é sempre
 MEDIDO (usage + câmbio), nunca constante.
 
-Métrica de produto por parceiro sai de `src/lib/db/admin/metrics.ts`, que já
+Métrica de produto por parceiro sai de `src/features/admin/server/db/metrics.ts`, que já
 aceita recorte por `partnerId`. Não escreva uma segunda consulta de conversão
 aqui: duas definições do mesmo número um dia discordam, e a discordância
 aparece como um parceiro reclamando do próprio painel.

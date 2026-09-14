@@ -1,8 +1,12 @@
 import { type NextRequest, NextResponse } from "next/server";
+import {
+  COUPON_COOKIE,
+  COUPON_COOKIE_MAX_AGE,
+  refCookieOptions,
+} from "@/features/referrals/cookies";
 import { normalizeCouponCode } from "@/lib/domain/coupon";
 import { createLogger } from "@/lib/log";
 import { enforceRateLimit, RATE_LIMITS } from "@/lib/rate-limit";
-import { COUPON_COOKIE, COUPON_COOKIE_MAX_AGE, refCookieOptions } from "@/lib/referrals/cookies";
 
 const log = createLogger("coupons/c");
 

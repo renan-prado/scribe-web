@@ -2,7 +2,7 @@ import type { Metadata } from "next";
 import { QuickLink } from "@/features/admin/components/AdminCards";
 import { AdminInsightsPanel } from "@/features/admin/components/AdminInsightsPanel";
 import { AdminPageHeader } from "@/features/admin/components/AdminPageHeader";
-import { readAdminInsights } from "@/lib/admin/insights/store";
+import { readAdminInsights } from "@/features/admin/server/insights/store";
 
 export const metadata: Metadata = { title: "Leitura da IA" };
 export const dynamic = "force-dynamic";

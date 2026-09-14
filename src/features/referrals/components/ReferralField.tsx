@@ -6,7 +6,7 @@ import {
   applyReferralCode,
   clearReferralCode,
   type ReferralActionState,
-} from "@/lib/referrals/actions";
+} from "@/features/referrals/actions";
 import { ReferrerAvatar } from "@/shared/components/ReferrerAvatar";
 
 /**

@@ -1,9 +1,9 @@
 import type { Metadata } from "next";
 import { AdminPageHeader } from "@/features/admin/components/AdminPageHeader";
 import { PartnersManager } from "@/features/admin/components/PartnersManager";
-import { appUrl } from "@/lib/billing/stripe";
-import { listPartners } from "@/lib/db/admin/partners";
-import { loadAdminUsageSummary } from "@/lib/db/admin/usage";
+import { listPartners } from "@/features/admin/server/db/partners";
+import { loadAdminUsageSummary } from "@/features/admin/server/db/usage";
+import { appUrl } from "@/features/billing/server/stripe";
 import { listProspects } from "@/lib/db/prospects";
 import { getUsdToBrl } from "@/lib/fx/usd-brl";
 

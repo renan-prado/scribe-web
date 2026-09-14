@@ -1,11 +1,11 @@
 import { type NextRequest, NextResponse } from "next/server";
-import { createLogger } from "@/lib/log";
-import { enforceRateLimit, RATE_LIMITS } from "@/lib/rate-limit";
 import {
   PROSPECT_COOKIE,
   PROSPECT_COOKIE_MAX_AGE,
   refCookieOptions,
-} from "@/lib/referrals/cookies";
+} from "@/features/referrals/cookies";
+import { createLogger } from "@/lib/log";
+import { enforceRateLimit, RATE_LIMITS } from "@/lib/rate-limit";
 
 const log = createLogger("partners/prospect");
 

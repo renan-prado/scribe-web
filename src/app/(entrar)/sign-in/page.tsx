@@ -4,10 +4,10 @@ import { GoogleSignInButton } from "@/features/auth/components/GoogleSignInButto
 import { CouponNotice } from "@/features/coupons/components/CouponNotice";
 import { ProspectNotice } from "@/features/partners/components/ProspectNotice";
 import { ReferralField } from "@/features/referrals/components/ReferralField";
+import { COUPON_COOKIE, PROSPECT_COOKIE } from "@/features/referrals/cookies";
+import { readActiveReferral } from "@/features/referrals/server/active";
 import { getCouponPublicByCode } from "@/lib/db/coupons";
 import { normalizeCouponCode } from "@/lib/domain/coupon";
-import { readActiveReferral } from "@/lib/referrals/active";
-import { COUPON_COOKIE, PROSPECT_COOKIE } from "@/lib/referrals/cookies";
 
 export const metadata = {
   title: "Entrar ou criar conta · Scriba",

@@ -1,5 +1,5 @@
-import { formatCoins } from "@/lib/billing/plans";
-import { PARTNER_PROSPECT_COINS } from "@/lib/partners/economics";
+import { formatCoins } from "@/features/billing/plans";
+import { PARTNER_PROSPECT_COINS } from "@/features/partners/economics";
 import { CoinMark } from "@/shared/icons/CoinMark";
 
 /**

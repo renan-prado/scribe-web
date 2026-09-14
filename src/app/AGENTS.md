@@ -367,7 +367,7 @@ Débito de moedas passa por `chargeCoins` (`src/lib/db/coins.ts`), que hoje fala
 a RPC pelo **service-role**: `charge_coins` teve o EXECUTE revogado de
 `authenticated` na migração 0037 porque, com ele, dava para chamar a função
 direto do navegador e escolher o próprio preço. **Crédito não tem rota**, ver
-`src/lib/billing/AGENTS.md`.
+`src/features/billing/AGENTS.md`.
 
 ## `/api/verse` responde em LOTE
 
@@ -471,7 +471,7 @@ de uma página que ninguém clica. Ver `docs/parceiros.md` § As páginas públi
 do programa.
 
 **A LP não tem números próprios.** Nome, preço e créditos dos cards de
-`/#planos` saem de `src/lib/billing/plans.ts`, o mesmo catálogo do diálogo de
+`/#planos` saem de `src/features/billing/plans.ts`, o mesmo catálogo do diálogo de
 compra e do `/profile`. Só a lista de recursos (`PLAN_FEATURES` em
 `src/app/page.tsx`) é copy local, porque descreve capacidades, não valores. Antes
 disso a LP anunciava 2.000/5.000/100 créditos contra os 1.000/2.500/50 reais:

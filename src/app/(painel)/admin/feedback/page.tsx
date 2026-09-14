@@ -2,7 +2,7 @@ import type { Metadata } from "next";
 import Link from "next/link";
 import { EmptyState } from "@/features/admin/components/AdminCards";
 import { AdminPageHeader } from "@/features/admin/components/AdminPageHeader";
-import { loadAdminFeedback } from "@/lib/db/admin/feedback";
+import { loadAdminFeedback } from "@/features/admin/server/db/feedback";
 import {
   FEEDBACK_RATING_EMOJI,
   FEEDBACK_RATING_LABEL,

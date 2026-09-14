@@ -1,7 +1,7 @@
 import type { ReactNode } from "react";
 import { PrivilegedMenuItems } from "@/features/auth/components/PrivilegedMenuItems";
+import { INITIAL_COIN_BALANCE } from "@/features/coins/pricing";
 import { isCurrentUserPartner } from "@/lib/auth/require-partner";
-import { INITIAL_COIN_BALANCE } from "@/lib/coins/pricing";
 import { getCurrentAccount } from "@/lib/db/account";
 import { AppMenu } from "./AppMenu";
 

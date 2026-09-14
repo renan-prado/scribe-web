@@ -140,14 +140,14 @@ módulo em referência de cliente e a string não chega. Foi por isso que
 
 ## Uma definição por número
 
-`src/lib/db/admin/metrics.ts` é a ÚNICA implementação das métricas de produto,
+`src/features/admin/server/db/metrics.ts` é a ÚNICA implementação das métricas de produto,
 funil, ativação, receita, passivo de moedas, e já aceita recorte por período
 e por `partnerId`. Não escreva uma segunda consulta de "conversão" dentro das
 telas de parceiro: duas definições do mesmo número um dia discordam, e a
 discordância aparece como um parceiro reclamando do próprio painel.
 
 O mesmo vale para a conta do programa de parceiros: ela mora em
-`src/lib/partners/economics.ts`, e o simulador do admin lê de lá.
+`src/features/partners/economics.ts`, e o simulador do admin lê de lá.
 
 ## Custo
 
@@ -237,7 +237,7 @@ receita do mês inteiro. A regra é uma frase:
 > **janela** em que ela esteve no ar onde não há (o ledger de moedas).
 
 A janela é medida, do primeiro evento da versão ao primeiro da seguinte
-(`VersionWindow` em `src/lib/db/admin/usage.ts`); a mais nova tem fim aberto. É o
+(`VersionWindow` em `src/features/admin/server/db/usage.ts`); a mais nova tem fim aberto. É o
 que permite `/admin/precificacao` ter o mesmo filtro e responder "esta mudança
 melhorou a margem da ação?", que é a pergunta daquela tela. Ela **mostra o
 intervalo resolvido** numa faixa sob o cabeçalho: um recorte de seis horas no
@@ -252,7 +252,7 @@ Guia completo em [`docs/versionamento.md`](../../../docs/versionamento.md).
 ## O inspetor de sessão
 
 `/admin/precificacao?sessionId=<uuid>` abre uma sessão **execução por
-execução** (`src/lib/db/admin/session-runs.ts`). É a única tela que NÃO agrega, e
+execução** (`src/features/admin/server/db/session-runs.ts`). É a única tela que NÃO agrega, e
 existe por causa de um ponto cego das outras duas: reprocessar um estudo grava
 um segundo conjunto de eventos na mesma sessão, e somados eles viram um número
 que não descreve nem uma execução nem a outra, que é justamente o número que
@@ -268,9 +268,9 @@ que não têm passo 1 para abrir.
 as anteriores existem em custo e não em qualidade. A tela diz isso; não repita
 as métricas ao lado de cada execução como se cada uma tivesse sido medida.
 
-As métricas de qualidade vêm de `src/lib/study/metrics.ts`, client-safe, pura, e a
+As métricas de qualidade vêm de `src/features/session/server/study/metrics.ts`, client-safe, pura, e a
 MESMA que o harness de avaliação usa. Ela espelha o contrato declarado no prompt
-de `src/lib/prompts/study-write.ts`: dois lugares, um commit.
+de `src/features/session/server/prompts/study-write.ts`: dois lugares, um commit.
 
 **"Moedas gastas" é filtrado por MOTIVO, nunca por `abs(amount)`.**
 `coin_transactions` é o ledger inteiro: `grant_coins` grava
@@ -293,9 +293,9 @@ o resumo sob demanda do modo transcrição) continuam somando nas linhas certas 
 ver o comentário de `reasons` em `billable.ts`. Reescrever motivo em ledger de
 dinheiro é apagar o que de fato aconteceu.
 
-O vocabulário está em `src/lib/coins/billable.ts` (client-safe) e a conta em
-`src/lib/coins/economics.ts`. O mapeamento ROTA → ação mora em
-`src/lib/db/admin/usage.ts`, junto do resto da agregação: **é a mesma passada pelas
+O vocabulário está em `src/features/coins/billable.ts` (client-safe) e a conta em
+`src/features/coins/economics.ts`. O mapeamento ROTA → ação mora em
+`src/features/admin/server/db/usage.ts`, junto do resto da agregação: **é a mesma passada pelas
 mesmas linhas** que alimenta `/admin/usage`. Uma segunda consulta de custo é
 uma segunda definição do mesmo número.
 
@@ -329,7 +329,7 @@ Três coisas que quem mexer aqui não pode desfazer:
   número que alguém digitou.
 - **A régua é um cookie, não uma tabela.** Nada do que se digita ali cobra
   coisa alguma, quem cobra é o Price do Stripe, e quem credita é
-  `src/lib/billing/catalog.ts`. Uma tabela `coin_pricing` no banco seria um convite
+  `src/features/billing/server/catalog.ts`. Uma tabela `coin_pricing` no banco seria um convite
   a alguém, um dia, ler dali para cobrar de verdade.
 - **A linha "gasto sem cobrança" precisa aparecer.** É a consulta de versículo
   avulsa, a formatação fora de gravação e o evento de sessão apagada: custo real
@@ -344,7 +344,7 @@ execução inventado.
 ## A leitura da IA (`/admin/insights`)
 
 Uma análise que um modelo escreve sobre os números do painel. Ela não tem
-número próprio: `src/lib/admin/insights/briefing.ts` monta o briefing a partir de
+número próprio: `src/features/admin/server/insights/briefing.ts` monta o briefing a partir de
 `loadAdminUsageSummary`, `loadAdminMetrics` e `computeActionEconomics`, os
 MESMOS que desenham as tabelas das outras telas. Uma segunda aritmética "só
 para o prompt" produziria um insight contradizendo uma tabela do painel.
@@ -391,7 +391,7 @@ Seis coisas que quem mexer aqui não pode desfazer:
   Amarrar a leitura ao filtro daria quatro chamadas de modelo caro para
   responder a mesma pergunta.
 - **A tabela `admin_insights` tem uma linha só.** A coluna `scope` sobrevive
-  como PK, com o valor constante `general` (ver `src/lib/admin/insights/store.ts`);
+  como PK, com o valor constante `general` (ver `src/features/admin/server/insights/store.ts`);
   as três linhas antigas foram apagadas pela migração 0054.
 
 O custo dela é gravado como qualquer outra rota (`admin-insights` em
@@ -443,7 +443,7 @@ O que não pode ser desfeito:
   prometer moeda que não será creditada, e a pessoa descobre isso depois de já
   ter criado a conta.
 
-O cookie é `scriba_coupon` (`src/lib/referrals/cookies.ts`, junto dos outros três),
+O cookie é `scriba_coupon` (`src/features/referrals/cookies.ts`, junto dos outros três),
 carrega só o CÓDIGO, é `httpOnly` e vale 30 dias. Ele é separado do
 `scriba_ref` pela mesma razão que o do pré-parceiro: o `scriba_ref` decide para
 onde vai DINHEIRO, e uma promoção não pode disputar espaço com a atribuição de
@@ -501,7 +501,7 @@ Quatro coisas que quem mexer aqui não pode desfazer:
   como tela travada em vez de sessão sem resumo. A ausência tem texto próprio.
 - **A tela só LÊ.** Nada de reprocessar, editar ou apagar daqui: o conserto de
   um resumo ruim é prompt e modelo, e uma correção manual produziria um
-  conteúdo que o dono não gerou e não sabe que mudou. `src/lib/db/admin/sessions.ts`
+  conteúdo que o dono não gerou e não sabe que mudou. `src/features/admin/server/db/sessions.ts`
   não exporta escrita nenhuma, e não deve passar a exportar.
 - **A lista mostra sim/não, não prévia.** Um trecho de resumo cortado numa
   célula convida a julgar qualidade por meia frase, que é o julgamento que a
@@ -528,9 +528,9 @@ diagnóstico precisava abrir uma tela que ninguém abria.
 
 **O dado continua existindo**, e essa é a parte que quem mexer aqui precisa
 saber: `session_deepenings.plan` continua guardando o `StudyRecord` inteiro
-(migração 0033), o pipeline continua gravando-o e `src/lib/db/admin/sessions.ts` e
+(migração 0033), o pipeline continua gravando-o e `src/features/admin/server/db/sessions.ts` e
 `session-runs.ts` continuam lendo-o. O que saiu foi a página e o
-`src/lib/db/admin/studies.ts` que só ela usava. `/admin/sessions/[id]` mostra a
+`src/features/admin/server/db/studies.ts` que só ela usava. `/admin/sessions/[id]` mostra a
 CONTAGEM ("11 de 27 perguntas respondidas") e nada mais.
 
 Se a pergunta "as perguntas eram rasas ou foram mal respondidas?" voltar a ser
@@ -587,8 +587,8 @@ deve, e para onde isso vai.** Desenho completo em [`docs/financeiro.md`](../../.
 o que não pode ser desfeito está aqui.
 
 **Metade do painel é MEDIDA e não se digita.** Receita de assinatura sai dos
-créditos de `coin_transactions` (`src/lib/finance/measured.ts`), custo de IA de
-`llm_usage_events`, taxa do Stripe de `src/lib/partners/economics.ts` e comissão
+créditos de `coin_transactions` (`src/features/admin/finance/measured.ts`), custo de IA de
+`llm_usage_events`, taxa do Stripe de `src/features/partners/economics.ts` e comissão
 de `partner_commissions`. O que se lança à mão são as cinco tabelas de
 `0043_finance.sql`, e elas guardam só o que ninguém mede por nós, Vercel,
 Supabase, domínio, ferramentas, impostos, dívidas.
@@ -597,10 +597,10 @@ Supabase, domínio, ferramentas, impostos, dívidas.
 > setembro, R$ 5.000" à mão CONTA DUAS VEZES. `buildFinanceOverview` devolve
 > um aviso quando um mês tem receita medida e receita lançada.
 
-**Uma conta, um lugar.** Toda aritmética mora em `src/lib/finance/*`, puro,
+**Uma conta, um lugar.** Toda aritmética mora em `src/features/admin/finance/*`, puro,
 client-safe e coberto por `npm test`. Nenhuma página calcula nada: elas
-recebem `FinanceOverview` de `src/lib/db/admin/finance-overview.ts`. É a mesma
-regra de `src/lib/db/admin/metrics.ts`, pelo mesmo motivo.
+recebem `FinanceOverview` de `src/features/admin/server/db/finance-overview.ts`. É a mesma
+regra de `src/features/admin/server/db/metrics.ts`, pelo mesmo motivo.
 
 Cinco coisas que quem mexer aqui não pode desfazer:
 
@@ -617,13 +617,13 @@ Cinco coisas que quem mexer aqui não pode desfazer:
   hoje, que é quando ela seria quitada.
 - **Sem cotação, um valor em dólar vale `null`, nunca zero.** Zero soma e some
   do total sem avisar; `null` obriga a tela a dizer quantos ficaram de fora.
-  Vale para toda a camada (`src/lib/finance/money.ts`).
+  Vale para toda a camada (`src/features/admin/finance/money.ts`).
 - **Os avisos vêm ANTES dos números.** Um painel financeiro erra em silêncio, e
   o sintoma é sempre uma conta boa demais, que é a que ninguém investiga. É a
   mesma razão do aviso de modelo sem preço em `/admin/usage`.
 
 **A projeção roda no CLIENTE, e isso não é cálculo no frontend.** O componente
-chama `project()` de `src/lib/finance/projection.ts`, o único lugar onde a fórmula
+chama `project()` de `src/features/admin/finance/projection.ts`, o único lugar onde a fórmula
 existe e o mesmo que os testes exercitam. Rodar ali é o que permite mexer numa
 premissa sem round-trip; nada do que sai dela é persistido. O que se GRAVA em
 `finance_scenarios` são as premissas, nunca o resultado, que envelheceria em

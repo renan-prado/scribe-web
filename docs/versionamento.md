@@ -120,8 +120,8 @@ CHANGELOG que responde por quê, e a tag `v0.6.0` que permite ler o código
 exato que produziu aquele número:
 
 ```bash
-git show v0.6.0:lib/prompts/study-answers.ts
-git diff v0.5.0 v0.6.0 -- lib/prompts/
+git show v0.6.0:src/features/session/server/prompts/study-answers.ts
+git diff v0.5.0 v0.6.0 -- src/features/session/server/prompts/
 ```
 
 É por isso que as tags são anotadas e vão para o remoto (`--follow-tags`): uma
@@ -190,7 +190,7 @@ Daí a regra única, e ela cabe numa frase:
 
 A janela é MEDIDA, como todo o resto: começa no primeiro evento que a versão
 gravou e termina no primeiro evento da versão seguinte (`VersionWindow`, em
-`src/lib/db/admin/usage.ts`). A mais nova tem fim aberto, ela ainda está no ar.
+`src/features/admin/server/db/usage.ts`). A mais nova tem fim aberto, ela ainda está no ar.
 
 Três consequências:
 

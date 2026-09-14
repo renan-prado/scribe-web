@@ -2,8 +2,8 @@
 
 import { useEffect, useRef, useState } from "react";
 import { BillingDialog } from "@/features/billing/components/BillingDialog";
+import { COIN_RING_REFERENCE } from "@/features/coins/pricing";
 import { useCoinsStore } from "@/features/coins/store";
-import { COIN_RING_REFERENCE } from "@/lib/coins/pricing";
 import { cn } from "@/lib/utils";
 
 const COIN_C = 2 * Math.PI * 6.5; // circumference for the r=6.5 stroke centerline (stroke-width 13 fills a r=13 disc without overflowing the viewBox)

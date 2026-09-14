@@ -24,6 +24,11 @@ import {
   TableRow,
 } from "@/components/ui/table";
 import {
+  entryAmountBrlCents,
+  formatBrlCents,
+  formatNativeCents,
+} from "@/features/admin/finance/money";
+import {
   type EntryStatus,
   entryStatusLabel,
   type FinanceCategory,
@@ -31,7 +36,6 @@ import {
   type FinanceKind,
   type FinanceRecurring,
 } from "@/lib/domain/finance";
-import { entryAmountBrlCents, formatBrlCents, formatNativeCents } from "@/lib/finance/money";
 import { EntryDialog } from "./EntryDialog";
 
 /**

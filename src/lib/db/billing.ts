@@ -1,5 +1,5 @@
 import "server-only";
-import type { PlanKey } from "@/lib/billing/plans";
+import type { PlanKey } from "@/features/billing/plans";
 import { createLogger } from "@/lib/log";
 import { createAdminClient } from "@/lib/supabase/admin";
 import { createClient } from "@/lib/supabase/server";

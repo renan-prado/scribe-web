@@ -190,5 +190,5 @@ uma constraint vale para caminhos de código que ainda não existem:
 | `feedback_prompts_once` unique(user_id, kind, session_id) | a pesquisa não volta depois de fechada |
 | CHECK https em `partner_payouts.receipt_url` | comprovante é link, não recado |
 
-O contexto de negócio de cada uma está em `src/lib/billing/AGENTS.md` e
+O contexto de negócio de cada uma está em `src/features/billing/AGENTS.md` e
 `src/features/partners/AGENTS.md`.

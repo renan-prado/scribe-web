@@ -1,7 +1,7 @@
 import type { Metadata } from "next";
 import Link from "next/link";
-import { formatBrl, formatCoins, PLANS } from "@/lib/billing/plans";
-import { INITIAL_COIN_BALANCE } from "@/lib/coins/pricing";
+import { formatBrl, formatCoins, PLANS } from "@/features/billing/plans";
+import { INITIAL_COIN_BALANCE } from "@/features/coins/pricing";
 import {
   COMMISSION_HOLD_DAYS,
   commissionCents,
@@ -12,8 +12,8 @@ import {
   PARTNER_PROSPECT_COINS,
   PAYOUT_MINIMUM_CENTS,
   PAYOUT_SCHEDULE_LABEL,
-} from "@/lib/partners/economics";
-import { REF_COOKIE_MAX_AGE } from "@/lib/referrals/cookies";
+} from "@/features/partners/economics";
+import { REF_COOKIE_MAX_AGE } from "@/features/referrals/cookies";
 import { cn } from "@/lib/utils";
 import { ScribaMark } from "@/shared/brand";
 import { LandingFooter, LandingHeader, SectionLabel } from "@/shared/components/LandingChrome";

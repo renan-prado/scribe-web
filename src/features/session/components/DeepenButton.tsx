@@ -9,9 +9,9 @@ import { PageBlurOverlay } from "@/components/PageBlurOverlay";
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/components/ui/tooltip";
 import { BillingDialog } from "@/features/billing/components/BillingDialog";
 import { CoinCost } from "@/features/coins/components/CoinCost";
+import { COIN_COSTS } from "@/features/coins/pricing";
 import { useCoinsStore } from "@/features/coins/store";
 import { STUDY_GENERATION_PHASES } from "@/features/session/lib/studyPhases";
-import { COIN_COSTS } from "@/lib/coins/pricing";
 import { minPlanNameFor } from "@/lib/entitlements/features";
 import { cn } from "@/lib/utils";
 

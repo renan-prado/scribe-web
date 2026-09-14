@@ -15,7 +15,7 @@ import {
   TableHeader,
   TableRow,
 } from "@/components/ui/table";
-import type { AdminUser } from "@/lib/db/admin/users";
+import type { AdminUser } from "@/features/admin/server/db/users";
 import { EditUserDialog } from "./EditUserDialog";
 
 const DATE_FMT = new Intl.DateTimeFormat("pt-BR", {

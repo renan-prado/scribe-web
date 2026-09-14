@@ -1,5 +1,6 @@
 import { NextResponse } from "next/server";
 import { z } from "zod";
+import { generateStudy } from "@/features/session/server/study/generate";
 import { chargeCoins } from "@/lib/db/coins";
 import { getDeepening, updateDeepening } from "@/lib/db/deepenings";
 import { getSession } from "@/lib/db/sessions";
@@ -7,7 +8,6 @@ import { requireFeature } from "@/lib/entitlements/server";
 import { parseJsonBody, UuidSchema } from "@/lib/http/validate";
 import { createLogger } from "@/lib/log";
 import { enforceRateLimit, RATE_LIMITS } from "@/lib/rate-limit";
-import { generateStudy } from "@/lib/study/generate";
 import { requireAuth } from "@/lib/supabase/require-auth";
 
 const log = createLogger("deepening-reprocess");

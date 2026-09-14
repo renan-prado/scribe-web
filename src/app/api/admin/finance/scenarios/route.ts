@@ -1,6 +1,6 @@
 import { NextResponse } from "next/server";
+import { createScenario, listScenarios } from "@/features/admin/server/db/finance";
 import { requireAdmin } from "@/lib/auth/require-admin";
-import { createScenario, listScenarios } from "@/lib/db/admin/finance";
 import { ScenarioInputSchema } from "@/lib/domain/finance";
 import { parseJsonBody } from "@/lib/http/validate";
 import { createLogger } from "@/lib/log";

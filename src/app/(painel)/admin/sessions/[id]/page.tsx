@@ -9,6 +9,7 @@ import {
   type SessionReaderPanel,
   SessionReaderTabs,
 } from "@/features/admin/components/SessionReaderTabs";
+import { getSessionForAdmin } from "@/features/admin/server/db/sessions";
 import { SavedTranscriptView } from "@/features/session/components/SavedTranscriptView";
 import {
   StudyBlockRenderer,
@@ -16,7 +17,6 @@ import {
 } from "@/features/session/components/StudyBlockRenderer";
 import { SummaryView } from "@/features/session/components/SummaryView";
 import { formatDurationLong } from "@/features/session/lib/formatting";
-import { getSessionForAdmin } from "@/lib/db/admin/sessions";
 
 export const dynamic = "force-dynamic";
 

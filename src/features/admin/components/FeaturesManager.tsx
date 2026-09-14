@@ -23,7 +23,7 @@ import {
   TableHeader,
   TableRow,
 } from "@/components/ui/table";
-import { PLANS } from "@/lib/billing/plans";
+import { PLANS } from "@/features/billing/plans";
 import type {
   FeatureDefinition,
   FeatureKey,

@@ -2,15 +2,15 @@ import type { Metadata } from "next";
 import { AdminPageHeader } from "@/features/admin/components/AdminPageHeader";
 import { FinanceNotices } from "@/features/admin/components/finance/FinanceNotices";
 import { ProjectionsView } from "@/features/admin/components/finance/ProjectionsView";
-import { listScenarios } from "@/lib/db/admin/finance";
-import { loadFinanceSnapshot } from "@/lib/db/admin/finance-overview";
-import { formatBrlCents, formatPercent } from "@/lib/finance/money";
+import { formatBrlCents, formatPercent } from "@/features/admin/finance/money";
 import {
   measuredPaymentFeeBps,
   measuredVariableCostPerCustomer,
   type ProjectionBasis,
-} from "@/lib/finance/projection";
-import { addMonthsToKey, monthKey } from "@/lib/finance/recurrence";
+} from "@/features/admin/finance/projection";
+import { addMonthsToKey, monthKey } from "@/features/admin/finance/recurrence";
+import { listScenarios } from "@/features/admin/server/db/finance";
+import { loadFinanceSnapshot } from "@/features/admin/server/db/finance-overview";
 
 export const metadata: Metadata = { title: "Projeções" };
 export const dynamic = "force-dynamic";

@@ -1,9 +1,9 @@
 import "server-only";
 import { cache } from "react";
+import { ensurePartnerAllowance } from "@/features/partners/server/allowance";
 import { escapeLikeValue } from "@/lib/db/like";
 import { flushPartnerSignupRewards } from "@/lib/db/referrals";
 import { createLogger } from "@/lib/log";
-import { ensurePartnerAllowance } from "@/lib/partners/allowance";
 import { createAdminClient } from "@/lib/supabase/admin";
 import { getAuthUser } from "@/lib/supabase/server";
 

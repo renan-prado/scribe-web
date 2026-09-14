@@ -13,9 +13,9 @@ import {
   TableHeader,
   TableRow,
 } from "@/components/ui/table";
-import { formatCoins } from "@/lib/billing/plans";
+import { formatCoins } from "@/features/billing/plans";
+import { declineProspectAction } from "@/features/partners/prospect-actions";
 import type { AdminProspect } from "@/lib/db/prospects";
-import { declineProspectAction } from "@/lib/partners/prospect-actions";
 
 /**
  * Os candidatos a parceiro: quem criou conta por `/parceiros` e ainda não foi

@@ -20,7 +20,7 @@ import {
   loadAdminUsageSummary,
   type UsageByVersion,
   type UsageFilters as UsageFiltersType,
-} from "@/lib/db/admin/usage";
+} from "@/features/admin/server/db/usage";
 import { SESSION_MODES, type SessionMode } from "@/lib/domain/session";
 import {
   type CostPerThousandCoinsFormatter,

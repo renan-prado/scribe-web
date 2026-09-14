@@ -1,6 +1,6 @@
 import { NextResponse } from "next/server";
+import { createRecurring, listRecurring } from "@/features/admin/server/db/finance";
 import { requireAdmin } from "@/lib/auth/require-admin";
-import { createRecurring, listRecurring } from "@/lib/db/admin/finance";
 import { RecurringInputSchema } from "@/lib/domain/finance";
 import { parseJsonBody } from "@/lib/http/validate";
 import { createLogger } from "@/lib/log";

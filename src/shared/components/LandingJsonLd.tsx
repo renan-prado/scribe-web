@@ -1,4 +1,4 @@
-import { PLAN_ORDER, PLANS, TOPUP } from "@/lib/billing/plans";
+import { PLAN_ORDER, PLANS, TOPUP } from "@/features/billing/plans";
 import { SITE_DESCRIPTION, SITE_NAME, SITE_URL } from "@/lib/seo";
 import { FAQ_ITEMS } from "@/shared/content/landing-faq";
 

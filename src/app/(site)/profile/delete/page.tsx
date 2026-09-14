@@ -3,7 +3,7 @@ import type { Metadata } from "next";
 import Link from "next/link";
 import type { ReactNode } from "react";
 import { DeleteAccountForm } from "@/features/auth/components/DeleteAccountForm";
-import { isActiveStatus, PLANS } from "@/lib/billing/plans";
+import { isActiveStatus, PLANS } from "@/features/billing/plans";
 import { getCurrentAccount } from "@/lib/db/account";
 import { getOwnSubscription } from "@/lib/db/billing";
 

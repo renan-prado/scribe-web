@@ -1,6 +1,6 @@
 import { NextResponse } from "next/server";
+import { createEntry, listEntries } from "@/features/admin/server/db/finance";
 import { requireAdmin } from "@/lib/auth/require-admin";
-import { createEntry, listEntries } from "@/lib/db/admin/finance";
 import { EntryFiltersSchema, EntryInputSchema } from "@/lib/domain/finance";
 import { parseJsonBody } from "@/lib/http/validate";
 import { createLogger } from "@/lib/log";

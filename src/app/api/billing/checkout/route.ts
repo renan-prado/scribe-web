@@ -1,11 +1,15 @@
 import { NextResponse } from "next/server";
 import type Stripe from "stripe";
 import { z } from "zod";
-import { clampTopupQuantity, priceIdForPlan, priceIdForTopup } from "@/lib/billing/catalog";
-import { getOrCreateCustomer } from "@/lib/billing/customer";
-import { syncSubscriptionState } from "@/lib/billing/fulfill";
-import { PAID_PLAN_KEYS, TOPUP_MAX_QUANTITY } from "@/lib/billing/plans";
-import { appUrl, getStripe, isBillingConfigured } from "@/lib/billing/stripe";
+import { PAID_PLAN_KEYS, TOPUP_MAX_QUANTITY } from "@/features/billing/plans";
+import {
+  clampTopupQuantity,
+  priceIdForPlan,
+  priceIdForTopup,
+} from "@/features/billing/server/catalog";
+import { getOrCreateCustomer } from "@/features/billing/server/customer";
+import { syncSubscriptionState } from "@/features/billing/server/fulfill";
+import { appUrl, getStripe, isBillingConfigured } from "@/features/billing/server/stripe";
 import { getOwnSubscription } from "@/lib/db/billing";
 import { getCurrentProfile } from "@/lib/db/profiles";
 import { parseJsonBody } from "@/lib/http/validate";

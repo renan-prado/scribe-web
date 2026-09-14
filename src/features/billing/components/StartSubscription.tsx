@@ -4,7 +4,7 @@ import { CircleAlert, Loader2 } from "lucide-react";
 import Link from "next/link";
 import { useEffect, useRef, useState } from "react";
 import { checkoutErrorMessage, requestCheckout } from "@/features/billing/lib/api";
-import { formatBrl, formatCoins, type PaidPlanKey, PLANS } from "@/lib/billing/plans";
+import { formatBrl, formatCoins, type PaidPlanKey, PLANS } from "@/features/billing/plans";
 import { cn } from "@/lib/utils";
 
 /**

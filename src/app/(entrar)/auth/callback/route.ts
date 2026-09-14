@@ -1,11 +1,5 @@
 import { cookies } from "next/headers";
 import { NextResponse } from "next/server";
-import { redeemSignupCoupon } from "@/lib/db/coupons";
-import { attachPartner } from "@/lib/db/partners";
-import { attachPartnerProspect } from "@/lib/db/prospects";
-import { attachReferrer } from "@/lib/db/referrals";
-import { normalizeCouponCode } from "@/lib/domain/coupon";
-import { createLogger } from "@/lib/log";
 import {
   COUPON_COOKIE,
   decodeRef,
@@ -13,7 +7,13 @@ import {
   REF_COOKIE,
   REF_HINT_COOKIE,
   VISIT_COOKIE,
-} from "@/lib/referrals/cookies";
+} from "@/features/referrals/cookies";
+import { redeemSignupCoupon } from "@/lib/db/coupons";
+import { attachPartner } from "@/lib/db/partners";
+import { attachPartnerProspect } from "@/lib/db/prospects";
+import { attachReferrer } from "@/lib/db/referrals";
+import { normalizeCouponCode } from "@/lib/domain/coupon";
+import { createLogger } from "@/lib/log";
 import { createClient } from "@/lib/supabase/server";
 
 const log = createLogger("auth/callback");

@@ -1,7 +1,7 @@
 "use client";
 
 import { create } from "zustand";
-import type { ChargeReason } from "@/lib/coins/pricing";
+import type { ChargeReason } from "@/features/coins/pricing";
 
 /**
  * Central store for the current user's coin balance. Replaces the old

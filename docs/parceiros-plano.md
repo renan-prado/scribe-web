@@ -15,7 +15,7 @@ a refactors foram promovidas para o `AGENTS.md`.
 1. **Comissão é dinheiro, logo é ledger.** Vale o mesmo rigor de
    `coin_transactions`: linha append-only, `external_ref` UNIQUE, saldo
    derivado por `SUM()`, nunca um contador incrementado.
-2. **A comissão nasce dentro de `src/lib/billing/fulfill.ts`.** Os quatro caminhos
+2. **A comissão nasce dentro de `src/features/billing/server/fulfill.ts`.** Os quatro caminhos
    de crédito (webhook, reconcile, summary, sweep) já convergem lá. Pendurar a
    comissão em qualquer outro lugar significaria que uma compra creditada pelo
    sweep não geraria comissão.
@@ -130,7 +130,7 @@ parceiro devolve 0 linhas e `rpc('attach_partner')` devolve 42501.
 
 Dois cookies novos, e nenhuma string solta no meio do código.
 
-**`src/lib/partners/cookies.ts`**, nome, TTL e opções de cada cookie em
+**`src/features/referrals/cookies.ts`**, nome, TTL e opções de cada cookie em
 constantes exportadas, no mesmo padrão de `MANUAL_FX_COOKIE`
 (`src/lib/fx/usd-brl.ts`) e do `SIDEBAR_COOKIE_NAME` do shadcn:
 
@@ -207,7 +207,7 @@ atribuído.
 
 ## Fase 3: Comissão
 
-- **`src/lib/billing/fulfill.ts`**: `creditInvoice()` ganha, depois do
+- **`src/features/billing/server/fulfill.ts`**: `creditInvoice()` ganha, depois do
   `grantCoins`, uma chamada a `accruePartnerCommission({ invoice, userId,
   entitlement, source })`. Só para `entitlement.kind === "subscription"`,
   avulso não comissiona, por decisão de negócio.
@@ -242,7 +242,7 @@ Hoje o `/admin` mostra usuários, custo e custo por 1.000 moedas
 existe, `profiles.created_at`, `subscriptions`, `coin_transactions`,
 `sessions`, sem nenhuma tabela nova.
 
-**`src/lib/db/admin/metrics.ts`**, com recorte por período e por coorte:
+**`src/features/admin/server/db/metrics.ts`**, com recorte por período e por coorte:
 
 - **Aquisição**: cadastros por dia/semana/mês.
 - **Ativação**: % que gravou ao menos uma sessão; moedas gastas nos 7
@@ -281,7 +281,7 @@ Tela: `/admin/metricas`, no padrão de `/admin/usage`.
 A taxa é editável por parceiro, então o formulário precisa mostrar a
 consequência **enquanto** o número é digitado, nunca depois de salvo.
 
-**`src/lib/partners/economics.ts`**, função pura, client-safe, sem segredo:
+**`src/features/partners/economics.ts`**, função pura, client-safe, sem segredo:
 
 ```ts
 simulatePartner({

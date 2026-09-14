@@ -1,7 +1,7 @@
 import { NextResponse } from "next/server";
 import { z } from "zod";
+import { deleteUser, updateUser } from "@/features/admin/server/db/users";
 import { requireAdmin } from "@/lib/auth/require-admin";
-import { deleteUser, updateUser } from "@/lib/db/admin/users";
 import { parseJsonBody, parseUuidParam } from "@/lib/http/validate";
 import { createLogger } from "@/lib/log";
 import { enforceRateLimit, RATE_LIMITS } from "@/lib/rate-limit";

@@ -1,7 +1,7 @@
 import { NextResponse } from "next/server";
 import { z } from "zod";
+import { PayoutStampError, registerPayout } from "@/features/admin/server/db/partners";
 import { requireAdmin } from "@/lib/auth/require-admin";
-import { PayoutStampError, registerPayout } from "@/lib/db/admin/partners";
 import { parseJsonBody, parseUuidParam } from "@/lib/http/validate";
 import { createLogger } from "@/lib/log";
 import { enforceRateLimit, RATE_LIMITS } from "@/lib/rate-limit";

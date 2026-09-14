@@ -1,7 +1,7 @@
 import type { Metadata } from "next";
 import { AdminPageHeader } from "@/features/admin/components/AdminPageHeader";
 import { UsersManager } from "@/features/admin/components/UsersManager";
-import { listUsers } from "@/lib/db/admin/users";
+import { listUsers } from "@/features/admin/server/db/users";
 import { createClient } from "@/lib/supabase/server";
 
 export const metadata: Metadata = { title: "Usuários" };

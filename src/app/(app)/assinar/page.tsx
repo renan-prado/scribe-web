@@ -1,7 +1,7 @@
 import type { Metadata } from "next";
 import { redirect } from "next/navigation";
 import { StartSubscription } from "@/features/billing/components/StartSubscription";
-import { isActiveStatus, isPaidPlanKey } from "@/lib/billing/plans";
+import { isActiveStatus, isPaidPlanKey } from "@/features/billing/plans";
 import { getOwnSubscription } from "@/lib/db/billing";
 
 export const metadata: Metadata = { title: "Assinar" };

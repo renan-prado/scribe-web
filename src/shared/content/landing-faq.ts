@@ -1,5 +1,5 @@
-import { formatCoins, PLANS } from "@/lib/billing/plans";
-import { COIN_COSTS, INITIAL_COIN_BALANCE } from "@/lib/coins/pricing";
+import { formatCoins, PLANS } from "@/features/billing/plans";
+import { COIN_COSTS, INITIAL_COIN_BALANCE } from "@/features/coins/pricing";
 
 /**
  * Perguntas frequentes da landing page.

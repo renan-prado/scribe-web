@@ -1,7 +1,7 @@
 "use client";
 
 import { useEffect, useState } from "react";
-import { REF_HINT_COOKIE } from "@/lib/referrals/cookies";
+import { REF_HINT_COOKIE } from "@/features/referrals/cookies";
 import { cn } from "@/lib/utils";
 import { ReferrerAvatar } from "@/shared/components/ReferrerAvatar";
 

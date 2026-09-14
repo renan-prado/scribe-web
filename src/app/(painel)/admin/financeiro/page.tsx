@@ -11,9 +11,9 @@ import {
 import { AdminPageHeader } from "@/features/admin/components/AdminPageHeader";
 import { FinanceNotices } from "@/features/admin/components/finance/FinanceNotices";
 import { MonthlyBars, MonthlyTable } from "@/features/admin/components/finance/MonthlyTable";
-import { loadFinanceSnapshot } from "@/lib/db/admin/finance-overview";
-import { formatBrlCents, formatPercent, formatSignedPercent } from "@/lib/finance/money";
-import { formatMonthKey } from "@/lib/finance/recurrence";
+import { formatBrlCents, formatPercent, formatSignedPercent } from "@/features/admin/finance/money";
+import { formatMonthKey } from "@/features/admin/finance/recurrence";
+import { loadFinanceSnapshot } from "@/features/admin/server/db/finance-overview";
 
 export const metadata: Metadata = { title: "Financeiro" };
 export const dynamic = "force-dynamic";

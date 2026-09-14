@@ -1,6 +1,6 @@
 import { NextResponse } from "next/server";
 import { z } from "zod";
-import { CHARGE_REASONS } from "@/lib/coins/pricing";
+import { CHARGE_REASONS } from "@/features/coins/pricing";
 import { chargeCoins } from "@/lib/db/coins";
 import { OptionalUuidSchema, parseJsonBody } from "@/lib/http/validate";
 import { createLogger } from "@/lib/log";

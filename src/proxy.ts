@@ -1,12 +1,12 @@
 import { createServerClient } from "@supabase/ssr";
 import { type NextRequest, NextResponse } from "next/server";
-import { clientEnv } from "@/lib/env/client";
 import {
   REF_COOKIE,
   REF_COOKIE_MAX_AGE,
   REF_HINT_COOKIE,
   refHintCookieOptions,
-} from "@/lib/referrals/cookies";
+} from "@/features/referrals/cookies";
+import { clientEnv } from "@/lib/env/client";
 import { SUPABASE_AUTH_COOKIE } from "@/lib/supabase/cookie";
 
 /**

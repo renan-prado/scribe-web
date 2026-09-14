@@ -1,7 +1,7 @@
 import "server-only";
 import { NextResponse } from "next/server";
 import { cache } from "react";
-import { isActiveStatus, type PlanKey } from "@/lib/billing/plans";
+import { isActiveStatus, type PlanKey } from "@/features/billing/plans";
 import { getOwnSubscription } from "@/lib/db/billing";
 import { getFeatureSwitches, getOwnFeatureOverrides } from "@/lib/db/feature-flags";
 import {

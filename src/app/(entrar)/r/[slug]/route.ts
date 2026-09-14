@@ -1,7 +1,4 @@
 import { type NextRequest, NextResponse } from "next/server";
-import { recordPartnerClick } from "@/lib/db/partners";
-import { createLogger } from "@/lib/log";
-import { enforceRateLimit, RATE_LIMITS } from "@/lib/rate-limit";
 import {
   encodeRef,
   normalizeSlug,
@@ -12,7 +9,10 @@ import {
   refHintCookieOptions,
   VISIT_COOKIE,
   VISIT_COOKIE_MAX_AGE,
-} from "@/lib/referrals/cookies";
+} from "@/features/referrals/cookies";
+import { recordPartnerClick } from "@/lib/db/partners";
+import { createLogger } from "@/lib/log";
+import { enforceRateLimit, RATE_LIMITS } from "@/lib/rate-limit";
 
 const log = createLogger("partners/r");
 

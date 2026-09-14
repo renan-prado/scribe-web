@@ -1,5 +1,9 @@
 import "server-only";
-import { type ChargeReason, COIN_COST_BY_REASON, INITIAL_COIN_BALANCE } from "@/lib/coins/pricing";
+import {
+  type ChargeReason,
+  COIN_COST_BY_REASON,
+  INITIAL_COIN_BALANCE,
+} from "@/features/coins/pricing";
 import { getCurrentAccount } from "@/lib/db/account";
 import { createAdminClient } from "@/lib/supabase/admin";
 import { getAuthUser } from "@/lib/supabase/server";

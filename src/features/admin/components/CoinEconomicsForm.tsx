@@ -3,8 +3,8 @@ import {
   COINS_PER_COST_UNIT,
   type CoinEconomicsSettings,
   DEFAULT_COIN_ECONOMICS,
-} from "@/lib/coins/economics";
-import { clearCoinEconomics, setCoinEconomics } from "@/lib/coins/settings-actions";
+} from "@/features/coins/economics";
+import { clearCoinEconomics, setCoinEconomics } from "@/features/coins/settings-actions";
 
 /**
  * A RÉGUA da tela de precificação: quanto vale a moeda que vendemos e qual
