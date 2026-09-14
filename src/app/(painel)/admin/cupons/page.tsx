@@ -1,6 +1,7 @@
 import type { Metadata } from "next";
 import { AdminPageHeader } from "@/features/admin/components/AdminPageHeader";
 import { CouponsManager } from "@/features/admin/components/CouponsManager";
+import { GrowthTabs } from "@/features/admin/components/SectionTabs";
 import { listCoupons } from "@/lib/db/coupons";
 
 export const metadata: Metadata = { title: "Cupons" };
@@ -29,6 +30,8 @@ export default async function AdminCouponsPage() {
         title="Cupons"
         subtitle="Links de convite: quem criar a conta por um deles ganha as moedas do cupom, além das de boas-vindas."
       />
+
+      <GrowthTabs active="cupons" />
       <CouponsManager coupons={coupons} />
     </div>
   );

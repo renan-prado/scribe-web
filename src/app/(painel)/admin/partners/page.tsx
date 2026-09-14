@@ -1,6 +1,7 @@
 import type { Metadata } from "next";
 import { AdminPageHeader } from "@/features/admin/components/AdminPageHeader";
 import { PartnersManager } from "@/features/admin/components/PartnersManager";
+import { GrowthTabs } from "@/features/admin/components/SectionTabs";
 import { listPartners } from "@/features/admin/server/db/partners";
 import { loadAdminUsageSummary } from "@/features/admin/server/db/usage";
 import { appUrl } from "@/features/billing/server/stripe";
@@ -36,6 +37,8 @@ export default async function AdminPartnersPage() {
         title="Parceiros"
         subtitle="Divulgadores convidados, seus números e o que há a pagar."
       />
+
+      <GrowthTabs active="parceiros" />
       <PartnersManager
         initialPartners={partners}
         prospects={prospects}

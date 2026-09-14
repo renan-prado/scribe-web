@@ -11,7 +11,7 @@
  * também. É o mesmo motivo de `lib/partners/economics.ts` ser client-safe,
  * duas cópias da conta é como se descobre tarde que uma delas estava errada.
  *
- * O mapeamento ROTA → ação NÃO mora aqui, e sim em `lib/db/admin/usage.ts`:
+ * O mapeamento ROTA → ação NÃO mora aqui, e sim em `features/admin/server/db/usage.ts`:
  * ele depende de `UsageRoute`, que é vocabulário do servidor, e inclui rotas
  * legadas que não existem mais no código mas continuam no banco.
  */

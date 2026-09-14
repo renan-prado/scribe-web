@@ -514,7 +514,7 @@ Reprocessar custa o mesmo 50, e não pode custar menos: reprocessar roda o
 pipeline inteiro de novo, e um preço menor abriria a arbitragem de gerar uma
 vez pelo preço cheio e reprocessar indefinidamente barato.
 
-O custo real por estudo é MEDIDO em `/admin/usage`, as três etapas gravam com
+O custo real por estudo é MEDIDO em `/admin/custos`, as três etapas gravam com
 rotas separadas, então dá para ver quanto custa perguntar, responder e
 escrever, e decidir onde baixar de modelo se a conta não fechar.
 

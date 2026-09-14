@@ -10,6 +10,7 @@ import {
   TableRow,
 } from "@/components/ui/table";
 import { AdminPageHeader } from "@/features/admin/components/AdminPageHeader";
+import { ContentTabs } from "@/features/admin/components/SectionTabs";
 import { SessionModeBadge } from "@/features/admin/components/SessionModeBadge";
 import { SessionReaderFilters } from "@/features/admin/components/SessionReaderFilters";
 import {
@@ -81,6 +82,8 @@ export default async function AdminSessionsPage({ searchParams }: PageProps) {
         title="Sessões"
         subtitle="O que os usuários receberam de fato: resumo, transcrição e estudo, para ler e julgar."
       />
+
+      <ContentTabs active="sessoes" />
 
       <SessionReaderFilters
         users={users}

@@ -35,12 +35,12 @@ export async function setCoinEconomics(formData: FormData): Promise<void> {
     path: "/",
     maxAge: ONE_YEAR_SECONDS,
   });
-  revalidatePath("/admin/precificacao");
+  revalidatePath("/admin/custos");
 }
 
 export async function clearCoinEconomics(): Promise<void> {
   await assertAdmin();
   const jar = await cookies();
   jar.delete(COIN_ECONOMICS_COOKIE);
-  revalidatePath("/admin/precificacao");
+  revalidatePath("/admin/custos");
 }

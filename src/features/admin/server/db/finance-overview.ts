@@ -31,7 +31,7 @@ import {
  * `FinanceOverview` devolvido daqui, e a aritmética inteira é a de
  * `lib/finance/aggregate.ts`.
  *
- * O câmbio vem de `getUsdToBrl()`, o MESMO de `/admin/usage`, com o mesmo
+ * O câmbio vem de `getUsdToBrl()`, o MESMO de `/admin/custos`, com o mesmo
  * fallback manual em cookie. Uma segunda fonte de cotação faria a mesma
  * despesa em dólar valer coisas diferentes em duas telas do mesmo painel.
  */

@@ -339,7 +339,7 @@ export async function POST(request: Request) {
     metadata: buildLlmMetadata({ route: "foo", userId: auth.user.id, sessionId }),
   });
   // 6. parseFooFromLLM() do lib/domain, nunca JSON.parse à mão
-  // 7. recordChatUsage() para o custo aparecer em /admin/usage
+  // 7. recordChatUsage() para o custo aparecer em /admin/custos
   // 8. log.debug("ok", { latencyMs, finishReason, promptTokens, completionTokens })
 }
 ```

@@ -1,7 +1,7 @@
 "use client";
 
 import { X } from "lucide-react";
-import { useRouter, useSearchParams } from "next/navigation";
+import { usePathname, useRouter, useSearchParams } from "next/navigation";
 import { useState, useTransition } from "react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -18,6 +18,7 @@ const UUID = /[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}/i;
 
 export function SessionRunLookup({ current }: { current: string }) {
   const router = useRouter();
+  const pathname = usePathname();
   const searchParams = useSearchParams();
   const [value, setValue] = useState(current);
   const [isPending, startTransition] = useTransition();
@@ -30,7 +31,10 @@ export function SessionRunLookup({ current }: { current: string }) {
     if (sessionId) params.set("sessionId", sessionId);
     else params.delete("sessionId");
     const qs = params.toString();
-    startTransition(() => router.push(qs ? `/admin/precificacao?${qs}` : "/admin/precificacao"));
+    // O destino é o `pathname` atual, e não uma rota escrita à mão: este campo
+    // já mudou de tela uma vez (nasceu na de precificação, hoje vive na aba
+    // Sessões de /admin/custos), e uma rota fixa aqui quebra em silêncio.
+    startTransition(() => router.push(qs ? `${pathname}?${qs}` : pathname));
   }
 
   return (

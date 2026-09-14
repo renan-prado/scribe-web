@@ -1,0 +1,280 @@
+import type { Metadata } from "next";
+import Link from "next/link";
+import { AdminPageHeader } from "@/features/admin/components/AdminPageHeader";
+import { AdminTabs } from "@/features/admin/components/AdminTabs";
+import { CoinEconomicsForm } from "@/features/admin/components/CoinEconomicsForm";
+import { UnpricedNote, VersionWindowNote } from "@/features/admin/components/custos/notices";
+import { PrecosTab } from "@/features/admin/components/custos/PrecosTab";
+import { RotasTab } from "@/features/admin/components/custos/RotasTab";
+import { SessoesTab } from "@/features/admin/components/custos/SessoesTab";
+import { VersoesTab } from "@/features/admin/components/custos/VersoesTab";
+import { FxRateBadge } from "@/features/admin/components/FxRateBadge";
+import { SessionRunLookup } from "@/features/admin/components/SessionRunLookup";
+import { SessionRunPanel } from "@/features/admin/components/SessionRunPanel";
+import { UsageFilters } from "@/features/admin/components/UsageFilters";
+import { VersionPicker } from "@/features/admin/components/VersionPicker";
+import { loadSessionRuns } from "@/features/admin/server/db/session-runs";
+import {
+  listUsersForFilter,
+  loadAdminUsageSummary,
+  type UsageFilters as UsageFiltersType,
+} from "@/features/admin/server/db/usage";
+import { getCoinEconomics, hasCustomCoinEconomics } from "@/features/coins/server/settings";
+import { SESSION_MODES, type SessionMode } from "@/lib/domain/session";
+import { makeCostPerThousandCoinsFormatter, makeMoneyFormatter } from "@/lib/fx/format";
+import { getUsdToBrl } from "@/lib/fx/usd-brl";
+import { cn } from "@/lib/utils";
+
+export const metadata: Metadata = { title: "Custos" };
+export const dynamic = "force-dynamic";
+
+/**
+ * Tudo o que a OpenAI cobra do Scriba, em quatro cortes da MESMA passada de
+ * `llm_usage_events`.
+ *
+ * Eram duas telas, "Uso & custos" e "Precificação", e a divisão não era de
+ * assunto, era de recorte: as duas chamavam `loadAdminUsageSummary`, as duas
+ * tinham pílulas de período, seletor de versão, aviso de modelo sem preço,
+ * selo de câmbio e uma fileira de KPI que só diferia pela margem no fim. Quem
+ * chegava com uma pergunta de dinheiro tinha de saber de cor em qual das duas
+ * estava a coluna, e quem trocava de tela recomeçava os filtros do zero.
+ *
+ * As quatro abas são as quatro perguntas, e a ordem é a da decisão:
+ *
+ *   - **Preços & margem** — o preço de cada AÇÃO ainda fecha? (a decisão)
+ *   - **Rotas & usuários** — de onde vem o custo? (o diagnóstico)
+ *   - **Versões** — depois daquela mudança, ficou melhor ou pior? (o tempo)
+ *   - **Sessões** — quanto custou esta sessão, execução por execução?
+ *
+ * **Os filtros finos não atravessam para a aba de preços**, e isso é regra, não
+ * descuido: uma margem por AÇÃO recortada por uma rota é custo de uma fatia
+ * contra a moeda inteira, um número sempre bom que ninguém investiga (a mesma
+ * armadilha que `coinsScoped` documenta em `server/db/usage.ts`). Período e
+ * versão atravessam, porque os dois recortam os dois lados da conta.
+ */
+
+const TABS = ["precos", "rotas", "versoes", "sessoes"] as const;
+type Tab = (typeof TABS)[number];
+
+const TAB_LABELS: Record<Tab, string> = {
+  precos: "Preços & margem",
+  rotas: "Rotas & usuários",
+  versoes: "Versões",
+  sessoes: "Sessões",
+};
+
+const TAB_SUBTITLES: Record<Tab, string> = {
+  precos: "O que cada ação cobra, o que ela custa de verdade, e a margem que sobra.",
+  rotas: "De onde vem o custo: cada rota de LLM e cada pessoa que a disparou.",
+  versoes: "Custo e latência de um deploy para o outro, uma rota de cada vez.",
+  sessoes: "O custo de cada sessão, e uma delas aberta execução por execução.",
+};
+
+const RANGES = [
+  { key: "7d", label: "7 dias", days: 7 },
+  { key: "30d", label: "30 dias", days: 30 },
+  { key: "90d", label: "90 dias", days: 90 },
+  { key: "all", label: "Tudo", days: null },
+] as const;
+
+function rangeToFrom(range: string): string | undefined {
+  const found = RANGES.find((r) => r.key === range) ?? RANGES[1];
+  if (!found.days) return undefined;
+  return new Date(Date.now() - found.days * 24 * 60 * 60 * 1000).toISOString();
+}
+
+const UUID = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
+
+function parseModeFilter(value: string | undefined): SessionMode | undefined {
+  return (SESSION_MODES as readonly string[]).includes(value ?? "")
+    ? (value as SessionMode)
+    : undefined;
+}
+
+type SearchParams = {
+  aba?: string;
+  range?: string;
+  userId?: string;
+  route?: string;
+  sessionId?: string;
+  mode?: string;
+  version?: string;
+};
+
+/**
+ * O link de uma aba, ou de uma pílula de período.
+ *
+ * Período e versão sobrevivem a qualquer troca; os filtros finos só existem
+ * nas abas que os usam, e são DESCARTADOS ao entrar em "Preços & margem" pela
+ * razão do cabeçalho do arquivo. O `sessionId` é de uma aba só.
+ */
+function hrefFor(tab: Tab, sp: SearchParams, overrides: Partial<SearchParams> = {}): string {
+  const merged = { ...sp, ...overrides };
+  const params = new URLSearchParams();
+  if (tab !== "precos") params.set("aba", tab);
+  if (merged.range && merged.range !== "30d") params.set("range", merged.range);
+  if (merged.version) params.set("version", merged.version);
+  if (tab !== "precos") {
+    if (merged.userId) params.set("userId", merged.userId);
+    if (merged.route) params.set("route", merged.route);
+    if (merged.mode) params.set("mode", merged.mode);
+  }
+  if (tab === "sessoes" && merged.sessionId) params.set("sessionId", merged.sessionId);
+  const qs = params.toString();
+  return qs ? `/admin/custos?${qs}` : "/admin/custos";
+}
+
+export default async function AdminCostsPage({
+  searchParams,
+}: {
+  searchParams: Promise<SearchParams>;
+}) {
+  const sp = await searchParams;
+  const tab: Tab = TABS.includes(sp.aba as Tab) ? (sp.aba as Tab) : "precos";
+  const range = RANGES.some((r) => r.key === sp.range) ? (sp.range as string) : "30d";
+  const version = sp.version?.trim() ?? "";
+  // Validado aqui e não no componente: um `sessionId` malformado viraria uma
+  // consulta ao Postgres que estoura em vez de devolver vazio.
+  const sessionId =
+    tab === "sessoes" && UUID.test(sp.sessionId?.trim() ?? "")
+      ? (sp.sessionId as string).trim()
+      : "";
+
+  const fine = tab !== "precos";
+  const filters: UsageFiltersType = {
+    from: rangeToFrom(range),
+    version: version || undefined,
+    userId: fine ? sp.userId || undefined : undefined,
+    route: fine ? sp.route || undefined : undefined,
+    mode: fine ? parseModeFilter(sp.mode) : undefined,
+    sessionId: sessionId || undefined,
+  };
+
+  const [summary, rate, settings, isCustom, users, sessionRuns] = await Promise.all([
+    loadAdminUsageSummary(filters),
+    getUsdToBrl(),
+    getCoinEconomics(),
+    hasCustomCoinEconomics(),
+    fine ? listUsersForFilter() : Promise.resolve([]),
+    // Melhor-esforço: um id que não existe não pode derrubar a tela inteira,
+    // que é a razão de alguém ter chegado aqui.
+    sessionId ? loadSessionRuns(sessionId).catch(() => null) : Promise.resolve(null),
+  ]);
+
+  const money = makeMoneyFormatter(rate);
+  const costPerThousandCoins = makeCostPerThousandCoinsFormatter(rate);
+  const routeUniverse: string[] =
+    summary.routes.length > 0
+      ? summary.routes
+      : // Só quando o período não tem evento nenhum: um `Select` vazio não abre,
+        // e o filtro pareceria quebrado em vez de vazio. Espelha as rotas vivas
+        // de `UsageRoute`; as legadas aparecem sozinhas quando houver linha delas.
+        ["transcribe", "final-summary", "study-answers", "study-write"];
+
+  return (
+    <div className="flex flex-col gap-6">
+      <AdminPageHeader
+        title="Custos"
+        subtitle={TAB_SUBTITLES[tab]}
+        actions={
+          <>
+            <VersionPicker versions={summary.versions} current={version} />
+            <RangePills tab={tab} sp={sp} current={range} />
+          </>
+        }
+      />
+
+      <AdminTabs
+        tabs={TABS.map((key) => ({
+          href: hrefFor(key, sp),
+          label: TAB_LABELS[key],
+          active: key === tab,
+        }))}
+      />
+
+      {/* Os dois avisos valem para os quatro cortes, então vivem acima das
+          abas: custo subestimado contamina margem, rota, versão e sessão, e
+          quem abriu direto numa delas não passa pelas outras para ser
+          avisado. */}
+      <UnpricedNote summary={summary} />
+      <VersionWindowNote summary={summary} />
+
+      {fine ? (
+        <UsageFilters
+          users={users}
+          routes={routeUniverse}
+          current={{ userId: sp.userId ?? "", route: sp.route ?? "", mode: sp.mode ?? "" }}
+        />
+      ) : null}
+
+      {tab === "precos" ? (
+        <>
+          {/* A régua fica na aba que ela governa. Nada do que se digita aqui
+              cobra coisa alguma: quem cobra é o Price do Stripe. O custo ao
+              lado é MEDIDO; este número é simulação, e a tela precisa dizer
+              qual é qual. */}
+          <CoinEconomicsForm settings={settings} isCustom={isCustom} />
+          <PrecosTab summary={summary} rate={rate} settings={settings} />
+        </>
+      ) : null}
+
+      {tab === "rotas" ? <RotasTab summary={summary} money={money} /> : null}
+
+      {tab === "versoes" ? (
+        <VersoesTab summary={summary} money={money} filteredRoute={sp.route ?? ""} />
+      ) : null}
+
+      {tab === "sessoes" ? (
+        <>
+          <SessionRunLookup current={sessionId} />
+          {sessionId && !sessionRuns ? (
+            <p className="rounded-xl border border-scriba-hairline bg-scriba-paper p-5 text-[13px] font-light text-scriba-ink-mute">
+              Nenhuma sessão com o id <span className="font-mono">{sessionId}</span> neste ambiente.
+            </p>
+          ) : null}
+          {sessionRuns ? (
+            <SessionRunPanel
+              report={sessionRuns}
+              usdToBrl={rate?.rate ?? null}
+              settings={settings}
+              money={money}
+            />
+          ) : null}
+          <SessoesTab
+            summary={summary}
+            money={money}
+            costPerThousandCoins={costPerThousandCoins}
+            sessionHref={(id) => hrefFor("sessoes", sp, { sessionId: id })}
+          />
+        </>
+      ) : null}
+
+      <FxRateBadge rate={rate} />
+    </div>
+  );
+}
+
+function RangePills({ tab, sp, current }: { tab: Tab; sp: SearchParams; current: string }) {
+  return (
+    <nav
+      aria-label="Período"
+      className="flex flex-wrap items-center gap-1 rounded-full border border-scriba-hairline-soft bg-scriba-paper p-1"
+    >
+      {RANGES.map((r) => (
+        <Link
+          key={r.key}
+          href={hrefFor(tab, sp, { range: r.key })}
+          aria-current={r.key === current ? "page" : undefined}
+          className={cn(
+            "rounded-full px-3 py-1 text-[12px] font-medium transition-colors",
+            r.key === current
+              ? "bg-scriba-blue-soft text-scriba-blue-ink"
+              : "text-scriba-ink-mute hover:text-scriba-ink"
+          )}
+        >
+          {r.label}
+        </Link>
+      ))}
+    </nav>
+  );
+}

@@ -21,11 +21,16 @@ const INT = new Intl.NumberFormat("pt-BR");
 const pct = (n: number) => `${(n * 100).toFixed(1).replace(".", ",")}%`;
 
 /**
- * Funil, ativação, receita e passivo de moedas.
+ * Funil, ativação e passivo de moedas: o CAMINHO até a assinatura.
  *
- * A tela responde às perguntas que o /admin não respondia: quantos assinam,
- * quantos chegam a gravar alguma coisa, se as moedas de boas-vindas estão
- * sendo usadas, e quanto de OpenAI já foi vendido e ainda não gasto.
+ * Quantos assinam, quantos chegam a gravar alguma coisa, se as moedas de
+ * boas-vindas estão sendo usadas, e quanto de OpenAI já foi vendido e ainda
+ * não gasto.
+ *
+ * Quanto a assinatura RENDE não é assunto daqui. O MRR morava nesta fileira e
+ * também no Financeiro, calculado por duas consultas diferentes sobre a mesma
+ * definição (`metrics.ts` e `finance.ts`), e ver o mesmo número em duas telas
+ * faz quem lê conferir se batem em vez de ler o funil.
  *
  * O custo por moeda é MEDIDO (`loadAdminUsageSummary` + câmbio), não fixado:
  * ele muda com o dólar e com o preço do modelo, e é a base da conversão do
@@ -44,6 +49,12 @@ export default async function AdminMetricsPage() {
   const metrics = await loadAdminMetrics({}, costPerThousandCents);
   const { funnel, welcomeCoins, revenue, liability } = metrics;
 
+  // O MRR saiu daqui, e o lugar dele é a Visão geral (o número do dia) e o
+  // Financeiro (a série mensal). Ele aparecia nesta fileira ao lado de
+  // "Assinantes ativos", e as duas telas publicavam o mesmo valor por duas
+  // consultas diferentes: quem via os dois passava a conferir se batiam em vez
+  // de ler o funil, que é a pergunta desta tela. O que fica aqui é o CAMINHO
+  // até a assinatura; quanto ela rende é assunto de dinheiro.
   const tiles: KpiTile[] = [
     {
       label: "Cadastros",
@@ -56,9 +67,17 @@ export default async function AdminMetricsPage() {
       hint: `${pct(funnel.conversionRate)} de conversão · ${INT.format(revenue.cancelScheduled)} com cancelamento agendado`,
     },
     {
-      label: "MRR",
-      value: formatBrl(revenue.mrrCents),
-      hint: `ARPU ${formatBrl(revenue.arpuCents)} · Stripe ~${formatBrl(revenue.stripeFeeCents)}/mês`,
+      // Mediana e não média: um único usuário que assinou depois de um ano
+      // deslocaria a média e faria o número mentir sobre o caso típico.
+      label: "Tempo até assinar",
+      value:
+        metrics.medianDaysToSubscribe === null
+          ? "-"
+          : `${metrics.medianDaysToSubscribe.toLocaleString("pt-BR")} dias`,
+      hint:
+        metrics.medianDaysToSubscribe === null
+          ? "nenhuma assinatura registrada ainda"
+          : "mediana entre o cadastro e a primeira assinatura",
     },
     {
       label: "Moedas em circulação",
@@ -93,7 +112,7 @@ export default async function AdminMetricsPage() {
     <div className="flex flex-col gap-6">
       <AdminPageHeader
         title="Métricas"
-        subtitle="Funil, ativação, receita e passivo de moedas, o caminho da visita ao dinheiro."
+        subtitle="O caminho da visita até a assinatura: funil, ativação e o passivo de moedas."
       />
 
       <KpiGrid>
@@ -170,7 +189,11 @@ export default async function AdminMetricsPage() {
         </div>
       </section>
 
-      <section className="grid gap-4 lg:grid-cols-2">
+      {/* O passivo ocupa a largura inteira: o cartão "Tempo até assinar" que
+          dividia esta faixa virou KPI lá em cima, onde um número solto com uma
+          frase de legenda cabe melhor do que num cartão da altura de uma
+          tabela. */}
+      <section className="grid gap-4">
         <ListCard title="Passivo de moedas" subtitle="Agora">
           <ul className="flex flex-col divide-y divide-scriba-hairline">
             <MetricRow label="Creditadas (total)" value={INT.format(liability.granted)} />
@@ -182,24 +205,6 @@ export default async function AdminMetricsPage() {
           <p className="text-[11.5px] font-light leading-[1.5] text-scriba-ink-mute">
             Os créditos acumulam de um mês para o outro, então o saldo parado é custo de OpenAI já
             vendido e ainda não gasto.
-          </p>
-        </ListCard>
-
-        <ListCard title="Tempo até assinar" subtitle="Mediana">
-          {metrics.medianDaysToSubscribe === null ? (
-            <EmptyState>Nenhuma assinatura registrada ainda.</EmptyState>
-          ) : (
-            <p className="text-[26px] font-semibold tracking-tight text-scriba-ink-strong">
-              {metrics.medianDaysToSubscribe.toLocaleString("pt-BR")}{" "}
-              <span className="text-[14px] font-light text-scriba-ink-soft">
-                dias entre o cadastro e a primeira assinatura
-              </span>
-            </p>
-          )}
-          {/* Mediana e não média: um único usuário que assinou depois de um ano
-              deslocaria a média e faria o número mentir sobre o caso típico. */}
-          <p className="text-[11.5px] font-light leading-[1.5] text-scriba-ink-mute">
-            Mediana, não média, um caso extremo não deve mover o número típico.
           </p>
         </ListCard>
       </section>

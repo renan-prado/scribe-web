@@ -1,9 +1,65 @@
 # src/features/admin: painel interno
 
-Telas de `/admin`: métricas de produto, uso de LLM, usuários, parceiros,
-cupons de convite, o feedback dos usuários e a leitura do que eles receberam
-(resumo, transcrição e estudo de cada sessão), mais a leitura que a IA faz de
-tudo isso.
+Oito telas: a visão geral (com a leitura que a IA faz do negócio), as métricas
+de produto, os custos de LLM, o controle financeiro, a leitura do que os
+usuários receberam, os programas de entrada de gente, os usuários e as
+configurações.
+
+## Oito telas, e por que não são dezessete
+
+O menu já teve **dezessete itens** (onze mais seis num grupo "Financeiro"), e a
+maior parte deles não era uma ÁREA: era um RECORTE dos mesmos números com uma
+linha própria no menu.
+
+- "Uso & custos" e "Precificação" liam a MESMA passada de `llm_usage_events`,
+  cada uma com o seu cabeçalho, as suas pílulas de período, o seu seletor de
+  versão, o seu selo de câmbio e uma fileira de KPI que só diferia pela margem
+  no fim.
+- "Visão geral" era `/admin/usage` com filtro fixo de 30 dias e sem filtro para
+  mexer: não mostrava MRR, nem caixa, nem funil, e fechava com quatro atalhos,
+  um menu dentro de uma tela que já tinha menu.
+- "Compromissos" era um FILTRO de "Lançamentos" sobre a mesma tabela.
+- "Leitura da IA" era um cabeçalho e um botão.
+- "Funcionalidades" e "Configurações financeiras" eram os dois lugares de girar
+  um parâmetro sem deploy, em cantos opostos do menu.
+- MRR aparecia em `/admin/metricas` E em `/admin/financeiro`, por duas
+  consultas diferentes sobre a mesma definição.
+
+O custo disso não é estético. **Uma lista de dezessete deixa de ser encontrada
+por reconhecimento**: para achar uma coluna era preciso saber de cor em qual
+das duas telas parecidas ela estava, e trocar de tela recomeçava os filtros do
+zero. Dois lugares publicando o mesmo número fazem quem lê conferir se batem em
+vez de ler a tela.
+
+**A regra que ficou: um item de menu é uma PERGUNTA, um recorte é uma ABA.**
+
+| Tela | Pergunta | O que absorveu |
+|---|---|---|
+| Visão geral | como o negócio vai hoje? | + a leitura da IA |
+| Métricas | quem chega, quem ativa, quem assina? | (perdeu o MRR) |
+| Custos | quanto a OpenAI cobra, e o preço fecha? | `usage` + `precificacao`, em 4 abas |
+| Financeiro | quanto entra, sai e devemos? | 6 telas → 1 item com abas |
+| Conteúdo | o que a pessoa recebeu presta? | `sessions` + `feedback` |
+| Crescimento | por onde entra gente? | `partners` + `cupons` |
+| Usuários | quem são, e o que podem? | |
+| Configurações | o que dá para girar sem deploy? | `features` + as financeiras |
+
+A faixa de abas é `AdminTabs`, e ela é **LINK, não estado de cliente**: toda
+tela do painel é `force-dynamic`, a aba troca o que o SERVIDOR busca, não o que
+o navegador esconde. Como link, ela sobrevive a um F5 e pode ser colada para
+alguém. Cada tela também busca só o que a aba ativa usa — `/admin/custos` só
+carrega a lista de usuários do filtro nas abas que a têm, e `/admin/configuracoes`
+não toca em finanças na aba de produto.
+
+O que uma aba diz e um item de menu não diz: **isto aqui é o mesmo assunto,
+visto de outro ângulo.** É por isso que "Em aberto" é aba de "Lançamentos" e
+não tela irmã: as duas são a mesma tabela, e lado a lado a tela responde
+sozinha a pergunta que dois itens de menu faziam nascer ("o que eu lanço ali
+aparece aqui?").
+
+**O grupo "Financeiro" da sidebar sumiu junto.** Ele existia para quebrar a
+parede de quatorze itens seguidos; com oito não há parede, e um rótulo de grupo
+sobre uma linha só é moldura sem quadro.
 
 ## O gate
 
@@ -113,7 +169,7 @@ invente porcentagem para preencher o espaço.
 **As grades de KPI viram quatro colunas só em `xl`, não no `@5xl/main` do
 bloco.** Em `lg` a sidebar já come 16rem, e um "R$ 12.345,67" não cabia nos
 ~175px que sobravam por cartão. Vale para o mesmo motivo na barra de filtros de
-`/admin/usage`.
+`/admin/custos`.
 
 **O `max-w-[1600px]` do conteúdo não é do bloco e fica.** Sem ele uma tabela de
 finanças se estica por um monitor inteiro e a linha deixa de ser lida de ponta
@@ -151,7 +207,7 @@ O mesmo vale para a conta do programa de parceiros: ela mora em
 
 ## Custo
 
-`/admin/usage` lê `llm_usage_events`, alimentada por `recordChatUsage` /
+`/admin/custos` lê `llm_usage_events`, alimentada por `recordChatUsage` /
 `recordAudioUsage` em cada rota de LLM. O preço por token está em
 `src/lib/llm/pricing.ts`; a conversão para reais usa o câmbio de
 `src/lib/fx/usd-brl.ts`.
@@ -182,11 +238,11 @@ A ordenação do "top de usuários" é por **moedas gastas**, não por dólar: d
 mistura modelos de preços diferentes e a lista deixava de responder à pergunta
 que ela existe para responder.
 
-## O corte por VERSÃO (`/admin/usage`)
+## O corte por VERSÃO (aba "Versões" de `/admin/custos`)
 
-Rota, usuário e sessão são cortes de ESPAÇO, dizem onde o dinheiro foi. A
-tabela "Por versão" é o corte de TEMPO, e responde à outra pergunta: **depois
-daquela mudança, ficou melhor ou pior?**
+Rota, usuário, ação e sessão são cortes de ESPAÇO, dizem onde o dinheiro foi. A
+aba "Versões" é o corte de TEMPO, e responde à outra pergunta: **depois daquela
+mudança, ficou melhor ou pior?**
 
 Data não serve de marcador, ela sabe quando a CHAMADA aconteceu, não quando o
 DEPLOY subiu. O marcador é `llm_usage_events.app_version` (migração `0044`),
@@ -195,7 +251,7 @@ Ele só separa alguma coisa se a versão SUBIR a cada entrega, e é por isso que
 `npm run release` antes de todo push é regra do `AGENTS.md` da raiz, não
 sugestão: sem o bump as linhas se fundem numa só, **sem erro nenhum na tela**.
 
-Cinco decisões dessa tela, todas contra o mesmo risco de mostrar um número que
+Cinco decisões dessa aba, todas contra o mesmo risco de mostrar um número que
 parece resposta e não é:
 
 - **A leitura correta é uma ROTA de cada vez**, e o aviso acima da tabela diz
@@ -205,11 +261,14 @@ parece resposta e não é:
 - **Não há coluna de moedas por versão na tabela.** O débito é por minuto de
   gravação, não por chamada, não há como ratear uma cobrança de minuto entre
   as chamadas que ela pagou.
-- **Os dois KPIs de moeda no topo viram `-` sob filtro de ROTA**
-  (`summary.coinsScoped`). Custo recortado dividido por moeda inteira é um
-  número sempre baixo, com cara de margem folgada, o tipo de mentira que
-  ninguém investiga porque a conta parece boa. Sob filtro de VERSÃO eles
-  continuam, pela regra da janela abaixo.
+- **Os filtros finos (usuário, rota, modo) NÃO atravessam para a aba de
+  preços** (`summary.coinsScoped`). Custo recortado por rota dividido por moeda
+  inteira é um número sempre baixo, com cara de margem folgada, o tipo de
+  mentira que ninguém investiga porque a conta parece boa. Enquanto eram duas
+  telas, a proteção era um travessão nos dois KPIs de moeda; hoje o recorte
+  simplesmente não chega àquela aba, e período e versão são os únicos que
+  atravessam, porque os dois recortam os DOIS lados da conta (o da versão pela
+  regra da janela, abaixo).
 - **Variação com menos de 20 chamadas de um dos lados sai cinza**, e abaixo de
   1% sai neutra. "+340%" em vermelho sobre duas chamadas é lido como regressão
   quando o que ele diz é "ainda não deu tempo de medir".
@@ -227,7 +286,7 @@ o efeito era o oposto do pretendido: a funcionalidade desaparecia exatamente
 quando alguém ia procurá-la (o estado de todo ambiente no dia em que isto sobe),
 e a leitura virava "não foi feito" em vez de "ainda não há o que comparar".
 
-### A regra da janela, e por que precificação também tem o filtro
+### A regra da janela, e por que a aba de preços também tem o filtro
 
 `llm_usage_events` tem carimbo de versão; `coin_transactions` **não**. Margem
 precisa dos dois lados, e recortar só o custo daria uma fatia dividida pela
@@ -238,10 +297,12 @@ receita do mês inteiro. A regra é uma frase:
 
 A janela é medida, do primeiro evento da versão ao primeiro da seguinte
 (`VersionWindow` em `src/features/admin/server/db/usage.ts`); a mais nova tem fim aberto. É o
-que permite `/admin/precificacao` ter o mesmo filtro e responder "esta mudança
-melhorou a margem da ação?", que é a pergunta daquela tela. Ela **mostra o
-intervalo resolvido** numa faixa sob o cabeçalho: um recorte de seis horas no
-ar é indistinguível de um de um mês, e os dois levam a decisões opostas.
+que permite a aba de PREÇOS responder "esta mudança melhorou a margem da
+ação?" com o mesmo seletor de versão. A faixa `VersionWindowNote` **mostra o
+intervalo resolvido**, e fica acima das abas, não dentro de uma: um recorte de
+seis horas no ar é indistinguível de um de um mês, os dois levam a decisões
+opostas, e quem trocou de aba com a versão fixada precisa continuar vendo qual
+é.
 
 Uma versão sem evento no período zera moeda e custo JUNTOS, zerar só o custo
 produziria margem de 100%. A imprecisão conhecida é o rollout, em que a Vercel
@@ -249,14 +310,21 @@ serve as duas versões por alguns minutos.
 
 Guia completo em [`docs/versionamento.md`](../../../docs/versionamento.md).
 
-## O inspetor de sessão
+## O inspetor de sessão (na aba "Sessões")
 
-`/admin/precificacao?sessionId=<uuid>` abre uma sessão **execução por
-execução** (`src/features/admin/server/db/session-runs.ts`). É a única tela que NÃO agrega, e
-existe por causa de um ponto cego das outras duas: reprocessar um estudo grava
-um segundo conjunto de eventos na mesma sessão, e somados eles viram um número
-que não descreve nem uma execução nem a outra, que é justamente o número que
-se quer comparar ao ajustar modelo ou prompt.
+`/admin/custos?aba=sessoes&sessionId=<uuid>` abre uma sessão **execução por
+execução** (`src/features/admin/server/db/session-runs.ts`). É a única leitura
+que NÃO agrega, e existe por causa de um ponto cego de todas as outras:
+reprocessar um estudo grava um segundo conjunto de eventos na mesma sessão, e
+somados eles viram um número que não descreve nem uma execução nem a outra, que
+é justamente o número que se quer comparar ao ajustar modelo ou prompt.
+
+**Ele mora na MESMA aba da tabela de sessões, e isso conserta uma ambiguidade
+real.** Antes, a tabela estava numa tela e o inspetor na outra, as duas
+governadas por um `sessionId` na URL com o mesmo nome e significados
+diferentes: lá ele filtrava a tabela, aqui ele abria a sessão. Juntos, o
+parâmetro quer dizer uma coisa só, e o clique numa linha entrega o agregado e
+as execuções de uma vez.
 
 A execução é delimitada pelo evento `study-questions`, o passo 1 do pipeline,
 que roda exatamente uma vez por estudo. É corte exato, não janela de tempo: dois
@@ -279,13 +347,24 @@ estorno grava um negativo que é devolução de crédito, não consumo. Só os s
 motivos de `CHARGE_REASONS` são gasto. O módulo de leitura já faz esse corte,
 não recrie a soma numa tela.
 
-## Precificação (`/admin/precificacao`)
+## Preços e margem (a aba de decisão de `/admin/custos`)
 
-Responde a UMA pergunta que `/admin/usage` não responde: **continuo cobrando 5
-moedas o minuto?** Preço não é cobrado por rota, é cobrado por AÇÃO, e uma
-ação é várias rotas (um minuto gravado é transcrição + a fatia dele no resumo
-final). Somar rota a rota à mão para chegar no minuto era o trabalho que esta
-tela existe para não ser refeito.
+Responde a UMA pergunta que nenhum dos outros três cortes responde: **continuo
+cobrando 5 moedas o minuto?** Preço não é cobrado por rota, é cobrado por AÇÃO,
+e uma ação é várias rotas (um minuto gravado é transcrição + a fatia dele no
+resumo final). Somar rota a rota à mão para chegar no minuto era o trabalho que
+esta aba existe para não ser refeito.
+
+**Ela é a aba PADRÃO da tela** (`/admin/custos` sem query abre nela), e a ordem
+das quatro é a da decisão: preço, depois o diagnóstico por rota, depois o
+tempo, depois a sessão. Quem chega com uma pergunta de dinheiro cai na resposta
+antes de cair no detalhe.
+
+**A fileira de KPI do topo era DUAS.** "Uso & custos" abria com custo, moedas e
+custo por milheiro; "Precificação" abria com os mesmos três mais a margem, com
+o primeiro cartão rebatizado ("Custo no período" contra "Custo medido"). Ficou
+a fileira completa, uma vez só, e a margem — a única diferença real — é o
+cartão que fecha a leitura.
 
 **As ações são quatro: gravação, importação do YouTube, estudo e resumo de
 sessão salva.** Os motivos de ledger LEGADOS (os três modos de captura antigos,
@@ -295,16 +374,18 @@ dinheiro é apagar o que de fato aconteceu.
 
 O vocabulário está em `src/features/coins/billable.ts` (client-safe) e a conta em
 `src/features/coins/economics.ts`. O mapeamento ROTA → ação mora em
-`src/features/admin/server/db/usage.ts`, junto do resto da agregação: **é a mesma passada pelas
-mesmas linhas** que alimenta `/admin/usage`. Uma segunda consulta de custo é
-uma segunda definição do mesmo número.
+`src/features/admin/server/db/usage.ts`, junto do resto da agregação: **é a
+mesma passada pelas mesmas linhas** que alimenta as outras abas. Uma segunda
+consulta de custo é uma segunda definição do mesmo número — e hoje é
+literalmente a mesma chamada, uma só por request, com a aba escolhendo o que
+desenhar do resultado.
 
-Ela também aceita o filtro de **versão**, ao lado das pílulas de período, e ali
-ele responde "esta mudança melhorou a margem da ação?". Quem recorta a moeda
-junto com o custo é a janela em que a versão esteve no ar, ver "A regra da
-janela" na seção do corte por versão, acima. A faixa azul sob o cabeçalho
-(`VersionWindowNote`) mostra o intervalo resolvido, e ela não é decoração: sem
-ela, seis horas no ar e um mês no ar produzem números indistinguíveis.
+Ela aceita o filtro de **versão**, ao lado das pílulas de período, e ali ele
+responde "esta mudança melhorou a margem da ação?". Quem recorta a moeda junto
+com o custo é a janela em que a versão esteve no ar, ver "A regra da janela" na
+seção do corte por versão, acima. **O que ela NÃO aceita são os filtros finos**
+(usuário, rota, modo): eles não chegam a esta aba, pelo motivo do mesmo
+parágrafo.
 
 **Há DUAS margens, e a coluna mostra a da DECISÃO.** `marginAtCurrentPrice` é
 custo de uma execução contra o que a ação cobra hoje; `realizedMargin` é custo
@@ -321,8 +402,13 @@ esteja errado. A realizada continua na tela, mas só quando o ledger cobrou algo
 diferente do preço atual (`ledgerDivergesFromPrice`), porque aí a divergência
 é o achado, não ruído.
 
-Três coisas que quem mexer aqui não pode desfazer:
+Quatro coisas que quem mexer aqui não pode desfazer:
 
+- **A régua da moeda mora NESTA aba, e não em `/admin/configuracoes`.** Ela é o
+  único parâmetro do painel que não foi para a tela de configurações, e a razão
+  é a do item seguinte: separá-la da margem que ela move faria o número da
+  outra tela parecer um fato. O câmbio manual fica fora pelo mesmo motivo, no
+  selo que mostra a cotação em uso.
 - **Os dois lados da conta têm origens diferentes, e a tela diz qual é qual.**
   O custo é MEDIDO; o valor da moeda é uma régua que o admin gira. Um painel em
   que os dois parecem igualmente factuais convida a decidir preço com base num
@@ -341,7 +427,7 @@ mesmas rotas de telemetria, então o custo é indistinguível no banco; como o
 preço também é o mesmo, somá-los não perde nada, separá-los daria um custo por
 execução inventado.
 
-## A leitura da IA (`/admin/insights`)
+## A leitura da IA (na visão geral, `/admin`)
 
 Uma análise que um modelo escreve sobre os números do painel. Ela não tem
 número próprio: `src/features/admin/server/insights/briefing.ts` monta o briefing a partir de
@@ -349,11 +435,11 @@ número próprio: `src/features/admin/server/insights/briefing.ts` monta o brief
 MESMOS que desenham as tabelas das outras telas. Uma segunda aritmética "só
 para o prompt" produziria um insight contradizendo uma tabela do painel.
 
-**Ela já foi três, e a mudança é o que este trecho precisa ensinar.** Havia um
-card lateral em `/admin/precificacao`, `/admin/usage` e `/admin/metricas`, cada
-um com o seu recorte (`pricing`, `usage`, `metrics`), e cada um DISPARANDO a
-geração sozinho quando a linha gravada passava de 24 horas. Dois defeitos que só
-aparecem com o painel em uso:
+**Ela já foi três, depois uma tela própria, e as duas mudanças são o que este
+trecho precisa ensinar.** Primeiro havia um card lateral nas duas telas de
+custo de então e em `/admin/metricas`, cada um com o seu recorte (`pricing`,
+`usage`, `metrics`), e cada um DISPARANDO a geração sozinho quando a linha
+gravada passava de 24 horas. Dois defeitos que só aparecem com o painel em uso:
 
 - **as três diziam quase a mesma coisa**, porque saem dos mesmos eventos, só
   recortados diferente. E nenhuma podia concluir sobre o negócio, porque cada
@@ -363,9 +449,18 @@ aparecem com o painel em uso:
 - **ninguém as pedia.** A chamada de LLM mais cara do produto rodava porque
   alguém abriu uma tela para conferir o MRR.
 
-Hoje é UMA leitura geral, com página própria, e ela **só roda no clique**.
+A correção foi uma leitura geral, com página própria, rodando **só no clique**.
+A página própria, porém, era um cabeçalho, o painel e três atalhos, e custava
+uma linha do menu para hospedar um botão.
 
-Seis coisas que quem mexer aqui não pode desfazer:
+Hoje a leitura vive na VISÃO GERAL, e o encaixe é exato: ela é uma síntese do
+negócio inteiro (custo, preço, funil e passivo saem dos mesmos agregados das
+outras telas), e a visão geral é a tela que também é síntese. Os cinco números
+do topo são os mesmos que o briefing recebe, então o texto comenta o que está
+logo acima dele. **O clique continua sendo a única coisa que dispara geração**:
+abrir `/admin` não chama modelo nenhum.
+
+Sete coisas que quem mexer aqui não pode desfazer:
 
 - **Nada gera sozinho.** Sem disparo automático, a conferência de validade
   ("já tem menos de 24h?") deixou de existir no card e na rota: não há o que
@@ -393,6 +488,11 @@ Seis coisas que quem mexer aqui não pode desfazer:
 - **A tabela `admin_insights` tem uma linha só.** A coluna `scope` sobrevive
   como PK, com o valor constante `general` (ver `src/features/admin/server/insights/store.ts`);
   as três linhas antigas foram apagadas pela migração 0054.
+- **Os atalhos abaixo dela não são decoração.** A leitura cita margem, rota e
+  funil, e quem quiser conferir um número precisa chegar à tabela que o publica
+  sem caçar no menu. Eles são a razão de a visão geral ainda ter uma fileira de
+  links, agora três e não quatro, e apontando para telas que o texto acima de
+  fato menciona.
 
 O custo dela é gravado como qualquer outra rota (`admin-insights` em
 `llm_usage_events`), na ação `internal`, separada de `unbilled` porque os dois
@@ -400,7 +500,7 @@ têm consertos opostos: gasto sem cobrança é preço mal ajustado, custo intern
 despesa nossa que nunca vai ter moeda atrás. Somados, a tela sugeriria cobrar
 do usuário por uma chamada que só o admin dispara.
 
-## Cupons de convite (`/admin/cupons`)
+## Cupons de convite (aba de "Crescimento")
 
 Um link que credita moedas na conta criada por ele: `scriba.cc/c/<codigo>`.
 Existe para uma coisa que nenhum dos três programas de indicação faz, **chamar
@@ -451,20 +551,45 @@ comissão.
 
 ## Modelo sem preço na tabela
 
-`/admin/usage` abre com um aviso vermelho quando alguma chamada rodou num
+`/admin/custos` abre com um aviso vermelho quando alguma chamada rodou num
 modelo que não está em `src/lib/llm/pricing.ts`. Elas gravaram custo **zero**, e
 sem o aviso o sintoma é uma conta boa demais, que é o sintoma que ninguém
 investiga. O efeito em cadeia é o pior possível: a margem daquela ação sobe, e
-a tela de precificação passa a recomendar BAIXAR um preço que já não se paga.
-Trocar um modelo por env var sem acrescentá-lo à tabela é o caminho normal de
-cair nisso.
+a aba de preços passa a recomendar BAIXAR um preço que já não se paga. Trocar
+um modelo por env var sem acrescentá-lo à tabela é o caminho normal de cair
+nisso.
 
-## Funcionalidades (`/admin/features`)
+**O aviso fica ACIMA das abas, não dentro de uma.** Custo subestimado contamina
+os quatro cortes, e quem abriu direto a aba de preços não passa pela de rotas
+para ser avisado. Vale o mesmo para a faixa da janela de versão: os dois são
+ressalvas sobre TODA a tela. Ele reaparece, resumido, entre os avisos da visão
+geral, pela mesma razão — é lá que se abre o painel.
 
-A tela tem três blocos e a ORDEM é a mensagem: a matriz `funcionalidade ×
-plano` vem primeiro e **não tem botão nenhum**. Ela é o retrato de
-`src/lib/entitlements/features.ts`, e é assim que a tela diz "o lugar de liberar o
-estudo para outro plano não é aqui, é um commit".
+## Configurações (`/admin/configuracoes`)
+
+**Tudo o que o painel GIRA sem deploy, num lugar só**, em duas abas:
+Funcionalidades e Financeiro. Eram duas telas em cantos opostos do menu
+(`/admin/features` no grupo do produto, `/admin/financeiro/configuracoes` no do
+dinheiro) fazendo a mesma coisa, e quem procurava "onde eu ligo/desligo isso"
+tinha de adivinhar por qual começar.
+
+**Duas réguas NÃO vieram para cá, e a exceção é a regra.** O valor da moeda e o
+câmbio manual continuam onde o número que eles movem é lido: a régua na aba de
+preços de `/admin/custos`, o câmbio no selo que mostra a cotação em uso.
+Separar uma simulação da margem que ela produz faria o número da outra tela
+parecer um fato — que é exatamente o risco documentado na seção de preços.
+
+**Cada aba busca só o que usa.** A de produto não toca em finanças; a
+financeira não carrega o snapshot de doze meses, porque não mostra total nenhum
+e puxar os eventos de LLM para desenhar dois formulários seria gastar quatro
+consultas grandes por visita sem nada em troca.
+
+### A aba de Funcionalidades
+
+Três blocos, e a ORDEM é a mensagem: a matriz `funcionalidade × plano` vem
+primeiro e **não tem botão nenhum**. Ela é o retrato de
+`src/lib/entitlements/features.ts`, e é assim que a tela diz "o lugar de liberar
+o estudo para outro plano não é aqui, é um commit".
 
 Os dois blocos seguintes editam o que precisa mudar sem deploy:
 
@@ -474,19 +599,35 @@ Os dois blocos seguintes editam o que precisa mudar sem deploy:
 
 `POST /api/admin/features` valida `feature` contra `isFeatureKey` antes de
 escrever. Sem isso, um typo cria linha órfã que nunca é lida, e alguém passa a
-tarde procurando por que o switch "não funcionou".
+tarde procurando por que o switch "não funcionou". **A rota não mudou de
+endereço**: só a tela que a chama mudou, e `/api/admin/features` continua sendo
+o nome dela.
 
-## Sessões (`/admin/sessions`)
+### A aba Financeiro
+
+`FinanceSettingsForm` (saldo em caixa, alíquota, câmbio das projeções) e
+`CategoriesManager`. **Categoria não se apaga, arquiva-se**: sem categoria um
+custo é tratado como variável, e apagar "Infraestrutura" faria o custo fixo de
+todo o histórico despencar sem nada indicando por quê. Por isso não existe
+`DELETE` na rota de categorias, e por isso trocar a `nature` de uma tem log
+próprio.
+
+## Sessões (aba de "Conteúdo")
 
 Não é métrica nem custo: é o CONTEÚDO. A lista traz todas as sessões, de todo
 mundo, e `/admin/sessions/[id]` abre uma delas em abas, resumo, transcrição,
 estudo e o feed do ao vivo.
 
 Ela existe porque as outras telas respondem em volta do texto e nunca sobre
-ele: `/admin/usage` diz quanto custou, `/admin/metricas` quantas foram,
-`/admin/feedback` que nota deram. Uma nota "razoável" não distingue um resumo
-que inventou uma citação de uma transcrição que perdeu o meio da pregação, e
-nos primeiros usuários o texto é a única evidência de qualidade que existe.
+ele: `/admin/custos` diz quanto custou, `/admin/metricas` quantas foram, e a
+aba vizinha, Feedback, que nota deram. Uma nota "razoável" não distingue um
+resumo que inventou uma citação de uma transcrição que perdeu o meio da
+pregação, e nos primeiros usuários o texto é a única evidência de qualidade que
+existe.
+
+**As duas são abas da mesma tela por isso.** A nota sem o texto não diz o quê;
+o texto sem a nota não diz se alguém se incomodou. Separadas no menu, cada uma
+respondia metade de "o que a pessoa recebeu presta?", que é uma pergunta só.
 
 Quatro coisas que quem mexer aqui não pode desfazer:
 
@@ -514,7 +655,7 @@ DIZ o teto no rodapé, mesma regra do `/admin/users`: o dia em que a base passar
 disso precisa ser visível, e não a lista parando de crescer em silêncio.
 
 A pílula de modo é uma só, `SessionModeBadge`, compartilhada com a tabela de
-sessões do `/admin/usage`. Ela nasceu lá e virou componente quando a segunda
+sessões de `/admin/custos`. Ela nasceu lá e virou componente quando a segunda
 tela precisou dela, com a divergência que duas cópias sempre produzem já
 consumada: `youtube` tinha entrado em `SESSION_MODES` e a cópia de lá continuava
 desenhando "-", que se lê como "sessão sem modo".
@@ -541,7 +682,7 @@ entre **cortada** (o guardião disse que o resumo já respondia, culpa do
 questionador) e **não escolhida** (o respondedor preferiu outras, culpa dele),
 e uma lista que as colapse num "descartada" não responde nada.
 
-## Feedback (`/admin/feedback`)
+## Feedback (aba de "Conteúdo")
 
 A nota que os usuários deram a cada parte do produto, e o que escreveram
 junto. A coleta é da pesquisa de satisfação, ver
@@ -581,10 +722,33 @@ desenha os chips no navegador.
 
 ## Financeiro (`/admin/financeiro`)
 
-Seis telas atrás de um `SidebarGroup` próprio. A área inteira responde a uma
-pergunta que as outras oito não respondem: **quanto o Scriba ganha, gasta e
-deve, e para onde isso vai.** Desenho completo em [`docs/financeiro.md`](../../../docs/financeiro.md);
-o que não pode ser desfeito está aqui.
+Uma área com navegação PRÓPRIA (`FinanceTabs`), atrás de um item de menu só. A
+área inteira responde a uma pergunta que as outras sete não respondem: **quanto
+o Scriba ganha, gasta e deve, e para onde isso vai.** Desenho completo em
+[`docs/financeiro.md`](../../../docs/financeiro.md); o que não pode ser
+desfeito está aqui.
+
+Ela já foi **seis linhas do menu** dentro de um `SidebarGroup`, o que era mais
+de um terço do painel inteiro descrevendo recortes de um assunto. Hoje são
+quatro rotas e cinco abas:
+
+| Aba | Rota |
+|---|---|
+| Visão geral | `/admin/financeiro` |
+| Lançamentos | `/admin/financeiro/lancamentos` |
+| Em aberto | `/admin/financeiro/lancamentos?visao=aberto` |
+| Custos recorrentes | `/admin/financeiro/recorrentes` |
+| Projeções | `/admin/financeiro/projecoes` |
+
+**"Em aberto" é um FILTRO de Lançamentos, e a faixa de abas diz isso ao pôr os
+dois lado a lado sobre a mesma rota.** Era `/admin/financeiro/compromissos`,
+uma tela irmã com título próprio ("Compromissos e dívidas"), e a leitura natural
+era a de duas listas independentes — a primeira dúvida de quem chegava era se
+um valor lançado numa aparecia na outra. Dívida não é um tipo: é um lançamento
+com `status <> 'paid'` e `due_date`, e a tela agora responde isso sozinha.
+
+Configurações saiu da área: categorias e parâmetros são a aba Financeiro de
+`/admin/configuracoes`, junto do resto do que o painel gira.
 
 **Metade do painel é MEDIDA e não se digita.** Receita de assinatura sai dos
 créditos de `coin_transactions` (`src/features/admin/finance/measured.ts`), custo de IA de
@@ -620,7 +784,7 @@ Cinco coisas que quem mexer aqui não pode desfazer:
   Vale para toda a camada (`src/features/admin/finance/money.ts`).
 - **Os avisos vêm ANTES dos números.** Um painel financeiro erra em silêncio, e
   o sintoma é sempre uma conta boa demais, que é a que ninguém investiga. É a
-  mesma razão do aviso de modelo sem preço em `/admin/usage`.
+  mesma razão do aviso de modelo sem preço em `/admin/custos`.
 
 **A projeção roda no CLIENTE, e isso não é cálculo no frontend.** O componente
 chama `project()` de `src/features/admin/finance/projection.ts`, o único lugar onde a fórmula
@@ -630,16 +794,15 @@ premissa sem round-trip; nada do que sai dela é persistido. O que se GRAVA em
 silêncio enquanto a base (assinantes, ARPU, custo por cliente) muda sozinha.
 
 **Dívida não é um tipo.** É um lançamento com `status <> 'paid'` e
-`due_date`; `/admin/financeiro/compromissos` é um recorte da mesma tabela. Um
-terceiro `kind` daria três somas para o mesmo dinheiro e a primeira quitação
-faria as três discordarem.
+`due_date`; a aba "Em aberto" é um recorte da mesma tabela, e por isso divide a
+rota com Lançamentos. Um terceiro `kind` daria três somas para o mesmo dinheiro
+e a primeira quitação faria as três discordarem.
 
-**Categoria não se apaga, arquiva-se.** Sem categoria, um custo é tratado como
-variável, apagar "Infraestrutura" faria o custo fixo de todo o histórico
-despencar sem nada indicando por quê. Por isso não existe `DELETE` na rota de
-categorias, e por isso trocar a `nature` de uma categoria tem log próprio.
+**Categoria não se apaga, arquiva-se.** A regra está na aba Financeiro de
+`/admin/configuracoes`, que é onde as categorias são editadas; ver a seção de
+Configurações, acima.
 
-## Parceiros
+## Parceiros (aba de "Crescimento")
 
 O cadastro, a taxa de comissão e o registro de pagamento (PIX) vivem aqui, mas
 as invariantes do programa estão em `src/features/partners/AGENTS.md`, leia

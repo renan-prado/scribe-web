@@ -260,7 +260,7 @@ existe, `profiles.created_at`, `subscriptions`, `coin_transactions`,
   vendido e ainda não incorrido. É a métrica que ninguém lembra de olhar até
   ela doer.
 
-Tela: `/admin/metricas`, no padrão de `/admin/usage`.
+Tela: `/admin/metricas`, no padrão de `/admin/custos`.
 
 ---
 

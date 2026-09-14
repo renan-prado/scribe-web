@@ -6,10 +6,9 @@ import { createAdminClient } from "@/lib/supabase/admin";
 /**
  * Uma sessão, EXECUÇÃO POR EXECUÇÃO.
  *
- * `/admin/usage` e `/admin/precificacao` agregam: a primeira por rota, a
- * segunda por ação. As duas somam tudo o que aconteceu numa sessão, e é o
- * certo para as perguntas delas. Nenhuma responde à pergunta de quem está
- * AJUSTANDO o pipeline: "o que mudou entre a execução de ontem e a de agora?"
+ * As abas de `/admin/custos` AGREGAM: por rota, por ação, por versão. Todas
+ * somam tudo o que aconteceu numa sessão, e é o certo para as perguntas delas.
+ * Nenhuma responde à pergunta de quem está AJUSTANDO o pipeline: "o que mudou entre a execução de ontem e a de agora?"
  *
  * Reprocessar um estudo grava um segundo conjunto de eventos na MESMA sessão.
  * Somados, os dois viram um número que não descreve nem um nem outro, e é

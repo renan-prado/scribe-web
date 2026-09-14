@@ -2,6 +2,7 @@ import type { Metadata } from "next";
 import Link from "next/link";
 import { EmptyState } from "@/features/admin/components/AdminCards";
 import { AdminPageHeader } from "@/features/admin/components/AdminPageHeader";
+import { ContentTabs } from "@/features/admin/components/SectionTabs";
 import { loadAdminFeedback } from "@/features/admin/server/db/feedback";
 import {
   FEEDBACK_RATING_EMOJI,
@@ -61,6 +62,7 @@ export default async function AdminFeedbackPage() {
     return (
       <div className="flex flex-col gap-6">
         <AdminPageHeader title="Feedback" subtitle="A nota de cada parte do produto." />
+        <ContentTabs active="feedback" />
         <EmptyState>Não consegui ler o feedback agora.</EmptyState>
       </div>
     );
@@ -75,6 +77,8 @@ export default async function AdminFeedbackPage() {
         title="Feedback"
         subtitle="O que os usuários acharam de cada parte, colhido no instante em que acabaram de usá-la."
       />
+
+      <ContentTabs active="feedback" />
 
       {/* 1. O denominador, antes das notas. Ver o cabeçalho. */}
       <section className="admin-card-surface flex flex-col gap-2 p-5">

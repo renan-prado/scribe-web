@@ -13,7 +13,7 @@ const ONE_YEAR_SECONDS = 365 * 24 * 60 * 60;
  * Accepts pt-BR ("5,42") or en-US ("5.42") decimal notation.
  *
  * O `assertAdmin()` é a autorização REAL destas duas actions, o formulário
- * só aparecer em /admin/usage não protege nada. Ver o cabeçalho da função.
+ * só aparecer em /admin/custos não protege nada. Ver o cabeçalho da função.
  */
 export async function setManualUsdBrlRate(formData: FormData): Promise<void> {
   await assertAdmin();
@@ -32,7 +32,8 @@ export async function setManualUsdBrlRate(formData: FormData): Promise<void> {
     maxAge: ONE_YEAR_SECONDS,
   });
   revalidatePath("/admin");
-  revalidatePath("/admin/usage");
+  revalidatePath("/admin/custos");
+  revalidatePath("/admin/financeiro");
 }
 
 export async function clearManualUsdBrlRate(): Promise<void> {
@@ -40,5 +41,6 @@ export async function clearManualUsdBrlRate(): Promise<void> {
   const jar = await cookies();
   jar.delete(MANUAL_FX_COOKIE);
   revalidatePath("/admin");
-  revalidatePath("/admin/usage");
+  revalidatePath("/admin/custos");
+  revalidatePath("/admin/financeiro");
 }

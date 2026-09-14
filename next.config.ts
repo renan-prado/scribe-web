@@ -131,6 +131,27 @@ const nextConfig: NextConfig = {
       { source: "/recording/:id/youtube", destination: "/importar/:id", permanent: true },
       // O nome mais antigo de todos.
       { source: "/session/:id", destination: "/summary/:id", permanent: true },
+      // O painel passou de dezessete itens de menu para oito, e os recortes
+      // viraram ABAS. Estes seis endereços eram telas; hoje são abas, e cada
+      // redirect aponta para a aba que absorveu a tela. Eles existem porque o
+      // painel é usado por marcador e por link colado: sem eles, um favorito
+      // de `/admin/usage` responde 404, que se lê como "a funcionalidade
+      // sumiu" e não como "mudou de endereço". A query sobrevive sozinha, o
+      // que importa em `?sessionId=`, o parâmetro do inspetor de execuções.
+      { source: "/admin/usage", destination: "/admin/custos?aba=rotas", permanent: true },
+      { source: "/admin/precificacao", destination: "/admin/custos", permanent: true },
+      { source: "/admin/insights", destination: "/admin", permanent: true },
+      { source: "/admin/features", destination: "/admin/configuracoes", permanent: true },
+      {
+        source: "/admin/financeiro/compromissos",
+        destination: "/admin/financeiro/lancamentos?visao=aberto",
+        permanent: true,
+      },
+      {
+        source: "/admin/financeiro/configuracoes",
+        destination: "/admin/configuracoes?aba=financeiro",
+        permanent: true,
+      },
     ];
   },
 };

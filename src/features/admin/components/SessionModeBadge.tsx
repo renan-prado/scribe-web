@@ -2,9 +2,9 @@ import type { SessionMode } from "@/lib/domain/session";
 
 /**
  * A pílula do modo de captura, a mesma em toda tela do painel que lista
- * sessões (`/admin/usage` e `/admin/sessions`).
+ * sessões (`/admin/custos` e `/admin/sessions`).
  *
- * Nasceu dentro de `/admin/usage` e saiu de lá quando a segunda tela precisou
+ * Nasceu dentro de `/admin/custos` e saiu de lá quando a segunda tela precisou
  * dela. Duas cópias divergem no primeiro modo novo, e foi o que aconteceu:
  * `youtube` entrou em `SESSION_MODES` e a cópia de lá continuou desenhando "-"
  * para ele, o que se lê como "sessão sem modo", não como "importada".

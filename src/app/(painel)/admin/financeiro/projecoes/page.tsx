@@ -1,6 +1,7 @@
 import type { Metadata } from "next";
 import { AdminPageHeader } from "@/features/admin/components/AdminPageHeader";
 import { FinanceNotices } from "@/features/admin/components/finance/FinanceNotices";
+import { FinanceTabs } from "@/features/admin/components/finance/FinanceTabs";
 import { ProjectionsView } from "@/features/admin/components/finance/ProjectionsView";
 import { formatBrlCents, formatPercent } from "@/features/admin/finance/money";
 import {
@@ -91,6 +92,8 @@ export default async function FinanceProjectionsPage() {
         title="Projeções"
         subtitle="Cenários sobre premissas suas, aplicados à base medida do produto."
       />
+
+      <FinanceTabs active="projecoes" />
 
       <FinanceNotices warnings={gaps} />
 

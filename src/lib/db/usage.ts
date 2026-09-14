@@ -30,9 +30,8 @@ const log = createLogger("usage");
  *   POST /rest/v1/llm_usage_events { user_id: <o meu>, route: 'transcribe',
  *                                    model: 'gpt-5.1', total_cost_usd: 12345.67 }
  *
- * direto com o anon key, e o custo forjado entrava no `/admin/usage` e no
- * `/admin/precificacao`, os números que decidem o preço da moeda e medem a
- * margem. Reproduzido em dev: HTTP 201. É a mesma lição de `charge_coins`
+ * direto com o anon key, e o custo forjado entrava em `/admin/custos`, os
+ * números que decidem o preço da moeda e medem a margem. Reproduzido em dev: HTTP 201. É a mesma lição de `charge_coins`
  * (migração 0037): o gate na rota não protege o que a policy concede por fora
  * dela. A policy foi derrubada na 0039.
  *
@@ -51,7 +50,7 @@ const log = createLogger("usage");
  * parágrafo, o enriquecimento em segunda chamada e o primeiro resumo de uma
  * sessão do modo transcrição (`final-summary-from-transcript`). Nada disso é
  * gerado hoje, e as linhas continuam no banco, sendo LIDAS por
- * `lib/db/admin/usage.ts` — que trabalha com `string`, justamente para que a
+ * `features/admin/server/db/usage.ts` — que trabalha com `string`, justamente para que a
  * medição do passado não dependa de o código do presente ainda conhecer o nome.
  *
  * Este tipo governa só o que se escreve daqui em diante.
@@ -72,7 +71,7 @@ export type UsageRoute =
   // alguém leria o custo por importação sem saber que há duas chamadas ali.
   | "youtube-metadata"
   // As três etapas de LLM do estudo (`lib/study/generate.ts`). Separadas de
-  // propósito: é o que permite ver no /admin/usage quanto custa PERGUNTAR,
+  // propósito: é o que permite ver em /admin/custos quanto custa PERGUNTAR,
   // quanto custa RESPONDER e quanto custa ESCREVER, e portanto onde vale subir
   // ou baixar de modelo. Um "deepening" único não respondia a isso.
   | "study-questions"
@@ -85,7 +84,7 @@ export type UsageRoute =
   // A análise diária do próprio painel (/api/admin/insights). Entra aqui, e não
   // fora da telemetria, porque é dólar de verdade saindo: fora da tabela, o
   // custo somado do painel deixaria de bater com a fatura da OpenAI. Ela é
-  // atribuída à ação `internal` em lib/db/admin/usage.ts, não a `unbilled`,
+  // atribuída à ação `internal` em features/admin/server/db/usage.ts, não a `unbilled`,
   // para não parecer gasto de usuário que ninguém cobrou.
   | "admin-insights";
 

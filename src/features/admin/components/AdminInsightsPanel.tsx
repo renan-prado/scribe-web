@@ -15,19 +15,22 @@ import type { AdminInsightsRecord, InsightSeverity } from "@/lib/domain/admin-in
 import { cn } from "@/lib/utils";
 
 /**
- * A leitura da IA sobre os números do painel, em `/admin/insights`.
+ * A leitura da IA sobre os números do painel, na visão geral (`/admin`).
  *
  * ## Ela só roda no clique
  *
- * Este componente já foi um CARD lateral em `/admin/precificacao`,
- * `/admin/usage` e `/admin/metricas`, com três leituras diferentes, e cada um
- * deles DISPARAVA a geração sozinho quando a linha gravada passava de 24 horas.
+ * Este componente já foi um CARD lateral em três telas (as duas de custo, que
+ * hoje são `/admin/custos`, e `/admin/metricas`), com três leituras diferentes,
+ * e cada um deles DISPARAVA a geração sozinho quando a linha gravada passava de
+ * 24 horas.
  * Duas coisas estavam erradas nisso: a chamada de LLM mais cara do produto
  * rodava sem ninguém pedir (quem abria a tela para conferir o MRR pagava um
  * modelo de raciocínio), e três leituras sobre os mesmos eventos diziam quase a
  * mesma coisa em três lugares onde nenhuma delas era o assunto da tela.
  *
- * Hoje é uma leitura só, com página própria, e o gesto que a paga é explícito.
+ * Hoje é uma leitura só, na visão geral do painel, e o gesto que a paga é
+ * explícito. A página própria que ela chegou a ter também saiu: era um
+ * cabeçalho e um botão, e uma linha de menu para chegar a eles.
  * O servidor entrega o que já está gravado (uma leitura de uma linha) e este
  * componente não faz NADA até o botão ser tocado.
  *

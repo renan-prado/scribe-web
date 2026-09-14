@@ -4,7 +4,7 @@ import { AlertTriangle, Info } from "lucide-react";
  * A faixa de avisos do painel financeiro.
  *
  * Ela é obrigatória em toda tela que mostra um total, e a razão é a mesma que
- * levou `/admin/usage` a abrir com o aviso de modelo sem preço: um painel
+ * levou `/admin/custos` a abrir com o aviso de modelo sem preço: um painel
  * financeiro erra em SILÊNCIO. Sem cotação do dólar, sem custo recorrente
  * cadastrado ou com a receita de assinatura lançada duas vezes, o total
  * continua sendo um número plausível, e o sintoma é sempre uma conta boa
@@ -61,7 +61,7 @@ export function FinanceNotices({
 /**
  * A legenda que separa MEDIDO de DIGITADO.
  *
- * A mesma decisão de `/admin/precificacao`: um painel em que os dois lados
+ * A mesma decisão de `/admin/custos`: um painel em que os dois lados
  * parecem igualmente factuais convida a decidir com base num número que
  * alguém inventou. Aqui a divisão é ainda mais afiada, porque metade da
  * receita e quase todo o custo variável vêm de medição real e a outra metade

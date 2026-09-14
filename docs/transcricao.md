@@ -224,7 +224,7 @@ Onde isso aperta, à régua de R$ 20,00 o milheiro de moeda
 gravação rende R$ 0,100 e o STT come R$ 0,032 dele. Sobram R$ 0,068 para o
 resumo final, que é a única outra chamada do minuto.
 
-**Isto é aritmética, não medição.** `/admin/precificacao` mostra o número real
+**Isto é aritmética, não medição.** `/admin/custos` mostra o número real
 assim que houver execução nova medida.
 
 > **Nota histórica.** Quando esta medição foi feita havia três modos de captura,

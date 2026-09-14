@@ -3,22 +3,13 @@
 import {
   ArrowUpRight,
   BarChart3,
-  Brain,
-  CalendarClock,
   ChevronsUpDown,
   Handshake,
-  Landmark,
   LayoutDashboard,
-  LineChart,
-  ListOrdered,
   LogOut,
-  MessageSquareHeart,
   Mic,
   PiggyBank,
-  Receipt,
   SlidersHorizontal,
-  Ticket,
-  ToggleRight,
   TrendingUp,
   User as UserIcon,
   Users,
@@ -40,7 +31,6 @@ import {
   SidebarFooter,
   SidebarGroup,
   SidebarGroupContent,
-  SidebarGroupLabel,
   SidebarHeader,
   SidebarMenu,
   SidebarMenuButton,
@@ -56,42 +46,54 @@ type NavItem = {
   label: string;
   icon: typeof LayoutDashboard;
   exact?: boolean;
+  /**
+   * As outras rotas que acendem este item. Existe para as áreas em que os
+   * recortes viraram ABAS dentro da tela em vez de linhas do menu: quem está
+   * em `/admin/feedback` continua dentro de "Conteúdo", e o menu precisa
+   * dizer isso.
+   */
+  match?: string[];
 };
 
+/**
+ * Oito itens, um por PERGUNTA, e nenhum por recorte.
+ *
+ * O menu já teve dezessete (onze mais seis num grupo "Financeiro"), e mais da
+ * metade deles não era uma área: era um corte dos mesmos números. "Uso &
+ * custos" e "Precificação" liam a mesma passada de `llm_usage_events`;
+ * "Compromissos" era um filtro de "Lançamentos"; "Leitura da IA" era uma tela
+ * com um botão; "Funcionalidades" e "Configurações financeiras" eram os dois
+ * lugares de girar um parâmetro. Uma lista assim deixa de ser encontrada por
+ * reconhecimento: para achar uma coluna era preciso saber de cor em qual das
+ * duas telas parecidas ela estava.
+ *
+ * O que sobrou responde a uma pergunta cada, e os recortes viraram abas dentro
+ * da tela (ver `AdminTabs`), onde eles dizem uma coisa que um item de menu não
+ * diz: **isto aqui é o mesmo assunto, visto de outro ângulo.**
+ *
+ * O grupo do financeiro sumiu junto. Ele existia para quebrar a parede de
+ * quatorze itens seguidos; com oito não há parede, e um rótulo de grupo sobre
+ * uma linha só é moldura sem quadro.
+ */
 const NAV: NavItem[] = [
   { href: "/admin", label: "Visão geral", icon: LayoutDashboard, exact: true },
-  { href: "/admin/users", label: "Usuários", icon: Users },
   { href: "/admin/metricas", label: "Métricas", icon: TrendingUp },
-  { href: "/admin/usage", label: "Uso & custos", icon: BarChart3 },
-  { href: "/admin/precificacao", label: "Precificação", icon: Landmark },
-  { href: "/admin/partners", label: "Parceiros", icon: Handshake },
-  { href: "/admin/features", label: "Funcionalidades", icon: ToggleRight },
-  { href: "/admin/sessions", label: "Sessões", icon: Mic },
-  { href: "/admin/feedback", label: "Feedback", icon: MessageSquareHeart },
-  { href: "/admin/cupons", label: "Cupons", icon: Ticket },
-  { href: "/admin/insights", label: "Leitura da IA", icon: Brain },
-];
-
-/**
- * O financeiro é um GRUPO próprio, não mais seis itens na lista do painel.
- *
- * Com quatorze itens seguidos, a navegação vira uma parede em que nada é
- * encontrado por reconhecimento, e as seis telas daqui respondem a uma
- * pergunta ("como está o dinheiro?") que é de outra ordem que as oito de cima
- * ("como está o produto?"). O rótulo do grupo é o que diz isso sem gastar uma
- * linha explicando.
- *
- * "Visão geral" repete o rótulo do primeiro item do outro grupo, e é
- * proposital: dentro do seu grupo, cada uma é a visão geral da sua pergunta.
- * O `exact` existe para ela não ficar ativa nas cinco filhas.
- */
-const FINANCE_NAV: NavItem[] = [
-  { href: "/admin/financeiro", label: "Visão geral", icon: PiggyBank, exact: true },
-  { href: "/admin/financeiro/lancamentos", label: "Lançamentos", icon: ListOrdered },
-  { href: "/admin/financeiro/recorrentes", label: "Custos recorrentes", icon: CalendarClock },
-  { href: "/admin/financeiro/compromissos", label: "Compromissos", icon: Receipt },
-  { href: "/admin/financeiro/projecoes", label: "Projeções", icon: LineChart },
-  { href: "/admin/financeiro/configuracoes", label: "Configurações", icon: SlidersHorizontal },
+  { href: "/admin/custos", label: "Custos", icon: BarChart3 },
+  { href: "/admin/financeiro", label: "Financeiro", icon: PiggyBank },
+  {
+    href: "/admin/sessions",
+    label: "Conteúdo",
+    icon: Mic,
+    match: ["/admin/sessions", "/admin/feedback"],
+  },
+  {
+    href: "/admin/partners",
+    label: "Crescimento",
+    icon: Handshake,
+    match: ["/admin/partners", "/admin/cupons"],
+  },
+  { href: "/admin/users", label: "Usuários", icon: Users },
+  { href: "/admin/configuracoes", label: "Configurações", icon: SlidersHorizontal },
 ];
 
 type AdminUser = {
@@ -153,21 +155,9 @@ export function AdminSidebar({
 
       <SidebarContent>
         <SidebarGroup>
-          <SidebarGroupLabel>Painel</SidebarGroupLabel>
           <SidebarGroupContent>
             <SidebarMenu>
               {NAV.map((item) => (
-                <NavRow key={item.href} item={item} pathname={pathname} />
-              ))}
-            </SidebarMenu>
-          </SidebarGroupContent>
-        </SidebarGroup>
-
-        <SidebarGroup>
-          <SidebarGroupLabel>Financeiro</SidebarGroupLabel>
-          <SidebarGroupContent>
-            <SidebarMenu>
-              {FINANCE_NAV.map((item) => (
                 <NavRow key={item.href} item={item} pathname={pathname} />
               ))}
             </SidebarMenu>
@@ -252,8 +242,11 @@ export function AdminSidebar({
 }
 
 function NavRow({ item, pathname }: { item: NavItem; pathname: string }) {
-  const { href, label, icon: Icon, exact } = item;
-  const active = exact ? pathname === href : pathname === href || pathname.startsWith(`${href}/`);
+  const { href, label, icon: Icon, exact, match } = item;
+  const roots = match ?? [href];
+  const active = exact
+    ? pathname === href
+    : roots.some((root) => pathname === root || pathname.startsWith(`${root}/`));
   return (
     <SidebarMenuItem>
       <SidebarMenuButton isActive={active} tooltip={label} render={<Link href={href} />}>

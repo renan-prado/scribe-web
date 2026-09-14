@@ -10,6 +10,7 @@ import {
 } from "@/features/admin/components/AdminCards";
 import { AdminPageHeader } from "@/features/admin/components/AdminPageHeader";
 import { FinanceNotices } from "@/features/admin/components/finance/FinanceNotices";
+import { FinanceTabs } from "@/features/admin/components/finance/FinanceTabs";
 import { MonthlyBars, MonthlyTable } from "@/features/admin/components/finance/MonthlyTable";
 import { formatBrlCents, formatPercent, formatSignedPercent } from "@/features/admin/finance/money";
 import { formatMonthKey } from "@/features/admin/finance/recurrence";
@@ -92,7 +93,7 @@ export default async function FinanceOverviewPage() {
   const blocking =
     usdBrl === null
       ? [
-          "Sem cotação do dólar. Informe uma manualmente em /admin/usage, sem ela, todo valor em US$ fica fora dos totais.",
+          "Sem cotação do dólar. Informe uma à mão no selo de cotação de /admin/custos, sem ela, todo valor em US$ fica fora dos totais.",
         ]
       : [];
 
@@ -102,6 +103,8 @@ export default async function FinanceOverviewPage() {
         title="Financeiro"
         subtitle="Quanto entra, quanto sai, quanto devemos e para onde estamos indo."
       />
+
+      <FinanceTabs active="geral" />
 
       <FinanceNotices warnings={blocking} tone="danger" />
       <FinanceNotices warnings={overview.warnings} />
@@ -192,7 +195,7 @@ export default async function FinanceOverviewPage() {
               Informe o saldo em caixa nas configurações, sem ele não há runway.
             </p>
           )}
-          <QuickLink href="/admin/financeiro/configuracoes">Configurações</QuickLink>
+          <QuickLink href="/admin/configuracoes?aba=financeiro">Configurações</QuickLink>
         </ListCard>
       </section>
 
@@ -239,7 +242,9 @@ export default async function FinanceOverviewPage() {
             />
             <Row label="A receber" value={formatBrlCents(commitments.receivableCents)} />
           </ul>
-          <QuickLink href="/admin/financeiro/compromissos">Ver compromissos</QuickLink>
+          <QuickLink href="/admin/financeiro/lancamentos?visao=aberto">
+            Ver o que está em aberto
+          </QuickLink>
         </ListCard>
 
         <ListCard title="Últimos 12 meses" subtitle="Acumulado em competência">
@@ -260,7 +265,7 @@ export default async function FinanceOverviewPage() {
         <span>
           Receita de assinatura e custo de IA são <strong>medidos</strong>, saem do ledger de
           créditos e de <code>llm_usage_events</code>, as mesmas fontes de /admin/métricas e
-          /admin/uso. O que se lança à mão aqui é só o que ninguém mede por nós.
+          /admin/custos. O que se lança à mão aqui é só o que ninguém mede por nós.
         </span>
       </p>
     </div>

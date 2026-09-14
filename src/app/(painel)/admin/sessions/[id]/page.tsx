@@ -34,7 +34,7 @@ export const dynamic = "force-dynamic";
  * de um resumo ruim é prompt e modelo, não uma correção manual no conteúdo de
  * alguém, que o dono não pediu e não saberia que houve. O link do cabeçalho vai
  * para a tela que responde a pergunta vizinha: quanto esta sessão custou
- * (`/admin/precificacao?sessionId=…`).
+ * (`/admin/custos?aba=sessoes&sessionId=…`).
  *
  * O `SummaryView` NÃO é usado quando não há resumo: sem payload e com
  * transcrição, ele desenha o esqueleto de carregamento, e no painel isso se
@@ -162,7 +162,7 @@ export default async function AdminSessionReaderPage({ params }: PageProps) {
               <CopyButton value={session.id} />
             </span>
             <Link
-              href={`/admin/precificacao?sessionId=${session.id}`}
+              href={`/admin/custos?aba=sessoes&sessionId=${session.id}`}
               className="text-[11px] font-medium text-scriba-ink-mute hover:text-scriba-ink hover:underline"
             >
               custo por execução

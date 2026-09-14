@@ -297,7 +297,7 @@ dados" → `/profile/delete`, e ele apaga de verdade:
 - O saldo de moedas morre com a conta, sem reembolso, e a tela avisa.
 - A migração `0056` tirou `coin_transactions` e `llm_usage_events` do cascade e
   as pôs em `on delete set null`: a receita do mês passado e o custo por versão
-  do `/admin/usage` não podem encolher porque alguém cancelou a conta. É o
+  do `/admin/custos` não podem encolher porque alguém cancelou a conta. É o
   "sobreviver anonimizado" que este portão pedia.
 
 **A página é PÚBLICA**, única folha de `/profile` em `PUBLIC_PREFIXES` no

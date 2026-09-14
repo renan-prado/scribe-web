@@ -9,7 +9,7 @@ import { createAdminClient } from "@/lib/supabase/admin";
  *
  * **A tabela tem uma linha, e a chave dela é uma constante.** Ela nasceu com
  * uma linha por TELA (`pricing`, `usage`, `metrics`), quando a leitura era três
- * cards espalhados pelo painel; hoje é uma leitura só, em `/admin/insights`, e
+ * cards espalhados pelo painel; hoje é uma leitura só, na visão geral (`/admin`), e
  * `INSIGHTS_ROW_KEY` é o que sobrou da coluna `scope`. A coluna fica porque ela
  * é a PK da tabela e porque o dia em que houver um segundo tipo de leitura (um
  * resumo semanal, digamos) ela já é o lugar certo, mas ninguém fora deste

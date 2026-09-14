@@ -15,7 +15,7 @@ import { z } from "zod";
  * aparecem com o painel em uso: as três diziam quase a mesma coisa (saem dos
  * mesmos eventos, só recortados diferente) e nenhuma delas era lida, porque um
  * card ao lado de uma tabela é enfeite da tabela. Hoje é UMA leitura geral, com
- * página própria (`/admin/insights`) e um briefing que atravessa custo, preço e
+ * lugar próprio (a visão geral, `/admin`) e um briefing que atravessa custo, preço e
  * funil, que é como as perguntas de fato se cruzam.
  *
  * ## A forma tem uma tese
@@ -114,7 +114,7 @@ function sort(payload: AdminInsightsPayload): AdminInsightsPayload {
 /**
  * A janela de análise é FIXA, e não o filtro de período das telas de dinheiro.
  *
- * /admin/precificacao tem pílulas de 7/30/90 dias, e amarrar a leitura a elas
+ * /admin/custos tem pílulas de 7/30/90 dias, e amarrar a leitura a elas
  * daria quatro variantes da mesma pergunta, cada uma uma chamada de modelo de
  * raciocínio. Trinta dias é a janela em que a pergunta de preço tem resposta:
  * sete dias não cobrem um mês de assinatura, e noventa diluem uma troca de

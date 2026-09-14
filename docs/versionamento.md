@@ -1,7 +1,7 @@
 # Versionamento: a versão é uma régua de medição
 
 **Status: implementado.** Migração `0044`, `src/scripts/release.mjs`,
-`src/lib/app-version.ts` e o corte "Por versão" do `/admin/usage`.
+`src/lib/app-version.ts` e o corte "Por versão" do `/admin/custos`.
 
 ---
 
@@ -33,7 +33,7 @@ lib/app-version.ts  APP_VERSION   client-safe
    ↓ carimbado em toda chamada
 lib/db/usage.ts  →  llm_usage_events.app_version
    ↓ agrupado
-/admin/usage  →  a tabela "Por versão" e o filtro
+/admin/custos  →  a aba "Versões" e o seletor do cabeçalho
 ```
 
 Três decisões dentro desse caminho:
@@ -132,7 +132,7 @@ arquivo.
 
 ## 6. Como ler a tabela "Por versão"
 
-Em `/admin/usage`, depois dos totais.
+Na aba **Versões** de `/admin/custos`.
 
 | Coluna | O que é |
 |---|---|
@@ -194,11 +194,11 @@ gravou e termina no primeiro evento da versão seguinte (`VersionWindow`, em
 
 Três consequências:
 
-- **`/admin/precificacao` tem o filtro**, e é ele que responde "esta mudança
-  melhorou a margem da ação?". A tela mostra o intervalo resolvido numa faixa
-  logo abaixo do cabeçalho, porque um número recortado por uma versão que ficou
-  seis horas no ar é indistinguível de um recortado por um mês, e as duas
-  leituras levam a decisões de preço opostas.
+- **A aba de preços de `/admin/custos` tem o mesmo filtro**, e é ela que
+  responde "esta mudança melhorou a margem da ação?". A tela mostra o intervalo
+  resolvido numa faixa acima das abas, porque um número recortado por uma
+  versão que ficou seis horas no ar é indistinguível de um recortado por um
+  mês, e as duas leituras levam a decisões de preço opostas.
 - **Uma versão sem nenhum evento no período zera moeda e custo juntos.** Zerar
   só o custo produziria margem de 100%.
 - **A imprecisão conhecida é o rollout.** Durante alguns minutos a Vercel serve

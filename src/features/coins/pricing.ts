@@ -37,7 +37,7 @@ export const COIN_COSTS = {
    *
    * Só a transcrição já come R$ 0,032 dos R$ 0,100 que 5 moedas rendem à régua
    * de `DEFAULT_COIN_PRICE_PER_THOUSAND_BRL`; o resumo final vem por cima.
-   * Reconfira em `/admin/precificacao` assim que houver execução nova medida.
+   * Reconfira em `/admin/custos` assim que houver execução nova medida.
    */
   recordingMinute: 5,
   /**

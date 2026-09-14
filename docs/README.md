@@ -34,7 +34,7 @@ saber ao editar código ficam nos `AGENTS.md` de cada pasta, não aqui.
   dá para automatizar do repositório.
 - **[`versionamento.md`](./versionamento.md)**: por que `npm run release` roda
   antes de todo push: a versão do `package.json` é carimbada em cada chamada de
-  LLM e é o eixo da tabela "Por versão" do `/admin/usage`. Sem o bump, a
+  LLM e é o eixo da tabela "Por versão" do `/admin/custos`. Sem o bump, a
   comparação entre deploys deixa de existir sem nenhum erro na tela. Traz o
   fluxo, a regra do degrau e como ler a tabela. **Status: implementado.**
 - **[`stripe-setup.md`](./stripe-setup.md)**: ligar a cobrança do zero:

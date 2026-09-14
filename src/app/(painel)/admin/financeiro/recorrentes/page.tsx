@@ -2,6 +2,7 @@ import type { Metadata } from "next";
 import { KpiCard, KpiGrid, type KpiTile } from "@/features/admin/components/AdminCards";
 import { AdminPageHeader } from "@/features/admin/components/AdminPageHeader";
 import { FinanceNotices } from "@/features/admin/components/finance/FinanceNotices";
+import { FinanceTabs } from "@/features/admin/components/finance/FinanceTabs";
 import { RecurringManager } from "@/features/admin/components/finance/RecurringManager";
 import { formatBrlCents } from "@/features/admin/finance/money";
 import { loadFinanceSnapshot } from "@/features/admin/server/db/finance-overview";
@@ -55,6 +56,8 @@ export default async function FinanceRecurringPage() {
         title="Custos recorrentes"
         subtitle="Os contratos que se repetem, com o equivalente mensal de cada um."
       />
+
+      <FinanceTabs active="recorrentes" />
 
       <KpiGrid>
         {tiles.map((t) => (

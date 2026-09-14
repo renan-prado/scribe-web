@@ -250,7 +250,7 @@ Isso foi decidido com o número à vista, não descoberto depois. Se um dia a
 mistura de receita virar problema, os dois consertos são conhecidos e nenhum
 exige mudar o desenho: subir o preço fixo, ou passar a cobrar por faixa de
 duração (o ledger já separa `youtube_import` como motivo próprio, e
-`/admin/precificacao` já mede a linha isoladamente).
+`/admin/custos` já mede a linha isoladamente).
 
 ## 6. A ordem dentro da rota
 
@@ -291,7 +291,7 @@ O `ended_at` que esse UPDATE grava é também o que faz um POST repetido bater n
   de importações do nosso ledger, é ali que a diferença aparece.
 - **Telemetria:** três rotas próprias em `llm_usage_events`
   (`final-summary-youtube`, `rereads-youtube` e `reminders-youtube`), somadas
-  na ação `youtube` de `/admin/precificacao`. Houve uma quarta,
+  na ação `youtube` de `/admin/custos`. Houve uma quarta,
   `summary-enrichment-youtube`, do enriquecimento que saiu do produto; as
   linhas antigas continuam no banco e continuam sendo lidas.
   Elas são separadas justamente para a pergunta "vídeo longo está comendo a

@@ -104,7 +104,7 @@ rota. Os dois devolvem `Result<T>` (nunca lançam) e têm timeout por
   é o que permite conciliar `llm_usage_events` com a fatura. (A OpenAI retém
   prompt e resposta por 30 dias do lado dela.)
 - **`recordChatUsage` / `recordAudioUsage` (`db/usage.ts`) alimentam
-  `/admin/usage`.** São fire-and-forget: a rota aguarda, mas qualquer falha de
+  `/admin/custos`.** São fire-and-forget: a rota aguarda, mas qualquer falha de
   insert é capturada e logada, observabilidade quebrada nunca vira 500 numa
   rota que funcionou. O preço por token está em `llm/pricing.ts`.
 
@@ -113,11 +113,11 @@ rota. Os dois devolvem `Result<T>` (nunca lançam) e têm timeout por
   client do usuário, sob a policy `user_id = auth.uid()`, e policy de INSERT
   autoriza a escrita sem conferir o conteúdo: dava para mandar uma linha de
   custo inventada direto por `POST /rest/v1/llm_usage_events` com o anon key e
-  envenenar `/admin/precificacao`. Migração 0039. De quebra sumiu um
+  envenenar `/admin/custos`. Migração 0039. De quebra sumiu um
   `auth.getUser()` por registro, era uma ida à rede por trecho transcrito.
 
   As duas também carimbam `app_version` (migração 0044), o que torna a tabela
-  comparável DEPLOY A DEPLOY em `/admin/usage`, mas só enquanto a versão subir
+  comparável DEPLOY A DEPLOY em `/admin/custos`, mas só enquanto a versão subir
   a cada entrega. Ver a seção "Versão e release" do `AGENTS.md` da raiz.
 
 ## Supabase: três clients, três autoridades
@@ -379,7 +379,7 @@ Dois módulos, e a divisão é a mesma de `billing/plans.ts` × `billing/catalog
 
 **O catálogo mora em CÓDIGO, não no banco.** Mesma razão de `billing/catalog.ts`:
 uma linha errada numa tabela não pode virar acesso grátis a funcionalidade
-paga. O `/admin/features` MOSTRA a matriz; não a edita. Mudar qual plano libera
+paga. O `/admin/configuracoes` MOSTRA a matriz; não a edita. Mudar qual plano libera
 o quê é um commit.
 
 O que o admin edita são as duas coisas que precisam mudar sem deploy, ambas em
@@ -573,7 +573,7 @@ nunca disparava com o modelo novo, nem em áudio com 27% de WER.
 
 - `app-version.ts`: **client-safe**. `APP_VERSION` sai do `package.json` pelo
   `env` do `next.config.ts`, e é o mesmo número que carimba
-  `llm_usage_events.app_version` e rotula o filtro do `/admin/usage`. Ele **não**
+  `llm_usage_events.app_version` e rotula o filtro do `/admin/custos`. Ele **não**
   está no schema Zod de `env/client.ts` de propósito: aquele schema valida o que
   uma PESSOA configura, e declarar esta ali convidaria alguém a criar a variável
   à mão, dois números de versão que um dia discordam. `compareVersions` existe
@@ -602,9 +602,9 @@ nunca disparava com o modelo novo, nem em áudio com 27% de WER.
   conta de margem por milheiro de moeda, os dois client-safe. `pricing.ts` diz
   quanto custa em moedas; `billable.ts` diz o que é uma coisa (gerar e
   reprocessar estudo são dois motivos no ledger e um produto só). Alimentam
-  `/admin/precificacao`, ver `src/features/admin/AGENTS.md`.
+  `/admin/custos`, ver `src/features/admin/AGENTS.md`.
 - `admin/insights/`: server-only, a leitura que um modelo faz dos números do
-  painel inteiro, em `/admin/insights`. UMA leitura, gerada só no clique; já
+  painel inteiro, na visão geral (`/admin`). UMA leitura, gerada só no clique; já
   foram três, uma por tela de dinheiro, e cada uma se disparava sozinha. O
   porquê está em `src/features/admin/AGENTS.md`. `briefing.ts` monta os números
   (sem calcular nada: tudo vem de `db/admin/*` e `coins/economics.ts`),

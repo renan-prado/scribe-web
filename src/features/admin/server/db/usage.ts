@@ -29,7 +29,7 @@ export type UsageTotals = {
 
 /**
  * Um modelo dentro de uma rota. A quebra existe para o analista de
- * `/admin/insights` poder dizer "a rota X está num modelo caro para o que ela
+ * `/admin` (a leitura da IA) poder dizer "a rota X está num modelo caro para o que ela
  * faz", a pergunta mais barata de responder que este painel tem, e a única
  * que não dá para responder olhando só o custo por rota.
  *

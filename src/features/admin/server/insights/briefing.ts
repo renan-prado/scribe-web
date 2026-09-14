@@ -16,7 +16,7 @@ import { INSIGHTS_WINDOW_DAYS } from "@/lib/domain/admin-insights";
 import { getUsdToBrl, type UsdBrlRate } from "@/lib/fx/usd-brl";
 
 /**
- * O BRIEFING: os números que o analista de `/admin/insights` recebe.
+ * O BRIEFING: os números que o analista da visão geral (`/admin`) recebe.
  *
  * Ele é UM só, e atravessa as três telas de dinheiro de uma vez: totais, custo
  * por ação, custo por rota e modelo, concentração por conta e sessão, funil,
