@@ -98,11 +98,9 @@ resumo. Hoje o `stop()` aguarda de verdade, com teto de 3s para o caso de um
 `tmp/dev-scripts/recorder-race.mts`: sem a espera, o `stop()` resolve com ZERO
 chunks emitidos.
 
-Quem consome isso precisa fechar a outra metade da corrida: o gravador ENTREGA
-o pedaço de forma síncrona, mas guardá-lo (decodificar para medir silêncio,
-gravar no IndexedDB) não é. Um `drain()` chamado antes disso responde "tudo
-enviado" sobre uma fila em que o último trecho ainda nem entrou. Ver o
-`inflightRef` do `app/v2/recording/AudioStudio.tsx`.
+Quem consome isso precisa fechar a outra metade da corrida quando o `onChunk`
+faz trabalho assíncrono (gravar no IndexedDB, por exemplo): emitir não é
+guardar, e seguir antes disso perde o mesmo fim de pregação por outro caminho.
 
 **A persistência em IndexedDB existe para o caso em que a aba morre.** Um
 chunk que não subiu vira buraco na transcrição; guardado, a fila o retoma

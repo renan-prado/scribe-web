@@ -86,11 +86,11 @@ registrado na ficha da Play Store — mudaria junto.
 /v2/summary/[id]         o resumo da sessão. MESMO `SavedSessionView` do
                          /recording/:id/summary, sem header, sem nav e sem o
                          botão de gravar
-/v2/recording            o gravador: onda, pausar, parar e apagar. Cria a
-                         sessão no start e sobe o áudio em pedaços durante a
-                         gravação; no stop, espera a fila e resume. Com
-                         ?auto=1 (o botão do /v2/home) abre o microfone
-                         sozinho; sem ele, espera o toque
+/v2/recording            o gravador: onda, pausar, parar e apagar. Grava um
+                         áudio só (fragmentado no IndexedDB para não se
+                         perder) e, no stop, cria a sessão, transcreve e
+                         resume. Com ?auto=1 (o botão do /v2/home) abre o
+                         microfone sozinho; sem ele, espera o toque
 /v2/studies              aprofundamentos gerados
 /v2/profile              a conta, o saldo e o plano
 /v2/importar             cola o link do vídeo e cria a sessão modo youtube
@@ -143,45 +143,38 @@ do app em produção, e disparada de uma tela em obras contaminaria a amostra).
 O único link do v2 que ainda devolve alguém ao app de hoje é o da TRANSCRIÇÃO,
 que não tem tela nova; ele sai quando `/v2/transcript` existir.
 
-O `/v2/recording` usa o MESMO motor de captura do app de hoje: a sessão nasce no
-start e o áudio sobe em pedaços de 15-20s durante a pregação (`createRecorder` +
-`useTranscribeQueue`). O que ele não tem é o feed ao vivo — o texto que volta de
-cada pedaço é guardado e só aparece no fim, dentro do resumo. Pausar ENCERRA o
-gravador (fechando o pedaço em andamento) e retomar cria outro continuando a
-numeração, como nas telas de captura de `(app)`. A cobrança é por minuto
-INICIADO (`useCoinTick`, `COIN_COSTS.audioOnlyMinute`), agora amarrada à sessão,
-que já existe quando o primeiro débito sai.
+**O `/v2/recording` grava UM áudio e transcreve UMA vez.** O app de hoje
+transcreve a cada 15-20s porque o feed ao vivo precisa do texto na hora; aqui
+não há feed, e herdar aquela cadência custaria ~206 chamadas de transcrição por
+hora de sermão para entregar exatamente o mesmo resumo.
 
-**Ele já foi o oposto disso, e a inversão custou caro.** O desenho anterior era
-"nada existe no servidor até o stop": um arquivo único na memória da aba, e no
-stop uma sequência de três chamadas. O argumento parecia bom — sem feed, fatiar
-seria pagar rede e costura de texto sem comprar nada — e errava em três frentes
-que só aparecem quando algo dá errado. Um arquivo só tem TETO (`/api/transcribe`
-recusa acima de 8 MB, ~44 minutos) e passar dele deixava a gravação sem como ser
-transcrita; não EXISTE antes do fim, então a aba morrer aos 40 minutos custava os
-40 minutos; e sobe UMA vez, sem fila para retomar o que a rede derrubou. Pior: o
-`Blob` vivia só numa variável local dentro do `finish()`, então a falha de rede
-caía num `catch` que mostrava um aviso educado enquanto o coletor comia a única
-cópia do que foi dito. Uma palestra de quase uma hora se perdeu assim.
+O áudio é fatiado mesmo assim, mas por OUTRO motivo e em outra escala, e os dois
+cortes não se confundem:
 
-Em pedaços as três deixam de existir: não há teto, cada pedaço vira registro no
-IndexedDB assim que fecha, e a fila reenvia sozinha, para sempre, com recuo
-progressivo. **O stop não resume pela metade em silêncio**: ele espera a fila
-esvaziar (`drain`, 60s) e, se ela não esvazia, PARA e conta quantos trechos
-faltam, oferecendo esperar mais ou resumir sem eles. Um resumo com buracos
-parece completo, que é o mesmo defeito da versão anterior numa forma mais
-discreta.
+- **Fragmento (2 min), para não perder.** `MediaRecorder.start(timeslice)` emite
+  um pedaço a cada 2 minutos, guardado no IndexedDB na hora. O primeiro traz o
+  cabeçalho e os seguintes são continuação, então concatená-los devolve o
+  arquivo original. A aba morrer custa, no pior caso, 2 minutos.
+- **Parte (~7 MB), para caber no POST.** `/api/transcribe` recusa acima de 8 MB,
+  uns 46 minutos a 24 kbps. Ao encostar no teto o gravador é encerrado e outro
+  começa (cabeçalho novo = arquivo válido por si), esperando um silêncio para a
+  emenda não cair no meio de uma palavra. 40 minutos: uma parte, uma chamada.
+  60 minutos: duas.
 
-**Duas dívidas conhecidas.** A primeira: não dá para RETOMAR uma sessão de outra
-visita. Se a aba morrer com trechos pendentes, o áudio continua no IndexedDB e a
-sessão fica em "Em aberto", mas a recuperação de órfãos do `useTranscribeQueue`
-só roda para a sessão montada, e falta guardar o TEXTO de cada pedaço (hoje ele
-vive só na memória da aba, então uma retomada reconstruiria a transcrição sem as
-partes que já tinham subido). As duas andam juntas; é a mesma dívida do app de
-hoje, ver `listUnfinishedSessions`. A segunda: não dá para COMEÇAR sem internet,
-porque a sessão nasce de um `POST` e sem ele não há chave para pendurar os
-pedaços — perder a rede depois de começar é tratado, começar sem ela não. As
-duas estão no cabeçalho do `AudioStudio`.
+Verificado em navegador: o concatenado decodifica inteiro, um fragmento do meio
+sozinho não decodifica, um gravador novo no mesmo stream produz arquivo válido,
+e pausar/retomar não corrompe nada.
+
+No stop o áudio JÁ está guardado — foi guardado durante a pregação —, então só
+resta criar a sessão, transcrever as partes, resumir e apagar a cópia local.
+Falhando qualquer passo, o áudio continua no aparelho e a tela oferece tentar de
+novo ou **baixar o arquivo**. Isso conserta o defeito que custou uma palestra de
+quase uma hora: o `Blob` vivia numa variável local, a falha caía num `catch` que
+mostrava um aviso educado, e o coletor comia a única cópia do que foi dito.
+
+**Dívida conhecida:** começar sem internet. Gravar não depende de rede, mas a
+sessão nasce de um `POST` no stop — sem ele o áudio fica guardado esperando, o
+que é bem melhor que sumir, mas não é funcionar offline.
 
 `app/session/[id]` é rota LEGADA: um `permanentRedirect` para
 `/recording/:id/summary`, preservado para que link antigo e bookmark não

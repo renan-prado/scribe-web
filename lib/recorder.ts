@@ -375,9 +375,6 @@ export function createRecorder(opts: RecorderOptions = {}): Recorder {
     onError(cb) {
       errorCb = cb;
     },
-    getAnalyser() {
-      return analyser;
-    },
     setChunkTiming(next) {
       if (typeof next.minChunkMs === "number" && next.minChunkMs > 0) {
         minChunkMs = next.minChunkMs;

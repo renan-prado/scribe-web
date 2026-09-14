@@ -7,14 +7,10 @@ export const metadata: Metadata = { title: "Gravando" };
 /**
  * A tela de gravação do v2.
  *
- * Ela grava de verdade: a sessão nasce no start e o áudio sobe em pedaços de
- * 15-20s durante a pregação, cada um guardado no aparelho (IndexedDB) antes de
- * tentar subir e reenviado pela fila até conseguir. No stop, a fila é esvaziada
- * e o texto vira resumo.
- *
- * Não há mais teto de duração, e perder a rede no meio deixou de custar a
- * gravação. O que ela ainda NÃO faz (retomar uma sessão de outra visita, e
- * COMEÇAR sem internet) está no cabeçalho do `AudioStudio`, junto do porquê.
+ * Ela grava UM áudio e transcreve UMA vez, no stop. O áudio é fragmentado a
+ * cada 2 minutos no IndexedDB só para não se perder, e remontado antes de subir
+ * (ver `AudioStudio`); vira duas chamadas apenas quando passa dos ~46 minutos
+ * que cabem num POST.
  *
  * O cabeçalho é renderizado AQUI, e não dentro do `AudioStudio`: a `TopBar` lê
  * o perfil e o saldo no servidor, e um componente cliente não pode renderizar

@@ -33,8 +33,13 @@ const ALLOWED_EXTENSIONS = new Set(["webm", "mp4", "mp3", "wav", "ogg", "m4a", "
 // sends at most a few hundred chars in practice. Cap defends against a
 // scripted client stuffing the prompt with an unbounded payload.
 const MAX_PREV_TEXT_CHARS = 4000;
-// A single chunk is ~30s; anything above 5min is either a bug or abuse.
-const MAX_DURATION_MS = 5 * 60 * 1000;
+// Teto do `durationMs` que o cliente declara, usado só para a telemetria de
+// custo (`recordAudioUsage`). Já foi 5 minutos, quando o único cliente era o
+// gravador de chunks de 15-20s do app. O v2 manda a gravação INTEIRA num POST,
+// e com aquele teto um arquivo de 40 minutos era registrado como 5: o
+// `/admin/usage` subestimava o custo real em oito vezes, sem erro nenhum.
+// 60 minutos é o que cabe nos 8 MB de `MAX_FILE_BYTES` com folga.
+const MAX_DURATION_MS = 60 * 60 * 1000;
 
 export async function POST(request: Request) {
   const auth = await requireAuth();
