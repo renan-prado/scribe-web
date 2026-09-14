@@ -187,8 +187,15 @@ function routesBlock(summary: AdminUsageSummary, rate: UsdBrlRate | null): strin
           `${m.model}${m.priced ? "" : " [SEM PREÇO NA TABELA, custo gravado como zero]"}: ${INT.format(m.events)} chamadas, ${money(rate ? m.totalCostUsd * rate.rate : null)}`
       )
       .join(" | ");
+    // A linha do balde precisa se anunciar como balde. Sem isto o analista lê
+    // "outras" como uma rota do produto e sugere trocar o modelo DELA, que é
+    // um conselho sobre código que já não existe.
+    const label =
+      r.mergedRoutes.length > 0
+        ? `${r.route} [rotas APOSENTADAS, somadas: ${r.mergedRoutes.join(", ")} — não há o que ajustar nelas]`
+        : r.route;
     lines.push(
-      `${r.route}: ${INT.format(r.events)} chamadas, ${money(rate ? r.totalCostUsd * rate.rate : null)}, ${models}`
+      `${label}: ${INT.format(r.events)} chamadas, ${money(rate ? r.totalCostUsd * rate.rate : null)}, ${models}`
     );
   }
   return lines.join("\n");

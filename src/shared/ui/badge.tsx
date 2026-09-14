@@ -24,6 +24,12 @@ const badgeVariants = cva(
           "bg-scriba-btn-muted text-scriba-ink [a]:hover:bg-scriba-btn-muted-hover [a]:hover:text-scriba-ink-strong",
         destructive:
           "bg-destructive/10 text-destructive focus-visible:ring-destructive/20 dark:bg-destructive/20 dark:focus-visible:ring-destructive/40 [a]:hover:bg-destructive/20",
+        // A contraparte de `destructive`, e a única variante colorida que a
+        // paleta monocromática admite ao lado dele: um estado binário de
+        // sistema em que o vermelho sozinho diria "isto está errado" e o
+        // cinza do outro lado não diria nada. Os dois tokens são declarados
+        // por tema (`--scriba-ok-*`), então o par não precisa de `dark:`.
+        success: "bg-scriba-ok-soft text-scriba-ok-ink [a]:hover:opacity-85",
         outline:
           "border-scriba-hairline text-scriba-ink [a]:hover:bg-scriba-btn-muted [a]:hover:text-scriba-ink-strong",
         ghost: "hover:bg-scriba-btn-muted hover:text-scriba-ink-strong",

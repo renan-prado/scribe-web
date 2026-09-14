@@ -41,7 +41,7 @@ vez de ler a tela.
 | Financeiro | quanto entra, sai e devemos? | 6 telas → 1 item com abas |
 | Conteúdo | o que a pessoa recebeu presta? | `sessions` + `feedback` |
 | Crescimento | por onde entra gente? | `partners` + `cupons` |
-| Usuários | quem são, e o que podem? | |
+| Usuários | quem são, quem paga e o que podem? | |
 | Configurações | o que dá para girar sem deploy? | `features` + as financeiras |
 
 A faixa de abas é `AdminTabs`, e ela é **LINK, não estado de cliente**: toda
@@ -237,6 +237,32 @@ some no arredondamento.
 A ordenação do "top de usuários" é por **moedas gastas**, não por dólar: dólar
 mistura modelos de preços diferentes e a lista deixava de responder à pergunta
 que ela existe para responder.
+
+**Na aba "Rotas", só a rota VIVA tem linha própria; o resto é "outras".**
+`llm_usage_events` guarda tudo o que o produto já chamou, e o produto já foi
+outro: o feed ao vivo (`bible`, `insights`, `sermon-echo`), os cards de
+acompanhamento (`practices*`, `rereads*`, `reminders*`), a formatação de
+parágrafo, o enriquecimento em segunda chamada, o resumo do modo transcrição.
+Cada um tinha a sua linha, e a aba do DIAGNÓSTICO abria com vinte, metade delas
+sobre código que não existe mais — numa tela cuja única saída é "trocar o modelo
+desta rota" ou "encurtar este prompt", que são consertos impossíveis no passado.
+
+Três coisas que essa fusão não pode desfazer:
+
+- **Quem diz o que é vivo é `USAGE_ROUTES`** (`src/lib/db/usage.ts`), a lista do
+  que o código de fato ESCREVE. Uma segunda lista dentro do painel envelheceria
+  calada na primeira rota nova que subisse, e o sintoma seria a rota recém-criada
+  nascendo dentro de "outras".
+- **Some da leitura, não da soma.** O custo continua inteiro nos totais, nos
+  KPIs, na margem e no filtro de rota — que segue listando todos os nomes reais,
+  porque isolar o custo histórico de uma rota morta continua sendo uma pergunta
+  legítima.
+- **A linha imprime os nomes que engoliu, e vai sempre por ÚLTIMO.** Sem os
+  nomes, "outras" vira uma rota fantasma e o custo histórico perde endereço;
+  ordenada por custo entre as vivas, ela seria lida como "a rota mais cara do
+  produto", que é o contrário do que ela diz. Pela mesma razão o briefing da
+  leitura da IA a rotula como aposentada: sem isso o analista sugere trocar o
+  modelo "da rota outras".
 
 ## O corte por VERSÃO (aba "Versões" de `/admin/custos`)
 
@@ -719,6 +745,64 @@ exatamente a mesma frase.
 A escala é texto no banco e vira número em UM lugar só,
 `FEEDBACK_RATING_SCORE`, em `src/lib/domain/feedback.ts`, o mesmo módulo que
 desenha os chips no navegador.
+
+## Usuários (`/admin/users`)
+
+A lista de contas responde "quem são e o que podem" desde sempre; ela passou a
+responder também **quem paga, por qual plano, há quanto tempo, e quem já pagou e
+parou**. Antes disso a única forma de saber se uma conta era pagante era abrir o
+Stripe: `/admin/metricas` dizia QUANTOS assinantes existem e `/admin/financeiro`
+quanto eles somam, mas nenhuma das duas dizia QUEM.
+
+**O plano vem do espelho; o tempo e o dinheiro vêm do ledger.** Essa divisão é a
+decisão central da tela, e ela não é preciosismo:
+
+- `subscriptions` é um espelho MUTÁVEL, uma linha por conta, sobrescrita pelo
+  webhook a cada mudança. Ela sabe o estado de AGORA e mais nada: quem cancelou e
+  voltou tem uma linha só, o `created_at` dela é a primeira assinatura e não o
+  começo do período atual, e quem abandonou o checkout no meio (`incomplete`) tem
+  linha igual à de quem pagou. Ler "pagante desde" daí devolveria a data de uma
+  INTENÇÃO.
+- `coin_transactions` tem histórico: cada fatura paga é uma linha com
+  `external_ref` único, escrita por `features/billing/server/fulfill.ts`, e ela
+  nunca é reescrita. É o único sinal datado de "entrou dinheiro" que o banco tem.
+
+Daí saem as **quatro classes, excludentes**, que são as pílulas de filtro:
+`assinante` (assinatura viva), `ex_assinante` (pagou fatura, hoje sem assinatura
+viva), `avulso` (nunca assinou, comprou pacote — também é conta pagante) e
+`nunca`. Elas cobrem a base inteira, e é isso que permite ler as contagens como
+resposta em vez de quatro filtros que talvez se sobreponham.
+
+O que não pode ser desfeito:
+
+- **A receita por conta sai de `aggregateMeasuredRevenue`**, a MESMA função que
+  desenha a receita de `/admin/financeiro`. Uma conversão moeda→reais escrita
+  aqui seria a segunda definição do mesmo número, e as duas discordariam no dia
+  em que um plano mudasse de franquia. A limitação dela vale aqui igual (é preço
+  de TABELA, não valor cobrado — ver o cabeçalho de `finance/measured.ts`), e o
+  asterisco na célula existe para os créditos que não casaram com o catálogo: um
+  total incompleto sem aviso é um total que ninguém audita.
+- **A tela não publica MRR nem receita total.** Os dois já têm dono, e dois
+  lugares publicando o mesmo número fazem quem lê conferir se batem em vez de
+  ler a tela. O que ela publica são contagens de LINHAS dela mesma.
+- **O intervalo de tempo é medido com dinheiro dos dois lados**: do primeiro
+  pagamento ao último, ou até HOJE enquanto a assinatura vive. Medir um
+  ex-assinante até hoje o mostraria como cliente de dois anos tendo pago três
+  meses e sumido — e é justamente ele que a tela existe para encontrar.
+- **O intervalo aparece na célula, não só a duração.** "5 meses" não distingue
+  quem paga de quem parou; "03/2026 – hoje" contra "03/2026 – 08/2026" distingue
+  numa olhada.
+- **`paidSpanDays` é calculado no SERVIDOR.** `UsersManager` é componente
+  cliente renderizado antes no servidor: um `Date.now()` lá dentro produz dois
+  valores para o mesmo HTML.
+- **Conta apagada (`user_id` nulo no ledger, migração 0056) não vira linha.** O
+  pagamento dela continua na receita do painel financeiro; aqui não há a quem
+  somar.
+
+As duas consultas de cobrança rodam **sem `.in(userIds)`**, de propósito: com mil
+perfis o filtro viraria uma URL de mil UUIDs no PostgREST, as duas tabelas são
+pequenas ao lado de `profiles`, e o cruzamento em memória ainda evita a
+pegadinha do `in([])`, que o PostgREST lê como "sem filtro".
 
 ## Financeiro (`/admin/financeiro`)
 

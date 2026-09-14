@@ -53,40 +53,48 @@ const log = createLogger("usage");
  * `features/admin/server/db/usage.ts` — que trabalha com `string`, justamente para que a
  * medição do passado não dependa de o código do presente ainda conhecer o nome.
  *
- * Este tipo governa só o que se escreve daqui em diante.
+ * Ela governa só o que se escreve daqui em diante — e, desde que virou VALOR e
+ * não só tipo, é também quem decide o que ganha linha própria na aba "Rotas"
+ * de /admin/custos: o que não está aqui já não é gerado e some dentro de
+ * "outras", ver `features/admin/server/db/usage.ts`. Acrescentar uma rota nova
+ * aqui é, portanto, o mesmo gesto que lhe dar uma linha no painel.
  */
-export type UsageRoute =
-  | "transcribe"
+export const USAGE_ROUTES = [
+  "transcribe",
   // As três rotas da MESMA chamada, `generateFinalSummary`. Separadas porque a
   // pergunta de preço é diferente em cada uma: a primeira está dentro do minuto
   // gravado, a segunda é o `reprocess_summary` de 15 moedas, e a terceira é a
   // única forma de medir o custo real de uma importação do YouTube contra as 30
   // moedas FIXAS que ela cobra, num custo que cresce com a duração do vídeo.
-  | "final-summary"
-  | "final-summary-reprocess"
-  | "final-summary-youtube"
+  "final-summary",
+  "final-summary-reprocess",
+  "final-summary-youtube",
   // A limpeza do título do vídeo (`lib/youtube/metadata.ts`). Rota própria
   // apesar de custar trocados, porque é a única chamada de LLM do produto que
   // roda sobre METADADO e não sobre o sermão: fundida com a do resumo, um dia
   // alguém leria o custo por importação sem saber que há duas chamadas ali.
-  | "youtube-metadata"
+  "youtube-metadata",
   // As três etapas de LLM do estudo (`lib/study/generate.ts`). Separadas de
   // propósito: é o que permite ver em /admin/custos quanto custa PERGUNTAR,
   // quanto custa RESPONDER e quanto custa ESCREVER, e portanto onde vale subir
   // ou baixar de modelo. Um "deepening" único não respondia a isso.
-  | "study-questions"
-  | "study-answers"
-  | "study-write"
+  "study-questions",
+  "study-answers",
+  "study-write",
   // Os dois cortes do guardião, num modelo barato. Mesma rota para os dois:
   // separá-los daria duas linhas de custo irrisório cada.
-  | "study-guard"
-  | "hallucination-report"
+  "study-guard",
+  "hallucination-report",
   // A análise diária do próprio painel (/api/admin/insights). Entra aqui, e não
   // fora da telemetria, porque é dólar de verdade saindo: fora da tabela, o
   // custo somado do painel deixaria de bater com a fatura da OpenAI. Ela é
   // atribuída à ação `internal` em features/admin/server/db/usage.ts, não a `unbilled`,
   // para não parecer gasto de usuário que ninguém cobrou.
-  | "admin-insights";
+  "admin-insights",
+] as const;
+
+/** A mesma lista, como tipo. Um lugar só, ou a lista e o tipo divergem. */
+export type UsageRoute = (typeof USAGE_ROUTES)[number];
 
 export type RecordChatUsageInput = {
   /** Sempre `auth.user.id`, nunca um valor vindo do corpo da requisição. */

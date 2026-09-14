@@ -30,8 +30,9 @@ content/     copy estruturada (FAQ da landing)
 > existir, e é deles que você precisa se o teste for revertido
 > (`git checkout master -- app/globals.css`).
 >
-> **Duas cores sobreviveram, e as duas por serem SEMÂNTICAS:** o vermelho
-> (`--scriba-rec*`, `destructive`) e o amarelo da MOEDA (`--scriba-yellow*` e
+> **Três cores sobreviveram, e as três por serem SEMÂNTICAS:** o vermelho
+> (`--scriba-rec*`, `destructive`), o verde (`--scriba-ok-*`, a variante
+> `success` do `<Badge>`) e o amarelo da MOEDA (`--scriba-yellow*` e
 > `--scriba-gold-*`, mais `--session-highlight-yellow`, que `.tone-study`
 > deixou de sobrescrever: o cinza que sobrara ali era resíduo da passagem
 > monocromática, e um marcador cinza ao lado de um amarelo em outra tela lia
@@ -48,6 +49,15 @@ content/     copy estruturada (FAQ da landing)
 > ali não é simplificação, é informação a menos. `--scriba-flash-debit` voltou
 > ao âmbar da mesma família e `--scriba-flash-credit` ficou neutro, o que
 > devolve a distinção sem trazer um terceiro matiz.
+>
+> **O verde entrou por último, e entrou estreito.** Ele existe para um estado
+> BINÁRIO de sistema — hoje só a conta ligada/desligada de `/admin/users` — em
+> que o vermelho de um lado diz "isto está errado" e o cinza do outro não diz
+> nada, e o par fica pela metade. Ele NÃO é um matiz de acento: se aparecer num
+> tile, num realce ou em qualquer coisa que não seja o lado bom de um estado de
+> duas pontas, o teste monocromático voltou a ser furado. Os dois valores
+> (`--scriba-ok-ink` / `--scriba-ok-soft`) são declarados por tema, então a
+> variante não carrega `dark:`.
 >
 > O que ainda custa informação, e está anotado no `globals.css`: as quatro
 > famílias de tile (mint/rose/cream/lilac) têm valores IDÊNTICOS, então o tipo

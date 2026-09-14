@@ -8,6 +8,7 @@ import {
 } from "@/features/coins/billable";
 import { isChargeReason } from "@/features/coins/pricing";
 import { sortVersionsDesc } from "@/lib/app-version";
+import { USAGE_ROUTES } from "@/lib/db/usage";
 import { SESSION_MODES, type SessionMode } from "@/lib/domain/session";
 import { hasAudioPricing, hasChatPricing } from "@/lib/llm/pricing";
 import { createAdminClient } from "@/lib/supabase/admin";
@@ -50,6 +51,13 @@ export type UsageByRoute = {
   totalCostUsd: number;
   /** Ordenada por custo. Quase sempre um item só, uma rota, um modelo. */
   models: UsageByModel[];
+  /**
+   * Os nomes REAIS somados nesta linha, e só na linha "outras" (ver
+   * `LEGACY_ROUTE_BUCKET`). Vazio em toda rota viva. A tela os imprime: um
+   * balde que não diz o que engoliu é indistinguível de uma rota chamada
+   * "outras", e o custo histórico ficaria sem endereço.
+   */
+  mergedRoutes: string[];
 };
 export type UsageByUser = {
   userId: string;
@@ -212,6 +220,30 @@ const REPROCESS_SUMMARY_ROUTES = new Set([
  * terão moeda atrás, ver `INTERNAL_ACTION_KEY`.
  */
 const INTERNAL_ROUTES = new Set(["admin-insights"]);
+
+/**
+ * O nome do balde das rotas MORTAS na aba "Rotas".
+ *
+ * `llm_usage_events` guarda tudo o que o produto já chamou, e o produto já foi
+ * outro: o feed ao vivo (`bible`, `insights`, `sermon-echo`), os cards de
+ * acompanhamento (`practices*`, `rereads*`, `reminders*`), a formatação de
+ * parágrafo, o enriquecimento em segunda chamada, o resumo do modo transcrição.
+ * Nada disso é gerado hoje. Cada um mantinha uma linha própria na tabela, e a
+ * aba do DIAGNÓSTICO abria com vinte linhas em que as dez que importam — as que
+ * ainda podem ser consertadas trocando modelo ou encurtando prompt — estavam
+ * misturadas com dez que só existem no passado.
+ *
+ * Elas viram uma linha só, sempre a ÚLTIMA, com os nomes ao lado. Some da
+ * leitura, não da soma: o custo continua inteiro nos totais, nos KPIs e na
+ * margem, e continua endereçável pelo filtro de rota, que segue listando todos
+ * os nomes reais.
+ *
+ * Quem decide o que é vivo é `USAGE_ROUTES`, a lista que o código de fato
+ * escreve — não uma segunda lista aqui, que envelheceria calada na primeira vez
+ * que uma rota nova subisse.
+ */
+const LEGACY_ROUTE_BUCKET = "outras";
+const LIVE_ROUTES: ReadonlySet<string> = new Set(USAGE_ROUTES);
 
 const ACTION_BY_MODE: Record<SessionMode, BillableActionKey> = {
   audio: "recording",
@@ -761,19 +793,7 @@ export async function loadAdminUsageSummary(
   const billableCostUsd = totals.totalCostUsd - unchargedCostUsd - internalCostUsd;
   const overallCostPerCoinUsd = coinsTotal > 0 ? billableCostUsd / coinsTotal : null;
 
-  const byRoute: UsageByRoute[] = Array.from(routeMap.values())
-    .map((r) => ({
-      ...r,
-      models: Array.from(modelMap.get(r.route)?.entries() ?? [])
-        .map(([model, agg]) => ({
-          model,
-          events: agg.events,
-          totalCostUsd: agg.cost,
-          priced: r.route === "transcribe" ? hasAudioPricing(model) : hasChatPricing(model),
-        }))
-        .sort((a, b) => b.totalCostUsd - a.totalCostUsd || b.events - a.events),
-    }))
-    .sort((a, b) => b.totalCostUsd - a.totalCostUsd);
+  const byRoute = buildByRoute(routeMap, modelMap);
   const byDay = Array.from(dayMap.values()).sort((a, b) => a.day.localeCompare(b.day));
 
   // Da mais nova para a mais antiga, com o balde sem versão ("antes da
@@ -837,6 +857,75 @@ export async function loadAdminUsageSummary(
     unpricedModels: Array.from(unpricedModels).sort(),
     coinsScoped: !filters.route,
   };
+}
+
+/**
+ * As linhas da aba "Rotas": uma por rota VIVA, mais o balde "outras" no fim.
+ *
+ * O balde é montado por último e nunca entra na ordenação por custo: ele não é
+ * uma rota, é o resto. Sentado entre as rotas vivas por ser caro, ele seria
+ * lido como "a rota mais cara do produto", que é o oposto do que ele diz.
+ */
+function buildByRoute(
+  routeMap: Map<string, { route: string; events: number; totalCostUsd: number }>,
+  modelMap: Map<string, Map<string, { events: number; cost: number }>>
+): UsageByRoute[] {
+  const modelsOf = (route: string): UsageByModel[] =>
+    Array.from(modelMap.get(route)?.entries() ?? []).map(([model, agg]) => ({
+      model,
+      events: agg.events,
+      totalCostUsd: agg.cost,
+      // A tabela de preço é escolhida pela ROTA, não pelo nome do modelo, a
+      // mesma regra do laço que contou os eventos sem preço.
+      priced: route === "transcribe" ? hasAudioPricing(model) : hasChatPricing(model),
+    }));
+
+  const live: UsageByRoute[] = [];
+  const legacy = { events: 0, totalCostUsd: 0, models: new Map<string, UsageByModel>() };
+  const merged: string[] = [];
+
+  for (const r of routeMap.values()) {
+    if (LIVE_ROUTES.has(r.route)) {
+      live.push({
+        ...r,
+        models: modelsOf(r.route).sort(
+          (a, b) => b.totalCostUsd - a.totalCostUsd || b.events - a.events
+        ),
+        mergedRoutes: [],
+      });
+      continue;
+    }
+    merged.push(r.route);
+    legacy.events += r.events;
+    legacy.totalCostUsd += r.totalCostUsd;
+    for (const m of modelsOf(r.route)) {
+      const acc = legacy.models.get(m.model);
+      if (acc) {
+        acc.events += m.events;
+        acc.totalCostUsd += m.totalCostUsd;
+        // Um modelo sem preço numa das rotas fundidas continua sem preço aqui:
+        // o `false` tem de sobreviver à fusão, ou o aviso de custo
+        // subestimado perde justamente as linhas antigas que o motivaram.
+        acc.priced = acc.priced && m.priced;
+      } else {
+        legacy.models.set(m.model, { ...m });
+      }
+    }
+  }
+
+  live.sort((a, b) => b.totalCostUsd - a.totalCostUsd);
+  if (merged.length === 0) return live;
+
+  live.push({
+    route: LEGACY_ROUTE_BUCKET,
+    events: legacy.events,
+    totalCostUsd: legacy.totalCostUsd,
+    models: Array.from(legacy.models.values()).sort(
+      (a, b) => b.totalCostUsd - a.totalCostUsd || b.events - a.events
+    ),
+    mergedRoutes: merged.sort(),
+  });
+  return live;
 }
 
 /**

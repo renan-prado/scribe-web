@@ -127,6 +127,8 @@
   --color-scriba-rec: var(--scriba-rec);
   --color-scriba-rec-ink: var(--scriba-rec-ink);
   --color-scriba-rec-soft: var(--scriba-rec-soft);
+  --color-scriba-ok-ink: var(--scriba-ok-ink);
+  --color-scriba-ok-soft: var(--scriba-ok-soft);
   --color-scriba-mint-strong: var(--scriba-mint-strong);
   --color-scriba-gold-soft: var(--scriba-gold-soft);
   --color-scriba-gold-track: var(--scriba-gold-track);
@@ -365,6 +367,15 @@
   --scriba-rec: #F0564E;
   --scriba-rec-ink: #B91C1C;
   --scriba-rec-soft: #FCEEEE;
+  /* VERDE, e ele entra pelo MESMO critério do vermelho: é semântico, não
+     decorativo. O par existe para um estado que só tem dois lados — conta
+     ligada / conta desligada, no /admin/users — onde o vermelho sozinho diz
+     "isto está errado" e o cinza do outro lado não diz nada. Não é um matiz
+     para tiles nem para acento: se aparecer em algo que não seja um estado
+     binário de sistema, o teste monocromático voltou a ser furado.
+     #15803D sobre o creme abaixo dá 4,5:1, o piso de AA para texto pequeno. */
+  --scriba-ok-ink: #15803D;
+  --scriba-ok-soft: #E9F7EF;
   --scriba-mint-strong: #525252;
   --scriba-gold-soft: #FFF9E8;
   --scriba-gold-track: #F0E4C6;
@@ -673,6 +684,9 @@
   --scriba-rec: #F0564E;
   --scriba-rec-ink: #FCA5A5;
   --scriba-rec-soft: #221115;
+  /* VERDE semântico, o par escuro. 11,8:1. */
+  --scriba-ok-ink: #86EFAC;
+  --scriba-ok-soft: #10221A;
   --scriba-mint-strong: #B4B4B4;
   --scriba-gold-soft: #1F1A10;
   --scriba-gold-track: #292315;

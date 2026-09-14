@@ -18,6 +18,13 @@ import { SectionLabel } from "./notices";
  * É a aba do diagnóstico, e não a da decisão: uma rota cara diz que vale
  * trocar de modelo ou encurtar um prompt, e é a aba de preços que diz se o que
  * se cobra por ela ainda fecha.
+ *
+ * Por isso só as rotas VIVAS têm linha própria: o conserto de uma rota
+ * aposentada não existe. As mortas chegam somadas na linha "outras", montada
+ * em `features/admin/server/db/usage.ts`, que é quem sabe quais são (a lista
+ * `USAGE_ROUTES`, o que o código ainda escreve). Aqui a única regra é IMPRIMIR
+ * os nomes que ela engoliu: um balde anônimo vira uma rota fantasma chamada
+ * "outras", e o custo histórico perde endereço.
  */
 export function RotasTab({
   summary,
@@ -49,7 +56,14 @@ export function RotasTab({
               ) : (
                 summary.byRoute.map((r) => (
                   <TableRow key={r.route}>
-                    <TableCell className="font-mono text-xs text-scriba-ink">{r.route}</TableCell>
+                    <TableCell className="text-xs text-scriba-ink">
+                      <span className="font-mono">{r.route}</span>
+                      {r.mergedRoutes.length > 0 ? (
+                        <span className="mt-0.5 block font-mono text-[0.65rem] leading-relaxed text-scriba-ink-mute">
+                          {r.mergedRoutes.join(" · ")}
+                        </span>
+                      ) : null}
+                    </TableCell>
                     <TableCell className="text-right">{INT.format(r.events)}</TableCell>
                     <TableCell className="text-right font-mono text-xs">
                       {money(r.totalCostUsd, "fine")}
