@@ -12,15 +12,19 @@ import { getAuthUser } from "@/lib/supabase/server";
  * saldo (ela é um server component), então o layout não teria como passá-la a
  * páginas que precisam dela em posições diferentes.
  *
- * O que ela garante é o chão: preto, ocupando a altura toda. O `flex-1` casa
- * com o `flex flex-col` do `<body>` (ver `app/layout.tsx`), sem ele o preto
- * para onde o conteúdo para, e sobra uma faixa do tema embaixo.
+ * O que ela garante é o chão: o grafite `--v2-bg`, ocupando a altura toda. O
+ * `flex-1` casa com o `flex flex-col` do `<body>` (ver `app/layout.tsx`), sem
+ * ele o chão para onde o conteúdo para, e sobra uma faixa do tema embaixo.
  *
  * **A classe `dark` não é decoração, é o que faz o app ter UM tema.** Ela
  * redeclara os tokens `--scriba-*` neste nó, e eles descem por herança, então
  * todo componente que veio da pele antiga (o `SessionCard`, o `SavedSessionView`,
  * a página de estudo) desenha na paleta escura. Sem isso, um cartão branco
- * pousaria sobre o preto e a tela ficaria com dois desenhos brigando.
+ * pousaria sobre o grafite e a tela ficaria com dois desenhos brigando.
+ *
+ * A Biblioteca não depende mais disso — os post-its dela são `--v2-note-*` e se
+ * pintam sozinhos (ver `LibraryNote`) —, mas o `/summary` e o `/studies` ainda
+ * dependem, e é por eles que a classe fica.
  *
  * **O `TourProvider` mora AQUI, e não em cada página**, por duas razões que não
  * são organização: o overlay é um só (duas páginas capazes de abrir o próprio

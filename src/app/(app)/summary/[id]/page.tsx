@@ -9,6 +9,8 @@ import { TOUR_DELAY_RESULT_MS } from "@/features/tour/config";
 import { hasDeepening } from "@/lib/db/deepenings";
 import { getSession } from "@/lib/db/sessions";
 import { canCurrentUserUse } from "@/lib/entitlements/server";
+import { LibrarySearchLink } from "../../components/LibrarySearchLink";
+import { TopBar } from "../../components/TopBar";
 
 type PageProps = {
   params: Promise<{ id: string }>;
@@ -37,6 +39,13 @@ const DATE_FMT = new Intl.DateTimeFormat("pt-BR", {
  *
  * Tela de LEITURA: não há botão de gravar. Ele é do `/home` e mora na página
  * dele, não no layout, exatamente para não vazar para cá.
+ *
+ * **O cabeçalho é a MESMA `TopBar` da Biblioteca**, com três diferenças que
+ * são a tela: o hambúrguer vira um voltar para `/home`, o título some (a
+ * página inteira é o título do sermão, duas linhas abaixo) e a lupa é um link
+ * para a busca do acervo, que é onde ela existe. A conta fica onde sempre
+ * esteve. Antes daqui saía um link "Voltar" de 12px, e abrir um cartão trocava
+ * o cabeçalho do app por outro.
  */
 export default async function V2SummaryPage({ params }: PageProps) {
   const { id } = await params;
@@ -52,6 +61,7 @@ export default async function V2SummaryPage({ params }: PageProps) {
   return (
     <>
       <SavedSessionView
+        header={<TopBar backHref="/home" trailing={<LibrarySearchLink />} />}
         id={id}
         title={session.title?.trim() || "Sessão sem título"}
         createdAtLabel={DATE_FMT.format(createdAt)}
@@ -70,7 +80,6 @@ export default async function V2SummaryPage({ params }: PageProps) {
         summary={session.finalSummary}
         hasDeepening={deepeningExists}
         canGenerateStudy={canGenerateStudy}
-        backHref="/home"
         meta="compact"
         lead="card"
       />

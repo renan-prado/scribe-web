@@ -1,11 +1,11 @@
 "use client";
 
-import { BookOpen, FileText, Loader2, SearchX } from "lucide-react";
+import { Loader2, SearchX } from "lucide-react";
 import { useMemo, useState } from "react";
-import { NavLink } from "@/components/NavLink";
 import { CollectionSearch, FACET_ALL } from "@/features/session/components/CollectionSearch";
+import { StudyNote } from "@/features/session/components/StudyNote";
 import { useContentSearch } from "@/features/session/hooks/useContentSearch";
-import { formatDurationShort, groupLabel, shortDate } from "@/features/session/lib/formatting";
+import { groupLabel } from "@/features/session/lib/formatting";
 import {
   buildHaystack,
   type DateRangeKey,
@@ -23,9 +23,11 @@ import type { DeepeningListItem } from "@/lib/db/deepenings";
  * ## O que a busca alcança aqui
  *
  * Título e abertura do ESTUDO, mais o título, o autor e a data do SERMÃO que o
- * originou, os dois blocos que o cartão mostra. O corpo do estudo fica de
- * fora: ele é um jsonb de quatro mil palavras por linha, e trazê-lo para a
- * lista custaria mais do que a busca vale.
+ * originou. **A busca alcança MAIS do que o cartão mostra**, e é de propósito:
+ * o post-it ficou com autor, título e data (ver `StudyNote`), mas quem procura
+ * lembra da abertura do estudo ou do nome do sermão tanto quanto do título. O
+ * corpo do estudo é que fica de fora: ele é um jsonb de quatro mil palavras por
+ * linha, e trazê-lo para a lista custaria mais do que a busca vale.
  *
  * A transcrição do sermão, essa entra, pela mesma rota do `/recordings`
  * (`/api/sessions/search`), porque estudo e sessão compartilham a chave. E é
@@ -158,20 +160,23 @@ export function StudiesBrowser({ studies, nowIso }: Props) {
       ) : (
         groups.map((group) => (
           <section key={group.label} className="flex flex-col gap-3">
-            <div className="flex items-center gap-3 px-1">
-              <span className="text-xs font-semibold text-scriba-ink-mute">{group.label}</span>
-              <span className="h-px flex-1 bg-scriba-hairline" />
-              <span className="text-[11px] font-light text-scriba-ink-mute">
-                {group.items.length}
-              </span>
-            </div>
-            <ul className="grid gap-3 sm:grid-cols-2">
+            {/* O MESMO cabeçalho de bloco da Biblioteca: `font-medium`, porque
+                o título dos post-its é regular e um cabeçalho em negrito
+                pesaria mais que os próprios cartões que ele anuncia. O fio e a
+                contagem que ficavam aqui saíram com ele — a contagem já é dita
+                pela barra de busca, duas linhas acima. */}
+            <h2 className="px-1 text-[15px] font-medium text-v2-ink-soft">{group.label}</h2>
+            {/* MASONRY por colunas de CSS, o mesmo mural da Biblioteca: duas
+                colunas, altura livre por cartão. O espaço vertical sai do
+                `mb-4` de cada `<li>` (ver `PostItNote`), porque `gap` em
+                contexto de colunas só vale ENTRE as colunas.
+
+                A ordem de leitura vira coluna-a-coluna, e isso é consciente: o
+                segundo estudo mais recente cai ABAIXO do primeiro, não ao lado.
+                O agrupamento por período contém o estrago, a bagunça nunca
+                atravessa a fronteira de um bloco. */}
+            <ul className="columns-2 gap-4">
               {group.items.map((s) => {
-                const includeYear = new Date(s.createdAt).getFullYear() !== now.getFullYear();
-                const sessionIncludeYear =
-                  s.sessionCreatedAt &&
-                  new Date(s.sessionCreatedAt).getFullYear() !== now.getFullYear();
-                const sessionLabel = s.sessionTitle?.trim() || "Sessão sem título";
                 const verseHit = tokens.length > 0 ? (verseRefs.get(s.sessionId) ?? null) : null;
                 const transcriptOnlyHit =
                   !verseHit &&
@@ -179,116 +184,13 @@ export function StudiesBrowser({ studies, nowIso }: Props) {
                   !matchesAllTokens(haystacks.get(s.sessionId) ?? "", tokens) &&
                   (transcriptHits?.has(s.sessionId) ?? false);
                 return (
-                  <li
+                  <StudyNote
                     key={s.sessionId}
-                    // CARTÃO INTEIRO CLICÁVEL, por "stretched link": quem
-                    // carrega o destino continua sendo o `<a>` do título, e é
-                    // o `::after` dele que se estica até as bordas deste
-                    // `<li>`. Envolver o cartão num `<a>` seria mais simples e
-                    // está errado: o menu de contexto é um `<button>`, e botão
-                    // dentro de link é HTML inválido e armadilha de teclado.
-                    //
-                    // `relative` aqui é o que dá ao `::after` uma caixa para
-                    // preencher, e por isso o link precisa deixar de ser
-                    // `relative` (ver o `static` lá embaixo).
-                    //
-                    // O retorno visual mora no próprio `::after`, como um véu
-                    // de `--scriba-ink-strong`, que INVERTE por tema: escurece
-                    // no claro e clareia no escuro, uma declaração só para os
-                    // dois. Tinta chapada não serviria, o fundo do cartão é
-                    // `background-image` e uma cor de fundo ficaria por baixo
-                    // dele, invisível.
-                    //
-                    // `:active` alcança os ANCESTRAIS do elemento acionado, é
-                    // o que faz `group-active:` funcionar a partir de um <li>
-                    // e o que dá retorno ao toque no celular, onde `hover:` é
-                    // código morto (ver `src/shared/AGENTS.md`).
-                    className="group relative flex flex-col rounded-3xl border border-scriba-hairline-soft bg-[image:var(--feed-card)] bg-[size:200%_100%] p-5 transition-colors hover:border-scriba-ink-strong/20 sm:p-6"
-                  >
-                    <NavLink
-                      href={`/studies/${s.sessionId}`}
-                      spinner="overlay"
-                      contentClassName="flex min-w-0 flex-1 flex-col gap-3"
-                      // Ver o cartão do /recordings: `static` derruba o
-                      // `relative` do `spinner="overlay"` para o `::after`
-                      // se medir pelo <li>.
-                      className="static flex min-w-0 flex-1 flex-col rounded-md outline-none after:absolute after:inset-0 after:rounded-3xl after:transition-colors focus-visible:ring-2 focus-visible:ring-ring/40 group-hover:after:bg-scriba-ink-strong/[0.035] group-active:after:bg-scriba-ink-strong/[0.07]"
-                    >
-                      <div className="flex items-start gap-2.5">
-                        {/* A MESMA pastilha do /recordings, agora o véu
-                            (`.veil-chip`), não a versão verde da família do
-                            estudo. O verde continua no resto da página e no
-                            `.tone-study` da leitura; só esta pastilha é comum
-                            às duas listas. */}
-                        <div className="veil-chip flex size-9 shrink-0 items-center justify-center rounded-lg">
-                          <BookOpen className="size-4" />
-                        </div>
-                        <span className="text-pretty text-[15px] font-semibold leading-tight tracking-tight text-scriba-ink-strong sm:text-base">
-                          {s.studyTitle}
-                        </span>
-                      </div>
-                      {s.studyShort ? (
-                        <p className="text-pretty text-[13px] font-light leading-snug text-scriba-ink-soft">
-                          {s.studyShort.length > 180
-                            ? `${s.studyShort.slice(0, 180).trim()}…`
-                            : s.studyShort}
-                        </p>
-                      ) : null}
-                    </NavLink>
-
-                    {verseHit ? (
-                      <span className="mt-2 inline-flex w-fit items-center gap-1 rounded-full bg-scriba-blue-soft px-2 py-0.5 text-[10px] font-semibold uppercase tracking-wider text-scriba-blue-ink">
-                        <BookOpen className="size-3" />
-                        {verseHit}
-                      </span>
-                    ) : null}
-                    {transcriptOnlyHit ? (
-                      <span className="mt-2 inline-flex w-fit items-center gap-1 rounded-full bg-scriba-mint px-2 py-0.5 text-[10px] font-semibold uppercase tracking-wider text-scriba-mint-ink">
-                        <FileText className="size-3" />
-                        Trecho na transcrição
-                      </span>
-                    ) : null}
-
-                    <div className="mt-4 flex flex-col gap-2 border-t border-scriba-hairline pt-3">
-                      <span className="text-[10px] font-semibold uppercase tracking-wider text-scriba-ink-mute">
-                        Baseado em
-                      </span>
-                      <NavLink
-                        href={`/summary/${s.sessionId}`}
-                        spinner="overlay"
-                        contentClassName="flex flex-col gap-0.5"
-                        className="-mx-1 rounded-md px-1 py-0.5 outline-none transition-colors hover:bg-scriba-green-soft/40 focus-visible:ring-2 focus-visible:ring-ring/40"
-                      >
-                        <span className="text-pretty text-[13px] font-medium leading-snug text-scriba-ink">
-                          {sessionLabel}
-                        </span>
-                        <span className="flex flex-wrap items-center gap-x-2 gap-y-0.5 text-[11px] font-light text-scriba-ink-mute">
-                          {s.sessionSpeakerName?.trim() ? (
-                            <span className="font-medium text-scriba-ink">
-                              {s.sessionSpeakerName}
-                            </span>
-                          ) : null}
-                          {s.sessionCreatedAt ? (
-                            <>
-                              {s.sessionSpeakerName?.trim() ? (
-                                <span className="size-[3px] rounded-full bg-scriba-ink-mute/60" />
-                              ) : null}
-                              <span>{shortDate(s.sessionCreatedAt, !!sessionIncludeYear)}</span>
-                            </>
-                          ) : null}
-                          {formatDurationShort(s.sessionDurationMs) ? (
-                            <>
-                              <span className="size-[3px] rounded-full bg-scriba-ink-mute/60" />
-                              <span>{formatDurationShort(s.sessionDurationMs)}</span>
-                            </>
-                          ) : null}
-                        </span>
-                      </NavLink>
-                      <span className="mt-1 text-[11px] font-light text-scriba-ink-mute">
-                        Estudo gerado em {shortDate(s.createdAt, includeYear)}
-                      </span>
-                    </div>
-                  </li>
+                    study={s}
+                    now={now}
+                    verseHit={verseHit}
+                    transcriptHit={transcriptOnlyHit}
+                  />
                 );
               })}
             </ul>

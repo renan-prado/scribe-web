@@ -2,6 +2,7 @@
 
 import { Search, X } from "lucide-react";
 import { createContext, type ReactNode, useContext, useMemo, useState } from "react";
+import { TOPBAR_CHIP_CLASS } from "../components/chip";
 
 /**
  * O estado da busca da Biblioteca, compartilhado entre o BOTÃO (que mora na
@@ -25,8 +26,20 @@ type SearchScopeValue = {
 
 const SearchScopeContext = createContext<SearchScopeValue | null>(null);
 
-export function SearchScope({ children }: { children: ReactNode }) {
-  const [open, setOpen] = useState(false);
+/**
+ * `defaultOpen` é a lupa das OUTRAS telas chegando aqui: o `/summary` não tem
+ * busca própria, e a dele é um link para `/home?busca=1` (ver
+ * `LibrarySearchLink`). Sem isso a pessoa cairia na Biblioteca com o campo
+ * fechado, tendo que tocar a lupa de novo na tela seguinte.
+ */
+export function SearchScope({
+  children,
+  defaultOpen = false,
+}: {
+  children: ReactNode;
+  defaultOpen?: boolean;
+}) {
+  const [open, setOpen] = useState(defaultOpen);
   const value = useMemo(() => ({ open, setOpen }), [open]);
   return <SearchScopeContext.Provider value={value}>{children}</SearchScopeContext.Provider>;
 }
@@ -59,12 +72,13 @@ export function SearchToggle() {
       // depois deste clique, então um tour ancorado nela descartava o passo em
       // toda visita, em silêncio. Ver `src/features/tour/AGENTS.md`.
       data-tour="library-search"
-      className="-mr-1 inline-flex size-11 shrink-0 items-center justify-center rounded-full text-v2-ink transition-colors hover:bg-v2-card focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-v2-ink-mute"
+      // O chip da barra, o mesmo do hambúrguer e do voltar. Ver `chip.ts`.
+      className={TOPBAR_CHIP_CLASS}
     >
       {open ? (
-        <X className="size-6" strokeWidth={1.75} />
+        <X className="size-5" strokeWidth={1.75} />
       ) : (
-        <Search className="size-6" strokeWidth={1.75} />
+        <Search className="size-5" strokeWidth={1.75} />
       )}
     </button>
   );

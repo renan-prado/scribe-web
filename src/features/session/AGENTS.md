@@ -18,7 +18,9 @@ pessoa quiser, aprofundar.
 | `components/SavedSessionView.tsx` | a tela de uma sessão salva: cabeçalho editável, resumo, estudo, menu |
 | `components/SummaryView.tsx` + `BlockRenderer.tsx` | os blocos do resumo |
 | `components/StudyBlockRenderer.tsx` | os blocos a MAIS que o estudo tem |
-| `components/SessionCard.tsx` + `SessionCardMenu.tsx` | o cartão de uma sessão na Biblioteca |
+| `components/PostItNote.tsx` | a casca do post-it dos dois murais: cor, cartão clicável, anatomia |
+| `components/LibraryNote.tsx` + `SessionCardMenu.tsx` | o post-it de uma sessão na Biblioteca (autor, título, data) |
+| `components/StudyNote.tsx` | o post-it de um estudo, a mesma casca com outro recheio |
 | `components/CollectionSearch.tsx` + `src/lib/search.ts` | a barra e o motor das duas listas |
 | `components/YoutubeUrlForm.tsx` + `YoutubeImport.tsx` | colar o link, e esperar a importação |
 | `components/DeepenButton.tsx` + `DeepeningMenu.tsx` | gerar e reprocessar o estudo |
@@ -195,9 +197,14 @@ TypeScript, com `parseVerseReference` (`src/lib/domain/reference.ts`).
 que respondia pelas sessões gravadas naquele modo. Ela foi dropada na migração
 0058, e a RPC passou a ler só o resumo — que toda sessão tem.
 
-O cartão que casou SÓ pela transcrição ganha a pastilha "Trecho na
-transcrição"; o que casou por versículo mostra a REFERÊNCIA que casou. Sem elas
-o cartão apareceria na lista sem nenhuma explicação visível para estar ali.
+**Nos ESTUDOS**, o cartão que casou só pela transcrição ganha a linha "Trecho na
+transcrição" e o que casou por versículo mostra a REFERÊNCIA — na tinta do
+próprio post-it, não numa pastilha de cor fixa, que sobre quatro papéis
+diferentes some em uns e grita em outros. Ali essa linha é obrigatória: o
+post-it do estudo não cita o sermão, então sem ela o cartão aparece sem nenhuma
+explicação visível para estar ali. Na Biblioteca as pastilhas equivalentes
+saíram com o `SessionCard` — lá o cartão É o sermão buscado. Ver o cabeçalho de
+`LibraryBrowser`.
 
 **O agrupamento por mês foi para dentro do browser**, junto com a filtragem:
 agrupar no servidor e filtrar no cliente deixa seções vazias na tela toda vez

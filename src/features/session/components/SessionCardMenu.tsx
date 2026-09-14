@@ -27,7 +27,13 @@ export function SessionCardMenu({ sessionId, href, deleteAction }: Props) {
       <DropdownMenu>
         <DropdownMenuTrigger
           aria-label="Opções da sessão"
-          className="flex size-8 shrink-0 items-center justify-center rounded-md text-scriba-ink-mute outline-none transition-colors hover:bg-scriba-blue-soft/60 hover:text-scriba-ink focus-visible:ring-2 focus-visible:ring-ring/40"
+          // A TINTA VEM DO CARTÃO, por herança (`text-current`), e não de um
+          // token próprio: o post-it que o hospeda pode ser claro ou escuro
+          // (ver `LibraryNote`), e um `text-scriba-ink-mute` fixo daria um
+          // glifo quase branco sobre papel de limão. Pelo mesmo motivo o realce
+          // é preto translúcido, que escurece qualquer das quatro faces, em vez
+          // de uma cor de superfície que só serve a uma delas.
+          className="flex size-8 shrink-0 items-center justify-center rounded-full text-current outline-none transition-colors hover:bg-black/10 focus-visible:ring-2 focus-visible:ring-ring/40"
         >
           <EllipsisVertical className="size-4" />
         </DropdownMenuTrigger>

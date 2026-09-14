@@ -3,7 +3,7 @@
 import { useEffect, useRef, useState } from "react";
 import { BillingDialog } from "@/features/billing/components/BillingDialog";
 import { COIN_RING_REFERENCE } from "@/features/coins/pricing";
-import { useCoinsStore } from "@/features/coins/store";
+import { getCoinsState, useCoinsStore } from "@/features/coins/store";
 import { cn } from "@/lib/utils";
 
 const COIN_C = 2 * Math.PI * 6.5; // circumference for the r=6.5 stroke centerline (stroke-width 13 fills a r=13 disc without overflowing the viewBox)
@@ -88,13 +88,21 @@ export function CoinBalance({
   const setBalance = useCoinsStore((s) => s.setBalance);
   const refresh = useCoinsStore((s) => s.refresh);
 
-  // Seed store from SSR-fetched balance on first mount so all consumers share
-  // the same source of truth immediately (no null flash for downstream gates).
-  const seededRef = useRef(false);
-  if (!seededRef.current && storeBalance === null) {
-    seededRef.current = true;
-    setBalance(initialBalance);
-  }
+  // Semeia a store com o saldo que veio do servidor, para que todo consumidor
+  // (o gate da gravação, o `DeepenButton`, o `BillingDialog`) leia a mesma
+  // fonte em vez de um `null` de "ainda não sei".
+  //
+  // **Num EFEITO, e não no corpo do render.** Isto era um `if` no render, e um
+  // `set` do zustand ali notifica TODOS os assinantes da store: no dia em que
+  // outro deles estava montado ao lado deste chip (o `BillingDialog`, no menu
+  // da conta), o React acusou "cannot update a component while rendering a
+  // different component". Atualizar em render só é permitido sobre o PRÓPRIO
+  // componente, e uma store global nunca é só ele. A tela não perde nada com a
+  // troca: o `balance` abaixo já cai no `initialBalance` enquanto a store
+  // estiver vazia, e nenhum gate é consultado antes do primeiro clique.
+  useEffect(() => {
+    if (getCoinsState().balance === null) setBalance(initialBalance);
+  }, [initialBalance, setBalance]);
 
   const balance = storeBalance ?? initialBalance;
   const prevBalanceRef = useRef(balance);

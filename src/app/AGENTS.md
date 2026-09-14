@@ -101,19 +101,50 @@ Router, ver o comentário no `src/proxy.ts`).
 
 A moldura é `src/app/(app)/layout.tsx`, e ela quase não desenha: não há header nem
 barra de navegação, cada tela renderiza a sua própria `TopBar`. Ela garante o
-chão preto e monta o `TourProvider`.
+chão grafite e monta o `TourProvider`.
 
 **A `TopBar` é um SERVER component** (`src/app/(app)/components/`): ela lê perfil e
 saldo com `getCurrentAccount`, então quem a renderiza é sempre a PÁGINA, nunca
-um componente cliente. O canto direito dela é um SLOT, porque o que vai ali
-depende da tela: a Biblioteca passa o gatilho da busca, a gravação passa o
-relógio. O hambúrguer abre a gaveta com avatar e saldo (o `CoinBalance` de
-verdade) na mesma linha, quatro destinos, os atalhos de admin/parceiro quando
-houver, e — colado no rodapé e longe deles — o Sair, um POST para
-`/auth/sign-out`.
+um componente cliente. O canto direito tem duas coisas: o SLOT `trailing`, que
+depende da tela (a Biblioteca passa o gatilho da busca, a gravação passa o
+relógio), e, à direita dele, o AVATAR, que é da barra e aparece em toda tela que
+a monte.
+
+**Com `backHref` ela vira a barra do `/summary`**: o hambúrguer dá lugar a um
+voltar e o título some — a página inteira é o título do sermão, repeti-lo na
+barra seria dizê-lo duas vezes. A lupa e o avatar NÃO mudam. Quem monta a barra
+lá é a página, e ela entra no `SavedSessionView` por um slot `header`, porque
+aquela view é `"use client"` e não teria como renderizar um server component.
+A lupa de lá é a `LibrarySearchLink`, um LINK para `/home?busca=1`: a busca é da
+Biblioteca (índice, filtros e lista moram no `LibraryBrowser`), e uma busca
+própria no resumo procuraria dentro de uma sessão só com o mesmo glifo. O
+`?busca=1` é lido pela `/home` e vira o `defaultOpen` do `SearchScope`, senão a
+lupa entregaria a Biblioteca com o campo fechado.
+
+**A conta mora num lugar só, o `AccountMenu`, com dois gatilhos.** O avatar o
+abre, e a linha do rodapé da gaveta também — é um conteúdo só porque o item mais
+perigoso do app (o Sair, um POST para `/auth/sign-out`) não pode ter duas
+versões. Dentro dele: o saldo (o `CoinBalance` de verdade, que abre o
+`BillingDialog`), "Meu perfil", os atalhos de admin/parceiro quando houver, e o
+Sair, separado.
+
+A gaveta do hambúrguer ficou com a forma da sidebar do `/admin`: **logotipo em
+cima, destinos no meio, conta no rodapé.** Os destinos são três, e só os do
+produto — Biblioteca, Estudos e Importar do YouTube; perfil, saldo e papéis são
+CONTA, e sair dali foi o que impediu "Perfil" de aparecer duas vezes na mesma
+gaveta.
 
 A cor vem de tokens no namespace `--v2-*` (`src/app/globals.css`), declarados só em
-`:root` porque o app nasce preto nos dois temas.
+`:root` porque o app tem um tema só, o escuro, nos dois temas do site.
+
+**O chão é `#212121`, e já foi `#000000`.** Preto chapado embaixo dos post-its
+da Biblioteca virava um vão, não uma página. Quem mexer em `--v2-bg` mexe
+TAMBÉM no `--v2-dock-fade`, cujos dez `rgba` são a cor da página: um fade preto
+sobre grafite não some no chão, ele pinta, e o rodapé vira uma mancha escura de
+borda difusa. O `theme-color` NÃO acompanha — ele sai de
+`src/shared/theme-color.ts`, que espelha `--scriba-surface` e vale para o site
+inteiro; a barra do sistema ficar um degrau mais escura que o app é seam
+conhecido, e o conserto seria `theme-color` por rota.
 
 **Os endereços antigos são `redirects()` do `next.config.ts`, não páginas:**
 
@@ -145,10 +176,76 @@ webhook não chegou — uma sessão de Checkout aberta durante o deploy ainda tr
 ## A Biblioteca e o gravador
 
 O `/home` põe o ACERVO como primeira tela e gravar como o botão no rodapé. O
-LAYOUT vem do gravador nativo do Android (print em `public/prints/new-release/`):
-barra no topo, blocos por mês, e embaixo uma faixa que escurece até o preto
+LAYOUT vem dos prints em `public/prints/new-release/`: barra no topo, blocos por
+mês, e embaixo uma faixa que escurece até o grafite da página
 (`--v2-dock-fade`) com o botão vermelho no meio. A faixa fica sempre; o BOTÃO
 some ao rolar para baixo e volta ao rolar para cima.
+
+### O mural de post-its
+
+Cada sessão é um post-it (`LibraryNote`) num masonry de DUAS colunas
+(`columns-2`), e o cartão diz três coisas: **autor, título e data.**
+
+**Os Estudos são o MESMO mural** (`StudyNote`): autor da pregação, título do
+estudo, data em que ele foi gerado. Enquanto uma tela era um mural de anotações
+e a outra uma lista de fichas com "Baseado em", trocar de aba parecia trocar de
+produto. A casca das duas é o `PostItNote` — cor, cartão clicável, véu do toque
+—, e o recheio é o único arquivo de cada uma; um `variant` traria de volta o
+`if` que matou o `SessionCard`, e copiar a casca faria duas versões do
+"stretched link" divergirem até uma parar de ser clicável em silêncio. O cartão
+do estudo passa o id da SESSÃO como cor, então estudo e sermão saem da mesma cor
+nos dois murais. No estudo não há glifo de modo: ali todo cartão é um estudo, e
+um ícone que nunca muda é enfeite ocupando a linha da data. Saíram o
+resumo curto, a duração, o local, o botão "Ver resumo →" e as pastilhas de modo
+e de estudo — numa coluna de ~150px, cada linha a mais empurrava a data para
+fora do primeiro olhar. Sobreviveu o MODO, como glifo ao lado da data: microfone
+para o gravado, play para o importado. Marcar só o YouTube seria marcar a
+exceção, e o cartão sem glifo diria "não é YouTube" em vez de "gravado".
+
+**A cor de um cartão sai do HASH DO ID, nunca da posição na lista.** Pelo
+índice, gravar um sermão novo repinta o acervo inteiro e o cartão amarelo de
+ontem é verde hoje; cor de post-it é memória visual, e instável ela é só ruído.
+São quatro faces (`--v2-note-*`), cada uma com o próprio par de tinta porque uma
+delas é ESCURA — não existe uma tinta só que sirva às quatro.
+
+**A ordem de leitura do masonry é coluna-a-coluna**, então o segundo sermão mais
+recente cai ABAIXO do primeiro, não ao lado. É consciente: um grid preservaria a
+cronologia e perderia o escalonamento, e o escalonamento é o desenho. O
+agrupamento por mês contém o estrago, a bagunça nunca atravessa um bloco.
+
+O `SessionCard`, que servia as duas listas, foi APAGADO junto — quando
+`/recordings` virou redirect ele ficou com um consumidor só, e um post-it não é
+aquele cartão com menos coisas. Um `variant` teria mantido o rodapé, as
+pastilhas e a paleta `--scriba-*` vivos atrás de um `if`, para nunca mais serem
+renderizados.
+
+**Os controles da barra do topo são CHIPS REDONDOS** (fundo `--v2-card` sempre
+visível), e não alvos transparentes que se acendem no hover: hover não existe no
+celular. São 40px com glifo de 20px — 44px com glifo de 24px davam à barra dois
+botões que pesavam mais que o próprio título. Eram quadrados arredondados até o
+avatar entrar ao lado deles: três controles na mesma barra com duas bordas
+diferentes liam como peças de origens diferentes, e quem cede é o chip. A
+classe deles mora em `(app)/components/chip.ts`, um `.ts` puro que servidor e
+cliente leem igual: são quatro botões em quatro arquivos desenhando o mesmo
+objeto, e copiada ela divergiria no primeiro ajuste de raio.
+
+**O avatar PREENCHE o botão**: o toque se anuncia clareando a própria foto
+(`hover:brightness-125`), não acendendo um disco atrás dela. Aquele disco era
+uma moldura que o celular nunca mostra e que no desktop vira um halo cinza em
+volta de uma foto redonda. A CAIXA dele é a mesma do chip (40px, é ela que
+alinha a barra), e a foto tem 36: uma foto chapada pesa mais que um disco de
+`--v2-card`, que é quase a cor da página, e com os dois a 40 o avatar lia como
+o maior dos dois botões.
+
+**A gaveta fecha por um X na linha do logotipo**, e o `Sheet` a monta com
+`showCloseButton={false}`: o botão de fábrica é absoluto em `top-3`, um X
+pairando acima da marca. Na mesma linha os dois centros coincidem sem número
+mágico. O destino Biblioteca leva uma ESTANTE (`Library`) — o `House` de antes
+dizia "início", o nome que a tela tinha quando o acervo não era a primeira.
+
+**O título da barra não é negrito**, e tem `gap-3` até o botão da esquerda: em
+`font-semibold` ele competia com o conteúdo que a página veio mostrar, e
+encostado no hambúrguer lia como legenda dele em vez de nome da tela.
 
 A busca fica atrás da lupa, e não permanente: quem abre o Scriba quase sempre
 quer o último sermão, não uma busca. Fechá-la LIMPA os filtros, senão a lista

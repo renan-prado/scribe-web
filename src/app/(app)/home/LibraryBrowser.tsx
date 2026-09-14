@@ -3,7 +3,7 @@
 import { Loader2, SearchX } from "lucide-react";
 import { useCallback, useEffect, useMemo, useState } from "react";
 import { CollectionSearch, FACET_ALL } from "@/features/session/components/CollectionSearch";
-import { SessionCard } from "@/features/session/components/SessionCard";
+import { LibraryNote } from "@/features/session/components/LibraryNote";
 import { SessionsEmptyState } from "@/features/session/components/SessionsEmptyState";
 import { useContentSearch } from "@/features/session/hooks/useContentSearch";
 import {
@@ -50,16 +50,24 @@ import { useSearchScope } from "./SearchScope";
  * relação ao HTML que o servidor mandou. O React descartaria a marcação por
  * divergência de hidratação, a página inteira, por causa de um rótulo.
  *
- * ## O que a busca alcança
+ * ## A busca alcança MAIS do que o cartão mostra
  *
- * Título, resumo curto, autor e local, tudo que o cartão mostra, mais a
- * TRANSCRIÇÃO, que o cartão não mostra e a lista não carrega: essa metade vem
- * de `/api/sessions/search` por `useContentSearch` e entra como união.
+ * Ela procura em título, resumo curto, autor e local, e ainda na TRANSCRIÇÃO —
+ * essa última metade vem de `/api/sessions/search` por `useContentSearch` e
+ * entra como união. O post-it (ver `LibraryNote`) mostra três dessas coisas:
+ * autor, título e data.
+ *
+ * **Isso é desalinhamento de propósito, e não um descuido a corrigir.** Uma
+ * busca limitada ao que cabe num post-it de 150px seria uma busca inútil; um
+ * cartão que exibisse tudo que a busca alcança seria o cartão antigo de volta.
+ * O preço é um resultado que aparece sem dizer por quê — as pastilhas de "casou
+ * pelo versículo" e "trecho na transcrição", que o `SessionCard` tinha, saíram
+ * com ele. Se a pergunta "por que este cartão está aqui?" voltar a incomodar,
+ * a resposta é uma pastilha no cartão do RESULTADO, não o resumo de volta em
+ * todos eles.
  */
 type Props = {
   sessions: SessionListItem[];
-  /** Sessões que já têm estudo gerado. */
-  deepenedIds: string[];
   nowIso: string;
   deleteAction: (formData: FormData) => Promise<void>;
 };
@@ -69,7 +77,7 @@ function v2Href(id: string): string {
   return `/summary/${id}`;
 }
 
-export function LibraryBrowser({ sessions, deepenedIds, nowIso, deleteAction }: Props) {
+export function LibraryBrowser({ sessions, nowIso, deleteAction }: Props) {
   const { open, setOpen } = useSearchScope();
   const [query, setQuery] = useState("");
   const [speaker, setSpeaker] = useState<string>(FACET_ALL);
@@ -79,7 +87,6 @@ export function LibraryBrowser({ sessions, deepenedIds, nowIso, deleteAction }: 
   const { ids: transcriptHits, pending: searching } = useContentSearch(open ? query : "");
 
   const now = useMemo(() => new Date(nowIso), [nowIso]);
-  const deepened = useMemo(() => new Set(deepenedIds), [deepenedIds]);
 
   const speakerOptions = useMemo(
     () => facetOptions(sessions.map((s) => s.speakerName)),
@@ -221,16 +228,29 @@ export function LibraryBrowser({ sessions, deepenedIds, nowIso, deleteAction }: 
       ) : (
         groups.map((group) => (
           <section key={group.label} className="flex flex-col gap-3">
-            <h2 className="px-1 text-[15px] font-semibold text-v2-ink-soft">{group.label}</h2>
-            <ul className="flex flex-col gap-3">
+            {/* `font-medium` e não `font-semibold`: o título dos post-its é
+                regular (ver `LibraryNote`), e um cabeçalho de mês em negrito
+                pesaria mais que os próprios cartões que ele anuncia. */}
+            <h2 className="px-1 text-[15px] font-medium text-v2-ink-soft">{group.label}</h2>
+            {/* MASONRY por colunas de CSS: duas colunas, altura livre por
+                cartão, que é o escalonamento de mural que a pele pede. O
+                espaço vertical sai do `mb-4` de cada `<li>`, porque `gap` em
+                contexto de colunas só vale ENTRE as colunas — e os dois números
+                andam juntos, senão o mural tem vão maior num eixo que no outro.
+
+                **A ordem de leitura é coluna-a-coluna**, e isso é consciente:
+                o segundo sermão mais recente cai ABAIXO do primeiro, não ao
+                lado. Trocar por um grid preservaria a cronologia e perderia o
+                escalonamento, e o escalonamento é o desenho. O agrupamento por
+                mês contém o estrago: a bagunça de ordem nunca atravessa a
+                fronteira de um bloco. */}
+            <ul className="columns-2 gap-4">
               {group.items.map((s) => (
-                <SessionCard
+                <LibraryNote
                   key={s.id}
                   session={s}
                   now={now}
-                  isDeepened={deepened.has(s.id)}
                   deleteAction={deleteAction}
-                  header="speaker"
                   buildHref={v2Href}
                 />
               ))}

@@ -90,15 +90,25 @@ import { cn } from "@/lib/utils";
  * dissolve os dois invólucros no `sm`, e a fileira do desktop volta a ser
  * exatamente a de antes, sem markup duplicado.
  *
- * Duas medidas de DEDO que não são estética:
+ * ## Os três controles têm a MESMA altura e o MESMO corpo
  *
- *  - **O campo de busca é 16px no celular** (`text-base sm:text-sm`). Abaixo
- *    disso o Safari do iOS dá zoom na página ao focar o input, e sair do zoom
- *    é manual, a barra "funcionava" e ainda assim quebrava a tela.
- *  - **Os gatilhos têm 36px de altura no celular** (`min-h-9`), contra os 28
- *    do `size="sm"`. É `min-height` de propósito: `h-7` vem de uma variante
+ * A constante é `CONTROL`, e ela existe porque a régua não é escolha de
+ * desenho, é uma medida de DEDO que puxa as outras duas atrás de si:
+ *
+ *  - **O campo de busca tem de ser 16px no celular.** Abaixo disso o Safari do
+ *    iOS dá zoom na página ao focar o input, e sair do zoom é manual — a barra
+ *    "funcionava" e ainda assim quebrava a tela.
+ *  - **Então os seletores também são 16px**, senão a mesma caixa empilhada
+ *    embaixo do campo aparece com outro corpo de letra, e a barra lê como duas
+ *    barras. Eram 13 e 14 contra os 16 do campo.
+ *  - **E a altura é 44px** nos três, contra os 36 de antes e os 28 do
+ *    `size="sm"`. É `min-height` de propósito: `h-7` vem de uma variante
  *    `data-[size=sm]` do `SelectTrigger`, que ganha de um `h-*` solto por
- *    especificidade, `min-h` não disputa com ela, só levanta o piso.
+ *    especificidade; `min-h` não disputa com ela, só levanta o piso.
+ *
+ * No `sm` a régua desce junto para 36px e `text-sm`, e aí ela vale para o
+ * campo também: com o `py-2.5` de antes ele ficava 6px mais alto que os
+ * gatilhos da mesma fileira.
  */
 
 /** O valor "sem filtro" de um faceta. Sentinela porque `""` no base-ui Select
@@ -135,12 +145,19 @@ const RANGE_OPTIONS: SelectOption<DateRangeKey>[] = DATE_RANGES.map((r) => ({
 }));
 
 /**
+ * A RÉGUA dos controles: campo de busca, gatilho de filtros e os três
+ * seletores. Altura e corpo de letra, nada mais — quem tem borda, cor ou
+ * padding próprio continua dizendo isso no seu lugar. Ver o cabeçalho.
+ */
+const CONTROL = "min-h-11 text-base sm:min-h-9 sm:text-sm";
+
+/**
  * O gatilho dos três seletores. No celular ele preenche a célula da grade
  * (`w-full`, e `min-w-0` para poder encolher abaixo do texto que carrega); no
  * `sm` volta a ser `w-fit`, a largura do próprio conteúdo, que é o desenho da
- * fileira. O `min-h-9` é a medida de dedo explicada no cabeçalho.
+ * fileira.
  */
-const TRIGGER = "min-h-9 w-full min-w-0 sm:min-h-0 sm:w-fit";
+const TRIGGER = cn(CONTROL, "w-full min-w-0 sm:w-fit");
 
 /** Um filtro ATIVO se acende, é o que distingue "todos" de uma escolha. */
 const TRIGGER_ON = "border-scriba-blue-soft bg-scriba-blue-soft/60 text-scriba-blue-ink";
@@ -192,7 +209,7 @@ export function CollectionSearch({
       // dos Estudos. As duas telas montam UM `CollectionSearch` cada, então o
       // mesmo atributo serve aos dois sem ambiguidade.
       data-tour="collection-search"
-      className="flex flex-col gap-3 rounded-2xl border border-scriba-hairline-soft bg-scriba-paper p-3 sm:p-4"
+      className="flex flex-col gap-3 rounded-2xl border border-scriba-hairline-soft bg-scriba-paper p-4 sm:p-5"
     >
       <div className="relative">
         <Search
@@ -207,10 +224,11 @@ export function CollectionSearch({
           placeholder={placeholder}
           aria-label={placeholder}
           className={cn(
-            "w-full rounded-xl border border-input bg-transparent py-2.5 pl-9 pr-11 outline-none sm:pr-9",
-            // 16px no celular: abaixo disso o Safari do iOS dá zoom na página
-            // ao focar o campo. Ver o cabeçalho.
-            "text-base sm:text-sm",
+            "w-full rounded-xl border border-input bg-transparent py-2 pl-9 pr-11 outline-none sm:py-1.5 sm:pr-9",
+            // A régua dos controles: 44px e 16px no celular, 36 e 14 no `sm`.
+            // O campo é quem a define (é o 16px que segura o zoom do iOS), e
+            // os seletores a seguem. Ver o cabeçalho.
+            CONTROL,
             "placeholder:text-scriba-ink-mute focus:border-ring focus:ring-2 focus:ring-ring/40",
             // O "×" nativo do type=search aparece só em alguns navegadores e
             // nunca combina com o resto; o nosso está sempre lá.
@@ -244,7 +262,8 @@ export function CollectionSearch({
           aria-expanded={filtersOpen}
           aria-controls={panelId}
           className={cn(
-            "inline-flex min-h-9 items-center justify-between gap-2 rounded-xl border px-3 text-[13px] font-medium outline-none transition-colors sm:hidden",
+            CONTROL,
+            "inline-flex items-center justify-between gap-2 rounded-xl border px-3 font-medium outline-none transition-colors sm:hidden",
             "focus-visible:ring-2 focus-visible:ring-ring/40",
             activeCount > 0
               ? "border-scriba-blue-soft bg-scriba-blue-soft/60 text-scriba-blue-ink"
@@ -337,8 +356,15 @@ export function CollectionSearch({
         </div>
 
         {/* No celular esta dupla ganha a própria linha: o contador à esquerda,
-            porque é o que se lê, e "Limpar" à direita, onde o polegar está. */}
-        <div className="flex items-center justify-between gap-2 sm:contents">
+            porque é o que se lê, e "Limpar" à direita, onde o polegar está.
+
+            `mt-2` e `pl-3`: colado no gatilho de filtros o contador lia como
+            legenda dele, e não como o resultado da busca inteira; e os 12px de
+            recuo o põem na COLUNA DOS ÍCONES — a lupa do campo (`left-3`) e o
+            glifo de "Filtros" (`px-3`) começam ali, e um texto rente à borda do
+            cartão saía dessa linha vertical. No `sm` o `contents` dissolve esta
+            caixa e as duas medidas vão junto com ela. */}
+        <div className="mt-2 flex items-center justify-between gap-2 pl-3 sm:contents">
           <span
             aria-live="polite"
             className="shrink-0 text-[11px] font-light tabular-nums text-scriba-ink-mute sm:order-last sm:ml-auto"

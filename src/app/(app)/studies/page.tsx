@@ -33,12 +33,7 @@ export default async function StudiesPage() {
 
   return (
     <div className="flex flex-1 flex-col">
-      <main
-        className={cn(
-          "mx-auto flex w-full max-w-[640px] flex-1 flex-col gap-6 px-4 pb-10",
-          isEmpty && "justify-center"
-        )}
-      >
+      <main className="mx-auto flex w-full max-w-[640px] flex-1 flex-col gap-6 px-4 pt-2 pb-10">
         {/* O título da página é o da barra, e por isso o cabeçalho gordo saiu:
             ele repetia "Seus estudos" logo abaixo da `TopBar` que já diz
             "Estudos". A frase de apoio foi junto — ela explicava o que a lista
@@ -46,22 +41,28 @@ export default async function StudiesPage() {
             pelo menu, que tem o mesmo nome. */}
         <TopBar title="Estudos" />
 
-        {/* Tem estudos mas perdeu (ou nunca teve) o plano: a lista fica, o
-          convite entra acima dela. Só a GERAÇÃO é restrita, ver
-          lib/entitlements/features.ts. */}
-        {!canGenerate && studies.length > 0 ? <StudiesUpsell variant="banner" /> : null}
+        {/* O `justify-center` da tela vazia mora AQUI, e não no `<main>`: lá ele
+          centrava a barra do topo junto, e o cabeçalho do app descia para o
+          meio da página junto com o convite. */}
 
-        {loadError ? (
-          <div className="rounded-2xl border border-destructive/40 bg-destructive/5 p-4 text-sm text-destructive">
-            Não consegui carregar os estudos: {loadError}
-          </div>
-        ) : showUpsellState ? (
-          <StudiesUpsell variant="full" />
-        ) : studies.length === 0 ? (
-          <StudiesEmptyState />
-        ) : (
-          <StudiesBrowser studies={studies} nowIso={now.toISOString()} />
-        )}
+        <div className={cn("flex flex-1 flex-col gap-6", isEmpty && "justify-center")}>
+          {/* Tem estudos mas perdeu (ou nunca teve) o plano: a lista fica, o
+            convite entra acima dela. Só a GERAÇÃO é restrita, ver
+            lib/entitlements/features.ts. */}
+          {!canGenerate && studies.length > 0 ? <StudiesUpsell variant="banner" /> : null}
+
+          {loadError ? (
+            <div className="rounded-2xl border border-destructive/40 bg-destructive/5 p-4 text-sm text-destructive">
+              Não consegui carregar os estudos: {loadError}
+            </div>
+          ) : showUpsellState ? (
+            <StudiesUpsell variant="full" />
+          ) : studies.length === 0 ? (
+            <StudiesEmptyState />
+          ) : (
+            <StudiesBrowser studies={studies} nowIso={now.toISOString()} />
+          )}
+        </div>
       </main>
       {/* A apresentação dos Estudos. Ela não roda para quem chegou na tela de
           convite (`showUpsellState`): ali a página INTEIRA já é uma explicação,

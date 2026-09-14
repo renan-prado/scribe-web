@@ -155,6 +155,21 @@
   --color-v2-card: var(--v2-card);
   --color-v2-card-hover: var(--v2-card-hover);
   --color-v2-wave: var(--v2-wave);
+  /* Os quatro post-its da Biblioteca, cada um com a própria tinta: um deles é
+     ESCURO, então não existe uma tinta só que sirva aos quatro. Ver o bloco
+     `--v2-note-*` em `:root`. */
+  --color-v2-note-mist: var(--v2-note-mist);
+  --color-v2-note-mist-ink: var(--v2-note-mist-ink);
+  --color-v2-note-mist-mute: var(--v2-note-mist-mute);
+  --color-v2-note-sage: var(--v2-note-sage);
+  --color-v2-note-sage-ink: var(--v2-note-sage-ink);
+  --color-v2-note-sage-mute: var(--v2-note-sage-mute);
+  --color-v2-note-slate: var(--v2-note-slate);
+  --color-v2-note-slate-ink: var(--v2-note-slate-ink);
+  --color-v2-note-slate-mute: var(--v2-note-slate-mute);
+  --color-v2-note-lemon: var(--v2-note-lemon);
+  --color-v2-note-lemon-ink: var(--v2-note-lemon-ink);
+  --color-v2-note-lemon-mute: var(--v2-note-lemon-mute);
   --color-v2-rec: var(--v2-rec);
   --color-v2-rec-hover: var(--v2-rec-hover);
   --color-v2-rec-ink: var(--v2-rec-ink);
@@ -427,16 +442,23 @@
   --sidebar-width-icon: 3rem;
   /* Scriba v2 (/*).
      Declarado SÓ aqui e de propósito: o `.dark` abaixo redefine todo token
-     de `:root`, este é a exceção. O v2 nasce preto nos dois temas, então
-     redefini-lo lá seria escrever o mesmo valor duas vezes e dar a impressão
-     de que ele acompanha o tema. Se um dia o v2 ganhar tema claro, é aqui
-     que a exceção deixa de valer. */
-  --v2-bg: #000000;
-  /* Um degrau só acima do preto. É o realce dos botões da barra do topo; o
-     CARTÃO da lista não usa este token, ele é o `SessionCard` do app atual e
-     traz a própria paleta (ver `app/layout.tsx`). */
-  --v2-card: #1A1A1A;
-  --v2-card-hover: #242424;
+     de `:root`, este é a exceção. O v2 tem UM tema, o escuro, nos dois temas
+     do site, então redefini-lo lá seria escrever o mesmo valor duas vezes e
+     dar a impressão de que ele acompanha o tema. Se um dia o v2 ganhar tema
+     claro, é aqui que a exceção deixa de valer. */
+  /* O chão. Foi `#000000` até a pele dos post-its: preto chapado embaixo de
+     cartões de cor clara vira um vão, e o grafite devolve à página a
+     profundidade que o preto absorvia. Quem mexer aqui mexe TAMBÉM no
+     `--v2-dock-fade` (que desce até esta mesma cor) e no `theme-color` do
+     `app/layout.tsx`, senão a barra do sistema do PWA descola da tela. */
+  --v2-bg: #212121;
+  /* O chip dos controles: hambúrguer e lupa da barra do topo. É a MESMA cor
+     do post-it escuro, de propósito, o app tem um cinza de superfície só.
+     Contra o fundo ele dá 1,25:1, ou seja o retângulo quase não se vê e quem
+     lê é o glifo dentro: o chip é moldura, não contorno, e por isso o anel de
+     foco não pode depender dele. */
+  --v2-card: #2F3035;
+  --v2-card-hover: #3A3B41;
   /* As barras da onda do microfone (`/recording`). Elas não usam a tinta de
      texto: a onda é um DESENHO, e no repouso ela cai para 30% de opacidade,
      um cinza que já nasce apagado sumiria de vez. */
@@ -449,8 +471,39 @@
   --v2-rec: #D83E36;
   --v2-rec-hover: #E64C44;
   --v2-rec-ink: #FFFFFF;
-  /* O chão do botão de gravar: uma faixa que escurece até o preto embaixo e
-     some em transparente em cima. Ela SUBSTITUIU a sombra que o botão tinha:
+  /* OS POST-ITS DA BIBLIOTECA.
+     Quatro cores em rodízio, e o rodízio é por HASH DO ID da sessão, nunca
+     pela posição na lista (ver `LibraryNote`): com o índice, gravar um sermão
+     novo repintaria o acervo inteiro, e o cartão amarelo de ontem seria verde
+     hoje. Cor de post-it é memória visual; instável, é só ruído.
+
+     Cada cor traz o próprio PAR de tinta porque uma das quatro é escura — não
+     existe uma tinta só que sirva às quatro, e `text-v2-ink` num cartão claro
+     seria texto branco sobre papel de limão. A tinta não é preto chapado: ela
+     puxa o matiz do próprio cartão, senão o preto lê mais frio que o papel no
+     sage e no lemon.
+
+     Contraste medido sobre o próprio cartão, não sobre a página (regra de
+     `src/shared/AGENTS.md`): tinta ~11-13:1, `mute` ~4,8-6,4:1, que é o piso
+     da linha de data. */
+  --v2-note-mist: #D8DFE9;
+  --v2-note-mist-ink: #1B2330;
+  --v2-note-mist-mute: #4A5568;
+  --v2-note-sage: #CFDECB;
+  --v2-note-sage-ink: #1C2A1B;
+  --v2-note-sage-mute: #48584A;
+  /* O escuro. É a MESMA cor do chip dos controles, e contra o fundo dá 1,25:1:
+     sozinho ele lê como um buraco na lista, não como cartão. Só ele leva um
+     fio de luz na borda (ver `LibraryNote`); pôr o fio nos quatro sujaria os
+     três claros, que já se separam do fundo pela própria cor. */
+  --v2-note-slate: #2F3035;
+  --v2-note-slate-ink: #F5F5F5;
+  --v2-note-slate-mute: #9A9BA2;
+  --v2-note-lemon: #EFF0A4;
+  --v2-note-lemon-ink: #2A2B12;
+  --v2-note-lemon-mute: #5A5B30;
+  /* O chão do botão de gravar: uma faixa que escurece até o GRAFITE da página
+     embaixo e some em transparente em cima. Ela SUBSTITUIU a sombra que o botão tinha:
      uma sombra separa o botão do que está atrás dele num ponto só, a faixa
      separa a barra inteira do conteúdo, e de quebra o texto do último cartão
      mergulha nela em vez de ser cortado por uma borda.
@@ -462,23 +515,29 @@
      é reta na conta, e no gradiente longo o olho vê a faixa de transição como
      uma borda. Quanto mais paradas, mais macia a curva.
 
-     **Ela NÃO chega ao preto chapado**, para em 82% embaixo. Sobre o fundo da
-     página isso é invisível, os dois são pretos; a diferença aparece onde há
+     **Ela NÃO chega ao opaco chapado**, para em 82% embaixo. Sobre o fundo da
+     página isso é invisível, é a própria cor dele; a diferença aparece onde há
      cartão atrás, e é ela que se quer: o cartão continua LÁ, escurecido, em vez
      de apagado por uma tarja. Uma faixa sólida separa recortando, esta separa
-     por profundidade. */
+     por profundidade.
+
+     **É `33, 33, 33` e não `0, 0, 0` desde que a página deixou de ser preta.**
+     Um fade preto sobre grafite não some no chão: ele PINTA, e o rodapé vira
+     uma mancha escura de borda difusa em cima de uma página que é cinza. A cor
+     do fade tem de ser a cor da página, sempre — se `--v2-bg` mudar de novo,
+     estes dez `rgba` mudam junto. */
   --v2-dock-fade: linear-gradient(
     to top,
-    rgba(0, 0, 0, 0.82) 0%,
-    rgba(0, 0, 0, 0.76) 12%,
-    rgba(0, 0, 0, 0.66) 24%,
-    rgba(0, 0, 0, 0.54) 36%,
-    rgba(0, 0, 0, 0.4) 48%,
-    rgba(0, 0, 0, 0.27) 60%,
-    rgba(0, 0, 0, 0.16) 72%,
-    rgba(0, 0, 0, 0.08) 83%,
-    rgba(0, 0, 0, 0.03) 92%,
-    rgba(0, 0, 0, 0) 100%
+    rgba(33, 33, 33, 0.82) 0%,
+    rgba(33, 33, 33, 0.76) 12%,
+    rgba(33, 33, 33, 0.66) 24%,
+    rgba(33, 33, 33, 0.54) 36%,
+    rgba(33, 33, 33, 0.4) 48%,
+    rgba(33, 33, 33, 0.27) 60%,
+    rgba(33, 33, 33, 0.16) 72%,
+    rgba(33, 33, 33, 0.08) 83%,
+    rgba(33, 33, 33, 0.03) 92%,
+    rgba(33, 33, 33, 0) 100%
   );
 }
 

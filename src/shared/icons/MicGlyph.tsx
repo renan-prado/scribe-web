@@ -1,5 +1,12 @@
 /**
- * O microfone do botão de gravar do v2 (`app/home/RecordButton.tsx`).
+ * O microfone do v2, em três tamanhos e um desenho só: o botão de gravar
+ * (`(app)/home/RecordDock.tsx`), o estúdio (`(app)/recording/AudioStudio.tsx`) e
+ * o marcador de modo do post-it da Biblioteca (`LibraryNote`, a 14px).
+ *
+ * **Essa terceira parada é o motivo de ele não ser o `Mic` do lucide em lugar
+ * nenhum.** O glifo que a pessoa aperta para gravar e o que marca o resultado
+ * daquele gesto na lista precisam ser o mesmo desenho; dois microfones
+ * diferentes nas duas pontas do mesmo gesto fazem a lista parecer de outro app.
  *
  * Original em `public/icons/microfone.svg`, e o arquivo continua sendo a fonte
  * que o designer edita: ao trocar o desenho, troque os DOIS. Do original saem

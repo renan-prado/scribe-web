@@ -1,6 +1,6 @@
 "use client";
 
-import { BookOpen, House, LogOut, Menu, User } from "lucide-react";
+import { BookOpen, Library, Menu, X } from "lucide-react";
 import type { ReactNode } from "react";
 import { useState } from "react";
 import { YoutubeIcon } from "@/components/icons/YoutubeIcon";
@@ -12,48 +12,51 @@ import {
   SheetHeader,
   SheetTitle,
 } from "@/components/ui/sheet";
-import { CoinBalance } from "@/features/coins/components/CoinBalance";
-import { initialsOf } from "@/features/session/lib/text";
+import { cn } from "@/lib/utils";
+import { ScribaLogo } from "@/shared/brand";
+import { AccountMenu } from "./AccountMenu";
+import { TOPBAR_CHIP_CLASS } from "./chip";
 
 /**
  * A gaveta do hambúrguer do v2.
  *
- * Ela abre com QUEM e QUANTO: avatar, nome e o saldo de moedas. É a mesma
- * ordem de leitura do header do app atual (avatar à direita, chip de moedas ao
- * lado), compactada numa coluna, porque no v2 o topo da tela é do título da
- * página, não do chrome.
+ * Ela tem a forma da sidebar do `/admin`, e isso é decisão: **marca em cima,
+ * destinos no meio, conta no rodapé.** Os dois painéis do produto passaram a
+ * ser lidos do mesmo jeito, e quem administra é a mesma pessoa que grava.
  *
- * O saldo é o `CoinBalance` de verdade, o mesmo componente do app: ele já
- * assina a store das moedas, então um gasto feito numa aba aparece aqui sem
- * recarregar, e o toque nele abre o diálogo de compra. Um número estático
- * copiado para cá mentiria na primeira gravação.
+ * - **O logotipo no topo** é o que diz onde a gaveta pertence. Ela abre por
+ *   cima da tela inteira, e um retângulo de links sem marca poderia ser de
+ *   qualquer app.
+ * - **Três destinos, e só os do produto**: Biblioteca (o `/home`, o acervo),
+ *   Estudos e Importar do YouTube. Perfil, admin e área do parceiro saíram
+ *   daqui: são a CONTA, e a conta agora tem um lugar só (ver `AccountMenu`).
+ *   Com "Perfil" nos dois lugares, a mesma tela apareceria duas vezes na mesma
+ *   gaveta.
+ * - **A conta no rodapé**, na mesma linha de avatar + nome + chevron do
+ *   `/admin`, abrindo o mesmo menu do avatar da `TopBar`. O Sair mora lá
+ *   dentro, que é onde o item mais perigoso do app fica longe do dedo que
+ *   procura uma tela.
  *
- * **Quatro destinos, e um botão de sair separado deles.** Biblioteca (o
- * `/home`, que é o acervo), Estudos, Importar do YouTube e Perfil são
- * navegação; sair não é, é o fim da sessão, e por isso mora colado no rodapé da
- * gaveta, longe do dedo que procura uma tela. Misturá-lo na mesma lista
- * deixaria o item mais perigoso do menu a um toque de distância do mais usado.
+ * O saldo foi junto para dentro do menu da conta. Ele era a segunda coisa que
+ * a gaveta dizia, e passou a ser a primeira que o menu diz.
  *
- * Os quatro apontam para as telas de hoje. Os endereços antigos continuam
- * existindo, mas só para responder 308 (ver `app/AGENTS.md`).
- *
- * Sair é um `<form method="post">` para `/auth/sign-out`, o mesmo caminho do
- * `UserMenu` e do `/profile`: encerrar sessão ESCREVE (limpa o cookie), e um
- * link GET que desloga é acionado por qualquer prefetch.
+ * Os três destinos apontam para as telas de hoje. Os endereços antigos
+ * continuam existindo, mas só para responder 308 (ver `app/AGENTS.md`).
  */
 type Props = {
   displayName: string | null;
   email: string | null;
   avatarUrl: string | null;
   coinBalance: number;
-  /** Sem sessão não há avatar nem saldo, só a navegação. */
+  /** Sem sessão não há conta no rodapé, só a navegação. */
   hasSession: boolean;
   /**
    * Os atalhos de quem tem papel (admin, parceiro), montados no SERVIDOR e
-   * entregues prontos. Slot, e não dois booleanos, pela razão do cabeçalho de
-   * `PrivilegedMenuItems`: com `isAdmin &&` aqui dentro, as strings "Admin",
-   * "/admin", "Área do parceiro" e "/partners" viajariam no chunk que TODO
-   * usuário logado baixa. O `false` esconderia o item na tela, não o código.
+   * entregues prontos, e daqui repassados ao `AccountMenu`. Slot, e não dois
+   * booleanos, pela razão do cabeçalho de `PrivilegedMenuItems`: com
+   * `isAdmin &&` aqui dentro, as strings "Admin", "/admin", "Área do parceiro"
+   * e "/partners" viajariam no chunk que TODO usuário logado baixa. O `false`
+   * esconderia o item na tela, não o código.
    */
   privilegedItems?: ReactNode;
 };
@@ -67,7 +70,6 @@ export function AppMenu({
   privilegedItems,
 }: Props) {
   const [open, setOpen] = useState(false);
-  const name = displayName?.trim() || email?.trim() || "Sua conta";
 
   return (
     <>
@@ -79,15 +81,20 @@ export function AppMenu({
         type="button"
         onClick={() => setOpen(true)}
         aria-label="Abrir menu"
-        className="-ml-1 inline-flex size-11 shrink-0 items-center justify-center rounded-full text-v2-ink transition-colors hover:bg-v2-card focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-v2-ink-mute"
+        // O mesmo chip da lupa e do voltar, de `chip.ts`.
+        className={cn("-ml-1", TOPBAR_CHIP_CLASS)}
       >
-        <Menu className="size-6" strokeWidth={1.75} />
+        <Menu className="size-5" strokeWidth={1.75} />
       </button>
       <Sheet open={open} onOpenChange={setOpen}>
         {/* A gaveta é `--v2-card`, um degrau acima do preto da página: no
             fundo preto ela seria uma superfície invisível sobre outra, e o véu
             borrado atrás não bastaria para dizer onde ela começa. */}
-        <SheetContent side="left" className="w-[300px] border-none bg-v2-card p-0 text-v2-ink">
+        <SheetContent
+          side="left"
+          showCloseButton={false}
+          className="w-[300px] border-none bg-v2-card p-0 text-v2-ink"
+        >
           <SheetHeader className="gap-0 p-0">
             <SheetTitle className="sr-only">Menu</SheetTitle>
             <SheetDescription className="sr-only">
@@ -95,46 +102,39 @@ export function AppMenu({
             </SheetDescription>
           </SheetHeader>
 
-          {hasSession ? (
-            <div className="flex items-center gap-3 px-5 pt-6 pb-5">
-              <div className="flex min-w-0 flex-1 items-center gap-3">
-                {/* `<img>` cru, e não `next/image`: a foto vem do provedor de
-                  login (Google), o tamanho é fixo e conhecido, e passar 40px
-                  pelo otimizador é pagar uma volta no servidor para não
-                  economizar nada. */}
-                {avatarUrl ? (
-                  // biome-ignore lint/performance/noImgElement: avatar de 40px vindo do provedor de login
-                  <img
-                    src={avatarUrl}
-                    alt=""
-                    width={40}
-                    height={40}
-                    referrerPolicy="no-referrer"
-                    className="size-10 shrink-0 rounded-full object-cover"
-                  />
-                ) : (
-                  <span className="flex size-10 shrink-0 items-center justify-center rounded-full bg-v2-card text-sm font-semibold text-v2-ink">
-                    {initialsOf(displayName ?? email)}
-                  </span>
-                )}
-                <div className="flex min-w-0 flex-col">
-                  <span className="truncate text-sm font-semibold text-v2-ink">{name}</span>
-                  {email?.trim() && email.trim() !== name ? (
-                    <span className="truncate text-xs font-light text-v2-ink-mute">{email}</span>
-                  ) : null}
-                </div>
-              </div>
-              {/* O saldo ao LADO de quem é você, não embaixo: as duas coisas
-                  respondem à mesma pergunta ("de quem é esta conta, e o que ela
-                  tem"), e numa linha só elas se leem juntas. */}
-              <CoinBalance initialBalance={coinBalance} />
-            </div>
-          ) : null}
+          {/* `variant="ink"`, e não o gradiente de sempre: a gaveta é um PORTAL
+              no `body`, fora do nó `dark` do layout do app, então `--scriba-cta`
+              chega aqui na versão clara do tema — um degradê de dois cinzas
+              escuros sobre um cinza escuro. Herdando o `color`, o logotipo
+              acompanha a tinta da gaveta. */}
+          {/* O fechar mora na MESMA linha do logotipo, e por isso o `Sheet`
+              entrega a gaveta sem o botão dele (`showCloseButton={false}`): o
+              de fábrica é absoluto em `top-3`, um X pairando acima da marca. Na
+              linha, os dois centros coincidem sem nenhum número mágico.
+
+              Ele é um botão nosso, e não o `SheetPrimitive.Close`, porque quem
+              manda na gaveta aqui é o estado (`open`), pela mesma razão que o
+              hambúrguer fica fora do `Sheet`. Sem `bg`: a gaveta JÁ é
+              `--v2-card`, então o chip da barra seria um disco invisível. */}
+          <div className="flex items-center justify-between gap-3 px-5 pt-6 pb-4">
+            <ScribaLogo size={24} variant="ink" textClassName="text-[19px]" />
+            <button
+              type="button"
+              onClick={() => setOpen(false)}
+              aria-label="Fechar menu"
+              className="-mr-2.5 inline-flex size-10 shrink-0 items-center justify-center rounded-full text-v2-ink-mute transition-colors hover:bg-v2-card-hover hover:text-v2-ink focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-v2-ink-mute"
+            >
+              <X className="size-5" strokeWidth={1.75} />
+            </button>
+          </div>
 
           <nav className="flex flex-col gap-1 px-3 py-2">
             <MenuItem
               href="/home"
-              icon={<House className="size-4" />}
+              /* Uma ESTANTE, não uma casa: a tela se chama Biblioteca, e o
+                 `House` dizia "início" — o nome antigo dela, de quando o acervo
+                 não era a primeira tela. */
+              icon={<Library className="size-4" />}
               onNavigate={() => setOpen(false)}
             >
               Biblioteca
@@ -157,38 +157,20 @@ export function AppMenu({
             >
               Importar do YouTube
             </MenuItem>
-            <MenuItem
-              href="/profile"
-              icon={<User className="size-4" />}
-              onNavigate={() => setOpen(false)}
-            >
-              Perfil
-            </MenuItem>
-            {/* Depois dos quatro destinos de todo mundo, e separados por uma
-                linha: são portas de OUTRO produto (o painel interno, a área do
-                parceiro), não mais uma tela do Scriba. */}
-            {privilegedItems ? (
-              <>
-                <span aria-hidden className="my-1 h-px bg-v2-card" />
-                {privilegedItems}
-              </>
-            ) : null}
           </nav>
 
           {hasSession ? (
-            <form
-              action="/auth/sign-out"
-              method="post"
-              className="mt-auto px-3 pt-2 pb-[calc(1rem+env(safe-area-inset-bottom))]"
-            >
-              <button
-                type="submit"
-                className="flex w-full items-center gap-3 rounded-xl px-3 py-3 text-left text-sm font-medium text-v2-ink-mute transition-colors hover:bg-v2-card-hover hover:text-v2-ink focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-v2-ink-mute"
-              >
-                <LogOut className="size-4" />
-                Sair
-              </button>
-            </form>
+            <div className="mt-auto px-3 pt-2 pb-[calc(1rem+env(safe-area-inset-bottom))]">
+              <AccountMenu
+                variant="row"
+                displayName={displayName}
+                email={email}
+                avatarUrl={avatarUrl}
+                coinBalance={coinBalance}
+                privilegedItems={privilegedItems}
+                onNavigate={() => setOpen(false)}
+              />
+            </div>
           ) : null}
         </SheetContent>
       </Sheet>
@@ -213,7 +195,7 @@ function MenuItem({
       onClick={onNavigate}
       spinner="none"
       contentClassName="flex items-center gap-3"
-      className="rounded-xl px-3 py-3 text-sm font-medium text-v2-ink-soft transition-colors hover:bg-v2-card hover:text-v2-ink focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-v2-ink-mute"
+      className="rounded-xl px-3 py-3 text-sm font-medium text-v2-ink-soft transition-colors hover:bg-v2-card-hover hover:text-v2-ink focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-v2-ink-mute"
     >
       {icon}
       {children}

@@ -1,7 +1,6 @@
 "use client";
 
-import { ArrowLeft, CreditCard } from "lucide-react";
-import Link from "next/link";
+import { CreditCard } from "lucide-react";
 import { usePathname, useRouter } from "next/navigation";
 import { useEffect, useState } from "react";
 import { toast } from "sonner";
@@ -23,6 +22,11 @@ import { cn } from "@/lib/utils";
  * o rodapé do diálogo tinha de mentir sobre a unidade do preço ("/min" num modo
  * que cobra por vídeo). Escolher COMO capturar e escolher QUAL vídeo são duas
  * perguntas, e amontoá-las num controle só piorava as duas.
+ *
+ * **Ela é só o MIOLO, não a tela inteira.** O `<main>`, a barra do topo e o
+ * voltar são do `/importar`; daqui saiu o link "← Biblioteca" que ficava acima
+ * do título, porque com o voltar na barra a mesma saída aparecia duas vezes na
+ * mesma tela, a três centímetros uma da outra.
  *
  * A tela não cria a sessão e não importa nada: ela valida o link e cria a linha
  * (`mode: "youtube"`), depois empurra para `/importar/:id`, que é onde
@@ -85,15 +89,12 @@ export function YoutubeUrlForm() {
   }
 
   return (
-    <main className="mx-auto flex w-full max-w-lg flex-1 flex-col gap-7 px-4 py-6 sm:px-6 sm:py-10">
-      <Link
-        href="/home"
-        className="inline-flex w-fit items-center gap-1.5 rounded-full text-[13px] font-medium text-scriba-ink-soft transition-colors hover:text-scriba-ink focus-visible:outline-none focus-visible:ring-4 focus-visible:ring-scriba-blue/30"
-      >
-        <ArrowLeft aria-hidden className="size-3.5" strokeWidth={2.4} />
-        Biblioteca
-      </Link>
-
+    // `<div>`, e não o `<main>` que ele já foi: quem monta a página é o
+    // `/importar`, e o `<main>` é de lá. Dois deles aninhados é HTML inválido, e
+    // o de fora é que carrega a barra do topo e o pé da tela. A medida própria
+    // (`max-w-lg`, mais estreita que os 640px da página) fica, é a largura em
+    // que um campo só não vira uma linha de ponta a ponta.
+    <div className="mx-auto flex w-full max-w-lg flex-col gap-7">
       <div className="flex flex-col items-center gap-4 text-center">
         <span
           aria-hidden
@@ -214,6 +215,6 @@ export function YoutubeUrlForm() {
       </form>
 
       <BillingDialog open={billingOpen} onOpenChange={setBillingOpen} />
-    </main>
+    </div>
   );
 }

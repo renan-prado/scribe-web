@@ -1,10 +1,10 @@
 "use client";
 
-import { ArrowLeft, MapPin, Pencil, Plus } from "lucide-react";
+import { MapPin, Pencil, Plus } from "lucide-react";
 import { useRouter } from "next/navigation";
+import type { ReactNode } from "react";
 import { useState } from "react";
 import { toast } from "sonner";
-import { NavLink } from "@/components/NavLink";
 import { PageBlurOverlay } from "@/components/PageBlurOverlay";
 import {
   Dialog,
@@ -56,10 +56,16 @@ type SavedSessionViewProps = {
   hasDeepening: boolean;
   /** Ver `lib/entitlements/server.ts`. */
   canGenerateStudy: boolean;
-  /** Para onde o "Voltar" leva. O padrão é a Biblioteca do app atual; o
-   * `/summary/:id` passa o Início do v2, senão o único caminho de volta
-   * desta tela jogaria a pessoa para fora da pele nova. */
-  backHref?: string;
+  /**
+   * A barra do topo, montada pela PÁGINA e entregue pronta.
+   *
+   * Slot, e não um `backHref`: a `TopBar` é um server component (ela lê o
+   * perfil e o saldo), e esta view é `"use client"` — daqui não há como
+   * renderizá-la, só como receber o nó já pronto. É também o que trouxe o
+   * voltar, a lupa e o avatar para cá: esta tela tinha um link "Voltar" de 12px
+   * próprio, e abrir um cartão trocava o cabeçalho do app por outro.
+   */
+  header?: ReactNode;
   /**
    * Quanta ficha técnica o cabeçalho mostra.
    *
@@ -92,7 +98,7 @@ export function SavedSessionView({
   summary,
   hasDeepening,
   canGenerateStudy,
-  backHref = "/home",
+  header,
   meta = "full",
   lead = "rule",
 }: SavedSessionViewProps) {
@@ -164,19 +170,16 @@ export function SavedSessionView({
   const initials = initialsOf(speakerName);
 
   return (
-    <main className="mx-auto flex min-h-svh w-full max-w-3xl flex-col gap-6 px-4 py-8 sm:gap-8 sm:px-6 sm:py-10">
+    // `pt-2`, e não o `py-8` de antes: a barra do topo encosta no alto da tela
+    // como encosta na Biblioteca, senão o mesmo cabeçalho pousaria 30px mais
+    // baixo ao abrir um cartão.
+    <main className="mx-auto flex min-h-svh w-full max-w-3xl flex-col gap-6 px-4 pt-2 pb-8 sm:gap-8 sm:px-6 sm:pb-10">
       <PageBlurOverlay
         open={reprocessing}
         title="Reprocessando o resumo"
         subtitle="Refazendo os pontos centrais da mensagem."
       />
-      <NavLink
-        href={backHref}
-        className="-mx-1 inline-flex w-fit items-center rounded-md px-1 py-0.5 text-xs font-medium text-scriba-ink-mute transition-colors hover:text-scriba-ink focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring/40"
-      >
-        <ArrowLeft className="size-3.5" />
-        Voltar
-      </NavLink>
+      {header}
 
       {/* O holofote do passo "Título, autor e local são seus" recorta o
           cabeçalho INTEIRO, e não só o título: os três campos editáveis moram
