@@ -86,6 +86,24 @@ Duas decisões dele que parecem detalhe:
 4. O chunk volta com texto e um veredito de qualidade. Ver "Qualidade" abaixo.
 5. Os pipelines observam a transcrição acumulada e decidem se chamam.
 
+**O `stop()` do recorder ESPERA o último chunk ser emitido.** `MediaRecorder.stop()`
+retorna na hora; quem fecha o último pedaço e o entrega ao `onChunk` é o
+`onstop`, um turno depois. Quem fizesse `await rec.stop()` e montasse a
+transcrição em seguida podia montá-la sem os últimos 15-20 segundos — o fim da
+pregação, que costuma ser a conclusão — sem nada na tela indicando a falta. O
+`await audioContext.close()` do teardown costumava dar tempo ao evento por
+acidente, e "por acidente" não é garantia num caminho que decide o que entra no
+resumo. Hoje o `stop()` aguarda de verdade, com teto de 3s para o caso de um
+`onstop` que nunca chega. Verificado contra o código real em
+`tmp/dev-scripts/recorder-race.mts`: sem a espera, o `stop()` resolve com ZERO
+chunks emitidos.
+
+Quem consome isso precisa fechar a outra metade da corrida: o gravador ENTREGA
+o pedaço de forma síncrona, mas guardá-lo (decodificar para medir silêncio,
+gravar no IndexedDB) não é. Um `drain()` chamado antes disso responde "tudo
+enviado" sobre uma fila em que o último trecho ainda nem entrou. Ver o
+`inflightRef` do `app/v2/recording/AudioStudio.tsx`.
+
 **A persistência em IndexedDB existe para o caso em que a aba morre.** Um
 chunk que não subiu vira buraco na transcrição; guardado, a fila o retoma
 depois, inclusive num reload da mesma URL de sessão (recuperação silenciosa

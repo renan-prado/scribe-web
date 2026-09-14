@@ -86,11 +86,11 @@ registrado na ficha da Play Store — mudaria junto.
 /v2/summary/[id]         o resumo da sessão. MESMO `SavedSessionView` do
                          /recording/:id/summary, sem header, sem nav e sem o
                          botão de gravar
-/v2/recording            o gravador: onda, pausar, parar e apagar. Grava UM
-                         arquivo (sem chunks) e, no stop, cria a sessão,
-                         transcreve e resume. Com ?auto=1 (o botão do
-                         /v2/home) abre o microfone sozinho; sem ele, espera
-                         o toque
+/v2/recording            o gravador: onda, pausar, parar e apagar. Cria a
+                         sessão no start e sobe o áudio em pedaços durante a
+                         gravação; no stop, espera a fila e resume. Com
+                         ?auto=1 (o botão do /v2/home) abre o microfone
+                         sozinho; sem ele, espera o toque
 /v2/studies              aprofundamentos gerados
 /v2/profile              a conta, o saldo e o plano
 /v2/importar             cola o link do vídeo e cria a sessão modo youtube
@@ -143,51 +143,45 @@ do app em produção, e disparada de uma tela em obras contaminaria a amostra).
 O único link do v2 que ainda devolve alguém ao app de hoje é o da TRANSCRIÇÃO,
 que não tem tela nova; ele sai quando `/v2/transcript` existir.
 
-O `/v2/recording` inverte a ORDEM do gravador de hoje, e é essa a ideia dele.
-Lá a sessão nasce antes da primeira palavra e o áudio sobe em pedaços de 15-20s
-durante a pregação, porque o feed ao vivo precisa do texto na hora. Aqui não há
-feed: o áudio fica inteiro no aparelho, num arquivo só (pausar e retomar usam o
-`pause()`/`resume()` do `MediaRecorder`, que não corta nada), e **nada existe no
-SERVIDOR até o stop**. No stop, em sequência: guarda o áudio no aparelho, cria
-a sessão (`audio_only`), manda o arquivo inteiro para `/api/transcribe`, manda o
-texto para `/api/final-summary`, apaga a cópia local e abre `/v2/summary/:id`.
-Apagar durante a captura pergunta antes e não deixa rastro, porque não há
-rastro a deixar. A cobrança é por minuto INICIADO durante a captura
-(`useCoinTick`, `COIN_COSTS.audioOnlyMinute`), como no app de hoje.
+O `/v2/recording` usa o MESMO motor de captura do app de hoje: a sessão nasce no
+start e o áudio sobe em pedaços de 15-20s durante a pregação (`createRecorder` +
+`useTranscribeQueue`). O que ele não tem é o feed ao vivo — o texto que volta de
+cada pedaço é guardado e só aparece no fim, dentro do resumo. Pausar ENCERRA o
+gravador (fechando o pedaço em andamento) e retomar cria outro continuando a
+numeração, como nas telas de captura de `(app)`. A cobrança é por minuto
+INICIADO (`useCoinTick`, `COIN_COSTS.audioOnlyMinute`), agora amarrada à sessão,
+que já existe quando o primeiro débito sai.
 
-**O primeiro passo do stop é o mais importante, e ele foi aprendido do jeito
-caro.** O `Blob` vivia só numa variável local dentro do `finish()`: qualquer
-falha de rede caía no `catch`, a função retornava, e o coletor comia a única
-cópia do que foi dito. O aviso mais provável era o de tamanho, então as
-gravações LONGAS — justamente as que mais doem — eram as que a tela destruía.
-Uma palestra de quase uma hora se perdeu assim. Hoje o áudio vai para o
-IndexedDB (`lib/capture-store.ts`) ANTES da primeira chamada de rede e só é
-apagado quando existe resumo no banco; no meio disso a tela mostra o painel de
-resgate (tentar de novo, **baixar o arquivo**, apagar), e uma pendente
-sobrevive a fechar a aba — na visita seguinte ela é encontrada e devolvida.
+**Ele já foi o oposto disso, e a inversão custou caro.** O desenho anterior era
+"nada existe no servidor até o stop": um arquivo único na memória da aba, e no
+stop uma sequência de três chamadas. O argumento parecia bom — sem feed, fatiar
+seria pagar rede e costura de texto sem comprar nada — e errava em três frentes
+que só aparecem quando algo dá errado. Um arquivo só tem TETO (`/api/transcribe`
+recusa acima de 8 MB, ~44 minutos) e passar dele deixava a gravação sem como ser
+transcrita; não EXISTE antes do fim, então a aba morrer aos 40 minutos custava os
+40 minutos; e sobe UMA vez, sem fila para retomar o que a rede derrubou. Pior: o
+`Blob` vivia só numa variável local dentro do `finish()`, então a falha de rede
+caía num `catch` que mostrava um aviso educado enquanto o coletor comia a única
+cópia do que foi dito. Uma palestra de quase uma hora se perdeu assim.
 
-**Três dívidas conhecidas.** A primeira: `/api/transcribe` recusa acima de 8 MB,
-o que a 24 kbps dá ~44 minutos; um sermão de uma hora precisa de fatiamento, que
-não existe. A segunda: a retentativa é MANUAL, o v2 não tem o equivalente à fila
-com backoff do app de hoje (`useTranscribeQueue`). Essas duas não custam mais a
-gravação, só o resumo automático.
+Em pedaços as três deixam de existir: não há teto, cada pedaço vira registro no
+IndexedDB assim que fecha, e a fila reenvia sozinha, para sempre, com recuo
+progressivo. **O stop não resume pela metade em silêncio**: ele espera a fila
+esvaziar (`drain`, 60s) e, se ela não esvazia, PARA e conta quantos trechos
+faltam, oferecendo esperar mais ou resumir sem eles. Um resumo com buracos
+parece completo, que é o mesmo defeito da versão anterior numa forma mais
+discreta.
 
-A terceira custa: a cópia local nasce no STOP, porque é só ali que o
-`MediaRecorder` vira arquivo, então **fechar a aba no meio da pregação ainda
-perde tudo**. Nenhum IndexedDB conserta isso — quem conserta é o fatiamento, que
-transforma a gravação em pedaços guardáveis enquanto ela acontece; é a mesma
-dívida da primeira, vista do outro lado. Até lá, `useUnloadGuard` pergunta antes
-de sair. As três estão no cabeçalho do `AudioStudio`.
-
-`lib/capture-store.ts` é banco IndexedDB SEPARADO do `scribe-chunks` do app de
-hoje (`lib/chunk-store.ts`), e a separação é deliberada: acrescentar um object
-store ao banco existente exigiria subir o `DB_VERSION` dele, e duas abas em
-versões diferentes do mesmo banco travam uma à outra (`onblocked`). Quando o v2
-passar a fatiar, o caminho natural é ele usar o `chunk-store` como o v1 usa. O CARTÃO, não, é o mesmo `SessionCard` da Biblioteca
-(`src/features/session/components/`), que saiu de dentro do `SessionsBrowser`
-para não existir em duas cópias. Hambúrguer, busca e o botão de gravar existem
-sem ação de propósito: o lugar deles na tela é a decisão que esta página tomou,
-o que eles abrem vem depois.
+**Duas dívidas conhecidas.** A primeira: não dá para RETOMAR uma sessão de outra
+visita. Se a aba morrer com trechos pendentes, o áudio continua no IndexedDB e a
+sessão fica em "Em aberto", mas a recuperação de órfãos do `useTranscribeQueue`
+só roda para a sessão montada, e falta guardar o TEXTO de cada pedaço (hoje ele
+vive só na memória da aba, então uma retomada reconstruiria a transcrição sem as
+partes que já tinham subido). As duas andam juntas; é a mesma dívida do app de
+hoje, ver `listUnfinishedSessions`. A segunda: não dá para COMEÇAR sem internet,
+porque a sessão nasce de um `POST` e sem ele não há chave para pendurar os
+pedaços — perder a rede depois de começar é tratado, começar sem ela não. As
+duas estão no cabeçalho do `AudioStudio`.
 
 `app/session/[id]` é rota LEGADA: um `permanentRedirect` para
 `/recording/:id/summary`, preservado para que link antigo e bookmark não

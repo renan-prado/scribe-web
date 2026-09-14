@@ -1,115 +1,97 @@
 "use client";
 
-import { Download, Pause, Play, RotateCw, Square, Trash2 } from "lucide-react";
+import { Pause, Play, Square, Trash2 } from "lucide-react";
 import { useRouter } from "next/navigation";
 import { useCallback, useEffect, useRef, useState } from "react";
 import { MicGlyph } from "@/components/icons/MicGlyph";
 import { ConfirmDialog } from "@/features/session/components/ConfirmDialog";
 import { useCoinTick } from "@/features/session/hooks/useCoinTick";
+import { useTranscribeQueue } from "@/features/session/hooks/useTranscribeQueue";
 import { useUnloadGuard } from "@/features/session/hooks/useUnloadGuard";
-import { requestCreateSession, requestFinalSummary } from "@/features/session/lib/api";
-import { formatDurationLong } from "@/features/session/lib/formatting";
 import {
-  deleteCapture,
-  deleteExpiredCaptures,
-  listCaptures,
-  type PendingCapture,
-  patchCapture,
-  putCapture,
-} from "@/lib/capture-store";
+  requestCreateSession,
+  requestDeleteSession,
+  requestFinalSummary,
+} from "@/features/session/lib/api";
+import { isSilentBlob } from "@/features/session/lib/audio";
+import { reportRecorderError } from "@/features/session/lib/recorderErrors";
+import { tailSentences } from "@/features/session/lib/text";
+import type { ChunkEvent } from "@/lib/domain/recorder";
 import { cn } from "@/lib/utils";
-import { useAudioCapture, WAVE_BARS } from "./useAudioCapture";
+import { useChunkedCapture, WAVE_BARS } from "./useChunkedCapture";
 
 /**
  * O gravador do v2: a onda do microfone, três controles e nada mais na tela.
  *
  * ## A ordem das coisas, que é o ponto desta tela
  *
- * Nada existe no SERVIDOR até o STOP. Não há sessão criada ao abrir, não há
- * áudio subindo durante a pregação, não há transcrição parcial. Quem desiste (o
- * botão de apagar) não deixa rastro nenhum para limpar depois.
+ * A sessão nasce no START, e o áudio sobe em pedaços de 15-20s DURANTE a
+ * pregação, exatamente como no gravador do app de hoje. O que esta tela não tem
+ * é o feed ao vivo: o texto que volta de cada pedaço é guardado e só aparece no
+ * fim, dentro do resumo.
  *
- * É o oposto do gravador do app atual, e de propósito: lá a sessão nasce antes
- * da primeira palavra porque o feed ao vivo precisa de uma linha para pendurar
- * os cartões. Aqui não há feed, então a linha só precisa existir quando houver
- * o que guardar nela.
+ * **Ela já foi o oposto disso, e a inversão custou caro.** O desenho anterior
+ * era "nada existe no servidor até o stop": um arquivo único na memória do
+ * aparelho, e no stop uma sequência de três chamadas. O argumento era bom —
+ * sem feed, fatiar parecia pagar rede e costura de texto sem comprar nada — e
+ * errava em três frentes que só aparecem quando algo dá errado:
  *
- * No stop, em sequência (e só então):
+ * - um arquivo só tem TETO (`/api/transcribe` recusa acima de 8 MB, ~44
+ *   minutos), e passar dele deixava a gravação sem como ser transcrita;
+ * - um arquivo só não EXISTE antes do fim, então a aba morrer aos 40 minutos
+ *   custava os 40 minutos;
+ * - um arquivo só sobe UMA vez, sem fila para retomar o que a rede derrubou.
  *
- * 1. **guarda o áudio no aparelho** (`lib/capture-store`, IndexedDB);
- * 2. cria a sessão (`POST /api/sessions`, modo `audio_only`);
- * 3. manda o ÁUDIO INTEIRO, num POST só, para `/api/transcribe`;
- * 4. manda o texto para `/api/final-summary`, que grava transcrição e resumo
- *    na sessão e a encerra;
- * 5. apaga a cópia local e abre `/v2/summary/:id`.
+ * Uma palestra de quase uma hora se perdeu por causa da primeira. Em pedaços,
+ * cada uma das três deixa de existir: não há teto, cada pedaço vira registro no
+ * IndexedDB assim que fecha, e a fila reenvia sozinha, para sempre, com recuo
+ * progressivo (`useTranscribeQueue`).
  *
- * ## O passo 1 é o mais importante, e ele foi aprendido do jeito caro
+ * ## O stop NÃO resume pela metade sem dizer
  *
- * Antes ele não existia: o `Blob` vivia numa variável local dentro do `finish()`
- * e em mais lugar nenhum. Quando um dos passos de rede falhava, o `catch`
- * mostrava um aviso educado na tela, a função retornava, a variável saía de
- * escopo e o coletor comia a ÚNICA cópia do que foi dito. O aviso mais provável
- * era o de tamanho, porque `/api/transcribe` recusa acima de 8 MB e um arquivo
- * de 24 kbps encosta nisso perto dos 44 minutos, ou seja: exatamente as
- * gravações mais longas, aquelas em que mais se perdia, eram as que a tela
- * destruía. Uma palestra de quase uma hora se perdeu assim.
+ * Parar espera a fila esvaziar (`drain`, 60s). Se ela não esvazia — rede fora,
+ * provedor fora —, a tela **para e conta**: quantos trechos faltam, e as duas
+ * saídas possíveis (esperar mais, ou resumir só com o que chegou). Gerar o
+ * resumo de uma transcrição com buracos e chamar isso de pronto é o mesmo
+ * defeito da versão anterior, só que mais discreto: o usuário levaria para casa
+ * um resumo que parece completo e não é.
  *
- * Agora o áudio é gravado no aparelho ANTES da primeira chamada de rede, e a
- * cópia só morre quando existe resumo no banco. Falhar virou só falhar: a tela
- * mostra o painel de resgate (tentar de novo, **baixar o arquivo**, apagar), e
- * fechar a aba no meio não destrói nada — na próxima visita a gravação pendente
- * é encontrada e oferecida de volta.
- *
- * O `Blob` também fica em estado do React, e não só no IndexedDB. Os dois não
- * são redundância boba: o IndexedDB pode simplesmente não estar disponível
- * (aba anônima, armazenamento desligado, cota estourada), e nesse caso a cópia
- * em memória ainda segura o áudio até a aba fechar, que é a diferença entre
- * "dá para baixar o arquivo" e "acabou". Quando ela é a única, a tela DIZ isso.
- *
- * ## Sem internet
- *
- * Cai no mesmo lugar: o passo 2 falha, o painel de resgate aparece, e o áudio
- * está guardado. Quem voltar a ter rede aperta "Tentar de novo". O que esta
- * tela ainda NÃO faz é tentar sozinha, com backoff, como a fila do app atual
- * (`useTranscribeQueue`) faz com os chunks — aqui a retentativa é manual.
+ * A fila continua tentando enquanto a aba estiver aberta, então "esperar mais"
+ * costuma ser a resposta certa. Sair da tela com trechos pendentes é o que
+ * `useUnloadGuard` pergunta antes de deixar acontecer.
  *
  * ## A cobrança
  *
  * `COIN_COSTS.audioOnlyMinute` por minuto INICIADO, debitado do cliente a cada
- * 60s enquanto captura, exatamente como no gravador do app atual: o primeiro
- * minuto sai no `start`, e pausar congela o relógio (ver `useCoinTick`).
+ * 60s enquanto captura: o primeiro minuto sai no `start`, e pausar congela o
+ * relógio (ver `useCoinTick`). Saldo acabando PAUSA, não encerra — quem comprar
+ * moedas retoma de onde parou, e quem não comprar ainda leva o resumo do que
+ * gravou até ali.
  *
- * **Ela roda DURANTE a captura, e não no stop**, embora a sessão só nasça lá.
- * Cobrar tudo no fim pareceria mais simples e é a decisão errada: quem tem
- * saldo zero gravaria três horas e só descobriria no stop, e o custo de STT
- * dessas três horas já teria sido nosso. Cobrando por minuto, o saldo acabando
- * PARA a captura na hora (`onDepleted`), que é o mesmo contrato do app atual.
- *
- * O preço disso é que as primeiras linhas do ledger saem sem `sessionId`, o
- * porquê está em `useCoinTick`. E a retentativa NÃO cobra de novo: os minutos
- * já foram pagos quando o microfone estava aberto.
+ * Agora que a sessão nasce no start, o débito vai AMARRADO a ela: as linhas do
+ * ledger deixaram de sair sem `sessionId`, e o custo de uma gravação volta a
+ * aparecer no detalhe por sessão, não só no total do usuário.
  *
  * ## O que esta tela ainda NÃO faz
  *
- * **Não passa de ~44 minutos.** `/api/transcribe` recusa acima de 8 MB, o que a
- * 24 kbps (ver `useAudioCapture`) dá cerca de 44 minutos num arquivo só. Acima
- * disso o POST volta 413. A diferença é que agora isso não custa a gravação:
- * ela fica guardada e o arquivo pode ser baixado enquanto o fatiamento não
- * existe. Um sermão de uma hora ainda precisa dele.
+ * **Não retoma uma sessão de outra visita.** Se a aba morrer com trechos
+ * pendentes, o áudio deles continua no IndexedDB (TTL de 24h) e a sessão fica
+ * em "Em aberto", mas não há por onde voltar nela: a recuperação de órfãos do
+ * `useTranscribeQueue` só roda para a sessão que ESTÁ montada. Falta também
+ * guardar o TEXTO de cada pedaço — hoje ele vive só na memória da aba, então
+ * uma retomada reconstruiria a transcrição sem as partes que já tinham subido.
+ * As duas coisas andam juntas e são o próximo passo; é a mesma dívida do app de
+ * hoje (ver `listUnfinishedSessions`).
  *
- * **Não protege quem fecha a aba NO MEIO da pregação.** A cópia local nasce no
- * stop, porque é só ali que o `MediaRecorder` vira arquivo: antes disso o áudio
- * está dentro dele, e não existe em forma nenhuma que dê para guardar. Uma aba
- * morta aos 40 minutos perde os 40 minutos, e nenhum IndexedDB conserta isso —
- * quem conserta é o fatiamento, que transforma a gravação em pedaços que podem
- * ser guardados enquanto ela acontece. Até lá, `useUnloadGuard` pergunta antes
- * de sair, que é a proteção possível.
+ * **Não começa uma gravação sem internet.** A sessão nasce de um `POST`, e sem
+ * ele não há chave para pendurar os pedaços. Perder a rede DEPOIS de começar é
+ * tratado (a fila segura e reenvia); começar sem ela, não.
  *
  * ## A onda
  *
  * Treze barras arredondadas, crescendo a partir do centro. Elas são desenhadas
  * uma vez e, daí em diante, quem mexe nelas é o laço de áudio escrevendo
- * `style.height` direto no DOM, nunca o React (ver `useAudioCapture`).
+ * `style.height` direto no DOM, nunca o React (ver `useChunkedCapture`).
  *
  * A altura de cada barra não vai a zero: o piso é a própria largura da barra, o
  * que a transforma num PONTO no silêncio em vez de fazê-la sumir. Uma onda que
@@ -122,52 +104,46 @@ import { useAudioCapture, WAVE_BARS } from "./useAudioCapture";
  * hierarquia, quem chega nesta tela vai terminar a gravação muito mais vezes do
  * que vai pausá-la ou descartá-la.
  */
-type Phase = "capture" | "creating" | "transcribing" | "summarizing";
+type Phase = "capture" | "creating" | "draining" | "summarizing";
 
 const PHASE_LABEL: Record<Exclude<Phase, "capture">, string> = {
-  creating: "Guardando a gravação…",
-  transcribing: "Transcrevendo o áudio…",
+  creating: "Preparando a gravação…",
+  draining: "Enviando os últimos trechos…",
   summarizing: "Montando o resumo…",
 };
 
 /**
- * Quanto tempo uma gravação pendente sobrevive no aparelho: 30 dias.
+ * Quanto o stop espera a fila esvaziar antes de perguntar o que fazer.
  *
- * É muito mais que as 24h do `chunk-store`, e a diferença é o que está em jogo.
- * Lá o que expira é um pedaço de 20 segundos, cuja perda é um buraco no meio de
- * uma transcrição; aqui é a pregação inteira de alguém, e a pessoa que não
- * conseguiu enviar no domingo pode perfeitamente só reabrir o app no domingo
- * seguinte. O custo de guardar é espaço em disco do próprio aparelho; o custo
- * de apagar cedo demais é definitivo.
+ * Mesmo valor do app de hoje. É generoso de propósito: um pedaço de 20s pesa
+ * uns 80 KB, e mesmo uma rede ruim sobe a fila inteira bem antes disso. Chegar
+ * no limite não significa "demorou", significa "não está subindo".
  */
-const CAPTURE_TTL_MS = 30 * 24 * 60 * 60 * 1_000;
+const DRAIN_TIMEOUT_MS = 60_000;
 
 export function AudioStudio({ autoStart = false }: { autoStart?: boolean }) {
   const router = useRouter();
   const barsRef = useRef<(HTMLSpanElement | null)[]>([]);
   const startedRef = useRef(false);
   const [phase, setPhase] = useState<Phase>("capture");
+  const [sessionId, setSessionId] = useState<string | null>(null);
   const [confirmDiscard, setConfirmDiscard] = useState(false);
-  const [confirmDrop, setConfirmDrop] = useState(false);
   const [depleted, setDepleted] = useState(false);
+  /** Preenchido quando o `drain` estoura: quantos trechos ficaram e quanto
+   * tempo a gravação teve. Enquanto existe, a tela é a da escolha. */
+  const [stalled, setStalled] = useState<{ pending: number; durationMs: number } | null>(null);
+  /** Só para a tela mostrar que há coisa em trânsito. Não governa nada. */
+  const [inFlight, setInFlight] = useState(0);
 
   /**
-   * A gravação que existe e ainda não virou resumo: a que acabou de ser parada,
-   * a que falhou no envio, ou a que foi encontrada no aparelho na montagem.
+   * O texto de cada pedaço, por índice.
    *
-   * Ela é ESTADO, e não um `ref`, porque é ela que decide o que a tela mostra.
-   * E ela segura o `Blob`, o que significa que a referência ao áudio sobrevive
-   * ao `catch` do envio — era exatamente isso que faltava.
+   * É `ref` porque quem escreve nele é o callback da fila e quem lê é o stop, e
+   * nenhum dos dois desenha a partir dele — virar estado só forçaria um render
+   * por trecho transcrito para nada. É também por isso que ele MORRE com a aba,
+   * a dívida está no cabeçalho.
    */
-  const [pending, setPending] = useState<PendingCapture | null>(null);
-  /** Quantas pendentes existem ao todo. Some que existe uma segunda gravação
-   * parada seria repetir o defeito que esta tela veio consertar. */
-  const [pendingCount, setPendingCount] = useState(0);
-  /** `false` quando o IndexedDB recusou a cópia. A tela avisa, porque aí fechar
-   * a aba perde de verdade. */
-  const [persisted, setPersisted] = useState(true);
-  /** Só depois de varrer o aparelho é que o `?auto=1` pode abrir o microfone. */
-  const [scanned, setScanned] = useState(false);
+  const textsRef = useRef<Map<number, { text: string; suspect: boolean }>>(new Map());
 
   // O ÚNICO ponto em que o áudio toca a tela. Roda a 60 quadros por segundo,
   // então aqui não entra nada além de escrever altura: sem alocar array, sem
@@ -183,23 +159,96 @@ export function AudioStudio({ autoStart = false }: { autoStart?: boolean }) {
     }
   }, []);
 
-  const { state, error, setError, start, pause, resume, stop, discard } = useAudioCapture({
+  /**
+   * Junta os pedaços transcritos em ordem.
+   *
+   * `excludeSuspect` tira os que o servidor marcou como assinatura de
+   * alucinação. Ele é usado para montar a DICA de contexto do próximo pedaço,
+   * onde realimentar um trecho alucinado tende a repetir a alucinação; o texto
+   * que vai para o resumo mantém todos, porque já chegam limpos.
+   */
+  const assemble = useCallback((opts?: { excludeSuspect?: boolean }) => {
+    return Array.from(textsRef.current.entries())
+      .sort(([a], [b]) => a - b)
+      .map(([, c]) => c)
+      .filter((c) => !(opts?.excludeSuspect && c.suspect))
+      .map((c) => c.text.trim())
+      .filter(Boolean)
+      .join(" ")
+      .replace(/\s+/g, " ")
+      .trim();
+  }, []);
+
+  const queue = useTranscribeQueue({
+    // A fila só existe de verdade depois que a sessão nasce; até lá este id
+    // vazio não casa com nada no IndexedDB e a recuperação de órfãos não acha
+    // nada, que é o comportamento certo.
+    sessionId: sessionId ?? "",
+    onSuccess: (index, text, meta) => {
+      textsRef.current.set(index, { text, suspect: meta.suspect });
+      // `queueRef` é declarado abaixo, e isto o lê só quando um upload termina,
+      // muito depois do primeiro render: closure captura o VÍNCULO, não o valor.
+      setInFlight(queueRef.current.pendingCount());
+    },
+  });
+  const queueRef = useRef(queue);
+  queueRef.current = queue;
+
+  const handleChunk = useCallback(
+    async (ev: ChunkEvent) => {
+      // O pedaço de silêncio sai ANTES de entrar na fila: transcrever silêncio
+      // é pagar a OpenAI para receber texto inventado de volta.
+      if (await isSilentBlob(ev.blob)) return;
+      // Pedaços suspeitos ficam fora da dica pelo motivo no `assemble`.
+      const prevHint = tailSentences(assemble({ excludeSuspect: true }), 2);
+      await queueRef.current.enqueue({
+        index: ev.index,
+        blob: ev.blob,
+        mimeType: ev.mimeType,
+        extension: ev.extension,
+        startedAt: ev.startedAt,
+        durationMs: ev.durationMs,
+        prevText: prevHint,
+      });
+      setInFlight(queueRef.current.pendingCount());
+    },
+    [assemble]
+  );
+
+  const sessionIdRef = useRef<string | null>(null);
+  sessionIdRef.current = sessionId;
+
+  /**
+   * Os `handleChunk` ainda em andamento.
+   *
+   * O gravador ENTREGA o pedaço de forma síncrona, mas guardá-lo não é
+   * síncrono: decodificar para medir silêncio e gravar no IndexedDB levam alguns
+   * quadros. Sem esperar por isso, o `drain` do stop podia rodar com a fila
+   * ainda vazia e responder "tudo enviado" antes de o último trecho sequer ter
+   * ENTRADO nela — o fim da pregação sumindo do resumo sem erro nenhum na tela.
+   */
+  const inflightRef = useRef<Set<Promise<void>>>(new Set());
+
+  const { state, error, setError, start, pause, resume, stop } = useChunkedCapture({
     onLevels: paintLevels,
+    onChunk: (ev) => {
+      const set = inflightRef.current;
+      const running: Promise<void> = handleChunk(ev).finally(() => set.delete(running));
+      set.add(running);
+    },
+    onRecorderError: (ev) => {
+      const sid = sessionIdRef.current;
+      if (sid) reportRecorderError(sid, ev);
+    },
   });
   const idle = state === "idle";
   const busy = phase !== "capture";
-  const rescuing = !busy && pending !== null;
+  const capturing = state === "recording" || state === "paused";
 
-  // O único buraco que a cópia no aparelho NÃO tapa: enquanto o microfone está
-  // aberto, o áudio ainda é um `MediaRecorder` em andamento, e ele só vira
-  // arquivo no `stop()`. Fechar a aba no meio da pregação perde tudo, e não há
-  // o que guardar antes disso sem fatiar (ver as dívidas no cabeçalho). Até lá,
-  // perguntar antes de sair é a proteção possível — é o mesmo guarda das telas
-  // de gravação do app de hoje.
-  //
-  // Ele vale também para a fase de envio: sair no meio do POST não perde o
-  // áudio (ele está no IndexedDB), mas perde o progresso e assusta à toa.
-  useUnloadGuard(state === "recording" || state === "paused" || busy);
+  // Sair daqui com trecho pendente é perder aquele trecho: a fila vive na aba.
+  // Também vale durante o envio e durante a escolha do `stalled`, pelos mesmos
+  // 20 segundos de pregação de cada pedaço.
+  useUnloadGuard(capturing || busy || stalled !== null || inFlight > 0);
 
   // Saldo acabando PAUSA, não encerra. Encerrar jogaria fora o que já foi
   // gravado (e já foi pago); pausado, quem comprar moedas numa outra aba
@@ -208,124 +257,107 @@ export function AudioStudio({ autoStart = false }: { autoStart?: boolean }) {
   useCoinTick({
     enabled: state === "recording",
     reason: "audio_only_minute",
-    sessionId: null,
+    sessionId,
     onDepleted: () => {
       setDepleted(true);
-      pause();
+      void pause();
     },
   });
 
-  // Varre o aparelho na montagem: uma gravação que ficou pendente de uma visita
-  // anterior (o envio falhou e a aba foi fechada) é encontrada aqui e devolvida
-  // ao dono. Sem esta varredura o IndexedDB seria um cofre sem chave.
-  useEffect(() => {
-    let alive = true;
-    void (async () => {
-      await deleteExpiredCaptures(CAPTURE_TTL_MS);
-      const rows = await listCaptures();
-      if (!alive) return;
-      if (rows.length > 0) {
-        setPending(rows[0]);
-        setPendingCount(rows.length);
+  /**
+   * Abre a gravação: a sessão primeiro, o microfone depois.
+   *
+   * Nesta ordem, e não ao contrário, porque a fila de upload é indexada por
+   * `sessionId` — um pedaço que fechasse antes de a sessão existir não teria
+   * onde ser guardado. O custo é uma ida ao servidor entre o toque e a onda; o
+   * primeiro pedaço só fecha 15 segundos depois, então sobra tempo.
+   */
+  const begin = useCallback(async () => {
+    if (sessionIdRef.current || busy) return;
+    setError(null);
+    setPhase("creating");
+    const created = await requestCreateSession({ mode: "audio_only" });
+    if ("error" in created) {
+      setPhase("capture");
+      setError(`Não consegui preparar a gravação: ${created.error}`);
+      return;
+    }
+    setSessionId(created.id);
+    sessionIdRef.current = created.id;
+    setPhase("capture");
+    textsRef.current = new Map();
+    if (!(await start())) {
+      // O microfone recusou: a sessão recém-criada não tem para que existir, e
+      // deixá-la viva encheria "Em aberto" de linhas vazias a cada tentativa.
+      void requestDeleteSession(created.id);
+      setSessionId(null);
+      sessionIdRef.current = null;
+    }
+  }, [busy, setError, start]);
+
+  /** O resumo, a partir do que já foi transcrito. Só chamado quando quem o
+   * chama já sabe o que está mandando: fila vazia, ou a escolha explícita de
+   * resumir com buracos. */
+  const summarize = useCallback(
+    async (sid: string, durationMs: number) => {
+      const transcript = assemble();
+      if (!transcript) {
+        // O microfone esteve aberto e nada inteligível entrou (silêncio, sala
+        // barulhenta abaixo do VAD, microfone mudo). Não há resumo a gerar, e a
+        // linha vazia não deve sobrar no acervo.
+        void requestDeleteSession(sid);
+        setSessionId(null);
+        setPhase("capture");
+        setError("Nenhuma fala foi capturada. A gravação foi descartada sem gerar resumo.");
+        return;
       }
-      setScanned(true);
-    })();
-    return () => {
-      alive = false;
-    };
-  }, []);
+      setPhase("summarizing");
+      const summary = await requestFinalSummary({
+        sessionId: sid,
+        text: transcript,
+        feedItems: [],
+        durationMs,
+      });
+      if (!summary) {
+        setPhase("capture");
+        setError("Não consegui montar o resumo desta gravação. Tente parar de novo.");
+        return;
+      }
+      router.push(`/v2/summary/${sid}`);
+    },
+    [assemble, router, setError]
+  );
+
+  async function finish() {
+    const sid = sessionIdRef.current;
+    if (!sid) return;
+    const durationMs = await stop();
+    setPhase("draining");
+    // O `stop()` já garante que o último pedaço foi EMITIDO; isto garante que
+    // ele foi GUARDADO. Só depois das duas coisas é que perguntar "a fila
+    // esvaziou?" quer dizer alguma coisa.
+    await Promise.allSettled([...inflightRef.current]);
+    const { drained, pending } = await queue.drain(DRAIN_TIMEOUT_MS);
+    setInFlight(queue.pendingCount());
+    if (!drained && pending > 0) {
+      // A escolha é de quem gravou, e por isso ela PARA aqui em vez de resumir
+      // o que deu. Um resumo com buracos parece completo.
+      setPhase("capture");
+      setStalled({ pending, durationMs });
+      return;
+    }
+    await summarize(sid, durationMs);
+  }
 
   // Chegando pelo `?auto=1` (o botão do `/v2/home`) o microfone abre sozinho.
   // O `startedRef` não é paranoia: em desenvolvimento o React monta, desmonta e
   // remonta cada componente uma vez para caçar efeito impuro, e sem a trava
-  // isso abriria DOIS microfones, dos quais um ficaria órfão.
-  //
-  // Uma gravação pendente SEGURA o automático: abrir o microfone por cima do
-  // painel de resgate esconderia, atrás da onda, a única tela que ainda oferece
-  // de volta o que não foi enviado.
+  // isso criaria DUAS sessões, das quais uma ficaria vazia para sempre.
   useEffect(() => {
-    if (!autoStart || !scanned || pending || startedRef.current) return;
+    if (!autoStart || startedRef.current) return;
     startedRef.current = true;
-    void start();
-  }, [autoStart, scanned, pending, start]);
-
-  /**
-   * Os três passos de rede, a partir de uma gravação já guardada no aparelho.
-   *
-   * É o mesmo caminho no envio original e na retentativa, e por isso ele começa
-   * conferindo o `sessionId`: se a sessão já nasceu numa tentativa anterior, ela
-   * é REUSADA. Criar outra a cada tentativa encheria a biblioteca de linhas
-   * vazias em "Em aberto", uma por vez que a rede caiu.
-   */
-  const runUpload = useCallback(
-    async (capture: PendingCapture) => {
-      let current = capture;
-      setError(null);
-      try {
-        let sessionId = current.sessionId;
-        if (!sessionId) {
-          setPhase("creating");
-          const created = await requestCreateSession({ mode: "audio_only" });
-          if ("error" in created)
-            throw new Error(`Não consegui criar a gravação: ${created.error}`);
-          sessionId = created.id;
-          current = { ...current, sessionId };
-          setPending(current);
-          await patchCapture(current.id, { sessionId });
-        }
-
-        setPhase("transcribing");
-        const text = await transcribeWhole(current, sessionId);
-
-        setPhase("summarizing");
-        const summary = await requestFinalSummary({
-          sessionId,
-          text,
-          feedItems: [],
-          durationMs: Math.round(current.durationMs),
-        });
-        if (!summary) throw new Error("Não consegui montar o resumo desta gravação.");
-
-        // O resumo está no banco: só AGORA a cópia local deixa de ser a única
-        // coisa que existe, e só agora ela pode morrer.
-        await deleteCapture(current.id);
-        setPending(null);
-        setPendingCount((n) => Math.max(0, n - 1));
-        router.push(`/v2/summary/${sessionId}`);
-      } catch (err) {
-        const attempts = current.attempts + 1;
-        await patchCapture(current.id, { attempts });
-        setPending({ ...current, attempts });
-        setPhase("capture");
-        setError((err as Error).message);
-      }
-    },
-    [router, setError]
-  );
-
-  async function finish() {
-    const captured = await stop();
-    if (!captured) {
-      setError("Não deu tempo de gravar nada. Tente de novo.");
-      return;
-    }
-    const entry: PendingCapture = {
-      id: crypto.randomUUID(),
-      blob: captured.blob,
-      extension: captured.extension,
-      durationMs: captured.durationMs,
-      createdAt: Date.now(),
-      sessionId: null,
-      attempts: 0,
-    };
-    // Nesta ordem, e a ordem é o conserto: o áudio vira estado e vira registro
-    // no aparelho ANTES de existir a primeira chance de dar errado.
-    setPending(entry);
-    setPendingCount((n) => n + 1);
-    const saved = await putCapture(entry);
-    setPersisted(saved);
-    await runUpload(entry);
-  }
+    void begin();
+  }, [autoStart, begin]);
 
   return (
     <>
@@ -362,13 +394,19 @@ export function AudioStudio({ autoStart = false }: { autoStart?: boolean }) {
           <p role="status" className="text-sm font-light text-v2-ink-soft">
             {PHASE_LABEL[phase as Exclude<Phase, "capture">]}
           </p>
-        ) : rescuing && pending ? (
-          <RescueNotice
-            capture={pending}
-            count={pendingCount}
-            persisted={persisted}
-            error={error}
-          />
+        ) : stalled ? (
+          <div role="alert" className="flex max-w-xs flex-col gap-2 text-center">
+            <p className="text-sm font-light text-v2-ink-soft">
+              {stalled.pending === 1
+                ? "1 trecho da gravação ainda não subiu."
+                : `${stalled.pending} trechos da gravação ainda não subiram.`}{" "}
+              O áudio deles está guardado neste aparelho e continua tentando sozinho.
+            </p>
+            <p className="text-sm font-light text-v2-ink-mute">
+              Se resumir agora, o resumo sai sem essas partes. Se der para esperar a rede voltar,
+              esperar é melhor — mas não feche esta tela.
+            </p>
+          </div>
         ) : depleted ? (
           <p role="alert" className="max-w-xs text-center text-sm font-light text-v2-ink-soft">
             Suas moedas acabaram e a gravação foi pausada. Você ainda pode parar e ficar com o
@@ -378,48 +416,56 @@ export function AudioStudio({ autoStart = false }: { autoStart?: boolean }) {
           <p role="alert" className="max-w-xs text-center text-sm font-light text-v2-ink-mute">
             {error}
           </p>
+        ) : capturing && inFlight > 0 ? (
+          // Sem isto, ficar sem rede no meio da pregação é invisível até o stop.
+          <p role="status" className="text-sm font-light text-v2-ink-mute">
+            {inFlight === 1 ? "1 trecho aguardando envio" : `${inFlight} trechos aguardando envio`}
+          </p>
         ) : null}
       </div>
 
       <div className="flex flex-col items-center gap-6">
         <div className="flex items-center justify-center gap-6">
-          {busy ? null : rescuing && pending ? (
+          {busy ? null : stalled ? (
             <>
-              {/* Baixar vem ANTES de tentar de novo, e do mesmo tamanho do
-                  principal, porque é o único dos três que não depende de nada
-                  dar certo: a rede pode continuar fora, a rota pode continuar
-                  recusando o tamanho, e o arquivo sai do aparelho do mesmo
-                  jeito. É a saída que faltava no dia em que uma palestra se
-                  perdeu. */}
               <button
                 type="button"
-                onClick={() => downloadCapture(pending)}
-                aria-label="Baixar o áudio"
-                className="inline-flex size-14 items-center justify-center rounded-full bg-v2-card text-v2-ink transition-colors hover:bg-v2-card-hover focus-visible:outline-2 focus-visible:outline-offset-4 focus-visible:outline-v2-ink-mute"
+                onClick={() => {
+                  void (async () => {
+                    setStalled(null);
+                    setPhase("draining");
+                    const again = await queue.drain(DRAIN_TIMEOUT_MS);
+                    setInFlight(queue.pendingCount());
+                    setPhase("capture");
+                    if (!again.drained && again.pending > 0) {
+                      setStalled({ pending: again.pending, durationMs: stalled.durationMs });
+                      return;
+                    }
+                    const sid = sessionIdRef.current;
+                    if (sid) await summarize(sid, stalled.durationMs);
+                  })();
+                }}
+                className="inline-flex h-12 items-center justify-center rounded-full bg-v2-card px-6 text-sm text-v2-ink transition-colors hover:bg-v2-card-hover focus-visible:outline-2 focus-visible:outline-offset-4 focus-visible:outline-v2-ink-mute"
               >
-                <Download className="size-5" strokeWidth={1.75} />
+                Esperar e tentar de novo
               </button>
               <button
                 type="button"
-                onClick={() => void runUpload(pending)}
-                aria-label="Tentar enviar de novo"
-                className="inline-flex size-24 items-center justify-center rounded-full bg-v2-card text-v2-ink transition-colors hover:bg-v2-card-hover focus-visible:outline-2 focus-visible:outline-offset-4 focus-visible:outline-v2-ink-mute"
+                onClick={() => {
+                  const sid = sessionIdRef.current;
+                  const { durationMs } = stalled;
+                  setStalled(null);
+                  if (sid) void summarize(sid, durationMs);
+                }}
+                className="inline-flex h-12 items-center justify-center rounded-full px-6 text-sm text-v2-ink-mute transition-colors hover:text-v2-ink focus-visible:outline-2 focus-visible:outline-offset-4 focus-visible:outline-v2-ink-mute"
               >
-                <RotateCw className="size-8" strokeWidth={1.75} />
-              </button>
-              <button
-                type="button"
-                onClick={() => setConfirmDrop(true)}
-                aria-label="Apagar esta gravação"
-                className="inline-flex size-14 items-center justify-center rounded-full bg-v2-card text-v2-ink-mute transition-colors hover:bg-v2-card-hover hover:text-v2-ink focus-visible:outline-2 focus-visible:outline-offset-4 focus-visible:outline-v2-ink-mute"
-              >
-                <Trash2 className="size-5" strokeWidth={1.75} />
+                Resumir assim mesmo
               </button>
             </>
           ) : idle ? (
             <button
               type="button"
-              onClick={start}
+              onClick={() => void begin()}
               aria-label="Começar a gravar"
               className="inline-flex size-24 items-center justify-center rounded-full bg-v2-card text-v2-ink transition-colors hover:bg-v2-card-hover focus-visible:outline-2 focus-visible:outline-offset-4 focus-visible:outline-v2-ink-mute"
             >
@@ -430,12 +476,12 @@ export function AudioStudio({ autoStart = false }: { autoStart?: boolean }) {
               <button
                 type="button"
                 onClick={() => {
-                  if (state !== "paused") return pause();
+                  if (state !== "paused") return void pause();
                   // Sem saldo o "Retomar" não retoma: ele manda comprar. Deixar
                   // o botão voltar a capturar daria minutos de graça até o
                   // próximo tick falhar de novo.
                   if (depleted) return;
-                  resume();
+                  void resume();
                 }}
                 disabled={state === "paused" && depleted}
                 aria-label={state === "paused" ? "Retomar" : "Pausar"}
@@ -451,15 +497,14 @@ export function AudioStudio({ autoStart = false }: { autoStart?: boolean }) {
                   diz qual é o principal, o branco diz qual encerra. */}
               <button
                 type="button"
-                onClick={finish}
+                onClick={() => void finish()}
                 aria-label="Parar"
                 className="inline-flex size-24 items-center justify-center rounded-full bg-v2-card text-v2-ink transition-colors hover:bg-v2-card-hover focus-visible:outline-2 focus-visible:outline-offset-4 focus-visible:outline-v2-ink-mute"
               >
                 <Square className="size-8 fill-current" strokeWidth={0} />
               </button>
-              {/* Apagar PERGUNTA. Não porque algo será destruído no servidor (não
-                  há nada lá ainda), mas porque o que se perde é a única cópia do
-                  que foi dito, e ela não volta de lugar nenhum. */}
+              {/* Apagar PERGUNTA. O que se perde é a única cópia do que foi
+                  dito, e ela não volta de lugar nenhum. */}
               <button
                 type="button"
                 onClick={() => setConfirmDiscard(true)}
@@ -471,23 +516,6 @@ export function AudioStudio({ autoStart = false }: { autoStart?: boolean }) {
             </>
           )}
         </div>
-
-        {/* A saída do painel de resgate. Discreta porque é a escolha rara, mas
-            presente porque a alternativa é trancar do lado de fora quem tem uma
-            gravação emperrada e uma pregação começando agora. A pendente NÃO é
-            descartada: ela continua no aparelho, esperando. */}
-        {rescuing ? (
-          <button
-            type="button"
-            onClick={() => {
-              setPending(null);
-              setError(null);
-            }}
-            className="text-sm font-light text-v2-ink-mute underline-offset-4 transition-colors hover:text-v2-ink-soft hover:underline"
-          >
-            Gravar outra agora
-          </button>
-        ) : null}
       </div>
 
       <ConfirmDialog
@@ -496,134 +524,21 @@ export function AudioStudio({ autoStart = false }: { autoStart?: boolean }) {
         title="Apagar esta gravação?"
         description="O áudio gravado até aqui é descartado e nada é salvo. Não dá para desfazer."
         confirmLabel="Apagar"
-        onConfirm={() => {
-          discard();
-          router.push("/v2/home");
-        }}
-      />
-
-      <ConfirmDialog
-        open={confirmDrop}
-        onOpenChange={setConfirmDrop}
-        title="Apagar a gravação que não foi enviada?"
-        description="Este é o único arquivo desta gravação. Apagando, ele some do aparelho e não volta. Se ainda não baixou o áudio, baixe antes."
-        confirmLabel="Apagar"
         onConfirm={async () => {
-          if (pending) await deleteCapture(pending.id);
-          setPending(null);
-          setPendingCount((n) => Math.max(0, n - 1));
-          setError(null);
+          await stop();
+          // `clear` cancela as retentativas E apaga os pedaços desta sessão do
+          // IndexedDB. Sem ele, a fila continuaria subindo áudio de uma sessão
+          // que acabou de deixar de existir.
+          queue.clear();
+          const sid = sessionIdRef.current;
+          if (sid) await requestDeleteSession(sid);
+          setSessionId(null);
+          sessionIdRef.current = null;
+          textsRef.current = new Map();
+          setInFlight(0);
+          router.push("/v2/home");
         }}
       />
     </>
   );
-}
-
-/**
- * O texto do painel de resgate: o que existe, por que parou e o que dá para
- * fazer.
- *
- * Ele diz a DURAÇÃO da gravação antes de qualquer outra coisa. Quem chega aqui
- * depois de uma hora de pregação precisa primeiro saber que o que gravou não
- * sumiu; o motivo da falha é a segunda pergunta, não a primeira.
- */
-function RescueNotice({
-  capture,
-  count,
-  persisted,
-  error,
-}: {
-  capture: PendingCapture;
-  count: number;
-  persisted: boolean;
-  error: string | null;
-}) {
-  const duration = formatDurationLong(capture.durationMs);
-  return (
-    <div role="alert" className="flex max-w-xs flex-col gap-2 text-center">
-      <p className="text-sm font-light text-v2-ink-soft">
-        {duration
-          ? `Sua gravação de ${duration} está guardada neste aparelho e ainda não foi enviada.`
-          : "Sua gravação está guardada neste aparelho e ainda não foi enviada."}
-      </p>
-      {error ? <p className="text-sm font-light text-v2-ink-mute">{error}</p> : null}
-      {!persisted ? (
-        <p className="text-sm font-light text-v2-ink-mute">
-          Não consegui guardar uma cópia no armazenamento deste navegador, então ela existe só
-          enquanto esta aba estiver aberta. Baixe o áudio antes de sair.
-        </p>
-      ) : null}
-      {count > 1 ? (
-        <p className="text-sm font-light text-v2-ink-mute">
-          Há {count} gravações esperando. Resolvendo esta, a próxima aparece aqui.
-        </p>
-      ) : null}
-      {capture.attempts > 1 ? (
-        <p className="text-sm font-light text-v2-ink-mute">
-          {capture.attempts} tentativas até aqui. Se não passar, baixe o áudio para não depender
-          desta tela.
-        </p>
-      ) : null}
-    </div>
-  );
-}
-
-/**
- * Entrega o arquivo a quem gravou.
- *
- * É a única ação desta tela que não depende de rede, de saldo nem de a rota
- * aceitar o tamanho, e por isso ela é a garantia de último recurso: o que foi
- * dito sai do aparelho de um jeito que o resto do sistema não pode estragar.
- *
- * O `revokeObjectURL` é adiado porque revogar no mesmo quadro do clique cancela
- * o download em alguns navegadores, que ainda nem começaram a ler a URL.
- */
-function downloadCapture(capture: PendingCapture) {
-  const stamp = new Date(capture.createdAt)
-    .toLocaleString("sv-SE")
-    .replace(/[: ]/g, "-")
-    .slice(0, 16);
-  const url = URL.createObjectURL(capture.blob);
-  const anchor = document.createElement("a");
-  anchor.href = url;
-  anchor.download = `scriba-${stamp}.${capture.extension}`;
-  document.body.append(anchor);
-  anchor.click();
-  anchor.remove();
-  setTimeout(() => URL.revokeObjectURL(url), 60_000);
-}
-
-/**
- * O áudio inteiro num POST só para `/api/transcribe`.
- *
- * A rota nasceu para chunks de 15-20s e continua a mesma: o que muda aqui é que
- * `chunkIndex` é sempre 0 e não há `prevText`, porque não existe pedaço anterior
- * para dar contexto ao modelo. O 413 tem mensagem própria porque é o limite que
- * esta tela encosta primeiro (ver o cabeçalho do componente).
- */
-async function transcribeWhole(
-  capture: Pick<PendingCapture, "blob" | "extension" | "durationMs">,
-  sessionId: string
-): Promise<string> {
-  const form = new FormData();
-  form.append("file", capture.blob, `gravacao.${capture.extension}`);
-  form.append("extension", capture.extension);
-  form.append("chunkIndex", "0");
-  form.append("sessionId", sessionId);
-  form.append("durationMs", String(Math.round(capture.durationMs)));
-
-  const res = await fetch("/api/transcribe", { method: "POST", body: form });
-  if (res.status === 413) {
-    throw new Error(
-      "A gravação ficou grande demais para transcrever de uma vez (o limite hoje é cerca de 44 minutos). O áudio não foi perdido: baixe o arquivo por enquanto."
-    );
-  }
-  if (!res.ok) {
-    const raw = (await res.json().catch(() => ({}))) as { error?: string };
-    throw new Error(`Não consegui transcrever o áudio: ${raw.error ?? `HTTP ${res.status}`}`);
-  }
-  const raw = (await res.json()) as { text?: string };
-  const text = (raw.text ?? "").trim();
-  if (!text) throw new Error("A transcrição voltou vazia, não consegui ouvir nada no áudio.");
-  return text;
 }

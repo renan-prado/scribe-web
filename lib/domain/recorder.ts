@@ -49,4 +49,18 @@ export type Recorder = {
   onChunk(cb: (ev: ChunkEvent) => void): void;
   onError(cb: (ev: RecorderErrorEvent) => void): void;
   setChunkTiming(next: ChunkTiming): void;
+  /**
+   * O `AnalyserNode` que o VAD já usa, ou `null` antes do `start()` e depois do
+   * `stop()`. Existe para quem DESENHA o áudio (a onda do `/v2/recording`).
+   *
+   * A alternativa seria a tela abrir seu próprio `AudioContext` sobre o mesmo
+   * stream, e num celular isso é caro do jeito errado: contexto de áudio é
+   * recurso de HARDWARE, com limite baixo, e o segundo existiria só para ler um
+   * sinal que este já tem na mão. Emprestar o analyser é de graça.
+   *
+   * Ler dele não atrapalha o VAD: o corte de chunk usa `getByteTimeDomainData`,
+   * e o `smoothingTimeConstant`, que a onda ajusta, só afeta a leitura de
+   * FREQUÊNCIA. As duas leituras convivem no mesmo nó.
+   */
+  getAnalyser(): AnalyserNode | null;
 };

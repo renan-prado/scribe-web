@@ -112,6 +112,23 @@ export function createRecorder(opts: RecorderOptions = {}): Recorder {
   let analyser: AnalyserNode | null = null;
   let vadTimer: ReturnType<typeof setInterval> | null = null;
   let chunkHardCutTimer: ReturnType<typeof setTimeout> | null = null;
+  /**
+   * Resolve quando o ÚLTIMO chunk foi emitido, e existe só entre o `stop()` e o
+   * `onstop` do gravador.
+   *
+   * Sem ele o `stop()` era uma promessa mentirosa: `MediaRecorder.stop()`
+   * retorna na hora e o `onstop`, que é quem fecha o último pedaço e o entrega
+   * ao `onChunk`, só roda um turno depois. Quem chamava `await rec.stop()` e
+   * logo em seguida montava a transcrição podia montá-la SEM os últimos 15-20
+   * segundos — o fim da pregação, justamente a parte que costuma ser a
+   * conclusão. Nada na tela indicaria a falta.
+   *
+   * Na prática o `await audioContext.close()` logo abaixo costumava dar tempo
+   * ao `onstop` de rodar antes, e é por isso que isto quase nunca apareceu.
+   * "Quase nunca" num caminho que decide se o fim do sermão entra no resumo não
+   * é garantia nenhuma.
+   */
+  let finalChunkResolve: (() => void) | null = null;
   let silenceSince: number | null = null;
   let visibilityListener: (() => void) | null = null;
 
@@ -212,7 +229,13 @@ export function createRecorder(opts: RecorderOptions = {}): Recorder {
       };
       chunkIndex += 1;
       if (chunkCb) chunkCb(ev);
-      if (running) startChunkRecorder();
+      if (running) {
+        startChunkRecorder();
+        return;
+      }
+      // Parando: este era o último pedaço, o `stop()` pode seguir.
+      finalChunkResolve?.();
+      finalChunkResolve = null;
     };
 
     chunkRecorder = rec;
@@ -246,6 +269,19 @@ export function createRecorder(opts: RecorderOptions = {}): Recorder {
       analyser = audioContext.createAnalyser();
       analyser.fftSize = 2048;
       source.connect(analyser);
+
+      // O contexto pode NASCER suspenso: o Safari entrega assim todo contexto
+      // criado fora de um gesto do usuário, e no v2 a gravação começa depois de
+      // um `POST /api/sessions`, ou seja, sempre fora do gesto. Suspenso, o
+      // analyser devolve silêncio puro — o VAD nunca vê fala, nunca corta no
+      // silêncio, e o corte passa a depender só do timer de emergência: chunks
+      // de 22s cortados no meio de uma palavra, sem nenhum erro na tela. O
+      // `resume()` num contexto que já está rodando não faz nada, então isto é
+      // seguro em todo navegador.
+      void audioContext.resume().catch(() => {
+        // Sem gesto nenhum o navegador pode recusar; o `visibilitychange`
+        // abaixo tenta de novo, e o timer de emergência segura enquanto isso.
+      });
 
       // Some browsers auto-suspend AudioContexts when the tab goes into the
       // background, that would silently break VAD chunk cutting. Resume as
@@ -293,10 +329,27 @@ export function createRecorder(opts: RecorderOptions = {}): Recorder {
       running = false;
       stopVadTimer();
       stopHardCutTimer();
+      // A promessa é armada ANTES do `stop()` porque o `onstop` pode disparar
+      // já no turno seguinte, e armá-la depois perderia a corrida.
+      const lastChunk =
+        chunkRecorder && chunkRecorder.state === "recording"
+          ? new Promise<void>((resolve) => {
+              finalChunkResolve = resolve;
+            })
+          : null;
       try {
         if (chunkRecorder && chunkRecorder.state === "recording") chunkRecorder.stop();
       } catch (err) {
         emitError("chunk", (err as Error).message ?? "chunk final stop failed");
+        finalChunkResolve = null;
+      }
+      if (lastChunk && finalChunkResolve) {
+        // O teto existe porque um `onstop` que nunca chega (WebView exótica,
+        // aba em segundo plano congelada) travaria o encerramento para sempre,
+        // e quem aperta "parar" precisa que parar termine. Três segundos é
+        // muito mais do que o evento leva quando ele vem.
+        await Promise.race([lastChunk, new Promise<void>((resolve) => setTimeout(resolve, 3_000))]);
+        finalChunkResolve = null;
       }
       if (visibilityListener) {
         document.removeEventListener("visibilitychange", visibilityListener);
@@ -321,6 +374,9 @@ export function createRecorder(opts: RecorderOptions = {}): Recorder {
     },
     onError(cb) {
       errorCb = cb;
+    },
+    getAnalyser() {
+      return analyser;
     },
     setChunkTiming(next) {
       if (typeof next.minChunkMs === "number" && next.minChunkMs > 0) {

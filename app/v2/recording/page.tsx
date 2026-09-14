@@ -7,15 +7,14 @@ export const metadata: Metadata = { title: "Gravando" };
 /**
  * A tela de gravação do v2.
  *
- * Ela grava de verdade: microfone, um arquivo só, e no stop transcrição e
- * resumo, com a sessão nascendo só nesse momento.
+ * Ela grava de verdade: a sessão nasce no start e o áudio sobe em pedaços de
+ * 15-20s durante a pregação, cada um guardado no aparelho (IndexedDB) antes de
+ * tentar subir e reenviado pela fila até conseguir. No stop, a fila é esvaziada
+ * e o texto vira resumo.
  *
- * O áudio é guardado no aparelho (IndexedDB) antes da primeira chamada de rede,
- * então uma falha no envio — sem internet, ou o 413 de quem passou de ~44
- * minutos — não custa mais a gravação: a tela oferece tentar de novo e baixar o
- * arquivo, e uma pendente sobrevive a fechar a aba. O que ela ainda NÃO faz
- * (fatiar acima de ~44 minutos, e tentar o reenvio sozinha) está no cabeçalho
- * do `AudioStudio`, junto do porquê.
+ * Não há mais teto de duração, e perder a rede no meio deixou de custar a
+ * gravação. O que ela ainda NÃO faz (retomar uma sessão de outra visita, e
+ * COMEÇAR sem internet) está no cabeçalho do `AudioStudio`, junto do porquê.
  *
  * O cabeçalho é renderizado AQUI, e não dentro do `AudioStudio`: a `TopBar` lê
  * o perfil e o saldo no servidor, e um componente cliente não pode renderizar
