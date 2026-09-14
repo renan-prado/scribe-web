@@ -146,6 +146,14 @@ sendo só quem BUSCA no banco.
 A diferença: na Biblioteca a barra fica atrás da lupa do cabeçalho e fechá-la
 limpa os filtros; nos Estudos ela é permanente.
 
+**Lista vazia e busca sem resultado são DUAS telas, não uma.** As duas páginas
+têm um estado vazio de verdade (`SessionsEmptyState`, `StudiesEmptyState`, sobre
+a casca comum do `CollectionEmptyState`) que ensina o caminho de encher a lista,
+e ele só entra quando não há nada mesmo. Com filtro ligado quem aparece é o
+"nenhuma gravação com esse recorte", cuja saída é limpar a busca: ensinar a
+gravar a quem tem trinta gravações e digitou uma palavra errada é responder
+outra pergunta.
+
 **A filtragem é no CLIENTE, e isso é escolha.** As duas páginas já carregam
 tudo do usuário num render de servidor, não há paginação em lugar nenhum, e a
 escala é a de quem grava um ou dois sermões por semana. Filtrar ali responde a

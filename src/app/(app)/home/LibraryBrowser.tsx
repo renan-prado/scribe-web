@@ -4,6 +4,7 @@ import { Loader2, SearchX } from "lucide-react";
 import { useCallback, useEffect, useMemo, useState } from "react";
 import { CollectionSearch, FACET_ALL } from "@/features/session/components/CollectionSearch";
 import { SessionCard } from "@/features/session/components/SessionCard";
+import { SessionsEmptyState } from "@/features/session/components/SessionsEmptyState";
 import { useContentSearch } from "@/features/session/hooks/useContentSearch";
 import {
   buildHaystack,
@@ -213,9 +214,10 @@ export function LibraryBrowser({ sessions, deepenedIds, nowIso, deleteAction }: 
           </button>
         </div>
       ) : groups.length === 0 ? (
-        <p className="px-1 text-sm font-light text-v2-ink-mute">
-          Nada gravado ainda. O que você gravar aparece aqui.
-        </p>
+        /* Biblioteca vazia é a primeira tela de quem acabou de entrar, e é
+           diferente de busca sem resultado (acima): ali a saída é limpar o
+           filtro, aqui é gravar. Ver `SessionsEmptyState`. */
+        <SessionsEmptyState />
       ) : (
         groups.map((group) => (
           <section key={group.label} className="flex flex-col gap-3">
