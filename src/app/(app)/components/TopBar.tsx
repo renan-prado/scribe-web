@@ -96,8 +96,10 @@ export async function TopBar({
       )}
       {/* Sem `trailing`, um vão do tamanho do botão: é ele que mantém o título
           na mesma posição nas duas telas, e sem o vão o texto escorregaria
-          para a direita ao trocar de página. */}
-      {trailing ?? <span aria-hidden className="size-10 shrink-0" />}
+          para a direita ao trocar de página. Só que ele existe para segurar o
+          TÍTULO — nas telas que não têm um (o `/summary`, o estudo) não há o
+          que segurar, e o vão seria um buraco de 40px antes do avatar. */}
+      {trailing ?? (title ? <span aria-hidden className="size-10 shrink-0" /> : null)}
       {/* Sem sessão não há conta a abrir, e o canto fica com a lupa sozinha. */}
       {account ? <AccountMenu {...identity} privilegedItems={privilegedItems} /> : null}
     </header>

@@ -112,14 +112,18 @@ a monte.
 
 **Com `backHref` ela vira a barra do `/summary`**: o hambúrguer dá lugar a um
 voltar e o título some — a página inteira é o título do sermão, repeti-lo na
-barra seria dizê-lo duas vezes. A lupa e o avatar NÃO mudam. Quem monta a barra
-lá é a página, e ela entra no `SavedSessionView` por um slot `header`, porque
-aquela view é `"use client"` e não teria como renderizar um server component.
-A lupa de lá é a `LibrarySearchLink`, um LINK para `/home?busca=1`: a busca é da
-Biblioteca (índice, filtros e lista moram no `LibraryBrowser`), e uma busca
-própria no resumo procuraria dentro de uma sessão só com o mesmo glifo. O
-`?busca=1` é lido pela `/home` e vira o `defaultOpen` do `SearchScope`, senão a
-lupa entregaria a Biblioteca com o campo fechado.
+barra seria dizê-lo duas vezes. O avatar não muda. Quem monta a barra lá é a
+página, e ela entra no `SavedSessionView` por um slot `header`, porque aquela
+view é `"use client"` e não teria como renderizar um server component.
+
+**As telas de LEITURA não têm lupa** (o `/summary` e o estudo). Elas já tiveram,
+levando para a busca do acervo, e a leitura era outra: sobre um texto longo,
+uma lupa promete procurar DENTRO dele. Um botão que promete uma coisa e faz
+outra é pior que o botão que falta. Quem continua com ela é o `/importar`, onde
+não há conteúdo com que confundir: lá é a `LibrarySearchLink`, um LINK para
+`/home?busca=1` — a busca é da Biblioteca, índice e filtros moram no
+`LibraryBrowser`. O `?busca=1` é lido pela `/home` e vira o `defaultOpen` do
+`SearchScope`, senão a lupa entregaria a Biblioteca com o campo fechado.
 
 **A conta mora num lugar só, o `AccountMenu`, com dois gatilhos.** O avatar o
 abre, e a linha do rodapé da gaveta também — é um conteúdo só porque o item mais

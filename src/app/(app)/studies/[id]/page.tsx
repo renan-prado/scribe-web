@@ -15,7 +15,6 @@ import { TOUR_DELAY_RESULT_MS } from "@/features/tour/config";
 import { getDeepening } from "@/lib/db/deepenings";
 import { getSessionMeta } from "@/lib/db/sessions";
 import { canCurrentUserUse } from "@/lib/entitlements/server";
-import { LibrarySearchLink } from "../../components/LibrarySearchLink";
 import { TopBar } from "../../components/TopBar";
 
 type PageProps = {
@@ -65,8 +64,12 @@ export default async function RecordingDeepeningPage({ params }: PageProps) {
           resumo" de 12px que ficava aqui: o estudo é a segunda tela de
           leitura do produto, e ela trocava o cabeçalho do app por outro no
           meio da mesma jornada. O voltar aponta para o RESUMO, que é de onde
-          se chega aqui, e não para a Biblioteca. */}
-      <TopBar backHref={`/summary/${id}`} trailing={<LibrarySearchLink />} />
+          se chega aqui, e não para a Biblioteca.
+
+          Sem lupa, pela razão do `/summary`: sobre um texto de dez mil
+          palavras, uma lupa promete procurar DENTRO dele, e a daqui levava
+          para a busca do acervo. */}
+      <TopBar backHref={`/summary/${id}`} />
 
       <header className="flex flex-col gap-3">
         <div className="flex items-center justify-between gap-3">
