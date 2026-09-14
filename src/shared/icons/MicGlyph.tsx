@@ -1,5 +1,5 @@
 /**
- * O microfone do botão de gravar do v2 (`app/v2/home/RecordButton.tsx`).
+ * O microfone do botão de gravar do v2 (`app/home/RecordButton.tsx`).
  *
  * Original em `public/icons/microfone.svg`, e o arquivo continua sendo a fonte
  * que o designer edita: ao trocar o desenho, troque os DOIS. Do original saem

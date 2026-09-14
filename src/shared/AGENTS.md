@@ -19,7 +19,7 @@ content/     copy estruturada (FAQ da landing)
 > `--scriba-*` e `--session-*` foram remapeados para a escala neutra do shadcn
 > (`neutral` do Tailwind) em `:root` e `.dark`, e o tema escuro trocou o índigo
 > pelos valores DEFAULT do template. Nenhum `.tsx` mudou: o remap inteiro cabe
-> em `app/globals.css`, que é o que este documento sempre prometeu.
+> em `src/app/globals.css`, que é o que este documento sempre prometeu.
 >
 > O que o texto abaixo descreve continua sendo a ESTRUTURA correta (as três
 > superfícies, a escala de tinta de quatro degraus, o par do CTA, a regra de
@@ -61,7 +61,7 @@ tema por componente.**
 **Nunca escreva uma cor literal num `className`.** Nada de `bg-white`,
 `bg-[#EAF2FA]`, `fill="#F8C64B"`. Toda cor vem de um token `--scriba-*` /
 `--session-*` / shadcn declarado em **ambos** `:root` e `.dark` em
-`app/globals.css`. Token novo entra em TRÊS lugares: `:root`, `.dark`, e o mapa
+`src/app/globals.css`. Token novo entra em TRÊS lugares: `:root`, `.dark`, e o mapa
 `@theme inline` que o expõe como utilitário.
 
 Superfícies, do fundo para a frente:
@@ -130,10 +130,10 @@ visitas: enquanto o padrão era claro, o HTML servido já era o padrão; com o
 padrão escuro e o HTML nascendo claro, TODA visita começaria branca e
 escureceria. De quebra, quem está sem JS agora recebe escuro em vez de claro.
 
-Quatro arquivos carregam esse padrão e mudam JUNTOS: `app/layout.tsx` (a
+Quatro arquivos carregam esse padrão e mudam JUNTOS: `src/app/layout.tsx` (a
 classe), `ThemeScript` (o fallback e a `<meta name="theme-color">`),
 `use-theme.ts` (o estado inicial e a chave `scriba-theme` do localStorage) e
-`app/manifest.ts` (`theme_color`, que é o que o navegador usa sem JS).
+`src/app/manifest.ts` (`theme_color`, que é o que o navegador usa sem JS).
 `public/offline.html` tem o quinto, o seu próprio bootstrap inline.
 
 Portais fora da árvore de tokens (sonner) precisam do tema resolvido passado
@@ -148,12 +148,12 @@ nos dois temas: **mudou o token, mude lá no mesmo commit.** A terceira exceçã
 pelo mesmo motivo, é `public/offline.html`, sem rede não há folha de estilo
 para carregar.
 
-O switch existe em UM lugar, e só: **`/v2/profile`** (`ThemeToggleRow`). Saiu
+O switch existe em UM lugar, e só: **`/profile`** (`ThemeToggleRow`). Saiu
 do header logado, do header de parceiros, do `AuthShell` (sign-in e sign-up) e
 do header da landing.
 
 **E hoje ele governa menos do que parece:** a moldura do app declara `dark` no
-nó raiz (ver `app/v2/layout.tsx`), então todas as telas logadas desenham escuro
+nó raiz (ver `src/app/layout.tsx`), então todas as telas logadas desenham escuro
 qualquer que seja a escolha. O que ainda responde ao switch é o `/admin`, o
 `/partners` e as páginas de conta fora da moldura. Quando o app ganhar tema
 claro próprio, aquela linha sai e o switch volta a valer em tudo.
@@ -190,7 +190,7 @@ usa `bg-scriba-ink-strong` + `text-background`.
 o mesmo par, e chapada na tinta mais forte da escala pesava mais que o
 versículo que anunciava, no escuro sobretudo, onde um retângulo branco sólido
 vira o objeto mais luminoso do cartão. Virou `.veil-chip`, em
-`app/globals.css`: um véu da própria tinta sobre a superfície de baixo
+`src/app/globals.css`: um véu da própria tinta sobre a superfície de baixo
 (`--veil-bg`, degradê de cima para baixo) com um anel de 1px (`--veil-ring`) e
 tinta `--scriba-ink`, um degrau abaixo do topo.
 
@@ -240,7 +240,7 @@ Duas camadas cobrem isso, e a ordem entre elas é o desenho:
 a grossura do ponteiro, um notebook com tela sensível continua tendo mouse.
 
 **O mesmo critério está exposto como variante: `touch:` e `no-touch:`**
-(declaradas em `app/globals.css`, ao lado da `dark`). Use-as onde a pergunta é
+(declaradas em `src/app/globals.css`, ao lado da `dark`). Use-as onde a pergunta é
 "isto é um celular ou tablet?", que NÃO é a mesma pergunta que "a viewport é
 pequena?". Quem confundiu as duas foi o convite de instalar o PWA: ele cortava
 em `lg` (1024px) para pegar o iPad em retrato, e o mesmo iPad deitado mede
@@ -309,16 +309,16 @@ mudar, troque os mestres e regenere, nesta ordem:
 2. `public/brand/pena.svg`: a mesma pena para consumo externo e para a
    máscara do logotipo em gradiente.
 3. `public/brand/favicon-{light,dark}-theme.svg`: a aba, por tema.
-4. `app/favicon.ico`: 16/32/48/64/128/256 no mesmo arquivo.
-5. `app/apple-icon.png` (180, opaco) e `public/brand/icon-{192,512}.png`.
-6. `app/opengraph-image.png`: cópia do banner (com o `.alt.txt` ao lado).
+4. `src/app/favicon.ico`: 16/32/48/64/128/256 no mesmo arquivo.
+5. `src/app/apple-icon.png` (180, opaco) e `public/brand/icon-{192,512}.png`.
+6. `src/app/opengraph-image.png`: cópia do banner (com o `.alt.txt` ao lado).
 7. `public/brand/splash/`: `node scripts/generate-splash.mjs`. As telas de
    abertura do PWA no iOS; o script LÊ o `pena.svg` do passo 2, então rodá-lo
    antes dele redesenha a marca velha.
-8. `app/manifest.ts`, `app/layout.tsx` e `LandingJsonLd.tsx`, só apontam, mas
+8. `src/app/manifest.ts`, `src/app/layout.tsx` e `LandingJsonLd.tsx`, só apontam, mas
    confira se o arquivo apontado ainda existe.
 
-Sobre formatos e precedência de `<link>`, ver `app/AGENTS.md`.
+Sobre formatos e precedência de `<link>`, ver `src/app/AGENTS.md`.
 
 ## Ícones
 
@@ -332,11 +332,11 @@ bloco `bg-scriba-yellow`.
 **Não há barra de navegação em `src/shared/`.** Havia `AppNav` (desktop),
 `MobileBottomNav` (celular), `nav.ts` (qual item acende) e `NavGlyphs.tsx` (os
 cinco ícones) — as quatro saíram junto com a moldura antiga. Quem navega hoje
-usa a gaveta do hambúrguer (`app/v2/components/V2Menu.tsx`), e quem grava usa o
+usa a gaveta do hambúrguer (`src/app/components/AppMenu.tsx`), e quem grava usa o
 botão do `RecordDock`, que mora na página da Biblioteca.
 
 A esfumaçada que ficava acima da barra (`--scriba-nav-fade`) e a do rodapé do
-app (`--v2-dock-fade`) continuam em `app/globals.css`.
+app (`--v2-dock-fade`) continuam em `src/app/globals.css`.
 
 ## A transição de página envolve o conteúdo, nunca a moldura
 
@@ -348,11 +348,11 @@ tem moldura do navegador para ancorar o olho, a barra inferior sumia e voltava
 a cada toque.
 
 Agora **cada moldura instala a sua**, em volta dos próprios `children`:
-`app/admin/layout.tsx` e `app/partners/layout.tsx`. O root layout ficou com a
+`src/app/admin/layout.tsx` e `src/app/partners/layout.tsx`. O root layout ficou com a
 classe sem `key` — o fade toca uma vez no carregamento completo, para toda rota,
 e não volta a tocar em navegação de cliente.
 
-**O app (`app/v2/layout.tsx`) NÃO tem `PageTransition`**, e não é esquecimento:
+**O app (`src/app/layout.tsx`) NÃO tem `PageTransition`**, e não é esquecimento:
 ele não tem chrome fixo para piscar (cada tela desenha a própria `TopBar`), e um
 fade por rota ali só atrasaria a leitura.
 
@@ -407,8 +407,8 @@ navegador**, não pelo Lighthouse, cujo relatório mostra uma amostra.
 Estado da última auditoria (axe-core 4.10, claro e escuro):
 
 ```
-/v2/{home,studies,profile,recording}        0 violações (eram 32)
-/v2/{summary,studies}/{id}                  0 violações
+/{home,studies,profile,recording}        0 violações (eram 32)
+/{summary,studies}/{id}                  0 violações
 /  /sign-in  /terms  /privacy               0 violações
 ```
 
@@ -443,4 +443,4 @@ respeite `prefers-reduced-motion` (o bloco já existe no `globals.css`).
 
 `components/LandingMocks.tsx` é markup estático PRÓPRIO, não os componentes
 do app. Isso é deliberado e tem preço: mexer no `FeedItemCard` não atualiza
-mais a landing. O porquê está em `app/AGENTS.md`.
+mais a landing. O porquê está em `src/app/AGENTS.md`.

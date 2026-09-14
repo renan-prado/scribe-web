@@ -3749,10 +3749,10 @@ Se isso já fizer o Aprofundar ficar claramente melhor, existe uma base sólida 
 - [ ] Criar `knowledge_chunks`
 - [ ] Definir `text-embedding-3-small` como embedding inicial
 - [ ] Definir 512 dimensões na POC
-- [ ] Criar `lib/ai/embeddings.ts`
-- [ ] Criar `lib/knowledge/chunk.ts`
-- [ ] Criar `lib/knowledge/ingest.ts`
-- [ ] Criar `lib/knowledge/search.ts`
+- [ ] Criar `src/lib/ai/embeddings.ts`
+- [ ] Criar `src/lib/knowledge/chunk.ts`
+- [ ] Criar `src/lib/knowledge/ingest.ts`
+- [ ] Criar `src/lib/knowledge/search.ts`
 - [ ] Criar função SQL `match_knowledge`
 - [ ] Criar `/admin/knowledge`
 - [ ] Criar formulário de novo conteúdo

@@ -90,6 +90,49 @@ const nextConfig: NextConfig = {
   async headers() {
     return [{ source: "/(.*)", headers: securityHeaders }];
   },
+  /**
+   * Os endereços que o produto já teve.
+   *
+   * Todos são 308 (`permanent: true`): a mudança é definitiva, e o navegador e
+   * o rastreador guardam a troca em vez de bater aqui de novo a cada visita.
+   *
+   * **Moram AQUI e não como `page.tsx` com `permanentRedirect`**, que era o
+   * desenho anterior, por duas razões:
+   *
+   * 1. **Eles rodam ANTES do proxy.** Um anônimo que abre `/recordings` é
+   *    redirecionado para `/home` e SÓ ENTÃO o gate do login age, então ele
+   *    chega ao `/sign-in?next=/home` — o destino vivo. Como página, o gate via
+   *    `/recordings` primeiro e guardava no `?next=` um caminho que só existe
+   *    para ser abandonado (era a exceção documentada do `/list` no `proxy.ts`,
+   *    e ela deixou de ser necessária).
+   * 2. **Não renderizam nada.** Cada um era um arquivo com um comentário e uma
+   *    linha de código; nove arquivos numa árvore de rotas que a gente estava
+   *    justamente tentando enxugar.
+   *
+   * A query atravessa sozinha (o Next a preserva quando o destino não traz a
+   * sua), e isso IMPORTA em dois deles: `?plan=` carrega a escolha feita na
+   * landing page, e `?cs=` é o que permite reconciliar um pagamento cujo
+   * webhook não chegou — uma sessão de Checkout aberta durante o deploy ainda
+   * traz `/billing/retorno` gravado do lado do Stripe.
+   */
+  async redirects() {
+    return [
+      // A Biblioteca teve três nomes antes de virar `/home`.
+      { source: "/feed", destination: "/home", permanent: true },
+      { source: "/recordings", destination: "/home", permanent: true },
+      { source: "/list", destination: "/home", permanent: true },
+      // A cobrança saiu de `/billing/*`.
+      { source: "/billing/assinar", destination: "/assinar", permanent: true },
+      { source: "/billing/retorno", destination: "/retorno", permanent: true },
+      // Tudo que pertencia a uma sessão morava sob `/recording/:id/`, mesmo o
+      // que não era gravação. `/recording` hoje é o gravador, e mais nada.
+      { source: "/recording/:id/summary", destination: "/summary/:id", permanent: true },
+      { source: "/recording/:id/deepening", destination: "/studies/:id", permanent: true },
+      { source: "/recording/:id/youtube", destination: "/importar/:id", permanent: true },
+      // O nome mais antigo de todos.
+      { source: "/session/:id", destination: "/summary/:id", permanent: true },
+    ];
+  },
 };
 
 export default nextConfig;

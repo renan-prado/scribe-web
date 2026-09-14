@@ -24,7 +24,7 @@ type SummaryViewProps = {
    * Como a IDEIA CENTRAL é desenhada.
    *
    * - `"rule"` (padrão): filete à esquerda e texto solto, o resumo de hoje.
-   * - `"card"` (o `/v2/summary`): o mesmo cartão do bloco `conclusion`, com a
+   * - `"card"` (o `/summary`): o mesmo cartão do bloco `conclusion`, com a
    *   superfície em degradê e a marca do Scriba na pastilha. As duas frases
    *   que a IA escreve SOBRE o sermão, e não a partir dele, passam a ter a
    *   mesma roupa, uma abrindo e a outra fechando a leitura.

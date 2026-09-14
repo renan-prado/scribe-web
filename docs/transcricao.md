@@ -73,7 +73,7 @@ Duas coisas saem daí:
   17,6%; com só o rabo da transcrição anterior, cai para 11,8%. Contexto de
   verdade ajuda; vocabulário decorado não.
 
-Ficou uma frase curta de domínio + `prevText` (`lib/vocabulario.ts`). A frase é
+Ficou uma frase curta de domínio + `prevText` (`src/lib/vocabulario.ts`). A frase é
 neutra na medição e ancora registro e idioma; se um dia a ideia de guiar
 vocabulário voltar, o caminho medido é **alongar o `prevText`**, não listar
 termos.
@@ -135,7 +135,7 @@ volume fica dentro do ruído da medição, e não vale o código.
 No `gpt-4o-mini-transcribe` o estrago era ainda maior (29,0% → 38,8% com
 denoise; 42,0% com a cadeia completa).
 
-**É por isso que `lib/audio-constraints.ts` desliga `noiseSuppression`,
+**É por isso que `src/lib/audio-constraints.ts` desliga `noiseSuppression`,
 `echoCancellation` e `autoGainControl`.** `getUserMedia({ audio: true })` liga
 os três por padrão: é o pacote do WebRTC afinado para chamada de voz, e uma
 igreja é o caso oposto do quarto com a boca a vinte centímetros do aparelho.
@@ -220,7 +220,7 @@ como não ser: `gpt-4o-mini-transcribe` é o único modelo nesse preço e é o q
 desaba com eco.
 
 Onde isso aperta, à régua de R$ 20,00 o milheiro de moeda
-(`lib/coins/economics.ts`) e câmbio de ~R$ 5,40: a 5 moedas o minuto, a
+(`src/lib/coins/economics.ts`) e câmbio de ~R$ 5,40: a 5 moedas o minuto, a
 gravação rende R$ 0,100 e o STT come R$ 0,032 dele. Sobram R$ 0,068 para o
 resumo final, que é a única outra chamada do minuto.
 

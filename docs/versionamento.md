@@ -1,7 +1,7 @@
 # Versionamento: a versão é uma régua de medição
 
-**Status: implementado.** Migração `0044`, `scripts/release.mjs`,
-`lib/app-version.ts` e o corte "Por versão" do `/admin/usage`.
+**Status: implementado.** Migração `0044`, `src/scripts/release.mjs`,
+`src/lib/app-version.ts` e o corte "Por versão" do `/admin/usage`.
 
 ---
 
@@ -42,7 +42,7 @@ Três decisões dentro desse caminho:
   ambiente é digitada; um número no painel da Vercel discordaria do repositório
   no primeiro deploy em que alguém mexesse só num dos dois. Derivada, ela não
   tem como discordar. Por isso `NEXT_PUBLIC_APP_VERSION` **não** está no schema
-  Zod de `lib/env/client.ts` e **não** entra no `.env.example`, declará-la ali
+  Zod de `src/lib/env/client.ts` e **não** entra no `.env.example`, declará-la ali
   convidaria exatamente a duplicação que a decisão evita.
 - **Se o `package.json` não puder ser lido, o build QUEBRA.** Um build que sobe
   sem saber a própria versão contamina a série inteira com um rótulo falso, e
@@ -139,7 +139,7 @@ Em `/admin/usage`, depois dos totais.
 | Versão | `app_version`, da mais nova para a mais antiga |
 | No ar | primeiro e último evento gravado, **medido**, não digitado |
 | Chamadas | eventos no período, já com os filtros ativos |
-| Custo | soma, convertida pelo câmbio de `lib/fx/usd-brl.ts` |
+| Custo | soma, convertida pelo câmbio de `src/lib/fx/usd-brl.ts` |
 | Por 1.000 chamadas | custo médio, com a variação contra a versão anterior |
 | Latência média | `latency_ms` médio, com a mesma variação |
 | Tokens/chamada | entrada + saída, **só nas chamadas de chat** |
@@ -190,7 +190,7 @@ Daí a regra única, e ela cabe numa frase:
 
 A janela é MEDIDA, como todo o resto: começa no primeiro evento que a versão
 gravou e termina no primeiro evento da versão seguinte (`VersionWindow`, em
-`lib/db/admin/usage.ts`). A mais nova tem fim aberto, ela ainda está no ar.
+`src/lib/db/admin/usage.ts`). A mais nova tem fim aberto, ela ainda está no ar.
 
 Três consequências:
 

@@ -207,7 +207,7 @@ export function CheckoutReturn({
           Fechar esta aba
         </button>
         <Link
-          href="/v2/home"
+          href="/home"
           className={cn(
             "inline-flex items-center justify-center rounded-full border border-scriba-hairline bg-scriba-paper px-6 py-3 text-sm font-semibold text-scriba-ink outline-none transition-colors",
             "hover:bg-scriba-blue-soft/40 focus-visible:ring-2 focus-visible:ring-ring/40"

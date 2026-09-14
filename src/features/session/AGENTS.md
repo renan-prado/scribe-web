@@ -3,8 +3,8 @@
 Tudo que pertence a uma sessão depois que ela existe: a leitura do resumo, o
 estudo, a importação do YouTube, os cartões da Biblioteca e a busca das listas.
 
-**O GRAVADOR não mora aqui.** Ele é `app/v2/recording/`, e é uma tela só
-(`AudioStudio` + `useAudioCapture`). Ver `app/AGENTS.md`.
+**O GRAVADOR não mora aqui.** Ele é `src/app/recording/`, e é uma tela só
+(`AudioStudio` + `useAudioCapture`). Ver `src/app/AGENTS.md`.
 
 Esta pasta já foi o dobro do tamanho: ela continha três telas de captura, os
 três pipelines de enriquecimento ao vivo, o feed que eles alimentavam e a fila
@@ -19,7 +19,7 @@ pessoa quiser, aprofundar.
 | `components/SummaryView.tsx` + `BlockRenderer.tsx` | os blocos do resumo |
 | `components/StudyBlockRenderer.tsx` | os blocos a MAIS que o estudo tem |
 | `components/SessionCard.tsx` + `SessionCardMenu.tsx` | o cartão de uma sessão na Biblioteca |
-| `components/CollectionSearch.tsx` + `lib/search.ts` | a barra e o motor das duas listas |
+| `components/CollectionSearch.tsx` + `src/lib/search.ts` | a barra e o motor das duas listas |
 | `components/YoutubeUrlForm.tsx` + `YoutubeImport.tsx` | colar o link, e esperar a importação |
 | `components/DeepenButton.tsx` + `DeepeningMenu.tsx` | gerar e reprocessar o estudo |
 | `components/PassageVerses.tsx` + `RichText.tsx` | texto bíblico e menções dentro do parágrafo |
@@ -51,10 +51,10 @@ servidor.
 ## Menções dentro do parágrafo
 
 `RichText` é o que o resumo e o estudo usam para desenhar PROSA. Ele passa o
-texto por `annotateText` (`lib/domain/annotate.ts`) e marca três coisas:
+texto por `annotateText` (`src/lib/domain/annotate.ts`) e marca três coisas:
 referência bíblica, personagem/lugar e figura citada.
 
-**É regex sobre um léxico curado (`lib/domain/lexicon.ts`), não uma etapa de
+**É regex sobre um léxico curado (`src/lib/domain/lexicon.ts`), não uma etapa de
 IA.** Marcar entidade com LLM seria mais uma chamada por sessão, com custo,
 latência e a chance de o modelo marcar o que não está no texto, para um
 problema que um autômato resolve igual toda vez.
@@ -90,7 +90,7 @@ que abasteciam um `/feed`. **Tudo isso saiu**, e o histórico importa por um
 motivo prático: os payloads antigos continuam no banco, e o `BlockRenderer`
 devolve `null` para tipo que não conhece, então eles simplesmente não desenham.
 As linhas de custo também continuam em `llm_usage_events`, e
-`lib/db/admin/usage.ts` continua lendo-as pelo nome, para o custo histórico não
+`src/lib/db/admin/usage.ts` continua lendo-as pelo nome, para o custo histórico não
 migrar para a linha errada do painel.
 
 O que fica no resumo é a voz do pregador: `bibleQuote` com a referência,
@@ -110,7 +110,7 @@ usa o modelo bom, e não cobra moeda: o usuário está reportando um defeito nos
 Duas particularidades que mordem de fora:
 
 - **Ele não fala o vocabulário de blocos do resumo.** `StudyBlock`
-  (`lib/domain/study.ts`) acrescenta `objection`, `distinction`, `reading` e
+  (`src/lib/domain/study.ts`) acrescenta `objection`, `distinction`, `reading` e
   `question`, e reinterpreta `example` — no resumo é "Exemplo do pregador", no
   estudo é ilustração do próprio estudo. Por isso a página usa
   `StudyBlockRenderer`, que desenha esses cinco e delega o resto ao
@@ -122,9 +122,9 @@ Duas particularidades que mordem de fora:
   produto, e o texto vira um FAQ.
 - **Gerar exige plano `Estudioso`. LER um estudo salvo, não.** O booleano vem
   do servidor por prop; a proteção real está em `requireFeature` dentro da
-  rota. Ver `lib/AGENTS.md`.
+  rota. Ver `src/lib/AGENTS.md`.
 
-  Consequência na tela: `/v2/studies` tem TRÊS estados, não dois. Sem plano e
+  Consequência na tela: `/studies` tem TRÊS estados, não dois. Sem plano e
   sem nenhum estudo, a página inteira é o convite (`StudiesUpsell` variante
   `full`) — o `StudiesEmptyState`, que ensina a gerar, seria instrução para algo
   que a pessoa não pode fazer. Sem plano MAS com estudos antigos, a lista fica e
@@ -133,8 +133,8 @@ Duas particularidades que mordem de fora:
 
 ## As listas: busca e filtros
 
-`/v2/home` e `/v2/studies` têm a MESMA barra (`CollectionSearch`) e o mesmo
-motor (`lib/search.ts`, puro e client-safe). Quem filtra é um componente
+`/home` e `/studies` têm a MESMA barra (`CollectionSearch`) e o mesmo
+motor (`src/lib/search.ts`, puro e client-safe). Quem filtra é um componente
 cliente por página (`LibraryBrowser`, `StudiesBrowser`); as páginas continuam
 sendo só quem BUSCA no banco.
 
@@ -168,14 +168,14 @@ desse hook:
 **A outra metade servidor é o VERSÍCULO, e ela não é busca de texto.** Procurar
 "Jonas 1" tem de achar a pregação cujo resumo cita "Jonas 1:1-17", e o pregador
 disse "no primeiro capítulo de Jonas" — a transcrição não ajuda, e nenhuma das
-duas strings é substring da outra. `lib/domain/reference-query.ts` entende os
+duas strings é substring da outra. `src/lib/domain/reference-query.ts` entende os
 dois lados como REFERÊNCIA: resolve o livro pelos apelidos de
-`lib/bibles/books.ts` ("genesis", "1co", "jona") e compara capítulo e faixa de
+`src/lib/bibles/books.ts` ("genesis", "1co", "jona") e compara capítulo e faixa de
 versículos por interseção, não por igualdade.
 
 O trabalho é dividido: a RPC `session_verse_references` peneira por prefixo de
 livro, e o casamento fino (capítulo, faixa de versículos) acontece no
-TypeScript, com `parseVerseReference` (`lib/domain/reference.ts`).
+TypeScript, com `parseVerseReference` (`src/lib/domain/reference.ts`).
 
 **A fonte é o bloco `bibleQuote` do resumo, e só.** Já foram duas: a projeção
 `session_feed_items` guardava os cards `citedVerse` do feed ao vivo, e era ela
@@ -202,7 +202,7 @@ atrás é um beco, e o que a lista mostra é o SNAPSHOT em
 
 `useCoinTick` debita `recording_minute` a cada 60 segundos de captura, do
 NAVEGADOR. É o cliente quem sabe quanto tempo o microfone ficou aberto, e o
-servidor se defende do resto com `requireBalance` (ver `lib/AGENTS.md`).
+servidor se defende do resto com `requireBalance` (ver `src/lib/AGENTS.md`).
 
 **Falha de cobrança que não seja "saldo insuficiente" vai para o log**, e essa
 linha não é decorativa: ela ficou meses sendo engolida em silêncio enquanto a

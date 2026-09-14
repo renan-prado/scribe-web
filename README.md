@@ -1,9 +1,10 @@
 # Scriba
 
-Transcrição e resumo ao vivo de sermões e aulas bíblicas. O gravador emite
-chunks de áudio que sobem para rotas de API com OpenAI atrás; enquanto a
-pessoa ouve, um feed vai mostrando os versículos citados, destaques da fala e
-contexto. No stop, um resumo estruturado do encontro inteiro.
+Transcrição e resumo de sermões e aulas bíblicas. O celular grava a pregação
+inteira num arquivo só e a tela fica quieta; no stop, o áudio sobe, é transcrito
+de uma vez e vira um resumo estruturado. A partir dele sai um estudo teológico,
+se a pessoa pedir. Também dá para importar um vídeo do YouTube e receber o mesmo
+resumo a partir da legenda.
 
 Next.js 16 (App Router) · React 19 · Supabase · Tailwind v4 · Stripe.
 
@@ -18,9 +19,24 @@ npm run dev          # http://localhost:3000, contra o Supabase e o Stripe de DE
 ```
 
 **Não crie `.env.local`.** O Next o carregaria sozinho, e um `next dev`
-distraído passaria a falar com produção sem avisar. O `scripts/with-env.mjs`
+distraído passaria a falar com produção sem avisar. O `src/scripts/with-env.mjs`
 aborta se encontrar qualquer arquivo dessa família. Detalhes em
 [`docs/ambientes.md`](./docs/ambientes.md).
+
+## Onde fica o quê
+
+```
+src/app/        as rotas, agrupadas por área: (site) (entrar) (app) (painel)
+src/lib/        a camada de servidor: LLM, banco, env, auth, cobrança
+src/features/   as features, componentes e hooks
+src/shared/     tema, tokens, marca e a UI base
+src/scripts/    release, db:push, with-env, stripe:doctor
+supabase/       as migrações
+docs/           os guias longos
+```
+
+Na raiz ficam só configuração, `public/` e `supabase/` — os dois últimos porque
+o Next e o CLI do Supabase os procuram lá.
 
 ## Comandos
 
@@ -52,10 +68,11 @@ O código é comentado com o **porquê** das decisões, e os cabeçalhos de arqu
 são a primeira parada. Acima deles:
 
 - **[`AGENTS.md`](./AGENTS.md)**: o índice. Cada pasta relevante tem o seu,
-  com as regras que valem ali (`app/`, `lib/`, `lib/billing/`,
+  com as regras que valem ali (`src/app/`, `src/lib/`, `src/lib/billing/`,
   `src/features/*/`, `src/shared/`, `supabase/`).
 - **[`docs/`](./docs/README.md)**: guias longos: configuração de ambiente,
-  Stripe, programa de parceiros, bridge React Native.
+  Stripe, programa de parceiros, bridge React Native, e a auditoria de
+  segurança em [`docs/security/`](./docs/security/README.md).
 
 Esses documentos são escritos para agentes de IA e para pessoas ao mesmo
 tempo. Mudou um comportamento que algum deles descreve? Atualize no mesmo

@@ -7,7 +7,7 @@ O `/admin/financeiro` existe para responder a uma pergunta só:
 > estamos indo?**
 
 Este documento explica o desenho. As invariantes de código estão em
-`src/features/admin/AGENTS.md` (telas) e `lib/AGENTS.md` (a camada de conta);
+`src/features/admin/AGENTS.md` (telas) e `src/lib/AGENTS.md` (a camada de conta);
 o porquê de cada tabela está no cabeçalho de `supabase/migrations/0043_finance.sql`.
 
 ---
@@ -19,15 +19,15 @@ Scriba o banco já sabe**. A resposta é: quase todo o que se move sozinho.
 
 | O que | Onde já está | Como vira dinheiro |
 |---|---|---|
-| Receita de assinatura e pacotes | `coin_transactions` (`subscription_grant`, `topup_pack`) | `lib/finance/measured.ts` casa a quantidade de moedas com `PLANS`/`TOPUP` |
-| Custo de IA | `llm_usage_events` × `lib/llm/pricing.ts` | × câmbio de `lib/fx/usd-brl.ts` |
-| Taxa de pagamento | - | `stripeFeeCents` de `lib/partners/economics.ts` |
+| Receita de assinatura e pacotes | `coin_transactions` (`subscription_grant`, `topup_pack`) | `src/lib/finance/measured.ts` casa a quantidade de moedas com `PLANS`/`TOPUP` |
+| Custo de IA | `llm_usage_events` × `src/lib/llm/pricing.ts` | × câmbio de `src/lib/fx/usd-brl.ts` |
+| Taxa de pagamento | - | `stripeFeeCents` de `src/lib/partners/economics.ts` |
 | Comissão de parceiro | `partner_commissions` / `partner_payouts` | direto, em centavos |
-| MRR, ARPU, assinantes | `subscriptions` × `PLANS` | mesma conta de `lib/db/admin/metrics.ts` |
+| MRR, ARPU, assinantes | `subscriptions` × `PLANS` | mesma conta de `src/lib/db/admin/metrics.ts` |
 
 **Nada disso é digitado.** Digitar seria criar uma segunda definição de um
 número que já existe, e duas definições do mesmo número um dia discordam, a
-lição que `lib/db/admin/metrics.ts` já tinha aprendido com as telas de
+lição que `src/lib/db/admin/metrics.ts` já tinha aprendido com as telas de
 parceiro.
 
 O que se lança à mão são as despesas que ninguém mede por nós: Vercel,
@@ -152,7 +152,7 @@ total sem avisar, e um total que esconde uma despesa é pior que um total que
 se recusa a existir. Toda soma da camada devolve quantos itens ficaram de fora,
 e a tela diz.
 
-O câmbio do histórico é o de `lib/fx/usd-brl.ts` (AwesomeAPI, com fallback
+O câmbio do histórico é o de `src/lib/fx/usd-brl.ts` (AwesomeAPI, com fallback
 manual em cookie, o mesmo de `/admin/usage`). O das PROJEÇÕES é separado, em
 `finance_settings.projection_usd_brl`, para uma projeção de doze meses não
 mudar de resultado entre dois carregamentos porque o dólar oscilou.
@@ -302,14 +302,14 @@ Mutação de dinheiro por admin é logada em `info`, com o `id` de quem fez.
 
 | Módulo | O que faz | Testado |
 |---|---|---|
-| `lib/finance/money.ts` | centavos, câmbio, arredondamento, formatação, parse | ✅ |
-| `lib/finance/recurrence.ts` | equivalentes, ocorrências, próxima cobrança | ✅ |
-| `lib/finance/measured.ts` | ledger → receita; custo de IA por mês | ✅ |
-| `lib/finance/aggregate.ts` | visão mensal, compromissos, indicadores, avisos | ✅ |
-| `lib/finance/projection.ts` | cenários, payback, entradas medidas | ✅ |
-| `lib/domain/finance.ts` | tipos, schemas Zod, rótulos (client-safe) | - |
-| `lib/db/admin/finance.ts` | CRUD e o lado medido (service-role) | - |
-| `lib/db/admin/finance-overview.ts` | o snapshot que as telas consomem | - |
+| `src/lib/finance/money.ts` | centavos, câmbio, arredondamento, formatação, parse | ✅ |
+| `src/lib/finance/recurrence.ts` | equivalentes, ocorrências, próxima cobrança | ✅ |
+| `src/lib/finance/measured.ts` | ledger → receita; custo de IA por mês | ✅ |
+| `src/lib/finance/aggregate.ts` | visão mensal, compromissos, indicadores, avisos | ✅ |
+| `src/lib/finance/projection.ts` | cenários, payback, entradas medidas | ✅ |
+| `src/lib/domain/finance.ts` | tipos, schemas Zod, rótulos (client-safe) | - |
+| `src/lib/db/admin/finance.ts` | CRUD e o lado medido (service-role) | - |
+| `src/lib/db/admin/finance-overview.ts` | o snapshot que as telas consomem | - |
 
 Os cinco primeiros são **puros e client-safe**: nenhuma página calcula nada, e
 cada número é verificável com `npm test` sem banco.

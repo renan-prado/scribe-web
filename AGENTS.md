@@ -19,13 +19,13 @@ sobe inteiro, é transcrito de uma vez e vira um resumo estruturado. A partir do
 resumo, quem tem plano `Estudioso` pede um estudo teológico, uma vez por sessão.
 
 **Um modo de captura só, `audio`**, a 5 moedas por minuto iniciado
-(`lib/coins/pricing.ts`). Já foram três (`live`, com um feed de cartões durante
-a pregação; `audio_only`; `transcript_only`, sem resumo), e o v2 existe porque
-três eram dois a mais.
+(`src/lib/coins/pricing.ts`). Já foram três — `live` (com um feed de cartões
+durante a pregação), `audio_only` e `transcript_only` (sem resumo) — e três eram
+dois a mais.
 
 **E um modo que NÃO captura nada: `youtube`.** A pessoa cola o link em
-`/v2/importar`, e a legenda que o YouTube já tem vira a transcrição, sobre a
-qual roda o MESMO pipeline de resumo. Sem áudio, sem STT.
+`/importar`, e a legenda que o YouTube já tem vira a transcrição, sobre a qual
+roda o MESMO pipeline de resumo. Sem áudio, sem STT.
 
 O preço dele é o único que não é por minuto: **30 moedas por vídeo**, cobradas
 uma vez, com teto de 2 horas. Cobrar por minuto seria cobrar por um STT que não
@@ -39,12 +39,12 @@ YouTube a partir de um servidor deixou de funcionar: o `timedtext` pune
 reputação de IP de datacenter desde o fim de 2024, então o mesmo código roda na
 máquina de quem escreveu e devolve bot-check na Vercel. `SUPADATA_API_KEY` é
 opcional; sem ela `/api/youtube/import` responde 503. Ver
-`lib/youtube/supadata.ts`.
+`src/lib/youtube/supadata.ts`.
 
 **O título do vídeo passa por um `mini` antes de virar título da sessão.** Um
 título de canal de igreja traz pregador, tema, data e hora colados por um
 separador que pode ser a LETRA `I`, e `author_name` do oEmbed é a IGREJA, não o
-autor. `lib/youtube/metadata.ts` separa os três; falha dele devolve o título
+autor. `src/lib/youtube/metadata.ts` separa os três; falha dele devolve o título
 cru, e em nenhum caminho o canal vira `speaker_name`. Ver `docs/youtube.md` §3.
 
 **Stack:** Next.js 16 (App Router) · React 19 · Supabase SSR · Tailwind v4 +
@@ -52,39 +52,51 @@ shadcn sobre base-ui · Zod · Zustand · TanStack Query · Biome · Stripe.
 
 ## Mapa do repositório
 
+**Todo código do produto mora em `src/`.** Na raiz ficam só arquivos de
+configuração, o `public/` (exigência do Next) e o `supabase/` (exigência do CLI
+dele, que resolve `supabase/config.toml` a partir do diretório de trabalho).
+
 ```
-app/          rotas, API, proxy, SEO, landing         → app/AGENTS.md
-  v2/         O APP. Biblioteca, gravador, resumo,
-              estudos, perfil, importação
-lib/          servidor: LLM, DB, env, log, auth        → lib/AGENTS.md
-  billing/    Stripe, moedas e crédito                 → lib/billing/AGENTS.md
-  entitlements/ o que cada plano libera                → lib/AGENTS.md
-  referrals/  cookies e números da indicação           → src/features/referrals/AGENTS.md
-  finance/    a conta do painel financeiro (pura)      → docs/financeiro.md
-src/features/
-  session/    resumo, estudo, cartões, busca           → src/features/session/AGENTS.md
-  partners/   programa de divulgadores                 → src/features/partners/AGENTS.md
-  referrals/  indique a um amigo                       → src/features/referrals/AGENTS.md
-  coupons/    o selo do cupom de convite               → src/features/coupons/AGENTS.md
-  admin/      painel interno, métricas, parceiros      → src/features/admin/AGENTS.md
-  feedback/   a pesquisa de satisfação e a nota        → src/features/feedback/AGENTS.md
-  tour/       as apresentações das telas logadas       → src/features/tour/AGENTS.md
-  billing/    diálogo de compra e retorno do checkout  → lib/billing/AGENTS.md
-src/shared/   tema, tokens, marca, a11y, UI base       → src/shared/AGENTS.md
-supabase/     migrações, RLS, GRANT, RPC               → supabase/AGENTS.md
-docs/         guias longos de operação                 → docs/README.md
+src/
+  app/          rotas, API, SEO, landing              → src/app/AGENTS.md
+    (site)/     público: landing, legais, parceiros
+    (entrar)/   login, OAuth e os links de entrada
+    (app)/      O APP, atrás do login
+    (painel)/   /admin e /partners
+    api/
+  proxy.ts      o gate de rota (o "middleware" do Next 16)
+  instrumentation.ts
+  lib/          servidor: LLM, DB, env, log, auth     → src/lib/AGENTS.md
+    billing/    Stripe, moedas e crédito              → src/lib/billing/AGENTS.md
+    entitlements/ o que cada plano libera             → src/lib/AGENTS.md
+    finance/    a conta do painel financeiro (pura)   → docs/financeiro.md
+  features/
+    session/    resumo, estudo, cartões, busca        → src/features/session/AGENTS.md
+    partners/   programa de divulgadores              → src/features/partners/AGENTS.md
+    referrals/  indique a um amigo                    → src/features/referrals/AGENTS.md
+    coupons/    o selo do cupom de convite            → src/features/coupons/AGENTS.md
+    admin/      painel interno, métricas, parceiros   → src/features/admin/AGENTS.md
+    feedback/   a pesquisa de satisfação e a nota     → src/features/feedback/AGENTS.md
+    tour/       as apresentações das telas logadas    → src/features/tour/AGENTS.md
+    billing/    diálogo de compra e retorno           → src/lib/billing/AGENTS.md
+  shared/       tema, tokens, marca, a11y, UI base    → src/shared/AGENTS.md
+  scripts/      release, db:push, with-env, doctor
+supabase/       migrações, RLS, GRANT, RPC            → supabase/AGENTS.md
+docs/           guias longos + a auditoria de segurança → docs/README.md
 ```
 
-**O gravador mora em `app/v2/recording/`, não em `src/features/session/`.** São
-dois arquivos (`AudioStudio.tsx` e `useAudioCapture.ts`); a pasta `session` é
+**O gravador mora em `src/app/(app)/recording/`, não em `src/features/session/`.**
+São dois arquivos (`AudioStudio.tsx` e `useAudioCapture.ts`); a pasta `session` é
 tudo o que vem DEPOIS de a sessão existir.
 
 ## Regras que valem em todo lugar
 
-**Imports.** `@/*` resolve para `./*` E `./src/*` (ver `tsconfig.json`), com
-atalhos para `@/components/ui/*` (→ `src/shared/ui`), `@/components/*`
-(→ `src/shared/components`), `@/hooks/*` e `@/components/icons/*`. Prefira
-sempre o caminho mais específico.
+**Imports.** `@/*` resolve para `./src/*`, e só (ver `tsconfig.json`). Já
+resolveu para DOIS lugares (`./*` e `./src/*`), porque metade do código estava na
+raiz; com tudo sob `src/` o alias voltou a ter uma resposta só. Há atalhos para
+`@/components/ui/*` (→ `src/shared/ui`), `@/components/*` (→
+`src/shared/components`), `@/hooks/*` e `@/components/icons/*`. Prefira sempre o
+caminho mais específico.
 
 **Fronteira servidor/cliente.** Todo módulo que carrega segredo, service-role
 ou `serverEnv` começa com `import "server-only"`. Sem isso um import distraído
@@ -93,21 +105,21 @@ usuário. Se um número precisa aparecer na TELA, ele mora num módulo
 client-safe; nunca importe uma constante de um módulo `server-only` para um
 componente cliente.
 
-**Cliente não importa de `app/api/*/route.ts`.** Todo tipo compartilhado vive
-em `lib/domain/`.
+**Cliente não importa de `src/app/api/*/route.ts`.** Todo tipo compartilhado vive
+em `src/lib/domain/`.
 
 **Nada de `plan === "estudioso"`.** Quem decide se uma funcionalidade está
-disponível é `lib/entitlements/`: `canCurrentUserUse(feature)` em server
+disponível é `src/lib/entitlements/`: `canCurrentUserUse(feature)` em server
 component, `requireFeature(feature)` em rota. Uma comparação de plano solta no
 meio do código é a regra duplicada em mais um lugar, e um dia os dois lugares
 discordam. E **esconder o botão nunca é a proteção**: a rota reconfere, sempre,
 antes de cobrar.
 
-**Nada de `console.*`** em `app/`, `lib/` ou `src/`. O logger é
-`createLogger(escopo)` de `@/lib/log`, ver `lib/AGENTS.md`.
+**Nada de `console.*`** em `src/`. O logger é `createLogger(escopo)` de
+`@/lib/log`, ver `src/lib/AGENTS.md`.
 
 **Nada de cor literal em `className`.** Toda cor vem de token declarado em
-`app/globals.css`, ver `src/shared/AGENTS.md`.
+`src/app/globals.css`, ver `src/shared/AGENTS.md`.
 
 **O ícone `Sparkles` do lucide-react é PROIBIDO.** Para um acento decorativo,
 use o hexágono amarelo já usado no app (ver `src/shared/AGENTS.md`).
@@ -119,7 +131,7 @@ use o hexágono amarelo já usado no app (ver `src/shared/AGENTS.md`).
 | `npm run dev` | Next dev com `.env.dev` |
 | `npm run prod` | Next dev com `.env.prod`. **Dados reais, Stripe LIVE.** Só para reproduzir bug de produção |
 | `npm run typecheck` | `tsc --noEmit`. Rode antes de commitar |
-| `npm test` | `node --test` sobre `lib/**/*.test.ts`, só a camada financeira |
+| `npm test` | `node --test` sobre `src/lib/**/*.test.ts`, só a camada financeira |
 | `npm run check` | Biome check + write (imports, format, lint) |
 | `npm run build:dev` | `next build` com `.env.dev`. `npm run build` sozinho não enxerga env e falha |
 | `npm run release` | Sobe a versão, escreve o `CHANGELOG.md` e cria a tag. **Antes de todo push** |
@@ -173,7 +185,7 @@ CHANGELOG que diz o que mudou e a tag que abre o código exato
 
 Dois conjuntos independentes de Supabase, Stripe e URL, escolhidos por
 `.env.dev` e `.env.prod`. **Nenhum dos dois é lido pelo Next sozinho**:
-`scripts/with-env.mjs` injeta o certo e só então sobe o comando. Ele ABORTA se
+`src/scripts/with-env.mjs` injeta o certo e só então sobe o comando. Ele ABORTA se
 achar qualquer arquivo que o Next carregaria por conta própria (`.env`,
 `.env.local`, `.env.development[.local]`, `.env.production[.local]`), se achar
 `sk_live_` no `.env.dev`, ou se os dois arquivos apontarem para o mesmo
@@ -184,7 +196,7 @@ Na Vercel é um projeto só: `master` → `scriba.cc` (Production), `develop` �
 `dev.scriba.cc` (Preview, env vars fixadas no branch). Cron da Vercel só roda
 em produção, então `/api/billing/sweep` não existe em dev.
 
-Variável nova: schema Zod em `lib/env/{server,client}.ts` **e** a linha no
+Variável nova: schema Zod em `src/lib/env/{server,client}.ts` **e** a linha no
 `.env.example`, nos dois arquivos locais e no painel da Vercel (escopos
 Production **e** Preview). Guia completo em `docs/ambientes.md`.
 
@@ -198,8 +210,8 @@ Não adicione sem pedido, o usuário sabe e adiou:
   `POST` no stop; sem ele o áudio fica guardado no IndexedDB esperando.
 
 **Testes existem em UM lugar só, e continuam não sendo o padrão do
-repositório.** `npm test` roda `node --test` sobre `lib/**/*.test.ts`, e hoje
-isso é `lib/finance/*`: aritmética de dinheiro, pura e sem banco, onde um erro
+repositório.** `npm test` roda `node --test` sobre `src/lib/**/*.test.ts`, e hoje
+isso é `src/lib/finance/*`: aritmética de dinheiro, pura e sem banco, onde um erro
 de arredondamento vira decisão de negócio errada. Não acrescente teste em outra
 camada sem pedido; a ausência deles no resto é escolha, não dívida.
 

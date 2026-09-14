@@ -61,7 +61,7 @@ export function ConfirmDialog({
       // FECHA no sucesso. Até aqui quem fechava era o `router.push` de cada
       // chamador, e por isso nenhum deles fechava de propósito: todos saíam da
       // página logo depois de confirmar. O primeiro que FICA (apagar uma
-      // gravação pendente, em `/v2/recording`) revelou que o diálogo nunca
+      // gravação pendente, em `/recording`) revelou que o diálogo nunca
       // soube se fechar sozinho — o botão apagava a gravação e a caixa
       // continuava lá, parecendo que nada aconteceu.
       onOpenChange(false);

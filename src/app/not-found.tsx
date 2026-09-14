@@ -1,0 +1,51 @@
+import { MicOff } from "lucide-react";
+import Link from "next/link";
+import { Button } from "@/components/ui/button";
+
+export const metadata = {
+  title: { absolute: "Página não encontrada, Scriba" },
+};
+
+export default function NotFoundPage() {
+  return (
+    <main className="mx-auto flex min-h-svh w-full max-w-lg flex-col items-center justify-center gap-6 px-4 py-12 text-center sm:px-6">
+      <span className="flex size-16 items-center justify-center rounded-full bg-scriba-blue-soft text-scriba-blue-ink">
+        <MicOff className="size-7" />
+      </span>
+
+      <div className="flex flex-col gap-3">
+        <p className="font-mono text-xs uppercase tracking-[0.2em] text-scriba-blue-ink">404</p>
+        <h1 className="text-2xl font-semibold tracking-tight text-scriba-ink-strong sm:text-3xl">
+          Página não encontrada
+        </h1>
+        <p className="max-w-sm text-sm leading-relaxed text-scriba-ink-soft">
+          Nossa IA tentou transcrever essa URL e ficou em silêncio.{" "}
+          <span className="text-scriba-ink-mute">O endereço não existe ou foi movido.</span>
+        </p>
+      </div>
+
+      <div className="flex flex-col gap-2 sm:flex-row">
+        <Button render={<Link href="/home" />} nativeButton={false} size="lg">
+          Ir para o início
+        </Button>
+        <Button render={<Link href="/" />} nativeButton={false} size="lg" variant="outline">
+          Voltar à landing
+        </Button>
+      </div>
+
+      {/* Ponteiros para quem chegou aqui via rastreador ou agente: a resposta
+          é um 404 de verdade (ver `proxy.ts`), e daqui dá para achar o mapa do
+          site. */}
+      <p className="text-xs leading-relaxed text-scriba-ink-mute">
+        Índice de páginas:{" "}
+        <a href="/sitemap.xml" className="underline underline-offset-2">
+          /sitemap.xml
+        </a>{" "}
+        ·{" "}
+        <a href="/llms.txt" className="underline underline-offset-2">
+          /llms.txt
+        </a>
+      </p>
+    </main>
+  );
+}

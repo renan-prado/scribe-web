@@ -104,7 +104,7 @@ Code de parceiro, e `billing/checkout` não sabe que este programa existe.
 
 ## O link e os cookies
 
-`app/r/[slug]/route.ts` grava o clique e redireciona. Três detalhes que
+`src/app/r/[slug]/route.ts` grava o clique e redireciona. Três detalhes que
 parecem cosméticos e não são:
 
 - **302, não 308.** Um permanente seria memorizado pelo navegador, e o parceiro
@@ -112,11 +112,11 @@ parecem cosméticos e não são:
 - **Redireciona mesmo com slug inválido.** Um 404 puniria o visitante por um
   erro que não é dele.
 - **A landing continua estática.** O clique é gravado NA ROTA, nunca em
-  `app/page.tsx`, ver `app/AGENTS.md`.
+  `src/app/page.tsx`, ver `src/app/AGENTS.md`.
 
 Os cookies são `httpOnly` e `sameSite: "lax"`, com nomes e prazos só em
-`lib/referrals/cookies.ts`, que serve aos DOIS programas, e por isso mudou de
-`lib/partners/` para lá. A única exceção ao `httpOnly` é o cookie-PISTA
+`src/lib/referrals/cookies.ts`, que serve aos DOIS programas, e por isso mudou de
+`src/lib/partners/` para lá. A única exceção ao `httpOnly` é o cookie-PISTA
 (`scriba_ref_hint`), que vale `1` e existe para o selo do hero da landing page
 não precisar perguntar ao servidor em toda visita anônima; ele não carrega nome
 nem código, justamente para não haver dois lugares dizendo quem é o padrinho. `strict` faria o cookie sumir na volta do OAuth do
@@ -128,7 +128,7 @@ indicação por prop, resolvida no servidor.
 
 `/parceiros` é a página de convite: PÚBLICA, estática, servida da CDN para
 alguém que ainda não tem conta. `/partners` é o painel, atrás do login. O par
-está em `PUBLIC_PREFIXES` e `KNOWN_APP_PREFIXES` do `proxy.ts`
+está em `PUBLIC_PREFIXES` e `KNOWN_APP_PREFIXES` do `src/proxy.ts`
 respectivamente, e o idioma é a pista de qual é qual.
 
 **Nenhum número é redigitado nas páginas públicas**, nem os minutos: elas leem
@@ -138,7 +138,7 @@ que nada quebrasse. E a prévia do painel na `/parceiros` é markup próprio, n�
 o painel real: os componentes daqui são `"use client"` e não podem entrar no
 bundle de uma página de venda.
 
-Mudou uma regra? Mude `docs/parceiros.md` E `app/parceiros/regulamento/page.tsx`
+Mudou uma regra? Mude `docs/parceiros.md` E `src/app/parceiros/regulamento/page.tsx`
 no mesmo commit.
 
 ## O painel nunca expõe uma pessoa
@@ -172,7 +172,7 @@ usuário ativo por desenho do programa (é essa a razão da mesada).
 
 ## A mesada mensal
 
-Crédito, logo passa por `grant_coins`. `lib/partners/allowance.ts`, com
+Crédito, logo passa por `grant_coins`. `src/lib/partners/allowance.ts`, com
 renovação **preguiçosa** (sem cron): o crédito sai quando o parceiro aparece,
 disparado por `getCurrentPartner()`, que o layout de `(app)` chama para
 decidir o item "Área do parceiro" no menu, e é por isso o único caminho por
@@ -214,11 +214,11 @@ zap" salvo ali vira botão quebrado no painel do parceiro.
 
 ## A conta mora num lugar só
 
-`lib/partners/economics.ts` é a ÚNICA implementação. Simulador do admin,
+`src/lib/partners/economics.ts` é a ÚNICA implementação. Simulador do admin,
 painel do parceiro e as tabelas do doc leem dela. O custo por moeda é sempre
 MEDIDO (usage + câmbio), nunca constante.
 
-Métrica de produto por parceiro sai de `lib/db/admin/metrics.ts`, que já
+Métrica de produto por parceiro sai de `src/lib/db/admin/metrics.ts`, que já
 aceita recorte por `partnerId`. Não escreva uma segunda consulta de conversão
 aqui: duas definições do mesmo número um dia discordam, e a discordância
 aparece como um parceiro reclamando do próprio painel.

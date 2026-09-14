@@ -70,8 +70,8 @@ que a task descreve.
 
 ## 1.4 O texto bíblico é confiado ao modelo, tendo o repositório a NVI local
 
-`lib/bibles/lookup.ts::lookupVerse` resolve referência → texto real a partir de
-`NVI.json`. É usado por `/api/verse` e por `lib/rereads/generate.ts`.
+`src/lib/bibles/lookup.ts::lookupVerse` resolve referência → texto real a partir de
+`NVI.json`. É usado por `/api/verse` e por `src/lib/rereads/generate.ts`.
 **Não é usado pelo estudo.** Todo `bibleQuote.text` de um estudo é prosa
 gerada, e o prompt gasta uma seção inteira ("REGRA DE OURO") pedindo ao modelo
 que não parafraseie a Escritura, um problema já resolvido no repositório,
@@ -403,7 +403,7 @@ paga.
   a mesma razão do `reasoningEffort: "low"` que ele sempre teve.
 
 Esperado: **$0,227 → ~$0,122**, margem −16% → ~38%. Não fecha os 70% da régua
-de `lib/coins/economics.ts` sozinho: o estudo custa 8× um minuto ao vivo em
+de `src/lib/coins/economics.ts` sozinho: o estudo custa 8× um minuto ao vivo em
 moedas e ~35× em dinheiro, então parte do conserto é preço, não custo.
 
 **Não funde o respondedor com o redator para economizar mais.** A ancoragem
@@ -444,7 +444,7 @@ duas diferenças são erro 400, não aviso:
 - `temperature` só aceita o padrão, e mandá-la junto de `reasoning_effort`
   falha.
 
-`lib/llm/openai.ts` detecta a família por prefixo e troca os parâmetros. Quem
+`src/lib/llm/openai.ts` detecta a família por prefixo e troca os parâmetros. Quem
 regula a etapa nesses modelos é `reasoning_effort`, não a temperatura, os
 valores de `temperature` nas rotas seguem valendo se alguém configurar um
 `gpt-4o` de volta.
@@ -471,7 +471,7 @@ alguém quiser um estudo ainda mais longo.
 ## As capas dos livros
 
 O bloco `reading` mostra a capa do livro indicado, e a URL dela **nunca vem do
-modelo**: é resolvida no servidor (`lib/study/covers.ts`) contra a Google Books
+modelo**: é resolvida no servidor (`src/lib/study/covers.ts`) contra a Google Books
 API, que precisa confirmar o par autor+título antes de a URL entrar no payload.
 Um link inventado é indistinguível de um real até alguém clicar.
 
@@ -506,7 +506,7 @@ nunca pode atrasar nem derrubar a geração, que já roda num orçamento apertad
 
 ## O preço
 
-**50 moedas**, contra as 5 de antes (`lib/coins/pricing.ts`). São três chamadas
+**50 moedas**, contra as 5 de antes (`src/lib/coins/pricing.ts`). São três chamadas
 a um modelo de raciocínio produzindo um artigo de três a quatro mil palavras: o
 estudo passou a ser a ação mais cara do produto por uma ordem de grandeza.
 
@@ -596,7 +596,7 @@ Na prática:
 - `quote` passa a exigir `author` **e** `work` (obra nomeável). Sem `work`, o
   bloco é descartado no passo [5], não "avaliado", descartado.
 - `reading` exige `author` e `title`.
-- `author` é validado contra um índice em `lib/prompts/theologians.ts` que
+- `author` é validado contra um índice em `src/lib/prompts/theologians.ts` que
   substitui a whitelist plana: cada autor com século, tradição, obras
   principais e temas. O índice serve a dois propósitos, filtrar na selagem e,
   sobretudo, **entrar no prompt de redação já filtrado por tema**: o modelo
@@ -669,7 +669,7 @@ o Estudioso herdar sozinho.
 ## 8.2 Onde mora a regra
 
 O catálogo (`feature → plano mínimo`) mora **em código**, client-safe, em
-`lib/entitlements/features.ts`. Pela mesma razão que `lib/billing/catalog.ts`
+`src/lib/entitlements/features.ts`. Pela mesma razão que `src/lib/billing/catalog.ts`
 mora em código: uma linha errada numa tabela do banco não pode virar acesso
 grátis a uma feature paga. O admin **vê** a matriz; não a edita.
 
@@ -705,9 +705,9 @@ tinha. Ambas revertem em uma linha do catálogo:
 | Passo | Entrega | Estado |
 |---|---|---|
 | 1 | Feature entitlements: catálogo, gate no servidor, UI, admin, docs | **feito** |
-| 2 | Índice de teólogos com obra, século e tema (`lib/prompts/theologians.ts`) | **feito** |
+| 2 | Índice de teólogos com obra, século e tema (`src/lib/prompts/theologians.ts`) | **feito** |
 | 3 | Tipos de bloco novos + `StudyPayload` próprio + `StudyBlockRenderer` | **feito** |
-| 4 | Pipeline questionador → respondedor → redator (`lib/study/`) | **feito** |
+| 4 | Pipeline questionador → respondedor → redator (`src/lib/study/`) | **feito** |
 | 5 | Amostra fixa de sessões + planilha dos oito critérios | a fazer |
 | 6 | (RAG PR 1-2) fontes reais no passo [3], ver `docs/scriba-rag-*` | a fazer |
 

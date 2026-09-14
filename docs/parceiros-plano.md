@@ -15,15 +15,15 @@ a refactors foram promovidas para o `AGENTS.md`.
 1. **Comissão é dinheiro, logo é ledger.** Vale o mesmo rigor de
    `coin_transactions`: linha append-only, `external_ref` UNIQUE, saldo
    derivado por `SUM()`, nunca um contador incrementado.
-2. **A comissão nasce dentro de `lib/billing/fulfill.ts`.** Os quatro caminhos
+2. **A comissão nasce dentro de `src/lib/billing/fulfill.ts`.** Os quatro caminhos
    de crédito (webhook, reconcile, summary, sweep) já convergem lá. Pendurar a
    comissão em qualquer outro lugar significaria que uma compra creditada pelo
    sweep não geraria comissão.
 3. **Nada de Stripe novo.** A atribuição é 100% nossa (cookie + código no
    cadastro). Nenhum Coupon, nenhum Promotion Code, nenhuma mudança em
-   `app/api/billing/checkout/route.ts`.
+   `src/app/api/billing/checkout/route.ts`.
 4. **A landing page continua estática.** Nenhuma leitura de cookie em
-   `app/page.tsx`. O link de parceiro é uma rota própria que redireciona.
+   `src/app/page.tsx`. O link de parceiro é uma rota própria que redireciona.
 5. **O parceiro nunca vê uma pessoa.** Todas as consultas do painel devolvem
    agregados. Não existe endpoint que liste indicados.
 
@@ -130,9 +130,9 @@ parceiro devolve 0 linhas e `rpc('attach_partner')` devolve 42501.
 
 Dois cookies novos, e nenhuma string solta no meio do código.
 
-**`lib/partners/cookies.ts`**, nome, TTL e opções de cada cookie em
+**`src/lib/partners/cookies.ts`**, nome, TTL e opções de cada cookie em
 constantes exportadas, no mesmo padrão de `MANUAL_FX_COOKIE`
-(`lib/fx/usd-brl.ts`) e do `SIDEBAR_COOKIE_NAME` do shadcn:
+(`src/lib/fx/usd-brl.ts`) e do `SIDEBAR_COOKIE_NAME` do shadcn:
 
 ```ts
 export const REF_COOKIE = "scriba_ref";
@@ -148,7 +148,7 @@ leitura acontecem só no servidor. Isso tem duas consequências no desenho:
 
 1. **O campo de código do `/sign-up` não escreve o cookie direto.** Ele chama
    uma server action (`setReferralCode`), no padrão exato de
-   `lib/fx/actions.ts`. A action valida o slug e grava com as opções acima.
+   `src/lib/fx/actions.ts`. A action valida o slug e grava com as opções acima.
 2. **Para a UI saber que há indicação ativa** (mostrar "você foi indicado, vai
    ganhar 150 moedas"), o server component do `/sign-up` lê `cookies()` e
    passa por prop. Nada de criar um segundo cookie legível por JS só para
@@ -165,12 +165,12 @@ store para ele é cerimônia sem ganho.
 
 ## Fase 1: Captura do clique
 
-- **`app/r/[slug]/route.ts`**: rota dinâmica. Seta o cookie `scriba_ref`
+- **`src/app/r/[slug]/route.ts`**: rota dinâmica. Seta o cookie `scriba_ref`
   (30 dias, `httpOnly`, `sameSite=lax`, `secure`), seta `scriba_visit` (24h,
   para deduplicar), chama `record_partner_click` e devolve `302` para `/`.
   Slug inexistente redireciona para `/` sem gravar nada, link velho não pode
   virar erro na cara do visitante.
-- **`proxy.ts`**: `/r` entra em `PUBLIC_PREFIXES`. O early-return de `/`
+- **`src/proxy.ts`**: `/r` entra em `PUBLIC_PREFIXES`. O early-return de `/`
   continua intacto: o clique é gravado em `/r/<slug>`, não na LP.
 - `sameSite=lax` é obrigatório: o retorno do OAuth do Google é uma navegação
   de terceiro para o nosso domínio, e `strict` faria o cookie sumir exatamente
@@ -187,12 +187,12 @@ continua marcando `/` como `○ Static`.
   Google, o valor digitado é gravado no mesmo cookie `scriba_ref` **antes** do
   redirect para o OAuth (`src/features/auth/components/`). O código atravessa
   o roundtrip do Google porque é cookie de primeira parte no mesmo host.
-- **`app/auth/callback/route.ts`**: depois do `exchangeCodeForSession`, se
+- **`src/app/auth/callback/route.ts`**: depois do `exchangeCodeForSession`, se
   existir cookie `scriba_ref`, chama `attach_partner`. Sai cedo quando não há
   cookie: custo zero para o login normal.
-- **`lib/db/partners.ts`**: wrappers tipados sobre as duas RPCs, no padrão de
-  `lib/db/billing.ts`.
-- **`GrantReason`** ganha `"partner_bonus"` (`lib/db/billing.ts:152`).
+- **`src/lib/db/partners.ts`**: wrappers tipados sobre as duas RPCs, no padrão de
+  `src/lib/db/billing.ts`.
+- **`GrantReason`** ganha `"partner_bonus"` (`src/lib/db/billing.ts:152`).
 - **Extrato de moedas** passa a mostrar a linha "bônus de indicação".
 
 O bônus **soma** às 50 de boas-vindas (que vêm do `DEFAULT` da coluna, sem
@@ -207,17 +207,17 @@ atribuído.
 
 ## Fase 3: Comissão
 
-- **`lib/billing/fulfill.ts`**: `creditInvoice()` ganha, depois do
+- **`src/lib/billing/fulfill.ts`**: `creditInvoice()` ganha, depois do
   `grantCoins`, uma chamada a `accruePartnerCommission({ invoice, userId,
   entitlement, source })`. Só para `entitlement.kind === "subscription"`,
   avulso não comissiona, por decisão de negócio.
   Um erro na comissão **não pode derrubar o crédito de moedas**: try/catch,
   log em `error`, e segue. Moeda é contrato com o usuário; comissão é
   reconciliável depois.
-- **`lib/db/partners.ts`**: `insertCommission()` com
+- **`src/lib/db/partners.ts`**: `insertCommission()` com
   `on conflict (referred_user_id) do nothing`. `status = 'pending'`,
   `available_at = now() + 30 days`.
-- **`app/api/stripe/webhook/route.ts`**: onde hoje chama `clawbackCoins` em
+- **`src/app/api/stripe/webhook/route.ts`**: onde hoje chama `clawbackCoins` em
   `charge.refunded` / `charge.dispute.created`, chama também
   `reversePartnerCommission(userId)`. Se a comissão já tiver `payout_id` (foi
   paga), não reverte: loga em `warn`, mesmo padrão do clawback quando as
@@ -242,7 +242,7 @@ Hoje o `/admin` mostra usuários, custo e custo por 1.000 moedas
 existe, `profiles.created_at`, `subscriptions`, `coin_transactions`,
 `sessions`, sem nenhuma tabela nova.
 
-**`lib/db/admin/metrics.ts`**, com recorte por período e por coorte:
+**`src/lib/db/admin/metrics.ts`**, com recorte por período e por coorte:
 
 - **Aquisição**: cadastros por dia/semana/mês.
 - **Ativação**: % que gravou ao menos uma sessão; moedas gastas nos 7
@@ -272,8 +272,8 @@ Tela: `/admin/metricas`, no padrão de `/admin/usage`.
 - **Registro de pagamento**: seleciona parceiro, período e valor; cria a linha
   em `partner_payouts` e carimba as comissões `available` com o `payout_id`.
   É este passo que faz o "a receber" do painel voltar a zero.
-- Entra no `AdminSidebar`; rotas sob `app/api/admin/partners/` seguindo o
-  padrão de `app/api/admin/users/`, com
+- Entra no `AdminSidebar`; rotas sob `src/app/api/admin/partners/` seguindo o
+  padrão de `src/app/api/admin/users/`, com
   `enforceRateLimit(..., RATE_LIMITS.admin, ...)`.
 
 ### Simulador de comissão
@@ -281,7 +281,7 @@ Tela: `/admin/metricas`, no padrão de `/admin/usage`.
 A taxa é editável por parceiro, então o formulário precisa mostrar a
 consequência **enquanto** o número é digitado, nunca depois de salvo.
 
-**`lib/partners/economics.ts`**, função pura, client-safe, sem segredo:
+**`src/lib/partners/economics.ts`**, função pura, client-safe, sem segredo:
 
 ```ts
 simulatePartner({
@@ -317,7 +317,7 @@ um parceiro específico; o que não pode é ela ser escolhida às cegas.
 
 ## Fase 6: Painel do parceiro (`/partners`)
 
-Estrutura espelhando `app/admin/`:
+Estrutura espelhando `src/app/admin/`:
 
 ```
 app/partners/layout.tsx     -- isCurrentUserPartner() → notFound()
@@ -326,7 +326,7 @@ src/features/partners/      -- componentes
 lib/auth/require-partner.ts -- irmão de lib/auth/require-admin.ts
 ```
 
-Fica **fora** de `(app)` (shell próprio, como o admin), e o `proxy.ts` já o
+Fica **fora** de `(app)` (shell próprio, como o admin), e o `src/proxy.ts` já o
 protege por não estar na allowlist pública. O gate por papel mora no
 `layout.tsx`, **não no proxy**, proxy com leitura de papel custa uma ida ao
 banco em toda requisição do site.

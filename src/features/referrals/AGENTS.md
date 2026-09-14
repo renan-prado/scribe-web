@@ -92,7 +92,7 @@ nunca quem são. Não crie rota que liste indicados.
 
 ## O selo do hero, e a LP estática
 
-`app/page.tsx` é ESTÁTICA por invariante (ver `app/AGENTS.md`). O selo
+`src/app/page.tsx` é ESTÁTICA por invariante (ver `src/app/AGENTS.md`). O selo
 "indicado por Fulano" NÃO pode ser resolvido no servidor lá, a leitura de
 cookie derruba a estaticidade e devolve `no-store` para toda visita anônima.
 
@@ -178,7 +178,7 @@ nada, porque é o único desfecho que não se resolve sozinho.
 carregasse, haveria dois lugares dizendo quem é o padrinho, e no dia em que
 divergissem, a página anunciaria uma pessoa e o cadastro creditaria outra.
 
-**Quem cura a pista quando ela falta é o `proxy.ts`** (`healReferralHint`), e
+**Quem cura a pista quando ela falta é o `src/proxy.ts`** (`healReferralHint`), e
 isso não é zelo: a pista nasceu DEPOIS do cookie de atribuição, então todo
 visitante que já tinha um `scriba_ref` vivo no dia do deploy não tinha pista
 nenhuma, e para ele o selo simplesmente não aparecia, sem erro em lugar
@@ -188,7 +188,7 @@ programa de parceiros já carregava o cookie antigo.
 
 A cura mora no proxy porque ele é o único lugar que roda em toda requisição, já
 escreve cookies, e **não custa a estaticidade da LP**, ele roda antes do cache
-de qualquer jeito. Um `cookies()` dentro de `app/page.tsx` faria exatamente o
+de qualquer jeito. Um `cookies()` dentro de `src/app/page.tsx` faria exatamente o
 oposto. A regra geral que fica: quando a landing page precisar reagir a um
 cookie, o cookie é preparado no proxy ou numa rota, nunca lido na página.
 
@@ -197,7 +197,7 @@ pelo mesmo `readActiveReferral`.
 
 ## A foto vem do Google, por `next/image`
 
-`app/AGENTS.md` proíbe `<img>` para host externo. O `remotePatterns` do
+`src/app/AGENTS.md` proíbe `<img>` para host externo. O `remotePatterns` do
 `next.config.ts` é o caminho que RESPEITA essa regra: a imagem passa a ser
 servida otimizada do nosso domínio, com width/height, sem CLS. **Um host só**
 (`lh3.googleusercontent.com`), `remotePatterns` frouxo transforma

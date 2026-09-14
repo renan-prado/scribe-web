@@ -214,8 +214,8 @@ de creditar duas vezes.
 ## 4. Vercel: variáveis de Preview
 
 O domínio já está criado e apontado para o branch `develop`; falta o DNS (§1) e
-faltam as variáveis. **Sem elas o deploy de preview nem sobe**: `lib/env/client.ts`
-e `lib/env/server.ts` fazem `throw` no import quando a validação Zod falha, o
+faltam as variáveis. **Sem elas o deploy de preview nem sobe**: `src/lib/env/client.ts`
+e `src/lib/env/server.ts` fazem `throw` no import quando a validação Zod falha, o
 que é de propósito, falhar no boot é melhor que falhar na primeira gravação.
 
 **Settings → Environment Variables → Add**, escopo **Preview**, e em *Branch*
@@ -241,7 +241,7 @@ escolha **`develop`**.
 
 Quatro observações que evitam retrabalho:
 
-- **`APP_URL` não é opcional aqui.** Sem ela, `lib/env/server.ts` cai no
+- **`APP_URL` não é opcional aqui.** Sem ela, `src/lib/env/server.ts` cai no
   `VERCEL_URL`, que é a URL aleatória do deploy. O Checkout devolveria o usuário
   para `scriba-abc123-….vercel.app` em vez de `dev.scriba.cc`.
 - **`STRIPE_WEBHOOK_SECRET` só depois do §6.** Enquanto não existir, as rotas

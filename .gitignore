@@ -58,4 +58,6 @@ next-env.d.ts
 /compare*.txt
 /overview.txt
 
+# notas de trabalho locais. As de SEGURANÇA são versionadas e moram em
+# docs/security/ — esta linha é ancorada na raiz e não alcança aquelas.
 /tasks*

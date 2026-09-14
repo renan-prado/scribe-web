@@ -1,0 +1,265 @@
+import {
+  AtSign,
+  CalendarClock,
+  ChevronRight,
+  LogOut,
+  User as UserIcon,
+  UserPlus,
+} from "lucide-react";
+import Link from "next/link";
+import { redirect } from "next/navigation";
+import type { ReactNode } from "react";
+import { InstallAppRow } from "@/components/InstallApp";
+import { ThemeToggleRow } from "@/components/ThemeToggle";
+import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
+import { PrivilegedProfileLinks } from "@/features/auth/components/PrivilegedProfileLinks";
+import { PlanCard } from "@/features/billing/components/PlanCard";
+import { ProfileFeedbackRow } from "@/features/feedback/components/ProfileFeedbackRow";
+import { ProfileTourRow } from "@/features/tour/components/ProfileTourRow";
+import { isCurrentUserAdmin } from "@/lib/auth/require-admin";
+import { isCurrentUserPartner } from "@/lib/auth/require-partner";
+import { COIN_RING_REFERENCE } from "@/lib/coins/pricing";
+import { getCurrentBalance } from "@/lib/db/coins";
+import { getCurrentProfile } from "@/lib/db/profiles";
+import { REFERRAL_SIGNUP_COINS } from "@/lib/referrals/economics";
+import { TopBar } from "../components/TopBar";
+
+export const metadata = {
+  title: "Perfil",
+};
+
+const DATE_FMT = new Intl.DateTimeFormat("pt-BR", {
+  day: "2-digit",
+  month: "long",
+  year: "numeric",
+});
+
+function initialsFrom(name: string | null, email: string | null): string {
+  const source = name?.trim() || email?.split("@")[0] || "?";
+  const parts = source.split(/\s+/).filter(Boolean).slice(0, 2);
+  return parts.map((p) => p[0]?.toUpperCase() ?? "").join("") || source.slice(0, 1).toUpperCase();
+}
+
+/**
+ * O perfil, agora no v2 (`/profile`; `/profile` redireciona para cá).
+ *
+ * O corpo é o mesmo de sempre e não foi reescrito: herói de identidade, o
+ * saldo como âncora visual, e a lista "Informações da conta" num cartão de
+ * fio. Ele usa os tokens `scriba-*`, que dentro da moldura do v2 renderizam na
+ * paleta escura (ver `app/layout.tsx`), então a tela acompanha o resto sem
+ * precisar de uma segunda folha de estilo.
+ *
+ * O que mudou foi a moldura: a `TopBar` do v2 no lugar do `AppHeader`, que era
+ * quem trazia o chip de moedas. O saldo continua na tela duas vezes, no herói e
+ * na gaveta da barra, e isso é aceitável: aqui ele é a informação da página, lá
+ * é o atalho para comprar.
+ */
+export default async function ProfilePage() {
+  // As quatro leituras custam UMA consulta a mais que as duas de antes: perfil,
+  // saldo e papel de admin saem da mesma linha memoizada de `profiles`
+  // (lib/db/account.ts), e `isCurrentUserPartner` é a que o layout de `(app)`
+  // já fez neste mesmo render, `cache()` devolve o resultado dela.
+  const [profile, balance, isAdmin, isPartner] = await Promise.all([
+    getCurrentProfile(),
+    getCurrentBalance().catch(() => null),
+    isCurrentUserAdmin().catch(() => false),
+    isCurrentUserPartner().catch(() => false),
+  ]);
+  if (!profile) redirect("/sign-in");
+
+  const shownName = profile.displayName?.trim() || profile.email?.split("@")[0] || "Sua conta";
+  const memberSince = DATE_FMT.format(new Date(profile.createdAt));
+  const initials = initialsFrom(profile.displayName, profile.email);
+  const coinBalance = balance ?? 0;
+  const percent = Math.max(0, Math.min(100, (coinBalance / COIN_RING_REFERENCE) * 100));
+
+  return (
+    <main className="mx-auto flex w-full max-w-[640px] flex-col gap-6 px-4 pb-10 sm:gap-8">
+      <TopBar title="Perfil" />
+      {/* Identity hero */}
+      <section className="relative overflow-hidden rounded-[28px] bg-scriba-paper p-6 shadow-[0_18px_40px_rgba(51,65,79,0.06)] ring-1 ring-scriba-hairline sm:p-8">
+        <div
+          aria-hidden
+          className="absolute inset-x-0 top-0 h-24 bg-gradient-to-b from-scriba-blue-soft to-transparent"
+        />
+        <div className="relative flex flex-col items-center gap-4 text-center">
+          <Avatar
+            size="lg"
+            className="size-24 ring-4 ring-scriba-paper shadow-[0_12px_28px_rgba(51,65,79,0.14)]"
+          >
+            {profile.avatarUrl ? <AvatarImage src={profile.avatarUrl} alt={shownName} /> : null}
+            <AvatarFallback className="bg-scriba-blue-soft text-2xl font-semibold text-scriba-blue-ink">
+              {initials}
+            </AvatarFallback>
+          </Avatar>
+          <div className="flex flex-col items-center gap-1">
+            <h1 className="font-heading text-[26px] font-semibold tracking-tight text-scriba-ink-strong">
+              {shownName}
+            </h1>
+            {profile.email ? <p className="text-sm text-scriba-ink-soft">{profile.email}</p> : null}
+            <p className="text-[11px] font-medium uppercase tracking-wider text-scriba-ink-mute">
+              Membro desde {memberSince}
+            </p>
+            <span
+              role="img"
+              aria-label={`${coinBalance} moedas`}
+              className="mt-2 inline-flex items-center gap-1.5 rounded-full bg-scriba-gold-soft py-1 pr-3 pl-2"
+            >
+              <span className="relative flex size-4.5 flex-none items-center justify-center">
+                {/* biome-ignore lint/a11y/noSvgWithoutTitle: aria-hidden decorative coin ring */}
+                <svg
+                  className="absolute inset-0 -rotate-90"
+                  width="18"
+                  height="18"
+                  viewBox="0 0 18 18"
+                  aria-hidden
+                >
+                  <circle cx="9" cy="9" r="9" fill="var(--scriba-gold-track)" />
+                  <circle
+                    cx="9"
+                    cy="9"
+                    r="9"
+                    fill="none"
+                    stroke="var(--scriba-yellow)"
+                    strokeWidth="18"
+                    strokeDasharray={`${(percent / 100) * 56.549} ${56.549 - (percent / 100) * 56.549}`}
+                  />
+                </svg>
+                <span className="relative flex size-[13px] items-center justify-center rounded-full bg-scriba-paper">
+                  <span className="coin-hex block h-[7.5px] w-[6.5px] bg-scriba-yellow" />
+                </span>
+              </span>
+              <span className="text-[12px] font-semibold tabular-nums text-scriba-gold-ink">
+                {coinBalance} moedas
+              </span>
+            </span>
+          </div>
+        </div>
+      </section>
+
+      <PlanCard />
+
+      {/* A porta para `/indicar`. Fica logo abaixo do plano de propósito: é
+          onde a pessoa acabou de olhar quanto tem e quanto custa, que é o
+          momento em que "dá para ganhar moedas de graça" é uma informação e
+          não um anúncio. O outro caminho é o card do `/feed`. */}
+      <Link
+        href="/indicar"
+        className="flex items-center gap-3.5 rounded-[28px] bg-scriba-paper p-5 ring-1 ring-scriba-hairline outline-none transition-colors hover:bg-scriba-surface focus-visible:ring-2 focus-visible:ring-ring/40 sm:p-6"
+      >
+        <span className="flex size-11 flex-none items-center justify-center rounded-2xl bg-scriba-cream text-scriba-cream-body">
+          <UserPlus aria-hidden className="size-5" />
+        </span>
+        <span className="flex min-w-0 flex-1 flex-col gap-0.5">
+          <span className="text-sm font-semibold text-scriba-ink-strong">Indique a um amigo</span>
+          <span className="text-xs font-light leading-relaxed text-scriba-ink-soft">
+            {REFERRAL_SIGNUP_COINS} moedas por amigo que criar a conta pelo seu link, e mais quando
+            ele assinar.
+          </span>
+        </span>
+        <ChevronRight aria-hidden className="size-4 flex-none text-scriba-ink-mute" />
+      </Link>
+
+      {/* A porta que a PESSOA procura, ao lado da que ela é convidada a usar.
+          As três janelas automáticas perguntam na hora que nós escolhemos; o
+          momento em que alguém tem algo a dizer é dele. */}
+      <ProfileFeedbackRow />
+
+      {/* O caminho de volta para as apresentações. Ele existe porque o tour é
+          gravado no instante em que aparece: quem recarregou a página no
+          primeiro passo não veria o resto nunca mais. Ver
+          `src/features/tour/AGENTS.md`. */}
+      <ProfileTourRow />
+
+      {/* Account info */}
+      <section className="rounded-[28px] bg-scriba-paper p-6 ring-1 ring-scriba-hairline sm:p-7">
+        <h2 className="mb-5 text-[11px] font-semibold uppercase tracking-wider text-scriba-ink-mute">
+          Informações da conta
+        </h2>
+        <dl className="grid gap-4">
+          <InfoRow icon={<UserIcon className="size-4" />} label="Nome" value={shownName} />
+          <InfoRow
+            icon={<AtSign className="size-4" />}
+            label="Email"
+            value={profile.email ?? "-"}
+          />
+          <InfoRow
+            icon={<CalendarClock className="size-4" />}
+            label="Membro desde"
+            value={memberSince}
+          />
+        </dl>
+      </section>
+
+      {/* Só no celular: no desktop estes atalhos vivem no menu do avatar, que
+          o header mobile não tem. Sem esta faixa, admin e parceiro só chegavam
+          às suas áreas digitando a URL. */}
+      <PrivilegedProfileLinks isAdmin={isAdmin} isPartner={isPartner} />
+
+      {/* Preferências */}
+      <section className="rounded-[28px] bg-scriba-paper p-6 ring-1 ring-scriba-hairline sm:p-7">
+        <h2 className="mb-5 text-[11px] font-semibold uppercase tracking-wider text-scriba-ink-mute">
+          Preferências
+        </h2>
+        <div className="flex flex-col gap-5">
+          <ThemeToggleRow />
+          {/* Caminho PERMANENTE para instalar: a faixa do topo do app pode ser
+              dispensada para sempre, e é a única outra porta. Ela some sozinha
+              onde não há o que oferecer, ver `InstallAppRow`. */}
+          <InstallAppRow />
+        </div>
+      </section>
+
+      <form action="/auth/sign-out" method="post">
+        <button
+          type="submit"
+          className="inline-flex w-full items-center justify-center gap-2 rounded-full bg-scriba-rose px-5 py-3 text-sm font-semibold text-scriba-rose-ink transition-colors hover:bg-scriba-rose-accent/20"
+        >
+          <LogOut className="size-4" />
+          Sair da conta
+        </button>
+      </form>
+
+      {/* A porta de saída DEFINITIVA, e ela é de propósito a última linha da
+          página, discreta e sem cartão: exigência da LGPD, da App Store e da
+          Play Store (ver `docs/app-store-ios.md`), não algo que se ofereça a
+          quem só veio conferir o saldo. Um botão vermelho do tamanho dos
+          outros seria clicado por engano ao lado de "Sair da conta", que é a
+          ação vizinha com que ela mais se confunde. Quem explica o que
+          acontece é a própria `/profile/delete`, não este rótulo. */}
+      <div className="pb-2 text-center">
+        <Link
+          href="/profile/delete"
+          className="text-xs font-medium text-scriba-ink-mute underline underline-offset-4 outline-none transition-colors hover:text-scriba-rec-ink focus-visible:text-scriba-rec-ink"
+        >
+          Excluir minha conta e meus dados
+        </Link>
+      </div>
+    </main>
+  );
+}
+
+/**
+ * Uma linha "rótulo / valor" da lista de informações da conta.
+ *
+ * O wrapper é um <div> contendo APENAS <dt> e <dd>, é a única forma de
+ * agrupamento que o HTML aceita dentro de um <dl>. Antes o ícone era irmão
+ * deles e o par ficava dois níveis abaixo do <dl>, o que invalidava a lista
+ * inteira (axe: `dlitem` + `definition-list`, 7 nós). O ícone agora mora
+ * dentro do <dt>, posicionado em absoluto para o visual não mudar: o `pl-12`
+ * do wrapper abre a calha e o `-translate-y-1/2` centra o disco na altura
+ * das duas linhas.
+ */
+function InfoRow({ icon, label, value }: { icon: ReactNode; label: string; value: string }) {
+  return (
+    <div className="relative min-w-0 pl-12">
+      <dt className="text-[11px] font-medium uppercase tracking-wider text-scriba-ink-mute">
+        <span className="-translate-y-1/2 absolute top-1/2 left-0 flex size-9 flex-none items-center justify-center rounded-full bg-scriba-blue-soft text-scriba-blue-ink">
+          {icon}
+        </span>
+        {label}
+      </dt>
+      <dd className="truncate text-sm font-medium text-scriba-ink-strong">{value}</dd>
+    </div>
+  );
+}

@@ -27,9 +27,9 @@ Registrado no topo pra evitar reabrir debate depois. Coisas adiadas estão em `d
 
 **Mas o documento foi escrito sem conhecer o repositório**, então três coisas grandes precisam ser corrigidas antes de virar plano:
 
-1. **O Aprofundar já existe** (`app/api/deepening/route.ts`, prompt em `lib/prompts/deepening.ts`, schema, tabela `session_deepenings`, custo já rastreado). Não é feature a construir; é rota a modificar. Isso encurta drasticamente a "Fase 4" do roadmap dele.
-2. **11 traduções da Bíblia já estão no repo** (`lib/bibles/*.json`, ACF, ARA, ARC, KJA, KJF, NAA, NBV, NTLH, NVI, NVT, OL). O "conteúdo bíblico" da biblioteca é grátis, licenciado, e já foi versificado. O GPT tratou como algo a indexar do zero.
-3. **O guard bíblico do live já extrai referência estruturada** (`book + chapter + verse`) via `lib/bible/guard.ts` + `lib/domain/feed.ts::parseVerseReference`. Isso é matéria-prima direta para o retrieval híbrido (metadata-first) que o GPT descreve como "futuro". Não é futuro, o pipeline live já produz o sinal.
+1. **O Aprofundar já existe** (`src/app/api/deepening/route.ts`, prompt em `src/lib/prompts/deepening.ts`, schema, tabela `session_deepenings`, custo já rastreado). Não é feature a construir; é rota a modificar. Isso encurta drasticamente a "Fase 4" do roadmap dele.
+2. **11 traduções da Bíblia já estão no repo** (`src/lib/bibles/*.json`, ACF, ARA, ARC, KJA, KJF, NAA, NBV, NTLH, NVI, NVT, OL). O "conteúdo bíblico" da biblioteca é grátis, licenciado, e já foi versificado. O GPT tratou como algo a indexar do zero.
+3. **O guard bíblico do live já extrai referência estruturada** (`book + chapter + verse`) via `src/lib/bible/guard.ts` + `src/lib/domain/feed.ts::parseVerseReference`. Isso é matéria-prima direta para o retrieval híbrido (metadata-first) que o GPT descreve como "futuro". Não é futuro, o pipeline live já produz o sinal.
 
 Além disso, **discordo em um ponto de método**: o GPT sugere começar CRUD editorial (20–50 chunks à mão). Eu sugiro começar indexando a **Bíblia** (que já temos, direito resolvido), porque isso valida a stack pgvector end-to-end sem depender de você digitar conteúdo. O CRUD editorial vira o segundo passo, não o primeiro.
 
@@ -50,10 +50,10 @@ Contexto factual que muda o plano. Nada aqui é opinião, é o que está no repo
 
 ### 1.1 O Aprofundar já é rota, prompt, schema, tabela
 
-- `app/api/deepening/route.ts`: rota `POST` autenticada, único por sessão (unique constraint), modelo default `gpt-4o`, `maxTokens: 16000`, responseFormat JSON.
-- `lib/prompts/deepening.ts`: 65 linhas de prompt teológico já com regras de voz, regra-de-ouro para bibleQuote, tipos de bloco.
-- `lib/domain/deepening.ts`: reusa `SummaryPayload` (mesmo renderer).
-- `lib/db/deepenings.ts`: persistência.
+- `src/app/api/deepening/route.ts`: rota `POST` autenticada, único por sessão (unique constraint), modelo default `gpt-4o`, `maxTokens: 16000`, responseFormat JSON.
+- `src/lib/prompts/deepening.ts`: 65 linhas de prompt teológico já com regras de voz, regra-de-ouro para bibleQuote, tipos de bloco.
+- `src/lib/domain/deepening.ts`: reusa `SummaryPayload` (mesmo renderer).
+- `src/lib/db/deepenings.ts`: persistência.
 - Migration `0009_session_deepenings.sql`.
 - Custo já rastreado via `recordChatUsage({ route: "deepening", ... })` e visível em `/admin/usage`.
 
@@ -61,16 +61,16 @@ Contexto factual que muda o plano. Nada aqui é opinião, é o que está no repo
 
 ### 1.2 Bíblia inteira já está no filesystem
 
-- `lib/bibles/loader.ts` expõe 11 traduções em pt-BR e inglês, com cache em memória, indexadas por `book.abbrev + chapter[] + verse[]`.
-- `lib/bibles/chapter-lengths.ts` e `books.ts` dão a estrutura canônica.
+- `src/lib/bibles/loader.ts` expõe 11 traduções em pt-BR e inglês, com cache em memória, indexadas por `book.abbrev + chapter[] + verse[]`.
+- `src/lib/bibles/chapter-lengths.ts` e `books.ts` dão a estrutura canônica.
 - Isso substitui integralmente as §32.1 e §32.2 do GPT ("Bíblia" e "Referência bíblica") como fonte livre. Direito autoral já foi resolvido antes de entrar no repo.
 
 **Consequência**: a POC pode ter **31.000 versículos + estrutura hierárquica** disponíveis para chunking teológico *desde o dia 1*, sem digitar nada. O medo do GPT de "não começar com muito conteúdo" faz sentido para livros protegidos; não faz sentido pra Bíblia.
 
 ### 1.3 O guard do live já produz metadata estruturada
 
-- `lib/bible/guard.ts` extrai `{ book, bookDisplay, chapter, verse }` com signals ponderados e mantém `currentReading` com TTL.
-- `lib/domain/feed.ts::parseVerseReference` normaliza referências.
+- `src/lib/bible/guard.ts` extrai `{ book, bookDisplay, chapter, verse }` com signals ponderados e mantém `currentReading` com TTL.
+- `src/lib/domain/feed.ts::parseVerseReference` normaliza referências.
 - Cada `citedVerse` que aparece no feed carrega `book/chapter/verseStart/verseEnd`.
 
 **Consequência**: no Ao Vivo, quando o pregador cita "Romanos 8:28", o Scriba **já sabe** disso de forma estruturada. Não precisa de embedding para achar "Romanos 8" na biblioteca, SQL `WHERE book='Romans' AND chapter=8` resolve. Embedding entra só para busca *conceitual* ("sofrimento e providência"), não para busca *referencial* ("Rm 8:28"). Isso é uma distinção que o GPT trata bem na §28, mas não conecta ao fato de que o Scriba já produz o dado.
@@ -85,7 +85,7 @@ Contexto factual que muda o plano. Nada aqui é opinião, é o que está no repo
 ### 1.5 Ainda não existe: o que o GPT propõe é genuinamente novo
 
 - Nenhuma extensão `vector` habilitada; nenhuma migration usa `pgvector`.
-- Nenhum código em `lib/` chama embeddings da OpenAI hoje.
+- Nenhum código em `src/lib/` chama embeddings da OpenAI hoje.
 - `serverEnv` (Zod estrito) precisará de novos campos (`OPENAI_EMBEDDING_MODEL`, `OPENAI_EMBEDDING_DIMENSIONS`).
 - Não há tabela `knowledge_*`.
 - Não há RAG em nenhuma rota (deepening, insights, bible, sermon-echo, final-summary, todas puramente prompt+transcript).
@@ -155,7 +155,7 @@ Metadata obrigatória por chunk bíblico: `{ translation, book, chapter, verseSt
 - Reindexar Bíblia + 3 comentários + editorial (20k chunks) ~ $0.40, ainda ok.
 - Um clique acidental em "reindexar" na produção pode disparar milhares de chamadas em paralelo, quebrar rate limit da OpenAI, e você fica sem embeddings por horas.
 
-**Contra-proposta**: reindex via **script CLI/npm** (`scripts/reindex-knowledge.ts`), com confirmação, batch size (10-50 por lote), backoff. UI mostra "última indexação: X, modelo: Y" mas só disparar reindex de UM source por vez. Reindex em massa é operação de manutenção, não feature de admin.
+**Contra-proposta**: reindex via **script CLI/npm** (`src/scripts/reindex-knowledge.ts`), com confirmação, batch size (10-50 por lote), backoff. UI mostra "última indexação: X, modelo: Y" mas só disparar reindex de UM source por vez. Reindex em massa é operação de manutenção, não feature de admin.
 
 ### 3.5 RAG no Ao Vivo: proposta concreta que o GPT não deu
 
@@ -198,7 +198,7 @@ Cada `session_deepenings`, cada `session_feed_items.speakerHighlight`, cada `fin
 
 `text-embedding-3-small` a $0.02/M tokens é barato mas não zero. Auto-indexar cada `final_summary` da produção sem medir vai virar linha no `llm_usage_events` que ninguém previu.
 
-**Sugestão**: nova migration `llm_embedding_usage_events` (ou coluna `event_kind='embedding'` em `llm_usage_events`), integrar com `lib/llm/pricing.ts` que já existe. O admin `/admin/usage` já mostra por rota; adicionar "embeddings" como rota é 1 linha.
+**Sugestão**: nova migration `llm_embedding_usage_events` (ou coluna `event_kind='embedding'` em `llm_usage_events`), integrar com `src/lib/llm/pricing.ts` que já existe. O admin `/admin/usage` já mostra por rota; adicionar "embeddings" como rota é 1 linha.
 
 #### (c) Shadow mode antes de rewrite
 
@@ -326,7 +326,7 @@ create or replace function match_knowledge(
 language sql stable as $$ ... $$;
 ```
 
-Script `scripts/index-bible.ts` (aceita arg `--translation NAA|ARA|NVI`, roda 3x, uma por tradução): lê o JSON correspondente em `lib/bibles/`, agrupa em perícopes de 5-10 versos, insere em `knowledge_sources` (1 fonte por livro × tradução = 66 × 3 = 198 sources, `license='public_domain'`) + chunks com metadata `{ translation, book, chapter, verseStart, verseEnd }`.
+Script `src/scripts/index-bible.ts` (aceita arg `--translation NAA|ARA|NVI`, roda 3x, uma por tradução): lê o JSON correspondente em `src/lib/bibles/`, agrupa em perícopes de 5-10 versos, insere em `knowledge_sources` (1 fonte por livro × tradução = 66 × 3 = 198 sources, `license='public_domain'`) + chunks com metadata `{ translation, book, chapter, verseStart, verseEnd }`.
 
 **Success criteria**: `select count(*) from knowledge_chunks` retorna ~15-24k (3 traduções × 5-8k). `select match_knowledge(embedText('soberania e sofrimento'), 5)` retorna passagens plausíveis.
 
@@ -398,7 +398,7 @@ Fluxo v2:
 
 Ordenados por criticidade:
 
-1. **Custo de embedding em auto-indexação de sessões**: se cada `final_summary` for auto-indexado, isso vira linha de custo silenciosa. Precisa entrar no cost tracking existente (`lib/llm/pricing.ts`) *antes* de ligar.
+1. **Custo de embedding em auto-indexação de sessões**: se cada `final_summary` for auto-indexado, isso vira linha de custo silenciosa. Precisa entrar no cost tracking existente (`src/lib/llm/pricing.ts`) *antes* de ligar.
 2. **Rate limit da OpenAI em reindexação em massa**: 3k RPM no tier 1. Reindexar Bíblia com paralelismo ingênuo bate no teto. Batch + backoff obrigatórios no ingest.
 3. **Divergência de embedding models entre chunks**: se metade dos chunks foi indexada com `text-embedding-3-small@512` e outra metade com `@1536`, o `match_knowledge` retorna lixo. Solução: coluna `embedding_model` no chunk row + função de match refuse mistura. Simpler: 1 tabela por modelo se algum dia precisar coexistir.
 4. **RLS nas novas tabelas**: `knowledge_sources` é *global* (nem por usuário nem por sessão). Precisa policy admin-only para write, read livre pra service_role. Não copiar padrão de `sessions`.

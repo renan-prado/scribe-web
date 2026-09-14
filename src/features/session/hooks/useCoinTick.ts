@@ -30,7 +30,7 @@ const log = createLogger("coins/tick");
  * unmounts, no stray ticks after the recorder is stopped or paused.
  *
  * **`sessionId` pode ser `null`, e o caso é o gravador do v2.** Lá a sessão só
- * nasce no stop (ver `app/v2/recording/AudioStudio.tsx`), então os primeiros
+ * nasce no stop (ver `app/recording/AudioStudio.tsx`), então os primeiros
  * minutos são cobrados antes de existir linha para amarrá-los. A cobrança em si
  * não depende disso, `/api/coins/charge` já aceita `sessionId` opcional; o que
  * se perde é a ATRIBUIÇÃO da linha do ledger à sessão, e o custo daquela

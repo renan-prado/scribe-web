@@ -26,13 +26,13 @@ As três alternativas óbvias foram descartadas, cada uma por um motivo próprio
 | Buscar do navegador do usuário | CORS. O IP seria residencial e resolveria o bloqueio, mas `youtube.com` não devolve cabeçalho para nós |
 | Proxy residencial próprio | Custo recorrente **mais** manutenção do parser toda vez que o YouTube muda o formato da resposta. É virar mantenedor de uma corrida que não temos interesse em correr |
 
-Sobrou provedor hospedado. É `lib/youtube/supadata.ts`, atrás da interface de
-`lib/youtube/transcript.ts`, a indireção existe porque este é o pedaço do
+Sobrou provedor hospedado. É `src/lib/youtube/supadata.ts`, atrás da interface de
+`src/lib/youtube/transcript.ts`, a indireção existe porque este é o pedaço do
 produto com maior chance de precisar ser trocado, e trocar tem de ser escrever
 um arquivo ao lado, não caçar `x-api-key` dentro de uma rota que também cobra
 moedas.
 
-**A exceção que confirma a regra:** `lib/youtube/oembed.ts` chama o YouTube
+**A exceção que confirma a regra:** `src/lib/youtube/oembed.ts` chama o YouTube
 direto, do servidor, e funciona. O oEmbed é serviço de metadado público pensado
 para ser consumido por servidor de terceiro (é o que monta o preview de um link
 colado em qualquer lugar) e não passa pelo antifraude do `timedtext`. Ele nos dá
@@ -86,7 +86,7 @@ depois do tema, e com data, hora, série, `#327`, "AO VIVO" e "EBD" espalhados.
 A decisão canal-é-igreja-ou-pessoa também não cabe em configuração: "Ministério
 Fiel" é local, "Yago Martins" é autor, e a diferença é semântica.
 
-`lib/youtube/metadata.ts` faz uma chamada de `gpt-4o-mini` a temperatura 0 sobre
+`src/lib/youtube/metadata.ts` faz uma chamada de `gpt-4o-mini` a temperatura 0 sobre
 UMA linha de texto (título + canal). É extração, não julgamento: tudo que a
 resposta precisa conter já está na entrada, e o prompt traz cinco exemplos
 resolvidos. Custa frações de centavo e tem rota própria em `llm_usage_events`

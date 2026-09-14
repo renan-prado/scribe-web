@@ -12,7 +12,7 @@ import { Label } from "@/components/ui/label";
  *
  * Aceita o UUID cru OU a URL da gravação colada do navegador, que é como o id
  * chega até a mão de quem está testando. Exigir que a pessoa recorte o UUID de
- * dentro de `/v2/studies/<id>` é atrito por nada.
+ * dentro de `/studies/<id>` é atrito por nada.
  */
 const UUID = /[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}/i;
 

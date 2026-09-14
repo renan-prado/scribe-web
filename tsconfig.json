@@ -23,7 +23,7 @@
       "@/components/icons/*": ["./src/shared/icons/*"],
       "@/components/*": ["./src/shared/components/*"],
       "@/hooks/*": ["./src/shared/hooks/*"],
-      "@/*": ["./*", "./src/*"]
+      "@/*": ["./src/*"]
     }
   },
   "include": [

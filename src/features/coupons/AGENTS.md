@@ -33,7 +33,7 @@ procurar um padrinho que não existe.
 
 ## O selo não decide nada
 
-Ele recebe um número e desenha. Quem lê o cookie é `app/sign-in/page.tsx`, quem
+Ele recebe um número e desenha. Quem lê o cookie é `src/app/sign-in/page.tsx`, quem
 resolve o valor é `getCouponPublicByCode`, e quem credita é
 `redeem_signup_coupon`, no `/auth/callback`.
 

@@ -145,7 +145,7 @@
 **Gatilho**: primeira migração de embedding model OU primeira mudança de chunker que exija reprocessar tudo.
 
 **TODOs**:
-- [ ] Script `scripts/reindex-knowledge.ts`, args: `--source-type`, `--dry-run`, `--batch-size` (default 20), `--concurrency` (default 3).
+- [ ] Script `src/scripts/reindex-knowledge.ts`, args: `--source-type`, `--dry-run`, `--batch-size` (default 20), `--concurrency` (default 3).
 - [ ] Backoff exponencial em 429 da OpenAI.
 - [ ] Progress bar + resumo final (indexed / failed / skipped).
 - [ ] Prompt de confirmação com estimativa de custo (`chunks * tokens_médios * $/1M`).
@@ -273,7 +273,7 @@
 
 **Por que adiado**: não é adiado, é uma REGRA a preservar. Registrado aqui pra não esquecer de codificar quando o RAG começar a virar componente reutilizável.
 
-**Gatilho**: quando `lib/knowledge/search.ts` for compartilhado entre múltiplas rotas.
+**Gatilho**: quando `src/lib/knowledge/search.ts` for compartilhado entre múltiplas rotas.
 
 **TODOs**:
 - [ ] Adicionar linha explícita no `AGENTS.md` (seção "Behaviour-preservation guardrails") proibindo RAG no `/api/final-summary`.
@@ -294,7 +294,7 @@
 - [ ] Migration: `alter table llm_usage_events add column event_kind text default 'chat' check (event_kind in ('chat','embedding','transcribe'));`
 - [ ] Atualizar `recordChatUsage` para não hardcodar `event_kind`.
 - [ ] Novo helper `recordEmbeddingUsage(...)`.
-- [ ] Adicionar preço de embedding em `lib/llm/pricing.ts`.
+- [ ] Adicionar preço de embedding em `src/lib/llm/pricing.ts`.
 - [ ] Admin: `/admin/usage` filtra por `event_kind`.
 
 ---
@@ -326,7 +326,7 @@
 **TODOs**:
 - [ ] `evals/rag/*.jsonl` com queries + expected_source_ids ou expected_bible_refs.
 - [ ] Script `npm run eval:rag` que roda e printa scorecard (precision@k, MRR).
-- [ ] Documentar processo: "antes de mergear mudança em `lib/knowledge/`, rode eval e cole resultado no PR".
+- [ ] Documentar processo: "antes de mergear mudança em `src/lib/knowledge/`, rode eval e cole resultado no PR".
 - [ ] Eventual: eval de generation (dado sermão + fontes, avalia qualidade da resposta), mais caro, provavelmente LLM-as-judge.
 
 ---
@@ -357,7 +357,7 @@ Muitas coisas do §92 do doc do GPT que caem em polish depois de PR 2:
 **Gatilho**: eval mostra que respostas do V2 têm cross-refs fragmentadas ou incompletas.
 
 **TODOs**:
-- [ ] Investigar se algum JSON de Bíblia no `lib/bibles/` preserva quebras de parágrafo original.
+- [ ] Investigar se algum JSON de Bíblia no `src/lib/bibles/` preserva quebras de parágrafo original.
 - [ ] Se sim: usar como sinal de boundary.
 - [ ] Se não: importar delimitação externa (SBL, BibleGateway) ou aceitar heurística.
 - [ ] Reindexar com `chunker_version = 'v2'`, comparar recall no eval set.

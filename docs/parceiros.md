@@ -107,7 +107,7 @@ Na prática:
 > escrita quando o minuto custava 5/2/1, dizia "40 min no Modo Completo" e
 > continuou dizendo isso depois que `COIN_COSTS` subiu para 7/5/3, sem erro
 > em lugar nenhum, só uma promessa que virou mentira em silêncio. Por isso
-> `app/parceiros/page.tsx` CALCULA os minutos a partir de `lib/coins/pricing.ts`
+> `src/app/parceiros/page.tsx` CALCULA os minutos a partir de `src/lib/coins/pricing.ts`
 > em vez de escrevê-los. Ao mexer nos preços, refaça esta tabela no mesmo
 > commit, ou apague-a e aponte para a página.
 
@@ -253,19 +253,19 @@ Duas, e a divisão entre elas é a mesma de `/` e `/terms`:
 
 | rota | o que é | arquivo |
 |---|---|---|
-| `/parceiros` | a página de convite, vende o programa | `app/parceiros/page.tsx` |
-| `/parceiros/regulamento` | o texto que obriga | `app/parceiros/regulamento/page.tsx` |
+| `/parceiros` | a página de convite, vende o programa | `src/app/parceiros/page.tsx` |
+| `/parceiros/regulamento` | o texto que obriga | `src/app/parceiros/regulamento/page.tsx` |
 
 **`/parceiros` é pública e `/partners` continua atrás do login.** O par é
 proposital e o idioma é a pista: a página de venda fala português como toda
 página pública (`/importar`, `/indicar`), o painel mantém o nome da feature.
-`PUBLIC_PREFIXES` no `proxy.ts` casa por prefixo, então o regulamento entra
+`PUBLIC_PREFIXES` no `src/proxy.ts` casa por prefixo, então o regulamento entra
 junto; `/partners` segue em `KNOWN_APP_PREFIXES`.
 
 **Nenhuma das duas tem número próprio.** Percentual, carência, mínimo de saque,
-moedas, preços e MINUTOS saem de `lib/partners/economics.ts`,
-`lib/billing/plans.ts`, `lib/coins/pricing.ts` e `lib/referrals/cookies.ts` (a
-janela de 30 dias). A regra é a mesma da landing page (ver `app/AGENTS.md`), e
+moedas, preços e MINUTOS saem de `src/lib/partners/economics.ts`,
+`src/lib/billing/plans.ts`, `src/lib/coins/pricing.ts` e `src/lib/referrals/cookies.ts` (a
+janela de 30 dias). A regra é a mesma da landing page (ver `src/app/AGENTS.md`), e
 aqui ela pesa mais: um percentual redigitado num regulamento continua
 verdadeiro na tela e falso no PIX.
 

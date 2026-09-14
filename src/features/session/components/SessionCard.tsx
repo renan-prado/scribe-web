@@ -11,13 +11,13 @@ import { SessionCardMenu } from "./SessionCardMenu";
  * O cartão de uma sessão salva. É o `<li>` inteiro: quem o usa põe o `<ul>`.
  *
  * Ele morava dentro do `SessionsBrowser` do `/recordings`, e saiu de lá quando
- * o `/v2/home` passou a listar as mesmas sessões: um cartão copiado é um
+ * o `/home` passou a listar as mesmas sessões: um cartão copiado é um
  * cartão que diverge do original no primeiro ajuste que alguém fizer num dos
  * dois. As duas listas mostram a mesma coisa, então mostram pelo mesmo
  * componente.
  *
  * O que veio junto e o que ficou de fora: as pastilhas de BUSCA (`verseHit`,
- * `transcriptOnlyHit`) são opcionais porque só a Biblioteca busca, o `/v2/home`
+ * `transcriptOnlyHit`) são opcionais porque só a Biblioteca busca, o `/home`
  * lista tudo e nunca as passa. O resto, modo, duração, orador, local, estudo
  * gerado, é da sessão, não da tela, e aparece sempre.
  *
@@ -26,7 +26,7 @@ import { SessionCardMenu } from "./SessionCardMenu";
  *
  * - `"mode"` (padrão, a Biblioteca) abre com o disco do MODO ao lado do título,
  *   e põe autor e local na linha de baixo do cartão.
- * - `"speaker"` (o `/v2/home`) abre com o AUTOR, no mesmo empilhamento do
+ * - `"speaker"` (o `/home`) abre com o AUTOR, no mesmo empilhamento do
  *   cabeçalho da página de resumo: avatar + nome, título, local. Quem lê uma
  *   lista de sermões procura pelo pregador tanto quanto pelo tema, e ter as duas
  *   telas falando a mesma língua é metade do valor de abrir uma a partir da
@@ -38,7 +38,7 @@ import { SessionCardMenu } from "./SessionCardMenu";
  * dois desenhos e nenhum motivo visível para isso.
  *
  * Não leva `"use client"`: sem estado e sem hook, ele funciona como server
- * component no `/v2/home` e é empacotado no bundle do cliente quando o
+ * component no `/home` e é empacotado no bundle do cliente quando o
  * `SessionsBrowser`, que é client, o importa.
  */
 type Props = {

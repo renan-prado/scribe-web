@@ -19,7 +19,7 @@ de gente de verdade não deve caber num erro de digitação.
 
 O CLI do Supabase guarda UM projeto vinculado por pasta (`supabase/.temp/`), e
 com dois ambientes esse estado invisível vira risco, você roda `db push`
-achando que está no dev e estava no prod. Por isso `scripts/db-push.mjs`
+achando que está no dev e estava no prod. Por isso `src/scripts/db-push.mjs`
 deriva o vínculo do arquivo de ambiente e o reajusta a cada execução: quem
 manda é o script npm que você digitou, não um `supabase link` que alguém rodou
 semana passada.
@@ -160,7 +160,7 @@ anon key, qualquer sessão logada mandava uma linha de custo inventada
 (`total_cost_usd: 12345.67`) direto para a tabela que alimenta
 `/admin/usage` e `/admin/precificacao`, os números que decidem o preço da
 moeda e que conciliamos com a fatura da OpenAI. Migração 0039 derruba a policy;
-`lib/db/usage.ts` passou a escrever com service-role, recebendo `userId` de
+`src/lib/db/usage.ts` passou a escrever com service-role, recebendo `userId` de
 quem chama.
 
 **Telemetria, contabilidade e qualquer número que a EMPRESA lê são escrita de
@@ -190,5 +190,5 @@ uma constraint vale para caminhos de código que ainda não existem:
 | `feedback_prompts_once` unique(user_id, kind, session_id) | a pesquisa não volta depois de fechada |
 | CHECK https em `partner_payouts.receipt_url` | comprovante é link, não recado |
 
-O contexto de negócio de cada uma está em `lib/billing/AGENTS.md` e
+O contexto de negócio de cada uma está em `src/lib/billing/AGENTS.md` e
 `src/features/partners/AGENTS.md`.

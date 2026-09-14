@@ -9,14 +9,14 @@ config.ts                      os três atrasos, um por tipo de tela
 components/TourProvider        o dono do estado; mora no layout do app
 components/TourRunner          o overlay: o véu com furo e o balão
 components/TourTrigger         o gatilho, montado no fim de cada tela
-components/ProfileTourRow      "Rever os tours", no /v2/profile
+components/ProfileTourRow      "Rever os tours", no /profile
 lib/anchors.ts                 achar o elemento de que o passo fala
 lib/api.ts                     as três chamadas, duas em silêncio
 ```
 
-O vocabulário (chaves, versões, passos) mora em `lib/domain/tour.ts`,
+O vocabulário (chaves, versões, passos) mora em `src/lib/domain/tour.ts`,
 client-safe, porque é o mesmo que o servidor consulta para decidir e o
-navegador para desenhar. A decisão de mostrar mora em `lib/db/tours.ts`, e a
+navegador para desenhar. A decisão de mostrar mora em `src/lib/db/tours.ts`, e a
 tabela em `supabase/migrations/0051_user_tours.sql`, cujo cabeçalho tem o
 raciocínio do schema.
 
@@ -64,7 +64,7 @@ tem o que mostrar, e o tour espera a próxima visita.
 **O alvo é o primeiro elemento VISÍVEL do seletor, não o primeiro.** Parte dos
 alvos é desenhada duas vezes, em versões que se escondem por `display: none`
 conforme a largura da tela. Um `querySelector` cru recortaria um retângulo de
-tamanho zero no canto da tela, sem erro nenhum no console. Ver `lib/anchors.ts`.
+tamanho zero no canto da tela, sem erro nenhum no console. Ver `src/lib/anchors.ts`.
 
 **No celular, o balão encosta no rodapé, e por isso o alvo PRESO ao viewport
 tem tratamento próprio.** A correção normal, quando o alvo cairia embaixo do
@@ -96,7 +96,7 @@ decisão existir.
 
 **O overlay é UM, e mora no layout.** Duas páginas capazes de abrir o próprio
 véu empilhariam dois no dia em que alguém montasse dois gatilhos por engano. O
-`TourProvider` envolve a moldura inteira (`app/v2/layout.tsx`) também porque o
+`TourProvider` envolve a moldura inteira (`src/app/layout.tsx`) também porque o
 mapa do que já foi visto sobrevive à navegação: o layout não é refeito ao andar
 entre as telas, então o `seen` que veio do servidor continua valendo.
 
@@ -108,11 +108,11 @@ relativo ao viewport dentro de um ancestral com `transform`, e o `/admin` e o
 
 | Tela | `tour` | Atraso | Portão |
 |---|---|---|---|
-| `/v2/home` | `library` | 1,2s | — |
-| `/v2/studies` | `studies` | 1,2s | nem vazio, nem na tela de convite |
-| `/v2/summary/:id` | `summary` | 3s | — |
-| `/v2/studies/:id` | `study` | 3s | — |
-| `/v2/recording` | `recording` | 0,7s | só sem `?auto=1` |
+| `/home` | `library` | 1,2s | — |
+| `/studies` | `studies` | 1,2s | nem vazio, nem na tela de convite |
+| `/summary/:id` | `summary` | 3s | — |
+| `/studies/:id` | `study` | 3s | — |
+| `/recording` | `recording` | 0,7s | só sem `?auto=1` |
 
 Os atrasos e o porquê de cada um estão em `config.ts`.
 
@@ -129,12 +129,12 @@ O contrato entre o passo e a tela é um seletor CSS, e a convenção é
 | `data-tour` | Onde vive |
 |---|---|
 | `collection-search` | `CollectionSearch` (serve à Biblioteca e aos Estudos) |
-| `record-dock` | `app/v2/home/RecordDock.tsx` |
-| `record-button` | `app/v2/recording/AudioStudio.tsx` |
+| `record-dock` | `src/app/home/RecordDock.tsx` |
+| `record-button` | `src/app/recording/AudioStudio.tsx` |
 | `summary-header` | `SavedSessionView` |
 | `session-menu` | `SessionMenu` |
 | `deepen` | `DeepenButton`, nos três estados permanentes |
-| `study-thesis` | `app/v2/studies/[id]/page.tsx` |
+| `study-thesis` | `src/app/studies/[id]/page.tsx` |
 | `study-menu` | `DeepeningMenu` |
 
 Um atributo que some não quebra nada: o passo simplesmente deixa de aparecer, o

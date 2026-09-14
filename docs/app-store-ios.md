@@ -88,7 +88,7 @@ A comparação honesta não é "0% contra 15%": é contra o que o Stripe já lev
 A tabela abaixo assume uma taxa Stripe de ~3,99% + R$ 0,39 no cartão nacional,
 **confira a taxa real da conta antes de usar isto para decidir.** O custo
 por milheiro de moeda (R$ 5,97) é o alvo da régua descrita em
-`lib/coins/pricing.ts`.
+`src/lib/coins/pricing.ts`.
 
 | Produto | Preço | Líquido Stripe | Líquido Apple 15% | Líquido Apple 30% |
 |---|---|---|---|---|
@@ -121,10 +121,10 @@ custo real. Quatro frentes:
 
 1. **Cadastrar cada produto no App Store Connect.** `pessoal`, `estudioso` e
    `topup500` viram produtos com identificador próprio no painel da Apple, com
-   preço e descrição. É o espelho de `lib/billing/catalog.ts`, mantido à mão
+   preço e descrição. É o espelho de `src/lib/billing/catalog.ts`, mantido à mão
    noutro lugar, com o risco de divergência que isso sempre traz.
 
-2. **Um quinto caminho de crédito.** O `lib/billing/AGENTS.md` já prevê:
+2. **Um quinto caminho de crédito.** O `src/lib/billing/AGENTS.md` já prevê:
    *"um quinto caminho, se surgir, também usa `fulfill.ts`"*. O IAP é esse
    quinto. A Apple envia *App Store Server Notifications* ao nosso servidor,
    o equivalente ao webhook do Stripe. O fluxo é o mesmo de sempre: validar,
@@ -136,7 +136,7 @@ custo real. Quatro frentes:
    Stripe e atualiza `current_period_end`. Com IAP quem renova é a Apple, e o
    Stripe não sabe de nada. A tabela de assinaturas precisa passar a guardar a
    **origem** de cada assinatura, e as três linhas de defesa descritas em
-   `lib/billing/AGENTS.md` (reconcile, check preguiçoso no `summary`, sweep)
+   `src/lib/billing/AGENTS.md` (reconcile, check preguiçoso no `summary`, sweep)
    precisam saber contra qual provedor conferir.
 
 4. **O usuário não cancela dentro do app.** Assinatura comprada pela Apple só
@@ -211,7 +211,7 @@ trocamos um contorno por outro. O caminho é `AVAudioSession` em `playAndRecord`
 com background mode `audio`, e o recorder nativo fatiando por VAD.
 
 O ponto bom é que **existe uma costura limpa**: `createRecorder`
-(`lib/audio-constraints.ts` + `app/v2/recording/`) já é a fronteira, e a tela de gravação a
+(`src/lib/audio-constraints.ts` + `src/app/v2/recording/`) já é a fronteira, e a tela de gravação a
 consomem pela mesma porta. Ela vira uma interface com duas implementações,
 web e nativa. `useTranscribeQueue`, o
 IndexedDB, os três pipelines e o feed não mudam; continuam recebendo chunk. O
@@ -265,7 +265,7 @@ Não é opcional e não tem contorno. É rejeição direta.
 O trabalho é pequeno: o Supabase Auth suporta o provider `apple`, então é
 configurar o provider no painel do Supabase, criar as credenciais no portal de
 desenvolvedor da Apple, e acrescentar um botão ao lado do de Google em
-`app/sign-in/page.tsx` e `app/sign-up/page.tsx`.
+`src/app/sign-in/page.tsx` e `src/app/sign-up/page.tsx`.
 
 **Atenção a um efeito colateral:** o "Ocultar meu e-mail" da Apple entrega um
 endereço de relay (`...@privaterelay.appleid.com`). Onde o produto assume que o
@@ -285,9 +285,9 @@ formulário. Precisa ser um caminho dentro do app que apague a conta e os dados.
 **FEITO.** O caminho é `/profile` → "Excluir minha conta e meus
 dados" → `/profile/delete`, e ele apaga de verdade:
 
-- `app/profile/delete/page.tsx` diz o que some, o que a lei nos obriga a
+- `src/app/profile/delete/page.tsx` diz o que some, o que a lei nos obriga a
   guardar e qual conta será apagada, e exige que a pessoa digite `EXCLUIR`.
-- `POST /api/account/delete` → `lib/account/delete-account.ts` cancela a
+- `POST /api/account/delete` → `src/lib/account/delete-account.ts` cancela a
   assinatura no Stripe **antes** de `auth.admin.deleteUser`. A ordem é a regra
   da função: apagar primeiro deixaria uma cobrança recorrente viva num
   `customer` que `findUserIdByCustomerId` não resolve mais. Cancelamento que
@@ -301,7 +301,7 @@ dados" → `/profile/delete`, e ele apaga de verdade:
   "sobreviver anonimizado" que este portão pedia.
 
 **A página é PÚBLICA**, única folha de `/profile` em `PUBLIC_PREFIXES` no
-`proxy.ts`, porque a política de exclusão de conta do **Google Play** pede uma
+`src/proxy.ts`, porque a política de exclusão de conta do **Google Play** pede uma
 URL para a ficha da loja e o revisor a abre sem ter conta. Anônimo lê a
 explicação inteira e encontra o botão de entrar; o botão que apaga só aparece
 logado, e a rota exige sessão. A URL para colar no formulário de Segurança dos

@@ -1,7 +1,7 @@
 # src/features/feedback: a pesquisa de satisfação
 
 A janela que pergunta "como foi para você?" no instante em que a pessoa acabou
-de usar cada parte do produto, e o botão "Dar feedback" do `/v2/profile`.
+de usar cada parte do produto, e o botão "Dar feedback" do `/profile`.
 
 ```
 config.ts                     os três atrasos, um por superfície
@@ -12,9 +12,9 @@ lib/api.ts                    as duas chamadas, ambas falhando em silêncio
 ```
 
 O vocabulário (escala, tópicos, superfícies, limites) mora em
-`lib/domain/feedback.ts`, client-safe, porque é o mesmo que desenha os chips
+`src/lib/domain/feedback.ts`, client-safe, porque é o mesmo que desenha os chips
 no navegador e as médias do `/admin/feedback`. A decisão de perguntar mora em
-`lib/db/feedback.ts`, e as tabelas em `supabase/migrations/0047_feedback.sql`,
+`src/lib/db/feedback.ts`, e as tabelas em `supabase/migrations/0047_feedback.sql`,
 cujo cabeçalho tem o raciocínio do schema.
 
 ## A regra que governa tudo: a pergunta é uma interrupção
@@ -30,7 +30,7 @@ pasta desce daí, e nenhuma delas é preferência estética:
   daí não há mais como perguntar nada.
 - **A nota é um toque; o texto é opcional e só aparece depois dela.** Com o
   campo de texto aberto de saída, a janela abre parecendo formulário, e o que
-  se quer da maioria é o toque, não a redação. **A exceção é o /v2/profile**, onde
+  se quer da maioria é o toque, não a redação. **A exceção é o /profile**, onde
   a caixa já vem aberta: ali a janela não interrompeu ninguém, a pessoa clicou
   em "Dar feedback" para ESCREVER, e esconder a caixa atrás de um chip é fazer
   com que ela procure o que veio usar. É a mesma distinção que dá nome ao
@@ -78,7 +78,7 @@ uma das duas.
 A importação do YouTube cai na MESMA superfície, e é o certo: a pergunta é sobre
 o resumo, que é o mesmo dos dois lados.
 
-**O botão do `/v2/profile` não passa por `feedback_prompts`.** Não há marco a
+**O botão do `/profile` não passa por `feedback_prompts`.** Não há marco a
 queimar nem pergunta a marcar como respondida, então o envio vai sem
 `promptId` e o servidor o trata como feedback geral (tópico `overall`, sem
 sessão). Ele existe porque as três janelas automáticas são NOSSA escolha de
@@ -89,14 +89,14 @@ na décima gravação é exatamente a pessoa que ainda está aqui.
 
 | Página | `kind` | Atraso | Pergunta sobre |
 |---|---|---|---|
-| `/v2/summary/:id` | `recording` | 5s | o resumo |
-| `/v2/studies/:id` | `study` | 8s | o estudo |
+| `/summary/:id` | `recording` | 5s | o resumo |
+| `/studies/:id` | `study` | 8s | o estudo |
 
 Os atrasos e o porquê de cada um estão em `config.ts`.
 
 ## O painel
 
-`/admin/feedback` lê de `lib/db/admin/feedback.ts`. Duas coisas de lá valem
+`/admin/feedback` lê de `src/lib/db/admin/feedback.ts`. Duas coisas de lá valem
 repetir aqui, porque elas restringem o que esta pasta pode mudar:
 
 - **A taxa de resposta vem antes das notas.** As médias são de quem escolheu

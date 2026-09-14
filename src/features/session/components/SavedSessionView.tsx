@@ -57,7 +57,7 @@ type SavedSessionViewProps = {
   /** Ver `lib/entitlements/server.ts`. */
   canGenerateStudy: boolean;
   /** Para onde o "Voltar" leva. O padrão é a Biblioteca do app atual; o
-   * `/v2/summary/:id` passa o Início do v2, senão o único caminho de volta
+   * `/summary/:id` passa o Início do v2, senão o único caminho de volta
    * desta tela jogaria a pessoa para fora da pele nova. */
   backHref?: string;
   /**
@@ -65,8 +65,8 @@ type SavedSessionViewProps = {
    *
    * - `"full"` (padrão): local numa linha, e a data por extenso com a duração
    *   noutra (curta no celular, longa no desktop).
-   * - `"compact"` (o `/v2/summary`): local e data na MESMA linha, separados
-   *   por um ponto, e a duração sai. É o cabeçalho do cartão do `/v2/home`
+   * - `"compact"` (o `/summary`): local e data na MESMA linha, separados
+   *   por um ponto, e a duração sai. É o cabeçalho do cartão do `/home`
    *   repetido aqui, para que abrir um cartão não pareça trocar de produto; e
    *   a duração some porque ela é do arquivo, não do sermão, ninguém abre um
    *   resumo para saber quantos minutos ele durou.
@@ -75,7 +75,7 @@ type SavedSessionViewProps = {
    * `createdAtShortLabel`, "6 set" em vez de "06 de set. de 2026".
    */
   meta?: "full" | "compact";
-  /** Ver `SummaryView`. O `/v2/summary` passa `"card"`. */
+  /** Ver `SummaryView`. O `/summary` passa `"card"`. */
   lead?: "rule" | "card";
 };
 
@@ -92,7 +92,7 @@ export function SavedSessionView({
   summary,
   hasDeepening,
   canGenerateStudy,
-  backHref = "/v2/home",
+  backHref = "/home",
   meta = "full",
   lead = "rule",
 }: SavedSessionViewProps) {
@@ -117,7 +117,7 @@ export function SavedSessionView({
       toast.error("Não foi possível excluir. Tente novamente.");
       return;
     }
-    router.push("/v2/home");
+    router.push("/home");
   }
 
   async function handleReprocess() {

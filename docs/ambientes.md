@@ -19,7 +19,7 @@ O scribe-web roda contra dois conjuntos independentes de recursos.
 ## 1. Como o ambiente é escolhido
 
 Existem exatamente dois arquivos, e **nenhum dos dois é carregado pelo Next
-automaticamente**. Quem escolhe é `scripts/with-env.mjs`, a partir do script de
+automaticamente**. Quem escolhe é `src/scripts/with-env.mjs`, a partir do script de
 npm que você digitou.
 
 ```
@@ -37,7 +37,7 @@ nada, e num app onde crédito é dinheiro, "sem dizer nada" é o pior modo de
 falhar.
 
 Com nomes que o Next ignora, subir sem escolher ambiente simplesmente não
-funciona: o Zod de `lib/env/server.ts` derruba o processo no import. E o
+funciona: o Zod de `src/lib/env/server.ts` derruba o processo no import. E o
 `with-env` **aborta** se encontrar qualquer arquivo da lista acima na raiz,
 porque a presença dele desfaz a garantia: variáveis que o script não definiu
 seriam preenchidas por ele pelas costas.
@@ -143,7 +143,7 @@ cobrança foram conferidos contra o projeto novo, `grant_coins` e
   - `http://localhost:3000/**`
   - `https://dev.scriba.cc/**`
 
-Sem isso, o `exchangeCodeForSession` de `app/auth/callback/route.ts` até
+Sem isso, o `exchangeCodeForSession` de `src/app/auth/callback/route.ts` até
 funciona, mas o Supabase recusa o redirect de volta e o login morre em branco.
 
 **Authentication → Providers → Google**, hoje está **desligado** no projeto de
@@ -238,7 +238,7 @@ envs de dev valem para o preview de qualquer branch.
 | `APP_URL` | `https://dev.scriba.cc` |
 | `CRON_SECRET` | valor próprio de dev |
 
-`APP_URL` importa: sem ela, `lib/env/server.ts` cai no `VERCEL_URL`, que é a URL
+`APP_URL` importa: sem ela, `src/lib/env/server.ts` cai no `VERCEL_URL`, que é a URL
 aleatória do deploy, e o retorno do Checkout leva para lá em vez de
 `dev.scriba.cc`.
 
@@ -264,7 +264,7 @@ curl -H "Authorization: Bearer $CRON_SECRET" http://localhost:3000/api/billing/s
 
 ### 5.4 CORS
 
-`proxy.ts` valida a origem contra `STATIC_ALLOWED_ORIGINS`, onde
+`src/proxy.ts` valida a origem contra `STATIC_ALLOWED_ORIGINS`, onde
 `https://dev.scriba.cc` já está. Um subdomínio novo que precise falar com a API
 tem de ser adicionado lá, não há wildcard, de propósito.
 
@@ -317,15 +317,15 @@ Com `auth.scriba.cc` o ref some da URL, e é por isso que
 no supabase.co) e obrigatória onde a URL é customizada, o `with-env` ABORTA se
 encontrar um domínio customizado sem ela.
 
-**O nome do cookie é fixado no ref, em `lib/supabase/cookie.ts`**, e os três
-clients (`lib/supabase/client.ts`, `lib/supabase/server.ts`, `proxy.ts`)
+**O nome do cookie é fixado no ref, em `src/lib/supabase/cookie.ts`**, e os três
+clients (`src/lib/supabase/client.ts`, `src/lib/supabase/server.ts`, `src/proxy.ts`)
 passam esse nome em `cookieOptions`. Sem isso, o padrão viraria
 `sb-auth-auth-token`, um nome diferente do que está no navegador de quem já
 entrou: nenhum erro na tela, o cookie antigo simplesmente deixa de ser
 procurado, e **toda sessão ativa cai no deploy**. Fixado no ref, a URL pode
 mudar de novo sem derrubar ninguém.
 
-A CSP do `proxy.ts` não precisou de nada: `connect-src` já é derivado de
+A CSP do `src/proxy.ts` não precisou de nada: `connect-src` já é derivado de
 `NEXT_PUBLIC_SUPABASE_URL`.
 
 ### 7.3 O passo a passo (fora do repositório)

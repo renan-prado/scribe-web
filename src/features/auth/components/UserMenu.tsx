@@ -100,13 +100,13 @@ export function UserMenu({
           <div className="my-1.5 h-px bg-scriba-hairline" />
 
           {variant === "partners" ? (
-            <DropdownMenuItem render={<Link href="/v2/home" />} className={MENU_ITEM_CLASS}>
+            <DropdownMenuItem render={<Link href="/home" />} className={MENU_ITEM_CLASS}>
               <ArrowRight className="size-4 text-scriba-ink-soft" />
               Ir para o app
             </DropdownMenuItem>
           ) : null}
 
-          <DropdownMenuItem render={<Link href="/v2/profile" />} className={MENU_ITEM_CLASS}>
+          <DropdownMenuItem render={<Link href="/profile" />} className={MENU_ITEM_CLASS}>
             <UserIcon className="size-4 text-scriba-ink-soft" />
             Meu perfil
           </DropdownMenuItem>
