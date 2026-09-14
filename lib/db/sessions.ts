@@ -299,7 +299,7 @@ export async function listUnfinishedSessions(): Promise<SessionListItem[]> {
 /**
  * A sessão inteira, incluindo transcrição, feed e resumo.
  *
- * Memoizada por render pass: as páginas de `/recording/[id]/*` chamam isto no
+ * Memoizada por render pass: as páginas de sessão chamam isto no
  * `generateMetadata` E no corpo, e o Next só deduplica `fetch()`, consulta
  * do Supabase, não. Eram duas leituras das colunas mais pesadas do banco por
  * page view, a segunda apenas para descobrir o `title` da aba.

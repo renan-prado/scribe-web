@@ -33,9 +33,9 @@ const poppins = Poppins({
 
 /**
  * `viewport-fit=cover` é o que faz `env(safe-area-inset-*)` deixar de valer
- * zero. Sem ele, no iPhone o app instalado desenha a nav inferior por baixo da
- * barra do indicador de início, o dedo acerta o gesto do sistema, não o botão.
- * Quem consome os insets é a `MobileBottomNav`.
+ * zero. Sem ele, no iPhone o app instalado desenha o botão de gravar por baixo
+ * da barra do indicador de início, e o dedo acerta o gesto do sistema, não o
+ * botão. Quem consome os insets é o `RecordDock` e o rodapé de cada tela.
  *
  * O zoom fica LIBERADO de propósito (`maximumScale: 5`, sem `userScalable`):
  * travar o pinch é a violação de acessibilidade mais comum em PWA, e o app é
@@ -172,10 +172,9 @@ export default function RootLayout({ children }: LayoutProps<"/">) {
       <body className="min-h-full flex flex-col" suppressHydrationWarning>
         <Providers>
           {/* Sem `key`: este div é o CHÃO de toda rota, e remontá-lo a cada
-              navegação derrubava junto o header e a barra inferior do celular,
-              a moldura piscava a cada toque. A classe fica, e toca uma vez
-              no carregamento completo; quem refaz o fade a cada rota é a
-              `PageTransition` dentro de cada moldura. */}
+              navegação fazia a moldura piscar a cada toque. A classe fica, e
+              toca uma vez no carregamento completo; quem refaz o fade a cada
+              rota é a `PageTransition`, dentro das molduras que a têm. */}
           <div className="animate-content-fade flex flex-1 flex-col">{children}</div>
           <ThemedToaster />
           <PwaBootstrap />

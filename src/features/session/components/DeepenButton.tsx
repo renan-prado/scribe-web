@@ -88,7 +88,7 @@ export function DeepenButton({ sessionId, hasDeepening, variant, canGenerate }: 
   const balanceLoading = balance === null;
   const insufficient = balance !== null && balance < DEEPENING_COST;
 
-  const href = `/recording/${sessionId}/deepening`;
+  const href = `/v2/studies/${sessionId}`;
   const layout = variant === "feed-card" ? "full" : variant === "cta-card" ? "cta" : "compact";
 
   if (hasDeepening) {

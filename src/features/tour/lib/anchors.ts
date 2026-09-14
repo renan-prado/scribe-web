@@ -5,13 +5,11 @@ import type { TourStep } from "@/lib/domain/tour";
  *
  * ## Por que "o primeiro VISÍVEL" e não "o primeiro"
  *
- * Metade dos alvos do produto é desenhada duas vezes: o botão "Gravar" existe
- * no header do desktop E na barra do celular, o `SessionMenu` aparece na tela
- * de gravação e na de resumo. Quem esconde um dos dois é `sm:hidden` /
- * `hidden sm:flex`, ou seja, `display: none`, e um `querySelector` cru
- * devolveria o que está fora da tela na metade das vezes. O holofote então
- * recortaria um retângulo de tamanho zero no canto superior esquerdo, sem erro
- * nenhum no console.
+ * Parte dos alvos do produto é desenhada duas vezes, em versões que se
+ * escondem por `sm:hidden` / `hidden sm:flex`, ou seja, por `display: none`. Um
+ * `querySelector` cru devolveria o que está fora da tela em metade das vezes, e
+ * o holofote recortaria um retângulo de tamanho zero no canto superior
+ * esquerdo, sem erro nenhum no console.
  *
  * Um elemento com `display: none` não tem caixa, e é isso que este módulo
  * mede. Não é uma conferência de "está dentro da janela": um alvo que existe
@@ -44,8 +42,8 @@ export function resolveAnchor(selector: string | undefined): HTMLElement | null 
 /**
  * O alvo acompanha a rolagem da página, ou está preso ao viewport?
  *
- * A pergunta existe por causa do "Gravar" do celular: ele mora na
- * `MobileBottomNav`, que é `fixed … bottom-0`. No celular o balão do tour
+ * A pergunta existe por causa do "Gravar": ele mora no `RecordDock`, que é
+ * `fixed … bottom-0`. No celular o balão do tour
  * encosta no rodapé, e a correção que o `TourRunner` faz quando o alvo cairia
  * embaixo dele é ROLAR a página, o que não move um centímetro um elemento
  * preso ao viewport. O resultado era o balão pousado exatamente em cima do

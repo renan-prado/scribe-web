@@ -384,6 +384,7 @@ export function AudioStudio({ autoStart = false }: { autoStart?: boolean }) {
               type="button"
               onClick={() => void begin()}
               aria-label="Começar a gravar"
+              data-tour="record-button"
               className="inline-flex size-24 items-center justify-center rounded-full bg-v2-card text-v2-ink transition-colors hover:bg-v2-card-hover focus-visible:outline-2 focus-visible:outline-offset-4 focus-visible:outline-v2-ink-mute"
             >
               <MicGlyph className="size-9" />

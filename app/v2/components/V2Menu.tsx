@@ -1,6 +1,7 @@
 "use client";
 
 import { BookOpen, House, LogOut, Menu, User } from "lucide-react";
+import type { ReactNode } from "react";
 import { useState } from "react";
 import { YoutubeIcon } from "@/components/icons/YoutubeIcon";
 import { NavLink } from "@/components/NavLink";
@@ -33,8 +34,8 @@ import { initialsOf } from "@/features/session/lib/text";
  * gaveta, longe do dedo que procura uma tela. Misturá-lo na mesma lista
  * deixaria o item mais perigoso do menu a um toque de distância do mais usado.
  *
- * Os quatro apontam para dentro do v2. As telas do app antigo continuam
- * existindo, mas redirecionam para cá (ver `app/AGENTS.md`).
+ * Os quatro apontam para as telas de hoje. Os endereços antigos continuam
+ * existindo, mas só para responder 308 (ver `app/AGENTS.md`).
  *
  * Sair é um `<form method="post">` para `/auth/sign-out`, o mesmo caminho do
  * `UserMenu` e do `/profile`: encerrar sessão ESCREVE (limpa o cookie), e um
@@ -47,9 +48,24 @@ type Props = {
   coinBalance: number;
   /** Sem sessão não há avatar nem saldo, só a navegação. */
   hasSession: boolean;
+  /**
+   * Os atalhos de quem tem papel (admin, parceiro), montados no SERVIDOR e
+   * entregues prontos. Slot, e não dois booleanos, pela razão do cabeçalho de
+   * `PrivilegedMenuItems`: com `isAdmin &&` aqui dentro, as strings "Admin",
+   * "/admin", "Área do parceiro" e "/partners" viajariam no chunk que TODO
+   * usuário logado baixa. O `false` esconderia o item na tela, não o código.
+   */
+  privilegedItems?: ReactNode;
 };
 
-export function V2Menu({ displayName, email, avatarUrl, coinBalance, hasSession }: Props) {
+export function V2Menu({
+  displayName,
+  email,
+  avatarUrl,
+  coinBalance,
+  hasSession,
+  privilegedItems,
+}: Props) {
   const [open, setOpen] = useState(false);
   const name = displayName?.trim() || email?.trim() || "Sua conta";
 
@@ -148,6 +164,15 @@ export function V2Menu({ displayName, email, avatarUrl, coinBalance, hasSession 
             >
               Perfil
             </MenuItem>
+            {/* Depois dos quatro destinos de todo mundo, e separados por uma
+                linha: são portas de OUTRO produto (o painel interno, a área do
+                parceiro), não mais uma tela do Scriba. */}
+            {privilegedItems ? (
+              <>
+                <span aria-hidden className="my-1 h-px bg-v2-card" />
+                {privilegedItems}
+              </>
+            ) : null}
           </nav>
 
           {hasSession ? (

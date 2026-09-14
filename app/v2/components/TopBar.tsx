@@ -1,4 +1,6 @@
 import type { ReactNode } from "react";
+import { PrivilegedMenuItems } from "@/features/auth/components/PrivilegedMenuItems";
+import { isCurrentUserPartner } from "@/lib/auth/require-partner";
 import { INITIAL_COIN_BALANCE } from "@/lib/coins/pricing";
 import { getCurrentAccount } from "@/lib/db/account";
 import { V2Menu } from "./V2Menu";
@@ -22,7 +24,15 @@ import { V2Menu } from "./V2Menu";
  * buscar, é pior que um canto vazio.
  */
 export async function TopBar({ title, trailing }: { title: string; trailing?: ReactNode }) {
-  const account = await getCurrentAccount().catch(() => null);
+  // Duas consultas, em paralelo. `getCurrentAccount` traz perfil, saldo e papel
+  // da MESMA linha de `profiles`; `isCurrentUserPartner` lê outra tabela, e é
+  // também o ponto onde a mesada mensal do parceiro é conferida e creditada
+  // (ver `lib/partners/allowance.ts`). Fica aqui, e não numa rota, porque esta
+  // barra é o único caminho por onde todo parceiro passa ao usar o app.
+  const [account, isPartner] = await Promise.all([
+    getCurrentAccount().catch(() => null),
+    isCurrentUserPartner().catch(() => false),
+  ]);
 
   return (
     <header className="flex items-center gap-2 px-1 py-3">
@@ -32,6 +42,9 @@ export async function TopBar({ title, trailing }: { title: string; trailing?: Re
         avatarUrl={account?.profile.avatarUrl ?? null}
         coinBalance={account?.coinBalance ?? INITIAL_COIN_BALANCE}
         hasSession={account !== null}
+        privilegedItems={
+          <PrivilegedMenuItems isAdmin={account?.isAdmin ?? false} isPartner={isPartner} />
+        }
       />
       <h1 className="min-w-0 flex-1 truncate text-[22px] font-semibold text-v2-ink">{title}</h1>
       {/* Sem `trailing`, um vão do tamanho do botão: é ele que mantém o título

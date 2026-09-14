@@ -14,7 +14,7 @@ type PageProps = {
  * Destino da intenção "quero este plano" vinda da landing page.
  *
  * Fica dentro de `(app)`, então o proxy já exige login: um visitante é mandado
- * para `/sign-in?next=/billing/assinar?plan=X` e volta para cá depois do
+ * para `/sign-in?next=/v2/assinar?plan=X` e volta para cá depois do
  * Google, com a escolha intacta.
  *
  * Dois desvios antes de gastar uma chamada no Stripe:
@@ -24,11 +24,11 @@ type PageProps = {
  */
 export default async function AssinarPage({ searchParams }: PageProps) {
   const { plan } = await searchParams;
-  if (!isPaidPlanKey(plan)) redirect("/profile");
+  if (!isPaidPlanKey(plan)) redirect("/v2/profile");
 
   const current = await getOwnSubscription().catch(() => null);
   if (current?.stripeSubscriptionId && isActiveStatus(current.status)) {
-    redirect("/profile");
+    redirect("/v2/profile");
   }
 
   return <StartSubscription plan={plan} />;

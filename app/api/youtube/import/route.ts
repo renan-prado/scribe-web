@@ -41,7 +41,7 @@ export const maxDuration = 300;
  *
  * A linha da sessão já existe quando esta rota é chamada: o diálogo a criou
  * com `mode: "youtube"` e a URL em `source_url`, e o cliente foi para
- * `/recording/:id/youtube`, que dispara isto. Essa ordem é o que faz um reload
+ * `/v2/importar/:id`, que dispara isto. Essa ordem é o que faz um reload
  * no meio da importação não perder nada, e é a mesma dos três modos de
  * captura, onde a linha nasce antes do primeiro segundo de áudio.
  *

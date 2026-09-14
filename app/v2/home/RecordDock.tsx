@@ -87,6 +87,7 @@ export function RecordDock() {
       <NavLink
         href="/v2/recording?auto=1"
         aria-label="Gravar"
+        data-tour="record-dock"
         // Sem spinner: o destino não busca nada no servidor, e um spinner
         // dentro de um disco de 56px é mais movimento do que informação.
         spinner="none"

@@ -1,5 +1,7 @@
 import type { Metadata } from "next";
 import { revalidatePath } from "next/cache";
+import { TourTrigger } from "@/features/tour/components/TourTrigger";
+import { TOUR_DELAY_LIST_MS } from "@/features/tour/config";
 import { listDeepenedSessionIds } from "@/lib/db/deepenings";
 import { deleteSession, listSessions, type SessionListItem } from "@/lib/db/sessions";
 import { TopBar } from "../components/TopBar";
@@ -68,6 +70,9 @@ export default async function V2HomePage() {
         />
       </main>
       <RecordDock />
+      {/* A apresentação da Biblioteca, e a primeira que qualquer pessoa vê: é
+          aqui que se cai ao entrar. Ver `src/features/tour/AGENTS.md`. */}
+      <TourTrigger tour="library" delayMs={TOUR_DELAY_LIST_MS} />
     </SearchScope>
   );
 }

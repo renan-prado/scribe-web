@@ -56,16 +56,7 @@ export type TourDefinition = {
   steps: readonly TourStep[];
 };
 
-export const TOUR_KEYS = [
-  "feed",
-  "recordings",
-  "studies",
-  "summary",
-  "study",
-  "capture_live",
-  "capture_audio",
-  "capture_transcribe",
-] as const;
+export const TOUR_KEYS = ["library", "recording", "summary", "studies", "study"] as const;
 
 export type TourKey = (typeof TOUR_KEYS)[number];
 
@@ -74,20 +65,18 @@ export function isTourKey(value: unknown): value is TourKey {
 }
 
 /**
- * As três telas de captura têm tours SEPARADOS, e não um só parametrizado
- * pelo modo.
- *
- * Elas se parecem antes de começar, o botão grande no meio e nada mais, e
- * prometem coisas diferentes: o Ao Vivo enche a tela de cartões durante a
- * pregação, o Áudio não mostra nada e entrega um resumo no fim, a Transcrição
- * entrega o texto e só. Uma chave única gastaria a explicação do Ao Vivo na
- * primeira vez que alguém gravasse em modo transcrição, e o cartão que ele
- * nunca viu continuaria sem explicação para sempre.
+ * **Eram oito chaves, e cinco delas descreviam telas que não existem mais.**
+ * `feed` era o Início; `recordings` era a Biblioteca antes de ela virar a
+ * primeira tela; e `capture_live`, `capture_audio` e `capture_transcribe` eram
+ * os três modos de gravação, que viraram um. As chaves novas não reaproveitam
+ * os nomes antigos de propósito: quem viu a apresentação do `recordings` viu
+ * OUTRA tela, e mostrá-la de novo é o certo, não um bug. As linhas velhas
+ * ficam em `user_tours` sem chave correspondente, inertes.
  */
 export const TOURS: Record<TourKey, TourDefinition> = {
-  feed: {
+  library: {
     version: 1,
-    label: "Início",
+    label: "Biblioteca",
     steps: [
       {
         id: "welcome",
@@ -95,70 +84,44 @@ export const TOURS: Record<TourKey, TourDefinition> = {
         body: "Em um minuto eu mostro o que tem em cada tela. Dá para pular a qualquer momento e rever tudo depois, no seu perfil.",
       },
       {
-        id: "reflection",
-        anchor: '[data-tour="feed-reflection"]',
-        title: "Sua última gravação, em uma frase",
-        body: "O centro do que foi dito, para você lembrar sem reler tudo. Toque em Relembrar para abrir o resumo completo.",
-      },
-      {
-        id: "entries",
-        anchor: '[data-tour="feed-entries"]',
-        title: "O que volta para você",
-        body: "Trechos para reler, lembretes e frases marcantes que o Scriba separou das suas pregações. A lista cresce a cada gravação.",
-      },
-      {
-        id: "record",
-        anchor: '[data-tour="nav-record"]',
-        title: "Gravar",
-        body: "É por aqui que tudo começa. Você escolhe o modo antes de iniciar, e cada um tem um preço por minuto.",
-      },
-    ],
-  },
-
-  recordings: {
-    version: 1,
-    label: "Biblioteca",
-    steps: [
-      {
         id: "intro",
         title: "Tudo o que você já ouviu",
-        body: "Cada gravação e cada vídeo importado fica aqui, agrupado por período. Nada é apagado sozinho.",
-      },
-      {
-        id: "unfinished",
-        anchor: '[data-tour="recordings-unfinished"]',
-        title: "Gravações em aberto",
-        body: "Sessões que nunca foram encerradas ficam nesta faixa. Você pode voltar para elas ou apagá-las, e trechos pendentes no aparelho são reenviados ao abrir a sessão.",
-      },
-      {
-        id: "import",
-        anchor: '[data-tour="recordings-import"]',
-        title: "Importar do YouTube",
-        body: "Cole o link de um vídeo e o Scriba organiza tudo para você.",
+        body: "Cada gravação e cada vídeo importado fica aqui, agrupado por mês. Nada é apagado sozinho.",
       },
       {
         id: "search",
         anchor: '[data-tour="collection-search"]',
         title: "Busque pela sua biblioteca",
-        body: "Faça uma busca pelo autor, local, versículos e ou frases que foram ditas.",
+        body: "Procure por quem pregou, pelo local, por um versículo ou por uma frase que foi dita.",
+      },
+      {
+        id: "record",
+        anchor: '[data-tour="record-dock"]',
+        title: "Gravar",
+        body: "É por aqui que tudo começa. São 5 moedas por minuto iniciado, e a transcrição e o resumo já estão nesse preço.",
       },
     ],
   },
 
-  studies: {
+  recording: {
     version: 1,
-    label: "Estudos",
+    label: "Gravação",
     steps: [
       {
-        id: "intro",
-        title: "Estudos teológicos",
-        body: "A partir de qualquer resumo você pode pedir um estudo: contexto da passagem, tese central e desdobramentos. Ele é gerado uma vez por sessão e mora aqui.",
+        id: "button",
+        anchor: '[data-tour="record-button"]',
+        title: "Toque para começar",
+        body: "Deixe o aparelho com a tela virada para quem prega, o mais perto possível. Distância e eco são o que mais atrapalham a transcrição.",
       },
       {
-        id: "search",
-        anchor: '[data-tour="collection-search"]',
-        title: "Busque por tema ou versículo",
-        body: "Serve para reencontrar aquele estudo do qual você só lembra de um trecho.",
+        id: "quiet",
+        title: "A tela fica quieta de propósito",
+        body: "O Scriba só escuta enquanto a pregação corre. É o modo de quem quer prestar atenção, não olhar o celular.",
+      },
+      {
+        id: "stop",
+        title: "Ao encerrar",
+        body: "O áudio sobe inteiro, de uma vez, e o resumo é gerado sobre tudo o que foi dito. Se algo der errado no envio, a gravação fica guardada no aparelho e você pode tentar de novo.",
       },
     ],
   },
@@ -188,13 +151,25 @@ export const TOURS: Record<TourKey, TourDefinition> = {
         id: "menu",
         anchor: '[data-tour="session-menu"]',
         title: "Transcrição e mais opções",
-        body: "Aqui ficam o texto bruto, os cartões que apareceram durante a gravação, o reprocessamento do resumo e o aviso de erro, se o Scriba escrever algo que não foi dito.",
+        body: "Aqui ficam o texto bruto, o reprocessamento do resumo e o aviso de erro, se o Scriba escrever algo que não foi dito.",
+      },
+    ],
+  },
+
+  studies: {
+    version: 1,
+    label: "Estudos",
+    steps: [
+      {
+        id: "intro",
+        title: "Estudos teológicos",
+        body: "A partir de qualquer resumo você pode pedir um estudo: contexto da passagem, tese central e desdobramentos. Ele é gerado uma vez por sessão e mora aqui.",
       },
       {
-        id: "followups",
-        anchor: '[data-tour="summary-followups"]',
-        title: "O que volta depois",
-        body: "Trechos para reler, lembretes e frases marcantes desta pregação. Eles aparecem no seu Início nos próximos dias.",
+        id: "search",
+        anchor: '[data-tour="collection-search"]',
+        title: "Busque por tema ou versículo",
+        body: "Serve para reencontrar aquele estudo do qual você só lembra de um trecho.",
       },
     ],
   },
@@ -219,75 +194,6 @@ export const TOURS: Record<TourKey, TourDefinition> = {
         anchor: '[data-tour="study-menu"]',
         title: "Refazer o estudo",
         body: "Se o resultado não ficou bom, dá para gerar de novo por aqui. O estudo anterior é substituído.",
-      },
-    ],
-  },
-
-  capture_live: {
-    version: 1,
-    label: "Gravação ao vivo",
-    steps: [
-      {
-        id: "button",
-        anchor: '[data-tour="record-button"]',
-        title: "Toque para começar",
-        body: "Deixe o aparelho com a tela virada para quem prega, o mais perto possível. Distância e eco são o que mais atrapalham a transcrição.",
-      },
-      {
-        id: "live",
-        title: "Durante a pregação",
-        body: "A tela vai se encher sozinha: versículos citados, ideias que apareceram e ecos de outras pregações suas. Nada é reescrito, o conteúdo só cresce.",
-      },
-      {
-        id: "stop",
-        title: "Ao encerrar",
-        body: "O resumo é gerado sobre tudo o que foi dito e a sessão abre sozinha. São 7 moedas por minuto iniciado, e você pode pausar quando quiser.",
-      },
-    ],
-  },
-
-  capture_audio: {
-    version: 1,
-    label: "Gravação de áudio",
-    steps: [
-      {
-        id: "button",
-        anchor: '[data-tour="record-button"]',
-        title: "Toque para começar",
-        body: "Deixe o aparelho com a tela virada para quem prega, o mais perto possível. Distância e eco são o que mais atrapalham a transcrição.",
-      },
-      {
-        id: "quiet",
-        title: "A tela fica quieta de propósito",
-        body: "Neste modo o Scriba só escuta e transcreve, sem cartões durante a pregação. É o modo de quem quer prestar atenção, não olhar o celular.",
-      },
-      {
-        id: "stop",
-        title: "Ao encerrar",
-        body: "O resumo é gerado sobre tudo o que foi dito e a sessão abre sozinha. São 5 moedas por minuto iniciado.",
-      },
-    ],
-  },
-
-  capture_transcribe: {
-    version: 1,
-    label: "Transcrição",
-    steps: [
-      {
-        id: "button",
-        anchor: '[data-tour="record-button"]',
-        title: "Toque para começar",
-        body: "Deixe o aparelho com a tela virada para quem prega, o mais perto possível. Distância e eco são o que mais atrapalham a transcrição.",
-      },
-      {
-        id: "text",
-        title: "Só o texto, e é o mais barato",
-        body: "Este modo não passa por nenhum modelo de resumo: você recebe a transcrição, e nada além dela. São 3 moedas por minuto iniciado.",
-      },
-      {
-        id: "later",
-        title: "E se você mudar de ideia",
-        body: "Depois de salva, a transcrição oferece um botão para gerar o resumo por 15 moedas. Escolher este modo agora não fecha a porta.",
       },
     ],
   },

@@ -6,5 +6,5 @@ import { permanentRedirect } from "next/navigation";
  */
 export default async function LegacySessionPage({ params }: { params: Promise<{ id: string }> }) {
   const { id } = await params;
-  permanentRedirect(`/recording/${id}/summary`);
+  permanentRedirect(`/v2/summary/${id}`);
 }

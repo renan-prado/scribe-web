@@ -1,4 +1,6 @@
 import type { Metadata } from "next";
+import { TourTrigger } from "@/features/tour/components/TourTrigger";
+import { TOUR_DELAY_CAPTURE_MS } from "@/features/tour/config";
 import { TopBar } from "../components/TopBar";
 import { AudioStudio } from "./AudioStudio";
 import { ClockScope, RecordingClock } from "./ClockScope";
@@ -36,6 +38,11 @@ export default async function V2RecordingPage({
         <TopBar title="Gravação" trailing={<RecordingClock />} />
         <AudioStudio autoStart={auto === "1"} />
       </main>
+      {/* A apresentação da gravação NÃO roda para quem chegou pelo botão do
+          dock: `?auto=1` começa a gravar na hora, e um balão por cima de uma
+          pregação em andamento é o pior defeito que esta pasta poderia ter.
+          Quem abre a tela pelo endereço direto, sem o parâmetro, vê. */}
+      <TourTrigger tour="recording" delayMs={TOUR_DELAY_CAPTURE_MS} enabled={auto !== "1"} />
     </ClockScope>
   );
 }

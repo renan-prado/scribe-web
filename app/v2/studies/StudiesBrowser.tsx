@@ -206,7 +206,7 @@ export function StudiesBrowser({ studies, nowIso }: Props) {
                     className="group relative flex flex-col rounded-3xl border border-scriba-hairline-soft bg-[image:var(--feed-card)] bg-[size:200%_100%] p-5 transition-colors hover:border-scriba-ink-strong/20 sm:p-6"
                   >
                     <NavLink
-                      href={`/recording/${s.sessionId}/deepening`}
+                      href={`/v2/studies/${s.sessionId}`}
                       spinner="overlay"
                       contentClassName="flex min-w-0 flex-1 flex-col gap-3"
                       // Ver o cartão do /recordings: `static` derruba o
@@ -254,7 +254,7 @@ export function StudiesBrowser({ studies, nowIso }: Props) {
                         Baseado em
                       </span>
                       <NavLink
-                        href={`/recording/${s.sessionId}/summary`}
+                        href={`/v2/summary/${s.sessionId}`}
                         spinner="overlay"
                         contentClassName="flex flex-col gap-0.5"
                         className="-mx-1 rounded-md px-1 py-0.5 outline-none transition-colors hover:bg-scriba-green-soft/40 focus-visible:ring-2 focus-visible:ring-ring/40"

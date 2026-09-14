@@ -7,12 +7,12 @@
  * procurar o X.
  *
  * O mesmo raciocínio governa `src/features/feedback/config.ts`, e os dois
- * arquivos se olham: no `/summary` e no `/deepening` as duas coisas disputam a
- * mesma tela, e quem cede é a pesquisa, ver `FeedbackPrompt`.
+ * arquivos se olham: no resumo e no estudo as duas coisas disputam a mesma
+ * tela, e quem cede é a pesquisa, ver `FeedbackPrompt`.
  */
 
 /**
- * Listagens (`/feed`, `/recordings`, `/studies`): 1,2 segundo.
+ * Listagens (a Biblioteca e os Estudos): 1,2 segundo.
  *
  * O conteúdo delas chega pronto do servidor; o que falta é a pessoa bater o
  * olho e entender onde está. Mais que isso e o balão aparece depois de ela já
@@ -32,12 +32,13 @@ export const TOUR_DELAY_LIST_MS = 1_200;
 export const TOUR_DELAY_RESULT_MS = 3_000;
 
 /**
- * Telas de captura: 700 ms.
+ * A tela de gravação: 700 ms.
  *
  * O mais curto de todos, e por uma razão de risco. O tour ali só pode rodar
- * ANTES de a gravação começar (ver `TourTrigger` e `RecordingLive`), e a
- * janela entre chegar na tela e tocar no botão é curta, é uma tela de um
- * botão só. Um atraso longo faria o balão abrir por cima de alguém que já
- * está gravando, que é exatamente o que não pode acontecer.
+ * ANTES de a gravação começar (ver `TourTrigger` e `AudioStudio`), e a janela
+ * entre chegar na tela e tocar no botão é curta, é uma tela de um botão só. Um
+ * atraso longo faria o balão abrir por cima de alguém que já está gravando,
+ * que é exatamente o que não pode acontecer — e quem chega por `?auto=1` já
+ * está.
  */
 export const TOUR_DELAY_CAPTURE_MS = 700;

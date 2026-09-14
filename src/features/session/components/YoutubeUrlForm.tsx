@@ -25,7 +25,7 @@ import { cn } from "@/lib/utils";
  * perguntas, e amontoá-las num controle só piorava as duas.
  *
  * A tela não cria a sessão e não importa nada: ela valida o link e cria a linha
- * (`mode: "youtube"`), depois empurra para `/recording/:id/youtube`, que é onde
+ * (`mode: "youtube"`), depois empurra para `/v2/importar/:id`, que é onde
  * a cobrança e o trabalho acontecem. É a mesma divisão dos três modos de
  * gravação, o diálogo cria a linha, a página de gravação faz o trabalho.
  */
@@ -81,13 +81,13 @@ export function YoutubeUrlForm() {
       return;
     }
     // `loading` segue ligado: a linha já existe e a próxima página é dinâmica.
-    router.push(`/recording/${result.id}/youtube`);
+    router.push(`/v2/importar/${result.id}`);
   }
 
   return (
     <main className="mx-auto flex w-full max-w-lg flex-1 flex-col gap-7 px-4 py-6 sm:px-6 sm:py-10">
       <Link
-        href="/recordings"
+        href="/v2/home"
         className="inline-flex w-fit items-center gap-1.5 rounded-full text-[13px] font-medium text-scriba-ink-soft transition-colors hover:text-scriba-ink focus-visible:outline-none focus-visible:ring-4 focus-visible:ring-scriba-blue/30"
       >
         <ArrowLeft aria-hidden className="size-3.5" strokeWidth={2.4} />

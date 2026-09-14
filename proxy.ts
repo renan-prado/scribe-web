@@ -111,10 +111,18 @@ const AUTH_ONLY_PREFIXES = ["/sign-in", "/sign-up"];
  * ele guardaria no `?next=` um caminho que só existe para ser abandonado.
  */
 const KNOWN_APP_PREFIXES = [
-  // As quatro primeiras são REDIRECTS 308 para dentro do v2 (ver `app/feed`,
-  // `app/recordings`, `app/studies`, `app/importar`). Continuam listadas de
-  // propósito: sem elas, o anônimo que abre um bookmark antigo levaria 404 em
-  // vez do login, e o redirect nem chegaria a rodar.
+  // O app inteiro mora sob "/v2": Biblioteca, gravador, resumo, estudos,
+  // perfil, importação, indicação e cobrança. Protegido como o resto, é tela de
+  // quem já entrou.
+  "/v2",
+  "/admin",
+  "/partners",
+  "/api",
+  // Daqui para baixo não existe página nenhuma: são só os endereços ANTIGOS,
+  // que respondem 308 para dentro do v2. Continuam listados de propósito, e
+  // essa é a única razão de esta lista ainda ter oito linhas: sem eles, o
+  // anônimo que abre um bookmark antigo levaria 404 em vez do login, e o
+  // redirect nem chegaria a rodar.
   "/feed",
   "/recordings",
   "/studies",
@@ -123,14 +131,7 @@ const KNOWN_APP_PREFIXES = [
   "/importar",
   "/recording",
   "/billing",
-  "/admin",
-  "/partners",
   "/session",
-  "/api",
-  // "/v2" é o app. A Biblioteca, o gravador, o resumo, os estudos, o perfil e a
-  // importação moram todos aqui, e as rotas antigas redirecionam para cá.
-  // Protegida como o resto: é tela de quem já entrou.
-  "/v2",
 ];
 
 // `dev.scriba.cc` é o ambiente de desenvolvimento: mesmo projeto na Vercel,

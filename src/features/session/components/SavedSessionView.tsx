@@ -92,7 +92,7 @@ export function SavedSessionView({
   summary,
   hasDeepening,
   canGenerateStudy,
-  backHref = "/recordings",
+  backHref = "/v2/home",
   meta = "full",
   lead = "rule",
 }: SavedSessionViewProps) {
@@ -117,7 +117,7 @@ export function SavedSessionView({
       toast.error("Não foi possível excluir. Tente novamente.");
       return;
     }
-    router.push("/recordings");
+    router.push("/v2/home");
   }
 
   async function handleReprocess() {

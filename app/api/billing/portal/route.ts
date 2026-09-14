@@ -41,7 +41,7 @@ export async function POST(request: Request) {
   try {
     const session = await stripe.billingPortal.sessions.create({
       customer: customerId,
-      return_url: appUrl("/profile"),
+      return_url: appUrl("/v2/profile"),
       locale: "pt-BR",
     });
     log.info("session", { userId: auth.user.id });

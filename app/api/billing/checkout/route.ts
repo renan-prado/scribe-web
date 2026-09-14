@@ -57,8 +57,8 @@ function urls(kind: "subscription" | "topup") {
     // direto na API do Stripe e credita se o webhook não tiver creditado.
     // O id sozinho não autoriza nada: /api/billing/reconcile recusa qualquer
     // sessão cujo customer não seja o do usuário autenticado.
-    success: appUrl(`/billing/retorno?status=sucesso&tipo=${kind}&cs={CHECKOUT_SESSION_ID}`),
-    cancel: appUrl("/billing/retorno?status=cancelado"),
+    success: appUrl(`/v2/retorno?status=sucesso&tipo=${kind}&cs={CHECKOUT_SESSION_ID}`),
+    cancel: appUrl("/v2/retorno?status=cancelado"),
   };
 }
 

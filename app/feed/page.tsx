@@ -8,10 +8,10 @@ import { permanentRedirect } from "next/navigation";
  * diz ao navegador e ao rastreador que a mudança é definitiva; um 307 faria
  * cada visita futura bater aqui de novo para descobrir a mesma coisa.
  *
- * Mora FORA do grupo `(app)` de propósito: um redirect não precisa de header,
- * de nav, nem das duas consultas ao banco do `app/(app)/layout.tsx`, que
- * renderiza em paralelo com a página. Mesma decisão de `app/list` e
- * `app/session/[id]`.
+ * Mora FORA do layout do app de propósito: um redirect não precisa da consulta
+ * ao banco que aquele layout faz (o mapa dos tours), e layout e página
+ * renderizam em paralelo, então pô-la lá dentro pagaria essa consulta em toda
+ * visita a um link antigo. Mesma decisão de `app/list` e `app/session/[id]`.
  */
 export default function FeedRedirect() {
   permanentRedirect("/v2/home");

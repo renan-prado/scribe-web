@@ -171,7 +171,7 @@ export default async function AdminFeedbackPage() {
                   <div className="flex items-baseline gap-3">
                     {s.sessionId ? (
                       <Link
-                        href={`/recording/${s.sessionId}/summary`}
+                        href={`/v2/summary/${s.sessionId}`}
                         className="text-[11px] font-medium text-scriba-ink-mute hover:text-scriba-ink hover:underline"
                       >
                         ver sessão

@@ -50,7 +50,7 @@ const INT = new Intl.NumberFormat("pt-BR");
 /** Os únicos destinos que o `?de=` alcança. */
 const ORIGENS = {
   feed: { href: "/v2/home", label: "Voltar à biblioteca" },
-  perfil: { href: "/profile", label: "Voltar ao perfil" },
+  perfil: { href: "/v2/profile", label: "Voltar ao perfil" },
 } as const;
 
 type Search = { de?: string };

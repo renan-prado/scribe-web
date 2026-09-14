@@ -22,9 +22,9 @@ export const metadata: Metadata = {
  * formulário de Segurança dos Dados da ficha da loja, e o revisor abre essa
  * URL sem ter conta nenhuma no produto.
  *
- * É por isso que esta é a única página dentro de `(app)` que renderiza para
- * quem NÃO está logado, e a razão de `/profile/delete` estar em
- * `PUBLIC_PREFIXES` no `proxy.ts` enquanto `/profile` segue protegido. Anônimo
+ * É por isso que ela mora FORA da moldura do app, é a única página de conta
+ * que renderiza para quem NÃO está logado, e está em `PUBLIC_PREFIXES` no
+ * `proxy.ts` enquanto `/profile` segue protegido. Anônimo
  * lê a explicação inteira, do que é apagado ao que a lei nos obriga a guardar,
  * e encontra no fim o caminho de entrar. Se a página fosse protegida como o
  * resto, o que o revisor veria ao abrir a URL da ficha era uma tela de login

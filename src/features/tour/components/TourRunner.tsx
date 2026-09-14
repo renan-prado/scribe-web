@@ -23,9 +23,9 @@ import { cn } from "@/lib/utils";
  * ## Ele vai para o `body`, num portal
  *
  * `position: fixed` é relativo ao viewport ATÉ um ancestral ter `transform`,
- * `filter` ou `backdrop-filter`, e aí passa a ser relativo a ele. O layout de
- * `(app)` tem o `PageTransition`, que anima deslocamento a cada troca de rota;
- * sem o portal, o véu ficaria preso na caixa da página animada e o furo
+ * `filter` ou `backdrop-filter`, e aí passa a ser relativo a ele. O `/admin` e
+ * o `/partners` têm o `PageTransition`, que anima deslocamento a cada troca de
+ * rota; sem o portal, o véu ficaria preso na caixa da página animada e o furo
  * apontaria para o lugar errado durante meio segundo, só nas navegações.
  *
  * ## Medir é contínuo, não uma vez
@@ -44,10 +44,10 @@ import { cn } from "@/lib/utils";
  * desktop o balão nasce abaixo do alvo, sobe para cima dele quando não há
  * espaço, e só então recorre ao centro.
  *
- * **Mas rolar não resolve todo alvo, e o "Gravar" é a prova.** No celular ele
- * mora na `MobileBottomNav`, `fixed bottom-0`: rolar a página não o tira de
- * baixo do balão encostado no rodapé, e o passo que fala do botão terminava
- * com o balão pousado exatamente em cima dele. Quando a correção por rolagem
+ * **Mas rolar não resolve todo alvo, e o "Gravar" é a prova.** Ele mora no
+ * `RecordDock`, `fixed bottom-0`: rolar a página não o tira de baixo do balão
+ * encostado no rodapé, e o passo que fala do botão terminava com o balão
+ * pousado exatamente em cima dele. Quando a correção por rolagem
  * não tem como funcionar, porque o alvo está preso ao viewport, ou porque ela
  * já foi tentada neste passo e o alvo continua coberto (uma página que não
  * tem mais para onde rolar), o balão sobe para CIMA do alvo. É o mesmo

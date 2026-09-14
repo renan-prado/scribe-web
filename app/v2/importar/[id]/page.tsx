@@ -17,13 +17,12 @@ export async function generateMetadata({ params }: PageProps): Promise<Metadata>
 /**
  * O lugar de uma sessão do modo YouTube ENQUANTO ela é importada.
  *
- * Ocupa a mesma casa das três páginas de gravação, `/recording/:id/<modo>`,
- * porque cumpre o mesmo papel no fluxo: é para onde o diálogo empurra, e é de
- * onde a sessão sai pronta. Só que aqui não há microfone, cronômetro nem botão:
- * o trabalho é do servidor, e a página existe para esperar por ele.
+ * Mora ao lado do formulário que a dispara (`/v2/importar`), e não sob
+ * `/v2/recording`, porque aqui não há microfone, cronômetro nem botão: o
+ * trabalho é do servidor, e a página existe para esperar por ele.
  *
- * Como as outras, é orquestração pura: resolve a sessão, confere o modo, monta
- * o componente. Quem dispara a importação é o `YoutubeImport`.
+ * É orquestração pura: resolve a sessão, confere o modo, monta o componente.
+ * Quem dispara a importação é o `YoutubeImport`.
  */
 export default async function RecordingYoutubePage({ params }: PageProps) {
   const { id } = await params;

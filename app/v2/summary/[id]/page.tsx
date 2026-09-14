@@ -1,7 +1,11 @@
 import type { Metadata } from "next";
 import { notFound } from "next/navigation";
+import { FeedbackPrompt } from "@/features/feedback/components/FeedbackPrompt";
+import { FEEDBACK_DELAY_SUMMARY_MS } from "@/features/feedback/config";
 import { SavedSessionView } from "@/features/session/components/SavedSessionView";
 import { formatDurationLong, shortDate } from "@/features/session/lib/formatting";
+import { TourTrigger } from "@/features/tour/components/TourTrigger";
+import { TOUR_DELAY_RESULT_MS } from "@/features/tour/config";
 import { hasDeepening } from "@/lib/db/deepenings";
 import { getSession } from "@/lib/db/sessions";
 import { canCurrentUserUse } from "@/lib/entitlements/server";
@@ -46,28 +50,35 @@ export default async function V2SummaryPage({ params }: PageProps) {
   const createdAt = new Date(session.createdAt);
 
   return (
-    <SavedSessionView
-      id={id}
-      title={session.title?.trim() || "Sessão sem título"}
-      createdAtLabel={DATE_FMT.format(createdAt)}
-      /* A data SIMPLIFICADA, "6 set", a mesma do cartão do `/v2/home`. Com o
-         ano só quando ele não é o corrente, e é por isso que ela é calculada
-         aqui e não dentro da view: quem sabe que ano é hoje é o servidor. */
-      createdAtShortLabel={shortDate(
-        session.createdAt,
-        createdAt.getFullYear() !== new Date().getFullYear()
-      )}
-      durationLabel={formatDurationLong(session.durationMs)}
-      durationMs={session.durationMs}
-      speakerName={session.speakerName}
-      speakerLocation={session.speakerLocation}
-      transcript={session.transcript}
-      summary={session.finalSummary}
-      hasDeepening={deepeningExists}
-      canGenerateStudy={canGenerateStudy}
-      backHref="/v2/home"
-      meta="compact"
-      lead="card"
-    />
+    <>
+      <SavedSessionView
+        id={id}
+        title={session.title?.trim() || "Sessão sem título"}
+        createdAtLabel={DATE_FMT.format(createdAt)}
+        /* A data SIMPLIFICADA, "6 set", a mesma do cartão do `/v2/home`. Com o
+           ano só quando ele não é o corrente, e é por isso que ela é calculada
+           aqui e não dentro da view: quem sabe que ano é hoje é o servidor. */
+        createdAtShortLabel={shortDate(
+          session.createdAt,
+          createdAt.getFullYear() !== new Date().getFullYear()
+        )}
+        durationLabel={formatDurationLong(session.durationMs)}
+        durationMs={session.durationMs}
+        speakerName={session.speakerName}
+        speakerLocation={session.speakerLocation}
+        transcript={session.transcript}
+        summary={session.finalSummary}
+        hasDeepening={deepeningExists}
+        canGenerateStudy={canGenerateStudy}
+        backHref="/v2/home"
+        meta="compact"
+        lead="card"
+      />
+      {/* A pesquisa da 1ª, 3ª e 8ª gravação, e a apresentação da tela. As duas
+          disputam o mesmo espaço, e quem cede é a pesquisa: enquanto o tour
+          está aberto ela nem conta o atraso dela. Ver `FeedbackPrompt`. */}
+      <FeedbackPrompt kind="recording" sessionId={id} delayMs={FEEDBACK_DELAY_SUMMARY_MS} />
+      <TourTrigger tour="summary" delayMs={TOUR_DELAY_RESULT_MS} />
+    </>
   );
 }

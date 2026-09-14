@@ -20,7 +20,7 @@ const log = createLogger("session:youtube");
  *
  * Ela dispara `POST /api/youtube/import` ao montar e fica de pé até a resposta
  * chegar, o que leva o tempo de um resumo final sobre uma pregação inteira.
- * Quando termina, empurra para `/recording/:id/summary`.
+ * Quando termina, empurra para `/v2/summary/:id`.
  *
  * **Ela não mostra barra de progresso, e sim uma sequência de frases.** Não há
  * progresso REAL para mostrar: a rota é uma requisição só, e o servidor não
@@ -129,7 +129,7 @@ export function YoutubeImport({ sessionId, sourceUrl }: Props) {
       // O saldo mudou: sem isso a moeda debitada só apareceria no próximo
       // carregamento de página.
       void refreshCoins();
-      router.replace(`/recording/${sessionId}/summary`);
+      router.replace(`/v2/summary/${sessionId}`);
       return;
     }
 
@@ -223,7 +223,7 @@ export function YoutubeImport({ sessionId, sourceUrl }: Props) {
           {/* A sessão foi salva: o caminho útil é abri-la, não voltar. */}
           {error === "summary_failed" ? (
             <Link
-              href={`/recording/${sessionId}/summary`}
+              href={`/v2/summary/${sessionId}`}
               className="inline-flex w-full items-center justify-center gap-2 rounded-full scriba-cta bg-[image:var(--scriba-cta)] px-7 py-3.5 text-[15px] font-semibold text-scriba-cta-ink shadow-[0_10px_24px_var(--scriba-cta-shadow)] transition-colors focus-visible:outline-none focus-visible:ring-4 focus-visible:ring-scriba-blue/30"
             >
               Abrir a gravação
@@ -231,7 +231,7 @@ export function YoutubeImport({ sessionId, sourceUrl }: Props) {
           ) : null}
 
           <Link
-            href="/recordings"
+            href="/v2/home"
             className="inline-flex w-full items-center justify-center gap-1.5 rounded-full px-7 py-3 text-[13px] font-medium text-scriba-ink-soft transition-colors hover:text-scriba-ink focus-visible:outline-none focus-visible:ring-4 focus-visible:ring-scriba-blue/30"
           >
             <ArrowLeft aria-hidden className="size-3.5" strokeWidth={2.4} />

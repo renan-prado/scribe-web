@@ -144,7 +144,7 @@ export default async function ProfilePage() {
           momento em que "dá para ganhar moedas de graça" é uma informação e
           não um anúncio. O outro caminho é o card do `/feed`. */}
       <Link
-        href="/indicar"
+        href="/v2/indicar"
         className="flex items-center gap-3.5 rounded-[28px] bg-scriba-paper p-5 ring-1 ring-scriba-hairline outline-none transition-colors hover:bg-scriba-surface focus-visible:ring-2 focus-visible:ring-ring/40 sm:p-6"
       >
         <span className="flex size-11 flex-none items-center justify-center rounded-2xl bg-scriba-cream text-scriba-cream-body">
