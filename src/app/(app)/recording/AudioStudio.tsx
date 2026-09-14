@@ -10,6 +10,8 @@ import { useUnloadGuard } from "@/features/session/hooks/useUnloadGuard";
 import { requestCreateSession, requestFinalSummary } from "@/features/session/lib/api";
 import { formatDurationLong } from "@/features/session/lib/formatting";
 import { tailSentences } from "@/features/session/lib/text";
+import { cn } from "@/lib/utils";
+import { useClockScope } from "./ClockScope";
 import {
   type CaptureMeta,
   deleteCapture,
@@ -19,9 +21,7 @@ import {
   patchCaptureMeta,
   putCaptureMeta,
   putFragment,
-} from "@/lib/capture-store";
-import { cn } from "@/lib/utils";
-import { useClockScope } from "./ClockScope";
+} from "./capture-store";
 import { useAudioCapture, WAVE_BARS } from "./useAudioCapture";
 
 /**

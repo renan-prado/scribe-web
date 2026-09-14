@@ -8,7 +8,7 @@ import { createLogger } from "@/lib/log";
 import { enforceAudioBudget, enforceRateLimit, RATE_LIMITS } from "@/lib/rate-limit";
 import { requireAuth } from "@/lib/supabase/require-auth";
 import { assessTranscription, modelSupportsLogprobs } from "@/lib/transcription/quality";
-import { VOCABULARIO_PROMPT } from "@/lib/vocabulario";
+import { VOCABULARIO_PROMPT } from "@/lib/transcription/vocabulario";
 
 const log = createLogger("transcribe");
 

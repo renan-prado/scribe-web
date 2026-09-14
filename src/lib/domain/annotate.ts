@@ -1,5 +1,5 @@
 import { BIBLE_PEOPLE, BIBLE_PLACES, CITED_FIGURES } from "@/lib/domain/lexicon";
-import { LIVROS_BIBLICOS } from "@/lib/vocabulario";
+import { LIVROS_BIBLICOS } from "@/lib/transcription/vocabulario";
 
 /**
  * Quebra um parágrafo em pedaços anotados, para o `RichText` desenhar

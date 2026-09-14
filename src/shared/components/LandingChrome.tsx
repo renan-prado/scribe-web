@@ -1,6 +1,6 @@
 import Link from "next/link";
+import { APP_VERSION } from "@/lib/app-version";
 import { cn } from "@/lib/utils";
-import { APP_VERSION } from "@/lib/version";
 import { ScribaLogo, ScribaMark } from "@/shared/brand";
 import { LandingCta } from "@/shared/components/LandingCta";
 

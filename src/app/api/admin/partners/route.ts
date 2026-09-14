@@ -1,8 +1,8 @@
 import { NextResponse } from "next/server";
 import { z } from "zod";
 import { requireAdmin } from "@/lib/auth/require-admin";
-import { isValidDoc, normalizeDoc } from "@/lib/br/documento";
 import { createPartner, listPartners } from "@/lib/db/admin/partners";
+import { isValidDoc, normalizeDoc } from "@/lib/domain/documento";
 import { parseJsonBody } from "@/lib/http/validate";
 import { createLogger } from "@/lib/log";
 import { normalizeSocials } from "@/lib/partners/socials";

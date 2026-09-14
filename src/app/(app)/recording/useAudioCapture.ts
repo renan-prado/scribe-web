@@ -1,7 +1,7 @@
 "use client";
 
 import { useCallback, useEffect, useRef, useState } from "react";
-import { AUDIO_CONSTRAINTS, reportTrackSettings } from "@/lib/audio-constraints";
+import { AUDIO_CONSTRAINTS, reportTrackSettings } from "./audio-constraints";
 
 /**
  * A captação do `/recording`: um arquivo, transcrito de uma vez só no fim.

@@ -1,4 +1,4 @@
-import { stripVocabHallucination } from "@/lib/vocabulario";
+import { stripVocabHallucination } from "@/lib/transcription/vocabulario";
 
 /**
  * Assinaturas conhecidas de alucinação do modelo de transcrição em áudio

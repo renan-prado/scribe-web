@@ -1,10 +1,34 @@
-# lib/: a camada de servidor
+# src/lib/: a camada de servidor
 
 Quase tudo aqui é `server-only`. As exceções client-safe estão marcadas
 abaixo, e a distinção não é estilística: importar um módulo `server-only` a
 partir de um `"use client"` é erro de BUILD, e é assim que tem de ser.
 
-Cobranças, moedas e Stripe têm documento próprio: `src/lib/billing/AGENTS.md`.
+## O mapa: são 23 pastas, e elas não são todas a mesma coisa
+
+`lib/` não é uma pasta de "bibliotecas". É a camada de servidor inteira, e ela
+tem três tipos de morador. Saber em qual deles você está é o que decide onde
+pôr código novo:
+
+| | Pastas | O que são |
+|---|---|---|
+| **Encanamento** | `env` `log` `http` `supabase` `llm` `fx` + `rate-limit.ts` `utils.ts` `deploy.ts` `app-version.ts` `seo.ts` | não sabem nada sobre sermão. Todo o resto depende deles, e eles não dependem de ninguém |
+| **Dados** | `db` `domain` | `domain` é o vocabulário (tipos, schemas, parsers) e é CLIENT-SAFE; `db` é o acesso, e é `server-only`. Quase todo arquivo do repositório importa de um dos dois |
+| **Assunto** | `billing` `coins` `entitlements` `partners` `referrals` `finance` `study` `final-summary` `transcription` `youtube` `bibles` `prompts` `auth` `account` `admin` | as regras do negócio, uma pasta por assunto |
+
+**A terceira linha tem uma costura conhecida, e vale dizê-la em voz alta:**
+metade daqueles assuntos tem uma METADE DE TELA em `src/features/` com o mesmo
+nome (`billing`, `partners`, `referrals`, `admin`), e mais um pedaço em
+`lib/db/`. Uma feature em três lugares é três lugares para procurar. Juntá-las
+sob `src/features/<assunto>/{components,server}` é o caminho óbvio e está em
+aberto; enquanto não for feito, o atalho é: **`src/features/X` desenha, `lib/X`
+decide, `lib/db/X` persiste.**
+
+**O que NÃO mora aqui, e já morou:** código de navegador. `capture-store.ts`
+(IndexedDB) e `audio-constraints.ts` mudaram para
+`src/app/(app)/recording/`, ao lado do único arquivo que os usa. Um módulo que
+só roda no browser numa pasta cujo cabeçalho diz "camada de servidor" é o tipo
+de coisa que faz alguém importá-lo do lado errado.
 
 ## Fronteira servidor/cliente
 
@@ -25,8 +49,9 @@ aconteceu com `DEFAULT_PARTNER_MONTHLY_COINS`, que teve de mudar de
 Client-safe de propósito: `coins/pricing.ts`, `coins/billable.ts`,
 `coins/economics.ts`, `billing/plans.ts`, `entitlements/features.ts`,
 `partners/economics.ts`, `referrals/economics.ts`, `referrals/cookies.ts`,
-`br/documento.ts`, `domain/*` (tipos e schemas), `supabase/cookie.ts`,
-`app-version.ts`, `deploy.ts`, `seo.ts`, `utils.ts`, `vocabulario.ts`.
+`domain/*` (tipos, schemas e o `documento.ts` de CPF/CNPJ),
+`supabase/cookie.ts`, `app-version.ts`, `deploy.ts`, `seo.ts`, `utils.ts`,
+`transcription/vocabulario.ts`.
 
 ## Env: estrito de propósito
 
@@ -537,6 +562,12 @@ nunca disparava com o modelo novo, nem em áudio com 27% de WER.
   porque "0.10.0" ordena antes de "0.9.0" como texto, em silêncio, justo na
   tabela que existe para dizer o que veio antes. O número só é um corte útil se
   SUBIR a cada entrega: ver `npm run release` e `docs/versionamento.md`.
+
+  **Ele já teve um gêmeo, e o gêmeo mentia.** `lib/version.ts` exportava o mesmo
+  `APP_VERSION` lendo `package.json` direto, e o cabeçalho dele afirmava que
+  "não existe variável de ambiente para isto" — o oposto do que está escrito
+  aqui. O rodapé da landing usava aquele, tudo o mais usava este. Dois números
+  de versão que ainda não tinham discordado.
 - `deploy.ts`: `IS_PRODUCTION_DEPLOY` (`VERCEL_ENV === "production"`). É a
   chave de GA4 e de indexação. Ler `process.env` não torna a rota dinâmica.
 - `seo.ts`: fonte única de domínio, título e descrição. Ver `src/app/AGENTS.md`.
@@ -571,7 +602,7 @@ nunca disparava com o modelo novo, nem em áudio com 27% de WER.
   margem alvo que o admin girou. É régua de SIMULAÇÃO: não cobra, não credita e
   não pode virar tabela. Escrita por `coins/settings-actions.ts`, com
   `assertAdmin()` dentro de cada action.
-- `br/documento.ts`: CPF/CNPJ com máscara e dígito verificador, client-safe,
+- `domain/documento.ts`: CPF/CNPJ com máscara e dígito verificador, client-safe,
   validado nas DUAS pontas. O banco guarda só os dígitos: gravada,
   "123.456.789-09" e "12345678909" viram duas pessoas na hora de conferir um
   pagamento.

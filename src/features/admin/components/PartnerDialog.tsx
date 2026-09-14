@@ -21,8 +21,8 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
-import { formatDoc, isValidDoc, normalizeDoc, onlyDigits } from "@/lib/br/documento";
 import type { AdminPartnerWithStats } from "@/lib/db/admin/partners";
+import { formatDoc, isValidDoc, normalizeDoc, onlyDigits } from "@/lib/domain/documento";
 import {
   DEFAULT_COMMISSION_BPS,
   DEFAULT_PARTNER_MONTHLY_COINS,
