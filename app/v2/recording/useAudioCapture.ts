@@ -71,9 +71,16 @@ type Options = {
   onLevels: (levels: Float32Array) => void;
   /** Um fragmento fechado, pronto para guardar. Chamado a cada ~2 min. */
   onFragment: (f: { part: number; seq: number; blob: Blob }) => void;
+  /**
+   * A origem do relógio, ANCORADA: `agora - startedAtRef` é sempre o tempo
+   * ativo de gravação, já sem o que passou pausado. Quem é dono dela é o
+   * CHAMADOR, porque o relógio da tela mora na `TopBar`, fora deste hook (ver
+   * `ClockScope`).
+   */
+  startedAtRef: React.RefObject<number>;
 };
 
-export function useAudioCapture({ onLevels, onFragment }: Options) {
+export function useAudioCapture({ onLevels, onFragment, startedAtRef }: Options) {
   const [state, setState] = useState<CaptureState>("idle");
   const [error, setError] = useState<string | null>(null);
 
@@ -97,8 +104,8 @@ export function useAudioCapture({ onLevels, onFragment }: Options) {
   const rotateSinceRef = useRef<number | null>(null);
   const rotatingRef = useRef(false);
 
-  // Duração REAL: corre gravando, congela na pausa.
-  const startedAtRef = useRef(0);
+  /** Tempo ativo acumulado até a última pausa. Enquanto grava, o tempo real é
+   * `agora - startedAtRef`; pausado, é este valor. */
   const accumulatedRef = useRef(0);
 
   const stopLoop = useCallback(() => {
@@ -120,7 +127,7 @@ export function useAudioCapture({ onLevels, onFragment }: Options) {
     rotatingRef.current = false;
     levelsRef.current.fill(0);
     onLevelsRef.current(levelsRef.current);
-  }, [stopLoop]);
+  }, [stopLoop, startedAtRef]);
 
   useEffect(() => releaseAll, [releaseAll]);
 
@@ -277,7 +284,7 @@ export function useAudioCapture({ onLevels, onFragment }: Options) {
       );
       return false;
     }
-  }, [releaseAll, runLoop, spawnRecorder]);
+  }, [releaseAll, runLoop, spawnRecorder, startedAtRef]);
 
   const pause = useCallback(() => {
     stopLoop();
@@ -285,19 +292,21 @@ export function useAudioCapture({ onLevels, onFragment }: Options) {
     // A trilha continua VIVA, só muda: desligá-la devolveria o microfone ao
     // sistema, e retomar pediria a permissão de novo.
     for (const t of streamRef.current?.getAudioTracks() ?? []) t.enabled = false;
-    accumulatedRef.current += performance.now() - startedAtRef.current;
+    accumulatedRef.current = performance.now() - startedAtRef.current;
     levelsRef.current.fill(0);
     onLevelsRef.current(levelsRef.current);
     setState("paused");
-  }, [stopLoop]);
+  }, [stopLoop, startedAtRef]);
 
   const resume = useCallback(() => {
     for (const t of streamRef.current?.getAudioTracks() ?? []) t.enabled = true;
     recorderRef.current?.resume();
-    startedAtRef.current = performance.now();
+    // Recua a origem pelo que já foi gravado: assim o relógio continua de onde
+    // parou em vez de voltar para zero.
+    startedAtRef.current = performance.now() - accumulatedRef.current;
     setState("recording");
     runLoop();
-  }, [runLoop]);
+  }, [runLoop, startedAtRef]);
 
   /** Encerra e devolve duração ativa, número de partes e o contêiner usado. */
   const stop = useCallback(async (): Promise<{
@@ -313,8 +322,7 @@ export function useAudioCapture({ onLevels, onFragment }: Options) {
     stopLoop();
 
     const durationMs =
-      accumulatedRef.current +
-      (rec.state === "recording" ? performance.now() - startedAtRef.current : 0);
+      rec.state === "recording" ? performance.now() - startedAtRef.current : accumulatedRef.current;
 
     // Espera o `onstop`: é ele que entrega o resto do buffer como último
     // fragmento. Seguir antes deixaria o fim da pregação fora do arquivo.
@@ -332,7 +340,7 @@ export function useAudioCapture({ onLevels, onFragment }: Options) {
       mimeType: picked.mime,
       extension: picked.extension,
     };
-  }, [releaseAll, stopLoop]);
+  }, [releaseAll, stopLoop, startedAtRef]);
 
   /** Joga fora: o microfone fecha e nada do que ficou vira arquivo. */
   const discard = useCallback(() => {

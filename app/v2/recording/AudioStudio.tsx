@@ -21,6 +21,7 @@ import {
   putFragment,
 } from "@/lib/capture-store";
 import { cn } from "@/lib/utils";
+import { useClockScope } from "./ClockScope";
 import { useAudioCapture, WAVE_BARS } from "./useAudioCapture";
 
 /**
@@ -97,7 +98,12 @@ export function AudioStudio({ autoStart = false }: { autoStart?: boolean }) {
     }
   }, []);
 
+  // O relógio do cabeçalho lê daqui (ver `ClockScope`): a origem é dele, e este
+  // hook só a move.
+  const { startedAtRef, setRunning, setVisible } = useClockScope();
+
   const { state, error, setError, start, pause, resume, stop, discard } = useAudioCapture({
+    startedAtRef,
     onLevels: paintLevels,
     onFragment: ({ part, seq, blob }) => {
       const id = captureIdRef.current;
@@ -118,6 +124,13 @@ export function AudioStudio({ autoStart = false }: { autoStart?: boolean }) {
   const rescuing = !busy && !capturing && pending !== null;
 
   useUnloadGuard(capturing || busy);
+
+  // O relógio corre gravando, congela na pausa e some ao voltar ao repouso.
+  useEffect(() => {
+    setRunning(state === "recording");
+    if (capturing) setVisible(true);
+    else if (idle && !busy) setVisible(false);
+  }, [state, capturing, idle, busy, setRunning, setVisible]);
 
   useCoinTick({
     enabled: state === "recording",

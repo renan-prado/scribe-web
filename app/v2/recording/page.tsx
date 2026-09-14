@@ -1,6 +1,7 @@
 import type { Metadata } from "next";
 import { TopBar } from "../components/TopBar";
 import { AudioStudio } from "./AudioStudio";
+import { ClockScope, RecordingClock } from "./ClockScope";
 
 export const metadata: Metadata = { title: "Gravando" };
 
@@ -28,9 +29,13 @@ export default async function V2RecordingPage({
   const { auto } = await searchParams;
 
   return (
-    <main className="mx-auto flex w-full max-w-[640px] flex-1 flex-col px-4 pb-[calc(2.5rem+env(safe-area-inset-bottom))]">
-      <TopBar title="Gravação" />
-      <AudioStudio autoStart={auto === "1"} />
-    </main>
+    // O `ClockScope` envolve os dois porque o relógio mora na `TopBar` e o
+    // tempo nasce no `AudioStudio`, em ramos diferentes da árvore.
+    <ClockScope>
+      <main className="mx-auto flex w-full max-w-[640px] flex-1 flex-col px-4 pb-[calc(2.5rem+env(safe-area-inset-bottom))]">
+        <TopBar title="Gravação" trailing={<RecordingClock />} />
+        <AudioStudio autoStart={auto === "1"} />
+      </main>
+    </ClockScope>
   );
 }
