@@ -89,10 +89,22 @@ export const TOURS: Record<TourKey, TourDefinition> = {
         body: "Cada gravação e cada vídeo importado fica aqui para você acessar a qualquer momento.",
       },
       {
+        /**
+         * O alvo é a LUPA do cabeçalho (`SearchToggle`), e não a barra de
+         * busca: na Biblioteca a barra só é montada depois do clique nela, e
+         * enquanto este passo apontou para `[data-tour="collection-search"]`
+         * ele foi descartado em TODA visita, sem erro nenhum na tela. Nos
+         * Estudos a barra é permanente, e lá o passo continua nela.
+         *
+         * O conserto não sobe a `version`: o passo é o mesmo passo, escrito no
+         * primeiro dia, que nunca chegou a aparecer. Subir a versão aqui
+         * reabriria o "Bem-vindo ao Scriba" na cara de toda a base para
+         * mostrar um balão sobre uma lupa.
+         */
         id: "search",
-        anchor: '[data-tour="collection-search"]',
+        anchor: '[data-tour="library-search"]',
         title: "Busque pela sua biblioteca",
-        body: "Procure por quem pregou, pelo local, por um versículo ou por uma frase que foi dita.",
+        body: "A lupa procura por quem pregou, pelo local, por um versículo ou por uma frase que foi dita na pregação.",
       },
       {
         id: "record",

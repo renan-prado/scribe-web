@@ -53,6 +53,12 @@ export function SearchToggle() {
       onClick={() => setOpen(!open)}
       aria-label={open ? "Fechar busca" : "Buscar gravações"}
       aria-expanded={open}
+      // O alvo do passo "busque pela sua biblioteca" do tour `library`, e é a
+      // LUPA, não a barra: a barra (`CollectionSearch`, com o
+      // `data-tour="collection-search"` que serve aos Estudos) só é montada
+      // depois deste clique, então um tour ancorado nela descartava o passo em
+      // toda visita, em silêncio. Ver `src/features/tour/AGENTS.md`.
+      data-tour="library-search"
       className="-mr-1 inline-flex size-11 shrink-0 items-center justify-center rounded-full text-v2-ink transition-colors hover:bg-v2-card focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-v2-ink-mute"
     >
       {open ? (

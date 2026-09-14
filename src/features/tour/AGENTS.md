@@ -108,7 +108,7 @@ relativo ao viewport dentro de um ancestral com `transform`, e o `/admin` e o
 
 | Tela | `tour` | Atraso | Portão |
 |---|---|---|---|
-| `/home` | `library` | 1,2s | — |
+| `/home` | `library` | 1,2s | — (roda TAMBÉM na Biblioteca vazia) |
 | `/studies` | `studies` | 1,2s | nem vazio, nem na tela de convite |
 | `/summary/:id` | `summary` | 3s | — |
 | `/studies/:id` | `study` | 3s | — |
@@ -116,10 +116,16 @@ relativo ao viewport dentro de um ancestral com `transform`, e o `/admin` e o
 
 Os atrasos e o porquê de cada um estão em `config.ts`.
 
-Os estados vazios ficam de fora porque neles os alvos do meio não existem, e o
-tour encolheria para uma frase solta sobre uma lista que não está lá. A tela de
-convite do `/studies` fica de fora por outro motivo: ela JÁ É uma explicação, e
-um tour por cima dela é a mesma coisa dita duas vezes.
+**A Biblioteca vazia é a única que TEM tour, e é de propósito.** O vazio das
+outras listas é uma lista que não encheu ainda; o vazio da Biblioteca é a
+primeira tela do primeiro minuto de quem se cadastrou, e o `library` é o único
+tour que começa com "Bem-vindo ao Scriba". Calá-lo ali seria calá-lo justamente
+para quem ele foi escrito. Os quatro passos sobrevivem à lista vazia porque
+nenhum alvo deles mora nela: a lupa e o botão de gravar existem sempre.
+
+O vazio dos `/studies` fica de fora porque o tour de lá fala de uma lista que
+não está na tela, e a tela de convite fica de fora por outro motivo: ela JÁ É
+uma explicação, e um tour por cima dela é a mesma coisa dita duas vezes.
 
 ## Telas com tour, e o atributo que o holofote procura
 
@@ -128,7 +134,8 @@ O contrato entre o passo e a tela é um seletor CSS, e a convenção é
 
 | `data-tour` | Onde vive |
 |---|---|
-| `collection-search` | `CollectionSearch` (serve à Biblioteca e aos Estudos) |
+| `library-search` | a LUPA da `TopBar` (`SearchToggle`, em `home/SearchScope.tsx`) |
+| `collection-search` | `CollectionSearch` — só o tour dos Estudos o usa |
 | `record-dock` | `src/app/home/RecordDock.tsx` |
 | `record-button` | `src/app/recording/AudioStudio.tsx` |
 | `summary-header` | `SavedSessionView` |
@@ -140,6 +147,14 @@ O contrato entre o passo e a tela é um seletor CSS, e a convenção é
 Um atributo que some não quebra nada: o passo simplesmente deixa de aparecer, o
 que é a pior forma de a explicação falhar, porque não avisa. Quando um alvo
 mudar de lugar, mude o atributo com ele.
+
+**E um atributo que EXISTE no código pode não existir na tela.** O passo
+`search` do `library` apontou para `[data-tour="collection-search"]` desde o
+primeiro dia e nunca apareceu uma vez: na Biblioteca aquela barra só é montada
+depois do clique na lupa, e o tour abre com ela fechada. Um alvo condicional
+serve de âncora para o passo que fala DELE (o botão de gerar estudo, a faixa
+"Em aberto"); para o passo que fala de um recurso, a âncora é o que abre o
+recurso, e esse está sempre na tela.
 
 ## O que ainda não existe
 
