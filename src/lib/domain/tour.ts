@@ -86,7 +86,7 @@ export const TOURS: Record<TourKey, TourDefinition> = {
       {
         id: "intro",
         title: "Tudo o que você já ouviu",
-        body: "Cada gravação e cada vídeo importado fica aqui, agrupado por mês. Nada é apagado sozinho.",
+        body: "Cada gravação e cada vídeo importado fica aqui para você acessar a qualquer momento.",
       },
       {
         id: "search",
