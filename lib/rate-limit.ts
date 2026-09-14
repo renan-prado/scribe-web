@@ -205,33 +205,18 @@ const AUDIO_BUDGET_BYTES_PER_HOUR = 240 * 1024 * 1024;
  * for retries. Anything meaningfully higher than these numbers is either
  * a bug on the client or abuse.
  *
- * - transcribe fires roughly every 30s per active recording, 40/min covers
- *   ~20min of continuous audio with headroom for parallel sessions on the
- *   same account (mobile + desktop).
- * - bible/insights/echo are chunk-driven; cadence bounded by transcribe.
- * - final-summary/deepening are once-per-session and expensive.
- * - sessions/coins/verse/format are cheap plumbing but still capped.
+ * - transcribe roda UMA vez por gravação, no stop, ou duas quando o áudio não
+ *   cabe num POST só. O limite de 40/min é folga de outra era (o gravador
+ *   antigo mandava um trecho a cada 30s) e fica: ele nunca é o que impede um
+ *   abuso de transcrição, quem faz isso é `AUDIO_BUDGET_BYTES_PER_HOUR`.
+ * - final-summary/deepening são uma vez por sessão, e caras.
+ * - sessions/coins/verse são encanamento barato, mas ainda assim limitados.
  */
 export const RATE_LIMITS = {
   transcribe: {
     route: "transcribe",
     perUser: { limit: 40, windowMs: MIN },
     perIp: { limit: 120, windowMs: MIN },
-  },
-  bible: {
-    route: "bible",
-    perUser: { limit: 60, windowMs: MIN },
-    perIp: { limit: 180, windowMs: MIN },
-  },
-  insights: {
-    route: "insights",
-    perUser: { limit: 30, windowMs: MIN },
-    perIp: { limit: 90, windowMs: MIN },
-  },
-  "sermon-echo": {
-    route: "sermon-echo",
-    perUser: { limit: 30, windowMs: MIN },
-    perIp: { limit: 90, windowMs: MIN },
   },
   "final-summary": {
     route: "final-summary",
@@ -240,14 +225,6 @@ export const RATE_LIMITS = {
   },
   "final-summary-reprocess": {
     route: "final-summary-reprocess",
-    perUser: { limit: 10, windowMs: HOUR },
-    perIp: { limit: 40, windowMs: HOUR },
-  },
-  // Mesma chamada cara do reprocessamento, e ainda mais rara: uma sessão do
-  // modo transcrição só tem o primeiro resumo gerado uma vez. O limite é o
-  // mesmo por não haver motivo para ser mais frouxo.
-  "final-summary-from-transcript": {
-    route: "final-summary-from-transcript",
     perUser: { limit: 10, windowMs: HOUR },
     perIp: { limit: 40, windowMs: HOUR },
   },
@@ -276,23 +253,6 @@ export const RATE_LIMITS = {
     perUser: { limit: 60, windowMs: MIN },
     perIp: { limit: 180, windowMs: MIN },
   },
-  // 20 por HORA, e antes eram 30 por MINUTO, noventa vezes mais.
-  //
-  // O número antigo veio do molde das rotas do pipeline ao vivo, que disparam a
-  // cada chunk. Esta não dispara a cada chunk: ela reformata uma transcrição
-  // inteira, de uma vez, e aceita 300 mil caracteres por chamada. Com 1.800
-  // chamadas por hora, uma conta com uma moeda de saldo custava perto de
-  // US$ 100/hora de gpt-4o-mini, a segunda maior exposição do produto, atrás
-  // só do `transcribe`.
-  //
-  // 20/hora é a cadência de uma ação de FIM de sessão, que é o que ela é,
-  // mesmo balde de `sessions-transcript`. Hoje nenhum código de cliente a
-  // chama; o limite é dimensionado para o dia em que voltar a chamar.
-  "format-paragraphs": {
-    route: "format-paragraphs",
-    perUser: { limit: 20, windowMs: HOUR },
-    perIp: { limit: 60, windowMs: HOUR },
-  },
   // Alerta manual de alucinação: o usuário digita uma nota, então a cadência
   // real é de alguns por sessão. Generoso o bastante para quem está frustrado
   // com o áudio insistir algumas vezes, apertado o bastante para não virar
@@ -302,22 +262,10 @@ export const RATE_LIMITS = {
     perUser: { limit: 10, windowMs: HOUR },
     perIp: { limit: 40, windowMs: HOUR },
   },
-  // Save de fim de gravação do modo transcrição: uma chamada por sessão
-  // encerrada, com retry manual do usuário se falhar.
-  "sessions-transcript": {
-    route: "sessions-transcript",
-    perUser: { limit: 20, windowMs: HOUR },
-    perIp: { limit: 60, windowMs: HOUR },
-  },
   "sessions-write": {
     route: "sessions-write",
     perUser: { limit: 60, windowMs: MIN },
     perIp: { limit: 180, windowMs: MIN },
-  },
-  "feed-read": {
-    route: "feed-read",
-    perUser: { limit: 120, windowMs: MIN },
-    perIp: { limit: 300, windowMs: MIN },
   },
   "entity-search": {
     route: "entity-search",

@@ -42,74 +42,52 @@ const log = createLogger("usage");
  * demanda (format, lookups) rodam fora de uma gravação.
  */
 
+/**
+ * As rotas de LLM que o código AINDA ESCREVE.
+ *
+ * **Ela não lista tudo o que existe em `llm_usage_events`, e não deve.** O
+ * produto já teve o feed ao vivo (`bible`, `insights`, `sermon-echo`), os cards
+ * de acompanhamento (`rereads*`, `reminders*`, `practices*`), a formatação de
+ * parágrafo, o enriquecimento em segunda chamada e o primeiro resumo de uma
+ * sessão do modo transcrição (`final-summary-from-transcript`). Nada disso é
+ * gerado hoje, e as linhas continuam no banco, sendo LIDAS por
+ * `lib/db/admin/usage.ts` — que trabalha com `string`, justamente para que a
+ * medição do passado não dependa de o código do presente ainda conhecer o nome.
+ *
+ * Este tipo governa só o que se escreve daqui em diante.
+ */
 export type UsageRoute =
-  | "bible"
-  | "insights"
-  | "sermon-echo"
+  | "transcribe"
+  // As três rotas da MESMA chamada, `generateFinalSummary`. Separadas porque a
+  // pergunta de preço é diferente em cada uma: a primeira está dentro do minuto
+  // gravado, a segunda é o `reprocess_summary` de 15 moedas, e a terceira é a
+  // única forma de medir o custo real de uma importação do YouTube contra as 30
+  // moedas FIXAS que ela cobra, num custo que cresce com a duração do vídeo.
   | "final-summary"
   | "final-summary-reprocess"
-  // Terceira rota da mesma chamada: o PRIMEIRO resumo de uma sessão gravada no
-  // modo transcrição, gerado sob demanda em /recording/:id/transcript. Separada
-  // das outras duas porque é o único sinal que responde "quantos escolheram o
-  // modo barato e mudaram de ideia?"; no painel de precificação ela soma com o
-  // reprocessamento, que é o mesmo trabalho pelo mesmo preço.
-  | "final-summary-from-transcript"
-  // Quarta rota da mesma chamada: o resumo de um vídeo do YouTube importado.
-  // Separada das outras três pelo motivo de sempre, é a única forma de o
-  // /admin/precificacao medir o custo real de uma importação contra as 30
-  // moedas que ela cobra, e esse preço é FIXO enquanto o custo cresce com a
-  // duração do vídeo. Fundida com `from-transcript`, a linha que diria "vídeo
-  // longo demais para 30" ficaria diluída na de quem mudou de ideia sobre o
-  // modo transcrição.
   | "final-summary-youtube"
   // A limpeza do título do vídeo (`lib/youtube/metadata.ts`). Rota própria
   // apesar de custar trocados, porque é a única chamada de LLM do produto que
   // roda sobre METADADO e não sobre o sermão: fundida com a do resumo, um dia
   // alguém leria o custo por importação sem saber que há duas chamadas ali.
   | "youtube-metadata"
-  // As quatro rotas do ENRIQUECIMENTO do resumo ("summary-enrichment" e os
-  // sufixos -reprocess / -from-transcript / -youtube) saíram daqui junto com a
-  // segunda chamada que as escrevia, ver `lib/final-summary/generate.ts`. As
-  // linhas continuam no banco e continuam sendo LIDAS por
-  // `lib/db/admin/usage.ts`; como no caso do estudo abaixo, o tipo governa só
-  // o que se ESCREVE daqui em diante.
   // As três etapas de LLM do estudo (`lib/study/generate.ts`). Separadas de
   // propósito: é o que permite ver no /admin/usage quanto custa PERGUNTAR,
-  // quanto custa RESPONDER e quanto custa ESCREVER, e portanto onde vale
-  // subir ou baixar de modelo. Um "deepening" único não respondia a isso.
-  // As linhas antigas ("deepening", "deepening-audit", "study-plan",
-  // "study-audit") continuam no banco; o tipo governa só o que se ESCREVE
-  // daqui em diante.
+  // quanto custa RESPONDER e quanto custa ESCREVER, e portanto onde vale subir
+  // ou baixar de modelo. Um "deepening" único não respondia a isso.
   | "study-questions"
   | "study-answers"
   | "study-write"
-  // Os dois cortes do guardião, num modelo barato. Mesma rota para os
-  // dois: separá-los daria duas linhas de custo irrisório cada.
+  // Os dois cortes do guardião, num modelo barato. Mesma rota para os dois:
+  // separá-los daria duas linhas de custo irrisório cada.
   | "study-guard"
-  // Os três cards de acompanhamento, e a segunda rota de cada um porque o
-  // reprocessamento regenera os três, e sem o par o custo dessa regeração
-  // caía na linha da gravação. Metade do
-  // trabalho que reprocessar dispara ficava fora do preço de
-  // `reprocess_summary`, que por isso parecia mais barato do que é.
-  | "practices"
-  | "practices-reprocess"
-  | "rereads"
-  | "rereads-reprocess"
-  | "rereads-from-transcript"
-  | "rereads-youtube"
-  | "reminders"
-  | "reminders-reprocess"
-  | "reminders-from-transcript"
-  | "reminders-youtube"
-  | "format-paragraphs"
   | "hallucination-report"
-  // A análise diária do próprio painel (/api/admin/insights). Entra aqui, e
-  // não fora da telemetria, porque é dólar de verdade saindo: fora da tabela,
-  // o custo somado do painel deixaria de bater com a fatura da OpenAI. Ela é
+  // A análise diária do próprio painel (/api/admin/insights). Entra aqui, e não
+  // fora da telemetria, porque é dólar de verdade saindo: fora da tabela, o
+  // custo somado do painel deixaria de bater com a fatura da OpenAI. Ela é
   // atribuída à ação `internal` em lib/db/admin/usage.ts, não a `unbilled`,
   // para não parecer gasto de usuário que ninguém cobrou.
-  | "admin-insights"
-  | "transcribe";
+  | "admin-insights";
 
 export type RecordChatUsageInput = {
   /** Sempre `auth.user.id`, nunca um valor vindo do corpo da requisição. */

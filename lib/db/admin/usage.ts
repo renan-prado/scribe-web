@@ -190,11 +190,12 @@ const STUDY_ROUTES = new Set([
 const REPROCESS_SUMMARY_ROUTES = new Set([
   "final-summary-reprocess",
   "summary-enrichment-reprocess",
-  // Reprocessar não reexecuta só o resumo: regenera também praticar, releia e
-  // lembra (ver o Promise.all em app/api/final-summary/reprocess/route.ts).
-  // São 3 chamadas de LLM a mais por reprocessamento, e enquanto elas
-  // gravavam as rotas SEM sufixo o custo delas era lido como custo da
-  // gravação, a margem de `reprocess_summary` saía otimista.
+  // Reprocessar já regenerou também praticar, releia e lembra: eram 3 chamadas
+  // de LLM a mais por reprocessamento, e enquanto elas gravavam as rotas SEM
+  // sufixo o custo delas era lido como custo da gravação, deixando a margem de
+  // `reprocess_summary` otimista. Os três cards não são mais gerados; as linhas
+  // deles continuam no banco e continuam somando na linha certa por causa
+  // destes nomes.
   "practices-reprocess",
   "rereads-reprocess",
   "reminders-reprocess",
@@ -227,8 +228,8 @@ const ACTION_BY_REASON = new Map<string, BillableActionKey>(
 
 /**
  * Toda rota que não é do estudo nem do reprocessamento de resumo está dentro
- * do preço por minuto da gravação, inclusive as gratuitas (praticar, releia,
- * lembra, formatação). Sem sessão para dizer o modo, o custo cai em
+ * do preço por minuto da gravação, inclusive as gratuitas que já existiram
+ * (praticar, releia, lembra, formatação). Sem sessão para dizer o modo, cai em
  * `unbilled`: é gasto real que ninguém pagou, e ele PRECISA aparecer.
  */
 function actionForEvent(route: string, mode: SessionMode | null): UsageActionKey {
@@ -733,9 +734,8 @@ export async function loadAdminUsageSummary(
       const durationMs = meta?.duration_ms ?? null;
       const coins = coinsBySession.get(id) ?? 0;
       // custo/moeda = tudo que a API cobrou nessa sessão dividido pelas moedas
-      // que o usuário efetivamente pagou (live_minute + audio_only_minute +
-      // transcript_minute +
-      // deepening + reprocess_*). Se não houver ledger para a sessão, é null.
+      // que o usuário efetivamente pagou (recording_minute + deepening +
+      // reprocess_*, mais os motivos legados). Sem ledger para a sessão, é null.
       const costPerCoinUsd = coins > 0 ? agg.cost / coins : null;
       const ownerProfile = meta?.user_id ? profiles.get(meta.user_id) : null;
       return {

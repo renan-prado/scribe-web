@@ -85,7 +85,7 @@ export type SessionRunsReport = {
   captureMode: string | null;
   /** Da mais recente para a mais antiga, é a que se acabou de rodar. */
   runs: SessionRun[];
-  /** Custo de tudo o que NÃO é estudo: transcrição, feed ao vivo, resumo. */
+  /** Custo de tudo o que NÃO é estudo: transcrição e resumo. */
   otherCostUsd: number;
   otherEvents: number;
   /**

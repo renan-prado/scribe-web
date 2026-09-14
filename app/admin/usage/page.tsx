@@ -108,7 +108,10 @@ export default async function AdminUsagePage({ searchParams }: PageProps) {
   const routeUniverse: string[] =
     summary.routes.length > 0
       ? summary.routes
-      : ["transcribe", "extract", "suggest", "sermon-echo", "final-summary", "format-paragraphs"];
+      : // Só quando o período não tem evento nenhum: um `Select` vazio não abre,
+        // e o filtro pareceria quebrado em vez de vazio. Espelha as rotas vivas
+        // de `UsageRoute`; as legadas aparecem sozinhas quando houver linha delas.
+        ["transcribe", "final-summary", "study-answers", "study-write"];
 
   return (
     <div className="flex flex-col gap-6">

@@ -7,9 +7,9 @@ import { NextResponse } from "next/server";
  * POR QUE EXISTE. A cobrança por minuto de gravação é emitida pelo NAVEGADOR
  * (`src/features/coins/store.ts` → POST /api/coins/charge). Isso é uma decisão
  * de produto razoável, só o cliente sabe quanto tempo o microfone ficou
- * aberto, mas fazia da medição inteira uma gentileza: `transcribe`, `bible`,
- * `insights`, `sermon-echo`, `format-paragraphs` e `final-summary` tinham
- * `requireAuth` e rate limit, e mais nada. Um cliente que simplesmente NUNCA
+ * aberto, mas fazia da medição inteira uma gentileza: `transcribe` e
+ * `final-summary` tinham `requireAuth` e rate limit, e mais nada. Um cliente
+ * que simplesmente NUNCA
  * chamasse /api/coins/charge transcrevia de graça, com saldo zero, limitado só
  * pelo balde em memória, que é por instância, e portanto vale
  * `limite × instâncias`.

@@ -29,7 +29,7 @@ import { MAX_INSIGHTS } from "@/lib/domain/admin-insights";
  * uma régua que o admin girou.** O custo vem de `llm_usage_events` e do câmbio
  * do dia; o valor da moeda e a margem alvo vêm de um cookie de simulação
  * (`lib/coins/settings.ts`). Um analista que trate os dois como igualmente
- * factuais escreve "a margem do Modo Ao Vivo é 62%" quando o correto é "é 62%
+ * factuais escreve "a margem da gravação é 62%" quando o correto é "é 62%
  * SE a moeda valer os R$ 20 o milheiro que você digitou", e é assim que uma
  * simulação vira decisão de preço.
  */
@@ -43,9 +43,10 @@ COMO O DINHEIRO FUNCIONA AQUI
 ═══════════════════════════════════════════════════════════════
 
 O usuário compra MOEDAS (crédito pré-pago) e as gasta em ações: cada minuto
-INICIADO de gravação debita um valor conforme o modo, e o estudo aprofundado
-debita um valor único. O custo do outro lado é a OpenAI: transcrição, os
-pipelines ao vivo, o resumo final e o pipeline de estudo.
+INICIADO de gravação debita um valor fixo, e importar um vídeo do YouTube,
+reprocessar um resumo ou gerar o estudo aprofundado debitam um valor único. O
+custo do outro lado é a OpenAI: a transcrição, o resumo final e o pipeline de
+estudo.
 
 Margem, aqui, é: (o que a moeda vale) menos (o que a OpenAI cobrou para
 entregar o que aquela moeda comprou).
