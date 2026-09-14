@@ -4,8 +4,9 @@
  * Client-safe: this module is imported by both the API routes and the UI so
  * the price shown on a button matches the amount the server actually debits.
  *
- * Recording modes are billed per started minute (ceil), ticked from the client
- * every 60s. Aprofundar is a flat single-shot charge inside POST /api/deepening.
+ * A gravação é cobrada por minuto INICIADO (ceil), pulsada pelo cliente a
+ * cada 60s. O resto do produto é cobrança única: importar um vídeo,
+ * aprofundar, reprocessar.
  *
  * NOTE: this file governs SPENDING only. Crediting lives in lib/billing/* and
  * only ever happens server-side from a verified Stripe webhook.
@@ -26,46 +27,19 @@ export const COIN_RING_REFERENCE = 300;
 
 export const COIN_COSTS = {
   /**
-   * Per started minute of live recording.
+   * Por minuto iniciado de gravação. O ÚNICO preço por minuto do produto.
    *
-   * 7 e não 5: medido sobre a janela do painel, o minuto ao vivo fechava 63%
-   * de margem contra o alvo de 70% da régua. Ele paga transcrição MAIS os três
-   * pipelines do feed, é o minuto mais caro do produto, e era o mais barato
-   * por moeda.
-   */
-  liveMinute: 7,
-  /**
-   * Per started minute of audio-only recording.
-   *
-   * **5 é PROVISÓRIO, e é uma decisão de produto contra a medição.** O 6
-   * anterior veio de uma amostra de 50 execuções: a 2 moedas o modo fechava
-   * 24,5% de margem, porque ele dispensa o feed mas NÃO dispensa a transcrição
-   * nem o resumo final, que é onde o dinheiro está. Descer para 5 aperta essa
-   * margem, e aperta num momento em que o custo de STT ACABOU DE DOBRAR
-   * ($0,003 → $0,006 por minuto de áudio, ver docs/transcricao.md). Os dois
-   * movimentos vão na mesma direção.
+   * **5 é PROVISÓRIO, e é uma decisão de produto contra a medição.** Eram três
+   * modos, a 7, 5 e 3 moedas o minuto; o de 5 era o do meio e é o que sobrou,
+   * porque é exatamente o que o produto faz hoje: transcreve e resume. A 5 a
+   * margem é apertada, e aperta num momento em que o custo de STT ACABOU DE
+   * DOBRAR ($0,003 → $0,006 por minuto de áudio, ver docs/transcricao.md).
    *
    * Só a transcrição já come R$ 0,032 dos R$ 0,100 que 5 moedas rendem à régua
    * de `DEFAULT_COIN_PRICE_PER_THOUSAND_BRL`; o resumo final vem por cima.
    * Reconfira em `/admin/precificacao` assim que houver execução nova medida.
    */
-  audioOnlyMinute: 5,
-  /**
-   * Per started minute of transcript-only recording (no LLM beyond STT).
-   *
-   * **3 é PROVISÓRIO, e corrige um prejuízo.** Era 1, e 1 deixou de pagar a
-   * conta: o modo faz UMA chamada, a de transcrição, e ela passou de $0,003
-   * para $0,006 o minuto de áudio (docs/transcricao.md). À régua de 20 reais o
-   * milheiro, 1 moeda rende R$ 0,020 contra R$ 0,032 de custo, cada minuto
-   * gravado neste modo dava prejuízo. Já era apertado antes (19% de margem);
-   * com o modelo novo virou negativo.
-   *
-   * A 3 moedas o minuto rende R$ 0,060 contra os mesmos R$ 0,032, ~46% de
-   * margem. Fica abaixo dos 70% de `DEFAULT_TARGET_MARGIN_PCT` de propósito:
-   * a régua pediria 6, e sextuplicar o preço do modo mais barato do produto é
-   * decisão maior que a de parar de perder dinheiro.
-   */
-  transcriptMinute: 3,
+  recordingMinute: 5,
   /**
    * One-shot cost of running /api/deepening.
    *
@@ -87,34 +61,17 @@ export const COIN_COSTS = {
    */
   reprocessSummary: 15,
   /**
-   * One-shot cost of generating the final summary for a session that was
-   * recorded in `transcript_only` and therefore never had one.
-   *
-   * O MESMO 15 do reprocessamento, e pelo mesmo motivo: é literalmente a mesma
-   * chamada, `generateFinalSummary` sobre a transcrição inteira, num modelo
-   * grande, mais releia/lembra/frases por cima. O que muda é o que existia
-   * antes (nada, em vez de um resumo velho), e isso não altera o custo de um
-   * centavo.
-   *
-   * Preço à parte no ledger porque a PERGUNTA é outra: "quantas pessoas
-   * gravaram no modo barato e mudaram de ideia?" é o sinal de produto que diz
-   * se o modo transcrição está sendo escolhido por engano. Na tela de
-   * precificação as duas somam na mesma linha, ver lib/coins/billable.ts.
-   */
-  summaryFromTranscript: 15,
-  /**
    * One-shot cost of importing a YouTube video: legenda + resumo completo.
    *
-   * **30 e FIXO, o único preço do produto que não é por minuto.** Os três modos
-   * de captura cobram por minuto porque o custo deles É por minuto, cada
-   * minuto de áudio é uma chamada de STT. Uma importação não tem STT: a legenda
-   * já existe, custa ~R$ 0,03 de provedor por vídeo (1 crédito da Supadata,
-   * qualquer que seja a duração), e o que sobra é exatamente a mesma chamada de
-   * `summaryFromTranscript`. Cobrar por minuto de vídeo seria cobrar por um
-   * trabalho que não fazemos.
+   * **30 e FIXO, o único preço do produto que não é por minuto.** A gravação
+   * cobra por minuto porque o custo dela É por minuto: cada minuto de áudio é
+   * uma chamada de STT. Uma importação não tem STT: a legenda já existe, custa
+   * ~R$ 0,03 de provedor por vídeo (1 crédito da Supadata, qualquer que seja a
+   * duração), e o que sobra é exatamente a mesma chamada de resumo.
+   * Cobrar por minuto de vídeo seria cobrar por um trabalho que não fazemos.
    *
    * A conta, na régua de `DEFAULT_COIN_PRICE_PER_THOUSAND_BRL`: R$ 0,105 de
-   * resumo (o número MEDIDO que fixou `summaryFromTranscript` em 15) mais
+   * resumo (o número MEDIDO que fixou `reprocessSummary` em 15) mais
    * R$ 0,03 de legenda dá R$ 0,135 num vídeo típico. A régua pediria 23 para os
    * 70% de `DEFAULT_TARGET_MARGIN_PCT` NESSE vídeo típico, mas o custo do
    * resumo cresce com a transcrição na ENTRADA e a receita aqui não cresce com
@@ -142,7 +99,7 @@ export const COIN_COSTS = {
    * grátis por sete pontos de margem é a decisão que este número carrega: a
    * porta que não exige esperar até domingo continua aberta, só não duas vezes.
    *
-   * **Sabendo que ele canibaliza o Modo Resumo.** Os mesmos 45 minutos custam
+   * **Sabendo que ele canibaliza a gravação.** Os mesmos 45 minutos custam
    * 225 moedas gravados e 30 importados, e para uma igreja que transmite ao
    * vivo os dois caminhos existem. A margem se sustenta nos dois (o custo cai
    * junto com o preço); a receita por sermão, não. Foi decisão de produto
@@ -163,27 +120,37 @@ export const COIN_COSTS = {
  * reason to its cost in COIN_COST_BY_REASON, clients never send an amount.
  */
 export const CHARGE_REASONS = [
-  "live_minute",
-  "audio_only_minute",
-  "transcript_minute",
+  "recording_minute",
   "deepening",
   "reprocess_summary",
   "reprocess_deepening",
-  "summary_from_transcript",
   "youtube_import",
 ] as const;
 export type ChargeReason = (typeof CHARGE_REASONS)[number];
 
 export const COIN_COST_BY_REASON: Record<ChargeReason, number> = {
-  live_minute: COIN_COSTS.liveMinute,
-  audio_only_minute: COIN_COSTS.audioOnlyMinute,
-  transcript_minute: COIN_COSTS.transcriptMinute,
+  recording_minute: COIN_COSTS.recordingMinute,
   deepening: COIN_COSTS.deepening,
   reprocess_summary: COIN_COSTS.reprocessSummary,
   reprocess_deepening: COIN_COSTS.reprocessDeepening,
-  summary_from_transcript: COIN_COSTS.summaryFromTranscript,
   youtube_import: COIN_COSTS.youtubeImport,
 };
+
+/**
+ * Motivos que NÃO são mais emitidos, e continuam no ledger.
+ *
+ * `live_minute`, `audio_only_minute` e `transcript_minute` eram os três modos
+ * de captura; `summary_from_transcript` era o resumo sob demanda de uma sessão
+ * do modo transcrição. Nenhum cliente manda mais nenhum deles, mas
+ * `coin_transactions` guarda anos de linhas com esses nomes, e o painel soma
+ * por motivo. Ver `lib/coins/billable.ts`.
+ */
+export const LEGACY_CHARGE_REASONS = [
+  "live_minute",
+  "audio_only_minute",
+  "transcript_minute",
+  "summary_from_transcript",
+] as const;
 
 export function isChargeReason(value: unknown): value is ChargeReason {
   return typeof value === "string" && (CHARGE_REASONS as readonly string[]).includes(value);

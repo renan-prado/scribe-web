@@ -28,7 +28,7 @@ import {
 } from "@/features/billing/lib/api";
 import { getBillingState, useBillingStore } from "@/features/billing/store";
 import { getCoinsState, useCoinsStore } from "@/features/coins/store";
-import { useSessionStore } from "@/features/session/store";
+import { useRecordingStore } from "@/features/session/recording-store";
 import {
   formatBrl,
   formatCoins,
@@ -121,7 +121,7 @@ export function BillingDialog({
    * MediaRecorder e a fila de chunks. Se o pop-up for bloqueado, é melhor
    * pedir para liberar do que "resolver" navegando.
    */
-  const recordingLive = useSessionStore((st) => st.running);
+  const recordingLive = useRecordingStore((st) => st.running);
 
   const plan = summary?.plan ?? "free";
   const subscribed = isActiveStatus(summary?.status);

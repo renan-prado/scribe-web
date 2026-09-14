@@ -79,7 +79,6 @@ export async function POST(request: Request) {
     userId: auth.user.id,
     sessionId,
     transcript,
-    feedItems: session.feedItems,
     finalSummary: session.finalSummary,
     logPrefix: "deepening-reprocess",
   });

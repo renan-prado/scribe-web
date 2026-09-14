@@ -35,12 +35,10 @@ const ANY = "__any__";
 
 // Cada Select declara suas opções UMA vez e passa a mesma lista para o `items`
 // do Root e para o map dos itens. Sem o `items`, o gatilho mostra o valor cru
-// ("audio_only") em vez do rótulo, ver o cabeçalho de shared/ui/select.
+// ("audio") em vez do rótulo, ver o cabeçalho de shared/ui/select.
 const MODE_OPTIONS: SelectOption[] = [
   { value: ANY, label: "Todos" },
-  { value: "live", label: "Com live" },
-  { value: "audio_only", label: "Sem live" },
-  { value: "transcript_only", label: "Transcrição" },
+  { value: "audio", label: "Gravação" },
   { value: "youtube", label: "YouTube" },
 ];
 

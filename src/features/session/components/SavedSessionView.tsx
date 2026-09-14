@@ -17,8 +17,6 @@ import { useCoinsStore } from "@/features/coins/store";
 import { ConfirmDialog } from "@/features/session/components/ConfirmDialog";
 import { DeepenButton } from "@/features/session/components/DeepenButton";
 import { EntityFieldDialog } from "@/features/session/components/EntityFieldDialog";
-import { Feed } from "@/features/session/components/Feed";
-import { FeedAgendadoPreview } from "@/features/session/components/FeedAgendadoPreview";
 import { HallucinationReportDialog } from "@/features/session/components/HallucinationReportDialog";
 import { SavedTranscriptView } from "@/features/session/components/SavedTranscriptView";
 import { SessionMenu } from "@/features/session/components/SessionMenu";
@@ -26,10 +24,6 @@ import { SummaryView } from "@/features/session/components/SummaryView";
 import { TitleDialog } from "@/features/session/components/TitleDialog";
 import { requestLocationSuggestions, requestSpeakerSuggestions } from "@/features/session/lib/api";
 import { initialsOf } from "@/features/session/lib/text";
-import type { FeedItem } from "@/lib/domain/feed";
-import type { HighlightsPayload } from "@/lib/domain/highlights";
-import type { RemindersPayload } from "@/lib/domain/reminders";
-import type { RereadsPayload } from "@/lib/domain/rereads";
 import type { SummaryPayload } from "@/lib/domain/summary";
 import { cn } from "@/lib/utils";
 
@@ -58,11 +52,7 @@ type SavedSessionViewProps = {
   speakerName: string | null;
   speakerLocation: string | null;
   transcript: string;
-  feedItems: FeedItem[];
   summary: SummaryPayload | null;
-  rereads: RereadsPayload | null;
-  reminders: RemindersPayload | null;
-  highlights: HighlightsPayload | null;
   hasDeepening: boolean;
   /** Ver `lib/entitlements/server.ts`. */
   canGenerateStudy: boolean;
@@ -99,18 +89,13 @@ export function SavedSessionView({
   speakerName: initialSpeakerName,
   speakerLocation: initialSpeakerLocation,
   transcript,
-  feedItems,
   summary,
-  rereads,
-  reminders,
-  highlights,
   hasDeepening,
   canGenerateStudy,
   backHref = "/recordings",
   meta = "full",
   lead = "rule",
 }: SavedSessionViewProps) {
-  const [feedOpen, setFeedOpen] = useState(false);
   const [transcriptOpen, setTranscriptOpen] = useState(false);
   const [titleDialogOpen, setTitleDialogOpen] = useState(false);
   const [speakerDialogOpen, setSpeakerDialogOpen] = useState(false);
@@ -236,9 +221,7 @@ export function SavedSessionView({
             </span>
             <SessionMenu
               hasTranscript={transcript.length > 0}
-              hasLiveFeed={feedItems.length > 0}
               onOpenTranscript={() => setTranscriptOpen(true)}
-              onOpenLiveFeed={() => setFeedOpen(true)}
               onDelete={() => setDeleteOpen(true)}
               onReprocess={summary ? handleReprocess : undefined}
               reprocessing={reprocessing}
@@ -332,36 +315,6 @@ export function SavedSessionView({
         lead={lead}
       />
 
-      {/* A secao pos-resumo reserva a mesma "canaleta" direita que os blocos
-          do SummaryView reservam pro botao de comentario do Scriba, um
-          placeholder invisivel size-9 alinha a borda direita de todo o
-          conteudo na mesma coluna. No mobile o placeholder some. */}
-      <div data-tour="summary-followups" className="flex items-start sm:gap-4">
-        <div className="min-w-0 flex-1">
-          <FeedAgendadoPreview rereads={rereads} reminders={reminders} highlights={highlights} />
-        </div>
-        <div aria-hidden className="hidden size-9 shrink-0 sm:block" />
-      </div>
-
-      <Dialog open={feedOpen} onOpenChange={setFeedOpen}>
-        <DialogContent className="sm:max-w-2xl">
-          <DialogHeader>
-            <DialogTitle>Conteúdo do live</DialogTitle>
-            <DialogDescription>
-              Cartões extraídos e sugestões que apareceram durante a gravação.
-            </DialogDescription>
-          </DialogHeader>
-          <div className="max-h-[65vh] overflow-y-auto pr-2">
-            <Feed
-              items={feedItems}
-              running={false}
-              hasTranscript={transcript.length > 0}
-              suggesting={false}
-            />
-          </div>
-        </DialogContent>
-      </Dialog>
-
       <Dialog open={transcriptOpen} onOpenChange={setTranscriptOpen}>
         <DialogContent className="sm:max-w-2xl">
           <DialogHeader>
@@ -380,7 +333,6 @@ export function SavedSessionView({
         open={reportOpen}
         onOpenChange={setReportOpen}
         sessionId={id}
-        scope="summary"
         onReprocess={summary ? handleReprocess : undefined}
       />
 

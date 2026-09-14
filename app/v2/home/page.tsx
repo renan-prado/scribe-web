@@ -1,12 +1,7 @@
 import type { Metadata } from "next";
 import { revalidatePath } from "next/cache";
 import { listDeepenedSessionIds } from "@/lib/db/deepenings";
-import {
-  deleteSession,
-  listSessionIdsWithSummary,
-  listSessions,
-  type SessionListItem,
-} from "@/lib/db/sessions";
+import { deleteSession, listSessions, type SessionListItem } from "@/lib/db/sessions";
 import { TopBar } from "../components/TopBar";
 import { LibraryBrowser } from "./LibraryBrowser";
 import { RecordDock } from "./RecordDock";
@@ -41,11 +36,9 @@ async function deleteSessionAction(formData: FormData): Promise<void> {
  * o acervo vira a primeira tela e gravar vira o botão que flutua sobre ele, não
  * de conteúdo do cartão.
  *
- * As três consultas são as mesmas do `/recordings`: a lista (sem as colunas
- * pesadas) e dois conjuntos de CHAVE, quais sessões já têm estudo e quais têm
- * resumo. A segunda existe porque uma sessão do modo transcrição pode ter
- * ganhado um resumo depois (ver `/api/final-summary/from-transcript`) e o
- * cartão precisa abrir na página certa.
+ * Duas consultas: a lista (sem as colunas pesadas) e o conjunto de chaves das
+ * sessões que já têm estudo, que é a única pastilha do cartão que não sai da
+ * própria linha.
  *
  * A busca inteira mora no cliente (`LibraryBrowser`), como no `/recordings`: a
  * página continua sendo só quem BUSCA no banco. O `SearchScope` envolve o
@@ -58,10 +51,7 @@ async function deleteSessionAction(formData: FormData): Promise<void> {
 export default async function V2HomePage() {
   const sessions = await listSessions().catch((): SessionListItem[] => []);
   const ids = sessions.map((s) => s.id);
-  const [deepenedIds, summarizedIds] = await Promise.all([
-    listDeepenedSessionIds(ids).catch(() => new Set<string>()),
-    listSessionIdsWithSummary(ids).catch(() => new Set<string>()),
-  ]);
+  const deepenedIds = await listDeepenedSessionIds(ids).catch(() => new Set<string>());
 
   return (
     <SearchScope>
@@ -73,7 +63,6 @@ export default async function V2HomePage() {
         <LibraryBrowser
           sessions={sessions}
           deepenedIds={[...deepenedIds]}
-          summarizedIds={[...summarizedIds]}
           nowIso={new Date().toISOString()}
           deleteAction={deleteSessionAction}
         />

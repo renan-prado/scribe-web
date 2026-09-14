@@ -10,13 +10,8 @@ import type { SessionMode } from "@/lib/domain/session";
  * para ele, o que se lê como "sessão sem modo", não como "importada".
  */
 const STYLES: Record<SessionMode, { label: string; className: string }> = {
-  live: { label: "Com live", className: "bg-scriba-mint text-scriba-mint-accent" },
-  audio_only: { label: "Sem live", className: "bg-scriba-cream text-scriba-cream-accent" },
-  transcript_only: {
-    label: "Transcrição",
-    className: "bg-scriba-hairline-soft text-scriba-ink-soft",
-  },
-  youtube: { label: "YouTube", className: "bg-scriba-rose text-scriba-rose-accent" },
+  audio: { label: "Gravação", className: "bg-scriba-cream text-scriba-cream-accent" },
+  youtube: { label: "YouTube", className: "bg-scriba-mint text-scriba-mint-dark" },
 };
 
 export function SessionModeBadge({ mode }: { mode: SessionMode | null }) {

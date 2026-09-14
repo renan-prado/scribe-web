@@ -26,10 +26,12 @@ const CreateSessionSchema = z
 
 /**
  * POST /api/sessions
- * Creates the empty row that anchors /recording/{id}/live. Called from the
- * "Nova gravação" dialog in the app header. The row
- * lives in Supabase with user_id = auth.uid() so RLS auto-scopes every
- * subsequent read/update.
+ *
+ * Cria a linha vazia que ancora uma sessão. A gravação a cria no STOP, quando
+ * já tem o áudio na mão (ver `AudioStudio`); a importação do YouTube a cria
+ * antes, porque precisa da linha para guardar a URL. Ela nasce no Supabase com
+ * `user_id = auth.uid()`, então a RLS escopa sozinha toda leitura e escrita
+ * seguinte.
  */
 export async function POST(request: Request) {
   const auth = await requireAuth();
@@ -46,7 +48,7 @@ export async function POST(request: Request) {
 
   const speakerName = body.speakerName?.trim() || null;
   const speakerLocation = body.speakerLocation?.trim() || null;
-  const mode = body.mode ?? "live";
+  const mode = body.mode ?? "audio";
 
   // O modo youtube não existe sem um vídeo: a linha nasceria com `source_url`
   // nulo e a página de importação não teria o que importar. Recusar aqui é o

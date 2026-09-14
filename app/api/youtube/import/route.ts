@@ -9,12 +9,9 @@ import {
   YOUTUBE_MIN_TRANSCRIPT_CHARS,
 } from "@/lib/domain/youtube";
 import { generateFinalSummary } from "@/lib/final-summary/generate";
-import { generateAndSaveHighlights } from "@/lib/highlights/save";
 import { parseJsonBody, UuidSchema } from "@/lib/http/validate";
 import { createLogger } from "@/lib/log";
 import { enforceRateLimit, RATE_LIMITS } from "@/lib/rate-limit";
-import { generateAndSaveReminders } from "@/lib/reminders/save";
-import { generateAndSaveRereads } from "@/lib/rereads/save";
 import { requireAuth } from "@/lib/supabase/require-auth";
 import { cleanYoutubeMetadata } from "@/lib/youtube/metadata";
 import { fetchYoutubeVideoInfo } from "@/lib/youtube/oembed";
@@ -212,7 +209,6 @@ export async function POST(request: Request) {
     transcript: text,
     // Vazio: uma importação não roda nenhum pipeline ao vivo, então não há
     // feed. Mesmo caso de `/api/final-summary/from-transcript`.
-    feedItems: [],
     logPrefix: "youtube-import",
     metadataRoute: "final-summary-youtube",
   });
@@ -248,37 +244,6 @@ export async function POST(request: Request) {
     log.error("summary save failed", { sessionId, error: (err as Error).message });
   }
 
-  // Best-effort, mesmo padrão das outras rotas de resumo: releia (10
-  // versículos), lembra (10 mini-callbacks) e frases marcantes (até 12, sem
-  // IA). Nenhuma falhando derruba o resumo, a UI trata payload ausente como
-  // normal.
-  const [rereads, reminders, highlights] = await Promise.all([
-    generateAndSaveRereads({
-      userId: auth.user.id,
-      sessionId,
-      transcript: text,
-      feedItems: [],
-      finalSummary: payload,
-      logPrefix: "rereads-youtube",
-      metadataRoute: "rereads-youtube",
-    }),
-    generateAndSaveReminders({
-      userId: auth.user.id,
-      sessionId,
-      transcript: text,
-      feedItems: [],
-      finalSummary: payload,
-      logPrefix: "reminders-youtube",
-      metadataRoute: "reminders-youtube",
-    }),
-    generateAndSaveHighlights({
-      sessionId,
-      feedItems: [],
-      finalSummary: payload,
-      logPrefix: "highlights-youtube",
-    }),
-  ]);
-
   log.info("imported", { sessionId, saved, latencyMs, durationMs });
 
   return NextResponse.json({
@@ -288,8 +253,5 @@ export async function POST(request: Request) {
     latencyMs,
     model,
     durationMs,
-    rereads,
-    reminders,
-    highlights,
   });
 }

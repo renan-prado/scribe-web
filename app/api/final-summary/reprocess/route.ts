@@ -3,12 +3,9 @@ import { z } from "zod";
 import { chargeCoins } from "@/lib/db/coins";
 import { getSession, updateSessionSummary } from "@/lib/db/sessions";
 import { generateFinalSummary } from "@/lib/final-summary/generate";
-import { generateAndSaveHighlights } from "@/lib/highlights/save";
 import { parseJsonBody, UuidSchema } from "@/lib/http/validate";
 import { createLogger } from "@/lib/log";
 import { enforceRateLimit, RATE_LIMITS } from "@/lib/rate-limit";
-import { generateAndSaveReminders } from "@/lib/reminders/save";
-import { generateAndSaveRereads } from "@/lib/rereads/save";
 import { requireAuth } from "@/lib/supabase/require-auth";
 
 const log = createLogger("final-summary-reprocess");
@@ -66,7 +63,6 @@ export async function POST(request: Request) {
     userId: auth.user.id,
     sessionId,
     transcript,
-    feedItems: session.feedItems,
     logPrefix: "final-summary-reprocess",
     metadataRoute: "final-summary-reprocess",
   });
@@ -98,45 +94,11 @@ export async function POST(request: Request) {
     });
   }
 
-  // Regenera "Releia este texto" (10), "Lembra disso?" (10) e "Frases
-  // marcantes" (até 12, sem IA) em paralelo com o resumo atualizado, upsert
-  // sobrescreve o payload anterior de cada. Best-effort, mesmo padrão do route
-  // de primeira geração.
-  const [rereads, reminders, highlights] = await Promise.all([
-    generateAndSaveRereads({
-      userId: auth.user.id,
-      sessionId,
-      transcript,
-      feedItems: session.feedItems,
-      finalSummary: payload,
-      logPrefix: "rereads-reprocess",
-      metadataRoute: "rereads-reprocess",
-    }),
-    generateAndSaveReminders({
-      userId: auth.user.id,
-      sessionId,
-      transcript,
-      feedItems: session.feedItems,
-      finalSummary: payload,
-      logPrefix: "reminders-reprocess",
-      metadataRoute: "reminders-reprocess",
-    }),
-    generateAndSaveHighlights({
-      sessionId,
-      feedItems: session.feedItems,
-      finalSummary: payload,
-      logPrefix: "highlights-reprocess",
-    }),
-  ]);
-
   return NextResponse.json({
     ...payload,
     latencyMs,
     model,
     sessionId,
     saved,
-    rereads,
-    reminders,
-    highlights,
   });
 }

@@ -2,7 +2,7 @@ import { BookGlyph } from "@/components/icons/BookGlyph";
 import { ChapterMention } from "@/features/session/components/ChapterMention";
 import { PassageVerses } from "@/features/session/components/PassageVerses";
 import { RichText } from "@/features/session/components/RichText";
-import { parseVerseReference } from "@/lib/domain/feed";
+import { parseVerseReference } from "@/lib/domain/reference";
 import type { SummaryBlock } from "@/lib/domain/summary";
 import { ScribaMark } from "@/shared/brand";
 

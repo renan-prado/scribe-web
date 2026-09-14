@@ -1,24 +1,19 @@
 import "server-only";
 import { cache } from "react";
 import { escapeLikeValue } from "@/lib/db/like";
-import type { FeedItem } from "@/lib/domain/feed";
 import { type ReferenceQuery, referenceMatchesQuery } from "@/lib/domain/reference-query";
 import { parseSessionMode, type SessionMode } from "@/lib/domain/session";
 import type { SummaryPayload } from "@/lib/domain/summary";
 import { createClient } from "@/lib/supabase/server";
 
 /**
- * Persistence for recording sessions. One row per stop-press: transcript,
- * curated live feed (jsonb), and the final summary.
+ * Persistence for recording sessions. One row per stop-press: transcript and
+ * the final summary.
  *
- * Ownership (user_id) and RLS are deferred to the auth phase.
- *
- * feed_items stays a jsonb column here, it carries every kind including
- * AI-authored ones (relatedVerse, context, suggestedQuote). Speaker-sourced
- * kinds (citedVerse, speakerHighlight, speakerEcho, speakerCitation) are
- * additionally projected into public.session_feed_items by a Postgres
- * trigger (see migration 0004) so cross-session queries have first-class
- * rows to filter and index. Read those via @/lib/db/feed-items.
+ * A coluna `feed_items` ainda existe no banco e continua sendo lida pela
+ * projeção `session_feed_items`, que alimenta a busca por referência bíblica
+ * das sessões ANTIGAS. Nada mais a escreve: os cards do feed ao vivo morreram
+ * com os três modos de captura, e esta camada não a lê mais.
  *
  * speaker_id / location_id (nullable FKs) link to the reusable entities in
  * @/lib/db/{speakers,locations}. speaker_name / speaker_location stay as
@@ -43,7 +38,6 @@ export type SessionRow = {
   /** Origem externa da transcrição, a URL do vídeo, no modo youtube. */
   sourceUrl: string | null;
   transcript: string;
-  feedItems: FeedItem[];
   finalSummary: SummaryPayload | null;
 };
 
@@ -64,13 +58,13 @@ export type SessionListItem = {
 /**
  * O cabeçalho de uma sessão, sem as três colunas pesadas.
  *
- * Existe porque as páginas de GRAVAÇÃO (live/audio/transcribe) e a de estudo
- * decidem rota e cabeçalho a partir de `mode`, `endedAt`, `title` e o
- * snapshot do orador, e nenhuma delas renderiza `transcript`, `feedItems`
- * ou `finalSummary`. Buscar tudo ali significava trazer a transcrição inteira
- * de um sermão de uma hora para abrir um gravador vazio.
+ * Existe porque a tela de gravação e a de estudo decidem rota e cabeçalho a
+ * partir de `mode`, `endedAt`, `title` e o snapshot do orador, e nenhuma das
+ * duas renderiza `transcript` ou `finalSummary`. Buscar tudo ali significava
+ * trazer a transcrição inteira de um sermão de uma hora para abrir um gravador
+ * vazio.
  */
-export type SessionMeta = Omit<SessionRow, "transcript" | "feedItems" | "finalSummary">;
+export type SessionMeta = Omit<SessionRow, "transcript" | "finalSummary">;
 
 export type CreateEmptySessionInput = {
   speakerName: string | null;
@@ -84,7 +78,6 @@ export type CreateEmptySessionInput = {
 
 export type UpdateSessionFinalInput = {
   transcript: string;
-  feedItems: FeedItem[];
   summary: SummaryPayload;
   durationMs: number | null;
   speakerName: string | null;
@@ -107,7 +100,6 @@ type DbRow = {
   capture_mode: string | null;
   source_url: string | null;
   transcript: string;
-  feed_items: FeedItem[] | null;
   final_summary: SummaryPayload | null;
 };
 
@@ -117,12 +109,12 @@ type DbRow = {
 // `capture_mode`; we keep the API-side field name as `mode` for callers.
 const SELECT_LIST =
   "id, created_at, duration_ms, title, short_summary, speaker_id, location_id, speaker_name, speaker_location, capture_mode, source_url";
-const SELECT_FULL = `id, created_at, ended_at, duration_ms, title, short_summary, speaker_id, location_id, speaker_name, speaker_location, capture_mode, source_url, transcript, feed_items, final_summary`;
-// O mesmo de SELECT_FULL menos transcript/feed_items/final_summary.
+const SELECT_FULL = `id, created_at, ended_at, duration_ms, title, short_summary, speaker_id, location_id, speaker_name, speaker_location, capture_mode, source_url, transcript, final_summary`;
+// O mesmo de SELECT_FULL menos transcript/final_summary.
 const SELECT_META =
   "id, created_at, ended_at, duration_ms, title, short_summary, speaker_id, location_id, speaker_name, speaker_location, capture_mode, source_url";
 
-type MetaRow = Omit<DbRow, "transcript" | "feed_items" | "final_summary">;
+type MetaRow = Omit<DbRow, "transcript" | "final_summary">;
 
 function rowToMeta(row: MetaRow): SessionMeta {
   return {
@@ -156,7 +148,6 @@ function rowToSession(row: DbRow): SessionRow {
     mode: parseSessionMode(row.capture_mode),
     sourceUrl: row.source_url,
     transcript: row.transcript,
-    feedItems: Array.isArray(row.feed_items) ? row.feed_items : [],
     finalSummary: row.final_summary,
   };
 }
@@ -164,7 +155,7 @@ function rowToSession(row: DbRow): SessionRow {
 /**
  * Create the row at the START of a recording so the URL /recording/{id}/live
  * is stable from the first second. Fills only what the user knows at that
- * point (speaker + location snapshot); transcript/feedItems/summary land
+ * point (speaker + location snapshot); transcript/summary land
  * later via updateSessionFinal on stop.
  *
  * user_id is pulled from the authenticated Supabase session, RLS then
@@ -185,10 +176,9 @@ export async function createEmptySession(input: CreateEmptySessionInput): Promis
       location_id: input.locationId ?? null,
       speaker_name: input.speakerName,
       speaker_location: input.speakerLocation,
-      capture_mode: input.mode ?? "live",
+      capture_mode: input.mode ?? "audio",
       source_url: input.sourceUrl ?? null,
       transcript: "",
-      feed_items: [],
     })
     .select("id")
     .single();
@@ -218,7 +208,6 @@ export async function updateSessionFinal(
     speaker_name: input.speakerName,
     speaker_location: input.speakerLocation,
     transcript: input.transcript,
-    feed_items: input.feedItems,
     final_summary: input.summary,
   };
   if (input.speakerId !== undefined) patch.speaker_id = input.speakerId;
@@ -315,7 +304,7 @@ export async function listUnfinishedSessions(): Promise<SessionListItem[]> {
  * do Supabase, não. Eram duas leituras das colunas mais pesadas do banco por
  * page view, a segunda apenas para descobrir o `title` da aba.
  *
- * Quem não precisa de `transcript`/`feedItems`/`finalSummary` deve chamar
+ * Quem não precisa de `transcript`/`finalSummary` deve chamar
  * `getSessionMeta`.
  */
 export const getSession = cache(async (id: string): Promise<SessionRow | null> => {
@@ -373,7 +362,7 @@ export async function deleteSession(id: string): Promise<void> {
 /**
  * Overwrite only the final_summary payload (plus its derived title and
  * short_summary). Used by POST /api/final-summary/reprocess, transcript,
- * feed_items and duration_ms are preserved as originally captured.
+ * duration_ms is preserved as originally captured.
  *
  * `keepTitle` existe para o resumo gerado sobre uma sessão do modo
  * transcrição: ali o título na linha foi ESCOLHIDO pela pessoa no cabeçalho da
@@ -478,18 +467,6 @@ export async function searchSessionsByReference(
   return [...hits].map(([sessionId, reference]) => ({ sessionId, reference }));
 }
 
-export async function listSessionIdsWithSummary(sessionIds: string[]): Promise<Set<string>> {
-  if (sessionIds.length === 0) return new Set();
-  const supabase = await createClient();
-  const { data, error } = await supabase
-    .from("sessions")
-    .select("id")
-    .in("id", sessionIds)
-    .not("final_summary", "is", null);
-  if (error) throw new Error(`listSessionIdsWithSummary failed: ${error.message}`);
-  return new Set((data ?? []).map((r) => r.id as string));
-}
-
 export type UpdateSessionTranscriptInput = {
   transcript: string;
   durationMs: number | null;
@@ -525,7 +502,6 @@ export async function updateSessionTranscript(
     speaker_name: input.speakerName,
     speaker_location: input.speakerLocation,
     transcript: input.transcript,
-    feed_items: [],
   };
   if (input.speakerId !== undefined) patch.speaker_id = input.speakerId;
   if (input.locationId !== undefined) patch.location_id = input.locationId;

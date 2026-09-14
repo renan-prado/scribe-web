@@ -1,6 +1,5 @@
 import "server-only";
 import { recordChatUsage, type UsageRoute } from "@/lib/db/usage";
-import type { FeedItem } from "@/lib/domain/feed";
 import { parseSummaryFromLLM, type SummaryPayload } from "@/lib/domain/summary";
 import { serverEnv } from "@/lib/env/server";
 import { buildLlmMetadata } from "@/lib/llm/metadata";
@@ -42,7 +41,6 @@ export type GenerateFinalSummaryInput = {
   userId: string;
   sessionId: string;
   transcript: string;
-  feedItems: FeedItem[];
   /** Log tag, "final-summary" or "final-summary-reprocess". */
   logPrefix: string;
   /** Metadata route tag on the OpenAI store record + usage rows. */
@@ -58,11 +56,11 @@ export type GenerateFinalSummaryInput = {
 export async function generateFinalSummary(
   input: GenerateFinalSummaryInput
 ): Promise<GenerateFinalSummaryResult> {
-  const { userId, sessionId, transcript, feedItems, logPrefix, metadataRoute } = input;
+  const { userId, sessionId, transcript, logPrefix, metadataRoute } = input;
   const log = createLogger(logPrefix);
   const model = serverEnv.OPENAI_FINAL_SUMMARY_MODEL;
 
-  const userMessage = `feedItems:\n${JSON.stringify(feedItems)}\n\n---\ntranscript:\n${transcript}`;
+  const userMessage = `transcript:\n${transcript}`;
 
   const result = await callChat({
     model,
@@ -111,7 +109,6 @@ export async function generateFinalSummary(
     promptTokens: usage.promptTokens,
     completionTokens: usage.completionTokens,
     blocks: payload.blocks.length,
-    feedItems: feedItems.length,
   });
   if (finishReason === "length") {
     log.warn(`output truncated by max_tokens`, {

@@ -59,29 +59,16 @@ type Props = {
   sessions: SessionListItem[];
   /** Sessões que já têm estudo gerado. */
   deepenedIds: string[];
-  /** Sessões que têm resumo final (decide a rota do cartão). */
-  summarizedIds: string[];
   nowIso: string;
   deleteAction: (formData: FormData) => Promise<void>;
 };
 
-/**
- * Para onde cada cartão aponta. O resumo tem página no v2; a TRANSCRIÇÃO ainda
- * não tem, e uma sessão do modo transcrição sem resumo continua abrindo a do
- * app atual, que existe e funciona. Um link para uma rota que ainda não foi
- * escrita seria um 404 disfarçado de tela nova.
- */
-function v2Href(id: string, route: "summary" | "transcript"): string {
-  return route === "summary" ? `/v2/summary/${id}` : `/recording/${id}/transcript`;
+/** Toda sessão salva abre no resumo. */
+function v2Href(id: string): string {
+  return `/v2/summary/${id}`;
 }
 
-export function LibraryBrowser({
-  sessions,
-  deepenedIds,
-  summarizedIds,
-  nowIso,
-  deleteAction,
-}: Props) {
+export function LibraryBrowser({ sessions, deepenedIds, nowIso, deleteAction }: Props) {
   const { open, setOpen } = useSearchScope();
   const [query, setQuery] = useState("");
   const [speaker, setSpeaker] = useState<string>(FACET_ALL);
@@ -92,7 +79,6 @@ export function LibraryBrowser({
 
   const now = useMemo(() => new Date(nowIso), [nowIso]);
   const deepened = useMemo(() => new Set(deepenedIds), [deepenedIds]);
-  const summarized = useMemo(() => new Set(summarizedIds), [summarizedIds]);
 
   const speakerOptions = useMemo(
     () => facetOptions(sessions.map((s) => s.speakerName)),
@@ -241,7 +227,6 @@ export function LibraryBrowser({
                   session={s}
                   now={now}
                   isDeepened={deepened.has(s.id)}
-                  hasSummary={summarized.has(s.id)}
                   deleteAction={deleteAction}
                   header="speaker"
                   buildHref={v2Href}

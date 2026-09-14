@@ -33,7 +33,7 @@ const ANY = "__any__";
 
 // Cada Select declara suas opções UMA vez e passa a mesma lista para o `items`
 // do Root e para o map dos itens. Sem o `items`, o gatilho mostra o valor cru
-// ("30d", "audio_only") em vez do rótulo, ver o cabeçalho de shared/ui/select.
+// ("30d", "audio") em vez do rótulo, ver o cabeçalho de shared/ui/select.
 const RANGE_OPTIONS: SelectOption[] = [
   { value: "7d", label: "Últimos 7 dias" },
   { value: "30d", label: "Últimos 30 dias" },
@@ -43,9 +43,8 @@ const RANGE_OPTIONS: SelectOption[] = [
 
 const MODE_OPTIONS: SelectOption[] = [
   { value: ANY, label: "Todos" },
-  { value: "live", label: "Com live" },
-  { value: "audio_only", label: "Sem live" },
-  { value: "transcript_only", label: "Transcrição" },
+  { value: "audio", label: "Gravação" },
+  { value: "youtube", label: "YouTube" },
 ];
 
 export function UsageFilters({ users, routes, versions, current }: Props) {

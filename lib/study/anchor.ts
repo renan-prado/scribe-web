@@ -3,7 +3,7 @@ import { abbrevFor } from "@/lib/bibles/books";
 import { CHAPTER_VERSE_COUNTS } from "@/lib/bibles/chapter-lengths";
 import { loadBible } from "@/lib/bibles/loader";
 import { lookupVerse } from "@/lib/bibles/lookup";
-import { parseVerseReference } from "@/lib/domain/feed";
+import { parseVerseReference } from "@/lib/domain/reference";
 
 /**
  * PASSO 3, a ANCORAGEM. Sem LLM.

@@ -1,14 +1,6 @@
 "use client";
 
-import {
-  FileText,
-  MoreVertical,
-  Pencil,
-  RefreshCw,
-  Sparkles,
-  Trash2,
-  TriangleAlert,
-} from "lucide-react";
+import { FileText, MoreVertical, Pencil, RefreshCw, Trash2, TriangleAlert } from "lucide-react";
 import {
   DropdownMenu,
   DropdownMenuContent,
@@ -22,9 +14,7 @@ import { cn } from "@/lib/utils";
 
 type SessionMenuProps = {
   hasTranscript: boolean;
-  hasLiveFeed: boolean;
   onOpenTranscript: () => void;
-  onOpenLiveFeed: () => void;
   onEdit?: () => void;
   onDelete?: () => void;
   onReprocess?: () => void;
@@ -38,8 +28,7 @@ type SessionMenuProps = {
    * Existe apesar de a barra do gravador já ter uma lixeira, e não é
    * duplicação inútil: aquela lixeira é um ícone de 14px numa barra que se
    * apaga sozinha depois de alguns segundos parada. Quem procura "como
-   * cancelar isto" abre o menu de três pontos, foi exatamente o que aconteceu
-   * no modo transcrição, que TINHA a ação e parecia não ter.
+   * cancelar isto" abre o menu de três pontos.
    *
    * Diferente de `onDelete`: aquele apaga um resumo já salvo.
    */
@@ -50,9 +39,7 @@ const REPROCESS_COST = COIN_COSTS.reprocessSummary;
 
 export function SessionMenu({
   hasTranscript,
-  hasLiveFeed,
   onOpenTranscript,
-  onOpenLiveFeed,
   onEdit,
   onDelete,
   onReprocess,
@@ -105,12 +92,6 @@ export function SessionMenu({
               <span className="coin-hex block h-[9px] w-[8px] bg-scriba-yellow" />
               {REPROCESS_COST}
             </span>
-          </DropdownMenuItem>
-        ) : null}
-        {hasLiveFeed ? (
-          <DropdownMenuItem onClick={onOpenLiveFeed} className="gap-2">
-            <Sparkles className="size-4" />
-            Ver conteúdo do live
           </DropdownMenuItem>
         ) : null}
         {hasTranscript ? (

@@ -134,7 +134,7 @@ export function AudioStudio({ autoStart = false }: { autoStart?: boolean }) {
 
   useCoinTick({
     enabled: state === "recording",
-    reason: "audio_only_minute",
+    reason: "recording_minute",
     sessionId: null,
     onDepleted: () => {
       setDepleted(true);
@@ -215,7 +215,7 @@ export function AudioStudio({ autoStart = false }: { autoStart?: boolean }) {
         let sessionId = current.sessionId;
         if (!sessionId) {
           setPhase("creating");
-          const created = await requestCreateSession({ mode: "audio_only" });
+          const created = await requestCreateSession({ mode: "audio" });
           if ("error" in created)
             throw new Error(`Não consegui criar a gravação: ${created.error}`);
           sessionId = created.id;
@@ -231,7 +231,6 @@ export function AudioStudio({ autoStart = false }: { autoStart?: boolean }) {
         const summary = await requestFinalSummary({
           sessionId,
           text,
-          feedItems: [],
           durationMs: current.durationMs,
         });
         if (!summary) throw new Error("Não consegui montar o resumo desta gravação.");

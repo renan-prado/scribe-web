@@ -11,12 +11,7 @@ import {
   DialogTitle,
 } from "@/components/ui/dialog";
 import { requestHallucinationReview } from "@/features/session/lib/api";
-import type { FeedItem } from "@/lib/domain/feed";
-import {
-  type HallucinationReview,
-  type HallucinationScope,
-  MAX_HALLUCINATION_NOTE_CHARS,
-} from "@/lib/domain/hallucination";
+import { type HallucinationReview, MAX_HALLUCINATION_NOTE_CHARS } from "@/lib/domain/hallucination";
 import { cn } from "@/lib/utils";
 
 const PRIMARY_BUTTON = cn(
@@ -32,7 +27,7 @@ const GHOST_BUTTON = cn(
   "disabled:cursor-not-allowed disabled:opacity-60"
 );
 
-const DANGER_BUTTON = cn(
+const _DANGER_BUTTON = cn(
   "inline-flex h-9 items-center justify-center rounded-full bg-destructive px-5 text-[13px] font-semibold text-white transition-opacity",
   "hover:opacity-90 focus-visible:outline-none focus-visible:ring-4 focus-visible:ring-destructive/30"
 );
@@ -41,17 +36,6 @@ type Props = {
   open: boolean;
   onOpenChange: (open: boolean) => void;
   sessionId: string;
-  scope: HallucinationScope;
-  /**
-   * Escopo live: contexto lido no momento do envio (a transcrição e o feed
-   * crescem enquanto o usuário digita). Lido por callback, não por prop, para
-   * que o dialog não re-renderize a cada chunk transcrito.
-   */
-  getLiveContext?: () => { text: string; feedItems: FeedItem[] };
-  /** Escopo live: remove do feed os cards que a auditoria reprovou. */
-  onRemoveKeys?: (keys: string[]) => number;
-  /** Oferecido quando a auditoria conclui que seguir gravando não compensa. */
-  onStopRecording?: () => void;
   /** Oferecido quando a auditoria conclui que o resumo salvo tem conserto. */
   onReprocess?: () => void;
 };
@@ -67,20 +51,10 @@ type Props = {
  * ele: ou age, ou explica o limite. E a decisão de encerrar (que interrompe a
  * cobrança de moedas) fica sempre na mão dele, nunca automática.
  */
-export function HallucinationReportDialog({
-  open,
-  onOpenChange,
-  sessionId,
-  scope,
-  getLiveContext,
-  onRemoveKeys,
-  onStopRecording,
-  onReprocess,
-}: Props) {
+export function HallucinationReportDialog({ open, onOpenChange, sessionId, onReprocess }: Props) {
   const [note, setNote] = useState("");
   const [submitting, setSubmitting] = useState(false);
   const [review, setReview] = useState<HallucinationReview | null>(null);
-  const [removed, setRemoved] = useState(0);
   const [error, setError] = useState("");
 
   // Cada abertura começa limpa, um veredito antigo na tela faria o usuário
@@ -89,7 +63,6 @@ export function HallucinationReportDialog({
     if (!open) return;
     setNote("");
     setReview(null);
-    setRemoved(0);
     setError("");
     setSubmitting(false);
   }, [open]);
@@ -101,27 +74,16 @@ export function HallucinationReportDialog({
     if (!trimmed || submitting) return;
     setSubmitting(true);
     setError("");
-    const live = scope === "live" ? getLiveContext?.() : undefined;
-    const result = await requestHallucinationReview({
-      sessionId,
-      scope,
-      note: trimmed,
-      text: live?.text,
-      feedItems: live?.feedItems,
-    });
+    const result = await requestHallucinationReview({ sessionId, note: trimmed });
     if (!result.ok) {
       setError(result.message);
       setSubmitting(false);
       return;
     }
-    const count =
-      result.review.removeKeys.length > 0 ? (onRemoveKeys?.(result.review.removeKeys) ?? 0) : 0;
-    setRemoved(count);
     setReview(result.review);
     setSubmitting(false);
   }
 
-  const showStop = review?.verdict === "suggest_stop" && Boolean(onStopRecording);
   const showReprocess = review?.verdict === "suggest_reprocess" && Boolean(onReprocess);
 
   return (
@@ -142,11 +104,6 @@ export function HallucinationReportDialog({
         {review ? (
           <div className="flex flex-col gap-3">
             <p className="text-sm leading-relaxed text-scriba-ink">{review.message}</p>
-            {removed > 0 ? (
-              <p className="text-xs font-medium text-scriba-ink-mute">
-                {removed === 1 ? "1 card removido do feed." : `${removed} cards removidos do feed.`}
-              </p>
-            ) : null}
           </div>
         ) : (
           <div className="flex flex-col gap-2">
@@ -187,18 +144,6 @@ export function HallucinationReportDialog({
               <button type="button" onClick={() => onOpenChange(false)} className={GHOST_BUTTON}>
                 Fechar
               </button>
-              {showStop ? (
-                <button
-                  type="button"
-                  onClick={() => {
-                    onOpenChange(false);
-                    onStopRecording?.();
-                  }}
-                  className={DANGER_BUTTON}
-                >
-                  Encerrar gravação
-                </button>
-              ) : null}
               {showReprocess ? (
                 <button
                   type="button"

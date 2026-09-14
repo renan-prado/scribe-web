@@ -2,9 +2,7 @@ import { NextResponse } from "next/server";
 import { z } from "zod";
 import { getSession } from "@/lib/db/sessions";
 import { recordChatUsage } from "@/lib/db/usage";
-import { coerceFeedItemsLoose, type FeedItem, feedItemDedupKey } from "@/lib/domain/feed";
 import {
-  HALLUCINATION_SCOPES,
   MAX_HALLUCINATION_NOTE_CHARS,
   parseHallucinationReviewFromLLM,
 } from "@/lib/domain/hallucination";
@@ -23,38 +21,19 @@ const log = createLogger("hallucination-report");
 export const runtime = "nodejs";
 export const dynamic = "force-dynamic";
 
-/** Cauda de transcrição enviada ao auditor no escopo live. Cobre vários
- * minutos de fala, o suficiente para julgar os cards visíveis sem inflar o
- * prompt com a sessão inteira. */
-const LIVE_TRANSCRIPT_CHARS = 6_000;
-/** No escopo summary a transcrição vem do banco e pode ser longa; cortamos
- * pelo fim, que é onde o resumo costuma derrapar. */
+/** A transcrição vem do banco e pode ser longa; cortamos pelo fim, que é onde
+ * o resumo costuma derrapar. */
 const SUMMARY_TRANSCRIPT_CHARS = 14_000;
 
 const BodySchema = z
   .object({
     sessionId: UuidSchema,
-    scope: z.enum(HALLUCINATION_SCOPES),
     note: z.string().trim().min(1).max(MAX_HALLUCINATION_NOTE_CHARS),
-    /** Escopo live: cauda da transcrição corrente (nada foi salvo ainda). */
-    text: z.string().max(20_000).optional(),
-    /** Escopo live: cards visíveis no feed, na ordem em que aparecem. */
-    feedItems: z.array(z.unknown()).max(500).optional(),
   })
   .strict();
 
 function tailOf(text: string, maxChars: number): string {
   return text.length <= maxChars ? text : text.slice(-maxChars);
-}
-
-/** Achata um card para o prompt: só o que importa para julgar ancoragem. */
-function itemForPrompt(item: FeedItem, index: number): Record<string, unknown> {
-  const base: Record<string, unknown> = { index, kind: item.kind };
-  if ("reference" in item && item.reference) base.reference = item.reference;
-  if ("author" in item && item.author) base.author = item.author;
-  if ("label" in item && item.label) base.label = item.label;
-  if ("text" in item && item.text) base.text = item.text;
-  return base;
 }
 
 /**
@@ -78,32 +57,19 @@ export async function POST(request: Request) {
 
   const parsed = await parseJsonBody(request, BodySchema);
   if (!parsed.ok) return parsed.response;
-  const { sessionId, scope, note } = parsed.data;
+  const { sessionId, note } = parsed.data;
 
   const model = serverEnv.OPENAI_HALLUCINATION_MODEL;
 
-  // No escopo live nada foi persistido ainda, então a transcrição e os cards
-  // vêm do cliente. No escopo summary a sessão já está salva, lemos do banco
-  // em vez de confiar no que o cliente manda.
-  let transcript = "";
-  let items: FeedItem[] = [];
-  let summaryJson: string | null = null;
+  // A sessão já está salva: lemos do banco em vez de confiar no que o cliente
+  // manda.
+  const session = await getSession(sessionId);
+  if (!session) return NextResponse.json({ error: "session_not_found" }, { status: 404 });
+  const transcript = tailOf(session.transcript.trim(), SUMMARY_TRANSCRIPT_CHARS);
+  const summaryJson = session.finalSummary ? JSON.stringify(session.finalSummary) : null;
 
-  if (scope === "live") {
-    transcript = tailOf((parsed.data.text ?? "").trim(), LIVE_TRANSCRIPT_CHARS);
-    items = coerceFeedItemsLoose(parsed.data.feedItems ?? []);
-  } else {
-    const session = await getSession(sessionId);
-    if (!session) return NextResponse.json({ error: "session_not_found" }, { status: 404 });
-    transcript = tailOf(session.transcript.trim(), SUMMARY_TRANSCRIPT_CHARS);
-    summaryJson = session.finalSummary ? JSON.stringify(session.finalSummary) : null;
-  }
-
-  const promptItems = items.map(itemForPrompt);
   const userMessage = [
-    `scope: ${scope}`,
     `note: ${note}`,
-    promptItems.length > 0 ? `items:\n${JSON.stringify(promptItems)}` : null,
     summaryJson ? `summary:\n${summaryJson}` : null,
     `---\ntranscript:\n${transcript || "(transcrição vazia)"}`,
   ]
@@ -136,22 +102,18 @@ export async function POST(request: Request) {
     }
     // O alerta do usuário é registrado mesmo quando a auditoria falha, é o
     // dado que não dá para recuperar depois.
-    await persistReport({ sessionId, userId: auth.user.id, scope, note, review: null });
+    await persistReport({ sessionId, userId: auth.user.id, scope: "summary", note, review: null });
     return NextResponse.json({ error: "upstream_failed" }, { status: 502 });
   }
 
   const { content, usage, latencyMs, finishReason } = result.data;
-  const review = parseHallucinationReviewFromLLM(content, (index) =>
-    index < items.length ? feedItemDedupKey(items[index]) : null
-  );
+  const review = parseHallucinationReviewFromLLM(content);
 
   log.debug("ok", {
     model,
     latencyMs,
     finishReason,
-    scope,
     verdict: review.verdict,
-    removed: review.removeKeys.length,
     promptTokens: usage.promptTokens,
     completionTokens: usage.completionTokens,
   });
@@ -166,7 +128,7 @@ export async function POST(request: Request) {
     reasoningTokens: usage.reasoningTokens,
     latencyMs,
   });
-  await persistReport({ sessionId, userId: auth.user.id, scope, note, review });
+  await persistReport({ sessionId, userId: auth.user.id, scope: "summary", note, review });
 
   return NextResponse.json(review);
 }
@@ -176,7 +138,7 @@ async function persistReport(input: {
   userId: string;
   scope: string;
   note: string;
-  review: { verdict: string; message: string; removeKeys: string[] } | null;
+  review: { verdict: string; message: string } | null;
 }): Promise<void> {
   try {
     const supabase = await createClient();
@@ -187,7 +149,9 @@ async function persistReport(input: {
       note: input.note,
       verdict: input.review?.verdict ?? null,
       message: input.review?.message ?? null,
-      removed_count: input.review?.removeKeys.length ?? 0,
+      // Coluna de 0004 do relatório: contava cards removidos do feed ao vivo.
+      // Não há mais feed nem remoção automática; fica zerada para as linhas novas.
+      removed_count: 0,
     });
     if (error) {
       log.error("insert failed", { error: error.message });

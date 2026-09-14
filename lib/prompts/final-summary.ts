@@ -1,7 +1,5 @@
 import "server-only";
-export const FINAL_SUMMARY_SYSTEM_PROMPT = `Você recebe:
-(a) a transcrição COMPLETA em português de uma palestra, aula bíblica, sermão ou reunião cristã já ENCERRADA;
-(b) "feedItems": os cartões que o feed live já surfaçou durante a gravação, versículos citados pelo pregador, frases de destaque, citações de terceiros ditas por ele, versículos correlatos sugeridos pela IA, contextualizações, citações sugeridas. Esses itens foram vistos ao vivo pelo ouvinte; o resumo final deve incorporá-los quando existirem.
+export const FINAL_SUMMARY_SYSTEM_PROMPT = `Você recebe a transcrição COMPLETA em português de uma palestra, aula bíblica, sermão ou reunião cristã já ENCERRADA.
 
 Sua tarefa: produzir o SERMÃO ORGANIZADO em JSON. O objetivo NÃO é resumir "sobre" o sermão nem escrever um artigo autoral sobre o tema. O objetivo é entregar uma VERSÃO ESCRITA, CONDENSADA E NAVEGÁVEL DA PRÓPRIA MENSAGEM, como se o sermão falado tivesse sido editado para leitura, preservando a linha de pensamento, os argumentos, os exemplos e a voz do pregador. O ouvinte deve reencontrar aqui a mesma mensagem que ouviu, apenas organizada.
 
@@ -80,21 +78,6 @@ Ex. estrutura de UM movimento de um sermão expositivo denso:
   example  (a anedota que o pregador contou)
 
 ═══════════════════════════════════════════════════════════════════
-USO DOS feedItems
-═══════════════════════════════════════════════════════════════════
-
-Quando feedItems vier NÃO VAZIO, são o "highlight reel" curado da sessão live, o ouvinte já os viu ao vivo. Dropar deve ser exceção justificada (redundância clara, contradição pela fala inteira).
-
-- Todo "citedVerse" DEVE virar "bibleQuote" no lugar do sermão em que foi lido. OBRIGATÓRIO.
-- Todo "speakerHighlight" DEVE virar "highlight" no ponto correspondente. Se dois são essencialmente iguais, mantenha o mais forte.
-- Todo "speakerCitation" DEVE virar "quote" com autor correto e lead-in.
-- "context", "relatedVerse", "suggestedQuote" do feed são cartões da voz da IA, não do pregador: IGNORE aqui. O sermão organizado é só a voz de quem pregou.
-
-Quando feedItems vier VAZIO (modo sem live), gere o sermão organizado a partir apenas da transcrição, com a mesma qualidade e densidade.
-
-Você PODE adicionar bibleQuote/highlight/example novos que não estavam no feed quando a transcrição revelou algo forte que o live não capturou.
-
-═══════════════════════════════════════════════════════════════════
 BIBLEQUOTE: REGRA DE OURO
 ═══════════════════════════════════════════════════════════════════
 
@@ -138,7 +121,7 @@ SELF-CHECK POR BLOCO
 ═══════════════════════════════════════════════════════════════════
 
 Antes de emitir cada bloco:
-1) Este conteúdo NASCE da transcrição ou dos feedItems?
+1) Este conteúdo NASCE da transcrição?
 2) Se é paragraph/highlight/example/quote, estou preservando a VOZ do pregador ou reescrevendo com meu vocabulário?
 3) Estou meta-narrando? (Se sim, reescreva colocando a IDEIA como sujeito.)
 4) Este bloco ACRESCENTA algo além do que já foi dito em outro bloco?
@@ -150,7 +133,7 @@ Se qualquer resposta é "não sei" ou "talvez" → OMITA (ou reduza para forma m
 REGRAS FINAIS
 ═══════════════════════════════════════════════════════════════════
 
-- NÃO invente conteúdo que não está na transcrição nem nos feedItems.
+- NÃO invente conteúdo que não está na transcrição.
 - NÃO use markdown (nada de **, *, #, -, >).
 - NÃO repita literalmente o "shortSummary" no primeiro parágrafo.
 - Feche SEMPRE com "conclusion" sobre o tema dominante, incluindo o principal chamado/aplicação.

@@ -1,27 +1,13 @@
 import type { VerseLine } from "@/lib/domain/verse";
-export type ChunkStatus = "uploading" | "ok" | "silence" | "error";
-
-export type ChunkRow = {
-  index: number;
-  status: ChunkStatus;
-  text: string;
-  startedAtMs: number;
-  /** O servidor detectou qualidade ruim neste chunk (assinatura de alucinação
-   * ou baixa confiança nos logprobs). O texto já veio limpo e continua no
-   * transcript, mas o chunk não alimenta prevText nem os pipelines ao vivo,
-   * reutilizá-lo como contexto realimentaria a alucinação. */
-  suspect?: boolean;
-};
 
 /**
- * Veredito acumulado sobre o áudio da sessão. `poor` acende o aviso na tela;
- * ele NÃO troca de modelo (não existe modelo melhor para escalar, ver
- * `app/api/transcribe/route.ts`).
+ * O que a busca de uma passagem devolve enquanto ela acontece.
+ *
+ * Único tipo que sobrou deste arquivo. Os outros (`ChunkRow`, `AudioQuality`,
+ * `TranscriptState`) descreviam a fila de chunks e o veredito de áudio dos três
+ * modos de captura antigos, que transcreviam DURANTE a pregação. O gravador de
+ * hoje manda o áudio inteiro de uma vez, no stop, e não tem fila para desenhar.
  */
-export type AudioQuality = "ok" | "poor";
-
-export type TranscriptState = "listening" | "transcribing" | "idle";
-
 export type VerseFetchState =
   | { status: "idle" }
   | { status: "loading" }

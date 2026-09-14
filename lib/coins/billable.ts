@@ -4,8 +4,7 @@
  * `pricing.ts` responde "quanto custa" em moedas; este arquivo responde "o que
  * é uma coisa". São perguntas diferentes: `deepening` e `reprocess_deepening`
  * são dois motivos no ledger e UM produto (o mesmo pipeline, o mesmo preço), e
- * `live_minute` é um motivo que só faz sentido lido junto com os minutos que o
- * usuário gravou. Sem esta camada, o painel de custo mostraria motivos de
+ * os quatro motivos por minuto que já existiram são hoje uma linha só. Sem esta camada, o painel de custo mostraria motivos de
  * lançamento contábil onde o usuário precisa ver decisões de preço.
  *
  * Client-safe: a tela de precificação lê daqui e a agregação server-only
@@ -17,16 +16,9 @@
  * legadas que não existem mais no código mas continuam no banco.
  */
 
-import { type ChargeReason, COIN_COSTS } from "./pricing";
+import { COIN_COSTS } from "./pricing";
 
-export const BILLABLE_ACTION_KEYS = [
-  "live",
-  "audio_only",
-  "transcript_only",
-  "youtube",
-  "study",
-  "reprocess_summary",
-] as const;
+export const BILLABLE_ACTION_KEYS = ["recording", "youtube", "study", "reprocess_summary"] as const;
 export type BillableActionKey = (typeof BILLABLE_ACTION_KEYS)[number];
 
 export type BillableAction = {
@@ -36,36 +28,29 @@ export type BillableAction = {
   coins: number;
   /** O que UMA execução é, no singular, para a coluna "por ...". */
   unit: string;
-  /** Motivos do ledger que somam nesta ação. */
-  reasons: readonly ChargeReason[];
+  /**
+   * Motivos do ledger que somam nesta ação. `string` e não `ChargeReason`
+   * porque as listas incluem motivos LEGADOS, que nenhum cliente emite mais e
+   * que continuam gravados em `coin_transactions` (ver `LEGACY_CHARGE_REASONS`
+   * em `pricing.ts`). Tipá-los como motivo vivo obrigaria a ressuscitar nomes
+   * mortos no enum só para o painel conseguir somar o passado.
+   */
+  reasons: readonly string[];
   /** Por que a linha existe / o que ela inclui. Vira o subtítulo da linha. */
   note: string;
 };
 
 export const BILLABLE_ACTIONS: readonly BillableAction[] = [
   {
-    key: "live",
-    label: "Modo Ao Vivo",
-    coins: COIN_COSTS.liveMinute,
+    key: "recording",
+    label: "Gravação",
+    coins: COIN_COSTS.recordingMinute,
     unit: "minuto",
-    reasons: ["live_minute"],
-    note: "Transcrição, os três pipelines do feed, resumo final e os cards de acompanhamento.",
-  },
-  {
-    key: "audio_only",
-    label: "Modo Áudio",
-    coins: COIN_COSTS.audioOnlyMinute,
-    unit: "minuto",
-    reasons: ["audio_only_minute"],
-    note: "Transcrição e resumo final, sem os pipelines do feed.",
-  },
-  {
-    key: "transcript_only",
-    label: "Modo Transcrição",
-    coins: COIN_COSTS.transcriptMinute,
-    unit: "minuto",
-    reasons: ["transcript_minute"],
-    note: "Só transcrição. Nenhuma chamada de LLM além do STT.",
+    // Os três motivos antigos eram os três modos de captura, todos cobrados
+    // por minuto gravado. Eles viraram um só produto, então viram uma linha só
+    // no painel: separá-los hoje seria comparar preços que não existem mais.
+    reasons: ["recording_minute", "audio_only_minute", "live_minute", "transcript_minute"],
+    note: "Transcrição no stop e resumo final. Único preço por minuto do produto.",
   },
   {
     key: "youtube",
@@ -96,14 +81,12 @@ export const BILLABLE_ACTIONS: readonly BillableAction[] = [
     label: "Resumo de sessão salva",
     coins: COIN_COSTS.reprocessSummary,
     unit: "resumo",
-    // Reprocessar um resumo e gerar o primeiro resumo de uma sessão do modo
-    // transcrição são o MESMO pipeline (`generateFinalSummary` sobre a
-    // transcrição inteira + releia/lembra/frases), pelo mesmo preço, gravando
-    // as mesmas rotas de telemetria. Somá-los é o mesmo argumento da linha do
-    // estudo acima: separar daria um custo por execução inventado. Os motivos
-    // continuam distintos no ledger, onde a pergunta de produto é outra.
+    // `summary_from_transcript` era o primeiro resumo de uma sessão do modo
+    // transcrição, e rodava o MESMO pipeline pelo mesmo preço. O modo morreu, o
+    // motivo continua no ledger, e somá-lo aqui é o que mantém o histórico
+    // comparável.
     reasons: ["reprocess_summary", "summary_from_transcript"],
-    note: "Resumo rodado FORA da gravação: reprocessar um resumo existente, ou gerar o primeiro de uma sessão do modo transcrição. Não confundir com reprocessar o estudo, que custa 50 e está na linha acima.",
+    note: "Resumo rodado FORA da gravação, sobre uma sessão já salva. Não confundir com reprocessar o estudo, que custa 50 e está na linha acima.",
   },
 ];
 

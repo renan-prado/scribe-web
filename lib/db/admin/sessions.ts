@@ -1,6 +1,5 @@
 import "server-only";
 import { escapeLikeValue } from "@/lib/db/like";
-import type { FeedItem } from "@/lib/domain/feed";
 import { parseSessionMode, type SessionMode } from "@/lib/domain/session";
 import type { StudyPayload, StudyRecord } from "@/lib/domain/study";
 import type { SummaryPayload } from "@/lib/domain/summary";
@@ -149,7 +148,6 @@ export type AdminSessionDetail = {
   ownerName: string | null;
   ownerEmail: string | null;
   transcript: string;
-  feedItems: FeedItem[];
   summary: SummaryPayload | null;
   study: {
     createdAt: string;
@@ -162,7 +160,6 @@ export type AdminSessionDetail = {
 type DetailRow = ListRow & {
   speaker_location: string | null;
   transcript: string | null;
-  feed_items: FeedItem[] | null;
   final_summary: SummaryPayload | null;
 };
 
@@ -171,7 +168,7 @@ export async function getSessionForAdmin(id: string): Promise<AdminSessionDetail
 
   const { data, error } = await admin
     .from("sessions")
-    .select(`${SELECT_LIST}, speaker_location, transcript, feed_items, final_summary`)
+    .select(`${SELECT_LIST}, speaker_location, transcript, final_summary`)
     .eq("id", id)
     .maybeSingle();
   if (error) throw new Error(`getSessionForAdmin failed: ${error.message}`);
@@ -199,7 +196,6 @@ export async function getSessionForAdmin(id: string): Promise<AdminSessionDetail
     ownerName: owner?.name ?? null,
     ownerEmail: owner?.email ?? null,
     transcript: row.transcript ?? "",
-    feedItems: row.feed_items ?? [],
     summary: row.final_summary,
     study,
   };

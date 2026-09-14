@@ -1,12 +1,10 @@
 import type { ReactNode } from "react";
 import { AppHeader } from "@/components/AppHeader";
-import { MobileBottomNav } from "@/components/MobileBottomNav";
 import { PageTransition } from "@/components/PageTransition";
 import { AccountDisabled } from "@/features/auth/components/AccountDisabled";
 import { PrivilegedMenuItems } from "@/features/auth/components/PrivilegedMenuItems";
 import { UserMenu } from "@/features/auth/components/UserMenu";
 import { CoinBalance } from "@/features/coins/components/CoinBalance";
-import { NewRecordingDialog } from "@/features/session/components/NewRecordingDialog";
 import { TourProvider } from "@/features/tour/components/TourProvider";
 import { isCurrentUserPartner } from "@/lib/auth/require-partner";
 import { INITIAL_COIN_BALANCE } from "@/lib/coins/pricing";
@@ -53,9 +51,9 @@ export default async function AppLayout({ children }: { children: ReactNode }) {
 
   return (
     /* O provider dos tours envolve a moldura INTEIRA, e não só o conteúdo:
-       parte dos alvos que o holofote recorta mora no header e na barra
-       inferior (o botão "Gravar"), e o overlay precisa estar vivo enquanto
-       eles estão na tela. Ver `src/features/tour/AGENTS.md`. */
+       parte dos alvos que o holofote recorta mora no header, e o overlay
+       precisa estar vivo enquanto eles estão na tela. Ver
+       `src/features/tour/AGENTS.md`. */
     <TourProvider seen={seenTours}>
       <AppHeader
         actions={
@@ -64,7 +62,6 @@ export default async function AppLayout({ children }: { children: ReactNode }) {
               {hasSession ? <CoinBalance initialBalance={initialBalance} /> : null}
             </div>
             <div className="hidden items-center gap-3 sm:flex">
-              {hasSession ? <NewRecordingDialog /> : null}
               {hasSession ? <CoinBalance initialBalance={initialBalance} /> : null}
               {profile ? (
                 <UserMenu
@@ -78,30 +75,10 @@ export default async function AppLayout({ children }: { children: ReactNode }) {
           </>
         }
       />
-      {/* Só o CONTEÚDO troca com a rota. O header acima e a `MobileBottomNav`
-          abaixo ficam montados: eram eles que sumiam e voltavam a cada toque
-          quando o fade morava no root layout.
-
-          A folga de 144px no celular é o espaço que a barra inferior ocupa,
-          sem ela o fim da rolagem fica embaixo da barra. Ela vai no FILHO
-          (`[&>*]`), não neste wrapper, e a diferença é visível: as páginas que
-          pintam o próprio chão o pintam no elemento raiz delas
-          (`bg-scriba-surface` no /feed, /recordings e /studies), então uma
-          folga aqui fora ficava DEPOIS da tinta e a faixa reservada aparecia
-          num tom diferente do conteúdo, o do `body`. Por dentro, o chão da
-          página se estende por ela.
-
-          Isso pressupõe UM elemento raiz por página, que é como todas as
-          páginas de `(app)` são hoje. Uma página que devolva irmãos no topo
-          ganharia a folga em cada um.
-
-          O `EndOfFeedSticker` (`PaginatedFeed.tsx`) tem um `mt-24 sm:mt-0` que
-          acompanha o `sm:` daqui, mas NÃO o valor: 144px em cima ficou longe
-          demais. Se o `sm:` desta linha mudar, o de lá muda junto. */}
-      <PageTransition className="flex flex-1 flex-col [&>*]:pb-36 sm:[&>*]:pb-0">
-        {children}
-      </PageTransition>
-      <MobileBottomNav />
+      {/* Só o CONTEÚDO troca com a rota: o header acima fica montado, e era
+          ele que sumia e voltava a cada toque quando o fade morava no root
+          layout. */}
+      <PageTransition className="flex flex-1 flex-col">{children}</PageTransition>
     </TourProvider>
   );
 }

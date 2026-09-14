@@ -1,5 +1,4 @@
-import type { FeedItem } from "@/lib/domain/feed";
-import type { HallucinationReview, HallucinationScope } from "@/lib/domain/hallucination";
+import type { HallucinationReview } from "@/lib/domain/hallucination";
 import type { ChunkEvent } from "@/lib/domain/recorder";
 import type { SessionMode } from "@/lib/domain/session";
 import type { SummaryPayload } from "@/lib/domain/summary";
@@ -11,86 +10,13 @@ import { type PassagePayload, parseVerseResponse } from "@/lib/domain/verse";
  */
 
 /**
- * POST /api/bible. Extrai APENAS citedVerse do trecho recente. O cliente
- * já filtrou via regex que há sinal de menção bíblica antes de chamar.
- */
-export async function requestBible(body: {
-  text: string;
-  existingItems: FeedItem[];
-  sermonAtMs?: number;
-  sessionId?: string;
-}): Promise<FeedItem[]> {
-  try {
-    const res = await fetch("/api/bible", {
-      method: "POST",
-      headers: { "content-type": "application/json" },
-      body: JSON.stringify(body),
-    });
-    const payload = (await res.json()) as { items?: FeedItem[] };
-    return Array.isArray(payload?.items) ? payload.items : [];
-  } catch {
-    return [];
-  }
-}
-
-/**
- * POST /api/insights. Enriquecimento (speakerHighlight, speakerCitation,
- * relatedVerse, context, suggestedQuote) sobre a transcrição corrente.
- * citedVerse fica com /api/bible.
- */
-export async function requestInsights(body: {
-  text: string;
-  existingItems: FeedItem[];
-  sermonAtMs?: number;
-  sessionId?: string;
-}): Promise<FeedItem[]> {
-  try {
-    const res = await fetch("/api/insights", {
-      method: "POST",
-      headers: { "content-type": "application/json" },
-      body: JSON.stringify(body),
-    });
-    const payload = (await res.json()) as { items?: FeedItem[] };
-    return Array.isArray(payload?.items) ? payload.items : [];
-  } catch {
-    return [];
-  }
-}
-
-/**
- * POST /api/sermon-echo. Picks ONE literal phrase the speaker just said from
- * the recent transcript tail, to break up runs of AI-authored cards in the
- * feed. May legitimately return an empty items array when nothing in the
- * recent tail qualifies.
- */
-export async function requestEcho(body: {
-  text: string;
-  existingItems: FeedItem[];
-  sermonAtMs?: number;
-  sessionId?: string;
-}): Promise<FeedItem[]> {
-  try {
-    const res = await fetch("/api/sermon-echo", {
-      method: "POST",
-      headers: { "content-type": "application/json" },
-      body: JSON.stringify(body),
-    });
-    const payload = (await res.json()) as { items?: FeedItem[] };
-    return Array.isArray(payload?.items) ? payload.items : [];
-  } catch {
-    return [];
-  }
-}
-
-/**
- * POST /api/final-summary. Single-shot after the recording stops: feeds the
- * full transcript and the curated live feed to the LLM and gets back the
- * definitive SummaryPayload rendered by SummaryView.
+ * POST /api/final-summary. Uma chamada só, depois que a gravação para: manda a
+ * transcrição inteira e recebe de volta o `SummaryPayload` que o `SummaryView`
+ * desenha.
  */
 export async function requestFinalSummary(body: {
   sessionId: string;
   text: string;
-  feedItems: FeedItem[];
   durationMs?: number;
   speakerName?: string;
   speakerLocation?: string;
@@ -148,58 +74,13 @@ export async function requestCreateSession(body: {
 }
 
 /**
- * PUT /api/sessions/:id/transcript. Fecha uma sessão do modo transcrição
- * gravando o texto capturado. Sem LLM: o corpo já é o transcript final que o
- * cliente montou a partir dos chunks.
- */
-export async function requestSaveTranscript(body: {
-  sessionId: string;
-  transcript: string;
-  durationMs?: number | null;
-  title?: string | null;
-  speakerName?: string | null;
-  speakerLocation?: string | null;
-}): Promise<{ ok: true } | { ok: false; message: string }> {
-  const { sessionId, ...payload } = body;
-  try {
-    const res = await fetch(`/api/sessions/${encodeURIComponent(sessionId)}/transcript`, {
-      method: "PUT",
-      headers: { "content-type": "application/json" },
-      body: JSON.stringify(payload),
-    });
-    if (res.ok) return { ok: true };
-    const raw = (await res.json().catch(() => ({}))) as { error?: string };
-    return { ok: false, message: raw?.error || `HTTP ${res.status}` };
-  } catch (err) {
-    return { ok: false, message: (err as Error).message || "network error" };
-  }
-}
-
-/**
- * DELETE /api/sessions/:id. Discards a session row and its associated data,
- * used when the user stops a recording that captured zero transcribable speech
- * so the empty row created up-front doesn't linger in their history.
- */
-export async function requestDeleteSession(id: string): Promise<{ ok: boolean }> {
-  try {
-    const res = await fetch(`/api/sessions/${encodeURIComponent(id)}`, { method: "DELETE" });
-    return { ok: res.ok };
-  } catch {
-    return { ok: false };
-  }
-}
-
-/**
  * POST /api/hallucination-report. O usuário avisou que o Scriba entendeu
  * errado e escreveu uma nota curta. A resposta traz o veredito da auditoria
- * e, no escopo live, as chaves dos cards que devem sair do feed.
+ * sobre o resumo já salvo.
  */
 export async function requestHallucinationReview(body: {
   sessionId: string;
-  scope: HallucinationScope;
   note: string;
-  text?: string;
-  feedItems?: FeedItem[];
 }): Promise<{ ok: true; review: HallucinationReview } | { ok: false; message: string }> {
   try {
     const res = await fetch("/api/hallucination-report", {
@@ -221,7 +102,6 @@ export async function requestHallucinationReview(body: {
       review: {
         verdict: raw.verdict ?? "acknowledged",
         message: typeof raw.message === "string" ? raw.message : "",
-        removeKeys: Array.isArray(raw.removeKeys) ? raw.removeKeys : [],
       },
     };
   } catch {

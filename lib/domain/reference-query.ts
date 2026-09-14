@@ -1,5 +1,5 @@
 import { BOOK_ABBREVS, normalizeBookName } from "@/lib/bibles/books";
-import { parseVerseReference } from "@/lib/domain/feed";
+import { parseVerseReference } from "@/lib/domain/reference";
 
 /**
  * Entender "Jonas 1" como REFERÊNCIA, e não como duas palavras soltas.

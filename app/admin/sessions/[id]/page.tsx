@@ -9,7 +9,6 @@ import {
   type SessionReaderPanel,
   SessionReaderTabs,
 } from "@/features/admin/components/SessionReaderTabs";
-import { Feed } from "@/features/session/components/Feed";
 import { SavedTranscriptView } from "@/features/session/components/SavedTranscriptView";
 import {
   StudyBlockRenderer,
@@ -24,8 +23,8 @@ export const dynamic = "force-dynamic";
 /**
  * A leitura de UMA sessão, do jeito que o dono dela leu.
  *
- * Ela renderiza o `SummaryView`, o `SavedTranscriptView`, o
- * `StudyBlockRenderer` e o `Feed` do próprio produto, e isso é a decisão
+ * Ela renderiza o `SummaryView`, o `SavedTranscriptView` e o
+ * `StudyBlockRenderer` do próprio produto, e isso é a decisão
  * central desta tela: uma segunda maneira de desenhar resumo no painel
  * mostraria um texto que ninguém viu, e a pergunta aqui é sobre o que a pessoa
  * VIU. Quando um bloco novo entrar no resumo, ele aparece aqui sem ninguém
@@ -76,12 +75,7 @@ export default async function AdminSessionReaderPage({ params }: PageProps) {
           <SummaryView summary={session.summary} hasTranscript={true} running={false} />
         </ReaderSurface>
       ) : (
-        <Empty>
-          Esta sessão não tem resumo.
-          {session.mode === "transcript_only"
-            ? " É o modo transcrição, que só gera resumo se a pessoa pedir."
-            : ""}
-        </Empty>
+        <Empty>Esta sessão não tem resumo.</Empty>
       ),
     },
     {
@@ -140,18 +134,6 @@ export default async function AdminSessionReaderPage({ params }: PageProps) {
               </div>
             ))}
           </div>
-        </ReaderSurface>
-      ),
-    });
-  }
-
-  if (session.feedItems.length > 0) {
-    panels.push({
-      value: "ao-vivo",
-      label: `Ao vivo (${session.feedItems.length})`,
-      content: (
-        <ReaderSurface>
-          <Feed items={session.feedItems} running={false} hasTranscript={true} suggesting={false} />
         </ReaderSurface>
       ),
     });

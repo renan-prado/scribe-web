@@ -2,7 +2,10 @@
 
 import type { RefObject } from "react";
 import { useEffect, useState } from "react";
-import { TICK_INTERVAL_MS } from "@/features/session/config";
+
+/** Três vezes por segundo: o relógio mostra mm:ss, e um tick mais lento faz o
+ * segundo virar com atraso visível. */
+const TICK_INTERVAL_MS = 300;
 
 /**
  * Emit a monotonic elapsed-ms counter derived from `startedAtRef`. Caller owns

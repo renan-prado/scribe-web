@@ -4,14 +4,10 @@ import { requireBalance } from "@/lib/coins/require-balance";
 import { upsertLocationByName } from "@/lib/db/locations";
 import { getSessionMeta, updateSessionFinal } from "@/lib/db/sessions";
 import { upsertSpeakerByName } from "@/lib/db/speakers";
-import { FeedItemSchema } from "@/lib/domain/feed";
 import { generateFinalSummary } from "@/lib/final-summary/generate";
-import { generateAndSaveHighlights } from "@/lib/highlights/save";
 import { parseJsonBody, UuidSchema } from "@/lib/http/validate";
 import { createLogger } from "@/lib/log";
 import { enforceRateLimit, RATE_LIMITS } from "@/lib/rate-limit";
-import { generateAndSaveReminders } from "@/lib/reminders/save";
-import { generateAndSaveRereads } from "@/lib/rereads/save";
 import { requireAuth } from "@/lib/supabase/require-auth";
 
 const log = createLogger("final-summary");
@@ -20,18 +16,13 @@ const log = createLogger("final-summary");
 // around ~150k chars. 300k is 2× headroom without letting a bot smuggle an
 // unbounded prompt through this endpoint (which is expensive: gpt-4-class
 // model, 12k output tokens).
-// feedItems is strictly validated, this array is persisted to the DB, so a
-// malformed entry from a compromised client would poison future reads.
-// 2000 items is far above any real recording; the live feed rarely tops 150.
 const MAX_TEXT_CHARS = 300_000;
-const MAX_FEED_ITEMS = 2000;
 const MAX_SESSION_HOURS_MS = 12 * 60 * 60 * 1000;
 
 const BodySchema = z
   .object({
     sessionId: UuidSchema,
     text: z.string().max(MAX_TEXT_CHARS),
-    feedItems: z.array(FeedItemSchema).max(MAX_FEED_ITEMS).optional(),
     durationMs: z.number().finite().nonnegative().max(MAX_SESSION_HOURS_MS).optional(),
     speakerName: z.string().max(200).optional(),
     speakerLocation: z.string().max(200).optional(),
@@ -67,8 +58,6 @@ export async function POST(request: Request) {
   if (!text) {
     return NextResponse.json({ error: "empty text" }, { status: 400 });
   }
-  const feedItems = body.feedItems ?? [];
-
   // Dono conferido ANTES do modelo, como já fazem `/reprocess` e `/deepening`.
   // Sem isto, a rota mais cara do app (até 300 mil caracteres num modelo
   // grande, 12k tokens de saída) rodava sobre um `sessionId` qualquer e só
@@ -85,7 +74,6 @@ export async function POST(request: Request) {
     userId: auth.user.id,
     sessionId,
     transcript: text,
-    feedItems,
     logPrefix: "final-summary",
     metadataRoute: "final-summary",
   });
@@ -147,7 +135,6 @@ export async function POST(request: Request) {
   try {
     await updateSessionFinal(sessionId, {
       transcript: text,
-      feedItems,
       summary: payload,
       durationMs: body.durationMs ?? null,
       speakerName,
@@ -161,45 +148,11 @@ export async function POST(request: Request) {
     log.error("save failed", { sessionId, error: (err as Error).message });
   }
 
-  // Best-effort: gera e persiste "Releia este texto" (10 versículos), "Lembra
-  // disso?" (10 mini-callbacks) e "Frases marcantes" (até 12 itens, sem IA) em
-  // paralelo após o resumo estar salvo. Nenhuma delas falhando quebra a
-  // resposta do resumo, a UI trata payloads ausentes como estado normal.
-  const [rereads, reminders, highlights] = await Promise.all([
-    generateAndSaveRereads({
-      userId: auth.user.id,
-      sessionId,
-      transcript: text,
-      feedItems,
-      finalSummary: payload,
-      logPrefix: "rereads",
-      metadataRoute: "rereads",
-    }),
-    generateAndSaveReminders({
-      userId: auth.user.id,
-      sessionId,
-      transcript: text,
-      feedItems,
-      finalSummary: payload,
-      logPrefix: "reminders",
-      metadataRoute: "reminders",
-    }),
-    generateAndSaveHighlights({
-      sessionId,
-      feedItems,
-      finalSummary: payload,
-      logPrefix: "highlights",
-    }),
-  ]);
-
   return NextResponse.json({
     ...payload,
     latencyMs,
     model,
     sessionId,
     saved,
-    rereads,
-    reminders,
-    highlights,
   });
 }

@@ -1,6 +1,5 @@
 import "server-only";
 import { recordChatUsage, type UsageRoute } from "@/lib/db/usage";
-import type { FeedItem } from "@/lib/domain/feed";
 import {
   parseQuestionFilterFromLLM,
   parseStudyAnswersFromLLM,
@@ -103,7 +102,6 @@ export type GenerateStudyInput = {
   userId: string;
   sessionId: string;
   transcript: string;
-  feedItems: FeedItem[];
   finalSummary: SummaryPayload;
   logPrefix: string;
 };
@@ -136,7 +134,7 @@ const LONG_CALL_TIMEOUT_MS = 240_000;
 const REWRITE_DEADLINE_MS = 150_000;
 
 export async function generateStudy(input: GenerateStudyInput): Promise<GenerateStudyResult> {
-  const { userId, sessionId, transcript, feedItems, finalSummary, logPrefix } = input;
+  const { userId, sessionId, transcript, finalSummary, logPrefix } = input;
   const log = createLogger(logPrefix);
   const startedAt = Date.now();
   let totalTokens = 0;
@@ -162,11 +160,9 @@ export async function generateStudy(input: GenerateStudyInput): Promise<Generate
       { role: "system", content: STUDY_QUESTIONS_SYSTEM_PROMPT },
       {
         role: "user",
-        content: [
-          `summary:\n${JSON.stringify(finalSummary)}`,
-          `feedItems:\n${JSON.stringify(feedItems)}`,
-          `transcript:\n${transcript}`,
-        ].join("\n\n---\n"),
+        content: [`summary:\n${JSON.stringify(finalSummary)}`, `transcript:\n${transcript}`].join(
+          "\n\n---\n"
+        ),
       },
     ],
     store: true,

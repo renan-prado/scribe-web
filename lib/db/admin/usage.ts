@@ -7,7 +7,7 @@ import {
   UNBILLED_ACTION_KEY,
   type UsageActionKey,
 } from "@/lib/coins/billable";
-import { type ChargeReason, isChargeReason } from "@/lib/coins/pricing";
+import { isChargeReason } from "@/lib/coins/pricing";
 import { SESSION_MODES, type SessionMode } from "@/lib/domain/session";
 import { hasAudioPricing, hasChatPricing } from "@/lib/llm/pricing";
 import { createAdminClient } from "@/lib/supabase/admin";
@@ -213,9 +213,7 @@ const REPROCESS_SUMMARY_ROUTES = new Set([
 const INTERNAL_ROUTES = new Set(["admin-insights"]);
 
 const ACTION_BY_MODE: Record<SessionMode, BillableActionKey> = {
-  live: "live",
-  audio_only: "audio_only",
-  transcript_only: "transcript_only",
+  audio: "recording",
   // A importação do YouTube não precisa de uma lista de rotas própria como o
   // estudo e o reprocessamento acima: as rotas dela sempre trazem sessionId, e
   // o MODO da sessão já é o discriminador exato. `final-summary-youtube` e
@@ -223,7 +221,7 @@ const ACTION_BY_MODE: Record<SessionMode, BillableActionKey> = {
   youtube: "youtube",
 };
 
-const ACTION_BY_REASON = new Map<ChargeReason, BillableActionKey>(
+const ACTION_BY_REASON = new Map<string, BillableActionKey>(
   BILLABLE_ACTIONS.flatMap((action) => action.reasons.map((r) => [r, action.key] as const))
 );
 

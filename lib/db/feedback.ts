@@ -7,7 +7,6 @@ import {
   type FeedbackTopic,
   isFeedbackMilestone,
 } from "@/lib/domain/feedback";
-import { parseSessionMode, type SessionMode } from "@/lib/domain/session";
 import { createLogger } from "@/lib/log";
 import { createAdminClient } from "@/lib/supabase/admin";
 
@@ -37,11 +36,16 @@ export type ResolvedFeedbackPrompt = {
   ordinal: number;
 };
 
-/** O modo de captura decide sobre o que faz sentido perguntar. */
-function surfaceForMode(mode: SessionMode): FeedbackSurface {
-  if (mode === "audio_only") return "audio";
-  if (mode === "transcript_only") return "transcript";
-  return "live";
+/**
+ * Toda sessão pergunta a mesma coisa: como foi o resumo.
+ *
+ * Já foram três superfícies, uma por modo de captura. `live` e `transcript`
+ * continuam no enum porque há notas antigas gravadas com elas, e o painel as
+ * lê; nenhuma sessão nova nasce com uma das duas. O modo `youtube` também cai
+ * aqui, e é o certo: a pergunta é sobre o resumo, que é o mesmo dos dois lados.
+ */
+function surfaceForSession(): FeedbackSurface {
+  return "audio";
 }
 
 /**
@@ -100,7 +104,7 @@ export async function resolveFeedbackPrompt(input: {
     // sobre a qual perguntar.
     if (!session.ended_at) return null;
     anchorAt = session.created_at as string;
-    surface = surfaceForMode(parseSessionMode(session.mode));
+    surface = surfaceForSession();
   } else {
     const { data: deepening, error } = await admin
       .from("session_deepenings")
@@ -217,7 +221,7 @@ export async function loadOpenFeedbackPrompt(input: {
     .eq("user_id", input.userId)
     .maybeSingle();
   if (!session) return null;
-  return { surface: surfaceForMode(parseSessionMode(session.mode)), sessionId };
+  return { surface: surfaceForSession(), sessionId };
 }
 
 export type FeedbackAnswer = { topic: FeedbackTopic; rating: FeedbackRating };

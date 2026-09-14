@@ -2,7 +2,6 @@ import type { Metadata } from "next";
 import { notFound, redirect } from "next/navigation";
 import { YoutubeImport } from "@/features/session/components/YoutubeImport";
 import { getSessionMeta } from "@/lib/db/sessions";
-import { recordingRouteFor } from "@/lib/domain/session";
 
 type PageProps = {
   params: Promise<{ id: string }>;
@@ -31,16 +30,14 @@ export default async function RecordingYoutubePage({ params }: PageProps) {
   const session = await getSessionMeta(id);
   if (!session) notFound();
 
-  // Guard de rota: sessões de outros modos gravam em outra página.
-  if (session.mode !== "youtube") {
-    redirect(`/recording/${id}/${recordingRouteFor(session.mode)}`);
-  }
+  // Guard de rota: uma sessão gravada pelo microfone não tem o que importar.
+  if (session.mode !== "youtube") redirect(`/v2/summary/${id}`);
 
   // Já importada, `ended_at` só é preenchido quando a transcrição foi gravada.
   // Voltar aqui (um "atrás" do navegador, um link velho) não pode redisparar
   // uma rota que cobra; a rota também recusa com 409, e este redirect é o que
   // evita a tela de espera piscando antes da recusa.
-  if (session.endedAt) redirect(`/recording/${id}/summary`);
+  if (session.endedAt) redirect(`/v2/summary/${id}`);
 
   // Sem URL não há o que importar. Acontece se a linha foi criada fora do
   // diálogo; a rota devolveria `invalid_url` e a tela de erro seria um beco.

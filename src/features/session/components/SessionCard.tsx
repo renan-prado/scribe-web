@@ -1,8 +1,7 @@
-import { BookOpen, Captions, FileText, MapPin, Mic } from "lucide-react";
+import { BookOpen, FileText, MapPin, Mic } from "lucide-react";
 import { YoutubeIcon } from "@/components/icons/YoutubeIcon";
 import { NavLink } from "@/components/NavLink";
 import type { SessionListItem } from "@/lib/db/sessions";
-import { savedRouteFor } from "@/lib/domain/session";
 import { cn } from "@/lib/utils";
 import { formatDurationShort, shortDate } from "../lib/formatting";
 import { initialsOf } from "../lib/text";
@@ -50,9 +49,6 @@ type Props = {
   now: Date;
   /** A sessão já tem estudo gerado. */
   isDeepened: boolean;
-  /** A sessão tem resumo final. Decide a rota e o rótulo do botão: uma sessão
-   * do modo transcrição pode ter ganhado um depois, sob demanda. */
-  hasSummary: boolean;
   deleteAction: (formData: FormData) => Promise<void>;
   /** A referência bíblica que casou com a busca. Aparece mesmo quando o cartão
    * já casaria pelo título: ela não é justificativa, é informação, dizer QUAL
@@ -64,44 +60,31 @@ type Props = {
   transcriptOnlyHit?: boolean;
   /** O que abre o cartão. Ver o cabeçalho deste arquivo. */
   header?: "mode" | "speaker";
-  /** Para onde o cartão aponta. Quem decide é o CHAMADOR porque as duas peles
-   * têm rotas próprias (`/recording/:id/summary` contra `/v2/summary/:id`),
-   * mas QUAL das duas páginas é a certa continua sendo conta deste componente,
-   * é `savedRouteFor` quem sabe que uma sessão do modo transcrição sem resumo
-   * abre na transcrição. Por isso a função recebe a rota já resolvida. */
-  buildHref?: (id: string, route: "summary" | "transcript") => string;
+  /** Para onde o cartão aponta. Toda sessão salva abre no resumo; quem passa a
+   * função é quem sabe o prefixo da rota. */
+  buildHref?: (id: string) => string;
 };
 
 export function SessionCard({
   session: s,
   now,
   isDeepened,
-  hasSummary,
   deleteAction,
   verseHit = null,
   transcriptOnlyHit = false,
   header = "mode",
-  buildHref = (id, route) => `/recording/${id}/${route}`,
+  buildHref = (id) => `/summary/${id}`,
 }: Props) {
   const includeYear = new Date(s.createdAt).getFullYear() !== now.getFullYear();
-  // Sessões do modo transcrição não têm resumo, a menos que tenham ganhado um
-  // sob demanda, e então elas abrem no resumo como qualquer outra.
-  const isTranscriptOnly = s.mode === "transcript_only";
   // Importada do YouTube: nunca passou por microfone nenhum, e o cartão precisa
   // dizer isso, o ícone de mic e a duração lidos juntos sugerem uma gravação
   // que a pessoa fez, e ela não fez.
   const isYoutube = s.mode === "youtube";
-  const href = buildHref(s.id, savedRouteFor(s.mode, hasSummary));
+  const href = buildHref(s.id);
   const speaker = s.speakerName?.trim() ?? "";
   const location = s.speakerLocation?.trim() ?? "";
   const stacked = header === "speaker";
-  const modeIcon = isYoutube ? (
-    <YoutubeIcon className="size-4" />
-  ) : isTranscriptOnly && !hasSummary ? (
-    <Captions className="size-4" />
-  ) : (
-    <Mic className="size-4" />
-  );
+  const modeIcon = isYoutube ? <YoutubeIcon className="size-4" /> : <Mic className="size-4" />;
 
   return (
     <li
@@ -271,18 +254,6 @@ export function SessionCard({
                   </span>
                 </>
               ) : null}
-              {isTranscriptOnly ? (
-                <>
-                  <span className="size-[3px] rounded-full bg-scriba-ink-mute/60" />
-                  <span
-                    title="Gravada no modo transcrição"
-                    className="inline-flex items-center gap-1 rounded-full bg-scriba-cream px-2 py-0.5 text-[10px] font-semibold uppercase tracking-wider text-scriba-cream-accent"
-                  >
-                    <Captions className="size-3" />
-                    Transcrição
-                  </span>
-                </>
-              ) : null}
               {isYoutube ? (
                 <>
                   <span className="size-[3px] rounded-full bg-scriba-ink-mute/60" />
@@ -314,7 +285,7 @@ export function SessionCard({
               href={href}
               className="inline-flex w-full items-center justify-center rounded-full bg-scriba-blue-soft px-4 py-2 text-[11px] font-semibold text-scriba-blue-ink transition-colors hover:bg-scriba-blue-soft/70 sm:w-auto"
             >
-              {isTranscriptOnly && !hasSummary ? "Ver transcrição →" : "Ver resumo →"}
+              Ver resumo →
             </NavLink>
           </div>
         </div>

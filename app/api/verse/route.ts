@@ -2,7 +2,7 @@ import { NextResponse } from "next/server";
 import { z } from "zod";
 import { loadBible } from "@/lib/bibles/loader";
 import { lookupPassage } from "@/lib/bibles/lookup";
-import { parseVerseReference } from "@/lib/domain/feed";
+import { parseVerseReference } from "@/lib/domain/reference";
 import type { PassagePayload, VerseResponse } from "@/lib/domain/verse";
 import { parseJsonBody } from "@/lib/http/validate";
 import { createLogger } from "@/lib/log";

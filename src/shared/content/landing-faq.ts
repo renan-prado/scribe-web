@@ -50,7 +50,7 @@ export const FAQ_ITEMS: FaqItem[] = [
   },
   {
     question: "Quanto custa usar o Scriba?",
-    answer: `A conta começa com ${INITIAL_COIN_BALANCE} créditos grátis, sem cartão. Cada minuto gravado consome créditos conforme o modo escolhido: ${COIN_COSTS.liveMinute} no modo ao vivo, com feed e resumo, ${COIN_COSTS.audioOnlyMinute} no modo somente áudio e ${COIN_COSTS.transcriptMinute} no modo somente transcrição. Os planos mensais recarregam a conta a partir de ${formatCoins(PLANS.pessoal.coins)} créditos por mês, e o que sobra acumula para o mês seguinte.`,
+    answer: `A conta começa com ${INITIAL_COIN_BALANCE} créditos grátis, sem cartão. Cada minuto gravado consome ${COIN_COSTS.recordingMinute} créditos, transcrição e resumo incluídos, e importar um vídeo do YouTube custa ${COIN_COSTS.youtubeImport} créditos, cobrados uma vez. Os planos mensais recarregam a conta a partir de ${formatCoins(PLANS.pessoal.coins)} créditos por mês, e o que sobra acumula para o mês seguinte.`,
   },
   {
     question: "O Scriba funciona sem internet?",
