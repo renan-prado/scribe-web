@@ -24,6 +24,12 @@ import { cn } from "@/lib/utils";
  * alinhado por baixo com ele — é o desenho do print, e é também o que mantém o
  * painel fora de debaixo do dedo que acabou de tocar.
  *
+ * **Abaixo de 350px de tela ele sobe para CIMA do botão.** Ali a linha não
+ * cabe, e insistir nela custaria uma opção cortada pela borda esquerda; em
+ * coluna o painel cabe inteiro, e o dedo em cima dele é o preço menor dos
+ * dois. É a única regra de largura do componente, e ela mora no `className` da
+ * linha, não num `useState` de tamanho de janela.
+ *
  * **Ela não tem fundo chapado, e é aí que está o desenho.** O que separa a
  * barra do conteúdo é um GRADIENTE (`--v2-dock-fade`), preto embaixo e
  * transparente em cima, então a lista não é cortada por uma borda, ela mergulha
@@ -165,13 +171,27 @@ export function CreateDock() {
             cobriria o próprio dedo que o abriu, e é por baixo que o polegar
             chega à barra.
 
-            A conta fecha com folga em 360px, mais estreito que qualquer
-            aparelho em uso: 328 de largura útil contra 258 de painel (3 × 70 de
-            opção, `gap-3`, `p-3`) + 12 de respiro + 48 de botão = 318. Quem
-            mexer no tamanho da opção, no padding do painel ou no do botão refaz
-            esta soma: o estouro sai pela ESQUERDA da tela no celular, e não
-            aparece no monitor. */}
-        <div className="mx-auto flex w-full max-w-[640px] items-end justify-end gap-3 px-4">
+            Em 360px, a largura confortável: 328 de útil contra 258 de painel
+            (3 × 70 de opção, `gap-3`, `p-3`) + 12 de respiro + 48 de botão =
+            318.
+
+            **Abaixo de 350px a linha vira COLUNA** e o painel passa a abrir em
+            CIMA do botão (`max-[349px]:flex-col`). Lado a lado ali não é
+            apertado, é impossível: não há 318px para dar, e a única saída da
+            linha seria comer o painel pela esquerda. Em cima ele cabe inteiro
+            com folga — 258 de painel para 288 de útil —, e o preço é o painel
+            ficar sob o dedo que o abriu, que é bem menos que uma opção cortada
+            pela borda da tela.
+
+            **Entre 350 e 360, quem cede é o PAINEL**, e é por isso que ele leva
+            `min-w-0` e o botão leva `shrink-0`. Sem os dois era o BOTÃO que
+            cedia, e virava uma elipse: um item de flex nasce com
+            `min-width: auto`, então o painel se recusava a encolher abaixo do
+            conteúdo dele e toda a compressão sobrava para o vizinho — que por
+            acaso é o único elemento da tela cuja FORMA é parte do que ele diz.
+            Um painel 8px mais apertado ninguém vê; um círculo amassado é a
+            primeira coisa que se vê. */}
+        <div className="mx-auto flex w-full max-w-[640px] items-end justify-end gap-3 px-4 max-[349px]:flex-col">
           {open ? (
             <nav
               // `<nav>` com nome, e não `role="menu"`: ARIA menu promete
@@ -181,7 +201,7 @@ export function CreateDock() {
               // leitor anuncia ("Criar, navegação").
               id="create-dock-options"
               aria-label="Criar"
-              className="pointer-events-auto flex origin-bottom-right animate-v2-rec-in gap-3 rounded-[28px] bg-v2-glass-panel bg-[image:var(--v2-glass-sheen)] p-3 ring-1 ring-v2-glass-edge backdrop-blur-xl"
+              className="pointer-events-auto flex min-w-0 origin-bottom-right animate-v2-rec-in gap-3 rounded-[28px] bg-v2-glass-panel bg-[image:var(--v2-glass-sheen)] p-3 ring-1 ring-v2-glass-edge backdrop-blur-xl"
             >
               {/* A ordem na tela é da DIREITA para a esquerda: "Resumo mágico"
                   encosta no botão, depois "Escrever", depois "Importar". O
@@ -228,7 +248,7 @@ export function CreateDock() {
             tabIndex={visible ? undefined : -1}
             aria-hidden={visible ? undefined : true}
             className={cn(
-              "inline-flex size-12 items-center justify-center rounded-full bg-v2-glass-button bg-[image:var(--v2-glass-sheen)] text-v2-ink ring-1 ring-v2-glass-edge backdrop-blur-xl transition hover:brightness-125 active:brightness-150 focus-visible:outline-2 focus-visible:outline-offset-4 focus-visible:outline-v2-ink-mute",
+              "inline-flex size-12 shrink-0 items-center justify-center rounded-full bg-v2-glass-button bg-[image:var(--v2-glass-sheen)] text-v2-ink ring-1 ring-v2-glass-edge backdrop-blur-xl transition hover:brightness-125 active:brightness-150 focus-visible:outline-2 focus-visible:outline-offset-4 focus-visible:outline-v2-ink-mute",
               visible ? "pointer-events-auto" : "pointer-events-none",
               moved && (visible ? "animate-v2-rec-in" : "animate-v2-rec-out")
             )}
@@ -284,7 +304,7 @@ function CreateOption({
       onClick={onNavigate}
       spinner="none"
       contentClassName="flex flex-col items-center gap-2"
-      className="group flex w-[70px] flex-col rounded-2xl focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-v2-ink-mute"
+      className="group flex w-[70px] min-w-0 flex-col rounded-2xl focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-v2-ink-mute"
     >
       {/* Glifo de 20 num quadrado de 48: o ícone é o que a opção MOSTRA, mas o
           alvo é o quadrado inteiro, e um glifo que encosta nas bordas dele
@@ -292,7 +312,7 @@ function CreateOption({
       <span className="flex size-12 items-center justify-center rounded-2xl bg-v2-glass-tile text-v2-ink transition group-hover:bg-v2-glass-edge">
         {icon}
       </span>
-      <span className="text-center text-[11px] leading-tight font-medium text-v2-ink-soft">
+      <span className="w-full break-words text-center text-[11px] leading-tight font-medium text-v2-ink-soft">
         {label}
       </span>
     </NavLink>
