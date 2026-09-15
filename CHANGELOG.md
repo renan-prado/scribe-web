@@ -9,6 +9,16 @@ Gerado por `npm run release` a partir dos Conventional Commits. `feat` sobe o
 minor; o resto sobe o patch. Não edite à mão, a próxima execução escreve por
 cima do topo do arquivo.
 
+## 0.25.0, 2026-09-15, desde v0.24.0
+
+### Novidades
+
+- **tema:** o produto inteiro veste a pele do app, e o tema claro sai (`b0dd4c5`)
+
+### Correções
+
+- **brand:** os ícones, o banner e o splash saem do índigo (`960b2c0`)
+
 ## 0.24.0, 2026-09-15, desde v0.23.0
 
 ### Novidades
