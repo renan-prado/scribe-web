@@ -9,6 +9,12 @@ Gerado por `npm run release` a partir dos Conventional Commits. `feat` sobe o
 minor; o resto sobe o patch. Não edite à mão, a próxima execução escreve por
 cima do topo do arquivo.
 
+## 0.29.0, 2026-09-15, desde v0.28.3
+
+### Novidades
+
+- **app:** o desktop ganha 1024px, as portas de criação na barra e a busca no resumo (`0277852`)
+
 ## 0.28.3, 2026-09-15, desde v0.28.2
 
 ### Correções
