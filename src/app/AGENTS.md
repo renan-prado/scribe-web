@@ -141,8 +141,11 @@ produto — Biblioteca, Estudos e Importar do YouTube; perfil, saldo e papéis s
 CONTA, e sair dali foi o que impediu "Perfil" de aparecer duas vezes na mesma
 gaveta.
 
-A cor vem de tokens no namespace `--v2-*` (`src/app/globals.css`), declarados só em
-`:root` porque o app tem um tema só, o escuro, nos dois temas do site.
+A cor vem de tokens no namespace `--v2-*` (`src/app/globals.css`), e eles são a
+ORIGEM da paleta do produto inteiro: `--background` é `--v2-bg`,
+`--scriba-paper` é `--v2-card`, `--secondary` é `--v2-card-hover`. O site e o
+painel passaram para a pele do app, e com isso o bloco `.dark` deixou de
+existir — há um tema só, declarado uma vez em `:root`.
 
 **O chão é `#212121`, e já foi `#000000`.** Preto chapado embaixo dos post-its
 da Biblioteca virava um vão, não uma página. Quem mexer em `--v2-bg` mexe
@@ -543,8 +546,8 @@ descreve. O desenho: as rotas de link gravam um cookie-PISTA legível por JS
 consulta `/api/referral/active` SE a pista existir, e a resposta é `no-store`.
 Assim os 99% que não vieram de link nenhum não pagam requisição alguma, e o
 HTML continua saindo da CDN. A pílula nasce ESCONDIDA e só existe quando há
-indicação a anunciar: um script antes do primeiro paint (irmão do
-`ThemeScript`) marca o `<html>`, e o CSS mostra um esqueleto de altura fixa
+indicação a anunciar: um script antes do primeiro paint (`HeroEyebrowScript`)
+marca o `<html>`, e o CSS mostra um esqueleto de altura fixa
 até a resposta chegar, então nem quem veio indicado vê o título saltar.
 
 Quem garante que a pista existe é o `healReferralHint` do `src/proxy.ts`: um cookie
@@ -673,15 +676,19 @@ anônimo derrubaria a instalação inteira do service worker.
 rede, o CSS do Next não carrega. Os valores lá são cópia dos tokens e precisam
 ser atualizados junto com eles.
 
-### A barra de status segue o tema
+### A barra de status é uma constante
 
-A cor da barra do sistema no PWA sai de `<meta name="theme-color">`, escrita
-pelo `ThemeScript` antes do primeiro paint e reescrita pelo `useTheme` a cada
-troca de tema. Ela **não** pode ser declarada em `metadata`/`viewport` do Next:
-o tema do Scriba vem do localStorage, não do `prefers-color-scheme`, que é a
-única coisa que uma meta estática sabe expressar. O `theme_color` do manifest é
-o fallback (valor claro). Os dois hexadecimais moram em
-`src/shared/theme-color.ts`.
+A cor da barra do sistema no PWA sai de `<meta name="theme-color">`, e hoje ela
+é uma tag ESTÁTICA, declarada no `viewport` do root layout. O produto tem um
+tema só, então o valor não depende de nada: `#212121`, o mesmo do
+`theme_color` e do `background_color` do manifest e das telas de abertura.
+
+Ela já foi escrita por um script inline no `<head>`, porque dependia do
+localStorage — que nem CSS nem `<meta>` sabem ler, e que o
+`prefers-color-scheme` de uma meta estática não expressa. Com o tema claro fora
+do produto, aquele script, o efeito que o corrigia dentro da área logada e o
+`useTheme` que o reescrevia a cada troca deixaram de existir. O hexadecimal
+mora em `src/shared/theme-color.ts` (e, copiado, em `public/offline.html`).
 
 O `viewport` do root layout declara `viewport-fit=cover`, é o que faz
 `env(safe-area-inset-*)` valer diferente de zero. Quem consome os insets é o

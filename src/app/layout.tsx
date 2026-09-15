@@ -4,9 +4,9 @@ import { Analytics } from "@/components/Analytics";
 import { Providers } from "@/components/Providers";
 import { PwaBootstrap } from "@/components/PwaBootstrap";
 import { ThemedToaster } from "@/components/ThemedToaster";
-import { ThemeScript } from "@/components/ThemeScript";
 import { IS_INDEXABLE, SITE_DESCRIPTION, SITE_NAME, SITE_TITLE, SITE_URL } from "@/lib/seo";
 import { APPLE_STARTUP_IMAGES } from "@/shared/splash";
+import { THEME_COLOR } from "@/shared/theme-color";
 import "./globals.css";
 
 const geistSans = Geist({
@@ -47,13 +47,17 @@ const poppins = Poppins({
  * desalinhar no meio da pregação. Quem manda nelas é o `APP_VIEWPORT` de
  * `@/shared/viewport`, declarado por `(app)/layout.tsx` e `(entrar)/layout.tsx`.
  *
- * `theme-color` NÃO entra aqui, ver `ThemeScript`.
+ * **O `themeColor` ENTRA aqui**, e entrou quando o produto passou a ter um
+ * tema só. Ele morava num script inline no `<head>` (`ThemeScript`) porque
+ * dependia do localStorage, que o CSS e a `<meta>` não sabem ler; com valor
+ * constante, ele é uma tag estática, e o script inteiro deixou de existir.
  */
 export const viewport: Viewport = {
   width: "device-width",
   initialScale: 1,
   maximumScale: 5,
   viewportFit: "cover",
+  themeColor: THEME_COLOR,
 };
 
 export const metadata: Metadata = {
@@ -159,10 +163,11 @@ export default function RootLayout({ children }: LayoutProps<"/">) {
     // Next desliga o suave só durante a transição e devolve em seguida.
     <html
       lang="pt-BR"
-      // `dark` fixo aqui é o PADRÃO do produto, e o `ThemeScript` no <head>
-      // logo abaixo tira a classe de quem escolheu claro. Nascer escuro e
-      // clarear a minoria é o que mantém a piscada fora da maioria das
-      // visitas, e é o que dá tema escuro a quem está sem JS. Ver `ThemeScript`.
+      // `dark` fixo, e agora ele é o ÚNICO estado possível: não há mais tema
+      // claro no produto, e nada tira esta classe. Ela fica porque as
+      // primitivas do shadcn trazem `dark:` escritos para o escuro (24 deles),
+      // e porque `@custom-variant dark` resolve por ela. O que ela NÃO faz
+      // mais é redefinir cor: o bloco `.dark` saiu do `globals.css`.
       className={`dark ${geistSans.variable} ${geistMono.variable} ${firaMono.variable} ${poppins.variable} h-full antialiased`}
       data-scroll-behavior="smooth"
       suppressHydrationWarning
@@ -173,7 +178,6 @@ export default function RootLayout({ children }: LayoutProps<"/">) {
             exige para abrir o atalho da tela inicial sem a moldura do Safari;
             as duas juntas não geram o aviso de depreciação do Chrome. */}
         <meta name="apple-mobile-web-app-capable" content="yes" />
-        <ThemeScript />
       </head>
       <body className="min-h-full flex flex-col" suppressHydrationWarning>
         <Providers>

@@ -27,8 +27,8 @@ type Props = {
 
 export function ReferralLinkCard({ link, code, bonusCoins, rewardCoins, ratePct }: Props) {
   return (
-    <section className="flex flex-col gap-4 rounded-2xl border border-scriba-hairline-soft bg-scriba-paper p-5">
-      <div className="flex flex-col gap-1">
+    <section className="flex flex-col gap-6 rounded-2xl bg-scriba-paper p-6">
+      <div className="flex flex-col gap-1.5">
         <h2 className="text-[14px] font-semibold text-scriba-ink-strong">Seu link e seu código</h2>
         <p className="text-[12.5px] font-light leading-[1.5] text-scriba-ink-soft">
           Quem entra por qualquer um dos dois ganha{" "}
@@ -91,7 +91,7 @@ function CopyRow({
   }
 
   return (
-    <div className="flex flex-col gap-1.5">
+    <div className="flex flex-col gap-2">
       <span className="text-[11px] font-medium uppercase tracking-[0.1em] text-scriba-ink-mute">
         {label}
       </span>
@@ -99,8 +99,8 @@ function CopyRow({
         <output
           className={
             mono
-              ? "min-w-0 flex-1 truncate rounded-xl bg-scriba-surface px-3 py-2.5 font-mono text-[13px] text-scriba-ink-strong"
-              : "min-w-0 flex-1 truncate rounded-xl bg-scriba-surface px-3 py-2.5 text-[13px] text-scriba-ink-strong"
+              ? "min-w-0 flex-1 truncate rounded-xl bg-scriba-surface px-4 py-3 font-mono text-[13px] text-scriba-ink-strong"
+              : "min-w-0 flex-1 truncate rounded-xl bg-scriba-surface px-4 py-3 text-[13px] text-scriba-ink-strong"
           }
         >
           {value}
@@ -109,7 +109,7 @@ function CopyRow({
           type="button"
           onClick={copy}
           aria-label={`Copiar ${label.toLowerCase()}`}
-          className="scriba-cta flex-none rounded-xl bg-[image:var(--scriba-cta)] px-3.5 py-2.5 text-scriba-cta-ink transition-[filter]"
+          className="scriba-cta flex-none rounded-xl bg-[image:var(--scriba-cta)] px-4 py-3 text-scriba-cta-ink transition-[filter]"
         >
           {copied ? <Check className="size-4" /> : <Copy className="size-4" />}
         </button>

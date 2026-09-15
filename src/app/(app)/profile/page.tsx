@@ -10,7 +10,6 @@ import Link from "next/link";
 import { redirect } from "next/navigation";
 import type { ReactNode } from "react";
 import { InstallAppRow } from "@/components/InstallApp";
-import { ThemeToggleRow } from "@/components/ThemeToggle";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { PrivilegedProfileLinks } from "@/features/auth/components/PrivilegedProfileLinks";
 import { PlanCard } from "@/features/billing/components/PlanCard";
@@ -145,7 +144,7 @@ export default async function ProfilePage() {
           não um anúncio. O outro caminho é o card do `/feed`. */}
       <Link
         href="/indicar"
-        className="flex items-center gap-3.5 rounded-[28px] bg-scriba-paper p-5 ring-1 ring-scriba-hairline outline-none transition-colors hover:bg-scriba-surface focus-visible:ring-2 focus-visible:ring-ring/40 sm:p-6"
+        className="flex items-center gap-3.5 rounded-[28px] bg-scriba-paper p-5 ring-1 ring-scriba-hairline outline-none transition-colors hover:bg-v2-card-hover focus-visible:ring-2 focus-visible:ring-ring/40 sm:p-6"
       >
         <span className="flex size-11 flex-none items-center justify-center rounded-2xl bg-scriba-cream text-scriba-cream-body">
           <UserPlus aria-hidden className="size-5" />
@@ -202,7 +201,11 @@ export default async function ProfilePage() {
           Preferências
         </h2>
         <div className="flex flex-col gap-5">
-          <ThemeToggleRow />
+          {/* O switch de tema morava aqui, e saiu com o tema claro. Ele já
+              governava menos do que parecia — a moldura do app declara `dark`
+              no nó raiz, então virar para claro não mudava nenhuma tela
+              logada, só a landing e o painel. Um controle que muda o que a
+              pessoa não está olhando é pior que controle nenhum. */}
           {/* Caminho PERMANENTE para instalar: a faixa do topo do app pode ser
               dispensada para sempre, e é a única outra porta. Ela some sozinha
               onde não há o que oferecer, ver `InstallAppRow`. */}

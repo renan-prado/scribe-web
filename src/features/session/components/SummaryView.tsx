@@ -20,24 +20,15 @@ type SummaryViewProps = {
   summary: SummaryPayload | null;
   hasTranscript: boolean;
   running: boolean;
-  /**
-   * Como a IDEIA CENTRAL é desenhada. Quem a desenha é o `LeadIdea`, o mesmo
-   * componente da "Tese central" do estudo; aqui só se escolhe a roupa.
-   *
-   * - `"rule"` (padrão): filete à esquerda e texto solto, o resumo montado no
-   *   `/recording`.
-   * - `"card"` (o `/summary`): o mesmo cartão do bloco `conclusion`.
-   */
-  lead?: "rule" | "card";
 };
 
-export function SummaryView({ summary, hasTranscript, running, lead = "rule" }: SummaryViewProps) {
+export function SummaryView({ summary, hasTranscript, running }: SummaryViewProps) {
   const hasBody = summary && (summary.shortSummary.length > 0 || summary.blocks.length > 0);
 
   if (hasBody) {
     return (
       <div className="flex flex-col gap-7">
-        <LeadIdea label="Ideia central" text={summary!.shortSummary} variant={lead} />
+        <LeadIdea label="Ideia central" text={summary!.shortSummary} />
         {summary!.blocks.map((block, i) => {
           // A posição entra na chave de propósito: dois `highlight` com o
           // mesmo começo de texto existem, e `blockKey` sozinho os colidiria.

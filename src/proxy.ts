@@ -247,8 +247,8 @@ function isAllowedOrigin(origin: string): boolean {
  *  - `script-src` sem `'unsafe-eval'` (em produção, ver a nota adiante) e com
  *    allowlist de host bloqueia o `<script src="//evil.com">` injetado. NÃO
  *    bloqueia inline: `'unsafe-inline'` é obrigatório enquanto o Next emitir o
- *    bootstrap dele inline sem nonce, e o `ThemeScript` também é inline. Esta é
- *    a folga que o nonce fecharia.
+ *    bootstrap dele inline sem nonce, e o `HeroEyebrowScript` da landing também
+ *    é inline. Esta é a folga que o nonce fecharia.
  *  - `object-src 'none'`, `base-uri 'self'` (impede sequestro de URL relativa
  *    por `<base>` injetada) e `form-action 'self'` (impede que um formulário
  *    injetado poste para fora).

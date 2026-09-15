@@ -84,7 +84,7 @@ resposta da metade do prompt:
 | `eval(` / `new Function(` | **zero** (os `\.exec(` que a busca traz são `RegExp.prototype.exec`) |
 | `child_process` / `execSync` / shell | **zero** em `src/app/`, `src/lib/`, `src/`. Em `src/scripts/` existem três, e as três recebem argv em ARRAY, com argumentos do próprio desenvolvedor no terminal, não há caminho de usuário até lá |
 | Renderizador de markdown | **zero**, não há dependência disso no `package.json` |
-| `dangerouslySetInnerHTML` | duas, e as duas com conteúdo de compilação: `LandingJsonLd` (JSON-LD serializado de uma constante) e `ThemeScript` (script literal). Nenhum dado de usuário ou de LLM |
+| `dangerouslySetInnerHTML` | duas, e as duas com conteúdo de compilação: `LandingJsonLd` (JSON-LD serializado de uma constante) e `HeroEyebrowScript` (script literal). Nenhum dado de usuário ou de LLM. O `ThemeScript`, que era a terceira, saiu com o tema claro |
 | Path de arquivo derivado de input | **zero**, nada é escrito em disco. O áudio do chunk vai direto para a OpenAI e o texto vai para o banco |
 
 Transcrição, resumo, cards e estudo são renderizados como **nó de texto do

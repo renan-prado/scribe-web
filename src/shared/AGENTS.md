@@ -7,7 +7,7 @@ antes de editar.
 brand/       a pena e o logotipo. UM arquivo tem o <path>
 ui/          primitivas shadcn sobre base-ui
 components/  chrome do app: header, nav, providers, tema, analytics, LP mocks
-hooks/       use-theme, use-mobile
+hooks/       use-mobile, use-standalone, use-install-prompt
 icons/       glifos próprios
 assets/      avatares WebP da landing
 content/     copy estruturada (FAQ da landing)
@@ -15,203 +15,133 @@ content/     copy estruturada (FAQ da landing)
 
 ## Tema
 
-> **BRANCH `test/tema-shadcn`: o produto está monocromático.** Os tokens
-> `--scriba-*` e `--session-*` foram remapeados para a escala neutra do shadcn
-> (`neutral` do Tailwind) em `:root` e `.dark`, e o tema escuro trocou o índigo
-> pelos valores DEFAULT do template. Nenhum `.tsx` mudou: o remap inteiro cabe
-> em `src/app/globals.css`, que é o que este documento sempre prometeu.
->
-> O que o texto abaixo descreve continua sendo a ESTRUTURA correta (as três
-> superfícies, a escala de tinta de quatro degraus, o par do CTA, a regra de
-> nunca escrever cor literal). O que mudou foram os VALORES, e por isso os
-> argumentos de calibragem que você vai ler adiante, "branco sobre `--scriba-blue`
-> dá 2,56:1", "o piso da escala se mede pelo `--scriba-bubble`", seguem válidos
-> como método mesmo com os números antigos: eles são a razão de cada token
-> existir, e é deles que você precisa se o teste for revertido
-> (`git checkout master -- app/globals.css`).
->
-> **Três cores sobreviveram, e as três por serem SEMÂNTICAS:** o vermelho
-> (`--scriba-rec*`, `destructive`), o verde (`--scriba-ok-*`, a variante
-> `success` do `<Badge>`) e o amarelo da MOEDA (`--scriba-yellow*` e
-> `--scriba-gold-*`, mais `--session-highlight-yellow`, que `.tone-study`
-> deixou de sobrescrever: o cinza que sobrara ali era resíduo da passagem
-> monocromática, e um marcador cinza ao lado de um amarelo em outra tela lia
-> como defeito).
->
-> O marca-texto no ESCURO é um amarelo queimado, e o valor está preso pelo
-> contraste, não pelo gosto: a faixa cobre só os 42% de baixo da linha, a
-> tinta do parágrafo ali é quase branca, e branco só se sustenta sobre amarelo
-> escuro. Composto sobre o cartão, o valor atual dá #836927, 5,0:1; o teto
-> para manter AA é ~#8D7029, indistinguível a olho nu. Usar o creme do tema
-> claro daria 1,2:1. **Clarear exige cobrir a linha inteira e inverter a tinta,
-> o que é outro desenho, não outro valor** — foi testado e desfeito. O saldo, o preço por
-> minuto e o marca-texto se identificam por essa cor em toda a interface; cinza
-> ali não é simplificação, é informação a menos. `--scriba-flash-debit` voltou
-> ao âmbar da mesma família e `--scriba-flash-credit` ficou neutro, o que
-> devolve a distinção sem trazer um terceiro matiz.
->
-> **O verde entrou por último, e entrou estreito.** Ele existe para um estado
-> BINÁRIO de sistema — hoje só a conta ligada/desligada de `/admin/users` — em
-> que o vermelho de um lado diz "isto está errado" e o cinza do outro não diz
-> nada, e o par fica pela metade. Ele NÃO é um matiz de acento: se aparecer num
-> tile, num realce ou em qualquer coisa que não seja o lado bom de um estado de
-> duas pontas, o teste monocromático voltou a ser furado. Os dois valores
-> (`--scriba-ok-ink` / `--scriba-ok-soft`) são declarados por tema, então a
-> variante não carrega `dark:`.
->
-> O que ainda custa informação, e está anotado no `globals.css`: as quatro
-> famílias de tile (mint/rose/cream/lilac) têm valores IDÊNTICOS, então o tipo
-> de card só se distingue pelo rótulo; e `.tone-study` virou meio degrau de
-> luminância no lugar do verde contra azul. A landing (`--lp-hero`, `--lp-band`,
-> `--lp-band-ink`, `--lp-phone-frame`) ficou FORA e mantém a marca.
+**Um tema só, e ele é o do app.** O produto é grafite, da landing ao painel do
+admin, e não existe mais bloco `.dark` no `globals.css` nem switch em lugar
+nenhum. Havia dois temas enquanto a área logada já forçava o escuro no nó raiz:
+o claro só sobrevivia na landing, no `/admin` e na área do parceiro, ou seja,
+metade do produto tinha uma paleta que a outra metade ignorava, e as duas
+precisavam ser calibradas e medidas.
 
-Claro e escuro por uma única classe `.dark` no `<html>`. **Não existe ramo de
-tema por componente.**
+O `<html>` continua nascendo com `class="dark"`, e ela NÃO pinta mais nada: as
+primitivas do shadcn trazem duas dúzias de `dark:` escritos para o escuro, e o
+`@custom-variant dark` resolve por ela.
 
 **Nunca escreva uma cor literal num `className`.** Nada de `bg-white`,
-`bg-[#EAF2FA]`, `fill="#F8C64B"`. Toda cor vem de um token `--scriba-*` /
-`--session-*` / shadcn declarado em **ambos** `:root` e `.dark` em
-`src/app/globals.css`. Token novo entra em TRÊS lugares: `:root`, `.dark`, e o mapa
-`@theme inline` que o expõe como utilitário.
+`bg-[#EAF2FA]`, `fill="#F8C64B"`. Toda cor vem de um token `--v2-*` /
+`--scriba-*` / `--session-*` / shadcn declarado em `src/app/globals.css`. Token
+novo entra em DOIS lugares: `:root` e o mapa `@theme inline` que o expõe como
+utilitário. (Eram três enquanto havia `.dark`.)
 
-Superfícies, do fundo para a frente:
+### Três superfícies, e é tudo
 
-| Token | Papel |
-|---|---|
-| `bg-background` | o chão da página |
-| `bg-scriba-surface` | a faixa rebaixada entre o chão e o papel |
-| `bg-scriba-paper` | a superfície elevada: cards, diálogos, sheets, popovers |
-
-**O cartão de sessão é a exceção, e tem token próprio: `--feed-card`.** O
-`SessionCard` da Biblioteca não usa `bg-scriba-paper`, e sim
-`bg-[image:var(--feed-card)]`, porque no tema
-ESCURO todos precisam da mesma superfície da citação bíblica, o degradê de
-`--session-surface-quote`, que é o que dá relevo ao cartão sobre um chão quase
-preto. No CLARO ele é branco chapado: ali o relevo já vem do contraste com
-`--scriba-surface`, e um degradê cinza sobre papel só sujaria a leitura.
-
-É gradiente nos DOIS temas mesmo quando é branco (quatro paradas iguais), senão
-o mesmo cartão precisaria de `bg-*` num tema e `bg-[image:*]` no outro. No
-escuro o valor é `var(--session-surface-quote)` por referência, não por cópia:
-a regra é "a mesma da citação bíblica", e precisa continuar valendo quando
-aquela mudar.
-
-**O nome do token é HISTÓRICO.** Ele nasceu para os cartões de um `/feed` que
-não existe mais, e ficou porque o que ele descreve continua valendo, palavra por
-palavra, para o cartão de sessão. Renomeá-lo tocaria `globals.css`, o tema claro
-e o escuro para trocar uma string.
-
-### A sombra das superfícies
-
-**É `--scriba-shadow-soft` / `--scriba-shadow`, nunca um `rgba()` colorido.**
-As sombras de card, de nav inferior, de caixa do admin e do cartão de login
-eram todas o mesmo azul literal, `rgba(79, 168, 240, ...)`, sobra da paleta
-antiga. No claro isso passava; no ESCURO não: azul claro difuso sobre um chão
-quase preto não lê como sombra, lê como BRILHO em volta da caixa, e a nav
-inferior ganhava uma linha acesa por cima em vez de descolar do conteúdo.
-
-Os dois degraus existem porque as chamadas já usavam dois: `soft` para o que só
-precisa descolar do fundo (cards do feed, campos, pastilhas), o outro para o que
-precisa flutuar (a nav, o cartão do login, o modo selecionado do diálogo de
-gravar). E os valores INVERTEM de intensidade com o tema: 0.06 / 0.12 no claro,
-0.35 / 0.5 no escuro, porque o mesmo preto fraco que assenta uma caixa branca
-simplesmente some sobre `#0A0A0A`.
-
-O par continua separado de `--scriba-cta-shadow`, que é a sombra do BOTÃO e
-acompanha o gradiente dele.
-
-`text-white` / `bg-white` literais só são aceitáveis sobre uma superfície que
-é a MESMA cor nos dois temas (`bg-scriba-blue`, `bg-scriba-rec`,
-`bg-scriba-yellow`, os gradientes fixos da landing). Qualquer coisa sobre
-`bg-scriba-ink-strong` usa `text-background`, porque esse token inverte.
-
-Uma variante `dark:` é a ferramenta certa para o caso raro que não é paleta
-(opacidade de scrim de modal). Se o valor é uma cor, prefira token.
-
-**O padrão é o tema ESCURO**, e continua NÃO sendo o `prefers-color-scheme` do
-sistema: o tema é decisão de produto, não retrato do SO. Quem nunca escolheu vê
-escuro, na landing e na área logada.
-
-A decisão mora em DOIS lugares que precisam concordar, e a ordem entre eles é o
-desenho: **o `<html>` do root layout nasce com `class="dark"`**, e o
-`ThemeScript` (no `<head>`, antes do primeiro paint) REMOVE a classe de quem
-escolheu claro. A inversão é o que mantém a piscada fora da maioria das
-visitas: enquanto o padrão era claro, o HTML servido já era o padrão; com o
-padrão escuro e o HTML nascendo claro, TODA visita começaria branca e
-escureceria. De quebra, quem está sem JS agora recebe escuro em vez de claro.
-
-Quatro arquivos carregam esse padrão e mudam JUNTOS: `src/app/layout.tsx` (a
-classe), `ThemeScript` (o fallback e a `<meta name="theme-color">`),
-`use-theme.ts` (o estado inicial e a chave `scriba-theme` do localStorage) e
-`src/app/manifest.ts` (`theme_color`, que é o que o navegador usa sem JS).
-`public/offline.html` tem o quinto, o seu próprio bootstrap inline.
-
-Portais fora da árvore de tokens (sonner) precisam do tema resolvido passado
-explicitamente, ver `ThemedToaster`.
-
-**Duas cores vivem FORA do `globals.css`, e as duas são obrigadas a isso.** A
-barra de status do celular (`<meta name="theme-color">`, escrita pelo
-`ThemeScript` e reescrita pelo `useTheme`) e o `theme_color` do manifest são
-lidos pelo navegador antes de qualquer CSS, nenhum dos dois enxerga um `var()`.
-Elas moram em `src/shared/theme-color.ts` e espelham `--scriba-surface` nos dois
-temas: **mudou o token, mude lá no mesmo commit.** A terceira exceção, pelo
-mesmo motivo, é `public/offline.html`, sem rede não há folha de estilo para
-carregar.
-
-### As barras do sistema no app
-
-A área logada tem UM tema, então lá a cor das barras não acompanha o switch:
-`THEME_COLOR.app` é o espelho de `--v2-bg`, e é ele que vale das duas pontas da
-tela. **São três mecanismos porque são três donos diferentes, e nenhum deles
-alcança os outros dois:**
-
-| Onde | Quem pinta | Por quê |
+| Token | Valor | Papel |
 |---|---|---|
-| Barra de status (topo) | `AppThemeColor`, montado pela moldura | A `<meta>` é escrita no `<head>`, antes de haver rota; o componente é a segunda palavra, dita já dentro do app |
-| Barra de navegação (Android, embaixo) | `html:has([data-v2-shell])` no `globals.css` | O Chrome tira a cor dela do fundo do DOCUMENTO, e não há meta que mande nela |
-| Abertura do app instalado | `theme_color` do manifest | É o que o sistema usa antes de a página existir |
+| `bg-background` / `bg-v2-bg` | `#212121` | o chão, em toda rota |
+| `bg-scriba-paper` / `bg-v2-card` / `bg-card` | `#2F3035` | tudo que é cartão |
+| `bg-secondary` / `bg-v2-card-hover` | `#3A3B41` | o realce: hover, aba ativa |
 
-O `bg-v2-bg` da moldura NÃO resolve nenhum dos três: ele pinta um div, e por
-baixo dele o fundo do documento é o do site — branco, para quem escolheu tema
-claro, que é como uma barra de navegação branca aparecia embaixo de um app
-grafite. `data-v2-shell`, no nó raiz de `(app)/layout.tsx`, é o que liga o CSS
-ao app; `useTheme` o consulta antes de pintar a meta, senão o toggle do
-`/profile` (que é uma tela do app) devolvia a barra de cima para a cor do site.
+`--scriba-surface`, que era a faixa REBAIXADA entre o chão e o papel, virou o
+próprio chão — os dois nomes valem `#212121`. Ele continua útil dentro de um
+cartão, onde o chão vira um encaixe (a trilha de uma barra de progresso, uma
+pastilha dentro do papel); o que ele não faz mais é pintar seção.
 
-A quarta ponta é a ABERTURA do app, e ela fecha o circuito: o
-`background_color` do manifest (Android) e as telas de `public/brand/splash/`
-(iOS) são o mesmo `#212121` chapado, então o app abre na cor em que ele fica.
-Foram índigo `#1C2349` até a pele nova, e o app abria num clarão azul para
-então ficar cinza.
+**Seção não se separa por faixa, se separa por FIO.** Uma banda mais escura
+embaixo de um chão que já é escuro lê como mancha. O fio é
+`border-scriba-hairline` (branco a 10%), o mesmo que a Biblioteca usa entre os
+meses. A exceção é a faixa full-bleed da landing (`--lp-band`), que é a
+superfície ELEVADA em tamanho de seção: ela é um cartão gigante, e é isso que
+ela faz na página.
 
-O switch existe em UM lugar, e só: **`/profile`** (`ThemeToggleRow`). Saiu
-do header logado, do header de parceiros, do `AuthShell` (sign-in e sign-up) e
-do header da landing.
+**Sombra não separa mais nada.** `--scriba-shadow-soft` é `transparent` de
+propósito: zerar o token apagou as ~20 sombras decorativas sem tocar num
+`className`. O degrau denso (`--scriba-shadow`) ficou, e é só para o que de
+fato flutua — diálogo, popover, sheet. O hover de cartão da landing
+(`.lp-lift` / `.lp-tile`) deixou de ser sombra crescendo e virou o que o app
+faz: a superfície sobe um degrau.
 
-**E hoje ele governa menos do que parece:** a moldura do app declara `dark` no
-nó raiz (ver `src/app/layout.tsx`), então todas as telas logadas desenham escuro
-qualquer que seja a escolha. O que ainda responde ao switch é o `/admin`, o
-`/partners` e as páginas de conta fora da moldura. Quando o app ganhar tema
-claro próprio, aquela linha sai e o switch volta a valer em tudo.
+### Três cores, todas semânticas
 
-A consequência precisa estar à vista de quem for mexer: **fora da área logada
-não há mais como trocar de tema.** Visitante da landing, quem está no sign-in e
-quem está no sign-up veem escuro e pronto; o caminho para o claro é entrar e ir
-ao perfil. Foi uma decisão explícita, não um esquecimento. Não espalhe mais sem
-pedido, e não devolva um deles sem lembrar que o padrão hoje é escuro.
+| Família | Para quê |
+|---|---|
+| `--scriba-yellow*` / `--scriba-gold-*` | a MOEDA: saldo, preço, marca-texto |
+| `--scriba-rec*` / `--scriba-rose*` / `destructive` | gravando, apagar, erro, valor negativo |
+| `--scriba-ok-*` | o lado bom de um estado BINÁRIO de sistema, e nada mais |
+
+As quatro famílias de tile (`mint`/`rose`/`cream`/`lilac`) tiveram valores
+IDÊNTICOS por uma temporada, e o preço era o tipo de card só se distinguir pelo
+rótulo. Hoje cada uma está amarrada a uma dessas três: mint é o lado bom, rose é
+o lado ruim, cream é a moeda, lilac é o neutro. **Elas são lavados ESCUROS** —
+a tinta dentro delas é clara, como em todo o resto do produto.
+
+### Os post-its são a outra metade do sistema de cor
+
+`--v2-note-{mist,sage,slate,lemon}`, cada um com o próprio par de tinta
+(`-ink` e `-mute`). São a ÚNICA cor clara sobre escuro do produto, são a marca
+do acervo (ver `PostItNote`), e **a landing os usa pelo mesmo motivo que o
+app**: os marcadores da seção "O problema", os chips dos blocos do resumo, o
+rótulo da faixa da Biblioteca e o mural dentro do mockup de celular.
+
+**Post-it é ACENTO, nunca fundo de cartão grande.** Um cartão de post-it
+obrigaria a inverter a tinta de tudo que estivesse dentro dele, e a página
+passaria a ter dois modelos de tinta. Onde a cor precisa cobrir área, a
+resposta é a superfície elevada.
+
+### A escala de tinta
+
+Quatro degraus, o piso medido pelo PAPEL (`#2F3035`), que é o fundo de menor
+contraste em que texto pousa:
+
+```
+              chão(#212121) / papel(#2F3035)
+ink-strong      14,8 / 12,1
+ink             10,9 /  8,9
+ink-soft         7,8 /  6,4
+ink-mute         5,8 /  4,8   <- o piso, AA para texto pequeno
+```
+
+Mexeu num, recalcule os quatro. E **não ponha `ink-mute` sobre `--secondary`**
+(`#3A3B41`): ali ele dá 4,0:1. Quem pousa naquela superfície é o
+`--muted-foreground` do shadcn, um degrau mais claro de propósito.
+
+`text-white` literal não é aceitável em lugar nenhum: ele é meio degrau acima
+do `--scriba-ink-strong` que o resto da página usa, e a diferença aparece
+exatamente onde ele costumava estar, nos blocos que fecham a leitura.
+
+### A cor das barras do sistema
+
+A barra de status do celular (`<meta name="theme-color">`), o `theme_color` e o
+`background_color` do manifest e a tela de abertura são todos `#212121`, e o
+valor mora em `src/shared/theme-color.ts` porque o navegador lê a meta antes de
+qualquer CSS e o manifest é JSON: nenhum dos dois enxerga um `var()`. **Mudou
+`--v2-bg`? Mude lá no mesmo commit.** `public/offline.html` é a terceira cópia,
+pelo mesmo motivo: sem rede não há folha de estilo para carregar.
+
+Com valor constante, a meta é uma tag ESTÁTICA no `viewport` do root layout.
+Três mecanismos deixaram de existir quando o segundo tema saiu: o script inline
+no `<head>` que lia o localStorage antes do primeiro paint (`ThemeScript`), o
+efeito que refazia a conta dentro da área logada (`AppThemeColor`) e o
+`useTheme`, que reescrevia a meta a cada troca. A barra de navegação do Android,
+que o Chrome tira do fundo do DOCUMENTO e que nenhuma meta alcança, acerta
+sozinha agora que `--background` é o grafite em toda rota.
+
+**Não devolva um switch de tema sem devolver a paleta junto.** O que existia
+(`ThemeToggleRow`, no `/profile`) governava menos do que parecia: a moldura do
+app declara `dark` no nó raiz, então virar para claro não mudava nenhuma tela
+logada, só a landing e o painel. Um controle que muda o que a pessoa não está
+olhando é pior que controle nenhum.
 
 ### O botão primário
 
-**É `--scriba-cta` / `--scriba-cta-ink` / `--scriba-cta-shadow`, na landing E na
-área logada.** Nunca pinte um botão com `bg-scriba-blue` + `text-white`:
-`--scriba-blue` é azul de SUPERFÍCIE, e branco sobre ele dá 2,56:1 no claro e
-2,33:1 no escuro. Era assim em 21 botões.
+**É `--scriba-cta` / `--scriba-cta-ink`, na landing E na área logada.** Uma
+pastilha clara com tinta grafite, CHAPADA e em raio total (`rounded-full`), que
+é o desenho de botão do app.
 
-O CTA é gradiente (`bg-[image:var(--scriba-cta)]`) e INVERTE: azul-escuro com
-tinta branca no claro, pastilha clara com tinta navy no escuro. O hover é um
-`filter` na classe `.scriba-cta`, não uma cor de fundo, um `hover:bg-*` chapa
-o gradiente. A sombra também é token, porque um halo azul sob pastilha branca
-em página escura suja a borda em vez de assentar o botão.
+Ele continua declarado como gradiente de duas paradas iguais e consumido por
+`bg-[image:var(--scriba-cta)]`: são doze lugares, e trocar o utilitário em
+todos para ganhar um `background-color` no lugar de um `background-image` seria
+mexer em doze arquivos por nada. O hover é um `filter` na classe `.scriba-cta`,
+nunca uma cor de fundo — um `hover:bg-*` chapa o gradiente.
+`--scriba-cta-shadow` é `transparent`: a pastilha não flutua.
 
 **A variante `default` do `ui/button.tsx` JÁ É esse par**, e a família inteira
 (`outline`, `secondary`, `ghost`, `link`) foi repontada para os tokens
@@ -291,29 +221,48 @@ nenhum, e isso é bom: é mais um motivo para ele não existir.
 ### Calibrar tinta
 
 **Tinta de família se calibra pela superfície da família, não pelo papel.**
-`--scriba-*-accent`, `-body` e `-dark` aparecem sobre `--scriba-cream`,
-`--scriba-mint` etc., que são mais escuros que o branco, medir no papel dá
-falso OK. E o piso da escala neutra é `--session-example-bg` (#EEF3FB), a
-superfície mais escura do tema claro, não o `--scriba-bubble`.
+`--scriba-*-accent`, `-body` e `-ink` aparecem sobre `--scriba-cream`,
+`--scriba-mint` etc., que são lavados mais claros que o chão; medir no papel dá
+falso OK nos dois sentidos. O mesmo vale, com mais força, para os post-its: ali
+a superfície é CLARA e a tinta é escura, e é a única parte do produto em que
+isso acontece.
 
 ### A landing tem tokens próprios
 
 As faixas full-bleed usam `--lp-hero`, `--lp-band` / `--lp-band-ink` /
 `--lp-band-cta` e `--lp-phone-frame` em vez de reaproveitar cor de componente.
-**Não pinte uma seção da LP com `bg-scriba-blue`.**
+**Não pinte uma seção da LP com `bg-scriba-blue`** (que, aliás, não é mais
+azul: é a própria tinta forte).
 
-**A faixa é ESCURA nos dois temas, e é isso que obriga o par de botão dela a
-ser fixo.** `--scriba-cta` inverte por tema; usado ali, o tema claro poria um
-botão quase preto sobre uma laje quase preta. Por isso `--lp-band-cta` /
-`--lp-band-cta-ink` valem o mesmo no claro e no escuro. Contraste da tinta no
-ponto mais claro da faixa: 9,2:1 no claro, 8,4:1 no escuro.
+**O hero tem DEGRADÊ, e é o único do produto.** `--lp-hero` abre em `#2B2C31`,
+o meio do caminho entre o chão e a superfície elevada, e desce até `#212121`.
+Ele já foi chapado por uma versão e a primeira dobra perdeu o eixo: é o degradê
+que empurra o olho do título para o aparelho no fim da seção. A parada FINAL
+precisa ser igual a `--lp-hero-fade`, que é contra o que o recorte do telefone
+esfuma; um tom fora do lugar desenha uma faixa visível exatamente onde a ideia
+era não haver borda nenhuma. As duas landings (`/` e `/parceiros`) leem o mesmo
+token.
 
-**Os dois halos radiais do hero (o azul e o dourado) ficaram FORA da paleta
-neutra, de propósito.** São o único acento cromático que restou nas duas
-landings, e é deles que vem a sensação de que a marca continua ali; o que
-mudou embaixo deles foi o chão, que deixou de ser azul. São os únicos `rgba()`
-de marca que sobrevivem num `className` deste repositório, e não são
-precedente: apagá-los apaga a cor da página inteira.
+**Os dois halos radiais do hero ficam**, um azul e um dourado, invertidos de
+posição entre a `/` e a `/parceiros`. São a última cor de marca do produto e o
+que impede a primeira dobra de ser um retângulo cinza com texto no meio; saíram
+por uma versão, junto com a pele antiga, e a página perdeu com isso o que a
+fazia parecer viva.
+
+Eles eram a única exceção à regra "nada de cor literal em `className`" — dois
+`rgba()` escritos na classe. **Hoje são token** (`--lp-halo-blue` /
+`--lp-halo-gold`), consumidos por `bg-[image:var(--…)]`: a exceção
+acabou e a calibragem ficou num lugar só. Sobre o grafite, 16% de opacidade é
+o teto antes de o halo deixar de ser luz e virar mancha de cor; no chão quase
+preto de antes dava para ir mais alto.
+
+Na `/parceiros` o dourado divide matiz com o AMARELO DA MOEDA, que ali é
+informação. Passa porque é luz difusa atrás do texto, não pastilha nem número.
+Se um valor em amarelo cair em cima dele, quem sai é o halo.
+
+**A faixa (`--lp-band`) é a superfície elevada em tamanho de seção**, e o par
+de botão dela (`--lp-band-cta` / `--lp-band-cta-ink`) é fixo porque ela é uma
+cor só. Tinta sobre ela: 8,9:1.
 
 ## Marca: a pena mora em um lugar só
 

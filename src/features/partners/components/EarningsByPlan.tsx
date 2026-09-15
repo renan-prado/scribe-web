@@ -39,8 +39,8 @@ export function EarningsByPlan({ rateBps }: Props) {
   });
 
   return (
-    <section className="flex flex-col gap-3 rounded-2xl border border-scriba-hairline-soft bg-scriba-paper p-5">
-      <div className="flex flex-col gap-1">
+    <section className="flex flex-col gap-6 rounded-2xl bg-scriba-paper p-6">
+      <div className="flex flex-col gap-1.5">
         <h2 className="text-[14px] font-semibold text-scriba-ink-strong">
           Quanto você ganha por assinatura
         </h2>
@@ -52,7 +52,7 @@ export function EarningsByPlan({ rateBps }: Props) {
 
       <ul className="flex flex-col divide-y divide-scriba-hairline">
         {rows.map((row) => (
-          <li key={row.key} className="flex items-center justify-between gap-3 py-3">
+          <li key={row.key} className="flex items-center justify-between gap-3 py-3.5">
             <div className="flex min-w-0 flex-col">
               <span className="text-[13px] font-medium text-scriba-ink-strong">
                 Plano {row.name}

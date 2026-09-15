@@ -1,4 +1,5 @@
 import { BlockRenderer, blockKey } from "@/features/session/components/BlockRenderer";
+import { LeadIdea } from "@/features/session/components/LeadIdea";
 import type { SummaryBlock } from "@/lib/domain/summary";
 
 /**
@@ -96,14 +97,13 @@ export function LandingSummaryMock({ lead = false }: LandingSummaryMockProps) {
   return (
     <div className="flex flex-col gap-4 px-4 pb-8 pt-3">
       <div className="flex flex-col gap-7">
-        <div className="-mb-2 flex flex-col gap-2 border-l-[2.5px] border-scriba-ink-soft pl-4">
-          <span className="text-[10px] font-semibold uppercase tracking-[0.14em] text-scriba-ink-mute">
-            Ideia central
-          </span>
-          <p className="animate-content-fade text-pretty text-balance text-lg font-medium leading-snug text-scriba-ink-strong">
-            {DEMO_SHORT_SUMMARY}
-          </p>
-        </div>
+        {/* O componente DE VERDADE, e não uma cópia do desenho dele. Esta é a
+            exceção à regra do cabeçalho, pelo mesmo motivo do `BlockRenderer`:
+            a abertura de uma leitura tem um desenho só no produto (ver
+            `LeadIdea`), e reproduzi-lo à mão aqui foi o que deixou a landing
+            mostrando a estética anterior depois de a do app mudar. Ele é
+            servidor puro e não arrasta bundle. */}
+        <LeadIdea label="Ideia central" text={DEMO_SHORT_SUMMARY} />
         {/* `blockKey` já é único nesta lista fixa (os textos são todos
             distintos), então não precisa do índice para desempatar. */}
         {/* Um bloco por linha, ocupando a tela inteira do aparelho.

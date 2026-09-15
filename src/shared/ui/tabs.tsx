@@ -31,7 +31,12 @@ function TabsList({ className, ...props }: TabsPrimitive.List.Props) {
     <TabsPrimitive.List
       data-slot="tabs-list"
       className={cn(
-        "relative flex w-fit max-w-full items-center gap-1 overflow-x-auto rounded-full bg-scriba-surface p-1",
+        // O trilho é a SUPERFÍCIE de cartão, e não `--scriba-surface`: desde
+        // que o chão do produto virou o grafite, os dois valem o mesmo e o
+        // trilho sumia — sobrava a pílula ativa flutuando sem controle em
+        // volta. `--v2-card` é a mesma cor do chip da barra do app, que é o
+        // outro controle dessa família.
+        "relative flex w-fit max-w-full items-center gap-1 overflow-x-auto rounded-full bg-v2-card p-1",
         className
       )}
       {...props}
@@ -62,7 +67,6 @@ function TabsTab({ className, ...props }: TabsPrimitive.Tab.Props) {
         // é de propósito: "onde eu estou" merece o mesmo peso de "o que eu
         // aperto".
         "data-[active]:bg-scriba-ink-strong data-[active]:text-scriba-paper",
-        "data-[active]:shadow-[0_2px_8px_rgba(0,0,0,0.18)]",
         className
       )}
       {...props}

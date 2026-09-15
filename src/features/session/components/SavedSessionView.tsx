@@ -81,8 +81,6 @@ type SavedSessionViewProps = {
    * `createdAtShortLabel`, "6 set" em vez de "06 de set. de 2026".
    */
   meta?: "full" | "compact";
-  /** Ver `SummaryView`. O `/summary` passa `"card"`. */
-  lead?: "rule" | "card";
 };
 
 export function SavedSessionView({
@@ -100,7 +98,6 @@ export function SavedSessionView({
   canGenerateStudy,
   header,
   meta = "full",
-  lead = "rule",
 }: SavedSessionViewProps) {
   const [transcriptOpen, setTranscriptOpen] = useState(false);
   const [titleDialogOpen, setTitleDialogOpen] = useState(false);
@@ -311,12 +308,7 @@ export function SavedSessionView({
 
       <div className="h-px w-full bg-scriba-hairline" />
 
-      <SummaryView
-        summary={summary}
-        hasTranscript={transcript.length > 0}
-        running={false}
-        lead={lead}
-      />
+      <SummaryView summary={summary} hasTranscript={transcript.length > 0} running={false} />
 
       <Dialog open={transcriptOpen} onOpenChange={setTranscriptOpen}>
         <DialogContent className="sm:max-w-2xl">

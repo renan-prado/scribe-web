@@ -200,7 +200,7 @@ export function AdminSidebar({
                 side={isMobile ? "bottom" : "right"}
                 align="end"
                 sideOffset={8}
-                className="min-w-[15rem] rounded-2xl border-none bg-scriba-paper p-2 shadow-[0_18px_40px_rgba(51,65,79,0.14)] ring-1 ring-scriba-hairline"
+                className="min-w-[15rem] rounded-2xl border-none bg-scriba-paper p-2 shadow-[0_18px_40px_var(--scriba-shadow)] ring-1 ring-scriba-hairline"
               >
                 <DropdownMenuItem
                   render={<Link href="/home" />}

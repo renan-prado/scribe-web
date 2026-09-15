@@ -14,6 +14,7 @@ import {
 } from "@/features/partners/economics";
 import { getCurrentPartner } from "@/lib/auth/require-partner";
 import { loadPartnerPanel } from "@/lib/db/partner-panel";
+import { cn } from "@/lib/utils";
 
 export const metadata: Metadata = { title: "Painel" };
 export const dynamic = "force-dynamic";
@@ -51,9 +52,23 @@ export default async function PartnerDashboardPage() {
   const totalEarned = summary.pendingCents + summary.availableCents + summary.paidCents;
 
   return (
+    /* O RITMO DESTA TELA, e ele é uma régua de quatro degraus. Antes cada
+       bloco escolhia o seu (`p-5` aqui, `gap-3` ali, `gap-0.5` no degrau do
+       funil), e o painel lia como uma pilha de caixas apertadas de tamanhos
+       diferentes. Os quatro, e nada além deles:
+
+         p-6      o respiro INTERNO de todo bloco, sem exceção
+         gap-6    entre blocos, e entre as partes DENTRO de um bloco
+         gap-4    entre cartões de uma mesma grade (os três de dinheiro,
+                  os três degraus do funil) — eles são irmãos, e vão mais
+                  juntos do que blocos diferentes
+         gap-1.5  entre linhas de texto da MESMA coisa (rótulo, valor, nota)
+
+       Ao acrescentar um bloco aqui, use um destes. Um `p-5` novo no meio é o
+       que desfaz a régua, e ela só existe enquanto ninguém abre exceção. */
     <div className="flex flex-col gap-6">
-      <header className="flex flex-wrap items-start justify-between gap-3">
-        <div className="flex flex-col gap-1">
+      <header className="flex flex-wrap items-start justify-between gap-4">
+        <div className="flex flex-col gap-1.5">
           <h1 className="text-[26px] font-semibold tracking-tight text-scriba-ink-strong">
             Olá, {partner.displayName.split(" ")[0]}
           </h1>
@@ -64,7 +79,7 @@ export default async function PartnerDashboardPage() {
         <RefreshPanelButton />
       </header>
 
-      <section className="grid gap-3 sm:grid-cols-3">
+      <section className="grid gap-4 sm:grid-cols-3">
         <Money
           label="A liberar"
           value={formatBrl(summary.pendingCents)}
@@ -98,7 +113,7 @@ export default async function PartnerDashboardPage() {
               ratePct={partner.commissionRateBps / 100}
             />
 
-            <section className="flex flex-col gap-3 rounded-2xl border border-scriba-hairline-soft bg-scriba-paper p-5">
+            <section className="flex flex-col gap-6 rounded-2xl bg-scriba-paper p-6">
               <h2 className="text-[14px] font-semibold text-scriba-ink-strong">Seu funil</h2>
               {/* Cada degrau mostra a taxa em relação ao degrau ANTERIOR, não
                   ao topo do funil. É o que o parceiro consegue agir: "de quem
@@ -148,9 +163,9 @@ export default async function PartnerDashboardPage() {
                 porque a mesada é cortesia fixa e esta é resultado do trabalho
                 dele. Some quando o parceiro não tem essa condição no acordo. */}
             {partner.signupRewardCoins > 0 ? (
-              <section className="flex items-start gap-3 rounded-2xl border border-scriba-hairline-soft bg-scriba-paper p-5">
+              <section className="flex items-start gap-4 rounded-2xl bg-scriba-paper p-6">
                 <CoinMark size={22} />
-                <div className="flex flex-col gap-0.5">
+                <div className="flex flex-col gap-1.5">
                   <h2 className="text-[13.5px] font-semibold text-scriba-ink-strong">
                     {INT.format(summary.signupRewardCoins)} moedas ganhas por cadastro
                   </h2>
@@ -164,9 +179,9 @@ export default async function PartnerDashboardPage() {
             ) : null}
 
             {partner.monthlyCoins > 0 ? (
-              <section className="flex items-start gap-3 rounded-2xl border border-scriba-hairline-soft bg-scriba-cream p-5">
+              <section className="flex items-start gap-4 rounded-2xl bg-scriba-cream p-6">
                 <CoinMark size={22} />
-                <div className="flex flex-col gap-0.5">
+                <div className="flex flex-col gap-1.5">
                   <h2 className="text-[13.5px] font-semibold text-scriba-cream-ink">
                     {INT.format(partner.monthlyCoins)} moedas por mês, por nossa conta
                   </h2>
@@ -188,7 +203,7 @@ export default async function PartnerDashboardPage() {
               ) : (
                 <ul className="flex flex-col divide-y divide-scriba-hairline">
                   {monthly.map((m) => (
-                    <li key={m.month} className="flex items-center justify-between gap-3 py-2.5">
+                    <li key={m.month} className="flex items-center justify-between gap-3 py-3.5">
                       <span className="text-[13px] text-scriba-ink first-letter:uppercase">
                         {MONTH_FMT.format(new Date(`${m.month}-01T12:00:00Z`))}
                       </span>
@@ -216,7 +231,7 @@ export default async function PartnerDashboardPage() {
                 {payouts.map((p) => (
                   <li
                     key={`${p.paidAt}-${p.amountCents}`}
-                    className="flex items-center justify-between gap-3 py-2.5"
+                    className="flex items-center justify-between gap-3 py-3.5"
                   >
                     <span className="flex flex-col">
                       <span className="text-[13px] text-scriba-ink">
@@ -242,7 +257,7 @@ export default async function PartnerDashboardPage() {
               </ul>
             )}
             {partner.pixKey ? null : (
-              <p className="rounded-xl bg-scriba-cream px-3 py-2 text-[12px] leading-[1.5] text-scriba-cream-body">
+              <p className="rounded-xl bg-scriba-cream px-4 py-3 text-[12px] leading-[1.5] text-scriba-cream-body">
                 Falta cadastrar sua chave PIX. Sem ela não conseguimos pagar, fale com a equipe do
                 Scriba.
               </p>
@@ -254,6 +269,21 @@ export default async function PartnerDashboardPage() {
   );
 }
 
+/**
+ * Um dos três cartões de dinheiro, e o `strong` é o "Disponível".
+ *
+ * **Ele é um POST-IT, e não um lavado verde.** Era `--scriba-mint`, a família
+ * semântica do "lado bom": no tema escuro isso virou um verde escuro sujo com
+ * três tintas próprias, e o cartão que deveria ser o mais importante da tela
+ * era o mais apagado dela. O post-it sage resolve invertendo a figura — ele é
+ * a única superfície CLARA da página, do mesmo jeito que um post-it é a única
+ * coisa clara na Biblioteca, e o valor em tinta escura dentro dele lê à
+ * distância de um olhar.
+ *
+ * As três tintas saem do próprio cartão (`-ink` e `-mute`), como em todo
+ * post-it: é a única parte do produto em que a tinta é escura, e misturar uma
+ * tinta de página aqui dentro apagaria a linha.
+ */
 function Money({
   label,
   value,
@@ -267,36 +297,32 @@ function Money({
 }) {
   return (
     <div
-      className={
-        strong
-          ? "flex flex-col gap-1 rounded-2xl border border-scriba-hairline-soft bg-scriba-mint p-5"
-          : "flex flex-col gap-1 rounded-2xl border border-scriba-hairline-soft bg-scriba-paper p-5"
-      }
+      className={cn(
+        "flex flex-col gap-1.5 rounded-2xl p-6",
+        strong ? "bg-v2-note-sage" : "bg-scriba-paper"
+      )}
     >
       <span
-        className={
-          strong
-            ? "text-[10px] font-semibold uppercase tracking-[0.12em] text-scriba-mint-accent"
-            : "text-[10px] font-semibold uppercase tracking-[0.12em] text-scriba-ink-mute"
-        }
+        className={cn(
+          "text-[10px] font-semibold uppercase tracking-[0.12em]",
+          strong ? "text-v2-note-sage-mute" : "text-scriba-ink-mute"
+        )}
       >
         {label}
       </span>
       <span
-        className={
-          strong
-            ? "text-[26px] font-semibold tracking-tight text-scriba-mint-dark"
-            : "text-[26px] font-semibold tracking-tight text-scriba-ink-strong"
-        }
+        className={cn(
+          "text-[26px] font-semibold tracking-tight",
+          strong ? "text-v2-note-sage-ink" : "text-scriba-ink-strong"
+        )}
       >
         {value}
       </span>
       <span
-        className={
-          strong
-            ? "text-[11.5px] font-light text-scriba-mint-body"
-            : "text-[11.5px] font-light text-scriba-ink-mute"
-        }
+        className={cn(
+          "text-[11.5px] font-light",
+          strong ? "text-v2-note-sage-mute" : "text-scriba-ink-mute"
+        )}
       >
         {hint}
       </span>
@@ -323,7 +349,7 @@ function pct(ratio: number): string {
  */
 function Step({ label, value, hint }: { label: string; value: string; hint?: string }) {
   return (
-    <div className="flex flex-col gap-0.5">
+    <div className="flex flex-col gap-1.5">
       <span className="text-[11px] font-medium uppercase tracking-[0.1em] text-scriba-ink-mute">
         {label}
       </span>
@@ -339,7 +365,7 @@ function Step({ label, value, hint }: { label: string; value: string; hint?: str
 
 function Panel({ title, children }: { title: string; children: React.ReactNode }) {
   return (
-    <section className="flex flex-col gap-3 rounded-2xl border border-scriba-hairline-soft bg-scriba-paper p-5">
+    <section className="flex flex-col gap-6 rounded-2xl bg-scriba-paper p-6">
       <h2 className="flex items-center gap-2 text-[14px] font-semibold text-scriba-ink-strong">
         {title}
       </h2>
@@ -358,8 +384,12 @@ function Panel({ title, children }: { title: string; children: React.ReactNode }
  */
 function Callout({ children }: { children: React.ReactNode }) {
   return (
-    <aside className="flex items-start gap-2.5 rounded-xl border-l-2 border-scriba-blue bg-scriba-surface px-4 py-3">
-      <Info className="mt-px size-4 flex-none text-scriba-blue-ink" aria-hidden />
+    // O filete à esquerda era a tinta forte, ou seja, uma barra BRANCA de 2px
+    // ao lado de um parágrafo de letra miúda: o traço pesava mais que o aviso.
+    // Superfície de cartão e o ícone na tinta apagada dizem a mesma coisa sem
+    // gritar, e é como o resto da página separa um bloco do chão.
+    <aside className="flex items-start gap-4 rounded-2xl bg-scriba-paper p-6">
+      <Info className="mt-px size-4 flex-none text-scriba-ink-mute" aria-hidden />
       <p className="text-[12px] font-light leading-[1.55] text-scriba-ink-soft">{children}</p>
     </aside>
   );

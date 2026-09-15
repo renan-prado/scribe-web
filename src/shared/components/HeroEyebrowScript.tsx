@@ -3,7 +3,8 @@ import { REF_HINT_COOKIE } from "@/features/referrals/cookies";
 /**
  * Decide ANTES DO PRIMEIRO PAINT se a pílula do hero vai falar de indicação.
  *
- * Irmão do `ThemeScript`, e existe pelo mesmo motivo: o estado depende de algo
+ * Existe pelo mesmo motivo que o bootstrap de tema que havia no `<head>` até
+ * o produto ter um tema só: o estado depende de algo
  * que só o navegador sabe (lá o localStorage, aqui um cookie), e descobrir
  * isso depois da hidratação produz um salto visível na cara de quem chegou:
  * o `<h1>` pintado no lugar certo e, um instante depois, empurrado para baixo

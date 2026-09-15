@@ -16,7 +16,10 @@ type LandingHeaderProps = {
 export function LandingHeader({ onLandingPage = false }: LandingHeaderProps) {
   const prefix = onLandingPage ? "" : "/";
   return (
-    <div className="sticky top-0 z-40 border-b border-scriba-hairline-soft/60 bg-scriba-paper/55 backdrop-blur-[22px] backdrop-saturate-150 dark:border-b-transparent dark:bg-transparent dark:backdrop-saturate-100">
+    // Um tema só: os `dark:` que zeravam fundo e borda aqui eram o desvio do
+    // tema escuro, e agora ele é o único. O véu é o CHÃO da página a 72%, não
+    // o papel: o header flutua sobre a página, não é um cartão em cima dela.
+    <div className="sticky top-0 z-40 border-b border-scriba-hairline bg-background/72 backdrop-blur-[22px]">
       <div className="mx-auto flex max-w-[1200px] items-center justify-between gap-6 px-5 py-3.5 sm:gap-8 sm:px-10 sm:py-[18px]">
         <Link
           href="/"
@@ -50,7 +53,7 @@ export function LandingHeader({ onLandingPage = false }: LandingHeaderProps) {
           {/* No celular este botão abre a escolha entre instalar e seguir no
               navegador; o texto é o mesmo nos dois lados. Ver `LandingCta`. */}
           <LandingCta
-            className="scriba-cta inline-flex items-center justify-center gap-2 rounded-[22px] bg-[image:var(--scriba-cta)] py-3 px-5 text-[12px] font-semibold uppercase tracking-[.04em] text-scriba-cta-ink shadow-[0_5px_14px_var(--scriba-cta-shadow)]"
+            className="scriba-cta inline-flex items-center justify-center gap-2 rounded-full bg-[image:var(--scriba-cta)] py-3 px-5 text-[12px] font-semibold uppercase tracking-[.04em] text-scriba-cta-ink"
             icon={<ScribaMark size={18} />}
             label="Começar"
           />
@@ -122,9 +125,13 @@ export function SectionLabel({ children, color = "mute" }: SectionLabelProps) {
     <div
       className={cn(
         "text-[11px] font-semibold uppercase tracking-[.12em]",
-        color === "blue" && "text-scriba-blue-ink",
+        // Era o azul de marca. Hoje o rótulo de seção é a própria tinta forte:
+        // o que o distingue do corpo é o versalete e o peso, não a cor.
+        color === "blue" && "text-scriba-ink-strong",
         color === "mute" && "text-scriba-ink-mute",
-        color === "yellow-light" && "text-scriba-yellow-light"
+        // Amarelo é a MOEDA no produto inteiro. Na faixa da Biblioteca o
+        // rótulo vira o post-it limão, que é a cor do acervo.
+        color === "yellow-light" && "text-v2-note-lemon"
       )}
     >
       {children}

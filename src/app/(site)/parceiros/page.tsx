@@ -108,10 +108,16 @@ export default function PartnersLandingPage() {
 function Hero() {
   return (
     <section className="relative mt-[calc(var(--lp-header-h)*-1)] overflow-hidden bg-[image:var(--lp-hero)]">
-      {/* Os halos acompanharam a composição, como na `/`: o dourado desce pelo
-          centro, o azul fica atrás do cartão. */}
-      <div className="pointer-events-none absolute -top-[260px] left-1/2 h-[720px] w-[720px] -translate-x-1/2 rounded-full bg-[radial-gradient(circle,rgba(248,198,75,.16)_0%,rgba(248,198,75,0)_70%)]" />
-      <div className="pointer-events-none absolute -bottom-[200px] left-1/2 hidden h-[560px] w-[560px] -translate-x-1/2 rounded-full bg-[radial-gradient(circle,rgba(79,168,240,.16)_0%,rgba(79,168,240,0)_70%)] lg:block" />
+      {/* Os halos acompanham a composição, como na `/`, e INVERTIDOS: aqui o
+          dourado desce pelo centro e o azul fica atrás do cartão.
+
+          O dourado divide matiz com o AMARELO DA MOEDA, que nesta página é
+          informação (comissão, saldo, bônus). Ele passa porque é luz difusa
+          atrás do texto, não pastilha nem número — e porque deixar só o azul
+          desequilibraria a dobra para um lado. Se algum dia um valor em
+          amarelo cair em cima dele, quem sai é o halo. */}
+      <div className="pointer-events-none absolute -top-[260px] left-1/2 h-[720px] w-[720px] -translate-x-1/2 rounded-full bg-[image:var(--lp-halo-gold)]" />
+      <div className="pointer-events-none absolute -bottom-[200px] left-1/2 hidden h-[560px] w-[560px] -translate-x-1/2 rounded-full bg-[image:var(--lp-halo-blue)] lg:block" />
       <div className="relative mx-auto flex max-w-[780px] flex-col items-center gap-4 px-5 pb-12 text-center pt-[calc(var(--lp-header-h)+2.25rem)] sm:px-10 lg:gap-6 lg:pb-16 lg:pt-[calc(var(--lp-header-h)+5rem)]">
         <h1 className="text-balance text-[29px] font-normal leading-[1.18] tracking-[-.02em] text-scriba-ink-strong sm:text-[40px] sm:leading-[1.14] sm:tracking-[-.025em] lg:text-[52px] lg:leading-[1.1]">
           Indique o Scriba para quem já te ouve e receba renda extra!
@@ -129,7 +135,7 @@ function Hero() {
         <div className="flex w-full flex-col pt-5 sm:w-auto lg:pt-7">
           <Link
             href={PROSPECT_ENTRY}
-            className="scriba-cta inline-flex items-center justify-center gap-2.5 rounded-[26px] bg-[image:var(--scriba-cta)] py-[17px] px-8 text-[13px] font-semibold uppercase tracking-[.04em] text-scriba-cta-ink shadow-[0_9px_22px_var(--scriba-cta-shadow)]"
+            className="scriba-cta inline-flex items-center justify-center gap-2.5 rounded-full bg-[image:var(--scriba-cta)] py-[17px] px-8 text-[13px] font-semibold uppercase tracking-[.04em] text-scriba-cta-ink"
           >
             <ScribaMark size={20} />
             Conhecer sem compromisso
@@ -169,7 +175,7 @@ function Hero() {
  */
 function InviteCard() {
   return (
-    <div className="flex min-w-0 flex-col gap-4 rounded-[26px] border border-scriba-hairline bg-scriba-paper p-6 shadow-[0_16px_40px_rgba(0,0,0,.12)] sm:p-8">
+    <div className="flex min-w-0 flex-col gap-4 rounded-[26px] bg-scriba-paper p-6 sm:p-8">
       <div className="text-[11px] font-semibold uppercase tracking-[.12em] text-scriba-ink-mute">
         O que o programa inclui
       </div>
@@ -222,9 +228,9 @@ function InviteRow({ title, body, coin }: { title: string; body: string; coin?: 
       ) : (
         <span
           aria-hidden
-          className="mt-0.5 flex size-5 flex-none items-center justify-center rounded-full bg-scriba-blue-soft"
+          className="mt-0.5 flex size-5 flex-none items-center justify-center rounded-full bg-v2-note-sage"
         >
-          <Check className="text-scriba-blue-ink" />
+          <Check className="text-v2-note-sage-ink" />
         </span>
       )}
       <div className="flex min-w-0 flex-col gap-0.5">
@@ -251,7 +257,9 @@ function InviteRow({ title, body, coin }: { title: string; body: string; coin?: 
  */
 function TryFirst() {
   return (
-    <section id="conhecer" className="border-y border-scriba-hairline-soft bg-scriba-surface">
+    // `--scriba-surface` virou o próprio chão: a seção se separa pelo fio de
+    // 1px, do mesmo jeito que a Biblioteca separa os meses.
+    <section id="conhecer" className="border-y border-scriba-hairline">
       <div className="mx-auto grid max-w-[1200px] gap-8 px-5 py-12 sm:px-10 sm:py-20 lg:grid-cols-[1.05fr_1fr] lg:gap-16">
         <div className="flex flex-col gap-4">
           <SectionLabel color="blue">Conheça o app</SectionLabel>
@@ -265,7 +273,7 @@ function TryFirst() {
           </p>
         </div>
         <div className="flex flex-col gap-3.5">
-          <div className="flex flex-col gap-3 rounded-[26px] border border-scriba-hairline bg-scriba-cream p-6 sm:p-7">
+          <div className="flex flex-col gap-3 rounded-[26px] bg-scriba-cream p-6 sm:p-7">
             <div className="flex items-center gap-3">
               <CoinMark size={30} className="flex-none" />
               <div className="flex flex-col">
@@ -296,7 +304,7 @@ function TryFirst() {
 
 function MiniCard({ title, body }: { title: string; body: string }) {
   return (
-    <div className="flex flex-col gap-1.5 rounded-[20px] border border-scriba-hairline bg-scriba-paper p-5">
+    <div className="flex flex-col gap-1.5 rounded-[20px] bg-scriba-paper p-5">
       <span className="text-[13px] font-semibold text-scriba-ink-strong">{title}</span>
       <span className="text-pretty text-[12.5px] pt-2 font-light leading-[1.55] text-scriba-ink-soft">
         {body}
@@ -389,7 +397,7 @@ const SCENARIOS: { subscribers: number; detail: string }[] = [
  */
 function Simulation() {
   return (
-    <section id="quanto-da" className="border-y border-scriba-hairline-soft bg-scriba-surface">
+    <section id="quanto-da" className="border-y border-scriba-hairline">
       <div className="mx-auto flex max-w-[1200px] flex-col gap-7 px-5 py-12 sm:px-10 sm:py-[88px] lg:gap-12">
         <div className="flex max-w-[680px] flex-col gap-3">
           <SectionLabel color="blue">Na prática</SectionLabel>
@@ -418,7 +426,7 @@ function Simulation() {
                 className={cn(
                   "flex flex-col gap-4 rounded-[24px] bg-scriba-paper p-6 sm:rounded-[26px] sm:p-8",
                   strong
-                    ? "border-[1.5px] border-scriba-blue shadow-[0_16px_40px_rgba(0,0,0,.16)]"
+                    ? "ring-[1.5px] ring-inset ring-scriba-ink-strong"
                     : "border border-scriba-hairline"
                 )}
               >
@@ -492,7 +500,7 @@ function Simulation() {
  */
 function Panel() {
   return (
-    <section id="painel" className="border-y border-scriba-hairline-soft bg-scriba-surface">
+    <section id="painel" className="border-y border-scriba-hairline">
       <div className="mx-auto grid max-w-[1200px] gap-8 px-5 py-12 sm:px-10 sm:py-[88px] lg:grid-cols-[1fr_1.1fr] lg:items-center lg:gap-16">
         <div className="flex flex-col gap-4">
           <SectionLabel color="blue">O painel</SectionLabel>
@@ -514,9 +522,9 @@ function Panel() {
               <li key={item} className="flex items-start gap-2.5">
                 <span
                   aria-hidden
-                  className="mt-[3px] flex size-4 flex-none items-center justify-center rounded-full bg-scriba-blue-soft"
+                  className="mt-[3px] flex size-4 flex-none items-center justify-center rounded-full bg-v2-note-sage"
                 >
-                  <Check className="text-scriba-blue-ink" />
+                  <Check className="text-v2-note-sage-ink" />
                 </span>
                 <span className="text-pretty text-[13.5px] font-light leading-[1.6] text-scriba-ink-soft">
                   {item}
@@ -524,7 +532,7 @@ function Panel() {
               </li>
             ))}
           </ul>
-          <p className="mt-1 rounded-[18px] border border-scriba-hairline bg-scriba-paper p-4 text-pretty text-[12.5px] font-light leading-[1.6] text-scriba-ink-soft">
+          <p className="mt-1 rounded-[18px] bg-scriba-paper p-4 text-pretty text-[12.5px] font-light leading-[1.6] text-scriba-ink-soft">
             <strong className="font-semibold text-scriba-ink-strong">
               O painel mostra apenas números.
             </strong>{" "}
@@ -541,7 +549,7 @@ function Panel() {
 
 function PanelMock() {
   return (
-    <div className="flex flex-col gap-3 rounded-[26px] border border-scriba-hairline bg-scriba-paper p-5 shadow-[0_16px_40px_rgba(0,0,0,.12)] sm:p-6">
+    <div className="flex flex-col gap-3 rounded-[26px] bg-scriba-paper p-5 sm:p-6">
       <div className="flex items-center justify-between gap-3">
         <div className="flex flex-col">
           <span className="text-[15px] font-semibold tracking-tight text-scriba-ink-strong">
@@ -551,7 +559,7 @@ function PanelMock() {
             Seus resultados e o que há a receber.
           </span>
         </div>
-        <span className="rounded-full bg-scriba-blue-soft px-3 py-1 text-[10.5px] font-semibold text-scriba-blue-ink">
+        <span className="rounded-full bg-v2-card-hover px-3 py-1 text-[10.5px] font-semibold text-v2-ink">
           /partners
         </span>
       </div>
@@ -576,15 +584,17 @@ function PanelMock() {
         </div>
       </div>
 
-      <div className="flex items-center gap-1.5 rounded-[16px] bg-scriba-btn-muted p-1">
+      {/* O trilho das abas desce para o CHÃO e a aba ativa sobe para a
+          superfície: era papel sobre papel, os dois `#2F3035` desde a paleta
+          nova, e a aba ativa se distinguia só por uma sombra que sobre grafite
+          não aparece. */}
+      <div className="flex items-center gap-1.5 rounded-[16px] bg-v2-bg p-1">
         {["Divulgação", "Ganhos", "Pagamentos"].map((tab, i) => (
           <span
             key={tab}
             className={cn(
               "flex-1 rounded-[12px] py-1.5 text-center text-[11.5px] font-medium",
-              i === 0
-                ? "bg-scriba-paper text-scriba-ink-strong shadow-[0_2px_6px_rgba(0,0,0,.12)]"
-                : "text-scriba-ink-mute"
+              i === 0 ? "bg-v2-card-hover text-scriba-ink-strong" : "text-scriba-ink-mute"
             )}
           >
             {tab}
@@ -592,7 +602,7 @@ function PanelMock() {
         ))}
       </div>
 
-      <div className="flex items-start gap-3 rounded-[18px] border border-scriba-hairline-soft bg-scriba-cream p-4">
+      <div className="flex items-start gap-3 rounded-[18px] bg-scriba-cream p-4">
         <CoinMark size={20} className="mt-0.5 flex-none" />
         <div className="flex flex-col gap-0.5">
           <span className="text-[12.5px] font-semibold text-scriba-cream-ink">
@@ -718,7 +728,7 @@ function Rules() {
         {RULES.map((rule) => (
           <div
             key={rule.title}
-            className="flex flex-col gap-2 rounded-[22px] border border-scriba-hairline bg-scriba-paper p-5 sm:p-6"
+            className="flex flex-col gap-2 rounded-[22px] bg-scriba-paper p-5 sm:p-6"
           >
             <h3 className="text-pretty text-[14.5px] font-semibold leading-[1.35] tracking-[-.01em] text-scriba-ink-strong">
               {rule.title}
@@ -741,7 +751,7 @@ function Rules() {
           o link é continua sendo o rótulo dele. */}
       <Link
         href="/parceiros/regulamento"
-        className="lp-cta-soft inline-flex w-fit items-center gap-2.5 rounded-[24px] bg-scriba-btn-muted py-[15px] px-7 text-[12px] font-semibold uppercase tracking-[.04em] text-scriba-ink hover:bg-scriba-btn-muted-hover"
+        className="lp-cta-soft inline-flex w-fit items-center gap-2.5 rounded-full bg-scriba-btn-muted py-[15px] px-7 text-[12px] font-semibold uppercase tracking-[.04em] text-scriba-ink hover:bg-scriba-btn-muted-hover"
       >
         <BookGlyph className="size-3.5 flex-none" />
         Ler o regulamento completo
@@ -825,8 +835,12 @@ function Faq() {
 function FinalCta() {
   return (
     <section className="mx-auto max-w-[1200px] px-5 py-11 sm:px-10 sm:py-24">
-      <div className="relative flex flex-col gap-5 overflow-hidden rounded-[30px] bg-[image:var(--lp-band)] p-9 text-white sm:rounded-[34px] lg:flex-row lg:items-center lg:justify-between lg:gap-12 lg:p-16">
-        <div className="pointer-events-none absolute -top-[90px] right-[60px] h-[340px] w-[340px] rounded-full bg-[radial-gradient(circle,rgba(248,198,75,.22)_0%,rgba(248,198,75,0)_70%)]" />
+      {/* A laje é a superfície elevada do app (`--lp-band` = `--v2-card`), e a
+          tinta é a do produto — `text-white` era meio degrau acima do
+          `--scriba-ink-strong` que o resto da página usa, e a diferença
+          aparecia justamente aqui, no bloco que fecha a leitura. O halo
+          dourado saiu: amarelo nesta página é a MOEDA. */}
+      <div className="relative flex flex-col gap-5 overflow-hidden rounded-[30px] bg-[image:var(--lp-band)] p-9 text-scriba-ink-strong sm:rounded-[34px] lg:flex-row lg:items-center lg:justify-between lg:gap-12 lg:p-16">
         <div className="relative flex max-w-[620px] flex-col gap-3">
           <div className="text-pretty text-[28px] font-semibold leading-[1.16] tracking-[-.022em] lg:text-[38px]">
             Conheça agora o nosso produto!
@@ -846,7 +860,7 @@ function FinalCta() {
         <div className="relative flex flex-none flex-col items-stretch gap-3">
           <Link
             href={PROSPECT_ENTRY}
-            className="lp-cta-yellow inline-flex items-center justify-center gap-2.5 rounded-[26px] bg-lp-band-cta py-[17px] px-[38px] text-[13px] font-semibold uppercase tracking-[.04em] text-lp-band-cta-ink shadow-[0_10px_24px_rgba(0,0,0,.2)]"
+            className="lp-cta-yellow inline-flex items-center justify-center gap-2.5 rounded-full bg-lp-band-cta py-[17px] px-[38px] text-[13px] font-semibold uppercase tracking-[.04em] text-lp-band-cta-ink"
           >
             <ScribaMark size={20} />
             Conhecer o Scriba

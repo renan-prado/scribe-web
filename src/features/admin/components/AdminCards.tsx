@@ -58,7 +58,11 @@ export type KpiTile = {
  */
 export function KpiGrid({ children }: { children: React.ReactNode }) {
   return (
-    <section className="grid grid-cols-1 gap-4 *:data-[slot=card]:bg-gradient-to-t *:data-[slot=card]:from-primary/5 *:data-[slot=card]:to-card *:data-[slot=card]:shadow-xs sm:grid-cols-2 xl:grid-cols-4 dark:*:data-[slot=card]:bg-card">
+    // Sem `shadow-xs` e sem o `dark:` que desligava o degradê: com um tema só,
+    // aquele seletor era a regra vencendo sempre e o degradê era código morto.
+    // O que ficou é o lavado de luz no topo do cartão (`--primary` a 5%, que
+    // hoje é branco), a única profundidade que a pele nova usa.
+    <section className="grid grid-cols-1 gap-4 *:data-[slot=card]:bg-gradient-to-t *:data-[slot=card]:from-primary/5 *:data-[slot=card]:to-card sm:grid-cols-2 xl:grid-cols-4">
       {children}
     </section>
   );

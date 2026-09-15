@@ -101,15 +101,10 @@ export default async function RecordingDeepeningPage({ params }: PageProps) {
       <div className="h-px w-full bg-scriba-hairline" />
 
       <div className="flex flex-col gap-7">
-        {/* O MESMO componente da "Ideia central" do `/summary`, na roupa de
-            cartão. Dentro de `.tone-study` ele nasce verde sozinho, os tokens
-            de sessão é que trocam de família. */}
-        <LeadIdea
-          label="Tese central"
-          text={payload.shortSummary}
-          variant="card"
-          tourId="study-thesis"
-        />
+        {/* O MESMO componente da "Ideia central" do `/summary`. Dentro de
+            `.tone-study` ele nasce na família do estudo sozinho: quem troca
+            são os tokens de sessão, não o componente. */}
+        <LeadIdea label="Tese central" text={payload.shortSummary} tourId="study-thesis" />
         {payload.blocks.map((block, i) => (
           <div
             // biome-ignore lint/suspicious/noArrayIndexKey: same disambiguation approach as SummaryView

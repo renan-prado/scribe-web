@@ -30,9 +30,19 @@ export function PartnerTabs({ divulgacao, ganhos, pagamentos }: Props) {
         <TabsTab value="ganhos">Ganhos</TabsTab>
         <TabsTab value="pagamentos">Pagamentos</TabsTab>
       </TabsList>
-      <TabsPanel value="divulgacao">{divulgacao}</TabsPanel>
-      <TabsPanel value="ganhos">{ganhos}</TabsPanel>
-      <TabsPanel value="pagamentos">{pagamentos}</TabsPanel>
+      {/* `gap-6` sobrescreve o `gap-4` do primitivo: é o vão entre blocos
+          desta tela, o mesmo que a coluna de fora usa. Ele fica aqui, e não no
+          `ui/tabs`, porque o /admin usa o mesmo primitivo com painéis de outra
+          densidade. */}
+      <TabsPanel value="divulgacao" className="gap-6">
+        {divulgacao}
+      </TabsPanel>
+      <TabsPanel value="ganhos" className="gap-6">
+        {ganhos}
+      </TabsPanel>
+      <TabsPanel value="pagamentos" className="gap-6">
+        {pagamentos}
+      </TabsPanel>
     </Tabs>
   );
 }

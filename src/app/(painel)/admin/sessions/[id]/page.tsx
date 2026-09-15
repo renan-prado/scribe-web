@@ -10,6 +10,7 @@ import {
   SessionReaderTabs,
 } from "@/features/admin/components/SessionReaderTabs";
 import { getSessionForAdmin } from "@/features/admin/server/db/sessions";
+import { LeadIdea } from "@/features/session/components/LeadIdea";
 import { SavedTranscriptView } from "@/features/session/components/SavedTranscriptView";
 import {
   StudyBlockRenderer,
@@ -115,16 +116,11 @@ export default async function AdminSessionReaderPage({ params }: PageProps) {
                 </span>
               ) : null}
             </div>
-            {study.payload.shortSummary ? (
-              <div className="-mb-2 flex flex-col gap-2 border-l-[2.5px] border-scriba-green pl-4">
-                <span className="text-[10px] font-semibold uppercase tracking-[0.14em] text-scriba-green">
-                  Tese central
-                </span>
-                <p className="text-pretty text-lg font-medium leading-snug text-scriba-ink-strong">
-                  {study.payload.shortSummary}
-                </p>
-              </div>
-            ) : null}
+            {/* O MESMO `LeadIdea` do `/studies/[id]`. Aqui havia uma cópia do
+                desenho com filete VERDE, de quando o estudo tinha cor própria;
+                o painel lê a sessão "do jeito que o dono dela leu", e uma
+                abertura pintada de outro jeito quebra exatamente isso. */}
+            <LeadIdea label="Tese central" text={study.payload.shortSummary} />
             {study.payload.blocks.map((block, i) => (
               <div
                 // biome-ignore lint/suspicious/noArrayIndexKey: mesma desambiguação da página do estudo

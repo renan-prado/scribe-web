@@ -1,36 +1,21 @@
 /**
  * A cor que o SISTEMA pinta ao redor do app: a barra de status do celular no
- * PWA instalado, a barra de endereço do Chrome no Android e a moldura da
- * janela no desktop.
+ * PWA instalado, a barra de endereço do Chrome no Android, a moldura da janela
+ * no desktop e a tela de abertura.
  *
- * **Por que estes hexadecimais existem fora do `globals.css`.** Quem lê
+ * **Por que este hexadecimal existe fora do `globals.css`.** Quem lê
  * `<meta name="theme-color">` é o navegador, antes de aplicar qualquer CSS, e
- * o manifest é JSON, nenhum dos dois enxerga um `var(--scriba-surface)`. Não
- * há como derivar um do outro, então este arquivo é o ÚNICO lugar onde a cor
- * pode estar duplicada, e os três consumidores importam daqui:
+ * o manifest é JSON: nenhum dos dois enxerga um `var(--v2-bg)`. Não há como
+ * derivar um do outro, então este arquivo é o ÚNICO lugar onde a cor pode
+ * estar duplicada. **Mudou `--v2-bg` em `app/globals.css`? Mude aqui no mesmo
+ * commit.**
  *
- * - `ThemeScript`: escreve a meta antes do primeiro paint;
- * - `useTheme`: reescreve a meta quando o usuário troca de tema;
- * - `app/manifest.ts`: o `theme_color`, que é o fallback de quem abre o app
- *   sem JS e a cor da tela de splash na instalação.
- *
- * `light` e `dark` espelham `--scriba-surface` em `:root` e em `.dark`, e são
- * a cor do SITE: landing, páginas legais, a tela de entrada.
- *
- * **`app` não tem par claro, e é de propósito.** A área logada tem UM tema (a
- * classe `dark` é fixa no `(app)/layout.tsx`), então a barra do sistema ali
- * não acompanha o toggle: ela é sempre o grafite da página. Enquanto ela seguia
- * o tema, quem tinha escolhido claro via uma barra de status BRANCA colada num
- * app grafite, e quem estava no escuro via o #111111 do site encostado no
- * #212121 do app, perto o bastante para parecer defeito e longe o bastante para
- * se ver. Quem aplica é o `AppThemeColor`, montado pela moldura do app.
- *
- * **Se o token mudar em `app/globals.css`, mude aqui no mesmo commit** — vale
- * para os três: `--scriba-surface` nos dois temas e `--v2-bg` no `app`.
+ * **Era um par, `light` e `dark`, e um terceiro valor só para o app.** Isso
+ * exigia três mecanismos para manter a barra certa: um script inline no
+ * `<head>` lendo o localStorage antes do primeiro paint, um efeito de cliente
+ * refazendo a conta dentro da área logada, e o `useTheme` reescrevendo a meta
+ * a cada troca. Com um tema só no produto inteiro, o valor é constante, e
+ * constante se declara: a `<meta>` sai do `viewport` do root layout, estática,
+ * e os três mecanismos deixaram de existir.
  */
-export const THEME_COLOR = {
-  light: "#FAFAFA",
-  dark: "#111111",
-  /** `--v2-bg`, o chão grafite da área logada. */
-  app: "#212121",
-} as const;
+export const THEME_COLOR = "#212121";

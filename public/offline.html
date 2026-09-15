@@ -12,30 +12,26 @@
       cor literal é aceitável. Offline não existe rede: um <link> para o CSS do
       Next não carrega, e a página apareceria como HTML pelado. Pelo mesmo
       motivo os valores abaixo são cópias dos tokens de `app/globals.css`
-      (`--background`, `--scriba-paper`, `--scriba-ink-strong`, `--scriba-blue-ink`,
+      (`--background`, `--scriba-paper`, `--scriba-ink-strong`, `--scriba-ink-soft`,
       `--scriba-hairline`), se a paleta mudar lá, atualize aqui no mesmo commit.
+
+      Eram DOIS conjuntos, um por tema, escolhidos por um script que lia o
+      localStorage antes do primeiro paint. O produto tem um tema só desde que
+      a landing e o painel passaram para o grafite do app, então aqui também é
+      um conjunto e nenhum script.
 
       A pena continua vindo de `public/brand/pena.svg`, por máscara CSS, para não
       duplicar o `<path>` da marca mais uma vez (ver src/shared/AGENTS.md).
     -->
     <style>
       :root {
-        color-scheme: light;
-        --bg: #ffffff;
-        --paper: #ffffff;
-        --ink: #171717;
-        --ink-soft: #525252;
-        --accent: #171717;
-        --hairline: #e5e5e5;
-      }
-      html[data-theme="dark"] {
         color-scheme: dark;
-        --bg: #0a0a0a;
-        --paper: #171717;
-        --ink: #fafafa;
-        --ink-soft: #b4b4b4;
-        --accent: #fafafa;
-        --hairline: #262626;
+        --bg: #212121;
+        --paper: #2f3035;
+        --ink: #f5f5f5;
+        --ink-soft: #b3b4ba;
+        --accent: #f5f5f5;
+        --hairline: rgba(255, 255, 255, 0.1);
       }
       * {
         box-sizing: border-box;
@@ -117,15 +113,6 @@
       <button type="button" id="retry">Tentar de novo</button>
     </main>
     <script>
-      // Mesma chave e mesmo padrão ESCURO do `ThemeScript`, ver
-      // src/shared/components/ThemeScript.tsx.
-      try {
-        var t = localStorage.getItem("scriba-theme");
-        document.documentElement.setAttribute(
-          "data-theme",
-          t === "light" ? "light" : "dark"
-        );
-      } catch (e) {}
       // O handler fica AQUI, e não num `onclick=` no markup: atributo de
       // evento é o primeiro a cair sob qualquer CSP mais apertada que a de
       // hoje, e ele falharia em silêncio.

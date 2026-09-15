@@ -46,7 +46,12 @@ export default async function PartnersLayout({ children }: { children: ReactNode
 
   return (
     <div className="flex min-h-svh flex-col bg-background">
-      <header className="sticky top-0 z-30 flex h-14 shrink-0 items-center justify-between gap-3 border-b border-scriba-hairline bg-scriba-paper/85 px-4 backdrop-blur-md sm:px-6">
+      {/* A faixa é o CHÃO da página a 80%, não o papel: ela flutua sobre o
+          conteúdo, não é um cartão em cima dele. Com a superfície de cartão
+          ali, a barra virava o objeto mais claro da tela e disputava com os
+          números, que é o que a pessoa veio ver. Mesma montagem do header da
+          landing. */}
+      <header className="sticky top-0 z-30 flex h-16 shrink-0 items-center justify-between gap-3 border-b border-scriba-hairline bg-background/80 px-4 backdrop-blur-[22px] sm:px-6">
         <Link href="/partners" className="flex items-center gap-2 text-scriba-ink-strong">
           <ScribaLogo size={26} textClassName="text-[19px]" subtitle="Parceiros" />
         </Link>

@@ -1,5 +1,4 @@
 import type { ReactNode } from "react";
-import { AppThemeColor } from "@/components/AppThemeColor";
 import { ZoomLock } from "@/components/ZoomLock";
 import { TourProvider } from "@/features/tour/components/TourProvider";
 import { listSeenTours } from "@/lib/db/tours";
@@ -55,12 +54,13 @@ import { APP_VIEWPORT } from "@/shared/viewport";
  * inteiro, e por que a landing continua ampliável, está em
  * `src/shared/viewport.ts`.
  *
- * **O `data-v2-shell` não é gancho de teste, é o que pinta o SISTEMA.** O
- * `bg-v2-bg` abaixo pinta um div; o fundo do documento, que é de onde o
- * Android tira a cor da barra de navegação de baixo, continuava sendo o do
- * site. O atributo é o que a regra `:has()` do `globals.css` procura para
- * levar o grafite até o <html>. O `AppThemeColor` faz o mesmo pela barra de
- * cima, que só se pinta por meta.
+ * **As barras do sistema não são mais assunto desta moldura.** Ela carregava
+ * um `data-v2-shell` (para uma regra `:has()` levar o grafite até o `<html>`,
+ * que é de onde o Android tira a cor da barra de navegação) e um
+ * `AppThemeColor` (para a barra de status). Os dois existiam porque o fundo do
+ * DOCUMENTO era o do site, que podia ser branco, enquanto o app era grafite.
+ * Com um tema só, `--background` é `--v2-bg` em toda rota: o canvas já nasce
+ * certo e a `<meta name="theme-color">` é estática no root layout.
  */
 export const viewport = APP_VIEWPORT;
 
@@ -75,11 +75,7 @@ export default async function AppLayout({ children }: { children: ReactNode }) {
   return (
     <TourProvider seen={seenTours}>
       <ZoomLock />
-      <AppThemeColor />
-      <div
-        data-v2-shell
-        className="dark flex flex-1 flex-col bg-v2-bg pt-[env(safe-area-inset-top)]"
-      >
+      <div className="dark flex flex-1 flex-col bg-v2-bg pt-[env(safe-area-inset-top)]">
         {children}
       </div>
     </TourProvider>

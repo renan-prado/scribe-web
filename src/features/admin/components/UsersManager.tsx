@@ -166,7 +166,7 @@ export function UsersManager({ initialUsers, currentUserId }: Props) {
           placeholder="Buscar por nome, email ou id"
           value={search}
           onChange={(e) => setSearch(e.target.value)}
-          className="h-11 rounded-xl border-scriba-hairline-soft bg-scriba-paper px-4 shadow-[0_4px_14px_var(--scriba-shadow-soft)] sm:max-w-sm"
+          className="h-11 rounded-xl border-scriba-hairline-soft bg-scriba-paper px-4 sm:max-w-sm"
         />
         <span className="text-xs text-muted-foreground">
           {filtered.length} de {users.length} usuários

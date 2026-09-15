@@ -88,11 +88,17 @@ export default function LandingPage() {
 function Hero() {
   return (
     <section className="relative mt-[calc(var(--lp-header-h)*-1)] overflow-hidden bg-[image:var(--lp-hero)]">
-      {/* Os dois halos acompanharam a composição: com o texto no eixo, o azul
-          vem de cima pelo centro e o dourado fica atrás do telefone. Ver
-          "Os dois halos radiais do hero" em `src/shared/AGENTS.md`. */}
-      <div className="pointer-events-none absolute -top-[260px] left-1/2 h-[720px] w-[720px] -translate-x-1/2 rounded-full bg-[radial-gradient(circle,rgba(79,168,240,.16)_0%,rgba(79,168,240,0)_70%)]" />
-      <div className="pointer-events-none absolute -bottom-[180px] left-1/2 hidden h-[560px] w-[560px] -translate-x-1/2 rounded-full bg-[radial-gradient(circle,rgba(248,198,75,.16)_0%,rgba(248,198,75,0)_70%)] lg:block" />
+      {/* Os dois halos acompanham a composição: com o texto no eixo, o azul
+          vem de cima pelo centro e o dourado fica atrás do telefone. Eles são
+          a única cor de marca que restou no produto, e a calibragem deles
+          sobre o grafite está nos dois tokens `--lp-halo-…` do `globals.css`,
+          e aqui ficam
+          só posição e tamanho.
+
+          O DEGRADÊ do chão é `--lp-hero`, e é ele que dá eixo à dobra,
+          empurrando o olho do título para o aparelho no fim da seção. */}
+      <div className="pointer-events-none absolute -top-[260px] left-1/2 h-[720px] w-[720px] -translate-x-1/2 rounded-full bg-[image:var(--lp-halo-blue)]" />
+      <div className="pointer-events-none absolute -bottom-[180px] left-1/2 hidden h-[560px] w-[560px] -translate-x-1/2 rounded-full bg-[image:var(--lp-halo-gold)] lg:block" />
       <div className="relative mx-auto flex max-w-[780px] flex-col items-center gap-4 px-5 text-center pt-[calc(var(--lp-header-h)+2.25rem)] sm:px-10 lg:gap-6 lg:pt-[calc(var(--lp-header-h)+5rem)]">
         {/* A pílula é um componente CLIENTE porque ela se personaliza para
             quem chegou por um link de indicação ("Indicado por Fulano", com
@@ -103,7 +109,7 @@ function Hero() {
             O script vem ANTES dela no documento, e a ordem é o ponto: ele
             roda enquanto o parser ainda não chegou na pílula, então o estado
             inicial (frase ou esqueleto) já está decidido no primeiro paint.
-            Mesmo padrão do `ThemeScript`. */}
+            Mesmo padrão do bootstrap de tema que havia no `<head>`. */}
         <HeroEyebrowScript />
         <HeroEyebrow />
         {/* Os três tamanhos são medidos, não escolhidos no olho: a frase tem
@@ -140,7 +146,7 @@ function Hero() {
             para quem realmente quer pular. Ver `LandingCta`. */}
         <div className="flex w-full flex-col pt-5 sm:w-auto lg:pt-7">
           <LandingCta
-            className="scriba-cta inline-flex items-center justify-center gap-2.5 rounded-[26px] bg-[image:var(--scriba-cta)] py-[17px] px-8 text-[13px] font-semibold uppercase tracking-[.04em] text-scriba-cta-ink shadow-[0_9px_22px_var(--scriba-cta-shadow)]"
+            className="scriba-cta inline-flex items-center justify-center gap-2.5 rounded-full bg-[image:var(--scriba-cta)] py-[17px] px-8 text-[13px] font-semibold uppercase tracking-[.04em] text-scriba-cta-ink"
             icon={<ScribaMark size={20} />}
             label="Começar agora"
           />
@@ -193,10 +199,20 @@ function Hero() {
   );
 }
 
+/**
+ * Os três marcadores da trilha, nas cores do POST-IT (ver `PostItNote`).
+ *
+ * Eles usavam as famílias de tile (`--scriba-rose/cream/lilac`), que são
+ * lavados ESCUROS e semânticos — rose é o lado ruim de um estado, cream é a
+ * moeda. Um número de lista pintado de "erro" e outro de "moeda" é cor dizendo
+ * o que não é. O post-it não diz nada além de "isto é um item", que é
+ * exatamente o que estes três são, e é a paleta que a pessoa vai reencontrar
+ * dentro do app.
+ */
 const PROBLEM_CLASSES = {
-  rose: "bg-scriba-rose text-scriba-rose-accent",
-  cream: "bg-scriba-cream text-scriba-cream-accent",
-  lilac: "bg-scriba-lilac text-scriba-lilac-accent",
+  rose: "bg-v2-note-mist text-v2-note-mist-ink",
+  cream: "bg-v2-note-lemon text-v2-note-lemon-ink",
+  lilac: "bg-v2-note-sage text-v2-note-sage-ink",
 } as const;
 
 /**
@@ -315,12 +331,13 @@ function Problem() {
   );
 }
 
-/** Chip tinting for the summary tiles, one swatch per block of the resumo. */
+/** O chip de cada bloco do resumo, nas quatro cores do post-it. Mesma razão
+ *  do `PROBLEM_CLASSES` logo acima: a cor identifica, não classifica. */
 const TILE_CLASSES = {
-  blue: "bg-scriba-blue-soft text-scriba-blue-ink",
-  rose: "bg-scriba-rose text-scriba-rose-accent",
-  mint: "bg-scriba-mint text-scriba-mint-accent",
-  cream: "bg-scriba-cream text-scriba-cream-accent",
+  blue: "bg-v2-note-mist text-v2-note-mist-ink",
+  rose: "bg-v2-note-slate text-v2-note-slate-ink ring-1 ring-inset ring-white/10",
+  mint: "bg-v2-note-sage text-v2-note-sage-ink",
+  cream: "bg-v2-note-lemon text-v2-note-lemon-ink",
 } as const;
 
 const TILE_ICON_PROPS = {
@@ -409,14 +426,15 @@ function Resumo() {
               você entender, encontrar e relembrar o que realmente importa.
             </p>
           </div>
-          {/* Cartões de papel com um chip colorido por bloco, a cor vira
-              acento e não fundo, o que mantém a leitura calma e funciona igual
-              nos dois temas. */}
+          {/* Cartões na superfície elevada do app, com um chip de post-it por
+              bloco: a cor é ACENTO, nunca fundo de cartão. Fundo de post-it
+              obrigaria a inverter a tinta de tudo que estivesse dentro, e a
+              página passaria a ter dois modelos de tinta. */}
           <div className="grid grid-cols-1 gap-3 sm:grid-cols-2 sm:gap-3.5">
             {SUMMARY_BLOCKS.map((b) => (
               <div
                 key={b.title}
-                className="lp-lift flex flex-col gap-2.5 rounded-[20px] border border-scriba-hairline bg-scriba-paper p-4 shadow-[0_4px_16px_rgba(0,0,0,.06)] sm:p-5"
+                className="lp-lift flex flex-col gap-2.5 rounded-[20px] bg-scriba-paper p-4 sm:p-5"
               >
                 <div className="flex items-center gap-2.5">
                   <span
@@ -446,9 +464,12 @@ function Resumo() {
 
 function Biblioteca() {
   return (
+    // A faixa é a superfície ELEVADA (`--lp-band` = `--v2-card`) sobre o chão
+    // da página, que é a mesma relação que um cartão tem com a tela no app. O
+    // halo branco que havia aqui era o jeito antigo de dizer "esta seção é
+    // outra coisa"; hoje quem diz isso é a superfície.
     <section className="relative overflow-hidden bg-[image:var(--lp-band)]">
-      <div className="pointer-events-none absolute -top-[140px] -left-[100px] h-[480px] w-[480px] rounded-full bg-[radial-gradient(circle,rgba(255,255,255,.14)_0%,rgba(255,255,255,0)_70%)]" />
-      <div className="relative mx-auto flex max-w-[1200px] flex-col items-stretch gap-8 px-5 py-12 text-white sm:px-10 sm:py-[88px] lg:grid lg:grid-cols-[minmax(0,1fr)_minmax(0,1fr)] lg:items-center lg:gap-16">
+      <div className="relative mx-auto flex max-w-[1200px] flex-col items-stretch gap-8 px-5 py-12 text-scriba-ink-strong sm:px-10 sm:py-[88px] lg:grid lg:grid-cols-[minmax(0,1fr)_minmax(0,1fr)] lg:items-center lg:gap-16">
         <div className="flex min-w-0 flex-col gap-5">
           <SectionLabel color="yellow-light">Sua biblioteca</SectionLabel>
           <h2 className="text-pretty text-[29px] font-semibold leading-[1.16] tracking-[-.022em] lg:text-[40px]">
@@ -486,7 +507,7 @@ function Biblioteca() {
                 subtitle="Biblioteca"
                 title="Suas gravações"
                 right={
-                  <span className="rounded-full bg-scriba-blue-soft px-2.5 py-1 text-[10px] font-semibold text-scriba-blue-ink">
+                  <span className="rounded-full bg-v2-card px-2.5 py-1 text-[10px] font-semibold text-v2-ink">
                     12
                   </span>
                 }
@@ -509,17 +530,17 @@ type BiblioCardProps = {
 
 function BiblioCard({ title, subtitle, badge }: BiblioCardProps) {
   return (
-    // O véu era `bg-white/[.16]`, que CLAREAVA a banda, e o card é justamente
-    // onde ficam os textos menores da seção, então ele piorava o contraste
-    // exatamente onde a régua é mais dura. Escurecer em vez de clarear inverte
-    // isso: o cartão continua se destacando do fundo, agora para baixo.
-    //   título 7,26 · subtítulo 6,31 · badge 5,59
-    <div className="flex items-center justify-between gap-4 rounded-[18px] bg-black/[.14] p-4 px-[17px] sm:px-[18px]">
+    // O cartão desce para o CHÃO da página (`--v2-bg`) em cima da faixa, que é
+    // a superfície elevada. Era um véu de preto a 14%, uma terceira tinta
+    // inventada para esta seção; com as duas superfícies do app a relação se
+    // resolve sozinha e a página inteira passa a ter dois tons, não cinco.
+    //   título 12,1 · subtítulo 8,9 · badge 8,4
+    <div className="flex items-center justify-between gap-4 rounded-[18px] bg-v2-bg p-4 px-[17px] sm:px-[18px]">
       <div className="flex flex-col gap-0.5">
         <div className="text-[13px] font-semibold sm:text-[13.5px]">{title}</div>
         <div className="text-[11.5px] font-light text-lp-band-ink sm:text-[12px]">{subtitle}</div>
       </div>
-      <div className="flex-none whitespace-nowrap text-[11px] font-semibold uppercase tracking-[.04em] text-scriba-yellow-light">
+      <div className="flex-none whitespace-nowrap text-[11px] font-semibold uppercase tracking-[.04em] text-v2-note-lemon">
         {badge}
       </div>
     </div>
@@ -579,7 +600,9 @@ const PAID_FEATURES: PlanFeature[] = [...BASE_FEATURES, { label: STUDY_FEATURE, 
 
 function Plans() {
   return (
-    <section id="planos" className="border-t border-scriba-hairline-soft bg-scriba-surface">
+    // Sem faixa de fundo própria: `--scriba-surface` virou o próprio chão, e a
+    // seção se separa pelo fio de 1px, como os meses da Biblioteca.
+    <section id="planos" className="border-t border-scriba-hairline">
       <div className="mx-auto flex max-w-[1200px] flex-col gap-6 px-5 py-12 sm:px-10 sm:py-[92px] lg:gap-12">
         <div className="flex flex-col gap-3 lg:items-center lg:text-center">
           <SectionLabel color="blue">Planos</SectionLabel>
@@ -679,13 +702,17 @@ function PlanCard({
     <div
       className={cn(
         "relative flex flex-col gap-[22px] rounded-[24px] bg-scriba-paper p-6 sm:rounded-[26px] sm:p-8",
-        isPrimary
-          ? "border-[1.5px] border-scriba-blue shadow-[0_16px_40px_rgba(0,0,0,.18)]"
-          : "border border-scriba-hairline"
+        // O plano em destaque se anuncia por um ANEL branco de 1,5px, não por
+        // sombra: sobre o grafite a sombra não aparece, e o que sobrava era
+        // uma borda de cor de marca que não existe mais.
+        isPrimary ? "ring-[1.5px] ring-inset ring-scriba-ink-strong" : ""
       )}
     >
       {badge ? (
-        <div className="absolute -top-[13px] left-6 rounded-[20px] bg-scriba-yellow px-[14px] py-[6px] text-[10.5px] font-semibold uppercase tracking-[.06em] text-scriba-yellow-ink sm:left-7">
+        // AMARELO não, porque amarelo é a MOEDA em todo o produto (ver
+        // `src/shared/AGENTS.md`), e "Sem cartão" não é um preço. A pastilha é
+        // a mesma tinta do anel do cartão em destaque.
+        <div className="absolute -top-[13px] left-6 rounded-full bg-scriba-ink-strong px-[14px] py-[6px] text-[10.5px] font-semibold uppercase tracking-[.06em] text-background sm:left-7">
           {badge}
         </div>
       ) : null}
@@ -693,7 +720,7 @@ function PlanCard({
         <div
           className={cn(
             "text-[13px] font-semibold tracking-[.03em]",
-            isPrimary ? "text-scriba-blue-ink" : "text-scriba-ink-soft"
+            isPrimary ? "text-scriba-ink-strong" : "text-scriba-ink-soft"
           )}
         >
           {name}
@@ -799,7 +826,7 @@ function FinalCTA() {
           aqui. Eram três literais, `#33414F`/`#1F5E92` no fundo e
           `#CFE4F3`/`#AFCBE0` nos textos, que não trocavam com o tema e eram o
           "azulzão" que sobrou da paleta antiga. */}
-      <div className="relative flex flex-col gap-4 overflow-hidden rounded-[30px] bg-[image:var(--lp-band)] p-9 text-white sm:gap-3.5 sm:rounded-[34px] lg:flex-row lg:items-center lg:justify-between lg:gap-12 lg:p-16">
+      <div className="relative flex flex-col gap-4 overflow-hidden rounded-[30px] bg-[image:var(--lp-band)] p-9 text-scriba-ink-strong sm:gap-3.5 sm:rounded-[34px] lg:flex-row lg:items-center lg:justify-between lg:gap-12 lg:p-16">
         {/* Azul, como os halos do hero: com o botão amarelo fora daqui, o
             dourado deste halo era a última coisa amarela do bloco e ficava
             sozinho. O `.22` é o do halo original, não o `.16` do hero: aqui
@@ -854,7 +881,10 @@ function PhoneFrame({ children, dark = false, chrome, className }: PhoneFramePro
         className
       )}
     >
-      <div className="phone-mask relative h-[680px] overflow-hidden rounded-[34px] bg-scriba-paper">
+      {/* A tela do aparelho é o CHÃO do app (`--v2-bg`), não o papel: é o que
+          a pessoa vê ao abrir o Scriba, e o mockup só convence se for a mesma
+          cor. */}
+      <div className="phone-mask relative h-[680px] overflow-hidden rounded-[34px] bg-v2-bg">
         <div className="absolute inset-x-0 top-0 z-10 flex h-11 items-center justify-between px-7 text-[12px] font-semibold text-scriba-ink">
           <span>9:41</span>
           <div className="flex items-center gap-1">
@@ -866,9 +896,7 @@ function PhoneFrame({ children, dark = false, chrome, className }: PhoneFramePro
         </div>
         <div className="absolute left-1/2 top-[12px] z-10 h-6.5 w-26 -translate-x-1/2 rounded-[16px] bg-[#050505]" />
         {chrome ? (
-          <div className="absolute inset-x-0 top-11 z-[5] bg-scriba-paper/95 backdrop-blur">
-            {chrome}
-          </div>
+          <div className="absolute inset-x-0 top-11 z-[5] bg-v2-bg/95 backdrop-blur">{chrome}</div>
         ) : null}
         <div className={chrome ? "pt-[108px]" : "pt-[52px]"}>{children}</div>
       </div>
@@ -900,47 +928,62 @@ function PhoneChrome({ title, subtitle, right }: PhoneChromeProps) {
   );
 }
 
+/**
+ * As quatro faces do post-it, na ORDEM do `PostItNote`. Aqui elas são fixas,
+ * uma por posição, porque num mockup não há id de sessão para sortear — e o
+ * que o mural precisa mostrar é que as cores se alternam, não qual cor cabe a
+ * qual sermão. Só o cartão escuro leva o fio de luz, pela mesma razão de lá:
+ * contra o chão ele dá 1,25:1 e sem o fio lê como buraco.
+ */
+const MOCK_NOTES = [
+  "bg-v2-note-mist text-v2-note-mist-ink [&_.note-mute]:text-v2-note-mist-mute",
+  "bg-v2-note-lemon text-v2-note-lemon-ink [&_.note-mute]:text-v2-note-lemon-mute",
+  "bg-v2-note-slate text-v2-note-slate-ink ring-1 ring-inset ring-white/10 [&_.note-mute]:text-v2-note-slate-mute",
+  "bg-v2-note-sage text-v2-note-sage-ink [&_.note-mute]:text-v2-note-sage-mute",
+] as const;
+
+/**
+ * A Biblioteca dentro do aparelho: o MURAL de post-its, duas colunas.
+ *
+ * Aqui havia uma lista de fichas — resumo curto, local, duração e um botão
+ * "Ver resumo →" —, que é o cartão que o app teve até a pele nova. A landing
+ * mostrando a tela anterior do produto é pior que mockup nenhum: a pessoa
+ * instala esperando aquilo.
+ *
+ * O desenho é o do `PostItNote`, reproduzido à mão pela razão que o cabeçalho
+ * de `LandingMocks` explica (o componente de verdade é um link, e traria
+ * `NavLink` e o bundle de sessão para a única página que todo visitante
+ * anônimo carrega). O que NÃO é reproduzido são os tokens: as cores saem das
+ * mesmas variáveis `--v2-note-*`, então repintar o acervo repinta a landing.
+ */
 function LibraryMock() {
   return (
-    <div className="flex flex-col gap-5 px-4 pb-8 pt-3">
-      {LIB_GROUPS.map((group) => (
+    <div className="flex flex-col gap-6 px-4 pb-8 pt-3">
+      {LIB_GROUPS.map((group, gi) => (
         <section key={group.label} className="flex flex-col gap-3">
-          <div className="flex items-center gap-2.5 px-1">
-            <span className="text-xs font-semibold text-scriba-blue-ink">{group.label}</span>
-            <span className="h-px flex-1 bg-scriba-hairline" />
-            <span className="text-[11px] font-light text-scriba-ink-mute">
-              {group.items.length}
-            </span>
-          </div>
-          <ul className="flex flex-col gap-3">
-            {group.items.map((s) => (
+          <h2 className="px-1 text-[15px] font-medium text-v2-ink-soft">{group.label}</h2>
+          {/* `columns-2` + `break-inside-avoid` + `mb-4`: o mesmo masonry de
+              CSS da Biblioteca, em que o vão vertical sai da margem do item e
+              o horizontal do `gap`. */}
+          <ul className="columns-2 gap-4">
+            {group.items.map((s, i) => (
+              // O `flex` fica no filho, e o `<li>` só carrega cor e quebra:
+              // um item de coluna com `display:flex` faz alguns navegadores
+              // ignorarem o `break-inside-avoid` e cortarem o cartão ao meio na
+              // virada. Mesma montagem do `PostItNote`.
               <li
                 key={s.title}
-                className="rounded-3xl border border-scriba-hairline-soft bg-scriba-paper p-4 shadow-[0_4px_14px_rgba(0,0,0,0.08)]"
+                className={cn(
+                  "mb-4 break-inside-avoid rounded-2xl",
+                  MOCK_NOTES[(gi * 2 + i) % MOCK_NOTES.length]
+                )}
               >
-                <div className="flex min-w-0 flex-col gap-1.5">
-                  <span className="text-pretty text-[15px] font-semibold leading-tight tracking-tight text-scriba-ink-strong">
+                <div className="flex flex-col gap-1.5 p-4">
+                  <span className="note-mute text-[11px] font-medium">{s.speaker}</span>
+                  <span className="text-pretty text-[14px] font-semibold leading-tight tracking-tight">
                     {s.title}
                   </span>
-                  <span className="text-pretty text-[13px] font-light leading-snug text-scriba-ink-soft">
-                    {s.summary}
-                  </span>
-                  <span className="flex flex-wrap items-center gap-x-2 gap-y-1 pt-1.5">
-                    <span className="text-[12px] font-medium text-scriba-ink">{s.speaker}</span>
-                    <span className="text-scriba-ink-mute">·</span>
-                    <span className="text-[11px] font-light text-scriba-ink-mute">
-                      {s.location}
-                    </span>
-                  </span>
-                </div>
-                <div className="mt-3 flex items-center gap-2 border-t border-scriba-hairline pt-2.5">
-                  <span className="text-[11px] font-light text-scriba-ink-mute">{s.date}</span>
-                  <span className="size-[3px] rounded-full bg-scriba-hairline" />
-                  <span className="text-[11px] font-light text-scriba-ink-mute">{s.duration}</span>
-                  <div className="flex-1" />
-                  <span className="rounded-full bg-scriba-blue-soft px-3.5 py-1.5 text-[11px] font-semibold text-scriba-blue-ink">
-                    Ver resumo →
-                  </span>
+                  <span className="note-mute pt-1 text-[11px] font-light">{s.date}</span>
                 </div>
               </li>
             ))}
@@ -951,38 +994,75 @@ function LibraryMock() {
   );
 }
 
+/**
+ * O acervo do mockup. São NOVE sessões em três meses, e a quantidade é o
+ * ponto: com três cartões o mural aparecia como duas colunas quase vazias num
+ * aparelho de 680px, e o que a seção promete é justamente o contrário — "anos
+ * de pregação, finalmente buscáveis". A máscara do `PhoneFrame` corta os
+ * últimos, que é o que diz que há mais coisa embaixo.
+ *
+ * Os meses são o mesmo agrupamento da Biblioteca de verdade (ver
+ * `LibraryBrowser`), e não "esta semana / semana passada": quem grava um
+ * sermão por domingo enche um mês, não uma semana.
+ */
 const LIB_GROUPS = [
   {
-    label: "Esta semana",
+    label: "Setembro",
     items: [
       {
         title: "A sede que só Cristo cura",
-        summary: "A samaritana no poço e as fontes que nunca saciam.",
         speaker: "Pr. João Silva",
-        location: "IBC · Domingo",
-        date: "24 ago",
-        duration: "41 min",
+        date: "24 set",
+      },
+      {
+        title: "O jugo leve",
+        speaker: "Pr. João Silva",
+        date: "17 set",
+      },
+      {
+        title: "Quando o perdão custa caro",
+        speaker: "Pra. Ana Ribeiro",
+        date: "10 set",
+      },
+      {
+        title: "A casa que Deus edifica",
+        speaker: "Pr. Roberto Nunes",
+        date: "3 set",
       },
     ],
   },
   {
-    label: "Semana passada",
+    label: "Agosto",
     items: [
       {
-        title: "Quando o perdão custa caro",
-        summary: "O servo mal agradecido e o preço da graça recebida.",
+        title: "O que sobra depois da tempestade",
         speaker: "Pr. João Silva",
-        location: "Mateus 18",
-        date: "17 ago",
-        duration: "38 min",
+        date: "27 ago",
       },
       {
-        title: "A casa que Deus edifica",
-        summary: "Salmo 127 e a diferença entre construir e ser edificado.",
+        title: "Duas casas, duas fundações",
         speaker: "Pr. Roberto Nunes",
-        location: "Culto de família",
+        date: "20 ago",
+      },
+      {
+        title: "O menor dos grãos",
+        speaker: "Pra. Ana Ribeiro",
         date: "13 ago",
-        duration: "34 min",
+      },
+    ],
+  },
+  {
+    label: "Julho",
+    items: [
+      {
+        title: "Ide, e fazei discípulos",
+        speaker: "Pr. João Silva",
+        date: "30 jul",
+      },
+      {
+        title: "A mesa posta diante dos meus adversários",
+        speaker: "Pr. Roberto Nunes",
+        date: "23 jul",
       },
     ],
   },

@@ -34,15 +34,15 @@ export default function manifest(): MetadataRoute.Manifest {
     // lugar nenhum desde que o app virou grafite: o app abria num clarão azul
     // para então ficar cinza. Antes disso era `#ffffff`, que era o mesmo erro
     // em branco. Mudou aqui? Mude lá.
-    background_color: THEME_COLOR.app,
+    background_color: THEME_COLOR,
     // O GRAFITE do app, e não a cor do site. Este valor é o fallback de quem
     // abre sem JS e, mais importante, a cor que o sistema usa na abertura,
     // antes de a página existir: quem toca no ícone vai para `/sign-in` e daí
     // para `/home`, ou seja, o app instalado está SEMPRE na área logada, que
-    // tem um tema só. Com JS, a `<meta name="theme-color">` tem precedência —
-    // no site ela acompanha o toggle (`ThemeScript`/`useTheme`), no app ela é
-    // fixada pelo `AppThemeColor`. Ver `src/shared/theme-color.ts`.
-    theme_color: THEME_COLOR.app,
+    // tem um tema só — e hoje o produto inteiro tem. A `<meta>` do root layout
+    // diz a mesma coisa, e é ela que tem precedência com JS ligado. Ver
+    // `src/shared/theme-color.ts`.
+    theme_color: THEME_COLOR,
     lang: "pt-BR",
     dir: "ltr",
     categories: ["productivity", "utilities", "education"],
