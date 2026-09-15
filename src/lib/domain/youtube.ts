@@ -21,6 +21,12 @@
  * Não é um limite técnico: `gpt-4o` aguenta a transcrição de duas horas com
  * folga de contexto. Se um dia o preço virar escalonado por faixa, este número
  * sobe junto, os dois andam sempre no mesmo passo.
+ *
+ * **Ele mede o que é IMPORTADO, não a fita.** Com recorte (ver `YoutubeClip`),
+ * um culto de três horas do qual se pede a meia hora da pregação passa: a
+ * legenda custou o mesmo 1 crédito fixo, e o resumo vê meia hora de texto.
+ * Medir o vídeo inteiro seria recusar pelo tamanho da fita, não pelo tamanho
+ * da conta.
  */
 export const YOUTUBE_MAX_DURATION_MS = 2 * 60 * 60 * 1000;
 
@@ -33,6 +39,109 @@ export const YOUTUBE_MAX_DURATION_MS = 2 * 60 * 60 * 1000;
  * entregar um resumo vazio.
  */
 export const YOUTUBE_MIN_TRANSCRIPT_CHARS = 600;
+
+/**
+ * Piso de um trecho recortado. Um minuto.
+ *
+ * Existe para o dedo errado, não para o abuso: quem escreve `12:00` no início
+ * e `12:30` no fim quis dizer outra coisa, e o preço é fechado por vídeo. O
+ * piso de CONTEÚDO continua sendo `YOUTUBE_MIN_TRANSCRIPT_CHARS`, medido sobre
+ * o texto que o recorte devolveu, que é o que pega o trecho de dez minutos em
+ * que ninguém fala.
+ */
+export const YOUTUBE_MIN_CLIP_MS = 60 * 1000;
+
+/**
+ * O recorte: importar só um pedaço do vídeo.
+ *
+ * Ele existe porque a transmissão de um culto inteiro tem duas horas e a
+ * pregação tem trinta minutos no meio. Sem isto a saída era "procure o corte
+ * só da pregação" — uma tarefa que o canal pode nunca ter feito.
+ *
+ * **O que o teto de duração mede passa a ser ISTO, o trecho, e não o vídeo.**
+ * É a leitura certa da regra que criou o teto: ele existe porque o custo do
+ * resumo cresce com a transcrição na ENTRADA, e a legenda custa 1 crédito por
+ * vídeo, fixo, independente da duração. Um culto de três horas recortado em
+ * quarenta minutos custa menos que uma pregação de duas horas inteira, e
+ * recusá-lo seria recusar pelo tamanho da fita, não pelo tamanho da conta.
+ * Ver `docs/youtube.md` §5.
+ */
+export type YoutubeClip = {
+  startMs: number;
+  /** Fim exclusivo. `null` = "até o fim do vídeo". */
+  endMs: number | null;
+};
+
+export type ClipRangeError = "clip_invalid" | "clip_too_short" | "clip_too_long";
+
+/**
+ * Valida um par início/fim vindo de fora (formulário, query da URL, corpo de
+ * rota). Devolve `null` quando NÃO há recorte — os dois vazios é o caso comum,
+ * e não é erro.
+ */
+export function parseClipRange(
+  startMs: number | null | undefined,
+  endMs: number | null | undefined
+): { ok: true; clip: YoutubeClip | null } | { ok: false; error: ClipRangeError } {
+  const start =
+    typeof startMs === "number" && Number.isFinite(startMs) ? Math.trunc(startMs) : null;
+  const end = typeof endMs === "number" && Number.isFinite(endMs) ? Math.trunc(endMs) : null;
+
+  if (start === null && end === null) return { ok: true, clip: null };
+  if (start !== null && start < 0) return { ok: false, error: "clip_invalid" };
+  if (end !== null && end <= 0) return { ok: false, error: "clip_invalid" };
+
+  const from = start ?? 0;
+  if (end !== null) {
+    if (end <= from) return { ok: false, error: "clip_invalid" };
+    if (end - from < YOUTUBE_MIN_CLIP_MS) return { ok: false, error: "clip_too_short" };
+    if (end - from > YOUTUBE_MAX_DURATION_MS) return { ok: false, error: "clip_too_long" };
+  }
+
+  return { ok: true, clip: { startMs: from, endMs: end } };
+}
+
+/**
+ * `"12:30"`, `"1:02:30"`, `"12"` → ms. Devolve `null` para o que não é um
+ * tempo, e `0` é uma resposta válida (o começo do vídeo).
+ *
+ * **Um número solto é lido como MINUTOS**, não segundos: o campo é o minuto em
+ * que a pregação começa, e quem digita `12` num campo cujo exemplo é `12:30`
+ * está dizendo doze minutos. Ler como segundos devolveria os doze primeiros
+ * segundos do culto, um erro silencioso que só aparece no resumo pronto.
+ */
+export function parseTimecode(raw: string): number | null {
+  const value = raw.trim();
+  if (!value) return null;
+
+  const parts = value.split(":");
+  if (parts.length > 3) return null;
+  if (!parts.every((part) => /^\d{1,3}$/.test(part))) return null;
+
+  const numbers = parts.map((part) => Number.parseInt(part, 10));
+  // Um número solto são minutos; dois são mm:ss; três são h:mm:ss.
+  const [hours, minutes, seconds] =
+    numbers.length === 1
+      ? [0, numbers[0], 0]
+      : numbers.length === 2
+        ? [0, numbers[0], numbers[1]]
+        : [numbers[0], numbers[1], numbers[2]];
+
+  if (minutes > 59 && numbers.length === 3) return null;
+  if (seconds > 59) return null;
+
+  return ((hours * 60 + minutes) * 60 + seconds) * 1000;
+}
+
+/** ms → `"12:30"` ou `"1:02:30"`. A forma em que o campo é digitado de volta. */
+export function formatTimecode(ms: number): string {
+  const total = Math.max(0, Math.round(ms / 1000));
+  const hours = Math.floor(total / 3600);
+  const minutes = Math.floor((total % 3600) / 60);
+  const seconds = total % 60;
+  const mm = hours > 0 ? String(minutes).padStart(2, "0") : String(minutes);
+  return `${hours > 0 ? `${hours}:` : ""}${mm}:${String(seconds).padStart(2, "0")}`;
+}
 
 /** Hosts que o parser aceita. Qualquer outro não é um vídeo do YouTube. */
 const YOUTUBE_HOSTS = new Set([
@@ -57,6 +166,15 @@ export type ParsedYoutubeUrl = {
   videoId: string;
   /** Forma canônica, guardada em `sessions.source_url`. */
   canonicalUrl: string;
+  /**
+   * O instante que o link apontava (`?t=90`, `?t=1h2m3s`, `?start=90`), em ms,
+   * ou `null`. **Não vai para o banco**: ele só SUGERE o início do trecho no
+   * formulário, porque quem compartilha um link parado no minuto 12 quase
+   * sempre está apontando onde a pregação começa. Guardá-lo na URL canônica
+   * faria duas linhas do mesmo vídeo em instantes diferentes parecerem vídeos
+   * diferentes, que é justamente o que a canonização existe para evitar.
+   */
+  startMs: number | null;
 };
 
 /**
@@ -101,7 +219,70 @@ export function parseYoutubeUrl(raw: string): ParsedYoutubeUrl | null {
   return {
     videoId: candidate,
     canonicalUrl: `https://www.youtube.com/watch?v=${candidate}`,
+    startMs: parseYoutubeTimeParam(url.searchParams.get("t") ?? url.searchParams.get("start")),
   };
+}
+
+/**
+ * O `t=` de um link do YouTube, nas duas formas que ele tem: segundos crus
+ * (`t=930`, `t=930s`) e a composta (`t=1h2m3s`, `t=15m30s`).
+ */
+function parseYoutubeTimeParam(raw: string | null): number | null {
+  if (!raw) return null;
+  const value = raw.trim().toLowerCase();
+  if (!value) return null;
+
+  if (/^\d+s?$/.test(value)) {
+    const seconds = Number.parseInt(value, 10);
+    return Number.isFinite(seconds) && seconds > 0 ? seconds * 1000 : null;
+  }
+
+  const composed = /^(?:(\d+)h)?(?:(\d+)m)?(?:(\d+)s)?$/.exec(value);
+  if (!composed || (!composed[1] && !composed[2] && !composed[3])) return null;
+  const ms =
+    (Number(composed[1] ?? 0) * 3600 + Number(composed[2] ?? 0) * 60 + Number(composed[3] ?? 0)) *
+    1000;
+  return ms > 0 ? ms : null;
+}
+
+/**
+ * Acha o primeiro link de vídeo dentro de um TEXTO qualquer.
+ *
+ * Existe por causa do compartilhamento: o que o Android entrega no
+ * `share_target` (e o que uma pessoa cola do WhatsApp) quase nunca é só a URL,
+ * é "Assista: Pr. Fulano — Romanos 8 https://youtu.be/xxxx". Passar isso por
+ * `parseYoutubeUrl` devolve `null`, e a tela apareceria vazia com o link na
+ * mão. Aqui a string é quebrada em pedaços e o primeiro que for um vídeo
+ * ganha.
+ *
+ * É só para a ENTRADA por URL/compartilhamento. O que a pessoa digita no campo
+ * continua passando por `parseYoutubeUrl` direto, com a régua estrita.
+ */
+export function extractYoutubeUrl(text: string): ParsedYoutubeUrl | null {
+  const direct = parseYoutubeUrl(text);
+  if (direct) return direct;
+
+  for (const token of text.split(/\s+/)) {
+    if (!token) continue;
+    const parsed = parseYoutubeUrl(token);
+    if (parsed) return parsed;
+  }
+  return null;
+}
+
+/**
+ * A miniatura de um vídeo, derivada do id. Não é chamada de rede nem de API:
+ * `i.ytimg.com` serve este caminho para todo vídeo público, e `hqdefault`
+ * (480×360) é o único tamanho que SEMPRE existe — `maxresdefault` volta 404 em
+ * vídeo que nunca foi enviado em HD, o que daria um quadrado quebrado na tela
+ * de espera.
+ *
+ * Quem consome é o `/importar/:id`, por `next/image` (ver o `remotePatterns`
+ * do `next.config.ts`): host externo em `<img>` cru é proibido, ver
+ * `src/app/AGENTS.md`.
+ */
+export function youtubeThumbnailUrl(videoId: string): string {
+  return `https://i.ytimg.com/vi/${videoId}/hqdefault.jpg`;
 }
 
 /** `true` quando o texto é um link de vídeo importável. Para o diálogo. */

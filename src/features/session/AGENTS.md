@@ -31,7 +31,7 @@ pessoa quiser, aprofundar.
 | `components/LibraryNote.tsx` | o post-it de uma sessão na Biblioteca (autor, título, data) |
 | `components/StudyNote.tsx` | o post-it de um estudo, a mesma casca com outro recheio |
 | `components/CollectionSearch.tsx` + `src/lib/search.ts` | a barra e o motor das duas listas |
-| `components/YoutubeUrlForm.tsx` + `YoutubeImport.tsx` | colar o link, e esperar a importação |
+| `components/YoutubeUrlForm.tsx` + `YoutubeImport.tsx` | colar o link (ou recebê-lo por parâmetro), recortar um trecho, e esperar a importação |
 | `components/DeepenButton.tsx` + `DeepeningMenu.tsx` | gerar e reprocessar o estudo |
 | `components/PassageVerses.tsx` + `RichText.tsx` | texto bíblico e menções dentro do parágrafo |
 | `hooks/useCoinTick.ts` | o débito por minuto, durante a gravação |

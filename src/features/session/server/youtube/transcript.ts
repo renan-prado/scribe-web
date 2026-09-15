@@ -18,6 +18,7 @@ import "server-only";
  * saber disso.
  */
 
+import type { YoutubeClip } from "@/lib/domain/youtube";
 import { createLogger } from "@/lib/log";
 import { fetchSupadataTranscript } from "./supadata";
 
@@ -31,7 +32,14 @@ export type YoutubeTranscriptError =
   /** O vídeo existe e NÃO tem legenda nenhuma. A recusa mais comum. */
   | "no_captions"
   /** Rede, timeout, 5xx do provedor, cota estourada. Vale tentar de novo. */
-  | "provider_failed";
+  | "provider_failed"
+  /**
+   * O vídeo TEM legenda, e o trecho pedido não pegou nada dela — um fim antes
+   * do início da fala, um "1:40:00" num vídeo de cinquenta minutos. Separado
+   * de `no_captions` porque a saída é outra: corrigir dois campos, não trocar
+   * de vídeo.
+   */
+  | "clip_empty";
 
 export type YoutubeTranscriptResult =
   | {
@@ -41,7 +49,11 @@ export type YoutubeTranscriptResult =
       /** Idioma que o provedor devolveu (ISO 639-1). */
       lang: string;
       /**
-       * Duração do vídeo em ms, DERIVADA do fim do último segmento de legenda.
+       * Duração do que foi IMPORTADO, em ms, derivada dos segmentos de legenda
+       * que sobraram — o vídeo inteiro quando não há recorte, o trecho quando
+       * há. É este número que a rota compara com `YOUTUBE_MAX_DURATION_MS` e
+       * que vai para `sessions.duration_ms`, porque é ele que mede o texto que
+       * entra no resumo, que é onde o custo mora.
        *
        * É uma aproximação por baixo, a legenda acaba quando a fala acaba, e
        * o vídeo pode seguir com música por mais um minuto. Serve para as duas
@@ -54,6 +66,8 @@ export type YoutubeTranscriptResult =
        * já respondeu de graça.
        */
       durationMs: number;
+      /** O vídeo inteiro, sempre, mesmo com recorte. Só para log e diagnóstico. */
+      fullDurationMs: number;
     }
   | { ok: false; error: YoutubeTranscriptError; message?: string };
 
@@ -74,8 +88,18 @@ export type YoutubeTranscriptResult =
  * pontuação, o resumo aguenta, a leitura crua da transcrição sofre, e é por
  * isso que a sessão importada abre em `/summary`.
  */
-export async function fetchYoutubeTranscript(videoUrl: string): Promise<YoutubeTranscriptResult> {
-  const result = await fetchSupadataTranscript(videoUrl);
+export async function fetchYoutubeTranscript(
+  videoUrl: string,
+  /**
+   * O trecho a importar, ou `null` para o vídeo inteiro. **Não é um parâmetro
+   * do provedor**: a legenda inteira vem de qualquer jeito, pelo mesmo 1
+   * crédito, e o recorte é aplicado sobre os segmentos que voltaram. Um
+   * provedor futuro que aceite janela nativamente pode usá-la; um que não
+   * aceite cumpre o contrato filtrando, como este.
+   */
+  clip: YoutubeClip | null = null
+): Promise<YoutubeTranscriptResult> {
+  const result = await fetchSupadataTranscript(videoUrl, clip);
   if (!result.ok) {
     log.warn("fetch failed", { error: result.error, message: result.message });
   }

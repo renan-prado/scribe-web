@@ -93,7 +93,8 @@ Router, ver o comentário no `src/proxy.ts`).
 /studies/[id]     um estudo. SEM ACESSO pela interface
 /escrever         a folha em branco: o editor de blocos, modo manual
 /escrever/[id]    o mesmo editor, num texto que já existe
-/importar         cola o link do vídeo e cria a sessão modo youtube
+/importar         cola (ou recebe por ?url=/?v=/?text=) o link do vídeo,
+                     opcionalmente um trecho, e cria a sessão modo youtube
 /importar/[id]    a importação rodando: legenda + resumo
 /profile          a conta, o saldo e o plano
 /indicar          indique a um amigo
@@ -399,16 +400,35 @@ a passagem dentro, o botão teria por nome acessível os sete versículos.
 **O salvamento é LOCAL-FIRST.** Cada mudança cai no IndexedDB em 300ms
 (`draft-store.ts`) e no banco em 1,8s (`useWrittenDraft`), e ao reabrir a tela
 o rascunho do aparelho VENCE o que o servidor devolveu, quando é mais novo que
-o último envio confirmado. A sessão nasce no PRIMEIRO envio, não ao abrir a
-tela: criar ali encheria a Biblioteca de textos vazios de quem clicou no menu e
-desistiu. Até lá a URL é `/escrever`; depois vira `/escrever/{id}`.
+o último envio confirmado.
+
+**O ID nasce no APARELHO; a LINHA, no primeiro envio.** São duas coisas, e
+separá-las conserta um defeito que apareceu em produção. A linha continua
+nascendo só quando há texto — criar ao abrir encheria a Biblioteca de folhas em
+branco de quem clicou no menu e desistiu —, mas o id é sorteado pelo editor
+(`newDraftId`), vira a chave do rascunho local, vai no corpo do POST e é com ele
+que `/api/sessions/written` cria a linha. A URL passa a ser `/escrever/{id}`
+assim que a folha abre, por `replaceState`.
+
+O desenho anterior deixava o id para o servidor, e o rascunho de um texto novo
+morava sob uma chave FIXA (`"novo"`) até o primeiro salvamento. Quando esse
+salvamento falhava, o texto ficava guardado ali e o "Escrever" seguinte abria
+com ele dentro — a pessoa pedia folha em branco e recebia o texto anterior. Um
+id por folha faz de cada "Escrever" um documento.
+
+**Consequência em `/escrever/{id}`: id sem linha no banco abre o editor VAZIO,
+não um 404.** O endereço existe antes do primeiro salvamento, e o rascunho está
+no aparelho; um 404 ali jogaria fora o texto de quem recarregou a página no meio
+da escrita. Id que não é UUID continua sendo 404. A rota, do lado de lá, CRIA
+com o id que veio quando não acha linha nenhuma, e devolve 409 `id_taken` se
+aquele id for de outra pessoa (a RLS o esconde, a chave primária o recusa).
 
 **Três regras existem porque cada uma já comeu uma palavra digitada**, e as três
 são a mesma ideia: o que está na tela agora é a verdade.
 
-1. A URL do primeiro salvamento muda por `history.replaceState`, não por
-   `router.replace`. Navegar remontava o editor com o que o servidor tinha
-   acabado de devolver, e o que foi digitado durante o POST voltava atrás.
+1. A URL do editor muda por `history.replaceState`, não por `router.replace`.
+   Navegar remontava o editor com o que o servidor tinha acabado de devolver, e
+   o que foi digitado durante o POST voltava atrás.
 2. O rascunho lido do IndexedDB não entra se uma tecla já foi digitada nesta
    montagem. A consulta é assíncrona, e quem abre a tela e escreve na hora tinha
    a primeira letra apagada pela resposta que chegava depois.
@@ -776,7 +796,10 @@ dentro dela é `dono → já importada? → legenda →
 duração → COBRA → resumo`, e a legenda vir ANTES da cobrança é uma inversão
 deliberada em relação a `/reprocess` e `/api/deepening`, ela é a chamada
 barata (~R$ 0,03) e é ela que diz se o vídeo é importável, então cobrar antes
-obrigaria a estornar três recusas rotineiras. A regra que aquelas rotas
+obrigaria a estornar quatro recusas rotineiras. O RECORTE (`source_start_ms` /
+`source_end_ms`) é lido da LINHA, nunca do corpo: esta rota é redisparada a
+cada reload de `/importar/:id`, e um recorte que viesse na requisição viraria o
+vídeo inteiro pelo mesmo preço num "atrás" do navegador. A regra que aquelas rotas
 protegem continua valendo: a chamada CARA (o resumo) só roda depois do débito.
 Ver o cabeçalho da rota.
 

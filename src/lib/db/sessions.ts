@@ -10,10 +10,10 @@ import { createClient } from "@/lib/supabase/server";
  * Persistence for recording sessions. One row per stop-press: transcript and
  * the final summary.
  *
- * A coluna `feed_items` ainda existe no banco e continua sendo lida pela
- * projeção `session_feed_items`, que alimenta a busca por referência bíblica
- * das sessões ANTIGAS. Nada mais a escreve: os cards do feed ao vivo morreram
- * com os três modos de captura, e esta camada não a lê mais.
+ * A coluna `feed_items` e a projeção `session_feed_items` NÃO existem mais:
+ * foram dropadas na migração 0058, junto com os cards do feed ao vivo que as
+ * alimentavam. A busca por referência bíblica passou a ler só o bloco
+ * `bibleQuote` do resumo, que toda sessão tem — ver `searchSessionsByReference`.
  *
  * speaker_id / location_id (nullable FKs) link to the reusable entities in
  * @/lib/db/{speakers,locations}. speaker_name / speaker_location stay as
@@ -37,6 +37,10 @@ export type SessionRow = {
   mode: SessionMode;
   /** Origem externa da transcrição, a URL do vídeo, no modo youtube. */
   sourceUrl: string | null;
+  /** Recorte da origem, no modo youtube. Os dois nulos = vídeo inteiro.
+   * Ver `parseClipRange` e a migração 0060. */
+  sourceStartMs: number | null;
+  sourceEndMs: number | null;
   transcript: string;
   finalSummary: SummaryPayload | null;
 };
@@ -67,6 +71,21 @@ export type SessionListItem = {
 export type SessionMeta = Omit<SessionRow, "transcript" | "finalSummary">;
 
 export type CreateEmptySessionInput = {
+  /**
+   * O id da linha, quando quem chama já tem um.
+   *
+   * Só o `/escrever` passa: lá o id é sorteado no APARELHO antes do primeiro
+   * salvamento, porque o rascunho local precisa de uma chave e a URL precisa
+   * de um endereço enquanto a rede ainda não entrou na história (ver
+   * `escrever/draft-store.ts`). Deixar o banco sortear obrigaria o aparelho a
+   * esperar a resposta para saber sob que nome guardar o que já foi digitado.
+   *
+   * Escolher a própria chave primária não abre porta nenhuma: a linha nasce
+   * com `user_id = auth.uid()` do mesmo jeito, e um id já ocupado esbarra na
+   * unicidade da tabela (quem chama traduz isso em 409). O risco seria
+   * ADIVINHAR o uuid v4 de outra pessoa, e ele não é adivinhável.
+   */
+  id?: string;
   speakerName: string | null;
   speakerLocation: string | null;
   speakerId?: string | null;
@@ -74,6 +93,9 @@ export type CreateEmptySessionInput = {
   mode?: SessionMode;
   /** Só o modo youtube preenche. Ver `sessions.source_url` (migração 0048). */
   sourceUrl?: string | null;
+  /** Só o modo youtube, e só quando a pessoa recortou. Migração 0060. */
+  sourceStartMs?: number | null;
+  sourceEndMs?: number | null;
 };
 
 export type UpdateSessionFinalInput = {
@@ -99,6 +121,8 @@ type DbRow = {
   speaker_location: string | null;
   capture_mode: string | null;
   source_url: string | null;
+  source_start_ms: number | null;
+  source_end_ms: number | null;
   transcript: string;
   final_summary: SummaryPayload | null;
 };
@@ -109,10 +133,10 @@ type DbRow = {
 // `capture_mode`; we keep the API-side field name as `mode` for callers.
 const SELECT_LIST =
   "id, created_at, duration_ms, title, short_summary, speaker_id, location_id, speaker_name, speaker_location, capture_mode, source_url";
-const SELECT_FULL = `id, created_at, ended_at, duration_ms, title, short_summary, speaker_id, location_id, speaker_name, speaker_location, capture_mode, source_url, transcript, final_summary`;
+const SELECT_FULL = `id, created_at, ended_at, duration_ms, title, short_summary, speaker_id, location_id, speaker_name, speaker_location, capture_mode, source_url, source_start_ms, source_end_ms, transcript, final_summary`;
 // O mesmo de SELECT_FULL menos transcript/final_summary.
 const SELECT_META =
-  "id, created_at, ended_at, duration_ms, title, short_summary, speaker_id, location_id, speaker_name, speaker_location, capture_mode, source_url";
+  "id, created_at, ended_at, duration_ms, title, short_summary, speaker_id, location_id, speaker_name, speaker_location, capture_mode, source_url, source_start_ms, source_end_ms";
 
 type MetaRow = Omit<DbRow, "transcript" | "final_summary">;
 
@@ -130,6 +154,8 @@ function rowToMeta(row: MetaRow): SessionMeta {
     speakerLocation: row.speaker_location,
     mode: parseSessionMode(row.capture_mode),
     sourceUrl: row.source_url,
+    sourceStartMs: row.source_start_ms,
+    sourceEndMs: row.source_end_ms,
   };
 }
 
@@ -147,6 +173,8 @@ function rowToSession(row: DbRow): SessionRow {
     speakerLocation: row.speaker_location,
     mode: parseSessionMode(row.capture_mode),
     sourceUrl: row.source_url,
+    sourceStartMs: row.source_start_ms,
+    sourceEndMs: row.source_end_ms,
     transcript: row.transcript,
     finalSummary: row.final_summary,
   };
@@ -171,6 +199,7 @@ export async function createEmptySession(input: CreateEmptySessionInput): Promis
   const { data, error } = await supabase
     .from("sessions")
     .insert({
+      ...(input.id ? { id: input.id } : {}),
       user_id: user.id,
       speaker_id: input.speakerId ?? null,
       location_id: input.locationId ?? null,
@@ -178,6 +207,8 @@ export async function createEmptySession(input: CreateEmptySessionInput): Promis
       speaker_location: input.speakerLocation,
       capture_mode: input.mode ?? "audio",
       source_url: input.sourceUrl ?? null,
+      source_start_ms: input.sourceStartMs ?? null,
+      source_end_ms: input.sourceEndMs ?? null,
       transcript: "",
     })
     .select("id")

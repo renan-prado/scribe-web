@@ -1,6 +1,6 @@
 "use client";
 
-import { CreditCard } from "lucide-react";
+import { CreditCard, Scissors, X } from "lucide-react";
 import { usePathname, useRouter } from "next/navigation";
 import { useEffect, useState } from "react";
 import { toast } from "sonner";
@@ -10,7 +10,13 @@ import { CoinCost } from "@/features/coins/components/CoinCost";
 import { COIN_COSTS } from "@/features/coins/pricing";
 import { useCoinsStore } from "@/features/coins/store";
 import { requestCreateSession } from "@/features/session/lib/api";
-import { isYoutubeVideoUrl, YOUTUBE_MAX_DURATION_MS } from "@/lib/domain/youtube";
+import {
+  formatTimecode,
+  isYoutubeVideoUrl,
+  parseClipRange,
+  parseTimecode,
+  YOUTUBE_MAX_DURATION_MS,
+} from "@/lib/domain/youtube";
 import { cn } from "@/lib/utils";
 
 /**
@@ -32,16 +38,47 @@ import { cn } from "@/lib/utils";
  * (`mode: "youtube"`), depois empurra para `/importar/:id`, que é onde
  * a cobrança e o trabalho acontecem. É a mesma divisão dos três modos de
  * gravação, o diálogo cria a linha, a página de gravação faz o trabalho.
+ *
+ * ## O campo pode chegar PREENCHIDO, e mesmo assim ninguém importa sozinho
+ *
+ * `/importar?url=…` (ver a página) entrega o link já no campo. O botão continua
+ * sendo o único caminho: a rota seguinte COBRA 30 moedas, e uma URL que
+ * importa por conta própria transforma um link colado num grupo — ou um
+ * prefetch — em débito. O preenchimento economiza a colagem, não a decisão.
  */
 
 const MAX_HOURS = Math.round(YOUTUBE_MAX_DURATION_MS / 3_600_000);
 
-export function YoutubeUrlForm() {
+type Props = {
+  /** Link já validado pela página, vindo de `?url=` / `?text=`. */
+  initialUrl?: string;
+  /** Recorte sugerido pela URL (`?inicio=`/`?fim=`, ou o `t=` do link). */
+  initialStartMs?: number | null;
+  initialEndMs?: number | null;
+};
+
+/** A frase de cada recusa do recorte. Ver `parseClipRange`. */
+const CLIP_ERRORS: Record<string, string> = {
+  clip_invalid: "O fim precisa vir depois do início.",
+  clip_too_short: "O trecho precisa ter pelo menos 1 minuto.",
+  clip_too_long: `O trecho não pode passar de ${MAX_HOURS} horas.`,
+  timecode: "Use minutos e segundos, como 12:30.",
+};
+
+export function YoutubeUrlForm({ initialUrl = "", initialStartMs, initialEndMs }: Props) {
   const router = useRouter();
   const pathname = usePathname();
-  const [url, setUrl] = useState("");
+  const [url, setUrl] = useState(initialUrl);
   const [loading, setLoading] = useState(false);
   const [billingOpen, setBillingOpen] = useState(false);
+  // O recorte começa fechado, porque importar o vídeo inteiro é o caso comum.
+  // Um link que já veio com trecho (ou parado num instante) abre a seção: quem
+  // mandou o tempo espera ver o tempo.
+  const [clipOpen, setClipOpen] = useState(initialStartMs != null || initialEndMs != null);
+  const [startRaw, setStartRaw] = useState(
+    initialStartMs != null ? formatTimecode(initialStartMs) : ""
+  );
+  const [endRaw, setEndRaw] = useState(initialEndMs != null ? formatTimecode(initialEndMs) : "");
   const balance = useCoinsStore((s) => s.balance);
   const refresh = useCoinsStore((s) => s.refresh);
 
@@ -52,7 +89,25 @@ export function YoutubeUrlForm() {
   /** Só acusa link inválido depois de a pessoa ter digitado algo de verdade,
    * um erro em vermelho no primeiro caractere é ruído, não ajuda. */
   const touched = url.trim().length > 6;
-  const blocked = insufficient || !valid;
+
+  // O recorte, lido dos dois campos. Campo vazio é "não disse", não é erro:
+  // só início quer dizer "daqui até o fim", e é um pedido legítimo.
+  const startMs = startRaw.trim() ? parseTimecode(startRaw) : null;
+  const endMs = endRaw.trim() ? parseTimecode(endRaw) : null;
+  const badTimecode =
+    (startRaw.trim().length > 0 && startMs === null) ||
+    (endRaw.trim().length > 0 && endMs === null);
+  const range = parseClipRange(startMs, endMs);
+  const clipError = !clipOpen
+    ? null
+    : badTimecode
+      ? CLIP_ERRORS.timecode
+      : range.ok
+        ? null
+        : CLIP_ERRORS[range.error];
+  const clip = clipOpen && !badTimecode && range.ok ? range.clip : null;
+
+  const blocked = insufficient || !valid || !!clipError;
 
   // Mesmo motivo do `NewRecordingDialog`: esta tela vive sob o layout de
   // `(app)`, que sobrevive à navegação. Sem isto o botão fica em "Preparando…"
@@ -78,7 +133,16 @@ export function YoutubeUrlForm() {
       return;
     }
 
-    const result = await requestCreateSession({ mode: "youtube", sourceUrl: url.trim() });
+    const result = await requestCreateSession({
+      mode: "youtube",
+      sourceUrl: url.trim(),
+      // O recorte vai para a LINHA, e é por isso que ele viaja aqui e não no
+      // POST da importação: `/importar/:id` redispara aquela rota a cada
+      // reload, e um recorte que morasse no cliente viraria, num "atrás" do
+      // navegador, o vídeo inteiro cobrado pelo mesmo preço.
+      startMs: clip?.startMs ?? null,
+      endMs: clip?.endMs ?? null,
+    });
     if ("error" in result) {
       setLoading(false);
       toast.error("Não consegui iniciar a importação", { description: result.error });
@@ -94,7 +158,7 @@ export function YoutubeUrlForm() {
     // o de fora é que carrega a barra do topo e o pé da tela. A medida própria
     // (`max-w-lg`, mais estreita que os 640px da página) fica, é a largura em
     // que um campo só não vira uma linha de ponta a ponta.
-    <div className="mx-auto flex w-full max-w-lg flex-col gap-7">
+    <div className="mx-auto flex w-full max-w-md flex-col gap-11">
       <div className="flex flex-col items-center gap-4 text-center">
         <span
           aria-hidden
@@ -107,8 +171,7 @@ export function YoutubeUrlForm() {
             Importar do YouTube
           </h1>
           <p className="text-pretty text-sm font-light leading-relaxed text-scriba-ink-soft">
-            O Scriba lê a legenda do vídeo e monta o mesmo resumo estruturado das gravações, com
-            estudo, releia e frases marcantes.
+            O Scriba entende o conteúdo do vídeo e monta um resumo organizado em segundos.
           </p>
         </div>
       </div>
@@ -134,9 +197,11 @@ export function YoutubeUrlForm() {
           autoCorrect="off"
           spellCheck={false}
           // Foca sozinho: a tela tem um campo só, e chegar aqui já é a decisão
-          // de colar um link.
+          // de colar um link. Menos quando o link JÁ veio pronto por parâmetro:
+          // ali o que falta é decidir, não digitar, e o teclado subindo sobre o
+          // botão só atrapalha.
           // biome-ignore lint/a11y/noAutofocus: tela de campo único, o foco não disputa com nada
-          autoFocus
+          autoFocus={!initialUrl}
           disabled={loading}
           value={url}
           onChange={(e) => setUrl(e.target.value)}
@@ -164,10 +229,60 @@ export function YoutubeUrlForm() {
         ) : (
           <p
             id="youtube-url-hint"
-            className="px-1 text-[12px] font-light leading-relaxed text-scriba-ink-mute"
+            className="px-1 text-[12px] font-light self-end pr-4 leading-relaxed text-scriba-ink-mute"
           >
-            Vídeos de até {MAX_HOURS} horas, com legenda disponível no YouTube.
+            limite de {MAX_HOURS}h*
           </p>
+        )}
+
+        {/* O RECORTE.
+            Ele mora depois do link porque é uma pergunta sobre um vídeo que já
+            foi escolhido, e fechado porque importar tudo é o caso comum. A
+            transmissão de um culto inteiro é o caso que ele resolve: duas
+            horas de fita com trinta minutos de pregação no meio. */}
+        {clipOpen ? (
+          <div className="mt-3 flex flex-col gap-2 rounded-2xl border border-scriba-hairline bg-scriba-paper px-4 py-3.5">
+            <div className="flex items-center gap-4 justify-around">
+              <ClipField
+                id="youtube-clip-start"
+                value={startRaw}
+                onChange={setStartRaw}
+                placeholder="00:00"
+                disabled={loading}
+                invalid={!!clipError}
+              />
+              <span className="text-[12px] font-light text-scriba-ink-soft">até</span>
+              <ClipField
+                id="youtube-clip-end"
+                value={endRaw}
+                onChange={setEndRaw}
+                placeholder="00:00"
+                disabled={loading}
+                invalid={!!clipError}
+              />
+              <button
+                type="button"
+                onClick={() => {
+                  setClipOpen(false);
+                  setStartRaw("");
+                  setEndRaw("");
+                }}
+                aria-label="Importar o vídeo inteiro"
+                className="inline-flex size-7 items-center justify-center rounded-full text-scriba-ink-mute transition-colors hover:text-scriba-ink focus-visible:outline-none focus-visible:ring-4 focus-visible:ring-scriba-blue/25"
+              >
+                <X aria-hidden className="size-3.5" strokeWidth={2.4} />
+              </button>
+            </div>
+          </div>
+        ) : (
+          <button
+            type="button"
+            onClick={() => setClipOpen(true)}
+            className="mt-1 inline-flex items-center gap-1.5 self-start rounded-full px-1 py-1 text-[12px] font-medium text-scriba-ink-soft transition-colors hover:text-scriba-ink focus-visible:outline-none focus-visible:ring-4 focus-visible:ring-scriba-blue/25"
+          >
+            <Scissors aria-hidden className="size-3.5" strokeWidth={2.2} />
+            Importar só um trecho
+          </button>
         )}
 
         {balanceLoading ? (
@@ -216,5 +331,52 @@ export function YoutubeUrlForm() {
 
       <BillingDialog open={billingOpen} onOpenChange={setBillingOpen} />
     </div>
+  );
+}
+
+/**
+ * Um campo de tempo do recorte. `inputMode="numeric"` para o teclado do
+ * celular abrir nos números, mas `type="text"`: um `number` recusaria os dois
+ * pontos de "12:30", que é justamente a forma que o campo pede.
+ */
+function ClipField({
+  id,
+  value,
+  onChange,
+  placeholder,
+  disabled,
+  invalid,
+}: {
+  id: string;
+  value: string;
+  onChange: (value: string) => void;
+  placeholder: string;
+  disabled: boolean;
+  invalid: boolean;
+}) {
+  return (
+    <label htmlFor={id} className="flex items-center gap-4">
+      <input
+        id={id}
+        type="text"
+        inputMode="numeric"
+        autoComplete="off"
+        spellCheck={false}
+        disabled={disabled}
+        value={value}
+        onChange={(e) => onChange(e.target.value)}
+        placeholder={placeholder}
+        aria-invalid={invalid}
+        aria-describedby="youtube-clip-hint"
+        className={cn(
+          "min-w-0 w-32 rounded-xl border text-center bg-scriba-surface px-3 py-2 text-[14px] tabular-nums text-scriba-ink transition-colors",
+          "placeholder:text-scriba-ink-mute",
+          "focus-visible:outline-none focus-visible:ring-4 focus-visible:ring-scriba-blue/25",
+          invalid
+            ? "border-scriba-cream-accent"
+            : "border-scriba-hairline focus-visible:border-scriba-blue"
+        )}
+      />
+    </label>
   );
 }

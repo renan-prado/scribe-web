@@ -2,6 +2,7 @@ import type { Metadata } from "next";
 import { notFound, redirect } from "next/navigation";
 import { getSession } from "@/lib/db/sessions";
 import { payloadToWritten } from "@/lib/domain/summary";
+import { isUuid } from "@/lib/http/validate";
 import { ImportAction, RecordAction, WriteAction } from "../../components/CreateActions";
 import { LibrarySearchLink } from "../../components/LibrarySearchLink";
 import { TopBar } from "../../components/TopBar";
@@ -35,6 +36,16 @@ export async function generateMetadata({ params }: PageProps): Promise<Metadata>
  * A rota de salvamento reconfere o modo (409 `not_manual`): esconder a tela
  * nunca é a proteção.
  *
+ * **Um id que ainda não é linha nenhuma abre o editor VAZIO, e não um 404.**
+ * O id de um texto novo é sorteado no aparelho e a URL passa a ser esta antes
+ * do primeiro salvamento (ver `useWrittenDraft`), então "não achei no banco"
+ * aqui quer dizer, quase sempre, "este texto ainda não subiu" — e o rascunho
+ * dele está no IndexedDB, a um passo de ser lido pelo editor. Responder 404
+ * seria jogar fora o texto de quem recarregou a página no meio da escrita.
+ *
+ * O que continua sendo 404 é um id que não é um UUID: ali não há rascunho
+ * possível, é endereço digitado errado.
+ *
  * O que desce daqui é o PAYLOAD do banco, e ele é só o ponto de partida: o
  * `useWrittenDraft` consulta o rascunho do aparelho e o prefere quando ele é
  * mais novo que o último envio confirmado. Ver o cabeçalho dele.
@@ -51,16 +62,18 @@ export async function generateMetadata({ params }: PageProps): Promise<Metadata>
  */
 export default async function EscreverIdPage({ params }: PageProps) {
   const { id } = await params;
-  const session = await getSession(id);
-  if (!session) notFound();
-  if (session.mode !== "manual") redirect(`/summary/${id}`);
+  if (!isUuid(id)) notFound();
 
-  const written = payloadToWritten(session.finalSummary);
+  const session = await getSession(id);
+  if (session && session.mode !== "manual") redirect(`/summary/${id}`);
+
+  const written = payloadToWritten(session?.finalSummary ?? null);
 
   return (
     <Composer
       id={id}
-      initial={{ ...written, title: session.title ?? written.title }}
+      exists={!!session}
+      initial={{ ...written, title: session?.title ?? written.title }}
       header={
         <TopBar
           backHref="/home"

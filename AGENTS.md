@@ -37,6 +37,18 @@ resumo. O teto existe porque o custo do resumo cresce com a transcrição na
 entrada e a receita não: `COIN_COSTS.youtubeImport` e `YOUTUBE_MAX_DURATION_MS`
 andam sempre juntos.
 
+**E dá para importar só um TRECHO** — "do minuto 12 ao 45" —, que é a resposta
+para a transmissão de duas horas com trinta minutos de pregação no meio. Não
+custa chamada a mais: a legenda já vem em segmentos com tempo, e o recorte é um
+filtro sobre eles. O teto passa a medir o TRECHO, não a fita. O par mora na
+linha da sessão (`source_start_ms`/`source_end_ms`), nunca só no cliente:
+`/importar/:id` redispara a importação a cada reload. Ver `docs/youtube.md` §8.
+
+**E o `/importar` aceita o vídeo pela URL** (`?url=`, `?v=`, `?text=`,
+`?inicio=`/`?fim=`), preenchendo o formulário — o botão continua sendo a única
+coisa que COBRA. É o que prepara o compartilhar-com-o-Scriba. Ver §9 do mesmo
+documento.
+
 **A legenda vem de um PROVEDOR PAGO, e isso não é preguiça.** Extrair legenda do
 YouTube a partir de um servidor deixou de funcionar: o `timedtext` pune
 reputação de IP de datacenter desde o fim de 2024, então o mesmo código roda na

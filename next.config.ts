@@ -85,7 +85,23 @@ const nextConfig: NextConfig = {
      * tela de entrada. Sem foto, a tela desenha as iniciais, ver
      * `ReferrerAvatar`.
      */
-    remotePatterns: [{ protocol: "https", hostname: "lh3.googleusercontent.com", pathname: "/**" }],
+    remotePatterns: [
+      { protocol: "https", hostname: "lh3.googleusercontent.com", pathname: "/**" },
+      /**
+       * A MINIATURA do vídeo que está sendo importado, na tela de espera do
+       * `/importar/:id`.
+       *
+       * Mesmo argumento do avatar acima: a alternativa não era "nenhuma
+       * imagem", era um `<img>` cru para host externo, que a regra proíbe. Por
+       * aqui ela sai do nosso domínio, redimensionada, com width/height
+       * conhecidos e sem CLS numa tela que fica minutos aberta.
+       *
+       * O caminho é FECHADO em `/vi/**`, que é onde ficam as miniaturas e mais
+       * nada. A URL é derivada do id do vídeo (`youtubeThumbnailUrl`), não
+       * vem de resposta de API nenhuma.
+       */
+      { protocol: "https", hostname: "i.ytimg.com", pathname: "/vi/**" },
+    ],
   },
   async headers() {
     return [{ source: "/(.*)", headers: securityHeaders }];

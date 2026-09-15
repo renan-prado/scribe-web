@@ -90,16 +90,22 @@ const BLOCK_SURFACE = "-mx-3 -my-2 rounded-[20px] px-3 py-2 transition-colors sm
 const ROW_LEADING_DISC = "pl-2 sm:pl-2";
 
 type Props = {
-  /** `null` num texto novo: a sessão nasce no primeiro salvamento. */
+  /** O id da URL. `null` em `/escrever`, onde o aparelho sorteia um. */
   id: string | null;
+  /** A linha já existe no banco? Ver `useWrittenDraft`. */
+  exists?: boolean;
   initial: WrittenSummary;
   /** A `TopBar`, montada pela página (ela é server component). */
   header: ReactNode;
 };
 
-export function Composer({ id, initial, header }: Props) {
+export function Composer({ id, exists = false, initial, header }: Props) {
   const router = useRouter();
-  const { doc, setDoc, status, sessionId, flush, ready } = useWrittenDraft({ id, initial });
+  const { doc, setDoc, status, offline, sessionId, flush, ready } = useWrittenDraft({
+    id,
+    exists,
+    initial,
+  });
 
   /** Onde o menu do `+` está aberto: depois do bloco de índice N (-1 = no fim). */
   const [adderAt, setAdderAt] = useState<number | null>(null);
@@ -286,7 +292,11 @@ export function Composer({ id, initial, header }: Props) {
                 verdade e mentira na prática: não há nada salvo porque não há
                 nada. O chip entra quando passa a existir algo sobre o que
                 afirmar. */}
-            {sessionId || status !== "synced" ? <StatusChip status={status} /> : <span />}
+            {sessionId || status !== "synced" ? (
+              <StatusChip status={status} offline={offline} />
+            ) : (
+              <span />
+            )}
             {sessionId ? (
               <button
                 type="button"
@@ -788,9 +798,15 @@ function WritingLine({
  * dentro da linha os botões empurrariam o texto para o lado toda vez que
  * aparecessem — o cursor de quem está escrevendo saltaria junto.
  *
- * Ela tem 34px, MENOR que os 42 da caixa do bloco, e pousa na borda de cima
+ * Ela tem 32px, MENOR que os 42 da caixa do bloco, e pousa na borda de cima
  * dela. Com 40px ela era do tamanho da linha inteira que controlava, e uma
  * barra de ferramentas do tamanho do conteúdo deixa de parecer uma barra.
+ *
+ * **E ela fica INTEIRA acima do texto** (`bottom-full`). Antes descia 12px
+ * abaixo da borda da caixa, o que sobre uma linha de 26px significa cobrir a
+ * metade de cima dela, do lado direito — onde o cursor chega quando a frase
+ * fica longa. No desktop é um estorvo com jeito de detalhe; no celular é a
+ * lixeira debaixo do dedo de quem só queria tocar no fim da palavra.
  *
  * **O `+` mora aqui**, e não mais no vão entre dois blocos. Lá eram dois discos
  * por bloco, acendendo e apagando conforme o mouse passava, e uma tela de texto
@@ -819,7 +835,14 @@ function BlockControls({
   return (
     <div
       className={cn(
-        "-top-3 absolute right-0 z-10 flex items-center gap-0.5 rounded-full bg-scriba-surface p-1 shadow-sm transition-opacity",
+        // `bottom-full`, e não um `-top-3`: a pílula fica INTEIRA acima da
+        // linha, nos 32px de espaço vazio que existem entre um texto e o
+        // seguinte (8 de recuo da caixa + 16 de vão + 8 da caixa de cima) —
+        // que é exatamente a altura dela. Com `-top-3` ela descia 20px sobre a
+        // própria linha que controla, e no celular isso é a barra de botões em
+        // cima da palavra que está sendo digitada: o dedo pousa no lixeira ao
+        // tentar pôr o cursor no fim da frase.
+        "absolute right-0 bottom-full z-10 flex items-center gap-0.5 rounded-full bg-scriba-surface p-1 shadow-sm transition-opacity",
         "ring-1 ring-scriba-hairline ring-inset",
         "opacity-0 group-hover:opacity-100 focus-within:opacity-100",
         shown && "opacity-100",
@@ -1114,15 +1137,30 @@ function BlockBody({
  * "Salvo" ali seria prometer uma coisa que ainda não aconteceu. Quando o envio
  * falha, a frase muda de tom mas o fato continua o mesmo — o trabalho está
  * guardado, e é isso que a pessoa precisa saber antes de fechar a aba.
+ *
+ * **A falha tem DUAS frases, e a diferença não é estilo.** O chip dizia "sem
+ * conexão" para qualquer envio que não desse certo, e em produção o envio
+ * falhava com o wi-fi perfeito (o banco recusava o modo `manual`): a tela
+ * culpava a internet de quem estava escrevendo por um erro que era nosso.
+ * Quem sabe se havia rede é o `navigator.onLine` no instante da falha, ver
+ * `useWrittenDraft`.
+ *
+ * **As cores do estado de erro são o VINHO com a tinta rosada**, o par que o
+ * resto do app usa (ver o `ControlButton` da lixeira e `src/shared/AGENTS.md`).
+ * Ele já foi `rose-body` com `rose-ink` — rosa claro sobre rosa claro, dois
+ * tons a um passo um do outro: no celular, no sol, o aviso mais importante da
+ * tela era o único texto ilegível dela.
  */
-function StatusChip({ status }: { status: SaveStatus }) {
+function StatusChip({ status, offline }: { status: SaveStatus; offline: boolean }) {
   const label =
     status === "synced"
       ? "Salvo"
       : status === "saving"
         ? "Salvando…"
         : status === "error"
-          ? "Sem conexão · salvo neste aparelho"
+          ? offline
+            ? "Sem internet · salvo neste aparelho"
+            : "Não consegui salvar · está neste aparelho"
           : "Salvo neste aparelho";
 
   return (
@@ -1133,7 +1171,7 @@ function StatusChip({ status }: { status: SaveStatus }) {
         status === "synced"
           ? "bg-scriba-mint text-scriba-mint-dark"
           : status === "error"
-            ? "bg-scriba-rose-body text-scriba-rose-ink"
+            ? "bg-scriba-rose text-scriba-rose-ink"
             : "bg-scriba-ink-mute/10 text-scriba-ink-soft"
       )}
     >

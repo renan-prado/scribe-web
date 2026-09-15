@@ -15,7 +15,12 @@ export const dynamic = "force-dynamic";
 
 const BodySchema = z
   .object({
-    /** Ausente na primeira gravação: é ela que cria a linha. */
+    /**
+     * O id vem SEMPRE, inclusive no primeiro salvamento: ele é sorteado no
+     * aparelho quando a folha em branco abre. Continua opcional no schema para
+     * não quebrar uma aba velha aberta de antes do deploy, que ainda manda o
+     * corpo sem ele.
+     */
     id: z.uuid().optional(),
     summary: WrittenSummarySchema,
   })
@@ -24,14 +29,26 @@ const BodySchema = z
 /**
  * POST /api/sessions/written
  *
- * Salva o texto que a pessoa ESCREVEU em `/escrever`. Cria a sessão quando não
- * vem `id`, sobrescreve quando vem, e devolve o id nos dois casos.
+ * Salva o texto que a pessoa ESCREVEU em `/escrever`. Cria a linha no primeiro
+ * salvamento, sobrescreve nos seguintes, e devolve o id nos dois casos.
  *
  * **Uma rota para os dois, e não um POST e um PUT**, porque para quem chama é
  * uma ação só: o editor salva sozinho a cada pausa da digitação, e ele não
  * deveria ter de saber se aquele salvamento é o primeiro. O primeiro é o único
  * que cria, e "criar" aqui é uma linha vazia seguida do mesmo UPDATE que todos
  * os outros fazem.
+ *
+ * **O ID vem do CLIENTE, e a linha nasce com ele.** É o editor quem sorteia
+ * (ver `escrever/draft-store.ts`), porque o rascunho no aparelho precisa de uma
+ * chave antes de existir rede. Então "veio um id que não acha linha nenhuma"
+ * não é erro: é o primeiro salvamento de um texto que já vinha sendo escrito, e
+ * a resposta certa é CRIAR com aquele id — não um 404, que descartaria o texto
+ * que a pessoa acabou de digitar.
+ *
+ * O que continua sendo recusa é o id de outra pessoa. A RLS o esconde (o SELECT
+ * volta vazio), a criação esbarra na unicidade da chave primária, e isso vira
+ * 409 `id_taken` — a única saída honesta, porque escrever ali seria escrever na
+ * sessão de outro. Chegar nesse caso exige adivinhar um uuid v4 inteiro.
  *
  * **Não cobra moeda, e não há o que discutir aqui:** não existe transcrição,
  * não existe chamada de modelo, não existe provedor. É o único caminho do
@@ -56,20 +73,22 @@ export async function POST(request: Request) {
   const payload = writtenToPayload(parsed.data.summary);
   let id = parsed.data.id;
 
-  if (id) {
+  // A linha existe? É o que separa "sobrescrever" de "criar", e com o id vindo
+  // do cliente essa pergunta deixou de ser "veio id?".
+  const existing = id ? await getSessionMeta(id).catch(() => null) : null;
+
+  if (id && existing) {
     // Dono ANTES de trabalhar, como manda `app/AGENTS.md`. A RLS já escoparia
     // o UPDATE, mas um id alheio receberia `{ ok: true }` mesmo assim, porque
-    // UPDATE que casa zero linhas não é erro no PostgREST. 404 e não 403: a
-    // existência da sessão de outra pessoa não é informação nossa para
-    // confirmar.
-    const owned = await getSessionMeta(id).catch(() => null);
-    if (!owned) return NextResponse.json({ error: "not_found" }, { status: 404 });
+    // UPDATE que casa zero linhas não é erro no PostgREST — e `getSessionMeta`
+    // devolver a linha é justamente a prova de que ela é de quem pediu.
+    //
     // O editor só sabe escrever o vocabulário de `WRITTEN_BLOCK_TYPES`, e uma
     // sessão gravada tem blocos que ele não desenha. Deixar este POST tocar
     // uma sessão `audio` seria apagar em silêncio o que a IA escreveu sobre
     // uma pregação — e apagar junto a transcrição da tela, que continuaria no
     // banco sem nada que a explicasse.
-    if (owned.mode !== "manual") {
+    if (existing.mode !== "manual") {
       return NextResponse.json({ error: "not_manual" }, { status: 409 });
     }
   } else {
@@ -88,12 +107,22 @@ export async function POST(request: Request) {
     const profile = await getCurrentProfile().catch(() => null);
     try {
       id = await createEmptySession({
+        id,
         speakerName: profile?.displayName?.trim() || null,
         speakerLocation: null,
         mode: "manual",
       });
     } catch (err) {
-      log.error("create failed", { error: (err as Error).message });
+      const message = (err as Error).message;
+      // Chave primária ocupada: o id existe e não é de quem está pedindo (se
+      // fosse, o SELECT acima o teria achado). 409 e não 500 — não houve falha
+      // nossa, houve uma colisão, e o cliente precisa saber que insistir com
+      // este id não vai adiantar.
+      if (/duplicate key|23505/i.test(message)) {
+        log.warn("id em uso", { id });
+        return NextResponse.json({ error: "id_taken" }, { status: 409 });
+      }
+      log.error("create failed", { error: message });
       return NextResponse.json({ error: "create_failed" }, { status: 500 });
     }
   }

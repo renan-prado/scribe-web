@@ -8,6 +8,7 @@ import { fetchYoutubeTranscript } from "@/features/session/server/youtube/transc
 import { chargeCoins } from "@/lib/db/coins";
 import { getSession, updateSessionSummary, updateSessionTranscript } from "@/lib/db/sessions";
 import {
+  parseClipRange,
   parseYoutubeUrl,
   YOUTUBE_MAX_DURATION_MS,
   YOUTUBE_MIN_TRANSCRIPT_CHARS,
@@ -61,9 +62,9 @@ export const maxDuration = 300;
  *    legenda e o resumo que a cumpre.
  * 2. **É a legenda que diz se o vídeo é importável.** A duração sai do último
  *    segmento dela (ver `lib/youtube/supadata.ts`); "sem legenda", "longo
- *    demais" e "curto demais" só são conhecidos depois. Cobrar antes obrigaria
- *    a estornar três recusas rotineiras, e estorno é o caminho onde um erro
- *    de contagem vira moeda criada do nada.
+ *    demais", "curto demais" e "o trecho não pegou nada" só são conhecidos
+ *    depois. Cobrar antes obrigaria a estornar quatro recusas rotineiras, e
+ *    estorno é o caminho onde um erro de contagem vira moeda criada do nada.
  *
  * Depois da cobrança o comportamento é o das outras: falha do modelo NÃO
  * estorna. Aqui isso dói menos que lá, porque a transcrição é gravada assim que
@@ -104,8 +105,22 @@ export async function POST(request: Request) {
     return NextResponse.json({ error: "invalid_url" }, { status: 400 });
   }
 
+  // O recorte vem da LINHA, não do corpo da requisição: ele foi decidido no
+  // formulário, antes de a sessão existir, e esta rota é disparada de novo a
+  // cada reload de `/importar/:id`. No corpo, um reload importaria o vídeo
+  // inteiro pelo mesmo preço, e ninguém perceberia até o resumo pronto falar
+  // de outra coisa. Ver a migração 0060.
+  const range = parseClipRange(session.sourceStartMs, session.sourceEndMs);
+  if (!range.ok) {
+    // A linha só existe com um recorte válido (a rota de criação usa esta
+    // mesma função), então chegar aqui é dado estragado à mão no banco.
+    log.error("invalid clip on row", { sessionId, error: range.error });
+    return NextResponse.json({ error: range.error }, { status: 400 });
+  }
+  const clip = range.clip;
+
   // ---- a legenda, antes da cobrança ------------------------------------
-  const transcriptResult = await fetchYoutubeTranscript(parsedUrl.canonicalUrl);
+  const transcriptResult = await fetchYoutubeTranscript(parsedUrl.canonicalUrl, clip);
   if (!transcriptResult.ok) {
     // `provider_unavailable` é 503 e não 4xx: falta a nossa chave, o usuário
     // não fez nada errado, e a tela precisa dizer "indisponível" em vez de
@@ -121,11 +136,20 @@ export async function POST(request: Request) {
     return NextResponse.json({ error: transcriptResult.error }, { status });
   }
 
-  const { text, durationMs, lang } = transcriptResult;
+  const { text, durationMs, fullDurationMs, lang } = transcriptResult;
 
+  // O teto mede o que vai ser IMPORTADO, e com recorte isso é o trecho. Um
+  // culto de três horas recortado em quarenta minutos passa, e deve passar: a
+  // legenda custou 1 crédito fixo, e o que cresce com a duração é a
+  // transcrição na entrada do resumo. Ver `YOUTUBE_MAX_DURATION_MS`.
   if (durationMs > YOUTUBE_MAX_DURATION_MS) {
     return NextResponse.json(
-      { error: "video_too_long", durationMs, maxDurationMs: YOUTUBE_MAX_DURATION_MS },
+      {
+        error: "video_too_long",
+        durationMs,
+        fullDurationMs,
+        maxDurationMs: YOUTUBE_MAX_DURATION_MS,
+      },
       { status: 422 }
     );
   }
@@ -151,7 +175,7 @@ export async function POST(request: Request) {
     return NextResponse.json({ error: "charge_failed" }, { status: 500 });
   }
 
-  log.info("charged", { sessionId, durationMs, chars: text.length, lang });
+  log.info("charged", { sessionId, durationMs, fullDurationMs, clip, chars: text.length, lang });
 
   // ---- o título, separado do amontoado ----------------------------------
   //
@@ -244,7 +268,7 @@ export async function POST(request: Request) {
     log.error("summary save failed", { sessionId, error: (err as Error).message });
   }
 
-  log.info("imported", { sessionId, saved, latencyMs, durationMs });
+  log.info("imported", { sessionId, saved, latencyMs, durationMs, clip });
 
   return NextResponse.json({
     ...payload,

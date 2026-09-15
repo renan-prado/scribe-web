@@ -57,6 +57,10 @@ export async function requestCreateSession(body: {
   /** Só o modo youtube manda. A URL do vídeo, validada antes por
    * `parseYoutubeUrl`, a rota revalida com a mesma régua. */
   sourceUrl?: string | null;
+  /** Só o modo youtube, e só quando a pessoa pediu um trecho do vídeo. Em ms;
+   * a rota revalida com `parseClipRange`, o mesmo do formulário. */
+  startMs?: number | null;
+  endMs?: number | null;
 }): Promise<{ id: string } | { error: string }> {
   try {
     const res = await fetch("/api/sessions", {

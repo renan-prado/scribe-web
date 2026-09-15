@@ -218,6 +218,11 @@ hora); só o vídeo de duas horas, o teto, segue abaixo dele.
 `COIN_COSTS.youtubeImport` e `YOUTUBE_MAX_DURATION_MS` andam sempre juntos:
 subir o teto sem mexer no preço é escolher a linha de baixo para todo mundo.
 
+**E o teto mede o que é IMPORTADO, não o tamanho da fita** — ver §8, o recorte.
+Um culto de três horas do qual se pede a meia hora da pregação cai na PRIMEIRA
+linha da tabela, não fora dela: a legenda custou o mesmo crédito fixo, e o
+resumo viu meia hora de texto.
+
 ### Por que não por minuto
 
 A gravação cobra por minuto porque o custo dela **é** por
@@ -265,10 +270,10 @@ A legenda vem **antes** da cobrança, e isso inverte o padrão de `/reprocess` e
    aquelas rotas protegem, não deixar a chamada CARA rodar antes do débito,
    continua cumprida, porque o débito está entre as duas.
 2. **É a legenda que diz se o vídeo é importável.** A duração sai do último
-   segmento dela; "sem legenda", "longo demais" e "curto demais" só são
-   conhecidos depois. Cobrar antes obrigaria a estornar três recusas
-   rotineiras, e estorno é o caminho onde um erro de contagem vira moeda
-   criada do nada.
+   segmento dela; "sem legenda", "longo demais", "curto demais" e "o trecho
+   não pegou nada" só são conhecidos depois. Cobrar antes obrigaria a estornar
+   quatro recusas rotineiras, e estorno é o caminho onde um erro de contagem
+   vira moeda criada do nada.
 
 **A transcrição é gravada assim que a cobrança passa, antes do resumo.** Falha
 do modelo depois disso não estorna (como nas outras rotas), mas dói menos:
@@ -296,3 +301,85 @@ O `ended_at` que esse UPDATE grava é também o que faz um POST repetido bater n
   linhas antigas continuam no banco e continuam sendo lidas.
   Elas são separadas justamente para a pergunta "vídeo longo está comendo a
   margem?" ter onde ser respondida.
+
+## 8. O recorte: "do minuto tal ao tal"
+
+O caso que sempre existiu e nunca teve resposta: a transmissão do culto inteiro
+tem **duas horas**, e a pregação são **trinta minutos no meio**. Até aqui o
+produto recusava o vídeo com uma frase que empurrava o problema de volta —
+"procure o corte só da pregação" — para um corte que o canal pode nunca ter
+publicado.
+
+`/importar` tem dois campos opcionais, início e fim, e eles vão para
+`sessions.source_start_ms` / `source_end_ms` (migração 0060).
+
+### Não custa uma chamada a mais
+
+Isto é o ponto econômico do recurso. Pedimos a legenda com `text=false`, e ela
+já vem em **segmentos com `offset` e `duration`** — era assim antes do recorte,
+porque é de onde sai a duração do vídeo. O recorte é um **filtro sobre a lista
+que já está na memória**: mesma chamada, mesmo 1 crédito, mesmo preço de 30
+moedas.
+
+Um segmento entra quando **toca** a janela, não quando cabe inteiro nela: a
+frase que começa em 11:58 e termina em 12:02 pertence à pregação, e descartá-la
+cortaria a abertura no meio.
+
+### Onde o recorte MORA, e por quê
+
+No **banco**, na linha da sessão, e não no corpo do `POST /api/youtube/import`.
+A linha nasce antes da importação (o formulário cria, `/importar/:id` dispara),
+e essa página é recarregável e sobrevive a um "atrás" do navegador — ela
+redispara a rota ao montar. Um recorte que morasse no estado do React viraria,
+num reload, **o vídeo inteiro importado pelo mesmo preço**, e ninguém
+perceberia até o resumo pronto falar de outra coisa.
+
+### O que ele muda no teto
+
+`YOUTUBE_MAX_DURATION_MS` passa a medir o TRECHO. Um vídeo de três horas com um
+recorte de quarenta minutos é aceito; o mesmo vídeo inteiro, não. É a leitura
+correta da regra que criou o teto (§4): o que cresce com a duração é a
+transcrição na entrada do resumo, e a legenda é preço fixo.
+
+`YOUTUBE_MIN_CLIP_MS` (1 minuto) existe para o dedo errado, não para o abuso. O
+piso de CONTEÚDO continua sendo `YOUTUBE_MIN_TRANSCRIPT_CHARS`, medido sobre o
+texto que o recorte devolveu.
+
+### A recusa nova
+
+`clip_empty`: o vídeo TEM legenda e a janela não pegou nada dela (um fim antes
+do início da fala, um "1:40:00" num vídeo de cinquenta minutos). É separada de
+`no_captions` porque a saída é outra — corrigir dois campos, não trocar de
+vídeo — e a tela oferece exatamente isso, um botão que volta ao formulário com
+o vídeo já preenchido.
+
+## 9. O endereço aceita o vídeo por parâmetro
+
+```
+/importar?url=https://youtu.be/XXXXXXXXXXX
+/importar?v=XXXXXXXXXXX
+/importar?text=<qualquer texto com o link no meio>
+/importar?url=…&inicio=12:00&fim=45:30
+```
+
+O caminho natural de um vídeo até o Scriba é **alguém mandando o link**, e até
+aqui esse alguém tinha de abrir o app, achar a porta e colar. Com o vídeo na
+URL, o próprio link vira o destino.
+
+- `text=` está aqui porque é o campo que a folha de compartilhamento do Android
+  entrega, e ele quase nunca vem limpo ("Assista isso: <link>").
+  `extractYoutubeUrl` acha o link no meio da frase.
+- O `t=` do próprio link do YouTube (`?t=930`, `?t=15m30s`) vira uma **sugestão
+  de início** do recorte, porque quem compartilha um vídeo parado num instante
+  quase sempre está apontando onde a pregação começa. Ele não entra na
+  `source_url`: a canonização existe para que o mesmo vídeo seja uma string só.
+- Parâmetro sem sentido é **ignorado**, nunca vira erro: quem chega por um link
+  torto vê o formulário vazio, que é o estado de sempre.
+
+**O que a URL NÃO faz é importar.** Ela preenche o campo; o botão continua
+sendo a única porta. A rota seguinte cobra 30 moedas, e um endereço que dispara
+sozinho transformaria um link colado num grupo — ou um prefetch do navegador —
+em débito na conta de quem abriu.
+
+Quando o `share_target` do manifest existir, é este endereço que ele alimenta,
+sem nada de novo do lado de cá.

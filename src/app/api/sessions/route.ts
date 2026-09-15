@@ -1,7 +1,7 @@
 import { NextResponse } from "next/server";
 import { z } from "zod";
 import { createEmptySession, SESSION_MODES } from "@/lib/db/sessions";
-import { parseYoutubeUrl } from "@/lib/domain/youtube";
+import { parseClipRange, parseYoutubeUrl } from "@/lib/domain/youtube";
 import { parseJsonBody } from "@/lib/http/validate";
 import { createLogger } from "@/lib/log";
 import { enforceRateLimit, RATE_LIMITS } from "@/lib/rate-limit";
@@ -21,6 +21,10 @@ const CreateSessionSchema = z
      * uma string e quem decide se ela é um vídeo é `parseYoutubeUrl`, o mesmo
      * parser que o diálogo usou para habilitar o botão. */
     sourceUrl: z.string().trim().max(2000).nullable().optional(),
+    /** O recorte, só no modo youtube. Ver `parseClipRange`, que é quem decide
+     * se o par faz sentido — o schema só garante que são inteiros de ms. */
+    startMs: z.number().int().min(0).nullable().optional(),
+    endMs: z.number().int().min(0).nullable().optional(),
   })
   .strict();
 
@@ -61,16 +65,36 @@ export async function POST(request: Request) {
   // diferentes joga fora a única chance de um dia perguntar "quantas pessoas
   // importaram este vídeo?".
   let sourceUrl: string | null = null;
+  // O recorte do vídeo, quando a pessoa pediu um trecho. Ele nasce JUNTO com a
+  // linha, e não no POST da importação, porque `/importar/:id` redispara a
+  // importação a cada reload: no corpo daquela rota, um "atrás" do navegador
+  // importaria o vídeo inteiro pelo mesmo preço. Ver a migração 0060.
+  let startMs: number | null = null;
+  let endMs: number | null = null;
   if (mode === "youtube") {
     const parsedUrl = body.sourceUrl ? parseYoutubeUrl(body.sourceUrl) : null;
     if (!parsedUrl) {
       return NextResponse.json({ error: "invalid_youtube_url" }, { status: 400 });
     }
     sourceUrl = parsedUrl.canonicalUrl;
+
+    const range = parseClipRange(body.startMs, body.endMs);
+    if (!range.ok) {
+      return NextResponse.json({ error: range.error }, { status: 400 });
+    }
+    startMs = range.clip?.startMs ?? null;
+    endMs = range.clip?.endMs ?? null;
   }
 
   try {
-    const id = await createEmptySession({ speakerName, speakerLocation, mode, sourceUrl });
+    const id = await createEmptySession({
+      speakerName,
+      speakerLocation,
+      mode,
+      sourceUrl,
+      sourceStartMs: startMs,
+      sourceEndMs: endMs,
+    });
     log.debug("created", { id, mode });
     return NextResponse.json({ id, mode });
   } catch (err) {

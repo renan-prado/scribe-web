@@ -30,6 +30,7 @@ import "server-only";
  * por MINUTO e volta assíncrono. Está fora, ver `transcript.ts`.
  */
 
+import type { YoutubeClip } from "@/lib/domain/youtube";
 import { serverEnv } from "@/lib/env/server";
 import { createLogger } from "@/lib/log";
 import type { YoutubeTranscriptResult } from "./transcript";
@@ -72,24 +73,65 @@ function asFiniteNumber(value: unknown): number {
  * que decide se ele cabe no teto e o que vai para `sessions.duration_ms`. A
  * alternativa era uma segunda chamada de metadados, custando um segundo
  * crédito por vídeo para saber algo que já veio junto.
+ *
+ * **E é o mesmo tempo que faz o RECORTE existir de graça.** Pedir "do minuto
+ * 12 ao 45" não é uma opção do provedor nem uma segunda chamada: a legenda
+ * inteira já veio, por 1 crédito fixo, e o recorte é um filtro sobre a lista
+ * que está na memória. Um segmento entra quando ele TOCA a janela, não quando
+ * cabe inteiro nela — a frase que começa em 11:58 e termina em 12:02 pertence
+ * à pregação, e descartá-la cortaria a abertura no meio.
+ *
+ * `fullDurationMs` é sempre o vídeo todo (é o que o log e um diagnóstico
+ * futuro querem saber); `durationMs` é o que foi de fato importado, e é ele
+ * que a rota compara com o teto e grava em `sessions.duration_ms`.
  */
-function foldSegments(segments: SupadataSegment[]): { text: string; durationMs: number } {
+function foldSegments(
+  segments: SupadataSegment[],
+  clip: YoutubeClip | null
+): { text: string; durationMs: number; fullDurationMs: number } {
   const parts: string[] = [];
-  let durationMs = 0;
+  let fullDurationMs = 0;
+  let firstMs: number | null = null;
+  let lastMs = 0;
+
+  const from = clip?.startMs ?? 0;
+  const to = clip?.endMs ?? Number.POSITIVE_INFINITY;
 
   for (const segment of segments) {
+    const start = asFiniteNumber(segment?.offset);
+    const end = start + asFiniteNumber(segment?.duration);
+    if (end > fullDurationMs) fullDurationMs = end;
+
+    if (end <= from || start >= to) continue;
+
     if (typeof segment?.text === "string") {
       const trimmed = segment.text.trim();
       if (trimmed) parts.push(trimmed);
     }
-    const end = asFiniteNumber(segment?.offset) + asFiniteNumber(segment?.duration);
-    if (end > durationMs) durationMs = end;
+    if (firstMs === null) firstMs = start;
+    if (end > lastMs) lastMs = end;
   }
 
-  return { text: parts.join(" ").replace(/\s+/g, " ").trim(), durationMs };
+  // A duração do trecho é medida pelos segmentos que SOBRARAM, não pela janela
+  // pedida: quem escreve "até 2:00:00" num vídeo de 50 minutos importou 50
+  // minutos, e é esse número que deve ir para a sessão e para o teto.
+  const durationMs = clip
+    ? firstMs === null
+      ? 0
+      : Math.max(0, lastMs - Math.max(from, firstMs))
+    : fullDurationMs;
+
+  return {
+    text: parts.join(" ").replace(/\s+/g, " ").trim(),
+    durationMs,
+    fullDurationMs,
+  };
 }
 
-export async function fetchSupadataTranscript(videoUrl: string): Promise<YoutubeTranscriptResult> {
+export async function fetchSupadataTranscript(
+  videoUrl: string,
+  clip: YoutubeClip | null
+): Promise<YoutubeTranscriptResult> {
   const apiKey = serverEnv.SUPADATA_API_KEY;
   if (!apiKey) {
     // Configuração ausente, não falha do usuário. A rota vira 503 e a tela diz
@@ -179,15 +221,24 @@ export async function fetchSupadataTranscript(videoUrl: string): Promise<Youtube
     };
   }
 
-  const { text, durationMs } = foldSegments(body.content as SupadataSegment[]);
-  if (!text) return { ok: false, error: "no_captions" };
+  const { text, durationMs, fullDurationMs } = foldSegments(
+    body.content as SupadataSegment[],
+    clip
+  );
+  // Sem recorte, texto vazio é vídeo sem legenda. COM recorte, a legenda
+  // existe e a janela é que caiu fora dela (o fim antes do início da fala, um
+  // "1:40:00" num vídeo de 50 minutos), e as duas coisas pedem frases
+  // diferentes na tela: "esse vídeo não tem legendas" mandaria a pessoa trocar
+  // de link quando o que ela precisa é corrigir dois campos.
+  if (!text) return { ok: false, error: clip ? "clip_empty" : "no_captions" };
 
-  log.debug("ok", { chars: text.length, durationMs, billed, lang: body.lang });
+  log.debug("ok", { chars: text.length, durationMs, fullDurationMs, billed, lang: body.lang });
 
   return {
     ok: true,
     text,
     lang: typeof body.lang === "string" ? body.lang : "pt",
     durationMs,
+    fullDurationMs,
   };
 }

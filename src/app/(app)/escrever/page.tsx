@@ -11,9 +11,14 @@ export const metadata: Metadata = { title: "Escrever" };
  *
  * **Ela não lê nada do servidor e não cria nada ao abrir.** A linha da sessão
  * nasce no primeiro salvamento (ver `useWrittenDraft`); criar aqui encheria a
- * Biblioteca de textos vazios de quem clicou no menu e desistiu. Até lá o
- * rascunho mora no IndexedDB do aparelho e a URL continua sendo esta — depois
- * do primeiro envio ela vira `/escrever/{id}` por um `replace`.
+ * Biblioteca de textos vazios de quem clicou no menu e desistiu.
+ *
+ * **O ID, esse, nasce na hora** — sorteado no aparelho pelo editor, que troca a
+ * URL para `/escrever/<id>` sem navegar. Então este endereço dura um instante,
+ * e é ele que garante que cada "Escrever" seja uma folha NOVA: enquanto o
+ * rascunho de um texto novo morava sob uma chave fixa, um salvamento que
+ * falhasse deixava o texto guardado ali e o próximo "Escrever" abria com ele
+ * dentro.
  *
  * **A barra é a do `/importar` e a do `/summary`**: um voltar no lugar do
  * hambúrguer, sem título. É uma tela de uma tarefa só, aberta a partir do

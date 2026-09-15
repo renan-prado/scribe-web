@@ -1,14 +1,16 @@
 "use client";
 
-import { AlertCircle, ArrowLeft } from "lucide-react";
+import { AlertCircle, ArrowLeft, Scissors } from "lucide-react";
+import Image from "next/image";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
-import { useCallback, useEffect, useRef, useState } from "react";
+import { type ReactNode, useCallback, useEffect, useRef, useState } from "react";
 import { YoutubeIcon } from "@/components/icons/YoutubeIcon";
 import { BillingDialog } from "@/features/billing/components/BillingDialog";
 import { COIN_COSTS } from "@/features/coins/pricing";
 import { useCoinsStore } from "@/features/coins/store";
 import { requestYoutubeImport } from "@/features/session/lib/api";
+import { formatTimecode, youtubeThumbnailUrl } from "@/lib/domain/youtube";
 import { createLogger } from "@/lib/log";
 import { cn } from "@/lib/utils";
 
@@ -28,12 +30,26 @@ const log = createLogger("session:youtube");
  * tem, ver o AGENTS.md da raiz). Uma barra teria de ser inventada, e barra
  * inventada que trava em 90% é pior que texto honesto. As frases avançam por
  * TEMPO e dizem o que está acontecendo de verdade, na ordem em que acontece.
+ *
+ * **O que ela mostra enquanto espera é o VÍDEO**: a miniatura (derivada do id,
+ * sem chamada nenhuma) e o título (que a página entrega em streaming, ver
+ * `importar/[id]/page.tsx`). Era a URL crua, que é a coisa menos legível que
+ * existe sobre um vídeo, e numa tela que fica minutos aberta ela não confirma
+ * o que está sendo importado — ela pede para a pessoa conferir onze caracteres
+ * de id.
  */
 
 type Props = {
   sessionId: string;
-  /** A URL do vídeo, para a tela mostrar o que está sendo importado. */
+  /** A URL do vídeo. Vira o `title` do link, não mais o texto da tela. */
   sourceUrl: string;
+  /** Para a miniatura, que é derivada dele e não custa rede. */
+  videoId: string;
+  /** O título do vídeo, em streaming a partir do servidor. Pode não vir. */
+  title: ReactNode;
+  /** O recorte, quando a pessoa pediu um trecho. Ver a migração 0060. */
+  startMs: number | null;
+  endMs: number | null;
 };
 
 /**
@@ -64,8 +80,13 @@ const ERROR_COPY: Record<string, { title: string; body: string; retry: boolean }
     retry: false,
   },
   video_too_long: {
-    title: "Esse vídeo é longo demais",
-    body: "Por enquanto a importação vai até 2 horas de vídeo. Se for uma transmissão de culto inteiro, procure o corte só da pregação.",
+    title: "Esse trecho é longo demais",
+    body: "A importação vai até 2 horas. Se for a transmissão de um culto inteiro, volte e diga do minuto tal ao tal: só a pregação é importada, pelo mesmo preço.",
+    retry: false,
+  },
+  clip_empty: {
+    title: "Esse trecho não tem fala",
+    body: "A legenda do vídeo existe, mas não há nada dentro do intervalo que você pediu. Confira o início e o fim, eles podem estar além do tempo do vídeo.",
     retry: false,
   },
   video_too_short: {
@@ -101,7 +122,7 @@ const FALLBACK_ERROR = {
   retry: true,
 };
 
-export function YoutubeImport({ sessionId, sourceUrl }: Props) {
+export function YoutubeImport({ sessionId, sourceUrl, videoId, title, startMs, endMs }: Props) {
   const router = useRouter();
   const [stepIndex, setStepIndex] = useState(0);
   const [error, setError] = useState<string | null>(null);
@@ -167,6 +188,13 @@ export function YoutubeImport({ sessionId, sourceUrl }: Props) {
     };
   }, [error]);
 
+  // O endereço do formulário com este vídeo (e o trecho atual) já preenchidos.
+  // Ver `importar/page.tsx`, que é quem lê estes parâmetros.
+  const adjustParams = new URLSearchParams({ url: sourceUrl });
+  if (startMs !== null) adjustParams.set("inicio", formatTimecode(startMs));
+  if (endMs !== null) adjustParams.set("fim", formatTimecode(endMs));
+  const adjustHref = `/importar?${adjustParams.toString()}`;
+
   if (error) {
     const copy =
       error === "insufficient_balance"
@@ -202,6 +230,20 @@ export function YoutubeImport({ sessionId, sourceUrl }: Props) {
             >
               Adicionar créditos
             </button>
+          ) : null}
+
+          {/* Os dois erros de TAMANHO têm uma saída melhor que "tente outro
+              link": voltar ao formulário com este mesmo vídeo e acertar o
+              trecho. É para isso que o `/importar` aceita o vídeo por
+              parâmetro. */}
+          {error === "video_too_long" || error === "clip_empty" ? (
+            <Link
+              href={adjustHref}
+              className="inline-flex w-full items-center justify-center gap-2 rounded-full scriba-cta bg-[image:var(--scriba-cta)] px-7 py-3.5 text-[15px] font-semibold text-scriba-cta-ink shadow-[0_10px_24px_var(--scriba-cta-shadow)] transition-colors focus-visible:outline-none focus-visible:ring-4 focus-visible:ring-scriba-blue/30"
+            >
+              <Scissors aria-hidden className="size-4" strokeWidth={2.2} />
+              Escolher o trecho
+            </Link>
           ) : null}
 
           {copy.retry ? (
@@ -253,13 +295,45 @@ export function YoutubeImport({ sessionId, sourceUrl }: Props) {
         <YoutubeIcon className="size-6" />
       </span>
 
-      <div className="flex flex-col gap-2">
+      <div className="flex w-full flex-col items-center gap-3">
         <h1 className="font-heading text-lg font-semibold text-scriba-ink">
           Importando do YouTube
         </h1>
-        <p className="break-all text-[12px] font-light leading-relaxed text-scriba-ink-mute">
-          {sourceUrl}
-        </p>
+
+        {/* A miniatura vem do id e entra com a página; `priority` porque ela é
+            o conteúdo desta tela, não uma imagem que aparece ao rolar. O 16/9
+            é fixo: `hqdefault` tem 480×360 (4/3) com barras, e o `object-cover`
+            corta as barras em vez de desenhá-las. */}
+        <a
+          href={sourceUrl}
+          target="_blank"
+          rel="noreferrer"
+          title={sourceUrl}
+          className="w-full max-w-[280px] overflow-hidden rounded-2xl bg-scriba-paper focus-visible:outline-none focus-visible:ring-4 focus-visible:ring-scriba-blue/30"
+        >
+          <Image
+            src={youtubeThumbnailUrl(videoId)}
+            alt=""
+            aria-hidden
+            width={480}
+            height={360}
+            priority
+            sizes="280px"
+            className="aspect-video w-full object-cover"
+          />
+        </a>
+
+        <div className="flex flex-col items-center gap-1">{title}</div>
+
+        {/* O recorte na tela é uma promessa sendo cumprida: quem pediu do
+            minuto 12 ao 45 precisa ver, antes de a moeda sair, que foi isso
+            que o Scriba entendeu. */}
+        {startMs !== null || endMs !== null ? (
+          <span className="inline-flex items-center gap-1.5 rounded-full bg-scriba-surface px-3 py-1 text-[12px] font-light text-scriba-ink-soft">
+            <Scissors aria-hidden className="size-3" strokeWidth={2.2} />
+            {formatTimecode(startMs ?? 0)} até {endMs === null ? "o fim" : formatTimecode(endMs)}
+          </span>
+        ) : null}
       </div>
 
       {/* `aria-live="polite"`: quem usa leitor de tela ouve cada etapa nova sem
