@@ -110,10 +110,13 @@ export const TOURS: Record<TourKey, TourDefinition> = {
      * um tour que não contava que escrever e importar existem, e o produto
      * inteiro está nessas três palavras.
      *
-     * O preço mudou de lugar junto. Na v1 ele aparecia uma vez, e só o da
-     * gravação, porque dizer os três dentro de um balão só seria uma tabela; com
-     * um balão por porta, cada preço cabe onde ele é a resposta à pergunta que
-     * acabou de nascer ("e este, quanto custa?").
+     * **E nenhum dos balões diz preço, nem o da gravação, que na v1 dizia.** Um
+     * balão por porta abriria lugar para os três — mas o que o tour tem a
+     * ensinar na primeira tela é que as três portas EXISTEM e o que cada uma
+     * faz. Preço é a segunda pergunta, e ela tem onde ser respondida na hora em
+     * que nasce: o saldo mora na barra, e o débito é anunciado no caminho de
+     * cada porta. Três tabelas de preço no primeiro minuto de alguém é a
+     * conversa de vendas antes da demonstração.
      */
     version: 2,
     label: "Biblioteca",
@@ -128,7 +131,7 @@ export const TOURS: Record<TourKey, TourDefinition> = {
          */
         id: "welcome",
         title: "Bem-vindo ao Scriba",
-        body: "Esta é a sua Biblioteca: toda pregação que você gravar, escrever ou importar fica guardada aqui. Em um minuto eu mostro o resto — dá para pular e rever depois, no seu perfil.",
+        body: "Esta é a sua Biblioteca: toda pregação que você gravar, escrever ou importar fica guardada aqui.",
       },
       {
         /**
@@ -187,21 +190,21 @@ export const TOURS: Record<TourKey, TourDefinition> = {
         anchor: '[data-tour="create-record"]',
         reveal: "create-dock",
         title: "Gravar",
-        body: "Deixe o aparelho gravando durante a pregação. No fim, o Scriba transcreve tudo e escreve o resumo para você. Custa 5 moedas por minuto iniciado, com a transcrição e o resumo já nesse preço.",
+        body: "Deixe o aparelho gravando durante a pregação. No fim, o Scriba transcreve tudo e escreve o resumo para você.",
       },
       {
         id: "create-write",
         anchor: '[data-tour="create-write"]',
         reveal: "create-dock",
         title: "Escrever",
-        body: "A folha em branco: aqui é você quem escreve, em blocos — título, passagem bíblica, frase de destaque, conclusão. É o único caminho do Scriba que não custa moeda nenhuma.",
+        body: "Escreva um resumo você mesmo, use nosso editor para organizar os pontos centrais de alguma reflexão ou pregação, e o Scriba guarda para você.",
       },
       {
         id: "create-import",
         anchor: '[data-tour="create-import"]',
         reveal: "create-dock",
         title: "Importar do YouTube",
-        body: "Cole o link de um culto que foi transmitido e a legenda do vídeo vira a transcrição — o mesmo resumo, sem gravar nada. São 30 moedas por vídeo, e dá para importar só o trecho da pregação.",
+        body: "Cole o link de um vídeo do YouTube e o Scriba transforma em transcrição e resumo.",
       },
     ],
   },
