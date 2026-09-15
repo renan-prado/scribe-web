@@ -6,22 +6,23 @@ import { INITIAL_COIN_BALANCE } from "@/features/coins/pricing";
 import { isCurrentUserPartner } from "@/lib/auth/require-partner";
 import { getCurrentAccount } from "@/lib/db/account";
 import { cn } from "@/lib/utils";
-import { ScribaLogo } from "@/shared/brand";
+import { ScribaMark } from "@/shared/brand";
 import { AccountMenu } from "./AccountMenu";
 import { TOPBAR_CHIP_CLASS } from "./chip";
 
 /**
- * A barra do topo do v2: o logotipo, o título, a busca.
+ * A barra do topo do v2: a pena, o título, a busca.
  *
  * Mora aqui, e não dentro de `home/`, porque a `/recording` usa a mesma:
  * são telas diferentes do mesmo produto, e um cabeçalho que muda de desenho ao
  * entrar na gravação faria a pessoa achar que saiu do app.
  *
- * **O canto esquerdo é a MARCA, e ela leva para a Biblioteca.** Ali houve um
+ * **O canto esquerdo é a PENA, sozinha e em cinza, e ela leva para a
+ * Biblioteca.** Ali houve um
  * hambúrguer, e a gaveta dele tinha quatro destinos: Biblioteca, Estudos,
  * Escrever e Importar do YouTube. Os dois últimos passaram para o `+` do
  * rodapé, que é onde se cria; os Estudos saíram da interface; e a Biblioteca
- * sozinha não é uma gaveta, é o logotipo — que é onde todo mundo já toca para
+ * sozinha não é uma gaveta, é a marca — que é onde todo mundo já toca para
  * voltar ao começo de um app. Uma gaveta com um item só é um clique cobrado
  * para mostrar o que o clique anterior já poderia ter feito.
  *
@@ -37,7 +38,7 @@ import { TOPBAR_CHIP_CLASS } from "./chip";
  * e um avatar que aparece e some conforme a tela obrigaria a decorar em qual
  * delas ele estava. Ver `AccountMenu`.
  *
- * **Com `backHref`, o canto esquerdo troca a marca por um VOLTAR** e o título
+ * **Com `backHref`, o canto esquerdo troca a pena por um VOLTAR** e o título
  * pode sumir — é a barra do `/summary`. Uma tela de leitura aberta a partir de
  * um cartão precisa do caminho de volta no lugar onde o polegar já procura,
  * que é o canto onde a marca estava; e repetir ali o título do sermão, que a
@@ -51,7 +52,7 @@ export async function TopBar({
 }: {
   /** Some no `/summary`: a própria página já é o título. */
   title?: string;
-  /** Quando passado, o logotipo vira um voltar para cá. */
+  /** Quando passado, a pena vira um voltar para cá. */
   backHref?: string;
   trailing?: ReactNode;
 }) {
@@ -94,18 +95,30 @@ export async function TopBar({
           <ArrowLeft className="size-5" strokeWidth={1.75} />
         </NavLink>
       ) : (
-        /* O logotipo é o alvo de toque, então ele mora dentro de um link de
-           40px de altura — a mesma caixa do chip do voltar e da lupa, que é o
-           que mantém a barra com a mesma altura em toda tela. Ele NÃO ganha o
-           disco `--v2-card` do chip: a marca não é um controle, e um logotipo
-           dentro de uma pastilha viraria mais um botão numa fileira deles. */
+        /* A PENA sozinha, e em cinza: sem a palavra e sem o gradiente do
+           `ScribaLogo`. O logotipo inteiro ali competia com o título da tela —
+           duas palavras no mesmo peso lado a lado, e a que importa é a que diz
+           onde você está. A pena basta para dizer de quem é o app, e em
+           `--v2-ink-mute` ela fica no plano em que uma marca fica: presente e
+           atrás do conteúdo. No toque ela acende até a tinta cheia.
+
+           Ela mora dentro de um link de 40px — a mesma caixa do chip do voltar
+           e da lupa, que é o que mantém a barra com a mesma altura em toda
+           tela. Mas NÃO ganha o disco `--v2-card` do chip: a marca não é um
+           controle, e dentro de uma pastilha ela viraria mais um botão numa
+           fileira deles.
+
+           O `aria-label` é da âncora porque a pena é `aria-hidden`: sem ele o
+           link ficaria sem nome nenhum, e o leitor de tela anunciaria só
+           "link". "Biblioteca" é para onde ele vai. */
         <NavLink
           href="/home"
+          aria-label="Biblioteca"
           spinner="none"
           contentClassName="inline-flex items-center"
-          className="inline-flex h-10 shrink-0 items-center rounded-full px-1 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-v2-ink-mute"
+          className="inline-flex size-10 shrink-0 items-center justify-center rounded-full text-v2-ink-mute transition-colors hover:text-v2-ink focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-v2-ink-mute"
         >
-          <ScribaLogo size={24} textClassName="text-[19px]" />
+          <ScribaMark size={26} />
         </NavLink>
       )}
       {/* Sem peso: o título é a placa da tela, e em negrito ele competia com o

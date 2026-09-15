@@ -327,7 +327,7 @@ bloco `bg-scriba-yellow`.
 **Não há barra de navegação em `src/shared/`.** Havia `AppNav` (desktop),
 `MobileBottomNav` (celular), `nav.ts` (qual item acende) e `NavGlyphs.tsx` (os
 cinco ícones) — as quatro saíram junto com a moldura antiga. Quem navega hoje
-tem o logotipo da `TopBar` (que leva à Biblioteca) e o menu da conta no avatar;
+tem a pena da `TopBar` (que leva à Biblioteca) e o menu da conta no avatar;
 quem CRIA — gravar, escrever, importar — usa o `+` do `CreateDock`, que mora na
 página da Biblioteca. A gaveta do hambúrguer que ficava entre os dois durou uma
 versão: ela existia para quatro destinos, e sobrou com um.

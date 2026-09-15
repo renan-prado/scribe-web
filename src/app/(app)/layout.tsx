@@ -32,7 +32,7 @@ import { APP_VIEWPORT } from "@/shared/viewport";
  * Instalado na tela inicial, o Scriba desenha por baixo da barra de status do
  * sistema — o `viewport-fit=cover` do root layout é o que pede isso, e quem
  * pede também paga: sem o respiro, a hora e a bateria do iPhone pousavam em
- * cima do logotipo da barra. O inset vale ZERO numa aba comum de navegador, então a
+ * cima da pena da barra. O inset vale ZERO numa aba comum de navegador, então a
  * conta é a mesma folga de sempre no desktop e a altura exata do recorte no
  * aparelho de quem instalou. Ele fica no LAYOUT, e não em cada tela: é do
  * aparelho, não da página, e repetido em seis lugares bastaria esquecer um

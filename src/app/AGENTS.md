@@ -122,15 +122,22 @@ depende da tela (a Biblioteca passa o gatilho da busca, a gravação passa o
 relógio), e, à direita dele, o AVATAR, que é da barra e aparece em toda tela que
 a monte.
 
-**O canto esquerdo é o LOGOTIPO, e ele leva para a Biblioteca.** Ali houve um
+**O canto esquerdo é a PENA, e ela leva para a Biblioteca.** Ali houve um
 hambúrguer com uma gaveta de quatro destinos; Escrever e Importar passaram para
 o `+` do rodapé (é lá que se cria), os Estudos saíram da interface, e a
 Biblioteca sozinha não é uma gaveta — é a marca, que é onde todo mundo já toca
-para voltar ao começo de um app. O logotipo não ganha o chip de `chip.ts`: a
-marca não é um controle, e dentro de uma pastilha ela viraria mais um botão
-numa fileira deles.
+para voltar ao começo de um app.
 
-**Com `backHref` ela vira a barra do `/summary`**: o logotipo dá lugar a um
+É a pena SOZINHA (`ScribaMark`), em `--v2-ink-mute`, e não o `ScribaLogo`
+inteiro: com a palavra e o gradiente, o canto esquerdo competia com o título da
+tela — duas palavras no mesmo peso lado a lado, e a que importa é a que diz
+onde você está. Em cinza a marca fica no plano em que uma marca fica, presente
+e atrás do conteúdo; no toque ela acende até a tinta cheia. Ela também não
+ganha o chip de `chip.ts`: a marca não é um controle, e dentro de uma pastilha
+viraria mais um botão numa fileira deles. O `aria-label` é da ÂNCORA, porque a
+pena é `aria-hidden` — sem ele o link não teria nome nenhum.
+
+**Com `backHref` ela vira a barra do `/summary`**: a pena dá lugar a um
 voltar e o título some — a página inteira é o título do sermão, repeti-lo na
 barra seria dizê-lo duas vezes. O avatar não muda. Quem monta a barra lá é a
 página, e ela entra no `SavedSessionView` por um slot `header`, porque aquela
@@ -396,7 +403,7 @@ tinha quatro destinos (Biblioteca, Estudos, Escrever, Importar do YouTube) e a
 forma da sidebar do `/admin` — marca em cima, destinos no meio, conta no
 rodapé. Dos quatro, dois eram CRIAÇÃO e foram para o `+` do rodapé, que é o
 lugar onde já se tocava para criar; um saiu do produto; e o que sobrou é a tela
-onde se cai ao entrar, que o logotipo alcança sem gaveta nenhuma. Um painel de
+onde se cai ao entrar, que a pena da barra alcança sem gaveta nenhuma. Um painel de
 tela inteira para um destino é um toque cobrado para mostrar o que o toque
 anterior já poderia ter feito.
 

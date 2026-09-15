@@ -46,7 +46,7 @@ const DATE_FMT = new Intl.DateTimeFormat("pt-BR", {
  * dele, não no layout, exatamente para não vazar para cá.
  *
  * **O cabeçalho é a MESMA `TopBar` da Biblioteca**, com duas diferenças que
- * são a tela: o logotipo vira um voltar para `/home` e o título some — a
+ * são a tela: a pena vira um voltar para `/home` e o título some — a
  * página inteira é o título do sermão, duas linhas abaixo. A conta fica onde
  * sempre esteve. Antes daqui saía um link "Voltar" de 12px, e abrir um cartão
  * trocava o cabeçalho do app por outro.
