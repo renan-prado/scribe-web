@@ -24,6 +24,7 @@ import { SummaryView } from "@/features/session/components/SummaryView";
 import { TitleDialog } from "@/features/session/components/TitleDialog";
 import { requestLocationSuggestions, requestSpeakerSuggestions } from "@/features/session/lib/api";
 import { initialsOf } from "@/features/session/lib/text";
+import type { SessionMode } from "@/lib/domain/session";
 import type { SummaryPayload } from "@/lib/domain/summary";
 import { cn } from "@/lib/utils";
 
@@ -81,6 +82,18 @@ type SavedSessionViewProps = {
    * `createdAtShortLabel`, "6 set" em vez de "06 de set. de 2026".
    */
   meta?: "full" | "compact";
+  /**
+   * Como esta sessão nasceu. Só `"manual"` muda alguma coisa aqui, e muda
+   * três: o menu ganha "Editar o texto", perde "Reprocessar" e perde "Algo
+   * está errado".
+   *
+   * Reprocessar refaz o resumo A PARTIR DA TRANSCRIÇÃO, e não há transcrição —
+   * a chamada custaria 15 moedas para apagar o que a pessoa escreveu e pôr no
+   * lugar um resumo de um texto vazio. "Algo está errado" audita a IA contra a
+   * transcrição, e aqui não houve IA: o alerta apontaria o dedo para o próprio
+   * autor.
+   */
+  mode?: SessionMode;
 };
 
 export function SavedSessionView({
@@ -98,6 +111,7 @@ export function SavedSessionView({
   canGenerateStudy,
   header,
   meta = "full",
+  mode = "audio",
 }: SavedSessionViewProps) {
   const [transcriptOpen, setTranscriptOpen] = useState(false);
   const [titleDialogOpen, setTitleDialogOpen] = useState(false);
@@ -165,6 +179,7 @@ export function SavedSessionView({
   }
 
   const initials = initialsOf(speakerName);
+  const written = mode === "manual";
 
   return (
     // `pt-2`, e não o `py-8` de antes: a barra do topo encosta no alto da tela
@@ -223,9 +238,10 @@ export function SavedSessionView({
               hasTranscript={transcript.length > 0}
               onOpenTranscript={() => setTranscriptOpen(true)}
               onDelete={() => setDeleteOpen(true)}
-              onReprocess={summary ? handleReprocess : undefined}
+              onReprocess={summary && !written ? handleReprocess : undefined}
               reprocessing={reprocessing}
-              onReportHallucination={() => setReportOpen(true)}
+              onReportHallucination={written ? undefined : () => setReportOpen(true)}
+              editHref={written ? `/escrever/${id}` : undefined}
             />
           </div>
         </div>
@@ -287,7 +303,11 @@ export function SavedSessionView({
               </p>
             ) : null}
           </div>
-          {summary ? (
+          {/* Gerar estudo pede transcrição, e um texto escrito não tem: a rota
+              recusaria com `empty_transcript` depois de o botão prometer. É
+              decisão do v1 — se o estudo passar a se ancorar nos próprios
+              blocos um dia, o botão volta aqui. */}
+          {summary && !written ? (
             <DeepenButton
               sessionId={id}
               hasDeepening={hasDeepening}
@@ -334,8 +354,12 @@ export function SavedSessionView({
       <ConfirmDialog
         open={deleteOpen}
         onOpenChange={setDeleteOpen}
-        title="Excluir este resumo?"
-        description="O resumo e a transcrição desta gravação serão apagados permanentemente. Esta ação não pode ser desfeita."
+        title={written ? "Excluir este texto?" : "Excluir este resumo?"}
+        description={
+          written
+            ? "Este texto será apagado permanentemente. Esta ação não pode ser desfeita."
+            : "O resumo e a transcrição desta gravação serão apagados permanentemente. Esta ação não pode ser desfeita."
+        }
         confirmLabel="Excluir"
         pendingLabel="Excluindo…"
         onConfirm={handleDelete}

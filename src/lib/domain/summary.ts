@@ -110,3 +110,132 @@ export function parseSummaryFromLLM(content: string, phase: SummaryPhase): Summa
 
   return { thinking, title, shortSummary, blocks };
 }
+
+/**
+ * Os blocos que uma pessoa pode ESCREVER à mão em `/escrever`, e os tetos de
+ * tamanho do que ela manda.
+ *
+ * É um subconjunto do vocabulário acima, e a diferença não é arbitrária:
+ *
+ * - **`example` fica de fora.** O rótulo dele na tela é "Exemplo do pregador",
+ *   e num texto que a própria pessoa escreveu não há pregador a citar.
+ * - **Não há um terceiro nível de título.** O produto desenha DOIS pesos
+ *   (`h1` a 22px bold, `h2` a 18px semibold) e um terceiro cairia entre o `h2`
+ *   e o parágrafo, indistinguível a um braço de distância no celular, num tipo
+ *   novo que os dois renderizadores (resumo e estudo) teriam de aprender para
+ *   um modelo que nunca vai emiti-lo.
+ * - **A "ideia central" NÃO é bloco**, e por isso não está nesta lista: ela é
+ *   o `shortSummary` do payload, o que aparece no cartão da Biblioteca e na
+ *   busca. No editor ela é campo fixo no topo. O que fecha o texto, esse sim,
+ *   é o bloco `conclusion`, e os dois já vestem o mesmo cartão na leitura
+ *   (ver `LeadIdea`).
+ *
+ * Os tetos existem porque este payload vem do CLIENTE, e é o único do produto
+ * que vem. Um resumo gerado nasce dentro do servidor; este chega por POST, e
+ * sem limite uma aba poderia empurrar megabytes de jsonb para a linha.
+ */
+export const WRITTEN_BLOCK_TYPES = [
+  "h1",
+  "h2",
+  "paragraph",
+  "highlight",
+  "quote",
+  "bibleQuote",
+  "conclusion",
+] as const;
+
+export type WrittenBlockType = (typeof WRITTEN_BLOCK_TYPES)[number];
+
+export const WRITTEN_LIMITS = {
+  title: 200,
+  shortSummary: 600,
+  /** Um parágrafo folgado. Quem precisa de mais está escrevendo dois. */
+  blockText: 5000,
+  reference: 200,
+  author: 120,
+  /** Um sermão organizado à mão passa longe disto. */
+  blocks: 300,
+} as const;
+
+const WrittenBlockSchema = z.discriminatedUnion("type", [
+  z.object({ type: z.literal("h1"), text: z.string().max(WRITTEN_LIMITS.blockText) }),
+  z.object({ type: z.literal("h2"), text: z.string().max(WRITTEN_LIMITS.blockText) }),
+  z.object({ type: z.literal("paragraph"), text: z.string().max(WRITTEN_LIMITS.blockText) }),
+  z.object({ type: z.literal("highlight"), text: z.string().max(WRITTEN_LIMITS.blockText) }),
+  z.object({
+    type: z.literal("quote"),
+    text: z.string().max(WRITTEN_LIMITS.blockText),
+    author: z.string().max(WRITTEN_LIMITS.author).optional(),
+  }),
+  z.object({
+    type: z.literal("bibleQuote"),
+    reference: z.string().max(WRITTEN_LIMITS.reference),
+    // Vazio, e é assim de propósito: com uma faixa de versículos o
+    // `BlockRenderer` IGNORA `text` e busca a NVI na hora de ler. Guardar uma
+    // cópia do texto bíblico no jsonb seria uma segunda fonte para a mesma
+    // passagem, que envelhece sozinha.
+    text: z.string().max(WRITTEN_LIMITS.blockText),
+  }),
+  z.object({ type: z.literal("conclusion"), text: z.string().max(WRITTEN_LIMITS.blockText) }),
+]);
+
+export type WrittenBlock = z.infer<typeof WrittenBlockSchema>;
+
+export const WrittenSummarySchema = z.object({
+  title: z.string().max(WRITTEN_LIMITS.title).default(""),
+  shortSummary: z.string().max(WRITTEN_LIMITS.shortSummary).default(""),
+  blocks: z.array(WrittenBlockSchema).max(WRITTEN_LIMITS.blocks).default([]),
+});
+
+export type WrittenSummary = z.infer<typeof WrittenSummarySchema>;
+
+/**
+ * O que o editor mandou, virado no payload que o resto do produto lê.
+ *
+ * `thinking` nasce vazio e continua vazio: ele é o rascunho do MODELO antes de
+ * escrever o resumo, e não existe quando não houve modelo. Blocos sem conteúdo
+ * são descartados aqui, e não na tela: o editor mantém um bloco vazio enquanto
+ * a pessoa pensa no que escrever, e salvá-lo faria a leitura mostrar um
+ * parágrafo em branco no meio do texto.
+ */
+export function writtenToPayload(written: WrittenSummary): SummaryPayload {
+  const blocks: SummaryBlock[] = [];
+  for (const b of written.blocks) {
+    if (b.type === "bibleQuote") {
+      const reference = b.reference.trim();
+      if (!reference) continue;
+      blocks.push({ type: "bibleQuote", reference, text: b.text.trim() });
+      continue;
+    }
+    const text = b.text.trim();
+    if (!text) continue;
+    if (b.type === "quote") {
+      const author = b.author?.trim();
+      blocks.push(author ? { type: "quote", text, author } : { type: "quote", text });
+      continue;
+    }
+    blocks.push({ type: b.type, text });
+  }
+  return {
+    thinking: "",
+    title: written.title.trim(),
+    shortSummary: written.shortSummary.trim(),
+    blocks,
+  };
+}
+
+/** O caminho de volta: um payload salvo reaberto no editor. */
+export function payloadToWritten(payload: SummaryPayload | null): WrittenSummary {
+  if (!payload) return { title: "", shortSummary: "", blocks: [] };
+  const blocks: WrittenBlock[] = [];
+  for (const b of payload.blocks) {
+    // Um tipo que o editor não sabe desenhar é DESCARTADO na abertura, pela
+    // mesma porta por onde os blocos mortos somem da leitura. Hoje isso não
+    // acontece — só uma sessão `manual` abre aqui, e ela só tem o que este
+    // editor escreveu —, e é o que mantém verdadeira a promessa de que salvar
+    // grava exatamente o que está na tela.
+    if (!(WRITTEN_BLOCK_TYPES as readonly string[]).includes(b.type)) continue;
+    blocks.push(b as WrittenBlock);
+  }
+  return { title: payload.title, shortSummary: payload.shortSummary, blocks };
+}

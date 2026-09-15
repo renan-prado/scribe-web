@@ -1,6 +1,15 @@
 "use client";
 
-import { FileText, MoreVertical, Pencil, RefreshCw, Trash2, TriangleAlert } from "lucide-react";
+import {
+  FileText,
+  MoreVertical,
+  Pencil,
+  PenLine,
+  RefreshCw,
+  Trash2,
+  TriangleAlert,
+} from "lucide-react";
+import Link from "next/link";
 import {
   DropdownMenu,
   DropdownMenuContent,
@@ -33,6 +42,12 @@ type SessionMenuProps = {
    * Diferente de `onDelete`: aquele apaga um resumo já salvo.
    */
   onDiscard?: () => void;
+  /**
+   * Abrir o editor de blocos. Só existe numa sessão `manual`: as outras foram
+   * escritas pela IA sobre uma transcrição, e o editor fala um vocabulário
+   * menor que o delas. Ver `app/(app)/escrever/[id]/page.tsx`.
+   */
+  editHref?: string;
 };
 
 const REPROCESS_COST = COIN_COSTS.reprocessSummary;
@@ -46,6 +61,7 @@ export function SessionMenu({
   reprocessing,
   onReportHallucination,
   onDiscard,
+  editHref,
 }: SessionMenuProps) {
   const balance = useCoinsStore((s) => s.balance);
   const insufficient = balance !== null && balance < REPROCESS_COST;
@@ -66,6 +82,12 @@ export function SessionMenu({
         <MoreVertical className="size-4" />
       </DropdownMenuTrigger>
       <DropdownMenuContent align="end" className="w-56">
+        {editHref ? (
+          <DropdownMenuItem render={<Link href={editHref} />} className="gap-2">
+            <PenLine className="size-4" />
+            Editar o texto
+          </DropdownMenuItem>
+        ) : null}
         {onEdit ? (
           <DropdownMenuItem onClick={onEdit} className="gap-2">
             <Pencil className="size-4" />
@@ -123,7 +145,11 @@ export function SessionMenu({
             <DropdownMenuSeparator />
             <DropdownMenuItem variant="destructive" onClick={onDelete} className="gap-2">
               <Trash2 className="size-4" />
-              Excluir resumo
+              {/* "Excluir resumo" seria errado no texto escrito à mão: ali não
+                  há um resumo DE alguma coisa, o texto é a coisa. O mesmo item
+                  apaga a mesma linha nos dois casos; só o nome muda, e ele
+                  muda porque quem lê a tela chama aquilo de nomes diferentes. */}
+              {editHref ? "Excluir este texto" : "Excluir resumo"}
             </DropdownMenuItem>
           </>
         ) : null}

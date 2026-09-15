@@ -6,6 +6,15 @@ estudo, a importação do YouTube, os cartões da Biblioteca e a busca das lista
 **O GRAVADOR não mora aqui.** Ele é `src/app/recording/`, e é uma tela só
 (`AudioStudio` + `useAudioCapture`). Ver `src/app/AGENTS.md`.
 
+**O EDITOR também não.** `src/app/(app)/escrever/` é a terceira porta de entrada
+de uma sessão, a que a pessoa escreve à mão (modo `manual`). Ele mora lá pela
+mesma razão do gravador: é uma tela de CRIAÇÃO, e esta pasta é tudo o que vem
+depois de a sessão existir. Ele escreve o mesmo `SummaryPayload` que o resumo
+gerado, então tudo aqui o lê sem saber que ele existe — com uma exceção, o
+`SavedSessionView`, que precisa saber que uma sessão `manual` não tem
+transcrição (some "Ler transcrição", "Reprocessar", "Algo está errado" e o
+"Gerar estudo"). Ver `src/app/AGENTS.md`.
+
 Esta pasta já foi o dobro do tamanho: ela continha três telas de captura, os
 três pipelines de enriquecimento ao vivo, o feed que eles alimentavam e a fila
 de chunks que os movia. Nada disso existe — o produto é gravar, resumir e, se a

@@ -115,6 +115,7 @@ const KNOWN_APP_PREFIXES = [
   "/recording",
   "/summary",
   "/studies",
+  "/escrever",
   "/importar",
   "/profile",
   "/indicar",

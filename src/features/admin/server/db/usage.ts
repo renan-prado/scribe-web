@@ -245,13 +245,20 @@ const INTERNAL_ROUTES = new Set(["admin-insights"]);
 const LEGACY_ROUTE_BUCKET = "outras";
 const LIVE_ROUTES: ReadonlySet<string> = new Set(USAGE_ROUTES);
 
-const ACTION_BY_MODE: Record<SessionMode, BillableActionKey> = {
+const ACTION_BY_MODE: Record<SessionMode, UsageActionKey> = {
   audio: "recording",
   // A importação do YouTube não precisa de uma lista de rotas própria como o
   // estudo e o reprocessamento acima: as rotas dela sempre trazem sessionId, e
   // o MODO da sessão já é o discriminador exato. `final-summary-youtube` e
   // companhia caem aqui pelo caminho normal.
   youtube: "youtube",
+  // O texto escrito à mão não chama modelo nenhum, então o caso normal é este
+  // mapa nunca ser consultado com `manual`. `unbilled` é a resposta certa para
+  // quando ele for: uma linha de custo atrás de uma sessão que não cobrou nada
+  // é, por definição, gasto sem cobrança, e é isso que aquela linha mostra.
+  // Inventar uma ação cobrável aqui faria o custo por moeda de uma AÇÃO PAGA
+  // engordar com gasto que não é dela.
+  manual: UNBILLED_ACTION_KEY,
 };
 
 const ACTION_BY_REASON = new Map<string, BillableActionKey>(

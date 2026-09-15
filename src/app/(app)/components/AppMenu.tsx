@@ -1,6 +1,6 @@
 "use client";
 
-import { BookOpen, Library, Menu, X } from "lucide-react";
+import { BookOpen, Library, Menu, PenLine, X } from "lucide-react";
 import type { ReactNode } from "react";
 import { useState } from "react";
 import { YoutubeIcon } from "@/components/icons/YoutubeIcon";
@@ -27,8 +27,8 @@ import { TOPBAR_CHIP_CLASS } from "./chip";
  * - **O logotipo no topo** é o que diz onde a gaveta pertence. Ela abre por
  *   cima da tela inteira, e um retângulo de links sem marca poderia ser de
  *   qualquer app.
- * - **Três destinos, e só os do produto**: Biblioteca (o `/home`, o acervo),
- *   Estudos e Importar do YouTube. Perfil, admin e área do parceiro saíram
+ * - **Quatro destinos, e só os do produto**: Biblioteca (o `/home`, o acervo),
+ *   Estudos, Escrever e Importar do YouTube. Perfil, admin e área do parceiro saíram
  *   daqui: são a CONTA, e a conta agora tem um lugar só (ver `AccountMenu`).
  *   Com "Perfil" nos dois lugares, a mesma tela apareceria duas vezes na mesma
  *   gaveta.
@@ -40,7 +40,14 @@ import { TOPBAR_CHIP_CLASS } from "./chip";
  * O saldo foi junto para dentro do menu da conta. Ele era a segunda coisa que
  * a gaveta dizia, e passou a ser a primeira que o menu diz.
  *
- * Os três destinos apontam para as telas de hoje. Os endereços antigos
+ * **"Escrever" fica junto de "Importar", e as duas depois das listas.** As
+ * duas criam uma sessão sem passar pelo microfone, e a Biblioteca e os Estudos
+ * são onde se LÊ o que já existe — o menu é lido de cima para baixo como "o
+ * que eu tenho" e depois "o que eu posso criar". E, como a importação,
+ * escrever não entra pelo botão de gravar: aquele botão liga o microfone e
+ * cobra por minuto.
+ *
+ * Os destinos apontam para as telas de hoje. Os endereços antigos
  * continuam existindo, mas só para responder 308 (ver `app/AGENTS.md`).
  */
 type Props = {
@@ -145,6 +152,17 @@ export function AppMenu({
               onNavigate={() => setOpen(false)}
             >
               Estudos
+            </MenuItem>
+            {/* Escrever não custa moeda nenhuma, e por isso não leva a
+                pastilha de preço que os caminhos pagos levariam: não há STT
+                nem chamada de modelo em lugar nenhum dele. Ver
+                `lib/domain/session.ts`. */}
+            <MenuItem
+              href="/escrever"
+              icon={<PenLine className="size-5" />}
+              onNavigate={() => setOpen(false)}
+            >
+              Escrever
             </MenuItem>
             {/* A importação entra pelo MENU, e não pelo botão de gravar: aquele
                 botão liga o microfone e cobra por minuto, este traz uma legenda

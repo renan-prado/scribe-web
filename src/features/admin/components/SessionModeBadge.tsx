@@ -12,6 +12,11 @@ import type { SessionMode } from "@/lib/domain/session";
 const STYLES: Record<SessionMode, { label: string; className: string }> = {
   audio: { label: "Gravação", className: "bg-scriba-cream text-scriba-cream-accent" },
   youtube: { label: "YouTube", className: "bg-scriba-mint text-scriba-mint-dark" },
+  // O texto escrito à mão. A pílula existe aqui apesar de ele não gerar custo
+  // nenhum: as duas telas que a usam listam SESSÕES, não chamadas, e uma
+  // sessão sem pílula se lê como "sem modo", que é o erro que este componente
+  // nasceu para corrigir.
+  manual: { label: "Escrito", className: "bg-scriba-lilac text-scriba-lilac-ink" },
 };
 
 export function SessionModeBadge({ mode }: { mode: SessionMode | null }) {

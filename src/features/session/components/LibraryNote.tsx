@@ -1,6 +1,8 @@
+import { PenLine } from "lucide-react";
 import { MicGlyph } from "@/components/icons/MicGlyph";
 import { YoutubeIcon } from "@/components/icons/YoutubeIcon";
 import type { SessionListItem } from "@/lib/db/sessions";
+import type { SessionMode } from "@/lib/domain/session";
 import { shortDate } from "../lib/formatting";
 import { PostItNote } from "./PostItNote";
 
@@ -34,11 +36,12 @@ import { PostItNote } from "./PostItNote";
  * apagar da `/home` e o `deleteAction` que descia página adentro.
  *
  * **O MODO é a quarta coisa**, e ele fica no rodapé, à esquerda da data:
- * microfone para o que foi gravado, o play para o que veio do YouTube, no tom
- * apagado da própria data — informação passiva, não pastilha. Marcar só o
- * YouTube, como foi feito primeiro, era marcar a EXCEÇÃO: o cartão sem glifo
- * não dizia "gravado", dizia "não é YouTube", que é uma ausência, e ausência
- * não se lê.
+ * microfone para o que foi gravado, o play para o que veio do YouTube, a caneta
+ * para o que foi escrito à mão, no tom apagado da própria data — informação
+ * passiva, não pastilha. Marcar só o YouTube, como foi feito primeiro, era
+ * marcar a EXCEÇÃO: o cartão sem glifo não dizia "gravado", dizia "não é
+ * YouTube", que é uma ausência, e ausência não se lê. Com três modos, esse
+ * raciocínio deixa de ser preferência e vira necessidade.
  */
 type Props = {
   session: SessionListItem;
@@ -49,6 +52,12 @@ type Props = {
   /** Para onde o cartão aponta. Toda sessão salva abre no resumo; quem passa a
    * função é quem sabe o prefixo da rota. */
   buildHref?: (id: string) => string;
+};
+
+const MODE_LABELS: Record<SessionMode, string> = {
+  audio: "Gravada pelo microfone",
+  youtube: "Importada de um vídeo do YouTube",
+  manual: "Escrita por você",
 };
 
 export function LibraryNote({ session: s, now, buildHref = (id) => `/summary/${id}` }: Props) {
@@ -68,13 +77,7 @@ export function LibraryNote({ session: s, now, buildHref = (id) => `/summary/${i
               `aria-label` sem `role="img"` é silenciado por boa parte dos
               leitores de tela. Com o wrapper, os dois glifos são anunciados do
               mesmo jeito. */}
-          <span
-            role="img"
-            aria-label={
-              s.mode === "youtube" ? "Importada de um vídeo do YouTube" : "Gravada pelo microfone"
-            }
-            className="flex shrink-0"
-          >
+          <span role="img" aria-label={MODE_LABELS[s.mode]} className="flex shrink-0">
             {/* O ACERTO DE ALTURA é de cada glifo, e os dois números são
                 diferentes de propósito.
 
@@ -94,6 +97,15 @@ export function LibraryNote({ session: s, now, buildHref = (id) => `/summary/${i
                 do YouTube ficava ~1,1px acima do miolo dos dígitos. */}
             {s.mode === "youtube" ? (
               <YoutubeIcon className="size-3.5 -translate-y-[0.5px]" />
+            ) : s.mode === "manual" ? (
+              /* A caneta é de CONTORNO, ao contrário dos dois vizinhos, que são
+                 tinta cheia — e o `strokeWidth` sobe de 2 para 2.25 para
+                 compensar: um traço de 1,5px a 14px de altura fica visivelmente
+                 mais claro que um glifo preenchido do mesmo tamanho, e a coluna
+                 de ícones do rodapé passaria a ter um item desbotado. A descida
+                 é a do microfone, não a do YouTube: como ele, a caneta é uma
+                 diagonal estreita, e não um retângulo de aresta reta. */
+              <PenLine className="-translate-y-[1.5px] size-3.5" strokeWidth={2.25} />
             ) : (
               /* O `MicGlyph`, o MESMO microfone do botão de gravar, e não o
                  `Mic` do lucide: o glifo que a pessoa aperta para gravar e o

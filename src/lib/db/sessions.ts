@@ -374,7 +374,7 @@ export async function deleteSession(id: string): Promise<void> {
 export async function updateSessionSummary(
   id: string,
   summary: SummaryPayload,
-  opts: { keepTitle?: boolean } = {}
+  opts: { keepTitle?: boolean; markEnded?: boolean } = {}
 ): Promise<void> {
   const supabase = await createClient();
   const patch: Record<string, unknown> = {
@@ -382,6 +382,14 @@ export async function updateSessionSummary(
     final_summary: summary,
   };
   if (!opts.keepTitle) patch.title = summary.title || null;
+  // `markEnded` é do modo `manual`, e não tem nada a ver com reprocessar: uma
+  // sessão escrita à mão nasce por esta função, não por `updateSessionFinal`,
+  // e sem carimbar `ended_at` ela ficaria para sempre na faixa "Gravações em
+  // aberto" do `/home`, oferecendo continuar ou apagar uma gravação que nunca
+  // existiu. É `now()` a cada salvamento, e não só no primeiro, porque a
+  // coluna responde "quando este texto ficou pronto", e cada salvamento move
+  // essa resposta.
+  if (opts.markEnded) patch.ended_at = new Date().toISOString();
   const { error } = await supabase.from("sessions").update(patch).eq("id", id);
   if (error) throw new Error(`updateSessionSummary failed: ${error.message}`);
 }

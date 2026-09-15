@@ -85,6 +85,7 @@ export default async function V2SummaryPage({ params }: PageProps) {
         hasDeepening={deepeningExists}
         canGenerateStudy={canGenerateStudy}
         meta="compact"
+        mode={session.mode}
       />
       {/* A pesquisa da 1ª, 3ª e 8ª gravação, e a apresentação da tela. As duas
           disputam o mesmo espaço, e quem cede é a pesquisa: enquanto o tour

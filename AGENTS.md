@@ -47,6 +47,15 @@ separador que pode ser a LETRA `I`, e `author_name` do oEmbed é a IGREJA, não 
 autor. `src/features/session/server/youtube/metadata.ts` separa os três; falha dele devolve o título
 cru, e em nenhum caminho o canal vira `speaker_name`. Ver `docs/youtube.md` §3.
 
+**E um terceiro modo, que não captura NEM gera: `manual`.** Em `/escrever` a
+pessoa digita o resumo ela mesma, num editor de blocos com o mesmo vocabulário
+do resumo gerado — título, subtítulo, parágrafo, passagem bíblica, frase de
+destaque, citação e conclusão. É o único caminho do produto que **não custa
+moeda**, porque não há STT nem chamada de modelo em lugar nenhum dele; o
+trabalho foi todo de quem escreveu. Uma sessão assim não tem transcrição, e é
+isso que tira dela o reprocessamento, o alerta de alucinação e, por ora, o
+estudo. Ver `src/app/AGENTS.md`.
+
 **Stack:** Next.js 16 (App Router) · React 19 · Supabase SSR · Tailwind v4 +
 shadcn sobre base-ui · Zod · Zustand · TanStack Query · Biome · Stripe.
 
@@ -61,7 +70,7 @@ src/
   app/          rotas, API, SEO, landing              → src/app/AGENTS.md
     (site)/     público: landing, legais, parceiros
     (entrar)/   login, OAuth e os links de entrada
-    (app)/      O APP, atrás do login
+    (app)/      O APP, atrás do login (o gravador e o /escrever moram aqui)
     (painel)/   /admin e /partners
     api/
   proxy.ts      o gate de rota (o "middleware" do Next 16)
@@ -238,3 +247,13 @@ de assumir que entendeu a intenção.
 Quando você mudar um comportamento que um destes documentos descreve, atualize
 o documento no MESMO commit. Um doc errado é pior que doc nenhum: ele é lido
 com confiança.
+
+<!-- BEGIN:nextjs-agent-rules -->
+
+# This is NOT the Next.js you know
+
+This version has breaking changes — APIs, conventions, and file structure may all differ from your training data. Read the relevant guide in `node_modules/next/dist/docs/` (resolved from this file's directory; in monorepos the `next` package may not be visible from the repo root) before writing any code. Heed deprecation notices.
+
+This block is written and re-added by `next dev` — verify at `node_modules/next/dist/server/lib/generate-agent-files.js`. Removing it from a diff only re-creates the uncommitted change; committing it with your work keeps the tree clean.
+
+<!-- END:nextjs-agent-rules -->

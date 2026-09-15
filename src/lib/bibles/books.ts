@@ -181,3 +181,101 @@ export function chapterVerseCount(bookFullName: string, chapter: number): number
   if (!chapters) return null;
   return chapters[chapter - 1] ?? null;
 }
+
+/**
+ * Os 66 livros em ordem canônica, com o nome como se ESCREVE.
+ *
+ * `BOOK_ABBREVS` acima responde a outra pergunta: ele parte de um nome escrito
+ * por um modelo ou por gente ("i corintios", "cantico de salomao", "revelacao")
+ * e diz qual livro é. Não dá para inverter esse mapa para montar uma lista:
+ * ele tem apelido demais, está sem acento por construção (a normalização come
+ * os acentos antes da busca) e a ordem dele é a de escrita, não a da Bíblia.
+ *
+ * Esta lista existe para OFERECER: é dela que sai o seletor de passagem do
+ * editor de `/escrever`. O `name` é a forma canônica — com acento, com o
+ * numeral arábico — e é ele que entra na referência gravada no bloco
+ * (`"1 Coríntios 13:4-7"`), o que fecha o círculo: `normalizeBookName(name)`
+ * cai numa chave de `BOOK_ABBREVS`, e o `abbrev` ao lado é o mesmo que a busca
+ * devolveria. Client-safe como o resto do arquivo.
+ */
+export type CanonBook = {
+  name: string;
+  abbrev: string;
+  testament: "antigo" | "novo";
+};
+
+export const BOOK_CANON: CanonBook[] = [
+  { name: "Gênesis", abbrev: "Gn", testament: "antigo" },
+  { name: "Êxodo", abbrev: "Êx", testament: "antigo" },
+  { name: "Levítico", abbrev: "Lv", testament: "antigo" },
+  { name: "Números", abbrev: "Nm", testament: "antigo" },
+  { name: "Deuteronômio", abbrev: "Dt", testament: "antigo" },
+  { name: "Josué", abbrev: "Js", testament: "antigo" },
+  { name: "Juízes", abbrev: "Jz", testament: "antigo" },
+  { name: "Rute", abbrev: "Rt", testament: "antigo" },
+  { name: "1 Samuel", abbrev: "1Sm", testament: "antigo" },
+  { name: "2 Samuel", abbrev: "2Sm", testament: "antigo" },
+  { name: "1 Reis", abbrev: "1Rs", testament: "antigo" },
+  { name: "2 Reis", abbrev: "2Rs", testament: "antigo" },
+  { name: "1 Crônicas", abbrev: "1Cr", testament: "antigo" },
+  { name: "2 Crônicas", abbrev: "2Cr", testament: "antigo" },
+  { name: "Esdras", abbrev: "Ed", testament: "antigo" },
+  { name: "Neemias", abbrev: "Ne", testament: "antigo" },
+  { name: "Ester", abbrev: "Et", testament: "antigo" },
+  { name: "Jó", abbrev: "Jó", testament: "antigo" },
+  { name: "Salmos", abbrev: "Sl", testament: "antigo" },
+  { name: "Provérbios", abbrev: "Pv", testament: "antigo" },
+  { name: "Eclesiastes", abbrev: "Ec", testament: "antigo" },
+  { name: "Cânticos", abbrev: "Ct", testament: "antigo" },
+  { name: "Isaías", abbrev: "Is", testament: "antigo" },
+  { name: "Jeremias", abbrev: "Jr", testament: "antigo" },
+  { name: "Lamentações", abbrev: "Lm", testament: "antigo" },
+  { name: "Ezequiel", abbrev: "Ez", testament: "antigo" },
+  { name: "Daniel", abbrev: "Dn", testament: "antigo" },
+  { name: "Oseias", abbrev: "Os", testament: "antigo" },
+  { name: "Joel", abbrev: "Jl", testament: "antigo" },
+  { name: "Amós", abbrev: "Am", testament: "antigo" },
+  { name: "Obadias", abbrev: "Ob", testament: "antigo" },
+  { name: "Jonas", abbrev: "Jn", testament: "antigo" },
+  { name: "Miqueias", abbrev: "Mq", testament: "antigo" },
+  { name: "Naum", abbrev: "Na", testament: "antigo" },
+  { name: "Habacuque", abbrev: "Hc", testament: "antigo" },
+  { name: "Sofonias", abbrev: "Sf", testament: "antigo" },
+  { name: "Ageu", abbrev: "Ag", testament: "antigo" },
+  { name: "Zacarias", abbrev: "Zc", testament: "antigo" },
+  { name: "Malaquias", abbrev: "Ml", testament: "antigo" },
+  { name: "Mateus", abbrev: "Mt", testament: "novo" },
+  { name: "Marcos", abbrev: "Mc", testament: "novo" },
+  { name: "Lucas", abbrev: "Lc", testament: "novo" },
+  { name: "João", abbrev: "Jo", testament: "novo" },
+  { name: "Atos", abbrev: "At", testament: "novo" },
+  { name: "Romanos", abbrev: "Rm", testament: "novo" },
+  { name: "1 Coríntios", abbrev: "1Co", testament: "novo" },
+  { name: "2 Coríntios", abbrev: "2Co", testament: "novo" },
+  { name: "Gálatas", abbrev: "Gl", testament: "novo" },
+  { name: "Efésios", abbrev: "Ef", testament: "novo" },
+  { name: "Filipenses", abbrev: "Fp", testament: "novo" },
+  { name: "Colossenses", abbrev: "Cl", testament: "novo" },
+  { name: "1 Tessalonicenses", abbrev: "1Ts", testament: "novo" },
+  { name: "2 Tessalonicenses", abbrev: "2Ts", testament: "novo" },
+  { name: "1 Timóteo", abbrev: "1Tm", testament: "novo" },
+  { name: "2 Timóteo", abbrev: "2Tm", testament: "novo" },
+  { name: "Tito", abbrev: "Tt", testament: "novo" },
+  { name: "Filemom", abbrev: "Fm", testament: "novo" },
+  { name: "Hebreus", abbrev: "Hb", testament: "novo" },
+  { name: "Tiago", abbrev: "Tg", testament: "novo" },
+  { name: "1 Pedro", abbrev: "1Pe", testament: "novo" },
+  { name: "2 Pedro", abbrev: "2Pe", testament: "novo" },
+  { name: "1 João", abbrev: "1Jo", testament: "novo" },
+  { name: "2 João", abbrev: "2Jo", testament: "novo" },
+  { name: "3 João", abbrev: "3Jo", testament: "novo" },
+  { name: "Judas", abbrev: "Jd", testament: "novo" },
+  { name: "Apocalipse", abbrev: "Ap", testament: "novo" },
+];
+
+/** Quantos capítulos o livro tem. `0` quando o livro não é reconhecido. */
+export function chapterCountFor(bookFullName: string): number {
+  const abbrev = abbrevFor(bookFullName);
+  if (!abbrev) return 0;
+  return CHAPTER_VERSE_COUNTS[abbrev]?.length ?? 0;
+}

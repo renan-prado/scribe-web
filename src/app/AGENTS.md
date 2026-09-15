@@ -91,6 +91,8 @@ Router, ver o comentário no `src/proxy.ts`).
 /summary/[id]     o resumo da sessão. O destino de TUDO que o app faz
 /studies          a lista de estudos gerados
 /studies/[id]     um estudo (gerar exige plano Estudioso; ler, não)
+/escrever         a folha em branco: o editor de blocos, modo manual
+/escrever/[id]    o mesmo editor, num texto que já existe
 /importar         cola o link do vídeo e cria a sessão modo youtube
 /importar/[id]    a importação rodando: legenda + resumo
 /profile          a conta, o saldo e o plano
@@ -124,6 +126,62 @@ não há conteúdo com que confundir: lá é a `LibrarySearchLink`, um LINK para
 `/home?busca=1` — a busca é da Biblioteca, índice e filtros moram no
 `LibraryBrowser`. O `?busca=1` é lido pela `/home` e vira o `defaultOpen` do
 `SearchScope`, senão a lupa entregaria a Biblioteca com o campo fechado.
+
+## `/escrever`: a terceira porta
+
+O produto tem três maneiras de uma sessão nascer, e a terceira não captura
+nada: o gravador abre o microfone, o `/importar` traz a legenda de um vídeo, e
+o `/escrever` é a pessoa digitando o resumo à mão. As três desembocam no mesmo
+lugar, um `SummaryPayload` numa linha de `sessions` — modo `manual`, ver
+`lib/domain/session.ts`.
+
+**É o único caminho que não custa moeda**, e não por generosidade: não há STT
+nem chamada de modelo em lugar nenhum dele. Por isso `COIN_COSTS` não tem uma
+linha para ele, e a ausência é a regra, não um esquecimento.
+
+**O editor não usa biblioteca de rich text, e isso é uma decisão sobre o
+DOMÍNIO.** Nenhum bloco do `SummaryBlockSchema` tem formatação inline: todos são
+`{ type, text }`, string pura. Então cada bloco é uma `<textarea>` vestida com
+as classes do `BlockRenderer` correspondente (`AutoTextarea`), e a edição
+acontece no lugar da leitura, sem pré-visualização. Um Tiptap ou um Lexical
+traria uma segunda representação do texto — um documento com nós e marcas —
+para ser espremida de volta numa string na hora de salvar, e cobraria cem
+quilobytes por recursos que não têm onde ser guardados.
+
+A consequência é que as classes de cada bloco existem em DOIS lugares: no
+`BlockRenderer` (leitura) e no `BlockBody` do `Composer` (edição). Mudou o
+desenho de um bloco lá, ajuste aqui no mesmo commit — é o que sustenta a
+promessa de que o que se escreve é o que se lê.
+
+**O vocabulário do editor é MENOR que o do resumo** (`WRITTEN_BLOCK_TYPES`): não
+tem `example`, cujo rótulo na tela é "Exemplo do pregador" e não faz sentido num
+texto que a própria pessoa escreveu, nem um terceiro nível de título. A "ideia
+central" não é bloco: ela é o `shortSummary`, campo fixo no topo, o que aparece
+no cartão da Biblioteca e na busca.
+
+**A passagem bíblica guarda só a REFERÊNCIA.** O `PassagePicker` caminha livro →
+capítulo → versículos sobre `CHAPTER_VERSE_COUNTS`, então só é possível escolher
+o que existe, e o bloco nasce com `text` vazio: quem busca a NVI é o
+`PassageVerses`, na leitura, como num bloco escrito pela IA. Guardar aqui uma
+cópia do texto bíblico seria uma segunda fonte para a mesma passagem.
+
+**O salvamento é LOCAL-FIRST.** Cada mudança cai no IndexedDB em 300ms
+(`draft-store.ts`) e no banco em 1,8s (`useWrittenDraft`), e ao reabrir a tela
+o rascunho do aparelho VENCE o que o servidor devolveu, quando é mais novo que
+o último envio confirmado. A sessão nasce no PRIMEIRO envio, não ao abrir a
+tela: criar ali encheria a Biblioteca de textos vazios de quem clicou no menu e
+desistiu. Até lá a URL é `/escrever`; depois vira `/escrever/{id}` por um
+`replace`.
+
+**Uma sessão `manual` não tem transcrição**, e três coisas somem da leitura por
+causa disso: "Ler transcrição", "Reprocessar" (refaria o resumo a partir de uma
+transcrição vazia, cobrando 15 moedas para apagar o que a pessoa escreveu) e
+"Algo está errado" (audita a IA contra a transcrição — aqui não houve IA, o
+alerta apontaria o dedo para o próprio autor). Gerar estudo também não aparece,
+e é decisão do v1: `/api/deepening` recusaria com `empty_transcript`.
+
+A busca por REFERÊNCIA, essa, encontra normalmente — ela lê os blocos
+`bibleQuote` do resumo, que o texto escrito tem como qualquer outro.
 
 **A conta mora num lugar só, o `AccountMenu`, com dois gatilhos.** O avatar o
 abre, e a linha do rodapé da gaveta também — é um conteúdo só porque o item mais
@@ -326,10 +384,21 @@ não são conteúdo, são efeito colateral com redirect.
 
 **API:** `src/app/api/`, LLM (`transcribe`, `final-summary[/reprocess]`,
 `deepening[/reprocess]`, `youtube/import`, `verse`, `hallucination-report`),
-dados (`sessions[/search]`, `speakers`, `locations`, `coins`,
+dados (`sessions[/search|/written]`, `speakers`, `locations`, `coins`,
 `feedback[/prompt]`, `tour/{start,finish,reset}`), conta (`account/delete`),
 cobrança (`billing/*`, `stripe/webhook`) e admin (`admin/users`,
 `admin/partners`, `admin/features`, `admin/coupons`, `admin/insights`).
+
+`sessions/written` é a rota do `/escrever`, e a ÚNICA do produto que recebe um
+`SummaryPayload` vindo do CLIENTE — todos os outros nascem dentro do servidor, a
+partir da resposta de um modelo. Daí `WrittenSummarySchema` ter teto em cada
+campo e em cada lista: sem eles uma aba empurraria megabytes de jsonb para
+dentro da linha. Ela cria a sessão quando não vem `id` e sobrescreve quando vem
+(o editor salva sozinho e não deveria ter de saber se aquele é o primeiro
+salvamento), confere o dono antes de trabalhar e recusa com 409 `not_manual`
+uma sessão que não foi escrita à mão: o editor fala um vocabulário menor que o
+do resumo, e deixá-lo tocar uma gravação apagaria em silêncio o que a IA
+escreveu. Esconder a tela nunca é a proteção.
 
 `account/delete` é a ÚNICA rota autenticada que se recusa a usar
 `requireAuth()`, e a exceção é o ponto dela: `requireAuth` responde 403 a quem

@@ -4,12 +4,27 @@
  * - `audio`: o microfone. Grava um arquivo só, transcreve no stop, resume.
  * - `youtube`: NÃO CAPTURA NADA. A transcrição vem pronta das legendas de um
  *   vídeo e o resumo roda sobre ela.
+ * - `manual`: NÃO CAPTURA E NÃO GERA NADA. A pessoa escreve os blocos à mão em
+ *   `/escrever`, e eles são gravados como `final_summary` direto.
  *
  * **Eram quatro, e a diferença entre três deles era o que rodava DURANTE a
  * pregação.** `live` mantinha três pipelines de enriquecimento alimentando um
  * feed ao vivo; `transcript_only` não gerava resumo; `audio_only` ficava no
  * meio. Os três foram removidos: o produto é gravar, resumir e, se a pessoa
  * quiser, aprofundar. Um modo de captura só.
+ *
+ * **`manual` é o modo sem NENHUMA das duas pontas**, e mora aqui pelo mesmo
+ * motivo: o destino de tudo no Scriba é um `SummaryPayload` numa linha de
+ * `sessions`, e escrevê-lo à mão não muda nada do que vem depois dele. Custa
+ * ZERO moeda, porque não há STT nem chamada de modelo em lugar nenhum do
+ * caminho — não existe um `COIN_COSTS` para ele, e isso é a regra, não um
+ * esquecimento.
+ *
+ * **Uma sessão `manual` não tem transcrição**, e quem depende dela precisa
+ * saber disso: o menu não oferece "Ler transcrição", `/api/deepening` recusa
+ * com `empty_transcript`, e a busca de CONTEÚDO (que varre o que o pregador
+ * disse) não a encontra. A busca por REFERÊNCIA encontra, ela lê os blocos
+ * `bibleQuote` do resumo, que o texto escrito tem como qualquer outro.
  *
  * **`youtube` é o modo que não grava, e mora aqui assim mesmo.** A alternativa
  * era um conceito novo ao lado de sessão, e o que uma importação precisa ser
@@ -18,7 +33,7 @@
  * `COIN_COSTS.youtubeImport`, cobrado uma vez, porque não há minuto de STT para
  * contar. Ver `lib/coins/pricing.ts`.
  */
-export const SESSION_MODES = ["audio", "youtube"] as const;
+export const SESSION_MODES = ["audio", "youtube", "manual"] as const;
 
 export type SessionMode = (typeof SESSION_MODES)[number];
 
