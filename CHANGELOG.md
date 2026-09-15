@@ -9,6 +9,12 @@ Gerado por `npm run release` a partir dos Conventional Commits. `feat` sobe o
 minor; o resto sobe o patch. Não edite à mão, a próxima execução escreve por
 cima do topo do arquivo.
 
+## 0.24.0, 2026-09-15, desde v0.23.0
+
+### Novidades
+
+- **app:** sem zoom na pinça, e as barras do sistema no grafite do app (`7fae220`)
+
 ## 0.23.0, 2026-09-14, desde v0.22.1
 
 ### Novidades
