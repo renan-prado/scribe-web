@@ -9,6 +9,12 @@ Gerado por `npm run release` a partir dos Conventional Commits. `feat` sobe o
 minor; o resto sobe o patch. Não edite à mão, a próxima execução escreve por
 cima do topo do arquivo.
 
+## 0.31.0, 2026-09-15, desde v0.30.0
+
+### Novidades
+
+- **tour:** o tour da Biblioteca abre o menu e explica as três portas, uma a uma (`aa09bdd`)
+
 ## 0.30.0, 2026-09-15, desde v0.29.0
 
 ### Novidades
