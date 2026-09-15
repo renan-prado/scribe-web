@@ -42,7 +42,7 @@ export function resolveAnchor(selector: string | undefined): HTMLElement | null 
 /**
  * O alvo acompanha a rolagem da página, ou está preso ao viewport?
  *
- * A pergunta existe por causa do "Gravar": ele mora no `RecordDock`, que é
+ * A pergunta existe por causa do "Criar": ele mora no `CreateDock`, que é
  * `fixed … bottom-0`. No celular o balão do tour
  * encosta no rodapé, e a correção que o `TourRunner` faz quando o alvo cairia
  * embaixo dele é ROLAR a página, o que não move um centímetro um elemento

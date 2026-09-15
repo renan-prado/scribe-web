@@ -123,6 +123,11 @@ usa o modelo bom, e não cobra moeda: o usuário está reportando um defeito nos
 
 ## O estudo
 
+**Ele está saindo do produto, e ninguém chega mais nele pela interface.** O
+"Gerar estudo" do `/summary`, o item da gaveta e o atalho do manifesto saíram;
+o código desta seção continua inteiro e funcionando, e o dia de removê-lo é
+outro commit. Ver `src/app/AGENTS.md`.
+
 Duas particularidades que mordem de fora:
 
 - **Ele não fala o vocabulário de blocos do resumo.** `StudyBlock`

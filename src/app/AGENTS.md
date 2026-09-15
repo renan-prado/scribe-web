@@ -86,11 +86,11 @@ Router, ver o comentário no `src/proxy.ts`).
 
 ```
 /home             "Biblioteca": o acervo agrupado por mês e o botão de
-                     gravar. É onde cai quem loga
+                     criar. É onde cai quem loga
 /recording        o gravador: onda, pausar, parar e apagar. Um modo só
 /summary/[id]     o resumo da sessão. O destino de TUDO que o app faz
-/studies          a lista de estudos gerados
-/studies/[id]     um estudo (gerar exige plano Estudioso; ler, não)
+/studies          a lista de estudos gerados. SEM ACESSO pela interface
+/studies/[id]     um estudo. SEM ACESSO pela interface
 /escrever         a folha em branco: o editor de blocos, modo manual
 /escrever/[id]    o mesmo editor, num texto que já existe
 /importar         cola o link do vídeo e cria a sessão modo youtube
@@ -100,6 +100,16 @@ Router, ver o comentário no `src/proxy.ts`).
 /assinar          abre o Checkout (destino do CTA da landing)
 /retorno          volta do Checkout. DECORATIVA: não credita nada
 ```
+
+**O `/studies` continua de pé e ninguém mais chega nele.** O modo estudo vai
+sair do produto, e o primeiro passo foi tirar o acesso: o item da gaveta (que
+morreu junto com o hambúrguer), o botão "Gerar estudo" do `/summary`
+(`DeepenButton`), o atalho do `manifest.ts` e o passo de tour que apontava para
+o botão. As rotas, a API, as tabelas e os componentes continuam inteiros — isto
+é esconder, não remover, e o dia de remover é outro commit. **Quem mexer aqui
+não deve "consertar" o acesso**: ele foi tirado de propósito. Duas consultas
+foram junto do botão (`hasDeepening` e a checagem de `study_generation` do
+`/summary`), porque alimentavam só a ele.
 
 A moldura é `src/app/(app)/layout.tsx`, e ela quase não desenha: não há header nem
 barra de navegação, cada tela renderiza a sua própria `TopBar`. Ela garante o
@@ -112,7 +122,15 @@ depende da tela (a Biblioteca passa o gatilho da busca, a gravação passa o
 relógio), e, à direita dele, o AVATAR, que é da barra e aparece em toda tela que
 a monte.
 
-**Com `backHref` ela vira a barra do `/summary`**: o hambúrguer dá lugar a um
+**O canto esquerdo é o LOGOTIPO, e ele leva para a Biblioteca.** Ali houve um
+hambúrguer com uma gaveta de quatro destinos; Escrever e Importar passaram para
+o `+` do rodapé (é lá que se cria), os Estudos saíram da interface, e a
+Biblioteca sozinha não é uma gaveta — é a marca, que é onde todo mundo já toca
+para voltar ao começo de um app. O logotipo não ganha o chip de `chip.ts`: a
+marca não é um controle, e dentro de uma pastilha ela viraria mais um botão
+numa fileira deles.
+
+**Com `backHref` ela vira a barra do `/summary`**: o logotipo dá lugar a um
 voltar e o título some — a página inteira é o título do sermão, repeti-lo na
 barra seria dizê-lo duas vezes. O avatar não muda. Quem monta a barra lá é a
 página, e ela entra no `SavedSessionView` por um slot `header`, porque aquela
@@ -365,21 +383,22 @@ e é decisão do v1: `/api/deepening` recusaria com `empty_transcript`.
 A busca por REFERÊNCIA, essa, encontra normalmente — ela lê os blocos
 `bibleQuote` do resumo, que o texto escrito tem como qualquer outro.
 
-**A conta mora num lugar só, o `AccountMenu`, com dois gatilhos.** O avatar o
-abre, e a linha do rodapé da gaveta também — é um conteúdo só porque o item mais
-perigoso do app (o Sair, um POST para `/auth/sign-out`) não pode ter duas
-versões. Dentro dele: o saldo (o `CoinBalance` de verdade, que abre o
-`BillingDialog`), "Meu perfil", os atalhos de admin/parceiro quando houver, e o
-Sair, separado.
+**A conta mora num lugar só, o `AccountMenu`, e o gatilho é o avatar.** Dentro
+dele: o saldo (o `CoinBalance` de verdade, que abre o `BillingDialog`), "Meu
+perfil", os atalhos de admin/parceiro quando houver, e o Sair, separado — um
+POST para `/auth/sign-out`, o item mais perigoso do app, e por isso o mais
+fundo. Ele já teve um segundo gatilho, uma linha no rodapé da gaveta do
+hambúrguer, com este mesmo conteúdo; a gaveta morreu e o `variant="row"` foi
+junto.
 
-A gaveta do hambúrguer ficou com a forma da sidebar do `/admin`: **logotipo em
-cima, destinos no meio, conta no rodapé.** Os destinos são 16px com glifo de
-20px (e a conta, 15px): a gaveta abre por cima da tela inteira e tem três
-linhas, e a 14/16 elas liam como itens de uma lista de configurações em vez da
-navegação do app. Os destinos são três, e só os do
-produto — Biblioteca, Estudos e Importar do YouTube; perfil, saldo e papéis são
-CONTA, e sair dali foi o que impediu "Perfil" de aparecer duas vezes na mesma
-gaveta.
+**A GAVETA do hambúrguer durou uma versão, e a lição dela é de tamanho.** Ela
+tinha quatro destinos (Biblioteca, Estudos, Escrever, Importar do YouTube) e a
+forma da sidebar do `/admin` — marca em cima, destinos no meio, conta no
+rodapé. Dos quatro, dois eram CRIAÇÃO e foram para o `+` do rodapé, que é o
+lugar onde já se tocava para criar; um saiu do produto; e o que sobrou é a tela
+onde se cai ao entrar, que o logotipo alcança sem gaveta nenhuma. Um painel de
+tela inteira para um destino é um toque cobrado para mostrar o que o toque
+anterior já poderia ter feito.
 
 A cor vem de tokens no namespace `--v2-*` (`src/app/globals.css`), e eles são a
 ORIGEM da paleta do produto inteiro: `--background` é `--v2-bg`,
@@ -497,15 +516,9 @@ alinha a barra), e a foto tem 36: uma foto chapada pesa mais que um disco de
 `--v2-card`, que é quase a cor da página, e com os dois a 40 o avatar lia como
 o maior dos dois botões.
 
-**A gaveta fecha por um X na linha do logotipo**, e o `Sheet` a monta com
-`showCloseButton={false}`: o botão de fábrica é absoluto em `top-3`, um X
-pairando acima da marca. Na mesma linha os dois centros coincidem sem número
-mágico. O destino Biblioteca leva uma ESTANTE (`Library`) — o `House` de antes
-dizia "início", o nome que a tela tinha quando o acervo não era a primeira.
-
-**O título da barra não é negrito**, e tem `gap-3` até o botão da esquerda: em
+**O título da barra não é negrito**, e tem `gap-3` até o canto da esquerda: em
 `font-semibold` ele competia com o conteúdo que a página veio mostrar, e
-encostado no hambúrguer lia como legenda dele em vez de nome da tela.
+encostado no botão lia como legenda dele em vez de nome da tela.
 
 A busca fica atrás da lupa, e não permanente: quem abre o Scriba quase sempre
 quer o último sermão, não uma busca. Fechá-la LIMPA os filtros, senão a lista
@@ -516,8 +529,31 @@ página. **Vale para os Estudos também**, onde a barra já foi permanente: a lu
 aparece quando há algum estudo — sem lista montada, o botão abriria uma barra
 sem onde existir.
 
-O botão de gravar mora na PÁGINA do `/home`, não no layout, e é o que o
-mantém fora do `/summary`: uma tela de leitura não oferece gravar.
+O botão de criar mora na PÁGINA do `/home`, não no layout, e é o que o mantém
+fora do `/summary`: uma tela de leitura não oferece gravar.
+
+**Ele é um `+` no canto de baixo à direita, e abre as TRÊS portas** (`CreateDock`):
+"Resumo mágico" (o microfone, `/recording?auto=1`), "Escrever" (`/escrever`) e
+"Importar do YouTube" (`/importar`), num painel de ícone-e-nome como o dos
+prints em `public/prints/new-release/`. Era um microfone sozinho no meio da
+faixa, e as outras duas portas moravam na gaveta — três toques longe, num lugar
+que ninguém abre para criar, abre para navegar.
+
+Três decisões dele que não são estética:
+
+- **À direita, não no centro.** Centralizado, o botão pousava sobre a coluna
+  esquerda do mural e tampava um cartão; e um painel que se abre a partir do
+  centro não tem para que lado crescer.
+- **O `+` continua VERMELHO** (`--v2-rec`), mesmo não sendo mais só o microfone:
+  é a cor da ação do produto, e num mural de post-its coloridos um `+` cinza
+  seria mais um retângulo. As opções lá dentro são neutras e iguais entre si —
+  quem chegou nelas já decidiu criar.
+- **Rolar fecha o painel.** O painel é `fixed`; parado no canto enquanto a lista
+  corre atrás dele, com um véu por cima que o dedo atravessa, seriam dois
+  comportamentos contraditórios no mesmo gesto.
+
+Girar um `+` em 45° dá um `×`: o botão que abre é o mesmo que fecha, e trocar de
+glifo faria o fechar aparecer do nada no lugar do abrir.
 
 **O `/recording` grava UM áudio e transcreve UMA vez.** O produto já
 transcreveu a cada 15-20s, porque havia um feed ao vivo que precisava do texto
@@ -943,8 +979,8 @@ mora em `src/shared/theme-color.ts` (e, copiado, em `public/offline.html`).
 
 O `viewport` do root layout declara `viewport-fit=cover`, é o que faz
 `env(safe-area-inset-*)` valer diferente de zero. Quem consome os insets é o
-`RecordDock` e o rodapé de cada tela; sem eles o iPhone desenha o botão de
-gravar por baixo da barra do gesto do sistema. Zoom fica liberado
+`CreateDock` e o rodapé de cada tela; sem eles o iPhone desenha o botão de
+criar por baixo da barra do gesto do sistema. Zoom fica liberado
 (`maximumScale: 5`): travar o pinch é violação de acessibilidade.
 
 **Em cima quem paga é o LAYOUT do `(app)`**, com `pt-[env(safe-area-inset-top)]`

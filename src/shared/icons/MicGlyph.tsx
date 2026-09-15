@@ -1,6 +1,6 @@
 /**
  * O microfone do v2, em três tamanhos e um desenho só: o botão de gravar
- * (`(app)/home/RecordDock.tsx`), o estúdio (`(app)/recording/AudioStudio.tsx`) e
+ * (`(app)/home/CreateDock.tsx`), o estúdio (`(app)/recording/AudioStudio.tsx`) e
  * o marcador de modo do post-it da Biblioteca (`LibraryNote`, a 14px).
  *
  * **Essa terceira parada é o motivo de ele não ser o `Mic` do lucide em lugar

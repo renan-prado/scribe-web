@@ -45,7 +45,7 @@ import { cn } from "@/lib/utils";
  * espaço, e só então recorre ao centro.
  *
  * **Mas rolar não resolve todo alvo, e o "Gravar" é a prova.** Ele mora no
- * `RecordDock`, `fixed bottom-0`: rolar a página não o tira de baixo do balão
+ * `CreateDock`, `fixed bottom-0`: rolar a página não o tira de baixo do balão
  * encostado no rodapé, e o passo que fala do botão terminava com o balão
  * pousado exatamente em cima dele. Quando a correção por rolagem
  * não tem como funcionar, porque o alvo está preso ao viewport, ou porque ela

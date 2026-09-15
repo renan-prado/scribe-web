@@ -15,7 +15,6 @@ import {
 } from "@/components/ui/dialog";
 import { useCoinsStore } from "@/features/coins/store";
 import { ConfirmDialog } from "@/features/session/components/ConfirmDialog";
-import { DeepenButton } from "@/features/session/components/DeepenButton";
 import { EntityFieldDialog } from "@/features/session/components/EntityFieldDialog";
 import { HallucinationReportDialog } from "@/features/session/components/HallucinationReportDialog";
 import { SavedTranscriptView } from "@/features/session/components/SavedTranscriptView";
@@ -54,9 +53,6 @@ type SavedSessionViewProps = {
   speakerLocation: string | null;
   transcript: string;
   summary: SummaryPayload | null;
-  hasDeepening: boolean;
-  /** Ver `lib/entitlements/server.ts`. */
-  canGenerateStudy: boolean;
   /**
    * A barra do topo, montada pela PÁGINA e entregue pronta.
    *
@@ -107,8 +103,6 @@ export function SavedSessionView({
   speakerLocation: initialSpeakerLocation,
   transcript,
   summary,
-  hasDeepening,
-  canGenerateStudy,
   header,
   meta = "full",
   mode = "audio",
@@ -303,21 +297,20 @@ export function SavedSessionView({
               </p>
             ) : null}
           </div>
-          {/* Gerar estudo pede transcrição, e um texto escrito não tem: a rota
-              recusaria com `empty_transcript` depois de o botão prometer. É
-              decisão do v1 — se o estudo passar a se ancorar nos próprios
-              blocos um dia, o botão volta aqui. */}
-          {summary && !written ? (
-            <DeepenButton
-              sessionId={id}
-              hasDeepening={hasDeepening}
-              variant="summary-header"
-              canGenerate={canGenerateStudy}
-            />
-          ) : null}
-          {/* No mobile a data fica abaixo do botão "Gerar estudo"; no desktop
-              ela mora na coluna esquerda, sob o local. No `compact` ela não
-              está em nenhum dos dois: mora na linha do local, como no cartão. */}
+          {/* Aqui morava o "Gerar estudo" (`DeepenButton`), a única porta para
+              o `/studies` a partir de uma sessão. O modo estudo está saindo do
+              produto e, enquanto ele não sai de verdade, o acesso a ele foi
+              retirado da interface — com o botão, foram junto a consulta de
+              `hasDeepening` e a checagem de `study_generation` que a página
+              fazia só para desenhá-lo (ver `summary/[id]/page.tsx`). O
+              componente continua no repositório, inteiro, para o dia em que a
+              decisão for a outra.
+
+              Ele também era o motivo de este cabeçalho ter três colunas no
+              desktop; a data que morava debaixo dele continua onde estava. */}
+          {/* No mobile a data fica embaixo; no desktop ela mora na coluna
+              esquerda, sob o local. No `compact` ela não está em nenhum dos
+              dois: mora na linha do local, como no cartão. */}
           {meta === "full" ? (
             <p className="text-[11px] font-light text-scriba-ink-mute sm:hidden">
               {createdAtShortLabel}

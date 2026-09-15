@@ -6,21 +6,29 @@ import { INITIAL_COIN_BALANCE } from "@/features/coins/pricing";
 import { isCurrentUserPartner } from "@/lib/auth/require-partner";
 import { getCurrentAccount } from "@/lib/db/account";
 import { cn } from "@/lib/utils";
+import { ScribaLogo } from "@/shared/brand";
 import { AccountMenu } from "./AccountMenu";
-import { AppMenu } from "./AppMenu";
 import { TOPBAR_CHIP_CLASS } from "./chip";
 
 /**
- * A barra do topo do v2: hambúrguer, título, busca.
+ * A barra do topo do v2: o logotipo, o título, a busca.
  *
  * Mora aqui, e não dentro de `home/`, porque a `/recording` usa a mesma:
  * são telas diferentes do mesmo produto, e um cabeçalho que muda de desenho ao
  * entrar na gravação faria a pessoa achar que saiu do app.
  *
+ * **O canto esquerdo é a MARCA, e ela leva para a Biblioteca.** Ali houve um
+ * hambúrguer, e a gaveta dele tinha quatro destinos: Biblioteca, Estudos,
+ * Escrever e Importar do YouTube. Os dois últimos passaram para o `+` do
+ * rodapé, que é onde se cria; os Estudos saíram da interface; e a Biblioteca
+ * sozinha não é uma gaveta, é o logotipo — que é onde todo mundo já toca para
+ * voltar ao começo de um app. Uma gaveta com um item só é um clique cobrado
+ * para mostrar o que o clique anterior já poderia ter feito.
+ *
  * **Ela é um server component, e por isso é a PÁGINA quem a renderiza**, nunca
  * um componente cliente. É aqui que o perfil e o saldo são lidos (uma consulta,
  * `getCurrentAccount` é `cache()`), e é a única razão de a barra tocar o banco:
- * a gaveta abre com quem é você e quanto você tem.
+ * o menu da conta abre com quem é você e quanto você tem.
  *
  * O canto direito tem DUAS coisas, e só uma delas é da página. O `trailing` é
  * um SLOT: a Biblioteca passa o gatilho da busca (que precisa do estado dela,
@@ -29,10 +37,10 @@ import { TOPBAR_CHIP_CLASS } from "./chip";
  * e um avatar que aparece e some conforme a tela obrigaria a decorar em qual
  * delas ele estava. Ver `AccountMenu`.
  *
- * **Com `backHref`, o canto esquerdo troca a gaveta por um VOLTAR** e o título
+ * **Com `backHref`, o canto esquerdo troca a marca por um VOLTAR** e o título
  * pode sumir — é a barra do `/summary`. Uma tela de leitura aberta a partir de
  * um cartão precisa do caminho de volta no lugar onde o polegar já procura,
- * que é o canto de onde a gaveta sai; e repetir ali o título do sermão, que a
+ * que é o canto onde a marca estava; e repetir ali o título do sermão, que a
  * página inteira grita duas linhas abaixo, seria dizê-lo duas vezes. O resto da
  * barra NÃO muda: a lupa e o avatar continuam onde estavam em toda tela.
  */
@@ -43,7 +51,7 @@ export async function TopBar({
 }: {
   /** Some no `/summary`: a própria página já é o título. */
   title?: string;
-  /** Quando passado, o hambúrguer vira um voltar para cá. */
+  /** Quando passado, o logotipo vira um voltar para cá. */
   backHref?: string;
   trailing?: ReactNode;
 }) {
@@ -57,9 +65,10 @@ export async function TopBar({
     isCurrentUserPartner().catch(() => false),
   ]);
 
-  // O MESMO nó, renderizado no menu do avatar e no da gaveta. Montá-lo duas
-  // vezes daria dois RSC payloads iguais; montá-lo aqui, uma vez, é o que
-  // garante que os dois menus não possam divergir num deploy distraído.
+  // Montado aqui, no servidor, e descido pronto: é a razão do slot de
+  // `PrivilegedMenuItems` — com `isAdmin &&` dentro do `AccountMenu`, que é
+  // cliente, as strings "Admin" e "/admin" viajariam no chunk que TODO usuário
+  // logado baixa.
   const privilegedItems = (
     <PrivilegedMenuItems isAdmin={account?.isAdmin ?? false} isPartner={isPartner} />
   );
@@ -85,7 +94,19 @@ export async function TopBar({
           <ArrowLeft className="size-5" strokeWidth={1.75} />
         </NavLink>
       ) : (
-        <AppMenu {...identity} hasSession={account !== null} privilegedItems={privilegedItems} />
+        /* O logotipo é o alvo de toque, então ele mora dentro de um link de
+           40px de altura — a mesma caixa do chip do voltar e da lupa, que é o
+           que mantém a barra com a mesma altura em toda tela. Ele NÃO ganha o
+           disco `--v2-card` do chip: a marca não é um controle, e um logotipo
+           dentro de uma pastilha viraria mais um botão numa fileira deles. */
+        <NavLink
+          href="/home"
+          spinner="none"
+          contentClassName="inline-flex items-center"
+          className="inline-flex h-10 shrink-0 items-center rounded-full px-1 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-v2-ink-mute"
+        >
+          <ScribaLogo size={24} textClassName="text-[19px]" />
+        </NavLink>
       )}
       {/* Sem peso: o título é a placa da tela, e em negrito ele competia com o
           conteúdo que a página veio mostrar. */}

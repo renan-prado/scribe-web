@@ -1,15 +1,16 @@
 /**
- * O chip dos controles da barra do topo: hambúrguer, voltar, lupa.
+ * O chip dos controles da barra do topo: voltar e lupa.
  *
- * Mora numa constante porque são QUATRO botões em quatro arquivos (`AppMenu`,
- * o voltar da `TopBar`, `SearchToggle` e `LibrarySearchLink`) desenhando o
- * mesmo objeto. Copiada, a classe divergiria no primeiro ajuste de raio ou de
- * tamanho, e a barra passaria a ter dois desenhos de botão lado a lado.
+ * Mora numa constante porque são TRÊS botões em três arquivos (o voltar da
+ * `TopBar`, `SearchToggle` e `LibrarySearchLink`) desenhando o mesmo objeto.
+ * Copiada, a classe divergiria no primeiro ajuste de raio ou de tamanho, e a
+ * barra passaria a ter dois desenhos de botão lado a lado. O logotipo do canto
+ * esquerdo NÃO usa o chip, e não é esquecimento: a marca não é um controle.
  *
  * Módulo `.ts` puro, sem `"use client"`: é uma string, então o servidor (a
  * `TopBar`) e o cliente (a lupa) leem a mesma sem nenhum custo de fronteira.
  *
- * REDONDO e de 40px, com glifo de 20px. O avatar fica ao lado, e três
+ * REDONDO e de 40px, com glifo de 20px. O avatar fica ao lado, e dois
  * controles na mesma barra com duas bordas diferentes liam como peças de
  * origens diferentes. O fundo é SEMPRE visível, e não um alvo transparente que
  * se acende no hover: hover não existe no celular (ver `src/shared/AGENTS.md`).

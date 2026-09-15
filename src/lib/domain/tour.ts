@@ -108,10 +108,22 @@ export const TOURS: Record<TourKey, TourDefinition> = {
         body: "A lupa procura por quem pregou, pelo local, por um versículo ou por uma frase que foi dita na pregação.",
       },
       {
+        /**
+         * O alvo é o `+` do rodapé, que era um microfone sozinho
+         * (`[data-tour="record-dock"]`). O passo é o MESMO passo, no mesmo
+         * lugar da tela, falando do botão que substituiu aquele — por isso a
+         * `version` não sobe: subi-la reabriria o "Bem-vindo ao Scriba" na cara
+         * de toda a base para mostrar um balão sobre o mesmo canto.
+         *
+         * O preço continua no texto, e continua sendo só o da gravação: das
+         * três portas, é a única cobrada por minuto. Escrever não custa nada e
+         * a importação tem preço fechado por vídeo — dizer os três aqui seria
+         * uma tabela dentro de um balão.
+         */
         id: "record",
-        anchor: '[data-tour="record-dock"]',
-        title: "Gravar",
-        body: "É por aqui que tudo começa. São 5 moedas por minuto iniciado, e a transcrição e o resumo já estão nesse preço.",
+        anchor: '[data-tour="create-dock"]',
+        title: "Criar",
+        body: "É por aqui que tudo começa: gravar a pregação, escrever você mesmo ou importar um vídeo do YouTube. Gravar custa 5 moedas por minuto iniciado, com a transcrição e o resumo já nesse preço.",
       },
     ],
   },
@@ -154,12 +166,14 @@ export const TOURS: Record<TourKey, TourDefinition> = {
         title: "Título, autor e local são seus",
         body: "Toque em qualquer um deles para corrigir. O Scriba tenta preencher sozinho, e nem sempre acerta o nome de quem pregou.",
       },
-      {
-        id: "deepen",
-        anchor: '[data-tour="deepen"]',
-        title: "O estudo desta pregação",
-        body: "Daqui sai o estudo teológico completo: contexto, tese e desdobramentos. É um por sessão, e depois de pronto este mesmo botão leva de volta a ele.",
-      },
+      /**
+       * Havia aqui um passo sobre o "Gerar estudo" (`[data-tour="deepen"]`). O
+       * botão saiu da interface com o modo estudo, e o passo saiu junto: um
+       * passo de âncora ausente é descartado em silêncio (ver
+       * `features/tour/lib/anchors.ts`), então deixá-lo não quebraria nada —
+       * seria só uma linha de configuração descrevendo um botão que a pessoa
+       * não tem como encontrar.
+       */
       {
         id: "menu",
         anchor: '[data-tour="session-menu"]',

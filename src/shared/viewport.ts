@@ -11,7 +11,7 @@ import type { Viewport } from "next";
  * O app é outra coisa: ele é instalado na tela inicial e vai virar um
  * WebView dentro de um app nativo, onde o zoom do navegador não é um recurso
  * de leitura, é um acidente — a pessoa apoia dois dedos para rolar durante a
- * pregação e a tela inteira desalinha, com o `RecordDock` fora de vista e o
+ * pregação e a tela inteira desalinha, com o `CreateDock` fora de vista e o
  * gesto de voltar do sistema desencontrado. Num app nativo esse gesto não
  * existe, e o app tem que parecer nativo.
  *
@@ -23,7 +23,7 @@ import type { Viewport } from "next";
  * `viewportFit: "cover"` é repetido aqui de propósito: o Next mescla campo a
  * campo com o layout de cima, mas esta é a única declaração que o app enxerga
  * e ela precisa se ler inteira — é dela que dependem os `env(safe-area-inset-*)`
- * do topo do `(app)/layout.tsx` e do `RecordDock`.
+ * do topo do `(app)/layout.tsx` e do `CreateDock`.
  */
 export const APP_VIEWPORT: Viewport = {
   width: "device-width",

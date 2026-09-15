@@ -24,8 +24,8 @@ export default async function V2RecordingPage({
 }: {
   searchParams: Promise<{ auto?: string }>;
 }) {
-  // `?auto=1` é a marca de quem chegou pelo botão de gravar do `/home` (ver
-  // `RecordDock`). Ele é lido AQUI, no servidor, e desce como prop: fazê-lo no
+  // `?auto=1` é a marca de quem chegou pelo "Resumo mágico" do `/home` (ver
+  // `CreateDock`). Ele é lido AQUI, no servidor, e desce como prop: fazê-lo no
   // cliente com `useSearchParams` obrigaria esta página a nascer dentro de um
   // `<Suspense>` só para ler um parâmetro que o servidor já tem na mão.
   const { auto } = await searchParams;

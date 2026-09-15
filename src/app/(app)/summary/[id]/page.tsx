@@ -7,9 +7,7 @@ import { SavedSessionView } from "@/features/session/components/SavedSessionView
 import { formatDurationLong, shortDate } from "@/features/session/lib/formatting";
 import { TourTrigger } from "@/features/tour/components/TourTrigger";
 import { TOUR_DELAY_RESULT_MS } from "@/features/tour/config";
-import { hasDeepening } from "@/lib/db/deepenings";
 import { getSession } from "@/lib/db/sessions";
-import { canCurrentUserUse } from "@/lib/entitlements/server";
 import { TopBar } from "../../components/TopBar";
 
 type PageProps = {
@@ -33,15 +31,22 @@ const DATE_FMT = new Intl.DateTimeFormat("pt-BR", {
 /**
  * O resumo de uma sessão: o DESTINO de tudo que o Scriba faz.
  *
- * Toda sessão desemboca aqui, gravada ou importada do YouTube, e é daqui que
- * sai o estudo. Não existe mais uma sessão sem resumo: o modo transcrição, que
- * produzia uma, foi removido junto com os outros dois.
+ * Toda sessão desemboca aqui, gravada ou importada do YouTube. Não existe mais
+ * uma sessão sem resumo: o modo transcrição, que produzia uma, foi removido
+ * junto com os outros dois.
+ *
+ * **Daqui saía o estudo, e não sai mais.** O modo estudo está saindo do
+ * produto; enquanto ele não sai de verdade, o acesso a ele foi retirado da
+ * interface, e com o botão foram embora as duas leituras que existiam só para
+ * desenhá-lo: `hasDeepening` (uma ida ao banco por resumo aberto) e
+ * `canCurrentUserUse("study_generation")`. Consulta que alimenta botão que não
+ * existe não aparece como bug, aparece como latência.
  *
  * Tela de LEITURA: não há botão de gravar. Ele é do `/home` e mora na página
  * dele, não no layout, exatamente para não vazar para cá.
  *
  * **O cabeçalho é a MESMA `TopBar` da Biblioteca**, com duas diferenças que
- * são a tela: o hambúrguer vira um voltar para `/home` e o título some — a
+ * são a tela: o logotipo vira um voltar para `/home` e o título some — a
  * página inteira é o título do sermão, duas linhas abaixo. A conta fica onde
  * sempre esteve. Antes daqui saía um link "Voltar" de 12px, e abrir um cartão
  * trocava o cabeçalho do app por outro.
@@ -53,11 +58,7 @@ const DATE_FMT = new Intl.DateTimeFormat("pt-BR", {
  */
 export default async function V2SummaryPage({ params }: PageProps) {
   const { id } = await params;
-  const [session, deepeningExists, canGenerateStudy] = await Promise.all([
-    getSession(id),
-    hasDeepening(id),
-    canCurrentUserUse("study_generation").catch(() => false),
-  ]);
+  const session = await getSession(id);
   if (!session) notFound();
 
   const createdAt = new Date(session.createdAt);
@@ -82,8 +83,6 @@ export default async function V2SummaryPage({ params }: PageProps) {
         speakerLocation={session.speakerLocation}
         transcript={session.transcript}
         summary={session.finalSummary}
-        hasDeepening={deepeningExists}
-        canGenerateStudy={canGenerateStudy}
         meta="compact"
         mode={session.mode}
       />

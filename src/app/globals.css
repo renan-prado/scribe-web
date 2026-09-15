@@ -980,8 +980,11 @@
   --animate-insight-gradient: insight-gradient 12s ease-in-out infinite;
   --animate-consolidate-pulse: consolidate-pulse 1.6s ease-in-out infinite;
   --animate-ai-spin: ai-spin 2.4s ease-in-out infinite;
-  /* O BOTÃO de gravar do v2 sumindo e voltando com a rolagem. Quem vai e vem é
-     só ele: a faixa de gradiente atrás fica sempre (ver `RecordDock`).
+  /* O BOTÃO de criar do v2 sumindo e voltando com a rolagem. Quem vai e vem é
+     só ele: a faixa de gradiente atrás fica sempre (ver `CreateDock`). A
+     entrada serve também ao painel de opções que ele abre, com a origem no
+     canto de baixo à direita: é a mesma ideia, um objeto que cresce de dentro
+     do lugar onde o dedo tocou.
      As duas são ASSIMÉTRICAS de propósito: sumir é só opacidade e quase
      instantâneo (45ms, três quadros a 60Hz), porque o que sai da frente não
      precisa ser anunciado e qualquer demora ali é sentida como atraso da

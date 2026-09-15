@@ -1,6 +1,6 @@
 "use client";
 
-import { ChevronsUpDown, LogOut, User as UserIcon } from "lucide-react";
+import { LogOut, User as UserIcon } from "lucide-react";
 import Link from "next/link";
 import { type ReactNode, useRef, useState } from "react";
 import {
@@ -20,16 +20,14 @@ import { CoinMark } from "@/shared/icons/CoinMark";
  * A conta, num menu só: quem você é, quanto você tem, e as portas que o seu
  * papel abre.
  *
- * Ele tem DOIS gatilhos e UM conteúdo, e é essa a razão de existir. O avatar
- * mora na `TopBar`, à direita da lupa; a LINHA mora no rodapé da gaveta do
- * hambúrguer, no mesmo desenho do rodapé da sidebar do `/admin`. São dois
- * lugares porque são dois caminhos: quem já está na tela toca no avatar, quem
- * abriu a gaveta para navegar encontra a conta onde ela está no painel. Duas
- * implementações é que não dá — o item mais perigoso do app (o Sair) não pode
- * ter duas versões que divergem no primeiro ajuste.
+ * O gatilho é o avatar da `TopBar`, à direita da lupa, e ele é o ÚNICO: a
+ * conta teve um segundo caminho, uma linha no rodapé da gaveta do hambúrguer,
+ * com este mesmo conteúdo — o item mais perigoso do app (o Sair) nunca pôde ter
+ * duas versões. A gaveta morreu junto com o hambúrguer (ver `TopBar`), e o
+ * `variant="row"` foi embora com ela: uma variante que ninguém renderiza é uma
+ * decisão de desenho que ninguém mais está lendo.
  *
- * **O saldo entrou aqui e saiu do cabeçalho da gaveta**, na mesma linha do nome,
- * que é onde ele estava lá. Ele continua sendo o `CoinBalance` de verdade
+ * **O saldo mora aqui**, na mesma linha do nome. Ele é o `CoinBalance` de verdade
  * (assina a store das moedas, então um gasto feito numa aba aparece sem
  * recarregar), com duas diferenças:
  *
@@ -60,10 +58,6 @@ type Props = {
    * usuário logado baixa. O `false` esconderia o item na tela, não o código.
    */
   privilegedItems?: ReactNode;
-  /** `avatar` na `TopBar`, `row` no rodapé da gaveta. */
-  variant?: "avatar" | "row";
-  /** A gaveta se fecha quando o menu leva para outra tela. */
-  onNavigate?: () => void;
 };
 
 export function AccountMenu({
@@ -72,8 +66,6 @@ export function AccountMenu({
   avatarUrl,
   coinBalance,
   privilegedItems,
-  variant = "avatar",
-  onNavigate,
 }: Props) {
   const [billingOpen, setBillingOpen] = useState(false);
   const signOutFormRef = useRef<HTMLFormElement>(null);
@@ -93,9 +85,7 @@ export function AccountMenu({
             // só aparece no hover — invisível no celular, e um halo cinza em
             // volta de uma foto redonda no desktop. Brilho funciona nos dois
             // casos, e nas iniciais também.
-            variant === "avatar"
-              ? "-mr-1 inline-flex size-10 shrink-0 items-center justify-center overflow-hidden rounded-full hover:brightness-125 active:brightness-150"
-              : "flex w-full items-center gap-3 rounded-xl px-3 py-3 text-left hover:bg-v2-card-hover data-open:bg-v2-card-hover"
+            "-mr-1 inline-flex size-10 shrink-0 items-center justify-center overflow-hidden rounded-full hover:brightness-125 active:brightness-150"
           )}
         >
           {/* 36 dentro do botão de 40, que é o tamanho do chip da lupa ao lado.
@@ -104,26 +94,12 @@ export function AccountMenu({
               cor da página: com os dois a 40, o avatar lia como o maior dos
               dois botões. Os 2px de folga tiram esse peso sem tirar nem o alvo
               de toque nem o centro. */}
-          <Face avatarUrl={avatarUrl} initials={initials} size={variant === "avatar" ? 36 : 40} />
-          {variant === "row" ? (
-            <>
-              <span className="flex min-w-0 flex-1 flex-col leading-tight">
-                {/* 15px: a linha da conta mora no rodapé da gaveta, e com os
-                    destinos a 16px o nome de quem está logado não pode ser o
-                    menor texto do painel. */}
-                <span className="truncate text-[15px] font-semibold text-v2-ink">{name}</span>
-                {showEmail ? (
-                  <span className="truncate text-[13px] font-light text-v2-ink-mute">{email}</span>
-                ) : null}
-              </span>
-              <ChevronsUpDown className="size-4 shrink-0 text-v2-ink-mute" />
-            </>
-          ) : null}
+          <Face avatarUrl={avatarUrl} initials={initials} size={36} />
         </DropdownMenuTrigger>
 
-        {/* `bg-v2-card` com anel: aberto pela gaveta, o popup pousa sobre uma
-            superfície da MESMA cor, e sem a borda não haveria como ver onde
-            uma termina e a outra começa. O `min-w` é o que vence o
+        {/* `bg-v2-card` com anel: sem a borda, o popup e as superfícies
+            elevadas da tela seriam a MESMA cor, e não haveria como ver onde uma
+            termina e a outra começa. O `min-w` é o que vence o
             `w-(--anchor-width)` do `dropdown-menu.tsx` — sem ele o menu do
             avatar teria a largura do avatar. */}
         <DropdownMenuContent
@@ -132,7 +108,7 @@ export function AccountMenu({
           className="min-w-[18rem] rounded-2xl bg-v2-card p-2 text-v2-ink ring-1 ring-v2-card-hover"
         >
           {/* Quem é você e quanto você tem, na mesma linha: as duas coisas
-              respondem à mesma pergunta, e era assim que a gaveta abria. */}
+              respondem à mesma pergunta. */}
           <div className="flex items-center gap-3 rounded-xl bg-v2-card-hover px-3 py-3">
             <Face avatarUrl={avatarUrl} initials={initials} size={40} />
             <div className="flex min-w-0 flex-1 flex-col">
@@ -151,11 +127,7 @@ export function AccountMenu({
             Créditos e planos
           </DropdownMenuItem>
 
-          <DropdownMenuItem
-            render={<Link href="/profile" />}
-            onClick={onNavigate}
-            className={ACCOUNT_ITEM_CLASS}
-          >
+          <DropdownMenuItem render={<Link href="/profile" />} className={ACCOUNT_ITEM_CLASS}>
             <UserIcon className="size-4 text-v2-ink-mute" />
             Meu perfil
           </DropdownMenuItem>

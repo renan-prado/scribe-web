@@ -35,7 +35,7 @@ const poppins = Poppins({
  * `viewport-fit=cover` é o que faz `env(safe-area-inset-*)` deixar de valer
  * zero. Sem ele, no iPhone o app instalado desenha o botão de gravar por baixo
  * da barra do indicador de início, e o dedo acerta o gesto do sistema, não o
- * botão. Quem consome os insets é o `RecordDock` e o rodapé de cada tela.
+ * botão. Quem consome os insets é o `CreateDock` e o rodapé de cada tela.
  *
  * O zoom fica LIBERADO aqui de propósito (`maximumScale: 5`, sem
  * `userScalable`), e este layout é o SITE: landing, páginas legais, as de

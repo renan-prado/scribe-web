@@ -69,14 +69,14 @@ tamanho zero no canto da tela, sem erro nenhum no console. Ver `src/lib/anchors.
 **No celular, o balão encosta no rodapé, e por isso o alvo PRESO ao viewport
 tem tratamento próprio.** A correção normal, quando o alvo cairia embaixo do
 balão, é rolar a página; ela não move um elemento `fixed`, e o passo do
-"Gravar", cujo alvo mora no `RecordDock`, terminava com o balão pousado
+"Criar", cujo alvo mora no `CreateDock`, terminava com o balão pousado
 exatamente em cima do botão de que estava falando. Quando rolar
 não tem como resolver, alvo preso (`isPinnedToViewport`) ou página que já rolou
 o que podia neste passo, o balão sobe para CIMA do alvo. Quem mexer na posição
 do balão precisa manter as duas saídas: a que rola e a que troca de lado.
 
 **Nenhum tour roda com o microfone ligado.** O tour da gravação tem
-`enabled={auto !== "1"}`: quem chega pelo botão do dock leva `?auto=1`, que abre
+`enabled={auto !== "1"}`: quem chega pelo "Resumo mágico" do dock leva `?auto=1`, que abre
 o microfone sozinho, e ali o tour simplesmente não dispara. Quem abre a tela pelo
 endereço direto vê. Um balão por cima de uma pregação em andamento é o pior
 defeito que esta pasta poderia ter.
@@ -137,11 +137,11 @@ O contrato entre o passo e a tela é um seletor CSS, e a convenção é
 | `library-search` | a LUPA da `TopBar` na Biblioteca (`SearchToggle`, em `(app)/components/SearchScope.tsx`) |
 | `studies-search` | a mesma lupa nos Estudos — o `tourId` é prop, a tela é que o nomeia |
 | `collection-search` | `CollectionSearch`, a barra. Nenhum tour aponta para ela, e é de propósito |
-| `record-dock` | `src/app/home/RecordDock.tsx` |
+| `create-dock` | o `+` de `src/app/(app)/home/CreateDock.tsx` (era `record-dock`, no microfone que ele substituiu) |
 | `record-button` | `src/app/recording/AudioStudio.tsx` |
 | `summary-header` | `SavedSessionView` |
 | `session-menu` | `SessionMenu` |
-| `deepen` | `DeepenButton`, nos três estados permanentes |
+| `deepen` | `DeepenButton`. Sem passo apontando para ele: o botão saiu da interface com o modo estudo |
 | `study-thesis` | `src/app/studies/[id]/page.tsx` |
 | `study-menu` | `DeepeningMenu` |
 

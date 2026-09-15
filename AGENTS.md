@@ -12,11 +12,14 @@ da própria pasta**, abra o da área em que for mexer ANTES de escrever código.
 
 ## O que é o produto
 
-**Grava → resumo → estudo, se a pessoa quiser.**
+**Grava → resumo.**
 
 Um sermão ou aula bíblica é gravado pelo microfone em UM arquivo. No stop ele
 sobe inteiro, é transcrito de uma vez e vira um resumo estruturado. A partir do
-resumo, quem tem plano `Estudioso` pede um estudo teológico, uma vez por sessão.
+resumo, quem tem plano `Estudioso` pedia um estudo teológico, uma vez por sessão
+— **o estudo está saindo do produto, e o acesso a ele já foi tirado da
+interface**: as rotas, a API e as tabelas continuam de pé, sem nenhum botão que
+chegue nelas. Ver `src/app/AGENTS.md`.
 
 **Um modo de captura só, `audio`**, a 5 moedas por minuto iniciado
 (`src/features/coins/pricing.ts`). Já foram três — `live` (com um feed de cartões

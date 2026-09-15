@@ -32,14 +32,14 @@ import { APP_VIEWPORT } from "@/shared/viewport";
  * Instalado na tela inicial, o Scriba desenha por baixo da barra de status do
  * sistema — o `viewport-fit=cover` do root layout é o que pede isso, e quem
  * pede também paga: sem o respiro, a hora e a bateria do iPhone pousavam em
- * cima do hambúrguer. O inset vale ZERO numa aba comum de navegador, então a
+ * cima do logotipo da barra. O inset vale ZERO numa aba comum de navegador, então a
  * conta é a mesma folga de sempre no desktop e a altura exata do recorte no
  * aparelho de quem instalou. Ele fica no LAYOUT, e não em cada tela: é do
  * aparelho, não da página, e repetido em seis lugares bastaria esquecer um
  * para a barra de status voltar a cobrir uma tela só.
  *
  * O irmão dele é o `env(safe-area-inset-bottom)`, que cada tela paga no
- * próprio rodapé (ver `RecordDock`): embaixo a folga depende do que a página
+ * próprio rodapé (ver `CreateDock`): embaixo a folga depende do que a página
  * põe ali, em cima é sempre a mesma barra.
  *
  * **O `TourProvider` mora AQUI, e não em cada página**, por duas razões que não
@@ -50,7 +50,7 @@ import { APP_VIEWPORT } from "@/shared/viewport";
  *
  * **O `ZoomLock` e o `viewport` daqui tiram a pinça de zoom do app.** O app é
  * instalado na tela inicial e vai virar um WebView; ampliar ali não é ler
- * melhor, é a tela sair do lugar com o `RecordDock` fora de vista. O porquê
+ * melhor, é a tela sair do lugar com o `CreateDock` fora de vista. O porquê
  * inteiro, e por que a landing continua ampliável, está em
  * `src/shared/viewport.ts`.
  *

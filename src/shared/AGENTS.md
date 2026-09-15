@@ -327,8 +327,10 @@ bloco `bg-scriba-yellow`.
 **Não há barra de navegação em `src/shared/`.** Havia `AppNav` (desktop),
 `MobileBottomNav` (celular), `nav.ts` (qual item acende) e `NavGlyphs.tsx` (os
 cinco ícones) — as quatro saíram junto com a moldura antiga. Quem navega hoje
-usa a gaveta do hambúrguer (`src/app/components/AppMenu.tsx`), e quem grava usa o
-botão do `RecordDock`, que mora na página da Biblioteca.
+tem o logotipo da `TopBar` (que leva à Biblioteca) e o menu da conta no avatar;
+quem CRIA — gravar, escrever, importar — usa o `+` do `CreateDock`, que mora na
+página da Biblioteca. A gaveta do hambúrguer que ficava entre os dois durou uma
+versão: ela existia para quatro destinos, e sobrou com um.
 
 A esfumaçada que ficava acima da barra (`--scriba-nav-fade`) e a do rodapé do
 app (`--v2-dock-fade`) continuam em `src/app/globals.css`.

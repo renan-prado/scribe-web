@@ -69,13 +69,17 @@ export default function manifest(): MetadataRoute.Manifest {
     //
     // **Gravar É um deles agora**, e não era: enquanto começar uma gravação
     // exigia escolher um modo num diálogo, não havia rota para apontar. Hoje
-    // `/recording?auto=1` é exatamente o que o botão do rodapé faz — abre o
-    // microfone e começa. É a ação mais urgente do produto (a pregação já
+    // `/recording?auto=1` é o que a primeira opção do `+` do rodapé faz — abre
+    // o microfone e começa. É a ação mais urgente do produto (a pregação já
     // começou), e é a que mais ganha em economizar dois toques.
     //
     // Eram três, e duas apontavam para `/home`: uma delas se chamava "Feed",
     // de quando existia uma tela de acompanhamento separada da Biblioteca. Dois
     // atalhos para o mesmo destino é o menu do sistema mentindo sobre o app.
+    //
+    // **Os Estudos saíram daqui junto com o resto do acesso a eles.** O modo
+    // está saindo do produto, e um atalho do sistema é acesso como qualquer
+    // outro — só que num lugar onde ninguém lembraria de ir desligá-lo.
     shortcuts: [
       {
         name: "Gravar agora",
@@ -89,13 +93,6 @@ export default function manifest(): MetadataRoute.Manifest {
         short_name: "Biblioteca",
         description: "Suas sessões salvas e importadas",
         url: "/home",
-        icons: [{ src: "/brand/icon-192.png", sizes: "192x192", type: "image/png" }],
-      },
-      {
-        name: "Estudos",
-        short_name: "Estudos",
-        description: "Os aprofundamentos gerados",
-        url: "/studies",
         icons: [{ src: "/brand/icon-192.png", sizes: "192x192", type: "image/png" }],
       },
     ],
