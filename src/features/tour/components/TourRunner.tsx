@@ -5,6 +5,7 @@ import { useCallback, useEffect, useId, useLayoutEffect, useRef, useState } from
 import { createPortal } from "react-dom";
 import { Button } from "@/components/ui/button";
 import { isPinnedToViewport, resolveAnchor } from "@/features/tour/lib/anchors";
+import { publishTourReveal } from "@/features/tour/lib/reveal";
 import type { TourStep } from "@/lib/domain/tour";
 import { cn } from "@/lib/utils";
 
@@ -97,6 +98,7 @@ export function TourRunner({ steps, onClose }: Props) {
 
   const step = steps[index];
   const isLast = index === steps.length - 1;
+  const reveal = step?.reveal ?? null;
 
   const measure = useCallback(() => {
     const el = resolveAnchor(step?.anchor);
@@ -117,6 +119,26 @@ export function TourRunner({ steps, onClose }: Props) {
     });
   }, [step]);
 
+  // O passo pede à tela que abra o que ele vai explicar — hoje só o menu de
+  // criar do celular, ver `lib/reveal.ts`. É `useLayoutEffect`, e está
+  // declarado ANTES do efeito que mede, para que o pedido saia na mesma passada
+  // em que o passo troca: publicado depois da pintura, o balão nasceria
+  // centralizado e saltaria para o alvo no quadro seguinte.
+  //
+  // O gancho é o VALOR do reveal, não o passo: três passos seguidos pedindo o
+  // mesmo painel não podem fechá-lo e reabri-lo a cada "Próximo".
+  useLayoutEffect(() => {
+    publishTourReveal(reveal);
+  }, [reveal]);
+
+  // E a limpeza mora sozinha, num efeito de desmontagem: o tour acaba por
+  // quatro caminhos (fim, "Pular", X, Escape) e nenhum deles pode deixar o menu
+  // aberto sobre a Biblioteca depois de o véu sumir. Na volta do efeito de cima
+  // ela rodaria também entre dois passos, que é justamente o que não se quer.
+  useEffect(() => {
+    return () => publishTourReveal(null);
+  }, []);
+
   // Troca de passo: leva o alvo para o meio da tela e remede enquanto a
   // rolagem suave acontece.
   //
@@ -133,12 +155,18 @@ export function TourRunner({ steps, onClose }: Props) {
       behavior: prefersReducedMotion() ? "auto" : "smooth",
     });
     measure();
+    // O quadro seguinte, antes dos tempos: é nele que aparece o alvo que o
+    // `reveal` acabou de mandar abrir. Sem ele o primeiro passo que abre o menu
+    // nasceria com o balão centralizado e saltaria para o botão 200ms depois,
+    // que é o que se vê como defeito.
+    const frame = window.requestAnimationFrame(measure);
     const timers = [
       window.setTimeout(measure, 200),
       window.setTimeout(measure, 500),
       window.setTimeout(measure, 900),
     ];
     return () => {
+      window.cancelAnimationFrame(frame);
       for (const t of timers) window.clearTimeout(t);
     };
   }, [measure, step]);

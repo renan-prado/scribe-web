@@ -53,13 +53,20 @@ import { TOPBAR_CHIP_CLASS } from "./chip";
  * ferramentas diz. O vermelho continua sendo a cor do microfone; ele volta na
  * tela de gravação, onde há o que ele marcar.
  *
- * **O alvo do tour é o chip de GRAVAR** (`data-tour="create-dock"`), o mesmo do
- * `+` do rodapé: `resolveAnchor` pega o primeiro VISÍVEL, e como um dos dois
- * está sempre em `display: none`, o balão do passo "Criar" encontra o que está
- * na tela em cada largura (ver `src/features/tour/lib/anchors.ts`). No celular
- * ele recorta o `+`, que é as três portas; no desktop recorta uma das três, e é
- * o mais honesto que dá — com a lupa no meio da fileira não existe retângulo
- * que contenha as três e mais nada.
+ * **Cada chip é um ALVO DE TOUR, e o nome dele é o mesmo da porta gêmea do
+ * `CreateDock`** (`create-record`, `create-write`, `create-import`). A
+ * apresentação da Biblioteca tem um passo por porta, e como um dos dois
+ * desenhos está sempre em `display: none`, `resolveAnchor` fica com o visível —
+ * os mesmos três passos servem às duas larguras sem um `if` de tamanho de tela
+ * em lugar nenhum (ver `src/features/tour/lib/anchors.ts`).
+ *
+ * **O que NÃO existe aqui é o `create-dock`**, e a ausência é deliberada. Ele é
+ * o `+` do rodapé, e o passo que o recorta diz "atrás deste botão estão as três
+ * portas" — uma frase que, no desktop, descreveria uma tela que não está ali:
+ * as três já estão abertas nesta barra. Sem alvo, aquele passo se apaga
+ * sozinho, pela regra de sempre. Enquanto o chip de gravar respondeu por
+ * `create-dock`, o desktop levava um balão a mais falando de um menu que ele
+ * não tem.
  */
 
 /** A porta do YouTube: cola o link e a legenda vira transcrição. */
@@ -69,6 +76,7 @@ export function ImportAction() {
       href="/importar"
       label="Importar do YouTube"
       icon={<YoutubeIcon className="size-5" />}
+      tourId="create-import"
     />
   );
 }
@@ -84,7 +92,7 @@ export function RecordAction() {
       href="/recording?auto=1"
       label="Gravar resumo"
       icon={<MicGlyph className="size-5" />}
-      tourId="create-dock"
+      tourId="create-record"
     />
   );
 }
@@ -96,6 +104,7 @@ export function WriteAction() {
       href="/escrever"
       label="Escrever resumo"
       icon={<PenLine className="size-5" strokeWidth={1.75} />}
+      tourId="create-write"
     />
   );
 }

@@ -71,9 +71,17 @@ export function isPinnedToViewport(el: HTMLElement | null): boolean {
  * aberto", o botão de gerar estudo de quem já gerou), e um tour que travasse
  * no alvo ausente seria um tour que só funciona na conta de quem o escreveu.
  *
+ * **Passo com `reveal` também entra sempre**, e é a única exceção. O alvo dele
+ * está fechado AGORA por definição — é o menu de criar do celular, que nasce
+ * fechado —, e é o próprio passo que vai mandar abri-lo (ver `reveal.ts`).
+ * Medi-lo aqui seria descartar em toda visita exatamente o passo escrito para
+ * esse caso. O preço, se um dia um `reveal` ficar sem ouvinte, é o balão nascer
+ * centralizado falando da tela em vez de apontar — o mesmo destino de qualquer
+ * âncora que some no meio do caminho, e não uma tela quebrada.
+ *
  * Lista vazia significa "esta tela não tem o que mostrar ainda", e quem chama
  * NÃO registra nada nesse caso: o tour espera a próxima visita.
  */
 export function resolveSteps(steps: readonly TourStep[]): TourStep[] {
-  return steps.filter((step) => !step.anchor || resolveAnchor(step.anchor) !== null);
+  return steps.filter((step) => !step.anchor || step.reveal || resolveAnchor(step.anchor) !== null);
 }

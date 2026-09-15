@@ -5,6 +5,7 @@ import { useEffect, useRef, useState } from "react";
 import { MicGlyph } from "@/components/icons/MicGlyph";
 import { YoutubeIcon } from "@/components/icons/YoutubeIcon";
 import { NavLink } from "@/components/NavLink";
+import { useTourReveal } from "@/features/tour/lib/reveal";
 import { cn } from "@/lib/utils";
 
 /**
@@ -123,13 +124,32 @@ import { cn } from "@/lib/utils";
  * isso. O painel é `fixed`: sem isso ele ficaria parado no canto enquanto a
  * lista corre atrás dele, com um véu por cima que o dedo atravessa — dois
  * comportamentos contraditórios no mesmo gesto.
+ *
+ * **O TOUR também abre este painel, e ele é a razão de `open` ser derivado.**
+ * As três portas do produto moram aqui dentro, atrás de um botão que nasce
+ * fechado; a apresentação da Biblioteca tem um passo para cada uma, e um tour
+ * que só pudesse falar do que já está na tela contaria as três apontando para
+ * um `+`. O pedido chega por `useTourReveal` (ver `features/tour/lib/reveal.ts`),
+ * e enquanto ele durar o painel não fecha por rolagem, por Esc nem por toque
+ * fora — o dono do painel naquele momento é o tour, e um menu que se fecha
+ * sozinho no meio do balão que fala dele é pior que um menu que não abre.
  */
 export function CreateDock() {
-  const [visible, setVisible] = useState(true);
+  const [scrolledIn, setScrolledIn] = useState(true);
   // Enquanto ninguém rolou não há animação nenhuma: no carregamento da página
   // ela seria um movimento sem causa.
   const [moved, setMoved] = useState(false);
-  const [open, setOpen] = useState(false);
+  const [tapped, setTapped] = useState(false);
+  const revealed = useTourReveal("create-dock");
+  // Aberto pelo dedo OU pelo tour. Derivado, e não um `setOpen` que o tour
+  // chamaria: com um estado só, o `setTapped(false)` da rolagem e do Esc apagaria
+  // o pedido do tour, e o painel fecharia no meio do passo que o explica.
+  const open = tapped || revealed;
+  // E o BOTÃO volta junto. Ele se esconde ao rolar para baixo, e um tour que
+  // abrisse o painel a partir de um `+` invisível recortaria um furo em cima de
+  // nada — o alvo continua tendo caixa, o holofote continua achando, e o que a
+  // pessoa vê é o véu com um buraco vazio no canto.
+  const visible = scrolledIn || revealed;
   const lastY = useRef(0);
 
   useEffect(() => {
@@ -139,9 +159,9 @@ export function CreateDock() {
       const dy = y - lastY.current;
       if (Math.abs(dy) < 8) return;
       lastY.current = y;
-      setOpen(false);
+      setTapped(false);
       const next = y < 80 ? true : dy < 0;
-      setVisible((prev) => {
+      setScrolledIn((prev) => {
         if (prev !== next) setMoved(true);
         return next;
       });
@@ -156,7 +176,7 @@ export function CreateDock() {
   useEffect(() => {
     if (!open) return;
     function onKeyDown(event: KeyboardEvent) {
-      if (event.key === "Escape") setOpen(false);
+      if (event.key === "Escape") setTapped(false);
     }
     window.addEventListener("keydown", onKeyDown);
     return () => window.removeEventListener("keydown", onKeyDown);
@@ -177,7 +197,7 @@ export function CreateDock() {
         <button
           type="button"
           aria-label="Fechar as opções de criação"
-          onClick={() => setOpen(false)}
+          onClick={() => setTapped(false)}
           className="fixed inset-0 z-20 cursor-default md:hidden"
         />
       ) : null}
@@ -264,7 +284,8 @@ export function CreateDock() {
                   href="/importar"
                   icon={<YoutubeIcon className="size-5" />}
                   label="Importar"
-                  onNavigate={() => setOpen(false)}
+                  tourId="create-import"
+                  onNavigate={() => setTapped(false)}
                 />
                 {/* Escrever não custa moeda nenhuma — não há STT nem chamada de
                   modelo em lugar nenhum dele —, e por isso não leva pastilha de
@@ -273,7 +294,8 @@ export function CreateDock() {
                   href="/escrever"
                   icon={<PenLine className="size-5" strokeWidth={1.5} />}
                   label="Escrever"
-                  onNavigate={() => setOpen(false)}
+                  tourId="create-write"
+                  onNavigate={() => setTapped(false)}
                 />
                 {/* A ÚNICA das três que é vermelha. O vermelho aqui é o mesmo
                   `--v2-rec` do microfone e do ponto que pisca durante a
@@ -286,14 +308,15 @@ export function CreateDock() {
                   icon={<MicGlyph className="size-5" />}
                   label="Gravar"
                   accent
-                  onNavigate={() => setOpen(false)}
+                  tourId="create-record"
+                  onNavigate={() => setTapped(false)}
                 />
               </div>
             </nav>
           ) : null}
           <button
             type="button"
-            onClick={() => setOpen((prev) => !prev)}
+            onClick={() => setTapped((prev) => !prev)}
             aria-label={open ? "Fechar as opções de criação" : "Criar"}
             aria-expanded={open}
             aria-controls="create-dock-options"
@@ -363,17 +386,26 @@ function CreateOption({
   icon,
   label,
   accent = false,
+  tourId,
   onNavigate,
 }: {
   href: string;
   icon: React.ReactNode;
   label: string;
   accent?: boolean;
+  /**
+   * O mesmo nome que o chip gêmeo da barra do topo carrega
+   * (`(app)/components/CreateActions.tsx`). Um dos dois está sempre em
+   * `display: none`, e o tour fica com o visível — é o que faz os passos das
+   * três portas servirem ao celular e ao desktop sem um `if` de largura.
+   */
+  tourId?: string;
   onNavigate: () => void;
 }) {
   return (
     <NavLink
       href={href}
+      data-tour={tourId}
       onClick={onNavigate}
       spinner="none"
       contentClassName="flex flex-col items-center gap-2"

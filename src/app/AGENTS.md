@@ -645,12 +645,15 @@ entre o voltar e o avatar —, e um disco vermelho no meio de quatro cinzas não
 leria como "o principal", leria como ALERTA, que é o que um ponto vermelho numa
 barra de ferramentas diz.
 
-O alvo do tour no desktop é o chip de GRAVAR, com o MESMO
-`data-tour="create-dock"` do `+` do rodapé: o `resolveAnchor` pega o primeiro
-visível (ver `src/features/tour/lib/anchors.ts`), então o passo "Criar" acha o
-que está na tela em cada largura. Com a lupa no meio da fileira não existe
-retângulo que contenha as três portas e mais nada, e recortar uma das três é o
-mais honesto que dá.
+**Cada chip é um alvo de tour, com o MESMO nome da porta gêmea do dock**
+(`create-record`, `create-write`, `create-import`): a apresentação da Biblioteca
+tem um balão por porta, o `resolveAnchor` pega o primeiro VISÍVEL (ver
+`src/features/tour/lib/anchors.ts`), e como um dos dois desenhos está sempre em
+`display: none`, os mesmos passos servem às duas larguras sem um `if` de tamanho
+de tela. O que NÃO existe aqui é o `create-dock`: ele é o `+` do rodapé, e o
+passo que o recorta diz "atrás deste botão estão as três portas" — frase que, no
+desktop, descreveria uma tela que não está ali. Sem alvo, aquele passo se apaga
+sozinho, e o desktop vê cinco balões onde o celular vê seis.
 
 **No CELULAR ele é um `+` no canto de baixo à direita, e abre as TRÊS portas**
 (`CreateDock`):
@@ -731,6 +734,17 @@ Falhando qualquer passo, o áudio continua no aparelho e a tela oferece tentar d
 novo ou **baixar o arquivo**. Isso conserta o defeito que custou uma palestra de
 quase uma hora: o `Blob` vivia numa variável local, a falha caía num `catch` que
 mostrava um aviso educado, e o coletor comia a única cópia do que foi dito.
+
+**A tela em repouso diz o que vem DEPOIS de parar**, numa pastilha sob a onda
+(o `hinting` do `AudioStudio`). Quem chega ali vê uma onda apagada e um
+microfone, e nada responde à pergunta que decide se a pessoa vai deixar o
+aparelho gravando uma hora de pregação. Ela é `absolute` dentro da caixa da
+onda, e não um irmão dela: a coluna é centralizada, então qualquer coisa que
+entrasse no fluxo empurraria a onda — que é o objeto em volta do qual a tela foi
+desenhada. E ela some no instante em que a gravação começa: dali em diante o
+lugar embaixo da onda é dos avisos que importam (saldo no fim, cópia local que
+falhou, gravação esperando resgate), e uma dica dividindo espaço com um alerta
+rebaixa o alerta.
 
 **Dívida conhecida:** começar sem internet. Gravar não depende de rede, mas a
 sessão nasce de um `POST` no stop — sem ele o áudio fica guardado esperando, o

@@ -122,6 +122,15 @@ export function AudioStudio({ autoStart = false }: { autoStart?: boolean }) {
   const busy = phase !== "capture";
   const capturing = state === "recording" || state === "paused";
   const rescuing = !busy && !capturing && pending !== null;
+  /**
+   * A dica embaixo da onda só aparece na tela EM REPOUSO, antes do primeiro
+   * toque. Ela responde "e depois, o que acontece?", e essa pergunta tem hora:
+   * depois que a gravação começa, a resposta virou passado, e o lugar embaixo da
+   * onda passa a ser dos avisos (saldo no fim, cópia local que falhou, resgate
+   * de uma gravação que ficou para trás). Por isso ela também cede a `error`:
+   * uma dica e um alerta empilhados rebaixam o alerta.
+   */
+  const hinting = idle && !busy && !rescuing && !depleted && !error;
 
   useUnloadGuard(capturing || busy);
 
@@ -286,23 +295,59 @@ export function AudioStudio({ autoStart = false }: { autoStart?: boolean }) {
   return (
     <>
       <div className="flex flex-1 flex-col items-center justify-center gap-10">
-        <div aria-hidden className="flex h-[168px] items-center justify-center gap-2 sm:gap-2.5">
-          {Array.from({ length: WAVE_BARS }, (_, i) => (
-            <span
-              key={`bar-${
-                // biome-ignore lint/suspicious/noArrayIndexKey: as barras são posições fixas, não dados
-                i
-              }`}
-              ref={(el) => {
-                barsRef.current[i] = el;
-              }}
-              className={cn(
-                "w-3.5 rounded-full bg-v2-wave transition-opacity duration-300 sm:w-4",
-                idle && !busy ? "opacity-15" : "opacity-50"
-              )}
-              style={{ height: "14px" }}
-            />
-          ))}
+        {/* A onda e a dica moram no MESMO bloco, e a dica é `absolute` dentro
+            dele: a coluna está centralizada (`justify-center`), então qualquer
+            coisa que entrasse no fluxo aqui empurraria a onda para cima — e a
+            onda é o objeto em volta do qual esta tela foi desenhada. Fora do
+            fluxo, ela pendura embaixo sem mover um pixel do que já estava. */}
+        <div className="relative flex items-center justify-center">
+          <div aria-hidden className="flex h-[168px] items-center justify-center gap-2 sm:gap-2.5">
+            {Array.from({ length: WAVE_BARS }, (_, i) => (
+              <span
+                key={`bar-${
+                  // biome-ignore lint/suspicious/noArrayIndexKey: as barras são posições fixas, não dados
+                  i
+                }`}
+                ref={(el) => {
+                  barsRef.current[i] = el;
+                }}
+                className={cn(
+                  "w-3.5 rounded-full bg-v2-wave transition-opacity duration-300 sm:w-4",
+                  idle && !busy ? "opacity-15" : "opacity-50"
+                )}
+                style={{ height: "14px" }}
+              />
+            ))}
+          </div>
+          {hinting ? (
+            /* A promessa que falta na tela mais silenciosa do produto: quem
+               chega aqui vê uma onda apagada e um microfone, e nada diz o que
+               acontece DEPOIS de parar. É a pergunta que decide se a pessoa
+               deixa o aparelho gravando uma hora de pregação.
+
+               Ela some no instante em que a gravação começa (`hinting`), e não
+               fica esmaecendo por trás do que a tela tem a dizer: durante a
+               pregação o lugar de baixo da onda é dos avisos que importam — o
+               saldo que acabou, a cópia que não foi guardada —, e uma dica
+               dividindo espaço com um alerta rebaixa o alerta.
+
+               **`w-max` não é enfeite, é o que faz a pastilha ter largura.**
+               Um elemento absoluto é medido pelo espaço que sobra no
+               contêiner, e com `left-1/2` isso é METADE da fileira de barras —
+               a frase quebrava em cinco linhas e a pastilha virava um ovo.
+               `w-max` a faz medir pelo texto, e o `max-w` é quem decide onde
+               ela quebra; `text-balance` reparte as duas linhas em vez de
+               deixar uma palavra sozinha na segunda.
+
+               A âncora é o CENTRO da onda mais 48px, e não a base da caixa
+               dela: a caixa tem 168px de altura para as barras crescerem
+               durante a pregação, e pendurar a dica lá embaixo a deixava
+               flutuando a 84px de qualquer coisa. Ela só aparece com as barras
+               em repouso, então não há altura de barra com que se preocupar. */
+            <p className="pointer-events-none absolute top-1/2 left-1/2 mt-12 w-max max-w-[min(18rem,80vw)] -translate-x-1/2 text-balance rounded-2xl bg-v2-card px-4 py-2.5 text-center text-xs font-light leading-snug text-v2-ink-mute">
+              Ao encerrar, o Scriba transcreve tudo e escreve o resumo para você.
+            </p>
+          ) : null}
         </div>
 
         {busy ? (

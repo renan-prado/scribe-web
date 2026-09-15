@@ -26,11 +26,30 @@
  * nenhum, o tour não roda E NÃO É MARCADO como visto, ele espera a tela ter o
  * que mostrar.
  *
+ * ## Passo que ABRE o que vai explicar
+ *
+ * A regra de cima tem uma exceção, e ela é o menu de criar do celular: as três
+ * portas do produto moram atrás de um `+` que nasce fechado, e um passo que
+ * esperasse encontrá-las na tela seria descartado em toda visita. `reveal` é o
+ * pedido do passo à tela — "abra isto antes" —, e quem sabe abrir escuta (ver
+ * `features/tour/lib/reveal.ts`).
+ *
  * ## `version`: subir é interromper todo mundo de novo
  *
  * Ver `supabase/migrations/0051_user_tours.sql`. Consertar uma vírgula não
  * sobe versão. Acrescentar um passo sobre um botão novo sobe.
  */
+
+/**
+ * O que um passo é capaz de pedir que a tela abra antes de falar dele.
+ *
+ * É uma lista fechada de propósito: cada nome aqui tem, do outro lado, um
+ * componente que o escuta. Um nome sem ouvinte é um passo que aponta para o
+ * vazio, e a lista curta é o que torna óbvio, ao ler, quais são os pares.
+ */
+export const TOUR_REVEALS = ["create-dock"] as const;
+
+export type TourReveal = (typeof TOUR_REVEALS)[number];
 
 /** O seletor é o contrato entre o passo e a tela. Ver `data-tour` nas páginas. */
 export type TourStep = {
@@ -44,6 +63,15 @@ export type TourStep = {
    * barra do celular desenham o mesmo botão, um deles está sempre oculto).
    */
   anchor?: string;
+  /**
+   * Pede à tela que abra algo ANTES deste passo, e o mantém aberto enquanto ele
+   * durar. Ver `TOUR_REVEALS` acima e `features/tour/lib/reveal.ts`.
+   *
+   * Um passo com `reveal` não é descartado por o alvo não estar na tela na hora
+   * em que o tour é montado — é exatamente esse o caso que ele existe para
+   * resolver. Ver `resolveSteps`.
+   */
+  reveal?: TourReveal;
   title: string;
   body: string;
 };
@@ -75,18 +103,32 @@ export function isTourKey(value: unknown): value is TourKey {
  */
 export const TOURS: Record<TourKey, TourDefinition> = {
   library: {
-    version: 1,
+    /**
+     * **2 porque o tour passou a explicar as TRÊS portas de criação**, uma por
+     * passo, e não mais uma linha sobre o botão que as esconde. Isso é
+     * exatamente o caso que a `version` existe para cobrir: quem viu a v1 viu
+     * um tour que não contava que escrever e importar existem, e o produto
+     * inteiro está nessas três palavras.
+     *
+     * O preço mudou de lugar junto. Na v1 ele aparecia uma vez, e só o da
+     * gravação, porque dizer os três dentro de um balão só seria uma tabela; com
+     * um balão por porta, cada preço cabe onde ele é a resposta à pergunta que
+     * acabou de nascer ("e este, quanto custa?").
+     */
+    version: 2,
     label: "Biblioteca",
     steps: [
       {
+        /**
+         * O "Bem-vindo" e o "o que é esta tela" eram dois passos, e viraram um.
+         * O tour ganhou três passos sobre as portas de criação, e sete balões
+         * na primeira tela da vida de alguém é uma parede; os dois que se
+         * juntaram diziam a mesma coisa em dois fôlegos, e juntos ainda plantam
+         * os três verbos que os últimos passos vão desenvolver.
+         */
         id: "welcome",
         title: "Bem-vindo ao Scriba",
-        body: "Em um minuto eu mostro o que tem em cada tela. Dá para pular a qualquer momento e rever tudo depois, no seu perfil.",
-      },
-      {
-        id: "intro",
-        title: "Tudo o que você já ouviu",
-        body: "Cada gravação e cada vídeo importado fica aqui para você acessar a qualquer momento.",
+        body: "Esta é a sua Biblioteca: toda pregação que você gravar, escrever ou importar fica guardada aqui. Em um minuto eu mostro o resto — dá para pular e rever depois, no seu perfil.",
       },
       {
         /**
@@ -109,21 +151,57 @@ export const TOURS: Record<TourKey, TourDefinition> = {
       },
       {
         /**
-         * O alvo é o `+` do rodapé, que era um microfone sozinho
-         * (`[data-tour="record-dock"]`). O passo é o MESMO passo, no mesmo
-         * lugar da tela, falando do botão que substituiu aquele — por isso a
-         * `version` não sobe: subi-la reabriria o "Bem-vindo ao Scriba" na cara
-         * de toda a base para mostrar um balão sobre o mesmo canto.
+         * **Este passo é do CELULAR, e some no desktop de propósito.**
+         * `[data-tour="create-dock"]` é o `+` do rodapé, que é `md:hidden`; no
+         * desktop as três portas já estão abertas na barra do topo, e um passo
+         * dizendo "elas estão atrás deste botão" descreveria uma tela que não
+         * está ali. Ele se apaga sozinho, pela regra de sempre: alvo ausente,
+         * passo descartado (ver `features/tour/lib/anchors.ts`).
          *
-         * O preço continua no texto, e continua sendo só o da gravação: das
-         * três portas, é a única cobrada por minuto. Escrever não custa nada e
-         * a importação tem preço fechado por vídeo — dizer os três aqui seria
-         * uma tabela dentro de um balão.
+         * Ele NÃO leva `reveal`, e é isso que faz a sequência funcionar: aqui o
+         * painel ainda está fechado e o holofote recorta o `+`; no "Próximo" o
+         * painel abre e o balão passa a apontar para dentro dele. A pessoa vê o
+         * menu nascer do botão de que acabaram de lhe falar, em vez de ouvir
+         * que ele existe.
          */
-        id: "record",
+        id: "create",
         anchor: '[data-tour="create-dock"]',
-        title: "Criar",
-        body: "É por aqui que tudo começa: gravar a pregação, escrever você mesmo ou importar um vídeo do YouTube. Gravar custa 5 moedas por minuto iniciado, com a transcrição e o resumo já nesse preço.",
+        title: "Tudo começa por aqui",
+        body: "Atrás deste botão estão as três portas do Scriba. Vou mostrar uma a uma.",
+      },
+      {
+        /**
+         * Daqui até o fim, os três alvos existem DUAS vezes — no painel do
+         * `CreateDock`, no celular, e nos chips da barra do topo, no desktop
+         * (`(app)/components/CreateActions.tsx`). Um dos dois está sempre em
+         * `display: none`, e `resolveAnchor` fica com o visível, então os
+         * mesmos três passos servem às duas larguras sem um `if` de tamanho de
+         * tela em lugar nenhum.
+         *
+         * O `reveal` é o que abre o painel no celular e o mantém aberto pelos
+         * três passos (ver `features/tour/lib/reveal.ts`). No desktop ele não
+         * tem efeito nenhum: o dock inteiro é `md:hidden`, e quem escuta o
+         * pedido está dentro dele.
+         */
+        id: "create-record",
+        anchor: '[data-tour="create-record"]',
+        reveal: "create-dock",
+        title: "Gravar",
+        body: "Deixe o aparelho gravando durante a pregação. No fim, o Scriba transcreve tudo e escreve o resumo para você. Custa 5 moedas por minuto iniciado, com a transcrição e o resumo já nesse preço.",
+      },
+      {
+        id: "create-write",
+        anchor: '[data-tour="create-write"]',
+        reveal: "create-dock",
+        title: "Escrever",
+        body: "A folha em branco: aqui é você quem escreve, em blocos — título, passagem bíblica, frase de destaque, conclusão. É o único caminho do Scriba que não custa moeda nenhuma.",
+      },
+      {
+        id: "create-import",
+        anchor: '[data-tour="create-import"]',
+        reveal: "create-dock",
+        title: "Importar do YouTube",
+        body: "Cole o link de um culto que foi transmitido e a legenda do vídeo vira a transcrição — o mesmo resumo, sem gravar nada. São 30 moedas por vídeo, e dá para importar só o trecho da pregação.",
       },
     ],
   },

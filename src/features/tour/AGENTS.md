@@ -11,6 +11,7 @@ components/TourRunner          o overlay: o véu com furo e o balão
 components/TourTrigger         o gatilho, montado no fim de cada tela
 components/ProfileTourRow      "Rever os tours", no /profile
 lib/anchors.ts                 achar o elemento de que o passo fala
+lib/reveal.ts                  pedir à tela que ABRA o que o passo explica
 lib/api.ts                     as três chamadas, duas em silêncio
 ```
 
@@ -60,6 +61,25 @@ inacabada, o botão de gerar estudo troca de forma para quem já gerou. Um tour
 que travasse no alvo ausente seria um tour que só funciona na conta de quem o
 escreveu. E se não sobrar passo nenhum, **nada é registrado**: a tela ainda não
 tem o que mostrar, e o tour espera a próxima visita.
+
+**O passo que precisa de um menu FECHADO pede que ele abra, e é a única
+exceção à regra acima.** As três portas de criação do celular moram atrás do
+`+` do `CreateDock`, que nasce fechado; a apresentação da Biblioteca tem um
+balão para cada uma, e medi-las na hora em que o tour monta as descartaria em
+toda visita. O passo declara `reveal: "create-dock"`, o `TourRunner` publica
+esse pedido enquanto ele durar, e o `CreateDock` escuta (`lib/reveal.ts`). Três
+consequências que quem mexer aqui precisa manter:
+
+- **`resolveSteps` não julga um passo com `reveal`.** Ele entra sempre — o alvo
+  dele está fechado por definição, e é ele mesmo que vai mandar abrir.
+- **A limpeza é de DESMONTAGEM, não da volta do efeito.** O tour acaba por
+  quatro caminhos e nenhum deles pode deixar o menu aberto sobre a Biblioteca
+  depois de o véu sumir; e entre dois passos que pedem o MESMO reveal, uma
+  limpeza no meio fecharia e reabriria o painel a cada "Próximo".
+- **Quem escuta deriva o `open`, não o guarda.** No `CreateDock`, `open` é
+  `tapped || revealed`: com um estado só, o `setTapped(false)` da rolagem e do
+  Esc apagaria o pedido do tour e o painel fecharia no meio do balão que fala
+  dele.
 
 **O alvo é o primeiro elemento VISÍVEL do seletor, não o primeiro.** Parte dos
 alvos é desenhada duas vezes, em versões que se escondem por `display: none`
@@ -116,12 +136,20 @@ relativo ao viewport dentro de um ancestral com `transform`, e o `/admin` e o
 
 Os atrasos e o porquê de cada um estão em `config.ts`.
 
+**O tour da Biblioteca tem SEIS passos no celular e CINCO no desktop, e a
+diferença não é um `if` de largura.** Os três últimos falam de uma porta de
+criação cada, e cada porta é desenhada duas vezes — no painel do dock e na barra
+do topo —, com uma delas sempre em `display: none`; o alvo visível é o que o
+holofote acha. O sexto é o `+`, que só existe no celular: no desktop as três
+portas já estão abertas na barra, e um balão dizendo "elas estão atrás deste
+botão" descreveria uma tela que não está ali. Sem alvo, ele se apaga sozinho.
+
 **A Biblioteca vazia é a única que TEM tour, e é de propósito.** O vazio das
 outras listas é uma lista que não encheu ainda; o vazio da Biblioteca é a
 primeira tela do primeiro minuto de quem se cadastrou, e o `library` é o único
 tour que começa com "Bem-vindo ao Scriba". Calá-lo ali seria calá-lo justamente
-para quem ele foi escrito. Os quatro passos sobrevivem à lista vazia porque
-nenhum alvo deles mora nela: a lupa e o botão de gravar existem sempre.
+para quem ele foi escrito. Os passos sobrevivem à lista vazia porque
+nenhum alvo deles mora nela: a lupa e as portas de criação existem sempre.
 
 O vazio dos `/studies` fica de fora porque o tour de lá fala de uma lista que
 não está na tela, e a tela de convite fica de fora por outro motivo: ela JÁ É
@@ -137,7 +165,10 @@ O contrato entre o passo e a tela é um seletor CSS, e a convenção é
 | `library-search` | a LUPA da `TopBar` na Biblioteca (`SearchToggle`, em `(app)/components/SearchScope.tsx`) |
 | `studies-search` | a mesma lupa nos Estudos — o `tourId` é prop, a tela é que o nomeia |
 | `collection-search` | `CollectionSearch`, a barra. Nenhum tour aponta para ela, e é de propósito |
-| `create-dock` | o `+` de `src/app/(app)/home/CreateDock.tsx` (era `record-dock`, no microfone que ele substituiu) |
+| `create-dock` | o `+` de `src/app/(app)/home/CreateDock.tsx` (era `record-dock`, no microfone que ele substituiu). **Só no celular**: o passo que fala dele se apaga sozinho no desktop |
+| `create-record` | a porta "Gravar" — o quadrado do painel do dock, e o chip do microfone da `TopBar` |
+| `create-write` | a porta "Escrever", nos mesmos dois lugares |
+| `create-import` | a porta "Importar", nos mesmos dois lugares |
 | `record-button` | `src/app/recording/AudioStudio.tsx` |
 | `summary-header` | `SavedSessionView` |
 | `session-menu` | `SessionMenu` |
