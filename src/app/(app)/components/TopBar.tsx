@@ -17,14 +17,13 @@ import { TOPBAR_CHIP_CLASS } from "./chip";
  * são telas diferentes do mesmo produto, e um cabeçalho que muda de desenho ao
  * entrar na gravação faria a pessoa achar que saiu do app.
  *
- * **O canto esquerdo é a PENA, sozinha e em cinza, e ela leva para a
- * Biblioteca.** Ali houve um
- * hambúrguer, e a gaveta dele tinha quatro destinos: Biblioteca, Estudos,
+ * **O canto esquerdo é a PENA, sozinha, em cinza, e ela não clica.** Ali houve
+ * um hambúrguer, e a gaveta dele tinha quatro destinos: Biblioteca, Estudos,
  * Escrever e Importar do YouTube. Os dois últimos passaram para o `+` do
- * rodapé, que é onde se cria; os Estudos saíram da interface; e a Biblioteca
- * sozinha não é uma gaveta, é a marca — que é onde todo mundo já toca para
- * voltar ao começo de um app. Uma gaveta com um item só é um clique cobrado
- * para mostrar o que o clique anterior já poderia ter feito.
+ * rodapé, que é onde se cria; os Estudos saíram da interface; e a Biblioteca,
+ * que sobrou, virou por um tempo o destino da própria marca. Hoje nem isso: a
+ * pena é MARCAÇÃO, sem link e sem hover. Quem precisa da Biblioteca chega nela
+ * pelo voltar do `/summary`, que é o caminho por onde se entrou.
  *
  * **Ela é um server component, e por isso é a PÁGINA quem a renderiza**, nunca
  * um componente cliente. É aqui que o perfil e o saldo são lidos (uma consulta,
@@ -32,11 +31,17 @@ import { TOPBAR_CHIP_CLASS } from "./chip";
  * o menu da conta abre com quem é você e quanto você tem.
  *
  * O canto direito tem DUAS coisas, e só uma delas é da página. O `trailing` é
- * um SLOT: a Biblioteca passa o gatilho da busca (que precisa do estado dela,
- * ver `SearchScope`), a gravação passa o relógio. **O avatar vem depois dele e
- * é da BARRA**, em toda tela que a monte: a conta não é assunto de uma página,
- * e um avatar que aparece e some conforme a tela obrigaria a decorar em qual
- * delas ele estava. Ver `AccountMenu`.
+ * um SLOT: a Biblioteca passa as portas de criação e o gatilho da busca (que
+ * precisa do estado dela, ver `SearchScope`), o `/summary` passa as portas e a
+ * busca DENTRO do resumo, a gravação passa o relógio. **O avatar vem depois
+ * dele e é da BARRA**, em toda tela que a monte: a conta não é assunto de uma
+ * página, e um avatar que aparece e some conforme a tela obrigaria a decorar em
+ * qual delas ele estava. Ver `AccountMenu`.
+ *
+ * **Entre os dois há um FIO, e só no desktop.** No celular o `trailing` tem um
+ * ou dois botões; no desktop ele tem quatro, e o quinto disco da fila não é um
+ * controle da tela, é a CONTA. O fio é o que separa as duas categorias — ver o
+ * comentário dele lá embaixo.
  *
  * **Com `backHref`, o canto esquerdo troca a pena por um VOLTAR** e o título
  * pode sumir — é a barra do `/summary`. Uma tela de leitura aberta a partir de
@@ -100,26 +105,26 @@ export async function TopBar({
            duas palavras no mesmo peso lado a lado, e a que importa é a que diz
            onde você está. A pena basta para dizer de quem é o app, e em
            `--v2-ink-mute` ela fica no plano em que uma marca fica: presente e
-           atrás do conteúdo. No toque ela acende até a tinta cheia.
+           atrás do conteúdo.
 
-           Ela mora dentro de um link de 40px — a mesma caixa do chip do voltar
-           e da lupa, que é o que mantém a barra com a mesma altura em toda
-           tela. Mas NÃO ganha o disco `--v2-card` do chip: a marca não é um
-           controle, e dentro de uma pastilha ela viraria mais um botão numa
-           fileira deles.
+           **Ela NÃO é clicável, e não reage ao mouse: é marcação.** Foi um link
+           para a Biblioteca por algumas versões, herdado da gaveta do
+           hambúrguer que morava neste canto. Um logotipo que acende sob o
+           cursor promete um destino, e num app de três telas esse destino não
+           valia o clique que ele pedia. Sem `hover`, sem `focus`, sem `href`:
+           quem olha entende que ali não há nada para tocar.
 
-           O `aria-label` é da âncora porque a pena é `aria-hidden`: sem ele o
-           link ficaria sem nome nenhum, e o leitor de tela anunciaria só
-           "link". "Biblioteca" é para onde ele vai. */
-        <NavLink
-          href="/home"
-          aria-label="Biblioteca"
-          spinner="none"
-          contentClassName="inline-flex items-center"
-          className="inline-flex size-10 shrink-0 items-center justify-center rounded-full text-v2-ink-mute transition-colors hover:text-v2-ink focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-v2-ink-mute"
-        >
+           Ela mora numa caixa de 40px — a mesma do chip do voltar e da lupa —,
+           e é isso que mantém a barra com a mesma altura em toda tela. Mas NÃO
+           ganha o disco `--v2-card` do chip: dentro de uma pastilha a marca
+           viraria mais um botão numa fileira deles, que é exatamente o que ela
+           deixou de ser.
+
+           Não leva `aria-label` nenhum: a pena já é `aria-hidden`, e um enfeite
+           sem ação não é coisa que o leitor de tela precise anunciar. */
+        <span className="inline-flex size-10 shrink-0 items-center justify-center text-v2-ink-mute">
           <ScribaMark size={26} />
-        </NavLink>
+        </span>
       )}
       {/* Sem peso: o título é a placa da tela, e em negrito ele competia com o
           conteúdo que a página veio mostrar. */}
@@ -135,7 +140,29 @@ export async function TopBar({
           que segurar, e o vão seria um buraco de 40px antes do avatar. */}
       {trailing ?? (title ? <span aria-hidden className="size-10 shrink-0" /> : null)}
       {/* Sem sessão não há conta a abrir, e o canto fica com a lupa sozinha. */}
-      {account ? <AccountMenu {...identity} privilegedItems={privilegedItems} /> : null}
+      {account ? (
+        <>
+          {/* O FIO entre os controles e o avatar, e só no desktop.
+
+              Ali no celular há dois botões; no desktop são cinco discos do
+              mesmo tamanho em fila, e o quinto não é um controle da tela, é a
+              CONTA — outra categoria de coisa, que abre um menu em vez de
+              levar a uma tela. Sem o fio, "criar um resumo" e "sair do app"
+              ficam a um disco de distância um do outro, indistinguíveis até
+              se ler os ícones.
+
+              É `--v2-card-hover`, o cinza do hover dos chips: um degrau acima
+              do `--v2-card` deles e um abaixo da tinta. Em `--v2-ink-mute` o
+              fio pesaria mais que os glifos que ele separa, e um divisor que
+              se lê antes do conteúdo virou o conteúdo.
+
+              24px de altura contra os 40 dos chips: um fio da altura cheia
+              fecharia a barra em duas caixas, e o que se quer é uma pausa, não
+              uma parede. */}
+          <span aria-hidden className="hidden h-6 w-px shrink-0 bg-v2-card-hover md:block" />
+          <AccountMenu {...identity} privilegedItems={privilegedItems} />
+        </>
+      ) : null}
     </header>
   );
 }

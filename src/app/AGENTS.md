@@ -115,6 +115,28 @@ A moldura é `src/app/(app)/layout.tsx`, e ela quase não desenha: não há head
 barra de navegação, cada tela renderiza a sua própria `TopBar`. Ela garante o
 chão grafite e monta o `TourProvider`.
 
+**A coluna do app tem teto de 1024px, e ele é escrito em CADA página**, no
+`max-w-[1024px]` do `<main>` — o layout não o declara porque cada tela tem o
+próprio recuo e a própria folga de rodapé, e um contêiner a mais em volta só
+para segurar uma largura seria uma `div` por tela. Ele já foi 640px: a tela
+nasceu de um print de celular, e num monitor a coluna ficava com meia tela de
+vão de cada lado. Quem sobe o teto sobe junto o que ele CONTÉM — foi o que
+aconteceu com o mural de post-its, que ganhou colunas no mesmo commit; largura
+maior sem conteúdo que a ocupe é o cartão esticado de sempre, num tamanho
+maior.
+
+**Nas telas de LEITURA o teto vale para a BARRA e não para o texto.** O
+`/summary` e o `/escrever` têm o `<main>` em 1024px, como todo o resto, e uma
+coluna INTERNA de `max-w-3xl` (768px) em volta do conteúdo. São duas medidas
+diferentes porque respondem a duas perguntas diferentes: a barra do topo é a
+mesma peça em toda tela do app, e terminá-la 256px antes numa delas faria o
+avatar saltar de lugar ao abrir um cartão; a largura de um parágrafo, essa, não
+é layout, é MEDIDA DE LINHA — a 1024px a linha passa de 120 caracteres e o olho
+perde o começo da seguinte. O `/studies/[id]` ficou em 768px INTEIRO, barra
+junto, e não é esquecimento: o modo estudo está saindo do produto e não há
+botão que chegue nele, então mexer no layout de uma tela sem acesso é trabalho
+numa coisa que vai ser apagada.
+
 **A `TopBar` é um SERVER component** (`src/app/(app)/components/`): ela lê perfil e
 saldo com `getCurrentAccount`, então quem a renderiza é sempre a PÁGINA, nunca
 um componente cliente. O canto direito tem duas coisas: o SLOT `trailing`, que
@@ -143,14 +165,35 @@ barra seria dizê-lo duas vezes. O avatar não muda. Quem monta a barra lá é a
 página, e ela entra no `SavedSessionView` por um slot `header`, porque aquela
 view é `"use client"` e não teria como renderizar um server component.
 
-**As telas de LEITURA não têm lupa** (o `/summary` e o estudo). Elas já tiveram,
-levando para a busca do acervo, e a leitura era outra: sobre um texto longo,
-uma lupa promete procurar DENTRO dele. Um botão que promete uma coisa e faz
-outra é pior que o botão que falta. Quem continua com ela é o `/importar`, onde
-não há conteúdo com que confundir: lá é a `LibrarySearchLink`, um LINK para
-`/home?busca=1` — a busca é da Biblioteca, índice e filtros moram no
-`LibraryBrowser`. O `?busca=1` é lido pela `/home` e vira o `defaultOpen` do
-`SearchScope`, senão a lupa entregaria a Biblioteca com o campo fechado.
+**A lupa existe em toda tela, e ela não faz a mesma coisa em todas.** São três
+botões com o mesmo glifo, no mesmo lugar da barra, e a diferença entre eles é o
+ALCANCE da busca, não o desenho:
+
+| Tela | Quem é a lupa | O que ela procura |
+|---|---|---|
+| `/home`, `/studies` | `SearchToggle` | a lista da própria tela (`SearchScope`) |
+| `/summary` | `SummaryFindToggle` | **dentro do resumo aberto** |
+| `/importar`, `/escrever` | `LibrarySearchLink` | o acervo, num link para `/home?busca=1` |
+
+O `?busca=1` é lido pela `/home` e vira o `defaultOpen` do `SearchScope`, senão
+a lupa entregaria a Biblioteca com o campo fechado.
+
+**O `/summary` foi o caso difícil, e por um tempo a saída foi não ter lupa
+nenhuma ali.** O raciocínio estava certo pela metade: sobre um texto longo, uma
+lupa promete procurar DENTRO dele, e a que havia levava para o acervo — um botão
+que promete uma coisa e faz outra é pior que o botão que falta. Só que a
+conclusão de então foi tirar o botão, e a de agora é cumprir a promessa. Quem
+quer o acervo tem o voltar, que é por onde entrou.
+
+O motor disso é `features/session/components/SummaryFind.tsx`, e ele não passa
+pelos renderizadores de bloco: são `Range`s sobre o DOM já pintado, entregues à
+CSS Custom Highlight API. O porquê está no cabeçalho do arquivo, e vale ler
+antes de mexer — é o que permite achar o texto dos versículos, que chega por
+fetch e não está em `SummaryPayload`.
+
+O `/escrever` ficou com o link para o acervo, e não com uma busca própria:
+procurar dentro de um rascunho que a pessoa acabou de digitar, e que cabe na
+tela, é uma busca sobre um palheiro que ela conhece de cor.
 
 ## `/escrever`: a terceira porta
 
@@ -459,8 +502,14 @@ some ao rolar para baixo e volta ao rolar para cima.
 
 ### O mural de post-its
 
-Cada sessão é um post-it (`LibraryNote`) num masonry de DUAS colunas
-(`columns-2`), e o cartão diz três coisas: **autor, título e data.**
+Cada sessão é um post-it (`LibraryNote`) num masonry de CSS, e o cartão diz
+três coisas: **autor, título e data.**
+
+**O número de colunas cresce com a tela** (`columns-2 sm:columns-3
+lg:columns-4`), e é o que segura o teto de 1024px da página: duas colunas numa
+coluna de 992px dariam post-its de meia tela. Nos três degraus o post-it fica na
+mesma faixa de largura, ~230 a ~300px, que é onde autor, título e data cabem em
+poucas linhas.
 
 **Os Estudos são o MESMO mural** (`StudyNote`): autor da pregação, título do
 estudo, data em que ele foi gerado. Enquanto uma tela era um mural de anotações
@@ -536,15 +585,76 @@ página. **Vale para os Estudos também**, onde a barra já foi permanente: a lu
 aparece quando há algum estudo — sem lista montada, o botão abriria uma barra
 sem onde existir.
 
-O botão de criar mora na PÁGINA do `/home`, não no layout, e é o que o mantém
-fora do `/summary`: uma tela de leitura não oferece gravar.
+O `CreateDock` mora na PÁGINA do `/home`, não no layout, e é o que o mantém
+fora do `/summary`: no celular, chegar a uma tela de leitura é ter escolhido
+LER, e um `+` flutuando sobre o sermão aberto cobraria a tela por uma ação que o
+voltar já alcança.
 
-**Ele é um `+` no canto de baixo à direita, e abre as TRÊS portas** (`CreateDock`):
-"Resumo mágico" (o microfone, `/recording?auto=1`), "Escrever" (`/escrever`) e
-"Importar do YouTube" (`/importar`), num painel de ícone-e-nome como o dos
+**No desktop essa regra não vale, e a razão dela é que muda.** O `+` custava a
+tela; os chips do `CreateActions` não custam nada — a barra tem vão de sobra à
+direita do voltar —, e o que eles evitam é a viagem de ida e volta à Biblioteca
+só para começar a próxima sessão. Por isso o `/summary` e o `/escrever` montam a
+fileira no `trailing` da própria `TopBar`, no lugar onde a lupa ficaria.
+
+**No DESKTOP não há `+`: as três portas ficam na barra do topo**
+(`(app)/components/CreateActions.tsx`), como chips de 40px, só o ícone, com o
+nome no tooltip. O `+` é um clique cobrado para revelar três ícones, e ele se
+paga enquanto a tela é estreita: ali a barra do topo é a única linha larga que
+existe, e gastá-la com três botões seria gastar o lugar do título. Num monitor
+as duas razões caem juntas — o cursor chega a qualquer canto pelo mesmo custo, e
+sobra vão à direita do título. Por isso o `CreateDock` inteiro é `md:hidden` e
+cada chip é `hidden md:inline-flex`: nunca os dois na mesma largura, nunca
+nenhum dos dois.
+
+**A ordem da barra é Importar, Gravar, LUPA, Escrever, avatar**, com o `gap-3`
+da `TopBar` valendo para todos. A busca entra no MEIO das portas de criação, e
+não antes nem depois delas, porque é o que reparte a fileira em dois pares:
+quatro discos seguidos mais o avatar viram uma régua de cinco botões iguais em
+que nada se acha sem ler os ícones um a um. Pela mesma razão não há `gap` menor
+entre os chips de criar — um grupo apertado com a lupa dentro a faria ler como
+intrusa numa fileira que não é dela. Como não existe grupo contíguo, o
+`CreateActions` exporta TRÊS componentes soltos (`ImportAction`, `RecordAction`,
+`WriteAction`) e quem monta a ordem é a página, que é também quem sabe se
+aquela tela tem lupa.
+
+**Nenhum deles é vermelho, nem o de gravar**, e é a diferença que separa a barra
+do painel do dock. Lá a cor tem trabalho: três quadrados iguais abertos no
+vazio, e o vermelho é o que faz o olho cair na porta mais usada sem ler os três
+nomes. Aqui não há fileira para destacar — os três estão separados pela lupa,
+entre o voltar e o avatar —, e um disco vermelho no meio de quatro cinzas não
+leria como "o principal", leria como ALERTA, que é o que um ponto vermelho numa
+barra de ferramentas diz.
+
+O alvo do tour no desktop é o chip de GRAVAR, com o MESMO
+`data-tour="create-dock"` do `+` do rodapé: o `resolveAnchor` pega o primeiro
+visível (ver `src/features/tour/lib/anchors.ts`), então o passo "Criar" acha o
+que está na tela em cada largura. Com a lupa no meio da fileira não existe
+retângulo que contenha as três portas e mais nada, e recortar uma das três é o
+mais honesto que dá.
+
+**No CELULAR ele é um `+` no canto de baixo à direita, e abre as TRÊS portas**
+(`CreateDock`):
+"Gravar" (o microfone, `/recording?auto=1`), "Escrever" (`/escrever`) e
+"Importar" (`/importar`), num painel de ícone-e-nome como o dos
 prints em `public/prints/new-release/`. Era um microfone sozinho no meio da
 faixa, e as outras duas portas moravam na gaveta — três toques longe, num lugar
 que ninguém abre para criar, abre para navegar.
+
+**Os três rótulos são UM VERBO cada, sob um título.** Eram "Resumo mágico",
+"Escrever resumo" e "Importar do YouTube": três nomes que repetiam a mesma
+palavra e obrigavam a ler o painel inteiro para escolher entre eles. Com um
+verbo só, a diferença está na primeira sílaba, e o ícone acima já disse o resto.
+O que o verbo sozinho não diz — que o fim daquilo é um resumo — passou a ser
+dito uma vez, no título "Criar resumo:" acima da fileira, que é também o nome do
+painel para quem usa leitor de tela (`aria-labelledby`, e não um `aria-label`
+repetindo a mesma frase por fora).
+
+A porta de gravar é a única COLORIDA: quadrado vermelho, `--v2-rec-sheen` — o
+mesmo vermelho do microfone, com uma queda de luz no ângulo do vidro ao lado. É
+o que o "mágico" do nome antigo tentava dizer, dito por cor em vez de por
+adjetivo. **A cor é o destaque INTEIRO**: um enfeite no canto do quadrado foi
+tentado duas vezes (um hexágono, depois um sparkles) e saiu nas duas, ver
+`src/shared/AGENTS.md`.
 
 Três decisões dele que não são estética:
 

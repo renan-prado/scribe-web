@@ -265,276 +265,294 @@ export function Composer({ id, initial, header }: Props) {
   const endsBlank = doc.blocks.length > 0 && isBlankParagraph(doc.blocks[doc.blocks.length - 1]);
 
   return (
-    <main className="mx-auto flex min-h-svh w-full max-w-3xl flex-col gap-6 px-4 pt-2 pb-24 sm:gap-8 sm:px-6">
+    <main className="mx-auto flex min-h-svh w-full max-w-[1024px] flex-col gap-6 px-4 pt-2 pb-24 sm:gap-8 sm:px-6">
       {header}
 
-      <header className="flex flex-col gap-4">
-        <div className="flex items-center justify-between gap-3">
-          {/* Numa folha em branco que nunca foi salva, "Salvo" é tecnicamente
-              verdade e mentira na prática: não há nada salvo porque não há
-              nada. O chip entra quando passa a existir algo sobre o que
-              afirmar. */}
-          {sessionId || status !== "synced" ? <StatusChip status={status} /> : <span />}
-          {sessionId ? (
-            <button
-              type="button"
-              onClick={openReading}
-              disabled={leaving}
-              className="inline-flex items-center gap-1.5 rounded-full bg-scriba-ink-mute/10 px-3 py-1.5 text-[11px] font-semibold uppercase tracking-wider text-scriba-ink-soft transition-colors hover:bg-scriba-blue-soft/70 hover:text-scriba-blue-ink disabled:opacity-60"
-            >
-              <Eye className="size-3.5" />
-              Ver como ficou
-            </button>
-          ) : null}
-        </div>
+      {/* A COLUNA DE ESCRITA, mais estreita que a barra do topo.
 
-        <AutoTextarea
-          value={doc.title}
-          onChange={(v) => setDoc((prev) => ({ ...prev, title: v.slice(0, WRITTEN_LIMITS.title) }))}
-          ariaLabel="Título"
-          placeholder="Título"
-          className="font-heading text-2xl font-semibold leading-tight tracking-tight text-scriba-ink-strong sm:text-3xl md:text-4xl"
-        />
+          O `<main>` tem 1024px para a `TopBar` terminar onde ela termina na
+          Biblioteca — ela é a mesma peça em toda tela do app, e o avatar
+          saltar de lugar ao entrar aqui seria a barra mudando de desenho. A
+          FOLHA fica em 768, a mesma medida da leitura: o que se escreve aqui
+          é lido no `/summary`, e escrever com a linha 256px mais larga do que
+          ela vai ser quebraria a promessa de que o que se vê é o que sai.
 
-        {/* A "ideia central" NÃO é um bloco, e por isso não está no menu do
-            `+`: ela é o `shortSummary` do payload, a frase que aparece no
-            cartão da Biblioteca e na busca. Quando existe, vem aqui em cima
-            com a roupa que vai vestir na leitura (`LeadIdea`), para que a
-            pessoa veja onde aquilo vai parar. */}
-        {showLead ? (
-          <section className="flex flex-col gap-2 rounded-[26px] bg-[image:var(--session-surface-quote)] bg-[size:200%_100%] p-5">
-            <div className="flex items-center justify-between gap-3">
-              <span className="inline-flex items-center gap-1.5 text-[10px] font-semibold uppercase tracking-[0.14em] text-session-chip-ai">
-                <ScribaMark className="size-3" />
-                Ideia central
-              </span>
+          O `PassagePicker` fica FORA desta coluna: é um diálogo, portal, sem
+          posição no fluxo. */}
+      <div className="mx-auto flex w-full max-w-3xl flex-col gap-6 sm:gap-8">
+        <header className="flex flex-col gap-4">
+          <div className="flex items-center justify-between gap-3">
+            {/* Numa folha em branco que nunca foi salva, "Salvo" é tecnicamente
+                verdade e mentira na prática: não há nada salvo porque não há
+                nada. O chip entra quando passa a existir algo sobre o que
+                afirmar. */}
+            {sessionId || status !== "synced" ? <StatusChip status={status} /> : <span />}
+            {sessionId ? (
               <button
                 type="button"
-                aria-label="Remover a ideia central"
-                title="Remover a ideia central"
-                onClick={() => {
-                  setLeadAsked(false);
-                  setDoc((prev) => ({ ...prev, shortSummary: "" }));
-                }}
-                className="-mr-1 -mt-1 inline-flex size-7 shrink-0 items-center justify-center rounded-full text-scriba-ink-mute transition-colors hover:bg-scriba-rose hover:text-scriba-rose-ink"
+                onClick={openReading}
+                disabled={leaving}
+                className="inline-flex items-center gap-1.5 rounded-full bg-scriba-ink-mute/10 px-3 py-1.5 text-[11px] font-semibold uppercase tracking-wider text-scriba-ink-soft transition-colors hover:bg-scriba-blue-soft/70 hover:text-scriba-blue-ink disabled:opacity-60"
               >
-                <X className="size-4" />
+                <Eye className="size-3.5" />
+                Ver como ficou
               </button>
-            </div>
-            <AutoTextarea
-              value={doc.shortSummary}
-              onChange={(v) =>
-                setDoc((prev) => ({
-                  ...prev,
-                  shortSummary: v.slice(0, WRITTEN_LIMITS.shortSummary),
-                }))
-              }
-              textareaRef={(el) => {
-                leadRef.current = el;
-              }}
-              ariaLabel="Ideia central"
-              placeholder="Em uma frase, do que trata esta mensagem."
-              className="text-pretty text-[15px] font-light leading-[1.7] text-session-verse-text"
-            />
-          </section>
-        ) : (
-          <button
-            type="button"
-            onClick={() => {
-              setLeadAsked(true);
-              // No próximo quadro: a `textarea` não existe no momento do
-              // clique, e o foco iria para o nada.
-              requestAnimationFrame(() => leadRef.current?.focus());
-            }}
-            className="inline-flex w-fit items-center gap-1.5 rounded-full border border-scriba-hairline px-3 py-1.5 font-medium text-scriba-ink-mute text-xs transition-colors hover:bg-scriba-blue-soft/60 hover:text-scriba-blue-ink focus-visible:ring-2 focus-visible:ring-ring/40 focus-visible:outline-none"
-          >
-            <Plus className="size-3.5" />
-            Adicionar ideia central
-          </button>
-        )}
-      </header>
+            ) : null}
+          </div>
 
-      {/* O VÃO é do contêiner, e nada mais mora dentro dele.
+          <AutoTextarea
+            value={doc.title}
+            onChange={(v) =>
+              setDoc((prev) => ({ ...prev, title: v.slice(0, WRITTEN_LIMITS.title) }))
+            }
+            ariaLabel="Título"
+            placeholder="Título"
+            className="font-heading text-2xl font-semibold leading-tight tracking-tight text-scriba-ink-strong sm:text-3xl md:text-4xl"
+          />
 
-          Ele já foi de 56px para abrigar um disco de `+` que aparecia entre
-          cada dois blocos. Eram dois discos por bloco, acendendo e apagando ao
-          passar do mouse, e o preço de manter cada um longe do vizinho era um
-          vão duas vezes maior que o da leitura. Hoje o `+` mora na pílula do
-          bloco, junto de mover e excluir, e o vão voltou a ser só espaço: 32px,
-          contra os 28 da leitura.
-
-          **A linha do cabeçalho é o PRIMEIRO item desta lista**, e não uma irmã
-          dela lá em cima: assim o espaço abaixo dela é decidido por quem sabe o
-          que vem depois, e não pelo `gap` do `<main>`. */}
-      <div className="flex flex-col gap-8">
-        <div className="h-px w-full bg-scriba-hairline" />
-
-        {doc.blocks.map((block, i) => {
-          // Um parágrafo VAZIO é uma linha em branco esperando, e é o momento
-          // em que "na verdade eu queria um título aqui" ainda está em aberto.
-          // Por isso ele ganha o `+` ao lado, igual à linha do fim: os dois são
-          // a mesma coisa na tela, e um Enter que caísse numa linha nua faria a
-          // oferta aparecer e sumir conforme a linha fosse real ou não.
-          const blank = isBlankParagraph(block);
-          const body = (
-            <BlockBody
-              block={block}
-              index={i}
-              onFocus={() => {
-                setActive(i);
-                // Voltar a escrever FECHA o menu que ficou aberto num vão. Ele
-                // não tem como se fechar sozinho — não é um popover, é uma
-                // fileira no meio do texto —, e uma fileira de sete pastilhas
-                // esquecida três parágrafos acima é a segunda coisa que não
-                // some desta tela.
-                setAdderAt(null);
-              }}
-              onChange={(patch) => setBlock(i, patch)}
-              onKeyDown={(e) => onKeyDown(i, e)}
-              onOpenPicker={() => setPickerFor(i)}
-              registerRef={(el) => {
-                refs.current[i] = el;
-              }}
-            />
-          );
-
-          return (
-            // O `onBlur` daqui não é interação: ele APAGA um estado quando o
-            // cursor sai do bloco. Não há ação atrás deste `div` para um leitor
-            // de tela alcançar.
-            // biome-ignore lint/a11y/noStaticElementInteractions: ver acima
-            <div
-              // biome-ignore lint/suspicious/noArrayIndexKey: ver o cabeçalho
-              key={i}
-              className="group relative flex flex-col"
-              onBlur={(e) => {
-                // `relatedTarget` é quem RECEBEU o foco. Se for um filho deste
-                // bloco (a lixeira, o mover, a pastilha da passagem), o cursor
-                // não saiu daqui e o bloco continua sendo o ativo.
-                if (e.currentTarget.contains(e.relatedTarget as Node | null)) return;
-                setActive((cur) => (cur === i ? null : cur));
-              }}
-            >
-              {/* Enquanto QUALQUER menu está aberto, pílula nenhuma aparece —
-                  não só a deste bloco. Com duas fileiras de pastilhas o menu
-                  cobre o começo do bloco de baixo, e a pílula daquele bloco
-                  ficava metade escondida e metade para fora, uma casquinha
-                  saindo da beirada do menu. Estar por cima (z-30) não resolvia:
-                  o que aparecia era justamente o pedaço que o menu não cobre. */}
-              <BlockControls
-                hidden={adderAt !== null}
-                shown={active === i}
-                onAdd={() => setAdderAt(i)}
-                onUp={i > 0 ? () => moveBy(i, -1) : undefined}
-                onDown={i < doc.blocks.length - 1 ? () => moveBy(i, 1) : undefined}
-                onDelete={() => removeAt(i)}
+          {/* A "ideia central" NÃO é um bloco, e por isso não está no menu do
+              `+`: ela é o `shortSummary` do payload, a frase que aparece no
+              cartão da Biblioteca e na busca. Quando existe, vem aqui em cima
+              com a roupa que vai vestir na leitura (`LeadIdea`), para que a
+              pessoa veja onde aquilo vai parar. */}
+          {showLead ? (
+            <section className="flex flex-col gap-2 rounded-[26px] bg-[image:var(--session-surface-quote)] bg-[size:200%_100%] p-5">
+              <div className="flex items-center justify-between gap-3">
+                <span className="inline-flex items-center gap-1.5 text-[10px] font-semibold uppercase tracking-[0.14em] text-session-chip-ai">
+                  <ScribaMark className="size-3" />
+                  Ideia central
+                </span>
+                <button
+                  type="button"
+                  aria-label="Remover a ideia central"
+                  title="Remover a ideia central"
+                  onClick={() => {
+                    setLeadAsked(false);
+                    setDoc((prev) => ({ ...prev, shortSummary: "" }));
+                  }}
+                  className="-mr-1 -mt-1 inline-flex size-7 shrink-0 items-center justify-center rounded-full text-scriba-ink-mute transition-colors hover:bg-scriba-rose hover:text-scriba-rose-ink"
+                >
+                  <X className="size-4" />
+                </button>
+              </div>
+              <AutoTextarea
+                value={doc.shortSummary}
+                onChange={(v) =>
+                  setDoc((prev) => ({
+                    ...prev,
+                    shortSummary: v.slice(0, WRITTEN_LIMITS.shortSummary),
+                  }))
+                }
+                textareaRef={(el) => {
+                  leadRef.current = el;
+                }}
+                ariaLabel="Ideia central"
+                placeholder="Em uma frase, do que trata esta mensagem."
+                className="text-pretty text-[15px] font-light leading-[1.7] text-session-verse-text"
               />
-              {adderAt === i ? (
-                <BlockMenu onClose={() => setAdderAt(null)} onPick={(type) => addOfType(i, type)} />
+            </section>
+          ) : (
+            <button
+              type="button"
+              onClick={() => {
+                setLeadAsked(true);
+                // No próximo quadro: a `textarea` não existe no momento do
+                // clique, e o foco iria para o nada.
+                requestAnimationFrame(() => leadRef.current?.focus());
+              }}
+              className="inline-flex w-fit items-center gap-1.5 rounded-full border border-scriba-hairline px-3 py-1.5 font-medium text-scriba-ink-mute text-xs transition-colors hover:bg-scriba-blue-soft/60 hover:text-scriba-blue-ink focus-visible:ring-2 focus-visible:ring-ring/40 focus-visible:outline-none"
+            >
+              <Plus className="size-3.5" />
+              Adicionar ideia central
+            </button>
+          )}
+        </header>
+
+        {/* O VÃO é do contêiner, e nada mais mora dentro dele.
+
+            Ele já foi de 56px para abrigar um disco de `+` que aparecia entre
+            cada dois blocos. Eram dois discos por bloco, acendendo e apagando ao
+            passar do mouse, e o preço de manter cada um longe do vizinho era um
+            vão duas vezes maior que o da leitura. Hoje o `+` mora na pílula do
+            bloco, junto de mover e excluir, e o vão voltou a ser só espaço: 32px,
+            contra os 28 da leitura.
+
+            **A linha do cabeçalho é o PRIMEIRO item desta lista**, e não uma irmã
+            dela lá em cima: assim o espaço abaixo dela é decidido por quem sabe o
+            que vem depois, e não pelo `gap` do `<main>`. */}
+        <div className="flex flex-col gap-8">
+          <div className="h-px w-full bg-scriba-hairline" />
+
+          {doc.blocks.map((block, i) => {
+            // Um parágrafo VAZIO é uma linha em branco esperando, e é o momento
+            // em que "na verdade eu queria um título aqui" ainda está em aberto.
+            // Por isso ele ganha o `+` ao lado, igual à linha do fim: os dois são
+            // a mesma coisa na tela, e um Enter que caísse numa linha nua faria a
+            // oferta aparecer e sumir conforme a linha fosse real ou não.
+            const blank = isBlankParagraph(block);
+            const body = (
+              <BlockBody
+                block={block}
+                index={i}
+                onFocus={() => {
+                  setActive(i);
+                  // Voltar a escrever FECHA o menu que ficou aberto num vão. Ele
+                  // não tem como se fechar sozinho — não é um popover, é uma
+                  // fileira no meio do texto —, e uma fileira de sete pastilhas
+                  // esquecida três parágrafos acima é a segunda coisa que não
+                  // some desta tela.
+                  setAdderAt(null);
+                }}
+                onChange={(patch) => setBlock(i, patch)}
+                onKeyDown={(e) => onKeyDown(i, e)}
+                onOpenPicker={() => setPickerFor(i)}
+                registerRef={(el) => {
+                  refs.current[i] = el;
+                }}
+              />
+            );
+
+            return (
+              // O `onBlur` daqui não é interação: ele APAGA um estado quando o
+              // cursor sai do bloco. Não há ação atrás deste `div` para um leitor
+              // de tela alcançar.
+              // biome-ignore lint/a11y/noStaticElementInteractions: ver acima
+              <div
+                // biome-ignore lint/suspicious/noArrayIndexKey: ver o cabeçalho
+                key={i}
+                className="group relative flex flex-col"
+                onBlur={(e) => {
+                  // `relatedTarget` é quem RECEBEU o foco. Se for um filho deste
+                  // bloco (a lixeira, o mover, a pastilha da passagem), o cursor
+                  // não saiu daqui e o bloco continua sendo o ativo.
+                  if (e.currentTarget.contains(e.relatedTarget as Node | null)) return;
+                  setActive((cur) => (cur === i ? null : cur));
+                }}
+              >
+                {/* Enquanto QUALQUER menu está aberto, pílula nenhuma aparece —
+                    não só a deste bloco. Com duas fileiras de pastilhas o menu
+                    cobre o começo do bloco de baixo, e a pílula daquele bloco
+                    ficava metade escondida e metade para fora, uma casquinha
+                    saindo da beirada do menu. Estar por cima (z-30) não resolvia:
+                    o que aparecia era justamente o pedaço que o menu não cobre. */}
+                <BlockControls
+                  hidden={adderAt !== null}
+                  shown={active === i}
+                  onAdd={() => setAdderAt(i)}
+                  onUp={i > 0 ? () => moveBy(i, -1) : undefined}
+                  onDown={i < doc.blocks.length - 1 ? () => moveBy(i, 1) : undefined}
+                  onDelete={() => removeAt(i)}
+                />
+                {adderAt === i ? (
+                  <BlockMenu
+                    onClose={() => setAdderAt(null)}
+                    onPick={(type) => addOfType(i, type)}
+                  />
+                ) : null}
+                {/* O bloco em foco POUSA NUMA SUPERFÍCIE, e é assim que se vê
+                    onde o cursor está. Ele existe pelo celular, onde não há
+                    ponteiro e o teclado cobre metade da tela — sem nada aceso,
+                    "onde eu estava?" só se responde rolando até achar o cursor.
+
+                    Foi uma barra na margem esquerda antes, e barra na margem é o
+                    vocabulário de CITAÇÃO: é exatamente o que o bloco `quote`
+                    desenha três linhas abaixo (`border-l-2 pl-4`). O mesmo traço
+                    para "isto é uma citação" e para "é aqui que você está" faz um
+                    parágrafo comum parecer citado enquanto é escrito.
+
+                    A caixa é sempre a mesma (`BLOCK_SURFACE`), com ou sem foco:
+                    o recuo já está lá e o negativo já o devolveu, então acender a
+                    cor não empurra uma letra.
+
+                    É `focus-within` puro, e não o `active`: a superfície não tem
+                    nada a que sobreviver — ela é o foco, e mais nada —, e o
+                    `active` existe para os botões, que precisam continuar
+                    clicáveis no toque seguinte. */}
+                <div
+                  className={cn(
+                    BLOCK_SURFACE,
+                    "relative focus-within:bg-scriba-blue-soft/60",
+                    blank && ROW_LEADING_DISC
+                  )}
+                >
+                  {/* O `+` da linha em branco FLUTUA, e o corpo nunca sai do
+                      lugar na árvore. Ele já foi um irmão numa `flex` ao lado do
+                      texto, e aí a primeira letra digitada trocava a estrutura —
+                      a linha deixava de ser branca, a `flex` sumia, e o React
+                      desmontava a `textarea` junto com ela para montar outra:
+                      escrevia-se uma letra e o foco ia para o nada. Agora o que
+                      muda entre branca e escrita é uma CLASSE (o `pl-8` que
+                      abre lugar para o disco) e um irmão que aparece antes dela
+                      — a caixa de texto é sempre o mesmo nó.
+
+                      O `top-2`/`left-2` são o `py-2` da caixa e o recuo de quem
+                      começa por um disco: um filho absoluto se mede pela caixa de
+                      PADDING, e sem eles o disco pousaria na quina. Os 26px são a
+                      altura da linha, e é nela que o disco se centra. */}
+                  {blank ? (
+                    <div className="absolute top-2 left-2 flex h-[26px] items-center">
+                      <DiscButton label="Adicionar bloco" visible onClick={() => setAdderAt(i)}>
+                        <Plus className="size-3.5" />
+                      </DiscButton>
+                    </div>
+                  ) : null}
+                  {/* `pl-8` = o disco (24) mais o vão (8), contados a partir do
+                      recuo de 8 que o `ROW_LEADING_DISC` já pôs. O mesmo número
+                      que a linha do fim alcança por `gap-2` depois do disco. */}
+                  <div className={cn("min-w-0", blank && "pl-8")}>{body}</div>
+                </div>
+              </div>
+            );
+          })}
+
+          {/* A linha do fim: uma linha em branco de parágrafo com o `+` ao lado.
+              É a única posição que não depende de um bloco existir — todas as
+              outras saem da pílula de um deles —, e a única em que se escreve sem
+              escolher nada antes (ver `WritingLine`). É ela que mantém "escrever
+              no fim do texto" a um clique de distância, e por isso o `+` da
+              pílula pode inserir só ACIMA sem deixar posição nenhuma órfã.
+
+              Ela SOME quando o último bloco já é um parágrafo vazio, que é o que
+              um Enter no fim do texto acabou de criar: os dois desenham a mesma
+              linha em branco com o mesmo `+`, e empilhadas seriam duas linhas
+              vazias onde a pessoa pediu uma. */}
+          {endsBlank ? null : (
+            <div className="relative">
+              {adderAt === doc.blocks.length ? (
+                <BlockMenu
+                  onClose={() => setAdderAt(null)}
+                  onPick={(type) => addOfType(doc.blocks.length, type)}
+                />
               ) : null}
-              {/* O bloco em foco POUSA NUMA SUPERFÍCIE, e é assim que se vê
-                  onde o cursor está. Ele existe pelo celular, onde não há
-                  ponteiro e o teclado cobre metade da tela — sem nada aceso,
-                  "onde eu estava?" só se responde rolando até achar o cursor.
-
-                  Foi uma barra na margem esquerda antes, e barra na margem é o
-                  vocabulário de CITAÇÃO: é exatamente o que o bloco `quote`
-                  desenha três linhas abaixo (`border-l-2 pl-4`). O mesmo traço
-                  para "isto é uma citação" e para "é aqui que você está" faz um
-                  parágrafo comum parecer citado enquanto é escrito.
-
-                  A caixa é sempre a mesma (`BLOCK_SURFACE`), com ou sem foco:
-                  o recuo já está lá e o negativo já o devolveu, então acender a
-                  cor não empurra uma letra.
-
-                  É `focus-within` puro, e não o `active`: a superfície não tem
-                  nada a que sobreviver — ela é o foco, e mais nada —, e o
-                  `active` existe para os botões, que precisam continuar
-                  clicáveis no toque seguinte. */}
+              {/* A MESMA caixa dos blocos, para a linha do fim acender igual
+                  quando recebe o cursor, e o mesmo recuo curto de quem começa por
+                  um disco. O texto fica a 40px da borda nos dois lugares: aqui
+                  por `gap-2` depois do disco de 24, na linha em branco pelo
+                  `pl-8` — o mesmo número por dois caminhos, porque lá o disco
+                  flutua para a caixa de texto não ser remontada a cada primeira
+                  letra. */}
               <div
                 className={cn(
                   BLOCK_SURFACE,
-                  "relative focus-within:bg-scriba-blue-soft/60",
-                  blank && ROW_LEADING_DISC
+                  ROW_LEADING_DISC,
+                  "flex items-center gap-2 focus-within:bg-scriba-blue-soft/60"
                 )}
               >
-                {/* O `+` da linha em branco FLUTUA, e o corpo nunca sai do
-                    lugar na árvore. Ele já foi um irmão numa `flex` ao lado do
-                    texto, e aí a primeira letra digitada trocava a estrutura —
-                    a linha deixava de ser branca, a `flex` sumia, e o React
-                    desmontava a `textarea` junto com ela para montar outra:
-                    escrevia-se uma letra e o foco ia para o nada. Agora o que
-                    muda entre branca e escrita é uma CLASSE (o `pl-8` que
-                    abre lugar para o disco) e um irmão que aparece antes dela
-                    — a caixa de texto é sempre o mesmo nó.
-
-                    O `top-2`/`left-2` são o `py-2` da caixa e o recuo de quem
-                    começa por um disco: um filho absoluto se mede pela caixa de
-                    PADDING, e sem eles o disco pousaria na quina. Os 26px são a
-                    altura da linha, e é nela que o disco se centra. */}
-                {blank ? (
-                  <div className="absolute top-2 left-2 flex h-[26px] items-center">
-                    <DiscButton label="Adicionar bloco" visible onClick={() => setAdderAt(i)}>
-                      <Plus className="size-3.5" />
-                    </DiscButton>
-                  </div>
-                ) : null}
-                {/* `pl-8` = o disco (24) mais o vão (8), contados a partir do
-                    recuo de 8 que o `ROW_LEADING_DISC` já pôs. O mesmo número
-                    que a linha do fim alcança por `gap-2` depois do disco. */}
-                <div className={cn("min-w-0", blank && "pl-8")}>{body}</div>
+                <DiscButton
+                  label="Adicionar bloco"
+                  visible
+                  onClick={() => setAdderAt(doc.blocks.length)}
+                >
+                  <Plus className="size-3.5" />
+                </DiscButton>
+                <WritingLine
+                  emphasis={empty}
+                  onWrite={(text) => insertAt(doc.blocks.length, { type: "paragraph", text })}
+                />
               </div>
             </div>
-          );
-        })}
-
-        {/* A linha do fim: uma linha em branco de parágrafo com o `+` ao lado.
-            É a única posição que não depende de um bloco existir — todas as
-            outras saem da pílula de um deles —, e a única em que se escreve sem
-            escolher nada antes (ver `WritingLine`). É ela que mantém "escrever
-            no fim do texto" a um clique de distância, e por isso o `+` da
-            pílula pode inserir só ACIMA sem deixar posição nenhuma órfã.
-
-            Ela SOME quando o último bloco já é um parágrafo vazio, que é o que
-            um Enter no fim do texto acabou de criar: os dois desenham a mesma
-            linha em branco com o mesmo `+`, e empilhadas seriam duas linhas
-            vazias onde a pessoa pediu uma. */}
-        {endsBlank ? null : (
-          <div className="relative">
-            {adderAt === doc.blocks.length ? (
-              <BlockMenu
-                onClose={() => setAdderAt(null)}
-                onPick={(type) => addOfType(doc.blocks.length, type)}
-              />
-            ) : null}
-            {/* A MESMA caixa dos blocos, para a linha do fim acender igual
-                quando recebe o cursor, e o mesmo recuo curto de quem começa por
-                um disco. O texto fica a 40px da borda nos dois lugares: aqui
-                por `gap-2` depois do disco de 24, na linha em branco pelo
-                `pl-8` — o mesmo número por dois caminhos, porque lá o disco
-                flutua para a caixa de texto não ser remontada a cada primeira
-                letra. */}
-            <div
-              className={cn(
-                BLOCK_SURFACE,
-                ROW_LEADING_DISC,
-                "flex items-center gap-2 focus-within:bg-scriba-blue-soft/60"
-              )}
-            >
-              <DiscButton
-                label="Adicionar bloco"
-                visible
-                onClick={() => setAdderAt(doc.blocks.length)}
-              >
-                <Plus className="size-3.5" />
-              </DiscButton>
-              <WritingLine
-                emphasis={empty}
-                onWrite={(text) => insertAt(doc.blocks.length, { type: "paragraph", text })}
-              />
-            </div>
-          </div>
-        )}
+          )}
+        </div>
       </div>
 
       <PassagePicker

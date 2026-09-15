@@ -1,4 +1,6 @@
 import type { Metadata } from "next";
+import { ImportAction, RecordAction, WriteAction } from "../components/CreateActions";
+import { LibrarySearchLink } from "../components/LibrarySearchLink";
 import { TopBar } from "../components/TopBar";
 import { Composer } from "./Composer";
 
@@ -19,16 +21,33 @@ export const metadata: Metadata = { title: "Escrever" };
  * escrevê-lo também na barra seria dizer a mesma coisa duas vezes na mesma
  * dobra.
  *
- * **E não há lupa**, pela razão do `/summary`: uma lupa sobre um texto longo
- * promete procurar DENTRO dele, e o que ela faria é levar para a busca do
- * acervo.
+ * **A lupa é a do `/importar`**, um LINK para o acervo (`LibrarySearchLink`), e
+ * não a busca-dentro-do-texto do `/summary`: procurar num rascunho que a
+ * própria pessoa acabou de digitar, e que cabe na tela, é uma busca sobre um
+ * palheiro que ela conhece de cor. O `/escrever/[id]` monta a mesma barra.
  */
 export default function EscreverPage() {
   return (
     <Composer
       id={null}
       initial={{ title: "", shortSummary: "", blocks: [] }}
-      header={<TopBar backHref="/home" />}
+      header={
+        <TopBar
+          backHref="/home"
+          trailing={
+            <>
+              <ImportAction />
+              <RecordAction />
+              {/* Aqui a lupa é a das outras telas: um LINK para o acervo com o
+                  campo já aberto. Procurar dentro de um rascunho que a própria
+                  pessoa acabou de digitar, e que cabe na tela, seria uma busca
+                  sobre um palheiro que ela conhece de cor. */}
+              <LibrarySearchLink />
+              <WriteAction />
+            </>
+          }
+        />
+      }
     />
   );
 }

@@ -8,6 +8,8 @@ import { formatDurationLong, shortDate } from "@/features/session/lib/formatting
 import { TourTrigger } from "@/features/tour/components/TourTrigger";
 import { TOUR_DELAY_RESULT_MS } from "@/features/tour/config";
 import { getSession } from "@/lib/db/sessions";
+import { ImportAction, RecordAction, WriteAction } from "../../components/CreateActions";
+import { SummaryFindToggle } from "../../components/SummaryFindToggle";
 import { TopBar } from "../../components/TopBar";
 
 type PageProps = {
@@ -42,8 +44,19 @@ const DATE_FMT = new Intl.DateTimeFormat("pt-BR", {
  * `canCurrentUserUse("study_generation")`. Consulta que alimenta botão que não
  * existe não aparece como bug, aparece como latência.
  *
- * Tela de LEITURA: não há botão de gravar. Ele é do `/home` e mora na página
- * dele, não no layout, exatamente para não vazar para cá.
+ * **A coluna tem 1024px e o TEXTO tem 768.** A barra do topo é a mesma peça em
+ * toda tela do app, e terminá-la 256px antes daqui faria o avatar saltar de
+ * lugar ao abrir um cartão; a medida de linha do resumo, essa, não é largura de
+ * layout, e a 1024 um parágrafo passa de 120 caracteres. Quem separa os dois é
+ * uma coluna interna no `SavedSessionView`. *
+ * **No DESKTOP a barra traz as três portas de criação** (`CreateActions`, no
+ * lugar onde a lupa ficaria). Elas não existem no celular, onde criar é o `+`
+ * do `CreateDock` e o `CreateDock` só mora na Biblioteca: ali, chegar a esta
+ * tela é ter escolhido LER, e um botão de gravar por cima do sermão aberto
+ * cobraria a tela de leitura por uma ação que o voltar já alcança. Num monitor
+ * as três portas não custam tela nenhuma — a barra tem vão de sobra à direita
+ * do voltar —, e o que elas evitam é a viagem de ida e volta à Biblioteca só
+ * para começar a próxima sessão.
  *
  * **O cabeçalho é a MESMA `TopBar` da Biblioteca**, com duas diferenças que
  * são a tela: a pena vira um voltar para `/home` e o título some — a
@@ -51,10 +64,11 @@ const DATE_FMT = new Intl.DateTimeFormat("pt-BR", {
  * sempre esteve. Antes daqui saía um link "Voltar" de 12px, e abrir um cartão
  * trocava o cabeçalho do app por outro.
  *
- * **E NÃO há lupa.** Ela chegou a morar aqui, levando para a busca do acervo,
- * e numa tela de um sermão só a leitura era outra: uma lupa sobre um texto
- * longo promete procurar DENTRO dele. O botão que promete uma coisa e faz
- * outra é pior que o botão que falta.
+ * **A lupa daqui procura DENTRO do resumo** (`SummaryFindToggle`). Ela já
+ * levou para a busca do acervo, e aquilo era um botão que promete uma coisa e
+ * faz outra — sobre um texto longo, uma lupa promete procurar dentro dele. A
+ * saída de então foi tirar o botão; a de agora é cumprir a promessa. Quem quer
+ * o acervo tem o voltar, que é por onde entrou. Ver `SummaryFind`.
  */
 export default async function V2SummaryPage({ params }: PageProps) {
   const { id } = await params;
@@ -66,7 +80,24 @@ export default async function V2SummaryPage({ params }: PageProps) {
   return (
     <>
       <SavedSessionView
-        header={<TopBar backHref="/home" />}
+        header={
+          <TopBar
+            backHref="/home"
+            trailing={
+              <>
+                <ImportAction />
+                <RecordAction />
+                {/* A lupa DESTA tela procura dentro do resumo aberto, e não no
+                    acervo (ver `SummaryFind`). Ela fica no mesmo lugar da lupa da
+                    Biblioteca, entre "Gravar" e "Escrever": a barra tem a mesma
+                    ordem em toda tela, e o que muda é o alcance da busca, que aqui
+                    é o texto em que a pessoa já está. */}
+                <SummaryFindToggle />
+                <WriteAction />
+              </>
+            }
+          />
+        }
         id={id}
         title={session.title?.trim() || "Sessão sem título"}
         createdAtLabel={DATE_FMT.format(createdAt)}

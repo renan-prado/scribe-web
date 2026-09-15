@@ -551,6 +551,26 @@
   --v2-rec: #D83E36;
   --v2-rec-hover: #E64C44;
   --v2-rec-ink: #FFFFFF;
+  /* O mesmo vermelho, com um degradê curto para um tom mais escuro embaixo.
+     É o irmão do `--v2-glass-sheen`: um quadrado de cor chapada ao lado de
+     duas peças de vidro curvo lê como adesivo colado por cima delas, e a
+     queda de luz é o que o põe no mesmo material do painel.
+
+     **A distância entre as duas pontas é curta de propósito.** São ~15% de
+     luminosidade, no mesmo matiz — o bastante para o olho ler volume, pouco
+     para ler "degradê". Abrir mais transforma um botão de 48px num banner.
+
+     GRADIENTE entra por `bg-[image:var(--v2-rec-sheen)]`, não vira utilitário
+     de cor, mesma regra do `--v2-dock-fade` e do `--v2-glass-sheen`.
+
+     A ponta de cima é o próprio `--v2-rec` (216,62,54); se ele mudar, esta
+     muda junto, e a de baixo é ele escurecido. Mesmo laço do
+     `--v2-glass-sheen` com o `--v2-card`.
+
+     160° é o ângulo do `--v2-glass-sheen`, e é de lá que ele veio: as duas
+     peças ficam lado a lado no painel, e luzes vindo de cantos diferentes na
+     mesma linha é o tipo de coisa que ninguém sabe nomear mas todo mundo vê. */
+  --v2-rec-sheen: linear-gradient(160deg, #D83E36 0%, #C0352D 58%, #B22F28 100%);
   /* OS POST-ITS DA BIBLIOTECA.
      Quatro cores em rodízio, e o rodízio é por HASH DO ID da sessão, nunca
      pela posição na lista (ver `LibraryNote`): com o índice, gravar um sermão
@@ -883,6 +903,37 @@
       transparent 58%,
       var(--session-highlight-yellow) 58%
     );
+  }
+  /* O AMARELO DA BUSCA DENTRO DO RESUMO (ver `SummaryFind.tsx`).
+
+     Ele é pintado pela CSS Custom Highlight API, e não por um `<mark>`: o
+     resumo sai de oito renderizadores diferentes e o texto dos versículos
+     chega por fetch, então envolver cada ocorrência numa tag obrigaria a
+     descer a consulta por todos eles e ainda assim perderia a NVI. Um
+     destaque de `::highlight()` não é um elemento, não tem `className`, e é
+     por isso que a cor dele mora aqui e não numa classe do Tailwind.
+
+     **Só quatro propriedades valem num `::highlight()`**: cor, cor de fundo,
+     sublinhado e sombra de texto. Nada de raio de canto nem respiro — por isso
+     este destaque é um retângulo de tinta, e não a pastilha arredondada do
+     `<mark>` da transcrição. Não tente arredondá-lo, a regra é ignorada em
+     silêncio.
+
+     A TINTA é `--scriba-yellow-ink`, e não `--scriba-ink-strong`: os dois
+     amarelos aqui são claros nos dois temas (eles são a cor da MOEDA, que não
+     inverte), e a tinta forte do app é quase branca no escuro — letra clara
+     sobre amarelo claro é o destaque apagando o que ele deveria mostrar.
+
+     Duas forças: `-current` é a ocorrência em foco, a que o ↑↓ persegue, no
+     amarelo cheio; as outras ficam no claro. Sem a diferença, achar a quinta
+     de doze seria contar de cima. */
+  ::highlight(scriba-find) {
+    background-color: var(--scriba-yellow-light);
+    color: var(--scriba-yellow-ink);
+  }
+  ::highlight(scriba-find-current) {
+    background-color: var(--scriba-yellow);
+    color: var(--scriba-yellow-ink);
   }
   .veil-chip {
     background-image: var(--veil-bg);

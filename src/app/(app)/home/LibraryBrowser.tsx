@@ -231,8 +231,8 @@ export function LibraryBrowser({ sessions, nowIso }: Props) {
                 regular (ver `LibraryNote`), e um cabeçalho de mês em negrito
                 pesaria mais que os próprios cartões que ele anuncia. */}
             <h2 className="px-1 text-[15px] font-medium text-v2-ink-soft">{group.label}</h2>
-            {/* MASONRY por colunas de CSS: duas colunas, altura livre por
-                cartão, que é o escalonamento de mural que a pele pede. O
+            {/* MASONRY por colunas de CSS: altura livre por cartão, que é o
+                escalonamento de mural que a pele pede. O
                 espaço vertical sai do `mb-4` de cada `<li>`, porque `gap` em
                 contexto de colunas só vale ENTRE as colunas — e os dois números
                 andam juntos, senão o mural tem vão maior num eixo que no outro.
@@ -242,8 +242,18 @@ export function LibraryBrowser({ sessions, nowIso }: Props) {
                 lado. Trocar por um grid preservaria a cronologia e perderia o
                 escalonamento, e o escalonamento é o desenho. O agrupamento por
                 mês contém o estrago: a bagunça de ordem nunca atravessa a
-                fronteira de um bloco. */}
-            <ul className="columns-2 gap-4">
+                fronteira de um bloco.
+
+                **O NÚMERO de colunas cresce com a tela**, e é o que segura o
+                teto de 1024px da página (ver `home/page.tsx`): duas colunas
+                numa coluna de 992px dariam post-its de meia tela, que é o mesmo
+                cartão esticado de sempre num tamanho menor. Nos três degraus o
+                post-it fica na mesma faixa de largura — ~230 a ~300px —, que é
+                o tamanho em que autor, título e data cabem em poucas linhas.
+                Ele acompanha os degraus do CONTEÚDO, não os do container: em
+                `lg` a coluna já bateu o teto e é a única largura em que quatro
+                cabem. */}
+            <ul className="columns-2 gap-4 sm:columns-3 lg:columns-4">
               {group.items.map((s) => (
                 <LibraryNote key={s.id} session={s} now={now} buildHref={v2Href} />
               ))}

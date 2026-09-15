@@ -24,7 +24,7 @@ export default async function V2RecordingPage({
 }: {
   searchParams: Promise<{ auto?: string }>;
 }) {
-  // `?auto=1` é a marca de quem chegou pelo "Resumo mágico" do `/home` (ver
+  // `?auto=1` é a marca de quem chegou pelo "Gravar" do `/home` (ver
   // `CreateDock`). Ele é lido AQUI, no servidor, e desce como prop: fazê-lo no
   // cliente com `useSearchParams` obrigaria esta página a nascer dentro de um
   // `<Suspense>` só para ler um parâmetro que o servidor já tem na mão.
@@ -34,7 +34,7 @@ export default async function V2RecordingPage({
     // O `ClockScope` envolve os dois porque o relógio mora na `TopBar` e o
     // tempo nasce no `AudioStudio`, em ramos diferentes da árvore.
     <ClockScope>
-      <main className="mx-auto flex w-full max-w-[640px] flex-1 flex-col px-4 pb-[calc(2.5rem+env(safe-area-inset-bottom))]">
+      <main className="mx-auto flex w-full max-w-[1024px] flex-1 flex-col px-4 pb-[calc(2.5rem+env(safe-area-inset-bottom))]">
         <TopBar title="Gravação" trailing={<RecordingClock />} />
         <AudioStudio autoStart={auto === "1"} />
       </main>

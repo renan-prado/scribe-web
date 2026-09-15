@@ -19,6 +19,11 @@ import { EntityFieldDialog } from "@/features/session/components/EntityFieldDial
 import { HallucinationReportDialog } from "@/features/session/components/HallucinationReportDialog";
 import { SavedTranscriptView } from "@/features/session/components/SavedTranscriptView";
 import { SessionMenu } from "@/features/session/components/SessionMenu";
+import {
+  SummaryFindArea,
+  SummaryFindBar,
+  SummaryFindProvider,
+} from "@/features/session/components/SummaryFind";
 import { SummaryView } from "@/features/session/components/SummaryView";
 import { TitleDialog } from "@/features/session/components/TitleDialog";
 import { requestLocationSuggestions, requestSpeakerSuggestions } from "@/features/session/lib/api";
@@ -179,212 +184,238 @@ export function SavedSessionView({
     // `pt-2`, e não o `py-8` de antes: a barra do topo encosta no alto da tela
     // como encosta na Biblioteca, senão o mesmo cabeçalho pousaria 30px mais
     // baixo ao abrir um cartão.
-    <main className="mx-auto flex min-h-svh w-full max-w-3xl flex-col gap-6 px-4 pt-2 pb-8 sm:gap-8 sm:px-6 sm:pb-10">
-      <PageBlurOverlay
-        open={reprocessing}
-        title="Reprocessando o resumo"
-        subtitle="Refazendo os pontos centrais da mensagem."
-      />
-      {header}
+    // O provider da busca envolve a tela INTEIRA porque o botão dela mora na
+    // `TopBar`, que chega pronta pelo slot `header` e é renderizada aqui
+    // dentro: contexto anda pela posição de render, não pela de criação. Ver
+    // `SummaryFind`.
+    <SummaryFindProvider>
+      <main className="mx-auto flex min-h-svh w-full max-w-[1024px] flex-col gap-6 px-4 pt-2 pb-8 sm:gap-8 sm:px-6 sm:pb-10">
+        <PageBlurOverlay
+          open={reprocessing}
+          title="Reprocessando o resumo"
+          subtitle="Refazendo os pontos centrais da mensagem."
+        />
+        {header}
+        {/* A barra da busca, quando aberta, entre o cabeçalho e o texto, e
+            alinhada com a coluna de leitura — é nela que se procura. Ver
+            `SummaryFind`. */}
+        <SummaryFindBar />
 
-      {/* O holofote do passo "Título, autor e local são seus" recorta o
-          cabeçalho INTEIRO, e não só o título: os três campos editáveis moram
-          aqui, e apontar para um deles deixaria os outros dois sem explicação
-          na única tela em que eles aparecem. */}
-      <header data-tour="summary-header" className="flex flex-col gap-3">
-        <div className="flex items-center justify-between gap-3">
-          {speakerName?.trim() ? (
-            <button
-              type="button"
-              onClick={() => setSpeakerDialogOpen(true)}
-              className={cn(
-                "group inline-flex items-center gap-2 rounded-full -mx-1 px-1 py-0.5 outline-none transition-colors",
-                "hover:bg-scriba-blue-soft/60 focus-visible:ring-2 focus-visible:ring-ring/40"
-              )}
-            >
-              <span className="flex size-6 items-center justify-center rounded-full bg-scriba-blue-soft text-[10px] font-semibold text-scriba-blue-ink">
-                {initials}
-              </span>
-              <span className="text-sm font-medium leading-none text-scriba-ink">
-                {speakerName}
-              </span>
-            </button>
-          ) : (
-            <button
-              type="button"
-              onClick={() => setSpeakerDialogOpen(true)}
-              className={ADD_BADGE_CLASSES}
-            >
-              <Plus className="size-3" strokeWidth={2.5} />
-              Adicionar autor
-            </button>
-          )}
-          <div className="flex items-center gap-2">
-            <span
-              role="status"
-              aria-label="Sessão salva"
-              className="hidden items-center gap-1.5 rounded-full bg-scriba-mint px-2.5 py-1 text-[10px] font-semibold uppercase tracking-wider text-scriba-mint-dark sm:inline-flex"
-            >
-              <span className="size-1.5 rounded-full bg-scriba-mint-strong" />
-              Salvo
-            </span>
-            <SessionMenu
-              hasTranscript={transcript.length > 0}
-              onOpenTranscript={() => setTranscriptOpen(true)}
-              onDelete={() => setDeleteOpen(true)}
-              onReprocess={summary && !written ? handleReprocess : undefined}
-              reprocessing={reprocessing}
-              onReportHallucination={written ? undefined : () => setReportOpen(true)}
-              editHref={written ? `/escrever/${id}` : undefined}
-            />
-          </div>
-        </div>
+        {/* A COLUNA DE LEITURA, mais estreita que a barra do topo.
 
-        <button
-          type="button"
-          onClick={() => setTitleDialogOpen(true)}
-          className="group -mx-1 rounded-md px-1 py-0.5 text-left transition-colors hover:bg-scriba-blue-soft/60"
-        >
-          <h1 className="font-heading text-2xl font-semibold leading-tight tracking-tight text-scriba-ink-strong sm:text-3xl md:text-4xl">
-            {title}
-            <Pencil className="ml-2 inline size-4 align-middle opacity-0 text-scriba-ink-mute transition-opacity group-hover:opacity-60" />
-          </h1>
-        </button>
+            O `<main>` tem 1024px, e é ele que alinha a `TopBar` com a da
+            Biblioteca: a barra é a mesma peça em toda tela do app, e ela
+            terminar 256px antes aqui faria o avatar saltar de lugar ao abrir um
+            cartão. O TEXTO fica em 768, porque a largura de um parágrafo não é
+            largura de layout, é MEDIDA DE LINHA — a 1024 a linha passa de 120
+            caracteres e o olho perde o começo da seguinte.
 
-        <div className="flex flex-col items-start gap-3 sm:flex-row sm:items-end sm:justify-between">
-          <div className="flex min-w-0 flex-col gap-1">
-            {speakerLocation?.trim() ? (
-              <button
-                type="button"
-                onClick={() => setLocationDialogOpen(true)}
-                className={cn(
-                  "group -mx-1 inline-flex w-fit items-center gap-1.5 rounded-md px-1 py-0.5 text-xs font-light text-scriba-ink-mute outline-none transition-colors",
-                  "hover:bg-scriba-blue-soft/60 focus-visible:ring-2 focus-visible:ring-ring/40"
-                )}
-              >
-                <MapPin className="size-3" />
-                {speakerLocation}
-                {meta === "compact" ? (
-                  <>
-                    <span className="size-[3px] rounded-full bg-scriba-ink-mute/60" />
-                    {createdAtShortLabel}
-                  </>
-                ) : null}
-              </button>
-            ) : (
-              <span className="inline-flex w-fit items-center gap-1.5">
+            Os diálogos e o `PageBlurOverlay` ficam FORA desta coluna de
+            propósito: os primeiros são portais (não têm posição no fluxo) e o
+            segundo cobre a tela inteira. **E é também o que a busca varre**: o
+            termo não acende dentro de um diálogo fechado, que contaria
+            ocorrências que ninguém vê. */}
+        <SummaryFindArea className="mx-auto flex w-full max-w-3xl flex-col gap-6 sm:gap-8">
+          {/* O holofote do passo "Título, autor e local são seus" recorta o
+              cabeçalho INTEIRO, e não só o título: os três campos editáveis moram
+              aqui, e apontar para um deles deixaria os outros dois sem explicação
+              na única tela em que eles aparecem. */}
+          <header data-tour="summary-header" className="flex flex-col gap-3">
+            <div className="flex items-center justify-between gap-3">
+              {speakerName?.trim() ? (
                 <button
                   type="button"
-                  onClick={() => setLocationDialogOpen(true)}
-                  className={cn(ADD_BADGE_CLASSES, "w-fit")}
+                  onClick={() => setSpeakerDialogOpen(true)}
+                  className={cn(
+                    "group inline-flex items-center gap-2 rounded-full -mx-1 px-1 py-0.5 outline-none transition-colors",
+                    "hover:bg-scriba-blue-soft/60 focus-visible:ring-2 focus-visible:ring-ring/40"
+                  )}
+                >
+                  <span className="flex size-6 items-center justify-center rounded-full bg-scriba-blue-soft text-[10px] font-semibold text-scriba-blue-ink">
+                    {initials}
+                  </span>
+                  <span className="text-sm font-medium leading-none text-scriba-ink">
+                    {speakerName}
+                  </span>
+                </button>
+              ) : (
+                <button
+                  type="button"
+                  onClick={() => setSpeakerDialogOpen(true)}
+                  className={ADD_BADGE_CLASSES}
                 >
                   <Plus className="size-3" strokeWidth={2.5} />
-                  Adicionar local
+                  Adicionar autor
                 </button>
-                {meta === "compact" ? (
-                  <span className="text-xs font-light text-scriba-ink-mute">
-                    {createdAtShortLabel}
+              )}
+              <div className="flex items-center gap-2">
+                <span
+                  role="status"
+                  aria-label="Sessão salva"
+                  className="hidden items-center gap-1.5 rounded-full bg-scriba-mint px-2.5 py-1 text-[10px] font-semibold uppercase tracking-wider text-scriba-mint-dark sm:inline-flex"
+                >
+                  <span className="size-1.5 rounded-full bg-scriba-mint-strong" />
+                  Salvo
+                </span>
+                <SessionMenu
+                  hasTranscript={transcript.length > 0}
+                  onOpenTranscript={() => setTranscriptOpen(true)}
+                  onDelete={() => setDeleteOpen(true)}
+                  onReprocess={summary && !written ? handleReprocess : undefined}
+                  reprocessing={reprocessing}
+                  onReportHallucination={written ? undefined : () => setReportOpen(true)}
+                  editHref={written ? `/escrever/${id}` : undefined}
+                />
+              </div>
+            </div>
+
+            <button
+              type="button"
+              onClick={() => setTitleDialogOpen(true)}
+              className="group -mx-1 rounded-md px-1 py-0.5 text-left transition-colors hover:bg-scriba-blue-soft/60"
+            >
+              <h1 className="font-heading text-2xl font-semibold leading-tight tracking-tight text-scriba-ink-strong sm:text-3xl md:text-4xl">
+                {title}
+                <Pencil className="ml-2 inline size-4 align-middle opacity-0 text-scriba-ink-mute transition-opacity group-hover:opacity-60" />
+              </h1>
+            </button>
+
+            <div className="flex flex-col items-start gap-3 sm:flex-row sm:items-end sm:justify-between">
+              <div className="flex min-w-0 flex-col gap-1">
+                {speakerLocation?.trim() ? (
+                  <button
+                    type="button"
+                    onClick={() => setLocationDialogOpen(true)}
+                    className={cn(
+                      "group -mx-1 inline-flex w-fit items-center gap-1.5 rounded-md px-1 py-0.5 text-xs font-light text-scriba-ink-mute outline-none transition-colors",
+                      "hover:bg-scriba-blue-soft/60 focus-visible:ring-2 focus-visible:ring-ring/40"
+                    )}
+                  >
+                    <MapPin className="size-3" />
+                    {speakerLocation}
+                    {meta === "compact" ? (
+                      <>
+                        <span className="size-[3px] rounded-full bg-scriba-ink-mute/60" />
+                        {createdAtShortLabel}
+                      </>
+                    ) : null}
+                  </button>
+                ) : (
+                  <span className="inline-flex w-fit items-center gap-1.5">
+                    <button
+                      type="button"
+                      onClick={() => setLocationDialogOpen(true)}
+                      className={cn(ADD_BADGE_CLASSES, "w-fit")}
+                    >
+                      <Plus className="size-3" strokeWidth={2.5} />
+                      Adicionar local
+                    </button>
+                    {meta === "compact" ? (
+                      <span className="text-xs font-light text-scriba-ink-mute">
+                        {createdAtShortLabel}
+                      </span>
+                    ) : null}
                   </span>
+                )}
+                {/* A ficha longa (data por extenso + duração) é do cabeçalho
+                    `full`. No `compact` a data já subiu para a linha do local. */}
+                {meta === "full" ? (
+                  <p className="hidden text-[11px] font-light text-scriba-ink-mute sm:block">
+                    {createdAtLabel}
+                    {durationLabel ? ` · ${durationLabel}` : ""}
+                  </p>
                 ) : null}
-              </span>
-            )}
-            {/* A ficha longa (data por extenso + duração) é do cabeçalho
-                `full`. No `compact` a data já subiu para a linha do local. */}
-            {meta === "full" ? (
-              <p className="hidden text-[11px] font-light text-scriba-ink-mute sm:block">
-                {createdAtLabel}
-                {durationLabel ? ` · ${durationLabel}` : ""}
-              </p>
-            ) : null}
-          </div>
-          {/* Aqui morava o "Gerar estudo" (`DeepenButton`), a única porta para
-              o `/studies` a partir de uma sessão. O modo estudo está saindo do
-              produto e, enquanto ele não sai de verdade, o acesso a ele foi
-              retirado da interface — com o botão, foram junto a consulta de
-              `hasDeepening` e a checagem de `study_generation` que a página
-              fazia só para desenhá-lo (ver `summary/[id]/page.tsx`). O
-              componente continua no repositório, inteiro, para o dia em que a
-              decisão for a outra.
+              </div>
+              {/* Aqui morava o "Gerar estudo" (`DeepenButton`), a única porta para
+                  o `/studies` a partir de uma sessão. O modo estudo está saindo do
+                  produto e, enquanto ele não sai de verdade, o acesso a ele foi
+                  retirado da interface — com o botão, foram junto a consulta de
+                  `hasDeepening` e a checagem de `study_generation` que a página
+                  fazia só para desenhá-lo (ver `summary/[id]/page.tsx`). O
+                  componente continua no repositório, inteiro, para o dia em que a
+                  decisão for a outra.
 
-              Ele também era o motivo de este cabeçalho ter três colunas no
-              desktop; a data que morava debaixo dele continua onde estava. */}
-          {/* No mobile a data fica embaixo; no desktop ela mora na coluna
-              esquerda, sob o local. No `compact` ela não está em nenhum dos
-              dois: mora na linha do local, como no cartão. */}
-          {meta === "full" ? (
-            <p className="text-[11px] font-light text-scriba-ink-mute sm:hidden">
-              {createdAtShortLabel}
-            </p>
-          ) : null}
-        </div>
-      </header>
+                  Ele também era o motivo de este cabeçalho ter três colunas no
+                  desktop; a data que morava debaixo dele continua onde estava. */}
+              {/* No mobile a data fica embaixo; no desktop ela mora na coluna
+                  esquerda, sob o local. No `compact` ela não está em nenhum dos
+                  dois: mora na linha do local, como no cartão. */}
+              {meta === "full" ? (
+                <p className="text-[11px] font-light text-scriba-ink-mute sm:hidden">
+                  {createdAtShortLabel}
+                </p>
+              ) : null}
+            </div>
+          </header>
 
-      <div className="h-px w-full bg-scriba-hairline" />
+          <div className="h-px w-full bg-scriba-hairline" />
 
-      <SummaryView summary={summary} hasTranscript={transcript.length > 0} running={false} />
+          <SummaryView summary={summary} hasTranscript={transcript.length > 0} running={false} />
+        </SummaryFindArea>
 
-      <Dialog open={transcriptOpen} onOpenChange={setTranscriptOpen}>
-        <DialogContent className="sm:max-w-2xl">
-          <DialogHeader>
-            <DialogTitle>Transcrição</DialogTitle>
-            <DialogDescription className="sr-only">
-              Texto bruto capturado pelo microfone.
-            </DialogDescription>
-          </DialogHeader>
-          <div className="max-h-[65vh] overflow-y-auto pr-2">
-            <SavedTranscriptView transcript={transcript} durationMs={durationMs} />
-          </div>
-        </DialogContent>
-      </Dialog>
+        <Dialog open={transcriptOpen} onOpenChange={setTranscriptOpen}>
+          <DialogContent className="sm:max-w-2xl">
+            <DialogHeader>
+              <DialogTitle>Transcrição</DialogTitle>
+              <DialogDescription className="sr-only">
+                Texto bruto capturado pelo microfone.
+              </DialogDescription>
+            </DialogHeader>
+            <div className="max-h-[65vh] overflow-y-auto pr-2">
+              <SavedTranscriptView transcript={transcript} durationMs={durationMs} />
+            </div>
+          </DialogContent>
+        </Dialog>
 
-      <HallucinationReportDialog
-        open={reportOpen}
-        onOpenChange={setReportOpen}
-        sessionId={id}
-        onReprocess={summary ? handleReprocess : undefined}
-      />
+        <HallucinationReportDialog
+          open={reportOpen}
+          onOpenChange={setReportOpen}
+          sessionId={id}
+          onReprocess={summary ? handleReprocess : undefined}
+        />
 
-      <ConfirmDialog
-        open={deleteOpen}
-        onOpenChange={setDeleteOpen}
-        title={written ? "Excluir este texto?" : "Excluir este resumo?"}
-        description={
-          written
-            ? "Este texto será apagado permanentemente. Esta ação não pode ser desfeita."
-            : "O resumo e a transcrição desta gravação serão apagados permanentemente. Esta ação não pode ser desfeita."
-        }
-        confirmLabel="Excluir"
-        pendingLabel="Excluindo…"
-        onConfirm={handleDelete}
-      />
+        <ConfirmDialog
+          open={deleteOpen}
+          onOpenChange={setDeleteOpen}
+          title={written ? "Excluir este texto?" : "Excluir este resumo?"}
+          description={
+            written
+              ? "Este texto será apagado permanentemente. Esta ação não pode ser desfeita."
+              : "O resumo e a transcrição desta gravação serão apagados permanentemente. Esta ação não pode ser desfeita."
+          }
+          confirmLabel="Excluir"
+          pendingLabel="Excluindo…"
+          onConfirm={handleDelete}
+        />
 
-      <TitleDialog
-        open={titleDialogOpen}
-        onOpenChange={setTitleDialogOpen}
-        initialValue={title}
-        onSave={(v) => patchField("title", v)}
-      />
+        <TitleDialog
+          open={titleDialogOpen}
+          onOpenChange={setTitleDialogOpen}
+          initialValue={title}
+          onSave={(v) => patchField("title", v)}
+        />
 
-      <EntityFieldDialog
-        kind="speaker"
-        open={speakerDialogOpen}
-        onOpenChange={setSpeakerDialogOpen}
-        title={speakerName?.trim() ? "Editar autor" : "Adicionar autor"}
-        placeholder="Nome do pregador"
-        initialValue={speakerName ?? ""}
-        fetchSuggestions={requestSpeakerSuggestions}
-        onSave={(v) => patchField("speakerName", v)}
-      />
-      <EntityFieldDialog
-        kind="location"
-        open={locationDialogOpen}
-        onOpenChange={setLocationDialogOpen}
-        title={speakerLocation?.trim() ? "Editar local" : "Adicionar local"}
-        placeholder="Igreja ou local"
-        initialValue={speakerLocation ?? ""}
-        fetchSuggestions={requestLocationSuggestions}
-        onSave={(v) => patchField("speakerLocation", v)}
-      />
-    </main>
+        <EntityFieldDialog
+          kind="speaker"
+          open={speakerDialogOpen}
+          onOpenChange={setSpeakerDialogOpen}
+          title={speakerName?.trim() ? "Editar autor" : "Adicionar autor"}
+          placeholder="Nome do pregador"
+          initialValue={speakerName ?? ""}
+          fetchSuggestions={requestSpeakerSuggestions}
+          onSave={(v) => patchField("speakerName", v)}
+        />
+        <EntityFieldDialog
+          kind="location"
+          open={locationDialogOpen}
+          onOpenChange={setLocationDialogOpen}
+          title={speakerLocation?.trim() ? "Editar local" : "Adicionar local"}
+          placeholder="Igreja ou local"
+          initialValue={speakerLocation ?? ""}
+          fetchSuggestions={requestLocationSuggestions}
+          onSave={(v) => patchField("speakerLocation", v)}
+        />
+      </main>
+    </SummaryFindProvider>
   );
 }

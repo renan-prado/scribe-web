@@ -9,7 +9,19 @@ import { cn } from "@/lib/utils";
 
 /**
  * A barra de baixo do v2: uma faixa que escurece até o preto, com o botão de
- * CRIAR no canto direito dela.
+ * CRIAR no canto direito dela. **Só no celular.**
+ *
+ * **No desktop ela não existe, e quem cria é a barra do topo**
+ * (`components/CreateActions.tsx`). O `+` é um clique cobrado para revelar três
+ * ícones, e ele se paga enquanto a tela é estreita e o polegar mora no canto de
+ * baixo: ali a faixa do topo é a única linha larga que a tela tem, e gastá-la
+ * com três botões seria gastar o lugar do título. Num monitor as duas razões
+ * caem — o cursor chega a qualquer canto pelo mesmo custo, e sobra vão de sobra
+ * à direita do título. Por isso tudo aqui é `md:hidden` e cada chip de lá é
+ * `hidden md:inline-flex`: nunca os dois na mesma largura, nunca nenhum dos
+ * dois. Lá eles também não são vermelhos — o quadrado `--v2-rec` do "Gravar"
+ * deste painel só funciona porque são três quadrados iguais abertos no vazio;
+ * numa barra de controles, o mesmo vermelho leria como alerta.
  *
  * **Era um microfone sozinho, e por isso o menu tinha de existir.** Gravar é um
  * dos três jeitos de uma sessão nascer — os outros dois, escrever e importar do
@@ -49,13 +61,24 @@ import { cn } from "@/lib/utils";
  * plástico brilhante de 2010 —, e é o que faz o mural de post-its continuar
  * atrás da peça, desfocado, em vez de apagado por um retângulo opaco.
  *
+ * **O painel tem um TÍTULO, "Criar resumo:", e ele não é enfeite.** Os três
+ * nomes viraram um verbo cada — Gravar, Escrever, Importar —, e um verbo
+ * sozinho diz o que o toque FAZ, não onde aquilo vai dar: "Gravar" não conta
+ * que o fim do caminho é um resumo, que é o produto inteiro. O título diz uma
+ * vez o que os três têm em comum, e devolve o que os rótulos longos diziam
+ * repetindo "resumo" três vezes.
+ *
+ * Ele é também o NOME do painel para quem usa leitor de tela
+ * (`aria-labelledby`), no lugar do `aria-label="Criar"` que havia ali: a mesma
+ * frase escrita em dois lugares é a frase que um dia diverge sem ninguém ver.
+ *
  * **E não há véu.** O apanhador de toque atrás do painel é transparente:
  * escurecer a tela trataria como modal o que é um menu de três atalhos. A
  * Biblioteca continua legível atrás, porque ela não está bloqueada, só está
  * sendo deixada de lado por um segundo — e é justamente ela, vista pelo vidro,
  * o que dá ao painel a profundidade que um véu apagaria.
  *
- * **"Resumo mágico" leva para o `/recording` JÁ GRAVANDO**, pelo `?auto=1` da
+ * **"Gravar" leva para o `/recording` JÁ GRAVANDO**, pelo `?auto=1` da
  * URL. O parâmetro existe porque as duas portas da mesma tela querem coisas
  * diferentes: quem tocou a opção já disse que quer gravar, e pedir um segundo
  * toque do outro lado seria cobrar duas vezes pela mesma decisão; quem digita
@@ -155,17 +178,20 @@ export function CreateDock() {
           type="button"
           aria-label="Fechar as opções de criação"
           onClick={() => setOpen(false)}
-          className="fixed inset-0 z-20 cursor-default"
+          className="fixed inset-0 z-20 cursor-default md:hidden"
         />
       ) : null}
       {/* `pointer-events-none` na faixa inteira: ela cobre o fim da lista, e um
           gradiente que engole o toque destinado ao último cartão seria um bug
           invisível. Só o botão e o painel recebem de volta o que ela abre mão.
 
-          A coluna de 640px é a MESMA da lista (ver `home/page.tsx`): colado na
-          borda direita da janela, o botão ficaria a meia tela de distância dos
-          post-its num monitor, sem nada por perto a que ele pertencesse. */}
-      <div className="pointer-events-none fixed inset-x-0 bottom-0 z-30 bg-[image:var(--v2-dock-fade)] pt-32 pb-[calc(1.25rem+env(safe-area-inset-bottom))]">
+          A coluna é a MESMA da lista (ver `home/page.tsx`), e é por isso que
+          o número acompanhou quando ela foi a 1024: colado na borda direita da
+          janela, o botão ficaria longe dos post-its numa tela larga, sem nada
+          por perto a que ele pertencesse. A faixa nunca passa de `md`, então na
+          prática o teto só chega a valer entre a lista já larga e o dock ainda
+          presente — mas dois tetos diferentes ali desalinhariam os dois. */}
+      <div className="pointer-events-none fixed inset-x-0 bottom-0 z-30 bg-[image:var(--v2-dock-fade)] pt-32 pb-[calc(1.25rem+env(safe-area-inset-bottom))] md:hidden">
         {/* O painel abre AO LADO do botão, na mesma linha, com os dois
             alinhados por baixo — é o desenho do print. Em cima do botão ele
             cobriria o próprio dedo que o abriu, e é por baixo que o polegar
@@ -191,19 +217,39 @@ export function CreateDock() {
             acaso é o único elemento da tela cuja FORMA é parte do que ele diz.
             Um painel 8px mais apertado ninguém vê; um círculo amassado é a
             primeira coisa que se vê. */}
-        <div className="mx-auto flex w-full max-w-[640px] items-end justify-end gap-3 px-4 max-[349px]:flex-col">
+        <div className="mx-auto flex w-full max-w-[1024px] items-end justify-end gap-3 px-4 max-[349px]:flex-col">
           {open ? (
             <nav
               // `<nav>` com nome, e não `role="menu"`: ARIA menu promete
               // navegação por setas, e quem o anuncia sem implementar as setas
               // entrega ao leitor de tela um menu que não responde como menu.
               // São três LINKS para três telas — é navegação, e é assim que o
-              // leitor anuncia ("Criar, navegação").
+              // leitor anuncia ("Criar resumo, navegação").
+              //
+              // O nome vem do TÍTULO que está na tela (`aria-labelledby`), e não
+              // de um `aria-label` escrito à parte: com os dois, a mesma frase
+              // existiria duas vezes, e a que o leitor anuncia poderia divergir
+              // da que se lê sem ninguém perceber.
               id="create-dock-options"
-              aria-label="Criar"
-              className="pointer-events-auto flex min-w-0 origin-bottom-right animate-v2-rec-in gap-3 rounded-[28px] bg-v2-glass-panel bg-[image:var(--v2-glass-sheen)] p-3 ring-1 ring-v2-glass-edge backdrop-blur-xl"
+              aria-labelledby="create-dock-title"
+              className="pointer-events-auto flex min-w-0 origin-bottom-right animate-v2-rec-in flex-col gap-2 rounded-[28px] bg-v2-glass-panel bg-[image:var(--v2-glass-sheen)] p-3 ring-1 ring-v2-glass-edge backdrop-blur-xl"
             >
-              {/* A ordem na tela é da DIREITA para a esquerda: "Resumo mágico"
+              {/* O título diz o que as três opções têm EM COMUM, e é o que os
+                  nomes de um verbo só deixaram de dizer: "Gravar" sozinho não
+                  conta que o fim daquilo é um resumo. Ele é também o que dá nome
+                  ao painel para quem usa leitor de tela.
+
+                  Em `--v2-ink-mute` e no mesmo corpo dos rótulos: ele é uma
+                  placa, não uma opção, e mais escuro que os nomes é o que o
+                  mantém atrás deles na ordem de leitura. O `px-1` o alinha com o
+                  primeiro ícone, que tem 48px de caixa para 20 de glifo. */}
+              <p
+                id="create-dock-title"
+                className="pl-2 text-[11px] pt-2 pb-3 leading-none font-medium text-v2-ink-mute"
+              >
+                Criar resumo:
+              </p>
+              {/* A ordem na tela é da DIREITA para a esquerda: "Gravar"
                   encosta no botão, depois "Escrever", depois "Importar". O
                   painel cresce para a esquerda a partir do `+`, então o que
                   está mais perto dele é o que o dedo alcança primeiro — e o que
@@ -213,27 +259,36 @@ export function CreateDock() {
                   `flex-row-reverse`: com a linha invertida no CSS, o TAB andaria
                   ao contrário do que o olho lê, que é o tipo de descompasso que
                   só quem navega por teclado sente. */}
-              <CreateOption
-                href="/importar"
-                icon={<YoutubeIcon className="size-5" />}
-                label="Importar do YouTube"
-                onNavigate={() => setOpen(false)}
-              />
-              {/* Escrever não custa moeda nenhuma — não há STT nem chamada de
+              <div className="flex gap-3">
+                <CreateOption
+                  href="/importar"
+                  icon={<YoutubeIcon className="size-5" />}
+                  label="Importar"
+                  onNavigate={() => setOpen(false)}
+                />
+                {/* Escrever não custa moeda nenhuma — não há STT nem chamada de
                   modelo em lugar nenhum dele —, e por isso não leva pastilha de
                   preço que os outros dois levariam. Ver `lib/domain/session.ts`. */}
-              <CreateOption
-                href="/escrever"
-                icon={<PenLine className="size-5" strokeWidth={1.5} />}
-                label="Escrever resumo"
-                onNavigate={() => setOpen(false)}
-              />
-              <CreateOption
-                href="/recording?auto=1"
-                icon={<MicGlyph className="size-5" />}
-                label="Resumo mágico"
-                onNavigate={() => setOpen(false)}
-              />
+                <CreateOption
+                  href="/escrever"
+                  icon={<PenLine className="size-5" strokeWidth={1.5} />}
+                  label="Escrever"
+                  onNavigate={() => setOpen(false)}
+                />
+                {/* A ÚNICA das três que é vermelha. O vermelho aqui é o mesmo
+                  `--v2-rec` do microfone e do ponto que pisca durante a
+                  pregação — no `+` ele prometia a porta errada (ver o cabeçalho
+                  do componente), mas ESTA porta é justamente a que grava, então
+                  ele diz a verdade. E é o que faz o olho cair na opção mais
+                  usada sem ter de ler os três nomes. */}
+                <CreateOption
+                  href="/recording?auto=1"
+                  icon={<MicGlyph className="size-5" />}
+                  label="Gravar"
+                  accent
+                  onNavigate={() => setOpen(false)}
+                />
+              </div>
             </nav>
           ) : null}
           <button
@@ -272,30 +327,48 @@ export function CreateDock() {
  * Uma porta de criação: ícone num quadrado e o nome embaixo, como nos prints
  * em `public/prints/new-release/`.
  *
- * A largura é FIXA, e é fixa porque os três nomes têm tamanhos muito
- * diferentes: deixados ao conteúdo, "Importar do YouTube" viraria um alvo com
- * quase o dobro da caixa de "Escrever resumo", e três alvos de tamanhos
- * diferentes lado a lado não leem como três opções da mesma lista.
+ * **Os três nomes são UM VERBO cada: Gravar, Escrever, Importar.** Eram
+ * "Resumo mágico", "Escrever resumo" e "Importar do YouTube" — três rótulos
+ * que diziam a mesma palavra três vezes e obrigavam a LER o painel para
+ * escolher. Com um verbo só, a diferença entre as opções está na primeira
+ * sílaba de cada uma, e o ícone acima já disse o resto. O que se perdeu
+ * ("mágico", "do YouTube") era ou promessa de marketing dentro de um menu, ou
+ * informação que o glifo do YouTube dá melhor que o texto.
  *
- * **O número (70px) é o que põe "Importar do" numa linha só** e ainda sobra
- * folga em volta do quadrado de 48. Os nomes ocupam duas linhas, e é por isso
- * que eles são `leading-tight`, `break-words` (palavra longa quebra em vez de
- * vazar) e o bloco tem altura livre.
+ * A largura continua FIXA em 70px, e agora a razão é outra: os nomes cabem
+ * todos numa linha, então o que ela garante são três alvos do MESMO tamanho.
+ * Ao conteúdo, "Importar" seria visivelmente mais largo que "Gravar", e três
+ * alvos de tamanhos diferentes lado a lado não leem como três opções da mesma
+ * lista. O `break-words` e o `leading-tight` ficam: são o seguro de uma
+ * palavra longa não vazar se um nome mudar.
  *
  * O toque se anuncia CLAREANDO o quadrado do ícone (`brightness`), e não
  * pintando o fundo do alvo: o quadrado é `--v2-card-hover`, a mesma cor que um
  * fundo de hover teria, e os dois juntos apagariam o quadrado exatamente no
  * momento em que o dedo está em cima dele.
+ *
+ * **`accent` pinta o quadrado de vermelho, e a COR é o único destaque que ele
+ * tem.** Uma das três portas é a que quase todo mundo quer, e num painel de
+ * três quadrados iguais ela só se acha lendo os nomes.
+ *
+ * Ele já teve um enfeite pendurado no canto — um sparkles amarelo, e antes
+ * dele um hexágono. Os dois foram tirados, e a razão é a mesma: num quadrado
+ * de 48px que JÁ é o único colorido da fileira, um segundo objeto em cima dele
+ * não acrescenta destaque, só divide o olhar entre duas coisas pequenas. A cor
+ * sozinha faz o trabalho inteiro. Se um acento voltar a ser preciso aqui,
+ * repare que ele obriga o quadrado a virar `relative`.
  */
 function CreateOption({
   href,
   icon,
   label,
+  accent = false,
   onNavigate,
 }: {
   href: string;
   icon: React.ReactNode;
   label: string;
+  accent?: boolean;
   onNavigate: () => void;
 }) {
   return (
@@ -309,7 +382,23 @@ function CreateOption({
       {/* Glifo de 20 num quadrado de 48: o ícone é o que a opção MOSTRA, mas o
           alvo é o quadrado inteiro, e um glifo que encosta nas bordas dele
           transforma a peça de vidro num botão de ícone apertado. */}
-      <span className="flex size-12 items-center justify-center rounded-2xl bg-v2-glass-tile text-v2-ink transition group-hover:bg-v2-glass-edge">
+      <span
+        className={cn(
+          "flex size-12 items-center justify-center rounded-2xl transition",
+          accent
+            ? // O `bg-v2-rec` fica debaixo do gradiente e não é decoração: uma
+              // cor de fundo sempre pinta, uma IMAGEM de fundo pode não chegar
+              // (impressão sem cor de fundo, `forced-colors`), e sem ela o
+              // quadrado seria transparente com um glifo branco em cima.
+              //
+              // O hover é `brightness`, e não a troca para `--v2-rec-hover`:
+              // com gradiente por cima, mudar a cor de fundo não muda nada do
+              // que se vê. O filtro clareia as duas pontas de uma vez e
+              // preserva a queda de luz, que é o ponto dela.
+              "bg-v2-rec bg-[image:var(--v2-rec-sheen)] text-v2-rec-ink group-hover:brightness-110"
+            : "bg-v2-glass-tile text-v2-ink group-hover:bg-v2-glass-edge"
+        )}
+      >
         {icon}
       </span>
       <span className="w-full break-words text-center text-[11px] leading-tight font-medium text-v2-ink-soft">

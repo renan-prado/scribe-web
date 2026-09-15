@@ -14,7 +14,7 @@
  */
 export default function LibraryLoading() {
   return (
-    <main className="mx-auto flex w-full max-w-[640px] flex-1 flex-col gap-6 px-4 pt-2 pb-[calc(7.5rem+env(safe-area-inset-bottom))]">
+    <main className="mx-auto flex w-full max-w-[1024px] flex-1 flex-col gap-6 px-4 pt-2 pb-[calc(7.5rem+env(safe-area-inset-bottom))] md:pb-10">
       <div className="flex items-center gap-2 px-1 py-3">
         <SB className="size-11 shrink-0 rounded-full" />
         <SB className="h-6 w-40" />

@@ -27,7 +27,7 @@ export const metadata: Metadata = { title: "Importar do YouTube" };
  */
 export default function ImportarPage() {
   return (
-    <main className="mx-auto flex w-full max-w-[640px] flex-1 flex-col px-4 pt-2 pb-10">
+    <main className="mx-auto flex w-full max-w-[1024px] flex-1 flex-col px-4 pt-2 pb-10">
       <TopBar backHref="/home" trailing={<LibrarySearchLink />} />
       <div className="flex flex-1 flex-col justify-center">
         <YoutubeUrlForm />

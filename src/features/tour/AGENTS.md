@@ -76,7 +76,7 @@ o que podia neste passo, o balão sobe para CIMA do alvo. Quem mexer na posiçã
 do balão precisa manter as duas saídas: a que rola e a que troca de lado.
 
 **Nenhum tour roda com o microfone ligado.** O tour da gravação tem
-`enabled={auto !== "1"}`: quem chega pelo "Resumo mágico" do dock leva `?auto=1`, que abre
+`enabled={auto !== "1"}`: quem chega pelo "Gravar" do dock leva `?auto=1`, que abre
 o microfone sozinho, e ali o tour simplesmente não dispara. Quem abre a tela pelo
 endereço direto vê. Um balão por cima de uma pregação em andamento é o pior
 defeito que esta pasta poderia ter.

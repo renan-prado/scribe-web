@@ -318,18 +318,27 @@ Sobre formatos e precedência de `<link>`, ver `src/app/AGENTS.md`.
 ## Ícones
 
 **O `Sparkles` do lucide-react é PROIBIDO.** Não importe, não renderize. Para
-um acento decorativo, use o hexágono amarelo já usado no app:
+um acento decorativo, use o hexágono amarelo já usado no `/admin`:
 `clip-path:polygon(50%_0,100%_25%,100%_75%,50%_100%,0_75%,0_25%)` sobre um
 bloco `bg-scriba-yellow`.
+
+A regra foi suspensa por um commit, para o quadrado vermelho do "Gravar" no
+`CreateDock`, e o próprio teste devolveu a resposta: sobre um quadrado de 48px
+que já é o único colorido da fileira, o brilhinho no canto não somava destaque,
+dividia o olhar entre duas coisas pequenas. Quem quiser tentar de novo saiba
+que já se tentou.
 
 ## A navegação do app não mora aqui
 
 **Não há barra de navegação em `src/shared/`.** Havia `AppNav` (desktop),
 `MobileBottomNav` (celular), `nav.ts` (qual item acende) e `NavGlyphs.tsx` (os
 cinco ícones) — as quatro saíram junto com a moldura antiga. Quem navega hoje
-tem a pena da `TopBar` (que leva à Biblioteca) e o menu da conta no avatar;
-quem CRIA — gravar, escrever, importar — usa o `+` do `CreateDock`, que mora na
-página da Biblioteca. A gaveta do hambúrguer que ficava entre os dois durou uma
+tem o menu da conta no avatar e o voltar da `TopBar` (a pena ao lado dele é
+marcação, não leva a lugar nenhum);
+quem CRIA — gravar, escrever, importar — usa o `+` do `CreateDock` no celular
+ou os chips do `CreateActions` na `TopBar` no desktop (`ImportAction`,
+`RecordAction` e `WriteAction`, com a lupa entre o segundo e o terceiro), todos
+montados pela própria página. A gaveta do hambúrguer que ficava entre os dois durou uma
 versão: ela existia para quatro destinos, e sobrou com um.
 
 A esfumaçada que ficava acima da barra (`--scriba-nav-fade`) e a do rodapé do

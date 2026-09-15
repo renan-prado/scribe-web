@@ -2,6 +2,8 @@ import type { Metadata } from "next";
 import { notFound, redirect } from "next/navigation";
 import { getSession } from "@/lib/db/sessions";
 import { payloadToWritten } from "@/lib/domain/summary";
+import { ImportAction, RecordAction, WriteAction } from "../../components/CreateActions";
+import { LibrarySearchLink } from "../../components/LibrarySearchLink";
 import { TopBar } from "../../components/TopBar";
 import { Composer } from "../Composer";
 
@@ -59,7 +61,23 @@ export default async function EscreverIdPage({ params }: PageProps) {
     <Composer
       id={id}
       initial={{ ...written, title: session.title ?? written.title }}
-      header={<TopBar backHref="/home" />}
+      header={
+        <TopBar
+          backHref="/home"
+          trailing={
+            <>
+              <ImportAction />
+              <RecordAction />
+              {/* Aqui a lupa é a das outras telas: um LINK para o acervo com o
+                  campo já aberto. Procurar dentro de um rascunho que a própria
+                  pessoa acabou de digitar, e que cabe na tela, seria uma busca
+                  sobre um palheiro que ela conhece de cor. */}
+              <LibrarySearchLink />
+              <WriteAction />
+            </>
+          }
+        />
+      }
     />
   );
 }
