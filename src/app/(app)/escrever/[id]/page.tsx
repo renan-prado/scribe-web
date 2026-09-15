@@ -36,6 +36,16 @@ export async function generateMetadata({ params }: PageProps): Promise<Metadata>
  * O que desce daqui é o PAYLOAD do banco, e ele é só o ponto de partida: o
  * `useWrittenDraft` consulta o rascunho do aparelho e o prefere quando ele é
  * mais novo que o último envio confirmado. Ver o cabeçalho dele.
+ *
+ * **O título vem da COLUNA, e não do payload.** Os dois existem: `title` é o que
+ * a Biblioteca, a busca e a aba do navegador leem, e `final_summary.title` é a
+ * cópia que o editor gravou junto com os blocos. Renomear em `/summary` escreve
+ * só a coluna (é um PATCH de metadados, ele não toca no resumo), então quem
+ * renomeava ali e clicava em "Editar" reabria o editor com o título ANTIGO — ou
+ * com o campo vazio, mostrando o texto de rascunho. E o primeiro salvamento
+ * automático levava esse vazio de volta para a coluna: o nome que a pessoa
+ * tinha acabado de escolher sumia da Biblioteca sem nada na tela dizendo por
+ * quê. Lendo a coluna, os dois voltam a concordar no salvamento seguinte.
  */
 export default async function EscreverIdPage({ params }: PageProps) {
   const { id } = await params;
@@ -43,10 +53,12 @@ export default async function EscreverIdPage({ params }: PageProps) {
   if (!session) notFound();
   if (session.mode !== "manual") redirect(`/summary/${id}`);
 
+  const written = payloadToWritten(session.finalSummary);
+
   return (
     <Composer
       id={id}
-      initial={payloadToWritten(session.finalSummary)}
+      initial={{ ...written, title: session.title ?? written.title }}
       header={<TopBar backHref="/home" />}
     />
   );

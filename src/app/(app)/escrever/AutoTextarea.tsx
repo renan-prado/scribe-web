@@ -74,7 +74,13 @@ export function AutoTextarea({
       onKeyDown={onKeyDown}
       onFocus={onFocus}
       className={cn(
-        "w-full resize-none overflow-hidden bg-transparent outline-none",
+        // `block` NÃO é decoração. Uma `textarea` é inline-block por padrão,
+        // e um inline-block pousa na LINHA DE BASE do pai: sobra por baixo
+        // dela o espaço dos descendentes da linha do pai, quatro píxeis que
+        // ninguém pediu. Eles iam parar dentro da superfície do foco, que
+        // ficava alta demais com o texto encostado no topo — e, somados, eram
+        // quatro píxeis a mais entre cada dois parágrafos do documento.
+        "block w-full resize-none overflow-hidden bg-transparent outline-none",
         "placeholder:text-scriba-ink-mute/60",
         className
       )}

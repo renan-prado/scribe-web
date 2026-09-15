@@ -1,6 +1,5 @@
 "use client";
 
-import { useRouter } from "next/navigation";
 import { useCallback, useEffect, useRef, useState } from "react";
 import type { WrittenSummary } from "@/lib/domain/summary";
 import { createLogger } from "@/lib/log";
@@ -58,6 +57,28 @@ export type WrittenDraftState = {
  * clicou em "Escrever" e desistiu. Enquanto não houver id, o rascunho mora sob
  * `NEW_DRAFT_KEY` e a URL não muda.
  *
+ * **E quando ela nasce, a URL muda SEM navegar** (`history.replaceState`, que o
+ * App Router entende — ver "Native History API" no guia de navegação). Com um
+ * `router.replace` ali, o primeiro salvamento trocava de rota, o editor era
+ * remontado do zero com o que o SERVIDOR acabara de devolver, e as teclas
+ * digitadas naquele intervalo iam junto: o texto na tela voltava a ser o do
+ * POST, e a palavra escrita no último segundo sumia sem deixar rastro. Trocar a
+ * URL no lugar não desmonta nada e não custa uma ida ao servidor para buscar um
+ * documento que já está na tela.
+ *
+ * **O que está sendo digitado vence o que veio do disco.** A consulta ao
+ * IndexedDB é assíncrona, e os poucos milissegundos dela são tempo de sobra
+ * para a primeira letra de quem abre a tela e começa a escrever na hora —
+ * letra que a resposta da consulta apagava ao chegar. Uma vez que uma tecla
+ * foi digitada, o rascunho guardado não entra mais.
+ *
+ * **Nada pendente morre com a tela.** No desmontar, o que ainda não subiu é
+ * gravado no aparelho na hora, sem esperar a pausa — sair da página no meio dos
+ * 300ms cancelaria o temporizador e o trabalho existiria só na memória de um
+ * componente que acabou de deixar de existir. E ao voltar, um rascunho mais
+ * novo que o último envio não só vence o servidor: ele agenda o envio que
+ * ficou faltando, senão ficaria para sempre guardado só neste aparelho.
+ *
  * **Envio nenhum roda em paralelo com outro.** Um `inFlight` segura a vez: com
  * dois POSTs no ar, o que saiu primeiro pode chegar por último e gravar o
  * texto VELHO por cima do novo. Quem chega durante um envio marca que há mais
@@ -69,7 +90,6 @@ export function useWrittenDraft(input: {
   /** O que o servidor entregou, ou o documento vazio de um texto novo. */
   initial: WrittenSummary;
 }): WrittenDraftState {
-  const router = useRouter();
   const [doc, setDocState] = useState<WrittenSummary>(input.initial);
   const [status, setStatus] = useState<SaveStatus>("synced");
   const [sessionId, setSessionId] = useState<string | null>(input.id);
@@ -88,24 +108,16 @@ export function useWrittenDraft(input: {
   const syncTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
   const inFlight = useRef(false);
   const pending = useRef(false);
-
-  // Abertura: o rascunho do aparelho decide.
-  useEffect(() => {
-    let alive = true;
-    const key = input.id ?? NEW_DRAFT_KEY;
-    void readDraft(key).then((draft) => {
-      if (!alive) return;
-      if (draft && draft.updatedAt > draft.syncedAt) {
-        setDocState(draft.doc);
-        docRef.current = draft.doc;
-        setStatus("local");
-      }
-      setReady(true);
-    });
-    return () => {
-      alive = false;
-    };
-  }, [input.id]);
+  /**
+   * Alguma tecla já foi digitada nesta montagem.
+   *
+   * O IndexedDB responde em alguns milissegundos, e alguns milissegundos são
+   * tempo de sobra para a primeira letra: quem abre `/escrever` e começa a
+   * escrever na hora tinha o que digitou APAGADO pela resposta da consulta,
+   * que chegava depois e escrevia o rascunho guardado por cima. O que está
+   * na tela, sendo digitado agora, vence qualquer coisa vinda do disco.
+   */
+  const touched = useRef(false);
 
   const persistLocal = useCallback((next: WrittenSummary) => {
     const key = sessionIdRef.current ?? NEW_DRAFT_KEY;
@@ -133,10 +145,11 @@ export function useWrittenDraft(input: {
         sessionIdRef.current = body.id;
         setSessionId(body.id);
         await adoptDraft(body.id);
-        // `replace`, não `push`: o voltar do navegador tem de sair do editor,
-        // não desfazer a criação da sessão e devolver uma tela em branco que
-        // escreveria o mesmo texto numa segunda linha.
-        router.replace(`/escrever/${body.id}`);
+        // `replaceState`, e não `router.replace`: ver o cabeçalho. É `replace`
+        // e não `push` pelo mesmo motivo de sempre — o voltar do navegador tem
+        // de sair do editor, não desfazer a criação da sessão e devolver uma
+        // tela em branco que escreveria o mesmo texto numa segunda linha.
+        window.history.replaceState(null, "", `/escrever/${body.id}`);
       }
 
       // Só o que FOI enviado conta como sincronizado. Se a pessoa digitou
@@ -162,10 +175,39 @@ export function useWrittenDraft(input: {
         void send();
       }
     }
-  }, [router]);
+  }, []);
+
+  // Abertura: o rascunho do aparelho decide.
+  useEffect(() => {
+    let alive = true;
+    const key = input.id ?? NEW_DRAFT_KEY;
+    void readDraft(key).then((draft) => {
+      if (!alive) return;
+      if (draft && !touched.current && draft.updatedAt > draft.syncedAt) {
+        setDocState(draft.doc);
+        docRef.current = draft.doc;
+        setStatus("local");
+        // O que o aparelho tem é mais novo que o que o banco tem, e ninguém
+        // mais vai mandar isso: o `setDoc` só arma o temporizador quando uma
+        // tecla é digitada, e pode não haver tecla nenhuma — a pessoa reabriu
+        // para LER o que escreveu. Só quando a sessão já existe: sem id, criar
+        // uma linha no banco ao abrir a tela é exatamente o que a regra acima
+        // não quer.
+        if (input.id) {
+          if (syncTimer.current) clearTimeout(syncTimer.current);
+          syncTimer.current = setTimeout(() => void send(), SYNC_DEBOUNCE_MS);
+        }
+      }
+      setReady(true);
+    });
+    return () => {
+      alive = false;
+    };
+  }, [input.id, send]);
 
   const setDoc = useCallback(
     (next: WrittenSummary | ((prev: WrittenSummary) => WrittenSummary)) => {
+      touched.current = true;
       setDocState((prev) => {
         const value = typeof next === "function" ? next(prev) : next;
         docRef.current = value;
@@ -200,8 +242,13 @@ export function useWrittenDraft(input: {
     return () => {
       if (localTimer.current) clearTimeout(localTimer.current);
       if (syncTimer.current) clearTimeout(syncTimer.current);
+      // O que estava esperando a pausa não pode morrer junto com a tela. A
+      // condição é o `status`: em "synced" não há nada pendente, e gravar assim
+      // mesmo carimbaria `syncedAt: 0` num texto que ESTÁ no banco — a próxima
+      // abertura anunciaria "salvo neste aparelho" sobre trabalho já salvo.
+      if (statusRef.current !== "synced") persistLocal(docRef.current);
     };
-  }, []);
+  }, [persistLocal]);
 
   return { doc, setDoc, status, sessionId, flush, ready };
 }

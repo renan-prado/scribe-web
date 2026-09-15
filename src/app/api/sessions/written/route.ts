@@ -1,5 +1,6 @@
 import { NextResponse } from "next/server";
 import { z } from "zod";
+import { getCurrentProfile } from "@/lib/db/profiles";
 import { createEmptySession, getSessionMeta, updateSessionSummary } from "@/lib/db/sessions";
 import { WrittenSummarySchema, writtenToPayload } from "@/lib/domain/summary";
 import { parseJsonBody } from "@/lib/http/validate";
@@ -72,9 +73,22 @@ export async function POST(request: Request) {
       return NextResponse.json({ error: "not_manual" }, { status: 409 });
     }
   } else {
+    // **O autor de um texto manual é quem o escreveu.** Nos outros modos o
+    // `speaker_name` é o PREGADOR, alguém que não é quem está com o aparelho na
+    // mão, e por isso nasce vazio esperando ser preenchido. Aqui não há terceiro
+    // nenhum: quem digitou é o autor, e deixar o campo em branco fazia a
+    // Biblioteca mostrar um cartão sem assinatura e a leitura oferecer
+    // "Adicionar autor" para uma pergunta que já tinha resposta. Continua
+    // editável em `/summary`, para o caso de alguém transcrever à mão o sermão
+    // de outra pessoa.
+    //
+    // `displayName` pode ser nulo (perfil que nunca teve nome), e aí volta a
+    // ser o comportamento de antes — um chute a partir do e-mail seria assinar
+    // o texto com "r.nanpr".
+    const profile = await getCurrentProfile().catch(() => null);
     try {
       id = await createEmptySession({
-        speakerName: null,
+        speakerName: profile?.displayName?.trim() || null,
         speakerLocation: null,
         mode: "manual",
       });

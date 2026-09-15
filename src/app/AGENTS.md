@@ -153,25 +153,207 @@ A consequência é que as classes de cada bloco existem em DOIS lugares: no
 desenho de um bloco lá, ajuste aqui no mesmo commit — é o que sustenta a
 promessa de que o que se escreve é o que se lê.
 
+**A frase de destaque é a exceção, e por isso tem um espelho.** A marca amarela
+é um gradiente atrás das PALAVRAS (`.highlight-phrase`, com
+`box-decoration-break: clone` para recomeçar a cada quebra), e o fundo de uma
+`textarea` é o retângulo da caixa. Então o amarelo é pintado por um `div` atrás
+dela — o mesmo texto, mesma tipografia, mesma largura útil, em tinta
+transparente. O `text-pretty` da leitura NÃO vai para os dois: ele mexe na
+quebra e a `textarea` não o aplica, o que desalinharia a marca do texto.
+
+**O bloco em foco pousa numa superfície** (`focus-within:bg-scriba-blue-soft/60`,
+com recuo negativo para o texto não andar quando a cor acende). Ele existe pelo
+celular, onde não há ponteiro e o teclado cobre metade da tela. Não é uma barra
+na margem: barra na margem é o vocabulário de CITAÇÃO, é o que o bloco `quote`
+desenha, e o mesmo traço para "isto é citação" e para "é aqui que você está"
+faz um parágrafo comum parecer citado enquanto é escrito. É CSS, e não o estado
+`active` do `Composer`, porque a superfície não tem nada a que sobreviver: ela é
+o foco e mais nada.
+
+**O `active` apaga quando o foco sai do bloco**, e o `onBlur` que o apaga confere
+o `relatedTarget` antes: se o foco foi para um filho do próprio bloco (a
+lixeira, o mover, a pastilha da passagem), o cursor não saiu dali. Sem esse
+apagar, um `+` revelado por um clique ficava aceso pelo resto da sessão; sem a
+conferência, tocar na lixeira apagaria o estado que mantém a lixeira na tela.
+
+**Quem acende os `+` é o `Composer`, não um `group-hover`.** Cada vão pertence a
+DOIS blocos, e o `+` entre eles aparece ao passar por qualquer um dos dois — um
+`group-` só enxerga o ancestral em que foi declarado, e o vão mora dentro de um
+só. Há também um `+` ACIMA do primeiro bloco: sem ele não havia como pôr nada
+antes do começo do texto a não ser criando depois e subindo.
+
+**Uma posição, UM dono.** `adderAt` é uma posição, não o endereço de um
+componente, então dois `+` que respondam pelo mesmo número abrem os dois menus e
+empilham duas fileiras idênticas na tela. Uma linha em branco é dona do vão logo
+acima dela (o `+` dela insere ali), e por isso o vão acima de uma linha em branco
+não desenha o seu próprio `+` — nem o do topo, quando o primeiro bloco já é uma
+linha em branco — nem o de baixo, que não seria duplicata e sim ruído: um
+segundo disco 28px abaixo do dela, dizendo a mesma coisa. Cada bloco responde
+pelo vão ACIMA dele (é daí que sai o `+` antes do primeiro), e a linha do rodapé
+responde pela posição depois do último, sumindo quando esse último já é uma
+linha em branco.
+
+**O `+` é OPCIONAL, e a linha do fim é uma linha em branco de verdade.** Depois
+do último bloco há sempre uma `textarea` vazia com a roupa de parágrafo, e o `+`
+fica ao lado dela: escrever ali cria o parágrafo com o que foi digitado e passa
+o cursor para ele (`WritingLine`, no `Composer`). Escrever um texto é escrever
+parágrafos — pedir que a pessoa escolha "Parágrafo" num menu antes de cada um
+cobra um clique por aquilo que ela ia fazer de qualquer jeito. O menu continua
+respondendo pelo resto: título, passagem, destaque, citação, conclusão.
+
+**Todo parágrafo VAZIO é essa mesma linha**, com o mesmo `+` ao lado — inclusive
+o que um Enter acabou de criar no meio do texto. Uma linha em branco é o momento
+em que "na verdade eu queria um título aqui" ainda está em aberto, e a oferta
+não pode aparecer ou sumir conforme a linha seja um bloco de verdade ou a do
+rodapé. Pela mesma razão a linha do rodapé some quando o último bloco já é um
+parágrafo vazio: as duas desenham a mesma coisa, e empilhadas seriam duas linhas
+em branco onde a pessoa pediu uma.
+
+**O `+` de inserir mora na PÍLULA do bloco** (`BlockControls`), junto de mover e
+excluir, e insere ACIMA dele — é o que diz o rótulo. Ele já ficou no vão entre
+dois blocos: eram dois discos por bloco, acendendo e apagando conforme o mouse
+passava, e uma tela de texto com uma dúzia de botõezinhos piscando ao redor.
+Numa barra que já existe e já aparece na hora certa, é um botão a mais.
+
+Inserir só acima não deixa posição órfã porque a linha do fim está sempre lá: as
+posições entre blocos saem da pílula do bloco de baixo, e o fim do texto é a
+própria linha em branco do rodapé.
+
+**O VÃO é do contêiner, e nada mais mora dentro dele.** Ele já foi de 56px para
+abrigar aquele disco; hoje são 32px, contra os 28 da leitura.
+
+**O menu de blocos FLUTUA sobre a linha, e não empurra nada.** Em fluxo, as sete
+pastilhas quebravam em duas linhas e empurravam o documento inteiro para baixo —
+o texto que a pessoa está olhando para decidir o que vem a seguir saltava no
+instante do clique, e o que estava sob o mouse deixava de estar. Ele começa
+exatamente onde a linha começa, e o `×` cai em cima do `+` que o abriu: mesmo
+disco, mesmo lugar, só o glifo muda (`DiscButton`) — o que só fecha porque ele
+não tem contorno: 1px de borda é 1px de LAYOUT, e tirava o `×` de cima do `+`.
+Ele não tem fio em volta, nem sombra, nem cor própria — os três o transformavam
+numa caixa pousada sobre o documento, e ele é a própria linha trocando de
+conteúdo. O que o sustenta é ser OPACO e estar por cima: `z-30`, contra os
+`z-10` da pílula de um bloco. Com duas fileiras de pastilhas ele cobre parte do
+bloco de baixo, e o que está embaixo não pode aparecer no meio das opções nem
+acender ao passar o mouse sobre elas. Enquanto ele está aberto NENHUMA pílula aparece, nem a de
+outro bloco: com duas fileiras de pastilhas o menu cobre o começo do bloco de
+baixo, e a pílula daquele bloco ficava metade escondida e metade para fora. Fecha com Esc, com
+um clique fora (é o que o `data-block-menu` marca) ou voltando a escrever.
+
+**NENHUM controle é mais alto que a linha de texto, e é essa regra que mantém o
+editor com uma altura de linha só.** Toda caixa de bloco tem 42px (a linha de
+26px mais 8px de cada lado), tenha dentro um parágrafo ou uma linha em branco
+com o `+` ao lado. Quando esse `+` tinha 36px ele esticava a linha em branco
+para 44 e ela ficava mais alta que o parágrafo vizinho — duas alturas de linha
+no mesmo documento, que é o que dá a sensação de espaçamento desproporcional. A
+pílula segue a mesma regra por outro caminho: 34px, menor que a caixa, pousada
+na borda de cima dela.
+
+**A geometria fecha, e as contas estão no `BLOCK_SURFACE` do `Composer`.** Vão de
+32px, a caixa avançando 8px para dentro dele de cada lado, 16px de superfície a
+superfície. O que casa com a leitura é a LARGURA do texto, que é o que decide
+onde a linha quebra.
+
+**O vermelho do excluir é `--scriba-rose` (#3A2321), o VINHO da paleta**, com o
+glifo em `--scriba-rose-ink`. Não é a tinta rosada clara: sobre o grafite, um
+fundo claro com o glifo branco vira um borrão vermelho no canto da tela. Fundo
+escuro com glifo rosado é o mesmo aviso, no tom em que o resto do app fala.
+
+**Quem começa pelo disco recua menos à esquerda** (`ROW_LEADING_DISC`): 8px até
+o disco, e os mesmos 8 do disco até o texto. Os 12/20px da caixa são recuo de
+TEXTO; um disco de 24px já traz a própria margem visual, e com 20px antes dele e
+9 acima a mesma linha tinha duas medidas de respiro. Esse recuo é igual nos dois
+tamanhos de tela, porque quem manda nele é o disco, que não muda de tamanho.
+
+**O disco que se vê tem 24px; o alvo que se acerta tem 36.** O `p-1.5` estica a
+área e o `-m-1.5` devolve o espaço ao layout, então o alvo cresce sem empurrar
+altura nenhuma. Um alvo de 24px é metade do mínimo de toque, e é no celular —
+sem mouse para mirar — que esse `+` aparece.
+
+**A `AutoTextarea` é `block`, e isso não é decoração.** Uma `textarea` é
+inline-block por padrão e pousa na linha de base do pai, deixando por baixo dela
+o espaço dos descendentes: quatro píxeis que ninguém pediu, dentro da superfície
+do foco (que ficava alta demais, com o texto encostado no topo) e somados a cada
+dois parágrafos do documento.
+
 **O vocabulário do editor é MENOR que o do resumo** (`WRITTEN_BLOCK_TYPES`): não
 tem `example`, cujo rótulo na tela é "Exemplo do pregador" e não faz sentido num
 texto que a própria pessoa escreveu, nem um terceiro nível de título. A "ideia
-central" não é bloco: ela é o `shortSummary`, campo fixo no topo, o que aparece
-no cartão da Biblioteca e na busca.
+central" não é bloco: ela é o `shortSummary`, o que aparece no cartão da
+Biblioteca e na busca. E é OPCIONAL — o campo não nasce na tela, entra por uma
+pastilha "Adicionar ideia central" no topo e sai pelo `×` do próprio cartão.
+Resumir a mensagem em uma frase é coisa que só se consegue fazer depois de
+escrevê-la; um campo fixo em cima da folha em branco pergunta antes da hora.
+
+**A faixa de versículos se escolhe como um período num calendário.** Um toque
+finca a ponta, o outro fecha, e ENTRE os dois o caminho até o número sob o mouse
+já aparece pintado — é isso que responde "quanto eu estou pegando?" antes do
+segundo toque. Um terceiro toque recomeça dali, como em todo seletor de período.
+A grade dos versículos não tem vão entre as colunas (a faixa é uma fita, não uma
+fileira de pastilhas) e arredonda nas pontas do intervalo E nas quebras de
+linha, senão uma faixa que vira a linha parece duas seleções. Quem sabe onde a
+linha quebra é uma CONTA sobre o número de colunas (`useGridColumns`), e não um
+seletor `nth-*`: numa grade responsiva as regras de seis colunas continuavam
+valendo na grade de oito, e sobravam cantos arredondados no meio da fita.
+
+**Dentro daquele diálogo, realce é VÉU BRANCO, e não `blue-soft`.** O popup tem
+`bg-popover`, que é `#2F3035` — exatamente o valor de `--scriba-blue-soft`.
+Todo `hover:bg-scriba-blue-soft` ali pintava cinza sobre o mesmo cinza: o toque
+não respondia nada e a faixa escolhida ficava invisível entre as duas pontas.
+Os três níveis (`VEIL_HOVER`, `VEIL_ACTIVE`, `VEIL_RANGE`) são a mesma tinta
+clara em forças diferentes, e por isso leem como escala. Eles guardam a classe
+INTEIRA, com a variante junto: um `hover:${...}` montado com template nunca
+aparece no código, o Tailwind não gera a regra, e o realce some sem erro nenhum
+— a segunda maneira de a mesma coisa ficar invisível.
+
+Todo item escolhível do diálogo tem `active:` (`LIST_ITEM`): num diálogo em que
+todo toque troca a tela, `hover:` não existe no celular, e sem o afundar do
+toque o dedo pousa no número e nada acontece até a tela seguinte chegar.
+
+**E o terceiro passo termina no `Concluir`, não no toque.** Fechar a faixa
+fechava o diálogo junto, e quem errava o último versículo por uma casa refazia
+livro e capítulo. Os dois primeiros passos não têm rodapé: ali escolher é
+avançar, e um botão de confirmar seria um segundo jeito de fazer a mesma coisa.
 
 **A passagem bíblica guarda só a REFERÊNCIA.** O `PassagePicker` caminha livro →
 capítulo → versículos sobre `CHAPTER_VERSE_COUNTS`, então só é possível escolher
 o que existe, e o bloco nasce com `text` vazio: quem busca a NVI é o
-`PassageVerses`, na leitura, como num bloco escrito pela IA. Guardar aqui uma
-cópia do texto bíblico seria uma segunda fonte para a mesma passagem.
+`PassageVerses`, como num bloco escrito pela IA. Guardar aqui uma cópia do texto
+bíblico seria uma segunda fonte para a mesma passagem.
+
+O editor monta o MESMO `PassageVerses`, e não um aviso de que o texto entra
+depois: este é o único bloco sem nada para digitar, escolhida a referência não
+há mais nada a fazer, e a única confirmação de que se escolheu a certa é ler o
+que veio. A busca é em cache por referência (`passageQueryOptions`), então abrir
+a leitura em seguida não a refaz. Por isso também o bloco inteiro deixou de ser
+um botão: clicável é a PASTILHA da referência, que é a parte que se troca — com
+a passagem dentro, o botão teria por nome acessível os sete versículos.
 
 **O salvamento é LOCAL-FIRST.** Cada mudança cai no IndexedDB em 300ms
 (`draft-store.ts`) e no banco em 1,8s (`useWrittenDraft`), e ao reabrir a tela
 o rascunho do aparelho VENCE o que o servidor devolveu, quando é mais novo que
 o último envio confirmado. A sessão nasce no PRIMEIRO envio, não ao abrir a
 tela: criar ali encheria a Biblioteca de textos vazios de quem clicou no menu e
-desistiu. Até lá a URL é `/escrever`; depois vira `/escrever/{id}` por um
-`replace`.
+desistiu. Até lá a URL é `/escrever`; depois vira `/escrever/{id}`.
+
+**Três regras existem porque cada uma já comeu uma palavra digitada**, e as três
+são a mesma ideia: o que está na tela agora é a verdade.
+
+1. A URL do primeiro salvamento muda por `history.replaceState`, não por
+   `router.replace`. Navegar remontava o editor com o que o servidor tinha
+   acabado de devolver, e o que foi digitado durante o POST voltava atrás.
+2. O rascunho lido do IndexedDB não entra se uma tecla já foi digitada nesta
+   montagem. A consulta é assíncrona, e quem abre a tela e escreve na hora tinha
+   a primeira letra apagada pela resposta que chegava depois.
+3. No desmontar, o que ainda não subiu é gravado no aparelho na hora, sem
+   esperar a pausa de 300ms — que seria cancelada junto com o componente. E ao
+   voltar, um rascunho mais novo que o último envio agenda o envio que faltou;
+   sem isso ele ficaria guardado só ali para sempre.
+
+**O autor de um texto manual é quem o escreveu**, e a sessão já nasce assinada
+com o `display_name` do perfil. Nos outros modos o `speaker_name` é o PREGADOR —
+alguém que não é quem está com o aparelho na mão —, e por isso nasce vazio
+esperando ser preenchido; aqui não há terceiro nenhum. Continua editável em
+`/summary`, para quem transcreve à mão o sermão de outra pessoa.
 
 **Uma sessão `manual` não tem transcrição**, e três coisas somem da leitura por
 causa disso: "Ler transcrição", "Reprocessar" (refaria o resumo a partir de uma
