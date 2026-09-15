@@ -550,14 +550,25 @@ Três decisões dele que não são estética:
 
 - **À direita, não no centro.** Centralizado, o botão pousava sobre a coluna
   esquerda do mural e tampava um cartão; e um painel que se abre a partir do
-  centro não tem para que lado crescer.
-- **O `+` continua VERMELHO** (`--v2-rec`), mesmo não sendo mais só o microfone:
-  é a cor da ação do produto, e num mural de post-its coloridos um `+` cinza
-  seria mais um retângulo. As opções lá dentro são neutras e iguais entre si —
-  quem chegou nelas já decidiu criar.
+  centro não tem para que lado crescer. O painel abre AO LADO dele, na mesma
+  linha e alinhado por baixo, como no print — aberto por cima, ele ficaria
+  debaixo do dedo que acabou de tocar. A conta fecha em 360px com folga de 18px,
+  e quem mexer no tamanho das opções refaz a soma (está no cabeçalho do
+  componente): o estouro sai pela esquerda da tela no celular, e não aparece no
+  monitor.
+- **O `+` é CINZA e de VIDRO** (`--v2-glass-*`), e já foi vermelho e chapado por
+  um commit. O vermelho é do microfone — é a cor do gravar, do ponto que pisca
+  durante a pregação —, e num botão que abre três portas, das quais só uma
+  grava, ele prometia a errada. O vidro são três camadas que andam juntas,
+  superfície translúcida sobre `backdrop-blur`, um brilho de 10% de branco
+  caindo a 2% (a curvatura sob uma luz de cima) e o fio da borda; os números são
+  baixos de propósito, e subi-los é o caminho curto para o plástico brilhante de
+  2010.
+- **Não há véu.** O apanhador de toque atrás do painel é transparente:
+  escurecer a tela trataria como modal o que é um menu de três atalhos — e é o
+  mural visto PELO vidro que dá ao painel a profundidade que um véu apagaria.
 - **Rolar fecha o painel.** O painel é `fixed`; parado no canto enquanto a lista
-  corre atrás dele, com um véu por cima que o dedo atravessa, seriam dois
-  comportamentos contraditórios no mesmo gesto.
+  corre atrás dele seriam dois comportamentos contraditórios no mesmo gesto.
 
 Girar um `+` em 45° dá um `×`: o botão que abre é o mesmo que fecha, e trocar de
 glifo faria o fechar aparecer do nada no lugar do abrir.

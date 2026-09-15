@@ -172,6 +172,13 @@
   --color-v2-note-lemon: var(--v2-note-lemon);
   --color-v2-note-lemon-ink: var(--v2-note-lemon-ink);
   --color-v2-note-lemon-mute: var(--v2-note-lemon-mute);
+  /* O vidro do dock (o `+` e o painel de opções). Cores viram utilitário; o
+     BRILHO não, ele é gradiente e entra por `bg-[image:var(--v2-glass-sheen)]`,
+     mesma regra do `--v2-dock-fade`. */
+  --color-v2-glass-panel: var(--v2-glass-panel);
+  --color-v2-glass-button: var(--v2-glass-button);
+  --color-v2-glass-tile: var(--v2-glass-tile);
+  --color-v2-glass-edge: var(--v2-glass-edge);
   --color-v2-rec: var(--v2-rec);
   --color-v2-rec-hover: var(--v2-rec-hover);
   --color-v2-rec-ink: var(--v2-rec-ink);
@@ -611,6 +618,42 @@
     rgba(33, 33, 33, 0.08) 83%,
     rgba(33, 33, 33, 0.03) 92%,
     rgba(33, 33, 33, 0) 100%
+  );
+
+  /* O VIDRO do dock: o botão de criar e o painel de opções que ele abre.
+
+     São três tokens porque são três camadas do mesmo material, e elas precisam
+     mudar juntas: a SUPERFÍCIE (a cor translúcida), o BRILHO (o gradiente que
+     dá a curvatura) e a BORDA (o fio de luz que diz onde o vidro termina).
+
+     **A superfície é translúcida de propósito, e é isso que a faz vidro.** Ela
+     vem com `backdrop-blur`, então o mural de post-its atrás continua lá,
+     desfocado e escurecido, em vez de apagado por um retângulo opaco — é a
+     mesma ideia do `--v2-dock-fade` logo acima, separar por profundidade e não
+     por recorte. Chapada, a peça vira mais um cartão pousado sobre os cartões.
+
+     **O brilho é MUITO sutil, e tem de continuar sendo.** São 10% de branco no
+     topo caindo para 2% embaixo, a 160°: o suficiente para a peça parecer
+     curva sob uma luz que vem de cima, e pouco demais para ser lido como "tem
+     um degradê aqui". Subir esses números é o caminho mais curto para o
+     plástico brilhante de 2010.
+
+     **O `backdrop-filter` não entra aqui**, é classe (`backdrop-blur-*`): o
+     token é a cor, e um filtro embutido numa variável de cor seria uma regra
+     escondida em cima de quem só quis pintar algo.
+
+     Os dois `rgb` de base são `--v2-card` (47,48,53) e `--v2-card-hover`
+     (58,59,65), com alfa. Se aqueles mudarem, estes mudam junto — é o mesmo
+     laço do `--v2-dock-fade` com o `--v2-bg`. */
+  --v2-glass-panel: rgba(47, 48, 53, 0.78);
+  --v2-glass-button: rgba(58, 59, 65, 0.72);
+  --v2-glass-tile: rgba(255, 255, 255, 0.07);
+  --v2-glass-edge: rgba(255, 255, 255, 0.1);
+  --v2-glass-sheen: linear-gradient(
+    160deg,
+    rgba(255, 255, 255, 0.1) 0%,
+    rgba(255, 255, 255, 0.04) 55%,
+    rgba(255, 255, 255, 0.02) 100%
   );
 }
 
