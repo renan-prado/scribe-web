@@ -27,12 +27,14 @@ export default function manifest(): MetadataRoute.Manifest {
     display_override: ["standalone", "minimal-ui"],
     orientation: "portrait",
     // A tela de abertura do Android: fundo desta cor, o ícone no meio, o nome
-    // embaixo. É o topo do gradiente da hero da landing no tema escuro
-    // (`--lp-hero` de `.dark`), a mesma tinta das telas de abertura do iOS que
-    // `scripts/generate-splash.mjs` desenha, o app abre igual nos dois
-    // sistemas. Era `#ffffff`, que dava um clarão branco antes do primeiro
-    // paint. Mudou aqui? Mude lá.
-    background_color: "#1C2349",
+    // embaixo. É o CHÃO DO APP, a mesma cor do `theme_color` logo abaixo e das
+    // telas de abertura do iOS que `src/scripts/generate-splash.mjs` desenha —
+    // abertura e primeira tela na mesma tinta, nos dois sistemas. Era
+    // `#1C2349`, o índigo da hero antiga, uma cor que o produto não usa em
+    // lugar nenhum desde que o app virou grafite: o app abria num clarão azul
+    // para então ficar cinza. Antes disso era `#ffffff`, que era o mesmo erro
+    // em branco. Mudou aqui? Mude lá.
+    background_color: THEME_COLOR.app,
     // O GRAFITE do app, e não a cor do site. Este valor é o fallback de quem
     // abre sem JS e, mais importante, a cor que o sistema usa na abertura,
     // antes de a página existir: quem toca no ícone vai para `/sign-in` e daí

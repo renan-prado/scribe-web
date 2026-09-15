@@ -9,11 +9,17 @@
  * isso é uma imagem por resolução, e por isso um aparelho novo precisa de uma
  * linha nova em `SCREENS`, sem ela o iPhone volta ao branco, em silêncio.
  *
- * O desenho é o mesmo da hero da landing no tema escuro
- * (`--lp-hero` de `.dark`: #1C2349 → #12102A) com a pena por cima no gradiente
- * branco do favicon escuro. O `<path>` NÃO é copiado aqui: ele é lido de
- * `public/brand/pena.svg`, que é o consumo de fora do React da marca (ver
- * src/shared/AGENTS.md). Trocou a marca? Regere isto depois de regerar aquele.
+ * **O desenho é a pena sobre o chão CHAPADO do app**, `--v2-bg`, o mesmo
+ * `#212121` do `background_color` do manifest e da barra de status. Era o
+ * degradê índigo da hero antiga (#1C2349 → #12102A), e eram dois problemas num:
+ * a cor não existe mais em lugar nenhum do produto, e um degradê numa tela de
+ * abertura que dura meio segundo só se anuncia como faixa, porque é ele que o
+ * olho pega antes de a página chegar. Chapado, a abertura e a primeira tela do
+ * app são a MESMA cor, e o splash deixa de ser um piscar.
+ *
+ * O `<path>` NÃO é copiado aqui: ele é lido de `public/brand/pena.svg`, que é
+ * o consumo de fora do React da marca (ver src/shared/AGENTS.md). Trocou a
+ * marca? Regere isto depois de regerar aquele.
  *
  *   node src/scripts/generate-splash.mjs
  */
@@ -31,9 +37,8 @@ const PENA = join(ROOT, "public", "brand", "pena.svg");
 // no branco, sem erro nenhum.
 const SCREENS_JSON = join(ROOT, "src", "shared", "splash-screens.json");
 
-/** Fundo: os dois stops de `--lp-hero` no tema escuro. */
-const BG_TOP = "#1C2349";
-const BG_BOTTOM = "#12102A";
+/** O chão do app: `--v2-bg` do `globals.css`, chapado. Mudou lá? Mude aqui. */
+const BG = "#212121";
 
 function splashFileName({ w, h }) {
   return `splash-${w}x${h}.png`;
@@ -47,19 +52,17 @@ function buildSvg({ w, h }, pathData) {
   const scale = mark / 166; // o viewBox da pena
   const x = Math.round((w - mark) / 2);
   const y = Math.round((h - mark) / 2);
+  // A tinta da pena continua em degradê: é o desenho da MARCA (o mesmo do
+  // `logo.png` e do favicon escuro), não decoração do fundo.
   return `<svg xmlns="http://www.w3.org/2000/svg" width="${w}" height="${h}" viewBox="0 0 ${w} ${h}">
   <defs>
-    <linearGradient id="bg" x1="0" y1="0" x2="0" y2="1">
-      <stop offset="0" stop-color="${BG_TOP}"/>
-      <stop offset="1" stop-color="${BG_BOTTOM}"/>
-    </linearGradient>
     <linearGradient id="ink" x1="0" y1="0" x2="0" y2="1">
       <stop offset="0" stop-color="#FFFFFF"/>
       <stop offset="0.46" stop-color="#D2D2D2"/>
       <stop offset="1" stop-color="#D2D2D2"/>
     </linearGradient>
   </defs>
-  <rect width="${w}" height="${h}" fill="url(#bg)"/>
+  <rect width="${w}" height="${h}" fill="${BG}"/>
   <g transform="translate(${x} ${y}) scale(${scale})" opacity="0.92">
     <path d="${pathData}" fill="url(#ink)"/>
   </g>

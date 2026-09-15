@@ -178,11 +178,11 @@ grafite. `data-v2-shell`, no nó raiz de `(app)/layout.tsx`, é o que liga o CSS
 ao app; `useTheme` o consulta antes de pintar a meta, senão o toggle do
 `/profile` (que é uma tela do app) devolvia a barra de cima para a cor do site.
 
-**Ainda desalinhada, e sabidamente:** as telas de abertura do iOS
-(`public/brand/splash/`) e o `background_color` do manifest continuam no índigo
-`#1C2349` da pele antiga, que nem a landing usa mais (`--lp-hero` no escuro é
-`#141414 → #0A0A0A`). Consertar é redesenhar os PNGs:
-`node src/scripts/generate-splash.mjs`, com `BG_TOP`/`BG_BOTTOM` atualizados.
+A quarta ponta é a ABERTURA do app, e ela fecha o circuito: o
+`background_color` do manifest (Android) e as telas de `public/brand/splash/`
+(iOS) são o mesmo `#212121` chapado, então o app abre na cor em que ele fica.
+Foram índigo `#1C2349` até a pele nova, e o app abria num clarão azul para
+então ficar cinza.
 
 O switch existe em UM lugar, e só: **`/profile`** (`ThemeToggleRow`). Saiu
 do header logado, do header de parceiros, do `AuthShell` (sign-in e sign-up) e
@@ -336,22 +336,32 @@ desencontra, já aconteceu, e o conserto virou commit.
 dois favicons, porque favicon, manifest e dados estruturados não passam por
 componente. Eles NÃO se atualizam sozinhos quando `ScribaMark` muda.
 
-Os MESTRES são `public/brand/logo.png` (quadrado, opaco) e
-`public/brand/banner-preview.png` (1200×630). Todo o resto de raster é
-derivado deles por `sharp`, não desenhe um tamanho à mão. Quando a marca
-mudar, troque os mestres e regenere, nesta ordem:
+Os MESTRES são **dois**: `public/brand/scriba.png` (a arte quadrada, opaca) e
+`public/brand/banner-preview.png` (1200×630). Todo o resto de raster é derivado
+deles, **não desenhe um tamanho à mão** — foi assim que seis arquivos ficaram
+índigo meses depois de o app virar grafite, cada um esperando alguém lembrar
+dele. Quando a marca mudar, troque os mestres e regenere, nesta ordem:
 
 1. `src/shared/brand/ScribaMark.tsx`: a aplicação inteira (o `<path>`).
 2. `public/brand/pena.svg`: a mesma pena para consumo externo e para a
    máscara do logotipo em gradiente.
-3. `public/brand/favicon-{light,dark}-theme.svg`: a aba, por tema.
-4. `src/app/favicon.ico`: 16/32/48/64/128/256 no mesmo arquivo.
-5. `src/app/apple-icon.png` (180, opaco) e `public/brand/icon-{192,512}.png`.
-6. `src/app/opengraph-image.png`: cópia do banner (com o `.alt.txt` ao lado).
-7. `public/brand/splash/`: `node scripts/generate-splash.mjs`. As telas de
-   abertura do PWA no iOS; o script LÊ o `pena.svg` do passo 2, então rodá-lo
-   antes dele redesenha a marca velha.
-8. `src/app/manifest.ts`, `src/app/layout.tsx` e `LandingJsonLd.tsx`, só apontam, mas
+3. `public/brand/favicon-{light,dark}-theme.svg`: a aba, por tema. São
+   TRANSPARENTES, não carregam fundo, e por isso atravessaram a troca de pele
+   sem precisar de conserto.
+4. `node src/scripts/generate-brand.mjs`: lê `scriba.png` e escreve os cinco
+   derivados quadrados — `logo.png` (o arquivo servido ao `LandingJsonLd`),
+   `icon-{192,512}.png`, `apple-icon.png` (achatado, o iOS não compõe alpha) e
+   `favicon.ico` (16/32/48/64/128/256, montado byte a byte porque o `sharp` não
+   escreve ICO).
+5. `node src/scripts/generate-splash.mjs`: as telas de abertura do iOS. Ele LÊ
+   o `pena.svg` do passo 2, então rodá-lo antes dele redesenha a marca velha.
+6. `src/app/opengraph-image.png`: cópia de `banner-preview.png` (com o
+   `.alt.txt` ao lado). **O banner é mestre por si, e não sai de script**: ele
+   carrega a palavra "scriba" em Poppins, e desenhar texto exigiria a fonte
+   instalada na máquina de quem roda. O fundo dele foi trocado uma vez sem
+   redesenhar a palavra, separando tinta de fundo pelo canal azul (a tinta é
+   neutra, o fundo era índigo); se precisar de novo, a conta está no commit.
+7. `src/app/manifest.ts`, `src/app/layout.tsx` e `LandingJsonLd.tsx`, só apontam, mas
    confira se o arquivo apontado ainda existe.
 
 Sobre formatos e precedência de `<link>`, ver `src/app/AGENTS.md`.

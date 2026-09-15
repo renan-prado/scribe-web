@@ -773,7 +773,9 @@ app. Ele é cliente puro justamente para não custar a estaticidade da página.
 ### Splash
 
 Android monta a tela de abertura com o `background_color` do manifest
-(`#1C2349`, o topo do gradiente da hero no tema escuro). **O iOS ignora isso**:
+(`#212121`, o chão da área logada — o app abre na cor em que ele fica; era o
+índigo da hero antiga, e a abertura piscava azul antes de virar cinza). **O iOS
+ignora isso**:
 sem `apple-touch-startup-image` casando exatamente com o aparelho, ele abre o
 app numa tela branca. As imagens saem de `src/scripts/generate-splash.mjs` e os
 `<link>` de `src/shared/splash.ts`, as duas metades leem o MESMO
