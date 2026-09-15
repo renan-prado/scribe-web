@@ -21,6 +21,12 @@ function readTheme(): Theme {
  * justamente o que mais salta aos olhos num app instalado. O `ThemeScript`
  * cria a meta antes do primeiro paint; o `createElement` aqui é só para o caso
  * de alguém remover aquele bootstrap.
+ *
+ * **Dentro do app o tema não manda nesta cor.** O toggle existe em
+ * `/profile`, que é uma tela do app, e a área logada tem UM tema: ao virar
+ * para claro ali, o app continuava grafite e só a barra de status ficava
+ * branca. Se a moldura está na tela, a barra é a do app. Ver `THEME_COLOR.app`
+ * e `AppThemeColor`.
  */
 function applyThemeColorMeta(theme: Theme) {
   let meta = document.querySelector<HTMLMetaElement>('meta[name="theme-color"]');
@@ -29,7 +35,8 @@ function applyThemeColorMeta(theme: Theme) {
     meta.name = "theme-color";
     document.head.appendChild(meta);
   }
-  meta.content = THEME_COLOR[theme];
+  const inApp = document.querySelector("[data-v2-shell]") !== null;
+  meta.content = inApp ? THEME_COLOR.app : THEME_COLOR[theme];
 }
 
 function applyTheme(theme: Theme) {

@@ -33,11 +33,14 @@ export default function manifest(): MetadataRoute.Manifest {
     // sistemas. Era `#ffffff`, que dava um clarão branco antes do primeiro
     // paint. Mudou aqui? Mude lá.
     background_color: "#1C2349",
-    // O tema CLARO, porque é o padrão de quem nunca escolheu (ver
-    // `ThemeScript`). Este valor é o fallback: com JS, a
-    // `<meta name="theme-color">` que o bootstrap escreve tem precedência e
-    // acompanha a troca de tema. Ver `src/shared/theme-color.ts`.
-    theme_color: THEME_COLOR.dark,
+    // O GRAFITE do app, e não a cor do site. Este valor é o fallback de quem
+    // abre sem JS e, mais importante, a cor que o sistema usa na abertura,
+    // antes de a página existir: quem toca no ícone vai para `/sign-in` e daí
+    // para `/home`, ou seja, o app instalado está SEMPRE na área logada, que
+    // tem um tema só. Com JS, a `<meta name="theme-color">` tem precedência —
+    // no site ela acompanha o toggle (`ThemeScript`/`useTheme`), no app ela é
+    // fixada pelo `AppThemeColor`. Ver `src/shared/theme-color.ts`.
+    theme_color: THEME_COLOR.app,
     lang: "pt-BR",
     dir: "ltr",
     categories: ["productivity", "utilities", "education"],

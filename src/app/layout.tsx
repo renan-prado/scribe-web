@@ -37,9 +37,15 @@ const poppins = Poppins({
  * da barra do indicador de início, e o dedo acerta o gesto do sistema, não o
  * botão. Quem consome os insets é o `RecordDock` e o rodapé de cada tela.
  *
- * O zoom fica LIBERADO de propósito (`maximumScale: 5`, sem `userScalable`):
- * travar o pinch é a violação de acessibilidade mais comum em PWA, e o app é
- * lido em letra pequena dentro de igreja.
+ * O zoom fica LIBERADO aqui de propósito (`maximumScale: 5`, sem
+ * `userScalable`), e este layout é o SITE: landing, páginas legais, as de
+ * confiança. Travar o pinch numa página de leitura pública é a violação de
+ * acessibilidade mais comum em PWA, e o Lighthouse reprova.
+ *
+ * **A área logada e a entrada travam**, porque lá o produto é um app
+ * instalado (e amanhã um WebView), onde ampliar não é ler melhor, é a tela
+ * desalinhar no meio da pregação. Quem manda nelas é o `APP_VIEWPORT` de
+ * `@/shared/viewport`, declarado por `(app)/layout.tsx` e `(entrar)/layout.tsx`.
  *
  * `theme-color` NÃO entra aqui, ver `ThemeScript`.
  */

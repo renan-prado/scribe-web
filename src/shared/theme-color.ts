@@ -14,12 +14,23 @@
  * - `app/manifest.ts`: o `theme_color`, que é o fallback de quem abre o app
  *   sem JS e a cor da tela de splash na instalação.
  *
- * Os valores espelham `--scriba-surface` em `:root` e em `.dark`: é a
- * superfície que fica logo abaixo da barra nas telas de lista (`/feed`,
- * `/recordings`, `/studies`), onde o encontro entre as duas é visível. **Se o
- * token mudar em `app/globals.css`, mude aqui no mesmo commit.**
+ * `light` e `dark` espelham `--scriba-surface` em `:root` e em `.dark`, e são
+ * a cor do SITE: landing, páginas legais, a tela de entrada.
+ *
+ * **`app` não tem par claro, e é de propósito.** A área logada tem UM tema (a
+ * classe `dark` é fixa no `(app)/layout.tsx`), então a barra do sistema ali
+ * não acompanha o toggle: ela é sempre o grafite da página. Enquanto ela seguia
+ * o tema, quem tinha escolhido claro via uma barra de status BRANCA colada num
+ * app grafite, e quem estava no escuro via o #111111 do site encostado no
+ * #212121 do app, perto o bastante para parecer defeito e longe o bastante para
+ * se ver. Quem aplica é o `AppThemeColor`, montado pela moldura do app.
+ *
+ * **Se o token mudar em `app/globals.css`, mude aqui no mesmo commit** — vale
+ * para os três: `--scriba-surface` nos dois temas e `--v2-bg` no `app`.
  */
 export const THEME_COLOR = {
   light: "#FAFAFA",
   dark: "#111111",
+  /** `--v2-bg`, o chão grafite da área logada. */
+  app: "#212121",
 } as const;

@@ -1,8 +1,11 @@
 import type { ReactNode } from "react";
+import { AppThemeColor } from "@/components/AppThemeColor";
+import { ZoomLock } from "@/components/ZoomLock";
 import { TourProvider } from "@/features/tour/components/TourProvider";
 import { listSeenTours } from "@/lib/db/tours";
 import type { TourSeenMap } from "@/lib/domain/tour";
 import { getAuthUser } from "@/lib/supabase/server";
+import { APP_VIEWPORT } from "@/shared/viewport";
 
 /**
  * A moldura do Scriba.
@@ -45,7 +48,22 @@ import { getAuthUser } from "@/lib/supabase/server";
  * empilhariam dois véus), e o mapa do que já foi visto sobrevive à navegação,
  * porque o layout não é refeito ao andar entre as telas. Ver
  * `src/features/tour/AGENTS.md`.
+ *
+ * **O `ZoomLock` e o `viewport` daqui tiram a pinça de zoom do app.** O app é
+ * instalado na tela inicial e vai virar um WebView; ampliar ali não é ler
+ * melhor, é a tela sair do lugar com o `RecordDock` fora de vista. O porquê
+ * inteiro, e por que a landing continua ampliável, está em
+ * `src/shared/viewport.ts`.
+ *
+ * **O `data-v2-shell` não é gancho de teste, é o que pinta o SISTEMA.** O
+ * `bg-v2-bg` abaixo pinta um div; o fundo do documento, que é de onde o
+ * Android tira a cor da barra de navegação de baixo, continuava sendo o do
+ * site. O atributo é o que a regra `:has()` do `globals.css` procura para
+ * levar o grafite até o <html>. O `AppThemeColor` faz o mesmo pela barra de
+ * cima, que só se pinta por meta.
  */
+export const viewport = APP_VIEWPORT;
+
 export default async function AppLayout({ children }: { children: ReactNode }) {
   // `getAuthUser` é `cache()`: pedir o usuário aqui não custa uma ida a mais à
   // rede, é a MESMA chamada que a `TopBar` de cada página já faz por dentro.
@@ -56,7 +74,12 @@ export default async function AppLayout({ children }: { children: ReactNode }) {
 
   return (
     <TourProvider seen={seenTours}>
-      <div className="dark flex flex-1 flex-col bg-v2-bg pt-[env(safe-area-inset-top)]">
+      <ZoomLock />
+      <AppThemeColor />
+      <div
+        data-v2-shell
+        className="dark flex flex-1 flex-col bg-v2-bg pt-[env(safe-area-inset-top)]"
+      >
         {children}
       </div>
     </TourProvider>

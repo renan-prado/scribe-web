@@ -153,10 +153,36 @@ explicitamente, ver `ThemedToaster`.
 barra de status do celular (`<meta name="theme-color">`, escrita pelo
 `ThemeScript` e reescrita pelo `useTheme`) e o `theme_color` do manifest são
 lidos pelo navegador antes de qualquer CSS, nenhum dos dois enxerga um `var()`.
-Elas moram em `src/shared/theme-color.ts` e são o espelho de `--scriba-surface`
-nos dois temas: **mudou o token, mude lá no mesmo commit.** A terceira exceção,
-pelo mesmo motivo, é `public/offline.html`, sem rede não há folha de estilo
-para carregar.
+Elas moram em `src/shared/theme-color.ts` e espelham `--scriba-surface` nos dois
+temas: **mudou o token, mude lá no mesmo commit.** A terceira exceção, pelo
+mesmo motivo, é `public/offline.html`, sem rede não há folha de estilo para
+carregar.
+
+### As barras do sistema no app
+
+A área logada tem UM tema, então lá a cor das barras não acompanha o switch:
+`THEME_COLOR.app` é o espelho de `--v2-bg`, e é ele que vale das duas pontas da
+tela. **São três mecanismos porque são três donos diferentes, e nenhum deles
+alcança os outros dois:**
+
+| Onde | Quem pinta | Por quê |
+|---|---|---|
+| Barra de status (topo) | `AppThemeColor`, montado pela moldura | A `<meta>` é escrita no `<head>`, antes de haver rota; o componente é a segunda palavra, dita já dentro do app |
+| Barra de navegação (Android, embaixo) | `html:has([data-v2-shell])` no `globals.css` | O Chrome tira a cor dela do fundo do DOCUMENTO, e não há meta que mande nela |
+| Abertura do app instalado | `theme_color` do manifest | É o que o sistema usa antes de a página existir |
+
+O `bg-v2-bg` da moldura NÃO resolve nenhum dos três: ele pinta um div, e por
+baixo dele o fundo do documento é o do site — branco, para quem escolheu tema
+claro, que é como uma barra de navegação branca aparecia embaixo de um app
+grafite. `data-v2-shell`, no nó raiz de `(app)/layout.tsx`, é o que liga o CSS
+ao app; `useTheme` o consulta antes de pintar a meta, senão o toggle do
+`/profile` (que é uma tela do app) devolvia a barra de cima para a cor do site.
+
+**Ainda desalinhada, e sabidamente:** as telas de abertura do iOS
+(`public/brand/splash/`) e o `background_color` do manifest continuam no índigo
+`#1C2349` da pele antiga, que nem a landing usa mais (`--lp-hero` no escuro é
+`#141414 → #0A0A0A`). Consertar é redesenhar os PNGs:
+`node src/scripts/generate-splash.mjs`, com `BG_TOP`/`BG_BOTTOM` atualizados.
 
 O switch existe em UM lugar, e só: **`/profile`** (`ThemeToggleRow`). Saiu
 do header logado, do header de parceiros, do `AuthShell` (sign-in e sign-up) e
