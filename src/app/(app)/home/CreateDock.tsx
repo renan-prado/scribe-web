@@ -225,7 +225,7 @@ export function CreateDock() {
               <CreateOption
                 href="/escrever"
                 icon={<PenLine className="size-5" strokeWidth={1.5} />}
-                label="Escrever manualmente"
+                label="Escrever resumo"
                 onNavigate={() => setOpen(false)}
               />
               <CreateOption
@@ -273,14 +273,14 @@ export function CreateDock() {
  * em `public/prints/new-release/`.
  *
  * A largura é FIXA, e é fixa porque os três nomes têm tamanhos muito
- * diferentes: deixados ao conteúdo, "Escrever manualmente" viraria um alvo com
- * o dobro da caixa de "Resumo mágico", e três alvos de tamanhos diferentes lado
- * a lado não leem como três opções da mesma lista.
+ * diferentes: deixados ao conteúdo, "Importar do YouTube" viraria um alvo com
+ * quase o dobro da caixa de "Escrever resumo", e três alvos de tamanhos
+ * diferentes lado a lado não leem como três opções da mesma lista.
  *
- * **O número (70px) sai da palavra mais longa**, "manualmente", que pede 65px a
- * 11px. Abaixo disso o navegador quebra a palavra no meio ou a deixa vazar. O
- * nome ocupa duas linhas quando precisa, e é por isso que ele é `leading-tight`
- * e o bloco tem altura livre.
+ * **O número (70px) é o que põe "Importar do" numa linha só** e ainda sobra
+ * folga em volta do quadrado de 48. Os nomes ocupam duas linhas, e é por isso
+ * que eles são `leading-tight`, `break-words` (palavra longa quebra em vez de
+ * vazar) e o bloco tem altura livre.
  *
  * O toque se anuncia CLAREANDO o quadrado do ícone (`brightness`), e não
  * pintando o fundo do alvo: o quadrado é `--v2-card-hover`, a mesma cor que um
