@@ -554,6 +554,22 @@ webhook não chegou — uma sessão de Checkout aberta durante o deploy ainda tr
 
 ## A Biblioteca e o gravador
 
+**A `/home` não vai ao banco.** Ela chegou a ter duas consultas no render,
+depois uma, e hoje nenhuma: a lista é lida do IndexedDB pelo `LibraryBrowser` e
+revalidada atrás (ver `src/features/session/AGENTS.md`). O que sobra na página é
+a moldura. Enquanto a consulta existia, cada abertura do app e cada volta para a
+Biblioteca a refaziam do zero, com a tela em esqueleto até a resposta chegar —
+num WebView, que o sistema mata a toda troca de app, isso é o dia inteiro.
+
+**E o cartão adianta o resumo no `pointerdown`** (`NavLink prefetchOnPress`).
+Toda rota daqui é dinâmica, e para rota dinâmica o `<Link>` padrão adianta só a
+casca até o `loading.tsx` — é por isso que o resumo abria no esqueleto. Entre o
+dedo encostar e sair passam ~100ms, e a transição leva mais um tanto. O preço é
+que rolar a lista começa com um `pointerdown` sobre um cartão, então alguns
+resumos são adiantados à toa; ficou barato quando a transcrição saiu do payload
+deles. **Prefetch não acontece em `next dev`**, só em produção — testar isso no
+`npm run dev` e concluir que não funcionou é o erro fácil.
+
 O `/home` põe o ACERVO como primeira tela e gravar como o botão no rodapé. O
 LAYOUT vem dos prints em `public/prints/new-release/`: barra no topo, blocos por
 mês, e embaixo uma faixa que escurece até o grafite da página
@@ -1158,8 +1174,16 @@ depurar.
 
 **Ele não cacheia o app, e isso é decisão.** O conteúdo aqui muda a cada
 segundo, transcrição, feed, saldo, e cache velho não apareceria como bug de
-cache: apareceria como sessão que perdeu texto. O único cache é a casca da tela
-offline (`offline.html` + `pena.svg`), que é estática. `offline.html` está na
+cache: apareceria como sessão que perdeu texto.
+
+**E o cache que existe HOJE não é dele.** A Biblioteca é guardada no IndexedDB
+pelo TanStack Query (ver `src/features/session/AGENTS.md`), e a diferença é o
+que cada um sabe: o service worker guardaria RESPOSTAS HTTP sem saber o que
+envelheceu, e é aí que ele transforma um cache velho em texto perdido; o
+TanStack guarda ESTADO que a aplicação sabe revalidar, escopado por conta e
+descartado a cada release. A decisão acima continua valendo — não acrescente
+cache de conteúdo ao `sw.js`. A casca da tela offline (`offline.html` +
+`pena.svg`) é estática. `offline.html` está na
 exclusão do `matcher` do proxy porque quem a busca é o `install` do SW, e
 `cache.addAll` REJEITA resposta redirecionada, atrás do proxy, um visitante
 anônimo derrubaria a instalação inteira do service worker.

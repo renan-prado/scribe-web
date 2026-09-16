@@ -1,7 +1,23 @@
 "use client";
 
-import { isServer, QueryClient, QueryClientProvider } from "@tanstack/react-query";
+import { createAsyncStoragePersister } from "@tanstack/query-async-storage-persister";
+import { isServer, QueryClient } from "@tanstack/react-query";
 import { ReactQueryDevtools } from "@tanstack/react-query-devtools";
+import { PersistQueryClientProvider } from "@tanstack/react-query-persist-client";
+import { APP_VERSION } from "@/lib/app-version";
+import { idbStorage } from "@/lib/idb-storage";
+
+/**
+ * Quanto tempo uma entrada do cache pode ficar sem uso antes de ser recolhida.
+ *
+ * O padrão do TanStack são 5 minutos, e ele é bom para cache de memória: nada
+ * se perde, porque a página seguinte busca de novo. Aqui é o contrário — o que
+ * o coletor recolhe não é recolhido só da memória, é o que DEIXA DE SER GRAVADO
+ * no disco, e com isso a Biblioteca voltaria a abrir vazia depois de cinco
+ * minutos fora do app. Uma semana é o horizonte de quem usa o Scriba de domingo
+ * a domingo.
+ */
+const GC_TIME = 7 * 24 * 60 * 60 * 1000;
 
 function makeQueryClient() {
   return new QueryClient({
@@ -12,6 +28,7 @@ function makeQueryClient() {
         staleTime: 5 * 60 * 1000,
         refetchOnWindowFocus: false,
         retry: 1,
+        gcTime: GC_TIME,
       },
     },
   });
@@ -25,14 +42,69 @@ function getQueryClient() {
   return browserQueryClient;
 }
 
+/**
+ * O persistidor. `undefined` no servidor, onde não há armazenamento nenhum e
+ * `createAsyncStoragePersister` não teria o que fazer.
+ */
+const persister = isServer
+  ? undefined
+  : createAsyncStoragePersister({
+      storage: idbStorage,
+      key: "scriba-query-cache",
+      // O respiro entre uma mudança do cache e a gravação. O padrão é 1s; aqui
+      // a gravação é assíncrona e sai do caminho, mas juntar as rajadas de uma
+      // revalidação continua valendo.
+      throttleTime: 1000,
+    });
+
+/**
+ * O cache do TanStack Query, e agora ele SOBREVIVE ao fechamento do app.
+ *
+ * ## Por que persistir
+ *
+ * Toda tela do Scriba nascia do zero: abrir o app era esperar o servidor
+ * responder antes de ver qualquer coisa, e num WebView que o Android mata a
+ * cada troca de app isso acontece o dia inteiro. Com o cache no IndexedDB (ver
+ * `lib/idb-storage.ts`), a Biblioteca desenha do disco no primeiro quadro e a
+ * rede só confirma atrás.
+ *
+ * O `PersistQueryClientProvider` é quem sabe a ordem certa: ele restaura o
+ * disco ANTES de deixar as queries rodarem, então não existe o instante em que
+ * a tela busca do servidor algo que já estava guardado.
+ *
+ * ## `buster`: por que a versão do app
+ *
+ * O que está no disco foi serializado pelo código de ONTEM. Uma mudança no
+ * formato de `SessionListItem` encontraria, no aparelho de quem não recarregou,
+ * objetos com o formato antigo — e o sintoma não seria um erro, seria um cartão
+ * sem título. Com a versão no `buster`, todo deploy descarta o que a versão
+ * anterior gravou. É o mesmo número que carimba as chamadas de LLM, então ele
+ * sobe em todo release (ver `docs/versionamento.md`).
+ *
+ * ## O que NÃO está resolvido aqui
+ *
+ * O cache é do APARELHO. Quem escopa por CONTA é a chave de cada query (ver
+ * `features/session/query.ts`), e quem apaga o cache do dono anterior quando
+ * outro entra é o `CacheOwnerGuard`. Este arquivo não sabe quem está logado, e
+ * não deve saber: ele envolve a landing page também, que é estática.
+ */
 export function Providers({ children }: { children: React.ReactNode }) {
   const queryClient = getQueryClient();
   return (
-    <QueryClientProvider client={queryClient}>
+    <PersistQueryClientProvider
+      client={queryClient}
+      persistOptions={{
+        // `persister` só é `undefined` no servidor, onde este provider nem
+        // chega a restaurar nada.
+        persister: persister as NonNullable<typeof persister>,
+        maxAge: GC_TIME,
+        buster: APP_VERSION,
+      }}
+    >
       {children}
       {process.env.NODE_ENV === "development" ? (
         <ReactQueryDevtools initialIsOpen={false} buttonPosition="bottom-left" />
       ) : null}
-    </QueryClientProvider>
+    </PersistQueryClientProvider>
   );
 }

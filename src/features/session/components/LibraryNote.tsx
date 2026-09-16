@@ -1,8 +1,7 @@
 import { PenLine } from "lucide-react";
 import { MicGlyph } from "@/components/icons/MicGlyph";
 import { YoutubeIcon } from "@/components/icons/YoutubeIcon";
-import type { SessionListItem } from "@/lib/db/sessions";
-import type { SessionMode } from "@/lib/domain/session";
+import type { SessionListItem, SessionMode } from "@/lib/domain/session";
 import { shortDate } from "../lib/formatting";
 import { PostItNote } from "./PostItNote";
 

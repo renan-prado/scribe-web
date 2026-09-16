@@ -1,7 +1,6 @@
 import type { Metadata } from "next";
 import { TourTrigger } from "@/features/tour/components/TourTrigger";
 import { TOUR_DELAY_LIST_MS } from "@/features/tour/config";
-import { listSessions, type SessionListItem } from "@/lib/db/sessions";
 import { ImportAction, RecordAction, WriteAction } from "../components/CreateActions";
 import { SearchScope, SearchToggle } from "../components/SearchScope";
 import { TopBar } from "../components/TopBar";
@@ -21,15 +20,23 @@ export const metadata: Metadata = { title: "Biblioteca" };
  * primeira tela, criar é o botão que flutua sobre ele, e cada sessão é uma
  * anotação colorida em vez de uma ficha.
  *
- * **Uma consulta só.** A segunda buscava quais sessões já tinham estudo, para
- * uma pastilha "Estudo" que o post-it não mostra; ela saiu junto com a pastilha,
- * porque consulta que alimenta tela que não existe é custo invisível — não
- * aparece como bug, aparece como latência.
+ * **Esta página não vai mais ao banco, e é a mudança que importa.** Ela chegou a
+ * ter duas consultas, depois uma — `listSessions()` no render —, e agora
+ * nenhuma. Enquanto ela existia, cada abertura do app e cada volta para a
+ * Biblioteca a refaziam do zero, com a tela em esqueleto até a resposta chegar;
+ * num WebView, que o sistema mata a toda hora, isso é o dia inteiro. A lista
+ * agora é lida do IndexedDB pelo `LibraryBrowser` e revalidada atrás (ver
+ * `features/session/query.ts`), e o que sobra aqui é a moldura.
  *
- * A busca inteira mora no cliente (`LibraryBrowser`), como no `/recordings`: a
- * página continua sendo só quem BUSCA no banco. O `SearchScope` envolve o
- * cabeçalho e a lista porque o botão está num e o estado no outro; a `TopBar`
- * segue renderizada no servidor mesmo passando por dentro dele.
+ * (A consulta que saiu ANTES dessa buscava quais sessões já tinham estudo, para
+ * uma pastilha que o post-it não mostra. O princípio é o mesmo nos dois cortes:
+ * consulta que alimenta tela que não existe, ou que existe guardada no
+ * aparelho, não aparece como bug — aparece como latência.)
+ *
+ * A busca inteira mora no cliente (`LibraryBrowser`), como no `/recordings`. O
+ * `SearchScope` envolve o cabeçalho e a lista porque o botão está num e o
+ * estado no outro; a `TopBar` segue renderizada no servidor mesmo passando por
+ * dentro dele.
  *
  * A largura trava em 1024px, e o mural ganha colunas junto (ver
  * `LibraryBrowser`): a tela nasceu de um print de celular, e esticada sem teto
@@ -49,10 +56,7 @@ export default async function V2HomePage({
       outras telas chega aqui, ver `LibrarySearchLink`. */
   searchParams: Promise<{ busca?: string }>;
 }) {
-  const [sessions, { busca }] = await Promise.all([
-    listSessions().catch((): SessionListItem[] => []),
-    searchParams,
-  ]);
+  const { busca } = await searchParams;
 
   return (
     <SearchScope defaultOpen={busca === "1"}>
@@ -78,7 +82,7 @@ export default async function V2HomePage({
             </>
           }
         />
-        <LibraryBrowser sessions={sessions} nowIso={new Date().toISOString()} />
+        <LibraryBrowser nowIso={new Date().toISOString()} />
       </main>
       <CreateDock />
       {/* A apresentação da Biblioteca, e a primeira que qualquer pessoa vê: é

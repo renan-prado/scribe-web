@@ -328,6 +328,35 @@ que já é o único colorido da fileira, o brilhinho no canto não somava destaq
 dividia o olhar entre duas coisas pequenas. Quem quiser tentar de novo saiba
 que já se tentou.
 
+## O cache do TanStack Query SOBREVIVE ao fechamento do app
+
+`components/Providers.tsx` usa `PersistQueryClientProvider`, não o
+`QueryClientProvider` cru: o cache é gravado no IndexedDB (ver
+`lib/idb-storage.ts`) e restaurado ANTES de as queries rodarem. É o que faz a
+Biblioteca desenhar do disco no primeiro quadro em vez de esperar o servidor —
+num WebView, que o sistema mata a cada troca de app, "abrir o app" acontece o
+dia inteiro.
+
+Três números, e os três têm motivo:
+
+- **`gcTime` de uma semana**, contra os 5 minutos do padrão. Em cache de
+  memória o padrão é bom, porque o que o coletor recolhe a página seguinte
+  busca de novo; aqui o que ele recolhe é o que DEIXA DE SER GRAVADO no disco,
+  e a Biblioteca voltaria a abrir vazia depois de cinco minutos fora do app.
+- **`buster` é a versão do app.** O que está no disco foi serializado pelo
+  código de ontem, e uma mudança de formato apareceria como cartão sem título,
+  não como erro. Todo release descarta o que o anterior gravou.
+- **`throttleTime` de 1s**, para juntar as rajadas de uma revalidação.
+
+**Este arquivo não sabe quem está logado, e não deve saber:** ele envolve a
+landing page também. Quem escopa o cache por CONTA é a chave de cada query, e
+quem apaga o do dono anterior é o `CacheOwner` (ver
+`src/features/session/AGENTS.md`).
+
+O service worker continua não cacheando nada — são coisas diferentes: ele
+guardaria RESPOSTAS HTTP sem saber o que envelheceu, este guarda ESTADO que a
+aplicação sabe revalidar. Ver `src/app/AGENTS.md`.
+
 ## A navegação do app não mora aqui
 
 **Não há barra de navegação em `src/shared/`.** Havia `AppNav` (desktop),

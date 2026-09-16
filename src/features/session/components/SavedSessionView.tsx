@@ -21,6 +21,7 @@ import { TitleDialog } from "@/features/session/components/TitleDialog";
 import { TranscriptDialog } from "@/features/session/components/TranscriptDialog";
 import { requestLocationSuggestions, requestSpeakerSuggestions } from "@/features/session/lib/api";
 import { initialsOf } from "@/features/session/lib/text";
+import { useLibrarySync, useLibraryWriter } from "@/features/session/query";
 import type { SessionMode } from "@/lib/domain/session";
 import type { SummaryPayload } from "@/lib/domain/summary";
 import { cn } from "@/lib/utils";
@@ -123,18 +124,32 @@ export function SavedSessionView({
 
   const router = useRouter();
   const refreshCoins = useCoinsStore((s) => s.refresh);
+  // A Biblioteca guardada no aparelho. Apagar e renomear daqui mexem NELA, e
+  // mexer no cache é como a lista concorda com o que acabou de acontecer sem
+  // esperar uma volta ao servidor. Ver `features/session/query.ts`.
+  const library = useLibraryWriter();
+  // Todo caminho de criação termina AQUI — gravar, importar, escrever —, então
+  // este é o lugar onde se descobre que a Biblioteca guardada no aparelho ainda
+  // não sabe desta sessão. Ver `useLibrarySync`.
+  useLibrarySync(id);
 
   const [title, setTitle] = useState(initialTitle);
   const [speakerName, setSpeakerName] = useState(initialSpeakerName);
   const [speakerLocation, setSpeakerLocation] = useState(initialSpeakerLocation);
 
   async function handleDelete() {
-    const res = await fetch(`/api/sessions/${id}`, { method: "DELETE" });
-    if (!res.ok) {
-      toast.error("Não foi possível excluir. Tente novamente.");
-      return;
-    }
+    // OTIMISTA: o cartão sai da Biblioteca ANTES da resposta. É o que permite
+    // navegar para lá em seguida e encontrar a lista já sem ele — sem isto, a
+    // pessoa apagaria um sermão, voltaria, e o veria ainda lá até a
+    // revalidação chegar, o que se lê como "não apagou".
+    const undo = library.remove(id);
     router.push("/home");
+
+    const res = await fetch(`/api/sessions/${id}`, { method: "DELETE" }).catch(() => null);
+    if (!res?.ok) {
+      undo();
+      toast.error("Não foi possível excluir. Tente novamente.");
+    }
   }
 
   async function handleReprocess() {
@@ -157,6 +172,9 @@ export function SavedSessionView({
       }
       void refreshCoins();
       toast.success("Resumo atualizado.");
+      // O resumo curto que o cartão usa na BUSCA acabou de mudar, e este é o
+      // único caminho em que ele muda sem passar por `patchField`.
+      void library.invalidate();
       router.refresh();
     } catch {
       toast.error("Falha de conexão ao reprocessar.");
@@ -167,12 +185,22 @@ export function SavedSessionView({
 
   async function patchField(field: "title" | "speakerName" | "speakerLocation", value: string) {
     const body = { [field]: value || null };
-    const res = await fetch(`/api/sessions/${id}`, {
-      method: "PATCH",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify(body),
-    });
-    if (!res.ok) throw new Error("update failed");
+    // O mesmo de `handleDelete`, e pela mesma razão: o cartão da Biblioteca
+    // mostra autor e título, e sem isto renomear aqui deixaria a lista com o
+    // nome velho até a próxima revalidação. `speakerLocation` entra junto
+    // porque a BUSCA procura por local, mesmo o cartão não o exibindo.
+    const undo = library.patch(id, { [field]: value || null });
+    try {
+      const res = await fetch(`/api/sessions/${id}`, {
+        method: "PATCH",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify(body),
+      });
+      if (!res.ok) throw new Error("update failed");
+    } catch (error) {
+      undo();
+      throw error;
+    }
     if (field === "title") setTitle(value || title);
     else if (field === "speakerName") setSpeakerName(value || null);
     else setSpeakerLocation(value || null);

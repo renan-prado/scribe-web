@@ -54,3 +54,29 @@ export function parseSessionMode(value: unknown): SessionMode {
   }
   return LEGACY_MODES[value as string] ?? "audio";
 }
+
+/**
+ * O cartão de uma sessão no MURAL da Biblioteca: o cabeçalho, sem nada pesado.
+ *
+ * Mora em `domain/` e não em `lib/db/sessions.ts`, onde nasceu, porque agora
+ * ele atravessa a fronteira: a lista deixou de ser só um retorno de consulta do
+ * servidor e virou o corpo de `GET /api/sessions` e o conteúdo do cache do
+ * aparelho (ver `features/session/query.ts`). `lib/db/` leva `server-only`, e a
+ * regra do repositório é que tipo compartilhado vive aqui.
+ *
+ * Não traz `finalSummary` nem `transcript` — o cartão mostra autor, título e
+ * data, e as duas colunas pesadas têm rota própria.
+ */
+export type SessionListItem = {
+  id: string;
+  createdAt: string;
+  durationMs: number | null;
+  title: string | null;
+  shortSummary: string | null;
+  speakerId: string | null;
+  locationId: string | null;
+  speakerName: string | null;
+  speakerLocation: string | null;
+  mode: SessionMode;
+  sourceUrl: string | null;
+};

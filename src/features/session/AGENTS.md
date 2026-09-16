@@ -34,6 +34,9 @@ pessoa quiser, aprofundar.
 | `components/YoutubeUrlForm.tsx` + `YoutubeImport.tsx` | colar o link (ou recebê-lo por parâmetro), recortar um trecho, e esperar a importação |
 | `components/DeepenButton.tsx` + `DeepeningMenu.tsx` | gerar e reprocessar o estudo |
 | `components/PassageVerses.tsx` + `RichText.tsx` | texto bíblico e menções dentro do parágrafo |
+| `components/TranscriptDialog.tsx` | a gaveta da transcrição, e quem vai buscá-la quando ela abre |
+| `components/CacheOwner.tsx` | de quem é o cache deste aparelho, e a faxina quando outra conta entra |
+| `query.ts` | a Biblioteca guardada no aparelho: leitura, escrita otimista e o conserto do atraso |
 | `hooks/useCoinTick.ts` | o débito por minuto, durante a gravação |
 | `recording-store.ts` | um booleano: há gravação viva nesta aba? |
 | `server/final-summary.ts` | a chamada única que vira o resumo |
@@ -41,6 +44,38 @@ pessoa quiser, aprofundar.
 | `server/youtube/` | oEmbed, legenda pela Supadata e a limpeza do título |
 | `server/prompts/` | todo system prompt do assunto |
 | `lib/transcription/` | sanitize e o veredito de qualidade de uma parte |
+
+## A Biblioteca mora no APARELHO
+
+`query.ts` é o acervo do lado do cliente. A lista vinha do render de `/home`, o
+que significava refazer a consulta a cada abertura do app e a cada volta para a
+Biblioteca, com a tela em esqueleto até a resposta chegar — e num WebView, que o
+sistema mata a toda troca de app, "a cada abertura" é o tempo todo. Hoje ela é
+lida do IndexedDB no primeiro quadro e revalidada atrás
+(`GET /api/sessions`).
+
+**O que se paga:** a PRIMEIRA visita num aparelho sem cache ganhou uma ida à
+rede, porque o HTML não traz mais a lista dentro. É a troca que define
+local-first, e ela compensa porque a primeira visita acontece uma vez.
+
+**A chave carrega o id do usuário, e isso é correção, não higiene.** O cache é
+do aparelho e um aparelho recebe duas contas; com a chave escopada, quem entra
+depois não tem entrada nenhuma e busca do servidor — não existe o quadro em que
+a Biblioteca de outra pessoa aparece na tela. Um `useEffect` que limpasse o
+cache rodaria DEPOIS do primeiro desenho. A higiene vem junto, no `CacheOwner`,
+que apaga o cache do dono anterior do disco. Ele fica na ENTRADA porque sair é
+um `<form method="post">` repetido em seis telas, e ainda haveria a sessão que
+expira sozinha.
+
+**Escrita otimista:** apagar e renomear mexem no cache ANTES da resposta
+(`useLibraryWriter`), e desfazem se a chamada falhar. Sem isso, apagar um sermão
+e voltar para a Biblioteca o mostraria ainda lá, o que se lê como "não apagou".
+
+**O conserto do atraso mora num lugar só.** `useLibrarySync`, chamado pela tela
+do resumo: se o cache não conhece a sessão aberta, ele é velho. Todo caminho de
+criação desemboca ali — gravar, importar, escrever —, então um ponto cobre os
+três, e o quarto quando existir. A alternativa era um `invalidate` em cada um,
+que é três lugares para esquecer um.
 
 ## Texto bíblico na tela
 

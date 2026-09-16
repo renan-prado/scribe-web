@@ -2,6 +2,7 @@ import type { ReactNode } from "react";
 import { PrivilegedMenuItems } from "@/features/auth/components/PrivilegedMenuItems";
 import { CoinsSync } from "@/features/coins/components/CoinsSync";
 import { INITIAL_COIN_BALANCE } from "@/features/coins/pricing";
+import { CacheOwner } from "@/features/session/components/CacheOwner";
 import { isCurrentUserPartner } from "@/lib/auth/require-partner";
 import { getCurrentAccount } from "@/lib/db/account";
 import { AccountMenu } from "./components/AccountMenu";
@@ -91,7 +92,11 @@ export default async function BarraLayout({ children }: { children: ReactNode })
           ) : null
         }
       />
-      {children}
+      {/* Quem é o dono do cache do aparelho, e a faxina quando ele muda. Fica
+          aqui porque é onde a conta já foi lida, e envolve `children` porque
+          toda tela que lê a Biblioteca do disco precisa do id na chave. Sem
+          sessão não há dono nem cache a escopar. Ver `CacheOwner`. */}
+      {account ? <CacheOwner userId={account.profile.id}>{children}</CacheOwner> : children}
     </>
   );
 }

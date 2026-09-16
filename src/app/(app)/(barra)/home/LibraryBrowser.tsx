@@ -15,13 +15,28 @@ import {
   resultLabel,
   searchTokens,
 } from "@/features/session/lib/search";
-import type { SessionListItem } from "@/lib/db/sessions";
+import { useLibrary } from "@/features/session/query";
+import type { SessionListItem } from "@/lib/domain/session";
 import { useSearchScope } from "../components/SearchScope";
 import { monthGroupLabel } from "../lib/format";
 
 /**
  * A lista da Biblioteca do v2, com a mesma busca e os mesmos filtros do
  * `/recordings`.
+ *
+ * ## De onde vêm as sessões, e por que mudou
+ *
+ * Do CACHE DO APARELHO (`useLibrary`), não mais de uma prop do servidor. A
+ * lista era buscada no render de `/home`, o que significava refazer a consulta
+ * a cada abertura do app e a cada volta para cá, com a tela em esqueleto até a
+ * resposta chegar — e num WebView, que o sistema mata a toda hora, "a cada
+ * abertura" é o tempo todo. Agora ela é lida do IndexedDB no primeiro quadro e
+ * revalidada atrás (ver `features/session/query.ts`).
+ *
+ * **O que se paga por isso:** a PRIMEIRA visita de todas, num aparelho sem
+ * cache, ganhou uma ida à rede — antes o HTML já vinha com a lista dentro. É a
+ * troca que define local-first, e ela compensa porque a primeira visita
+ * acontece uma vez e as outras acontecem todos os dias.
  *
  * ## O que é reaproveitado, e por quê
  *
@@ -67,7 +82,6 @@ import { monthGroupLabel } from "../lib/format";
  * todos eles.
  */
 type Props = {
-  sessions: SessionListItem[];
   nowIso: string;
 };
 
@@ -76,7 +90,22 @@ function v2Href(id: string): string {
   return `/summary/${id}`;
 }
 
-export function LibraryBrowser({ sessions, nowIso }: Props) {
+/** As alturas dos ossos do mural. Todas DIFERENTES, e não por acaso: o mural é
+ *  masonry, e seis blocos de mesma altura anunciariam uma grade que não vai
+ *  aparecer. Serem únicas também as torna chave. */
+const BONE_HEIGHTS = [28, 36, 24, 32, 26, 34];
+
+/** Uma referência estável para o caso "ainda não sei": um `[]` novo a cada
+ *  render invalidaria todos os `useMemo` abaixo a cada quadro. */
+const EMPTY: SessionListItem[] = [];
+
+export function LibraryBrowser({ nowIso }: Props) {
+  const { data, isPending } = useLibrary();
+  // `undefined` é "ainda não sei" (cache vazio, primeira visita); a lista vazia
+  // é um fato. Os dois desenham coisas diferentes lá embaixo, e confundi-los
+  // faria a tela anunciar "Biblioteca vazia" a quem tem trinta sermões.
+  const sessions = data ?? EMPTY;
+
   const { open, setOpen } = useSearchScope();
   const [query, setQuery] = useState("");
   const [speaker, setSpeaker] = useState<string>(FACET_ALL);
@@ -219,6 +248,13 @@ export function LibraryBrowser({ sessions, nowIso }: Props) {
             Limpar busca
           </button>
         </div>
+      ) : isPending ? (
+        /* Cache vazio e resposta a caminho: a primeira visita num aparelho
+           novo, e o único momento em que esta tela não tem o que desenhar.
+           Nunca o `SessionsEmptyState` aqui — ele diz "grave a primeira", e
+           dizer isso a quem tem trinta sermões guardados é a tela mentindo
+           por meio segundo. Ver `useLibrary`. */
+        <LibrarySkeleton />
       ) : groups.length === 0 ? (
         /* Biblioteca vazia é a primeira tela de quem acabou de entrar, e é
            diferente de busca sem resultado (acima): ali a saída é limpar o
@@ -262,5 +298,40 @@ export function LibraryBrowser({ sessions, nowIso }: Props) {
         ))
       )}
     </div>
+  );
+}
+
+/**
+ * O esqueleto do mural, para o único momento em que ele não tem o que desenhar:
+ * a primeira visita num aparelho sem cache.
+ *
+ * Ele repete a anatomia do post-it — moldura do autor, título, rodapé — e não
+ * um retângulo qualquer: um esqueleto sem a forma do que vem produz um pulo de
+ * layout na troca. Alturas diferentes por cartão porque o mural é masonry (ver
+ * `BONE_HEIGHTS`).
+ *
+ * Irmão do `home/loading.tsx`, que cobre a outra espera — aquele é o servidor
+ * montando a página, este é a rede trazendo a lista.
+ */
+function LibrarySkeleton() {
+  return (
+    <section aria-hidden className="flex flex-col gap-3">
+      <div className="ml-1 h-4 w-24 animate-skeleton-shimmer rounded-md bg-scriba-hairline-soft" />
+      <ul className="columns-2 gap-4 sm:columns-3 lg:columns-4">
+        {BONE_HEIGHTS.map((height) => (
+          <li
+            key={height}
+            className="mb-4 break-inside-avoid rounded-2xl bg-scriba-hairline-soft/40 p-4"
+          >
+            <div className="h-3 w-20 animate-skeleton-shimmer rounded-md bg-scriba-hairline-soft" />
+            <div
+              className="mt-3 animate-skeleton-shimmer rounded-md bg-scriba-hairline-soft"
+              style={{ height: `${height}px` }}
+            />
+            <div className="mt-4 h-3 w-16 animate-skeleton-shimmer rounded-md bg-scriba-hairline-soft" />
+          </li>
+        ))}
+      </ul>
+    </section>
   );
 }

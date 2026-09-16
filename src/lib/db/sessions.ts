@@ -2,7 +2,7 @@ import "server-only";
 import { cache } from "react";
 import { escapeLikeValue } from "@/lib/db/like";
 import { type ReferenceQuery, referenceMatchesQuery } from "@/lib/domain/reference-query";
-import { parseSessionMode, type SessionMode } from "@/lib/domain/session";
+import { parseSessionMode, type SessionListItem, type SessionMode } from "@/lib/domain/session";
 import type { SummaryPayload } from "@/lib/domain/summary";
 import { createClient, getAuthUser } from "@/lib/supabase/server";
 
@@ -45,19 +45,10 @@ export type SessionRow = {
   finalSummary: SummaryPayload | null;
 };
 
-export type SessionListItem = {
-  id: string;
-  createdAt: string;
-  durationMs: number | null;
-  title: string | null;
-  shortSummary: string | null;
-  speakerId: string | null;
-  locationId: string | null;
-  speakerName: string | null;
-  speakerLocation: string | null;
-  mode: SessionMode;
-  sourceUrl: string | null;
-};
+// Reexportado por compatibilidade: o tipo mudou de casa para `lib/domain/`
+// quando a lista passou a atravessar a fronteira servidor/cliente. Ver o
+// cabeçalho dele lá.
+export type { SessionListItem } from "@/lib/domain/session";
 
 /**
  * O cabeçalho de uma sessão, sem as três colunas pesadas.

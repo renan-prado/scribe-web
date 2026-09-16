@@ -150,24 +150,58 @@ diff.
 `generateMetadata` do mesmo request dividem o resultado; requests diferentes
 nunca. Isso é o oposto de cache persistente: nada sobrevive à resposta.
 
-O motivo: `supabase.auth.getUser()` NÃO é decode local do JWT, é um
-`GET /auth/v1/user` na rede, toda vez (é por validar no servidor de auth que
-ele é preferível a `getSession()`). Sem memoização, um load da Biblioteca fazia
-OITO dessas idas. Hoje faz duas.
+O motivo: resolver o usuário custava uma ida à REDE. Sem memoização, um load da
+Biblioteca fazia OITO delas.
+
+**E hoje não custa nem isso: `getAuthUser()` lê `getClaims()`, não
+`getUser()`.** `getUser()` é um `GET /auth/v1/user` no servidor de auth;
+`getClaims()` verifica a assinatura do JWT localmente (WebCrypto contra o JWKS
+do projeto) e lê a identidade do próprio token. A memoização cortou a
+QUANTIDADE de idas; o `getClaims` cortou a que sobrou — e fez o mesmo no
+`proxy.ts` (que roda em toda navegação, todo prefetch e toda rota de API) e no
+`requireAuth`, onde `cache()` não vale e cada chamada pagava a sua.
+
+O que se perde é FRESCOR: claims valem até o token expirar, então uma conta
+desativada no meio da hora ainda passa pelo gate. É por isso que `is_active`
+continua saindo da linha de `profiles` (`require-auth.ts`, `db/account.ts`), e
+o RLS do Postgres revalida o mesmo JWT do outro lado. O gate diz "há sessão",
+não "esta sessão pode".
+
+**Com chave simétrica (o segredo HS256 legado) não há ganho:** sem chave
+assimétrica o `getClaims()` chama o `getUser()` por baixo. Nada quebra, só não
+economiza — confira as JWT signing keys no painel do Supabase.
 
 **Prefira `getAuthUser()` a `(await createClient()).auth.getUser()`.** É a
-mesma coisa, cobrada uma vez por request em vez de uma por chamador.
+mesma coisa, local e cobrada uma vez por request em vez de uma por chamador. As
+chamadas cruas que sobraram estão no `/admin`, de propósito: é o caminho do
+poder, é raro, e ali o registro canônico do servidor vale a ida.
 
 `cache()` não vale em Route Handler nem em Server Action, eles ficam fora da
 árvore de render. Lá o comportamento é o de antes: uma chamada, uma ida à
 rede. Nada quebra, só não há o que deduplicar.
 
-**Leituras de sessão têm duas larguras.** `getSession` traz `transcript` e
-`final_summary`; `getSessionMeta` não. Quem nunca renderiza a transcrição (a
-importação do YouTube, o estudo) usa a segunda: abrir uma tela de espera não
-deve trazer o sermão inteiro. Ambas são
-memoizadas porque `generateMetadata` e o corpo da página chamavam as duas, e o
-Next só deduplica `fetch()`, não consulta do Supabase.
+**Leituras de sessão têm QUATRO larguras, e a escolha é sobre o que vai pelo
+fio.**
+
+| Função | Traz | Para quem |
+|---|---|---|
+| `getSession` | tudo, `transcript` inclusive | o pipeline do SERVIDOR: reprocessar resumo, gerar estudo, auditar alucinação, importar do YouTube |
+| `getSessionView` | tudo menos `transcript`, mais `hasTranscript` | as TELAS: `/summary/:id` e `/escrever/:id` |
+| `getSessionMeta` | nem `transcript` nem `final_summary` | quem só decide rota e cabeçalho |
+| `getSessionTranscript` | só `transcript` + duração | o dialog da transcrição, quando abre |
+
+A linha que importa é a segunda. A transcrição viajava no payload de toda
+abertura do resumo — dezenas de KB num sermão de quarenta minutos — e a tela
+fazia três usos dela, dos quais dois queriam apenas saber se ela EXISTE.
+`hasTranscript` é uma coluna GERADA (migração 0061), porque o PostgREST não tem
+`length()` no `select` e pedir a coluna para descobrir que ela não está vazia
+traria de volta exatamente o que se estava tirando do fio.
+
+Isso não é só higiene de payload: é o que torna o resumo leve o bastante para
+ser adiantado no toque (`NavLink prefetchOnPress`) e guardado no aparelho.
+
+As três primeiras são memoizadas porque `generateMetadata` e o corpo da página
+chamam a mesma, e o Next só deduplica `fetch()`, não consulta do Supabase.
 
 ## Auth e autorização
 
@@ -589,6 +623,12 @@ nunca disparava com o modelo novo, nem em áudio com 27% de WER.
 - `deploy.ts`: `IS_PRODUCTION_DEPLOY` (`VERCEL_ENV === "production"`). É a
   chave de GA4 e de indexação. Ler `process.env` não torna a rota dinâmica.
 - `seo.ts`: fonte única de domínio, título e descrição. Ver `src/app/AGENTS.md`.
+- `idb-storage.ts`: **client-safe**. Um `AsyncStorage` de três métodos sobre o
+  IndexedDB, para o persistidor do TanStack Query (`shared/components/Providers.tsx`).
+  Não é `localStorage` porque aquele é SÍNCRONO: serializar o cache na thread
+  principal a cada mudança travaria o toque seguinte, no app que se está
+  tentando deixar instantâneo. Armazenamento bloqueado devolve `null` e engole
+  a escrita — app sem cache persistido, nunca quebrado.
 - `fx/usd-brl.ts`: câmbio USD→BRL, cacheado 1h, em quatro degraus:
   AwesomeAPI → Frankfurter (BCE) → valor manual num cookie do admin → **a
   última cotação guardada em `usd_brl_rates`** (migração 0049, escrita por

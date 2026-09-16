@@ -1,6 +1,6 @@
 import { NextResponse } from "next/server";
 import { z } from "zod";
-import { createEmptySession, SESSION_MODES } from "@/lib/db/sessions";
+import { createEmptySession, listSessions, SESSION_MODES } from "@/lib/db/sessions";
 import { parseClipRange, parseYoutubeUrl } from "@/lib/domain/youtube";
 import { parseJsonBody } from "@/lib/http/validate";
 import { createLogger } from "@/lib/log";
@@ -11,6 +11,35 @@ const log = createLogger("sessions");
 
 export const runtime = "nodejs";
 export const dynamic = "force-dynamic";
+
+/**
+ * GET /api/sessions — a Biblioteca inteira, para o cache do cliente.
+ *
+ * A lista MORAVA só no render do servidor de `/home`, o que significava
+ * refazê-la a cada abertura do app e a cada volta para a Biblioteca, sempre do
+ * zero, sempre com a tela em esqueleto até a resposta chegar. Agora ela é
+ * guardada no aparelho (ver `features/session/query.ts`): a tela desenha do
+ * disco na hora e chama isto atrás, para conferir o que mudou.
+ *
+ * É a mesma consulta de antes — `listSessions`, escopada pela RLS —, só que
+ * alcançável pelo navegador. Não traz `final_summary` nem transcrição: o cartão
+ * mostra autor, título e data, e o resto tem rota própria.
+ */
+export async function GET(request: Request) {
+  const auth = await requireAuth();
+  if (auth.response) return auth.response;
+
+  const limited = enforceRateLimit(request, RATE_LIMITS["sessions-read"], auth.user.id);
+  if (limited) return limited;
+
+  const sessions = await listSessions().catch((error: unknown) => {
+    log.error("listSessions falhou", { error: String(error) });
+    return null;
+  });
+  if (!sessions) return NextResponse.json({ error: "server_error" }, { status: 500 });
+
+  return NextResponse.json({ sessions });
+}
 
 const CreateSessionSchema = z
   .object({
