@@ -4,7 +4,7 @@ import { escapeLikeValue } from "@/lib/db/like";
 import { type ReferenceQuery, referenceMatchesQuery } from "@/lib/domain/reference-query";
 import { parseSessionMode, type SessionMode } from "@/lib/domain/session";
 import type { SummaryPayload } from "@/lib/domain/summary";
-import { createClient } from "@/lib/supabase/server";
+import { createClient, getAuthUser } from "@/lib/supabase/server";
 
 /**
  * Persistence for recording sessions. One row per stop-press: transcript and
@@ -191,9 +191,7 @@ function rowToSession(row: DbRow): SessionRow {
  */
 export async function createEmptySession(input: CreateEmptySessionInput): Promise<string> {
   const supabase = await createClient();
-  const {
-    data: { user },
-  } = await supabase.auth.getUser();
+  const user = await getAuthUser();
   if (!user) throw new Error("createEmptySession: not authenticated");
 
   const { data, error } = await supabase

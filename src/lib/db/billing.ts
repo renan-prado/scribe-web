@@ -2,7 +2,7 @@ import "server-only";
 import type { PlanKey } from "@/features/billing/plans";
 import { createLogger } from "@/lib/log";
 import { createAdminClient } from "@/lib/supabase/admin";
-import { createClient } from "@/lib/supabase/server";
+import { createClient, getAuthUser } from "@/lib/supabase/server";
 
 const log = createLogger("billing");
 
@@ -58,9 +58,7 @@ const SELECT =
 /** Assinatura do usuário autenticado (RLS garante o escopo). */
 export async function getOwnSubscription(): Promise<SubscriptionRecord | null> {
   const supabase = await createClient();
-  const {
-    data: { user },
-  } = await supabase.auth.getUser();
+  const user = await getAuthUser();
   if (!user) return null;
 
   const { data, error } = await supabase

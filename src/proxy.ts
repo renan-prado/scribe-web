@@ -13,8 +13,31 @@ import { SUPABASE_AUTH_COOKIE } from "@/lib/supabase/cookie";
  * Next.js 16 proxy (formerly middleware). Refreshes the Supabase auth cookie
  * on every non-static request and gates protected routes. Follows the
  * @supabase/ssr contract, do NOT insert code between createServerClient and
- * supabase.auth.getUser(), as rewriting cookies mid-flight breaks the
+ * supabase.auth.getClaims(), as rewriting cookies mid-flight breaks the
  * session-refresh handshake.
+ *
+ * **O gate lê `getClaims()`, e não `getUser()`, e isso é performance.**
+ * `getUser()` é um `GET /auth/v1/user` na REDE, toda vez, e este proxy roda em
+ * toda requisição que não seja estática: cada navegação, cada prefetch de
+ * `<Link>`, cada chamada de API pagava uma ida ao servidor de auth ANTES de a
+ * página começar a renderizar. `getClaims()` verifica a assinatura do JWT
+ * localmente (WebCrypto contra o JWKS do projeto, que ele mesmo mantém em
+ * cache), sem sair da máquina. É o que a documentação do Supabase recomenda
+ * para proteger rota, e é o que o exemplo oficial de `proxy.ts` deles usa.
+ *
+ * **O preço, para quem vier depois:** claims são o que o token DIZ, e o token
+ * vale até expirar. Uma conta apagada ou banida no meio da hora continua
+ * passando por aqui até o refresh seguinte — `getUser()` pegaria na hora. Isso
+ * é aceitável porque este gate não é a última porta: `requireAuth` confere
+ * `is_active` na linha de `profiles` em toda rota de API, e o RLS do Postgres
+ * revalida o JWT do lado do banco em toda consulta. O gate diz "há sessão", não
+ * "esta sessão pode".
+ *
+ * **Com chave SIMÉTRICA (o segredo HS256 legado) não há ganho nenhum:** sem
+ * chave assimétrica o `getClaims()` não tem como verificar sozinho e chama o
+ * `getUser()` por baixo. Nada quebra, só não economiza. Se esta linha ainda
+ * estiver aqui e o app continuar lento, confira as JWT signing keys no painel
+ * do Supabase antes de procurar em outro lugar.
  *
  * Route buckets:
  *   PUBLIC, /, /sign-in, /sign-up, /auth/*, /about, /contact, /terms, /privacy,
@@ -431,9 +454,10 @@ export async function proxy(request: NextRequest) {
     }
   );
 
-  const {
-    data: { user },
-  } = await supabase.auth.getUser();
+  // Ver o cabeçalho: verificação LOCAL do JWT, sem ida à rede. O que sai daqui
+  // é usado só como booleano ("há sessão?"), nunca como registro de usuário.
+  const { data: claimsData } = await supabase.auth.getClaims();
+  const user = claimsData?.claims ?? null;
 
   const { pathname, search } = request.nextUrl;
 

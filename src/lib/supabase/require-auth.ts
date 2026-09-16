@@ -31,6 +31,13 @@ const log = createLogger("require-auth");
  * lê-lo aqui é de graça, a linha de `profiles` já está sendo aberta. `null`
  * quer dizer "não sei", não "zero", e quem consome trata as duas de formas
  * diferentes.
+ *
+ * **A identidade vem de `getClaims()`, não de `getUser()`.** Era uma ida à
+ * rede por chamada de API, e `cache()` não vale em Route Handler, então nem a
+ * memoização a segurava: duas chamadas de API eram duas viagens ao servidor de
+ * auth. `getClaims()` verifica o JWT localmente. O frescor que se perde é
+ * justamente o que a consulta logo abaixo repõe — `is_active` sai da linha de
+ * `profiles`, que é o fato gravado, e não do token. Ver `lib/supabase/server.ts`.
  */
 
 type AuthUser = { id: string; coinBalance: number | null };
@@ -38,10 +45,9 @@ type AuthResult = { user: AuthUser; response: null } | { user: null; response: N
 
 export async function requireAuth(): Promise<AuthResult> {
   const supabase = await createClient();
-  const {
-    data: { user },
-  } = await supabase.auth.getUser();
-  if (!user) {
+  const { data: claimsData } = await supabase.auth.getClaims();
+  const userId = claimsData?.claims?.sub;
+  if (!userId) {
     return {
       user: null,
       response: NextResponse.json({ error: "unauthenticated" }, { status: 401 }),
@@ -54,10 +60,10 @@ export async function requireAuth(): Promise<AuthResult> {
   const { data, error } = await supabase
     .from("profiles")
     .select("is_active, coin_balance")
-    .eq("id", user.id)
+    .eq("id", userId)
     .maybeSingle();
   if (error) {
-    log.warn("não consegui ler o perfil, seguindo", { userId: user.id, error: error.message });
+    log.warn("não consegui ler o perfil, seguindo", { userId, error: error.message });
   } else if (data?.is_active === false) {
     return {
       user: null,
@@ -65,5 +71,5 @@ export async function requireAuth(): Promise<AuthResult> {
     };
   }
 
-  return { user: { id: user.id, coinBalance: data?.coin_balance ?? null }, response: null };
+  return { user: { id: userId, coinBalance: data?.coin_balance ?? null }, response: null };
 }

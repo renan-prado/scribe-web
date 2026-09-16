@@ -1,6 +1,6 @@
 import "server-only";
 import type { StudyPayload, StudyRecord } from "@/lib/domain/study";
-import { createClient } from "@/lib/supabase/server";
+import { createClient, getAuthUser } from "@/lib/supabase/server";
 
 /**
  * Persistence for session deepenings, the on-demand "aprofundamento" a user
@@ -142,9 +142,7 @@ export async function createDeepening(
   plan: StudyRecord
 ): Promise<void> {
   const supabase = await createClient();
-  const {
-    data: { user },
-  } = await supabase.auth.getUser();
+  const user = await getAuthUser();
   if (!user) throw new Error("createDeepening: not authenticated");
 
   const { error } = await supabase.from("session_deepenings").insert({

@@ -14,11 +14,10 @@ import { SUPABASE_AUTH_COOKIE } from "@/lib/supabase/cookie";
  * resultado; requests diferentes nunca. Isso é o oposto de cache persistente:
  * nada aqui sobrevive à resposta.
  *
- * O motivo é que `supabase.auth.getUser()` NÃO é decode local do JWT, é um
- * `GET /auth/v1/user` na rede, toda vez (é justamente por validar no servidor
- * de auth que ele é preferível ao `getSession()`). Sem a memoização, um load
- * de /feed fazia OITO dessas idas: uma no proxy, quatro no layout de `(app)`,
- * uma na própria página, e mais duas no `GET /api/coins/balance` que o header
+ * O motivo é que resolver o usuário nunca foi de graça: `getUser()` é um
+ * `GET /auth/v1/user` na rede, toda vez. Sem a memoização, um load de /feed
+ * fazia OITO dessas idas: uma no proxy, quatro no layout de `(app)`, uma na
+ * própria página, e mais duas no `GET /api/coins/balance` que o header
  * disparava logo depois.
  *
  * `cache()` não vale em Route Handlers nem em Server Actions, eles ficam
@@ -60,12 +59,27 @@ export type AuthUser = { id: string; email: string | null };
  *
  * Prefira esta função a `(await createClient()).auth.getUser()`: é a mesma
  * coisa, mas cobrada uma vez por request em vez de uma vez por chamador.
+ *
+ * **E ela lê `getClaims()`, não `getUser()`.** A diferença é uma ida à rede:
+ * `getUser()` pergunta ao servidor de auth quem é a pessoa, `getClaims()`
+ * verifica a assinatura do JWT localmente (WebCrypto contra o JWKS do projeto)
+ * e lê a identidade do próprio token. A memoização acima já tinha cortado a
+ * QUANTIDADE dessas idas; isto corta a que sobrou.
+ *
+ * O que sai daqui vira `user.id` em consulta ao banco, e é seguro: quem
+ * realmente decide o que aquele id enxerga é o RLS do Postgres, que revalida o
+ * mesmo JWT do outro lado. Um token forjado não passa lá. O que claims NÃO
+ * garantem é frescor — uma conta desativada no meio da hora continua com token
+ * válido até o refresh —, e é por isso que `is_active` é conferido na linha de
+ * `profiles` (ver `require-auth.ts` e `lib/db/account.ts`), não aqui.
+ *
+ * Com chave simétrica (HS256 legado) o `getClaims()` cai de volta no
+ * `getUser()` sozinho: nada quebra, só não economiza. Ver `proxy.ts`.
  */
 export const getAuthUser = cache(async (): Promise<AuthUser | null> => {
   const supabase = await createClient();
-  const {
-    data: { user },
-  } = await supabase.auth.getUser();
-  if (!user) return null;
-  return { id: user.id, email: user.email ?? null };
+  const { data } = await supabase.auth.getClaims();
+  const claims = data?.claims;
+  if (!claims?.sub) return null;
+  return { id: claims.sub, email: typeof claims.email === "string" ? claims.email : null };
 });
