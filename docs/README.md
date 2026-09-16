@@ -21,7 +21,7 @@ saber ao editar código ficam nos `AGENTS.md` de cada pasta, não aqui.
 | Por que a transcrição erra, e o que já foi tentado? | [`transcricao.md`](./transcricao.md) |
 | Por que importar do YouTube custa 30 e não um preço por minuto? | [`youtube.md`](./youtube.md) |
 | Qual plano libera qual funcionalidade? | [`estudo-v2.md` §8](./estudo-v2.md) e `src/lib/entitlements/features.ts` |
-| Como o app fala com a shell React Native? | [`react-native-bridge.md`](./react-native-bridge.md) |
+| Como a shell React Native sabe que estamos gravando? | [`react-native-bridge.md`](./react-native-bridge.md) |
 | O que a Apple exige para aprovar o app na loja? | [`app-store-ios.md`](./app-store-ios.md) |
 | O que já foi auditado em segurança? | [`security/`](./security/README.md) |
 
@@ -84,11 +84,14 @@ saber ao editar código ficam nos `AGENTS.md` de cada pasta, não aqui.
 
 ## Integração
 
-- **[`react-native-bridge.md`](./react-native-bridge.md)**, o contrato de
-  mensagens `window.ReactNativeWebView.postMessage`. É a única forma real de
-  manter a gravação viva com a tela bloqueada ou o app minimizado, porque a
-  plataforma web não expõe foreground service. Implementação:
-  `src/features/session/lib/nativeBridge.ts`.
+- **[`react-native-bridge.md`](./react-native-bridge.md)**: como o shell
+  React Native sabe que uma gravação está em andamento, e o que ele faz com
+  isso. É a única forma real de manter a gravação viva com a tela bloqueada ou
+  o app minimizado, porque a plataforma web não expõe foreground service. **Não
+  há implementação neste repositório**, e isso é escolha: o módulo que emitia os
+  eventos foi apagado num commit que mexia no gravador e ninguém notou por
+  meses. Hoje o shell observa o `MediaRecorder` de fora. O documento lista as
+  três mudanças em `useAudioCapture.ts` que o quebram em silêncio.
 - **[`app-store-ios.md`](./app-store-ios.md)**: os quatro portões da App Store
   (IAP, minimum functionality, Sign in with Apple, exclusão de conta), o que
   cada um custa e uma rota sugerida. O irmão de negócio do documento acima: lá
