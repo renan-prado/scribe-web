@@ -9,6 +9,16 @@ Gerado por `npm run release` a partir dos Conventional Commits. `feat` sobe o
 minor; o resto sobe o patch. Não edite à mão, a próxima execução escreve por
 cima do topo do arquivo.
 
+## 0.32.1, 2026-09-16, desde v0.32.0
+
+### Correções
+
+- **youtube:** o campo do recorte passa a parecer tempo (`f24add8`)
+
+### Outros
+
+- **resumo:** a frase de destaque perde as aspas e ganha simetria (`fc5ccb6`)
+
 ## 0.32.0, 2026-09-16, desde v0.31.2
 
 ### Novidades
