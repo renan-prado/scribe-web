@@ -159,7 +159,7 @@ resposta voltar. Era literalmente o "header carregando de uma tela para outra".
   `AccountMenu`): o avatar, o saldo, o menu da conta, o fio que os separa dos
   controles. Consultado uma vez por carregamento de verdade, e preservado em
   toda navegação — o menu nem perde o estado de aberto.
-- **O que é da TELA continua na página** (`TopBar`): a pena ou o voltar, o
+- **O que é da TELA continua na rota** (`TopBar`): a pena ou o voltar, o
   título e o SLOT `trailing`, que muda conforme a tela (a Biblioteca passa o
   gatilho da busca, a gravação passa o relógio).
 
@@ -180,10 +180,28 @@ uma vez por TOQUE, que era o que se pagava antes.
 
 **Consequência para quem escreve tela nova em `(barra)`:** o `<main>` não leva
 mais `pt-2` — a folga acima da barra é da casca agora, e repeti-la abre um vão
-duplicado. E nenhum `loading.tsx` desenha osso de cabeçalho: a barra sobrevive à
+duplicado. E nenhum `loading.tsx` desenha osso de cabeçalho: a casca sobrevive à
 navegação, já está inteira na tela enquanto o resto carrega, e um esqueleto por
 cima dela finge que falta o que está ali. Era exatamente esse osso, no
 `loading.tsx` da Biblioteca, o piscar que se via ao voltar para ela.
+
+**E a metade que vem por portal NÃO sobrevive sozinha: rota com `loading.tsx`
+põe a `TopBar` no `layout.tsx` do segmento.** O `loading.tsx` envolve a PÁGINA
+num `<Suspense>` e nunca o layout do mesmo segmento (está escrito no
+`node_modules/next/dist/docs/01-app/03-api-reference/03-file-conventions/loading.md`),
+então, com a barra dentro da página, ela é desmontada junto com ela: enquanto o
+esqueleto está na tela o vão fica VAZIO, o avatar continua lá porque é do layout
+de cima, e o título, o voltar e a lupa somem e voltam. É esse o piscar da lupa
+ao ir do `/summary` para a Biblioteca. No layout do segmento a barra atravessa o
+esqueleto pela mesma regra que preserva o avatar, um degrau abaixo — é o que
+`home/layout.tsx` e `profile/layout.tsx` fazem. Sem `loading.tsx` tanto faz: ali
+o router segura a tela anterior inteira até a nova estar pronta, e é por isso
+que o `/studies` e o `/summary` nunca piscaram.
+
+Quando a barra depende de estado da tela, o PROVIDER sobe junto — o `SearchScope`
+da Biblioteca envolve a lupa (no layout) e a lista (na página). O que não sobe é
+`searchParams`, que layout não recebe: o `?busca=1` passou a ser lido no cliente
+(`home/LibrarySearchScope.tsx`).
 
 **O canto esquerdo é a PENA, e ela leva para a Biblioteca.** Ali houve um
 hambúrguer com uma gaveta de quatro destinos; Escrever e Importar passaram para
@@ -206,6 +224,13 @@ barra seria dizê-lo duas vezes. O avatar não muda. Quem monta a barra lá é a
 página, e ela entra no `SavedSessionView` por um slot `header`, porque aquela
 view é `"use client"` e não teria como renderizar um server component.
 
+**Toda tela em que se ENTRA a partir de outra tem `backHref`**, e o `/profile`
+passou a ter o dele (`/home`) porque não tinha: ele é aberto pelo menu da conta,
+de qualquer lugar do app, e no celular a barra dele não oferecia saída nenhuma —
+a pena é marcação, não clica. A única volta era o botão do sistema, que dentro do
+WebView fecha o aplicativo. Ali o título FICA: "Perfil" não está escrito em lugar
+nenhum da página, ao contrário do título do sermão no `/summary`.
+
 **A lupa existe em toda tela, e ela não faz a mesma coisa em todas.** São três
 botões com o mesmo glifo, no mesmo lugar da barra, e a diferença entre eles é o
 ALCANCE da busca, não o desenho:
@@ -216,8 +241,10 @@ ALCANCE da busca, não o desenho:
 | `/summary` | `SummaryFindToggle` | **dentro do resumo aberto** |
 | `/importar`, `/escrever` | `LibrarySearchLink` | o acervo, num link para `/home?busca=1` |
 
-O `?busca=1` é lido pela `/home` e vira o `defaultOpen` do `SearchScope`, senão
-a lupa entregaria a Biblioteca com o campo fechado.
+O `?busca=1` vira o `defaultOpen` do `SearchScope`, senão a lupa entregaria a
+Biblioteca com o campo fechado. Ele é lido no CLIENTE
+(`home/LibrarySearchScope.tsx`), porque o provider mora no layout do segmento e
+layout não recebe `searchParams`.
 
 **O `/summary` foi o caso difícil, e por um tempo a saída foi não ter lupa
 nenhuma ali.** O raciocínio estava certo pela metade: sobre um texto longo, uma
@@ -655,8 +682,11 @@ encostado no botão lia como legenda dele em vez de nome da tela.
 A busca fica atrás da lupa, e não permanente: quem abre o Scriba quase sempre
 quer o último sermão, não uma busca. Fechá-la LIMPA os filtros, senão a lista
 reabriria recortada por uma escolha de dois dias atrás. O botão mora na `TopBar`
-e o estado na lista, então um `SearchScope` (contexto) envolve os dois na
-página. **Vale para os Estudos também**, onde a barra já foi permanente: a lupa
+e o estado na lista, então um `SearchScope` (contexto) envolve os dois. Na
+Biblioteca ele mora no `layout.tsx` do segmento, junto da barra, pela razão da
+seção da `TopBar`; nos Estudos, que não têm `loading.tsx`, ele continua na
+página.
+**Vale para os Estudos também**, onde a barra já foi permanente: a lupa
 é a mesma (`SearchToggle`, com rótulo e alvo de tour por prop), e lá ela só
 aparece quando há algum estudo — sem lista montada, o botão abriria uma barra
 sem onde existir.

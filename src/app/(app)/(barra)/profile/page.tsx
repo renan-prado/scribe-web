@@ -21,7 +21,6 @@ import { isCurrentUserAdmin } from "@/lib/auth/require-admin";
 import { isCurrentUserPartner } from "@/lib/auth/require-partner";
 import { getCurrentBalance } from "@/lib/db/coins";
 import { getCurrentProfile } from "@/lib/db/profiles";
-import { TopBar } from "../components/TopBar";
 
 export const metadata = {
   title: "Perfil",
@@ -52,6 +51,9 @@ function initialsFrom(name: string | null, email: string | null): string {
  * quem trazia o chip de moedas. O saldo continua na tela duas vezes, no herói e
  * na gaveta da barra, e isso é aceitável: aqui ele é a informação da página, lá
  * é o atalho para comprar.
+ *
+ * **A barra em si mora no `layout.tsx` deste segmento**, com o voltar que ela
+ * não tinha. Ver o cabeçalho de lá.
  */
 export default async function ProfilePage() {
   // As quatro leituras custam UMA consulta a mais que as duas de antes: perfil,
@@ -74,7 +76,6 @@ export default async function ProfilePage() {
 
   return (
     <main className="mx-auto flex w-full max-w-[1024px] flex-col gap-6 px-4 pb-10 sm:gap-8">
-      <TopBar title="Perfil" />
       {/* Identity hero */}
       <section className="relative overflow-hidden rounded-[28px] bg-scriba-paper p-6 shadow-[0_18px_40px_rgba(51,65,79,0.06)] ring-1 ring-scriba-hairline sm:p-8">
         <div

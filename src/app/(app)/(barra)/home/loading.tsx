@@ -13,10 +13,13 @@ import { LibrarySkeleton } from "./LibraryBrowser";
  * este arquivo cobria uma ida ao banco; hoje ela não vai ao banco (ver
  * `page.tsx`), e o que sobra aqui é o tempo de o segmento chegar.
  *
- * **A barra do topo não aparece, e não precisa.** Ela mora no layout de
- * `(barra)` e SOBREVIVE à navegação: já está na tela, inteira e de verdade,
- * enquanto esta lista carrega. Desenhar um osso por cima dela seria fingir que
- * falta o que está ali.
+ * **A barra do topo não aparece aqui, e não precisa: ela está na tela de
+ * verdade.** A casca (o avatar, o saldo) é do layout de `(barra)`, e o conteúdo
+ * da tela — título, voltar, lupa — é do `layout.tsx` deste segmento, que este
+ * arquivo NÃO substitui: `loading.tsx` envolve a página, nunca o layout irmão.
+ * Foi para isso que a `TopBar` saiu da `page.tsx`; enquanto ela estava lá, o vão
+ * da barra ficava vazio durante este esqueleto e a lupa piscava a cada chegada.
+ * Desenhar um osso por cima dela seria fingir que falta o que está ali.
  */
 export default function LibraryLoading() {
   return (
