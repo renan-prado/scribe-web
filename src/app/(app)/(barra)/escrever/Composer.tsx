@@ -1045,13 +1045,7 @@ function BlockBody({
      */
     const face = "text-center font-semibold text-lg leading-relaxed sm:text-xl";
     return (
-      <div className="mt-2 mb-4 flex flex-col items-center gap-1.5 px-4 text-center sm:px-8">
-        <span
-          aria-hidden
-          className="select-none font-semibold text-4xl text-scriba-hairline-soft leading-none"
-        >
-          "
-        </span>
+      <div className="my-3 flex flex-col items-center px-4 text-center sm:px-8">
         <div className="relative w-full">
           {block.text ? (
             <div

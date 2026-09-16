@@ -88,36 +88,17 @@ export function BlockRenderer({ block }: { block: SummaryBlock }) {
     }
     case "highlight":
       return (
-        <figure className="mt-2 mb-6 flex flex-col items-center gap-1.5 px-4 text-center sm:mb-8 sm:px-8">
-          <span
-            aria-hidden
-            className="select-none text-4xl font-semibold leading-none text-scriba-hairline-soft"
-          >
-            "
-          </span>
+        // O que separa a frase do resto é o AR em volta dela e a faixa
+        // amarela, não uma moldura: as duas aspas decorativas saíram, e com
+        // elas a conta de métrica que existia só para igualar a de baixo à de
+        // cima. A margem é a mesma nos dois lados porque agora não há nada
+        // assimétrico para compensar.
+        <figure className="my-6 flex flex-col items-center px-4 text-center sm:my-8 sm:px-8">
           <blockquote className="text-pretty text-lg font-semibold leading-relaxed text-scriba-ink-strong sm:text-xl">
             <span className="highlight-phrase px-1 py-0.5 [box-decoration-break:clone] [-webkit-box-decoration-break:clone]">
               {block.text}
             </span>
           </blockquote>
-          {/* O `mt-[25px]` iguala esta aspa à de cima, e o número saiu da
-              MÉTRICA da fonte, não do olho: numa caixa de 36px com
-              `leading-none`, a tinta do glifo `"` ocupa da linha 1,5 até a
-              9,5, ou seja, ela nasce colada no topo da caixa e sobram 26,5px
-              vazios embaixo dela. Em cima isso é exatamente o que afasta a
-              aspa do texto; embaixo, é o que a cola nele, o vazio fica do
-              lado de fora. Medido na tela: 32,5px acima contra 7,8px abaixo.
-              Com a margem, 32,5 contra 32,8.
-
-              Não depende do breakpoint: o texto cresce no `sm:`, o glifo não,
-              e a conta é toda dentro da caixa dele. Se o `text-4xl` daqui
-              mudar, este número muda junto. */}
-          <span
-            aria-hidden
-            className="mt-[25px] select-none text-4xl font-semibold leading-none text-scriba-hairline-soft"
-          >
-            "
-          </span>
         </figure>
       );
     case "conclusion":
