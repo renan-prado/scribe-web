@@ -1,6 +1,6 @@
 import type { Metadata } from "next";
 import { notFound, redirect } from "next/navigation";
-import { getSession } from "@/lib/db/sessions";
+import { getSessionView } from "@/lib/db/sessions";
 import { payloadToWritten } from "@/lib/domain/summary";
 import { isUuid } from "@/lib/http/validate";
 import { ImportAction, RecordAction, WriteAction } from "../../components/CreateActions";
@@ -12,7 +12,7 @@ type PageProps = { params: Promise<{ id: string }> };
 
 export async function generateMetadata({ params }: PageProps): Promise<Metadata> {
   const { id } = await params;
-  const session = await getSession(id);
+  const session = await getSessionView(id);
   const title = session?.title?.trim();
   return { title: title ? `Editando ${title}` : "Escrever" };
 }
@@ -64,7 +64,7 @@ export default async function EscreverIdPage({ params }: PageProps) {
   const { id } = await params;
   if (!isUuid(id)) notFound();
 
-  const session = await getSession(id);
+  const session = await getSessionView(id);
   if (session && session.mode !== "manual") redirect(`/summary/${id}`);
 
   const written = payloadToWritten(session?.finalSummary ?? null);

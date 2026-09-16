@@ -267,6 +267,17 @@ export const RATE_LIMITS = {
     perUser: { limit: 60, windowMs: MIN },
     perIp: { limit: 180, windowMs: MIN },
   },
+  // LEITURA de sessão: a lista da Biblioteca, um resumo, uma transcrição. É o
+  // que o cache do cliente revalida (ver `features/session/query`), e ele
+  // revalida ao voltar o foco, o que num celular acontece a cada troca de app.
+  // Folgado de propósito: são consultas baratas, escopadas pela RLS, sem
+  // modelo nenhum atrás, e um 429 aqui apareceria na tela como uma Biblioteca
+  // que parou de atualizar sem dizer por quê.
+  "sessions-read": {
+    route: "sessions-read",
+    perUser: { limit: 240, windowMs: MIN },
+    perIp: { limit: 600, windowMs: MIN },
+  },
   "entity-search": {
     route: "entity-search",
     perUser: { limit: 120, windowMs: MIN },

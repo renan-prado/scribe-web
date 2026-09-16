@@ -6,18 +6,10 @@ import type { ReactNode } from "react";
 import { useState } from "react";
 import { toast } from "sonner";
 import { PageBlurOverlay } from "@/components/PageBlurOverlay";
-import {
-  Dialog,
-  DialogContent,
-  DialogDescription,
-  DialogHeader,
-  DialogTitle,
-} from "@/components/ui/dialog";
 import { useCoinsStore } from "@/features/coins/store";
 import { ConfirmDialog } from "@/features/session/components/ConfirmDialog";
 import { EntityFieldDialog } from "@/features/session/components/EntityFieldDialog";
 import { HallucinationReportDialog } from "@/features/session/components/HallucinationReportDialog";
-import { SavedTranscriptView } from "@/features/session/components/SavedTranscriptView";
 import { SessionMenu } from "@/features/session/components/SessionMenu";
 import {
   SummaryFindArea,
@@ -26,6 +18,7 @@ import {
 } from "@/features/session/components/SummaryFind";
 import { SummaryView } from "@/features/session/components/SummaryView";
 import { TitleDialog } from "@/features/session/components/TitleDialog";
+import { TranscriptDialog } from "@/features/session/components/TranscriptDialog";
 import { requestLocationSuggestions, requestSpeakerSuggestions } from "@/features/session/lib/api";
 import { initialsOf } from "@/features/session/lib/text";
 import type { SessionMode } from "@/lib/domain/session";
@@ -56,7 +49,15 @@ type SavedSessionViewProps = {
   durationMs: number | null;
   speakerName: string | null;
   speakerLocation: string | null;
-  transcript: string;
+  /**
+   * SE existe transcrição, não ELA.
+   *
+   * O texto viajava aqui dentro, no payload de toda abertura do resumo, e só
+   * dois dos três usos que esta tela fazia dele queriam mais do que este
+   * booleano. O terceiro — desenhá-lo — mora num dialog que busca o texto
+   * sozinho quando abre. Ver `TranscriptDialog` e a migração 0061.
+   */
+  hasTranscript: boolean;
   summary: SummaryPayload | null;
   /**
    * A barra do topo, montada pela PÁGINA e entregue pronta.
@@ -106,7 +107,7 @@ export function SavedSessionView({
   durationMs,
   speakerName: initialSpeakerName,
   speakerLocation: initialSpeakerLocation,
-  transcript,
+  hasTranscript,
   summary,
   header,
   meta = "full",
@@ -258,7 +259,7 @@ export function SavedSessionView({
                   Salvo
                 </span>
                 <SessionMenu
-                  hasTranscript={transcript.length > 0}
+                  hasTranscript={hasTranscript}
                   onOpenTranscript={() => setTranscriptOpen(true)}
                   onDelete={() => setDeleteOpen(true)}
                   onReprocess={summary && !written ? handleReprocess : undefined}
@@ -350,22 +351,15 @@ export function SavedSessionView({
 
           <div className="h-px w-full bg-scriba-hairline" />
 
-          <SummaryView summary={summary} hasTranscript={transcript.length > 0} running={false} />
+          <SummaryView summary={summary} hasTranscript={hasTranscript} running={false} />
         </SummaryFindArea>
 
-        <Dialog open={transcriptOpen} onOpenChange={setTranscriptOpen}>
-          <DialogContent className="sm:max-w-2xl">
-            <DialogHeader>
-              <DialogTitle>Transcrição</DialogTitle>
-              <DialogDescription className="sr-only">
-                Texto bruto capturado pelo microfone.
-              </DialogDescription>
-            </DialogHeader>
-            <div className="max-h-[65vh] overflow-y-auto pr-2">
-              <SavedTranscriptView transcript={transcript} durationMs={durationMs} />
-            </div>
-          </DialogContent>
-        </Dialog>
+        <TranscriptDialog
+          sessionId={id}
+          durationMs={durationMs}
+          open={transcriptOpen}
+          onOpenChange={setTranscriptOpen}
+        />
 
         <HallucinationReportDialog
           open={reportOpen}

@@ -70,6 +70,17 @@ export type SessionListItem = {
  */
 export type SessionMeta = Omit<SessionRow, "transcript" | "finalSummary">;
 
+/**
+ * A sessão como a TELA do resumo precisa dela: tudo, menos a transcrição.
+ *
+ * `hasTranscript` ocupa o lugar dela. A tela só perguntava duas coisas ao
+ * texto — se ele existe, para acender o item do menu e o aviso do resumo — e
+ * a terceira, desenhá-lo, acontece dentro de um dialog que quase ninguém abre.
+ * Mandar dezenas de KB em toda abertura para responder um booleano era o maior
+ * peso morto do payload; ver a migração 0061 e `getSessionTranscript`.
+ */
+export type SessionView = Omit<SessionRow, "transcript"> & { hasTranscript: boolean };
+
 export type CreateEmptySessionInput = {
   /**
    * O id da linha, quando quem chama já tem um.
@@ -137,8 +148,12 @@ const SELECT_FULL = `id, created_at, ended_at, duration_ms, title, short_summary
 // O mesmo de SELECT_FULL menos transcript/final_summary.
 const SELECT_META =
   "id, created_at, ended_at, duration_ms, title, short_summary, speaker_id, location_id, speaker_name, speaker_location, capture_mode, source_url, source_start_ms, source_end_ms";
+// O de SELECT_FULL com `has_transcript` (coluna gerada, migração 0061) no
+// lugar de `transcript`: o mesmo conteúdo de tela por uma fração do payload.
+const SELECT_VIEW = `${SELECT_META}, has_transcript, final_summary`;
 
 type MetaRow = Omit<DbRow, "transcript" | "final_summary">;
+type ViewRow = MetaRow & { has_transcript: boolean | null; final_summary: SummaryPayload | null };
 
 function rowToMeta(row: MetaRow): SessionMeta {
   return {
@@ -176,6 +191,14 @@ function rowToSession(row: DbRow): SessionRow {
     sourceStartMs: row.source_start_ms,
     sourceEndMs: row.source_end_ms,
     transcript: row.transcript,
+    finalSummary: row.final_summary,
+  };
+}
+
+function rowToView(row: ViewRow): SessionView {
+  return {
+    ...rowToMeta(row),
+    hasTranscript: row.has_transcript === true,
     finalSummary: row.final_summary,
   };
 }
@@ -349,6 +372,53 @@ export const getSession = cache(async (id: string): Promise<SessionRow | null> =
 });
 
 /** Cabeçalho da sessão, sem as colunas pesadas. Ver {@link SessionMeta}. */
+/**
+ * A sessão para a TELA do resumo: tudo menos a transcrição, mais o booleano
+ * que diz se ela existe.
+ *
+ * É o que `/summary/:id` e `/escrever/:id` leem. Quem precisa do TEXTO é o
+ * pipeline do servidor — reprocessar resumo, gerar estudo, relatar alucinação,
+ * importar do YouTube — e esse continua em `getSession`, que roda no servidor e
+ * não manda nada pelo fio.
+ *
+ * Memoizada pela mesma razão que `getSession`: a página chama isto no
+ * `generateMetadata` E no corpo.
+ */
+export const getSessionView = cache(async (id: string): Promise<SessionView | null> => {
+  const supabase = await createClient();
+  const { data, error } = await supabase
+    .from("sessions")
+    .select(SELECT_VIEW)
+    .eq("id", id)
+    .maybeSingle();
+
+  if (error) throw new Error(`getSessionView failed: ${error.message}`);
+  return data ? rowToView(data as unknown as ViewRow) : null;
+});
+
+/**
+ * Só a transcrição, e a duração que a tela usa para carimbar os tempos.
+ *
+ * Existe porque ela saiu do payload do resumo: quem abre o dialog "Transcrição"
+ * paga por ela então, e só então. `null` quer dizer que a sessão não é da
+ * pessoa ou não existe — a RLS resolve, e quem chama devolve 404.
+ */
+export async function getSessionTranscript(
+  id: string
+): Promise<{ transcript: string; durationMs: number | null } | null> {
+  const supabase = await createClient();
+  const { data, error } = await supabase
+    .from("sessions")
+    .select("transcript, duration_ms")
+    .eq("id", id)
+    .maybeSingle();
+
+  if (error) throw new Error(`getSessionTranscript failed: ${error.message}`);
+  if (!data) return null;
+  const row = data as { transcript: string | null; duration_ms: number | null };
+  return { transcript: row.transcript ?? "", durationMs: row.duration_ms };
+}
+
 export const getSessionMeta = cache(async (id: string): Promise<SessionMeta | null> => {
   const supabase = await createClient();
   const { data, error } = await supabase

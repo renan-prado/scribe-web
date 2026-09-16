@@ -7,7 +7,7 @@ import { SavedSessionView } from "@/features/session/components/SavedSessionView
 import { formatDurationLong, shortDate } from "@/features/session/lib/formatting";
 import { TourTrigger } from "@/features/tour/components/TourTrigger";
 import { TOUR_DELAY_RESULT_MS } from "@/features/tour/config";
-import { getSession } from "@/lib/db/sessions";
+import { getSessionView } from "@/lib/db/sessions";
 import { ImportAction, RecordAction, WriteAction } from "../../components/CreateActions";
 import { SummaryFindToggle } from "../../components/SummaryFindToggle";
 import { TopBar } from "../../components/TopBar";
@@ -18,7 +18,7 @@ type PageProps = {
 
 export async function generateMetadata({ params }: PageProps): Promise<Metadata> {
   const { id } = await params;
-  const session = await getSession(id);
+  const session = await getSessionView(id);
   return { title: session?.title?.trim() || "Sessão sem título" };
 }
 
@@ -72,7 +72,7 @@ const DATE_FMT = new Intl.DateTimeFormat("pt-BR", {
  */
 export default async function V2SummaryPage({ params }: PageProps) {
   const { id } = await params;
-  const session = await getSession(id);
+  const session = await getSessionView(id);
   if (!session) notFound();
 
   const createdAt = new Date(session.createdAt);
@@ -112,7 +112,7 @@ export default async function V2SummaryPage({ params }: PageProps) {
         durationMs={session.durationMs}
         speakerName={session.speakerName}
         speakerLocation={session.speakerLocation}
-        transcript={session.transcript}
+        hasTranscript={session.hasTranscript}
         summary={session.finalSummary}
         meta="compact"
         mode={session.mode}
