@@ -1,22 +1,9 @@
 "use client";
 
-import {
-  ArrowUpRight,
-  BarChart3,
-  ChevronsUpDown,
-  Handshake,
-  LayoutDashboard,
-  LogOut,
-  Mic,
-  PiggyBank,
-  SlidersHorizontal,
-  TrendingUp,
-  User as UserIcon,
-  Users,
-} from "lucide-react";
+import { ArrowUpRight, ChevronsUpDown, LogOut, User as UserIcon } from "lucide-react";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
-import { type ComponentProps, useEffect, useRef } from "react";
+import { type ComponentProps, useRef } from "react";
 import { LinkPendingSwap } from "@/components/NavLink";
 import {
   DropdownMenu,
@@ -38,63 +25,9 @@ import {
   SidebarRail,
   useSidebar,
 } from "@/components/ui/sidebar";
+import { ADMIN_NAV, type AdminNavItem, isAdminNavActive } from "@/features/admin/lib/nav";
 import { MENU_ITEM_CLASS } from "@/features/auth/lib/menu";
 import { ScribaLogo } from "@/shared/brand";
-
-type NavItem = {
-  href: string;
-  label: string;
-  icon: typeof LayoutDashboard;
-  exact?: boolean;
-  /**
-   * As outras rotas que acendem este item. Existe para as áreas em que os
-   * recortes viraram ABAS dentro da tela em vez de linhas do menu: quem está
-   * em `/admin/feedback` continua dentro de "Conteúdo", e o menu precisa
-   * dizer isso.
-   */
-  match?: string[];
-};
-
-/**
- * Oito itens, um por PERGUNTA, e nenhum por recorte.
- *
- * O menu já teve dezessete (onze mais seis num grupo "Financeiro"), e mais da
- * metade deles não era uma área: era um corte dos mesmos números. "Uso &
- * custos" e "Precificação" liam a mesma passada de `llm_usage_events`;
- * "Compromissos" era um filtro de "Lançamentos"; "Leitura da IA" era uma tela
- * com um botão; "Funcionalidades" e "Configurações financeiras" eram os dois
- * lugares de girar um parâmetro. Uma lista assim deixa de ser encontrada por
- * reconhecimento: para achar uma coluna era preciso saber de cor em qual das
- * duas telas parecidas ela estava.
- *
- * O que sobrou responde a uma pergunta cada, e os recortes viraram abas dentro
- * da tela (ver `AdminTabs`), onde eles dizem uma coisa que um item de menu não
- * diz: **isto aqui é o mesmo assunto, visto de outro ângulo.**
- *
- * O grupo do financeiro sumiu junto. Ele existia para quebrar a parede de
- * quatorze itens seguidos; com oito não há parede, e um rótulo de grupo sobre
- * uma linha só é moldura sem quadro.
- */
-const NAV: NavItem[] = [
-  { href: "/admin", label: "Visão geral", icon: LayoutDashboard, exact: true },
-  { href: "/admin/metricas", label: "Métricas", icon: TrendingUp },
-  { href: "/admin/custos", label: "Custos", icon: BarChart3 },
-  { href: "/admin/financeiro", label: "Financeiro", icon: PiggyBank },
-  {
-    href: "/admin/sessions",
-    label: "Conteúdo",
-    icon: Mic,
-    match: ["/admin/sessions", "/admin/feedback"],
-  },
-  {
-    href: "/admin/partners",
-    label: "Crescimento",
-    icon: Handshake,
-    match: ["/admin/partners", "/admin/cupons"],
-  },
-  { href: "/admin/users", label: "Usuários", icon: Users },
-  { href: "/admin/configuracoes", label: "Configurações", icon: SlidersHorizontal },
-];
 
 type AdminUser = {
   displayName: string | null;
@@ -107,26 +40,13 @@ export function AdminSidebar({
   ...props
 }: ComponentProps<typeof Sidebar> & { user: AdminUser }) {
   const pathname = usePathname();
-  // No celular a sidebar é um sheet sobre a página: sem fechá-la na navegação
-  // ela fica por cima da tela que acabou de carregar, e o único jeito de sair é
-  // tocar no scrim, que parece cancelar o clique que se acabou de dar.
-  const { isMobile, setOpenMobile } = useSidebar();
-  const closeOnMobile = () => {
-    if (isMobile) setOpenMobile(false);
-  };
-
-  // Os itens de navegação NÃO fecham no clique; fecham quando a rota troca.
-  // A diferença aparece no celular: fechando no clique, a gaveta some antes de
-  // a página chegar e o toque some com ela, nenhuma tela dá sinal de que
-  // alguma coisa está carregando. Fechando na TROCA, o item clicado fica à
-  // vista girando o spinner do `LinkPendingSwap` pelo tempo que a rota do admin
-  // (toda `force-dynamic`) levar, e a gaveta sai exatamente quando há o que
-  // mostrar atrás dela. Navegação instantânea (rota já em cache) fecha no mesmo
-  // quadro, como antes.
-  // biome-ignore lint/correctness/useExhaustiveDependencies: é a TROCA de rota que fecha a gaveta; `pathname` é a dependência, não o alvo da leitura
-  useEffect(() => {
-    setOpenMobile(false);
-  }, [pathname, setOpenMobile]);
+  // `isMobile` decide de que lado o menu da conta abre, e só isso. Ele já
+  // guardou também o fechar da GAVETA: no celular esta lateral era um sheet, e
+  // era preciso fechá-la a cada troca de rota para ela não cobrir a tela que
+  // acabou de chegar. A gaveta não abre mais — quem responde pelo hambúrguer é
+  // o `AdminMenu`, nas duas larguras —, então o que restou aqui é o lado do
+  // dropdown.
+  const { isMobile } = useSidebar();
   const shownName = user.displayName?.trim() || user.email?.split("@")[0] || "Admin";
   const initials = initialsFrom(user.displayName, user.email);
   const signOutFormRef = useRef<HTMLFormElement>(null);
@@ -136,12 +56,7 @@ export function AdminSidebar({
       <SidebarHeader>
         <SidebarMenu>
           <SidebarMenuItem>
-            <SidebarMenuButton
-              size="lg"
-              tooltip="Voltar para o app"
-              onClick={closeOnMobile}
-              render={<Link href="/home" />}
-            >
+            <SidebarMenuButton size="lg" tooltip="Voltar para o app" render={<Link href="/home" />}>
               <ScribaLogo
                 size={26}
                 textClassName="text-[17px]"
@@ -157,7 +72,7 @@ export function AdminSidebar({
         <SidebarGroup>
           <SidebarGroupContent>
             <SidebarMenu>
-              {NAV.map((item) => (
+              {ADMIN_NAV.map((item) => (
                 <NavRow key={item.href} item={item} pathname={pathname} />
               ))}
             </SidebarMenu>
@@ -202,19 +117,11 @@ export function AdminSidebar({
                 sideOffset={8}
                 className="min-w-[15rem] rounded-2xl border-none bg-scriba-paper p-2 shadow-[0_18px_40px_var(--scriba-shadow)] ring-1 ring-scriba-hairline"
               >
-                <DropdownMenuItem
-                  render={<Link href="/home" />}
-                  onClick={closeOnMobile}
-                  className={MENU_ITEM_CLASS}
-                >
+                <DropdownMenuItem render={<Link href="/home" />} className={MENU_ITEM_CLASS}>
                   <ArrowUpRight className="size-4 text-scriba-ink-soft" />
                   Voltar ao app
                 </DropdownMenuItem>
-                <DropdownMenuItem
-                  render={<Link href="/profile" />}
-                  onClick={closeOnMobile}
-                  className={MENU_ITEM_CLASS}
-                >
+                <DropdownMenuItem render={<Link href="/profile" />} className={MENU_ITEM_CLASS}>
                   <UserIcon className="size-4 text-scriba-ink-soft" />
                   Meu perfil
                 </DropdownMenuItem>
@@ -241,12 +148,9 @@ export function AdminSidebar({
   );
 }
 
-function NavRow({ item, pathname }: { item: NavItem; pathname: string }) {
-  const { href, label, icon: Icon, exact, match } = item;
-  const roots = match ?? [href];
-  const active = exact
-    ? pathname === href
-    : roots.some((root) => pathname === root || pathname.startsWith(`${root}/`));
+function NavRow({ item, pathname }: { item: AdminNavItem; pathname: string }) {
+  const { href, label, icon: Icon } = item;
+  const active = isAdminNavActive(item, pathname);
   return (
     <SidebarMenuItem>
       <SidebarMenuButton isActive={active} tooltip={label} render={<Link href={href} />}>
