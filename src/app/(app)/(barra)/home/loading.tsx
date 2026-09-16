@@ -8,18 +8,17 @@
  * genérico: um esqueleto que não tem a forma do que vai chegar produz um pulo
  * de layout quando o conteúdo entra.
  *
- * A barra do topo NÃO é desenhada aqui. Ela também é dinâmica (lê perfil e
- * saldo), mas desenhá-la duas vezes, uma em osso e outra de verdade, faria o
- * cabeçalho piscar; deixá-la fora simplesmente adia o cabeçalho inteiro.
+ * **A barra do topo não aparece aqui, e agora ela não precisava mesmo.** Este
+ * esqueleto desenhava um osso de cabeçalho — um disco e uma barra de título —,
+ * e era ele o piscar que se via ao voltar para a Biblioteca: o osso entrava, e
+ * meio segundo depois a barra de verdade o substituía. Hoje a barra mora no
+ * layout de `(barra)` e SOBREVIVE à navegação; ela já está na tela, inteira e
+ * de verdade, enquanto esta lista carrega. Desenhar um osso por cima dela
+ * seria fingir que falta o que está ali.
  */
 export default function LibraryLoading() {
   return (
-    <main className="mx-auto flex w-full max-w-[1024px] flex-1 flex-col gap-6 px-4 pt-2 pb-[calc(7.5rem+env(safe-area-inset-bottom))] md:pb-10">
-      <div className="flex items-center gap-2 px-1 py-3">
-        <SB className="size-11 shrink-0 rounded-full" />
-        <SB className="h-6 w-40" />
-      </div>
-
+    <main className="mx-auto flex w-full max-w-[1024px] flex-1 flex-col gap-6 px-4 pb-[calc(7.5rem+env(safe-area-inset-bottom))] md:pb-10">
       <section className="flex flex-col gap-3">
         <SB className="ml-1 h-4 w-24" />
         {[0, 1, 2].map((i) => (

@@ -17,7 +17,8 @@ src/app/
 ```
 
 Os parênteses são o [route group][rg] do Next: a pasta organiza e **não entra
-na URL**. `(app)/home/page.tsx` continua sendo `/home`.
+na URL**. `(app)/(barra)/home/page.tsx` continua sendo `/home` — dois grupos
+aninhados, zero segmento de endereço.
 
 [rg]: https://nextjs.org/docs/app/api-reference/file-conventions/route-groups
 
@@ -112,9 +113,18 @@ não deve "consertar" o acesso**: ele foi tirado de propósito. Duas consultas
 foram junto do botão (`hasDeepening` e a checagem de `study_generation` do
 `/summary`), porque alimentavam só a ele.
 
-A moldura é `src/app/(app)/layout.tsx`, e ela quase não desenha: não há header nem
-barra de navegação, cada tela renderiza a sua própria `TopBar`. Ela garante o
-chão grafite e monta o `TourProvider`.
+São DUAS molduras, uma dentro da outra. `src/app/(app)/layout.tsx` garante o
+chão grafite, o recorte do aparelho e o `TourProvider`, e vale para tudo que
+está atrás do login. Dentro dele, `src/app/(app)/(barra)/layout.tsx` desenha a
+BARRA DO TOPO e é quem lê a conta — perfil, saldo e papel de parceiro.
+
+**O grupo `(barra)` existe para dizer quem tem barra sem uma lista de
+exceções.** Dentro dele: `/home`, `/summary`, `/recording`, `/escrever`,
+`/importar`, `/profile` e `/studies`. Fora: `/assinar` e `/retorno`, que são o
+fluxo de pagamento em tela cheia, e `/indicar`, que traz o próprio voltar. Um
+`if` de pathname no layout apodrece na primeira rota nova; a pasta não, e ela é
+a documentação. Grupo de rotas não entra na URL, então nenhum endereço mudou
+quando as sete pastas se mudaram para lá.
 
 **A coluna do app tem teto de 1024px, e ele é escrito em CADA página**, no
 `max-w-[1024px]` do `<main>` — o layout não o declara porque cada tela tem o
@@ -138,12 +148,42 @@ junto, e não é esquecimento: o modo estudo está saindo do produto e não há
 botão que chegue nele, então mexer no layout de uma tela sem acesso é trabalho
 numa coisa que vai ser apagada.
 
-**A `TopBar` é um SERVER component** (`src/app/(app)/components/`): ela lê perfil e
-saldo com `getCurrentAccount`, então quem a renderiza é sempre a PÁGINA, nunca
-um componente cliente. O canto direito tem duas coisas: o SLOT `trailing`, que
-depende da tela (a Biblioteca passa o gatilho da busca, a gravação passa o
-relógio), e, à direita dele, o AVATAR, que é da barra e aparece em toda tela que
-a monte.
+**A barra é PARTIDA EM DUAS, e a linha do corte é o que muda e o que não
+muda.** Ela era um server component inteiro dentro de CADA página, lendo perfil
+e saldo — e página é o que o App Router descarta ao navegar. Resultado: todo
+toque num link refazia `getCurrentAccount` e `isCurrentUserPartner`, remontava o
+avatar e o menu da conta, e deixava o cabeçalho num estado de carregando até a
+resposta voltar. Era literalmente o "header carregando de uma tela para outra".
+
+- **O que é da SESSÃO mora no layout de `(barra)`** (`AppHeaderShell` +
+  `AccountMenu`): o avatar, o saldo, o menu da conta, o fio que os separa dos
+  controles. Consultado uma vez por carregamento de verdade, e preservado em
+  toda navegação — o menu nem perde o estado de aberto.
+- **O que é da TELA continua na página** (`TopBar`): a pena ou o voltar, o
+  título e o SLOT `trailing`, que muda conforme a tela (a Biblioteca passa o
+  gatilho da busca, a gravação passa o relógio).
+
+**A `TopBar` virou cliente e devolve um PORTAL** para um vão com id
+(`TOPBAR_SLOT_ID`) que a casca desenha. Ela não podia virar prop do layout:
+layout não recebe prop de página, e três `trailing` dependem de contexto que
+nasce dentro da própria tela — o `SearchToggle` precisa do `SearchScope`, a lupa
+do `/summary` do `SummaryFindProvider`, o relógio do `ClockScope`. Com o portal
+ela continua sendo renderizada onde sempre foi, dentro dos providers dela, e só
+o DOM pousa lá em cima.
+
+**O preço, e ele está escrito no código:** portal não existe no HTML do
+servidor. Num carregamento DURO (abrir o app, um link compartilhado) o vão nasce
+vazio e recebe o título e os chips na hidratação. O avatar já está lá, então a
+barra nunca parece quebrada, e o vão tem `min-h-10`, então a altura é a mesma
+nos dois momentos e nada pula de lugar. É uma vez por abertura do app, contra
+uma vez por TOQUE, que era o que se pagava antes.
+
+**Consequência para quem escreve tela nova em `(barra)`:** o `<main>` não leva
+mais `pt-2` — a folga acima da barra é da casca agora, e repeti-la abre um vão
+duplicado. E nenhum `loading.tsx` desenha osso de cabeçalho: a barra sobrevive à
+navegação, já está inteira na tela enquanto o resto carrega, e um esqueleto por
+cima dela finge que falta o que está ali. Era exatamente esse osso, no
+`loading.tsx` da Biblioteca, o piscar que se via ao voltar para ela.
 
 **O canto esquerdo é a PENA, e ela leva para a Biblioteca.** Ali houve um
 hambúrguer com uma gaveta de quatro destinos; Escrever e Importar passaram para
@@ -580,7 +620,7 @@ celular. São 40px com glifo de 20px — 44px com glifo de 24px davam à barra d
 botões que pesavam mais que o próprio título. Eram quadrados arredondados até o
 avatar entrar ao lado deles: três controles na mesma barra com duas bordas
 diferentes liam como peças de origens diferentes, e quem cede é o chip. A
-classe deles mora em `(app)/components/chip.ts`, um `.ts` puro que servidor e
+classe deles mora em `(app)/(barra)/components/chip.ts`, um `.ts` puro que servidor e
 cliente leem igual: são quatro botões em quatro arquivos desenhando o mesmo
 objeto, e copiada ela divergiria no primeiro ajuste de raio.
 
@@ -617,7 +657,7 @@ só para começar a próxima sessão. Por isso o `/summary` e o `/escrever` mont
 fileira no `trailing` da própria `TopBar`, no lugar onde a lupa ficaria.
 
 **No DESKTOP não há `+`: as três portas ficam na barra do topo**
-(`(app)/components/CreateActions.tsx`), como chips de 40px, só o ícone, com o
+(`(app)/(barra)/components/CreateActions.tsx`), como chips de 40px, só o ícone, com o
 nome no tooltip. O `+` é um clique cobrado para revelar três ícones, e ele se
 paga enquanto a tela é estreita: ali a barra do topo é a única linha larga que
 existe, e gastá-la com três botões seria gastar o lugar do título. Num monitor

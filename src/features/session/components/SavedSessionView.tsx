@@ -189,7 +189,7 @@ export function SavedSessionView({
     // dentro: contexto anda pela posição de render, não pela de criação. Ver
     // `SummaryFind`.
     <SummaryFindProvider>
-      <main className="mx-auto flex min-h-svh w-full max-w-[1024px] flex-col gap-6 px-4 pt-2 pb-8 sm:gap-8 sm:px-6 sm:pb-10">
+      <main className="mx-auto flex min-h-svh w-full max-w-[1024px] flex-col gap-6 px-4 pb-8 sm:gap-8 sm:px-6 sm:pb-10">
         <PageBlurOverlay
           open={reprocessing}
           title="Reprocessando o resumo"

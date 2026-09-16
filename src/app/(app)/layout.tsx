@@ -9,10 +9,15 @@ import { APP_VIEWPORT } from "@/shared/viewport";
 /**
  * A moldura do Scriba.
  *
- * Ela quase não desenha: não há header nem barra de navegação aqui. Cada tela
- * renderiza a sua própria `TopBar`, e a razão é que a barra LÊ o perfil e o
- * saldo (ela é um server component), então o layout não teria como passá-la a
- * páginas que precisam dela em posições diferentes.
+ * Ela quase não desenha: não há header nem barra de navegação AQUI. A barra do
+ * topo desceu um degrau, para `(barra)/layout.tsx`, e a razão é que ela não
+ * cobre tudo que está atrás do login: `/assinar` e `/retorno` são o fluxo de
+ * pagamento em tela cheia e `/indicar` traz o próprio voltar. O grupo de rotas
+ * é o que diz quem tem barra sem um `if` de pathname que apodrece na primeira
+ * rota nova.
+ *
+ * O que esta moldura garante é o que vale para TODA tela logada: o chão, o
+ * recorte do aparelho, o tour e o zoom.
  *
  * O que ela garante é o chão: o grafite `--v2-bg`, ocupando a altura toda. O
  * `flex-1` casa com o `flex flex-col` do `<body>` (ver `app/layout.tsx`), sem

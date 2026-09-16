@@ -59,7 +59,7 @@ export default async function V2HomePage({
       {/* A folga de baixo é a altura da barra de criar mais o inset do iPhone:
           sem ela o último cartão da lista para debaixo dela e não há rolagem
           que o traga inteiro para a luz. Ver `CreateDock`. */}
-      <main className="mx-auto flex w-full max-w-[1024px] flex-1 flex-col gap-6 px-4 pt-2 pb-[calc(7.5rem+env(safe-area-inset-bottom))] md:pb-10">
+      <main className="mx-auto flex w-full max-w-[1024px] flex-1 flex-col gap-6 px-4 pb-[calc(7.5rem+env(safe-area-inset-bottom))] md:pb-10">
         <TopBar
           title="Biblioteca"
           /* A ordem da barra: Importar, Gravar, LUPA, Escrever, avatar. A

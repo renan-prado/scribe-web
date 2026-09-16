@@ -38,7 +38,7 @@ export default async function StudiesPage() {
     // árvore. Mesma montagem da Biblioteca, ver `SearchScope`.
     <SearchScope>
       <div className="flex flex-1 flex-col">
-        <main className="mx-auto flex w-full max-w-[1024px] flex-1 flex-col gap-6 px-4 pt-2 pb-10">
+        <main className="mx-auto flex w-full max-w-[1024px] flex-1 flex-col gap-6 px-4 pb-10">
           {/* O título da página é o da barra, e por isso o cabeçalho gordo saiu:
             ele repetia "Seus estudos" logo abaixo da `TopBar` que já diz
             "Estudos". A frase de apoio foi junto — ela explicava o que a lista

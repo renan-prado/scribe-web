@@ -59,7 +59,7 @@ export default async function RecordingDeepeningPage({ params }: PageProps) {
   const deepeningTitle = payload.title?.trim() || `Estudo, ${sessionTitle}`;
 
   return (
-    <main className="tone-study mx-auto flex min-h-svh w-full max-w-3xl flex-col gap-6 px-4 pt-2 pb-8 sm:gap-8 sm:px-6 sm:pb-10">
+    <main className="tone-study mx-auto flex min-h-svh w-full max-w-3xl flex-col gap-6 px-4 pb-8 sm:gap-8 sm:px-6 sm:pb-10">
       {/* A barra do app, a MESMA do `/summary`, e não o link "Voltar ao
           resumo" de 12px que ficava aqui: o estudo é a segunda tela de
           leitura do produto, e ela trocava o cabeçalho do app por outro no

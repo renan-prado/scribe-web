@@ -162,7 +162,7 @@ O contrato entre o passo e a tela é um seletor CSS, e a convenção é
 
 | `data-tour` | Onde vive |
 |---|---|
-| `library-search` | a LUPA da `TopBar` na Biblioteca (`SearchToggle`, em `(app)/components/SearchScope.tsx`) |
+| `library-search` | a LUPA da `TopBar` na Biblioteca (`SearchToggle`, em `(app)/(barra)/components/SearchScope.tsx`) |
 | `studies-search` | a mesma lupa nos Estudos — o `tourId` é prop, a tela é que o nomeia |
 | `collection-search` | `CollectionSearch`, a barra. Nenhum tour aponta para ela, e é de propósito |
 | `create-dock` | o `+` de `src/app/(app)/home/CreateDock.tsx` (era `record-dock`, no microfone que ele substituiu). **Só no celular**: o passo que fala dele se apaga sozinho no desktop |

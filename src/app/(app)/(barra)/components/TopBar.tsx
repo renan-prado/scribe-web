@@ -1,13 +1,12 @@
+"use client";
+
 import { ArrowLeft } from "lucide-react";
-import type { ReactNode } from "react";
+import { type ReactNode, useSyncExternalStore } from "react";
+import { createPortal } from "react-dom";
 import { NavLink } from "@/components/NavLink";
-import { PrivilegedMenuItems } from "@/features/auth/components/PrivilegedMenuItems";
-import { INITIAL_COIN_BALANCE } from "@/features/coins/pricing";
-import { isCurrentUserPartner } from "@/lib/auth/require-partner";
-import { getCurrentAccount } from "@/lib/db/account";
 import { cn } from "@/lib/utils";
 import { ScribaMark } from "@/shared/brand";
-import { AccountMenu } from "./AccountMenu";
+import { TOPBAR_SLOT_ID } from "./AppHeaderShell";
 import { TOPBAR_CHIP_CLASS } from "./chip";
 
 /**
@@ -17,6 +16,26 @@ import { TOPBAR_CHIP_CLASS } from "./chip";
  * são telas diferentes do mesmo produto, e um cabeçalho que muda de desenho ao
  * entrar na gravação faria a pessoa achar que saiu do app.
  *
+ * **Ela não desenha mais uma barra: ela PREENCHE a que o layout já desenhou.**
+ * O que se vê na tela é a soma de duas peças — esta, que é da PÁGINA, e a
+ * `AppHeaderShell`, que é do layout de `(barra)` e carrega o avatar, o saldo e
+ * o menu da conta. O porquê da divisão está no cabeçalho de lá, e resume-se a
+ * isto: página o App Router descarta ao navegar, layout ele preserva. Com a
+ * conta na página, cada toque num link refazia duas consultas ao banco e
+ * remontava o cabeçalho — o "header carregando de uma tela para outra".
+ *
+ * Por isso ela é CLIENTE e devolve um portal. Ela continua sendo renderizada
+ * no mesmo lugar de sempre (dentro do `SearchScope` da Biblioteca, do
+ * `SummaryFindProvider` do resumo, do `ClockScope` da gravação), então o
+ * `trailing` continua enxergando o contexto da tela dele; só o DOM é que pousa
+ * lá em cima. Passar isso como prop era impossível: layout não recebe prop de
+ * página, e subir os três providers até o layout daria escopo global a estado
+ * de uma tela só.
+ *
+ * **Ela não lê mais o banco**, e é o ponto inteiro da mudança: as duas
+ * consultas (`getCurrentAccount` e `isCurrentUserPartner`) subiram para o
+ * layout, onde acontecem uma vez por carregamento em vez de uma por navegação.
+ *
  * **O canto esquerdo é a PENA, sozinha, em cinza, e ela não clica.** Ali houve
  * um hambúrguer, e a gaveta dele tinha quatro destinos: Biblioteca, Estudos,
  * Escrever e Importar do YouTube. Os dois últimos passaram para o `+` do
@@ -25,23 +44,17 @@ import { TOPBAR_CHIP_CLASS } from "./chip";
  * pena é MARCAÇÃO, sem link e sem hover. Quem precisa da Biblioteca chega nela
  * pelo voltar do `/summary`, que é o caminho por onde se entrou.
  *
- * **Ela é um server component, e por isso é a PÁGINA quem a renderiza**, nunca
- * um componente cliente. É aqui que o perfil e o saldo são lidos (uma consulta,
- * `getCurrentAccount` é `cache()`), e é a única razão de a barra tocar o banco:
- * o menu da conta abre com quem é você e quanto você tem.
- *
  * O canto direito tem DUAS coisas, e só uma delas é da página. O `trailing` é
  * um SLOT: a Biblioteca passa as portas de criação e o gatilho da busca (que
  * precisa do estado dela, ver `SearchScope`), o `/summary` passa as portas e a
  * busca DENTRO do resumo, a gravação passa o relógio. **O avatar vem depois
- * dele e é da BARRA**, em toda tela que a monte: a conta não é assunto de uma
+ * dele e é do LAYOUT**, em toda tela de `(barra)`: a conta não é assunto de uma
  * página, e um avatar que aparece e some conforme a tela obrigaria a decorar em
  * qual delas ele estava. Ver `AccountMenu`.
  *
- * **Entre os dois há um FIO, e só no desktop.** No celular o `trailing` tem um
- * ou dois botões; no desktop ele tem quatro, e o quinto disco da fila não é um
- * controle da tela, é a CONTA. O fio é o que separa as duas categorias — ver o
- * comentário dele lá embaixo.
+ * **Entre os dois há um FIO, e só no desktop.** Ele foi junto com o avatar para
+ * o layout, pela mesma razão: ele separa os controles DA TELA da CONTA, e quem
+ * desenha a fronteira é o lado que não muda.
  *
  * **Com `backHref`, o canto esquerdo troca a pena por um VOLTAR** e o título
  * pode sumir — é a barra do `/summary`. Uma tela de leitura aberta a partir de
@@ -50,7 +63,7 @@ import { TOPBAR_CHIP_CLASS } from "./chip";
  * página inteira grita duas linhas abaixo, seria dizê-lo duas vezes. O resto da
  * barra NÃO muda: a lupa e o avatar continuam onde estavam em toda tela.
  */
-export async function TopBar({
+export function TopBar({
   title,
   backHref,
   trailing,
@@ -61,34 +74,14 @@ export async function TopBar({
   backHref?: string;
   trailing?: ReactNode;
 }) {
-  // Duas consultas, em paralelo. `getCurrentAccount` traz perfil, saldo e papel
-  // da MESMA linha de `profiles`; `isCurrentUserPartner` lê outra tabela, e é
-  // também o ponto onde a mesada mensal do parceiro é conferida e creditada
-  // (ver `lib/partners/allowance.ts`). Fica aqui, e não numa rota, porque esta
-  // barra é o único caminho por onde todo parceiro passa ao usar o app.
-  const [account, isPartner] = await Promise.all([
-    getCurrentAccount().catch(() => null),
-    isCurrentUserPartner().catch(() => false),
-  ]);
+  const host = useTopBarSlot();
+  // No HTML do servidor não há portal: o vão nasce vazio e é preenchido na
+  // hidratação. Ele já tem altura própria (`min-h-10` lá), então a barra não
+  // muda de tamanho entre um momento e o outro e nada pula de lugar.
+  if (!host) return null;
 
-  // Montado aqui, no servidor, e descido pronto: é a razão do slot de
-  // `PrivilegedMenuItems` — com `isAdmin &&` dentro do `AccountMenu`, que é
-  // cliente, as strings "Admin" e "/admin" viajariam no chunk que TODO usuário
-  // logado baixa.
-  const privilegedItems = (
-    <PrivilegedMenuItems isAdmin={account?.isAdmin ?? false} isPartner={isPartner} />
-  );
-  const identity = {
-    displayName: account?.profile.displayName ?? null,
-    email: account?.profile.email ?? null,
-    avatarUrl: account?.profile.avatarUrl ?? null,
-    coinBalance: account?.coinBalance ?? INITIAL_COIN_BALANCE,
-  };
-
-  return (
-    // `gap-3`: o título encostado no botão da esquerda lia como legenda dele,
-    // e não como o nome da tela.
-    <header className="flex items-center gap-3 px-1 py-3">
+  return createPortal(
+    <>
       {backHref ? (
         <NavLink
           href={backHref}
@@ -139,30 +132,25 @@ export async function TopBar({
           TÍTULO — nas telas que não têm um (o `/summary`, o estudo) não há o
           que segurar, e o vão seria um buraco de 40px antes do avatar. */}
       {trailing ?? (title ? <span aria-hidden className="size-10 shrink-0" /> : null)}
-      {/* Sem sessão não há conta a abrir, e o canto fica com a lupa sozinha. */}
-      {account ? (
-        <>
-          {/* O FIO entre os controles e o avatar, e só no desktop.
+    </>,
+    host
+  );
+}
 
-              Ali no celular há dois botões; no desktop são cinco discos do
-              mesmo tamanho em fila, e o quinto não é um controle da tela, é a
-              CONTA — outra categoria de coisa, que abre um menu em vez de
-              levar a uma tela. Sem o fio, "criar um resumo" e "sair do app"
-              ficam a um disco de distância um do outro, indistinguíveis até
-              se ler os ícones.
-
-              É `--v2-card-hover`, o cinza do hover dos chips: um degrau acima
-              do `--v2-card` deles e um abaixo da tinta. Em `--v2-ink-mute` o
-              fio pesaria mais que os glifos que ele separa, e um divisor que
-              se lê antes do conteúdo virou o conteúdo.
-
-              24px de altura contra os 40 dos chips: um fio da altura cheia
-              fecharia a barra em duas caixas, e o que se quer é uma pausa, não
-              uma parede. */}
-          <span aria-hidden className="hidden h-6 w-px shrink-0 bg-v2-card-hover md:block" />
-          <AccountMenu {...identity} privilegedItems={privilegedItems} />
-        </>
-      ) : null}
-    </header>
+/**
+ * O nó onde a barra pousa, achado no DOM depois da montagem.
+ *
+ * `useSyncExternalStore` e não `useState` + `useEffect`: o snapshot do servidor
+ * é `null` por definição (não há DOM lá), e este hook é o jeito de dizer isso
+ * ao React sem que ele acuse divergência de hidratação. O `subscribe` é vazio
+ * de propósito — o vão é criado pelo layout, que por construção monta ANTES de
+ * qualquer página e nunca desmonta enquanto se anda dentro de `(barra)`, então
+ * não há evento a que assinar.
+ */
+function useTopBarSlot(): HTMLElement | null {
+  return useSyncExternalStore(
+    () => () => {},
+    () => document.getElementById(TOPBAR_SLOT_ID),
+    () => null
   );
 }

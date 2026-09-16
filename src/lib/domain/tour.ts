@@ -176,7 +176,7 @@ export const TOURS: Record<TourKey, TourDefinition> = {
         /**
          * Daqui até o fim, os três alvos existem DUAS vezes — no painel do
          * `CreateDock`, no celular, e nos chips da barra do topo, no desktop
-         * (`(app)/components/CreateActions.tsx`). Um dos dois está sempre em
+         * (`(app)/(barra)/components/CreateActions.tsx`). Um dos dois está sempre em
          * `display: none`, e `resolveAnchor` fica com o visível, então os
          * mesmos três passos servem às duas larguras sem um `if` de tamanho de
          * tela em lugar nenhum.
