@@ -23,6 +23,10 @@ import { LibrarySkeleton } from "./LibraryBrowser";
  */
 export default function LibraryLoading() {
   return (
+    // A MESMA caixa da `page.tsx`: o esqueleto e a lista aparecem um atrás do
+    // outro, e qualquer diferença entre os dois faz o mural saltar no instante
+    // em que ele chega. (A folga acima é do `AppHeaderShell`, que sobrevive ao
+    // esqueleto — ver o cabeçalho deste arquivo.)
     <main className="mx-auto flex w-full max-w-[1024px] flex-1 flex-col gap-6 px-4 pb-[calc(7.5rem+env(safe-area-inset-bottom))] md:pb-10">
       <LibrarySkeleton />
     </main>

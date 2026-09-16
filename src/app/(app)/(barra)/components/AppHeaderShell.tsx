@@ -63,7 +63,17 @@ export function AppHeaderShell({ account }: { account: ReactNode }) {
     // A mesma coluna das telas (`max-w-[1024px]`, `px-4`) e o mesmo `pt-2` que
     // cada `<main>` tinha antes da barra: a barra sai das páginas, e a folga
     // acima dela sai junto, senão sobraria 8px de vão duplicado no topo.
-    <div className="mx-auto w-full max-w-[1024px] px-4 pt-2">
+    //
+    // **O `pb-4` é a folga ABAIXO da barra, e ela mora aqui porque é a mesma em
+    // toda tela.** Sem ela o `py-3` do `<header>` era tudo o que separava a
+    // barra do conteúdo, e 12px não bastam: o primeiro "Este mês" da Biblioteca
+    // nascia colado no avatar, e o título do sermão colado no voltar — dois
+    // textos miúdos da mesma família, um sendo moldura e o outro sendo começo
+    // de página. Escrita aqui, ela vale para as sete telas de `(barra)` de uma
+    // vez; repetida no `<main>` de cada uma, bastaria esquecer uma. Nenhuma
+    // página tem recuo de topo próprio, e continuar assim é o que mantém este
+    // número sendo O número.
+    <div className="mx-auto w-full max-w-[1024px] px-4 pt-2 pb-4">
       {/* `gap-3` e `px-1 py-3` são os da barra antiga, intactos: o desenho não
           mudou, mudou de dono. */}
       <header className="flex items-center gap-3 px-1 py-3">

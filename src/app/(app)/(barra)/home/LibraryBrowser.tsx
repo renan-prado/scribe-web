@@ -101,10 +101,31 @@ const EMPTY: SessionListItem[] = [];
 
 export function LibraryBrowser({ nowIso }: Props) {
   const { data, isPending } = useLibrary();
+  /**
+   * O primeiro render do cliente desenha o que o SERVIDOR mandou, e só o
+   * seguinte olha o cache do aparelho.
+   *
+   * O HTML do servidor nunca tem a lista — o acervo é do aparelho, ele não
+   * chega lá. E esta árvore hidrata TARDE: o `loading.tsx` a põe dentro de um
+   * `<Suspense>`, e o React hidrata boundary por boundary, então a restauração
+   * do IndexedDB (que roda num efeito do provider, lá em cima) pode terminar
+   * ANTES. Quando termina, o primeiro render daqui já tem os cartões, onde o
+   * servidor tinha posto o esqueleto: mismatch de hidratação, a árvore inteira
+   * descartada e refeita, com um erro recuperável no console.
+   *
+   * O booleano custa UM QUADRO e nenhuma ida à rede — o efeito roda logo após
+   * a hidratação, e o mural pinta do disco em seguida, que é a promessa do
+   * local-first. Era esse mesmo render que o React já estava fazendo, só que
+   * por cima de um erro.
+   */
+  const [hydrated, setHydrated] = useState(false);
+  useEffect(() => setHydrated(true), []);
+
   // `undefined` é "ainda não sei" (cache vazio, primeira visita); a lista vazia
   // é um fato. Os dois desenham coisas diferentes lá embaixo, e confundi-los
   // faria a tela anunciar "Biblioteca vazia" a quem tem trinta sermões.
-  const sessions = data ?? EMPTY;
+  const sessions = hydrated ? (data ?? EMPTY) : EMPTY;
+  const loading = !hydrated || isPending;
 
   const { open, setOpen } = useSearchScope();
   const [query, setQuery] = useState("");
@@ -248,9 +269,10 @@ export function LibraryBrowser({ nowIso }: Props) {
             Limpar busca
           </button>
         </div>
-      ) : isPending ? (
+      ) : loading ? (
         /* Cache vazio e resposta a caminho: a primeira visita num aparelho
            novo, e o único momento em que esta tela não tem o que desenhar.
+           (É também o quadro que antecede a hidratação, ver `hydrated`.)
            Nunca o `SessionsEmptyState` aqui — ele diz "grave a primeira", e
            dizer isso a quem tem trinta sermões guardados é a tela mentindo
            por meio segundo. Ver `useLibrary`. */
