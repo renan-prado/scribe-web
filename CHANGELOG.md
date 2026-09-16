@@ -9,6 +9,18 @@ Gerado por `npm run release` a partir dos Conventional Commits. `feat` sobe o
 minor; o resto sobe o patch. Não edite à mão, a próxima execução escreve por
 cima do topo do arquivo.
 
+## 0.31.2, 2026-09-16, desde v0.31.1
+
+### Correções
+
+- **coins:** o saldo para de ficar preso em "ainda não sei" e destrava o botão do /importar (`7fa5c46`)
+- **importar:** o X do recorte para de vazar para fora da tela (`3bf253d`)
+- **home:** aumenta o botão + do rodapé e o tira da borda (`a037ff6`)
+
+### Desempenho
+
+- **app:** a barra do topo sobe para o layout e para de recarregar a cada toque (`f03464c`)
+
 ## 0.31.1, 2026-09-15, desde v0.31.0
 
 ### Correções
