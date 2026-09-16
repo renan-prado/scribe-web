@@ -310,10 +310,12 @@ export function LibraryBrowser({ nowIso }: Props) {
  * layout na troca. Alturas diferentes por cartão porque o mural é masonry (ver
  * `BONE_HEIGHTS`).
  *
- * Irmão do `home/loading.tsx`, que cobre a outra espera — aquele é o servidor
- * montando a página, este é a rede trazendo a lista.
+ * **É o MESMO desenho do `home/loading.tsx`**, que importa esta função. As duas
+ * esperas são diferentes — lá o servidor monta a página, aqui a rede traz a
+ * lista — mas acontecem uma atrás da outra, e dois esqueletos de anatomias
+ * diferentes em sequência leem como a tela se refazendo duas vezes.
  */
-function LibrarySkeleton() {
+export function LibrarySkeleton() {
   return (
     <section aria-hidden className="flex flex-col gap-3">
       <div className="ml-1 h-4 w-24 animate-skeleton-shimmer rounded-md bg-scriba-hairline-soft" />
