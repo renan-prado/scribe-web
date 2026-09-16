@@ -9,6 +9,22 @@ Gerado por `npm run release` a partir dos Conventional Commits. `feat` sobe o
 minor; o resto sobe o patch. Não edite à mão, a próxima execução escreve por
 cima do topo do arquivo.
 
+## 0.34.0, 2026-09-16, desde v0.33.0
+
+### Novidades
+
+- **home:** o "Resumo automatico" ganha gradiente animado e o selo "IA" (`5346808`)
+- **escrever:** ideia central e conclusao viram as duas pontas do texto (`e0d9bad`)
+- **summary:** a transcricao vira o segundo slide, e "Editar" sobe para o cabecalho (`a63ac18`)
+
+### Correções
+
+- **app:** folga entre a barra do topo e o conteudo, e a Biblioteca para de divergir na hidratacao (`655878d`)
+
+### Outros
+
+- **bridge:** o contrato com o app descreve o que existe, e o editor volta para a leitura (`3d289b8`)
+
 ## 0.33.0, 2026-09-16, desde v0.32.1
 
 ### Novidades
