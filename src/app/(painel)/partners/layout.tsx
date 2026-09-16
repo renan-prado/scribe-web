@@ -50,8 +50,17 @@ export default async function PartnersLayout({ children }: { children: ReactNode
           conteúdo, não é um cartão em cima dele. Com a superfície de cartão
           ali, a barra virava o objeto mais claro da tela e disputava com os
           números, que é o que a pessoa veio ver. Mesma montagem do header da
-          landing. */}
-      <header className="sticky top-0 z-30 flex h-16 shrink-0 items-center justify-between gap-3 border-b border-scriba-hairline bg-background/80 px-4 backdrop-blur-[22px] sm:px-6">
+          landing.
+
+          A altura é 64px MAIS o recorte do aparelho. O `viewport-fit=cover` do
+          root layout manda a página passar por baixo da barra de status, e quem
+          pede paga: sem o `pt`, a hora e a bateria do telefone pousam em cima da
+          marca. Ela paga por si, e não por um ancestral, porque é `sticky
+          top-0` — uma folga acima vale só enquanto a página está no topo da
+          rolagem, e esta barra fica colada no alto o tempo todo. Num navegador
+          de mesa o inset é ZERO e a conta devolve os 64px de sempre. Mesma
+          correção do `admin/layout.tsx`. */}
+      <header className="sticky top-0 z-30 flex h-[calc(--spacing(16)+env(safe-area-inset-top))] shrink-0 items-center justify-between gap-3 border-b border-scriba-hairline bg-background/80 px-4 pt-[env(safe-area-inset-top)] backdrop-blur-[22px] sm:px-6">
         <Link href="/partners" className="flex items-center gap-2 text-scriba-ink-strong">
           <ScribaLogo size={26} textClassName="text-[19px]" subtitle="Parceiros" />
         </Link>
