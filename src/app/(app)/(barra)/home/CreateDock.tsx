@@ -211,7 +211,7 @@ export function CreateDock() {
           por perto a que ele pertencesse. A faixa nunca passa de `md`, então na
           prática o teto só chega a valer entre a lista já larga e o dock ainda
           presente — mas dois tetos diferentes ali desalinhariam os dois. */}
-      <div className="pointer-events-none fixed inset-x-0 bottom-0 z-30 bg-[image:var(--v2-dock-fade)] pt-32 pb-[calc(1.25rem+env(safe-area-inset-bottom))] md:hidden">
+      <div className="pointer-events-none fixed inset-x-0 bottom-0 z-30 bg-[image:var(--v2-dock-fade)] pt-32 pb-[calc(1.75rem+env(safe-area-inset-bottom))] md:hidden">
         {/* O painel abre AO LADO do botão, na mesma linha, com os dois
             alinhados por baixo — é o desenho do print. Em cima do botão ele
             cobriria o próprio dedo que o abriu, e é por baixo que o polegar
@@ -237,7 +237,7 @@ export function CreateDock() {
             acaso é o único elemento da tela cuja FORMA é parte do que ele diz.
             Um painel 8px mais apertado ninguém vê; um círculo amassado é a
             primeira coisa que se vê. */}
-        <div className="mx-auto flex w-full max-w-[1024px] items-end justify-end gap-3 px-4 max-[349px]:flex-col">
+        <div className="mx-auto flex w-full max-w-[1024px] items-end justify-end gap-3 px-5 max-[349px]:flex-col">
           {open ? (
             <nav
               // `<nav>` com nome, e não `role="menu"`: ARIA menu promete
@@ -326,7 +326,19 @@ export function CreateDock() {
             tabIndex={visible ? undefined : -1}
             aria-hidden={visible ? undefined : true}
             className={cn(
-              "inline-flex size-12 shrink-0 items-center justify-center rounded-full bg-v2-glass-button bg-[image:var(--v2-glass-sheen)] text-v2-ink ring-1 ring-v2-glass-edge backdrop-blur-xl transition hover:brightness-125 active:brightness-150 focus-visible:outline-2 focus-visible:outline-offset-4 focus-visible:outline-v2-ink-mute",
+              // 56px, e não os 48 de antes. Ele é o único alvo flutuante da
+              // tela e o mais tocado do app; 48 é o MÍNIMO de um alvo de dedo,
+              // não o tamanho de um botão que a tela inteira existe para
+              // oferecer.
+              //
+              // Os 8px a mais saem do PAINEL, não do botão, e é para isso que
+              // o `min-w-0` de lá e o `shrink-0` daqui existem: em 360px a
+              // linha pede 326 (258 de painel + 12 + 56) para 320 de útil com
+              // o `px-5`, então o painel cede os 6 que faltam. Seis pixels num
+              // painel de 258 ninguém vê; um círculo amassado é a primeira
+              // coisa que se vê. Abaixo de 350 a linha já vira coluna e a
+              // conta deixa de existir.
+              "inline-flex size-14 shrink-0 items-center justify-center rounded-full bg-v2-glass-button bg-[image:var(--v2-glass-sheen)] text-v2-ink ring-1 ring-v2-glass-edge backdrop-blur-xl transition hover:brightness-125 active:brightness-150 focus-visible:outline-2 focus-visible:outline-offset-4 focus-visible:outline-v2-ink-mute",
               visible ? "pointer-events-auto" : "pointer-events-none",
               moved && (visible ? "animate-v2-rec-in" : "animate-v2-rec-out")
             )}
@@ -337,7 +349,7 @@ export function CreateDock() {
             <Plus
               aria-hidden
               strokeWidth={1.5}
-              className={cn("size-5 transition-transform duration-200", open && "rotate-45")}
+              className={cn("size-6 transition-transform duration-200", open && "rotate-45")}
             />
           </button>
         </div>
