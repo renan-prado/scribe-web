@@ -40,7 +40,7 @@ import { cn } from "@/lib/utils";
  * **O preço:** num celular, rolar a lista COMEÇA com um `pointerdown` sobre um
  * cartão. Alguns resumos são adiantados à toa por sessão de rolagem. É barato
  * porque o payload do resumo emagreceu (a transcrição saiu dele, ver
- * `TranscriptDialog`) — com ela dentro, este atalho custaria mais banda do que
+ * `SummaryDeck`) — com ela dentro, este atalho custaria mais banda do que
  * economizaria — e porque o que vem fica no cache do router, então um segundo
  * toque no mesmo cartão não repete nada.
  *

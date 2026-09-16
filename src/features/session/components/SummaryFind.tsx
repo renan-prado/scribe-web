@@ -109,7 +109,20 @@ export function useSummaryFind(): SummaryFindValue {
  * sem acento nenhum, que é o certo por si, em vez de recortar a letra errada.
  */
 function collectRanges(root: HTMLElement, needle: string): Range[] {
-  const walker = document.createTreeWalker(root, NodeFilter.SHOW_TEXT);
+  const walker = document.createTreeWalker(root, NodeFilter.SHOW_TEXT, {
+    // **`[data-find-skip]` fica de fora, com tudo o que estiver dentro dele.**
+    // É o slide da transcrição (ver `SummaryDeck`): ele está no DOM o tempo
+    // todo, ao lado do resumo, mas só uma das duas metades está na tela. Contar
+    // as ocorrências dele faria o "3 de 17" da barra apontar para um texto que
+    // ninguém está vendo, e o ↑↓ arrastaria o trilho para o lado no meio de uma
+    // busca. É a mesma regra que valia quando a transcrição era um diálogo — e
+    // ela tem a busca dela, dentro do próprio slide.
+    acceptNode(node) {
+      return node.parentElement?.closest("[data-find-skip]")
+        ? NodeFilter.FILTER_REJECT
+        : NodeFilter.FILTER_ACCEPT;
+    },
+  });
   const found: Range[] = [];
   for (let node = walker.nextNode(); node; node = walker.nextNode()) {
     const raw = node.nodeValue;
@@ -236,9 +249,13 @@ export function SummaryFindProvider({ children }: { children: ReactNode }) {
 
 /**
  * O contêiner em que se procura. Só o que estiver aqui dentro é varrido, e é
- * por isso que os diálogos do `/summary` — a transcrição, o alerta de
- * alucinação — ficam fora dele: eles têm a própria busca, e um termo que
- * acendesse dentro de um diálogo fechado contaria ocorrências que ninguém vê.
+ * por isso que os diálogos do `/summary` — o alerta de alucinação, o editor de
+ * título — ficam fora dele: um termo que acendesse dentro de um diálogo fechado
+ * contaria ocorrências que ninguém vê.
+ *
+ * O que está aqui dentro e mesmo assim fica de fora é o slide da TRANSCRIÇÃO,
+ * pelo `data-find-skip` (ver `collectRanges` e `SummaryDeck`): ele é irmão do
+ * resumo no DOM, mas só um dos dois está na tela por vez.
  */
 export function SummaryFindArea({
   className,

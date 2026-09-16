@@ -1,15 +1,6 @@
 "use client";
 
-import {
-  FileText,
-  MoreVertical,
-  Pencil,
-  PenLine,
-  RefreshCw,
-  Trash2,
-  TriangleAlert,
-} from "lucide-react";
-import Link from "next/link";
+import { MoreVertical, Pencil, RefreshCw, Trash2, TriangleAlert } from "lucide-react";
 import {
   DropdownMenu,
   DropdownMenuContent,
@@ -22,8 +13,6 @@ import { useCoinsStore } from "@/features/coins/store";
 import { cn } from "@/lib/utils";
 
 type SessionMenuProps = {
-  hasTranscript: boolean;
-  onOpenTranscript: () => void;
   onEdit?: () => void;
   onDelete?: () => void;
   onReprocess?: () => void;
@@ -43,26 +32,26 @@ type SessionMenuProps = {
    */
   onDiscard?: () => void;
   /**
-   * Abrir o editor de blocos, em QUALQUER modo. Ele já foi exclusivo da sessão
-   * `manual`, porque o editor falava um vocabulário menor que o do resumo e
-   * salvar comeria o que a IA tinha escrito; as duas listas são a mesma hoje.
-   * Ver `app/(app)/(barra)/escrever/[id]/page.tsx`.
+   * A sessão foi escrita à mão? Só o NOME do item de excluir muda com isto.
+   *
+   * Aqui morava um `editHref`, e o "Editar o texto" que ele desenhava: era a
+   * ação mais usada deste menu, no meio das mais raras, e virou um botão no
+   * cabeçalho do `/summary` (ver `SavedSessionView`). Dois caminhos para a
+   * mesma tela seria um a mais.
    */
-  editHref?: string;
+  written?: boolean;
 };
 
 const REPROCESS_COST = COIN_COSTS.reprocessSummary;
 
 export function SessionMenu({
-  hasTranscript,
-  onOpenTranscript,
   onEdit,
   onDelete,
   onReprocess,
   reprocessing,
   onReportHallucination,
   onDiscard,
-  editHref,
+  written = false,
 }: SessionMenuProps) {
   const balance = useCoinsStore((s) => s.balance);
   const insufficient = balance !== null && balance < REPROCESS_COST;
@@ -83,12 +72,6 @@ export function SessionMenu({
         <MoreVertical className="size-4" />
       </DropdownMenuTrigger>
       <DropdownMenuContent align="end" className="w-56">
-        {editHref ? (
-          <DropdownMenuItem render={<Link href={editHref} />} className="gap-2">
-            <PenLine className="size-4" />
-            Editar o texto
-          </DropdownMenuItem>
-        ) : null}
         {onEdit ? (
           <DropdownMenuItem onClick={onEdit} className="gap-2">
             <Pencil className="size-4" />
@@ -117,12 +100,10 @@ export function SessionMenu({
             </span>
           </DropdownMenuItem>
         ) : null}
-        {hasTranscript ? (
-          <DropdownMenuItem onClick={onOpenTranscript} className="gap-2">
-            <FileText className="size-4" />
-            Ler transcrição
-          </DropdownMenuItem>
-        ) : null}
+        {/* Aqui morava o "Ler transcrição". A transcrição virou o SEGUNDO
+            SLIDE do `/summary` (ver `SummaryDeck`), a um deslize do resumo, e
+            um item de menu apontando para o que está ao lado na tela seria um
+            segundo caminho para o mesmo lugar. */}
         {onReportHallucination ? (
           <>
             <DropdownMenuSeparator />
@@ -150,7 +131,7 @@ export function SessionMenu({
                   há um resumo DE alguma coisa, o texto é a coisa. O mesmo item
                   apaga a mesma linha nos dois casos; só o nome muda, e ele
                   muda porque quem lê a tela chama aquilo de nomes diferentes. */}
-              {editHref ? "Excluir este texto" : "Excluir resumo"}
+              {written ? "Excluir este texto" : "Excluir resumo"}
             </DropdownMenuItem>
           </>
         ) : null}

@@ -12,11 +12,13 @@ mesma razão do gravador: é uma tela de CRIAÇÃO, e esta pasta é tudo o que v
 depois de a sessão existir. Ele escreve o mesmo `SummaryPayload` que o resumo
 gerado, então tudo aqui o lê sem saber que ele existe — com uma exceção, o
 `SavedSessionView`, que precisa saber que uma sessão `manual` não tem
-transcrição (some "Ler transcrição", "Reprocessar", "Algo está errado" e o
-"Gerar estudo"). Ver `src/app/AGENTS.md`.
+transcrição (somem o SLIDE da transcrição e os pontinhos que o anunciam, o
+"Reprocessar", o "Algo está errado" e o "Gerar estudo"). Ver
+`src/app/AGENTS.md`.
 
 **E ele não é mais só a porta de entrada: `/escrever/:id` REABRE o resumo de
-qualquer modo**, e o "Editar o texto" do `SavedSessionView` aparece em todos. A
+qualquer modo**, e o botão "Editar" do cabeçalho do `SavedSessionView` — que já
+foi um item do menu de três pontinhos — aparece em todos. A
 IA erra um nome ou perde a frase que valia a pregação, e consertar à mão custa um
 minuto contra as 15 moedas de um reprocessamento. Editar não muda mais nada da
 sessão — o modo, a transcrição e as três coisas do parágrafo acima continuam
@@ -35,6 +37,7 @@ pessoa quiser, aprofundar.
 | Onde | O que |
 |---|---|
 | `components/SavedSessionView.tsx` | a tela de uma sessão salva: cabeçalho editável, resumo, estudo, menu |
+| `components/SummaryDeck.tsx` | o carrossel resumo ↔ transcrição, e quem busca a transcrição |
 | `components/SummaryView.tsx` + `BlockRenderer.tsx` | os blocos do resumo |
 | `components/StudyBlockRenderer.tsx` | os blocos a MAIS que o estudo tem |
 | `components/PostItNote.tsx` | a casca do post-it dos dois murais: cor, cartão clicável, anatomia |
@@ -44,7 +47,6 @@ pessoa quiser, aprofundar.
 | `components/YoutubeUrlForm.tsx` + `YoutubeImport.tsx` | colar o link (ou recebê-lo por parâmetro), recortar um trecho, e esperar a importação |
 | `components/DeepenButton.tsx` + `DeepeningMenu.tsx` | gerar e reprocessar o estudo |
 | `components/PassageVerses.tsx` + `RichText.tsx` | texto bíblico e menções dentro do parágrafo |
-| `components/TranscriptDialog.tsx` | a gaveta da transcrição, e quem vai buscá-la quando ela abre |
 | `components/CacheOwner.tsx` | de quem é o cache deste aparelho, e a faxina quando outra conta entra |
 | `query.ts` | a Biblioteca guardada no aparelho: leitura, escrita otimista e o conserto do atraso |
 | `hooks/useCoinTick.ts` | o débito por minuto, durante a gravação |
@@ -86,6 +88,32 @@ do resumo: se o cache não conhece a sessão aberta, ele é velho. Todo caminho 
 criação desemboca ali — gravar, importar, escrever —, então um ponto cobre os
 três, e o quarto quando existir. A alternativa era um `invalidate` em cada um,
 que é três lugares para esquecer um.
+
+## O resumo e a transcrição são DOIS SLIDES
+
+`/summary` é um carrossel de dois: o resumo, sempre o primeiro, e a
+transcrição, quando a sessão tem uma. Os pontinhos ficam acima da "Ideia
+central", e são `tab`s de verdade (setas do teclado, leitor de tela). Quem
+monta isso é `components/SummaryDeck.tsx`, e o cabeçalho dele tem o raciocínio
+inteiro; três consequências que mordem de fora:
+
+- **"Ler transcrição" saiu do menu de três pontinhos**, e não deve voltar: ela
+  está a um deslize do resumo, e um item de menu para o que está ao lado na
+  tela é um segundo caminho para o mesmo lugar. O `TranscriptDialog` foi
+  apagado junto.
+- **A busca do resumo não varre a transcrição.** O slide dela leva
+  `data-find-skip`, e o `SummaryFind` pula tudo que estiver lá dentro — a
+  transcrição tem a busca DELA, que filtra as linhas. Sem isso o "3 de 17" da
+  barra apontaria para um texto fora da tela.
+- **A altura do trilho é medida, não livre.** Um contêiner com `overflow-x`
+  tem uma altura só para os dois slides, e eles têm alturas muito diferentes;
+  livre, o resumo ganharia dez telas de branco embaixo, e com `overflow-y:
+  auto` apareceria um segundo scroll vertical dentro da página. Quem mexer no
+  conteúdo dos slides não precisa fazer nada — o `ResizeObserver` cobre —, mas
+  quem mexer no TRILHO precisa ler aquele cabeçalho antes.
+
+**Sem transcrição não há carrossel nenhum** (é o caso de toda sessão `manual`):
+o `SummaryDeck` devolve o resumo direto, sem trilho e sem pontinhos.
 
 ## Texto bíblico na tela
 

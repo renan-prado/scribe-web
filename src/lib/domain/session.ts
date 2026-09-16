@@ -21,7 +21,7 @@
  * esquecimento.
  *
  * **Uma sessão `manual` não tem transcrição**, e quem depende dela precisa
- * saber disso: o menu não oferece "Ler transcrição", `/api/deepening` recusa
+ * saber disso: o `/summary` não desenha o segundo slide, `/api/deepening` recusa
  * com `empty_transcript`, e a busca de CONTEÚDO (que varre o que o pregador
  * disse) não a encontra. A busca por REFERÊNCIA encontra, ela lê os blocos
  * `bibleQuote` do resumo, que o texto escrito tem como qualquer outro.

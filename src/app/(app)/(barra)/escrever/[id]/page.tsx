@@ -79,8 +79,8 @@ export default async function EscreverIdPage({ params }: PageProps) {
       header={
         <TopBar
           /* O voltar leva de volta ao que se estava LENDO, e não à Biblioteca.
-             Aqui sempre se chega de `/summary/{id}`, pelo "Editar o texto" do
-             menu, e mandar para `/home` obrigava a achar o cartão de novo para
+             Aqui sempre se chega de `/summary/{id}`, pelo botão "Editar" do
+             cabeçalho, e mandar para `/home` obrigava a achar o cartão de novo para
              conferir o que acabou de ser corrigido. Um id sem linha no banco é
              o texto novo que ainda não subiu (ver acima): ali `/summary/{id}`
              ainda não existe, e a Biblioteca é a saída certa. */

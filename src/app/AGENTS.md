@@ -179,8 +179,11 @@ nos dois momentos e nada pula de lugar. É uma vez por abertura do app, contra
 uma vez por TOQUE, que era o que se pagava antes.
 
 **Consequência para quem escreve tela nova em `(barra)`:** o `<main>` não leva
-mais `pt-2` — a folga acima da barra é da casca agora, e repeti-la abre um vão
-duplicado. E nenhum `loading.tsx` desenha osso de cabeçalho: a casca sobrevive à
+recuo de topo NENHUM — a folga acima da barra (`pt-2`) e a que separa a barra do
+conteúdo (`pb-4`) são as duas da casca, e repetir qualquer uma abre um vão
+duplicado. O `pb-4` existe porque o `py-3` do `<header>` sozinho deixava o
+primeiro "Este mês" da Biblioteca colado no avatar e o título do sermão colado
+no voltar; ele mora lá em cima porque é a mesma folga nas sete telas. E nenhum `loading.tsx` desenha osso de cabeçalho: a casca sobrevive à
 navegação, já está inteira na tela enquanto o resto carrega, e um esqueleto por
 cima dela finge que falta o que está ali. Era exatamente esse osso, no
 `loading.tsx` da Biblioteca, o piscar que se via ao voltar para ela.
@@ -422,10 +425,21 @@ uma pregação. **Bloco novo no `SummaryBlockSchema` entra em
 que o editor não tem é um terceiro nível de título.
 
 A "ideia central" não é bloco: ela é o `shortSummary`, o que aparece no cartão da
-Biblioteca e na busca. E é OPCIONAL — o campo não nasce na tela, entra por uma
-pastilha "Adicionar ideia central" no topo e sai pelo `×` do próprio cartão.
-Resumir a mensagem em uma frase é coisa que só se consegue fazer depois de
-escrevê-la; um campo fixo em cima da folha em branco pergunta antes da hora.
+Biblioteca e na busca. E é OPCIONAL — o campo não nasce na tela, entra pelo menu
+do `+` e sai pelo `×` do próprio cartão. Resumir a mensagem em uma frase é coisa
+que só se consegue fazer depois de escrevê-la; um campo fixo em cima da folha em
+branco pergunta antes da hora.
+
+**Ela e a CONCLUSÃO são as duas pontas, e as duas são únicas.** As duas moram no
+menu do `+` (a ideia central é a primeira opção, a conclusão é a última) e SOMEM
+de lá depois de usadas: duas conclusões num texto não são um recurso, são um
+erro de digitação que ninguém desfaz sem ir procurar a segunda. A posição de
+cada uma é fixa — a ideia central abre o texto, a conclusão o fecha —, e é o
+`Composer` quem garante isso: toda inserção tem o índice da conclusão como teto,
+ela não se move com as setas, e nada se move para depois dela. A ideia central
+já teve uma pastilha própria no topo da folha; eram dois lugares respondendo "o
+que mais cabe aqui?", e o que decidia em qual deles cada coisa aparecia era um
+detalhe do schema (ser ou não ser bloco) que ninguém que escreve tem como saber.
 
 **A faixa de versículos se escolhe como um período num calendário.** Um toque
 finca a ponta, o outro fecha, e ENTRE os dois o caminho até o número sob o mouse
@@ -518,13 +532,19 @@ esperando ser preenchido; aqui não há terceiro nenhum. Continua editável em
 `/summary`, para quem transcreve à mão o sermão de outra pessoa.
 
 **Uma sessão `manual` não tem transcrição**, e três coisas somem da leitura por
-causa disso: "Ler transcrição", "Reprocessar" (refaria o resumo a partir de uma
+causa disso: o SLIDE da transcrição (com os pontinhos que o anunciam — o
+`/summary` é um carrossel de dois, ver `src/features/session/AGENTS.md`),
+"Reprocessar" (refaria o resumo a partir de uma
 transcrição vazia, cobrando 15 moedas para apagar o que a pessoa escreveu) e
 "Algo está errado" (audita a IA contra a transcrição — aqui não houve IA, o
 alerta apontaria o dedo para o próprio autor). Gerar estudo também não aparece,
 e é decisão do v1: `/api/deepening` recusaria com `empty_transcript`.
 
-**O caminho inverso não vale: "Editar o texto" aparece em TODO modo.** O editor
+**O caminho inverso não vale: o botão "Editar" aparece em TODO modo.** Ele fica
+no cabeçalho do `/summary`, ao lado do menu de três pontinhos, onde já foi um
+item chamado "Editar o texto" — era a ação mais usada daquele menu, no meio das
+mais raras (apagar, reprocessar, reportar erro), e cobrava dois toques por
+aquilo que se faz toda vez que a IA erra um nome. O editor
 já foi exclusivo do `manual`, e por vocabulário, não por princípio (ver
 `sessions/written` acima). Um resumo gerado é um texto sobre uma pregação, e a IA
 erra um nome ou perde a frase que valia a mensagem inteira; consertar à mão custa
@@ -741,13 +761,13 @@ intrusa numa fileira que não é dela. Como não existe grupo contíguo, o
 `WriteAction`) e quem monta a ordem é a página, que é também quem sabe se
 aquela tela tem lupa.
 
-**Nenhum deles é vermelho, nem o de gravar**, e é a diferença que separa a barra
+**Nenhum deles é colorido, nem o de gravar**, e é a diferença que separa a barra
 do painel do dock. Lá a cor tem trabalho: três quadrados iguais abertos no
-vazio, e o vermelho é o que faz o olho cair na porta mais usada sem ler os três
-nomes. Aqui não há fileira para destacar — os três estão separados pela lupa,
-entre o voltar e o avatar —, e um disco vermelho no meio de quatro cinzas não
-leria como "o principal", leria como ALERTA, que é o que um ponto vermelho numa
-barra de ferramentas diz.
+vazio, e o `--v2-accent` é o que faz o olho cair na porta mais usada sem ler os
+três nomes. Aqui não há fileira para destacar — os três estão separados pela
+lupa, entre o voltar e o avatar —, e um disco colorido no meio de quatro cinzas
+não leria como "o principal", leria como ALERTA, que é o que um ponto de cor
+numa barra de ferramentas diz.
 
 **Cada chip é um alvo de tour, com o MESMO nome da porta gêmea do dock**
 (`create-record`, `create-write`, `create-import`): a apresentação da Biblioteca
@@ -777,12 +797,21 @@ desktop. Acima deles o título "Criar resumo:" diz uma vez o que os três têm e
 comum, e é também o nome do painel para quem usa leitor de tela
 (`aria-labelledby`, e não um `aria-label` repetindo a mesma frase por fora).
 
-A porta de gravar é a única COLORIDA: quadrado vermelho, `--v2-rec-sheen` — o
-mesmo vermelho do microfone, com uma queda de luz no ângulo do vidro ao lado. É
-o que o "mágico" do nome antigo tentava dizer, dito por cor em vez de por
-adjetivo. **A cor é o destaque INTEIRO**: um enfeite no canto do quadrado foi
-tentado duas vezes (um hexágono, depois um sparkles) e saiu nas duas, ver
-`src/shared/AGENTS.md`.
+A porta do "Resumo automático" é a única COLORIDA: `--v2-accent`, o vermelho do
+produto, com o gradiente ANDANDO até um vinho fundo e de volta
+(`--v2-accent-sheen` + `animate-accent-sheen`, as mesmas keyframes dos cartões
+que o Scriba escreve, em 6s contra os 12s de lá — num quadrado de 48px, 12s
+passam por parado). O vermelho diz a verdade — esta é justamente a
+porta que grava —, e o movimento é o que o "mágico" do nome antigo tentava
+dizer, dito por cor em vez de por adjetivo. **O token se chama `accent`, e não
+pela cor**: ele já foi vermelho chapado e já foi um roxo→azul de IA, a pergunta
+está em aberto, e um nome de cor obrigaria a renomear o arquivo a cada
+tentativa. **E ela leva o selo "IA" no canto de cima**, amarelo da moeda,
+com o sparkles do lucide — que é proibido como enfeite solto e permitido aqui
+porque acompanha uma palavra: a cor diz "esta é a porta principal", e nenhuma
+cor diz "o resumo sai pronto, escrito pela máquina". O mesmo canto já teve duas
+vezes um enfeite SEM texto (um hexágono, depois um sparkles) e as duas saíram,
+ver `src/shared/AGENTS.md`.
 
 Três decisões dele que não são estética:
 

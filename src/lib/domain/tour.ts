@@ -255,11 +255,19 @@ export const TOURS: Record<TourKey, TourDefinition> = {
        * seria só uma linha de configuração descrevendo um botão que a pessoa
        * não tem como encontrar.
        */
+      /**
+       * A TRANSCRIÇÃO saiu deste passo junto com o item do menu: ela é o
+       * segundo slide da tela agora, a um deslize do resumo (ver
+       * `SummaryDeck`). O passo continua sendo o mesmo — "o que mora atrás dos
+       * três pontinhos" —, dizendo o que sobrou lá dentro, e por isso a
+       * `version` não sobe: subi-la reabriria o tour inteiro na cara de toda a
+       * base para trocar uma frase.
+       */
       {
         id: "menu",
         anchor: '[data-tour="session-menu"]',
-        title: "Transcrição e mais opções",
-        body: "Aqui ficam o texto bruto, o reprocessamento do resumo e o aviso de erro, se o Scriba escrever algo que não foi dito.",
+        title: "As opções do resumo",
+        body: "Aqui ficam o reprocessamento do resumo, o aviso de erro (se o Scriba escrever algo que não foi dito) e a exclusão. Para ler o texto bruto da pregação, deslize o resumo para o lado.",
       },
     ],
   },

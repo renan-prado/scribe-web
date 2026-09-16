@@ -1,16 +1,18 @@
 "use client";
 
-import { MapPin, Pencil, Plus } from "lucide-react";
+import { MapPin, Pencil, PenLine, Plus } from "lucide-react";
 import { useRouter } from "next/navigation";
 import type { ReactNode } from "react";
 import { useState } from "react";
 import { toast } from "sonner";
+import { LinkPendingSwap, NavLink } from "@/components/NavLink";
 import { PageBlurOverlay } from "@/components/PageBlurOverlay";
 import { useCoinsStore } from "@/features/coins/store";
 import { ConfirmDialog } from "@/features/session/components/ConfirmDialog";
 import { EntityFieldDialog } from "@/features/session/components/EntityFieldDialog";
 import { HallucinationReportDialog } from "@/features/session/components/HallucinationReportDialog";
 import { SessionMenu } from "@/features/session/components/SessionMenu";
+import { SummaryDeck } from "@/features/session/components/SummaryDeck";
 import {
   SummaryFindArea,
   SummaryFindBar,
@@ -18,7 +20,6 @@ import {
 } from "@/features/session/components/SummaryFind";
 import { SummaryView } from "@/features/session/components/SummaryView";
 import { TitleDialog } from "@/features/session/components/TitleDialog";
-import { TranscriptDialog } from "@/features/session/components/TranscriptDialog";
 import { requestLocationSuggestions, requestSpeakerSuggestions } from "@/features/session/lib/api";
 import { initialsOf } from "@/features/session/lib/text";
 import { useLibrarySync, useLibraryWriter } from "@/features/session/query";
@@ -34,12 +35,20 @@ const ADD_BADGE_CLASSES = cn(
 );
 
 /**
- * View of a saved session. Renders the same SummaryView the live page uses on
- * stop, plus dialogs for the live feed, the raw transcript, and editing metadata.
+ * A tela de uma sessão salva: cabeçalho editável, o resumo e o menu.
  *
- * Speaker and location each get an independent edit dialog (opened by clicking
- * the badge/chip). The combined "Editar sermão" dialog is still reachable from
- * the menu for cases where the user wants to touch multiple fields at once.
+ * Título, autor e local são cada um o seu próprio diálogo, abertos pela
+ * pastilha correspondente — a edição acontece no lugar em que o dado está, e
+ * não num formulário com os três campos que obrigaria a procurar o que se veio
+ * corrigir.
+ *
+ * **O CORPO são dois slides, não um** (`SummaryDeck`): o resumo e, quando a
+ * sessão tem uma, a transcrição, com os pontinhos em cima. A transcrição já
+ * morou atrás do menu de três pontinhos, num diálogo; o porquê da mudança está
+ * no cabeçalho do `SummaryDeck`.
+ *
+ * **E EDITAR é um botão do cabeçalho**, ao lado do menu, pela mesma razão
+ * invertida: era a ação mais usada do menu, no meio das raras.
  */
 type SavedSessionViewProps = {
   id: string;
@@ -55,8 +64,12 @@ type SavedSessionViewProps = {
    *
    * O texto viajava aqui dentro, no payload de toda abertura do resumo, e só
    * dois dos três usos que esta tela fazia dele queriam mais do que este
-   * booleano. O terceiro — desenhá-lo — mora num dialog que busca o texto
-   * sozinho quando abre. Ver `TranscriptDialog` e a migração 0061.
+   * booleano. O terceiro — desenhá-lo — mora no segundo slide do `SummaryDeck`,
+   * que busca o texto sozinho quando alguém desliza até ele. Ver a migração
+   * 0061.
+   *
+   * Aqui ele decide também se existe um segundo slide: sem transcrição não há
+   * carrossel nem pontinhos, e o resumo é desenhado direto.
    */
   hasTranscript: boolean;
   summary: SummaryPayload | null;
@@ -95,7 +108,10 @@ type SavedSessionViewProps = {
    * transcrição, e aqui não houve IA: o alerta apontaria o dedo para o próprio
    * autor.
    *
-   * **"Editar o texto" não é mais uma delas**: ele aparece em TODO modo. Um
+   * (A transcrição some junto, mas não por aqui: quem some com o segundo slide
+   * é o `hasTranscript`, que numa sessão `manual` é sempre falso.)
+   *
+   * **"Editar" não é mais uma delas**: o botão aparece em TODO modo. Um
    * resumo gerado é um texto sobre uma pregação, e a IA erra um nome ou perde a
    * frase que valia a mensagem inteira; consertar à mão custa um minuto, contra
    * 15 moedas de um reprocessamento que pode errar de novo. O que tornava isso
@@ -120,7 +136,6 @@ export function SavedSessionView({
   meta = "full",
   mode = "audio",
 }: SavedSessionViewProps) {
-  const [transcriptOpen, setTranscriptOpen] = useState(false);
   const [titleDialogOpen, setTitleDialogOpen] = useState(false);
   const [speakerDialogOpen, setSpeakerDialogOpen] = useState(false);
   const [locationDialogOpen, setLocationDialogOpen] = useState(false);
@@ -287,19 +302,63 @@ export function SavedSessionView({
                 <span
                   role="status"
                   aria-label="Sessão salva"
-                  className="hidden items-center gap-1.5 rounded-full bg-scriba-mint px-2.5 py-1 text-[10px] font-semibold uppercase tracking-wider text-scriba-mint-dark sm:inline-flex"
+                  className="hidden items-center gap-1.5 rounded-full bg-scriba-mint px-2.5 py-1 text-[10px] font-semibold uppercase tracking-wider text-scriba-mint-accent sm:inline-flex"
                 >
-                  <span className="size-1.5 rounded-full bg-scriba-mint-strong" />
+                  {/* VERDE (`mint-accent`) na bolinha E no texto. Eram
+                      `mint-strong` (um cinza, #B3B4BA) e `mint-dark` (branco,
+                      #F5F5F5): o chip dizia "Salvo" num cartão verde sem nada
+                      verde dentro, o desenho exato de um indicador desligado.
+                      É o mesmo par do chip do editor, ver `StatusChip` no
+                      `Composer`. */}
+                  <span className="size-1.5 rounded-full bg-scriba-mint-accent" />
                   Salvo
                 </span>
+                {/* EDITAR é um botão, e não mais um item do menu de três
+                    pontinhos. Ele era a ação mais usada do menu e estava no
+                    lugar das raras — apagar, reprocessar, reportar erro —, o
+                    que cobrava dois toques por aquilo que se faz toda vez que a
+                    IA erra um nome. A pastilha é a MESMA do "Adicionar autor"
+                    (`ADD_BADGE_CLASSES`), porque é a mesma promessa: toque aqui
+                    e conserte o que está na tela.
+
+                    Ele é um `NavLink` e não um `button` com `push`: o destino é
+                    uma ROTA, e como link ele ganha o abrir em nova aba, o
+                    copiar endereço e o prefetch do router.
+
+                    **E o `NavLink` é a parte que não é escolha de estilo.** O
+                    editor é um pedaço grande de JavaScript, e o toque ficava
+                    sem resposta nenhuma até a tela trocar — a reação natural de
+                    quem usa é tocar de novo, que é como um clique vira três.
+
+                    Quem gira é a PENA (`LinkPendingSwap`), e não um spinner ao
+                    lado dela: a pastilha tem duas coisas dentro, e acrescentar
+                    uma terceira faria a largura dela crescer no meio do clique,
+                    empurrando o menu de três pontinhos para o lado. Trocando o
+                    glifo, a pastilha não muda de tamanho — e o `spinner="none"`
+                    é justamente o que desliga o spinner padrão do `NavLink`
+                    para essa troca ser a única. O `prefetchOnPress` adianta a
+                    rota INTEIRA no `pointerdown`, nos ~100ms entre o dedo
+                    encostar e sair. Ver `NavLink`. */}
+                {summary ? (
+                  <NavLink
+                    href={`/escrever/${id}`}
+                    prefetchOnPress
+                    spinner="none"
+                    contentClassName="inline-flex items-center gap-1"
+                    className={ADD_BADGE_CLASSES}
+                  >
+                    <LinkPendingSwap className="size-3">
+                      <PenLine className="size-3" strokeWidth={2.5} />
+                    </LinkPendingSwap>
+                    Editar
+                  </NavLink>
+                ) : null}
                 <SessionMenu
-                  hasTranscript={hasTranscript}
-                  onOpenTranscript={() => setTranscriptOpen(true)}
                   onDelete={() => setDeleteOpen(true)}
                   onReprocess={summary && !written ? handleReprocess : undefined}
                   reprocessing={reprocessing}
                   onReportHallucination={written ? undefined : () => setReportOpen(true)}
-                  editHref={summary ? `/escrever/${id}` : undefined}
+                  written={written}
                 />
               </div>
             </div>
@@ -385,15 +444,14 @@ export function SavedSessionView({
 
           <div className="h-px w-full bg-scriba-hairline" />
 
-          <SummaryView summary={summary} hasTranscript={hasTranscript} running={false} />
+          {/* O resumo e a transcrição, um ao lado do outro, com os pontinhos
+              em cima da "Ideia central". Sem transcrição (toda sessão escrita à
+              mão) o `SummaryDeck` devolve o resumo direto, sem trilho e sem
+              pontinhos — ver o cabeçalho dele. */}
+          <SummaryDeck sessionId={id} durationMs={durationMs} hasTranscript={hasTranscript}>
+            <SummaryView summary={summary} hasTranscript={hasTranscript} running={false} />
+          </SummaryDeck>
         </SummaryFindArea>
-
-        <TranscriptDialog
-          sessionId={id}
-          durationMs={durationMs}
-          open={transcriptOpen}
-          onOpenChange={setTranscriptOpen}
-        />
 
         <HallucinationReportDialog
           open={reportOpen}
