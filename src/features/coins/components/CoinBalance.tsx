@@ -3,7 +3,7 @@
 import { useEffect, useRef, useState } from "react";
 import { BillingDialog } from "@/features/billing/components/BillingDialog";
 import { COIN_RING_REFERENCE } from "@/features/coins/pricing";
-import { getCoinsState, useCoinsStore } from "@/features/coins/store";
+import { useCoinsStore } from "@/features/coins/store";
 import { cn } from "@/lib/utils";
 
 const COIN_C = 2 * Math.PI * 6.5; // circumference for the r=6.5 stroke centerline (stroke-width 13 fills a r=13 disc without overflowing the viewBox)
@@ -85,55 +85,21 @@ export function CoinBalance({
   interactive?: boolean;
 }) {
   const storeBalance = useCoinsStore((s) => s.balance);
-  const setBalance = useCoinsStore((s) => s.setBalance);
-  const refresh = useCoinsStore((s) => s.refresh);
 
-  // Semeia a store com o saldo que veio do servidor, para que todo consumidor
-  // (o gate da gravação, o `DeepenButton`, o `BillingDialog`) leia a mesma
-  // fonte em vez de um `null` de "ainda não sei".
+  // **Ele não semeia mais a store, e não ressincroniza nada.** As duas coisas
+  // moravam aqui e NÃO FUNCIONAVAM: este chip vive dentro do menu da conta, que
+  // é um popup, e base-ui só monta o conteúdo de um `DropdownMenu` quando ele
+  // abre. Enquanto ninguém tocasse no avatar, a store ficava em `null` e todo
+  // gate que a lê ficava preso em "carregando" — no `/importar` isso era o
+  // botão Importar substituído por uma pastilha pulsando que nunca terminava.
+  // As duas passaram para o `CoinsSync`, no layout de `(barra)`, que está
+  // sempre montado; o porquê inteiro está no cabeçalho de lá.
   //
-  // **Num EFEITO, e não no corpo do render.** Isto era um `if` no render, e um
-  // `set` do zustand ali notifica TODOS os assinantes da store: no dia em que
-  // outro deles estava montado ao lado deste chip (o `BillingDialog`, no menu
-  // da conta), o React acusou "cannot update a component while rendering a
-  // different component". Atualizar em render só é permitido sobre o PRÓPRIO
-  // componente, e uma store global nunca é só ele. A tela não perde nada com a
-  // troca: o `balance` abaixo já cai no `initialBalance` enquanto a store
-  // estiver vazia, e nenhum gate é consultado antes do primeiro clique.
-  useEffect(() => {
-    if (getCoinsState().balance === null) setBalance(initialBalance);
-  }, [initialBalance, setBalance]);
-
+  // O `initialBalance` fica, e agora é só o que ele sempre foi de verdade: o
+  // número a desenhar enquanto a store não respondeu.
   const balance = storeBalance ?? initialBalance;
   const prevBalanceRef = useRef(balance);
   const [flash, setFlash] = useState<"debit" | "credit" | null>(null);
-
-  // NÃO há refresh no mount. O saldo já chegou do servidor em `initialBalance`,
-  // renderizado no mesmo request, pedi-lo de novo por HTTP logo depois custava
-  // dois `getUser()` (proxy + rota) e mais um SELECT em `profiles` para receber
-  // de volta o número que acabou de ser desenhado na tela. Os dois sinais
-  // abaixo cobrem o caso em que o saldo muda de verdade sem esta aba saber.
-
-  // O pagamento acontece numa ABA NOVA (para não derrubar uma gravação em
-  // curso), então esta aba não recebe nenhum evento próprio quando o crédito
-  // entra. Dois sinais cobrem o caso: a volta do foco, e um postMessage que a
-  // aba de retorno dispara no `window.opener` assim que vê o saldo subir.
-  // Como o store é global, este único listener no header atualiza o app todo.
-  useEffect(() => {
-    const onFocus = () => void refresh();
-    const onMessage = (event: MessageEvent) => {
-      if (event.origin !== window.location.origin) return;
-      if ((event.data as { type?: string } | null)?.type === "scriba:coins-updated") {
-        void refresh();
-      }
-    };
-    window.addEventListener("focus", onFocus);
-    window.addEventListener("message", onMessage);
-    return () => {
-      window.removeEventListener("focus", onFocus);
-      window.removeEventListener("message", onMessage);
-    };
-  }, [refresh]);
 
   useEffect(() => {
     const prev = prevBalanceRef.current;

@@ -1,5 +1,6 @@
 import type { ReactNode } from "react";
 import { PrivilegedMenuItems } from "@/features/auth/components/PrivilegedMenuItems";
+import { CoinsSync } from "@/features/coins/components/CoinsSync";
 import { INITIAL_COIN_BALANCE } from "@/features/coins/pricing";
 import { isCurrentUserPartner } from "@/lib/auth/require-partner";
 import { getCurrentAccount } from "@/lib/db/account";
@@ -48,6 +49,12 @@ export default async function BarraLayout({ children }: { children: ReactNode })
 
   return (
     <>
+      {/* Semeia o saldo na store com o número que esta consulta JÁ trouxe, e
+          cuida da ressincronia. Não desenha nada, e fica aqui porque o único
+          componente que fazia isso era o chip do saldo — que mora dentro do
+          menu da conta, ou seja, só existia com o menu aberto. O sintoma era o
+          botão do `/importar` preso num carregando eterno. Ver `CoinsSync`. */}
+      {account ? <CoinsSync balance={account.coinBalance ?? INITIAL_COIN_BALANCE} /> : null}
       <AppHeaderShell
         account={
           // Sem sessão não há conta a abrir, e o canto fica só com o que a
