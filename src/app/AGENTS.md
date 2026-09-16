@@ -719,14 +719,15 @@ prints em `public/prints/new-release/`. Era um microfone sozinho no meio da
 faixa, e as outras duas portas moravam na gaveta — três toques longe, num lugar
 que ninguém abre para criar, abre para navegar.
 
-**Os três rótulos são UM VERBO cada, sob um título.** Eram "Resumo mágico",
-"Escrever resumo" e "Importar do YouTube": três nomes que repetiam a mesma
-palavra e obrigavam a ler o painel inteiro para escolher entre eles. Com um
-verbo só, a diferença está na primeira sílaba, e o ícone acima já disse o resto.
-O que o verbo sozinho não diz — que o fim daquilo é um resumo — passou a ser
-dito uma vez, no título "Criar resumo:" acima da fileira, que é também o nome do
-painel para quem usa leitor de tela (`aria-labelledby`, e não um `aria-label`
-repetindo a mesma frase por fora).
+**Os três rótulos dizem o RESULTADO, sob um título**: "Resumo automático",
+"Escrever resumo" e "Importar do YouTube". Já foram um verbo cada (Gravar,
+Escrever, Importar), que cabia numa linha e punha a diferença na primeira
+sílaba, mas dizia o GESTO em vez do que sai dele — "Gravar" não conta que o fim
+daquilo é um resumo. Com o nome inteiro, cada porta se explica fora da fileira
+também, no balão do tour e no leitor de tela, e ela bate com o chip gêmeo do
+desktop. Acima deles o título "Criar resumo:" diz uma vez o que os três têm em
+comum, e é também o nome do painel para quem usa leitor de tela
+(`aria-labelledby`, e não um `aria-label` repetindo a mesma frase por fora).
 
 A porta de gravar é a única COLORIDA: quadrado vermelho, `--v2-rec-sheen` — o
 mesmo vermelho do microfone, com uma queda de luz no ângulo do vidro ao lado. É

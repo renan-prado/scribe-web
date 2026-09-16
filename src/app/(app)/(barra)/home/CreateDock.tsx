@@ -62,14 +62,18 @@ import { cn } from "@/lib/utils";
  * plástico brilhante de 2010 —, e é o que faz o mural de post-its continuar
  * atrás da peça, desfocado, em vez de apagado por um retângulo opaco.
  *
- * **O painel tem um TÍTULO, "Criar resumo:", e ele não é enfeite.** Os três
- * nomes viraram um verbo cada — Gravar, Escrever, Importar —, e um verbo
- * sozinho diz o que o toque FAZ, não onde aquilo vai dar: "Gravar" não conta
- * que o fim do caminho é um resumo, que é o produto inteiro. O título diz uma
- * vez o que os três têm em comum, e devolve o que os rótulos longos diziam
- * repetindo "resumo" três vezes.
+ * **Os três nomes dizem o RESULTADO, não o gesto**: "Resumo automático",
+ * "Escrever resumo", "Importar do YouTube". Eles já foram um verbo cada
+ * (Gravar, Escrever, Importar), e um verbo sozinho diz o que o toque faz, não
+ * onde ele vai dar — "Gravar" não conta que o fim do caminho é um resumo, que é
+ * o produto inteiro. Com o nome inteiro, cada porta se explica fora da fileira
+ * também: no balão do tour, num leitor de tela, na volta de quem já não lembra
+ * qual era qual. São os mesmos nomes dos chips gêmeos do desktop
+ * (`(app)/(barra)/components/CreateActions.tsx`), menos o de gravar, que lá é
+ * "Gravar resumo".
  *
- * Ele é também o NOME do painel para quem usa leitor de tela
+ * **O painel tem um TÍTULO, "Criar resumo:"**, que diz uma vez o que os três
+ * têm em comum. Ele é também o NOME do painel para quem usa leitor de tela
  * (`aria-labelledby`), no lugar do `aria-label="Criar"` que havia ali: a mesma
  * frase escrita em dois lugares é a frase que um dia diverge sem ninguém ver.
  *
@@ -252,12 +256,10 @@ export function CreateDock() {
               // da que se lê sem ninguém perceber.
               id="create-dock-options"
               aria-labelledby="create-dock-title"
-              className="pointer-events-auto flex min-w-0 origin-bottom-right animate-v2-rec-in flex-col gap-2 rounded-[28px] bg-v2-glass-panel bg-[image:var(--v2-glass-sheen)] p-3 ring-1 ring-v2-glass-edge backdrop-blur-xl"
+              className="pointer-events-auto flex min-w-0 origin-bottom-right animate-v2-rec-in flex-col gap-2 rounded-[28px] bg-v2-glass-panel bg-[image:var(--v2-glass-sheen)] px-3 pt-3 pb-5 ring-1 ring-v2-glass-edge backdrop-blur-xl"
             >
-              {/* O título diz o que as três opções têm EM COMUM, e é o que os
-                  nomes de um verbo só deixaram de dizer: "Gravar" sozinho não
-                  conta que o fim daquilo é um resumo. Ele é também o que dá nome
-                  ao painel para quem usa leitor de tela.
+              {/* O título diz o que as três opções têm EM COMUM, e dá nome ao
+                  painel para quem usa leitor de tela.
 
                   Em `--v2-ink-mute` e no mesmo corpo dos rótulos: ele é uma
                   placa, não uma opção, e mais escuro que os nomes é o que o
@@ -269,8 +271,8 @@ export function CreateDock() {
               >
                 Criar resumo:
               </p>
-              {/* A ordem na tela é da DIREITA para a esquerda: "Gravar"
-                  encosta no botão, depois "Escrever", depois "Importar". O
+              {/* A ordem na tela é da DIREITA para a esquerda: gravar encosta
+                  no botão, depois escrever, depois importar. O
                   painel cresce para a esquerda a partir do `+`, então o que
                   está mais perto dele é o que o dedo alcança primeiro — e o que
                   mais se faz é gravar.
@@ -283,7 +285,7 @@ export function CreateDock() {
                 <CreateOption
                   href="/importar"
                   icon={<YoutubeIcon className="size-5" />}
-                  label="Importar"
+                  label="Importar do YouTube"
                   tourId="create-import"
                   onNavigate={() => setTapped(false)}
                 />
@@ -293,7 +295,7 @@ export function CreateDock() {
                 <CreateOption
                   href="/escrever"
                   icon={<PenLine className="size-5" strokeWidth={1.5} />}
-                  label="Escrever"
+                  label="Escrever resumo"
                   tourId="create-write"
                   onNavigate={() => setTapped(false)}
                 />
@@ -306,7 +308,7 @@ export function CreateDock() {
                 <CreateOption
                   href="/recording?auto=1"
                   icon={<MicGlyph className="size-5" />}
-                  label="Gravar"
+                  label="Resumo automático"
                   accent
                   tourId="create-record"
                   onNavigate={() => setTapped(false)}
@@ -362,20 +364,16 @@ export function CreateDock() {
  * Uma porta de criação: ícone num quadrado e o nome embaixo, como nos prints
  * em `public/prints/new-release/`.
  *
- * **Os três nomes são UM VERBO cada: Gravar, Escrever, Importar.** Eram
- * "Resumo mágico", "Escrever resumo" e "Importar do YouTube" — três rótulos
- * que diziam a mesma palavra três vezes e obrigavam a LER o painel para
- * escolher. Com um verbo só, a diferença entre as opções está na primeira
- * sílaba de cada uma, e o ícone acima já disse o resto. O que se perdeu
- * ("mágico", "do YouTube") era ou promessa de marketing dentro de um menu, ou
- * informação que o glifo do YouTube dá melhor que o texto.
+ * **O nome diz o RESULTADO: "Resumo automático", "Escrever resumo", "Importar
+ * do YouTube".** Ele já foi um verbo só — Gravar, Escrever, Importar —, que
+ * cabia numa linha e deixava a diferença na primeira sílaba, mas dizia o gesto
+ * em vez do que sai dele.
  *
- * A largura continua FIXA em 70px, e agora a razão é outra: os nomes cabem
- * todos numa linha, então o que ela garante são três alvos do MESMO tamanho.
- * Ao conteúdo, "Importar" seria visivelmente mais largo que "Gravar", e três
- * alvos de tamanhos diferentes lado a lado não leem como três opções da mesma
- * lista. O `break-words` e o `leading-tight` ficam: são o seguro de uma
- * palavra longa não vazar se um nome mudar.
+ * A largura é FIXA em 70px, e é ela que garante três alvos do MESMO tamanho:
+ * ao conteúdo, os nomes têm comprimentos diferentes, e três alvos de larguras
+ * diferentes lado a lado não leem como três opções da mesma lista. É o
+ * `break-words` com o `leading-tight` que faz os nomes caberem ali — os três
+ * quebram em duas linhas, que é o que mantém a fileira com uma altura só.
  *
  * O toque se anuncia CLAREANDO o quadrado do ícone (`brightness`), e não
  * pintando o fundo do alvo: o quadrado é `--v2-card-hover`, a mesma cor que um
