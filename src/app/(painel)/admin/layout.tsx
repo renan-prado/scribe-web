@@ -5,7 +5,6 @@ import { notFound } from "next/navigation";
 import type { ReactNode } from "react";
 import { PageTransition } from "@/components/PageTransition";
 import { Button } from "@/components/ui/button";
-import { Separator } from "@/components/ui/separator";
 import { SidebarInset, SidebarProvider } from "@/components/ui/sidebar";
 import { AdminBreadcrumbs } from "@/features/admin/components/AdminBreadcrumbs";
 import { AdminMenu } from "@/features/admin/components/AdminMenu";
@@ -76,16 +75,13 @@ export default async function AdminLayout({ children }: { children: ReactNode })
           inset é ZERO e a conta devolve os 56px de sempre.
         */}
         <header className="sticky top-0 z-30 flex h-[calc(var(--header-height)+env(safe-area-inset-top))] shrink-0 items-center gap-1 border-b bg-background/85 px-3 pt-[env(safe-area-inset-top)] backdrop-blur-md sm:gap-2 sm:px-4">
-          {/* O menu do painel: as oito áreas em grade, abrindo a partir do
-              hambúrguer, no celular e no desktop. Ele era o `SidebarTrigger`,
-              que respondia duas coisas diferentes conforme a largura — gaveta
-              no telefone, recolher a lateral no monitor. A lateral continua no
-              desktop; quem a recolhe agora é o `SidebarRail`. Ver `AdminMenu`. */}
-          <AdminMenu />
-          {/* `data-vertical:`, e não `data-[orientation=vertical]:`, o
-              Separator do base-ui emite o atributo `data-vertical`, então o
-              seletor antigo nunca casava e o traço ia de topo a base da faixa. */}
-          <Separator orientation="vertical" className="mx-2 hidden data-vertical:h-4 sm:block" />
+          {/* A faixa começa no BREADCRUMB, e não num botão de menu. Ela abria com
+              um `SidebarTrigger` encostado no canto superior esquerdo — o ponto
+              mais distante do polegar numa tela de telefone, e o único caminho
+              para as outras sete telas. Ele virou o `AdminMenu`, flutuando no
+              canto de baixo à direita, e o `Separator` que o dividia do
+              breadcrumb foi junto: sem nada à esquerda, um traço vertical ali é
+              uma marca solta. */}
           <div className="min-w-0 flex-1">
             <AdminBreadcrumbs />
           </div>
@@ -111,13 +107,26 @@ export default async function AdminLayout({ children }: { children: ReactNode })
         {/* `<div>`, não `<main>`: o `SidebarInset` JÁ é o <main> da página.
             É `PageTransition` para o fade de troca de rota ficar DENTRO da
             moldura, sidebar e faixa do topo não podem piscar junto. */}
-        {/* O ritmo do `dashboard-01`: `gap-4 py-4` que abre para `gap-6 py-6`
+        {/* O ritmo do `dashboard-01`: `gap-4 pt-4` que abre para `gap-6 pt-6`
             em `md`, e `px-4 lg:px-6` na horizontal. O `max-w-[1600px]` não é
             do bloco, e fica: sem ele uma tabela de finanças se estica por um
-            monitor inteiro e a linha deixa de ser lida de ponta a ponta. */}
-        <PageTransition className="mx-auto flex w-full max-w-[1600px] flex-1 flex-col gap-4 px-4 py-4 md:gap-6 md:py-6 lg:px-6">
+            monitor inteiro e a linha deixa de ser lida de ponta a ponta.
+
+            Embaixo o ritmo não vale, e por isso o `py` do bloco virou `pt`: a
+            folga de baixo é a altura do botão flutuante mais o recorte do
+            aparelho, senão a última linha de uma tabela para debaixo dele e não
+            há rolagem que a traga inteira para a luz. É o mesmo pagamento que a
+            Biblioteca faz pelo `+` do `CreateDock`, e aqui ele vale em TODA
+            largura, porque o `AdminMenu` não some no desktop. */}
+        <PageTransition className="mx-auto flex w-full max-w-[1600px] flex-1 flex-col gap-4 px-4 pt-4 pb-[calc(6rem+env(safe-area-inset-bottom))] md:gap-6 md:pt-6 lg:px-6">
           {children}
         </PageTransition>
+        {/* O menu do painel: as oito áreas em grade, a partir de um botão
+            flutuante no canto de baixo à direita, como o `+` da Biblioteca. Ele
+            mora FORA do `PageTransition` de propósito — é moldura, e piscar no
+            fade de troca de rota o faria sumir justamente enquanto a tela que
+            ele abriu está chegando. Ver `AdminMenu`. */}
+        <AdminMenu />
       </SidebarInset>
     </SidebarProvider>
   );
