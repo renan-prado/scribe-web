@@ -4,6 +4,7 @@ import { Flag, Heading1, Heading2, Highlighter, Lightbulb, Pilcrow, Quote } from
 import type { ReactNode } from "react";
 import { BookGlyph } from "@/components/icons/BookGlyph";
 import type { WrittenBlock, WrittenBlockType } from "@/lib/domain/summary";
+import { ScribaMark } from "@/shared/brand";
 
 /**
  * O menu do `+`: o que a pessoa pode acrescentar, com o nome que ela usa.
@@ -22,7 +23,12 @@ import type { WrittenBlock, WrittenBlockType } from "@/lib/domain/summary";
  * A ORDEM é a de uso, e não a do schema: parágrafo primeiro, porque é o que se
  * acrescenta nove vezes em cada dez, e os dois títulos logo atrás. A passagem
  * bíblica vem antes das citações porque este é um produto de sermão. A
- * conclusão é a última porque é a última.
+ * conclusão é a última porque é a última — e a ideia central (`LEAD_OPTION`,
+ * que não mora nesta lista porque não é bloco) é a primeira pela mesma razão.
+ *
+ * **Essas duas são ÚNICAS, e o menu é quem diz isso**: postas uma vez, elas
+ * somem da fileira, e o que sobra na tela é o cartão já criado. Ver
+ * `menuOptions` no `Composer`.
  */
 export type BlockOption = {
   type: WrittenBlockType;
@@ -30,6 +36,47 @@ export type BlockOption = {
   /** Uma linha explicando para que serve, no menu. */
   hint: string;
   icon: ReactNode;
+};
+
+/**
+ * O que o menu do `+` pode acrescentar: um bloco, ou a IDEIA CENTRAL, que não
+ * é um bloco.
+ *
+ * Ela é o `shortSummary` do payload — a frase que aparece no cartão da
+ * Biblioteca e na busca —, e por isso não tem tipo no `SummaryBlockSchema`. Ela
+ * entrou no menu mesmo assim porque, do lado de quem escreve, ela é mais uma
+ * coisa que se ACRESCENTA ao texto, e ter uma pastilha própria no topo da folha
+ * fazia a mesma pergunta ("o que mais cabe aqui?") ser respondida em dois
+ * lugares diferentes. Quem trata a diferença é o `Composer`: a ideia central
+ * abre o campo do cabeçalho em vez de inserir um bloco na posição do `+`.
+ */
+export type BlockPick = WrittenBlockType | "leadIdea";
+
+export type MenuOption = {
+  type: BlockPick;
+  label: string;
+  hint: string;
+  icon: ReactNode;
+};
+
+/**
+ * A ideia central no menu do `+`.
+ *
+ * **Ela é a PRIMEIRA da lista porque é o primeiro bloco do texto**, o espelho
+ * da conclusão, que é a última porque é a última. É a única das opções que não
+ * obedece à ordem de uso, e a razão é que ela e a conclusão são as duas únicas
+ * com posição FIXA: o menu as põe nas pontas para que a lista de opções tenha a
+ * forma do documento que ela monta.
+ *
+ * O glifo é a marca do Scriba, e não um ícone de lucide: é exatamente o que
+ * está na pastilha do cartão que esta opção cria, na edição e na leitura. Um
+ * segundo símbolo aqui faria a pessoa escolher uma coisa e ver outra aparecer.
+ */
+export const LEAD_OPTION: MenuOption = {
+  type: "leadIdea",
+  label: "Ideia central",
+  hint: "Em uma frase, do que trata o texto. Abre a leitura.",
+  icon: <ScribaMark className="size-3" />,
 };
 
 export const BLOCK_OPTIONS: BlockOption[] = [

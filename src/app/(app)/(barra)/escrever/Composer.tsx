@@ -7,12 +7,19 @@ import { BookGlyph } from "@/components/icons/BookGlyph";
 import { PassageVerses } from "@/features/session/components/PassageVerses";
 import { useUnloadGuard } from "@/features/session/hooks/useUnloadGuard";
 import { parseVerseReference } from "@/lib/domain/reference";
-import type { WrittenBlock, WrittenBlockType, WrittenSummary } from "@/lib/domain/summary";
+import type { WrittenBlock, WrittenSummary } from "@/lib/domain/summary";
 import { WRITTEN_LIMITS } from "@/lib/domain/summary";
 import { cn } from "@/lib/utils";
 import { ScribaMark } from "@/shared/brand";
 import { AutoTextarea } from "./AutoTextarea";
-import { BLOCK_OPTIONS, BLOCK_PLACEHOLDERS, emptyBlock } from "./blocks";
+import {
+  BLOCK_OPTIONS,
+  BLOCK_PLACEHOLDERS,
+  type BlockPick,
+  emptyBlock,
+  LEAD_OPTION,
+  type MenuOption,
+} from "./blocks";
 import { PassagePicker } from "./PassagePicker";
 import { type SaveStatus, useWrittenDraft } from "./useWrittenDraft";
 
@@ -131,10 +138,17 @@ export function Composer({ id, exists = false, initial, header }: Props) {
 
   /**
    * A ideia central é OPCIONAL, e por isso o campo não nasce na tela: ela
-   * aparece quando a pessoa pede, por uma pastilha, e sai por um botão de
+   * aparece quando a pessoa pede, pelo menu do `+`, e sai por um botão de
    * remover. Um campo fixo em cima de uma folha em branco é uma pergunta feita
    * antes da hora — quem abre o editor quer escrever o texto, e resumir em uma
    * frase é coisa que só se consegue fazer DEPOIS.
+   *
+   * **O pedido vinha de uma pastilha própria, no topo da folha, e ela saiu.**
+   * Havia dois lugares respondendo "o que mais cabe neste texto?" — aquela
+   * pastilha e o menu do `+` —, e o que decidia em qual deles uma coisa
+   * aparecia era um detalhe de implementação (ser ou não ser um bloco do
+   * schema) que ninguém que escreve tem como saber. No menu, ela é a primeira
+   * opção, do mesmo jeito que a conclusão é a última.
    *
    * O estado é só o "pedi para abrir": o que manda é o texto. Um documento que
    * já tem `shortSummary` (salvo antes, ou vindo do rascunho do aparelho, que
@@ -187,30 +201,84 @@ export function Composer({ id, exists = false, initial, header }: Props) {
     setDoc((prev) => ({ ...prev, blocks: next(prev.blocks) }));
   }
 
+  /**
+   * A CONCLUSÃO é única e é a última, e estas três linhas são as duas coisas.
+   *
+   * Única: enquanto existir uma, ela sai do menu do `+` (ver `menuOptions`) —
+   * do mesmo jeito que a ideia central sai enquanto o campo dela estiver na
+   * tela. Duas conclusões num texto não são um recurso, são um erro de
+   * digitação que ninguém desfaz sem ir procurar a segunda.
+   *
+   * Última: o índice dela é o TETO de toda inserção. Sem isso, a linha em
+   * branco do rodapé — que insere no fim — escreveria parágrafos DEPOIS do
+   * fecho, e o menu do `+` daquela linha ofereceria posição abaixo dele.
+   */
+  const conclusionAt = doc.blocks.findIndex((b) => b.type === "conclusion");
+
   function insertAt(index: number, block: WrittenBlock) {
+    // A conclusão vai sempre para o fim; todo o resto para antes dela.
+    const at =
+      block.type === "conclusion"
+        ? doc.blocks.length
+        : conclusionAt >= 0 && index > conclusionAt
+          ? conclusionAt
+          : index;
     patchBlocks((blocks) => {
       const copy = blocks.slice();
-      copy.splice(index, 0, block);
+      copy.splice(at, 0, block);
       return copy;
     });
     setAdderAt(null);
-    setFocusIndex(index);
-    setActive(index);
+    setFocusIndex(at);
+    setActive(at);
   }
 
-  function addOfType(index: number, type: WrittenBlockType) {
+  /**
+   * Abrir o campo da ideia central e pôr o cursor nele.
+   *
+   * O foco é pedido no quadro SEGUINTE: a `textarea` não existe no instante do
+   * clique, e o foco iria para o nada.
+   */
+  function askLead() {
+    setAdderAt(null);
+    setLeadAsked(true);
+    requestAnimationFrame(() => leadRef.current?.focus());
+  }
+
+  function addOfType(index: number, pick: BlockPick) {
+    // A ideia central não é bloco: ela é o `shortSummary`, e o que o menu faz
+    // é abrir o campo dela lá em cima, na posição fixa que ela tem. Ver
+    // `LEAD_OPTION`.
+    if (pick === "leadIdea") {
+      askLead();
+      return;
+    }
     // A passagem não tem o que digitar: ela nasce do seletor, e sem referência
     // não haveria bloco nenhum para mostrar. Por isso o `+` abre o seletor em
     // vez de inserir um bloco vazio que ficaria na tela pedindo um segundo
     // toque.
-    if (type === "bibleQuote") {
+    if (pick === "bibleQuote") {
       setAdderAt(null);
       setPendingIndex(index);
       setPickerFor(-1);
       return;
     }
-    insertAt(index, emptyBlock(type));
+    insertAt(index, emptyBlock(pick));
   }
+
+  /**
+   * O que o menu do `+` oferece AGORA.
+   *
+   * As duas pontas do documento são únicas e desaparecem quando usadas: a
+   * ideia central enquanto o campo dela estiver na tela, a conclusão enquanto
+   * houver uma. É a mesma regra por dois caminhos, porque uma é `shortSummary`
+   * e a outra é bloco — e do lado de quem escreve elas são a mesma coisa, o
+   * cartão que abre e o que fecha.
+   */
+  const menuOptions: MenuOption[] = [
+    ...(showLead ? [] : [LEAD_OPTION]),
+    ...BLOCK_OPTIONS.filter((o) => o.type !== "conclusion" || conclusionAt < 0),
+  ];
 
   const [pendingIndex, setPendingIndex] = useState(0);
 
@@ -319,12 +387,37 @@ export function Composer({ id, exists = false, initial, header }: Props) {
             placeholder="Título"
             className="font-heading text-2xl font-semibold leading-tight tracking-tight text-scriba-ink-strong sm:text-3xl md:text-4xl"
           />
+        </header>
 
-          {/* A "ideia central" NÃO é um bloco, e por isso não está no menu do
-              `+`: ela é o `shortSummary` do payload, a frase que aparece no
-              cartão da Biblioteca e na busca. Quando existe, vem aqui em cima
-              com a roupa que vai vestir na leitura (`LeadIdea`), para que a
-              pessoa veja onde aquilo vai parar. */}
+        {/* O VÃO é do contêiner, e nada mais mora dentro dele.
+
+            Ele já foi de 56px para abrigar um disco de `+` que aparecia entre
+            cada dois blocos. Eram dois discos por bloco, acendendo e apagando ao
+            passar do mouse, e o preço de manter cada um longe do vizinho era um
+            vão duas vezes maior que o da leitura. Hoje o `+` mora na pílula do
+            bloco, junto de mover e excluir, e o vão voltou a ser só espaço: 32px,
+            contra os 28 da leitura.
+
+            **A linha do cabeçalho é o PRIMEIRO item desta lista**, e não uma irmã
+            dela lá em cima: assim o espaço abaixo dela é decidido por quem sabe o
+            que vem depois, e não pelo `gap` do `<main>`. */}
+        <div className="flex flex-col gap-8">
+          <div className="h-px w-full bg-scriba-hairline" />
+
+          {/* A IDEIA CENTRAL, quando existe, é o primeiro item do texto.
+              Ela não é um bloco — é o `shortSummary` do payload, a frase que
+              aparece no cartão da Biblioteca e na busca —, e por isso não tem
+              pílula de mover nem de excluir: a posição dela é fixa, e quem a
+              tira é o `×` do próprio cartão. Está aqui dentro, e não no
+              cabeçalho onde morava, porque é aqui que ela vai estar na LEITURA
+              (ver `SummaryView`): o editor promete que o que se escreve é o que
+              se lê, e a única frase que abria o texto num lugar e aparecia em
+              outro era esta.
+
+              A roupa é a do `LeadIdea`, com uma diferença que não é estética:
+              sem a animação do gradiente. Lá ela diz "isto a máquina escreveu";
+              aqui quem escreve é a pessoa, e um cartão pulsando sob o cursor é
+              movimento embaixo do texto que está sendo digitado. */}
           {showLead ? (
             <section className="flex flex-col gap-2 rounded-[26px] bg-[image:var(--session-surface-quote)] bg-[size:200%_100%] p-5">
               <div className="flex items-center justify-between gap-3">
@@ -361,37 +454,7 @@ export function Composer({ id, exists = false, initial, header }: Props) {
                 className="text-pretty text-[15px] font-light leading-[1.7] text-session-verse-text"
               />
             </section>
-          ) : (
-            <button
-              type="button"
-              onClick={() => {
-                setLeadAsked(true);
-                // No próximo quadro: a `textarea` não existe no momento do
-                // clique, e o foco iria para o nada.
-                requestAnimationFrame(() => leadRef.current?.focus());
-              }}
-              className="inline-flex w-fit items-center gap-1.5 rounded-full border border-scriba-hairline px-3 py-1.5 font-medium text-scriba-ink-mute text-xs transition-colors hover:bg-scriba-blue-soft/60 hover:text-scriba-blue-ink focus-visible:ring-2 focus-visible:ring-ring/40 focus-visible:outline-none"
-            >
-              <Plus className="size-3.5" />
-              Adicionar ideia central
-            </button>
-          )}
-        </header>
-
-        {/* O VÃO é do contêiner, e nada mais mora dentro dele.
-
-            Ele já foi de 56px para abrigar um disco de `+` que aparecia entre
-            cada dois blocos. Eram dois discos por bloco, acendendo e apagando ao
-            passar do mouse, e o preço de manter cada um longe do vizinho era um
-            vão duas vezes maior que o da leitura. Hoje o `+` mora na pílula do
-            bloco, junto de mover e excluir, e o vão voltou a ser só espaço: 32px,
-            contra os 28 da leitura.
-
-            **A linha do cabeçalho é o PRIMEIRO item desta lista**, e não uma irmã
-            dela lá em cima: assim o espaço abaixo dela é decidido por quem sabe o
-            que vem depois, e não pelo `gap` do `<main>`. */}
-        <div className="flex flex-col gap-8">
-          <div className="h-px w-full bg-scriba-hairline" />
+          ) : null}
 
           {doc.blocks.map((block, i) => {
             // Um parágrafo VAZIO é uma linha em branco esperando, e é o momento
@@ -449,14 +512,28 @@ export function Composer({ id, exists = false, initial, header }: Props) {
                   hidden={adderAt !== null}
                   shown={active === i}
                   onAdd={() => setAdderAt(i)}
-                  onUp={i > 0 ? () => moveBy(i, -1) : undefined}
-                  onDown={i < doc.blocks.length - 1 ? () => moveBy(i, 1) : undefined}
+                  /* A CONCLUSÃO não se move, e nada se move para depois dela:
+                     ela é o fecho, e as setas são o único caminho que restaria
+                     para desmanchar a posição que a inserção garante. Os
+                     botões ficam ali, desabilitados (o `ControlButton` já
+                     desenha isso a 30% quando não recebe `onClick`) — sumir
+                     com eles faria a pílula deste bloco ter uma largura
+                     diferente da dos vizinhos. */
+                  onUp={i > 0 && block.type !== "conclusion" ? () => moveBy(i, -1) : undefined}
+                  onDown={
+                    i < doc.blocks.length - 1 &&
+                    block.type !== "conclusion" &&
+                    conclusionAt !== i + 1
+                      ? () => moveBy(i, 1)
+                      : undefined
+                  }
                   onDelete={() => removeAt(i)}
                 />
                 {adderAt === i ? (
                   <BlockMenu
+                    options={menuOptions}
                     onClose={() => setAdderAt(null)}
-                    onPick={(type) => addOfType(i, type)}
+                    onPick={(pick) => addOfType(i, pick)}
                   />
                 ) : null}
                 {/* O bloco em foco POUSA NUMA SUPERFÍCIE, e é assim que se vê
@@ -530,8 +607,9 @@ export function Composer({ id, exists = false, initial, header }: Props) {
             <div className="relative">
               {adderAt === doc.blocks.length ? (
                 <BlockMenu
+                  options={menuOptions}
                   onClose={() => setAdderAt(null)}
-                  onPick={(type) => addOfType(doc.blocks.length, type)}
+                  onPick={(pick) => addOfType(doc.blocks.length, pick)}
                 />
               ) : null}
               {/* A MESMA caixa dos blocos, para a linha do fim acender igual
@@ -675,11 +753,14 @@ function DiscButton({
  * sobre o documento, e ela é a própria linha trocando de conteúdo.
  */
 function BlockMenu({
+  options,
   onClose,
   onPick,
 }: {
+  /** O que cabe AGORA: as duas opções únicas saem quando usadas. Ver `menuOptions`. */
+  options: MenuOption[];
   onClose: () => void;
-  onPick: (type: WrittenBlockType) => void;
+  onPick: (pick: BlockPick) => void;
 }) {
   return (
     <div
@@ -704,7 +785,7 @@ function BlockMenu({
         </DiscButton>
       </div>
       <div className="-my-0.5 flex min-w-0 flex-1 flex-wrap gap-1.5">
-        {BLOCK_OPTIONS.map((o) => (
+        {options.map((o) => (
           <button
             key={o.type}
             type="button"
@@ -1147,18 +1228,30 @@ function BlockBody({
 /**
  * O que está salvo, e ONDE.
  *
- * "Salvo neste aparelho" não é um estado de erro disfarçado: enquanto a pausa
- * de 1,8s não termina, o texto realmente só existe no IndexedDB, e dizer
- * "Salvo" ali seria prometer uma coisa que ainda não aconteceu. Quando o envio
- * falha, a frase muda de tom mas o fato continua o mesmo — o trabalho está
- * guardado, e é isso que a pessoa precisa saber antes de fechar a aba.
+ * **São DOIS estados bons, e não quatro**: "Salvo" (o banco já tem esta
+ * versão) e "Sync" (o texto está no aparelho e a subida está a caminho). Eram
+ * "Salvando…" e "Salvo neste aparelho", duas frases para o mesmo fato — que há
+ * trabalho por sincronizar —, e a segunda ainda gastava três palavras para
+ * dizer, num canto de 10px, uma coisa que quem escreve não tem o que fazer a
+ * respeito. A distinção que importa é essa: já subiu, ou ainda vai subir.
+ *
+ * **A bolinha E O TEXTO são verdes nos dois**, e isso é a correção de um defeito
+ * de cor, não uma escolha nova: a bolinha usava `--scriba-mint-strong`, que na
+ * paleta escura é um CINZA (#B3B4BA), e o texto usava `--scriba-mint-dark`, que
+ * é BRANCO (#F5F5F5) — o chip dizia "Salvo" num cartão verde sem nada verde
+ * dentro, que é exatamente o desenho de um indicador desligado. Os dois agora
+ * são `--scriba-mint-accent`, o mesmo verde que o resto do app usa para "deu
+ * certo", e ele dá 9,3:1 sobre o `--scriba-mint` (a tinta de família se mede
+ * sobre a superfície DA FAMÍLIA, ver `src/shared/AGENTS.md`).
  *
  * **A falha tem DUAS frases, e a diferença não é estilo.** O chip dizia "sem
  * conexão" para qualquer envio que não desse certo, e em produção o envio
  * falhava com o wi-fi perfeito (o banco recusava o modo `manual`): a tela
  * culpava a internet de quem estava escrevendo por um erro que era nosso.
  * Quem sabe se havia rede é o `navigator.onLine` no instante da falha, ver
- * `useWrittenDraft`.
+ * `useWrittenDraft`. Em ambas o fato continua o mesmo — o trabalho está
+ * guardado no aparelho —, e é isso que a pessoa precisa saber antes de fechar
+ * a aba.
  *
  * **As cores do estado de erro são o VINHO com a tinta rosada**, o par que o
  * resto do app usa (ver o `ControlButton` da lixeira e `src/shared/AGENTS.md`).
@@ -1167,37 +1260,27 @@ function BlockBody({
  * tela era o único texto ilegível dela.
  */
 function StatusChip({ status, offline }: { status: SaveStatus; offline: boolean }) {
-  const label =
-    status === "synced"
+  const failed = status === "error";
+  const label = failed
+    ? offline
+      ? "Sem internet · salvo neste aparelho"
+      : "Erro ao salvar · está neste aparelho"
+    : status === "synced"
       ? "Salvo"
-      : status === "saving"
-        ? "Salvando…"
-        : status === "error"
-          ? offline
-            ? "Sem internet · salvo neste aparelho"
-            : "Não consegui salvar · está neste aparelho"
-          : "Salvo neste aparelho";
+      : "Sync";
 
   return (
     <span
       role="status"
       className={cn(
         "inline-flex items-center gap-1.5 rounded-full px-2.5 py-1 font-semibold text-[10px] uppercase tracking-wider",
-        status === "synced"
-          ? "bg-scriba-mint text-scriba-mint-dark"
-          : status === "error"
-            ? "bg-scriba-rose text-scriba-rose-ink"
-            : "bg-scriba-ink-mute/10 text-scriba-ink-soft"
+        failed ? "bg-scriba-rose text-scriba-rose-ink" : "bg-scriba-mint text-scriba-mint-accent"
       )}
     >
       <span
         className={cn(
           "size-1.5 rounded-full",
-          status === "synced"
-            ? "bg-scriba-mint-strong"
-            : status === "error"
-              ? "bg-scriba-rose-accent"
-              : "bg-scriba-ink-mute"
+          failed ? "bg-scriba-rose-accent" : "bg-scriba-mint-accent"
         )}
       />
       {label}
