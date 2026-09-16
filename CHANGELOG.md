@@ -9,6 +9,23 @@ Gerado por `npm run release` a partir dos Conventional Commits. `feat` sobe o
 minor; o resto sobe o patch. Não edite à mão, a próxima execução escreve por
 cima do topo do arquivo.
 
+## 0.33.0, 2026-09-16, desde v0.32.1
+
+### Novidades
+
+- **summary:** o resumo gerado passa a ser editavel, como o escrito a mao (`fbbf1b6`)
+- **admin:** o hamburguer abre as areas em grade, nas duas larguras (`adc34d7`)
+
+### Correções
+
+- **painel:** a barra de status do Android para de cobrir o cabecalho (`5cbbfb7`)
+- **barra:** a barra da tela para de piscar, e o perfil ganha o voltar (`be77504`)
+
+### Outros
+
+- **admin:** o menu vira botao flutuante no canto de baixo a direita (`1efebed`)
+- **biblioteca:** as portas do dock voltam a dizer o resultado (`aa317d9`)
+
 ## 0.32.1, 2026-09-16, desde v0.32.0
 
 ### Correções
