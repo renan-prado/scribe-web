@@ -158,8 +158,10 @@ antes de cobrar.
 **Nada de cor literal em `className`.** Toda cor vem de token declarado em
 `src/app/globals.css`, ver `src/shared/AGENTS.md`.
 
-**O ícone `Sparkles` do lucide-react é PROIBIDO.** Para um acento decorativo,
-use o hexágono amarelo já usado no app (ver `src/shared/AGENTS.md`).
+**O ícone `Sparkles` do lucide-react é PROIBIDO como acento decorativo.** Para
+isso, use o hexágono amarelo já usado no app. Há UMA exceção viva, o selo "com
+IA" do `CreateDock`, onde ele acompanha um texto em vez de ser o enfeite; ver
+`src/shared/AGENTS.md` antes de abrir a segunda.
 
 ## Comandos
 

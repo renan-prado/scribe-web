@@ -1,6 +1,6 @@
 "use client";
 
-import { PenLine, Plus } from "lucide-react";
+import { PenLine, Plus, Sparkles } from "lucide-react";
 import { useEffect, useRef, useState } from "react";
 import { MicGlyph } from "@/components/icons/MicGlyph";
 import { YoutubeIcon } from "@/components/icons/YoutubeIcon";
@@ -20,9 +20,10 @@ import { cn } from "@/lib/utils";
  * caem — o cursor chega a qualquer canto pelo mesmo custo, e sobra vão de sobra
  * à direita do título. Por isso tudo aqui é `md:hidden` e cada chip de lá é
  * `hidden md:inline-flex`: nunca os dois na mesma largura, nunca nenhum dos
- * dois. Lá eles também não são vermelhos — o quadrado `--v2-rec` do "Gravar"
- * deste painel só funciona porque são três quadrados iguais abertos no vazio;
- * numa barra de controles, o mesmo vermelho leria como alerta.
+ * dois. Lá eles também não têm cor — o quadrado `--v2-accent` do "Resumo
+ * automático" deste painel só funciona porque são três quadrados iguais
+ * abertos no vazio; numa barra de controles, um disco colorido no meio de
+ * quatro cinzas leria como alerta.
  *
  * **Era um microfone sozinho, e por isso o menu tinha de existir.** Gravar é um
  * dos três jeitos de uma sessão nascer — os outros dois, escrever e importar do
@@ -299,12 +300,14 @@ export function CreateDock() {
                   tourId="create-write"
                   onNavigate={() => setTapped(false)}
                 />
-                {/* A ÚNICA das três que é vermelha. O vermelho aqui é o mesmo
-                  `--v2-rec` do microfone e do ponto que pisca durante a
-                  pregação — no `+` ele prometia a porta errada (ver o cabeçalho
-                  do componente), mas ESTA porta é justamente a que grava, então
-                  ele diz a verdade. E é o que faz o olho cair na opção mais
-                  usada sem ter de ler os três nomes. */}
+                {/* A ÚNICA das três com cor (`--v2-accent`), e ela ANDA: o
+                  vermelho do produto viajando até um vinho fundo e de volta, 6s
+                  por volta (ver `--v2-accent-sheen`). O vermelho é o mesmo do
+                  microfone e do ponto que pisca durante a pregação, e aqui ele
+                  diz a verdade — esta é justamente a porta que grava; o que o
+                  movimento acrescenta é que dali sai um resumo pronto, sem
+                  pedir um adjetivo na tela. E a cor continua sendo o que faz o
+                  olho cair na opção mais usada sem ler os três nomes. */}
                 <CreateOption
                   href="/recording?auto=1"
                   icon={<MicGlyph className="size-5" />}
@@ -380,16 +383,25 @@ export function CreateDock() {
  * fundo de hover teria, e os dois juntos apagariam o quadrado exatamente no
  * momento em que o dedo está em cima dele.
  *
- * **`accent` pinta o quadrado de vermelho, e a COR é o único destaque que ele
- * tem.** Uma das três portas é a que quase todo mundo quer, e num painel de
- * três quadrados iguais ela só se acha lendo os nomes.
+ * **`accent` pinta o quadrado com o `--v2-accent`, e a COR é o único destaque
+ * que ele tem.** Uma das três portas é a que quase todo mundo quer, e num
+ * painel de três quadrados iguais ela só se acha lendo os nomes. O gradiente
+ * ANDA (`animate-accent-sheen`, as mesmas keyframes dos cartões que o Scriba
+ * escreve, na metade do tempo): é o que diz, sem adjetivo, que o resumo dali
+ * sai pronto.
  *
- * Ele já teve um enfeite pendurado no canto — um sparkles amarelo, e antes
- * dele um hexágono. Os dois foram tirados, e a razão é a mesma: num quadrado
- * de 48px que JÁ é o único colorido da fileira, um segundo objeto em cima dele
- * não acrescenta destaque, só divide o olhar entre duas coisas pequenas. A cor
- * sozinha faz o trabalho inteiro. Se um acento voltar a ser preciso aqui,
- * repare que ele obriga o quadrado a virar `relative`.
+ * **E ele leva o selo "IA" no canto**, amarelo, pendurado na borda de cima
+ * do quadrado. O canto já teve um enfeite duas vezes — um sparkles solto, e
+ * antes dele um hexágono — e as duas saíram pela mesma razão: num quadrado de
+ * 48px que JÁ é o único colorido da fileira, um segundo OBJETO não acrescenta
+ * destaque, só divide o olhar entre duas coisas pequenas.
+ *
+ * O selo é outra coisa, e é por isso que ele fica: aquilo era enfeite, e isto é
+ * uma PALAVRA. A cor diz "esta é a porta principal", e nenhuma cor diz "o
+ * resumo sai pronto, escrito pela máquina" — era o que o "mágico" do nome
+ * antigo tentava dizer, e o que o rótulo "Resumo automático" diz pela metade
+ * ("automático" também descreve um formulário que se preenche sozinho). O
+ * glifo aqui é apoio de um texto, não o acento.
  */
 function CreateOption({
   href,
@@ -426,22 +438,69 @@ function CreateOption({
           transforma a peça de vidro num botão de ícone apertado. */}
       <span
         className={cn(
-          "flex size-12 items-center justify-center rounded-2xl transition",
+          // `relative` por causa do selo "IA", que pousa na borda de cima.
+          "relative flex size-12 items-center justify-center rounded-2xl transition",
           accent
-            ? // O `bg-v2-rec` fica debaixo do gradiente e não é decoração: uma
-              // cor de fundo sempre pinta, uma IMAGEM de fundo pode não chegar
-              // (impressão sem cor de fundo, `forced-colors`), e sem ela o
-              // quadrado seria transparente com um glifo branco em cima.
+            ? // O `bg-v2-accent` fica debaixo do gradiente e não é decoração:
+              // uma cor de fundo sempre pinta, uma IMAGEM de fundo pode não
+              // chegar (impressão sem cor de fundo, `forced-colors`), e sem ela
+              // o quadrado seria transparente com um glifo branco em cima.
               //
-              // O hover é `brightness`, e não a troca para `--v2-rec-hover`:
-              // com gradiente por cima, mudar a cor de fundo não muda nada do
-              // que se vê. O filtro clareia as duas pontas de uma vez e
-              // preserva a queda de luz, que é o ponto dela.
-              "bg-v2-rec bg-[image:var(--v2-rec-sheen)] text-v2-rec-ink group-hover:brightness-110"
+              // O `bg-[size:200%_100%]` com o `animate-accent-sheen` é o MESMO
+              // mecanismo dos cartões que o Scriba escreve (a ideia central, a
+              // conclusão), com as MESMAS keyframes: a cor anda dentro do
+              // quadrado e é isso que dá a ele cara de coisa viva em vez de
+              // adesivo colado no painel. O que muda é a duração, 6s contra os
+              // 12s de lá — num cartão de meia tela 12s é uma maré que se
+              // percebe pelo canto do olho, num quadrado de 48px é uma peça
+              // parada. Só `background-position`, sem filtro, sem custo por
+              // quadro.
+              //
+              // O hover é `brightness`, e não a troca para outro token: com
+              // gradiente por cima, mudar a cor de fundo não muda nada do que
+              // se vê. O filtro clareia as pontas de uma vez e preserva a queda
+              // de luz, que é o ponto dela.
+              "animate-accent-sheen bg-v2-accent bg-[image:var(--v2-accent-sheen)] bg-[size:200%_100%] text-v2-accent-ink group-hover:brightness-110"
             : "bg-v2-glass-tile text-v2-ink group-hover:bg-v2-glass-edge"
         )}
       >
         {icon}
+        {/* O SELO "IA", no canto de cima à direita do quadrado.
+            **Duas letras, e não "com IA".** O selo mede ~34px contra os 48 do
+            quadrado, então ele pousa no CANTO; com a preposição ia a 51px,
+            quase a largura inteira, e um selo tão largo quanto o objeto deixa
+            de ser selo e vira faixa atravessada no topo. O que a palavra a mais
+            acrescentava era gramática, não informação.
+            Ele cresce para a ESQUERDA a partir da borda direita (`-right-2`,
+            sem `left`), e o avanço de 8px para fora do quadrado é o que faz o
+            selo morder a quina em vez de ficar contido dentro dela. Os 8px são
+            o teto útil, não um número redondo: a coluna da opção tem 70px para
+            um quadrado de 48, então sobram 11px de cada lado, e depois deles
+            vêm os 12 do `px-3` do painel — passar disso põe o selo por cima da
+            borda arredondada, que não recorta nada.
+            `aria-hidden` porque a porta já se chama "Resumo automático", e
+            dentro do link o texto do selo viraria o COMEÇO do nome acessível
+            dela ("IA Resumo automático"). Para o olho ele acrescenta; para o
+            leitor de tela, o nome inteiro já estava dito.
+            Amarelo da MOEDA (`--scriba-yellow` com `--scriba-yellow-ink`) e não
+            uma cor nova: é o único amarelo do produto, e o selo fica no mesmo
+            lugar da escala em que ficam as pastilhas de preço. A cor CHAPADA
+            fica debaixo do `--scriba-yellow-sheen` pela razão de sempre: uma
+            cor de fundo sempre pinta, uma imagem de fundo pode não chegar.
+            A queda de luz dele é ESTÁTICA, e é a única coisa nesta peça que não
+            se mexe: o quadrado embaixo já anda (`animate-accent-sheen`), e dois
+            gradientes animados encaixados um no outro num objeto de 48px é
+            movimento demais para o canto de uma tela de lista. O ângulo é o do
+            vidro do painel, 160°. */}
+        {accent ? (
+          <span
+            aria-hidden
+            className="-top-2 -right-2 absolute inline-flex items-center gap-1 whitespace-nowrap rounded-full bg-scriba-yellow bg-[image:var(--scriba-yellow-sheen)] px-1.5 py-[3px] font-semibold text-[9px] text-scriba-yellow-ink leading-none"
+          >
+            <Sparkles className="size-2.5" strokeWidth={2.5} />
+            IA
+          </span>
+        ) : null}
       </span>
       <span className="w-full break-words text-center text-[11px] leading-tight font-medium text-v2-ink-soft">
         {label}

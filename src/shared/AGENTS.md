@@ -317,16 +317,23 @@ Sobre formatos e precedência de `<link>`, ver `src/app/AGENTS.md`.
 
 ## Ícones
 
-**O `Sparkles` do lucide-react é PROIBIDO.** Não importe, não renderize. Para
-um acento decorativo, use o hexágono amarelo já usado no `/admin`:
+**O `Sparkles` do lucide-react é PROIBIDO COMO ACENTO DECORATIVO.** Não o
+pendure num canto para "dar um brilho". Para isso existe o hexágono amarelo já
+usado no `/admin`:
 `clip-path:polygon(50%_0,100%_25%,100%_75%,50%_100%,0_75%,0_25%)` sobre um
 bloco `bg-scriba-yellow`.
 
-A regra foi suspensa por um commit, para o quadrado vermelho do "Gravar" no
-`CreateDock`, e o próprio teste devolveu a resposta: sobre um quadrado de 48px
-que já é o único colorido da fileira, o brilhinho no canto não somava destaque,
-dividia o olhar entre duas coisas pequenas. Quem quiser tentar de novo saiba
-que já se tentou.
+A regra nasceu de um teste: ele foi pendurado no canto do quadrado destacado do
+`CreateDock` (e antes dele um hexágono), e as duas vezes saiu — sobre um
+quadrado de 48px que já é o único colorido da fileira, o brilhinho não somava
+destaque, dividia o olhar entre duas coisas pequenas.
+
+**A exceção é o selo "IA"**, no mesmo canto daquele quadrado, e a diferença
+é o que separa as duas: ali o glifo acompanha uma PALAVRA. Enfeite compete com
+a cor pelo mesmo trabalho (dizer "olhe aqui"), que a cor já faz sozinha; o selo
+faz outro (dizer o que sai dali), que cor nenhuma faz. **Sparkles sem texto ao
+lado continua proibido**, e um segundo selo no app não é uma exceção nova, é a
+regra virando o contrário dela.
 
 ## O cache do TanStack Query SOBREVIVE ao fechamento do app
 

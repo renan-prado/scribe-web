@@ -182,6 +182,11 @@
   --color-v2-rec: var(--v2-rec);
   --color-v2-rec-hover: var(--v2-rec-hover);
   --color-v2-rec-ink: var(--v2-rec-ink);
+  /* O quadrado destacado do dock. Mesma regra das de cima: a cor CHAPADA vira
+     utilitário (ela é o chão que sempre pinta), o gradiente não — ele entra
+     por `bg-[image:var(--v2-accent-sheen)]`. */
+  --color-v2-accent: var(--v2-accent);
+  --color-v2-accent-ink: var(--v2-accent-ink);
   --color-v2-ink: var(--v2-ink);
   --color-v2-ink-soft: var(--v2-ink-soft);
   --color-v2-ink-mute: var(--v2-ink-mute);
@@ -325,6 +330,24 @@
   --scriba-green-body: #9A9BA2;
   --scriba-yellow: #F8C64B;
   --scriba-yellow-hover: #FFD469;
+  /* O MESMO amarelo com uma queda de luz, para quando ele cobre uma superfície
+     em vez de pintar um glifo — hoje, o selo "IA" do `CreateDock`.
+
+     É o irmão do `--v2-rec-sheen`, e existe pela mesma razão: uma pastilha de
+     cor chapada ao lado de peças de vidro curvo lê como adesivo colado por
+     cima delas. **O ângulo é 160°, o do `--v2-glass-sheen`**, porque é a luz
+     daquele painel — duas peças vizinhas iluminadas de cantos diferentes é o
+     tipo de coisa que ninguém sabe nomear mas todo mundo vê.
+
+     A distância entre as pontas é curta (~25% de luminosidade, mesmo matiz): o
+     bastante para o olho ler volume, pouco para ler "degradê". E o piso é a
+     ponta ESCURA contra `--scriba-yellow-ink`, que dá 4,9:1 — o texto atravessa
+     a pastilha inteira, então quem manda no contraste é o pior ponto dela, não
+     a média.
+
+     GRADIENTE entra por `bg-[image:var(--scriba-yellow-sheen)]`, não vira
+     utilitário de cor, mesma regra do `--v2-rec-sheen` e do `--v2-dock-fade`. */
+  --scriba-yellow-sheen: linear-gradient(160deg, #FCD166 0%, #F8C64B 48%, #E9B640 100%);
   /* As quatro famílias de tile, agora indistinguíveis por cor. */
   --scriba-mint: #1F2B24;
   --scriba-mint-ink: #F5F5F5;
@@ -571,6 +594,45 @@
      peças ficam lado a lado no painel, e luzes vindo de cantos diferentes na
      mesma linha é o tipo de coisa que ninguém sabe nomear mas todo mundo vê. */
   --v2-rec-sheen: linear-gradient(160deg, #D83E36 0%, #C0352D 58%, #B22F28 100%);
+  /* O QUADRADO DESTACADO do painel do `+`: hoje é o "Resumo automático".
+     **O NOME não diz a cor, e isso é de propósito.** Ele já foi o `--v2-rec`
+     chapado e já foi um roxo→azul de IA; a pergunta "que cor melhor anuncia a
+     porta principal?" está em aberto, e um token chamado pela cor obrigaria a
+     renomear o arquivo inteiro a cada tentativa. `accent` diz o PAPEL: é o
+     único quadrado colorido da fileira, e é o que faz o olho cair na opção mais
+     usada sem ler os três nomes.
+     A CHAPADA vem primeiro e não é decoração: uma cor de fundo sempre pinta,
+     uma imagem de fundo pode não chegar (impressão sem cor de fundo,
+     `forced-colors`), e sem ela o quadrado seria transparente com um glifo
+     branco em cima.
+     O gradiente tem a MESMA cor nas duas pontas de propósito: ele é desenhado
+     em `bg-[size:200%_100%]` e andado pelo `animate-accent-sheen`, então ponta
+     igual é o que faz o laço fechar sem um salto de cor no meio da volta.
+
+     **O caminho é o vermelho do produto → um vinho fundo → e de volta.** A
+     ponta clara é praticamente o `--v2-rec` (#D83E36), a cor que o microfone e
+     o ponto da gravação já usam, e é ela que dá o TOM da peça; o vinho é o que
+     dá o que ver. Uma versão anterior andava entre três tons quase iguais,
+     todos escuros, e o movimento sumia: a peça parecia chapada e o quadrado
+     ficava mais escuro que o vermelho que o resto do app usa. O laço leva 6s,
+     metade dos 12s dos cartões do Scriba — a mesma ideia de movimento, num
+     objeto de 48px onde 12s passam por parado.
+
+     **O glifo em cima é BRANCO**, e o contraste varia com a volta: 8,9:1 no
+     vinho, 6,2:1 no meio, 4,4:1 na ponta clara — que é o mesmo número que o
+     `--v2-rec` com tinta branca já entrega hoje no app inteiro. Quem quiser
+     abrir mais a amplitude clareia a ponta de cima por sua conta e risco: é
+     ela que decide o pior momento do ciclo para o microfone. */
+  --v2-accent: #C4363B;
+  --v2-accent-ink: #FFFFFF;
+  --v2-accent-sheen: linear-gradient(
+    120deg,
+    #D8423A 0%,
+    #B32E3C 28%,
+    #8E1F3F 50%,
+    #B32E3C 72%,
+    #D8423A 100%
+  );
   /* OS POST-ITS DA BIBLIOTECA.
      Quatro cores em rodízio, e o rodízio é por HASH DO ID da sessão, nunca
      pela posição na lista (ver `LibraryNote`): com o índice, gravar um sermão
@@ -1072,6 +1134,14 @@
   --animate-text-shimmer: text-shimmer 2.4s ease-in-out infinite;
   --animate-content-fade: content-fade 0.5s cubic-bezier(0.22, 1, 0.36, 1);
   --animate-insight-gradient: insight-gradient 12s ease-in-out infinite;
+  /* O quadrado destacado do `CreateDock`, com as MESMAS keyframes dos cartões
+     do Scriba e metade do tempo. A duração é a única diferença, e ela existe
+     porque o tamanho do objeto muda o que "devagar" quer dizer: num cartão de
+     texto de meia tela, 12s é uma maré que se percebe pelo canto do olho; num
+     quadrado de 48px, é uma peça parada. Dividir a animação em duas linhas
+     custa uma linha e evita a saída errada, que seria acelerar a dos cartões
+     junto. */
+  --animate-accent-sheen: insight-gradient 6s ease-in-out infinite;
   --animate-consolidate-pulse: consolidate-pulse 1.6s ease-in-out infinite;
   --animate-ai-spin: ai-spin 2.4s ease-in-out infinite;
   /* O BOTÃO de criar do v2 sumindo e voltando com a rolagem. Quem vai e vem é
