@@ -242,7 +242,14 @@ export function YoutubeUrlForm({ initialUrl = "", initialStartMs, initialEndMs }
             horas de fita com trinta minutos de pregação no meio. */}
         {clipOpen ? (
           <div className="mt-3 flex flex-col gap-2 rounded-2xl border border-scriba-hairline bg-scriba-paper px-4 py-3.5">
-            <div className="flex items-center gap-4 justify-around">
+            {/* `justify-between` com os campos CEDENDO (`flex-1 min-w-0` no
+                `ClipField`), e não `justify-around` com largura fixa. Os dois
+                campos tinham 128px cravados: 256 de campo + os vãos + os 28 do
+                X passavam dos ~296px úteis de uma tela de 360, e o último item
+                da linha — o X — era empurrado para fora da página. Com os
+                campos elásticos, quem encolhe é o que pode encolher, e o botão
+                (`shrink-0`) fica onde tem de ficar em qualquer largura. */}
+            <div className="flex items-center justify-between gap-2">
               <ClipField
                 id="youtube-clip-start"
                 value={startRaw}
@@ -251,7 +258,7 @@ export function YoutubeUrlForm({ initialUrl = "", initialStartMs, initialEndMs }
                 disabled={loading}
                 invalid={!!clipError}
               />
-              <span className="text-[12px] font-light text-scriba-ink-soft">até</span>
+              <span className="shrink-0 text-[12px] font-light text-scriba-ink-soft">até</span>
               <ClipField
                 id="youtube-clip-end"
                 value={endRaw}
@@ -268,7 +275,7 @@ export function YoutubeUrlForm({ initialUrl = "", initialStartMs, initialEndMs }
                   setEndRaw("");
                 }}
                 aria-label="Importar o vídeo inteiro"
-                className="inline-flex size-7 items-center justify-center rounded-full text-scriba-ink-mute transition-colors hover:text-scriba-ink focus-visible:outline-none focus-visible:ring-4 focus-visible:ring-scriba-blue/25"
+                className="-mr-1 inline-flex size-7 shrink-0 items-center justify-center rounded-full text-scriba-ink-mute transition-colors hover:text-scriba-ink focus-visible:outline-none focus-visible:ring-4 focus-visible:ring-scriba-blue/25"
               >
                 <X aria-hidden className="size-3.5" strokeWidth={2.4} />
               </button>
@@ -355,7 +362,7 @@ function ClipField({
   invalid: boolean;
 }) {
   return (
-    <label htmlFor={id} className="flex items-center gap-4">
+    <label htmlFor={id} className="flex min-w-0 flex-1 items-center">
       <input
         id={id}
         type="text"
@@ -369,7 +376,10 @@ function ClipField({
         aria-invalid={invalid}
         aria-describedby="youtube-clip-hint"
         className={cn(
-          "min-w-0 w-32 rounded-xl border text-center bg-scriba-surface px-3 py-2 text-[14px] tabular-nums text-scriba-ink transition-colors",
+          // `w-full` sobre um pai `flex-1 min-w-0`: o campo OCUPA o que sobra e
+          // ENCOLHE quando falta. Era `w-32` cravado, e a largura fixa
+          // empurrava o X para fora da tela no celular.
+          "w-full min-w-0 rounded-xl border bg-scriba-surface px-2 py-2 text-center text-[14px] tabular-nums text-scriba-ink transition-colors",
           "placeholder:text-scriba-ink-mute",
           "focus-visible:outline-none focus-visible:ring-4 focus-visible:ring-scriba-blue/25",
           invalid
