@@ -1072,6 +1072,27 @@ function BlockBody({
     );
   }
 
+  if (block.type === "example") {
+    // A mesma moldura do `BlockRenderer`: barra grossa à esquerda, fundo
+    // próprio e o rótulo em versalete. Ele é o bloco mais recente do editor, e
+    // entrou junto com a edição de um resumo GERADO — sem ele, abrir aqui o
+    // resumo de uma pregação e salvar apagaria os exemplos que a IA separou.
+    return (
+      <aside className="relative rounded-2xl border-[var(--session-example-border)] border-l-4 bg-[var(--session-example-bg)] px-5 py-4">
+        <span className="mb-1.5 block font-semibold text-[10px] text-scriba-ink-mute uppercase tracking-[0.14em]">
+          Exemplo do pregador
+        </span>
+        <AutoTextarea
+          {...shared}
+          value={block.text}
+          onChange={(text) => onChange({ text })}
+          ariaLabel="Exemplo do pregador"
+          className="text-pretty font-light text-scriba-ink text-sm leading-relaxed"
+        />
+      </aside>
+    );
+  }
+
   if (block.type === "quote") {
     return (
       <figure className="flex flex-col gap-1.5 border-scriba-hairline border-l-2 pl-4">

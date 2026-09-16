@@ -1,6 +1,6 @@
 "use client";
 
-import { Flag, Heading1, Heading2, Highlighter, Pilcrow, Quote } from "lucide-react";
+import { Flag, Heading1, Heading2, Highlighter, Lightbulb, Pilcrow, Quote } from "lucide-react";
 import type { ReactNode } from "react";
 import { BookGlyph } from "@/components/icons/BookGlyph";
 import type { WrittenBlock, WrittenBlockType } from "@/lib/domain/summary";
@@ -13,6 +13,11 @@ import type { WrittenBlock, WrittenBlockType } from "@/lib/domain/summary";
  * Quem escreve aqui é quem prega, não quem programa, e um menu com "H1 / H2 /
  * blockquote" pediria um vocabulário que a pessoa não tem motivo nenhum para
  * ter aprendido.
+ *
+ * A exceção é o `example`, cujo rótulo é o MESMO da leitura, "Exemplo do
+ * pregador". Aqui o nome do schema não ajudaria em nada, e um segundo nome de
+ * leigo ("Ilustração") faria a pessoa escolher uma coisa e ver outra aparecer
+ * na tela.
  *
  * A ORDEM é a de uso, e não a do schema: parágrafo primeiro, porque é o que se
  * acrescenta nove vezes em cada dez, e os dois títulos logo atrás. A passagem
@@ -63,6 +68,12 @@ export const BLOCK_OPTIONS: BlockOption[] = [
     icon: <Highlighter className="size-4" />,
   },
   {
+    type: "example",
+    label: "Exemplo do pregador",
+    hint: "A história ou comparação que ele usou para explicar.",
+    icon: <Lightbulb className="size-4" />,
+  },
+  {
     type: "quote",
     label: "Citação",
     hint: "Uma frase de outra pessoa, com o nome dela.",
@@ -104,6 +115,7 @@ export const BLOCK_PLACEHOLDERS: Record<WrittenBlockType, string> = {
   h2: "Subtítulo",
   bibleQuote: "Escolha a passagem",
   highlight: "A frase que resume tudo",
+  example: "A história que ele contou",
   quote: "A frase citada",
   conclusion: "O que fica da mensagem",
 };

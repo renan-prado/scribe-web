@@ -86,15 +86,21 @@ type SavedSessionViewProps = {
    */
   meta?: "full" | "compact";
   /**
-   * Como esta sessão nasceu. Só `"manual"` muda alguma coisa aqui, e muda
-   * três: o menu ganha "Editar o texto", perde "Reprocessar" e perde "Algo
-   * está errado".
+   * Como esta sessão nasceu. Só `"manual"` muda alguma coisa aqui, e muda duas:
+   * o menu perde "Reprocessar" e perde "Algo está errado".
    *
    * Reprocessar refaz o resumo A PARTIR DA TRANSCRIÇÃO, e não há transcrição —
    * a chamada custaria 15 moedas para apagar o que a pessoa escreveu e pôr no
    * lugar um resumo de um texto vazio. "Algo está errado" audita a IA contra a
    * transcrição, e aqui não houve IA: o alerta apontaria o dedo para o próprio
    * autor.
+   *
+   * **"Editar o texto" não é mais uma delas**: ele aparece em TODO modo. Um
+   * resumo gerado é um texto sobre uma pregação, e a IA erra um nome ou perde a
+   * frase que valia a mensagem inteira; consertar à mão custa um minuto, contra
+   * 15 moedas de um reprocessamento que pode errar de novo. O que tornava isso
+   * proibido era o editor conhecer menos tipos de bloco que o resumo, e não é
+   * mais o caso — ver `WRITTEN_BLOCK_TYPES`.
    */
   mode?: SessionMode;
 };
@@ -293,7 +299,7 @@ export function SavedSessionView({
                   onReprocess={summary && !written ? handleReprocess : undefined}
                   reprocessing={reprocessing}
                   onReportHallucination={written ? undefined : () => setReportOpen(true)}
-                  editHref={written ? `/escrever/${id}` : undefined}
+                  editHref={summary ? `/escrever/${id}` : undefined}
                 />
               </div>
             </div>

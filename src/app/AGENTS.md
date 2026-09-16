@@ -411,10 +411,17 @@ o espaço dos descendentes: quatro píxeis que ninguém pediu, dentro da superf�
 do foco (que ficava alta demais, com o texto encostado no topo) e somados a cada
 dois parágrafos do documento.
 
-**O vocabulário do editor é MENOR que o do resumo** (`WRITTEN_BLOCK_TYPES`): não
-tem `example`, cujo rótulo na tela é "Exemplo do pregador" e não faz sentido num
-texto que a própria pessoa escreveu, nem um terceiro nível de título. A "ideia
-central" não é bloco: ela é o `shortSummary`, o que aparece no cartão da
+**O vocabulário do editor é o do resumo, INTEIRO** (`WRITTEN_BLOCK_TYPES`), e
+essa igualdade é o que torna seguro abrir aqui um resumo que a IA escreveu:
+enquanto faltava um tipo, salvar apagava em silêncio os blocos daquele tipo. O
+que faltava era o `example` — ficou de fora enquanto o editor era só a folha em
+branco, porque "Exemplo do pregador" não faz sentido num texto que a própria
+pessoa escreveu, e o argumento caiu quando o editor passou a abrir o resumo de
+uma pregação. **Bloco novo no `SummaryBlockSchema` entra em
+`WRITTEN_BLOCK_TYPES`, no `BlockBody` e no `BlockRenderer` no mesmo commit.** O
+que o editor não tem é um terceiro nível de título.
+
+A "ideia central" não é bloco: ela é o `shortSummary`, o que aparece no cartão da
 Biblioteca e na busca. E é OPCIONAL — o campo não nasce na tela, entra por uma
 pastilha "Adicionar ideia central" no topo e sai pelo `×` do próprio cartão.
 Resumir a mensagem em uma frase é coisa que só se consegue fazer depois de
@@ -516,6 +523,17 @@ transcrição vazia, cobrando 15 moedas para apagar o que a pessoa escreveu) e
 "Algo está errado" (audita a IA contra a transcrição — aqui não houve IA, o
 alerta apontaria o dedo para o próprio autor). Gerar estudo também não aparece,
 e é decisão do v1: `/api/deepening` recusaria com `empty_transcript`.
+
+**O caminho inverso não vale: "Editar o texto" aparece em TODO modo.** O editor
+já foi exclusivo do `manual`, e por vocabulário, não por princípio (ver
+`sessions/written` acima). Um resumo gerado é um texto sobre uma pregação, e a IA
+erra um nome ou perde a frase que valia a mensagem inteira; consertar à mão custa
+um minuto, contra as 15 moedas de um reprocessamento que pode errar de novo.
+Editar não muda NADA além do resumo — o modo continua o que era, a transcrição
+continua no banco, e a leitura continua oferecendo as três coisas acima. A
+consequência a dizer em voz alta é que **reprocessar descarta o que foi
+editado**, porque ele refaz o resumo a partir da transcrição, que é o que ele
+sempre fez.
 
 A busca por REFERÊNCIA, essa, encontra normalmente — ela lê os blocos
 `bibleQuote` do resumo, que o texto escrito tem como qualquer outro.
@@ -862,10 +880,17 @@ partir da resposta de um modelo. Daí `WrittenSummarySchema` ter teto em cada
 campo e em cada lista: sem eles uma aba empurraria megabytes de jsonb para
 dentro da linha. Ela cria a sessão quando não vem `id` e sobrescreve quando vem
 (o editor salva sozinho e não deveria ter de saber se aquele é o primeiro
-salvamento), confere o dono antes de trabalhar e recusa com 409 `not_manual`
-uma sessão que não foi escrita à mão: o editor fala um vocabulário menor que o
-do resumo, e deixá-lo tocar uma gravação apagaria em silêncio o que a IA
-escreveu. Esconder a tela nunca é a proteção.
+salvamento) e confere o dono antes de trabalhar.
+
+Ela já recusou com 409 `not_manual` uma sessão que não fosse escrita à mão, e a
+razão era de VOCABULÁRIO: o editor conhecia sete dos oito tipos de bloco, então
+salvar uma gravação por aqui apagaria em silêncio todo `example` que a IA tivesse
+separado. `WRITTEN_BLOCK_TYPES` passou a ser o `SummaryBlockSchema` inteiro, a
+razão acabou, e com ela o 409 — **quem acrescentar um tipo de bloco ao resumo sem
+acrescentá-lo lá traz o defeito de volta, sem erro nenhum na tela.** Só o
+`markEnded` continua olhando o modo: num texto manual `ended_at` é "quando isto
+ficou pronto" e cada salvamento o move, numa gravação ele é a hora em que o
+microfone parou e esta rota não o toca.
 
 `account/delete` é a ÚNICA rota autenticada que se recusa a usar
 `requireAuth()`, e a exceção é o ponto dela: `requireAuth` responde 403 a quem

@@ -115,10 +115,21 @@ export function parseSummaryFromLLM(content: string, phase: SummaryPhase): Summa
  * Os blocos que uma pessoa pode ESCREVER à mão em `/escrever`, e os tetos de
  * tamanho do que ela manda.
  *
- * É um subconjunto do vocabulário acima, e a diferença não é arbitrária:
+ * **Ela é hoje o vocabulário INTEIRO do resumo**, e essa igualdade não é
+ * coincidência: é o que torna seguro abrir no editor um resumo que a IA
+ * escreveu. Enquanto faltava um tipo, salvar por aqui apagaria em silêncio os
+ * blocos daquele tipo, e era por isso que `/escrever/:id` só aceitava sessão
+ * `manual` e a rota recusava o resto com 409 `not_manual`. Quem acrescentar um
+ * bloco ao `SummaryBlockSchema` acrescenta aqui no MESMO commit — ou a próxima
+ * edição de um resumo gerado o come sem avisar.
  *
- * - **`example` fica de fora.** O rótulo dele na tela é "Exemplo do pregador",
- *   e num texto que a própria pessoa escreveu não há pregador a citar.
+ * - **`example` entrou**, e ele foi o último a faltar. Ficou de fora enquanto o
+ *   editor era só a folha em branco: o rótulo dele na tela é "Exemplo do
+ *   pregador", e num texto que a própria pessoa escreveu não haveria pregador a
+ *   citar. O argumento caiu por dois lados — o editor agora abre o resumo de uma
+ *   pregação, onde o pregador existe, e mesmo na folha em branco quem escreve
+ *   pode estar transcrevendo à mão o sermão de outra pessoa (é a mesma razão de
+ *   `speaker_name` continuar editável em `/summary`).
  * - **Não há um terceiro nível de título.** O produto desenha DOIS pesos
  *   (`h1` a 22px bold, `h2` a 18px semibold) e um terceiro cairia entre o `h2`
  *   e o parágrafo, indistinguível a um braço de distância no celular, num tipo
@@ -139,6 +150,7 @@ export const WRITTEN_BLOCK_TYPES = [
   "h2",
   "paragraph",
   "highlight",
+  "example",
   "quote",
   "bibleQuote",
   "conclusion",
@@ -162,6 +174,7 @@ const WrittenBlockSchema = z.discriminatedUnion("type", [
   z.object({ type: z.literal("h2"), text: z.string().max(WRITTEN_LIMITS.blockText) }),
   z.object({ type: z.literal("paragraph"), text: z.string().max(WRITTEN_LIMITS.blockText) }),
   z.object({ type: z.literal("highlight"), text: z.string().max(WRITTEN_LIMITS.blockText) }),
+  z.object({ type: z.literal("example"), text: z.string().max(WRITTEN_LIMITS.blockText) }),
   z.object({
     type: z.literal("quote"),
     text: z.string().max(WRITTEN_LIMITS.blockText),
@@ -230,10 +243,16 @@ export function payloadToWritten(payload: SummaryPayload | null): WrittenSummary
   const blocks: WrittenBlock[] = [];
   for (const b of payload.blocks) {
     // Um tipo que o editor não sabe desenhar é DESCARTADO na abertura, pela
-    // mesma porta por onde os blocos mortos somem da leitura. Hoje isso não
-    // acontece — só uma sessão `manual` abre aqui, e ela só tem o que este
-    // editor escreveu —, e é o que mantém verdadeira a promessa de que salvar
-    // grava exatamente o que está na tela.
+    // mesma porta por onde os blocos mortos somem da leitura — e é o que mantém
+    // verdadeira a promessa de que salvar grava exatamente o que está na tela.
+    //
+    // Hoje quem cai aqui são só os blocos MORTOS: o `contextCard` e o
+    // `relatedVerse` dos comentários do Scriba, o `distinction` do estudo, os
+    // cards do feed ao vivo. Eles saíram do produto e continuam salvos no jsonb
+    // de sessões antigas; a leitura já não os desenha (o `BlockRenderer` devolve
+    // `null` para tipo que não conhece), e o editor os trata igual. Nenhum tipo
+    // VIVO cai aqui, porque as duas listas são a mesma — ver
+    // `WRITTEN_BLOCK_TYPES`.
     if (!(WRITTEN_BLOCK_TYPES as readonly string[]).includes(b.type)) continue;
     blocks.push(b as WrittenBlock);
   }

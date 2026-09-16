@@ -15,6 +15,16 @@ gerado, então tudo aqui o lê sem saber que ele existe — com uma exceção, o
 transcrição (some "Ler transcrição", "Reprocessar", "Algo está errado" e o
 "Gerar estudo"). Ver `src/app/AGENTS.md`.
 
+**E ele não é mais só a porta de entrada: `/escrever/:id` REABRE o resumo de
+qualquer modo**, e o "Editar o texto" do `SavedSessionView` aparece em todos. A
+IA erra um nome ou perde a frase que valia a pregação, e consertar à mão custa um
+minuto contra as 15 moedas de um reprocessamento. Editar não muda mais nada da
+sessão — o modo, a transcrição e as três coisas do parágrafo acima continuam
+onde estavam —, e **reprocessar continua descartando o que foi editado**, porque
+ele refaz o resumo a partir da transcrição. O que permitiu isso foi o
+vocabulário do editor virar o do resumo INTEIRO; ver `WRITTEN_BLOCK_TYPES` em
+`src/lib/domain/summary.ts` antes de acrescentar um bloco de um lado só.
+
 Esta pasta já foi o dobro do tamanho: ela continha três telas de captura, os
 três pipelines de enriquecimento ao vivo, o feed que eles alimentavam e a fila
 de chunks que os movia. Nada disso existe — o produto é gravar, resumir e, se a

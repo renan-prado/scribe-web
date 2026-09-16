@@ -59,6 +59,18 @@ const BodySchema = z
  * dentro do servidor, a partir da resposta do modelo; este chega por POST, e é
  * por isso que `WrittenSummarySchema` tem teto em cada campo e em cada lista:
  * sem eles uma aba empurraria megabytes de jsonb para dentro da linha.
+ *
+ * **Ela salva o resumo de QUALQUER modo, e não só o escrito à mão.** Havia um
+ * 409 `not_manual` aqui, e ele existia por uma razão de vocabulário: o editor
+ * conhecia sete dos oito tipos de bloco, então deixá-lo tocar uma gravação
+ * apagaria em silêncio todo `example` que a IA tivesse separado. Com
+ * `WRITTEN_BLOCK_TYPES` igual ao `SummaryBlockSchema` (ver `domain/summary.ts`)
+ * a razão acabou, e com ela o 409. **Quem acrescentar um tipo de bloco ao resumo
+ * sem acrescentá-lo lá o traz de volta, sem erro nenhum na tela.**
+ *
+ * O que NÃO muda numa sessão gravada é tudo o resto: o modo continua `audio` ou
+ * `youtube` (o `mode` só é escrito na criação), a transcrição continua onde
+ * estava, e por isso "Reprocessar" e "Algo está errado" continuam na tela dela.
  */
 export async function POST(request: Request) {
   const auth = await requireAuth();
@@ -77,21 +89,11 @@ export async function POST(request: Request) {
   // do cliente essa pergunta deixou de ser "veio id?".
   const existing = id ? await getSessionMeta(id).catch(() => null) : null;
 
-  if (id && existing) {
-    // Dono ANTES de trabalhar, como manda `app/AGENTS.md`. A RLS já escoparia
-    // o UPDATE, mas um id alheio receberia `{ ok: true }` mesmo assim, porque
-    // UPDATE que casa zero linhas não é erro no PostgREST — e `getSessionMeta`
-    // devolver a linha é justamente a prova de que ela é de quem pediu.
-    //
-    // O editor só sabe escrever o vocabulário de `WRITTEN_BLOCK_TYPES`, e uma
-    // sessão gravada tem blocos que ele não desenha. Deixar este POST tocar
-    // uma sessão `audio` seria apagar em silêncio o que a IA escreveu sobre
-    // uma pregação — e apagar junto a transcrição da tela, que continuaria no
-    // banco sem nada que a explicasse.
-    if (existing.mode !== "manual") {
-      return NextResponse.json({ error: "not_manual" }, { status: 409 });
-    }
-  } else {
+  // Quando a linha existe, ela PRECISA ser de quem pediu, e é `getSessionMeta`
+  // quem prova isso: a RLS já escoparia o UPDATE, mas um id alheio receberia
+  // `{ ok: true }` mesmo assim, porque UPDATE que casa zero linhas não é erro no
+  // PostgREST. Dono ANTES de trabalhar, como manda `app/AGENTS.md`.
+  if (!id || !existing) {
     // **O autor de um texto manual é quem o escreveu.** Nos outros modos o
     // `speaker_name` é o PREGADOR, alguém que não é quem está com o aparelho na
     // mão, e por isso nasce vazio esperando ser preenchido. Aqui não há terceiro
@@ -128,7 +130,13 @@ export async function POST(request: Request) {
   }
 
   try {
-    await updateSessionSummary(id, payload, { markEnded: true });
+    // `markEnded` só para o texto escrito à mão. Ali `ended_at` quer dizer
+    // "quando este texto ficou pronto", e cada salvamento move a resposta; sem
+    // ele a sessão ficaria para sempre na faixa "Gravações em aberto" do
+    // `/home`. Numa sessão gravada ou importada a coluna é da CAPTURA — a hora
+    // em que o microfone parou —, e carimbá-la a cada pausa da digitação faria
+    // um sermão de terça dizer que terminou hoje à noite.
+    await updateSessionSummary(id, payload, { markEnded: !existing || existing.mode === "manual" });
   } catch (err) {
     log.error("save failed", { id, error: (err as Error).message });
     return NextResponse.json({ error: "save_failed" }, { status: 500 });

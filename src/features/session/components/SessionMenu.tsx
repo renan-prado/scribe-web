@@ -43,9 +43,10 @@ type SessionMenuProps = {
    */
   onDiscard?: () => void;
   /**
-   * Abrir o editor de blocos. Só existe numa sessão `manual`: as outras foram
-   * escritas pela IA sobre uma transcrição, e o editor fala um vocabulário
-   * menor que o delas. Ver `app/(app)/escrever/[id]/page.tsx`.
+   * Abrir o editor de blocos, em QUALQUER modo. Ele já foi exclusivo da sessão
+   * `manual`, porque o editor falava um vocabulário menor que o do resumo e
+   * salvar comeria o que a IA tinha escrito; as duas listas são a mesma hoje.
+   * Ver `app/(app)/(barra)/escrever/[id]/page.tsx`.
    */
   editHref?: string;
 };

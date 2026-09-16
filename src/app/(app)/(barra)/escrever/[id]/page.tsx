@@ -1,5 +1,5 @@
 import type { Metadata } from "next";
-import { notFound, redirect } from "next/navigation";
+import { notFound } from "next/navigation";
 import { getSessionView } from "@/lib/db/sessions";
 import { payloadToWritten } from "@/lib/domain/summary";
 import { isUuid } from "@/lib/http/validate";
@@ -18,23 +18,26 @@ export async function generateMetadata({ params }: PageProps): Promise<Metadata>
 }
 
 /**
- * `/escrever/{id}`: o texto escrito à mão, reaberto.
+ * `/escrever/{id}`: um resumo reaberto para edição.
  *
- * **Só uma sessão `manual` abre aqui**, e uma gravada é REDIRECIONADA para a
- * leitura em vez de recusada. Os dois motivos são diferentes e os dois contam:
+ * **Qualquer modo abre aqui, e não só o `manual`.** Um resumo gravado ou
+ * importado é um texto sobre uma pregação, e a IA erra um nome, junta dois
+ * pontos que eram um só, ou perde a frase que valia a pregação inteira —
+ * consertar isso à mão custa um minuto, e a alternativa era reprocessar por 15
+ * moedas na esperança de que a segunda tentativa acertasse.
  *
- * - O editor fala um vocabulário menor que o do resumo (`WRITTEN_BLOCK_TYPES`
- *   não tem `example`, e resumos antigos ainda carregam blocos que saíram do
- *   produto). Abrir uma sessão gravada aqui mostraria um texto com buracos, e
- *   o primeiro salvamento gravaria esses buracos por cima do que a IA
- *   escreveu.
- * - Trocar o endereço por `/summary/{id}` é o que a pessoa queria de qualquer
- *   forma: ela pediu para ver aquele sermão. Um 404 na cara de quem digitou
- *   `/escrever/` no lugar de `/summary/` seria uma lição sobre a nossa
- *   estrutura de rotas.
+ * Isto já foi proibido, e a razão era de VOCABULÁRIO: o editor conhecia sete
+ * dos oito tipos de bloco, e abrir aqui uma gravação mostraria um texto com
+ * buracos onde estavam os `example` — que o primeiro salvamento gravaria por
+ * cima do que a IA escreveu. Com `WRITTEN_BLOCK_TYPES` igual ao
+ * `SummaryBlockSchema` a razão acabou; **quem acrescentar um bloco ao resumo
+ * sem acrescentá-lo lá a traz de volta em silêncio.**
  *
- * A rota de salvamento reconfere o modo (409 `not_manual`): esconder a tela
- * nunca é a proteção.
+ * O que NÃO muda é o resto da sessão: o modo continua o que era, a transcrição
+ * continua onde estava, e a leitura dela continua oferecendo "Reprocessar" e
+ * "Algo está errado". A consequência a dizer em voz alta é que **reprocessar
+ * DESCARTA o que foi editado** — ele refaz o resumo a partir da transcrição, e
+ * é isso que ele sempre fez.
  *
  * **Um id que ainda não é linha nenhuma abre o editor VAZIO, e não um 404.**
  * O id de um texto novo é sorteado no aparelho e a URL passa a ser esta antes
@@ -65,7 +68,6 @@ export default async function EscreverIdPage({ params }: PageProps) {
   if (!isUuid(id)) notFound();
 
   const session = await getSessionView(id);
-  if (session && session.mode !== "manual") redirect(`/summary/${id}`);
 
   const written = payloadToWritten(session?.finalSummary ?? null);
 
