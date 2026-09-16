@@ -9,6 +9,22 @@ Gerado por `npm run release` a partir dos Conventional Commits. `feat` sobe o
 minor; o resto sobe o patch. Não edite à mão, a próxima execução escreve por
 cima do topo do arquivo.
 
+## 0.32.0, 2026-09-16, desde v0.31.2
+
+### Novidades
+
+- **biblioteca:** o acervo passa a morar no aparelho, e as escritas ficam otimistas (`d15f8ea`)
+
+### Desempenho
+
+- **biblioteca:** o cartao adianta o resumo inteiro no toque (`2767788`)
+- **summary:** a transcricao sai do payload e vem so quando alguem a pede (`8f70c31`)
+- **auth:** o gate verifica o JWT localmente, sem ida ao servidor de auth (`7328079`)
+
+### Outros
+
+- **biblioteca:** os dois esqueletos da tela viram um so (`3bdf7e6`)
+
 ## 0.31.2, 2026-09-16, desde v0.31.1
 
 ### Correções
