@@ -2,7 +2,8 @@
 
 import { Loader2 } from "lucide-react";
 import Link, { type LinkProps, useLinkStatus } from "next/link";
-import type { ComponentPropsWithoutRef, ReactNode } from "react";
+import type { ComponentPropsWithoutRef, PointerEvent, ReactNode } from "react";
+import { useState } from "react";
 import { cn } from "@/lib/utils";
 
 /**
@@ -22,12 +23,38 @@ import { cn } from "@/lib/utils";
  * `contentClassName` controls the layout of the wrapping span around children.
  * Default `inline-flex items-center gap-1.5` fits most text links; pass e.g.
  * `flex flex-col gap-2` when the anchor's own layout is column.
+ *
+ * ## `prefetchOnPress`: os 100ms de graça entre o dedo encostar e sair
+ *
+ * Toda rota do app é DINÂMICA (tudo aqui depende de quem está logado), e para
+ * uma rota dinâmica o prefetch padrão do `<Link>` traz só a casca até o
+ * `loading.tsx` — o esqueleto, sem os dados. É o que faz o resumo abrir no
+ * esqueleto e preencher meio segundo depois.
+ *
+ * Com `prefetchOnPress`, o `pointerdown` vira a prop para `prefetch={true}`,
+ * que busca a rota INTEIRA, dados inclusive. Entre encostar o dedo e soltá-lo
+ * passam ~100ms, e a transição leva mais um tanto: quando o React vai pedir a
+ * página, ela já está vindo. Alternar a prop com estado é o padrão que a
+ * própria documentação do Next descreve para prefetch por intenção.
+ *
+ * **O preço:** num celular, rolar a lista COMEÇA com um `pointerdown` sobre um
+ * cartão. Alguns resumos são adiantados à toa por sessão de rolagem. É barato
+ * porque o payload do resumo emagreceu (a transcrição saiu dele, ver
+ * `TranscriptDialog`) — com ela dentro, este atalho custaria mais banda do que
+ * economizaria — e porque o que vem fica no cache do router, então um segundo
+ * toque no mesmo cartão não repete nada.
+ *
+ * **Prefetch não acontece em `next dev`**, só em produção. Testar isto no
+ * `npm run dev` e concluir que não funcionou é o erro fácil.
  */
 type NavLinkProps = LinkProps &
   Omit<ComponentPropsWithoutRef<"a">, keyof LinkProps> & {
     children: ReactNode;
     contentClassName?: string;
     spinner?: "inline" | "overlay" | "none";
+    /** Adianta a rota INTEIRA no `pointerdown`, em vez de só a casca. Ver o
+     *  cabeçalho: é para link cujo destino é o conteúdo que a pessoa quer. */
+    prefetchOnPress?: boolean;
   };
 
 export function NavLink({
@@ -35,10 +62,25 @@ export function NavLink({
   className,
   contentClassName,
   spinner = "inline",
+  prefetchOnPress = false,
+  prefetch,
+  onPointerDown,
   ...props
 }: NavLinkProps) {
+  const [pressed, setPressed] = useState(false);
+
   return (
-    <Link className={cn(spinner === "overlay" && "relative", className)} {...props}>
+    <Link
+      className={cn(spinner === "overlay" && "relative", className)}
+      // `true` busca a rota inteira; fora do toque, `prefetch` segue sendo o
+      // que quem chamou passou (normalmente nada, ou seja, o padrão do Next).
+      prefetch={prefetchOnPress && pressed ? true : prefetch}
+      onPointerDown={(event: PointerEvent<HTMLAnchorElement>) => {
+        if (prefetchOnPress) setPressed(true);
+        onPointerDown?.(event);
+      }}
+      {...props}
+    >
       <NavLinkContent contentClassName={contentClassName} spinner={spinner}>
         {children}
       </NavLinkContent>

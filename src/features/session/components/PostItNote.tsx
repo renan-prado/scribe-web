@@ -157,6 +157,10 @@ export function PostItNote({ colorKey, href, eyebrow, title, footer, hint }: Pro
           que agora é o próprio link. */}
       <NavLink
         href={href}
+        // O cartão é o caminho principal do app — a Biblioteca existe para ser
+        // tocada — e o destino é justamente o conteúdo que a pessoa quer. O
+        // `pointerdown` adianta a rota inteira; ver `NavLink`.
+        prefetchOnPress
         spinner="overlay"
         contentClassName="flex min-w-0 flex-col"
         className={`flex flex-col rounded-2xl p-4 outline-none transition-colors hover:bg-black/[0.06] focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-current active:bg-black/[0.12] ${note.ink}`}
