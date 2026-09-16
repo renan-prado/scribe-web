@@ -13,6 +13,7 @@ import { requestCreateSession } from "@/features/session/lib/api";
 import {
   formatTimecode,
   isYoutubeVideoUrl,
+  maskTimecode,
   parseClipRange,
   parseTimecode,
   YOUTUBE_MAX_DURATION_MS,
@@ -62,7 +63,9 @@ const CLIP_ERRORS: Record<string, string> = {
   clip_invalid: "O fim precisa vir depois do início.",
   clip_too_short: "O trecho precisa ter pelo menos 1 minuto.",
   clip_too_long: `O trecho não pode passar de ${MAX_HOURS} horas.`,
-  timecode: "Use minutos e segundos, como 12:30.",
+  // Com a máscara, a forma nunca mais está errada: o que sobra de recusa é
+  // valor fora de faixa, `12:99`.
+  timecode: "Minutos e segundos vão até 59.",
 };
 
 export function YoutubeUrlForm({ initialUrl = "", initialStartMs, initialEndMs }: Props) {
@@ -280,6 +283,19 @@ export function YoutubeUrlForm({ initialUrl = "", initialStartMs, initialEndMs }
                 <X aria-hidden className="size-3.5" strokeWidth={2.4} />
               </button>
             </div>
+
+            {/* A recusa do recorte era CALCULADA e nunca desenhada: os campos
+                mudavam de borda, o botão de importar ficava cinza, e nada na
+                tela dizia por quê. */}
+            {clipError ? (
+              <p
+                id="youtube-clip-error"
+                role="alert"
+                className="px-0.5 text-[12px] font-light leading-relaxed text-scriba-cream-ink"
+              >
+                {clipError}
+              </p>
+            ) : null}
           </div>
         ) : (
           <button
@@ -345,6 +361,10 @@ export function YoutubeUrlForm({ initialUrl = "", initialStartMs, initialEndMs }
  * Um campo de tempo do recorte. `inputMode="numeric"` para o teclado do
  * celular abrir nos números, mas `type="text"`: um `number` recusaria os dois
  * pontos de "12:30", que é justamente a forma que o campo pede.
+ *
+ * O que ele digita passa pelo `maskTimecode` a cada tecla, então o campo nunca
+ * mostra um número solto — os dois pontos aparecem no primeiro dígito, e é o
+ * próprio campo que ensina a forma.
  */
 function ClipField({
   id,
@@ -371,10 +391,12 @@ function ClipField({
         spellCheck={false}
         disabled={disabled}
         value={value}
-        onChange={(e) => onChange(e.target.value)}
+        onChange={(e) => onChange(maskTimecode(e.target.value))}
         placeholder={placeholder}
         aria-invalid={invalid}
-        aria-describedby="youtube-clip-hint"
+        // Só aponta para a mensagem quando ela EXISTE: `aria-describedby` para
+        // um id ausente é uma descrição vazia anunciada como se houvesse uma.
+        aria-describedby={invalid ? "youtube-clip-error" : undefined}
         className={cn(
           // `w-full` sobre um pai `flex-1 min-w-0`: o campo OCUPA o que sobra e
           // ENCOLHE quando falta. Era `w-32` cravado, e a largura fixa

@@ -105,10 +105,12 @@ export function parseClipRange(
  * `"12:30"`, `"1:02:30"`, `"12"` → ms. Devolve `null` para o que não é um
  * tempo, e `0` é uma resposta válida (o começo do vídeo).
  *
- * **Um número solto é lido como MINUTOS**, não segundos: o campo é o minuto em
- * que a pregação começa, e quem digita `12` num campo cujo exemplo é `12:30`
- * está dizendo doze minutos. Ler como segundos devolveria os doze primeiros
- * segundos do culto, um erro silencioso que só aparece no resumo pronto.
+ * **Um número solto é lido como MINUTOS**, não segundos: quem escreve `?inicio=12`
+ * está dizendo o minuto em que a pregação começa. Ler como segundos devolveria
+ * os doze primeiros segundos do culto, um erro silencioso que só aparece no
+ * resumo pronto. O FORMULÁRIO não produz mais número solto — o `maskTimecode`
+ * põe os dois pontos a cada tecla —, então esta regra hoje serve à URL, que é
+ * onde um número chega sem campo nenhum em volta para dizer o que ele é.
  */
 export function parseTimecode(raw: string): number | null {
   const value = raw.trim();
@@ -131,6 +133,39 @@ export function parseTimecode(raw: string): number | null {
   if (seconds > 59) return null;
 
   return ((hours * 60 + minutes) * 60 + seconds) * 1000;
+}
+
+/**
+ * O que o campo de recorte MOSTRA enquanto se digita: só dígito entra, e eles
+ * preenchem da direita para a esquerda, segundos primeiro. `5` vira `0:05`,
+ * `1230` vira `12:30`, `12345` vira `1:23:45`.
+ *
+ * Existe porque o campo cru não parecia tempo. Eram dois retângulos com teclado
+ * numérico, e o que se digitava ficava sendo um número solto — `1230` — até o
+ * fim; quem olhava não tinha como saber se ali entrava `12:30`, `750` ou uma
+ * quantidade de milissegundos, e o formato só era mencionado numa mensagem de
+ * erro que a tela nem chegava a desenhar. Com os dois pontos aparecendo
+ * sozinhos no primeiro dígito, a forma é ensinada pelo próprio campo.
+ *
+ * **O zero à esquerda é descartado antes de tudo**, e é ele que faz o apagar
+ * funcionar: sem isso, `0:05` menos um caractere viraria `0:00`, que produz de
+ * volta `0:05`… e o campo nunca esvaziaria.
+ *
+ * Ele não CONSERTA valor fora de faixa — `12:99` continua `12:99`. Reescrever
+ * o dígito que a pessoa acabou de digitar é pior que dizer que ele não serve, e
+ * quem recusa é o `parseTimecode`.
+ */
+export function maskTimecode(raw: string): string {
+  const digits = raw.replace(/\D/g, "").replace(/^0+/, "").slice(0, 6);
+  if (!digits) return "";
+
+  const seconds = digits.slice(-2).padStart(2, "0");
+  const rest = digits.slice(0, -2);
+  if (!rest) return `0:${seconds}`;
+
+  const minutes = rest.slice(-2);
+  const hours = rest.slice(0, -2);
+  return hours ? `${hours}:${minutes.padStart(2, "0")}:${seconds}` : `${minutes}:${seconds}`;
 }
 
 /** ms → `"12:30"` ou `"1:02:30"`. A forma em que o campo é digitado de volta. */

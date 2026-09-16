@@ -313,6 +313,18 @@ publicado.
 `/importar` tem dois campos opcionais, início e fim, e eles vão para
 `sessions.source_start_ms` / `source_end_ms` (migração 0060).
 
+### Os dois campos são MASCARADOS
+
+`maskTimecode` (`src/lib/domain/youtube.ts`) põe os dois pontos a cada tecla: só
+dígito entra, e eles preenchem da direita para a esquerda, segundos primeiro —
+`1230` vira `12:30` enquanto se digita. Antes o campo era texto livre com um
+`00:00` de placeholder, e o que ficava na tela era um número solto; ninguém
+tinha como saber se ali entrava `12:30`, `750` ou milissegundos.
+
+A frase da recusa veio junto, porque era CALCULADA e nunca desenhada: os campos
+mudavam de borda, o botão de importar ficava cinza, e a tela não dizia por quê
+— e o `aria-describedby` dos campos apontava para um id que não existia.
+
 ### Não custa uma chamada a mais
 
 Isto é o ponto econômico do recurso. Pedimos a legenda com `text=false`, e ela
