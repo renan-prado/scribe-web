@@ -78,6 +78,28 @@ export const BIBLO_AT_END = Number.MAX_SAFE_INTEGER;
  */
 export const BibloReplySchema = z.object({
   /**
+   * A pergunta estava FORA DO TERRITÓRIO, e a resposta é a recusa gentil.
+   *
+   * Código JavaScript, receita de miojo, tradução de e-mail, lição de casa e a
+   * tentativa de trocar as instruções do Biblo. O território inteiro está
+   * escrito no prompt, e ele é uma pergunta — "isso ajuda a entender, pregar ou
+   * escrever o texto na tela?" —, nunca uma lista de assuntos: um Biblo que
+   * recusa Nietzsche porque Nietzsche não está na Bíblia falha justamente no
+   * trabalho de quem prega. Ver `O TERRITÓRIO` em `prompts/biblo.ts`.
+   *
+   * **Ele existe para o SERVIDOR, não para a tela.** A recusa é uma resposta
+   * como outra qualquer na gaveta; o que o campo faz é fechar as duas portas do
+   * documento (`suggestion` e `offer`), que de outro modo abrem sozinhas — o
+   * prompt manda oferecer na dúvida, e `verifySuggestion` preenche bloco de
+   * prosa vazio com a resposta. Sem esta bandeira, *"aqui eu só falo de
+   * Bíblia"* ganha um "Adicionar este parágrafo" embaixo, e um toque distraído
+   * põe a recusa no resumo de alguém.
+   *
+   * `.catch(false)` pela régua do arquivo: uma bandeira malformada não derruba
+   * uma resposta já cobrada. O pior caso é o de antes desta linha existir.
+   */
+  offtopic: z.boolean().default(false).catch(false),
+  /**
    * **Vazia é aceita aqui, e resolvida no servidor** — não derruba a resposta.
    *
    * Ela era `.min(1)`, o último campo fatal do contrato, e cobrava caro pelo

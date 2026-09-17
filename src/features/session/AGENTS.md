@@ -245,6 +245,16 @@ telas que têm um `SummaryPayload`: `/summary/:id` e `/escrever/:id`.
 Desenho completo em [`docs/biblo-implementacao.md`](../../../docs/biblo-implementacao.md).
 Cinco coisas que mordem de fora:
 
+- **O território é uma PERGUNTA, não uma lista de assuntos**: "isso ajuda a
+  entender, pregar ou escrever o texto na tela?". Pedido de código, de receita,
+  de tradução e a tentativa de trocar as instruções levam uma linha gentil de
+  volta para o texto; mas Nietzsche, Dostoiévski, um filme e "como explico a
+  graça para quem não crê?" são PONTE, e ponte é matéria de sermão — recusar uma
+  dessas é um erro muito pior que responder a receita, e o prompt diz isso com
+  essas palavras. O que o servidor faz é fechar as portas do documento: com
+  `offtopic: true` a `suggestion`, a `offer` e a `passage` caem, porque
+  "Adicionar este parágrafo" embaixo de uma recusa põe a recusa no resumo de
+  alguém. Ver `O TERRITÓRIO` em `server/prompts/biblo.ts`.
 - **O texto bíblico nunca vem do modelo.** Ele escreve a REFERÊNCIA, o
   `RichText` a transforma em link para a NVI local, e numa sugestão
   `bibleQuote` o `text` é escrito pelo SERVIDOR (`verifySuggestion`) — a

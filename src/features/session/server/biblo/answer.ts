@@ -578,21 +578,41 @@ export async function generateBibloAnswer(input: BibloAnswerInput): Promise<Bibl
     return { ok: false, kind: "unparseable", message: "resposta vazia" };
   }
 
+  // Fora do território (ver `O TERRITÓRIO` em `prompts/biblo.ts`): a recusa é a
+  // resposta inteira, e não há nada nela para pôr no documento de ninguém.
+  //
+  // O prompt já manda `suggestion` e `offer` nulas aqui, e não é nele que se
+  // pode confiar para isto: duas instruções empurram para o lado contrário — o
+  // "NA DÚVIDA, PREENCHA" da oferta e o bloco de prosa vazio que o SERVIDOR
+  // preenche com a resposta (`verifySuggestion`). As duas somadas desenham
+  // "Adicionar este parágrafo" embaixo de "aqui eu só falo de Bíblia", e o
+  // estrago de um toque distraído é a recusa dentro do resumo de alguém.
+  //
+  // A passagem cai pelo mesmo motivo: o cartão da NVI embaixo de uma recusa de
+  // receita de miojo não explica nada, só ocupa a tela.
+  const offtopic = reply.data.offtopic;
+  if (offtopic) log.info("fora do território", { model });
+
   const answer = await resolveMarkers(written);
-  const text = await splicePassage(dropTrailingOffer(breathe(answer.text)), reply.data.passage);
+  const text = await splicePassage(
+    dropTrailingOffer(breathe(answer.text)),
+    offtopic ? null : reply.data.passage
+  );
   // O bloco preenchido pelo servidor leva a PROSA, sem a linha da passagem: ela
   // é um cartão dentro da conversa, e dentro de um `paragraph` do resumo viraria
   // uma referência solta no meio do texto de alguém. Quem quiser a passagem no
   // documento tem o "+" do próprio cartão.
   const prose = withoutPassageLines(text);
-  const suggestion = await verifySuggestion(
-    reply.data.suggestion,
-    blocks.length,
-    prose,
-    // A última coisa que ELE disse, já sem a linha da passagem: é o "isso" de
-    // "add isso ao resumo". Ver `ANSWER_IS_A_POINTER_BELOW`.
-    withoutPassageLines(latestAnswer(input.history))
-  );
+  const suggestion = offtopic
+    ? null
+    : await verifySuggestion(
+        reply.data.suggestion,
+        blocks.length,
+        prose,
+        // A última coisa que ELE disse, já sem a linha da passagem: é o "isso"
+        // de "add isso ao resumo". Ver `ANSWER_IS_A_POINTER_BELOW`.
+        withoutPassageLines(latestAnswer(input.history))
+      );
 
   if (answer.dropped > 0) {
     // Não é erro de usuário nem motivo para 500: a resposta segue sem a
@@ -613,7 +633,7 @@ export async function generateBibloAnswer(input: BibloAnswerInput): Promise<Bibl
   // Daqui para baixo é um chip como outro qualquer: o banco, a gaveta e o
   // `send` não precisam saber que ela nasceu num campo próprio. E é justamente
   // por isso que a voz dela é acertada ANTES daqui — ver `asUserVoice`.
-  const offer = asUserVoice(reply.data.offer);
+  const offer = offtopic ? null : asUserVoice(reply.data.offer);
   const chips = offer ? [offer, ...reply.data.chips] : reply.data.chips;
 
   return {
