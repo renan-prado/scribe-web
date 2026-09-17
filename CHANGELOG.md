@@ -9,6 +9,13 @@ Gerado por `npm run release` a partir dos Conventional Commits. `feat` sobe o
 minor; o resto sobe o patch. Não edite à mão, a próxima execução escreve por
 cima do topo do arquivo.
 
+## 0.39.0, 2026-09-17, desde v0.38.0
+
+### Novidades
+
+- **biblo:** adicionar um bloco rola ate ele e da uma piscada (`097a27c`)
+- **biblo:** ele conversa sobre a Biblia, e recusa o resto numa linha (`0794f83`)
+
 ## 0.38.0, 2026-09-17, desde v0.37.0
 
 ### Novidades
