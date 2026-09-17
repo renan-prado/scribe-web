@@ -9,6 +9,26 @@ Gerado por `npm run release` a partir dos Conventional Commits. `feat` sobe o
 minor; o resto sobe o patch. Não edite à mão, a próxima execução escreve por
 cima do topo do arquivo.
 
+## 0.36.0, 2026-09-17, desde v0.35.0
+
+### Novidades
+
+- **biblo:** ele se apresenta nas tres primeiras conversas (`b541548`)
+- **biblo:** a conversa vira conversa, e o Biblo para de escrever sem ser pedido (`e1148b8`)
+
+### Correções
+
+- **summary:** o servidor resolve os versiculos, e a hidratacao para de divergir (`6a1615a`)
+- **biblo:** o cumprimento chama pelo nome, e o rosto deixa de ser vermelho (`9af0cbb`)
+
+### Outros
+
+- **biblo:** a apresentacao ganha "qualquer tema cristao" (`ab6bfdc`)
+- **biblo:** "Biblo" com maiuscula no cabecalho da gaveta (`8e20ebd`)
+- **biblo:** o cabecalho da gaveta volta a ter nome (`3600bd7`)
+- **biblo:** a gaveta perde o cabecalho, e o campo cresce com a pergunta (`48334a2`)
+- **biblo:** o rosto clareia para um azul esbranquicado (`d452369`)
+
 ## 0.35.0, 2026-09-17, desde v0.34.0
 
 ### Novidades
