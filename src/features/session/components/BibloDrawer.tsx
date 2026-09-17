@@ -97,16 +97,6 @@ const DENIAL_COPY: Record<BibloDenial, { text: string; cta?: { label: string; hr
 };
 
 /**
- * Quantos pixels o ponteiro precisa andar para o gesto deixar de ser um clique.
- *
- * Abaixo disto é a tremida da mão de quem clica, e tratá-la como arrasto faria
- * o chip não responder ao toque. Acima, o clique que vem depois do `pointerup`
- * é engolido — senão soltar o botão em cima de uma pastilha mandaria a pergunta
- * que a pessoa só queria empurrar para o lado.
- */
-const DRAG_SLOP_PX = 4;
-
-/**
  * A fileira de sugestões: UMA linha que rola de lado.
  *
  * **Ela era `flex-wrap`, e virou uma parede.** Enquanto os chips eram
@@ -129,15 +119,23 @@ const DRAG_SLOP_PX = 4;
  * encosta nas pastilhas — e uma linha cinza rente a uma fileira de pastilhas
  * cinza lê como sublinhado, não como barra.
  *
- * ## Com mouse, arrastar rola
+ * ## Não há arrastar-para-rolar, e isso foi TENTADO
  *
- * O dedo já empurrava a fileira; o mouse não tinha como, e num trackpad o
- * deslize lateral nem sempre chega ao elemento certo. O arrasto com o botão
- * esquerdo é o gesto que qualquer um tenta, e a barra fina que aparece no
- * desktop (`.scroll-row`, em `globals.css`) é o par visual dele.
+ * Houve aqui um arrasto com o botão esquerdo, via eventos de ponteiro. Ele
+ * tinha um defeito que só aparece em uso: o `pointerup` não desfazia o estado
+ * do arrasto (de propósito, porque o `click` vem depois dele e precisava saber
+ * que houve arrasto), e a partir daí **todo movimento do mouse sobre a fileira
+ * a rolava, sem botão nenhum pressionado**.
  *
- * **Só com mouse**, e a conferência é `pointerType`: no toque o navegador já
- * rola nativamente, e somar a nossa conta à dele faria a fileira andar o dobro.
+ * O conserto era de uma linha. O que não se paga é o mecanismo: ele precisava
+ * de captura de ponteiro, de uma margem de tremida, de engolir o clique que
+ * termina sobre uma pastilha e de uma guarda para não brigar com a rolagem
+ * nativa do toque — quatro peças e quatro modos de falhar para duplicar o que
+ * a barra de rolagem e a roda do mouse já fazem.
+ *
+ * **A barra é a resposta**, e é por isso que ela aparece onde há mouse (ver
+ * `.scroll-row`, em `globals.css`). Não devolva o arrasto sem um motivo que
+ * este parágrafo não cubra.
  */
 function Chips({
   chips,
@@ -148,60 +146,10 @@ function Chips({
   onPick: (chip: string) => void;
   disabled: boolean;
 }) {
-  const rowRef = useRef<HTMLDivElement>(null);
-  // Em `ref` e não em estado: isto muda a cada `pointermove` e nada na tela
-  // depende do valor — um `setState` por quadro do arrasto seria uma
-  // re-renderização por quadro para mover uma barra de rolagem.
-  const drag = useRef<{ startX: number; startLeft: number; moved: boolean } | null>(null);
-
   if (chips.length === 0) return null;
 
   return (
-    <div
-      ref={rowRef}
-      className="scroll-row -mx-4 flex select-none gap-1.5 overflow-x-auto px-4 pb-2"
-      onPointerDown={(event) => {
-        const row = rowRef.current;
-        // Zerado ANTES das guardas: um arrasto anterior deixa `moved: true` para
-        // o `onClickCapture` ler, e se o próximo gesto sair por uma destas
-        // portas aquele `true` engoliria um clique legítimo.
-        drag.current = null;
-        if (event.pointerType !== "mouse" || event.button !== 0 || !row) return;
-        // Nada a arrastar quando tudo já cabe: sem isto, um clique numa fileira
-        // curta viraria um arrasto de zero pixel com cara de travada.
-        if (row.scrollWidth <= row.clientWidth) return;
-        drag.current = { startX: event.clientX, startLeft: row.scrollLeft, moved: false };
-        // A captura é o que faz o arrasto continuar quando o ponteiro sai da
-        // fileira — que é o caso normal, porque ela tem 32px de altura.
-        row.setPointerCapture(event.pointerId);
-      }}
-      onPointerMove={(event) => {
-        const row = rowRef.current;
-        if (!drag.current || !row) return;
-        const dx = event.clientX - drag.current.startX;
-        if (Math.abs(dx) > DRAG_SLOP_PX) drag.current.moved = true;
-        row.scrollLeft = drag.current.startLeft - dx;
-      }}
-      onPointerUp={(event) => {
-        const row = rowRef.current;
-        if (row?.hasPointerCapture(event.pointerId)) row.releasePointerCapture(event.pointerId);
-      }}
-      onPointerCancel={(event) => {
-        const row = rowRef.current;
-        if (row?.hasPointerCapture(event.pointerId)) row.releasePointerCapture(event.pointerId);
-        drag.current = null;
-      }}
-      // Na CAPTURA, antes de o clique chegar à pastilha: é aqui que o arrasto
-      // que terminou sobre um chip deixa de virar uma pergunta enviada. O
-      // `click` vem depois do `pointerup`, e é por isso que o `pointerup` não
-      // limpa o `drag` — ele ainda precisa ser lido aqui.
-      onClickCapture={(event) => {
-        if (!drag.current?.moved) return;
-        event.preventDefault();
-        event.stopPropagation();
-        drag.current = null;
-      }}
-    >
+    <div className="scroll-row -mx-4 flex gap-1.5 overflow-x-auto px-4 pb-2">
       {chips.map((chip) => (
         <button
           key={chip}
