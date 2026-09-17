@@ -114,6 +114,31 @@ export const BibloReplySchema = z.object({
       return trimmed.length > 0 && trimmed.length <= BIBLO_MAX_CHIP_CHARS ? trimmed : null;
     }),
   /**
+   * A passagem que a pessoa precisa ter DIANTE DOS OLHOS para acompanhar esta
+   * resposta — "Lucas 19:11-27" —, e `null` quando a resposta não gira em torno
+   * de um trecho.
+   *
+   * **Tem campo próprio pela mesma razão que a `offer` tem**, e a medição foi a
+   * mesma. O prompt pede que a referência a ser MOSTRADA fique sozinha numa
+   * linha (é o que o `BibloPassage` reconhece na tela), com exemplo do formato
+   * e uma seção explicando por quê. Duas rodadas seguidas o modelo escreveu
+   * "Ela aparece em Lucas 19:11-27 e fala de..." no meio da frase: correto pelo
+   * contrato de sempre, e sem a passagem na tela, que é o que se queria.
+   *
+   * Uma instrução sobre ONDE pôr um texto disputa com o hábito de escrever
+   * prosa, e perde. Um campo separado não disputa com nada. O servidor a
+   * encaixa na resposta (ver `splicePassage` em `biblo/answer.ts`), depois de
+   * conferi-la contra a NVI — o modelo continua sem a caneta do texto bíblico.
+   */
+  passage: z
+    .string()
+    .nullable()
+    .default(null)
+    .transform((text) => {
+      const trimmed = text?.trim() ?? "";
+      return trimmed.length > 0 && trimmed.length <= 60 ? trimmed : null;
+    }),
+  /**
    * O fio: o que já foi conversado ANTES da janela que vai ao modelo,
    * reescrito a cada resposta. É a memória de uma conversa longa sem o custo
    * de reler a conversa longa — ver a janela deslizante em

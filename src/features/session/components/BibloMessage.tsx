@@ -2,7 +2,9 @@
 
 import { Check, Copy, Plus, Undo2 } from "lucide-react";
 import { useState } from "react";
+import { BibloPassage } from "@/features/session/components/BibloPassage";
 import { RichText } from "@/features/session/components/RichText";
+import { asStandaloneScripture } from "@/lib/domain/annotate";
 import type { BibloMessage as Message } from "@/lib/domain/biblo";
 import { cn } from "@/lib/utils";
 import { BibloAvatar, type BibloMood } from "@/shared/brand";
@@ -16,6 +18,14 @@ import { BibloAvatar, type BibloMood } from "@/shared/brand";
  * a REFERÊNCIA (o servidor apaga a que não existe, ver `biblo/answer.ts`), e
  * quem mostra o texto do versículo é sempre a Bíblia em disco. Em nenhum ponto
  * o modelo tem a caneta do texto bíblico.
+ *
+ * ## Uma linha que é só a referência vira a PASSAGEM ABERTA
+ *
+ * Dois tratamentos para a mesma referência, e o que os separa é ela estar
+ * sozinha: no meio da frase é link, sozinha numa linha é o texto da NVI
+ * desenhado ali (`BibloPassage`). É como quem conversa destaca um trecho antes
+ * de comentá-lo — parágrafo, passagem, parágrafo —, e é o que faz uma conversa
+ * sobre a Bíblia mostrar a Bíblia sem pedir um toque a cada citação.
  *
  * **"Copiar" e "Adicionar" têm o mesmo peso visual, de propósito.** Nem tudo
  * vira bloco: às vezes o parágrafo vai para o caderno, para o WhatsApp do
@@ -186,7 +196,14 @@ export function BibloMessageView({
   if (message.role === "user") return <BibloUserBubble text={message.content} />;
 
   const suggestion = message.suggestion;
-  const paragraphs = message.content.split(/\n{2,}/);
+  // Quebra em QUALQUER fim de linha, e não só na linha em branco: o modelo
+  // separa com uma linha só metade das vezes, e uma quebra sozinha dentro de um
+  // `<p>` vira um espaço — a parede de texto que a quebra existia para evitar,
+  // com a marcação certa e a tela errada.
+  const paragraphs = message.content
+    .split(/\n+/)
+    .map((paragraph) => paragraph.trim())
+    .filter(Boolean);
 
   return (
     <div className="flex gap-2.5">
@@ -199,20 +216,28 @@ export function BibloMessageView({
           className="max-w-[92%] rounded-2xl rounded-tl-md bg-secondary px-3.5 py-2.5"
         >
           <div className="space-y-3 text-[14px] text-scriba-ink leading-relaxed">
-            {paragraphs.map((paragraph, index) => (
-              <p
+            {paragraphs.map((paragraph, index) => {
+              // A linha que é SÓ uma referência vira a passagem aberta; a
+              // referência no meio da frase continua um link, como no resumo.
+              const passage = asStandaloneScripture(paragraph);
+              const motion = {
+                className: cn(animate && "animate-biblo-in"),
+                style: animate
+                  ? { animationDelay: `${Math.min(index * STAGGER_STEP_MS, STAGGER_MAX_MS)}ms` }
+                  : undefined,
+              };
+              return passage ? (
                 // biome-ignore lint/suspicious/noArrayIndexKey: parágrafos de um texto imutável, a ordem é estável
-                key={`p-${index}`}
-                className={cn(animate && "animate-biblo-in")}
-                style={
-                  animate
-                    ? { animationDelay: `${Math.min(index * STAGGER_STEP_MS, STAGGER_MAX_MS)}ms` }
-                    : undefined
-                }
-              >
-                <RichText>{paragraph}</RichText>
-              </p>
-            ))}
+                <div key={`p-${index}`} {...motion}>
+                  <BibloPassage reference={passage} />
+                </div>
+              ) : (
+                // biome-ignore lint/suspicious/noArrayIndexKey: parágrafos de um texto imutável, a ordem é estável
+                <p key={`p-${index}`} {...motion}>
+                  <RichText>{paragraph}</RichText>
+                </p>
+              );
+            })}
           </div>
 
           {suggestion && (

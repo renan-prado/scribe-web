@@ -245,11 +245,25 @@ telas que têm um `SummaryPayload`: `/summary/:id` e `/escrever/:id`.
 Desenho completo em [`docs/biblo-implementacao.md`](../../../docs/biblo-implementacao.md).
 Cinco coisas que mordem de fora:
 
-- **O texto bíblico nunca vem do modelo.** Ele escreve a REFERÊNCIA em prosa, o
+- **O texto bíblico nunca vem do modelo.** Ele escreve a REFERÊNCIA, o
   `RichText` a transforma em link para a NVI local, e numa sugestão
   `bibleQuote` o `text` é escrito pelo SERVIDOR (`verifySuggestion`) — a
   sugestão inteira é descartada se a referência não resolver. É o que torna um
   versículo inventado impossível em vez de improvável.
+- **A referência tem DUAS formas, e o que as separa é a POSIÇÃO na linha.** No
+  meio da frase é link; sozinha numa linha (com faixa de versículos) vira a
+  passagem ABERTA dentro do balão, com os versículos da NVI desenhados ali
+  (`asStandaloneScripture` → `BibloPassage`). Numa conversa sobre a Bíblia, ver a
+  Bíblia é o padrão. Quem garante que ela apareça não é o prompt — é o campo
+  `passage` do contrato, que o servidor encaixa depois do primeiro parágrafo
+  (`splicePassage`); pedir a disposição em prosa foi tentado e medido, e perde
+  para o hábito de escrever prosa corrida.
+- **Três coisas do texto da resposta são garantidas no servidor, não pedidas**
+  (`biblo/answer.ts`): a parede de parágrafo é quebrada em fronteira de frase
+  (`breathe`), o "quer que eu escreva isso?" do fim é removido
+  (`dropTrailingOffer`) e a oferta é virada para a voz de quem pergunta
+  (`asUserVoice`) — o chip da oferta é ENVIADO como se a pessoa o tivesse
+  digitado, e uma pergunta ali deixa de fazer sentido no instante do toque.
 - **A sugestão é um `SummaryBlock`, e não um formato novo.** Se o que o Biblo
   quer oferecer não couber nos oito tipos que o editor já desenha, não há
   sugestão. Um "bloco do Biblo" seria um nono tipo que o `BlockRenderer`, o

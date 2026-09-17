@@ -49,7 +49,21 @@ function useMentionDialog() {
   return { hasOpened, open, setOpen, show };
 }
 
-export function ChapterMention({ reference }: { reference: string }) {
+export function ChapterMention({
+  reference,
+  label,
+}: {
+  reference: string;
+  /**
+   * O que a pastilha MOSTRA, quando é diferente do que ela ABRE.
+   *
+   * Existe para o cartão de passagem do Biblo, que exibe o trecho
+   * ("Lucas 19:11-27") e abre o capítulo inteiro ("Lucas 19"): ali a pastilha
+   * é o caminho para o entorno, e repetir a faixa que já está desenhada
+   * embaixo dela seria um botão que promete o que já foi entregue.
+   */
+  label?: string;
+}) {
   const dialog = useMentionDialog();
 
   return (
@@ -60,7 +74,7 @@ export function ChapterMention({ reference }: { reference: string }) {
         className="inline-flex items-center gap-2 veil-chip rounded-full px-4 py-1.5 text-xs font-medium transition-opacity hover:opacity-85 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring/40"
       >
         <BookGlyph className="size-3" />
-        {reference}
+        {label ?? reference}
       </button>
       {dialog.hasOpened ? (
         <ChapterDialog reference={reference} open={dialog.open} onOpenChange={dialog.setOpen} />

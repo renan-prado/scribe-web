@@ -135,7 +135,11 @@ Seis coisas, que são a lista do produto:
 
 1. **Indicar textos bíblicos ligados ao tema.** Não "leia também João 3:16":
    a passagem COM a razão de ela ter vindo, que é o que transforma uma lista de
-   referências em material de sermão.
+   referências em material de sermão. E quando a conversa é SOBRE um trecho, ele
+   **mostra o trecho**: os versículos da NVI aparecem dentro da própria resposta,
+   entre o parágrafo que apresenta e o que comenta. Ninguém conversa sobre um
+   texto sem ter o texto à vista, e um link que exige um toque e um diálogo por
+   cima tira a pessoa da conversa no meio dela. Ver `biblo-implementacao.md` §6.
 2. **Contexto histórico** da passagem, do livro, do momento.
 3. **Personagens e lugares** que aparecem no resumo ou na conversa.
 4. **Tirar dúvidas e ensinar.** A pergunta direta, inclusive a pergunta básica

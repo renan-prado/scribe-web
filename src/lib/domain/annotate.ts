@@ -114,6 +114,32 @@ function scan(
   return out;
 }
 
+/**
+ * A referência quando o parágrafo INTEIRO é ela — "Lucas 19:11-27" sozinho numa
+ * linha —, e `null` em qualquer outro caso.
+ *
+ * É o sinal que o Biblo usa para MOSTRAR a passagem dentro da conversa em vez
+ * de só apontar para ela (ver `BibloPassage`). Uma referência no meio da frase
+ * continua sendo um link, como no resumo e no estudo: o que muda o tratamento
+ * é ela estar sozinha, que é como quem conversa destaca um trecho antes de
+ * comentá-lo.
+ *
+ * Mora aqui porque a decisão tem de usar o MESMO reconhecimento do `RichText`.
+ * Uma segunda regex faria a tela mostrar o cartão para uma referência que o
+ * anotador não linka, ou o contrário, e as duas telas discordariam sobre o que
+ * é uma referência.
+ *
+ * A pontuação final é ignorada ("Jonas 1:3." conta), porque o modelo termina a
+ * linha com ponto metade das vezes e isso não muda o que ele quis dizer.
+ */
+export function asStandaloneScripture(text: string): string | null {
+  const trimmed = text.trim().replace(/[.:;,\s]+$/, "");
+  if (!trimmed) return null;
+  const segments = annotateText(trimmed);
+  if (segments.length !== 1) return null;
+  return segments[0].kind === "scripture" ? segments[0].reference : null;
+}
+
 export function annotateText(text: string): AnnotatedSegment[] {
   if (!text) return [];
 

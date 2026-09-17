@@ -2,7 +2,9 @@ import "server-only";
 import { BIBLO_SYSTEM_PROMPT, bibloContextBlock } from "@/features/session/server/prompts/biblo";
 import { anchorReference } from "@/features/session/server/study/anchor";
 import type { BibloRow } from "@/lib/db/biblo";
+import { asStandaloneScripture } from "@/lib/domain/annotate";
 import { type BibloReply, BibloReplySchema, type BibloSuggestion } from "@/lib/domain/biblo";
+import { parseVerseReference } from "@/lib/domain/reference";
 import type { SummaryBlock, SummaryPayload } from "@/lib/domain/summary";
 import { serverEnv } from "@/lib/env/server";
 import { buildLlmMetadata } from "@/lib/llm/metadata";
@@ -167,6 +169,207 @@ async function resolveMarkers(text: string): Promise<{ text: string; dropped: nu
 }
 
 /**
+ * A passagem do campo `passage` encaixada na resposta, como linha própria.
+ *
+ * ## Por que o servidor encaixa, em vez de o modelo escrever no lugar certo
+ *
+ * Porque foi pedido e não aconteceu. O prompt tem a regra, o exemplo do formato
+ * e o parágrafo dizendo por que ela existe; em duas rodadas seguidas o modelo
+ * escreveu "Ela aparece em Lucas 19:11-27 e fala de..." dentro da frase. Não é
+ * desobediência, é gravidade: uma instrução sobre a DISPOSIÇÃO de um texto
+ * disputa com o hábito de escrever prosa corrida, e perde. O campo separado não
+ * disputa com nada — é a mesma lição da `offer`, medida do mesmo jeito.
+ *
+ * ## Onde ela entra
+ *
+ * Depois do PRIMEIRO parágrafo: apresenta, mostra, comenta. É a ordem do
+ * exemplo do prompt e a ordem natural de quem conversa sobre um texto — ninguém
+ * abre a Bíblia antes de dizer o que vai ler, nem depois de já ter comentado.
+ * Com um parágrafo só, ela vai ao fim, que é o mesmo lugar.
+ *
+ * ## Duas guardas
+ *
+ * **Se a referência já está sozinha numa linha, nada acontece.** O modelo
+ * acerta às vezes, e encaixar de novo daria a mesma passagem duas vezes.
+ *
+ * **A referência é conferida contra a NVI antes de entrar** (`anchorReference`),
+ * e a que não resolve é simplesmente ignorada — a resposta segue sem o cartão,
+ * como seguia antes. É a mesma régua de `verifySuggestion`: o modelo aponta, a
+ * Bíblia em disco escreve.
+ */
+async function splicePassage(text: string, raw: string | null): Promise<string> {
+  if (!raw) return text;
+
+  const paragraphs = text.split(/\n{2,}/);
+  if (paragraphs.some((paragraph) => asStandaloneScripture(paragraph))) return text;
+
+  const anchored = await anchorReference(raw).catch(() => null);
+  if (!anchored) return text;
+  // Sem faixa de versículos não há cartão: "Lucas 19" desenharia a pastilha de
+  // sempre, agora ocupando uma linha inteira para dizer o que o link da prosa
+  // já dizia. Ver `BibloPassage`.
+  if (!parseVerseReference(anchored.reference)?.startVerse) return text;
+
+  const head = paragraphs.slice(0, 1);
+  const tail = paragraphs.slice(1);
+  return [...head, anchored.reference, ...tail].join("\n\n");
+}
+
+/**
+ * A oferta virada para a VOZ DE QUEM PERGUNTA, e descartada quando não vira.
+ *
+ * O chip da oferta não é uma fala do Biblo: tocá-lo ENVIA aquele texto como se
+ * a pessoa o tivesse digitado. Quando o modelo escreve "Quer que eu escreva um
+ * trecho sobre a diferença entre as duas parábolas?" — e ele escreve, apesar de
+ * o prompt pedir o contrário com dois exemplos —, o que chega à conversa é a
+ * PESSOA perguntando ao Biblo se ELE quer escrever. A frase deixa de fazer
+ * sentido no instante exato em que é usada, e a resposta seguinte sai torta.
+ *
+ * Duas passadas, e as duas são costura de texto, não adivinhação:
+ *
+ *  1. **Tira o pedido de licença.** "Quer que eu ", "Posso ", "Gostaria que eu "
+ *     e os irmãos deles são exatamente o que sobra quando a oferta é escrita na
+ *     voz errada. O que vem depois já é o pedido.
+ *  2. **Põe o verbo no imperativo.** O que resta da passada 1 vem no infinitivo
+ *     ("escrever") ou no subjuntivo ("escrevesse"), e a tabela abaixo cobre os
+ *     verbos que o próprio prompt enumera. Um verbo fora dela passa como está —
+ *     desajeitado é melhor que ausente.
+ *
+ * **Sobrou pergunta, não há botão.** Um chip que ainda termina em "?" depois
+ * das duas passadas é uma frase que a pessoa não diria; melhor a fileira com
+ * quatro perguntas do que com uma quinta que confunde.
+ */
+const OFFER_PREFIX_RE =
+  /^(?:e\s+)?(?:voc[êe]\s+)?(?:quer(?:es)?|gostaria|deseja|posso|devo)\s+(?:que\s+eu\s+)?/i;
+
+const IMPERATIVE: Record<string, string> = {
+  escrever: "escreva",
+  escrevesse: "escreva",
+  reescrever: "reescreva",
+  reescrevesse: "reescreva",
+  transformar: "transforme",
+  transformasse: "transforme",
+  resumir: "resuma",
+  resumisse: "resuma",
+  montar: "monte",
+  montasse: "monte",
+  fazer: "faça",
+  fizesse: "faça",
+  colocar: "coloque",
+  colocasse: "coloque",
+  adicionar: "adicione",
+  adicionasse: "adicione",
+  trazer: "traga",
+  trouxesse: "traga",
+  explicar: "explique",
+  explicasse: "explique",
+  criar: "crie",
+  criasse: "crie",
+  fechar: "feche",
+  fechasse: "feche",
+};
+
+/**
+ * Tira o pedido de licença do FIM da resposta.
+ *
+ * "Quer que eu escreva um trecho explicando essa parábola?" como último
+ * parágrafo é a mesma oferta que já está virando botão dois centímetros abaixo,
+ * dita duas vezes — e a versão em prosa é a pior das duas, porque não faz nada
+ * quando lida. O prompt pede que ela fique só no campo `offer`; isto é a rede,
+ * e usa o mesmo reconhecimento de `asUserVoice`.
+ *
+ * Só o ÚLTIMO parágrafo, e só se ele for curto e terminar em "?": uma pergunta
+ * de verdade no fecho ("E você, o que acha que o servo temia?") não começa com
+ * "quer que eu" e continua onde está — ela é parte do que o Biblo faz.
+ */
+function dropTrailingOffer(text: string): string {
+  const paragraphs = text.split(/\n{2,}/);
+  if (paragraphs.length < 2) return text;
+
+  const last = paragraphs[paragraphs.length - 1].trim();
+  if (!last.endsWith("?")) return text;
+  if (last.length > 160) return text;
+  if (!OFFER_PREFIX_RE.test(last)) return text;
+
+  return paragraphs.slice(0, -1).join("\n\n");
+}
+
+function asUserVoice(offer: string | null): string | null {
+  if (!offer) return null;
+
+  const original = offer.trim();
+  let text = original.replace(OFFER_PREFIX_RE, "");
+  if (text !== original) {
+    text = text.replace(/\?+\s*$/, "").trim();
+    const [first, ...rest] = text.split(" ");
+    const imperative = IMPERATIVE[first?.toLowerCase() ?? ""];
+    if (imperative) text = [imperative, ...rest].join(" ");
+  }
+
+  if (!text || text.endsWith("?")) return null;
+  return text[0].toUpperCase() + text.slice(1);
+}
+
+/**
+ * O parágrafo que já é uma PAREDE, e o tamanho para o qual ele é quebrado.
+ *
+ * O prompt pede parágrafo de até três frases e diz quando um parágrafo acaba.
+ * Isto é a rede embaixo: medido, o modelo devolve vinte linhas num bloco só
+ * quando o assunto rende — e o que a pessoa vê então é uma tela inteira de
+ * cinza sem um ponto de apoio, que é olhada, não lida.
+ *
+ * O limiar é ALTO de propósito. Quebrar prosa numa fronteira de frase que o
+ * autor não escolheu é sempre um pouco errado, então só vale a pena quando o
+ * certo já está perdido: até 600 caracteres o parágrafo passa intocado, e o que
+ * passa disso é dividido em pedaços de ~380, que é a ordem de grandeza de três
+ * frases em português.
+ */
+const PARAGRAPH_WALL_CHARS = 600;
+const PARAGRAPH_TARGET_CHARS = 380;
+
+/** Uma frase: tudo até o ponto final (ou `?`/`!`) e o espaço que o segue. */
+const SENTENCE_RE = /[^.!?]+(?:[.!?]+|$)\s*/g;
+
+function splitWall(paragraph: string): string[] {
+  if (paragraph.length <= PARAGRAPH_WALL_CHARS) return [paragraph];
+
+  const sentences = paragraph.match(SENTENCE_RE);
+  // Parede sem ponto final nenhum: não há onde cortar sem cortar uma frase ao
+  // meio, e um corte assim é pior que a parede.
+  if (!sentences || sentences.length < 2) return [paragraph];
+
+  const chunks: string[] = [];
+  let current = "";
+  for (const sentence of sentences) {
+    current += sentence;
+    if (current.length >= PARAGRAPH_TARGET_CHARS) {
+      chunks.push(current.trim());
+      current = "";
+    }
+  }
+  // O resto vai junto com o último pedaço quando é curto demais para ser um
+  // parágrafo por si: uma linha de seis palavras sozinha no fim lê como erro.
+  if (current.trim()) {
+    if (current.trim().length < 120 && chunks.length > 0) {
+      chunks[chunks.length - 1] = `${chunks[chunks.length - 1]} ${current.trim()}`;
+    } else {
+      chunks.push(current.trim());
+    }
+  }
+  return chunks;
+}
+
+/** A resposta com respiro: toda parede vira parágrafos. */
+function breathe(text: string): string {
+  return text
+    .split(/\n+/)
+    .map((paragraph) => paragraph.trim())
+    .filter(Boolean)
+    .flatMap(splitWall)
+    .join("\n\n");
+}
+
+/**
  * Os tipos de prosa cujo `text` o servidor sabe preencher a partir da resposta.
  *
  * `h2` e `quote` ficam de fora: um subtítulo não é a resposta inteira, e uma
@@ -283,7 +486,8 @@ export async function generateBibloAnswer(input: BibloAnswerInput): Promise<Bibl
   // o que vai para o documento tem de ser a resposta JÁ com os marcadores
   // resolvidos — nunca um `[[Jonas 1:3]]` cru entrando no resumo de alguém.
   const answer = await resolveMarkers(reply.data.answer);
-  const suggestion = await verifySuggestion(reply.data.suggestion, blocks.length, answer.text);
+  const text = await splicePassage(dropTrailingOffer(breathe(answer.text)), reply.data.passage);
+  const suggestion = await verifySuggestion(reply.data.suggestion, blocks.length, text);
 
   if (answer.dropped > 0) {
     // Não é erro de usuário nem motivo para 500: a resposta segue sem a
@@ -302,13 +506,15 @@ export async function generateBibloAnswer(input: BibloAnswerInput): Promise<Bibl
   // a leitura da fileira.
   //
   // Daqui para baixo é um chip como outro qualquer: o banco, a gaveta e o
-  // `send` não precisam saber que ela nasceu num campo próprio.
-  const chips = reply.data.offer ? [reply.data.offer, ...reply.data.chips] : reply.data.chips;
+  // `send` não precisam saber que ela nasceu num campo próprio. E é justamente
+  // por isso que a voz dela é acertada ANTES daqui — ver `asUserVoice`.
+  const offer = asUserVoice(reply.data.offer);
+  const chips = offer ? [offer, ...reply.data.chips] : reply.data.chips;
 
   return {
     ok: true,
     data: {
-      reply: { ...reply.data, answer: answer.text, suggestion, chips },
+      reply: { ...reply.data, answer: text, suggestion, chips },
       model,
       usage: result.data.usage,
       latencyMs: result.data.latencyMs,

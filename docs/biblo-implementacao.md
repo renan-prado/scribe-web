@@ -441,8 +441,10 @@ export const BibloReplySchema = z.object({
   chips: /* array de string, aparado */,
   /** O bloco, quando ela PEDIU um. Malformado vira null, não derruba nada. */
   suggestion: BibloSuggestionSchema.nullable().catch(null).default(null),
-  /** A OFERTA de escrever, na voz dela. Vira a última pastilha da fileira. */
+  /** A OFERTA de escrever, na voz dela. Vira a PRIMEIRA pastilha da fileira. */
   offer: /* string | null */,
+  /** A passagem a MOSTRAR, com faixa. O servidor a encaixa na resposta. */
+  passage: /* string | null */,
   /** Reescrito a cada resposta, é a memória além da janela. */
   thread: /* string, cortada em 600 */,
 });
@@ -493,6 +495,50 @@ inteira: *"O que Társis representava para a época?"*, *"E os marinheiros junto
 Jonas, o que pensavam da situação?"*. O teto virou 12 palavras, com a ressalva
 de que uma pergunta já específica em quatro fica em quatro — esticar *"Por que
 Deus escolheu Nínive?"* só para cumprir tamanho a piora.
+
+### A PASSAGEM também tem campo próprio, e pela mesma medição
+
+Perguntado sobre a parábola das dez minas, o Biblo explicava a parábola inteira
+e escrevia "Lucas 19" no meio da frase — um link, e nada mais. Estava certo pelo
+contrato de então e errado pelo produto: numa conversa sobre a Bíblia, **ver a
+Bíblia é o padrão**, e obrigar um toque, um diálogo por cima da conversa e um
+voltar é tirar a pessoa da conversa no meio dela.
+
+O conserto tem duas metades, e foram necessárias as duas:
+
+1. **Na tela**, a referência ganhou uma segunda forma. No meio da frase continua
+   link; **sozinha numa linha** vira a passagem ABERTA, com os versículos da NVI
+   desenhados ali (`asStandaloneScripture` → `BibloPassage`). É a forma de quem
+   conversa sobre um texto: parágrafo, passagem, parágrafo.
+2. **No contrato**, o campo `passage`. O prompt pedia a linha, com exemplo do
+   formato e a razão escrita — e em duas rodadas seguidas o modelo escreveu "Ela
+   aparece em Lucas 19:11-27 e fala de…" dentro da frase. Uma instrução sobre a
+   DISPOSIÇÃO de um texto disputa com o hábito de escrever prosa corrida, e
+   perde. O campo não disputa com nada: o servidor encaixa a referência depois do
+   primeiro parágrafo (`splicePassage`), e não faz nada quando ela já está lá.
+
+A invariante do §7 não se moveu um milímetro: o modelo aponta, e o texto vem da
+NVI em disco. `splicePassage` confere a referência com `anchorReference` antes
+de encaixá-la, e ignora a que não resolve — a resposta segue sem o cartão.
+
+**Sem faixa de versículos não há cartão.** "Lucas 19" continua sendo a pastilha
+de sempre: o capítulo inteiro dentro de um balão seria pior que o link que havia
+antes. E um trecho longo é dobrado na tela — Lucas 19:11-27 tem dezessete
+versículos, e dezessete dentro de um balão é a parede de texto que este trabalho
+existe para desmanchar.
+
+### O RESPIRO da resposta é garantido, não pedido
+
+O mesmo caso trouxe vinte linhas num parágrafo só. O prompt pedia "texto
+corrido, parágrafos separados por linha em branco" e nunca dizia quando um
+parágrafo ACABA — sem isso, o modelo escreve um. Hoje a instrução tem número
+(até três frases) e critério (uma ideia por parágrafo), e o servidor quebra a
+parede que escapar: `breathe` divide em fronteira de FRASE todo parágrafo acima
+de 600 caracteres, em pedaços de ~380.
+
+O limiar é alto de propósito. Cortar prosa numa fronteira que o autor não
+escolheu é sempre um pouco errado, e só vale a pena quando o certo já está
+perdido.
 
 ### O modelo escolhe o bloco; o SERVIDOR escreve o texto
 
@@ -790,6 +836,28 @@ era conversa: era um documento com uma carinha do lado.
 MOEDA), e âmbar sobre fundo escuro lê como AVISO — a própria pergunta da pessoa
 parecia algo que precisava de atenção. O azul não carrega estado nenhum no
 produto, e amarra a conversa ao personagem em vez de amarrá-la ao preço.
+
+### A PASSAGEM aberta mora DENTRO do balão
+
+A ideia natural é "um balão, os versículos, outro balão", e ela é a certa
+visualmente — é o que se vê: parágrafo, passagem, parágrafo. Mas fatiar a
+resposta em três MENSAGENS custaria caro no resto: uma mensagem é uma linha no
+banco, é o que o "Copiar" copia, é onde a sugestão se prende e é a âncora da
+rolagem até o início da resposta. Três balões seriam três de tudo isso para uma
+fala só.
+
+A resposta continua sendo UMA. O respiro vem do painel, que tem superfície
+própria (`--scriba-hairline-soft` com fio de 1px) dentro do balão cinza, a
+pastilha da referência em cima — a mesma do resumo — e os versículos da NVI
+embaixo, na tinta de `--session-verse-text`.
+
+A pastilha abre o CAPÍTULO, não o trecho: quem a toca quer o entorno do que está
+lendo, e repetir a faixa que já está desenhada logo abaixo dela seria um botão
+que promete o que já foi entregue.
+
+Acima de seis versículos o painel dobra o resto atrás de um "Mostrar os outros
+N". Lucas 19:11-27 tem dezessete, e dezessete versículos empurram a conversa
+inteira para fora da tela.
 
 ### O cabeçalho é do tamanho do que ele tem a dizer
 
