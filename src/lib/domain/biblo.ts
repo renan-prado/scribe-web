@@ -61,9 +61,14 @@ export type BibloSuggestion = z.infer<typeof BibloSuggestionSchema>;
  * conversa está empilhando, não costurando — e mover um bloco dentro do editor
  * é um gesto, enquanto achar onde ele foi parar no meio do texto é uma busca.
  *
- * As duas pontas que consomem uma sugestão já grampeiam o índice ao tamanho da
- * lista (`Math.min` no `BibloSummaryDock`, o `splice` do `insertAt` no editor),
- * então um número grande é literalmente "o fim" nas duas, sem caso especial.
+ * As duas pontas que consomem uma sugestão passam por `insertionIndex`
+ * (`domain/summary.ts`), que grampeia o número ao tamanho da lista — então
+ * "grande" é literalmente "o fim", sem caso especial aqui.
+ *
+ * **Mas o fim não é abaixo da CONCLUSÃO**, e por um tempo foi: a leitura só
+ * grampeava ao tamanho da lista, e uma passagem adicionada pelo "+" entrava
+ * depois do fecho. A regra que impede isso mora naquela função, e é por isso
+ * que as duas telas a chamam em vez de cada uma calcular a sua.
  */
 export const BIBLO_AT_END = Number.MAX_SAFE_INTEGER;
 

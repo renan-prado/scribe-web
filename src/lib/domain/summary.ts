@@ -237,6 +237,46 @@ export function writtenToPayload(written: WrittenSummary): SummaryPayload {
   };
 }
 
+/**
+ * ONDE um bloco novo entra, dada a posição PEDIDA.
+ *
+ * **A conclusão é o teto de toda inserção, e nada fica abaixo dela.** Ela é o
+ * fecho do texto: um parágrafo depois do fecho não é um parágrafo fora de
+ * ordem, é um texto que acabou duas vezes.
+ *
+ * A regra tem duas metades, e a segunda é a que morde:
+ *
+ *  - **uma conclusão vai sempre para o FIM** (e o editor já impede a segunda,
+ *    tirando-a do menu do `+` enquanto existir uma);
+ *  - **todo o resto para ANTES da que existir** — pedir depois dela é pedir o
+ *    lugar dela, e o lugar que sobra é imediatamente acima.
+ *
+ * ## Por que ela mora aqui, e não no editor
+ *
+ * Porque ela nasceu lá e o resto do produto não a conhecia. O `insertAt` do
+ * `Composer` tinha a regra inteira; o `BibloSummaryDock` — a mesma inserção,
+ * na tela de LEITURA — só grampeava o índice ao tamanho da lista. O "+" de uma
+ * passagem e o trecho selecionado mandam `BIBLO_AT_END`, que quer dizer "no
+ * fim", e na leitura o fim era literalmente o fim: a passagem entrava DEPOIS da
+ * conclusão. Duas telas inserindo no mesmo documento por regras diferentes é
+ * uma delas estar errada, e a que não tinha a regra era a errada.
+ *
+ * Client-safe de propósito: quem chama são as duas telas.
+ */
+export function insertionIndex(
+  blocks: readonly WrittenBlock[],
+  block: WrittenBlock,
+  requested: number
+): number {
+  if (block.type === "conclusion") return blocks.length;
+  const conclusionAt = blocks.findIndex((b) => b.type === "conclusion");
+  const capped = conclusionAt >= 0 && requested > conclusionAt ? conclusionAt : requested;
+  // `BIBLO_AT_END` é `Number.MAX_SAFE_INTEGER`: sem o grampo o número volta
+  // para quem inseriu como um índice que não existe na tela, e a revelação do
+  // bloco não acha nada. O `splice` já tratava isso como o fim.
+  return Math.min(Math.max(capped, 0), blocks.length);
+}
+
 /** O caminho de volta: um payload salvo reaberto no editor. */
 export function payloadToWritten(payload: SummaryPayload | null): WrittenSummary {
   if (!payload) return { title: "", shortSummary: "", blocks: [] };

@@ -6,6 +6,7 @@ import { BibloDock } from "@/features/session/components/BibloDock";
 import { revealSummaryBlock } from "@/features/session/components/reveal-block";
 import type { BibloSuggestion } from "@/lib/domain/biblo";
 import {
+  insertionIndex,
   payloadToWritten,
   type SummaryPayload,
   type WrittenBlock,
@@ -111,8 +112,13 @@ export function BibloSummaryDock({
       sessionId={sessionId}
       onInsert={(suggestion: BibloSuggestion) => {
         const blocks = draft.current.blocks.slice();
-        const at = Math.min(Math.max(suggestion.afterIndex + 1, 0), blocks.length);
-        blocks.splice(at, 0, suggestion.block as WrittenBlock);
+        const block = suggestion.block as WrittenBlock;
+        // A conclusão é o TETO, e nada entra abaixo dela. Esta tela grampeava
+        // só ao tamanho da lista, e `BIBLO_AT_END` a fazia inserir depois do
+        // fecho — a regra é a mesma do editor, e agora sai do mesmo lugar. Ver
+        // `insertionIndex`.
+        const at = insertionIndex(blocks, block, suggestion.afterIndex + 1);
+        blocks.splice(at, 0, block);
         pendingReveal.current = at;
         void save({ ...draft.current, blocks });
       }}

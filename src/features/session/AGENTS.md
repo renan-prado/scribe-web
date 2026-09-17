@@ -295,6 +295,11 @@ Cinco coisas que mordem de fora:
   As duas últimas entram pelo MESMO `onInsert`, como uma `BibloSuggestion`
   montada no cliente com `afterIndex: BIBLO_AT_END` — um segundo canal até o
   texto seria uma segunda regra de posição, de desfazer e de salvamento.
+- **A CONCLUSÃO é o teto de toda inserção, e quem decide isso é
+  `insertionIndex`** (`domain/summary.ts`), chamado pelas DUAS telas. A regra
+  morava só no `insertAt` do editor, e a leitura grampeava o índice ao tamanho
+  da lista e nada mais: uma passagem adicionada pelo "+" caía depois do fecho,
+  que é um texto acabando duas vezes.
 - **"Add isso ao resumo" NÃO faz o Biblo reescrever a resposta.** Quando o
   "isso" é o que ele acabou de dizer, a `answer` é uma linha e o texto do bloco
   vem do servidor — a última resposta da conversa, palavra por palavra

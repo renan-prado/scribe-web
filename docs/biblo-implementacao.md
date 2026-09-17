@@ -1179,6 +1179,18 @@ posição, de desfazer e de salvamento. O que muda é só o `afterIndex`: aqui
 ninguém propôs posição, e o valor é `BIBLO_AT_END` — quem coleta material
 enquanto conversa está empilhando, não costurando.
 
+**E "o fim" não é abaixo da CONCLUSÃO.** A conclusão é o teto de toda inserção —
+um parágrafo depois do fecho não é um bloco fora de ordem, é um texto que acabou
+duas vezes. A regra morava só no `insertAt` do editor, e a tela de LEITURA, que
+insere no mesmo documento por esta gaveta, não a conhecia: ela grampeava o
+índice ao tamanho da lista e nada mais, então uma passagem adicionada pelo "+"
+entrava DEPOIS da conclusão. Duas telas inserindo no mesmo documento por regras
+diferentes é uma delas estar errada, e a errada era a que não tinha a regra.
+
+Hoje as duas chamam `insertionIndex` (`domain/summary.ts`), que é onde a regra
+mora: uma conclusão vai sempre para o fim, todo o resto para antes da que
+existir, e o índice é grampeado ao tamanho da lista.
+
 **A seleção também traz "Copiar", com o mesmo peso.** Um parágrafo selecionável
 com um menu do sistema por cima que só sabe copiar é uma promessa pela metade;
 e fazer do copiar o caminho de segunda classe empurra para dentro do texto o que

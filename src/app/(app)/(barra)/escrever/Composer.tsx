@@ -9,8 +9,12 @@ import { PassageVerses } from "@/features/session/components/PassageVerses";
 import { revealSummaryBlock, SUMMARY_BLOCK_ATTR } from "@/features/session/components/reveal-block";
 import { useUnloadGuard } from "@/features/session/hooks/useUnloadGuard";
 import { parseVerseReference } from "@/lib/domain/reference";
-import type { WrittenBlock, WrittenSummary } from "@/lib/domain/summary";
-import { WRITTEN_LIMITS } from "@/lib/domain/summary";
+import {
+  insertionIndex,
+  WRITTEN_LIMITS,
+  type WrittenBlock,
+  type WrittenSummary,
+} from "@/lib/domain/summary";
 import { cn } from "@/lib/utils";
 import { ScribaMark } from "@/shared/brand";
 import { AutoTextarea } from "./AutoTextarea";
@@ -226,16 +230,17 @@ export function Composer({ id, exists = false, initial, header }: Props) {
   }
 
   /**
-   * A CONCLUSÃO é única e é a última, e estas três linhas são as duas coisas.
+   * A CONCLUSÃO é única, e esta linha é essa metade da regra.
    *
-   * Única: enquanto existir uma, ela sai do menu do `+` (ver `menuOptions`) —
-   * do mesmo jeito que a ideia central sai enquanto o campo dela estiver na
-   * tela. Duas conclusões num texto não são um recurso, são um erro de
-   * digitação que ninguém desfaz sem ir procurar a segunda.
+   * Enquanto existir uma, ela sai do menu do `+` (ver `menuOptions`) — do mesmo
+   * jeito que a ideia central sai enquanto o campo dela estiver na tela. Duas
+   * conclusões num texto não são um recurso, são um erro de digitação que
+   * ninguém desfaz sem ir procurar a segunda.
    *
-   * Última: o índice dela é o TETO de toda inserção. Sem isso, a linha em
-   * branco do rodapé — que insere no fim — escreveria parágrafos DEPOIS do
-   * fecho, e o menu do `+` daquela linha ofereceria posição abaixo dele.
+   * **A outra metade — ela é a ÚLTIMA, e nada entra abaixo dela — saiu daqui
+   * para `insertionIndex` (`domain/summary.ts`).** Ela morava só neste arquivo,
+   * e a tela de LEITURA, que insere no mesmo documento pela gaveta do Biblo,
+   * não a conhecia: uma passagem adicionada por lá caía depois do fecho.
    */
   const conclusionAt = doc.blocks.findIndex((b) => b.type === "conclusion");
 
@@ -248,22 +253,9 @@ export function Composer({ id, exists = false, initial, header }: Props) {
    * pôr o cursor nele abre o teclado do celular por cima do que se quer ver.
    */
   function insertAt(index: number, block: WrittenBlock, focus = true): number {
-    // A conclusão vai sempre para o fim; todo o resto para antes dela.
-    //
-    // O `Math.min` no fim não é paranoia: quem insere pela CONVERSA manda
-    // `BIBLO_AT_END` (`Number.MAX_SAFE_INTEGER`), que quer dizer "no fim" — o
-    // "+" de uma passagem e o trecho selecionado não têm posição proposta por
-    // ninguém. O `splice` já tratava esse número como o fim, então nada muda
-    // no que é inserido; o que muda é o número DEVOLVIDO, que sem o grampo
-    // seria um índice que não existe na tela e a revelação não acharia nada.
-    const at = Math.min(
-      block.type === "conclusion"
-        ? doc.blocks.length
-        : conclusionAt >= 0 && index > conclusionAt
-          ? conclusionAt
-          : index,
-      doc.blocks.length
-    );
+    // A conclusão é o teto, e a regra é a MESMA das duas telas. Ver
+    // `insertionIndex`.
+    const at = insertionIndex(doc.blocks, block, index);
     patchBlocks((blocks) => {
       const copy = blocks.slice();
       copy.splice(at, 0, block);
