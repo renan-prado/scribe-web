@@ -9,6 +9,20 @@ Gerado por `npm run release` a partir dos Conventional Commits. `feat` sobe o
 minor; o resto sobe o patch. Não edite à mão, a próxima execução escreve por
 cima do topo do arquivo.
 
+## 0.38.0, 2026-09-17, desde v0.37.0
+
+### Novidades
+
+- **biblo:** o cabecalho da gaveta ganha um balao de conversa (`dd5953b`)
+
+### Correções
+
+- **biblo:** ele para de repetir a resposta, e o aviso de falha fica legivel (`e39bd98`)
+
+### Outros
+
+- **biblo:** o balao do cabecalho fica solido (`ea5b761`)
+
 ## 0.37.0, 2026-09-17, desde v0.36.0
 
 ### Novidades
