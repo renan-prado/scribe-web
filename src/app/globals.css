@@ -835,7 +835,8 @@
        então as duas trilhas não brigam.
      A borda transparente + `background-clip: content-box` deixa o polegar com
      4px visíveis numa pista de 10px, fino e com folga, em vez de colado no
-     conteúdo. A cor sai de token, então acompanha o dark. */
+     conteúdo. A cor sai de token, então acompanha o dark.
+     As setas das pontas são desligadas: ver `::-webkit-scrollbar-button`. */
   html {
     scrollbar-color: var(--scriba-scroll-thumb) transparent;
   }
@@ -849,6 +850,15 @@
   *::-webkit-scrollbar-track,
   *::-webkit-scrollbar-corner {
     background: transparent;
+  }
+  /* As SETAS das pontas. Elas não estavam nesta lista, e por isso apareciam:
+     estilizar `::-webkit-scrollbar` liga o desenho clássico da barra no
+     Chromium do Windows, e os botões vêm junto, com a aparência padrão do
+     sistema — dois triângulos que não pertencem a nenhuma parte desta paleta.
+     São também um alvo de 16px para um trabalho que a roda e o arrastar do
+     polegar já fazem melhor. Fora daqui, o que sobra é o polegar. */
+  *::-webkit-scrollbar-button {
+    display: none;
   }
   *::-webkit-scrollbar-thumb {
     background-color: var(--scriba-scroll-thumb);
@@ -896,17 +906,26 @@
     }
   }
 
-  /* A fileira que ROLA DE LADO e não mostra barra: os chips do Biblo.
-     Barra horizontal sob uma fileira de pastilhas de 32px rouba um terço da
-     altura dela e aparece permanentemente no desktop, onde a barra não some
-     sozinha. O gesto de arrastar continua lá, e no celular nunca houve barra
-     para esconder. Ela vence o `scrollbar-width: thin` do seletor universal
-     acima por especificidade de classe. */
-  .no-scrollbar {
-    scrollbar-width: none;
-  }
-  .no-scrollbar::-webkit-scrollbar {
-    display: none;
+  /* A fileira que ROLA DE LADO: os chips do Biblo.
+
+     Com mouse ela MOSTRA a barra — a fina de toda a aplicação, declarada acima.
+     Ela é a única pista de que há mais coisa à direita, e num monitor o dedo
+     não descobre isso sozinho; é também o par visual do arrastar com o botão
+     esquerdo que a fileira aceita (ver `Chips`, em `BibloDrawer`).
+
+     No toque ela some, e por um motivo que não é estética: o navegador desenha
+     barra horizontal como CAMADA por cima, sem custar altura — mas assim que
+     alguém estiliza `::-webkit-scrollbar`, e o bloco acima estiliza, o Safari do
+     iOS troca a camada por uma barra de verdade, que passa a ocupar 10px dentro
+     de uma fileira de 32. `hover: none` é a mesma pergunta que o resto do
+     produto faz para separar dedo de mouse. */
+  @media (hover: none) {
+    .scroll-row {
+      scrollbar-width: none;
+    }
+    .scroll-row::-webkit-scrollbar {
+      display: none;
+    }
   }
 
   /* Mobile sidebar overrides the width token so w-(--sidebar-width) resolves to 18rem */

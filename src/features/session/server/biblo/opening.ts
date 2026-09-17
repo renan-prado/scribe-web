@@ -30,8 +30,8 @@ const MAX_CHIPS = 5;
 const GENERIC_CHIPS = ["Uma pergunta que incomode", "O que ler sobre isso"];
 
 const EMPTY_CHIPS = [
-  "Sobre qual passagem quero escrever?",
-  "Me ajuda a achar um tema",
+  "Me ajuda a achar um tema?",
+  "Vamos falar de João 1?",
   "O que a Bíblia diz sobre perdão?",
 ];
 
