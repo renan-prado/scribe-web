@@ -27,10 +27,28 @@ export function BlockRenderer({ block }: { block: SummaryBlock }) {
         </h3>
       );
     case "paragraph":
+      // A linha em branco DENTRO de um bloco vira parágrafo de verdade.
+      //
+      // Um `<p>` colapsa `\n\n` em espaço, então um bloco com dois parágrafos
+      // saía como uma parede de dez linhas — a mesma que o Biblo aprendeu a não
+      // escrever. Isso passou a acontecer quando "add isso ao resumo" começou a
+      // preencher o bloco com uma resposta inteira dele (ver `verifySuggestion`),
+      // e vale para qualquer bloco que tenha a quebra, venha de onde vier.
+      //
+      // O BLOCO continua sendo um: quem edita vê um campo só, e quem quiser
+      // dois blocos os separa no editor. O que muda é só a marcação de leitura.
       return (
-        <p className="text-pretty text-[15px] font-light leading-[1.72] text-scriba-ink">
-          <RichText>{block.text}</RichText>
-        </p>
+        <div className="space-y-3.5">
+          {block.text.split(/\n{2,}/).map((paragraph, index) => (
+            <p
+              // biome-ignore lint/suspicious/noArrayIndexKey: parágrafos de um texto imutável, a ordem é estável
+              key={`p-${index}`}
+              className="text-pretty text-[15px] font-light leading-[1.72] text-scriba-ink"
+            >
+              <RichText>{paragraph}</RichText>
+            </p>
+          ))}
+        </div>
       );
     case "example":
       return (

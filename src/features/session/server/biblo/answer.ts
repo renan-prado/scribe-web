@@ -112,6 +112,28 @@ function renderBlocks(blocks: SummaryBlock[]): string[] {
   return lines;
 }
 
+/** A última resposta do Biblo nesta conversa, ou vazio na primeira mensagem. */
+function latestAnswer(history: BibloRow[]): string {
+  for (let i = history.length - 1; i >= 0; i--) {
+    if (history[i].role === "assistant") return history[i].content;
+  }
+  return "";
+}
+
+/**
+ * A prosa de uma resposta, sem as linhas que são só uma referência.
+ *
+ * Uma passagem é um CARTÃO dentro da conversa; dentro de um `paragraph` do
+ * resumo ela viraria uma referência solta no meio do texto de alguém. Quem
+ * quiser a passagem no documento tem o "+" do próprio cartão.
+ */
+function withoutPassageLines(text: string): string {
+  return text
+    .split(/\n{2,}/)
+    .filter((paragraph) => !asStandaloneScripture(paragraph))
+    .join("\n\n");
+}
+
 /** O fio mais recente: o último que o assistente escreveu. */
 function latestThread(history: BibloRow[]): string {
   for (let i = history.length - 1; i >= 0; i--) {
@@ -409,23 +431,66 @@ function suggestionText(suggestion: BibloSuggestion | null): string {
  * Com o `text` vazio, o modelo só precisa dizer o TIPO e a POSIÇÃO, que é
  * barato e que ele faz de bom grado. O texto é a resposta que ele acabou de
  * escrever, que é o que a pessoa pediu e o que ela está lendo na tela.
+ *
+ * ## "Add isso ao resumo" preenche com a resposta ANTERIOR
+ *
+ * O "isso" quase nunca é esta resposta: é a que veio antes. Perguntado o
+ * contexto histórico de Filipenses e mandado "Add isso ao resumo", o modelo
+ * reescrevia os dois parágrafos INTEIROS para ter o que pôr no bloco — a pessoa
+ * lia a mesma coisa duas vezes seguidas, num lugar onde ela só queria um botão,
+ * e pagava a saída de modelo pela repetição. Medido, e foi o defeito mais
+ * irritante que o Biblo já teve.
+ *
+ * Hoje o prompt manda responder em UMA linha ("Separei o parágrafo sobre o
+ * contexto — é só tocar em Adicionar"), e o texto do bloco vem daqui: a última
+ * coisa que ele disse, que é literalmente o "isso" da frase dela.
+ *
+ * **O gatilho é o TAMANHO da resposta, e não uma bandeira do modelo.** Uma
+ * resposta curta demais para ser o trecho é, necessariamente, um ponteiro para
+ * outro trecho — não há terceira leitura possível. Uma bandeira no JSON seria
+ * mais um campo para ele errar, e este não erra: o número mede o que aconteceu,
+ * não o que ele disse que ia acontecer.
  */
+
+/**
+ * Abaixo disto, a resposta é um PONTEIRO, não o trecho.
+ *
+ * "Separei o parágrafo sobre o contexto histórico — é só tocar em Adicionar"
+ * tem 74 caracteres. O parágrafo mais curto que já se quis num resumo passa
+ * folgado dos 200: os do próprio resumo gerado começam nos 120 e a média fica
+ * acima de 300. A folga entre os dois é grande o bastante para o corte não ser
+ * uma aposta.
+ */
+const ANSWER_IS_A_POINTER_BELOW = 200;
+
 async function verifySuggestion(
   suggestion: BibloSuggestion | null,
   blockCount: number,
-  answerText: string
+  answerText: string,
+  previousAnswer: string
 ): Promise<BibloSuggestion | null> {
   if (!suggestion) return null;
+
+  // A resposta desta vez é um PONTEIRO para o que já foi dito ("Separei o
+  // parágrafo…"), e não o trecho. Ver `ANSWER_IS_A_POINTER_BELOW`.
+  const pointing = answerText.trim().length < ANSWER_IS_A_POINTER_BELOW && !!previousAnswer.trim();
 
   let block = suggestion.block;
   if (block.type === "bibleQuote") {
     const anchored = await anchorReference(block.reference).catch(() => null);
     if (!anchored) return null;
     block = { type: "bibleQuote", reference: anchored.reference, text: anchored.text };
-  } else if (!block.text.trim()) {
+  } else if (pointing || !block.text.trim()) {
     // Bloco de prosa sem texto: ou é a resposta, ou não é sugestão nenhuma.
-    if (!FILLABLE_FROM_ANSWER.has(block.type) || !answerText.trim()) return null;
-    block = { ...block, text: answerText.trim() };
+    if (!FILLABLE_FROM_ANSWER.has(block.type)) return null;
+    // `pointing` VENCE o texto que o modelo escreveu no bloco, e isto é
+    // deliberado: apontando para o que já foi dito, o que ele põe ali é uma
+    // REESCRITA do parágrafo anterior — a mesma repetição que estamos tirando,
+    // só que escondida dentro do JSON em vez de visível na conversa. O que a
+    // pessoa leu e mandou adicionar é o texto anterior, palavra por palavra.
+    const text = pointing ? previousAnswer.trim() : answerText.trim();
+    if (!text) return null;
+    block = { ...block, text };
   }
 
   // O modelo chuta índices fora da lista de vez em quando; um `afterIndex` de
@@ -519,11 +584,15 @@ export async function generateBibloAnswer(input: BibloAnswerInput): Promise<Bibl
   // é um cartão dentro da conversa, e dentro de um `paragraph` do resumo viraria
   // uma referência solta no meio do texto de alguém. Quem quiser a passagem no
   // documento tem o "+" do próprio cartão.
-  const prose = text
-    .split(/\n{2,}/)
-    .filter((paragraph) => !asStandaloneScripture(paragraph))
-    .join("\n\n");
-  const suggestion = await verifySuggestion(reply.data.suggestion, blocks.length, prose);
+  const prose = withoutPassageLines(text);
+  const suggestion = await verifySuggestion(
+    reply.data.suggestion,
+    blocks.length,
+    prose,
+    // A última coisa que ELE disse, já sem a linha da passagem: é o "isso" de
+    // "add isso ao resumo". Ver `ANSWER_IS_A_POINTER_BELOW`.
+    withoutPassageLines(latestAnswer(input.history))
+  );
 
   if (answer.dropped > 0) {
     // Não é erro de usuário nem motivo para 500: a resposta segue sem a

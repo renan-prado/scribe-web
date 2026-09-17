@@ -1084,6 +1084,51 @@ com um menu do sistema por cima que só sabe copiar é uma promessa pela metade;
 e fazer do copiar o caminho de segunda classe empurra para dentro do texto o que
 a pessoa queria levar para fora.
 
+### "Add isso ao resumo" repetia a resposta inteira
+
+O pior defeito que o Biblo já teve, e o mais fácil de não ver na bancada: ele
+só aparece na SEGUNDA mensagem, e o harness de uma pergunta só (`biblo-eval`)
+é cego para ele. Reproduzido em `biblo-chat.mts`, que roda uma conversa.
+
+Perguntado o contexto histórico de Filipenses, ele respondia bem. Mandado "Add
+isso ao resumo", **reescrevia os mesmos dois parágrafos inteiros** — e mandado
+"Valeu", reescrevia de novo. A pessoa relia a mesma coisa três vezes, pagando
+duas moedas por rodada, e perguntava mais uma vez achando que ele não tinha
+entendido.
+
+A causa não era desatenção: era o contrato. Para preencher `suggestion` ele
+precisava de um texto, e o único texto que ele sabia escrever era o da `answer`.
+**Repetir era a saída correta dentro das regras que tinha.**
+
+Duas metades:
+
+1. **A regra dura 5 no prompt** ("VOCÊ NUNCA SE REPETE"), que cobre o "Valeu" e
+   a pergunta parecida — os casos em que não há nada a acrescentar.
+2. **O ramo "JÁ ESTÁ" de `suggestion`**, que tira a razão legítima de repetir.
+   Quando o "isso" é o que ele ACABOU de dizer, a `answer` é uma linha
+   ("Separei o parágrafo sobre o contexto — é só tocar em Adicionar") e o texto
+   do bloco vem do SERVIDOR: a última resposta da conversa, palavra por palavra.
+
+**O gatilho é o TAMANHO da resposta, não uma bandeira do modelo**
+(`ANSWER_IS_A_POINTER_BELOW`, 200 caracteres). Uma resposta curta demais para
+ser o trecho é, necessariamente, um ponteiro para outro trecho — não há terceira
+leitura. Uma bandeira no JSON seria mais um campo para ele errar; o número mede
+o que aconteceu, não o que ele disse que ia acontecer.
+
+E o ponteiro **vence o texto que o modelo escreveu no bloco**, quando ele
+escreve um: apontando para o que já foi dito, o que ele põe ali é uma reescrita
+do parágrafo anterior — a mesma repetição, escondida no JSON em vez de visível
+na conversa. Medido: ele faz isso em cerca de metade das rodadas.
+
+**De quebra, o bloco de parágrafo passou a respeitar a linha em branco.** O
+preenchimento traz a resposta anterior inteira, que tem dois ou três parágrafos,
+e um `<p>` colapsa `
+
+` em espaço — a mesma parede que o Biblo tinha acabado
+de aprender a não escrever, agora dentro do resumo de alguém. `BlockRenderer`
+quebra o texto na linha em branco; o BLOCO continua sendo um, e quem edita vê um
+campo só.
+
 ### "Insere no resumo um parágrafo sobre X" custou o contrato inteiro
 
 O pedido existe desde sempre — é o ramo "SIM, PEDIU" do prompt —, mas o verbo

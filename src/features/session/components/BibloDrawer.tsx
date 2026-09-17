@@ -646,8 +646,15 @@ export function BibloDrawer({
             </BibloBubble>
           )}
 
+          {/* O aviso de falha, LEGÍVEL.
+              `--scriba-rose` (#3A2321) é a SUPERFÍCIE vermelha — o fundo de um
+              cartão de erro —, e estava aqui como cor de TEXTO: vermelho quase
+              preto sobre o papel escuro da gaveta, que é onde a mensagem some
+              justamente na hora em que ela precisa ser lida. A tinta da família
+              é `--scriba-rose-body` (#D9A9A4), a mesma que o resto do app usa
+              para corpo de texto em vermelho. */}
           {failed && (
-            <p className="text-[13px] text-scriba-rose">
+            <p className="text-[13px] text-scriba-rose-body">
               Não consegui responder agora. Tente de novo.
             </p>
           )}

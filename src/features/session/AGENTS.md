@@ -274,6 +274,13 @@ Cinco coisas que mordem de fora:
   As duas últimas entram pelo MESMO `onInsert`, como uma `BibloSuggestion`
   montada no cliente com `afterIndex: BIBLO_AT_END` — um segundo canal até o
   texto seria uma segunda regra de posição, de desfazer e de salvamento.
+- **"Add isso ao resumo" NÃO faz o Biblo reescrever a resposta.** Quando o
+  "isso" é o que ele acabou de dizer, a `answer` é uma linha e o texto do bloco
+  vem do servidor — a última resposta da conversa, palavra por palavra
+  (`ANSWER_IS_A_POINTER_BELOW`). Sem isso ele repetia dois parágrafos inteiros a
+  cada mensagem seguinte, e a pessoa pagava para reler o que estava na tela. **O
+  harness que pega esse tipo de defeito é `tmp/dev-scripts/biblo-chat.mts`**, que
+  roda uma CONVERSA; o `biblo-eval.mts`, de uma pergunta só, é cego para ele.
 - **Nada no contrato da resposta é fatal, nem o `answer`.** Ele era `.min(1)`, e
   o pedido "insere no resumo um parágrafo sobre X" fazia o modelo escrever o
   trecho dentro da sugestão e mandar a resposta vazia — `unparseable` depois de
