@@ -1094,6 +1094,26 @@
     background-color: var(--scriba-yellow);
     color: var(--scriba-yellow-ink);
   }
+  /* A SELEÇÃO do usuário, no mesmo par do destaque de busca acima.
+
+     O azul do sistema é a única cor do produto que não foi escolhida por
+     ninguém, e num app escuro ele chega como um bloco saturado no meio de uma
+     paleta de cinzas e âmbar — some de um lado o texto e do outro a marca. Ele
+     ficou invisível enquanto selecionar não fazia nada; virou visível quando o
+     trecho selecionado passou a ser um gesto do produto (ver `BibloSelection`).
+
+     É o MESMO amarelo do `::highlight(scriba-find)`, e de propósito: marcar um
+     trecho com o dedo e achar um trecho pela busca são a mesma ideia, e duas
+     tintas diferentes para "isto aqui está marcado" seria uma a mais. Vale a
+     mesma nota sobre a tinta: `--scriba-yellow-ink`, e não a tinta forte do
+     app, que é quase branca e sumiria sobre o amarelo claro.
+
+     Sem `::-moz-selection`: o Firefox suporta `::selection` desde a 62, e um
+     seletor desconhecido invalidaria a regra inteira se agrupado. */
+  ::selection {
+    background-color: var(--scriba-yellow-light);
+    color: var(--scriba-yellow-ink);
+  }
   .veil-chip {
     background-image: var(--veil-bg);
     color: var(--scriba-ink);

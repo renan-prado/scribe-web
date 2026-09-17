@@ -145,10 +145,14 @@ export function BibloSelection({
             onAdd(spot.text);
             dismiss();
           }}
+          // O rótulo é "Adicionar" e o nome acessível é inteiro: a barra é
+          // estreita e nasce colada no trecho, então o "ao resumo" é o contexto
+          // que o olho já tem e o leitor de tela não.
+          aria-label="Adicionar o trecho ao resumo"
           className="inline-flex items-center gap-1.5 rounded-full px-3 py-1.5 font-medium text-[12px] text-scriba-paper transition-colors hover:bg-scriba-paper/15"
         >
           <Plus aria-hidden className="size-3.5" strokeWidth={2} />
-          Adicionar ao resumo
+          Adicionar
         </button>
       )}
       <button
