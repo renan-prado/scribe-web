@@ -57,13 +57,10 @@ type Props = {
  * real da rota: a legenda volta em 1-3s, o resumo é o que leva minutos.
  */
 const STEPS = [
-  { atMs: 0, label: "Buscando a legenda do vídeo…" },
-  { atMs: 6_000, label: "Lendo a pregação inteira…" },
+  { atMs: 0, label: "Entendendo a ideia central…" },
+  { atMs: 6_000, label: "Transcrevendo o que foi dito…" },
   { atMs: 25_000, label: "Organizando a mensagem em tópicos…" },
   { atMs: 60_000, label: "Separando versículos e frases marcantes…" },
-  // A última não tem sucessora de propósito: passado esse ponto ninguém sabe
-  // quanto falta, e trocar a frase de novo só sugeriria um progresso que não
-  // está sendo medido.
   { atMs: 110_000, label: "Quase lá, finalizando o resumo…" },
 ] as const;
 

@@ -80,19 +80,42 @@ function citedReferences(summary: SummaryPayload): string[] {
  * nenhum fallback genérico entra no lugar — ninguém se reconhece em "Olá,
  * usuário!".
  */
+/**
+ * A apresentação, dita nas primeiras conversas e só nelas.
+ *
+ * **Ela diz o que ele FAZ, não o que ele é.** "Sou um assistente de IA" não
+ * responde a pergunta que a pessoa tem diante de uma gaveta que acabou de
+ * abrir, que é "o que eu pergunto aqui?". Quatro capacidades concretas
+ * respondem, e são as mesmas quatro do `biblo.md` §2 — as mesmas que os chips
+ * oferecem logo abaixo, para a frase e as pastilhas dizerem a mesma coisa.
+ *
+ * **E ela não diz nada sobre a SITUAÇÃO**, de propósito: quem diz é a frase
+ * seguinte, que sabe se a pessoa está lendo um sermão, escrevendo o próprio
+ * texto ou diante de uma folha em branco. A primeira versão abria com "eu leio
+ * junto com você", e no `/escrever` isso estava simplesmente errado. Pelo mesmo
+ * motivo o ângulo é "que ninguém trouxe" e não "que a pregação não pegou" — no
+ * `/escrever` não há pregação nenhuma.
+ *
+ * Quem decide se ela aparece é o contador de `biblo/intro.ts`.
+ */
+const INTRODUCTION =
+  "Meu nome é Biblo. Posso explicar uma passagem, contar o contexto de quem a escreveu, apresentar um personagem ou levantar um ângulo que ninguém trouxe.";
+
 function buildGreeting(input: {
   title: string;
   speakerName: string | null;
   firstName: string | null;
   authored: boolean;
+  introduce: boolean;
 }): string {
   const hello = input.firstName ? `Olá, ${input.firstName}!` : "Olá!";
+  const intro = input.introduce ? ` ${INTRODUCTION}` : "";
   const question = "Tem algum trecho ou tema que você queira conversar a respeito?";
-  if (!input.title) return `${hello} Li o que está na tela. ${question}`;
+  if (!input.title) return `${hello}${intro} Li o que está na tela. ${question}`;
 
   const verb = input.authored ? "escrevendo" : "lendo";
   const author = input.speakerName ? `, de ${input.speakerName}` : "";
-  return `${hello} Vi que você está ${verb} sobre "${input.title}"${author}. ${question}`;
+  return `${hello}${intro} Vi que você está ${verb} sobre "${input.title}"${author}. ${question}`;
 }
 
 export function buildBibloOpening(input: {
@@ -101,8 +124,13 @@ export function buildBibloOpening(input: {
   firstName: string | null;
   /** `true` no `/escrever`: o texto na tela é dela, não de um pregador. */
   authored: boolean;
+  /**
+   * `true` nas primeiras conversas: ele diz quem é antes de falar do texto.
+   * Quem conta é `biblo/intro.ts`.
+   */
+  introduce: boolean;
 }): BibloOpening {
-  const { summary, speakerName, firstName, authored } = input;
+  const { summary, speakerName, firstName, authored, introduce } = input;
   const title = summary?.title?.trim() ?? "";
   const hasContent = !!summary && (summary.blocks.length > 0 || !!summary.shortSummary.trim());
 
@@ -110,13 +138,16 @@ export function buildBibloOpening(input: {
   // quem acabou de abrir o `/escrever`, e um "vi que você está escrevendo
   // sobre" ali seria uma mentira na primeira frase.
   if (!hasContent) {
+    const hello = firstName ? `Olá, ${firstName}!` : "Olá!";
     return {
-      greeting: `${firstName ? `Olá, ${firstName}!` : "Olá!"} Sou o Biblo. Sobre o que você quer escrever?`,
+      greeting: introduce
+        ? `${hello} ${INTRODUCTION} Sobre o que você quer escrever?`
+        : `${hello} Sobre o que você quer escrever?`,
       chips: EMPTY_CHIPS,
     };
   }
 
-  const greeting = buildGreeting({ title, speakerName, firstName, authored });
+  const greeting = buildGreeting({ title, speakerName, firstName, authored, introduce });
 
   const chips: string[] = [];
   for (const reference of citedReferences(summary)) {

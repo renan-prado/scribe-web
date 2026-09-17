@@ -2,6 +2,10 @@ import { NextResponse } from "next/server";
 import { z } from "zod";
 import { resolveBibloAllowance } from "@/features/session/server/biblo/allowance";
 import { generateBibloAnswer } from "@/features/session/server/biblo/answer";
+import {
+  countBibloConversation,
+  shouldIntroduceBiblo,
+} from "@/features/session/server/biblo/intro";
 import { buildBibloOpening } from "@/features/session/server/biblo/opening";
 import { type BibloRow, insertBibloMessage, listBibloRows } from "@/lib/db/biblo";
 import { chargeCoins } from "@/lib/db/coins";
@@ -69,9 +73,10 @@ export async function GET(request: Request) {
   const session = await getSessionView(sessionId);
   if (!session) return NextResponse.json({ error: "session_not_found" }, { status: 404 });
 
-  const [rows, allowance] = await Promise.all([
+  const [rows, allowance, introduce] = await Promise.all([
     listBibloRows(sessionId),
     resolveBibloAllowance(auth.user.id),
+    shouldIntroduceBiblo(),
   ]);
 
   const body: BibloConversation = {
@@ -83,6 +88,7 @@ export async function GET(request: Request) {
       // O `/escrever` é o único modo em que o texto na tela é de quem está
       // lendo esta frase — e é o que decide entre "escrevendo" e "lendo".
       authored: session.mode === "manual",
+      introduce,
     }),
     allowance,
   };
@@ -145,6 +151,13 @@ export async function POST(request: Request) {
   }
 
   const history = await listBibloRows(sessionId);
+
+  // Conversa nova: o contador da apresentação sobe UMA vez, aqui, e não a cada
+  // mensagem — ver o cabeçalho de `biblo/intro.ts`. Vem antes da chamada ao
+  // modelo porque é só um `Set-Cookie`, e depois do débito porque uma conversa
+  // que não chegou a ser cobrada não é uma conversa.
+  if (history.length === 0) await countBibloConversation();
+
   const question = await insertBibloMessage({
     sessionId,
     userId: auth.user.id,

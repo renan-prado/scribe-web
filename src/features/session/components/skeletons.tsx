@@ -1,3 +1,5 @@
+import { cn } from "@/lib/utils";
+
 export function SummarySkeleton() {
   return (
     <div role="status" aria-label="Gerando resumo" className="flex flex-col gap-6">
@@ -26,12 +28,29 @@ export function TranscriptSkeleton() {
   );
 }
 
-export function ListeningDots() {
+/**
+ * Os três pontos cinzas, o gesto universal de "algo está vindo".
+ *
+ * Nasceu no feed ao vivo ("escutando") e serve também à gaveta do Biblo
+ * ("abrindo a conversa"), que é por que o rótulo e o espaçamento são
+ * parâmetros: o DESENHO é o componente, a frase é de quem chama. Um segundo
+ * trio de pontos em outro arquivo divergiria no primeiro ajuste de tamanho.
+ *
+ * O rótulo continua obrigatório em espírito: quem usa leitor de tela não vê
+ * ponto nenhum, e "carregando" sem dizer o quê não informa nada.
+ */
+export function ListeningDots({
+  label = "Escutando",
+  className,
+}: {
+  label?: string;
+  className?: string;
+}) {
   return (
     <div
       role="status"
-      aria-label="Escutando"
-      className="flex items-center justify-center gap-1.5 pt-2"
+      aria-label={label}
+      className={cn("flex items-center justify-center gap-1.5 pt-2", className)}
     >
       <span className="size-1.5 animate-listening-dot rounded-full bg-session-typing-dot" />
       <span className="size-1.5 animate-listening-dot rounded-full bg-session-typing-dot [animation-delay:200ms]" />

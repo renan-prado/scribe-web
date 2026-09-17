@@ -8,6 +8,7 @@ import {
   BibloMessageView,
   BibloUserBubble,
 } from "@/features/session/components/BibloMessage";
+import { ListeningDots } from "@/features/session/components/skeletons";
 import {
   BIBLO_MAX_QUESTION_CHARS,
   type BibloAllowance,
@@ -353,40 +354,57 @@ export function BibloDrawer({
         </button>
       </div>
 
-      <div ref={listRef} className="min-h-0 flex-1 space-y-5 overflow-y-auto px-4 pt-1 pb-4">
-        {conversation === null && !failed && (
-          <p className="text-[13px] text-scriba-ink-mute">Abrindo a conversa…</p>
-        )}
+      {/* A abertura, no MEIO da gaveta e sem frase.
 
-        {conversation && messages.length === 0 && (
-          <BibloBubble>{conversation.opening.greeting}</BibloBubble>
-        )}
+          Era "Abrindo a conversa…" no canto superior esquerdo: uma linha de
+          texto solta no alto de uma área vazia, que lê como uma mensagem sem
+          balão — justamente o que a gaveta inteira não é. Os três pontos são o
+          gesto que qualquer um reconhece num chat, e ficam onde o olho já está:
+          no centro.
 
-        {messages.map((message) => (
-          <BibloMessageView
-            key={message.id}
-            message={message}
-            onAdd={onInsert ? handleAdd : undefined}
-            onUndo={onRemove ? handleUndo : undefined}
-            added={addedIds.has(message.id)}
-            animate={message.id === arrivedId}
-          />
-        ))}
+          Ele é o PRÓPRIO filho flexível, e não um `h-full` dentro da lista:
+          `height: 100%` dentro de um item de flex depende de o item ter altura
+          definida, o que nem sempre acontece — aqui o `flex-1` resolve a altura
+          e o `items-center` centra dentro dela, sem porcentagem nenhuma.
 
-        {asking && <BibloUserBubble text={asking} />}
+          O rótulo existe para quem usa leitor de tela, onde ponto cinza não
+          diz nada. */}
+      {conversation === null && !failed ? (
+        <div className="flex min-h-0 flex-1 items-center justify-center">
+          <ListeningDots label="Abrindo a conversa" className="pt-0" />
+        </div>
+      ) : (
+        <div ref={listRef} className="min-h-0 flex-1 space-y-5 overflow-y-auto px-4 pt-1 pb-4">
+          {conversation && messages.length === 0 && (
+            <BibloBubble>{conversation.opening.greeting}</BibloBubble>
+          )}
 
-        {pending && (
-          <BibloBubble mood="thinking">
-            <span className="text-[13px] text-scriba-ink-mute">Pensando…</span>
-          </BibloBubble>
-        )}
+          {messages.map((message) => (
+            <BibloMessageView
+              key={message.id}
+              message={message}
+              onAdd={onInsert ? handleAdd : undefined}
+              onUndo={onRemove ? handleUndo : undefined}
+              added={addedIds.has(message.id)}
+              animate={message.id === arrivedId}
+            />
+          ))}
 
-        {failed && (
-          <p className="text-[13px] text-scriba-rose">
-            Não consegui responder agora. Tente de novo.
-          </p>
-        )}
-      </div>
+          {asking && <BibloUserBubble text={asking} />}
+
+          {pending && (
+            <BibloBubble mood="thinking">
+              <span className="text-[13px] text-scriba-ink-mute">Pensando…</span>
+            </BibloBubble>
+          )}
+
+          {failed && (
+            <p className="text-[13px] text-scriba-rose">
+              Não consegui responder agora. Tente de novo.
+            </p>
+          )}
+        </div>
+      )}
 
       <div className="space-y-3 border-scriba-hairline border-t px-4 pt-3 pb-[calc(0.75rem+max(env(safe-area-inset-bottom),var(--kb-inset,0px)))]">
         {!blocked && <Chips chips={chips} onPick={send} disabled={pending} />}

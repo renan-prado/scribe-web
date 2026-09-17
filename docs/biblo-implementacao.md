@@ -809,6 +809,55 @@ e sem o nome a gaveta abre sem dizer o que é — a conversa pode estar vazia, e
 o único sinal DENTRO da gaveta de que a resposta está a caminho, já que o outro
 é o botão flutuante, que só se vê com ela fechada.
 
+### Ele se apresenta nas TRÊS primeiras conversas
+
+Na primeira vez a gaveta abre e a pessoa não sabe o que perguntar ali. A
+apresentação responde a pergunta que ela tem de fato — *"o que eu pergunto
+aqui?"* — e por isso diz o que ele FAZ, não o que ele é: *"Meu nome é Biblo.
+Posso explicar uma passagem, contar o contexto de quem a escreveu, apresentar um
+personagem ou levantar um ângulo que ninguém trouxe."* São as mesmas quatro
+capacidades da §2 do `biblo.md`, e as mesmas que os chips logo abaixo oferecem.
+
+Ela não diz nada sobre a SITUAÇÃO — quem diz é a frase seguinte, que sabe se a
+pessoa está lendo um sermão, escrevendo o próprio texto ou diante de uma folha
+em branco. A primeira versão abria com *"eu leio junto com você"*, e no
+`/escrever` isso estava simplesmente errado.
+
+**Quem conta é um COOKIE, e o atalho é deliberado.** O fato existe no banco
+(`biblo_messages` sabe em quantas sessões a pessoa já falou), mas um
+`count(distinct session_id)` não sai do PostgREST sem uma função nova e um
+GRANT, e nada disso se paga para decidir o tom de uma frase de boas-vindas. O
+preço é que o contador é por APARELHO: quem troca de celular para o computador
+ouve a apresentação de novo. Numa atribuição de comissão isso seria inaceitável
+(é por isso que `features/referrals/` mora no banco); aqui o pior caso é ser
+cumprimentado uma vez a mais por um assistente simpático — e aparelho novo é
+contexto novo.
+
+**Ele conta CONVERSA, não abertura de gaveta.** Sobe no `POST`, e só quando a
+sessão ainda não tinha mensagem nenhuma. Abrir, olhar e fechar sem dizer nada
+não gasta apresentação — que é o comportamento de quem ainda não entendeu para
+que ele serve, ou seja, exatamente quem a apresentação existe para alcançar.
+
+Três porque é onde o hábito pega sem virar ladainha: na primeira a pessoa não
+sabe o que ele faz, na terceira ela já sabe e a frase começa a atrapalhar o que
+ela veio perguntar.
+
+### A abertura da gaveta é três pontos no centro
+
+Era *"Abrindo a conversa…"* no canto superior esquerdo: uma linha de texto solta
+no alto de uma área vazia, que lê como uma mensagem sem balão — justamente o que
+a gaveta inteira não é.
+
+Hoje são os três pontos cinzas do `ListeningDots`, o mesmo componente do feed ao
+vivo, centrado nos dois eixos. **Reaproveitar foi a decisão:** o desenho é o
+componente, a frase é de quem chama (`label`), e um segundo trio de pontos em
+outro arquivo divergiria no primeiro ajuste de tamanho. O rótulo continua
+existindo para quem usa leitor de tela, onde ponto cinza não diz nada.
+
+Ele é o próprio filho flexível da gaveta, e não um `h-full` dentro da lista:
+`height: 100%` dentro de um item de flex depende de o item ter altura definida,
+o que nem sempre acontece.
+
 ### O campo de digitar cresce, até seis linhas
 
 Era `rows={1}` fixo, e quem escrevia uma pergunta de três linhas via a primeira
