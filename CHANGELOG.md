@@ -9,6 +9,28 @@ Gerado por `npm run release` a partir dos Conventional Commits. `feat` sobe o
 minor; o resto sobe o patch. Não edite à mão, a próxima execução escreve por
 cima do topo do arquivo.
 
+## 0.37.0, 2026-09-17, desde v0.36.0
+
+### Novidades
+
+- **biblo:** tres portas da conversa para o resumo, e a gaveta reabre no fim (`1fa729b`)
+- **biblo:** ele mostra a passagem, e a resposta ganha respiro (`7d14081`)
+- **biblo:** a conversa ganha uma batida entre perguntar e pensar (`e16101b`)
+- **biblo:** arrastar rola os chips de novo, agora sem o arrasto fantasma (`6171c0e`)
+- **biblo:** arrastar rola os chips, e a barra fina aparece no desktop (`ef27c24`)
+
+### Correções
+
+- **biblo:** o clique nos chips volta — a captura do ponteiro so depois do arrasto (`17c0fb9`)
+- **biblo:** a barra dos chips perde as setas (`3384c48`)
+- **biblo:** ele aparece na folha em branco, e a gaveta para de comer a tela (`01f5051`)
+
+### Outros
+
+- a selecao usa o azul do Biblo, nao o amarelo da moeda (`21d14cf`)
+- **biblo:** a selecao ganha o amarelo da marca, e o botao encurta (`963d6e6`)
+- **biblo:** tira o arrastar-para-rolar dos chips, a barra basta (`ced493e`)
+
 ## 0.36.0, 2026-09-17, desde v0.35.0
 
 ### Novidades
