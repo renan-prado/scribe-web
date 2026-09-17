@@ -791,16 +791,18 @@ MOEDA), e âmbar sobre fundo escuro lê como AVISO — a própria pergunta da pe
 parecia algo que precisava de atenção. O azul não carrega estado nenhum no
 produto, e amarra a conversa ao personagem em vez de amarrá-la ao preço.
 
-### A gaveta não tem cabeçalho
+### O cabeçalho é do tamanho do que ele tem a dizer
 
-Ela teve: o rosto do Biblo e o nome dele sobre um fio. As duas coisas já
-estavam na tela — **o rosto se repete em cada balão de resposta, e quem diz o
-nome dele é o rosto** — e uma faixa que só reafirma o óbvio rouba altura da
-conversa, que é o que a gaveta existe para mostrar.
+Ele tinha o rosto do Biblo, o nome dele e um fio embaixo. **O rosto saiu**: ele
+se repete em cada balão de resposta, e ali ele faz trabalho — diz de quem é a
+fala. Em cima, ao lado do nome, só repetia. O fio saiu junto: o que separa a
+linha da conversa é o espaço, não um traço.
 
-Ficou só o fechar, alinhado à direita, sem fio embaixo: o que o separa da lista
-é o espaço, não um traço. Ele não é redundante — sem ele a gaveta não fecha, já
-que o botão flutuante sai da tela enquanto ela está aberta.
+Ficaram o nome, em caixa baixa e na Poppins da marca (a mesma palavra que o
+`ScribaLogo` desenha), e o fechar. Nenhum dos dois é dispensável: sem o fechar a
+gaveta não fecha, já que o botão flutuante sai da tela enquanto ela está aberta,
+e sem o nome a gaveta abre sem dizer o que é — a conversa pode estar vazia, e um
+× sozinho no canto não é cabeçalho, é um botão perdido.
 
 **O rosto `thinking` do "Pensando…" passou a importar mais por causa disso**: é
 o único sinal DENTRO da gaveta de que a resposta está a caminho, já que o outro

@@ -319,17 +319,28 @@ export function BibloDrawer({
         "md:inset-y-0 md:right-0 md:left-auto md:max-h-none md:w-[420px] md:rounded-none md:rounded-l-3xl"
       )}
     >
-      {/* O que sobrou do cabeçalho: o fechar, e nada mais.
+      {/* O cabeçalho, do tamanho do que ele tem a dizer.
 
-          Ele tinha o rosto do Biblo e o nome dele sobre um fio, e as duas
-          coisas já estavam na tela — o rosto se repete em CADA balão de
-          resposta, e o nome dele quem o diz é o rosto. Uma faixa que só
-          reafirma o óbvio rouba altura da conversa, que é o que a gaveta
-          existe para mostrar.
+          Ele tinha o rosto do Biblo, o nome dele e um fio embaixo. O ROSTO
+          saiu: ele se repete em cada balão de resposta, e ali ele faz
+          trabalho — diz de quem é a fala. Em cima, ao lado do nome, ele só
+          repetia. O fio saiu junto: o que separa esta linha da conversa é o
+          espaço.
 
-          O fechar não é redundante e por isso ficou. Sem fio embaixo: o que o
-          separa da lista é o espaço, não um traço. */}
-      <div className="flex justify-end px-2 pt-2">
+          **O nome ficou, em caixa baixa, na Poppins da marca.** É a mesma
+          palavra que o `ScribaLogo` desenha, e é o que impede a gaveta de
+          abrir sem dizer o que ela é — a conversa pode estar vazia, e um × sozinho
+          no canto não é cabeçalho, é um botão perdido.
+
+          O fechar nunca foi redundante: sem ele a gaveta não fecha, porque o
+          botão flutuante sai da tela enquanto ela está aberta. */}
+      <div className="flex items-center justify-between py-2 pr-2 pl-4">
+        <span
+          className="font-semibold text-[15px] text-scriba-ink-soft leading-none"
+          style={{ fontFamily: "var(--font-poppins)", letterSpacing: "-0.015em" }}
+        >
+          biblo
+        </span>
         <button
           type="button"
           onClick={onClose}
