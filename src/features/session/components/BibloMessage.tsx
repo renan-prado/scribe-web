@@ -5,7 +5,7 @@ import { useState } from "react";
 import { RichText } from "@/features/session/components/RichText";
 import type { BibloMessage as Message } from "@/lib/domain/biblo";
 import { cn } from "@/lib/utils";
-import { BibloAvatar } from "@/shared/brand";
+import { BibloAvatar, type BibloMood } from "@/shared/brand";
 
 /**
  * Uma mensagem da conversa.
@@ -29,10 +29,15 @@ import { BibloAvatar } from "@/shared/brand";
  * lados têm balão, e é o que faz o olho saber de quem é cada linha antes de
  * ler qualquer uma delas.
  *
- * | quem | superfície |
- * |---|---|
- * | Biblo | `--secondary`, o degrau de realce que o app já usa |
- * | quem pergunta | `--biblo-bubble-me`, o azul do rosto dele |
+ * | quem | superfície | canto aparado |
+ * |---|---|---|
+ * | Biblo | `--secondary`, o degrau de realce que o app já usa | superior esquerdo |
+ * | quem pergunta | `--biblo-bubble-me`, o azul do rosto dele | inferior direito |
+ *
+ * **O canto aparado aponta para a origem da fala**, e é ele que faz um
+ * retângulo arredondado virar balão: o do Biblo encosta no rosto dele, que está
+ * em cima e à esquerda; o de quem pergunta encosta no canto de onde ela
+ * escreveu. Um raio uniforme nos quatro cantos lê como cartão, não como fala.
  *
  * **O balão de quem pergunta já foi âmbar**, o da família da MOEDA, e âmbar
  * sobre fundo escuro lê como aviso: a própria pergunta da pessoa parecia algo
@@ -121,12 +126,23 @@ export function BibloUserBubble({ text }: { text: string }) {
  * moldura sem resposta atrás: três cópias do par avatar + balão desencontrariam
  * na primeira mudança de raio, de cor ou de espaçamento.
  */
-export function BibloBubble({ children }: { children: React.ReactNode }) {
+export function BibloBubble({
+  children,
+  mood = "idle",
+}: {
+  children: React.ReactNode;
+  /**
+   * `thinking` no balão do "Pensando…". Com o cabeçalho fora, este rosto é o
+   * único sinal DENTRO da gaveta de que a resposta está a caminho — o outro é
+   * o botão flutuante, que só se vê com a gaveta fechada.
+   */
+  mood?: BibloMood;
+}) {
   return (
     <div className="flex gap-2.5">
-      <BibloAvatar size={28} className="mt-0.5" />
+      <BibloAvatar mood={mood} size={28} className="mt-0.5" />
       <div className="min-w-0 flex-1">
-        <div className="max-w-[92%] rounded-2xl rounded-bl-md bg-secondary px-3.5 py-2.5 text-[14px] text-scriba-ink leading-relaxed">
+        <div className="max-w-[92%] rounded-2xl rounded-tl-md bg-secondary px-3.5 py-2.5 text-[14px] text-scriba-ink leading-relaxed">
           {children}
         </div>
       </div>
@@ -166,7 +182,7 @@ export function BibloMessageView({
             desta resposta. Ver o efeito de rolagem em `BibloDrawer`. */}
         <div
           data-biblo-answer={message.id}
-          className="max-w-[92%] rounded-2xl rounded-bl-md bg-secondary px-3.5 py-2.5"
+          className="max-w-[92%] rounded-2xl rounded-tl-md bg-secondary px-3.5 py-2.5"
         >
           <div className="space-y-3 text-[14px] text-scriba-ink leading-relaxed">
             {paragraphs.map((paragraph, index) => (

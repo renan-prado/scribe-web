@@ -773,10 +773,15 @@ raiz): o Biblo tem rosto próprio, não precisa de enfeite emprestado.
 
 ### A conversa é de BALÕES, e a cor de cada lado é uma decisão
 
-| quem | superfície |
-|---|---|
-| Biblo | `--secondary` (#3A3B41), o degrau de realce que o app já usa |
-| quem pergunta | `--biblo-bubble-me` (#2C4A6B), o azul do rosto dele |
+| quem | superfície | canto aparado |
+|---|---|---|
+| Biblo | `--secondary` (#3A3B41), o degrau de realce que o app já usa | superior esquerdo |
+| quem pergunta | `--biblo-bubble-me` (#2C4A6B), o azul do rosto dele | inferior direito |
+
+**O canto aparado aponta para a origem da fala**, e é ele que faz um retângulo
+arredondado virar balão: o do Biblo encosta no rosto dele, que está em cima e à
+esquerda; o de quem pergunta encosta no canto de onde ela escreveu. Raio igual
+nos quatro cantos lê como cartão, não como fala.
 
 A resposta do Biblo já foi texto solto ao lado de um avatar, e o que se lia não
 era conversa: era um documento com uma carinha do lado.
@@ -785,6 +790,36 @@ era conversa: era um documento com uma carinha do lado.
 MOEDA), e âmbar sobre fundo escuro lê como AVISO — a própria pergunta da pessoa
 parecia algo que precisava de atenção. O azul não carrega estado nenhum no
 produto, e amarra a conversa ao personagem em vez de amarrá-la ao preço.
+
+### A gaveta não tem cabeçalho
+
+Ela teve: o rosto do Biblo e o nome dele sobre um fio. As duas coisas já
+estavam na tela — **o rosto se repete em cada balão de resposta, e quem diz o
+nome dele é o rosto** — e uma faixa que só reafirma o óbvio rouba altura da
+conversa, que é o que a gaveta existe para mostrar.
+
+Ficou só o fechar, alinhado à direita, sem fio embaixo: o que o separa da lista
+é o espaço, não um traço. Ele não é redundante — sem ele a gaveta não fecha, já
+que o botão flutuante sai da tela enquanto ela está aberta.
+
+**O rosto `thinking` do "Pensando…" passou a importar mais por causa disso**: é
+o único sinal DENTRO da gaveta de que a resposta está a caminho, já que o outro
+é o botão flutuante, que só se vê com ela fechada.
+
+### O campo de digitar cresce, até seis linhas
+
+Era `rows={1}` fixo, e quem escrevia uma pergunta de três linhas via a primeira
+sumir por cima enquanto digitava a terceira — reler o que se escreveu virava
+rolar um campo de uma linha.
+
+O teto é seis porque a gaveta tem altura fixa (85dvh no celular) e um campo sem
+limite come a conversa que a pessoa está lendo para responder. Passando disso
+ele rola por dentro; o teto duro continua sendo `BIBLO_MAX_QUESTION_CHARS`.
+
+**As constantes da altura andam junto com o `className` do `<textarea>`:** a
+conta é feita em pixels no componente e o `leading-6` / `py-2.5` de lá é o que a
+torna verdadeira. Mudar o `leading` sem mudar a constante erra por uma linha,
+em silêncio.
 
 ### A pergunta entra ANTES da rede
 

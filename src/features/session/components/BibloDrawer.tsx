@@ -19,9 +19,31 @@ import {
 } from "@/lib/domain/biblo";
 import { createLogger } from "@/lib/log";
 import { cn } from "@/lib/utils";
-import { BibloAvatar } from "@/shared/brand";
 
 const log = createLogger("biblo");
+
+/**
+ * O campo de digitar cresce com o texto, até SEIS linhas.
+ *
+ * Ele era `rows={1}` fixo: quem escrevia uma pergunta de três linhas via a
+ * primeira sumir por cima enquanto digitava a terceira, e reler o que se
+ * escreveu virava rolar um campo de uma linha. O teto existe porque a gaveta
+ * tem altura fixa (85dvh no celular), e um campo sem limite come a conversa
+ * que a pessoa está lendo para responder; passando de seis linhas ele rola por
+ * dentro, que é onde uma pergunta já deixou de ser pergunta — o teto duro
+ * continua sendo `BIBLO_MAX_QUESTION_CHARS`.
+ *
+ * As três constantes andam JUNTAS com o `className` do `<textarea>`: a altura é
+ * calculada em pixels aqui e o `leading-6`/`py-2.5` de lá é o que a torna
+ * verdadeira. Mexeu num, confira o outro — a conta silenciosamente erra por
+ * uma linha se `leading` mudar.
+ */
+const COMPOSER_MAX_LINES = 6;
+/** `leading-6` = 1,5rem. */
+const COMPOSER_LINE_PX = 24;
+/** `py-2.5` nas duas pontas. */
+const COMPOSER_PADDING_PX = 20;
+const COMPOSER_MAX_PX = COMPOSER_MAX_LINES * COMPOSER_LINE_PX + COMPOSER_PADDING_PX;
 
 /**
  * A gaveta: a conversa por cima do conteúdo, com o resumo atrás.
@@ -178,6 +200,18 @@ export function BibloDrawer({
     list.scrollTo({ top: Math.max(0, top - 12), behavior: "smooth" });
   }, [arrivedId]);
 
+  // A altura acompanha o conteúdo. `auto` primeiro porque `scrollHeight` nunca
+  // ENCOLHE sozinho: sem zerar antes, apagar uma linha deixaria o campo do
+  // tamanho que ele teve na maior vez.
+  //
+  // biome-ignore lint/correctness/useExhaustiveDependencies: `draft` não é LIDO aqui — quem tem o texto é o DOM —, e é exatamente por isso que ele precisa estar na lista: é o único sinal de que o conteúdo mudou e a altura precisa ser remedida.
+  useEffect(() => {
+    const input = inputRef.current;
+    if (!input) return;
+    input.style.height = "auto";
+    input.style.height = `${Math.min(input.scrollHeight, COMPOSER_MAX_PX)}px`;
+  }, [draft]);
+
   const send = useCallback(
     async (text: string) => {
       const question = text.trim();
@@ -285,22 +319,28 @@ export function BibloDrawer({
         "md:inset-y-0 md:right-0 md:left-auto md:max-h-none md:w-[420px] md:rounded-none md:rounded-l-3xl"
       )}
     >
-      <header className="flex items-center gap-2.5 border-scriba-hairline border-b px-4 py-3">
-        <BibloAvatar mood={pending ? "thinking" : "idle"} size={30} />
-        <div className="min-w-0 flex-1">
-          <p className="font-semibold text-[14px] text-scriba-ink">Biblo</p>
-        </div>
+      {/* O que sobrou do cabeçalho: o fechar, e nada mais.
+
+          Ele tinha o rosto do Biblo e o nome dele sobre um fio, e as duas
+          coisas já estavam na tela — o rosto se repete em CADA balão de
+          resposta, e o nome dele quem o diz é o rosto. Uma faixa que só
+          reafirma o óbvio rouba altura da conversa, que é o que a gaveta
+          existe para mostrar.
+
+          O fechar não é redundante e por isso ficou. Sem fio embaixo: o que o
+          separa da lista é o espaço, não um traço. */}
+      <div className="flex justify-end px-2 pt-2">
         <button
           type="button"
           onClick={onClose}
           aria-label="Fechar a conversa"
-          className="inline-flex size-8 items-center justify-center rounded-full text-scriba-ink-soft transition-colors hover:bg-scriba-hairline/50 hover:text-scriba-ink focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-scriba-ink-mute"
+          className="inline-flex size-10 items-center justify-center rounded-full text-scriba-ink-soft transition-colors hover:bg-scriba-hairline/50 hover:text-scriba-ink focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-scriba-ink-mute"
         >
           <X aria-hidden className="size-4.5" strokeWidth={1.75} />
         </button>
-      </header>
+      </div>
 
-      <div ref={listRef} className="min-h-0 flex-1 space-y-5 overflow-y-auto px-4 py-4">
+      <div ref={listRef} className="min-h-0 flex-1 space-y-5 overflow-y-auto px-4 pt-1 pb-4">
         {conversation === null && !failed && (
           <p className="text-[13px] text-scriba-ink-mute">Abrindo a conversa…</p>
         )}
@@ -323,7 +363,7 @@ export function BibloDrawer({
         {asking && <BibloUserBubble text={asking} />}
 
         {pending && (
-          <BibloBubble>
+          <BibloBubble mood="thinking">
             <span className="text-[13px] text-scriba-ink-mute">Pensando…</span>
           </BibloBubble>
         )}
@@ -381,7 +421,7 @@ export function BibloDrawer({
               rows={1}
               placeholder="Pergunte alguma coisa…"
               aria-label="Sua pergunta"
-              className="max-h-32 min-h-10 flex-1 resize-none rounded-2xl bg-scriba-surface px-3.5 py-2.5 text-[14px] text-scriba-ink placeholder:text-scriba-ink-mute focus-visible:outline-2 focus-visible:outline-offset-1 focus-visible:outline-scriba-ink-mute"
+              className="flex-1 resize-none overflow-y-auto rounded-2xl bg-scriba-surface px-3.5 py-2.5 text-[14px] text-scriba-ink leading-6 placeholder:text-scriba-ink-mute focus-visible:outline-2 focus-visible:outline-offset-1 focus-visible:outline-scriba-ink-mute"
             />
             <button
               type="submit"
