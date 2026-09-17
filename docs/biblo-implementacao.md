@@ -1206,6 +1206,23 @@ disso:
   não.** A primeira é informação — sem ela a rolagem para no meio do texto sem
   dizer em quê —, a segunda é movimento.
 
+**Ela só COMEÇA quando a rolagem para**, e o critério é a posição do bloco
+parar de mudar, não um tempo cravado — a duração de uma rolagem suave depende da
+distância e do navegador. Começando junto com o `scrollIntoView`, os dois pulsos
+aconteciam no caminho: no celular, onde a gaveta ainda está fechando e a
+distância é maior, dava para não ver nada. A espera tem piso (a rolagem ainda
+não começou nos primeiros quadros, e "não mudou de posição" seria verdade
+justamente ali), exige três quadros parados (uma rolagem suave desacelera) e tem
+teto de 1,2s, para um dedo que interrompe a rolagem não cancelar a piscada.
+
+**E ela leva `!important`, que é conserto de um bug e não desleixo.** Na tela de
+LEITURA todo bloco entra com `animate-content-fade`, e as duas classes escrevem
+a MESMA propriedade `animation` com a mesma especificidade — uma classe cada. A
+utilitária do Tailwind é gerada depois no arquivo, então ela vencia: o
+`/escrever` piscava, o `/summary` **não piscava nada**, sem erro nenhum na tela.
+`animation` é uma propriedade só; por 1,4s a piscada é a animação dona daquele
+elemento, e é isso que o `!important` diz.
+
 **No celular a gaveta FECHA antes; no desktop não.** No celular ela cobre o
 texto e ocupa 85% da altura, então a piscada aconteceria atrás dela e o gesto
 pareceria não ter feito nada. No desktop ela EMPURRA (`globals.css`), o texto

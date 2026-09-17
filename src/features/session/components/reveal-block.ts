@@ -43,15 +43,66 @@ export const SUMMARY_BLOCK_ATTR = "data-summary-block";
 /** A classe que faz a piscada. Declarada em `globals.css`. */
 const FLASH_CLASS = "summary-block-flash";
 
+/**
+ * A piscada só começa quando a ROLAGEM PARA, e isto é o que espera.
+ *
+ * Começando junto com o `scrollIntoView`, os dois pulsos aconteciam DURANTE o
+ * caminho: no celular — onde a gaveta ainda está fechando e a distância é
+ * maior — a animação acabava antes de o bloco chegar ao centro, e o que se via
+ * era rolagem e mais nada.
+ *
+ * O critério é a POSIÇÃO do bloco parar de mudar, e não um tempo cravado: a
+ * duração de uma rolagem suave depende da distância e do navegador, e qualquer
+ * número fixo seria curto num caso e longo em outro.
+ *
+ * Três amarras, cada uma contra uma falha diferente:
+ *
+ *  - **O piso** (`FLOOR`) existe porque nos primeiros quadros a rolagem ainda
+ *    não começou: sem ele, "não mudou de posição" é verdade justamente antes de
+ *    o movimento sair, e a espera terminaria no ato.
+ *  - **Três quadros parados**, e não um: uma rolagem suave desacelera, e no fim
+ *    dela dois quadros seguidos podem diferir por menos de meio pixel.
+ *  - **O teto** (`CAP`) garante que a piscada aconteça de todo jeito. Rolagem
+ *    interrompida pelo dedo, bloco que já estava no centro, aba em segundo
+ *    plano: em qualquer um deles é melhor piscar um pouco tarde que nunca.
+ */
+const SETTLE_FLOOR_MS = 120;
+const SETTLE_CAP_MS = 1200;
+const SETTLE_STABLE_FRAMES = 3;
+
+function whenScrollSettles(el: HTMLElement, flash: () => void): void {
+  const started = performance.now();
+  let previousTop = Number.NaN;
+  let stable = 0;
+
+  const tick = () => {
+    const top = el.getBoundingClientRect().top;
+    stable = Math.abs(top - previousTop) < 0.5 ? stable + 1 : 0;
+    previousTop = top;
+
+    const elapsed = performance.now() - started;
+    const parou = stable >= SETTLE_STABLE_FRAMES && elapsed >= SETTLE_FLOOR_MS;
+    if (parou || elapsed >= SETTLE_CAP_MS) {
+      flash();
+      return;
+    }
+    requestAnimationFrame(tick);
+  };
+
+  requestAnimationFrame(tick);
+}
+
 export function revealSummaryBlock(index: number): void {
   const el = document.querySelector<HTMLElement>(`[${SUMMARY_BLOCK_ATTR}="${index}"]`);
   if (!el) return;
+
+  const reduced = window.matchMedia("(prefers-reduced-motion: reduce)").matches;
 
   el.scrollIntoView({
     // Rolagem suave é o que liga o lugar de antes ao lugar de agora; com
     // movimento reduzido ela é um salto, e a piscada continua dizendo qual é o
     // bloco — o recado não depende da animação.
-    behavior: window.matchMedia("(prefers-reduced-motion: reduce)").matches ? "auto" : "smooth",
+    behavior: reduced ? "auto" : "smooth",
     block: "center",
     // `inline: "nearest"` é uma GUARDA, não um detalhe: `scrollIntoView` mexe
     // em TODO ancestral que rola, e na leitura um deles é o trilho horizontal
@@ -61,12 +112,18 @@ export function revealSummaryBlock(index: number): void {
     inline: "nearest",
   });
 
-  // Revelar o MESMO bloco duas vezes seguidas (inserir, desfazer, inserir de
-  // novo) não reinicia uma animação que já está na classe: o navegador só a
-  // dispara quando ela ENTRA. Tirar, forçar o reflow e pôr de volta é o que
-  // reinicia.
-  el.classList.remove(FLASH_CLASS);
-  void el.offsetWidth;
-  el.classList.add(FLASH_CLASS);
-  el.addEventListener("animationend", () => el.classList.remove(FLASH_CLASS), { once: true });
+  const flash = () => {
+    // Revelar o MESMO bloco duas vezes seguidas (inserir, desfazer, inserir de
+    // novo) não reinicia uma animação que já está na classe: o navegador só a
+    // dispara quando ela ENTRA. Tirar, forçar o reflow e pôr de volta é o que
+    // reinicia.
+    el.classList.remove(FLASH_CLASS);
+    void el.offsetWidth;
+    el.classList.add(FLASH_CLASS);
+    el.addEventListener("animationend", () => el.classList.remove(FLASH_CLASS), { once: true });
+  };
+
+  // Com rolagem instantânea não há o que esperar: o bloco já está no centro.
+  if (reduced) flash();
+  else whenScrollSettles(el, flash);
 }
