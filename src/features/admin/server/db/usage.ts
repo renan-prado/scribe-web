@@ -245,6 +245,15 @@ const INTERNAL_ROUTES = new Set(["admin-insights"]);
 const LEGACY_ROUTE_BUCKET = "outras";
 const LIVE_ROUTES: ReadonlySet<string> = new Set(USAGE_ROUTES);
 
+/**
+ * A conversa com o Biblo. Precisa de conjunto próprio pela MESMA razão do
+ * estudo: as mensagens sempre trazem `sessionId`, então sem esta linha o custo
+ * delas cairia no modo da sessão — engordando a linha da gravação num resumo
+ * gravado, e caindo em `unbilled` num texto escrito à mão, que é o oposto da
+ * verdade (ali a conversa é a única coisa que cobra).
+ */
+const BIBLO_ROUTES = new Set(["biblo"]);
+
 const ACTION_BY_MODE: Record<SessionMode, UsageActionKey> = {
   audio: "recording",
   // A importação do YouTube não precisa de uma lista de rotas própria como o
@@ -275,6 +284,7 @@ function actionForEvent(route: string, mode: SessionMode | null): UsageActionKey
   if (INTERNAL_ROUTES.has(route)) return INTERNAL_ACTION_KEY;
   if (STUDY_ROUTES.has(route)) return "study";
   if (REPROCESS_SUMMARY_ROUTES.has(route)) return "reprocess_summary";
+  if (BIBLO_ROUTES.has(route)) return "biblo";
   return mode ? ACTION_BY_MODE[mode] : UNBILLED_ACTION_KEY;
 }
 

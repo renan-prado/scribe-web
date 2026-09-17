@@ -113,7 +113,69 @@ export const COIN_COSTS = {
    * por um trabalho de 50.
    */
   reprocessDeepening: 50,
+  /**
+   * UMA mensagem ao Biblo, a conversa dentro da sessão.
+   *
+   * **2 e não 1, e o preço nunca aparece na tela.** Na régua de
+   * `DEFAULT_COIN_PRICE_PER_THOUSAND_BRL`, uma moeda vale R$ 0,02, então uma
+   * mensagem rende R$ 0,04.
+   *
+   * **MEDIDO** (`tmp/dev-scripts/biblo-eval.mts`, quatro execuções reais em
+   * `gpt-4.1-mini` sobre um resumo de cinco blocos, com a janela deslizante e
+   * os dois tetos de `BIBLO_ANSWER_MAX_TOKENS` / `BIBLO_SUMMARY_TOKEN_BUDGET`
+   * no lugar):
+   *
+   * | | entrada | saída | custo | margem a 2 |
+   * |---|---|---|---|---|
+   * | cache frio | ~1.300 | ~250 | R$ 0,0046 – 0,0055 | **86–88%** |
+   * | cache quente | ~1.270 (1.024 em cache) | ~250 | R$ 0,0032 | **92%** |
+   *
+   * A ESTIMATIVA que fixou este preço era R$ 0,0103, ou seja, ela errou para o
+   * lado seguro por um fator de dois. Um resumo de verdade é maior que o do
+   * teste (~2.000 tokens contra ~500), o que acrescenta na casa de R$ 0,003 por
+   * mensagem: o caso real fica perto de R$ 0,008 no pior cenário, com margem
+   * ~80%. Nenhum cenário medido chega perto do prejuízo.
+   *
+   * **Os dois tetos são o que garante isso.** Sem limite no tamanho da resposta
+   * e do resumo, o custo de uma mensagem não tem teto superior nenhum — cresce
+   * com a transcrição na entrada e com a prolixidade na saída. Era esse caso
+   * (R$ 0,0237) que condenava o preço de 1 moeda, o mesmo buraco em que
+   * `reprocessSummary` esteve a 5.
+   *
+   * **2 é o número de PARTIDA, e o ajuste provável é para BAIXO.** É fácil
+   * baixar um preço e caro subir: cair para 1 depois da medição em produção é
+   * um presente que se anuncia, subir de 1 para 2 é a única mudança de preço
+   * que gera reclamação. A medição acima é de BANCADA, com um resumo pequeno e
+   * sem conversa longa atrás — reconfira em `/admin/custos` (linha "Biblo")
+   * assim que houver tráfego real, olhando a fatia de chamadas que pegou cache.
+   *
+   * A elegância de "uma moeda por mensagem" não compra nada aqui porque **o
+   * preço é invisível**: o saldo do assinante deixa de ser um número na barra
+   * (ver `docs/creditos-na-tela.md`), então ninguém lê a unidade. O que se
+   * sente é o ritmo em que o anel anda, e a 2 moedas uma conversa de 40
+   * mensagens são 8% de um plano Pessoal.
+   */
+  bibloMessage: 2,
 } as const;
+
+/**
+ * O presente: mensagens que a conta GRATUITA usa antes de conhecer o preço.
+ *
+ * **Uma vez por CONTA, nunca por sessão.** Abrir uma sessão não custa nada
+ * (`/escrever` é o caminho gratuito do produto), então dez mensagens por
+ * sessão seriam dez mensagens infinitas com um passo a mais. Um presente tem
+ * fim, ou não é presente, é um preço mal cobrado.
+ *
+ * Dez mensagens custam ~R$ 0,10 uma vez na vida da conta, contra o R$ 1,00 de
+ * valor que `INITIAL_COIN_BALANCE` já dá de graça no cadastro: é um
+ * arredondamento numa exposição que já existe, e paga a única chance de
+ * alguém descobrir por que valeria assinar.
+ *
+ * Não há contador na tela enquanto ele corre. O aviso aparece UMA vez, na
+ * última mensagem, e é uma linha de agradecimento — não um diálogo, não um
+ * bloqueio. Ver `docs/biblo-implementacao.md` §1.1.
+ */
+export const BIBLO_GIFT_MESSAGES = 10;
 
 /**
  * Reason strings persisted in coin_transactions.reason. The server maps each
@@ -125,6 +187,7 @@ export const CHARGE_REASONS = [
   "reprocess_summary",
   "reprocess_deepening",
   "youtube_import",
+  "biblo_message",
 ] as const;
 export type ChargeReason = (typeof CHARGE_REASONS)[number];
 
@@ -134,6 +197,7 @@ export const COIN_COST_BY_REASON: Record<ChargeReason, number> = {
   reprocess_summary: COIN_COSTS.reprocessSummary,
   reprocess_deepening: COIN_COSTS.reprocessDeepening,
   youtube_import: COIN_COSTS.youtubeImport,
+  biblo_message: COIN_COSTS.bibloMessage,
 };
 
 /**

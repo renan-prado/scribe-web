@@ -99,6 +99,28 @@ const schema = z.object({
   // filtro que reprova tudo não filtra nada, só aciona o fallback. Custa 9s.
   OPENAI_STUDY_GUARD_MODEL: z.string().default("gpt-5-mini"),
   /**
+   * O Biblo, a conversa dentro da sessão.
+   *
+   * **`gpt-4.1-mini`, e NÃO um da família de raciocínio**, por duas razões que
+   * puxam para o mesmo lado:
+   *
+   *   * **Latência.** Não há streaming no produto (ver o AGENTS.md da raiz), e
+   *     numa conversa a resposta inteira aparece de uma vez. 2 a 4 segundos
+   *     passam despercebidos atrás do "pensando" do avatar; os 9s que o
+   *     guardião leva no `gpt-5-mini` seriam uma conversa inutilizável.
+   *   * **Custo, e a margem é apertada aqui.** Token de raciocínio é cobrado
+   *     como SAÍDA, e o preço de 2 moedas por mensagem (features/coins/pricing.ts)
+   *     foi calculado sem nenhum. Um modelo de raciocínio no lugar deste muda
+   *     a conta, não só a qualidade.
+   *
+   * O cache automático da OpenAI cobra o prefixo estável (instruções + resumo)
+   * a 25% na família 4.1, e é essa linha que separa 74% de margem de 61%.
+   *
+   * ⚠️ Trocar por um modelo FORA de `lib/llm/pricing.ts` faz o painel medir
+   * zero e toda margem do Biblo sair inflada. Confira a tabela antes do deploy.
+   */
+  OPENAI_BIBLO_MODEL: z.string().default("gpt-4.1-mini"),
+  /**
    * Capa dos livros indicados no estudo. OPCIONAL: sem ela o resolvedor
    * devolve null sem chamar ninguém e a UI desenha uma capa tipográfica.
    *

@@ -3,6 +3,7 @@ import { notFound } from "next/navigation";
 import { FeedbackPrompt } from "@/features/feedback/components/FeedbackPrompt";
 import { FEEDBACK_DELAY_SUMMARY_MS } from "@/features/feedback/config";
 import { BackToTop } from "@/features/session/components/BackToTop";
+import { BibloSummaryDock } from "@/features/session/components/BibloSummaryDock";
 import { SavedSessionView } from "@/features/session/components/SavedSessionView";
 import { formatDurationLong, shortDate } from "@/features/session/lib/formatting";
 import { TourTrigger } from "@/features/tour/components/TourTrigger";
@@ -122,9 +123,21 @@ export default async function V2SummaryPage({ params }: PageProps) {
           está aberto ela nem conta o atraso dela. Ver `FeedbackPrompt`. */}
       <FeedbackPrompt kind="recording" sessionId={id} delayMs={FEEDBACK_DELAY_SUMMARY_MS} />
       <TourTrigger tour="summary" delayMs={TOUR_DELAY_RESULT_MS} />
+      {/* O Biblo fica no canto de baixo à direita, o mesmo gesto do `+` da
+          Biblioteca e do hambúrguer do painel — a pergunta nasce no meio do
+          texto, não no topo dele. Ver `BibloDock`. */}
+      <BibloSummaryDock
+        sessionId={id}
+        summary={session.finalSummary}
+        title={session.title?.trim() || ""}
+      />
       {/* Um resumo com transcrição longa rola vários telefones; o voltar, o
-          menu e o título moram todos no alto. Ver `BackToTop`. */}
-      <BackToTop />
+          menu e o título moram todos no alto. Ver `BackToTop`.
+
+          `stacked`: ele divide o canto com o Biblo, e o permanente fica
+          embaixo. O contrário faria o botão principal pular de lugar toda vez
+          que alguém rolasse a página. */}
+      <BackToTop stacked />
     </>
   );
 }

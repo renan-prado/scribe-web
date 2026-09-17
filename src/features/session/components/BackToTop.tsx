@@ -21,11 +21,18 @@ import { useEffect, useState } from "react";
  * Fica ACIMA do inset do iPhone (`env(safe-area-inset-bottom)`), senão no
  * Safari ele nasce debaixo da barra do gesto do sistema.
  *
+ * **`stacked` é para quando o canto já tem dono.** No `/summary` o Biblo mora
+ * ali (`BibloDock`), e quem sobe é este: o botão PERMANENTE fica embaixo e o
+ * EVENTUAL empilha por cima, senão o principal pularia de lugar toda vez que
+ * alguém rolasse a página. `--kb-inset` entra na conta pelo mesmo motivo que
+ * entra lá — com o teclado aberto os dois sobem juntos, ou este desce para
+ * trás dele.
+ *
  * `scrollTo` com `behavior: "smooth"`, e o navegador de quem pediu menos
  * movimento resolve sozinho: `prefers-reduced-motion` já é respeitado pelo
  * scroll suave nativo, não há o que conferir aqui.
  */
-export function BackToTop() {
+export function BackToTop({ stacked = false }: { stacked?: boolean } = {}) {
   const [visible, setVisible] = useState(false);
 
   useEffect(() => {
@@ -48,9 +55,11 @@ export function BackToTop() {
       // para poder ir e voltar com transição.
       aria-hidden={!visible}
       tabIndex={visible ? 0 : -1}
-      className={`fixed right-4 bottom-[calc(1rem+env(safe-area-inset-bottom))] z-30 inline-flex size-10 items-center justify-center rounded-full bg-scriba-surface text-scriba-ink-soft ring-1 ring-scriba-hairline transition-all hover:text-scriba-ink focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-scriba-ink-mute ${
-        visible ? "opacity-90" : "pointer-events-none translate-y-2 opacity-0"
-      }`}
+      className={`fixed right-4 z-30 inline-flex size-10 items-center justify-center rounded-full bg-scriba-surface text-scriba-ink-soft ring-1 ring-scriba-hairline transition-all hover:text-scriba-ink focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-scriba-ink-mute ${
+        stacked
+          ? "bottom-[calc(5.5rem+max(env(safe-area-inset-bottom),var(--kb-inset,0px)))]"
+          : "bottom-[calc(1rem+env(safe-area-inset-bottom))]"
+      } ${visible ? "opacity-90" : "pointer-events-none translate-y-2 opacity-0"}`}
     >
       <ArrowUp className="size-5" strokeWidth={1.75} />
     </button>

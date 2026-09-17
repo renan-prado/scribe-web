@@ -897,7 +897,8 @@ foi convencido. Nenhuma das três entra no `sitemap.ts` nem no `/llms.txt`, elas
 não são conteúdo, são efeito colateral com redirect.
 
 **API:** `src/app/api/`, LLM (`transcribe`, `final-summary[/reprocess]`,
-`deepening[/reprocess]`, `youtube/import`, `verse`, `hallucination-report`),
+`deepening[/reprocess]`, `youtube/import`, `verse`, `hallucination-report`,
+`biblo`),
 dados (`sessions[/search|/written]`, `speakers`, `locations`, `coins`,
 `feedback[/prompt]`, `tour/{start,finish,reset}`), conta (`account/delete`),
 cobrança (`billing/*`, `stripe/webhook`) e admin (`admin/users`,
@@ -957,6 +958,15 @@ cada reload de `/importar/:id`, e um recorte que viesse na requisição viraria 
 vídeo inteiro pelo mesmo preço num "atrás" do navegador. A regra que aquelas rotas
 protegem continua valendo: a chamada CARA (o resumo) só roda depois do débito.
 Ver o cabeçalho da rota.
+
+`biblo` é a conversa dentro de uma sessão, e a ordem dela é
+`dono → allowance → COBRA → grava a pergunta → modelo → grava a resposta`. Duas
+coisas fora do padrão: o `allowance` não é um `requireFeature` seco, porque a
+conta gratuita recusada por plano ainda tem as mensagens de PRESENTE (ver
+`features/session/server/biblo/allowance.ts`); e a pergunta é gravada ANTES da
+chamada, para uma falha do modelo não apagar da tela o que a pessoa escreveu. O
+`GET` da mesma rota devolve a conversa guardada e não cobra nada — a abertura é
+derivada do resumo, sem LLM. Ver `docs/biblo-implementacao.md`.
 
 `sessions/search` é a metade SERVIDOR da busca das listas, e responde a DUAS
 perguntas sobre a mesma sessão: o que foi DITO (`ilike` na transcrição) e o que

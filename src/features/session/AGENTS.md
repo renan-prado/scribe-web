@@ -45,6 +45,9 @@ pessoa quiser, aprofundar.
 | `components/StudyNote.tsx` | o post-it de um estudo, a mesma casca com outro recheio |
 | `components/CollectionSearch.tsx` + `src/lib/search.ts` | a barra e o motor das duas listas |
 | `components/YoutubeUrlForm.tsx` + `YoutubeImport.tsx` | colar o link (ou recebê-lo por parâmetro), recortar um trecho, e esperar a importação |
+| `components/BibloDock.tsx` + `BibloDrawer.tsx` + `BibloMessage.tsx` | a conversa com o Biblo: botão flutuante e gaveta |
+| `components/BibloSummaryDock.tsx` | o mesmo Biblo na tela de LEITURA, que precisa de um POST para inserir |
+| `server/biblo/` | allowance, resposta e a abertura derivada |
 | `components/DeepenButton.tsx` + `DeepeningMenu.tsx` | gerar e reprocessar o estudo |
 | `components/PassageVerses.tsx` + `RichText.tsx` | texto bíblico e menções dentro do parágrafo |
 | `components/CacheOwner.tsx` | de quem é o cache deste aparelho, e a faxina quando outra conta entra |
@@ -231,6 +234,43 @@ Duas particularidades que mordem de fora:
   que a pessoa não pode fazer. Sem plano MAS com estudos antigos, a lista fica e
   o convite vira faixa acima dela: esconder o que a pessoa já pagou para
   produzir seria confisco.
+
+## O Biblo: a conversa dentro da sessão
+
+Um botão flutuante no canto de baixo à direita abre uma gaveta onde se conversa
+sobre o texto que está na tela — contexto, personagens, outras passagens,
+provocações —, e o que presta volta para o resumo como BLOCO. Ele vive nas duas
+telas que têm um `SummaryPayload`: `/summary/:id` e `/escrever/:id`.
+
+Desenho completo em [`docs/biblo-implementacao.md`](../../../docs/biblo-implementacao.md).
+Cinco coisas que mordem de fora:
+
+- **O texto bíblico nunca vem do modelo.** Ele escreve a REFERÊNCIA em prosa, o
+  `RichText` a transforma em link para a NVI local, e numa sugestão
+  `bibleQuote` o `text` é escrito pelo SERVIDOR (`verifySuggestion`) — a
+  sugestão inteira é descartada se a referência não resolver. É o que torna um
+  versículo inventado impossível em vez de improvável.
+- **A sugestão é um `SummaryBlock`, e não um formato novo.** Se o que o Biblo
+  quer oferecer não couber nos oito tipos que o editor já desenha, não há
+  sugestão. Um "bloco do Biblo" seria um nono tipo que o `BlockRenderer`, o
+  `Composer` e o `WRITTEN_BLOCK_TYPES` teriam de aprender.
+- **A abertura é DERIVADA, sem LLM** (`server/biblo/opening.ts`): o cumprimento
+  sai do título e os chips das referências citadas. Abrir a gaveta não custa
+  moeda, não custa dólar e não espera nada. Os chips com inteligência são os que
+  vêm DEPOIS de uma resposta, no mesmo JSON que a escreveu.
+- **A janela é de 6 pares de mensagens**, e o que fica fora vira o `thread`. É o
+  que mantém o custo por mensagem CONSTANTE — sem ela um preço fixo por mensagem
+  estaria errado justamente na conversa longa, que é a boa.
+- **Nada na gaveta mostra preço.** Não há contador de mensagens nem "2 moedas"
+  escrito em lugar nenhum; cobrar por mensagem só é aceitável porque o saldo
+  deixou de ser um número na barra. Ver `docs/creditos-na-tela.md`.
+
+**Inserir é diferente nas duas telas, e é bom que seja.** No editor a sugestão
+entra no rascunho local pelo mesmo `insertAt` do menu do `+`. Na leitura não há
+rascunho: o `BibloSummaryDock` faz um POST em `/api/sessions/written` e
+`router.refresh()`. Isso só é possível porque aquela rota deixou de exigir
+sessão `manual` — enquanto o `409 not_manual` existia, o Biblo da leitura não
+teria onde escrever.
 
 ## As listas: busca e filtros
 

@@ -18,7 +18,13 @@
 
 import { COIN_COSTS } from "./pricing";
 
-export const BILLABLE_ACTION_KEYS = ["recording", "youtube", "study", "reprocess_summary"] as const;
+export const BILLABLE_ACTION_KEYS = [
+  "recording",
+  "youtube",
+  "study",
+  "reprocess_summary",
+  "biblo",
+] as const;
 export type BillableActionKey = (typeof BILLABLE_ACTION_KEYS)[number];
 
 export type BillableAction = {
@@ -87,6 +93,20 @@ export const BILLABLE_ACTIONS: readonly BillableAction[] = [
     // comparável.
     reasons: ["reprocess_summary", "summary_from_transcript"],
     note: "Resumo rodado FORA da gravação, sobre uma sessão já salva. Não confundir com reprocessar o estudo, que custa 50 e está na linha acima.",
+  },
+  {
+    key: "biblo",
+    label: "Biblo",
+    coins: COIN_COSTS.bibloMessage,
+    // "mensagem" e não "conversa": é a unidade que o ledger debita, e é a
+    // única que tem custo estável. Uma conversa tem de três a quarenta
+    // mensagens, então um custo "por conversa" seria uma média de amostras
+    // incomparáveis — e é justamente a pergunta "quantas mensagens tem uma
+    // conversa?" que o painel precisa responder dividindo uma coisa pela
+    // outra.
+    unit: "mensagem",
+    reasons: ["biblo_message"],
+    note: "Uma pergunta e a resposta, com o resumo no contexto. O preço nasceu de ESTIMATIVA, não de medição: confira o custo real e a fatia de chamadas que pegou cache antes de mexer nele. Ver features/coins/pricing.ts.",
   },
 ];
 

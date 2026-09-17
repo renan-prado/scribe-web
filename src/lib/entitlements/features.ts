@@ -19,7 +19,7 @@
 
 import { PLAN_ORDER, PLANS, type PlanKey } from "@/features/billing/plans";
 
-export const FEATURE_KEYS = ["study_generation"] as const;
+export const FEATURE_KEYS = ["study_generation", "biblo_chat"] as const;
 export type FeatureKey = (typeof FEATURE_KEYS)[number];
 
 export function isFeatureKey(value: unknown): value is FeatureKey {
@@ -53,6 +53,26 @@ export const FEATURES: Record<FeatureKey, FeatureDefinition> = {
     // degrau mínimo, e qualquer um acima dele, tem acesso.
     minPlan: "pessoal",
     upsell: "O estudo aprofundado faz parte dos planos pagos.",
+  },
+  biblo_chat: {
+    key: "biblo_chat",
+    name: "Conversar com o Biblo",
+    description:
+      "A conversa dentro de uma sessão: contexto, passagens e provocações sobre o resumo.",
+    // Mesmo degrau do estudo, e pela mesma razão escrita lá em cima.
+    //
+    // ⚠️ **Este é o único `FEATURE_KEYS` cujo "não" não é o fim da história.**
+    // A conta gratuita recusada por `reason: "plan"` ainda tem as mensagens de
+    // presente (`BIBLO_GIFT_MESSAGES`), e quem trata esse caso é
+    // `features/session/server/biblo/allowance.ts`, NÃO este catálogo: aqui a
+    // resposta continua sendo sim ou não, como para as outras rotas. Ensinar
+    // "talvez" ao catálogo criaria uma terceira resposta que todas as outras
+    // features teriam de entender sem precisar.
+    //
+    // O que continua valendo sem exceção é o kill switch: `disabled` recusa
+    // todo mundo, inclusive o presente (ver `evaluateFeature`).
+    minPlan: "pessoal",
+    upsell: "O Biblo conversa com você nos planos Pessoal e Estudioso.",
   },
 };
 

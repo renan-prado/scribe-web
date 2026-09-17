@@ -4,6 +4,7 @@ import { ChevronDown, ChevronUp, Eye, Plus, Trash2, X } from "lucide-react";
 import { useRouter } from "next/navigation";
 import { type ReactNode, useEffect, useRef, useState } from "react";
 import { BookGlyph } from "@/components/icons/BookGlyph";
+import { BibloDock } from "@/features/session/components/BibloDock";
 import { PassageVerses } from "@/features/session/components/PassageVerses";
 import { useUnloadGuard } from "@/features/session/hooks/useUnloadGuard";
 import { parseVerseReference } from "@/lib/domain/reference";
@@ -654,6 +655,33 @@ export function Composer({ id, exists = false, initial, header }: Props) {
           setPickerFor(null);
         }}
       />
+
+      {/* O Biblo. Ele só aparece depois do PRIMEIRO salvamento (`sessionId`),
+          e não é limitação: a conversa é guardada por sessão, e enquanto a
+          linha não existe no banco não há onde guardá-la. O editor salva
+          sozinho a cada pausa da digitação, então "depois do primeiro
+          salvamento" é alguns segundos depois da primeira palavra.
+
+          Aqui ele SABE inserir: o `insertAt` é o mesmo do menu do `+`, e a
+          sugestão entra como bloco de verdade, no lugar que o Biblo propôs. Ver
+          `BibloDock`. */}
+      {sessionId && (
+        <BibloDock
+          sessionId={sessionId}
+          onInsert={(suggestion) => insertAt(suggestion.afterIndex + 1, suggestion.block)}
+          onRemove={(suggestion) => {
+            // Remove a ÚLTIMA ocorrência igual à sugerida, e não um índice
+            // guardado: entre o "Adicionar" e o "Remover" a pessoa pode ter
+            // escrito, movido ou apagado blocos, e um índice velho apagaria o
+            // parágrafo errado. Comparar o conteúdo é o que sobrevive a isso.
+            const needle = JSON.stringify(suggestion.block);
+            patchBlocks((blocks) => {
+              const at = blocks.map((b) => JSON.stringify(b)).lastIndexOf(needle);
+              return at < 0 ? blocks : blocks.filter((_, i) => i !== at);
+            });
+          }}
+        />
+      )}
 
       {/* `ready` só é falso por um instante, enquanto o rascunho do aparelho é
           consultado. Ele não esconde a tela (isso faria a página piscar em todo

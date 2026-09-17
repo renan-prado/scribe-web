@@ -213,6 +213,16 @@ const AUDIO_BUDGET_BYTES_PER_HOUR = 240 * 1024 * 1024;
  * - sessions/coins/verse são encanamento barato, mas ainda assim limitados.
  */
 export const RATE_LIMITS = {
+  // A conversa com o Biblo. Teto de ABUSO, não de produto: o que segura o
+  // custo de uma conversa longa é a janela deslizante do prompt (o custo por
+  // mensagem é constante), e o que segura a carteira é o débito de moedas. 30
+  // por hora é mais do que qualquer pessoa digita de verdade e menos do que um
+  // laço automatizado gastaria antes de alguém perceber.
+  biblo: {
+    route: "biblo",
+    perUser: { limit: 30, windowMs: HOUR },
+    perIp: { limit: 120, windowMs: HOUR },
+  },
   transcribe: {
     route: "transcribe",
     perUser: { limit: 40, windowMs: MIN },

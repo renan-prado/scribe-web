@@ -91,6 +91,13 @@ export const USAGE_ROUTES = [
   // atribuída à ação `internal` em features/admin/server/db/usage.ts, não a `unbilled`,
   // para não parecer gasto de usuário que ninguém cobrou.
   "admin-insights",
+  // A conversa com o Biblo. UMA rota para a mensagem inteira, e não uma por
+  // parte: a mesma chamada escreve a resposta, os próximos chips, a sugestão
+  // de bloco e o fio da conversa, então não há dois custos a separar. O que
+  // se quer ler aqui é o custo de UMA mensagem — e, dentro dele,
+  // `cached_tokens`, que diz quanta conversa pegou o cache do prefixo. É a
+  // diferença entre 74% e 61% de margem em `features/coins/pricing.ts`.
+  "biblo",
 ] as const;
 
 /** A mesma lista, como tipo. Um lugar só, ou a lista e o tipo divergem. */

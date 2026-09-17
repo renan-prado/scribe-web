@@ -18,6 +18,9 @@ saber ao editar código ficam nos `AGENTS.md` de cada pasta, não aqui.
 | Quanto se ganha indicando um amigo, e por que esses números? | [`indicacao.md`](./indicacao.md) |
 | Como o painel sabe quanto ganhamos, gastamos e devemos? | [`financeiro.md`](./financeiro.md) |
 | Por que o estudo entrega pouco, e o que fazer? | [`estudo-v2.md`](./estudo-v2.md) |
+| O que é o Biblo, o bate-papo dentro do resumo? | [`biblo.md`](./biblo.md) |
+| Como o Biblo vai ser construído, e quanto ele custa? | [`biblo-implementacao.md`](./biblo-implementacao.md) |
+| Por que o assinante não vê o número de créditos? | [`creditos-na-tela.md`](./creditos-na-tela.md) |
 | Por que a transcrição erra, e o que já foi tentado? | [`transcricao.md`](./transcricao.md) |
 | Por que importar do YouTube custa 30 e não um preço por minuto? | [`youtube.md`](./youtube.md) |
 | Qual plano libera qual funcionalidade? | [`estudo-v2.md` §8](./estudo-v2.md) e `src/lib/entitlements/features.ts` |
@@ -81,6 +84,24 @@ saber ao editar código ficam nos `AGENTS.md` de cada pasta, não aqui.
   prompt), o pipeline de cinco etapas que substitui a chamada única, e o
   desenho de entitlements por plano. **Status: implementado, exceto a rotina de
   avaliação da §7 (passo 5 da §9).**
+- **[`biblo.md`](./biblo.md)**: o bate-papo com o Biblo dentro do resumo e do
+  editor: conversar sobre o conteúdo, receber contexto, passagens e provocações
+  em pedaços pequenos, e mandar o que prestou de volta para o texto. É a mesma
+  ambição do estudo pelo caminho oposto — dirigido pela pessoa, um pedaço de
+  cada vez. **Status: proposta.**
+- **[`biblo-implementacao.md`](./biblo-implementacao.md)**: o **como** do
+  Biblo. Fecha com número as três decisões que a proposta deixou em aberto (o
+  Biblo é dos planos pagos, a conta gratuita ganha 10 mensagens de presente, e
+  cada mensagem custa 2 moedas, cobradas em silêncio), e descreve a tabela, a
+  rota, o prompt, a
+  janela deslizante que mantém o custo por mensagem constante e a ordem de
+  implementação. **Status: plano aprovado, nada implementado.**
+- **[`creditos-na-tela.md`](./creditos-na-tela.md)**: o odômetro do saldo só
+  anda para baixo, e para quem assina isso é mentira — o crédito volta todo mês.
+  O assinante passa a ver o anel e o nome do plano, o número aparece nos
+  detalhes (e volta sozinho quando a reserva fica curta); para a conta gratuita
+  nada muda, porque ali o número é a informação certa. Metade da decisão de
+  cobrar o Biblo por mensagem, e entra na mesma entrega. **Status: proposta.**
 
 ## Integração
 
