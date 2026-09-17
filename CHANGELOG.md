@@ -9,6 +9,12 @@ Gerado por `npm run release` a partir dos Conventional Commits. `feat` sobe o
 minor; o resto sobe o patch. Não edite à mão, a próxima execução escreve por
 cima do topo do arquivo.
 
+## 0.40.1, 2026-09-17, desde v0.40.0
+
+### Correções
+
+- **landing:** no celular a secao abre pelo texto, nao pela tela (`5525aa4`)
+
 ## 0.40.0, 2026-09-17, desde v0.39.4
 
 ### Novidades
