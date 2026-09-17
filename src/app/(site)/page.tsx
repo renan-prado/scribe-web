@@ -452,7 +452,11 @@ function CapabilitySection({ item }: { item: Capability }) {
       >
         <div
           className={cn(
-            "order-2 flex min-w-0 flex-col gap-6",
+            // No celular o TEXTO vem primeiro: é ele que diz do que a seção
+            // trata, e uma tela de aparelho antes do título é uma imagem sem
+            // legenda ocupando a dobra inteira. O `lg:order-*` continua
+            // alternando os lados no desktop, onde há dois.
+            "order-1 flex min-w-0 flex-col gap-6",
             item.reverse ? "lg:order-2" : "lg:order-1"
           )}
         >
@@ -532,7 +536,7 @@ function CapabilitySection({ item }: { item: Capability }) {
         </div>
         <div
           className={cn(
-            "order-1 -mx-5 flex min-w-0 justify-center overflow-hidden sm:mx-0 sm:overflow-visible",
+            "order-2 -mx-5 flex min-w-0 justify-center overflow-hidden sm:mx-0 sm:overflow-visible",
             item.reverse ? "lg:order-1" : "lg:order-2"
           )}
         >
