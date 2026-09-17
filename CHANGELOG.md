@@ -9,6 +9,12 @@ Gerado por `npm run release` a partir dos Conventional Commits. `feat` sobe o
 minor; o resto sobe o patch. Não edite à mão, a próxima execução escreve por
 cima do topo do arquivo.
 
+## 0.39.4, 2026-09-17, desde v0.39.3
+
+### Correções
+
+- **escrever:** key no TopBar que o Composer recebe por prop (`a7c9f2e`)
+
 ## 0.39.3, 2026-09-17, desde v0.39.2
 
 ### Correções
