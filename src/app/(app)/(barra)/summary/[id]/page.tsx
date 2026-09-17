@@ -1,3 +1,4 @@
+import { HydrationBoundary } from "@tanstack/react-query";
 import type { Metadata } from "next";
 import { notFound } from "next/navigation";
 import { FeedbackPrompt } from "@/features/feedback/components/FeedbackPrompt";
@@ -6,6 +7,7 @@ import { BackToTop } from "@/features/session/components/BackToTop";
 import { BibloSummaryDock } from "@/features/session/components/BibloSummaryDock";
 import { SavedSessionView } from "@/features/session/components/SavedSessionView";
 import { formatDurationLong, shortDate } from "@/features/session/lib/formatting";
+import { dehydratePassages } from "@/features/session/server/passages";
 import { TourTrigger } from "@/features/tour/components/TourTrigger";
 import { TOUR_DELAY_RESULT_MS } from "@/features/tour/config";
 import { getSessionView } from "@/lib/db/sessions";
@@ -78,7 +80,13 @@ export default async function V2SummaryPage({ params }: PageProps) {
 
   const createdAt = new Date(session.createdAt);
 
-  return (
+  // O texto dos versículos resolvido AQUI, contra a NVI em disco. Sem isto o
+  // HTML sai com o esqueleto e o navegador hidrata com os versículos (o cache
+  // do TanStack volta do IndexedDB antes do React), o que é uma divergência de
+  // hidratação em toda passagem. Ver `session/server/passages.ts`.
+  const passages = await dehydratePassages(session.finalSummary?.blocks);
+
+  const page = (
     <>
       <SavedSessionView
         header={
@@ -140,4 +148,6 @@ export default async function V2SummaryPage({ params }: PageProps) {
       <BackToTop stacked />
     </>
   );
+
+  return passages ? <HydrationBoundary state={passages}>{page}</HydrationBoundary> : page;
 }

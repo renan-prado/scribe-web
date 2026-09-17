@@ -95,7 +95,7 @@ function citedReferences(summary: SummaryPayload): string[] {
  * junto com você", e no `/escrever` isso estava simplesmente errado.
  *
  * **A quarta capacidade é a mais larga de propósito.** As três primeiras são
- * sobre o texto que está na tela; "refletir sobre qualquer tema cristão" abre a
+ * sobre o texto que está na tela; "conversar sobre qualquer tema" abre a
  * porta para a pergunta que não nasceu do sermão — a dúvida que a pessoa tem há
  * meses e nunca perguntou a ninguém. É a que o `biblo.md` §2 chama de "a
  * pergunta básica que alguém teria vergonha de fazer em público", e ela precisa
@@ -104,7 +104,7 @@ function citedReferences(summary: SummaryPayload): string[] {
  * Quem decide se ela aparece é o contador de `biblo/intro.ts`.
  */
 const INTRODUCTION =
-  "Meu nome é Biblo. Eu posso explicar uma passagem bíblica, trazer o contexto histórico, apresentar um personagem bíblico ou refletir sobre qualquer tema cristão.";
+  "Meu nome é Biblo. Eu posso explicar uma passagem bíblica, trazer o contexto histórico, apresentar um personagem bíblico ou conversar sobre qualquer tema.";
 
 function buildGreeting(input: {
   title: string;

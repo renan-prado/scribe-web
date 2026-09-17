@@ -815,11 +815,11 @@ Na primeira vez a gaveta abre e a pessoa não sabe o que perguntar ali. A
 apresentação responde a pergunta que ela tem de fato — *"o que eu pergunto
 aqui?"* — e por isso diz o que ele FAZ, não o que ele é: *"Meu nome é Biblo. Eu
 posso explicar uma passagem bíblica, trazer o contexto histórico, apresentar um
-personagem bíblico ou refletir sobre qualquer tema cristão."* São as mesmas
+personagem bíblico ou conversar sobre qualquer tema."* São as mesmas
 capacidades da §2 do `biblo.md`, e as mesmas que os chips logo abaixo oferecem.
 
 **A quarta é a mais larga de propósito.** As três primeiras são sobre o texto na
-tela; *"qualquer tema cristão"* abre a porta para a pergunta que não nasceu do
+tela; *"qualquer tema"* abre a porta para a pergunta que não nasceu do
 sermão — a dúvida que a pessoa tem há meses e nunca perguntou a ninguém, que a
 §2 chama de "a pergunta básica que alguém teria vergonha de fazer em público".
 Ela precisa estar na primeira frase para ser feita.

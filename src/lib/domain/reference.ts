@@ -42,3 +42,25 @@ export function parseVerseReference(ref: string): ParsedVerseReference | null {
     endVerse,
   };
 }
+
+/**
+ * A referência normalizada de uma FAIXA de versículos — "Jonas 1:1-3", ou
+ * "Jonas 1:3" quando a faixa tem um só.
+ *
+ * Ela é a CHAVE do cache de passagens (`["passage", reference]`), e é por isso
+ * que mora aqui e não no componente que a desenha: quem a monta na tela
+ * (`PassageVerses`) e quem a pré-resolve no servidor (`session/server/passages.ts`)
+ * precisam produzir byte a byte a mesma string. Uma diferença de um espaço faria
+ * o servidor semear uma entrada que o cliente nunca lê — e o sintoma não seria
+ * um erro, seria o esqueleto piscando de novo em toda passagem.
+ */
+export function formatPassageRange(
+  bookDisplay: string,
+  chapter: number,
+  startVerse: number,
+  endVerse: number
+): string {
+  return endVerse > startVerse
+    ? `${bookDisplay} ${chapter}:${startVerse}-${endVerse}`
+    : `${bookDisplay} ${chapter}:${startVerse}`;
+}

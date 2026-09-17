@@ -1,3 +1,4 @@
+import { HydrationBoundary } from "@tanstack/react-query";
 import { ArrowLeft, ExternalLink } from "lucide-react";
 import type { Metadata } from "next";
 import Link from "next/link";
@@ -18,6 +19,7 @@ import {
 } from "@/features/session/components/StudyBlockRenderer";
 import { SummaryView } from "@/features/session/components/SummaryView";
 import { formatDurationLong } from "@/features/session/lib/formatting";
+import { dehydratePassages } from "@/features/session/server/passages";
 
 export const dynamic = "force-dynamic";
 
@@ -66,6 +68,11 @@ export default async function AdminSessionReaderPage({ params }: PageProps) {
   const owner = session.ownerName?.trim() || session.ownerEmail || session.userId || "sem dono";
   const duration = formatDurationLong(session.durationMs);
   const study = session.study;
+
+  // O mesmo pré-carregamento da `/summary/:id`: esta tela desenha o `SummaryView`
+  // do produto, então herda a divergência de hidratação dele junto com o
+  // componente. Ver `session/server/passages.ts`.
+  const passages = await dehydratePassages(session.summary?.blocks);
 
   const panels: SessionReaderPanel[] = [
     {
@@ -135,7 +142,7 @@ export default async function AdminSessionReaderPage({ params }: PageProps) {
     });
   }
 
-  return (
+  const page = (
     <div className="flex flex-col gap-6">
       <Link
         href="/admin/sessions"
@@ -187,6 +194,8 @@ export default async function AdminSessionReaderPage({ params }: PageProps) {
       <SessionReaderTabs panels={panels} />
     </div>
   );
+
+  return passages ? <HydrationBoundary state={passages}>{page}</HydrationBoundary> : page;
 }
 
 /**

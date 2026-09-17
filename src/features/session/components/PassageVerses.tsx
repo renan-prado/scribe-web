@@ -1,6 +1,7 @@
 "use client";
 
 import { useVerseFetch } from "@/features/session/hooks/useVerseFetch";
+import { formatPassageRange } from "@/lib/domain/reference";
 import type { VerseLine } from "@/lib/domain/verse";
 
 /**
@@ -62,10 +63,7 @@ export function VerseLines({ verses }: { verses: VerseLine[] }) {
 const SKELETON_WIDTHS = ["w-full", "w-[92%]", "w-[97%]", "w-[85%]", "w-[95%]"];
 
 export function PassageVerses({ bookDisplay, chapter, startVerse, endVerse }: PassageVersesProps) {
-  const reference =
-    endVerse > startVerse
-      ? `${bookDisplay} ${chapter}:${startVerse}-${endVerse}`
-      : `${bookDisplay} ${chapter}:${startVerse}`;
+  const reference = formatPassageRange(bookDisplay, chapter, startVerse, endVerse);
 
   const state = useVerseFetch(reference);
 

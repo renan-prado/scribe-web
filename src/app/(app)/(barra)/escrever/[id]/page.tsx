@@ -1,5 +1,7 @@
+import { HydrationBoundary } from "@tanstack/react-query";
 import type { Metadata } from "next";
 import { notFound } from "next/navigation";
+import { dehydratePassages } from "@/features/session/server/passages";
 import { getSessionView } from "@/lib/db/sessions";
 import { payloadToWritten } from "@/lib/domain/summary";
 import { isUuid } from "@/lib/http/validate";
@@ -71,7 +73,12 @@ export default async function EscreverIdPage({ params }: PageProps) {
 
   const written = payloadToWritten(session?.finalSummary ?? null);
 
-  return (
+  // Mesma razão da `/summary/:id`: sem semear o texto dos versículos, o HTML
+  // sai com o esqueleto e o navegador hidrata com a NVI já em cache. Ver
+  // `session/server/passages.ts`.
+  const passages = await dehydratePassages(session?.finalSummary?.blocks);
+
+  const page = (
     <Composer
       id={id}
       exists={!!session}
@@ -101,4 +108,6 @@ export default async function EscreverIdPage({ params }: PageProps) {
       }
     />
   );
+
+  return passages ? <HydrationBoundary state={passages}>{page}</HydrationBoundary> : page;
 }
