@@ -84,7 +84,25 @@ export default async function EscreverIdPage({ params }: PageProps) {
       exists={!!session}
       initial={{ ...written, title: session?.title ?? written.title }}
       header={
+        /* O `key` num elemento que é PROP, e não item de lista.
+
+           O React avisava "Each child in a list should have a unique key prop"
+           apontando para cá: o `Composer` põe este elemento entre os filhos do
+           `<main>` dele, e um elemento que atravessa a fronteira RSC — criado
+           aqui, num server component, e entregue a um componente cliente —
+           chega sem a marca interna de "já conferido" que o React põe no que
+           ele mesmo cria. Sem ela, um filho sem `key` é tratado como item de
+           lista, e o aviso sai com o nome deste arquivo.
+
+           Não reproduzi numa carga limpa da rota (nem com o portal da barra
+           montado, nem por navegação do cliente, nem com o layout embrulhando
+           `children` num componente cliente), então este `key` é o conserto do
+           que o aviso PEDE, e não de uma causa que eu tenha visto de perto. Ele
+           é gratuito: um elemento que nunca muda de posição não perde nada com
+           uma identidade fixa. Se o aviso voltar com ele aqui, o problema não é
+           este. */
         <TopBar
+          key="topbar"
           /* O voltar leva de volta ao que se estava LENDO, e não à Biblioteca.
              Aqui sempre se chega de `/summary/{id}`, pelo botão "Editar" do
              cabeçalho, e mandar para `/home` obrigava a achar o cartão de novo para
