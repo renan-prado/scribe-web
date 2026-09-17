@@ -866,6 +866,13 @@ se repete em cada balão de resposta, e ali ele faz trabalho — diz de quem é 
 fala. Em cima, ao lado do nome, só repetia. O fio saiu junto: o que separa a
 linha da conversa é o espaço, não um traço.
 
+Ficou um balão de conversa ao lado do nome, e ele **não é o rosto de volta**:
+o rosto diz QUEM fala, e tem trabalho a fazer três linhas abaixo, em cada
+resposta; este glifo diz O QUE isto é. É a mesma função do microfone no gravador
+e do livro na pastilha de referência, e é o que dá a este cabeçalho a anatomia
+dos outros do app. Vai `aria-hidden`: o nome ao lado já diz tudo, e um segundo
+rótulo faria o leitor de tela anunciar "conversa Biblo".
+
 Ficaram o nome, na Poppins da marca e com maiúscula — a caixa baixa é do
 logotipo, onde "scriba" é a MARCA; aqui a palavra é o nome de alguém com quem se
 conversa —, e o fechar. Nenhum dos dois é dispensável: sem o fechar a

@@ -1,6 +1,6 @@
 "use client";
 
-import { ArrowUp, X } from "lucide-react";
+import { ArrowUp, MessageCircle, X } from "lucide-react";
 import { useCallback, useEffect, useRef, useState } from "react";
 import { useCoinsStore } from "@/features/coins/store";
 import {
@@ -579,12 +579,24 @@ export function BibloDrawer({
           cabeçalho, é um botão perdido.
 
           O fechar nunca foi redundante: sem ele a gaveta não fecha, porque o
-          botão flutuante sai da tela enquanto ela está aberta. */}
+          botão flutuante sai da tela enquanto ela está aberta.
+
+          **O balão de conversa ao lado do nome NÃO é o rosto de volta.** O
+          rosto foi tirado daqui porque ele tem trabalho a fazer três linhas
+          abaixo, em cada resposta, e repeti-lo em cima confunde quem é quem
+          numa gaveta que pode estar vazia. Este glifo diz outra coisa: não
+          QUEM fala, mas O QUE isto é — uma conversa. É a mesma função do
+          microfone no gravador e do livro na pastilha de referência, e é o que
+          dá ao cabeçalho a mesma anatomia das outras telas do app.
+
+          Ele é `aria-hidden`: o nome ao lado já diz tudo, e um segundo rótulo
+          faria o leitor de tela anunciar "conversa Biblo". */}
       <div className="flex items-center justify-between py-2 pr-2 pl-4">
         <span
-          className="font-semibold text-[15px] text-scriba-ink-soft leading-none"
+          className="inline-flex items-center gap-2 font-semibold text-[15px] text-scriba-ink-soft leading-none"
           style={{ fontFamily: "var(--font-poppins)", letterSpacing: "-0.015em" }}
         >
+          <MessageCircle aria-hidden className="size-4" strokeWidth={1.75} />
           Biblo
         </span>
         <button
