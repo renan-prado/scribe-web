@@ -1,10 +1,12 @@
 "use client";
 
 import { useState } from "react";
+import { BibloAddButton } from "@/features/session/components/BibloAddButton";
 import { ChapterMention } from "@/features/session/components/ChapterMention";
 import { VerseLines } from "@/features/session/components/PassageVerses";
 import { useVerseFetch } from "@/features/session/hooks/useVerseFetch";
 import { formatPassageRange, parseVerseReference } from "@/lib/domain/reference";
+import type { SummaryBlock } from "@/lib/domain/summary";
 
 /**
  * A passagem ABERTA dentro da conversa: a referência que o Biblo deixou
@@ -51,7 +53,19 @@ import { formatPassageRange, parseVerseReference } from "@/lib/domain/reference"
  */
 const VISIBLE_VERSES = 6;
 
-export function BibloPassage({ reference }: { reference: string }) {
+export function BibloPassage({
+  reference,
+  onAdd,
+  onRemove,
+}: {
+  reference: string;
+  /**
+   * Leva a passagem para o resumo, como bloco `bibleQuote`. `undefined` na tela
+   * que não sabe editar — o cartão continua lá, só sem o "+".
+   */
+  onAdd?: (block: SummaryBlock) => void;
+  onRemove?: (block: SummaryBlock) => void;
+}) {
   const parsed = parseVerseReference(reference);
   const start = parsed?.startVerse;
   const range =
@@ -64,6 +78,7 @@ export function BibloPassage({ reference }: { reference: string }) {
 
   const state = useVerseFetch(range);
   const [expanded, setExpanded] = useState(false);
+  const [added, setAdded] = useState(false);
 
   // Sem faixa ("Lucas 19") não há trecho a mostrar: o capítulo inteiro num balão
   // seria pior que o link que havia antes. Vira a menção de sempre.
@@ -75,9 +90,33 @@ export function BibloPassage({ reference }: { reference: string }) {
   const hidden = Math.max(verses.length - VISIBLE_VERSES, 0);
   const shown = expanded ? verses : verses.slice(0, VISIBLE_VERSES);
 
+  // O bloco que vai para o resumo é o do RESUMO, e o texto dele sai da NVI que
+  // já está desenhada aqui — nunca do modelo, que só escreveu a referência. É a
+  // faixa INTEIRA, e não o que está aberto na tela: dobrar versículos é um
+  // gesto de leitura, e o que se guarda é a passagem.
+  const block: SummaryBlock = {
+    type: "bibleQuote",
+    reference: range,
+    text: verses.map((line) => line.text).join(" "),
+  };
+
   return (
     <div className="rounded-xl bg-scriba-hairline-soft px-3 py-3 ring-1 ring-scriba-hairline">
-      <ChapterMention reference={chapter} label={range} />
+      <div className="flex items-start justify-between gap-2">
+        <ChapterMention reference={chapter} label={range} />
+        {onAdd && verses.length > 0 && (
+          <BibloAddButton
+            added={added}
+            label="Adicionar esta passagem ao resumo"
+            onToggle={() => {
+              if (added) onRemove?.(block);
+              else onAdd(block);
+              setAdded(!added);
+            }}
+            className="-mr-1 -mt-0.5"
+          />
+        )}
+      </div>
       <div className="mt-2.5 text-session-verse-text">
         {state.status === "ok" ? (
           <VerseLines verses={shown} />

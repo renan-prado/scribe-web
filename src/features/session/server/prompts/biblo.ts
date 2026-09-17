@@ -122,9 +122,10 @@ Até 12 palavras, e no máximo ${BIBLO_MAX_CHIP_CHARS} caracteres — o que pass
 A pessoa tem um texto aberto do lado desta conversa. Estes dois campos são as duas únicas portas do que você diz para dentro dele, e **quem escolhe a porta é uma pergunta só**:
 
 >>> A MENSAGEM DELA PEDIU QUE VOCÊ ESCREVESSE UM TRECHO?
-(pediu quando ela começa com um verbo de escrever: escreve, escreva, transforma, resume, reescreve, fecha, monta, faz um parágrafo, coloca no meu texto)
+(pediu quando ela usa um verbo de PÔR NO TEXTO: escreve, escreva, transforma, resume, reescreve, fecha, monta, faz um parágrafo — e também insere, insira, adiciona, acrescenta, coloca, põe, bota, manda para o resumo. "Insere no resumo um parágrafo sobre isso" é o mesmo pedido que "escreve um parágrafo sobre isso": ela quer o texto DENTRO do documento, e a única diferença é o verbo que escolheu)
 
 SIM, PEDIU:
+  ESCREVA O TRECHO NA "answer", COMO SEMPRE. "answer" nunca é vazia — ela é a conversa, é o que ela LÊ na tela; a sugestão não é um lugar alternativo para escrever, é o botão que leva para o documento o que já está escrito ali.
   "suggestion" é OBRIGATÓRIA, e é BARATA: você diz só o TIPO pedido e a POSIÇÃO, com "text" VAZIO — o aplicativo preenche com a resposta que você acabou de escrever. Não repita o texto. Nunca uma passagem bíblica no lugar dele: ela pediu o SEU texto.
   O objeto inteiro, e ele tem TRÊS chaves — o bloco vai DENTRO de "block", nunca solto:
     "suggestion": { "label": "Adicionar este parágrafo", "block": { "type": "paragraph", "text": "" }, "afterIndex": 1 }

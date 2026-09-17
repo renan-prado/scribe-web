@@ -50,6 +50,24 @@ export const BibloSuggestionSchema = z.object({
 export type BibloSuggestion = z.infer<typeof BibloSuggestionSchema>;
 
 /**
+ * O `afterIndex` que quer dizer "no fim do texto".
+ *
+ * O campo nasceu para o modelo APONTAR uma posição: ele vê os blocos numerados
+ * e diz depois de qual o novo entra. Mas nem toda inserção vem do modelo — o
+ * "+" de uma passagem e o "Adicionar ao resumo" de um trecho selecionado são a
+ * PESSOA inserindo, e ali não há posição proposta por ninguém.
+ *
+ * O fim é a resposta certa para esses dois: quem coleta material enquanto
+ * conversa está empilhando, não costurando — e mover um bloco dentro do editor
+ * é um gesto, enquanto achar onde ele foi parar no meio do texto é uma busca.
+ *
+ * As duas pontas que consomem uma sugestão já grampeiam o índice ao tamanho da
+ * lista (`Math.min` no `BibloSummaryDock`, o `splice` do `insertAt` no editor),
+ * então um número grande é literalmente "o fim" nas duas, sem caso especial.
+ */
+export const BIBLO_AT_END = Number.MAX_SAFE_INTEGER;
+
+/**
  * O JSON que UMA chamada ao modelo devolve: resposta, próximos chips, sugestão
  * e o fio.
  *
@@ -59,7 +77,23 @@ export type BibloSuggestion = z.infer<typeof BibloSuggestionSchema>;
  * mensagem para gerar três frases curtas.
  */
 export const BibloReplySchema = z.object({
-  answer: z.string().min(1),
+  /**
+   * **Vazia é aceita aqui, e resolvida no servidor** — não derruba a resposta.
+   *
+   * Ela era `.min(1)`, o último campo fatal do contrato, e cobrava caro pelo
+   * privilégio: perguntado "insere no resumo um parágrafo sobre a diferença
+   * entre as duas parábolas", o modelo escrevia o parágrafo DENTRO de
+   * `suggestion.block.text` e mandava `answer: ""` — o pedido foi atendido, o
+   * texto existe, e mesmo assim o `POST` respondia `unparseable` **depois de
+   * debitar as duas moedas**. E acontecia justamente no pedido mais valioso da
+   * conversa, o de pôr algo no documento.
+   *
+   * Quem decide o que fazer com o vazio é `generateBibloAnswer`: havendo texto
+   * na sugestão, ele VIRA a resposta (os dois campos são o mesmo trecho, um
+   * para ler e outro para inserir). Vazio dos dois lados, aí sim não há
+   * resposta, e aí sim é erro.
+   */
+  answer: z.string().default(""),
   /**
    * Os chips, **aparados em vez de recusados**.
    *

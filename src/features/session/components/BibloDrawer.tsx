@@ -8,8 +8,10 @@ import {
   BibloMessageView,
   BibloUserBubble,
 } from "@/features/session/components/BibloMessage";
+import { BibloSelection } from "@/features/session/components/BibloSelection";
 import { ListeningDots } from "@/features/session/components/skeletons";
 import {
+  BIBLO_AT_END,
   BIBLO_MAX_QUESTION_CHARS,
   type BibloAllowance,
   type BibloConversation,
@@ -18,6 +20,7 @@ import {
   type BibloSuggestion,
   type BibloTurn,
 } from "@/lib/domain/biblo";
+import type { SummaryBlock } from "@/lib/domain/summary";
 import { createLogger } from "@/lib/log";
 import { cn } from "@/lib/utils";
 
@@ -100,12 +103,20 @@ const COMPOSER_MAX_PX = COMPOSER_MAX_LINES * COMPOSER_LINE_PX + COMPOSER_PADDING
  * três caminhos de falha ela sai da lista e volta para o campo, onde pode ser
  * reenviada — o otimismo termina onde a certeza termina.
  *
- * ## A rolagem tem DOIS destinos
+ * ## A rolagem tem TRÊS destinos
  *
- * Ao enviar, o fim da lista. Ao receber, o **início do balão da resposta** —
- * porque parar no fim de uma resposta de três parágrafos deixa a primeira linha
- * meia tela acima, e a pessoa tem de subir para começar a ler o que acabou de
- * pedir.
+ * Ao abrir uma conversa que já existia, o fim da lista, sem animação. Ao
+ * enviar, o fim da lista de novo. Ao receber, o **início do balão da resposta**
+ * — porque parar no fim de uma resposta de três parágrafos deixa a primeira
+ * linha meia tela acima, e a pessoa tem de subir para começar a ler o que
+ * acabou de pedir.
+ *
+ * ## Três portas para o documento, e só uma passa pelo modelo
+ *
+ * A `suggestion` é a dele. O **"+"** de uma passagem e o **trecho selecionado**
+ * são da pessoa, e entram pelo mesmo `onInsert` — um segundo canal até o texto
+ * seria uma segunda regra de posição, de desfazer e de salvamento. Ver
+ * `BibloAddButton`, `BibloSelection` e `BIBLO_AT_END`.
  */
 
 const DENIAL_COPY: Record<BibloDenial, { text: string; cta?: { label: string; href: string } }> = {
@@ -346,6 +357,23 @@ export function BibloDrawer({
     };
   }, [sessionId]);
 
+  // Ao ABRIR uma conversa que já existia, o fim da lista.
+  //
+  // A gaveta abria no COMEÇO, que é o começo de uma conversa de semanas atrás:
+  // quem reabre quer a última coisa que foi dita, não a primeira — e os chips
+  // do rodapé são os da última resposta, então a tela mostrava o fim da conversa
+  // embaixo e o início dela em cima, dois pontos do fio ao mesmo tempo.
+  //
+  // Sem `smooth`, ao contrário das outras duas rolagens: aqui não houve evento
+  // nenhum para acompanhar, este é o lugar onde a lista NASCE. Uma animação
+  // subindo a conversa inteira no instante da abertura anuncia um movimento que
+  // ninguém fez.
+  useEffect(() => {
+    const list = listRef.current;
+    if (!list || !conversation || conversation.messages.length === 0) return;
+    list.scrollTop = list.scrollHeight;
+  }, [conversation]);
+
   // Enquanto a pergunta esta no ar, o fim da lista e o lugar certo: a pergunta
   // recem-enviada e o "Pensando..." sao as duas ultimas coisas, e a pessoa quer
   // ver as duas. `behavior: "smooth"` de proposito, um salto seco esconde que
@@ -499,6 +527,19 @@ export function BibloDrawer({
     setAddedIds((prev) => new Set(prev).add(message.id));
   };
 
+  // As inserções que NÃO vêm do modelo: o "+" de uma passagem e o trecho
+  // selecionado. Elas viram a mesma `BibloSuggestion` que o resto do caminho já
+  // sabe inserir e desfazer — um segundo canal até o documento seria uma
+  // segunda regra de posição, de desfazer e de salvamento. O que muda é só o
+  // `afterIndex`: aqui não há posição proposta, e o fim é a resposta certa
+  // (ver `BIBLO_AT_END`).
+  const insertBlock = (block: SummaryBlock) => {
+    onInsert?.({ label: "Adicionar ao resumo", block, afterIndex: BIBLO_AT_END });
+  };
+  const removeBlock = (block: SummaryBlock) => {
+    onRemove?.({ label: "Adicionar ao resumo", block, afterIndex: BIBLO_AT_END });
+  };
+
   const handleUndo = (message: BibloMessage) => {
     if (!message.suggestion || !onRemove) return;
     onRemove(message.suggestion);
@@ -590,6 +631,8 @@ export function BibloDrawer({
               message={message}
               onAdd={onInsert ? handleAdd : undefined}
               onUndo={onRemove ? handleUndo : undefined}
+              onAddBlock={onInsert ? insertBlock : undefined}
+              onRemoveBlock={onRemove ? removeBlock : undefined}
               added={addedIds.has(message.id)}
               animate={message.id === arrivedId}
             />
@@ -610,6 +653,11 @@ export function BibloDrawer({
           )}
         </div>
       )}
+
+      <BibloSelection
+        listRef={listRef}
+        onAdd={onInsert ? (text) => insertBlock({ type: "paragraph", text }) : undefined}
+      />
 
       <div className="space-y-3 border-scriba-hairline border-t px-4 pt-3 pb-[calc(0.75rem+max(env(safe-area-inset-bottom),var(--kb-inset,0px)))]">
         {!blocked && <Chips chips={chips} onPick={send} disabled={pending} />}

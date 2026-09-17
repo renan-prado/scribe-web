@@ -268,6 +268,17 @@ Cinco coisas que mordem de fora:
   quer oferecer não couber nos oito tipos que o editor já desenha, não há
   sugestão. Um "bloco do Biblo" seria um nono tipo que o `BlockRenderer`, o
   `Composer` e o `WRITTEN_BLOCK_TYPES` teriam de aprender.
+- **São TRÊS portas para o documento, e só uma passa pelo modelo.** A
+  `suggestion`/`offer` é dele; o **"+"** no canto de uma passagem
+  (`BibloAddButton`) e o **trecho selecionado** (`BibloSelection`) são da pessoa.
+  As duas últimas entram pelo MESMO `onInsert`, como uma `BibloSuggestion`
+  montada no cliente com `afterIndex: BIBLO_AT_END` — um segundo canal até o
+  texto seria uma segunda regra de posição, de desfazer e de salvamento.
+- **Nada no contrato da resposta é fatal, nem o `answer`.** Ele era `.min(1)`, e
+  o pedido "insere no resumo um parágrafo sobre X" fazia o modelo escrever o
+  trecho dentro da sugestão e mandar a resposta vazia — `unparseable` depois de
+  cobrar, no pedido mais valioso da conversa. Hoje um dos dois campos preenche o
+  outro; vazio dos dois lados é o único erro.
 - **A abertura é DERIVADA, sem LLM** (`server/biblo/opening.ts`): o cumprimento
   sai do título e os chips das referências citadas. Abrir a gaveta não custa
   moeda, não custa dólar e não espera nada. Os chips com inteligência são os que

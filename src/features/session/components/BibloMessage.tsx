@@ -6,6 +6,7 @@ import { BibloPassage } from "@/features/session/components/BibloPassage";
 import { RichText } from "@/features/session/components/RichText";
 import { asStandaloneScripture } from "@/lib/domain/annotate";
 import type { BibloMessage as Message } from "@/lib/domain/biblo";
+import type { SummaryBlock } from "@/lib/domain/summary";
 import { cn } from "@/lib/utils";
 import { BibloAvatar, type BibloMood } from "@/shared/brand";
 
@@ -178,6 +179,8 @@ export function BibloMessageView({
   message,
   onAdd,
   onUndo,
+  onAddBlock,
+  onRemoveBlock,
   added,
   animate = false,
 }: {
@@ -185,6 +188,13 @@ export function BibloMessageView({
   /** `undefined` quando não há para onde inserir (a tela não sabe editar). */
   onAdd?: (message: Message) => void;
   onUndo?: (message: Message) => void;
+  /**
+   * Insere um bloco que NÃO veio do modelo — hoje, a passagem aberta pelo "+"
+   * dela. Separado de `onAdd` porque aquele carrega a `suggestion` da mensagem,
+   * que é uma por resposta; este é por PEDAÇO, e uma resposta pode ter vários.
+   */
+  onAddBlock?: (block: SummaryBlock) => void;
+  onRemoveBlock?: (block: SummaryBlock) => void;
   added: boolean;
   /**
    * Só a resposta que ACABOU de chegar anima. Reabrir a gaveta amanhã é ler
@@ -229,7 +239,7 @@ export function BibloMessageView({
               return passage ? (
                 // biome-ignore lint/suspicious/noArrayIndexKey: parágrafos de um texto imutável, a ordem é estável
                 <div key={`p-${index}`} {...motion}>
-                  <BibloPassage reference={passage} />
+                  <BibloPassage reference={passage} onAdd={onAddBlock} onRemove={onRemoveBlock} />
                 </div>
               ) : (
                 // biome-ignore lint/suspicious/noArrayIndexKey: parágrafos de um texto imutável, a ordem é estável

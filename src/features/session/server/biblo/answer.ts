@@ -378,6 +378,19 @@ function breathe(text: string): string {
 const FILLABLE_FROM_ANSWER = new Set(["paragraph", "highlight", "conclusion", "example"]);
 
 /**
+ * O texto que a sugestão carrega, quando ela carrega algum.
+ *
+ * Existe para o caminho INVERSO do preenchimento abaixo: o modelo às vezes
+ * escreve o trecho pedido dentro do bloco e deixa a conversa vazia. Os dois
+ * campos são o mesmo parágrafo — um para ler, outro para inserir —, então
+ * quando só um deles tem texto, ele serve aos dois.
+ */
+function suggestionText(suggestion: BibloSuggestion | null): string {
+  if (!suggestion || suggestion.block.type === "bibleQuote") return "";
+  return suggestion.block.text.trim();
+}
+
+/**
  * A sugestão, conferida — e, quando é o caso, PREENCHIDA.
  *
  * ## O modelo escolhe o bloco; o servidor escreve o texto
@@ -478,16 +491,39 @@ export async function generateBibloAnswer(input: BibloAnswerInput): Promise<Bibl
 
   const reply = BibloReplySchema.safeParse(parsed);
   if (!reply.success) {
-    log.warn("schema-drop", { issues: reply.error.issues.length });
+    // Os CAMINHOS, não a contagem: "issues: 1" não diz qual campo caiu, e
+    // descobrir isso era refazer a chamada com um log temporário no meio.
+    log.warn("schema-drop", {
+      issues: reply.error.issues.map(
+        (issue) => `${issue.path.join(".") || "(raiz)"}: ${issue.code}`
+      ),
+    });
     return { ok: false, kind: "unparseable", message: "resposta fora do contrato" };
   }
 
   // A ordem importa: a sugestão pode ser preenchida com o texto da resposta, e
   // o que vai para o documento tem de ser a resposta JÁ com os marcadores
   // resolvidos — nunca um `[[Jonas 1:3]]` cru entrando no resumo de alguém.
-  const answer = await resolveMarkers(reply.data.answer);
+  // A resposta pode vir vazia quando o modelo escreveu o trecho pedido dentro
+  // da sugestão (ver o cabeçalho de `answer` em `domain/biblo.ts`). Vazia dos
+  // DOIS lados não há o que mostrar, e aí sim é erro — mas é o único caso.
+  const written = reply.data.answer.trim() || suggestionText(reply.data.suggestion);
+  if (!written) {
+    log.warn("schema-drop", { issues: ["answer: vazia dos dois lados"] });
+    return { ok: false, kind: "unparseable", message: "resposta vazia" };
+  }
+
+  const answer = await resolveMarkers(written);
   const text = await splicePassage(dropTrailingOffer(breathe(answer.text)), reply.data.passage);
-  const suggestion = await verifySuggestion(reply.data.suggestion, blocks.length, text);
+  // O bloco preenchido pelo servidor leva a PROSA, sem a linha da passagem: ela
+  // é um cartão dentro da conversa, e dentro de um `paragraph` do resumo viraria
+  // uma referência solta no meio do texto de alguém. Quem quiser a passagem no
+  // documento tem o "+" do próprio cartão.
+  const prose = text
+    .split(/\n{2,}/)
+    .filter((paragraph) => !asStandaloneScripture(paragraph))
+    .join("\n\n");
+  const suggestion = await verifySuggestion(reply.data.suggestion, blocks.length, prose);
 
   if (answer.dropped > 0) {
     // Não é erro de usuário nem motivo para 500: a resposta segue sem a

@@ -960,7 +960,7 @@ verdade**: quem a escreveu foi a pessoa, e o que o servidor devolve depois é s�
 o id dela. Nos três caminhos de falha ela sai da lista e volta para o campo,
 onde pode ser reenviada — o otimismo termina onde a certeza termina.
 
-### A rolagem tem DOIS destinos
+### A rolagem tem TRÊS destinos
 
 Ao enviar, o fim da lista: a pergunta e o "Pensando…" são as duas últimas
 coisas, e a pessoa quer ver as duas.
@@ -968,6 +968,13 @@ coisas, e a pessoa quer ver as duas.
 **Ao receber, o INÍCIO do balão da resposta.** Parar no fim de uma resposta de
 três parágrafos deixa a primeira linha meia tela acima, e a pessoa tem de subir
 para começar a ler o que acabou de pedir.
+
+**Ao ABRIR**, se a conversa já existia, o fim da lista — e sem animação. A
+gaveta abria no COMEÇO, que é o começo de uma conversa de semanas atrás: quem
+reabre quer a última coisa que foi dita. Pior, os chips do rodapé são os da
+ÚLTIMA resposta, então a tela mostrava dois pontos do fio ao mesmo tempo, o fim
+embaixo e o início em cima. Sem `smooth` ao contrário das outras duas: aqui não
+houve evento nenhum para acompanhar, este é o lugar onde a lista nasce.
 
 ### O "pensando"
 
@@ -1048,6 +1055,52 @@ histórico: é o arrependimento dos próximos segundos.
 **Copiar é a segunda porta, e não a de serviço.** Todo trecho da conversa tem
 "copiar", com o mesmo peso visual do "Adicionar" — às vezes o parágrafo vai para
 o caderno, para o WhatsApp do grupo, para um slide.
+
+### São TRÊS portas, e só uma passa pelo modelo
+
+A `suggestion` e a `offer` trabalham em unidades que o modelo escolheu: a
+resposta inteira, reescrita por ele. Duas coisas ficavam sem caminho, e as duas
+são o material que mais se quer guardar numa conversa sobre um sermão:
+
+| o que se quer levar | a porta | o que entra no resumo |
+|---|---|---|
+| a resposta que ele acabou de escrever | `suggestion` / `offer` | o bloco que ele propôs, onde ele propôs |
+| **a passagem que está na tela** | o **"+"** no canto do cartão | `bibleQuote` com a referência e o texto da NVI |
+| **um pedaço de uma resposta** | **selecionar o trecho** | `paragraph` com o que foi selecionado |
+
+As duas novas não pedem nada a ninguém: a passagem já está desenhada, o trecho
+já está marcado com o dedo, e o que faltava era um lugar para pôr. Sem elas, o
+pedaço só sai daqui por copiar e colar — **e quem copia e cola sai do produto
+para voltar a ele**, que é exatamente o que esta seção existe para evitar.
+
+As duas entram pelo MESMO `onInsert` das outras, como uma `BibloSuggestion`
+montada no cliente. Um segundo canal até o documento seria uma segunda regra de
+posição, de desfazer e de salvamento. O que muda é só o `afterIndex`: aqui
+ninguém propôs posição, e o valor é `BIBLO_AT_END` — quem coleta material
+enquanto conversa está empilhando, não costurando.
+
+**A seleção também traz "Copiar", com o mesmo peso.** Um parágrafo selecionável
+com um menu do sistema por cima que só sabe copiar é uma promessa pela metade;
+e fazer do copiar o caminho de segunda classe empurra para dentro do texto o que
+a pessoa queria levar para fora.
+
+### "Insere no resumo um parágrafo sobre X" custou o contrato inteiro
+
+O pedido existe desde sempre — é o ramo "SIM, PEDIU" do prompt —, mas o verbo
+não estava na lista (só `escreve`, `transforma`, `resume`…). Corrigida a lista,
+apareceu o defeito real: o modelo escrevia o parágrafo DENTRO de
+`suggestion.block.text` e devolvia `answer: ""`. O pedido estava atendido, o
+texto existia — e o `.min(1)` do `answer` derrubava o schema inteiro,
+respondendo `unparseable` **depois de debitar as duas moedas**, justamente no
+pedido mais valioso da conversa.
+
+`answer` deixou de ser fatal. Vazia, ela é preenchida com o texto da sugestão:
+os dois campos são o mesmo trecho, um para ler e outro para inserir. Vazio dos
+dois lados, aí sim não há resposta.
+
+(E o `schema-drop` passou a registrar os CAMINHOS dos campos que caíram, não a
+contagem. "issues: 1" não diz qual campo falhou, e descobrir isso era refazer a
+chamada com um log temporário no meio.)
 
 ---
 
