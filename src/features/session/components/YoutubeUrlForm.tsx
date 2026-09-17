@@ -229,14 +229,41 @@ export function YoutubeUrlForm({ initialUrl = "", initialStartMs, initialEndMs }
           >
             Cole o endereço de um vídeo. Links de canal e de playlist não funcionam aqui.
           </p>
-        ) : (
-          <p
-            id="youtube-url-hint"
-            className="px-1 text-[12px] font-light self-end pr-4 leading-relaxed text-scriba-ink-mute"
-          >
-            limite de {MAX_HOURS}h*
-          </p>
-        )}
+        ) : null}
+
+        {/* A LINHA SOB O CAMPO: o recorte à esquerda, o teto à direita.
+
+            Os dois eram irmãos numa coluna — o teto alinhado à direita, o
+            recorte à esquerda uma linha abaixo —, e o resultado era uma
+            escadinha de duas linhas miúdas com um vão morto entre elas, cada
+            uma num canto. Eles falam do MESMO campo (um diz até onde ele vai, o
+            outro pede um pedaço dele), então dividem a linha: o texto do teto
+            deixa de ser uma linha própria e passa a ser a legenda da ponta
+            direita daquela que já existe.
+
+            O `ml-auto` do teto, e não só o `justify-between`: com o recorte
+            aberto o botão sai da linha, e sem ele o teto escorregaria para a
+            esquerda, sob o começo do campo. */}
+        <div className="flex items-center justify-between gap-3 px-1">
+          {clipOpen ? null : (
+            <button
+              type="button"
+              onClick={() => setClipOpen(true)}
+              className="inline-flex items-center gap-1.5 rounded-full px-1 py-1 text-[12px] font-medium text-scriba-ink-soft transition-colors hover:text-scriba-ink focus-visible:outline-none focus-visible:ring-4 focus-visible:ring-scriba-blue/25"
+            >
+              <Scissors aria-hidden className="size-3.5" strokeWidth={2.2} />
+              Importar só um trecho
+            </button>
+          )}
+          {touched && !valid ? null : (
+            <p
+              id="youtube-url-hint"
+              className="ml-auto pr-4 text-[12px] font-light leading-relaxed text-scriba-ink-mute"
+            >
+              limite de {MAX_HOURS}h*
+            </p>
+          )}
+        </div>
 
         {/* O RECORTE.
             Ele mora depois do link porque é uma pergunta sobre um vídeo que já
@@ -297,16 +324,7 @@ export function YoutubeUrlForm({ initialUrl = "", initialStartMs, initialEndMs }
               </p>
             ) : null}
           </div>
-        ) : (
-          <button
-            type="button"
-            onClick={() => setClipOpen(true)}
-            className="mt-1 inline-flex items-center gap-1.5 self-start rounded-full px-1 py-1 text-[12px] font-medium text-scriba-ink-soft transition-colors hover:text-scriba-ink focus-visible:outline-none focus-visible:ring-4 focus-visible:ring-scriba-blue/25"
-          >
-            <Scissors aria-hidden className="size-3.5" strokeWidth={2.2} />
-            Importar só um trecho
-          </button>
-        )}
+        ) : null}
 
         {balanceLoading ? (
           <span

@@ -577,6 +577,20 @@
   --scriba-tour-scrim: rgba(0, 0, 0, 0.72);
   --scriba-tour-ring: rgba(245, 245, 245, 0.5);
   --lp-header-h: 71px;
+  /* A ALTURA DA BARRA DO APP, para uma tela poder centrar no que SOBRA dela.
+
+     É a soma da caixa do `AppHeaderShell`: `pt-2` (8) + `py-3` do header (24)
+     + `min-h-10` do vão (40) + `pb-4` (16) = 88. O par dele é o
+     `--lp-header-h` acima, que existe pela mesma razão do outro lado do
+     produto — e, como aquele, é um número MEDIDO: mexer nas folgas daquele
+     componente é mexer aqui no mesmo commit.
+
+     Quem centra verticalmente numa tela de `(barra)` PRECISA dele. `min-h-dvh`
+     ali é uma tela cheia ABAIXO de uma barra de 88px: a página passa a ter
+     88px a mais que a janela, e o conteúdo centrado desce 88px do centro que
+     se está vendo. Era o que acontecia no `/importar` — a tela de espera
+     nascia com um vão grande em cima e quase nada embaixo. */
+  --app-header-h: 88px;
   /* Design-system border widths */
   --border-book: 1.5px;   /* book glyph icon border */
   --border-fine: 1.4px;   /* fine phone frame border */

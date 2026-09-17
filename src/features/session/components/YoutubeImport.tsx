@@ -203,7 +203,11 @@ export function YoutubeImport({ sessionId, sourceUrl, videoId, title, startMs, e
         : (ERROR_COPY[error] ?? FALLBACK_ERROR);
 
     return (
-      <main className="mx-auto flex min-h-dvh w-full max-w-md flex-col items-center justify-center gap-6 px-6 py-12 text-center">
+      // `min-h-[calc(100dvh-var(--app-header-h))]`, e não `min-h-dvh`: a barra
+      // do app está ACIMA deste `<main>`, e uma tela cheia embaixo dela põe o
+      // centro desta coluna 88px abaixo do centro da janela. Ver
+      // `--app-header-h`.
+      <main className="mx-auto flex min-h-[calc(100dvh-var(--app-header-h))] w-full max-w-md flex-col items-center justify-center gap-6 px-6 py-12 text-center">
         <span
           aria-hidden
           className="flex size-14 items-center justify-center rounded-2xl border border-scriba-cream-accent/40 bg-scriba-cream text-scriba-cream-ink"
@@ -284,7 +288,9 @@ export function YoutubeImport({ sessionId, sourceUrl, videoId, title, startMs, e
   }
 
   return (
-    <main className="mx-auto flex min-h-dvh w-full max-w-md flex-col items-center justify-center gap-7 px-6 py-12 text-center">
+    // A mesma conta do estado de erro acima: centrar na janela exige descontar
+    // a barra do app. Ver `--app-header-h`.
+    <main className="mx-auto flex min-h-[calc(100dvh-var(--app-header-h))] w-full max-w-md flex-col items-center justify-center gap-7 px-6 py-12 text-center">
       <span
         aria-hidden
         className="flex size-14 items-center justify-center rounded-2xl bg-[image:var(--scriba-cta)] text-scriba-cta-ink shadow-[0_10px_24px_var(--scriba-cta-shadow)]"
