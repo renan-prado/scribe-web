@@ -1,14 +1,29 @@
 import Link from "next/link";
 import { formatBrl, formatCoins, PLANS } from "@/features/billing/plans";
+import { BIBLO_GIFT_MESSAGES, COIN_COSTS } from "@/features/coins/pricing";
+// O catálogo de funcionalidades por plano. A LP LÊ dele (o nome da feature e a
+// frase de upsell do Biblo) em vez de redigitar as duas: é o mesmo princípio
+// dos preços, que saem de `billing/plans`. Ambos são client-safe.
+import { FEATURES } from "@/lib/entitlements/features";
 import { SITE_DESCRIPTION, SITE_TITLE } from "@/lib/seo";
 import { cn } from "@/lib/utils";
 import { ScribaMark } from "@/shared/brand";
+// Caminho direto, não o barril: o barril reexporta os dois rostos, e só este
+// é para carregar JS na LP. Ver `BibloHeroFace` e `BibloFace`.
+import { BibloHeroFace } from "@/shared/brand/BibloHeroFace";
 import { HeroEyebrow } from "@/shared/components/HeroEyebrow";
 import { HeroEyebrowScript } from "@/shared/components/HeroEyebrowScript";
 import { LandingFooter, LandingHeader, SectionLabel } from "@/shared/components/LandingChrome";
 import { LandingCta } from "@/shared/components/LandingCta";
 import { LandingJsonLd } from "@/shared/components/LandingJsonLd";
-import { LandingSummaryMock } from "@/shared/components/LandingMocks";
+import {
+  LandingBibloMock,
+  LandingEditorMock,
+  LandingRecordingMock,
+  LandingYoutubeMock,
+  MockClock,
+} from "@/shared/components/LandingMocks";
+import { LandingParticles } from "@/shared/components/LandingParticles";
 import { StandaloneHomeGuard } from "@/shared/components/StandaloneHomeGuard";
 import { FAQ_ITEMS } from "@/shared/content/landing-faq";
 
@@ -51,8 +66,28 @@ export default function LandingPage() {
           esse encaixe. */}
       <main>
         <Hero />
-        <Problem />
-        <Resumo />
+        {/* O que dá para fazer, numerado, uma TELA por seção. Elas são a
+            estrutura da página, e não uma lista de recursos entre outras
+            coisas: o hero promete um bloco de notas inteligente, que é uma
+            promessa larga, e estas são a prova curta dela — gravar, escrever,
+            importar e perguntar.
+
+            **Importar virou seção PRÓPRIA, e não um parágrafo da de
+            escrever.** As duas eram uma só ("Edite, escreva do zero ou traga
+            de um vídeo"), e o resultado era uma seção com dois assuntos e uma
+            tela — a do editor —, onde o YouTube existia como uma linha de
+            texto. Ele é o caminho de quem NÃO estava no culto, é o único com
+            preço fechado por uso, e é o único com uma pergunta própria a fazer
+            (o recorte, "do minuto 12 ao 45"). Separadas, cada uma mostra a
+            tela em que a pessoa vai cair.
+
+            **"O problema" foi removido.** Era a trilha de três marcadores
+            ("anotar divide sua atenção", "os detalhes desaparecem", "fica
+            difícil encontrar"), e ela descrevia um produto que gravava sermões.
+            Num bloco de notas em que escrever à mão e conversar sobre a Bíblia
+            são metade do que se faz, ela vendia a dor de um terço da página, e
+            vendia depois de as quatro telas já terem mostrado a solução. */}
+        <Capabilities />
         <Biblioteca />
         <Plans />
         <Faq />
@@ -73,33 +108,65 @@ export default function LandingPage() {
  * Ele já foi duas colunas, texto à esquerda e telefone à direita. Numa tela de
  * 1200px isso dava 430px para o mockup e obrigava o título a caber em ~600px,
  * ou seja, a promessa da página competia por largura com a imagem dela. Em
- * coluna única o título ganha a linha inteira, a leitura desce numa ordem só
- * (pílula → promessa → explicação → botão → prova social → produto) e o
- * telefone deixa de ser um vizinho para virar o DESFECHO da dobra.
+ * coluna única o título ganha a linha inteira e a leitura desce numa ordem só:
+ * pílula → rosto do Biblo → promessa → explicação → botão.
  *
- * O telefone é CORTADO no fim da seção, de propósito. Inteiro ele mede ~702px
- * e empurraria tudo o que vem depois para longe da primeira rolagem; cortado
- * na borda de baixo ele mostra o suficiente para se reconhecer como produto e
- * ainda deixa visível que há página embaixo. Quem faz o corte é a altura fixa
- * do invólucro com `overflow-hidden`, e é ela que precisa mudar junto se a
- * escala do `PhoneFrame` mudar: o `origin-top` existe para que a redução
- * encoste no topo, e não sobre folga no meio do recorte.
+ * ## Não há mockup de celular aqui, e a ausência é a decisão
+ *
+ * O hero terminava com um aparelho CORTADO na borda de baixo, mostrando a tela
+ * do resumo. Ele fazia sentido quando a página levava três seções para chegar
+ * a uma tela do produto; hoje a seção seguinte é a primeira das três
+ * capacidades, cada uma com o seu aparelho, e a primeira delas começa a ~150px
+ * de onde o corte terminava.
+ *
+ * Então o que o recorte fazia era mostrar uma tela para dizer, 600px depois,
+ * "aqui está a tela". Ele custava quase toda a altura da dobra (496px no
+ * celular, 660px no desktop) e empurrava a primeira capacidade para fora da
+ * primeira rolagem — a página gastava a peça mais cara que tinha para
+ * antecipar o que já vinha logo em seguida.
+ *
+ * **Não devolva um mockup ao hero sem tirar um de baixo.** Quatro aparelhos na
+ * mesma página é o mesmo objeto repetido até deixar de ser notado, e o do hero
+ * seria o único sem uma frase ao lado dizendo o que ele é.
  */
 function Hero() {
   return (
+    // `overflow-hidden` fica, e agora é pelas PARTÍCULAS e pelos halos: os
+    // dois sangram fora da caixa de propósito (o halo azul começa 260px acima
+    // do topo), e sem o corte eles abrem barra de rolagem horizontal. Era do
+    // recorte do telefone antes, que saiu.
     <section className="relative mt-[calc(var(--lp-header-h)*-1)] overflow-hidden bg-[image:var(--lp-hero)]">
-      {/* Os dois halos acompanham a composição: com o texto no eixo, o azul
-          vem de cima pelo centro e o dourado fica atrás do telefone. Eles são
-          a única cor de marca que restou no produto, e a calibragem deles
-          sobre o grafite está nos dois tokens `--lp-halo-…` do `globals.css`,
-          e aqui ficam
+      {/* UM halo, o azul, descendo pelo centro. A calibragem dele sobre o
+          grafite está no token `--lp-halo-blue` do `globals.css`; aqui ficam
           só posição e tamanho.
 
-          O DEGRADÊ do chão é `--lp-hero`, e é ele que dá eixo à dobra,
-          empurrando o olho do título para o aparelho no fim da seção. */}
+          **O dourado saiu daqui.** Ele existia atrás do telefone do hero, e
+          com o aparelho fora da dobra virou uma mancha âmbar chapada abaixo do
+          CTA — um degradê pequeno e forte, sem nada na frente para quebrá-lo,
+          lê como sujeira no fundo em vez de luz. Espalhá-lo (820px, mais
+          baixo) só deixou a mancha maior. O token continua vivo na
+          `/parceiros`, que é onde ele ainda tem um objeto por cima.
+
+          Com um halo só, quem dá eixo à dobra é o DEGRADÊ do chão
+          (`--lp-hero`): o azul marca o topo, o degradê desce, e o fim da seção
+          é a mesma tinta do fundo da página. */}
       <div className="pointer-events-none absolute -top-[260px] left-1/2 h-[720px] w-[720px] -translate-x-1/2 rounded-full bg-[image:var(--lp-halo-blue)]" />
-      <div className="pointer-events-none absolute -bottom-[180px] left-1/2 hidden h-[560px] w-[560px] -translate-x-1/2 rounded-full bg-[image:var(--lp-halo-gold)] lg:block" />
-      <div className="relative mx-auto flex max-w-[780px] flex-col items-center gap-4 px-5 text-center pt-[calc(var(--lp-header-h)+2.25rem)] sm:px-10 lg:gap-6 lg:pt-[calc(var(--lp-header-h)+5rem)]">
+      {/* A poeira que sobe, atrás de tudo e na frente dos halos. Ela mora nos
+          LADOS VAZIOS da dobra no desktop, onde a coluna de texto de 780px
+          deixa vão; no miolo passam só quatro pontos pequenos. Ver
+          `LandingParticles` para por que é CSS e por que as posições são uma
+          lista. */}
+      <LandingParticles />
+      {/* O `pb` substitui o que o recorte do telefone fazia de graça: ele era
+          o fim da seção, então a coluna de texto não precisava fechar nada.
+
+          **Ele é bem menor que o `pt`, e isso é deliberado.** Com 128px aqui
+          mais os 80px de topo da primeira capacidade, sobrava um vão de duas
+          centenas de pixels que fazia a página parecer acabada no CTA. O vão
+          que separa as duas seções é o da seguinte, que já tem o seu; o daqui
+          só precisa dar ao degradê do chão espaço para morrer depois do
+          botão. */}
+      <div className="relative mx-auto flex max-w-[780px] flex-col items-center gap-4 px-5 pb-9 text-center pt-[calc(var(--lp-header-h)+2.25rem)] sm:px-10 sm:pb-12 lg:gap-6 lg:pb-16 lg:pt-[calc(var(--lp-header-h)+5rem)]">
         {/* A pílula é um componente CLIENTE porque ela se personaliza para
             quem chegou por um link de indicação ("Indicado por Fulano", com
             foto), e a LP não pode ler cookie sem deixar de ser estática.
@@ -112,6 +179,12 @@ function Hero() {
             Mesmo padrão do bootstrap de tema que havia no `<head>`. */}
         <HeroEyebrowScript />
         <HeroEyebrow />
+        {/* O Biblo, e os olhos dele seguem o ponteiro. É o segundo (e último)
+            componente cliente do hero, e o único da página que existe para se
+            MEXER — ver o cabeçalho de `BibloHeroFace` para o que isso custa e
+            por que se aceitou aqui. Sem cursor (celular) ele fica parado, o
+            que é o certo: não há o que seguir. */}
+        <BibloHeroFace className="-mb-1" />
         {/* Os três tamanhos são medidos, não escolhidos no olho: a frase tem
             60 caracteres, e o que decide cada degrau é quanto de margem sobra
             nas pontas da linha mais larga. No celular, 34px punha a segunda
@@ -121,7 +194,7 @@ function Hero() {
             centrado. Em 27px são três linhas de 300/286/308 num vão de 340, e
             o título volta a ter margem dos dois lados. */}
         <h1 className="text-balance text-[27px] font-normal leading-[1.22] tracking-[-.02em] text-scriba-ink-strong sm:text-[40px] sm:leading-[1.14] sm:tracking-[-.025em] lg:text-[56px] lg:leading-[1.08]">
-          Uma IA que anota tudo enquanto você presta atenção na mensagem
+          O bloco de notas inteligente que todo cristão deveria ter
         </h1>
         {/* No celular a medida é MENOR que o vão disponível, e o texto é
             balanceado em vez de "pretty": no vão inteiro (340px) as linhas
@@ -131,8 +204,9 @@ function Hero() {
             iguais (230/232/232/221/246), com margem real dos dois lados. Do
             `sm` para cima o vão já é folgado e vale a regra normal. */}
         <p className="max-w-[320px] text-balance text-[14.5px] font-light leading-[1.62] text-scriba-ink-soft sm:max-w-[580px] sm:text-pretty lg:text-[17.5px]">
-          Enquanto você se concentra na pregação, aula da EBD, palestra, conversa entre amigos, o
-          Scriba monta um resumo organizado para você revisitar quando quiser.
+          Grave a pregação da sua igreja, importe uma reflexão do Youtube, escreva seus próprios
+          pensamentos ou converse com o Biblo, nossa IA expert na Escrituras, para tirar dúvidas e
+          organizar seu resumo sobre qualquer tema das Escrituras.
         </p>
         {/* O `pt` aqui é somado ao `gap` da coluna: o botão fica mais longe das
             duas frases do que as frases ficam uma da outra, e é essa diferença
@@ -152,98 +226,9 @@ function Hero() {
           />
         </div>
       </div>
-      {/* O recorte do telefone. A altura é menor que a do mockup escalado em
-          cada faixa (~527px, ~632px e 702px), e é essa diferença que produz o
-          corte na borda de baixo da seção.
-
-          **O que o corte precisa alcançar é a frase marcante.** O topo do
-          resumo é texto cinza (ideia central, título, um parágrafo); o amarelo
-          do `highlight` é a única cor do mockup, e é ele que faz a dobra
-          parecer um produto em vez de um bloco de texto. Ao mexer nestas
-          alturas, confira no navegador que a faixa amarela continua inteira
-          dentro do recorte nas três faixas. */}
-      <div className="relative mt-9 h-[496px] overflow-hidden sm:mt-11 sm:h-[596px] lg:mt-14 lg:h-[660px]">
-        {/* A borda do recorte, esfumada. Sem isto o aparelho termina numa
-            linha reta no meio de um parágrafo, e o corte parece falha de
-            renderização em vez de escolha. O gradiente vai do transparente ao
-            chão do hero (`--lp-hero` termina no mesmo tom em que o fundo da
-            página continua), então ele apaga o telefone sem desenhar uma
-            faixa própria por cima.
-
-            Fica ACIMA do telefone (z-10) e não recebe clique. As três alturas
-            são medidas para o esmaecimento COMEÇAR depois que a frase
-            marcante termina (ela fecha a 364px, 436px e 485px do topo do
-            recorte, uma medida por escala, e o esmaecimento abre a 384px,
-            468px e 516px): mais alto e ele apaga a única cor da dobra, mais
-            baixo e
-            vira uma borda borrada, que é o mesmo problema com outro nome.
-            Por isso as alturas do recorte logo acima e as daqui andam
-            juntas. */}
-        <div
-          aria-hidden
-          className="pointer-events-none absolute inset-x-0 bottom-0 z-10 h-28 bg-[linear-gradient(180deg,transparent_0%,var(--lp-hero-fade)_70%,var(--lp-hero-fade)_100%)] sm:h-32 lg:h-36"
-        />
-        <div className="flex justify-center">
-          {/* O MESMO mockup da seção "O resumo", e de propósito: o hero promete
-              um resumo organizado, então o que ele mostra é o resumo. A seção
-              lá embaixo explica em texto o que esta imagem já adiantou. */}
-          <PhoneFrame
-            className="origin-top"
-            chrome={<PhoneChrome subtitle="Resumo · 41 min" title="A sede que só Cristo cura" />}
-          >
-            <LandingSummaryMock lead />
-          </PhoneFrame>
-        </div>
-      </div>
     </section>
   );
 }
-
-/**
- * Os três marcadores da trilha, nas cores do POST-IT (ver `PostItNote`).
- *
- * Eles usavam as famílias de tile (`--scriba-rose/cream/lilac`), que são
- * lavados ESCUROS e semânticos — rose é o lado ruim de um estado, cream é a
- * moeda. Um número de lista pintado de "erro" e outro de "moeda" é cor dizendo
- * o que não é. O post-it não diz nada além de "isto é um item", que é
- * exatamente o que estes três são, e é a paleta que a pessoa vai reencontrar
- * dentro do app.
- */
-const PROBLEM_CLASSES = {
-  rose: "bg-v2-note-mist text-v2-note-mist-ink",
-  cream: "bg-v2-note-lemon text-v2-note-lemon-ink",
-  lilac: "bg-v2-note-sage text-v2-note-sage-ink",
-} as const;
-
-/**
- * A cópia original vinha como um parágrafo único com dois pontos no meio; o
- * corte vira manchete + desdobramento, que é o que a trilha abaixo desenha.
- */
-const PROBLEMS: {
-  n: number;
-  variant: keyof typeof PROBLEM_CLASSES;
-  title: string;
-  body: string;
-}[] = [
-  {
-    n: 1,
-    variant: "rose",
-    title: "Anotar durante o sermão divide sua atenção",
-    body: "Enquanto você escreve, deixa de acompanhar o que está sendo dito.",
-  },
-  {
-    n: 2,
-    variant: "cream",
-    title: "Sem revisitar a mensagem, os detalhes desaparecem",
-    body: "Uma frase importante, uma referência bíblica, uma aplicação para a semana.",
-  },
-  {
-    n: 3,
-    variant: "lilac",
-    title: "Com o tempo, fica difícil encontrar o que você ouviu",
-    body: "Os sermões se acumulam, mas seus aprendizados não ficam organizados.",
-  },
-];
 
 /**
  * As perguntas vêm de `src/shared/content/landing-faq.ts`, o mesmo módulo que
@@ -281,195 +266,310 @@ function Faq() {
   );
 }
 
-function Problem() {
+/* ---------- As três coisas que dá para fazer ---------- */
+
+/**
+ * As três capacidades do produto, numeradas, uma seção cada, com a tela de
+ * cada uma ao lado.
+ *
+ * ## Por que numeradas, e por que só três
+ *
+ * "Bloco de notas inteligente" é uma promessa larga, e promessa larga precisa
+ * de prova curta. As três respondem "o que eu faço com isto?" na ordem em que
+ * uma pessoa entra no produto: o domingo (gravar), a semana (escrever, importar,
+ * editar) e a dúvida (perguntar). O número não é enfeite de lista — ele diz que
+ * são TRÊS, e que a página acaba de contar todas.
+ *
+ * Aqui já houve uma seção de cartões ("Três maneiras de começar") mais uma
+ * seção "O resumo" com quatro chips. Eram as mesmas três coisas dividas em
+ * dois lugares, e nenhum dos dois mostrava a tela da gravação — a landing
+ * falava de gravar exibindo o RESULTADO de gravar, que é a parte que a pessoa
+ * já imaginou.
+ *
+ * ## As telas alternam de lado, e a primeira é a da gravação
+ *
+ * `reverse` inverte a coluna do mockup no desktop. No celular a ordem é sempre
+ * texto → tela, porque ali não há dois lados: o `order` só entra do `lg` para
+ * cima.
+ *
+ * ⚠️ Cada `<Capability>` PROMETE uma tela. Ao mexer numa delas, confira o
+ * mockup correspondente em `LandingMocks.tsx`: as quatro
+ * (`LandingRecordingMock`, `LandingEditorMock`, `LandingYoutubeMock`,
+ * `LandingBibloMock`) são markup próprio, então mudar o app não as atualiza.
+ */
+type Capability = {
+  /**
+   * Só para a `key` da lista e para a ordem de leitura do código.
+   *
+   * **Ele não vai mais para a tela.** Cada seção tinha um disco numerado com
+   * um rótulo ao lado ("1 · GRAVAR"), e com quatro seções aquilo virou
+   * paginação: a pessoa passava a ler "estou no passo 2 de 4" numa página em
+   * que nada é passo — as quatro são coisas independentes, e ninguém precisa
+   * fazer a 1 para fazer a 3. O título de cada uma já diz do que ela trata, e
+   * é mais específico que o rótulo que o anunciava.
+   */
+  n: number;
+  title: string;
+  body: string;
+  /** Os detalhes, em linhas curtas. Três é o máximo que se lê de relance. */
+  points: string[];
+  /** A linha de preço. `null` quando não custa crédito nenhum. */
+  cost: string | null;
+  /** Segunda linha, miúda, para o que o preço não diz. */
+  note?: string;
+  screen: React.ReactNode;
+  /** Ancora o link do header. Só a do Biblo tem, hoje. */
+  id?: string;
+  /** No desktop, joga a tela para a ESQUERDA. */
+  reverse?: boolean;
+  /**
+   * Põe o rosto do Biblo à esquerda do título.
+   *
+   * É uma chave e não um `ReactNode` porque a resposta é sim ou não: o rosto é
+   * do personagem, e só a seção que fala dele o merece. Um `ReactNode` aqui
+   * seria um convite para pendurar um ícone em cada uma das três, e aí o rosto
+   * deixa de significar "este é o Biblo" e passa a significar "esta é uma
+   * seção".
+   */
+  face?: boolean;
+};
+
+function Capabilities() {
+  const items: Capability[] = [
+    {
+      n: 1,
+      id: "recursos",
+      title: "Grave a pregação e saia com um resumo automático.",
+      body: "Grave uma pregação, aula da EBD, reunião de grupo ou uma conversa entre amigos e o Scriba transcreve tudo e gera um resumo organizado com todas as referências bíblicas e ideias centrais.",
+      points: [
+        "Transcrição e resumos automáticos",
+        "Os versículos citados ficam linkados na anotação",
+        "Revisite quando fizer sentido",
+      ],
+      cost: null,
+      note: "",
+      screen: (
+        // O cabeçalho é o da `TopBar` de verdade: o título diz o estado e o
+        // relógio fica à DIREITA, com o ponto de gravação ao lado dele — e o
+        // relógio CONTA (ver `MockClock`). Um relógio parado num mockup que
+        // promete "grave a pregação" é a única coisa na tela que desmente a
+        // frase ao lado dela.
+        <PhoneFrame
+          chrome={
+            <PhoneChrome
+              title="Gravando"
+              right={
+                <span className="flex items-center gap-2">
+                  <RecDot />
+                  <MockClock />
+                </span>
+              }
+            />
+          }
+        >
+          <LandingRecordingMock />
+        </PhoneFrame>
+      ),
+    },
+    {
+      n: 2,
+      title: "Escreva suas próprias ideias",
+      body: "Crie uma anotação do zero ou edite um resumo gerado pelo Scriba. O nosso editor foi criado para você ter todas as ideias claras com um design limpo e moderno.",
+      points: [
+        "Título, parágrafo, passagem bíblica, destaque, citação e conclusão",
+        "Tenha um resumo estruturado do seu jeito",
+        "O mesmo editor, quer o conteúdo tenha sido gerado ou escrito manualmente",
+      ],
+      cost: null,
+      note: "",
+      reverse: true,
+      screen: (
+        <PhoneFrame
+          chrome={<PhoneChrome subtitle="Anotação · 41 min" title="A sede que só Cristo cura" />}
+        >
+          <LandingEditorMock />
+        </PhoneFrame>
+      ),
+    },
+    {
+      n: 3,
+      title: "Resumos automáticos de vídeos do YouTube",
+      body: "Assistiu algum vídeo no Youtube que mexeu com você? Copie e cole o link do video no Scriba e importamos a transcrição e montamos um resumo organizado para você.",
+      points: [
+        "Transcrição de tudo que é falado no vídeo",
+        "Resumo automático e organizado do conteúdo",
+        "Liberdade para editar e acrescentar suas próprias ideias",
+      ],
+      cost: null,
+      note: "",
+      screen: (
+        <PhoneFrame chrome={<PhoneChrome title="Importar" />}>
+          <LandingYoutubeMock />
+        </PhoneFrame>
+      ),
+    },
+    {
+      n: 4,
+      id: "biblo",
+      face: true,
+      reverse: true,
+      title: "Converse com o Biblo sobre qualquer assunto da bíblia",
+      body: "O Biblo é nosso expert nas Escrituras, ele é capaz de te ajudar a tirar dúvidas, organizar suas ideias e até sugerir contéudo para adicionar em suas anotações.",
+      points: [
+        "Tire dúvidas sobre qualquer assunto da Bíblia",
+        "Sugestões de conteúdo para suas anotações",
+        "Versículos e ideias relacionadas ao conteúdo que você está estudando",
+      ],
+      cost: null,
+      note: `${FEATURES.biblo_chat.upsell} Na conta gratuita, te presenteamos com ${BIBLO_GIFT_MESSAGES} mensagens grátis para você conhecer o nosso expert.`,
+      screen: (
+        <PhoneFrame
+          chrome={<PhoneChrome subtitle="Anotação · 41 min" title="A sede que só Cristo cura" />}
+        >
+          <LandingBibloMock />
+        </PhoneFrame>
+      ),
+    },
+  ];
+
   return (
-    <section className="mx-auto flex max-w-[1200px] flex-col gap-5 px-5 py-11 sm:px-10 sm:py-20 lg:gap-9 lg:pb-24">
-      <SectionLabel>O problema</SectionLabel>
-      <div className="grid gap-8 lg:grid-cols-[1.1fr_1fr] lg:gap-14">
-        <h2 className="text-pretty text-[25px] font-medium leading-[1.32] tracking-[-.016em] text-scriba-ink-strong lg:text-[34px]">
-          <span className="text-scriba-ink-mute">
-            Você sai da igreja querendo lembrar de tudo.{" "}
-          </span>
-          Alguns dias depois, muita coisa já se perdeu.
-        </h2>
-        <ol className="flex flex-col">
-          {PROBLEMS.map((p, i) => {
-            const last = i === PROBLEMS.length - 1;
-            return (
-              <li key={p.n} className={cn("flex gap-4 sm:gap-5", !last && "pb-6 sm:pb-7")}>
-                {/* Trilho: marcador + linha que se dissolve até o próximo item */}
-                <div className="flex flex-none flex-col items-center">
-                  <span
-                    className={cn(
-                      "flex size-9 flex-none items-center justify-center rounded-[13px] text-[13px] font-semibold sm:size-10",
-                      PROBLEM_CLASSES[p.variant]
-                    )}
-                  >
-                    {p.n}
-                  </span>
-                  {last ? null : (
-                    <span
-                      aria-hidden
-                      className="mt-2 w-px flex-1 bg-[linear-gradient(180deg,var(--scriba-hairline),transparent)]"
-                    />
-                  )}
-                </div>
-                <div className="flex min-w-0 flex-col gap-1.5 pt-1 sm:pt-1.5">
-                  <h3 className="text-pretty text-[15px] font-semibold leading-[1.35] tracking-[-.01em] text-scriba-ink-strong sm:text-[16.5px]">
-                    {p.title}
-                  </h3>
-                  <p className="text-pretty text-[13.5px] font-light leading-[1.6] text-scriba-ink-soft sm:text-[14.5px]">
-                    {p.body}
-                  </p>
-                </div>
+    <>
+      {items.map((item) => (
+        <CapabilitySection key={item.n} item={item} />
+      ))}
+    </>
+  );
+}
+
+function CapabilitySection({ item }: { item: Capability }) {
+  return (
+    <section id={item.id} className="mx-auto max-w-[1200px] px-5 py-12 sm:px-10 sm:py-20">
+      <div
+        className={cn(
+          "flex flex-col items-center gap-8 lg:grid lg:items-center lg:gap-16",
+          item.reverse ? "lg:grid-cols-[420px_minmax(0,1fr)]" : "lg:grid-cols-[minmax(0,1fr)_420px]"
+        )}
+      >
+        <div
+          className={cn(
+            "order-2 flex min-w-0 flex-col gap-6",
+            item.reverse ? "lg:order-2" : "lg:order-1"
+          )}
+        >
+          {/* O `gap` entre o título e a descrição é maior que o das outras
+              colunas desta página (12px), e é por causa do TAMANHO do título:
+              ele tem 38px com `leading-[1.16]`, então duas linhas dele fecham
+              num bloco alto e denso, e um parágrafo de 16px a 12px dele lê
+              como continuação da frase em vez de explicação dela. Com o vão de
+              20px o título respira e a descrição volta a ser um segundo
+              assunto.
+
+              Ele não sobe junto com o `gap` da coluna inteira: o que separa o
+              título do corpo é uma relação de hierarquia, e o que separa o
+              corpo da lista de fios é outra. */}
+          <div className="flex flex-col gap-5">
+            {/* Com rosto, o título vira uma linha de dois itens alinhados
+                pelo TOPO: o título tem duas linhas e o rosto acompanha a
+                primeira, que é onde a leitura começa — centrado na caixa
+                inteira ele flutuaria no meio do vão.
+
+                O TAMANHO é o das duas linhas do título: 88px no desktop, que
+                é a altura de duas linhas de 38px com `leading-[1.16]`, e o
+                rosto passa a pesar como o texto ao lado em vez de parecer um
+                ícone pendurado nele. No celular ele cai para 60px, porque lá o
+                título tem ~280px de vão e três linhas — um rosto de 88px
+                comeria uma palavra de cada uma.
+
+                Quem manda no tamanho é a CLASSE, não o `size`: o `size` fica
+                como piso, para o caso de o CSS não carregar. Escalar por CSS
+                não desalinha o gaze — a excursão está em unidades do `viewBox`,
+                que não mudam com a caixa. */}
+            {item.face ? (
+              <div className="flex items-start gap-3.5 sm:gap-5">
+                <BibloHeroFace className="mt-0.5 size-15 sm:mt-1 sm:size-22" size={88} />
+                <h2 className="text-pretty text-[27px] font-semibold leading-[1.16] tracking-[-.022em] text-scriba-ink-strong lg:text-[38px]">
+                  {item.title}
+                </h2>
+              </div>
+            ) : (
+              <h2 className="text-pretty text-[27px] font-semibold leading-[1.16] tracking-[-.022em] text-scriba-ink-strong lg:text-[38px]">
+                {item.title}
+              </h2>
+            )}
+            <p className="max-w-[520px] text-pretty text-[14.5px] font-light leading-[1.62] text-scriba-ink-soft lg:text-[16px] lg:leading-[1.65]">
+              {item.body}
+            </p>
+          </div>
+          {/* Os detalhes como lista de fios, o mesmo desenho dos três pontos
+              que a seção do Biblo já usava: eles são leitura de relance, e
+              cartão para cada um daria peso de seção a uma linha de texto. */}
+          <ul className="flex flex-col">
+            {item.points.map((point) => (
+              <li
+                key={point}
+                className="border-t border-scriba-hairline py-3 text-pretty text-[13.5px] font-light leading-[1.55] text-scriba-ink-soft sm:py-3.5 sm:text-[14.5px]"
+              >
+                {point}
               </li>
-            );
-          })}
-        </ol>
+            ))}
+          </ul>
+          <div className="flex flex-col gap-1">
+            {/* A moeda aparece só onde há cobrança por uso. No Biblo o preço
+                por mensagem existe mas NÃO vai para a tela (ver `COIN_COSTS`),
+                então a linha dele é a de plano, e sem hexágono. */}
+            {item.cost ? (
+              <div className="flex items-center gap-1.5 text-[12.5px] font-light text-scriba-ink-mute lg:text-[13px]">
+                <CoinHex />
+                {item.cost}
+              </div>
+            ) : null}
+            {item.note ? (
+              <p className="max-w-[440px] text-pretty text-[12px] font-light leading-[1.6] text-scriba-ink-mute lg:text-[12.5px]">
+                {item.note}
+              </p>
+            ) : null}
+          </div>
+        </div>
+        <div
+          className={cn(
+            "order-1 -mx-5 flex min-w-0 justify-center overflow-hidden sm:mx-0 sm:overflow-visible",
+            item.reverse ? "lg:order-1" : "lg:order-2"
+          )}
+        >
+          {item.screen}
+        </div>
       </div>
     </section>
   );
 }
 
-/** O chip de cada bloco do resumo, nas quatro cores do post-it. Mesma razão
- *  do `PROBLEM_CLASSES` logo acima: a cor identifica, não classifica. */
-const TILE_CLASSES = {
-  blue: "bg-v2-note-mist text-v2-note-mist-ink",
-  rose: "bg-v2-note-slate text-v2-note-slate-ink ring-1 ring-inset ring-white/10",
-  mint: "bg-v2-note-sage text-v2-note-sage-ink",
-  cream: "bg-v2-note-lemon text-v2-note-lemon-ink",
-} as const;
-
-const TILE_ICON_PROPS = {
-  width: 16,
-  height: 16,
-  viewBox: "0 0 16 16",
-  fill: "none",
-  stroke: "currentColor",
-  strokeWidth: 1.6,
-  strokeLinecap: "round",
-  strokeLinejoin: "round",
-} as const;
-
-const SUMMARY_BLOCKS: {
-  title: string;
-  text: string;
-  variant: keyof typeof TILE_CLASSES;
-  icon: React.ReactNode;
-}[] = [
-  {
-    title: "Ideia central",
-    text: "O ensinamento que conduz toda a mensagem, destacado logo no início.",
-    variant: "blue",
-    icon: (
-      <svg {...TILE_ICON_PROPS} role="presentation">
-        <circle cx="8" cy="8" r="5.6" />
-        <circle cx="8" cy="8" r="1.7" fill="currentColor" stroke="none" />
-      </svg>
-    ),
-  },
-  {
-    title: "Versículos citados",
-    text: "As passagens mencionadas pelo pregador, reunidas com suas referências.",
-    variant: "rose",
-    icon: (
-      <svg {...TILE_ICON_PROPS} role="presentation">
-        <path d="M8 4.6v8.2" />
-        <path d="M8 4.6C6.7 3.5 5.1 3.2 3.4 3.3v8.2c1.7-.1 3.3.2 4.6 1.3" />
-        <path d="M8 4.6c1.3-1.1 2.9-1.4 4.6-1.3v8.2c-1.7-.1-3.3.2-4.6 1.3" />
-      </svg>
-    ),
-  },
-  {
-    title: "Aplicações práticas",
-    text: "Caminhos possíveis para levar o que você ouviu para a vida cotidiana.",
-    variant: "mint",
-    icon: (
-      <svg {...TILE_ICON_PROPS} role="presentation">
-        <circle cx="8" cy="8" r="5.6" />
-        <path d="M5.6 8.2 7.3 9.9l3.2-3.6" />
-      </svg>
-    ),
-  },
-  {
-    title: "Pontos principais",
-    text: "O desenvolvimento do sermão organizado de forma clara e fácil de consultar.",
-    variant: "cream",
-    icon: (
-      <svg {...TILE_ICON_PROPS} role="presentation">
-        <path d="M6.4 4.6h6.2M6.4 8h6.2M6.4 11.4h4" />
-        <path d="M3.4 4.6h.01M3.4 8h.01M3.4 11.4h.01" strokeWidth={2.2} />
-      </svg>
-    ),
-  },
-];
-
-function Resumo() {
-  return (
-    <section id="recursos" className="mx-auto max-w-[1200px] px-5 py-12 sm:px-10 sm:py-24">
-      <div className="flex flex-col items-center gap-8 lg:grid lg:grid-cols-[420px_minmax(0,1fr)] lg:gap-16">
-        <div className="order-2 -mx-5 flex min-w-0 justify-center overflow-hidden sm:mx-0 sm:overflow-visible lg:order-1">
-          <PhoneFrame
-            chrome={<PhoneChrome subtitle="Resumo · 41 min" title="A sede que só Cristo cura" />}
-          >
-            <LandingSummaryMock />
-          </PhoneFrame>
-        </div>
-        <div className="order-1 flex min-w-0 flex-col gap-6 lg:order-2 lg:gap-[34px]">
-          <div className="flex flex-col gap-3">
-            <SectionLabel color="blue">O resumo</SectionLabel>
-            <h2 className="text-pretty text-[29px] font-semibold leading-[1.16] tracking-[-.022em] text-scriba-ink-strong lg:text-[40px]">
-              Mais que transcrição: a mensagem, organizada.
-            </h2>
-            <p className="max-w-[520px] text-pretty text-[14.5px] font-light leading-[1.62] text-scriba-ink-soft lg:text-[16px] lg:leading-[1.65]">
-              Ao final da mensagem, o Scriba transforma tudo o que foi dito em um resumo claro, para
-              você entender, encontrar e relembrar o que realmente importa.
-            </p>
-          </div>
-          {/* Cartões na superfície elevada do app, com um chip de post-it por
-              bloco: a cor é ACENTO, nunca fundo de cartão. Fundo de post-it
-              obrigaria a inverter a tinta de tudo que estivesse dentro, e a
-              página passaria a ter dois modelos de tinta. */}
-          <div className="grid grid-cols-1 gap-3 sm:grid-cols-2 sm:gap-3.5">
-            {SUMMARY_BLOCKS.map((b) => (
-              <div
-                key={b.title}
-                className="lp-lift flex flex-col gap-2.5 rounded-[20px] bg-scriba-paper p-4 sm:p-5"
-              >
-                <div className="flex items-center gap-2.5">
-                  <span
-                    aria-hidden
-                    className={cn(
-                      "flex size-8 flex-none items-center justify-center rounded-[10px]",
-                      TILE_CLASSES[b.variant]
-                    )}
-                  >
-                    {b.icon}
-                  </span>
-                  <span className="text-[13px] font-semibold tracking-[-.005em] text-scriba-ink-strong sm:text-[13.5px]">
-                    {b.title}
-                  </span>
-                </div>
-                <p className="text-pretty text-[12.5px] font-light leading-[1.55] text-scriba-ink-soft sm:text-[13px]">
-                  {b.text}
-                </p>
-              </div>
-            ))}
-          </div>
-        </div>
-      </div>
-    </section>
-  );
+/**
+ * O ponto vermelho da `TopBar` durante a gravação.
+ *
+ * `--scriba-rec` é a família do "gravando" no produto inteiro (ver
+ * `src/shared/AGENTS.md`), e é o único vermelho que a landing usa. Ele existe
+ * aqui porque um relógio sozinho no cabeçalho não diz se está correndo ou
+ * parado, e é justamente isso que a seção 1 promete.
+ */
+function RecDot() {
+  return <span aria-hidden className="block size-2.5 rounded-full bg-scriba-rec" />;
 }
 
 function Biblioteca() {
   return (
-    // A faixa é a superfície ELEVADA (`--lp-band` = `--v2-card`) sobre o chão
-    // da página, que é a mesma relação que um cartão tem com a tela no app. O
-    // halo branco que havia aqui era o jeito antigo de dizer "esta seção é
-    // outra coisa"; hoje quem diz isso é a superfície.
-    <section className="relative overflow-hidden bg-[image:var(--lp-band)]">
-      <div className="relative mx-auto flex max-w-[1200px] flex-col items-stretch gap-8 px-5 py-12 text-scriba-ink-strong sm:px-10 sm:py-[88px] lg:grid lg:grid-cols-[minmax(0,1fr)_minmax(0,1fr)] lg:items-center lg:gap-16">
+    // O CHÃO da página, como as quatro seções de capacidade logo acima, e não
+    // mais a faixa elevada (`--lp-band`). A faixa dizia "esta seção é outra
+    // coisa", e ela não é: é a quinta tela do produto, na mesma conversa das
+    // outras quatro — a diferença que ela anunciava era de desenho, não de
+    // assunto. Quem separa é o FIO de 1px, a regra do resto do produto (ver
+    // `src/shared/AGENTS.md`), o mesmo que abre a seção de planos.
+    //
+    // Com o chão embaixo, o que inverte é a relação dos CARTÕES: eles eram o
+    // chão sobre a faixa e passam a ser a superfície elevada sobre o chão (ver
+    // `BiblioCard`). A faixa continua viva no bloco final (`FinalCTA`), onde
+    // ela é um cartão gigante e não uma seção.
+    <section className="relative overflow-hidden border-scriba-hairline border-t">
+      <div className="relative mx-auto flex max-w-[1200px] flex-col items-stretch gap-8 px-5 py-12 text-scriba-ink-strong sm:px-10 sm:py-20 lg:grid lg:grid-cols-[minmax(0,1fr)_minmax(0,1fr)] lg:items-center lg:gap-16">
         <div className="flex min-w-0 flex-col gap-5">
           <SectionLabel color="yellow-light">Sua biblioteca</SectionLabel>
           <h2 className="text-pretty text-[29px] font-semibold leading-[1.16] tracking-[-.022em] lg:text-[40px]">
@@ -482,7 +582,9 @@ function Biblioteca() {
               coisa", e isso nunca foi desfeito na cópia quando a
               funcionalidade saiu do produto. Ao mexer aqui, confira a rota
               antes de escrever o verbo. */}
-          <p className="max-w-[500px] text-pretty text-[14.5px] font-light leading-[1.62] text-lp-band-ink lg:text-[16px] lg:leading-[1.65]">
+          {/* `ink-soft`, a tinta de corpo das outras seções, e não a
+              `lp-band-ink`: aquela é calibrada sobre a faixa, que saiu daqui. */}
+          <p className="max-w-[500px] text-pretty text-[14.5px] font-light leading-[1.62] text-scriba-ink-soft lg:text-[16px] lg:leading-[1.65]">
             Busque por tema, versículo ou pregador. O que o pregador disse fica procurável, e uma
             referência encontra o sermão mesmo quando ela foi citada de outro jeito.
           </p>
@@ -530,15 +632,19 @@ type BiblioCardProps = {
 
 function BiblioCard({ title, subtitle, badge }: BiblioCardProps) {
   return (
-    // O cartão desce para o CHÃO da página (`--v2-bg`) em cima da faixa, que é
-    // a superfície elevada. Era um véu de preto a 14%, uma terceira tinta
-    // inventada para esta seção; com as duas superfícies do app a relação se
-    // resolve sozinha e a página inteira passa a ter dois tons, não cinco.
-    //   título 12,1 · subtítulo 8,9 · badge 8,4
-    <div className="flex items-center justify-between gap-4 rounded-[18px] bg-v2-bg p-4 px-[17px] sm:px-[18px]">
+    // O cartão SOBE para a superfície elevada (`--v2-card`), agora que a
+    // seção ficou no chão da página: é a mesma relação de sempre, cartão sobre
+    // tela, só que na ordem certa. Ele já foi o chão em cima da faixa, quando a
+    // faixa é que era a superfície, e antes disso um véu de preto a 14% — uma
+    // terceira tinta inventada para esta seção. Com as duas superfícies do app
+    // a relação se resolve sozinha e a página tem dois tons, não cinco.
+    //   título 12,1 · subtítulo 6,4 · badge 8,4 (medidos sobre o papel)
+    <div className="flex items-center justify-between gap-4 rounded-[18px] bg-scriba-paper p-4 px-[17px] sm:px-[18px]">
       <div className="flex flex-col gap-0.5">
         <div className="text-[13px] font-semibold sm:text-[13.5px]">{title}</div>
-        <div className="text-[11.5px] font-light text-lp-band-ink sm:text-[12px]">{subtitle}</div>
+        <div className="text-[11.5px] font-light text-scriba-ink-soft sm:text-[12px]">
+          {subtitle}
+        </div>
       </div>
       <div className="flex-none whitespace-nowrap text-[11px] font-semibold uppercase tracking-[.04em] text-v2-note-lemon">
         {badge}
@@ -548,21 +654,13 @@ function BiblioCard({ title, subtitle, badge }: BiblioCardProps) {
 }
 
 /**
- * Capacidades do produto, iguais em todos os planos; o que muda entre eles é
- * quantos créditos vêm por mês. Nome, preço e créditos NÃO moram aqui: saem de
- * `lib/billing/plans.ts`, o mesmo catálogo que o diálogo de compra e o
- * /profile leem. Antes disso a LP tinha números próprios, e eles já haviam
- * divergido do real (anunciava 2.000/5.000/100 créditos contra 1.000/2.500/50).
- * Preço de tela errado é promessa quebrada na hora do checkout.
- */
-/**
  * O que cada plano entrega. Copy local de propósito, descreve CAPACIDADES, e
  * não valores; nome, preço e créditos vêm de `lib/billing/plans.ts`, o mesmo
  * catálogo do diálogo de compra (ver `app/AGENTS.md`).
  *
- * ⚠️ A lista era uma só para os três planos, e passou a mentir no dia em que o
- * estudo virou exclusivo de plano pago: o card do Gratuito prometia "Gerar
- * estudos", e o botão respondia 403. **Uma linha aqui é uma promessa que
+ * ⚠️ A lista era uma só para os três planos, e passou a mentir no dia em que a
+ * funcionalidade exclusiva virou exclusiva: o card do Gratuito prometia o que
+ * o botão respondia com 403. **Uma linha aqui é uma promessa que
  * `lib/entitlements/features.ts` tem de cumprir**, ao mexer numa, confira a
  * outra.
  */
@@ -572,31 +670,55 @@ type PlanFeature = {
   included: boolean;
 };
 
-/** O que os três planos têm em comum. */
+/**
+ * O que os três planos têm em comum.
+ *
+ * A primeira linha era "Sermão comentado", herança dos cartões que apareciam
+ * durante a pregação no modo `live`, que não existe mais — ninguém no produto
+ * de hoje encontraria o que ela nomeava. No lugar dela está o que de fato
+ * mudou: as três portas do `/home` (ver a seção "Três maneiras de começar"),
+ * que todo plano tem, o Gratuito inclusive.
+ */
 const BASE_FEATURES: PlanFeature[] = [
-  { label: "Sermão comentado", included: true },
+  { label: "Gravar, importar ou escrever", included: true },
   { label: "Resumo organizado", included: true },
   { label: "Referências bíblicas", included: true },
   { label: "Biblioteca de sermões", included: true },
 ];
 
 /**
- * O estudo é o que separa um plano pago do gratuito, e por isso ele fecha as
+ * O BIBLO é o que separa um plano pago do gratuito, e por isso ele fecha as
  * TRÊS listas, inclusive a do Gratuito, onde aparece apagada e com um X no
  * lugar do check.
+ *
+ * **Aqui havia "Estudos bíblicos", e ela precisava sair.** O estudo saiu do
+ * produto: as rotas continuam de pé, mas nenhum botão da interface chega nelas
+ * (ver `src/app/AGENTS.md`). Um card de preço anunciando a única coisa que
+ * diferencia o plano pago, e que a pessoa não encontra em lugar nenhum depois
+ * de assinar, é pior que a lista curta — é a promessa quebrada do lado de
+ * dentro, onde não há 403 para explicá-la. O `biblo_chat` é hoje o degrau
+ * pago, no mesmo `minPlan` em que o estudo estava.
+ *
+ * O NOME sai do catálogo, não daqui: é o mesmo rótulo que o `/admin` mostra na
+ * matriz de features e o mesmo que a frase de upsell da seção do Biblo usa.
  *
  * A ausência é dita, não omitida. Antes o Gratuito simplesmente tinha uma
  * linha a menos, e uma lista mais curta se lê como "tem menos coisa", não
  * como "esta coisa específica não vem" — quem comparava os cards de relance
  * não via o que estava faltando, e a diferença entre pagar e não pagar era
- * justamente ela. O 403 que o botão de estudo devolve depois do cadastro é o
- * que essa linha existe para antecipar. Ver `lib/entitlements/features.ts`.
+ * justamente ela.
+ *
+ * O X do Gratuito é honesto por um fio, e do lado certo: a conta gratuita
+ * ganha `BIBLO_GIFT_MESSAGES` mensagens de presente (ver
+ * `session/server/biblo/allowance.ts`), então quem não paga recebe MAIS do que
+ * o card prometeu, não menos. A seção do Biblo diz isso em uma linha; o card
+ * de preço não é o lugar de explicar uma exceção.
  */
-const STUDY_FEATURE = "Estudos bíblicos";
+const BIBLO_FEATURE = FEATURES.biblo_chat.name;
 
-const FREE_FEATURES: PlanFeature[] = [...BASE_FEATURES, { label: STUDY_FEATURE, included: false }];
+const FREE_FEATURES: PlanFeature[] = [...BASE_FEATURES, { label: BIBLO_FEATURE, included: false }];
 
-const PAID_FEATURES: PlanFeature[] = [...BASE_FEATURES, { label: STUDY_FEATURE, included: true }];
+const PAID_FEATURES: PlanFeature[] = [...BASE_FEATURES, { label: BIBLO_FEATURE, included: true }];
 
 function Plans() {
   return (
@@ -677,7 +799,7 @@ type PlanCardProps = {
   variant: "primary" | "soft";
   badge?: string;
   /**
-   * Destaca o ÚLTIMO item da lista. Usado nos planos pagos para o estudo,
+   * Destaca o ÚLTIMO item da lista. Usado nos planos pagos para o Biblo,
    * o diferencial em relação ao Gratuito, não se perder no meio das linhas
    * idênticas que os três planos compartilham. A linha AUSENTE do Gratuito se
    * distingue sozinha, pelo X, e não precisa desta chave.
@@ -821,9 +943,11 @@ function PlanCard({
 function FinalCTA() {
   return (
     <section className="mx-auto max-w-[1200px] px-5 py-11 sm:px-10 sm:py-24">
-      {/* A MESMA faixa da seção "Sua biblioteca" e do bloco final dos
-          parceiros (`--lp-band`), não mais um gradiente azul escrito à mão
-          aqui. Eram três literais, `#33414F`/`#1F5E92` no fundo e
+      {/* A faixa (`--lp-band`), a mesma do bloco final dos parceiros, e não
+          mais um gradiente azul escrito à mão aqui. Ela é o ÚNICO lugar da LP
+          que ainda a usa, desde que a seção "Sua biblioteca" desceu para o
+          chão: aqui ela não é seção, é um cartão gigante com cantos e halo
+          próprios — a última tela da página, que pede para ser olhada. Eram três literais, `#33414F`/`#1F5E92` no fundo e
           `#CFE4F3`/`#AFCBE0` nos textos, que não trocavam com o tema e eram o
           "azulzão" que sobrou da paleta antiga. */}
       <div className="relative flex flex-col gap-4 overflow-hidden rounded-[30px] bg-[image:var(--lp-band)] p-9 text-scriba-ink-strong sm:gap-3.5 sm:rounded-[34px] lg:flex-row lg:items-center lg:justify-between lg:gap-12 lg:p-16">

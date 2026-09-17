@@ -236,18 +236,37 @@ azul: é a própria tinta forte).
 
 **O hero tem DEGRADÊ, e é o único do produto.** `--lp-hero` abre em `#2B2C31`,
 o meio do caminho entre o chão e a superfície elevada, e desce até `#212121`.
-Ele já foi chapado por uma versão e a primeira dobra perdeu o eixo: é o degradê
-que empurra o olho do título para o aparelho no fim da seção. A parada FINAL
-precisa ser igual a `--lp-hero-fade`, que é contra o que o recorte do telefone
-esfuma; um tom fora do lugar desenha uma faixa visível exatamente onde a ideia
-era não haver borda nenhuma. As duas landings (`/` e `/parceiros`) leem o mesmo
-token.
+Ele já foi chapado por uma versão e a primeira dobra perdeu o eixo.
 
-**Os dois halos radiais do hero ficam**, um azul e um dourado, invertidos de
-posição entre a `/` e a `/parceiros`. São a última cor de marca do produto e o
+**A última parada dele é 72%, e não 100%.** Com ela no fim, a seção alcançava a
+cor do fundo exatamente na borda de baixo, e toda a diferença de tom entre o
+hero e a seção seguinte se concentrava nos últimos pixels — uma emenda fina,
+visível por ser fina. Antes de 72% os ~28% de baixo já são `#212121` chapado, e
+a seção seguinte começa na tinta em que a anterior terminou. A parada do meio
+(38%) existe pela outra ponta: sem ela o degradê escurece rápido demais no
+primeiro terço e o halo azul ganha uma borda de contraste em volta.
+
+`--lp-hero-fade` precisa ser igual a essa última parada; um tom fora do lugar
+desenha uma faixa visível exatamente onde a ideia era não haver borda nenhuma.
+Quem ainda o consome é a `/parceiros`, que esfuma a prévia do painel contra
+ele. As duas landings leem o mesmo `--lp-hero`.
+
+**Os halos radiais do hero ficam**, e hoje são UM por landing: a `/` tem só o
+azul, a `/parceiros` tem o dourado. São a última cor de marca do produto e o
 que impede a primeira dobra de ser um retângulo cinza com texto no meio; saíram
 por uma versão, junto com a pele antiga, e a página perdeu com isso o que a
 fazia parecer viva.
+
+O dourado saiu da `/` junto com o mockup de celular do hero dela: ele ficava
+ATRÁS do aparelho, e sem nada por cima um degradê âmbar de 16% lê como mancha
+em vez de luz. Espalhá-lo só fez a mancha maior. Na `/parceiros` ele continua,
+com um objeto na frente.
+
+**E a `/` ganhou PARTÍCULAS**, pontinhos que sobem devagar atrás do texto do
+hero, em CSS e sem JavaScript (`LandingParticles`). Elas vivem nos lados vazios
+da dobra no desktop — a coluna de texto tem 780px, e o vão que sobra é onde um
+efeito de fundo não disputa com o que está escrito. Ver o cabeçalho do
+componente para por que as posições são uma lista e não um sorteio.
 
 Eles eram a única exceção à regra "nada de cor literal em `className`" — dois
 `rgba()` escritos na classe. **Hoje são token** (`--lp-halo-blue` /
@@ -275,6 +294,28 @@ inline "só desta vez".
   `subtitle` opcional (hoje só o "Admin" da sidebar).
 - `ScribaAvatar`: a pena branca no disco com gradiente, usada quando o Scriba
   fala como autor (cards de IA no feed e nos blocos de estudo).
+
+### O rosto do Biblo existe em TRÊS arquivos, e nenhum é cópia do outro
+
+A identidade — semente e as duas coordenadas de cor — mora em
+`biblo-seed.ts`, e os três a leem. Ela foi extraída porque `BibloAvatar` é
+`"use client"`, e uma constante importada de um módulo cliente por um server
+component chega como referência de cliente, não como valor.
+
+| arquivo | onde | por quê |
+|---|---|---|
+| `BibloAvatar` | o app | anima as três expressões (`idle`/`thinking`/`happy`) |
+| `BibloFace` | a landing, parado | `blobatar()` no SERVIDOR: zero JS |
+| `BibloHeroFace` | a landing, vivo | olhos seguindo o ponteiro (`useGaze`) |
+
+**Um valor divergente entre eles é outra pessoa atendendo**, uma no app e outra
+na página que vende o app. Ao mexer na cara, mexa na semente.
+
+O `BibloHeroFace` carrega `blobatar/motion.css` **e** `blobatar/gaze.css`: sem
+o segundo, `--mo-track-travel` fica no inicial (`0px`) e o rosto renderiza
+perfeito e nunca se move — o mesmo sintoma de não haver gaze nenhum, e sem erro
+em lugar nenhum. E `travel` vem pelo HOOK, nunca por CSS: a biblioteca aceita
+os dois e o CSS vence o hook silenciosamente.
 
 **A cor do logotipo vem do CONTAINER, nunca de uma classe própria em cada
 metade.** Pena e palavra são uma marca só: o `<path>` usa `currentColor` e o
@@ -486,3 +527,39 @@ respeite `prefers-reduced-motion` (o bloco já existe no `globals.css`).
 `components/LandingMocks.tsx` é markup estático PRÓPRIO, não os componentes
 do app. Isso é deliberado e tem preço: mexer no `FeedItemCard` não atualiza
 mais a landing. O porquê está em `src/app/AGENTS.md`.
+
+São QUATRO telas, uma por capacidade da LP, e cada uma tem uma amarra:
+
+- `LandingRecordingMock` (gravar) — a onda, o relógio e os três botões. É a
+  única que precisa da ALTURA do aparelho escrita à mão
+  (`h-[calc(680px-108px)]`): o `PhoneFrame` põe os filhos num invólucro sem
+  altura própria, então um `h-full` resolve para `auto` e os botões sobem e
+  colam na onda. Mexeu na altura da tela ou no vão do cabeçalho do
+  `PhoneFrame`? Mexa aqui também.
+
+  **A onda MEXE e o relógio CONTA, e os dois são CSS.** As barras têm três
+  durações longas com atrasos negativos diferentes (`--animate-lp-wave-*`), e
+  o relógio são três fitas de dígito rolando com `steps()`
+  (`--animate-lp-digit-*`, e o `MockClock` aqui). Um mockup parado embaixo de
+  "grave a pregação" é a única coisa na tela que desmente a frase ao lado. Nas
+  fitas, o `count` do `DigitReel` e o `steps()` da animação são o mesmo número
+  — a keyframe percorre a fita INTEIRA (`-100%` dela), então é o número de
+  passos que define quanto vale um dígito.
+- `LandingYoutubeMock` (importar) — a tela de `/importar` com o RECORTE aberto
+  ("do minuto 12 ao 45"). Fechada, ela seria um campo de texto com um botão, a
+  tela mais genérica que existe; o recorte é a única parte da importação que
+  ninguém adivinha sozinho. O preço no botão sai de `COIN_COSTS.youtubeImport`.
+- `LandingEditorMock` (escrever) — o `/escrever` com o menu do `+` ABERTO. Ali
+  estava a tela de LEITURA (`LandingSummaryMock`, que saiu por ter ficado sem
+  consumidor), e ela mostrava o resultado pronto embaixo de um texto que promete
+  um editor. Os blocos escritos são o `BlockRenderer` de verdade, como no
+  editor; o que é reproduzido à mão são os controles, e as medidas saem do
+  `BLOCK_SURFACE` do `Composer`. A fileira de pastilhas é `BLOCK_OPTIONS` mais
+  a ideia central: opção nova lá, pastilha nova aqui.
+- `LandingBibloMock` (conversar) — a gaveta aberta SOBRE o resumo, com o texto
+  visível atrás, porque é isso que a feature é. A conversa é ancorada embaixo
+  (`justify-end`) e cortada no topo, e o trecho sugerido tem de continuar
+  visível: é a única parte que prova "a resposta entra no texto".
+
+As três falam do MESMO sermão (João 4), e a do Biblo conversa sobre o que a do
+resumo mostra. Trocar o sermão de uma é trocar das três.

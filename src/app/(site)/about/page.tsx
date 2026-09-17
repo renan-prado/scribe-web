@@ -5,7 +5,7 @@ import { LandingFooter, LandingHeader } from "@/shared/components/LandingChrome"
 export const metadata: Metadata = {
   title: "Sobre o Scriba · Scriba",
   description:
-    "O que é o Scriba, para quem ele foi feito e como funciona a transcrição e o resumo de sermões em tempo real.",
+    "O que é o Scriba, para quem ele foi feito e como funciona a transcrição e o resumo de sermões.",
   alternates: { canonical: "/about" },
 };
 
@@ -27,12 +27,17 @@ export default function AboutPage() {
           <section>
             <h2 className="mb-3 text-base font-semibold text-scriba-ink-strong">O que é</h2>
             <p>
-              O Scriba é um aplicativo web em português que acompanha uma pregação ao vivo pelo
-              microfone do celular ou do computador. Enquanto o pregador fala, o Scriba transcreve o
-              que é dito, reconhece as passagens bíblicas citadas e separa as frases mais
-              importantes. Quando a mensagem termina, você recebe um resumo estruturado: ideia
-              central, pontos principais, versículos citados, frases marcantes e aplicações para a
-              semana.
+              O Scriba é um aplicativo web em português que transforma uma pregação em um resumo
+              estruturado: ideia central, pontos principais, versículos citados, frases marcantes e
+              aplicações para a semana. Ele reconhece as passagens bíblicas citadas e separa as
+              frases mais importantes do que foi dito.
+            </p>
+            <p className="mt-2">
+              O sermão entra de três maneiras: gravado pelo microfone do celular ou do computador,
+              importado da legenda de um vídeo do YouTube (o vídeo inteiro ou só o trecho da
+              pregação) ou escrito por você mesmo, num editor com os mesmos blocos do resumo gerado.
+              E dentro de cada resumo fica o Biblo, uma conversa que já sabe o que está na tela e
+              cujas respostas você leva para o próprio texto.
             </p>
             <p className="mt-2">
               Ele roda inteiramente no navegador, sem instalar nada e sem gravador externo. Se
@@ -65,15 +70,21 @@ export default function AboutPage() {
                 estruturado é gerado a partir da transcrição inteira.
               </li>
               <li>
-                <strong>Durante a semana:</strong> a partir de um sermão salvo você gera um estudo
-                de aprofundamento, relê a transcrição e consulta qualquer versículo citado.
+                <strong>Sem microfone:</strong> quando a mensagem está num vídeo do YouTube, a
+                legenda passa pelo mesmo resumo; e quando você prefere escrever, o editor tem os
+                mesmos blocos do resumo gerado — título, passagem bíblica, frase de destaque,
+                citação e conclusão.
+              </li>
+              <li>
+                <strong>Durante a semana:</strong> você relê o resumo e a transcrição, consulta
+                qualquer versículo citado e conversa com o Biblo sobre a mensagem.
               </li>
             </ul>
             <p className="mt-2">
               A cobrança é em créditos, por minuto iniciado de gravação, com a transcrição e o
-              resumo já inclusos. Você também pode importar um vídeo do YouTube e receber o mesmo
-              resumo a partir da legenda, por um preço fechado por vídeo. A conta começa gratuita,
-              com créditos de boas-vindas e sem cartão.
+              resumo já inclusos. Importar um vídeo do YouTube tem preço fechado por vídeo, cobrado
+              uma vez, e escrever o resumo à mão não consome créditos. A conta começa gratuita, com
+              créditos de boas-vindas e sem cartão.
             </p>
           </section>
 

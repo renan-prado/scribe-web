@@ -102,13 +102,20 @@ const GRAPH = {
       browserRequirements: "Requer um navegador com acesso ao microfone.",
       inLanguage: "pt-BR",
       publisher: { "@id": `${SITE_URL}/#organization` },
+      // ⚠️ Cada linha é uma funcionalidade que existe HOJE e que a página
+      // afirma. Aqui já esteve "Estudos gerados a partir do sermão" depois de
+      // o estudo sair da interface (ver `src/app/AGENTS.md`): dado estruturado
+      // é o que um buscador de IA lê primeiro para dizer o que o produto faz,
+      // então uma linha morta aqui vira recomendação errada em um lugar onde
+      // ninguém a revisa.
       featureList: [
         "Transcrição de sermões gravados pelo celular",
         "Resumo estruturado ao final da pregação",
         "Versículos citados com o texto da passagem",
-        "Importação de vídeos do YouTube",
-        "Estudos gerados a partir do sermão",
-        "Biblioteca de sermões gravados",
+        "Importação de vídeos do YouTube, inteiros ou por trecho",
+        "Editor para escrever o resumo à mão, sem gravar",
+        "Conversa com o Biblo sobre o sermão resumido",
+        "Biblioteca de sermões buscável por tema, versículo ou pregador",
       ],
       offers: OFFERS,
     },

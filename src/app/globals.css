@@ -493,11 +493,30 @@
      A parada FINAL precisa ser o `--lp-hero-fade` logo abaixo: é contra ela
      que o recorte do telefone esfuma, e um tom fora do lugar desenha uma faixa
      visível exatamente onde a ideia era não haver borda nenhuma. */
-  --lp-hero: linear-gradient(180deg, #2B2C31 0%, #212121 100%);
+  /* O CHÃO do hero. Ele abre meio caminho entre o fundo da página e a
+     superfície elevada, e fecha no próprio fundo da página.
+
+     **A última parada é 72%, não 100%, e é isso que suaviza a emenda.** Com
+     ela em 100% a seção chegava à cor do fundo exatamente na borda de baixo,
+     então a diferença de tom entre o hero e a seção seguinte se concentrava
+     nos últimos pixels — uma emenda fina, visível justamente por ser fina. Com
+     a parada antes do fim, os ~28% de baixo já SÃO `#212121` chapado, e a
+     seção seguinte começa na mesma tinta em que a anterior terminou: não há
+     linha para ver.
+
+     A parada do meio existe pelo mesmo motivo, na outra ponta: um degradê de
+     duas cores em 72% escurece rápido demais no primeiro terço, e o halo azul
+     do topo passa a ter uma borda de contraste em volta. */
+  --lp-hero: linear-gradient(180deg, #2B2C31 0%, #26272B 38%, #212121 72%);
   --lp-hero-auth: linear-gradient(180deg, #2B2C31 0%, #212121 60%);
-  /* OS DOIS HALOS DO HERO, um por landing invertidos de posição: na `/` o azul
-     desce pelo centro e o dourado fica atrás do telefone; na `/parceiros` é o
-     contrário.
+  /* OS HALOS DO HERO. Hoje são um por landing, e não os mesmos dois nas duas:
+     a `/` ficou só com o azul, descendo pelo centro, e a `/parceiros` continua
+     com o dourado no topo.
+
+     O dourado saiu da `/` quando o mockup de celular saiu do hero dela: ele
+     ficava ATRÁS do aparelho, e sem nada por cima um degradê âmbar de 16% lê
+     como mancha, não como luz. Na `/parceiros` ele segue no lugar, com o
+     mesmo papel e um objeto na frente.
 
      Eles são a ÚNICA cor de marca que sobrou no produto, e sobrevivem por uma
      razão que não é nostalgia: o hero é a primeira coisa que alguém vê do
@@ -525,10 +544,15 @@
      dois builds para aprender. */
   --lp-halo-blue: radial-gradient(circle, rgba(79, 168, 240, 0.16) 0%, rgba(79, 168, 240, 0) 70%);
   --lp-halo-gold: radial-gradient(circle, rgba(248, 198, 75, 0.16) 0%, rgba(248, 198, 75, 0) 70%);
-  /* A cor SÓLIDA em que `--lp-hero` termina. O hero esfuma o celular
-     recortado contra ela, e o valor precisa bater com o 100% do gradiente
-     acima: um tom fora do lugar desenha uma faixa visível exatamente onde a
-     ideia era não haver borda nenhuma. Mexeu num, mexa no outro. */
+  /* A cor SÓLIDA em que `--lp-hero` termina, e o valor precisa bater com a
+     última parada dele: um tom fora do lugar desenha uma faixa visível
+     exatamente onde a ideia era não haver borda nenhuma. Mexeu num, mexa no
+     outro.
+
+     Quem a consome hoje é o hero da `/parceiros`, que ainda esfuma a prévia do
+     painel contra ela. O da `/` não tem mais nada para esfumar — o recorte do
+     celular saiu —, e é a última parada do próprio degradê que faz o trabalho
+     lá. */
   --lp-hero-fade: #212121;
   /* A FAIXA full-bleed da landing: a superfície elevada do app (`--v2-card`),
      e não mais uma laje com degradê próprio. Ela é a mesma coisa que um
@@ -1374,6 +1398,74 @@
      rolagem, ela acabava antes de o olho chegar — no celular, onde a gaveta
      ainda está fechando e o caminho é mais longo, dava para não ver nada. */
   --animate-block-flash: block-flash 1400ms ease-out;
+  /* As PARTÍCULAS do hero da landing: pontinhos que sobem devagar atrás do
+     texto. São três durações para que elas não andem em bloco — o mesmo
+     motivo de o `LandingParticles` sortear atraso e deriva por partícula. Ver
+     o cabeçalho dele.
+
+     Cada uma sobe a altura do PRÓPRIO invólucro (`translateY(-100%)` da caixa
+     da partícula, não da seção), então quem decide o quanto ela viaja é a
+     altura que o componente dá a ela. Isso é o que permite as três camadas de
+     profundidade sem três animações a mais. */
+  --animate-lp-particle-slow: lp-particle 26s linear infinite;
+  --animate-lp-particle-mid: lp-particle 19s linear infinite;
+  --animate-lp-particle-fast: lp-particle 14s linear infinite;
+  /* A ONDA do mockup de gravação da landing, e o RELÓGIO ao lado dela.
+
+     A tela de verdade escreve a altura de cada barra fora do React, quadro a
+     quadro, a partir do analisador de áudio (ver `useAudioCapture`). Aqui não
+     há áudio nenhum, então o movimento é keyframe — e é CSS e não JS pela
+     mesma razão das partículas: é a primeira coisa que um visitante anônimo
+     baixa, e um `requestAnimationFrame` por barra numa página de venda é
+     trabalho de CPU pelo efeito mais dispensável dela.
+
+     **São três durações para as treze barras.** Com uma só, a fileira pulsa
+     em bloco como um equalizador de brinquedo; com três períodos que não são
+     múltiplos entre si (2,4 / 3,1 / 3,7s), o padrão combinado só se repete
+     depois de muito tempo e o que se vê é uma onda respirando. O
+     `LandingRecordingMock` distribui as três por barra, e os atrasos negativos
+     de lá são o que impede as vizinhas de subirem juntas.
+
+     **Os períodos foram de ~1s para ~3s, e a amplitude caiu junto.** A
+     primeira calibragem era literal — barras indo de 22% a 100% em menos de um
+     segundo, que é mais ou menos o que um analisador de áudio faz de verdade —
+     e o efeito na landing era outro: treze barras saltando a esse ritmo num
+     mockup PARADO no meio de uma página de texto puxam o olho para fora do que
+     está escrito ao lado. A onda aqui não precisa medir som nenhum, ela precisa
+     dizer "isto está gravando" enquanto a pessoa lê a frase. Devagar e curta,
+     ela diz isso pelo canto do olho; rápida e cheia, ela disputa.
+
+     Animar `transform` e não `height`: altura é layout, e treze elementos
+     relayoutando 60 vezes por segundo derrubam o quadro de qualquer rolagem
+     que aconteça ao mesmo tempo. */
+  --animate-lp-wave-a: lp-wave 2.4s ease-in-out infinite;
+  --animate-lp-wave-b: lp-wave 3.1s ease-in-out infinite;
+  --animate-lp-wave-c: lp-wave 3.7s ease-in-out infinite;
+  /* O relógio do mockup, em três fitas de dígito que rolam.
+
+     `steps()` é o que faz um número TROCAR em vez de deslizar: a fita sobe um
+     dígito por passo e para nele, e o que se vê é um contador. Os períodos
+     são a base 60 do relógio — 10s para a unidade do segundo, 60s para a
+     dezena, 600s para a unidade do minuto —, então ele conta 0:00 → 9:59 de
+     verdade antes de voltar ao começo.
+
+     A dezena do MINUTO é fixa no mockup (um zero escrito), e é por isso que
+     não há uma quarta fita: ela só mudaria depois de dez minutos de página
+     aberta. Ver `LandingRecordingMock`.
+
+     **A keyframe é UMA, e quem casa com ela é o número de dígitos da fita.**
+     O percurso é `-100%` da fita inteira, então `steps(n)` sobre uma fita de
+     `n` dígitos anda exatamente um dígito por passo — o `count` do `DigitReel`
+     e o `steps()` daqui são o mesmo número, e é isso que o componente
+     documenta.
+
+     Duas versões erradas antes desta, e as duas pela mesma confusão: `%` num
+     `translateY` mede a altura do PRÓPRIO elemento, que aqui é a fita (dez
+     linhas), não a linha. `-1000%` andava dez fitas, ou seja, cem dígitos por
+     ciclo, e o relógio mostrava casas em branco a maior parte do tempo. */
+  --animate-lp-digit-sec: lp-digit-roll 10s steps(10, end) infinite;
+  --animate-lp-digit-ten: lp-digit-roll 60s steps(6, end) infinite;
+  --animate-lp-digit-min: lp-digit-roll 600s steps(10, end) infinite;
 
   @keyframes record-halo {
     0%,
@@ -1529,6 +1621,91 @@
       opacity: 0.4;
       transform: scale(0.985);
       filter: blur(0.6px);
+    }
+  }
+
+  /* A partícula sobe do rodapé do invólucro até o topo dele, aparecendo e
+     apagando nas pontas.
+
+     **A opacidade vai a zero nas duas extremidades, e é ela que faz o efeito
+     funcionar.** Sem isso a partícula nasce e morre num piscar visível no meio
+     do gradiente do hero, e o que se vê é um ponto sendo ligado, não uma
+     poeira flutuando. As duas paradas internas (12% e 88%) são onde ela está
+     acesa; o teto é 0,5 porque acima disso o ponto compete com o texto que
+     está na frente dele.
+
+     O `--lp-drift` é a deriva lateral, um valor por partícula, e o `-50%` do
+     meio é o que impede as três camadas de subirem em linha reta paralela.
+     Ele entra no `translate` junto do Y porque duas `transform` no mesmo
+     elemento não se somam, a última ganha.
+
+     Nada de `filter: blur()` aqui: são até 18 elementos animando ao mesmo
+     tempo, e um blur por elemento é uma camada de composição por elemento.
+     O tamanho e a opacidade já dão a profundidade. */
+  @keyframes lp-particle {
+    0% {
+      transform: translate3d(0, 0, 0);
+      opacity: 0;
+    }
+    12% {
+      opacity: var(--lp-particle-peak, 0.5);
+    }
+    88% {
+      opacity: var(--lp-particle-peak, 0.5);
+    }
+    100% {
+      transform: translate3d(var(--lp-drift, 0px), -100%, 0);
+      opacity: 0;
+    }
+  }
+
+  /* Uma barra da onda: ela encolhe e volta ao tamanho cheio.
+
+     `scaleY` com a origem no CENTRO (o padrão) porque a onda da tela real
+     cresce dos dois lados do eixo, não de baixo.
+
+     **O piso é 0,62, e antes era 0,22.** Com 0,22 a barra perdia quase quatro
+     quintos da altura em cada ciclo, o que é o movimento de um equalizador —
+     correto para um medidor de áudio, agressivo para um enfeite que fica na
+     tela enquanto alguém lê o parágrafo ao lado. Em 0,62 o percurso é curto o
+     bastante para a fileira parecer respirar sem mudar de forma.
+
+     As três paradas, em vez de duas, tiram o batimento simétrico: com só um
+     `50%`, ida e volta têm exatamente a mesma duração e a barra pulsa como um
+     metrônomo. Descendo em 42% e voltando mais devagar, o movimento fica
+     desigual, que é como som se comporta.
+
+     A altura CHEIA de cada barra é o `style` inline do mockup, então estas
+     keyframes valem para as treze. */
+  @keyframes lp-wave {
+    0%,
+    100% {
+      transform: scaleY(1);
+    }
+    42% {
+      transform: scaleY(0.62);
+    }
+    68% {
+      transform: scaleY(0.84);
+    }
+  }
+
+  /* A fita de dígitos do relógio: ela sobe a própria altura, inteira.
+
+     **`-100%` é a altura da FITA, e é essa a medida certa.** `%` num
+     `translateY` sempre se refere ao próprio elemento, e a fita é a coluna de
+     dígitos — não a janela de uma linha que a corta. Com o percurso sendo a
+     fita toda, `steps(n)` sobre uma fita de `n` dígitos para em cada um deles,
+     um por passo, e o último passo cai no ponto em que o ciclo reinicia.
+
+     Por isso o número de dígitos da fita (`count`, no `DigitReel`) e o
+     `steps()` da animação que a move têm de ser o MESMO número. */
+  @keyframes lp-digit-roll {
+    from {
+      transform: translateY(0);
+    }
+    to {
+      transform: translateY(-100%);
     }
   }
 

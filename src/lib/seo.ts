@@ -20,13 +20,21 @@ export const SITE_NAME = "Scriba";
  * termos reais, e, até esta mudança, a única aparição da palavra
  * "transcrição" na página inteira era numa frase que a NEGAVA.
  *
+ * **O substantivo da frente é "bloco de notas", e isso é produto, não SEO.**
+ * O Scriba deixou de ser um gravador que resume: a anotação pode ser gravada,
+ * importada ou escrita à mão, e o Biblo conversa sobre ela. "Transcreva e
+ * resuma sermões" descrevia o produto inteiro e hoje descreve uma das três
+ * coisas que ele faz. Os termos de busca ("Bíblia", "pregação", "anotação")
+ * continuam na frase, atrás da categoria nova — é ela que responde "que tipo
+ * de coisa é isso?", que é a pergunta que um título tem de responder.
+ *
  * Limites práticos antes do Google truncar: ~60 caracteres no título, ~155 na
  * descrição. Ambos abaixo respeitam isso, conferir ao editar.
  */
-export const SITE_TITLE = "Scriba | Transcreva e organize sermões e estudos bíblicos";
+export const SITE_TITLE = "Scriba | Bloco de notas com IA para estudar a Bíblia";
 
 export const SITE_DESCRIPTION =
-  "Grave, transcreva e organize sermões, estudos bíblicos e mensagens da igreja. O Scriba reconhece os versículos citados e entrega um resumo pronto ao final.";
+  "Grave a pregação e receba a anotação pronta, escreva a sua ou importe de um vídeo, e converse sobre qualquer passagem da Bíblia com o Biblo.";
 
 /**
  * Só o deploy de produção pode ser indexado.

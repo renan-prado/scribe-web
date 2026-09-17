@@ -1132,6 +1132,37 @@ nenhum no diff.
 A LP é a única página que um visitante anônimo carrega. Duas regras a
 protegem, e as duas são fáceis de desfazer sem perceber.
 
+**A ESTRUTURA dela é a promessa.** O hero diz o que o produto é ("o bloco de
+notas inteligente que todo cristão deveria ter") e quatro seções provam, UMA
+TELA cada: gravar (`LandingRecordingMock`), escrever e editar
+(`LandingEditorMock`), importar do YouTube (`LandingYoutubeMock`) e conversar
+com o Biblo (`LandingBibloMock`). Elas moram em `Capabilities`, num tipo só
+(`Capability`), porque a semelhança entre elas É a mensagem: são quatro portas
+para a mesma coisa.
+
+**Ao acrescentar uma capacidade, acrescente a TELA dela.** Sem tela ela é mais
+um cartão de texto, e é assim que a página volta ao que era: cinco seções — "O
+resumo" com quatro chips, "Três maneiras de começar" com três cartões e "O
+Biblo" — para dizer três coisas, nenhuma delas mostrando a tela da GRAVAÇÃO. A
+página falava de gravar exibindo o resultado de gravar, que é a parte que a
+pessoa já imaginou.
+
+Duas coisas que saíram de lá e não devem voltar sem uma razão nova:
+
+- **O hero não tem mockup.** A primeira capacidade começa logo abaixo dele, com
+  o seu; o recorte do hero custava a altura da dobra para antecipar o que vinha
+  em seguida. Ver o cabeçalho de `Hero` em `src/app/(site)/page.tsx`.
+- **"O problema" não existe mais.** A trilha de três marcadores ("anotar divide
+  sua atenção", "os detalhes desaparecem", "fica difícil encontrar") descrevia
+  um produto que gravava sermões; num bloco de notas em que escrever à mão e
+  conversar são metade do que se faz, ela vendia a dor de um quarto da página —
+  e vendia depois de as quatro telas já terem mostrado a solução.
+- **As seções não são numeradas.** Cada uma teve um disco com número e um
+  rótulo ("1 · GRAVAR"), e com quatro aquilo virou paginação: passava a ler
+  "passo 2 de 4" numa página em que nada é passo, já que ninguém precisa gravar
+  para importar. O título de cada seção diz do que ela trata, e melhor que o
+  rótulo dizia.
+
 **`src/app/page.tsx` é ESTÁTICA. Nada nela lê cookie, sessão ou header.** Uma
 única chamada a `supabase.auth.getUser()` ali dentro marca a rota como
 dinâmica, e o efeito é desproporcional: a resposta passa a sair com
@@ -1157,6 +1188,16 @@ Quem garante que a pista existe é o `healReferralHint` do `src/proxy.ts`: um co
 novo não retroage aos 30 dias de atribuições que já estavam em circulação, e
 sem essa cura o selo não aparecia para exatamente quem já tinha clicado num
 link. Detalhes em `src/features/referrals/AGENTS.md`.
+
+**A LP tem DOIS componentes cliente próprios, e os dois existem por um
+motivo.** O primeiro é o `HeroEyebrow` (a pílula "indicado por Fulano", abaixo).
+O segundo é o `BibloHeroFace`, o rosto do Biblo acima do título do hero e ao
+lado do título da seção dele: os olhos seguem o ponteiro, e é isso que faz
+alguém reparar num personagem antes de ler a frase. Ele arrasta a
+`@blobatar/react` e a camada de gaze para o bundle inicial, e a troca foi
+aceita para ESTE efeito — os rostos parados da página (os balões dentro do
+mockup) são o `BibloFace`, que roda `blobatar()` no servidor e não custa um
+byte de JS. Rosto novo na página usa o estático, salvo decisão explícita.
 
 **A LP não importa componente `"use client"` de `src/features/`.** As telas
 dentro dos mockups de celular são markup estático em
@@ -1195,10 +1236,25 @@ do programa.
 
 **A LP não tem números próprios.** Nome, preço e créditos dos cards de
 `/#planos` saem de `src/features/billing/plans.ts`, o mesmo catálogo do diálogo de
-compra e do `/profile`. Só a lista de recursos (`PLAN_FEATURES` em
-`src/app/page.tsx`) é copy local, porque descreve capacidades, não valores. Antes
-disso a LP anunciava 2.000/5.000/100 créditos contra os 1.000/2.500/50 reais:
-preço de tela errado é promessa quebrada no checkout.
+compra e do `/profile`; o preço em moedas das três portas ("Três maneiras de
+começar") e o da FAQ saem de `src/features/coins/pricing.ts`. Antes disso a LP
+anunciava 2.000/5.000/100 créditos contra os 1.000/2.500/50 reais: preço de tela
+errado é promessa quebrada no checkout.
+
+**E ela não tem REGRA de plano própria.** O nome da funcionalidade paga nos
+cards (`BIBLO_FEATURE`) e a frase de "isto é dos planos pagos" da seção do
+Biblo saem de `src/lib/entitlements/features.ts`, o mesmo catálogo que a rota
+consulta antes de cobrar. Só as descrições de capacidade (`BASE_FEATURES`,
+`DOORS`, `BIBLO_POINTS`, em `src/app/(site)/page.tsx`) são copy local.
+
+**Cada linha desses cards é uma promessa que `lib/entitlements/` tem de
+cumprir**, e o defeito já aconteceu duas vezes em direções opostas: o card do
+Gratuito prometeu "Gerar estudos" e o botão respondeu 403; depois o estudo saiu
+da interface e os cards pagos continuaram vendendo "Estudos bíblicos", que é o
+mesmo erro do lado de dentro, onde não há 403 para explicá-lo. Ao mexer numa
+lista, confira o catálogo — e vice-versa. O mesmo vale para o `featureList` do
+`LandingJsonLd` e para os marcadores de `shared/content/llms.ts`: eles afirmam
+as mesmas capacidades num lugar que ninguém revisa ao mudar a tela.
 
 ## SEO
 
