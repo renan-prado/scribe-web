@@ -65,20 +65,46 @@ const FLASH_CLASS = "summary-block-flash";
  *  - **O teto** (`CAP`) garante que a piscada aconteça de todo jeito. Rolagem
  *    interrompida pelo dedo, bloco que já estava no centro, aba em segundo
  *    plano: em qualquer um deles é melhor piscar um pouco tarde que nunca.
+ *
+ * ## E ela MIRA DE NOVO enquanto a página cresce
+ *
+ * Um bloco acrescentado no FIM do resumo tinha um destino pior que tarde: nunca.
+ * Na tela de leitura o resumo mora no trilho do `SummaryDeck`, que tem altura
+ * MEDIDA e `overflow-y: hidden` — e a altura só cresce quando o
+ * `ResizeObserver` de lá dispara, um ou dois quadros depois de o bloco pintar.
+ * Nesse intervalo o bloco novo está recortado e a PÁGINA ainda não tem para
+ * onde rolar: o `scrollIntoView` mira num documento que ainda não cresceu, para
+ * onde está, e a piscada acontece fora da tela.
+ *
+ * Por isso o laço olha também a altura do documento: enquanto ela mudar, a
+ * rolagem anterior mirou errado e é refeita. Foi o caso que separou o parágrafo
+ * (que entra no MEIO do texto, onde a página já tinha a altura toda) da
+ * passagem do "+" (que entra no fim, por `BIBLO_AT_END`).
  */
 const SETTLE_FLOOR_MS = 120;
 const SETTLE_CAP_MS = 1200;
 const SETTLE_STABLE_FRAMES = 3;
 
-function whenScrollSettles(el: HTMLElement, flash: () => void): void {
+function whenScrollSettles(el: HTMLElement, aim: () => void, flash: () => void): void {
   const started = performance.now();
   let previousTop = Number.NaN;
+  let previousPageHeight = Number.NaN;
   let stable = 0;
 
   const tick = () => {
     const top = el.getBoundingClientRect().top;
-    stable = Math.abs(top - previousTop) < 0.5 ? stable + 1 : 0;
+    const pageHeight = document.documentElement.scrollHeight;
+    const grew = Number.isFinite(previousPageHeight) && pageHeight !== previousPageHeight;
+
+    if (grew) {
+      // A página mudou de tamanho debaixo da rolagem. Ver "MIRA DE NOVO".
+      aim();
+      stable = 0;
+    } else {
+      stable = Math.abs(top - previousTop) < 0.5 ? stable + 1 : 0;
+    }
     previousTop = top;
+    previousPageHeight = pageHeight;
 
     const elapsed = performance.now() - started;
     const parou = stable >= SETTLE_STABLE_FRAMES && elapsed >= SETTLE_FLOOR_MS;
@@ -98,19 +124,22 @@ export function revealSummaryBlock(index: number): void {
 
   const reduced = window.matchMedia("(prefers-reduced-motion: reduce)").matches;
 
-  el.scrollIntoView({
-    // Rolagem suave é o que liga o lugar de antes ao lugar de agora; com
-    // movimento reduzido ela é um salto, e a piscada continua dizendo qual é o
-    // bloco — o recado não depende da animação.
-    behavior: reduced ? "auto" : "smooth",
-    block: "center",
-    // `inline: "nearest"` é uma GUARDA, não um detalhe: `scrollIntoView` mexe
-    // em TODO ancestral que rola, e na leitura um deles é o trilho horizontal
-    // dos dois slides (`SummaryDeck`). Sem isto, revelar um bloco poderia
-    // arrastar o carrossel para o meio do caminho entre o resumo e a
-    // transcrição.
-    inline: "nearest",
-  });
+  const aim = () =>
+    el.scrollIntoView({
+      // Rolagem suave é o que liga o lugar de antes ao lugar de agora; com
+      // movimento reduzido ela é um salto, e a piscada continua dizendo qual é
+      // o bloco — o recado não depende da animação.
+      behavior: reduced ? "auto" : "smooth",
+      block: "center",
+      // `inline: "nearest"` é uma GUARDA, não um detalhe: `scrollIntoView` mexe
+      // em TODO ancestral que rola, e na leitura um deles é o trilho horizontal
+      // dos dois slides (`SummaryDeck`). Sem isto, revelar um bloco poderia
+      // arrastar o carrossel para o meio do caminho entre o resumo e a
+      // transcrição.
+      inline: "nearest",
+    });
+
+  aim();
 
   const flash = () => {
     // Revelar o MESMO bloco duas vezes seguidas (inserir, desfazer, inserir de
@@ -125,5 +154,5 @@ export function revealSummaryBlock(index: number): void {
 
   // Com rolagem instantânea não há o que esperar: o bloco já está no centro.
   if (reduced) flash();
-  else whenScrollSettles(el, flash);
+  else whenScrollSettles(el, aim, flash);
 }

@@ -1237,12 +1237,38 @@ inserção — com o bloco que estava lá. Piscar cedo pisca o parágrafo errado
 | tela | o que se espera | quem espera |
 |---|---|---|
 | `/escrever` | o commit do React (o bloco entrou num rascunho local) | `revealIndex`, um estado com efeito, como o `focusIndex` ao lado |
-| `/summary` | o `router.refresh()` voltar com o payload novo | um efeito na prop `summary`, confirmando o bloco por conteúdo |
+| `/summary` | o `router.refresh()` voltar com o payload novo | um efeito na IDENTIDADE da prop `summary` |
 
-A confirmação na leitura é por CONTEÚDO (`JSON.stringify`), e não por contagem
-de blocos: numa sessão antiga o payload pode ter bloco morto que o rascunho
-descarta (`payloadToWritten`), e aí as duas listas têm tamanhos diferentes por
-motivo nenhum ligado a esta inserção.
+**Na leitura o sinal é a identidade da prop, e não o conteúdo do bloco.** A
+primeira versão comparava o bloco por `JSON.stringify`, e ela **nunca batia**:
+`final_summary` é `jsonb`, e o Postgres não preserva a ordem das chaves de um
+objeto — o que sai como `{type, text}` volta como `{text, type}`. O
+`JSON.stringify` dos dois lados compara duas grafias da mesma coisa e responde
+"diferente" para sempre, então a piscada não acontecia em NENHUM bloco desta
+tela. O sintoma era só a ausência dela, e ele se disfarçava de "funciona no
+editor e não na leitura" — que é exatamente o que se vê quando um lado não
+compara nada.
+
+O `summary` desce de um server component, então identidade nova é servidor novo:
+um re-render de cliente passa o mesmo objeto.
+
+**A piscada MIRA DE NOVO enquanto a página cresce**, e sem isso um bloco
+acrescentado no FIM tinha destino pior que tarde: nunca. Na leitura o resumo mora
+no trilho do `SummaryDeck`, que tem altura MEDIDA e `overflow-y: hidden`, e essa
+altura só cresce quando o `ResizeObserver` de lá dispara — um ou dois quadros
+depois de o bloco pintar. No intervalo o bloco novo está recortado e a página
+ainda não tem para onde rolar: o `scrollIntoView` mira num documento que não
+cresceu e para onde está.
+
+Medido na bancada, com o `SummaryDeck` real e 14 blocos: no quadro do clique a
+página tinha 2079px e o bloco novo nascia com o topo em 2079 — fora da tela. Nos
+dois quadros seguintes ela cresceu para 2111, 2135 e assim até 2249, e foi a
+remira que trouxe o bloco para 646px do topo, dentro de uma janela de 820. Sem
+ela, a rolagem teria terminado mirando a página antiga.
+
+É esse o caso que separava o parágrafo da passagem: o parágrafo entra no MEIO do
+texto, onde a página já tem a altura toda, e o "+" de uma passagem entra no fim,
+por `BIBLO_AT_END`.
 
 **E no editor a inserção pela conversa NÃO pede o foco**, ao contrário da do
 menu do `+`. Lá o bloco nasce vazio e vai ser digitado; aqui ele chega pronto, e

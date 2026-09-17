@@ -46,29 +46,40 @@ export function BibloSummaryDock({
   const router = useRouter();
 
   /**
-   * O bloco que acabou de ser inserido, esperando o servidor devolver a tela
-   * com ele dentro para poder piscar.
+   * O ÍNDICE do bloco que acabou de ser inserido, esperando o servidor devolver
+   * a tela com ele dentro para poder piscar.
    *
    * **Aqui a revelação não pode ser no ato, e é a diferença desta tela.** No
    * editor o bloco entra num rascunho local e existe no quadro seguinte; aqui
    * inserir é um POST mais um `router.refresh()`, e até ele voltar o nó naquele
    * índice ainda é o bloco ANTIGO. Piscar na hora piscaria o parágrafo errado.
    */
-  const pendingReveal = useRef<{ at: number; block: WrittenBlock } | null>(null);
+  const pendingReveal = useRef<number | null>(null);
 
-  // O `summary` desce do server component, então esta prop mudar É o refresh
-  // chegando. A confirmação é por CONTEÚDO, e não por contagem de blocos: numa
-  // sessão antiga o payload pode ter bloco morto que o rascunho descarta (ver
-  // `payloadToWritten`), e aí as duas listas têm tamanhos diferentes por
-  // motivo nenhum relacionado a esta inserção. É a mesma identidade por
-  // `JSON.stringify` que o `onRemove` abaixo usa.
+  /**
+   * A última versão do resumo que esta gaveta já viu.
+   *
+   * O `summary` desce do server component, então **uma IDENTIDADE nova é o
+   * `router.refresh()` chegando** — um re-render de cliente passa o mesmo
+   * objeto. É esse o sinal que a revelação espera.
+   *
+   * **Comparar o CONTEÚDO do bloco não funciona, e a razão é o banco.**
+   * `final_summary` é `jsonb`, e o Postgres não preserva a ordem das chaves de
+   * um objeto: o que sai como `{type, text}` volta como `{text, type}`. Um
+   * `JSON.stringify` dos dois lados compara duas grafias da mesma coisa e
+   * responde "diferente" para sempre — na prática a piscada não acontecia em
+   * NENHUM bloco desta tela, e a única pista era a ausência dela.
+   */
+  const seenSummary = useRef(summary);
+
   useEffect(() => {
-    const pending = pendingReveal.current;
-    if (!pending) return;
-    const landed = summary?.blocks[pending.at];
-    if (!landed || JSON.stringify(landed) !== JSON.stringify(pending.block)) return;
+    if (summary === seenSummary.current) return;
+    seenSummary.current = summary;
+
+    const at = pendingReveal.current;
+    if (at === null) return;
     pendingReveal.current = null;
-    revealSummaryBlock(pending.at);
+    revealSummaryBlock(at);
   }, [summary]);
 
   // O payload em edição fica numa ref, não em estado: quem desenha o resumo é o
@@ -101,9 +112,8 @@ export function BibloSummaryDock({
       onInsert={(suggestion: BibloSuggestion) => {
         const blocks = draft.current.blocks.slice();
         const at = Math.min(Math.max(suggestion.afterIndex + 1, 0), blocks.length);
-        const block = suggestion.block as WrittenBlock;
-        blocks.splice(at, 0, block);
-        pendingReveal.current = { at, block };
+        blocks.splice(at, 0, suggestion.block as WrittenBlock);
+        pendingReveal.current = at;
         void save({ ...draft.current, blocks });
       }}
       onRemove={(suggestion: BibloSuggestion) => {
