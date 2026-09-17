@@ -92,14 +92,19 @@ function citedReferences(summary: SummaryPayload): string[] {
  * **E ela não diz nada sobre a SITUAÇÃO**, de propósito: quem diz é a frase
  * seguinte, que sabe se a pessoa está lendo um sermão, escrevendo o próprio
  * texto ou diante de uma folha em branco. A primeira versão abria com "eu leio
- * junto com você", e no `/escrever` isso estava simplesmente errado. Pelo mesmo
- * motivo o ângulo é "que ninguém trouxe" e não "que a pregação não pegou" — no
- * `/escrever` não há pregação nenhuma.
+ * junto com você", e no `/escrever` isso estava simplesmente errado.
+ *
+ * **A quarta capacidade é a mais larga de propósito.** As três primeiras são
+ * sobre o texto que está na tela; "refletir sobre qualquer tema cristão" abre a
+ * porta para a pergunta que não nasceu do sermão — a dúvida que a pessoa tem há
+ * meses e nunca perguntou a ninguém. É a que o `biblo.md` §2 chama de "a
+ * pergunta básica que alguém teria vergonha de fazer em público", e ela precisa
+ * estar na primeira frase para ser feita.
  *
  * Quem decide se ela aparece é o contador de `biblo/intro.ts`.
  */
 const INTRODUCTION =
-  "Meu nome é Biblo. Posso explicar uma passagem, contar o contexto de quem a escreveu, apresentar um personagem ou levantar um ângulo que ninguém trouxe.";
+  "Meu nome é Biblo. Eu posso explicar uma passagem bíblica, trazer o contexto histórico, apresentar um personagem bíblico ou refletir sobre qualquer tema cristão.";
 
 function buildGreeting(input: {
   title: string;
