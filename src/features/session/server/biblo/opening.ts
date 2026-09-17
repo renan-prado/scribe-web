@@ -31,7 +31,7 @@ const GENERIC_CHIPS = ["Uma pergunta que incomode", "O que ler sobre isso"];
 
 const EMPTY_CHIPS = [
   "Me ajuda a achar um tema?",
-  "Vamos falar de João 1?",
+  "Vamos falar sobre João 1?",
   "O que a Bíblia diz sobre perdão?",
 ];
 

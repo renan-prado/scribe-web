@@ -134,12 +134,27 @@ const DRAG_SLOP_PX = 4;
  * mesmo. **Só com mouse** (`pointerType`): no toque o navegador rola
  * nativamente, e somar a nossa conta à dele faria a fileira andar o dobro.
  *
- * ## O defeito da primeira tentativa, e as três travas contra ele
+ * ## A CAPTURA SÓ ACONTECE DEPOIS QUE O GESTO VIRA ARRASTO
  *
- * Havia um arrasto aqui antes, e ele tinha um defeito que só aparece em uso: o
- * `pointerup` não desfazia o estado do arrasto — de propósito, porque o `click`
- * vem depois dele e precisava saber que houve arrasto — e a partir daí **todo
- * movimento do mouse sobre a fileira a rolava, sem botão pressionado**.
+ * Esta é a linha mais importante do arquivo, e ela custou um clique que não
+ * funcionava: **`setPointerCapture` redireciona o `click`.** Capturado o
+ * ponteiro, o `pointerdown` e o `pointerup` passam a ter a FILEIRA como alvo, e
+ * o navegador dispara o clique no ancestral comum dos dois — a fileira. O
+ * `onClick` da pastilha nunca roda. Capturar no `pointerdown`, que é o que todo
+ * exemplo de arrastar-para-rolar faz, quebra portanto todos os cliques.
+ *
+ * Aqui a captura espera o ponteiro andar mais que `DRAG_SLOP_PX`. Um clique
+ * nunca chega lá, então ele não passa por nada disto: sem captura, sem
+ * `preventDefault`, sem `stopPropagation` — o caminho do clique é o de um
+ * `<button>` comum. E o arrasto de verdade captura, o que de quebra já resolve
+ * a metade do problema que o `swallowClick` resolvia.
+ *
+ * ## O defeito da PRIMEIRA tentativa, e as três travas contra ele
+ *
+ * Havia um arrasto aqui antes, e ele tinha outro defeito: o `pointerup` não
+ * desfazia o estado do arrasto — de propósito, porque o `click` vem depois dele
+ * e precisava saber que houve arrasto — e a partir daí **todo movimento do
+ * mouse sobre a fileira a rolava, sem botão pressionado**.
  *
  * A causa era uma só: um estado que significava DUAS coisas ("estou
  * arrastando" e "houve arrasto"), e que por isso não podia ser limpo na hora
@@ -167,7 +182,7 @@ function Chips({
   const rowRef = useRef<HTMLDivElement>(null);
   // "Estou arrastando AGORA". Em `ref` e não em estado: muda a cada
   // `pointermove` e nada na tela depende do valor.
-  const drag = useRef<{ startX: number; startLeft: number } | null>(null);
+  const drag = useRef<{ startX: number; startLeft: number; captured: boolean } | null>(null);
   // "O gesto que acabou foi um arrasto" — separado do de cima porque vive mais
   // que ele: o `click` só chega depois do `pointerup`. Foi juntar os dois num
   // campo só que criou o defeito descrito no cabeçalho.
@@ -193,10 +208,10 @@ function Chips({
         // Nada a arrastar quando tudo já cabe: sem isto, um clique numa fileira
         // curta viraria um arrasto de zero pixel com cara de travada.
         if (row.scrollWidth <= row.clientWidth) return;
-        drag.current = { startX: event.clientX, startLeft: row.scrollLeft };
-        // A captura é o que faz o arrasto continuar quando o ponteiro sai da
-        // fileira — o caso normal, porque ela tem 32px de altura.
-        row.setPointerCapture(event.pointerId);
+        // Note que NÃO se captura o ponteiro aqui: enquanto isto for um
+        // clique, ele tem de seguir o caminho normal até a pastilha. Ver o
+        // cabeçalho.
+        drag.current = { startX: event.clientX, startLeft: row.scrollLeft, captured: false };
       }}
       onPointerMove={(event) => {
         const row = rowRef.current;
@@ -206,7 +221,18 @@ function Chips({
           return;
         }
         const dx = event.clientX - drag.current.startX;
-        if (Math.abs(dx) > DRAG_SLOP_PX) swallowClick.current = true;
+        if (!drag.current.captured) {
+          // Ainda pode ser um clique: não rola nada e não captura nada. Três
+          // pixels de rolagem não se veem, e a captura antes da hora é o que
+          // matava o clique.
+          if (Math.abs(dx) <= DRAG_SLOP_PX) return;
+          drag.current.captured = true;
+          swallowClick.current = true;
+          // Agora sim: é a captura que faz o arrasto continuar quando o
+          // ponteiro sai da fileira — o caso normal, porque ela tem 32px de
+          // altura.
+          row.setPointerCapture(event.pointerId);
+        }
         row.scrollLeft = drag.current.startLeft - dx;
       }}
       onPointerUp={endDrag}
