@@ -21,7 +21,37 @@ import { BibloAvatar } from "@/shared/brand";
  * vira bloco: às vezes o parágrafo vai para o caderno, para o WhatsApp do
  * grupo, para um slide. Fazer do copiar o caminho de segunda classe seria
  * empurrar para dentro do texto o que a pessoa queria levar para fora.
+ *
+ * ## Os dois lados são BALÃO, e a cor de cada um é uma decisão
+ *
+ * A resposta do Biblo já foi texto solto ao lado de um avatar, e o que se lia
+ * ali não era conversa: era um documento com uma carinha do lado. Hoje os dois
+ * lados têm balão, e é o que faz o olho saber de quem é cada linha antes de
+ * ler qualquer uma delas.
+ *
+ * | quem | superfície |
+ * |---|---|
+ * | Biblo | `--secondary`, o degrau de realce que o app já usa |
+ * | quem pergunta | `--biblo-bubble-me`, o azul do rosto dele |
+ *
+ * **O balão de quem pergunta já foi âmbar**, o da família da MOEDA, e âmbar
+ * sobre fundo escuro lê como aviso: a própria pergunta da pessoa parecia algo
+ * que precisava de atenção. O azul não carrega estado nenhum no produto, e
+ * amarra a conversa ao personagem em vez de amarrá-la ao preço.
+ *
+ * ## A cascata de entrada não é digitação
+ *
+ * Sem streaming (`AGENTS.md`), a resposta chega INTEIRA de um quadro para o
+ * outro, e um bloco de texto que simplesmente aparece não diz de onde veio. Os
+ * parágrafos entram com `animate-biblo-in` e um atraso crescente **com teto**:
+ * sem o teto, uma resposta de sete parágrafos faria a pessoa esperar por um
+ * texto que já está em mãos — o defeito do streaming, copiado de graça por um
+ * efeito que existe para o contrário.
  */
+
+/** A cascata: o passo entre parágrafos e o teto dela. Ver o cabeçalho. */
+const STAGGER_STEP_MS = 60;
+const STAGGER_MAX_MS = 240;
 
 function CopyButton({ text }: { text: string }) {
   const [copied, setCopied] = useState(false);
@@ -53,92 +83,146 @@ function CopyButton({ text }: { text: string }) {
   );
 }
 
+const BLOCK_LABEL: Record<string, string> = {
+  bibleQuote: "Passagem bíblica",
+  highlight: "Frase de destaque",
+  quote: "Citação",
+  h2: "Subtítulo",
+  conclusion: "Conclusão",
+  example: "Exemplo",
+  paragraph: "Parágrafo",
+};
+
+/**
+ * O balão de quem pergunta.
+ *
+ * Exportado porque a pergunta OTIMISTA — a que aparece no instante do envio,
+ * antes de existir linha no banco — é exatamente esta, sem id. Ver o cabeçalho
+ * de `BibloDrawer`.
+ *
+ * `whitespace-pre-wrap` porque o campo aceita Shift+Enter: quebrar a pergunta
+ * em duas linhas e vê-las coladas de volta é o app desfazendo o que a pessoa
+ * acabou de fazer.
+ */
+export function BibloUserBubble({ text }: { text: string }) {
+  return (
+    <div className="flex justify-end">
+      <p className="max-w-[85%] whitespace-pre-wrap rounded-2xl rounded-br-md bg-biblo-bubble-me px-3.5 py-2 text-[14px] text-biblo-bubble-me-ink leading-relaxed">
+        {text}
+      </p>
+    </div>
+  );
+}
+
+/**
+ * O balão do Biblo, vazio, com o rosto ao lado.
+ *
+ * Exportado porque o cumprimento da abertura e o "Pensando…" são a mesma
+ * moldura sem resposta atrás: três cópias do par avatar + balão desencontrariam
+ * na primeira mudança de raio, de cor ou de espaçamento.
+ */
+export function BibloBubble({ children }: { children: React.ReactNode }) {
+  return (
+    <div className="flex gap-2.5">
+      <BibloAvatar size={28} className="mt-0.5" />
+      <div className="min-w-0 flex-1">
+        <div className="max-w-[92%] rounded-2xl rounded-bl-md bg-secondary px-3.5 py-2.5 text-[14px] text-scriba-ink leading-relaxed">
+          {children}
+        </div>
+      </div>
+    </div>
+  );
+}
+
 export function BibloMessageView({
   message,
   onAdd,
   onUndo,
   added,
+  animate = false,
 }: {
   message: Message;
   /** `undefined` quando não há para onde inserir (a tela não sabe editar). */
   onAdd?: (message: Message) => void;
   onUndo?: (message: Message) => void;
   added: boolean;
+  /**
+   * Só a resposta que ACABOU de chegar anima. Reabrir a gaveta amanhã é ler
+   * uma conversa guardada, e ver dez respostas antigas entrando em cascata
+   * seria o app fingindo que elas estão chegando agora.
+   */
+  animate?: boolean;
 }) {
-  if (message.role === "user") {
-    return (
-      <div className="flex justify-end">
-        <p className="max-w-[85%] rounded-2xl rounded-br-md bg-scriba-gold-soft px-3.5 py-2 text-[14px] text-scriba-gold-ink leading-relaxed">
-          {message.content}
-        </p>
-      </div>
-    );
-  }
+  if (message.role === "user") return <BibloUserBubble text={message.content} />;
 
   const suggestion = message.suggestion;
+  const paragraphs = message.content.split(/\n{2,}/);
 
   return (
     <div className="flex gap-2.5">
       <BibloAvatar size={28} className="mt-0.5" />
       <div className="min-w-0 flex-1">
-        <div className="space-y-3 text-[14px] text-scriba-ink leading-relaxed">
-          {message.content.split(/\n{2,}/).map((paragraph, index) => (
-            // biome-ignore lint/suspicious/noArrayIndexKey: parágrafos de um texto imutável, a ordem é estável
-            <p key={`p-${index}`}>
-              <RichText>{paragraph}</RichText>
-            </p>
-          ))}
-        </div>
-
-        {suggestion && (
-          <div className="mt-3 rounded-xl border border-scriba-hairline border-dashed p-3">
-            <p className="text-[11px] text-scriba-ink-soft uppercase tracking-wide">
-              {suggestion.block.type === "bibleQuote"
-                ? "Passagem bíblica"
-                : suggestion.block.type === "highlight"
-                  ? "Frase de destaque"
-                  : suggestion.block.type === "quote"
-                    ? "Citação"
-                    : suggestion.block.type === "h2"
-                      ? "Subtítulo"
-                      : suggestion.block.type === "conclusion"
-                        ? "Conclusão"
-                        : suggestion.block.type === "example"
-                          ? "Exemplo"
-                          : "Parágrafo"}
-            </p>
-            <p className="mt-1 text-[13px] text-scriba-ink leading-relaxed">
-              {suggestion.block.type === "bibleQuote"
-                ? suggestion.block.reference
-                : suggestion.block.text}
-            </p>
-            {onAdd && (
-              <button
-                type="button"
-                onClick={() => (added ? onUndo?.(message) : onAdd(message))}
-                className={cn(
-                  "mt-2 inline-flex items-center gap-1.5 rounded-full px-3 py-1.5 font-medium text-[12px] transition-colors",
-                  "focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-scriba-ink-mute",
-                  added
-                    ? "bg-scriba-hairline/60 text-scriba-ink-soft hover:text-scriba-ink"
-                    : "bg-scriba-ink text-scriba-paper hover:brightness-110"
-                )}
+        {/* `data-biblo-answer` é o que a gaveta procura para rolar até o INÍCIO
+            desta resposta. Ver o efeito de rolagem em `BibloDrawer`. */}
+        <div
+          data-biblo-answer={message.id}
+          className="max-w-[92%] rounded-2xl rounded-bl-md bg-secondary px-3.5 py-2.5"
+        >
+          <div className="space-y-3 text-[14px] text-scriba-ink leading-relaxed">
+            {paragraphs.map((paragraph, index) => (
+              <p
+                // biome-ignore lint/suspicious/noArrayIndexKey: parágrafos de um texto imutável, a ordem é estável
+                key={`p-${index}`}
+                className={cn(animate && "animate-biblo-in")}
+                style={
+                  animate
+                    ? { animationDelay: `${Math.min(index * STAGGER_STEP_MS, STAGGER_MAX_MS)}ms` }
+                    : undefined
+                }
               >
-                {added ? (
-                  <>
-                    <Undo2 aria-hidden className="size-3.5" strokeWidth={1.75} />
-                    Remover
-                  </>
-                ) : (
-                  <>
-                    <Plus aria-hidden className="size-3.5" strokeWidth={2} />
-                    {suggestion.label}
-                  </>
-                )}
-              </button>
-            )}
+                <RichText>{paragraph}</RichText>
+              </p>
+            ))}
           </div>
-        )}
+
+          {suggestion && (
+            <div className="mt-3 rounded-xl border border-scriba-hairline border-dashed p-3">
+              <p className="text-[11px] text-scriba-ink-soft uppercase tracking-wide">
+                {BLOCK_LABEL[suggestion.block.type] ?? "Parágrafo"}
+              </p>
+              <p className="mt-1 text-[13px] text-scriba-ink leading-relaxed">
+                {suggestion.block.type === "bibleQuote"
+                  ? suggestion.block.reference
+                  : suggestion.block.text}
+              </p>
+              {onAdd && (
+                <button
+                  type="button"
+                  onClick={() => (added ? onUndo?.(message) : onAdd(message))}
+                  className={cn(
+                    "mt-2 inline-flex items-center gap-1.5 rounded-full px-3 py-1.5 font-medium text-[12px] transition-colors",
+                    "focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-scriba-ink-mute",
+                    added
+                      ? "bg-scriba-hairline/60 text-scriba-ink-soft hover:text-scriba-ink"
+                      : "bg-scriba-ink text-scriba-paper hover:brightness-110"
+                  )}
+                >
+                  {added ? (
+                    <>
+                      <Undo2 aria-hidden className="size-3.5" strokeWidth={1.75} />
+                      Remover
+                    </>
+                  ) : (
+                    <>
+                      <Plus aria-hidden className="size-3.5" strokeWidth={2} />
+                      {suggestion.label}
+                    </>
+                  )}
+                </button>
+              )}
+            </div>
+          )}
+        </div>
 
         <div className="mt-1 flex">
           <CopyButton text={message.content} />

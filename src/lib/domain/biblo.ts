@@ -22,6 +22,23 @@ import { SummaryBlockSchema } from "./summary";
  * `domain/summary.ts` sobre o que acontece quando existe um tipo que só um
  * lado conhece.
  */
+/**
+ * Teto de um chip.
+ *
+ * 90 e não 48: os chips passaram a ser perguntas faladas ("E os marinheiros
+ * junto a Jonas, o que pensavam da situação?"), e as telegráficas que cabiam em
+ * 48 eram justamente o que se queria mudar. Acima disto deixa de ser pergunta e
+ * vira parágrafo com ponto de interrogação, e a fileira de pastilhas do rodapé
+ * vira um bloco de texto.
+ *
+ * **A folga entre 80 e 90 foi comprada com uma medição.** A `offer` passa por
+ * este mesmo teto, e a primeira que o modelo escreveu tinha 84 caracteres:
+ * quatro a mais que o limite de então. Ela era descartada em silêncio, e o
+ * sintoma era o botão de oferta nunca aparecer — que se lê como "o prompt não
+ * funcionou", e leva a mexer no lugar errado.
+ */
+export const BIBLO_MAX_CHIP_CHARS = 90;
+
 export const BibloSuggestionSchema = z.object({
   /** O rótulo do botão, no vocabulário do usuário. */
   label: z.string().min(1).max(60),
@@ -43,15 +60,73 @@ export type BibloSuggestion = z.infer<typeof BibloSuggestionSchema>;
  */
 export const BibloReplySchema = z.object({
   answer: z.string().min(1),
-  chips: z.array(z.string().min(1).max(48)).max(4).default([]),
-  suggestion: BibloSuggestionSchema.nullable().default(null),
+  /**
+   * Os chips, **aparados em vez de recusados**.
+   *
+   * Eles eram `.max(48)` e o schema inteiro caía quando um passava disso: uma
+   * resposta boa, já paga e já cobrada, era descartada porque uma sugestão de
+   * próxima pergunta tinha três palavras a mais. Chip é decoração; a resposta é
+   * o produto. O que não couber sai da lista, e a resposta chega.
+   *
+   * (Foi exatamente o que aconteceu quando o prompt passou a pedir perguntas em
+   * voz de gente, mais longas que as telegráficas de antes.)
+   */
+  chips: z
+    .array(z.string())
+    .default([])
+    .transform((list) =>
+      list
+        .map((chip) => chip.trim())
+        .filter((chip) => chip.length > 0 && chip.length <= BIBLO_MAX_CHIP_CHARS)
+        .slice(0, 4)
+    ),
+  /**
+   * **`.catch(null)` e não só `.nullable()`**: uma sugestão malformada vira
+   * "sem sugestão", e não a perda da resposta inteira.
+   *
+   * Foi medido: pedindo `text` vazio, o modelo às vezes devolve o BLOCO no
+   * lugar do envelope (`{type, text}` em vez de `{label, block, afterIndex}`).
+   * Sem o `catch`, esse deslize derrubava o schema todo e a pessoa perdia —
+   * já cobrada — uma resposta que estava correta. Mesma régua dos chips.
+   */
+  suggestion: BibloSuggestionSchema.nullable().catch(null).default(null),
+  /**
+   * A OFERTA de escrever um trecho, na voz de quem pede: "Escreve um parágrafo
+   * sobre isso". `null` quando a resposta não daria texto para o documento.
+   *
+   * **Ela tem campo próprio porque, dentro de `chips`, ela simplesmente não
+   * acontecia.** Os chips são pedidos como perguntas ("escreva-os como ELA
+   * perguntaria"), e uma oferta não é uma pergunta: com quatro vagas e uma
+   * instrução de pergunta, o modelo enchia as quatro de perguntas e a oferta
+   * nunca saía — medido, três rodadas seguidas. Um campo que precisa ser
+   * preenchido ou dito nulo é a diferença entre pedir e obter.
+   *
+   * O servidor a junta a `chips` antes de gravar (ver `biblo/answer.ts`): a
+   * oferta é uma pastilha que se toca como as outras, e separá-la na tela
+   * seria um segundo mecanismo para o mesmo gesto.
+   */
+  offer: z
+    .string()
+    .nullable()
+    .default(null)
+    .transform((text) => {
+      const trimmed = text?.trim() ?? "";
+      return trimmed.length > 0 && trimmed.length <= BIBLO_MAX_CHIP_CHARS ? trimmed : null;
+    }),
   /**
    * O fio: o que já foi conversado ANTES da janela que vai ao modelo,
    * reescrito a cada resposta. É a memória de uma conversa longa sem o custo
    * de reler a conversa longa — ver a janela deslizante em
    * `docs/biblo-implementacao.md` §1.4.
+   *
+   * Cortado, e não recusado, pelo mesmo motivo dos chips: o fio é memória
+   * nossa, e um fio comprido demais não é razão para a pessoa perder a
+   * resposta que pagou.
    */
-  thread: z.string().max(600).default(""),
+  thread: z
+    .string()
+    .default("")
+    .transform((text) => text.slice(0, 600)),
 });
 
 export type BibloReply = z.infer<typeof BibloReplySchema>;

@@ -3,7 +3,11 @@
 import { ArrowUp, X } from "lucide-react";
 import { useCallback, useEffect, useRef, useState } from "react";
 import { useCoinsStore } from "@/features/coins/store";
-import { BibloMessageView } from "@/features/session/components/BibloMessage";
+import {
+  BibloBubble,
+  BibloMessageView,
+  BibloUserBubble,
+} from "@/features/session/components/BibloMessage";
 import {
   BIBLO_MAX_QUESTION_CHARS,
   type BibloAllowance,
@@ -32,6 +36,26 @@ const log = createLogger("biblo");
  * como em qualquer outra ação do produto — ver `docs/creditos-na-tela.md`. O
  * único número que esta tela conhece é o `remaining` do presente, e ele existe
  * para dizer UMA linha de agradecimento na última mensagem, não para contar.
+ *
+ * ## A pergunta entra antes da rede (`asking`)
+ *
+ * A pergunta aparecia junto com a resposta, quatro segundos depois de enviada,
+ * e nesses quatro segundos a tela não tinha registro nenhum do que a pessoa
+ * fez: o campo esvaziava e nada acontecia. Num chat isso é o app parecendo ter
+ * perdido a mensagem, e a reação de quem usa é mandar de novo.
+ *
+ * `asking` é a pergunta enviada que ainda não tem linha no banco. Ela é a única
+ * coisa desta conversa que **não precisa de servidor para ser verdade**: quem
+ * escreveu foi a pessoa, e o que o servidor devolve depois é só o id dela. Nos
+ * três caminhos de falha ela sai da lista e volta para o campo, onde pode ser
+ * reenviada — o otimismo termina onde a certeza termina.
+ *
+ * ## A rolagem tem DOIS destinos
+ *
+ * Ao enviar, o fim da lista. Ao receber, o **início do balão da resposta** —
+ * porque parar no fim de uma resposta de três parágrafos deixa a primeira linha
+ * meia tela acima, e a pessoa tem de subir para começar a ler o que acabou de
+ * pedir.
  */
 
 const DENIAL_COPY: Record<BibloDenial, { text: string; cta?: { label: string; href: string } }> = {
@@ -98,6 +122,11 @@ export function BibloDrawer({
   const [draft, setDraft] = useState("");
   const [pending, setPending] = useState(false);
   const [failed, setFailed] = useState(false);
+  // A pergunta enviada que ainda nao tem linha no banco. Ver o cabecalho.
+  const [asking, setAsking] = useState<string | null>(null);
+  // O id da ultima resposta que CHEGOU nesta sessao de tela. So ela anima, e
+  // so ate ela e que a rolagem sobe.
+  const [arrivedId, setArrivedId] = useState<string | null>(null);
   const [addedIds, setAddedIds] = useState<Set<string>>(new Set());
   const listRef = useRef<HTMLDivElement>(null);
   const inputRef = useRef<HTMLTextAreaElement>(null);
@@ -119,15 +148,35 @@ export function BibloDrawer({
     };
   }, [sessionId]);
 
-  // Rola para o fim a cada mensagem nova. `behavior: "smooth"` de propósito:
-  // um salto seco esconde que algo chegou.
-  //
-  // biome-ignore lint/correctness/useExhaustiveDependencies: `pending` não é lido pelo efeito, e é dependência de propósito. O "Pensando…" é uma LINHA A MAIS no fim da lista: ele muda a altura do conteúdo sem mudar o número de mensagens, e sem ele a pergunta recém-enviada fica meia tela acima do rodapé até a resposta chegar.
+  // Enquanto a pergunta esta no ar, o fim da lista e o lugar certo: a pergunta
+  // recem-enviada e o "Pensando..." sao as duas ultimas coisas, e a pessoa quer
+  // ver as duas. `behavior: "smooth"` de proposito, um salto seco esconde que
+  // algo aconteceu.
   useEffect(() => {
     const list = listRef.current;
-    if (!list) return;
+    if (!list || !asking) return;
     list.scrollTo({ top: list.scrollHeight, behavior: "smooth" });
-  }, [conversation?.messages.length, pending]);
+  }, [asking]);
+
+  // Quando a resposta chega, o fim da lista e o lugar ERRADO: numa resposta de
+  // tres paragrafos o rodape dela fica na tela e a primeira linha, meia tela
+  // acima, e a pessoa tem de subir para comecar a ler. A rolagem para no INICIO
+  // do balao, que e onde a leitura comeca.
+  //
+  // `getBoundingClientRect` e nao `offsetTop`: `offsetTop` e medido contra o
+  // ancestral POSICIONADO, e a lista nao e um. Sem posicionar a lista so para
+  // este calculo, a conta relativa entre os dois retangulos e a que nao mente.
+  useEffect(() => {
+    const list = listRef.current;
+    if (!list || !arrivedId) return;
+    const answer = list.querySelector<HTMLElement>(`[data-biblo-answer="${arrivedId}"]`);
+    if (!answer) return;
+    const top =
+      list.scrollTop + answer.getBoundingClientRect().top - list.getBoundingClientRect().top;
+    // A folga de 12px e a mesma do padding da lista: encostar o balao no topo
+    // faz ele parecer cortado.
+    list.scrollTo({ top: Math.max(0, top - 12), behavior: "smooth" });
+  }, [arrivedId]);
 
   const send = useCallback(
     async (text: string) => {
@@ -137,6 +186,10 @@ export function BibloDrawer({
       setDraft("");
       setPending(true);
       setFailed(false);
+      // A pergunta entra na tela AGORA, antes de a rede saber dela. Ela e a
+      // unica coisa desta conversa que nao precisa de servidor nenhum para ser
+      // verdade: a pessoa acabou de escreve-la.
+      setAsking(question);
       onThinking(true);
       try {
         const res = await fetch("/api/biblo", {
@@ -154,6 +207,7 @@ export function BibloDrawer({
           // troca de estado e a pergunta volta para o campo, para a pessoa não
           // perder o que escreveu.
           if (body.reason) {
+            setAsking(null);
             setDraft(question);
             setConversation((prev) =>
               prev
@@ -162,6 +216,7 @@ export function BibloDrawer({
             );
             return;
           }
+          setAsking(null);
           setDraft(question);
           setFailed(true);
           return;
@@ -169,6 +224,10 @@ export function BibloDrawer({
 
         const turn = body as BibloTurn;
         if (typeof turn.balance === "number") setBalance(turn.balance);
+        // A ordem importa: a linha real entra na lista no MESMO render em que o
+        // balao otimista sai, senao a pergunta pisca.
+        setAsking(null);
+        setArrivedId(turn.answer.id);
         setConversation((prev) =>
           prev
             ? {
@@ -180,6 +239,7 @@ export function BibloDrawer({
         );
       } catch (error) {
         log.error("não consegui enviar", { error: String(error) });
+        setAsking(null);
         setDraft(question);
         setFailed(true);
       } finally {
@@ -246,12 +306,7 @@ export function BibloDrawer({
         )}
 
         {conversation && messages.length === 0 && (
-          <div className="flex gap-2.5">
-            <BibloAvatar size={28} className="mt-0.5" />
-            <p className="min-w-0 flex-1 text-[14px] text-scriba-ink leading-relaxed">
-              {conversation.opening.greeting}
-            </p>
-          </div>
+          <BibloBubble>{conversation.opening.greeting}</BibloBubble>
         )}
 
         {messages.map((message) => (
@@ -261,14 +316,16 @@ export function BibloDrawer({
             onAdd={onInsert ? handleAdd : undefined}
             onUndo={onRemove ? handleUndo : undefined}
             added={addedIds.has(message.id)}
+            animate={message.id === arrivedId}
           />
         ))}
 
+        {asking && <BibloUserBubble text={asking} />}
+
         {pending && (
-          <div className="flex gap-2.5">
-            <BibloAvatar mood="thinking" size={28} className="mt-0.5" />
-            <p className="mt-1 text-[13px] text-scriba-ink-mute">Pensando…</p>
-          </div>
+          <BibloBubble>
+            <span className="text-[13px] text-scriba-ink-mute">Pensando…</span>
+          </BibloBubble>
         )}
 
         {failed && (

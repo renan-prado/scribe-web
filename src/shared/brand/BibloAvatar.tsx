@@ -61,7 +61,7 @@ const BIBLO_NAME = "biblo03";
 
 /**
  * O azul do Biblo. `hue` em graus, `tone` na posição da amostra — juntos dão
- * `#b4d8ff` na cabeça, um azul claro esbranquiçado.
+ * `#9fbfe0` na cabeça, um azul claro esbranquiçado.
  *
  * **O grau é OKLCh, e não o matiz de HSL que o DevTools mostra.** Esta
  * constante já foi `44`, "o amarelo da marca (`--scriba-yellow`, #F8C64B)" —
@@ -85,7 +85,7 @@ const BIBLO_HUE = 250;
 /**
  * A posição na rampa daquele matiz. **Não é contínua**: a lib escolhe entre
  * meia dúzia de amostras, e o intervalo 0,80–0,90 inteiro dá o mesmo
- * `#b4d8ff`. 0,85 é o meio da faixa de propósito — um ajuste fino de dois
+ * `#9fbfe0`. 0,85 é o meio da faixa de propósito — um ajuste fino de dois
  * centésimos não deve pular para a amostra vizinha (`#1c89e4`, o azul médio
  * que este valor substituiu, ou `#2a394a`, que é quase o grafite do fundo).
  *

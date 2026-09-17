@@ -106,6 +106,19 @@ abertura são mais ou menos estes:
 - **Uma pergunta que incomode** — a provocação, o ângulo que ninguém trouxe
 - **O que ler sobre isso** — livro, autor, frase de referência cristã
 
+**Os chips que vêm DEPOIS de uma resposta são perguntas faladas, não entradas de
+índice.** A diferença é uma palavra ou duas, e ela decide se a pastilha soa como
+alguém falando ou como sumário de livro:
+
+| índice | gente |
+|---|---|
+| "O que Társis representa?" | "O que Társis representava para a época?" |
+| "E os marinheiros, o que pensam?" | "E os marinheiros junto a Jonas, o que pensavam da situação?" |
+| "Jonas tinha medo do que?" | "Jonas tinha medo do que, exatamente?" |
+
+Uma pergunta que já está específica em quatro palavras fica em quatro: "Por que
+Deus escolheu Nínive?" não precisa de mais nada.
+
 Três a cinco por vez, nunca a lista inteira; e novos chips aparecem depois de
 cada resposta, puxados do que acabou de ser dito ("quer os paralelos em Mateus
 12?"). É assim que a conversa anda sem a pessoa ter de escrever uma linha.
@@ -149,11 +162,20 @@ A conversa acontece ao lado de um texto que está sendo escrito. Então, quando 
 resposta é boa, o Biblo oferece: *"quer que eu acrescente isso como uma passagem
 bíblica depois da ideia central?"*.
 
-Três regras, todas inegociáveis:
+Quatro regras, todas inegociáveis:
 
 **Ele nunca escreve sozinho.** Toda inserção passa por um "Adicionar" explícito.
 O texto é da pessoa, e um assistente que mexe no documento por conta própria vira
 algo que se desliga.
+
+**E ele não RASCUNHA sozinho.** Escrever o parágrafo antes de alguém querê-lo é
+a mesma presunção um passo antes: a primeira versão punha texto pronto embaixo
+de perguntas que eram só curiosidade, e texto que ninguém pediu é texto morto —
+ocupa a tela, paga saída de modelo e responde por quem escreve. O bloco pronto
+só vem em dois casos: uma PASSAGEM (que custa uma referência e nada mais) e um
+trecho que a pessoa pediu. Fora deles, a oferta é uma pastilha na voz dela —
+*"Escreve um parágrafo sobre isso"* — e o texto só existe depois do toque.
+O preço: aceitar um parágrafo custa duas mensagens em vez de uma.
 
 **A sugestão vem no vocabulário do resumo.** Não é um bloco de texto solto no
 fim: é uma *passagem bíblica*, uma *frase de destaque*, um *parágrafo*, uma

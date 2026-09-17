@@ -167,16 +167,37 @@ async function resolveMarkers(text: string): Promise<{ text: string; dropped: nu
 }
 
 /**
- * A sugestão, conferida.
+ * Os tipos de prosa cujo `text` o servidor sabe preencher a partir da resposta.
  *
- * Duas coisas acontecem aqui, e a primeira é a que importa: quando o bloco é
- * `bibleQuote`, o `text` é escrito pelo SERVIDOR a partir da NVI, e a sugestão
- * inteira é descartada se a referência não resolver. O modelo só escolhe QUAL
- * passagem; ele nunca escreve o que ela diz.
+ * `h2` e `quote` ficam de fora: um subtítulo não é a resposta inteira, e uma
+ * citação sem autor não é uma citação.
+ */
+const FILLABLE_FROM_ANSWER = new Set(["paragraph", "highlight", "conclusion", "example"]);
+
+/**
+ * A sugestão, conferida — e, quando é o caso, PREENCHIDA.
+ *
+ * ## O modelo escolhe o bloco; o servidor escreve o texto
+ *
+ * Era assim só para `bibleQuote` (o texto vem da NVI, e a sugestão inteira cai
+ * se a referência não resolver — o modelo nunca teve a caneta do texto
+ * bíblico). Agora vale também para a prosa, e por um motivo medido:
+ *
+ * **quando a pessoa pedia "escreve um parágrafo sobre isso", o modelo escrevia
+ * o parágrafo em `answer` e deixava `suggestion` nula.** Seis formulações de
+ * prompt não mudaram isso, e a razão é boa: do ponto de vista dele o trabalho
+ * estava feito, e repetir cento e tantos tokens que já estão na resposta é
+ * exatamente o que o resto do prompt manda não fazer. O sintoma era o pior
+ * possível — quem PEDIU o botão ficava sem o botão, depois de pagar.
+ *
+ * Com o `text` vazio, o modelo só precisa dizer o TIPO e a POSIÇÃO, que é
+ * barato e que ele faz de bom grado. O texto é a resposta que ele acabou de
+ * escrever, que é o que a pessoa pediu e o que ela está lendo na tela.
  */
 async function verifySuggestion(
   suggestion: BibloSuggestion | null,
-  blockCount: number
+  blockCount: number,
+  answerText: string
 ): Promise<BibloSuggestion | null> {
   if (!suggestion) return null;
 
@@ -185,6 +206,10 @@ async function verifySuggestion(
     const anchored = await anchorReference(block.reference).catch(() => null);
     if (!anchored) return null;
     block = { type: "bibleQuote", reference: anchored.reference, text: anchored.text };
+  } else if (!block.text.trim()) {
+    // Bloco de prosa sem texto: ou é a resposta, ou não é sugestão nenhuma.
+    if (!FILLABLE_FROM_ANSWER.has(block.type) || !answerText.trim()) return null;
+    block = { ...block, text: answerText.trim() };
   }
 
   // O modelo chuta índices fora da lista de vez em quando; um `afterIndex` de
@@ -254,10 +279,11 @@ export async function generateBibloAnswer(input: BibloAnswerInput): Promise<Bibl
     return { ok: false, kind: "unparseable", message: "resposta fora do contrato" };
   }
 
-  const [answer, suggestion] = await Promise.all([
-    resolveMarkers(reply.data.answer),
-    verifySuggestion(reply.data.suggestion, blocks.length),
-  ]);
+  // A ordem importa: a sugestão pode ser preenchida com o texto da resposta, e
+  // o que vai para o documento tem de ser a resposta JÁ com os marcadores
+  // resolvidos — nunca um `[[Jonas 1:3]]` cru entrando no resumo de alguém.
+  const answer = await resolveMarkers(reply.data.answer);
+  const suggestion = await verifySuggestion(reply.data.suggestion, blocks.length, answer.text);
 
   if (answer.dropped > 0) {
     // Não é erro de usuário nem motivo para 500: a resposta segue sem a
@@ -265,10 +291,17 @@ export async function generateBibloAnswer(input: BibloAnswerInput): Promise<Bibl
     log.warn("referência inválida descartada", { dropped: answer.dropped, model });
   }
 
+  // A oferta entra como a ÚLTIMA pastilha da fileira, e nunca na frente: as
+  // perguntas continuam sendo o caminho normal da conversa, e a oferta é o
+  // desvio para dentro do texto. Daqui para baixo ela é um chip como outro
+  // qualquer — o banco, a gaveta e o `send` não precisam saber que ela nasceu
+  // num campo próprio.
+  const chips = reply.data.offer ? [...reply.data.chips, reply.data.offer] : reply.data.chips;
+
   return {
     ok: true,
     data: {
-      reply: { ...reply.data, answer: answer.text, suggestion },
+      reply: { ...reply.data, answer: answer.text, suggestion, chips },
       model,
       usage: result.data.usage,
       latencyMs: result.data.latencyMs,

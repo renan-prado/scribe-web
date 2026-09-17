@@ -435,23 +435,44 @@ Uma chamada devolve **tudo** — resposta, próximos chips, sugestão de bloco e
 fio. `src/lib/domain/biblo.ts` (client-safe, é o que a gaveta desenha):
 
 ```ts
-export const BibloSuggestionSchema = z.object({
-  /** O rótulo do botão, no vocabulário do usuário. */
-  label: z.string().max(60),
-  /** Um bloco do resumo, os MESMOS oito tipos. Nada de formato novo. */
-  block: SummaryBlockSchema,
-  /** Depois de qual bloco entrar. -1 = no começo. */
-  afterIndex: z.number().int().min(-1),
-});
-
 export const BibloReplySchema = z.object({
-  answer: z.string(),
-  chips: z.array(z.string().max(48)).max(4).default([]),
-  suggestion: BibloSuggestionSchema.nullable().default(null),
+  answer: z.string().min(1),
+  /** Até 4 PERGUNTAS. O que passa de 90 caracteres é aparado fora da lista. */
+  chips: /* array de string, aparado */,
+  /** O bloco, quando ela PEDIU um. Malformado vira null, não derruba nada. */
+  suggestion: BibloSuggestionSchema.nullable().catch(null).default(null),
+  /** A OFERTA de escrever, na voz dela. Vira a última pastilha da fileira. */
+  offer: /* string | null */,
   /** Reescrito a cada resposta, é a memória além da janela. */
-  thread: z.string().max(600).default(""),
+  thread: /* string, cortada em 600 */,
 });
 ```
+
+### Nada neste contrato derruba uma resposta já paga
+
+Os três campos acessórios são **aparados, nunca fatais**: chip comprido sai da
+lista, fio comprido é cortado, sugestão malformada vira `null`. A resposta
+chega.
+
+Não é zelo abstrato — os dois primeiros aconteceram na bancada no mesmo dia. Os
+chips eram `.max(48)`; quando o prompt passou a pedir perguntas faladas, um chip
+de 58 caracteres derrubava o schema inteiro e o `POST` devolvia `unparseable`
+**depois de ter debitado as duas moedas**. Uma decoração não pode custar o
+produto.
+
+### A OFERTA tem campo próprio, e o motivo é medido
+
+Ela nasceu dentro de `chips` e simplesmente **não acontecia**: os chips são
+pedidos como perguntas ("escreva-os como ELA perguntaria"), e uma oferta não é
+uma pergunta — com quatro vagas e uma instrução de pergunta, o modelo enchia as
+quatro de perguntas, três rodadas seguidas. Um campo que precisa ser preenchido
+ou dito nulo é a diferença entre pedir e obter.
+
+O servidor a junta a `chips` antes de gravar. Daí para baixo ela é uma pastilha
+como as outras: a gaveta desenha, a pessoa toca, e o texto dela vira a próxima
+mensagem — por isso a oferta vai **na voz dela, no imperativo** ("Escreve um
+parágrafo sobre isso"), e não na do Biblo ("Posso escrever um parágrafo?"), que
+foi a primeira coisa que o modelo tentou.
 
 **A sugestão é um `SummaryBlock`, e isso é a regra inteira da §6 do
 `biblo.md` virada em tipo.** Se o que o Biblo quer oferecer não couber nos oito
@@ -463,6 +484,40 @@ existiu um tipo que só um lado conhecia.
 
 **Chips derivados, nunca fixos** — eles saem desta mesma chamada, puxados do que
 acabou de ser dito. A exceção é a abertura, §8.
+
+**E eles são perguntas FALADAS, não entradas de índice.** A primeira versão
+pedia "no máximo 6 palavras" e produzia telegrama — *"O que Társis
+representa?"*, *"E os marinheiros, o que pensam?"*. Uma pergunta que alguém faz
+em voz alta é específica, e é a especificidade que a faz caber numa frase
+inteira: *"O que Társis representava para a época?"*, *"E os marinheiros junto a
+Jonas, o que pensavam da situação?"*. O teto virou 12 palavras, com a ressalva
+de que uma pergunta já específica em quatro fica em quatro — esticar *"Por que
+Deus escolheu Nínive?"* só para cumprir tamanho a piora.
+
+### O modelo escolhe o bloco; o SERVIDOR escreve o texto
+
+Isto já valia para `bibleQuote` (§7) e agora vale para a prosa, pela mesma
+razão de sempre — e por uma medição que custou seis formulações de prompt:
+
+> Quando a pessoa pedia *"escreve um parágrafo sobre isso"*, o modelo escrevia o
+> parágrafo em `answer` e deixava `suggestion` nula.
+
+Do ponto de vista dele o trabalho estava feito, e repetir cento e tantos tokens
+que já estão na resposta é exatamente o que o resto do prompt manda não fazer. O
+sintoma era o pior possível: **quem PEDIU o botão ficava sem o botão, depois de
+pagar.**
+
+Hoje o modelo manda o bloco com `"text": ""` — só o TIPO e a POSIÇÃO, que é
+barato e que ele faz de bom grado — e `verifySuggestion` preenche com a resposta
+já resolvida. Vale para `paragraph`, `highlight`, `conclusion` e `example`;
+`h2` e `quote` ficam de fora (um subtítulo não é a resposta inteira, e citação
+sem autor não é citação) e são descartados se vierem vazios.
+
+**Mesmo assim ele acerta ~2 em 3** na bancada, e o terço restante entrega o
+texto na resposta sem o botão — a pessoa copia. Antes de mexer no prompt de
+novo: o pedido curto (*"Escreve um parágrafo sobre isso"*, que é o que a própria
+oferta escreve) acerta mais que o longo (*"Escreve um parágrafo explicando por
+que…"*), que o modelo lê como pedido de explicação.
 
 ---
 
@@ -683,7 +738,7 @@ desenho. Num avatar por usuário isso é cosmético; **num personagem, é a cara
 dele mudando num `npm update`**. Preso o `gen`, um major da lib vira uma
 conferência a olho, não uma surpresa em produção.
 
-**O `hue` é 250 e o `tone` 0,85, o que dá `#b4d8ff` — um azul claro,
+**O `hue` é 250 e o `tone` 0,85, o que dá `#9fbfe0` — um azul claro,
 esbranquiçado. As duas metades disso custaram caro.**
 
 A primeira: ele saía do amarelo da marca, `44`, o matiz HSL de `--scriba-yellow`.
@@ -716,6 +771,43 @@ como conferi-lo.
 **E o `Sparkles` do lucide continua proibido aqui** (regra do `AGENTS.md` da
 raiz): o Biblo tem rosto próprio, não precisa de enfeite emprestado.
 
+### A conversa é de BALÕES, e a cor de cada lado é uma decisão
+
+| quem | superfície |
+|---|---|
+| Biblo | `--secondary` (#3A3B41), o degrau de realce que o app já usa |
+| quem pergunta | `--biblo-bubble-me` (#2C4A6B), o azul do rosto dele |
+
+A resposta do Biblo já foi texto solto ao lado de um avatar, e o que se lia não
+era conversa: era um documento com uma carinha do lado.
+
+**O balão de quem pergunta já foi âmbar** (`--scriba-gold-soft`, a família da
+MOEDA), e âmbar sobre fundo escuro lê como AVISO — a própria pergunta da pessoa
+parecia algo que precisava de atenção. O azul não carrega estado nenhum no
+produto, e amarra a conversa ao personagem em vez de amarrá-la ao preço.
+
+### A pergunta entra ANTES da rede
+
+Ela aparecia junto com a resposta, quatro segundos depois de enviada, e nesses
+quatro segundos a tela não tinha registro nenhum do que a pessoa fez: o campo
+esvaziava e nada acontecia. Num chat isso é o app parecendo ter perdido a
+mensagem, e a reação de quem usa é mandar de novo — e mandar de novo aqui custa
+duas moedas.
+
+A pergunta é a única coisa desta conversa que **não precisa de servidor para ser
+verdade**: quem a escreveu foi a pessoa, e o que o servidor devolve depois é só
+o id dela. Nos três caminhos de falha ela sai da lista e volta para o campo,
+onde pode ser reenviada — o otimismo termina onde a certeza termina.
+
+### A rolagem tem DOIS destinos
+
+Ao enviar, o fim da lista: a pergunta e o "Pensando…" são as duas últimas
+coisas, e a pessoa quer ver as duas.
+
+**Ao receber, o INÍCIO do balão da resposta.** Parar no fim de uma resposta de
+três parágrafos deixa a primeira linha meia tela acima, e a pessoa tem de subir
+para começar a ler o que acabou de pedir.
+
 ### O "pensando"
 
 Sem streaming (`biblo.md` §10, e `AGENTS.md`: o produto não tem SSE). **Medido:
@@ -730,10 +822,38 @@ enquanto a resposta não chega vê o rosto no canto pensando, e voltando a `idle
 quando ela chega. É o aviso de "terminei" sem badge, sem ponto vermelho e sem
 notificação.
 
+**E a resposta ASSENTA, em vez de simplesmente aparecer.** Sem streaming ela
+chega inteira de um quadro para o outro, e um bloco de texto que surge pronto
+não diz de onde veio. Os parágrafos entram com `animate-biblo-in` (260ms) e um
+atraso crescente **com teto de 240ms**. O teto é a parte que importa: sem ele,
+uma resposta de sete parágrafos faria a pessoa esperar por um texto que já está
+em mãos — o defeito do streaming, copiado de graça por um efeito que existe para
+o contrário. **Não é digitação, e não deve virar uma.**
+
+Só a resposta que ACABOU de chegar anima. Reabrir a gaveta amanhã é ler uma
+conversa guardada, e ver dez respostas antigas entrando em cascata seria o app
+fingindo que elas estão chegando agora.
+
 ## 10. Da conversa para o resumo
 
-**Ele nunca escreve sozinho.** Todo cartão de sugestão tem "Adicionar", e nada
-entra no texto sem esse toque.
+**Ele nunca escreve sozinho — e agora nem RASCUNHA sozinho.** Todo cartão de
+sugestão tem "Adicionar", e nada entra no texto sem esse toque.
+
+A primeira versão ia um passo além do necessário: qualquer resposta que desse um
+bom trecho vinha com o parágrafo já escrito embaixo. O resultado era texto
+pronto sob perguntas que eram só curiosidade ("qual o contexto histórico
+disso?"), e texto escrito antes de alguém querer é texto morto — ocupa a tela,
+paga saída de modelo e, pior, responde por quem escreve.
+
+Hoje o bloco pronto só vem em dois casos: uma PASSAGEM (que custa uma referência
+e nada mais) e um trecho que a pessoa PEDIU. Nos demais, a oferta vira pastilha
+("Escreve um parágrafo sobre isso"), e a pastilha tocada é o pedido do segundo
+caso.
+
+**O preço disso é honesto e está aqui para ser revisto**: aceitar um parágrafo
+passou a custar duas mensagens em vez de uma — quatro moedas. A troca vale
+porque a maioria das perguntas nunca ia virar texto, e essas agora não pagam
+nada além da própria resposta.
 
 O caminho é diferente nas duas telas, e isso é bom:
 

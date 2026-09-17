@@ -120,6 +120,9 @@
   /* Scriba AI chat bubble tokens (cards de autoria da IA no feed ao vivo) */
   --color-scriba-bubble: var(--scriba-bubble);
   --color-scriba-bubble-ink: var(--scriba-bubble-ink);
+  /* O balão de quem pergunta, na gaveta do Biblo */
+  --color-biblo-bubble-me: var(--biblo-bubble-me);
+  --color-biblo-bubble-me-ink: var(--biblo-bubble-me-ink);
   /* Elevated surface ("paper"). White in light, raised indigo in dark, this is
      the token every card/sheet/dialog uses instead of a literal `bg-white`, so
      the whole app flips with a single `.dark` on <html>. */
@@ -408,6 +411,18 @@
   /* Balão de fala da IA */
   --scriba-bubble: #2F3035;
   --scriba-bubble-ink: #F5F5F5;
+  /* O balão de QUEM PERGUNTA, na conversa com o Biblo.
+     É a única superfície azul do produto, e o azul é o do rosto dele
+     (`BibloAvatar`) — o par lê como "esta é a sua fala nesta conversa", não
+     como uma quarta família semântica solta no app.
+     Ele já foi `--scriba-gold-soft`, o âmbar da moeda, e o âmbar sobre fundo
+     escuro lê como AVISO: a própria pergunta da pessoa parecia algo que
+     precisava de atenção. Tinta sobre ele: 7,8:1; contra o papel da gaveta,
+     1,44:1, que é o que faz o balão ser um objeto e não uma mancha.
+     O balão do Biblo não tem token próprio: é o `--secondary` (#3A3B41), o
+     degrau de realce que o app já usa para aba ativa e hover de cartão. */
+  --biblo-bubble-me: #2C4A6B;
+  --biblo-bubble-me-ink: #E4EFF9;
   /* O disco do avatar continua escuro nos DOIS temas: a pena dentro dele é
      branca e pintada com `currentColor`, não tem variante clara. */
   --scriba-avatar-gradient: linear-gradient(140deg, #4A4B52, #2F3035);
@@ -1162,6 +1177,17 @@
   --animate-v2-rec-in: v2-rec-in 200ms cubic-bezier(0.22, 1, 0.36, 1);
   --animate-v2-rec-out: v2-rec-out 45ms linear forwards;
 
+  /* A entrada de um parágrafo da resposta do Biblo.
+     O produto não tem streaming (`AGENTS.md`), então a resposta chega INTEIRA,
+     de um quadro para o outro — e um bloco de texto que simplesmente aparece
+     não diz de onde veio. Isto não imita digitação: os parágrafos entram em
+     cascata curta (o atraso é aplicado no ponto de uso e tem teto), e o efeito
+     é o texto assentando, não alguém escrevendo devagar.
+     260ms porque é para ser sentido, não esperado: acima de ~300ms a animação
+     vira o tempo de leitura da pessoa. `both` segura o quadro zero, senão o
+     parágrafo pisca visível antes de o atraso dele começar. */
+  --animate-biblo-in: biblo-in 260ms cubic-bezier(0.22, 1, 0.36, 1) both;
+
   @keyframes record-halo {
     0%,
     100% {
@@ -1253,6 +1279,17 @@
     }
     to {
       opacity: 0;
+    }
+  }
+
+  @keyframes biblo-in {
+    from {
+      opacity: 0;
+      transform: translateY(6px);
+    }
+    to {
+      opacity: 1;
+      transform: translateY(0);
     }
   }
 
