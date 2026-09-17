@@ -915,6 +915,18 @@ enquanto a resposta não chega vê o rosto no canto pensando, e voltando a `idle
 quando ela chega. É o aviso de "terminei" sem badge, sem ponto vermelho e sem
 notificação.
 
+**E a conversa tem uma BATIDA.** A pergunta aparecia e o "Pensando…" nascia no
+mesmo quadro, o que é rápido e não é conversa: ninguém começa a pensar antes de
+a outra pessoa terminar de falar. O indicador espera 400ms, e a espera **não
+custa nada a ninguém** — a requisição sai no instante zero, o que atrasa é só o
+que se vê.
+
+Há também um piso de 1,1s para a resposta entrar na tela. Hoje ele quase nunca
+pega, porque uma resposta real leva de 3,7 a 4,8s; ele existe para o dia em que
+pegar e para o "Pensando…" nunca ser um lampejo de 200ms, que é pior que
+indicador nenhum. **É o único atraso que o usuário paga**, e por isso tem teto
+fixo: ele adia a resposta que chegou cedo demais, nunca a que demorou.
+
 **E a resposta ASSENTA, em vez de simplesmente aparecer.** Sem streaming ela
 chega inteira de um quadro para o outro, e um bloco de texto que surge pronto
 não diz de onde veio. Os parágrafos entram com `animate-biblo-in` (260ms) e um

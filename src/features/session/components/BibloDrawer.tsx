@@ -23,6 +23,9 @@ import { cn } from "@/lib/utils";
 
 const log = createLogger("biblo");
 
+/** Uma pausa. Só a coreografia da conversa a usa — ver `THINKING_BEAT_MS`. */
+const sleep = (ms: number) => new Promise((resolve) => window.setTimeout(resolve, ms));
+
 /**
  * O campo de digitar cresce com o texto, até SEIS linhas.
  *
@@ -39,6 +42,30 @@ const log = createLogger("biblo");
  * verdadeira. Mexeu num, confira o outro — a conta silenciosamente erra por
  * uma linha se `leading` mudar.
  */
+/**
+ * A BATIDA entre a pergunta aparecer e o "Pensando…" aparecer.
+ *
+ * As duas coisas aconteciam no MESMO quadro, e é isso que tirava a conversa da
+ * conversa: ninguém começa a pensar antes de a outra pessoa terminar de falar.
+ * A pausa não custa nada a ninguém — a requisição sai no instante zero, o que
+ * espera é só o indicador.
+ */
+const THINKING_BEAT_MS = 400;
+
+/**
+ * O tempo MÍNIMO que o "Pensando…" fica na tela antes de a resposta entrar.
+ *
+ * Com a batida acima, o piso da conversa inteira é 1,1s. Hoje ele quase nunca
+ * pega: uma resposta real leva de 3,7 a 4,8 segundos (medido, ver
+ * `docs/biblo-implementacao.md` §9). Ele existe para o dia em que pegar — um
+ * modelo mais rápido, uma resposta curta — e para o "Pensando…" nunca ser um
+ * lampejo de 200ms, que é pior do que não ter indicador nenhum.
+ *
+ * **É o único atraso que o usuário PAGA**, e por isso é curto e tem teto fixo:
+ * ele nunca adia uma resposta que demorou, só uma que chegou cedo demais.
+ */
+const THINKING_MIN_MS = 700;
+
 const COMPOSER_MAX_LINES = 6;
 /** `leading-6` = 1,5rem. */
 const COMPOSER_LINE_PX = 24;
@@ -288,6 +315,10 @@ export function BibloDrawer({
   const [conversation, setConversation] = useState<BibloConversation | null>(null);
   const [draft, setDraft] = useState("");
   const [pending, setPending] = useState(false);
+  // Separado do `pending`: aquele é "a requisição está no ar" e governa o que
+  // fica desabilitado (tem de ser imediato, senão dois cliques mandam duas
+  // perguntas); este é só o balão do "Pensando…", que entra uma batida depois.
+  const [showThinking, setShowThinking] = useState(false);
   const [failed, setFailed] = useState(false);
   // A pergunta enviada que ainda nao tem linha no banco. Ver o cabecalho.
   const [asking, setAsking] = useState<string | null>(null);
@@ -319,11 +350,13 @@ export function BibloDrawer({
   // recem-enviada e o "Pensando..." sao as duas ultimas coisas, e a pessoa quer
   // ver as duas. `behavior: "smooth"` de proposito, um salto seco esconde que
   // algo aconteceu.
+  //
+  // biome-ignore lint/correctness/useExhaustiveDependencies: `showThinking` não é LIDO pelo efeito, e é dependência de propósito — o "Pensando…" é uma LINHA A MAIS que chega uma batida depois da pergunta, e sem ela o balão nasceria abaixo da dobra numa conversa que já rolava.
   useEffect(() => {
     const list = listRef.current;
     if (!list || !asking) return;
     list.scrollTo({ top: list.scrollHeight, behavior: "smooth" });
-  }, [asking]);
+  }, [asking, showThinking]);
 
   // Quando a resposta chega, o fim da lista e o lugar ERRADO: numa resposta de
   // tres paragrafos o rodape dela fica na tela e a primeira linha, meia tela
@@ -370,6 +403,9 @@ export function BibloDrawer({
       // verdade: a pessoa acabou de escreve-la.
       setAsking(question);
       onThinking(true);
+
+      const startedAt = Date.now();
+      const beat = window.setTimeout(() => setShowThinking(true), THINKING_BEAT_MS);
       try {
         // O texto na tela vai para o banco ANTES da pergunta. Na primeira ela
         // cria a linha (sem ela o POST responderia 404); nas seguintes ela é o
@@ -419,6 +455,12 @@ export function BibloDrawer({
         if (typeof turn.balance === "number") setBalance(turn.balance);
         // A ordem importa: a linha real entra na lista no MESMO render em que o
         // balao otimista sai, senao a pergunta pisca.
+        // A espera pelo piso acontece AQUI, com a resposta já em mãos: o que
+        // se segura é a entrada dela na tela, nunca a chamada.
+        const elapsed = Date.now() - startedAt;
+        const floor = THINKING_BEAT_MS + THINKING_MIN_MS;
+        if (elapsed < floor) await sleep(floor - elapsed);
+
         setAsking(null);
         setArrivedId(turn.answer.id);
         setConversation((prev) =>
@@ -436,6 +478,8 @@ export function BibloDrawer({
         setDraft(question);
         setFailed(true);
       } finally {
+        window.clearTimeout(beat);
+        setShowThinking(false);
         setPending(false);
         onThinking(false);
       }
@@ -553,7 +597,7 @@ export function BibloDrawer({
 
           {asking && <BibloUserBubble text={asking} />}
 
-          {pending && (
+          {showThinking && (
             <BibloBubble mood="thinking">
               <span className="text-[13px] text-scriba-ink-mute">Pensando…</span>
             </BibloBubble>
