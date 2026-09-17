@@ -427,6 +427,20 @@
      degrau de realce que o app já usa para aba ativa e hover de cartão. */
   --biblo-bubble-me: #2C4A6B;
   --biblo-bubble-me-ink: #E4EFF9;
+  /* A SELEÇÃO do usuário, em qualquer lugar do app. Ver a regra `::selection`.
+
+     É o azul do ROSTO do Biblo (`BIBLO_HUE` 250 no `tone` 0,85), e não o do
+     balão acima: o balão é #2C4A6B, e uma seleção da mesma cor dentro dele
+     seria uma seleção invisível — que é o caso de quem marca a própria
+     pergunta para copiá-la.
+
+     A ESTRUTURA é a do destaque de busca: fundo CLARO, tinta ESCURA. Num app
+     escuro é o que faz o trecho marcado saltar de qualquer superfície, do papel
+     da gaveta ao balão azul, sem uma regra por superfície. A tinta é um azul
+     quase preto (7,8:1 sobre o fundo), e não `--scriba-surface`: o par fica na
+     mesma família, como o amarelo e o `--scriba-yellow-ink`. */
+  --scriba-selection: #9FBFE0;
+  --scriba-selection-ink: #16293D;
   /* O disco do avatar continua escuro nos DOIS temas: a pena dentro dele é
      branca e pintada com `currentColor`, não tem variante clara. */
   --scriba-avatar-gradient: linear-gradient(140deg, #4A4B52, #2F3035);
@@ -1094,25 +1108,29 @@
     background-color: var(--scriba-yellow);
     color: var(--scriba-yellow-ink);
   }
-  /* A SELEÇÃO do usuário, no mesmo par do destaque de busca acima.
+  /* A SELEÇÃO do usuário, no AZUL do Biblo.
 
      O azul do sistema é a única cor do produto que não foi escolhida por
      ninguém, e num app escuro ele chega como um bloco saturado no meio de uma
-     paleta de cinzas e âmbar — some de um lado o texto e do outro a marca. Ele
-     ficou invisível enquanto selecionar não fazia nada; virou visível quando o
-     trecho selecionado passou a ser um gesto do produto (ver `BibloSelection`).
+     paleta de cinzas e âmbar. Ele ficou invisível enquanto selecionar não fazia
+     nada; virou visível quando o trecho selecionado passou a ser um gesto do
+     produto (ver `BibloSelection`).
 
-     É o MESMO amarelo do `::highlight(scriba-find)`, e de propósito: marcar um
-     trecho com o dedo e achar um trecho pela busca são a mesma ideia, e duas
-     tintas diferentes para "isto aqui está marcado" seria uma a mais. Vale a
-     mesma nota sobre a tinta: `--scriba-yellow-ink`, e não a tinta forte do
-     app, que é quase branca e sumiria sobre o amarelo claro.
+     **O amarelo esteve aqui e saiu.** Ele é o par do destaque de busca logo
+     acima, e a simetria era tentadora — mas amarelo neste app é a MOEDA (ver o
+     `AGENTS.md` da raiz: saldo, preço, o selo de crédito), e pintar de amarelo
+     todo texto que alguém arrasta o dedo por cima espalha a cor do dinheiro
+     pelo produto inteiro. O destaque de busca pode usá-la porque é raro e tem
+     um gesto próprio; a seleção acontece o tempo todo, inclusive sem querer.
+
+     A ESTRUTURA continua a do destaque: fundo claro, tinta escura, que é o que
+     faz o trecho saltar de qualquer superfície. O que muda é o matiz.
 
      Sem `::-moz-selection`: o Firefox suporta `::selection` desde a 62, e um
      seletor desconhecido invalidaria a regra inteira se agrupado. */
   ::selection {
-    background-color: var(--scriba-yellow-light);
-    color: var(--scriba-yellow-ink);
+    background-color: var(--scriba-selection);
+    color: var(--scriba-selection-ink);
   }
   .veil-chip {
     background-image: var(--veil-bg);
