@@ -9,6 +9,13 @@ Gerado por `npm run release` a partir dos Conventional Commits. `feat` sobe o
 minor; o resto sobe o patch. Não edite à mão, a próxima execução escreve por
 cima do topo do arquivo.
 
+## 0.35.0, 2026-09-17, desde v0.34.0
+
+### Novidades
+
+- **creditos:** o assinante ve o mes, nao o odometro (`4291baa`)
+- **biblo:** a conversa dentro da sessao, com o rosto no canto (`fc6cbcd`)
+
 ## 0.34.0, 2026-09-16, desde v0.33.0
 
 ### Novidades
