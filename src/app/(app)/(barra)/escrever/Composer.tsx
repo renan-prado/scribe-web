@@ -6,6 +6,7 @@ import { type ReactNode, useEffect, useRef, useState } from "react";
 import { BookGlyph } from "@/components/icons/BookGlyph";
 import { BibloDock } from "@/features/session/components/BibloDock";
 import { PassageVerses } from "@/features/session/components/PassageVerses";
+import { revealSummaryBlock, SUMMARY_BLOCK_ATTR } from "@/features/session/components/reveal-block";
 import { useUnloadGuard } from "@/features/session/hooks/useUnloadGuard";
 import { parseVerseReference } from "@/lib/domain/reference";
 import type { WrittenBlock, WrittenSummary } from "@/lib/domain/summary";
@@ -136,6 +137,21 @@ export function Composer({ id, exists = false, initial, header }: Props) {
 
   const refs = useRef<(HTMLTextAreaElement | null)[]>([]);
   const [focusIndex, setFocusIndex] = useState<number | null>(null);
+  /**
+   * O bloco a REVELAR: rolar até ele e piscar (`revealSummaryBlock`).
+   *
+   * **É estado, e não uma chamada dentro do `insertAt`, pelo mesmo motivo do
+   * `focusIndex` logo acima:** o nó ainda não existe no instante em que o bloco
+   * é criado, e o que existe naquele índice é o bloco que estava lá antes —
+   * piscar ali piscaria o parágrafo errado.
+   *
+   * **E é um estado SEPARADO do `focusIndex` porque são gestos diferentes.** O
+   * foco é para um bloco que nasceu VAZIO e vai ser digitado (o menu do `+`);
+   * a revelação é para um bloco que chegou PRONTO da conversa, e ali o cursor
+   * não é bem-vindo — no celular ele abre o teclado, que cobre justamente o
+   * texto que a rolagem acabou de trazer para o centro.
+   */
+  const [revealIndex, setRevealIndex] = useState<number | null>(null);
 
   /**
    * A ideia central é OPCIONAL, e por isso o campo não nasce na tela: ela
@@ -198,6 +214,13 @@ export function Composer({ id, exists = false, initial, header }: Props) {
     setFocusIndex(null);
   }, [focusIndex]);
 
+  // O par do efeito acima, para o bloco que chegou pronto. Ver `revealIndex`.
+  useEffect(() => {
+    if (revealIndex === null) return;
+    revealSummaryBlock(revealIndex);
+    setRevealIndex(null);
+  }, [revealIndex]);
+
   function patchBlocks(next: (blocks: WrittenBlock[]) => WrittenBlock[]) {
     setDoc((prev) => ({ ...prev, blocks: next(prev.blocks) }));
   }
@@ -216,22 +239,40 @@ export function Composer({ id, exists = false, initial, header }: Props) {
    */
   const conclusionAt = doc.blocks.findIndex((b) => b.type === "conclusion");
 
-  function insertAt(index: number, block: WrittenBlock) {
+  /**
+   * Insere e devolve A POSIÇÃO ONDE O BLOCO CAIU, que não é a pedida sempre que
+   * a conclusão é o teto (ver abaixo). Quem inseriu precisa do número certo
+   * para revelar o bloco.
+   *
+   * `focus` existe para a inserção que vem da CONVERSA: o bloco chega pronto, e
+   * pôr o cursor nele abre o teclado do celular por cima do que se quer ver.
+   */
+  function insertAt(index: number, block: WrittenBlock, focus = true): number {
     // A conclusão vai sempre para o fim; todo o resto para antes dela.
-    const at =
+    //
+    // O `Math.min` no fim não é paranoia: quem insere pela CONVERSA manda
+    // `BIBLO_AT_END` (`Number.MAX_SAFE_INTEGER`), que quer dizer "no fim" — o
+    // "+" de uma passagem e o trecho selecionado não têm posição proposta por
+    // ninguém. O `splice` já tratava esse número como o fim, então nada muda
+    // no que é inserido; o que muda é o número DEVOLVIDO, que sem o grampo
+    // seria um índice que não existe na tela e a revelação não acharia nada.
+    const at = Math.min(
       block.type === "conclusion"
         ? doc.blocks.length
         : conclusionAt >= 0 && index > conclusionAt
           ? conclusionAt
-          : index;
+          : index,
+      doc.blocks.length
+    );
     patchBlocks((blocks) => {
       const copy = blocks.slice();
       copy.splice(at, 0, block);
       return copy;
     });
     setAdderAt(null);
-    setFocusIndex(at);
+    if (focus) setFocusIndex(at);
     setActive(at);
+    return at;
   }
 
   /**
@@ -494,6 +535,9 @@ export function Composer({ id, exists = false, initial, header }: Props) {
               <div
                 // biome-ignore lint/suspicious/noArrayIndexKey: ver o cabeçalho
                 key={i}
+                // O índice no DOM é o que deixa a inserção pela conversa rolar
+                // até o bloco e piscar nele. Ver `revealSummaryBlock`.
+                {...{ [SUMMARY_BLOCK_ATTR]: i }}
                 className="group relative flex flex-col"
                 onBlur={(e) => {
                   // `relatedTarget` é quem RECEBEU o foco. Se for um filho deste
@@ -677,7 +721,10 @@ export function Composer({ id, exists = false, initial, header }: Props) {
         <BibloDock
           sessionId={draftId}
           ensureSession={flush}
-          onInsert={(suggestion) => insertAt(suggestion.afterIndex + 1, suggestion.block)}
+          onInsert={(suggestion) => {
+            // Sem foco, com revelação: ver `revealIndex`.
+            setRevealIndex(insertAt(suggestion.afterIndex + 1, suggestion.block, false));
+          }}
           onRemove={(suggestion) => {
             // Remove a ÚLTIMA ocorrência igual à sugerida, e não um índice
             // guardado: entre o "Adicionar" e o "Remover" a pessoa pode ter

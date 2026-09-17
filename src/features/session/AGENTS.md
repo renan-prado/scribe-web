@@ -278,6 +278,17 @@ Cinco coisas que mordem de fora:
   quer oferecer não couber nos oito tipos que o editor já desenha, não há
   sugestão. Um "bloco do Biblo" seria um nono tipo que o `BlockRenderer`, o
   `Composer` e o `WRITTEN_BLOCK_TYPES` teriam de aprender.
+- **Inserir ROLA até o bloco e pisca nele** (`revealSummaryBlock`), porque o
+  "Adicionar" está na gaveta e o efeito dele está três telas abaixo. **No
+  celular a gaveta fecha antes** — ela cobre o texto, e a piscada atrás dela é o
+  mesmo que gesto nenhum; no desktop ela empurra, o texto está à vista, e fechar
+  tiraria da tela uma conversa inacabada. Só a inserção fecha, nunca o
+  "Desfazer". As duas telas revelam em momentos diferentes (o editor espera o
+  commit do React, a leitura espera o `router.refresh()` voltar com o bloco), e
+  é por isso que `revealSummaryBlock` não espera nada por conta própria: o nó
+  daquele índice já existe, com o conteúdo antigo. No editor a inserção pela
+  conversa **não pede o foco** — o bloco chegou pronto, e o cursor abriria o
+  teclado por cima do que a rolagem acabou de centralizar.
 - **São TRÊS portas para o documento, e só uma passa pelo modelo.** A
   `suggestion`/`offer` é dele; o **"+"** no canto de uma passagem
   (`BibloAddButton`) e o **trecho selecionado** (`BibloSelection`) são da pessoa.

@@ -1,8 +1,9 @@
 "use client";
 
 import { useRouter } from "next/navigation";
-import { useRef } from "react";
+import { useEffect, useRef } from "react";
 import { BibloDock } from "@/features/session/components/BibloDock";
+import { revealSummaryBlock } from "@/features/session/components/reveal-block";
 import type { BibloSuggestion } from "@/lib/domain/biblo";
 import {
   payloadToWritten,
@@ -44,6 +45,32 @@ export function BibloSummaryDock({
 }) {
   const router = useRouter();
 
+  /**
+   * O bloco que acabou de ser inserido, esperando o servidor devolver a tela
+   * com ele dentro para poder piscar.
+   *
+   * **Aqui a revelação não pode ser no ato, e é a diferença desta tela.** No
+   * editor o bloco entra num rascunho local e existe no quadro seguinte; aqui
+   * inserir é um POST mais um `router.refresh()`, e até ele voltar o nó naquele
+   * índice ainda é o bloco ANTIGO. Piscar na hora piscaria o parágrafo errado.
+   */
+  const pendingReveal = useRef<{ at: number; block: WrittenBlock } | null>(null);
+
+  // O `summary` desce do server component, então esta prop mudar É o refresh
+  // chegando. A confirmação é por CONTEÚDO, e não por contagem de blocos: numa
+  // sessão antiga o payload pode ter bloco morto que o rascunho descarta (ver
+  // `payloadToWritten`), e aí as duas listas têm tamanhos diferentes por
+  // motivo nenhum relacionado a esta inserção. É a mesma identidade por
+  // `JSON.stringify` que o `onRemove` abaixo usa.
+  useEffect(() => {
+    const pending = pendingReveal.current;
+    if (!pending) return;
+    const landed = summary?.blocks[pending.at];
+    if (!landed || JSON.stringify(landed) !== JSON.stringify(pending.block)) return;
+    pendingReveal.current = null;
+    revealSummaryBlock(pending.at);
+  }, [summary]);
+
   // O payload em edição fica numa ref, não em estado: quem desenha o resumo é o
   // server component atrás da gaveta, e `router.refresh()` o repinta. Um estado
   // aqui seria uma segunda cópia do mesmo texto, e as duas divergiriam no
@@ -74,7 +101,9 @@ export function BibloSummaryDock({
       onInsert={(suggestion: BibloSuggestion) => {
         const blocks = draft.current.blocks.slice();
         const at = Math.min(Math.max(suggestion.afterIndex + 1, 0), blocks.length);
-        blocks.splice(at, 0, suggestion.block as WrittenBlock);
+        const block = suggestion.block as WrittenBlock;
+        blocks.splice(at, 0, block);
+        pendingReveal.current = { at, block };
         void save({ ...draft.current, blocks });
       }}
       onRemove={(suggestion: BibloSuggestion) => {

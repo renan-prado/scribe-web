@@ -1184,6 +1184,60 @@ com um menu do sistema por cima que só sabe copiar é uma promessa pela metade;
 e fazer do copiar o caminho de segunda classe empurra para dentro do texto o que
 a pessoa queria levar para fora.
 
+### INSERIR ROLA ATÉ O BLOCO E PISCA NELE
+
+O "Adicionar" acontece dentro da gaveta; o efeito dele acontece fora, num
+parágrafo que pode estar a três telas de distância. Antes disto o único retorno
+era o botão trocar de rótulo para "Desfazer" — e o gesto mais valioso do Biblo,
+o que o separa de um ChatGPT numa aba (§6 do `biblo.md`), terminava com a pessoa
+fechando a conversa para ir PROCURAR onde o bloco caiu.
+
+Agora ele rola até o bloco, centraliza e dá nele **dois pulsos de um lavado
+branco** (`revealSummaryBlock` + `.summary-block-flash`). Três decisões dentro
+disso:
+
+- **Dois pulsos, não um.** Um pulso lê como o bloco aparecendo, que é o que todo
+  bloco já faz ao entrar (`animate-content-fade`). O que se quer dizer aqui é
+  "é ESTE", e em linguagem de tela isso é um piscar.
+- **A folga em volta é `box-shadow` de espalhamento, não padding.** Padding
+  mudaria a altura do bloco, e o parágrafo seguinte daria um pulo de 20px
+  justamente no quadro em que se está olhando para cá.
+- **A piscada sobrevive a `prefers-reduced-motion`; a suavidade da ROLAGEM
+  não.** A primeira é informação — sem ela a rolagem para no meio do texto sem
+  dizer em quê —, a segunda é movimento.
+
+**No celular a gaveta FECHA antes; no desktop não.** No celular ela cobre o
+texto e ocupa 85% da altura, então a piscada aconteceria atrás dela e o gesto
+pareceria não ter feito nada. No desktop ela EMPURRA (`globals.css`), o texto
+está à vista, e fechar tiraria da tela uma conversa que ninguém terminou. Só a
+inserção fecha: quem toca em "Desfazer" está corrigindo dentro da conversa, e
+não indo olhar o documento.
+
+**As duas telas revelam em MOMENTOS diferentes, e é inevitável.** O bloco tem de
+estar no DOM com o conteúdo novo, e o nó daquele índice existe desde antes da
+inserção — com o bloco que estava lá. Piscar cedo pisca o parágrafo errado.
+
+| tela | o que se espera | quem espera |
+|---|---|---|
+| `/escrever` | o commit do React (o bloco entrou num rascunho local) | `revealIndex`, um estado com efeito, como o `focusIndex` ao lado |
+| `/summary` | o `router.refresh()` voltar com o payload novo | um efeito na prop `summary`, confirmando o bloco por conteúdo |
+
+A confirmação na leitura é por CONTEÚDO (`JSON.stringify`), e não por contagem
+de blocos: numa sessão antiga o payload pode ter bloco morto que o rascunho
+descarta (`payloadToWritten`), e aí as duas listas têm tamanhos diferentes por
+motivo nenhum ligado a esta inserção.
+
+**E no editor a inserção pela conversa NÃO pede o foco**, ao contrário da do
+menu do `+`. Lá o bloco nasce vazio e vai ser digitado; aqui ele chega pronto, e
+o cursor abriria o teclado do celular exatamente por cima do texto que a rolagem
+acabou de trazer para o centro. É o que o terceiro argumento de `insertAt`
+existe para dizer.
+
+**`insertAt` passou a DEVOLVER a posição onde o bloco caiu**, e isso não é
+cosmético: a conclusão é o teto de toda inserção, e o "+" de uma passagem manda
+`BIBLO_AT_END`. Nos dois casos o índice pedido não é o índice final, e revelar o
+pedido não acharia nada.
+
 ### "Add isso ao resumo" repetia a resposta inteira
 
 O pior defeito que o Biblo já teve, e o mais fácil de não ver na bancada: ele

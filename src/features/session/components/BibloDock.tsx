@@ -3,6 +3,7 @@
 import { useEffect, useState } from "react";
 import { BibloDrawer } from "@/features/session/components/BibloDrawer";
 import { useKeyboardInset } from "@/hooks/use-keyboard-inset";
+import { useIsMobile } from "@/hooks/use-mobile";
 import type { BibloSuggestion } from "@/lib/domain/biblo";
 import { BibloAvatar } from "@/shared/brand";
 
@@ -82,7 +83,28 @@ export function BibloDock({
 }) {
   const [open, setOpen] = useState(false);
   const [thinking, setThinking] = useState(false);
+  const isMobile = useIsMobile();
   useKeyboardInset();
+
+  /**
+   * Inserir FECHA a gaveta no celular, e não no desktop.
+   *
+   * O efeito do "Adicionar" acontece fora da gaveta, e quem insere quer ver
+   * onde o bloco caiu — é o que a rolagem e a piscada dizem
+   * (`revealSummaryBlock`). No celular a gaveta COBRE o texto e ocupa 85% da
+   * altura: a piscada aconteceria atrás dela, e o gesto pareceria não ter feito
+   * nada. No desktop ela EMPURRA (ver `globals.css`), o texto está à vista, e
+   * fechar tiraria da tela a conversa que a pessoa não terminou.
+   *
+   * Só na inserção. O "Desfazer" não fecha nada: quem desfaz está corrigindo
+   * dentro da conversa, e não indo olhar o documento.
+   */
+  const insert = onInsert
+    ? (suggestion: BibloSuggestion) => {
+        onInsert(suggestion);
+        if (isMobile) setOpen(false);
+      }
+    : undefined;
 
   // No DESKTOP a gaveta empurra o conteúdo em vez de cobri-lo, e quem faz isso
   // é um `padding-right` no `<body>` (a regra e o porquê estão em
@@ -123,7 +145,7 @@ export function BibloDock({
           ensureSession={ensureSession}
           onClose={() => setOpen(false)}
           onThinking={setThinking}
-          onInsert={onInsert}
+          onInsert={insert}
           onRemove={onRemove}
         />
       )}

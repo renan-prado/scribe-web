@@ -2,6 +2,7 @@
 
 import { BlockRenderer, blockKey } from "@/features/session/components/BlockRenderer";
 import { LeadIdea } from "@/features/session/components/LeadIdea";
+import { SUMMARY_BLOCK_ATTR } from "@/features/session/components/reveal-block";
 import { SummarySkeleton } from "@/features/session/components/skeletons";
 import type { SummaryPayload } from "@/lib/domain/summary";
 
@@ -34,7 +35,16 @@ export function SummaryView({ summary, hasTranscript, running }: SummaryViewProp
           // mesmo começo de texto existem, e `blockKey` sozinho os colidiria.
           const key = `${block.type}-${i}-${blockKey(block)}`;
           return (
-            <div key={key} className="animate-content-fade min-w-0">
+            // O índice vai no DOM para a inserção pela conversa poder ROLAR até
+            // o bloco e piscar nele. É a mesma numeração que
+            // `suggestion.afterIndex` usa, e ela é fiel porque este `map` é
+            // um-para-um com `blocks` — um filtro aqui a desalinharia em
+            // silêncio. Ver `revealSummaryBlock`.
+            <div
+              key={key}
+              {...{ [SUMMARY_BLOCK_ATTR]: i }}
+              className="animate-content-fade min-w-0"
+            >
               <BlockRenderer block={block} />
             </div>
           );
