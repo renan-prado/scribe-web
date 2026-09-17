@@ -1,6 +1,7 @@
 # Créditos na tela: o número que assusta
 
-> **Status: proposta.** Nada disto está implementado. Nasceu junto com o preço
+> **Status: implementado**, menos a §7 — nada dali existe, e é para continuar
+> assim. Nasceu junto com o preço
 > do Biblo ([`biblo-implementacao.md`](./biblo-implementacao.md) §1.2) e é
 > metade da mesma decisão: **cobrar por mensagem só é aceitável se o saldo
 > deixar de ser um número descendo na barra do app.**
@@ -176,19 +177,23 @@ Três regras para esse bloco:
 
 | arquivo | o quê |
 |---|---|
-| `lib/db/coins.ts` | `getCycleUsage(userId)`: as duas consultas da §3, uma chamada |
-| `app/api/billing/summary/route.ts` | devolver `cycleSpent` e `cycleGrant` |
-| `features/billing/plans.ts` | `BillingSummary` ganha os dois campos |
+| `lib/db/coins.ts` | `getCycleUsage()`: as duas consultas da §3 |
+| `app/api/coins/balance/route.ts` | devolve o ciclo JUNTO com o saldo |
+| `app/api/billing/summary/route.ts` | o mesmo, para o diálogo |
+| `features/billing/plans.ts` | `BillingSummary.cycle` |
+| `features/coins/store.ts` + `CoinsSync.tsx` | o ciclo na store, semeado pelo layout |
 | `features/coins/components/CoinBalance.tsx` | os dois modos da §3 |
-| `features/coins/pricing.ts` | `COIN_RING_REFERENCE` ganha o comentário de que ele agora só vale para conta gratuita |
+| `features/coins/pricing.ts` | `COIN_RING_REFERENCE` só vale para conta gratuita |
 | `features/billing/components/BillingDialog.tsx` | o bloco da §5 |
-| `app/(app)/(barra)/profile/page.tsx` | o mesmo cálculo, que hoje repete o do chip |
+| `app/(app)/(barra)/layout.tsx` | lê plano e ciclo, e desce os dois |
+| `app/(app)/(barra)/profile/page.tsx` | a mesma regra na pastilha do perfil |
 
-**O chip do header não pode ganhar uma requisição.** Ele já é alimentado pelo
-`CoinsSync` no layout de `(barra)`; `cycleSpent` e `cycleGrant` viajam no mesmo
-`GET /api/billing/summary` que o diálogo já busca, e o layout semeia o valor
-inicial no servidor como faz hoje com o saldo. Um segundo `fetch` no header para
-desenhar um anel seria um preço alto por uma decisão de calma.
+**O chip do header não ganhou requisição nenhuma.** O layout de `(barra)` já lia
+o saldo no servidor; passou a ler o ciclo na mesma leva e a semeá-lo pelo
+`CoinsSync`. E o ciclo viaja no MESMO `GET /api/coins/balance` que a store já
+chama para ressincronizar — os dois envelhecem pelo mesmo débito, e buscá-los
+em rotas separadas faria o anel e o número discordarem por um instante a cada
+gasto.
 
 ## 7. O que fica de fora
 

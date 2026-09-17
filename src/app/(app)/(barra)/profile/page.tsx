@@ -19,7 +19,7 @@ import { REFERRAL_SIGNUP_COINS } from "@/features/referrals/economics";
 import { ProfileTourRow } from "@/features/tour/components/ProfileTourRow";
 import { isCurrentUserAdmin } from "@/lib/auth/require-admin";
 import { isCurrentUserPartner } from "@/lib/auth/require-partner";
-import { getCurrentBalance } from "@/lib/db/coins";
+import { getCurrentBalance, getCycleUsage } from "@/lib/db/coins";
 import { getCurrentProfile } from "@/lib/db/profiles";
 
 export const metadata = {
@@ -60,9 +60,10 @@ export default async function ProfilePage() {
   // saldo e papel de admin saem da mesma linha memoizada de `profiles`
   // (lib/db/account.ts), e `isCurrentUserPartner` é a que o layout de `(app)`
   // já fez neste mesmo render, `cache()` devolve o resultado dela.
-  const [profile, balance, isAdmin, isPartner] = await Promise.all([
+  const [profile, balance, cycle, isAdmin, isPartner] = await Promise.all([
     getCurrentProfile(),
     getCurrentBalance().catch(() => null),
+    getCycleUsage().catch(() => null),
     isCurrentUserAdmin().catch(() => false),
     isCurrentUserPartner().catch(() => false),
   ]);
@@ -72,7 +73,18 @@ export default async function ProfilePage() {
   const memberSince = DATE_FMT.format(new Date(profile.createdAt));
   const initials = initialsFrom(profile.displayName, profile.email);
   const coinBalance = balance ?? 0;
-  const percent = Math.max(0, Math.min(100, (coinBalance / COIN_RING_REFERENCE) * 100));
+
+  // A mesma regra do chip do header: **o número absoluto é a verdade de quem
+  // NÃO renova, a porcentagem é a de quem renova.** Aqui a pastilha é só
+  // informativa (não abre diálogo nenhum), então ela não repete a escada de
+  // avisos do `CoinBalance` — com franquia, ela mostra o crédito do MÊS; sem
+  // franquia, o saldo de sempre. O número real continua no `PlanCard` logo
+  // abaixo. Ver `docs/creditos-na-tela.md`.
+  const monthLeft = cycle ? Math.max(0, cycle.grant - cycle.spent) : null;
+  const percent =
+    cycle && monthLeft !== null
+      ? Math.max(0, Math.min(100, (monthLeft / Math.max(1, cycle.grant)) * 100))
+      : Math.max(0, Math.min(100, (coinBalance / COIN_RING_REFERENCE) * 100));
 
   return (
     <main className="mx-auto flex w-full max-w-[1024px] flex-col gap-6 px-4 pb-10 sm:gap-8">
@@ -130,7 +142,9 @@ export default async function ProfilePage() {
                 </span>
               </span>
               <span className="text-[12px] font-semibold tabular-nums text-scriba-gold-ink">
-                {coinBalance} moedas
+                {cycle && monthLeft !== null
+                  ? `${monthLeft} de ${cycle.grant} este mês`
+                  : `${coinBalance} moedas`}
               </span>
             </span>
           </div>

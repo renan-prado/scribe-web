@@ -149,4 +149,15 @@ export type BillingSummary = {
   /** False quando o servidor está sem Stripe configurado, a UI esconde as
    * opções de compra em vez de oferecer botões que vão dar 503. */
   configured: boolean;
+  /**
+   * O ciclo de crédito, quando esta conta já recebeu uma franquia de plano.
+   * `null` = nunca recebeu (conta gratuita, ou primeira fatura ainda não caiu),
+   * e aí a tela mostra o saldo ABSOLUTO, que é a informação certa para quem não
+   * tem renovação marcada. Ver `docs/creditos-na-tela.md`.
+   *
+   * O par vem do LEDGER, não do Stripe: `lib/db/coins.ts#getCycleUsage` explica
+   * por quê, e a razão curta é que `past_due` continua ativo no produto, então
+   * o período do Stripe vira sem que a recarga aconteça.
+   */
+  cycle: { grant: number; spent: number; since: string } | null;
 };

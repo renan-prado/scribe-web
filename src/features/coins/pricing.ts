@@ -17,11 +17,20 @@
 export const INITIAL_COIN_BALANCE = 50;
 
 /**
- * Reference used by the coin ring/gauge in the UI to decide "how full" the
- * balance looks. Deliberately NOT the signup grant: since a plan tops the
- * account up to 1.000+ credits, anchoring the gauge to 50 would peg it at
- * 100% forever. 300 ≈ one hour of Modo Estudo, which is the amount that
- * actually feels like "a full tank" to a user about to record.
+ * Referência do anel do saldo, para decidir "quão cheio" ele parece.
+ *
+ * **Ele vale só para quem NÃO assina**, e isso é o conserto de um defeito que
+ * o comentário original já admitia sem resolver: ancorar o medidor em 50 o
+ * deixaria em 100% para sempre num plano de 1.000 créditos — só que 1.000 e
+ * 2.500 também o deixam. Para todo assinante este anel marcava 100% desde o
+ * primeiro dia e nunca saía de lá, um enfeite dourado que não informava nada.
+ *
+ * Hoje o assinante tem outro anel: o crédito do MÊS restante, medido contra a
+ * franquia que ele de fato recebeu (`lib/db/coins.ts#getCycleUsage`). Este
+ * continua sendo o certo para a conta gratuita, onde não há renovação e o saldo
+ * absoluto é a informação que decide se a pessoa grava o culto de domingo.
+ * 300 ≈ uma hora de gravação, que é o que parece "tanque cheio" para quem está
+ * prestes a gravar. Ver `docs/creditos-na-tela.md`.
  */
 export const COIN_RING_REFERENCE = 300;
 

@@ -1,7 +1,7 @@
 "use client";
 
 import { useEffect } from "react";
-import { getCoinsState, useCoinsStore } from "@/features/coins/store";
+import { type CycleUsage, getCoinsState, useCoinsStore } from "@/features/coins/store";
 
 /**
  * Quem SEMEIA o saldo de moedas na store, e quem o ressincroniza depois.
@@ -41,9 +41,18 @@ import { getCoinsState, useCoinsStore } from "@/features/coins/store";
  *
  * No layout eles são um par só para o app inteiro, e sobrevivem à navegação.
  */
-export function CoinsSync({ balance }: { balance: number }) {
+export function CoinsSync({ balance, cycle }: { balance: number; cycle: CycleUsage | null }) {
   const setBalance = useCoinsStore((s) => s.setBalance);
+  const setCycle = useCoinsStore((s) => s.setCycle);
   const refresh = useCoinsStore((s) => s.refresh);
+
+  // O ciclo é semeado SEM guarda, ao contrário do saldo: ele não tem um
+  // "ainda não sei" que trave gate nenhum, e a prop vem do mesmo render de
+  // servidor que trouxe o saldo. Segurá-lo atrás da mesma condição deixaria o
+  // chip do assinante no modo do saldo absoluto até o primeiro `refresh`.
+  useEffect(() => {
+    setCycle(cycle);
+  }, [cycle, setCycle]);
 
   // Só semeia o que ainda não se sabe. Este componente monta uma vez (é do
   // layout, que sobrevive à navegação), mas a guarda importa mesmo assim: a

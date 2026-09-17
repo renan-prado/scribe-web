@@ -101,7 +101,8 @@ saber ao editar código ficam nos `AGENTS.md` de cada pasta, não aqui.
   O assinante passa a ver o anel e o nome do plano, o número aparece nos
   detalhes (e volta sozinho quando a reserva fica curta); para a conta gratuita
   nada muda, porque ali o número é a informação certa. Metade da decisão de
-  cobrar o Biblo por mensagem, e entra na mesma entrega. **Status: proposta.**
+  cobrar o Biblo por mensagem, e subiu na mesma entrega.
+  **Status: implementado.**
 
 ## Integração
 

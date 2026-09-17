@@ -3,7 +3,7 @@ import type { BillingSummary } from "@/features/billing/plans";
 import { getStripe, isBillingConfigured } from "@/features/billing/server/stripe";
 import { lazySubscriptionCheck, subscriptionLooksStale } from "@/features/billing/server/sweep";
 import { getOwnSubscription } from "@/lib/db/billing";
-import { getCurrentBalance } from "@/lib/db/coins";
+import { getCurrentBalance, getCycleUsage } from "@/lib/db/coins";
 import { enforceRateLimit, RATE_LIMITS } from "@/lib/rate-limit";
 import { requireAuth } from "@/lib/supabase/require-auth";
 
@@ -42,7 +42,13 @@ export async function GET(request: Request) {
     subscription = await getOwnSubscription().catch(() => subscription);
   }
 
-  const balance = await getCurrentBalance().catch(() => null);
+  const [balance, cycle] = await Promise.all([
+    getCurrentBalance().catch(() => null),
+    // Falha aqui NÃO derruba a resposta: sem o ciclo a tela cai no modo do
+    // saldo absoluto, que é o comportamento de sempre. Trocar um anel por um
+    // 500 seria pagar caro por uma decisão de calma.
+    getCycleUsage().catch(() => null),
+  ]);
 
   const body: BillingSummary = {
     plan: subscription?.plan ?? "free",
@@ -51,6 +57,7 @@ export async function GET(request: Request) {
     cancelAtPeriodEnd: subscription?.cancelAtPeriodEnd ?? false,
     balance: balance ?? 0,
     configured: isBillingConfigured(),
+    cycle,
   };
 
   return NextResponse.json(body);

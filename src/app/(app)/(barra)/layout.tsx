@@ -1,10 +1,13 @@
 import type { ReactNode } from "react";
 import { PrivilegedMenuItems } from "@/features/auth/components/PrivilegedMenuItems";
+import { PLANS } from "@/features/billing/plans";
 import { CoinsSync } from "@/features/coins/components/CoinsSync";
 import { INITIAL_COIN_BALANCE } from "@/features/coins/pricing";
 import { CacheOwner } from "@/features/session/components/CacheOwner";
 import { isCurrentUserPartner } from "@/lib/auth/require-partner";
 import { getCurrentAccount } from "@/lib/db/account";
+import { getCycleUsage } from "@/lib/db/coins";
+import { getCurrentPlan } from "@/lib/entitlements/server";
 import { AccountMenu } from "./components/AccountMenu";
 import { AppHeaderShell } from "./components/AppHeaderShell";
 
@@ -35,9 +38,15 @@ export default async function BarraLayout({ children }: { children: ReactNode })
   // também o ponto onde a mesada mensal do parceiro é conferida e creditada
   // (ver `lib/partners/allowance.ts`). Fica aqui, e não numa rota, porque esta
   // barra é o único caminho por onde todo parceiro passa ao usar o app.
-  const [account, isPartner] = await Promise.all([
+  const [account, isPartner, plan, cycle] = await Promise.all([
     getCurrentAccount().catch(() => null),
     isCurrentUserPartner().catch(() => false),
+    // O plano e o ciclo decidem se o chip do saldo mostra o NÚMERO ou o anel do
+    // mês (ver `CoinBalance` e `docs/creditos-na-tela.md`). Os dois falham para
+    // o lado calmo: sem plano ou sem ciclo, o chip volta ao odômetro de sempre,
+    // que é o comportamento correto para a conta gratuita.
+    getCurrentPlan().catch(() => "free" as const),
+    getCycleUsage().catch(() => null),
   ]);
 
   // Montado aqui, no servidor, e descido pronto: é a razão do slot de
@@ -55,7 +64,9 @@ export default async function BarraLayout({ children }: { children: ReactNode })
           componente que fazia isso era o chip do saldo — que mora dentro do
           menu da conta, ou seja, só existia com o menu aberto. O sintoma era o
           botão do `/importar` preso num carregando eterno. Ver `CoinsSync`. */}
-      {account ? <CoinsSync balance={account.coinBalance ?? INITIAL_COIN_BALANCE} /> : null}
+      {account ? (
+        <CoinsSync balance={account.coinBalance ?? INITIAL_COIN_BALANCE} cycle={cycle} />
+      ) : null}
       <AppHeaderShell
         account={
           // Sem sessão não há conta a abrir, e o canto fica só com o que a
@@ -86,6 +97,7 @@ export default async function BarraLayout({ children }: { children: ReactNode })
                 email={account.profile.email ?? null}
                 avatarUrl={account.profile.avatarUrl ?? null}
                 coinBalance={account.coinBalance ?? INITIAL_COIN_BALANCE}
+                planName={plan === "free" ? null : PLANS[plan].name}
                 privilegedItems={privilegedItems}
               />
             </>

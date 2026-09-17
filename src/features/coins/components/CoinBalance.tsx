@@ -76,15 +76,48 @@ function Odometer({ value, minWidth = 3 }: { value: number; minWidth?: number })
  * Chip de saldo do header. Clicável: abre o `BillingDialog`, de onde o usuário
  * compra um pacote avulso ou assina um plano. `interactive={false}` devolve o
  * chip puramente informativo (usado onde não faz sentido vender).
+ *
+ * ## Ele tem DOIS modos, e a regra que os separa é uma frase
+ *
+ * **O número absoluto é a verdade de quem NÃO renova; a porcentagem é a de quem
+ * renova.** Para a conta gratuita nada mudou: 50 créditos são tudo o que
+ * existe, ninguém vai repor, e ver o número cair é exatamente o que precisa
+ * acontecer — esconder isso seria esconder o que ela precisa saber para decidir
+ * se grava o culto de domingo.
+ *
+ * Para quem assina, aquele odômetro MENTE: o crédito volta todo mês e ainda
+ * acumula, mas ele só anda para baixo, e a leitura que a cabeça faz de um
+ * número descendo é "está acabando". Quem paga vê o anel do crédito do mês e o
+ * nome do plano, sem número nenhum — porque não há nada que ele possa fazer com
+ * o número, e é isso que separa informação de ansiedade. O número real está a
+ * dois toques, no `BillingDialog`.
+ *
+ * **Ele volta sozinho quando passa a importar**: com a franquia do mês gasta E
+ * a reserva abaixo de `LOW_RESERVE_COINS`, o anel fica âmbar e o saldo volta
+ * escrito. Aí a informação é acionável, e é dever nosso dá-la sem rodeio.
+ *
+ * Desenho completo em `docs/creditos-na-tela.md`.
  */
+
+/**
+ * Abaixo disto o saldo volta a aparecer. 150 moedas ≈ meia hora de gravação, a
+ * menor unidade de trabalho que alguém planeja fazer com o app: é o ponto em
+ * que "quanto me resta?" deixa de ser curiosidade e vira uma decisão.
+ */
+const LOW_RESERVE_COINS = 150;
+
 export function CoinBalance({
   initialBalance,
   interactive = true,
+  planName,
 }: {
   initialBalance: number;
   interactive?: boolean;
+  /** Nome do plano ativo. Sem ele o chip fica no modo do saldo absoluto. */
+  planName?: string | null;
 }) {
   const storeBalance = useCoinsStore((s) => s.balance);
+  const cycle = useCoinsStore((s) => s.cycle);
 
   // **Ele não semeia mais a store, e não ressincroniza nada.** As duas coisas
   // moravam aqui e NÃO FUNCIONAVAM: este chip vive dentro do menu da conta, que
@@ -111,7 +144,20 @@ export function CoinBalance({
     }
   }, [balance]);
 
-  const percent = Math.max(0, Math.min(100, (balance / COIN_RING_REFERENCE) * 100));
+  // A reserva é o que sobrou dos meses anteriores: saldo menos o que ainda há
+  // da franquia deste mês. É ela que decide se o fim da franquia é um aviso ou
+  // um não-evento.
+  const monthLeft = cycle ? Math.max(0, cycle.grant - cycle.spent) : null;
+  const reserve = cycle ? Math.max(0, balance - (monthLeft ?? 0)) : balance;
+  const lowOnCredit = cycle !== null && monthLeft === 0 && reserve < LOW_RESERVE_COINS;
+
+  // O modo calmo: assina, tem franquia e ainda há folga. Só aí o número sai da
+  // tela — sem plano não há renovação, e com a reserva no fim há o que decidir.
+  const quiet = cycle !== null && !!planName && !lowOnCredit;
+
+  const percent = quiet
+    ? Math.max(0, Math.min(100, ((monthLeft ?? 0) / Math.max(1, cycle.grant)) * 100))
+    : Math.max(0, Math.min(100, (balance / COIN_RING_REFERENCE) * 100));
   const filled = (percent / 100) * COIN_C;
 
   const chip = (
@@ -149,15 +195,32 @@ export function CoinBalance({
           <span className="coin-hex block h-[10.625px] w-[9.35px] bg-scriba-yellow" />
         </span>
       </span>
-      <span className="inline-flex h-6.5 flex-none items-center text-[13px] font-semibold leading-none tabular-nums text-scriba-gold-ink">
-        <Odometer value={balance} />
+      <span className="inline-flex h-6.5 flex-none items-center text-[13px] font-semibold leading-none text-scriba-gold-ink">
+        {quiet ? (
+          // O nome do plano ocupa o lugar que o odômetro deixou, e ele diz a
+          // coisa que o assinante quer confirmar de relance ("estou no Pessoal,
+          // está tudo certo"). O chip deixa de ser medidor de combustível e
+          // vira crachá.
+          <span className="max-w-24 truncate">{planName}</span>
+        ) : (
+          <span className="tabular-nums">
+            <Odometer value={balance} />
+          </span>
+        )}
       </span>
     </span>
   );
 
+  // O rótulo acessível NUNCA esconde o número: quem usa leitor de tela não tem
+  // um anel para olhar, e a decisão de esconder é sobre ATENÇÃO VISUAL, não
+  // sobre transparência.
+  const label = quiet
+    ? `Plano ${planName}. ${monthLeft} de ${cycle.grant} créditos do mês restantes, ${reserve} de reserva.`
+    : `${balance} moedas restantes`;
+
   if (!interactive) {
     return (
-      <span role="status" aria-label={`${balance} moedas restantes`} className="inline-flex">
+      <span role="status" aria-label={label} className="inline-flex">
         {chip}
       </span>
     );
@@ -166,7 +229,7 @@ export function CoinBalance({
   return (
     <BillingDialog
       trigger={chip}
-      triggerLabel={`${balance} moedas restantes. Adicionar créditos.`}
+      triggerLabel={`${label} Adicionar créditos.`}
       triggerClassName={cn(
         "inline-flex rounded-[20px] outline-none transition-transform",
         "hover:brightness-[0.97] active:scale-[0.97]",

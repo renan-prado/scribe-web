@@ -98,6 +98,7 @@ export function BillingDialog({
   const balance = useCoinsStore((s) => s.balance);
   const refreshBalance = useCoinsStore((s) => s.refresh);
   const summary = useBillingStore((s) => s.summary);
+  const cycle = useCoinsStore((s) => s.cycle);
   const refreshSummary = useBillingStore((s) => s.refresh);
 
   const [quantity, setQuantity] = useState(1);
@@ -257,6 +258,52 @@ export function BillingDialog({
               </DialogDescription>
             </div>
           </header>
+
+          {/* O que o chip parou de dizer.
+
+              Esconder o número no header é uma decisão sobre ATENÇÃO, não sobre
+              transparência: aqui ele está inteiro, e a dois toques. Três coisas
+              que este bloco NÃO faz, e cada uma é uma decisão: não projeta
+              ("neste ritmo seus créditos duram até o dia 24" é a ansiedade de
+              volta, com data marcada), não compara com o mês passado, e não
+              elogia economia — transformar o uso do produto numa pontuação puxa
+              o uso para baixo, porque a melhor nota é sempre a de quem não usou.
+
+              "Reserva acumulada" e não "saldo", porque é o que ela é: o que
+              sobrou dos meses anteriores. A palavra faz o trabalho de dizer
+              "isto é uma folga, não é o seu limite". Ver
+              `docs/creditos-na-tela.md`. */}
+          {ready && cycle && balance !== null ? (
+            <div className="rounded-2xl border border-scriba-hairline bg-scriba-surface px-4 py-3">
+              <p className="text-[13px] text-scriba-ink leading-relaxed">
+                Você usou{" "}
+                <strong className="font-semibold">
+                  {formatCoins(Math.min(cycle.spent, cycle.grant))} dos {formatCoins(cycle.grant)}{" "}
+                  créditos
+                </strong>{" "}
+                deste mês.
+              </p>
+              <div
+                aria-hidden
+                className="mt-2 h-1.5 overflow-hidden rounded-full bg-scriba-gold-track"
+              >
+                <div
+                  className="h-full rounded-full bg-scriba-yellow"
+                  style={{
+                    width: `${Math.max(0, Math.min(100, (cycle.spent / Math.max(1, cycle.grant)) * 100))}%`,
+                  }}
+                />
+              </div>
+              <p className="mt-2 text-[12px] text-scriba-ink-soft">
+                {cycle.spent >= cycle.grant
+                  ? "O crédito deste mês acabou — você está usando a reserva."
+                  : "Renova junto com a sua assinatura."}{" "}
+                Reserva acumulada:{" "}
+                {formatCoins(Math.max(0, balance - Math.max(0, cycle.grant - cycle.spent)))}{" "}
+                créditos.
+              </p>
+            </div>
+          ) : null}
 
           {notice ? (
             <div

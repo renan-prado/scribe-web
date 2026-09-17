@@ -50,6 +50,8 @@ type Props = {
   email: string | null;
   avatarUrl: string | null;
   coinBalance: number;
+  /** Nome do plano ativo, ou `null` na conta gratuita. Ver `CoinBalance`. */
+  planName?: string | null;
   /**
    * Os atalhos de quem tem papel (admin, parceiro), montados no SERVIDOR e
    * entregues prontos. Slot, e não dois booleanos, pela razão do cabeçalho de
@@ -65,6 +67,7 @@ export function AccountMenu({
   email,
   avatarUrl,
   coinBalance,
+  planName,
   privilegedItems,
 }: Props) {
   const [billingOpen, setBillingOpen] = useState(false);
@@ -117,7 +120,7 @@ export function AccountMenu({
                 <span className="truncate text-[11px] font-light text-v2-ink-mute">{email}</span>
               ) : null}
             </div>
-            <CoinBalance initialBalance={coinBalance} interactive={false} />
+            <CoinBalance initialBalance={coinBalance} interactive={false} planName={planName} />
           </div>
 
           <span aria-hidden className="my-1.5 block h-px bg-v2-card-hover" />

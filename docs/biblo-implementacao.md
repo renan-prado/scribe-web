@@ -1,10 +1,9 @@
 # Biblo: o documento de implementação
 
-> **Status: IMPLEMENTADO** (migração 0062, `/api/biblo`, a gaveta nas duas
-> telas), **exceto o passo 11**: o saldo do assinante continua sendo o odômetro
-> de hoje, e [`creditos-na-tela.md`](./creditos-na-tela.md) segue proposta. Os
-> dois foram desenhados para subir juntos — ver §1.2. O
-> [`biblo.md`](./biblo.md) diz
+> **Status: IMPLEMENTADO**, os treze passos da §12 — migração 0062,
+> `/api/biblo`, a gaveta nas duas telas e o saldo do assinante
+> ([`creditos-na-tela.md`](./creditos-na-tela.md)), que subiu junto como a §1.2
+> exige. O [`biblo.md`](./biblo.md) diz
 > **o que** o Biblo é e **por que** ele existe; este arquivo diz **como** ele é
 > construído — as decisões que estavam em aberto lá, agora fechadas com número,
 > e a ordem em que o código nasce. Quando ele existir, os dois arquivos
