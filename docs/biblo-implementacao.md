@@ -873,6 +873,14 @@ e do livro na pastilha de referência, e é o que dá a este cabeçalho a anatom
 dos outros do app. Vai `aria-hidden`: o nome ao lado já diz tudo, e um segundo
 rótulo faria o leitor de tela anunciar "conversa Biblo".
 
+Ele é **sólido**, e isso precisa ser pedido: o lucide não tem versão preenchida
+de nada — são 4.050 ícones de contorno, com `fill: "none"` nos atributos padrão.
+O que salva este é a geometria: o balão é UM caminho fechado, então
+`fill="currentColor"` o pinta inteiro. Num ícone de traços soltos o mesmo truque
+produz manchas. Um contorno aqui inverteria a razão de o ícone existir — ele não
+é informação que se lê, é a marcação de "aqui começa a conversa", e um glifo
+vazado ao lado de um nome em semibold some.
+
 Ficaram o nome, na Poppins da marca e com maiúscula — a caixa baixa é do
 logotipo, onde "scriba" é a MARCA; aqui a palavra é o nome de alguém com quem se
 conversa —, e o fechar. Nenhum dos dois é dispensável: sem o fechar a

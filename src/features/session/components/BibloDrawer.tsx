@@ -590,13 +590,27 @@ export function BibloDrawer({
           dá ao cabeçalho a mesma anatomia das outras telas do app.
 
           Ele é `aria-hidden`: o nome ao lado já diz tudo, e um segundo rótulo
-          faria o leitor de tela anunciar "conversa Biblo". */}
+          faria o leitor de tela anunciar "conversa Biblo".
+
+          **SÓLIDO, e é preciso pedir.** O lucide não tem versão preenchida de
+          nada: são 4.050 ícones de contorno, e o `fill: "none"` vem nos atributos
+          padrão de todos. O que salva este é a geometria — o balão é UM caminho
+          fechado, então `fill="currentColor"` o pinta inteiro (o `...rest` do
+          `Icon` entra depois dos padrões, então a prop vence). Só funciona em
+          ícone de caminho fechado; num de traços soltos, preencher produz
+          manchas. O traço fica em 1,5: com o preenchimento ele deixa de
+          desenhar a forma e passa a só suavizar a borda, e em 2 engordaria o
+          glifo um pixel para todo lado.
+
+          Um contorno aqui é a razão de o ícone existir invertida: ele não é
+          informação que se lê, é a marcação de "aqui começa a conversa", e um
+          glifo vazado ao lado de um nome em semibold some. */}
       <div className="flex items-center justify-between py-2 pr-2 pl-4">
         <span
           className="inline-flex items-center gap-2 font-semibold text-[15px] text-scriba-ink-soft leading-none"
           style={{ fontFamily: "var(--font-poppins)", letterSpacing: "-0.015em" }}
         >
-          <MessageCircle aria-hidden className="size-4" strokeWidth={1.75} />
+          <MessageCircle aria-hidden className="size-4" fill="currentColor" strokeWidth={1.5} />
           Biblo
         </span>
         <button
