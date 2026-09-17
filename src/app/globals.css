@@ -836,7 +836,13 @@
      A borda transparente + `background-clip: content-box` deixa o polegar com
      4px visíveis numa pista de 10px, fino e com folga, em vez de colado no
      conteúdo. A cor sai de token, então acompanha o dark.
-     As setas das pontas são desligadas: ver `::-webkit-scrollbar-button`. */
+
+     CONSEQUÊNCIA que custou uma tentativa: no Chromium quem desenha é a trilha
+     PADRÃO, e ela traz as setas de `<` e `>` das pontas no Windows. Não há
+     propriedade padrão que as desligue, e um `*::-webkit-scrollbar-button` aqui
+     é código morto — os pseudo-elementos estão desativados justamente porque
+     `scrollbar-width` está definido. Quem precisa da barra SEM setas abre mão
+     das propriedades padrão naquele elemento; ver `.scroll-row` abaixo. */
   html {
     scrollbar-color: var(--scriba-scroll-thumb) transparent;
   }
@@ -850,15 +856,6 @@
   *::-webkit-scrollbar-track,
   *::-webkit-scrollbar-corner {
     background: transparent;
-  }
-  /* As SETAS das pontas. Elas não estavam nesta lista, e por isso apareciam:
-     estilizar `::-webkit-scrollbar` liga o desenho clássico da barra no
-     Chromium do Windows, e os botões vêm junto, com a aparência padrão do
-     sistema — dois triângulos que não pertencem a nenhuma parte desta paleta.
-     São também um alvo de 16px para um trabalho que a roda e o arrastar do
-     polegar já fazem melhor. Fora daqui, o que sobra é o polegar. */
-  *::-webkit-scrollbar-button {
-    display: none;
   }
   *::-webkit-scrollbar-thumb {
     background-color: var(--scriba-scroll-thumb);
@@ -919,6 +916,44 @@
      iOS troca a camada por uma barra de verdade, que passa a ocupar 10px dentro
      de uma fileira de 32. `hover: none` é a mesma pergunta que o resto do
      produto faz para separar dedo de mouse. */
+  .scroll-row {
+    /* A RENÚNCIA, e ela é o ponto: no Chromium os pseudo-elementos
+       `::-webkit-scrollbar` só valem enquanto `scrollbar-width` e
+       `scrollbar-color` forem `auto`. Devolvê-los ao padrão aqui é o que
+       reativa a trilha legada NESTA fileira — e só nela — para poder desligar
+       as setas, que a trilha padrão não deixa desligar.
+       `scrollbar-color` é HERDADO do <html>, então não basta o `width`. */
+    scrollbar-width: auto;
+    scrollbar-color: auto;
+  }
+  .scroll-row::-webkit-scrollbar {
+    height: 6px;
+  }
+  /* As setas. É por elas que esta fileira abre mão da trilha padrão: dois
+     triângulos com a aparência do sistema, que não pertencem a esta paleta, num
+     alvo de 16px para um trabalho que a roda do mouse já faz. */
+  .scroll-row::-webkit-scrollbar-button {
+    display: none;
+  }
+  .scroll-row::-webkit-scrollbar-track {
+    background: transparent;
+  }
+  .scroll-row::-webkit-scrollbar-thumb {
+    background-color: var(--scriba-scroll-thumb);
+    border-radius: 9999px;
+  }
+  .scroll-row::-webkit-scrollbar-thumb:hover {
+    background-color: var(--scriba-scroll-thumb-hover);
+  }
+  /* O Firefox não conhece esses pseudo-elementos — `@supports not selector()` é
+     exatamente essa pergunta — e lá a barra fina nunca teve setas. Então é ele,
+     e só ele, que fica com as propriedades padrão. */
+  @supports not selector(::-webkit-scrollbar) {
+    .scroll-row {
+      scrollbar-width: thin;
+      scrollbar-color: var(--scriba-scroll-thumb) transparent;
+    }
+  }
   @media (hover: none) {
     .scroll-row {
       scrollbar-width: none;
