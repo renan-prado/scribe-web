@@ -499,7 +499,7 @@ Do `final_summary` já se tira tudo o que a primeira frase precisa:
 
 | do payload | vira |
 |---|---|
-| `title` | *"Vi que você está escrevendo sobre **{título}**."* |
+| `title` + o primeiro nome de quem abriu | *"Olá, **{nome}**! Vi que você está lendo sobre **"{título}"**, de **{pregador}**. Tem algum trecho ou tema que você queira conversar a respeito?"* |
 | cada bloco `bibleQuote` | chip **"Contexto de {referência}"** |
 | referências no meio da prosa (as mesmas já extraídas para a busca por versículo, migração 0041) | chip **"Contexto de {referência}"** |
 | `shortSummary` | chip **"Outras passagens sobre isto"** |
@@ -509,6 +509,13 @@ Três a cinco chips por vez, nunca a lista inteira (`biblo.md` §4). **Sessão
 vazia** — alguém que acabou de abrir o `/escrever` — recebe o cumprimento sem
 fingir que sabe de algo e os chips genéricos: *"sobre qual passagem você quer
 escrever?"*.
+
+**O cumprimento chama a pessoa pelo nome, e o VERBO olha o modo da sessão.** O
+nome sai de `display_name` (a conta vem do Google, quase sempre existe) e vem de
+carona na consulta que o `requireAuth` já faz; sem nome usável, o "Olá!" fica
+sozinho — ninguém se reconhece em "Olá, usuário!". E o texto do `/escrever` é
+algo que a pessoa está ESCREVENDO, não lendo: dizer "vi que você está lendo"
+para quem está com a própria página aberta erra logo na frase que todo mundo lê.
 
 Uma abertura gerada por LLM custaria uma chamada a cada gaveta aberta, inclusive
 as que ninguém usa, e ela é a única parte da conversa cujo material está todo na
@@ -676,9 +683,25 @@ desenho. Num avatar por usuário isso é cosmético; **num personagem, é a cara
 dele mudando num `npm update`**. Preso o `gen`, um major da lib vira uma
 conferência a olho, não uma surpresa em produção.
 
-O `hue` sai do amarelo da marca (`--scriba-yellow`). A regra de "nada de cor
-literal" do `AGENTS.md` fala de `className`, e aqui é um número numa prop — mas
-o espírito vale: o número vem do token e o comentário diz de onde.
+**O `hue` é 250, um azul (`#1c89e4`), e as duas metades disso custaram caro.**
+
+A primeira: ele saía do amarelo da marca, `44`, o matiz HSL de `--scriba-yellow`.
+Mas a lib pinta em **OKLCh**, onde 44° é laranja queimado — o Biblo nasceu
+vermelho, e ninguém percebeu até a cara dele estar na tela. Para conferir um
+valor sem abrir o navegador, o pacote exporta `palette(hue, enforce, tone)`, que
+devolve os três hexadecimais. A régua, em OKLCh: ~29 vermelho, ~88 amarelo, ~145
+verde, ~250 azul.
+
+A segunda, e a que importa: **o amarelo não devia ser a cor dele de qualquer
+jeito.** No Scriba o amarelo é a MOEDA (`src/shared/AGENTS.md`: saldo, preço,
+marca-texto), e um rosto amarelo flutuando no canto em que o app fala de crédito
+diria "isto custa" antes de dizer "isto conversa" — justamente o que a §9 quer
+evitar. O azul não pertence a nenhuma das três famílias semânticas, que é o que
+um personagem precisa.
+
+A regra de "nada de cor literal" do `AGENTS.md` fala de `className`, e aqui é um
+número numa prop — mas o espírito vale: o comentário diz de onde o número vem e
+como conferi-lo.
 
 **E o `Sparkles` do lucide continua proibido aqui** (regra do `AGENTS.md` da
 raiz): o Biblo tem rosto próprio, não precisa de enfeite emprestado.

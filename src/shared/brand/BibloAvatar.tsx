@@ -49,16 +49,37 @@ import { cn } from "@/lib/utils";
  * CSS nosso aqui.
  */
 
-/** A semente. Constante: o Biblo é um só, em todo aparelho. */
-const BIBLO_NAME = "biblo";
+/**
+ * A semente. Constante: o Biblo é um só, em todo aparelho.
+ *
+ * **O valor é escolhido pelo ROSTO que ele produz, não pelo que ele diz.** A
+ * lib deriva a forma de um hash da string, então mudar um caractere aqui é
+ * trocar o personagem — `"biblo03"` foi o que se olhou na tela e se aprovou.
+ * Não "arrume" para `"biblo"`.
+ */
+const BIBLO_NAME = "biblo03";
 
 /**
- * O amarelo da marca (`--scriba-yellow`, #F8C64B) em graus de matiz. O número
- * é literal porque a lib recebe um NÚMERO, não uma cor — a regra de "nada de
- * cor literal" do AGENTS.md fala de `className`, e o espírito dela é atendido
- * aqui pela origem estar escrita.
+ * O azul do Biblo, em graus de matiz. Dá `#1c89e4` na cabeça.
+ *
+ * **O grau é OKLCh, e não o matiz de HSL que o DevTools mostra.** Esta
+ * constante já foi `44`, "o amarelo da marca (`--scriba-yellow`, #F8C64B)" —
+ * mas 44 é o matiz HSL daquele amarelo, e em OKLCh 44° é laranja queimado: o
+ * Biblo nasceu vermelho. Para conferir um valor sem abrir a tela:
+ * `palette(hue, true, tone)`, exportado pelo próprio pacote, devolve os três
+ * hexadecimais. A régua, em OKLCh: ~29 vermelho, ~88 amarelo, ~145 verde,
+ * ~250 azul.
+ *
+ * **E ele NÃO é mais a cor da marca, de propósito.** O amarelo do Scriba é a
+ * MOEDA (`src/shared/AGENTS.md`: saldo, preço, marca-texto), e um rosto amarelo
+ * flutuando sobre o mesmo canto em que o app fala de crédito diria "isto custa"
+ * antes de dizer "isto conversa". O azul não pertence a nenhuma das três
+ * famílias semânticas, que é exatamente o que um personagem precisa.
+ *
+ * O número é literal porque a lib recebe um NÚMERO, não uma cor — a regra de
+ * "nada de cor literal" do AGENTS.md fala de `className`.
  */
-const BIBLO_HUE = 44;
+const BIBLO_HUE = 250;
 const BIBLO_TONE = 0.62;
 
 export type BibloMood = "idle" | "thinking" | "happy";

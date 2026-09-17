@@ -76,7 +76,14 @@ export async function GET(request: Request) {
 
   const body: BibloConversation = {
     messages: rows.map(toMessage),
-    opening: buildBibloOpening(session.finalSummary, session.speakerName),
+    opening: buildBibloOpening({
+      summary: session.finalSummary,
+      speakerName: session.speakerName,
+      firstName: auth.user.firstName,
+      // O `/escrever` é o único modo em que o texto na tela é de quem está
+      // lendo esta frase — e é o que decide entre "escrevendo" e "lendo".
+      authored: session.mode === "manual",
+    }),
     allowance,
   };
   return NextResponse.json(body);

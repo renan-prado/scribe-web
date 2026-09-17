@@ -67,10 +67,42 @@ function citedReferences(summary: SummaryPayload): string[] {
   return found;
 }
 
-export function buildBibloOpening(
-  summary: SummaryPayload | null,
-  speakerName: string | null
-): BibloOpening {
+/**
+ * O cumprimento.
+ *
+ * **Ele chama a pessoa pelo nome, e o verbo olha o modo da sessão.** Um resumo
+ * que veio de gravação ou do YouTube é algo que ela está LENDO; o `/escrever`
+ * é algo que ela está ESCREVENDO, e dizer "vi que você está lendo" para quem
+ * está com a própria página aberta erra na primeira frase — que é a única que
+ * todo mundo lê.
+ *
+ * `firstName` nulo tira só o nome: "Olá!" continua sendo um cumprimento, e
+ * nenhum fallback genérico entra no lugar — ninguém se reconhece em "Olá,
+ * usuário!".
+ */
+function buildGreeting(input: {
+  title: string;
+  speakerName: string | null;
+  firstName: string | null;
+  authored: boolean;
+}): string {
+  const hello = input.firstName ? `Olá, ${input.firstName}!` : "Olá!";
+  const question = "Tem algum trecho ou tema que você queira conversar a respeito?";
+  if (!input.title) return `${hello} Li o que está na tela. ${question}`;
+
+  const verb = input.authored ? "escrevendo" : "lendo";
+  const author = input.speakerName ? `, de ${input.speakerName}` : "";
+  return `${hello} Vi que você está ${verb} sobre "${input.title}"${author}. ${question}`;
+}
+
+export function buildBibloOpening(input: {
+  summary: SummaryPayload | null;
+  speakerName: string | null;
+  firstName: string | null;
+  /** `true` no `/escrever`: o texto na tela é dela, não de um pregador. */
+  authored: boolean;
+}): BibloOpening {
+  const { summary, speakerName, firstName, authored } = input;
   const title = summary?.title?.trim() ?? "";
   const hasContent = !!summary && (summary.blocks.length > 0 || !!summary.shortSummary.trim());
 
@@ -79,14 +111,12 @@ export function buildBibloOpening(
   // sobre" ali seria uma mentira na primeira frase.
   if (!hasContent) {
     return {
-      greeting: "Oi! Sou o Biblo. Sobre o que você quer escrever?",
+      greeting: `${firstName ? `Olá, ${firstName}!` : "Olá!"} Sou o Biblo. Sobre o que você quer escrever?`,
       chips: EMPTY_CHIPS,
     };
   }
 
-  const greeting = title
-    ? `Vi que você está com "${title}" aqui${speakerName ? `, de ${speakerName}` : ""}. Quer conversar sobre o quê?`
-    : "Li o que está na tela. Quer conversar sobre o quê?";
+  const greeting = buildGreeting({ title, speakerName, firstName, authored });
 
   const chips: string[] = [];
   for (const reference of citedReferences(summary)) {

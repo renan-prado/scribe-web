@@ -4,6 +4,7 @@ import {
   REFERRAL_SIGNUP_COINS,
   REFERRAL_SUBSCRIPTION_COINS,
 } from "@/features/referrals/economics";
+import { firstNameFrom } from "@/lib/domain/profile";
 import { createLogger } from "@/lib/log";
 import { createAdminClient } from "@/lib/supabase/admin";
 
@@ -197,24 +198,12 @@ export async function getReferrerPublicByCode(code: string): Promise<ReferrerPub
   if (!data || data.is_active === false) return null;
 
   return {
-    firstName: firstNameOf(data.display_name, data.email),
+    // O fallback é daqui, não do helper: este selo é PÚBLICO, aparece para
+    // quem ainda não entrou, e um espaço em branco no lugar do nome de quem
+    // convidou estragaria o convite.
+    firstName: firstNameFrom(data.display_name, data.email) ?? "um amigo",
     avatarUrl: (data.avatar_url as string | null) ?? null,
   };
-}
-
-/**
- * Primeiro nome, com um fallback que nunca vira vergonha na tela.
- *
- * A conta vem do Google, então `display_name` quase sempre existe; quando não
- * existe, o pedaço do e-mail antes do `@` é o que a pessoa reconheceria como
- * si mesma. E o e-mail INTEIRO nunca sai daqui, expor endereço de alguém num
- * selo público seria um vazamento por conveniência.
- */
-function firstNameOf(displayName: string | null, email: string | null): string {
-  const name = displayName?.trim();
-  if (name) return name.split(/\s+/)[0];
-  const handle = email?.split("@")[0]?.trim();
-  return handle || "um amigo";
 }
 
 /**

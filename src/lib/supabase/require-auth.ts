@@ -1,5 +1,6 @@
 import "server-only";
 import { NextResponse } from "next/server";
+import { firstNameFrom } from "@/lib/domain/profile";
 import { createLogger } from "@/lib/log";
 import { createClient } from "./server";
 
@@ -32,6 +33,11 @@ const log = createLogger("require-auth");
  * quer dizer "não sei", não "zero", e quem consome trata as duas de formas
  * diferentes.
  *
+ * `firstName` entra pela MESMA razão e com a mesma régua: é uma coluna a mais
+ * numa linha já aberta, para as rotas em que o produto fala COM a pessoa em
+ * vez de sobre ela (hoje só a abertura do Biblo). `null` quer dizer "não há
+ * nome usável", e quem cumprimenta simplesmente omite o nome.
+ *
  * **A identidade vem de `getClaims()`, não de `getUser()`.** Era uma ida à
  * rede por chamada de API, e `cache()` não vale em Route Handler, então nem a
  * memoização a segurava: duas chamadas de API eram duas viagens ao servidor de
@@ -40,7 +46,7 @@ const log = createLogger("require-auth");
  * `profiles`, que é o fato gravado, e não do token. Ver `lib/supabase/server.ts`.
  */
 
-type AuthUser = { id: string; coinBalance: number | null };
+type AuthUser = { id: string; coinBalance: number | null; firstName: string | null };
 type AuthResult = { user: AuthUser; response: null } | { user: null; response: NextResponse };
 
 export async function requireAuth(): Promise<AuthResult> {
@@ -59,7 +65,7 @@ export async function requireAuth(): Promise<AuthResult> {
   // nada.
   const { data, error } = await supabase
     .from("profiles")
-    .select("is_active, coin_balance")
+    .select("is_active, coin_balance, display_name, email")
     .eq("id", userId)
     .maybeSingle();
   if (error) {
@@ -71,5 +77,12 @@ export async function requireAuth(): Promise<AuthResult> {
     };
   }
 
-  return { user: { id: userId, coinBalance: data?.coin_balance ?? null }, response: null };
+  return {
+    user: {
+      id: userId,
+      coinBalance: data?.coin_balance ?? null,
+      firstName: firstNameFrom(data?.display_name ?? null, data?.email ?? null),
+    },
+    response: null,
+  };
 }
