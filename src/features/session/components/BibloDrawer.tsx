@@ -327,10 +327,12 @@ export function BibloDrawer({
           repetia. O fio saiu junto: o que separa esta linha da conversa é o
           espaço.
 
-          **O nome ficou, em caixa baixa, na Poppins da marca.** É a mesma
-          palavra que o `ScribaLogo` desenha, e é o que impede a gaveta de
-          abrir sem dizer o que ela é — a conversa pode estar vazia, e um × sozinho
-          no canto não é cabeçalho, é um botão perdido.
+          **O nome ficou, na Poppins da marca, e com MAIÚSCULA.** A caixa baixa
+          é do logotipo do `ScribaLogo`, onde "scriba" é a marca; aqui a palavra
+          é o nome de alguém com quem se conversa, e nome de gente começa com
+          maiúscula. É também o que impede a gaveta de abrir sem dizer o que ela
+          é — a conversa pode estar vazia, e um × sozinho no canto não é
+          cabeçalho, é um botão perdido.
 
           O fechar nunca foi redundante: sem ele a gaveta não fecha, porque o
           botão flutuante sai da tela enquanto ela está aberta. */}
@@ -339,7 +341,7 @@ export function BibloDrawer({
           className="font-semibold text-[15px] text-scriba-ink-soft leading-none"
           style={{ fontFamily: "var(--font-poppins)", letterSpacing: "-0.015em" }}
         >
-          biblo
+          Biblo
         </span>
         <button
           type="button"

@@ -798,8 +798,9 @@ se repete em cada balão de resposta, e ali ele faz trabalho — diz de quem é 
 fala. Em cima, ao lado do nome, só repetia. O fio saiu junto: o que separa a
 linha da conversa é o espaço, não um traço.
 
-Ficaram o nome, em caixa baixa e na Poppins da marca (a mesma palavra que o
-`ScribaLogo` desenha), e o fechar. Nenhum dos dois é dispensável: sem o fechar a
+Ficaram o nome, na Poppins da marca e com maiúscula — a caixa baixa é do
+logotipo, onde "scriba" é a MARCA; aqui a palavra é o nome de alguém com quem se
+conversa —, e o fechar. Nenhum dos dois é dispensável: sem o fechar a
 gaveta não fecha, já que o botão flutuante sai da tela enquanto ela está aberta,
 e sem o nome a gaveta abre sem dizer o que é — a conversa pode estar vazia, e um
 × sozinho no canto não é cabeçalho, é um botão perdido.
