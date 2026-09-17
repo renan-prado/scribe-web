@@ -683,7 +683,8 @@ desenho. Num avatar por usuário isso é cosmético; **num personagem, é a cara
 dele mudando num `npm update`**. Preso o `gen`, um major da lib vira uma
 conferência a olho, não uma surpresa em produção.
 
-**O `hue` é 250, um azul (`#1c89e4`), e as duas metades disso custaram caro.**
+**O `hue` é 250 e o `tone` 0,85, o que dá `#b4d8ff` — um azul claro,
+esbranquiçado. As duas metades disso custaram caro.**
 
 A primeira: ele saía do amarelo da marca, `44`, o matiz HSL de `--scriba-yellow`.
 Mas a lib pinta em **OKLCh**, onde 44° é laranja queimado — o Biblo nasceu
@@ -698,6 +699,15 @@ marca-texto), e um rosto amarelo flutuando no canto em que o app fala de crédit
 diria "isto custa" antes de dizer "isto conversa" — justamente o que a §9 quer
 evitar. O azul não pertence a nenhuma das três famílias semânticas, que é o que
 um personagem precisa.
+
+O `tone` **não é contínuo**: a lib escolhe entre meia dúzia de amostras daquele
+matiz, e 0,80–0,90 inteiro dá o mesmo hexadecimal. Os valores vizinhos são
+`#1c89e4` (o azul médio, faixa 0,65–0,75) e `#2a394a` (quase o grafite do fundo,
+em 0,95) — por isso 0,85 fica no MEIO da faixa, e não na borda dela.
+
+O fundo do avatar é transparente: a lib desenha só cabeça e olhos, e o `bg`
+quase branco que a `palette()` devolve nunca vai para a tela. É o que permite
+um tom claro — a cabeça pousa direto no vidro do dock, sobre o grafite.
 
 A regra de "nada de cor literal" do `AGENTS.md` fala de `className`, e aqui é um
 número numa prop — mas o espírito vale: o comentário diz de onde o número vem e
