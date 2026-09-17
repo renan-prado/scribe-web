@@ -146,8 +146,8 @@ export function buildBibloOpening(input: {
     const hello = firstName ? `Olá, ${firstName}!` : "Olá!";
     return {
       greeting: introduce
-        ? `${hello} ${INTRODUCTION} Sobre o que você quer escrever?`
-        : `${hello} Sobre o que você quer escrever?`,
+        ? `${hello} ${INTRODUCTION} Sobre qual assunto você gostaria de escrever?`
+        : `${hello} Sobre qual assunto você gostaria de escrever?`,
       chips: EMPTY_CHIPS,
     };
   }

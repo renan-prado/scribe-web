@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { BibloDrawer } from "@/features/session/components/BibloDrawer";
 import { useKeyboardInset } from "@/hooks/use-keyboard-inset";
 import type { BibloSuggestion } from "@/lib/domain/biblo";
@@ -36,6 +36,17 @@ import { BibloAvatar } from "@/shared/brand";
  * legível através dele. É a mesma razão de o `AdminMenu` poder ficar parado
  * sobre uma tabela.
  *
+ * ## No desktop a gaveta EMPURRA, no celular ela cobre
+ *
+ * Num monitor sobra largura dos dois lados da coluna de leitura, e mesmo assim
+ * a gaveta cobria o lado direito do texto — cortando as linhas justamente no
+ * parágrafo que fez a pessoa abrir a conversa. Conversar sobre um texto exige
+ * ver o texto. Este componente só liga a classe `biblo-open` no `<body>`; a
+ * regra (e a razão de ela morar lá) está em `globals.css`.
+ *
+ * No celular nada muda: não há largura para dividir, e a gaveta sobe do rodapé
+ * por cima do conteúdo, de onde o botão estava.
+ *
  * ## O teclado
  *
  * `--kb-inset` (ver `hooks/use-keyboard-inset.ts`) e `max()` com a faixa do
@@ -51,10 +62,20 @@ import { BibloAvatar } from "@/shared/brand";
  */
 export function BibloDock({
   sessionId,
+  ensureSession,
   onInsert,
   onRemove,
 }: {
   sessionId: string;
+  /**
+   * Garante que a linha da sessão exista no banco antes de uma pergunta, e
+   * devolve o id dela (`null` quando o salvamento falhou).
+   *
+   * Só o `/escrever` passa: lá o id é do APARELHO e a linha nasce no primeiro
+   * salvamento, então sem isto a primeira pergunta esbarraria numa sessão que
+   * não existe. Ver o cabeçalho do `Composer`.
+   */
+  ensureSession?: () => Promise<string | null>;
   /** Ausente na tela que não sabe editar: a conversa funciona, sem "Adicionar". */
   onInsert?: (suggestion: BibloSuggestion) => void;
   onRemove?: (suggestion: BibloSuggestion) => void;
@@ -62,6 +83,21 @@ export function BibloDock({
   const [open, setOpen] = useState(false);
   const [thinking, setThinking] = useState(false);
   useKeyboardInset();
+
+  // No DESKTOP a gaveta empurra o conteúdo em vez de cobri-lo, e quem faz isso
+  // é um `padding-right` no `<body>` (a regra e o porquê estão em
+  // `globals.css`). A classe vai no corpo porque a gaveta é `fixed`: ela não
+  // ocupa espaço nenhum no fluxo, então não há como um ancestral dela encolher
+  // a página — o corpo é o único elemento acima de todo o layout.
+  //
+  // A limpeza no retorno cobre o caso que não é o fechar: desmontar a tela com
+  // a conversa aberta (uma navegação) deixaria o corpo estreito para sempre,
+  // com a gaveta já fora da tela.
+  useEffect(() => {
+    if (!open) return;
+    document.body.classList.add("biblo-open");
+    return () => document.body.classList.remove("biblo-open");
+  }, [open]);
 
   return (
     <>
@@ -84,6 +120,7 @@ export function BibloDock({
       {open && (
         <BibloDrawer
           sessionId={sessionId}
+          ensureSession={ensureSession}
           onClose={() => setOpen(false)}
           onThinking={setThinking}
           onInsert={onInsert}

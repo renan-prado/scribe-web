@@ -291,12 +291,19 @@ export async function generateBibloAnswer(input: BibloAnswerInput): Promise<Bibl
     log.warn("referência inválida descartada", { dropped: answer.dropped, model });
   }
 
-  // A oferta entra como a ÚLTIMA pastilha da fileira, e nunca na frente: as
-  // perguntas continuam sendo o caminho normal da conversa, e a oferta é o
-  // desvio para dentro do texto. Daqui para baixo ela é um chip como outro
-  // qualquer — o banco, a gaveta e o `send` não precisam saber que ela nasceu
-  // num campo próprio.
-  const chips = reply.data.offer ? [...reply.data.chips, reply.data.offer] : reply.data.chips;
+  // A oferta entra como a PRIMEIRA pastilha da fileira.
+  //
+  // Ela já foi a última, com o argumento de que as perguntas são o caminho
+  // normal da conversa e a oferta é o desvio para dentro do texto. O argumento
+  // morreu quando a fileira virou uma linha que ROLA DE LADO (ver `Chips` em
+  // `BibloDrawer`): ali "último" quer dizer "fora da tela", e a oferta é o
+  // único chip com um destino — é o que separa o Biblo de um chat numa aba.
+  // Ela também é a única que não é pergunta, então abrir com ela não confunde
+  // a leitura da fileira.
+  //
+  // Daqui para baixo é um chip como outro qualquer: o banco, a gaveta e o
+  // `send` não precisam saber que ela nasceu num campo próprio.
+  const chips = reply.data.offer ? [reply.data.offer, ...reply.data.chips] : reply.data.chips;
 
   return {
     ok: true,

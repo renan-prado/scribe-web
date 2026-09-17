@@ -58,6 +58,20 @@ import { BibloAvatar, type BibloMood } from "@/shared/brand";
 const STAGGER_STEP_MS = 60;
 const STAGGER_MAX_MS = 240;
 
+/**
+ * O rosto ao lado da fala dele.
+ *
+ * Uma constante, e não `28` escrito em dois lugares: o avatar do balão e o do
+ * "Pensando…" são o mesmo objeto na mesma coluna, e meio pixel de diferença
+ * entre os dois desalinha a fileira inteira quando a resposta substitui a
+ * espera.
+ *
+ * 32 e não 28: no `BibloDock` ele tem 36 e ali lê como personagem; a 28, dentro
+ * da conversa, virava um selo. É um degrau, não um salto — o balão continua
+ * sendo o objeto principal da linha.
+ */
+const AVATAR_SIZE = 32;
+
 function CopyButton({ text }: { text: string }) {
   const [copied, setCopied] = useState(false);
 
@@ -140,7 +154,7 @@ export function BibloBubble({
 }) {
   return (
     <div className="flex gap-2.5">
-      <BibloAvatar mood={mood} size={28} className="mt-0.5" />
+      <BibloAvatar mood={mood} size={AVATAR_SIZE} className="mt-0.5" />
       <div className="min-w-0 flex-1">
         <div className="max-w-[92%] rounded-2xl rounded-tl-md bg-secondary px-3.5 py-2.5 text-[14px] text-scriba-ink leading-relaxed">
           {children}
@@ -176,7 +190,7 @@ export function BibloMessageView({
 
   return (
     <div className="flex gap-2.5">
-      <BibloAvatar size={28} className="mt-0.5" />
+      <BibloAvatar size={AVATAR_SIZE} className="mt-0.5" />
       <div className="min-w-0 flex-1">
         {/* `data-biblo-answer` é o que a gaveta procura para rolar até o INÍCIO
             desta resposta. Ver o efeito de rolagem em `BibloDrawer`. */}

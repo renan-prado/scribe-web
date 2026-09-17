@@ -60,6 +60,19 @@ function toMessage(row: BibloRow): BibloMessage {
  * **Não cobra, não chama modelo e não grava nada.** A abertura é derivada do
  * resumo (ver `biblo/opening.ts`), então abrir a gaveta é de graça em todos os
  * sentidos da palavra.
+ *
+ * **E ela não exige que a sessão EXISTA.** No `/escrever` o id é sorteado no
+ * aparelho quando a folha abre, e a linha só nasce no primeiro salvamento — que
+ * só acontece depois de a pessoa digitar (ver `escrever/useWrittenDraft.ts`,
+ * que mantém de propósito a invariante "linha vazia no banco é impossível").
+ * Um 404 aqui tirava o Biblo da tela exatamente no momento em que ele é mais
+ * útil: a folha em branco, onde a conversa dele É "sobre o que você quer
+ * escrever?".
+ *
+ * Responder com a conversa vazia não conta nada a ninguém: um id que não existe
+ * e o id de outra pessoa devolvem a MESMA coisa (a RLS esconde o segundo), então
+ * a rota não vira um oráculo de "esta sessão existe". Quem confere dono é o
+ * `POST`, que é onde alguma coisa acontece.
  */
 export async function GET(request: Request) {
   const auth = await requireAuth();
@@ -70,10 +83,8 @@ export async function GET(request: Request) {
     return NextResponse.json({ error: "invalid_session_id" }, { status: 400 });
   }
 
-  const session = await getSessionView(sessionId);
-  if (!session) return NextResponse.json({ error: "session_not_found" }, { status: 404 });
-
-  const [rows, allowance, introduce] = await Promise.all([
+  const [session, rows, allowance, introduce] = await Promise.all([
+    getSessionView(sessionId),
     listBibloRows(sessionId),
     resolveBibloAllowance(auth.user.id),
     shouldIntroduceBiblo(),
@@ -82,12 +93,13 @@ export async function GET(request: Request) {
   const body: BibloConversation = {
     messages: rows.map(toMessage),
     opening: buildBibloOpening({
-      summary: session.finalSummary,
-      speakerName: session.speakerName,
+      summary: session?.finalSummary ?? null,
+      speakerName: session?.speakerName ?? null,
       firstName: auth.user.firstName,
       // O `/escrever` é o único modo em que o texto na tela é de quem está
-      // lendo esta frase — e é o que decide entre "escrevendo" e "lendo".
-      authored: session.mode === "manual",
+      // lendo esta frase — e é o que decide entre "escrevendo" e "lendo". Sem
+      // linha no banco só se chega aqui pelo `/escrever`, então `true`.
+      authored: session ? session.mode === "manual" : true,
       introduce,
     }),
     allowance,

@@ -381,6 +381,10 @@
   --scriba-ink-soft: #B3B4BA;
   --scriba-ink-mute: #9A9BA2;
   --scriba-surface: #212121;
+  /* A largura da gaveta do Biblo no desktop. Lida em DOIS lugares, e é por isso
+     que é token: a própria gaveta (`md:w-(--biblo-drawer-w)`) e o
+     `padding-right` que o corpo ganha para não ficar embaixo dela. */
+  --biblo-drawer-w: 420px;
   --scriba-hairline: rgba(255, 255, 255, 0.1);
   --scriba-hairline-soft: rgba(255, 255, 255, 0.06);
   --scriba-yellow-light: #FFE29A;
@@ -855,6 +859,56 @@
   *::-webkit-scrollbar-thumb:hover {
     background-color: var(--scriba-scroll-thumb-hover);
   }
+  /* NO DESKTOP, A GAVETA DO BIBLO EMPURRA — NÃO COBRE.
+
+     No celular ela sobe do rodapé e fica por cima, e é o certo: não há largura
+     para dividir. Num monitor havia — sobrava tela dos dois lados da coluna de
+     leitura — e mesmo assim a gaveta cobria o lado direito do texto, cortando
+     as linhas justamente no parágrafo que a pessoa tinha aberto a conversa para
+     entender. Conversar sobre um texto exige VER o texto (`docs/biblo.md` §3).
+
+     O empurrão é `padding-right` no `<body>`: a gaveta é `fixed`, então ela não
+     ocupa espaço nenhum no fluxo, e é o padding do corpo que reduz a largura
+     disponível. Os contêineres de página são `mx-auto` com largura máxima, e
+     por isso se recentram sozinhos no que sobrou, sem uma linha de layout nova
+     em lugar nenhum.
+
+     A largura sai de `--biblo-drawer-w`, o MESMO token que dimensiona a gaveta
+     (`md:w-(--biblo-drawer-w)` em `BibloDrawer`). Dois números aqui abririam um
+     vão ou uma sobreposição de alguns pixels que ninguém entenderia depois.
+
+     A transição acompanha os 200ms da entrada da gaveta: sem ela o texto salta
+     de largura de um quadro para o outro enquanto a gaveta ainda está entrando.
+
+     Nenhum elemento do app usa `w-screen` nem `100vw` (conferido), então o
+     padding não cria rolagem horizontal. */
+  @media (min-width: 768px) {
+    body.biblo-open {
+      padding-right: var(--biblo-drawer-w);
+    }
+  }
+  body {
+    transition: padding-right 200ms cubic-bezier(0.22, 1, 0.36, 1);
+  }
+  @media (prefers-reduced-motion: reduce) {
+    body {
+      transition: none;
+    }
+  }
+
+  /* A fileira que ROLA DE LADO e não mostra barra: os chips do Biblo.
+     Barra horizontal sob uma fileira de pastilhas de 32px rouba um terço da
+     altura dela e aparece permanentemente no desktop, onde a barra não some
+     sozinha. O gesto de arrastar continua lá, e no celular nunca houve barra
+     para esconder. Ela vence o `scrollbar-width: thin` do seletor universal
+     acima por especificidade de classe. */
+  .no-scrollbar {
+    scrollbar-width: none;
+  }
+  .no-scrollbar::-webkit-scrollbar {
+    display: none;
+  }
+
   /* Mobile sidebar overrides the width token so w-(--sidebar-width) resolves to 18rem */
   [data-sidebar="sidebar"][data-mobile="true"] {
     --sidebar-width: 18rem;

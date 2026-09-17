@@ -96,6 +96,24 @@ const DENIAL_COPY: Record<BibloDenial, { text: string; cta?: { label: string; hr
   revoked: { text: "O Biblo não está disponível nesta conta." },
 };
 
+/**
+ * A fileira de sugestões: UMA linha que rola de lado.
+ *
+ * **Ela era `flex-wrap`, e virou uma parede.** Enquanto os chips eram
+ * telegramas de seis palavras, dois cabiam por linha; quando passaram a ser
+ * perguntas faladas (ver `prompts/biblo.ts`), cada um ficou quase da largura da
+ * tela, quebrou em duas linhas e o conjunto tomou metade da gaveta — empurrando
+ * para fora justamente a resposta que as sugestões comentam.
+ *
+ * Uma linha que rola custa altura FIXA, não importa quantos chips venham nem
+ * quão longos sejam. O preço é que o quarto e o quinto ficam fora da tela, e é
+ * por isso que a OFERTA vem primeiro (ver `biblo/answer.ts`): numa fileira que
+ * rola, "último" quer dizer "invisível".
+ *
+ * O `-mx-4 px-4` sangra a fileira até as bordas da gaveta: sem isso a rolagem
+ * pararia 16px antes de cada lado e o último chip pareceria cortado por um
+ * vão em vez de continuar.
+ */
 function Chips({
   chips,
   onPick,
@@ -107,14 +125,14 @@ function Chips({
 }) {
   if (chips.length === 0) return null;
   return (
-    <div className="flex flex-wrap gap-1.5">
+    <div className="no-scrollbar -mx-4 flex gap-1.5 overflow-x-auto px-4">
       {chips.map((chip) => (
         <button
           key={chip}
           type="button"
           disabled={disabled}
           onClick={() => onPick(chip)}
-          className="rounded-full border border-scriba-hairline px-3 py-1.5 text-[12px] text-scriba-ink-soft transition-colors hover:border-scriba-ink-mute hover:text-scriba-ink disabled:opacity-50 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-scriba-ink-mute"
+          className="shrink-0 whitespace-nowrap rounded-full border border-scriba-hairline px-3 py-1.5 text-[12px] text-scriba-ink-soft transition-colors hover:border-scriba-ink-mute hover:text-scriba-ink disabled:opacity-50 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-scriba-ink-mute"
         >
           {chip}
         </button>
@@ -125,12 +143,15 @@ function Chips({
 
 export function BibloDrawer({
   sessionId,
+  ensureSession,
   onClose,
   onThinking,
   onInsert,
   onRemove,
 }: {
   sessionId: string;
+  /** Ver `BibloDock`. Ausente onde a sessão já existe (`/summary/:id`). */
+  ensureSession?: () => Promise<string | null>;
   onClose: () => void;
   /** Avisa o botão flutuante para ele pensar junto, com a gaveta fechada. */
   onThinking: (thinking: boolean) => void;
@@ -227,10 +248,24 @@ export function BibloDrawer({
       setAsking(question);
       onThinking(true);
       try {
+        // O texto na tela vai para o banco ANTES da pergunta. Na primeira ela
+        // cria a linha (sem ela o POST responderia 404); nas seguintes ela é o
+        // que faz o Biblo ler no servidor o que a pessoa está vendo, e não o
+        // texto de duas frases atrás. Ver `escrever/Composer.tsx`.
+        const id = ensureSession ? await ensureSession() : sessionId;
+        if (!id) {
+          // O salvamento falhou (rede). Perguntar assim mesmo cobraria por uma
+          // resposta sobre um texto que o servidor não tem.
+          setAsking(null);
+          setDraft(question);
+          setFailed(true);
+          return;
+        }
+
         const res = await fetch("/api/biblo", {
           method: "POST",
           headers: { "content-type": "application/json" },
-          body: JSON.stringify({ sessionId, text: question }),
+          body: JSON.stringify({ sessionId: id, text: question }),
         });
         const body = (await res.json().catch(() => ({}))) as Partial<BibloTurn> & {
           error?: string;
@@ -282,7 +317,7 @@ export function BibloDrawer({
         onThinking(false);
       }
     },
-    [pending, sessionId, onThinking, setBalance]
+    [pending, sessionId, ensureSession, onThinking, setBalance]
   );
 
   const allowance: BibloAllowance = conversation?.allowance ?? { kind: "coins" };
@@ -317,7 +352,7 @@ export function BibloDrawer({
         // No desktop ela é uma coluna à direita, de altura cheia: ali há espaço
         // ao lado do texto, e cobrir o rodapé de uma tela larga esconderia o
         // resumo em vez de ficar ao lado dele.
-        "md:inset-y-0 md:right-0 md:left-auto md:max-h-none md:w-[420px] md:rounded-none md:rounded-l-3xl"
+        "md:inset-y-0 md:right-0 md:left-auto md:max-h-none md:w-(--biblo-drawer-w) md:rounded-none md:rounded-l-3xl"
       )}
     >
       {/* O cabeçalho, do tamanho do que ele tem a dizer.
@@ -362,15 +397,18 @@ export function BibloDrawer({
           gesto que qualquer um reconhece num chat, e ficam onde o olho já está:
           no centro.
 
-          Ele é o PRÓPRIO filho flexível, e não um `h-full` dentro da lista:
-          `height: 100%` dentro de um item de flex depende de o item ter altura
-          definida, o que nem sempre acontece — aqui o `flex-1` resolve a altura
-          e o `items-center` centra dentro dela, sem porcentagem nenhuma.
+          **O `py-16` é o que faz ele existir.** `flex-1` reparte a altura que
+          SOBRA, e a gaveta não tem altura própria: `max-h-[85dvh]` só põe um
+          teto, quem dá a altura é o conteúdo. Com um filho sem altura
+          intrínseca não sobrava nada para repartir, e no celular a gaveta abria
+          rasa, com os três pontos espremidos debaixo do cabeçalho. O padding dá
+          a ela mais ou menos a altura do cumprimento que está chegando — então
+          a gaveta abre do tamanho certo e não pula quando o texto entra.
 
-          O rótulo existe para quem usa leitor de tela, onde ponto cinza não
-          diz nada. */}
+          `items-center` continua fazendo o trabalho no desktop, onde a coluna é
+          de altura cheia e aí sim sobra espaço para centrar dentro. */}
       {conversation === null && !failed ? (
-        <div className="flex min-h-0 flex-1 items-center justify-center">
+        <div className="flex min-h-0 flex-1 items-center justify-center py-16">
           <ListeningDots label="Abrindo a conversa" className="pt-0" />
         </div>
       ) : (

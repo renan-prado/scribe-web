@@ -109,7 +109,7 @@ type Props = {
 
 export function Composer({ id, exists = false, initial, header }: Props) {
   const router = useRouter();
-  const { doc, setDoc, status, offline, sessionId, flush, ready } = useWrittenDraft({
+  const { doc, setDoc, status, offline, draftId, sessionId, flush, ready } = useWrittenDraft({
     id,
     exists,
     initial,
@@ -656,18 +656,27 @@ export function Composer({ id, exists = false, initial, header }: Props) {
         }}
       />
 
-      {/* O Biblo. Ele só aparece depois do PRIMEIRO salvamento (`sessionId`),
-          e não é limitação: a conversa é guardada por sessão, e enquanto a
-          linha não existe no banco não há onde guardá-la. O editor salva
-          sozinho a cada pausa da digitação, então "depois do primeiro
-          salvamento" é alguns segundos depois da primeira palavra.
+      {/* O Biblo, e ele aparece desde a FOLHA EM BRANCO.
+
+          Ele esperava o primeiro salvamento, e isso o tirava da tela justamente
+          onde ele é mais útil: diante da folha vazia, onde a conversa dele é
+          "Sobre qual assunto você gostaria de escrever?". O endereço nunca foi o problema —
+          o `draftId` existe desde o primeiro quadro, sorteado no aparelho.
+
+          Quem resolve a linha que ainda não existe é o `ensureSession`: o
+          `flush` salva ANTES de cada pergunta, o que cria a linha na primeira
+          e, nas seguintes, garante que o Biblo leia no servidor o texto que
+          está na tela — e não o de duas frases atrás. A invariante "linha vazia
+          no banco é impossível" (ver `useWrittenDraft`) continua de pé por um
+          fio: quem abre a gaveta e não pergunta nada não cria nada.
 
           Aqui ele SABE inserir: o `insertAt` é o mesmo do menu do `+`, e a
           sugestão entra como bloco de verdade, no lugar que o Biblo propôs. Ver
           `BibloDock`. */}
-      {sessionId && (
+      {ready && (
         <BibloDock
-          sessionId={sessionId}
+          sessionId={draftId}
+          ensureSession={flush}
           onInsert={(suggestion) => insertAt(suggestion.afterIndex + 1, suggestion.block)}
           onRemove={(suggestion) => {
             // Remove a ÚLTIMA ocorrência igual à sugerida, e não um índice

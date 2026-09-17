@@ -37,6 +37,12 @@ export type WrittenDraftState = {
    */
   offline: boolean;
   /** `null` enquanto a sessão não existe no banco. */
+  /**
+   * O id do documento, conhecido desde o primeiro quadro — ele é sorteado no
+   * aparelho, não no banco. Serve a quem só precisa de um ENDEREÇO (a URL, a
+   * conversa do Biblo); quem precisa saber se a linha EXISTE usa `sessionId`.
+   */
+  draftId: string;
   sessionId: string | null;
   /** Envia agora, sem esperar a pausa. Devolve o id, ou `null` se falhou. */
   flush: () => Promise<string | null>;
@@ -301,7 +307,7 @@ export function useWrittenDraft(input: {
     };
   }, [persistLocal]);
 
-  return { doc, setDoc, status, offline, sessionId: saved ? draftId : null, flush, ready };
+  return { doc, setDoc, status, offline, draftId, sessionId: saved ? draftId : null, flush, ready };
 }
 
 /** Apaga o rascunho local de uma sessão. */
