@@ -192,14 +192,17 @@ demais, e é assim que ela volta a ser arco-íris.
   inteiro pela primeira passada. Um "João" solto no meio da frase continua
   sendo o apóstolo. A lista de LIVROS não é cadastrável — ela é fechada há dois
   mil anos.
-- **A ABREVIAÇÃO também é reconhecida ("1Tm 4:12", "At 16:1"), e ela exige
-  VERSÍCULO.** Dezesseis das 66 siglas são palavras do português (`Os`, `Na`,
-  `Am`, `Ed`, `At`…), e com capítulo solto "**Os** 12 discípulos" viraria Oseias
-  12 — um link errado dentro de uma frase certa, que é pior que link nenhum. Os
-  dois-pontos separam os dois casos: medido sobre um cartão real, a regra pega
-  as onze referências de verdade e recusa os cinco falsos positivos. O que casa
-  e o que ABRE são diferentes: `text` é "1Tm 4:12" e `reference` é "1 Timóteo
-  4:12", porque o lookup resolve nome de livro, não sigla.
+- **A ABREVIAÇÃO também é reconhecida**, com capítulo solto ou com versículo:
+  "At 2", "Ap 21", "1Tm 4:12", "Fp 2:19-22". O que casa e o que ABRE são
+  diferentes: `text` é "1Tm 4:12" e `reference` é "1 Timóteo 4:12", porque o
+  lookup resolve nome de livro, não sigla.
+- **Duas siglas são exceção, e só duas: `Os` e `Na`.** O risco do capítulo solto
+  é uma sigla que também é palavra do português capitalizada em começo de frase,
+  e "**Os** 12 discípulos" viraria Oseias 12. Varridas as 66, só o artigo e a
+  preposição são isso — `At`, `Am`, `Ed`, `Jd` não são palavras do português, e
+  `Ml` só aparece depois do número. Então elas exigem os dois-pontos e as outras
+  64 não, o que é cirúrgico em vez de geral. O preço: "Os 3" e "Na 1" ficam
+  texto, e quem quiser linká-los escreve "Oseias 3".
 - **Uma referência encadeada só liga a primeira.** Em "2Tm 1:5; 3:15", o "3:15"
   fica texto: ele depende do livro da anterior, e herdar contexto entre dois
   casamentos independentes é uma máquina de estado que este anotador não tem.

@@ -33,22 +33,26 @@ import type { LexiconCategory, LexiconIndexEntry } from "@/lib/domain/lexicon";
  *    continua em código, e não no cadastro: ela é fechada há dois mil anos.
  * 2. **Nome próprio**, só nos vãos que sobraram da primeira.
  *
- * ## A ABREVIAÇÃO é reconhecida, e ela exige VERSÍCULO
+ * ## A ABREVIAÇÃO é reconhecida, com capítulo solto ou com versículo
  *
- * "1Tm 4:12", "At 16:1", "Fp 2:19-22" — é como se escreve referência num texto
- * denso, e sem isso um cartão do léxico fica com uma dúzia de referências
- * mortas no meio da prosa.
+ * "1Tm 4:12", "At 16:1", "Fp 2:19-22", "At 2", "Ap 21" — é como se escreve
+ * referência num texto denso, e sem isso um cartão do léxico fica com uma dúzia
+ * de referências mortas no meio da prosa.
  *
- * **Mas ela não aceita capítulo solto, e a razão não é gosto.** Dezesseis das
- * 66 abreviações são palavras do português (`Os`, `Na`, `Am`, `Ed`, `Is`, `At`,
- * `Jd`…), e com capítulo solto "**Os** 12 discípulos" viraria Oseias 12 e
- * "**Na** 2 vezes" viraria Naum 2 — um link errado no meio de uma frase certa,
- * que é pior que link nenhum. Exigir os dois-pontos separa os dois casos com
- * precisão: medido sobre um cartão real, a regra pega as onze referências de
- * verdade e recusa os cinco falsos positivos.
+ * **Duas siglas são exceção, e só duas.** O risco de aceitar capítulo solto é
+ * uma sigla que também é palavra do português, capitalizada em começo de frase:
+ * "**Os** 12 discípulos" viraria Oseias 12 e "**Na** 2ª carta" viraria Naum 2 —
+ * um link errado dentro de uma frase certa, que é pior que link nenhum.
  *
- * O preço é conhecido: "Ap 21" continua texto. Quem escreve capítulo inteiro
- * escreve o nome por extenso, que é o caminho que sempre funcionou.
+ * Varridas as 66, só `Os` (artigo) e `Na` (preposição) são isso. `At`, `Am`,
+ * `Ed`, `Is`, `Jd` e as outras não são palavras do português — `Is` é inglês,
+ * `Ml` só aparece DEPOIS do número ("500 ml"). Então a regra é cirúrgica em vez
+ * de geral: `OS` e `NA` continuam exigindo os dois-pontos, as outras 64 aceitam
+ * capítulo solto.
+ *
+ * O preço, e ele é pequeno: "Os 3" e "Na 1" ficam texto. Quem quiser linká-los
+ * escreve "Oseias 3" e "Naum 1", que é o caminho que sempre funcionou — e as
+ * duas são justamente as siglas que quase ninguém usa.
  *
  * **O que casa e o que ABRE são coisas diferentes**, e é o `AnnotatedSegment`
  * que já separava as duas: `text` é "1Tm 4:12", como está escrito, e
@@ -112,14 +116,31 @@ const ABBREV_TO_BOOK = new Map(
 );
 
 /**
- * `<sigla> <capítulo>:<versículo>[-<versículo>]`. O versículo é OBRIGATÓRIO,
- * ver a seção sobre abreviação no cabeçalho.
+ * As duas siglas que são PALAVRA do português em começo de frase.
  *
+ * `Os` é artigo e `Na` é preposição, e as duas aparecem seguidas de número o
+ * tempo todo ("Os 12 discípulos", "Na 2ª carta"). São as únicas: varridas as
+ * 66, nenhuma outra é palavra do português — ver o cabeçalho. Elas exigem
+ * versículo; o resto aceita capítulo solto.
+ */
+const AMBIGUOUS_ABBREVS = new Set(["Os", "Na"]);
+
+/**
  * Mais longa primeiro, e isso é o que faz "1Jo 2:1" ser 1 João e não João: sem
  * a ordenação, a alternação casaria o "Jo" a partir do segundo caractere, e a
  * fronteira de palavra deixaria passar porque o "1" antes dele não é letra.
  */
-const ABBREV_ALTERNATION = [...ABBREV_TO_BOOK.keys()].sort(byLengthDesc).map(escapeRe).join("|");
+function alternationOf(keys: string[]): string {
+  return keys.sort(byLengthDesc).map(escapeRe).join("|");
+}
+
+const PLAIN_ABBREVS = alternationOf(
+  [...ABBREV_TO_BOOK.keys()].filter((a) => !AMBIGUOUS_ABBREVS.has(a))
+);
+
+const AMBIGUOUS_ALTERNATION = alternationOf(
+  [...ABBREV_TO_BOOK.keys()].filter((a) => AMBIGUOUS_ABBREVS.has(a))
+);
 
 /**
  * `<livro> <capítulo>[:<versículo>[-<versículo>]]`.
@@ -135,8 +156,15 @@ const SCRIPTURE_RE = new RegExp(
   "g"
 );
 
+/** `<sigla> <capítulo>[:<versículo>[-<versículo>]]` — o versículo é opcional. */
 const ABBREV_SCRIPTURE_RE = new RegExp(
-  `(?:${ABBREV_ALTERNATION})\\s+\\d{1,3}\\s*:\\s*\\d{1,3}(?:\\s*[-–]\\s*\\d{1,3})?(?![${LETTER}0-9])`,
+  `(?:${PLAIN_ABBREVS})\\s+\\d{1,3}(?:\\s*:\\s*\\d{1,3}(?:\\s*[-–]\\s*\\d{1,3})?)?(?![${LETTER}0-9])`,
+  "g"
+);
+
+/** As duas ambíguas: aqui o versículo é OBRIGATÓRIO. Ver `AMBIGUOUS_ABBREVS`. */
+const AMBIGUOUS_SCRIPTURE_RE = new RegExp(
+  `(?:${AMBIGUOUS_ALTERNATION})\\s+\\d{1,3}\\s*:\\s*\\d{1,3}(?:\\s*[-–]\\s*\\d{1,3})?(?![${LETTER}0-9])`,
   "g"
 );
 
@@ -279,10 +307,15 @@ export function annotateText(text: string, entries: LexiconIndexEntry[] = []): A
   const takenByName = (from: number, to: number) =>
     byName.some((s) => from < s.end && to > s.start);
 
-  const byAbbrev = scan(text, ABBREV_SCRIPTURE_RE, (matched) => {
+  const toAbbrevSegment = (matched: string): AnnotatedSegment | null => {
     const reference = expandAbbrev(matched);
     return reference ? { kind: "scripture", text: matched, reference } : null;
-  }).filter((m) => !takenByName(m.start, m.end));
+  };
+
+  const byAbbrev = [
+    ...scan(text, ABBREV_SCRIPTURE_RE, toAbbrevSegment),
+    ...scan(text, AMBIGUOUS_SCRIPTURE_RE, toAbbrevSegment),
+  ].filter((m) => !takenByName(m.start, m.end));
 
   const scripture = [...byName, ...byAbbrev];
 
