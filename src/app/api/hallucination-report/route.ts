@@ -4,6 +4,7 @@ import { HALLUCINATION_SYSTEM_PROMPT } from "@/features/session/server/prompts/h
 import { getSession } from "@/lib/db/sessions";
 import { recordChatUsage } from "@/lib/db/usage";
 import {
+  type HallucinationReview,
   MAX_HALLUCINATION_NOTE_CHARS,
   parseHallucinationReviewFromLLM,
 } from "@/lib/domain/hallucination";
@@ -44,6 +45,10 @@ function tailOf(text: string, maxChars: number): string {
  * sem apoio na transcrição (live), sugerir encerrar a gravação, sugerir
  * reprocessar o resumo, ou apenas registrar.
  *
+ * **Sessão `manual` não passa pelo modelo.** Não há transcrição para cruzar
+ * com a nota — o texto é da própria pessoa —, então o veredito já nasce
+ * `acknowledged` e só a nota é gravada.
+ *
  * Não cobra moedas de propósito: o usuário está reportando um defeito NOSSO.
  * Cobrar por isso ensinaria exatamente o comportamento errado, deixar o
  * problema passar em silêncio. A proteção contra abuso é o rate limit.
@@ -65,6 +70,19 @@ export async function POST(request: Request) {
   // manda.
   const session = await getSession(sessionId);
   if (!session) return NextResponse.json({ error: "session_not_found" }, { status: 404 });
+
+  // Um texto `manual` não tem transcrição: não há IA para auditar, o alerta
+  // apontaria o dedo para o próprio autor. Guardamos a nota como registro,
+  // sem gastar uma chamada de modelo contra transcrição vazia.
+  if (session.mode === "manual") {
+    const review: HallucinationReview = {
+      verdict: "acknowledged",
+      message: "Alerta registrado. Obrigado por avisar.",
+    };
+    await persistReport({ sessionId, userId: auth.user.id, scope: "summary", note, review });
+    return NextResponse.json(review);
+  }
+
   const transcript = tailOf(session.transcript.trim(), SUMMARY_TRANSCRIPT_CHARS);
   const summaryJson = session.finalSummary ? JSON.stringify(session.finalSummary) : null;
 

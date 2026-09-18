@@ -56,6 +56,9 @@ export function SessionMenu({
   const balance = useCoinsStore((s) => s.balance);
   const insufficient = balance !== null && balance < REPROCESS_COST;
   const reprocessDisabled = !onReprocess || reprocessing || insufficient;
+  const hasLeadingItem = Boolean(onEdit || onReprocess);
+  const hasItemAboveDiscard = hasLeadingItem || Boolean(onReportHallucination);
+  const hasItemAboveDelete = hasItemAboveDiscard || Boolean(onDiscard);
 
   return (
     <DropdownMenu>
@@ -85,12 +88,12 @@ export function SessionMenu({
             className="gap-2"
             aria-label={
               insufficient
-                ? `Reprocessar (moedas insuficientes, custa ${REPROCESS_COST})`
-                : `Reprocessar (custa ${REPROCESS_COST} moedas)`
+                ? `Gerar novamente (moedas insuficientes, custa ${REPROCESS_COST})`
+                : `Gerar novamente (custa ${REPROCESS_COST} moedas)`
             }
           >
             <RefreshCw className={cn("size-4", reprocessing && "animate-spin")} />
-            <span className="flex-1">{reprocessing ? "Reprocessando…" : "Reprocessar"}</span>
+            <span className="flex-1">{reprocessing ? "Gerando…" : "Gerar novamente"}</span>
             <span
               aria-hidden
               className="ml-auto inline-flex items-center gap-1 rounded-full bg-scriba-yellow/15 px-1.5 py-0.5 text-[10px] font-semibold tabular-nums text-scriba-gold-ink"
@@ -106,7 +109,7 @@ export function SessionMenu({
             segundo caminho para o mesmo lugar. */}
         {onReportHallucination ? (
           <>
-            <DropdownMenuSeparator />
+            {hasLeadingItem ? <DropdownMenuSeparator /> : null}
             <DropdownMenuItem onClick={onReportHallucination} className="gap-2">
               <TriangleAlert className="size-4" />
               Algo está errado
@@ -115,7 +118,7 @@ export function SessionMenu({
         ) : null}
         {onDiscard ? (
           <>
-            <DropdownMenuSeparator />
+            {hasItemAboveDiscard ? <DropdownMenuSeparator /> : null}
             <DropdownMenuItem variant="destructive" onClick={onDiscard} className="gap-2">
               <Trash2 className="size-4" />
               Descartar gravação
@@ -124,14 +127,14 @@ export function SessionMenu({
         ) : null}
         {onDelete ? (
           <>
-            <DropdownMenuSeparator />
+            {hasItemAboveDelete ? <DropdownMenuSeparator /> : null}
             <DropdownMenuItem variant="destructive" onClick={onDelete} className="gap-2">
               <Trash2 className="size-4" />
               {/* "Excluir resumo" seria errado no texto escrito à mão: ali não
                   há um resumo DE alguma coisa, o texto é a coisa. O mesmo item
                   apaga a mesma linha nos dois casos; só o nome muda, e ele
                   muda porque quem lê a tela chama aquilo de nomes diferentes. */}
-              {written ? "Excluir este texto" : "Excluir resumo"}
+              {written ? "Excluir este documento" : "Excluir resumo"}
             </DropdownMenuItem>
           </>
         ) : null}

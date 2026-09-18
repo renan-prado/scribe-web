@@ -38,6 +38,13 @@ type Props = {
   sessionId: string;
   /** Oferecido quando a auditoria conclui que o resumo salvo tem conserto. */
   onReprocess?: () => void;
+  /**
+   * Texto escrito à mão? Não há transcrição para cruzar com a nota, então a
+   * rota não chama modelo nenhum — só registra o alerta. Muda a descrição de
+   * "vou conferir na transcrição" para "vou registrar", que é o que de fato
+   * acontece.
+   */
+  written?: boolean;
 };
 
 /**
@@ -51,7 +58,13 @@ type Props = {
  * ele: ou age, ou explica o limite. E a decisão de encerrar (que interrompe a
  * cobrança de moedas) fica sempre na mão dele, nunca automática.
  */
-export function HallucinationReportDialog({ open, onOpenChange, sessionId, onReprocess }: Props) {
+export function HallucinationReportDialog({
+  open,
+  onOpenChange,
+  sessionId,
+  onReprocess,
+  written = false,
+}: Props) {
   const [note, setNote] = useState("");
   const [submitting, setSubmitting] = useState(false);
   const [review, setReview] = useState<HallucinationReview | null>(null);
@@ -97,7 +110,9 @@ export function HallucinationReportDialog({ open, onOpenChange, sessionId, onRep
           <DialogDescription>
             {review
               ? "Resultado da análise."
-              : "Conte em poucas palavras o que o Scriba entendeu errado. Vou conferir na transcrição."}
+              : written
+                ? "Conte em poucas palavras o que está errado. Vou registrar o alerta."
+                : "Conte em poucas palavras o que o Scriba entendeu errado. Vou conferir na transcrição."}
           </DialogDescription>
         </DialogHeader>
 

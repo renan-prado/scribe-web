@@ -1,13 +1,16 @@
 "use client";
 
-import { ChevronDown, ChevronUp, Eye, Plus, Trash2, X } from "lucide-react";
+import { ChevronDown, ChevronUp, Eye, MapPin, Plus, Trash2, X } from "lucide-react";
 import { useRouter } from "next/navigation";
 import { type ReactNode, useEffect, useRef, useState } from "react";
 import { BookGlyph } from "@/components/icons/BookGlyph";
 import { BibloDock } from "@/features/session/components/BibloDock";
+import { EntityFieldDialog } from "@/features/session/components/EntityFieldDialog";
 import { PassageVerses } from "@/features/session/components/PassageVerses";
 import { revealSummaryBlock, SUMMARY_BLOCK_ATTR } from "@/features/session/components/reveal-block";
 import { useUnloadGuard } from "@/features/session/hooks/useUnloadGuard";
+import { requestLocationSuggestions, requestSpeakerSuggestions } from "@/features/session/lib/api";
+import { initialsOf } from "@/features/session/lib/text";
 import { parseVerseReference } from "@/lib/domain/reference";
 import {
   insertionIndex,
@@ -102,23 +105,77 @@ const BLOCK_SURFACE = "-mx-3 -my-2 rounded-[20px] px-3 py-2 transition-colors sm
  */
 const ROW_LEADING_DISC = "pl-2 sm:pl-2";
 
+/** Pastilha neutra do "adicionar autor/local", a mesma família da leitura
+ * (`ADD_BADGE_CLASSES` em `SavedSessionView`). */
+const ADD_BADGE_CLASSES = cn(
+  "inline-flex items-center gap-1 rounded-full bg-scriba-ink-mute/10 px-2.5 py-1 text-[11px] font-semibold uppercase tracking-wider text-scriba-ink-soft outline-none transition-colors",
+  "hover:bg-scriba-blue-soft/70 hover:text-scriba-blue-ink focus-visible:ring-2 focus-visible:ring-ring/40"
+);
+
 type Props = {
   /** O id da URL. `null` em `/escrever`, onde o aparelho sorteia um. */
   id: string | null;
   /** A linha já existe no banco? Ver `useWrittenDraft`. */
   exists?: boolean;
   initial: WrittenSummary;
+  /**
+   * Autor e local da sessão. `null` numa folha em branco (`/escrever`, sem
+   * linha ainda) — os dois só existem para EDITAR, nunca aparecem aqui.
+   *
+   * Continuam vivendo na COLUNA (`sessions.speaker_name`/`speaker_location`),
+   * não no `WrittenSummary`: são os mesmos campos que `/summary` edita, e o
+   * `PATCH /api/sessions/:id` que os grava é o mesmo dos dois lugares. Editar
+   * aqui não é um segundo mecanismo, é o mesmo botão que já existia na
+   * leitura, movido para onde a pessoa também os corrige — reabrir um resumo
+   * pela porta "Editar" não deveria custar uma volta ao `/summary` só para
+   * trocar o nome do pregador.
+   */
+  speakerName?: string | null;
+  speakerLocation?: string | null;
   /** A `TopBar`, montada pela página (ela é server component). */
   header: ReactNode;
 };
 
-export function Composer({ id, exists = false, initial, header }: Props) {
+export function Composer({
+  id,
+  exists = false,
+  initial,
+  speakerName: initialSpeakerName = null,
+  speakerLocation: initialSpeakerLocation = null,
+  header,
+}: Props) {
   const router = useRouter();
   const { doc, setDoc, status, offline, draftId, sessionId, flush, ready } = useWrittenDraft({
     id,
     exists,
     initial,
   });
+
+  const [speakerName, setSpeakerName] = useState(initialSpeakerName);
+  const [speakerLocation, setSpeakerLocation] = useState(initialSpeakerLocation);
+  const [speakerDialogOpen, setSpeakerDialogOpen] = useState(false);
+  const [locationDialogOpen, setLocationDialogOpen] = useState(false);
+
+  /**
+   * Mesmo PATCH que a leitura usa (`/api/sessions/:id`), e por isso só chama
+   * com `sessionId`: a rota confere dono numa linha que precisa existir, e
+   * antes do primeiro salvamento não há linha nenhuma para o "Autor"
+   * apontar — o campo simplesmente não aparece até lá (ver o `sessionId ?`
+   * abaixo).
+   */
+  async function patchSpeakerField(field: "speakerName" | "speakerLocation", value: string) {
+    if (!sessionId) return;
+    const res = await fetch(`/api/sessions/${sessionId}`, {
+      method: "PATCH",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ [field]: value || null }),
+    });
+    if (!res.ok) throw new Error("update failed");
+    if (field === "speakerName") setSpeakerName(value || null);
+    else setSpeakerLocation(value || null);
+  }
+
+  const speakerInitials = initialsOf(speakerName);
 
   /** Onde o menu do `+` está aberto: depois do bloco de índice N (-1 = no fim). */
   const [adderAt, setAdderAt] = useState<number | null>(null);
@@ -421,6 +478,62 @@ export function Composer({ id, exists = false, initial, header }: Props) {
             placeholder="Título"
             className="font-heading text-2xl font-semibold leading-tight tracking-tight text-scriba-ink-strong sm:text-3xl md:text-4xl"
           />
+
+          {/* Autor e local só existem depois do primeiro salvamento (o PATCH
+              precisa de uma linha para apontar) — mesmo botão da leitura,
+              trazido para cá para não obrigar uma volta ao `/summary`. */}
+          {sessionId ? (
+            <div className="flex flex-wrap items-center gap-2">
+              {speakerName?.trim() ? (
+                <button
+                  type="button"
+                  onClick={() => setSpeakerDialogOpen(true)}
+                  className={cn(
+                    "group inline-flex items-center gap-2 rounded-full -mx-1 px-1 py-0.5 outline-none transition-colors",
+                    "hover:bg-scriba-blue-soft/60 focus-visible:ring-2 focus-visible:ring-ring/40"
+                  )}
+                >
+                  <span className="flex size-6 items-center justify-center rounded-full bg-scriba-blue-soft text-[10px] font-semibold text-scriba-blue-ink">
+                    {speakerInitials}
+                  </span>
+                  <span className="text-sm font-medium leading-none text-scriba-ink">
+                    {speakerName}
+                  </span>
+                </button>
+              ) : (
+                <button
+                  type="button"
+                  onClick={() => setSpeakerDialogOpen(true)}
+                  className={ADD_BADGE_CLASSES}
+                >
+                  <Plus className="size-3" strokeWidth={2.5} />
+                  Adicionar autor
+                </button>
+              )}
+              {speakerLocation?.trim() ? (
+                <button
+                  type="button"
+                  onClick={() => setLocationDialogOpen(true)}
+                  className={cn(
+                    "group -mx-1 inline-flex w-fit items-center gap-1.5 rounded-md px-1 py-0.5 text-xs font-light text-scriba-ink-mute outline-none transition-colors",
+                    "hover:bg-scriba-blue-soft/60 focus-visible:ring-2 focus-visible:ring-ring/40"
+                  )}
+                >
+                  <MapPin className="size-3" />
+                  {speakerLocation}
+                </button>
+              ) : (
+                <button
+                  type="button"
+                  onClick={() => setLocationDialogOpen(true)}
+                  className={ADD_BADGE_CLASSES}
+                >
+                  <Plus className="size-3" strokeWidth={2.5} />
+                  Adicionar local
+                </button>
+              )}
+            </div>
+          ) : null}
         </header>
 
         {/* O VÃO é do contêiner, e nada mais mora dentro dele.
@@ -690,6 +803,27 @@ export function Composer({ id, exists = false, initial, header }: Props) {
           else if (pickerFor !== null) setBlock(pickerFor, { reference });
           setPickerFor(null);
         }}
+      />
+
+      <EntityFieldDialog
+        kind="speaker"
+        open={speakerDialogOpen}
+        onOpenChange={setSpeakerDialogOpen}
+        title={speakerName?.trim() ? "Editar autor" : "Adicionar autor"}
+        placeholder="Nome do pregador"
+        initialValue={speakerName ?? ""}
+        fetchSuggestions={requestSpeakerSuggestions}
+        onSave={(v) => patchSpeakerField("speakerName", v)}
+      />
+      <EntityFieldDialog
+        kind="location"
+        open={locationDialogOpen}
+        onOpenChange={setLocationDialogOpen}
+        title={speakerLocation?.trim() ? "Editar local" : "Adicionar local"}
+        placeholder="Igreja ou local"
+        initialValue={speakerLocation ?? ""}
+        fetchSuggestions={requestLocationSuggestions}
+        onSave={(v) => patchSpeakerField("speakerLocation", v)}
       />
 
       {/* O Biblo, e ele aparece desde a FOLHA EM BRANCO.

@@ -83,6 +83,8 @@ export default async function EscreverIdPage({ params }: PageProps) {
       id={id}
       exists={!!session}
       initial={{ ...written, title: session?.title ?? written.title }}
+      speakerName={session?.speakerName ?? null}
+      speakerLocation={session?.speakerLocation ?? null}
       header={
         /* O `key` num elemento que é PROP, e não item de lista.
 

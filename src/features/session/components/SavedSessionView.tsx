@@ -99,14 +99,16 @@ type SavedSessionViewProps = {
    */
   meta?: "full" | "compact";
   /**
-   * Como esta sessão nasceu. Só `"manual"` muda alguma coisa aqui, e muda duas:
-   * o menu perde "Reprocessar" e perde "Algo está errado".
+   * Como esta sessão nasceu. Só `"manual"` muda alguma coisa aqui, e muda uma:
+   * o menu perde "Gerar novamente".
    *
-   * Reprocessar refaz o resumo A PARTIR DA TRANSCRIÇÃO, e não há transcrição —
-   * a chamada custaria 15 moedas para apagar o que a pessoa escreveu e pôr no
-   * lugar um resumo de um texto vazio. "Algo está errado" audita a IA contra a
-   * transcrição, e aqui não houve IA: o alerta apontaria o dedo para o próprio
-   * autor.
+   * Ele refaz o resumo A PARTIR DA TRANSCRIÇÃO, e não há transcrição — a
+   * chamada custaria 15 moedas para apagar o que a pessoa escreveu e pôr no
+   * lugar um resumo de um texto vazio.
+   *
+   * "Algo está errado" CONTINUA em todo modo: numa sessão `manual` não há o que
+   * auditar contra transcrição nenhuma, então a rota (`/api/hallucination-report`)
+   * não chama modelo — só registra a nota como `acknowledged`, sem custo.
    *
    * (A transcrição some junto, mas não por aqui: quem some com o segundo slide
    * é o `hasTranscript`, que numa sessão `manual` é sempre falso.)
@@ -357,7 +359,7 @@ export function SavedSessionView({
                   onDelete={() => setDeleteOpen(true)}
                   onReprocess={summary && !written ? handleReprocess : undefined}
                   reprocessing={reprocessing}
-                  onReportHallucination={written ? undefined : () => setReportOpen(true)}
+                  onReportHallucination={() => setReportOpen(true)}
                   written={written}
                 />
               </div>
@@ -457,7 +459,8 @@ export function SavedSessionView({
           open={reportOpen}
           onOpenChange={setReportOpen}
           sessionId={id}
-          onReprocess={summary ? handleReprocess : undefined}
+          onReprocess={summary && !written ? handleReprocess : undefined}
+          written={written}
         />
 
         <ConfirmDialog
