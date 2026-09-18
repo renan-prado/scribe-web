@@ -1,4 +1,5 @@
 import { LIVROS_BIBLICOS } from "@/features/session/lib/transcription/vocabulario";
+import { BOOK_CANON } from "@/lib/bibles/books";
 import type { LexiconCategory, LexiconIndexEntry } from "@/lib/domain/lexicon";
 
 /**
@@ -31,6 +32,29 @@ import type { LexiconCategory, LexiconIndexEntry } from "@/lib/domain/lexicon";
  *    e a passada de nomes nunca chega a ver aquele "João". A lista de LIVROS
  *    continua em código, e não no cadastro: ela é fechada há dois mil anos.
  * 2. **Nome próprio**, só nos vãos que sobraram da primeira.
+ *
+ * ## A ABREVIAÇÃO é reconhecida, e ela exige VERSÍCULO
+ *
+ * "1Tm 4:12", "At 16:1", "Fp 2:19-22" — é como se escreve referência num texto
+ * denso, e sem isso um cartão do léxico fica com uma dúzia de referências
+ * mortas no meio da prosa.
+ *
+ * **Mas ela não aceita capítulo solto, e a razão não é gosto.** Dezesseis das
+ * 66 abreviações são palavras do português (`Os`, `Na`, `Am`, `Ed`, `Is`, `At`,
+ * `Jd`…), e com capítulo solto "**Os** 12 discípulos" viraria Oseias 12 e
+ * "**Na** 2 vezes" viraria Naum 2 — um link errado no meio de uma frase certa,
+ * que é pior que link nenhum. Exigir os dois-pontos separa os dois casos com
+ * precisão: medido sobre um cartão real, a regra pega as onze referências de
+ * verdade e recusa os cinco falsos positivos.
+ *
+ * O preço é conhecido: "Ap 21" continua texto. Quem escreve capítulo inteiro
+ * escreve o nome por extenso, que é o caminho que sempre funcionou.
+ *
+ * **O que casa e o que ABRE são coisas diferentes**, e é o `AnnotatedSegment`
+ * que já separava as duas: `text` é "1Tm 4:12", como está escrito, e
+ * `reference` é "1 Timóteo 4:12", que é o que `/api/verse` entende. Sem essa
+ * expansão o link abriria e não acharia o texto, porque o lookup resolve nome
+ * de livro, não sigla.
  *
  * ## Por que não `\b`
  *
@@ -72,6 +96,32 @@ function byLengthDesc(a: string, b: string): number {
 const BOOK_ALTERNATION = [...LIVROS_BIBLICOS, "Salmo"].sort(byLengthDesc).map(escapeRe).join("|");
 
 /**
+ * Sigla → nome canônico ("1Tm" → "1 Timóteo").
+ *
+ * Sai de `BOOK_CANON`, que já é a lista oficial usada pelo seletor de passagem
+ * do editor. Uma segunda tabela de siglas aqui seria a mesma informação em dois
+ * lugares, e o dia em que discordassem produziria um link que abre o livro
+ * errado.
+ *
+ * Fora as que são IGUAIS ao nome do livro ("Jó", "Tito" não, mas "Jó" sim):
+ * elas já casam pela alternação de nomes completos, e repetidas aqui só
+ * dobrariam o tamanho da regex.
+ */
+const ABBREV_TO_BOOK = new Map(
+  BOOK_CANON.filter((b) => b.abbrev !== b.name).map((b) => [b.abbrev, b.name])
+);
+
+/**
+ * `<sigla> <capítulo>:<versículo>[-<versículo>]`. O versículo é OBRIGATÓRIO,
+ * ver a seção sobre abreviação no cabeçalho.
+ *
+ * Mais longa primeiro, e isso é o que faz "1Jo 2:1" ser 1 João e não João: sem
+ * a ordenação, a alternação casaria o "Jo" a partir do segundo caractere, e a
+ * fronteira de palavra deixaria passar porque o "1" antes dele não é letra.
+ */
+const ABBREV_ALTERNATION = [...ABBREV_TO_BOOK.keys()].sort(byLengthDesc).map(escapeRe).join("|");
+
+/**
  * `<livro> <capítulo>[:<versículo>[-<versículo>]]`.
  *
  * O capítulo é obrigatório, ver a nota sobre a ordem das passadas acima. O
@@ -84,6 +134,24 @@ const SCRIPTURE_RE = new RegExp(
   `(?:${BOOK_ALTERNATION})\\s+\\d{1,3}(?:\\s*:\\s*\\d{1,3}(?:\\s*[-–]\\s*\\d{1,3})?)?(?![${LETTER}0-9])`,
   "g"
 );
+
+const ABBREV_SCRIPTURE_RE = new RegExp(
+  `(?:${ABBREV_ALTERNATION})\\s+\\d{1,3}\\s*:\\s*\\d{1,3}(?:\\s*[-–]\\s*\\d{1,3})?(?![${LETTER}0-9])`,
+  "g"
+);
+
+/** "1Tm 4:12" → "1 Timóteo 4:12". A sigla vira o nome que o lookup entende. */
+function expandAbbrev(matched: string): string | null {
+  const m = /^(\S+)\s+(.+)$/.exec(matched);
+  if (!m) return null;
+  const book = ABBREV_TO_BOOK.get(m[1]);
+  return book ? `${book} ${normalizeRefTail(m[2])}` : null;
+}
+
+/** Tira o espaço solto que o modelo deixa em volta dos dois-pontos e do hífen. */
+function normalizeRefTail(tail: string): string {
+  return tail.replace(/\s*:\s*/, ":").replace(/\s*[-–]\s*/, "-");
+}
 
 type NameHit = { slug: string; category: LexiconCategory };
 
@@ -197,14 +265,26 @@ export function asStandaloneScripture(text: string): string | null {
 export function annotateText(text: string, entries: LexiconIndexEntry[] = []): AnnotatedSegment[] {
   if (!text) return [];
 
-  const scripture = scan(text, SCRIPTURE_RE, (matched) => ({
+  const byName = scan(text, SCRIPTURE_RE, (matched) => ({
     kind: "scripture",
     text: matched,
     // A referência que vai ao diálogo é normalizada: o parser de
     // `parseVerseReference` e a rota /api/verse esperam "Livro 3:16", sem o
     // espaço solto que o modelo às vezes deixa em volta dos dois-pontos.
-    reference: matched.replace(/\s*:\s*/, ":").replace(/\s*[-–]\s*/, "-"),
+    reference: normalizeRefTail(matched),
   }));
+
+  // A passada das SIGLAS não vê o que a dos nomes já consumiu: "1 Timóteo 4:12"
+  // contém um "Tm" que, sozinho, não é referência nenhuma.
+  const takenByName = (from: number, to: number) =>
+    byName.some((s) => from < s.end && to > s.start);
+
+  const byAbbrev = scan(text, ABBREV_SCRIPTURE_RE, (matched) => {
+    const reference = expandAbbrev(matched);
+    return reference ? { kind: "scripture", text: matched, reference } : null;
+  }).filter((m) => !takenByName(m.start, m.end));
+
+  const scripture = [...byName, ...byAbbrev];
 
   const covered = (from: number, to: number) => scripture.some((s) => from < s.end && to > s.start);
 

@@ -1,6 +1,9 @@
 "use client";
 
+import { ArrowLeft } from "lucide-react";
 import Image from "next/image";
+import { useEffect, useState } from "react";
+import { Button } from "@/components/ui/button";
 import {
   Dialog,
   DialogContent,
@@ -8,6 +11,8 @@ import {
   DialogHeader,
   DialogTitle,
 } from "@/components/ui/dialog";
+import { LexiconNavProvider } from "@/features/session/components/LexiconProvider";
+import { RichText } from "@/features/session/components/RichText";
 import { useLexiconCard } from "@/features/session/lexicon-query";
 import { LEXICON_CATEGORY_LABEL } from "@/lib/domain/lexicon";
 
@@ -58,13 +63,28 @@ import { LEXICON_CATEGORY_LABEL } from "@/lib/domain/lexicon";
  * `next/image` e nunca `<object>`/`<iframe>`: o bucket aceita SVG, e SVG só é
  * inerte enquanto for desenhado como imagem. Ver a migração 0064.
  *
- * ## O texto NÃO passa pelo `RichText`
+ * ## O texto PASSA pelo `RichText`, e o cartão navega DENTRO DE SI
  *
- * Seria a tentação óbvia (a descrição de "Abraão" cita "Gênesis 12"), e está
- * errada por dois motivos. O primeiro é circular: um nome dentro do cartão
- * abriria outro cartão por cima deste, e não há caminho de volta. O segundo é
- * que o cartão é uma nota curta, não um segundo texto para navegar — quem quer
- * ir mais fundo tem o Biblo, que já lê esta mesma descrição.
+ * Este cabeçalho dizia o contrário, com dois argumentos. O segundo ("é uma nota
+ * curta, não um texto para navegar") não sobreviveu ao conteúdo real: um cartão
+ * de personagem cita meia dúzia de outros nomes do léxico e uma dúzia de
+ * referências bíblicas, e todas ficavam mortas no meio da prosa — inclusive as
+ * referências, que são o caminho mais curto para a Bíblia dentro de um texto
+ * que fala dela o tempo todo.
+ *
+ * O primeiro argumento era real: um nome dentro do cartão abriria OUTRO cartão
+ * por cima deste, e não haveria caminho de volta. A saída não é deixar o texto
+ * morto, é o cartão navegar dentro de si mesmo — a trilha abaixo troca o
+ * conteúdo do MESMO diálogo e desenha um voltar. Tocar em "Paulo" dentro do
+ * Timóteo leva ao Paulo; o voltar traz de volta ao Timóteo.
+ *
+ * **E o próprio nome não é marcado**, o que o `LexiconNav.self` resolve: um
+ * cartão do Timóteo que sublinha "Timóteo" oferece um caminho para onde a
+ * pessoa já está.
+ *
+ * A referência bíblica continua abrindo o `ChapterDialog`, por cima. São duas
+ * caixas empilhadas, e aqui isso é aceitável porque a de cima é uma FOLHA: ela
+ * mostra o texto e fecha, sem oferecer um terceiro salto.
  */
 
 export function LexiconCardDialog({
@@ -76,7 +96,25 @@ export function LexiconCardDialog({
   open: boolean;
   onOpenChange: (open: boolean) => void;
 }) {
-  const { data, isPending, isError } = useLexiconCard(slug);
+  /**
+   * A trilha de nomes abertos, do primeiro ao atual.
+   *
+   * É uma pilha, e não um "slug atual", porque o voltar precisa saber de ONDE
+   * se veio: com três saltos (Timóteo → Paulo → Éfeso), um estado simples
+   * devolveria ao começo em vez do passo anterior.
+   */
+  const [trail, setTrail] = useState<string[]>([slug]);
+  const current = trail[trail.length - 1];
+
+  // Reabrir o diálogo num nome diferente recomeça a trilha. Sem isto, tocar em
+  // "Paulo" no parágrafo depois de ter navegado por dentro traria a trilha
+  // antiga junto, com um voltar apontando para um nome que ninguém abriu.
+  useEffect(() => {
+    if (open) setTrail([slug]);
+  }, [open, slug]);
+
+  const { data, isPending, isError } = useLexiconCard(current);
+  const canGoBack = trail.length > 1;
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
@@ -95,6 +133,18 @@ export function LexiconCardDialog({
             texto solto para o qual aquele padding foi calibrado, a diferença se
             vê. */}
         <DialogHeader className="flex-row items-center gap-3 pr-12 pb-4">
+          {canGoBack ? (
+            <Button
+              type="button"
+              variant="ghost"
+              size="icon-sm"
+              aria-label="Voltar"
+              className="-ml-1 shrink-0"
+              onClick={() => setTrail((t) => t.slice(0, -1))}
+            >
+              <ArrowLeft className="size-4" />
+            </Button>
+          ) : null}
           {data?.imageUrl ? (
             <div className="relative size-14 shrink-0 overflow-hidden rounded-lg">
               <Image
@@ -116,7 +166,7 @@ export function LexiconCardDialog({
             {/* `leading-snug` sobre o `leading-none` do componente: ao lado da
                 imagem a coluna é estreita, e um título de duas linhas com
                 entrelinha zerada tem os glifos de uma encostando nos da outra. */}
-            <DialogTitle className="leading-snug">{data?.title ?? slug}</DialogTitle>
+            <DialogTitle className="leading-snug">{data?.title ?? current}</DialogTitle>
             <DialogDescription>
               {data ? LEXICON_CATEGORY_LABEL[data.category] : "Carregando"}
             </DialogDescription>
@@ -137,9 +187,28 @@ export function LexiconCardDialog({
           ) : isError ? (
             <p className="text-sm text-destructive">Não consegui carregar agora.</p>
           ) : data ? (
-            <p className="whitespace-pre-line text-sm leading-relaxed text-scriba-ink">
-              {data.description}
-            </p>
+            <LexiconNavProvider
+              nav={{ self: data.slug, go: (next) => setTrail((t) => [...t, next]) }}
+            >
+              {/* Um parágrafo por linha em branco, e não um `whitespace-pre-line`
+                  sobre o texto inteiro: a descrição é escrita à mão num campo de
+                  texto do painel, e o `RichText` precisa de uma string por
+                  parágrafo para marcar dentro de cada uma. */}
+              <div className="flex flex-col gap-3">
+                {data.description
+                  .split(/\n{2,}/)
+                  .map((paragraph) => paragraph.trim())
+                  .filter(Boolean)
+                  .map((paragraph) => (
+                    <p
+                      key={paragraph.slice(0, 48)}
+                      className="text-sm leading-relaxed text-scriba-ink"
+                    >
+                      <RichText>{paragraph}</RichText>
+                    </p>
+                  ))}
+              </div>
+            </LexiconNavProvider>
           ) : (
             // A entrada sumiu do cadastro entre o índice descer e o toque
             // acontecer. Raro, e ainda assim possível: o índice vive até um

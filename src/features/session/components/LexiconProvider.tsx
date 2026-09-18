@@ -60,6 +60,36 @@ import { LEXICON_INDEX_STALE_MS, type LexiconIndexEntry } from "@/lib/domain/lex
  */
 const LexiconContext = createContext<LexiconIndexEntry[]>([]);
 
+/**
+ * Onde uma menção ABRE, quando não é num diálogo novo.
+ *
+ * `null` (o padrão) é o caso normal: a menção monta o próprio cartão por cima
+ * do texto. Dentro de um cartão que já está aberto, ele é preenchido, e aí a
+ * menção NAVEGA no lugar — o mesmo diálogo troca de conteúdo e ganha um voltar.
+ *
+ * É contexto, e não uma prop do `RichText`, porque quem precisa da informação é
+ * o `LexiconMention`, três níveis abaixo, e o `RichText` não deveria saber que
+ * esse modo existe para poder repassá-lo.
+ *
+ * `self` é a entrada que está sendo LIDA, e serve para uma coisa só: não
+ * marcar o próprio nome. Um cartão do Timóteo que sublinha "Timóteo" oferece um
+ * caminho de volta para onde a pessoa já está.
+ */
+export type LexiconNav = {
+  self: string;
+  go: (slug: string) => void;
+};
+
+const LexiconNavContext = createContext<LexiconNav | null>(null);
+
+export function LexiconNavProvider({ nav, children }: { nav: LexiconNav; children: ReactNode }) {
+  return <LexiconNavContext.Provider value={nav}>{children}</LexiconNavContext.Provider>;
+}
+
+export function useLexiconNav(): LexiconNav | null {
+  return useContext(LexiconNavContext);
+}
+
 export function LexiconProvider({
   entries,
   children,

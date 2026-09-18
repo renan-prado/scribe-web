@@ -2,6 +2,7 @@
 
 import dynamic from "next/dynamic";
 import { useMentionDialog } from "@/features/session/components/ChapterMention";
+import { useLexiconNav } from "@/features/session/components/LexiconProvider";
 import { LEXICON_CATEGORY_LABEL, type LexiconCategory } from "@/lib/domain/lexicon";
 
 /**
@@ -37,6 +38,16 @@ import { LEXICON_CATEGORY_LABEL, type LexiconCategory } from "@/lib/domain/lexic
  * este arquivo continua com uma classe só, e mexer numa opacidade não é um
  * commit em dois lugares.
  *
+ * ## DENTRO de um cartão, ela navega em vez de abrir outro
+ *
+ * Um cartão pode citar outros nomes do léxico — o do Timóteo fala de Paulo, de
+ * Listra e de Éfeso —, e abrir um segundo diálogo por cima do primeiro empilha
+ * duas caixas sem caminho de volta. Com o `LexiconNav` preenchido, a menção
+ * troca o CONTEÚDO do cartão que já está aberto, e ele ganha um voltar.
+ *
+ * **E o próprio nome não é marcado.** Num cartão do Timóteo, "Timóteo" é texto:
+ * marcá-lo ofereceria à pessoa um caminho para onde ela já está.
+ *
  * ## O diálogo entra por `dynamic`
  *
  * Mesma razão do `ChapterMention`, e o mesmo comentário vale inteiro: o
@@ -69,12 +80,16 @@ export function LexiconMention({
   text: string;
 }) {
   const dialog = useMentionDialog();
+  const nav = useLexiconNav();
+
+  // O próprio nome, dentro do próprio cartão: texto e nada mais.
+  if (nav?.self === slug) return <>{text}</>;
 
   return (
     <>
       <button
         type="button"
-        onClick={dialog.show}
+        onClick={nav ? () => nav.go(slug) : dialog.show}
         data-mention={category}
         // O rótulo diz o que ACONTECE, não o que a palavra é: quem navega por
         // leitor de tela ouve uma lista de botões, e "Habacuque, personagem
@@ -84,7 +99,9 @@ export function LexiconMention({
       >
         {text}
       </button>
-      {dialog.hasOpened ? (
+      {/* Sem `nav` a menção é dona do próprio diálogo; com ele, quem desenha é
+          o cartão que já está aberto. */}
+      {!nav && dialog.hasOpened ? (
         <LexiconCardDialog slug={slug} open={dialog.open} onOpenChange={dialog.setOpen} />
       ) : null}
     </>

@@ -192,6 +192,17 @@ demais, e é assim que ela volta a ser arco-íris.
   inteiro pela primeira passada. Um "João" solto no meio da frase continua
   sendo o apóstolo. A lista de LIVROS não é cadastrável — ela é fechada há dois
   mil anos.
+- **A ABREVIAÇÃO também é reconhecida ("1Tm 4:12", "At 16:1"), e ela exige
+  VERSÍCULO.** Dezesseis das 66 siglas são palavras do português (`Os`, `Na`,
+  `Am`, `Ed`, `At`…), e com capítulo solto "**Os** 12 discípulos" viraria Oseias
+  12 — um link errado dentro de uma frase certa, que é pior que link nenhum. Os
+  dois-pontos separam os dois casos: medido sobre um cartão real, a regra pega
+  as onze referências de verdade e recusa os cinco falsos positivos. O que casa
+  e o que ABRE são diferentes: `text` é "1Tm 4:12" e `reference` é "1 Timóteo
+  4:12", porque o lookup resolve nome de livro, não sigla.
+- **Uma referência encadeada só liga a primeira.** Em "2Tm 1:5; 3:15", o "3:15"
+  fica texto: ele depende do livro da anterior, e herdar contexto entre dois
+  casamentos independentes é uma máquina de estado que este anotador não tem.
 - **O casamento é exato**, acento e maiúscula inclusive. A entrada aqui é texto
   escrito por um modelo, e tolerância que não é necessária só compra falso
   positivo.
@@ -231,6 +242,16 @@ devolver a lista de ontem.
 Juntá-las faria cada abertura de resumo baixar 300 descrições e 300 URLs de
 imagem para mostrar zero delas. O cartão entra por `dynamic(ssr:false)`, igual
 ao `ChapterDialog`, e é cacheado por sessão no React Query.
+
+**O texto do cartão PASSA pelo `RichText`, e o cartão navega dentro de si
+mesmo.** Ele não passava, e o argumento era a circularidade: um nome dentro do
+cartão abriria outro cartão por cima, sem caminho de volta. O problema era real
+e a conclusão estava errada — um cartão de personagem cita meia dúzia de nomes
+e uma dúzia de referências, e todas ficavam mortas no meio da prosa. A saída é
+uma TRILHA: a menção troca o conteúdo do mesmo diálogo (`LexiconNav`) e ele
+ganha um voltar. O próprio nome não é marcado, porque seria um caminho para
+onde a pessoa já está. A referência bíblica continua abrindo o `ChapterDialog`
+por cima, e ali empilhar é aceitável: ele é uma FOLHA, mostra o texto e fecha.
 
 **No cartão, a imagem é o RETRATO do cabeçalho, ao lado do título, e não uma
 faixa acima dele.** A faixa foi tentada em três alturas antes de o problema
