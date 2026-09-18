@@ -1277,6 +1277,36 @@
   .coin-hex {
     clip-path: polygon(50% 0, 100% 25%, 100% 75%, 50% 100%, 0 75%, 0 25%);
   }
+  /* O PALCO do carrossel das telas da landing (ver `MockSwap`).
+
+     São duas peças. A `lp-swap-ghost` é uma CÓPIA do primeiro estado, presente
+     no fluxo e invisível: é ela que dá altura ao palco, porque os estados de
+     verdade estão todos fora do fluxo e uma caixa só de filhos absolutos mede
+     zero. Assim nenhuma altura precisa ser escrita à mão aqui — quem manda é a
+     tela que já existia.
+
+     A `lp-slide` é cada estado, empilhado no mesmo lugar e transparente por
+     padrão. Transparente e não escondido porque quem o acende é a animação: sem
+     ela — e é isso que acontece em `prefers-reduced-motion` — o palco inteiro
+     ficaria em branco, e é aí que o fantasma volta a aparecer e a seção passa a
+     mostrar a primeira tela, PARADA. Quem pede menos movimento não pede menos
+     conteúdo. */
+  .lp-swap-ghost {
+    visibility: hidden;
+  }
+  .lp-slide {
+    position: absolute;
+    inset: 0;
+    opacity: 0;
+  }
+  @media (prefers-reduced-motion: reduce) {
+    .lp-swap-ghost {
+      visibility: visible;
+    }
+    .lp-slide {
+      display: none;
+    }
+  }
   /* O mesmo desenho do `<Card>` de `ui/card.tsx`, para o punhado de blocos do
      admin que ainda são `<div>` e não passaram pelo componente. Alvo a abater:
      quando o último deles virar `<Card>`, esta classe sai. */
@@ -1466,6 +1496,45 @@
   --animate-lp-digit-sec: lp-digit-roll 10s steps(10, end) infinite;
   --animate-lp-digit-ten: lp-digit-roll 60s steps(6, end) infinite;
   --animate-lp-digit-min: lp-digit-roll 600s steps(10, end) infinite;
+
+  /* O CARROSSEL das telas da landing: cada mockup de celular passa por dois ou
+     três ESTADOS, sozinho, em CSS puro.
+
+     O problema que ele resolve: uma tela parada embaixo de "grave a pregação e
+     saia com um resumo automático" mostra a metade da frase que a pessoa já
+     imaginou (o aparelho gravando) e nunca a que ela veio conferir (o resumo
+     pronto). O mesmo valia para o editor, para a importação e para o Biblo — a
+     promessa de cada seção é uma TRANSIÇÃO, e a prova dela não cabe num quadro.
+
+     **Uma keyframe por CONTAGEM de estados, e o que muda entre as fatias é o
+     atraso.** Quem quer três telas usa as três fatias de `lp-slide-3`; quem
+     quer duas usa as duas de `lp-slide-2`. Assim não há uma keyframe por
+     mockup, e o ritmo da página inteira sai de dois números.
+
+     **As fatias se CRUZAM, não se revezam.** A keyframe nasce transparente e
+     sobe na primeira fração do ciclo, então a fatia que entra acende enquanto a
+     anterior apaga, no mesmo meio segundo. Com um `0% { opacity: 1 }` a que
+     entra apareceria de estalo por cima da que ainda está saindo, e cada troca
+     seria um pisca.
+
+     **Três segundos por estado.** É o degrau entre as duas coisas que dão
+     errado: abaixo disso a tela vira letreiro e não dá tempo de reconhecer o
+     que mudou, e acima de quatro ou cinco quem chega no meio de um estado
+     espera demais para ver o seguinte — que é justamente a prova da seção, já
+     que a promessa de cada uma é a PASSAGEM de uma tela para a outra. Foram
+     cinco segundos numa primeira calibragem, e eram longos: a página inteira
+     parecia parada enquanto se lia o parágrafo ao lado. O cruzamento continua
+     em meio segundo, então o que encurtou foi o tempo LENDO cada tela, não a
+     transição. */
+  --animate-lp-slide-2a: lp-slide-2 6s ease-in-out infinite;
+  --animate-lp-slide-2b: lp-slide-2 6s ease-in-out 3s infinite;
+  --animate-lp-slide-3a: lp-slide-3 9s ease-in-out infinite;
+  --animate-lp-slide-3b: lp-slide-3 9s ease-in-out 3s infinite;
+  --animate-lp-slide-3c: lp-slide-3 9s ease-in-out 6s infinite;
+  /* O cursor piscando no fim do bloco recém-escrito do mockup do editor. É o
+     que diz "isto está sendo DIGITADO" numa fatia que, sem ele, seria só mais
+     um bloco pronto. `steps(2)` porque cursor não esmaece, ele acende e apaga. */
+  --animate-lp-caret: lp-caret 1.1s steps(2, jump-none) infinite;
 
   @keyframes record-halo {
     0%,
@@ -1706,6 +1775,55 @@
     }
     to {
       transform: translateY(-100%);
+    }
+  }
+
+  /* As fatias do carrossel das telas da LP. Ver os `--animate-lp-slide-*`.
+
+     A conta de cada uma: `100% / n` é o fim da fatia, e o meio segundo de
+     cruzamento vale 8,3% do ciclo de 6s e 5,6% do de 9s. Quem entra começa em 0
+     (a fatia seguinte tem o atraso exato do fim desta), sobe nessa fração, fica
+     acesa até o fim da própria fatia e apaga na mesma fração. Mexeu na duração
+     do token? Refaça as porcentagens, ou o cruzamento deixa de ser meio segundo.
+
+     A opacidade é a única coisa animada de propósito: as fatias são telas
+     inteiras empilhadas, e animar `transform` ou `height` nelas poria o
+     navegador para refazer o layout de quatro mockups ao mesmo tempo, na
+     página que mais precisa de primeiro quadro barato. */
+  @keyframes lp-slide-2 {
+    0% {
+      opacity: 0;
+    }
+    8.3%,
+    50% {
+      opacity: 1;
+    }
+    58.3%,
+    100% {
+      opacity: 0;
+    }
+  }
+
+  @keyframes lp-slide-3 {
+    0% {
+      opacity: 0;
+    }
+    5.6%,
+    33.4% {
+      opacity: 1;
+    }
+    39%,
+    100% {
+      opacity: 0;
+    }
+  }
+
+  @keyframes lp-caret {
+    from {
+      opacity: 1;
+    }
+    to {
+      opacity: 0;
     }
   }
 

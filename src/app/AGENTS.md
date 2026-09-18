@@ -1147,6 +1147,23 @@ Biblo" — para dizer três coisas, nenhuma delas mostrando a tela da GRAVAÇÃO
 página falava de gravar exibindo o resultado de gravar, que é a parte que a
 pessoa já imaginou.
 
+**As quatro telas TROCAM sozinhas, e é por isso que cada seção prova o que
+promete.** Cada uma promete uma TRANSIÇÃO — "grave E saia com um resumo",
+"escreva", "cole o link e receba", "pergunte e seja respondido" —, e um quadro
+parado sempre mostra a metade que a pessoa já imaginou. Então cada mockup é um
+`MockSwap` (`LandingMocks.tsx`) com dois ou três estados que se dissolvem um no
+outro: gravando → resumo pronto; o texto → o menu do `+` → o bloco sendo
+digitado; o link colado → a importação rodando → o resumo; o Biblo cumprimentando
+→ a pergunta com "Pensando…" → a resposta com o trecho a adicionar.
+
+É **CSS puro**, pela mesma razão de tudo o mais aqui: um carrossel com estado
+no cliente custaria um `"use client"` por mockup na única rota que um anônimo
+carrega inteira. O ritmo é de três segundos por estado — abaixo disso a tela
+vira letreiro e não dá tempo de ver o que mudou; acima de quatro ou cinco, quem
+chega no meio de um estado espera demais pela PASSAGEM, que é o que a seção tem
+a provar. Em `prefers-reduced-motion` o palco para no PRIMEIRO estado, visível:
+quem pede menos movimento não pede menos conteúdo.
+
 Duas coisas que saíram de lá e não devem voltar sem uma razão nova:
 
 - **O hero não tem mockup.** A primeira capacidade começa logo abaixo dele, com

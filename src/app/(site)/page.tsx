@@ -25,8 +25,11 @@ import {
   LandingBibloMock,
   LandingEditorMock,
   LandingRecordingMock,
+  LandingSummaryMock,
+  LandingYoutubeImportingMock,
   LandingYoutubeMock,
   MockClock,
+  MockSwap,
 } from "@/shared/components/LandingMocks";
 import { LandingParticles } from "@/shared/components/LandingParticles";
 import { StandaloneHomeGuard } from "@/shared/components/StandaloneHomeGuard";
@@ -244,7 +247,7 @@ function Faq() {
   return (
     <section
       id="perguntas"
-      className="mx-auto flex max-w-[1200px] flex-col gap-7 px-5 py-12 sm:px-10 sm:py-24 lg:gap-12"
+      className="mx-auto flex max-w-[1200px] flex-col gap-6 px-5 py-10 sm:px-10 sm:py-24 lg:gap-12"
     >
       <div className="flex flex-col gap-3 lg:items-center lg:text-center">
         <SectionLabel color="blue">Perguntas frequentes</SectionLabel>
@@ -354,6 +357,18 @@ function Capabilities() {
       cost: null,
       note: "",
       screen: (
+        // DUAS telas que se revezam, e é a seção em que isso mais importa: a
+        // frase promete "grave a pregação E saia com um resumo", e um quadro
+        // parado só consegue mostrar a metade que a pessoa já imaginou. A
+        // segunda é o resumo pronto, que é o que ela veio conferir. Ver
+        // `MockSwap`.
+        //
+        // O CABEÇALHO troca junto, e não é enfeite: "Gravando" com o ponto
+        // vermelho por cima de um resumo pronto desmentiria a tela inteira.
+        // Os dois são de uma linha só (nenhum tem subtítulo) porque o palco
+        // tira a altura do PRIMEIRO, e um segundo mais alto desceria o fio de
+        // baixo do cabeçalho por cima do conteúdo.
+        //
         // O cabeçalho é o da `TopBar` de verdade: o título diz o estado e o
         // relógio fica à DIREITA, com o ponto de gravação ao lado dele — e o
         // relógio CONTA (ver `MockClock`). Um relógio parado num mockup que
@@ -361,18 +376,24 @@ function Capabilities() {
         // frase ao lado dela.
         <PhoneFrame
           chrome={
-            <PhoneChrome
-              title="Gravando"
-              right={
-                <span className="flex items-center gap-2">
-                  <RecDot />
-                  <MockClock />
-                </span>
-              }
-            />
+            <MockSwap>
+              <PhoneChrome
+                title="Gravando"
+                right={
+                  <span className="flex items-center gap-2">
+                    <RecDot />
+                    <MockClock />
+                  </span>
+                }
+              />
+              <PhoneChrome title="A sede que só Cristo cura" />
+            </MockSwap>
           }
         >
-          <LandingRecordingMock />
+          <MockSwap>
+            <LandingRecordingMock />
+            <LandingSummaryMock />
+          </MockSwap>
         </PhoneFrame>
       ),
     },
@@ -389,10 +410,17 @@ function Capabilities() {
       note: "",
       reverse: true,
       screen: (
+        // TRÊS momentos de uma edição: o texto como estava, o menu do `+`
+        // aberto e o bloco novo sendo digitado, com o cursor piscando. O
+        // cabeçalho é o mesmo nos três, porque a anotação é a mesma.
         <PhoneFrame
           chrome={<PhoneChrome subtitle="Anotação · 41 min" title="A sede que só Cristo cura" />}
         >
-          <LandingEditorMock />
+          <MockSwap>
+            <LandingEditorMock />
+            <LandingEditorMock state="menu" />
+            <LandingEditorMock state="written" />
+          </MockSwap>
         </PhoneFrame>
       ),
     },
@@ -408,8 +436,25 @@ function Capabilities() {
       cost: null,
       note: "",
       screen: (
-        <PhoneFrame chrome={<PhoneChrome title="Importar" />}>
-          <LandingYoutubeMock />
+        // As TRÊS etapas que o texto ao lado descreve: o link colado, o Scriba
+        // trabalhando e o resumo pronto. A do meio é a que responde "e depois
+        // que eu colo o link?" — sem ela a seção mostra um formulário e um
+        // resultado, e o trabalho, que é a parte que o Scriba faz no lugar da
+        // pessoa, acontece fora da tela.
+        <PhoneFrame
+          chrome={
+            <MockSwap>
+              <PhoneChrome title="Importar" />
+              <PhoneChrome title="Importar" />
+              <PhoneChrome title="A sede que só Cristo cura" />
+            </MockSwap>
+          }
+        >
+          <MockSwap>
+            <LandingYoutubeMock />
+            <LandingYoutubeImportingMock />
+            <LandingSummaryMock />
+          </MockSwap>
         </PhoneFrame>
       ),
     },
@@ -448,10 +493,15 @@ function Capabilities() {
 
 function CapabilitySection({ item }: { item: Capability }) {
   return (
-    <section id={item.id} className="mx-auto max-w-[1200px] px-5 py-12 sm:px-10 sm:py-20">
+    // `py-8` no celular contra `py-20` do desktop, e a distância é de propósito:
+    // ali a seção é uma coluna só, então o respiro entre duas seções é a soma
+    // dos dois paddings (64px), enquanto no desktop ele separa blocos que já
+    // estão lado a lado. Com os 48px de antes, o par texto + tela ficava mais
+    // perto da seção vizinha do que de si mesmo.
+    <section id={item.id} className="mx-auto max-w-[1200px] px-5 py-8 sm:px-10 sm:py-20">
       <div
         className={cn(
-          "flex flex-col items-center gap-8 lg:grid lg:items-center lg:gap-16",
+          "flex flex-col items-center gap-6 lg:grid lg:items-center lg:gap-16",
           item.reverse ? "lg:grid-cols-[420px_minmax(0,1fr)]" : "lg:grid-cols-[minmax(0,1fr)_420px]"
         )}
       >
@@ -461,7 +511,7 @@ function CapabilitySection({ item }: { item: Capability }) {
             // trata, e uma tela de aparelho antes do título é uma imagem sem
             // legenda ocupando a dobra inteira. O `lg:order-*` continua
             // alternando os lados no desktop, onde há dois.
-            "order-1 flex min-w-0 flex-col gap-6",
+            "order-1 flex min-w-0 flex-col gap-5 lg:gap-6",
             item.reverse ? "lg:order-2" : "lg:order-1"
           )}
         >
@@ -477,25 +527,35 @@ function CapabilitySection({ item }: { item: Capability }) {
               título do corpo é uma relação de hierarquia, e o que separa o
               corpo da lista de fios é outra. */}
           <div className="flex flex-col gap-5">
-            {/* Com rosto, o título vira uma linha de dois itens alinhados
-                pelo TOPO: o título tem duas linhas e o rosto acompanha a
-                primeira, que é onde a leitura começa — centrado na caixa
-                inteira ele flutuaria no meio do vão.
+            {/* Com rosto, o título vira duas linhas empilhadas no celular e
+                dois itens lado a lado do `sm` para cima.
+
+                **No celular o rosto fica ACIMA do título**, e a razão é a
+                largura: ali o título tem ~340px, e com o rosto ao lado sobram
+                ~280 para três linhas de 27px — cada uma perdia uma palavra para
+                o vão, e a promessa da seção quebrava em lugares que ninguém
+                escolheu. Empilhado, o título recupera a linha inteira e o rosto
+                continua anunciando de quem é a seção, uma linha antes.
+
+                Do `sm` para cima eles voltam a dividir a linha, alinhados pelo
+                TOPO: o título tem duas linhas e o rosto acompanha a primeira,
+                que é onde a leitura começa — centrado na caixa inteira ele
+                flutuaria no meio do vão.
 
                 O TAMANHO é o das duas linhas do título: 88px no desktop, que
                 é a altura de duas linhas de 38px com `leading-[1.16]`, e o
                 rosto passa a pesar como o texto ao lado em vez de parecer um
-                ícone pendurado nele. No celular ele cai para 60px, porque lá o
-                título tem ~280px de vão e três linhas — um rosto de 88px
-                comeria uma palavra de cada uma.
+                ícone pendurado nele. No celular ele cai para 60px, que é o
+                degrau em que ele lê como personagem sem virar ilustração da
+                seção.
 
                 Quem manda no tamanho é a CLASSE, não o `size`: o `size` fica
                 como piso, para o caso de o CSS não carregar. Escalar por CSS
                 não desalinha o gaze — a excursão está em unidades do `viewBox`,
                 que não mudam com a caixa. */}
             {item.face ? (
-              <div className="flex items-start gap-3.5 sm:gap-5">
-                <BibloHeroFace className="mt-0.5 size-15 sm:mt-1 sm:size-22" size={88} />
+              <div className="flex flex-col gap-3 sm:flex-row sm:items-start sm:gap-5">
+                <BibloHeroFace className="size-15 sm:mt-1 sm:size-22" size={88} />
                 <h2 className="text-pretty text-[27px] font-semibold leading-[1.16] tracking-[-.022em] text-scriba-ink-strong lg:text-[38px]">
                   {item.title}
                 </h2>
@@ -578,7 +638,7 @@ function Biblioteca() {
     // `BiblioCard`). A faixa continua viva no bloco final (`FinalCTA`), onde
     // ela é um cartão gigante e não uma seção.
     <section className="relative overflow-hidden border-scriba-hairline border-t">
-      <div className="relative mx-auto flex max-w-[1200px] flex-col items-stretch gap-8 px-5 py-12 text-scriba-ink-strong sm:px-10 sm:py-20 lg:grid lg:grid-cols-[minmax(0,1fr)_minmax(0,1fr)] lg:items-center lg:gap-16">
+      <div className="relative mx-auto flex max-w-[1200px] flex-col items-stretch gap-6 px-5 py-10 text-scriba-ink-strong sm:px-10 sm:py-20 lg:grid lg:grid-cols-[minmax(0,1fr)_minmax(0,1fr)] lg:items-center lg:gap-16">
         <div className="flex min-w-0 flex-col gap-5">
           <SectionLabel color="yellow-light">Sua biblioteca</SectionLabel>
           <h2 className="text-pretty text-[29px] font-semibold leading-[1.16] tracking-[-.022em] lg:text-[40px]">
@@ -667,7 +727,7 @@ function Plans() {
     // Sem faixa de fundo própria: `--scriba-surface` virou o próprio chão, e a
     // seção se separa pelo fio de 1px, como os meses da Biblioteca.
     <section id="planos" className="border-t border-scriba-hairline">
-      <div className="mx-auto flex max-w-[1200px] flex-col gap-6 px-5 py-12 sm:px-10 sm:py-[92px] lg:gap-12">
+      <div className="mx-auto flex max-w-[1200px] flex-col gap-6 px-5 py-10 sm:px-10 sm:py-[92px] lg:gap-12">
         <div className="flex flex-col gap-3 lg:items-center lg:text-center">
           <SectionLabel color="blue">Planos</SectionLabel>
           <h2 className="text-pretty text-[29px] font-semibold leading-[1.16] tracking-[-.022em] text-scriba-ink-strong lg:text-[42px] lg:leading-[1.14]">
@@ -928,7 +988,7 @@ function PlanCard({
 
 function FinalCTA() {
   return (
-    <section className="mx-auto max-w-[1200px] px-5 py-11 sm:px-10 sm:py-24">
+    <section className="mx-auto max-w-[1200px] px-5 py-10 sm:px-10 sm:py-24">
       {/* A faixa (`--lp-band`), a mesma do bloco final dos parceiros, e não
           mais um gradiente azul escrito à mão aqui. Ela é o ÚNICO lugar da LP
           que ainda a usa, desde que a seção "Sua biblioteca" desceu para o
@@ -986,7 +1046,22 @@ function PhoneFrame({ children, dark = false, chrome, className }: PhoneFramePro
   return (
     <div
       className={cn(
+        // A MARGEM NEGATIVA é o par obrigatório do `scale`, não um ajuste fino.
+        //
+        // `transform` não mexe no layout: o aparelho continua ocupando os 702px
+        // da caixa (680 de tela + 11 de moldura em cima e embaixo) mesmo
+        // desenhando 527 no celular. Os 175px que sobram viram vão morto em
+        // volta dele, 87,5 de cada lado, e no celular — onde a seção é uma
+        // coluna — esse vão entra INTEIRO entre o texto e a tela que ele
+        // promete, somado ao `gap` da coluna. Era o maior espaço em branco da
+        // página, e não havia nada nele.
+        //
+        // A conta: `(702 × (1 − escala)) / 2`. A 0,75 dá 87,5px; a 0,9, 35px; a
+        // 1 não sobra nada e a margem zera. **Mexeu na escala ou na altura da
+        // tela, refaça os três números** — eles não se ajustam sozinhos, e
+        // errar para mais faz a seção seguinte subir por cima do aparelho.
         "relative w-[390px] flex-none scale-[.75] rounded-[44px] bg-lp-phone-frame p-[11px] sm:scale-90 lg:scale-100",
+        "-my-[87.5px] sm:-my-[35px] lg:my-0",
         dark ? "phone-frame-dark" : "phone-frame",
         className
       )}

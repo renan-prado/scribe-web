@@ -528,6 +528,24 @@ respeite `prefers-reduced-motion` (o bloco já existe no `globals.css`).
 do app. Isso é deliberado e tem preço: mexer no `FeedItemCard` não atualiza
 mais a landing. O porquê está em `src/app/AGENTS.md`.
 
+**As telas TROCAM sozinhas, e o palco é o `MockSwap`.** Ele empilha dois ou
+três estados da mesma tela e os alterna em CSS (`--animate-lp-slide-*`), sem uma
+linha de JavaScript: as fatias se cruzam por opacidade, com atrasos diferentes
+sobre a mesma duração. Três coisas dele não são livres:
+
+- **A altura sai de um FANTASMA**, uma cópia do primeiro estado no fluxo e
+  invisível: os estados de verdade são absolutos, e uma caixa só de filhos
+  absolutos mede zero. Por isso o primeiro estado tem de ser o MAIS ALTO dos
+  irmãos, ou o que sobra dos outros é cortado — foi o que obrigou o resumo da
+  seção de gravar a começar pela ideia central, e não a caber inteiro.
+- **As fatias compartilham as coordenadas.** O que faz a troca parecer uma ação
+  em vez de um corte é o conteúdo comum não sair do lugar: no editor, o
+  parágrafo de cima é o mesmo pixel nos três estados. Um bloco a mais em um só
+  deles transforma a dissolvência num pulo.
+- **`prefers-reduced-motion` mostra o fantasma e esconde as fatias**, então a
+  seção fica no primeiro estado, PARADA. Quem pede menos movimento não pede uma
+  caixa vazia.
+
 São QUATRO telas, uma por capacidade da LP, e cada uma tem uma amarra:
 
 - `LandingRecordingMock` (gravar) — a onda, o relógio e os três botões. É a
@@ -545,11 +563,20 @@ São QUATRO telas, uma por capacidade da LP, e cada uma tem uma amarra:
   fitas, o `count` do `DigitReel` e o `steps()` da animação são o mesmo número
   — a keyframe percorre a fita INTEIRA (`-100%` dela), então é o número de
   passos que define quanto vale um dígito.
-- `LandingYoutubeMock` (importar) — a tela de `/importar` com o RECORTE aberto
-  ("do minuto 12 ao 45"). Fechada, ela seria um campo de texto com um botão, a
-  tela mais genérica que existe; o recorte é a única parte da importação que
-  ninguém adivinha sozinho. O preço no botão sai de `COIN_COSTS.youtubeImport`.
-- `LandingEditorMock` (escrever) — o `/escrever` com o menu do `+` ABERTO. Ali
+- `LandingYoutubeMock` (importar) — o link colado e o botão, e mais duas fatias:
+  a espera (`LandingYoutubeImportingMock`, que é `/importar/[id]` com as etapas
+  do `STEPS` do `YoutubeImport`) e o resumo. A do meio é a que responde "e depois
+  que eu colo o link?" — sem ela a seção mostra um formulário e um resultado, e o
+  trabalho, que é a parte que o Scriba faz no lugar da pessoa, acontece fora da
+  tela. **O RECORTE ("do minuto 12 ao 45") já esteve nesta tela e saiu**: ele
+  responde uma pergunta que ninguém fez ainda na LP, e o que a seção precisa
+  provar é que um link vira resumo. Não o traga de volta sem pedido. O preço
+  também não está no botão: nenhuma das quatro seções fala em moedas hoje.
+- `LandingEditorMock` (escrever) — o `/escrever` em três estados (`state`): o
+  texto como estava, o menu do `+` ABERTO e o bloco novo sendo digitado, com o
+  cursor piscando (`--animate-lp-caret`). A pastilha "Parágrafo" aparece escolhida
+  no menu porque o bloco que nasce na fatia seguinte é um parágrafo: trocou um,
+  troque o outro. Ali
   estava a tela de LEITURA (`LandingSummaryMock`, que saiu por ter ficado sem
   consumidor), e ela mostrava o resultado pronto embaixo de um texto que promete
   um editor. Os blocos escritos são o `BlockRenderer` de verdade, como no

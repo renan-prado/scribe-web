@@ -1,8 +1,8 @@
+import { Children } from "react";
 // Caminho direto, e não o barril `@/shared/brand`: ele reexporta o
 // `BibloAvatar`, que é `"use client"` — exatamente o que esta página não pode
 // carregar. Ver o cabeçalho de `BibloFace`.
-import { COIN_COSTS } from "@/features/coins/pricing";
-import { BlockRenderer } from "@/features/session/components/BlockRenderer";
+import { BlockRenderer, blockKey } from "@/features/session/components/BlockRenderer";
 import { LeadIdea } from "@/features/session/components/LeadIdea";
 import type { SummaryBlock } from "@/lib/domain/summary";
 import { cn } from "@/lib/utils";
@@ -77,6 +77,115 @@ const DEMO_BLOCKS: SummaryBlock[] = [
     text: "Cristo não veio apenas melhorar as cisternas que construímos. Ele veio nos levar de volta à fonte. Nele, nossa sede encontra descanso e nossa vida se transforma em verdadeira adoração.",
   },
 ];
+
+/* -------------------------------------------------------------------------- */
+/*  O palco: as telas que trocam sozinhas                                     */
+/* -------------------------------------------------------------------------- */
+
+/**
+ * As animações de cada fatia, por número de estados. Ver o bloco
+ * `--animate-lp-slide-*` do `globals.css`, que é onde mora o porquê.
+ */
+const SLIDE_ANIMATIONS: Record<number, readonly string[]> = {
+  2: ["var(--animate-lp-slide-2a)", "var(--animate-lp-slide-2b)"],
+  3: ["var(--animate-lp-slide-3a)", "var(--animate-lp-slide-3b)", "var(--animate-lp-slide-3c)"],
+};
+
+/**
+ * Empilha dois ou três estados de uma tela e os alterna sozinho, em CSS.
+ *
+ * **Cada seção da landing promete uma TRANSIÇÃO, e um quadro parado mostra
+ * sempre a metade errada dela.** A da gravação exibia o aparelho gravando, que
+ * é justamente a parte que a pessoa já imaginou, e nunca o resumo pronto, que é
+ * o que ela veio conferir. O mesmo valia para as outras três: o editor sem o
+ * bloco sendo escrito, a importação sem a importação acontecendo, o Biblo sem a
+ * resposta chegando.
+ *
+ * **Zero JavaScript, como o resto da página.** É a única rota que um visitante
+ * anônimo carrega inteira, e um carrossel com estado no cliente custaria a ela
+ * um componente `"use client"` por mockup — ver o cabeçalho deste arquivo. As
+ * fatias são keyframes de opacidade com atrasos diferentes sobre a mesma
+ * duração, então o navegador desenha isso na thread de composição e a página
+ * continua estática.
+ *
+ * **A altura sai de um FANTASMA, não de um número.** Os estados são todos
+ * absolutos (é o que os põe no mesmo lugar), e uma caixa só de filhos absolutos
+ * mede zero; então o primeiro estado é renderizado mais uma vez, no fluxo e
+ * invisível, só para dar altura ao palco. Escrever a altura à mão aqui seria
+ * mais uma medida para manter em sincronia com a tela do `PhoneFrame`, e este
+ * arquivo já tem uma dessas (ver `LandingRecordingMock`).
+ *
+ * `aria-hidden` no palco inteiro: são fotos de tela, e quem lê por áudio já
+ * recebeu do parágrafo ao lado tudo o que elas mostram. Sem isso, um leitor de
+ * tela anunciaria as três versões da MESMA tela, em sequência, como se fossem
+ * três conteúdos.
+ */
+export function MockSwap({
+  children,
+  className,
+}: {
+  children: React.ReactNode;
+  className?: string;
+}) {
+  const states = Children.toArray(children);
+  const animations = SLIDE_ANIMATIONS[states.length];
+  if (!animations) {
+    // Build-time, e de propósito: a landing é pré-renderizada, então um palco
+    // com um número de estados para o qual não há keyframe quebra o build em
+    // vez de subir uma seção que não troca de tela.
+    throw new Error(`MockSwap: ${states.length} estados, e só há animação para 2 ou 3.`);
+  }
+  return (
+    <div aria-hidden className={cn("relative", className)}>
+      <div className="lp-swap-ghost h-full">{states[0]}</div>
+      {states.map((state, index) => (
+        <div
+          // biome-ignore lint/suspicious/noArrayIndexKey: as fatias são posições fixas de uma lista literal, não dados
+          key={`slide-${index}`}
+          className="lp-slide"
+          style={{ animation: animations[index] }}
+        >
+          {state}
+        </div>
+      ))}
+    </div>
+  );
+}
+
+/* -------------------------------------------------------------------------- */
+/*  O resumo pronto                                                           */
+/* -------------------------------------------------------------------------- */
+
+/**
+ * A tela de LEITURA: a ideia central, o título e os blocos, como em
+ * `/summary/[id]`.
+ *
+ * É o segundo estado da seção de gravar (o "saia com um resumo automático" da
+ * frase ao lado) e o terceiro da importação, e nos dois ela entra por
+ * `MockSwap`. Só uns 570px dela cabem na tela do aparelho, e o corte é o
+ * assunto: a ordem dos blocos aqui é escolhida para que a FRASE DE DESTAQUE —
+ * a parte do resumo que não se parece com nada que a pessoa escreveria à mão —
+ * apareça antes de o aparelho acabar. Ver `SCREEN_BLOCKS`.
+ *
+ * O `LeadIdea` e o `BlockRenderer` são os componentes DE VERDADE, e essa é a
+ * exceção à regra do cabeçalho deste arquivo: os dois são servidor puro, não
+ * custam bundle, e reproduzi-los à mão foi o que um dia deixou a landing
+ * mostrando a estética anterior do resumo depois de a do app mudar.
+ */
+const SCREEN_BLOCKS: SummaryBlock[] = DEMO_BLOCKS.slice(0, 3);
+
+export function LandingSummaryMock() {
+  return (
+    <div className="flex flex-col gap-4 px-4 pb-8 pt-2">
+      <LeadIdea label="Ideia central" text={DEMO_SHORT_SUMMARY} />
+      {SCREEN_BLOCKS.map((block) => (
+        <div key={blockKey(block)} className="min-w-0">
+          <BlockRenderer block={block} />
+        </div>
+      ))}
+    </div>
+  );
+}
 
 /* -------------------------------------------------------------------------- */
 /*  O editor                                                                  */
@@ -173,21 +282,44 @@ const EDITOR_CHIPS: { label: string; icon: React.ReactNode }[] = [
   },
 ];
 
+/** O estado do editor que cada fatia do `MockSwap` mostra. Ver o componente. */
+type EditorState = "base" | "menu" | "written";
+
 /**
- * `/escrever` dentro do aparelho: o texto já começado, a pílula do bloco, o
- * menu do `+` ABERTO com as pastilhas de cada tipo e a linha do fim.
+ * O texto do bloco que está sendo ESCRITO na terceira fatia. Curto e cortado no
+ * meio de propósito: o que a seção promete é o ato de escrever, e uma frase
+ * inteira com ponto final é um bloco pronto, não um bloco em andamento.
+ *
+ * Ele continua o sermão de `DEMO_BLOCKS` (João 4), como tudo o mais nesta
+ * página: o mesmo poço, a mesma sede.
+ */
+const EDITOR_TYPED_TEXT = "A promessa não é um poço melhor, é uma fonte que";
+
+/**
+ * `/escrever` dentro do aparelho, em TRÊS estados que o `MockSwap` alterna: o
+ * bloco já escrito com a linha do fim, o menu do `+` aberto, e o bloco novo
+ * sendo digitado.
+ *
+ * **Os três compartilham as mesmas coordenadas**, e é isso que faz a troca de
+ * fatia parecer uma ação em vez de um corte: o parágrafo de cima não sai do
+ * lugar em nenhuma delas, então o que a pessoa vê é o menu abrindo onde estava
+ * o `+`, e depois um bloco nascendo onde o menu estava. Ao mexer em qualquer
+ * um deles, confira os três — um bloco a mais em um só transforma a
+ * dissolvência num pulo.
  *
  * Aqui morava o `LandingSummaryMock`, a tela de LEITURA, e era a tela errada
  * para esta seção: ao lado de um texto que promete um editor, o aparelho
- * mostrava o resultado pronto — que é o que as outras telas da página já
- * mostram. O que falta provar nesta é que existe um lugar onde se ESCREVE, e
- * numa imagem parada quem diz isso é o `+` e a fileira de blocos que ele abre.
+ * mostrava o resultado pronto, que é o que as outras telas da página já
+ * mostram. O que falta provar nesta é que existe um lugar onde se ESCREVE.
  *
  * Os blocos já escritos são o `BlockRenderer` DE VERDADE, e não uma cópia,
  * porque é assim no editor também: cada `textarea` do `Composer` veste as
  * classes do bloco correspondente (ver o `BlockBody` dele). A promessa da
  * seção — a edição acontece no lugar onde se lê — sai do próprio código em vez
- * de ser reproduzida à mão.
+ * de ser reproduzida à mão. **A exceção é o bloco que está sendo digitado**: o
+ * cursor precisa nascer no fim do texto, dentro do parágrafo, e para isso as
+ * classes do `paragraph` do `BlockRenderer` estão copiadas ali. Mexeu nelas
+ * lá? Mexa aqui.
  *
  * O que É reproduzido à mão são os CONTROLES (a caixa acesa do bloco em foco,
  * a pílula de mover e excluir, o disco do `+`, o menu e a linha do fim), pela
@@ -198,7 +330,7 @@ const EDITOR_CHIPS: { label: string; icon: React.ReactNode }[] = [
  * `Composer` (`-mx-3 -my-2 … px-3 py-2`), o disco tem 24px e o vão entre
  * blocos é `gap-8`. Mexeu lá, confira aqui.
  */
-export function LandingEditorMock() {
+export function LandingEditorMock({ state = "base" }: { state?: EditorState }) {
   return (
     // Os vãos são mais curtos que os do editor (`gap-4` no lugar do `gap-6` do
     // cabeçalho, `pb-2` no lugar do `pb-24`) por uma razão de MOCKUP, não de
@@ -226,93 +358,144 @@ export function LandingEditorMock() {
       <div className="flex flex-col gap-8">
         <div className="h-px w-full bg-scriba-hairline" />
 
-        {/* O bloco escrito, com a pílula e a superfície acesa.
+        {/* O parágrafo que já estava escrito. Ele é o ponto FIXO das três
+            fatias: só perde a pílula e a superfície acesa quando o cursor
+            muda para o bloco novo, na terceira. */}
+        <EditorBlock lit={state !== "written"}>
+          <BlockRenderer block={DEMO_BLOCKS[1]} />
+        </EditorBlock>
 
-            A PÍLULA diz que cada trecho se move e se apaga, e o `+` dela
-            insere ACIMA; a lixeira aparece apagada, como todo `ControlButton`
-            sem ação — aqui nada tem ação. A SUPERFÍCIE é como o editor
-            responde "é aqui que o cursor está", e no celular é a única
-            resposta possível, porque ali não há ponteiro.
-
-            O bloco é o `BlockRenderer` DE VERDADE, com as mesmas classes que
-            a `textarea` do `Composer` veste. Só um: com o menu aberto, que no
-            telefone quebra em cinco fileiras, dois blocos punham a linha do
-            fim para fora da tela — e é o par `+` / pastilhas que esta seção
-            precisa mostrar. */}
-        <div className="relative">
-          <div className="absolute right-0 bottom-full z-10 flex items-center gap-0.5 rounded-full bg-scriba-surface p-1 shadow-sm ring-1 ring-scriba-hairline ring-inset">
-            {[
-              { d: "M8 3.5v9M3.5 8h9", mute: false },
-              { d: "M4.5 9.8 8 6.2l3.5 3.6", mute: false },
-              { d: "M4.5 6.2 8 9.8l3.5-3.6", mute: false },
-              { d: "M3.2 4.5h9.6M6.4 4.5V3h3.2v1.5M4.8 4.5l.6 8.5h5.2l.6-8.5", mute: true },
-            ].map((glyph) => (
+        {/* O bloco NOVO, meio digitado, com o cursor piscando no fim. É a
+            terceira fatia inteira: a resposta do "escreva suas próprias
+            ideias" que nenhuma tela parada dá. */}
+        {state === "written" ? (
+          <EditorBlock lit>
+            <p className="text-pretty text-[15px] font-light leading-[1.72] text-scriba-ink">
+              {EDITOR_TYPED_TEXT}
               <span
-                key={glyph.d}
                 aria-hidden
-                className={cn(
-                  "inline-flex size-6.5 items-center justify-center rounded-full",
-                  glyph.mute ? "text-scriba-ink-mute/40" : "text-scriba-ink-soft"
-                )}
-              >
-                <svg {...EDITOR_ICON} role="presentation">
-                  <path d={glyph.d} />
-                </svg>
-              </span>
-            ))}
-          </div>
-          <div className="-mx-3 -my-2 rounded-[20px] bg-scriba-blue-soft/60 px-3 py-2">
-            <BlockRenderer block={DEMO_BLOCKS[1]} />
-          </div>
-        </div>
+                className="ml-0.5 inline-block h-[1.05em] w-[2px] translate-y-[3px] rounded-full bg-scriba-ink-strong"
+                style={{ animation: "var(--animate-lp-caret)" }}
+              />
+            </p>
+          </EditorBlock>
+        ) : null}
 
-        {/* O MENU DO `+`, aberto. O `×` nasce onde o `+` estava — mesmo disco,
-            mesmo lugar, só o glifo muda — e as pastilhas QUEBRAM em linhas em
-            vez de rolar na horizontal: a Conclusão é a última, e precisa existir
-            para quem não descobre que aquilo arrasta. */}
-        <div className="-mx-1 flex items-start gap-2 rounded-[20px] bg-scriba-surface p-2">
-          {/* `h-[26px]`: a altura da linha de texto, para o `×` pousar onde o
-              `+` estava. */}
-          <span className="flex h-[26px] shrink-0 items-center">
-            <span
-              aria-hidden
-              className="inline-flex size-6 items-center justify-center rounded-full border border-scriba-hairline text-scriba-ink-mute"
-            >
-              <svg {...EDITOR_ICON} className="size-3.5" role="presentation">
-                <path d="M4 4l8 8M12 4l-8 8" />
-              </svg>
-            </span>
-          </span>
-          <span className="-my-0.5 flex min-w-0 flex-1 flex-wrap gap-1.5">
-            {EDITOR_CHIPS.map((chip) => (
-              <span
-                key={chip.label}
-                className="inline-flex shrink-0 items-center gap-1.5 rounded-full border border-scriba-hairline px-2.5 py-1.5 font-medium text-[11.5px] text-scriba-ink-soft"
-              >
-                {chip.icon}
-                {chip.label}
-              </span>
-            ))}
-          </span>
-        </div>
+        {/* O MENU DO `+`, aberto, ou a linha do fim, nunca os dois: no editor
+            de verdade o menu nasce NO lugar da linha, e é por isso que a fatia
+            do meio não empurra nada para baixo. */}
+        {state === "menu" ? <EditorMenu /> : <EditorEndLine />}
+      </div>
+    </div>
+  );
+}
 
-        {/* A linha do fim: o disco do `+` e uma linha em branco onde se escreve
-            sem escolher nada antes. É ela que mantém o menu OPCIONAL — quem
-            quer um parágrafo, digita. */}
-        <div className="-mx-3 -my-2 flex items-center gap-2 rounded-[20px] py-2 pr-3 pl-2">
+/**
+ * Um bloco do editor: a superfície acesa do `BLOCK_SURFACE` e a pílula de
+ * mover e excluir, quando o cursor está nele.
+ *
+ * A PÍLULA diz que cada trecho se move e se apaga, e o `+` dela insere ACIMA; a
+ * lixeira aparece apagada, como todo `ControlButton` sem ação — aqui nada tem
+ * ação. A SUPERFÍCIE é como o editor responde "é aqui que o cursor está", e no
+ * celular é a única resposta possível, porque ali não há ponteiro.
+ */
+function EditorBlock({ children, lit }: { children: React.ReactNode; lit?: boolean }) {
+  if (!lit) return <div className="min-w-0">{children}</div>;
+  return (
+    <div className="relative">
+      <div className="absolute right-0 bottom-full z-10 flex items-center gap-0.5 rounded-full bg-scriba-surface p-1 shadow-sm ring-1 ring-scriba-hairline ring-inset">
+        {[
+          { d: "M8 3.5v9M3.5 8h9", mute: false },
+          { d: "M4.5 9.8 8 6.2l3.5 3.6", mute: false },
+          { d: "M4.5 6.2 8 9.8l3.5-3.6", mute: false },
+          { d: "M3.2 4.5h9.6M6.4 4.5V3h3.2v1.5M4.8 4.5l.6 8.5h5.2l.6-8.5", mute: true },
+        ].map((glyph) => (
           <span
+            key={glyph.d}
             aria-hidden
-            className="inline-flex size-6 shrink-0 items-center justify-center rounded-full border border-scriba-hairline text-scriba-ink-mute"
+            className={cn(
+              "inline-flex size-6.5 items-center justify-center rounded-full",
+              glyph.mute ? "text-scriba-ink-mute/40" : "text-scriba-ink-soft"
+            )}
           >
-            <svg {...EDITOR_ICON} className="size-3.5" strokeWidth={2} role="presentation">
-              <path d="M8 3.5v9M3.5 8h9" />
+            <svg {...EDITOR_ICON} role="presentation">
+              <path d={glyph.d} />
             </svg>
           </span>
-          <span className="font-light text-[15px] text-scriba-ink-mute/60 leading-[1.72]">
-            Escreva…
-          </span>
-        </div>
+        ))}
       </div>
+      <div className="-mx-3 -my-2 rounded-[20px] bg-scriba-blue-soft/60 px-3 py-2">{children}</div>
+    </div>
+  );
+}
+
+/**
+ * O menu do `+`, aberto. O `×` nasce onde o `+` estava — mesmo disco, mesmo
+ * lugar, só o glifo muda — e as pastilhas QUEBRAM em linhas em vez de rolar na
+ * horizontal: a Conclusão é a última, e precisa existir para quem não descobre
+ * que aquilo arrasta.
+ *
+ * A pastilha do PARÁGRAFO aparece escolhida, e é ela que amarra esta fatia à
+ * seguinte: o bloco que nasce lá é um parágrafo. Trocou o bloco digitado?
+ * Troque a pastilha acesa.
+ */
+function EditorMenu() {
+  return (
+    <div className="-mx-1 flex items-start gap-2 rounded-[20px] bg-scriba-surface p-2">
+      {/* `h-[26px]`: a altura da linha de texto, para o `×` pousar onde o
+          `+` estava. */}
+      <span className="flex h-[26px] shrink-0 items-center">
+        <span
+          aria-hidden
+          className="inline-flex size-6 items-center justify-center rounded-full border border-scriba-hairline text-scriba-ink-mute"
+        >
+          <svg {...EDITOR_ICON} className="size-3.5" role="presentation">
+            <path d="M4 4l8 8M12 4l-8 8" />
+          </svg>
+        </span>
+      </span>
+      <span className="-my-0.5 flex min-w-0 flex-1 flex-wrap gap-1.5">
+        {EDITOR_CHIPS.map((chip) => {
+          const chosen = chip.label === "Parágrafo";
+          return (
+            <span
+              key={chip.label}
+              className={cn(
+                "inline-flex shrink-0 items-center gap-1.5 rounded-full border px-2.5 py-1.5 font-medium text-[11.5px]",
+                chosen
+                  ? "border-transparent bg-scriba-ink text-scriba-paper"
+                  : "border-scriba-hairline text-scriba-ink-soft"
+              )}
+            >
+              {chip.icon}
+              {chip.label}
+            </span>
+          );
+        })}
+      </span>
+    </div>
+  );
+}
+
+/**
+ * A linha do fim: o disco do `+` e uma linha em branco onde se escreve sem
+ * escolher nada antes. É ela que mantém o menu OPCIONAL, quem quer um
+ * parágrafo digita.
+ */
+function EditorEndLine() {
+  return (
+    <div className="-mx-3 -my-2 flex items-center gap-2 rounded-[20px] py-2 pr-3 pl-2">
+      <span
+        aria-hidden
+        className="inline-flex size-6 shrink-0 items-center justify-center rounded-full border border-scriba-hairline text-scriba-ink-mute"
+      >
+        <svg {...EDITOR_ICON} className="size-3.5" strokeWidth={2} role="presentation">
+          <path d="M8 3.5v9M3.5 8h9" />
+        </svg>
+      </span>
+      <span className="font-light text-[15px] text-scriba-ink-mute/60 leading-[1.72]">
+        Escreva…
+      </span>
     </div>
   );
 }
@@ -387,45 +570,51 @@ export function LandingBibloMock() {
           </span>
         </div>
 
-        {/* A conversa, ancorada EMBAIXO (`justify-end`), e é o detalhe que
-            faz a gaveta parecer usada: o que sobra é cortado no TOPO, como
-            numa lista rolada até o fim, e não na borda de baixo. É também o
-            que garante que o trecho sugerido — a única parte que prova "a
-            resposta entra no texto" — apareça inteiro por mais que a conversa
-            acima cresça. Ao editar as falas, confira que a pastilha continua
-            visível. */}
-        <div className="flex min-h-0 flex-1 flex-col justify-end gap-5 overflow-hidden px-4 pb-1">
-          <BibloBubble>
-            Vi que o resumo fala sobre a mulher samaritana, em João 4. Quer que eu te ecplique o
-            contexto da passagem, ou traga versiculos sobre o mesmo assunto?
-          </BibloBubble>
-          <div className="flex justify-end">
-            <p className="max-w-[85%] rounded-2xl rounded-br-md bg-biblo-bubble-me px-3.5 py-2 text-[13px] leading-relaxed text-biblo-bubble-me-ink">
-              Por que a mulher samaritana estranhou quando Jesus falou com ela?
-            </p>
-          </div>
-          <BibloBubble>
-            Os Judeus e samaritanos não se falavam havia séculos, e um homem dirigir a palavra a uma
-            mulher sozinha, ao meio-dia, já era estranho por conta própria.
-            {/* O trecho sugerido: é o que tira a conversa do bate-papo e a põe
-                no texto, e é por isso que ele aparece aqui. */}
-            <span className="mt-3 block rounded-xl border border-dashed border-scriba-hairline p-3">
-              <span className="block text-[10.5px] uppercase tracking-wide text-scriba-ink-soft">
-                Parágrafo
+        {/* A conversa, em TRÊS fatias: o cumprimento sozinho, a pergunta com
+            o "Pensando…", e a resposta com o trecho sugerido. Uma gaveta
+            parada mostra uma conversa que já aconteceu; o que a seção promete
+            é perguntar e ser respondido, e isso é a passagem de uma para a
+            outra.
+
+            Ela é ancorada EMBAIXO (`justify-end`), e é o detalhe que faz a
+            gaveta parecer usada: o que sobra é cortado no TOPO, como numa
+            lista rolada até o fim, e não na borda de baixo. É também o que
+            mantém as três fatias alinhadas pela ÚLTIMA linha — cada uma tem
+            uma altura diferente, e ancoradas pelo topo a conversa inteira
+            subiria e desceria a cada troca. Ao editar as falas, confira que o
+            trecho sugerido continua visível: ele é a única parte que prova
+            "a resposta entra no texto". */}
+        <MockSwap className="min-h-0 flex-1 overflow-hidden">
+          <BibloTurn />
+          <BibloTurn asking>
+            <BibloBubble>
+              <span className="text-scriba-ink-mute">Pensando…</span>
+            </BibloBubble>
+          </BibloTurn>
+          <BibloTurn asking>
+            <BibloBubble>
+              Os judeus e samaritanos não se falavam havia séculos, e um homem dirigir a palavra a
+              uma mulher sozinha, ao meio-dia, já era estranho por conta própria.
+              {/* O trecho sugerido: é o que tira a conversa do bate-papo e a
+                  põe no texto, e é por isso que ele aparece aqui. */}
+              <span className="mt-3 block rounded-xl border border-dashed border-scriba-hairline p-3">
+                <span className="block text-[10.5px] uppercase tracking-wide text-scriba-ink-soft">
+                  Parágrafo
+                </span>
+                <span className="mt-1 block text-[12.5px] leading-relaxed text-scriba-ink">
+                  Ao pedir água a uma samaritana, Jesus atravessa de uma vez a barreira étnica e a
+                  social.
+                </span>
+                <span className="mt-2 inline-flex items-center gap-1.5 rounded-full bg-scriba-ink px-3 py-1.5 text-[11.5px] font-medium text-scriba-paper">
+                  <svg {...DRAWER_ICON} className="size-3.5" strokeWidth={2} role="presentation">
+                    <path d="M8 3.5v9M3.5 8h9" />
+                  </svg>
+                  Adicionar este parágrafo
+                </span>
               </span>
-              <span className="mt-1 block text-[12.5px] leading-relaxed text-scriba-ink">
-                Ao pedir água a uma samaritana, Jesus atravessa de uma vez a barreira étnica e a
-                social.
-              </span>
-              <span className="mt-2 inline-flex items-center gap-1.5 rounded-full bg-scriba-ink px-3 py-1.5 text-[11.5px] font-medium text-scriba-paper">
-                <svg {...DRAWER_ICON} className="size-3.5" strokeWidth={2} role="presentation">
-                  <path d="M8 3.5v9M3.5 8h9" />
-                </svg>
-                Adicionar este parágrafo
-              </span>
-            </span>
-          </BibloBubble>
-        </div>
+            </BibloBubble>
+          </BibloTurn>
+        </MockSwap>
 
         {/* Os chips e o campo. No app os chips saem do CONTEÚDO; aqui são
             fixos, porque num mockup não há resumo de verdade para derivá-los. */}
@@ -456,6 +645,40 @@ export function LandingBibloMock() {
         </div>
       </div>
     </>
+  );
+}
+
+/**
+ * Uma fatia da conversa: o cumprimento de abertura, que está nas três, mais o
+ * que aquela fatia acrescenta.
+ *
+ * O cumprimento é repetido de propósito em vez de ficar fora do `MockSwap`:
+ * ele SOBE quando a pergunta chega (a coluna é ancorada embaixo), e uma
+ * dissolvência entre duas fatias que o contêm nas duas alturas certas é o que
+ * faz a conversa parecer crescer. Fora do palco, ele ficaria pregado no lugar
+ * enquanto o resto se mexe.
+ *
+ * ⚠️ As falas são sobre João 4, a MESMA passagem do `LandingEditorMock` e do
+ * `LandingSummaryMock` (os três leem `DEMO_BLOCKS`). Se a demo mudar de sermão,
+ * esta conversa muda junto, ou a página mostra um Biblo conversando sobre
+ * outra tela.
+ */
+function BibloTurn({ children, asking }: { children?: React.ReactNode; asking?: boolean }) {
+  return (
+    <div className="flex h-full flex-col justify-end gap-5 px-4 pb-1">
+      <BibloBubble>
+        Vi que o resumo fala sobre a mulher samaritana, em João 4. Quer que eu te explique o
+        contexto da passagem, ou traga versículos sobre o mesmo assunto?
+      </BibloBubble>
+      {asking ? (
+        <div className="flex justify-end">
+          <p className="max-w-[85%] rounded-2xl rounded-br-md bg-biblo-bubble-me px-3.5 py-2 text-[13px] leading-relaxed text-biblo-bubble-me-ink">
+            Por que a mulher samaritana estranhou quando Jesus falou com ela?
+          </p>
+        </div>
+      ) : null}
+      {children}
+    </div>
   );
 }
 
@@ -684,26 +907,40 @@ export function LandingRecordingMock() {
 /*  A importação do YouTube                                                   */
 /* -------------------------------------------------------------------------- */
 
+/** O quadrado do YouTube, na pastilha do CTA. O mesmo das duas telas. */
+function YoutubeGlyph({ className }: { className?: string }) {
+  return (
+    <svg
+      width="24"
+      height="24"
+      viewBox="0 0 24 24"
+      fill="currentColor"
+      role="presentation"
+      className={className}
+    >
+      <path d="M21.6 7.2a2.5 2.5 0 0 0-1.76-1.77C18.25 5 12 5 12 5s-6.25 0-7.84.43A2.5 2.5 0 0 0 2.4 7.2C2 8.8 2 12 2 12s0 3.2.4 4.8a2.5 2.5 0 0 0 1.76 1.77C5.75 19 12 19 12 19s6.25 0 7.84-.43a2.5 2.5 0 0 0 1.76-1.77C22 15.2 22 12 22 12s0-3.2-.4-4.8ZM9.9 15.1V8.9l5.4 3.1-5.4 3.1Z" />
+    </svg>
+  );
+}
+
 /**
- * A tela de `/importar` dentro do `PhoneFrame`, com o recorte ABERTO.
+ * A tela de `/importar` dentro do `PhoneFrame`: o link colado e o botão.
  *
- * **O recorte aberto é a escolha que essa tela tem a fazer.** Fechado, o
- * mockup seria um campo de texto com um botão — a tela mais genérica que
- * existe, e que não diz nada que a frase ao lado não diga melhor. Aberto, ele
- * mostra o "do minuto 12 ao 45", que é a resposta para a transmissão de duas
- * horas com trinta minutos de pregação no meio, e é a única parte da
- * importação que ninguém adivinha sozinho.
+ * **O RECORTE ("do minuto 12 ao 45") não aparece aqui, e a ausência é
+ * deliberada.** Ele é uma resposta para quem já entendeu o que a importação
+ * faz, e na landing ele responde uma pergunta que ninguém fez ainda: o que esta
+ * seção precisa provar é que um link vira resumo. Já esteve nesta tela e saiu
+ * por isso — não o traga de volta sem pedido.
  *
  * Reproduzido à mão pela razão do cabeçalho deste arquivo: o `YoutubeUrlForm`
  * é `"use client"` e traz consigo a validação, o saldo e o `lucide-react`. O
- * que veio de lá são as medidas, os tokens e os textos exatos — o rótulo "Link
- * do vídeo", o `placeholder` do campo, o "limite de 2h*", o "até" entre os dois
- * campos de tempo.
+ * que veio de lá são as medidas, os tokens e os textos exatos, a começar pelo
+ * rótulo "Link do vídeo".
  *
- * ⚠️ O preço no botão sai de `COIN_COSTS.youtubeImport`, como todo número da
- * LP (ver `src/app/AGENTS.md`). O "limite de 2h" é `YOUTUBE_MAX_DURATION_MS`, e
- * os dois andam juntos: o teto existe porque o custo do resumo cresce com a
- * transcrição de entrada e a receita não.
+ * ⚠️ O botão NÃO traz preço, e o `COIN_COSTS.youtubeImport` que morava neste
+ * arquivo saiu com ele: nenhuma das quatro seções da LP fala em moedas hoje
+ * (ver o `cost` de cada `Capability`), e uma tela de mockup não é o lugar de
+ * reabrir esse assunto sozinha.
  */
 export function LandingYoutubeMock() {
   return (
@@ -715,9 +952,7 @@ export function LandingYoutubeMock() {
           aria-hidden
           className="flex size-14 items-center justify-center rounded-2xl bg-[image:var(--scriba-cta)] text-scriba-cta-ink"
         >
-          <svg width="24" height="24" viewBox="0 0 24 24" fill="currentColor" role="presentation">
-            <path d="M21.6 7.2a2.5 2.5 0 0 0-1.76-1.77C18.25 5 12 5 12 5s-6.25 0-7.84.43A2.5 2.5 0 0 0 2.4 7.2C2 8.8 2 12 2 12s0 3.2.4 4.8a2.5 2.5 0 0 0 1.76 1.77C5.75 19 12 19 12 19s6.25 0 7.84-.43a2.5 2.5 0 0 0 1.76-1.77C22 15.2 22 12 22 12s0-3.2-.4-4.8ZM9.9 15.1V8.9l5.4 3.1-5.4 3.1Z" />
-          </svg>
+          <YoutubeGlyph />
         </span>
         <div className="flex flex-col gap-1">
           <span className="font-heading text-[19px] font-semibold leading-tight tracking-tight text-scriba-ink-strong">
@@ -738,15 +973,85 @@ export function LandingYoutubeMock() {
           youtube.com/watch?v=aX3p1Kd9
         </span>
 
-        {/* O botão, com o preço na ponta — é assim que o produto cobra: o valor
-            aparece NO botão que cobra, nunca numa tela de aviso antes dele. */}
+        {/* O botão. Ele é a única coisa da tela que COBRA, e é por isso que o
+            mockup para aqui: a fatia seguinte é o que acontece depois de ele
+            ser tocado. */}
         <span className="mt-10 inline-flex w-full items-center justify-center gap-2 rounded-full bg-[image:var(--scriba-cta)] px-6 py-3 text-[14px] font-semibold text-scriba-cta-ink">
-          <svg width="16" height="16" viewBox="0 0 24 24" fill="currentColor" role="presentation">
-            <path d="M21.6 7.2a2.5 2.5 0 0 0-1.76-1.77C18.25 5 12 5 12 5s-6.25 0-7.84.43A2.5 2.5 0 0 0 2.4 7.2C2 8.8 2 12 2 12s0 3.2.4 4.8a2.5 2.5 0 0 0 1.76 1.77C5.75 19 12 19 12 19s6.25 0 7.84-.43a2.5 2.5 0 0 0 1.76-1.77C22 15.2 22 12 22 12s0-3.2-.4-4.8ZM9.9 15.1V8.9l5.4 3.1-5.4 3.1Z" />
-          </svg>
+          <YoutubeGlyph className="size-4" />
           Importar
         </span>
       </div>
+    </div>
+  );
+}
+
+/**
+ * A ESPERA da importação: a mesma tela de `/importar/[id]`, com a etapa em que
+ * o Scriba já está escrevendo.
+ *
+ * É a fatia do meio da seção, e é a que responde "o que acontece depois que eu
+ * colo o link?". Sem ela a seção mostraria um formulário e um resumo, e a parte
+ * que a pessoa quer saber — que o trabalho é do Scriba e não dela — ficaria
+ * entre as duas telas, sem tela nenhuma.
+ *
+ * **A miniatura é um lugar, não uma foto.** Na tela de verdade ela vem do id do
+ * vídeo (`youtubeThumbnailUrl`), e aqui nenhuma imagem podia entrar: seria uma
+ * requisição a um domínio de terceiro na única rota que um visitante anônimo
+ * carrega inteira, e por um vídeo que não existe. O retângulo com o botão de
+ * play diz a mesma coisa sem pedir rede.
+ *
+ * ⚠️ A frase da etapa é uma das do `STEPS` do `YoutubeImport`, e os cinco
+ * pontos são as cinco etapas dele. Ganhou ou perdeu etapa lá? Os pontos mudam
+ * junto, ou a landing promete uma espera com outro tamanho.
+ */
+export function LandingYoutubeImportingMock() {
+  return (
+    <div className="flex flex-col items-center gap-5 px-6 pt-12 text-center">
+      <span
+        aria-hidden
+        className="flex size-14 items-center justify-center rounded-2xl bg-[image:var(--scriba-cta)] text-scriba-cta-ink"
+      >
+        <YoutubeGlyph />
+      </span>
+
+      <span className="font-heading text-[17px] font-semibold text-scriba-ink">
+        Importando do YouTube
+      </span>
+
+      <span className="flex aspect-video w-full max-w-[260px] items-center justify-center rounded-2xl bg-scriba-surface ring-1 ring-scriba-hairline ring-inset">
+        <span
+          aria-hidden
+          className="flex size-11 items-center justify-center rounded-full bg-scriba-ink-mute/25 text-scriba-paper"
+        >
+          <svg width="16" height="16" viewBox="0 0 16 16" fill="currentColor" role="presentation">
+            <path d="M5.5 3.4 12 8l-6.5 4.6V3.4Z" />
+          </svg>
+        </span>
+      </span>
+
+      <span className="text-[13px] font-medium text-scriba-ink">A sede que só Cristo cura</span>
+
+      <span className="text-[14px] font-light text-scriba-ink-soft">
+        Organizando a mensagem em tópicos…
+      </span>
+
+      {/* As cinco etapas do `STEPS`, com as três primeiras cumpridas. */}
+      <span aria-hidden className="flex items-center gap-1.5">
+        {[true, true, true, false, false].map((done, index) => (
+          <span
+            // biome-ignore lint/suspicious/noArrayIndexKey: são as cinco etapas fixas do `STEPS`, não dados
+            key={`step-${index}`}
+            className={cn(
+              "block size-1.5 rounded-full",
+              done ? "bg-scriba-blue" : "bg-scriba-ink-mute/25"
+            )}
+          />
+        ))}
+      </span>
+
+      <span className="text-[12px] font-light leading-relaxed text-scriba-ink-mute">
+        Isso leva alguns minutos numa pregação longa. Pode deixar a tela aberta.
+      </span>
     </div>
   );
 }
