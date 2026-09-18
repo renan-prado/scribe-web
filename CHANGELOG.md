@@ -9,6 +9,27 @@ Gerado por `npm run release` a partir dos Conventional Commits. `feat` sobe o
 minor; o resto sobe o patch. Não edite à mão, a próxima execução escreve por
 cima do topo do arquivo.
 
+## 0.47.0, 2026-09-18, desde v0.46.0
+
+### Novidades
+
+- **lexico:** a marcacao ganha cor por categoria, azul para pessoa e verde para lugar (`90f9c80`)
+- **lexico:** nomes marcados viram cadastro com cartao, e o Biblo os usa como fonte (`9c30fba`)
+
+### Correções
+
+- **lexico:** salvar deixa de fechar o dialog, e a imagem trocada aparece na leitura (`88fcd06`)
+- **lexico:** o indice para de ficar congelado ate um F5 (`10dc1a3`)
+- **lexico:** cabecalho do cartao fecha com folga, e o cartao alarga no desktop (`7cc1a19`)
+- **lexico:** a imagem do cartao vira o retrato do cabecalho, ao lado do titulo (`d345f41`)
+- **lexico:** a faixa da imagem do cartao cai para metade da altura (`1156de9`)
+- **lexico:** imagem do cartao nao e mais cortada (`63b65fb`)
+- **lexico:** publicar grava o formulario, em vez de conferir a linha antiga (`9eb0ffb`)
+
+### Outros
+
+- **lexico:** as marcacoes coloridas caem para um degrau acima do piso (`522274e`)
+
 ## 0.46.0, 2026-09-18, desde v0.45.0
 
 ### Novidades
