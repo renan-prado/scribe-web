@@ -1,6 +1,5 @@
 "use client";
 
-import { useQuery } from "@tanstack/react-query";
 import Image from "next/image";
 import {
   Dialog,
@@ -9,7 +8,7 @@ import {
   DialogHeader,
   DialogTitle,
 } from "@/components/ui/dialog";
-import { requestLexiconCard } from "@/features/session/lib/api";
+import { useLexiconCard } from "@/features/session/lexicon-query";
 import { LEXICON_CATEGORY_LABEL } from "@/lib/domain/lexicon";
 
 /**
@@ -67,20 +66,6 @@ import { LEXICON_CATEGORY_LABEL } from "@/lib/domain/lexicon";
  * que o cartão é uma nota curta, não um segundo texto para navegar — quem quer
  * ir mais fundo tem o Biblo, que já lê esta mesma descrição.
  */
-
-/**
- * O conteúdo do cartão praticamente não muda, e quando muda é porque o admin
- * mexeu nele. `staleTime` infinito, como o texto bíblico: reabrir o mesmo nome
- * duas vezes na mesma sessão não repete a busca.
- */
-function useLexiconCard(slug: string) {
-  return useQuery({
-    queryKey: ["lexicon-card", slug] as const,
-    queryFn: () => requestLexiconCard(slug),
-    staleTime: Number.POSITIVE_INFINITY,
-    gcTime: 60 * 60 * 1000,
-  });
-}
 
 export function LexiconCardDialog({
   slug,

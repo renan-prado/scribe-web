@@ -734,6 +734,12 @@ O que não pode ser desfeito:
   regra. A imagem é opcional: um cartão com texto e sem foto responde a pergunta
   que o toque fez; com foto e sem texto é uma imagem sem legenda no meio de um
   sermão.
+- **Salvar NÃO fecha a caixa, nem no cadastro novo**, e isso conserta um fluxo
+  em dois tempos: criar, ver o diálogo fechar, procurar a entrada na lista,
+  abrir de novo, subir a imagem, publicar. Imagem e publicação só existem depois
+  que HÁ uma linha, então fechar bem no instante em que ela passa a existir é
+  fechar a porta na hora em que ela abre. O diálogo guarda a entrada corrente
+  (`current`) e TROCA DE MODO no lugar quando o `create` volta.
 - **Publicar GRAVA o formulário junto, numa escrita só**, e isso é o conserto de
   um defeito real. Os dois lados chamavam a mesma função sobre coisas
   DIFERENTES: o botão sobre o formulário, a rota sobre a linha gravada. Quem
@@ -774,6 +780,13 @@ service-role. Três coisas:
   sobrescrever `abraao.jpg` deixaria a foto antiga viva nos navegadores por
   horas, e o sintoma é "troquei a imagem e não mudou nada". Nome novo, URL nova,
   e a antiga é apagada em seguida.
+- **E isso não bastava sozinho.** A URL nova fura todo cache de HTTP e mesmo
+  assim a imagem trocada continuava velha na LEITURA, porque quem segurava a URL
+  antiga era um degrau acima: o cache de consulta do cartão, criado com
+  `staleTime: Infinity` copiado do padrão da passagem bíblica. A Bíblia é
+  imutável; um cartão é conteúdo que a mesma pessoa acabou de editar. Hoje o
+  prazo dele é o mesmo do índice de nomes, e a query fica fora do disco. Ver
+  `features/session/lexicon-query.ts`.
 - **A imagem nunca é CORTADA, em nenhuma das três telas.** Faixa de altura fixa
   com `object-contain`, e não uma proporção com `object-cover`. O léxico guarda
   as duas formas — o retrato de um personagem é alto, o mapa de uma rota é

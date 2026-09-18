@@ -84,6 +84,14 @@ type Props = {
 };
 
 export function LexiconEntryDialog({ entry, open, onOpenChange, onChanged }: Props) {
+  /**
+   * A entrada como ela está NO BANCO, e `null` enquanto ela não existe.
+   *
+   * Ela é estado, e não só a prop, porque o cadastro novo vira cadastro
+   * existente DENTRO desta caixa: salvar uma entrada nova devolve a linha
+   * criada, e a partir daí há id, há imagem para subir e há o que publicar.
+   */
+  const [current, setCurrent] = useState<AdminLexiconEntry | null>(entry);
   const [term, setTerm] = useState(entry?.term ?? "");
   const [aliases, setAliases] = useState((entry?.aliases ?? []).join(", "));
   const [category, setCategory] = useState<LexiconCategory>(entry?.category ?? "person");
@@ -93,10 +101,22 @@ export function LexiconEntryDialog({ entry, open, onOpenChange, onChanged }: Pro
   const [busy, setBusy] = useState<string | null>(null);
   const fileRef = useRef<HTMLInputElement>(null);
 
-  const isNew = entry === null;
+  const isNew = current === null;
   const ready = canPublishLexiconEntry({ title, description });
 
-  async function post(body: unknown, okMessage: string, busyKey: string): Promise<boolean> {
+  /**
+   * `ok` diz se a escrita passou; `entry` é a linha que a rota gravou, e ela só
+   * não vem no DELETE, que não tem mais o que devolver.
+   *
+   * Ela já foi um booleano só, e o que se perdia era justamente a linha recém
+   * criada: sem ela, esta caixa não tinha como saber que passou a existir uma
+   * entrada para publicar.
+   */
+  async function post(
+    body: unknown,
+    okMessage: string,
+    busyKey: string
+  ): Promise<{ ok: boolean; entry: AdminLexiconEntry | null }> {
     setBusy(busyKey);
     try {
       const res = await fetch("/api/admin/lexicon", {
@@ -104,7 +124,10 @@ export function LexiconEntryDialog({ entry, open, onOpenChange, onChanged }: Pro
         headers: { "content-type": "application/json" },
         body: JSON.stringify(body),
       });
-      const data = (await res.json().catch(() => ({}))) as { error?: string };
+      const data = (await res.json().catch(() => ({}))) as {
+        error?: string;
+        entry?: AdminLexiconEntry;
+      };
       if (!res.ok) {
         toast.error(
           data.error === "duplicate"
@@ -113,14 +136,15 @@ export function LexiconEntryDialog({ entry, open, onOpenChange, onChanged }: Pro
               ? "Escreva o título e a descrição antes de publicar."
               : "Não consegui salvar. Confira os campos e tente de novo."
         );
-        return false;
+        return { ok: false, entry: null };
       }
       toast.success(okMessage);
+      if (data.entry) setCurrent(data.entry);
       onChanged();
-      return true;
+      return { ok: true, entry: data.entry ?? null };
     } catch {
       toast.error("Falha de conexão.");
-      return false;
+      return { ok: false, entry: null };
     } finally {
       setBusy(null);
     }
@@ -142,17 +166,29 @@ export function LexiconEntryDialog({ entry, open, onOpenChange, onChanged }: Pro
     };
   }
 
+  /**
+   * Salvar NÃO fecha a caixa, nem no cadastro novo.
+   *
+   * Fechava, e o resultado era um fluxo em dois tempos: criar, procurar a
+   * entrada na lista, abrir de novo, subir a imagem, publicar. As três últimas
+   * coisas só existem depois que há uma linha, então fechar bem no instante em
+   * que ela passa a existir é fechar a porta na hora em que ela abre.
+   *
+   * Com `current` guardado, a caixa TROCA DE MODO no lugar: o rodapé ganha o
+   * "Publicar" e o campo de imagem aparece, sem a pessoa sair de onde estava.
+   */
   async function handleSave() {
     if (term.trim().length < 2) {
       toast.error("O termo precisa de pelo menos duas letras.");
       return;
     }
-    const ok = await post(
-      isNew ? { action: "create", ...payload() } : { action: "update", id: entry.id, ...payload() },
-      isNew ? "Entrada criada." : "Entrada salva.",
+    await post(
+      current
+        ? { action: "update", id: current.id, ...payload() }
+        : { action: "create", ...payload() },
+      current ? "Entrada salva." : "Entrada criada. Agora dá para subir a imagem e publicar.",
       "save"
     );
-    if (ok && isNew) onOpenChange(false);
   }
 
   /**
@@ -164,9 +200,9 @@ export function LexiconEntryDialog({ entry, open, onOpenChange, onChanged }: Pro
    * passo que nada na tela pedia.
    */
   async function handlePublish(published: boolean) {
-    if (isNew) return;
-    const ok = await post(
-      { action: "publish", id: entry.id, published, entry: payload() },
+    if (!current) return;
+    const { ok } = await post(
+      { action: "publish", id: current.id, published, entry: payload() },
       published ? "Publicada: o nome já é marcado no texto." : "Voltou a rascunho.",
       "publish"
     );
@@ -174,13 +210,13 @@ export function LexiconEntryDialog({ entry, open, onOpenChange, onChanged }: Pro
   }
 
   async function handleDelete() {
-    if (isNew) return;
-    const ok = await post({ action: "delete", id: entry.id }, "Entrada apagada.", "delete");
+    if (!current) return;
+    const { ok } = await post({ action: "delete", id: current.id }, "Entrada apagada.", "delete");
     if (ok) onOpenChange(false);
   }
 
   async function handleUpload(file: File) {
-    if (!entry) return;
+    if (!current) return;
     if (file.size > LEXICON_LIMITS.imageBytes) {
       toast.error("A imagem passa de 2 MB.");
       return;
@@ -188,7 +224,7 @@ export function LexiconEntryDialog({ entry, open, onOpenChange, onChanged }: Pro
     setBusy("image");
     try {
       const form = new FormData();
-      form.set("id", entry.id);
+      form.set("id", current.id);
       form.set("file", file);
       const res = await fetch("/api/admin/lexicon/image", { method: "POST", body: form });
       const data = (await res.json().catch(() => ({}))) as {
@@ -205,6 +241,7 @@ export function LexiconEntryDialog({ entry, open, onOpenChange, onChanged }: Pro
         );
         return;
       }
+      setCurrent(data.entry);
       setImageUrl(data.entry.imageUrl);
       toast.success("Imagem atualizada.");
       onChanged();
@@ -217,18 +254,22 @@ export function LexiconEntryDialog({ entry, open, onOpenChange, onChanged }: Pro
   }
 
   async function handleClearImage() {
-    if (!entry) return;
-    const ok = await post({ action: "clear-image", id: entry.id }, "Imagem removida.", "image");
+    if (!current) return;
+    const { ok } = await post(
+      { action: "clear-image", id: current.id },
+      "Imagem removida.",
+      "image"
+    );
     if (ok) setImageUrl(null);
   }
 
-  const slug = entry?.slug ?? slugifyTerm(term);
+  const slug = current?.slug ?? slugifyTerm(term);
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
       <DialogContent className="sm:max-w-xl">
         <DialogHeader>
-          <DialogTitle>{isNew ? "Nova entrada" : entry.term}</DialogTitle>
+          <DialogTitle>{current ? current.term : "Nova entrada"}</DialogTitle>
           <DialogDescription>
             {/* O slug aparece porque ele é o ENDEREÇO do cartão e não muda mais
                 depois de criado (ver `updateLexiconEntry`). Quem for renomear um
@@ -400,8 +441,8 @@ export function LexiconEntryDialog({ entry, open, onOpenChange, onChanged }: Pro
               {busy === "save" ? <Loader2 className="size-3.5 animate-spin" /> : null}
               Salvar
             </Button>
-            {!isNew &&
-              (entry.published ? (
+            {current &&
+              (current.published ? (
                 <Button
                   type="button"
                   variant="secondary"

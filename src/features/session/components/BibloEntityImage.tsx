@@ -1,8 +1,7 @@
 "use client";
 
-import { useQuery } from "@tanstack/react-query";
 import Image from "next/image";
-import { requestLexiconCard } from "@/features/session/lib/api";
+import { useLexiconCard } from "@/features/session/lexicon-query";
 
 /**
  * O retrato de um nome do léxico, dentro da conversa.
@@ -38,16 +37,12 @@ import { requestLexiconCard } from "@/features/session/lib/api";
  * Ela simplesmente aparece quando chega, e se não chegar, ninguém soube que ela
  * existia.
  *
- * O cache é o mesmo do diálogo (chave `["lexicon-card", slug]`), então tocar no
- * nome depois de já ter visto o retrato abre o cartão sem nova busca.
+ * O cache é o mesmo do diálogo, e literalmente o mesmo hook
+ * (`useLexiconCard`), então tocar no nome depois de já ter visto o retrato abre
+ * o cartão sem nova busca.
  */
 export function BibloEntityImage({ slug }: { slug: string }) {
-  const { data } = useQuery({
-    queryKey: ["lexicon-card", slug] as const,
-    queryFn: () => requestLexiconCard(slug),
-    staleTime: Number.POSITIVE_INFINITY,
-    gcTime: 60 * 60 * 1000,
-  });
+  const { data } = useLexiconCard(slug);
 
   if (!data?.imageUrl) return null;
 
