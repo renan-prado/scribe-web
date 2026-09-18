@@ -19,11 +19,16 @@ import { requestLexiconCard } from "@/features/session/lib/api";
  * um mapa do Mar Vermelho é o que uma resposta de texto nunca vai dar, e é por
  * isso que ele é a única parte que sobe para a tela.
  *
- * ## Ela é pequena, e fica ANTES do texto
+ * ## Ela é pequena, fica ANTES do texto, e não é cortada
  *
  * Ocupa uma faixa estreita no topo do balão, não o corpo dele: a resposta
  * continua sendo o conteúdo, e a imagem é o rosto dela. Uma foto do tamanho do
  * diálogo transformaria a conversa numa galeria com legendas.
+ *
+ * **A faixa tem altura fixa e `object-contain`**, pela mesma razão do cartão
+ * (ver `LexiconCardDialog`), e aqui o erro era pior: ela era 21/9 com
+ * `object-cover`, uma fresta deitada sobre um retrato em pé. Do rosto de Paulo
+ * sobrava a barba.
  *
  * ## O carregamento não desenha esqueleto
  *
@@ -48,13 +53,13 @@ export function BibloEntityImage({ slug }: { slug: string }) {
 
   return (
     <figure className="mb-2.5 overflow-hidden rounded-xl bg-muted">
-      <div className="relative aspect-[21/9] w-full">
+      <div className="relative h-36 w-full">
         <Image
           src={data.imageUrl}
           alt=""
           fill
           sizes="(max-width: 480px) 90vw, 24rem"
-          className="object-cover"
+          className="object-contain"
         />
       </div>
       {/* O nome sob a imagem, e não um título: quem lê já sabe do que se está

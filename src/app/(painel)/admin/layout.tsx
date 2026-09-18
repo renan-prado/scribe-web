@@ -12,7 +12,7 @@ import { AdminSidebar } from "@/features/admin/components/AdminSidebar";
 import { isCurrentUserAdmin } from "@/lib/auth/require-admin";
 import { createClient } from "@/lib/supabase/server";
 
-export const metadata: Metadata = { title: { default: "Admin", template: "%s, Admin" } };
+export const metadata: Metadata = { title: { default: "Admin", template: "%s | Admin" } };
 export const dynamic = "force-dynamic";
 
 export default async function AdminLayout({ children }: { children: ReactNode }) {

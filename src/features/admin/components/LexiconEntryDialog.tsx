@@ -320,7 +320,11 @@ export function LexiconEntryDialog({ entry, open, onOpenChange, onChanged }: Pro
               <div className="flex items-center gap-3">
                 <div className="relative h-16 w-28 shrink-0 overflow-hidden rounded-md border border-scriba-hairline bg-muted">
                   {imageUrl ? (
-                    <Image src={imageUrl} alt="" fill sizes="7rem" className="object-cover" />
+                    // `contain`, como nas duas telas que a pessoa vê: uma
+                    // miniatura cortada mostraria enquadramento que o produto
+                    // não usa, e quem confere a imagem aqui está conferindo
+                    // justamente o que vai aparecer lá.
+                    <Image src={imageUrl} alt="" fill sizes="7rem" className="object-contain" />
                   ) : (
                     <span className="flex h-full items-center justify-center text-scriba-ink-mute">
                       <ImageOff className="size-4" />

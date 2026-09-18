@@ -774,6 +774,16 @@ service-role. Três coisas:
   sobrescrever `abraao.jpg` deixaria a foto antiga viva nos navegadores por
   horas, e o sintoma é "troquei a imagem e não mudou nada". Nome novo, URL nova,
   e a antiga é apagada em seguida.
+- **A imagem nunca é CORTADA, em nenhuma das três telas.** Faixa de altura fixa
+  com `object-contain`, e não uma proporção com `object-cover`. O léxico guarda
+  as duas formas — o retrato de um personagem é alto, o mapa de uma rota é
+  deitado —, e não existe proporção fixa que sirva às duas cortando: um 16/9
+  sobre o retrato de Paulo comeu a cabeça e o peito, que era o que a imagem
+  tinha a dizer. A altura é fixa porque não guardamos as dimensões do arquivo:
+  uma caixa que se molda à imagem só saberia o tamanho depois de carregá-la, e o
+  texto abaixo pularia de lugar no meio da leitura. A miniatura do painel segue
+  a mesma regra, porque quem confere a imagem aqui está conferindo o que vai
+  aparecer lá.
 - **SVG é aceito** (migração 0064), e o cabeçalho dela tem o argumento inteiro:
   mapa, planta do templo e linha do tempo são desenho, não foto. O que o mantém
   inerte são três pernas, e as três precisam continuar de pé — quem sobe é o

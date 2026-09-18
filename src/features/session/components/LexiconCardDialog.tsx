@@ -21,12 +21,26 @@ import { LEXICON_CATEGORY_LABEL } from "@/lib/domain/lexicon";
  * admin cadastrou em `lexicon_entries`. Em nenhum dos dois o modelo tem a
  * caneta.
  *
- * ## A imagem vem PRIMEIRO, e é do tamanho que é
+ * ## A imagem vem PRIMEIRO, e NADA nela é cortado
  *
  * Um cartão de "Mar Vermelho" com três linhas de texto e um mapa de 40px é um
- * mapa que ninguém olha. A faixa do topo ocupa a largura inteira numa
- * proporção 16/9, que é a que serve tanto para uma pintura de personagem
- * quanto para um mapa deitado, e o texto começa embaixo dela.
+ * mapa que ninguém olha. Daí a faixa no topo, na largura inteira, antes do
+ * texto.
+ *
+ * **Ela é uma faixa de altura fixa com `object-contain`, e já foi 16/9 com
+ * `object-cover`.** O corte parecia inofensivo e não era: o léxico guarda as
+ * DUAS formas — o retrato de um personagem é alto, o mapa de uma rota é
+ * deitado —, e não existe proporção fixa que sirva às duas cortando. Um 16/9
+ * sobre um retrato de Paulo comeu a cabeça e o peito, que é exatamente o que a
+ * imagem tinha a dizer.
+ *
+ * Contido, o retrato fica inteiro com folga dos lados e o mapa fica inteiro com
+ * folga em cima e embaixo. A folga é o `bg-muted` da faixa, que é a superfície
+ * do próprio cartão um degrau acima: ela lê como moldura, não como buraco.
+ *
+ * **A altura é FIXA, e é isso que evita o salto.** Não guardamos as dimensões
+ * da imagem, então uma caixa que se molda ao arquivo só saberia o tamanho
+ * DEPOIS de carregá-lo, e o texto abaixo pularia de lugar no meio da leitura.
  *
  * **Sem imagem o cartão não fica com um buraco**: a faixa simplesmente não
  * existe, e o título sobe para o topo. Imagem é opcional no cadastro de
@@ -74,7 +88,7 @@ export function LexiconCardDialog({
     <Dialog open={open} onOpenChange={onOpenChange}>
       <DialogContent>
         {data?.imageUrl ? (
-          <div className="relative -mt-2 aspect-video w-full overflow-hidden rounded-lg bg-muted">
+          <div className="relative -mt-2 h-52 w-full overflow-hidden rounded-lg bg-muted">
             <Image
               src={data.imageUrl}
               alt=""
@@ -82,7 +96,7 @@ export function LexiconCardDialog({
               // O diálogo não passa de ~28rem; pedir a imagem inteira seria
               // baixar um arquivo grande para desenhá-lo pequeno.
               sizes="(max-width: 480px) 100vw, 28rem"
-              className="object-cover"
+              className="object-contain"
             />
           </div>
         ) : null}
