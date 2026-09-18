@@ -9,6 +9,16 @@ Gerado por `npm run release` a partir dos Conventional Commits. `feat` sobe o
 minor; o resto sobe o patch. Não edite à mão, a próxima execução escreve por
 cima do topo do arquivo.
 
+## 0.41.0, 2026-09-18, desde v0.40.1
+
+### Novidades
+
+- **biblo:** a conversa abre do cache, e a despedida do presente aparece onde ela e verdade (`43a1249`)
+
+### Correções
+
+- **biblo:** resposta ja paga nao cai mais por JSON truncado ou campo fora do formato (`ea716d2`)
+
 ## 0.40.1, 2026-09-17, desde v0.40.0
 
 ### Correções
