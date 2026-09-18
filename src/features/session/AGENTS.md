@@ -211,6 +211,23 @@ Duas leituras, e separá-las é a decisão de desempenho da feature:
 | `getLexiconIndex` | termo, apelidos, slug, categoria | no layout de `(app)`, cacheado 1 min em memória |
 | `getLexiconCard` | título, descrição, imagem | `GET /api/lexicon/:slug`, no toque |
 
+**O índice do servidor é a primeira PINTURA, não a verdade da sessão.** Ele
+desce dentro do HTML (marcação no primeiro quadro, sem requisição), e o
+`LexiconProvider` o revalida a cada NAVEGAÇÃO quando ele passa de
+`LEXICON_INDEX_STALE_MS` — um número só, compartilhado com o cache do servidor.
+
+Isso conserta um defeito que o desenho original tinha e o documento escondia: o
+provedor mora num LAYOUT, e o App Router reusa o payload de um layout em toda
+navegação entre telas que o compartilham. A lista ficava congelada **até um
+F5**, e a promessa de "um minuto no máximo entre publicar e acender" era falsa.
+O sintoma foi publicar um nome, tocar em "Ver como ficou" no editor e não ver
+marcação nenhuma.
+
+E a query leva `meta: { persist: false }`: o índice já vem no HTML, então
+guardá-lo no disco não economiza espera e, ao restaurar, o valor do disco
+venceria o que o servidor acabou de mandar — recarregar a página passaria a
+devolver a lista de ontem.
+
 Juntá-las faria cada abertura de resumo baixar 300 descrições e 300 URLs de
 imagem para mostrar zero delas. O cartão entra por `dynamic(ssr:false)`, igual
 ao `ChapterDialog`, e é cacheado por sessão no React Query.

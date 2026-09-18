@@ -1,7 +1,7 @@
 "use client";
 
 import { createAsyncStoragePersister } from "@tanstack/query-async-storage-persister";
-import { isServer, QueryClient } from "@tanstack/react-query";
+import { defaultShouldDehydrateQuery, isServer, QueryClient } from "@tanstack/react-query";
 import { ReactQueryDevtools } from "@tanstack/react-query-devtools";
 import { PersistQueryClientProvider } from "@tanstack/react-query-persist-client";
 import { APP_VERSION } from "@/lib/app-version";
@@ -88,6 +88,30 @@ const persister = isServer
  * outro entra é o `CacheOwnerGuard`. Este arquivo não sabe quem está logado, e
  * não deve saber: ele envolve a landing page também, que é estática.
  */
+/**
+ * O que vai para o DISCO, e o que é só de memória.
+ *
+ * O padrão do persistidor é guardar toda query bem-sucedida, e é o certo para
+ * quase tudo daqui: a Biblioteca, a conversa do Biblo e o texto bíblico existem
+ * no disco justamente para a tela nascer pronta antes de qualquer rede.
+ *
+ * **A exceção é o dado que o SERVIDOR já manda dentro do HTML.** Guardá-lo é um
+ * empate na melhor das hipóteses (não há espera a economizar, ele chega junto
+ * com a página) e uma inversão na pior: ao restaurar, o valor do disco vence o
+ * `initialData` que acabou de vir fresco do servidor, e a tela passa a mostrar
+ * a versão de ontem DEPOIS de já ter pintado a de hoje. Foi o que quase
+ * aconteceu com o índice do léxico, onde o efeito seria perverso — recarregar a
+ * página, que é o gesto de quem quer ver o conteúdo novo, passaria a devolver o
+ * antigo.
+ *
+ * `meta: { persist: false }` é a marca, e ela é um MECANISMO e não um caso
+ * especial: qualquer query semeada por `initialData` do servidor pode usá-la.
+ */
+function shouldPersist(query: Parameters<typeof defaultShouldDehydrateQuery>[0]): boolean {
+  if (query.meta?.persist === false) return false;
+  return defaultShouldDehydrateQuery(query);
+}
+
 export function Providers({ children }: { children: React.ReactNode }) {
   const queryClient = getQueryClient();
   return (
@@ -99,6 +123,7 @@ export function Providers({ children }: { children: React.ReactNode }) {
         persister: persister as NonNullable<typeof persister>,
         maxAge: GC_TIME,
         buster: APP_VERSION,
+        dehydrateOptions: { shouldDehydrateQuery: shouldPersist },
       }}
     >
       {children}

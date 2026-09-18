@@ -1,5 +1,5 @@
 import type { HallucinationReview } from "@/lib/domain/hallucination";
-import type { LexiconCard } from "@/lib/domain/lexicon";
+import type { LexiconCard, LexiconIndexEntry } from "@/lib/domain/lexicon";
 import type { SessionMode } from "@/lib/domain/session";
 import type { SummaryPayload } from "@/lib/domain/summary";
 import { type PassagePayload, parseVerseResponse } from "@/lib/domain/verse";
@@ -267,4 +267,18 @@ export async function requestLexiconCard(slug: string): Promise<LexiconCard | nu
   }
   const body = (await res.json()) as { card?: LexiconCard };
   return body.card ?? null;
+}
+
+/**
+ * GET /api/lexicon. O índice de nomes publicados, para o anotador marcar prosa.
+ *
+ * Quem chama é o `LexiconProvider`, e só quando o valor que veio do servidor
+ * passou do prazo: a primeira pintura de toda tela já nasce com o índice dentro
+ * do HTML, sem nenhuma requisição.
+ */
+export async function requestLexiconIndex(): Promise<LexiconIndexEntry[]> {
+  const res = await fetch("/api/lexicon");
+  if (!res.ok) throw new Error(`HTTP ${res.status}`);
+  const body = (await res.json()) as { entries?: LexiconIndexEntry[] };
+  return body.entries ?? [];
 }

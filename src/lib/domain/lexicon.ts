@@ -27,6 +27,17 @@ import { z } from "zod";
  * URLs de imagem para mostrar zero delas.
  */
 
+/**
+ * De quanto em quanto tempo o índice de nomes é reconferido.
+ *
+ * **Um número só para os dois lados**, e é ele que torna verdadeira a promessa
+ * "no máximo um minuto entre publicar uma entrada e ela acender na tela": o
+ * servidor guarda o índice em memória por este prazo (`getLexiconIndex`), e o
+ * cliente o reconfere por ele a cada navegação (`LexiconProvider`). Com dois
+ * números, o maior manda e o outro vira decoração.
+ */
+export const LEXICON_INDEX_STALE_MS = 60_000;
+
 export const LEXICON_CATEGORIES = ["person", "place", "figure"] as const;
 
 export type LexiconCategory = (typeof LEXICON_CATEGORIES)[number];

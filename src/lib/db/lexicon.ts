@@ -6,7 +6,7 @@ import type {
   LexiconEntryInput,
   LexiconIndexEntry,
 } from "@/lib/domain/lexicon";
-import { canPublishLexiconEntry, slugifyTerm } from "@/lib/domain/lexicon";
+import { canPublishLexiconEntry, LEXICON_INDEX_STALE_MS, slugifyTerm } from "@/lib/domain/lexicon";
 import { clientEnv } from "@/lib/env/client";
 import { createLogger } from "@/lib/log";
 import { createAdminClient } from "@/lib/supabase/admin";
@@ -69,7 +69,6 @@ type IndexRow = {
  * que é o tipo de atraso que ninguém percebe e que uma tela de admin explica em
  * uma linha se preciso.
  */
-const INDEX_TTL_MS = 60_000;
 let indexCache: { entries: LexiconIndexEntry[]; at: number } | null = null;
 let indexLoading: Promise<LexiconIndexEntry[]> | null = null;
 
@@ -83,7 +82,7 @@ let indexLoading: Promise<LexiconIndexEntry[]> | null = null;
  */
 export async function getLexiconIndex(): Promise<LexiconIndexEntry[]> {
   const now = Date.now();
-  if (indexCache && now - indexCache.at < INDEX_TTL_MS) return indexCache.entries;
+  if (indexCache && now - indexCache.at < LEXICON_INDEX_STALE_MS) return indexCache.entries;
   if (indexLoading) return indexLoading;
 
   indexLoading = (async (): Promise<LexiconIndexEntry[]> => {
