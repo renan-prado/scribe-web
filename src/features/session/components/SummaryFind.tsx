@@ -43,11 +43,17 @@ import { cn } from "@/lib/utils";
  * destaque que insere `<mark>` dispara o observador que o recalcularia, e o
  * laço é infinito.
  *
- * As cores moram em `::highlight(...)` no `app/globals.css`, porque uma
- * pseudo-classe de destaque não é um elemento e não tem `className`. Ali só
- * valem cor, fundo, sublinhado e sombra — nada de raio de canto ou respiro,
- * então este destaque é um retângulo de tinta, e não a pastilha arredondada do
- * `<mark>` da transcrição.
+ * As cores moram em `::highlight(...)`, via `<style>` injetado por ESTE
+ * componente (`HIGHLIGHT_STYLE` abaixo) — não em `app/globals.css`, onde elas
+ * moravam até o Turbopack parar de compilar: o Lightning CSS que ele embute
+ * não reconhece `::highlight()` (vercel/next.js#85398), e um `<style>`
+ * renderizado pelo React nunca passa pelo parser de CSS do bundler. A correção
+ * já foi mesclada no upstream (parcel-bundler/lightningcss#970), só falta um
+ * release estável do Next que a carregue — quando chegar, isto pode voltar
+ * para `globals.css`. Uma pseudo-classe de destaque não é um elemento e não
+ * tem `className`, e ali só valem cor, fundo, sublinhado e sombra — nada de
+ * raio de canto ou respiro, então este destaque é um retângulo de tinta, e não
+ * a pastilha arredondada do `<mark>` da transcrição.
  *
  * **Sem a API, a busca continua NAVEGANDO e para de PINTAR**: a conta de
  * ocorrências, o ↑↓ e a rolagem até a linha funcionam iguais, porque são
@@ -69,6 +75,30 @@ import { cn } from "@/lib/utils";
 const HIGHLIGHT_ALL = "scriba-find";
 const HIGHLIGHT_CURRENT = "scriba-find-current";
 const MIN_QUERY = 2;
+
+/**
+ * O `<style>` que colore os dois destaques acima — ver o cabeçalho do arquivo
+ * para o porquê de ele nascer aqui, e não em `globals.css`.
+ *
+ * A TINTA é `--scriba-yellow-ink`, e não `--scriba-ink-strong`: os dois
+ * amarelos aqui são claros nos dois temas (eles são a cor da MOEDA, que não
+ * inverte), e a tinta forte do app é quase branca no escuro — letra clara
+ * sobre amarelo claro é o destaque apagando o que ele deveria mostrar.
+ *
+ * Duas forças: `-current` é a ocorrência em foco, a que o ↑↓ persegue, no
+ * amarelo cheio; as outras ficam no claro. Sem a diferença, achar a quinta de
+ * doze seria contar de cima.
+ */
+const HIGHLIGHT_STYLE = `
+  ::highlight(${HIGHLIGHT_ALL}) {
+    background-color: var(--scriba-yellow-light);
+    color: var(--scriba-yellow-ink);
+  }
+  ::highlight(${HIGHLIGHT_CURRENT}) {
+    background-color: var(--scriba-yellow);
+    color: var(--scriba-yellow-ink);
+  }
+`;
 
 type SummaryFindValue = {
   open: boolean;
@@ -244,7 +274,12 @@ export function SummaryFindProvider({ children }: { children: ReactNode }) {
     [open, query, total, current, toggle, close, step]
   );
 
-  return <SummaryFindContext.Provider value={value}>{children}</SummaryFindContext.Provider>;
+  return (
+    <SummaryFindContext.Provider value={value}>
+      <style>{HIGHLIGHT_STYLE}</style>
+      {children}
+    </SummaryFindContext.Provider>
+  );
 }
 
 /**

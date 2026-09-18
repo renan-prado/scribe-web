@@ -1125,37 +1125,21 @@
       var(--session-highlight-yellow) 58%
     );
   }
-  /* O AMARELO DA BUSCA DENTRO DO RESUMO (ver `SummaryFind.tsx`).
+  /* O AMARELO DA BUSCA DENTRO DO RESUMO morava aqui, e SAIU — ver
+     `SummaryFind.tsx`, que agora injeta essas duas regras num `<style>`
+     próprio.
 
-     Ele é pintado pela CSS Custom Highlight API, e não por um `<mark>`: o
-     resumo sai de oito renderizadores diferentes e o texto dos versículos
-     chega por fetch, então envolver cada ocorrência numa tag obrigaria a
-     descer a consulta por todos eles e ainda assim perderia a NVI. Um
-     destaque de `::highlight()` não é um elemento, não tem `className`, e é
-     por isso que a cor dele mora aqui e não numa classe do Tailwind.
-
-     **Só quatro propriedades valem num `::highlight()`**: cor, cor de fundo,
-     sublinhado e sombra de texto. Nada de raio de canto nem respiro — por isso
-     este destaque é um retângulo de tinta, e não a pastilha arredondada do
-     `<mark>` da transcrição. Não tente arredondá-lo, a regra é ignorada em
-     silêncio.
-
-     A TINTA é `--scriba-yellow-ink`, e não `--scriba-ink-strong`: os dois
-     amarelos aqui são claros nos dois temas (eles são a cor da MOEDA, que não
-     inverte), e a tinta forte do app é quase branca no escuro — letra clara
-     sobre amarelo claro é o destaque apagando o que ele deveria mostrar.
-
-     Duas forças: `-current` é a ocorrência em foco, a que o ↑↓ persegue, no
-     amarelo cheio; as outras ficam no claro. Sem a diferença, achar a quinta
-     de doze seria contar de cima. */
-  ::highlight(scriba-find) {
-    background-color: var(--scriba-yellow-light);
-    color: var(--scriba-yellow-ink);
-  }
-  ::highlight(scriba-find-current) {
-    background-color: var(--scriba-yellow);
-    color: var(--scriba-yellow-ink);
-  }
+     A razão é o Turbopack, não o CSS: o parser de Lightning CSS que ele
+     embute não reconhece `::highlight()` ainda (vercel/next.js#85398, correção
+     já mesclada no upstream em parcel-bundler/lightningcss#970, sem release
+     estável do Next que a carregue até 18/09/2026 — testado até 16.3.5). Como
+     `globals.css` passa pelo parser do Turbopack e uma `<style>` renderizada
+     pelo React não passa, mover as duas regras destrava o `next dev` sem
+     trocar de bundler nem esperar o upstream. Quando o Next shippar a
+     correção, elas podem voltar para cá — não é o lugar errado, é o atalho em
+     volta de um bug temporário. O restante do raciocínio (por que
+     `::highlight()` e não `<mark>`, por que só quatro propriedades, por que a
+     tinta é `--scriba-yellow-ink`) está no cabeçalho do `SummaryFind.tsx`. */
   /* A SELEÇÃO do usuário, no AZUL do Biblo.
 
      O azul do sistema é a única cor do produto que não foi escolhida por
