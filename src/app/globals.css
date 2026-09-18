@@ -316,19 +316,28 @@
      categorias e DUAS cores: quem é trazido de fora da narrativa bíblica não é
      uma terceira família, é a ausência das duas.
 
-     As forças foram MEDIDAS sobre `--v2-card`, não escolhidas, e a janela é
-     estreita: abaixo de ~35% o matiz some e a faixa lê como o cinza de sempre;
-     acima de ~70% o traço ganha contorno e vira sublinhado de INTERFACE, que
-     promete um link onde há um marca-texto. Os valores de hoje ficam na metade
-     de baixo dessa janela, porque o realce tem de ser reconhecido, não lido.
+     AS FORÇAS FORAM MEDIDAS sobre `--v2-card`, e a janela tem as duas bordas
+     encostadas nos valores de hoje:
 
-     OS DOIS ANDAM JUNTOS. Já estiveram em 70/62, e baixar só o azul (o que
-     parecia a correção, já que era ele que gritava) fez o verde virar a coisa
-     mais forte do parágrafo: na mesma opacidade o verde pesa mais, então mexer
-     em um sozinho apenas troca qual dos dois puxa o olho. */
+       acima de ~70%  o traço ganha contorno e vira sublinhado de INTERFACE,
+                      que promete um link onde há um marca-texto;
+       abaixo de ~24% o matiz colapsa no neutro logo acima (branco a 22%) e a
+                      faixa volta a ser o cinza de antes, com a categoria dita
+                      numa cor que ninguém enxerga.
+
+     32% e 30% é o degrau imediatamente acima do piso, e é onde ele deve ficar:
+     a cor aqui existe para ser RECONHECIDA de relance, não lida. A escala desceu
+     de 70/62 em duas passadas, e o caminho até aqui está registrado porque a
+     tentação de subi-la volta toda vez que alguém olha uma marcação isolada —
+     ela é discreta por desenho, e o teste é o parágrafo inteiro, não a palavra.
+
+     OS DOIS ANDAM JUNTOS. Baixar só o azul (o que parecia a correção, já que
+     era ele que gritava) fez o verde virar a coisa mais forte do parágrafo: na
+     mesma opacidade o verde pesa mais, então mexer em um sozinho apenas troca
+     qual dos dois puxa o olho. */
   --session-mention-wash: rgba(255, 255, 255, 0.22);
-  --session-mention-wash-person: rgba(96, 163, 240, 0.52);
-  --session-mention-wash-place: rgba(104, 200, 136, 0.5);
+  --session-mention-wash-person: rgba(96, 163, 240, 0.32);
+  --session-mention-wash-place: rgba(104, 200, 136, 0.3);
 
   /* O LAVADO DA PISCADA: "esse aqui é o bloco que acabou de entrar".
 

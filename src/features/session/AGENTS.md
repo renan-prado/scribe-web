@@ -179,10 +179,13 @@ igreja, e duas gramáticas de cor para a mesma distinção seria o custo real.
 
 A tinta mora nos tokens `--session-mention-wash*` e é trocada por uma regra
 presa ao `data-mention`, nunca por um mapa de classes no componente. As forças
-foram medidas: há uma janela estreita entre o matiz sumir e a faixa virar
-sublinhado de interface, e **os dois valores andam juntos** — na mesma
-opacidade o verde pesa mais, então mexer em um sozinho só troca qual dos dois
-puxa o olho.
+foram medidas, e ficam **um degrau acima do piso**: abaixo de ~24% o matiz
+colapsa no neutro (branco a 22%) e a categoria passa a ser dita numa cor que
+ninguém enxerga; acima de ~70% o traço ganha contorno e vira sublinhado de
+interface. **Os dois valores andam juntos** — na mesma opacidade o verde pesa
+mais, então mexer em um sozinho só troca qual dos dois puxa o olho. E o teste é
+o PARÁGRAFO, nunca a palavra isolada: de perto a marcação sempre parece fraca
+demais, e é assim que ela volta a ser arco-íris.
 
 - **A passada de referência vem ANTES da de nomes, e exige número de
   capítulo.** É o que separa o evangelho do apóstolo: "João 3:16" é consumido
