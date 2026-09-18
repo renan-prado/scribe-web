@@ -25,11 +25,33 @@ const log = createLogger("biblo");
  */
 
 /**
- * Teto da resposta. Uma resposta de chat que passa disso é pior de ler E dobra
- * a parcela mais cara da conta (token de saída). O prompt já pede resposta
- * curta; isto é a mesma regra escrita onde ela é obrigatória em vez de pedida.
+ * Teto da saída da chamada. Uma resposta de chat longa demais é pior de ler E
+ * dobra a parcela mais cara da conta (token de saída). O prompt já pede
+ * resposta curta; isto é a mesma regra escrita onde ela é obrigatória em vez de
+ * pedida.
+ *
+ * ## 700 e não 400, porque 400 CORTAVA O JSON NO MEIO
+ *
+ * Este número não limita a resposta: limita o OBJETO INTEIRO — a prosa, os
+ * quatro chips, a sugestão, a oferta, a passagem e o fio. Em 400 ele era um
+ * orçamento apertado para sete campos, e quando estourava o modelo parava de
+ * escrever no meio de uma string. O que chegava aqui era um JSON quebrado,
+ * `JSON.parse` estourava, e a pessoa via *"Não consegui responder agora"* com
+ * a moeda já debitada.
+ *
+ * **Medido em produção (17/09/2026):** das 105 chamadas do dia, 4 terminaram em
+ * `finish_reason: "length"` — todas em 400 tokens exatos, todas com JSON
+ * inválido, todas sem resposta na tela. A prosa sozinha ficava em ~270 tokens
+ * na mediana e ~350 no topo; o que estourava era a SOMA dos campos, sempre nas
+ * respostas em que o modelo também escrevia um bloco para o resumo.
+ *
+ * Em 700 a folga é de duas vezes o pico medido, e o custo praticamente não se
+ * mexe: o teto só é alcançado pelas poucas que o alcançavam, e ~300 tokens de
+ * saída a mais nelas são R$ 0,0003. A margem medida de 82% (`/admin/custos`,
+ * linha "Biblo") não sente. Quem segura o tamanho da PROSA continua sendo o
+ * prompt, que é onde essa decisão é de leitura e não de orçamento.
  */
-export const BIBLO_ANSWER_MAX_TOKENS = 400;
+export const BIBLO_ANSWER_MAX_TOKENS = 700;
 
 /**
  * Teto do resumo que entra no prompt, em CARACTERES (~4 por token em
@@ -392,6 +414,55 @@ function breathe(text: string): string {
 }
 
 /**
+ * A prosa resgatada de um JSON que o modelo não terminou de escrever.
+ *
+ * `BIBLO_ANSWER_MAX_TOKENS` subiu para 700 justamente para este caso ficar
+ * raro, e isto é a rede embaixo dele: o teto é um número fixo e a prolixidade
+ * não é, então um dia ele será alcançado de novo. Quando for, o que está em
+ * jogo já não é uma resposta a gerar — é uma resposta JÁ GERADA e JÁ PAGA,
+ * inteira no buffer, perdida por causa de uma chave que faltou fechar.
+ *
+ * **O resgate é possível porque `answer` é o primeiro campo longo do objeto.**
+ * O prompt pede a ordem `offtopic, answer, chips, suggestion, offer, passage,
+ * thread`, e o modelo a respeita: nas quatro truncagens medidas em produção, a
+ * prosa estava completa e o corte caiu dentro de `suggestion` ou depois dela.
+ * O que se perde são os chips e o botão, que são decoração; o que se salva é o
+ * produto.
+ *
+ * A varredura é manual, e não um `JSON.parse` de um pedaço: o conteúdo não é
+ * JSON válido, é justamente esse o problema. Ela anda caractere a caractere
+ * respeitando as escapadas, e para na primeira aspa que não esteja escapada —
+ * ou no fim do buffer, quando nem a aspa de fechamento chegou.
+ */
+function salvageAnswer(content: string): string | null {
+  const head = /"answer"\s*:\s*"/.exec(content);
+  if (!head) return null;
+
+  let index = head.index + head[0].length;
+  let text = "";
+  while (index < content.length) {
+    const char = content[index];
+    if (char === '"') break;
+    if (char === "\\") {
+      // `\uXXXX` tem seis caracteres; as demais escapadas, dois. Uma escapada
+      // cortada ao meio pelo teto não é decodificável, e ali o resgate para.
+      const sequence = content.slice(index, index + (content[index + 1] === "u" ? 6 : 2));
+      try {
+        text += JSON.parse(`"${sequence}"`) as string;
+      } catch {
+        break;
+      }
+      index += sequence.length;
+      continue;
+    }
+    text += char;
+    index++;
+  }
+
+  return text.trim() || null;
+}
+
+/**
  * Os tipos de prosa cujo `text` o servidor sabe preencher a partir da resposta.
  *
  * `h2` e `quote` ficam de fora: um subtítulo não é a resposta inteira, e uma
@@ -442,7 +513,7 @@ function suggestionText(suggestion: BibloSuggestion | null): string {
  * irritante que o Biblo já teve.
  *
  * Hoje o prompt manda responder em UMA linha ("Separei o parágrafo sobre o
- * contexto — é só tocar em Adicionar"), e o texto do bloco vem daqui: a última
+ * contexto. É só tocar em Adicionar"), e o texto do bloco vem daqui: a última
  * coisa que ele disse, que é literalmente o "isso" da frase dela.
  *
  * **O gatilho é o TAMANHO da resposta, e não uma bandeira do modelo.** Uma
@@ -455,8 +526,8 @@ function suggestionText(suggestion: BibloSuggestion | null): string {
 /**
  * Abaixo disto, a resposta é um PONTEIRO, não o trecho.
  *
- * "Separei o parágrafo sobre o contexto histórico — é só tocar em Adicionar"
- * tem 74 caracteres. O parágrafo mais curto que já se quis num resumo passa
+ * "Separei o parágrafo sobre o contexto histórico. É só tocar em Adicionar"
+ * tem 73 caracteres. O parágrafo mais curto que já se quis num resumo passa
  * folgado dos 200: os do próprio resumo gerado começam nos 120 e a média fica
  * acima de 300. A folga entre os dois é grande o bastante para o corte não ser
  * uma aposta.
@@ -547,18 +618,41 @@ export async function generateBibloAnswer(input: BibloAnswerInput): Promise<Bibl
     return { ok: false, kind: "upstream", message };
   }
 
+  // `finishReason` vai em TODO log de falha daqui para baixo, e é a única coisa
+  // que separa "o modelo escreveu bobagem" de "o modelo foi interrompido no
+  // meio". Sem ele, as duas causas chegam ao Vercel como a mesma linha, e
+  // descobrir qual era custou uma consulta aos logs da OpenAI.
+  const { finishReason } = result.data;
+
   let parsed: unknown;
   try {
     parsed = JSON.parse(result.data.content);
   } catch {
-    return { ok: false, kind: "unparseable", message: "resposta não é JSON" };
+    // Cortado pelo teto: a prosa continua inteira no buffer. Ver `salvageAnswer`.
+    const salvaged = salvageAnswer(result.data.content);
+    if (!salvaged) {
+      log.error("json inválido", { finishReason, chars: result.data.content.length });
+      return { ok: false, kind: "unparseable", message: "resposta não é JSON" };
+    }
+    log.warn("resposta resgatada de um JSON truncado", {
+      finishReason,
+      completionTokens: result.data.usage.completionTokens,
+      chars: salvaged.length,
+    });
+    parsed = { answer: salvaged };
   }
 
   const reply = BibloReplySchema.safeParse(parsed);
   if (!reply.success) {
     // Os CAMINHOS, não a contagem: "issues: 1" não diz qual campo caiu, e
     // descobrir isso era refazer a chamada com um log temporário no meio.
-    log.warn("schema-drop", {
+    //
+    // **Chegar aqui é, hoje, um DEFEITO DE CONTRATO e não um deslize do
+    // modelo**: todo campo tem rede, e o único erro fatal é a resposta vazia
+    // dos dois lados (ver o cabeçalho de `BibloReplySchema`). Uma linha destas
+    // no log significa que um campo novo nasceu sem `.catch()`.
+    log.error("schema-drop", {
+      finishReason,
       issues: reply.error.issues.map(
         (issue) => `${issue.path.join(".") || "(raiz)"}: ${issue.code}`
       ),
@@ -574,7 +668,7 @@ export async function generateBibloAnswer(input: BibloAnswerInput): Promise<Bibl
   // DOIS lados não há o que mostrar, e aí sim é erro — mas é o único caso.
   const written = reply.data.answer.trim() || suggestionText(reply.data.suggestion);
   if (!written) {
-    log.warn("schema-drop", { issues: ["answer: vazia dos dois lados"] });
+    log.error("resposta vazia dos dois lados", { finishReason });
     return { ok: false, kind: "unparseable", message: "resposta vazia" };
   }
 

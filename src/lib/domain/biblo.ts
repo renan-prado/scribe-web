@@ -80,7 +80,55 @@ export const BIBLO_AT_END = Number.MAX_SAFE_INTEGER;
  * são o que faz a conversa andar sem a pessoa ter de escrever uma linha
  * (`biblo.md` §4), e pedi-los numa segunda chamada dobraria o custo de cada
  * mensagem para gerar três frases curtas.
+ *
+ * ## NENHUM CAMPO DERRUBA A RESPOSTA, e isto é o contrato inteiro
+ *
+ * A chamada já aconteceu e a moeda já foi debitada quando este schema roda:
+ * recusar aqui não economiza nada, só transforma dinheiro gasto em *"Não
+ * consegui responder agora"*. Todo campo tem, portanto, a sua rede — `.catch()`
+ * ou um valor padrão —, e o ÚNICO erro fatal é a resposta vazia dos dois lados
+ * (`answer` e `suggestion.block.text`), que é o caso em que não há literalmente
+ * o que mostrar.
+ *
+ * A regra existe porque foi violada três vezes, e cada violação custou
+ * respostas boas já pagas: `chips` com uma sugestão longa demais, `suggestion`
+ * com o bloco solto no lugar do envelope, e `offer` com o objeto da sugestão
+ * dentro. **Campo novo nasce com rede**, e a rede é parte do campo, não uma
+ * melhoria posterior.
  */
+/**
+ * A oferta, quando ela chega como OBJETO em vez de frase.
+ *
+ * **Isto não é paranoia de tipo: foi a causa número um das falhas do Biblo em
+ * produção.** Medido em 17/09/2026, cinco das nove perguntas sem resposta
+ * daquele dia foram exatamente este deslize — o modelo devolveu em `offer` o
+ * envelope da `suggestion`:
+ *
+ *     "offer": { "label": "Escreva um parágrafo sobre a humildade de Cristo",
+ *                "block": { "type": "paragraph", "text": "" }, "afterIndex": 2 }
+ *
+ * O campo era `z.string()` sem rede, então o schema INTEIRO caía, e a pessoa
+ * via *"Não consegui responder agora"* depois de a moeda já ter sido debitada
+ * e de o modelo ter escrito uma resposta perfeitamente boa. O erro vinha do
+ * próprio prompt, onde o bloco "O formato: { label, block, afterIndex }" ficava
+ * logo abaixo do parágrafo que fala da `offer` — mas um prompt mais claro
+ * reduz a frequência, nunca a zero, e é esta função que decide o que acontece
+ * quando ele erra.
+ *
+ * O `label` é aproveitado em vez de descartado porque ele É a oferta: está na
+ * voz certa, no tamanho certo, e jogá-lo fora tiraria da tela o único chip com
+ * um destino. Qualquer outra forma vira `null`, que é "sem oferta" — o pior
+ * caso de antes desta linha existir.
+ */
+function offerText(value: unknown): string | null {
+  if (typeof value === "string") return value;
+  if (value && typeof value === "object" && "label" in value) {
+    const label = (value as { label?: unknown }).label;
+    if (typeof label === "string") return label;
+  }
+  return null;
+}
+
 export const BibloReplySchema = z.object({
   /**
    * A pergunta estava FORA DO TERRITÓRIO, e a resposta é a recusa gentil.
@@ -120,7 +168,7 @@ export const BibloReplySchema = z.object({
    * para ler e outro para inserir). Vazio dos dois lados, aí sim não há
    * resposta, e aí sim é erro.
    */
-  answer: z.string().default(""),
+  answer: z.string().default("").catch(""),
   /**
    * Os chips, **aparados em vez de recusados**.
    *
@@ -135,6 +183,7 @@ export const BibloReplySchema = z.object({
   chips: z
     .array(z.string())
     .default([])
+    .catch([])
     .transform((list) =>
       list
         .map((chip) => chip.trim())
@@ -165,11 +214,16 @@ export const BibloReplySchema = z.object({
    * O servidor a junta a `chips` antes de gravar (ver `biblo/answer.ts`): a
    * oferta é uma pastilha que se toca como as outras, e separá-la na tela
    * seria um segundo mecanismo para o mesmo gesto.
+   *
+   * **`z.unknown()` e não `z.string()`, e é a correção de um defeito caro**:
+   * ver o cabeçalho de `offerText` logo acima. Este campo era o último do
+   * contrato sem rede, e derrubava a resposta inteira — já paga — quando o
+   * modelo escrevia aqui o objeto da sugestão.
    */
   offer: z
-    .string()
-    .nullable()
-    .default(null)
+    .unknown()
+    .transform(offerText)
+    .catch(null)
     .transform((text) => {
       const trimmed = text?.trim() ?? "";
       return trimmed.length > 0 && trimmed.length <= BIBLO_MAX_CHIP_CHARS ? trimmed : null;
@@ -195,6 +249,7 @@ export const BibloReplySchema = z.object({
     .string()
     .nullable()
     .default(null)
+    .catch(null)
     .transform((text) => {
       const trimmed = text?.trim() ?? "";
       return trimmed.length > 0 && trimmed.length <= 60 ? trimmed : null;
@@ -212,6 +267,7 @@ export const BibloReplySchema = z.object({
   thread: z
     .string()
     .default("")
+    .catch("")
     .transform((text) => text.slice(0, 600)),
 });
 
