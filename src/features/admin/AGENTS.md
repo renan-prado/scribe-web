@@ -767,6 +767,31 @@ O que não pode ser desfeito:
   se chama "Martinho Lutero"), e `aliases` é `text[]`, onde o PostgREST só
   oferece `cs`, que casa o elemento inteiro — "luter" não acharia nada.
 
+### "Algo está errado": o alerta que vem de quem lê
+
+O cartão tem um menu de três pontinhos com "Algo está errado", e o que ele
+escreve cai em `lexicon_reports` (migração 0066), listado no TOPO desta tela.
+
+**Ele não é o alerta de alucinação, apesar do mesmo rótulo.** Aquele manda a
+nota a um modelo que a cruza com a TRANSCRIÇÃO e responde na própria janela;
+existe o que auditar, porque o texto foi escrito por uma IA a partir de um áudio
+que existe. Aqui o conteúdo foi escrito à mão no painel: não há IA para auditar
+nem transcrição para conferir, e a única resposta possível é uma pessoa ler e
+corrigir. Então a janela do usuário não promete análise nenhuma — recebe o
+recado e agradece. Fingir uma apuração seria pior que não ter o botão.
+
+- **A fila abre a tela, e some quando está vazia.** O trabalho normal daqui é
+  escrever o próximo cartão; um alerta é a exceção que fura essa fila, porque
+  alguém LEU o que escrevemos e disse que está errado. Um bloco "nenhum alerta"
+  permanente seria moldura vazia no lugar do que a pessoa veio fazer.
+- **"Resolvido" marca, não apaga.** A linha sai da fila e fica no banco: é o que
+  responde "esse texto já foi questionado antes?", e três alertas sobre a mesma
+  entrada dizem algo que um só não diz.
+- **A tabela tem RLS ligada e NENHUMA policy**, como `feedback_responses`. Uma
+  policy de INSERT para `authenticated` autorizaria a escrita sem olhar o
+  conteúdo, e esta tabela é uma FILA DE TRABALHO: enchê-la de lixo não custa
+  dinheiro, custa os alertas de verdade ficarem enterrados.
+
 ### A imagem: o primeiro arquivo que o produto guarda
 
 Bucket público `lexicon`, escrita só por `/api/admin/lexicon/image` com

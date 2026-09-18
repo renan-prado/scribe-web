@@ -283,6 +283,16 @@ export const RATE_LIMITS = {
     perUser: { limit: 60, windowMs: MIN },
     perIp: { limit: 180, windowMs: MIN },
   },
+  // "Algo está errado" num cartão do léxico. A cadência legítima é de alguns
+  // por leitura — quem repara num erro repara em um, não em vinte —, e o balde
+  // é apertado porque a tabela do outro lado é uma FILA DE TRABALHO: enchê-la
+  // de lixo não custa dinheiro nenhum, custa os alertas de verdade ficarem
+  // enterrados. Mesma régua do alerta de alucinação.
+  lexiconReport: {
+    route: "lexicon-report",
+    perUser: { limit: 10, windowMs: HOUR },
+    perIp: { limit: 40, windowMs: HOUR },
+  },
   // Alerta manual de alucinação: o usuário digita uma nota, então a cadência
   // real é de alguns por sessão. Generoso o bastante para quem está frustrado
   // com o áudio insistir algumas vezes, apertado o bastante para não virar

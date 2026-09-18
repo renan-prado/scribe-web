@@ -1,6 +1,7 @@
 import "server-only";
 import type {
   AdminLexiconEntry,
+  AdminLexiconReport,
   LexiconCard,
   LexiconCategory,
   LexiconEntryInput,
@@ -517,4 +518,101 @@ async function removeLexiconImage(path: string): Promise<void> {
   // Falha aqui é lixo no bucket, não erro de produto: a linha já aponta para o
   // lugar certo. Fica o registro para quem for limpar.
   if (error) log.warn("imagem antiga não saiu", { path, error: error.message });
+}
+
+/* -------------------------------------------------------------------------- */
+/*  "Algo está errado"                                                        */
+/* -------------------------------------------------------------------------- */
+
+/**
+ * O alerta de um usuário sobre o conteúdo de um cartão.
+ *
+ * Service-role, porque a tabela da migração 0066 tem RLS ligada e nenhuma
+ * policy: ela é uma FILA DE TRABALHO, e uma policy de INSERT para
+ * `authenticated` autorizaria a escrita sem olhar o conteúdo — mil linhas de
+ * lixo direto no PostgREST enterrariam os alertas de verdade. Quem afirma a
+ * sessão é a rota; o `userId` vem de lá, nunca do corpo.
+ */
+export async function createLexiconReport(input: {
+  slug: string;
+  note: string;
+  userId: string;
+}): Promise<boolean> {
+  const admin = createAdminClient();
+  const { error } = await admin
+    .from("lexicon_reports")
+    .insert({ slug: input.slug, note: input.note, user_id: input.userId });
+  if (error) {
+    log.error("alerta não gravou", { slug: input.slug, error: error.message });
+    return false;
+  }
+  log.info("alerta registrado", { slug: input.slug, userId: input.userId });
+  return true;
+}
+
+type ReportRow = {
+  id: string;
+  slug: string;
+  note: string;
+  resolved: boolean;
+  created_at: string;
+  user_id: string | null;
+};
+
+/**
+ * A fila do painel: os alertas em aberto, mais novos primeiro.
+ *
+ * O e-mail de quem alertou vem numa SEGUNDA consulta, e não por join: a FK de
+ * `user_id` aponta para `auth.users`, não para `profiles`, então o PostgREST
+ * não tem relação declarada entre as duas tabelas para embutir. É o mesmo
+ * caminho de `loadOwners` no painel de sessões.
+ *
+ * Ele é trazido porque um alerta sem autor não dá para responder, e responder é
+ * metade do valor de alguém ter parado para escrever. Falha na leitura dos
+ * e-mails NÃO esconde os alertas: quem alertou é contexto, o recado é o
+ * conteúdo.
+ */
+export async function listLexiconReports(includeResolved = false): Promise<AdminLexiconReport[]> {
+  const admin = createAdminClient();
+  let query = admin
+    .from("lexicon_reports")
+    .select("id, slug, note, resolved, created_at, user_id")
+    .order("created_at", { ascending: false })
+    .limit(200);
+  if (!includeResolved) query = query.eq("resolved", false);
+
+  const { data, error } = await query;
+  if (error) {
+    log.error("alertas não carregaram", { error: error.message });
+    return [];
+  }
+
+  const rows = (data ?? []) as ReportRow[];
+  const ids = [...new Set(rows.map((r) => r.user_id).filter((id): id is string => Boolean(id)))];
+  const emails = new Map<string, string | null>();
+  if (ids.length > 0) {
+    const { data: profiles } = await admin.from("profiles").select("id, email").in("id", ids);
+    for (const p of (profiles ?? []) as { id: string; email: string | null }[]) {
+      emails.set(p.id, p.email);
+    }
+  }
+
+  return rows.map((row) => ({
+    id: row.id,
+    slug: row.slug,
+    note: row.note,
+    resolved: row.resolved,
+    createdAt: row.created_at,
+    userEmail: row.user_id ? (emails.get(row.user_id) ?? null) : null,
+  }));
+}
+
+export async function resolveLexiconReport(id: string, resolved: boolean): Promise<boolean> {
+  const admin = createAdminClient();
+  const { error } = await admin.from("lexicon_reports").update({ resolved }).eq("id", id);
+  if (error) {
+    log.error("alerta não atualizou", { id, error: error.message });
+    return false;
+  }
+  return true;
 }

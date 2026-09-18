@@ -127,6 +127,32 @@ export const LEXICON_LIMITS = {
  * do cartão se desenha com `<img>` (ou o `next/image` por cima dele), nunca com
  * `<object>`, `<iframe>` ou `<embed>`, que são os que executam script de SVG.
  */
+/**
+ * Teto do recado de "Algo está errado", espelhando o CHECK da migração 0066.
+ *
+ * Pequeno de propósito: é um recado ("a data está errada", "esse não é o
+ * Timóteo certo"), e o que não couber aqui é uma conversa, não um campo maior.
+ */
+export const LEXICON_REPORT_MAX_CHARS = 600;
+
+export const LexiconReportInputSchema = z.object({
+  slug: z.string().min(1).max(64),
+  note: z.string().trim().min(3).max(LEXICON_REPORT_MAX_CHARS),
+});
+
+export type LexiconReportInput = z.infer<typeof LexiconReportInputSchema>;
+
+/** Um alerta, como o painel o lê. */
+export type AdminLexiconReport = {
+  id: string;
+  slug: string;
+  note: string;
+  resolved: boolean;
+  createdAt: string;
+  /** Quem alertou, para o painel poder responder. `null` = conta apagada. */
+  userEmail: string | null;
+};
+
 export const LEXICON_IMAGE_TYPES = [
   "image/jpeg",
   "image/png",

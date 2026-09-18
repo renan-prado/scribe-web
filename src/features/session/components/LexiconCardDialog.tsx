@@ -1,6 +1,6 @@
 "use client";
 
-import { ArrowLeft } from "lucide-react";
+import { ArrowLeft, MoreVertical, TriangleAlert } from "lucide-react";
 import Image from "next/image";
 import { useEffect, useState } from "react";
 import { Button } from "@/components/ui/button";
@@ -11,7 +11,14 @@ import {
   DialogHeader,
   DialogTitle,
 } from "@/components/ui/dialog";
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuTrigger,
+} from "@/components/ui/dropdown-menu";
 import { LexiconNavProvider } from "@/features/session/components/LexiconProvider";
+import { LexiconReportDialog } from "@/features/session/components/LexiconReportDialog";
 import { RichText } from "@/features/session/components/RichText";
 import { useLexiconCard } from "@/features/session/lexicon-query";
 import { LEXICON_CATEGORY_LABEL } from "@/lib/domain/lexicon";
@@ -85,6 +92,23 @@ import { LEXICON_CATEGORY_LABEL } from "@/lib/domain/lexicon";
  * A referência bíblica continua abrindo o `ChapterDialog`, por cima. São duas
  * caixas empilhadas, e aqui isso é aceitável porque a de cima é uma FOLHA: ela
  * mostra o texto e fecha, sem oferecer um terceiro salto.
+ *
+ * ## "Algo está errado" fica atrás dos três pontinhos
+ *
+ * O conteúdo daqui é escrito à mão, o que significa que ele erra como gente
+ * erra: uma data trocada, o Timóteo errado, uma frase que ficou pela metade.
+ * Quem lê é quem descobre, e sem um caminho de volta esse achado morre na tela.
+ *
+ * **No menu, e não como botão à vista**, porque a proporção manda: reportar um
+ * erro é raro e ler é o tempo todo. Um "algo está errado" permanente no cabeçalho
+ * de um cartão de três parágrafos sugere que o texto é pouco confiável, que é o
+ * contrário do que ele é. É o mesmo lugar que o resumo já usa (`SessionMenu`),
+ * então o gesto é o que a pessoa já aprendeu.
+ *
+ * **Ele fecha o cartão antes de abrir a janela do alerta.** Seria a terceira
+ * caixa empilhada (cartão → alerta, com o `ChapterDialog` podendo entrar por
+ * cima), e três camadas sobre a mesma superfície é onde o véu desiste. Além
+ * disso, quem vai escrever o que está errado já leu o que precisava ler.
  */
 
 export function LexiconCardDialog({
@@ -116,107 +140,159 @@ export function LexiconCardDialog({
   const { data, isPending, isError } = useLexiconCard(current);
   const canGoBack = trail.length > 1;
 
+  /**
+   * O alerta é irmão do cartão, não filho: ele abre DEPOIS que o cartão fecha.
+   *
+   * Por isso o slug e o termo são guardados aqui em vez de lidos do `data` — no
+   * instante em que a janela abre, o cartão já se foi e `data` mudou com ele.
+   */
+  const [reporting, setReporting] = useState<{ slug: string; term: string } | null>(null);
+
   return (
-    <Dialog open={open} onOpenChange={onOpenChange}>
-      {/* Mais largo que o padrão do diálogo (`sm:max-w-sm`) SÓ no desktop: o
+    <>
+      {/* IRMÃ do cartão, nunca filha: tocar em "Algo está errado" fecha o
+          cartão e abre esta janela, e como filha ela seria desmontada no mesmo
+          quadro em que deveria aparecer. */}
+      {reporting ? (
+        <LexiconReportDialog
+          slug={reporting.slug}
+          term={reporting.term}
+          open
+          onOpenChange={(o) => {
+            if (!o) setReporting(null);
+          }}
+        />
+      ) : null}
+      <Dialog open={open} onOpenChange={onOpenChange}>
+        {/* Mais largo que o padrão do diálogo (`sm:max-w-sm`) SÓ no desktop: o
           cartão é um texto de três ou quatro parágrafos, e em 384px ele vira
           uma coluna estreita e comprida que obriga a rolar para ler uma nota
           curta. No celular nada muda — lá a largura já é a da tela menos a
           margem, e o teto não chega a valer. `lg` e não mais: a medida de linha
           continua sendo o limite, e passando disso o olho perde o começo da
           linha seguinte (a mesma razão do `max-w-3xl` das telas de leitura). */}
-      <DialogContent className="sm:max-w-lg">
-        {/* `pb-4` fecha o cabeçalho com a mesma folga que o `pt-4` do
+        <DialogContent className="sm:max-w-lg">
+          {/* `pb-4` fecha o cabeçalho com a mesma folga que o `pt-4` do
             componente abre. Sem ele, quem separava o retrato da descrição era só
             o `pt-4` do corpo, e a metade de cima da linha ficava mais apertada
             que a de baixo — num cabeçalho de 56px, que é bem mais alto que o
             texto solto para o qual aquele padding foi calibrado, a diferença se
             vê. */}
-        <DialogHeader className="flex-row items-center gap-3 pr-12 pb-4">
-          {canGoBack ? (
-            <Button
-              type="button"
-              variant="ghost"
-              size="icon-sm"
-              aria-label="Voltar"
-              className="-ml-1 shrink-0"
-              onClick={() => setTrail((t) => t.slice(0, -1))}
-            >
-              <ArrowLeft className="size-4" />
-            </Button>
-          ) : null}
-          {data?.imageUrl ? (
-            <div className="relative size-14 shrink-0 overflow-hidden rounded-lg">
-              <Image
-                src={data.imageUrl}
-                alt=""
-                fill
-                // 56px na tela, e o dobro numa tela retina: pedir a imagem
-                // inteira seria baixar um arquivo grande para desenhá-lo do
-                // tamanho de um avatar.
-                sizes="56px"
-                className="object-contain"
-              />
-            </div>
-          ) : null}
-          {/* `min-w-0` é o que deixa um título longo QUEBRAR em vez de esticar a
+          {/* `pr-20` e não `pr-12`: o canto de cima à direita agora tem DOIS
+            controles, o X do diálogo e os três pontinhos ao lado dele. Com o
+            recuo antigo, um título longo passava por baixo do menu. */}
+          <DialogHeader className="flex-row items-center gap-3 pr-20 pb-4">
+            {canGoBack ? (
+              <Button
+                type="button"
+                variant="ghost"
+                size="icon-sm"
+                aria-label="Voltar"
+                className="-ml-1 shrink-0"
+                onClick={() => setTrail((t) => t.slice(0, -1))}
+              >
+                <ArrowLeft className="size-4" />
+              </Button>
+            ) : null}
+            {data?.imageUrl ? (
+              <div className="relative size-14 shrink-0 overflow-hidden rounded-lg">
+                <Image
+                  src={data.imageUrl}
+                  alt=""
+                  fill
+                  // 56px na tela, e o dobro numa tela retina: pedir a imagem
+                  // inteira seria baixar um arquivo grande para desenhá-lo do
+                  // tamanho de um avatar.
+                  sizes="56px"
+                  className="object-contain"
+                />
+              </div>
+            ) : null}
+            {/* `min-w-0` é o que deixa um título longo QUEBRAR em vez de esticar a
               linha: um filho de flex adota a largura mínima do conteúdo, e sem
               isto "Nabucodonosor, rei da Babilônia" empurraria a caixa. */}
-          <div className="flex min-w-0 flex-col gap-1">
-            {/* `leading-snug` sobre o `leading-none` do componente: ao lado da
+            <div className="flex min-w-0 flex-col gap-1">
+              {/* `leading-snug` sobre o `leading-none` do componente: ao lado da
                 imagem a coluna é estreita, e um título de duas linhas com
                 entrelinha zerada tem os glifos de uma encostando nos da outra. */}
-            <DialogTitle className="leading-snug">{data?.title ?? current}</DialogTitle>
-            <DialogDescription>
-              {data ? LEXICON_CATEGORY_LABEL[data.category] : "Carregando"}
-            </DialogDescription>
-          </div>
-        </DialogHeader>
-
-        <div className="min-h-16">
-          {isPending ? (
-            <div aria-hidden className="flex flex-col gap-2">
-              {["w-full", "w-[94%]", "w-[88%]"].map((w, i) => (
-                <span
-                  key={w}
-                  className={`block h-3 animate-skeleton-shimmer rounded-md bg-muted ${w}`}
-                  style={{ animationDelay: `${i * 90}ms` }}
-                />
-              ))}
+              <DialogTitle className="leading-snug">{data?.title ?? current}</DialogTitle>
+              <DialogDescription>
+                {data ? LEXICON_CATEGORY_LABEL[data.category] : "Carregando"}
+              </DialogDescription>
             </div>
-          ) : isError ? (
-            <p className="text-sm text-destructive">Não consegui carregar agora.</p>
-          ) : data ? (
-            <LexiconNavProvider
-              nav={{ self: data.slug, go: (next) => setTrail((t) => [...t, next]) }}
-            >
-              {/* Um parágrafo por linha em branco, e não um `whitespace-pre-line`
+
+            {/* Só quando há cartão: um menu sobre um esqueleto de carregamento
+              oferece reportar um erro num texto que ainda não foi lido. */}
+            {data ? (
+              <DropdownMenu>
+                <DropdownMenuTrigger
+                  aria-label="Mais opções"
+                  className="absolute top-2 right-11 flex size-8 items-center justify-center rounded-full text-scriba-ink-mute outline-none transition-colors hover:bg-scriba-blue-soft/60 hover:text-scriba-ink focus-visible:ring-2 focus-visible:ring-ring/40"
+                >
+                  <MoreVertical className="size-4" />
+                </DropdownMenuTrigger>
+                <DropdownMenuContent align="end" className="w-52">
+                  <DropdownMenuItem
+                    className="gap-2"
+                    onClick={() => {
+                      // Fecha o cartão e abre o alerta. Ver o cabeçalho.
+                      setReporting({ slug: data.slug, term: data.title });
+                      onOpenChange(false);
+                    }}
+                  >
+                    <TriangleAlert className="size-4" />
+                    Algo está errado
+                  </DropdownMenuItem>
+                </DropdownMenuContent>
+              </DropdownMenu>
+            ) : null}
+          </DialogHeader>
+
+          <div className="min-h-16">
+            {isPending ? (
+              <div aria-hidden className="flex flex-col gap-2">
+                {["w-full", "w-[94%]", "w-[88%]"].map((w, i) => (
+                  <span
+                    key={w}
+                    className={`block h-3 animate-skeleton-shimmer rounded-md bg-muted ${w}`}
+                    style={{ animationDelay: `${i * 90}ms` }}
+                  />
+                ))}
+              </div>
+            ) : isError ? (
+              <p className="text-sm text-destructive">Não consegui carregar agora.</p>
+            ) : data ? (
+              <LexiconNavProvider
+                nav={{ self: data.slug, go: (next) => setTrail((t) => [...t, next]) }}
+              >
+                {/* Um parágrafo por linha em branco, e não um `whitespace-pre-line`
                   sobre o texto inteiro: a descrição é escrita à mão num campo de
                   texto do painel, e o `RichText` precisa de uma string por
                   parágrafo para marcar dentro de cada uma. */}
-              <div className="flex flex-col gap-3">
-                {data.description
-                  .split(/\n{2,}/)
-                  .map((paragraph) => paragraph.trim())
-                  .filter(Boolean)
-                  .map((paragraph) => (
-                    <p
-                      key={paragraph.slice(0, 48)}
-                      className="text-sm leading-relaxed text-scriba-ink"
-                    >
-                      <RichText>{paragraph}</RichText>
-                    </p>
-                  ))}
-              </div>
-            </LexiconNavProvider>
-          ) : (
-            // A entrada sumiu do cadastro entre o índice descer e o toque
-            // acontecer. Raro, e ainda assim possível: o índice vive até um
-            // minuto em memória (ver `getLexiconIndex`).
-            <p className="text-sm text-muted-foreground">Ainda não escrevi sobre isso.</p>
-          )}
-        </div>
-      </DialogContent>
-    </Dialog>
+                <div className="flex flex-col gap-3">
+                  {data.description
+                    .split(/\n{2,}/)
+                    .map((paragraph) => paragraph.trim())
+                    .filter(Boolean)
+                    .map((paragraph) => (
+                      <p
+                        key={paragraph.slice(0, 48)}
+                        className="text-sm leading-relaxed text-scriba-ink"
+                      >
+                        <RichText>{paragraph}</RichText>
+                      </p>
+                    ))}
+                </div>
+              </LexiconNavProvider>
+            ) : (
+              // A entrada sumiu do cadastro entre o índice descer e o toque
+              // acontecer. Raro, e ainda assim possível: o índice vive até um
+              // minuto em memória (ver `getLexiconIndex`).
+              <p className="text-sm text-muted-foreground">Ainda não escrevi sobre isso.</p>
+            )}
+          </div>
+        </DialogContent>
+      </Dialog>
+    </>
   );
 }

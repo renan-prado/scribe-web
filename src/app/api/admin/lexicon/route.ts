@@ -5,6 +5,7 @@ import {
   clearLexiconImage,
   createLexiconEntry,
   deleteLexiconEntry,
+  resolveLexiconReport,
   setLexiconPublished,
   updateLexiconEntry,
 } from "@/lib/db/lexicon";
@@ -56,6 +57,10 @@ const BodySchema = z.discriminatedUnion("action", [
   }),
   z.object({ action: z.literal("clear-image"), id: IdSchema }),
   z.object({ action: z.literal("delete"), id: IdSchema }),
+  // O alerta de "Algo está errado" lido e resolvido. Mora nesta rota, e não
+  // numa própria, porque é a mesma tela e o mesmo gate: quem resolve um alerta
+  // acabou de corrigir a entrada ao lado.
+  z.object({ action: z.literal("resolve-report"), id: IdSchema, resolved: z.boolean() }),
 ]);
 
 export async function POST(request: Request) {
@@ -70,6 +75,13 @@ export async function POST(request: Request) {
   const body = parsed.data;
 
   try {
+    if (body.action === "resolve-report") {
+      const ok = await resolveLexiconReport(body.id, body.resolved);
+      return ok
+        ? NextResponse.json({ ok: true })
+        : NextResponse.json({ error: "write_failed" }, { status: 500 });
+    }
+
     if (body.action === "delete") {
       const ok = await deleteLexiconEntry(body.id);
       return ok

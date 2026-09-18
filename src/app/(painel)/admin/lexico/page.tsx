@@ -1,8 +1,9 @@
 import type { Metadata } from "next";
 import { AdminPageHeader } from "@/features/admin/components/AdminPageHeader";
 import { LexiconManager } from "@/features/admin/components/LexiconManager";
+import { LexiconReports } from "@/features/admin/components/LexiconReports";
 import { ContentTabs } from "@/features/admin/components/SectionTabs";
-import { listLexiconForAdmin } from "@/lib/db/lexicon";
+import { listLexiconForAdmin, listLexiconReports } from "@/lib/db/lexicon";
 import { LEXICON_CATEGORIES, type LexiconCategory } from "@/lib/domain/lexicon";
 
 export const metadata: Metadata = { title: "Léxico" };
@@ -43,13 +44,17 @@ export default async function AdminLexiconPage({ searchParams }: PageProps) {
   // denominador do "x de y publicadas". Sem a segunda, filtrar por rascunho
   // mudaria o total na mesma tela em que se está tentando acompanhar o
   // progresso do trabalho.
-  const [entries, all] = await Promise.all([
+  const [entries, all, reports] = await Promise.all([
     listLexiconForAdmin({
       search: sp.q?.trim() || undefined,
       category: parseCategory(sp.categoria),
       published: parsePublished(sp.estado),
     }),
     listLexiconForAdmin(),
+    // Os alertas de leitores. Vêm sempre, e não só quando algum filtro pede: um
+    // alerta fura a fila do cadastro (ver `LexiconReports`), e escondê-lo atrás
+    // de um filtro seria enterrar exatamente o que veio de fora.
+    listLexiconReports(),
   ]);
 
   return (
@@ -60,6 +65,8 @@ export default async function AdminLexiconPage({ searchParams }: PageProps) {
       />
 
       <ContentTabs active="lexico" />
+
+      <LexiconReports reports={reports} />
 
       <LexiconManager
         entries={entries}

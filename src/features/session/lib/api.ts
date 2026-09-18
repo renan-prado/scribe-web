@@ -282,3 +282,22 @@ export async function requestLexiconIndex(): Promise<LexiconIndexEntry[]> {
   const body = (await res.json()) as { entries?: LexiconIndexEntry[] };
   return body.entries ?? [];
 }
+
+/**
+ * POST /api/lexicon/report. "Algo está errado" num cartão do léxico.
+ *
+ * Não cobra moeda e não chama modelo: o conteúdo do léxico é escrito à mão, e a
+ * única resposta possível é uma pessoa ler e corrigir.
+ */
+export async function reportLexiconEntry(input: { slug: string; note: string }): Promise<boolean> {
+  try {
+    const res = await fetch("/api/lexicon/report", {
+      method: "POST",
+      headers: { "content-type": "application/json" },
+      body: JSON.stringify(input),
+    });
+    return res.ok;
+  } catch {
+    return false;
+  }
+}
