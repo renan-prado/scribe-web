@@ -1,6 +1,6 @@
 "use client";
 
-import { ArrowUp, MessageCircle, X } from "lucide-react";
+import { ArrowUp, Loader2, MessageCircle, Mic, Square, X } from "lucide-react";
 import { useCallback, useEffect, useRef, useState } from "react";
 import { BillingDialog } from "@/features/billing/components/BillingDialog";
 import { useCoinsStore } from "@/features/coins/store";
@@ -12,6 +12,8 @@ import {
 } from "@/features/session/components/BibloMessage";
 import { BibloSelection } from "@/features/session/components/BibloSelection";
 import { ListeningDots } from "@/features/session/components/skeletons";
+import { useBibloVoice } from "@/features/session/hooks/useBibloVoice";
+import { formatMmSs } from "@/features/session/lib/text";
 import {
   BIBLO_AT_END,
   BIBLO_MAX_QUESTION_CHARS,
@@ -342,6 +344,78 @@ function Chips({
   );
 }
 
+/**
+ * O slot do rodapé: UM botão redondo, quatro estados.
+ *
+ * **Campo vazio vira microfone; campo com texto volta a ser a seta.** É a
+ * decisão inteira da tarefa 006 virada em componente: não há dois botões
+ * disputando o canto, e por isso `draft` decide entre `mic` e `send` sem que
+ * a gaveta precise mudar de layout. Gravando e transcrevendo cobrem os dois
+ * por cima, porque nenhum dos dois é "campo vazio, decida sozinho".
+ */
+function ComposerButton({
+  pending,
+  draft,
+  voice,
+}: {
+  pending: boolean;
+  draft: string;
+  voice: ReturnType<typeof useBibloVoice>;
+}) {
+  if (voice.state === "recording") {
+    return (
+      <button
+        type="button"
+        onClick={() => void voice.stop()}
+        aria-label="Encerrar a gravação"
+        className="inline-flex size-10 shrink-0 items-center justify-center rounded-full bg-scriba-rose text-scriba-rose-ink transition hover:brightness-110 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-scriba-ink-mute"
+      >
+        <Square aria-hidden className="size-4" fill="currentColor" strokeWidth={0} />
+      </button>
+    );
+  }
+
+  if (voice.state === "transcribing") {
+    return (
+      <button
+        type="button"
+        disabled
+        aria-label="Transcrevendo"
+        className="inline-flex size-10 shrink-0 items-center justify-center rounded-full bg-scriba-ink text-scriba-paper opacity-70"
+      >
+        <Loader2 aria-hidden className="size-5 animate-spin" />
+      </button>
+    );
+  }
+
+  // Mic só aparece com o campo vazio e o aparelho sabendo gravar
+  // (`pickMime()` != null, ver `useBibloVoice`): oferecer um botão que falha
+  // no toque é pior do que não oferecer nenhum.
+  if (draft.trim().length === 0 && voice.supported) {
+    return (
+      <button
+        type="button"
+        onClick={() => void voice.start()}
+        aria-label="Gravar uma pergunta"
+        className="inline-flex size-10 shrink-0 items-center justify-center rounded-full bg-scriba-ink text-scriba-paper transition hover:brightness-110 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-scriba-ink-mute"
+      >
+        <Mic aria-hidden className="size-5" strokeWidth={2} />
+      </button>
+    );
+  }
+
+  return (
+    <button
+      type="submit"
+      disabled={pending || draft.trim().length === 0}
+      aria-label="Enviar"
+      className="inline-flex size-10 shrink-0 items-center justify-center rounded-full bg-scriba-ink text-scriba-paper transition disabled:opacity-40 hover:brightness-110 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-scriba-ink-mute"
+    >
+      <ArrowUp aria-hidden className="size-5" strokeWidth={2} />
+    </button>
+  );
+}
+
 export function BibloDrawer({
   sessionId,
   ensureSession,
@@ -386,6 +460,18 @@ export function BibloDrawer({
   const listRef = useRef<HTMLDivElement>(null);
   const inputRef = useRef<HTMLTextAreaElement>(null);
   const setBalance = useCoinsStore((s) => s.setBalance);
+
+  // O recado falado: fala em vez de digitar, o texto cai no CAMPO, nunca é
+  // enviado sozinho. Ver o cabeçalho de `useBibloVoice`.
+  const voice = useBibloVoice({
+    sessionId,
+    ensureSession,
+    onTranscribed: (text, balance) => {
+      setDraft(text);
+      if (typeof balance === "number") setBalance(balance);
+      inputRef.current?.focus();
+    },
+  });
 
   // Ao ABRIR uma conversa que já existia, o fim da lista.
   //
@@ -764,7 +850,29 @@ export function BibloDrawer({
       />
 
       <div className="space-y-3 border-scriba-hairline border-t px-4 pt-3 pb-[calc(0.75rem+max(env(safe-area-inset-bottom),var(--kb-inset,0px)))]">
-        {!blocked && <Chips chips={chips} onPick={send} disabled={pending} />}
+        {!blocked && (
+          <Chips chips={chips} onPick={send} disabled={pending || voice.state !== "idle"} />
+        )}
+
+        {/* O erro do recado falado, LEGÍVEL e com saída.
+            Duas famílias: "tente de novo" (rede, STT, áudio vazio) não tem
+            botão nenhum, e "plano"/"saldo" (`voice.showBilling`) abre o MESMO
+            `BillingDialog` da despedida, porque é o mesmo diálogo em todo
+            lugar do produto que fala de comprar. */}
+        {!blocked && voice.error && (
+          <div className="flex items-center justify-between gap-3">
+            <p className="text-[13px] text-scriba-rose-body">{voice.error}</p>
+            {voice.showBilling && (
+              <button
+                type="button"
+                onClick={() => setBillingOpen(true)}
+                className="shrink-0 whitespace-nowrap font-medium text-[13px] text-scriba-ink-soft underline underline-offset-2 hover:text-scriba-ink"
+              >
+                Ver planos
+              </button>
+            )}
+          </div>
+        )}
 
         {/* A despedida, com o rosto de quem a diz.
 
@@ -819,18 +927,18 @@ export function BibloDrawer({
                 }
               }}
               rows={1}
-              placeholder="Pergunte alguma coisa…"
+              disabled={voice.state !== "idle"}
+              placeholder={
+                voice.state === "recording"
+                  ? `Gravando… ${formatMmSs(voice.elapsedMs)}`
+                  : voice.state === "transcribing"
+                    ? "Transcrevendo…"
+                    : "Pergunte alguma coisa…"
+              }
               aria-label="Sua pergunta"
-              className="flex-1 resize-none overflow-y-auto rounded-2xl bg-scriba-surface px-3.5 py-2.5 text-[14px] text-scriba-ink leading-6 placeholder:text-scriba-ink-mute focus-visible:outline-2 focus-visible:outline-offset-1 focus-visible:outline-scriba-ink-mute"
+              className="flex-1 resize-none overflow-y-auto rounded-2xl bg-scriba-surface px-3.5 py-2.5 text-[14px] text-scriba-ink leading-6 placeholder:text-scriba-ink-mute focus-visible:outline-2 focus-visible:outline-offset-1 focus-visible:outline-scriba-ink-mute disabled:opacity-100"
             />
-            <button
-              type="submit"
-              disabled={pending || draft.trim().length === 0}
-              aria-label="Enviar"
-              className="inline-flex size-10 shrink-0 items-center justify-center rounded-full bg-scriba-ink text-scriba-paper transition disabled:opacity-40 hover:brightness-110 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-scriba-ink-mute"
-            >
-              <ArrowUp aria-hidden className="size-5" strokeWidth={2} />
-            </button>
+            <ComposerButton pending={pending} draft={draft} voice={voice} />
           </form>
         )}
       </div>

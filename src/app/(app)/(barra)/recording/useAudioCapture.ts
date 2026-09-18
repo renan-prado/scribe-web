@@ -1,7 +1,7 @@
 "use client";
 
 import { useCallback, useEffect, useRef, useState } from "react";
-import { AUDIO_CONSTRAINTS, reportTrackSettings } from "./audio-constraints";
+import { AUDIO_CONSTRAINTS, pickMime, reportTrackSettings } from "@/lib/audio-constraints";
 
 /**
  * A captação do `/recording`: um arquivo, transcrito de uma vez só no fim.
@@ -51,21 +51,6 @@ const PART_MAX_BYTES = 7 * 1024 * 1024;
 /** Depois do teto, quanto esperamos por um silêncio antes de cortar à força. */
 const PART_SILENCE_GRACE_MS = 30_000;
 const SILENCE_RMS = 0.01;
-
-const MIME_CANDIDATES = [
-  { mime: "audio/webm;codecs=opus", extension: "webm" },
-  { mime: "audio/webm", extension: "webm" },
-  // Safari não grava webm; o contêiner dele é mp4 e a rota aceita a extensão.
-  { mime: "audio/mp4", extension: "mp4" },
-] as const;
-
-function pickMime(): { mime: string; extension: string } | null {
-  if (typeof MediaRecorder === "undefined") return null;
-  for (const c of MIME_CANDIDATES) {
-    if (MediaRecorder.isTypeSupported(c.mime)) return c;
-  }
-  return null;
-}
 
 type Options = {
   onLevels: (levels: Float32Array) => void;

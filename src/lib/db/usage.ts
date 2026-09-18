@@ -98,6 +98,11 @@ export const USAGE_ROUTES = [
   // `cached_tokens`, que diz quanta conversa pegou o cache do prefixo. É a
   // diferença entre 74% e 61% de margem em `features/coins/pricing.ts`.
   "biblo",
+  // O recado FALADO ao Biblo (`POST /api/biblo/voice`). Rota própria e não
+  // `transcribe`: misturar os dois jogaria minutos de recado dentro da
+  // medição de minutos de SERMÃO, que é justamente o número que decide se
+  // `recordingMinute` continua em 5. Ver `docs/biblo-implementacao.md` §14.
+  "biblo-voice",
 ] as const;
 
 /** A mesma lista, como tipo. Um lugar só, ou a lista e o tipo divergem. */
@@ -127,7 +132,7 @@ export type RecordAudioUsageInput = {
   /** Sempre `auth.user.id`, nunca um valor vindo do corpo da requisição. */
   userId: string;
   sessionId: string | null;
-  route: Extract<UsageRoute, "transcribe">;
+  route: Extract<UsageRoute, "transcribe" | "biblo-voice">;
   model: string;
   audioSeconds: number;
   latencyMs: number;

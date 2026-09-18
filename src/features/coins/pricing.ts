@@ -165,6 +165,39 @@ export const COIN_COSTS = {
    * mensagens são 8% de um plano Pessoal.
    */
   bibloMessage: 2,
+  /**
+   * UM recado FALADO ao Biblo: fala em vez de digitar, o texto cai no campo.
+   *
+   * **7 e não 2, porque o custo é outro: STT em cima da chamada de conversa.**
+   * Na régua de `DEFAULT_COIN_PRICE_PER_THOUSAND_BRL` (moeda = R$ 0,02) e
+   * `DEFAULT_TARGET_MARGIN_PCT` (70%), um recado de até `BIBLO_VOICE_MAX_MS`:
+   *
+   * | parcela | custo |
+   * |---|---|
+   * | STT, 1 minuto | R$ 0,0320 |
+   * | a mensagem em si (medida, cache frio, ver `bibloMessage`) | R$ 0,0055 |
+   * | **total** | **R$ 0,0375** |
+   *
+   * R$ 0,0375 / 0,3 = R$ 0,125, que a R$ 0,02 a moeda dá 6,25 → 7, com margem
+   * de ~73%. A leitura alternativa chega quase no mesmo lugar por outro
+   * caminho: 5 (`recordingMinute`, que já é STT mais resumo) + 2
+   * (`bibloMessage`) = 7.
+   *
+   * **`BIBLO_VOICE_MAX_MS` é o que torna este preço fixo defensável.** Sem
+   * teto o custo de STT não tem limite superior, o mesmo buraco em que
+   * `reprocessSummary` esteve a 5. Ver `lib/domain/biblo.ts`.
+   *
+   * **Não cobre o presente, e isso é decisão, não omissão.** `bibloMessage`
+   * tem `BIBLO_GIFT_MESSAGES` grátis por conta; a voz não tem — dez recados
+   * falados custariam R$ 0,38 do R$ 1,00 que `INITIAL_COIN_BALANCE` já dá de
+   * graça, e a voz exige plano pago desde a primeira tentativa. Ver
+   * `BibloVoiceDenial` em `lib/domain/biblo.ts`.
+   *
+   * **Não estorna em falha de STT.** A ordem continua cobra → sobe →
+   * transcreve, como em toda outra rota do produto: sete moedas não pagam a
+   * complexidade de um estorno, igual às duas de `bibloMessage`.
+   */
+  bibloVoiceMessage: 7,
 } as const;
 
 /**
@@ -197,6 +230,7 @@ export const CHARGE_REASONS = [
   "reprocess_deepening",
   "youtube_import",
   "biblo_message",
+  "biblo_voice_message",
 ] as const;
 export type ChargeReason = (typeof CHARGE_REASONS)[number];
 
@@ -207,6 +241,7 @@ export const COIN_COST_BY_REASON: Record<ChargeReason, number> = {
   reprocess_deepening: COIN_COSTS.reprocessDeepening,
   youtube_import: COIN_COSTS.youtubeImport,
   biblo_message: COIN_COSTS.bibloMessage,
+  biblo_voice_message: COIN_COSTS.bibloVoiceMessage,
 };
 
 /**

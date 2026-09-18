@@ -2,7 +2,7 @@ import "server-only";
 import { BIBLO_GIFT_MESSAGES } from "@/features/coins/pricing";
 import { countGiftMessages } from "@/lib/db/biblo";
 import { getFeatureSwitches, getOwnFeatureOverrides } from "@/lib/db/feature-flags";
-import type { BibloAllowance } from "@/lib/domain/biblo";
+import type { BibloAllowance, BibloVoiceAllowance } from "@/lib/domain/biblo";
 import { evaluateFeature } from "@/lib/entitlements/features";
 import { getCurrentPlan } from "@/lib/entitlements/server";
 import { createLogger } from "@/lib/log";
@@ -71,4 +71,42 @@ export async function resolveBibloAllowance(userId: string): Promise<BibloAllowa
   const remaining = Math.max(0, BIBLO_GIFT_MESSAGES - used);
   if (remaining <= 0) return { kind: "denied", reason: "gift_exhausted" };
   return { kind: "gift", remaining };
+}
+
+/**
+ * Quem pode mandar o PRÓXIMO recado falado. Ver `BibloVoiceDenial`
+ * (`lib/domain/biblo.ts`) para o porquê de não haver presente aqui.
+ *
+ * **Não é `resolveBibloAllowance` com um `if` a menos, é a mesma decisão sem
+ * o passo 3.** O catálogo (`evaluateFeature`) continua respondendo sim ou
+ * não; o que a voz NUNCA faz é traduzir o "não, por plano" de uma conta
+ * gratuita num talvez. `"plan"` sai direto como recusa.
+ *
+ * **Sem parâmetro `userId`.** Ao contrário de `resolveBibloAllowance`, esta
+ * função nunca consulta `countGiftMessages` (não há presente para a voz), e
+ * `getCurrentPlan()` já resolve sozinho a conta do request atual. Recebê-lo
+ * sem usá-lo sugeriria uma checagem por PESSOA que este código não faz.
+ */
+export async function resolveBibloVoiceAllowance(): Promise<BibloVoiceAllowance> {
+  let plan: Awaited<ReturnType<typeof getCurrentPlan>>;
+  try {
+    plan = await getCurrentPlan();
+  } catch (error) {
+    log.error("não consegui ler o plano", { error: String(error) });
+    return { kind: "denied", reason: "revoked" };
+  }
+
+  const [switches, overrides] = await Promise.all([
+    getFeatureSwitches().catch(() => ({}) as Record<string, boolean>),
+    getOwnFeatureOverrides().catch(() => ({}) as Record<string, boolean>),
+  ]);
+
+  const access = evaluateFeature("biblo_chat", {
+    plan,
+    enabled: switches.biblo_chat,
+    override: overrides.biblo_chat ?? null,
+  });
+
+  if (access.allowed) return { kind: "coins" };
+  return { kind: "denied", reason: access.reason };
 }

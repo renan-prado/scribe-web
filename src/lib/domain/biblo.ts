@@ -332,3 +332,54 @@ export type BibloTurn = {
 
 /** Teto do que a pessoa pode digitar. Uma pergunta não é um texto. */
 export const BIBLO_MAX_QUESTION_CHARS = 500;
+
+/**
+ * O recado falado: fala em vez de digitar, o texto cai no CAMPO.
+ *
+ * `POST /api/biblo/voice` cobra, transcreve e devolve o texto — nunca escreve
+ * na conversa. Quem grava a mensagem de verdade continua sendo `POST
+ * /api/biblo`, quando a pessoa envia o texto que voltou. Ver
+ * `docs/biblo-implementacao.md` §14.
+ */
+
+/**
+ * Teto de duração de UM recado falado, em ms.
+ *
+ * **É o que torna `bibloVoiceMessage` um preço FIXO defensável.** Sem teto o
+ * custo de STT de uma mensagem não tem limite superior, o mesmo buraco em que
+ * `reprocessSummary` esteve a 5 moedas. Com 60s o pior caso é conhecido antes
+ * da chamada. O CLIENTE encerra a gravação sozinho ao alcançar o teto; o
+ * servidor tem o dele por trás, um teto de BYTES (`MAX_VOICE_FILE_BYTES` na
+ * rota) calibrado para a mesma duração, porque decodificar o áudio para medir
+ * a duração de verdade exigiria um binário que o runtime do Next não tem.
+ */
+export const BIBLO_VOICE_MAX_MS = 60_000;
+
+/**
+ * Por que uma tentativa de recado falado não virou texto no campo.
+ *
+ * **Não tem `gift_exhausted`, e a ausência é a regra, não um esquecimento.**
+ * O presente (`BIBLO_GIFT_MESSAGES`) cobre só a mensagem digitada — dez
+ * recados falados custariam R$ 0,38 do R$ 1,00 que `INITIAL_COIN_BALANCE` já
+ * dá de graça, e a voz é a única ação do Biblo que exige plano pago desde a
+ * primeira tentativa. `"plan"` é essa recusa: a mesma que `evaluateFeature`
+ * devolve para `biblo_chat` numa conta gratuita, sem o desvio para o
+ * presente que `resolveBibloAllowance` abre para o texto.
+ */
+export type BibloVoiceDenial =
+  /** Kill switch: fora para todo mundo. */
+  | "disabled"
+  /** Um override do admin revogou para esta pessoa. */
+  | "revoked"
+  /** Conta gratuita: a voz não tem presente, só o plano libera. */
+  | "plan"
+  /** Sem saldo. Reversível comprando créditos. */
+  | "insufficient_balance";
+
+export type BibloVoiceAllowance = { kind: "coins" } | { kind: "denied"; reason: BibloVoiceDenial };
+
+/** Resposta de `POST /api/biblo/voice`. */
+export type BibloVoiceTurn =
+  | { ok: true; text: string; balance: number | null }
+  | { ok: false; error: "biblo_voice_not_available"; reason: BibloVoiceDenial }
+  | { ok: false; error: string };

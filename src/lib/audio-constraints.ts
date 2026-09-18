@@ -30,12 +30,14 @@ const log = createLogger("mic");
  * real responde se o pedido foi aceito. Se um dia isto precisar voltar atrás, é
  * este objeto, e nada mais. Ver `docs/transcricao.md`.
  *
- * **Quem abre microfone neste repositório usa ESTE objeto.** O gravador já abriu
- * o microfone por conta própria pedindo os três LIGADOS, para a onda na tela não
- * dançar com o ar-condicionado da sala — uma decisão cosmética tomada sobre o
- * mesmo `MediaStream` que alimenta o `MediaRecorder`, ou seja, pagando a
- * qualidade da transcrição pela estética da animação, sem que nada no código
- * dissesse que havia uma troca ali.
+ * **Quem abre microfone neste repositório usa ESTE objeto.** O gravador
+ * (`(app)/(barra)/recording/useAudioCapture.ts`) e o recado falado ao Biblo
+ * (`features/session/hooks/useBibloVoice.ts`) são os dois consumidores; o
+ * gravador já abriu o microfone por conta própria pedindo os três LIGADOS, para
+ * a onda na tela não dançar com o ar-condicionado da sala — uma decisão
+ * cosmética tomada sobre o mesmo `MediaStream` que alimenta o `MediaRecorder`,
+ * ou seja, pagando a qualidade da transcrição pela estética da animação, sem
+ * que nada no código dissesse que havia uma troca ali.
  */
 export const AUDIO_CONSTRAINTS: MediaTrackConstraints = {
   echoCancellation: false,
@@ -63,4 +65,28 @@ export function reportTrackSettings(stream: MediaStream) {
   } catch {
     // getSettings não é universal; a ausência do log não pode custar a gravação.
   }
+}
+
+const MIME_CANDIDATES = [
+  { mime: "audio/webm;codecs=opus", extension: "webm" },
+  { mime: "audio/webm", extension: "webm" },
+  // Safari não grava webm; o contêiner dele é mp4 e a rota aceita a extensão.
+  { mime: "audio/mp4", extension: "mp4" },
+] as const;
+
+/**
+ * O contêiner que este navegador sabe gravar, ou `null` quando nenhum dos
+ * candidatos é suportado (Safari antigo, WebView sem `MediaRecorder`).
+ *
+ * **`null` é a guarda que esconde o botão de gravar.** Era privado dentro de
+ * `useAudioCapture.ts`; o recado falado do Biblo precisa da mesma checagem
+ * antes de desenhar o microfone — oferecer um botão que falha no toque é pior
+ * do que não oferecer nenhum.
+ */
+export function pickMime(): { mime: string; extension: string } | null {
+  if (typeof MediaRecorder === "undefined") return null;
+  for (const c of MIME_CANDIDATES) {
+    if (MediaRecorder.isTypeSupported(c.mime)) return c;
+  }
+  return null;
 }

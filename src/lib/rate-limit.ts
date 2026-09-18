@@ -228,6 +228,16 @@ export const RATE_LIMITS = {
     perUser: { limit: 40, windowMs: MIN },
     perIp: { limit: 120, windowMs: MIN },
   },
+  // O recado falado ao Biblo. Teto de ABUSO: um recado é um MediaRecorder,
+  // um blob, um POST — não há fatiamento em partes como no gravador, então
+  // não há cadência legítima acima de "algumas mensagens por minuto". O que
+  // segura o custo de verdade é o teto de `BIBLO_VOICE_MAX_MS` por mensagem
+  // (preço fixo) e o débito de 7 moedas; este bucket só corta rajada.
+  "biblo-voice": {
+    route: "biblo-voice",
+    perUser: { limit: 20, windowMs: HOUR },
+    perIp: { limit: 80, windowMs: HOUR },
+  },
   "final-summary": {
     route: "final-summary",
     perUser: { limit: 20, windowMs: HOUR },

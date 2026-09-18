@@ -1587,8 +1587,80 @@ sozinho:
   texto de ninguém — a regra da §5 não tem exceção para folha em branco. Se um
   dia virar um modo próprio, é outra conversa, e provavelmente outro preço.
 - **A transcrição no contexto** (§5). Recorte por busca, numa onda seguinte.
-- **Conversar sobre a Biblioteca inteira**, voz, streaming, buscar na internet e
+- **Conversar sobre a Biblioteca inteira**, streaming, buscar na internet e
   compartilhar a conversa continuam fora (`biblo.md` §10). Quando a camada de
   conhecimento curado existir (`scriba-rag-proposta-claude.md`), o Biblo é o
   primeiro cliente dela, e é ali que "sugerir livros e frases" deixa de ser
-  risco de invenção.
+  risco de invenção. **Voz saiu desta lista**, ver §14.
+
+---
+
+## 14. O recado falado: falar a pergunta em vez de digitar
+
+> **Status: IMPLEMENTADO.** Um botão de microfone no compositor da gaveta: a
+> pessoa fala, o áudio sobe uma vez, volta como TEXTO NO CAMPO, e ela lê,
+> conserta o que o STT errou (ou apaga tudo, de graça) e envia pelo caminho de
+> sempre. A voz nunca é enviada sozinha.
+
+**A forma na tela é um slot, não um botão a mais.** O composer já tinha um
+botão redondo que nasce desabilitado com o campo vazio; a proposta encaixa
+nesse vazio: campo vazio → microfone, campo com texto → seta de enviar, sem
+mudar o layout da gaveta nem a altura calculada com o teclado aberto. Estados
+do botão: `mic` → `gravando` (cronômetro no lugar do placeholder do campo,
+toque encerra) → `transcrevendo` (spinner) → texto no campo. Ver
+`ComposerButton` em `features/session/components/BibloDrawer.tsx`.
+
+**O preço é FIXO em 7 moedas, não 2.** A mensagem falada acrescenta STT por
+cima da mesma chamada de conversa que já custa `bibloMessage` (2 moedas); a
+conta completa, com a tabela de margem, mora no comentário de
+`bibloVoiceMessage` em `features/coins/pricing.ts`. O que torna esse preço
+fixo defensável é `BIBLO_VOICE_MAX_MS` (60s, `lib/domain/biblo.ts`): sem teto o
+custo de STT não tem limite superior, o mesmo buraco em que `reprocessSummary`
+esteve a 5 moedas antes de subir para 15.
+
+**Três decisões que este documento fecha, e as três eram as únicas em aberto
+na proposta original:**
+
+1. **Teto de 60s**, não 120s: cabe numa pergunta falada com folga e mantém
+   preço único. 120s obrigaria a cobrar por minuto iniciado, preço variável de
+   volta na tela.
+2. **O presente (`BIBLO_GIFT_MESSAGES`) NÃO cobre voz.** Só `bibloMessage`
+   (texto) tem dez mensagens grátis por conta; a voz exige plano pago desde a
+   primeira tentativa. `resolveBibloVoiceAllowance`
+   (`features/session/server/biblo/allowance.ts`) é a mesma decisão de
+   `resolveBibloAllowance` SEM o desvio para `countGiftMessages` — o "não, por
+   plano" de uma conta gratuita sai direto como recusa (`reason: "plan"`), em
+   vez de virar um talvez.
+3. **Sem estorno em falha de STT.** A ordem continua `cobra → sobe →
+   transcreve`, como em toda outra rota do produto: sete moedas não pagam a
+   complexidade de um estorno.
+
+**Rota própria, `POST /api/biblo/voice`, que NÃO escreve na conversa.** Ela
+cobra, transcreve e devolve o texto; quem grava a mensagem de verdade continua
+sendo `POST /api/biblo`, quando a pessoa envia o texto que voltou. A ordem:
+`dono da sessão → arquivo válido (tamanho, extensão, duração declarada) →
+allowance → COBRA → transcreve`. Motivo de custo próprio
+(`biblo_voice_message` em `CHARGE_REASONS`) e rota de medição própria
+(`biblo-voice` em `USAGE_ROUTES`): misturar no `biblo_message` ou no
+`transcribe` do gravador esconderia a margem de uma linha e inflaria os
+minutos de SERMÃO com minutos de recado, que é justamente o número que decide
+se `recordingMinute` continua em 5. O balde de bytes por hora
+(`enforceAudioBudget`) é o MESMO do `/api/transcribe`, de propósito: os dois
+são STT sobre a mesma conta OpenAI.
+
+**A captação NÃO reusa `useAudioCapture.ts`.** Aquele hook existe para uma
+hora de sermão fatiada em partes de ~7 MB, com onda de 13 barras; um recado de
+até 60s é um `MediaRecorder`, um blob, um POST
+(`features/session/hooks/useBibloVoice.ts`). O que os dois dividem,
+`AUDIO_CONSTRAINTS` e `pickMime` (antes privado dentro do hook), virou
+`lib/audio-constraints.ts` — client-safe, e é onde qualquer microfone deste
+repositório deve abrir o `MediaStream` daqui em diante.
+
+**O botão só aparece se o aparelho souber gravar.** `pickMime()` devolvendo
+`null` (Safari antigo, WebView sem `MediaRecorder`) esconde o microfone em vez
+de oferecer um botão que falha no toque, mesma guarda do gravador principal.
+
+**Fora do escopo desta entrega, de propósito:** voz como CONTEÚDO da anotação
+(falar um parágrafo inteiro para entrar no texto, tarefa 008 do backlog local),
+transcrição em tempo real enquanto a pessoa fala, e resposta falada do Biblo
+(TTS).

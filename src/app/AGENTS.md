@@ -898,7 +898,7 @@ não são conteúdo, são efeito colateral com redirect.
 
 **API:** `src/app/api/`, LLM (`transcribe`, `final-summary[/reprocess]`,
 `deepening[/reprocess]`, `youtube/import`, `verse`, `hallucination-report`,
-`biblo`),
+`biblo`, `biblo/voice`),
 dados (`sessions[/search|/written]`, `speakers`, `locations`, `coins`,
 `feedback[/prompt]`, `tour/{start,finish,reset}`), conta (`account/delete`),
 cobrança (`billing/*`, `stripe/webhook`) e admin (`admin/users`,
@@ -967,6 +967,14 @@ conta gratuita recusada por plano ainda tem as mensagens de PRESENTE (ver
 chamada, para uma falha do modelo não apagar da tela o que a pessoa escreveu. O
 `GET` da mesma rota devolve a conversa guardada e não cobra nada — a abertura é
 derivada do resumo, sem LLM. Ver `docs/biblo-implementacao.md`.
+
+`biblo/voice` é o recado FALADO: `dono → arquivo válido → allowance → COBRA →
+transcreve`, e a ordem termina aí, ela **não escreve na conversa**, só devolve
+o texto para o CAMPO do composer — quem grava a mensagem de verdade continua
+sendo `POST /api/biblo`, quando a pessoa envia o que voltou. O `allowance`
+aqui é mais estrito que o do texto: sem presente nenhum, `plan` recusa direto
+uma conta gratuita (`features/session/server/biblo/allowance.ts#resolveBibloVoiceAllowance`).
+Ver `docs/biblo-implementacao.md` §14.
 
 `sessions/search` é a metade SERVIDOR da busca das listas, e responde a DUAS
 perguntas sobre a mesma sessão: o que foi DITO (`ilike` na transcrição) e o que
