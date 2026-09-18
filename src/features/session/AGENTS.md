@@ -165,9 +165,24 @@ strings foram para a tabela pelo seed daquela migração, **todas como rascunho*
 A alternativa era marcar todo nome e deixar metade surda ao toque, que é pior
 que as duas pontas: promete e não entrega. O preço, aceito de olhos abertos, é
 que no dia da migração nada fica marcado — cada nome acende quando alguém
-escreve o cartão dele. A categoria (`person`/`place`/`figure`) segue nos dados
-e FORA da tinta, pela razão de sempre: três cores de faixa num parágrafo é uma
-página de arco-íris, e o realce só funciona enquanto for exceção.
+escreve o cartão dele.
+
+**E foi isso que devolveu a COR à marcação.** Este documento dizia que a
+categoria vivia nos dados e fora da tinta, para um parágrafo não virar uma
+página de arco-íris. O argumento valia enquanto a marcação era só relevo
+tipográfico; com a regra acima ela passou a significar "aqui abre um cartão", e
+a cor virou a resposta antecipada de **qual** cartão. Hoje são três categorias e
+DUAS cores — **azul é personagem, verde é lugar, e figura citada fica no
+neutro** —, e é a terceira ficar sem cor que segura o arco-íris. Azul e verde
+não foram escolhidos: são o que o `EntityCombobox` já usa para pregador e
+igreja, e duas gramáticas de cor para a mesma distinção seria o custo real.
+
+A tinta mora nos tokens `--session-mention-wash*` e é trocada por uma regra
+presa ao `data-mention`, nunca por um mapa de classes no componente. As forças
+foram medidas: há uma janela estreita entre o matiz sumir e a faixa virar
+sublinhado de interface, e **os dois valores andam juntos** — na mesma
+opacidade o verde pesa mais, então mexer em um sozinho só troca qual dos dois
+puxa o olho.
 
 - **A passada de referência vem ANTES da de nomes, e exige número de
   capítulo.** É o que separa o evangelho do apóstolo: "João 3:16" é consumido

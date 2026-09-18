@@ -296,7 +296,39 @@
   --session-example-bg: #2A2B30;
   --session-example-border: rgba(255, 255, 255, 0.1);
   --session-mention-ink: #F5F5F5;
+
+  /* O MARCA-TEXTO DE NOME PRÓPRIO, em três tintas.
+
+     Ele foi NEUTRO por muito tempo, e o argumento era bom: nome próprio não
+     levava a lugar nenhum, então a marcação era só relevo tipográfico, e três
+     cores de relevo num parágrafo dão uma página de arco-íris.
+
+     O que mudou não foi o gosto, foi o que a marcação SIGNIFICA. Desde a
+     migração 0063 só é marcado o nome que TEM CARTÃO, e o cartão diz de que
+     tipo ele é. A cor deixou de ser enfeite e virou a resposta antecipada de
+     "o que abre aqui?": um personagem, um lugar, ou alguém citado.
+
+     AZUL É PESSOA E VERDE É LUGAR porque o produto já fala assim: no
+     `EntityCombobox`, pregador é pastilha azul e igreja é pastilha verde. Duas
+     gramáticas de cor para a mesma distinção seria o custo real.
+
+     FIGURA CITADA FICA NEUTRA, e é isso que segura o arco-íris. São três
+     categorias e DUAS cores: quem é trazido de fora da narrativa bíblica não é
+     uma terceira família, é a ausência das duas.
+
+     As forças foram MEDIDAS sobre `--v2-card`, não escolhidas, e a janela é
+     estreita: abaixo de ~35% o matiz some e a faixa lê como o cinza de sempre;
+     acima de ~70% o traço ganha contorno e vira sublinhado de INTERFACE, que
+     promete um link onde há um marca-texto. Os valores de hoje ficam na metade
+     de baixo dessa janela, porque o realce tem de ser reconhecido, não lido.
+
+     OS DOIS ANDAM JUNTOS. Já estiveram em 70/62, e baixar só o azul (o que
+     parecia a correção, já que era ele que gritava) fez o verde virar a coisa
+     mais forte do parágrafo: na mesma opacidade o verde pesa mais, então mexer
+     em um sozinho apenas troca qual dos dois puxa o olho. */
   --session-mention-wash: rgba(255, 255, 255, 0.22);
+  --session-mention-wash-person: rgba(96, 163, 240, 0.52);
+  --session-mention-wash-place: rgba(104, 200, 136, 0.5);
 
   /* O LAVADO DA PISCADA: "esse aqui é o bloco que acabou de entrar".
 
@@ -1335,6 +1367,24 @@
        propriedade só, e a alternativa seria animar um pseudo-elemento, que
        exigiria posicionar a caixa do bloco só para isso. */
     animation: var(--animate-block-flash) !important;
+  }
+
+  /* A CATEGORIA escolhe a tinta da marcação, e quem a carrega é o
+     `data-mention` que o `LexiconMention` já escrevia nos dados.
+
+     Aqui, e não no `className` do componente, por duas razões. A primeira é a
+     regra da casa: cor mora em token, não em classe. A segunda é que assim o
+     componente continua com UMA classe e uma expressão de gradiente; a
+     alternativa era um mapa de três strings de Tailwind em TypeScript, e cada
+     ajuste de opacidade passaria a ser um commit em dois arquivos.
+
+     `figure` não aparece porque ela fica com o valor de `:root`, que é o
+     neutro. */
+  [data-mention="person"] {
+    --session-mention-wash: var(--session-mention-wash-person);
+  }
+  [data-mention="place"] {
+    --session-mention-wash: var(--session-mention-wash-place);
   }
 
   /* A pele do ESTUDO: `/studies` e o aprofundamento. Ela reaponta os tokens

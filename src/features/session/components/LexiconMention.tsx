@@ -15,17 +15,27 @@ import { LEXICON_CATEGORY_LABEL, type LexiconCategory } from "@/lib/domain/lexic
  * parágrafo não muda, e o `box-decoration-break` mantém a faixa inteira quando
  * um nome composto quebra entre duas linhas.
  *
- * O desenho é o mesmo de quando a marcação não abria nada, e isso é escolha. A
- * referência bíblica ao lado já usa o vocabulário de link (cor + pontilhado), e
- * dar o mesmo a um nome poria dois links de aparência idêntica e destinos
- * diferentes na mesma linha. **O que diz que o nome abre algo é ele estar
- * marcado**, porque a partir da migração 0063 não existe nome marcado sem
- * cartão: a regra é aprendida no primeiro toque e vale para o resto do
- * produto. Ver `RichText`.
+ * Ela não usa o vocabulário de LINK (cor na letra + pontilhado), que é o da
+ * referência bíblica ao lado: dois links de aparência idêntica e destinos
+ * diferentes na mesma linha seria uma promessa só para duas coisas. **O que diz
+ * que o nome abre algo é ele estar marcado**, porque a partir da migração 0063
+ * não existe nome marcado sem cartão — a regra é aprendida no primeiro toque e
+ * vale para o resto do produto. Ver `RichText`.
  *
  * No `hover` a faixa ENGROSSA (sobe de 82% para 74%) em vez de mudar de cor.
  * É a mesma tinta, um pouco mais de papel: o realce não vira um segundo estado
  * semântico, e no celular, onde não existe hover, nada se perde.
+ *
+ * ## A TINTA vem da categoria, e o componente não a conhece
+ *
+ * Azul é personagem, verde é lugar, e figura citada fica no cinza de sempre. O
+ * porquê de cada uma dessas três decisões está no token, em `globals.css`, que
+ * é onde toda cor deste repositório mora.
+ *
+ * Aqui só existe `var(--session-mention-wash)`, uma vez. Quem o reaponta é uma
+ * regra CSS presa ao `data-mention` que o botão já escrevia nos dados — então
+ * este arquivo continua com uma classe só, e mexer numa opacidade não é um
+ * commit em dois lugares.
  *
  * ## O diálogo entra por `dynamic`
  *
