@@ -32,6 +32,12 @@ export const dynamic = "force-dynamic";
  * A conferência de "tem o que publicar" mora em `canPublishLexiconEntry`
  * (client-safe) e é chamada nos DOIS lados: o painel para acender o botão, esta
  * rota para recusar o pedido. O botão é UX; a rota é a regra.
+ *
+ * **E os dois conferem a MESMA coisa**, que é o conserto de um defeito real: o
+ * botão olhava o formulário e a rota olhava a linha gravada, então quem
+ * preenchia os campos e ia direto ao Publicar via *"Escreva o título e a
+ * descrição antes de publicar"* com os dois escritos na tela. Publicar agora
+ * carrega o formulário e o grava na mesma escrita.
  */
 
 const IdSchema = z.string().uuid();
@@ -39,7 +45,15 @@ const IdSchema = z.string().uuid();
 const BodySchema = z.discriminatedUnion("action", [
   z.object({ action: z.literal("create"), ...LexiconEntryInputSchema.shape }),
   z.object({ action: z.literal("update"), id: IdSchema, ...LexiconEntryInputSchema.shape }),
-  z.object({ action: z.literal("publish"), id: IdSchema, published: z.boolean() }),
+  // `entry` é o formulário como ele está AGORA, e publicar o grava junto. Ele é
+  // opcional porque publicar também acontece de fora do formulário; ver o
+  // cabeçalho de `setLexiconPublished`.
+  z.object({
+    action: z.literal("publish"),
+    id: IdSchema,
+    published: z.boolean(),
+    entry: LexiconEntryInputSchema.optional(),
+  }),
   z.object({ action: z.literal("clear-image"), id: IdSchema }),
   z.object({ action: z.literal("delete"), id: IdSchema }),
 ]);
@@ -69,7 +83,7 @@ export async function POST(request: Request) {
         : body.action === "update"
           ? await updateLexiconEntry(body.id, body)
           : body.action === "publish"
-            ? await setLexiconPublished(body.id, body.published)
+            ? await setLexiconPublished(body.id, body.published, body.entry)
             : await clearLexiconImage(body.id);
 
     if (result.ok) return NextResponse.json({ ok: true, entry: result.entry });

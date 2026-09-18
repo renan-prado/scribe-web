@@ -40,6 +40,8 @@ import { cn } from "@/lib/utils";
  *
  * ## Publicar não é um campo, é um BOTÃO, e fica no rodapé
  *
+ * (E ele SALVA o formulário junto, numa escrita só. Ver `handlePublish`.)
+ *
  * Um `switch` de "publicado" no meio do formulário seria coerente com a coluna
  * do banco e errado com o que a ação faz: publicar acende o nome na prosa de
  * todo mundo e o entrega ao Biblo como fonte. Isso não é um atributo do
@@ -153,10 +155,18 @@ export function LexiconEntryDialog({ entry, open, onOpenChange, onChanged }: Pro
     if (ok && isNew) onOpenChange(false);
   }
 
+  /**
+   * Publicar GRAVA o formulário junto, numa escrita só.
+   *
+   * Sem isso, o botão confere o que está na tela e a rota confere a LINHA, e
+   * quem preenche os campos e vai direto ao Publicar recebe "escreva o título e
+   * a descrição" com os dois escritos na frente dele. "Salve primeiro" era um
+   * passo que nada na tela pedia.
+   */
   async function handlePublish(published: boolean) {
     if (isNew) return;
     const ok = await post(
-      { action: "publish", id: entry.id, published },
+      { action: "publish", id: entry.id, published, entry: payload() },
       published ? "Publicada: o nome já é marcado no texto." : "Voltou a rascunho.",
       "publish"
     );

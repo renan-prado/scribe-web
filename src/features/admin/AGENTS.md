@@ -734,6 +734,14 @@ O que não pode ser desfeito:
   regra. A imagem é opcional: um cartão com texto e sem foto responde a pergunta
   que o toque fez; com foto e sem texto é uma imagem sem legenda no meio de um
   sermão.
+- **Publicar GRAVA o formulário junto, numa escrita só**, e isso é o conserto de
+  um defeito real. Os dois lados chamavam a mesma função sobre coisas
+  DIFERENTES: o botão sobre o formulário, a rota sobre a linha gravada. Quem
+  preenchia os campos e ia direto ao Publicar via *"Escreva o título e a
+  descrição antes de publicar"* com os dois escritos na frente dele — um passo
+  escondido ("salve primeiro") que nada na tela pedia. Uma escrita, e não um
+  salvar seguido de um publicar: duas chamadas abrem a janela em que a primeira
+  passa e a segunda falha, e a entrada fica gravada e apagada.
 - **A tela nasceu com 258 rascunhos e zero publicadas**, porque o seed da 0063
   trouxe para cá o léxico que era um array no código. O trabalho que ela serve
   não é administrar um cadastro, é ESCREVER CARTÕES até o produto voltar a marcar

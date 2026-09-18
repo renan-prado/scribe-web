@@ -375,24 +375,52 @@ export async function updateLexiconEntry(
  */
 export async function setLexiconPublished(
   id: string,
-  published: boolean
+  published: boolean,
+  /**
+   * O que está no formulário AGORA.
+   *
+   * **Publicar grava junto**, e essa não é uma conveniência: sem ela, o botão
+   * confere o formulário e a rota confere a LINHA, e os dois discordam sempre
+   * que alguém preenche os campos e vai direto ao Publicar. O sintoma era
+   * exatamente esse — *"Escreva o título e a descrição antes de publicar"* com
+   * os dois escritos na tela —, e a causa é um passo escondido ("salve
+   * primeiro") que nada na tela pedia.
+   *
+   * Uma escrita só, e não um salvar seguido de um publicar: duas chamadas
+   * abrem a janela em que a primeira passa e a segunda falha, e aí a entrada
+   * fica gravada e apagada, que é o pior dos dois resultados.
+   */
+  input?: LexiconEntryInput
 ): Promise<LexiconWriteResult> {
   const admin = createAdminClient();
 
+  // A conferência é sobre o que VAI ficar gravado: o formulário quando ele
+  // veio, a linha quando não veio (é o caso do botão da lista, que publica sem
+  // abrir nada).
   if (published) {
-    const current = await getLexiconEntryForAdmin(id);
-    if (!current) return { ok: false, reason: "not_found" };
-    if (!canPublishLexiconEntry(current)) return { ok: false, reason: "incomplete" };
+    const subject = input ?? (await getLexiconEntryForAdmin(id));
+    if (!subject) return { ok: false, reason: "not_found" };
+    if (!canPublishLexiconEntry(subject)) return { ok: false, reason: "incomplete" };
+  }
+
+  const patch: Record<string, unknown> = { published };
+  if (input) {
+    patch.term = input.term;
+    patch.aliases = input.aliases;
+    patch.category = input.category;
+    patch.title = input.title || null;
+    patch.description = input.description || null;
   }
 
   const { data, error } = await admin
     .from("lexicon_entries")
-    .update({ published })
+    .update(patch)
     .eq("id", id)
     .select(ADMIN_COLUMNS)
     .maybeSingle();
 
   if (error) {
+    if (isDuplicate(error.code)) return { ok: false, reason: "duplicate" };
     log.error("publicação falhou", { id, published, error: error.message });
     return { ok: false, reason: "error" };
   }
