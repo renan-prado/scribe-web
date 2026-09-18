@@ -197,6 +197,15 @@ Juntá-las faria cada abertura de resumo baixar 300 descrições e 300 URLs de
 imagem para mostrar zero delas. O cartão entra por `dynamic(ssr:false)`, igual
 ao `ChapterDialog`, e é cacheado por sessão no React Query.
 
+**No cartão, a imagem é o RETRATO do cabeçalho, ao lado do título, e não uma
+faixa acima dele.** A faixa foi tentada em três alturas antes de o problema
+aparecer, e ele nunca foi a altura: era o PAPEL. Uma faixa sobre o título é a
+capa de um artigo, e anuncia que a imagem é o conteúdo — mas quem tocou num nome
+tocou para LER sobre ele, e cada pixel de faixa empurrava a resposta para baixo
+da dobra. `object-contain` sempre, e sem chão atrás: o léxico guarda as duas
+formas (retrato em pé, mapa deitado), nenhum recorte serve às duas, e o cinza
+por trás só desenhava as sobras de um quadrado que a arte quase nunca preenche.
+
 **O índice chega ao `RichText` por CONTEXTO** (`LexiconProvider`), e não por
 prop: o caminho até ele tem cinco degraus em quatro árvores, e esquecer um faria
 a marcação sumir daquela tela sem erro nenhum. O preço foi o `RichText` virar

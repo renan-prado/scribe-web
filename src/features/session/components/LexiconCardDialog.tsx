@@ -21,36 +21,38 @@ import { LEXICON_CATEGORY_LABEL } from "@/lib/domain/lexicon";
  * admin cadastrou em `lexicon_entries`. Em nenhum dos dois o modelo tem a
  * caneta.
  *
- * ## A imagem vem PRIMEIRO, e NADA nela é cortado
+ * ## A imagem é o RETRATO do cabeçalho, não uma faixa
  *
- * Um cartão de "Mar Vermelho" com três linhas de texto e um mapa de 40px é um
- * mapa que ninguém olha. Daí a faixa no topo, na largura inteira, antes do
- * texto.
+ * Ela fica à esquerda do título, na altura dele, e a descrição corre embaixo na
+ * largura inteira:
  *
- * **Ela é uma faixa de altura fixa com `object-contain`, e já foi 16/9 com
- * `object-cover`.** O corte parecia inofensivo e não era: o léxico guarda as
- * DUAS formas — o retrato de um personagem é alto, o mapa de uma rota é
- * deitado —, e não existe proporção fixa que sirva às duas cortando. Um 16/9
- * sobre um retrato de Paulo comeu a cabeça e o peito, que é exatamente o que a
- * imagem tinha a dizer.
+ *     [img]  Paulo, o apóstolo dos gentios
+ *     [   ]  Personagem bíblico
+ *     ------------------------------------
+ *     Judeu nascido em Tarso, na Cilícia…
  *
- * Contido, o retrato fica inteiro com folga dos lados e o mapa fica inteiro com
- * folga em cima e embaixo. A folga é o `bg-muted` da faixa, que é a superfície
- * do próprio cartão um degrau acima: ela lê como moldura, não como buraco.
+ * **Ela já foi uma faixa da largura toda, e duas vezes.** Primeiro em 16/9 com
+ * `object-cover`, depois contida em 208px, depois em 104px — e o problema nunca
+ * foi a altura, era o PAPEL. Uma faixa acima do título é a capa de um artigo, e
+ * anuncia que a imagem é o conteúdo; aqui o conteúdo é o texto. Quem tocou num
+ * nome tocou para LER sobre ele, e cada pixel de faixa empurrava a resposta para
+ * baixo da dobra.
  *
- * **A altura é FIXA, e é isso que evita o salto.** Não guardamos as dimensões
- * da imagem, então uma caixa que se molda ao arquivo só saberia o tamanho
- * DEPOIS de carregá-lo, e o texto abaixo pularia de lugar no meio da leitura.
+ * No cabeçalho ela vira o que de fato é: a cara da entrada, do lado do nome
+ * dela, como a pastilha de iniciais do `EntityCombobox` é a cara de um
+ * pregador. Custa 56px de uma linha que já existia.
  *
- * **São 104px, metade do que já foram.** Contida em 208px, a faixa virava o
- * primeiro terço do cartão e empurrava o texto para baixo da dobra: quem tocou
- * num nome tocou para LER sobre ele, e chegava a uma ilustração de meia tela com
- * a resposta escondida embaixo. O retrato continua reconhecível nesta altura, e
- * o mapa continua legível — e o que ganhou espaço foi a descrição, que é o
- * conteúdo.
+ * **`object-contain`, e isso não mudou.** O léxico guarda as duas formas — o
+ * retrato de um personagem é alto, o mapa de uma rota é deitado —, e um quadrado
+ * que corte serve mal às duas.
  *
- * **Sem imagem o cartão não fica com um buraco**: a faixa simplesmente não
- * existe, e o título sobe para o topo. Imagem é opcional no cadastro de
+ * **O que sumiu foi o chão cinza atrás dela.** Contido, o quadrado quase nunca
+ * é preenchido pela imagem, e o `bg-muted` desenhava as sobras: uma caixa clara
+ * em volta de um retrato, no canto de um diálogo que não tem nenhuma outra
+ * caixa. Sem ele, o que aparece ao lado do título é a arte e mais nada.
+ *
+ * **Sem imagem o cabeçalho não fica com um buraco**: o quadrado simplesmente não
+ * existe e o título encosta na esquerda. Imagem é opcional no cadastro de
  * propósito (ver `canPublishLexiconEntry`), então "sem foto" é um estado comum,
  * não uma falha a ser desenhada com um ícone de imagem quebrada.
  *
@@ -94,25 +96,33 @@ export function LexiconCardDialog({
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
       <DialogContent>
-        {data?.imageUrl ? (
-          <div className="relative -mt-2 h-26 w-full overflow-hidden rounded-lg bg-muted">
-            <Image
-              src={data.imageUrl}
-              alt=""
-              fill
-              // O diálogo não passa de ~28rem; pedir a imagem inteira seria
-              // baixar um arquivo grande para desenhá-lo pequeno.
-              sizes="(max-width: 480px) 100vw, 28rem"
-              className="object-contain"
-            />
+        <DialogHeader className="flex-row items-center gap-3 pr-12">
+          {data?.imageUrl ? (
+            <div className="relative size-14 shrink-0 overflow-hidden rounded-lg">
+              <Image
+                src={data.imageUrl}
+                alt=""
+                fill
+                // 56px na tela, e o dobro numa tela retina: pedir a imagem
+                // inteira seria baixar um arquivo grande para desenhá-lo do
+                // tamanho de um avatar.
+                sizes="56px"
+                className="object-contain"
+              />
+            </div>
+          ) : null}
+          {/* `min-w-0` é o que deixa um título longo QUEBRAR em vez de esticar a
+              linha: um filho de flex adota a largura mínima do conteúdo, e sem
+              isto "Nabucodonosor, rei da Babilônia" empurraria a caixa. */}
+          <div className="flex min-w-0 flex-col gap-1">
+            {/* `leading-snug` sobre o `leading-none` do componente: ao lado da
+                imagem a coluna é estreita, e um título de duas linhas com
+                entrelinha zerada tem os glifos de uma encostando nos da outra. */}
+            <DialogTitle className="leading-snug">{data?.title ?? slug}</DialogTitle>
+            <DialogDescription>
+              {data ? LEXICON_CATEGORY_LABEL[data.category] : "Carregando"}
+            </DialogDescription>
           </div>
-        ) : null}
-
-        <DialogHeader>
-          <DialogTitle>{data?.title ?? slug}</DialogTitle>
-          <DialogDescription>
-            {data ? LEXICON_CATEGORY_LABEL[data.category] : "Carregando"}
-          </DialogDescription>
         </DialogHeader>
 
         <div className="min-h-16">
