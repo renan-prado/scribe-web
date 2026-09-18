@@ -204,18 +204,7 @@ function Hero() {
         <h1 className="text-balance text-[27px] font-normal leading-[1.22] tracking-[-.02em] text-scriba-ink-strong sm:text-[40px] sm:leading-[1.14] sm:tracking-[-.025em] lg:text-[56px] lg:leading-[1.08]">
           O bloco de notas inteligente que todo cristão deveria ter
         </h1>
-        {/* No celular a medida é MENOR que o vão disponível, e o texto é
-            balanceado em vez de "pretty": no vão inteiro (340px) as linhas
-            fechavam a 6px da borda, com a última sobrando curta, e um bloco
-            que encosta nas duas pontas parece espremido mesmo estando
-            centrado. Em 320px com `text-balance` saem cinco linhas quase
-            iguais (230/232/232/221/246), com margem real dos dois lados. Do
-            `sm` para cima o vão já é folgado e vale a regra normal. */}
-        <p className="max-w-[320px] text-balance text-[14.5px] font-light leading-[1.62] text-scriba-ink-soft sm:max-w-[580px] sm:text-pretty lg:text-[17.5px]">
-          Grave a pregação da sua igreja, importe uma reflexão do Youtube, escreva seus próprios
-          pensamentos ou converse com o Biblo, nossa IA expert na Escrituras, para tirar dúvidas e
-          organizar seu resumo sobre qualquer tema das Escrituras.
-        </p>
+        <HeroPromises />
         {/* O `pt` aqui é somado ao `gap` da coluna: o botão fica mais longe das
             duas frases do que as frases ficam uma da outra, e é essa diferença
             que separa "o que estamos dizendo" de "o que fazer a respeito".
@@ -235,6 +224,140 @@ function Hero() {
         </div>
       </div>
     </section>
+  );
+}
+
+/**
+ * O traço dos glifos dos cards do hero.
+ *
+ * Desenhados à mão pela razão de sempre nesta página: a LP não importa
+ * `lucide-react` em lugar nenhum, e abrir essa porta por três ícones de 16px
+ * numa dobra que precisa ser o HTML mais leve do site é trocar bundle por
+ * nada. O quarto card não tem glifo, tem o ROSTO do Biblo (`BibloFace`), que é
+ * `blobatar()` rodando no servidor: ali o ícone é o personagem.
+ */
+const HERO_ICON = {
+  width: 16,
+  height: 16,
+  viewBox: "0 0 16 16",
+  fill: "none",
+  stroke: "currentColor",
+  strokeWidth: 1.6,
+  strokeLinecap: "round",
+  strokeLinejoin: "round",
+} as const;
+
+/**
+ * As QUATRO PROMESSAS, em cards curtos, logo abaixo do título do hero.
+ *
+ * Aqui havia um parágrafo de três linhas que dizia as quatro coisas de uma vez
+ * ("Grave a pregação da sua igreja, importe uma reflexão do Youtube, escreva
+ * seus próprios pensamentos ou converse com o Biblo, nossa IA expert nas
+ * Escrituras, para tirar dúvidas e organizar seu resumo…"). Ele estava certo no
+ * conteúdo e errado no formato: uma lista de quatro itens escrita como frase
+ * corrida só entrega o quarto item a quem leu os três primeiros, e numa dobra
+ * ninguém lê — ninguém varre. Em cards, as quatro chegam de relance, e a que
+ * interessa àquela pessoa é encontrada em vez de esperada.
+ *
+ * **Uma linha por card, e curta.** A tentação é usar aqui os títulos das
+ * seções de baixo, que são as mesmas quatro promessas por extenso; num card de
+ * ~170px eles viram quatro linhas cada, e a dobra fica tão densa quanto o
+ * parágrafo que saiu. O título da seção tem a página inteira para se explicar,
+ * este card tem um relance.
+ *
+ * **Eles NÃO são links, e isso é a mesma decisão do botão único.** O hero já
+ * teve um segundo botão ("Conhecer o Scriba", ancorando em `#recursos`), e ele
+ * saiu porque dividia o eixo com o CTA oferecendo o que a pessoa faz sozinha:
+ * rolar. Quatro cards clicáveis seriam esse botão de volta, multiplicado por
+ * quatro, bem no caminho entre o título e a única ação da dobra. Quem quiser
+ * pular tem as âncoras no header.
+ *
+ * ⚠️ São as mesmas quatro capacidades do `Capabilities`, na mesma ORDEM.
+ * Capacidade nova lá é card novo aqui, ou a dobra passa a prometer três de
+ * quatro.
+ */
+function HeroPromises() {
+  const items: { label: string; icon: React.ReactNode }[] = [
+    {
+      label: "Grave e receba um resumo automático",
+      icon: (
+        // A onda da tela de gravação, em três barras. Elas abrem até as
+        // bordas do `viewBox` (3 e 13, não 4 e 12) porque a mancha do ícone é
+        // o que o olho compara na fileira: encolhidas ao meio, a onda lia como
+        // um ícone menor que os três vizinhos, e não como um desenho mais
+        // simples.
+        <svg {...HERO_ICON} role="presentation">
+          <path d="M3 5.4v5.2M8 2.6v10.8M13 5.4v5.2" />
+        </svg>
+      ),
+    },
+    {
+      label: "Organize suas próprias ideias",
+      icon: (
+        <svg {...HERO_ICON} role="presentation">
+          <path d="M10.6 2.8l2.6 2.6-7.4 7.4-3.4.8.8-3.4 7.4-7.4Z" />
+        </svg>
+      ),
+    },
+    {
+      label: "Resuma um vídeo do YouTube",
+      icon: (
+        <svg {...HERO_ICON} viewBox="0 0 24 24" fill="currentColor" role="presentation">
+          <path d="M21.6 7.2a2.5 2.5 0 0 0-1.76-1.77C18.25 5 12 5 12 5s-6.25 0-7.84.43A2.5 2.5 0 0 0 2.4 7.2C2 8.8 2 12 2 12s0 3.2.4 4.8a2.5 2.5 0 0 0 1.76 1.77C5.75 19 12 19 12 19s6.25 0 7.84-.43a2.5 2.5 0 0 0 1.76-1.77C22 15.2 22 12 22 12s0-3.2-.4-4.8ZM9.9 15.1V8.9l5.4 3.1-5.4 3.1Z" />
+        </svg>
+      ),
+    },
+    {
+      label: "Converse sobre Bíblia com o Biblo",
+      // UM DEGRAU MAIOR que os glifos, e não é engano: os três vizinhos são
+      // traçados que quase encostam nas bordas do `viewBox`, e o rosto é uma
+      // forma cheia que ocupa 66% do dele (medido: 65,7 de 100). Desenhado na
+      // mesma caixa, ele aparecia como o menor item da fileira. A 20px a
+      // MANCHA dos quatro se iguala, que é o que o olho compara — e ele
+      // transborda a caixa de 16 por 2px de cada lado sem mexer no layout,
+      // porque quem mede é a caixa (ver o `IconBox`).
+      icon: <BibloFace size={20} className="size-5" />,
+    },
+  ];
+
+  return (
+    // DOIS por linha no celular e QUATRO do `sm` para cima. Em coluna única
+    // eles empurrariam o CTA para fora da dobra, que é o oposto do que esta
+    // troca foi fazer; em quatro colunas num vão de 340px cada card fica com
+    // 78px e a frase quebra em quatro linhas.
+    //
+    // O `mt-1` é somado ao `gap` da coluna do hero: os cards não são a
+    // continuação da frase do título, são o bloco seguinte.
+    <ul className="mt-1 grid w-full grid-cols-2 gap-2 sm:max-w-[680px] sm:grid-cols-4 sm:gap-2.5">
+      {items.map((item) => (
+        <li
+          key={item.label}
+          // `items-start` e não `items-center`: as frases têm uma ou duas
+          // linhas conforme a largura, e com o ícone centrado na caixa ele
+          // dançava de card para card na mesma fileira. Alinhado ao topo, os
+          // quatro ícones ficam na mesma altura, que é o que faz a fileira ler
+          // como uma fileira.
+          className="flex items-start gap-2 rounded-2xl bg-scriba-paper/70 p-3 text-left ring-1 ring-scriba-hairline ring-inset sm:flex-col sm:gap-2.5 sm:p-3.5"
+        >
+          {/* A CAIXA do ícone, e ela é `flex` de propósito.
+              Um `span` inline com um SVG dentro ganha a descida da fonte por
+              baixo do desenho — no card do Biblo, cuja cara é um `inline-flex`,
+              isso virava 8px de vão fantasma entre o rosto e a frase, e só ali.
+              Com `flex` não há caixa de linha, e a medida fixa mantém os quatro
+              ícones na mesma altura mesmo quando o desenho de dentro é maior
+              que ela. */}
+          <span
+            aria-hidden
+            className="mt-px flex size-4 flex-none items-center justify-center text-scriba-ink-soft sm:mt-0"
+          >
+            {item.icon}
+          </span>
+          <span className="text-pretty text-[12.5px] font-light leading-[1.35] text-scriba-ink sm:text-[13px]">
+            {item.label}
+          </span>
+        </li>
+      ))}
+    </ul>
   );
 }
 
