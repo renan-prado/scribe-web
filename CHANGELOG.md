@@ -9,6 +9,13 @@ Gerado por `npm run release` a partir dos Conventional Commits. `feat` sobe o
 minor; o resto sobe o patch. Não edite à mão, a próxima execução escreve por
 cima do topo do arquivo.
 
+## 0.42.0, 2026-09-18, desde v0.41.0
+
+### Novidades
+
+- **planos:** uma lista de vantagens so, para a LP e para o dialogo de compra (`b90a348`)
+- **biblo:** a despedida abre o dialogo de creditos em vez de mandar para /assinar (`db95031`)
+
 ## 0.41.0, 2026-09-18, desde v0.40.1
 
 ### Novidades
