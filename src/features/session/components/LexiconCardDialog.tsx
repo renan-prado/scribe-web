@@ -95,8 +95,21 @@ export function LexiconCardDialog({
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent>
-        <DialogHeader className="flex-row items-center gap-3 pr-12">
+      {/* Mais largo que o padrão do diálogo (`sm:max-w-sm`) SÓ no desktop: o
+          cartão é um texto de três ou quatro parágrafos, e em 384px ele vira
+          uma coluna estreita e comprida que obriga a rolar para ler uma nota
+          curta. No celular nada muda — lá a largura já é a da tela menos a
+          margem, e o teto não chega a valer. `lg` e não mais: a medida de linha
+          continua sendo o limite, e passando disso o olho perde o começo da
+          linha seguinte (a mesma razão do `max-w-3xl` das telas de leitura). */}
+      <DialogContent className="sm:max-w-lg">
+        {/* `pb-4` fecha o cabeçalho com a mesma folga que o `pt-4` do
+            componente abre. Sem ele, quem separava o retrato da descrição era só
+            o `pt-4` do corpo, e a metade de cima da linha ficava mais apertada
+            que a de baixo — num cabeçalho de 56px, que é bem mais alto que o
+            texto solto para o qual aquele padding foi calibrado, a diferença se
+            vê. */}
+        <DialogHeader className="flex-row items-center gap-3 pr-12 pb-4">
           {data?.imageUrl ? (
             <div className="relative size-14 shrink-0 overflow-hidden rounded-lg">
               <Image
