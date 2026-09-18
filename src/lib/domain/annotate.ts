@@ -1,22 +1,35 @@
 import { LIVROS_BIBLICOS } from "@/features/session/lib/transcription/vocabulario";
-import { BIBLE_PEOPLE, BIBLE_PLACES, CITED_FIGURES } from "@/lib/domain/lexicon";
+import type { LexiconCategory, LexiconIndexEntry } from "@/lib/domain/lexicon";
 
 /**
  * Quebra um parágrafo em pedaços anotados, para o `RichText` desenhar
  * referência bíblica clicável e nome próprio marcado no meio da prosa.
  *
- * Client-safe e SEM IA: é varredura de regex sobre um léxico curado
- * (`lib/domain/lexicon.ts`). Uma etapa de LLM para "marcar as entidades" seria
- * mais uma chamada por sessão, com custo, latência e a chance de o modelo
- * marcar coisa que não está no texto, para um problema que um autômato
- * resolve, com o mesmo resultado toda vez.
+ * Client-safe e SEM IA: é varredura de regex sobre um léxico curado. Uma etapa
+ * de LLM para "marcar as entidades" seria mais uma chamada por sessão, com
+ * custo, latência e a chance de o modelo marcar coisa que não está no texto,
+ * para um problema que um autômato resolve, com o mesmo resultado toda vez.
+ *
+ * ## O léxico ENTRA, não é importado
+ *
+ * Ele já foi um array compilado aqui dentro (`lib/domain/lexicon.ts`, ~330
+ * strings). Hoje é cadastro (`lexicon_entries`, migração 0063) e chega por
+ * parâmetro, porque quem sabe ler o banco é o servidor e quem chama esta função
+ * é o render. Quem entrega a lista até aqui é o `LexiconProvider`; ver
+ * `RichText`.
+ *
+ * **Lista vazia é um caso normal**, não um defeito: a landing não tem provedor
+ * (e não vai ao banco por causa de um mockup), e o `asStandaloneScripture`
+ * abaixo só se interessa por referência. Nos dois, a passada de nomes
+ * simplesmente não roda.
  *
  * ## Duas passadas, nesta ordem
  *
  * 1. **Referência bíblica.** Exige NÚMERO de capítulo: "João 3:16" e "Romanos 8"
  *    casam, "João" sozinho não. É o que separa o evangelho do apóstolo, e é
  *    por isso que esta passada vem primeiro: ela consome "João 3:16" inteiro,
- *    e a passada de nomes nunca chega a ver aquele "João".
+ *    e a passada de nomes nunca chega a ver aquele "João". A lista de LIVROS
+ *    continua em código, e não no cadastro: ela é fechada há dois mil anos.
  * 2. **Nome próprio**, só nos vãos que sobraram da primeira.
  *
  * ## Por que não `\b`
@@ -34,9 +47,11 @@ export type AnnotatedSegment =
   | { kind: "text"; text: string }
   /** Referência com capítulo (e talvez versículo). `reference` é o que vai para o diálogo. */
   | { kind: "scripture"; text: string; reference: string }
-  | { kind: "name"; text: string; category: NameCategory };
-
-export type NameCategory = "person" | "place" | "figure";
+  /**
+   * Um nome do léxico. `slug` é o que o cartão abre: ele vem da ENTRADA, não do
+   * texto casado, então "Lutero" e "Martinho Lutero" levam ao mesmo lugar.
+   */
+  | { kind: "name"; text: string; slug: string; category: LexiconCategory };
 
 /** Classe de letra (com acento) usada nas fronteiras de palavra. */
 const LETTER = "A-Za-zÀ-ÖØ-öø-ÿ";
@@ -70,22 +85,57 @@ const SCRIPTURE_RE = new RegExp(
   "g"
 );
 
-const NAME_ENTRIES: { term: string; category: NameCategory }[] = [
-  ...BIBLE_PEOPLE.map((term) => ({ term, category: "person" as const })),
-  ...BIBLE_PLACES.map((term) => ({ term, category: "place" as const })),
-  ...CITED_FIGURES.map((term) => ({ term, category: "figure" as const })),
-];
+type NameHit = { slug: string; category: LexiconCategory };
 
-/** Um termo em duas listas (nome que também é lugar) fica com a primeira. */
-const NAME_CATEGORY = new Map<string, NameCategory>();
-for (const { term, category } of NAME_ENTRIES) {
-  if (!NAME_CATEGORY.has(term)) NAME_CATEGORY.set(term, category);
+type CompiledLexicon = {
+  re: RegExp;
+  byTerm: Map<string, NameHit>;
+};
+
+/**
+ * A regex de nomes é MONTADA A PARTIR DA LISTA, e montá-la custa, uma
+ * alternação de trezentos termos ordenada por comprimento. O render de um
+ * resumo chama `annotateText` uma vez por parágrafo, e recompilar a cada
+ * parágrafo seria pagar esse preço trinta vezes por tela.
+ *
+ * A memoização é por IDENTIDADE do array, não por conteúdo: o índice desce do
+ * servidor como uma referência estável e atravessa a árvore inteira sem mudar,
+ * então um slot só resolve o caso real. Comparar conteúdo custaria mais que o
+ * acerto que traria.
+ */
+let lastEntries: LexiconIndexEntry[] | null = null;
+let lastCompiled: CompiledLexicon | null = null;
+
+function compile(entries: LexiconIndexEntry[]): CompiledLexicon | null {
+  if (entries === lastEntries) return lastCompiled;
+
+  const byTerm = new Map<string, NameHit>();
+  for (const entry of entries) {
+    const hit = { slug: entry.slug, category: entry.category };
+    // O termo canônico vence um apelido de outra entrada: dois cadastros
+    // disputando a mesma palavra é erro do admin, e a preferência previsível é
+    // melhor que a ordem de chegada.
+    for (const alias of entry.aliases) {
+      if (!byTerm.has(alias)) byTerm.set(alias, hit);
+    }
+    byTerm.set(entry.term, hit);
+  }
+
+  const compiled =
+    byTerm.size === 0
+      ? null
+      : {
+          byTerm,
+          re: new RegExp(
+            `(?:${[...byTerm.keys()].sort(byLengthDesc).map(escapeRe).join("|")})(?![${LETTER}])`,
+            "g"
+          ),
+        };
+
+  lastEntries = entries;
+  lastCompiled = compiled;
+  return compiled;
 }
-
-const NAME_RE = new RegExp(
-  `(?:${[...NAME_CATEGORY.keys()].sort(byLengthDesc).map(escapeRe).join("|")})(?![${LETTER}])`,
-  "g"
-);
 
 /** Casou de verdade, ou o padrão pegou o fim de uma palavra maior? */
 function startsAtWordBoundary(text: string, index: number): boolean {
@@ -129,6 +179,10 @@ function scan(
  * anotador não linka, ou o contrário, e as duas telas discordariam sobre o que
  * é uma referência.
  *
+ * Roda **sem léxico**, e isso não é economia: uma linha que fosse só "Habacuque"
+ * não é uma passagem, e o que interessa aqui é ela ser uma referência e mais
+ * nada. O servidor a chama (`biblo/answer.ts`), onde não há índice à mão.
+ *
  * A pontuação final é ignorada ("Jonas 1:3." conta), porque o modelo termina a
  * linha com ponto metade das vezes e isso não muda o que ele quis dizer.
  */
@@ -140,7 +194,7 @@ export function asStandaloneScripture(text: string): string | null {
   return segments[0].kind === "scripture" ? segments[0].reference : null;
 }
 
-export function annotateText(text: string): AnnotatedSegment[] {
+export function annotateText(text: string, entries: LexiconIndexEntry[] = []): AnnotatedSegment[] {
   if (!text) return [];
 
   const scripture = scan(text, SCRIPTURE_RE, (matched) => ({
@@ -154,10 +208,13 @@ export function annotateText(text: string): AnnotatedSegment[] {
 
   const covered = (from: number, to: number) => scripture.some((s) => from < s.end && to > s.start);
 
-  const names = scan(text, NAME_RE, (matched) => {
-    const category = NAME_CATEGORY.get(matched);
-    return category ? { kind: "name", text: matched, category } : null;
-  }).filter((m) => !covered(m.start, m.end));
+  const lexicon = compile(entries);
+  const names = lexicon
+    ? scan(text, lexicon.re, (matched) => {
+        const hit = lexicon.byTerm.get(matched);
+        return hit ? { kind: "name", text: matched, slug: hit.slug, category: hit.category } : null;
+      }).filter((m) => !covered(m.start, m.end))
+    : [];
 
   const matches = [...scripture, ...names].sort((a, b) => a.start - b.start);
 
@@ -165,8 +222,8 @@ export function annotateText(text: string): AnnotatedSegment[] {
   let cursor = 0;
   for (const match of matches) {
     // Duas menções de nome podem se sobrepor quando uma contém a outra e a
-    // ordenação por comprimento não resolveu (listas diferentes). A primeira
-    // vence; a segunda é descartada.
+    // ordenação por comprimento não resolveu (termos de entradas diferentes). A
+    // primeira vence; a segunda é descartada.
     if (match.start < cursor) continue;
     if (match.start > cursor) {
       segments.push({ kind: "text", text: text.slice(cursor, match.start) });

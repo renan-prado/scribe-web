@@ -1,6 +1,8 @@
 import type { ReactNode } from "react";
 import { ZoomLock } from "@/components/ZoomLock";
+import { LexiconProvider } from "@/features/session/components/LexiconProvider";
 import { TourProvider } from "@/features/tour/components/TourProvider";
+import { getLexiconIndex } from "@/lib/db/lexicon";
 import { listSeenTours } from "@/lib/db/tours";
 import type { TourSeenMap } from "@/lib/domain/tour";
 import { getAuthUser } from "@/lib/supabase/server";
@@ -59,6 +61,13 @@ import { APP_VIEWPORT } from "@/shared/viewport";
  * inteiro, e por que a landing continua ampliável, está em
  * `src/shared/viewport.ts`.
  *
+ * **O `LexiconProvider` também mora aqui**, e pela primeira das duas razões
+ * acima: o índice de nomes que o `RichText` marca é o mesmo para o resumo, o
+ * estudo, o editor e o Biblo, e passá-lo por prop até cada um deles seria cinco
+ * lugares para esquecer um. A leitura é cacheada em memória por um minuto
+ * (`getLexiconIndex`), então este `await` não custa uma consulta por
+ * navegação. Ver `LexiconProvider`.
+ *
  * **As barras do sistema não são mais assunto desta moldura.** Ela carregava
  * um `data-v2-shell` (para uma regra `:has()` levar o grafite até o `<html>`,
  * que é de onde o Android tira a cor da barra de navegação) e um
@@ -73,16 +82,19 @@ export default async function AppLayout({ children }: { children: ReactNode }) {
   // `getAuthUser` é `cache()`: pedir o usuário aqui não custa uma ida a mais à
   // rede, é a MESMA chamada que a `TopBar` de cada página já faz por dentro.
   const user = await getAuthUser();
-  const seenTours = user
-    ? await listSeenTours(user.id).catch((): TourSeenMap => ({}))
-    : ({} as TourSeenMap);
+  const [seenTours, lexicon] = await Promise.all([
+    user ? listSeenTours(user.id).catch((): TourSeenMap => ({})) : ({} as TourSeenMap),
+    getLexiconIndex(),
+  ]);
 
   return (
     <TourProvider seen={seenTours}>
-      <ZoomLock />
-      <div className="dark flex flex-1 flex-col bg-v2-bg pt-[env(safe-area-inset-top)]">
-        {children}
-      </div>
+      <LexiconProvider entries={lexicon}>
+        <ZoomLock />
+        <div className="dark flex flex-1 flex-col bg-v2-bg pt-[env(safe-area-inset-top)]">
+          {children}
+        </div>
+      </LexiconProvider>
     </TourProvider>
   );
 }

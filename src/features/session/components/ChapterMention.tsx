@@ -39,7 +39,7 @@ const ChapterDialog = dynamic(
  * em que o base-ui começa a animar a saída, e o diálogo sumiria seco. Depois do
  * primeiro clique ele fica montado, fechado, mas montado.
  */
-function useMentionDialog() {
+export function useMentionDialog() {
   const [hasOpened, setHasOpened] = useState(false);
   const [open, setOpen] = useState(false);
   function show() {

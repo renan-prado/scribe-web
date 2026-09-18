@@ -21,6 +21,25 @@ const appVersion = (
   }
 ).version;
 
+/**
+ * O host do projeto Supabase deste ambiente, para o `remotePatterns` das
+ * imagens do léxico.
+ *
+ * Derivado, e não escrito: são dois projetos, um por arquivo de ambiente (ver
+ * `docs/ambientes.md`), e um host fixo aqui deixaria as imagens quebradas em
+ * metade dos ambientes sem dizer por quê. Se a variável faltar, o build QUEBRA,
+ * pela mesma régua do `appVersion` acima: melhor parar aqui que descobrir numa
+ * tela com o cartão sem foto.
+ */
+const supabaseHost = new URL(
+  process.env.NEXT_PUBLIC_SUPABASE_URL ??
+    (() => {
+      throw new Error(
+        "NEXT_PUBLIC_SUPABASE_URL ausente: o next.config precisa dela para as imagens do léxico"
+      );
+    })()
+).hostname;
+
 const securityHeaders = [
   { key: "X-Frame-Options", value: "DENY" },
   { key: "X-Content-Type-Options", value: "nosniff" },
@@ -101,7 +120,40 @@ const nextConfig: NextConfig = {
        * vem de resposta de API nenhuma.
        */
       { protocol: "https", hostname: "i.ytimg.com", pathname: "/vi/**" },
+      /**
+       * A imagem do cartão do LÉXICO, no bucket público `lexicon`
+       * (migração 0063).
+       *
+       * O host é DERIVADO de `NEXT_PUBLIC_SUPABASE_URL` em vez de escrito, pela
+       * mesma razão da versão lá em cima: são dois projetos Supabase, um por
+       * ambiente, e um host fixo aqui apontaria o dev para as imagens de
+       * produção (ou o contrário) sem erro nenhum na tela — a imagem
+       * simplesmente não carregaria naquele ambiente.
+       *
+       * O caminho é fechado no bucket: `/storage/v1/object/public/lexicon/**`.
+       * Os outros buckets do projeto, se um dia houver, não passam por aqui.
+       */
+      {
+        protocol: "https",
+        hostname: supabaseHost,
+        pathname: "/storage/v1/object/public/lexicon/**",
+      },
     ],
+    /**
+     * O SVG do léxico (migração 0064): mapa, planta do templo, linha do tempo.
+     *
+     * O otimizador recusa SVG por padrão, e a recusa tem motivo: um `.svg` pode
+     * conter `<script>`, e servido pelo NOSSO domínio (é isso que `/_next/image`
+     * faz) ele rodaria na nossa origem, com acesso a cookie e sessão. A tranca
+     * que torna a permissão aceitável é a CSP abaixo, aplicada pelo Next a toda
+     * imagem que ele serve: sem script, e em sandbox.
+     *
+     * A outra metade da proteção não mora aqui: SVG só é inerte enquanto for
+     * desenhado por `<img>`. Ver `LEXICON_IMAGE_TYPES` em `domain/lexicon.ts`.
+     */
+    dangerouslyAllowSVG: true,
+    contentDispositionType: "attachment",
+    contentSecurityPolicy: "default-src 'self'; script-src 'none'; sandbox;",
   },
   async headers() {
     return [{ source: "/(.*)", headers: securityHeaders }];

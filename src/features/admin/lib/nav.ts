@@ -66,7 +66,7 @@ export const ADMIN_NAV: AdminNavItem[] = [
     href: "/admin/sessions",
     label: "Conteúdo",
     icon: Mic,
-    match: ["/admin/sessions", "/admin/feedback"],
+    match: ["/admin/sessions", "/admin/feedback", "/admin/lexico"],
   },
   {
     href: "/admin/partners",

@@ -46,6 +46,7 @@ function toMessage(row: BibloRow): BibloMessage {
     content: row.content,
     chips: row.chips,
     suggestion: row.suggestion,
+    entitySlug: row.entitySlug,
     createdAt: row.createdAt,
   };
 }
@@ -205,6 +206,7 @@ export async function POST(request: Request) {
     chips: reply.chips,
     suggestion: reply.suggestion,
     thread: reply.thread,
+    entitySlug: result.data.entitySlug,
   });
 
   await recordChatUsage({

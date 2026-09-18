@@ -656,6 +656,18 @@ nunca disparava com o modelo novo, nem em áudio com 27% de WER.
   caminho do link, lidos pelo formulário do painel); o primeiro é service-role e
   só traduz o resultado de `redeem_signup_coupon`, onde a regra inteira mora.
   Ver `src/features/admin/AGENTS.md`.
+- `db/lexicon.ts` + `domain/lexicon.ts`: o léxico das MENÇÕES, os nomes que o
+  resumo marca e o cartão de cada um (migração 0063). O segundo é client-safe e
+  guarda só o vocabulário — ele já foi o léxico INTEIRO, um array de ~330 strings
+  compilado no bundle, e hoje as strings são cadastro editado em
+  `/admin/lexico`. O primeiro tem uma assimetria deliberada: as leituras
+  PÚBLICAS passam pelo client do usuário, porque a policy já diz
+  `using (published)` e service-role ali trocaria uma garantia do banco por um
+  `.eq()` que alguém esquece de escrever na próxima consulta; a escrita é
+  service-role, porque não há policy de escrita nenhuma. `getLexiconIndex` é
+  cacheado em memória por um minuto, e o PRAZO é o que substitui a invalidação:
+  em serverless a instância que atende o admin não é a que atende o leitor, e um
+  `revalidate` limparia um mapa que as outras não têm.
 - `coins/settings.ts`: server-only, lê do cookie o valor de venda da moeda e a
   margem alvo que o admin girou. É régua de SIMULAÇÃO: não cobra, não credita e
   não pode virar tabela. Escrita por `coins/settings-actions.ts`, com

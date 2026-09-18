@@ -15,6 +15,12 @@ import { AdminTabs } from "./AdminTabs";
  * o texto sem a nota não diz se alguém se incomodou. Separadas no menu, cada
  * uma respondia metade.
  *
+ * **Léxico** entrou nessa mesma faixa porque responde à mesma pergunta pelo
+ * outro lado: Sessões e Feedback olham o que o MODELO escreveu, e o léxico é o
+ * único texto de um resumo com a nossa voz — o cartão que abre num nome próprio
+ * foi escrito à mão. Quem abre uma sessão para julgar qualidade está a um
+ * clique de consertar a parte que é nossa.
+ *
  * **Crescimento** junta Parceiros e Cupons porque as duas são portas de
  * entrada de gente, com contas diferentes: o parceiro ganha comissão sobre
  * quem trouxe, o cupom gasta moeda para chamar alguém escolhido. Quem abre uma
@@ -24,9 +30,10 @@ import { AdminTabs } from "./AdminTabs";
 const CONTENT_TABS = [
   { key: "sessoes", href: "/admin/sessions", label: "Sessões" },
   { key: "feedback", href: "/admin/feedback", label: "Feedback" },
+  { key: "lexico", href: "/admin/lexico", label: "Léxico" },
 ] as const;
 
-export function ContentTabs({ active }: { active: "sessoes" | "feedback" }) {
+export function ContentTabs({ active }: { active: "sessoes" | "feedback" | "lexico" }) {
   return (
     <AdminTabs
       tabs={CONTENT_TABS.map((t) => ({

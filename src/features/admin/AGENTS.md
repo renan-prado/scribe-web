@@ -39,7 +39,7 @@ vez de ler a tela.
 | Métricas | quem chega, quem ativa, quem assina? | (perdeu o MRR) |
 | Custos | quanto a OpenAI cobra, e o preço fecha? | `usage` + `precificacao`, em 4 abas |
 | Financeiro | quanto entra, sai e devemos? | 6 telas → 1 item com abas |
-| Conteúdo | o que a pessoa recebeu presta? | `sessions` + `feedback` |
+| Conteúdo | o que a pessoa recebeu presta? | `sessions` + `feedback` + `lexico` |
 | Crescimento | por onde entra gente? | `partners` + `cupons` |
 | Usuários | quem são, quem paga e o que podem? | |
 | Configurações | o que dá para girar sem deploy? | `features` + as financeiras |
@@ -707,6 +707,71 @@ aba de leitura e chamar isso de diagnóstico: a distinção que importava era
 entre **cortada** (o guardião disse que o resumo já respondia, culpa do
 questionador) e **não escolhida** (o respondedor preferiu outras, culpa dele),
 e uma lista que as colapse num "descartada" não responde nada.
+
+## Léxico (aba de "Conteúdo")
+
+Os nomes próprios que o resumo MARCA no texto, e o cartão que abre em cada um.
+Migração 0063, tabela `lexicon_entries`.
+
+**Ele é aba de Conteúdo porque responde à mesma pergunta pelo outro lado.**
+Sessões e Feedback olham o que o MODELO escreveu; o léxico é o único texto de um
+resumo com a NOSSA voz — um cartão sobre Habacuque ou sobre o Mar Vermelho,
+escrito à mão. Quem abre uma sessão para julgar qualidade está a um clique de
+consertar a parte que é nossa.
+
+**Publicar é a ação de verdade desta tela, e por isso é um BOTÃO, não um
+campo.** Publicar uma entrada faz três coisas de uma vez: o nome passa a ser
+marcado na prosa de todo mundo, o cartão passa a abrir no toque, e a descrição
+passa a entrar como FONTE na conversa do Biblo. Isso não é um atributo que se
+alterna de passagem enquanto se conserta um acento. `LexiconEntryInput` nem
+aceita o campo; a rota tem uma ação `publish` própria.
+
+O que não pode ser desfeito:
+
+- **Só entrada COM cartão é marcada.** Título e descrição, os dois, e a regra
+  mora em `canPublishLexiconEntry` (client-safe), chamada pelo painel para
+  acender o botão e pela rota para recusar o pedido. O botão é UX, a rota é a
+  regra. A imagem é opcional: um cartão com texto e sem foto responde a pergunta
+  que o toque fez; com foto e sem texto é uma imagem sem legenda no meio de um
+  sermão.
+- **A tela nasceu com 258 rascunhos e zero publicadas**, porque o seed da 0063
+  trouxe para cá o léxico que era um array no código. O trabalho que ela serve
+  não é administrar um cadastro, é ESCREVER CARTÕES até o produto voltar a marcar
+  nomes — daí a ordenação padrão pôr rascunho primeiro e o filtro de estado ser o
+  primeiro que se alcança. O "x de y publicadas" é o progresso disso, e o
+  denominador vem de uma segunda leitura sem filtro, senão filtrar por rascunho
+  mudaria o total na mesma tela em que se acompanha o avanço.
+- **O SLUG não é recalculado quando o termo muda.** Ele é o endereço do cartão
+  (`/api/lexicon/<slug>`) e o que o Biblo grava ao apontar uma entrada; trocá-lo
+  por causa de um acerto de acento quebraria em silêncio toda referência já
+  gravada. O diálogo o mostra por isso.
+- **Uma entrada publicada que perde título ou descrição volta a rascunho**, no
+  próprio `updateLexiconEntry`. Publicado é a promessa de que há cartão, e salvar
+  não pode deixá-la de pé e vazia.
+- **A busca é feita em MEMÓRIA, e só a categoria e o estado vão ao banco.** Ela
+  precisa cobrir também os APELIDOS (quem procura "Lutero" não sabe que a entrada
+  se chama "Martinho Lutero"), e `aliases` é `text[]`, onde o PostgREST só
+  oferece `cs`, que casa o elemento inteiro — "luter" não acharia nada.
+
+### A imagem: o primeiro arquivo que o produto guarda
+
+Bucket público `lexicon`, escrita só por `/api/admin/lexicon/image` com
+service-role. Três coisas:
+
+- **O banco guarda o CAMINHO, nunca a URL.** O domínio do projeto Supabase é
+  diferente em dev e em produção; uma URL gravada apontaria para o ambiente
+  errado no primeiro dump copiado de um lado para o outro. O `remotePatterns` do
+  `next.config.ts` deriva o host da mesma variável, pela mesma razão.
+- **O nome do arquivo carrega um carimbo de tempo.** Público quer dizer cacheado:
+  sobrescrever `abraao.jpg` deixaria a foto antiga viva nos navegadores por
+  horas, e o sintoma é "troquei a imagem e não mudou nada". Nome novo, URL nova,
+  e a antiga é apagada em seguida.
+- **SVG é aceito** (migração 0064), e o cabeçalho dela tem o argumento inteiro:
+  mapa, planta do templo e linha do tempo são desenho, não foto. O que o mantém
+  inerte são três pernas, e as três precisam continuar de pé — quem sobe é o
+  admin, o arquivo mora em OUTRA origem (o domínio do Supabase, não `scriba.cc`),
+  e a tela o desenha por `<img>`/`next/image`, nunca por `<object>`, `<iframe>`
+  ou `<embed>`, que são os que executam script de SVG.
 
 ## Feedback (aba de "Conteúdo")
 

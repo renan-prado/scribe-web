@@ -273,6 +273,16 @@ export const RATE_LIMITS = {
     perUser: { limit: 60, windowMs: MIN },
     perIp: { limit: 180, windowMs: MIN },
   },
+  // O cartão de um nome do léxico. Mesma cadência do versículo, e pela mesma
+  // razão: é um toque numa palavra do parágrafo, então a taxa legítima é a de
+  // um dedo curioso, e o resultado é cacheado por sessão no React Query. O
+  // conteúdo é leitura de uma linha só, sem modelo e sem moeda, então o balde
+  // existe para cortar varredura do catálogo inteiro, não para racionar.
+  lexicon: {
+    route: "lexicon",
+    perUser: { limit: 60, windowMs: MIN },
+    perIp: { limit: 180, windowMs: MIN },
+  },
   // Alerta manual de alucinação: o usuário digita uma nota, então a cadência
   // real é de alguns por sessão. Generoso o bastante para quem está frustrado
   // com o áudio insistir algumas vezes, apertado o bastante para não virar

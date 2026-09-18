@@ -2,6 +2,7 @@
 
 import { Check, Copy, Plus, Undo2 } from "lucide-react";
 import { useState } from "react";
+import { BibloEntityImage } from "@/features/session/components/BibloEntityImage";
 import { BibloPassage } from "@/features/session/components/BibloPassage";
 import { RichText } from "@/features/session/components/RichText";
 import { asStandaloneScripture } from "@/lib/domain/annotate";
@@ -19,6 +20,15 @@ import { BibloAvatar, type BibloMood } from "@/shared/brand";
  * a REFERÊNCIA (o servidor apaga a que não existe, ver `biblo/answer.ts`), e
  * quem mostra o texto do versículo é sempre a Bíblia em disco. Em nenhum ponto
  * o modelo tem a caneta do texto bíblico.
+ *
+ * ## E o NOME sobre o qual se perguntou pode trazer um rosto
+ *
+ * Quando a pergunta toca uma entrada do léxico que tem imagem, o balão abre com
+ * ela. O TEXTO daquela entrada não é desenhado aqui: ele entrou no prompt como
+ * fonte, e já está diluído na resposta que a pessoa acabou de ler — é a mesma
+ * invariante do texto bíblico, vista de outro ângulo. O que nós escrevemos
+ * governa o que o Biblo diz; o que ele diz continua sendo prosa dele. Ver
+ * `BibloEntityImage` e `entityForAnswer` em `biblo/answer.ts`.
  *
  * ## Uma linha que é só a referência vira a PASSAGEM ABERTA
  *
@@ -225,6 +235,10 @@ export function BibloMessageView({
           data-biblo-answer={message.id}
           className="max-w-[92%] rounded-2xl rounded-tl-md bg-secondary px-3.5 py-2.5"
         >
+          {/* O retrato do nome sobre o qual se perguntou, quando há um. Vem
+              ANTES do texto porque é o rosto da resposta, não uma ilustração
+              dela; ver `BibloEntityImage`. */}
+          {message.entitySlug ? <BibloEntityImage slug={message.entitySlug} /> : null}
           <div className="space-y-3 text-[14px] text-scriba-ink leading-relaxed">
             {paragraphs.map((paragraph, index) => {
               // A linha que é SÓ uma referência vira a passagem aberta; a

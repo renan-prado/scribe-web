@@ -143,29 +143,69 @@ servidor.
 
 ## Menções dentro do parágrafo
 
-`RichText` é o que o resumo e o estudo usam para desenhar PROSA. Ele passa o
-texto por `annotateText` (`src/lib/domain/annotate.ts`) e marca três coisas:
-referência bíblica, personagem/lugar e figura citada.
+`RichText` é o que o resumo, o estudo e o Biblo usam para desenhar PROSA. Ele
+passa o texto por `annotateText` (`src/lib/domain/annotate.ts`) e marca duas
+coisas: referência bíblica e nome próprio do LÉXICO.
 
-**É regex sobre um léxico curado (`src/lib/domain/lexicon.ts`), não uma etapa de
-IA.** Marcar entidade com LLM seria mais uma chamada por sessão, com custo,
-latência e a chance de o modelo marcar o que não está no texto, para um
-problema que um autômato resolve igual toda vez.
+**É regex sobre um léxico curado, não uma etapa de IA.** Marcar entidade com LLM
+seria mais uma chamada por sessão, com custo, latência e a chance de o modelo
+marcar o que não está no texto, para um problema que um autômato resolve igual
+toda vez.
+
+### O léxico é CADASTRO, e marcado quer dizer "tem cartão"
+
+Ele já foi um array de ~330 strings em `src/lib/domain/lexicon.ts`, compilado no
+bundle. Hoje é `lexicon_entries` (migração 0063), editado em **/admin/lexico**,
+e cada entrada carrega um cartão: título, descrição e, opcionalmente, imagem. O
+arquivo antigo virou só o vocabulário (tipos, limites e o `slugifyTerm`); as
+strings foram para a tabela pelo seed daquela migração, **todas como rascunho**.
+
+> **está marcado ⇔ tem cartão ⇔ abre no toque.**
+
+A alternativa era marcar todo nome e deixar metade surda ao toque, que é pior
+que as duas pontas: promete e não entrega. O preço, aceito de olhos abertos, é
+que no dia da migração nada fica marcado — cada nome acende quando alguém
+escreve o cartão dele. A categoria (`person`/`place`/`figure`) segue nos dados
+e FORA da tinta, pela razão de sempre: três cores de faixa num parágrafo é uma
+página de arco-íris, e o realce só funciona enquanto for exceção.
 
 - **A passada de referência vem ANTES da de nomes, e exige número de
   capítulo.** É o que separa o evangelho do apóstolo: "João 3:16" é consumido
   inteiro pela primeira passada. Um "João" solto no meio da frase continua
-  sendo o apóstolo.
+  sendo o apóstolo. A lista de LIVROS não é cadastrável — ela é fechada há dois
+  mil anos.
 - **O casamento é exato**, acento e maiúscula inclusive. A entrada aqui é texto
   escrito por um modelo, e tolerância que não é necessária só compra falso
   positivo.
-- **Só a referência é CLICÁVEL, e por isso só ela é colorida.** Nome próprio
-  ganha a faixa de marca-texto (`--session-mention-wash`) e nada mais: não há
-  para onde ir a partir dele. Três cores de marcação num parágrafo é uma página
-  de arco-íris, e o realce só funciona enquanto for exceção.
+- **Os APELIDOS são o que impede um cartão por grafia.** "Lutero" e "Martinho
+  Lutero", "Abrão" e "Abraão", "Saulo" e "Paulo" são a mesma entrada, e os dois
+  termos abrem o mesmo cartão. O seed da 0063 já fundiu 35 pares desses.
 - **Nunca aplique `RichText` em texto bíblico** (`bibleQuote`) nem em frase de
   efeito (`highlight`). No primeiro todo nome é personagem e a marcação
   pintaria o bloco inteiro; a segunda já carrega a faixa amarela.
+
+### O índice desce, o cartão é buscado
+
+Duas leituras, e separá-las é a decisão de desempenho da feature:
+
+| | o quê | quando |
+|---|---|---|
+| `getLexiconIndex` | termo, apelidos, slug, categoria | no layout de `(app)`, cacheado 1 min em memória |
+| `getLexiconCard` | título, descrição, imagem | `GET /api/lexicon/:slug`, no toque |
+
+Juntá-las faria cada abertura de resumo baixar 300 descrições e 300 URLs de
+imagem para mostrar zero delas. O cartão entra por `dynamic(ssr:false)`, igual
+ao `ChapterDialog`, e é cacheado por sessão no React Query.
+
+**O índice chega ao `RichText` por CONTEXTO** (`LexiconProvider`), e não por
+prop: o caminho até ele tem cinco degraus em quatro árvores, e esquecer um faria
+a marcação sumir daquela tela sem erro nenhum. O preço foi o `RichText` virar
+`"use client"`. **A landing não monta o provedor**, de propósito — sem ele a
+lista é vazia e o anotador só reconhece referência, que é o que ele já fazia lá.
+
+**O anotador memoiza a regex pela IDENTIDADE do array.** O índice desce como uma
+referência estável; um `[]` literal novo a cada render recompilaria uma
+alternação de trezentos termos por parágrafo.
 
 Os dois tokens trocam de família dentro de `.tone-study`: no estudo o acento é
 verde, como o resto.
@@ -329,6 +369,24 @@ Cinco coisas que mordem de fora:
   as letras a FRASE da `offer` do OBJETO da `suggestion`. Um prompt mais claro
   baixa a frequência, nunca a zero, e é o schema que decide o que acontece
   quando ele erra.
+- **O LÉXICO entra como FONTE, e é a única coisa do produto que governa o que o
+  modelo diz.** Quando a pergunta toca um nome cadastrado e publicado, a
+  descrição dele vai ao prompt como material NOSSO — não como mandado de
+  repetir: se a pergunta pede mais do que está escrito ali, o Biblo responde do
+  que sabe, o que ele não faz é contradizer. É o mesmo reconhecimento por regex
+  que marca o nome na tela (`annotateText`), então ele recebe exatamente as
+  entradas que a pessoa VÊ marcadas. Teto de 3 cartões e 600 caracteres cada, e
+  falha de leitura não derruba a resposta: sem o bloco, o Biblo responde como
+  respondia antes. Ver `bibloLexiconBlock` em `server/prompts/biblo.ts`.
+- **O que sobe para a tela é só a IMAGEM, nunca o cartão.** O texto já está
+  diluído na resposta, e desenhá-lo embaixo dela seria dizer a mesma coisa duas
+  vezes, uma em voz de conversa e outra em voz de ficha. A foto é a única parte
+  que a prosa não carrega. Quem escolhe é o SERVIDOR (`entityForAnswer`), não um
+  campo do contrato: as menções da pergunta já foram achadas de graça, e um campo
+  no JSON custaria prompt, tokens e uma conferência contra invenção de slug. Duas
+  condições, as duas conservadoras — exatamente UMA entrada na pergunta, e ela
+  tem imagem. O slug fica em `biblo_messages.entity_slug` (migração 0065) para o
+  retrato sobreviver a fechar e reabrir a gaveta.
 - **A abertura é DERIVADA, sem LLM** (`server/biblo/opening.ts`): o cumprimento
   sai do título e os chips das referências citadas. Abrir a gaveta não custa
   moeda, não custa dólar e não espera nada. Os chips com inteligência são os que

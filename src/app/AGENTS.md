@@ -900,9 +900,21 @@ não são conteúdo, são efeito colateral com redirect.
 `deepening[/reprocess]`, `youtube/import`, `verse`, `hallucination-report`,
 `biblo`, `biblo/voice`),
 dados (`sessions[/search|/written]`, `speakers`, `locations`, `coins`,
-`feedback[/prompt]`, `tour/{start,finish,reset}`), conta (`account/delete`),
-cobrança (`billing/*`, `stripe/webhook`) e admin (`admin/users`,
-`admin/partners`, `admin/features`, `admin/coupons`, `admin/insights`).
+`lexicon/[slug]`, `feedback[/prompt]`, `tour/{start,finish,reset}`), conta
+(`account/delete`), cobrança (`billing/*`, `stripe/webhook`) e admin
+(`admin/users`, `admin/partners`, `admin/features`, `admin/coupons`,
+`admin/insights`, `admin/lexicon[/image]`).
+
+`lexicon/[slug]` é o cartão de um nome marcado no resumo, e é **GET** enquanto
+`/api/verse` é POST: lá o corpo é uma lista de referências, aqui o pedido é um
+identificador no caminho, que é o que o navegador e o React Query já sabem
+cachear. Não chama modelo e não cobra, mesma razão de `/api/verse`; quem impede
+o rascunho de sair é a POLICY da migração 0063, não um filtro na rota.
+
+`admin/lexicon/image` é a única rota do produto que recebe `multipart/form-data`
+— é o primeiro arquivo que o Scriba guarda. Ela é irmã separada de
+`admin/lexicon` (JSON + Zod) porque a fronteira natural é o tipo do corpo, não a
+entidade. Ver `src/features/admin/AGENTS.md`.
 
 `sessions/written` é a rota do `/escrever`, e a ÚNICA do produto que recebe um
 `SummaryPayload` vindo do CLIENTE — todos os outros nascem dentro do servidor, a

@@ -1,9 +1,15 @@
 import "server-only";
-import { BIBLO_SYSTEM_PROMPT, bibloContextBlock } from "@/features/session/server/prompts/biblo";
+import {
+  BIBLO_SYSTEM_PROMPT,
+  bibloContextBlock,
+  bibloLexiconBlock,
+} from "@/features/session/server/prompts/biblo";
 import { anchorReference } from "@/features/session/server/study/anchor";
 import type { BibloRow } from "@/lib/db/biblo";
-import { asStandaloneScripture } from "@/lib/domain/annotate";
+import { getLexiconCards, getLexiconIndex } from "@/lib/db/lexicon";
+import { annotateText, asStandaloneScripture } from "@/lib/domain/annotate";
 import { type BibloReply, BibloReplySchema, type BibloSuggestion } from "@/lib/domain/biblo";
+import type { LexiconCard, LexiconIndexEntry } from "@/lib/domain/lexicon";
 import { parseVerseReference } from "@/lib/domain/reference";
 import type { SummaryBlock, SummaryPayload } from "@/lib/domain/summary";
 import { serverEnv } from "@/lib/env/server";
@@ -97,6 +103,8 @@ export type BibloAnswerInput = {
 
 export type BibloAnswerOk = {
   reply: BibloReply;
+  /** A entrada do léxico que ilustra a resposta, ou `null`. Ver `entityForAnswer`. */
+  entitySlug: string | null;
   model: string;
   usage: ChatResult["usage"];
   latencyMs: number;
@@ -571,6 +579,60 @@ async function verifySuggestion(
   return { label: suggestion.label, block, afterIndex };
 }
 
+/**
+ * Quantos cartões do léxico entram no prompt, e quanto de cada um.
+ *
+ * São AMARRAS DE MARGEM, como as duas do topo deste arquivo. O bloco cresce com
+ * o que a pessoa escreveu na pergunta, e sem teto uma pergunta que cite seis
+ * nomes empurraria seis descrições de 2 mil caracteres para dentro da chamada.
+ * Três cobre a pergunta real ("quem era Habacuque, e por que ele reclama como
+ * Jó?"); 600 caracteres é a ordem de grandeza de um cartão inteiro bem escrito,
+ * e o que passa disso entra cortado em vez de ficar de fora.
+ *
+ * O custo é de ENTRADA, o lado barato da conta, e nem sempre existe: uma
+ * conversa que não toca nome nenhum do léxico não paga nada por isto.
+ */
+const BIBLO_LEXICON_MAX_CARDS = 3;
+const BIBLO_LEXICON_CHAR_BUDGET = 600;
+
+/**
+ * Os slugs do léxico citados num texto, na ordem em que aparecem.
+ *
+ * É o MESMO `annotateText` que o `RichText` usa para marcar nome próprio na
+ * tela, e essa igualdade é o ponto: o Biblo recebe como fonte exatamente as
+ * entradas que a pessoa VÊ marcadas, nem mais nem menos. Uma segunda forma de
+ * reconhecer nome aqui faria a conversa e a tela discordarem sobre quem é quem.
+ */
+function lexiconSlugsIn(text: string, index: LexiconIndexEntry[]): string[] {
+  if (!text || index.length === 0) return [];
+  const slugs: string[] = [];
+  for (const segment of annotateText(text, index)) {
+    if (segment.kind === "name" && !slugs.includes(segment.slug)) slugs.push(segment.slug);
+  }
+  return slugs;
+}
+
+/**
+ * A entrada cuja IMAGEM acompanha esta resposta, ou `null`.
+ *
+ * Decidida pelo servidor, e não pelo modelo: as menções da pergunta já foram
+ * achadas por regex acima, de graça e sem chance de invenção. O cabeçalho da
+ * migração 0065 tem o argumento inteiro.
+ *
+ * Duas condições, e as duas são conservadoras:
+ *
+ * - **Exatamente UMA entrada na pergunta.** Com dois nomes não há resposta certa
+ *   sobre qual ilustrar, e escolher a primeira é acertar metade das vezes num
+ *   lugar onde não desenhar nada não custa nada.
+ * - **Ela tem imagem.** O texto do cartão já está na resposta, em prosa; o que
+ *   o retrato acrescenta é a única coisa que a prosa não carrega.
+ */
+function entityForAnswer(slugs: string[], cards: LexiconCard[]): string | null {
+  if (slugs.length !== 1) return null;
+  const card = cards.find((c) => c.slug === slugs[0]);
+  return card?.imageUrl ? card.slug : null;
+}
+
 export async function generateBibloAnswer(input: BibloAnswerInput): Promise<BibloAnswerResult> {
   const summary = input.summary;
   const blocks = summary?.blocks ?? [];
@@ -583,15 +645,46 @@ export async function generateBibloAnswer(input: BibloAnswerInput): Promise<Bibl
     thread: latestThread(input.history),
   });
 
+  // Os nomes do léxico que a PERGUNTA tocou, achados pelo mesmo anotador que
+  // marca nome próprio na tela. Duas idas ao banco no pior caso, as duas
+  // baratas: o índice é cacheado em memória por um minuto, e os cartões saem
+  // numa consulta só.
+  //
+  // Falha aqui NÃO derruba a resposta: sem o bloco, o Biblo responde do que ele
+  // sabe, que é como ele respondia antes desta feature existir. Uma leitura de
+  // catálogo não pode custar uma moeda já debitada.
+  const index = await getLexiconIndex().catch((): LexiconIndexEntry[] => []);
+  const slugs = lexiconSlugsIn(input.question, index).slice(0, BIBLO_LEXICON_MAX_CARDS);
+  const cards = slugs.length > 0 ? await getLexiconCards(slugs).catch(() => []) : [];
+
   // A ordem é deliberada: instruções e contexto PRIMEIRO, e os dois estáveis
   // durante a conversa inteira. É esse prefixo que o cache automático da OpenAI
   // pega (25% do preço na família 4.1), e é a diferença entre 74% e 61% de
   // margem em `features/coins/pricing.ts`. Qualquer coisa variável antes deles
   // invalida o cache a cada mensagem, sem erro nenhum na tela.
+  //
+  // **O bloco do léxico vem DEPOIS da janela**, pela mesma razão pelo avesso:
+  // ele muda a cada pergunta, porque depende dos nomes dela. Entre as duas
+  // primeiras mensagens, invalidaria o prefixo cacheado toda vez. Ver
+  // `bibloLexiconBlock`.
   const messages: ChatMessage[] = [
     { role: "system", content: BIBLO_SYSTEM_PROMPT },
     { role: "system", content: context },
     ...windowMessages(input.history),
+    ...(cards.length > 0
+      ? [
+          {
+            role: "system" as const,
+            content: bibloLexiconBlock(
+              cards.map((card) => ({
+                term: card.term,
+                title: card.title,
+                description: card.description.slice(0, BIBLO_LEXICON_CHAR_BUDGET),
+              }))
+            ),
+          },
+        ]
+      : []),
     { role: "user", content: input.question },
   ];
 
@@ -730,10 +823,16 @@ export async function generateBibloAnswer(input: BibloAnswerInput): Promise<Bibl
   const offer = offtopic ? null : asUserVoice(reply.data.offer);
   const chips = offer ? [offer, ...reply.data.chips] : reply.data.chips;
 
+  // O retrato só acompanha resposta DENTRO do território: embaixo de "aqui eu
+  // só falo de Bíblia" ele seria um enfeite numa recusa, e a foto de um
+  // personagem não tem nada a ver com a receita de miojo que foi pedida.
+  const entitySlug = offtopic ? null : entityForAnswer(slugs, cards);
+
   return {
     ok: true,
     data: {
       reply: { ...reply.data, answer: text, suggestion, chips },
+      entitySlug,
       model,
       usage: result.data.usage,
       latencyMs: result.data.latencyMs,

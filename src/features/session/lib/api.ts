@@ -1,4 +1,5 @@
 import type { HallucinationReview } from "@/lib/domain/hallucination";
+import type { LexiconCard } from "@/lib/domain/lexicon";
 import type { SessionMode } from "@/lib/domain/session";
 import type { SummaryPayload } from "@/lib/domain/summary";
 import { type PassagePayload, parseVerseResponse } from "@/lib/domain/verse";
@@ -249,4 +250,21 @@ export async function requestYoutubeImport(body: {
   } catch (err) {
     return { ok: false, error: (err as Error).message || "network_error", status: 0 };
   }
+}
+
+/**
+ * GET /api/lexicon/:slug. O cartão de um nome marcado no resumo.
+ *
+ * `null` cobre os dois "não tem": a entrada não existe, ou existe como
+ * rascunho. A tela não distingue os dois casos, e não deveria — para quem lê,
+ * os dois são a mesma coisa.
+ */
+export async function requestLexiconCard(slug: string): Promise<LexiconCard | null> {
+  const res = await fetch(`/api/lexicon/${encodeURIComponent(slug)}`);
+  if (!res.ok) {
+    if (res.status === 404) return null;
+    throw new Error(`HTTP ${res.status}`);
+  }
+  const body = (await res.json()) as { card?: LexiconCard };
+  return body.card ?? null;
 }

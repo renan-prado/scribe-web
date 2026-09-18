@@ -301,3 +301,51 @@ export function bibloContextBlock(input: {
   }
   return parts.join("\n");
 }
+
+/**
+ * O que O SCRIBA já escreveu sobre os nomes que apareceram na conversa.
+ *
+ * ## Por que isto existe
+ *
+ * O léxico (`lexicon_entries`, migração 0063) é o único texto do produto com a
+ * NOSSA voz: um cartão sobre Habacuque, sobre o Mar Vermelho ou sobre
+ * Bonhoeffer, escrito à mão no painel. Ele já governa o que a pessoa lê ao tocar
+ * num nome do resumo. Não entregá-lo ao Biblo faria o produto dizer duas coisas
+ * sobre o mesmo nome: a nossa no cartão, a genérica do modelo na conversa.
+ *
+ * ## O que ele NÃO é
+ *
+ * Não é um mandado de repetir. O texto entra como FONTE, e a instrução abaixo
+ * diz isso com todas as letras: se a pergunta pede mais do que está aqui, o
+ * Biblo continua respondendo do que sabe — o que ele não faz é CONTRADIZER o
+ * que nós escrevemos. Um bloco que mandasse "responda com isto" transformaria
+ * uma conversa num leitor de fichas, e a pergunta seguinte ("e por que ele
+ * reclamou?") não teria resposta.
+ *
+ * ## Onde ele entra na conversa, e por que não antes
+ *
+ * Como mensagem de sistema DEPOIS da janela de histórico, nunca junto do
+ * contexto. As duas primeiras mensagens (instruções + o texto na tela) são
+ * estáveis durante a conversa inteira, e é esse prefixo que o cache automático
+ * da OpenAI pega — 25% do preço, e a diferença entre 74% e 61% de margem em
+ * `features/coins/pricing.ts`. Este bloco muda a cada pergunta, porque depende
+ * dos nomes DELA; posto lá em cima, invalidaria o cache a cada mensagem, sem
+ * erro nenhum na tela. Ver a ordem em `generateBibloAnswer`.
+ */
+export function bibloLexiconBlock(
+  cards: { term: string; title: string; description: string }[]
+): string {
+  const parts = [
+    "=== O QUE O SCRIBA JÁ ESCREVEU SOBRE ESTES NOMES ===",
+    "Isto é material NOSSO, curado, que a pessoa vê ao tocar no nome dentro do texto dela.",
+    "Use como FONTE: não contradiga, e não repita palavra por palavra — ela pode já ter lido.",
+    "Se a pergunta pede mais do que está aqui, responda do que você sabe, sem inventar o que não está.",
+    "",
+  ];
+  for (const card of cards) {
+    parts.push(`— ${card.term}${card.title && card.title !== card.term ? ` (${card.title})` : ""}`);
+    parts.push(card.description);
+    parts.push("");
+  }
+  return parts.join("\n").trimEnd();
+}

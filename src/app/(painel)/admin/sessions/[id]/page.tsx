@@ -12,6 +12,7 @@ import {
 } from "@/features/admin/components/SessionReaderTabs";
 import { getSessionForAdmin } from "@/features/admin/server/db/sessions";
 import { LeadIdea } from "@/features/session/components/LeadIdea";
+import { LexiconProvider } from "@/features/session/components/LexiconProvider";
 import { SavedTranscriptView } from "@/features/session/components/SavedTranscriptView";
 import {
   StudyBlockRenderer,
@@ -20,6 +21,7 @@ import {
 import { SummaryView } from "@/features/session/components/SummaryView";
 import { formatDurationLong } from "@/features/session/lib/formatting";
 import { dehydratePassages } from "@/features/session/server/passages";
+import { getLexiconIndex } from "@/lib/db/lexicon";
 
 export const dynamic = "force-dynamic";
 
@@ -73,6 +75,12 @@ export default async function AdminSessionReaderPage({ params }: PageProps) {
   // do produto, então herda a divergência de hidratação dele junto com o
   // componente. Ver `session/server/passages.ts`.
   const passages = await dehydratePassages(session.summary?.blocks);
+
+  // O mesmo índice de nomes que o layout de `(app)` entrega às telas do
+  // produto. Ele mora aqui, e não no layout do painel, porque esta é a única
+  // tela do admin que desenha prosa: pendurá-lo na moldura faria as sete telas
+  // de tabela pagarem por uma marcação que nenhuma delas mostra.
+  const lexicon = await getLexiconIndex();
 
   const panels: SessionReaderPanel[] = [
     {
@@ -195,7 +203,13 @@ export default async function AdminSessionReaderPage({ params }: PageProps) {
     </div>
   );
 
-  return passages ? <HydrationBoundary state={passages}>{page}</HydrationBoundary> : page;
+  const withLexicon = <LexiconProvider entries={lexicon}>{page}</LexiconProvider>;
+
+  return passages ? (
+    <HydrationBoundary state={passages}>{withLexicon}</HydrationBoundary>
+  ) : (
+    withLexicon
+  );
 }
 
 /**

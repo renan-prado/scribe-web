@@ -24,6 +24,12 @@ export type BibloRow = {
   thread: string | null;
   /** Só em linha do usuário. */
   billing: BibloBilling | null;
+  /**
+   * A entrada do léxico que ilustra esta resposta, quando há uma (0065).
+   * Quem a escolhe é o servidor, por regex sobre a pergunta; ver
+   * `entityForAnswer` em `biblo/answer.ts`.
+   */
+  entitySlug: string | null;
   createdAt: string;
 };
 
@@ -35,10 +41,11 @@ type DbRow = {
   suggestion: unknown;
   thread: string | null;
   billing: string | null;
+  entity_slug: string | null;
   created_at: string;
 };
 
-const COLUMNS = "id, role, content, chips, suggestion, thread, billing, created_at";
+const COLUMNS = "id, role, content, chips, suggestion, thread, billing, entity_slug, created_at";
 
 /**
  * Teto de linhas trazidas numa leitura. Não é paginação: a janela que vai ao
@@ -58,6 +65,7 @@ function toRow(row: DbRow): BibloRow {
     suggestion: (row.suggestion as BibloSuggestion | null) ?? null,
     thread: row.thread,
     billing: (row.billing as BibloBilling | null) ?? null,
+    entitySlug: row.entity_slug,
     createdAt: row.created_at,
   };
 }
@@ -103,6 +111,7 @@ export type InsertBibloMessage = {
   suggestion?: BibloSuggestion | null;
   thread?: string | null;
   billing?: BibloBilling | null;
+  entitySlug?: string | null;
 };
 
 export async function insertBibloMessage(input: InsertBibloMessage): Promise<BibloRow> {
@@ -122,6 +131,7 @@ export async function insertBibloMessage(input: InsertBibloMessage): Promise<Bib
       suggestion: input.role === "assistant" ? (input.suggestion ?? null) : null,
       thread: input.role === "assistant" ? (input.thread ?? null) : null,
       billing: input.role === "user" ? (input.billing ?? null) : null,
+      entity_slug: input.role === "assistant" ? (input.entitySlug ?? null) : null,
     })
     .select(COLUMNS)
     .single();

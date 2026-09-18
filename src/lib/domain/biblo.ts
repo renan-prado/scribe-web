@@ -285,6 +285,18 @@ export type BibloMessage = {
   content: string;
   chips: string[];
   suggestion: BibloSuggestion | null;
+  /**
+   * O slug da entrada do léxico cuja IMAGEM acompanha esta resposta, e `null`
+   * na esmagadora maioria delas (migração 0065).
+   *
+   * **É o slug, não o cartão**, e a diferença importa: a gaveta busca a imagem
+   * pelo mesmo caminho que o resumo usa quando alguém toca num nome
+   * (`/api/lexicon/:slug`, cacheado por sessão no React Query), então reler uma
+   * conversa de vinte mensagens não carrega vinte cartões pelo fio. O texto do
+   * cartão já está na resposta, em prosa — quem escolheu foi o servidor, ver
+   * `entityForAnswer` em `biblo/answer.ts`.
+   */
+  entitySlug: string | null;
   createdAt: string;
 };
 
