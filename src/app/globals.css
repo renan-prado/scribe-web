@@ -1418,6 +1418,25 @@
 }
 
 @theme {
+  /* A ELEVAÇÃO DE UM DIÁLOGO.
+ 
+     Ela existe para o caso em que o véu não resolve: DIÁLOGO SOBRE DIÁLOGO. O
+     popup tem `bg-popover` e um fio de 1px, o que basta enquanto o que está
+     atrás é o véu escurecido — mas o texto bíblico abre por cima do cartão do
+     léxico, e ali os dois são a MESMA superfície (#2F3035), separados por uma
+     linha de 10% de branco. O de cima deixa de ser lido como uma caixa em cima
+     de outra e passa a parecer um pedaço do mesmo plano.
+ 
+     Calibrada sobre esse par, e não escolhida de catálogo: sem sombra as bordas
+     se fundem; neste degrau elas se separam e o desfoque continua difuso, sem
+     contorno duro; um degrau acima a diferença deixa de ser perceptível e só
+     escurece mais o que está atrás.
+ 
+     Ela mora no `DialogContent`, então vale para TODO diálogo. Sobre o véu ela
+     é quase invisível, que é o certo: elevação é propriedade da peça, não do
+     caso em que alguém reparou nela. */
+  --shadow-dialog: 0 16px 40px -12px rgba(0, 0, 0, 0.8);
+
   --animate-record-halo: record-halo 2.4s cubic-bezier(0.4, 0, 0.6, 1) infinite;
   --animate-scriba-halo: scriba-halo 2.4s ease-out infinite;
   --animate-skeleton-shimmer: skeleton-shimmer 1.6s ease-in-out infinite;
