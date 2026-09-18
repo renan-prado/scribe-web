@@ -42,6 +42,13 @@ import { LEXICON_CATEGORY_LABEL } from "@/lib/domain/lexicon";
  * da imagem, então uma caixa que se molda ao arquivo só saberia o tamanho
  * DEPOIS de carregá-lo, e o texto abaixo pularia de lugar no meio da leitura.
  *
+ * **São 104px, metade do que já foram.** Contida em 208px, a faixa virava o
+ * primeiro terço do cartão e empurrava o texto para baixo da dobra: quem tocou
+ * num nome tocou para LER sobre ele, e chegava a uma ilustração de meia tela com
+ * a resposta escondida embaixo. O retrato continua reconhecível nesta altura, e
+ * o mapa continua legível — e o que ganhou espaço foi a descrição, que é o
+ * conteúdo.
+ *
  * **Sem imagem o cartão não fica com um buraco**: a faixa simplesmente não
  * existe, e o título sobe para o topo. Imagem é opcional no cadastro de
  * propósito (ver `canPublishLexiconEntry`), então "sem foto" é um estado comum,
@@ -88,7 +95,7 @@ export function LexiconCardDialog({
     <Dialog open={open} onOpenChange={onOpenChange}>
       <DialogContent>
         {data?.imageUrl ? (
-          <div className="relative -mt-2 h-52 w-full overflow-hidden rounded-lg bg-muted">
+          <div className="relative -mt-2 h-26 w-full overflow-hidden rounded-lg bg-muted">
             <Image
               src={data.imageUrl}
               alt=""
