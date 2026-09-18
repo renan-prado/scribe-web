@@ -9,6 +9,16 @@ Gerado por `npm run release` a partir dos Conventional Commits. `feat` sobe o
 minor; o resto sobe o patch. Não edite à mão, a próxima execução escreve por
 cima do topo do arquivo.
 
+## 0.46.0, 2026-09-18, desde v0.45.0
+
+### Novidades
+
+- **session:** menu do resumo mais respirado, alerta em todo modo, autor e local editaveis no editor (`44c8446`)
+
+### Correções
+
+- **build:** contorna ::highlight() nao suportado pelo parser do Turbopack (`0e026e3`)
+
 ## 0.45.0, 2026-09-18, desde v0.44.0
 
 ### Novidades
