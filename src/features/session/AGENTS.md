@@ -363,6 +363,11 @@ Cinco coisas que mordem de fora:
   ali que se decide assinar. O "—" está proibido na nossa cópia e no prompt (ver
   `NADA DE TRAVESSÃO` em `server/prompts/biblo.ts`): é a marca registrada de
   texto escrito por máquina, e o Biblo inteiro existe para não soar como uma.
+- **O botão da despedida abre o `BillingDialog`, não `/assinar`.** É o mesmo
+  diálogo do avatar ("Créditos e planos") e o mesmo do overlay de saldo
+  esgotado. Navegar dali tiraria a pessoa do meio da conversa que é justamente o
+  motivo de ela considerar assinar; o diálogo pousa por cima sem desmontar nada,
+  o checkout sai em outra aba, e quem fecha sem comprar volta para onde estava.
 
 **Inserir é diferente nas duas telas, e é bom que seja.** No editor a sugestão
 entra no rascunho local pelo mesmo `insertAt` do menu do `+`. Na leitura não há

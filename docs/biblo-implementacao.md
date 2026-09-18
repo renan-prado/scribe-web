@@ -77,6 +77,16 @@ mensagem respondida —, então zero ali e `gift_exhausted` no pedido seguinte s
 o MESMO fato; a gaveta traduz um no outro e mostra a despedida uma vez só, no
 lugar onde ela é verdade.
 
+**O botão dela ABRE O DIÁLOGO DE CRÉDITOS, e não uma página.** Ele era um link
+para `/assinar`, e navegar era o pior que podia acontecer ali: a pessoa está no
+meio de uma conversa, com o resumo atrás da gaveta e a pergunta seguinte já
+pensada, e trocar a tela pede que ela decida assinar longe do motivo pelo qual
+quis assinar. O `BillingDialog` é o MESMO que o avatar abre em "Créditos e
+planos" e o mesmo do overlay de saldo esgotado no meio de uma gravação: ele
+pousa por cima sem desmontar nada, o checkout sai em outra aba, e quem fecha sem
+comprar continua exatamente onde estava. Vale para os dois botões da despedida,
+o do presente e o do saldo zerado.
+
 ### 1.2 O preço: duas moedas por mensagem, cobradas em silêncio
 
 **Duas moedas por mensagem.** Não há bloco, não há pacote, não há parede no meio

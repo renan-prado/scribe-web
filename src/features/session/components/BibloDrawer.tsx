@@ -2,6 +2,7 @@
 
 import { ArrowUp, MessageCircle, X } from "lucide-react";
 import { useCallback, useEffect, useRef, useState } from "react";
+import { BillingDialog } from "@/features/billing/components/BillingDialog";
 import { useCoinsStore } from "@/features/coins/store";
 import { useBibloConversation, useBibloWriter } from "@/features/session/biblo-query";
 import {
@@ -144,15 +145,30 @@ const COMPOSER_MAX_PX = COMPOSER_MAX_LINES * COMPOSER_LINE_PX + COMPOSER_PADDING
  * A diferença entre "acabou" e "foi bom" não é cosmética: uma fecha a porta, a
  * outra diz que valeu. Quem gastou as dez mensagens de presente gostou o
  * bastante para gastá-las, e essa é a pessoa a quem o convite é feito.
+ *
+ * ## O BOTÃO ABRE O DIÁLOGO, e não uma página
+ *
+ * Ele era um `<a href="/assinar">`, e navegar era o pior que podia acontecer
+ * ali: a pessoa está NO MEIO de uma conversa, com o resumo atrás da gaveta e a
+ * pergunta seguinte já pensada. Trocar a tela por outra pede que ela decida
+ * assinar longe do motivo pelo qual quis assinar, e a volta fica por conta do
+ * botão do navegador.
+ *
+ * O `BillingDialog` é o MESMO que o avatar abre em "Créditos e planos" e o
+ * mesmo que o overlay de saldo esgotado abre no meio de uma gravação, pela
+ * razão daquele: ele pousa por cima sem desmontar nada, o checkout sai em
+ * outra aba, e quem fecha sem comprar continua exatamente onde estava. Uma
+ * segunda tabela de preços só para este botão seria uma segunda tabela de
+ * preços para manter.
  */
-const DENIAL_COPY: Record<BibloDenial, { text: string; cta?: { label: string; href: string } }> = {
+const DENIAL_COPY: Record<BibloDenial, { text: string; cta?: string }> = {
   gift_exhausted: {
-    text: "Gostei de conversar com você. Essas primeiras foram por nossa conta, e eu sigo com você nos planos Pessoal e Estudioso.",
-    cta: { label: "Ver os planos", href: "/assinar" },
+    text: "Maravilha! Conversar contigo é uma benção! Essas primeiras mensagens foram presente nosso, continue conversando comigo conhecendo nossos planos :)",
+    cta: "Conhecer os planos",
   },
   insufficient_balance: {
     text: "Seus créditos acabaram. Coloque mais e a gente continua de onde parou.",
-    cta: { label: "Adicionar créditos", href: "/assinar" },
+    cta: "Adicionar créditos",
   },
   disabled: { text: "Estou em manutenção por aqui. Volte daqui a pouco." },
   revoked: { text: "Não consigo conversar nesta conta." },
@@ -365,6 +381,8 @@ export function BibloDrawer({
   // so ate ela e que a rolagem sobe.
   const [arrivedId, setArrivedId] = useState<string | null>(null);
   const [addedIds, setAddedIds] = useState<Set<string>>(new Set());
+  // Créditos e planos, abertos pelo botão da despedida. Ver `DENIAL_COPY`.
+  const [billingOpen, setBillingOpen] = useState(false);
   const listRef = useRef<HTMLDivElement>(null);
   const inputRef = useRef<HTMLTextAreaElement>(null);
   const setBalance = useCoinsStore((s) => s.setBalance);
@@ -764,18 +782,19 @@ export function BibloDrawer({
             o que a pessoa acabou de perder. */}
         {denial ? (
           <div className="flex items-start gap-2.5 pb-1">
-            <BibloAvatar mood="idle" size={32} className="mt-0.5" />
+            <BibloAvatar mood="idle" size={54} className="mt-0.5" />
             <div className="min-w-0 space-y-2.5">
               <p className="text-[13px] text-scriba-ink-soft leading-relaxed">
                 {DENIAL_COPY[denial].text}
               </p>
               {DENIAL_COPY[denial].cta && (
-                <a
-                  href={DENIAL_COPY[denial].cta?.href}
+                <button
+                  type="button"
+                  onClick={() => setBillingOpen(true)}
                   className="inline-flex items-center rounded-full bg-[image:var(--scriba-cta)] px-4 py-2 font-medium text-[13px] text-scriba-cta-ink scriba-cta"
                 >
-                  {DENIAL_COPY[denial].cta?.label}
-                </a>
+                  {DENIAL_COPY[denial].cta}
+                </button>
               )}
             </div>
           </div>
@@ -815,6 +834,13 @@ export function BibloDrawer({
           </form>
         )}
       </div>
+
+      {/* Ele se desenha num portal, por cima de tudo: a gaveta continua montada
+          atrás, com a conversa inteira onde estava, e fechar sem comprar devolve
+          a pessoa exatamente ao lugar de onde ela saiu. O checkout, esse, abre
+          em outra aba (ver `BillingDialog`), que é o que impede a compra de
+          derrubar uma gravação em curso. */}
+      <BillingDialog open={billingOpen} onOpenChange={setBillingOpen} />
     </div>
   );
 }
