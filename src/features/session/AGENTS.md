@@ -47,6 +47,7 @@ pessoa quiser, aprofundar.
 | `components/YoutubeUrlForm.tsx` + `YoutubeImport.tsx` | colar o link (ou recebê-lo por parâmetro), recortar um trecho, e esperar a importação |
 | `components/BibloDock.tsx` + `BibloDrawer.tsx` + `BibloMessage.tsx` | a conversa com o Biblo: botão flutuante e gaveta |
 | `components/BibloSummaryDock.tsx` | o mesmo Biblo na tela de LEITURA, que precisa de um POST para inserir |
+| `biblo-query.ts` | a conversa guardada no aparelho: leitura, pré-busca e a rodada nova |
 | `server/biblo/` | allowance, resposta e a abertura derivada |
 | `components/DeepenButton.tsx` + `DeepeningMenu.tsx` | gerar e reprocessar o estudo |
 | `components/PassageVerses.tsx` + `RichText.tsx` | texto bíblico e menções dentro do parágrafo |
@@ -307,11 +308,27 @@ Cinco coisas que mordem de fora:
   cada mensagem seguinte, e a pessoa pagava para reler o que estava na tela. **O
   harness que pega esse tipo de defeito é `tmp/dev-scripts/biblo-chat.mts`**, que
   roda uma CONVERSA; o `biblo-eval.mts`, de uma pergunta só, é cego para ele.
-- **Nada no contrato da resposta é fatal, nem o `answer`.** Ele era `.min(1)`, e
-  o pedido "insere no resumo um parágrafo sobre X" fazia o modelo escrever o
-  trecho dentro da sugestão e mandar a resposta vazia — `unparseable` depois de
-  cobrar, no pedido mais valioso da conversa. Hoje um dos dois campos preenche o
-  outro; vazio dos dois lados é o único erro.
+- **NENHUM campo do contrato é fatal, e campo novo nasce com rede.** A chamada
+  já aconteceu e a moeda já foi debitada quando o schema roda: recusar ali não
+  economiza nada, só transforma dinheiro gasto em "Não consegui responder
+  agora". O único erro é a resposta vazia dos DOIS lados (`answer` e o texto da
+  sugestão), que é quando não há literalmente o que mostrar.
+
+  A regra custou caro para ser aprendida, e a última lição foi medida em
+  produção: em 17/09/2026, **36% das perguntas ficaram sem resposta** (9 de 25).
+  Cinco eram o modelo escrevendo em `offer` o OBJETO da `suggestion`
+  (`{label, block, afterIndex}`) num campo que era `z.string()` sem `.catch()`,
+  e quatro eram o JSON cortado ao meio pelo teto de 400 tokens de saída. Nas
+  nove a resposta existia, estava correta e tinha sido paga. Ver `offerText` e o
+  cabeçalho de `BibloReplySchema` em `lib/domain/biblo.ts`.
+
+  As três defesas, e elas são independentes de propósito: o teto subiu para 700
+  (`BIBLO_ANSWER_MAX_TOKENS`, que limita o OBJETO inteiro e não a prosa); um
+  JSON truncado tem a prosa resgatada por varredura (`salvageAnswer`), porque
+  `answer` é o primeiro campo longo e chega inteiro; e o prompt separa com todas
+  as letras a FRASE da `offer` do OBJETO da `suggestion`. Um prompt mais claro
+  baixa a frequência, nunca a zero, e é o schema que decide o que acontece
+  quando ele erra.
 - **A abertura é DERIVADA, sem LLM** (`server/biblo/opening.ts`): o cumprimento
   sai do título e os chips das referências citadas. Abrir a gaveta não custa
   moeda, não custa dólar e não espera nada. Os chips com inteligência são os que
@@ -322,6 +339,30 @@ Cinco coisas que mordem de fora:
 - **Nada na gaveta mostra preço.** Não há contador de mensagens nem "2 moedas"
   escrito em lugar nenhum; cobrar por mensagem só é aceitável porque o saldo
   deixou de ser um número na barra. Ver `docs/creditos-na-tela.md`.
+- **A conversa mora no APARELHO, como a Biblioteca** (`biblo-query.ts`). O
+  `BibloDock` desmonta a gaveta inteira ao fechar — é o que faz o botão VIRAR a
+  gaveta —, e enquanto o `GET` era um `fetch` solto num `useEffect` isso
+  significava recomeçar do zero a cada abertura: quem fechava para conferir um
+  versículo no resumo e voltava esperava a conversa carregar de novo para reler
+  o que já tinha lido. Hoje ela vem do IndexedDB no primeiro quadro, o
+  `BibloDock` a PRÉ-BUSCA quando a tela monta (para a primeira abertura também
+  ser instantânea), e a rodada que volta do `POST` é escrita no cache, não num
+  estado da montagem. Dá para guardar porque o `GET` não cobra, não chama modelo
+  e não grava, e porque a conversa só anda quando é a própria pessoa que fala. O
+  que é volátil é o `allowance`, e por isso o `staleTime` é de 30s: o cache
+  remove a ESPERA, nunca a conferência — quem cobra continua sendo o `POST`.
+- **O presente com `remaining === 0` é o FIM, não um aviso.** Ele foi um estado
+  intermediário: a gaveta dizia "foram por nossa conta" e deixava o campo e os
+  chips vivos embaixo, então a pessoa digitava a pergunta seguinte, esperava, e
+  só descobria pelo 403 que a conversa tinha acabado. O servidor sempre soube
+  (`remaining` volta já descontado), e a gaveta agora traduz zero em
+  `gift_exhausted` sem uma segunda ida ao servidor.
+- **A despedida tem o ROSTO do Biblo ao lado, e nenhuma frase do produto usa
+  travessão.** Um parágrafo cinza sem dono dentro de um chat lê como erro de
+  sistema, e é justamente na despedida do presente que isso mais custa, porque é
+  ali que se decide assinar. O "—" está proibido na nossa cópia e no prompt (ver
+  `NADA DE TRAVESSÃO` em `server/prompts/biblo.ts`): é a marca registrada de
+  texto escrito por máquina, e o Biblo inteiro existe para não soar como uma.
 
 **Inserir é diferente nas duas telas, e é bom que seja.** No editor a sugestão
 entra no rascunho local pelo mesmo `insertAt` do menu do `+`. Na leitura não há

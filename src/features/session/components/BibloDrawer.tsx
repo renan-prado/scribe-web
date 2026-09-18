@@ -3,6 +3,7 @@
 import { ArrowUp, MessageCircle, X } from "lucide-react";
 import { useCallback, useEffect, useRef, useState } from "react";
 import { useCoinsStore } from "@/features/coins/store";
+import { useBibloConversation, useBibloWriter } from "@/features/session/biblo-query";
 import {
   BibloBubble,
   BibloMessageView,
@@ -14,7 +15,6 @@ import {
   BIBLO_AT_END,
   BIBLO_MAX_QUESTION_CHARS,
   type BibloAllowance,
-  type BibloConversation,
   type BibloDenial,
   type BibloMessage,
   type BibloSuggestion,
@@ -23,6 +23,7 @@ import {
 import type { SummaryBlock } from "@/lib/domain/summary";
 import { createLogger } from "@/lib/log";
 import { cn } from "@/lib/utils";
+import { BibloAvatar } from "@/shared/brand";
 
 const log = createLogger("biblo");
 
@@ -119,19 +120,42 @@ const COMPOSER_MAX_PX = COMPOSER_MAX_LINES * COMPOSER_LINE_PX + COMPOSER_PADDING
  * `BibloAddButton`, `BibloSelection` e `BIBLO_AT_END`.
  */
 
+/**
+ * O que o rodapé diz quando não dá para mandar a próxima mensagem.
+ *
+ * ## É O BIBLO QUE FALA, e por isso o rosto está ao lado
+ *
+ * As quatro frases são ditas na primeira pessoa dele, e aparecem ao lado do
+ * mesmo rosto que assina cada resposta da conversa. O aviso era um parágrafo
+ * cinza sem dono, e um parágrafo sem dono dentro de um chat lê como erro de
+ * sistema: quem estava conversando com alguém de repente recebe um comunicado
+ * do aplicativo. A despedida do presente é o momento em que isso mais custa,
+ * porque é justamente onde se decide assinar ou não.
+ *
+ * ## SEM TRAVESSÃO
+ *
+ * Nenhuma frase deste produto usa "—". É a marca registrada de texto escrito
+ * por máquina, e o Biblo inteiro existe para não soar como uma. A regra vale
+ * aqui, nos chips e na resposta do modelo (ver `NADA DE TRAVESSÃO` em
+ * `prompts/biblo.ts`): vírgula, ponto, dois-pontos, ou duas frases.
+ *
+ * ## Uma frase por motivo, e o `gift_exhausted` é AGRADECIMENTO
+ *
+ * A diferença entre "acabou" e "foi bom" não é cosmética: uma fecha a porta, a
+ * outra diz que valeu. Quem gastou as dez mensagens de presente gostou o
+ * bastante para gastá-las, e essa é a pessoa a quem o convite é feito.
+ */
 const DENIAL_COPY: Record<BibloDenial, { text: string; cta?: { label: string; href: string } }> = {
-  // O agradecimento, não o aviso de limite. A diferença entre as duas frases
-  // não é cosmética: uma fecha a porta, a outra diz que foi bom.
   gift_exhausted: {
-    text: "Espero ter ajudado nestas primeiras conversas. O Biblo continua com você nos planos Pessoal e Estudioso.",
+    text: "Gostei de conversar com você. Essas primeiras foram por nossa conta, e eu sigo com você nos planos Pessoal e Estudioso.",
     cta: { label: "Ver os planos", href: "/assinar" },
   },
   insufficient_balance: {
-    text: "Seus créditos acabaram.",
+    text: "Seus créditos acabaram. Coloque mais e a gente continua de onde parou.",
     cta: { label: "Adicionar créditos", href: "/assinar" },
   },
-  disabled: { text: "O Biblo está em manutenção. Volte daqui a pouco." },
-  revoked: { text: "O Biblo não está disponível nesta conta." },
+  disabled: { text: "Estou em manutenção por aqui. Volte daqui a pouco." },
+  revoked: { text: "Não consigo conversar nesta conta." },
 };
 
 /**
@@ -323,7 +347,11 @@ export function BibloDrawer({
   onInsert?: (suggestion: BibloSuggestion) => void;
   onRemove?: (suggestion: BibloSuggestion) => void;
 }) {
-  const [conversation, setConversation] = useState<BibloConversation | null>(null);
+  // A conversa vem do cache persistido, não de um `fetch` nesta montagem: ver
+  // `features/session/biblo-query.ts`. É o que faz fechar e reabrir a gaveta
+  // custar zero espera.
+  const { data: conversation, isError } = useBibloConversation(sessionId);
+  const { appendTurn, setAllowance } = useBibloWriter(sessionId);
   const [draft, setDraft] = useState("");
   const [pending, setPending] = useState(false);
   // Separado do `pending`: aquele é "a requisição está no ar" e governa o que
@@ -341,22 +369,6 @@ export function BibloDrawer({
   const inputRef = useRef<HTMLTextAreaElement>(null);
   const setBalance = useCoinsStore((s) => s.setBalance);
 
-  useEffect(() => {
-    let alive = true;
-    fetch(`/api/biblo?sessionId=${sessionId}`, { cache: "no-store" })
-      .then((res) => (res.ok ? res.json() : Promise.reject(new Error(String(res.status)))))
-      .then((body: BibloConversation) => {
-        if (alive) setConversation(body);
-      })
-      .catch((error: unknown) => {
-        log.error("não consegui abrir a conversa", { error: String(error) });
-        if (alive) setFailed(true);
-      });
-    return () => {
-      alive = false;
-    };
-  }, [sessionId]);
-
   // Ao ABRIR uma conversa que já existia, o fim da lista.
   //
   // A gaveta abria no COMEÇO, que é o começo de uma conversa de semanas atrás:
@@ -368,9 +380,18 @@ export function BibloDrawer({
   // nenhum para acompanhar, este é o lugar onde a lista NASCE. Uma animação
   // subindo a conversa inteira no instante da abertura anuncia um movimento que
   // ninguém fez.
+  //
+  // **UMA vez por abertura**, e é o `landed` que garante isso. Desde que a
+  // conversa passou a vir do cache (`biblo-query.ts`), o objeto troca de
+  // identidade também quando a revalidação volta do servidor e quando uma
+  // rodada nova é escrita — e sem a trava a lista saltaria para o fim no meio
+  // da leitura de alguém que subiu para reler um parágrafo. O destino de uma
+  // resposta que CHEGA é outro, e tem o efeito dele logo abaixo.
+  const landed = useRef(false);
   useEffect(() => {
     const list = listRef.current;
-    if (!list || !conversation || conversation.messages.length === 0) return;
+    if (!list || landed.current || !conversation || conversation.messages.length === 0) return;
+    landed.current = true;
     list.scrollTop = list.scrollHeight;
   }, [conversation]);
 
@@ -466,11 +487,7 @@ export function BibloDrawer({
           if (body.reason) {
             setAsking(null);
             setDraft(question);
-            setConversation((prev) =>
-              prev
-                ? { ...prev, allowance: { kind: "denied", reason: body.reason as BibloDenial } }
-                : prev
-            );
+            setAllowance({ kind: "denied", reason: body.reason });
             return;
           }
           setAsking(null);
@@ -491,15 +508,9 @@ export function BibloDrawer({
 
         setAsking(null);
         setArrivedId(turn.answer.id);
-        setConversation((prev) =>
-          prev
-            ? {
-                ...prev,
-                messages: [...prev.messages, turn.question, turn.answer],
-                allowance: turn.allowance,
-              }
-            : prev
-        );
+        // No CACHE, e não num estado desta montagem: é o que faz a rodada
+        // sobreviver a fechar e reabrir a gaveta. Ver `useBibloWriter`.
+        appendTurn([turn.question, turn.answer], turn.allowance);
       } catch (error) {
         log.error("não consegui enviar", { error: String(error) });
         setAsking(null);
@@ -512,11 +523,35 @@ export function BibloDrawer({
         onThinking(false);
       }
     },
-    [pending, sessionId, ensureSession, onThinking, setBalance]
+    [pending, sessionId, ensureSession, onThinking, setBalance, appendTurn, setAllowance]
   );
 
   const allowance: BibloAllowance = conversation?.allowance ?? { kind: "coins" };
-  const blocked = allowance.kind === "denied";
+
+  /**
+   * O motivo de não dar para mandar a próxima, ou `null` enquanto dá.
+   *
+   * **O presente com `remaining === 0` É o fim, e não um aviso.** Ele foi um
+   * estado intermediário por um tempo: a gaveta mostrava a linha de
+   * agradecimento e deixava o campo de digitar e os chips VIVOS embaixo dela.
+   * Quem lia "foram por nossa conta" continuava com um cursor piscando e quatro
+   * pastilhas à mão, digitava a pergunta seguinte, esperava, e só então
+   * descobria pelo 403 que a conversa tinha acabado. A tela dizia uma coisa e
+   * oferecia a contrária.
+   *
+   * O servidor sempre soube disso: `remaining` volta já descontado da mensagem
+   * que acabou de ser respondida (ver o fim de `POST /api/biblo`), então zero
+   * aqui e `gift_exhausted` no próximo pedido são o MESMO fato, com uma ida ao
+   * servidor de diferença. Traduzir um no outro nesta linha é o que faz a
+   * despedida aparecer uma vez só, no lugar onde ela é verdade.
+   */
+  const denial: BibloDenial | null =
+    allowance.kind === "denied"
+      ? allowance.reason
+      : allowance.kind === "gift" && allowance.remaining === 0
+        ? "gift_exhausted"
+        : null;
+  const blocked = denial !== null;
   const messages = conversation?.messages ?? [];
   const lastAnswer = [...messages].reverse().find((m) => m.role === "assistant");
   const chips = lastAnswer ? lastAnswer.chips : (conversation?.opening.chips ?? []);
@@ -640,8 +675,14 @@ export function BibloDrawer({
           a gaveta abre do tamanho certo e não pula quando o texto entra.
 
           `items-center` continua fazendo o trabalho no desktop, onde a coluna é
-          de altura cheia e aí sim sobra espaço para centrar dentro. */}
-      {conversation === null && !failed ? (
+          de altura cheia e aí sim sobra espaço para centrar dentro.
+
+          **Desde que a conversa vem do cache, este estado é quase sempre pulado**
+          (ver `biblo-query.ts`): a segunda abertura em diante já tem a lista no
+          primeiro quadro, e os três pontos ficam para a primeira de todas. É
+          essa a diferença que se sente ao fechar a gaveta para conferir um
+          versículo e voltar. */}
+      {!conversation && !isError ? (
         <div className="flex min-h-0 flex-1 items-center justify-center py-16">
           <ListeningDots label="Abrindo a conversa" className="pt-0" />
         </div>
@@ -678,7 +719,19 @@ export function BibloDrawer({
               preto sobre o papel escuro da gaveta, que é onde a mensagem some
               justamente na hora em que ela precisa ser lida. A tinta da família
               é `--scriba-rose-body` (#D9A9A4), a mesma que o resto do app usa
-              para corpo de texto em vermelho. */}
+              para corpo de texto em vermelho.
+
+              As DUAS falhas dizem coisas diferentes, e por um bom tempo
+              disseram a mesma: "não consegui responder" aparecia também quando
+              o que tinha falhado era ABRIR a conversa, e a pessoa relia a
+              pergunta que nunca chegou a ser enviada procurando o que havia de
+              errado nela. */}
+          {isError && !failed && (
+            <p className="text-[13px] text-scriba-rose-body">
+              Não consegui abrir a conversa agora. Feche e abra de novo.
+            </p>
+          )}
+
           {failed && (
             <p className="text-[13px] text-scriba-rose-body">
               Não consegui responder agora. Tente de novo.
@@ -695,25 +748,36 @@ export function BibloDrawer({
       <div className="space-y-3 border-scriba-hairline border-t px-4 pt-3 pb-[calc(0.75rem+max(env(safe-area-inset-bottom),var(--kb-inset,0px)))]">
         {!blocked && <Chips chips={chips} onPick={send} disabled={pending} />}
 
-        {allowance.kind === "gift" && allowance.remaining === 0 && (
-          <p className="text-[12px] text-scriba-ink-soft leading-relaxed">
-            Espero ter ajudado nestas primeiras conversas — foram por nossa conta.
-          </p>
-        )}
+        {/* A despedida, com o rosto de quem a diz.
 
-        {blocked ? (
-          <div className="space-y-2 pb-1">
-            <p className="text-[13px] text-scriba-ink-soft leading-relaxed">
-              {DENIAL_COPY[allowance.reason].text}
-            </p>
-            {DENIAL_COPY[allowance.reason].cta && (
-              <a
-                href={DENIAL_COPY[allowance.reason].cta?.href}
-                className="inline-flex items-center rounded-full bg-[image:var(--scriba-cta)] px-4 py-2 font-medium text-[13px] text-scriba-cta-ink scriba-cta"
-              >
-                {DENIAL_COPY[allowance.reason].cta?.label}
-              </a>
-            )}
+            O rosto é o MESMO de cada balão de resposta (`BibloMessage`): 32px,
+            `gap-2.5`, alinhado ao topo da primeira linha. Esta é mais uma fala
+            dele, a última da conversa, e não um comunicado do aplicativo
+            pousado no rodapé. Sem ele a frase ficava órfã, e o convite a
+            assinar chegava com a voz errada justamente na hora em que ele
+            precisa soar como alguém de quem se gostou. Um tamanho menor aqui
+            faria dele um selo, que é a medição registrada em `AVATAR_SIZE`.
+
+            `idle` e não `happy`: a expressão diz o estado da máquina, nunca uma
+            opinião sobre o momento (ver o cabeçalho de `BibloAvatar`), e um
+            Biblo sorrindo ao anunciar o fim do presente é o avatar comemorando
+            o que a pessoa acabou de perder. */}
+        {denial ? (
+          <div className="flex items-start gap-2.5 pb-1">
+            <BibloAvatar mood="idle" size={32} className="mt-0.5" />
+            <div className="min-w-0 space-y-2.5">
+              <p className="text-[13px] text-scriba-ink-soft leading-relaxed">
+                {DENIAL_COPY[denial].text}
+              </p>
+              {DENIAL_COPY[denial].cta && (
+                <a
+                  href={DENIAL_COPY[denial].cta?.href}
+                  className="inline-flex items-center rounded-full bg-[image:var(--scriba-cta)] px-4 py-2 font-medium text-[13px] text-scriba-cta-ink scriba-cta"
+                >
+                  {DENIAL_COPY[denial].cta?.label}
+                </a>
+              )}
+            </div>
           </div>
         ) : (
           <form

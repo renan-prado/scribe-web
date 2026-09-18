@@ -1,6 +1,7 @@
 "use client";
 
 import { useEffect, useState } from "react";
+import { useBibloWriter } from "@/features/session/biblo-query";
 import { BibloDrawer } from "@/features/session/components/BibloDrawer";
 import { useKeyboardInset } from "@/hooks/use-keyboard-inset";
 import { useIsMobile } from "@/hooks/use-mobile";
@@ -85,6 +86,24 @@ export function BibloDock({
   const [thinking, setThinking] = useState(false);
   const isMobile = useIsMobile();
   useKeyboardInset();
+
+  /**
+   * A conversa é buscada quando a TELA abre, não quando a gaveta abre.
+   *
+   * O botão está na tela o tempo todo e a gaveta é o que ele vira: o instante
+   * entre o toque e a conversa desenhada não tem nada a fazer além de esperar
+   * a rede, e é justamente ali que a pessoa está olhando. Com a pré-busca, a
+   * primeira abertura já encontra a resposta pronta no cache; da segunda em
+   * diante ela vem do disco, sem rede nenhuma (ver `biblo-query.ts`).
+   *
+   * Não custa nada a ninguém: o `GET /api/biblo` não cobra, não chama modelo e
+   * não grava (ver o cabeçalho da rota). E é `prefetchQuery`, que não faz nada
+   * quando já há algo fresco guardado.
+   */
+  const { prefetch } = useBibloWriter(sessionId);
+  useEffect(() => {
+    prefetch();
+  }, [prefetch]);
 
   /**
    * Inserir FECHA a gaveta no celular, e não no desktop.

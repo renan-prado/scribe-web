@@ -45,14 +45,37 @@ A diferença entre as duas frases não é cosmética:
 
 | ❌ o que não escrevemos | ✅ o que escrevemos |
 |---|---|
-| "Você usou 10 de 10 mensagens gratuitas." | "Espero ter ajudado nestas primeiras conversas." |
-| "Assine para continuar usando." | "O Biblo continua com você nos planos Pessoal e Estudioso." |
+| "Você usou 10 de 10 mensagens gratuitas." | "Gostei de conversar com você." |
+| "Assine para continuar usando." | "Essas primeiras foram por nossa conta, e eu sigo com você nos planos Pessoal e Estudioso." |
 | um contador visível durante a conversa | nada na tela enquanto o presente corre |
 
 **Nada de contador enquanto o presente está correndo.** Um número descendo no
 canto é a coisa mais rápida de transformar "estou pensando sobre Jonas" em
-"estou gastando". O aviso aparece UMA vez, na última mensagem do presente, e é
-uma linha gentil — não um diálogo, não um bloqueio.
+"estou gastando". O aviso aparece UMA vez, no fim do presente, e é uma linha
+gentil — não um diálogo, não um bloqueio.
+
+**É o BIBLO que fala, na primeira pessoa e com o rosto dele ao lado.** A frase
+foi um parágrafo cinza sem dono no rodapé, e um parágrafo sem dono dentro de um
+chat lê como erro de sistema: quem estava conversando com alguém de repente
+recebe um comunicado do aplicativo. É o pior lugar possível para isso acontecer,
+porque é ali que se decide assinar. O rosto é o mesmo de cada balão de resposta,
+no mesmo tamanho, na expressão `idle` — um Biblo sorrindo ao anunciar o fim do
+presente seria o avatar comemorando o que a pessoa acabou de perder.
+
+**E nenhuma frase do produto usa travessão.** O "—" no meio de uma frase é a
+marca registrada de texto escrito por máquina, e o Biblo inteiro existe para não
+soar como uma. A regra vale para a nossa cópia, para os chips e para a resposta
+do modelo (`NADA DE TRAVESSÃO` no system prompt).
+
+**E o fim do presente é o FIM, não um aviso com o campo ainda aberto.** Por um
+tempo a gaveta dizia "foram por nossa conta" e deixava o campo de digitar e os
+chips vivos embaixo: a pessoa lia a despedida com um cursor piscando à frente,
+digitava a próxima pergunta, esperava, e só então descobria pelo 403 que a
+conversa tinha acabado. A tela dizia uma coisa e oferecia a contrária. O
+servidor sempre soube — o `remaining` que volta do `POST` já vem descontado da
+mensagem respondida —, então zero ali e `gift_exhausted` no pedido seguinte são
+o MESMO fato; a gaveta traduz um no outro e mostra a despedida uma vez só, no
+lugar onde ela é verdade.
 
 ### 1.2 O preço: duas moedas por mensagem, cobradas em silêncio
 
@@ -66,7 +89,7 @@ bibloMessage: 2,                          // COIN_COSTS
 export const BIBLO_GIFT_MESSAGES = 10;    // o presente, uma vez por CONTA
 
 // features/session/server/biblo/answer.ts — as duas amarras da margem
-export const BIBLO_ANSWER_MAX_TOKENS = 400;
+export const BIBLO_ANSWER_MAX_TOKENS = 700;
 export const BIBLO_SUMMARY_TOKEN_BUDGET = 2_500;
 ```
 
@@ -131,9 +154,20 @@ preço que só fecha com o cache quente é um preço que não fecha.
 
 Então:
 
-- **`maxTokens: 400` na resposta.** Uma resposta de 800 tokens dobra a parcela
-  mais cara da conta, e é pior de ler: o `biblo.md` §5 já pede resposta curta, e
-  isto é a mesma regra escrita onde ela é obrigatória em vez de pedida.
+- **`maxTokens: 700` na chamada.** Uma resposta longa dobra a parcela mais cara
+  da conta, e é pior de ler: o `biblo.md` §5 já pede resposta curta, e isto é a
+  mesma regra escrita onde ela é obrigatória em vez de pedida.
+
+  **Ele foi 400, e 400 era um BUG, não um aperto.** Este número não limita a
+  prosa: limita o OBJETO JSON inteiro, com os quatro chips, a sugestão, a
+  oferta, a passagem e o fio dentro. Estourado o teto, o modelo parava de
+  escrever no meio de uma string e o que chegava era um JSON quebrado —
+  `unparseable` depois de cobrar. Medido em 17/09/2026: 4 das 105 chamadas do
+  dia terminaram em `finish_reason: "length"`, todas em 400 tokens exatos, todas
+  sem resposta na tela. A prosa sozinha ficava em ~270 tokens na mediana e ~350
+  no topo, então em 700 a folga é de duas vezes o pico e o custo quase não se
+  mexe: só as poucas que alcançavam o teto passam dele, a ~R$ 0,0003 cada.
+  Quem segura o tamanho da PROSA continua sendo o prompt.
 - **Teto no resumo que vai no prompt.** Quase todo resumo cabe folgado em 2.500
   tokens; o que não couber entra truncado pelo fim. Sem isso, o custo de uma
   mensagem passa a depender do tamanho do texto sobre o qual se conversa, que é
@@ -200,10 +234,12 @@ por hora por usuário.
 
 Quatro manetes, **e o preço é a última**:
 
-1. **A mensagem está custando mais que o estimado** → encolha
-   `BIBLO_ANSWER_MAX_TOKENS` (400 → 300). É a parcela mais cara da conta e a que
-   o usuário menos sente: uma resposta de chat que encurta 25% quase sempre
-   melhora.
+1. **A mensagem está custando mais que o estimado** → peça uma resposta mais
+   curta no PROMPT, e olhe `completion_tokens` em `/admin/custos` antes e
+   depois. **Não encolha `BIBLO_ANSWER_MAX_TOKENS`**: ele não é um pedido de
+   brevidade, é o ponto em que a chamada é INTERROMPIDA no meio do JSON, e foi
+   exatamente isso que ele fez em 400 (ver §1.4). Ele é uma amarra de teto
+   superior, não a manete de tamanho. A manete de tamanho é o prompt.
 2. **Ainda está cara** → encolha `BIBLO_SUMMARY_TOKEN_BUDGET`. O resumo entra
    truncado, e o efeito aparece só nas sessões muito longas.
 3. **A qualidade está curta** → troque `OPENAI_BIBLO_MODEL`, meça a diferença
@@ -1032,6 +1068,46 @@ Ele é o próprio filho flexível da gaveta, e não um `h-full` dentro da lista:
 `height: 100%` dentro de um item de flex depende de o item ter altura definida,
 o que nem sempre acontece.
 
+### E hoje eles quase nunca aparecem: a conversa mora no APARELHO
+
+`features/session/biblo-query.ts`.
+
+O `BibloDock` desmonta o `BibloDrawer` inteiro quando a gaveta fecha — é o que
+faz o botão VIRAR a gaveta —, e enquanto o `GET` era um `fetch` solto num
+`useEffect` isso queria dizer recomeçar do zero a cada abertura. O sintoma
+relatado é o que qualquer um faria: *"fechei o chat para ler uma coisa, abri de
+novo e teve que carregar tudo outra vez"*. Os três pontos apareciam para
+entregar, quatro segundos depois, exatamente o que estava na tela antes.
+
+Agora a conversa é uma query do TanStack com o persistidor de IndexedDB que o
+app já tem (`shared/components/Providers.tsx`), com a chave escopada pelo dono
+como a da Biblioteca. São três peças:
+
+1. **Ela é lida do disco no primeiro quadro.** Da segunda abertura em diante não
+   há espera nenhuma, e a revalidação corre atrás.
+2. **O `BibloDock` PRÉ-BUSCA quando a TELA monta**, não quando a gaveta abre.
+   O botão está lá o tempo todo, e o instante entre o toque e a conversa
+   desenhada é justamente onde a pessoa está olhando. É `prefetchQuery`, então
+   uma tela que monta duas vezes não vira duas consultas.
+3. **A rodada nova é escrita no CACHE**, não num estado da montagem. Sem isso o
+   servidor teria as duas linhas e o disco não, e fechar logo depois de uma
+   resposta perderia justamente a última.
+
+**Dá para guardar porque o `GET` não cobra, não chama modelo e não grava nada**
+(§8), e porque a conversa só anda quando é a própria pessoa que fala: não existe
+a conversa que avançou sozinha no servidor com a gaveta fechada.
+
+**O que é volátil é o `allowance`** — o presente pode ter acabado numa conversa
+de outra sessão, o saldo pode ter mudado numa compra, o kill switch pode ter
+sido puxado. Por isso o `staleTime` é de 30 segundos e a revalidação acontece
+toda vez: o cache remove a ESPERA, nunca a conferência. E o servidor continua
+dono da decisão — a gaveta pode abrir otimista com o rodapé de ontem, mas quem
+cobra é o `POST`, que reconfere antes de debitar.
+
+**O preço é o de sempre no local-first:** a PRIMEIRA abertura num aparelho sem
+cache continua custando uma ida à rede. É a mesma troca da Biblioteca, e ela
+compensa porque a primeira vez acontece uma vez.
+
 ### O campo de digitar cresce, até seis linhas
 
 Era `rows={1}` fixo, e quem escrevia uma pergunta de três linhas via a primeira
@@ -1355,6 +1431,59 @@ dois lados, aí sim não há resposta.
 (E o `schema-drop` passou a registrar os CAMINHOS dos campos que caíram, não a
 contagem. "issues: 1" não diz qual campo falhou, e descobrir isso era refazer a
 chamada com um log temporário no meio.)
+
+### O dia em que 36% das perguntas ficaram sem resposta
+
+Em 17/09/2026, com o Biblo já em produção: **9 das 25 perguntas do dia não
+tiveram resposta**. Na tela, sempre a mesma linha — *"Não consegui responder
+agora. Tente de novo."* — e a moeda debitada em todas. Quem usava reenviava a
+mesma pergunta três vezes em vinte e cinco segundos e eventualmente uma passava,
+o que é o pior formato possível de um defeito: intermitente, caro e mudo.
+
+A conta fecha porque a rota grava a PERGUNTA antes de chamar o modelo (§8): a
+diferença entre as linhas `role = 'user'` e `role = 'assistant'` de
+`biblo_messages` É o número de falhas, sem telemetria nenhuma. E os logs da
+OpenAI têm o resto, porque a chamada vai com `store: true` e `metadata.route`.
+
+Eram **duas** causas, e nenhuma das duas era o modelo respondendo mal:
+
+**1. O `offer` vindo como OBJETO (5 das 9).** O modelo devolvia ali o envelope
+da `suggestion`:
+
+```json
+"offer": { "label": "Escreva um parágrafo sobre a humildade de Cristo",
+           "block": { "type": "paragraph", "text": "" }, "afterIndex": 2 }
+```
+
+O campo era `z.string()` sem `.catch()` — o último do contrato sem rede — e o
+schema INTEIRO caía. A resposta estava escrita, correta e paga. A causa raiz era
+o próprio prompt: o bloco *"O formato: `{ label, block, afterIndex }`"* ficava
+logo abaixo dos parágrafos que falam da `offer`, e o modelo o lia como sendo
+dela. O prompt foi separado com todas as letras, **e o campo virou
+`z.unknown()` com uma leitura que aproveita o `label`** (ver `offerText`): ele
+JÁ É a oferta, está na voz certa e no tamanho certo, e descartá-lo tiraria da
+tela o único chip com um destino.
+
+**2. O JSON cortado ao meio (4 das 9).** `finish_reason: "length"`, em 400
+tokens exatos. Ver §1.4: o teto não limitava a prosa, limitava o objeto inteiro.
+Subiu para 700, **e um JSON truncado passou a ter a prosa RESGATADA** por
+varredura (`salvageAnswer`) — `answer` é o primeiro campo longo do objeto, então
+nas quatro truncagens medidas ela estava completa e o corte caiu dentro da
+`suggestion`. O que se perde são os chips e o botão, que são decoração.
+
+As duas correções foram conferidas contra as **111 chamadas reais** guardadas na
+OpenAI: 11 falhariam com o código de antes, 0 falham com o de agora (106 passam
+limpas, 5 são resgatadas com 618 a 915 caracteres de prosa intactos).
+
+**A lição que fica escrita no código** é a regra do cabeçalho de
+`BibloReplySchema`: quando aquele schema roda, a chamada já aconteceu e a moeda
+já foi debitada, então recusar ali não economiza nada — só transforma dinheiro
+gasto em erro na tela. **Campo novo nasce com rede.** O único erro fatal é a
+resposta vazia dos dois lados.
+
+E `finishReason` passou a ir em TODO log de falha. Sem ele, "o modelo escreveu
+bobagem" e "o modelo foi interrompido no meio" chegam ao Vercel como a mesma
+linha, e separar as duas custou uma consulta aos logs da OpenAI.
 
 ---
 
