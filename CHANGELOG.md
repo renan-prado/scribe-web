@@ -9,6 +9,12 @@ Gerado por `npm run release` a partir dos Conventional Commits. `feat` sobe o
 minor; o resto sobe o patch. Não edite à mão, a próxima execução escreve por
 cima do topo do arquivo.
 
+## 0.44.0, 2026-09-18, desde v0.43.0
+
+### Novidades
+
+- **landing:** as quatro promessas viram cards no hero, no lugar do paragrafo (`cd89bb3`)
+
 ## 0.43.0, 2026-09-18, desde v0.42.0
 
 ### Novidades
