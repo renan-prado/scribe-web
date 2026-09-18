@@ -126,6 +126,32 @@ tem números próprios: antes disso ela anunciava 2.000/5.000/100 créditos
 contra os 1.000/2.500/50 reais, e preço de tela errado é promessa quebrada no
 checkout.
 
+**As VANTAGENS de cada plano moram em `plan-features.ts`, numa lista só**, e
+essa lista é a MESMA nos cards de `/#planos` e no diálogo de compra. Cada tela
+já teve a sua: quem lia as duas via dois produtos parecidos em vez de um, e só
+uma delas era corrigida quando o produto mudava — foi assim que "Estudo
+aprofundado de cada sessão" sobreviveu no diálogo meses depois de o estudo sair
+da interface. `plans.ts` ficou com nome, preço, franquia e a `tagline`; o que o
+plano ENTREGA é o outro arquivo.
+
+Ele não fica dentro de `plans.ts` por causa de um ciclo: o nome da
+funcionalidade paga sai de `lib/entitlements/features.ts`, que importa
+`plans.ts`. `plan-features.ts` fica acima dos dois e lê os dois.
+
+Três regras viajam com a lista, e as duas telas as desenham igual: o NEGRITO
+(`featured`) marca o que aquele plano tem e o Gratuito não, a linha do Biblo
+troca o check pelo ROSTO dele (`face`), e no Gratuito esse rosto vai em
+`grayscale`, porque ali ele é um presente com fim.
+
+**O Estudioso NÃO tem exclusiva, e o card não finge que tem.** Os dois planos
+pagos liberam as mesmas features (`lib/entitlements/features.ts`: `biblo_chat` e
+`study_generation` estão em `minPlan: "pessoal"`), então o que o card dele vende
+é ritmo, não uma funcionalidade a mais. Ali já esteve "Estudo aprofundado de cada sessão", nos DOIS planos, e
+a linha sobreviveu à saída do estudo da interface: a pessoa pagava, procurava e
+não achava. **Uma exclusiva inventada é a promessa quebrada do lado de dentro**,
+onde não há 403 para explicá-la. O dia em que o Estudioso ganhar uma de verdade,
+ela nasce no catálogo de features e só depois vira linha de card.
+
 ## O que o usuário GASTA
 
 `src/features/coins/pricing.ts` (client-safe, espelhado pela migração) governa só o

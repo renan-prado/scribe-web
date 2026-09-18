@@ -1,6 +1,10 @@
 import Link from "next/link";
+// As LISTAS de vantagens dos cards saem de `plan-features.ts`, e não daqui:
+// a mesma lista desenha o diálogo de compra da área logada. Ver o cabeçalho
+// de lá. Preço, nome e créditos continuam vindo de `plans.ts`.
+import { PLAN_FEATURES, type PlanFeature } from "@/features/billing/plan-features";
 import { formatBrl, formatCoins, PLANS } from "@/features/billing/plans";
-import { BIBLO_GIFT_MESSAGES, COIN_COSTS } from "@/features/coins/pricing";
+import { BIBLO_GIFT_MESSAGES } from "@/features/coins/pricing";
 // O catálogo de funcionalidades por plano. A LP LÊ dele (o nome da feature e a
 // frase de upsell do Biblo) em vez de redigitar as duas: é o mesmo princípio
 // dos preços, que saem de `billing/plans`. Ambos são client-safe.
@@ -10,6 +14,7 @@ import { cn } from "@/lib/utils";
 import { ScribaMark } from "@/shared/brand";
 // Caminho direto, não o barril: o barril reexporta os dois rostos, e só este
 // é para carregar JS na LP. Ver `BibloHeroFace` e `BibloFace`.
+import { BibloFace } from "@/shared/brand/BibloFace";
 import { BibloHeroFace } from "@/shared/brand/BibloHeroFace";
 import { HeroEyebrow } from "@/shared/components/HeroEyebrow";
 import { HeroEyebrowScript } from "@/shared/components/HeroEyebrowScript";
@@ -657,73 +662,6 @@ function BiblioCard({ title, subtitle, badge }: BiblioCardProps) {
   );
 }
 
-/**
- * O que cada plano entrega. Copy local de propósito, descreve CAPACIDADES, e
- * não valores; nome, preço e créditos vêm de `lib/billing/plans.ts`, o mesmo
- * catálogo do diálogo de compra (ver `app/AGENTS.md`).
- *
- * ⚠️ A lista era uma só para os três planos, e passou a mentir no dia em que a
- * funcionalidade exclusiva virou exclusiva: o card do Gratuito prometia o que
- * o botão respondia com 403. **Uma linha aqui é uma promessa que
- * `lib/entitlements/features.ts` tem de cumprir**, ao mexer numa, confira a
- * outra.
- */
-type PlanFeature = {
-  label: string;
-  /** `false` desenha a linha como AUSENTE: X apagado no lugar do check. */
-  included: boolean;
-};
-
-/**
- * O que os três planos têm em comum.
- *
- * A primeira linha era "Sermão comentado", herança dos cartões que apareciam
- * durante a pregação no modo `live`, que não existe mais — ninguém no produto
- * de hoje encontraria o que ela nomeava. No lugar dela está o que de fato
- * mudou: as três portas do `/home` (ver a seção "Três maneiras de começar"),
- * que todo plano tem, o Gratuito inclusive.
- */
-const BASE_FEATURES: PlanFeature[] = [
-  { label: "Gravar, importar ou escrever", included: true },
-  { label: "Resumo organizado", included: true },
-  { label: "Referências bíblicas", included: true },
-  { label: "Biblioteca de sermões", included: true },
-];
-
-/**
- * O BIBLO é o que separa um plano pago do gratuito, e por isso ele fecha as
- * TRÊS listas, inclusive a do Gratuito, onde aparece apagada e com um X no
- * lugar do check.
- *
- * **Aqui havia "Estudos bíblicos", e ela precisava sair.** O estudo saiu do
- * produto: as rotas continuam de pé, mas nenhum botão da interface chega nelas
- * (ver `src/app/AGENTS.md`). Um card de preço anunciando a única coisa que
- * diferencia o plano pago, e que a pessoa não encontra em lugar nenhum depois
- * de assinar, é pior que a lista curta — é a promessa quebrada do lado de
- * dentro, onde não há 403 para explicá-la. O `biblo_chat` é hoje o degrau
- * pago, no mesmo `minPlan` em que o estudo estava.
- *
- * O NOME sai do catálogo, não daqui: é o mesmo rótulo que o `/admin` mostra na
- * matriz de features e o mesmo que a frase de upsell da seção do Biblo usa.
- *
- * A ausência é dita, não omitida. Antes o Gratuito simplesmente tinha uma
- * linha a menos, e uma lista mais curta se lê como "tem menos coisa", não
- * como "esta coisa específica não vem" — quem comparava os cards de relance
- * não via o que estava faltando, e a diferença entre pagar e não pagar era
- * justamente ela.
- *
- * O X do Gratuito é honesto por um fio, e do lado certo: a conta gratuita
- * ganha `BIBLO_GIFT_MESSAGES` mensagens de presente (ver
- * `session/server/biblo/allowance.ts`), então quem não paga recebe MAIS do que
- * o card prometeu, não menos. A seção do Biblo diz isso em uma linha; o card
- * de preço não é o lugar de explicar uma exceção.
- */
-const BIBLO_FEATURE = FEATURES.biblo_chat.name;
-
-const FREE_FEATURES: PlanFeature[] = [...BASE_FEATURES, { label: BIBLO_FEATURE, included: false }];
-
-const PAID_FEATURES: PlanFeature[] = [...BASE_FEATURES, { label: BIBLO_FEATURE, included: true }];
-
 function Plans() {
   return (
     // Sem faixa de fundo própria: `--scriba-surface` virou o próprio chão, e a
@@ -735,8 +673,14 @@ function Plans() {
           <h2 className="text-pretty text-[29px] font-semibold leading-[1.16] tracking-[-.022em] text-scriba-ink-strong lg:text-[42px] lg:leading-[1.14]">
             Comece grátis. Cresça quando fizer sentido.
           </h2>
+          {/* O presente ANTES da tabela, e com o número.
+
+              A linha dizia o que não pedimos (contrato, cartão), que é uma
+              promessa em negativo: ela tira um medo e não dá nada. O que a
+              conta gratuita ganha de verdade são duas coisas, e as duas saem do
+              código que as concede, não de um número digitado aqui. */}
           <p className="max-w-[520px] text-[13.5px] font-light leading-[1.6] text-scriba-ink-soft lg:text-[15.5px]">
-            Sem contrato, sem cartão para testar. Cancele em um toque.
+            Conheça o bloco de notas inteligente que todo cristão deveria ter.
           </p>
         </div>
         {/* Sem `items-start`: os cards precisam ESTICAR até a altura do mais alto.
@@ -749,8 +693,8 @@ function Plans() {
             price={formatBrl(PLANS.pessoal.priceCents)}
             priceUnit="/mês"
             hint={`${formatCoins(PLANS.pessoal.coins)} créditos por mês`}
-            features={PAID_FEATURES}
-            highlightLast
+            tagline={PLANS.pessoal.tagline}
+            features={PLAN_FEATURES.pessoal}
             cta={`Assinar ${PLANS.pessoal.name}`}
             href="/sign-in?next=%2Fbilling%2Fassinar%3Fplan%3Dpessoal"
             variant="soft"
@@ -758,8 +702,9 @@ function Plans() {
           <PlanCard
             name={PLANS.free.name}
             price="Grátis"
-            hint={`${formatCoins(PLANS.free.coins)} créditos para conhecer o Scriba`}
-            features={FREE_FEATURES}
+            hint={`${formatCoins(PLANS.free.coins)} créditos de boas-vindas`}
+            tagline={PLANS.free.tagline}
+            features={PLAN_FEATURES.free}
             cta="Começar grátis"
             href="/sign-in"
             variant="primary"
@@ -770,8 +715,8 @@ function Plans() {
             price={formatBrl(PLANS.estudioso.priceCents)}
             priceUnit="/mês"
             hint={`${formatCoins(PLANS.estudioso.coins)} créditos por mês`}
-            features={PAID_FEATURES}
-            highlightLast
+            tagline={PLANS.estudioso.tagline}
+            features={PLAN_FEATURES.estudioso}
             cta={`Assinar ${PLANS.estudioso.name}`}
             href="/sign-in?next=%2Fbilling%2Fassinar%3Fplan%3Destudioso"
             variant="soft"
@@ -795,6 +740,8 @@ type PlanCardProps = {
   price: string;
   priceUnit?: string;
   hint: string;
+  /** A frase do plano, de `PLANS[*].tagline`: para QUEM ele é, antes das linhas do que ele tem. */
+  tagline: string;
   features: PlanFeature[];
   cta: string;
   /** Destino do CTA. Nos planos pagos carrega a intenção via `?next=`, para
@@ -802,13 +749,6 @@ type PlanCardProps = {
   href: string;
   variant: "primary" | "soft";
   badge?: string;
-  /**
-   * Destaca o ÚLTIMO item da lista. Usado nos planos pagos para o Biblo,
-   * o diferencial em relação ao Gratuito, não se perder no meio das linhas
-   * idênticas que os três planos compartilham. A linha AUSENTE do Gratuito se
-   * distingue sozinha, pelo X, e não precisa desta chave.
-   */
-  highlightLast?: boolean;
 };
 
 function PlanCard({
@@ -816,12 +756,12 @@ function PlanCard({
   price,
   priceUnit,
   hint,
+  tagline,
   features,
   cta,
   href,
   variant,
   badge,
-  highlightLast,
 }: PlanCardProps) {
   const isPrimary = variant === "primary";
   return (
@@ -851,6 +791,12 @@ function PlanCard({
         >
           {name}
         </div>
+        {/* Para quem o plano é, em cima do preço: é a pergunta que a pessoa faz
+            antes de olhar o número, e responder depois dele obriga a subir de
+            novo para comparar. */}
+        <div className="text-[12.5px] font-light leading-[1.45] text-scriba-ink-soft lg:text-[13px]">
+          {tagline}
+        </div>
         <div className="flex items-baseline gap-1.5">
           <div className="text-[36px] font-semibold tracking-[-.02em] text-scriba-ink-strong lg:text-[40px]">
             {price}
@@ -861,15 +807,17 @@ function PlanCard({
             </div>
           ) : null}
         </div>
-        <div className="flex items-center gap-1.5 text-[12.5px] font-light text-scriba-ink-mute lg:text-[13px]">
-          <CoinHex />
-          {hint}
+        <div className="flex flex-col gap-1">
+          <div className="flex items-center gap-1.5 text-[12.5px] font-light text-scriba-ink-mute lg:text-[13px]">
+            <CoinHex />
+            {hint}
+          </div>
         </div>
       </div>
       <div className="h-px bg-scriba-hairline-soft" />
       <div className="flex flex-col gap-2.5 pb-4 text-[13px] font-light text-scriba-ink-soft lg:text-[13.5px]">
-        {features.map((f, i) => {
-          const featured = highlightLast === true && i === features.length - 1;
+        {features.map((f) => {
+          const featured = f.featured === true;
           return (
             <div
               key={f.label}
@@ -887,33 +835,62 @@ function PlanCard({
                 !f.included && "text-scriba-ink-mute"
               )}
             >
-              <svg
-                role="img"
-                aria-label={f.included ? "Incluído" : "Não incluído"}
-                className={cn(
-                  "mt-0.5 flex-none",
-                  !f.included
-                    ? "text-scriba-ink-mute"
-                    : featured
-                      ? "text-scriba-green"
-                      : isPrimary
-                        ? "text-scriba-blue-ink"
-                        : "text-scriba-ink-mute"
-                )}
-                width="16"
-                height="16"
-                viewBox="0 0 16 16"
-                fill="none"
-                xmlns="http://www.w3.org/2000/svg"
-              >
-                <path
-                  d={f.included ? "M3 8.5L6.5 12L13 5" : "M4 4L12 12M12 4L4 12"}
-                  stroke="currentColor"
-                  strokeWidth="1.75"
-                  strokeLinecap="round"
-                  strokeLinejoin="round"
+              {/* O ROSTO no lugar do check, na linha do Biblo.
+
+                  Ele é a única coisa do produto com cara, nome e primeira
+                  pessoa, e escrito em texto corrido no meio de cinco linhas
+                  iguais não lembra disso ninguém: quem já leu a seção dele
+                  reconhece a cara antes de ler a frase. É o mesmo rosto da
+                  seção acima e o mesmo de dentro do app, porque é a mesma
+                  função pura sobre a mesma semente (ver `BibloFace`), e não
+                  custa um byte de JS na LP.
+
+                  Ele ocupa a mesma caixa de 16px do check, senão a linha sai do
+                  alinhamento das outras quatro. Não custa acessibilidade: o
+                  check tem `aria-label` porque ele CARREGA a informação
+                  incluído/ausente, e esta linha só existe como incluída. */}
+              {f.face ? (
+                // CINZA no Gratuito, colorido nos pagos. O rosto é a única
+                // coisa colorida da lista, e no card em que o Biblo é um
+                // presente com fim ele não pode ser o ponto mais vivo dos três
+                // cards. Um `grayscale` diz isso pela mesma imagem, sem um
+                // segundo desenho para manter: é o mesmo Biblo, com a cor
+                // guardada para quem assina. Vale toda linha com rosto que não
+                // seja `featured`, que por definição é só a do Gratuito.
+                <BibloFace
+                  size={16}
+                  className={cn("mt-0.5 size-4", !featured && "grayscale")}
+                  title="Incluído"
                 />
-              </svg>
+              ) : (
+                <svg
+                  role="img"
+                  aria-label={f.included ? "Incluído" : "Não incluído"}
+                  className={cn(
+                    "mt-0.5 flex-none",
+                    !f.included
+                      ? "text-scriba-ink-mute"
+                      : featured
+                        ? "text-scriba-green"
+                        : isPrimary
+                          ? "text-scriba-blue-ink"
+                          : "text-scriba-ink-mute"
+                  )}
+                  width="16"
+                  height="16"
+                  viewBox="0 0 16 16"
+                  fill="none"
+                  xmlns="http://www.w3.org/2000/svg"
+                >
+                  <path
+                    d={f.included ? "M3 8.5L6.5 12L13 5" : "M4 4L12 12M12 4L4 12"}
+                    stroke="currentColor"
+                    strokeWidth="1.75"
+                    strokeLinecap="round"
+                    strokeLinejoin="round"
+                  />
+                </svg>
+              )}
               {f.label}
             </div>
           );
@@ -935,7 +912,12 @@ function PlanCard({
       ) : (
         <Link
           href={href}
-          className="lp-cta-soft mt-auto inline-flex items-center justify-center gap-2 rounded-[24px] p-[15px] text-[12px] font-semibold uppercase tracking-[.04em] bg-scriba-btn-muted text-scriba-ink hover:bg-scriba-btn-muted-hover"
+          // A borda cinza é `--scriba-hairline`, o mesmo fio que separa as
+          // seções e desenha a moldura de todo cartão do produto. Ela existe
+          // porque `--scriba-btn-muted` (#2F3035) está a um degrau do papel do
+          // card: sem o fio, o botão dos planos pagos não tem onde começar e
+          // acaba, e o único CTA com contorno visível na seção é o do Gratuito.
+          className="lp-cta-soft mt-auto inline-flex items-center justify-center gap-2 rounded-[24px] border border-scriba-hairline p-[15px] text-[12px] font-semibold uppercase tracking-[.04em] bg-scriba-btn-muted text-scriba-ink hover:bg-scriba-btn-muted-hover"
         >
           {cta}
         </Link>

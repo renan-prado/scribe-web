@@ -41,49 +41,60 @@ export type PlanDisplay = {
   /** Centavos de BRL. Apenas legenda, a cobrança é a do Price no Stripe. */
   priceCents: number;
   tagline: string;
-  highlights: string[];
 };
 
+/**
+ * Os dois números de cada plano, fora do `PLANS` para o objeto poder ler os
+ * dois enquanto nasce.
+ */
+const COINS = { free: 50, pessoal: 1000, estudioso: 2500 } as const;
+const PRICE_CENTS = { free: 0, pessoal: 1990, estudioso: 4490 } as const;
+
+const BRL = new Intl.NumberFormat("pt-BR", { style: "currency", currency: "BRL" });
+
+export function formatBrl(cents: number): string {
+  return BRL.format(cents / 100);
+}
+
+/** Formata milhares como "1.000", usado nos números de crédito. */
+const NUM = new Intl.NumberFormat("pt-BR");
+export function formatCoins(n: number): string {
+  return NUM.format(n);
+}
+
+/**
+ * Nome, preço, franquia e a frase de cada plano.
+ *
+ * **O que cada um ENTREGA não mora aqui: mora em `plan-features.ts`**, numa
+ * lista só, lida pelos cards da landing e pelo diálogo de compra. As duas telas
+ * já tiveram cada uma a sua, e só uma das duas era corrigida quando o produto
+ * mudava: foi assim que "Estudo aprofundado de cada sessão" sobreviveu no
+ * diálogo meses depois de o estudo sair da interface.
+ *
+ * A `tagline` fica, porque ela não é uma promessa de funcionalidade: é para
+ * QUEM o plano é, e o `/profile` a usa sozinha, sem lista nenhuma ao lado.
+ */
 export const PLANS: Record<PlanKey, PlanDisplay> = {
   free: {
     key: "free",
     name: "Gratuito",
-    coins: 50,
-    priceCents: 0,
-    tagline: "Para conhecer o Scriba",
-    highlights: ["50 créditos de boas-vindas", "Todos os modos de gravação", "Sem cartão"],
+    coins: COINS.free,
+    priceCents: PRICE_CENTS.free,
+    tagline: "Ideal para conhecer o Scriba",
   },
   pessoal: {
     key: "pessoal",
     name: "Pessoal",
-    coins: 1000,
-    priceCents: 1990,
-    tagline: "Para acompanhar os cultos da semana",
-    highlights: [
-      "1.000 créditos por mês",
-      // Ver a nota no plano Estudioso: esta linha é a legenda de
-      // `lib/entitlements/features.ts`, e as duas andam juntas.
-      "Estudo aprofundado de cada sessão",
-      "Créditos acumulam de um mês para o outro",
-      "Cancele quando quiser",
-    ],
+    coins: COINS.pessoal,
+    priceCents: PRICE_CENTS.pessoal,
+    tagline: "Ideial para devocionais e estudos pontuais",
   },
   estudioso: {
     key: "estudioso",
     name: "Estudioso",
-    coins: 2500,
-    priceCents: 4490,
-    tagline: "Para quem estuda a sério, toda semana",
-    highlights: [
-      "2.500 créditos por mês",
-      // O que este plano DESTRAVA, e não só quanto ele dá. A regra em si está
-      // em `lib/entitlements/features.ts`, esta linha é a legenda dela, e as
-      // duas precisam andar juntas: prometer aqui o que o catálogo não libera
-      // é promessa quebrada depois do pagamento, como já foi com os créditos.
-      "Estudo aprofundado de cada sessão",
-      "Créditos acumulam de um mês para o outro",
-      "Cancele quando quiser",
-    ],
+    coins: COINS.estudioso,
+    priceCents: PRICE_CENTS.estudioso,
+    tagline: "Ideal para pregadores, professores e líderes",
   },
 };
 
@@ -112,18 +123,6 @@ export type TopupKey = typeof TOPUP.key;
  * clamp, o valor aqui é só para a UI não oferecer o que será rejeitado.
  */
 export const TOPUP_MAX_QUANTITY = 20;
-
-const BRL = new Intl.NumberFormat("pt-BR", { style: "currency", currency: "BRL" });
-
-export function formatBrl(cents: number): string {
-  return BRL.format(cents / 100);
-}
-
-/** Formata milhares como "1.000", usado nos números de crédito. */
-const NUM = new Intl.NumberFormat("pt-BR");
-export function formatCoins(n: number): string {
-  return NUM.format(n);
-}
 
 /**
  * Status de assinatura em que o plano ainda vale. `past_due` entra de

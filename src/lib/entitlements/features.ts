@@ -56,7 +56,7 @@ export const FEATURES: Record<FeatureKey, FeatureDefinition> = {
   },
   biblo_chat: {
     key: "biblo_chat",
-    name: "Conversar com o Biblo",
+    name: "Chat inteligente com o Biblo",
     description:
       "A conversa dentro de uma sessão: contexto, passagens e provocações sobre o resumo.",
     // Mesmo degrau do estudo, e pela mesma razão escrita lá em cima.

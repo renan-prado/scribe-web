@@ -9,6 +9,7 @@ import {
   Minus,
   Plus,
   Settings2,
+  X,
 } from "lucide-react";
 import { type ReactNode, useCallback, useEffect, useState } from "react";
 import { toast } from "sonner";
@@ -26,6 +27,7 @@ import {
   requestBillingPortal,
   requestCheckout,
 } from "@/features/billing/lib/api";
+import { PLAN_FEATURES } from "@/features/billing/plan-features";
 import {
   formatBrl,
   formatCoins,
@@ -40,6 +42,7 @@ import { getBillingState, useBillingStore } from "@/features/billing/store";
 import { getCoinsState, useCoinsStore } from "@/features/coins/store";
 import { useRecordingStore } from "@/features/session/recording-store";
 import { cn } from "@/lib/utils";
+import { BibloAvatar } from "@/shared/brand";
 
 /**
  * Diálogo de créditos: saldo, planos de assinatura e, por último, o pacote
@@ -353,18 +356,70 @@ export function BillingDialog({
                             </span>
                           </div>
                         </div>
+                        {/* A MESMA lista da landing, tópico por tópico.
+
+                            As duas telas descrevem a mesma coisa para a mesma
+                            pessoa, em dois momentos dela, e cada uma tinha a
+                            sua: quem lia os dois via dois produtos parecidos em
+                            vez de um. Pior, só uma das duas era corrigida
+                            quando o produto mudava — foi assim que "Estudo
+                            aprofundado de cada sessão" sobreviveu AQUI meses
+                            depois de o estudo sair da interface. Ver
+                            `plan-features.ts`.
+
+                            Três regras vêm junto da lista, e são as mesmas de
+                            lá: o NEGRITO marca o que aquele plano tem e o
+                            Gratuito não; a linha do Biblo troca o check pelo
+                            ROSTO dele (aqui o `BibloAvatar`, que é cliente,
+                            contra o `BibloFace` estático da landing — mesma
+                            semente, mesmo rosto); e o `mood` é `idle` porque
+                            aqui ele não está fazendo nada.
+
+                            O rosto ocupa a mesma caixa do check para as linhas
+                            continuarem alinhadas, e a troca não custa
+                            acessibilidade: o check nunca foi lido (é
+                            `aria-hidden`), a informação inteira está no texto
+                            da linha. */}
                         <ul className="flex flex-col gap-1.5">
-                          {p.highlights.map((h) => (
+                          {PLAN_FEATURES[key].map((f) => (
                             <li
-                              key={h}
-                              className="flex items-start gap-2 text-[12px] font-light leading-snug text-scriba-ink-soft"
+                              key={f.label}
+                              className={cn(
+                                "flex items-start gap-2 text-[12px] leading-snug",
+                                f.featured
+                                  ? "font-medium text-scriba-ink"
+                                  : "font-light text-scriba-ink-soft"
+                              )}
                             >
-                              <Check
-                                aria-hidden
-                                className="mt-0.5 size-3.5 shrink-0 text-scriba-blue-ink"
-                                strokeWidth={3}
-                              />
-                              {h}
+                              {f.face ? (
+                                <BibloAvatar
+                                  mood="idle"
+                                  size={14}
+                                  className="mt-0.5 size-3.5 shrink-0"
+                                />
+                              ) : f.included ? (
+                                <Check
+                                  aria-hidden
+                                  className={cn(
+                                    "mt-0.5 size-3.5 shrink-0",
+                                    f.featured ? "text-scriba-green" : "text-scriba-blue-ink"
+                                  )}
+                                  strokeWidth={3}
+                                />
+                              ) : (
+                                // Hoje não acontece: o diálogo só desenha plano
+                                // PAGO (`upgradeTargets`), e a única linha
+                                // ausente da lista é a do Gratuito. Está aqui
+                                // porque a lista é compartilhada com a landing,
+                                // e um check sobre uma linha ausente seria uma
+                                // promessa que ninguém escreveu.
+                                <X
+                                  aria-hidden
+                                  className="mt-0.5 size-3.5 shrink-0 text-scriba-ink-mute"
+                                  strokeWidth={3}
+                                />
+                              )}
+                              {f.label}
                             </li>
                           ))}
                         </ul>
@@ -501,7 +556,7 @@ export function BillingDialog({
               ) : null}
 
               <p className="text-center text-[11px] font-light leading-relaxed text-scriba-ink-mute">
-                Pagamento processado pela Stripe. O Scriba não armazena dados do seu cartão.
+                Pagamento processado pela Stripe
               </p>
             </>
           )}

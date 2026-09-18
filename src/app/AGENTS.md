@@ -1242,17 +1242,39 @@ anunciava 2.000/5.000/100 créditos contra os 1.000/2.500/50 reais: preço de te
 errado é promessa quebrada no checkout.
 
 **E ela não tem REGRA de plano própria.** O nome da funcionalidade paga nos
-cards (`BIBLO_FEATURE`) e a frase de "isto é dos planos pagos" da seção do
-Biblo saem de `src/lib/entitlements/features.ts`, o mesmo catálogo que a rota
-consulta antes de cobrar. Só as descrições de capacidade (`BASE_FEATURES`,
-`DOORS`, `BIBLO_POINTS`, em `src/app/(site)/page.tsx`) são copy local.
+cards e a frase de "isto é dos planos pagos" da seção do Biblo saem de
+`src/lib/entitlements/features.ts`, o mesmo catálogo que a rota consulta antes
+de cobrar.
+
+**Nem LISTA de vantagens própria.** O que cada card promete sai de
+`src/features/billing/plan-features.ts`, e é a MESMA lista que o diálogo de
+compra da área logada desenha: as duas telas descrevem a mesma coisa para a
+mesma pessoa, em dois momentos dela, e enquanto cada uma teve a sua, só uma era
+corrigida quando o produto mudava. Copy local da LP são as descrições de
+capacidade das seções (`DOORS`, `BIBLO_POINTS`, em `src/app/(site)/page.tsx`),
+não os cards.
 
 **Cada linha desses cards é uma promessa que `lib/entitlements/` tem de
 cumprir**, e o defeito já aconteceu duas vezes em direções opostas: o card do
 Gratuito prometeu "Gerar estudos" e o botão respondeu 403; depois o estudo saiu
 da interface e os cards pagos continuaram vendendo "Estudos bíblicos", que é o
 mesmo erro do lado de dentro, onde não há 403 para explicá-lo. Ao mexer numa
-lista, confira o catálogo — e vice-versa. O mesmo vale para o `featureList` do
+lista, confira o catálogo — e vice-versa.
+
+**O card do Gratuito RECEBE, ele não é o plano capado.** A linha do Biblo dele
+já foi um X, e o X estava errado pelos dois lados: a conta gratuita ganha
+`BIBLO_GIFT_MESSAGES` conversas de verdade (quem não paga recebe MAIS do que o
+card prometia), e dizer "você não tem" a quem ainda nem entrou fecha a única
+porta pela qual alguém descobre por que valeria assinar. O que o Gratuito não
+tem continua dito com todas as letras, e é uma linha só: a recarga todo mês. Ela
+fica no MEIO da lista, onde é comparada com a mesma linha dos outros dois cards,
+e o card termina no presente.
+
+**Onde o Biblo aparece, aparece o ROSTO dele** — o `BibloFace`, que é servidor
+puro. Vale para a linha dele nos três cards e para o diálogo de compra (lá é o
+`BibloAvatar`, que é cliente). Ele é a única coisa do produto com cara, nome e
+primeira pessoa, e escrito em texto corrido no meio de linhas iguais não lembra
+disso ninguém. O mesmo vale para o `featureList` do
 `LandingJsonLd` e para os marcadores de `shared/content/llms.ts`: eles afirmam
 as mesmas capacidades num lugar que ninguém revisa ao mudar a tela.
 
