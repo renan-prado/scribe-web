@@ -9,6 +9,19 @@ Gerado por `npm run release` a partir dos Conventional Commits. `feat` sobe o
 minor; o resto sobe o patch. Não edite à mão, a próxima execução escreve por
 cima do topo do arquivo.
 
+## 0.48.0, 2026-09-18, desde v0.47.0
+
+### Novidades
+
+- **lexico:** os 211 cartoes sao escritos, e os autores citados saem (`ccf650a`)
+- **lexico:** cartao ganha "Algo esta errado", e o painel ganha a fila (`cf0b39a`)
+- **lexico:** abreviacao com capitulo solto tambem vira link (`171b196`)
+- **lexico:** abreviacao biblica vira link, e o cartao navega dentro de si (`6e94437`)
+
+### Correções
+
+- **ui:** dialog ganha elevacao, para o caso em que o veu nao resolve (`37e64de`)
+
 ## 0.47.0, 2026-09-18, desde v0.46.0
 
 ### Novidades
