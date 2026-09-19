@@ -9,6 +9,12 @@ Gerado por `npm run release` a partir dos Conventional Commits. `feat` sobe o
 minor; o resto sobe o patch. Não edite à mão, a próxima execução escreve por
 cima do topo do arquivo.
 
+## 0.49.0, 2026-09-19, desde v0.48.0
+
+### Novidades
+
+- **lexico:** o marca-texto de nome proprio volta a ser cinza (`eb590e1`)
+
 ## 0.48.0, 2026-09-18, desde v0.47.0
 
 ### Novidades
