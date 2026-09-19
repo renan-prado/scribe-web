@@ -167,25 +167,23 @@ que as duas pontas: promete e não entrega. O preço, aceito de olhos abertos, �
 que no dia da migração nada fica marcado — cada nome acende quando alguém
 escreve o cartão dele.
 
-**E foi isso que devolveu a COR à marcação.** Este documento dizia que a
-categoria vivia nos dados e fora da tinta, para um parágrafo não virar uma
-página de arco-íris. O argumento valia enquanto a marcação era só relevo
-tipográfico; com a regra acima ela passou a significar "aqui abre um cartão", e
-a cor virou a resposta antecipada de **qual** cartão. Hoje são três categorias e
-DUAS cores — **azul é personagem, verde é lugar, e figura citada fica no
-neutro** —, e é a terceira ficar sem cor que segura o arco-íris. Azul e verde
-não foram escolhidos: são o que o `EntityCombobox` já usa para pregador e
-igreja, e duas gramáticas de cor para a mesma distinção seria o custo real.
+**A COR foi tentada e voltou atrás: a marcação é CINZA, uma tinta só.** Por
+duas versões ela teve matiz — azul para personagem, verde para lugar, neutro
+para figura citada —, e o argumento era que, valendo "aqui abre um cartão", ela
+podia adiantar **qual** cartão. O que derrubou isso foi a DENSIDADE, e ela só
+aparece no lugar que a cor deveria servir melhor: um cartão do léxico cita meia
+dúzia de nomes num parágrafo, e ali as duas cores mais o neutro não leem como
+três categorias, leem como três tintas piscando na mesma frase. A escala desceu
+de 70/62 para 32/30 tentando resolver, e cada degrau comprou menos ruído ao
+preço de uma distinção que ninguém enxergava — no piso da janela ela já era
+decorativa.
 
-A tinta mora nos tokens `--session-mention-wash*` e é trocada por uma regra
-presa ao `data-mention`, nunca por um mapa de classes no componente. As forças
-foram medidas, e ficam **um degrau acima do piso**: abaixo de ~24% o matiz
-colapsa no neutro (branco a 22%) e a categoria passa a ser dita numa cor que
-ninguém enxerga; acima de ~70% o traço ganha contorno e vira sublinhado de
-interface. **Os dois valores andam juntos** — na mesma opacidade o verde pesa
-mais, então mexer em um sozinho só troca qual dos dois puxa o olho. E o teste é
-o PARÁGRAFO, nunca a palavra isolada: de perto a marcação sempre parece fraca
-demais, e é assim que ela volta a ser arco-íris.
+Então hoje há **um token e nenhuma regra de categoria**:
+`--session-mention-wash`, branco a 22%. A categoria continua nos dados
+(`data-mention`) e no rótulo que o leitor de tela ouve, e continua fora da
+tinta. O teste da força é o PARÁGRAFO, nunca a palavra isolada: de perto a
+marcação sempre parece fraca demais, e foi essa impressão que já levou a escala
+a 70% uma vez.
 
 - **A passada de referência vem ANTES da de nomes, e exige número de
   capítulo.** É o que separa o evangelho do apóstolo: "João 3:16" é consumido
@@ -275,8 +273,9 @@ lista é vazia e o anotador só reconhece referência, que é o que ele já fazi
 referência estável; um `[]` literal novo a cada render recompilaria uma
 alternação de trezentos termos por parágrafo.
 
-Os dois tokens trocam de família dentro de `.tone-study`: no estudo o acento é
-verde, como o resto.
+Dentro de `.tone-study` o par `--session-mention-ink` / `--session-mention-wash`
+é reapontado, e só em FORÇA: a superfície do estudo é meio degrau mais clara que
+a do resumo, e o mesmo 22% sumiria nela.
 
 ## Depois do stop
 

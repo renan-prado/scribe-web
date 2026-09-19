@@ -297,47 +297,31 @@
   --session-example-border: rgba(255, 255, 255, 0.1);
   --session-mention-ink: #F5F5F5;
 
-  /* O MARCA-TEXTO DE NOME PRÓPRIO, em três tintas.
+  /* O MARCA-TEXTO DE NOME PRÓPRIO, numa tinta só.
 
-     Ele foi NEUTRO por muito tempo, e o argumento era bom: nome próprio não
-     levava a lugar nenhum, então a marcação era só relevo tipográfico, e três
-     cores de relevo num parágrafo dão uma página de arco-íris.
+     Ele já foi três, e o argumento era bom: desde a migração 0063 só é marcado
+     o nome que TEM CARTÃO, então a cor podia ser a resposta antecipada de "o
+     que abre aqui?" — azul para personagem e verde para lugar, emprestados do
+     `EntityCombobox`, com a figura citada no neutro para segurar o arco-íris.
 
-     O que mudou não foi o gosto, foi o que a marcação SIGNIFICA. Desde a
-     migração 0063 só é marcado o nome que TEM CARTÃO, e o cartão diz de que
-     tipo ele é. A cor deixou de ser enfeite e virou a resposta antecipada de
-     "o que abre aqui?": um personagem, um lugar, ou alguém citado.
+     NÃO SEGUROU. O que a teoria não pesa é a DENSIDADE: um cartão do léxico
+     cita meia dúzia de nomes num parágrafo, e ali as duas cores mais a neutra
+     deixam de ser três categorias e viram três tintas piscando na mesma frase.
+     A escala desceu de 70/62 para 32/30 em duas passadas tentando resolver
+     isso, e cada uma comprou menos ruído ao preço de uma cor que ninguém
+     enxergava — no piso da janela a distinção já era decorativa, e abaixo dele
+     colapsaria no cinza de qualquer jeito.
 
-     AZUL É PESSOA E VERDE É LUGAR porque o produto já fala assim: no
-     `EntityCombobox`, pregador é pastilha azul e igreja é pastilha verde. Duas
-     gramáticas de cor para a mesma distinção seria o custo real.
+     Então ela colapsa de propósito. A CATEGORIA continua nos dados
+     (`data-mention`, escrito pelo `LexiconMention`) e no rótulo que o leitor de
+     tela ouve; o que ela não faz mais é escolher tinta. Quem diz que o nome
+     abre algo é ele estar MARCADO, e essa promessa é uma só.
 
-     FIGURA CITADA FICA NEUTRA, e é isso que segura o arco-íris. São três
-     categorias e DUAS cores: quem é trazido de fora da narrativa bíblica não é
-     uma terceira família, é a ausência das duas.
-
-     AS FORÇAS FORAM MEDIDAS sobre `--v2-card`, e a janela tem as duas bordas
-     encostadas nos valores de hoje:
-
-       acima de ~70%  o traço ganha contorno e vira sublinhado de INTERFACE,
-                      que promete um link onde há um marca-texto;
-       abaixo de ~24% o matiz colapsa no neutro logo acima (branco a 22%) e a
-                      faixa volta a ser o cinza de antes, com a categoria dita
-                      numa cor que ninguém enxerga.
-
-     32% e 30% é o degrau imediatamente acima do piso, e é onde ele deve ficar:
-     a cor aqui existe para ser RECONHECIDA de relance, não lida. A escala desceu
-     de 70/62 em duas passadas, e o caminho até aqui está registrado porque a
-     tentação de subi-la volta toda vez que alguém olha uma marcação isolada —
-     ela é discreta por desenho, e o teste é o parágrafo inteiro, não a palavra.
-
-     OS DOIS ANDAM JUNTOS. Baixar só o azul (o que parecia a correção, já que
-     era ele que gritava) fez o verde virar a coisa mais forte do parágrafo: na
-     mesma opacidade o verde pesa mais, então mexer em um sozinho apenas troca
-     qual dos dois puxa o olho. */
+     22% de branco: forte o bastante para o olho achar o nome de relance, fraco
+     o bastante para o glifo continuar sobre o papel. O teste é o PARÁGRAFO,
+     nunca a palavra isolada — de perto a marcação sempre parece fraca demais, e
+     é essa impressão que já levou a escala para 70% uma vez. */
   --session-mention-wash: rgba(255, 255, 255, 0.22);
-  --session-mention-wash-person: rgba(96, 163, 240, 0.32);
-  --session-mention-wash-place: rgba(104, 200, 136, 0.3);
 
   /* O LAVADO DA PISCADA: "esse aqui é o bloco que acabou de entrar".
 
@@ -1376,24 +1360,6 @@
        propriedade só, e a alternativa seria animar um pseudo-elemento, que
        exigiria posicionar a caixa do bloco só para isso. */
     animation: var(--animate-block-flash) !important;
-  }
-
-  /* A CATEGORIA escolhe a tinta da marcação, e quem a carrega é o
-     `data-mention` que o `LexiconMention` já escrevia nos dados.
-
-     Aqui, e não no `className` do componente, por duas razões. A primeira é a
-     regra da casa: cor mora em token, não em classe. A segunda é que assim o
-     componente continua com UMA classe e uma expressão de gradiente; a
-     alternativa era um mapa de três strings de Tailwind em TypeScript, e cada
-     ajuste de opacidade passaria a ser um commit em dois arquivos.
-
-     `figure` não aparece porque ela fica com o valor de `:root`, que é o
-     neutro. */
-  [data-mention="person"] {
-    --session-mention-wash: var(--session-mention-wash-person);
-  }
-  [data-mention="place"] {
-    --session-mention-wash: var(--session-mention-wash-place);
   }
 
   /* A pele do ESTUDO: `/studies` e o aprofundamento. Ela reaponta os tokens

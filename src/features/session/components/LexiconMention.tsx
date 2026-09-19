@@ -27,16 +27,19 @@ import { LEXICON_CATEGORY_LABEL, type LexiconCategory } from "@/lib/domain/lexic
  * É a mesma tinta, um pouco mais de papel: o realce não vira um segundo estado
  * semântico, e no celular, onde não existe hover, nada se perde.
  *
- * ## A TINTA vem da categoria, e o componente não a conhece
+ * ## A TINTA É UMA SÓ, e a categoria não escolhe mais
  *
- * Azul é personagem, verde é lugar, e figura citada fica no cinza de sempre. O
- * porquê de cada uma dessas três decisões está no token, em `globals.css`, que
- * é onde toda cor deste repositório mora.
+ * Azul era personagem e verde era lugar, emprestados do `EntityCombobox`, com
+ * a figura citada no cinza. A ideia era boa no parágrafo de resumo, em que um
+ * nome marcado é exceção, e ruiu no CARTÃO: ali meia dúzia de nomes cai na
+ * mesma frase, e três tintas piscando lado a lado deixam de ser categoria e
+ * viram arco-íris. O porquê inteiro, com as duas passadas de escala que
+ * tentaram salvar a cor antes de ela sair, está no token em `globals.css`.
  *
- * Aqui só existe `var(--session-mention-wash)`, uma vez. Quem o reaponta é uma
- * regra CSS presa ao `data-mention` que o botão já escrevia nos dados — então
- * este arquivo continua com uma classe só, e mexer numa opacidade não é um
- * commit em dois lugares.
+ * O `data-mention` CONTINUA sendo escrito, e continua fora da tinta: ele é o
+ * dado da categoria, lido por quem depurar e disponível se um dia ela voltar a
+ * significar algo na tela. Quem diz que o nome abre um cartão é ele estar
+ * marcado, e essa promessa é uma só.
  *
  * ## DENTRO de um cartão, ela navega em vez de abrir outro
  *
