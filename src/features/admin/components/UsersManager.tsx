@@ -1,6 +1,6 @@
 "use client";
 
-import { Pencil, ShieldCheck, Trash2 } from "lucide-react";
+import { Coins as CoinsIcon, Pencil, ShieldCheck, Trash2 } from "lucide-react";
 import { useRouter } from "next/navigation";
 import { useMemo, useState, useTransition } from "react";
 import { toast } from "sonner";
@@ -16,8 +16,9 @@ import {
   TableRow,
 } from "@/components/ui/table";
 import type { AdminUser, AdminUserBilling, PayingStatus } from "@/features/admin/server/db/users";
-import { formatBrl, PLANS } from "@/features/billing/plans";
+import { formatBrl, formatCoins, PLANS } from "@/features/billing/plans";
 import { EditUserDialog } from "./EditUserDialog";
+import { GrantCoinsDialog } from "./GrantCoinsDialog";
 
 const DATE_FMT = new Intl.DateTimeFormat("pt-BR", {
   day: "2-digit",
@@ -100,6 +101,7 @@ export function UsersManager({ initialUsers, currentUserId }: Props) {
   const [search, setSearch] = useState("");
   const [filter, setFilter] = useState<"todos" | PayingStatus>("todos");
   const [editing, setEditing] = useState<AdminUser | null>(null);
+  const [granting, setGranting] = useState<AdminUser | null>(null);
   const [pendingId, setPendingId] = useState<string | null>(null);
   const [_isPending, startTransition] = useTransition();
   const router = useRouter();
@@ -182,6 +184,7 @@ export function UsersManager({ initialUsers, currentUserId }: Props) {
               <TableHead>Status</TableHead>
               <TableHead>Assinatura</TableHead>
               <TableHead>Pagante</TableHead>
+              <TableHead className="text-right">Saldo</TableHead>
               <TableHead className="text-right">Pagamentos</TableHead>
               <TableHead className="text-right">Receita</TableHead>
               <TableHead>Criado em</TableHead>
@@ -192,7 +195,7 @@ export function UsersManager({ initialUsers, currentUserId }: Props) {
           <TableBody>
             {filtered.length === 0 ? (
               <TableRow>
-                <TableCell colSpan={10} className="py-6 text-center text-sm text-muted-foreground">
+                <TableCell colSpan={11} className="py-6 text-center text-sm text-muted-foreground">
                   Nenhum usuário encontrado.
                 </TableCell>
               </TableRow>
@@ -239,6 +242,18 @@ export function UsersManager({ initialUsers, currentUserId }: Props) {
                     <TableCell>
                       <PayingCell billing={b} />
                     </TableCell>
+                    {/* O saldo sai da MESMA linha de `profiles` que o resto
+                        desta tabela (ver `listUsers`), então a coluna não custa
+                        consulta nenhuma. Ela fica ao lado de "Pagante" porque as
+                        duas respondem à mesma pergunta por caminhos diferentes:
+                        quanto esta pessoa já pôs, e quanto ela ainda tem. */}
+                    <TableCell className="text-right font-mono text-xs tabular-nums">
+                      {u.coinBalance === null ? (
+                        <span className="text-muted-foreground">-</span>
+                      ) : (
+                        formatCoins(u.coinBalance)
+                      )}
+                    </TableCell>
                     <TableCell className="text-right">
                       {b.invoices === 0 && b.topups === 0 ? (
                         <span className="text-xs text-muted-foreground">-</span>
@@ -282,6 +297,15 @@ export function UsersManager({ initialUsers, currentUserId }: Props) {
                         <Button
                           variant="ghost"
                           size="icon-sm"
+                          onClick={() => setGranting(u)}
+                          aria-label={`Creditar moedas para ${label}`}
+                          title="Creditar moedas"
+                        >
+                          <CoinsIcon />
+                        </Button>
+                        <Button
+                          variant="ghost"
+                          size="icon-sm"
                           onClick={() => setEditing(u)}
                           aria-label={`Editar ${label}`}
                         >
@@ -305,6 +329,20 @@ export function UsersManager({ initialUsers, currentUserId }: Props) {
           </TableBody>
         </Table>
       </div>
+
+      {granting ? (
+        <GrantCoinsDialog
+          user={granting}
+          onClose={() => setGranting(null)}
+          onDone={() => {
+            setGranting(null);
+            // `router.refresh()` porque o saldo que esta tabela mostra veio do
+            // SERVIDOR, no render da página: sem ele a coluna continuaria com o
+            // número de antes do crédito que a pessoa acabou de dar.
+            startTransition(() => router.refresh());
+          }}
+        />
+      ) : null}
 
       {editing ? (
         <EditUserDialog

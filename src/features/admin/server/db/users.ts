@@ -90,6 +90,13 @@ export type AdminUser = {
   isActive: boolean;
   createdAt: string;
   lastSignInAt: string | null;
+  /**
+   * O saldo de moedas AGORA. Ele vem da mesma linha de `profiles` que o resto
+   * desta lista, então não custa consulta nenhuma — e sem ele o diálogo de
+   * crédito avulso pediria à pessoa que digitasse um número sem saber quanto
+   * já existe na conta, que é a informação que decide se ela vai dar 50 ou 500.
+   */
+  coinBalance: number | null;
   billing: AdminUserBilling;
 };
 
@@ -101,9 +108,10 @@ type ProfileRow = {
   role: "user" | "admin";
   is_active: boolean;
   created_at: string;
+  coin_balance: number | null;
 };
 
-const SELECT = "id, display_name, avatar_url, email, role, is_active, created_at";
+const SELECT = "id, display_name, avatar_url, email, role, is_active, created_at, coin_balance";
 
 /**
  * Teto da listagem do /admin/users. Quando a base passar disto, a tela precisa
@@ -153,6 +161,7 @@ export async function listUsers(): Promise<AdminUser[]> {
     isActive: row.is_active,
     createdAt: row.created_at,
     lastSignInAt: lastSignIn.get(row.id) ?? null,
+    coinBalance: row.coin_balance,
     billing: billing.get(row.id) ?? NEVER_PAID,
   }));
 }

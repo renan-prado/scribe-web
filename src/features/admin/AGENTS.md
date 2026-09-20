@@ -875,6 +875,36 @@ parou**. Antes disso a única forma de saber se uma conta era pagante era abrir 
 Stripe: `/admin/metricas` dizia QUANTOS assinantes existem e `/admin/financeiro`
 quanto eles somam, mas nenhuma das duas dizia QUEM.
 
+**E ela CREDITA moedas avulsas**, pelo botão da moeda em cada linha
+(`GrantCoinsDialog` → `POST /api/admin/users/:id/coins`). Antes disso, dar uma
+cortesia a quem perdeu uma gravação por um defeito nosso significava abrir o
+Supabase Studio e somar um número na coluna `coin_balance` à mão: sem lançamento
+no ledger, sem autor, sem motivo, e a uma tecla de editar a linha errada. Um
+crédito feito assim não aparece em `/admin/custos` e não entra no passivo de
+moedas.
+
+**A rota é mais um chamador de `grantCoins`, não uma segunda porta de crédito**
+(ver `src/features/billing/AGENTS.md`, "Todo crédito passa por `fulfill.ts`" —
+o princípio é o mesmo). Daí ela herdar de graça o lançamento com motivo próprio
+(`admin_grant`, que já existia no `GrantReason` esperando por isto), o
+incremento ATÔMICO da RPC e a idempotência por `external_ref`. O `external_ref`
+carrega QUEM deu e um id sorteado no SERVIDOR: quem deu é o que torna o
+lançamento auditável meses depois, e o sorteio do lado de cá é o que faz duas
+cortesias iguais no mesmo minuto serem dois créditos em vez de um — sorteado no
+cliente, um duplo clique viraria crédito dobrado ou nenhum.
+
+**Ela só CREDITA**, com teto de 50.000 por operação. Tirar moeda é estorno, tem
+motivo próprio (`refund`/`chargeback`) e já tem caminho (`clawbackCoins`); um
+campo que aceitasse os dois sinais transformaria um erro de digitação na zeragem
+da conta de um assinante. O MOTIVO digitado vai para o log, nunca para o ledger:
+`coin_transactions.reason` é o vocabulário fechado de `GrantReason`, e texto
+livre nele faria toda consulta que agrupa por motivo ganhar uma cauda de frases
+únicas.
+
+A coluna "Saldo" ao lado veio junto, da mesma linha de `profiles` que a lista já
+lia — sem ela o diálogo pediria um número sem dizer quanto já existe na conta,
+que é justamente o que decide entre dar 50 ou 500.
+
 **O plano vem do espelho; o tempo e o dinheiro vêm do ledger.** Essa divisão é a
 decisão central da tela, e ela não é preciosismo:
 
