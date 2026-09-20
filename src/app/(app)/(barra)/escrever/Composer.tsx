@@ -1,8 +1,8 @@
 "use client";
 
-import { ChevronDown, ChevronUp, Eye, MapPin, Plus, Trash2, X } from "lucide-react";
+import { ChevronDown, ChevronUp, Eye, Highlighter, MapPin, Plus, Trash2, X } from "lucide-react";
 import { useRouter } from "next/navigation";
-import { type ReactNode, useEffect, useRef, useState } from "react";
+import { Fragment, type ReactNode, useEffect, useRef, useState } from "react";
 import { BookGlyph } from "@/components/icons/BookGlyph";
 import { BibloDock } from "@/features/session/components/BibloDock";
 import { EntityFieldDialog } from "@/features/session/components/EntityFieldDialog";
@@ -11,9 +11,11 @@ import { revealSummaryBlock, SUMMARY_BLOCK_ATTR } from "@/features/session/compo
 import { useUnloadGuard } from "@/features/session/hooks/useUnloadGuard";
 import { requestLocationSuggestions, requestSpeakerSuggestions } from "@/features/session/lib/api";
 import { initialsOf } from "@/features/session/lib/text";
+import { hasMark, splitMarks, toggleMark } from "@/lib/domain/mark";
 import { parseVerseReference } from "@/lib/domain/reference";
 import {
   insertionIndex,
+  listItems,
   WRITTEN_LIMITS,
   type WrittenBlock,
   type WrittenSummary,
@@ -192,6 +194,15 @@ export function Composer({
    * estado que mantém a lixeira na tela.
    */
   const [active, setActive] = useState<number | null>(null);
+  /**
+   * Em qual bloco há texto SELECIONADO agora. É o que decide se o botão do
+   * marca-texto existe na pílula.
+   *
+   * Um índice, e não um booleano: a pílula é por bloco, e com um booleano
+   * global ela apareceria no bloco vizinho quando o foco pulasse de um para o
+   * outro sem passar por um recorte vazio.
+   */
+  const [selectedIn, setSelectedIn] = useState<number | null>(null);
   /** O bloco de passagem cujo seletor está aberto. `-1` = um bloco novo. */
   const [pickerFor, setPickerFor] = useState<number | null>(null);
   const [leaving, setLeaving] = useState(false);
@@ -398,21 +409,122 @@ export function Composer({
     );
   }
 
+  /**
+   * O MARCA-TEXTO, ligado e desligado pelo mesmo botão.
+   *
+   * A regra inteira mora em `toggleMark` (`lib/domain/mark.ts`), que é onde a
+   * leitura também vai buscar o que é uma marca. Aqui fica só o que é da TELA:
+   * pegar o recorte da caixa, pedir o texto novo, e devolver o cursor exatamente
+   * sobre o que acabou de ser marcado.
+   *
+   * **O recorte é lido do DOM, não de um estado.** Guardar `selectionStart` a
+   * cada tecla seria um render por movimento de cursor para reproduzir um número
+   * que a `textarea` já tem, e que só é consultado neste clique.
+   *
+   * A devolução do foco é no quadro seguinte porque o texto ainda não foi
+   * repintado: `setSelectionRange` sobre o valor antigo selecionaria o intervalo
+   * certo do texto errado.
+   */
+  function markAt(index: number) {
+    const el = refs.current[index];
+    if (!el) return;
+    const next = toggleMark(el.value, el.selectionStart, el.selectionEnd);
+    if (!next) return;
+    setBlock(index, { text: next.text });
+    requestAnimationFrame(() => {
+      el.focus();
+      el.setSelectionRange(next.start, next.end);
+    });
+  }
+
+  /**
+   * O atalho que a web inteira ensinou: "- " ou "* " no começo de um parágrafo
+   * o vira uma lista de tópicos, "1. " o vira uma lista numerada.
+   *
+   * **Ele mora no `setBlock`, e não numa tecla.** Escrito num `onKeyDown` ele
+   * teria de reconstruir o que o campo vai conter DEPOIS daquela tecla, e
+   * perderia o mesmo gesto feito por colagem ou pelo teclado do celular, que
+   * não emite as teclas uma a uma. Aqui a pergunta é sobre o texto que chegou,
+   * seja de onde for.
+   *
+   * O prefixo é COMIDO na conversão: ele era a instrução, não conteúdo. Deixá-lo
+   * daria "• - item", que é a marca desenhada duas vezes.
+   */
+  function autoformatted(block: WrittenBlock, patch: Partial<WrittenBlock>): Partial<WrittenBlock> {
+    if (block.type !== "paragraph") return patch;
+    const text = (patch as { text?: string }).text;
+    if (typeof text !== "string") return patch;
+    const marker = /^([-*]|\d{1,3}[.)])[ \t]/.exec(text);
+    if (!marker) return patch;
+    const ordered = /\d/.test(marker[1]);
+    return {
+      type: ordered ? "orderedList" : "bulletList",
+      text: text.slice(marker[0].length),
+    } as Partial<WrittenBlock>;
+  }
+
+  function changeBlock(index: number, patch: Partial<WrittenBlock>) {
+    const block = doc.blocks[index];
+    setBlock(index, block ? autoformatted(block, patch) : patch);
+  }
+
   function onKeyDown(index: number, e: React.KeyboardEvent<HTMLTextAreaElement>) {
+    const el = e.currentTarget;
+    const block = doc.blocks[index];
+    const isList = block?.type === "bulletList" || block?.type === "orderedList";
+
     if (e.key === "Enter" && !e.shiftKey) {
+      /**
+       * Numa LISTA, Enter é o comportamento nativo da `textarea`: ele abre uma
+       * linha, e uma linha é um item. Não há nada a fazer, e é por isso que este
+       * ramo termina sem `preventDefault` — foi ele que precisou existir, porque
+       * o Enter de todo o resto do editor CRIA UM BLOCO, e com essa regra valendo
+       * aqui era impossível escrever o segundo tópico de uma lista.
+       *
+       * A exceção é o Enter no vazio, que é como toda lista da web termina:
+       * estando na última linha e ela em branco, a lista se fecha e um parágrafo
+       * nasce abaixo. A linha em branco que sobraria é comida no caminho — ela
+       * era a intenção de sair, não um item.
+       */
+      if (isList) {
+        const caret = el.selectionStart;
+        const lineStart = el.value.lastIndexOf("\n", Math.max(0, caret - 1)) + 1;
+        const currentLine = el.value.slice(lineStart, caret);
+        const atEnd = caret === el.value.length && el.selectionEnd === caret;
+        if (currentLine.trim().length === 0 && atEnd) {
+          e.preventDefault();
+          const kept = el.value.slice(0, lineStart).replace(/\n$/, "");
+          if (listItems(kept).length === 0) {
+            // Uma lista sem nenhum item não é uma lista que acabou, é uma que
+            // nunca começou: ela volta a ser o parágrafo que era, no lugar, em
+            // vez de deixar um bloco vazio para trás e abrir outro.
+            setBlock(index, { type: "paragraph", text: "" });
+            return;
+          }
+          setBlock(index, { text: kept });
+          insertAt(index + 1, emptyBlock("paragraph"));
+        }
+        return;
+      }
       e.preventDefault();
       insertAt(index + 1, emptyBlock("paragraph"));
       return;
     }
-    const el = e.currentTarget;
-    if (
-      e.key === "Backspace" &&
-      el.value.length === 0 &&
-      el.selectionStart === 0 &&
-      doc.blocks.length > 1
-    ) {
-      e.preventDefault();
-      removeAt(index);
+
+    if (e.key === "Backspace" && el.value.length === 0 && el.selectionStart === 0) {
+      // Numa lista vazia, apagar DESFAZ a lista em vez de apagar o bloco: o
+      // gesto de quem chega aqui é "não era isto que eu queria", e devolver o
+      // parágrafo é o desfazer que ele pede. Apagar o bloco inteiro tiraria da
+      // tela a linha em que a pessoa está.
+      if (isList) {
+        e.preventDefault();
+        setBlock(index, { type: "paragraph", text: "" });
+        return;
+      }
+      if (doc.blocks.length > 1) {
+        e.preventDefault();
+        removeAt(index);
+      }
     }
   }
 
@@ -623,8 +735,12 @@ export function Composer({
                   // some desta tela.
                   setAdderAt(null);
                 }}
-                onChange={(patch) => setBlock(i, patch)}
+                onChange={(patch) => changeBlock(i, patch)}
                 onKeyDown={(e) => onKeyDown(i, e)}
+                onSelect={(e) => {
+                  const el = e.currentTarget;
+                  setSelectedIn(el.selectionEnd > el.selectionStart ? i : null);
+                }}
                 onOpenPicker={() => setPickerFor(i)}
                 registerRef={(el) => {
                   refs.current[i] = el;
@@ -676,6 +792,13 @@ export function Composer({
                     conclusionAt !== i + 1
                       ? () => moveBy(i, 1)
                       : undefined
+                  }
+                  /* O marca-texto só existe com um recorte na mão, e só nos
+                     blocos cuja LEITURA passa pelo `RichText` — marcar onde a
+                     marca não vai aparecer seria um botão que engole o gesto.
+                     Ver `MARKABLE`. */
+                  onMark={
+                    selectedIn === i && MARKABLE.has(block.type) ? () => markAt(i) : undefined
                   }
                   onDelete={() => removeAt(i)}
                 />
@@ -1112,6 +1235,7 @@ function BlockControls({
   onAdd,
   onUp,
   onDown,
+  onMark,
   onDelete,
 }: {
   /** Há um menu de blocos aberto em algum lugar: nenhuma pílula aparece. */
@@ -1121,6 +1245,20 @@ function BlockControls({
   onAdd: () => void;
   onUp?: () => void;
   onDown?: () => void;
+  /**
+   * Marca ou desmarca o trecho selecionado. `undefined` quando não há recorte
+   * na mão, ou quando este bloco não desenha marca na leitura — e aí o botão
+   * não fica desabilitado, ele SOME.
+   *
+   * É a única exceção à regra da largura fixa que os dois botões de mover
+   * seguem (eles ficam a 30% em vez de sumir, para a pílula deste bloco ter a
+   * mesma largura da dos vizinhos). A razão é que mover é uma ação que sempre
+   * existe — estar no topo é circunstância —, e marcar depende de um gesto que
+   * ainda não aconteceu. Um botão permanentemente apagado, que só acende
+   * quando se arrasta o dedo sobre uma palavra, é uma charada; um que aparece
+   * no instante da seleção é uma resposta.
+   */
+  onMark?: () => void;
   onDelete: () => void;
 }) {
   return (
@@ -1145,6 +1283,20 @@ function BlockControls({
       <ControlButton label="Adicionar bloco acima" onClick={onAdd}>
         <Plus className="size-3.5" />
       </ControlButton>
+      {/* O MARCA-TEXTO entra aqui, e não numa barra flutuante sobre a seleção.
+          Uma barra própria teria de ser posicionada em cima de um recorte
+          dentro de uma `textarea`, que é a única coisa da página cuja geometria
+          o DOM não expõe — daria um espelho de medição só para achar o pixel. E
+          o argumento que tirou o `+` do vão vale igual aqui: numa barra que já
+          existe, e que já aparece na hora certa, isto é um botão a mais.
+
+          O fio fica DEPOIS dele: o `+` e o marca-texto são as duas ações que
+          escrevem no texto, e mover/excluir são as que mexem no bloco. */}
+      {onMark ? (
+        <ControlButton keepFocus label="Marcar o trecho selecionado" onClick={onMark}>
+          <Highlighter className="size-3.5" />
+        </ControlButton>
+      ) : null}
       <span aria-hidden className="mx-0.5 h-4 w-px bg-scriba-hairline" />
       <ControlButton label="Mover para cima" onClick={onUp}>
         <ChevronUp className="size-3.5" />
@@ -1163,16 +1315,31 @@ function ControlButton({
   label,
   onClick,
   destructive,
+  keepFocus,
   children,
 }: {
   label: string;
   onClick?: () => void;
   destructive?: boolean;
+  /**
+   * Não tira o foco da caixa ao ser apertado.
+   *
+   * É o que o botão do marca-texto precisa: ele age sobre o RECORTE que está na
+   * `textarea`, e apertar um botão comum move o foco para ele. Os navegadores
+   * até preservam `selectionStart`/`selectionEnd` de uma caixa desfocada, mas
+   * "até preservam" não é contrato — e o modo de falhar seria o pior possível,
+   * um botão que não faz nada em um navegador só.
+   *
+   * `preventDefault` no `mousedown` é o jeito canônico: o foco nunca sai, então
+   * não há recorte a preservar.
+   */
+  keepFocus?: boolean;
   children: ReactNode;
 }) {
   return (
     <button
       type="button"
+      onMouseDown={keepFocus ? (e) => e.preventDefault() : undefined}
       aria-label={label}
       title={label}
       disabled={!onClick}
@@ -1194,6 +1361,119 @@ function ControlButton({
 }
 
 /**
+ * Onde o marca-texto vale.
+ *
+ * São exatamente os blocos cuja LEITURA passa pelo `RichText`, que é quem
+ * transforma `==assim==` na faixa amarela. Oferecer o botão fora dessa lista
+ * seria deixar a pessoa marcar um trecho e descobrir, na leitura, que a marca
+ * virou dois sinais de igual no meio da frase.
+ *
+ * Ficam de fora, e cada um por uma razão própria: o `h1` e o `h2`, onde a
+ * hierarquia já é o destaque; o `highlight`, que É a frase destacada e ganharia
+ * uma segunda camada de amarelo sobre a primeira; o `bibleQuote`, cujo texto
+ * vem da NVI e não é nosso para grifar; e o `quote`, que na leitura não passa
+ * pelo `RichText`. Se o `quote` passar a passar, ele entra aqui no mesmo
+ * commit.
+ */
+const MARKABLE = new Set<WrittenBlock["type"]>([
+  "paragraph",
+  "example",
+  "conclusion",
+  "bulletList",
+  "orderedList",
+]);
+
+/**
+ * O texto CRU com a faixa amarela atrás dos trechos marcados, para o espelho.
+ *
+ * Ele reproduz o texto exatamente como está na caixa, `==` inclusive, e é essa
+ * fidelidade que faz o espelho quebrar a linha onde a caixa quebra — a razão de
+ * ele existir. As cercas ficam DENTRO do amarelo, o que é um efeito colateral
+ * que se aceitou de bom grado: elas são a única coisa na tela que ensina a
+ * sintaxe a quem não usou o botão.
+ *
+ * Sem `px` nenhum, ao contrário da leitura: qualquer recuo horizontal aqui
+ * empurra o texto invisível e tira o espelho de fase com a caixa.
+ */
+/** O que toda caixa deste editor recebe igual. */
+type SharedField = {
+  onKeyDown: (e: React.KeyboardEvent<HTMLTextAreaElement>) => void;
+  onFocus: () => void;
+  onSelect: (e: React.SyntheticEvent<HTMLTextAreaElement>) => void;
+  textareaRef: (el: HTMLTextAreaElement | null) => void;
+  placeholder: string;
+};
+
+function MarkMirror({ text }: { text: string }) {
+  return (
+    <>
+      {splitMarks(text).map((piece, index) =>
+        piece.marked ? (
+          <span
+            // biome-ignore lint/suspicious/noArrayIndexKey: lista derivada de string imutável
+            key={index}
+            className="highlight-phrase [-webkit-box-decoration-break:clone] [box-decoration-break:clone]"
+          >{`==${piece.text}==`}</span>
+        ) : (
+          // biome-ignore lint/suspicious/noArrayIndexKey: lista derivada de string imutável
+          <Fragment key={index}>{piece.text}</Fragment>
+        )
+      )}
+    </>
+  );
+}
+
+/**
+ * Uma caixa de prosa que MOSTRA o marca-texto enquanto se escreve.
+ *
+ * Mesma solução da frase de destaque e da lista: uma `textarea` não tem como
+ * pintar parte do próprio texto, então o amarelo vem de um espelho atrás dela,
+ * com a mesma tipografia e a mesma largura. O espelho só é montado quando há
+ * marca — o caso comum é não haver, e um `div` a mais por parágrafo num texto
+ * de cinquenta blocos é trabalho de layout por nada.
+ *
+ * **Nenhum dos dois leva `text-pretty`**, e é por isso que ele saiu das classes
+ * destes três blocos: a `textarea` não o aplica, então ele nunca fez efeito
+ * aqui — só dava ao espelho uma quebra de linha que a caixa não tem.
+ */
+function MarkableField({
+  shared,
+  value,
+  onChange,
+  ariaLabel,
+  className,
+}: {
+  shared: SharedField;
+  value: string;
+  onChange: (text: string) => void;
+  ariaLabel: string;
+  className: string;
+}) {
+  return (
+    <div className="relative">
+      {hasMark(value) ? (
+        <div
+          aria-hidden
+          className={cn(
+            className,
+            "pointer-events-none absolute inset-0 whitespace-pre-wrap break-words text-transparent"
+          )}
+        >
+          <MarkMirror text={value} />
+        </div>
+      ) : null}
+      <AutoTextarea
+        {...shared}
+        value={value}
+        onChange={onChange}
+        ariaLabel={ariaLabel}
+        className={cn(className, "relative")}
+      />
+    </div>
+  );
+}
+
+/**
  * O corpo de um bloco, com as classes do `BlockRenderer` equivalente.
  *
  * A duplicação das classes é deliberada e é o custo de não ter editor de rich
@@ -1208,6 +1488,7 @@ function BlockBody({
   onFocus,
   onChange,
   onKeyDown,
+  onSelect,
   onOpenPicker,
   registerRef,
 }: {
@@ -1216,12 +1497,14 @@ function BlockBody({
   onFocus: () => void;
   onChange: (patch: Partial<WrittenBlock>) => void;
   onKeyDown: (e: React.KeyboardEvent<HTMLTextAreaElement>) => void;
+  onSelect: (e: React.SyntheticEvent<HTMLTextAreaElement>) => void;
   onOpenPicker: () => void;
   registerRef: (el: HTMLTextAreaElement | null) => void;
 }) {
-  const shared = {
+  const shared: SharedField = {
     onKeyDown,
     onFocus,
+    onSelect,
     textareaRef: registerRef,
     placeholder: BLOCK_PLACEHOLDERS[block.type],
   };
@@ -1288,6 +1571,88 @@ function BlockBody({
           />
         </div>
       </figure>
+    );
+  }
+
+  if (block.type === "bulletList" || block.type === "orderedList") {
+    /**
+     * Uma lista é UMA `textarea`, com um item por linha, e os marcadores são
+     * pintados ATRÁS dela por um espelho.
+     *
+     * É a mesma solução da frase de destaque, algumas linhas abaixo, e pela
+     * mesma impossibilidade: uma `textarea` é uma caixa de texto simples, não
+     * tem `::marker` nem como desenhar coisa alguma por linha. O espelho é um
+     * `div` com a MESMA tipografia, a MESMA largura útil e o MESMO recuo,
+     * então ele quebra as linhas exatamente onde a caixa quebra — e cada item
+     * do espelho ocupa o mesmo número de linhas que o item da caixa, o que é o
+     * que mantém a bolinha na altura certa mesmo num tópico de três linhas.
+     *
+     * Daí duas regras que parecem detalhe e não são:
+     *
+     * - **o texto do espelho é TRANSPARENTE, e precisa estar lá.** Ele não é
+     *   visível; ele é o que empurra o próximo marcador para baixo na medida
+     *   certa. Um espelho só com os marcadores os empilharia todos no topo.
+     * - **nada de `text-pretty` em nenhum dos dois.** Ele muda a quebra e a
+     *   `textarea` não o aplica: seria a única diferença capaz de tirar os
+     *   marcadores de fase com o texto. Pela mesma razão o `pl-5` daqui é o
+     *   `ml-5` da leitura (ver `BlockRenderer`) — os dois números andam juntos.
+     *
+     * A NUMERAÇÃO é contada aqui, pulando as linhas em branco, porque é assim
+     * que a leitura conta: lá quem numera é o `<ol>`, que só enxerga os itens
+     * que sobraram depois do `listItems`. Contar as linhas cruas faria a caixa
+     * mostrar "3." num item que a leitura vai chamar de 2.
+     *
+     * O marcador fica numa calha de 20px: a bolinha centrada, o número
+     * encostado à direita, que é aproximadamente onde `list-disc` e
+     * `list-decimal` os põem. Os poucos pixels de diferença entre a escrita e a
+     * leitura são o preço de não ter editor de rich text, e eles caem na
+     * MARCA — o texto, que é o que se lê, começa no mesmo lugar nas duas.
+     */
+    const ordered = block.type === "orderedList";
+    const face = "text-[15px] font-light leading-[1.72]";
+    let position = 0;
+    return (
+      <div className="relative">
+        <div aria-hidden className="pointer-events-none absolute inset-0">
+          {block.text.split(/\r?\n/).map((item, index) => {
+            const filled = item.trim().length > 0;
+            if (filled) position += 1;
+            return (
+              <div
+                // biome-ignore lint/suspicious/noArrayIndexKey: a linha É a posição, não um dado com identidade
+                key={`marker-${index}`}
+                className={cn(
+                  face,
+                  "relative whitespace-pre-wrap break-words pl-5 text-transparent"
+                )}
+              >
+                {filled ? (
+                  <span
+                    className={cn(
+                      "absolute top-0 left-0 w-5 text-scriba-ink-mute",
+                      ordered ? "pr-1.5 text-right tabular-nums" : "text-center"
+                    )}
+                  >
+                    {ordered ? `${position}.` : "•"}
+                  </span>
+                ) : null}
+                {/* O espaço fixo dá ALTURA à linha em branco. Sem ele o item
+                    vazio que o Enter acabou de abrir tem zero de altura no
+                    espelho e um de altura na caixa, e todos os marcadores
+                    abaixo dele sobem uma linha. */}
+                <MarkMirror text={item || " "} />
+              </div>
+            );
+          })}
+        </div>
+        <AutoTextarea
+          {...shared}
+          value={block.text}
+          onChange={(text) => onChange({ text })}
+          ariaLabel={ordered ? "Tópicos numerados" : "Tópicos"}
+          className={cn(face, "relative whitespace-pre-wrap break-words pl-5 text-scriba-ink")}
+        />
+      </div>
     );
   }
 
@@ -1373,12 +1738,12 @@ function BlockBody({
         <span className="mb-1.5 block font-semibold text-[10px] text-scriba-ink-mute uppercase tracking-[0.14em]">
           Exemplo do pregador
         </span>
-        <AutoTextarea
-          {...shared}
+        <MarkableField
+          shared={shared}
           value={block.text}
           onChange={(text) => onChange({ text })}
           ariaLabel="Exemplo do pregador"
-          className="text-pretty font-light text-scriba-ink text-sm leading-relaxed"
+          className="font-light text-scriba-ink text-sm leading-relaxed"
         />
       </aside>
     );
@@ -1413,24 +1778,24 @@ function BlockBody({
           <ScribaMark className="size-3" />
           Conclusão
         </span>
-        <AutoTextarea
-          {...shared}
+        <MarkableField
+          shared={shared}
           value={block.text}
           onChange={(text) => onChange({ text })}
           ariaLabel="Conclusão"
-          className="text-pretty font-light text-[15px] text-session-verse-text leading-[1.7]"
+          className="font-light text-[15px] text-session-verse-text leading-[1.7]"
         />
       </section>
     );
   }
 
   return (
-    <AutoTextarea
-      {...shared}
+    <MarkableField
+      shared={shared}
       value={block.text}
       onChange={(text) => onChange({ text })}
       ariaLabel="Parágrafo"
-      className="text-pretty font-light text-[15px] text-scriba-ink leading-[1.72]"
+      className="font-light text-[15px] text-scriba-ink leading-[1.72]"
     />
   );
 }

@@ -32,6 +32,9 @@ type Props = {
   className?: string;
   onKeyDown?: (e: React.KeyboardEvent<HTMLTextAreaElement>) => void;
   onFocus?: () => void;
+  /** O recorte mudou dentro da caixa. Quem escuta é a barra do marca-texto,
+   *  que só existe enquanto houver texto selecionado. Ver `BlockControls`. */
+  onSelect?: (e: React.SyntheticEvent<HTMLTextAreaElement>) => void;
   ariaLabel: string;
   textareaRef?: (el: HTMLTextAreaElement | null) => void;
 };
@@ -43,6 +46,7 @@ export function AutoTextarea({
   className,
   onKeyDown,
   onFocus,
+  onSelect,
   ariaLabel,
   textareaRef,
 }: Props) {
@@ -73,6 +77,7 @@ export function AutoTextarea({
       onChange={(e) => onChange(e.target.value)}
       onKeyDown={onKeyDown}
       onFocus={onFocus}
+      onSelect={onSelect}
       className={cn(
         // `block` NÃO é decoração. Uma `textarea` é inline-block por padrão,
         // e um inline-block pousa na LINHA DE BASE do pai: sobra por baixo

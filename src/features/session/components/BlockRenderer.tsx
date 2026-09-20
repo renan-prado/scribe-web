@@ -3,7 +3,7 @@ import { ChapterMention } from "@/features/session/components/ChapterMention";
 import { PassageVerses } from "@/features/session/components/PassageVerses";
 import { RichText } from "@/features/session/components/RichText";
 import { parseVerseReference } from "@/lib/domain/reference";
-import type { SummaryBlock } from "@/lib/domain/summary";
+import { listItems, type SummaryBlock } from "@/lib/domain/summary";
 import { ScribaMark } from "@/shared/brand";
 
 export function blockKey(block: SummaryBlock): string {
@@ -50,6 +50,54 @@ export function BlockRenderer({ block }: { block: SummaryBlock }) {
           ))}
         </div>
       );
+    case "bulletList":
+    case "orderedList": {
+      /**
+       * A lista inteira é UM bloco, e cada linha de `text` é um item (ver
+       * `listItems`, em `lib/domain/summary.ts`).
+       *
+       * **A numeração do `orderedList` é derivada aqui, pelo `<ol>`, e nunca
+       * guardada.** Um "1." escrito dentro do texto sobreviveria a mover o
+       * bloco e a apagar um item, e no primeiro reordenamento o banco diria
+       * "3." onde a tela mostra o segundo. Quem conta é o navegador.
+       *
+       * **Não há vão entre os itens, e isso não é aperto: é o que mantém o
+       * editor honesto.** Lá a lista é UMA `textarea` com uma linha por item, e
+       * uma `textarea` não tem como pôr 8px entre duas linhas suas. Com um
+       * `gap` aqui, os marcadores desenhados atrás da caixa (ver o espelho no
+       * `Composer`) sairiam de fase com o texto a partir do segundo item. A
+       * entrelinha de 1,72 já dá quase 26px por linha, que é ar de sobra para
+       * uma lista de tópicos.
+       *
+       * `marker:` pinta a bolinha e o número na tinta apagada: em cheio eles
+       * pesam mais que as palavras que anunciam. O recuo é de 1,25rem, e ele é
+       * o MESMO `pl-5` da caixa do editor — os dois números andam juntos, senão
+       * a lista quebra a linha num lugar na escrita e noutro na leitura.
+       */
+      const items = listItems(block.text);
+      if (items.length === 0) return null;
+      const face =
+        "ml-5 text-pretty text-[15px] font-light leading-[1.72] text-scriba-ink marker:text-scriba-ink-mute";
+      return block.type === "orderedList" ? (
+        <ol className={`list-decimal ${face} marker:tabular-nums`}>
+          {items.map((item, index) => (
+            // biome-ignore lint/suspicious/noArrayIndexKey: itens de um texto imutável, a ordem é estável
+            <li key={`item-${index}`}>
+              <RichText>{item}</RichText>
+            </li>
+          ))}
+        </ol>
+      ) : (
+        <ul className={`list-disc ${face}`}>
+          {items.map((item, index) => (
+            // biome-ignore lint/suspicious/noArrayIndexKey: itens de um texto imutável, a ordem é estável
+            <li key={`item-${index}`}>
+              <RichText>{item}</RichText>
+            </li>
+          ))}
+        </ul>
+      );
+    }
     case "example":
       return (
         <aside className="relative rounded-2xl border-l-4 border-[var(--session-example-border)] bg-[var(--session-example-bg)] px-5 py-4">

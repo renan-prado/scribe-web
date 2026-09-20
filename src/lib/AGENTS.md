@@ -623,6 +623,13 @@ nunca disparava com o modelo novo, nem em áudio com 27% de WER.
 - `deploy.ts`: `IS_PRODUCTION_DEPLOY` (`VERCEL_ENV === "production"`). É a
   chave de GA4 e de indexação. Ler `process.env` não torna a rota dinâmica.
 - `seo.ts`: fonte única de domínio, título e descrição. Ver `src/app/AGENTS.md`.
+- `domain/mark.ts`: **client-safe**, a sintaxe do MARCA-TEXTO (`==assim==`) e o
+  toggle dela. Ela é sintaxe dentro da string, e não formatação no schema,
+  porque a invariante que sustenta o editor é que todo bloco é `{ type, text }`,
+  string pura — ver `domain/summary.ts` e `src/app/AGENTS.md`. A leitura
+  (`RichText`) e o editor (`Composer`) leem daqui; uma segunda regex em qualquer
+  uma das duas pontas faria a tela e o salvamento discordarem sobre o que é uma
+  marca.
 - `idb-storage.ts`: **client-safe**. Um `AsyncStorage` de três métodos sobre o
   IndexedDB, para o persistidor do TanStack Query (`shared/components/Providers.tsx`).
   Não é `localStorage` porque aquele é SÍNCRONO: serializar o cache na thread

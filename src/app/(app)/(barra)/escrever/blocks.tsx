@@ -1,6 +1,16 @@
 "use client";
 
-import { Flag, Heading1, Heading2, Highlighter, Lightbulb, Pilcrow, Quote } from "lucide-react";
+import {
+  Flag,
+  Heading1,
+  Heading2,
+  Highlighter,
+  Lightbulb,
+  List,
+  ListOrdered,
+  Pilcrow,
+  Quote,
+} from "lucide-react";
 import type { ReactNode } from "react";
 import { BookGlyph } from "@/components/icons/BookGlyph";
 import type { WrittenBlock, WrittenBlockType } from "@/lib/domain/summary";
@@ -99,6 +109,18 @@ export const BLOCK_OPTIONS: BlockOption[] = [
     icon: <Heading2 className="size-4" />,
   },
   {
+    type: "bulletList",
+    label: "Tópicos",
+    hint: "Uma lista de pontos. Um por linha.",
+    icon: <List className="size-4" />,
+  },
+  {
+    type: "orderedList",
+    label: "Tópicos numerados",
+    hint: "O mesmo, em ordem. Os números saem sozinhos.",
+    icon: <ListOrdered className="size-4" />,
+  },
+  {
     type: "bibleQuote",
     label: "Passagem bíblica",
     hint: "Escolha o livro, o capítulo e os versículos.",
@@ -160,6 +182,8 @@ export const BLOCK_PLACEHOLDERS: Record<WrittenBlockType, string> = {
   paragraph: "Escreva…",
   h1: "Título desta parte",
   h2: "Subtítulo",
+  bulletList: "Um tópico por linha",
+  orderedList: "Um tópico por linha",
   bibleQuote: "Escolha a passagem",
   highlight: "A frase que resume tudo",
   example: "A história que ele contou",

@@ -196,6 +196,15 @@ tinta. O teste da força é o PARÁGRAFO, nunca a palavra isolada: de perto a
 marcação sempre parece fraca demais, e foi essa impressão que já levou a escala
 a 70% uma vez.
 
+- **O MARCA-TEXTO é repartido ANTES de tudo**, e a ordem é o que torna as duas
+  camadas compatíveis. A marca é da PESSOA (ela arrastou o dedo e disse "isto
+  importa"), a anotação é do SISTEMA. Anotando primeiro, as cercas `==` cairiam
+  no meio de um segmento já fechado e apareceriam como texto na tela. O efeito
+  colateral é uma regra e não um defeito: **uma menção partida ao meio por uma
+  marca deixa de ser menção** — marcar "João 3" e deixar o ":16" de fora entrega
+  dois pedaços, e nenhum deles é a referência. A sintaxe inteira mora em
+  `lib/domain/mark.ts`, e a faixa é a `.highlight-phrase`, a MESMA da frase de
+  destaque: um segundo amarelo seria uma segunda gramática para a mesma ideia.
 - **A passada de referência vem ANTES da de nomes, e exige número de
   capítulo.** É o que separa o evangelho do apóstolo: "João 3:16" é consumido
   inteiro pela primeira passada. Um "João" solto no meio da frase continua

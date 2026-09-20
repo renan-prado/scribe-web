@@ -414,6 +414,43 @@ o espaço dos descendentes: quatro píxeis que ninguém pediu, dentro da superf�
 do foco (que ficava alta demais, com o texto encostado no topo) e somados a cada
 dois parágrafos do documento.
 
+**TÓPICOS e TÓPICOS NUMERADOS são dois blocos novos, e uma LISTA INTEIRA é UM
+bloco**, com um item por linha de `text`. Um bloco por item foi considerado e
+recusado: o `map` do `SummaryView` é um-para-um com `blocks` de propósito (é a
+numeração que a gaveta do Biblo usa para rolar até um bloco e piscar nele), e
+agrupar itens consecutivos num `<ul>` a desalinharia em silêncio. A numeração do
+`orderedList` é derivada pelo `<ol>` na leitura, NUNCA guardada — guardada, ela
+sobreviveria a mover o bloco e o banco diria "3." onde a tela mostra o segundo.
+
+Três gestos, os da web inteira: `- `, `* ` ou `1. ` no começo de um parágrafo o
+convertem (a detecção mora no `setBlock`, não numa tecla, para pegar também
+colagem e teclado de celular); Enter abre um item; Enter numa linha vazia no fim
+fecha a lista e abre um parágrafo. Backspace numa lista vazia a DESFAZ em vez de
+apagar o bloco.
+
+**O MARCA-TEXTO é sintaxe dentro da string, `==assim==`** (`lib/domain/mark.ts`),
+e não formatação no schema. É o que preserva a invariante que sustenta este
+editor inteiro: todo bloco é `{ type, text }`, string pura. Um marca-texto em nós
+e marcas obrigaria a uma segunda representação do documento, que é exatamente o
+que o editor existe para não ter. Ele vale onde a leitura passa pelo `RichText`
+(parágrafo, exemplo, conclusão e os itens de lista) — `MARKABLE`, no `Composer`
+—, e a faixa amarela é a MESMA da frase de destaque.
+
+**O botão dele mora na pílula de controles que já existe**, e aparece quando há
+recorte na mão. Uma barra flutuante sobre a seleção precisaria medir a geometria
+de um recorte DENTRO de uma `textarea`, que é a única coisa da página cuja
+posição o DOM não expõe; e o argumento que tirou o `+` do vão vale igual aqui.
+Ele é o único botão da pílula que SOME em vez de ficar apagado, porque marcar
+depende de um gesto que ainda não aconteceu.
+
+**Os três blocos novos são desenhados por ESPELHO no editor**, a mesma técnica
+que a frase de destaque já usava: um `div` atrás da `textarea`, com a mesma
+tipografia e a mesma largura, pintando o que a caixa não sabe pintar (a bolinha,
+o número, o amarelo). Daí uma regra que parece detalhe: **nenhum dos dois leva
+`text-pretty`**, e ele saiu das classes dos blocos de prosa por isso — a
+`textarea` não o aplica, então ele nunca fez efeito ali, só dava ao espelho uma
+quebra de linha que a caixa não tem.
+
 **O vocabulário do editor é o do resumo, INTEIRO** (`WRITTEN_BLOCK_TYPES`), e
 essa igualdade é o que torna seguro abrir aqui um resumo que a IA escreveu:
 enquanto faltava um tipo, salvar apagava em silêncio os blocos daquele tipo. O

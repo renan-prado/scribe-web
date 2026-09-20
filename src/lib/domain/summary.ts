@@ -17,6 +17,10 @@ export const SummaryBlockSchema = z.discriminatedUnion("type", [
   z.object({ type: z.literal("h1"), text: z.string() }),
   z.object({ type: z.literal("h2"), text: z.string() }),
   z.object({ type: z.literal("paragraph"), text: z.string() }),
+  // As duas LISTAS. Uma lista inteira é UM bloco, e cada LINHA de `text` é um
+  // item: ver o cabeçalho de `WRITTEN_BLOCK_TYPES`.
+  z.object({ type: z.literal("bulletList"), text: z.string() }),
+  z.object({ type: z.literal("orderedList"), text: z.string() }),
   z.object({ type: z.literal("bibleQuote"), reference: z.string(), text: z.string() }),
   z.object({ type: z.literal("highlight"), text: z.string() }),
   z.object({ type: z.literal("example"), text: z.string() }),
@@ -80,6 +84,8 @@ export function parseSummaryFromLLM(content: string, phase: SummaryPhase): Summa
       }
       case "h2":
       case "paragraph":
+      case "bulletList":
+      case "orderedList":
       case "highlight":
       case "example": {
         if (phase === "intro") break;
@@ -130,6 +136,18 @@ export function parseSummaryFromLLM(content: string, phase: SummaryPhase): Summa
  *   pregação, onde o pregador existe, e mesmo na folha em branco quem escreve
  *   pode estar transcrevendo à mão o sermão de outra pessoa (é a mesma razão de
  *   `speaker_name` continuar editável em `/summary`).
+ * - **Uma LISTA inteira é UM bloco, e cada linha de `text` é um item.** A
+ *   alternativa era um bloco por item, e ela quebra duas coisas deste produto.
+ *   A primeira é o `SummaryView`, cujo `map` é um-para-um com `blocks` de
+ *   propósito: é essa numeração que a gaveta do Biblo usa para rolar até um
+ *   bloco e piscar nele (`revealSummaryBlock`), e agrupar itens consecutivos
+ *   num `<ul>` a desalinharia em silêncio. A segunda é a própria promessa dos
+ *   blocos: eles são `{ type, text }`, string pura, e um item de lista que
+ *   precisa saber que é o terceiro de uma sequência é estado escondido entre
+ *   dois blocos vizinhos. Com a lista inteira num bloco, reordenar, apagar e
+ *   mover continuam sendo as mesmas operações de sempre, e a NUMERAÇÃO do
+ *   `orderedList` é derivada na hora de desenhar — ela nunca é guardada, então
+ *   não existe o dia em que o banco diz "3." e a tela mostra o segundo item.
  * - **Não há um terceiro nível de título.** O produto desenha DOIS pesos
  *   (`h1` a 22px bold, `h2` a 18px semibold) e um terceiro cairia entre o `h2`
  *   e o parágrafo, indistinguível a um braço de distância no celular, num tipo
@@ -149,6 +167,8 @@ export const WRITTEN_BLOCK_TYPES = [
   "h1",
   "h2",
   "paragraph",
+  "bulletList",
+  "orderedList",
   "highlight",
   "example",
   "quote",
@@ -173,6 +193,8 @@ const WrittenBlockSchema = z.discriminatedUnion("type", [
   z.object({ type: z.literal("h1"), text: z.string().max(WRITTEN_LIMITS.blockText) }),
   z.object({ type: z.literal("h2"), text: z.string().max(WRITTEN_LIMITS.blockText) }),
   z.object({ type: z.literal("paragraph"), text: z.string().max(WRITTEN_LIMITS.blockText) }),
+  z.object({ type: z.literal("bulletList"), text: z.string().max(WRITTEN_LIMITS.blockText) }),
+  z.object({ type: z.literal("orderedList"), text: z.string().max(WRITTEN_LIMITS.blockText) }),
   z.object({ type: z.literal("highlight"), text: z.string().max(WRITTEN_LIMITS.blockText) }),
   z.object({ type: z.literal("example"), text: z.string().max(WRITTEN_LIMITS.blockText) }),
   z.object({
@@ -203,6 +225,23 @@ export const WrittenSummarySchema = z.object({
 export type WrittenSummary = z.infer<typeof WrittenSummarySchema>;
 
 /**
+ * Os itens de uma lista, um por linha, sem as linhas em branco.
+ *
+ * É a ÚNICA leitura de um bloco de lista no produto inteiro, e ela mora aqui
+ * porque três lugares fazem a mesma pergunta: a leitura (`BlockRenderer`), o
+ * editor (o espelho dos marcadores, em `Composer`) e a normalização do
+ * salvamento logo abaixo. Escrita três vezes, bastaria uma delas tratar o
+ * `\r\n` de um texto colado do Word para os marcadores saírem de fase com o
+ * texto.
+ */
+export function listItems(text: string): string[] {
+  return text
+    .split(/\r?\n/)
+    .map((line) => line.trim())
+    .filter((line) => line.length > 0);
+}
+
+/**
  * O que o editor mandou, virado no payload que o resto do produto lê.
  *
  * `thinking` nasce vazio e continua vazio: ele é o rascunho do MODELO antes de
@@ -218,6 +257,15 @@ export function writtenToPayload(written: WrittenSummary): SummaryPayload {
       const reference = b.reference.trim();
       if (!reference) continue;
       blocks.push({ type: "bibleQuote", reference, text: b.text.trim() });
+      continue;
+    }
+    if (b.type === "bulletList" || b.type === "orderedList") {
+      // Linha em branco no meio de uma lista é um item vazio, e ele existe
+      // enquanto se escreve: é a linha que o Enter acabou de abrir. Salvá-lo
+      // faria a leitura desenhar uma bolinha sozinha no meio dos tópicos.
+      const items = listItems(b.text);
+      if (items.length === 0) continue;
+      blocks.push({ type: b.type, text: items.join("\n") });
       continue;
     }
     const text = b.text.trim();
