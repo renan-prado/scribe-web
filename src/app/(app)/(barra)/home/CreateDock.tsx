@@ -5,6 +5,8 @@ import { useEffect, useRef, useState } from "react";
 import { MicGlyph } from "@/components/icons/MicGlyph";
 import { YoutubeIcon } from "@/components/icons/YoutubeIcon";
 import { NavLink } from "@/components/NavLink";
+import { AiPaywallDialog } from "@/features/billing/components/AiPaywallDialog";
+import { useCoinsStore } from "@/features/coins/store";
 import { useTourReveal } from "@/features/tour/lib/reveal";
 import { cn } from "@/lib/utils";
 
@@ -157,6 +159,28 @@ export function CreateDock() {
   const visible = scrolledIn || revealed;
   const lastY = useRef(0);
 
+  /**
+   * As duas portas que custam moeda ficam FECHADAS quando o saldo acabou, e o
+   * toque nelas abre a explicação em vez da tela.
+   *
+   * Antes elas navegavam: a pessoa chegava ao gravador, deixava o microfone
+   * aberto durante a pregação e descobria no fim que não havia saldo para
+   * transcrever. A parede existia, só estava no lugar errado — depois do
+   * trabalho, em vez de antes dele.
+   *
+   * `balance === null` é "ainda não sei" e passa direto, nunca bloqueia: o
+   * chip do saldo é semeado pelo layout (ver `CoinsSync`), mas um carregamento
+   * lento não pode transformar uma conta paga numa parede. Só o ZERO lido
+   * fecha a porta, que é o mesmo princípio do `requireBalance` do servidor.
+   *
+   * **A terceira porta nunca fecha.** Escrever à mão não custa moeda nenhuma e
+   * não vai custar — é essa a promessa que o `AiPaywallDialog` repete do outro
+   * lado do toque.
+   */
+  const balance = useCoinsStore((s) => s.balance);
+  const broke = balance === 0;
+  const [paywall, setPaywall] = useState<string | null>(null);
+
   useEffect(() => {
     lastY.current = window.scrollY;
     function onScroll() {
@@ -289,6 +313,7 @@ export function CreateDock() {
                   label="Importar do YouTube"
                   tourId="create-import"
                   onNavigate={() => setTapped(false)}
+                  onBlocked={broke ? () => setPaywall("importar um vídeo") : undefined}
                 />
                 {/* Escrever não custa moeda nenhuma — não há STT nem chamada de
                   modelo em lugar nenhum dele —, e por isso não leva pastilha de
@@ -315,6 +340,9 @@ export function CreateDock() {
                   accent
                   tourId="create-record"
                   onNavigate={() => setTapped(false)}
+                  onBlocked={
+                    broke ? () => setPaywall("gravar e receber o resumo pronto") : undefined
+                  }
                 />
               </div>
             </nav>
@@ -359,6 +387,14 @@ export function CreateDock() {
           </button>
         </div>
       </div>
+
+      <AiPaywallDialog
+        open={paywall !== null}
+        onOpenChange={(next) => {
+          if (!next) setPaywall(null);
+        }}
+        action={paywall ?? ""}
+      />
     </>
   );
 }
@@ -410,6 +446,7 @@ function CreateOption({
   accent = false,
   tourId,
   onNavigate,
+  onBlocked,
 }: {
   href: string;
   icon: React.ReactNode;
@@ -423,12 +460,27 @@ function CreateOption({
    */
   tourId?: string;
   onNavigate: () => void;
+  /**
+   * A porta está fechada: em vez de navegar, ela explica por quê.
+   *
+   * `undefined` é o caso normal, e é o que mantém a porta um LINK de verdade —
+   * com adiantamento de rota, abertura em nova aba e tudo o mais que um `<a>`
+   * dá de graça. Só quando o saldo acabou é que o toque vira uma conversa; ver
+   * `AiPaywallDialog`.
+   */
+  onBlocked?: () => void;
 }) {
   return (
     <NavLink
       href={href}
       data-tour={tourId}
-      onClick={onNavigate}
+      onClick={(event) => {
+        if (onBlocked) {
+          event.preventDefault();
+          onBlocked();
+        }
+        onNavigate();
+      }}
       spinner="none"
       contentClassName="flex flex-col items-center gap-2"
       className="group flex w-[70px] min-w-0 flex-col rounded-2xl focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-v2-ink-mute"

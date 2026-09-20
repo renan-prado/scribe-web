@@ -1,11 +1,13 @@
 "use client";
 
 import { PenLine } from "lucide-react";
-import type { ReactNode } from "react";
+import { type ReactNode, useState } from "react";
 import { MicGlyph } from "@/components/icons/MicGlyph";
 import { YoutubeIcon } from "@/components/icons/YoutubeIcon";
 import { NavLink } from "@/components/NavLink";
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/components/ui/tooltip";
+import { AiPaywallDialog } from "@/features/billing/components/AiPaywallDialog";
+import { useCoinsStore } from "@/features/coins/store";
 import { TOPBAR_CHIP_CLASS } from "./chip";
 
 /**
@@ -77,6 +79,7 @@ export function ImportAction() {
       label="Importar do YouTube"
       icon={<YoutubeIcon className="size-5" />}
       tourId="create-import"
+      paywall="importar um vídeo"
     />
   );
 }
@@ -93,6 +96,7 @@ export function RecordAction() {
       label="Gravar resumo"
       icon={<MicGlyph className="size-5" />}
       tourId="create-record"
+      paywall="gravar e receber o resumo pronto"
     />
   );
 }
@@ -130,12 +134,30 @@ function CreateAction({
   label,
   icon,
   tourId,
+  paywall,
 }: {
   href: string;
   label: string;
   icon: ReactNode;
   tourId?: string;
+  /**
+   * O que esta porta FAZ, na voz de quem clicou, para a parede de IA poder
+   * dizer o que falta. Só as duas portas que gastam moeda a passam; a folha em
+   * branco não tem parede, hoje nem nunca.
+   *
+   * Ela é o gêmeo exato do `onBlocked` do `CreateDock`, e as duas telas têm de
+   * andar juntas: uma porta que abre no celular e recusa no desktop, ou o
+   * contrário, é a mesma decisão de produto contada de dois jeitos.
+   */
+  paywall?: string;
 }) {
+  const balance = useCoinsStore((s) => s.balance);
+  const [blocked, setBlocked] = useState(false);
+  // Só o ZERO LIDO fecha a porta. `null` é "ainda não sei", e um carregamento
+  // lento do saldo não pode transformar uma conta paga numa parede — é o mesmo
+  // princípio do `requireBalance` do servidor. Ver `CreateDock`.
+  const broke = paywall !== undefined && balance === 0;
+
   return (
     // `delay` curto: o nome do ícone é informação que se pede com o cursor já
     // parado em cima, não um aviso que precisa de tempo de leitura antes. Ele
@@ -152,12 +174,23 @@ function CreateAction({
             spinner="none"
             contentClassName="inline-flex items-center"
             className={TOPBAR_CHIP_CLASS}
+            onClick={
+              broke
+                ? (event) => {
+                    event.preventDefault();
+                    setBlocked(true);
+                  }
+                : undefined
+            }
           >
             {icon}
           </NavLink>
         </TooltipTrigger>
         <TooltipContent>{label}</TooltipContent>
       </Tooltip>
+      {paywall ? (
+        <AiPaywallDialog open={blocked} onOpenChange={setBlocked} action={paywall} />
+      ) : null}
     </TooltipProvider>
   );
 }

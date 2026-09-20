@@ -138,6 +138,39 @@ Ele não fica dentro de `plans.ts` por causa de um ciclo: o nome da
 funcionalidade paga sai de `lib/entitlements/features.ts`, que importa
 `plans.ts`. `plan-features.ts` fica acima dos dois e lê os dois.
 
+**A lista abre pelo que é GRÁTIS, e isso é a estratégia escrita na tela.** As
+duas primeiras linhas dos três cards são `EDITOR_FEATURES` ("Editor manual
+ilimitado", "Todas as ferramentas de texto"), e o Gratuito ganha a terceira:
+"Sem custo para sempre". O card dele dizia "Editor inteligente e moderno", a
+mesma frase dos pagos — um adjetivo sobre uma ferramenta —, e com isso a tela de
+planos descrevia um produto que não é o nosso: um app de IA com amostra grátis.
+É o contrário. O editor manual é o produto e não acaba; a monetização mora
+inteira na IA, e quem escreve os próprios esboços nunca vai pagar nada.
+
+⚠️ **"Todas as ferramentas de texto" quer dizer TODAS**: títulos, tópicos,
+marca-texto, passagem, citação, destaque, conclusão. No dia em que um bloco novo
+do editor nascer atrás de um `requireFeature`, esta linha passa a mentir — e é a
+pior das mentiras possíveis aqui, porque não há 403 na tela de planos para
+explicá-la.
+
+**A parede de IA tem tela própria** (`components/AiPaywallDialog.tsx`), e a
+ordem do que ela diz é a decisão: primeiro o que a pessoa TEM (o editor inteiro,
+de graça, para sempre), depois o que falta para a ação que ela pediu. A ordem
+inversa é o diálogo de sempre, "você atingiu o limite, assine", e ele descreve o
+produto errado. Ela **sempre oferece uma saída que funciona agora** ("Escrever à
+mão"): uma parede com um botão só trata quem não vai assinar hoje como alguém
+que não tem mais o que fazer no app. Ela não escreve preço nem nome de plano —
+quem vende é o `BillingDialog`, que ela abre por cima.
+
+**Ela aparece ANTES do trabalho, não depois.** As duas portas que gastam moeda
+(`CreateDock` no celular, `CreateActions` no desktop) ficam fechadas com saldo
+zero. Antes elas navegavam: a pessoa chegava ao gravador, deixava o microfone
+aberto durante a pregação e descobria no fim que não havia saldo para
+transcrever. As duas telas andam JUNTAS — uma porta que abre no celular e recusa
+no desktop é a mesma decisão contada de dois jeitos. Só o ZERO LIDO fecha;
+`balance === null` é "ainda não sei" e passa, pelo mesmo princípio do
+`requireBalance`.
+
 Três regras viajam com a lista, e as duas telas as desenham igual: o NEGRITO
 (`featured`) marca o que aquele plano tem e o Gratuito não, a linha do Biblo
 troca o check pelo ROSTO dele (`face`), e no Gratuito esse rosto vai em

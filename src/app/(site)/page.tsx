@@ -854,16 +854,27 @@ function Plans() {
         <div className="flex flex-col gap-3 lg:items-center lg:text-center">
           <SectionLabel color="blue">Planos</SectionLabel>
           <h2 className="text-pretty text-[29px] font-semibold leading-[1.16] tracking-[-.022em] text-scriba-ink-strong lg:text-[42px] lg:leading-[1.14]">
-            Comece grátis. Cresça quando fizer sentido.
+            O editor é grátis. Você paga pela IA.
           </h2>
-          {/* O presente ANTES da tabela, e com o número.
+          {/* A ESTRATÉGIA dita em voz alta, e não uma frase de vitrine.
 
-              A linha dizia o que não pedimos (contrato, cartão), que é uma
-              promessa em negativo: ela tira um medo e não dá nada. O que a
-              conta gratuita ganha de verdade são duas coisas, e as duas saem do
-              código que as concede, não de um número digitado aqui. */}
-          <p className="max-w-[520px] text-[13.5px] font-light leading-[1.6] text-scriba-ink-soft lg:text-[15.5px]">
-            Conheça o bloco de notas inteligente que todo cristão deveria ter.
+              O título já foi "Comece grátis. Cresça quando fizer sentido.", que
+              é o que toda tela de planos diz e não descreve produto nenhum:
+              "comece grátis" promete um período, e quem lê entende amostra. Não
+              é amostra. O editor manual é o produto, ele não acaba, e a
+              monetização mora inteira nas funcionalidades de IA.
+
+              Dizer isso aqui não é generosidade anunciada: é o que faz a pessoa
+              criar a conta sem calcular quando vai ser cobrada. Quem escreve os
+              próprios esboços fica de graça para sempre — e é justamente essa
+              pessoa que um dia vai querer que a máquina escreva o primeiro
+              rascunho por ela.
+
+              A linha anterior dizia o que não pedimos (contrato, cartão), que é
+              uma promessa em negativo: tira um medo e não dá nada. */}
+          <p className="max-w-[560px] text-[13.5px] font-light leading-[1.6] text-scriba-ink-soft lg:text-[15.5px]">
+            Escrever, organizar e guardar seus textos não custa nada e nunca vai custar. Os créditos
+            existem para quando você quiser que o Scriba transcreva, resuma e escreva por você.
           </p>
         </div>
         {/* Sem `items-start`: os cards precisam ESTICAR até a altura do mais alto.

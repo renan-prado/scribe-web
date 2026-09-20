@@ -71,15 +71,40 @@ export type PlanFeature = {
 };
 
 /**
- * O que os três planos têm em comum.
+ * O EDITOR, e ele é a base dos três cards porque é a base do produto.
  *
- * A primeira linha já foi "Sermão comentado", herança dos cartões que apareciam
- * durante a pregação no modo `live`, que não existe mais — ninguém no produto
- * de hoje encontraria o que ela nomeava. No lugar dela está o que de fato
- * mudou: as portas do `/home`, que todo plano tem, o Gratuito inclusive.
+ * ## A linha que faltava, e o que ela conserta
+ *
+ * O card do Gratuito dizia "Editor inteligente e moderno" — a mesma frase dos
+ * pagos, um adjetivo sobre uma ferramenta — e com isso a tela de planos
+ * descrevia um produto que não é o nosso: um app de IA com uma amostra grátis.
+ * A estratégia é a inversa, e ela é explícita: **o editor manual é grátis para
+ * sempre, e o que se cobra é a IA.** Uma pessoa que escreve os próprios esboços
+ * toda semana nunca vai pagar nada, e é isso que a faz ficar.
+ *
+ * Então a base virou duas linhas que dizem CAPACIDADE em vez de adjetivo, e o
+ * Gratuito ganha a terceira, que é a promessa inteira em quatro palavras. Elas
+ * são as PRIMEIRAS dos três cards de propósito: quem compara de relance lê o
+ * topo, e o topo tem de dizer o que a pessoa leva sem pagar.
+ *
+ * ⚠️ **Cada uma destas linhas é uma promessa que o produto tem de cumprir.**
+ * "Todas as ferramentas de texto" quer dizer TODAS: títulos, tópicos,
+ * marca-texto, passagem bíblica, citação, destaque, conclusão. No dia em que um
+ * bloco novo do editor nascer atrás de um `requireFeature`, esta linha passa a
+ * mentir — e é a mentira pior de todas, porque não há 403 na tela de planos
+ * para explicá-la.
  */
-const BASE_FEATURES: PlanFeature[] = [
-  { label: "Editor inteligente e moderno", included: true },
+const EDITOR_FEATURES: PlanFeature[] = [
+  { label: "Editor manual ilimitado", included: true },
+  { label: "Todas as ferramentas de texto", included: true },
+];
+
+/**
+ * O que a IA acrescenta. São as duas portas do `/home` que gastam moeda, e por
+ * isso elas são a linha divisória do preço: existem nos três planos, e o que
+ * muda entre eles é quanto se pode usá-las.
+ */
+const AI_FEATURES: PlanFeature[] = [
   { label: "Resumo automático", included: true },
   { label: "Importar do YouTube", included: true },
 ];
@@ -101,6 +126,12 @@ const BIBLO_FEATURE = FEATURES.biblo_chat.name;
  * coisa errada a dizer a quem ainda nem entrou — a conversa com o Biblo é a
  * única chance de alguém descobrir por que valeria assinar.
  *
+ * **E ele abre com o que NÃO acaba**: o editor manual, as ferramentas de texto
+ * e a linha que diz a estratégia inteira, "Sem custo para sempre". Ela fica
+ * logo abaixo das duas capacidades que qualifica, e não no fim do card, porque
+ * é a frase que decide se alguém cria a conta — e porque é verdade: quem só
+ * escreve nunca vai ver uma parede.
+ *
  * **O que o Gratuito não tem continua dito, e com todas as letras**: a recarga
  * todo mês. Ela é a diferença de verdade entre não pagar e pagar, e é a ÚNICA
  * linha ausente do card, o que a deixa visível de relance em vez de escondida
@@ -108,7 +139,9 @@ const BIBLO_FEATURE = FEATURES.biblo_chat.name;
  * dos outros dois, e o card termina no que a pessoa GANHA.
  */
 const FREE_FEATURES: PlanFeature[] = [
-  ...BASE_FEATURES,
+  ...EDITOR_FEATURES,
+  { label: "Sem custo para sempre", included: true },
+  ...AI_FEATURES,
   { label: "Créditos que renovam todo mês", included: false },
   {
     label: `${BIBLO_GIFT_MESSAGES} mensagens grátis com o Biblo`,
@@ -135,7 +168,12 @@ const BIBLO_PAID_FEATURE: PlanFeature = {
   face: true,
 };
 
-const PAID_FEATURES: PlanFeature[] = [...BASE_FEATURES, RENEWAL_FEATURE, BIBLO_PAID_FEATURE];
+const PAID_FEATURES: PlanFeature[] = [
+  ...EDITOR_FEATURES,
+  ...AI_FEATURES,
+  RENEWAL_FEATURE,
+  BIBLO_PAID_FEATURE,
+];
 
 /**
  * O Estudioso é o Pessoal num RITMO maior, e é só isso que ele é.
@@ -148,7 +186,8 @@ const PAID_FEATURES: PlanFeature[] = [...BASE_FEATURES, RENEWAL_FEATURE, BIBLO_P
  * explicá-la.
  */
 const ESTUDIOSO_FEATURES: PlanFeature[] = [
-  ...BASE_FEATURES,
+  ...EDITOR_FEATURES,
+  ...AI_FEATURES,
   RENEWAL_FEATURE,
   { label: "Uso diário sem preocupação", included: true, featured: true },
   { label: "Crie múltiplos esboços e aulas", included: true, featured: true },
