@@ -9,6 +9,16 @@ Gerado por `npm run release` a partir dos Conventional Commits. `feat` sobe o
 minor; o resto sobe o patch. Não edite à mão, a próxima execução escreve por
 cima do topo do arquivo.
 
+## 0.50.0, 2026-09-20, desde v0.49.0
+
+### Novidades
+
+- **gravacao:** a gravacao guardada aparece na Biblioteca e sobe sozinha (`9f61b26`)
+
+### Outros
+
+- **acervo:** levantamento das obras do CCEL (`872834c`)
+
 ## 0.49.0, 2026-09-19, desde v0.48.0
 
 ### Novidades
