@@ -9,6 +9,15 @@ Gerado por `npm run release` a partir dos Conventional Commits. `feat` sobe o
 minor; o resto sobe o patch. Não edite à mão, a próxima execução escreve por
 cima do topo do arquivo.
 
+## 0.51.0, 2026-09-20, desde v0.50.0
+
+### Novidades
+
+- **planos:** o editor e gratis para sempre, e a tela passa a dizer isso (`f0c4d15`)
+- **admin:** creditar moedas avulsas pelo painel (`c2ba293`)
+- **escrever:** topicos, topicos numerados e marca-texto no editor (`979eb06`)
+- **offline:** o app diz que esta offline, e as leituras respondem do disco (`d1e66bd`)
+
 ## 0.50.0, 2026-09-20, desde v0.49.0
 
 ### Novidades
