@@ -3,6 +3,7 @@
 import { useCallback, useEffect, useRef, useState } from "react";
 import type { WrittenSummary } from "@/lib/domain/summary";
 import { createLogger } from "@/lib/log";
+import { isOnline } from "@/shared/hooks/use-network-status";
 import { deleteDraft, newDraftId, readDraft, writeDraft } from "./draft-store";
 
 const log = createLogger("escrever");
@@ -217,10 +218,11 @@ export function useWrittenDraft(input: {
       setStatus(upToDate ? "synced" : "local");
       return body.id;
     } catch (err) {
-      // `navigator.onLine` é lido AQUI, no instante da falha, e não na hora de
-      // desenhar o chip: o que a frase precisa dizer é como a rede estava
-      // quando o envio morreu.
-      const wasOffline = typeof navigator !== "undefined" && navigator.onLine === false;
+      // A rede é lida AQUI, no instante da falha, e não na hora de desenhar o
+      // chip: o que a frase precisa dizer é como a rede estava quando o envio
+      // morreu. Por isso é o `isOnline()` de fora do React, e não o hook: este
+      // é um `catch`, não um render. Ver `use-network-status.ts`.
+      const wasOffline = !isOnline();
       log.warn("envio falhou", { error: (err as Error).message, offline: wasOffline });
       setOffline(wasOffline);
       setStatus("error");

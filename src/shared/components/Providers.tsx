@@ -29,10 +29,42 @@ function makeQueryClient() {
         refetchOnWindowFocus: false,
         retry: 1,
         gcTime: GC_TIME,
+        // Ver `NETWORK_MODE`.
+        networkMode: NETWORK_MODE,
+      },
+      mutations: {
+        networkMode: NETWORK_MODE,
       },
     },
   });
 }
+
+/**
+ * Sem rede, o cache do disco RESPONDE em vez de a tela ficar esperando.
+ *
+ * O padrão do TanStack v5 é `"online"`: sem conexão, toda query entra em
+ * `paused` e nunca chega a rodar. Isso é o certo para um app que só existe
+ * ligado, e é o errado aqui — a Biblioteca, a conversa do Biblo e o texto
+ * bíblico moram no IndexedDB justamente para a tela nascer pronta antes de
+ * qualquer rede. Em `paused`, o dado do disco continua sendo entregue, mas a
+ * query fica marcada como uma espera que não vai terminar, e quem lê `isPending`
+ * para desenhar esqueleto desenha um esqueleto eterno.
+ *
+ * `"offlineFirst"` faz o contrário: ela TENTA uma vez, falha rápido, e o que
+ * fica na tela é o que veio do disco. É a mesma escolha que o resto do produto
+ * já fazia à mão em três lugares — `navigator.onLine` é dica, nunca decisão
+ * (ver `use-network-status.ts`) —, agora dita uma vez para todas as queries.
+ *
+ * Nas MUTAÇÕES ele vale por outra razão. O padrão pausa a mutação offline e a
+ * reenvia sozinho ao reconectar, que é uma fila de escrita de graça; mas este
+ * produto não escreve por `useMutation` — o editor tem o próprio salvamento
+ * local-first (`useWrittenDraft`) e a gravação tem a própria fila
+ * (`features/session/capture-queue.ts`), as duas guardando no IndexedDB antes
+ * de tentar a rede. Duas filas com regras diferentes sobre o mesmo trabalho é
+ * uma delas estar errada, então aqui a mutação segue o mesmo princípio das
+ * queries: tenta, falha depressa, e quem tem trabalho a guardar já o guardou.
+ */
+const NETWORK_MODE = "offlineFirst" as const;
 
 let browserQueryClient: QueryClient | undefined;
 

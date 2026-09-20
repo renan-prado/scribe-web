@@ -2,6 +2,7 @@
 
 import { create } from "zustand";
 import { createLogger } from "@/lib/log";
+import { isOnline } from "@/shared/hooks/use-network-status";
 import {
   type CaptureMeta,
   deleteCapture,
@@ -238,7 +239,7 @@ export const useCaptureQueue = create<QueueState & QueueActions>((set, get) => (
     if (state.uploading || !state.scanned) return;
     // Gravando: a rede e a CPU são do microfone. Ver o cabeçalho.
     if (useRecordingStore.getState().running) return;
-    if (typeof navigator !== "undefined" && navigator.onLine === false) return;
+    if (!isOnline()) return;
     const now = Date.now();
     // A mais ANTIGA primeiro: quem esperou mais tempo pela internet é quem tem
     // mais chance de estar prestes a ser apagada pela idade.

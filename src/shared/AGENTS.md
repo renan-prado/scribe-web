@@ -405,6 +405,57 @@ O service worker continua não cacheando nada — são coisas diferentes: ele
 guardaria RESPOSTAS HTTP sem saber o que envelheceu, este guarda ESTADO que a
 aplicação sabe revalidar. Ver `src/app/AGENTS.md`.
 
+**E ele RESPONDE sem rede: `networkMode: "offlineFirst"`, nas queries e nas
+mutações.** O padrão do v5 é `"online"`, ou seja, sem conexão toda query entra
+em `paused` e nunca roda. Isso é o certo para um app que só existe ligado, e o
+errado aqui: a Biblioteca, a conversa do Biblo e o texto bíblico moram no disco
+justamente para a tela nascer pronta antes de qualquer rede, e em `paused` o
+dado do disco continua sendo entregue mas a query fica marcada como uma espera
+que não vai terminar — quem lê `isPending` para desenhar esqueleto desenha um
+esqueleto eterno. Com `offlineFirst` ela tenta uma vez, falha rápido, e o que
+fica na tela é o que veio do disco.
+
+Nas MUTAÇÕES o padrão daria uma fila de escrita de graça (pausa offline,
+reenvia ao reconectar), e mesmo assim a escolha é a mesma: este produto não
+escreve por `useMutation`. O editor tem o próprio salvamento local-first
+(`useWrittenDraft`) e a gravação tem a própria fila
+(`features/session/capture-queue.ts`), as duas guardando no IndexedDB antes de
+tentar a rede. Duas filas com regras diferentes sobre o mesmo trabalho é uma
+delas estar errada.
+
+## Offline: uma pergunta, um lugar
+
+`hooks/use-network-status.ts` é o ÚNICO lugar do produto que responde "há rede
+agora?". Antes a resposta estava espalhada: `navigator.onLine` solto em quatro
+arquivos, cada um com a sua guarda de `typeof navigator`, e nenhum deles
+repintando a tela quando a resposta mudava — eram leituras pontuais, no instante
+de uma falha. Uma tela que precise DIZER "você está sem internet" não pode ser
+servida por isso.
+
+Ele exporta os dois caminhos de propósito: `useNetworkStatus()` para componentes
+(`useSyncExternalStore`, porque o dado é externo ao React e é lido em mais de um
+lugar ao mesmo tempo) e `isOnline()` para quem pergunta dentro de um `catch` ou
+de uma função assíncrona, onde não há hook que valha. Os dois no mesmo arquivo é
+o que impede a guarda de ser reescrita diferente em cada chamador.
+
+**`navigator.onLine` é uma DICA, nunca a decisão.** Ele diz `true` num wi-fi de
+hotel que não deixa passar um pacote e pode dizer `false` numa VPN que funciona.
+Use-o para escolher a FRASE ("sem internet" contra "erro ao salvar"), para
+adiantar um trabalho que certamente falharia, e para saber a hora de tentar de
+novo. Quem decide se valeu é a resposta do servidor.
+
+O snapshot do servidor é `true`, sempre: o HTML é montado sem saber nada do
+aparelho, e se ele nascesse "offline" toda página apareceria com o aviso por um
+quadro antes de se corrigir.
+
+`components/OfflineBadge.tsx` é a pastilha, montada uma vez no layout de
+`(barra)`. Ela é pequena e fica embaixo porque não é um erro, é um MODO: uma
+faixa vermelha no topo trataria a falta de rede como um acidente a resolver
+agora, e aqui ela não impede nada do que a pessoa veio fazer. O que ela conserta
+é o silêncio — o Scriba passou a funcionar sem rede e não contava isso, e um app
+que continua aceitando texto sem dizer que está offline é indistinguível de um
+que está prestes a perder tudo.
+
 ## A navegação do app não mora aqui
 
 **Não há barra de navegação em `src/shared/`.** Havia `AppNav` (desktop),

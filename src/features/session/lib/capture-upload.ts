@@ -1,4 +1,5 @@
 import type { SummaryPayload } from "@/lib/domain/summary";
+import { isOnline } from "@/shared/hooks/use-network-status";
 import { type CaptureFailure, type CaptureMeta, loadParts } from "./capture-store";
 import { tailSentences } from "./text";
 
@@ -112,7 +113,7 @@ export async function uploadCapture(
 ): Promise<UploadResult> {
   // A pergunta barata antes de qualquer trabalho: remontar os blobs de uma
   // pregação de uma hora custa memória, e no avião a resposta já é conhecida.
-  if (typeof navigator !== "undefined" && navigator.onLine === false) return offline();
+  if (!isOnline()) return offline();
 
   let sessionId = meta.sessionId;
 

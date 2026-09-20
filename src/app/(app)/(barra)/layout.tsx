@@ -9,6 +9,7 @@ import { isCurrentUserPartner } from "@/lib/auth/require-partner";
 import { getCurrentAccount } from "@/lib/db/account";
 import { getCycleUsage } from "@/lib/db/coins";
 import { getCurrentPlan } from "@/lib/entitlements/server";
+import { OfflineBadge } from "@/shared/components/OfflineBadge";
 import { AccountMenu } from "./components/AccountMenu";
 import { AppHeaderShell } from "./components/AppHeaderShell";
 
@@ -105,15 +106,20 @@ export default async function BarraLayout({ children }: { children: ReactNode })
           ) : null
         }
       />
+      {/* "Modo offline", uma vez para todo o app. O estado é do APARELHO e não
+          da página: repetido em sete telas, bastaria esquecer uma para o aviso
+          sumir justamente onde alguém estava trabalhando. Ver `OfflineBadge`. */}
+      <OfflineBadge />
       {/* Quem é o dono do cache do aparelho, e a faxina quando ele muda. Fica
           aqui porque é onde a conta já foi lida, e envolve `children` porque
           toda tela que lê a Biblioteca do disco precisa do id na chave. Sem
-          sessão não há dono nem cache a escopar. Ver `CacheOwner`. */}
-      {/* A fila das gravações guardadas que ainda não viraram resumo, acordada
-          aqui e não numa página: ela precisa continuar tentando enquanto o app
-          estiver aberto, e uma página morre no primeiro toque num cartão. Fica
-          DENTRO do `CacheOwner` porque, ao terminar um envio, ela invalida a
-          lista da Biblioteca, que é escopada pelo id do dono. Ver
+          sessão não há dono nem cache a escopar. Ver `CacheOwner`.
+
+          Dentro dele, a FILA das gravações guardadas que ainda não viraram
+          resumo: ela precisa continuar tentando enquanto o app estiver aberto,
+          e uma página morre no primeiro toque num cartão. Fica dentro do
+          `CacheOwner` porque, ao terminar um envio, ela invalida a lista da
+          Biblioteca, que é escopada pelo id do dono. Ver
           `PendingCaptureRunner` e `features/session/capture-queue.ts`. */}
       {account ? (
         <CacheOwner userId={account.profile.id}>
