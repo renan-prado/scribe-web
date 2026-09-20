@@ -246,7 +246,9 @@ Não adicione sem pedido, o usuário sabe e adiou:
 - Respostas em streaming (SSE).
 - Framework de i18n. As strings pt-BR ficam inline por enquanto.
 - Gravar sem internet. Gravar não depende de rede, mas a sessão nasce de um
-  `POST` no stop; sem ele o áudio fica guardado no IndexedDB esperando.
+  `POST` no stop; sem ele o áudio fica guardado no IndexedDB esperando — com
+  cartão na Biblioteca, motivo escrito e retentativa automática, mas esperando
+  (ver `src/features/session/AGENTS.md`).
 
 **Testes existem em UM lugar só, e continuam não sendo o padrão do
 repositório.** `npm test` roda `node --test` sobre `src/lib/**/*.test.ts`, e hoje

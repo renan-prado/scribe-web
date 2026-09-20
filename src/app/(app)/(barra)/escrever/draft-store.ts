@@ -4,7 +4,7 @@
  * **Local-first, e não "cache".** O que a pessoa digitou existe aqui antes de
  * existir em qualquer outro lugar: cada tecla cai no IndexedDB, e só depois de
  * uma pausa o texto sobe para o banco. É o mesmo princípio do gravador (ver
- * `recording/capture-store.ts`), pela mesma razão: o trabalho de quem está do
+ * `features/session/lib/capture-store.ts`), pela mesma razão: o trabalho de quem está do
  * outro lado da tela não pode depender de a rede estar boa naquele segundo.
  *
  * É um banco SEPARADO do `scriba-captures`, e isso é decisão. Acrescentar um

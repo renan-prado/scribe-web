@@ -4,6 +4,7 @@ import { PLANS } from "@/features/billing/plans";
 import { CoinsSync } from "@/features/coins/components/CoinsSync";
 import { INITIAL_COIN_BALANCE } from "@/features/coins/pricing";
 import { CacheOwner } from "@/features/session/components/CacheOwner";
+import { PendingCaptureRunner } from "@/features/session/components/PendingCaptureRunner";
 import { isCurrentUserPartner } from "@/lib/auth/require-partner";
 import { getCurrentAccount } from "@/lib/db/account";
 import { getCycleUsage } from "@/lib/db/coins";
@@ -108,7 +109,20 @@ export default async function BarraLayout({ children }: { children: ReactNode })
           aqui porque é onde a conta já foi lida, e envolve `children` porque
           toda tela que lê a Biblioteca do disco precisa do id na chave. Sem
           sessão não há dono nem cache a escopar. Ver `CacheOwner`. */}
-      {account ? <CacheOwner userId={account.profile.id}>{children}</CacheOwner> : children}
+      {/* A fila das gravações guardadas que ainda não viraram resumo, acordada
+          aqui e não numa página: ela precisa continuar tentando enquanto o app
+          estiver aberto, e uma página morre no primeiro toque num cartão. Fica
+          DENTRO do `CacheOwner` porque, ao terminar um envio, ela invalida a
+          lista da Biblioteca, que é escopada pelo id do dono. Ver
+          `PendingCaptureRunner` e `features/session/capture-queue.ts`. */}
+      {account ? (
+        <CacheOwner userId={account.profile.id}>
+          <PendingCaptureRunner />
+          {children}
+        </CacheOwner>
+      ) : (
+        children
+      )}
     </>
   );
 }

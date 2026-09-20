@@ -2,8 +2,10 @@
 
 import { Loader2, SearchX } from "lucide-react";
 import { useCallback, useEffect, useMemo, useState } from "react";
+import { usePendingCount } from "@/features/session/capture-queue";
 import { CollectionSearch, FACET_ALL } from "@/features/session/components/CollectionSearch";
 import { LibraryNote } from "@/features/session/components/LibraryNote";
+import { PendingCaptures } from "@/features/session/components/PendingCaptures";
 import { SessionsEmptyState } from "@/features/session/components/SessionsEmptyState";
 import { useContentSearch } from "@/features/session/hooks/useContentSearch";
 import {
@@ -128,6 +130,11 @@ export function LibraryBrowser({ nowIso }: Props) {
   const loading = !hydrated || isPending;
 
   const { open, setOpen } = useSearchScope();
+  // As gravações guardadas no aparelho que ainda não viraram resumo. Elas não
+  // vêm da lista do servidor (não existem lá), e é por isso que a conta delas
+  // é lida à parte: sem ela, a Biblioteca de quem só tem uma gravação
+  // pendente anunciaria "grave a primeira" com a gravação bem ali em cima.
+  const pendingCount = usePendingCount();
   const [query, setQuery] = useState("");
   const [speaker, setSpeaker] = useState<string>(FACET_ALL);
   const [location, setLocation] = useState<string>(FACET_ALL);
@@ -241,6 +248,10 @@ export function LibraryBrowser({ nowIso }: Props) {
         />
       ) : null}
 
+      {/* O que está guardado no aparelho e ainda não subiu, antes dos meses.
+          Fora da busca: ver `PendingCaptures`. */}
+      {open ? null : <PendingCaptures now={now} />}
+
       {/* Nada na tela E resposta a caminho não é "não encontrei": metade desta
           busca mora no servidor (a transcrição), e afirmar o vazio antes dela
           chegar é uma tela que se desmente sozinha meio segundo depois. */}
@@ -277,10 +288,15 @@ export function LibraryBrowser({ nowIso }: Props) {
            dizer isso a quem tem trinta sermões guardados é a tela mentindo
            por meio segundo. Ver `useLibrary`. */
         <LibrarySkeleton />
-      ) : groups.length === 0 ? (
+      ) : groups.length === 0 && pendingCount === 0 ? (
         /* Biblioteca vazia é a primeira tela de quem acabou de entrar, e é
            diferente de busca sem resultado (acima): ali a saída é limpar o
-           filtro, aqui é gravar. Ver `SessionsEmptyState`. */
+           filtro, aqui é gravar. Ver `SessionsEmptyState`.
+
+           `pendingCount` é a terceira situação, e ela some se não for dita:
+           acervo vazio COM uma gravação esperando na fila logo acima. "Grave a
+           primeira" ali é a tela ignorando o sermão que a pessoa acabou de
+           gravar e está vendo na mesma dobra. */
         <SessionsEmptyState />
       ) : (
         groups.map((group) => (

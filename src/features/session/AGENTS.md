@@ -6,6 +6,12 @@ estudo, a importação do YouTube, os cartões da Biblioteca e a busca das lista
 **O GRAVADOR não mora aqui.** Ele é `src/app/recording/`, e é uma tela só
 (`AudioStudio` + `useAudioCapture`). Ver `src/app/AGENTS.md`.
 
+**O que a gravação DEIXA, esse mora.** O áudio guardado no aparelho, a pipeline
+que o transforma em resumo e a fila que insiste por ele são desta pasta
+(`lib/capture-store.ts`, `lib/capture-upload.ts`, `capture-queue.ts`): eles eram
+da tela de gravação, e ser dela foi exatamente o defeito — ver "A gravação
+guardada, e quem insiste por ela".
+
 **O EDITOR também não.** `src/app/(app)/escrever/` é a terceira porta de entrada
 de uma sessão, a que a pessoa escreve à mão (modo `manual`). Ele mora lá pela
 mesma razão do gravador: é uma tela de CRIAÇÃO, e esta pasta é tudo o que vem
@@ -52,6 +58,11 @@ pessoa quiser, aprofundar.
 | `components/DeepenButton.tsx` + `DeepeningMenu.tsx` | gerar e reprocessar o estudo |
 | `components/PassageVerses.tsx` + `RichText.tsx` | texto bíblico e menções dentro do parágrafo |
 | `components/CacheOwner.tsx` | de quem é o cache deste aparelho, e a faxina quando outra conta entra |
+| `lib/capture-store.ts` | o áudio guardado no IndexedDB: fragmentos, partes e a linha de cada gravação |
+| `lib/capture-upload.ts` | sessão → transcrição → resumo, com a falha CLASSIFICADA |
+| `capture-queue.ts` | a fila que insiste pelas gravações guardadas, de qualquer tela |
+| `components/PendingCaptureRunner.tsx` | quem acorda a fila (mora no layout de `(barra)`) |
+| `components/PendingCaptures.tsx` + `PendingCaptureNote.tsx` | o bloco e o cartão do que ainda não subiu |
 | `query.ts` | a Biblioteca guardada no aparelho: leitura, escrita otimista e o conserto do atraso |
 | `hooks/useCoinTick.ts` | o débito por minuto, durante a gravação |
 | `recording-store.ts` | um booleano: há gravação viva nesta aba? |
@@ -276,6 +287,57 @@ alternação de trezentos termos por parágrafo.
 Dentro de `.tone-study` o par `--session-mention-ink` / `--session-mention-wash`
 é reapontado, e só em FORÇA: a superfície do estudo é meio degrau mais clara que
 a do resumo, e o mesmo 22% sumiria nela.
+
+## A gravação guardada, e quem insiste por ela
+
+Guardar o áudio nunca bastou, e o custo dessa diferença foi uma pregação de
+quase uma hora dada por perdida. Os fragmentos SEMPRE estiveram no IndexedDB
+durante a captura; o que faltava é que a gravação guardada só existia DENTRO da
+tela de gravação — era lá que a falha aparecia, lá que ficava o botão de tentar
+de novo, e sair daquela tela era o gesto que sumia com o áudio do app inteiro.
+Ele continuava no aparelho, intacto, e nenhuma tela voltava a mencioná-lo.
+**Guardar sem devolver é a mesma coisa que perder, com o agravante de não
+parecer um defeito.**
+
+O conserto tem três partes, e nenhuma delas mora numa tela:
+
+- **`lib/capture-store.ts`** é o disco. A linha de uma gravação nasce no
+  PRIMEIRO SEGUNDO, e não no stop: nascendo no stop, a aba morta no minuto 40
+  deixava 20 fragmentos sem índice nenhum apontando para eles, invisíveis para o
+  resgate e para a faxina por idade. `closed` diz se o `stop()` chegou ao fim e
+  `heartbeatAt` é a hora do último fragmento, que é como uma segunda aba
+  distingue "abandonada" de "gravando agora".
+- **`lib/capture-upload.ts`** é o caminho até o resumo, e o produto dele é a
+  TAXONOMIA da falha. "Não consegui" não é resposta: a pessoa precisa saber se
+  espera a rede voltar (`offline`), se espera o Scriba (`server`), se recarrega
+  moedas (`balance`) ou se baixa o arquivo porque nada disso vai resolver
+  (`fatal`). É a classificação que decide se a fila retenta sozinha, e a frase
+  fica GRAVADA na linha da gravação para a Biblioteca escrevê-la no cartão.
+- **`capture-queue.ts`** é quem insiste, acordada pelo `PendingCaptureRunner` no
+  layout de `(barra)`. Quatro sinais, porque esperar por um só é escolher o dia
+  em que nada acontece: a abertura do app, o evento `online`, a volta ao app e
+  um relógio de 20s que só pergunta se já venceu a espera daquela gravação (ela
+  cresce de 15s a 10min a cada falha).
+
+**O áudio é apagado numa LINHA SÓ do app inteiro**, no `run()` da fila, depois
+de `ok: true`. Antes de o resumo existir, nada apaga nada.
+
+**A fila nunca sobe a gravação que está sendo gravada**, e a guarda é dupla de
+propósito: `capturing` é o id vivo nesta aba, e o `heartbeatAt` cobre a aba
+vizinha, que esta não enxerga. Ela também não trabalha durante uma gravação —
+subir 7 MB enquanto o microfone está aberto disputa rede e CPU com a única coisa
+da tela que não pode falhar.
+
+**Retentar é seguro porque moeda não é cobrada nessa pipeline.** O débito sai do
+navegador por minuto GRAVADO (`useCoinTick`); `transcribe` e `final-summary` só
+exigem saldo positivo. E a sessão é criada uma vez: `sessionId` é gravado na
+linha da gravação assim que o `POST /api/sessions` responde.
+
+**A Biblioteca mostra o que está pendente** (`PendingCaptures`), num bloco
+próprio acima dos meses, fora da busca. O cartão não é um `PostItNote`: aquele é
+um `<a>` em volta de tudo justamente por não ter botão dentro, e este é três
+botões e nenhum destino. Ele some sozinho, quando o resumo existe ou quando a
+pessoa apaga o áudio, e nunca antes disso.
 
 ## Depois do stop
 

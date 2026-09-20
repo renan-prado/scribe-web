@@ -862,12 +862,35 @@ Verificado em navegador: o concatenado decodifica inteiro, um fragmento do meio
 sozinho não decodifica, um gravador novo no mesmo stream produz arquivo válido,
 e pausar/retomar não corrompe nada.
 
+**A linha da gravação nasce no PRIMEIRO SEGUNDO, não no stop.** Ela é o índice
+que torna os fragmentos encontráveis; nascendo no stop, a aba morta no minuto 40
+deixava 20 fragmentos no IndexedDB sem nada apontando para eles — invisíveis
+para o resgate e para a faxina por idade, ocupando a cota até alguém limpar o
+navegador.
+
 No stop o áudio JÁ está guardado — foi guardado durante a pregação —, então só
 resta criar a sessão, transcrever as partes, resumir e apagar a cópia local.
-Falhando qualquer passo, o áudio continua no aparelho e a tela oferece tentar de
-novo ou **baixar o arquivo**. Isso conserta o defeito que custou uma palestra de
-quase uma hora: o `Blob` vivia numa variável local, a falha caía num `catch` que
-mostrava um aviso educado, e o coletor comia a única cópia do que foi dito.
+
+**E esta tela NÃO é mais a dona disso.** Ela era, e foi por isso que uma
+pregação se perdeu mesmo com o áudio no disco: o envio, a falha, o botão de
+tentar de novo e o aviso viviam todos dentro do `AudioStudio`, então sair da
+tela de gravação era o gesto que sumia com a gravação do app inteiro. Quem
+envia hoje é a FILA (`features/session/capture-queue.ts`), que não mora em tela
+nenhuma, insiste sozinha por quatro sinais diferentes e publica o cartão na
+Biblioteca; o porquê inteiro está em `src/features/session/AGENTS.md`.
+
+**Por isso o erro daqui termina em `/home`.** Quem parou de gravar sem internet
+não pode ficar preso numa tela de erro cujo único conteúdo é um botão que não
+vai funcionar: o lugar daquela gravação é a Biblioteca, com o cartão dizendo o
+que aconteceu — internet ou erro nosso, e são frases diferentes — e o Scriba
+tentando de novo atrás. A pessoa vai para onde a gravação dela está. Deu certo,
+o destino é o resumo, como sempre foi.
+
+**A Biblioteca mostra o que ainda não subiu**, num bloco acima dos meses
+(`PendingCaptures`), fora da busca. O cartão não é um `PostItNote`: aquele é um
+`<a>` em volta de tudo justamente por não ter botão dentro, e este tem três
+(tentar agora, baixar, apagar) e nenhum destino. Ele some sozinho quando o
+resumo existe, e nunca antes disso.
 
 **A tela em repouso diz o que vem DEPOIS de parar**, numa pastilha sob a onda
 (o `hinting` do `AudioStudio`). Quem chega ali vê uma onda apagada e um
@@ -877,12 +900,12 @@ onda, e não um irmão dela: a coluna é centralizada, então qualquer coisa que
 entrasse no fluxo empurraria a onda — que é o objeto em volta do qual a tela foi
 desenhada. E ela some no instante em que a gravação começa: dali em diante o
 lugar embaixo da onda é dos avisos que importam (saldo no fim, cópia local que
-falhou, gravação esperando resgate), e uma dica dividindo espaço com um alerta
-rebaixa o alerta.
+falhou), e uma dica dividindo espaço com um alerta rebaixa o alerta.
 
 **Dívida conhecida:** começar sem internet. Gravar não depende de rede, mas a
-sessão nasce de um `POST` no stop — sem ele o áudio fica guardado esperando, o
-que é bem melhor que sumir, mas não é funcionar offline.
+sessão nasce de um `POST` no stop — sem ele o áudio fica guardado esperando. A
+espera hoje tem cartão na Biblioteca, motivo escrito e retentativa automática,
+o que é muito melhor que sumir, mas ainda não é funcionar offline.
 
 **Restrito:** `/admin/*` (gate em `src/app/admin/layout.tsx`, responde `notFound()`
 a quem não é admin) e `/partners` (gate em `src/lib/auth/require-partner.ts`).
