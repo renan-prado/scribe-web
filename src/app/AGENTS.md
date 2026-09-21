@@ -1080,7 +1080,10 @@ diferente:
   o ícone do app e o glifo do microfone), e só aparece quando a aba ESCONDE:
   dizê-la com o app na frente é dizer o óbvio, e um aviso que aparece quando
   não precisa é ignorado quando precisa. O toque nela volta para a aba que está
-  gravando, nunca abre uma segunda.
+  gravando, nunca abre uma segunda. **Pausar com a aba escondida REESCREVE a
+  mesma notificação** para "Gravação pausada": ela é a única coisa do aparelho
+  que fala pelo Scriba enquanto a pessoa está em outro app, e um aviso de
+  gravação sobre um microfone parado é a única mentira que ela poderia contar.
 
 A permissão é pedida no toque em "gravar", que é o único gesto do fluxo com um
 porquê visível. **Nada disso é obrigatório**: permissão negada, navegador sem

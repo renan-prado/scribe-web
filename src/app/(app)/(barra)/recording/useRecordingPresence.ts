@@ -39,6 +39,12 @@ import { useCallback, useEffect, useRef } from "react";
  * (`requireInteraction`), silenciosa (o sermão está acontecendo) e some sozinha
  * quando a pessoa volta.
  *
+ * **E ela diz a verdade sobre o estado, não só sobre a existência.** Pausar
+ * pela tela de bloqueio com a aba escondida reescreve a mesma notificação para
+ * "Gravação pausada": um aviso de gravação sobre um microfone parado é a única
+ * mentira que este arquivo poderia contar, e é a mais cara delas. Ver
+ * `PAUSED_TITLE`.
+ *
  * ## Por que a permissão é pedida no START
  *
  * Porque é o único momento do fluxo que é um GESTO da pessoa e que tem um
@@ -54,6 +60,21 @@ import { useCallback, useEffect, useRef } from "react";
 const NOTIFICATION_TAG = "scriba-recording";
 const NOTIFICATION_TITLE = "Gravando áudio em background…";
 const NOTIFICATION_BODY = "O Scriba continua gravando. Toque para voltar.";
+/**
+ * A gravação PAUSADA tem as suas próprias duas frases, e não é preciosismo.
+ *
+ * Esta notificação é a única coisa do aparelho que fala pelo Scriba enquanto a
+ * pessoa está em outro app. Deixá-la dizendo "Gravando áudio" com o microfone
+ * parado é a pior coisa que ela poderia fazer: alguém pausa para atender no
+ * corredor, lê o aviso de gravação na tela de bloqueio, confia nele e perde a
+ * segunda metade do sermão. Uma notificação que mente uma vez deixa de valer
+ * para sempre.
+ *
+ * Ela é a MESMA notificação (mesma `tag`), reescrita — e não uma segunda, que
+ * empilharia duas linhas do Scriba na gaveta do sistema.
+ */
+const PAUSED_TITLE = "Gravação pausada";
+const PAUSED_BODY = "O Scriba não está gravando agora. Toque para continuar.";
 /** O ícone do aplicativo, o mesmo do manifest. */
 const APP_ICON = "/brand/icon-192.png";
 /** O glifo do microfone, que é o que diz do que se trata sem ler o texto. */
@@ -132,8 +153,6 @@ async function swRegistration(): Promise<ServiceWorkerRegistration | null> {
 }
 
 export function useRecordingPresence({ active, paused, onPause, onResume, onStop }: Options) {
-  const audioRef = useRef<HTMLAudioElement | null>(null);
-  const urlRef = useRef<string | null>(null);
   /** A notificação criada SEM service worker. Só ela precisa ser guardada:
    *  a do service worker é reencontrada pela `tag`. */
   const looseRef = useRef<Notification | null>(null);
@@ -153,11 +172,12 @@ export function useRecordingPresence({ active, paused, onPause, onResume, onStop
     }
   }, []);
 
-  const showNotification = useCallback(async () => {
+  const showNotification = useCallback(async (isPaused: boolean) => {
     if (typeof window === "undefined" || !("Notification" in window)) return;
     if (Notification.permission !== "granted") return;
+    const title = isPaused ? PAUSED_TITLE : NOTIFICATION_TITLE;
     const options: NotificationOptions = {
-      body: NOTIFICATION_BODY,
+      body: isPaused ? PAUSED_BODY : NOTIFICATION_BODY,
       icon: APP_ICON,
       badge: MIC_BADGE,
       tag: NOTIFICATION_TAG,
@@ -169,14 +189,14 @@ export function useRecordingPresence({ active, paused, onPause, onResume, onStop
     if (reg) {
       // O toque nela é tratado pelo `notificationclick` do `public/sw.js`, que
       // é quem sabe trazer a aba de volta para a frente.
-      await reg.showNotification(NOTIFICATION_TITLE, options).catch(() => {});
+      await reg.showNotification(title, options).catch(() => {});
       return;
     }
     // Sem service worker (o `npm run dev` não o registra, ver `PwaBootstrap`).
     // O Android recusa este construtor com um TypeError, e aí não há aviso —
     // mas lá o service worker existe, então o caminho de cima é o que roda.
     try {
-      const loose = new Notification(NOTIFICATION_TITLE, options);
+      const loose = new Notification(title, options);
       loose.onclick = () => {
         window.focus();
         loose.close();
@@ -193,21 +213,17 @@ export function useRecordingPresence({ active, paused, onPause, onResume, onStop
   useEffect(() => {
     if (!active) return;
     const url = silentWavUrl();
-    urlRef.current = url;
     const audio = new Audio(url);
     audio.loop = true;
     // Não é para ser ouvido, é para existir. Volume zero faria alguns
     // navegadores tratarem a aba como silenciosa e congelá-la assim mesmo, que
     // é justamente o que a faixa existe para evitar.
     audio.volume = 0.001;
-    audioRef.current = audio;
     void audio.play().catch(() => {});
     return () => {
       audio.pause();
       audio.src = "";
-      audioRef.current = null;
       URL.revokeObjectURL(url);
-      urlRef.current = null;
     };
   }, [active]);
 
@@ -229,7 +245,7 @@ export function useRecordingPresence({ active, paused, onPause, onResume, onStop
     }
 
     session.metadata = new MediaMetadata({
-      title: NOTIFICATION_TITLE,
+      title: paused ? PAUSED_TITLE : NOTIFICATION_TITLE,
       artist: "Scriba",
       artwork: [
         { src: APP_ICON, sizes: "192x192", type: "image/png" },
@@ -251,13 +267,18 @@ export function useRecordingPresence({ active, paused, onPause, onResume, onStop
   }, [active, paused]);
 
   // Camada 3: a frase, e só enquanto a aba está escondida.
+  //
+  // `paused` está nas dependências de propósito: pausar com a aba escondida
+  // (pelos controles da tela de bloqueio, que é o único jeito de fazê-lo dali)
+  // REESCREVE a notificação em vez de deixá-la anunciando uma gravação que não
+  // está acontecendo. Ver `PAUSED_TITLE`.
   useEffect(() => {
     if (!active) {
       void closeNotification();
       return;
     }
     const sync = () => {
-      if (document.visibilityState === "hidden") void showNotification();
+      if (document.visibilityState === "hidden") void showNotification(paused);
       else void closeNotification();
     };
     sync();
@@ -266,5 +287,5 @@ export function useRecordingPresence({ active, paused, onPause, onResume, onStop
       document.removeEventListener("visibilitychange", sync);
       void closeNotification();
     };
-  }, [active, closeNotification, showNotification]);
+  }, [active, paused, closeNotification, showNotification]);
 }
