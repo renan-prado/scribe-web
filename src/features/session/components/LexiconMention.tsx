@@ -9,37 +9,42 @@ import { LEXICON_CATEGORY_LABEL, type LexiconCategory } from "@/lib/domain/lexic
  * O nome próprio marcado no meio da prosa: "Habacuque", "Mar Vermelho",
  * "Bonhoeffer". Toca e abre o cartão.
  *
- * ## A faixa, e por que ela continua sendo uma faixa
+ * ## A marcação é um PONTILHADO, e essa é a terceira e última forma dela
  *
- * Ela começa em 82% da altura da linha: é um traço SOB as palavras, não um
- * bloco atrás delas. O glifo continua sobre o papel, então o contraste do
- * parágrafo não muda, e o `box-decoration-break` mantém a faixa inteira quando
- * um nome composto quebra entre duas linhas.
+ * Ela foi três tintas (azul personagem, verde lugar, cinza figura citada),
+ * depois uma faixa de lavado branco sob as palavras. As duas saíram pelo mesmo
+ * motivo, e o motivo é a DENSIDADE: um cartão do léxico cita meia dúzia de
+ * nomes num parágrafo, e ali qualquer tratamento com ÁREA — cor de fundo,
+ * faixa, realce — deixa de marcar palavras e passa a manchar o bloco. A escala
+ * da faixa desceu de 70% para 22% em três passadas tentando resolver isso, e
+ * cada degrau comprou menos ruído ao preço de uma marcação que ninguém
+ * enxergava. Uma faixa fraca continua sendo uma faixa.
  *
- * Ela não usa o vocabulário de LINK (cor na letra + pontilhado), que é o da
- * referência bíblica ao lado: dois links de aparência idêntica e destinos
- * diferentes na mesma linha seria uma promessa só para duas coisas. **O que diz
- * que o nome abre algo é ele estar marcado**, porque a partir da migração 0063
- * não existe nome marcado sem cartão — a regra é aprendida no primeiro toque e
- * vale para o resto do produto. Ver `RichText`.
+ * O pontilhado não tem área: ele é uma linha de um pixel embaixo da palavra, no
+ * mesmo lugar em que um leitor já espera encontrá-la. O parágrafo volta a ler
+ * como parágrafo, e o nome continua dizendo "aqui abre algo".
  *
- * No `hover` a faixa ENGROSSA (sobe de 82% para 74%) em vez de mudar de cor.
- * É a mesma tinta, um pouco mais de papel: o realce não vira um segundo estado
- * semântico, e no celular, onde não existe hover, nada se perde.
+ * **É o MESMO vocabulário da referência bíblica** (`InlineScripture`), e isso
+ * deixou de ser um problema para virar a resposta. O argumento de antes era que
+ * dois links idênticos com destinos diferentes seriam uma promessa só para duas
+ * coisas; o que ele não pesava é que a promessa é a MESMA nos dois casos — "toca
+ * e abre" —, e o destino se descobre no toque, como em qualquer link. O que os
+ * separa é a FORÇA: a referência leva a tinta clara na letra e o pontilhado a
+ * 50%, porque ela é um endereço; o nome fica na tinta do parágrafo, com o
+ * pontilhado a 30%, porque ele é uma palavra do texto que por acaso tem ficha.
  *
- * ## A TINTA É UMA SÓ, e a categoria não escolhe mais
- *
- * Azul era personagem e verde era lugar, emprestados do `EntityCombobox`, com
- * a figura citada no cinza. A ideia era boa no parágrafo de resumo, em que um
- * nome marcado é exceção, e ruiu no CARTÃO: ali meia dúzia de nomes cai na
- * mesma frase, e três tintas piscando lado a lado deixam de ser categoria e
- * viram arco-íris. O porquê inteiro, com as duas passadas de escala que
- * tentaram salvar a cor antes de ela sair, está no token em `globals.css`.
+ * Nada de fundo, nada de recuo, nada de peso: o glifo é exatamente o que era
+ * antes de ser marcado. No `hover` só a linha escurece, e no celular, onde não
+ * existe hover, nada se perde.
  *
  * O `data-mention` CONTINUA sendo escrito, e continua fora da tinta: ele é o
  * dado da categoria, lido por quem depurar e disponível se um dia ela voltar a
  * significar algo na tela. Quem diz que o nome abre um cartão é ele estar
  * marcado, e essa promessa é uma só.
+ *
+ * **A área de toque não mudou**: ela é a do `<button>`, que é a palavra, e uma
+ * decoração de texto não participa do teste de acerto de nada. O que some é o
+ * fundo; o alvo é o mesmo.
  *
  * ## DENTRO de um cartão, ela navega em vez de abrir outro
  *
@@ -65,11 +70,16 @@ const LexiconCardDialog = dynamic(
 );
 
 const MENTION_CLASSES = [
-  "cursor-pointer font-medium text-scriba-ink-strong",
-  "bg-[linear-gradient(transparent_82%,var(--session-mention-wash)_82%)]",
-  "hover:bg-[linear-gradient(transparent_74%,var(--session-mention-wash)_74%)]",
-  "[box-decoration-break:clone] [-webkit-box-decoration-break:clone]",
-  "rounded-[2px] transition-[background-image] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring/40",
+  // Sem `font-medium` e sem tinta própria: a palavra continua sendo a palavra
+  // do parágrafo. Ver o cabeçalho.
+  "cursor-pointer rounded-sm",
+  // O pontilhado, na mesma mecânica da referência bíblica: mesma distância da
+  // linha de base, mesmo estilo, 30% contra os 50% dela. `box-decoration-break`
+  // saiu junto com a faixa — uma decoração de texto atravessa a quebra de linha
+  // sozinha, que é justamente o que um fundo não faz.
+  "underline decoration-dotted decoration-session-mention-ink/30 underline-offset-[3px]",
+  "transition-[text-decoration-color] hover:decoration-session-mention-ink/60",
+  "focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring/40",
 ].join(" ");
 
 export function LexiconMention({

@@ -219,23 +219,42 @@ que as duas pontas: promete e não entrega. O preço, aceito de olhos abertos, �
 que no dia da migração nada fica marcado — cada nome acende quando alguém
 escreve o cartão dele.
 
-**A COR foi tentada e voltou atrás: a marcação é CINZA, uma tinta só.** Por
-duas versões ela teve matiz — azul para personagem, verde para lugar, neutro
-para figura citada —, e o argumento era que, valendo "aqui abre um cartão", ela
-podia adiantar **qual** cartão. O que derrubou isso foi a DENSIDADE, e ela só
-aparece no lugar que a cor deveria servir melhor: um cartão do léxico cita meia
-dúzia de nomes num parágrafo, e ali as duas cores mais o neutro não leem como
-três categorias, leem como três tintas piscando na mesma frase. A escala desceu
-de 70/62 para 32/30 tentando resolver, e cada degrau comprou menos ruído ao
-preço de uma distinção que ninguém enxergava — no piso da janela ela já era
-decorativa.
+**A marcação é um PONTILHADO, e essa é a terceira forma dela.** Por duas
+versões ela teve matiz — azul para personagem, verde para lugar, neutro para
+figura citada —, e o argumento era que, valendo "aqui abre um cartão", ela podia
+adiantar **qual** cartão. Depois ela virou uma faixa de lavado branco sob as
+palavras, sem categoria nenhuma. As duas saíram pelo mesmo motivo, levado até o
+fim: a DENSIDADE. Um cartão do léxico cita meia dúzia de nomes num parágrafo, e
+ali qualquer tratamento com ÁREA — cor de fundo, faixa, realce — deixa de marcar
+palavras e passa a manchar o bloco. A escala desceu de 70% para 22% em três
+passadas tentando resolver isso, e cada degrau comprou menos ruído ao preço de
+uma marcação que ninguém enxergava; **uma faixa fraca continua sendo uma
+faixa.**
 
-Então hoje há **um token e nenhuma regra de categoria**:
-`--session-mention-wash`, branco a 22%. A categoria continua nos dados
-(`data-mention`) e no rótulo que o leitor de tela ouve, e continua fora da
-tinta. O teste da força é o PARÁGRAFO, nunca a palavra isolada: de perto a
-marcação sempre parece fraca demais, e foi essa impressão que já levou a escala
-a 70% uma vez.
+Hoje o nome leva **um pontilhado e nada mais**: `underline decoration-dotted`
+sobre `--session-mention-ink` a 30%, sem fundo, sem recuo e sem peso — o glifo é
+exatamente o que era antes de ser marcado. Ele não tem área, é uma linha de um
+pixel no lugar em que um leitor já espera encontrá-la, e o parágrafo volta a ler
+como parágrafo.
+
+**É o MESMO vocabulário da referência bíblica**, e isso deixou de ser um
+problema para virar a resposta: o argumento de antes era que dois links
+idênticos com destinos diferentes seriam uma promessa só para duas coisas, e o
+que ele não pesava é que a promessa é a MESMA — "toca e abre" —, com o destino
+descoberto no toque, como em qualquer link. O que os separa é a FORÇA: a
+referência leva a tinta clara na letra e o pontilhado a 50%, porque ela é um
+endereço; o nome fica na tinta do parágrafo, com o pontilhado a 30%, porque ele
+é uma palavra do texto que por acaso tem ficha.
+
+A ÁREA DE TOQUE não mudou com isso: ela é a do `<button>`, que é a palavra, e
+uma decoração de texto não participa do teste de acerto de nada. O que some é o
+fundo; o alvo é o mesmo.
+
+A categoria continua nos dados (`data-mention`) e no rótulo que o leitor de tela
+ouve, e continua fora da tinta. `--session-mention-wash` sobreviveu porque o
+`EntityCombobox` o usa para outra coisa: pintar o trecho que casou no
+autocompletar de autor e local, numa lista curta em que o realce com área é
+exatamente o certo.
 
 - **O MARCA-TEXTO é repartido ANTES de tudo**, e a ordem é o que torna as duas
   camadas compatíveis. A marca é da PESSOA (ela arrastou o dedo e disse "isto
@@ -353,9 +372,10 @@ lista é vazia e o anotador só reconhece referência, que é o que ele já fazi
 referência estável; um `[]` literal novo a cada render recompilaria uma
 alternação de trezentos termos por parágrafo.
 
-Dentro de `.tone-study` o par `--session-mention-ink` / `--session-mention-wash`
-é reapontado, e só em FORÇA: a superfície do estudo é meio degrau mais clara que
-a do resumo, e o mesmo 22% sumiria nela.
+Dentro de `.tone-study` sobra `--session-mention-ink`: o `--session-mention-wash`
+era reapontado ali para a faixa não sumir na superfície meio degrau mais clara
+do estudo, e com a faixa fora do produto aquele override deixou de governar
+qualquer pixel.
 
 ## A gravação guardada, e quem insiste por ela
 

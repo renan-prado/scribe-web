@@ -297,7 +297,10 @@
   --session-example-border: rgba(255, 255, 255, 0.1);
   --session-mention-ink: #F5F5F5;
 
-  /* O MARCA-TEXTO DE NOME PRÓPRIO, numa tinta só.
+  /* O LAVADO DO TRECHO QUE CASOU, no autocompletar de autor e local.
+
+     Ele já foi o MARCA-TEXTO DE NOME PRÓPRIO do resumo, e essa é a história
+     que este comentário guarda.
 
      Ele já foi três, e o argumento era bom: desde a migração 0063 só é marcado
      o nome que TEM CARTÃO, então a cor podia ser a resposta antecipada de "o
@@ -317,10 +320,19 @@
      tela ouve; o que ela não faz mais é escolher tinta. Quem diz que o nome
      abre algo é ele estar MARCADO, e essa promessa é uma só.
 
-     22% de branco: forte o bastante para o olho achar o nome de relance, fraco
-     o bastante para o glifo continuar sobre o papel. O teste é o PARÁGRAFO,
-     nunca a palavra isolada — de perto a marcação sempre parece fraca demais, e
-     é essa impressão que já levou a escala para 70% uma vez. */
+     E a FAIXA saiu junto com a cor, pelo mesmo motivo levado até o fim: um
+     tratamento com ÁREA — fundo, faixa, realce — deixa de marcar palavras e
+     passa a manchar o bloco quando meia dúzia delas cai no mesmo parágrafo. A
+     escala desceu de 70% para 22% em três passadas tentando resolver isso, e
+     cada degrau comprou menos ruído ao preço de uma marcação que ninguém
+     enxergava; uma faixa fraca continua sendo uma faixa. Hoje o nome é um
+     PONTILHADO sobre `--session-mention-ink`, sem área nenhuma, no mesmo
+     vocabulário da referência bíblica e mais fraco que ela (ver
+     `LexiconMention`).
+
+     O token sobrevive porque o `EntityCombobox` o usa para outra coisa: pintar
+     o trecho que casou com o que foi digitado, numa lista curta em que o
+     realce com área é exatamente o certo. 22% de branco. */
   --session-mention-wash: rgba(255, 255, 255, 0.22);
 
   /* O LAVADO DA PISCADA: "esse aqui é o bloco que acabou de entrar".
@@ -328,7 +340,7 @@
      Branco, e não amarelo nem verde: as três cores do produto são semânticas
      (amarelo é a MOEDA, verde é estado binário de sistema, vermelho é
      destrutivo), e "olha aqui" não é nenhuma das três. É o mesmo lavado neutro
-     do marca-texto de nome próprio (`--session-mention-wash`), só mais fraco:
+     do realce do autocompletar (`--session-mention-wash`), só mais fraco:
      aquele cobre duas palavras, este cobre um parágrafo inteiro mais a folga
      em volta dele, e na mesma força viraria um retângulo cinza. */
   --session-block-flash: rgba(255, 255, 255, 0.13);
@@ -1392,7 +1404,6 @@
     --session-example-bg: #32333A;
     --session-example-border: rgba(255, 255, 255, 0.12);
     --session-mention-ink: #F5F5F5;
-    --session-mention-wash: rgba(255, 255, 255, 0.26);
   }
 }
 
