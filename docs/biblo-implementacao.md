@@ -734,8 +734,15 @@ Do `final_summary` já se tira tudo o que a primeira frase precisa:
 | `title` + o primeiro nome de quem abriu | *"Olá, **{nome}**! Vi que você está lendo sobre **"{título}"**, de **{pregador}**. Tem algum trecho ou tema que você queira conversar a respeito?"* |
 | cada bloco `bibleQuote` | chip **"Contexto de {referência}"** |
 | referências no meio da prosa (as mesmas já extraídas para a busca por versículo, migração 0041) | chip **"Contexto de {referência}"** |
-| `shortSummary` | chip **"Outras passagens sobre isto"** |
-| sempre | **"Uma pergunta que incomode"**, **"O que ler sobre isso"** |
+| `shortSummary` | chip **"Outras passagens sobre `<assunto>`"** |
+| sempre | **"Falar mais sobre `<assunto>`"**, **"Uma pergunta que incomode"**, **"O que ler sobre `<assunto>`"** |
+
+`<assunto>` é o TÍTULO do texto na tela, e "o assunto" quando ele não existe ou
+não cabe numa pastilha (`SUBJECT_MAX_CHARS`). Os três chips diziam "isso" e
+"isto", e "Falar mais sobre isso" é a legenda que um robô põe embaixo de
+qualquer coisa: o pronome não aponta para nada que a pessoa possa conferir, e
+numa fileira de pastilhas ele lê como preenchimento. Nomeando o assunto, o chip
+vira convite em vez de rótulo.
 
 Três a cinco chips por vez, nunca a lista inteira (`biblo.md` §4). **Sessão
 vazia** — alguém que acabou de abrir o `/escrever` — recebe o cumprimento sem

@@ -24,11 +24,50 @@ export type BibloOpening = { greeting: string; chips: string[] };
 const MAX_CHIPS = 5;
 
 /**
- * Os dois que valem para qualquer texto, e que ficam por último de propósito:
- * os derivados do conteúdo são melhores, e estes existem para a fileira nunca
- * ficar curta.
+ * Quantos chips dependem do ASSUNTO e não das referências citadas. É o que
+ * sobra para os "Contexto de X" no corte de `MAX_CHIPS`.
  */
-const GENERIC_CHIPS = ["Uma pergunta que incomode", "O que ler sobre isso"];
+const SUBJECT_CHIPS = 3;
+
+/**
+ * O teto do assunto DENTRO de um chip.
+ *
+ * Um chip é uma pastilha numa fileira que rola de lado; um título de sermão de
+ * oitenta caracteres dentro dela deixa de ser um botão e vira uma linha de
+ * texto com fundo. Acima disto a fileira volta a dizer "o assunto", que é
+ * genérico mas legível — e genérico e legível ganha de específico e ilegível.
+ */
+const SUBJECT_MAX_CHARS = 42;
+
+/**
+ * Do que esta conversa trata, em palavras que cabem num chip. `null` quando o
+ * texto na tela não tem título, ou quando ele é comprido demais.
+ */
+function subjectOf(summary: SummaryPayload): string | null {
+  const title = summary.title?.trim() ?? "";
+  if (!title || title.length > SUBJECT_MAX_CHARS) return null;
+  return title;
+}
+
+/**
+ * Os chips que continuam a conversa, com o ASSUNTO no lugar do "isso".
+ *
+ * **"Falar mais sobre isso" é uma frase que não diz nada.** Ela é a legenda que
+ * um robô põe embaixo de qualquer coisa: o "isso" não aponta para nada que a
+ * pessoa possa conferir, e numa fileira de pastilhas ela lê como preenchimento.
+ * O mesmo valia para "Outras passagens sobre isto" e "O que ler sobre isso" —
+ * três chips apontando para um referente que só existe na cabeça de quem
+ * escreveu o código.
+ *
+ * Com o título do texto na mão, o chip passa a NOMEAR o assunto: "Falar mais
+ * sobre a suficiência da graça" é um convite; "Falar mais sobre isso" é um
+ * rótulo. Sem título (ou com um comprido demais para caber numa pastilha) ele
+ * cai em "o assunto", que ao menos é português.
+ */
+function subjectChips(subject: string | null): string[] {
+  const about = subject ?? "o assunto";
+  return [`Falar mais sobre ${about}`, "Uma pergunta que incomode", `O que ler sobre ${about}`];
+}
 
 /**
  * Os chips da folha em branco, com um capítulo SORTEADO no meio.
@@ -172,13 +211,16 @@ export function buildBibloOpening(input: {
 
   const greeting = buildGreeting({ title, speakerName, firstName, authored, introduce });
 
+  const subject = subjectOf(summary);
   const chips: string[] = [];
   for (const reference of citedReferences(summary)) {
-    if (chips.length >= MAX_CHIPS - GENERIC_CHIPS.length) break;
+    if (chips.length >= MAX_CHIPS - SUBJECT_CHIPS) break;
     chips.push(`Contexto de ${reference}`);
   }
-  if (summary.shortSummary.trim()) chips.push("Outras passagens sobre isto");
-  chips.push(...GENERIC_CHIPS);
+  if (summary.shortSummary.trim()) {
+    chips.push(`Outras passagens sobre ${subject ?? "o assunto"}`);
+  }
+  chips.push(...subjectChips(subject));
 
   return { greeting, chips: chips.slice(0, MAX_CHIPS) };
 }
