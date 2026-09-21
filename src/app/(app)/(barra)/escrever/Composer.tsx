@@ -1349,41 +1349,94 @@ function DiscButton({
  * que mais recebe a barra: a última. Escrever é escrever para BAIXO, então o
  * cursor vive perto do rodapé da janela, e ali uma lista de nove itens
  * (~20rem) nasce inteira fora da tela — a pessoa digita `/`, não vê nada
- * acontecer, apaga e conclui que o atalho não existe. Com o teclado do celular
- * aberto, sobra menos ainda.
+ * acontecer, apaga e conclui que o atalho não existe.
  *
- * A medida é feita no MOMENTO em que o menu monta, e não por um ponto de
- * quebra: o que decide é quanto de janela sobra abaixo desta linha, que
- * depende da rolagem, da altura da tela e do teclado. Ele mede uma vez e não
- * escuta a rolagem, porque o menu só vive enquanto a linha está em foco — e o
- * gesto inteiro, da barra à escolha, dura menos que um gesto de rolar.
+ * **A medida é contra o VIEWPORT VISÍVEL, não contra `window.innerHeight`, e
+ * essa troca é o que consertou o corte no celular.** No modo padrão do
+ * Android (`resizes-visual`, o mesmo que o `useKeyboardInset` existe para
+ * compensar) o teclado NÃO encolhe `innerHeight` — a conta achava que sobrava
+ * espaço embaixo contando um espaço que o teclado já tinha comido, escolhia
+ * "para baixo" e a lista nascia cortada por baixo do teclado. `visualViewport`
+ * encolhe nos dois modos, então a conta passa a valer nos dois.
+ *
+ * **E a lista se ENCOLHE ao espaço que sobrou, nos dois lados.** Antes só o
+ * lado "embaixo" era medido contra o teto de altura; "em cima" bastava ter
+ * MAIS espaço que embaixo para ser escolhido, sem checar se aquele espaço
+ * bastava — numa janela baixa dos dois lados, "em cima" ainda estourava o
+ * topo da tela. Agora os dois lados clampam a própria altura ao que
+ * realmente têm (`SLASH_MENU_MIN_HEIGHT` a `SLASH_MENU_MAX_HEIGHT`), com
+ * rolagem interna cobrindo o resto.
+ *
+ * A medida roda no MOMENTO em que o menu monta — que costuma ser o momento em
+ * que o teclado já está aberto, já que a barra só se digita com o campo em
+ * foco — e de novo a cada `resize`/`scroll` do `visualViewport` enquanto ele
+ * vive: o teclado pode ainda estar animando ao abrir, e o iOS rola a página
+ * para manter o cursor visível depois do primeiro quadro. O menu vive pouco,
+ * só enquanto a linha está em foco, então ouvir os dois eventos custa pouco.
  *
  * `useLayoutEffect` e não `useEffect`: medir depois da pintura faria a lista
  * aparecer embaixo e pular para cima num segundo quadro, que é pior que
  * qualquer dos dois lugares.
  */
-/** A altura que a lista cheia pede. Ver `useSlashSide`. */
+/** A altura que a lista cheia pede. Ver `useSlashPlacement`. */
 const SLASH_MENU_MAX_HEIGHT = 320;
+/** O menor que a lista pode encolher sem virar inútil: menos que isto e a
+ *  rolagem interna trabalha mais do que ajuda. */
+const SLASH_MENU_MIN_HEIGHT = 120;
+/** A folga entre a lista e a borda do viewport visível, no lado que sobrou. */
+const SLASH_MENU_EDGE_GAP = 12;
+
+type SlashPlacement = { side: "up" | "down"; maxHeight: number };
 
 /**
- * Para que lado o menu abre, medido uma vez quando ele monta.
- *
- * `"down"` é o padrão e o certo em quase toda linha; `"up"` é a resposta para a
- * última linha do documento, que é onde a barra mais é digitada e onde não há
- * janela embaixo. Ver o cabeçalho do `SlashMenu`.
+ * Para que lado o menu abre e a que altura ele encolhe, medido contra o que
+ * está VISÍVEL — não contra `window.innerHeight`. Ver o cabeçalho do
+ * `SlashMenu`, que tem o raciocínio inteiro (o defeito do teclado, e por que
+ * os dois lados clampam a própria altura).
  */
-function useSlashSide(ref: React.RefObject<HTMLDivElement | null>): "up" | "down" {
-  const [side, setSide] = useState<"up" | "down">("down");
+function useSlashPlacement(ref: React.RefObject<HTMLDivElement | null>): SlashPlacement {
+  const [placement, setPlacement] = useState<SlashPlacement>({
+    side: "down",
+    maxHeight: SLASH_MENU_MAX_HEIGHT,
+  });
   useLayoutEffect(() => {
     const anchor = ref.current?.parentElement;
     if (!anchor) return;
-    const box = anchor.getBoundingClientRect();
-    const below = window.innerHeight - box.bottom;
-    // Só sobe quando não cabe embaixo E cabe em cima: numa janela baixa demais
-    // para os dois lados, embaixo é o lugar em que a rolagem alcança a lista.
-    setSide(below < SLASH_MENU_MAX_HEIGHT && box.top > below ? "up" : "down");
+    const measure = () => {
+      const box = anchor.getBoundingClientRect();
+      const vv = window.visualViewport;
+      const visibleBottom = vv ? vv.offsetTop + vv.height : window.innerHeight;
+      const visibleTop = vv?.offsetTop ?? 0;
+      const below = visibleBottom - box.bottom;
+      const above = box.top - visibleTop;
+      // Só sobe quando não cabe embaixo E há mais espaço em cima: numa janela
+      // baixa demais para os dois lados, embaixo é o lugar em que a rolagem da
+      // PÁGINA alcança a lista; em cima ela ficaria presa contra o topo da
+      // tela sem para onde rolar.
+      const side = below < SLASH_MENU_MAX_HEIGHT && above > below ? "up" : "down";
+      // A lista se encolhe ao espaço que o lado escolhido tem, e nunca menos
+      // que o mínimo: sem isto, "up" com pouco espaço em cima ainda estourava
+      // o topo da tela — ele só comparava contra "embaixo", nunca contra o
+      // que cabia de fato ali em cima.
+      const room = (side === "up" ? above : below) - SLASH_MENU_EDGE_GAP;
+      const maxHeight = Math.max(SLASH_MENU_MIN_HEIGHT, Math.min(SLASH_MENU_MAX_HEIGHT, room));
+      setPlacement({ side, maxHeight });
+    };
+    measure();
+    // O teclado pode ainda estar abrindo no instante em que a barra é digitada
+    // (a animação leva alguns quadros), e a rolagem que o iOS faz para manter
+    // o cursor visível também muda `offsetTop` depois do primeiro quadro. O
+    // menu vive pouco — só enquanto a linha está em foco —, então ouvir os
+    // dois eventos custa pouco e corrige o caso em que a medida do mount já
+    // nasceu velha.
+    window.visualViewport?.addEventListener("resize", measure);
+    window.visualViewport?.addEventListener("scroll", measure);
+    return () => {
+      window.visualViewport?.removeEventListener("resize", measure);
+      window.visualViewport?.removeEventListener("scroll", measure);
+    };
   }, [ref]);
-  return side;
+  return placement;
 }
 
 function SlashMenu({
@@ -1400,7 +1453,7 @@ function SlashMenu({
   onPick: (pick: BlockPick) => void;
 }) {
   const ref = useRef<HTMLDivElement>(null);
-  const side = useSlashSide(ref);
+  const { side, maxHeight } = useSlashPlacement(ref);
   // A caixa acompanha o lado: para cima ela é ancorada pela BASE, para a lista
   // crescer afastando-se da linha em vez de cobri-la.
   const place = side === "up" ? "bottom-full mb-1" : "top-full mt-1";
@@ -1424,8 +1477,9 @@ function SlashMenu({
     <div
       ref={ref}
       data-slash-menu
+      style={{ maxHeight }}
       className={cn(
-        "absolute left-0 z-40 flex max-h-80 w-[min(20rem,calc(100vw-3rem))] flex-col gap-0.5 overflow-y-auto rounded-2xl border border-scriba-hairline bg-scriba-surface p-1.5 shadow-[0_12px_32px_var(--scriba-shadow)]",
+        "absolute left-0 z-40 flex w-[min(20rem,calc(100vw-3rem))] flex-col gap-0.5 overflow-y-auto rounded-2xl border border-scriba-hairline bg-scriba-surface p-1.5 shadow-[0_12px_32px_var(--scriba-shadow)]",
         place
       )}
     >
