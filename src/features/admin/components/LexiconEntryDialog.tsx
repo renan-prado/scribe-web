@@ -362,10 +362,16 @@ export function LexiconEntryDialog({ entry, open, onOpenChange, onChanged }: Pro
                 reparte parágrafos sozinho quando a pessoa esquece (ver
                 `lib/domain/paragraphs.ts`), mas uma quebra escolhida por quem
                 escreveu cai sempre num lugar melhor que uma calculada por
-                contagem de caracteres. */}
+                contagem de caracteres.
+
+                Ela pede uma QUEBRA, não uma linha em branco: o `breathe` separa
+                parágrafos em `
++`, e pedir Enter duas vezes aqui seria ensinar
+                a regra antiga — a que fazia o cartão sair grudado — como se ela
+                ainda valesse. */}
             <div className="flex items-baseline justify-between gap-3">
               <p className="text-[11px] text-scriba-ink-mute">
-                Uma linha em branco entre as ideias. Parágrafo longo é olhado, não lido.
+                Uma quebra de linha entre as ideias. Parágrafo longo é olhado, não lido.
               </p>
               <p className="shrink-0 text-[11px] text-scriba-ink-mute">
                 {description.length}/{LEXICON_LIMITS.description}
