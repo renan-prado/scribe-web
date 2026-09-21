@@ -1038,10 +1038,24 @@ o destino é o resumo, como sempre foi.
 (tentar agora, baixar, apagar) e nenhum destino. Ele some sozinho quando o
 resumo existe, e nunca antes disso.
 
-**Gravando, a tela vira uma BANCADA** (`RecordingWorkbench`). Uma pregação dura
-quarenta minutos, e a tela passava os quarenta mostrando treze barrinhas — a
-tela mais ociosa do produto, justamente na hora em que quem está ali mais tem o
-que anotar e o que perguntar. Três abas: **Notas**, **Biblo** e **Bíblia**.
+**Gravando, três ferramentas flutuam sobre a tela** (`RecordingWorkbench`).
+Uma pregação dura quarenta minutos, e quem está ali com o aparelho na mão tem
+o que anotar e o que perguntar — mas a tela precisa continuar limpa, porque na
+maior parte desses quarenta minutos ninguém está mexendo em nenhuma das três.
+Elas já foram uma BANCADA, um painel de abas que tomava metade da tela ao lado
+da onda; hoje são camadas fechadas por padrão, cada uma reaproveitando o
+lugar em que a mesma ferramenta já mora no resto do app:
+
+- **Biblo** é o `BibloDock` de sempre, o disco de vidro no canto de baixo à
+  direita — o MESMO componente de `/summary` e `/escrever`, sem `onInsert`
+  (durante a gravação não há resumo em que inserir).
+- **Bíblia** é o `BibleDock` de sempre, a aba colada na borda direita.
+- **Notas** é a única sem gêmea em outra tela: `RecordingNotesDock`, um
+  widget no canto de baixo à ESQUERDA — o canto direito já tem dois donos.
+
+Reusar Biblo e Bíblia tal como já existem, em vez de uma terceira gramática de
+painel só do gravador, é o que faz abrir a conversa ou a Bíblia durante a
+pregação parecer a MESMA coisa que abri-las lendo um resumo.
 
 - **As notas viram CONTEXTO do resumo, e não um segundo documento.** Elas vão
   para o prompt do `/api/final-summary` marcadas como notas de quem estava na
@@ -1064,17 +1078,19 @@ que anotar e o que perguntar. Três abas: **Notas**, **Biblo** e **Bíblia**.
   tentativa de envio manda o MESMO, e `POST /api/sessions` o devolve em vez de
   criar outra sessão. Apagar a gravação apaga a linha junto, quando ela
   existe.
-- **Nada da bancada pode repintar o gravador.** O estado das três abas mora
-  dentro do `RecordingWorkbench` (ou no store de `recording-notes.ts`), ele é
-  `memo`, e o `AudioStudio` lê as notas por `getState()`, que não assina nada.
-  O `MediaRecorder` mora em refs e sobreviveria aos renders, mas a fileira de
-  barras, os controles e o relógio não precisam repintar a cada tecla digitada
-  numa pregação de uma hora.
-- No celular a onda ENCOLHE e gruda no topo: ela deixa de ser o objeto da tela
-  e vira a confirmação de que o microfone continua aberto, e 168px dela seriam
-  metade da tela gastos num indicador. No desktop as duas coisas ficam lado a
-  lado. Quem mexer no tamanho da onda mexe no `waveRef` do `AudioStudio`, que é
-  ref e não prop de propósito: `paintLevels` roda a 60 quadros por segundo.
+- **Nada das três pode repintar o gravador.** Cada uma guarda o próprio
+  estado dentro de si mesma ou num store (`recording-notes.ts`), nunca no
+  `AudioStudio`; `RecordingWorkbench` é `memo`, e o `AudioStudio` lê as notas
+  por `getState()`, que não assina nada. O `MediaRecorder` mora em refs e
+  sobreviveria aos renders de qualquer forma, mas abrir, fechar e conversar
+  numa das três não tem por que repintar a fileira de barras, os controles e o
+  relógio a cada tecla digitada numa pregação de uma hora.
+- **A onda tem um tamanho só, gravando ou em repouso.** Ela já encolhia e
+  grudava no topo para abrir espaço à bancada; sem bancada nenhuma disputando
+  a tela, ela fica no tamanho de sempre, o objeto em volta do qual a tela foi
+  desenhada. Quem mexer no tamanho da onda mexe no `waveRef` do `AudioStudio`,
+  que é ref e não prop de propósito: `paintLevels` roda a 60 quadros por
+  segundo.
 
 **A tela em repouso diz o que vem DEPOIS de parar**, numa pastilha sob a onda
 (o `hinting` do `AudioStudio`). Quem chega ali vê uma onda apagada e um

@@ -124,13 +124,11 @@ export function AudioStudio({ autoStart = false }: { autoStart?: boolean }) {
   /**
    * A geometria da onda, numa REF e não numa prop.
    *
-   * A onda tem dois tamanhos: a grande da tela em repouso, que é o objeto em
-   * volta do qual esta tela foi desenhada, e a fina de quando a bancada está
-   * aberta embaixo dela — ali a onda vira a confirmação de que o microfone
-   * está vivo, e 168px dela seriam metade da tela do celular gastos num
-   * indicador. A ref existe porque `paintLevels` roda a 60 quadros por
-   * segundo: recriá-la a cada troca de tamanho recriaria o callback, e com ele
-   * o `useAudioCapture` inteiro.
+   * Um tamanho só, gravando ou em repouso — é o objeto em volta do qual esta
+   * tela foi desenhada, e nada mais disputa espaço com ela (ver o cabeçalho
+   * de `RecordingWorkbench`). A ref existe porque `paintLevels` roda a 60
+   * quadros por segundo: uma prop recriaria o callback a cada render, e com
+   * ele o `useAudioCapture` inteiro.
    */
   const waveRef = useRef({ base: 14, span: 154 });
 
@@ -198,9 +196,15 @@ export function AudioStudio({ autoStart = false }: { autoStart?: boolean }) {
 
   useUnloadGuard(capturing || busy);
 
-  // Gravando, a onda encolhe para dar a tela à bancada. Ver `waveRef`.
+  // A onda tem um tamanho só, gravando ou em repouso. Ela já encolheu para dar
+  // lugar à bancada (as três ferramentas do lado); hoje elas são camadas
+  // flutuantes fora do fluxo (ver `RecordingWorkbench`), e não sobra mais
+  // ninguém para essa folga defender — a tela fica limpa com a onda no
+  // tamanho de sempre. O efeito continua existindo para DEFLACIONAR as barras
+  // ao sair da gravação: sem ele, parar no meio de um pico deixava a onda
+  // congelada alta enquanto a tela voltava ao repouso.
+  // biome-ignore lint/correctness/useExhaustiveDependencies: `capturing` não é LIDO pelo efeito, e é dependência de propósito — o gatilho é a TRANSIÇÃO (parar de gravar), não o valor.
   useEffect(() => {
-    waveRef.current = capturing ? { base: 8, span: 56 } : { base: 14, span: 154 };
     for (const bar of barsRef.current) {
       if (bar) bar.style.height = `${waveRef.current.base}px`;
     }
@@ -405,67 +409,44 @@ export function AudioStudio({ autoStart = false }: { autoStart?: boolean }) {
 
   return (
     <>
-      {/* A tela tem DUAS caras.
-
-          Em repouso ela é o que sempre foi: a onda grande no meio de uma
-          coluna centralizada, com a dica embaixo. Gravando, ela vira uma
-          BANCADA — a onda encolhe e sobe para o topo, e embaixo dela entram as
-          três ferramentas que correm ao lado da pregação (ver
-          `RecordingWorkbench`). Quarenta minutos olhando treze barrinhas era
-          a tela mais ociosa do produto justamente na hora em que a pessoa mais
-          tem o que anotar e o que perguntar.
-
-          No celular a onda fica GRUDADA no topo (`sticky`), que é o que
-          permite rolar a conversa ou o capítulo sem perder de vista a
-          confirmação de que o microfone continua aberto. No desktop não há por
-          que grudar nada: a tela é larga, e as duas coisas ficam lado a lado,
-          a onda à esquerda e a bancada à direita. */}
-      <div
-        className={cn(
-          "flex min-h-0 flex-1 flex-col",
-          capturing ? "gap-4 lg:flex-row lg:items-stretch lg:gap-8" : "gap-10"
-        )}
-      >
-        <div
-          className={cn(
-            "flex flex-col items-center justify-center gap-10",
-            capturing
-              ? "sticky top-0 z-10 shrink-0 gap-4 bg-v2-bg py-2 lg:static lg:w-[22rem] lg:justify-center lg:py-0"
-              : "flex-1"
-          )}
-        >
-          {/* A onda e a dica moram no MESMO bloco, e a dica é `absolute` dentro
+      {/* A tela é UMA cara só, gravando ou em repouso: a onda grande no meio
+          de uma coluna centralizada, com a dica embaixo antes do primeiro
+          toque. Ela já teve uma segunda cara — encolhia e subia para o topo
+          para abrir espaço a uma bancada de três abas ao lado —, e essa
+          bancada saiu (ver `RecordingWorkbench`): Notas, Biblo e Bíblia são
+          hoje camadas flutuantes, fechadas por padrão, e não sobra mais nada
+          disputando espaço com a onda. Quarenta minutos olhando treze
+          barrinhas era a tela mais ociosa do produto; a resposta não é mais
+          apertar a onda para caber uma bancada, é deixar as três ferramentas
+          a um toque de distância sem custar um pixel da tela enquanto
+          fechadas. */}
+      <div className="flex min-h-0 flex-1 flex-col items-center justify-center gap-10">
+        {/* A onda e a dica moram no MESMO bloco, e a dica é `absolute` dentro
               dele: a coluna está centralizada (`justify-center`), então qualquer
               coisa que entrasse no fluxo aqui empurraria a onda para cima — e a
               onda é o objeto em volta do qual esta tela foi desenhada. Fora do
               fluxo, ela pendura embaixo sem mover um pixel do que já estava. */}
-          <div className="relative flex items-center justify-center">
-            <div
-              aria-hidden
-              className={cn(
-                "flex items-center justify-center gap-2 sm:gap-2.5",
-                capturing ? "h-[64px]" : "h-[168px]"
-              )}
-            >
-              {Array.from({ length: WAVE_BARS }, (_, i) => (
-                <span
-                  key={`bar-${
-                    // biome-ignore lint/suspicious/noArrayIndexKey: as barras são posições fixas, não dados
-                    i
-                  }`}
-                  ref={(el) => {
-                    barsRef.current[i] = el;
-                  }}
-                  className={cn(
-                    "w-3.5 rounded-full bg-v2-wave transition-opacity duration-300 sm:w-4",
-                    idle && !busy ? "opacity-15" : "opacity-50"
-                  )}
-                  style={{ height: "14px" }}
-                />
-              ))}
-            </div>
-            {hinting ? (
-              /* A promessa que falta na tela mais silenciosa do produto: quem
+        <div className="relative flex items-center justify-center">
+          <div aria-hidden className="flex h-[168px] items-center justify-center gap-2 sm:gap-2.5">
+            {Array.from({ length: WAVE_BARS }, (_, i) => (
+              <span
+                key={`bar-${
+                  // biome-ignore lint/suspicious/noArrayIndexKey: as barras são posições fixas, não dados
+                  i
+                }`}
+                ref={(el) => {
+                  barsRef.current[i] = el;
+                }}
+                className={cn(
+                  "w-3.5 rounded-full bg-v2-wave transition-opacity duration-300 sm:w-4",
+                  idle && !busy ? "opacity-15" : "opacity-50"
+                )}
+                style={{ height: "14px" }}
+              />
+            ))}
+          </div>
+          {hinting ? (
+            /* A promessa que falta na tela mais silenciosa do produto: quem
                chega aqui vê uma onda apagada e um microfone, e nada diz o que
                acontece DEPOIS de parar. É a pergunta que decide se a pessoa
                deixa o aparelho gravando uma hora de pregação.
@@ -489,51 +470,59 @@ export function AudioStudio({ autoStart = false }: { autoStart?: boolean }) {
                durante a pregação, e pendurar a dica lá embaixo a deixava
                flutuando a 84px de qualquer coisa. Ela só aparece com as barras
                em repouso, então não há altura de barra com que se preocupar. */
-              <p className="pointer-events-none absolute top-1/2 left-1/2 mt-12 w-max max-w-[min(18rem,80vw)] -translate-x-1/2 text-balance rounded-2xl bg-v2-card px-4 py-2.5 text-center text-xs font-light leading-snug text-v2-ink-mute">
-                Ao encerrar, o Scriba transcreve tudo e escreve o resumo para você.
-              </p>
-            ) : null}
-          </div>
-
-          {busy ? (
-            <div className="flex max-w-xs flex-col items-center gap-2 text-center">
-              <p role="status" className="text-sm font-light text-v2-ink-soft">
-                {showingPhase ? phaseLabel(phase, chunk) : "Guardando a gravação…"}
-              </p>
-              {/* A frase que tira o medo de fechar o app no meio do envio, e que
-                só é honesta porque o áudio já está no disco antes de a primeira
-                chamada sair. */}
-              <p className="text-xs font-light text-v2-ink-mute">
-                Sua gravação já está guardada neste aparelho. Se algo der errado agora, ela aparece
-                na Biblioteca e o Scriba tenta de novo sozinho.
-              </p>
-            </div>
-          ) : depleted ? (
-            <p role="alert" className="max-w-xs text-center text-sm font-light text-v2-ink-soft">
-              Suas moedas acabaram e a gravação foi pausada. Você ainda pode parar e ficar com o
-              resumo do que gravou até aqui.
-            </p>
-          ) : error ? (
-            <p role="alert" className="max-w-xs text-center text-sm font-light text-v2-ink-mute">
-              {error}
-            </p>
-          ) : !persisted && capturing ? (
-            <p role="alert" className="max-w-xs text-center text-sm font-light text-v2-ink-mute">
-              Este navegador não está guardando cópia da gravação. Ela existe só enquanto esta tela
-              estiver aberta.
+            <p className="pointer-events-none absolute top-1/2 left-1/2 mt-12 w-max max-w-[min(18rem,80vw)] -translate-x-1/2 text-balance rounded-2xl bg-v2-card px-4 py-2.5 text-center text-xs font-light leading-snug text-v2-ink-mute">
+              Ao encerrar, o Scriba transcreve tudo e escreve o resumo para você.
             </p>
           ) : null}
         </div>
 
-        {/* A bancada só existe com o microfone aberto. Antes de começar, esta
-            tela é um convite, e um bloco de notas ao lado de um convite é uma
-            segunda coisa a decidir antes da única que importa. */}
-        {capturing ? (
-          <RecordingWorkbench sessionId={sessionId} ensureSession={ensureSession} />
+        {busy ? (
+          <div className="flex max-w-xs flex-col items-center gap-2 text-center">
+            <p role="status" className="text-sm font-light text-v2-ink-soft">
+              {showingPhase ? phaseLabel(phase, chunk) : "Guardando a gravação…"}
+            </p>
+            {/* A frase que tira o medo de fechar o app no meio do envio, e que
+                só é honesta porque o áudio já está no disco antes de a primeira
+                chamada sair. */}
+            <p className="text-xs font-light text-v2-ink-mute">
+              Sua gravação já está guardada neste aparelho. Se algo der errado agora, ela aparece na
+              Biblioteca e o Scriba tenta de novo sozinho.
+            </p>
+          </div>
+        ) : depleted ? (
+          <p role="alert" className="max-w-xs text-center text-sm font-light text-v2-ink-soft">
+            Suas moedas acabaram e a gravação foi pausada. Você ainda pode parar e ficar com o
+            resumo do que gravou até aqui.
+          </p>
+        ) : error ? (
+          <p role="alert" className="max-w-xs text-center text-sm font-light text-v2-ink-mute">
+            {error}
+          </p>
+        ) : !persisted && capturing ? (
+          <p role="alert" className="max-w-xs text-center text-sm font-light text-v2-ink-mute">
+            Este navegador não está guardando cópia da gravação. Ela existe só enquanto esta tela
+            estiver aberta.
+          </p>
         ) : null}
       </div>
 
-      <div className="flex flex-col items-center gap-6">
+      {/* As três ferramentas flutuantes só existem com o microfone aberto.
+          Antes de começar, esta tela é um convite, e um convite com um disco
+          de notas no canto é uma segunda coisa a decidir antes da única que
+          importa. Elas moram FORA da coluna centralizada de propósito — são
+          camadas `fixed`, decididamente fora da estrutura principal da tela
+          (ver `RecordingWorkbench`). */}
+      {capturing ? (
+        <RecordingWorkbench sessionId={sessionId} ensureSession={ensureSession} />
+      ) : null}
+
+      {/* `pb-16` só GRAVANDO: é a folga que evita o botão de Apagar (à
+          direita da fileira) encostar no disco do Biblo, e o de Pausar (à
+          esquerda) no disco das Notas — os dois cantos de baixo que as três
+          ferramentas flutuantes ocupam enquanto a gravação está aberta. Em
+          repouso não há ferramenta nenhuma flutuando, e a folga extra seria
+          só espaço morto sob o microfone. */}
+      <div className={cn("flex flex-col items-center gap-6", capturing && "pb-16")}>
         <div className="flex items-center justify-center gap-6">
           {busy ? null : idle ? (
             <button

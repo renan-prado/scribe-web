@@ -38,9 +38,9 @@ import { cn } from "@/lib/utils";
  *
  * ## Ela é uma REGIÃO, não um diálogo
  *
- * É o que a torna reusável nas duas telas que a pedem: dentro de uma aba do
- * gravador (`RecordingWorkbench`) e dentro de uma gaveta na leitura
- * (`BibleDock`). Quem quiser um diálogo põe isto dentro de um; o contrário não
+ * É o que a torna reusável em toda tela que a pede — o `BibleDock`, o MESMO
+ * componente, monta a mesma região dentro de uma gaveta na leitura, no editor
+ * e no gravador. Quem quiser um diálogo põe isto dentro de um; o contrário não
  * daria — um componente que carrega o próprio `Dialog` não entra numa aba.
  *
  * O texto vem do MESMO `useVerseFetch` do resto do app, cacheado por

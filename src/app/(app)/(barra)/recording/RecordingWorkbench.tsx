@@ -1,11 +1,9 @@
 "use client";
 
-import { Loader2, WifiOff } from "lucide-react";
-import { memo, useState } from "react";
-import { Tabs, TabsList, TabsPanel, TabsTab } from "@/components/ui/tabs";
-import { BibleReader } from "@/features/session/components/BibleReader";
-import { BibloDrawer } from "@/features/session/components/BibloDrawer";
-import { RECORDING_NOTES_MAX_CHARS, useRecordingNotes } from "./recording-notes";
+import { memo } from "react";
+import { BibleDock } from "@/features/session/components/BibleDock";
+import { BibloDock } from "@/features/session/components/BibloDock";
+import { RecordingNotesDock } from "./RecordingNotesDock";
 
 /**
  * As três ferramentas que correm AO LADO da gravação: Notas, Biblo e Bíblia.
@@ -19,127 +17,65 @@ import { RECORDING_NOTES_MAX_CHARS, useRecordingNotes } from "./recording-notes"
  * fora do Scriba, em outro app, com o risco de o sistema matar a aba que está
  * gravando.
  *
- * ## A regra que governa este arquivo
+ * ## Três CAMADAS, não mais um painel de abas
  *
- * **Nada daqui pode repintar o gravador.** Todo o estado (a aba aberta, o
- * texto das notas, o caminho na Bíblia, a conversa) nasce e morre DENTRO deste
- * componente ou no store de notas, e as props que ele recebe são estáveis. Ele
- * é `memo` por causa disso: o `AudioStudio` repinta a cada troca de fase e a
- * cada segundo de saldo, e nenhuma dessas coisas tem o que dizer a uma
- * conversa em andamento.
+ * Isto já foi uma bancada: três abas dentro de um painel que tomava metade da
+ * tela, ao lado da onda. O problema era exatamente esse — "tomava metade da
+ * tela" é o oposto de "a tela fica limpa enquanto grava", e uma pregação passa
+ * a maior parte do tempo sem que ninguém esteja escrevendo nota, conversando
+ * com o Biblo ou lendo um capítulo. Hoje as três são camadas flutuantes,
+ * fechadas por padrão, sobre uma tela que volta a ser só a onda:
  *
- * ## Abas, e não painéis lado a lado
+ * - **Biblo** é o `BibloDock` de sempre — o mesmo disco de vidro no canto de
+ *   baixo à direita que existe em `/summary` e `/escrever`. Sem `onInsert`:
+ *   durante a gravação não há resumo em que inserir, e a conversa funciona
+ *   igual sem o "Adicionar" (o mesmo caminho de antes desta tela virar
+ *   `BibloPanel`).
+ * - **Bíblia** é o `BibleDock` de sempre — a aba colada na borda direita, na
+ *   altura do olho, que abre o leitor como gaveta (celular) ou painel
+ *   (desktop).
+ * - **Notas** é a única sem gêmea em outra tela — `RecordingNotesDock`, um
+ *   widget no canto de baixo à ESQUERDA, porque só aqui há o que anotar
+ *   enquanto se grava. Ver o cabeçalho de lá.
  *
- * No celular não há largura para dois painéis, e no desktop a tela de gravação
- * já é uma coluna com a onda no meio: a divisão em duas colunas acontece um
- * nível acima (`AudioStudio`), entre o GRAVADOR e esta bancada. Aqui dentro,
- * três abas — as três coisas são alternativas uma da outra, ninguém escreve
- * uma nota enquanto lê um salmo.
+ * Reusar os dois primeiros TAL COMO já existem, em vez de uma terceira
+ * gramática de painel dentro do gravador, é o que garante que abrir a
+ * conversa ou a Bíblia durante a pregação pareça a MESMA coisa que abri-las
+ * lendo um resumo — o canto de baixo à direita e a borda direita já são
+ * lugares conhecidos.
  *
- * `keepMounted` está LIGADO, ao contrário do padrão do `Tabs`. É o que faz a
- * conversa com o Biblo sobreviver a uma passada pela Bíblia: sem ele o painel
- * sai do DOM, a gaveta remonta do zero e o rascunho que estava sendo digitado
- * some. Numa tela em que a pessoa alterna o tempo todo, desmontar é perder.
+ * ## Nada daqui pode repintar o gravador
+ *
+ * `BibloDock`, `BibleDock` e `RecordingNotesDock` guardam o próprio estado
+ * (aberto/fechado, a conversa, o capítulo, o texto das notas) dentro de si
+ * mesmos ou num store — nenhum deles sobe estado para o `AudioStudio`. Ele é
+ * `memo` por causa disso: o `AudioStudio` repinta a cada troca de fase e a
+ * cada segundo de saldo, e nenhuma dessas coisas tem o que dizer às três
+ * ferramentas. O `MediaRecorder` mora em refs dentro do `useAudioCapture`, e
+ * é por isso que abrir, fechar e interagir com qualquer uma delas nunca o
+ * interrompe: elas nunca chegam perto do que o controla.
  */
 
 type Props = {
   /**
    * A sessão que ancora a conversa. `null` enquanto ela não existe — a
-   * gravação começa antes de qualquer ida ao servidor, e pode começar sem rede
-   * nenhuma.
+   * gravação começa antes de qualquer ida ao servidor, e pode começar sem
+   * rede nenhuma. Nesse instante o `BibloDock` simplesmente não é montado: o
+   * mesmo vazio já cobre o Biblo, ver `AudioStudio`.
    */
   sessionId: string | null;
   /** Cria a sessão sob demanda e devolve o id. Ver `AudioStudio`. */
   ensureSession: () => Promise<string | null>;
 };
 
-function NotesPanel() {
-  // A ÚNICA assinatura deste texto. O `AudioStudio` lê por `getState()`.
-  const notes = useRecordingNotes((s) => s.notes);
-  const setNotes = useRecordingNotes((s) => s.setNotes);
-
+function Tools({ sessionId, ensureSession }: Props) {
   return (
-    <div className="flex min-h-0 flex-1 flex-col gap-2">
-      <textarea
-        value={notes}
-        onChange={(e) => setNotes(e.target.value.slice(0, RECORDING_NOTES_MAX_CHARS))}
-        maxLength={RECORDING_NOTES_MAX_CHARS}
-        placeholder="Nomes, referências, a frase que você não quer perder…"
-        aria-label="Anotações desta gravação"
-        className="min-h-40 flex-1 resize-none rounded-2xl bg-v2-card p-4 text-[14px] leading-relaxed text-v2-ink placeholder:text-v2-ink-mute focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-v2-ink-mute"
-      />
-      {/* A promessa, dita uma vez. Sem ela o campo parece um bloco de notas
-          qualquer, e a pessoa não tem por que preferi-lo ao do sistema. */}
-      <p className="shrink-0 px-1 text-[11px] font-light leading-snug text-v2-ink-mute">
-        O Scriba lê estas notas junto com a transcrição ao escrever o resumo.
-      </p>
-    </div>
+    <>
+      <RecordingNotesDock />
+      <BibleDock />
+      {sessionId ? <BibloDock sessionId={sessionId} ensureSession={ensureSession} /> : null}
+    </>
   );
 }
 
-function BibloPanel({ sessionId, ensureSession }: Props) {
-  if (!sessionId) {
-    return (
-      <div className="flex min-h-40 flex-1 flex-col items-center justify-center gap-3 rounded-2xl bg-v2-card p-6 text-center">
-        <WifiOff aria-hidden className="size-5 text-v2-ink-mute" strokeWidth={1.75} />
-        <p className="text-[13px] font-light leading-snug text-v2-ink-mute">
-          A conversa com o Biblo precisa de internet. Sua gravação continua, e ele volta assim que a
-          conexão voltar.
-        </p>
-        <button
-          type="button"
-          onClick={() => void ensureSession()}
-          className="inline-flex items-center gap-1.5 rounded-full bg-v2-card-hover px-4 py-2 text-[12px] font-semibold text-v2-ink transition-colors hover:brightness-110 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-v2-ink-mute"
-        >
-          <Loader2 aria-hidden className="size-3.5" strokeWidth={2} />
-          Tentar de novo
-        </button>
-      </div>
-    );
-  }
-
-  // `layout="inline"` é o que tira da gaveta a moldura `fixed` e o fechar: aqui
-  // ela é o conteúdo de uma aba, não um painel pousado sobre a tela. Sem
-  // `onInsert`: durante a gravação não existe resumo em que inserir, e a
-  // conversa funciona igual sem o "Adicionar" (é o mesmo caminho do
-  // `/summary` antes de a leitura saber editar).
-  return (
-    <BibloDrawer
-      layout="inline"
-      sessionId={sessionId}
-      ensureSession={ensureSession}
-      onThinking={() => {}}
-      className="min-h-[22rem] flex-1"
-    />
-  );
-}
-
-function Workbench({ sessionId, ensureSession }: Props) {
-  const [tab, setTab] = useState("notas");
-
-  return (
-    <Tabs
-      value={tab}
-      onValueChange={(value) => setTab(String(value))}
-      className="flex min-h-0 flex-1 flex-col gap-3"
-    >
-      <TabsList className="shrink-0 self-center">
-        <TabsTab value="notas">Notas</TabsTab>
-        <TabsTab value="biblo">Biblo</TabsTab>
-        <TabsTab value="biblia">Bíblia</TabsTab>
-      </TabsList>
-
-      <TabsPanel keepMounted value="notas" className="min-h-0 flex-1">
-        <NotesPanel />
-      </TabsPanel>
-      <TabsPanel keepMounted value="biblo" className="min-h-0 flex-1">
-        <BibloPanel sessionId={sessionId} ensureSession={ensureSession} />
-      </TabsPanel>
-      <TabsPanel keepMounted value="biblia" className="min-h-0 flex-1">
-        <BibleReader className="flex-1 rounded-2xl bg-v2-card p-3" />
-      </TabsPanel>
-    </Tabs>
-  );
-}
-
-export const RecordingWorkbench = memo(Workbench);
+export const RecordingWorkbench = memo(Tools);

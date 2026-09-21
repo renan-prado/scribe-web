@@ -63,7 +63,7 @@ pessoa quiser, aprofundar.
 | `components/DeepenButton.tsx` + `DeepeningMenu.tsx` | gerar e reprocessar o estudo |
 | `components/PassageVerses.tsx` + `RichText.tsx` | texto bíblico e menções dentro do parágrafo |
 | `components/BibleReader.tsx` | a Bíblia para LER: livro → capítulo → texto, dentro de uma aba ou de uma gaveta |
-| `components/BibleDock.tsx` | a aba colada na borda direita que abre o leitor, na leitura e no editor |
+| `components/BibleDock.tsx` | a aba colada na borda direita que abre o leitor, na leitura, no editor e no gravador |
 | `components/CacheOwner.tsx` | de quem é o cache deste aparelho, e a faxina quando outra conta entra |
 | `lib/capture-store.ts` | o áudio guardado no IndexedDB: fragmentos, partes, os PEDAÇOS do envio e a linha de cada gravação |
 | `lib/capture-upload.ts` | sessão → transcrição → resumo, com a falha CLASSIFICADA |
@@ -159,13 +159,14 @@ ele entra numa aba da bancada do gravador e dentro de uma gaveta na leitura, e
 quem quiser um diálogo o põe dentro de um. O contrário não daria — um componente
 que carrega o próprio `Dialog` não entra numa aba.
 
-**Quem o abre na leitura e no editor é o `BibleDock`, uma aba na borda
-DIREITA**, e não mais um disco no canto de baixo: aquele canto já tem dois
-donos, o Biblo (permanente, embaixo) e o voltar ao topo (empilhado por cima
-quando aparece), e um terceiro faria uma torre de três botões sobre o texto. A
-gaveta abre pela direita no desktop e sobe do rodapé no celular, o mesmo
-desenho da do Biblo — e some enquanto a conversa está aberta, porque as duas
-entram pelo mesmo lado (a regra está em `globals.css`).
+**Quem o abre na leitura, no editor e no gravador é o `BibleDock`, uma aba na
+borda DIREITA**, e não mais um disco no canto de baixo: aquele canto já tem
+dois donos, o Biblo (permanente, embaixo) e o voltar ao topo (empilhado por
+cima quando aparece — ausente só no gravador), e um terceiro faria uma torre
+de três botões sobre o texto. A gaveta abre pela direita no desktop e sobe do
+rodapé no celular, o mesmo desenho da do Biblo — e some enquanto a conversa
+está aberta, porque as duas entram pelo mesmo lado (a regra está em
+`globals.css`).
 
 **Abrir e fechar a Bíblia não custa NADA do que estava na tela.** A rolagem
 fica (o painel é um portal, a página não desmonta), os realces do `SummaryFind`
