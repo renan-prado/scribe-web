@@ -464,6 +464,14 @@ Três coisas que não são detalhe:
   cursor. É o que permite ter um popover ancorado no caret sem medir geometria
   DENTRO de uma `textarea`, que é a única coisa da página cuja posição o DOM não
   expõe — a mesma razão pela qual o marca-texto não tem barra flutuante.
+- **Mas ele SOBE quando não cabe embaixo.** Abrir sempre para baixo é certo em
+  toda linha menos justamente na que mais recebe a barra, a última: escrever é
+  escrever para baixo, o cursor vive perto do rodapé da janela, e ali uma lista
+  de nove itens nasce inteira fora da tela — digita-se `/`, não se vê nada
+  acontecer, e conclui-se que o atalho não existe. O que se mede é a janela que
+  sobra abaixo da linha, uma vez, quando o menu monta (`useSlashSide`); não é
+  um ponto de quebra, porque a resposta depende da rolagem e do teclado do
+  celular, não da largura.
 
 Escolher **SUBSTITUI** o parágrafo em vez de inserir acima, ao contrário do
 `+`: lá se aponta uma POSIÇÃO, aqui se diz o que a linha em que já se está É.

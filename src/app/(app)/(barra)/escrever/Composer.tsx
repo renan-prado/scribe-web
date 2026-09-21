@@ -2,7 +2,7 @@
 
 import { ChevronDown, ChevronUp, Eye, Highlighter, MapPin, Plus, Trash2, X } from "lucide-react";
 import { useRouter } from "next/navigation";
-import { Fragment, type ReactNode, useEffect, useRef, useState } from "react";
+import { Fragment, type ReactNode, useEffect, useLayoutEffect, useRef, useState } from "react";
 import { BookGlyph } from "@/components/icons/BookGlyph";
 import { BibleDock } from "@/features/session/components/BibleDock";
 import { BibloDock } from "@/features/session/components/BibloDock";
@@ -1314,7 +1314,50 @@ function DiscButton({
  * `pointer-events` ficam ligados: o mouse também escolhe, e passar por cima
  * move o mesmo cursor que as setas movem — dois destaques ao mesmo tempo, um
  * do mouse e outro do teclado, é a ambiguidade que faz o Enter parecer aleatório.
+ *
+ * ## Ele abre para BAIXO, menos quando não cabe
+ *
+ * Abrir sempre para baixo é o caminho certo em toda linha, menos justamente na
+ * que mais recebe a barra: a última. Escrever é escrever para BAIXO, então o
+ * cursor vive perto do rodapé da janela, e ali uma lista de nove itens
+ * (~20rem) nasce inteira fora da tela — a pessoa digita `/`, não vê nada
+ * acontecer, apaga e conclui que o atalho não existe. Com o teclado do celular
+ * aberto, sobra menos ainda.
+ *
+ * A medida é feita no MOMENTO em que o menu monta, e não por um ponto de
+ * quebra: o que decide é quanto de janela sobra abaixo desta linha, que
+ * depende da rolagem, da altura da tela e do teclado. Ele mede uma vez e não
+ * escuta a rolagem, porque o menu só vive enquanto a linha está em foco — e o
+ * gesto inteiro, da barra à escolha, dura menos que um gesto de rolar.
+ *
+ * `useLayoutEffect` e não `useEffect`: medir depois da pintura faria a lista
+ * aparecer embaixo e pular para cima num segundo quadro, que é pior que
+ * qualquer dos dois lugares.
  */
+/** A altura que a lista cheia pede. Ver `useSlashSide`. */
+const SLASH_MENU_MAX_HEIGHT = 320;
+
+/**
+ * Para que lado o menu abre, medido uma vez quando ele monta.
+ *
+ * `"down"` é o padrão e o certo em quase toda linha; `"up"` é a resposta para a
+ * última linha do documento, que é onde a barra mais é digitada e onde não há
+ * janela embaixo. Ver o cabeçalho do `SlashMenu`.
+ */
+function useSlashSide(ref: React.RefObject<HTMLDivElement | null>): "up" | "down" {
+  const [side, setSide] = useState<"up" | "down">("down");
+  useLayoutEffect(() => {
+    const anchor = ref.current?.parentElement;
+    if (!anchor) return;
+    const box = anchor.getBoundingClientRect();
+    const below = window.innerHeight - box.bottom;
+    // Só sobe quando não cabe embaixo E cabe em cima: numa janela baixa demais
+    // para os dois lados, embaixo é o lugar em que a rolagem alcança a lista.
+    setSide(below < SLASH_MENU_MAX_HEIGHT && box.top > below ? "up" : "down");
+  }, [ref]);
+  return side;
+}
+
 function SlashMenu({
   options,
   cursor,
@@ -1328,11 +1371,21 @@ function SlashMenu({
   onHover: (cursor: number) => void;
   onPick: (pick: BlockPick) => void;
 }) {
+  const ref = useRef<HTMLDivElement>(null);
+  const side = useSlashSide(ref);
+  // A caixa acompanha o lado: para cima ela é ancorada pela BASE, para a lista
+  // crescer afastando-se da linha em vez de cobri-la.
+  const place = side === "up" ? "bottom-full mb-1" : "top-full mt-1";
+
   if (options.length === 0) {
     return (
       <div
+        ref={ref}
         data-slash-menu
-        className="absolute top-full left-0 z-40 mt-1 w-[min(20rem,calc(100vw-3rem))] rounded-2xl border border-scriba-hairline bg-scriba-surface px-3 py-2.5 shadow-[0_12px_32px_var(--scriba-shadow)]"
+        className={cn(
+          "absolute left-0 z-40 w-[min(20rem,calc(100vw-3rem))] rounded-2xl border border-scriba-hairline bg-scriba-surface px-3 py-2.5 shadow-[0_12px_32px_var(--scriba-shadow)]",
+          place
+        )}
       >
         <p className="text-scriba-ink-mute text-xs">Nada com “{query}”.</p>
       </div>
@@ -1341,8 +1394,12 @@ function SlashMenu({
 
   return (
     <div
+      ref={ref}
       data-slash-menu
-      className="absolute top-full left-0 z-40 mt-1 flex w-[min(20rem,calc(100vw-3rem))] flex-col gap-0.5 rounded-2xl border border-scriba-hairline bg-scriba-surface p-1.5 shadow-[0_12px_32px_var(--scriba-shadow)]"
+      className={cn(
+        "absolute left-0 z-40 flex max-h-80 w-[min(20rem,calc(100vw-3rem))] flex-col gap-0.5 overflow-y-auto rounded-2xl border border-scriba-hairline bg-scriba-surface p-1.5 shadow-[0_12px_32px_var(--scriba-shadow)]",
+        place
+      )}
     >
       {options.map((o, i) => (
         <button
