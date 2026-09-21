@@ -48,11 +48,12 @@ const CreateSessionSchema = z
      * de existir rede.
      *
      * É o mesmo desenho de `/api/sessions/written`: lá o editor sorteia o id
-     * quando a folha abre, porque o rascunho local precisa de uma chave; aqui
-     * quem sorteia é a conversa do Biblo na Biblioteca, que precisa de um
-     * `sessionId` para LER a conversa (o `GET /api/biblo` responde sem exigir
-     * que a sessão exista) antes de ter gastado uma ida ao servidor para criar
-     * a linha.
+     * quando a folha abre, porque o rascunho local precisa de uma chave. Aqui
+     * são dois, e pela mesma razão: a conversa do Biblo na Biblioteca precisa
+     * de um `sessionId` para LER a conversa (o `GET /api/biblo` responde sem
+     * exigir que a sessão exista) antes de gastar uma ida ao servidor, e a
+     * GRAVAÇÃO precisa de um id que já esteja na linha do áudio guardado no
+     * aparelho — que pode ser enviado dois dias depois, de outra tela.
      *
      * Opcional: quem não manda continua recebendo o id do banco, como sempre.
      */
@@ -74,11 +75,19 @@ const CreateSessionSchema = z
 /**
  * POST /api/sessions
  *
- * Cria a linha vazia que ancora uma sessão. A gravação a cria no STOP, quando
- * já tem o áudio na mão (ver `AudioStudio`); a importação do YouTube a cria
- * antes, porque precisa da linha para guardar a URL. Ela nasce no Supabase com
+ * Cria a linha vazia que ancora uma sessão. Ela nasce no Supabase com
  * `user_id = auth.uid()`, então a RLS escopa sozinha toda leitura e escrita
  * seguinte.
+ *
+ * **Quando ela nasce depende de quem chama, e são três respostas.** A
+ * importação do YouTube a cria primeiro, porque precisa da linha para guardar
+ * a URL. A gravação a cria no ENVIO — ou antes, se alguém perguntar algo ao
+ * Biblo durante a pregação, que é quando a conversa passa a precisar de uma
+ * sessão a que se ancorar. O Biblo da Biblioteca a cria na primeira pergunta.
+ *
+ * Os dois últimos mandam um `id` sorteado no aparelho, e é o que permite a
+ * mesma linha ser pedida duas vezes sem virar duas: id que já é seu devolve o
+ * mesmo id, em vez de recusar.
  */
 export async function POST(request: Request) {
   const auth = await requireAuth();

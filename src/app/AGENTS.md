@@ -1041,12 +1041,18 @@ que anotar e o que perguntar. Três abas: **Notas**, **Biblo** e **Bíblia**.
   pulso a cada 2 minutos. Uma gravação pode ser retentada pela fila dois dias
   depois, de outra tela, e notas que morressem com a tela só chegariam ao
   resumo quando tudo desse certo de primeira.
-- **O Biblo precisa de uma sessão**, então ela passa a nascer DURANTE a
-  gravação (`ensureSession`), e não mais no stop. O id é gravado na linha da
-  gravação no mesmo gesto, então o `uploadCapture` a reusa no fim em vez de
-  criar uma segunda. A chamada é disparada sem `await` e falha em silêncio:
-  **gravar continua sem depender de rede**, e sem ela a aba diz que está sem
-  internet. Apagar a gravação apaga a linha junto.
+- **O Biblo precisa de uma sessão, e o ID dela nasce no APARELHO** — sorteado
+  no mesmo instante que o da gravação, sem custar rede. A LINHA no banco é
+  outra coisa: ela só é criada quando alguém de fato pergunta algo ao Biblo
+  (`ensureSession`), e no caminho comum continua nascendo no ENVIO, como
+  sempre nasceu. É o mesmo desenho do `/escrever` e do Biblo da Biblioteca, e
+  substituiu um `POST` adiantado no toque em "gravar" que punha uma ida ao
+  servidor no instante em que a tela tem uma coisa só para fazer, e deixava
+  uma sessão vazia no banco para cada gravação abandonada no primeiro minuto.
+  Como o id está na linha da gravação desde o primeiro segundo, toda
+  tentativa de envio manda o MESMO, e `POST /api/sessions` o devolve em vez de
+  criar outra sessão. Apagar a gravação apaga a linha junto, quando ela
+  existe.
 - **Nada da bancada pode repintar o gravador.** O estado das três abas mora
   dentro do `RecordingWorkbench` (ou no store de `recording-notes.ts`), ele é
   `memo`, e o `AudioStudio` lê as notas por `getState()`, que não assina nada.
@@ -1099,7 +1105,7 @@ Media Session ou `play()` recusado falham em silêncio, cada um por si, e a
 gravação continua como continuava.
 
 **Dívida conhecida:** começar sem internet. Gravar não depende de rede, mas a
-sessão nasce de um `POST` no stop — sem ele o áudio fica guardado esperando. A
+sessão precisa de um `POST` no envio — sem ele o áudio fica guardado esperando. A
 espera hoje tem cartão na Biblioteca, motivo escrito e retentativa automática,
 o que é muito melhor que sumir, mas ainda não é funcionar offline.
 
@@ -1137,10 +1143,12 @@ entidade. Ver `src/features/admin/AGENTS.md`.
 
 `POST /api/sessions` aceita um `id` sorteado no APARELHO, opcional. Era só o
 `/escrever` que precisava disso (por outra rota); hoje a conversa do Biblo na
-Biblioteca também, porque ela precisa de um `sessionId` para LER a conversa
-antes de gastar uma ida ao servidor para criar a linha. Id que já existe e é
-seu devolve o mesmo id; id de outra pessoa vira 409 `id_taken`, a mesma régua
-de `sessions/written`.
+Biblioteca e a GRAVAÇÃO também — as três pela mesma razão, que é precisar de
+uma chave antes de haver o que guardar no servidor. Id que já existe e é seu
+devolve o mesmo id; id de outra pessoa vira 409 `id_taken`, a mesma régua de
+`sessions/written`. **É essa idempotência que sustenta o envio da gravação**:
+ele chama a rota SEMPRE, com o id da linha, sem precisar saber se a sessão já
+foi criada durante a pregação.
 
 `sessions/written` é a rota do `/escrever`, e a ÚNICA do produto que recebe um
 `SummaryPayload` vindo do CLIENTE — todos os outros nascem dentro do servidor, a

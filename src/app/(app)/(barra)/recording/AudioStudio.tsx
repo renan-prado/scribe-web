@@ -89,12 +89,20 @@ export function AudioStudio({ autoStart = false }: { autoStart?: boolean }) {
   /**
    * A sessão que ancora a conversa com o Biblo durante a gravação.
    *
-   * A ref é a verdade (ela é lida por callbacks que não repintam), e o estado
-   * existe só para a bancada saber que ela chegou. São DOIS porque a linha
-   * nasce no meio de uma gravação que já está correndo: um estado sozinho não
-   * serviria ao `ensureSession`, que precisa responder na hora se já existe.
+   * **O id é sorteado no APARELHO, no mesmo instante que o da gravação, e a
+   * LINHA no banco é outra coisa** — ela só nasce quando alguém pergunta algo
+   * ao Biblo, ou no envio. É o mesmo desenho do `/escrever` e do Biblo da
+   * Biblioteca, e é a segunda vez que ele substitui um `POST` adiantado aqui:
+   * criar a linha no toque em "gravar" punha uma ida ao servidor no instante
+   * em que a tela tem uma coisa só para fazer, e deixava uma sessão vazia no
+   * banco para cada gravação abandonada no primeiro minuto.
+   *
+   * A ref é a verdade (ela é lida por callbacks que não repintam) e o estado é
+   * a cópia que a bancada lê. `sessionSavedRef` é a outra pergunta, a de se a
+   * LINHA já existe: `ensureSession` responde por ela.
    */
   const sessionIdRef = useRef<string | null>(null);
+  const sessionSavedRef = useRef(false);
   const [sessionId, setSessionId] = useState<string | null>(null);
   /** Os `putFragment` em andamento. O stop espera por eles antes de entregar à
    * fila, senão o último fragmento pode não estar no banco ainda. */
@@ -235,36 +243,35 @@ export function AudioStudio({ autoStart = false }: { autoStart?: boolean }) {
   });
 
   /**
-   * Cria a linha da sessão, se ela ainda não existe, e devolve o id.
+   * Garante que a LINHA da sessão exista no banco, e devolve o id.
    *
-   * **Ela é criada DURANTE a gravação, e não no stop como sempre foi.** O que
-   * mudou foi o Biblo entrar nesta tela: uma conversa precisa de uma sessão a
-   * que se ancorar, e não há como perguntar sobre a pregação que está
-   * acontecendo sem ela. O id é gravado na linha da gravação no mesmo gesto,
-   * então o `uploadCapture` a REUSA no fim em vez de criar uma segunda — é o
-   * mesmo campo que já existia para a retentativa não espalhar sessões vazias
-   * pelo banco.
+   * Quem chama é a bancada, na PRIMEIRA pergunta ao Biblo — uma conversa
+   * precisa de uma sessão a que se ancorar, e não há como perguntar sobre a
+   * pregação que está acontecendo sem ela. Quem grava e nunca abre aquela aba
+   * (que é a maioria) não paga ida ao servidor nenhuma aqui: a linha nasce no
+   * envio, como sempre nasceu.
    *
-   * **Gravar continua sem depender de rede.** Esta chamada é disparada sem
-   * `await` e falha em silêncio: sem ela a aba de conversa diz que está sem
-   * internet, e o resto da tela não sabe que ela existiu.
+   * O id vai no corpo, e é o mesmo que já está gravado na linha da gravação
+   * desde o primeiro segundo. `POST /api/sessions` com um id que já é seu
+   * devolve o mesmo id em vez de recusar, então uma segunda chamada — desta
+   * tela ou do `uploadCapture` no fim — não cria uma segunda sessão.
+   *
+   * **Gravar continua sem depender de rede**: uma falha aqui devolve `null`, a
+   * aba de conversa diz que está sem internet, e o resto da tela segue.
    */
   const ensureSession = useCallback(async (): Promise<string | null> => {
-    if (sessionIdRef.current) return sessionIdRef.current;
+    const id = sessionIdRef.current;
+    if (!id) return null;
+    if (sessionSavedRef.current) return id;
     try {
       const res = await fetch("/api/sessions", {
         method: "POST",
         headers: { "content-type": "application/json" },
-        body: JSON.stringify({ mode: "audio" }),
+        body: JSON.stringify({ id, mode: "audio" }),
       });
       if (!res.ok) return null;
-      const raw = (await res.json()) as { id?: string };
-      if (!raw?.id) return null;
-      sessionIdRef.current = raw.id;
-      setSessionId(raw.id);
-      const captureId = captureIdRef.current;
-      if (captureId) await patchCaptureMeta(captureId, { sessionId: raw.id });
-      return raw.id;
+      sessionSavedRef.current = true;
+      return id;
     } catch {
       return null;
     }
@@ -278,8 +285,12 @@ export function AudioStudio({ autoStart = false }: { autoStart?: boolean }) {
     const picked = pickMime();
     const id = crypto.randomUUID();
     captureIdRef.current = id;
-    sessionIdRef.current = null;
-    setSessionId(null);
+    // Os dois ids nascem juntos, e nenhum dos dois custa rede. Ver
+    // `sessionIdRef`.
+    const session = crypto.randomUUID();
+    sessionIdRef.current = session;
+    sessionSavedRef.current = false;
+    setSessionId(session);
     // Uma gravação nova não herda as notas da anterior.
     useRecordingNotes.getState().reset();
     setPersisted(true);
@@ -291,7 +302,7 @@ export function AudioStudio({ autoStart = false }: { autoStart?: boolean }) {
     // certa. Ver o cabeçalho.
     const meta: CaptureMeta = {
       id,
-      sessionId: null,
+      sessionId: session,
       mimeType: picked?.mime ?? "audio/webm",
       extension: picked?.extension ?? "webm",
       durationMs: 0,
@@ -309,6 +320,8 @@ export function AudioStudio({ autoStart = false }: { autoStart?: boolean }) {
 
     if (!(await start())) {
       captureIdRef.current = null;
+      sessionIdRef.current = null;
+      setSessionId(null);
       setCapturing(null);
       // Microfone negado não é gravação nenhuma: a linha que acabou de nascer
       // não tem um único byte atrás dela, e deixá-la viva encheria a Biblioteca
@@ -316,10 +329,7 @@ export function AudioStudio({ autoStart = false }: { autoStart?: boolean }) {
       await deleteCapture(id);
       return;
     }
-    // A sessão da conversa, atrás. Sem `await`: a pregação já começou, e a
-    // tela não espera o servidor para desenhar a onda.
-    void ensureSession();
-  }, [start, setError, setCapturing, ensureSession]);
+  }, [start, setError, setCapturing]);
 
   /**
    * Entrega a gravação à fila e acompanha a primeira tentativa.
@@ -584,16 +594,19 @@ export function AudioStudio({ autoStart = false }: { autoStart?: boolean }) {
         onConfirm={async () => {
           discard();
           const id = captureIdRef.current;
-          const session = sessionIdRef.current;
+          // A linha da sessão só existe se alguém perguntou algo ao Biblo
+          // durante a pregação (ver `ensureSession`); no caminho comum não há
+          // o que apagar, e um DELETE ali seria uma ida ao servidor para
+          // descobrir isso. Quando ela existe, apagar o áudio sem apagá-la
+          // deixaria no banco uma sessão vazia que nenhuma tela mostra e que
+          // ninguém nunca vai encerrar.
+          const session = sessionSavedRef.current ? sessionIdRef.current : null;
           captureIdRef.current = null;
           sessionIdRef.current = null;
+          sessionSavedRef.current = false;
           setSessionId(null);
           setCapturing(null);
           if (id) await deleteCapture(id);
-          // A linha da sessão nasce durante a gravação, para a conversa ter
-          // onde se ancorar (ver `ensureSession`). Apagar o áudio sem apagá-la
-          // deixaria no banco uma sessão vazia que nenhuma tela mostra e que
-          // ninguém nunca vai encerrar.
           if (session) {
             await fetch(`/api/sessions/${session}`, { method: "DELETE" }).catch(() => {});
           }

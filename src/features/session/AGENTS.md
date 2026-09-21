@@ -443,8 +443,12 @@ da tela que não pode falhar.
 
 **Retentar é seguro porque moeda não é cobrada nessa pipeline.** O débito sai do
 navegador por minuto GRAVADO (`useCoinTick`); `transcribe` e `final-summary` só
-exigem saldo positivo. E a sessão é criada uma vez: `sessionId` é gravado na
-linha da gravação assim que o `POST /api/sessions` responde.
+exigem saldo positivo. E a sessão é criada uma vez porque o ID é sorteado no
+APARELHO e gravado na linha da gravação desde o primeiro segundo: toda
+tentativa manda o mesmo, e `POST /api/sessions` com um id que já é seu devolve
+o mesmo id em vez de criar outra linha. Por isso o envio chama aquela rota
+SEMPRE, e não só quando falta um id — ele não precisa saber se a linha já
+nasceu durante a pregação (ver `ensureSession` no `AudioStudio`).
 
 **A Biblioteca mostra o que está pendente** (`PendingCaptures`), num bloco
 próprio acima dos meses, fora da busca. O cartão não é um `PostItNote`: aquele é

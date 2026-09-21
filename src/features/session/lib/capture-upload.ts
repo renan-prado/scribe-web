@@ -33,11 +33,17 @@ import { tailSentences } from "./text";
  * Uma quinta tentativa de enviar custa o provedor, não a carteira de quem
  * gravou.
  *
- * **A sessão é criada UMA vez.** `sessionId` é gravado na linha da gravação
- * assim que o `POST /api/sessions` responde, então a tentativa seguinte reusa a
- * mesma sessão em vez de espalhar linhas vazias pelo banco. Elas nem
- * apareceriam na Biblioteca (`listSessions` filtra `ended_at is not null`), mas
- * seriam lixo silencioso crescendo a cada domingo sem sinal.
+ * **A sessão é criada UMA vez, e quem garante isso é o id.** Ele é sorteado no
+ * aparelho junto com o da gravação e gravado na linha desde o primeiro segundo
+ * (ver `AudioStudio`), então toda tentativa manda o MESMO id — e
+ * `POST /api/sessions` com um id que já é seu devolve o mesmo id em vez de
+ * criar outra linha. Sem isso, cada domingo sem sinal deixaria um punhado de
+ * sessões vazias para trás: elas nem apareceriam na Biblioteca (`listSessions`
+ * filtra `ended_at is not null`), mas seriam lixo silencioso crescendo.
+ *
+ * É por isso que o POST acontece SEMPRE, e não só quando falta um id. A linha
+ * pode não existir ainda — quem gravou sem abrir a aba do Biblo nunca a criou —
+ * e a alternativa seria esta pipeline adivinhar em que estado o banco está.
  *
  * ## A taxonomia da falha é o produto deste arquivo
  *
@@ -246,22 +252,34 @@ export async function uploadCapture(
   // pregação de uma hora custa memória, e no avião a resposta já é conhecida.
   if (!isOnline()) return offline();
 
-  let sessionId = meta.sessionId;
-
   try {
-    if (!sessionId) {
-      onPhase?.("creating");
-      const res = await fetch("/api/sessions", {
+    onPhase?.("creating");
+    // Criar OU reusar, numa chamada só: ver o cabeçalho.
+    let created = await fetch("/api/sessions", {
+      method: "POST",
+      headers: { "content-type": "application/json" },
+      body: JSON.stringify({ id: meta.sessionId ?? undefined, mode: "audio" }),
+    });
+    // 409 é o id que já é de OUTRA pessoa — exige acertar um uuid v4 inteiro,
+    // e a chance disso é remota a ponto de não valer uma frase na tela. Mas o
+    // id está gravado na linha da gravação, então sem esta saída ele seria
+    // reenviado para sempre, e a gravação nunca subiria. Sortear outro custa
+    // uma chamada e resolve.
+    if (created.status === 409) {
+      created = await fetch("/api/sessions", {
         method: "POST",
         headers: { "content-type": "application/json" },
         body: JSON.stringify({ mode: "audio" }),
       });
-      if (!res.ok) return fromStatus(res.status, await errorOf(res));
-      const raw = (await res.json()) as { id?: string };
-      if (!raw?.id) return { ok: false, failure: "server", message: SERVER_MESSAGE };
-      sessionId = raw.id;
-      await onSession?.(sessionId);
     }
+    if (!created.ok) return fromStatus(created.status, await errorOf(created));
+    const session = (await created.json()) as { id?: string };
+    if (!session?.id) return { ok: false, failure: "server", message: SERVER_MESSAGE };
+    const sessionId = session.id;
+    // Só quando ele MUDOU: no caminho normal a linha da gravação já tem este
+    // id desde o primeiro segundo, e reescrevê-la seria uma ida ao IndexedDB
+    // por nada.
+    if (sessionId !== meta.sessionId) await onSession?.(sessionId);
 
     onPhase?.("transcribing");
     const chunks = await loadChunks(meta.id, TRANSCRIBE_MAX_BYTES);
