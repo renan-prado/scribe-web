@@ -1,4 +1,5 @@
 import type { Metadata } from "next";
+import { BibloHomeDock } from "@/features/session/components/BibloHomeDock";
 import { TourTrigger } from "@/features/tour/components/TourTrigger";
 import { TOUR_DELAY_LIST_MS } from "@/features/tour/config";
 import { CreateDock } from "./CreateDock";
@@ -65,6 +66,10 @@ export default function V2HomePage() {
         <LibraryBrowser nowIso={new Date().toISOString()} />
       </main>
       <CreateDock />
+      {/* O Biblo na Biblioteca é o único que ESCREVE um documento em vez de
+          sugerir um bloco: aqui não há texto na tela para receber sugestão.
+          Ver `BibloHomeDock`. */}
+      <BibloHomeDock />
       {/* A apresentação da Biblioteca, e a primeira que qualquer pessoa vê: é
           aqui que se cai ao entrar. Ver `src/features/tour/AGENTS.md`. */}
       <TourTrigger tour="library" delayMs={TOUR_DELAY_LIST_MS} />

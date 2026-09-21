@@ -1,7 +1,7 @@
 "use client";
 
 import { ArrowUp, Loader2, MessageCircle, Mic, Square, X } from "lucide-react";
-import { useCallback, useEffect, useRef, useState } from "react";
+import { type ReactNode, useCallback, useEffect, useRef, useState } from "react";
 import { BillingDialog } from "@/features/billing/components/BillingDialog";
 import { useCoinsStore } from "@/features/coins/store";
 import { useBibloConversation, useBibloWriter } from "@/features/session/biblo-query";
@@ -17,10 +17,12 @@ import { formatMmSs } from "@/features/session/lib/text";
 import {
   BIBLO_AT_END,
   BIBLO_MAX_QUESTION_CHARS,
+  type BibloAction,
   type BibloAllowance,
   type BibloDenial,
   type BibloMessage,
   type BibloSuggestion,
+  type BibloSurface,
   type BibloTurn,
 } from "@/lib/domain/biblo";
 import type { SummaryBlock } from "@/lib/domain/summary";
@@ -425,6 +427,9 @@ export function BibloDrawer({
   onRemove,
   layout = "drawer",
   className,
+  surface = "session",
+  onActions,
+  banner,
 }: {
   sessionId: string;
   /** Ver `BibloDock`. Ausente onde a sessão já existe (`/summary/:id`). */
@@ -448,6 +453,24 @@ export function BibloDrawer({
    */
   layout?: "drawer" | "inline";
   className?: string;
+  /**
+   * Onde esta conversa acontece, e é isso que decide se o Biblo tem
+   * FERRAMENTAS (ver `BIBLO_TOOLS_BLOCK`). `session` é o padrão: uma conversa
+   * dentro de um texto, cuja porta para o documento é a `suggestion`.
+   */
+  surface?: BibloSurface;
+  /**
+   * Executa o que o Biblo decidiu FAZER, e devolve o rótulo do que está
+   * acontecendo enquanto acontece — é ele que a gaveta escreve no lugar do
+   * "Pensando…". Só a Biblioteca passa; ver `BibloHomeDock`.
+   *
+   * Ele é `await`-ado ANTES de a resposta entrar na lista: uma linha dizendo
+   * "montei o esboço" com o documento ainda não salvo é a tela adiantando um
+   * fato, e se o salvamento falhar ela fica com a afirmação na cara.
+   */
+  onActions?: (actions: BibloAction[], onStep: (label: string) => void) => Promise<void>;
+  /** Uma faixa acima da conversa. Hoje, o documento em edição na Biblioteca. */
+  banner?: ReactNode;
   /** Obrigatório no `drawer`: sem ele a gaveta não tem como fechar. */
   onClose?: () => void;
   /** Avisa o botão flutuante para ele pensar junto, com a gaveta fechada. */
@@ -470,6 +493,9 @@ export function BibloDrawer({
   // fica desabilitado (tem de ser imediato, senão dois cliques mandam duas
   // perguntas); este é só o balão do "Pensando…", que entra uma batida depois.
   const [showThinking, setShowThinking] = useState(false);
+  /** O que o Biblo está FAZENDO agora (criando o documento, renomeando). Ele
+   *  substitui o "Pensando…", que já terminou quando isto aparece. */
+  const [acting, setActing] = useState<string | null>(null);
   const [failed, setFailed] = useState(false);
   // A pergunta enviada que ainda nao tem linha no banco. Ver o cabecalho.
   const [asking, setAsking] = useState<string | null>(null);
@@ -599,7 +625,7 @@ export function BibloDrawer({
         const res = await fetch("/api/biblo", {
           method: "POST",
           headers: { "content-type": "application/json" },
-          body: JSON.stringify({ sessionId: id, text: question }),
+          body: JSON.stringify({ sessionId: id, text: question, surface }),
         });
         const body = (await res.json().catch(() => ({}))) as Partial<BibloTurn> & {
           error?: string;
@@ -632,6 +658,16 @@ export function BibloDrawer({
         const floor = THINKING_BEAT_MS + THINKING_MIN_MS;
         if (elapsed < floor) await sleep(floor - elapsed);
 
+        // As ferramentas rodam ANTES de a resposta entrar na lista: ver
+        // `onActions`. O `finally` limpa o rótulo mesmo se uma delas estourar.
+        if (onActions && turn.actions?.length) {
+          try {
+            await onActions(turn.actions, setActing);
+          } finally {
+            setActing(null);
+          }
+        }
+
         setAsking(null);
         setArrivedId(turn.answer.id);
         // No CACHE, e não num estado desta montagem: é o que faz a rodada
@@ -649,7 +685,17 @@ export function BibloDrawer({
         onThinking(false);
       }
     },
-    [pending, sessionId, ensureSession, onThinking, setBalance, appendTurn, setAllowance]
+    [
+      pending,
+      sessionId,
+      ensureSession,
+      onThinking,
+      setBalance,
+      appendTurn,
+      setAllowance,
+      surface,
+      onActions,
+    ]
   );
 
   const allowance: BibloAllowance = conversation?.allowance ?? { kind: "coins" };
@@ -802,6 +848,12 @@ export function BibloDrawer({
         ) : null}
       </div>
 
+      {/* A faixa fica FORA da lista que rola: ela diz o que existe agora (o
+          documento desta conversa), e uma informação de estado que sobe com a
+          rolagem é uma informação que some justamente quando a conversa fica
+          longa. */}
+      {banner ? <div className="shrink-0 px-4 pb-2">{banner}</div> : null}
+
       {/* A abertura, no MEIO da gaveta e sem frase.
 
           Era "Abrindo a conversa…" no canto superior esquerdo: uma linha de
@@ -851,11 +903,20 @@ export function BibloDrawer({
 
           {asking && <BibloUserBubble text={asking} />}
 
-          {showThinking && (
+          {/* Pensar e FAZER são dois estados, e o segundo vem depois do
+              primeiro: a resposta já chegou, e o que está correndo agora é o
+              documento sendo escrito. Dizer "Pensando…" ali seria mentir sobre
+              o que demora, e uma espera sem nome é uma espera que parece
+              travada. Ver `ACTION_LABELS`. */}
+          {acting ? (
+            <BibloBubble mood="thinking">
+              <span className="text-[13px] text-scriba-ink-mute">{acting}</span>
+            </BibloBubble>
+          ) : showThinking ? (
             <BibloBubble mood="thinking">
               <span className="text-[13px] text-scriba-ink-mute">Pensando…</span>
             </BibloBubble>
-          )}
+          ) : null}
 
           {/* O aviso de falha, LEGÍVEL.
               `--scriba-rose` (#3A2321) é a SUPERFÍCIE vermelha — o fundo de um

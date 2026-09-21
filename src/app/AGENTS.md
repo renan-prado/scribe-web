@@ -1068,6 +1068,13 @@ o rascunho de sair é a POLICY da migração 0063, não um filtro na rota.
 `admin/lexicon` (JSON + Zod) porque a fronteira natural é o tipo do corpo, não a
 entidade. Ver `src/features/admin/AGENTS.md`.
 
+`POST /api/sessions` aceita um `id` sorteado no APARELHO, opcional. Era só o
+`/escrever` que precisava disso (por outra rota); hoje a conversa do Biblo na
+Biblioteca também, porque ela precisa de um `sessionId` para LER a conversa
+antes de gastar uma ida ao servidor para criar a linha. Id que já existe e é
+seu devolve o mesmo id; id de outra pessoa vira 409 `id_taken`, a mesma régua
+de `sessions/written`.
+
 `sessions/written` é a rota do `/escrever`, e a ÚNICA do produto que recebe um
 `SummaryPayload` vindo do CLIENTE — todos os outros nascem dentro do servidor, a
 partir da resposta de um modelo. Daí `WrittenSummarySchema` ter teto em cada
@@ -1122,6 +1129,13 @@ cada reload de `/importar/:id`, e um recorte que viesse na requisição viraria 
 vídeo inteiro pelo mesmo preço num "atrás" do navegador. A regra que aquelas rotas
 protegem continua valendo: a chamada CARA (o resumo) só roda depois do débito.
 Ver o cabeçalho da rota.
+
+`biblo` aceita um `surface` no corpo (`session`, o padrão, ou `home`). Ele não
+é autorização, é MODO: com `home` o prompt ganha as três ferramentas
+(`criarDocumento`, `editarTitulo`, `adicionarBlocoDeConteudo`) e o teto de saída
+sobe, porque ali o Biblo escreve um documento em vez de responder sobre um.
+Quem EXECUTA a ferramenta é o cliente, por `/api/sessions/written`; esta rota
+não escreve no acervo de ninguém. Ver `docs/biblo-implementacao.md` §15.
 
 `biblo` é a conversa dentro de uma sessão, e a ordem dela é
 `dono → allowance → COBRA → grava a pergunta → modelo → grava a resposta`. Duas

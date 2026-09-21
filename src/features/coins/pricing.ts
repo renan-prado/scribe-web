@@ -151,6 +151,16 @@ export const COIN_COSTS = {
    * (R$ 0,0237) que condenava o preço de 1 moeda, o mesmo buraco em que
    * `reprocessSummary` esteve a 5.
    *
+   * **Na BIBLIOTECA o teto da saída é outro** (`BIBLO_TOOLS_MAX_TOKENS`, 2.400
+   * contra 700), porque ali o Biblo pode ESCREVER um documento inteiro em vez
+   * de responder uma pergunta. O preço continua o mesmo, e a conta continua de
+   * pé por dois motivos: teto não é consumo — a pergunta comum daquela tela
+   * gasta os mesmos ~250 tokens de saída —, e o pior caso, com o teto cheio,
+   * custa ~R$ 0,014 por mensagem, margem de ~65%. É a única ação do Biblo que
+   * desce da faixa dos 80%, e ela é justamente a que entrega um resumo pronto
+   * no acervo — que pelo caminho do gravador custaria `recordingMinute` vezes a
+   * duração da pregação.
+   *
    * **2 é o número de PARTIDA, e o ajuste provável é para BAIXO.** É fácil
    * baixar um preço e caro subir: cair para 1 depois da medição em produção é
    * um presente que se anuncia, subir de 1 para 2 é a única mudança de preço

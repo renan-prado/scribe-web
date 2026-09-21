@@ -1,6 +1,6 @@
 import { NextResponse } from "next/server";
 import { z } from "zod";
-import { createEmptySession, listSessions, SESSION_MODES } from "@/lib/db/sessions";
+import { createEmptySession, getSessionMeta, listSessions, SESSION_MODES } from "@/lib/db/sessions";
 import { parseClipRange, parseYoutubeUrl } from "@/lib/domain/youtube";
 import { parseJsonBody } from "@/lib/http/validate";
 import { createLogger } from "@/lib/log";
@@ -43,6 +43,20 @@ export async function GET(request: Request) {
 
 const CreateSessionSchema = z
   .object({
+    /**
+     * O id sorteado no APARELHO, quando quem chama precisa de uma chave antes
+     * de existir rede.
+     *
+     * É o mesmo desenho de `/api/sessions/written`: lá o editor sorteia o id
+     * quando a folha abre, porque o rascunho local precisa de uma chave; aqui
+     * quem sorteia é a conversa do Biblo na Biblioteca, que precisa de um
+     * `sessionId` para LER a conversa (o `GET /api/biblo` responde sem exigir
+     * que a sessão exista) antes de ter gastado uma ida ao servidor para criar
+     * a linha.
+     *
+     * Opcional: quem não manda continua recebendo o id do banco, como sempre.
+     */
+    id: z.uuid().optional(),
     speakerName: z.string().trim().max(200).nullable().optional(),
     speakerLocation: z.string().trim().max(200).nullable().optional(),
     mode: z.enum(SESSION_MODES).optional(),
@@ -115,8 +129,18 @@ export async function POST(request: Request) {
     endMs = range.clip?.endMs ?? null;
   }
 
+  // Com id vindo do cliente, "já existe" não é erro: é a segunda chamada de
+  // quem perdeu a marca local de que a linha já tinha nascido. A RLS é quem
+  // responde — uma sessão de outra pessoa simplesmente não volta desta leitura,
+  // e aí o INSERT abaixo esbarra na chave primária e vira 409.
+  if (body.id) {
+    const existing = await getSessionMeta(body.id).catch(() => null);
+    if (existing) return NextResponse.json({ id: body.id, mode });
+  }
+
   try {
     const id = await createEmptySession({
+      id: body.id,
       speakerName,
       speakerLocation,
       mode,
@@ -127,7 +151,14 @@ export async function POST(request: Request) {
     log.debug("created", { id, mode });
     return NextResponse.json({ id, mode });
   } catch (err) {
-    log.error("create failed", { error: (err as Error).message });
+    const message = (err as Error).message;
+    // Chave primária duplicada com um id que a leitura acima não enxergou: a
+    // linha é de OUTRA pessoa (a RLS a esconde). Escrever ali seria escrever na
+    // sessão de alguém, e chegar aqui exige adivinhar um uuid v4 inteiro.
+    if (body.id && /duplicate key|23505/i.test(message)) {
+      return NextResponse.json({ error: "id_taken" }, { status: 409 });
+    }
+    log.error("create failed", { error: message });
     return NextResponse.json({ error: "create_failed" }, { status: 500 });
   }
 }

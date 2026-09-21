@@ -73,6 +73,104 @@ export type BibloSuggestion = z.infer<typeof BibloSuggestionSchema>;
 export const BIBLO_AT_END = Number.MAX_SAFE_INTEGER;
 
 /**
+ * ONDE a conversa está acontecendo, e é isso que decide o que o Biblo pode
+ * FAZER além de falar.
+ *
+ * - `session`: dentro de um resumo (`/summary/:id`, `/escrever/:id`) ou ao lado
+ *   de uma gravação. Há um documento na tela, e a porta para ele é a
+ *   `suggestion` — um bloco, inserido onde o modelo apontou.
+ * - `home`: a Biblioteca. Não há documento nenhum na tela, e é justamente por
+ *   isso que aqui ele ganha FERRAMENTAS: criar um documento do zero, renomeá-lo
+ *   e acrescentar conteúdo a ele. Uma sugestão de bloco não teria onde entrar.
+ *
+ * A separação existe para o prompt não oferecer o que a tela não sabe executar:
+ * um `criarDocumento` respondido dentro do `/summary` seria uma ferramenta que
+ * ninguém chama, gastando tokens de instrução em toda mensagem do produto.
+ */
+export const BIBLO_SURFACES = ["session", "home"] as const;
+
+export type BibloSurface = (typeof BIBLO_SURFACES)[number];
+
+/**
+ * As FERRAMENTAS do Biblo: o que ele faz no aplicativo, e não só diz.
+ *
+ * ## Por que elas são um campo do contrato, e não `tool_calls` da OpenAI
+ *
+ * Porque a resposta do Biblo JÁ é um contrato JSON com seis campos, validado
+ * por um schema cuja regra número um é que nenhum campo derruba a resposta (ver
+ * `BibloReplySchema`). `tool_calls` seria um segundo canal de saída, com um
+ * segundo caminho de erro, um segundo lugar onde o schema pode cair, e uma
+ * segunda rodada de chamada ao modelo por ação — a OpenAI espera que a
+ * ferramenta responda e a conversa continue. Tudo isso para entregar o mesmo
+ * objeto que já cabe num campo do JSON que ele está escrevendo de qualquer
+ * jeito.
+ *
+ * A troca, dita em voz alta: perdemos a validação de argumentos que o provedor
+ * faria, e ganhamos a MESMA rede que o resto do contrato tem — ação
+ * malformada é ação descartada, e a resposta continua chegando.
+ *
+ * ## As três
+ *
+ * - `criarDocumento`: nasce um resumo escrito à mão (modo `manual`), com título
+ *   e blocos. É a única que cria alguma coisa.
+ * - `editarTitulo`: troca o título do documento desta conversa.
+ * - `adicionarBlocoDeConteudo`: acrescenta blocos ao fim dele.
+ *
+ * As duas últimas só fazem sentido DEPOIS da primeira, e quem garante isso é o
+ * cliente: sem documento em mãos, elas são descartadas com uma linha no log.
+ *
+ * ## Por que `blocks` é uma LISTA
+ *
+ * Porque a `suggestion` é um bloco só, e isso é o teto dela por desenho — ela
+ * oferece um parágrafo dentro de um texto que já existe. Uma ferramenta que
+ * CRIA um documento entrega um documento: título, alguns parágrafos, uma lista,
+ * uma conclusão. Pedir isso um bloco por mensagem seria cobrar seis mensagens
+ * por um pedido só.
+ */
+export const BIBLO_ACTION_MAX_BLOCKS = 24;
+export const BIBLO_ACTION_MAX_TITLE = 120;
+
+const BibloActionBlockList = z.array(SummaryBlockSchema).min(1).max(BIBLO_ACTION_MAX_BLOCKS);
+
+export const BibloActionSchema = z.discriminatedUnion("tool", [
+  z.object({
+    tool: z.literal("criarDocumento"),
+    title: z.string().trim().min(1).max(BIBLO_ACTION_MAX_TITLE),
+    /** A frase de "em poucas palavras". Opcional: nem todo pedido tem uma. */
+    shortSummary: z.string().trim().max(600).optional(),
+    blocks: BibloActionBlockList,
+  }),
+  z.object({
+    tool: z.literal("editarTitulo"),
+    title: z.string().trim().min(1).max(BIBLO_ACTION_MAX_TITLE),
+  }),
+  z.object({
+    tool: z.literal("adicionarBlocoDeConteudo"),
+    blocks: BibloActionBlockList,
+  }),
+]);
+
+export type BibloAction = z.infer<typeof BibloActionSchema>;
+
+/**
+ * A lista de ações, peneirada UMA A UMA.
+ *
+ * `z.array(BibloActionSchema).catch([])` derrubaria as boas junto com a ruim, e
+ * a régua deste arquivo é a oposta: o que não couber sai, o que chegou inteiro
+ * fica. Com duas ações numa resposta — criar o documento e já acrescentar um
+ * bloco —, um erro de digitação na segunda não pode apagar a primeira.
+ */
+function parseActions(value: unknown): BibloAction[] {
+  if (!Array.isArray(value)) return [];
+  const out: BibloAction[] = [];
+  for (const raw of value.slice(0, 4)) {
+    const parsed = BibloActionSchema.safeParse(raw);
+    if (parsed.success) out.push(parsed.data);
+  }
+  return out;
+}
+
+/**
  * O JSON que UMA chamada ao modelo devolve: resposta, próximos chips, sugestão
  * e o fio.
  *
@@ -269,6 +367,17 @@ export const BibloReplySchema = z.object({
     .default("")
     .catch("")
     .transform((text) => text.slice(0, 600)),
+  /**
+   * O que o Biblo vai FAZER no aplicativo, além de responder. Vazio na
+   * esmagadora maioria das mensagens, e sempre vazio fora da superfície `home`
+   * — quem apaga é o servidor, não o prompt (ver `generateBibloAnswer`).
+   *
+   * `z.unknown()` com peneira manual, e não `z.array(BibloActionSchema)`: a
+   * régua do arquivo é que nenhum campo derruba uma resposta já paga, e uma
+   * ação malformada não pode levar junto a prosa nem a outra ação que veio
+   * certa. Ver `parseActions`.
+   */
+  actions: z.unknown().transform(parseActions).catch([]),
 });
 
 export type BibloReply = z.infer<typeof BibloReplySchema>;
@@ -340,6 +449,16 @@ export type BibloTurn = {
   allowance: BibloAllowance;
   /** Saldo depois do débito, para a store de moedas não ter de reperguntar. */
   balance: number | null;
+  /**
+   * O que fazer no aplicativo depois de mostrar a resposta.
+   *
+   * **Elas não são gravadas na mensagem, e a ausência é escolha.** Uma ação é
+   * um acontecimento, não um conteúdo: executada, o que sobra dela é o
+   * DOCUMENTO, que está no acervo e é durável. Guardá-las no `biblo_messages`
+   * pediria uma coluna e uma migração para reexibir, ao reabrir a conversa, o
+   * aviso de uma coisa que já aconteceu.
+   */
+  actions: BibloAction[];
 };
 
 /** Teto do que a pessoa pode digitar. Uma pergunta não é um texto. */

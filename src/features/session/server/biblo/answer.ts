@@ -1,6 +1,7 @@
 import "server-only";
 import {
   BIBLO_SYSTEM_PROMPT,
+  BIBLO_TOOLS_BLOCK,
   bibloContextBlock,
   bibloLexiconBlock,
 } from "@/features/session/server/prompts/biblo";
@@ -8,7 +9,13 @@ import { anchorReference } from "@/features/session/server/study/anchor";
 import type { BibloRow } from "@/lib/db/biblo";
 import { getLexiconCards, getLexiconIndex } from "@/lib/db/lexicon";
 import { annotateText, asStandaloneScripture } from "@/lib/domain/annotate";
-import { type BibloReply, BibloReplySchema, type BibloSuggestion } from "@/lib/domain/biblo";
+import {
+  type BibloAction,
+  type BibloReply,
+  BibloReplySchema,
+  type BibloSuggestion,
+  type BibloSurface,
+} from "@/lib/domain/biblo";
 import type { LexiconCard, LexiconIndexEntry } from "@/lib/domain/lexicon";
 import { parseVerseReference } from "@/lib/domain/reference";
 import type { SummaryBlock, SummaryPayload } from "@/lib/domain/summary";
@@ -60,6 +67,22 @@ const log = createLogger("biblo");
 export const BIBLO_ANSWER_MAX_TOKENS = 700;
 
 /**
+ * O teto quando a conversa TEM ferramentas (a superfície `home`).
+ *
+ * 700 é o orçamento de uma resposta de chat com seis campos ao redor. Um
+ * `criarDocumento` é outra coisa: título, seis a dezesseis blocos com texto
+ * escrito de verdade, e a prosa por cima. Naquele teto ele seria cortado no
+ * meio, e um JSON truncado é a falha mais cara do Biblo — a resposta existe,
+ * foi paga, e não chega (ver `salvageAnswer`).
+ *
+ * **O custo sobe só quando a ferramenta é usada.** Teto não é consumo: uma
+ * pergunta comum na Biblioteca continua gastando os mesmos ~300 tokens de
+ * saída. O que muda é o pior caso, e o pior caso aqui é justamente o pedido
+ * mais valioso da conversa.
+ */
+export const BIBLO_TOOLS_MAX_TOKENS = 2400;
+
+/**
  * Teto do resumo que entra no prompt, em CARACTERES (~4 por token em
  * português). Quase todo resumo cabe folgado; o que não couber entra truncado
  * pelo fim — o começo de um resumo (título, ideia central, primeiros blocos) é
@@ -99,10 +122,17 @@ export type BibloAnswerInput = {
   /** A conversa inteira, em ordem. A janela é recortada aqui dentro. */
   history: BibloRow[];
   question: string;
+  /**
+   * Onde a conversa acontece. `home` liga as FERRAMENTAS (ver
+   * `BIBLO_TOOLS_BLOCK`); `session` é a conversa de sempre, dentro de um texto.
+   */
+  surface: BibloSurface;
 };
 
 export type BibloAnswerOk = {
   reply: BibloReply;
+  /** O que a tela deve EXECUTAR. Sempre vazio fora da superfície `home`. */
+  actions: BibloAction[];
   /** A entrada do léxico que ilustra a resposta, ou `null`. Ver `entityForAnswer`. */
   entitySlug: string | null;
   model: string;
@@ -667,8 +697,14 @@ export async function generateBibloAnswer(input: BibloAnswerInput): Promise<Bibl
   // ele muda a cada pergunta, porque depende dos nomes dela. Entre as duas
   // primeiras mensagens, invalidaria o prefixo cacheado toda vez. Ver
   // `bibloLexiconBlock`.
+  // As ferramentas entram logo depois das instruções e ANTES da janela: elas
+  // são estáveis durante a conversa inteira, então continuam dentro do prefixo
+  // que o cache da OpenAI pega. O bloco do léxico é o oposto e entra lá
+  // embaixo. Ver `BIBLO_TOOLS_BLOCK`.
+  const tools = input.surface === "home";
   const messages: ChatMessage[] = [
     { role: "system", content: BIBLO_SYSTEM_PROMPT },
+    ...(tools ? [{ role: "system" as const, content: BIBLO_TOOLS_BLOCK }] : []),
     { role: "system", content: context },
     ...windowMessages(input.history),
     ...(cards.length > 0
@@ -693,7 +729,7 @@ export async function generateBibloAnswer(input: BibloAnswerInput): Promise<Bibl
     model,
     messages,
     temperature: 0.7,
-    maxTokens: BIBLO_ANSWER_MAX_TOKENS,
+    maxTokens: tools ? BIBLO_TOOLS_MAX_TOKENS : BIBLO_ANSWER_MAX_TOKENS,
     responseFormat: { type: "json_object" },
     store: true,
     metadata: buildLlmMetadata({
@@ -828,10 +864,21 @@ export async function generateBibloAnswer(input: BibloAnswerInput): Promise<Bibl
   // personagem não tem nada a ver com a receita de miojo que foi pedida.
   const entitySlug = offtopic ? null : entityForAnswer(slugs, cards);
 
+  // As ferramentas são apagadas em DOIS casos, e nenhum deles é confiado ao
+  // prompt: fora da Biblioteca a tela não sabe executá-las (e o bloco de
+  // instruções nem foi enviado, então uma ação aqui é o modelo inventando), e
+  // fora do território a mesma regra da `suggestion` vale em dobro — criar um
+  // documento com a recusa dentro é pior que oferecer um botão para inseri-la.
+  const actions = tools && !offtopic ? reply.data.actions : [];
+  if (actions.length > 0) {
+    log.info("ações", { tools: actions.map((a) => a.tool) });
+  }
+
   return {
     ok: true,
     data: {
       reply: { ...reply.data, answer: text, suggestion, chips },
+      actions,
       entitySlug,
       model,
       usage: result.data.usage,

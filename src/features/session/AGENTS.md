@@ -57,6 +57,7 @@ pessoa quiser, aprofundar.
 | `components/YoutubeUrlForm.tsx` + `YoutubeImport.tsx` | colar o link (ou recebê-lo por parâmetro), recortar um trecho, e esperar a importação |
 | `components/BibloDock.tsx` + `BibloDrawer.tsx` + `BibloMessage.tsx` | a conversa com o Biblo: botão flutuante e gaveta (ou painel `inline`) |
 | `components/BibloSummaryDock.tsx` | o mesmo Biblo na tela de LEITURA, que precisa de um POST para inserir |
+| `components/BibloHomeDock.tsx` + `biblo-workspace.ts` | o Biblo da Biblioteca, que ESCREVE um documento em vez de sugerir um bloco |
 | `biblo-query.ts` | a conversa guardada no aparelho: leitura, pré-busca e a rodada nova |
 | `server/biblo/` | allowance, resposta e a abertura derivada |
 | `components/DeepenButton.tsx` + `DeepeningMenu.tsx` | gerar e reprocessar o estudo |
@@ -532,6 +533,16 @@ Cinco coisas que mordem de fora:
   daquele índice já existe, com o conteúdo antigo. No editor a inserção pela
   conversa **não pede o foco** — o bloco chegou pronto, e o cursor abriria o
   teclado por cima do que a rolagem acabou de centralizar.
+- **Na BIBLIOTECA ele tem FERRAMENTAS, e é a única superfície que as tem.**
+  Ali não há texto na tela, então não há `suggestion` possível: no lugar dela
+  vêm `criarDocumento`, `editarTitulo` e `adicionarBlocoDeConteudo`, pedidas ao
+  modelo por um bloco de prompt que só entra quando `surface === "home"` e
+  executadas no CLIENTE, por `/api/sessions/written` — a mesma rota do editor,
+  que confere dono e passa pela RLS. Elas são um campo do contrato e não
+  `tool_calls`: a resposta já é um JSON com rede em todo campo, e um segundo
+  canal de saída seria um segundo caminho de erro. A conversa se ancora numa
+  sessão VAZIA que nunca é encerrada (e por isso nunca aparece no acervo); o
+  documento que ela cria é outra sessão. Ver `docs/biblo-implementacao.md` §15.
 - **São TRÊS portas para o documento, e só uma passa pelo modelo.** A
   `suggestion`/`offer` é dele; o **"+"** no canto de uma passagem
   (`BibloAddButton`) e o **trecho selecionado** (`BibloSelection`) são da pessoa.

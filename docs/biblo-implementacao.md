@@ -1664,3 +1664,81 @@ de oferecer um botão que falha no toque, mesma guarda do gravador principal.
 (falar um parágrafo inteiro para entrar no texto, tarefa 008 do backlog local),
 transcrição em tempo real enquanto a pessoa fala, e resposta falada do Biblo
 (TTS).
+
+## 15. O Biblo na Biblioteca, e as três ferramentas
+
+Nas telas anteriores o Biblo conversa **sobre um texto que está na tela**, e a
+porta dele para o documento é a `suggestion`: um bloco, inserido onde o modelo
+apontou. Na **Biblioteca** não há texto nenhum, e uma sugestão de bloco não
+teria onde entrar. É essa ausência que muda o papel dele ali: em vez de sugerir
+um pedaço, ele **escreve o documento**.
+
+### 15.1 A superfície decide o que ele pode fazer
+
+`POST /api/biblo` recebe `surface: "session" | "home"` (`session` é o padrão).
+Ela não é uma autorização, é um MODO: com `home`, o prompt ganha o
+`BIBLO_TOOLS_BLOCK` e o teto de saída sobe de `BIBLO_ANSWER_MAX_TOKENS` (700)
+para `BIBLO_TOOLS_MAX_TOKENS` (2.400). Um cliente que mentisse ali ganharia
+instruções de ferramenta numa tela que não as executa, e nada mais — quem
+escreve não é a rota do Biblo.
+
+O bloco de ferramentas entra **depois das instruções e antes da janela**, junto
+do prefixo que o cache automático da OpenAI pega. O bloco do léxico continua
+entrando depois da janela, pela razão oposta: ele muda a cada pergunta.
+
+### 15.2 As três ferramentas
+
+Elas são um **campo do contrato** (`actions`), e não `tool_calls` da OpenAI. A
+resposta do Biblo já é um JSON de sete campos com uma regra número um — nenhum
+campo derruba a resposta —, e `tool_calls` seria um segundo canal de saída, com
+um segundo caminho de erro e uma segunda rodada de chamada por ação. O que se
+perde é a validação de argumentos do provedor; o que se ganha é a mesma rede do
+resto do contrato: ação malformada é ação descartada, peneirada **uma a uma**
+(ver `parseActions`), e a resposta continua chegando.
+
+| ferramenta | o que faz |
+|---|---|
+| `criarDocumento` | nasce um resumo modo `manual` com título e blocos |
+| `editarTitulo` | troca o título do documento desta conversa |
+| `adicionarBlocoDeConteudo` | acrescenta blocos ao fim dele |
+
+`blocks` é uma LISTA, ao contrário da `suggestion`, que é um bloco só: aquela
+oferece um parágrafo dentro de um texto que já existe, esta entrega um
+documento. Pedir um documento um bloco por mensagem seria cobrar seis mensagens
+por um pedido só. É também o que responde "saída maior e com formatação rica":
+`bulletList`, `orderedList`, `h1`, `bibleQuote` e o resto do vocabulário do
+editor entram todos por aqui.
+
+### 15.3 Quem executa é o CLIENTE
+
+O servidor decide o que o Biblo QUER fazer; quem escreve é o
+`BibloHomeDock`, por `POST /api/sessions/written` — a mesma rota do editor, que
+confere dono e passa pela RLS. Nenhuma rota nova nasce com permissão de
+escrever no acervo de alguém a partir do que um modelo devolveu, e uma ação
+inventada esbarra no mesmo schema que o editor esbarra.
+
+As ações rodam **antes** de a resposta entrar na lista, com o rótulo do passo no
+lugar do "Pensando…" ("O Biblo está criando o documento…"). Uma linha dizendo
+"montei o esboço" com o documento ainda não salvo é a tela adiantando um fato.
+
+### 15.4 Duas sessões, e elas não se confundem
+
+- **A âncora** é uma sessão vazia que existe só para a conversa ter a que se
+  prender (toda mensagem é gravada sob um `session_id`). O id nasce no
+  APARELHO — o `GET /api/biblo` responde sem exigir que a sessão exista —, e a
+  linha só é criada na primeira pergunta, por `POST /api/sessions` com esse id.
+  Ela nunca é encerrada, então **nunca aparece no acervo**.
+- **O documento** é outra sessão, modo `manual`, que aparece na Biblioteca como
+  qualquer resumo escrito à mão.
+
+Se a conversa VIRASSE o documento, a segunda pergunta estaria acontecendo dentro
+do texto que a pessoa acabou de mandar criar, e a terceira criaria um documento
+dentro de outro. Os dois ids e o documento em edição moram no `localStorage`
+(`biblo-workspace.ts`): são o ENDEREÇO do conteúdo, não o conteúdo.
+
+### 15.5 O preço
+
+Continua `COIN_COSTS.bibloMessage`. Teto não é consumo: a pergunta comum da
+Biblioteca gasta os mesmos ~250 tokens de saída. O pior caso, com o teto cheio,
+custa ~R$ 0,014 e dá margem de ~65% — a única ação do Biblo abaixo dos 80%, e
+ela entrega um resumo pronto no acervo. Ver `features/coins/pricing.ts`.

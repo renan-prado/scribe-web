@@ -13,6 +13,7 @@ import { getSessionView } from "@/lib/db/sessions";
 import { recordChatUsage } from "@/lib/db/usage";
 import {
   BIBLO_MAX_QUESTION_CHARS,
+  BIBLO_SURFACES,
   type BibloConversation,
   type BibloMessage,
   type BibloTurn,
@@ -35,6 +36,18 @@ const PostSchema = z
   .object({
     sessionId: UuidSchema,
     text: z.string().trim().min(1).max(BIBLO_MAX_QUESTION_CHARS),
+    /**
+     * Onde a conversa acontece. `home` liga as FERRAMENTAS do Biblo (criar
+     * documento, renomear, acrescentar bloco); `session`, o padrão, é a
+     * conversa de sempre dentro de um texto.
+     *
+     * **Ele não é uma autorização, é um MODO.** A ferramenta não escreve nada
+     * sozinha: quem cria e salva o documento é o cliente, por
+     * `/api/sessions/written`, que confere o dono e a RLS. Um cliente que
+     * mentisse aqui ganharia instruções de ferramenta numa tela que não as
+     * executa, e nada mais.
+     */
+    surface: z.enum(BIBLO_SURFACES).optional(),
   })
   .strict();
 
@@ -133,6 +146,7 @@ export async function POST(request: Request) {
   const parsed = await parseJsonBody(request, PostSchema);
   if (!parsed.ok) return parsed.response;
   const { sessionId, text } = parsed.data;
+  const surface = parsed.data.surface ?? "session";
 
   // A RLS é o dono da resposta: uma sessão de outra pessoa simplesmente não
   // volta desta leitura.
@@ -186,6 +200,7 @@ export async function POST(request: Request) {
     speakerName: session.speakerName,
     history,
     question: text,
+    surface,
   });
 
   if (!result.ok) {
@@ -233,6 +248,9 @@ export async function POST(request: Request) {
     answer: toMessage(answer),
     allowance: next,
     balance,
+    // Elas não são gravadas na mensagem: uma ação é um acontecimento, e o que
+    // sobra dela é o DOCUMENTO, que está no acervo. Ver `BibloTurn`.
+    actions: result.data.actions,
   };
   return NextResponse.json(body);
 }

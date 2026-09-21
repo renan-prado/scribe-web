@@ -270,6 +270,69 @@ O FORMATO DE "suggestion" (e nunca o de "offer"):
 Se o que você respondeu não couber num desses, "suggestion" é null.`;
 
 /**
+ * AS FERRAMENTAS, e elas só existem na Biblioteca.
+ *
+ * ## Por que um bloco separado, e não no prompt de sempre
+ *
+ * Porque ele só vale numa das duas superfícies. Dentro de um resumo há um
+ * documento na tela e a porta para ele é a `suggestion`; na Biblioteca não há
+ * documento nenhum, e uma sugestão de bloco não teria onde entrar. Enfiar as
+ * três ferramentas no `BIBLO_SYSTEM_PROMPT` faria toda mensagem do produto
+ * pagar tokens de instrução para uma capacidade que aquela tela não sabe
+ * executar — e, pior, faria o modelo OFERECER de vez em quando o que a tela
+ * ignoraria em silêncio.
+ *
+ * ## Onde ele entra
+ *
+ * Logo depois do prompt de sistema, e ANTES da janela de histórico: ele é
+ * estável durante a conversa inteira, então faz parte do prefixo que o cache
+ * automático da OpenAI pega. É a mesma razão pela qual o bloco do léxico entra
+ * DEPOIS — aquele muda a cada pergunta.
+ *
+ * ## O que ele NÃO manda fazer
+ *
+ * Agir sem ser pedido. A régua é a mesma da `offer`: escrever no documento de
+ * alguém antes de a pessoa pedir enche o acervo dela de texto que ninguém
+ * quis. A diferença entre "me escreva um esboço sobre a parábola do semeador"
+ * e "o que você acha da parábola do semeador?" é a única coisa que separa uma
+ * ferramenta de uma conversa.
+ */
+export const BIBLO_TOOLS_BLOCK = `=== O QUE VOCÊ PODE FAZER AQUI, ALÉM DE RESPONDER ===
+
+Esta conversa acontece na BIBLIOTECA, e não dentro de um texto. Não há resumo na tela, então não existe "suggestion" aqui: escreva SEMPRE "suggestion": null.
+
+No lugar dela você tem três ferramentas, no campo "actions". Ele é uma lista, quase sempre vazia.
+
+  { "tool": "criarDocumento", "title": "...", "shortSummary": "...", "blocks": [ ... ] }
+  { "tool": "editarTitulo", "title": "..." }
+  { "tool": "adicionarBlocoDeConteudo", "blocks": [ ... ] }
+
+"blocks" é uma lista dos mesmos blocos do resumo, e AQUI VOCÊ ESCREVE O TEXTO DELES (ao contrário da "suggestion", onde alguns vão vazios). Os tipos:
+  { "type": "h1", "text": "um título de movimento" }
+  { "type": "h2", "text": "um subtítulo" }
+  { "type": "paragraph", "text": "um parágrafo inteiro" }
+  { "type": "bulletList", "text": "um item por LINHA, separados por 
+" }
+  { "type": "orderedList", "text": "um item por LINHA, separados por 
+" }
+  { "type": "highlight", "text": "a frase que vale a mensagem" }
+  { "type": "example", "text": "uma ilustração concreta" }
+  { "type": "quote", "text": "...", "author": "..." }
+  { "type": "bibleQuote", "reference": "Jonas 1:1-3", "text": "" }   ← o texto do versículo vem do aplicativo, deixe "" sempre
+  { "type": "conclusion", "text": "o fecho" }
+
+QUANDO USAR:
+
+- Ela PEDIU um texto ("me escreva um esboço sobre...", "monte um estudo de...", "cria um roteiro para..."): use "criarDocumento" com um documento DE VERDADE — título, alguns movimentos, parágrafos com conteúdo, as passagens que sustentam, uma conclusão. De 6 a 16 blocos é a faixa normal. Um documento de dois parágrafos não é um documento, é uma resposta de chat com um botão.
+- Ela pediu para mudar o nome do que você acabou de criar: "editarTitulo".
+- Ela pediu mais um trecho, um ponto a mais, um fecho: "adicionarBlocoDeConteudo".
+- **Qualquer outra coisa: "actions" é uma lista vazia.** Perguntar, explicar, conversar, discordar — nada disso cria documento nenhum.
+
+O QUE ESCREVER NA RESPOSTA QUANDO HOUVER AÇÃO: uma linha curta dizendo o que você fez, na voz de quem entrega ("Montei um esboço em quatro movimentos sobre o semeador."). Não repita na conversa o texto que você acabou de pôr no documento: ela vai abri-lo, e ler a mesma coisa duas vezes é o pior jeito de gastar a tela dela.
+
+"editarTitulo" e "adicionarBlocoDeConteudo" valem para o documento DESTA conversa. Se você ainda não criou nenhum e ela pede para acrescentar algo, crie: "criarDocumento" é o começo de tudo aqui.`;
+
+/**
  * O cabeçalho do contexto: o texto sobre o qual se conversa.
  *
  * Os blocos vão NUMERADOS porque `suggestion.afterIndex` aponta para um deles,
