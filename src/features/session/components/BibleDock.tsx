@@ -71,7 +71,15 @@ export function BibleDock() {
         <SheetContent
           keepMounted
           side={isMobile ? "bottom" : "right"}
-          className="h-[85dvh] gap-0 p-0 data-[side=right]:h-full data-[side=right]:sm:max-w-md"
+          // O `data-[side=bottom]:` na altura não é enfeite: o padrão do
+          // `SheetContent` já declara `data-[side=bottom]:h-auto`, e um
+          // `h-[85dvh]` SEM o mesmo modificador perde essa queda de braço —
+          // as duas classes miram o `height`, mas `twMerge` só desempata
+          // quando o modificador é IDÊNTICO, então o painel esticava até a
+          // altura do próprio conteúdo (a lista de 66 livros, ou um capítulo
+          // inteiro) em vez de parar em 85% da tela. `max-h` repete o mesmo
+          // teto por baixo, para o caso de o navegador não sustentar `dvh`.
+          className="gap-0 p-0 data-[side=bottom]:h-[85dvh] data-[side=bottom]:max-h-[85dvh] data-[side=right]:h-full data-[side=right]:sm:max-w-md"
         >
           <SheetHeader className="shrink-0 pb-2">
             <SheetTitle className="flex items-center gap-2">
