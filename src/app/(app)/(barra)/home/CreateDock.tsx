@@ -240,7 +240,7 @@ export function CreateDock() {
           por perto a que ele pertencesse. A faixa nunca passa de `md`, então na
           prática o teto só chega a valer entre a lista já larga e o dock ainda
           presente — mas dois tetos diferentes ali desalinhariam os dois. */}
-      <div className="pointer-events-none fixed inset-x-0 bottom-0 z-30 bg-[image:var(--v2-dock-fade)] pt-32 pb-[calc(1.75rem+env(safe-area-inset-bottom))] md:hidden">
+      <div className="pointer-events-none fixed inset-x-0 bottom-0 z-30 bg-[image:var(--v2-dock-fade)] pt-32 pb-[calc(6.25rem+env(safe-area-inset-bottom))] md:hidden">
         {/* O painel abre AO LADO do botão, na mesma linha, com os dois
             alinhados por baixo — é o desenho do print. Em cima do botão ele
             cobriria o próprio dedo que o abriu, e é por baixo que o polegar

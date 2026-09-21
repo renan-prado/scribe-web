@@ -3,7 +3,7 @@
 import { FileText, X } from "lucide-react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
-import { useCallback, useEffect, useState } from "react";
+import { useCallback, useEffect, useRef, useState } from "react";
 import { toast } from "sonner";
 import { useBibloWriter } from "@/features/session/biblo-query";
 import {
@@ -22,6 +22,7 @@ import { useLibraryWriter } from "@/features/session/query";
 import { useKeyboardInset } from "@/hooks/use-keyboard-inset";
 import type { BibloAction } from "@/lib/domain/biblo";
 import { createLogger } from "@/lib/log";
+import { cn } from "@/lib/utils";
 import { BibloAvatar } from "@/shared/brand";
 
 const log = createLogger("biblo-home");
@@ -63,9 +64,15 @@ const log = createLogger("biblo-home");
  *
  * O mesmo disco de vidro do Biblo das outras telas, no mesmo canto. O que muda
  * é a companhia: aqui o canto de baixo à direita já é do `+` do `CreateDock`
- * no celular, então este sobe uma linha — o `+` é a ação principal da tela e
- * não pode pular de lugar, pela mesma regra que já governa o `BackToTop` do
- * `/summary`.
+ * no celular, e os dois dividem a coluna — o Biblo fica no PISO, mais perto do
+ * polegar, porque conversar é o gesto mais repetido da tela; o `+` sobe uma
+ * linha, e o painel dele já cresce para cima a partir de onde nasce, então
+ * subir de posição não muda para onde ele se abre.
+ *
+ * **E ele soma o mesmo esconde-ao-rolar do `+`** (mesmo limiar de 8px, mesmo
+ * gatilho de "perto do topo reaparece sempre", ver o cabeçalho de
+ * `CreateDock`): sem isso os dois botões discordariam a cada rolagem, um
+ * sumindo e o outro parado, o que lê como um dos dois estar quebrado.
  */
 export function BibloHomeDock() {
   const [open, setOpen] = useState(false);
@@ -74,6 +81,29 @@ export function BibloHomeDock() {
   const library = useLibraryWriter();
   const router = useRouter();
   useKeyboardInset();
+
+  // O mesmo esconde-ao-rolar do `+` do `CreateDock` (ver o cabeçalho de lá):
+  // rolar para baixo é ler, rolar para cima é procurar, e perto do topo o
+  // botão volta sempre, mesmo que o último gesto tenha sido para baixo.
+  const [scrolledIn, setScrolledIn] = useState(true);
+  const [moved, setMoved] = useState(false);
+  const lastY = useRef(0);
+  useEffect(() => {
+    lastY.current = window.scrollY;
+    function onScroll() {
+      const y = window.scrollY;
+      const dy = y - lastY.current;
+      if (Math.abs(dy) < 8) return;
+      lastY.current = y;
+      const next = y < 80 ? true : dy < 0;
+      setScrolledIn((prev) => {
+        if (prev !== next) setMoved(true);
+        return next;
+      });
+    }
+    window.addEventListener("scroll", onScroll, { passive: true });
+    return () => window.removeEventListener("scroll", onScroll);
+  }, []);
 
   // O `localStorage` só existe no cliente, e lê-lo durante o render faria o
   // servidor desenhar uma coisa e o navegador outra. Um quadro depois, como a
@@ -179,16 +209,25 @@ export function BibloHomeDock() {
   return (
     <>
       {/* O botão sai da tela com a gaveta aberta: ele não é um interruptor
-          aceso, ele VIROU a gaveta. `bottom` empilha acima do `+` do
-          `CreateDock`, que é a ação principal do `/home` e não pode se mexer. */}
+          aceso, ele VIROU a gaveta. `bottom` fica ABAIXO do `+` do
+          `CreateDock`, no piso da coluna. Ver "## O botão" no topo do
+          arquivo. */}
       {!open && (
-        <div className="pointer-events-none fixed inset-x-0 bottom-0 z-30 flex justify-end px-4 pb-[calc(6.25rem+max(env(safe-area-inset-bottom),var(--kb-inset,0px)))] md:pb-[calc(1rem+max(env(safe-area-inset-bottom),var(--kb-inset,0px)))]">
+        <div className="pointer-events-none fixed inset-x-0 bottom-0 z-30 flex justify-end px-4 pb-[calc(1.75rem+max(env(safe-area-inset-bottom),var(--kb-inset,0px)))] md:pb-[calc(1rem+max(env(safe-area-inset-bottom),var(--kb-inset,0px)))]">
           <button
             type="button"
             onClick={() => setOpen(true)}
             aria-label="Conversar com o Biblo"
             aria-expanded={false}
-            className="pointer-events-auto inline-flex size-14 items-center justify-center rounded-full bg-v2-glass-button bg-[image:var(--v2-glass-sheen)] ring-1 ring-v2-glass-edge backdrop-blur-xl transition hover:brightness-125 active:brightness-150 focus-visible:outline-2 focus-visible:outline-offset-4 focus-visible:outline-v2-ink-mute"
+            // Escondido ele também sai do alcance do dedo e do TAB, a mesma
+            // regra do `+` do `CreateDock`.
+            tabIndex={scrolledIn ? undefined : -1}
+            aria-hidden={scrolledIn ? undefined : true}
+            className={cn(
+              "inline-flex size-14 items-center justify-center rounded-full bg-v2-glass-button bg-[image:var(--v2-glass-sheen)] ring-1 ring-v2-glass-edge backdrop-blur-xl transition hover:brightness-125 active:brightness-150 focus-visible:outline-2 focus-visible:outline-offset-4 focus-visible:outline-v2-ink-mute",
+              scrolledIn ? "pointer-events-auto" : "pointer-events-none",
+              moved && (scrolledIn ? "animate-v2-rec-in" : "animate-v2-rec-out")
+            )}
           >
             <BibloAvatar mood={thinking ? "thinking" : "idle"} size={36} />
           </button>
