@@ -5,6 +5,7 @@ import { useState } from "react";
 import { MicGlyph } from "@/components/icons/MicGlyph";
 import { useCaptureQueue } from "../capture-queue";
 import { type CaptureMeta, downloadCapture } from "../lib/capture-store";
+import { phaseLabel } from "../lib/capture-upload";
 import { formatDurationLong, shortDate } from "../lib/formatting";
 import { ConfirmDialog } from "./ConfirmDialog";
 
@@ -47,23 +48,18 @@ type Props = {
 };
 
 /**
- * O que a pessoa precisa saber, em uma linha, por estado.
- *
  * A frase de falha vem GRAVADA na linha da gravação (`failureMessage`), e não é
  * montada aqui: quem sabe distinguir "sua internet caiu" de "nosso servidor
  * caiu" de "acabaram suas moedas" é o `capture-upload`, que viu a resposta.
  * Reclassificar aqui seria adivinhar duas vezes a mesma coisa, e num dia a
- * tela e a fila discordariam sobre o que aconteceu.
+ * tela e a fila discordariam sobre o que aconteceu. A frase do PASSO vem do
+ * mesmo lugar, por `phaseLabel`.
  */
-const PHASE_LABEL = {
-  creating: "Guardando a gravação…",
-  transcribing: "Transcrevendo o áudio…",
-  summarizing: "Montando o resumo…",
-} as const;
 
 export function PendingCaptureNote({ capture, now }: Props) {
   const uploading = useCaptureQueue((s) => s.uploading === capture.id);
   const phase = useCaptureQueue((s) => s.phase);
+  const chunk = useCaptureQueue((s) => s.chunk);
   const run = useCaptureQueue((s) => s.run);
   const drop = useCaptureQueue((s) => s.drop);
   const busyElsewhere = useCaptureQueue((s) => s.uploading !== null && s.uploading !== capture.id);
@@ -95,7 +91,7 @@ export function PendingCaptureNote({ capture, now }: Props) {
           {working ? (
             <>
               <Loader2 aria-hidden className="mt-px size-3.5 shrink-0 animate-spin" />
-              {PHASE_LABEL[phase]}
+              {phaseLabel(phase, chunk)}
             </>
           ) : capture.failure === "offline" ? (
             <>

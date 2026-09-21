@@ -281,11 +281,6 @@ export type CaptureChunk = {
   body: Blob[];
 };
 
-export function chunkBytes(chunk: CaptureChunk): number {
-  const head = chunk.header?.size ?? 0;
-  return chunk.body.reduce((sum, b) => sum + b.size, head);
-}
-
 /** Só os bytes de áudio novo, sem o cabeçalho repetido. É o que mede a fatia
  *  de duração que cabe a este pedaço. */
 export function chunkBodyBytes(chunk: CaptureChunk): number {

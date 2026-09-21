@@ -48,12 +48,53 @@ import { tailSentences } from "./text";
  */
 export type UploadPhase = "creating" | "transcribing" | "summarizing";
 
+/**
+ * A frase do passo, com a CONTAGEM quando a transcrição tem mais de um pedaço.
+ *
+ * Ela mora aqui, e não na tela, porque as telas são DUAS — o cartão da
+ * Biblioteca e a própria tela de gravação — e elas guardavam cada uma a sua
+ * cópia das mesmas três strings. Duas cópias de um texto é uma que um dia não
+ * é atualizada.
+ *
+ * "(3 de 9)" é a diferença entre esperar e achar que travou: uma pregação de
+ * uma hora que caiu numa parte só vira oito ou nove chamadas em fila, e vários
+ * minutos de uma frase parada são indistinguíveis de um app travado. A
+ * contagem só aparece quando há mais de um pedaço — no caminho normal, o de
+ * uma chamada só, "(1 de 1)" seria ruído sobre uma frase que já estava certa.
+ */
+const PHASE_LABEL: Record<UploadPhase, string> = {
+  creating: "Guardando a gravação…",
+  transcribing: "Transcrevendo o áudio…",
+  summarizing: "Montando o resumo…",
+};
+
+export function phaseLabel(
+  phase: UploadPhase,
+  chunk: { done: number; total: number } | null
+): string {
+  const label = PHASE_LABEL[phase];
+  if (phase !== "transcribing" || !chunk) return label;
+  return `${label} (${chunk.done} de ${chunk.total})`;
+}
+
 type UploadFailure = { ok: false; failure: CaptureFailure; message: string };
 
 export type UploadResult = { ok: true; sessionId: string; summary: SummaryPayload } | UploadFailure;
 
 type Options = {
   onPhase?: (phase: UploadPhase) => void;
+  /**
+   * Em que pedaço a transcrição está, quando ela tem mais de um.
+   *
+   * Uma pregação de uma hora que caiu numa parte só vira oito ou nove POSTs
+   * em fila, e cada um leva o seu tempo. Sem isto, a tela mostra
+   * "Transcrevendo o áudio…" parado por vários minutos, que é
+   * indistinguível de travado — e a pessoa que acha que travou fecha a aba,
+   * que é a única coisa que realmente estraga o resultado. O total CRESCE
+   * quando um pedaço precisa ser partido, e isso é honesto: ele é o que
+   * ainda falta, não uma promessa feita no começo.
+   */
+  onChunk?: (done: number, total: number) => void;
   /** Chamado assim que a sessão nasce, para quem chama gravar o id antes da
    *  transcrição começar. Uma falha depois daqui não pode criar outra sessão. */
   onSession?: (sessionId: string) => void | Promise<void>;
@@ -147,7 +188,8 @@ type TranscribeResult = { ok: true; text: string } | UploadFailure;
 async function transcribeChunks(
   chunks: CaptureChunk[],
   meta: CaptureMeta,
-  sessionId: string
+  sessionId: string,
+  onChunk?: (done: number, total: number) => void
 ): Promise<TranscribeResult> {
   // A duração de cada POST é proporcional ao áudio NOVO que ele carrega, e não
   // à divisão igual pelo número de pedaços: é ela que vira custo no
@@ -159,6 +201,9 @@ async function transcribeChunks(
 
   while (queue.length > 0) {
     const chunk = queue.shift() as CaptureChunk;
+    // `index` são os que já voltaram, mais este, mais os que esperam. A conta
+    // é refeita a cada volta porque um 413 acrescenta um pedaço à fila.
+    onChunk?.(index + 1, index + 1 + queue.length);
     const share = totalBytes > 0 ? chunkBodyBytes(chunk) / totalBytes : 1 / chunks.length;
     const form = new FormData();
     form.append("file", chunkBlob(chunk, meta.mimeType), `gravacao-${index}.${meta.extension}`);
@@ -195,7 +240,7 @@ async function transcribeChunks(
 
 export async function uploadCapture(
   meta: CaptureMeta,
-  { onPhase, onSession }: Options = {}
+  { onPhase, onSession, onChunk }: Options = {}
 ): Promise<UploadResult> {
   // A pergunta barata antes de qualquer trabalho: remontar os blobs de uma
   // pregação de uma hora custa memória, e no avião a resposta já é conhecida.
@@ -228,7 +273,7 @@ export async function uploadCapture(
       };
     }
 
-    const transcribed = await transcribeChunks(chunks, meta, sessionId);
+    const transcribed = await transcribeChunks(chunks, meta, sessionId, onChunk);
     if (!transcribed.ok) return transcribed;
     const transcript = transcribed.text;
     if (!transcript) {

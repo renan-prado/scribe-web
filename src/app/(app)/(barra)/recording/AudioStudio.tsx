@@ -15,6 +15,7 @@ import {
   putCaptureMeta,
   putFragment,
 } from "@/features/session/lib/capture-store";
+import { phaseLabel } from "@/features/session/lib/capture-upload";
 import { pickMime } from "@/lib/audio-constraints";
 import { cn } from "@/lib/utils";
 import { useClockScope } from "./ClockScope";
@@ -74,12 +75,6 @@ import { askRecordingNotificationPermission, useRecordingPresence } from "./useR
  * hoje é uma espera com cartão, aviso e retentativa, mas ainda não é o mesmo
  * que funcionar offline.
  */
-const PHASE_LABEL = {
-  creating: "Guardando a gravação…",
-  transcribing: "Transcrevendo o áudio…",
-  summarizing: "Montando o resumo…",
-} as const;
-
 export function AudioStudio({ autoStart = false }: { autoStart?: boolean }) {
   const router = useRouter();
   const barsRef = useRef<(HTMLSpanElement | null)[]>([]);
@@ -112,6 +107,7 @@ export function AudioStudio({ autoStart = false }: { autoStart?: boolean }) {
   const run = useCaptureQueue((s) => s.run);
   const uploading = useCaptureQueue((s) => s.uploading);
   const phase = useCaptureQueue((s) => s.phase);
+  const chunk = useCaptureQueue((s) => s.chunk);
 
   /** A gravação que ESTA tela entregou à fila e está acompanhando. Enquanto
    *  ela existe, a tela mostra o passo do envio em vez dos controles. */
@@ -492,7 +488,7 @@ export function AudioStudio({ autoStart = false }: { autoStart?: boolean }) {
           {busy ? (
             <div className="flex max-w-xs flex-col items-center gap-2 text-center">
               <p role="status" className="text-sm font-light text-v2-ink-soft">
-                {showingPhase ? PHASE_LABEL[phase] : "Guardando a gravação…"}
+                {showingPhase ? phaseLabel(phase, chunk) : "Guardando a gravação…"}
               </p>
               {/* A frase que tira o medo de fechar o app no meio do envio, e que
                 só é honesta porque o áudio já está no disco antes de a primeira

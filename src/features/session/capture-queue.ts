@@ -68,6 +68,9 @@ type QueueState = {
   /** A gravação sendo enviada agora, e em que passo ela está. */
   uploading: string | null;
   phase: UploadPhase | null;
+  /** Em que pedaço a transcrição está, quando o áudio foi cortado em vários.
+   *  `null` no caminho normal, o de uma chamada só. Ver `capture-upload`. */
+  chunk: { done: number; total: number } | null;
   /** A gravação que o microfone está escrevendo NESTA aba. Nunca é enviada. */
   capturing: string | null;
   /** A última que chegou ao fim. É por aqui que a tela de gravação sabe para
@@ -152,6 +155,7 @@ export const useCaptureQueue = create<QueueState & QueueActions>((set, get) => (
   captures: [],
   uploading: null,
   phase: null,
+  chunk: null,
   capturing: null,
   done: null,
   scanned: false,
@@ -185,7 +189,7 @@ export const useCaptureQueue = create<QueueState & QueueActions>((set, get) => (
     if (!meta) return;
     if (!options?.force && !isEligible(meta, state)) return;
 
-    set({ uploading: id, phase: "creating" });
+    set({ uploading: id, phase: "creating", chunk: null });
     // Some com o aviso antigo enquanto esta tentativa corre: manter na tela o
     // "sem internet" de dez minutos atrás, com a barra dizendo "transcrevendo",
     // é a tela se contradizendo.
@@ -197,6 +201,7 @@ export const useCaptureQueue = create<QueueState & QueueActions>((set, get) => (
 
     const result = await uploadCapture(meta, {
       onPhase: (phase) => set({ phase }),
+      onChunk: (done, total) => set({ chunk: total > 1 ? { done, total } : null }),
       onSession: async (sessionId) => {
         const next = await patchCaptureMeta(id, { sessionId });
         if (next) set((s) => ({ captures: s.captures.map((c) => (c.id === id ? next : c)) }));
@@ -212,6 +217,7 @@ export const useCaptureQueue = create<QueueState & QueueActions>((set, get) => (
         captures: s.captures.filter((c) => c.id !== id),
         uploading: null,
         phase: null,
+        chunk: null,
         done: { captureId: id, sessionId: result.sessionId, at: Date.now() },
       }));
       return;
@@ -230,7 +236,7 @@ export const useCaptureQueue = create<QueueState & QueueActions>((set, get) => (
       nextAttemptAt.set(id, Date.now() + backoffFor(next));
       set((s) => ({ captures: s.captures.map((c) => (c.id === id ? next : c)) }));
     }
-    set({ uploading: null, phase: null });
+    set({ uploading: null, phase: null, chunk: null });
     log.warn("capture upload failed", { captureId: id, failure: result.failure, attempts });
   },
 
