@@ -73,6 +73,12 @@ const log = createLogger("biblo-home");
  * gatilho de "perto do topo reaparece sempre", ver o cabeçalho de
  * `CreateDock`): sem isso os dois botões discordariam a cada rolagem, um
  * sumindo e o outro parado, o que lê como um dos dois estar quebrado.
+ *
+ * **O `px-5` da borda direita é o MESMO do `CreateDock`, e precisa continuar
+ * sendo.** Os dois discos já nascem do mesmo `size-14`; o que os desalinhava
+ * não era o tamanho, era o respiro — este vinha em `px-4` (16px) contra os
+ * `px-5` (20px) do `+`, e 4px de diferença bastam para a coluna empilhada
+ * parecer torta em vez de reta.
  */
 export function BibloHomeDock() {
   const [open, setOpen] = useState(false);
@@ -213,7 +219,7 @@ export function BibloHomeDock() {
           `CreateDock`, no piso da coluna. Ver "## O botão" no topo do
           arquivo. */}
       {!open && (
-        <div className="pointer-events-none fixed inset-x-0 bottom-0 z-30 flex justify-end px-4 pb-[calc(1.75rem+max(env(safe-area-inset-bottom),var(--kb-inset,0px)))] md:pb-[calc(1rem+max(env(safe-area-inset-bottom),var(--kb-inset,0px)))]">
+        <div className="pointer-events-none fixed inset-x-0 bottom-0 z-30 flex justify-end px-5 pb-[calc(1.75rem+max(env(safe-area-inset-bottom),var(--kb-inset,0px)))] md:pb-[calc(1rem+max(env(safe-area-inset-bottom),var(--kb-inset,0px)))]">
           <button
             type="button"
             onClick={() => setOpen(true)}
