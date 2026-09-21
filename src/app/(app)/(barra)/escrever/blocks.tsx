@@ -194,7 +194,10 @@ export const BLOCK_PLACEHOLDERS: Record<WrittenBlockType, string> = {
   orderedList: "Um tópico por linha",
   bibleQuote: "Escolha a passagem",
   highlight: "A frase que resume tudo",
-  example: "A história que ele contou",
+  // Sem "ele": o bloco deixou de se chamar "Exemplo do pregador" justamente
+  // porque num texto escrito à mão não há pregador nenhum a quem o exemplo
+  // pertença, e o placeholder era o último lugar onde ele continuava.
+  example: "A história ou comparação que explica",
   quote: "A frase citada",
   conclusion: "O que fica da mensagem",
 };
