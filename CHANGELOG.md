@@ -9,6 +9,21 @@ Gerado por `npm run release` a partir dos Conventional Commits. `feat` sobe o
 minor; o resto sobe o patch. Não edite à mão, a próxima execução escreve por
 cima do topo do arquivo.
 
+## 0.63.1, 2026-09-21, desde v0.63.0
+
+### Correções
+
+- **admin:** a dica do lexico para de pedir uma linha em branco (`fd13249`)
+- **biblo:** a fileira de chips para de dizer a mesma coisa duas vezes (`87af4e1`)
+- **editor:** o menu da barra sobe quando nao cabe embaixo da linha (`031465b`)
+- **biblo:** o cartao da Biblioteca acompanha o titulo que o Biblo mudou (`d9bef93`)
+- **gravacao:** a notificacao do sistema para de mentir quando a gravacao e pausada (`6bbc9dc`)
+- **gravacao:** a transcricao longa diz em que pedaco esta (`a75e57e`)
+
+### Outros
+
+- **gravacao:** o id da sessao nasce no aparelho, e a linha so quando precisa (`d3affba`)
+
 ## 0.63.0, 2026-09-21, desde v0.62.1
 
 ### Novidades
