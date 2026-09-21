@@ -9,6 +9,12 @@ Gerado por `npm run release` a partir dos Conventional Commits. `feat` sobe o
 minor; o resto sobe o patch. Não edite à mão, a próxima execução escreve por
 cima do topo do arquivo.
 
+## 0.54.0, 2026-09-21, desde v0.53.0
+
+### Novidades
+
+- **gravacao:** a tela de gravar vira bancada com notas, Biblo e Biblia (`35d585f`)
+
 ## 0.53.0, 2026-09-21, desde v0.52.0
 
 ### Novidades
