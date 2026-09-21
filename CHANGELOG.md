@@ -9,6 +9,12 @@ Gerado por `npm run release` a partir dos Conventional Commits. `feat` sobe o
 minor; o resto sobe o patch. Não edite à mão, a próxima execução escreve por
 cima do topo do arquivo.
 
+## 0.52.0, 2026-09-21, desde v0.51.0
+
+### Novidades
+
+- **gravacao:** audio longo e cortado na hora de enviar, e o aviso de tamanho sai (`dff5622`)
+
 ## 0.51.0, 2026-09-20, desde v0.50.0
 
 ### Novidades
