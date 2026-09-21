@@ -818,6 +818,15 @@ também que segurava o "stretched link" (`::after` esticado + `z-10` no menu),
 que existia porque botão dentro de link é HTML inválido: sem botão nenhum lá
 dentro, aquilo era mecanismo sem a razão que o justificava.
 
+**A vista LISTA tem ações rápidas de novo, e não é o mesmo erro voltando.**
+`LibraryRow` (`features/session/components/LibraryRow.tsx`) mostra Compartilhar
+e Excluir no hover (sempre visíveis no toque, `no-touch:opacity-0
+group-hover:opacity-100`), mas como IRMÃS do `<a>` dentro do `<li>`, nunca
+dentro dele — o problema de antes era a aninhação, não a existência do menu, e
+numa linha de largura de página (contra os ~150px do post-it) sobra espaço
+para as duas coisas conviverem. Excluir reusa o `DELETE /api/sessions/:id` e o
+`library.remove` otimista que `SavedSessionView` já tinha; não há rota nova.
+
 **A cor de um cartão sai do HASH DO ID, nunca da posição na lista.** Pelo
 índice, gravar um sermão novo repinta o acervo inteiro e o cartão amarelo de
 ontem é verde hoje; cor de post-it é memória visual, e instável ela é só ruído.
