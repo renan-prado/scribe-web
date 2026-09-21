@@ -452,7 +452,7 @@ Duas particularidades que mordem de fora:
 
 - **Ele não fala o vocabulário de blocos do resumo.** `StudyBlock`
   (`src/lib/domain/study.ts`) acrescenta `objection`, `reading` e `question`, e
-  reinterpreta `example` — no resumo é "Exemplo do pregador", no estudo é
+  reinterpreta `example` — no resumo é "Exemplo", no estudo é
   ilustração do próprio estudo. Por isso a página usa `StudyBlockRenderer`, que
   desenha esses quatro e delega o resto ao `BlockRenderer`. Um bloco novo
   precisa entrar nos DOIS lugares.

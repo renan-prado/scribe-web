@@ -8,10 +8,10 @@ import { cn } from "@/lib/utils";
  * com o resumo, e desenha ele mesmo os cinco que não existem lá.
  *
  * Três tipos são novos (`objection`, `reading`, `question`) e o quarto,
- * `example`, é reinterpretado: no resumo ele é "Exemplo do pregador", porque
- * veio do sermão; aqui é uma ilustração que o próprio estudo traz, e a
- * etiqueta errada era um dos sinais de que estudo e resumo eram a mesma coisa
- * por dentro. Ver `docs/estudo-v2.md` §1.7 e §5.1.
+ * `example`, é reinterpretado: no resumo ele é "Exemplo" (e já foi "Exemplo do
+ * pregador"); aqui é "Ilustração", porque ela é do próprio estudo e não de
+ * alguém que pregou. A etiqueta errada era um dos sinais de que estudo e resumo
+ * eram a mesma coisa por dentro. Ver `docs/estudo-v2.md` §1.7 e §5.1.
  *
  * **O `distinction` foi REMOVIDO**, e os estudos antigos que o têm salvo
  * continuam intactos no banco: o bloco cai no `default` daqui, vai parar no

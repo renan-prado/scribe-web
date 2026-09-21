@@ -138,8 +138,16 @@ export const BLOCK_OPTIONS: BlockOption[] = [
   },
   {
     type: "example",
-    label: "Exemplo do pregador",
-    hint: "A história ou comparação que ele usou para explicar.",
+    // "Exemplo", e não "Exemplo do pregador", que foi o nome dele por duas
+    // versões. O rótulo nasceu quando este bloco só existia num resumo GERADO
+    // a partir de um sermão, e ele deixou de ser verdade no dia em que o editor
+    // passou a abrir qualquer resumo e a folha em branco: num texto que a
+    // própria pessoa escreve não há pregador nenhum a quem o exemplo pertença.
+    //
+    // **O TIPO continua `example`**, e é isso que mantém de pé todo bloco já
+    // salvo no banco: o que mudou é a palavra na tela, não a chave do jsonb.
+    label: "Exemplo",
+    hint: "A história ou comparação que explica a ideia.",
     icon: <Lightbulb className="size-4" />,
   },
   {

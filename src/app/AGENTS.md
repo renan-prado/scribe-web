@@ -455,9 +455,11 @@ quebra de linha que a caixa não tem.
 essa igualdade é o que torna seguro abrir aqui um resumo que a IA escreveu:
 enquanto faltava um tipo, salvar apagava em silêncio os blocos daquele tipo. O
 que faltava era o `example` — ficou de fora enquanto o editor era só a folha em
-branco, porque "Exemplo do pregador" não faz sentido num texto que a própria
-pessoa escreveu, e o argumento caiu quando o editor passou a abrir o resumo de
-uma pregação. **Bloco novo no `SummaryBlockSchema` entra em
+branco, porque "Exemplo do pregador", o nome que o bloco tinha então, não fazia
+sentido num texto que a própria pessoa escreveu. O argumento caiu quando o
+editor passou a abrir o resumo de uma pregação, e o rótulo foi consertado
+depois: hoje ele se chama só **"Exemplo"** na tela, nas duas pontas (o tipo no
+jsonb continua `example`, então nada do que está salvo se mexeu). **Bloco novo no `SummaryBlockSchema` entra em
 `WRITTEN_BLOCK_TYPES`, no `BlockBody` e no `BlockRenderer` no mesmo commit.** O
 que o editor não tem é um terceiro nível de título.
 

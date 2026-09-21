@@ -1743,13 +1743,13 @@ function BlockBody({
     return (
       <aside className="relative rounded-2xl border-[var(--session-example-border)] border-l-4 bg-[var(--session-example-bg)] px-5 py-4">
         <span className="mb-1.5 block font-semibold text-[10px] text-scriba-ink-mute uppercase tracking-[0.14em]">
-          Exemplo do pregador
+          Exemplo
         </span>
         <MarkableField
           shared={shared}
           value={block.text}
           onChange={(text) => onChange({ text })}
-          ariaLabel="Exemplo do pregador"
+          ariaLabel="Exemplo"
           className="font-light text-scriba-ink text-sm leading-relaxed"
         />
       </aside>

@@ -101,8 +101,12 @@ export function BlockRenderer({ block }: { block: SummaryBlock }) {
     case "example":
       return (
         <aside className="relative rounded-2xl border-l-4 border-[var(--session-example-border)] bg-[var(--session-example-bg)] px-5 py-4">
+          {/* "Exemplo", e não "Exemplo do pregador": o rótulo antigo só era
+              verdade num resumo gerado a partir de um sermão, e a mesma
+              moldura desenha hoje o texto que a pessoa escreveu à mão. O TIPO
+              continua `example` — o que mudou é a palavra, não a chave. */}
           <span className="mb-1.5 block text-[10px] font-semibold uppercase tracking-[0.14em] text-scriba-ink-mute">
-            Exemplo do pregador
+            Exemplo
           </span>
           <p className="text-pretty text-sm font-light leading-relaxed text-scriba-ink">
             <RichText>{block.text}</RichText>

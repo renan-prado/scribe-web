@@ -257,7 +257,7 @@ const EDITOR_CHIPS: { label: string; icon: React.ReactNode }[] = [
     ),
   },
   {
-    label: "Exemplo do pregador",
+    label: "Exemplo",
     icon: (
       <svg {...EDITOR_ICON} role="presentation">
         <path d="M6.4 13.2h3.2M6.9 14.9h2.2M8 1.6a4.2 4.2 0 0 0-2.6 7.5c.4.4.6.9.6 1.4h4c0-.5.2-1 .6-1.4A4.2 4.2 0 0 0 8 1.6Z" />
