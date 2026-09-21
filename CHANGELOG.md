@@ -9,6 +9,12 @@ Gerado por `npm run release` a partir dos Conventional Commits. `feat` sobe o
 minor; o resto sobe o patch. Não edite à mão, a próxima execução escreve por
 cima do topo do arquivo.
 
+## 0.58.0, 2026-09-21, desde v0.57.0
+
+### Novidades
+
+- **editor:** o bloco "Exemplo do pregador" passa a se chamar so "Exemplo" (`bff88e5`)
+
 ## 0.57.0, 2026-09-21, desde v0.56.0
 
 ### Novidades
