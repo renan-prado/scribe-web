@@ -11,6 +11,7 @@ import { PassageVerses } from "@/features/session/components/PassageVerses";
 import { revealSummaryBlock, SUMMARY_BLOCK_ATTR } from "@/features/session/components/reveal-block";
 import { useUnloadGuard } from "@/features/session/hooks/useUnloadGuard";
 import { requestLocationSuggestions, requestSpeakerSuggestions } from "@/features/session/lib/api";
+import { normalizeSearch } from "@/features/session/lib/search";
 import { initialsOf } from "@/features/session/lib/text";
 import { hasMark, splitMarks, toggleMark } from "@/lib/domain/mark";
 import { parseVerseReference } from "@/lib/domain/reference";
@@ -182,6 +183,15 @@ export function Composer({
 
   /** Onde o menu do `+` está aberto: depois do bloco de índice N (-1 = no fim). */
   const [adderAt, setAdderAt] = useState<number | null>(null);
+  /**
+   * O menu da BARRA, aberto digitando `/` num parágrafo vazio.
+   *
+   * `index` é o bloco em que ele está; `cursor` é a opção destacada, que as
+   * setas movem. A BUSCA não mora aqui: ela é o próprio texto do bloco depois
+   * da barra (`/exem`), e guardá-la de novo aqui daria duas verdades sobre o
+   * que está escrito na linha.
+   */
+  const [slash, setSlash] = useState<{ index: number; cursor: number } | null>(null);
   /**
    * Qual bloco tem o cursor. É o que põe os controles e os `+` no ar no
    * celular, onde não existe passar o mouse.
@@ -455,24 +465,179 @@ export function Composer({
     if (block.type !== "paragraph") return patch;
     const text = (patch as { text?: string }).text;
     if (typeof text !== "string") return patch;
-    const marker = /^([-*]|\d{1,3}[.)])[ \t]/.exec(text);
+    const marker = /^(#{1,2}|>|[-*]|\d{1,3}[.)])[ \t]/.exec(text);
     if (!marker) return patch;
-    const ordered = /\d/.test(marker[1]);
+    const rest = text.slice(marker[0].length);
+    const head = marker[1];
+    if (head === "#") return { type: "h1", text: rest } as Partial<WrittenBlock>;
+    if (head === "##") return { type: "h2", text: rest } as Partial<WrittenBlock>;
+    if (head === ">") return { type: "quote", text: rest } as Partial<WrittenBlock>;
     return {
-      type: ordered ? "orderedList" : "bulletList",
-      text: text.slice(marker[0].length),
+      type: /\d/.test(head) ? "orderedList" : "bulletList",
+      text: rest,
     } as Partial<WrittenBlock>;
+  }
+
+  /**
+   * O NEGRITO do Markdown vira o MARCA-TEXTO, porque negrito não existe aqui.
+   *
+   * Todo bloco deste editor é `{ type, text }`, string pura, e a única ênfase
+   * dentro de uma frase que o produto tem é a faixa amarela (`==assim==`, ver
+   * `lib/domain/mark.ts`). O dedo que digita `**` está pedindo "destaque esta
+   * parte", e a resposta honesta é dar o destaque que existe em vez de deixar
+   * dois asteriscos no meio da frase de alguém, que é o que acontece em
+   * qualquer campo que não converta.
+   *
+   * Só onde a marca APARECE na leitura (`MARKABLE`): convertê-la num título ou
+   * numa citação escreveria `==` na tela, que é pior que o `**`.
+   */
+  function markdownEmphasis(block: WrittenBlock, text: string): string | null {
+    if (!MARKABLE.has(block.type)) return null;
+    // Sem lookbehind de propósito: `(?<!\s)` só existe no Safari 16.4 em
+    // diante, e um literal de regex com ele é um SyntaxError de PARSE — ou
+    // seja, o editor inteiro deixaria de carregar num iPhone de 2021, não só a
+    // conversão. As duas pontas `\S` dizem a mesma coisa (nada de `** x **`)
+    // com sintaxe que todo navegador entende.
+    const next = text.replace(/\*\*(\S(?:[^\n*]{0,298}\S)?)\*\*/g, "==$1==");
+    return next === text ? null : next;
+  }
+
+  /**
+   * O menu da barra abre e fecha OLHANDO O TEXTO, nunca numa tecla.
+   *
+   * É o mesmo raciocínio do autoformato das listas, e pelo mesmo motivo: num
+   * `onKeyDown` seria preciso reconstruir o que o campo vai conter depois
+   * daquela tecla, e o gesto se perderia numa colagem ou no teclado do celular,
+   * que não emite as teclas uma a uma. Aqui a pergunta é sobre o texto que
+   * chegou: um parágrafo que passou a ser exatamente `/` abre o menu, e um que
+   * deixou de começar por `/` o fecha.
+   */
+  function syncSlash(index: number, block: WrittenBlock, text: string) {
+    if (block.type !== "paragraph") {
+      if (slash?.index === index) setSlash(null);
+      return;
+    }
+    if (text === "/") {
+      setSlash({ index, cursor: 0 });
+      return;
+    }
+    if (slash?.index !== index) return;
+    // Enquanto a linha começar por `/`, o que vem depois é a BUSCA. Apagou a
+    // barra, ou escreveu uma linha de verdade: o menu não tem mais o que
+    // filtrar. O cursor volta ao topo porque a lista mudou debaixo dele.
+    if (!text.startsWith("/")) setSlash(null);
+    else setSlash({ index, cursor: 0 });
   }
 
   function changeBlock(index: number, patch: Partial<WrittenBlock>) {
     const block = doc.blocks[index];
-    setBlock(index, block ? autoformatted(block, patch) : patch);
+    if (!block) {
+      setBlock(index, patch);
+      return;
+    }
+    const text = (patch as { text?: string }).text;
+    if (typeof text === "string") {
+      syncSlash(index, block, text);
+      const emphasized = markdownEmphasis(block, text);
+      if (emphasized !== null) {
+        // O cursor tem de andar junto: `**x**` vira `==x==`, dois caracteres a
+        // menos por par convertido. Sem isto, quem marca uma palavra no meio de
+        // um parágrafo perde o lugar e continua digitando no fim dele. No
+        // quadro seguinte, como em `markAt`: o valor novo ainda não foi pintado.
+        const el = refs.current[index];
+        const caret = el?.selectionStart ?? emphasized.length;
+        const delta = text.length - emphasized.length;
+        setBlock(index, autoformatted(block, { ...patch, text: emphasized }));
+        requestAnimationFrame(() => {
+          const at = Math.max(0, Math.min(caret - delta, emphasized.length));
+          el?.setSelectionRange(at, at);
+        });
+        return;
+      }
+    }
+    setBlock(index, autoformatted(block, patch));
+  }
+
+  /**
+   * O que o menu da barra oferece com o que já foi digitado depois dela.
+   *
+   * A peneira é por SUBSTRING sem acento: `/exem` acha "Exemplo", `/cita` acha
+   * "Citação", `/passagem` acha "Passagem bíblica". Não é busca aproximada de
+   * propósito: a lista tem nove itens, e uma correspondência frouxa aqui
+   * significaria o Enter escolher o bloco errado.
+   */
+  const slashQuery = slash !== null ? (doc.blocks[slash.index]?.text ?? "").slice(1) : "";
+  const slashOptions = (() => {
+    if (slash === null) return [];
+    const q = normalizeSearch(slashQuery).trim();
+    if (!q) return menuOptions;
+    return menuOptions.filter((o) => normalizeSearch(o.label).includes(q));
+  })();
+
+  /**
+   * Escolher no menu da barra SUBSTITUI o parágrafo, em vez de inserir acima.
+   *
+   * É a diferença entre este menu e o do `+`: lá a pessoa aponta uma POSIÇÃO e
+   * pede um bloco novo; aqui ela está DENTRO de uma linha dizendo o que aquela
+   * linha é. Inserir acima deixaria para trás o parágrafo com a barra dentro,
+   * que é o oposto do que a tecla pediu.
+   */
+  function pickSlash(index: number, pick: BlockPick) {
+    setSlash(null);
+    if (pick === "leadIdea") {
+      setBlock(index, { text: "" });
+      askLead();
+      return;
+    }
+    if (pick === "bibleQuote") {
+      // A passagem não tem o que digitar, e um bloco sem referência ficaria na
+      // tela pedindo um segundo toque. O seletor abre e a passagem entra NA
+      // posição desta linha; o parágrafo vazio desce e vira a linha seguinte,
+      // que é onde se continua escrevendo. Ver `addOfType`.
+      setBlock(index, { text: "" });
+      setPendingIndex(index);
+      setPickerFor(-1);
+      return;
+    }
+    patchBlocks((blocks) => blocks.map((b, i) => (i === index ? emptyBlock(pick) : b)));
+    setFocusIndex(index);
   }
 
   function onKeyDown(index: number, e: React.KeyboardEvent<HTMLTextAreaElement>) {
     const el = e.currentTarget;
     const block = doc.blocks[index];
     const isList = block?.type === "bulletList" || block?.type === "orderedList";
+
+    /**
+     * Com o menu da barra aberto, o teclado é DELE.
+     *
+     * Este ramo vem antes de tudo, e a ordem é o que o faz funcionar: o Enter
+     * deste editor cria um bloco, e com a regra de baixo valendo aqui seria
+     * impossível escolher uma opção sem antes fechar o menu com o mouse. As
+     * setas também: sem interceptá-las, elas andariam com o cursor dentro de
+     * uma linha que só tem uma barra escrita.
+     */
+    if (slash?.index === index && slashOptions.length > 0) {
+      if (e.key === "ArrowDown" || e.key === "ArrowUp") {
+        e.preventDefault();
+        const step = e.key === "ArrowDown" ? 1 : -1;
+        const count = slashOptions.length;
+        // Circular: numa lista de nove itens, chegar ao fim e voltar ao começo
+        // é mais curto que subir oito vezes.
+        setSlash({ index, cursor: (slash.cursor + step + count) % count });
+        return;
+      }
+      if (e.key === "Enter" || e.key === "Tab") {
+        e.preventDefault();
+        pickSlash(index, slashOptions[Math.min(slash.cursor, slashOptions.length - 1)].type);
+        return;
+      }
+      if (e.key === "Escape") {
+        e.preventDefault();
+        setSlash(null);
+        return;
+      }
+    }
 
     if (e.key === "Enter" && !e.shiftKey) {
       /**
@@ -767,6 +932,11 @@ export function Composer({
                   // não saiu daqui e o bloco continua sendo o ativo.
                   if (e.currentTarget.contains(e.relatedTarget as Node | null)) return;
                   setActive((cur) => (cur === i ? null : cur));
+                  // O menu da barra é a linha sendo escrita: sem o cursor nela,
+                  // ele fica pousado sobre um `/` que ninguém está digitando.
+                  // Escolher uma opção não passa por aqui — os itens usam
+                  // `onMouseDown` com `preventDefault`, que não tira o foco.
+                  setSlash((cur) => (cur?.index === i ? null : cur));
                 }}
               >
                 {/* Enquanto QUALQUER menu está aberto, pílula nenhuma aparece —
@@ -860,7 +1030,25 @@ export function Composer({
                   {/* `pl-8` = o disco (24) mais o vão (8), contados a partir do
                       recuo de 8 que o `ROW_LEADING_DISC` já pôs. O mesmo número
                       que a linha do fim alcança por `gap-2` depois do disco. */}
-                  <div className={cn("min-w-0", blank && "pl-8")}>{body}</div>
+                  {/* `relative` para o menu da barra pousar EXATAMENTE sob o
+                      cursor: esta caixa começa onde o texto começa, e o menu é
+                      `absolute left-0 top-full` dentro dela. A barra só abre num
+                      parágrafo VAZIO, então o cursor está no início da linha —
+                      que é esta borda. É por isso que aqui não há medição de
+                      geometria dentro da `textarea`, que é a única coisa da
+                      página cuja posição o DOM não expõe. */}
+                  <div className={cn("relative min-w-0", blank && "pl-8")}>
+                    {body}
+                    {slash?.index === i ? (
+                      <SlashMenu
+                        options={slashOptions}
+                        cursor={slash.cursor}
+                        query={slashQuery}
+                        onHover={(cursor) => setSlash({ index: i, cursor })}
+                        onPick={(pick) => pickSlash(i, pick)}
+                      />
+                    ) : null}
+                  </div>
                 </div>
               </div>
             );
@@ -909,7 +1097,15 @@ export function Composer({
                 </DiscButton>
                 <WritingLine
                   emphasis={empty}
-                  onWrite={(text) => insertAt(doc.blocks.length, { type: "paragraph", text })}
+                  onWrite={(text) => {
+                    const at = insertAt(doc.blocks.length, { type: "paragraph", text });
+                    // A barra digitada na linha do fim faz a MESMA coisa que
+                    // dentro de um bloco: ela vira um parágrafo com `/` dentro,
+                    // e o menu abre sobre ele. Sem isto, o único lugar do
+                    // editor onde se escreve sem escolher nada antes seria
+                    // justamente o único onde a barra não funcionaria.
+                    if (text === "/") setSlash({ index: at, cursor: 0 });
+                  }}
                 />
               </div>
             </div>
@@ -1092,6 +1288,90 @@ function DiscButton({
  * sem sombra e sem cor própria: os três a transformavam numa caixa pousada
  * sobre o documento, e ela é a própria linha trocando de conteúdo.
  */
+/**
+ * O menu da BARRA: as mesmas opções do `+`, chamadas pelo teclado.
+ *
+ * ## Por que ele não é o `BlockMenu`
+ *
+ * Aquele é uma fileira de pastilhas que ocupa a LINHA INTEIRA, aberta por um
+ * disco que a pessoa mirou com o dedo: ele responde "o que cabe nesta
+ * posição?" e é tocado. Este responde "o que é esta linha?" enquanto as mãos
+ * estão no teclado, é filtrado enquanto se digita e é percorrido com as setas.
+ * Uma lista VERTICAL é a forma que a seta pede, e o realce do item focado só
+ * faz sentido numa lista em que existe um item focado.
+ *
+ * Eles compartilham o que importa, que são as OPÇÕES (`menuOptions`): duas
+ * listas de blocos divergiriam no primeiro tipo novo, e o menu que ficasse para
+ * trás simplesmente não o ofereceria, sem erro nenhum na tela.
+ *
+ * ## A caixa
+ *
+ * Ela TEM contorno e sombra, ao contrário do `BlockMenu`, e a diferença não é
+ * gosto: aquele é a linha trocando de conteúdo, e por isso é opaco e sem
+ * moldura; este pousa SOBRE o texto que continua ali embaixo, e uma lista sem
+ * borda sobre parágrafos vira duas camadas de texto na mesma tinta.
+ *
+ * `pointer-events` ficam ligados: o mouse também escolhe, e passar por cima
+ * move o mesmo cursor que as setas movem — dois destaques ao mesmo tempo, um
+ * do mouse e outro do teclado, é a ambiguidade que faz o Enter parecer aleatório.
+ */
+function SlashMenu({
+  options,
+  cursor,
+  query,
+  onHover,
+  onPick,
+}: {
+  options: MenuOption[];
+  cursor: number;
+  query: string;
+  onHover: (cursor: number) => void;
+  onPick: (pick: BlockPick) => void;
+}) {
+  if (options.length === 0) {
+    return (
+      <div
+        data-slash-menu
+        className="absolute top-full left-0 z-40 mt-1 w-[min(20rem,calc(100vw-3rem))] rounded-2xl border border-scriba-hairline bg-scriba-surface px-3 py-2.5 shadow-[0_12px_32px_var(--scriba-shadow)]"
+      >
+        <p className="text-scriba-ink-mute text-xs">Nada com “{query}”.</p>
+      </div>
+    );
+  }
+
+  return (
+    <div
+      data-slash-menu
+      className="absolute top-full left-0 z-40 mt-1 flex w-[min(20rem,calc(100vw-3rem))] flex-col gap-0.5 rounded-2xl border border-scriba-hairline bg-scriba-surface p-1.5 shadow-[0_12px_32px_var(--scriba-shadow)]"
+    >
+      {options.map((o, i) => (
+        <button
+          key={o.type}
+          type="button"
+          // `onMouseDown` com `preventDefault`, e não `onClick`: um clique tira
+          // o foco da `textarea` antes de o handler rodar, e sem o foco o
+          // `onBlur` do bloco já fechou este menu — o toque cairia no vazio.
+          onMouseDown={(e) => {
+            e.preventDefault();
+            onPick(o.type);
+          }}
+          onMouseEnter={() => onHover(i)}
+          className={cn(
+            "flex w-full items-center gap-2.5 rounded-xl px-2.5 py-2 text-left transition-colors",
+            i === cursor ? "bg-scriba-blue-soft text-scriba-blue-ink" : "text-scriba-ink-soft"
+          )}
+        >
+          <span className="flex size-5 shrink-0 items-center justify-center">{o.icon}</span>
+          <span className="min-w-0 flex-1">
+            <span className="block truncate font-medium text-xs">{o.label}</span>
+            <span className="block truncate text-[11px] text-scriba-ink-mute">{o.hint}</span>
+          </span>
+        </button>
+      ))}
+    </div>
+  );
+}
+
 function BlockMenu({
   options,
   onClose,

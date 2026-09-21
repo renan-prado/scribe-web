@@ -428,6 +428,48 @@ colagem e teclado de celular); Enter abre um item; Enter numa linha vazia no fim
 fecha a lista e abre um parágrafo. Backspace numa lista vazia a DESFAZ em vez de
 apagar o bloco.
 
+**O MARKDOWN de bloco é a mesma máquina**, e por isso mora no mesmo lugar
+(`autoformatted`): `# ` vira título, `## ` vira subtítulo, `> ` vira citação, e
+o prefixo é COMIDO na conversão — ele era a instrução, não conteúdo.
+
+**O NEGRITO vira o MARCA-TEXTO**, e não há bold nenhum escondido nisso: todo
+bloco é `{ type, text }`, string pura, e a única ênfase dentro de uma frase que
+o produto tem é a faixa amarela. `**assim**` vira `==assim==` onde a marca
+APARECE na leitura (`MARKABLE`), e o cursor anda junto — são dois caracteres a
+menos por par convertido, e sem o acerto quem marca uma palavra no meio de um
+parágrafo perde o lugar. Num título ou numa citação a conversão não acontece:
+ali `==` apareceria como texto, que é pior que o `**`.
+
+### O menu da BARRA (`/`)
+
+Digitar `/` num parágrafo VAZIO abre uma lista vertical com as mesmas opções do
+`+` (`menuOptions` — duas listas divergiriam no primeiro tipo novo, e o menu
+que ficasse para trás simplesmente não o ofereceria). O que se digita depois da
+barra FILTRA: `/exem` deixa "Exemplo". As setas andam (circulares), Enter e Tab
+escolhem, Esc fecha, o mouse escolhe também e passar por cima move o mesmo
+cursor que as setas movem.
+
+Três coisas que não são detalhe:
+
+- **Ele abre e fecha olhando o TEXTO, nunca numa tecla** — mesmo raciocínio do
+  autoformato das listas, e pelo mesmo motivo: num `onKeyDown` seria preciso
+  adivinhar o que o campo vai conter depois daquela tecla, e o gesto se
+  perderia numa colagem ou no teclado do celular.
+- **A busca não tem estado próprio**: ela É o texto do bloco depois da barra.
+  Guardá-la de novo num `useState` daria duas verdades sobre o que está escrito
+  na linha.
+- **Ele pousa exatamente sob o cursor sem medir nada.** A barra só abre em
+  parágrafo vazio, então o cursor está no INÍCIO da linha; o menu é
+  `absolute left-0 top-full` da caixa que embrulha o texto, e essa borda é o
+  cursor. É o que permite ter um popover ancorado no caret sem medir geometria
+  DENTRO de uma `textarea`, que é a única coisa da página cuja posição o DOM não
+  expõe — a mesma razão pela qual o marca-texto não tem barra flutuante.
+
+Escolher **SUBSTITUI** o parágrafo em vez de inserir acima, ao contrário do
+`+`: lá se aponta uma POSIÇÃO, aqui se diz o que a linha em que já se está É.
+Os itens usam `onMouseDown` com `preventDefault`, senão o clique tiraria o foco
+da `textarea` e o `onBlur` fecharia o menu antes de o toque chegar.
+
 **O MARCA-TEXTO é sintaxe dentro da string, `==assim==`** (`lib/domain/mark.ts`),
 e não formatação no schema. É o que preserva a invariante que sustenta este
 editor inteiro: todo bloco é `{ type, text }`, string pura. Um marca-texto em nós
