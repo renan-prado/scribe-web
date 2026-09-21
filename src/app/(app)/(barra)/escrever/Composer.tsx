@@ -694,14 +694,42 @@ export function Composer({
     }
   }
 
+  /**
+   * "Ver como ficou": manda o que falta e ABRE A LEITURA, nessa ordem.
+   *
+   * O `await flush()` é a coisa toda. Ele espera o texto da tela estar no
+   * banco — inclusive a palavra digitada durante um salvamento automático que
+   * já estava no ar, que era por onde escapava a leitura desatualizada (ver o
+   * cabeçalho de `useWrittenDraft`).
+   *
+   * **E um envio que FALHOU não navega, quando havia algo por enviar.** É a
+   * outra maneira de a leitura abrir sem o que a pessoa acabou de escrever, e
+   * a mais cruel: no elevador, o botão levaria a um texto de dois parágrafos
+   * atrás com nada explicando a diferença. Ficando aqui, quem explica é o chip
+   * ao lado do botão, a vinte pixels dali.
+   *
+   * Com tudo já sincronizado, uma falha não impede nada: não há o que perder,
+   * e quem só quer LER o que escreveu não deve ficar preso no editor porque a
+   * rede caiu depois de o texto estar salvo.
+   *
+   * `dirty` é lido ANTES do `await` de propósito — a pergunta é "havia algo
+   * por salvar quando o dedo tocou?", e `status` depois da espera ainda seria
+   * o valor deste render, não o de agora.
+   */
   async function openReading() {
+    const dirty = status !== "synced";
     setLeaving(true);
-    const savedId = (await flush()) ?? sessionId;
-    if (!savedId) {
+    const sentId = await flush();
+    if (sentId) {
+      router.push(`/summary/${sentId}`);
+      return;
+    }
+    // O envio falhou (`flush` só devolve `null` assim).
+    if (dirty || !sessionId) {
       setLeaving(false);
       return;
     }
-    router.push(`/summary/${savedId}`);
+    router.push(`/summary/${sessionId}`);
   }
 
   const empty = doc.blocks.length === 0;

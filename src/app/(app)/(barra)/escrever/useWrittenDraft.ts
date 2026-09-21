@@ -101,10 +101,24 @@ export type WrittenDraftState = {
  * novo que o último envio não só vence o servidor: ele agenda o envio que
  * ficou faltando, senão ficaria para sempre guardado só neste aparelho.
  *
- * **Envio nenhum roda em paralelo com outro.** Um `inFlight` segura a vez: com
- * dois POSTs no ar, o que saiu primeiro pode chegar por último e gravar o
+ * **Envio nenhum roda em paralelo com outro.** Um envio em curso segura a vez:
+ * com dois POSTs no ar, o que saiu primeiro pode chegar por último e gravar o
  * texto VELHO por cima do novo. Quem chega durante um envio marca que há mais
  * a mandar, e o envio seguinte sai quando o atual terminar.
+ *
+ * **Mas quem chega durante um envio ESPERA por ele, e é isso que separa o
+ * `send` do `flush`.** A vez era guardada num booleano, então um `send` que
+ * esbarrasse noutro devolvia `null` na hora, sem mandar nada e sem esperar
+ * nada. Para quem dispara e segue isso está certo (a tecla, o `online`, a
+ * volta da aba); para o `flush` está errado, porque ele existe exatamente para
+ * alguém poder esperar o texto estar no banco antes de sair da tela.
+ *
+ * O defeito que isso causava era o "Ver como ficou" abrir a leitura
+ * desatualizada, e só ÀS VEZES: bastava digitar mais uma palavra enquanto o
+ * salvamento automático corria e tocar no botão. O `flush` recebia `null`,
+ * caía no id que já tinha e navegava — e a palavra saía num POST que partiu
+ * depois da navegação. Recarregar a página mostrava o texto certo, que é a
+ * assinatura desse tipo de corrida.
  */
 export function useWrittenDraft(input: {
   /** O id da URL, quando se abre um endereço que já existe. */
@@ -143,7 +157,21 @@ export function useWrittenDraft(input: {
 
   const localTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
   const syncTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
-  const inFlight = useRef(false);
+  /**
+   * O envio em curso, e não um booleano: quem esbarra nele precisa poder
+   * ESPERÁ-LO. Ver o cabeçalho.
+   */
+  const running = useRef<Promise<string | null> | null>(null);
+  /**
+   * O retrato que o envio em curso está levando.
+   *
+   * Ele responde a uma pergunta só, e ela decide se vale um POST: o que está
+   * na tela agora JÁ está a caminho, ou mudou depois que aquele envio partiu?
+   * Sem essa pergunta, qualquer um que esbarrasse num envio marcava "falta
+   * mandar mais" — inclusive quem só queria esperar —, e o `flush` disparava
+   * dois POSTs idênticos ao que acabara de chegar, contra um bucket de 60/min.
+   */
+  const runningDoc = useRef<WrittenSummary | null>(null);
   const pending = useRef(false);
   /**
    * Alguma tecla já foi digitada nesta montagem.
@@ -180,60 +208,73 @@ export function useWrittenDraft(input: {
     window.history.replaceState(null, "", `/escrever/${draftId}`);
   }, [input.id, draftId]);
 
-  const send = useCallback(async (): Promise<string | null> => {
-    if (inFlight.current) {
-      pending.current = true;
-      return null;
+  const send = useCallback((): Promise<string | null> => {
+    // Já há um POST no ar: devolve a ESPERA por ele, em vez de `null`. Para
+    // quem dispara e segue não muda nada; para o `flush` é a diferença entre
+    // navegar antes ou depois de o texto existir no banco.
+    if (running.current) {
+      // E só marca que falta mandar mais se o texto MUDOU desde que aquele
+      // envio pegou o retrato dele. Ver `runningDoc`.
+      if (docRef.current !== runningDoc.current) pending.current = true;
+      return running.current;
     }
-    inFlight.current = true;
-    setStatus("saving");
-    const snapshot = docRef.current;
-    try {
-      // O `id` vai SEMPRE, inclusive no primeiro envio: é a rota que cria a
-      // linha com ele. Sem isso o servidor sortearia um id que este aparelho
-      // não conhece, e o rascunho local ficaria guardado sob outra chave.
-      const res = await fetch("/api/sessions/written", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ id: draftId, summary: snapshot }),
-      });
-      if (!res.ok) throw new Error(`http ${res.status}`);
-      const body = (await res.json()) as { id: string };
+    const perform = async (): Promise<string | null> => {
+      setStatus("saving");
+      const snapshot = docRef.current;
+      runningDoc.current = snapshot;
+      try {
+        // O `id` vai SEMPRE, inclusive no primeiro envio: é a rota que cria a
+        // linha com ele. Sem isso o servidor sortearia um id que este aparelho
+        // não conhece, e o rascunho local ficaria guardado sob outra chave.
+        const res = await fetch("/api/sessions/written", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ id: draftId, summary: snapshot }),
+        });
+        if (!res.ok) throw new Error(`http ${res.status}`);
+        const body = (await res.json()) as { id: string };
 
-      if (!savedRef.current) {
-        savedRef.current = true;
-        setSaved(true);
-      }
+        if (!savedRef.current) {
+          savedRef.current = true;
+          setSaved(true);
+        }
 
-      // Só o que FOI enviado conta como sincronizado. Se a pessoa digitou
-      // durante o envio, `snapshot` já é passado, e carimbar o documento atual
-      // como sincronizado esconderia a diferença até a próxima tecla.
-      const upToDate = snapshot === docRef.current;
-      await writeDraft({
-        key: body.id,
-        doc: docRef.current,
-        updatedAt: Date.now(),
-        syncedAt: upToDate ? Date.now() : 0,
-      });
-      setStatus(upToDate ? "synced" : "local");
-      return body.id;
-    } catch (err) {
-      // A rede é lida AQUI, no instante da falha, e não na hora de desenhar o
-      // chip: o que a frase precisa dizer é como a rede estava quando o envio
-      // morreu. Por isso é o `isOnline()` de fora do React, e não o hook: este
-      // é um `catch`, não um render. Ver `use-network-status.ts`.
-      const wasOffline = !isOnline();
-      log.warn("envio falhou", { error: (err as Error).message, offline: wasOffline });
-      setOffline(wasOffline);
-      setStatus("error");
-      return null;
-    } finally {
-      inFlight.current = false;
-      if (pending.current) {
-        pending.current = false;
-        void send();
+        // Só o que FOI enviado conta como sincronizado. Se a pessoa digitou
+        // durante o envio, `snapshot` já é passado, e carimbar o documento
+        // atual como sincronizado esconderia a diferença até a próxima tecla.
+        const upToDate = snapshot === docRef.current;
+        await writeDraft({
+          key: body.id,
+          doc: docRef.current,
+          updatedAt: Date.now(),
+          syncedAt: upToDate ? Date.now() : 0,
+        });
+        setStatus(upToDate ? "synced" : "local");
+        return body.id;
+      } catch (err) {
+        // A rede é lida AQUI, no instante da falha, e não na hora de desenhar
+        // o chip: o que a frase precisa dizer é como a rede estava quando o
+        // envio morreu. Por isso é o `isOnline()` de fora do React, e não o
+        // hook: este é um `catch`, não um render. Ver `use-network-status.ts`.
+        const wasOffline = !isOnline();
+        log.warn("envio falhou", { error: (err as Error).message, offline: wasOffline });
+        setOffline(wasOffline);
+        setStatus("error");
+        return null;
+      } finally {
+        running.current = null;
+        runningDoc.current = null;
+        if (pending.current) {
+          pending.current = false;
+          void send();
+        }
       }
-    }
+    };
+    // `perform()` corre até o primeiro `await` (o `fetch`) antes de devolver,
+    // então a ref está preenchida muito antes de o `finally` limpá-la.
+    const run = perform();
+    running.current = run;
+    return run;
   }, [draftId]);
 
   // Abertura: o rascunho do aparelho decide.
@@ -281,9 +322,31 @@ export function useWrittenDraft(input: {
     [persistLocal, send]
   );
 
-  const flush = useCallback(async () => {
+  /**
+   * Manda tudo AGORA, e só volta quando o que está na tela está no banco.
+   *
+   * O laço existe porque um envio carrega o texto que existia quando ELE
+   * começou: quem digitou no meio de um POST precisa do SEGUINTE, e o seguinte
+   * é disparado pelo `finally` do anterior. Esperar só o primeiro abre a
+   * leitura sem a última palavra.
+   *
+   * Três voltas é folga — a segunda já cobre o caso real, um POST no ar mais
+   * uma tecla —, e o teto existe para um dedo muito rápido não segurar a
+   * navegação indefinidamente. Uma falha interrompe na hora: insistir não
+   * conserta rede, e quem explica é o chip de estado.
+   */
+  const flush = useCallback(async (): Promise<string | null> => {
     if (syncTimer.current) clearTimeout(syncTimer.current);
-    return send();
+    let id: string | null = null;
+    for (let round = 0; round < 3; round++) {
+      const snapshot = docRef.current;
+      id = await send();
+      if (id === null) break;
+      // `running` cobre o envio que o `finally` acabou de disparar; o snapshot
+      // cobre a tecla digitada durante a espera, que rearmou o temporizador.
+      if (running.current === null && docRef.current === snapshot) break;
+    }
+    return id;
   }, [send]);
 
   // Uma tentativa a mais quando a rede volta. Sem isto, um envio que falhou no
