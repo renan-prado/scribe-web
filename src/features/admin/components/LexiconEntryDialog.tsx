@@ -71,6 +71,16 @@ const CATEGORY_OPTIONS: SelectOption[] = LEXICON_CATEGORIES.map((c) => ({
   label: LEXICON_CATEGORY_LABEL[c],
 }));
 
+/**
+ * O placeholder da descrição, em duas partes: o que este texto É, e como ele
+ * deve ser escrito. A segunda linha existe porque o resultado mais comum de
+ * um campo de texto grande sem instrução nenhuma é um parágrafo único do
+ * tamanho do campo, e um parágrafo assim é olhado, não lido.
+ */
+const PLACEHOLDER = `O que a pessoa lê ao tocar no nome. O Biblo também recebe este texto como fonte quando a conversa toca esta entrada.
+
+Uma ideia por parágrafo, de duas a quatro frases: quem era, o que fez, por que importa.`;
+
 const TEXTAREA_CLASSES =
   "w-full rounded-lg border border-input bg-transparent px-2.5 py-2 text-sm outline-none transition-colors placeholder:text-muted-foreground focus-visible:border-ring focus-visible:ring-3 focus-visible:ring-ring/50 dark:bg-input/30";
 
@@ -341,14 +351,26 @@ export function LexiconEntryDialog({ entry, open, onOpenChange, onChanged }: Pro
               id="lex-description"
               value={description}
               onChange={(e) => setDescription(e.target.value)}
-              rows={6}
+              rows={8}
               maxLength={LEXICON_LIMITS.description}
-              placeholder="O que a pessoa lê ao tocar no nome. O Biblo também recebe este texto como fonte quando a conversa toca esta entrada."
+              placeholder={PLACEHOLDER}
               className={TEXTAREA_CLASSES}
             />
-            <p className="text-right text-[11px] text-scriba-ink-mute">
-              {description.length}/{LEXICON_LIMITS.description}
-            </p>
+            {/* A instrução fica ABAIXO do campo, e não só no placeholder: o
+                placeholder some na primeira letra, e é justamente a partir da
+                primeira letra que o texto começa a virar parede. O cartão
+                reparte parágrafos sozinho quando a pessoa esquece (ver
+                `lib/domain/paragraphs.ts`), mas uma quebra escolhida por quem
+                escreveu cai sempre num lugar melhor que uma calculada por
+                contagem de caracteres. */}
+            <div className="flex items-baseline justify-between gap-3">
+              <p className="text-[11px] text-scriba-ink-mute">
+                Uma linha em branco entre as ideias. Parágrafo longo é olhado, não lido.
+              </p>
+              <p className="shrink-0 text-[11px] text-scriba-ink-mute">
+                {description.length}/{LEXICON_LIMITS.description}
+              </p>
+            </div>
           </div>
 
           <div className="flex flex-col gap-2">

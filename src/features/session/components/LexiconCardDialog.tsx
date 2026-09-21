@@ -22,6 +22,7 @@ import { LexiconReportDialog } from "@/features/session/components/LexiconReport
 import { RichText } from "@/features/session/components/RichText";
 import { useLexiconCard } from "@/features/session/lexicon-query";
 import { LEXICON_CATEGORY_LABEL } from "@/lib/domain/lexicon";
+import { toParagraphs } from "@/lib/domain/paragraphs";
 
 /**
  * O cartão de um nome: quem foi, onde fica, o que escreveu.
@@ -265,23 +266,29 @@ export function LexiconCardDialog({
               <LexiconNavProvider
                 nav={{ self: data.slug, go: (next) => setTrail((t) => [...t, next]) }}
               >
-                {/* Um parágrafo por linha em branco, e não um `whitespace-pre-line`
-                  sobre o texto inteiro: a descrição é escrita à mão num campo de
-                  texto do painel, e o `RichText` precisa de uma string por
-                  parágrafo para marcar dentro de cada uma. */}
-                <div className="flex flex-col gap-3">
-                  {data.description
-                    .split(/\n{2,}/)
-                    .map((paragraph) => paragraph.trim())
-                    .filter(Boolean)
-                    .map((paragraph) => (
-                      <p
-                        key={paragraph.slice(0, 48)}
-                        className="text-sm leading-relaxed text-scriba-ink"
-                      >
-                        <RichText>{paragraph}</RichText>
-                      </p>
-                    ))}
+                {/* Um `<p>` por parágrafo, e não um `whitespace-pre-line` sobre
+                  o texto inteiro: o `RichText` precisa de uma string por
+                  parágrafo para marcar referência e nome próprio dentro de cada
+                  uma.
+
+                  **Quem reparte é o `toParagraphs`, e não um `split` daqui.**
+                  Ele fazia `split(/\n{2,}/)`, o que exigia linha EM BRANCO
+                  entre as ideias: quem escreveu a descrição no painel apertando
+                  Enter uma vez só via o cartão inteiro grudado num bloco de
+                  cinza, sem nada na tela explicando por quê. E a descrição
+                  digitada de um fôlego, sem quebra nenhuma, continuava parede
+                  mesmo com o `split` certo — é o `splitWall` que a reparte em
+                  fronteira de frase, o MESMO que já põe respiro na resposta do
+                  Biblo. Ver `lib/domain/paragraphs.ts`. */}
+                <div className="flex flex-col gap-4">
+                  {toParagraphs(data.description).map((paragraph) => (
+                    <p
+                      key={paragraph.slice(0, 48)}
+                      className="text-pretty text-sm leading-relaxed text-scriba-ink"
+                    >
+                      <RichText>{paragraph}</RichText>
+                    </p>
+                  ))}
                 </div>
               </LexiconNavProvider>
             ) : (

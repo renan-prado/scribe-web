@@ -305,6 +305,25 @@ Juntá-las faria cada abertura de resumo baixar 300 descrições e 300 URLs de
 imagem para mostrar zero delas. O cartão entra por `dynamic(ssr:false)`, igual
 ao `ChapterDialog`, e é cacheado por sessão no React Query.
 
+**O cartão é repartido em PARÁGRAFOS por `toParagraphs`**
+(`lib/domain/paragraphs.ts`), e não por um `split` próprio. Ele exigia linha EM
+BRANCO entre as ideias (`
+{2,}`), então quem escreveu a descrição no painel
+apertando Enter uma vez só via o cartão inteiro grudado num bloco de cinza, sem
+nada na tela explicando por quê. E a descrição digitada de um fôlego continuava
+parede mesmo com o corte certo: quem a reparte em fronteira de frase é o
+`splitWall`, o MESMO que já põe respiro na resposta do Biblo — ele saiu de
+dentro do `biblo/answer.ts` (que é `server-only`) quando o segundo consumidor
+apareceu, porque dois limiares para a mesma pergunta divergem no primeiro
+ajuste.
+
+**A descrição é escrita à MÃO, não gerada.** Não há modelo nenhum produzindo o
+texto do cartão; quem escreve é uma pessoa em `/admin/lexico`, e é por isso que
+a instrução de "uma ideia por parágrafo" mora no campo daquele formulário. O
+`splitWall` é a rede embaixo de quem esquece — uma quebra escolhida por quem
+escreveu cai sempre num lugar melhor que uma calculada por contagem de
+caracteres.
+
 **O texto do cartão PASSA pelo `RichText`, e o cartão navega dentro de si
 mesmo.** Ele não passava, e o argumento era a circularidade: um nome dentro do
 cartão abriria outro cartão por cima, sem caminho de volta. O problema era real
