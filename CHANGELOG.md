@@ -9,6 +9,12 @@ Gerado por `npm run release` a partir dos Conventional Commits. `feat` sobe o
 minor; o resto sobe o patch. Não edite à mão, a próxima execução escreve por
 cima do topo do arquivo.
 
+## 0.56.0, 2026-09-21, desde v0.55.0
+
+### Novidades
+
+- **home:** tres vistas do acervo, mural, lista e grade (`92da4a3`)
+
 ## 0.55.0, 2026-09-21, desde v0.54.0
 
 ### Novidades
