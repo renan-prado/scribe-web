@@ -29,6 +29,9 @@ const MAX_CHIPS = 5;
  */
 const SUBJECT_CHIPS = 3;
 
+/** Quantas referências citadas viram chip, no máximo. */
+const REFERENCE_CHIPS = MAX_CHIPS - SUBJECT_CHIPS;
+
 /**
  * O teto do assunto DENTRO de um chip.
  *
@@ -63,10 +66,22 @@ function subjectOf(summary: SummaryPayload): string | null {
  * sobre a suficiência da graça" é um convite; "Falar mais sobre isso" é um
  * rótulo. Sem título (ou com um comprido demais para caber numa pastilha) ele
  * cai em "o assunto", que ao menos é português.
+ *
+ * **`hasPassages` tira o chip que ficou redundante**, e essa é a segunda
+ * lição, aprendida depois que o assunto entrou. Nomear o assunto consertou o
+ * "isso" e criou um problema novo: "Outras passagens sobre X" e "Falar mais
+ * sobre X" dizem a MESMA coisa (mais sobre X) e caíam lado a lado, enquanto "O
+ * que ler sobre X", que é a única das três com um pedido diferente, era
+ * cortada pelo teto de cinco. Com o "isso" genérico a repetição não aparecia;
+ * com o assunto escrito por extenso, duas pastilhas terminam na mesma frase
+ * longa e a fileira parece um robô procurando o que dizer. Fora o dos
+ * versículos, "Falar mais" volta a ser a porta larga e aberta que ele sempre
+ * foi.
  */
-function subjectChips(subject: string | null): string[] {
+function subjectChips(subject: string | null, hasPassages: boolean): string[] {
   const about = subject ?? "o assunto";
-  return [`Falar mais sobre ${about}`, "Uma pergunta que incomode", `O que ler sobre ${about}`];
+  const chips = ["Uma pergunta que incomode", `O que ler sobre ${about}`];
+  return hasPassages ? chips : [`Falar mais sobre ${about}`, ...chips];
 }
 
 /**
@@ -214,13 +229,12 @@ export function buildBibloOpening(input: {
   const subject = subjectOf(summary);
   const chips: string[] = [];
   for (const reference of citedReferences(summary)) {
-    if (chips.length >= MAX_CHIPS - SUBJECT_CHIPS) break;
+    if (chips.length >= REFERENCE_CHIPS) break;
     chips.push(`Contexto de ${reference}`);
   }
-  if (summary.shortSummary.trim()) {
-    chips.push(`Outras passagens sobre ${subject ?? "o assunto"}`);
-  }
-  chips.push(...subjectChips(subject));
+  const hasPassages = !!summary.shortSummary.trim();
+  if (hasPassages) chips.push(`Outras passagens sobre ${subject ?? "o assunto"}`);
+  chips.push(...subjectChips(subject, hasPassages));
 
   return { greeting, chips: chips.slice(0, MAX_CHIPS) };
 }
