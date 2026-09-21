@@ -9,6 +9,12 @@ Gerado por `npm run release` a partir dos Conventional Commits. `feat` sobe o
 minor; o resto sobe o patch. Não edite à mão, a próxima execução escreve por
 cima do topo do arquivo.
 
+## 0.59.1, 2026-09-21, desde v0.59.0
+
+### Correções
+
+- **editor:** a bolinha do topico aparece no instante em que o bloco nasce (`b634f6f`)
+
 ## 0.59.0, 2026-09-21, desde v0.58.0
 
 ### Novidades
