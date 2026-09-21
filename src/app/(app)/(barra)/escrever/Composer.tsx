@@ -1913,16 +1913,33 @@ function BlockBody({
                   "relative whitespace-pre-wrap break-words pl-5 text-transparent"
                 )}
               >
-                {filled ? (
-                  <span
-                    className={cn(
-                      "absolute top-0 left-0 w-5 text-scriba-ink-mute",
-                      ordered ? "pr-1.5 text-right tabular-nums" : "text-center"
-                    )}
-                  >
-                    {ordered ? `${position}.` : "•"}
-                  </span>
-                ) : null}
+                {/* **A linha em branco TAMBÉM tem marcador**, e essa é a
+                    diferença que faz o botão parecer ter funcionado.
+
+                    Ele só aparecia em linha com texto, então acrescentar um
+                    bloco de tópicos desenhava uma caixa vazia e mais nada: o
+                    gesto não tinha retorno nenhum, e quem tocou tocava de novo.
+                    O mesmo valia para o item que o Enter abre — a bolinha
+                    chegava com a primeira letra, sempre um passo atrás do dedo.
+
+                    Ele é APAGADO (`opacity-50`) porque não é um item ainda, é o
+                    lugar do próximo. E isso não é enfeite: numa lista numerada
+                    a linha em branco mostra o número que ela VAI ter
+                    (`position + 1`) sem consumir a contagem, senão a caixa
+                    diria "3." num item que a leitura vai chamar de 2 (é o
+                    `listItems` que pula as linhas vazias, e o `<ol>` da leitura
+                    só enxerga o que sobrou). Com um item abaixo dela, o mesmo
+                    número aparece duas vezes por um instante — apagado num
+                    deles, que é o que o lê como sombra em vez de contradição. */}
+                <span
+                  className={cn(
+                    "absolute top-0 left-0 w-5 text-scriba-ink-mute",
+                    ordered ? "pr-1.5 text-right tabular-nums" : "text-center",
+                    filled ? null : "opacity-50"
+                  )}
+                >
+                  {ordered ? `${filled ? position : position + 1}.` : "•"}
+                </span>
                 {/* O espaço fixo dá ALTURA à linha em branco. Sem ele o item
                     vazio que o Enter acabou de abrir tem zero de altura no
                     espelho e um de altura na caixa, e todos os marcadores

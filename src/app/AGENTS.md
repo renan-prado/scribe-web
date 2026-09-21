@@ -485,6 +485,16 @@ posição o DOM não expõe; e o argumento que tirou o `+` do vão vale igual aq
 Ele é o único botão da pílula que SOME em vez de ficar apagado, porque marcar
 depende de um gesto que ainda não aconteceu.
 
+**A linha em branco de uma lista TEM marcador**, apagado a 50%. Ele só aparecia
+em linha com texto, e por isso acrescentar um bloco de tópicos desenhava uma
+caixa vazia e mais nada: o gesto não tinha retorno nenhum, e quem tocou tocava
+de novo. O mesmo valia para o item que o Enter abre, com a bolinha chegando na
+primeira letra, sempre um passo atrás do dedo. Apagado porque não é um item
+ainda, é o LUGAR do próximo — e numa lista numerada ele mostra o número que vai
+ter (`position + 1`) **sem consumir a contagem**, senão a caixa diria "3." num
+item que a leitura vai chamar de 2 (quem pula as linhas vazias é o `listItems`,
+e o `<ol>` da leitura só enxerga o que sobrou).
+
 **Os três blocos novos são desenhados por ESPELHO no editor**, a mesma técnica
 que a frase de destaque já usava: um `div` atrás da `textarea`, com a mesma
 tipografia e a mesma largura, pintando o que a caixa não sabe pintar (a bolinha,
