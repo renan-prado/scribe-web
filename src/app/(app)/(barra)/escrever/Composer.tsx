@@ -4,6 +4,7 @@ import { ChevronDown, ChevronUp, Eye, Highlighter, MapPin, Plus, Trash2, X } fro
 import { useRouter } from "next/navigation";
 import { Fragment, type ReactNode, useEffect, useRef, useState } from "react";
 import { BookGlyph } from "@/components/icons/BookGlyph";
+import { BibleDock } from "@/features/session/components/BibleDock";
 import { BibloDock } from "@/features/session/components/BibloDock";
 import { EntityFieldDialog } from "@/features/session/components/EntityFieldDialog";
 import { PassageVerses } from "@/features/session/components/PassageVerses";
@@ -966,6 +967,12 @@ export function Composer({
           Aqui ele SABE inserir: o `insertAt` é o mesmo do menu do `+`, e a
           sugestão entra como bloco de verdade, no lugar que o Biblo propôs. Ver
           `BibloDock`. */}
+      {/* A Bíblia fica na borda direita, aqui como na leitura: quem escreve o
+          resumo de um sermão confere uma passagem tanto quanto quem o lê, e o
+          `PassagePicker` do `+` não serve para isso — ele existe para INSERIR
+          um bloco, e inserir no texto é um preço alto demais por uma consulta.
+          Ver `BibleDock`. */}
+      <BibleDock />
       {ready && (
         <BibloDock
           sessionId={draftId}

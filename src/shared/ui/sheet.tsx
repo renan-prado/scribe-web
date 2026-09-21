@@ -32,13 +32,24 @@ function SheetContent({
   children,
   side = "right",
   showCloseButton = true,
+  keepMounted = false,
   ...props
 }: SheetPrimitive.Popup.Props & {
   side?: "top" | "right" | "bottom" | "left";
   showCloseButton?: boolean;
+  /**
+   * Mantém o conteúdo no DOM com o painel fechado.
+   *
+   * O padrão (falso) é o certo quase sempre: painel fechado não deve contar
+   * para o leitor de tela nem para o Ctrl+F. Ligue-o quando fechar e reabrir
+   * tiver de devolver a pessoa ONDE ela estava — é o caso da Bíblia, que abre
+   * e fecha meia dúzia de vezes na leitura de um sermão e não pode voltar à
+   * lista dos 66 livros a cada vez.
+   */
+  keepMounted?: boolean;
 }) {
   return (
-    <SheetPortal>
+    <SheetPortal keepMounted={keepMounted}>
       <SheetOverlay />
       <SheetPrimitive.Popup
         data-slot="sheet-content"

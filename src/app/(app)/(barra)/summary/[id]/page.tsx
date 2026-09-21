@@ -4,6 +4,7 @@ import { notFound } from "next/navigation";
 import { FeedbackPrompt } from "@/features/feedback/components/FeedbackPrompt";
 import { FEEDBACK_DELAY_SUMMARY_MS } from "@/features/feedback/config";
 import { BackToTop } from "@/features/session/components/BackToTop";
+import { BibleDock } from "@/features/session/components/BibleDock";
 import { BibloSummaryDock } from "@/features/session/components/BibloSummaryDock";
 import { SavedSessionView } from "@/features/session/components/SavedSessionView";
 import { formatDurationLong, shortDate } from "@/features/session/lib/formatting";
@@ -139,6 +140,11 @@ export default async function V2SummaryPage({ params }: PageProps) {
         summary={session.finalSummary}
         title={session.title?.trim() || ""}
       />
+      {/* A Bíblia, na borda direita, em toda a altura da leitura. Ela não
+          entra no canto de baixo porque ele já tem dois donos — o Biblo, que é
+          permanente, e o voltar ao topo, que empilha por cima quando aparece.
+          Ver `BibleDock`. */}
+      <BibleDock />
       {/* Um resumo com transcrição longa rola vários telefones; o voltar, o
           menu e o título moram todos no alto. Ver `BackToTop`.
 

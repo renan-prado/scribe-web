@@ -982,6 +982,19 @@
       padding-right: var(--biblo-drawer-w);
     }
   }
+
+  /* A aba da Bíblia sai da tela enquanto a conversa está aberta.
+
+     Ela mora colada na borda direita (`BibleDock`), que é exatamente onde a
+     gaveta do Biblo entra: no celular a gaveta passaria por cima dela, e no
+     desktop ela ficaria pendurada sobre a conversa. Some pelo mesmo motivo
+     que o botão do Biblo some com a gaveta aberta — quem está conversando não
+     está procurando um capítulo, e as duas coisas abrem do mesmo lado. */
+  body.biblo-open [data-slot="bible-dock"] {
+    opacity: 0;
+    pointer-events: none;
+  }
+
   body {
     transition: padding-right 200ms cubic-bezier(0.22, 1, 0.36, 1);
   }
