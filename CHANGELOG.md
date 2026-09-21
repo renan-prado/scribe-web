@@ -9,6 +9,12 @@ Gerado por `npm run release` a partir dos Conventional Commits. `feat` sobe o
 minor; o resto sobe o patch. Não edite à mão, a próxima execução escreve por
 cima do topo do arquivo.
 
+## 0.59.0, 2026-09-21, desde v0.58.0
+
+### Novidades
+
+- **editor:** menu da barra com busca, e markdown de bloco e de enfase (`002cf2e`)
+
 ## 0.58.0, 2026-09-21, desde v0.57.0
 
 ### Novidades
