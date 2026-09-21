@@ -562,7 +562,7 @@ export function Composer({
    * O que o menu da barra oferece com o que já foi digitado depois dela.
    *
    * A peneira é por SUBSTRING sem acento: `/exem` acha "Exemplo", `/cita` acha
-   * "Citação", `/passagem` acha "Passagem bíblica". Não é busca aproximada de
+   * "Citação", `/bib` acha "Bíblia". Não é busca aproximada de
    * propósito: a lista tem nove itens, e uma correspondência frouxa aqui
    * significaria o Enter escolher o bloco errado.
    */

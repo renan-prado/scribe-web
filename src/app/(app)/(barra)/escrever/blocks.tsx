@@ -122,7 +122,15 @@ export const BLOCK_OPTIONS: BlockOption[] = [
   },
   {
     type: "bibleQuote",
-    label: "Passagem bíblica",
+    // "Bíblia", e não "Passagem bíblica". O nome antigo descrevia o RECORTE
+    // (uma passagem) num menu em que todas as outras opções são uma palavra;
+    // numa fileira de pastilhas ele era o único com duas, e a segunda não
+    // acrescentava nada que o glifo do livro já não dissesse. O que se escolhe
+    // ali é a Bíblia, e o passo seguinte é que decide qual pedaço dela.
+    //
+    // **O TIPO continua `bibleQuote`**, e é isso que mantém de pé todo bloco já
+    // salvo: mudou a palavra na tela, não a chave do jsonb.
+    label: "Bíblia",
     hint: "Escolha o livro, o capítulo e os versículos.",
     // `size-3`, e não os `size-4` dos vizinhos: o `BookGlyph` é um retângulo
     // vazio (a lombada de um livro visto de cima), e à altura de um glifo de

@@ -562,7 +562,9 @@ fechava o diálogo junto, e quem errava o último versículo por uma casa refazi
 livro e capítulo. Os dois primeiros passos não têm rodapé: ali escolher é
 avançar, e um botão de confirmar seria um segundo jeito de fazer a mesma coisa.
 
-**A passagem bíblica guarda só a REFERÊNCIA.** O `PassagePicker` caminha livro →
+**O bloco de Bíblia guarda só a REFERÊNCIA.** (Ele se chamava "Passagem
+bíblica" no menu, e a palavra a mais descrevia o RECORTE numa fileira em que
+toda outra opção é uma palavra só; o tipo no jsonb continua `bibleQuote`.) O `PassagePicker` caminha livro →
 capítulo → versículos sobre `CHAPTER_VERSE_COUNTS`, então só é possível escolher
 o que existe, e o bloco nasce com `text` vazio: quem busca a NVI é o
 `PassageVerses`, como num bloco escrito pela IA. Guardar aqui uma cópia do texto

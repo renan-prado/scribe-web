@@ -247,7 +247,7 @@ const EDITOR_CHIPS: { label: string; icon: React.ReactNode }[] = [
       </svg>
     ),
   },
-  { label: "Passagem bíblica", icon: <BookGlyph className="size-3" /> },
+  { label: "Bíblia", icon: <BookGlyph className="size-3" /> },
   {
     label: "Frase de destaque",
     icon: (

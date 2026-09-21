@@ -124,7 +124,7 @@ function CopyButton({ text }: { text: string }) {
 }
 
 const BLOCK_LABEL: Record<string, string> = {
-  bibleQuote: "Passagem bíblica",
+  bibleQuote: "Bíblia",
   highlight: "Frase de destaque",
   quote: "Citação",
   h2: "Subtítulo",
