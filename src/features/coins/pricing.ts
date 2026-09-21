@@ -208,6 +208,21 @@ export const COIN_COSTS = {
    * complexidade de um estorno, igual às duas de `bibloMessage`.
    */
   bibloVoiceMessage: 7,
+  /**
+   * UMA pergunta à Bíblia por sentido ("versículos sobre perdão"), no painel
+   * lateral. `bible-search`, ver `lib/domain/bible-search.ts`.
+   *
+   * **NÃO MEDIDO ainda, e herda o preço de `bibloMessage` de propósito.** O
+   * perfil de custo é o mesmo: uma chamada curta (a pergunta cabe numa
+   * frase), saída pequena e ESTRUTURADA (uma explicação e até seis
+   * referências — nunca o texto do versículo, que sai da NVI local e não do
+   * modelo, a mesma regra do `bibleQuote`), no mesmo modelo pequeno. Nenhum
+   * dos dois motivos que fizeram `bibloVoiceMessage` custar mais que
+   * `bibloMessage` (STT, teto de tempo maior) se aplica aqui. Reconfira em
+   * `/admin/custos` assim que houver tráfego real — este número é o de
+   * PARTIDA, não uma medição.
+   */
+  bibleSearch: 2,
 } as const;
 
 /**
@@ -241,6 +256,7 @@ export const CHARGE_REASONS = [
   "youtube_import",
   "biblo_message",
   "biblo_voice_message",
+  "bible_search",
 ] as const;
 export type ChargeReason = (typeof CHARGE_REASONS)[number];
 
@@ -252,6 +268,7 @@ export const COIN_COST_BY_REASON: Record<ChargeReason, number> = {
   youtube_import: COIN_COSTS.youtubeImport,
   biblo_message: COIN_COSTS.bibloMessage,
   biblo_voice_message: COIN_COSTS.bibloVoiceMessage,
+  bible_search: COIN_COSTS.bibleSearch,
 };
 
 /**

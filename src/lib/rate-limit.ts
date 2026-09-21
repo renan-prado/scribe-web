@@ -273,6 +273,14 @@ export const RATE_LIMITS = {
     perUser: { limit: 60, windowMs: MIN },
     perIp: { limit: 180, windowMs: MIN },
   },
+  // A busca por sentido no painel da Bíblia. MESMO teto do `biblo`, e pela
+  // mesma razão: uma chamada de modelo cobrada em moedas, então o que segura
+  // o abuso é o débito, e este bucket só corta rajada automatizada.
+  "bible-search": {
+    route: "bible-search",
+    perUser: { limit: 30, windowMs: HOUR },
+    perIp: { limit: 120, windowMs: HOUR },
+  },
   // O cartão de um nome do léxico. Mesma cadência do versículo, e pela mesma
   // razão: é um toque numa palavra do parágrafo, então a taxa legítima é a de
   // um dedo curioso, e o resultado é cacheado por sessão no React Query. O

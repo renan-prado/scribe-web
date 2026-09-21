@@ -103,6 +103,11 @@ export const USAGE_ROUTES = [
   // medição de minutos de SERMÃO, que é justamente o número que decide se
   // `recordingMinute` continua em 5. Ver `docs/biblo-implementacao.md` §14.
   "biblo-voice",
+  // A busca por sentido no painel da Bíblia (`POST /api/bible-search`). Rota
+  // própria e não `biblo`: é uma chamada mais curta, com um preço próprio
+  // (`COIN_COSTS.bibleSearch`) ainda não medido — fundida com `biblo`, a
+  // média das duas esconderia justamente o número que falta medir.
+  "bible-search",
 ] as const;
 
 /** A mesma lista, como tipo. Um lugar só, ou a lista e o tipo divergem. */

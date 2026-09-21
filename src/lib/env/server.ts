@@ -29,6 +29,9 @@ const schema = z.object({
    * `docs/transcricao.md`.
    */
   OPENAI_TRANSCRIBE_MODEL: z.string().default("gpt-transcribe"),
+  /** A busca por sentido no painel da Bíblia (`server/biblo/bible-search.ts`).
+   * Já existia, órfã, de um pipeline removido antes desta feature — reusada
+   * em vez de nascer uma variável nova para o mesmo tipo de chamada. */
   OPENAI_BIBLE_MODEL: z.string().default("gpt-4.1-mini"),
   OPENAI_INSIGHTS_MODEL: z.string().default("gpt-4.1-mini"),
   OPENAI_ECHO_MODEL: z.string().default("gpt-4o-mini"),

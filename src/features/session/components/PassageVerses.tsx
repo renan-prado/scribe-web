@@ -49,7 +49,15 @@ export function VerseLines({ verses }: { verses: VerseLine[] }) {
   return (
     <div className="flex flex-col gap-1.5 pl-3">
       {verses.map((line) => (
-        <p key={line.verse} className="text-sm leading-relaxed text-foreground/90">
+        // `data-verse` é o que o "Ir para a passagem" da busca do Biblo usa
+        // para rolar até este versículo e piscar nele — ver o cabeçalho de
+        // `BibleReader.tsx`. Único por CAPÍTULO visível, não por Bíblia
+        // inteira: só um capítulo está montado por vez.
+        <p
+          key={line.verse}
+          data-verse={line.verse}
+          className="rounded-md text-sm leading-relaxed text-foreground/90"
+        >
           <sup className="mr-1.5 select-none align-[0.35em] text-[0.65rem] font-semibold text-muted-foreground">
             {line.verse}
           </sup>

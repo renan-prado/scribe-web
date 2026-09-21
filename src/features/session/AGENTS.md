@@ -148,6 +148,7 @@ responde, nunca o desenho:
 | `ChapterDialog` | uma menção tocada no meio do texto | mostra o capítulo e fecha |
 | `PassagePicker` (`/escrever`) | nada | devolve uma REFERÊNCIA para virar bloco |
 | `BibleReader` | nada | deixa LER: livro → capítulo → texto, e as setas andam de capítulo |
+| `BibleReader` (modo "ask") | uma pergunta de sentido | pede ao Biblo, mostra passagens achadas |
 
 Os dois últimos parecem o mesmo e não são: o seletor tem um terceiro passo (a
 faixa de versículos), um rodapé de confirmar e um `onPick`, porque o produto
@@ -158,6 +159,18 @@ seria pedir que a pessoa escolha versículos para poder ler o capítulo.
 ele entra numa aba da bancada do gravador e dentro de uma gaveta na leitura, e
 quem quiser um diálogo o põe dentro de um. O contrário não daria — um componente
 que carrega o próprio `Dialog` não entra numa aba.
+
+**Quando nenhum livro está aberto, um alternador troca a lista de livros por
+uma pergunta ao Biblo** (`POST /api/bible-search`, `COIN_COSTS.bibleSearch`,
+gate pela MESMA feature do chat, `biblo_chat` — não uma segunda entrada no
+catálogo de planos). O modelo devolve só REFERÊNCIA e uma nota curta, nunca o
+texto do versículo: quem resolve cada uma contra a NVI local é
+`server/biblo/bible-search.ts`, a mesma técnica de `server/study/anchor.ts`
+(passo 3 do estudo) — uma referência que não existir é descartada em
+silêncio, sem aviso na tela. "Ir para a passagem" usa o MESMO `book`/`chapter`
+que o resto do componente e reaproveita a classe de piscada do
+`revealSummaryBlock` (`.summary-block-flash`) para destacar o versículo
+depois que o capítulo termina de carregar.
 
 **Quem o abre na leitura, no editor e no gravador é o `BibleDock`, uma aba na
 borda DIREITA**, e não mais um disco no canto de baixo: aquele canto já tem
