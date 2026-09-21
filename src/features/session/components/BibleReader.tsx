@@ -398,33 +398,6 @@ function AskBiblo({
 
   return (
     <div className="flex min-h-0 flex-1 flex-col gap-3">
-      <form
-        className="relative shrink-0"
-        onSubmit={(e) => {
-          e.preventDefault();
-          submit();
-        }}
-      >
-        <input
-          value={question}
-          onChange={(e) =>
-            onQuestionChange(e.target.value.slice(0, BIBLE_SEARCH_MAX_QUESTION_CHARS))
-          }
-          placeholder="Versículos sobre perdão…"
-          aria-label="Perguntar ao Biblo sobre a Bíblia"
-          disabled={submitting}
-          className="w-full rounded-full bg-v2-card py-2.5 pr-11 pl-4 text-[13.5px] text-v2-ink placeholder:text-v2-ink-mute focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-v2-ink-mute disabled:opacity-60"
-        />
-        <button
-          type="submit"
-          disabled={!question.trim() || submitting}
-          aria-label="Perguntar"
-          className="absolute top-1/2 right-1.5 inline-flex size-8 -translate-y-1/2 items-center justify-center rounded-full bg-v2-ink text-v2-bg transition-opacity disabled:opacity-30"
-        >
-          <ArrowUp aria-hidden className="size-4" strokeWidth={2} />
-        </button>
-      </form>
-
       <div className="min-h-0 flex-1 overflow-y-auto">
         {state.status === "idle" ? (
           <p className="px-1 py-6 text-center text-[13px] font-light leading-relaxed text-v2-ink-mute">
@@ -466,6 +439,33 @@ function AskBiblo({
           </div>
         )}
       </div>
+
+      <form
+        className="relative shrink-0"
+        onSubmit={(e) => {
+          e.preventDefault();
+          submit();
+        }}
+      >
+        <input
+          value={question}
+          onChange={(e) =>
+            onQuestionChange(e.target.value.slice(0, BIBLE_SEARCH_MAX_QUESTION_CHARS))
+          }
+          placeholder="Versículos sobre perdão…"
+          aria-label="Perguntar ao Biblo sobre a Bíblia"
+          disabled={submitting}
+          className="w-full rounded-full bg-v2-card py-2.5 pr-11 pl-4 text-[13.5px] text-v2-ink placeholder:text-v2-ink-mute focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-v2-ink-mute disabled:opacity-60"
+        />
+        <button
+          type="submit"
+          disabled={!question.trim() || submitting}
+          aria-label="Perguntar"
+          className="absolute top-1/2 right-1.5 inline-flex size-8 -translate-y-1/2 items-center justify-center rounded-full bg-v2-ink text-v2-bg transition-opacity disabled:opacity-30"
+        >
+          <ArrowUp aria-hidden className="size-4" strokeWidth={2} />
+        </button>
+      </form>
     </div>
   );
 }
