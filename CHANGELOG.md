@@ -9,6 +9,12 @@ Gerado por `npm run release` a partir dos Conventional Commits. `feat` sobe o
 minor; o resto sobe o patch. Não edite à mão, a próxima execução escreve por
 cima do topo do arquivo.
 
+## 0.61.0, 2026-09-21, desde v0.60.0
+
+### Novidades
+
+- **biblo:** o chip de abertura sorteia um capitulo em vez de repetir Joao 1 (`a5ba8da`)
+
 ## 0.60.0, 2026-09-21, desde v0.59.2
 
 ### Novidades
