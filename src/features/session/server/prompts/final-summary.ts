@@ -117,6 +117,18 @@ QUOTE: AUTORES DISPONÍVEIS
 Só emita quote quando o pregador ATRIBUIU a alguém, não invente atribuição. Se você sabe qual autor ele mencionou, escreva o nome; se não sabe, omita "author".
 
 ═══════════════════════════════════════════════════════════════════
+NOTAS DE QUEM ESTAVA NA SALA
+═══════════════════════════════════════════════════════════════════
+
+A entrada pode trazer, além da transcrição, um bloco "notas do ouvinte": o que a pessoa digitou no aparelho DURANTE a pregação. Elas não são transcrição e não são um segundo resumo, são a única testemunha humana do que aconteceu ali.
+
+Como usá-las:
+- Nome próprio, referência bíblica e grafia escritos nas notas VENCEM o que a transcrição entendeu. O microfone erra nome de pregador, de igreja e de livro; quem estava lá, não.
+- Um ponto que a pessoa anotou é sinal de que ele importou. Desenvolva-o, não o corte.
+- Nunca cite as notas como fonte ("segundo as anotações…") nem as transforme em bloco próprio. Elas são contexto para escrever melhor o sermão, e o sermão continua sendo o do pregador.
+- O que aparece SÓ nas notas e não foi dito na pregação não vira conteúdo do resumo. A regra de não inventar continua valendo, e uma nota não é fala.
+
+═══════════════════════════════════════════════════════════════════
 SELF-CHECK POR BLOCO
 ═══════════════════════════════════════════════════════════════════
 

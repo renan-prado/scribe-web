@@ -423,11 +423,33 @@ export function BibloDrawer({
   onThinking,
   onInsert,
   onRemove,
+  layout = "drawer",
+  className,
 }: {
   sessionId: string;
   /** Ver `BibloDock`. Ausente onde a sessão já existe (`/summary/:id`). */
   ensureSession?: () => Promise<string | null>;
-  onClose: () => void;
+  /**
+   * Onde esta conversa está pousada.
+   *
+   * `drawer` é a de sempre: um painel `fixed` que sobe do rodapé no celular e
+   * encosta à direita no desktop, com um fechar próprio porque o botão que a
+   * abriu saiu da tela.
+   *
+   * `inline` é a MESMA conversa como conteúdo de outra coisa — hoje, uma aba
+   * da bancada do gravador. Ali ela não é um painel sobre a tela: ela ocupa a
+   * caixa que lhe deram, não tem fechar (a aba ao lado é o fechar) e não é um
+   * `dialog` para o leitor de tela, porque não há nada atrás dela para ser
+   * interrompido.
+   *
+   * O que NÃO muda entre os dois é tudo o que importa: a conversa, o cache, o
+   * allowance, o recado falado e a despedida do presente. Duas cópias deste
+   * arquivo divergiriam na primeira correção.
+   */
+  layout?: "drawer" | "inline";
+  className?: string;
+  /** Obrigatório no `drawer`: sem ele a gaveta não tem como fechar. */
+  onClose?: () => void;
   /** Avisa o botão flutuante para ele pensar junto, com a gaveta fechada. */
   onThinking: (thinking: boolean) => void;
   /**
@@ -689,17 +711,33 @@ export function BibloDrawer({
     });
   };
 
+  const drawer = layout === "drawer";
+
+  /**
+   * O papel só existe na GAVETA, e a ausência dele no `inline` é a resposta
+   * certa, não uma economia: ali a conversa é o conteúdo de um painel de abas,
+   * que já a nomeia ("Biblo") e já a anuncia. Um `dialog` interromperia a
+   * leitura da tela para dizer que abriu algo que não abriu nada, e um `region`
+   * acrescentaria um segundo marco com o mesmo nome do primeiro.
+   */
+  const shell = drawer ? ({ role: "dialog", "aria-label": "Conversa com o Biblo" } as const) : {};
+
   return (
     <div
-      role="dialog"
-      aria-label="Conversa com o Biblo"
+      {...shell}
       className={cn(
-        "fixed inset-x-0 bottom-0 z-40 flex max-h-[85dvh] flex-col rounded-t-3xl bg-scriba-paper shadow-[0_-8px_40px_var(--scriba-shadow)] ring-1 ring-scriba-hairline",
-        "animate-v2-rec-in",
-        // No desktop ela é uma coluna à direita, de altura cheia: ali há espaço
-        // ao lado do texto, e cobrir o rodapé de uma tela larga esconderia o
-        // resumo em vez de ficar ao lado dele.
-        "md:inset-y-0 md:right-0 md:left-auto md:max-h-none md:w-(--biblo-drawer-w) md:rounded-none md:rounded-l-3xl"
+        "flex min-h-0 flex-col bg-scriba-paper ring-1 ring-scriba-hairline",
+        drawer
+          ? cn(
+              "fixed inset-x-0 bottom-0 z-40 max-h-[85dvh] rounded-t-3xl shadow-[0_-8px_40px_var(--scriba-shadow)]",
+              "animate-v2-rec-in",
+              // No desktop ela é uma coluna à direita, de altura cheia: ali há
+              // espaço ao lado do texto, e cobrir o rodapé de uma tela larga
+              // esconderia o resumo em vez de ficar ao lado dele.
+              "md:inset-y-0 md:right-0 md:left-auto md:max-h-none md:w-(--biblo-drawer-w) md:rounded-none md:rounded-l-3xl"
+            )
+          : "h-full rounded-3xl",
+        className
       )}
     >
       {/* O cabeçalho, do tamanho do que ele tem a dizer.
@@ -752,14 +790,16 @@ export function BibloDrawer({
           <MessageCircle aria-hidden className="size-4" fill="currentColor" strokeWidth={1.5} />
           Biblo
         </span>
-        <button
-          type="button"
-          onClick={onClose}
-          aria-label="Fechar a conversa"
-          className="inline-flex size-10 items-center justify-center rounded-full text-scriba-ink-soft transition-colors hover:bg-scriba-hairline/50 hover:text-scriba-ink focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-scriba-ink-mute"
-        >
-          <X aria-hidden className="size-4.5" strokeWidth={1.75} />
-        </button>
+        {drawer ? (
+          <button
+            type="button"
+            onClick={onClose}
+            aria-label="Fechar a conversa"
+            className="inline-flex size-10 items-center justify-center rounded-full text-scriba-ink-soft transition-colors hover:bg-scriba-hairline/50 hover:text-scriba-ink focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-scriba-ink-mute"
+          >
+            <X aria-hidden className="size-4.5" strokeWidth={1.75} />
+          </button>
+        ) : null}
       </div>
 
       {/* A abertura, no MEIO da gaveta e sem frase.
@@ -849,7 +889,18 @@ export function BibloDrawer({
         onAdd={onInsert ? (text) => insertBlock({ type: "paragraph", text }) : undefined}
       />
 
-      <div className="space-y-3 border-scriba-hairline border-t px-4 pt-3 pb-[calc(0.75rem+max(env(safe-area-inset-bottom),var(--kb-inset,0px)))]">
+      {/* A folga de baixo é da GAVETA, não da conversa: ela encosta na borda
+          do aparelho, então precisa desviar da faixa do gesto e do teclado.
+          Inline, a conversa é o conteúdo de uma aba no meio da tela, e aquele
+          `calc` viraria um vão de 34px dentro do painel, sem nada embaixo. */}
+      <div
+        className={cn(
+          "space-y-3 border-scriba-hairline border-t px-4 pt-3",
+          drawer
+            ? "pb-[calc(0.75rem+max(env(safe-area-inset-bottom),var(--kb-inset,0px)))]"
+            : "pb-3"
+        )}
+      >
         {!blocked && (
           <Chips chips={chips} onPick={send} disabled={pending || voice.state !== "idle"} />
         )}

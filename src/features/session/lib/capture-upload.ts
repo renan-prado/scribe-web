@@ -244,7 +244,14 @@ export async function uploadCapture(
     const res = await fetch("/api/final-summary", {
       method: "POST",
       headers: { "content-type": "application/json" },
-      body: JSON.stringify({ sessionId, text: transcript, durationMs: meta.durationMs }),
+      body: JSON.stringify({
+        sessionId,
+        text: transcript,
+        durationMs: meta.durationMs,
+        // As notas escritas durante a pregação. Elas viajam na LINHA da
+        // gravação, então uma retentativa de dois dias depois as leva junto.
+        notes: meta.notes,
+      }),
     });
     if (!res.ok) return fromStatus(res.status, await errorOf(res));
     const raw = (await res.json()) as Partial<SummaryPayload> & { error?: string };

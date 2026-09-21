@@ -935,6 +935,38 @@ o destino é o resumo, como sempre foi.
 (tentar agora, baixar, apagar) e nenhum destino. Ele some sozinho quando o
 resumo existe, e nunca antes disso.
 
+**Gravando, a tela vira uma BANCADA** (`RecordingWorkbench`). Uma pregação dura
+quarenta minutos, e a tela passava os quarenta mostrando treze barrinhas — a
+tela mais ociosa do produto, justamente na hora em que quem está ali mais tem o
+que anotar e o que perguntar. Três abas: **Notas**, **Biblo** e **Bíblia**.
+
+- **As notas viram CONTEXTO do resumo, e não um segundo documento.** Elas vão
+  para o prompt do `/api/final-summary` marcadas como notas de quem estava na
+  sala: nome próprio e referência escritos ali VENCEM o que o microfone
+  entendeu, e um ponto anotado é sinal de que ele importou. O que aparece só
+  nelas e não foi dito não vira conteúdo — uma nota não é fala.
+- Elas viajam na LINHA da gravação (`CaptureMeta.notes`), gravadas junto do
+  pulso a cada 2 minutos. Uma gravação pode ser retentada pela fila dois dias
+  depois, de outra tela, e notas que morressem com a tela só chegariam ao
+  resumo quando tudo desse certo de primeira.
+- **O Biblo precisa de uma sessão**, então ela passa a nascer DURANTE a
+  gravação (`ensureSession`), e não mais no stop. O id é gravado na linha da
+  gravação no mesmo gesto, então o `uploadCapture` a reusa no fim em vez de
+  criar uma segunda. A chamada é disparada sem `await` e falha em silêncio:
+  **gravar continua sem depender de rede**, e sem ela a aba diz que está sem
+  internet. Apagar a gravação apaga a linha junto.
+- **Nada da bancada pode repintar o gravador.** O estado das três abas mora
+  dentro do `RecordingWorkbench` (ou no store de `recording-notes.ts`), ele é
+  `memo`, e o `AudioStudio` lê as notas por `getState()`, que não assina nada.
+  O `MediaRecorder` mora em refs e sobreviveria aos renders, mas a fileira de
+  barras, os controles e o relógio não precisam repintar a cada tecla digitada
+  numa pregação de uma hora.
+- No celular a onda ENCOLHE e gruda no topo: ela deixa de ser o objeto da tela
+  e vira a confirmação de que o microfone continua aberto, e 168px dela seriam
+  metade da tela gastos num indicador. No desktop as duas coisas ficam lado a
+  lado. Quem mexer no tamanho da onda mexe no `waveRef` do `AudioStudio`, que é
+  ref e não prop de propósito: `paintLevels` roda a 60 quadros por segundo.
+
 **A tela em repouso diz o que vem DEPOIS de parar**, numa pastilha sob a onda
 (o `hinting` do `AudioStudio`). Quem chega ali vê uma onda apagada e um
 microfone, e nada responde à pergunta que decide se a pessoa vai deixar o

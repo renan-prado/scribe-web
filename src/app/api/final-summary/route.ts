@@ -26,6 +26,9 @@ const BodySchema = z
     durationMs: z.number().finite().nonnegative().max(MAX_SESSION_HOURS_MS).optional(),
     speakerName: z.string().max(200).optional(),
     speakerLocation: z.string().max(200).optional(),
+    /** As notas escritas durante a gravação. Teto acima do campo da tela
+     *  (`RECORDING_NOTES_MAX_CHARS`), com folga para caractere multibyte. */
+    notes: z.string().max(8000).nullable().optional(),
   })
   .strict();
 
@@ -74,6 +77,7 @@ export async function POST(request: Request) {
     userId: auth.user.id,
     sessionId,
     transcript: text,
+    notes: body.notes ?? null,
     logPrefix: "final-summary",
     metadataRoute: "final-summary",
   });

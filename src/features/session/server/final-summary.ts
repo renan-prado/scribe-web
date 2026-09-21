@@ -41,6 +41,14 @@ export type GenerateFinalSummaryInput = {
   userId: string;
   sessionId: string;
   transcript: string;
+  /**
+   * O que quem gravou digitou DURANTE a pregação (ver `recording-notes.ts`).
+   * Vai para o prompt marcado como notas do ouvinte, e não como transcrição:
+   * elas corrigem nome próprio e referência que o microfone não entregou, e
+   * dizem o que importou para quem estava lá. Ausente em toda rota que não
+   * nasce de uma gravação.
+   */
+  notes?: string | null;
   /** Log tag, "final-summary" or "final-summary-reprocess". */
   logPrefix: string;
   /** Metadata route tag on the OpenAI store record + usage rows. */
@@ -56,11 +64,19 @@ export type GenerateFinalSummaryInput = {
 export async function generateFinalSummary(
   input: GenerateFinalSummaryInput
 ): Promise<GenerateFinalSummaryResult> {
-  const { userId, sessionId, transcript, logPrefix, metadataRoute } = input;
+  const { userId, sessionId, transcript, notes, logPrefix, metadataRoute } = input;
   const log = createLogger(logPrefix);
   const model = serverEnv.OPENAI_FINAL_SUMMARY_MODEL;
 
-  const userMessage = `transcript:\n${transcript}`;
+  const trimmedNotes = notes?.trim();
+  const userMessage = trimmedNotes
+    ? `transcript:
+${transcript}
+
+notas do ouvinte:
+${trimmedNotes}`
+    : `transcript:
+${transcript}`;
 
   const result = await callChat({
     model,

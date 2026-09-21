@@ -4,8 +4,8 @@ Tudo que pertence a uma sessão depois que ela existe: a leitura do resumo, o
 estudo, a importação do YouTube, os cartões da Biblioteca e a busca das listas.
 
 **O GRAVADOR não mora aqui.** Ele é `src/app/recording/`, e é uma tela só
-(`AudioStudio` + `useAudioCapture` + `useRecordingPresence`). Ver
-`src/app/AGENTS.md`.
+(`AudioStudio` + `useAudioCapture` + `useRecordingPresence` +
+`RecordingWorkbench`). Ver `src/app/AGENTS.md`.
 
 **O que a gravação DEIXA, esse mora.** O áudio guardado no aparelho, a pipeline
 que o transforma em resumo e a fila que insiste por ele são desta pasta
@@ -52,12 +52,13 @@ pessoa quiser, aprofundar.
 | `components/StudyNote.tsx` | o post-it de um estudo, a mesma casca com outro recheio |
 | `components/CollectionSearch.tsx` + `src/lib/search.ts` | a barra e o motor das duas listas |
 | `components/YoutubeUrlForm.tsx` + `YoutubeImport.tsx` | colar o link (ou recebê-lo por parâmetro), recortar um trecho, e esperar a importação |
-| `components/BibloDock.tsx` + `BibloDrawer.tsx` + `BibloMessage.tsx` | a conversa com o Biblo: botão flutuante e gaveta |
+| `components/BibloDock.tsx` + `BibloDrawer.tsx` + `BibloMessage.tsx` | a conversa com o Biblo: botão flutuante e gaveta (ou painel `inline`) |
 | `components/BibloSummaryDock.tsx` | o mesmo Biblo na tela de LEITURA, que precisa de um POST para inserir |
 | `biblo-query.ts` | a conversa guardada no aparelho: leitura, pré-busca e a rodada nova |
 | `server/biblo/` | allowance, resposta e a abertura derivada |
 | `components/DeepenButton.tsx` + `DeepeningMenu.tsx` | gerar e reprocessar o estudo |
 | `components/PassageVerses.tsx` + `RichText.tsx` | texto bíblico e menções dentro do parágrafo |
+| `components/BibleReader.tsx` | a Bíblia para LER: livro → capítulo → texto, dentro de uma aba ou de uma gaveta |
 | `components/CacheOwner.tsx` | de quem é o cache deste aparelho, e a faxina quando outra conta entra |
 | `lib/capture-store.ts` | o áudio guardado no IndexedDB: fragmentos, partes, os PEDAÇOS do envio e a linha de cada gravação |
 | `lib/capture-upload.ts` | sessão → transcrição → resumo, com a falha CLASSIFICADA |
@@ -132,6 +133,26 @@ inteiro; três consequências que mordem de fora:
 o `SummaryDeck` devolve o resumo direto, sem trilho e sem pontinhos.
 
 ## Texto bíblico na tela
+
+São QUATRO componentes, e a diferença entre eles é a PERGUNTA que cada um
+responde, nunca o desenho:
+
+| | de onde parte | o que faz |
+|---|---|---|
+| `PassageVerses` | uma referência dentro de um bloco | desenha os versículos dela |
+| `ChapterDialog` | uma menção tocada no meio do texto | mostra o capítulo e fecha |
+| `PassagePicker` (`/escrever`) | nada | devolve uma REFERÊNCIA para virar bloco |
+| `BibleReader` | nada | deixa LER: livro → capítulo → texto, e as setas andam de capítulo |
+
+Os dois últimos parecem o mesmo e não são: o seletor tem um terceiro passo (a
+faixa de versículos), um rodapé de confirmar e um `onPick`, porque o produto
+dele é uma referência; o leitor termina na leitura, e um terceiro passo ali
+seria pedir que a pessoa escolha versículos para poder ler o capítulo.
+
+**O `BibleReader` é uma REGIÃO, não um diálogo**, e é isso que o torna reusável:
+ele entra numa aba da bancada do gravador e dentro de uma gaveta na leitura, e
+quem quiser um diálogo o põe dentro de um. O contrário não daria — um componente
+que carrega o próprio `Dialog` não entra numa aba.
 
 `PassageVerses` faz **uma** busca por passagem e tem **um** estado: ou o
 esqueleto do bloco inteiro, ou o texto inteiro. Não há revelação progressiva.

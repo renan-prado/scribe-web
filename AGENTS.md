@@ -123,8 +123,9 @@ uma camada coesa por três donos discutindo. Só `db/admin/*` foi junto, porque
 só o painel o lia.
 
 **O gravador mora em `src/app/(app)/recording/`, e é a exceção à regra acima.**
-São três arquivos (`AudioStudio.tsx`, `useAudioCapture.ts` e
-`useRecordingPresence.ts`); a pasta `session` é
+São cinco arquivos (`AudioStudio.tsx`, `useAudioCapture.ts`,
+`useRecordingPresence.ts`, `RecordingWorkbench.tsx` e `recording-notes.ts`);
+a pasta `session` é
 tudo o que vem DEPOIS de a sessão existir.
 
 ## Regras que valem em todo lugar

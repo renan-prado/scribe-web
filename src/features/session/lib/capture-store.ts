@@ -79,6 +79,16 @@ export type CaptureMeta = {
   /** Por que a última tentativa falhou, e a frase que a tela mostra. */
   failure: CaptureFailure | null;
   failureMessage: string | null;
+  /**
+   * As anotações que quem gravou escreveu DURANTE a pregação, e que vão para o
+   * prompt do resumo junto da transcrição.
+   *
+   * Elas moram na linha da gravação, e não numa variável da tela, pelo mesmo
+   * motivo do áudio: a gravação pode falhar no envio e ser retentada pela fila
+   * dois dias depois, de outra tela. Notas que morressem com a tela seriam
+   * notas que só chegam ao resumo quando tudo dá certo de primeira.
+   */
+  notes: string | null;
 };
 
 type Fragment = {
@@ -144,6 +154,7 @@ function normalize(row: CaptureMeta): CaptureMeta {
     attempts: typeof row.attempts === "number" ? row.attempts : 0,
     failure: row.failure ?? null,
     failureMessage: row.failureMessage ?? null,
+    notes: row.notes ?? null,
   };
 }
 
