@@ -9,6 +9,12 @@ Gerado por `npm run release` a partir dos Conventional Commits. `feat` sobe o
 minor; o resto sobe o patch. Não edite à mão, a próxima execução escreve por
 cima do topo do arquivo.
 
+## 0.63.3, 2026-09-21, desde v0.63.2
+
+### Correções
+
+- **editor:** o menu da barra para de cortar embaixo no celular (`6ebabf2`)
+
 ## 0.63.2, 2026-09-21, desde v0.63.1
 
 ### Correções
