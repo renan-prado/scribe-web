@@ -4,7 +4,10 @@ import { Loader2, SearchX } from "lucide-react";
 import { useCallback, useEffect, useMemo, useState } from "react";
 import { usePendingCount } from "@/features/session/capture-queue";
 import { CollectionSearch, FACET_ALL } from "@/features/session/components/CollectionSearch";
+import { LibraryCard } from "@/features/session/components/LibraryCard";
 import { LibraryNote } from "@/features/session/components/LibraryNote";
+import { LibraryRow } from "@/features/session/components/LibraryRow";
+import { LibraryViewToggle } from "@/features/session/components/LibraryViewToggle";
 import { PendingCaptures } from "@/features/session/components/PendingCaptures";
 import { SessionsEmptyState } from "@/features/session/components/SessionsEmptyState";
 import { useContentSearch } from "@/features/session/hooks/useContentSearch";
@@ -17,6 +20,7 @@ import {
   resultLabel,
   searchTokens,
 } from "@/features/session/lib/search";
+import { useLibraryView } from "@/features/session/library-view";
 import { useLibrary } from "@/features/session/query";
 import type { SessionListItem } from "@/lib/domain/session";
 import { useSearchScope } from "../components/SearchScope";
@@ -74,6 +78,19 @@ import { monthGroupLabel } from "../lib/format";
  * entra como união. O post-it (ver `LibraryNote`) mostra três dessas coisas:
  * autor, título e data.
  *
+ * ## Três vistas, e a escolha é do APARELHO
+ *
+ * O mural de post-its continua o padrão e continua sendo o desenho do produto.
+ * Ao lado dele há a LISTA (varredura: uma linha por sermão, com o trecho) e a
+ * GRADE (cartões iguais, cinza, na ordem cronológica linha a linha). O mural
+ * ganha de quem tem vinte sermões e olha a parede inteira; as outras duas
+ * ganham de quem tem duzentos e está procurando um. A escolha fica no
+ * `localStorage`, ver `features/session/library-view.ts`.
+ *
+ * **O agrupamento por mês vale para as três.** Ele é o que contém a bagunça de
+ * ordem do masonry, e nas outras duas ele continua sendo a única âncora
+ * temporal de uma lista longa.
+ *
  * **Isso é desalinhamento de propósito, e não um descuido a corrigir.** Uma
  * busca limitada ao que cabe num post-it de 150px seria uma busca inútil; um
  * cartão que exibisse tudo que a busca alcança seria o cartão antigo de volta.
@@ -129,6 +146,7 @@ export function LibraryBrowser({ nowIso }: Props) {
   const sessions = hydrated ? (data ?? EMPTY) : EMPTY;
   const loading = !hydrated || isPending;
 
+  const [view, setView] = useLibraryView();
   const { open, setOpen } = useSearchScope();
   // As gravações guardadas no aparelho que ainda não viraram resumo. Elas não
   // vêm da lista do servidor (não existem lá), e é por isso que a conta delas
@@ -252,6 +270,19 @@ export function LibraryBrowser({ nowIso }: Props) {
           Fora da busca: ver `PendingCaptures`. */}
       {open ? null : <PendingCaptures now={now} />}
 
+      {/* O seletor de vista, alinhado à direita e acima do primeiro mês.
+
+          Ele só aparece quando há acervo desenhado: sobre o estado vazio ele
+          ofereceria três maneiras de olhar para nada, e sobre o esqueleto
+          seria um controle vivo em cima de uma tela que ainda não existe. E
+          ele fica FORA das seções de mês — a escolha vale para a Biblioteca
+          inteira, e repeti-lo em cada mês sugeriria o contrário. */}
+      {!loading && groups.length > 0 ? (
+        <div className="-mb-2 flex justify-end px-1">
+          <LibraryViewToggle value={view} onChange={setView} />
+        </div>
+      ) : null}
+
       {/* Nada na tela E resposta a caminho não é "não encontrei": metade desta
           busca mora no servidor (a transcrição), e afirmar o vazio antes dela
           chegar é uma tela que se desmente sozinha meio segundo depois. */}
@@ -327,11 +358,31 @@ export function LibraryBrowser({ nowIso }: Props) {
                 Ele acompanha os degraus do CONTEÚDO, não os do container: em
                 `lg` a coluna já bateu o teto e é a única largura em que quatro
                 cabem. */}
-            <ul className="columns-2 gap-4 sm:columns-3 lg:columns-4">
-              {group.items.map((s) => (
-                <LibraryNote key={s.id} session={s} now={now} buildHref={v2Href} />
-              ))}
-            </ul>
+            {view === "list" ? (
+              /* A LISTA: uma linha por sermão, do mesmo tamanho, na ordem
+                 exata. Sem `columns`, sem `grid` — a pilha é o desenho. */
+              <ul className="flex flex-col">
+                {group.items.map((s) => (
+                  <LibraryRow key={s.id} session={s} now={now} buildHref={v2Href} />
+                ))}
+              </ul>
+            ) : view === "card" ? (
+              /* A GRADE: `items-stretch` (o padrão do grid) mais `h-full` no
+                 cartão é o que dá a TODOS a altura da fileira, e é isso que
+                 separa esta vista do mural. `auto-rows-fr` para que fileiras
+                 diferentes também tenham a mesma altura entre si. */
+              <ul className="grid auto-rows-fr grid-cols-1 gap-3 sm:grid-cols-2 lg:grid-cols-3">
+                {group.items.map((s) => (
+                  <LibraryCard key={s.id} session={s} now={now} buildHref={v2Href} />
+                ))}
+              </ul>
+            ) : (
+              <ul className="columns-2 gap-4 sm:columns-3 lg:columns-4">
+                {group.items.map((s) => (
+                  <LibraryNote key={s.id} session={s} now={now} buildHref={v2Href} />
+                ))}
+              </ul>
+            )}
           </section>
         ))
       )}

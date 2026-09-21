@@ -678,10 +678,38 @@ mês, e embaixo uma faixa que escurece até o grafite da página
 (`--v2-dock-fade`) com o botão vermelho no meio. A faixa fica sempre; o BOTÃO
 some ao rolar para baixo e volta ao rolar para cima.
 
-### O mural de post-its
+### O mural de post-its, e as outras duas vistas
 
 Cada sessão é um post-it (`LibraryNote`) num masonry de CSS, e o cartão diz
 três coisas: **autor, título e data.**
+
+**Ele é o padrão, e não é mais a única forma.** Há três, e a escolha mora no
+`localStorage` do aparelho (`features/session/library-view.ts`), com o seletor
+alinhado à direita acima do primeiro mês:
+
+| | o que é | para quem |
+|---|---|---|
+| `postit` | o mural: cor por sessão, altura livre, masonry | vinte sermões, olhando a parede inteira |
+| `list` | uma linha por sermão, com autor, título, trecho e data | duzentos sermões, PROCURANDO um |
+| `card` | grade de cartões iguais: mesma altura, mesma largura, um cinza só | o meio termo, com a ordem cronológica linha a linha |
+
+O mural é cor sorteada e ordem COLUNA-A-COLUNA, e as duas coisas trabalham
+contra quem está varrendo títulos: o segundo sermão mais recente cai abaixo do
+primeiro, não ao lado, e quatro cores piscando não ajudam a comparar. As outras
+duas existem justamente para não ter nada disso — na grade a cronologia é linha
+a linha, e o cinza é `--v2-card`, a superfície que o chip da barra e o trilho
+das abas já usam, não um quinto tom inventado.
+
+**As três agrupam por MÊS**, e as três leem o MESMO `SessionModeGlyph` no
+rodapé: três cópias daquele ícone é o tipo de coisa que diverge em silêncio no
+primeiro acerto óptico.
+
+**A escolha é do aparelho, não da conta.** A mesma pessoa quer o mural no
+celular e a lista no monitor, e uma coluna no banco daria a ela uma escolha só
+para os dois.
+
+**O seletor só aparece com acervo desenhado**: sobre o estado vazio ele
+ofereceria três maneiras de olhar para nada.
 
 **O número de colunas cresce com a tela** (`columns-2 sm:columns-3
 lg:columns-4`), e é o que segura o teto de 1024px da página: duas colunas numa

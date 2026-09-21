@@ -1,9 +1,7 @@
-import { PenLine } from "lucide-react";
-import { MicGlyph } from "@/components/icons/MicGlyph";
-import { YoutubeIcon } from "@/components/icons/YoutubeIcon";
-import type { SessionListItem, SessionMode } from "@/lib/domain/session";
+import type { SessionListItem } from "@/lib/domain/session";
 import { shortDate } from "../lib/formatting";
 import { PostItNote } from "./PostItNote";
+import { SessionModeGlyph } from "./SessionModeGlyph";
 
 /**
  * O post-it de uma SESSÃO salva, o cartão da Biblioteca. É o `<li>` inteiro:
@@ -34,13 +32,15 @@ import { PostItNote } from "./PostItNote";
  * vai editar ou apagar. Com ele foram o `SessionCardMenu`, a Server Action de
  * apagar da `/home` e o `deleteAction` que descia página adentro.
  *
- * **O MODO é a quarta coisa**, e ele fica no rodapé, à esquerda da data:
- * microfone para o que foi gravado, o play para o que veio do YouTube, a caneta
- * para o que foi escrito à mão, no tom apagado da própria data — informação
- * passiva, não pastilha. Marcar só o YouTube, como foi feito primeiro, era
- * marcar a EXCEÇÃO: o cartão sem glifo não dizia "gravado", dizia "não é
- * YouTube", que é uma ausência, e ausência não se lê. Com três modos, esse
- * raciocínio deixa de ser preferência e vira necessidade.
+ * **O MODO é a quarta coisa**, e ele fica no rodapé, à esquerda da data, no
+ * tom apagado da própria data — informação passiva, não pastilha. O desenho
+ * dele (e os acertos ópticos de cada glifo) mora no `SessionModeGlyph`, porque
+ * as três vistas da Biblioteca o usam.
+ *
+ * **As outras duas vistas são a LINHA e o CARTÃO** (`LibraryRow`,
+ * `LibraryCard`), e elas não são este cartão com um `variant`: o post-it é cor
+ * sorteada, altura livre e ordem coluna-a-coluna, e as outras duas existem
+ * justamente para não ter nada disso. Ver `library-view.ts`.
  */
 type Props = {
   session: SessionListItem;
@@ -51,12 +51,6 @@ type Props = {
   /** Para onde o cartão aponta. Toda sessão salva abre no resumo; quem passa a
    * função é quem sabe o prefixo da rota. */
   buildHref?: (id: string) => string;
-};
-
-const MODE_LABELS: Record<SessionMode, string> = {
-  audio: "Gravada pelo microfone",
-  youtube: "Importada de um vídeo do YouTube",
-  manual: "Escrita por você",
 };
 
 export function LibraryNote({ session: s, now, buildHref = (id) => `/summary/${id}` }: Props) {
@@ -71,52 +65,7 @@ export function LibraryNote({ session: s, now, buildHref = (id) => `/summary/${i
       title={s.title?.trim() || "Sessão sem título"}
       footer={
         <>
-          {/* O rótulo mora no `<span>`, não no `<svg>`: o `YoutubeIcon` já
-              nasce `aria-hidden` e não aceita props soltas, e um `<svg>` com
-              `aria-label` sem `role="img"` é silenciado por boa parte dos
-              leitores de tela. Com o wrapper, os dois glifos são anunciados do
-              mesmo jeito. */}
-          <span role="img" aria-label={MODE_LABELS[s.mode]} className="flex shrink-0">
-            {/* O ACERTO DE ALTURA é de cada glifo, e os dois números são
-                diferentes de propósito.
-
-                O problema comum: `items-center` alinha o ícone pela CAIXA da
-                linha, e a caixa de "8 set" tem embaixo um vão de descida que
-                nenhuma daquelas letras usa — centrado por ela, o glifo cai
-                abaixo do miolo do texto. `translate` e não margem: com
-                `items-center` a margem negativa desloca só metade do que se
-                pede.
-
-                A diferença entre os dois é ÓPTICA, não geométrica: as duas
-                tintas são centradas no próprio `viewBox` (medido), mas o
-                YouTube é um retângulo cheio, com aresta reta em cima e
-                embaixo, e o microfone é uma cápsula estreita com um pé. Subir
-                os dois 1,5px deixava o retângulo visivelmente alto enquanto a
-                cápsula caía certa. Medido no print: a 1,5px o miolo do glifo
-                do YouTube ficava ~1,1px acima do miolo dos dígitos. */}
-            {s.mode === "youtube" ? (
-              <YoutubeIcon className="size-3.5 -translate-y-[0.5px]" />
-            ) : s.mode === "manual" ? (
-              /* A caneta é de CONTORNO, ao contrário dos dois vizinhos, que são
-                 tinta cheia — e o `strokeWidth` sobe de 2 para 2.25 para
-                 compensar: um traço de 1,5px a 14px de altura fica visivelmente
-                 mais claro que um glifo preenchido do mesmo tamanho, e a coluna
-                 de ícones do rodapé passaria a ter um item desbotado. A descida
-                 é a do microfone, não a do YouTube: como ele, a caneta é uma
-                 diagonal estreita, e não um retângulo de aresta reta. */
-              <PenLine className="-translate-y-[1.5px] size-3.5" strokeWidth={2.25} />
-            ) : (
-              /* O `MicGlyph`, o MESMO microfone do botão de gravar, e não o
-                 `Mic` do lucide: o glifo que a pessoa aperta para gravar e o
-                 que marca o resultado daquele gesto na lista têm de ser o mesmo
-                 desenho, senão a Biblioteca fala de uma gravação com o
-                 vocabulário de outro app. Ele é preenchido, como o do YouTube
-                 ao lado, e ocupa 23 de 32 na altura — quase a mesma extensão
-                 vertical do vizinho, que é o que mantém a coluna de ícones
-                 alinhada. */
-              <MicGlyph className="size-3.5 -translate-y-[1.5px]" />
-            )}
-          </span>
+          <SessionModeGlyph mode={s.mode} />
           {shortDate(s.createdAt, includeYear)}
         </>
       }

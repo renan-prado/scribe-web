@@ -49,6 +49,9 @@ pessoa quiser, aprofundar.
 | `components/StudyBlockRenderer.tsx` | os blocos a MAIS que o estudo tem |
 | `components/PostItNote.tsx` | a casca do post-it dos dois murais: cor, cartão clicável, anatomia |
 | `components/LibraryNote.tsx` | o post-it de uma sessão na Biblioteca (autor, título, data) |
+| `components/LibraryRow.tsx` + `LibraryCard.tsx` | as outras duas vistas do acervo: a linha e o cartão da grade |
+| `components/LibraryViewToggle.tsx` + `library-view.ts` | qual vista, e onde a escolha fica guardada |
+| `components/SessionModeGlyph.tsx` | o ícone do modo, o mesmo nas três vistas |
 | `components/StudyNote.tsx` | o post-it de um estudo, a mesma casca com outro recheio |
 | `components/CollectionSearch.tsx` + `src/lib/search.ts` | a barra e o motor das duas listas |
 | `components/YoutubeUrlForm.tsx` + `YoutubeImport.tsx` | colar o link (ou recebê-lo por parâmetro), recortar um trecho, e esperar a importação |
