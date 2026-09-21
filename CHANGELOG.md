@@ -9,6 +9,12 @@ Gerado por `npm run release` a partir dos Conventional Commits. `feat` sobe o
 minor; o resto sobe o patch. Não edite à mão, a próxima execução escreve por
 cima do topo do arquivo.
 
+## 0.66.0, 2026-09-21, desde v0.65.0
+
+### Novidades
+
+- **biblia:** busca por sentido com o Biblo no painel de leitura (`100db64`)
+
 ## 0.65.0, 2026-09-21, desde v0.64.0
 
 ### Novidades
