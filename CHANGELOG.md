@@ -9,6 +9,12 @@ Gerado por `npm run release` a partir dos Conventional Commits. `feat` sobe o
 minor; o resto sobe o patch. Não edite à mão, a próxima execução escreve por
 cima do topo do arquivo.
 
+## 0.53.0, 2026-09-21, desde v0.52.0
+
+### Novidades
+
+- **gravacao:** o sistema avisa que a gravacao continua com o app minimizado (`ed58d6a`)
+
 ## 0.52.0, 2026-09-21, desde v0.51.0
 
 ### Novidades
