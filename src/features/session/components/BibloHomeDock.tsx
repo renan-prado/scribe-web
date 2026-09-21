@@ -150,7 +150,7 @@ export function BibloHomeDock() {
           aceso, ele VIROU a gaveta. `bottom` empilha acima do `+` do
           `CreateDock`, que é a ação principal do `/home` e não pode se mexer. */}
       {!open && (
-        <div className="pointer-events-none fixed inset-x-0 bottom-0 z-30 flex justify-end px-4 pb-[calc(5.5rem+max(env(safe-area-inset-bottom),var(--kb-inset,0px)))] md:pb-[calc(1rem+max(env(safe-area-inset-bottom),var(--kb-inset,0px)))]">
+        <div className="pointer-events-none fixed inset-x-0 bottom-0 z-30 flex justify-end px-4 pb-[calc(6.25rem+max(env(safe-area-inset-bottom),var(--kb-inset,0px)))] md:pb-[calc(1rem+max(env(safe-area-inset-bottom),var(--kb-inset,0px)))]">
           <button
             type="button"
             onClick={() => setOpen(true)}
