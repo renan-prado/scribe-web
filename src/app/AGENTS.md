@@ -945,6 +945,32 @@ desenhada. E ela some no instante em que a gravação começa: dali em diante o
 lugar embaixo da onda é dos avisos que importam (saldo no fim, cópia local que
 falhou), e uma dica dividindo espaço com um alerta rebaixa o alerta.
 
+**Minimizar o app não interrompe a gravação, e agora o sistema DIZ isso**
+(`useRecordingPresence`). O `MediaRecorder` nunca parou ao esconder a aba, mas
+nada no aparelho confirmava isso, e a única maneira de conferir era voltar ao
+app no meio do sermão. São três camadas, cada uma respondendo uma pergunta
+diferente:
+
+- **Uma faixa silenciosa tocando** é a única declaração que o navegador aceita
+  de "esta aba não pode ser congelada"; é a mesma regra que mantém um podcast
+  vivo com a tela apagada, e é ela que o `media-src 'self' blob:` da CSP
+  libera. O WAV é montado em memória, não baixado: pedir rede para reproduzir
+  silêncio falharia justamente no aparelho em que a aba mais precisa ficar
+  acordada.
+- **A Media Session** vem de graça a partir dela, e põe o app com os controles
+  na tela de bloqueio. Pausar e parar por ali chegam ao MESMO gravador que os
+  botões da tela, com a mesma guarda de saldo.
+- **A notificação do sistema** é a FRASE ("Gravando áudio em background…", com
+  o ícone do app e o glifo do microfone), e só aparece quando a aba ESCONDE:
+  dizê-la com o app na frente é dizer o óbvio, e um aviso que aparece quando
+  não precisa é ignorado quando precisa. O toque nela volta para a aba que está
+  gravando, nunca abre uma segunda.
+
+A permissão é pedida no toque em "gravar", que é o único gesto do fluxo com um
+porquê visível. **Nada disso é obrigatório**: permissão negada, navegador sem
+Media Session ou `play()` recusado falham em silêncio, cada um por si, e a
+gravação continua como continuava.
+
 **Dívida conhecida:** começar sem internet. Gravar não depende de rede, mas a
 sessão nasce de um `POST` no stop — sem ele o áudio fica guardado esperando. A
 espera hoje tem cartão na Biblioteca, motivo escrito e retentativa automática,
@@ -1442,9 +1468,11 @@ precisa) e bloqueia câmera e geolocalização.
 chamada a `/api/verse` não pague o parse de 4 MB de JSON. É a ÚNICA tradução
 que o código lê, ver `src/lib/bibles/loader.ts` antes de adicionar outra.
 
-`public/sw.js` faz duas coisas: existir (é requisito para o navegador nos
-tratar como PWA instalável) e servir `public/offline.html` quando uma
-**navegação GET** falha por falta de rede. Ele nunca é registrado em dev
+`public/sw.js` faz TRÊS coisas: existir (é requisito para o navegador nos
+tratar como PWA instalável), servir `public/offline.html` quando uma
+**navegação GET** falha por falta de rede, e trazer a aba de volta quando
+alguém toca na notificação de gravação em andamento (`notificationclick`, ver
+a seção do gravador acima). Ele nunca é registrado em dev
 (`PwaBootstrap`): service worker + HMR gera loop de código velho difícil de
 depurar.
 

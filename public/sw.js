@@ -53,6 +53,26 @@ self.addEventListener("activate", (event) => {
   );
 });
 
+// A notificação de "Gravando áudio em background…" (ver
+// `src/app/(app)/(barra)/recording/useRecordingPresence.ts`). O toque nela tem
+// UM trabalho: trazer de volta a aba que está com o microfone aberto. Por isso
+// ele procura QUALQUER janela do Scriba antes de abrir uma nova — abrir outra
+// durante uma gravação daria duas abas disputando o microfone, que é o mesmo
+// motivo do `launch_handler` do manifest.
+self.addEventListener("notificationclick", (event) => {
+  event.notification.close();
+  const target = (event.notification.data && event.notification.data.url) || "/recording";
+  event.waitUntil(
+    (async () => {
+      const windows = await self.clients.matchAll({ type: "window", includeUncontrolled: true });
+      for (const client of windows) {
+        if ("focus" in client) return client.focus();
+      }
+      if (self.clients.openWindow) return self.clients.openWindow(target);
+    })()
+  );
+});
+
 self.addEventListener("fetch", (event) => {
   const request = event.request;
   // Só navegação, e só GET. Um POST de navegação (o formulário de

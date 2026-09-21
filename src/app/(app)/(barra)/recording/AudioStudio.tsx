@@ -19,6 +19,7 @@ import { pickMime } from "@/lib/audio-constraints";
 import { cn } from "@/lib/utils";
 import { useClockScope } from "./ClockScope";
 import { useAudioCapture, WAVE_BARS } from "./useAudioCapture";
+import { askRecordingNotificationPermission, useRecordingPresence } from "./useRecordingPresence";
 
 /**
  * O gravador do v2.
@@ -162,6 +163,25 @@ export function AudioStudio({ autoStart = false }: { autoStart?: boolean }) {
 
   useUnloadGuard(capturing || busy);
 
+  /**
+   * A gravação vista de FORA da aba: a notificação do sistema quando o app é
+   * minimizado, os controles da tela de bloqueio e a faixa silenciosa que
+   * impede o navegador de congelar a aba. Ver `useRecordingPresence`.
+   *
+   * O "retomar" de lá passa pela MESMA guarda do botão da tela: com as moedas
+   * no fim, a tela de bloqueio não pode religar um microfone que esta tela se
+   * recusa a religar.
+   */
+  useRecordingPresence({
+    active: capturing,
+    paused: state === "paused",
+    onPause: pause,
+    onResume: () => {
+      if (!depleted) resume();
+    },
+    onStop: () => void finish(),
+  });
+
   // O relógio corre gravando, congela na pausa e some ao voltar ao repouso.
   useEffect(() => {
     setRunning(state === "recording");
@@ -180,6 +200,10 @@ export function AudioStudio({ autoStart = false }: { autoStart?: boolean }) {
   });
 
   const begin = useCallback(async () => {
+    // O toque em "gravar" é o único gesto do fluxo com um porquê visível para
+    // pedir a permissão de notificar: a pessoa acabou de mandar gravar uma hora
+    // de pregação. Não esperamos a resposta, gravar não depende dela.
+    void askRecordingNotificationPermission();
     const picked = pickMime();
     const id = crypto.randomUUID();
     captureIdRef.current = id;

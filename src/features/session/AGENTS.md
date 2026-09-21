@@ -4,7 +4,8 @@ Tudo que pertence a uma sessão depois que ela existe: a leitura do resumo, o
 estudo, a importação do YouTube, os cartões da Biblioteca e a busca das listas.
 
 **O GRAVADOR não mora aqui.** Ele é `src/app/recording/`, e é uma tela só
-(`AudioStudio` + `useAudioCapture`). Ver `src/app/AGENTS.md`.
+(`AudioStudio` + `useAudioCapture` + `useRecordingPresence`). Ver
+`src/app/AGENTS.md`.
 
 **O que a gravação DEIXA, esse mora.** O áudio guardado no aparelho, a pipeline
 que o transforma em resumo e a fila que insiste por ele são desta pasta
