@@ -77,7 +77,8 @@ export function BibloHomeDock() {
 
   const runActions = useCallback(
     async (actions: BibloAction[], onStep: (label: string) => void) => {
-      let doc: BibloDoc | null = readWorkspace().doc;
+      const before: BibloDoc | null = readWorkspace().doc;
+      let doc: BibloDoc | null = before;
       let created = false;
       for (const action of actions) {
         onStep(ACTION_LABELS[action.tool]);
@@ -95,9 +96,23 @@ export function BibloHomeDock() {
         writeWorkspace(next);
         return next;
       });
-      // O acervo guardado no aparelho não conhece o documento que acabou de
-      // nascer, e a Biblioteca está bem atrás desta gaveta.
+      // O acervo guardado no aparelho está bem atrás desta gaveta, e as duas
+      // maneiras de ele ficar errado pedem remédios diferentes.
+      //
+      // **Nascer** exige a lista inteira de volta: o cartão novo não existe no
+      // cache, e não há como inventá-lo aqui sem repetir a forma que o servidor
+      // monta (a data agrupada, o modo, o trecho).
+      //
+      // **Mudar de TÍTULO** já existe, e um `invalidate` ali seria buscar o
+      // acervo inteiro para corrigir uma string. A escrita otimista é o mesmo
+      // caminho que renomear pelo `/summary` usa, e ela conserta o que estava
+      // simplesmente errado antes: pedir "muda o título para X" com o documento
+      // já criado deixava o cartão da Biblioteca com o nome antigo até alguém
+      // recarregar a página.
       if (created) void library.invalidate();
+      else if (doc && before && doc.title !== before.title) {
+        library.patch(doc.id, { title: doc.title });
+      }
     },
     [library]
   );
