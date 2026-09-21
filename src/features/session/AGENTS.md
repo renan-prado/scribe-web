@@ -58,7 +58,7 @@ pessoa quiser, aprofundar.
 | `components/DeepenButton.tsx` + `DeepeningMenu.tsx` | gerar e reprocessar o estudo |
 | `components/PassageVerses.tsx` + `RichText.tsx` | texto bíblico e menções dentro do parágrafo |
 | `components/CacheOwner.tsx` | de quem é o cache deste aparelho, e a faxina quando outra conta entra |
-| `lib/capture-store.ts` | o áudio guardado no IndexedDB: fragmentos, partes e a linha de cada gravação |
+| `lib/capture-store.ts` | o áudio guardado no IndexedDB: fragmentos, partes, os PEDAÇOS do envio e a linha de cada gravação |
 | `lib/capture-upload.ts` | sessão → transcrição → resumo, com a falha CLASSIFICADA |
 | `capture-queue.ts` | a fila que insiste pelas gravações guardadas, de qualquer tela |
 | `components/PendingCaptureRunner.tsx` | quem acorda a fila (mora no layout de `(barra)`) |
@@ -327,6 +327,30 @@ O conserto tem três partes, e nenhuma delas mora numa tela:
   em que nada acontece: a abertura do app, o evento `online`, a volta ao app e
   um relógio de 20s que só pergunta se já venceu a espera daquela gravação (ela
   cresce de 15s a 10min a cada falha).
+
+**O TAMANHO do POST é conta do cliente, e não um aviso na tela.** O gravador já
+corta a gravação em partes de ~7 MB enquanto grava, mas o corte educado (o que
+espera um silêncio) depende de um `requestAnimationFrame`, e o navegador PARA o
+`requestAnimationFrame` com a aba em segundo plano — que é exatamente o que quem
+apoia o celular no banco faz durante a pregação. A pregação de 40 minutos saía
+numa parte única, recusada com 413 no fim, e a pessoa lia "baixe o arquivo e nos
+avise" depois de ter gravado tudo.
+
+São duas defesas, e elas são independentes de propósito:
+
+- **No gravador**, `PART_HARD_MAX_BYTES` corta a parte de dentro do
+  `ondataavailable`, que é evento do `MediaRecorder` e continua chegando com a
+  aba escondida. Conserta a causa, e só vale para gravação nova.
+- **No envio**, `loadChunks` recorta a parte que não couber, na hora de enviar,
+  quando o tamanho já é fato e não previsão. Conserta também o que já está
+  guardado no aparelho. O corte é possível porque o PRIMEIRO fragmento de uma
+  parte é o que traz o cabeçalho do contêiner: prefixá-lo a qualquer corrida de
+  fragmentos devolve um arquivo que decodifica, sem reencodar nada no navegador.
+  Um 413 que ainda assim volte parte o pedaço em dois e continua (`splitChunk`),
+  sem custo — a rota recusa pelo tamanho antes de falar com o provedor.
+
+Daí `fatal` não falar mais de tamanho, e o aviso "ficou grande demais, baixe o
+arquivo e nos avise" ter saído do produto.
 
 **O áudio é apagado numa LINHA SÓ do app inteiro**, no `run()` da fila, depois
 de `ok: true`. Antes de o resumo existir, nada apaga nada.

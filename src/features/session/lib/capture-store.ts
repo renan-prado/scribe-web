@@ -53,8 +53,10 @@ const DB_VERSION = 1;
  *   espera crescente.
  * - `balance`: as moedas acabaram no meio do caminho. Retentar sozinho dá o
  *   mesmo resultado, depende de a pessoa recarregar; o áudio fica guardado.
- * - `fatal`: retentar dá o mesmo resultado para sempre (arquivo grande demais,
- *   áudio sem fala nenhuma). A única saída honesta é baixar o arquivo.
+ * - `fatal`: retentar dá o mesmo resultado para sempre (áudio sem fala nenhuma,
+ *   fragmentos que sumiram do disco). A única saída honesta é baixar o arquivo.
+ *   **Tamanho não cai mais aqui**: a gravação longa é cortada em pedaços na
+ *   hora de enviar, ver `loadChunks`.
  */
 export type CaptureFailure = "offline" | "server" | "balance" | "fatal";
 
@@ -209,12 +211,12 @@ export async function listCaptures(): Promise<CaptureMeta[]> {
 }
 
 /**
- * Remonta as partes: um `Blob` por parte, na ordem dos fragmentos.
+ * Os fragmentos de uma gravação, agrupados por parte e em ordem de sequência.
  *
  * O `getAll` sobre a chave composta já vem ordenado por `[captureId, part, seq]`,
- * então basta agrupar. Blob de blobs não copia bytes, o navegador só referencia.
+ * então basta agrupar.
  */
-export async function loadParts(captureId: string, mimeType: string): Promise<Blob[]> {
+async function loadFragmentsByPart(captureId: string): Promise<Blob[][]> {
   const db = await openDb();
   if (!db) return [];
   try {
@@ -231,12 +233,117 @@ export async function loadParts(captureId: string, mimeType: string): Promise<Bl
       list.push(r.blob);
       byPart.set(r.part, list);
     }
-    return [...byPart.keys()]
-      .sort((a, b) => a - b)
-      .map((p) => new Blob(byPart.get(p) ?? [], { type: mimeType }));
+    return [...byPart.keys()].sort((a, b) => a - b).map((p) => byPart.get(p) ?? []);
   } catch {
     return [];
   }
+}
+
+/**
+ * Remonta as partes: um `Blob` por parte, na ordem dos fragmentos.
+ *
+ * Blob de blobs não copia bytes, o navegador só referencia. É o arquivo que
+ * quem gravou baixa, e por isso continua sendo a parte INTEIRA: recortá-la
+ * aqui entregaria à pessoa pedaços que só a transcrição precisa.
+ */
+export async function loadParts(captureId: string, mimeType: string): Promise<Blob[]> {
+  const parts = await loadFragmentsByPart(captureId);
+  return parts.map((frags) => new Blob(frags, { type: mimeType }));
+}
+
+/**
+ * Um pedaço de áudio que cabe num POST de transcrição.
+ *
+ * `header` é o PRIMEIRO fragmento da parte, e ele existe aqui por um motivo de
+ * formato: num webm/mp4 gravado por `MediaRecorder`, só o fragmento inicial
+ * traz o cabeçalho do contêiner (faixas, codec, timescale). Os seguintes são
+ * continuação e, sozinhos, não decodificam. Prefixar o cabeçalho a qualquer
+ * corrida de fragmentos devolve um arquivo válido — que é o que torna possível
+ * fatiar uma gravação longa DEPOIS de ela ter sido gravada, sem reencodar nada
+ * no navegador de quem está com o dado móvel da igreja.
+ *
+ * O primeiro pedaço de cada parte já começa no cabeçalho, então nele `header` é
+ * `null`: prefixá-lo duas vezes é que daria arquivo inválido.
+ */
+export type CaptureChunk = {
+  header: Blob | null;
+  body: Blob[];
+};
+
+export function chunkBytes(chunk: CaptureChunk): number {
+  const head = chunk.header?.size ?? 0;
+  return chunk.body.reduce((sum, b) => sum + b.size, head);
+}
+
+/** Só os bytes de áudio novo, sem o cabeçalho repetido. É o que mede a fatia
+ *  de duração que cabe a este pedaço. */
+export function chunkBodyBytes(chunk: CaptureChunk): number {
+  return chunk.body.reduce((sum, b) => sum + b.size, 0);
+}
+
+export function chunkBlob(chunk: CaptureChunk, mimeType: string): Blob {
+  const pieces = chunk.header ? [chunk.header, ...chunk.body] : chunk.body;
+  return new Blob(pieces, { type: mimeType });
+}
+
+/**
+ * Parte um pedaço em dois, para quando o servidor recusar o tamanho mesmo
+ * depois do corte por bytes. `null` quer dizer que não há mais o que partir:
+ * um fragmento é a menor unidade que o gravador produziu, e quebrá-lo por
+ * bytes daria um arquivo que nenhum decodificador abre.
+ */
+export function splitChunk(chunk: CaptureChunk): [CaptureChunk, CaptureChunk] | null {
+  if (chunk.body.length < 2) return null;
+  const middle = Math.ceil(chunk.body.length / 2);
+  return [
+    { header: chunk.header, body: chunk.body.slice(0, middle) },
+    // A segunda metade não começa mais no cabeçalho da parte, então precisa
+    // carregá-lo junto — inclusive quando a primeira metade também precisava.
+    { header: chunk.header ?? chunk.body[0], body: chunk.body.slice(middle) },
+  ];
+}
+
+/**
+ * Corta a gravação guardada em pedaços que caibam em `maxBytes`.
+ *
+ * Uma parte que já cabe sai inteira, que é o caminho da esmagadora maioria das
+ * gravações. A que não cabe — a pregação de uma hora que o navegador deixou
+ * numa parte só porque a aba estava em segundo plano e o corte por silêncio
+ * nunca rodou — vira várias, cada uma com o cabeçalho na frente.
+ */
+export async function loadChunks(captureId: string, maxBytes: number): Promise<CaptureChunk[]> {
+  const parts = await loadFragmentsByPart(captureId);
+  const chunks: CaptureChunk[] = [];
+
+  for (const frags of parts) {
+    if (frags.length === 0) continue;
+    const total = frags.reduce((sum, b) => sum + b.size, 0);
+    if (total <= maxBytes) {
+      chunks.push({ header: null, body: frags });
+      continue;
+    }
+
+    const header = frags[0];
+    let body: Blob[] = [];
+    let bytes = 0;
+    let first = true;
+    for (const frag of frags) {
+      const overhead = first ? 0 : header.size;
+      // Um fragmento sozinho maior que o teto não tem como caber: ele vai assim
+      // mesmo, e a rota decide. Partir bytes de dentro dele daria lixo.
+      if (body.length > 0 && overhead + bytes + frag.size > maxBytes) {
+        chunks.push({ header: first ? null : header, body });
+        first = false;
+        body = [];
+        bytes = 0;
+      }
+      body.push(frag);
+      bytes += frag.size;
+    }
+    if (body.length > 0) chunks.push({ header: first ? null : header, body });
+  }
+
+  return chunks;
 }
 
 export async function deleteCapture(captureId: string): Promise<void> {

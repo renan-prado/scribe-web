@@ -48,6 +48,18 @@ const AUDIO_BITS_PER_SECOND = 24_000;
 const FRAGMENT_MS = 120_000;
 /** Teto por parte, com folga sobre os 8 MB de `/api/transcribe`. */
 const PART_MAX_BYTES = 7 * 1024 * 1024;
+/**
+ * O teto que não espera silêncio nenhum.
+ *
+ * O corte educado depende do `runLoop`, e o `runLoop` é um
+ * `requestAnimationFrame` — que o navegador PARA quando a aba vai para segundo
+ * plano, que é exatamente o que quem apoia o celular no banco faz durante a
+ * pregação. Sem este segundo teto, a parte crescia sem limite pela hora inteira
+ * e só era recusada no fim, na transcrição. Aqui o `ondataavailable` corta
+ * sozinho: ele é um evento do `MediaRecorder`, e continua chegando com a aba
+ * escondida.
+ */
+const PART_HARD_MAX_BYTES = 7.5 * 1024 * 1024;
 /** Depois do teto, quanto esperamos por um silêncio antes de cortar à força. */
 const PART_SILENCE_GRACE_MS = 30_000;
 const SILENCE_RMS = 0.01;
@@ -88,6 +100,9 @@ export function useAudioCapture({ onLevels, onFragment, startedAtRef }: Options)
   /** Quando passamos do teto e começamos a procurar um silêncio para cortar. */
   const rotateSinceRef = useRef<number | null>(null);
   const rotatingRef = useRef(false);
+  /** `rotatePart` nasce depois de `spawnRecorder` e chama de volta para ele.
+   *  A ref é o que quebra o ciclo sem duplicar a função. */
+  const rotatePartRef = useRef<() => void>(() => {});
 
   /** Tempo ativo acumulado até a última pausa. Enquanto grava, o tempo real é
    * `agora - startedAtRef`; pausado, é este valor. */
@@ -131,7 +146,11 @@ export function useAudioCapture({ onLevels, onFragment, startedAtRef }: Options)
       partBytesRef.current += event.data.size;
       onFragmentRef.current({ part, seq: seqRef.current, blob: event.data });
       seqRef.current += 1;
-      if (partBytesRef.current >= PART_MAX_BYTES && rotateSinceRef.current === null) {
+      if (partBytesRef.current >= PART_HARD_MAX_BYTES) {
+        // Segundo plano: o `runLoop` está parado e ninguém vai procurar o
+        // silêncio. Corta aqui mesmo. Ver `PART_HARD_MAX_BYTES`.
+        rotatePartRef.current();
+      } else if (partBytesRef.current >= PART_MAX_BYTES && rotateSinceRef.current === null) {
         rotateSinceRef.current = performance.now();
       }
     };
@@ -159,6 +178,7 @@ export function useAudioCapture({ onLevels, onFragment, startedAtRef }: Options)
     };
     rec.stop();
   }, [spawnRecorder]);
+  rotatePartRef.current = rotatePart;
 
   const runLoop = useCallback(() => {
     const analyser = analyserRef.current;

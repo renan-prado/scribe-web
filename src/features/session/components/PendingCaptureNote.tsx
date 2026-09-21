@@ -120,36 +120,47 @@ export function PendingCaptureNote({ capture, now }: Props) {
         {/* Os três botões, no tom do papel. Eles são pequenos porque o cartão é
             estreito (~230px na coluna mais larga do mural) e porque o caminho
             normal desta gravação é o Scriba resolvê-la sozinho: quem toca aqui
-            é quem não quer esperar, ou quem quer o arquivo na mão. */}
-        <div className="mt-4 flex items-center gap-2">
+            é quem não quer esperar, ou quem quer o arquivo na mão.
+
+            **Duas linhas, e não uma.** Os três lado a lado cabiam na coluna
+            larga do mural e não cabiam no celular: o rótulo "Tentar agora"
+            tem um comprimento fixo, e espremido entre dois botões redondos
+            ele estourava a largura do cartão e empurrava os ícones para fora.
+            Empilhar resolve pela ANATOMIA em vez de por um ponto de quebra —
+            a ação principal ocupa a linha inteira em qualquer largura, e as
+            duas de ícone dividem a linha de baixo em partes iguais. */}
+        <div className="mt-4 flex flex-col gap-2">
           <button
             type="button"
             disabled={uploading}
             onClick={() => void run(capture.id, { force: true })}
-            className="inline-flex flex-1 items-center justify-center gap-1.5 rounded-full bg-v2-note-lemon-ink/10 px-3 py-2 text-[11px] font-semibold transition-colors hover:bg-v2-note-lemon-ink/20 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-current disabled:opacity-40"
+            className="inline-flex w-full items-center justify-center gap-1.5 rounded-full bg-v2-note-lemon-ink/10 px-3 py-2 text-[11px] font-semibold transition-colors hover:bg-v2-note-lemon-ink/20 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-current disabled:opacity-40"
           >
             <RotateCw aria-hidden className="size-3.5" strokeWidth={2} />
             Tentar agora
           </button>
-          <button
-            type="button"
-            onClick={() => void downloadCapture(capture)}
-            aria-label="Baixar o áudio desta gravação"
-            title="Baixar o áudio"
-            className="inline-flex size-8 shrink-0 items-center justify-center rounded-full bg-v2-note-lemon-ink/10 transition-colors hover:bg-v2-note-lemon-ink/20 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-current"
-          >
-            <Download aria-hidden className="size-3.5" strokeWidth={2} />
-          </button>
-          <button
-            type="button"
-            disabled={uploading}
-            onClick={() => setConfirmDrop(true)}
-            aria-label="Apagar esta gravação"
-            title="Apagar"
-            className="inline-flex size-8 shrink-0 items-center justify-center rounded-full bg-v2-note-lemon-ink/10 text-v2-note-lemon-mute transition-colors hover:bg-v2-note-lemon-ink/20 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-current disabled:opacity-40"
-          >
-            <Trash2 aria-hidden className="size-3.5" strokeWidth={2} />
-          </button>
+
+          <div className="flex items-center gap-2">
+            <button
+              type="button"
+              onClick={() => void downloadCapture(capture)}
+              aria-label="Baixar o áudio desta gravação"
+              title="Baixar o áudio"
+              className="inline-flex h-8 flex-1 items-center justify-center rounded-full bg-v2-note-lemon-ink/10 transition-colors hover:bg-v2-note-lemon-ink/20 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-current"
+            >
+              <Download aria-hidden className="size-3.5" strokeWidth={2} />
+            </button>
+            <button
+              type="button"
+              disabled={uploading}
+              onClick={() => setConfirmDrop(true)}
+              aria-label="Apagar esta gravação"
+              title="Apagar"
+              className="inline-flex h-8 flex-1 items-center justify-center rounded-full bg-v2-note-lemon-ink/10 text-v2-note-lemon-mute transition-colors hover:bg-v2-note-lemon-ink/20 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-current disabled:opacity-40"
+            >
+              <Trash2 aria-hidden className="size-3.5" strokeWidth={2} />
+            </button>
+          </div>
         </div>
 
         <span className="mt-4 inline-flex items-center gap-1.5 text-[11px] font-light text-v2-note-lemon-mute">

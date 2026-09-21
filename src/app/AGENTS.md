@@ -893,7 +893,13 @@ cortes não se confundem:
   uns 46 minutos a 24 kbps. Ao encostar no teto o gravador é encerrado e outro
   começa (cabeçalho novo = arquivo válido por si), esperando um silêncio para a
   emenda não cair no meio de uma palavra. 40 minutos: uma parte, uma chamada.
-  60 minutos: duas.
+  60 minutos: duas. **Há um SEGUNDO teto que não espera silêncio nenhum**
+  (`PART_HARD_MAX_BYTES`): a procura pelo silêncio roda no
+  `requestAnimationFrame`, que o navegador PARA com a aba em segundo plano, e
+  sem ele a parte crescia a pregação inteira — para ser recusada no fim, na
+  transcrição. O teto duro corta de dentro do `ondataavailable`, que continua
+  chegando com a aba escondida. A rede de segurança do que já está guardado é
+  outra, e mora no envio (`loadChunks`, ver `src/features/session/AGENTS.md`).
 
 Verificado em navegador: o concatenado decodifica inteiro, um fragmento do meio
 sozinho não decodifica, um gravador novo no mesmo stream produz arquivo válido,
