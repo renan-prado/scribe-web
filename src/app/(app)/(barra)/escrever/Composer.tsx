@@ -1458,6 +1458,25 @@ function SlashMenu({
   // crescer afastando-se da linha em vez de cobri-la.
   const place = side === "up" ? "bottom-full mb-1" : "top-full mt-1";
 
+  /**
+   * O item focado pela SETA se mantém visível dentro da lista, que agora tem
+   * altura limitada (`useSlashPlacement`) e rolagem própria. Sem isto, andar
+   * com o teclado além do que cabe na tela move o cursor para um item que
+   * ninguém vê — a lista não acompanha, e a pessoa navega às cegas.
+   *
+   * `block: "nearest"` é o que faz o hover do MOUSE não disputar com isto: um
+   * item hoverado já está visível por definição (não dá para apontar o mouse
+   * para algo fora da área rolada), então "nearest" não move nada nesse caso —
+   * só a navegação por teclado, que pode apontar para fora, de fato rola.
+   *
+   * Os filhos do contêiner SÃO os botões, na mesma ordem de `options`: não há
+   * ref por item porque a lista inteira já é o `ref` da medição de posição.
+   */
+  useLayoutEffect(() => {
+    const item = ref.current?.children[cursor];
+    if (item instanceof HTMLElement) item.scrollIntoView({ block: "nearest" });
+  }, [cursor]);
+
   if (options.length === 0) {
     return (
       <div

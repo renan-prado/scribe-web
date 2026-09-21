@@ -464,14 +464,25 @@ Três coisas que não são detalhe:
   cursor. É o que permite ter um popover ancorado no caret sem medir geometria
   DENTRO de uma `textarea`, que é a única coisa da página cuja posição o DOM não
   expõe — a mesma razão pela qual o marca-texto não tem barra flutuante.
-- **Mas ele SOBE quando não cabe embaixo.** Abrir sempre para baixo é certo em
-  toda linha menos justamente na que mais recebe a barra, a última: escrever é
-  escrever para baixo, o cursor vive perto do rodapé da janela, e ali uma lista
-  de nove itens nasce inteira fora da tela — digita-se `/`, não se vê nada
-  acontecer, e conclui-se que o atalho não existe. O que se mede é a janela que
-  sobra abaixo da linha, uma vez, quando o menu monta (`useSlashSide`); não é
-  um ponto de quebra, porque a resposta depende da rolagem e do teclado do
-  celular, não da largura.
+- **Mas ele SOBE quando não cabe embaixo, e ENCOLHE quando não cabe em lugar
+  nenhum** (`useSlashPlacement`). Abrir sempre para baixo é certo em toda linha
+  menos justamente na que mais recebe a barra, a última: escrever é escrever
+  para baixo, o cursor vive perto do rodapé da janela, e ali uma lista de nove
+  itens nasce inteira fora da tela. A medida é contra o `visualViewport`, não
+  contra `window.innerHeight` — no modo padrão do Android o teclado NÃO encolhe
+  `innerHeight`, então medir com ele é achar que sobra espaço que o teclado já
+  comeu, e foi exatamente isso que cortava o menu no celular. Ela roda de novo
+  a cada `resize`/`scroll` do `visualViewport` enquanto o menu vive, porque o
+  teclado pode ainda estar animando ao abrir. E os DOIS lados clampam a própria
+  altura ao que sobrou (120 a 320px, com rolagem interna): "para cima" já
+  chegou a estourar o topo da tela por só comparar contra o espaço de baixo,
+  nunca contra o de cima.
+- **E o item focado pela SETA se mantém visível dentro dessa rolagem.** Com a
+  lista agora de altura limitada, navegar além do que cabe na tela move o
+  cursor para um item que ninguém vê, sem a lista acompanhar. Um
+  `scrollIntoView({ block: "nearest" })` a cada troca de `cursor` resolve os
+  dois gestos com a mesma linha: pelo teclado, que pode apontar para fora,
+  rola; pelo mouse, que só aponta para o que já está visível, não move nada.
 
 Escolher **SUBSTITUI** o parágrafo em vez de inserir acima, ao contrário do
 `+`: lá se aponta uma POSIÇÃO, aqui se diz o que a linha em que já se está É.
