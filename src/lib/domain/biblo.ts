@@ -109,15 +109,30 @@ export type BibloSurface = (typeof BIBLO_SURFACES)[number];
  * faria, e ganhamos a MESMA rede que o resto do contrato tem — ação
  * malformada é ação descartada, e a resposta continua chegando.
  *
- * ## As três
+ * ## As seis
  *
  * - `criarDocumento`: nasce um resumo escrito à mão (modo `manual`), com título
- *   e blocos. É a única que cria alguma coisa.
+ *   e blocos. É a única das TRÊS de documento que cria alguma coisa.
  * - `editarTitulo`: troca o título do documento desta conversa.
  * - `adicionarBlocoDeConteudo`: acrescenta blocos ao fim dele.
+ * - `iniciarGravacao`: leva para `/recording?auto=1` com o microfone já
+ *   ligado — o MESMO parâmetro que o "Gravar" do `CreateDock` usa, e pela
+ *   mesma razão: quem pediu já disse que quer gravar, um segundo toque para
+ *   confirmar cobraria duas vezes pela mesma decisão.
+ * - `importarVideoDoYoutube`: leva para `/importar`, preenchendo o campo com
+ *   o link quando a pessoa já disse qual é — o MESMO `?url=` que o
+ *   compartilhar-com-o-Scriba usa (`docs/youtube.md` §9). O botão de lá
+ *   continua sendo a única coisa que COBRA; este tool só abre a porta.
+ * - `navegarPara`: troca de tela sem executar nada. Só existem DOIS destinos
+ *   porque os outros três já têm ferramenta própria — gravar é
+ *   `iniciarGravacao`, importar é `importarVideoDoYoutube`, escrever é
+ *   `criarDocumento` — e duas portas para o mesmo lugar seriam a mesma
+ *   escolha feita duas vezes.
  *
- * As duas últimas só fazem sentido DEPOIS da primeira, e quem garante isso é o
- * cliente: sem documento em mãos, elas são descartadas com uma linha no log.
+ * As três de documento só fazem sentido a segunda e a terceira DEPOIS da
+ * primeira, e quem garante isso é o cliente: sem documento em mãos, elas são
+ * descartadas com uma linha no log. As três novas não têm essa dependência —
+ * gravar, importar e navegar não precisam de um documento na conversa.
  *
  * ## Por que `blocks` é uma LISTA
  *
@@ -147,6 +162,20 @@ export const BibloActionSchema = z.discriminatedUnion("tool", [
   z.object({
     tool: z.literal("adicionarBlocoDeConteudo"),
     blocks: BibloActionBlockList,
+  }),
+  z.object({
+    tool: z.literal("iniciarGravacao"),
+  }),
+  z.object({
+    tool: z.literal("importarVideoDoYoutube"),
+    /** O link, quando a pessoa já disse qual é. Sem ele a tela abre com o
+     * campo vazio, do mesmo jeito que abriria pelo `CreateDock`. */
+    url: z.string().trim().url().max(500).optional(),
+  }),
+  z.object({
+    tool: z.literal("navegarPara"),
+    /** Só os dois destinos sem ferramenta própria. Ver o cabeçalho acima. */
+    destino: z.enum(["home", "perfil"]),
   }),
 ]);
 

@@ -277,10 +277,17 @@ Se o que você respondeu não couber num desses, "suggestion" é null.`;
  * Porque ele só vale numa das duas superfícies. Dentro de um resumo há um
  * documento na tela e a porta para ele é a `suggestion`; na Biblioteca não há
  * documento nenhum, e uma sugestão de bloco não teria onde entrar. Enfiar as
- * três ferramentas no `BIBLO_SYSTEM_PROMPT` faria toda mensagem do produto
+ * seis ferramentas no `BIBLO_SYSTEM_PROMPT` faria toda mensagem do produto
  * pagar tokens de instrução para uma capacidade que aquela tela não sabe
  * executar — e, pior, faria o modelo OFERECER de vez em quando o que a tela
  * ignoraria em silêncio.
+ *
+ * As TRÊS últimas (`iniciarGravacao`, `importarVideoDoYoutube`,
+ * `navegarPara`) são o copiloto do Biblo — ele deixa de só falar sobre o
+ * Scriba e passa a MANOBRAR o Scriba. Elas moram no mesmo bloco que as três
+ * de documento pela mesma razão de sempre: só existem na Biblioteca, que é a
+ * tela de onde as três também partem (gravar, importar e escrever são as
+ * três portas do `CreateDock`).
  *
  * ## Onde ele entra
  *
@@ -301,11 +308,14 @@ export const BIBLO_TOOLS_BLOCK = `=== O QUE VOCÊ PODE FAZER AQUI, ALÉM DE RESP
 
 Esta conversa acontece na BIBLIOTECA, e não dentro de um texto. Não há resumo na tela, então não existe "suggestion" aqui: escreva SEMPRE "suggestion": null.
 
-No lugar dela você tem três ferramentas, no campo "actions". Ele é uma lista, quase sempre vazia.
+No lugar dela você tem seis ferramentas, no campo "actions". Ele é uma lista, quase sempre vazia.
 
   { "tool": "criarDocumento", "title": "...", "shortSummary": "...", "blocks": [ ... ] }
   { "tool": "editarTitulo", "title": "..." }
   { "tool": "adicionarBlocoDeConteudo", "blocks": [ ... ] }
+  { "tool": "iniciarGravacao" }
+  { "tool": "importarVideoDoYoutube", "url": "..." }   ← "url" é opcional, só quando ela já disse o link
+  { "tool": "navegarPara", "destino": "home" }   ← ou "perfil"
 
 "blocks" é uma lista dos mesmos blocos do resumo, e AQUI VOCÊ ESCREVE O TEXTO DELES (ao contrário da "suggestion", onde alguns vão vazios). Os tipos:
   { "type": "h1", "text": "um título de movimento" }
@@ -326,11 +336,16 @@ QUANDO USAR:
 - Ela PEDIU um texto ("me escreva um esboço sobre...", "monte um estudo de...", "cria um roteiro para..."): use "criarDocumento" com um documento DE VERDADE — título, alguns movimentos, parágrafos com conteúdo, as passagens que sustentam, uma conclusão. De 6 a 16 blocos é a faixa normal. Um documento de dois parágrafos não é um documento, é uma resposta de chat com um botão.
 - Ela pediu para mudar o nome do que você acabou de criar: "editarTitulo".
 - Ela pediu mais um trecho, um ponto a mais, um fecho: "adicionarBlocoDeConteudo".
-- **Qualquer outra coisa: "actions" é uma lista vazia.** Perguntar, explicar, conversar, discordar — nada disso cria documento nenhum.
+- Ela pediu para GRAVAR ("inicie uma gravação", "quero gravar um sermão", "me leva pra gravação"): "iniciarGravacao". Isso já liga o microfone, então só use quando o pedido for claro — não ofereça isso como sugestão dentro de uma resposta sobre outra coisa.
+- Ela pediu para IMPORTAR um vídeo do YouTube ("quero importar um vídeo", "importa esse link: ..."): "importarVideoDoYoutube", com "url" só quando ela colou ou ditou o link na própria mensagem.
+- Ela pediu para IR para outra tela ("me leva para os resumos", "abre meu perfil", "volta para a Biblioteca"): "navegarPara", com "destino" igual a "home" (a Biblioteca, o acervo de resumos) ou "perfil" (conta, saldo e plano). Não existe um terceiro destino: pedido de ir para a Bíblia ou para os estudos não tem tela própria para onde levar, responda em texto.
+- **Qualquer outra coisa: "actions" é uma lista vazia.** Perguntar, explicar, conversar, discordar — nada disso dispara ferramenta nenhuma.
 
-O QUE ESCREVER NA RESPOSTA QUANDO HOUVER AÇÃO: uma linha curta dizendo o que você fez, na voz de quem entrega ("Montei um esboço em quatro movimentos sobre o semeador."). Não repita na conversa o texto que você acabou de pôr no documento: ela vai abri-lo, e ler a mesma coisa duas vezes é o pior jeito de gastar a tela dela.
+O QUE ESCREVER NA RESPOSTA QUANDO HOUVER AÇÃO: uma linha curta dizendo o que você fez, na voz de quem entrega ("Montei um esboço em quatro movimentos sobre o semeador.", "Já vou te levar para a gravação.", "Abrindo a importação do vídeo."). Não repita na conversa o texto que você acabou de pôr no documento: ela vai abri-lo, e ler a mesma coisa duas vezes é o pior jeito de gastar a tela dela.
 
-"editarTitulo" e "adicionarBlocoDeConteudo" valem para o documento DESTA conversa. Se você ainda não criou nenhum e ela pede para acrescentar algo, crie: "criarDocumento" é o começo de tudo aqui.`;
+"editarTitulo" e "adicionarBlocoDeConteudo" valem para o documento DESTA conversa. Se você ainda não criou nenhum e ela pede para acrescentar algo, crie: "criarDocumento" é o começo de tudo aqui.
+
+"iniciarGravacao", "importarVideoDoYoutube" e "navegarPara" não dependem de documento nenhum, e podem vir na mesma resposta que qualquer uma das três de cima — mas cada pedido tem UMA ferramenta, nunca duas competindo pelo mesmo "levar para outro lugar".`;
 
 /**
  * O cabeçalho do contexto: o texto sobre o qual se conversa.

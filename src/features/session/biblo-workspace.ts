@@ -131,6 +131,9 @@ export const ACTION_LABELS: Record<BibloAction["tool"], string> = {
   criarDocumento: "O Biblo está criando o documento…",
   editarTitulo: "O Biblo está mudando o título…",
   adicionarBlocoDeConteudo: "O Biblo está acrescentando o conteúdo…",
+  iniciarGravacao: "Redirecionando para a gravação…",
+  importarVideoDoYoutube: "Abrindo a importação do vídeo…",
+  navegarPara: "Redirecionando…",
 };
 
 async function save(doc: BibloDoc): Promise<boolean> {
@@ -151,6 +154,29 @@ function titleFrom(blocks: SummaryBlock[]): string {
   return heading?.text.trim() || "Documento do Biblo";
 }
 
+/**
+ * Para as TRÊS ações que só navegam: a URL de destino, ou `null` quando a
+ * ação é uma das de documento. Pura e sem `fetch` — o `router.push` mora no
+ * componente, que é quem TEM um router; este arquivo não tem.
+ *
+ * `iniciarGravacao` usa o MESMO `?auto=1` do "Gravar" do `CreateDock`, e
+ * `importarVideoDoYoutube` o MESMO `?url=` do compartilhar-com-o-Scriba —
+ * ver `docs/youtube.md` §9. Duas gramáticas para "abrir esta tela já
+ * preenchida" seriam duas para aprender e duas para manter iguais.
+ */
+export function navigationTargetFor(action: BibloAction): string | null {
+  switch (action.tool) {
+    case "iniciarGravacao":
+      return "/recording?auto=1";
+    case "importarVideoDoYoutube":
+      return action.url ? `/importar?url=${encodeURIComponent(action.url)}` : "/importar";
+    case "navegarPara":
+      return action.destino === "perfil" ? "/profile" : "/home";
+    default:
+      return null;
+  }
+}
+
 export type ActionOutcome =
   | { ok: true; doc: BibloDoc; created: boolean }
   | { ok: false; reason: "save_failed" };
@@ -167,6 +193,12 @@ export type ActionOutcome =
  * **`editarTitulo` sem documento é a única que não tem para onde ir** e é
  * descartada com uma linha no log: renomear o que não existe não tem leitura
  * razoável nenhuma.
+ *
+ * **As três de NAVEGAÇÃO não passam por aqui.** Esta função só sabe salvar
+ * documento; `iniciarGravacao`, `importarVideoDoYoutube` e `navegarPara` são
+ * um `router.push`, e quem tem o router é o componente (ver
+ * `navigationTargetFor` e `BibloHomeDock`). Chamada com uma delas por engano,
+ * ela devolve `null` em vez de acessar um campo que não existe.
  */
 export async function runBibloAction(
   action: BibloAction,
@@ -192,6 +224,8 @@ export async function runBibloAction(
     if (!(await save(doc))) return { ok: false, reason: "save_failed" };
     return { ok: true, doc, created: false };
   }
+
+  if (action.tool !== "adicionarBlocoDeConteudo") return null;
 
   const base: BibloDoc = current ?? {
     id: crypto.randomUUID(),

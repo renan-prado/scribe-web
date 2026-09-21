@@ -2,7 +2,9 @@
 
 import { FileText, X } from "lucide-react";
 import Link from "next/link";
+import { useRouter } from "next/navigation";
 import { useCallback, useEffect, useState } from "react";
+import { toast } from "sonner";
 import { useBibloWriter } from "@/features/session/biblo-query";
 import {
   ACTION_LABELS,
@@ -10,6 +12,7 @@ import {
   type BibloWorkspace,
   EMPTY_WORKSPACE,
   ensureWorkspaceSession,
+  navigationTargetFor,
   readWorkspace,
   runBibloAction,
   writeWorkspace,
@@ -18,7 +21,10 @@ import { BibloDrawer } from "@/features/session/components/BibloDrawer";
 import { useLibraryWriter } from "@/features/session/query";
 import { useKeyboardInset } from "@/hooks/use-keyboard-inset";
 import type { BibloAction } from "@/lib/domain/biblo";
+import { createLogger } from "@/lib/log";
 import { BibloAvatar } from "@/shared/brand";
+
+const log = createLogger("biblo-home");
 
 /**
  * O Biblo na BIBLIOTECA, onde ele não conversa sobre um texto: ele ESCREVE um.
@@ -28,14 +34,23 @@ import { BibloAvatar } from "@/shared/brand";
  * Lá há um documento na tela, e a porta para ele é a `suggestion`: um bloco,
  * inserido onde o modelo apontou. Aqui não há documento nenhum, e uma sugestão
  * de bloco não teria onde entrar. No lugar dela vêm as FERRAMENTAS — criar um
- * documento, renomeá-lo, acrescentar conteúdo — pedidas ao modelo pelo
- * `BIBLO_TOOLS_BLOCK` e executadas AQUI, no cliente.
+ * documento, renomeá-lo, acrescentar conteúdo, gravar, importar do YouTube,
+ * navegar — pedidas ao modelo pelo `BIBLO_TOOLS_BLOCK` e executadas AQUI, no
+ * cliente.
  *
  * **Executar no cliente não é preguiça, é onde a permissão já existe.** Quem
  * escreve é `/api/sessions/written`, a mesma rota do editor, que confere dono
  * e passa pela RLS. A alternativa seria uma rota nova que escreve no acervo a
  * partir do que um modelo devolveu, o que é exatamente a rota que ninguém
  * quer ter.
+ *
+ * **As três últimas ferramentas não escrevem nada, só navegam** —
+ * `iniciarGravacao`, `importarVideoDoYoutube`, `navegarPara`. São um
+ * `router.push` cada, resolvido por `navigationTargetFor`
+ * (`biblo-workspace.ts`) e disparado aqui dentro de `runActions`, no MESMO
+ * laço que salva documento — uma ferramenta que estoura entra num `try`
+ * próprio e vira um toast, sem derrubar a resposta (que já foi paga) nem as
+ * ações seguintes da mesma mensagem.
  *
  * ## Duas sessões, e elas não se confundem
  *
@@ -57,6 +72,7 @@ export function BibloHomeDock() {
   const [thinking, setThinking] = useState(false);
   const [workspace, setWorkspace] = useState<BibloWorkspace>(EMPTY_WORKSPACE);
   const library = useLibraryWriter();
+  const router = useRouter();
   useKeyboardInset();
 
   // O `localStorage` só existe no cliente, e lê-lo durante o render faria o
@@ -82,14 +98,30 @@ export function BibloHomeDock() {
       let created = false;
       for (const action of actions) {
         onStep(ACTION_LABELS[action.tool]);
-        const outcome = await runBibloAction(action, doc);
-        // `null` é a ação que não tinha para onde ir (renomear sem documento);
-        // `ok: false` é o salvamento que falhou. Nos dois a conversa segue: a
-        // resposta do Biblo já está paga, e derrubá-la por causa de um POST
-        // seria cobrar duas vezes pela mesma pergunta.
-        if (!outcome?.ok) continue;
-        doc = outcome.doc;
-        created = created || outcome.created;
+        try {
+          // As três de navegação não salvam nada: é só um `router.push` para
+          // a tela certa, com o parâmetro certo. Ver `navigationTargetFor`.
+          const target = navigationTargetFor(action);
+          if (target) {
+            router.push(target);
+            continue;
+          }
+          const outcome = await runBibloAction(action, doc);
+          // `null` é a ação que não tinha para onde ir (renomear sem documento);
+          // `ok: false` é o salvamento que falhou. Nos dois a conversa segue: a
+          // resposta do Biblo já está paga, e derrubá-la por causa de um POST
+          // seria cobrar duas vezes pela mesma pergunta.
+          if (!outcome?.ok) continue;
+          doc = outcome.doc;
+          created = created || outcome.created;
+        } catch (error) {
+          // Uma ferramenta que estoura não pode levar a conversa junto: a
+          // resposta já foi paga e já está na tela, só a AÇÃO falhou. O
+          // toast avisa em vez de fingir que nada aconteceu — é o mesmo
+          // texto amigável de qualquer outro pedaço do produto que erra.
+          log.error("ação do Biblo falhou", { tool: action.tool, error: String(error) });
+          toast.error("Não consegui fazer isso agora. Tente novamente em instantes.");
+        }
       }
       setWorkspace((w) => {
         const next = { ...w, doc };
@@ -114,7 +146,7 @@ export function BibloHomeDock() {
         library.patch(doc.id, { title: doc.title });
       }
     },
-    [library]
+    [library, router]
   );
 
   const banner = workspace.doc ? (
