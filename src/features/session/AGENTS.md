@@ -282,9 +282,10 @@ exatamente o certo.
   `Ml` só aparece depois do número. Então elas exigem os dois-pontos e as outras
   64 não, o que é cirúrgico em vez de geral. O preço: "Os 3" e "Na 1" ficam
   texto, e quem quiser linká-los escreve "Oseias 3".
-- **Uma referência encadeada só liga a primeira.** Em "2Tm 1:5; 3:15", o "3:15"
-  fica texto: ele depende do livro da anterior, e herdar contexto entre dois
-  casamentos independentes é uma máquina de estado que este anotador não tem.
+- **Uma referência ENCADEADA liga no contexto da anterior.** Em "2Tm 1:5; 3:15",
+  o "3:15" herda o livro de "2Tm" e vira "2 Timóteo 3:15"; em "João 3:16, 17"
+  o "17" herda livro E capítulo e vira "João 3:17". Quem faz essa máquina de
+  estado pequena é `withChains`, em `annotate.ts` — ver o cabeçalho de lá.
 - **O casamento é exato**, acento e maiúscula inclusive. A entrada aqui é texto
   escrito por um modelo, e tolerância que não é necessária só compra falso
   positivo.

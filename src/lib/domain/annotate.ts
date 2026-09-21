@@ -60,6 +60,19 @@ import type { LexiconCategory, LexiconIndexEntry } from "@/lib/domain/lexicon";
  * expansão o link abriria e não acharia o texto, porque o lookup resolve nome
  * de livro, não sigla.
  *
+ * ## Referência ENCADEADA: "2Tm 1:5; 3:15"
+ *
+ * Depois de qualquer referência resolvida, `withChains` estica o casamento
+ * para o que vem colado logo em seguida por `;` ou `,` sem livro nenhum na
+ * frente: o `;` herda o LIVRO e troca de CAPÍTULO ("3:15" vira "2 Timóteo
+ * 3:15"), a `,` herda os DOIS e troca só o VERSÍCULO ("17" depois de "João
+ * 3:16" vira "João 3:17"). Uma cadeia inteira encadeia várias vezes
+ * ("16, 17; 4:1" são três referências a partir de uma âncora só), mas só
+ * anda enquanto o próximo caractere depois do delimitador for um número —
+ * "Gn 1:1; Ex 2:3" não é uma cadeia, é duas referências INDEPENDENTES, cada
+ * uma com o próprio livro, e a passada de cima já resolve as duas sozinha.
+ *
+
  * ## Por que não `\b`
  *
  * O `\b` do JavaScript é ASCII: em "José." a fronteira entre `é` e `.` não
@@ -241,6 +254,83 @@ function startsAtWordBoundary(text: string, index: number): boolean {
 
 type Match = { start: number; end: number; segment: AnnotatedSegment };
 
+/**
+ * `; 3:15` ou `, 17` logo depois de uma referência já resolvida.
+ *
+ * O DOIS-PONTOS decide o que falta: com ele é um CAPÍTULO novo, e só o
+ * LIVRO é herdado ("3:15" depois de "2Tm 1:5" vira "2 Timóteo 3:15"); sem
+ * ele é um VERSÍCULO novo do MESMO capítulo ("17" depois de "João 3:16"
+ * vira "João 3:17"). Os grupos: 1 é o prefixo (delimitador + espaço, que
+ * fica de FORA do casamento — ele continua sendo texto comum entre os dois
+ * links), 2 é sempre o primeiro número, 3 e 4 só existem com dois-pontos.
+ *
+ * Ancorada com `^` de propósito: ela roda contra `text.slice(cursor)`, não
+ * contra o texto inteiro, então não precisa (nem pode) ser `global`.
+ */
+const CHAIN_RE = new RegExp(
+  `^(\\s*[;,]\\s*)(\\d{1,3})(?:\\s*:\\s*(\\d{1,3})(?:\\s*[-–]\\s*(\\d{1,3}))?)?(?![${LETTER}0-9])`
+);
+
+/**
+ * "2 Timóteo 1:5" → `{ book: "2 Timóteo", chapter: 1 }`.
+ *
+ * Livro pode ter número no NOME ("2 Timóteo"), então o corte certo é o
+ * ÚLTIMO espaço antes de um número — daí o `.+?` não-guloso: ele tenta o
+ * corte mais curto primeiro, mas só o mais longo deixa `\d{1,3}` cair
+ * exatamente sobre o capítulo.
+ */
+function splitReference(reference: string): { book: string; chapter: number } | null {
+  const m = /^(.+?)\s+(\d{1,3})(?::\d.*)?$/.exec(reference);
+  return m ? { book: m[1], chapter: Number(m[2]) } : null;
+}
+
+/**
+ * Estica cada referência já resolvida com o que vem ENCADEADO logo depois
+ * dela. Só olha o texto IMEDIATAMENTE após o fim da anterior — nada de
+ * whitespace além do que o próprio delimitador consome — e para no
+ * primeiro ponto em que não há mais um número ali: é o que impede uma
+ * vírgula qualquer, três frases adiante, de virar referência.
+ *
+ * Antes disto, "2Tm 1:5; 3:15" perdia o segundo pedaço: "3:15" sozinho não
+ * casa com nenhuma das três regex acima (nenhuma tem livro), e sem
+ * contexto não havia como saber de qual livro ele era. Ver "Uma referência
+ * encadeada" em `src/features/session/AGENTS.md`.
+ */
+function withChains(text: string, hits: Match[]): Match[] {
+  const out: Match[] = [];
+  for (const hit of hits) {
+    out.push(hit);
+    if (hit.segment.kind !== "scripture") continue;
+    const ctx = splitReference(hit.segment.reference);
+    if (!ctx) continue;
+    const { book } = ctx;
+    let chapter = ctx.chapter;
+    let cursor = hit.end;
+    for (;;) {
+      const m = CHAIN_RE.exec(text.slice(cursor));
+      if (!m) break;
+      const [, prefix, first, second, third] = m;
+      const hasChapter = second !== undefined;
+      if (hasChapter) chapter = Number(first);
+      const verse = hasChapter ? second : first;
+      const verseEnd = hasChapter ? third : undefined;
+      const start = cursor + prefix.length;
+      const end = cursor + m[0].length;
+      out.push({
+        start,
+        end,
+        segment: {
+          kind: "scripture",
+          text: text.slice(start, end),
+          reference: `${book} ${chapter}:${verse}${verseEnd ? `-${verseEnd}` : ""}`,
+        },
+      });
+      cursor = end;
+    }
+  }
+  return out;
+}
+
 function scan(
   text: string,
   re: RegExp,
@@ -317,7 +407,7 @@ export function annotateText(text: string, entries: LexiconIndexEntry[] = []): A
     ...scan(text, AMBIGUOUS_SCRIPTURE_RE, toAbbrevSegment),
   ].filter((m) => !takenByName(m.start, m.end));
 
-  const scripture = [...byName, ...byAbbrev];
+  const scripture = withChains(text, [...byName, ...byAbbrev]);
 
   const covered = (from: number, to: number) => scripture.some((s) => from < s.end && to > s.start);
 
