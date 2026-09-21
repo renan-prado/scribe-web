@@ -1,4 +1,5 @@
 import "server-only";
+import { randomChapterReference } from "@/lib/bibles/books";
 import { parseVerseReference } from "@/lib/domain/reference";
 import type { SummaryPayload } from "@/lib/domain/summary";
 
@@ -29,11 +30,28 @@ const MAX_CHIPS = 5;
  */
 const GENERIC_CHIPS = ["Uma pergunta que incomode", "O que ler sobre isso"];
 
-const EMPTY_CHIPS = [
-  "Me ajuda a achar um tema?",
-  "Vamos falar sobre João 1?",
-  "O que a Bíblia diz sobre perdão?",
-];
+/**
+ * Os chips da folha em branco, com um capítulo SORTEADO no meio.
+ *
+ * Ele era uma string fixa ("Vamos falar sobre João 1?"), e sugestão fixa
+ * envelhece na segunda vez que alguém a vê: deixa de ser convite e vira parte
+ * da moldura, como um rótulo. Sorteado, a mesma pastilha propõe uma porta
+ * diferente a cada conversa, e a Bíblia inteira cabe num botão só.
+ *
+ * É uma FUNÇÃO, e não um array no topo do módulo: uma constante seria sorteada
+ * uma vez por processo, e todas as gavetas abertas naquele servidor até o
+ * próximo deploy ofereceriam o mesmo capítulo.
+ *
+ * O sorteio corre sobre os capítulos, não sobre os livros — ver
+ * `randomChapterReference`.
+ */
+function emptyChips(): string[] {
+  return [
+    "Me ajuda a achar um tema?",
+    `Vamos falar sobre ${randomChapterReference()}?`,
+    "O que a Bíblia diz sobre perdão?",
+  ];
+}
 
 /**
  * As referências citadas no texto, em ordem de aparição e sem repetir.
@@ -148,7 +166,7 @@ export function buildBibloOpening(input: {
       greeting: introduce
         ? `${hello} ${INTRODUCTION} Sobre qual assunto você gostaria de escrever?`
         : `${hello} Sobre qual assunto você gostaria de escrever?`,
-      chips: EMPTY_CHIPS,
+      chips: emptyChips(),
     };
   }
 

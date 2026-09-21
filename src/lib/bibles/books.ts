@@ -279,3 +279,42 @@ export function chapterCountFor(bookFullName: string): number {
   if (!abbrev) return 0;
   return CHAPTER_VERSE_COUNTS[abbrev]?.length ?? 0;
 }
+
+/**
+ * Um capítulo QUALQUER da Bíblia, sorteado: "Gênesis 5", "Tiago 2".
+ *
+ * ## Para que ele existe
+ *
+ * Para o chip de abertura do Biblo na folha em branco. Ele era uma string fixa
+ * — "Vamos falar sobre João 1?" — e uma sugestão fixa envelhece na segunda vez
+ * que alguém a vê: ela deixa de ser um convite e vira parte da moldura, como um
+ * rótulo. Sorteando, a mesma pastilha propõe uma porta diferente a cada
+ * conversa, e a Bíblia inteira passa a caber num botão só.
+ *
+ * ## O sorteio é sobre CAPÍTULOS, não sobre livros
+ *
+ * Um índice uniforme entre os 66 livros faria Obadias (1 capítulo) aparecer
+ * tanto quanto Salmos (150), o que não é "um capítulo qualquer da Bíblia": é
+ * "um livro qualquer, e depois um pedaço dele". Aqui o sorteio corre sobre os
+ * 1.189 capítulos do cânone, então cada um tem exatamente a mesma chance — que
+ * é o que a frase promete.
+ *
+ * `random` é injetável para o teste poder fixar o resultado; em produção
+ * ninguém passa nada.
+ */
+export function randomChapterReference(random: () => number = Math.random): string {
+  let total = 0;
+  for (const book of BOOK_CANON) total += CHAPTER_VERSE_COUNTS[book.abbrev]?.length ?? 0;
+  if (total === 0) return "João 1";
+
+  let target = Math.floor(random() * total);
+  for (const book of BOOK_CANON) {
+    const chapters = CHAPTER_VERSE_COUNTS[book.abbrev]?.length ?? 0;
+    if (target < chapters) return `${book.name} ${target + 1}`;
+    target -= chapters;
+  }
+  // Inalcançável: a soma acima é a mesma que a varredura consome. A saída
+  // existe porque um `random()` que devolvesse exatamente 1 cairia aqui, e um
+  // `undefined` no chip é pior que o primeiro capítulo do primeiro livro.
+  return `${BOOK_CANON[0].name} 1`;
+}
