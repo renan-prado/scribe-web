@@ -9,6 +9,12 @@ Gerado por `npm run release` a partir dos Conventional Commits. `feat` sobe o
 minor; o resto sobe o patch. Não edite à mão, a próxima execução escreve por
 cima do topo do arquivo.
 
+## 0.72.2, 2026-09-22, desde v0.72.1
+
+### Outros
+
+- **home:** remove as vistas lista e grade, deixa só o mural de post-its (`e52d14e`)
+
 ## 0.72.1, 2026-09-22, desde v0.72.0
 
 ### Correções
