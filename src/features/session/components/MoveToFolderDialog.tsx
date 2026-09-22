@@ -4,7 +4,7 @@ import { Check, Folder as FolderIcon } from "lucide-react";
 import { useState } from "react";
 import { toast } from "sonner";
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
-import type { Folder } from "@/lib/domain/folder";
+import { FOLDER_SWATCH_BG, type Folder } from "@/lib/domain/folder";
 import { cn } from "@/lib/utils";
 
 /**
@@ -25,13 +25,6 @@ export type MoveToFolderDialogProps = {
   folders: Folder[];
   currentFolderId: string | null;
   onMove: (folderId: string | null) => Promise<void> | void;
-};
-
-const SWATCH: Record<string, string> = {
-  mist: "bg-v2-note-mist",
-  sage: "bg-v2-note-sage",
-  slate: "bg-v2-note-slate",
-  lemon: "bg-v2-note-lemon",
 };
 
 export function MoveToFolderDialog({
@@ -87,7 +80,10 @@ export function MoveToFolderDialog({
                 icon={
                   <span
                     aria-hidden
-                    className={cn("size-2.5 shrink-0 rounded-full", SWATCH[f.color ?? "mist"])}
+                    className={cn(
+                      "size-2.5 shrink-0 rounded-full",
+                      FOLDER_SWATCH_BG[f.color ?? "mist"]
+                    )}
                   />
                 }
               />

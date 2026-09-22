@@ -25,6 +25,7 @@ import { useFolders } from "@/features/session/folders-query";
 import { requestLocationSuggestions, requestSpeakerSuggestions } from "@/features/session/lib/api";
 import { initialsOf } from "@/features/session/lib/text";
 import { useLibrarySync, useLibraryWriter } from "@/features/session/query";
+import { FOLDER_SWATCH_BG } from "@/lib/domain/folder";
 import type { SessionMode } from "@/lib/domain/session";
 import type { SummaryPayload } from "@/lib/domain/summary";
 import { cn } from "@/lib/utils";
@@ -155,6 +156,12 @@ export function SavedSessionView({
   // espera o dono do cache, então chamar aqui sem o diálogo aberto não custa
   // nada: a Biblioteca (se aberta antes) já deixou a lista pronta.
   const { data: folders } = useFolders();
+  // A pasta ATUAL, para a pastilha do cabeçalho (ver abaixo). `undefined`
+  // enquanto a lista de pastas ainda não chegou (primeira visita sem cache);
+  // a pastilha simplesmente não desenha nesse instante, e reaparece no quadro
+  // seguinte — o mesmo tipo de espera que o resto da tela já tolera em outros
+  // dados que vêm do cache do aparelho.
+  const currentFolder = folders?.find((f) => f.id === folderId) ?? null;
 
   const router = useRouter();
   const refreshCoins = useCoinsStore((s) => s.refresh);
@@ -410,6 +417,34 @@ export function SavedSessionView({
                 <Pencil className="ml-2 inline size-4 align-middle opacity-0 text-scriba-ink-mute transition-opacity group-hover:opacity-60" />
               </h1>
             </button>
+
+            {/* A MARCAÇÃO da pasta, só quando a sessão está em uma — sem
+                pasta não há pastilha nenhuma aqui, nunca "Sem pasta" escrito
+                por extenso. Ela é a mesma pastilha visual dos chips da
+                Biblioteca (o pontinho de `FOLDER_SWATCH_BG`), e o toque abre
+                o MESMO `MoveToFolderDialog` do menu de três pontinhos: duas
+                portas para o mesmo diálogo, uma para quem já sabe que quer
+                mudar de pasta, outra para quem só queria confirmar em qual
+                pasta está. */}
+            {currentFolder ? (
+              <button
+                type="button"
+                onClick={() => setMoveFolderOpen(true)}
+                className={cn(
+                  "group -mx-1 inline-flex w-fit items-center gap-1.5 rounded-full px-2 py-1 text-xs font-medium text-scriba-ink-soft outline-none transition-colors",
+                  "hover:bg-scriba-blue-soft/60 hover:text-scriba-ink focus-visible:ring-2 focus-visible:ring-ring/40"
+                )}
+              >
+                <span
+                  aria-hidden
+                  className={cn(
+                    "size-2 shrink-0 rounded-full",
+                    FOLDER_SWATCH_BG[currentFolder.color ?? "mist"]
+                  )}
+                />
+                {currentFolder.name}
+              </button>
+            ) : null}
 
             <div className="flex flex-col items-start gap-3 sm:flex-row sm:items-end sm:justify-between">
               <div className="flex min-w-0 flex-col gap-1">

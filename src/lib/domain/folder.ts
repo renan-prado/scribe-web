@@ -20,6 +20,20 @@ export function parseFolderColor(value: unknown): FolderColor {
 }
 
 /**
+ * A classe do PONTINHO de cada cor (`FolderChips`, `MoveToFolderDialog`, a
+ * marcação de pasta no `SavedSessionView`). Literal, não montada por
+ * template: o Tailwind só gera a regra de uma classe que ele consegue ler
+ * como string inteira em algum lugar do código, `` `bg-v2-note-${color}` ``
+ * não geraria nada.
+ */
+export const FOLDER_SWATCH_BG: Record<FolderColor, string> = {
+  mist: "bg-v2-note-mist",
+  sage: "bg-v2-note-sage",
+  slate: "bg-v2-note-slate",
+  lemon: "bg-v2-note-lemon",
+};
+
+/**
  * Uma pasta do usuário. Client-safe: atravessa a fronteira do mesmo jeito que
  * `SessionListItem` (ver `domain/session.ts`) — é o corpo de `GET /api/folders`
  * e o conteúdo do cache do aparelho (`features/session/folders-query.ts`).

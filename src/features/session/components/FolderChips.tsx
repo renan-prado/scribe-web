@@ -14,7 +14,7 @@ import { FolderDialog } from "@/features/session/components/FolderDialog";
 import { useFolders, useFolderWriter } from "@/features/session/folders-query";
 import { isSessionDrag, readSessionDragId } from "@/features/session/lib/folder-dnd";
 import { useLibraryWriter } from "@/features/session/query";
-import type { Folder, FolderColor } from "@/lib/domain/folder";
+import { FOLDER_SWATCH_BG, type Folder, type FolderColor } from "@/lib/domain/folder";
 import type { SessionListItem } from "@/lib/domain/session";
 import { cn } from "@/lib/utils";
 
@@ -166,7 +166,10 @@ export function FolderChips({ selectedFolderId, onSelect, sessions }: Props) {
             >
               <span
                 aria-hidden
-                className={cn("size-2.5 shrink-0 rounded-full", SWATCH[folder.color ?? "mist"])}
+                className={cn(
+                  "size-2.5 shrink-0 rounded-full",
+                  FOLDER_SWATCH_BG[folder.color ?? "mist"]
+                )}
               />
               <span className="max-w-[140px] truncate">{folder.name}</span>
               {count > 0 ? (
@@ -211,13 +214,6 @@ export function FolderChips({ selectedFolderId, onSelect, sessions }: Props) {
     </div>
   );
 }
-
-const SWATCH: Record<string, string> = {
-  mist: "bg-v2-note-mist",
-  sage: "bg-v2-note-sage",
-  slate: "bg-v2-note-slate",
-  lemon: "bg-v2-note-lemon",
-};
 
 /**
  * O "⋯" de cada pasta: editar (nome + cor) ou excluir. É a única "ação
