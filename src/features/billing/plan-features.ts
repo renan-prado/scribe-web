@@ -140,7 +140,6 @@ const BIBLO_FEATURE = FEATURES.biblo_chat.name;
  */
 const FREE_FEATURES: PlanFeature[] = [
   ...EDITOR_FEATURES,
-  { label: "Sem custo para sempre", included: true },
   ...AI_FEATURES,
   { label: "Créditos que renovam todo mês", included: false },
   {

@@ -138,15 +138,6 @@ Ele não fica dentro de `plans.ts` por causa de um ciclo: o nome da
 funcionalidade paga sai de `lib/entitlements/features.ts`, que importa
 `plans.ts`. `plan-features.ts` fica acima dos dois e lê os dois.
 
-**A lista abre pelo que é GRÁTIS, e isso é a estratégia escrita na tela.** As
-duas primeiras linhas dos três cards são `EDITOR_FEATURES` ("Editor manual
-ilimitado", "Todas as ferramentas de texto"), e o Gratuito ganha a terceira:
-"Sem custo para sempre". O card dele dizia "Editor inteligente e moderno", a
-mesma frase dos pagos — um adjetivo sobre uma ferramenta —, e com isso a tela de
-planos descrevia um produto que não é o nosso: um app de IA com amostra grátis.
-É o contrário. O editor manual é o produto e não acaba; a monetização mora
-inteira na IA, e quem escreve os próprios esboços nunca vai pagar nada.
-
 ⚠️ **"Todas as ferramentas de texto" quer dizer TODAS**: títulos, tópicos,
 marca-texto, passagem, citação, destaque, conclusão. No dia em que um bloco novo
 do editor nascer atrás de um `requireFeature`, esta linha passa a mentir — e é a
