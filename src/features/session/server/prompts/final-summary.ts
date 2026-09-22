@@ -49,6 +49,18 @@ Meta implícita: o sermão organizado deve manter algo entre 40% e 55% do "peso 
 O erro comum é entregar CURTO DEMAIS. Diante da dúvida entre um movimento a mais ou a menos, entre um parágrafo a mais ou a menos, ESCOLHA O MAIOR: desenvolva o argumento até o fim em vez de encerrá-lo na primeira frase que já dá a ideia. Ficar ABAIXO da faixa da categoria só se justifica quando a transcrição realmente não tem material, nunca por economia. Isso NÃO autoriza encher: parágrafo que repete outro, floreio, ou desenvolvimento que a fala não teve continuam proibidos pelo self-check.
 
 ═══════════════════════════════════════════════════════════════════
+TESTEMUNHOS E ILUSTRAÇÕES NUNCA SÃO CORTADOS (crítico)
+═══════════════════════════════════════════════════════════════════
+
+Se o pregador contou um TESTEMUNHO PESSOAL, uma experiência vivida, uma história de outra pessoa ou uma ilustração concreta, ela é PARTE DA MENSAGEM, não um enfeite descartável quando o espaço aperta. "Resumir" NUNCA significa reduzir a pregação a só os pontos conceituais e cortar a experiência que o próprio pregador viveu e narrou: quem ouviu a pregação sobre o Filho Pródigo e voltou a este resumo para reler o testemunho pessoal que o pregador contou no meio dela precisa ENCONTRÁ-LO aqui, com os detalhes concretos (quem, o quê, quando, o que sentiu) — não um "ele compartilhou uma experiência pessoal" genérico.
+
+Regras práticas:
+- Todo testemunho/experiência pessoal do pregador e toda ilustração/anedota que ele contou viram um bloco "example" (ou, quando integrados à explicação de um versículo, ficam dentro do "paragraph" que os cerca) — sempre, mesmo numa mensagem curta ou numa categoria de densidade menor. Eles não competem com a cota de blocos do movimento: um movimento com testemunho pode e deve ter um bloco a mais do que a mesma mensagem sem ele.
+- Diante da escolha entre economizar um parágrafo de desenvolvimento CONCEITUAL ou preservar um testemunho/ilustração contado, corte o parágrafo conceitual. O concreto (o que aconteceu, com quem, o que ele contou) é o que fica na memória de quem ouviu, e é o que este resumo existe para não deixar escapar.
+- O testemunho entra no LUGAR em que o pregador o contou na pregação, junto do argumento que ele ilustra — não movido para o fim nem agrupado à parte, o resumo segue a mesma linha do tempo em que a mensagem foi falada (início, meio e conclusão).
+- Antes de fechar o "blocks", confira: cada testemunho, história pessoal ou ilustração que a transcrição contém tem um bloco correspondente? Se um sumiu na condensação, ele volta, mesmo que outro bloco tenha de encolher para abrir espaço.
+
+═══════════════════════════════════════════════════════════════════
 TIPOS DE BLOCO PERMITIDOS
 ═══════════════════════════════════════════════════════════════════
 
@@ -139,7 +151,7 @@ Antes de emitir cada bloco:
 4) Este bloco ACRESCENTA algo além do que já foi dito em outro bloco?
 5) Para bibleQuote: tenho o texto real com certeza? Para quote: tenho autor + formulação real com certeza?
 
-Se qualquer resposta é "não sei" ou "talvez" → OMITA (ou reduza para forma mais neutra).
+Se qualquer resposta é "não sei" ou "talvez" → OMITA (ou reduza para forma mais neutra). Exceção: um testemunho ou ilustração que o pregador contou não passa por este teste de omitir — a pergunta 1) já responde "sim, nasce da transcrição", e a regra da seção TESTEMUNHOS E ILUSTRAÇÕES manda.
 
 ═══════════════════════════════════════════════════════════════════
 REGRAS FINAIS
@@ -149,5 +161,6 @@ REGRAS FINAIS
 - NÃO use markdown (nada de **, *, #, -, >).
 - NÃO repita literalmente o "shortSummary" no primeiro parágrafo.
 - Feche SEMPRE com "conclusion" sobre o tema dominante, incluindo o principal chamado/aplicação.
-- A ordem dos blocks segue a ordem real da mensagem, não reorganize.
+- A ordem dos blocks segue a ordem real da mensagem (início → desenvolvimento → conclusão), não reorganize.
+- NENHUM testemunho pessoal, história vivida ou ilustração contada pelo pregador fica de fora — ver TESTEMUNHOS E ILUSTRAÇÕES NUNCA SÃO CORTADOS acima.
 - NÃO emita nenhum bloco fora da lista permitida acima. Não há segunda chamada: o que sair daqui é o resumo inteiro.`;
