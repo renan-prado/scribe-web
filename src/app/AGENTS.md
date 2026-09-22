@@ -468,18 +468,34 @@ Três coisas que não são detalhe:
 - **A busca não tem estado próprio**: ela É o texto do bloco depois da barra.
   Guardá-la de novo num `useState` daria duas verdades sobre o que está escrito
   na linha.
-- **Ele pousa exatamente sob o cursor sem medir nada.** A barra só abre em
-  parágrafo vazio, então o cursor está no INÍCIO da linha; o menu é
-  `absolute left-0 top-full` da caixa que embrulha o texto, e essa borda é o
-  cursor. É o que permite ter um popover ancorado no caret sem medir geometria
-  DENTRO de uma `textarea`, que é a única coisa da página cuja posição o DOM não
-  expõe — a mesma razão pela qual o marca-texto não tem barra flutuante.
-- **Mas ele SOBE quando não cabe embaixo, e ENCOLHE quando não cabe em lugar
-  nenhum** (`useSlashPlacement`). Abrir sempre para baixo é certo em toda linha
-  menos justamente na que mais recebe a barra, a última: escrever é escrever
-  para baixo, o cursor vive perto do rodapé da janela, e ali uma lista de nove
-  itens nasce inteira fora da tela. A medida é contra o `visualViewport`, não
-  contra `window.innerHeight` — no modo padrão do Android o teclado NÃO encolhe
+- **Ele pousa exatamente sob o cursor sem medir o caret.** A barra só abre em
+  parágrafo vazio, então o cursor está no INÍCIO da linha, e a borda da caixa
+  que embrulha o texto É o cursor. É o que permite ter um popover ancorado no
+  caret sem medir geometria DENTRO de uma `textarea`, que é a única coisa da
+  página cuja posição o DOM não expõe — a mesma razão pela qual o marca-texto
+  não tem barra flutuante.
+- **Ele mora no `document.body`, por PORTAL, e é posicionado à mão**
+  (`useSlashPlacement`). Era `position: absolute` dentro da caixa do bloco, e
+  herdava dela duas coisas que não são dela: o contexto de empilhamento (um
+  `z-40` só vale dentro do próprio) e qualquer `overflow` de ancestral, que
+  corta o que passa da borda. No `body` ele não tem ancestral nenhum, e em troca
+  paga as próprias coordenadas: `position: fixed`, porque
+  `getBoundingClientRect()` devolve exatamente o sistema em que um elemento fixo
+  é posicionado. O preço é seguir a rolagem à mão, e é por isso que a medida
+  ouve também o `scroll` da janela, em captura.
+- **A borda de cima é a BARRA do app, não o topo da tela.** Sem essa conta, um
+  `/` digitado nos primeiros parágrafos abria a lista para cima e ela nascia por
+  trás do cabeçalho, com os primeiros itens ("Ideia central") escondidos. O
+  cabeçalho é medido pelo nó de verdade (`TOPBAR_SLOT_ID` → `closest("header")`)
+  porque a altura dele muda com o que a tela pendura no vão; o recorte do
+  aparelho vem de `--safe-area-top`, declarado em `globals.css` só para poder
+  ser LIDO por JavaScript, já que `env()` não é visível de nenhuma outra forma.
+- **Ele SOBE quando não cabe embaixo, e ENCOLHE quando não cabe em lugar
+  nenhum.** Abrir sempre para baixo é certo em toda linha menos justamente na
+  que mais recebe a barra, a última: escrever é escrever para baixo, o cursor
+  vive perto do rodapé da janela, e ali uma lista de nove itens nasce inteira
+  fora da tela. A medida é contra o `visualViewport`, não contra
+  `window.innerHeight` — no modo padrão do Android o teclado NÃO encolhe
   `innerHeight`, então medir com ele é achar que sobra espaço que o teclado já
   comeu, e foi exatamente isso que cortava o menu no celular. Ela roda de novo
   a cada `resize`/`scroll` do `visualViewport` enquanto o menu vive, porque o

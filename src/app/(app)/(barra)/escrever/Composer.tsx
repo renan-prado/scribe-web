@@ -2,7 +2,16 @@
 
 import { ChevronDown, ChevronUp, Eye, Highlighter, MapPin, Plus, Trash2, X } from "lucide-react";
 import { useRouter } from "next/navigation";
-import { Fragment, type ReactNode, useEffect, useLayoutEffect, useRef, useState } from "react";
+import {
+  type CSSProperties,
+  Fragment,
+  type ReactNode,
+  useEffect,
+  useLayoutEffect,
+  useRef,
+  useState,
+} from "react";
+import { createPortal } from "react-dom";
 import { BookGlyph } from "@/components/icons/BookGlyph";
 import { BibleDock } from "@/features/session/components/BibleDock";
 import { BibloDock } from "@/features/session/components/BibloDock";
@@ -24,6 +33,7 @@ import {
 } from "@/lib/domain/summary";
 import { cn } from "@/lib/utils";
 import { ScribaMark } from "@/shared/brand";
+import { TOPBAR_SLOT_ID } from "../components/AppHeaderShell";
 import { AutoTextarea } from "./AutoTextarea";
 import {
   BLOCK_OPTIONS,
@@ -1058,13 +1068,15 @@ export function Composer({
                   {/* `pl-8` = o disco (24) mais o vão (8), contados a partir do
                       recuo de 8 que o `ROW_LEADING_DISC` já pôs. O mesmo número
                       que a linha do fim alcança por `gap-2` depois do disco. */}
-                  {/* `relative` para o menu da barra pousar EXATAMENTE sob o
-                      cursor: esta caixa começa onde o texto começa, e o menu é
-                      `absolute left-0 top-full` dentro dela. A barra só abre num
-                      parágrafo VAZIO, então o cursor está no início da linha —
-                      que é esta borda. É por isso que aqui não há medição de
-                      geometria dentro da `textarea`, que é a única coisa da
-                      página cuja posição o DOM não expõe. */}
+                  {/* `relative` para o ÂNCORA do menu da barra cobrir
+                      EXATAMENTE a linha: esta caixa começa onde o texto começa,
+                      e o âncora é um `absolute inset-0` invisível dentro dela.
+                      A barra só abre num parágrafo VAZIO, então o cursor está
+                      no início da linha — que é esta borda. É por isso que aqui
+                      não há medição de geometria dentro da `textarea`, que é a
+                      única coisa da página cuja posição o DOM não expõe. O menu
+                      em si não mora aqui: ele sai por portal para o `body`, e
+                      as coordenadas saem deste âncora (ver `SlashMenu`). */}
                   <div className={cn("relative min-w-0", blank && "pl-8")}>
                     {body}
                     {slash?.index === i ? (
@@ -1369,14 +1381,38 @@ function DiscButton({
  *
  * A medida roda no MOMENTO em que o menu monta — que costuma ser o momento em
  * que o teclado já está aberto, já que a barra só se digita com o campo em
- * foco — e de novo a cada `resize`/`scroll` do `visualViewport` enquanto ele
- * vive: o teclado pode ainda estar animando ao abrir, e o iOS rola a página
- * para manter o cursor visível depois do primeiro quadro. O menu vive pouco,
- * só enquanto a linha está em foco, então ouvir os dois eventos custa pouco.
+ * foco — e de novo a cada `resize`/`scroll` do `visualViewport` **e da página**
+ * enquanto ele vive: o teclado pode ainda estar animando ao abrir, e o iOS rola
+ * a página para manter o cursor visível depois do primeiro quadro. O menu vive
+ * pouco, só enquanto a linha está em foco, então ouvir os eventos custa pouco.
  *
  * `useLayoutEffect` e não `useEffect`: medir depois da pintura faria a lista
  * aparecer embaixo e pular para cima num segundo quadro, que é pior que
  * qualquer dos dois lugares.
+ *
+ * ## Ele mora no `document.body`, e é posicionado à mão
+ *
+ * A lista era `position: absolute` dentro da caixa do bloco, e herdava dela
+ * duas coisas que não são dela: o contexto de empilhamento (um `z-40` só vale
+ * dentro do próprio contexto) e qualquer `overflow` de um ancestral, que corta
+ * o que passa da borda. Num portal para o `body` ela não tem ancestral nenhum,
+ * e em troca precisa das próprias coordenadas.
+ *
+ * `position: fixed` é o que casa com a medição: `getBoundingClientRect()`
+ * devolve coordenadas do viewport de LAYOUT, que é exatamente o sistema em que
+ * um elemento fixo é posicionado. O preço é seguir a rolagem à mão, e é por
+ * isso que a lista de eventos acima ganhou o `scroll` da janela — em captura,
+ * para pegar também um contêiner rolável no meio do caminho.
+ *
+ * ## A borda de cima não é o topo da tela
+ *
+ * É o que está por baixo da BARRA do app e do recorte do aparelho. Sem essa
+ * conta, um `/` digitado nos primeiros parágrafos abria a lista para cima e ela
+ * nascia por trás do cabeçalho, com os primeiros itens ("Ideia central") fora
+ * de alcance. A barra é medida pelo nó de verdade (`TOPBAR_SLOT_ID`), e não por
+ * um número escrito aqui, porque a altura dela muda com o que a tela pendura no
+ * vão; o recorte vem de `--safe-area-top`, que é `env(safe-area-inset-top)`
+ * declarado em `globals.css` só para poder ser LIDO por JavaScript.
  */
 /** A altura que a lista cheia pede. Ver `useSlashPlacement`. */
 const SLASH_MENU_MAX_HEIGHT = 320;
@@ -1385,59 +1421,126 @@ const SLASH_MENU_MAX_HEIGHT = 320;
 const SLASH_MENU_MIN_HEIGHT = 120;
 /** A folga entre a lista e a borda do viewport visível, no lado que sobrou. */
 const SLASH_MENU_EDGE_GAP = 12;
+/** O vão entre a lista e a linha que a abriu (o antigo `mt-1`/`mb-1`). */
+const SLASH_MENU_ANCHOR_GAP = 4;
+/** A largura cheia da lista (as antigas `20rem`). */
+const SLASH_MENU_WIDTH = 320;
 
-type SlashPlacement = { side: "up" | "down"; maxHeight: number };
+type SlashPlacement = { side: "up" | "down"; style: CSSProperties };
+
+/** Os cinco números que a medida produz. Comparados um a um porque o objeto é
+ *  sempre novo, e o que importa é se algum PIXEL mudou. */
+function sameStyle(a: CSSProperties, b: CSSProperties): boolean {
+  return (
+    a.left === b.left &&
+    a.top === b.top &&
+    a.bottom === b.bottom &&
+    a.width === b.width &&
+    a.maxHeight === b.maxHeight
+  );
+}
+
+/** O recorte do aparelho, em pixels. Ver o cabeçalho do `SlashMenu`. */
+function safeAreaTop(): number {
+  const raw = getComputedStyle(document.documentElement).getPropertyValue("--safe-area-top");
+  const value = Number.parseFloat(raw);
+  return Number.isFinite(value) ? value : 0;
+}
+
+/** Onde a barra do app termina, ou o topo do recorte quando ela já rolou para
+ *  fora da tela. É a `collisionBoundary` de cima. */
+function boundaryTop(viewportTop: number): number {
+  const header = document.getElementById(TOPBAR_SLOT_ID)?.closest("header");
+  const headerBottom = header ? header.getBoundingClientRect().bottom : Number.NEGATIVE_INFINITY;
+  return Math.max(viewportTop + safeAreaTop(), headerBottom);
+}
 
 /**
- * Para que lado o menu abre e a que altura ele encolhe, medido contra o que
- * está VISÍVEL — não contra `window.innerHeight`. Ver o cabeçalho do
- * `SlashMenu`, que tem o raciocínio inteiro (o defeito do teclado, e por que
- * os dois lados clampam a própria altura).
+ * Para que lado o menu abre, a que altura ele encolhe e em que coordenada ele
+ * pousa, medido contra o que está VISÍVEL — não contra `window.innerHeight`.
+ * Ver o cabeçalho do `SlashMenu`, que tem o raciocínio inteiro.
  */
-function useSlashPlacement(ref: React.RefObject<HTMLDivElement | null>): SlashPlacement {
+function useSlashPlacement(anchorRef: React.RefObject<HTMLElement | null>): SlashPlacement {
   const [placement, setPlacement] = useState<SlashPlacement>({
     side: "down",
-    maxHeight: SLASH_MENU_MAX_HEIGHT,
+    // Fora da tela até a primeira medida: um menu desenhado na quina superior
+    // esquerda por um quadro é mais visível que um menu que aparece pronto.
+    style: { position: "fixed", left: -9999, top: -9999, width: SLASH_MENU_WIDTH },
   });
   useLayoutEffect(() => {
-    const anchor = ref.current?.parentElement;
+    const anchor = anchorRef.current;
     if (!anchor) return;
     const measure = () => {
       const box = anchor.getBoundingClientRect();
       const vv = window.visualViewport;
-      const visibleBottom = vv ? vv.offsetTop + vv.height : window.innerHeight;
-      const visibleTop = vv?.offsetTop ?? 0;
-      const below = visibleBottom - box.bottom;
-      const above = box.top - visibleTop;
+      const viewportTop = vv?.offsetTop ?? 0;
+      const viewportLeft = vv?.offsetLeft ?? 0;
+      const viewportWidth = vv?.width ?? window.innerWidth;
+      const viewportHeight = vv?.height ?? window.innerHeight;
+
+      const top = boundaryTop(viewportTop);
+      const bottom = viewportTop + viewportHeight;
+      const gap = SLASH_MENU_ANCHOR_GAP + SLASH_MENU_EDGE_GAP;
+      const below = bottom - box.bottom - gap;
+      const above = box.top - top - gap;
       // Só sobe quando não cabe embaixo E há mais espaço em cima: numa janela
       // baixa demais para os dois lados, embaixo é o lugar em que a rolagem da
-      // PÁGINA alcança a lista; em cima ela ficaria presa contra o topo da
-      // tela sem para onde rolar.
+      // PÁGINA alcança a lista; em cima ela ficaria presa contra a barra sem
+      // para onde rolar.
       const side = below < SLASH_MENU_MAX_HEIGHT && above > below ? "up" : "down";
       // A lista se encolhe ao espaço que o lado escolhido tem, e nunca menos
       // que o mínimo: sem isto, "up" com pouco espaço em cima ainda estourava
       // o topo da tela — ele só comparava contra "embaixo", nunca contra o
       // que cabia de fato ali em cima.
-      const room = (side === "up" ? above : below) - SLASH_MENU_EDGE_GAP;
+      const room = side === "up" ? above : below;
       const maxHeight = Math.max(SLASH_MENU_MIN_HEIGHT, Math.min(SLASH_MENU_MAX_HEIGHT, room));
-      setPlacement({ side, maxHeight });
+
+      const width = Math.min(SLASH_MENU_WIDTH, viewportWidth - SLASH_MENU_EDGE_GAP * 2);
+      // A lista nasce alinhada ao começo do texto e recua se isso a jogaria
+      // para fora da borda direita do que está visível.
+      const left = Math.max(
+        viewportLeft + SLASH_MENU_EDGE_GAP,
+        Math.min(box.left, viewportLeft + viewportWidth - width - SLASH_MENU_EDGE_GAP)
+      );
+
+      const style: CSSProperties = { position: "fixed", left, width, maxHeight };
+      if (side === "up") {
+        // Ancorada pela BASE, para a lista crescer afastando-se da linha em vez
+        // de cobri-la. `bottom` de um elemento fixo conta do fim do viewport de
+        // LAYOUT, que é `innerHeight` — não do viewport visual.
+        style.bottom = window.innerHeight - box.top + SLASH_MENU_ANCHOR_GAP;
+      } else {
+        style.top = box.bottom + SLASH_MENU_ANCHOR_GAP;
+      }
+      // A rolagem dispara este cálculo a cada quadro, e um objeto novo por
+      // quadro remontaria o `style` de uma lista de sete itens sessenta vezes
+      // por segundo sem um pixel mudar de lugar.
+      setPlacement((cur) =>
+        cur.side === side && sameStyle(cur.style, style) ? cur : { side, style }
+      );
     };
     measure();
     // O teclado pode ainda estar abrindo no instante em que a barra é digitada
     // (a animação leva alguns quadros), e a rolagem que o iOS faz para manter
-    // o cursor visível também muda `offsetTop` depois do primeiro quadro. O
-    // menu vive pouco — só enquanto a linha está em foco —, então ouvir os
-    // dois eventos custa pouco e corrige o caso em que a medida do mount já
-    // nasceu velha.
+    // o cursor visível também muda `offsetTop` depois do primeiro quadro. Com
+    // o menu num portal, a rolagem da PÁGINA também precisa ser ouvida: nada
+    // mais o move junto com a linha que o abriu.
     window.visualViewport?.addEventListener("resize", measure);
     window.visualViewport?.addEventListener("scroll", measure);
+    window.addEventListener("resize", measure);
+    window.addEventListener("scroll", measure, true);
     return () => {
       window.visualViewport?.removeEventListener("resize", measure);
       window.visualViewport?.removeEventListener("scroll", measure);
+      window.removeEventListener("resize", measure);
+      window.removeEventListener("scroll", measure, true);
     };
-  }, [ref]);
+  }, [anchorRef]);
   return placement;
 }
+
+const SLASH_MENU_SHELL =
+  "z-50 rounded-2xl border border-scriba-hairline bg-scriba-surface shadow-[0_12px_32px_var(--scriba-shadow)]";
 
 function SlashMenu({
   options,
@@ -1452,81 +1555,77 @@ function SlashMenu({
   onHover: (cursor: number) => void;
   onPick: (pick: BlockPick) => void;
 }) {
+  // O ÂNCORA fica no lugar do menu antigo, invisível e sem alvo de toque: ele é
+  // só a caixa que diz onde a linha está. O menu em si sai pelo portal, e por
+  // isso precisa de alguém medindo por ele aqui dentro.
+  const anchorRef = useRef<HTMLSpanElement>(null);
   const ref = useRef<HTMLDivElement>(null);
-  const { side, maxHeight } = useSlashPlacement(ref);
-  // A caixa acompanha o lado: para cima ela é ancorada pela BASE, para a lista
-  // crescer afastando-se da linha em vez de cobri-la.
-  const place = side === "up" ? "bottom-full mb-1" : "top-full mt-1";
+  const { style } = useSlashPlacement(anchorRef);
 
   /**
-   * O item focado pela SETA se mantém visível dentro da lista, que agora tem
-   * altura limitada (`useSlashPlacement`) e rolagem própria. Sem isto, andar
-   * com o teclado além do que cabe na tela move o cursor para um item que
-   * ninguém vê — a lista não acompanha, e a pessoa navega às cegas.
+   * O item focado pela SETA se mantém visível dentro da lista, que tem altura
+   * limitada (`useSlashPlacement`) e rolagem própria. Sem isto, andar com o
+   * teclado além do que cabe na tela move o cursor para um item que ninguém vê
+   * — a lista não acompanha, e a pessoa navega às cegas.
    *
    * `block: "nearest"` é o que faz o hover do MOUSE não disputar com isto: um
    * item hoverado já está visível por definição (não dá para apontar o mouse
    * para algo fora da área rolada), então "nearest" não move nada nesse caso —
    * só a navegação por teclado, que pode apontar para fora, de fato rola.
    *
-   * Os filhos do contêiner SÃO os botões, na mesma ordem de `options`: não há
-   * ref por item porque a lista inteira já é o `ref` da medição de posição.
+   * Os filhos do contêiner SÃO os botões, na mesma ordem de `options`.
    */
   useLayoutEffect(() => {
     const item = ref.current?.children[cursor];
     if (item instanceof HTMLElement) item.scrollIntoView({ block: "nearest" });
   }, [cursor]);
 
-  if (options.length === 0) {
-    return (
+  const menu =
+    options.length === 0 ? (
+      <div data-slash-menu style={style} className={cn(SLASH_MENU_SHELL, "px-3 py-2.5")}>
+        <p className="text-scriba-ink-mute text-xs">Nada com “{query}”.</p>
+      </div>
+    ) : (
       <div
         ref={ref}
         data-slash-menu
-        className={cn(
-          "absolute left-0 z-40 w-[min(20rem,calc(100vw-3rem))] rounded-2xl border border-scriba-hairline bg-scriba-surface px-3 py-2.5 shadow-[0_12px_32px_var(--scriba-shadow)]",
-          place
-        )}
+        style={style}
+        className={cn(SLASH_MENU_SHELL, "flex flex-col gap-0.5 overflow-y-auto p-1.5")}
       >
-        <p className="text-scriba-ink-mute text-xs">Nada com “{query}”.</p>
+        {options.map((o, i) => (
+          <button
+            key={o.type}
+            type="button"
+            // `onMouseDown` com `preventDefault`, e não `onClick`: um clique tira
+            // o foco da `textarea` antes de o handler rodar, e sem o foco o
+            // `onBlur` do bloco já fechou este menu — o toque cairia no vazio.
+            onMouseDown={(e) => {
+              e.preventDefault();
+              onPick(o.type);
+            }}
+            onMouseEnter={() => onHover(i)}
+            className={cn(
+              "flex w-full items-center gap-2.5 rounded-xl px-2.5 py-2 text-left transition-colors",
+              i === cursor ? "bg-scriba-blue-soft text-scriba-blue-ink" : "text-scriba-ink-soft"
+            )}
+          >
+            <span className="flex size-5 shrink-0 items-center justify-center">{o.icon}</span>
+            <span className="min-w-0 flex-1">
+              <span className="block truncate font-medium text-xs">{o.label}</span>
+              <span className="block truncate text-[11px] text-scriba-ink-mute">{o.hint}</span>
+            </span>
+          </button>
+        ))}
       </div>
     );
-  }
 
   return (
-    <div
-      ref={ref}
-      data-slash-menu
-      style={{ maxHeight }}
-      className={cn(
-        "absolute left-0 z-40 flex w-[min(20rem,calc(100vw-3rem))] flex-col gap-0.5 overflow-y-auto rounded-2xl border border-scriba-hairline bg-scriba-surface p-1.5 shadow-[0_12px_32px_var(--scriba-shadow)]",
-        place
-      )}
-    >
-      {options.map((o, i) => (
-        <button
-          key={o.type}
-          type="button"
-          // `onMouseDown` com `preventDefault`, e não `onClick`: um clique tira
-          // o foco da `textarea` antes de o handler rodar, e sem o foco o
-          // `onBlur` do bloco já fechou este menu — o toque cairia no vazio.
-          onMouseDown={(e) => {
-            e.preventDefault();
-            onPick(o.type);
-          }}
-          onMouseEnter={() => onHover(i)}
-          className={cn(
-            "flex w-full items-center gap-2.5 rounded-xl px-2.5 py-2 text-left transition-colors",
-            i === cursor ? "bg-scriba-blue-soft text-scriba-blue-ink" : "text-scriba-ink-soft"
-          )}
-        >
-          <span className="flex size-5 shrink-0 items-center justify-center">{o.icon}</span>
-          <span className="min-w-0 flex-1">
-            <span className="block truncate font-medium text-xs">{o.label}</span>
-            <span className="block truncate text-[11px] text-scriba-ink-mute">{o.hint}</span>
-          </span>
-        </button>
-      ))}
-    </div>
+    <>
+      <span ref={anchorRef} aria-hidden className="pointer-events-none absolute inset-0 block" />
+      {/* Sem guarda de `typeof document`: este menu só existe depois de alguém
+          digitar uma barra, e digitar é coisa que não acontece no servidor. */}
+      {createPortal(menu, document.body)}
+    </>
   );
 }
 

@@ -197,6 +197,13 @@
 
 :root {
   color-scheme: dark;
+  /* O recorte do aparelho, exposto como custom property SÓ para poder ser LIDO
+     por JavaScript: `env()` não é visível de nenhuma outra forma, e o menu da
+     barra do `/escrever` precisa do número para não abrir por baixo da barra de
+     status (ver `useSlashPlacement`). Nenhum `className` consome este token —
+     quem quer o respiro continua escrevendo `pt-[env(safe-area-inset-top)]`,
+     que é o que o layout do `(app)` faz. */
+  --safe-area-top: env(safe-area-inset-top, 0px);
   --background: #212121;
   --foreground: #F5F5F5;
   --card: #2F3035;
