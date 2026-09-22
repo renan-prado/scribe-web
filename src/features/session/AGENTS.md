@@ -72,9 +72,9 @@ pessoa quiser, aprofundar.
 | `components/PendingCaptures.tsx` + `PendingCaptureNote.tsx` | o bloco e o cartão do que ainda não subiu |
 | `query.ts` | a Biblioteca guardada no aparelho: leitura, escrita otimista e o conserto do atraso |
 | `folders-query.ts` | as PASTAS guardadas no aparelho, mesmo desenho de `query.ts` |
-| `components/FolderChips.tsx` | a fileira de pastas da Biblioteca: navegar, criar, editar, excluir, soltar um cartão |
+| `components/FolderGrid.tsx` | a grade de pastas de um nível da Biblioteca: navegar, criar, editar, mover, excluir, soltar |
 | `components/FolderDialog.tsx` + `DeleteFolderDialog.tsx` + `MoveToFolderDialog.tsx` | criar/editar, excluir (com o destino do conteúdo) e mover uma sessão só |
-| `lib/folder-dnd.ts` | o `dataTransfer` de tipo próprio do arrastar-e-soltar |
+| `lib/folder-dnd.ts` | os dois `dataTransfer` de tipo próprio do arrastar-e-soltar (sessão e pasta) |
 | `hooks/useCoinTick.ts` | o débito por minuto, durante a gravação |
 | `recording-store.ts` | um booleano: há gravação viva nesta aba? |
 | `server/final-summary.ts` | a chamada única que vira o resumo |
@@ -711,10 +711,10 @@ teria onde escrever.
 
 ## Pastas
 
-`folders` (migração 0068) e `sessions.folder_id`, nullable — uma sessão vive em
-NO MÁXIMO uma pasta, e sem pasta continua sendo o estado padrão (a "raiz").
-`GET/POST /api/folders` e `PATCH/DELETE /api/folders/:id`, mais um `folderId`
-a mais no `PATCH /api/sessions/:id` de sempre.
+`folders` (migrações 0068 e 0069) e `sessions.folder_id`, nullable — uma sessão
+vive em NO MÁXIMO uma pasta, e sem pasta continua sendo o estado padrão (a
+"raiz"). `GET/POST /api/folders` e `PATCH/DELETE /api/folders/:id`, mais um
+`folderId` a mais no `PATCH /api/sessions/:id` de sempre.
 
 **A pasta que uma sessão aponta precisa ser DO MESMO DONO, e isso é RLS, não
 a rota.** `sessions_insert_own`/`sessions_update_own` (migração 0068) levam um
@@ -724,37 +724,135 @@ no `with check` — a mesma classe de furo fechada em `session_deepenings` na
 rota confere de novo (`getFolder` antes do PATCH) só para devolver
 `folder_not_found` em vez do erro cru do Postgres.
 
-**Apagar uma pasta não apaga o conteúdo por padrão.** `folder_id` é
+### Três níveis, e o teto é do BANCO
+
+`folders.parent_id` (migração 0069), com profundidade máxima 3 garantida pelo
+gatilho `folders_tree` — não por um `if` no TypeScript, que valeria só para o
+caminho que alguém lembrou de proteger. Ele recusa três coisas: passar de três
+níveis (contando a corrente de pais **e** a altura da subárvore, porque mover
+uma pasta move as filhas com ela), ciclo, e pai de outro dono.
+`MAX_FOLDER_DEPTH` em `lib/domain/folder.ts` é o mesmo número, e serve só para
+a tela esconder "Nova pasta" no último nível em vez de oferecer um gesto que
+vai falhar.
+
+**Por que TRÊS.** Uma árvore sem limite pede uma tela que navegue árvore
+(recolher, expandir, arrastar para dentro de um nó fechado), e o produto é um
+mural de cartões. Com três, o caminho inteiro cabe numa migalha de pão de uma
+linha ("Biblioteca › 2026 › Romanos"), que é o que a tela já desenha.
+
+**O nome é único DENTRO DA MÃE**, não no acervo (o índice da 0069 troca o da
+0068). "Romanos" em 2025 e "Romanos" em 2026 são duas pastas legítimas. O
+`coalesce(parent_id, <uuid nil>)` do índice existe porque dois `null` são
+valores DISTINTOS num índice único, e sem ele as pastas de raiz deixariam de
+ser comparadas entre si.
+
+**A policy de `folders` usa `parent_id in (select p.id …)`, e NÃO
+`exists (… where p.id = parent_id)`.** A forma da 0068 funciona para
+`sessions` porque a subconsulta lê OUTRA tabela; aqui ela lê a MESMA, e
+`parent_id` sem qualificação é resolvido no escopo mais interno — vira
+`p.parent_id`, a condição fica `p.id = p.parent_id`, e a policy recusa toda
+subpasta, inclusive as legítimas. Foi medido em dev antes de a migração sair
+de lá. O cabeçalho da 0069 tem o parágrafo inteiro.
+
+**Apagar uma pasta apaga as SUBPASTAS, sempre.** `parent_id` é
+`on delete cascade`, e não há "apagar esta e manter as filhas" — uma subpasta
+sem mãe não teria por onde ser alcançada na tela. Por isso o
+`DeleteFolderDialog` AVISA quantas somem, em vez de oferecer uma terceira
+opção.
+
+**Apagar uma pasta não apaga o CONTEÚDO por padrão.** `folder_id` é
 `on delete set null`: apagar a linha da pasta já solta as sessões para a raiz
-sozinho, sem UPDATE nenhum. "Excluir também as sessões" é o caminho OPOSTO, e
-por isso pede a escolha explícita no `DeleteFolderDialog` — apagar sessão é
-raro e caro de desfazer, mover para a raiz não perde nada.
+sozinho, sem UPDATE nenhum, e vale igual para as que estavam nas subpastas.
+"Excluir também as sessões" é o caminho OPOSTO, e por isso pede a escolha
+explícita — apagar sessão é raro e caro de desfazer, mover para a raiz não
+perde nada. **O alcance dessa opção é a SUBÁRVORE**, não a pasta clicada: um
+`.eq("folder_id", id)` deixaria intacto justamente o conteúdo das subpastas
+que o mesmo gesto acabou de apagar.
+
+### A tela: cartões, não pastilhas
+
+`FolderGrid` desenha as pastas de UM nível como cartões numa grade, sob um
+`<h2>` "Pastas" que é o mesmo cabeçalho de "Este mês". Ela substituiu o
+`FolderChips`, uma fileira de pastilhas arredondadas acima dos meses, e o
+problema dela não era feiura, era PERTENCIMENTO: a Biblioteca é uma sequência
+de seções com título e cartões embaixo, e a fileira era a única coisa da tela
+que não era nem título nem cartão. Cartão e cabeçalho fazem de pastas uma
+seção da lista em vez de uma barra de ferramentas antes dela — e o cartão tem
+onde dizer quantos resumos e quantas subpastas há dentro.
+
+**A seção fica ABAIXO do seletor de vista**, não no topo da página. Lá em cima,
+a primeira coisa da primeira tela do app passava a ser a organização do acervo,
+e não o acervo. O seletor não governa esta seção (uma pasta não tem post-it nem
+linha) e é a única que ele não alcança: ele é sobre a vista das SESSÕES.
+
+**O ÍCONE de pasta é o que torna o cartão legível**, e a cor da pasta é a TINTA
+dele (`FOLDER_ICON_INK`), não um segundo objeto na linha. Um pontinho colorido
+ao lado de um nome diz "isto tem uma cor", não "isto é uma pasta".
+
+**Dentro de uma pasta a página ganha TÍTULO** (`LibraryBrowser`), com a migalha
+de pão acima. Ele existe porque o nome da tela mora na barra do topo, e lá ele
+é "Biblioteca" em toda navegação — a barra é do LAYOUT do segmento e nem
+poderia saber qual pasta está aberta, que vem de um `searchParams` lido só pela
+página. **A migalha NAVEGA e o título INFORMA**: o último degrau da migalha não
+é botão justamente porque ele é o título logo abaixo. Na raiz não há título, a
+barra já o diz.
+
+**Pasta NÃO tem escolha de cor**, e o `FolderDialog` é um campo de texto e
+mais nada. Ele teve um seletor de quatro faces (as do post-it) e ele saiu: a
+pasta não mora num mural de cores sorteadas, mora numa grade de cartões
+cinzas iguais, onde a cor entrava só como a tinta de um ícone de 20px — quatro
+opções compravam um enfeite e cobravam um passo, no único diálogo do produto
+que existe para receber uma palavra e sair da frente.
+
+Duas consequências:
+
+- **`folders.color` continua no banco** (0068) e a API continua aceitando o
+  campo, opcional. Nada na tela o manda; toda pasta nova nasce `null` e
+  `FOLDER_ICON_INK[color ?? "mist"]` pinta o ícone. É o seam por onde a cor
+  volta se um dia ela tiver trabalho a fazer, e não vale uma migração para
+  derrubar.
+- **O caso do `slate` deixou de existir por não ter mais onde aparecer.** Ele
+  é `#2F3035`, exatamente `--v2-card` e `bg-popover`, e como pastilha de 28px
+  dentro do diálogo lia como um buraco em vez de uma opção. A primeira
+  correção foi um fio de borda (`ring-1 ring-white/20`, o recurso que o
+  post-it escuro usa); a correção da correção foi tirar o seletor. Ele sobrevive
+  em `FOLDER_ICON_INK`, apontando para `--v2-note-slate-mute`, só para a linha
+  antiga que estiver gravada assim — como TINTA, `--v2-note-slate` seria o
+  próprio cinza do cartão e o ícone não apareceria.
+
+### Mover: duas portas, nenhuma no cartão da sessão
 
 **Não existe um menu de três pontinhos no CARTÃO da Biblioteca, de propósito**
-(ver o cabeçalho de `PostItNote`), e "mover para pasta" não é exceção a essa
-regra — são DUAS portas, nenhuma delas um botão dentro do cartão:
+(ver o cabeçalho de `PostItNote`), e "mover para pasta" não é exceção:
 
-- **Arrastar** (`lib/folder-dnd.ts`), no desktop: cada cartão é `draggable`, e
-  cada chip de `FolderChips` é alvo de `drop`. Um `dataTransfer` de tipo
-  próprio (`application/x-scriba-session-id`) e não o `text/plain` que um
-  `<a>` carregaria sozinho, para que soltar um cartão fora de uma pasta não
-  vire "abrir link" em silêncio.
+- **Arrastar** (`lib/folder-dnd.ts`), no desktop. São DOIS MIME próprios, e
+  serem dois é o que permite ao mesmo alvo fazer coisas diferentes com cada
+  carga: `application/x-scriba-session-id` move a SESSÃO,
+  `application/x-scriba-folder-id` move a PASTA para dentro da outra. Tipos
+  inventados e não o `text/plain` que um `<a>` carregaria sozinho, para que
+  soltar um cartão fora de uma pasta não vire "abrir link" em silêncio.
 - **`MoveToFolderDialog`**, aberto pelo item "Mover para pasta" do
-  `SessionMenu` de uma sessão já aberta (`/summary/:id`). É a via de TECLADO
-  e de CELULAR que o arrastar não cobre — o requisito de acessibilidade do
-  sistema de pastas não é um segundo desenho do arrastar, é este diálogo.
+  `SessionMenu` de uma sessão já aberta (`/summary/:id`), e "Mover para a
+  raiz" no "⋯" de uma subpasta. É a via de TECLADO e de CELULAR que o
+  arrastar não cobre — o requisito de acessibilidade do sistema de pastas não
+  é um segundo desenho do arrastar, são estes dois.
 
-**A cor de pasta é FECHADA em quatro valores**, os MESMOS tokens dos post-its
-sorteados (`--v2-note-*`, ver `FOLDER_COLORS` em `lib/domain/folder.ts`) —
-"nada de cor literal em `className`" (`src/shared/AGENTS.md`) vale para pasta
-como para qualquer outro pixel, e uma paleta própria duplicaria a do mural por
-nenhum ganho.
+**No diálogo a árvore aparece INTEIRA, com recuo por nível**
+(`flattenFolderTree`), ao contrário da grade, que mostra um nível e navega para
+dentro. São duas perguntas diferentes: na grade a pessoa está navegando e o
+caminho está na migalha; no diálogo ela está escolhendo um destino, e um
+destino que exige três toques para ser visto é um destino que ela não acha.
 
-**A pasta em si tem UM menu de três pontinhos** (`FolderChipMenu`, dentro de
-`FolderChips`), e ali ele é o desenho certo: o "⋯" e o nome são dois BOTÕES
-IRMÃOS dentro do mesmo chip, nunca um dentro do outro — a régua que tirou o
-menu do cartão (botão dentro de `<a>` é HTML inválido) continua valendo, só
+**A pasta em si tem UM menu de três pontinhos** (`FolderCardMenu`, dentro de
+`FolderGrid`), e ali ele é o desenho certo: o "⋯" e o botão que navega são
+dois BOTÕES IRMÃOS, nunca um dentro do outro — a régua que tirou o menu do
+cartão de sessão (botão dentro de `<a>` é HTML inválido) continua valendo, só
 que aqui não há link nenhum por baixo para o botão invadir.
+
+**A tela de leitura mostra o CAMINHO, não a última pasta.** A pastilha do
+cabeçalho do `SavedSessionView` escreve "2026 › Romanos": com três níveis,
+"Romanos" sozinho não diz qual dos dois é, e a Biblioteca permite os dois nomes
+justamente porque cada um mora numa mãe diferente.
 
 ## As listas: busca e filtros
 

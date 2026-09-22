@@ -1,65 +1,76 @@
 "use client";
 
-import { Check } from "lucide-react";
 import { useEffect, useState } from "react";
 import { toast } from "sonner";
 import {
   Dialog,
   DialogContent,
+  DialogDescription,
   DialogFooter,
   DialogHeader,
   DialogTitle,
 } from "@/components/ui/dialog";
-import { FOLDER_COLORS, type FolderColor } from "@/lib/domain/folder";
 import { cn } from "@/lib/utils";
 
 /**
- * Nome e cor de uma pasta, criação e renomeação no mesmo diálogo — a mesma
- * decisão do `TitleDialog`: o valor inicial vazio É o modo de criação, sem um
- * `mode` separado para os dois casos dizerem a mesma coisa duas vezes.
+ * O NOME de uma pasta, criação e renomeação no mesmo diálogo — a mesma decisão
+ * do `TitleDialog`: o valor inicial vazio É o modo de criação, sem um `mode`
+ * separado para os dois casos dizerem a mesma coisa duas vezes.
+ *
+ * ## A COR saiu, e o diálogo é um campo de texto
+ *
+ * Ele teve um seletor de quatro faces (`--v2-note-*`, as mesmas do post-it) e
+ * ele foi removido. Escolher cor é uma decisão que o produto pedia e não usava:
+ * a pasta não é um post-it — ela não mora num mural de cores sorteadas, mora
+ * numa grade de cartões cinzas iguais, onde a cor entrava só como a tinta de um
+ * ícone de 20px. Ali quatro opções compravam um enfeite e cobravam um passo,
+ * no único diálogo do produto que existe para receber uma palavra e sair da
+ * frente.
+ *
+ * Duas consequências que valem ser ditas em voz alta:
+ *
+ * - **a coluna `folders.color` continua no banco** (migração 0068) e a API
+ *   continua aceitando `color`, opcional. Nada na tela a manda, e nada a lê
+ *   além do `?? "mist"` de `FOLDER_ICON_INK`. É o seam por onde a cor volta se
+ *   um dia ela tiver trabalho a fazer, e não vale uma migração para derrubar.
+ * - **o problema do `slate` deixou de existir por não ter mais onde
+ *   aparecer.** Ele é `#2F3035`, a mesma cor de `--v2-card` e de `bg-popover`,
+ *   e como pastilha de 28px dentro do diálogo lia como um buraco em vez de uma
+ *   opção. A correção foi um fio de borda; a correção da correção foi tirar o
+ *   seletor.
  */
 export type FolderDialogProps = {
   open: boolean;
   onOpenChange: (open: boolean) => void;
   initialName?: string;
-  initialColor?: FolderColor | null;
-  onSave: (name: string, color: FolderColor) => Promise<void> | void;
-};
-
-/** As quatro faces do post-it, na MESMA ordem que `PostItNote.NOTES` — é o
- *  mesmo par bg/ink que pinta o mural, então uma pasta "lemon" e um post-it
- *  sorteado "lemon" precisam ler como a mesma cor. */
-const SWATCHES: Record<FolderColor, { bg: string; ring: string; ink: string }> = {
-  mist: { bg: "bg-v2-note-mist", ring: "ring-v2-note-mist-ink", ink: "text-v2-note-mist-ink" },
-  sage: { bg: "bg-v2-note-sage", ring: "ring-v2-note-sage-ink", ink: "text-v2-note-sage-ink" },
-  slate: { bg: "bg-v2-note-slate", ring: "ring-v2-note-slate-mute", ink: "text-v2-note-slate-ink" },
-  lemon: { bg: "bg-v2-note-lemon", ring: "ring-v2-note-lemon-ink", ink: "text-v2-note-lemon-ink" },
+  /** A pasta mãe, quando a nova nasce DENTRO de outra. Vira a linha "Dentro
+   *  de …" do cabeçalho: com três níveis, nada mais no diálogo diria em que
+   *  altura da árvore a pasta está sendo criada, e descobrir errado custa um
+   *  excluir e um criar de novo. */
+  parentName?: string | null;
+  onSave: (name: string) => Promise<void> | void;
 };
 
 export function FolderDialog({
   open,
   onOpenChange,
   initialName = "",
-  initialColor,
+  parentName,
   onSave,
 }: FolderDialogProps) {
   const [name, setName] = useState(initialName);
-  const [color, setColor] = useState<FolderColor>(initialColor ?? FOLDER_COLORS[0]);
   const [saving, setSaving] = useState(false);
 
   useEffect(() => {
-    if (open) {
-      setName(initialName);
-      setColor(initialColor ?? FOLDER_COLORS[0]);
-    }
-  }, [open, initialName, initialColor]);
+    if (open) setName(initialName);
+  }, [open, initialName]);
 
   async function handleSave() {
     const trimmed = name.trim();
     if (!trimmed) return;
     setSaving(true);
     try {
-      await onSave(trimmed, color);
+      await onSave(trimmed);
       onOpenChange(false);
     } catch {
       toast.error("Não foi possível salvar a pasta.");
@@ -73,6 +84,9 @@ export function FolderDialog({
       <DialogContent className="sm:max-w-sm">
         <DialogHeader>
           <DialogTitle>{initialName ? "Editar pasta" : "Nova pasta"}</DialogTitle>
+          {!initialName && parentName ? (
+            <DialogDescription>Dentro de “{parentName}”.</DialogDescription>
+          ) : null}
         </DialogHeader>
         <input
           className="w-full rounded-md border border-input bg-transparent px-3 py-2 text-sm outline-none ring-offset-background placeholder:text-muted-foreground focus:border-ring focus:ring-2 focus:ring-ring/50"
@@ -84,28 +98,6 @@ export function FolderDialog({
           autoFocus
           maxLength={80}
         />
-        <div className="flex items-center gap-3 pt-1">
-          {FOLDER_COLORS.map((c) => (
-            <button
-              key={c}
-              type="button"
-              aria-label={`Cor ${c}`}
-              aria-pressed={color === c}
-              disabled={saving}
-              onClick={() => setColor(c)}
-              className={cn(
-                "flex size-7 items-center justify-center rounded-full outline-none transition-transform",
-                SWATCHES[c].bg,
-                "focus-visible:ring-2 focus-visible:ring-ring/50",
-                color === c ? cn("ring-2 ring-offset-2 ring-offset-popover", SWATCHES[c].ring) : ""
-              )}
-            >
-              {color === c ? (
-                <Check className={cn("size-3.5", SWATCHES[c].ink)} strokeWidth={3} />
-              ) : null}
-            </button>
-          ))}
-        </div>
         <DialogFooter>
           <button
             type="button"

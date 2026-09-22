@@ -1,6 +1,6 @@
 import { NextResponse } from "next/server";
 import { z } from "zod";
-import { createFolder, listFolders } from "@/lib/db/folders";
+import { createFolder, folderTreeError, listFolders } from "@/lib/db/folders";
 import { FOLDER_COLORS } from "@/lib/domain/folder";
 import { parseJsonBody } from "@/lib/http/validate";
 import { createLogger } from "@/lib/log";
@@ -38,6 +38,8 @@ const CreateFolderSchema = z
   .object({
     name: z.string().trim().min(1).max(80),
     color: z.enum(FOLDER_COLORS).nullable().optional(),
+    /** A pasta mãe. Ausente ou `null` cria na raiz. */
+    parentId: z.string().uuid().nullable().optional(),
   })
   .strict();
 
@@ -56,12 +58,15 @@ export async function POST(request: Request) {
     const folder = await createFolder({
       name: parsed.data.name,
       color: parsed.data.color ?? null,
+      parentId: parsed.data.parentId ?? null,
     });
-    log.debug("created", { id: folder.id });
+    log.debug("created", { id: folder.id, parentId: folder.parentId });
     return NextResponse.json({ folder });
   } catch (err) {
     const message = (err as Error).message;
-    // Índice único (user_id, lower(name)) — migração 0068.
+    const tree = folderTreeError(message);
+    if (tree) return NextResponse.json({ error: tree }, { status: 409 });
+    // Índice único (user_id, parent_id, lower(name)) — migrações 0068/0069.
     if (/duplicate key|23505/i.test(message)) {
       return NextResponse.json({ error: "name_taken" }, { status: 409 });
     }

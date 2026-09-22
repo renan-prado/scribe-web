@@ -79,6 +79,32 @@ morrer em 23505 na hora de gravar.
 > não só a que diz de quem a linha é.** E entra no de UPDATE junto, senão a
 > linha nasce certa e é movida depois.
 
+**Quando a coluna aponta para a PRÓPRIA tabela, a forma do `exists` muda.** A
+0069 acrescentou `folders.parent_id`, e a policy escrita no molde da 0068
+recusava TODA subpasta, inclusive as legítimas:
+
+```sql
+-- ERRADO em folders: `parent_id` é resolvido no escopo mais interno, vira
+-- `p.parent_id`, e a condição fica `p.id = p.parent_id`, nunca verdadeira.
+or exists (select 1 from public.folders p where p.id = parent_id and p.user_id = auth.uid())
+-- CERTO: a coluna da linha nova é lida FORA do escopo da subconsulta.
+or parent_id in (select p.id from public.folders p where p.user_id = auth.uid())
+```
+
+O molde da 0068 (`exists (select 1 from folders f where f.id = folder_id …)`)
+continua correto para `sessions`, e é por um acidente feliz: `folders` não tem
+uma coluna `folder_id` para o nome colidir. Com a MESMA tabela nos dois lados
+não existe acidente nenhum, e o sintoma é `new row violates row-level security
+policy` em cima de uma escrita que devia passar. Não há erro de sintaxe, não há
+aviso: escreva `in (subquery)` e não precise lembrar da regra.
+
+> Policy auto-referente: **prove-a com um usuário de verdade antes do push de
+> produção.** Service-role ignora RLS, então o `db push` e qualquer script de
+> admin passam limpos por uma policy quebrada. O que pegou esta foi um script
+> descartável que criou um usuário em dev (`generateLink` + `verifyOtp`, porque
+> o projeto só tem Google OAuth), inseriu uma subpasta com a chave anônima e
+> apagou o usuário no fim.
+
 ## GRANT: o grant diz QUAIS COLUNAS
 
 **RLS não restringe coluna. GRANT sim, e os dois se somam.** É o mecanismo que

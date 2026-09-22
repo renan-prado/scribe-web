@@ -59,7 +59,14 @@ export function useFolderWriter() {
   return {
     add: (folder: Folder) =>
       write((list) => [...list, folder].sort((a, b) => a.name.localeCompare(b.name, "pt-BR"))),
-    remove: (id: string) => write((list) => list.filter((f) => f.id !== id)),
+    /** Tira a pasta E a descendência dela: `folders.parent_id` é
+     *  `on delete cascade` (migração 0069), então apagar uma linha apaga a
+     *  subárvore no banco, e o cache tem de perder as mesmas linhas — senão a
+     *  tela mostra subpastas de uma pasta que já não existe. */
+    removeMany: (ids: string[]) => {
+      const set = new Set(ids);
+      return write((list) => list.filter((f) => !set.has(f.id)));
+    },
     patch: (id: string, fields: Partial<Folder>) =>
       write((list) =>
         list

@@ -1,11 +1,11 @@
 "use client";
 
-import { ChevronRight, Loader2, SearchX } from "lucide-react";
+import { ChevronRight, Folder as FolderIcon, Loader2, SearchX } from "lucide-react";
 import { useRouter, useSearchParams } from "next/navigation";
-import { useCallback, useEffect, useMemo, useState } from "react";
+import { Fragment, useCallback, useEffect, useMemo, useState } from "react";
 import { usePendingCount } from "@/features/session/capture-queue";
 import { CollectionSearch, FACET_ALL } from "@/features/session/components/CollectionSearch";
-import { FolderChips } from "@/features/session/components/FolderChips";
+import { FolderGrid } from "@/features/session/components/FolderGrid";
 import { LibraryCard } from "@/features/session/components/LibraryCard";
 import { LibraryNote } from "@/features/session/components/LibraryNote";
 import { LibraryRow } from "@/features/session/components/LibraryRow";
@@ -25,7 +25,9 @@ import {
 } from "@/features/session/lib/search";
 import { useLibraryView } from "@/features/session/library-view";
 import { useLibrary } from "@/features/session/query";
+import { FOLDER_ICON_INK, folderCountLabel, folderPath } from "@/lib/domain/folder";
 import type { SessionListItem } from "@/lib/domain/session";
+import { cn } from "@/lib/utils";
 import { useSearchScope } from "../components/SearchScope";
 import { monthGroupLabel } from "../lib/format";
 
@@ -158,6 +160,15 @@ export function LibraryBrowser({ nowIso }: Props) {
   const selectedFolderId = searchParams.get("pasta");
   const { data: folders } = useFolders();
   const selectedFolder = folders?.find((f) => f.id === selectedFolderId) ?? null;
+  // O caminho da raiz até a pasta aberta ("2026 › Romanos"), que é a migalha
+  // de pão. Ela é a ÚNICA navegação da árvore: com o teto de três níveis o
+  // caminho inteiro cabe numa linha, e por isso não existe painel de árvore
+  // recolhível em lugar nenhum — ver o cabeçalho de `FolderGrid`.
+  const folderTrail = useMemo(
+    () => folderPath(folders ?? [], selectedFolderId),
+    [folders, selectedFolderId]
+  );
+  const hasSubfolders = (folders ?? []).some((f) => f.parentId === selectedFolderId);
   const selectFolder = useCallback(
     (id: string | null) => {
       router.push(id ? `/home?pasta=${id}` : "/home");
@@ -262,32 +273,74 @@ export function LibraryBrowser({ nowIso }: Props) {
 
   return (
     <div className="flex flex-col gap-6">
-      {/* As pastas, e o "Biblioteca > <pasta>" de quem está dentro de uma.
-          Fora da busca, pelo mesmo motivo de `PendingCaptures` logo abaixo:
-          a barra de busca já é um funil sobre o acervo, e pastas são outro —
-          dois funis abertos ao mesmo tempo confundem mais do que ajudam. Quem
-          quer procurar DENTRO de uma pasta entra nela primeiro. */}
-      {open ? null : (
-        <div className="flex flex-col gap-3">
-          {selectedFolder ? (
-            <nav aria-label="Você está em" className="flex items-center gap-1 px-1 text-[13px]">
-              <button
-                type="button"
-                onClick={() => selectFolder(null)}
-                className="rounded-md font-light text-v2-ink-mute outline-none transition-colors hover:text-v2-ink focus-visible:ring-2 focus-visible:ring-ring/50"
-              >
-                Biblioteca
-              </button>
-              <ChevronRight aria-hidden className="size-3.5 text-v2-ink-mute" />
-              <span className="font-medium text-v2-ink">{selectedFolder.name}</span>
-            </nav>
-          ) : null}
-          <FolderChips
-            selectedFolderId={selectedFolderId}
-            onSelect={selectFolder}
-            sessions={sessions}
-          />
-        </div>
+      {/* O TÍTULO da pasta aberta, com a migalha de pão acima dele. Ele existe
+          porque o nome da tela mora na barra do topo, e lá ele é "Biblioteca"
+          em toda navegação — entrar numa pasta mudava o conteúdo inteiro da
+          página e nada além de uma linha de 13px dizia onde a pessoa estava.
+          A barra não pode dizer isso: ela é do LAYOUT do segmento e sobrevive
+          à navegação, e a pasta aberta vem de um `searchParams` que só a
+          página lê (ver `src/app/AGENTS.md`).
+
+          A migalha NAVEGA e o título INFORMA, e é essa divisão que impede os
+          dois de serem a mesma coisa duas vezes: o último degrau da migalha
+          não é botão justamente porque ele é o título logo abaixo.
+
+          Na raiz não há título nenhum — "Biblioteca" já está na barra, e
+          repeti-lo aqui empurraria os cartões para baixo da dobra para dizer o
+          que já estava dito.
+
+          Fora da busca, pelo mesmo motivo de `PendingCaptures` logo abaixo: a
+          barra de busca já é um funil sobre o acervo, e pastas são outro. */}
+      {open || folderTrail.length === 0 ? null : (
+        <header className="flex flex-col gap-1.5">
+          <nav
+            aria-label="Você está em"
+            className="flex flex-wrap items-center gap-1 px-1 text-[13px]"
+          >
+            <button
+              type="button"
+              onClick={() => selectFolder(null)}
+              className="rounded-md font-light text-v2-ink-mute outline-none transition-colors hover:text-v2-ink focus-visible:ring-2 focus-visible:ring-ring/50"
+            >
+              Biblioteca
+            </button>
+            {folderTrail.map((folder, index) => (
+              <Fragment key={folder.id}>
+                <ChevronRight aria-hidden className="size-3.5 shrink-0 text-v2-ink-mute" />
+                {index === folderTrail.length - 1 ? (
+                  <span className="font-medium text-v2-ink">{folder.name}</span>
+                ) : (
+                  <button
+                    type="button"
+                    onClick={() => selectFolder(folder.id)}
+                    className="rounded-md font-light text-v2-ink-mute outline-none transition-colors hover:text-v2-ink focus-visible:ring-2 focus-visible:ring-ring/50"
+                  >
+                    {folder.name}
+                  </button>
+                )}
+              </Fragment>
+            ))}
+          </nav>
+          <h1 className="flex min-w-0 items-center gap-2 px-1">
+            <FolderIcon
+              aria-hidden
+              strokeWidth={1.75}
+              className={cn(
+                "size-5 shrink-0",
+                FOLDER_ICON_INK[folderTrail[folderTrail.length - 1].color ?? "mist"]
+              )}
+            />
+            <span className="truncate font-heading text-xl font-semibold leading-tight tracking-tight text-v2-ink sm:text-2xl">
+              {folderTrail[folderTrail.length - 1].name}
+            </span>
+            <span className="shrink-0 text-[12px] font-light text-v2-ink-mute">
+              {folderCountLabel(
+                (folders ?? []).filter((f) => f.parentId === selectedFolderId).length,
+                sessionsInFolder.length
+              )}
+            </span>
+          </h1>
+        </header>
       )}
 
       {open ? (
@@ -340,6 +393,29 @@ export function LibraryBrowser({ nowIso }: Props) {
         </div>
       ) : null}
 
+      {/* As pastas DESTE nível: as de raiz na Biblioteca, as filhas dentro de
+          uma pasta aberta.
+
+          Elas ficam ABAIXO do seletor de vista, e não acima do bloco inteiro.
+          Estiveram lá em cima por uma versão e o efeito era o contrário do
+          pretendido: a primeira coisa da primeira tela do app passava a ser a
+          organização do acervo, e não o acervo. Aqui a ordem lê como a
+          hierarquia real — o seletor manda em como os cartões são desenhados,
+          e o que vem embaixo dele é o conteúdo, pastas primeiro e meses
+          depois.
+
+          O seletor não as governa (uma pasta não tem post-it nem linha), e é
+          por isso que ela é a única seção que ele não alcança: ele é sobre a
+          vista das SESSÕES, e o cartão de pasta tem uma forma só. */}
+      {open ? null : (
+        <FolderGrid
+          parentId={selectedFolderId}
+          selectedFolderId={selectedFolderId}
+          onSelect={selectFolder}
+          sessions={sessions}
+        />
+      )}
+
       {/* Nada na tela E resposta a caminho não é "não encontrei": metade desta
           busca mora no servidor (a transcrição), e afirmar o vazio antes dela
           chegar é uma tela que se desmente sozinha meio segundo depois. */}
@@ -376,18 +452,22 @@ export function LibraryBrowser({ nowIso }: Props) {
            dizer isso a quem tem trinta sermões guardados é a tela mentindo
            por meio segundo. Ver `useLibrary`. */
         <LibrarySkeleton />
-      ) : groups.length === 0 && selectedFolder ? (
+      ) : groups.length === 0 && selectedFolder && !hasSubfolders ? (
         /* Uma pasta vazia não é a Biblioteca vazia: a pessoa já tem acervo,
            só não pôs nada AQUI ainda. "Grave a primeira gravação" seria a
-           tela ignorando as sessões que existem fora desta pasta. */
+           tela ignorando as sessões que existem fora desta pasta.
+
+           E uma pasta COM subpastas não está vazia: o `!hasSubfolders` é o que
+           impede este bloco de aparecer embaixo da grade de filhas, dizendo
+           que não há nada num lugar onde acabou de haver. */
         <div className="flex flex-col items-center gap-2 rounded-3xl border border-dashed border-v2-card-hover px-6 py-12 text-center">
           <p className="text-sm font-medium text-v2-ink">Esta pasta está vazia.</p>
           <p className="max-w-sm text-[13px] font-light leading-relaxed text-v2-ink-soft">
-            Arraste um cartão até “{selectedFolder.name}” na fileira acima, ou mova uma sessão pelo
-            menu dela.
+            Crie uma subpasta acima, arraste um cartão da Biblioteca até “{selectedFolder.name}”, ou
+            abra um resumo e use “Mover para pasta”.
           </p>
         </div>
-      ) : groups.length === 0 && pendingCount === 0 ? (
+      ) : groups.length === 0 && !selectedFolder && pendingCount === 0 ? (
         /* Biblioteca vazia é a primeira tela de quem acabou de entrar, e é
            diferente de busca sem resultado (acima): ali a saída é limpar o
            filtro, aqui é gravar. Ver `SessionsEmptyState`.

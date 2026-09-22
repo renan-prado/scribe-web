@@ -1,6 +1,6 @@
 "use client";
 
-import { MapPin, Pencil, PenLine, Plus } from "lucide-react";
+import { Folder as FolderIcon, MapPin, Pencil, PenLine, Plus } from "lucide-react";
 import { useRouter } from "next/navigation";
 import type { ReactNode } from "react";
 import { useState } from "react";
@@ -25,7 +25,7 @@ import { useFolders } from "@/features/session/folders-query";
 import { requestLocationSuggestions, requestSpeakerSuggestions } from "@/features/session/lib/api";
 import { initialsOf } from "@/features/session/lib/text";
 import { useLibrarySync, useLibraryWriter } from "@/features/session/query";
-import { FOLDER_SWATCH_BG } from "@/lib/domain/folder";
+import { FOLDER_ICON_INK, folderPath } from "@/lib/domain/folder";
 import type { SessionMode } from "@/lib/domain/session";
 import type { SummaryPayload } from "@/lib/domain/summary";
 import { cn } from "@/lib/utils";
@@ -156,12 +156,12 @@ export function SavedSessionView({
   // espera o dono do cache, então chamar aqui sem o diálogo aberto não custa
   // nada: a Biblioteca (se aberta antes) já deixou a lista pronta.
   const { data: folders } = useFolders();
-  // A pasta ATUAL, para a pastilha do cabeçalho (ver abaixo). `undefined`
-  // enquanto a lista de pastas ainda não chegou (primeira visita sem cache);
-  // a pastilha simplesmente não desenha nesse instante, e reaparece no quadro
-  // seguinte — o mesmo tipo de espera que o resto da tela já tolera em outros
-  // dados que vêm do cache do aparelho.
-  const currentFolder = folders?.find((f) => f.id === folderId) ?? null;
+  // O CAMINHO até a pasta atual, para a pastilha do cabeçalho (ver abaixo).
+  // Vazio enquanto a lista de pastas ainda não chegou (primeira visita sem
+  // cache): a pastilha simplesmente não desenha nesse instante, e reaparece no
+  // quadro seguinte — o mesmo tipo de espera que o resto da tela já tolera em
+  // outros dados que vêm do cache do aparelho.
+  const folderTrail = folderPath(folders ?? [], folderId);
 
   const router = useRouter();
   const refreshCoins = useCoinsStore((s) => s.refresh);
@@ -420,29 +420,35 @@ export function SavedSessionView({
 
             {/* A MARCAÇÃO da pasta, só quando a sessão está em uma — sem
                 pasta não há pastilha nenhuma aqui, nunca "Sem pasta" escrito
-                por extenso. Ela é a mesma pastilha visual dos chips da
-                Biblioteca (o pontinho de `FOLDER_SWATCH_BG`), e o toque abre
-                o MESMO `MoveToFolderDialog` do menu de três pontinhos: duas
-                portas para o mesmo diálogo, uma para quem já sabe que quer
-                mudar de pasta, outra para quem só queria confirmar em qual
-                pasta está. */}
-            {currentFolder ? (
+                por extenso. O toque abre o MESMO `MoveToFolderDialog` do menu
+                de três pontinhos: duas portas para o mesmo diálogo, uma para
+                quem já sabe que quer mudar de pasta, outra para quem só
+                queria confirmar em qual pasta está.
+
+                **Ela mostra o CAMINHO, não a última pasta.** Com três níveis
+                (migração 0069), "Romanos" sozinho não diz se é o Romanos de
+                2025 ou o de 2026, e a Biblioteca permite os dois nomes
+                justamente porque cada um mora numa mãe diferente. É a mesma
+                migalha de pão do `LibraryBrowser`, sem os botões: aqui ela
+                INFORMA, não navega. */}
+            {folderTrail.length > 0 ? (
               <button
                 type="button"
                 onClick={() => setMoveFolderOpen(true)}
                 className={cn(
-                  "group -mx-1 inline-flex w-fit items-center gap-1.5 rounded-full px-2 py-1 text-xs font-medium text-scriba-ink-soft outline-none transition-colors",
+                  "-mx-1 inline-flex w-fit max-w-full items-center gap-1.5 rounded-full px-2 py-1 text-xs font-medium text-scriba-ink-soft outline-none transition-colors",
                   "hover:bg-scriba-blue-soft/60 hover:text-scriba-ink focus-visible:ring-2 focus-visible:ring-ring/40"
                 )}
               >
-                <span
+                <FolderIcon
                   aria-hidden
+                  strokeWidth={1.75}
                   className={cn(
-                    "size-2 shrink-0 rounded-full",
-                    FOLDER_SWATCH_BG[currentFolder.color ?? "mist"]
+                    "size-3.5 shrink-0",
+                    FOLDER_ICON_INK[folderTrail[folderTrail.length - 1].color ?? "mist"]
                   )}
                 />
-                {currentFolder.name}
+                <span className="truncate">{folderTrail.map((f) => f.name).join(" › ")}</span>
               </button>
             ) : null}
 

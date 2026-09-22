@@ -22,12 +22,22 @@ const log = createLogger("delete-folder-dialog");
  * opções, mutuamente exclusivas, e a primeira é o padrão — apagar sessão é
  * ação rara e cara de desfazer; mover para a raiz não perde nada, só desfaz a
  * organização.
+ *
+ * **As SUBPASTAS vão sempre, e a escolha não as alcança.** `parent_id` é
+ * `on delete cascade` (migração 0069): não há "apagar esta e manter as filhas",
+ * porque uma subpasta sem mãe não teria por onde ser alcançada na tela. Daí o
+ * `subfolderCount` ser um AVISO no texto e não uma terceira opção — e daí
+ * `sessionCount` contar a subárvore inteira, não só o primeiro nível: a
+ * pergunta "o que fazer com elas?" tem de valer para tudo que o gesto alcança.
  */
 export type DeleteFolderDialogProps = {
   open: boolean;
   onOpenChange: (open: boolean) => void;
   folderName: string;
+  /** As sessões da SUBÁRVORE, não só as do primeiro nível. */
   sessionCount: number;
+  /** Quantas subpastas somem por cascata junto com esta. */
+  subfolderCount?: number;
   onConfirm: (deleteSessions: boolean) => Promise<void> | void;
 };
 
@@ -36,6 +46,7 @@ export function DeleteFolderDialog({
   onOpenChange,
   folderName,
   sessionCount,
+  subfolderCount = 0,
   onConfirm,
 }: DeleteFolderDialogProps) {
   const [deleteSessions, setDeleteSessions] = useState(false);
@@ -67,13 +78,7 @@ export function DeleteFolderDialog({
       <DialogContent showCloseButton={false} className="sm:max-w-sm">
         <DialogHeader>
           <DialogTitle>Excluir “{folderName}”?</DialogTitle>
-          <DialogDescription>
-            {sessionCount > 0
-              ? `Esta pasta tem ${sessionCount} ${sessionCount === 1 ? "sessão" : "sessões"}. O que fazer com ${
-                  sessionCount === 1 ? "ela" : "elas"
-                }?`
-              : "Esta pasta está vazia."}
-          </DialogDescription>
+          <DialogDescription>{describe(sessionCount, subfolderCount)}</DialogDescription>
         </DialogHeader>
 
         {sessionCount > 0 ? (
@@ -110,6 +115,25 @@ export function DeleteFolderDialog({
       </DialogContent>
     </Dialog>
   );
+}
+
+/** A frase do cabeçalho. Ela diz o ALCANCE do gesto antes de perguntar o que
+ *  fazer com o conteúdo: com subpastas, "esta pasta está vazia" seria verdade
+ *  sobre o primeiro nível e mentira sobre o que vai ser apagado. */
+function describe(sessions: number, subfolders: number): string {
+  const subPart =
+    subfolders > 0
+      ? `${subfolders} ${subfolders === 1 ? "subpasta" : "subpastas"} ${
+          subfolders === 1 ? "também será apagada" : "também serão apagadas"
+        }.`
+      : "";
+  if (sessions === 0) {
+    return subPart ? `Sem resumos dentro. ${subPart}` : "Esta pasta está vazia.";
+  }
+  const scope = subfolders > 0 ? "Ela e as subpastas têm" : "Esta pasta tem";
+  const noun = sessions === 1 ? "resumo" : "resumos";
+  const pronoun = sessions === 1 ? "ele" : "eles";
+  return `${scope} ${sessions} ${noun}. O que fazer com ${pronoun}? ${subPart}`.trim();
 }
 
 function OptionRow({

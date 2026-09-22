@@ -1,6 +1,6 @@
 import { NextResponse } from "next/server";
 import { z } from "zod";
-import { deleteFolder, getFolder, updateFolder } from "@/lib/db/folders";
+import { deleteFolder, folderTreeError, getFolder, updateFolder } from "@/lib/db/folders";
 import { FOLDER_COLORS } from "@/lib/domain/folder";
 import { parseJsonBody, parseUuidParam } from "@/lib/http/validate";
 import { createLogger } from "@/lib/log";
@@ -16,10 +16,13 @@ const PatchSchema = z
   .object({
     name: z.string().trim().min(1).max(80).optional(),
     color: z.enum(FOLDER_COLORS).nullable().optional(),
+    /** Move a pasta: `null` a leva para a raiz. Quem recusa profundidade,
+     *  ciclo e pai de outra pessoa é o gatilho `folders_tree` (0069). */
+    parentId: z.string().uuid().nullable().optional(),
   })
   .strict();
 
-/** PATCH /api/folders/:id — renomeia e/ou troca a cor. */
+/** PATCH /api/folders/:id — renomeia, troca a cor e/ou move de lugar. */
 export async function PATCH(request: Request, { params }: { params: Promise<{ id: string }> }) {
   const auth = await requireAuth();
   if (auth.response) return auth.response;
@@ -45,11 +48,14 @@ export async function PATCH(request: Request, { params }: { params: Promise<{ id
     await updateFolder(id, {
       name: parsed.data.name,
       color: parsed.data.color,
+      parentId: parsed.data.parentId,
     });
     log.debug("updated", { id });
     return NextResponse.json({ ok: true });
   } catch (err) {
     const message = (err as Error).message;
+    const tree = folderTreeError(message);
+    if (tree) return NextResponse.json({ error: tree }, { status: 409 });
     if (/duplicate key|23505/i.test(message)) {
       return NextResponse.json({ error: "name_taken" }, { status: 409 });
     }
