@@ -9,6 +9,12 @@ Gerado por `npm run release` a partir dos Conventional Commits. `feat` sobe o
 minor; o resto sobe o patch. Não edite à mão, a próxima execução escreve por
 cima do topo do arquivo.
 
+## 0.72.1, 2026-09-22, desde v0.72.0
+
+### Correções
+
+- **editor:** menu da barra vai para o body e respeita a barra do app (`125dd9c`)
+
 ## 0.72.0, 2026-09-22, desde v0.71.0
 
 ### Novidades
