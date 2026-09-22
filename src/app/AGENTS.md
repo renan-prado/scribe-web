@@ -54,7 +54,12 @@ herdar a moldura do app nem a consulta ao banco que ela faz. O que o Next proíb
 
 ```
 /                       landing. ESTÁTICA, ver a seção abaixo
-/sign-in  /sign-up      entrada. /sign-up redireciona para /sign-in
+/sign-in  /sign-up      entrada. /sign-up redireciona para /sign-in. Google em
+                        cima; abaixo do "ou", e fechado atrás de um botão, o
+                        formulário de e-mail e senha (ver docs/auth.md)
+/recuperar              "esqueci minha senha". Pública porque quem chega nela é
+                        justamente quem não consegue entrar. A irmã dela,
+                        /nova-senha, é PROTEGIDA e está na lista do app
 /terms  /privacy        legais. Datadas; a data também está no sitemap
 /about  /contact        páginas de confiança. Estáticas, chrome da landing
 /parceiros              convite do programa de parceiros. Estática, pública.
@@ -62,7 +67,12 @@ herdar a moldura do app nem a consulta ao banco que ela faz. O que o Next proíb
 /parceiros/regulamento  as regras que obrigam. Datada, como /terms
 /parceiros/entrar       marca o cookie de pré-parceiro e vai para /sign-in.
                         Não é página, irmã de /r/<slug>, e pelo mesmo motivo
-/auth/callback          troca o code do OAuth por sessão. Valida o ?next=
+/auth/callback          troca o ?code= do PKCE por sessão: o Google, e os
+                        e-mails enquanto os modelos do Supabase forem os de
+                        fábrica. Valida o ?next=
+/auth/confirm           troca o ?token_hash= por sessão, a forma que funciona
+                        em OUTRO aparelho (o code depende do cookie do PKCE).
+                        Só é usada se os modelos apontarem para cá: docs/auth.md
 /auth/sign-out
 /r/[slug]               link do parceiro: marca a visita e devolve 302
 /i/[code]               link de indicação de um usuário comum. 302 para a LP
@@ -1290,9 +1300,13 @@ quebra o handshake de refresh do `@supabase/ssr`.
   agente e rastreador concluírem que qualquer URL existe. **Rota nova numa área
   nova entra em `KNOWN_APP_PREFIXES` no mesmo commit.**
 - Autenticado em `/sign-in`, `/sign-up` ou `/` → `/feed`.
-- `?next=` passa por `safeNextPath`, e o `/auth/callback` faz a checagem
-  equivalente: só caminho relativo, recusando `//host`, `/\host` e `/%2F…`.
-  Um `next` frouxo no login é open redirect assinado pelo nosso domínio.
+- `?next=` passa por `safeNextPath`, e o proxy, o `/auth/callback`, o
+  `/auth/confirm` e as server actions de senha usam a MESMA função, que mora em
+  `src/features/auth/lib/next-path.ts`: só caminho relativo, recusando
+  `//host`, `/\host` e `/%2F…`. Um `next` frouxo no login é open redirect
+  assinado pelo nosso domínio. Ela já esteve copiada em três arquivos, e três
+  cópias de uma regra de segurança é a promessa de que uma delas vai receber um
+  caso novo e as outras não.
 - O proxy sai CEDO, antes de instanciar o client do Supabase, quando o path é
   `/` e não há nenhum cookie `sb-*`: sem sessão não há o que renovar.
 
@@ -1496,6 +1510,15 @@ HTML continua saindo da CDN. A pílula nasce ESCONDIDA e só existe quando há
 indicação a anunciar: um script antes do primeiro paint (`HeroEyebrowScript`)
 marca o `<html>`, e o CSS mostra um esqueleto de altura fixa
 até a resposta chegar, então nem quem veio indicado vê o título saltar.
+
+Esse script mora no **`<head>` do root layout**, e não na página do hero, onde
+nasceu. Um `<script>` dentro de um componente só vale quando o HTML vem do
+servidor: criado no CLIENTE, o React o troca por uma `<div>` vazia e avisa no
+console. E a landing é alcançável por navegação de cliente (o "← Voltar" da
+tela de entrada), então nesse caminho o script não rodava e a pílula não
+aparecia para quem tinha indicação. O root layout nunca é remontado, e é o
+único lugar do App Router onde um bootstrap antes do paint é sempre servidor.
+**Não devolva um `<script>` para dentro de uma página.**
 
 Quem garante que a pista existe é o `healReferralHint` do `src/proxy.ts`: um cookie
 novo não retroage aos 30 dias de atribuições que já estavam em circulação, e

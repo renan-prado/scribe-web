@@ -1,6 +1,9 @@
 import { cookies } from "next/headers";
 import { AuthShell } from "@/features/auth/components/AuthShell";
+import { EmailPasswordForm } from "@/features/auth/components/EmailPasswordForm";
+import { AuthDivider } from "@/features/auth/components/form-bits";
 import { GoogleSignInButton } from "@/features/auth/components/GoogleSignInButton";
+import { nextPathOrDefault } from "@/features/auth/lib/next-path";
 import { CouponNotice } from "@/features/coupons/components/CouponNotice";
 import { ProspectNotice } from "@/features/partners/components/ProspectNotice";
 import { ReferralField } from "@/features/referrals/components/ReferralField";
@@ -48,7 +51,11 @@ export default async function SignInPage({ searchParams }: { searchParams: Promi
   // 0055): esconder um deles faria a tela prometer menos do que vai entregar.
   const couponCode = normalizeCouponCode(jar.get(COUPON_COOKIE)?.value);
   const coupon = couponCode ? await getCouponPublicByCode(couponCode) : null;
-  const target = typeof next === "string" && next.startsWith("/") ? next : "/home";
+  // A mesma sanitização do proxy e do callback, numa função só: ver
+  // `features/auth/lib/next-path.ts`. Aqui ela protege o `next` que vai parar
+  // num campo escondido do formulário de senha e no `emailRedirectTo` do
+  // e-mail de confirmação.
+  const target = nextPathOrDefault(next);
   const errorMessage =
     error === "exchange_failed"
       ? "Não consegui completar o login. Tente novamente."
@@ -67,16 +74,21 @@ export default async function SignInPage({ searchParams }: { searchParams: Promi
       }
       subtitle={
         coupon
-          ? "Crie sua conta com o Google e as moedas do convite entram no seu saldo na hora."
+          ? "Crie sua conta e as moedas do convite entram no seu saldo na hora."
           : isProspect
-            ? "Crie sua conta com o Google e receba moedas para usar o app antes de decidir qualquer coisa."
-            : "Use sua conta Google para entrar. Se ainda não tem uma conta, ela é criada automaticamente no primeiro acesso, grátis, sem cartão."
+            ? "Crie sua conta e receba moedas para usar o app antes de decidir qualquer coisa."
+            : "Entre com o Google ou com seu e-mail e senha. Se ainda não tem conta, ela é criada na hora."
       }
-      footer={<>Primeira vez por aqui? É só continuar com o Google. Sua conta é criada na hora.</>}
+      footer={<>Primeira vez por aqui? Sua conta é criada na hora, pelo Google ou por e-mail.</>}
     >
       {coupon ? <CouponNotice coins={coupon.coins} /> : null}
       {isProspect ? <ProspectNotice /> : null}
+      {/* O Google fica em cima e sozinho: é um toque, não tem senha para
+          esquecer e é por onde a maioria entra. O formulário de e-mail vem
+          depois do "ou", para quem não tem (ou não quer usar) conta Google. */}
       <GoogleSignInButton next={target} label="Continuar com Google" />
+      <AuthDivider />
+      <EmailPasswordForm next={target} />
       <ReferralField active={referral} />
       {errorMessage ? (
         <div

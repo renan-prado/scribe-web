@@ -10,6 +10,7 @@ saber ao editar código ficam nos `AGENTS.md` de cada pasta, não aqui.
 |---|---|
 | Como mexer em código de X? | o `AGENTS.md` da pasta de X, comece pelo da raiz |
 | Como ligar o Stripe do zero? | [`stripe-setup.md`](./stripe-setup.md) |
+| O que configurar no Supabase para o login por e-mail e senha? | [`auth.md`](./auth.md) |
 | Como funcionam dev e produção? | [`ambientes.md`](./ambientes.md) |
 | Por que o login sai por `auth.scriba.cc`? | [`ambientes.md` §7](./ambientes.md) |
 | Por que subir a versão antes de dar push? | [`versionamento.md`](./versionamento.md) |
@@ -40,6 +41,13 @@ saber ao editar código ficam nos `AGENTS.md` de cada pasta, não aqui.
   LLM e é o eixo da tabela "Por versão" do `/admin/custos`. Sem o bump, a
   comparação entre deploys deixa de existir sem nenhum erro na tela. Traz o
   fluxo, a regra do degrau e como ler a tabela. **Status: implementado.**
+- **[`auth.md`](./auth.md)**: as duas portas de entrada (Google e e-mail com
+  senha) e as três chaves do painel do Supabase sem as quais a segunda não
+  funciona: o provedor, as URLs de retorno e os modelos de e-mail. Explica por
+  que os modelos com `token_hash` são recomendados (o link de recuperação
+  aberto em OUTRO aparelho falha com os de fábrica), por que a recuperação
+  responde "enviado" mesmo para e-mail inexistente, e por que criar senha numa
+  conta do Google não cria uma segunda conta. **Status: implementado.**
 - **[`stripe-setup.md`](./stripe-setup.md)**: ligar a cobrança do zero:
   objetos a criar no Stripe, as variáveis, e as armadilhas conhecidas.
   Ferramentas: `npm run stripe:doctor` e `npm run stripe:listen`.

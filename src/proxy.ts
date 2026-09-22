@@ -1,5 +1,10 @@
 import { createServerClient } from "@supabase/ssr";
 import { type NextRequest, NextResponse } from "next/server";
+// A sanitização do `?next=` mora em `features/auth`, com as outras duas
+// leitoras dela (o `/auth/callback` e as server actions de senha). Ela já
+// esteve copiada aqui, e três cópias de uma regra de segurança é a promessa de
+// que um dia uma delas recebe um caso novo e as outras não.
+import { safeNextPath } from "@/features/auth/lib/next-path";
 import {
   REF_COOKIE,
   REF_COOKIE_MAX_AGE,
@@ -40,7 +45,7 @@ import { SUPABASE_AUTH_COOKIE } from "@/lib/supabase/cookie";
  * do Supabase antes de procurar em outro lugar.
  *
  * Route buckets:
- *   PUBLIC, /, /sign-in, /sign-up, /auth/*, /about, /contact, /terms, /privacy,
+ *   PUBLIC, /, /sign-in, /sign-up, /recuperar, /auth/*, /about, /contact, /terms, /privacy,
  *                /parceiros/*, e as três rotas de link de entrada: /r/*, /i/*,
  *                /c/*
  *   PROTECTED, a known app area (KNOWN_APP_PREFIXES) behind the login
@@ -96,11 +101,17 @@ import { SUPABASE_AUTH_COOKIE } from "@/lib/supabase/cookie";
 // `/api/account/delete`, que exige sessão. O prefixo casa por segmento, então
 // "/profile" segue protegido e só esta folha escapa. Ver
 // `app/(site)/profile/delete/page.tsx` e `docs/app-store-ios.md`.
+// "/recuperar" é o "esqueci minha senha": quem chega nela é, por definição,
+// quem NÃO consegue entrar. Protegida, ela mandaria a pessoa para a tela de
+// login que ela acabou de não conseguir usar. A irmã dela, "/nova-senha", é o
+// oposto e está em KNOWN_APP_PREFIXES: lá a pessoa já tem sessão (criada pelo
+// link do e-mail), e é justamente a sessão que faz as vezes do token na URL.
 const PUBLIC_PREFIXES = [
   "/sign-in",
   "/profile/delete",
   "/c",
   "/sign-up",
+  "/recuperar",
   "/auth",
   "/terms",
   "/privacy",
@@ -133,6 +144,9 @@ const AUTH_ONLY_PREFIXES = ["/sign-in", "/sign-up"];
  * destino vivo em vez de um caminho que só existe para ser abandonado.
  */
 const KNOWN_APP_PREFIXES = [
+  // A tela que define a senha nova. Protegida de propósito, ver o comentário
+  // de "/recuperar" acima.
+  "/nova-senha",
   // O app.
   "/home",
   "/recording",
@@ -218,27 +232,6 @@ function prefersMarkdown(accept: string | null): boolean {
   return html === null || md >= html;
 }
 
-/**
- * Sanitiza um `?next=` antes de redirecionar para ele.
- *
- * Exige caminho relativo à nossa origem e recusa as formas que os navegadores
- * resolvem como host externo, `//evil.com`, `/\evil.com`, `/%2F...`. Sem
- * isso, um link `/sign-in?next=...` publicado por terceiros viraria um
- * open redirect com a credibilidade do nosso domínio, que é o vetor clássico
- * de phishing sobre fluxo de login.
- */
-function safeNextPath(raw: string | null): string | null {
-  if (!raw) return null;
-  if (!raw.startsWith("/")) return null;
-  // "//host" e "/\host" são resolvidos como URL absoluta pelos navegadores.
-  if (raw.startsWith("//")) return null;
-  if (raw.startsWith("/\\")) return null;
-  // "/%2F..." e "/%5C..." viram as formas acima depois da decodificação.
-  if (/^\/%2f/i.test(raw)) return null;
-  if (/^\/%5c/i.test(raw)) return null;
-  return raw;
-}
-
 function isAllowedOrigin(origin: string): boolean {
   if (STATIC_ALLOWED_ORIGINS.has(origin)) return true;
   return ALLOWED_ORIGIN_PATTERNS.some((re) => re.test(origin));
@@ -271,7 +264,7 @@ function isAllowedOrigin(origin: string): boolean {
  *  - `script-src` sem `'unsafe-eval'` (em produção, ver a nota adiante) e com
  *    allowlist de host bloqueia o `<script src="//evil.com">` injetado. NÃO
  *    bloqueia inline: `'unsafe-inline'` é obrigatório enquanto o Next emitir o
- *    bootstrap dele inline sem nonce, e o `HeroEyebrowScript` da landing também
+ *    bootstrap dele inline sem nonce, e o `HeroEyebrowScript` do root layout também
  *    é inline. Esta é a folga que o nonce fecharia.
  *  - `object-src 'none'`, `base-uri 'self'` (impede sequestro de URL relativa
  *    por `<base>` injetada) e `form-action 'self'` (impede que um formulário
