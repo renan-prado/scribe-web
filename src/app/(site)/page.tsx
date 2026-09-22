@@ -854,7 +854,7 @@ function Plans() {
         <div className="flex flex-col gap-3 lg:items-center lg:text-center">
           <SectionLabel color="blue">Planos</SectionLabel>
           <h2 className="text-pretty text-[29px] font-semibold leading-[1.16] tracking-[-.022em] text-scriba-ink-strong lg:text-[42px] lg:leading-[1.14]">
-            O editor é grátis. Você paga pela IA.
+            Comece grátis. Cresça quando fizer sentido.
           </h2>
           {/* A ESTRATÉGIA dita em voz alta, e não uma frase de vitrine.
 
