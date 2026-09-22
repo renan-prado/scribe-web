@@ -38,10 +38,12 @@ import { SessionModeGlyph } from "./SessionModeGlyph";
  * dele (e os acertos ópticos de cada glifo) mora no `SessionModeGlyph`, porque
  * as três vistas da Biblioteca o usam.
  *
- * **As outras duas vistas são a LINHA e o CARTÃO** (`LibraryRow`,
- * `LibraryCard`), e elas não são este cartão com um `variant`: o post-it é cor
- * sorteada, altura livre e ordem coluna-a-coluna, e as outras duas existem
- * justamente para não ter nada disso. Ver `library-view.ts`.
+ * **Já existiram outras duas vistas**, a LINHA e o CARTÃO (`LibraryRow`,
+ * `LibraryCard`), escolhidas por um seletor acima dos meses. Saíram porque o
+ * mural — cor sorteada, altura livre, ordem coluna-a-coluna — é o desenho do
+ * produto, e a busca (atrás da lupa) já resolve o problema que as outras duas
+ * existiam para resolver: achar UM sermão dentro de um acervo grande. Ver o
+ * cabeçalho de `LibraryBrowser`.
  */
 type Props = {
   session: SessionListItem;

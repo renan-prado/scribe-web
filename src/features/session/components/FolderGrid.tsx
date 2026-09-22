@@ -33,9 +33,8 @@ import type { SessionListItem } from "@/lib/domain/session";
 import { cn } from "@/lib/utils";
 
 /**
- * As pastas de um nível da Biblioteca, desenhadas como CARTÕES numa grade —
- * a mesma gramática da vista `card` do acervo (ver `LibraryCard`), sob um
- * cabeçalho "Pastas" que é o mesmo `<h2>` de "Este mês".
+ * As pastas de um nível da Biblioteca, desenhadas como CARTÕES numa grade
+ * regular, sob um cabeçalho "Pastas" que é o mesmo `<h2>` de "Este mês".
  *
  * ## Elas eram uma fileira de pastilhas, e o problema era de PERTENCIMENTO
  *

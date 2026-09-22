@@ -6,10 +6,7 @@ import { Fragment, useCallback, useEffect, useMemo, useState } from "react";
 import { usePendingCount } from "@/features/session/capture-queue";
 import { CollectionSearch, FACET_ALL } from "@/features/session/components/CollectionSearch";
 import { FolderGrid } from "@/features/session/components/FolderGrid";
-import { LibraryCard } from "@/features/session/components/LibraryCard";
 import { LibraryNote } from "@/features/session/components/LibraryNote";
-import { LibraryRow } from "@/features/session/components/LibraryRow";
-import { LibraryViewToggle } from "@/features/session/components/LibraryViewToggle";
 import { PendingCaptures } from "@/features/session/components/PendingCaptures";
 import { SessionsEmptyState } from "@/features/session/components/SessionsEmptyState";
 import { useFolders } from "@/features/session/folders-query";
@@ -23,7 +20,6 @@ import {
   resultLabel,
   searchTokens,
 } from "@/features/session/lib/search";
-import { useLibraryView } from "@/features/session/library-view";
 import { useLibrary } from "@/features/session/query";
 import { FOLDER_ICON_INK, folderCountLabel, folderPath } from "@/lib/domain/folder";
 import type { SessionListItem } from "@/lib/domain/session";
@@ -83,18 +79,21 @@ import { monthGroupLabel } from "../lib/format";
  * entra como união. O post-it (ver `LibraryNote`) mostra três dessas coisas:
  * autor, título e data.
  *
- * ## Três vistas, e a escolha é do APARELHO
+ * ## Uma vista só: o mural de post-its
  *
- * O mural de post-its continua o padrão e continua sendo o desenho do produto.
- * Ao lado dele há a LISTA (varredura: uma linha por sermão, com o trecho) e a
- * GRADE (cartões iguais, cinza, na ordem cronológica linha a linha). O mural
- * ganha de quem tem vinte sermões e olha a parede inteira; as outras duas
- * ganham de quem tem duzentos e está procurando um. A escolha fica no
- * `localStorage`, ver `features/session/library-view.ts`.
+ * Já existiram mais duas — a LISTA (varredura: uma linha por sermão, com o
+ * trecho) e a GRADE (cartões iguais, cinza, na ordem cronológica linha a
+ * linha) —, escolhidas por um seletor que ficava acima dos meses
+ * (`LibraryViewToggle`, guardado por aparelho em `localStorage`). Elas saíram:
+ * o mural é o desenho do produto, e as outras duas eram a resposta a "quem tem
+ * duzentos sermões e está procurando um" — problema que a busca (atrás da
+ * lupa) já resolve sem pedir que a pessoa escolha entre três layouts antes de
+ * ver o próprio acervo. `LibraryCard`, `LibraryRow` e `library-view.ts` foram
+ * junto; `LibraryNote` é o único cartão de sessão que resta.
  *
- * **O agrupamento por mês vale para as três.** Ele é o que contém a bagunça de
- * ordem do masonry, e nas outras duas ele continua sendo a única âncora
- * temporal de uma lista longa.
+ * **O agrupamento por mês continua contendo a bagunça de ordem do masonry.**
+ * Sem ele o mural inteiro seria uma coluna-a-coluna só, e a pessoa perderia a
+ * âncora temporal de um acervo longo.
  *
  * **Isso é desalinhamento de propósito, e não um descuido a corrigir.** Uma
  * busca limitada ao que cabe num post-it de 150px seria uma busca inútil; um
@@ -186,7 +185,6 @@ export function LibraryBrowser({ nowIso }: Props) {
     [sessions, selectedFolderId]
   );
 
-  const [view, setView] = useLibraryView();
   const { open, setOpen } = useSearchScope();
   // As gravações guardadas no aparelho que ainda não viraram resumo. Elas não
   // vêm da lista do servidor (não existem lá), e é por isso que a conta delas
@@ -380,33 +378,16 @@ export function LibraryBrowser({ nowIso }: Props) {
           Fora da busca: ver `PendingCaptures`. */}
       {open ? null : <PendingCaptures now={now} />}
 
-      {/* O seletor de vista, alinhado à direita e acima do primeiro mês.
-
-          Ele só aparece quando há acervo desenhado: sobre o estado vazio ele
-          ofereceria três maneiras de olhar para nada, e sobre o esqueleto
-          seria um controle vivo em cima de uma tela que ainda não existe. E
-          ele fica FORA das seções de mês — a escolha vale para a Biblioteca
-          inteira, e repeti-lo em cada mês sugeriria o contrário. */}
-      {!loading && groups.length > 0 ? (
-        <div className="-mb-2 flex justify-end px-1">
-          <LibraryViewToggle value={view} onChange={setView} />
-        </div>
-      ) : null}
-
       {/* As pastas DESTE nível: as de raiz na Biblioteca, as filhas dentro de
           uma pasta aberta.
 
-          Elas ficam ABAIXO do seletor de vista, e não acima do bloco inteiro.
-          Estiveram lá em cima por uma versão e o efeito era o contrário do
-          pretendido: a primeira coisa da primeira tela do app passava a ser a
-          organização do acervo, e não o acervo. Aqui a ordem lê como a
-          hierarquia real — o seletor manda em como os cartões são desenhados,
-          e o que vem embaixo dele é o conteúdo, pastas primeiro e meses
-          depois.
-
-          O seletor não as governa (uma pasta não tem post-it nem linha), e é
-          por isso que ela é a única seção que ele não alcança: ele é sobre a
-          vista das SESSÕES, e o cartão de pasta tem uma forma só. */}
+          Estiveram ACIMA do mural por uma versão, quando ainda existia um
+          seletor de vista que precisava de uma seção fora do alcance dele
+          (uma pasta não tem post-it). O seletor saiu, e a pergunta que
+          continua valendo é a mesma de antes dele existir: a primeira coisa da
+          primeira tela do app é o ACERVO, não a organização dele — daí as
+          pastas ficarem abaixo do bloco de pendentes e acima dos meses, nunca
+          no topo da página. */}
       {open ? null : (
         <FolderGrid
           parentId={selectedFolderId}
@@ -506,31 +487,11 @@ export function LibraryBrowser({ nowIso }: Props) {
                 Ele acompanha os degraus do CONTEÚDO, não os do container: em
                 `lg` a coluna já bateu o teto e é a única largura em que quatro
                 cabem. */}
-            {view === "list" ? (
-              /* A LISTA: uma linha por sermão, do mesmo tamanho, na ordem
-                 exata. Sem `columns`, sem `grid` — a pilha é o desenho. */
-              <ul className="flex flex-col">
-                {group.items.map((s) => (
-                  <LibraryRow key={s.id} session={s} now={now} buildHref={v2Href} />
-                ))}
-              </ul>
-            ) : view === "card" ? (
-              /* A GRADE: `items-stretch` (o padrão do grid) mais `h-full` no
-                 cartão é o que dá a TODOS a altura da fileira, e é isso que
-                 separa esta vista do mural. `auto-rows-fr` para que fileiras
-                 diferentes também tenham a mesma altura entre si. */
-              <ul className="grid auto-rows-fr grid-cols-1 gap-3 sm:grid-cols-2 lg:grid-cols-3">
-                {group.items.map((s) => (
-                  <LibraryCard key={s.id} session={s} now={now} buildHref={v2Href} />
-                ))}
-              </ul>
-            ) : (
-              <ul className="columns-2 gap-4 sm:columns-3 lg:columns-4">
-                {group.items.map((s) => (
-                  <LibraryNote key={s.id} session={s} now={now} buildHref={v2Href} />
-                ))}
-              </ul>
-            )}
+            <ul className="columns-2 gap-4 sm:columns-3 lg:columns-4">
+              {group.items.map((s) => (
+                <LibraryNote key={s.id} session={s} now={now} buildHref={v2Href} />
+              ))}
+            </ul>
           </section>
         ))
       )}

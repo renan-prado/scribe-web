@@ -319,10 +319,10 @@ export function BibleReader({ className, initialBook, initialChapter }: Props) {
 }
 
 /**
- * "Pesquisa Exata" contra "Perguntar ao Biblo": a MESMA gramática do
- * `LibraryViewToggle` (pílula ativa invertida), com o avatar do Biblo no
- * lugar de um ícone genérico — é a "indicação do Biblo" no próprio seletor,
- * em vez de um selo à parte competindo pela mesma linha.
+ * "Pesquisa Exata" contra "Perguntar ao Biblo": a mesma gramática de um
+ * `Tabs` (pílula ativa invertida), com o avatar do Biblo no lugar de um ícone
+ * genérico — é a "indicação do Biblo" no próprio seletor, em vez de um selo à
+ * parte competindo pela mesma linha.
  */
 function SearchModeToggle({
   mode,
