@@ -1,6 +1,7 @@
 import type { Metadata, Viewport } from "next";
 import { Fira_Mono, Geist, Geist_Mono, Poppins } from "next/font/google";
 import { Analytics } from "@/components/Analytics";
+import { HeroEyebrowScript } from "@/components/HeroEyebrowScript";
 import { Providers } from "@/components/Providers";
 import { PwaBootstrap } from "@/components/PwaBootstrap";
 import { ThemedToaster } from "@/components/ThemedToaster";
@@ -178,6 +179,13 @@ export default function RootLayout({ children }: LayoutProps<"/">) {
             exige para abrir o atalho da tela inicial sem a moldura do Safari;
             as duas juntas não geram o aviso de depreciação do Chrome. */}
         <meta name="apple-mobile-web-app-capable" content="yes" />
+        {/* Decide ANTES DO PRIMEIRO PAINT se a pílula "indicado por Fulano" do
+            hero da landing aparece. Ele governa UMA tela e mora aqui mesmo
+            assim: um `<script>` dentro de uma página vira uma `<div>` vazia
+            quando o React o cria no cliente, e a landing é alcançável por
+            navegação de cliente. O root layout nunca é remontado, então daqui
+            o script sempre vem do HTML. Ver `HeroEyebrowScript`. */}
+        <HeroEyebrowScript />
       </head>
       <body className="min-h-full flex flex-col" suppressHydrationWarning>
         <Providers>

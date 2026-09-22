@@ -102,8 +102,10 @@ O desenho é de quatro peças, e cada uma existe por uma razão:
    Vale `1` e nada mais. Sem ele, o hero perguntaria ao servidor em toda visita
    para ouvir "não há indicação" em 99% delas.
 2. **`HeroEyebrowScript`**, um script que roda ANTES DO PRIMEIRO PAINT e marca
-   `data-scriba-ref` no `<html>` se a pista existe. Mesmo padrão de um
-   bootstrap de `<head>`: o estado tem de estar decidido no primeiro paint.
+   `data-scriba-ref` no `<html>` se a pista existe. Não é "mesmo padrão de um
+   bootstrap de `<head>`": ele É um, e mora no `<head>` do root layout. Dentro
+   da página, que é onde ficava, o React o trocava por uma `<div>` vazia sempre
+   que a landing era alcançada por navegação de cliente. Ver o cabeçalho dele.
 3. **`HeroEyebrow`**, cliente, só busca se a pista existe.
 4. **`/api/referral/active`**, que lê o cookie `httpOnly` no servidor.
 

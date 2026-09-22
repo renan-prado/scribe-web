@@ -26,9 +26,22 @@ import { REF_HINT_COOKIE } from "@/features/referrals/cookies";
  * escondida. É o desfecho certo: o selo é enfeite de conversão, e a landing
  * page precisa funcionar sem ele.
  *
- * Mora numa rota só (o hero da LP), e não no layout, porque é lá que a pílula
- * existe. Um script global rodando em toda página do app para governar um
- * elemento de uma página é custo sem contrapartida.
+ * **Ele mora no `<head>` do root layout, e NÃO na página do hero, que é onde
+ * ficava.** A razão é do React, não de organização: `<script>` dentro de um
+ * componente só existe de verdade quando o HTML vem do SERVIDOR. Quando o
+ * React cria o elemento no cliente, ele o troca por uma `<div>` vazia e avisa
+ * no console ("Scripts inside React components are never executed when
+ * rendering on the client"). E era exatamente o que acontecia: a LP é estática
+ * e alcançável por navegação de cliente (o "← Voltar" da tela de entrada leva
+ * a ela), e nesse caminho o script não rodava, a pílula não aparecia para quem
+ * tinha indicação, e sobrava uma `<div>` no meio do hero.
+ *
+ * O root layout é o único lugar imune: ele é renderizado no servidor em todo
+ * carregamento duro e NUNCA é remontado numa navegação de cliente, então o
+ * script sempre nasce do HTML. O preço é ele rodar em toda página em vez de
+ * numa só, e é uma leitura de `document.cookie` com um `setAttribute`: menos
+ * do que custava ter um mecanismo que falhava em silêncio na metade das
+ * entradas.
  */
 const SCRIPT = `(function(){try{if(document.cookie.indexOf("${REF_HINT_COOKIE}=")!==-1){document.documentElement.setAttribute("data-scriba-ref","1");}}catch(e){}})();`;
 

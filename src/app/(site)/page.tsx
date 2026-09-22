@@ -17,7 +17,6 @@ import { ScribaMark } from "@/shared/brand";
 import { BibloFace } from "@/shared/brand/BibloFace";
 import { BibloHeroFace } from "@/shared/brand/BibloHeroFace";
 import { HeroEyebrow } from "@/shared/components/HeroEyebrow";
-import { HeroEyebrowScript } from "@/shared/components/HeroEyebrowScript";
 import { LandingFooter, LandingHeader, SectionLabel } from "@/shared/components/LandingChrome";
 import { LandingCta } from "@/shared/components/LandingCta";
 import { LandingJsonLd } from "@/shared/components/LandingJsonLd";
@@ -181,11 +180,12 @@ function Hero() {
             Ver o cabeçalho de `HeroEyebrow`. Não arrasta bundle: é um
             componente de `src/shared/`, sem nada de `src/features/`.
 
-            O script vem ANTES dela no documento, e a ordem é o ponto: ele
-            roda enquanto o parser ainda não chegou na pílula, então o estado
-            inicial (frase ou esqueleto) já está decidido no primeiro paint.
-            Mesmo padrão do bootstrap de tema que havia no `<head>`. */}
-        <HeroEyebrowScript />
+            Quem decide o estado inicial dela é o `HeroEyebrowScript`, que
+            roda antes do primeiro paint. Ele ficava AQUI, uma linha acima,
+            para o parser chegar nele antes da pílula, e mudou-se para o
+            `<head>` do root layout: um `<script>` dentro de uma página vira
+            uma `<div>` vazia quando o React o cria no cliente, e esta página é
+            alcançável por navegação de cliente. Ver o cabeçalho dele. */}
         <HeroEyebrow />
         {/* O Biblo, e os olhos dele seguem o ponteiro. É o segundo (e último)
             componente cliente do hero, e o único da página que existe para se
