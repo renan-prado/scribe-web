@@ -3,6 +3,7 @@
   <head>
     <meta charset="utf-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
+    <meta name="theme-color" content="#212121" />
     <title>Sem conexão, Scriba</title>
     <!--
       A tela que o app mostra quando o aparelho está offline. Quem a serve é o
@@ -21,7 +22,18 @@
       um conjunto e nenhum script.
 
       A pena continua vindo de `public/brand/pena.svg`, por máscara CSS, para não
-      duplicar o `<path>` da marca mais uma vez (ver src/shared/AGENTS.md).
+      duplicar o `<path>` da marca mais uma vez (ver src/shared/AGENTS.md). O
+      glifo da nuvem cortada é inline porque é o único desenho desta tela que não
+      existe em lugar nenhum do produto, e um segundo arquivo a buscar seria um
+      segundo jeito de esta tela aparecer quebrada.
+
+      ## Os dois atalhos aparecem SÓ quando levam a algum lugar
+
+      "Abrir minhas notas" e "Nova gravação" dependem de o service worker ter a
+      moldura daquela tela guardada (ver `PAGE_CACHE` no `sw.js`). Sem isso o
+      toque cairia na rede, falharia, e o navegador voltaria para esta mesma
+      página: um botão que promete e devolve o aviso é pior que botão nenhum.
+      Então eles nascem escondidos e só acendem depois que o cache responde.
     -->
     <style>
       :root {
@@ -30,6 +42,7 @@
         --paper: #2f3035;
         --ink: #f5f5f5;
         --ink-soft: #b3b4ba;
+        --ink-mute: #8a8b92;
         --accent: #f5f5f5;
         --hairline: rgba(255, 255, 255, 0.1);
       }
@@ -60,15 +73,34 @@
         background: var(--paper);
         border: 1px solid var(--hairline);
         border-radius: 28px;
-        padding: 40px 28px;
+        padding: 36px 28px 28px;
       }
       .mark {
-        width: 44px;
-        height: 44px;
-        margin: 0 auto 20px;
-        background-color: var(--accent);
+        width: 32px;
+        height: 32px;
+        margin: 0 auto 18px;
+        background-color: var(--ink-mute);
         -webkit-mask: url("/brand/pena.svg") center / contain no-repeat;
         mask: url("/brand/pena.svg") center / contain no-repeat;
+      }
+      /* O disco da nuvem cortada. Ele é o objeto da tela, então ganha o único
+         volume daqui: um poço do próprio chão dentro do papel, que é o encaixe
+         que o resto do produto usa. */
+      .glyph {
+        width: 72px;
+        height: 72px;
+        margin: 0 auto 20px;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        border-radius: 999px;
+        background: var(--bg);
+        border: 1px solid var(--hairline);
+        color: var(--ink-soft);
+      }
+      .glyph svg {
+        width: 32px;
+        height: 32px;
       }
       h1 {
         margin: 0 0 10px;
@@ -82,38 +114,97 @@
         line-height: 1.6;
         color: var(--ink-soft);
       }
-      button {
+      .actions {
         margin-top: 24px;
+        display: flex;
+        flex-direction: column;
+        gap: 8px;
+      }
+      .action {
+        display: block;
         width: 100%;
         padding: 13px 20px;
-        border: 1px solid var(--hairline);
+        border: 1px solid transparent;
         border-radius: 999px;
-        background: var(--bg);
-        color: var(--ink);
         font: inherit;
         font-size: 14px;
         font-weight: 600;
+        text-decoration: none;
         cursor: pointer;
       }
-      button:focus-visible {
+      /* A pastilha clara com tinta grafite: o botão primário do produto. */
+      .action--primary {
+        background: var(--accent);
+        color: #212121;
+      }
+      .action--ghost {
+        background: var(--bg);
+        color: var(--ink);
+        border-color: var(--hairline);
+      }
+      .action:focus-visible {
         outline: 2px solid var(--accent);
         outline-offset: 2px;
+      }
+      /* Num aparelho de toque não há hover, e um toque sem reação vira três
+         toques. É o mesmo piso do `globals.css`. */
+      @media (hover: none) {
+        .action:active {
+          opacity: 0.62;
+        }
+      }
+      .note {
+        margin-top: 18px;
+        font-size: 12px;
+        line-height: 1.5;
+        color: var(--ink-mute);
+      }
+      [hidden] {
+        display: none !important;
       }
     </style>
   </head>
   <body>
     <main>
       <div class="mark" aria-hidden="true"></div>
-      <h1>Você está sem conexão</h1>
+      <div class="glyph" aria-hidden="true">
+        <!-- Nuvem cortada, o mesmo desenho do "Modo offline" da pastilha do app
+             (`CloudOff` do lucide), copiado aqui porque sem rede não há bundle. -->
+        <svg
+          viewBox="0 0 24 24"
+          fill="none"
+          stroke="currentColor"
+          stroke-width="1.75"
+          stroke-linecap="round"
+          stroke-linejoin="round"
+        >
+          <path d="m2 2 20 20" />
+          <path d="M5.782 5.782A7 7 0 0 0 9 19h8.5a4.5 4.5 0 0 0 1.307-.193" />
+          <path d="M21.532 16.5A4.5 4.5 0 0 0 17.5 10h-1.79A7.008 7.008 0 0 0 10 5.07" />
+        </svg>
+      </div>
+      <h1>Você está sem internet no momento</h1>
       <p>
-        O Scriba precisa de internet para transcrever e resumir. Assim que a
-        conexão voltar, é só tentar de novo, nada do que já foi gravado se
-        perde.
+        O Scriba precisa de conexão para transcrever e resumir. O que você já
+        escreveu e gravou continua guardado neste aparelho, e sobe sozinho
+        assim que a rede voltar.
       </p>
-      <button type="button" id="retry">Tentar de novo</button>
+      <div class="actions">
+        <button type="button" id="retry" class="action action--primary">Tentar novamente</button>
+        <a id="library" class="action action--ghost" href="/home" hidden>
+          Acessar notas e gravações locais
+        </a>
+        <a id="record" class="action action--ghost" href="/recording" hidden>
+          Nova gravação offline
+        </a>
+      </div>
+      <p class="note" id="note" hidden>
+        Abra o Scriba uma vez com internet para deixar estas telas disponíveis
+        offline.
+      </p>
     </main>
     <script>
-      // O handler fica AQUI, e não num `onclick=` no markup: atributo de
+      // Os handlers ficam AQUI, e não num `onclick=` no markup: atributo de
       // evento é o primeiro a cair sob qualquer CSP mais apertada que a de
       // hoje, e ele falharia em silêncio.
       document.getElementById("retry").addEventListener("click", function () {
@@ -124,6 +215,41 @@
       window.addEventListener("online", function () {
         location.reload();
       });
+
+      // Quais atalhos têm moldura guardada. O nome do cache é o mesmo do
+      // `sw.js`; mexeu lá, mexa aqui.
+      var PAGE_CACHE = "scriba-pages-v2";
+      var SHELL_ROUTES = [
+        { path: "/home", id: "library" },
+        { path: "/recording", id: "record" },
+      ];
+
+      (function revealCachedShortcuts() {
+        if (!("caches" in window)) return;
+        Promise.all(
+          SHELL_ROUTES.map(function (route) {
+            return caches
+              .match(route.path, { cacheName: PAGE_CACHE })
+              .then(function (hit) {
+                return Boolean(hit);
+              })
+              .catch(function () {
+                return false;
+              });
+          })
+        ).then(function (found) {
+          var any = false;
+          found.forEach(function (ok, i) {
+            if (!ok) return;
+            any = true;
+            document.getElementById(SHELL_ROUTES[i].id).hidden = false;
+          });
+          // A linha explicativa é o que sobra quando nenhum atalho existe: ela
+          // diz por que a tela tem um botão só, em vez de deixar o vazio
+          // parecer um app pela metade.
+          if (!any) document.getElementById("note").hidden = false;
+        });
+      })();
     </script>
   </body>
 </html>

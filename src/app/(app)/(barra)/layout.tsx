@@ -10,6 +10,7 @@ import { getCurrentAccount } from "@/lib/db/account";
 import { getCycleUsage } from "@/lib/db/coins";
 import { getCurrentPlan } from "@/lib/entitlements/server";
 import { OfflineBadge } from "@/shared/components/OfflineBadge";
+import { ReconnectWatcher } from "@/shared/components/ReconnectWatcher";
 import { AccountMenu } from "./components/AccountMenu";
 import { AppHeaderShell } from "./components/AppHeaderShell";
 
@@ -110,6 +111,10 @@ export default async function BarraLayout({ children }: { children: ReactNode })
           da página: repetido em sete telas, bastaria esquecer uma para o aviso
           sumir justamente onde alguém estava trabalhando. Ver `OfflineBadge`. */}
       <OfflineBadge />
+      {/* E a outra metade: o aviso de que a rede VOLTOU, com a reidratação que
+          ele anuncia (queries, mutações pausadas e os server components da
+          moldura). Ver `ReconnectWatcher`. */}
+      <ReconnectWatcher />
       {/* Quem é o dono do cache do aparelho, e a faxina quando ele muda. Fica
           aqui porque é onde a conta já foi lida, e envolve `children` porque
           toda tela que lê a Biblioteca do disco precisa do id na chave. Sem

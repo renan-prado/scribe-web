@@ -1675,33 +1675,60 @@ precisa) e bloqueia câmera e geolocalização.
 chamada a `/api/verse` não pague o parse de 4 MB de JSON. É a ÚNICA tradução
 que o código lê, ver `src/lib/bibles/loader.ts` antes de adicionar outra.
 
-`public/sw.js` faz TRÊS coisas: existir (é requisito para o navegador nos
+`public/sw.js` faz QUATRO coisas: existir (é requisito para o navegador nos
 tratar como PWA instalável), servir `public/offline.html` quando uma
-**navegação GET** falha por falta de rede, e trazer a aba de volta quando
-alguém toca na notificação de gravação em andamento (`notificationclick`, ver
-a seção do gravador acima). Ele nunca é registrado em dev
-(`PwaBootstrap`): service worker + HMR gera loop de código velho difícil de
+**navegação GET** falha por falta de rede, guardar a CASCA do app, e trazer a
+aba de volta quando alguém toca na notificação de gravação em andamento
+(`notificationclick`, ver a seção do gravador acima). Ele nunca é registrado em
+dev (`PwaBootstrap`): service worker + HMR gera loop de código velho difícil de
 depurar.
 
-**Ele não cacheia o app, e isso é decisão.** O conteúdo aqui muda a cada
-segundo, transcrição, feed, saldo, e cache velho não apareceria como bug de
-cache: apareceria como sessão que perdeu texto.
+**Ele não cacheia CONTEÚDO, e isso continua sendo decisão.** Nenhuma resposta
+de `/api/*`, nenhuma tela de sessão (`/summary/:id`, `/escrever/:id`), nada que
+carregue transcrição, feed ou saldo. O conteúdo aqui muda a cada segundo, e
+cache velho não apareceria como bug de cache: apareceria como sessão que perdeu
+texto.
 
-**E o cache que existe HOJE não é dele.** A Biblioteca é guardada no IndexedDB
-pelo TanStack Query (ver `src/features/session/AGENTS.md`), e a diferença é o
-que cada um sabe: o service worker guardaria RESPOSTAS HTTP sem saber o que
-envelheceu, e é aí que ele transforma um cache velho em texto perdido; o
-TanStack guarda ESTADO que a aplicação sabe revalidar, escopado por conta e
-descartado a cada release. A decisão acima continua valendo — não acrescente
-cache de conteúdo ao `sw.js`. A casca da tela offline (`offline.html` +
-`pena.svg`) é estática. `offline.html` está na
-exclusão do `matcher` do proxy porque quem a busca é o `install` do SW, e
-`cache.addAll` REJEITA resposta redirecionada, atrás do proxy, um visitante
-anônimo derrubaria a instalação inteira do service worker.
+**O que ele passou a cachear é a CASCA**, e são três baldes com regras
+diferentes:
+
+| cache | o quê | estratégia |
+|---|---|---|
+| `scriba-shell-v2` | `offline.html` + `pena.svg` | precache no `install` |
+| `scriba-assets-v2` | `/_next/static/*` (hash no caminho) | cache-first, teto de 240 entradas |
+| | `/brand/*`, `/icons/*` (sem hash) | stale-while-revalidate |
+| `scriba-pages-v2` | o HTML de `/home` e `/recording` | network-first, cache só no fallback |
+
+O terceiro é a exceção, e ela é estreita de propósito: sem ele os dois atalhos
+da tela offline ("acessar notas e gravações locais", "nova gravação offline")
+seriam botões que levam de volta ao aviso. O que se guarda é a MOLDURA daquelas
+duas telas, servida só quando a rede falhou, e a lista de rotas
+(`SHELL_ROUTES`) está escrita nos dois arquivos — mexeu no `sw.js`, mexa no
+`offline.html`, que decide quais botões desenhar a partir do que o cache
+responde. **Um atalho sem moldura guardada não aparece**; a tela mostra no
+lugar a linha que explica como deixá-lo disponível.
+
+**Aquele HTML traz nome, e-mail e saldo de quem estava logado**, então ele sai
+por dois caminhos: o POST de `/auth/sign-out`, que o `sw.js` observa sem
+responder, e a mensagem `scriba:purge-private` que o `CacheOwner` manda quando
+o dono do aparelho muda (é ela que pega a sessão que expirou sozinha). Nenhum
+outro cache carrega dado de conta.
+
+**E o cache de ESTADO continua não sendo dele.** A Biblioteca é guardada no
+IndexedDB pelo TanStack Query (ver `src/features/session/AGENTS.md`), e a
+diferença é o que cada um sabe: o service worker guarda RESPOSTAS HTTP sem saber
+o que envelheceu, e é por isso que o que ele guarda é casca; o TanStack guarda
+ESTADO que a aplicação sabe revalidar, escopado por conta e descartado a cada
+release. **Não acrescente cache de conteúdo ao `sw.js`.**
+
+`offline.html` está na exclusão do `matcher` do proxy porque quem a busca é o
+`install` do SW, e `cache.addAll` REJEITA resposta redirecionada, atrás do
+proxy, um visitante anônimo derrubaria a instalação inteira do service worker.
 
 `offline.html` é o ÚNICO arquivo do projeto onde cor literal é aceitável: sem
 rede, o CSS do Next não carrega. Os valores lá são cópia dos tokens e precisam
-ser atualizados junto com eles.
+ser atualizados junto com eles. O glifo da nuvem cortada também é cópia (o
+`CloudOff` do lucide que a pastilha do app usa), pelo mesmo motivo.
 
 ### A barra de status é uma constante
 

@@ -52,6 +52,20 @@ export function CacheOwner({ userId, children }: { userId: string; children: Rea
     if (previous === null || previous === userId) return;
     client.clear();
     void idbStorage.removeItem("scriba-query-cache");
+    // O service worker guarda a MOLDURA de `/home` e `/recording` para a tela
+    // offline ter atalhos de verdade (ver `public/sw.js`), e aquele HTML traz
+    // nome, e-mail e saldo de quem estava logado. Ele sai pelo mesmo gesto que
+    // o resto do cache do dono anterior, e por aqui — não no logout — porque
+    // este é o ponto que também pega a sessão que expirou sozinha.
+    if ("serviceWorker" in navigator) {
+      navigator.serviceWorker.ready
+        .then((registration) => {
+          registration.active?.postMessage({ type: "scriba:purge-private" });
+        })
+        .catch(() => {
+          // Registro que nunca ficou pronto. O cache do TanStack já saiu.
+        });
+    }
   }, [userId, client]);
 
   return <SessionOwnerProvider value={userId}>{children}</SessionOwnerProvider>;

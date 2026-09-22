@@ -401,9 +401,11 @@ landing page também. Quem escopa o cache por CONTA é a chave de cada query, e
 quem apaga o do dono anterior é o `CacheOwner` (ver
 `src/features/session/AGENTS.md`).
 
-O service worker continua não cacheando nada — são coisas diferentes: ele
-guardaria RESPOSTAS HTTP sem saber o que envelheceu, este guarda ESTADO que a
-aplicação sabe revalidar. Ver `src/app/AGENTS.md`.
+O service worker cacheia outra coisa, e são coisas diferentes: ele guarda a
+CASCA (os arquivos de `/_next/static/`, a marca e a moldura das duas telas que a
+tela offline oferece como atalho), sem saber o que envelheceu; este guarda
+ESTADO que a aplicação sabe revalidar. Conteúdo continua fora dos dois lados
+dele. Ver `src/app/AGENTS.md`.
 
 **E ele RESPONDE sem rede: `networkMode: "offlineFirst"`, nas queries e nas
 mutações.** O padrão do v5 é `"online"`, ou seja, sem conexão toda query entra
@@ -455,6 +457,20 @@ agora, e aqui ela não impede nada do que a pessoa veio fazer. O que ela consert
 é o silêncio — o Scriba passou a funcionar sem rede e não contava isso, e um app
 que continua aceitando texto sem dizer que está offline é indistinguível de um
 que está prestes a perder tudo.
+
+`components/ReconnectWatcher.tsx` é a outra metade, no mesmo layout: o toast
+"Conexão restabelecida" e a REIDRATAÇÃO que ele anuncia
+(`invalidateQueries` + `resumePausedMutations` + `router.refresh()`, que é a
+única das três que alcança os server components da moldura). Ele dispara na
+TRANSIÇÃO, guardada num `ref`, e não no booleano: o hook nasce `true` no
+servidor e no primeiro quadro, então reagir ao valor daria um "conexão
+restabelecida" a cada abertura do app.
+
+**A terceira tela do assunto é `public/offline.html`**, servida pelo service
+worker quando uma navegação falha sem rede. Ela deixou de ser um aviso com um
+botão de recarregar: hoje oferece também "acessar notas e gravações locais" e
+"nova gravação offline", e cada um só aparece se o SW tiver a moldura daquela
+tela guardada. O porquê dos três baldes de cache está em `src/app/AGENTS.md`.
 
 ## A navegação do app não mora aqui
 
