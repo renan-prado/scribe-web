@@ -13,7 +13,8 @@
       "!**/node_modules",
       "!**/public",
       "!**/lib/bibles/*.json",
-      "!**/tsconfig.tsbuildinfo"
+      "!**/tsconfig.tsbuildinfo",
+      "!**/supabase/email-templates"
     ]
   },
   "formatter": {

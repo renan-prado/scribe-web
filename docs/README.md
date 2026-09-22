@@ -43,11 +43,14 @@ saber ao editar código ficam nos `AGENTS.md` de cada pasta, não aqui.
   fluxo, a regra do degrau e como ler a tabela. **Status: implementado.**
 - **[`auth.md`](./auth.md)**: as duas portas de entrada (Google e e-mail com
   senha) e as três chaves do painel do Supabase sem as quais a segunda não
-  funciona: o provedor, as URLs de retorno e os modelos de e-mail. Explica por
-  que os modelos com `token_hash` são recomendados (o link de recuperação
-  aberto em OUTRO aparelho falha com os de fábrica), por que a recuperação
-  responde "enviado" mesmo para e-mail inexistente, e por que criar senha numa
-  conta do Google não cria uma segunda conta. **Status: implementado.**
+  funciona: o provedor, as URLs de retorno e os modelos de e-mail (os quatro
+  prontos em `supabase/email-templates/`), mais o remetente, o SMTP próprio e os
+  registros de DNS que decidem se a confirmação chega na caixa de entrada ou no
+  lixo eletrônico. Explica por que os modelos com `token_hash` são recomendados
+  (o link de recuperação aberto em OUTRO aparelho falha com os de fábrica), por
+  que a recuperação responde "enviado" mesmo para e-mail inexistente, e por que
+  criar senha numa conta do Google não cria uma segunda conta.
+  **Status: implementado.**
 - **[`stripe-setup.md`](./stripe-setup.md)**: ligar a cobrança do zero:
   objetos a criar no Stripe, as variáveis, e as armadilhas conhecidas.
   Ferramentas: `npm run stripe:doctor` e `npm run stripe:listen`.

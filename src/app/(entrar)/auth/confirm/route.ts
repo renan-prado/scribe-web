@@ -19,9 +19,10 @@ const log = createLogger("auth/confirm");
  * aparelho, que é como as pessoas de fato leem e-mail.
  *
  * Esta rota só é usada quando os modelos de e-mail do Supabase apontam para
- * cá. Os de fábrica não apontam, e por isso `docs/auth.md` traz os quatro
- * modelos prontos para colar no painel. Enquanto ninguém os trocar, tudo
- * continua funcionando pelo `/auth/callback`, no mesmo aparelho.
+ * cá. Os de fábrica não apontam, e por isso `supabase/email-templates/` traz os
+ * quatro modelos prontos para colar no painel (o guia de colagem é `docs/auth.md`
+ * §4). Enquanto ninguém os trocar, tudo continua funcionando pelo
+ * `/auth/callback`, no mesmo aparelho.
  *
  * `type` é entrada do cliente e é conferida contra a lista fechada abaixo:
  * ela vai direto para o `verifyOtp`, e um valor inventado ali é uma chamada

@@ -3,6 +3,15 @@
 Uma migração por arquivo, numerada e imutável depois de aplicada. Os números
 0012–0016 não existem: não procure, não renumere.
 
+**`email-templates/` não é migração e não sobe por `db:push`.** São os quatro
+modelos de e-mail do Supabase Auth (cadastro, senha, link mágico e troca de
+e-mail), em HTML de tabela e CSS inline, para serem COLADOS no painel
+(Authentication → Emails → Templates), nos dois projetos. Eles moram aqui por
+serem configuração do mesmo serviço; o guia de colagem, as variáveis, o
+remetente e o DNS estão em [`docs/auth.md`](../docs/auth.md) §4 e §5. Mexeu
+num `next=` ou num `type=` ali? Confira `src/app/(entrar)/auth/confirm/route.ts`,
+que é quem os recebe.
+
 ## Como aplicar
 
 ```
