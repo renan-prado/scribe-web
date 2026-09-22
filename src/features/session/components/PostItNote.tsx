@@ -67,6 +67,12 @@ type Props = {
   footer: ReactNode;
   /** A linha que explica um casamento invisível da busca. Ver o cabeçalho. */
   hint?: ReactNode;
+  /** Arrastar o cartão até uma pasta (ver `folder-dnd.ts`), só a Biblioteca
+   *  passa. No `<li>`, e não no link: o link é quem responde ao CLIQUE, e o
+   *  arrastar é um gesto do cartão inteiro, os dois não competem porque o
+   *  navegador só decide "isto é um arrastar" depois de o ponteiro se mover. */
+  draggable?: boolean;
+  onDragStart?: (e: React.DragEvent<HTMLLIElement>) => void;
 };
 
 /**
@@ -118,11 +124,22 @@ function noteOf(id: string): (typeof NOTES)[number] {
   return NOTES[Math.abs(hash) % NOTES.length];
 }
 
-export function PostItNote({ colorKey, href, eyebrow, title, footer, hint }: Props) {
+export function PostItNote({
+  colorKey,
+  href,
+  eyebrow,
+  title,
+  footer,
+  hint,
+  draggable,
+  onDragStart,
+}: Props) {
   const note = noteOf(colorKey);
 
   return (
     <li
+      draggable={draggable}
+      onDragStart={onDragStart}
       // `break-inside-avoid` é o que impede o masonry de CSS (`columns-2`) de
       // cortar um cartão ao meio na virada da coluna. `mb-4` e não `gap`: entre
       // colunas o vão é do `gap`, mas o vão VERTICAL num contexto de colunas

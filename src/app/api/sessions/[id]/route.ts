@@ -1,5 +1,6 @@
 import { NextResponse } from "next/server";
 import { z } from "zod";
+import { getFolder } from "@/lib/db/folders";
 import { upsertLocationByName } from "@/lib/db/locations";
 import { deleteSession, getSessionMeta, updateSessionMeta } from "@/lib/db/sessions";
 import { upsertSpeakerByName } from "@/lib/db/speakers";
@@ -18,6 +19,9 @@ const PatchSchema = z
     title: z.string().trim().max(200).nullable().optional(),
     speakerName: z.string().trim().max(200).nullable().optional(),
     speakerLocation: z.string().trim().max(200).nullable().optional(),
+    /** `null` tira a sessão da pasta (move para "sem pasta"). Ver
+     *  `src/lib/domain/folder.ts` e a migração 0068. */
+    folderId: z.uuid().nullable().optional(),
   })
   .strict();
 
@@ -48,6 +52,15 @@ export async function PATCH(request: Request, { params }: { params: Promise<{ id
   // informação nossa para confirmar.
   const owned = await getSessionMeta(id).catch(() => null);
   if (!owned) return NextResponse.json({ error: "not_found" }, { status: 404 });
+
+  // A RLS (migração 0068) já recusa no UPDATE um `folder_id` que não seja de
+  // uma pasta do próprio usuário, mas ali o erro é opaco (mensagem do
+  // Postgres). Conferir aqui devolve `folder_not_found`, o mesmo padrão de
+  // "confira o dono antes de trabalhar" do resto da rota.
+  if (parsed.data.folderId) {
+    const folder = await getFolder(parsed.data.folderId).catch(() => null);
+    if (!folder) return NextResponse.json({ error: "folder_not_found" }, { status: 404 });
+  }
 
   const title = parsed.data.title === undefined ? undefined : parsed.data.title?.trim() || null;
   const speakerName =
@@ -94,6 +107,7 @@ export async function PATCH(request: Request, { params }: { params: Promise<{ id
       speakerLocation,
       speakerId,
       locationId,
+      folderId: parsed.data.folderId,
     });
     log.debug("meta updated", { id });
     return NextResponse.json({ ok: true });

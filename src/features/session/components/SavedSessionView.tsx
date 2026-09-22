@@ -11,6 +11,7 @@ import { useCoinsStore } from "@/features/coins/store";
 import { ConfirmDialog } from "@/features/session/components/ConfirmDialog";
 import { EntityFieldDialog } from "@/features/session/components/EntityFieldDialog";
 import { HallucinationReportDialog } from "@/features/session/components/HallucinationReportDialog";
+import { MoveToFolderDialog } from "@/features/session/components/MoveToFolderDialog";
 import { SessionMenu } from "@/features/session/components/SessionMenu";
 import { SummaryDeck } from "@/features/session/components/SummaryDeck";
 import {
@@ -20,6 +21,7 @@ import {
 } from "@/features/session/components/SummaryFind";
 import { SummaryView } from "@/features/session/components/SummaryView";
 import { TitleDialog } from "@/features/session/components/TitleDialog";
+import { useFolders } from "@/features/session/folders-query";
 import { requestLocationSuggestions, requestSpeakerSuggestions } from "@/features/session/lib/api";
 import { initialsOf } from "@/features/session/lib/text";
 import { useLibrarySync, useLibraryWriter } from "@/features/session/query";
@@ -121,6 +123,8 @@ type SavedSessionViewProps = {
    * mais o caso — ver `WRITTEN_BLOCK_TYPES`.
    */
   mode?: SessionMode;
+  /** A pasta da sessão, ou `null` para "sem pasta". Ver `src/lib/domain/folder.ts`. */
+  folderId?: string | null;
 };
 
 export function SavedSessionView({
@@ -137,6 +141,7 @@ export function SavedSessionView({
   header,
   meta = "full",
   mode = "audio",
+  folderId: initialFolderId = null,
 }: SavedSessionViewProps) {
   const [titleDialogOpen, setTitleDialogOpen] = useState(false);
   const [speakerDialogOpen, setSpeakerDialogOpen] = useState(false);
@@ -144,6 +149,12 @@ export function SavedSessionView({
   const [reprocessing, setReprocessing] = useState(false);
   const [reportOpen, setReportOpen] = useState(false);
   const [deleteOpen, setDeleteOpen] = useState(false);
+  const [moveFolderOpen, setMoveFolderOpen] = useState(false);
+  const [folderId, setFolderId] = useState(initialFolderId);
+  // As pastas para o diálogo "Mover para pasta". `enabled` do próprio hook
+  // espera o dono do cache, então chamar aqui sem o diálogo aberto não custa
+  // nada: a Biblioteca (se aberta antes) já deixou a lista pronta.
+  const { data: folders } = useFolders();
 
   const router = useRouter();
   const refreshCoins = useCoinsStore((s) => s.refresh);
@@ -227,6 +238,29 @@ export function SavedSessionView({
     if (field === "title") setTitle(value || title);
     else if (field === "speakerName") setSpeakerName(value || null);
     else setSpeakerLocation(value || null);
+  }
+
+  async function handleMoveToFolder(nextFolderId: string | null) {
+    // Otimista nas DUAS pontas: o estado local (o que este diálogo mostra
+    // marcado da próxima vez que abrir) e o cartão da Biblioteca guardado no
+    // aparelho, pelo mesmo motivo de `patchField` acima — sem isto, voltar
+    // para a Biblioteca mostraria a sessão na pasta antiga até a próxima
+    // revalidação.
+    const previousFolderId = folderId;
+    const undo = library.patch(id, { folderId: nextFolderId });
+    setFolderId(nextFolderId);
+    try {
+      const res = await fetch(`/api/sessions/${id}`, {
+        method: "PATCH",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ folderId: nextFolderId }),
+      });
+      if (!res.ok) throw new Error("update failed");
+    } catch (error) {
+      undo();
+      setFolderId(previousFolderId);
+      throw error;
+    }
   }
 
   const initials = initialsOf(speakerName);
@@ -360,6 +394,7 @@ export function SavedSessionView({
                   onReprocess={summary && !written ? handleReprocess : undefined}
                   reprocessing={reprocessing}
                   onReportHallucination={() => setReportOpen(true)}
+                  onMoveToFolder={() => setMoveFolderOpen(true)}
                   written={written}
                 />
               </div>
@@ -475,6 +510,14 @@ export function SavedSessionView({
           confirmLabel="Excluir"
           pendingLabel="Excluindo…"
           onConfirm={handleDelete}
+        />
+
+        <MoveToFolderDialog
+          open={moveFolderOpen}
+          onOpenChange={setMoveFolderOpen}
+          folders={folders ?? []}
+          currentFolderId={folderId}
+          onMove={handleMoveToFolder}
         />
 
         <TitleDialog

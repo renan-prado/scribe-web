@@ -79,4 +79,7 @@ export type SessionListItem = {
   speakerLocation: string | null;
   mode: SessionMode;
   sourceUrl: string | null;
+  /** A pasta da sessão, ou `null` para "sem pasta" (a raiz). Migração 0068,
+   *  ver `src/lib/domain/folder.ts`. */
+  folderId: string | null;
 };

@@ -4,6 +4,7 @@ import { ChevronRight } from "lucide-react";
 import { memo } from "react";
 import { NavLink } from "@/components/NavLink";
 import type { SessionListItem, SessionMode } from "@/lib/domain/session";
+import { sessionDragProps } from "../lib/folder-dnd";
 import { shortDate } from "../lib/formatting";
 import { formatMmSs } from "../lib/text";
 import { SessionModeGlyph } from "./SessionModeGlyph";
@@ -64,7 +65,7 @@ function LibraryRowImpl({
   const title = s.title?.trim() || "Sessão sem título";
 
   return (
-    <li className="border-v2-card-hover border-b last:border-b-0">
+    <li className="border-v2-card-hover border-b last:border-b-0" {...sessionDragProps(s.id)}>
       <NavLink
         href={buildHref(s.id)}
         prefetchOnPress

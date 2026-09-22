@@ -126,6 +126,7 @@ export default async function V2SummaryPage({ params }: PageProps) {
         summary={session.finalSummary}
         meta="compact"
         mode={session.mode}
+        folderId={session.folderId}
       />
       {/* A pesquisa da 1ª, 3ª e 8ª gravação, e a apresentação da tela. As duas
           disputam o mesmo espaço, e quem cede é a pesquisa: enquanto o tour

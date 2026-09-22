@@ -1,4 +1,5 @@
 import type { SessionListItem } from "@/lib/domain/session";
+import { sessionDragProps } from "../lib/folder-dnd";
 import { shortDate } from "../lib/formatting";
 import { PostItNote } from "./PostItNote";
 import { SessionModeGlyph } from "./SessionModeGlyph";
@@ -63,6 +64,7 @@ export function LibraryNote({ session: s, now, buildHref = (id) => `/summary/${i
       href={href}
       eyebrow={s.speakerName?.trim() || null}
       title={s.title?.trim() || "Sessão sem título"}
+      {...sessionDragProps(s.id)}
       footer={
         <>
           <SessionModeGlyph mode={s.mode} />

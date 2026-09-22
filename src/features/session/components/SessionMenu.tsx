@@ -1,6 +1,6 @@
 "use client";
 
-import { MoreVertical, Pencil, RefreshCw, Trash2, TriangleAlert } from "lucide-react";
+import { FolderInput, MoreVertical, Pencil, RefreshCw, Trash2, TriangleAlert } from "lucide-react";
 import {
   DropdownMenu,
   DropdownMenuContent,
@@ -32,6 +32,13 @@ type SessionMenuProps = {
    */
   onDiscard?: () => void;
   /**
+   * Abre o diálogo de "Mover para pasta" (ver `MoveToFolderDialog`). É a via
+   * de TECLADO/celular do sistema de pastas — o arrastar (`folder-dnd.ts`)
+   * só existe na Biblioteca, com mouse; aqui, na tela de leitura, mover é um
+   * item de menu como qualquer outro.
+   */
+  onMoveToFolder?: () => void;
+  /**
    * A sessão foi escrita à mão? Só o NOME do item de excluir muda com isto.
    *
    * Aqui morava um `editHref`, e o "Editar o texto" que ele desenhava: era a
@@ -51,12 +58,13 @@ export function SessionMenu({
   reprocessing,
   onReportHallucination,
   onDiscard,
+  onMoveToFolder,
   written = false,
 }: SessionMenuProps) {
   const balance = useCoinsStore((s) => s.balance);
   const insufficient = balance !== null && balance < REPROCESS_COST;
   const reprocessDisabled = !onReprocess || reprocessing || insufficient;
-  const hasLeadingItem = Boolean(onEdit || onReprocess);
+  const hasLeadingItem = Boolean(onEdit || onReprocess || onMoveToFolder);
   const hasItemAboveDiscard = hasLeadingItem || Boolean(onReportHallucination);
   const hasItemAboveDelete = hasItemAboveDiscard || Boolean(onDiscard);
 
@@ -79,6 +87,12 @@ export function SessionMenu({
           <DropdownMenuItem onClick={onEdit} className="gap-2">
             <Pencil className="size-4" />
             Editar
+          </DropdownMenuItem>
+        ) : null}
+        {onMoveToFolder ? (
+          <DropdownMenuItem onClick={onMoveToFolder} className="gap-2">
+            <FolderInput className="size-4" />
+            Mover para pasta
           </DropdownMenuItem>
         ) : null}
         {onReprocess ? (

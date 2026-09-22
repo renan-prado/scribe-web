@@ -1,15 +1,18 @@
 "use client";
 
-import { Loader2, SearchX } from "lucide-react";
+import { ChevronRight, Loader2, SearchX } from "lucide-react";
+import { useRouter, useSearchParams } from "next/navigation";
 import { useCallback, useEffect, useMemo, useState } from "react";
 import { usePendingCount } from "@/features/session/capture-queue";
 import { CollectionSearch, FACET_ALL } from "@/features/session/components/CollectionSearch";
+import { FolderChips } from "@/features/session/components/FolderChips";
 import { LibraryCard } from "@/features/session/components/LibraryCard";
 import { LibraryNote } from "@/features/session/components/LibraryNote";
 import { LibraryRow } from "@/features/session/components/LibraryRow";
 import { LibraryViewToggle } from "@/features/session/components/LibraryViewToggle";
 import { PendingCaptures } from "@/features/session/components/PendingCaptures";
 import { SessionsEmptyState } from "@/features/session/components/SessionsEmptyState";
+import { useFolders } from "@/features/session/folders-query";
 import { useContentSearch } from "@/features/session/hooks/useContentSearch";
 import {
   buildHaystack,
@@ -146,6 +149,32 @@ export function LibraryBrowser({ nowIso }: Props) {
   const sessions = hydrated ? (data ?? EMPTY) : EMPTY;
   const loading = !hydrated || isPending;
 
+  // A PASTA aberta, lida da URL (`?pasta=<id>`) como o `?busca=1` da própria
+  // busca — mesmo desenho de `LibrarySearchScope`. `useSearchParams` num
+  // client component não força nada a dinâmico, a lupa já faz isto aqui do
+  // lado de dentro.
+  const searchParams = useSearchParams();
+  const router = useRouter();
+  const selectedFolderId = searchParams.get("pasta");
+  const { data: folders } = useFolders();
+  const selectedFolder = folders?.find((f) => f.id === selectedFolderId) ?? null;
+  const selectFolder = useCallback(
+    (id: string | null) => {
+      router.push(id ? `/home?pasta=${id}` : "/home");
+    },
+    [router]
+  );
+
+  // O acervo dentro da pasta aberta, ou tudo — é sobre ISTO que a busca, as
+  // opções de autor/local e o agrupamento por mês rodam a seguir. Filtrar
+  // ANTES faz a busca dentro de uma pasta procurar só ali dentro, do mesmo
+  // jeito que a busca da Biblioteca inteira já procura só no que está
+  // carregado.
+  const sessionsInFolder = useMemo(
+    () => (selectedFolderId ? sessions.filter((s) => s.folderId === selectedFolderId) : sessions),
+    [sessions, selectedFolderId]
+  );
+
   const [view, setView] = useLibraryView();
   const { open, setOpen } = useSearchScope();
   // As gravações guardadas no aparelho que ainda não viraram resumo. Elas não
@@ -163,12 +192,12 @@ export function LibraryBrowser({ nowIso }: Props) {
   const now = useMemo(() => new Date(nowIso), [nowIso]);
 
   const speakerOptions = useMemo(
-    () => facetOptions(sessions.map((s) => s.speakerName)),
-    [sessions]
+    () => facetOptions(sessionsInFolder.map((s) => s.speakerName)),
+    [sessionsInFolder]
   );
   const locationOptions = useMemo(
-    () => facetOptions(sessions.map((s) => s.speakerLocation)),
-    [sessions]
+    () => facetOptions(sessionsInFolder.map((s) => s.speakerLocation)),
+    [sessionsInFolder]
   );
 
   // O palheiro é montado UMA vez por lista, não uma por tecla: normalizar
@@ -176,19 +205,19 @@ export function LibraryBrowser({ nowIso }: Props) {
   // trabalho que só aparece no aparelho de quem tem muitas gravações.
   const haystacks = useMemo(() => {
     const map = new Map<string, string>();
-    for (const s of sessions) {
+    for (const s of sessionsInFolder) {
       map.set(s.id, buildHaystack([s.title, s.shortSummary, s.speakerName, s.speakerLocation]));
     }
     return map;
-  }, [sessions]);
+  }, [sessionsInFolder]);
 
   const tokens = useMemo(() => searchTokens(open ? query : ""), [open, query]);
 
   const filtered = useMemo(() => {
     // Com a barra fechada não há filtro nenhum para aplicar, e passar a lista
     // inteira pelo funil seria trabalho para devolvê-la igual.
-    if (!open) return sessions;
-    return sessions.filter((s) => {
+    if (!open) return sessionsInFolder;
+    return sessionsInFolder.filter((s) => {
       if (speaker !== FACET_ALL && s.speakerName?.trim() !== speaker) return false;
       if (location !== FACET_ALL && s.speakerLocation?.trim() !== location) return false;
       if (!isWithinRange(s.createdAt, range, now)) return false;
@@ -196,7 +225,7 @@ export function LibraryBrowser({ nowIso }: Props) {
       if (matchesAllTokens(haystacks.get(s.id) ?? "", tokens)) return true;
       return transcriptHits?.has(s.id) ?? false;
     });
-  }, [open, sessions, speaker, location, range, now, tokens, haystacks, transcriptHits]);
+  }, [open, sessionsInFolder, speaker, location, range, now, tokens, haystacks, transcriptHits]);
 
   const groups = useMemo(() => {
     const out: { label: string; items: SessionListItem[] }[] = [];
@@ -233,6 +262,34 @@ export function LibraryBrowser({ nowIso }: Props) {
 
   return (
     <div className="flex flex-col gap-6">
+      {/* As pastas, e o "Biblioteca > <pasta>" de quem está dentro de uma.
+          Fora da busca, pelo mesmo motivo de `PendingCaptures` logo abaixo:
+          a barra de busca já é um funil sobre o acervo, e pastas são outro —
+          dois funis abertos ao mesmo tempo confundem mais do que ajudam. Quem
+          quer procurar DENTRO de uma pasta entra nela primeiro. */}
+      {open ? null : (
+        <div className="flex flex-col gap-3">
+          {selectedFolder ? (
+            <nav aria-label="Você está em" className="flex items-center gap-1 px-1 text-[13px]">
+              <button
+                type="button"
+                onClick={() => selectFolder(null)}
+                className="rounded-md font-light text-v2-ink-mute outline-none transition-colors hover:text-v2-ink focus-visible:ring-2 focus-visible:ring-ring/50"
+              >
+                Biblioteca
+              </button>
+              <ChevronRight aria-hidden className="size-3.5 text-v2-ink-mute" />
+              <span className="font-medium text-v2-ink">{selectedFolder.name}</span>
+            </nav>
+          ) : null}
+          <FolderChips
+            selectedFolderId={selectedFolderId}
+            onSelect={selectFolder}
+            sessions={sessions}
+          />
+        </div>
+      )}
+
       {open ? (
         <CollectionSearch
           query={query}
@@ -259,7 +316,7 @@ export function LibraryBrowser({ nowIso }: Props) {
           countLabel={
             searching
               ? "Procurando…"
-              : resultLabel(filtered.length, sessions.length, ["gravação", "gravações"])
+              : resultLabel(filtered.length, sessionsInFolder.length, ["gravação", "gravações"])
           }
           filtering={filtering}
           onClear={clearAll}
@@ -319,6 +376,17 @@ export function LibraryBrowser({ nowIso }: Props) {
            dizer isso a quem tem trinta sermões guardados é a tela mentindo
            por meio segundo. Ver `useLibrary`. */
         <LibrarySkeleton />
+      ) : groups.length === 0 && selectedFolder ? (
+        /* Uma pasta vazia não é a Biblioteca vazia: a pessoa já tem acervo,
+           só não pôs nada AQUI ainda. "Grave a primeira gravação" seria a
+           tela ignorando as sessões que existem fora desta pasta. */
+        <div className="flex flex-col items-center gap-2 rounded-3xl border border-dashed border-v2-card-hover px-6 py-12 text-center">
+          <p className="text-sm font-medium text-v2-ink">Esta pasta está vazia.</p>
+          <p className="max-w-sm text-[13px] font-light leading-relaxed text-v2-ink-soft">
+            Arraste um cartão até “{selectedFolder.name}” na fileira acima, ou mova uma sessão pelo
+            menu dela.
+          </p>
+        </div>
       ) : groups.length === 0 && pendingCount === 0 ? (
         /* Biblioteca vazia é a primeira tela de quem acabou de entrar, e é
            diferente de busca sem resultado (acima): ali a saída é limpar o

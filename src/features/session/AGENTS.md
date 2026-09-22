@@ -71,6 +71,10 @@ pessoa quiser, aprofundar.
 | `components/PendingCaptureRunner.tsx` | quem acorda a fila (mora no layout de `(barra)`) |
 | `components/PendingCaptures.tsx` + `PendingCaptureNote.tsx` | o bloco e o cartão do que ainda não subiu |
 | `query.ts` | a Biblioteca guardada no aparelho: leitura, escrita otimista e o conserto do atraso |
+| `folders-query.ts` | as PASTAS guardadas no aparelho, mesmo desenho de `query.ts` |
+| `components/FolderChips.tsx` | a fileira de pastas da Biblioteca: navegar, criar, editar, excluir, soltar um cartão |
+| `components/FolderDialog.tsx` + `DeleteFolderDialog.tsx` + `MoveToFolderDialog.tsx` | criar/editar, excluir (com o destino do conteúdo) e mover uma sessão só |
+| `lib/folder-dnd.ts` | o `dataTransfer` de tipo próprio do arrastar-e-soltar |
 | `hooks/useCoinTick.ts` | o débito por minuto, durante a gravação |
 | `recording-store.ts` | um booleano: há gravação viva nesta aba? |
 | `server/final-summary.ts` | a chamada única que vira o resumo |
@@ -704,6 +708,53 @@ rascunho: o `BibloSummaryDock` faz um POST em `/api/sessions/written` e
 `router.refresh()`. Isso só é possível porque aquela rota deixou de exigir
 sessão `manual` — enquanto o `409 not_manual` existia, o Biblo da leitura não
 teria onde escrever.
+
+## Pastas
+
+`folders` (migração 0068) e `sessions.folder_id`, nullable — uma sessão vive em
+NO MÁXIMO uma pasta, e sem pasta continua sendo o estado padrão (a "raiz").
+`GET/POST /api/folders` e `PATCH/DELETE /api/folders/:id`, mais um `folderId`
+a mais no `PATCH /api/sessions/:id` de sempre.
+
+**A pasta que uma sessão aponta precisa ser DO MESMO DONO, e isso é RLS, não
+a rota.** `sessions_insert_own`/`sessions_update_own` (migração 0068) levam um
+`exists (select 1 from folders where id = folder_id and user_id = auth.uid())`
+no `with check` — a mesma classe de furo fechada em `session_deepenings` na
+0040 (ver `supabase/AGENTS.md`), aqui prevenida em vez de corrigida depois. A
+rota confere de novo (`getFolder` antes do PATCH) só para devolver
+`folder_not_found` em vez do erro cru do Postgres.
+
+**Apagar uma pasta não apaga o conteúdo por padrão.** `folder_id` é
+`on delete set null`: apagar a linha da pasta já solta as sessões para a raiz
+sozinho, sem UPDATE nenhum. "Excluir também as sessões" é o caminho OPOSTO, e
+por isso pede a escolha explícita no `DeleteFolderDialog` — apagar sessão é
+raro e caro de desfazer, mover para a raiz não perde nada.
+
+**Não existe um menu de três pontinhos no CARTÃO da Biblioteca, de propósito**
+(ver o cabeçalho de `PostItNote`), e "mover para pasta" não é exceção a essa
+regra — são DUAS portas, nenhuma delas um botão dentro do cartão:
+
+- **Arrastar** (`lib/folder-dnd.ts`), no desktop: cada cartão é `draggable`, e
+  cada chip de `FolderChips` é alvo de `drop`. Um `dataTransfer` de tipo
+  próprio (`application/x-scriba-session-id`) e não o `text/plain` que um
+  `<a>` carregaria sozinho, para que soltar um cartão fora de uma pasta não
+  vire "abrir link" em silêncio.
+- **`MoveToFolderDialog`**, aberto pelo item "Mover para pasta" do
+  `SessionMenu` de uma sessão já aberta (`/summary/:id`). É a via de TECLADO
+  e de CELULAR que o arrastar não cobre — o requisito de acessibilidade do
+  sistema de pastas não é um segundo desenho do arrastar, é este diálogo.
+
+**A cor de pasta é FECHADA em quatro valores**, os MESMOS tokens dos post-its
+sorteados (`--v2-note-*`, ver `FOLDER_COLORS` em `lib/domain/folder.ts`) —
+"nada de cor literal em `className`" (`src/shared/AGENTS.md`) vale para pasta
+como para qualquer outro pixel, e uma paleta própria duplicaria a do mural por
+nenhum ganho.
+
+**A pasta em si tem UM menu de três pontinhos** (`FolderChipMenu`, dentro de
+`FolderChips`), e ali ele é o desenho certo: o "⋯" e o nome são dois BOTÕES
+IRMÃOS dentro do mesmo chip, nunca um dentro do outro — a régua que tirou o
+menu do cartão (botão dentro de `<a>` é HTML inválido) continua valendo, só
+que aqui não há link nenhum por baixo para o botão invadir.
 
 ## As listas: busca e filtros
 

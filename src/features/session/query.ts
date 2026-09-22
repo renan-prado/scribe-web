@@ -118,6 +118,17 @@ export function useLibraryWriter() {
     /** Aplica uma mudança de campo (título, autor, local). Devolve o desfazer. */
     patch: (id: string, fields: Partial<SessionListItem>) =>
       write((list) => list.map((item) => (item.id === id ? { ...item, ...fields } : item))),
+    /** Tira da lista TODA sessão de uma pasta — o lado "excluir também as
+     *  sessões" de apagar uma pasta (ver `DeleteFolderDialog`). Devolve o
+     *  desfazer. */
+    removeByFolder: (folderId: string) =>
+      write((list) => list.filter((s) => s.folderId !== folderId)),
+    /** Tira o vínculo de pasta de toda sessão que a tinha — o lado "mover
+     *  para a raiz". O banco já faz isto sozinho (`on delete set null` em
+     *  `sessions.folder_id`, migração 0068); aqui é só o cache do aparelho
+     *  acompanhando. Devolve o desfazer. */
+    clearFolder: (folderId: string) =>
+      write((list) => list.map((s) => (s.folderId === folderId ? { ...s, folderId: null } : s))),
     /** Marca a lista como velha para que a próxima montagem confira. */
     invalidate: () => client.invalidateQueries({ queryKey: key }),
   };

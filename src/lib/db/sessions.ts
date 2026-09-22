@@ -43,6 +43,8 @@ export type SessionRow = {
   sourceEndMs: number | null;
   transcript: string;
   finalSummary: SummaryPayload | null;
+  /** A pasta da sessão, ou `null` para "sem pasta" (a raiz). Migração 0068. */
+  folderId: string | null;
 };
 
 // Reexportado por compatibilidade: o tipo mudou de casa para `lib/domain/`
@@ -127,6 +129,7 @@ type DbRow = {
   source_end_ms: number | null;
   transcript: string;
   final_summary: SummaryPayload | null;
+  folder_id: string | null;
 };
 
 // `mode` is a Postgres ordered-set aggregate function name, PostgREST tries
@@ -134,11 +137,11 @@ type DbRow = {
 // required for ordered-set aggregate mode"). The column is physically named
 // `capture_mode`; we keep the API-side field name as `mode` for callers.
 const SELECT_LIST =
-  "id, created_at, duration_ms, title, short_summary, speaker_id, location_id, speaker_name, speaker_location, capture_mode, source_url";
-const SELECT_FULL = `id, created_at, ended_at, duration_ms, title, short_summary, speaker_id, location_id, speaker_name, speaker_location, capture_mode, source_url, source_start_ms, source_end_ms, transcript, final_summary`;
+  "id, created_at, duration_ms, title, short_summary, speaker_id, location_id, speaker_name, speaker_location, capture_mode, source_url, folder_id";
+const SELECT_FULL = `id, created_at, ended_at, duration_ms, title, short_summary, speaker_id, location_id, speaker_name, speaker_location, capture_mode, source_url, source_start_ms, source_end_ms, transcript, final_summary, folder_id`;
 // O mesmo de SELECT_FULL menos transcript/final_summary.
 const SELECT_META =
-  "id, created_at, ended_at, duration_ms, title, short_summary, speaker_id, location_id, speaker_name, speaker_location, capture_mode, source_url, source_start_ms, source_end_ms";
+  "id, created_at, ended_at, duration_ms, title, short_summary, speaker_id, location_id, speaker_name, speaker_location, capture_mode, source_url, source_start_ms, source_end_ms, folder_id";
 // O de SELECT_FULL com `has_transcript` (coluna gerada, migração 0061) no
 // lugar de `transcript`: o mesmo conteúdo de tela por uma fração do payload.
 const SELECT_VIEW = `${SELECT_META}, has_transcript, final_summary`;
@@ -162,6 +165,7 @@ function rowToMeta(row: MetaRow): SessionMeta {
     sourceUrl: row.source_url,
     sourceStartMs: row.source_start_ms,
     sourceEndMs: row.source_end_ms,
+    folderId: row.folder_id,
   };
 }
 
@@ -183,6 +187,7 @@ function rowToSession(row: DbRow): SessionRow {
     sourceEndMs: row.source_end_ms,
     transcript: row.transcript,
     finalSummary: row.final_summary,
+    folderId: row.folder_id,
   };
 }
 
@@ -277,6 +282,7 @@ type ListRow = {
   speaker_location: string | null;
   capture_mode: string | null;
   source_url: string | null;
+  folder_id: string | null;
 };
 
 function rowToListItem(r: ListRow): SessionListItem {
@@ -292,6 +298,7 @@ function rowToListItem(r: ListRow): SessionListItem {
     speakerLocation: r.speaker_location,
     mode: parseSessionMode(r.capture_mode),
     sourceUrl: r.source_url,
+    folderId: r.folder_id,
   };
 }
 
@@ -428,6 +435,10 @@ export type UpdateSessionMetaInput = {
   speakerLocation?: string | null;
   speakerId?: string | null;
   locationId?: string | null;
+  /** `null` = "sem pasta" (a raiz). RLS confere que a pasta apontada é do
+   *  próprio usuário (migração 0068), então um id de pasta alheia simplesmente
+   *  não passa no UPDATE, o que aqui aparece como erro do Supabase. */
+  folderId?: string | null;
 };
 
 export async function updateSessionMeta(id: string, input: UpdateSessionMetaInput): Promise<void> {
@@ -438,6 +449,7 @@ export async function updateSessionMeta(id: string, input: UpdateSessionMetaInpu
   if (input.speakerLocation !== undefined) patch.speaker_location = input.speakerLocation;
   if (input.speakerId !== undefined) patch.speaker_id = input.speakerId;
   if (input.locationId !== undefined) patch.location_id = input.locationId;
+  if (input.folderId !== undefined) patch.folder_id = input.folderId;
   if (Object.keys(patch).length === 0) return;
   const { error } = await supabase.from("sessions").update(patch).eq("id", id);
   if (error) throw new Error(`updateSessionMeta failed: ${error.message}`);

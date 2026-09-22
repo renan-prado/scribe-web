@@ -1,5 +1,6 @@
 import { NavLink } from "@/components/NavLink";
 import type { SessionListItem } from "@/lib/domain/session";
+import { sessionDragProps } from "../lib/folder-dnd";
 import { shortDate } from "../lib/formatting";
 import { SessionModeGlyph } from "./SessionModeGlyph";
 
@@ -53,7 +54,7 @@ export function LibraryCard({
   const excerpt = s.shortSummary?.trim();
 
   return (
-    <li className="h-full">
+    <li className="h-full" {...sessionDragProps(s.id)}>
       <NavLink
         href={buildHref(s.id)}
         prefetchOnPress
