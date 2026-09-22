@@ -322,80 +322,29 @@ o foco e mais nada.
 **O `active` apaga quando o foco sai do bloco**, e o `onBlur` que o apaga confere
 o `relatedTarget` antes: se o foco foi para um filho do próprio bloco (a
 lixeira, o mover, a pastilha da passagem), o cursor não saiu dali. Sem esse
-apagar, um `+` revelado por um clique ficava aceso pelo resto da sessão; sem a
+apagar, a pílula revelada por um clique ficava acesa pelo resto da sessão; sem a
 conferência, tocar na lixeira apagaria o estado que mantém a lixeira na tela.
 
-**Quem acende os `+` é o `Composer`, não um `group-hover`.** Cada vão pertence a
-DOIS blocos, e o `+` entre eles aparece ao passar por qualquer um dos dois — um
-`group-` só enxerga o ancestral em que foi declarado, e o vão mora dentro de um
-só. Há também um `+` ACIMA do primeiro bloco: sem ele não havia como pôr nada
-antes do começo do texto a não ser criando depois e subindo.
+**Não há mais botão "+". A barra `/`, num parágrafo vazio, é o ÚNICO caminho
+para inserir um bloco** — título, passagem, destaque, citação, conclusão,
+tudo o que o menu oferece (ver "O menu da BARRA" abaixo). Havia um disco por
+vão entre blocos, e outro na pílula de cada bloco (`BlockControls`, "Adicionar
+bloco acima"), os dois abrindo a mesma fileira flutuante de pastilhas; o
+celular perdia o `hover` que acendia o disco, e o alvo de 24px já nascia
+pequeno para o dedo. O placeholder de todo parágrafo vazio (`BLOCK_PLACEHOLDERS`)
+ensina o atalho, e a linha do fim do texto (`WritingLine`) continua sempre lá
+— é nela, ou em qualquer parágrafo vazio no meio do documento, que se digita
+`/`.
 
-**Uma posição, UM dono.** `adderAt` é uma posição, não o endereço de um
-componente, então dois `+` que respondam pelo mesmo número abrem os dois menus e
-empilham duas fileiras idênticas na tela. Uma linha em branco é dona do vão logo
-acima dela (o `+` dela insere ali), e por isso o vão acima de uma linha em branco
-não desenha o seu próprio `+` — nem o do topo, quando o primeiro bloco já é uma
-linha em branco — nem o de baixo, que não seria duplicata e sim ruído: um
-segundo disco 28px abaixo do dela, dizendo a mesma coisa. Cada bloco responde
-pelo vão ACIMA dele (é daí que sai o `+` antes do primeiro), e a linha do rodapé
-responde pela posição depois do último, sumindo quando esse último já é uma
-linha em branco.
+**O que sobra na PÍLULA do bloco** (`BlockControls`) é o que só faz sentido
+sobre um bloco que já existe: marcar um recorte selecionado, mover para cima
+ou para baixo, excluir. Ela continua no vão acima do bloco (`bottom-full`),
+34px, MENOR que os 42 da caixa — maior que a linha que controla, ela virava a
+linha.
 
-**O `+` é OPCIONAL, e a linha do fim é uma linha em branco de verdade.** Depois
-do último bloco há sempre uma `textarea` vazia com a roupa de parágrafo, e o `+`
-fica ao lado dela: escrever ali cria o parágrafo com o que foi digitado e passa
-o cursor para ele (`WritingLine`, no `Composer`). Escrever um texto é escrever
-parágrafos — pedir que a pessoa escolha "Parágrafo" num menu antes de cada um
-cobra um clique por aquilo que ela ia fazer de qualquer jeito. O menu continua
-respondendo pelo resto: título, passagem, destaque, citação, conclusão.
-
-**Todo parágrafo VAZIO é essa mesma linha**, com o mesmo `+` ao lado — inclusive
-o que um Enter acabou de criar no meio do texto. Uma linha em branco é o momento
-em que "na verdade eu queria um título aqui" ainda está em aberto, e a oferta
-não pode aparecer ou sumir conforme a linha seja um bloco de verdade ou a do
-rodapé. Pela mesma razão a linha do rodapé some quando o último bloco já é um
-parágrafo vazio: as duas desenham a mesma coisa, e empilhadas seriam duas linhas
-em branco onde a pessoa pediu uma.
-
-**O `+` de inserir mora na PÍLULA do bloco** (`BlockControls`), junto de mover e
-excluir, e insere ACIMA dele — é o que diz o rótulo. Ele já ficou no vão entre
-dois blocos: eram dois discos por bloco, acendendo e apagando conforme o mouse
-passava, e uma tela de texto com uma dúzia de botõezinhos piscando ao redor.
-Numa barra que já existe e já aparece na hora certa, é um botão a mais.
-
-Inserir só acima não deixa posição órfã porque a linha do fim está sempre lá: as
-posições entre blocos saem da pílula do bloco de baixo, e o fim do texto é a
-própria linha em branco do rodapé.
-
-**O VÃO é do contêiner, e nada mais mora dentro dele.** Ele já foi de 56px para
-abrigar aquele disco; hoje são 32px, contra os 28 da leitura.
-
-**O menu de blocos FLUTUA sobre a linha, e não empurra nada.** Em fluxo, as sete
-pastilhas quebravam em duas linhas e empurravam o documento inteiro para baixo —
-o texto que a pessoa está olhando para decidir o que vem a seguir saltava no
-instante do clique, e o que estava sob o mouse deixava de estar. Ele começa
-exatamente onde a linha começa, e o `×` cai em cima do `+` que o abriu: mesmo
-disco, mesmo lugar, só o glifo muda (`DiscButton`) — o que só fecha porque ele
-não tem contorno: 1px de borda é 1px de LAYOUT, e tirava o `×` de cima do `+`.
-Ele não tem fio em volta, nem sombra, nem cor própria — os três o transformavam
-numa caixa pousada sobre o documento, e ele é a própria linha trocando de
-conteúdo. O que o sustenta é ser OPACO e estar por cima: `z-30`, contra os
-`z-10` da pílula de um bloco. Com duas fileiras de pastilhas ele cobre parte do
-bloco de baixo, e o que está embaixo não pode aparecer no meio das opções nem
-acender ao passar o mouse sobre elas. Enquanto ele está aberto NENHUMA pílula aparece, nem a de
-outro bloco: com duas fileiras de pastilhas o menu cobre o começo do bloco de
-baixo, e a pílula daquele bloco ficava metade escondida e metade para fora. Fecha com Esc, com
-um clique fora (é o que o `data-block-menu` marca) ou voltando a escrever.
-
-**NENHUM controle é mais alto que a linha de texto, e é essa regra que mantém o
-editor com uma altura de linha só.** Toda caixa de bloco tem 42px (a linha de
-26px mais 8px de cada lado), tenha dentro um parágrafo ou uma linha em branco
-com o `+` ao lado. Quando esse `+` tinha 36px ele esticava a linha em branco
-para 44 e ela ficava mais alta que o parágrafo vizinho — duas alturas de linha
-no mesmo documento, que é o que dá a sensação de espaçamento desproporcional. A
-pílula segue a mesma regra por outro caminho: 34px, menor que a caixa, pousada
-na borda de cima dela.
+**NENHUM controle é mais alto que a linha de texto, e é essa regra que mantém
+o editor com uma altura de linha só.** Toda caixa de bloco tem 42px (a linha
+de 26px mais 8px de cada lado), sempre — é esse "sempre" que importa.
 
 **A geometria fecha, e as contas estão no `BLOCK_SURFACE` do `Composer`.** Vão de
 32px, a caixa avançando 8px para dentro dele de cada lado, 16px de superfície a
@@ -406,17 +355,6 @@ onde a linha quebra.
 glifo em `--scriba-rose-ink`. Não é a tinta rosada clara: sobre o grafite, um
 fundo claro com o glifo branco vira um borrão vermelho no canto da tela. Fundo
 escuro com glifo rosado é o mesmo aviso, no tom em que o resto do app fala.
-
-**Quem começa pelo disco recua menos à esquerda** (`ROW_LEADING_DISC`): 8px até
-o disco, e os mesmos 8 do disco até o texto. Os 12/20px da caixa são recuo de
-TEXTO; um disco de 24px já traz a própria margem visual, e com 20px antes dele e
-9 acima a mesma linha tinha duas medidas de respiro. Esse recuo é igual nos dois
-tamanhos de tela, porque quem manda nele é o disco, que não muda de tamanho.
-
-**O disco que se vê tem 24px; o alvo que se acerta tem 36.** O `p-1.5` estica a
-área e o `-m-1.5` devolve o espaço ao layout, então o alvo cresce sem empurrar
-altura nenhuma. Um alvo de 24px é metade do mínimo de toque, e é no celular —
-sem mouse para mirar — que esse `+` aparece.
 
 **A `AutoTextarea` é `block`, e isso não é decoração.** Uma `textarea` é
 inline-block por padrão e pousa na linha de base do pai, deixando por baixo dela
@@ -432,11 +370,11 @@ agrupar itens consecutivos num `<ul>` a desalinharia em silêncio. A numeração
 `orderedList` é derivada pelo `<ol>` na leitura, NUNCA guardada — guardada, ela
 sobreviveria a mover o bloco e o banco diria "3." onde a tela mostra o segundo.
 
-Três gestos, os da web inteira: `- `, `* ` ou `1. ` no começo de um parágrafo o
-convertem (a detecção mora no `setBlock`, não numa tecla, para pegar também
-colagem e teclado de celular); Enter abre um item; Enter numa linha vazia no fim
-fecha a lista e abre um parágrafo. Backspace numa lista vazia a DESFAZ em vez de
-apagar o bloco.
+Quatro gestos, os da web inteira: `- `, `* `, `1. ` ou `1) ` no começo de um
+parágrafo o convertem (a detecção mora no `setBlock`, não numa tecla, para
+pegar também colagem e teclado de celular); Enter abre um item; Enter numa
+linha vazia no fim fecha a lista e abre um parágrafo. Backspace numa lista
+vazia a DESFAZ em vez de apagar o bloco.
 
 **O MARKDOWN de bloco é a mesma máquina**, e por isso mora no mesmo lugar
 (`autoformatted`): `# ` vira título, `## ` vira subtítulo, `> ` vira citação, e
@@ -450,14 +388,14 @@ menos por par convertido, e sem o acerto quem marca uma palavra no meio de um
 parágrafo perde o lugar. Num título ou numa citação a conversão não acontece:
 ali `==` apareceria como texto, que é pior que o `**`.
 
-### O menu da BARRA (`/`)
+### O menu da BARRA (`/`), o ÚNICO caminho para inserir um bloco
 
-Digitar `/` num parágrafo VAZIO abre uma lista vertical com as mesmas opções do
-`+` (`menuOptions` — duas listas divergiriam no primeiro tipo novo, e o menu
-que ficasse para trás simplesmente não o ofereceria). O que se digita depois da
-barra FILTRA: `/exem` deixa "Exemplo". As setas andam (circulares), Enter e Tab
-escolhem, Esc fecha, o mouse escolhe também e passar por cima move o mesmo
-cursor que as setas movem.
+Digitar `/` num parágrafo VAZIO abre uma lista vertical com as opções de bloco
+(`menuOptions`). O que se digita depois da barra FILTRA: `/info` deixa
+"Informação", `/atos 1:1` deixa a citação rápida daquela passagem (ver
+"Citação rápida" abaixo). As setas andam (circulares), Enter e Tab escolhem,
+Esc fecha, o mouse escolhe também e passar por cima move o mesmo cursor que as
+setas movem.
 
 Três coisas que não são detalhe:
 
@@ -553,22 +491,25 @@ essa igualdade é o que torna seguro abrir aqui um resumo que a IA escreveu:
 enquanto faltava um tipo, salvar apagava em silêncio os blocos daquele tipo. O
 que faltava era o `example` — ficou de fora enquanto o editor era só a folha em
 branco, porque "Exemplo do pregador", o nome que o bloco tinha então, não fazia
-sentido num texto que a própria pessoa escreveu. O argumento caiu quando o
-editor passou a abrir o resumo de uma pregação, e o rótulo foi consertado
-depois: hoje ele se chama só **"Exemplo"** na tela, nas duas pontas (o tipo no
-jsonb continua `example`, então nada do que está salvo se mexeu). **Bloco novo no `SummaryBlockSchema` entra em
+sentido num texto que a própria pessoa escreveu. O rótulo passou por
+"Exemplo" antes de virar **"Informação"**, o nome de hoje: o bloco nasceu para
+um uso só e passou a servir qualquer nota à parte do texto corrido, e o TÍTULO
+agora é editável (`title`, opcional em `SummaryBlockSchema` e
+`WrittenBlockSchema` — ausente ou vazio cai no próprio "Informação"). O tipo
+no jsonb continua `example` em toda essa história, então nada do que está
+salvo se mexeu. **Bloco novo no `SummaryBlockSchema` entra em
 `WRITTEN_BLOCK_TYPES`, no `BlockBody` e no `BlockRenderer` no mesmo commit.** O
 que o editor não tem é um terceiro nível de título.
 
 A "ideia central" não é bloco: ela é o `shortSummary`, o que aparece no cartão da
 Biblioteca e na busca. E é OPCIONAL — o campo não nasce na tela, entra pelo menu
-do `+` e sai pelo `×` do próprio cartão. Resumir a mensagem em uma frase é coisa
-que só se consegue fazer depois de escrevê-la; um campo fixo em cima da folha em
-branco pergunta antes da hora.
+da barra e sai pelo `×` do próprio cartão. Resumir a mensagem em uma frase é
+coisa que só se consegue fazer depois de escrevê-la; um campo fixo em cima da
+folha em branco pergunta antes da hora.
 
 **Ela e a CONCLUSÃO são as duas pontas, e as duas são únicas.** As duas moram no
-menu do `+` (a ideia central é a primeira opção, a conclusão é a última) e SOMEM
-de lá depois de usadas: duas conclusões num texto não são um recurso, são um
+menu da barra (a ideia central é a primeira opção, a conclusão é a última) e
+SOMEM de lá depois de usadas: duas conclusões num texto não são um recurso, são um
 erro de digitação que ninguém desfaz sem ir procurar a segunda. A posição de
 cada uma é fixa — a ideia central abre o texto, a conclusão o fecha —, e é o
 `Composer` quem garante isso: toda inserção tem o índice da conclusão como teto,
@@ -606,6 +547,20 @@ toque o dedo pousa no número e nada acontece até a tela seguinte chegar.
 fechava o diálogo junto, e quem errava o último versículo por uma casa refazia
 livro e capítulo. Os dois primeiros passos não têm rodapé: ali escolher é
 avançar, e um botão de confirmar seria um segundo jeito de fazer a mesma coisa.
+
+**Editar uma referência que já existe reabre o `PassagePicker` no passo 3, com
+o livro, o capítulo e a faixa que já estavam ali** (`initialReference`), não
+na lista dos 66 livros. Só um bloco NOVO (sem referência ainda) recomeça do
+livro — reabrir do zero uma passagem já escolhida cobraria os dois primeiros
+passos de novo só para corrigir o último versículo por uma casa.
+
+**Citação rápida: `/atos 1:1` já É a referência**, e Enter insere o bloco de
+Bíblia direto, sem o seletor de três passos. `parseQuickBibleReference`
+(`blocks.tsx`) usa o MESMO vocabulário de apelidos do resto do produto
+(`lib/bibles/books.ts` — "atos", "at", "1 corintios"…) e confere capítulo e
+versículo contra `CHAPTER_VERSE_COUNTS` antes de oferecer a opção: uma
+referência que não existe não aparece no menu, porque o atalho não insere o
+que a leitura não vai conseguir mostrar depois.
 
 **O bloco de Bíblia guarda só a REFERÊNCIA.** (Ele se chamava "Passagem
 bíblica" no menu, e a palavra a mais descrevia o RECORTE numa fileira em que

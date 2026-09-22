@@ -12,11 +12,13 @@ import {
   DialogTitle,
 } from "@/components/ui/dialog";
 import {
+  abbrevFor,
   BOOK_CANON,
   chapterCountFor,
   chapterVerseCount,
   normalizeBookName,
 } from "@/lib/bibles/books";
+import { parseVerseReference } from "@/lib/domain/reference";
 import { cn } from "@/lib/utils";
 
 /**
@@ -57,11 +59,21 @@ import { cn } from "@/lib/utils";
  * com ela: sem faixa de versículos e sem corpo, o `BlockRenderer` desenha a
  * MENÇÃO (`ChapterMention`, uma pastilha clicável que abre o capítulo) em vez
  * da moldura de citação vazia em volta de nada.
+ *
+ * **Editando uma referência que já existe, ele abre no passo 3, já com o
+ * livro, o capítulo e a faixa daquela referência** (`initialReference`), em
+ * vez de recomeçar do livro. Reabrir do zero uma passagem que já foi
+ * escolhida cobra os dois primeiros passos de novo só para corrigir o
+ * versículo errado por uma casa. `initialReference` ausente ou que não
+ * resolve contra `lib/bibles/books` (um bloco novo, sem referência ainda) cai
+ * no reset de sempre.
  */
 type Props = {
   open: boolean;
   onOpenChange: (open: boolean) => void;
   onPick: (reference: string) => void;
+  /** A referência já escolhida, ao EDITAR. `null`/inválida = bloco novo. */
+  initialReference?: string | null;
 };
 
 type Step = "book" | "chapter" | "verse";
@@ -107,7 +119,7 @@ const LIST_ITEM = cn(
   "focus-visible:ring-2 focus-visible:ring-ring/40 focus-visible:outline-none"
 );
 
-export function PassagePicker({ open, onOpenChange, onPick }: Props) {
+export function PassagePicker({ open, onOpenChange, onPick, initialReference }: Props) {
   const [step, setStep] = useState<Step>("book");
   const [book, setBook] = useState<string | null>(null);
   const [chapter, setChapter] = useState<number | null>(null);
@@ -121,11 +133,33 @@ export function PassagePicker({ open, onOpenChange, onPick }: Props) {
   const [whole, setWhole] = useState(false);
   const [query, setQuery] = useState("");
 
-  // Toda abertura recomeça do livro. Um seletor que reabre no terceiro passo
-  // da vez anterior obriga quem quer outra passagem a voltar dois passos antes
-  // de poder escolher, e é a MESMA caixa para os dois casos.
+  // Toda abertura recomeça do livro, A MENOS que exista uma referência já
+  // escolhida (editar um bloco existente): aí ela pousa direto no passo 3,
+  // com aquele livro, capítulo e faixa. Um seletor que reabre sempre no
+  // primeiro passo obriga quem quer só corrigir o último versículo a refazer
+  // livro e capítulo de novo.
   useEffect(() => {
     if (!open) return;
+    const parsed = initialReference ? parseVerseReference(initialReference) : null;
+    const canon = parsed && abbrevFor(parsed.bookDisplay) ? parsed.bookDisplay : null;
+    const chapters = canon ? chapterCountFor(canon) : 0;
+    if (parsed && canon && parsed.chapter >= 1 && parsed.chapter <= chapters) {
+      setStep("verse");
+      setBook(canon);
+      setChapter(parsed.chapter);
+      if (parsed.startVerse != null) {
+        setWhole(false);
+        setStart(parsed.startVerse);
+        setEnd(parsed.endVerse ?? parsed.startVerse);
+      } else {
+        setWhole(true);
+        setStart(null);
+        setEnd(null);
+      }
+      setHover(null);
+      setQuery("");
+      return;
+    }
     setStep("book");
     setBook(null);
     setChapter(null);
@@ -134,7 +168,7 @@ export function PassagePicker({ open, onOpenChange, onPick }: Props) {
     setHover(null);
     setWhole(false);
     setQuery("");
-  }, [open]);
+  }, [open, initialReference]);
 
   const books = useMemo(() => {
     const q = normalizeBookName(query);

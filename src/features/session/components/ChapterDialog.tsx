@@ -1,14 +1,18 @@
 "use client";
 
+import { Plus } from "lucide-react";
 import { BookGlyph } from "@/components/icons/BookGlyph";
+import { Button } from "@/components/ui/button";
 import {
   Dialog,
   DialogContent,
   DialogDescription,
+  DialogFooter,
   DialogHeader,
   DialogTitle,
 } from "@/components/ui/dialog";
 import { VerseLines } from "@/features/session/components/PassageVerses";
+import { useSummaryInsert } from "@/features/session/components/SummaryInsertContext";
 import { useVerseFetch } from "@/features/session/hooks/useVerseFetch";
 
 /**
@@ -27,6 +31,14 @@ import { useVerseFetch } from "@/features/session/hooks/useVerseFetch";
  *
  * A rolagem é do `DialogContent`, que já tem `max-h-[85dvh]` e um corpo com
  * `overflow-y-auto`. O Salmo 119, com 176 versículos, cabe sem nada extra.
+ *
+ * **"Adicionar ao resumo" só aparece dentro de um `SummaryInsertProvider`.**
+ * Este diálogo é aberto de qualquer prosa que passa por `RichText` —
+ * resumo, estudo, mensagem do Biblo —, e nem toda tela tem onde escrever a
+ * resposta (a landing, por exemplo, não tem sessão nenhuma). `useSummaryInsert()`
+ * devolve `null` fora do provider, e o botão simplesmente não desenha —
+ * sem isso, cada chamador teria de saber por conta própria se está numa
+ * tela que aceita escrita.
  */
 export function ChapterDialog({
   reference,
@@ -38,6 +50,7 @@ export function ChapterDialog({
   onOpenChange: (open: boolean) => void;
 }) {
   const state = useVerseFetch(reference);
+  const insert = useSummaryInsert();
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
@@ -70,6 +83,20 @@ export function ChapterDialog({
             </div>
           )}
         </div>
+        {insert ? (
+          <DialogFooter>
+            <Button
+              variant="outline"
+              onClick={() => {
+                insert.addPassage(reference);
+                onOpenChange(false);
+              }}
+            >
+              <Plus className="size-3.5" />
+              Adicionar ao resumo
+            </Button>
+          </DialogFooter>
+        ) : null}
       </DialogContent>
     </Dialog>
   );

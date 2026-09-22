@@ -56,6 +56,35 @@ import { splitMarks } from "@/lib/domain/mark";
  * `LexiconProvider`.
  */
 
+/**
+ * A seta que `/escrever` cria a partir de `->` (`autoArrow`, no `Composer`).
+ * Ela é APAGADA de propósito: a tinta cheia pesaria como palavra, e ela é
+ * pontuação, um `->` mais legível, não um destaque.
+ *
+ * `text` já vem sem marca-texto nem menção (os dois já foram separados antes
+ * de chegar aqui), então dividir de novo por um caractere simples não briga
+ * com nenhuma das duas.
+ */
+const ARROW_GLYPH = "➤";
+
+function TextWithArrows({ text }: { text: string }) {
+  if (!text.includes(ARROW_GLYPH)) return <>{text}</>;
+  const parts = text.split(ARROW_GLYPH);
+  return (
+    <>
+      {parts.map((part, index) => (
+        // biome-ignore lint/suspicious/noArrayIndexKey: lista derivada de string imutável
+        <Fragment key={index}>
+          {part}
+          {index < parts.length - 1 ? (
+            <span className="text-scriba-ink-mute">{ARROW_GLYPH}</span>
+          ) : null}
+        </Fragment>
+      ))}
+    </>
+  );
+}
+
 function Segment({ segment }: { segment: AnnotatedSegment }) {
   if (segment.kind === "scripture") {
     return <InlineScripture reference={segment.reference} text={segment.text} />;
@@ -63,7 +92,7 @@ function Segment({ segment }: { segment: AnnotatedSegment }) {
   if (segment.kind === "name") {
     return <LexiconMention slug={segment.slug} category={segment.category} text={segment.text} />;
   }
-  return <>{segment.text}</>;
+  return <TextWithArrows text={segment.text} />;
 }
 
 function Annotated({

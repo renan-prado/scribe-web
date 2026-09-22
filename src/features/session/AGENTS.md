@@ -55,6 +55,7 @@ pessoa quiser, aprofundar.
 | `components/YoutubeUrlForm.tsx` + `YoutubeImport.tsx` | colar o link (ou recebê-lo por parâmetro), recortar um trecho, e esperar a importação |
 | `components/BibloDock.tsx` + `BibloDrawer.tsx` + `BibloMessage.tsx` | a conversa com o Biblo: botão flutuante e gaveta (ou painel `inline`) |
 | `components/BibloSummaryDock.tsx` | o mesmo Biblo na tela de LEITURA, que precisa de um POST para inserir |
+| `hooks/useWrittenReadingDraft.ts` + `components/SummaryInsertContext.tsx` | escrever num resumo salvo sem rascunho local — o POST que o Biblo e o "Adicionar ao resumo" da referência dividem |
 | `components/BibloHomeDock.tsx` + `biblo-workspace.ts` | o Biblo da Biblioteca, que ESCREVE um documento em vez de sugerir um bloco |
 | `biblo-query.ts` | a conversa guardada no aparelho: leitura, pré-busca e a rodada nova |
 | `server/biblo/` | allowance, resposta e a abertura derivada |
@@ -156,6 +157,20 @@ Os dois últimos parecem o mesmo e não são: o seletor tem um terceiro passo (a
 faixa de versículos), um rodapé de confirmar e um `onPick`, porque o produto
 dele é uma referência; o leitor termina na leitura, e um terceiro passo ali
 seria pedir que a pessoa escolha versículos para poder ler o capítulo.
+
+**O `ChapterDialog` ganhou um botão, "Adicionar ao resumo".** Ele é a única
+das quatro respostas que aparece dentro de OUTRA prosa — a referência tocada
+pode estar no resumo, no estudo ou numa mensagem do Biblo — e por isso não
+sabe, sozinho, se há onde escrever a resposta. Quem sabe é
+`SummaryInsertContext` (`SummaryInsertProvider`, montado em
+`/summary/[id]/page.tsx` envolvendo `SavedSessionView` E `BibloSummaryDock`):
+fora dele `useSummaryInsert()` devolve `null` e o botão não desenha. A
+escrita é a MESMA de `useWrittenReadingDraft` — `POST /api/sessions/written`
++ `router.refresh()`, com `insertionIndex` respeitando o teto da conclusão —,
+extraída de dentro do próprio `BibloSummaryDock` para as duas portas
+(o Biblo e este botão) escreverem sobre uma ÚNICA cópia do documento: duas
+instâncias do rascunho, cada uma achando que sabe o estado atual dos blocos,
+fariam a segunda escrita apagar a primeira.
 
 **O `BibleReader` é uma REGIÃO, não um diálogo**, e é isso que o torna reusável:
 ele entra numa aba da bancada do gravador e dentro de uma gaveta na leitura, e

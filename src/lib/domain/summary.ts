@@ -23,7 +23,10 @@ export const SummaryBlockSchema = z.discriminatedUnion("type", [
   z.object({ type: z.literal("orderedList"), text: z.string() }),
   z.object({ type: z.literal("bibleQuote"), reference: z.string(), text: z.string() }),
   z.object({ type: z.literal("highlight"), text: z.string() }),
-  z.object({ type: z.literal("example"), text: z.string() }),
+  // `title` é o rótulo do cartão na tela — ausente ou vazio cai no padrão
+  // "Informação" (ver `BLOCK_OPTIONS.example` em `blocks.tsx`). O tipo no
+  // jsonb continua `example`, tanto aqui quanto no schema de `/escrever`.
+  z.object({ type: z.literal("example"), title: z.string().optional(), text: z.string() }),
   z.object({ type: z.literal("quote"), text: z.string(), author: z.string().optional() }),
   z.object({ type: z.literal("conclusion"), text: z.string() }),
 ]);
@@ -86,10 +89,16 @@ export function parseSummaryFromLLM(content: string, phase: SummaryPhase): Summa
       case "paragraph":
       case "bulletList":
       case "orderedList":
-      case "highlight":
-      case "example": {
+      case "highlight": {
         if (phase === "intro") break;
         if (text) blocks.push({ type, text });
+        break;
+      }
+      case "example": {
+        if (phase === "intro") break;
+        if (!text) break;
+        const title = typeof rec.title === "string" ? rec.title.trim() : "";
+        blocks.push(title ? { type: "example", title, text } : { type: "example", text });
         break;
       }
       case "bibleQuote": {
@@ -185,6 +194,8 @@ export const WRITTEN_LIMITS = {
   blockText: 5000,
   reference: 200,
   author: 120,
+  /** O título do bloco "Informação". Uma etiqueta, não uma frase. */
+  exampleTitle: 80,
   /** Um sermão organizado à mão passa longe disto. */
   blocks: 300,
 } as const;
@@ -196,7 +207,11 @@ const WrittenBlockSchema = z.discriminatedUnion("type", [
   z.object({ type: z.literal("bulletList"), text: z.string().max(WRITTEN_LIMITS.blockText) }),
   z.object({ type: z.literal("orderedList"), text: z.string().max(WRITTEN_LIMITS.blockText) }),
   z.object({ type: z.literal("highlight"), text: z.string().max(WRITTEN_LIMITS.blockText) }),
-  z.object({ type: z.literal("example"), text: z.string().max(WRITTEN_LIMITS.blockText) }),
+  z.object({
+    type: z.literal("example"),
+    title: z.string().max(WRITTEN_LIMITS.exampleTitle).optional(),
+    text: z.string().max(WRITTEN_LIMITS.blockText),
+  }),
   z.object({
     type: z.literal("quote"),
     text: z.string().max(WRITTEN_LIMITS.blockText),

@@ -1,6 +1,16 @@
 "use client";
 
-import { ChevronDown, ChevronUp, Eye, Highlighter, MapPin, Plus, Trash2, X } from "lucide-react";
+import {
+  ChevronDown,
+  ChevronUp,
+  Eye,
+  Highlighter,
+  Info,
+  MapPin,
+  Plus,
+  Trash2,
+  X,
+} from "lucide-react";
 import { useRouter } from "next/navigation";
 import {
   type CSSProperties,
@@ -41,7 +51,9 @@ import {
   type BlockPick,
   emptyBlock,
   LEAD_OPTION,
+  looksLikeBibleQuery,
   type MenuOption,
+  parseQuickBibleReference,
 } from "./blocks";
 import { PassagePicker } from "./PassagePicker";
 import { type SaveStatus, useWrittenDraft } from "./useWrittenDraft";
@@ -88,36 +100,18 @@ import { type SaveStatus, useWrittenDraft } from "./useWrittenDraft";
  *
  * As contas, e elas se seguram umas nas outras:
  *   - a linha de um parágrafo tem 26px (15px × 1,72);
- *   - a caixa acrescenta 8px (`py-2`) de cada lado: 42px de altura, SEMPRE, e
- *     é esse "sempre" que importa. Uma linha em branco com um disco de 36px
- *     dentro ficava 10px mais alta que o parágrafo ao lado, e eram duas
- *     alturas de linha no mesmo documento. Hoje NENHUM controle é mais alto
- *     que a linha de texto: todo disco tem 24px e o alvo de toque cresce por
- *     fora, com padding e margem negativa, sem empurrar altura nenhuma.
+ *   - a caixa acrescenta 8px (`py-2`) de cada lado: 42px de altura, SEMPRE —
+ *     todo bloco tem a mesma altura de linha, com ou sem foco;
  *   - o vão entre dois blocos é `gap-8` (32px); a caixa avança 8px para dentro
  *     dele de cada lado, então o que se vê entre duas superfícies são 16px;
- *   - a pílula de adicionar/mover/excluir tem 34px, e é MENOR que a caixa de
+ *   - a pílula de mover/marcar/excluir tem 34px, e é MENOR que a caixa de
  *     propósito: ela pousa na borda de cima de uma superfície de 42px. Maior
  *     que a linha que ela controla, virava a linha.
  *   - o recuo lateral é 12px no celular e 20px no desktop: 4px a menos que o
  *     `px` do `<main>` (16 e 24), que é o que impede a caixa de encostar na
  *     borda da tela.
- *   - QUEM COMEÇA COM O DISCO recua menos à esquerda (`ROW_LEADING_DISC`): 8px
- *     até o disco, os mesmos 8 do disco até o texto. Aquele recuo é para
- *     TEXTO, e um disco de 24px já traz a própria margem visual — com 20px
- *     antes dele e 9 acima, a mesma linha tinha duas medidas de respiro.
  */
 const BLOCK_SURFACE = "-mx-3 -my-2 rounded-[20px] px-3 py-2 transition-colors sm:-mx-5 sm:px-5";
-
-/**
- * O recuo esquerdo de uma linha que começa pelo disco do `+`: 8px, igual nos
- * dois tamanhos de tela. Some com a diferença entre celular e desktop porque
- * quem manda aqui é o disco, e ele tem o mesmo tamanho nos dois.
- *
- * O texto vem 32px adiante (`pl-8`, ou o `gap-2` depois do disco na linha do
- * fim): 8 de recuo + 24 do disco + 8 de vão.
- */
-const ROW_LEADING_DISC = "pl-2 sm:pl-2";
 
 /** Pastilha neutra do "adicionar autor/local", a mesma família da leitura
  * (`ADD_BADGE_CLASSES` em `SavedSessionView`). */
@@ -191,8 +185,6 @@ export function Composer({
 
   const speakerInitials = initialsOf(speakerName);
 
-  /** Onde o menu do `+` está aberto: depois do bloco de índice N (-1 = no fim). */
-  const [adderAt, setAdderAt] = useState<number | null>(null);
   /**
    * O menu da BARRA, aberto digitando `/` num parágrafo vazio.
    *
@@ -203,15 +195,15 @@ export function Composer({
    */
   const [slash, setSlash] = useState<{ index: number; cursor: number } | null>(null);
   /**
-   * Qual bloco tem o cursor. É o que põe os controles e os `+` no ar no
+   * Qual bloco tem o cursor. É o que põe a pílula de controles no ar no
    * celular, onde não existe passar o mouse.
    *
    * **Ele APAGA quando o foco sai do bloco**, e isso custou uma tela cheia de
    * botões acesos para ser aprendido: `active` só era trocado por outro foco,
-   * então um `+` revelado por um clique ficava no ar pelo resto da sessão,
+   * então a pílula revelada por um toque ficava no ar pelo resto da sessão,
    * inclusive depois de a pessoa clicar em outro bloco e voltar. Quem apaga é
    * o `onBlur` do bloco, que só conta como saída quando o foco foi para FORA
-   * dele — sem essa conferência, tocar no lixeira do próprio bloco apagaria o
+   * dele — sem essa conferência, tocar na lixeira do próprio bloco apagaria o
    * estado que mantém a lixeira na tela.
    */
   const [active, setActive] = useState<number | null>(null);
@@ -239,8 +231,8 @@ export function Composer({
    * piscar ali piscaria o parágrafo errado.
    *
    * **E é um estado SEPARADO do `focusIndex` porque são gestos diferentes.** O
-   * foco é para um bloco que nasceu VAZIO e vai ser digitado (o menu do `+`);
-   * a revelação é para um bloco que chegou PRONTO da conversa, e ali o cursor
+   * foco é para um bloco que nasceu VAZIO e vai ser digitado (o menu da
+   * barra); a revelação é para um bloco que chegou PRONTO da conversa, e ali o cursor
    * não é bem-vindo — no celular ele abre o teclado, que cobre justamente o
    * texto que a rolagem acabou de trazer para o centro.
    */
@@ -248,14 +240,14 @@ export function Composer({
 
   /**
    * A ideia central é OPCIONAL, e por isso o campo não nasce na tela: ela
-   * aparece quando a pessoa pede, pelo menu do `+`, e sai por um botão de
+   * aparece quando a pessoa pede, pelo menu da barra, e sai por um botão de
    * remover. Um campo fixo em cima de uma folha em branco é uma pergunta feita
    * antes da hora — quem abre o editor quer escrever o texto, e resumir em uma
    * frase é coisa que só se consegue fazer DEPOIS.
    *
    * **O pedido vinha de uma pastilha própria, no topo da folha, e ela saiu.**
    * Havia dois lugares respondendo "o que mais cabe neste texto?" — aquela
-   * pastilha e o menu do `+` —, e o que decidia em qual deles uma coisa
+   * pastilha e o menu —, e o que decidia em qual deles uma coisa
    * aparecia era um detalhe de implementação (ser ou não ser um bloco do
    * schema) que ninguém que escreve tem como saber. No menu, ela é a primeira
    * opção, do mesmo jeito que a conclusão é a última.
@@ -270,30 +262,6 @@ export function Composer({
   const leadRef = useRef<HTMLTextAreaElement | null>(null);
 
   useUnloadGuard(status !== "synced");
-
-  /**
-   * O menu de blocos fecha com Esc e com um clique fora dele.
-   *
-   * Ele flutua, e o que flutua tem de saber ir embora: o `X` é uma saída, não
-   * A saída. O `pointerdown` que ABRE o menu já aconteceu quando este efeito é
-   * registrado, então não há risco de ele se fechar no mesmo clique.
-   */
-  useEffect(() => {
-    if (adderAt === null) return;
-    function onKey(e: KeyboardEvent) {
-      if (e.key === "Escape") setAdderAt(null);
-    }
-    function onDown(e: PointerEvent) {
-      const target = e.target as Element | null;
-      if (!target?.closest("[data-block-menu]")) setAdderAt(null);
-    }
-    document.addEventListener("keydown", onKey);
-    document.addEventListener("pointerdown", onDown, true);
-    return () => {
-      document.removeEventListener("keydown", onKey);
-      document.removeEventListener("pointerdown", onDown, true);
-    };
-  }, [adderAt]);
 
   // O foco é pedido pelo estado, e não no meio do `setDoc`: o elemento que vai
   // receber o cursor pode ainda não existir na hora em que o bloco é criado.
@@ -350,7 +318,6 @@ export function Composer({
       copy.splice(at, 0, block);
       return copy;
     });
-    setAdderAt(null);
     if (focus) setFocusIndex(at);
     setActive(at);
     return at;
@@ -363,34 +330,12 @@ export function Composer({
    * clique, e o foco iria para o nada.
    */
   function askLead() {
-    setAdderAt(null);
     setLeadAsked(true);
     requestAnimationFrame(() => leadRef.current?.focus());
   }
 
-  function addOfType(index: number, pick: BlockPick) {
-    // A ideia central não é bloco: ela é o `shortSummary`, e o que o menu faz
-    // é abrir o campo dela lá em cima, na posição fixa que ela tem. Ver
-    // `LEAD_OPTION`.
-    if (pick === "leadIdea") {
-      askLead();
-      return;
-    }
-    // A passagem não tem o que digitar: ela nasce do seletor, e sem referência
-    // não haveria bloco nenhum para mostrar. Por isso o `+` abre o seletor em
-    // vez de inserir um bloco vazio que ficaria na tela pedindo um segundo
-    // toque.
-    if (pick === "bibleQuote") {
-      setAdderAt(null);
-      setPendingIndex(index);
-      setPickerFor(-1);
-      return;
-    }
-    insertAt(index, emptyBlock(pick));
-  }
-
   /**
-   * O que o menu do `+` oferece AGORA.
+   * O que o menu da barra oferece AGORA.
    *
    * As duas pontas do documento são únicas e desaparecem quando usadas: a
    * ideia central enquanto o campo dela estiver na tela, a conclusão enquanto
@@ -513,6 +458,22 @@ export function Composer({
   }
 
   /**
+   * `->` vira `➤`, em QUALQUER bloco de texto.
+   *
+   * Diferente do negrito (`markdownEmphasis`), que só converte onde a marca
+   * aparece na leitura, isto é troca de caractere pura — não depende de o
+   * bloco passar por `RichText` para fazer sentido, então vale igual num
+   * título, numa citação ou num parágrafo. **A tinta apagada da seta** (ver
+   * `ARROW_GLYPH` em `RichText.tsx`) só se desenha onde `RichText` lê — os
+   * mesmos blocos do marca-texto (`MARKABLE`): fora deles ela é o glifo cru,
+   * pela mesma razão de a `textarea` não ter como colorir um caractere só.
+   */
+  function autoArrow(text: string): string | null {
+    const next = text.replace(/->/g, "➤");
+    return next === text ? null : next;
+  }
+
+  /**
    * O menu da barra abre e fecha OLHANDO O TEXTO, nunca numa tecla.
    *
    * É o mesmo raciocínio do autoformato das listas, e pelo mesmo motivo: num
@@ -548,49 +509,103 @@ export function Composer({
     const text = (patch as { text?: string }).text;
     if (typeof text === "string") {
       syncSlash(index, block, text);
-      const emphasized = markdownEmphasis(block, text);
-      if (emphasized !== null) {
-        // O cursor tem de andar junto: `**x**` vira `==x==`, dois caracteres a
-        // menos por par convertido. Sem isto, quem marca uma palavra no meio de
-        // um parágrafo perde o lugar e continua digitando no fim dele. No
-        // quadro seguinte, como em `markAt`: o valor novo ainda não foi pintado.
+      // A seta some primeiro (vale em todo bloco); o negrito→marca-texto entra
+      // depois, sobre o texto já com a seta trocada, e só onde `MARKABLE`
+      // permite. As duas mexem no comprimento do texto, e cada uma reposiciona
+      // o cursor a partir de onde a anterior o deixou.
+      const arrowed = autoArrow(text);
+      const withArrow = arrowed ?? text;
+      const emphasized = markdownEmphasis(block, withArrow);
+      const finalText = emphasized ?? withArrow;
+      if (arrowed !== null || emphasized !== null) {
+        // O cursor tem de andar junto: cada substituição encolhe o texto
+        // (`->` vira `➤`, um caractere a menos; `**x**` vira `==x==`, dois a
+        // menos). Sem isto,
+        // quem digita no meio de um parágrafo perde o lugar e continua
+        // digitando no fim dele. No quadro seguinte, como em `markAt`: o valor
+        // novo ainda não foi pintado.
         const el = refs.current[index];
-        const caret = el?.selectionStart ?? emphasized.length;
-        const delta = text.length - emphasized.length;
-        setBlock(index, autoformatted(block, { ...patch, text: emphasized }));
-        requestAnimationFrame(() => {
-          const at = Math.max(0, Math.min(caret - delta, emphasized.length));
-          el?.setSelectionRange(at, at);
-        });
+        const caret = el?.selectionStart ?? finalText.length;
+        const delta = text.length - finalText.length;
+        const next = autoformatted(block, { ...patch, text: finalText });
+        setBlock(index, next);
+        if ("type" in next && next.type !== block.type) {
+          // Ver o comentário abaixo: um bloco que MUDA DE TIPO troca de nó no
+          // DOM, e o `el` capturado aqui em cima fica apontando para um
+          // elemento que não existe mais.
+          setFocusIndex(index);
+        } else {
+          requestAnimationFrame(() => {
+            const at = Math.max(0, Math.min(caret - delta, finalText.length));
+            el?.setSelectionRange(at, at);
+          });
+        }
         return;
       }
     }
-    setBlock(index, autoformatted(block, patch));
+    const next = autoformatted(block, patch);
+    setBlock(index, next);
+    // `autoformatted` só devolve `type` quando um atalho (`# `, `- `, `1. `…)
+    // de fato converteu o bloco. A conversão troca a árvore de JSX que
+    // `BlockBody` desenha — de uma `textarea` de parágrafo para outra dentro
+    // de uma moldura de título, lista etc. —, então o nó FOCADO é destruído e
+    // um outro nasce no lugar: o foco simplesmente some, porque nada volta a
+    // pedi-lo. `setFocusIndex` é o MESMO pedido que `insertAt`/`removeAt`/
+    // `moveBy` já fazem para um nó que ainda não existe no instante do clique
+    // — aqui o nó é outro pelo mesmo motivo, só que descoberto na digitação.
+    if ("type" in next && next.type !== block.type) setFocusIndex(index);
   }
 
   /**
    * O que o menu da barra oferece com o que já foi digitado depois dela.
    *
-   * A peneira é por SUBSTRING sem acento: `/exem` acha "Exemplo", `/cita` acha
-   * "Citação", `/bib` acha "Bíblia". Não é busca aproximada de
+   * A peneira é por SUBSTRING sem acento: `/exem` acha "Informação", `/cita`
+   * acha "Citação", `/bib` acha "Bíblia". Não é busca aproximada de
    * propósito: a lista tem nove itens, e uma correspondência frouxa aqui
    * significaria o Enter escolher o bloco errado.
    */
   const slashQuery = slash !== null ? (doc.blocks[slash.index]?.text ?? "").slice(1) : "";
+  /**
+   * A citação rápida: `/atos 1:1` já É a referência, e não uma busca por
+   * "Bíblia". Quando o que vem depois da barra resolve contra
+   * `parseQuickBibleReference`, ela entra como a PRIMEIRA opção — na prática a
+   * única, porque uma referência não casa com nenhum `label` de
+   * `BLOCK_OPTIONS` — e escolhê-la insere o bloco direto, sem o seletor de
+   * três passos.
+   */
+  const quickBibleRef = slash !== null ? parseQuickBibleReference(slashQuery) : null;
   const slashOptions = (() => {
     if (slash === null) return [];
     const q = normalizeSearch(slashQuery).trim();
-    if (!q) return menuOptions;
-    return menuOptions.filter((o) => normalizeSearch(o.label).includes(q));
+    const base = !q ? menuOptions : menuOptions.filter((o) => normalizeSearch(o.label).includes(q));
+    if (quickBibleRef) {
+      const quick: MenuOption = {
+        type: "quickBibleQuote",
+        label: quickBibleRef,
+        hint: "Inserir esta passagem",
+        icon: <BookGlyph className="size-3" />,
+      };
+      return [quick, ...base];
+    }
+    // A referência ainda não fechou — falta o versículo, o livro tem um erro
+    // de digitação, ou o capítulo não existe — mas o formato (letras, depois
+    // um número) já diz que é isto que a pessoa está tentando. Sem esta
+    // saída, a lista fica vazia ("Nada com…") do primeiro número digitado
+    // até a referência ficar byte a byte certa, e a barra parece não
+    // suportar citar a Bíblia até o instante em que ela funciona. Ver
+    // `looksLikeBibleQuery`.
+    if (base.length === 0 && looksLikeBibleQuery(slashQuery)) {
+      const bibleOption = menuOptions.find((o) => o.type === "bibleQuote");
+      if (bibleOption) return [bibleOption];
+    }
+    return base;
   })();
 
   /**
-   * Escolher no menu da barra SUBSTITUI o parágrafo, em vez de inserir acima.
-   *
-   * É a diferença entre este menu e o do `+`: lá a pessoa aponta uma POSIÇÃO e
-   * pede um bloco novo; aqui ela está DENTRO de uma linha dizendo o que aquela
-   * linha é. Inserir acima deixaria para trás o parágrafo com a barra dentro,
-   * que é o oposto do que a tecla pediu.
+   * Escolher no menu da barra SUBSTITUI o parágrafo, em vez de inserir acima:
+   * a pessoa está DENTRO de uma linha dizendo o que aquela linha é, e inserir
+   * acima deixaria para trás o parágrafo com a barra dentro, que é o oposto
+   * do que a tecla pediu.
    */
   function pickSlash(index: number, pick: BlockPick) {
     setSlash(null);
@@ -599,11 +614,21 @@ export function Composer({
       askLead();
       return;
     }
+    if (pick === "quickBibleQuote") {
+      // Mesmo desenho do `bibleQuote` via seletor, um parágrafo abaixo: o
+      // parágrafo esvazia, o bloco de Bíblia entra na posição da linha, e o
+      // parágrafo vazio desce para continuar a escrita — só que aqui a
+      // referência já está pronta, sem abrir o `PassagePicker`.
+      if (!quickBibleRef) return;
+      setBlock(index, { text: "" });
+      insertAt(index, { type: "bibleQuote", reference: quickBibleRef, text: "" });
+      return;
+    }
     if (pick === "bibleQuote") {
       // A passagem não tem o que digitar, e um bloco sem referência ficaria na
       // tela pedindo um segundo toque. O seletor abre e a passagem entra NA
       // posição desta linha; o parágrafo vazio desce e vira a linha seguinte,
-      // que é onde se continua escrevendo. Ver `addOfType`.
+      // que é onde se continua escrevendo.
       setBlock(index, { text: "" });
       setPendingIndex(index);
       setPickerFor(-1);
@@ -920,25 +945,11 @@ export function Composer({
           ) : null}
 
           {doc.blocks.map((block, i) => {
-            // Um parágrafo VAZIO é uma linha em branco esperando, e é o momento
-            // em que "na verdade eu queria um título aqui" ainda está em aberto.
-            // Por isso ele ganha o `+` ao lado, igual à linha do fim: os dois são
-            // a mesma coisa na tela, e um Enter que caísse numa linha nua faria a
-            // oferta aparecer e sumir conforme a linha fosse real ou não.
-            const blank = isBlankParagraph(block);
             const body = (
               <BlockBody
                 block={block}
                 index={i}
-                onFocus={() => {
-                  setActive(i);
-                  // Voltar a escrever FECHA o menu que ficou aberto num vão. Ele
-                  // não tem como se fechar sozinho — não é um popover, é uma
-                  // fileira no meio do texto —, e uma fileira de sete pastilhas
-                  // esquecida três parágrafos acima é a segunda coisa que não
-                  // some desta tela.
-                  setAdderAt(null);
-                }}
+                onFocus={() => setActive(i)}
                 onChange={(patch) => changeBlock(i, patch)}
                 onKeyDown={(e) => onKeyDown(i, e)}
                 onSelect={(e) => {
@@ -977,16 +988,8 @@ export function Composer({
                   setSlash((cur) => (cur?.index === i ? null : cur));
                 }}
               >
-                {/* Enquanto QUALQUER menu está aberto, pílula nenhuma aparece —
-                    não só a deste bloco. Com duas fileiras de pastilhas o menu
-                    cobre o começo do bloco de baixo, e a pílula daquele bloco
-                    ficava metade escondida e metade para fora, uma casquinha
-                    saindo da beirada do menu. Estar por cima (z-30) não resolvia:
-                    o que aparecia era justamente o pedaço que o menu não cobre. */}
                 <BlockControls
-                  hidden={adderAt !== null}
                   shown={active === i}
-                  onAdd={() => setAdderAt(i)}
                   /* A CONCLUSÃO não se move, e nada se move para depois dela:
                      ela é o fecho, e as setas são o único caminho que restaria
                      para desmanchar a posição que a inserção garante. Os
@@ -1011,13 +1014,6 @@ export function Composer({
                   }
                   onDelete={() => removeAt(i)}
                 />
-                {adderAt === i ? (
-                  <BlockMenu
-                    options={menuOptions}
-                    onClose={() => setAdderAt(null)}
-                    onPick={(pick) => addOfType(i, pick)}
-                  />
-                ) : null}
                 {/* O bloco em foco POUSA NUMA SUPERFÍCIE, e é assim que se vê
                     onde o cursor está. Ele existe pelo celular, onde não há
                     ponteiro e o teclado cobre metade da tela — sem nada aceso,
@@ -1037,37 +1033,7 @@ export function Composer({
                     nada a que sobreviver — ela é o foco, e mais nada —, e o
                     `active` existe para os botões, que precisam continuar
                     clicáveis no toque seguinte. */}
-                <div
-                  className={cn(
-                    BLOCK_SURFACE,
-                    "relative focus-within:bg-scriba-blue-soft/60",
-                    blank && ROW_LEADING_DISC
-                  )}
-                >
-                  {/* O `+` da linha em branco FLUTUA, e o corpo nunca sai do
-                      lugar na árvore. Ele já foi um irmão numa `flex` ao lado do
-                      texto, e aí a primeira letra digitada trocava a estrutura —
-                      a linha deixava de ser branca, a `flex` sumia, e o React
-                      desmontava a `textarea` junto com ela para montar outra:
-                      escrevia-se uma letra e o foco ia para o nada. Agora o que
-                      muda entre branca e escrita é uma CLASSE (o `pl-8` que
-                      abre lugar para o disco) e um irmão que aparece antes dela
-                      — a caixa de texto é sempre o mesmo nó.
-
-                      O `top-2`/`left-2` são o `py-2` da caixa e o recuo de quem
-                      começa por um disco: um filho absoluto se mede pela caixa de
-                      PADDING, e sem eles o disco pousaria na quina. Os 26px são a
-                      altura da linha, e é nela que o disco se centra. */}
-                  {blank ? (
-                    <div className="absolute top-2 left-2 flex h-[26px] items-center">
-                      <DiscButton label="Adicionar bloco" visible onClick={() => setAdderAt(i)}>
-                        <Plus className="size-3.5" />
-                      </DiscButton>
-                    </div>
-                  ) : null}
-                  {/* `pl-8` = o disco (24) mais o vão (8), contados a partir do
-                      recuo de 8 que o `ROW_LEADING_DISC` já pôs. O mesmo número
-                      que a linha do fim alcança por `gap-2` depois do disco. */}
+                <div className={cn(BLOCK_SURFACE, "relative focus-within:bg-scriba-blue-soft/60")}>
                   {/* `relative` para o ÂNCORA do menu da barra cobrir
                       EXATAMENTE a linha: esta caixa começa onde o texto começa,
                       e o âncora é um `absolute inset-0` invisível dentro dela.
@@ -1077,7 +1043,7 @@ export function Composer({
                       única coisa da página cuja posição o DOM não expõe. O menu
                       em si não mora aqui: ele sai por portal para o `body`, e
                       as coordenadas saem deste âncora (ver `SlashMenu`). */}
-                  <div className={cn("relative min-w-0", blank && "pl-8")}>
+                  <div className="relative min-w-0">
                     {body}
                     {slash?.index === i ? (
                       <SlashMenu
@@ -1094,60 +1060,32 @@ export function Composer({
             );
           })}
 
-          {/* A linha do fim: uma linha em branco de parágrafo com o `+` ao lado.
+          {/* A linha do fim: uma linha em branco de parágrafo, sempre presente.
               É a única posição que não depende de um bloco existir — todas as
-              outras saem da pílula de um deles —, e a única em que se escreve sem
-              escolher nada antes (ver `WritingLine`). É ela que mantém "escrever
-              no fim do texto" a um clique de distância, e por isso o `+` da
-              pílula pode inserir só ACIMA sem deixar posição nenhuma órfã.
+              outras saem da pílula de um deles —, e a única em que se escreve
+              sem escolher nada antes (ver `WritingLine`). É ela que mantém
+              "escrever no fim do texto" sempre à mão, e é nela (ou em qualquer
+              outra linha em branco) que a barra `/` abre o menu de blocos.
 
               Ela SOME quando o último bloco já é um parágrafo vazio, que é o que
-              um Enter no fim do texto acabou de criar: os dois desenham a mesma
-              linha em branco com o mesmo `+`, e empilhadas seriam duas linhas
-              vazias onde a pessoa pediu uma. */}
+              um Enter no fim do texto acabou de criar: as duas desenham a mesma
+              linha em branco, e empilhadas seriam duas onde a pessoa pediu
+              uma. */}
           {endsBlank ? null : (
-            <div className="relative">
-              {adderAt === doc.blocks.length ? (
-                <BlockMenu
-                  options={menuOptions}
-                  onClose={() => setAdderAt(null)}
-                  onPick={(pick) => addOfType(doc.blocks.length, pick)}
-                />
-              ) : null}
-              {/* A MESMA caixa dos blocos, para a linha do fim acender igual
-                  quando recebe o cursor, e o mesmo recuo curto de quem começa por
-                  um disco. O texto fica a 40px da borda nos dois lugares: aqui
-                  por `gap-2` depois do disco de 24, na linha em branco pelo
-                  `pl-8` — o mesmo número por dois caminhos, porque lá o disco
-                  flutua para a caixa de texto não ser remontada a cada primeira
-                  letra. */}
-              <div
-                className={cn(
-                  BLOCK_SURFACE,
-                  ROW_LEADING_DISC,
-                  "flex items-center gap-2 focus-within:bg-scriba-blue-soft/60"
-                )}
-              >
-                <DiscButton
-                  label="Adicionar bloco"
-                  visible
-                  onClick={() => setAdderAt(doc.blocks.length)}
-                >
-                  <Plus className="size-3.5" />
-                </DiscButton>
-                <WritingLine
-                  emphasis={empty}
-                  onWrite={(text) => {
-                    const at = insertAt(doc.blocks.length, { type: "paragraph", text });
-                    // A barra digitada na linha do fim faz a MESMA coisa que
-                    // dentro de um bloco: ela vira um parágrafo com `/` dentro,
-                    // e o menu abre sobre ele. Sem isto, o único lugar do
-                    // editor onde se escreve sem escolher nada antes seria
-                    // justamente o único onde a barra não funcionaria.
-                    if (text === "/") setSlash({ index: at, cursor: 0 });
-                  }}
-                />
-              </div>
+            <div className={cn(BLOCK_SURFACE, "focus-within:bg-scriba-blue-soft/60")}>
+              <WritingLine
+                emphasis={empty}
+                onWrite={(text) => {
+                  const at = insertAt(doc.blocks.length, { type: "paragraph", text });
+                  // A barra digitada na linha do fim faz a MESMA coisa que
+                  // dentro de um bloco: ela vira um parágrafo com `/` dentro, e
+                  // o bloco recém-criado (agora mapeado por `doc.blocks.map`
+                  // acima) desenha o menu sobre ele. Sem isto, o único lugar do
+                  // editor onde se escreve sem escolher nada antes seria
+                  // justamente o único onde a barra não funcionaria.
+                  if (text === "/") setSlash({ index: at, cursor: 0 });
+                }}
+              />
             </div>
           )}
         </div>
@@ -1155,6 +1093,14 @@ export function Composer({
 
       <PassagePicker
         open={pickerFor !== null}
+        // Editando uma referência que já existe, o seletor abre direto no
+        // capítulo/versículo atual — não na lista de livros. `null` (bloco
+        // novo, `pickerFor === -1`) mantém o começo do zero de sempre.
+        initialReference={
+          pickerFor !== null && pickerFor >= 0
+            ? ((doc.blocks[pickerFor] as { reference?: string } | undefined)?.reference ?? null)
+            : null
+        }
         onOpenChange={(v) => {
           if (!v) setPickerFor(null);
         }}
@@ -1240,116 +1186,24 @@ export function Composer({
   );
 }
 
-/** Um parágrafo sem uma letra: a linha em branco que oferece o `+`. */
+/** Um parágrafo sem uma letra: a linha em branco que espera o `/`. */
 function isBlankParagraph(block: WrittenBlock): boolean {
   return block.type === "paragraph" && block.text.length === 0;
 }
 
 /**
- * O disco do `+`.
+ * O menu da BARRA: as opções de bloco, filtradas pelo que se digita depois da
+ * `/`, chamadas pelo teclado ou pelo mouse.
  *
- * O `+` de uma linha em branco e o `×` que fecha o menu são o MESMO botão com
- * glifos diferentes, e é por isso que este componente existe. O `×` nasce
- * exatamente onde o `+` estava — mesmo tamanho, mesmo lugar —, senão abrir o
- * menu troca um disco de 24px por um botão de 36 três píxeis ao lado, e o olho
- * lê isso como a tela inteira tendo se mexido.
+ * É o ÚNICO caminho para inserir um bloco — não há mais um botão `+`. Ele
+ * responde "o que é esta linha?" enquanto as mãos estão no teclado, filtra
+ * enquanto se digita e é percorrido com as setas; uma lista VERTICAL é a
+ * forma que a seta pede, e o realce do item focado só faz sentido numa lista
+ * em que existe um item focado.
  *
- * **O disco tem 24px, e o alvo de toque cresce por fora.** Ele já teve 36, e 36
- * é mais alto que a linha de texto que ele acompanha: a linha em branco ficava
- * 10px mais alta que o parágrafo de cima, duas alturas de linha no mesmo
- * documento. Hoje o que cresce é a área clicável, por `padding` com `margin`
- * negativa, e ela não empurra altura nenhuma.
- *
- * **Quem acende é o `Composer`, e não um `group-hover`.** Cada vão pertence a
- * dois blocos, e o `+` entre eles aparece ao passar por qualquer um dos dois —
- * um `group-` só enxerga o ancestral em que foi declarado, e o vão mora dentro
- * de um só. No celular a mesma vaga é preenchida pelo bloco em edição.
- */
-function DiscButton({
-  label,
-  visible,
-  onClick,
-  children,
-}: {
-  label: string;
-  visible?: boolean;
-  onClick: () => void;
-  children: ReactNode;
-}) {
-  return (
-    <button
-      type="button"
-      aria-label={label}
-      title={label}
-      onClick={onClick}
-      className={cn(
-        "group/disc inline-flex shrink-0 items-center transition-opacity",
-        "opacity-0 focus-visible:opacity-100",
-        visible && "opacity-100",
-        // O alvo é 36×36 sem ocupar mais que os 24 do disco: o `p-1.5` estica a
-        // área e o `-m-1.5` devolve o espaço ao layout.
-        "-m-1.5 justify-center p-1.5"
-      )}
-    >
-      <span
-        className={cn(
-          "inline-flex size-6 items-center justify-center rounded-full border border-scriba-hairline text-scriba-ink-mute transition-colors",
-          "group-hover/disc:border-scriba-ink-mute group-hover/disc:text-scriba-ink"
-        )}
-      >
-        {children}
-      </span>
-    </button>
-  );
-}
-
-/**
- * A fileira de opções, aberta NO LUGAR da linha, flutuando sobre ela.
- *
- * **Ela não empurra mais nada.** Em fluxo, as sete pastilhas quebravam em duas
- * linhas e empurravam o documento inteiro para baixo — o texto que a pessoa
- * está olhando para decidir o que vem a seguir saltava no instante do clique, e
- * o que estava sob o mouse deixava de estar. Flutuando, o que se mexe é só ela.
- *
- * **Ela começa exatamente onde a linha começa**: o `-top-2` desconta o avanço da
- * caixa do bloco para dentro do vão, e o `-inset-x-*` a alinha com as bordas da
- * superfície. O `×` cai em cima do `+` que a abriu — mesmo disco, mesmo lugar,
- * só o glifo muda —, então abrir o menu parece a linha virando o menu.
- *
- * Ela QUEBRA em linhas, não rola na horizontal. As sete opções não cabem numa
- * linha nem no desktop (a coluna de leitura tem 768px), e a versão com
- * `overflow-x-auto` punha uma barra de rolagem cinza atravessando a página para
- * esconder as duas últimas — a Conclusão deixava de existir para quem não
- * descobrisse que aquilo arrastava.
- *
- * O `data-block-menu` é como o `Composer` sabe que um clique caiu DENTRO dela
- * (ver o efeito que a fecha por fora); o fundo opaco, na cor do chão, é o que
- * impede o texto de baixo de aparecer no meio das pastilhas. Sem fio em volta,
- * sem sombra e sem cor própria: os três a transformavam numa caixa pousada
- * sobre o documento, e ela é a própria linha trocando de conteúdo.
- */
-/**
- * O menu da BARRA: as mesmas opções do `+`, chamadas pelo teclado.
- *
- * ## Por que ele não é o `BlockMenu`
- *
- * Aquele é uma fileira de pastilhas que ocupa a LINHA INTEIRA, aberta por um
- * disco que a pessoa mirou com o dedo: ele responde "o que cabe nesta
- * posição?" e é tocado. Este responde "o que é esta linha?" enquanto as mãos
- * estão no teclado, é filtrado enquanto se digita e é percorrido com as setas.
- * Uma lista VERTICAL é a forma que a seta pede, e o realce do item focado só
- * faz sentido numa lista em que existe um item focado.
- *
- * Eles compartilham o que importa, que são as OPÇÕES (`menuOptions`): duas
- * listas de blocos divergiriam no primeiro tipo novo, e o menu que ficasse para
- * trás simplesmente não o ofereceria, sem erro nenhum na tela.
- *
- * ## A caixa
- *
- * Ela TEM contorno e sombra, ao contrário do `BlockMenu`, e a diferença não é
- * gosto: aquele é a linha trocando de conteúdo, e por isso é opaco e sem
- * moldura; este pousa SOBRE o texto que continua ali embaixo, e uma lista sem
- * borda sobre parágrafos vira duas camadas de texto na mesma tinta.
+ * Ela pousa SOBRE o texto que continua ali embaixo, e por isso tem contorno e
+ * sombra: uma lista sem borda sobre parágrafos vira duas camadas de texto na
+ * mesma tinta.
  *
  * `pointer-events` ficam ligados: o mouse também escolhe, e passar por cima
  * move o mesmo cursor que as setas movem — dois destaques ao mesmo tempo, um
@@ -1629,66 +1483,16 @@ function SlashMenu({
   );
 }
 
-function BlockMenu({
-  options,
-  onClose,
-  onPick,
-}: {
-  /** O que cabe AGORA: as duas opções únicas saem quando usadas. Ver `menuOptions`. */
-  options: MenuOption[];
-  onClose: () => void;
-  onPick: (pick: BlockPick) => void;
-}) {
-  return (
-    <div
-      data-block-menu
-      className={cn(
-        "-top-2 -inset-x-3 sm:-inset-x-5 absolute z-30 flex items-start gap-2",
-        // Nem contorno, nem sombra, nem cor própria: o fundo é o do chão, e o
-        // menu é a linha trocando de conteúdo, não uma caixa pousada sobre o
-        // documento. O que o mantém legível é ser OPACO e estar por cima —
-        // `z-30` contra os `z-10` da pílula de um bloco, porque com duas
-        // fileiras de pastilhas ele cobre parte do bloco de baixo e o que está
-        // embaixo não pode aparecer no meio das opções nem acender ao passar o
-        // mouse sobre elas.
-        "rounded-[20px] bg-scriba-surface p-2"
-      )}
-    >
-      {/* `h-[26px]`: a altura da linha de texto, para o `×` pousar na mesma
-          altura em que o `+` estava. */}
-      <div className="flex h-[26px] shrink-0 items-center">
-        <DiscButton label="Fechar" visible onClick={onClose}>
-          <X className="size-3.5" />
-        </DiscButton>
-      </div>
-      <div className="-my-0.5 flex min-w-0 flex-1 flex-wrap gap-1.5">
-        {options.map((o) => (
-          <button
-            key={o.type}
-            type="button"
-            title={o.hint}
-            onClick={() => onPick(o.type)}
-            className="inline-flex shrink-0 items-center gap-1.5 rounded-full border border-scriba-hairline px-2.5 py-1.5 font-medium text-scriba-ink-soft text-xs transition-colors hover:bg-scriba-blue-soft/60 hover:text-scriba-blue-ink focus-visible:ring-2 focus-visible:ring-ring/40 focus-visible:outline-none"
-          >
-            {o.icon}
-            {o.label}
-          </button>
-        ))}
-      </div>
-    </div>
-  );
-}
-
 /**
  * A linha em branco depois do último bloco: uma `textarea` vazia, permanente,
  * com a roupa de parágrafo.
  *
- * **Ela existe para o `+` ser opcional.** Escrever um texto é escrever
- * parágrafos; pedir que a pessoa escolha "Parágrafo" num menu antes de cada um
- * é cobrar um clique por aquilo que ela ia fazer de qualquer jeito — e numa
- * folha em branco esse clique é um degrau entre abrir o editor e começar. Quem
- * quer um título, uma passagem ou uma conclusão pede pelo `+`, que continua ali
- * do lado; quem quer escrever, escreve.
+ * **Ela existe para não obrigar um menu antes de cada parágrafo.** Escrever um
+ * texto é escrever parágrafos; pedir que a pessoa escolha "Parágrafo" antes de
+ * cada um cobraria um clique por aquilo que ela ia fazer de qualquer jeito — e
+ * numa folha em branco esse clique é um degrau entre abrir o editor e começar.
+ * Quem quer um título, uma passagem ou qualquer outro bloco digita `/`; quem
+ * quer escrever, escreve.
  *
  * **O bloco nasce na primeira tecla, e ela não se perde.** Esta `textarea` não
  * guarda texto: o que foi digitado vira o parágrafo, o foco vai para ele
@@ -1720,7 +1524,11 @@ function WritingLine({
       rows={1}
       value={text}
       aria-label="Escrever um parágrafo"
-      placeholder={emphasis ? "Comece a escrever…" : BLOCK_PLACEHOLDERS.paragraph}
+      placeholder={
+        emphasis
+          ? "Comece a escrever, ou digite / para ver as opções"
+          : BLOCK_PLACEHOLDERS.paragraph
+      }
       onChange={(e) => {
         const value = e.target.value;
         if ("isComposing" in e.nativeEvent && e.nativeEvent.isComposing) {
@@ -1766,27 +1574,18 @@ function WritingLine({
  * fica longa. No desktop é um estorvo com jeito de detalhe; no celular é a
  * lixeira debaixo do dedo de quem só queria tocar no fim da palavra.
  *
- * **O `+` mora aqui**, e não mais no vão entre dois blocos. Lá eram dois discos
- * por bloco, acendendo e apagando conforme o mouse passava, e uma tela de texto
- * com uma dúzia de botõezinhos piscando ao redor. Aqui é um botão a mais numa
- * barra que já existe e já aparece na hora certa. Ele insere ACIMA do bloco —
- * é o que diz o rótulo, e é o que mantém toda posição alcançável: para o fim do
- * texto existe a linha em branco do rodapé, que está sempre lá.
+ * Inserir um bloco não passa mais por aqui — é a barra `/` quem faz isso,
+ * numa linha em branco. O que sobra nesta pílula é o que só faz sentido sobre
+ * um bloco que já existe: marcar um recorte, mover e excluir.
  */
 function BlockControls({
-  hidden,
   shown,
-  onAdd,
   onUp,
   onDown,
   onMark,
   onDelete,
 }: {
-  /** Há um menu de blocos aberto em algum lugar: nenhuma pílula aparece. */
-  hidden?: boolean;
   shown: boolean;
-  /** Abre o menu de blocos na posição deste bloco, ou seja, ACIMA dele. */
-  onAdd: () => void;
   onUp?: () => void;
   onDown?: () => void;
   /**
@@ -1818,24 +1617,18 @@ function BlockControls({
         "absolute right-0 bottom-full z-10 flex items-center gap-0.5 rounded-full bg-scriba-surface p-1 shadow-sm transition-opacity",
         "ring-1 ring-scriba-hairline ring-inset",
         "opacity-0 group-hover:opacity-100 focus-within:opacity-100",
-        shown && "opacity-100",
-        // `invisible`, e não `hidden`: assim ela some junto com a transição em
-        // vez de desaparecer no primeiro quadro.
-        hidden && "invisible opacity-0"
+        shown && "opacity-100"
       )}
     >
-      <ControlButton label="Adicionar bloco acima" onClick={onAdd}>
-        <Plus className="size-3.5" />
-      </ControlButton>
       {/* O MARCA-TEXTO entra aqui, e não numa barra flutuante sobre a seleção.
           Uma barra própria teria de ser posicionada em cima de um recorte
           dentro de uma `textarea`, que é a única coisa da página cuja geometria
-          o DOM não expõe — daria um espelho de medição só para achar o pixel. E
-          o argumento que tirou o `+` do vão vale igual aqui: numa barra que já
-          existe, e que já aparece na hora certa, isto é um botão a mais.
+          o DOM não expõe — daria um espelho de medição só para achar o pixel.
+          Numa barra que já existe, e que já aparece na hora certa, isto é um
+          botão a mais.
 
-          O fio fica DEPOIS dele: o `+` e o marca-texto são as duas ações que
-          escrevem no texto, e mover/excluir são as que mexem no bloco. */}
+          O fio fica DEPOIS dele: marcar escreve no texto, mover/excluir mexem
+          no bloco. */}
       {onMark ? (
         <ControlButton keepFocus label="Marcar o trecho selecionado" onClick={onMark}>
           <Highlighter className="size-3.5" />
@@ -2294,16 +2087,33 @@ function BlockBody({
     // próprio e o rótulo em versalete. Ele é o bloco mais recente do editor, e
     // entrou junto com a edição de um resumo GERADO — sem ele, abrir aqui o
     // resumo de uma pregação e salvar apagaria os exemplos que a IA separou.
+    //
+    // O RÓTULO é editável, ao contrário de todo outro bloco fixo do menu: o
+    // bloco entrou para servir um uso só (o exemplo do pregador) e passou a
+    // servir qualquer nota à parte do texto corrido — "Informação" é o nome
+    // que cabe nos dois, e quem quiser dizer o que é escreve por cima dele.
+    // Vazio, ele mostra o próprio "Informação" como placeholder — é o que o
+    // `BlockRenderer` também desenha na leitura quando `title` está ausente.
     return (
       <aside className="relative rounded-2xl border-[var(--session-example-border)] border-l-4 bg-[var(--session-example-bg)] px-5 py-4">
-        <span className="mb-1.5 block font-semibold text-[10px] text-scriba-ink-mute uppercase tracking-[0.14em]">
-          Exemplo
-        </span>
+        <div className="mb-1.5 flex items-center gap-1.5 text-scriba-ink-mute">
+          <Info className="size-3 shrink-0" />
+          <input
+            value={block.title ?? ""}
+            onChange={(e) =>
+              onChange({ title: e.target.value.slice(0, WRITTEN_LIMITS.exampleTitle) })
+            }
+            onFocus={onFocus}
+            aria-label="Título do bloco de informação"
+            placeholder="Informação"
+            className="min-w-0 flex-1 bg-transparent font-semibold text-[10px] uppercase tracking-[0.14em] outline-none placeholder:text-scriba-ink-mute/70"
+          />
+        </div>
         <MarkableField
           shared={shared}
           value={block.text}
           onChange={(text) => onChange({ text })}
-          ariaLabel="Exemplo"
+          ariaLabel={block.title?.trim() || "Informação"}
           className="font-light text-scriba-ink text-sm leading-relaxed"
         />
       </aside>

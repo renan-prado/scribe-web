@@ -1,3 +1,4 @@
+import { Info } from "lucide-react";
 import { BookGlyph } from "@/components/icons/BookGlyph";
 import { ChapterMention } from "@/features/session/components/ChapterMention";
 import { PassageVerses } from "@/features/session/components/PassageVerses";
@@ -101,12 +102,14 @@ export function BlockRenderer({ block }: { block: SummaryBlock }) {
     case "example":
       return (
         <aside className="relative rounded-2xl border-l-4 border-[var(--session-example-border)] bg-[var(--session-example-bg)] px-5 py-4">
-          {/* "Exemplo", e não "Exemplo do pregador": o rótulo antigo só era
-              verdade num resumo gerado a partir de um sermão, e a mesma
-              moldura desenha hoje o texto que a pessoa escreveu à mão. O TIPO
-              continua `example` — o que mudou é a palavra, não a chave. */}
-          <span className="mb-1.5 block text-[10px] font-semibold uppercase tracking-[0.14em] text-scriba-ink-mute">
-            Exemplo
+          {/* "Informação", e não "Exemplo" (que por sua vez já não era "Exemplo
+              do pregador"): o bloco nasceu para um uso só e passou a servir
+              qualquer nota à parte do texto corrido. `title` é OPCIONAL — sem
+              ele, o rótulo é o nome do bloco. O TIPO continua `example` — o
+              que mudou é a palavra, não a chave do jsonb. */}
+          <span className="mb-1.5 flex items-center gap-1.5 text-[10px] font-semibold uppercase tracking-[0.14em] text-scriba-ink-mute">
+            <Info className="size-3" aria-hidden />
+            {block.title?.trim() || "Informação"}
           </span>
           <p className="text-pretty text-sm font-light leading-relaxed text-scriba-ink">
             <RichText>{block.text}</RichText>

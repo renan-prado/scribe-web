@@ -7,6 +7,7 @@ import { BackToTop } from "@/features/session/components/BackToTop";
 import { BibleDock } from "@/features/session/components/BibleDock";
 import { BibloSummaryDock } from "@/features/session/components/BibloSummaryDock";
 import { SavedSessionView } from "@/features/session/components/SavedSessionView";
+import { SummaryInsertProvider } from "@/features/session/components/SummaryInsertContext";
 import { formatDurationLong, shortDate } from "@/features/session/lib/formatting";
 import { dehydratePassages } from "@/features/session/server/passages";
 import { TourTrigger } from "@/features/tour/components/TourTrigger";
@@ -88,7 +89,16 @@ export default async function V2SummaryPage({ params }: PageProps) {
   const passages = await dehydratePassages(session.finalSummary?.blocks);
 
   const page = (
-    <>
+    // O provider é o único DONO do rascunho de leitura (ver
+    // `SummaryInsertContext`): `SavedSessionView` (referências dentro do
+    // resumo, via `ChapterDialog`) e `BibloSummaryDock` escrevem os dois no
+    // MESMO documento, e por isso moram DENTRO dele, não como irmãos que cada
+    // um chamaria o hook por conta própria.
+    <SummaryInsertProvider
+      sessionId={id}
+      summary={session.finalSummary}
+      title={session.title?.trim() || ""}
+    >
       <SavedSessionView
         header={
           <TopBar
@@ -136,11 +146,7 @@ export default async function V2SummaryPage({ params }: PageProps) {
       {/* O Biblo fica no canto de baixo à direita, o mesmo gesto do `+` da
           Biblioteca e do hambúrguer do painel — a pergunta nasce no meio do
           texto, não no topo dele. Ver `BibloDock`. */}
-      <BibloSummaryDock
-        sessionId={id}
-        summary={session.finalSummary}
-        title={session.title?.trim() || ""}
-      />
+      <BibloSummaryDock sessionId={id} />
       {/* A Bíblia, na borda direita, em toda a altura da leitura. Ela não
           entra no canto de baixo porque ele já tem dois donos — o Biblo, que é
           permanente, e o voltar ao topo, que empilha por cima quando aparece.
@@ -153,7 +159,7 @@ export default async function V2SummaryPage({ params }: PageProps) {
           embaixo. O contrário faria o botão principal pular de lugar toda vez
           que alguém rolasse a página. */}
       <BackToTop stacked />
-    </>
+    </SummaryInsertProvider>
   );
 
   return passages ? <HydrationBoundary state={passages}>{page}</HydrationBoundary> : page;

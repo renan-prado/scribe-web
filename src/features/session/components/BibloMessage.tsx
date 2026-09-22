@@ -129,7 +129,7 @@ const BLOCK_LABEL: Record<string, string> = {
   quote: "Citação",
   h2: "Subtítulo",
   conclusion: "Conclusão",
-  example: "Exemplo",
+  example: "Informação",
   paragraph: "Parágrafo",
 };
 
