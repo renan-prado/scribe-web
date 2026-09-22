@@ -1,6 +1,7 @@
 "use client";
 
 import { useQuery, useQueryClient } from "@tanstack/react-query";
+import { useEffect, useState } from "react";
 import type { Folder } from "@/lib/domain/folder";
 import { useSessionOwner } from "./query";
 
@@ -28,15 +29,44 @@ async function fetchFolders(): Promise<Folder[]> {
   return body.folders;
 }
 
+/**
+ * O PRIMEIRO render do cliente devolve `undefined`, mesmo com a lista já no
+ * disco, e isso é correção de um defeito e não cautela.
+ *
+ * O HTML do servidor nunca tem pasta nenhuma — elas são do aparelho, e o
+ * `PersistQueryClientProvider` as restaura do IndexedDB num efeito lá em cima.
+ * Essa restauração pode terminar ANTES de esta árvore hidratar (o
+ * `loading.tsx` da Biblioteca a põe dentro de um `<Suspense>`, e o React
+ * hidrata boundary por boundary), e aí o primeiro render daqui já tem o
+ * cabeçalho "Pastas" e os cartões onde o servidor tinha posto nada: mismatch
+ * de hidratação, a árvore inteira descartada e refeita, com um erro
+ * recuperável no console. Era exatamente o `<h2>Pastas</h2>` do `FolderGrid`
+ * que o React apontava.
+ *
+ * O guard mora AQUI, e não em cada tela, porque são três consumidores
+ * (`FolderGrid`, `LibraryBrowser`, `SavedSessionView`) e esquecer um é um
+ * defeito que só aparece no console de quem já tem pastas guardadas. É o
+ * mesmo raciocínio do `hydrated` de `LibraryBrowser`, um degrau mais fundo: lá
+ * ele precisa ficar na tela porque a Biblioteca distingue "ainda não sei"
+ * (esqueleto) de "está vazia" (o convite a gravar), e pasta não tem essa
+ * diferença — sem saber, não se desenha pasta nenhuma.
+ *
+ * Custa UM QUADRO e nenhuma ida à rede.
+ */
 export function useFolders() {
   const userId = useSessionOwner();
-  return useQuery({
+  const [hydrated, setHydrated] = useState(false);
+  useEffect(() => setHydrated(true), []);
+
+  const { data, ...rest } = useQuery({
     queryKey: foldersKey(userId),
     queryFn: fetchFolders,
     enabled: userId !== null,
     staleTime: 30_000,
     refetchOnWindowFocus: true,
   });
+
+  return { ...rest, data: hydrated ? data : undefined };
 }
 
 /**
