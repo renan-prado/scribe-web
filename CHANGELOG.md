@@ -9,6 +9,12 @@ Gerado por `npm run release` a partir dos Conventional Commits. `feat` sobe o
 minor; o resto sobe o patch. Não edite à mão, a próxima execução escreve por
 cima do topo do arquivo.
 
+## 0.68.1, 2026-09-22, desde v0.68.0
+
+### Correções
+
+- **session:** garante testemunhos e ilustracoes no resumo gerado (`7380122`)
+
 ## 0.68.0, 2026-09-22, desde v0.67.4
 
 ### Novidades
