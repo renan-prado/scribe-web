@@ -37,11 +37,27 @@ export function parseFolderColor(value: unknown): FolderColor {
  * `--v2-note-slate` porque o segundo É o cinza do cartão, e o ícone de uma
  * pasta antiga gravada assim simplesmente não apareceria.
  */
+/**
+ * A cor do ícone de pasta, e ela sai do `-mute` de cada post-it, NUNCA da
+ * superfície dele.
+ *
+ * Três dos quatro apontavam para a superfície (`text-v2-note-mist`), e
+ * funcionava enquanto aquelas eram pastéis CLAROS: um glifo azul-claro tinha
+ * contraste de sobra no cartão escuro do app. Com os post-its virando cinzas
+ * nos dois temas, a superfície deles passou a ser quase a mesma do cartão em
+ * que o ícone pousa — no claro ele saía quase branco sobre cinza-claro, e no
+ * escuro sairia escuro sobre escuro. O mesmo erro, espelhado.
+ *
+ * O `-mute` é a tinta já calibrada de cada família (~5:1 sobre o próprio
+ * cartão), e como post-it e cartão do app estão no mesmo degrau em cada tema,
+ * ela vale nos dois. A pasta continua colorida — o matiz é o mesmo —, só deixa
+ * de ser pintada com uma cor de FUNDO.
+ */
 export const FOLDER_ICON_INK: Record<FolderColor, string> = {
-  mist: "text-v2-note-mist",
-  sage: "text-v2-note-sage",
+  mist: "text-v2-note-mist-mute",
+  sage: "text-v2-note-sage-mute",
   slate: "text-v2-note-slate-mute",
-  lemon: "text-v2-note-lemon",
+  lemon: "text-v2-note-lemon-mute",
 };
 
 /**

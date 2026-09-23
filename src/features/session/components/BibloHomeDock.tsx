@@ -17,7 +17,7 @@ import {
   runBibloAction,
   writeWorkspace,
 } from "@/features/session/biblo-workspace";
-import type { BibloDockHandle } from "@/features/session/components/BibloDock";
+import { BIBLO_TRIGGER_CLASS, type BibloDockHandle } from "@/features/session/components/BibloDock";
 import { BibloDrawer } from "@/features/session/components/BibloDrawer";
 import { useLibraryWriter } from "@/features/session/query";
 import { useKeyboardInset } from "@/hooks/use-keyboard-inset";
@@ -236,7 +236,7 @@ export const BibloHomeDock = forwardRef<
             tabIndex={scrolledIn ? undefined : -1}
             aria-hidden={scrolledIn ? undefined : true}
             className={cn(
-              "inline-flex size-14 items-center justify-center rounded-full bg-v2-glass-button bg-[image:var(--v2-glass-sheen)] ring-1 ring-v2-glass-edge backdrop-blur-xl transition hover:brightness-125 active:brightness-150 focus-visible:outline-2 focus-visible:outline-offset-4 focus-visible:outline-v2-ink-mute",
+              BIBLO_TRIGGER_CLASS,
               scrolledIn ? "pointer-events-auto" : "pointer-events-none",
               moved && (scrolledIn ? "animate-v2-rec-in" : "animate-v2-rec-out")
             )}

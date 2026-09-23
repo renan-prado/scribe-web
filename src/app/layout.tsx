@@ -5,6 +5,7 @@ import { HeroEyebrowScript } from "@/components/HeroEyebrowScript";
 import { Providers } from "@/components/Providers";
 import { PwaBootstrap } from "@/components/PwaBootstrap";
 import { ThemedToaster } from "@/components/ThemedToaster";
+import { ThemeScript } from "@/components/ThemeScript";
 import { IS_INDEXABLE, SITE_DESCRIPTION, SITE_NAME, SITE_TITLE, SITE_URL } from "@/lib/seo";
 import { APPLE_STARTUP_IMAGES } from "@/shared/splash";
 import { THEME_COLOR } from "@/shared/theme-color";
@@ -48,10 +49,13 @@ const poppins = Poppins({
  * desalinhar no meio da pregação. Quem manda nelas é o `APP_VIEWPORT` de
  * `@/shared/viewport`, declarado por `(app)/layout.tsx` e `(entry)/layout.tsx`.
  *
- * **O `themeColor` ENTRA aqui**, e entrou quando o produto passou a ter um
- * tema só. Ele morava num script inline no `<head>` (`ThemeScript`) porque
- * dependia do localStorage, que o CSS e a `<meta>` não sabem ler; com valor
- * constante, ele é uma tag estática, e o script inteiro deixou de existir.
+ * **O `themeColor` continua aqui, e agora ele é só o PADRÃO.** Com dois temas
+ * no produto, a barra de status tem duas cores, e a escolha vem do
+ * localStorage — que nem o CSS nem a `<meta>` sabem ler, e que o
+ * `prefers-color-scheme` do `media` não responde. A tag estática é o valor
+ * ESCURO, que é o padrão e o que quem está sem JS recebe; quem escolheu claro
+ * tem o `content` reescrito pelo `ThemeScript` antes do primeiro paint, e pelo
+ * `useTheme` a cada troca. Ver `src/shared/theme-color.ts`.
  */
 export const viewport: Viewport = {
   width: "device-width",
@@ -164,11 +168,15 @@ export default function RootLayout({ children }: LayoutProps<"/">) {
     // Next desliga o suave só durante a transição e devolve em seguida.
     <html
       lang="pt-BR"
-      // `dark` fixo, e agora ele é o ÚNICO estado possível: não há mais tema
-      // claro no produto, e nada tira esta classe. Ela fica porque as
-      // primitivas do shadcn trazem `dark:` escritos para o escuro (24 deles),
-      // e porque `@custom-variant dark` resolve por ela. O que ela NÃO faz
-      // mais é redefinir cor: o bloco `.dark` saiu do `globals.css`.
+      // `dark` é o PADRÃO servido, não o único estado: quem escolheu claro tem
+      // esta classe trocada por `light` pelo `ThemeScript`, antes do primeiro
+      // paint. Servir o padrão é o que evita a piscada para a maioria — ao
+      // contrário, toda visita começaria branca e viraria escuro.
+      //
+      // Ela faz DUAS coisas, e as duas importam: ativa o `@custom-variant dark`
+      // do Tailwind (e com ele os `dark:` que as primitivas do shadcn já
+      // trazem escritos) e deixa o `:root` do `globals.css` valer, que é onde a
+      // paleta escura mora. O tema claro é o bloco `.light` de lá.
       className={`dark ${geistSans.variable} ${geistMono.variable} ${firaMono.variable} ${poppins.variable} h-full antialiased`}
       data-scroll-behavior="smooth"
       suppressHydrationWarning
@@ -179,6 +187,10 @@ export default function RootLayout({ children }: LayoutProps<"/">) {
             exige para abrir o atalho da tela inicial sem a moldura do Safari;
             as duas juntas não geram o aviso de depreciação do Chrome. */}
         <meta name="apple-mobile-web-app-capable" content="yes" />
+        {/* Aplica o tema escolhido ANTES DO PRIMEIRO PAINT. Ele vem primeiro
+            de propósito: é o único script da página cujo atraso APARECE, como
+            uma piscada de tema inteiro. Ver `ThemeScript`. */}
+        <ThemeScript />
         {/* Decide ANTES DO PRIMEIRO PAINT se a pílula "indicado por Fulano" do
             hero da landing aparece. Ele governa UMA tela e mora aqui mesmo
             assim: um `<script>` dentro de uma página vira uma `<div>` vazia

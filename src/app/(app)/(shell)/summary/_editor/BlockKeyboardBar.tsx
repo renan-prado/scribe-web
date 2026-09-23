@@ -152,7 +152,7 @@ export function BlockKeyboardBar({
               title={o.label}
               className={cn(
                 BAR_BUTTON_CLASS,
-                "bg-v2-glass-button bg-[image:var(--v2-glass-sheen)] text-v2-ink-soft ring-1 ring-v2-glass-edge"
+                "bg-v2-glass-button bg-[image:var(--v2-glass-sheen)] text-v2-ink-soft shadow-[0_2px_6px_var(--v2-glass-shadow),0_10px_28px_var(--v2-glass-shadow)] ring-1 ring-v2-glass-edge"
               )}
             >
               <span aria-hidden className="flex size-5 items-center justify-center">
@@ -169,7 +169,7 @@ export function BlockKeyboardBar({
           aria-label="Ver todas as opções"
           className={cn(
             BAR_BUTTON_CLASS,
-            "bg-v2-glass-button bg-[image:var(--v2-glass-sheen)] text-v2-ink ring-1 ring-v2-glass-edge backdrop-blur-xl"
+            "bg-v2-glass-button bg-[image:var(--v2-glass-sheen)] text-v2-ink shadow-[0_2px_6px_var(--v2-glass-shadow),0_10px_28px_var(--v2-glass-shadow)] ring-1 ring-v2-glass-edge backdrop-blur-xl"
           )}
         >
           <Plus aria-hidden className="size-5" strokeWidth={1.75} />

@@ -442,7 +442,7 @@ export function GlobalSearchDialog() {
             "fixed inset-0 z-50 flex flex-col bg-v2-bg outline-none duration-100",
             "data-open:animate-in data-open:fade-in-0",
             "md:data-closed:animate-out md:data-closed:fade-out-0",
-            "md:inset-x-0 md:top-[8vh] md:bottom-auto md:mx-auto md:max-h-[80vh] md:w-full md:max-w-xl md:overflow-hidden md:rounded-2xl md:bg-v2-glass-panel md:bg-[image:var(--v2-glass-sheen)] md:ring-1 md:ring-v2-glass-edge md:backdrop-blur-xl md:data-open:zoom-in-95 md:data-closed:zoom-out-95"
+            "md:inset-x-0 md:top-[8vh] md:bottom-auto md:mx-auto md:max-h-[80vh] md:w-full md:max-w-xl md:overflow-hidden md:rounded-2xl md:bg-v2-glass-panel md:bg-[image:var(--v2-glass-sheen)] md:shadow-[0_2px_6px_var(--v2-glass-shadow),0_10px_28px_var(--v2-glass-shadow)] md:ring-1 md:ring-v2-glass-edge md:backdrop-blur-xl md:data-open:zoom-in-95 md:data-closed:zoom-out-95"
           )}
         >
           <DialogPrimitive.Title className="sr-only">Buscar na biblioteca</DialogPrimitive.Title>
@@ -558,7 +558,7 @@ export function GlobalSearchDialog() {
             )}
           >
             {mobileFiltersOpen ? (
-              <div className="absolute inset-x-4 bottom-full mb-3 flex flex-col gap-2 rounded-[28px] bg-v2-glass-panel bg-[image:var(--v2-glass-sheen)] p-3 ring-1 ring-v2-glass-edge backdrop-blur-xl">
+              <div className="absolute inset-x-4 bottom-full mb-3 flex flex-col gap-2 rounded-[28px] bg-v2-glass-panel bg-[image:var(--v2-glass-sheen)] p-3 shadow-[0_2px_6px_var(--v2-glass-shadow),0_10px_28px_var(--v2-glass-shadow)] ring-1 ring-v2-glass-edge backdrop-blur-xl">
                 <div className="flex flex-wrap items-center gap-2">{facetSelects}</div>
                 <div className="flex items-center justify-between px-1 pb-1">
                   <span className="text-[11px] text-v2-ink-mute tabular-nums">
@@ -583,7 +583,7 @@ export function GlobalSearchDialog() {
               </div>
             ) : null}
 
-            <div className="flex h-14 min-w-0 items-center gap-2 rounded-full bg-v2-glass-button bg-[image:var(--v2-glass-sheen)] px-4 ring-1 ring-v2-glass-edge backdrop-blur-xl">
+            <div className="flex h-14 min-w-0 items-center gap-2 rounded-full bg-v2-glass-button bg-[image:var(--v2-glass-sheen)] px-4 shadow-[0_2px_6px_var(--v2-glass-shadow),0_10px_28px_var(--v2-glass-shadow)] ring-1 ring-v2-glass-edge backdrop-blur-xl">
               <Search aria-hidden className="size-5 shrink-0 text-v2-ink-mute" strokeWidth={1.75} />
               <input
                 ref={inputRef}
@@ -618,7 +618,7 @@ export function GlobalSearchDialog() {
               type="button"
               onClick={closeSearch}
               aria-label="Fechar busca"
-              className="inline-flex size-14 shrink-0 items-center justify-center rounded-full bg-v2-glass-button bg-[image:var(--v2-glass-sheen)] text-v2-ink ring-1 ring-v2-glass-edge backdrop-blur-xl transition hover:brightness-125 active:brightness-150"
+              className="inline-flex size-14 shrink-0 items-center justify-center rounded-full bg-v2-glass-button bg-[image:var(--v2-glass-sheen)] text-v2-ink shadow-[0_2px_6px_var(--v2-glass-shadow),0_10px_28px_var(--v2-glass-shadow)] ring-1 ring-v2-glass-edge backdrop-blur-xl transition hover:brightness-125 active:brightness-150"
             >
               <X aria-hidden className="size-5" strokeWidth={1.75} />
             </button>

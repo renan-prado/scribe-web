@@ -22,7 +22,7 @@ import { useGlobalSearchStore } from "./GlobalSearchStore";
  * barra passaria a ter dois desenhos de disco lado a lado.
  */
 export const MOBILE_BAR_BUTTON_CLASS =
-  "inline-flex size-14 shrink-0 items-center justify-center rounded-full bg-v2-glass-button bg-[image:var(--v2-glass-sheen)] text-v2-ink ring-1 ring-v2-glass-edge backdrop-blur-xl transition hover:brightness-125 active:brightness-150 focus-visible:outline-2 focus-visible:outline-offset-4 focus-visible:outline-v2-ink-mute disabled:opacity-50";
+  "inline-flex size-14 shrink-0 items-center justify-center rounded-full bg-v2-glass-button bg-[image:var(--v2-glass-sheen)] text-v2-ink shadow-[0_2px_6px_var(--v2-glass-shadow),0_10px_28px_var(--v2-glass-shadow)] ring-1 ring-v2-glass-edge backdrop-blur-xl transition hover:brightness-125 active:brightness-150 focus-visible:outline-2 focus-visible:outline-offset-4 focus-visible:outline-v2-ink-mute disabled:opacity-50";
 
 /**
  * A barra de baixo do celular, única em `/home`, `/summary` e `/summary/new`:
@@ -129,7 +129,7 @@ export function MobileActionBar({
           type="button"
           onClick={onAskBiblo}
           aria-label="Pergunte ao Biblo"
-          className="inline-flex h-14 min-w-0 flex-1 items-center gap-2.5 rounded-full bg-v2-glass-button bg-[image:var(--v2-glass-sheen)] py-1.5 pr-4 pl-1.5 text-left ring-1 ring-v2-glass-edge backdrop-blur-xl transition hover:brightness-125 active:brightness-150 focus-visible:outline-2 focus-visible:outline-offset-4 focus-visible:outline-v2-ink-mute"
+          className="inline-flex h-14 min-w-0 flex-1 items-center gap-2.5 rounded-full bg-v2-glass-button bg-[image:var(--v2-glass-sheen)] py-1.5 pr-4 pl-1.5 text-left shadow-[0_2px_6px_var(--v2-glass-shadow),0_10px_28px_var(--v2-glass-shadow)] ring-1 ring-v2-glass-edge backdrop-blur-xl transition hover:brightness-125 active:brightness-150 focus-visible:outline-2 focus-visible:outline-offset-4 focus-visible:outline-v2-ink-mute"
         >
           <BibloAvatar mood={bibloThinking ? "thinking" : "idle"} size={40} />
           <span className="truncate font-medium text-[15px] text-v2-ink-soft">
@@ -187,7 +187,7 @@ function CreateButton() {
           <nav
             id="mobile-create-options"
             aria-labelledby="mobile-create-title"
-            className="pointer-events-auto absolute right-0 bottom-full mb-3 flex origin-bottom-right animate-v2-rec-in flex-col gap-2 rounded-[28px] bg-v2-glass-panel bg-[image:var(--v2-glass-sheen)] px-3 pt-3 pb-5 ring-1 ring-v2-glass-edge backdrop-blur-xl"
+            className="pointer-events-auto absolute right-0 bottom-full mb-3 flex origin-bottom-right animate-v2-rec-in flex-col gap-2 rounded-[28px] bg-v2-glass-panel bg-[image:var(--v2-glass-sheen)] px-3 pt-3 pb-5 shadow-[0_2px_6px_var(--v2-glass-shadow),0_10px_28px_var(--v2-glass-shadow)] ring-1 ring-v2-glass-edge backdrop-blur-xl"
           >
             <p
               id="mobile-create-title"

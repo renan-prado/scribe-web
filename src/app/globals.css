@@ -182,6 +182,10 @@
   --color-v2-glass-button: var(--v2-glass-button);
   --color-v2-glass-tile: var(--v2-glass-tile);
   --color-v2-glass-edge: var(--v2-glass-edge);
+  /* O disco flutuante do dock. Ele tem par próprio porque no tema claro ele é
+     ESCURO enquanto o resto do dock é claro; ver `--v2-dock-disc` em `:root`. */
+  --color-v2-dock-disc: var(--v2-dock-disc);
+  --color-v2-dock-disc-ink: var(--v2-dock-disc-ink);
   --color-v2-rec: var(--v2-rec);
   --color-v2-rec-hover: var(--v2-rec-hover);
   --color-v2-rec-ink: var(--v2-rec-ink);
@@ -628,6 +632,11 @@
      sheet — coisas que cobrem a página e precisam dizer isso. */
   --scriba-shadow-soft: transparent;
   --scriba-shadow: rgba(0, 0, 0, 0.45);
+  /* A cor da elevação de DIÁLOGO SOBRE DIÁLOGO. Ela mora aqui, e não no
+     `@theme` que declara `--shadow-dialog` lá embaixo, pelo motivo escrito no
+     cabeçalho daquele token: um valor de `@theme` é inlineado na utilitária e
+     não enxerga o bloco de tema. */
+  --dialog-shadow-color: rgba(0, 0, 0, 0.8);
   /* A esfumaçada acima da nav inferior, na cor do CHÃO da página (#212121,
      o mesmo grafite do `--v2-dock-fade`). Sete stops, cauda longa, o porquê
      está em src/shared/AGENTS.md. */
@@ -758,37 +767,58 @@
     #B32E3C 72%,
     #D8423A 100%
   );
-  /* OS POST-ITS DA BIBLIOTECA.
-     Quatro cores em rodízio, e o rodízio é por HASH DO ID da sessão, nunca
-     pela posição na lista (ver `LibraryNote`): com o índice, gravar um sermão
-     novo repintaria o acervo inteiro, e o cartão amarelo de ontem seria verde
-     hoje. Cor de post-it é memória visual; instável, é só ruído.
+  /* OS POST-ITS DA BIBLIOTECA, e hoje eles são UMA COR SÓ: a do cartão.
 
-     Cada cor traz o próprio PAR de tinta porque uma das quatro é escura — não
-     existe uma tinta só que sirva às quatro, e `text-v2-ink` num cartão claro
-     seria texto branco sobre papel de limão. A tinta não é preto chapado: ela
-     puxa o matiz do próprio cartão, senão o preto lê mais frio que o papel no
-     sage e no lemon.
+     `--v2-note-*` vale exatamente `--v2-card` nos dois temas, e a tinta e o
+     `mute` acompanham. O post-it deixou de ser um objeto com paleta própria e
+     virou o que o resto da Biblioteca já é — o mesmo cartão do cartão de
+     pasta, na mesma superfície.
 
-     Contraste medido sobre o próprio cartão, não sobre a página (regra de
-     `src/shared/AGENTS.md`): tinta ~11-13:1, `mute` ~4,8-6,4:1, que é o piso
-     da linha de data. */
-  --v2-note-mist: #D8DFE9;
-  --v2-note-mist-ink: #1B2330;
-  --v2-note-mist-mute: #4A5568;
-  --v2-note-sage: #CFDECB;
-  --v2-note-sage-ink: #1C2A1B;
-  --v2-note-sage-mute: #48584A;
-  /* O escuro. É a MESMA cor do chip dos controles, e contra o fundo dá 1,25:1:
-     sozinho ele lê como um buraco na lista, não como cartão. Só ele leva um
-     fio de luz na borda (ver `LibraryNote`); pôr o fio nos quatro sujaria os
-     três claros, que já se separam do fundo pela própria cor. */
+     **Eles foram quatro PASTÉIS, e depois quatro cinzas com um fio de matiz.**
+     Os pastéis (azul, verde, limão, mais um escuro) tinham um argumento bom:
+     num chão grafite a saturação some, e a cor dá vida a um mural que de resto
+     seria cinza sobre cinza. O que o argumento não pesa é o que a cor faz COM
+     O TEXTO — o mural é a primeira tela do app, cada cartão tem um título
+     dentro, e quatro lavados numa grade de seis puxam o olho para a grade em
+     vez de para o que está escrito nela. Um acervo não é uma paleta.
+
+     Os quatro cinzas foram a tentativa de manter a memória visual sem a cor, e
+     não sobreviveram ao mesmo teste: um "fio de matiz" continua sendo matiz, e
+     de perto o mural lia verde e bege. Uma cor só é a conclusão de levar o
+     argumento até o fim.
+
+     **Os QUATRO tokens continuam, com valores idênticos, e isso é deliberado.**
+     O `PostItNote` segue sorteando uma das quatro faces pelo hash do id, e
+     `FOLDER_ICON_INK` segue lendo os `-mute` para tingir o ícone de pasta.
+     Nenhum dos dois muda nada na tela hoje; os tokens são o seam por onde a
+     distinção volta se um dia ela tiver trabalho a fazer, e derrubá-los seria
+     apagar o mecanismo junto com a decisão. **Consequência viva:** a cor de
+     pasta gravada no banco (`folders.color`) deixou de pintar qualquer pixel —
+     o seletor dela já não existia no diálogo, e agora o ícone também não a
+     mostra.
+
+     Contraste sobre o próprio cartão: tinta ~11:1 no escuro e ~14:1 no claro,
+     `mute` ~4,7:1 e ~5,0:1, que é o piso da linha de data. O `mute` NÃO é o
+     `--v2-ink-mute` do app (#8C8C8C / #707070): sobre esta superfície ele dá
+     3,9:1, abaixo de AA. */
+  --v2-note-mist: #2F3035;
+  --v2-note-mist-ink: #F5F5F5;
+  --v2-note-mist-mute: #9A9A9A;
+  --v2-note-sage: #2F3035;
+  --v2-note-sage-ink: #F5F5F5;
+  --v2-note-sage-mute: #9A9A9A;
+  /* O neutro, e ele é o mais CLARO dos quatro — o degrau que quebra o mural
+     para ele não ser quatro tons da mesma coisa. Era o contrário: ele era o
+     único ESCURO no meio de três pastéis claros, e por isso o único que
+     levava um fio de luz na borda. Com os quatro na mesma família o papel
+     dele continua sendo o de destoar, só que pelo lado de cima, e o fio
+     passou a valer para os quatro (ver `PostItNote`). */
   --v2-note-slate: #2F3035;
   --v2-note-slate-ink: #F5F5F5;
-  --v2-note-slate-mute: #9A9BA2;
-  --v2-note-lemon: #EFF0A4;
-  --v2-note-lemon-ink: #2A2B12;
-  --v2-note-lemon-mute: #5A5B30;
+  --v2-note-slate-mute: #9A9A9A;
+  --v2-note-lemon: #2F3035;
+  --v2-note-lemon-ink: #F5F5F5;
+  --v2-note-lemon-mute: #9A9A9A;
   /* O chão do botão de gravar: uma faixa que escurece até o GRAFITE da página
      embaixo e some em transparente em cima. Ela SUBSTITUIU a sombra que o botão tinha:
      uma sombra separa o botão do que está atrás dele num ponto só, a faixa
@@ -861,6 +891,440 @@
     rgba(255, 255, 255, 0.1) 0%,
     rgba(255, 255, 255, 0.04) 55%,
     rgba(255, 255, 255, 0.02) 100%
+  );
+  /* A SOMBRA das peças de dock, e aqui ela é `transparent` de propósito.
+
+     Sobre o grafite a peça de vidro já se separa sozinha: ela é mais clara que
+     o chão, o `backdrop-blur` escurece o que passa atrás e o fio de luz da
+     borda diz onde ela termina. Uma sombra preta embaixo disso não apareceria,
+     e onde aparecesse seria mancha.
+
+     Ela existe para o tema claro, onde nada disso funciona — ver o bloco de
+     vidro do `.light`. Zerada aqui, o mesmo `shadow-[…var(--v2-glass-shadow)]`
+     escrito nos componentes de dock não pinta nada neste tema. */
+  --v2-glass-shadow: transparent;
+  /* O DISCO DO DOCK: o botão flutuante redondo, hoje só o do Biblo.
+     No escuro ele é exatamente o `--v2-glass-button`, e o par existe para o
+     tema claro poder torná-lo PRETO sem arrastar junto a barra de busca e os
+     chips, que dividem aquele token. Ver o `.light`. */
+  --v2-dock-disc: rgba(58, 59, 65, 0.72);
+  --v2-dock-disc-ink: #F5F5F5;
+  /* O brilho do disco, e ele tem token PRÓPRIO porque o disco deixou de ser
+     vidro no tema claro.
+
+     Aqui ele é o mesmo `--v2-glass-sheen` — 10% de branco caindo para 2%, a
+     curvatura que põe a peça no material do resto do dock. No claro o disco é
+     preto, e o brilho do vidro de lá é branco a 90%: aplicado por cima, ele
+     LAVAVA o disco inteiro e o que se via era um cinza médio, não um botão
+     preto. Um token separado é o que deixa o vidro claro e o disco preto terem
+     luzes próprias sem um `if` no componente. */
+  --v2-dock-disc-sheen: var(--v2-glass-sheen);
+}
+
+/* ---------------------------------------------------------------------------
+   O SEGUNDO TEMA, e ele é a paleta INTEIRA, não um switch.
+
+   O produto teve dois temas, e o claro saiu porque valia em METADE dele: a
+   área logada forçava `dark` no nó raiz, então o claro só sobrevivia na
+   landing, no /admin e na área do parceiro. O switch que existia em `/profile`
+   mudava telas que a pessoa não estava olhando, e é por isso que o
+   `src/shared/AGENTS.md` dizia "não devolva um switch sem devolver a paleta
+   junto".
+
+   Ele volta com a paleta junto. Duas coisas garantem isso:
+     1. `(app)/layout.tsx` não escreve mais `dark` na moldura do app — quem
+        decide o tema é o `<html>`, e só ele, em toda rota;
+     2. todo token declarado no `:root` acima que carrega COR tem uma linha
+        aqui. Os que não carregam (medidas, raios, larguras, o inset do
+        aparelho) não se repetem: eles não têm versão clara.
+
+   O SELETOR é `.light`, e o `<html>` nasce com `.dark` (ver `app/layout.tsx`).
+   A inversão é deliberada e é a mesma de antes: o escuro é o PADRÃO do
+   produto, então o HTML servido já é o padrão, e quem escolheu claro paga uma
+   troca de classe antes do primeiro paint (`ThemeScript`). Ao contrário, TODA
+   visita começaria branca e piscaria para o escuro.
+
+   AS TRÊS SUPERFÍCIES seguem sendo três, e na mesma ordem lógica:
+     o chão      `--background` / `--v2-bg`          #FFFFFF
+     a elevada   `--scriba-paper` / `--v2-card`      #F7F7F5
+     o realce    `--secondary` / `--v2-card-hover`   #EFEFED
+   O que INVERTE é a DIREÇÃO do degrau: no escuro a superfície elevada é mais
+   CLARA que o chão, aqui ela é mais escura. O extremo é o chão dos dois lados,
+   e empilhar cartão sobre cartão sobe a escala num tema e desce no outro. A
+   exceção é o menu (`--popover`), que volta ao branco: quem separa ele do que
+   está embaixo é a sombra e o fio, não a cor.
+
+   A ESCALA DE TINTA foi recalculada, não invertida por conta. No escuro o piso
+   se mede pelo PAPEL, que é o fundo de menor contraste; aqui é o contrário, o
+   chão é o branco e o pior fundo é o REALCE. Por isso a tabela abaixo mede os
+   dois extremos, chão (#FFFFFF) e realce (#EFEFED):
+
+                     chão(#FFFFFF) / realce(#EFEFED)
+       ink-strong     12,3 / 10,7
+       ink             9,0 /  7,8
+       ink-soft        7,2 /  6,3
+       ink-mute        5,3 /  4,6   <- o piso, AA para texto pequeno
+
+   Ela é mais CURTA que a do escuro de propósito: o topo é a tinta quente
+   (#37352F), não um preto, e 12,3:1 já está muito acima de AAA. O que se
+   ganharia subindo para 17:1 é o zumbido de preto puro sobre branco.
+
+   Mexeu num, recalcule os quatro, a mesma regra do outro tema.
+
+   O QUE NÃO TEM LINHA AQUI, e por quê:
+     - o VERMELHO de gravar (`--v2-rec*`) e o quadrado do dock
+       (`--v2-accent*`), que são cor saturada com tinta branca por cima: o par
+       já atravessa qualquer fundo.
+     - a SELEÇÃO (`--scriba-selection`), que é fundo claro com tinta escura por
+       construção — ela salta do papel branco pelo mesmo motivo que saltava do
+       grafite.
+     - o disco do AVATAR, que é escuro nos dois temas porque a pena dentro dele
+       é branca e pintada com `currentColor`.
+     - o `--feed-card`, que é `var(--session-surface-quote)` LITERALMENTE: a
+       regra é "a mesma da citação", e ela continua valendo sozinha porque o
+       `var()` resolve no ponto de uso, com o valor que este bloco acabou de
+       dar.
+     - a moldura do celular da landing (`--lp-phone-frame`), que é preta nos
+       dois: o que separa o aparelho da página é ele ser mais escuro que ela.
+
+   A SOMBRA VOLTA A SEPARAR, e é a única decisão aqui que não é uma inversão de
+   valor. No escuro `--scriba-shadow-soft` é `transparent` de propósito: um
+   cartão se separa do chão por SER outra superfície, #2F3035 sobre #212121, e
+   sombra ali era a linguagem da pele anterior. No claro o cinza do cartão está
+   a 3% do branco da página, o degrau mal existe — o fio de 1px sozinho desenha
+   uma tabela, não um cartão. Devolver o token (e só ele) reacende as ~20
+   sombras decorativas sem tocar num `className`. O mesmo raciocínio, um degrau
+   acima, criou o `--v2-glass-shadow` para as peças de dock; ver o bloco de
+   vidro lá embaixo.
+--------------------------------------------------------------------------- */
+.light {
+  color-scheme: light;
+  /* O CHÃO É O BRANCO PURO, e o componente é que é cinza.
+
+     Foi ao contrário por uma versão — chão cinza (#F4F5F7), cartão branco —,
+     que é a inversão literal do tema escuro e é o que a maioria dos apps faz.
+     A página ficava fechada: um chão cinza tem uma cor, e o branco do cartão
+     em cima dele lê como papel recortado e colado. O que se quer aqui é o
+     contrário, uma folha em branco em que os componentes POUSAM.
+
+     É a gramática do Notion, e ela não é gosto: num produto que é texto de
+     ponta a ponta, o branco tem de pertencer ao TEXTO, não ao cartão. O cinza
+     então passa a marcar o que é chrome — cartão, chip, barra, menu — e a
+     leitura fica sendo a única coisa da tela sem moldura. */
+  --background: #FFFFFF;
+  /* A tinta é QUENTE (#1F1F1F), e não o cinza-azulado que o tema escuro usa.
+     Preto puro sobre branco vibra; o quase-preto puxado para o marrom é o que
+     faz uma tela de texto poder ser lida por uma hora. 12,3:1 no branco. */
+  --foreground: #000000;
+  --card: #F5F5F5;
+  --card-foreground: #1F1F1F;
+  /* Menu e diálogo são BRANCOS, não cinza: eles flutuam sobre a página e
+     quem os separa é a sombra mais o fio, não a cor. Um menu cinza sobre um
+     cartão cinza seria a mesma superfície duas vezes. */
+  --popover: #FFFFFF;
+  --popover-foreground: #1F1F1F;
+  --primary: #000000;
+  --primary-foreground: #FFFFFF;
+  --secondary: #EBEBEB;
+  --secondary-foreground: #1F1F1F;
+  --muted: #EBEBEB;
+  /* Um degrau ACIMA do `ink-mute`, pelo mesmo motivo do outro tema: é este que
+     pousa sobre `--secondary`, onde o `ink-mute` daria 4,6:1 raspando. */
+  --muted-foreground: #454545;
+  --accent: #EBEBEB;
+  --accent-foreground: #1F1F1F;
+  --destructive: #B3261E;
+  --border: rgba(0, 0, 0, 0.09);
+  --input: rgba(0, 0, 0, 0.16);
+  --ring: #8F8F8F;
+  --chart-1: #EBEBEB;
+  --chart-2: #D2D2D2;
+  --chart-3: #ABABAB;
+  --chart-4: #848484;
+  --chart-5: #454545;
+  --sidebar: #F5F5F5;
+  --sidebar-foreground: #1F1F1F;
+  --sidebar-primary: #1F1F1F;
+  --sidebar-primary-foreground: #FFFFFF;
+  --sidebar-accent: #EBEBEB;
+  --sidebar-accent-foreground: #1F1F1F;
+  --sidebar-border: rgba(0, 0, 0, 0.09);
+  --sidebar-ring: #8F8F8F;
+
+  /* Sessão: citações, versos, menções. A citação é o cinza do CARTÃO — é ela
+     que marca "isto é citado" dentro de uma coluna de texto que corre no
+     branco da página.
+
+     O amarelo do marca-texto (`--session-highlight-yellow`) não tem linha
+     aqui: ele é translúcido, e a 44% sobre branco vira a faixa de marcador que
+     sempre quis ser, com a letra legível por baixo. */
+  --session-surface-quote: linear-gradient(110deg, #F5F5F5, #F5F5F5, #F5F5F5, #F5F5F5);
+  --session-example-bg: #EBEBEB;
+  --session-example-border: rgba(0, 0, 0, 0.1);
+  --session-mention-ink: #000000;
+  --session-mention-wash: rgba(0, 0, 0, 0.14);
+  --session-block-flash: rgba(0, 0, 0, 0.08);
+  --veil-bg: linear-gradient(180deg, rgba(0, 0, 0, 0.09), rgba(0, 0, 0, 0.035));
+  --veil-ring: rgba(0, 0, 0, 0.13);
+  --scriba-blue: #000000;
+  --scriba-blue-hover: #1A1A1A;
+  --scriba-blue-soft: #EBEBEB;
+  --scriba-green: #1A1A1A;
+  --scriba-green-hover: #454545;
+  --scriba-green-soft: #EBEBEB;
+  --scriba-green-ink: #1F1F1F;
+  --scriba-green-body: #6B6B6B;
+  /* O amarelo da MOEDA é o mesmo nos dois temas: ele é o glifo, não a
+     superfície. Quem muda é a tinta que o acompanha (`--scriba-gold-ink`), que
+     no claro precisa descer para caber sobre papel. */
+  --scriba-yellow-hover: #F2B92F;
+  /* As quatro famílias de tile, lavados claros com tinta escura, cada uma
+     mantendo o papel que tem no escuro: mint é o lado bom, rose é o lado ruim,
+     cream é a moeda, lilac é o neutro. Elas são as ÚNICAS superfícies com
+     matiz do tema claro fora dos post-its — todo o resto é cinza. */
+  --scriba-mint: #E7F0E7;
+  --scriba-mint-ink: #2A3329;
+  --scriba-mint-accent: #2C6E43;
+  --scriba-rose: #FBEAE7;
+  --scriba-rose-ink: #8A231B;
+  --scriba-rose-accent: #C0392B;
+  --scriba-cream: #F7F1E1;
+  --scriba-cream-ink: #3A3524;
+  --scriba-cream-accent: #8A6410;
+  --scriba-lilac: #EBEBEB;
+  --scriba-lilac-ink: #1F1F1F;
+  --scriba-lilac-accent: #454545;
+  --scriba-ink-strong: #000000;
+  --scriba-ink: #1A1A1A;
+  --scriba-ink-soft: #454545;
+  --scriba-ink-mute: #6B6B6B;
+  /* O chão, e ele é a MESMA cor do `--background` — a regra do outro tema vale
+     aqui igual. Ele é lido também como TINTA (`text-scriba-surface` sobre
+     `bg-scriba-ink-strong`, no `PassagePicker`), e nessa posição o branco
+     sobre o quase-preto é exatamente o que se quer. */
+  --scriba-surface: #FFFFFF;
+  /* O FIO é a tinta a 9%, não um cinza próprio. Assim ele acompanha a tinta da
+     página em vez de ser uma quinta cor para calibrar, e sobre qualquer uma
+     das três superfícies ele desenha a mesma linha. */
+  --scriba-hairline: rgba(0, 0, 0, 0.09);
+  --scriba-hairline-soft: rgba(0, 0, 0, 0.055);
+  /* Tinta âmbar sobre papel: ela é TEXTO (o rótulo de seção da landing, o link
+     da /parceiros), então no claro desce até caber em AA. */
+  --scriba-yellow-light: #8A6410;
+  --scriba-blue-ink: #1F1F1F;
+  --scriba-rose-body: #8A625C;
+  --scriba-mint-body: #6B6B6B;
+  --scriba-cream-body: #6B6B6B;
+  --scriba-btn-muted: #EBEBEB;
+  --scriba-btn-muted-hover: #E2E2E2;
+  --scriba-scroll-thumb: rgba(0, 0, 0, 0.2);
+  --scriba-scroll-thumb-hover: rgba(0, 0, 0, 0.4);
+  --session-typing-dot: #8F8F8F;
+  --session-verse-text: #1A1A1A;
+  --session-verse-border: #D2D2D2;
+  --session-chip-ai: #6B6B6B;
+  --scriba-gold-ink: #8A6410;
+  --auth-btn-border: rgba(0, 0, 0, 0.12);
+  --auth-btn-border-hover: rgba(0, 0, 0, 0.24);
+  --auth-btn-bg-hover: #F5F5F5;
+  --scriba-mint-dark: #1F1F1F;
+  --scriba-bubble: #F5F5F5;
+  --scriba-bubble-ink: #000000;
+  /* O balão de quem pergunta, na gaveta do Biblo. Continua sendo o AZUL do
+     rosto dele, agora do lado claro da família: ele se separa do papel da
+     gaveta sem virar mancha, e a tinta em cima dá 9,4:1. */
+  --biblo-bubble-me: #DCEAF8;
+  --biblo-bubble-me-ink: #16293D;
+  --scriba-paper: #F5F5F5;
+  /* O vermelho de GRAVAR é superfície (o ponto, o botão) e não muda. Quem muda
+     é a TINTA vermelha, que no escuro era um rosa claro e aqui tem de ser o
+     vermelho fundo para pousar sobre papel. */
+  --scriba-rec-ink: #A81E17;
+  --scriba-rec-soft: #FBEAE7;
+  --scriba-ok-ink: #15803D;
+  --scriba-ok-soft: #E7F0E7;
+  --scriba-mint-strong: #454545;
+  --scriba-gold-soft: #F7F1E1;
+  --scriba-gold-track: #EBE2CB;
+  --scriba-flash-debit: #F7EAD2;
+  --scriba-flash-credit: #EBEBEB;
+  --session-btn-border: rgba(0, 0, 0, 0.16);
+  --session-btn-ink: #1A1A1A;
+  /* O hero da landing, com as mesmas três paradas e a mesma razão para cada
+     uma — só que aqui ele DESCE até o chão em vez de subir: o branco é o chão,
+     e o degrau acima dele é o cinza do cartão. A última parada em 72% continua
+     sendo o que impede a emenda com a seção seguinte de se concentrar nos
+     últimos pixels. */
+  --lp-hero: linear-gradient(180deg, #F5F5F5 0%, #FAFAFA 38%, #FFFFFF 72%);
+  --lp-hero-auth: linear-gradient(180deg, #F5F5F5 0%, #FFFFFF 60%);
+  /* Os halos SOBEM de 16% para 22%: sobre o grafite aquele era o teto antes de
+     a luz virar mancha; sobre o branco ela some antes disso. */
+  --lp-halo-blue: radial-gradient(circle, rgba(79, 168, 240, 0.22) 0%, rgba(79, 168, 240, 0) 70%);
+  --lp-halo-gold: radial-gradient(circle, rgba(248, 198, 75, 0.3) 0%, rgba(248, 198, 75, 0) 70%);
+  --lp-hero-fade: #FFFFFF;
+  /* A faixa full-bleed continua sendo a superfície ELEVADA em tamanho de
+     seção: no claro isso é o cinza do cartão sobre a página branca. */
+  --lp-band: linear-gradient(180deg, #F5F5F5 0%, #F5F5F5 100%);
+  --lp-band-ink: #1A1A1A;
+  --lp-band-cta: #000000;
+  --lp-band-cta-ink: #FFFFFF;
+  /* O BOTÃO PRIMÁRIO inverte inteiro: pastilha quase preta, tinta branca. É o
+     objeto de maior contraste da tela nos dois temas, e é ele que responde
+     "onde eu clico?" numa página que, de resto, é toda branca e cinza.
+     Continua gradiente de duas paradas iguais pelo motivo de sempre — uma
+     dúzia de lugares o consome por `bg-[image:var(--scriba-cta)]`. */
+  --scriba-cta: linear-gradient(180deg, #000000 0%, #000000 100%);
+  --scriba-cta-ink: #FFFFFF;
+  /* A SOMBRA volta a separar. Ver o porquê no cabeçalho deste bloco. Ela é
+     quase neutra (#0F0F0F) e não a tinta quente: sombra é ausência de luz, e
+     uma sombra marrom sob um cartão cinza lê como sujeira. */
+  --scriba-shadow-soft: rgba(0, 0, 0, 0.06);
+  --scriba-shadow: rgba(0, 0, 0, 0.16);
+  --dialog-shadow-color: rgba(0, 0, 0, 0.24);
+  /* A esfumaçada acima da nav inferior, na cor do CHÃO da página — aqui o
+     branco, como lá era o grafite. Sete stops e a mesma cauda longa; a cor do
+     fade tem de ser a cor da página, sempre. */
+  --scriba-nav-fade: linear-gradient(
+    to top,
+    rgba(255, 255, 255, 0.92) 0%,
+    rgba(255, 255, 255, 0.7) 22%,
+    rgba(255, 255, 255, 0.45) 44%,
+    rgba(255, 255, 255, 0.24) 64%,
+    rgba(255, 255, 255, 0.1) 80%,
+    rgba(255, 255, 255, 0.03) 92%,
+    rgba(255, 255, 255, 0) 100%
+  );
+  --scriba-tour-scrim: rgba(0, 0, 0, 0.45);
+  --scriba-tour-ring: rgba(0, 0, 0, 0.55);
+  --v2-bg: #FFFFFF;
+  --v2-card: #F5F5F5;
+  --v2-card-hover: #EBEBEB;
+  /* A onda do microfone é um DESENHO, não texto: no repouso ela cai para 30%
+     de opacidade, e no claro uma barra branca sumiria de vez. */
+  --v2-wave: #1A1A1A;
+  --v2-ink: #000000;
+  --v2-ink-soft: #454545;
+  --v2-ink-mute: #6B6B6B;
+  /* O chão do botão de gravar, na cor da página, pelo mesmo motivo escrito lá
+     em cima: um fade que não é a cor da página PINTA em vez de sumir. Dez
+     paradas, e a última em 82% para o cartão atrás continuar lá, esmaecido,
+     em vez de apagado. */
+  --v2-dock-fade: linear-gradient(
+    to top,
+    rgba(255, 255, 255, 0.82) 0%,
+    rgba(255, 255, 255, 0.76) 12%,
+    rgba(255, 255, 255, 0.66) 24%,
+    rgba(255, 255, 255, 0.54) 36%,
+    rgba(255, 255, 255, 0.4) 48%,
+    rgba(255, 255, 255, 0.27) 60%,
+    rgba(255, 255, 255, 0.16) 72%,
+    rgba(255, 255, 255, 0.08) 83%,
+    rgba(255, 255, 255, 0.03) 92%,
+    rgba(255, 255, 255, 0) 100%
+  );
+
+  /* OS POST-ITS, e no claro eles são QUATRO CINZAS.
+
+     No escuro são quatro pastéis, e é o certo lá: sobre um chão grafite a cor
+     é a única coisa que dá vida ao mural, e a saturação some no escuro. Sobre
+     uma página branca os mesmos quatro pastéis viram adesivos de papelaria —
+     a cor, que no escuro era um respiro, passa a ser a coisa mais barulhenta
+     da primeira tela do app.
+
+     Então aqui eles são quatro cinzas com um FIO de matiz, na escala de
+     neutros da própria página: frio, verde, quente e o mais fundo dos quatro.
+     Eles continuam fazendo o que sempre fizeram — dar ao acervo uma memória
+     visual, "aquele é o cinza azulado" — sem disputar com o título que está
+     escrito dentro deles.
+
+     A distância entre eles é curta de propósito, e a hierarquia continua sendo
+     de TINTA, não de fundo. Cada um mantém o próprio par (`-ink` e `-mute`)
+     puxado para o matiz do cartão, e o `mute` foi medido sobre o CARTÃO, não
+     sobre a página (regra do `src/shared/AGENTS.md`): ~4,9-5,2:1, que é o piso
+     da linha de data.
+
+     O quarto (`slate`) era o ESCURO no tema escuro, e aqui ele é o mais FUNDO
+     dos quatro cinzas. O papel dele é o mesmo — quebrar o mural para ele não
+     ser quatro tons da mesma coisa —, e ele continua sendo o único que pede o
+     fio de luz na borda (ver `PostItNote`), que no claro é invisível e
+     inofensivo. */
+  --v2-note-mist: #F5F5F5;
+  --v2-note-mist-ink: #000000;
+  --v2-note-mist-mute: #6B6B6B;
+  --v2-note-sage: #F5F5F5;
+  --v2-note-sage-ink: #000000;
+  --v2-note-sage-mute: #6B6B6B;
+  --v2-note-slate: #F5F5F5;
+  --v2-note-slate-ink: #000000;
+  --v2-note-slate-mute: #6B6B6B;
+  --v2-note-lemon: #F5F5F5;
+  --v2-note-lemon-ink: #000000;
+  --v2-note-lemon-mute: #6B6B6B;
+  /* O VIDRO do dock, e no claro ele deixa de ser vidro.
+
+     Translucidez com `backdrop-blur` sobre um chão escuro dá uma peça que se
+     lê sozinha: o que está atrás aparece escurecido, e o fio de luz da borda
+     desenha onde ela termina. Sobre uma página BRANCA nada disso acontece —
+     um branco translúcido sobre branco é branco, e o fio a 10% da tinta é a
+     única coisa que sobra. Era esse o defeito: os controles flutuantes viravam
+     contorno, e um contorno não parece apertável.
+
+     A resposta aqui é a do Notion e é a de qualquer chrome sobre papel:
+     superfície CHAPADA, fio mais firme (13% em vez de 10%) e uma SOMBRA de
+     verdade, que é quem diz que a peça está na frente. O `backdrop-blur` das
+     classes continua lá e deixa de ter o que fazer, o que não custa nada.
+
+     `--v2-glass-shadow` é o token novo dessa história: `transparent` no
+     escuro, onde a peça já se separa pela própria cor, e uma sombra real aqui.
+     Ele entra por `shadow-[…var(--v2-glass-shadow)]` nos componentes de dock. */
+  --v2-glass-panel: #FFFFFF;
+  --v2-glass-button: #F5F5F5;
+  --v2-glass-tile: rgba(0, 0, 0, 0.05);
+  /* O FIO das peças de dock, e no claro ele é MUITO mais fino que os 13% da
+     primeira passada. A barra de baixo do celular é uma fileira de três peças
+     coladas, e um fio a 13% da tinta em volta de cada uma desenha três
+     contornos pretos sobre a página branca — o que separa as peças ali é a
+     sombra, o fio só precisa fechar a borda. */
+  --v2-glass-edge: rgba(0, 0, 0, 0.06);
+  --v2-glass-sheen: linear-gradient(
+    160deg,
+    rgba(255, 255, 255, 0.9) 0%,
+    rgba(255, 255, 255, 0.5) 55%,
+    rgba(255, 255, 255, 0.2) 100%
+  );
+  --v2-glass-shadow: rgba(0, 0, 0, 0.14);
+  /* O DISCO DO DOCK: o botão flutuante do Biblo, o mesmo na Biblioteca e na
+     leitura (`BIBLO_TRIGGER_CLASS`).
+
+     **Ele já foi PRETO aqui, e o preto não serviu.** O raciocínio era o do
+     `--scriba-cta`: é uma ação flutuando sozinha sobre a página, e ação neste
+     tema é escura. Só que o disco não é uma pastilha com um rótulo, é a
+     MOLDURA de um rosto — e um disco preto em volta do Biblo lê como um buraco
+     recortado na página, não como um botão. Ele é cinza claro, e quem faz o
+     trabalho de dizer "isto está na frente" é a sombra mais o fio.
+
+     **O ROSTO não muda com o tema, e isso foi decidido depois de tentar.** Uma
+     versão escurecia o azul dele (`#b4d8ff` → `#1c89e4`) e clareava o olho
+     aqui, pela lógica de que o contraste do botão deve vir do avatar, que é o
+     conteúdo dele. Na tela ficou outro personagem. O Biblo é UM, com uma cara
+     só, em todo aparelho e nos dois temas — a mesma regra que fixa a semente e
+     as duas coordenadas de cor em `biblo-seed.ts`. Quem quiser mexer no
+     contraste do botão mexe no DISCO.
+
+     No escuro o token vale o que o `--v2-glass-button` vale, ou seja, lá nada
+     muda desde sempre. */
+  --v2-dock-disc: #F4F4F4;
+  --v2-dock-disc-ink: #000000;
+  /* A borda cinza que se via embaixo do disco era o FIM DESTE DEGRADÊ, não um
+     fio: o brilho abre quase branco e caía a 20% no pé, deixando a base do
+     disco na cor chapada do token e desenhando uma meia-lua escura. Com a
+     última parada em 60% e o chapado um degrau mais claro, a queda de luz
+     continua dando curvatura sem virar contorno. */
+  --v2-dock-disc-sheen: linear-gradient(
+    160deg,
+    rgba(255, 255, 255, 0.9) 0%,
+    rgba(255, 255, 255, 0.75) 55%,
+    rgba(255, 255, 255, 0.6) 100%
   );
 }
 
@@ -1246,6 +1710,7 @@
     background-color: var(--scriba-selection);
     color: var(--scriba-selection-ink);
   }
+
   .veil-chip {
     background-image: var(--veil-bg);
     color: var(--scriba-ink);
@@ -1437,6 +1902,27 @@
     --session-example-border: rgba(255, 255, 255, 0.12);
     --session-mention-ink: #F5F5F5;
   }
+
+  /* A mesma pele, do lado claro, e aqui o meio degrau vai para BAIXO.
+
+     No escuro o estudo SOBE meio degrau acima do resumo (#2F3035 → #383940),
+     porque lá subir é o que afasta do chão. No claro a direção se inverte
+     junto com a das superfícies: o resumo é o cinza do cartão (#F5F5F5) e o
+     estudo desce meio degrau para #EFEFEF, na direção do realce. A distância é
+     a mesma que lá, e a intenção também — entrar num cômodo vizinho, não em
+     outro produto.
+
+     `.light .tone-study` ganha da regra acima por especificidade, e as duas
+     estão na MESMA @layer, então a ordem entre camadas não entra na conta. */
+  .light .tone-study {
+    --session-surface-quote: linear-gradient(110deg, #EFEFEF, #EFEFEF, #EFEFEF, #EFEFEF);
+    --session-verse-text: #3D3D3D;
+    --session-verse-border: #D6D6D6;
+    --session-chip-ai: #707070;
+    --session-example-bg: #E7E7E7;
+    --session-example-border: rgba(0, 0, 0, 0.12);
+    --session-mention-ink: #1F1F1F;
+  }
 }
 
 @theme {
@@ -1456,8 +1942,17 @@
  
      Ela mora no `DialogContent`, então vale para TODO diálogo. Sobre o véu ela
      é quase invisível, que é o certo: elevação é propriedade da peça, não do
-     caso em que alguém reparou nela. */
-  --shadow-dialog: 0 16px 40px -12px rgba(0, 0, 0, 0.8);
+     caso em que alguém reparou nela.
+
+     **A COR sai por `var()`, e isso não é preciosismo.** Um `@theme` do
+     Tailwind não é uma custom property comum: o valor declarado aqui é
+     INLINEADO dentro da utilitária `.shadow-dialog`, então redefinir
+     `--shadow-dialog` num bloco de tema (o `.light`) não muda nada e falha em
+     silêncio — a folha compilada nunca leu a variável. Com a cor saindo de
+     `--dialog-shadow-color`, o que o Tailwind inlineia é o `var()`, que aí sim
+     resolve no ponto de uso, com o valor do tema que estiver valendo. Custou
+     uma olhada no CSS gerado para descobrir. */
+  --shadow-dialog: 0 16px 40px -12px var(--dialog-shadow-color);
 
   --animate-record-halo: record-halo 2.4s cubic-bezier(0.4, 0, 0.6, 1) infinite;
   --animate-scriba-halo: scriba-halo 2.4s ease-out infinite;

@@ -5,6 +5,7 @@ import { happy, idle, thinking } from "blobatar/expression";
 import "blobatar/motion.css";
 import { cn } from "@/lib/utils";
 import { BIBLO_HUE, BIBLO_NAME, BIBLO_TONE } from "@/shared/brand/biblo-seed";
+import { useTheme } from "@/shared/hooks/use-theme";
 
 /**
  * O rosto do Biblo.
@@ -72,12 +73,31 @@ export function BibloAvatar({
   /** Vira o `<title>` do SVG. `undefined` deixa o avatar decorativo. */
   title?: string;
 }) {
+  /**
+   * EXPERIMENTO: o azul do Biblo desce um degrau da rampa no tema claro.
+   *
+   * `tone` 0,85 é a amostra clara (`#b4d8ff`), calibrada para pousar sobre o
+   * vidro escuro do dock; 0,71 é a vizinha (`#1c89e4`), um azul médio. A forma,
+   * a semente e o matiz não mudam — só a amostra de cor.
+   *
+   * **Ele PISCA num quadro ao carregar no tema claro**, e isso é conhecido: o
+   * tema mora no localStorage, o servidor renderiza sem saber dele, e o
+   * `useTheme` só responde depois da montagem. Conviver com a piscada ou não é
+   * a decisão que este experimento existe para informar.
+   */
+  const { isDark, mounted } = useTheme();
+  const light = mounted && !isDark;
+
   return (
     <Blobatar
       name={BIBLO_NAME}
       size={size}
       hue={BIBLO_HUE}
-      tone={BIBLO_TONE}
+      // O `tone` PROP vence o trait de mesmo nome na lib (`r.tone ?? t("tone")`
+      // em `blob.js`), então passar os dois deixaria o override sem efeito —
+      // no claro ele sai de cena e quem manda é `traits`.
+      tone={light ? undefined : BIBLO_TONE}
+      traits={light ? { tone: 0.5 } : undefined}
       expression={EXPRESSION[mood]}
       // `always` e não `hover`: o alvo principal é um telefone, onde não existe
       // hover — e é justamente lá que o `thinking` precisa se mexer para dizer

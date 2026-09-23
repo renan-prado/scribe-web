@@ -45,7 +45,7 @@ function NotesDock() {
             onClick={() => setOpen(true)}
             aria-label="Abrir as notas"
             aria-expanded={false}
-            className="pointer-events-auto relative inline-flex size-14 items-center justify-center rounded-full bg-v2-glass-button bg-[image:var(--v2-glass-sheen)] text-v2-ink ring-1 ring-v2-glass-edge backdrop-blur-xl transition hover:brightness-125 active:brightness-150 focus-visible:outline-2 focus-visible:outline-offset-4 focus-visible:outline-v2-ink-mute"
+            className="pointer-events-auto relative inline-flex size-14 items-center justify-center rounded-full bg-v2-glass-button bg-[image:var(--v2-glass-sheen)] text-v2-ink shadow-[0_2px_6px_var(--v2-glass-shadow),0_10px_28px_var(--v2-glass-shadow)] ring-1 ring-v2-glass-edge backdrop-blur-xl transition hover:brightness-125 active:brightness-150 focus-visible:outline-2 focus-visible:outline-offset-4 focus-visible:outline-v2-ink-mute"
           >
             <NotebookPen aria-hidden className="size-5" strokeWidth={1.75} />
             {/* Um ponto discreto avisa que já há algo escrito, sem exigir abrir
@@ -62,7 +62,7 @@ function NotesDock() {
       )}
 
       {open && (
-        <div className="fixed inset-x-4 bottom-[calc(1rem+max(env(safe-area-inset-bottom),var(--kb-inset,0px)))] z-30 mx-auto flex max-w-sm flex-col gap-2 rounded-[28px] bg-v2-glass-panel bg-[image:var(--v2-glass-sheen)] p-4 ring-1 ring-v2-glass-edge backdrop-blur-xl sm:inset-x-auto sm:left-4 sm:w-80">
+        <div className="fixed inset-x-4 bottom-[calc(1rem+max(env(safe-area-inset-bottom),var(--kb-inset,0px)))] z-30 mx-auto flex max-w-sm flex-col gap-2 rounded-[28px] bg-v2-glass-panel bg-[image:var(--v2-glass-sheen)] p-4 shadow-[0_2px_6px_var(--v2-glass-shadow),0_10px_28px_var(--v2-glass-shadow)] ring-1 ring-v2-glass-edge backdrop-blur-xl sm:inset-x-auto sm:left-4 sm:w-80">
           <div className="flex items-center justify-between gap-2 px-1">
             <p className="flex items-center gap-1.5 text-[13px] font-medium text-v2-ink">
               <NotebookPen aria-hidden className="size-3.5" strokeWidth={1.75} />

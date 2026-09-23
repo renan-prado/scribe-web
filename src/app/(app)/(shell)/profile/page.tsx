@@ -10,6 +10,7 @@ import Link from "next/link";
 import { redirect } from "next/navigation";
 import type { ReactNode } from "react";
 import { InstallAppRow } from "@/components/InstallApp";
+import { ThemeToggleRow } from "@/components/ThemeToggle";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { PrivilegedProfileLinks } from "@/features/auth/components/PrivilegedProfileLinks";
 import { PlanCard } from "@/features/billing/components/PlanCard";
@@ -216,11 +217,21 @@ export default async function ProfilePage() {
           Preferências
         </h2>
         <div className="flex flex-col gap-5">
-          {/* O switch de tema morava aqui, e saiu com o tema claro. Ele já
-              governava menos do que parecia — a moldura do app declara `dark`
-              no nó raiz, então virar para claro não mudava nenhuma tela
-              logada, só a landing e o painel. Um controle que muda o que a
-              pessoa não está olhando é pior que controle nenhum. */}
+          {/* O switch de tema, DE VOLTA, e desta vez com a paleta junto.
+
+              Ele saiu porque governava menos do que parecia: a moldura do app
+              declarava `dark` no nó raiz, então virar para claro não mudava
+              nenhuma tela logada, só a landing e o painel — um controle que
+              muda o que a pessoa não está olhando. Agora quem decide é o
+              `<html>`, em toda rota, e o `globals.css` tem a paleta clara
+              inteira. Ver `ThemeToggle` e o bloco `.light` de lá.
+
+              O outro lugar onde ele aparece é o estado vazio da Biblioteca,
+              que é a primeira tela de quem entra. São dois, e é de propósito:
+              este é onde se PROCURA a preferência, aquele é onde se DESCOBRE
+              que ela existe. Os dois ficam em sincronia pelo evento que o
+              `useTheme` dispara. */}
+          <ThemeToggleRow />
           {/* Caminho PERMANENTE para instalar: a faixa do topo do app pode ser
               dispensada para sempre, e é a única outra porta. Ela some sozinha
               onde não há o que oferecer, ver `InstallAppRow`. */}

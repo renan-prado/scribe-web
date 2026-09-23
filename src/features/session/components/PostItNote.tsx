@@ -75,32 +75,30 @@ type Props = {
  * o índice sorteado é posição neste array.
  */
 const NOTES = [
-  {
-    bg: "bg-v2-note-mist",
-    ink: "text-v2-note-mist-ink",
-    mute: "text-v2-note-mist-mute",
-    ring: "",
-  },
-  {
-    bg: "bg-v2-note-sage",
-    ink: "text-v2-note-sage-ink",
-    mute: "text-v2-note-sage-mute",
-    ring: "",
-  },
-  {
-    bg: "bg-v2-note-slate",
-    ink: "text-v2-note-slate-ink",
-    mute: "text-v2-note-slate-mute",
-    // O fio de luz do cartão escuro, e só dele. Ver o cabeçalho.
-    ring: "ring-1 ring-inset ring-white/10",
-  },
-  {
-    bg: "bg-v2-note-lemon",
-    ink: "text-v2-note-lemon-ink",
-    mute: "text-v2-note-lemon-mute",
-    ring: "",
-  },
+  { bg: "bg-v2-note-mist", ink: "text-v2-note-mist-ink", mute: "text-v2-note-mist-mute" },
+  { bg: "bg-v2-note-sage", ink: "text-v2-note-sage-ink", mute: "text-v2-note-sage-mute" },
+  { bg: "bg-v2-note-slate", ink: "text-v2-note-slate-ink", mute: "text-v2-note-slate-mute" },
+  { bg: "bg-v2-note-lemon", ink: "text-v2-note-lemon-ink", mute: "text-v2-note-lemon-mute" },
 ] as const;
+
+/**
+ * O FIO, e ele vale para os QUATRO cartões.
+ *
+ * Era exceção de um só: enquanto três post-its eram pastéis claros e o quarto
+ * era escuro, só o escuro precisava de borda — ele dava 1,25:1 contra a página
+ * e lia como um buraco na lista, e pôr o mesmo fio nos outros três sujaria
+ * cartões que já se separavam do fundo pela própria cor.
+ *
+ * Com os quatro em cinza, nos dois temas, não existe mais o cartão destoante:
+ * todos estão a um degrau curto da página, e a exceção virou a regra. O fio é
+ * `--scriba-hairline` (a tinta a 10%), o mesmo que a Biblioteca usa entre os
+ * meses, e não um branco literal — é o que faz ele acompanhar o tema em vez de
+ * sumir no claro.
+ *
+ * `ring-inset` e não `border`: 1px de borda mudaria a caixa do cartão, e com
+ * ela a régua do mural inteiro.
+ */
+const NOTE_RING = "ring-1 ring-inset ring-scriba-hairline";
 
 /**
  * A cor de um cartão, estável para sempre porque sai do id dele.
@@ -140,7 +138,7 @@ export function PostItNote({
       // sai da margem do próprio item — e os dois andam JUNTOS, senão o mural
       // fica com vão maior num eixo que no outro e as colunas deixam de
       // parecer o mesmo mural.
-      className={`mb-4 break-inside-avoid rounded-2xl ${note.bg} ${note.ring}`}
+      className={`mb-4 break-inside-avoid rounded-2xl ${note.bg} ${NOTE_RING}`}
     >
       {/* O CARTÃO É O LINK, um `<a>` em volta de tudo — e isso é o que sobrou
           quando o menu de três pontinhos saiu do post-it. Enquanto ele existia,

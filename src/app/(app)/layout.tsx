@@ -68,13 +68,15 @@ import { APP_VIEWPORT } from "@/shared/viewport";
  * (`getLexiconIndex`), então este `await` não custa uma consulta por
  * navegação. Ver `LexiconProvider`.
  *
- * **As barras do sistema não são mais assunto desta moldura.** Ela carregava
- * um `data-v2-shell` (para uma regra `:has()` levar o grafite até o `<html>`,
- * que é de onde o Android tira a cor da barra de navegação) e um
- * `AppThemeColor` (para a barra de status). Os dois existiam porque o fundo do
- * DOCUMENTO era o do site, que podia ser branco, enquanto o app era grafite.
- * Com um tema só, `--background` é `--v2-bg` em toda rota: o canvas já nasce
- * certo e a `<meta name="theme-color">` é estática no root layout.
+ * **As barras do sistema não são mais assunto desta moldura**, e continuam não
+ * sendo agora que o produto voltou a ter dois temas. Ela carregava um
+ * `data-v2-shell` (para uma regra `:has()` levar o grafite até o `<html>`, que
+ * é de onde o Android tira a cor da barra de navegação) e um `AppThemeColor`
+ * (para a barra de status). Os dois existiam porque o fundo do DOCUMENTO era o
+ * do site, que podia ser branco, enquanto o app era grafite — ou seja, porque
+ * o app tinha um tema PRÓPRIO. Ele não tem mais: `--background` é `--v2-bg` no
+ * tema que estiver valendo, em toda rota, e quem reescreve a `<meta>` é o
+ * `useTheme`, uma vez por troca.
  */
 export const viewport = APP_VIEWPORT;
 
@@ -91,7 +93,13 @@ export default async function AppLayout({ children }: { children: ReactNode }) {
     <TourProvider seen={seenTours}>
       <LexiconProvider entries={lexicon}>
         <ZoomLock />
-        <div className="dark flex flex-1 flex-col bg-v2-bg pt-[env(safe-area-inset-top)]">
+        {/* **Sem `dark` aqui, e a ausência é a regra.** Esta moldura forçava o
+            escuro no próprio nó, e era exatamente isso que fazia o tema claro
+            valer em metade do produto: o switch do `/profile` mudava a landing
+            e o painel, e a tela em que a pessoa estava olhando continuava
+            grafite. Quem decide o tema é o `<html>`, e só ele, em toda rota.
+            Ver o bloco `.light` em `app/globals.css`. */}
+        <div className="flex flex-1 flex-col bg-v2-bg pt-[env(safe-area-inset-top)]">
           {children}
         </div>
       </LexiconProvider>

@@ -1250,15 +1250,16 @@ function PhoneChrome({ title, subtitle, right }: PhoneChromeProps) {
 /**
  * As quatro faces do post-it, na ORDEM do `PostItNote`. Aqui elas são fixas,
  * uma por posição, porque num mockup não há id de sessão para sortear — e o
- * que o mural precisa mostrar é que as cores se alternam, não qual cor cabe a
- * qual sermão. Só o cartão escuro leva o fio de luz, pela mesma razão de lá:
- * contra o chão ele dá 1,25:1 e sem o fio lê como buraco.
+ * que o mural precisa mostrar é que as faces se alternam, não qual cabe a qual
+ * sermão. Os quatro levam o mesmo fio, pela mesma razão de lá: com as quatro
+ * faces em cinza não existe mais o cartão destoante que era a exceção.
  */
+const NOTE_RING = "ring-1 ring-inset ring-scriba-hairline";
 const MOCK_NOTES = [
-  "bg-v2-note-mist text-v2-note-mist-ink [&_.note-mute]:text-v2-note-mist-mute",
-  "bg-v2-note-lemon text-v2-note-lemon-ink [&_.note-mute]:text-v2-note-lemon-mute",
-  "bg-v2-note-slate text-v2-note-slate-ink ring-1 ring-inset ring-white/10 [&_.note-mute]:text-v2-note-slate-mute",
-  "bg-v2-note-sage text-v2-note-sage-ink [&_.note-mute]:text-v2-note-sage-mute",
+  `bg-v2-note-mist text-v2-note-mist-ink ${NOTE_RING} [&_.note-mute]:text-v2-note-mist-mute`,
+  `bg-v2-note-lemon text-v2-note-lemon-ink ${NOTE_RING} [&_.note-mute]:text-v2-note-lemon-mute`,
+  `bg-v2-note-slate text-v2-note-slate-ink ${NOTE_RING} [&_.note-mute]:text-v2-note-slate-mute`,
+  `bg-v2-note-sage text-v2-note-sage-ink ${NOTE_RING} [&_.note-mute]:text-v2-note-sage-mute`,
 ] as const;
 
 /**

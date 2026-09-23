@@ -779,17 +779,18 @@ anterior já poderia ter feito.
 A cor vem de tokens no namespace `--v2-*` (`src/app/globals.css`), e eles são a
 ORIGEM da paleta do produto inteiro: `--background` é `--v2-bg`,
 `--scriba-paper` é `--v2-card`, `--secondary` é `--v2-card-hover`. O site e o
-painel passaram para a pele do app, e com isso o bloco `.dark` deixou de
-existir — há um tema só, declarado uma vez em `:root`.
+painel vestem a pele do app, e a equivalência vale nos DOIS temas — a paleta
+escura no `:root`, a clara no bloco `.light` logo abaixo. **A moldura do `(app)`
+não declara tema**, e essa ausência é a regra que faz o switch valer em toda
+rota; ver `src/shared/AGENTS.md`.
 
 **O chão é `#212121`, e já foi `#000000`.** Preto chapado embaixo dos post-its
 da Biblioteca virava um vão, não uma página. Quem mexer em `--v2-bg` mexe
-TAMBÉM no `--v2-dock-fade`, cujos dez `rgba` são a cor da página: um fade preto
-sobre grafite não some no chão, ele pinta, e o rodapé vira uma mancha escura de
-borda difusa. O `theme-color` NÃO acompanha — ele sai de
-`src/shared/theme-color.ts`, que espelha `--scriba-surface` e vale para o site
-inteiro; a barra do sistema ficar um degrau mais escura que o app é seam
-conhecido, e o conserto seria `theme-color` por rota.
+TAMBÉM no `--v2-dock-fade` e no `--scriba-nav-fade`, cujos dez e sete `rgba`
+são a cor da página: um fade que não é a cor da página não some no chão, ele
+PINTA, e o rodapé vira uma mancha de borda difusa. E nas três cópias que não
+enxergam CSS — `src/shared/theme-color.ts`, `public/offline.html` e o `BG` de
+`src/scripts/generate-splash.mjs`.
 
 **Os endereços antigos são `redirects()` do `next.config.ts`, não páginas:**
 
@@ -1824,19 +1825,23 @@ rede, o CSS do Next não carrega. Os valores lá são cópia dos tokens e precis
 ser atualizados junto com eles. O glifo da nuvem cortada também é cópia (o
 `CloudOff` do lucide que a pastilha do app usa), pelo mesmo motivo.
 
-### A barra de status é uma constante
+### A barra de status: uma tag estática, reescrita duas vezes
 
-A cor da barra do sistema no PWA sai de `<meta name="theme-color">`, e hoje ela
-é uma tag ESTÁTICA, declarada no `viewport` do root layout. O produto tem um
-tema só, então o valor não depende de nada: `#212121`, o mesmo do
+A cor da barra do sistema no PWA sai de `<meta name="theme-color">`. Ela é
+declarada como tag ESTÁTICA no `viewport` do root layout, no valor ESCURO, que
+é o padrão do produto e o que quem está sem JS recebe — o mesmo `#212121` do
 `theme_color` e do `background_color` do manifest e das telas de abertura.
 
-Ela já foi escrita por um script inline no `<head>`, porque dependia do
-localStorage — que nem CSS nem `<meta>` sabem ler, e que o
-`prefers-color-scheme` de uma meta estática não expressa. Com o tema claro fora
-do produto, aquele script, o efeito que o corrigia dentro da área logada e o
-`useTheme` que o reescrevia a cada troca deixaram de existir. O hexadecimal
-mora em `src/shared/theme-color.ts` (e, copiado, em `public/offline.html`).
+Quem a corrige para quem escolheu o tema claro são dois mecanismos, e eles
+existem porque a escolha mora no localStorage — que nem CSS nem `<meta>` sabem
+ler, e que o `prefers-color-scheme` de um `media` não expressa: o `ThemeScript`,
+um script inline no `<head>` que roda antes do primeiro paint, e o `useTheme`,
+que reescreve o `content` a cada troca. Os dois hexadecimais moram em
+`src/shared/theme-color.ts` (e o escuro, copiado, em `public/offline.html`).
+
+O manifest e as telas de abertura NÃO acompanham o tema, e não é descuido: os
+dois desenham o instante anterior ao primeiro paint, quando não há documento
+para consultar o localStorage. Eles são o padrão, como a tag servida.
 
 O `viewport` do root layout declara `viewport-fit=cover`, é o que faz
 `env(safe-area-inset-*)` valer diferente de zero. Quem consome os insets é o

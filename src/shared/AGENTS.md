@@ -15,49 +15,119 @@ content/     copy estruturada (FAQ da landing)
 
 ## Tema
 
-**Um tema só, e ele é o do app.** O produto é grafite, da landing ao painel do
-admin, e não existe mais bloco `.dark` no `globals.css` nem switch em lugar
-nenhum. Havia dois temas enquanto a área logada já forçava o escuro no nó raiz:
-o claro só sobrevivia na landing, no `/admin` e na área do parceiro, ou seja,
-metade do produto tinha uma paleta que a outra metade ignorava, e as duas
-precisavam ser calibradas e medidas.
+**Dois temas, e os dois valem em TODA rota.** O produto nasce grafite, da
+landing ao painel do admin, e vira claro inteiro quando a pessoa escolhe. A
+paleta escura mora no `:root` do `globals.css`; a clara, no bloco `.light` logo
+abaixo dele.
 
-O `<html>` continua nascendo com `class="dark"`, e ela NÃO pinta mais nada: as
-primitivas do shadcn trazem duas dúzias de `dark:` escritos para o escuro, e o
-`@custom-variant dark` resolve por ela.
+Isto já foi errado uma vez, e o jeito como estava errado é a regra de hoje. O
+produto teve dois temas enquanto a moldura da área logada declarava `dark` no
+próprio nó: o claro só sobrevivia na landing, no `/admin` e na área do
+parceiro, ou seja, o switch mudava metade do produto e nunca a tela em que a
+pessoa estava. Por isso o tema saiu inteiro, e por isso ele voltou com **duas
+garantias, que valem juntas ou não valem**:
+
+1. **Nenhuma moldura declara tema.** `(app)/layout.tsx` não escreve mais
+   `dark`, e nenhum outro layout deve escrever. Quem decide é o `<html>`.
+2. **Todo token de cor do `:root` tem uma linha no `.light`.** O cabeçalho
+   daquele bloco lista os poucos que não têm, um a um, com o motivo. Token de
+   cor novo entra nos DOIS.
+
+O `<html>` nasce com `class="dark"` porque o escuro é o PADRÃO servido; quem
+escolheu claro tem a classe trocada por `light` pelo `ThemeScript`, antes do
+primeiro paint. A inversão é deliberada: servindo o padrão, só a minoria paga
+o ajuste — ao contrário, toda visita começaria branca e piscaria para o escuro.
+A classe `dark` faz duas coisas, e as duas importam: ativa o
+`@custom-variant dark` (e com ele as duas dúzias de `dark:` que as primitivas
+do shadcn já trazem) e deixa o `:root` valer.
+
+**O switch mora em DOIS lugares, e é de propósito:** a seção "Preferências" do
+`/profile`, que é onde se PROCURA uma preferência, e o rodapé do estado vazio
+da Biblioteca (`SessionsEmptyState`), que é a primeira tela de quem entra e a
+única com espaço sobrando — é onde se DESCOBRE que a preferência existe. Os
+dois ficam em sincronia pelo evento que o `useTheme` dispara a cada troca.
 
 **Nunca escreva uma cor literal num `className`.** Nada de `bg-white`,
 `bg-[#EAF2FA]`, `fill="#F8C64B"`. Toda cor vem de um token `--v2-*` /
 `--scriba-*` / `--session-*` / shadcn declarado em `src/app/globals.css`. Token
-novo entra em DOIS lugares: `:root` e o mapa `@theme inline` que o expõe como
-utilitário. (Eram três enquanto havia `.dark`.)
+novo de cor entra em TRÊS lugares: `:root`, o bloco `.light` e o mapa
+`@theme inline` que o expõe como utilitário.
+
+**Um valor declarado em `@theme` (sem `inline`) NÃO é redefinível por tema.**
+O Tailwind o inlineia dentro da utilitária que o consome, então uma linha para
+ele no `.light` é código morto que falha em silêncio. Foi o caso do
+`--shadow-dialog`: a saída é declarar a PARTE que muda como custom property
+comum no `:root`/`.light` e referenciá-la por `var()` lá dentro
+(`--dialog-shadow-color`). Ver o comentário dos dois no `globals.css`.
 
 ### Três superfícies, e é tudo
 
-| Token | Valor | Papel |
-|---|---|---|
-| `bg-background` / `bg-v2-bg` | `#212121` | o chão, em toda rota |
-| `bg-scriba-paper` / `bg-v2-card` / `bg-card` | `#2F3035` | tudo que é cartão |
-| `bg-secondary` / `bg-v2-card-hover` | `#3A3B41` | o realce: hover, aba ativa |
+| Token | Escuro | Claro | Papel |
+|---|---|---|---|
+| `bg-background` / `bg-v2-bg` | `#212121` | `#FFFFFF` | o chão, em toda rota |
+| `bg-scriba-paper` / `bg-v2-card` / `bg-card` | `#2F3035` | `#F5F5F5` | tudo que é cartão |
+| `bg-secondary` / `bg-v2-card-hover` | `#3A3B41` | `#EBEBEB` | o realce: hover, aba ativa |
+
+**No claro o CHÃO é o branco puro e o componente é que é cinza** — não o
+contrário. O que separa um cartão da página não é ele "ser papel", é ele ser a
+única coisa cinza numa página que não é.
+
+Foi o contrário por uma versão, na primeira passada do tema claro: chão cinza,
+cartão branco, que é a inversão literal do escuro e o que a maioria dos apps
+faz. A página ficava fechada. Um chão cinza TEM uma cor, e o cartão branco em
+cima dele lê como papel recortado e colado; o que este produto quer é o
+oposto, uma folha em branco em que os componentes pousam.
+
+É a gramática do Notion, e ela não é gosto: num produto que é texto de ponta a
+ponta, o branco tem de pertencer ao TEXTO. O cinza então passa a marcar o que é
+chrome — cartão, chip, barra, menu — e a leitura fica sendo a única coisa da
+tela sem moldura.
+
+**O chão do ESCURO não mudou, e não deve mudar por causa disto.** Ele é o
+grafite `#212121` de sempre; o preto do tema claro é o da TINTA e dos botões,
+não um chão novo do outro lado.
+
+Consequência para quem for desenhar uma tela: **no claro, empilhar cartão sobre
+cartão desce a escala** (branco → cinza → cinza mais fundo), enquanto no escuro
+ela sobe. O menu e o diálogo são a exceção nos dois: eles são `--popover`, que
+no claro volta ao BRANCO, porque quem os separa é a sombra e o fio, não a cor —
+um menu cinza pousado num cartão cinza é a mesma superfície duas vezes.
 
 `--scriba-surface`, que era a faixa REBAIXADA entre o chão e o papel, virou o
-próprio chão — os dois nomes valem `#212121`. Ele continua útil dentro de um
-cartão, onde o chão vira um encaixe (a trilha de uma barra de progresso, uma
-pastilha dentro do papel); o que ele não faz mais é pintar seção.
+próprio chão — ele e `--background` valem o mesmo nos dois temas. Ele continua
+útil dentro de um cartão, onde o chão vira um encaixe (a trilha de uma barra de
+progresso, a trilha do `ThemeToggle`, uma pastilha dentro do papel); o que ele
+não faz mais é pintar seção. Ele é lido também como TINTA
+(`text-scriba-surface` sobre `bg-scriba-ink-strong`), e nessa posição os dois
+valores continuam certos.
+
+**O tema claro é NEUTRO de ponta a ponta: R=G=B em todo cinza dele.** Ele teve
+uma casta quente por uma versão (tinta `#37352F`, superfícies puxadas para o
+bege), e a casta é visível — de perto o app inteiro lia levemente sépia. Hoje a
+tinta é preta (`#000000`) e desce por cinzas puros (`#1A1A1A`, `#454545`,
+`#6B6B6B`), os fios e as sombras são `rgba(0, 0, 0, …)`, e o botão primário e o
+disco do dock são preto chapado — é o preto que faz o contraste num tema em que
+todo o resto é branco e cinza.
 
 **Seção não se separa por faixa, se separa por FIO.** Uma banda mais escura
 embaixo de um chão que já é escuro lê como mancha. O fio é
-`border-scriba-hairline` (branco a 10%), o mesmo que a Biblioteca usa entre os
+`border-scriba-hairline` (a tinta a 10%), o mesmo que a Biblioteca usa entre os
 meses. A exceção é a faixa full-bleed da landing (`--lp-band`), que é a
 superfície ELEVADA em tamanho de seção: ela é um cartão gigante, e é isso que
 ela faz na página.
 
-**Sombra não separa mais nada.** `--scriba-shadow-soft` é `transparent` de
-propósito: zerar o token apagou as ~20 sombras decorativas sem tocar num
-`className`. O degrau denso (`--scriba-shadow`) ficou, e é só para o que de
-fato flutua — diálogo, popover, sheet. O hover de cartão da landing
-(`.lp-lift` / `.lp-tile`) deixou de ser sombra crescendo e virou o que o app
-faz: a superfície sobe um degrau.
+**Sombra separa no CLARO, e não no escuro.** `--scriba-shadow-soft` é
+`transparent` no escuro de propósito: lá um cartão se separa do chão por SER
+outra superfície (`#2F3035` sobre `#212121`), e zerar o token apagou as ~20
+sombras decorativas sem tocar num `className`. No claro o cinza do cartão está
+a 3% do branco da página, o degrau mal existe, e o mesmo token devolve as mesmas
+~20 sombras pelo mesmo caminho. É o exemplo de um token fazer trabalho de
+arquitetura: a decisão "aqui a sombra separa" é uma linha, não vinte.
+
+O degrau denso (`--scriba-shadow`) vale nos dois, e é só para o que de fato
+flutua — diálogo, popover, sheet. O hover de cartão da landing (`.lp-lift` /
+`.lp-tile`) não é sombra em nenhum dos dois: é a superfície subindo um degrau,
+o que o app faz.
 
 ### Três cores, todas semânticas
 
@@ -70,16 +140,53 @@ faz: a superfície sobe um degrau.
 As quatro famílias de tile (`mint`/`rose`/`cream`/`lilac`) tiveram valores
 IDÊNTICOS por uma temporada, e o preço era o tipo de card só se distinguir pelo
 rótulo. Hoje cada uma está amarrada a uma dessas três: mint é o lado bom, rose é
-o lado ruim, cream é a moeda, lilac é o neutro. **Elas são lavados ESCUROS** —
-a tinta dentro delas é clara, como em todo o resto do produto.
+o lado ruim, cream é a moeda, lilac é o neutro. **Elas são lavados, e o lavado
+acompanha o tema** — escuros com tinta clara no escuro, claros com tinta escura
+no claro. O que não muda é o PAPEL de cada uma.
 
 ### Os post-its são a outra metade do sistema de cor
 
 `--v2-note-{mist,sage,slate,lemon}`, cada um com o próprio par de tinta
-(`-ink` e `-mute`). São a ÚNICA cor clara sobre escuro do produto, são a marca
-do acervo (ver `PostItNote`), e **a landing os usa pelo mesmo motivo que o
-app**: os marcadores da seção "O problema", os chips dos blocos do resumo, o
-rótulo da faixa da Biblioteca e o mural dentro do mockup de celular.
+(`-ink` e `-mute`). São a marca do acervo (ver `PostItNote`), e **a landing os
+usa pelo mesmo motivo que o app**: os marcadores da seção "O problema", os chips
+dos blocos do resumo, o rótulo da faixa da Biblioteca e o mural dentro do
+mockup de celular.
+
+**São quatro CINZAS, nos dois temas, e já foram quatro pastéis.** Eram três
+lavados claros e saturados (azul, verde, limão) mais um escuro, e o argumento
+era bom: num chão escuro a saturação some, e a cor é o que dá vida a um mural
+que de resto seria cinza sobre cinza.
+
+O que o argumento não pesa é o que a cor faz COM O TEXTO. O mural é a primeira
+tela do app, cada cartão tem um título dentro, e quatro lavados saturados numa
+grade de seis puxam o olho para a grade em vez de para o que está escrito nela.
+Um acervo não é uma paleta. No claro isso ficava pior ainda — sobre branco os
+mesmos pastéis viram adesivo de papelaria.
+
+Hoje são quatro cinzas com um FIO de matiz: frio, verde, quente, e um neutro
+que destoa por lightness (o mais claro dos quatro no escuro, o mais fundo no
+claro). Eles continuam fazendo o que sempre fizeram, dar ao acervo uma memória
+visual — "aquele é o cinza azulado" —, sem disputar com o título. **A hierarquia
+dentro do cartão continua sendo de TINTA, não de fundo**, e é por isso que a
+troca não custou legibilidade: cada face traz o próprio par (`-ink` e `-mute`),
+e os dois foram recalculados junto, ~10-11:1 e ~5:1 sobre o próprio cartão.
+
+**O matiz é um FIO mesmo, e tem um teto.** Uma primeira calibragem usava ~11 de
+distância entre canais e o mural lia verde e bege, não cinza. Em ~5-8 ele lê
+como temperatura, que é o que se quer: distinguível de relance, invisível
+quando se está lendo.
+
+**O fio da borda passou a valer para os QUATRO** (`NOTE_RING`, em
+`PostItNote`). Era exceção do cartão escuro, o único que precisava de borda
+porque dava 1,25:1 contra a página; com os quatro na mesma família não existe
+mais o cartão destoante, e a exceção virou a regra. Ele é
+`ring-scriba-hairline`, não um branco literal — é o que o faz acompanhar o tema.
+
+O par `-mute` de cada face tem um segundo consumidor, e isso amarra as duas
+pontas: `FOLDER_ICON_INK` tinge com ele o ícone de pasta, que pousa no cartão do
+APP e não no post-it. Ele apontava para a SUPERFÍCIE de cada face, o que
+funcionava enquanto elas eram pastéis claros e quebrou nos dois temas assim que
+viraram cinza — ver o cabeçalho em `src/lib/domain/folder.ts`.
 
 **Post-it é ACENTO, nunca fundo de cartão grande.** Um cartão de post-it
 obrigaria a inverter a tinta de tudo que estivesse dentro dele, e a página
@@ -88,20 +195,33 @@ resposta é a superfície elevada.
 
 ### A escala de tinta
 
-Quatro degraus, o piso medido pelo PAPEL (`#2F3035`), que é o fundo de menor
-contraste em que texto pousa:
+Quatro degraus por tema, e **o pior fundo não é o mesmo nos dois**. No escuro o
+piso se mede pelo PAPEL (`#2F3035`), porque o chão é mais escuro e portanto mais
+fácil; no claro é o contrário, o chão é o branco e quem aperta é o REALCE
+(`#EFEFED`). Por isso cada tabela mede os dois extremos do próprio tema:
 
 ```
-              chão(#212121) / papel(#2F3035)
-ink-strong      14,8 / 12,1
-ink             10,9 /  8,9
-ink-soft         7,8 /  6,4
-ink-mute         5,8 /  4,8   <- o piso, AA para texto pequeno
+ESCURO        chão(#212121) / papel(#2F3035)      CLARO     chão(#FFFFFF) / realce(#EBEBEB)
+ink-strong      14,8 / 12,1                                   21,0 / 17,6
+ink             10,9 /  8,9                                   17,4 / 14,6
+ink-soft         7,8 /  6,4                                    9,6 /  8,0
+ink-mute         5,8 /  4,8   <- o piso, AA para texto pequeno  5,3 /  4,5
 ```
 
-Mexeu num, recalcule os quatro. E **não ponha `ink-mute` sobre `--secondary`**
-(`#3A3B41`): ali ele dá 4,0:1. Quem pousa naquela superfície é o
-`--muted-foreground` do shadcn, um degrau mais claro de propósito.
+A escala do claro é mais CURTA, e é de propósito: o topo dela é `#37352F`, a
+tinta quente, e não um preto. 12,3:1 está muito acima de AAA (7:1), e o que se
+ganha subindo para 17:1 é o zumbido de preto puro sobre branco.
+
+**No claro os dois degraus de cima quase se tocam (21,0 e 17,4), e é de
+propósito.** A prosa do resumo é `--scriba-ink`, e ela precisa ler como PRETO;
+uma escala "bem distribuída" a partir do preto põe o corpo do texto num
+cinza escuro, que foi exatamente o defeito relatado. Quem separa título de
+corpo naquela tela é peso e tamanho, não tinta.
+
+Mexeu num, recalcule os quatro — do tema em que mexeu. E **não ponha `ink-mute`
+sobre `--secondary`**: no escuro (`#3A3B41`) ele dá 4,0:1. Quem pousa naquela
+superfície é o `--muted-foreground` do shadcn, um degrau mais forte de
+propósito nos dois temas (mais claro no escuro, mais escuro no claro).
 
 `text-white` literal não é aceitável em lugar nenhum: ele é meio degrau acima
 do `--scriba-ink-strong` que o resto da página usa, e a diferença aparece
@@ -109,39 +229,51 @@ exatamente onde ele costumava estar, nos blocos que fecham a leitura.
 
 ### A cor das barras do sistema
 
-A barra de status do celular (`<meta name="theme-color">`), o `theme_color` e o
-`background_color` do manifest e a tela de abertura são todos `#212121`, e o
-valor mora em `src/shared/theme-color.ts` porque o navegador lê a meta antes de
-qualquer CSS e o manifest é JSON: nenhum dos dois enxerga um `var()`. **Mudou
-`--v2-bg`? Mude lá no mesmo commit.** `public/offline.html` é a terceira cópia,
-pelo mesmo motivo: sem rede não há folha de estilo para carregar.
+A barra de status do celular (`<meta name="theme-color">`) tem DUAS cores, uma
+por tema, e elas moram em `THEME_COLOR_BY_THEME`, em `src/shared/theme-color.ts`
+— o navegador lê a meta antes de qualquer CSS, então ela não enxerga um
+`var()`. **Mudou `--v2-bg` de um dos temas? Mude lá no mesmo commit.**
 
-Com valor constante, a meta é uma tag ESTÁTICA no `viewport` do root layout.
-Três mecanismos deixaram de existir quando o segundo tema saiu: o script inline
-no `<head>` que lia o localStorage antes do primeiro paint (`ThemeScript`), o
-efeito que refazia a conta dentro da área logada (`AppThemeColor`) e o
-`useTheme`, que reescrevia a meta a cada troca. A barra de navegação do Android,
-que o Chrome tira do fundo do DOCUMENTO e que nenhuma meta alcança, acerta
-sozinha agora que `--background` é o grafite em toda rota.
+Um `media="(prefers-color-scheme: …)"` não resolveria: o tema do Scriba é uma
+ESCOLHA guardada no localStorage, não o retrato do sistema operacional. Então a
+meta é servida no valor escuro (uma tag estática no `viewport` do root layout,
+que é o padrão e o que quem está sem JS recebe) e tem o `content` reescrito por
+dois mecanismos: o `ThemeScript`, antes do primeiro paint, e o `useTheme`, a
+cada troca.
 
-**Não devolva um switch de tema sem devolver a paleta junto.** O que existia
-(`ThemeToggleRow`, no `/profile`) governava menos do que parecia: a moldura do
-app declara `dark` no nó raiz, então virar para claro não mudava nenhuma tela
-logada, só a landing e o painel. Um controle que muda o que a pessoa não está
-olhando é pior que controle nenhum.
+`THEME_COLOR` sozinho continua sendo o escuro e continua constante, porque os
+dois lugares que o consomem desenham o instante ANTERIOR ao primeiro paint, sem
+documento para consultar: o `manifest.ts` (JSON) e as telas de abertura (PNGs
+gerados em build). `public/offline.html` é a terceira cópia, pelo mesmo motivo:
+sem rede não há folha de estilo para carregar.
+
+A barra de navegação do Android, que o Chrome tira do fundo do DOCUMENTO e que
+nenhuma meta alcança, acerta sozinha porque `--background` é o chão do tema
+vigente em toda rota — um mecanismo a menos que na primeira vez que houve dois
+temas, quando a área logada tinha paleta própria e exigia um `AppThemeColor`.
+
+**Não devolva um switch de tema sem devolver a paleta junto.** A regra continua
+valendo, e é a cicatriz da primeira tentativa: o `ThemeToggleRow` do `/profile`
+governava menos do que parecia, porque a moldura do app declarava `dark` no
+próprio nó — virar para claro não mudava nenhuma tela logada, só a landing e o
+painel. Um controle que muda o que a pessoa não está olhando é pior que controle
+nenhum. Ele voltou junto com a paleta inteira e com a moldura despida do `dark`;
+as duas garantias estão no topo desta seção.
 
 ### O botão primário
 
 **É `--scriba-cta` / `--scriba-cta-ink`, na landing E na área logada.** Uma
-pastilha clara com tinta grafite, CHAPADA e em raio total (`rounded-full`), que
-é o desenho de botão do app.
+pastilha CHAPADA em raio total (`rounded-full`) que é o desenho de botão do
+app, e o par INVERTE com o tema: clara com tinta grafite no escuro, grafite com
+tinta clara no claro. É o objeto de maior contraste da tela nos dois casos.
 
 Ele continua declarado como gradiente de duas paradas iguais e consumido por
 `bg-[image:var(--scriba-cta)]`: são doze lugares, e trocar o utilitário em
 todos para ganhar um `background-color` no lugar de um `background-image` seria
 mexer em doze arquivos por nada. O hover é um `filter` na classe `.scriba-cta`,
-nunca uma cor de fundo — um `hover:bg-*` chapa o gradiente.
-`--scriba-cta-shadow` é `transparent`: a pastilha não flutua.
+nunca uma cor de fundo — um `hover:bg-*` chapa o gradiente, e o `filter` serve
+aos dois temas sem um segundo par de tokens, que é a razão de ele ter nascido
+assim. `--scriba-cta-shadow` é `transparent`: a pastilha não flutua.
 
 **A variante `default` do `ui/button.tsx` JÁ É esse par**, e a família inteira
 (`outline`, `secondary`, `ghost`, `link`) foi repontada para os tokens
@@ -178,6 +310,42 @@ pressupõe. Fora do admin ninguém os pinta; **dentro dele, o gradiente dos
 cartões de KPI é `from-primary/5`**, de propósito, porque é assim que o bloco
 `dashboard-01` desenha e é o `--primary` que faz o degradê acompanhar o tema.
 Ver `src/features/admin/AGENTS.md`.
+
+### O dock: onde o vidro deixa de ser vidro
+
+As peças flutuantes do app — o disco do Biblo, a barra do celular, o painel do
+`+`, a barra de busca, os chips do teclado — são "vidro": `--v2-glass-panel` /
+`-button` (a superfície translúcida), `--v2-glass-sheen` (o brilho que dá
+curvatura) e `--v2-glass-edge` (o fio que diz onde a peça termina), com
+`backdrop-blur` por classe.
+
+**Isso funciona sobre um chão escuro e não funciona sobre papel.** No escuro a
+peça é mais clara que o fundo, o desfoque escurece o que passa atrás e o fio de
+luz a recorta. Sobre uma página branca, um branco translúcido é branco: o que
+sobrava era o fio a 10% da tinta, e um contorno não parece apertável. Foi o
+defeito que a primeira passada do tema claro deixou.
+
+No claro a resposta é a de qualquer chrome sobre papel: **superfície CHAPADA,
+fio mais firme (13%) e SOMBRA de verdade** — `--v2-glass-shadow`, um token que
+é `transparent` no escuro e uma sombra real aqui, consumido por
+`shadow-[…var(--v2-glass-shadow)]` nos componentes de dock. O `backdrop-blur`
+das classes fica e deixa de ter o que fazer, o que não custa nada.
+
+**E o DISCO flutuante é a exceção dentro da exceção.** `--v2-dock-disc` /
+`-ink` existe porque mesmo chapado e com sombra, um disco cinza-claro de 56px
+pousado sobre uma página branca continua lendo como enfeite: ele é uma AÇÃO, a
+única flutuando ali, e ação neste tema é escura, a mesma decisão do
+`--scriba-cta`. No escuro o token vale exatamente o que `--v2-glass-button`
+valia, então lá nada mudou — ele nasceu para dar ao claro uma resposta que o
+outro tema já tinha de graça, sem arrastar junto a barra de busca e os chips,
+que dividiam aquele token e precisam continuar claros (é dentro deles que se lê
+e se digita).
+
+Pela mesma razão o "Nova pasta" deixou de ser um contorno tracejado: tracejado
+é o desenho de "vazio a preencher" e só se lê assim com contraste de sobra.
+Hoje ele é um tile cheio, na superfície dos próprios cartões de pasta, com o
+ícone num disco da tinta forte — o par do botão primário, no tamanho de um
+glifo, que inverte com o tema de graça.
 
 ### Pressionado: o hover que não existe no celular
 
@@ -222,10 +390,15 @@ nenhum, e isso é bom: é mais um motivo para ele não existir.
 
 **Tinta de família se calibra pela superfície da família, não pelo papel.**
 `--scriba-*-accent`, `-body` e `-ink` aparecem sobre `--scriba-cream`,
-`--scriba-mint` etc., que são lavados mais claros que o chão; medir no papel dá
-falso OK nos dois sentidos. O mesmo vale, com mais força, para os post-its: ali
-a superfície é CLARA e a tinta é escura, e é a única parte do produto em que
-isso acontece.
+`--scriba-mint` etc., que são lavados fora da escala de superfícies; medir no
+papel dá falso OK nos dois sentidos. O mesmo vale, com mais força, para os
+post-its, que são os únicos quatro objetos do produto cuja cor NÃO acompanha o
+tema: no escuro eles são a única superfície clara com tinta escura, e é
+justamente por isso que medi-los contra o fundo da página não diz nada.
+
+**E calibre no tema em que mexeu, não nos dois de uma vez.** Os dois blocos de
+paleta são independentes: um número certo num não diz nada sobre o outro, e a
+tabela da escala de tinta traz as duas colunas por esse motivo.
 
 ### A landing tem tokens próprios
 
@@ -234,14 +407,15 @@ As faixas full-bleed usam `--lp-hero`, `--lp-band` / `--lp-band-ink` /
 **Não pinte uma seção da LP com `bg-scriba-blue`** (que, aliás, não é mais
 azul: é a própria tinta forte).
 
-**O hero tem DEGRADÊ, e é o único do produto.** `--lp-hero` abre em `#2B2C31`,
-o meio do caminho entre o chão e a superfície elevada, e desce até `#212121`.
-Ele já foi chapado por uma versão e a primeira dobra perdeu o eixo.
+**O hero tem DEGRADÊ, e é o único do produto.** `--lp-hero` abre um degrau
+ACIMA do chão (no escuro, `#2B2C31`, o meio do caminho até a superfície
+elevada; no claro, o próprio branco do papel) e desce até o chão. Ele já foi
+chapado por uma versão e a primeira dobra perdeu o eixo.
 
 **A última parada dele é 72%, e não 100%.** Com ela no fim, a seção alcançava a
 cor do fundo exatamente na borda de baixo, e toda a diferença de tom entre o
 hero e a seção seguinte se concentrava nos últimos pixels — uma emenda fina,
-visível por ser fina. Antes de 72% os ~28% de baixo já são `#212121` chapado, e
+visível por ser fina. Antes de 72% os ~28% de baixo já são o chão chapado, e
 a seção seguinte começa na tinta em que a anterior terminou. A parada do meio
 (38%) existe pela outra ponta: sem ela o degradê escurece rápido demais no
 primeiro terço e o halo azul ganha uma borda de contraste em volta.
@@ -273,7 +447,9 @@ Eles eram a única exceção à regra "nada de cor literal em `className`" — d
 `--lp-halo-gold`), consumidos por `bg-[image:var(--…)]`: a exceção
 acabou e a calibragem ficou num lugar só. Sobre o grafite, 16% de opacidade é
 o teto antes de o halo deixar de ser luz e virar mancha de cor; no chão quase
-preto de antes dava para ir mais alto.
+preto de antes dava para ir mais alto. **No tema claro eles SOBEM** (22% e
+30%): sobre um chão quase branco o problema se inverte, a luz some antes de
+chegar perto de virar mancha.
 
 Na `/partners` o dourado divide matiz com o AMARELO DA MOEDA, que ali é
 informação. Passa porque é luz difusa atrás do texto, não pastilha nem número.

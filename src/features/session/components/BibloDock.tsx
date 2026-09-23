@@ -13,6 +13,22 @@ import { BibloAvatar } from "@/shared/brand";
 export type BibloDockHandle = { open: () => void };
 
 /**
+ * O DISCO FLUTUANTE DO BIBLO, e ele é UMA classe para as duas telas.
+ *
+ * Ele existe em dois lugares — este componente (a leitura e o editor) e o
+ * `BibloHomeDock` (a Biblioteca, que precisa de um disco próprio porque o dele
+ * some e volta com a rolagem). A classe estava COPIADA nos dois, e o resultado
+ * foi o previsível: ao dar ao disco uma superfície própria no tema claro, só
+ * uma das cópias mudou, e o mesmo botão passou a ter dois visuais em duas
+ * telas do mesmo app.
+ *
+ * Quem precisar de comportamento próprio (o `pointer-events`, a animação de
+ * entrada) acrescenta ao redor, nunca reescreve isto.
+ */
+export const BIBLO_TRIGGER_CLASS =
+  "inline-flex size-14 items-center justify-center rounded-full bg-v2-dock-disc bg-[image:var(--v2-dock-disc-sheen)] shadow-[0_2px_6px_var(--v2-glass-shadow),0_10px_28px_var(--v2-glass-shadow)] ring-1 ring-v2-glass-edge backdrop-blur-xl transition hover:brightness-125 active:brightness-150 focus-visible:outline-2 focus-visible:outline-offset-4 focus-visible:outline-v2-ink-mute";
+
+/**
  * O botão do Biblo: flutuante, no canto inferior direito, nas DUAS telas.
  *
  * ## Ele é o terceiro do mesmo gesto
@@ -179,7 +195,7 @@ export const BibloDock = forwardRef<
             onClick={() => setOpen(true)}
             aria-label="Conversar com o Biblo"
             aria-expanded={false}
-            className="pointer-events-auto inline-flex size-14 items-center justify-center rounded-full bg-v2-glass-button bg-[image:var(--v2-glass-sheen)] ring-1 ring-v2-glass-edge backdrop-blur-xl transition hover:brightness-125 active:brightness-150 focus-visible:outline-2 focus-visible:outline-offset-4 focus-visible:outline-v2-ink-mute"
+            className={cn("pointer-events-auto", BIBLO_TRIGGER_CLASS)}
           >
             <BibloAvatar mood={thinking ? "thinking" : "idle"} size={36} />
           </button>

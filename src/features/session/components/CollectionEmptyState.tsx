@@ -5,6 +5,17 @@ type CollectionEmptyStateProps = {
   sticker: string;
   heading: string;
   body: ReactNode;
+  /**
+   * Um controle no rodapé do quadro, abaixo do parágrafo e separado dele por
+   * um fio.
+   *
+   * Ele existe porque o quadro vazio é o único lugar do app com espaço
+   * sobrando, e é a primeira tela de quem entra: o que couber aqui é
+   * descoberto sem ninguém ir procurar. O que NÃO cabe é ação de conteúdo —
+   * gravar, importar e escrever moram na barra, visíveis, e repeti-las aqui
+   * seria dar duas respostas para a mesma pergunta.
+   */
+  action?: ReactNode;
 };
 
 /**
@@ -28,7 +39,12 @@ type CollectionEmptyStateProps = {
  * direto por página nenhuma: a frase de cada lista é decisão de produto e
  * merece um nome próprio no import.
  */
-export function CollectionEmptyState({ sticker, heading, body }: CollectionEmptyStateProps) {
+export function CollectionEmptyState({
+  sticker,
+  heading,
+  body,
+  action,
+}: CollectionEmptyStateProps) {
   return (
     <div className="overflow-hidden rounded-3xl bg-scriba-paper">
       <div className="flex flex-col items-center px-5 py-10 text-center sm:px-8 sm:py-14">
@@ -52,6 +68,14 @@ export function CollectionEmptyState({ sticker, heading, body }: CollectionEmpty
             {body}
           </p>
         </div>
+
+        {/* O fio, e não uma faixa: a mesma regra que separa os meses da
+            Biblioteca. Ele só existe quando há o que separar. */}
+        {action ? (
+          <div className="mt-8 flex w-full max-w-[400px] justify-center border-scriba-hairline border-t pt-6">
+            {action}
+          </div>
+        ) : null}
       </div>
     </div>
   );

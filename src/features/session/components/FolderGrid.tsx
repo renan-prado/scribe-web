@@ -362,7 +362,11 @@ function FolderCardMenu({
     <DropdownMenu>
       <DropdownMenuTrigger
         aria-label="Opções da pasta"
-        className="absolute right-2 top-2 flex size-7 items-center justify-center rounded-full text-v2-ink-mute outline-none transition-colors hover:bg-black/20 hover:text-v2-ink focus-visible:ring-2 focus-visible:ring-ring/50"
+        // `bg-v2-card-hover` e não um preto a 20%: o realce é o degrau que o
+        // app já usa para hover de cartão, e o preto literal, que funcionava
+        // enquanto o produto era só escuro, desenharia um disco pesado sobre a
+        // pasta branca do tema claro.
+        className="absolute right-2 top-2 flex size-7 items-center justify-center rounded-full text-v2-ink-mute outline-none transition-colors hover:bg-v2-card-hover hover:text-v2-ink focus-visible:ring-2 focus-visible:ring-ring/50"
       >
         <MoreHorizontal aria-hidden className="size-4" />
       </DropdownMenuTrigger>

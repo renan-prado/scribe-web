@@ -115,7 +115,11 @@ export function TopBar({
 
            Não leva `aria-label` nenhum: a pena já é `aria-hidden`, e um enfeite
            sem ação não é coisa que o leitor de tela precise anunciar. */
-        <span className="inline-flex size-10 shrink-0 items-center justify-center text-v2-ink-mute">
+        // `text-v2-ink` no claro e `v2-ink-mute` no escuro, e não um token só:
+        // no escuro a pena é um enfeite e um branco chapado ali competiria com
+        // o título ao lado; no claro o cinza médio a fazia sumir na página
+        // branca, e a marca é a única coisa da barra que diz de quem é o app.
+        <span className="inline-flex size-10 shrink-0 items-center justify-center text-v2-ink dark:text-v2-ink-mute">
           <ScribaMark size={26} />
         </span>
       )}
