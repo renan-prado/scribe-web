@@ -479,10 +479,12 @@ tela guardada. O porquê dos três baldes de cache está em `src/app/AGENTS.md`.
 cinco ícones) — as quatro saíram junto com a moldura antiga. Quem navega hoje
 tem o menu da conta no avatar e o voltar da `TopBar` (a pena ao lado dele é
 marcação, não leva a lugar nenhum);
-quem CRIA — gravar, escrever, importar — usa o `+` do `CreateDock` no celular
-ou os chips do `CreateActions` na `TopBar` no desktop (`ImportAction`,
-`RecordAction` e `WriteAction`, com a lupa entre o segundo e o terceiro), todos
-montados pela própria página. A gaveta do hambúrguer que ficava entre os dois durou uma
+quem CRIA — gravar, escrever, importar — usa o `+` da `MobileActionBar` no
+celular (`(app)/(barra)/components/MobileActionBar.tsx`, a barra de baixo
+comum a `/home`, `/summary` e `/escrever`, ver `src/app/AGENTS.md`) ou os chips
+do `CreateActions` na `TopBar` no desktop (`ImportAction`, `RecordAction` e
+`WriteAction`, com a lupa entre o segundo e o terceiro), todos montados pela
+própria página. A gaveta do hambúrguer que ficava entre os dois durou uma
 versão: ela existia para quatro destinos, e sobrou com um.
 
 A esfumaçada que ficava acima da barra (`--scriba-nav-fade`) e a do rodapé do

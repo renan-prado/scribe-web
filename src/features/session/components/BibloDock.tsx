@@ -1,12 +1,16 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { forwardRef, useEffect, useImperativeHandle, useState } from "react";
 import { useBibloWriter } from "@/features/session/biblo-query";
 import { BibloDrawer } from "@/features/session/components/BibloDrawer";
 import { useKeyboardInset } from "@/hooks/use-keyboard-inset";
 import { useIsMobile } from "@/hooks/use-mobile";
 import type { BibloSuggestion } from "@/lib/domain/biblo";
+import { cn } from "@/lib/utils";
 import { BibloAvatar } from "@/shared/brand";
+
+/** O que a `MobileActionBar` chama para abrir a gaveta a partir de fora. */
+export type BibloDockHandle = { open: () => void };
 
 /**
  * O botão do Biblo: flutuante, no canto inferior direito, nas DUAS telas.
@@ -61,31 +65,50 @@ import { BibloAvatar } from "@/shared/brand";
  * não chega vê o rosto no canto em `thinking`, e voltando a `idle` quando ela
  * chega: é o aviso de "terminei" sem badge, sem ponto vermelho e sem
  * notificação.
+ *
+ * ## O gatilho no celular mudou de dono
+ *
+ * `/summary` e `/escrever` têm hoje uma `MobileActionBar` própria, com o
+ * "Pergunte ao Biblo" dentro dela — e não mais o disco flutuante que este
+ * componente desenhava sozinho no canto. `hideMobileTrigger` esconde esse
+ * disco só no celular (`max-md:hidden`); no desktop ele continua existindo,
+ * porque lá não há barra nenhuma. Quem abre a gaveta a partir da barra chama
+ * `ref.current.open()` (`BibloDockHandle`), e `onThinkingChange` é como o
+ * rosto da barra sabe mostrar `thinking` com a gaveta fechada — sem ele a
+ * barra não teria como saber que uma resposta está a caminho.
  */
-export function BibloDock({
-  sessionId,
-  ensureSession,
-  onInsert,
-  onRemove,
-}: {
-  sessionId: string;
-  /**
-   * Garante que a linha da sessão exista no banco antes de uma pergunta, e
-   * devolve o id dela (`null` quando o salvamento falhou).
-   *
-   * Só o `/escrever` passa: lá o id é do APARELHO e a linha nasce no primeiro
-   * salvamento, então sem isto a primeira pergunta esbarraria numa sessão que
-   * não existe. Ver o cabeçalho do `Composer`.
-   */
-  ensureSession?: () => Promise<string | null>;
-  /** Ausente na tela que não sabe editar: a conversa funciona, sem "Adicionar". */
-  onInsert?: (suggestion: BibloSuggestion) => void;
-  onRemove?: (suggestion: BibloSuggestion) => void;
-}) {
+export const BibloDock = forwardRef<
+  BibloDockHandle,
+  {
+    sessionId: string;
+    /**
+     * Garante que a linha da sessão exista no banco antes de uma pergunta, e
+     * devolve o id dela (`null` quando o salvamento falhou).
+     *
+     * Só o `/escrever` passa: lá o id é do APARELHO e a linha nasce no primeiro
+     * salvamento, então sem isto a primeira pergunta esbarraria numa sessão que
+     * não existe. Ver o cabeçalho do `Composer`.
+     */
+    ensureSession?: () => Promise<string | null>;
+    /** Ausente na tela que não sabe editar: a conversa funciona, sem "Adicionar". */
+    onInsert?: (suggestion: BibloSuggestion) => void;
+    onRemove?: (suggestion: BibloSuggestion) => void;
+    /** Ver "O gatilho no celular mudou de dono" acima. */
+    hideMobileTrigger?: boolean;
+    onThinkingChange?: (thinking: boolean) => void;
+  }
+>(function BibloDock(
+  { sessionId, ensureSession, onInsert, onRemove, hideMobileTrigger = false, onThinkingChange },
+  ref
+) {
   const [open, setOpen] = useState(false);
   const [thinking, setThinking] = useState(false);
   const isMobile = useIsMobile();
   useKeyboardInset();
+  useImperativeHandle(ref, () => ({ open: () => setOpen(true) }), []);
+  useEffect(() => {
+    onThinkingChange?.(thinking);
+  }, [thinking, onThinkingChange]);
 
   /**
    * A conversa é buscada quando a TELA abre, não quando a gaveta abre.
@@ -145,7 +168,12 @@ export function BibloDock({
       {/* O botão sai da tela enquanto a gaveta está aberta: ele não é um
           interruptor aceso, ele VIROU a gaveta, e ela tem o próprio fechar. */}
       {!open && (
-        <div className="pointer-events-none fixed inset-x-0 bottom-0 z-30 flex justify-end px-4 pb-[calc(1rem+max(env(safe-area-inset-bottom),var(--kb-inset,0px)))]">
+        <div
+          className={cn(
+            "pointer-events-none fixed inset-x-0 bottom-0 z-30 flex justify-end px-4 pb-[calc(1rem+max(env(safe-area-inset-bottom),var(--kb-inset,0px)))]",
+            hideMobileTrigger && "max-md:hidden"
+          )}
+        >
           <button
             type="button"
             onClick={() => setOpen(true)}
@@ -170,4 +198,4 @@ export function BibloDock({
       )}
     </>
   );
-}
+});

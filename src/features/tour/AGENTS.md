@@ -64,10 +64,10 @@ tem o que mostrar, e o tour espera a próxima visita.
 
 **O passo que precisa de um menu FECHADO pede que ele abra, e é a única
 exceção à regra acima.** As três portas de criação do celular moram atrás do
-`+` do `CreateDock`, que nasce fechado; a apresentação da Biblioteca tem um
+`+` do `MobileActionBar`, que nasce fechado; a apresentação da Biblioteca tem um
 balão para cada uma, e medi-las na hora em que o tour monta as descartaria em
 toda visita. O passo declara `reveal: "create-dock"`, o `TourRunner` publica
-esse pedido enquanto ele durar, e o `CreateDock` escuta (`lib/reveal.ts`). Três
+esse pedido enquanto ele durar, e o `MobileActionBar` escuta (`lib/reveal.ts`). Três
 consequências que quem mexer aqui precisa manter:
 
 - **`resolveSteps` não julga um passo com `reveal`.** Ele entra sempre — o alvo
@@ -76,7 +76,7 @@ consequências que quem mexer aqui precisa manter:
   quatro caminhos e nenhum deles pode deixar o menu aberto sobre a Biblioteca
   depois de o véu sumir; e entre dois passos que pedem o MESMO reveal, uma
   limpeza no meio fecharia e reabriria o painel a cada "Próximo".
-- **Quem escuta deriva o `open`, não o guarda.** No `CreateDock`, `open` é
+- **Quem escuta deriva o `open`, não o guarda.** No `MobileActionBar`, `open` é
   `tapped || revealed`: com um estado só, o `setTapped(false)` da rolagem e do
   Esc apagaria o pedido do tour e o painel fecharia no meio do balão que fala
   dele.
@@ -89,7 +89,7 @@ tamanho zero no canto da tela, sem erro nenhum no console. Ver `src/lib/anchors.
 **No celular, o balão encosta no rodapé, e por isso o alvo PRESO ao viewport
 tem tratamento próprio.** A correção normal, quando o alvo cairia embaixo do
 balão, é rolar a página; ela não move um elemento `fixed`, e o passo do
-"Criar", cujo alvo mora no `CreateDock`, terminava com o balão pousado
+"Criar", cujo alvo mora no `MobileActionBar`, terminava com o balão pousado
 exatamente em cima do botão de que estava falando. Quando rolar
 não tem como resolver, alvo preso (`isPinnedToViewport`) ou página que já rolou
 o que podia neste passo, o balão sobe para CIMA do alvo. Quem mexer na posição
@@ -162,10 +162,10 @@ O contrato entre o passo e a tela é um seletor CSS, e a convenção é
 
 | `data-tour` | Onde vive |
 |---|---|
-| `library-search` | a LUPA da `TopBar` na Biblioteca (`SearchToggle`, em `(app)/(barra)/components/SearchScope.tsx`) |
-| `studies-search` | a mesma lupa nos Estudos — o `tourId` é prop, a tela é que o nomeia |
-| `collection-search` | `CollectionSearch`, a barra. Nenhum tour aponta para ela, e é de propósito |
-| `create-dock` | o `+` de `src/app/(app)/home/CreateDock.tsx` (era `record-dock`, no microfone que ele substituiu). **Só no celular**: o passo que fala dele se apaga sozinho no desktop |
+| `library-search` | o botão da busca GLOBAL, duas vezes — `SearchTrigger` (desktop, na `TopBar`) e o botão de busca da `MobileActionBar` (celular); um dos dois sempre `display: none` |
+| `studies-search` | a lupa da barra ANTIGA nos Estudos (`SearchToggle`, em `(app)/(barra)/components/SearchScope.tsx`) — o `tourId` é prop, a tela é que o nomeia. Único uso restante de `SearchScope`/`CollectionSearch`, que a Biblioteca não usa mais |
+| `collection-search` | `CollectionSearch`, a barra dos Estudos. Nenhum tour aponta para ela, e é de propósito |
+| `create-dock` | o `+` de `src/app/(app)/(barra)/components/MobileActionBar.tsx` (era `record-dock`, no microfone que ele substituiu, e antes disso o `+` vivia sozinho em `CreateDock.tsx`, hoje apagado). **Só no celular**: o passo que fala dele se apaga sozinho no desktop |
 | `create-record` | a porta "Gravar" — o quadrado do painel do dock, e o chip do microfone da `TopBar` |
 | `create-write` | a porta "Escrever", nos mesmos dois lugares |
 | `create-import` | a porta "Importar", nos mesmos dois lugares |

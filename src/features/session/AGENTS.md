@@ -51,7 +51,7 @@ pessoa quiser, aprofundar.
 | `components/LibraryNote.tsx` | o post-it de uma sessão na Biblioteca (autor, título, data) |
 | `components/SessionModeGlyph.tsx` | o ícone do modo, o mesmo nas três vistas |
 | `components/StudyNote.tsx` | o post-it de um estudo, a mesma casca com outro recheio |
-| `components/CollectionSearch.tsx` + `src/lib/search.ts` | a barra e o motor das duas listas |
+| `components/CollectionSearch.tsx` + `src/lib/search.ts` | a barra dos Estudos e o motor da busca (também usado pela `GlobalSearchDialog`) |
 | `components/YoutubeUrlForm.tsx` + `YoutubeImport.tsx` | colar o link (ou recebê-lo por parâmetro), recortar um trecho, e esperar a importação |
 | `components/BibloDock.tsx` + `BibloDrawer.tsx` + `BibloMessage.tsx` | a conversa com o Biblo: botão flutuante e gaveta (ou painel `inline`) |
 | `components/BibloSummaryDock.tsx` | o mesmo Biblo na tela de LEITURA, que precisa de um POST para inserir |
@@ -869,19 +869,25 @@ justamente porque cada um mora numa mãe diferente.
 
 ## As listas: busca e filtros
 
-`/home` e `/studies` têm a MESMA barra (`CollectionSearch`) e o mesmo
-motor (`src/lib/search.ts`, puro e client-safe). Quem filtra é um componente
-cliente por página (`LibraryBrowser`, `StudiesBrowser`); as páginas continuam
-sendo só quem BUSCA no banco.
+**A Biblioteca não tem mais busca PRÓPRIA.** Ela teve uma barra atrás da lupa
+do cabeçalho (`CollectionSearch` + `SearchScope`, aberta por `?busca=1`), e
+essa barra saiu — a busca virou GLOBAL
+(`(app)/(barra)/components/GlobalSearchDialog.tsx`), um diálogo por cima de
+QUALQUER tela do app, aberto por Ctrl+K, pelo `SearchTrigger` do desktop ou
+pelo botão de busca da `MobileActionBar`. `LibraryBrowser` voltou a mostrar
+sempre o acervo inteiro (pastas, pendentes, meses), sem estado de "busca
+aberta" nenhum; o diálogo lê a MESMA `useLibrary()`, sem consulta nova, e
+reaproveita o mesmo motor (`src/lib/search.ts`) e a mesma metade servidor
+(`useContentSearch`, abaixo).
 
-**Nas DUAS a barra fica atrás da lupa do cabeçalho**, e fechá-la limpa os
-filtros. Nos Estudos ela já foi permanente, e a diferença não se sustentava:
-quem abre qualquer uma das listas quase sempre quer o último item, não uma
-busca, e uma barra montada por padrão come a primeira dobra dos cartões. O
-estado (`SearchScope`) mora num provider porque a lupa está na `TopBar` e os
-filtros na lista, ramos diferentes da árvore. **O passo de busca do tour aponta
-para a LUPA nas duas telas** — ancorado na barra, ele é descartado em silêncio
-porque ela ainda não existe quando o tour abre.
+**`/studies` continua com a barra ANTIGA** (`CollectionSearch` + `SearchScope`
++ `SearchToggle`, atrás da lupa do cabeçalho, fechando limpa os filtros): os
+Estudos estão saindo do produto (ver `src/app/AGENTS.md`) e não valeram a
+migração para o diálogo global. `StudiesBrowser` é hoje o único consumidor de
+`CollectionSearch`. **O passo de busca do tour dos Estudos aponta para a LUPA**
+— ancorado na barra, ele seria descartado em silêncio porque ela ainda não
+existe quando o tour abre. O passo irmão da Biblioteca aponta para o botão que
+abre o diálogo global, não para um resultado dentro dele.
 
 **Lista vazia e busca sem resultado são DUAS telas, não uma.** As duas páginas
 têm um estado vazio de verdade (`SessionsEmptyState`, `StudiesEmptyState`, sobre

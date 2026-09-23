@@ -1,11 +1,12 @@
 /**
  * O chip dos controles da barra do topo: voltar e lupa.
  *
- * Mora numa constante porque são TRÊS botões em três arquivos (o voltar da
- * `TopBar`, `SearchToggle` e `LibrarySearchLink`) desenhando o mesmo objeto.
- * Copiada, a classe divergiria no primeiro ajuste de raio ou de tamanho, e a
- * barra passaria a ter dois desenhos de botão lado a lado. A pena do canto
- * esquerdo NÃO usa o chip, e não é esquecimento: a marca não é um controle.
+ * Mora numa constante porque são vários botões em vários arquivos (o voltar da
+ * `TopBar`, `SearchTrigger`, `SearchToggle`, `SummaryFindToggle`)
+ * desenhando o mesmo objeto. Copiada, a classe divergiria no primeiro ajuste de
+ * raio ou de tamanho, e a barra passaria a ter dois desenhos de botão lado a
+ * lado. A pena do canto esquerdo NÃO usa o chip, e não é esquecimento: a marca
+ * não é um controle.
  *
  * Módulo `.ts` puro, sem `"use client"`: é uma string, então o servidor (a
  * `TopBar`) e o cliente (a lupa) leem a mesma sem nenhum custo de fronteira.

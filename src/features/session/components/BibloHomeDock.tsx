@@ -3,7 +3,7 @@
 import { FileText, X } from "lucide-react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
-import { useCallback, useEffect, useRef, useState } from "react";
+import { forwardRef, useCallback, useEffect, useImperativeHandle, useRef, useState } from "react";
 import { toast } from "sonner";
 import { useBibloWriter } from "@/features/session/biblo-query";
 import {
@@ -17,6 +17,7 @@ import {
   runBibloAction,
   writeWorkspace,
 } from "@/features/session/biblo-workspace";
+import type { BibloDockHandle } from "@/features/session/components/BibloDock";
 import { BibloDrawer } from "@/features/session/components/BibloDrawer";
 import { useLibraryWriter } from "@/features/session/query";
 import { useKeyboardInset } from "@/hooks/use-keyboard-inset";
@@ -62,33 +63,33 @@ const log = createLogger("biblo-home");
  *
  * ## O botão
  *
- * O mesmo disco de vidro do Biblo das outras telas, no mesmo canto. O que muda
- * é a companhia: aqui o canto de baixo à direita já é do `+` do `CreateDock`
- * no celular, e os dois dividem a coluna — o Biblo fica no PISO, mais perto do
- * polegar, porque conversar é o gesto mais repetido da tela; o `+` sobe uma
- * linha, e o painel dele já cresce para cima a partir de onde nasce, então
- * subir de posição não muda para onde ele se abre.
+ * O mesmo disco de vidro do Biblo das outras telas, no mesmo canto — e hoje,
+ * SÓ NO DESKTOP: no celular a Biblioteca não tem mais um `+` e um disco do
+ * Biblo dividindo o canto, ela tem a `MobileActionBar`, com as duas coisas
+ * (e a busca) numa barra só. Ver "No celular o gatilho..." abaixo.
  *
- * **E ele soma o mesmo esconde-ao-rolar do `+`** (mesmo limiar de 8px, mesmo
- * gatilho de "perto do topo reaparece sempre", ver o cabeçalho de
- * `CreateDock`): sem isso os dois botões discordariam a cada rolagem, um
- * sumindo e o outro parado, o que lê como um dos dois estar quebrado.
- *
- * **O `px-5` da borda direita é o MESMO do `CreateDock`, e precisa continuar
- * sendo.** Os dois discos já nascem do mesmo `size-14`; o que os desalinhava
- * não era o tamanho, era o respiro — este vinha em `px-4` (16px) contra os
- * `px-5` (20px) do `+`, e 4px de diferença bastam para a coluna empilhada
- * parecer torta em vez de reta.
+ * **No celular o gatilho é a `MobileActionBar`, não mais este disco.** A
+ * barra chama `ref.current.open()` (`BibloDockHandle`) e lê o `thinking` por
+ * `onThinkingChange`; `hideMobileTrigger` esconde o disco só no celular
+ * (`max-md:hidden`) — no desktop ele continua sendo o único caminho até a
+ * gaveta, porque não há barra nenhuma lá. Ver o mesmo desenho em `BibloDock`.
  */
-export function BibloHomeDock() {
+export const BibloHomeDock = forwardRef<
+  BibloDockHandle,
+  { hideMobileTrigger?: boolean; onThinkingChange?: (thinking: boolean) => void }
+>(function BibloHomeDock({ hideMobileTrigger = false, onThinkingChange }, ref) {
   const [open, setOpen] = useState(false);
   const [thinking, setThinking] = useState(false);
   const [workspace, setWorkspace] = useState<BibloWorkspace>(EMPTY_WORKSPACE);
   const library = useLibraryWriter();
   const router = useRouter();
   useKeyboardInset();
+  useImperativeHandle(ref, () => ({ open: () => setOpen(true) }), []);
+  useEffect(() => {
+    onThinkingChange?.(thinking);
+  }, [thinking, onThinkingChange]);
 
-  // O mesmo esconde-ao-rolar do `+` do `CreateDock` (ver o cabeçalho de lá):
+  // Esconde-ao-rolar, hoje só relevante no DESKTOP (o disco só existe lá):
   // rolar para baixo é ler, rolar para cima é procurar, e perto do topo o
   // botão volta sempre, mesmo que o último gesto tenha sido para baixo.
   const [scrolledIn, setScrolledIn] = useState(true);
@@ -215,11 +216,16 @@ export function BibloHomeDock() {
   return (
     <>
       {/* O botão sai da tela com a gaveta aberta: ele não é um interruptor
-          aceso, ele VIROU a gaveta. `bottom` fica ABAIXO do `+` do
-          `CreateDock`, no piso da coluna. Ver "## O botão" no topo do
-          arquivo. */}
+          aceso, ele VIROU a gaveta. Só existe no DESKTOP hoje
+          (`hideMobileTrigger`); no celular quem abre é a `MobileActionBar`.
+          Ver "## O botão" no topo do arquivo. */}
       {!open && (
-        <div className="pointer-events-none fixed inset-x-0 bottom-0 z-30 flex justify-end px-5 pb-[calc(1.75rem+max(env(safe-area-inset-bottom),var(--kb-inset,0px)))] md:pb-[calc(1rem+max(env(safe-area-inset-bottom),var(--kb-inset,0px)))]">
+        <div
+          className={cn(
+            "pointer-events-none fixed inset-x-0 bottom-0 z-30 flex justify-end px-5 pb-[calc(1.75rem+max(env(safe-area-inset-bottom),var(--kb-inset,0px)))] md:pb-[calc(1rem+max(env(safe-area-inset-bottom),var(--kb-inset,0px)))]",
+            hideMobileTrigger && "max-md:hidden"
+          )}
+        >
           <button
             type="button"
             onClick={() => setOpen(true)}
@@ -253,4 +259,4 @@ export function BibloHomeDock() {
       )}
     </>
   );
-}
+});

@@ -175,11 +175,12 @@ resposta voltar. Era literalmente o "header carregando de uma tela para outra".
 
 **A `TopBar` virou cliente e devolve um PORTAL** para um vão com id
 (`TOPBAR_SLOT_ID`) que a casca desenha. Ela não podia virar prop do layout:
-layout não recebe prop de página, e três `trailing` dependem de contexto que
-nasce dentro da própria tela — o `SearchToggle` precisa do `SearchScope`, a lupa
-do `/summary` do `SummaryFindProvider`, o relógio do `ClockScope`. Com o portal
-ela continua sendo renderizada onde sempre foi, dentro dos providers dela, e só
-o DOM pousa lá em cima.
+layout não recebe prop de página, e alguns `trailing` dependem de contexto que
+nasce dentro da própria tela — a lupa do `/summary` do `SummaryFindProvider`, o
+relógio do `ClockScope`. Com o portal ela continua sendo renderizada onde
+sempre foi, dentro dos providers dela, e só o DOM pousa lá em cima. (O
+`SearchTrigger` da Biblioteca NÃO é mais um desses: ele lê a `GlobalSearchStore`
+direto, sem provider de tela nenhum — ver abaixo.)
 
 **O preço, e ele está escrito no código:** portal não existe no HTML do
 servidor. Num carregamento DURO (abrir o app, um link compartilhado) o vão nasce
@@ -211,10 +212,12 @@ esqueleto pela mesma regra que preserva o avatar, um degrau abaixo — é o que
 o router segura a tela anterior inteira até a nova estar pronta, e é por isso
 que o `/studies` e o `/summary` nunca piscaram.
 
-Quando a barra depende de estado da tela, o PROVIDER sobe junto — o `SearchScope`
-da Biblioteca envolve a lupa (no layout) e a lista (na página). O que não sobe é
-`searchParams`, que layout não recebe: o `?busca=1` passou a ser lido no cliente
-(`home/LibrarySearchScope.tsx`).
+Quando a barra depende de estado da tela, o PROVIDER sobe junto — o `ClockScope`
+da gravação e o `SummaryFindProvider` do resumo envolvem a `TopBar` e o resto da
+tela. A Biblioteca já teve um `SearchScope` assim (`?busca=1` lido no cliente
+por `home/LibrarySearchScope.tsx`, porque layout não recebe `searchParams`); os
+dois saíram quando a busca dela virou a GLOBAL — ver "A lupa existe em toda
+tela" abaixo.
 
 **O canto esquerdo é a PENA, e ela leva para a Biblioteca.** Ali houve um
 hambúrguer com uma gaveta de quatro destinos; Escrever e Importar passaram para
@@ -244,20 +247,29 @@ a pena é marcação, não clica. A única volta era o botão do sistema, que de
 WebView fecha o aplicativo. Ali o título FICA: "Perfil" não está escrito em lugar
 nenhum da página, ao contrário do título do sermão no `/summary`.
 
-**A lupa existe em toda tela, e ela não faz a mesma coisa em todas.** São três
-botões com o mesmo glifo, no mesmo lugar da barra, e a diferença entre eles é o
-ALCANCE da busca, não o desenho:
+**A lupa existe em toda tela, e ela não faz a mesma coisa em todas.** São dois
+glifos com propósitos diferentes, no mesmo lugar da barra:
 
 | Tela | Quem é a lupa | O que ela procura |
 |---|---|---|
-| `/home`, `/studies` | `SearchToggle` | a lista da própria tela (`SearchScope`) |
+| `/home`, `/importar`, `/escrever` | `SearchTrigger` (`(barra)/components/`) | a busca GLOBAL, um diálogo por cima da tela (`GlobalSearchDialog`) |
 | `/summary` | `SummaryFindToggle` | **dentro do resumo aberto** |
-| `/importar`, `/escrever` | `LibrarySearchLink` | o acervo, num link para `/home?busca=1` |
+| `/studies` | `SearchToggle` | a lista da própria tela (`SearchScope`), a barra ANTIGA |
 
-O `?busca=1` vira o `defaultOpen` do `SearchScope`, senão a lupa entregaria a
-Biblioteca com o campo fechado. Ele é lido no CLIENTE
-(`home/LibrarySearchScope.tsx`), porque o provider mora no layout do segmento e
-layout não recebe `searchParams`.
+**`SearchTrigger` não abre nada NESTA tela.** Ele só manda `open: true` para a
+`GlobalSearchStore`, e quem desenha a busca é `GlobalSearchDialog`
+(`(barra)/layout.tsx`, montado uma vez), que aparece por cima de qualquer rota
+— inclusive as que nem têm o chip, alcançável ali por Ctrl+K/Cmd+K. Ele é
+`hidden md:inline-flex`: no celular quem abre a MESMA busca é o botão da
+`MobileActionBar`, e os dois levam `data-tour="library-search"` para o tour
+achar o visível. Não há mais link para `/home?busca=1`, nem `?busca=1` para ler
+— a busca não precisa mais de estar em `/home` para existir.
+
+**`/studies` é a exceção, de propósito.** Os Estudos estão saindo do produto
+(ver a seção deles abaixo) e ficaram com a busca de sempre — `SearchToggle`
+abrindo uma barra (`CollectionSearch`) atrás da lupa, com o estado num
+`SearchScope` que envolve a `TopBar` e a lista. Não valeu migrar uma tela que
+está de saída.
 
 **O `/summary` foi o caso difícil, e por um tempo a saída foi não ter lupa
 nenhuma ali.** O raciocínio estava certo pela metade: sobre um texto longo, uma
@@ -272,9 +284,10 @@ CSS Custom Highlight API. O porquê está no cabeçalho do arquivo, e vale ler
 antes de mexer — é o que permite achar o texto dos versículos, que chega por
 fetch e não está em `SummaryPayload`.
 
-O `/escrever` ficou com o link para o acervo, e não com uma busca própria:
-procurar dentro de um rascunho que a pessoa acabou de digitar, e que cabe na
-tela, é uma busca sobre um palheiro que ela conhece de cor.
+O `/escrever` ficou com a busca GLOBAL, e não com uma busca própria: procurar
+dentro de um rascunho que a pessoa acabou de digitar, e que cabe na tela, é uma
+busca sobre um palheiro que ela conhece de cor — o `SearchTrigger` dali abre o
+MESMO `GlobalSearchDialog` de qualquer outra tela.
 
 ## `/escrever`: a terceira porta
 
@@ -743,9 +756,9 @@ três coisas: **autor, título e data.** É a única forma que o acervo desenha.
 primeiro mês, guardado por aparelho: a LISTA (uma linha por sermão, com autor,
 título, trecho e data) e a GRADE (cartões iguais, mesma altura, um cinza só, na
 ordem cronológica linha a linha). Saíram porque o problema que resolviam — achar
-UM sermão dentro de um acervo grande — a busca (atrás da lupa, ver
-`CollectionSearch` acima) já resolve, sem pedir que a pessoa escolha entre três
-layouts antes de ver o próprio acervo. `LibraryRow`, `LibraryCard`,
+UM sermão dentro de um acervo grande — a busca GLOBAL (Ctrl+K, ver
+`GlobalSearchDialog` abaixo) já resolve, sem pedir que a pessoa escolha entre
+três layouts antes de ver o próprio acervo. `LibraryRow`, `LibraryCard`,
 `LibraryViewToggle` e `library-view.ts` foram junto.
 
 O mural é cor sorteada e ordem COLUNA-A-COLUNA: o segundo sermão mais recente
@@ -823,28 +836,27 @@ o maior dos dois botões.
 `font-semibold` ele competia com o conteúdo que a página veio mostrar, e
 encostado no botão lia como legenda dele em vez de nome da tela.
 
-A busca fica atrás da lupa, e não permanente: quem abre o Scriba quase sempre
-quer o último sermão, não uma busca. Fechá-la LIMPA os filtros, senão a lista
-reabriria recortada por uma escolha de dois dias atrás. O botão mora na `TopBar`
-e o estado na lista, então um `SearchScope` (contexto) envolve os dois. Na
-Biblioteca ele mora no `layout.tsx` do segmento, junto da barra, pela razão da
-seção da `TopBar`; nos Estudos, que não têm `loading.tsx`, ele continua na
-página.
-**Vale para os Estudos também**, onde a barra já foi permanente: a lupa
-é a mesma (`SearchToggle`, com rótulo e alvo de tour por prop), e lá ela só
-aparece quando há algum estudo — sem lista montada, o botão abriria uma barra
-sem onde existir.
+**Na Biblioteca a lupa não abre mais uma barra NESTA tela.** Ela chamava
+`SearchScope` (contexto) e uma barra atrás dela, fechando LIMPAVA os filtros; a
+busca virou GLOBAL (`GlobalSearchDialog`, ver "A lupa existe em toda tela"
+acima), um diálogo por cima de qualquer rota, aberto por Ctrl+K ou pelo
+`SearchTrigger`. Não há mais estado de tela para dividir entre o botão e a
+lista.
 
-O `CreateDock` mora na PÁGINA do `/home`, não no layout, e é o que o mantém
-fora do `/summary`: no celular, chegar a uma tela de leitura é ter escolhido
-LER, e um `+` flutuando sobre o sermão aberto cobraria a tela por uma ação que o
-voltar já alcança.
+**Nos Estudos a barra antiga continua de pé**, e é a exceção deliberada — eles
+estão saindo do produto e não valeram a migração. Lá a lupa é `SearchToggle`
+(rótulo e alvo de tour por prop), o estado é um `SearchScope` na página
+(sem `loading.tsx`, ele não precisa subir para o layout), e o botão só aparece
+quando há algum estudo — sem lista montada, ele abriria uma barra sem onde
+existir.
 
-**No desktop essa regra não vale, e a razão dela é que muda.** O `+` custava a
-tela; os chips do `CreateActions` não custam nada — a barra tem vão de sobra à
-direita do voltar —, e o que eles evitam é a viagem de ida e volta à Biblioteca
-só para começar a próxima sessão. Por isso o `/summary` e o `/escrever` montam a
-fileira no `trailing` da própria `TopBar`, no lugar onde a lupa ficaria.
+**No desktop quem cria é a barra do topo, e a razão não é a mesma do celular.**
+No `/summary` e no `/escrever`, chegar a uma tela de leitura é ter escolhido
+LER, e um `+` flutuando sobre o sermão aberto cobraria a tela por uma ação que
+o voltar já alcança — mas no celular hoje as três portas moram na
+`MobileActionBar` (ver abaixo) em TODA tela que tem uma, `/home`, `/summary` e
+`/escrever` incluídas: criar a próxima sessão sem sair da que se está lendo ou
+escrevendo deixou de custar a viagem de volta à Biblioteca.
 
 **No DESKTOP não há `+`: as três portas ficam na barra do topo**
 (`(app)/(barra)/components/CreateActions.tsx`), como chips de 40px, só o ícone, com o
@@ -852,9 +864,9 @@ nome no tooltip. O `+` é um clique cobrado para revelar três ícones, e ele se
 paga enquanto a tela é estreita: ali a barra do topo é a única linha larga que
 existe, e gastá-la com três botões seria gastar o lugar do título. Num monitor
 as duas razões caem juntas — o cursor chega a qualquer canto pelo mesmo custo, e
-sobra vão à direita do título. Por isso o `CreateDock` inteiro é `md:hidden` e
-cada chip é `hidden md:inline-flex`: nunca os dois na mesma largura, nunca
-nenhum dos dois.
+sobra vão à direita do título. Por isso a `MobileActionBar` inteira é `md:hidden`
+e cada chip do `CreateActions` é `hidden md:inline-flex`: nunca os dois na
+mesma largura, nunca nenhum dos dois.
 
 **A ordem da barra é Importar, Gravar, LUPA, Escrever, avatar**, com o `gap-3`
 da `TopBar` valendo para todos. A busca entra no MEIO das portas de criação, e
@@ -875,23 +887,24 @@ lupa, entre o voltar e o avatar —, e um disco colorido no meio de quatro cinza
 não leria como "o principal", leria como ALERTA, que é o que um ponto de cor
 numa barra de ferramentas diz.
 
-**Cada chip é um alvo de tour, com o MESMO nome da porta gêmea do dock**
-(`create-record`, `create-write`, `create-import`): a apresentação da Biblioteca
-tem um balão por porta, o `resolveAnchor` pega o primeiro VISÍVEL (ver
-`src/features/tour/lib/anchors.ts`), e como um dos dois desenhos está sempre em
-`display: none`, os mesmos passos servem às duas larguras sem um `if` de tamanho
-de tela. O que NÃO existe aqui é o `create-dock`: ele é o `+` do rodapé, e o
-passo que o recorta diz "atrás deste botão estão as três portas" — frase que, no
-desktop, descreveria uma tela que não está ali. Sem alvo, aquele passo se apaga
-sozinho, e o desktop vê cinco balões onde o celular vê seis.
+**Cada chip é um alvo de tour, com o MESMO nome da porta gêmea da barra do
+celular** (`create-record`, `create-write`, `create-import`): a apresentação da
+Biblioteca tem um balão por porta, o `resolveAnchor` pega o primeiro VISÍVEL
+(ver `src/features/tour/lib/anchors.ts`), e como um dos dois desenhos está
+sempre em `display: none`, os mesmos passos servem às duas larguras sem um `if`
+de tamanho de tela. O que NÃO existe no desktop é o `create-dock`: é o `+` da
+`MobileActionBar`, e o passo que o recorta diz "atrás deste botão estão as três
+portas" — frase que, no desktop, descreveria uma tela que não está ali. Sem
+alvo, aquele passo se apaga sozinho, e o desktop vê cinco balões onde o celular
+vê seis.
 
-**No CELULAR ele é um `+` no canto de baixo à direita, e abre as TRÊS portas**
-(`CreateDock`):
+**No CELULAR as três portas ficam atrás do "+" da `MobileActionBar`**
+(`(app)/(barra)/components/MobileActionBar.tsx`), a barra de baixo comum a
+`/home`, `/summary` e `/escrever` — ver "A barra de baixo do celular" adiante,
+onde ela é explicada por inteiro. O painel que o "+" abre é o mesmo de sempre:
 "Gravar" (o microfone, `/recording?auto=1`), "Escrever" (`/escrever`) e
 "Importar" (`/importar`), num painel de ícone-e-nome como o dos
-prints em `public/prints/new-release/`. Era um microfone sozinho no meio da
-faixa, e as outras duas portas moravam na gaveta — três toques longe, num lugar
-que ninguém abre para criar, abre para navegar.
+prints em `public/prints/new-release/`.
 
 **Os três rótulos dizem o RESULTADO, sob um título**: "Resumo automático",
 "Escrever resumo" e "Importar do YouTube". Já foram um verbo cada (Gravar,
@@ -919,32 +932,56 @@ cor diz "o resumo sai pronto, escrito pela máquina". O mesmo canto já teve dua
 vezes um enfeite SEM texto (um hexágono, depois um sparkles) e as duas saíram,
 ver `src/shared/AGENTS.md`.
 
-Três decisões dele que não são estética:
+Duas decisões dele que não são estética, hoje dentro da `MobileActionBar`:
 
-- **À direita, não no centro.** Centralizado, o botão pousava sobre a coluna
-  esquerda do mural e tampava um cartão; e um painel que se abre a partir do
-  centro não tem para que lado crescer. O painel abre AO LADO dele, na mesma
-  linha e alinhado por baixo, como no print — aberto por cima, ele ficaria
-  debaixo do dedo que acabou de tocar. A conta fecha em 360px com folga de 18px,
-  e quem mexer no tamanho das opções refaz a soma (está no cabeçalho do
-  componente): o estouro sai pela esquerda da tela no celular, e não aparece no
-  monitor.
-- **O `+` é CINZA e de VIDRO** (`--v2-glass-*`), e já foi vermelho e chapado por
-  um commit. O vermelho é do microfone — é a cor do gravar, do ponto que pisca
-  durante a pregação —, e num botão que abre três portas, das quais só uma
-  grava, ele prometia a errada. O vidro são três camadas que andam juntas,
-  superfície translúcida sobre `backdrop-blur`, um brilho de 10% de branco
-  caindo a 2% (a curvatura sob uma luz de cima) e o fio da borda; os números são
-  baixos de propósito, e subi-los é o caminho curto para o plástico brilhante de
-  2010.
+- **O `+` é CINZA e de VIDRO** (`--v2-glass-*`), como os outros dois botões da
+  barra, e já foi vermelho e chapado por um commit. O vermelho é do
+  microfone — é a cor do gravar, do ponto que pisca durante a pregação —, e num
+  botão que abre três portas, das quais só uma grava, ele prometia a errada. O
+  vidro são três camadas que andam juntas, superfície translúcida sobre
+  `backdrop-blur`, um brilho de 10% de branco caindo a 2% (a curvatura sob uma
+  luz de cima) e o fio da borda; os números são baixos de propósito, e
+  subi-los é o caminho curto para o plástico brilhante de 2010.
 - **Não há véu.** O apanhador de toque atrás do painel é transparente:
   escurecer a tela trataria como modal o que é um menu de três atalhos — e é o
-  mural visto PELO vidro que dá ao painel a profundidade que um véu apagaria.
-- **Rolar fecha o painel.** O painel é `fixed`; parado no canto enquanto a lista
-  corre atrás dele seriam dois comportamentos contraditórios no mesmo gesto.
+  mural (ou o texto) visto PELO vidro que dá ao painel a profundidade que um
+  véu apagaria.
 
 Girar um `+` em 45° dá um `×`: o botão que abre é o mesmo que fecha, e trocar de
 glifo faria o fechar aparecer do nada no lugar do abrir.
+
+### A barra de baixo do celular
+
+`MobileActionBar` (`(app)/(barra)/components/MobileActionBar.tsx`) é a barra
+que junta busca, "Pergunte ao Biblo" e criar num só lugar, `md:hidden`, e vive
+em TRÊS telas: `/home`, `/summary` e `/escrever`. Ela substituiu dois discos
+soltos que cada tela desenhava por conta própria — o `+` (o antigo
+`CreateDock`, que só existia na Biblioteca) e o disco flutuante do Biblo
+(`BibloDock`/`BibloHomeDock`, repetido nas três) — por uma peça PERSISTENTE:
+ao contrário do `CreateDock` antigo, ela não some ao rolar. Uma barra de
+navegação que aparece e desaparece é pior que uma parada.
+
+**Quem abre a conversa não é esta barra.** A gaveta do Biblo (a sessão, as
+ferramentas de cada tela, `onInsert`/`onRemove`) continua exatamente onde
+estava — `BibloHomeDock` na Biblioteca, `BibloDock`/`BibloSummaryDock` no
+resumo e no editor —, só o GATILHO mudou de lugar: cada uma expõe um
+`BibloDockHandle` por `ref` (`{ open: () => void }`) e um `onThinkingChange`,
+e no celular deixa de desenhar o próprio disco (`hideMobileTrigger`). No
+DESKTOP nada mudou — lá não há barra, e o disco de cada uma continua sendo o
+único caminho até a gaveta. Ver o cabeçalho de `BibloDock`
+("O gatilho no celular mudou de dono").
+
+**A busca é sempre a GLOBAL, nunca a do texto aberto.** No `/summary` a lupa da
+`TopBar` já procura DENTRO do resumo (`SummaryFindToggle`); esta é outra
+pergunta, "onde isto está no acervo?", e o botão das três telas manda
+`open: true` para a `GlobalSearchStore` — a mesma que o `SearchTrigger` do
+desktop e o Ctrl+K abrem. Não há mais link para `/home?busca=1`: a busca não
+precisa de estar na Biblioteca para existir.
+
+**O "+" é o MESMO painel de três portas de sempre**, só que dentro da barra em
+vez de sozinho no canto: o botão carrega `data-tour="create-dock"` e escuta
+`useTourReveal("create-dock")`, então o passo do tour que já apontava para ele
+continua funcionando sem saber que o `CreateDock` antigo foi apagado.
 
 **O `/recording` grava UM áudio e transcreve UMA vez.** O produto já
 transcreveu a cada 15-20s, porque havia um feed ao vivo que precisava do texto
@@ -1694,7 +1731,7 @@ mora em `src/shared/theme-color.ts` (e, copiado, em `public/offline.html`).
 
 O `viewport` do root layout declara `viewport-fit=cover`, é o que faz
 `env(safe-area-inset-*)` valer diferente de zero. Quem consome os insets é o
-`CreateDock` e o rodapé de cada tela; sem eles o iPhone desenha o botão de
+`MobileActionBar` e o rodapé de cada tela; sem eles o iPhone desenha a barra de
 criar por baixo da barra do gesto do sistema. Zoom fica liberado
 (`maximumScale: 5`): travar o pinch é violação de acessibilidade.
 

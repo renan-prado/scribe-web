@@ -24,7 +24,7 @@ import {
 import { createPortal } from "react-dom";
 import { BookGlyph } from "@/components/icons/BookGlyph";
 import { BibleDock } from "@/features/session/components/BibleDock";
-import { BibloDock } from "@/features/session/components/BibloDock";
+import { BibloDock, type BibloDockHandle } from "@/features/session/components/BibloDock";
 import { EntityFieldDialog } from "@/features/session/components/EntityFieldDialog";
 import { PassageVerses } from "@/features/session/components/PassageVerses";
 import { revealSummaryBlock, SUMMARY_BLOCK_ATTR } from "@/features/session/components/reveal-block";
@@ -44,6 +44,7 @@ import {
 import { cn } from "@/lib/utils";
 import { ScribaMark } from "@/shared/brand";
 import { TOPBAR_SLOT_ID } from "../components/AppHeaderShell";
+import { MobileActionBar } from "../components/MobileActionBar";
 import { AutoTextarea } from "./AutoTextarea";
 import {
   BLOCK_OPTIONS,
@@ -163,6 +164,12 @@ export function Composer({
   const [speakerLocation, setSpeakerLocation] = useState(initialSpeakerLocation);
   const [speakerDialogOpen, setSpeakerDialogOpen] = useState(false);
   const [locationDialogOpen, setLocationDialogOpen] = useState(false);
+
+  // O gatilho do Biblo no celular é a `MobileActionBar`, não mais o disco
+  // flutuante que o `BibloDock` desenhava sozinho. Ver o cabeçalho de lá
+  // ("O gatilho no celular mudou de dono").
+  const bibloRef = useRef<BibloDockHandle>(null);
+  const [bibloThinking, setBibloThinking] = useState(false);
 
   /**
    * Mesmo PATCH que a leitura usa (`/api/sessions/:id`), e por isso só chama
@@ -1155,10 +1162,23 @@ export function Composer({
           um bloco, e inserir no texto é um preço alto demais por uma consulta.
           Ver `BibleDock`. */}
       <BibleDock />
+      {/* No celular, a barra unificada (busca, Biblo, criar) — a busca sai
+          daqui direto para o acervo (`/home?busca=1`), como em toda tela que
+          não é a Biblioteca. No desktop o Biblo continua sendo o disco de
+          sempre. Ver o cabeçalho de `BibloDock`. */}
+      {ready && (
+        <MobileActionBar
+          onAskBiblo={() => bibloRef.current?.open()}
+          bibloThinking={bibloThinking}
+        />
+      )}
       {ready && (
         <BibloDock
+          ref={bibloRef}
           sessionId={draftId}
           ensureSession={flush}
+          hideMobileTrigger
+          onThinkingChange={setBibloThinking}
           onInsert={(suggestion) => {
             // Sem foco, com revelação: ver `revealIndex`.
             setRevealIndex(insertAt(suggestion.afterIndex + 1, suggestion.block, false));

@@ -1,7 +1,7 @@
 import type { Metadata } from "next";
 import { YoutubeUrlForm } from "@/features/session/components/YoutubeUrlForm";
 import { extractYoutubeUrl, parseClipRange, parseTimecode } from "@/lib/domain/youtube";
-import { LibrarySearchLink } from "../components/LibrarySearchLink";
+import { SearchTrigger } from "../components/SearchTrigger";
 import { TopBar } from "../components/TopBar";
 
 export const metadata: Metadata = { title: "Importar do YouTube" };
@@ -82,7 +82,10 @@ export default async function ImportarPage({ searchParams }: PageProps) {
 
   return (
     <main className="mx-auto flex w-full max-w-[1024px] flex-1 flex-col px-4 pb-10">
-      <TopBar backHref="/home" trailing={<LibrarySearchLink />} />
+      {/* Sem `MobileActionBar` nesta tela (ela É uma porta de criação, não
+          teria sentido abrir outra a partir dela), a lupa fica visível no
+          celular também — `mobileVisible`, ver o cabeçalho de `SearchTrigger`. */}
+      <TopBar backHref="/home" trailing={<SearchTrigger mobileVisible />} />
       <div className="flex flex-1 flex-col justify-center">
         <YoutubeUrlForm
           initialUrl={shared?.canonicalUrl ?? ""}

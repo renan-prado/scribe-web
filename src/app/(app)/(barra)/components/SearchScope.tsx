@@ -6,8 +6,14 @@ import { TOPBAR_CHIP_CLASS } from "./chip";
 
 /**
  * O estado da busca de uma LISTA, compartilhado entre o BOTÃO (que mora na
- * `TopBar`) e a lista em si — o `LibraryBrowser` na Biblioteca, o
- * `StudiesBrowser` nos Estudos.
+ * `TopBar`) e a lista em si — hoje só o `StudiesBrowser`, nos Estudos.
+ *
+ * **A Biblioteca não usa mais isto.** A busca dela é a GLOBAL
+ * (`GlobalSearchDialog`, `(barra)/components/`), aberta por Ctrl+K ou pelo
+ * `SearchTrigger`/`MobileActionBar` de qualquer tela — não uma barra que só
+ * existe depois de já estar em `/home`. Este módulo sobrevive porque os
+ * Estudos ainda o usam, e eles estão saindo do produto (ver
+ * `src/app/AGENTS.md`).
  *
  * Ele existe por causa dessa distância: os dois estão em ramos diferentes da
  * árvore, com um server component no meio, então nenhum dos dois pode segurar

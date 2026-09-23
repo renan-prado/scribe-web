@@ -14,18 +14,21 @@ import { DATE_RANGES, type DateRangeKey } from "@/features/session/lib/search";
 import { cn } from "@/lib/utils";
 
 /**
- * A barra de busca das duas listas, `/recordings` e `/studies`. Só DESENHA:
- * quem filtra é o browser de cada página, com os helpers de
+ * A barra de busca do `/studies`, hoje o único consumidor. Só DESENHA: quem
+ * filtra é o `StudiesBrowser`, com os helpers de
  * `src/features/session/lib/search.ts`.
  *
- * ## Uma barra para as duas páginas
+ * **A Biblioteca não usa mais este componente.** A busca dela virou a GLOBAL
+ * (`GlobalSearchDialog`, Ctrl+K), que abre por cima de qualquer tela em vez de
+ * uma barra atrás da lupa DENTRO da Biblioteca — ver o cabeçalho de lá. Este
+ * componente sobrevive porque os Estudos ainda o usam, e os Estudos estão
+ * saindo do produto (ver `src/app/AGENTS.md`); no dia em que saírem de vez,
+ * este arquivo e `SearchScope` ficam sem dono — `lib/search.ts` não, o
+ * `GlobalSearchDialog` da Biblioteca também é dono dele.
  *
- * As listas mostram coisas diferentes (gravações e estudos) mas se procuram
- * pelas mesmas chaves, quem pregou, onde, quando. Duas barras parecidas é
- * como duas telas de busca começam a divergir em detalhes que ninguém decidiu:
- * uma ganha o contador de resultados, a outra não; uma limpa os filtros com um
- * "×", a outra com um link. Os facetas ficam configuráveis (`/studies` não tem
- * local) e o resto é o mesmo componente.
+ * ## Os facetas ficam configuráveis
+ *
+ * `/studies` não tem faceta de local, e o resto é o mesmo componente.
  *
  * ## Os filtros ficam sempre visíveis NO DESKTOP, e recolhidos no celular
  *

@@ -135,17 +135,18 @@ export const TOURS: Record<TourKey, TourDefinition> = {
       },
       {
         /**
-         * O alvo é a LUPA do cabeçalho (`SearchToggle`), e não a barra de
-         * busca: a barra só é montada depois do clique nela, e enquanto este
-         * passo apontou para `[data-tour="collection-search"]` ele foi
-         * descartado em TODA visita, sem erro nenhum na tela. Vale para as
-         * duas listas — os Estudos passaram a esconder a barra atrás da lupa
-         * como a Biblioteca sempre fez, e o passo de lá mudou de alvo junto.
+         * O alvo é o BOTÃO de busca, e não um resultado dentro dela: a busca
+         * é a GLOBAL (`GlobalSearchDialog`, Ctrl+K), aberta por cima de
+         * qualquer tela, e `[data-tour="library-search"]` existe DUAS vezes —
+         * no `SearchTrigger` da `TopBar` (desktop) e no botão de busca da
+         * `MobileActionBar` (celular) — um dos dois sempre em
+         * `display: none`, e `resolveAnchor` fica com o visível, a mesma
+         * técnica de `create-record`/`create-write`/`create-import`.
          *
-         * O conserto não sobe a `version`: o passo é o mesmo passo, escrito no
-         * primeiro dia, que nunca chegou a aparecer. Subir a versão aqui
-         * reabriria o "Bem-vindo ao Scriba" na cara de toda a base para
-         * mostrar um balão sobre uma lupa.
+         * Isto já foi a lupa da barra antiga (`SearchToggle`), que abria uma
+         * busca só de DENTRO da Biblioteca; a troca não sobe a `version`, é o
+         * mesmo passo dizendo a mesma coisa sobre o botão que hoje faz esse
+         * trabalho.
          */
         id: "search",
         anchor: '[data-tour="library-search"]',

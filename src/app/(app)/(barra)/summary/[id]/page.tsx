@@ -5,7 +5,6 @@ import { FeedbackPrompt } from "@/features/feedback/components/FeedbackPrompt";
 import { FEEDBACK_DELAY_SUMMARY_MS } from "@/features/feedback/config";
 import { BackToTop } from "@/features/session/components/BackToTop";
 import { BibleDock } from "@/features/session/components/BibleDock";
-import { BibloSummaryDock } from "@/features/session/components/BibloSummaryDock";
 import { SavedSessionView } from "@/features/session/components/SavedSessionView";
 import { SummaryInsertProvider } from "@/features/session/components/SummaryInsertContext";
 import { formatDurationLong, shortDate } from "@/features/session/lib/formatting";
@@ -16,6 +15,7 @@ import { getSessionView } from "@/lib/db/sessions";
 import { ImportAction, RecordAction, WriteAction } from "../../components/CreateActions";
 import { SummaryFindToggle } from "../../components/SummaryFindToggle";
 import { TopBar } from "../../components/TopBar";
+import { SummaryMobileDock } from "./SummaryMobileDock";
 
 type PageProps = {
   params: Promise<{ id: string }>;
@@ -143,10 +143,11 @@ export default async function V2SummaryPage({ params }: PageProps) {
           está aberto ela nem conta o atraso dela. Ver `FeedbackPrompt`. */}
       <FeedbackPrompt kind="recording" sessionId={id} delayMs={FEEDBACK_DELAY_SUMMARY_MS} />
       <TourTrigger tour="summary" delayMs={TOUR_DELAY_RESULT_MS} />
-      {/* O Biblo fica no canto de baixo à direita, o mesmo gesto do `+` da
-          Biblioteca e do hambúrguer do painel — a pergunta nasce no meio do
-          texto, não no topo dele. Ver `BibloDock`. */}
-      <BibloSummaryDock sessionId={id} />
+      {/* No celular, a barra unificada (busca, Biblo, criar). No desktop o
+          Biblo continua sendo o disco de sempre no canto de baixo à direita —
+          a pergunta nasce no meio do texto, não no topo dele. Ver
+          `SummaryMobileDock` e o cabeçalho de `BibloDock`. */}
+      <SummaryMobileDock sessionId={id} />
       {/* A Bíblia, na borda direita, em toda a altura da leitura. Ela não
           entra no canto de baixo porque ele já tem dois donos — o Biblo, que é
           permanente, e o voltar ao topo, que empilha por cima quando aparece.

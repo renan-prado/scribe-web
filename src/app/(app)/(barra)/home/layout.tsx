@@ -1,8 +1,7 @@
 import type { ReactNode } from "react";
 import { ImportAction, RecordAction, WriteAction } from "../components/CreateActions";
-import { SearchToggle } from "../components/SearchScope";
+import { SearchTrigger } from "../components/SearchTrigger";
 import { TopBar } from "../components/TopBar";
-import { LibrarySearchScope } from "./LibrarySearchScope";
 
 /**
  * A metade da barra que é da Biblioteca, e a razão de ela ter saído da página.
@@ -22,14 +21,14 @@ import { LibrarySearchScope } from "./LibrarySearchScope";
  * segmento**, não na página; sem `loading.tsx` tanto faz, porque ali o router
  * segura a tela anterior inteira até a nova estar pronta.
  *
- * O `SearchScope` veio junto e não tinha escolha: ele é o estado que a lupa
- * (aqui) e a lista (na página) dividem, então precisa envolver os dois. O
- * `?busca=1` que ele lia de `searchParams` passou para o cliente, ver
- * `LibrarySearchScope`.
+ * **A busca não precisa mais de um `SearchScope` aqui.** Ela é a
+ * `GlobalSearchDialog`, montada uma vez em `(barra)/layout.tsx`; o
+ * `SearchTrigger` só manda `open: true` para a `GlobalSearchStore`, sem estado
+ * nenhum para dividir com a página.
  */
 export default function BibliotecaLayout({ children }: { children: ReactNode }) {
   return (
-    <LibrarySearchScope>
+    <>
       <TopBar
         title="Biblioteca"
         /* A ordem da barra: Importar, Gravar, LUPA, Escrever, avatar. A busca
@@ -43,12 +42,12 @@ export default function BibliotecaLayout({ children }: { children: ReactNode }) 
           <>
             <ImportAction />
             <RecordAction />
-            <SearchToggle />
+            <SearchTrigger />
             <WriteAction />
           </>
         }
       />
       {children}
-    </LibrarySearchScope>
+    </>
   );
 }

@@ -1,8 +1,7 @@
 import type { Metadata } from "next";
-import { BibloHomeDock } from "@/features/session/components/BibloHomeDock";
 import { TourTrigger } from "@/features/tour/components/TourTrigger";
 import { TOUR_DELAY_LIST_MS } from "@/features/tour/config";
-import { CreateDock } from "./CreateDock";
+import { HomeDockBar } from "./HomeDockBar";
 import { LibraryBrowser } from "./LibraryBrowser";
 
 export const metadata: Metadata = { title: "Biblioteca" };
@@ -46,16 +45,16 @@ export const metadata: Metadata = { title: "Biblioteca" };
  * o mesmo defeito num tamanho menor.
  *
  * **No desktop as três portas de criação sobem para a BARRA** (`CreateActions`),
- * e o `+` do rodapé some. Por isso a folga de baixo é mobile-only: sem o dock
- * não há o que desviar, e o vão viraria um buraco no fim da lista. Ver
- * `CreateDock`.
+ * e a `MobileActionBar` some. Por isso a folga de baixo é mobile-only: sem a
+ * barra não há o que desviar, e o vão viraria um buraco no fim da lista. Ver
+ * `HomeDockBar`.
  */
 export default function V2HomePage() {
   return (
     <>
-      {/* A folga de baixo é a altura da barra de criar mais o inset do iPhone:
-          sem ela o último cartão da lista para debaixo dela e não há rolagem
-          que o traga inteiro para a luz. Ver `CreateDock`.
+      {/* A folga de baixo é a altura da barra do rodapé mais o inset do
+          iPhone: sem ela o último cartão da lista para debaixo dela e não há
+          rolagem que o traga inteiro para a luz. Ver `HomeDockBar`.
 
           A de CIMA não está aqui, e não é esquecimento: ela é a mesma em toda
           tela do app e mora no `pb-4` do `AppHeaderShell`, junto da barra que
@@ -65,11 +64,7 @@ export default function V2HomePage() {
       <main className="mx-auto flex w-full max-w-[1024px] flex-1 flex-col gap-6 px-4 pb-[calc(7.5rem+env(safe-area-inset-bottom))] md:pb-10">
         <LibraryBrowser nowIso={new Date().toISOString()} />
       </main>
-      <CreateDock />
-      {/* O Biblo na Biblioteca é o único que ESCREVE um documento em vez de
-          sugerir um bloco: aqui não há texto na tela para receber sugestão.
-          Ver `BibloHomeDock`. */}
-      <BibloHomeDock />
+      <HomeDockBar />
       {/* A apresentação da Biblioteca, e a primeira que qualquer pessoa vê: é
           aqui que se cai ao entrar. Ver `src/features/tour/AGENTS.md`. */}
       <TourTrigger tour="library" delayMs={TOUR_DELAY_LIST_MS} />

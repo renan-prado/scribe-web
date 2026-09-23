@@ -6,7 +6,7 @@ import { getSessionView } from "@/lib/db/sessions";
 import { payloadToWritten } from "@/lib/domain/summary";
 import { isUuid } from "@/lib/http/validate";
 import { ImportAction, RecordAction, WriteAction } from "../../components/CreateActions";
-import { LibrarySearchLink } from "../../components/LibrarySearchLink";
+import { SearchTrigger } from "../../components/SearchTrigger";
 import { TopBar } from "../../components/TopBar";
 import { Composer } from "../Composer";
 
@@ -116,11 +116,11 @@ export default async function EscreverIdPage({ params }: PageProps) {
             <>
               <ImportAction />
               <RecordAction />
-              {/* Aqui a lupa é a das outras telas: um LINK para o acervo com o
-                  campo já aberto. Procurar dentro de um rascunho que a própria
-                  pessoa acabou de digitar, e que cabe na tela, seria uma busca
-                  sobre um palheiro que ela conhece de cor. */}
-              <LibrarySearchLink />
+              {/* Aqui a lupa é a GLOBAL, a mesma do resto do app. Procurar
+                  dentro de um rascunho que a própria pessoa acabou de digitar,
+                  e que cabe na tela, seria uma busca sobre um palheiro que ela
+                  conhece de cor. */}
+              <SearchTrigger />
               <WriteAction />
             </>
           }

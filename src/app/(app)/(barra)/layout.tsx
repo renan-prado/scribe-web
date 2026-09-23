@@ -13,6 +13,7 @@ import { OfflineBadge } from "@/shared/components/OfflineBadge";
 import { ReconnectWatcher } from "@/shared/components/ReconnectWatcher";
 import { AccountMenu } from "./components/AccountMenu";
 import { AppHeaderShell } from "./components/AppHeaderShell";
+import { GlobalSearchDialog } from "./components/GlobalSearchDialog";
 
 /**
  * As telas do app que têm BARRA, e o dono da metade dela que não muda.
@@ -129,6 +130,11 @@ export default async function BarraLayout({ children }: { children: ReactNode })
       {account ? (
         <CacheOwner userId={account.profile.id}>
           <PendingCaptureRunner />
+          {/* A busca GLOBAL (Ctrl+K, o chip da `TopBar` e o botão da
+              `MobileActionBar`), montada UMA vez aqui dentro: ela lê a
+              Biblioteca de `useLibrary()`, que só tem dono dentro do
+              `CacheOwner`. Ver `GlobalSearchDialog`. */}
+          <GlobalSearchDialog />
           {children}
         </CacheOwner>
       ) : (
