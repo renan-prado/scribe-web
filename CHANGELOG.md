@@ -9,6 +9,12 @@ Gerado por `npm run release` a partir dos Conventional Commits. `feat` sobe o
 minor; o resto sobe o patch. Não edite à mão, a próxima execução escreve por
 cima do topo do arquivo.
 
+## 0.76.0, 2026-09-23, desde v0.75.0
+
+### Novidades
+
+- **app:** barra de baixo do celular serve o documento aberto (`412faf5`)
+
 ## 0.75.0, 2026-09-23, desde v0.74.0
 
 ### Novidades
