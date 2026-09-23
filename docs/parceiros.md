@@ -30,14 +30,14 @@ entra com a mesma conta Google que usa no app.
 
 **Ninguém entra no programa sem ter usado o produto, e ninguém precisa prometer
 nada para usá-lo.** Quem clica em "Conhecer sem compromisso" na
-`scriba.cc/parceiros` cria uma conta comum e ganha **500 moedas** de cortesia
+`scriba.cc/partners` cria uma conta comum e ganha **500 moedas** de cortesia
 (`PARTNER_PROSPECT_COINS`), creditadas uma vez. A tela de entrada se
 personaliza para dizer isso, mesmo desenho do selo "indicado por Fulano", só
 que anunciando a cortesia e a ausência de compromisso.
 
 A pessoa vira uma linha em `partner_prospects` com `status = 'new'`. Ela **não
 é parceira**: não tem slug, não tem link, não tem comissão, não aparece em
-`/partners`. É um candidato, e a promoção é um cadastro manual no
+`/partners/dashboard`. É um candidato, e a promoção é um cadastro manual no
 `/admin/partners`, o botão "Cadastrar como parceiro" abre o diálogo de sempre
 com o e-mail preenchido, e `createPartner` carimba o candidato como promovido.
 
@@ -107,7 +107,7 @@ Na prática:
 > escrita quando o minuto custava 5/2/1, dizia "40 min no Modo Completo" e
 > continuou dizendo isso depois que `COIN_COSTS` subiu para 7/5/3, sem erro
 > em lugar nenhum, só uma promessa que virou mentira em silêncio. Por isso
-> `src/app/parceiros/page.tsx` CALCULA os minutos a partir de `src/features/coins/pricing.ts`
+> `src/app/partners/page.tsx` CALCULA os minutos a partir de `src/features/coins/pricing.ts`
 > em vez de escrevê-los. Ao mexer nos preços, refaça esta tabela no mesmo
 > commit, ou apague-a e aponte para a página.
 
@@ -253,14 +253,14 @@ Duas, e a divisão entre elas é a mesma de `/` e `/terms`:
 
 | rota | o que é | arquivo |
 |---|---|---|
-| `/parceiros` | a página de convite, vende o programa | `src/app/parceiros/page.tsx` |
-| `/parceiros/regulamento` | o texto que obriga | `src/app/parceiros/regulamento/page.tsx` |
+| `/partners` | a página de convite, vende o programa | `src/app/partners/page.tsx` |
+| `/partners/terms` | o texto que obriga | `src/app/partners/terms/page.tsx` |
 
-**`/parceiros` é pública e `/partners` continua atrás do login.** O par é
+**`/partners` é pública e `/partners/dashboard` continua atrás do login.** O par é
 proposital e o idioma é a pista: a página de venda fala português como toda
-página pública (`/importar`, `/indicar`), o painel mantém o nome da feature.
+página pública (`/import`, `/refer`), o painel mantém o nome da feature.
 `PUBLIC_PREFIXES` no `src/proxy.ts` casa por prefixo, então o regulamento entra
-junto; `/partners` segue em `KNOWN_APP_PREFIXES`.
+junto; `/partners/dashboard` segue em `KNOWN_APP_PREFIXES`.
 
 **Nenhuma das duas tem número próprio.** Percentual, carência, mínimo de saque,
 moedas, preços e MINUTOS saem de `src/features/partners/economics.ts`,

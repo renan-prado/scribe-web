@@ -152,7 +152,7 @@ function Hero() {
           CTA — um degradê pequeno e forte, sem nada na frente para quebrá-lo,
           lê como sujeira no fundo em vez de luz. Espalhá-lo (820px, mais
           baixo) só deixou a mancha maior. O token continua vivo na
-          `/parceiros`, que é onde ele ainda tem um objeto por cima.
+          `/partners`, que é onde ele ainda tem um objeto por cima.
 
           Com um halo só, quem dá eixo à dobra é o DEGRADÊ do chão
           (`--lp-hero`): o azul marca o topo, o degradê desce, e o fim da seção

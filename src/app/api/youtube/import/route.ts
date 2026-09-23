@@ -42,7 +42,7 @@ export const maxDuration = 300;
  *
  * A linha da sessão já existe quando esta rota é chamada: o diálogo a criou
  * com `mode: "youtube"` e a URL em `source_url`, e o cliente foi para
- * `/importar/:id`, que dispara isto. Essa ordem é o que faz um reload
+ * `/import/:id`, que dispara isto. Essa ordem é o que faz um reload
  * no meio da importação não perder nada, e é a mesma dos três modos de
  * captura, onde a linha nasce antes do primeiro segundo de áudio.
  *
@@ -107,7 +107,7 @@ export async function POST(request: Request) {
 
   // O recorte vem da LINHA, não do corpo da requisição: ele foi decidido no
   // formulário, antes de a sessão existir, e esta rota é disparada de novo a
-  // cada reload de `/importar/:id`. No corpo, um reload importaria o vídeo
+  // cada reload de `/import/:id`. No corpo, um reload importaria o vídeo
   // inteiro pelo mesmo preço, e ninguém perceberia até o resumo pronto falar
   // de outra coisa. Ver a migração 0060.
   const range = parseClipRange(session.sourceStartMs, session.sourceEndMs);

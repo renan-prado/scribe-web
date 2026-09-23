@@ -1,7 +1,7 @@
 /**
  * Cookies de ENTRADA, nome, prazo e opções em um lugar só: os dois programas de
  * indicação (o de parceiros, `/r/<slug>`, e o "Indique a um amigo",
- * `/i/<codigo>`), o pré-parceiro (`/parceiros/entrar`) e o cupom de cadastro
+ * `/i/<codigo>`), o pré-parceiro (`/partners/join`) e o cupom de cadastro
  * (`/c/<code>`).
  *
  * Estar todos aqui é o que torna visível o que cada um decide, e o que impede o
@@ -58,7 +58,7 @@ export const REF_COOKIE_MAX_AGE = 30 * 24 * 60 * 60;
  * Mesma janela de 30 dias do `scriba_ref`: quem leu a página, foi pensar e
  * voltou na semana seguinte é o comportamento esperado, não a exceção.
  *
- * `httpOnly` como os outros, quem escreve é a rota `/parceiros/entrar`, quem
+ * `httpOnly` como os outros, quem escreve é a rota `/partners/join`, quem
  * lê é a tela de entrada (server component) e o `/auth/callback`. Nenhum código
  * de navegador o toca.
  */

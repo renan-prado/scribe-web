@@ -29,7 +29,7 @@ export type CurrentAccount = {
   isAdmin: boolean;
   /**
    * `false` só quando um admin desativou a conta. É o que os layouts de
-   * `(app)` e `/partners` conferem para barrar a navegação, o equivalente,
+   * `(app)` e `/partners/dashboard` conferem para barrar a navegação, o equivalente,
    * do lado das páginas, ao 403 que `requireAuth()` devolve nas rotas.
    */
   isActive: boolean;

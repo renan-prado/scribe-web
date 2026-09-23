@@ -76,7 +76,7 @@ export const BIBLO_AT_END = Number.MAX_SAFE_INTEGER;
  * ONDE a conversa está acontecendo, e é isso que decide o que o Biblo pode
  * FAZER além de falar.
  *
- * - `session`: dentro de um resumo (`/summary/:id`, `/escrever/:id`) ou ao lado
+ * - `session`: dentro de um resumo (`/summary/:id`, `/summary/:id/edit`) ou ao lado
  *   de uma gravação. Há um documento na tela, e a porta para ele é a
  *   `suggestion` — um bloco, inserido onde o modelo apontou.
  * - `home`: a Biblioteca. Não há documento nenhum na tela, e é justamente por
@@ -119,7 +119,7 @@ export type BibloSurface = (typeof BIBLO_SURFACES)[number];
  *   ligado — o MESMO parâmetro que o "Gravar" do `CreateDock` usa, e pela
  *   mesma razão: quem pediu já disse que quer gravar, um segundo toque para
  *   confirmar cobraria duas vezes pela mesma decisão.
- * - `importarVideoDoYoutube`: leva para `/importar`, preenchendo o campo com
+ * - `importarVideoDoYoutube`: leva para `/import`, preenchendo o campo com
  *   o link quando a pessoa já disse qual é — o MESMO `?url=` que o
  *   compartilhar-com-o-Scriba usa (`docs/youtube.md` §9). O botão de lá
  *   continua sendo a única coisa que COBRA; este tool só abre a porta.

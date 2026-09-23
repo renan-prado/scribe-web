@@ -34,7 +34,7 @@ import { useNetworkStatus } from "@/shared/hooks/use-network-status";
  *
  * ## Onde ela mora
  *
- * No layout de `(barra)`, uma vez, e não em cada tela. É o mesmo raciocínio do
+ * No layout de `(shell)`, uma vez, e não em cada tela. É o mesmo raciocínio do
  * `PendingCaptureRunner` ao lado dela: o estado é do APARELHO, não da página, e
  * repetido em sete telas bastaria esquecer uma para o aviso sumir justamente
  * onde alguém estava trabalhando.

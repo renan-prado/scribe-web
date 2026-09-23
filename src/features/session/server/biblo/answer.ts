@@ -61,7 +61,7 @@ const log = createLogger("biblo");
  *
  * Em 700 a folga é de duas vezes o pico medido, e o custo praticamente não se
  * mexe: o teto só é alcançado pelas poucas que o alcançavam, e ~300 tokens de
- * saída a mais nelas são R$ 0,0003. A margem medida de 82% (`/admin/custos`,
+ * saída a mais nelas são R$ 0,0003. A margem medida de 82% (`/admin/costs`,
  * linha "Biblo") não sente. Quem segura o tamanho da PROSA continua sendo o
  * prompt, que é onde essa decisão é de leitura e não de orçamento.
  */

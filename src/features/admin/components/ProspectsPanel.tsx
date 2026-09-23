@@ -18,7 +18,7 @@ import { declineProspectAction } from "@/features/partners/prospect-actions";
 import type { AdminProspect } from "@/lib/db/prospects";
 
 /**
- * Os candidatos a parceiro: quem criou conta por `/parceiros` e ainda não foi
+ * Os candidatos a parceiro: quem criou conta por `/partners` e ainda não foi
  * promovido nem descartado.
  *
  * **Isto é uma FILA, não um cadastro.** A pergunta que ela responde é "quem se
@@ -69,7 +69,7 @@ export function ProspectsPanel({ prospects, onPromote }: Props) {
             {waiting.length > 0 ? <Badge>{waiting.length}</Badge> : null}
           </h2>
           <p className="text-[12.5px] font-light text-scriba-ink-soft">
-            Criaram conta por /parceiros, receberam as moedas de cortesia e ainda não foram
+            Criaram conta por /partners, receberam as moedas de cortesia e ainda não foram
             avaliados. Nada foi prometido a eles.
           </p>
         </div>

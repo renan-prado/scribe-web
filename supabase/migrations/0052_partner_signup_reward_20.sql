@@ -11,7 +11,7 @@
 --
 -- 20 mantém a recompensa existindo, que é o ponto dela ("não fico na mão
 -- trazendo gente que não assina"), e devolve a hierarquia: ela é um bônus, não
--- a proposta. A `/parceiros` foi reescrita no mesmo commit para dizer isso na
+-- a proposta. A `/partners` foi reescrita no mesmo commit para dizer isso na
 -- mesma ordem.
 --
 -- ISTO MUDA SÓ O PADRÃO, NÃO OS ACORDOS JÁ FECHADOS. `signup_reward_coins` é

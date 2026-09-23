@@ -51,7 +51,7 @@ no Stripe; moedas vêm de `entitlementForPrice(priceId)` em `catalog.ts`. **Um
 Price fora do catálogo credita zero.**
 
 **A intenção de plano sobrevive ao login.** O CTA da landing aponta para
-`/sign-in?next=%2Fbilling%2Fassinar%3Fplan%3D<plano>`, e `/billing/assinar`
+`/sign-in?next=%2Fbilling%2Fassinar%3Fplan%3D<plano>`, e `/billing/subscribe`
 (dentro de `(app)`, logo protegida) abre o Checkout. A chave viaja pela URL e
 isso é seguro, ela só ENDEREÇA. Trocar `?plan=` muda qual plano é oferecido,
 nunca quanto custa. Sobre o `?next=`, ver `src/app/AGENTS.md`.
@@ -60,7 +60,7 @@ nunca quanto custa. Sobre o `?next=`, ver `src/app/AGENTS.md`.
 endereça: a sessão é buscada na API do Stripe, o `customer` dela tem de bater
 com o `stripe_customer_id` de quem está autenticado (senão 403), o pagamento
 tem de estar `paid`, e o `external_ref` UNIQUE faz webhook e reconciliação
-juntos creditarem uma vez só. A página `/billing/retorno` segue decorativa:
+juntos creditarem uma vez só. A página `/subscribe/return` segue decorativa:
 forjar `?status=sucesso` não produz crédito nenhum.
 
 **O dono do crédito vem do vínculo que NÓS gravamos**,

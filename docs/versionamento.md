@@ -1,7 +1,7 @@
 # Versionamento: a versão é uma régua de medição
 
 **Status: implementado.** Migração `0044`, `src/scripts/release.mjs`,
-`src/lib/app-version.ts` e o corte "Por versão" do `/admin/custos`.
+`src/lib/app-version.ts` e o corte "Por versão" do `/admin/costs`.
 
 ---
 
@@ -33,7 +33,7 @@ lib/app-version.ts  APP_VERSION   client-safe
    ↓ carimbado em toda chamada
 lib/db/usage.ts  →  llm_usage_events.app_version
    ↓ agrupado
-/admin/custos  →  a aba "Versões" e o seletor do cabeçalho
+/admin/costs  →  a aba "Versões" e o seletor do cabeçalho
 ```
 
 Três decisões dentro desse caminho:
@@ -132,7 +132,7 @@ arquivo.
 
 ## 6. Como ler a tabela "Por versão"
 
-Na aba **Versões** de `/admin/custos`.
+Na aba **Versões** de `/admin/costs`.
 
 | Coluna | O que é |
 |---|---|
@@ -194,7 +194,7 @@ gravou e termina no primeiro evento da versão seguinte (`VersionWindow`, em
 
 Três consequências:
 
-- **A aba de preços de `/admin/custos` tem o mesmo filtro**, e é ela que
+- **A aba de preços de `/admin/costs` tem o mesmo filtro**, e é ela que
   responde "esta mudança melhorou a margem da ação?". A tela mostra o intervalo
   resolvido numa faixa acima das abas, porque um número recortado por uma
   versão que ficou seis horas no ar é indistinguível de um recortado por um

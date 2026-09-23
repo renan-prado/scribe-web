@@ -46,7 +46,7 @@ import { ProspectsPanel } from "./ProspectsPanel";
 
 type Props = {
   initialPartners: AdminPartnerWithStats[];
-  /** Candidatos vindos de /parceiros, ainda não avaliados. */
+  /** Candidatos vindos de /partners, ainda não avaliados. */
   prospects: AdminProspect[];
   costPerThousandCoinsCents: number;
   /** Prefixo do link de indicação, já com o domínio (ex.: https://scriba.cc/r). */

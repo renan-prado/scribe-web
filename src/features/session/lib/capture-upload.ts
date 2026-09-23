@@ -199,7 +199,7 @@ async function transcribeChunks(
 ): Promise<TranscribeResult> {
   // A duração de cada POST é proporcional ao áudio NOVO que ele carrega, e não
   // à divisão igual pelo número de pedaços: é ela que vira custo no
-  // `/admin/custos`, e o cabeçalho repetido não é minuto de sermão.
+  // `/admin/costs`, e o cabeçalho repetido não é minuto de sermão.
   const totalBytes = chunks.reduce((sum, c) => sum + chunkBodyBytes(c), 0);
   const queue = [...chunks];
   const texts: string[] = [];

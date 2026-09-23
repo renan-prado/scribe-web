@@ -7,7 +7,7 @@
 -- sobre ESSE payload, não sobre o áudio.
 --
 -- `manual` é o mesmo destino sem a origem: a pessoa escreve os blocos à mão em
--- `/escrever`. É o mesmo argumento que trouxe o `youtube` para dentro de
+-- `/summary/new`. É o mesmo argumento que trouxe o `youtube` para dentro de
 -- `sessions` em 0048 — o que um texto escrito precisa SER (linha na
 -- Biblioteca, título, autor, local, resumo, busca, estudo um dia) é
 -- exatamente o que uma sessão já é, e um conceito novo ao lado dela duplicaria

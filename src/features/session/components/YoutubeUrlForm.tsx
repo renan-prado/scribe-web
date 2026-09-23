@@ -31,18 +31,18 @@ import { cn } from "@/lib/utils";
  * perguntas, e amontoá-las num controle só piorava as duas.
  *
  * **Ela é só o MIOLO, não a tela inteira.** O `<main>`, a barra do topo e o
- * voltar são do `/importar`; daqui saiu o link "← Biblioteca" que ficava acima
+ * voltar são do `/import`; daqui saiu o link "← Biblioteca" que ficava acima
  * do título, porque com o voltar na barra a mesma saída aparecia duas vezes na
  * mesma tela, a três centímetros uma da outra.
  *
  * A tela não cria a sessão e não importa nada: ela valida o link e cria a linha
- * (`mode: "youtube"`), depois empurra para `/importar/:id`, que é onde
+ * (`mode: "youtube"`), depois empurra para `/import/:id`, que é onde
  * a cobrança e o trabalho acontecem. É a mesma divisão dos três modos de
  * gravação, o diálogo cria a linha, a página de gravação faz o trabalho.
  *
  * ## O campo pode chegar PREENCHIDO, e mesmo assim ninguém importa sozinho
  *
- * `/importar?url=…` (ver a página) entrega o link já no campo. O botão continua
+ * `/import?url=…` (ver a página) entrega o link já no campo. O botão continua
  * sendo o único caminho: a rota seguinte COBRA 30 moedas, e uma URL que
  * importa por conta própria transforma um link colado num grupo — ou um
  * prefetch — em débito. O preenchimento economiza a colagem, não a decisão.
@@ -53,7 +53,7 @@ const MAX_HOURS = Math.round(YOUTUBE_MAX_DURATION_MS / 3_600_000);
 type Props = {
   /** Link já validado pela página, vindo de `?url=` / `?text=`. */
   initialUrl?: string;
-  /** Recorte sugerido pela URL (`?inicio=`/`?fim=`, ou o `t=` do link). */
+  /** Recorte sugerido pela URL (`?start=`/`?end=`, ou o `t=` do link). */
   initialStartMs?: number | null;
   initialEndMs?: number | null;
 };
@@ -140,7 +140,7 @@ export function YoutubeUrlForm({ initialUrl = "", initialStartMs, initialEndMs }
       mode: "youtube",
       sourceUrl: url.trim(),
       // O recorte vai para a LINHA, e é por isso que ele viaja aqui e não no
-      // POST da importação: `/importar/:id` redispara aquela rota a cada
+      // POST da importação: `/import/:id` redispara aquela rota a cada
       // reload, e um recorte que morasse no cliente viraria, num "atrás" do
       // navegador, o vídeo inteiro cobrado pelo mesmo preço.
       startMs: clip?.startMs ?? null,
@@ -152,12 +152,12 @@ export function YoutubeUrlForm({ initialUrl = "", initialStartMs, initialEndMs }
       return;
     }
     // `loading` segue ligado: a linha já existe e a próxima página é dinâmica.
-    router.push(`/importar/${result.id}`);
+    router.push(`/import/${result.id}`);
   }
 
   return (
     // `<div>`, e não o `<main>` que ele já foi: quem monta a página é o
-    // `/importar`, e o `<main>` é de lá. Dois deles aninhados é HTML inválido, e
+    // `/import`, e o `<main>` é de lá. Dois deles aninhados é HTML inválido, e
     // o de fora é que carrega a barra do topo e o pé da tela. A medida própria
     // (`max-w-lg`, mais estreita que os 640px da página) fica, é a largura em
     // que um campo só não vira uma linha de ponta a ponta.

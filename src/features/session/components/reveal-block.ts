@@ -16,7 +16,7 @@
  *
  * ## As duas telas chamam isto em momentos diferentes, e é inevitável
  *
- * No editor (`/escrever`) o bloco entra no rascunho local: o nó existe no
+ * No editor (`/summary/new`) o bloco entra no rascunho local: o nó existe no
  * quadro seguinte, e quem chama espera o commit do React (ver `revealIndex` no
  * `Composer`). Na leitura (`/summary`) inserir é um POST mais um
  * `router.refresh()`, e o nó certo só existe quando o payload novo desce do

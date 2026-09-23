@@ -6,7 +6,7 @@ import { createAdminClient } from "@/lib/supabase/admin";
 /**
  * Uma sessão, EXECUÇÃO POR EXECUÇÃO.
  *
- * As abas de `/admin/custos` AGREGAM: por rota, por ação, por versão. Todas
+ * As abas de `/admin/costs` AGREGAM: por rota, por ação, por versão. Todas
  * somam tudo o que aconteceu numa sessão, e é o certo para as perguntas delas.
  * Nenhuma responde à pergunta de quem está AJUSTANDO o pipeline: "o que mudou entre a execução de ontem e a de agora?"
  *

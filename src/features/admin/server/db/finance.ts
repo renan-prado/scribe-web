@@ -43,7 +43,7 @@ import { createAdminClient } from "@/lib/supabase/admin";
  *
  * A exceção aparente é `loadMeasuredInputs`, e ela não é exceção: as somas que
  * ele faz são de `lib/finance/measured.ts`, e os números de assinatura vêm de
- * `loadAdminMetrics`, a MESMA implementação que desenha `/admin/metricas`.
+ * `loadAdminMetrics`, a MESMA implementação que desenha `/admin/metrics`.
  * Uma segunda consulta de MRR aqui seria uma segunda definição de MRR, e um
  * dia o painel financeiro e o de métricas discordariam sobre a mesma receita.
  */

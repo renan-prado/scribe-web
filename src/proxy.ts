@@ -45,9 +45,10 @@ import { SUPABASE_AUTH_COOKIE } from "@/lib/supabase/cookie";
  * do Supabase antes de procurar em outro lugar.
  *
  * Route buckets:
- *   PUBLIC, /, /sign-in, /sign-up, /recuperar, /auth/*, /about, /contact, /terms, /privacy,
- *                /parceiros/*, e as três rotas de link de entrada: /r/*, /i/*,
- *                /c/*
+ *   PUBLIC, /, /sign-in, /sign-up, /forgot-password, /auth/*, /about, /contact, /terms, /privacy,
+ *                /partners e /partners/terms (mas NÃO /partners/dashboard, ver
+ *                PROTECTED_EXCEPTIONS), e as três rotas de link de entrada:
+ *                /r/*, /i/*, /c/*
  *   PROTECTED, a known app area (KNOWN_APP_PREFIXES) behind the login
  *   UNKNOWN, neither: passed through so the Next router answers a real 404
  *
@@ -73,13 +74,19 @@ import { SUPABASE_AUTH_COOKIE } from "@/lib/supabase/cookie";
 // para /sign-in e o link de divulgação levaria a uma tela de login em vez da
 // landing page. Ver app/r/[slug]/route.ts e app/i/[code]/route.ts.
 //
-// "/parceiros" é a página de CONVITE do programa de parceiros, pública por
-// definição: quem a lê ainda não tem conta. Ela não se confunde com
-// "/partners", que é o PAINEL e segue atrás do login, em KNOWN_APP_PREFIXES,
-// o par é proposital, e o idioma é a pista: a página de venda fala português
-// como toda página pública (/importar, /indicar), o painel mantém o nome da
-// feature. Como `isPublic` casa por prefixo, "/parceiros/regulamento" entra
-// junto.
+// "/partners" é a página de CONVITE do programa de parceiros, pública por
+// definição: quem a lê ainda não tem conta. Como `isPublic` casa por prefixo,
+// "/partners/terms" entra junto, e é isso que queremos.
+//
+// **O que NÃO pode entrar junto é o painel.** Ele era "/partners" enquanto a
+// página de venda era "/parceiros", e o idioma sozinho separava os dois; com
+// os endereços todos em inglês, o painel desceu para "/partners/dashboard" e
+// passou a morar DENTRO de um prefixo público. Sem a exceção abaixo, o gate
+// do login deixaria o painel de um parceiro aberto para qualquer visitante —
+// e o erro seria silencioso, porque a página ainda tem o gate dela por
+// dentro (`getCurrentPartner()` no layout) e responderia um 404 em vez de um
+// vazamento. Silencioso é o pior jeito de uma proteção falhar, e por isso ela
+// está escrita aqui em vez de confiada ao andar de baixo.
 //
 // "/c" é o link de um CUPOM de cadastro (/c/<codigo>, migração 0055): o admin
 // emite o convite, quem o recebe ainda não tem conta, e a rota grava o cookie e
@@ -101,9 +108,9 @@ import { SUPABASE_AUTH_COOKIE } from "@/lib/supabase/cookie";
 // `/api/account/delete`, que exige sessão. O prefixo casa por segmento, então
 // "/profile" segue protegido e só esta folha escapa. Ver
 // `app/(site)/profile/delete/page.tsx` e `docs/app-store-ios.md`.
-// "/recuperar" é o "esqueci minha senha": quem chega nela é, por definição,
+// "/forgot-password" é o "esqueci minha senha": quem chega nela é, por definição,
 // quem NÃO consegue entrar. Protegida, ela mandaria a pessoa para a tela de
-// login que ela acabou de não conseguir usar. A irmã dela, "/nova-senha", é o
+// login que ela acabou de não conseguir usar. A irmã dela, "/new-password", é o
 // oposto e está em KNOWN_APP_PREFIXES: lá a pessoa já tem sessão (criada pelo
 // link do e-mail), e é justamente a sessão que faz as vezes do token na URL.
 const PUBLIC_PREFIXES = [
@@ -111,13 +118,13 @@ const PUBLIC_PREFIXES = [
   "/profile/delete",
   "/c",
   "/sign-up",
-  "/recuperar",
+  "/forgot-password",
   "/auth",
   "/terms",
   "/privacy",
   "/about",
   "/contact",
-  "/parceiros",
+  "/partners",
   "/r",
   "/i",
   "/api/referral",
@@ -145,24 +152,34 @@ const AUTH_ONLY_PREFIXES = ["/sign-in", "/sign-up"];
  */
 const KNOWN_APP_PREFIXES = [
   // A tela que define a senha nova. Protegida de propósito, ver o comentário
-  // de "/recuperar" acima.
-  "/nova-senha",
-  // O app.
+  // de "/forgot-password" acima.
+  "/new-password",
+  // O app. "/summary" cobre as três telas do mesmo documento — a leitura, o
+  // "/summary/new" da folha em branco e o "/summary/<id>/edit" do editor —, e
+  // "/subscribe" cobre a volta do Checkout: os dois eram endereços de topo
+  // ("/escrever", "/retorno") e viraram filhos do que já estava aqui.
   "/home",
   "/recording",
   "/summary",
-  "/studies",
-  "/escrever",
-  "/importar",
+  "/import",
   "/profile",
-  "/indicar",
-  "/assinar",
-  "/retorno",
+  "/refer",
+  "/subscribe",
   // Os dois painéis internos, cada um com o seu próprio gate por dentro.
   "/admin",
-  "/partners",
+  "/partners/dashboard",
   "/api",
 ];
+
+/**
+ * Caminhos que casam com um prefixo PÚBLICO mas não são públicos.
+ *
+ * Hoje há um só, e ele existe porque o painel dos parceiros mora debaixo da
+ * página de convite deles. Ver o comentário de "/partners" acima. Esta lista é
+ * conferida ANTES de `PUBLIC_PREFIXES`, então a exceção sempre ganha do
+ * prefixo que a contém.
+ */
+const PROTECTED_EXCEPTIONS = ["/partners/dashboard"];
 
 // `dev.scriba.cc` é o ambiente de desenvolvimento: mesmo projeto na Vercel,
 // domínio fixado no branch `develop`, com env vars de Preview apontando para o
@@ -199,6 +216,9 @@ const CORS_HEADERS = {
 
 function isPublic(pathname: string): boolean {
   if (pathname === "/") return true;
+  if (PROTECTED_EXCEPTIONS.some((p) => pathname === p || pathname.startsWith(`${p}/`))) {
+    return false;
+  }
   return PUBLIC_PREFIXES.some((p) => pathname === p || pathname.startsWith(`${p}/`));
 }
 
@@ -485,7 +505,7 @@ export async function proxy(request: NextRequest) {
 
   if (user && isAuthOnly(pathname)) {
     // Preserva a INTENÇÃO. Um usuário já logado que clica em "Assinar Pessoal"
-    // na landing page chega aqui com `?next=/billing/assinar?plan=pessoal`;
+    // na landing page chega aqui com `?next=/billing/subscribe?plan=pessoal`;
     // jogá-lo em /home descartaria a escolha e ele teria de recomeçar.
     const next = safeNextPath(request.nextUrl.searchParams.get("next"));
     const url = new URL(next ?? "/home", request.nextUrl.origin);

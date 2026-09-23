@@ -8,7 +8,7 @@ import { libraryKey, useSessionOwner } from "../query";
 /**
  * Quem acorda a fila das gravações guardadas. Não desenha nada.
  *
- * Ele mora no layout de `(barra)`, e não numa página, por uma razão só: uma
+ * Ele mora no layout de `(shell)`, e não numa página, por uma razão só: uma
  * gravação que não subiu precisa continuar tentando enquanto o app estiver
  * aberto, esteja a pessoa na Biblioteca, num resumo ou no perfil. Montado numa
  * página, ele morreria no primeiro toque num cartão, que é exatamente o gesto

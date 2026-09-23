@@ -7,7 +7,7 @@ import { escapeLikeValue } from "@/lib/db/like";
 import { createAdminClient } from "@/lib/supabase/admin";
 
 /**
- * O pré-parceiro: quem chegou por `/parceiros`, criou conta sem compromisso e
+ * O pré-parceiro: quem chegou por `/partners`, criou conta sem compromisso e
  * ganha moedas para conhecer o produto antes de decidir se vai divulgá-lo.
  *
  * Toda a regra mora na RPC `attach_partner_prospect` (migração 0050), a janela

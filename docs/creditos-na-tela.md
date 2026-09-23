@@ -185,10 +185,10 @@ Três regras para esse bloco:
 | `features/coins/components/CoinBalance.tsx` | os dois modos da §3 |
 | `features/coins/pricing.ts` | `COIN_RING_REFERENCE` só vale para conta gratuita |
 | `features/billing/components/BillingDialog.tsx` | o bloco da §5 |
-| `app/(app)/(barra)/layout.tsx` | lê plano e ciclo, e desce os dois |
-| `app/(app)/(barra)/profile/page.tsx` | a mesma regra na pastilha do perfil |
+| `app/(app)/(shell)/layout.tsx` | lê plano e ciclo, e desce os dois |
+| `app/(app)/(shell)/profile/page.tsx` | a mesma regra na pastilha do perfil |
 
-**O chip do header não ganhou requisição nenhuma.** O layout de `(barra)` já lia
+**O chip do header não ganhou requisição nenhuma.** O layout de `(shell)` já lia
 o saldo no servidor; passou a ler o ciclo na mesma leva e a semeá-lo pelo
 `CoinsSync`. E o ciclo viaja no MESMO `GET /api/coins/balance` que a store já
 chama para ressincronizar — os dois envelhecem pelo mesmo débito, e buscá-los

@@ -25,7 +25,7 @@ export const SummaryBlockSchema = z.discriminatedUnion("type", [
   z.object({ type: z.literal("highlight"), text: z.string() }),
   // `title` é o rótulo do cartão na tela — ausente ou vazio cai no padrão
   // "Informação" (ver `BLOCK_OPTIONS.example` em `blocks.tsx`). O tipo no
-  // jsonb continua `example`, tanto aqui quanto no schema de `/escrever`.
+  // jsonb continua `example`, tanto aqui quanto no schema de `/summary/new`.
   z.object({ type: z.literal("example"), title: z.string().optional(), text: z.string() }),
   z.object({ type: z.literal("quote"), text: z.string(), author: z.string().optional() }),
   z.object({ type: z.literal("conclusion"), text: z.string() }),
@@ -127,13 +127,13 @@ export function parseSummaryFromLLM(content: string, phase: SummaryPhase): Summa
 }
 
 /**
- * Os blocos que uma pessoa pode ESCREVER à mão em `/escrever`, e os tetos de
+ * Os blocos que uma pessoa pode ESCREVER à mão em `/summary/new`, e os tetos de
  * tamanho do que ela manda.
  *
  * **Ela é hoje o vocabulário INTEIRO do resumo**, e essa igualdade não é
  * coincidência: é o que torna seguro abrir no editor um resumo que a IA
  * escreveu. Enquanto faltava um tipo, salvar por aqui apagaria em silêncio os
- * blocos daquele tipo, e era por isso que `/escrever/:id` só aceitava sessão
+ * blocos daquele tipo, e era por isso que `/summary/:id/edit` só aceitava sessão
  * `manual` e a rota recusava o resto com 409 `not_manual`. Quem acrescentar um
  * bloco ao `SummaryBlockSchema` acrescenta aqui no MESMO commit — ou a próxima
  * edição de um resumo gerado o come sem avisar.

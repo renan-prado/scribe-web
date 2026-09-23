@@ -4,7 +4,7 @@ Regras de negócio em [`parceiros.md`](./parceiros.md). Este documento é o
 plano técnico: o que construir, em que ordem, e onde encostar no código que
 já existe.
 
-Branch: `feat/parceiros`. **Fases 0 a 7 entregues**, o que cada uma resolveu
+Branch: `feat/partners`. **Fases 0 a 7 entregues**, o que cada uma resolveu
 está no corpo do commit correspondente. As invariantes que precisam sobreviver
 a refactors foram promovidas para o `AGENTS.md`.
 
@@ -260,7 +260,7 @@ existe, `profiles.created_at`, `subscriptions`, `coin_transactions`,
   vendido e ainda não incorrido. É a métrica que ninguém lembra de olhar até
   ela doer.
 
-Tela: `/admin/metricas`, no padrão de `/admin/custos`.
+Tela: `/admin/metrics`, no padrão de `/admin/costs`.
 
 ---
 
@@ -315,7 +315,7 @@ um parceiro específico; o que não pode é ela ser escolhida às cegas.
 
 ---
 
-## Fase 6: Painel do parceiro (`/partners`)
+## Fase 6: Painel do parceiro (`/partners/dashboard`)
 
 Estrutura espelhando `src/app/admin/`:
 
@@ -368,7 +368,7 @@ Decisões conscientes, não esquecimentos:
 
 - **Sem e-mail de convite.** O parceiro é avisado fora do sistema e entra com
   a conta Google dele; o vínculo se resolve sozinho na primeira visita a
-  `/partners`. Um fluxo de convite por e-mail só se paga quando houver
+  `/partners/dashboard`. Um fluxo de convite por e-mail só se paga quando houver
   parceiros demais para avisar à mão.
 - **Sem exportação de relatório.** O painel responde às perguntas que o
   parceiro faz; um CSV é trabalho até alguém pedir.

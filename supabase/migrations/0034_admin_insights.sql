@@ -1,5 +1,5 @@
 -- Insights financeiros do painel: a leitura de UM modelo sobre os números que
--- /admin/precificacao, /admin/usage e /admin/metricas já publicam.
+-- /admin/precificacao, /admin/usage e /admin/metrics já publicam.
 --
 -- POR QUE UMA TABELA, e não um cookie como a régua de `lib/coins/settings.ts`:
 -- a régua é preferência de quem está olhando, e vale por navegador. Isto é o

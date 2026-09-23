@@ -24,7 +24,7 @@ import { cn } from "@/lib/utils";
  * Uma sessão aberta EXECUÇÃO POR EXECUÇÃO.
  *
  * Existe para uma pergunta que nenhuma outra tela responde: **o que mudou
- * entre a execução de ontem e a de agora?** Os cards acima e `/admin/custos`
+ * entre a execução de ontem e a de agora?** Os cards acima e `/admin/costs`
  * agregam, e um reprocessamento soma na mesma sessão, o número resultante não
  * descreve nenhuma das duas execuções.
  *

@@ -30,7 +30,7 @@ import { AdminTabs } from "./AdminTabs";
 const CONTENT_TABS = [
   { key: "sessoes", href: "/admin/sessions", label: "Sessões" },
   { key: "feedback", href: "/admin/feedback", label: "Feedback" },
-  { key: "lexico", href: "/admin/lexico", label: "Léxico" },
+  { key: "lexico", href: "/admin/lexicon", label: "Léxico" },
 ] as const;
 
 export function ContentTabs({ active }: { active: "sessoes" | "feedback" | "lexico" }) {
@@ -47,7 +47,7 @@ export function ContentTabs({ active }: { active: "sessoes" | "feedback" | "lexi
 
 const GROWTH_TABS = [
   { key: "parceiros", href: "/admin/partners", label: "Parceiros" },
-  { key: "cupons", href: "/admin/cupons", label: "Cupons de convite" },
+  { key: "cupons", href: "/admin/coupons", label: "Cupons de convite" },
 ] as const;
 
 export function GrowthTabs({ active }: { active: "parceiros" | "cupons" }) {

@@ -2,7 +2,7 @@
 -- acendem. E os "Autores citados" saem.
 --
 -- POR QUE ISTO É UMA MIGRAÇÃO, e não trabalho no painel. O cadastro do
--- `/admin/lexico` existe justamente para que escrever cartão não precise de
+-- `/admin/lexicon` existe justamente para que escrever cartão não precise de
 -- deploy, e foi por ele que as primeiras 39 entradas foram escritas. Só que ele
 -- escreve num banco SÓ: o que foi preenchido em dev ficou em dev, e produção
 -- continuou com as 258 linhas nascidas como rascunho na 0063, ou seja, com o

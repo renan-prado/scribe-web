@@ -9,7 +9,7 @@ import { createAdminClient } from "@/lib/supabase/admin";
  * Leitura do CONTEÚDO das sessões, transversal a usuários, para `/admin/sessions`.
  *
  * Existe por uma pergunta que nenhuma das outras telas responde: **o que saiu
- * está bom?** `/admin/custos` diz quanto custou, `/admin/metricas` diz quantas
+ * está bom?** `/admin/costs` diz quanto custou, `/admin/metrics` diz quantas
  * foram e `/admin/feedback` diz que nota deram, mas nenhuma delas mostra o
  * texto que a pessoa de fato leu. Nos primeiros usuários esse texto é a única evidência de
  * qualidade que existe: uma nota "razoável" não diz se o resumo inventou uma

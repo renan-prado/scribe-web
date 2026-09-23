@@ -108,7 +108,7 @@ const nextConfig: NextConfig = {
       { protocol: "https", hostname: "lh3.googleusercontent.com", pathname: "/**" },
       /**
        * A MINIATURA do vídeo que está sendo importado, na tela de espera do
-       * `/importar/:id`.
+       * `/import/:id`.
        *
        * Mesmo argumento do avatar acima: a alternativa não era "nenhuma
        * imagem", era um `<img>` cru para host externo, que a regra proíbe. Por
@@ -189,16 +189,63 @@ const nextConfig: NextConfig = {
       { source: "/feed", destination: "/home", permanent: true },
       { source: "/recordings", destination: "/home", permanent: true },
       { source: "/list", destination: "/home", permanent: true },
-      // A cobrança saiu de `/billing/*`.
-      { source: "/billing/assinar", destination: "/assinar", permanent: true },
-      { source: "/billing/retorno", destination: "/retorno", permanent: true },
+      // A cobrança saiu de `/billing/*`, e depois o português saiu das URLs.
+      { source: "/billing/assinar", destination: "/subscribe", permanent: true },
+      { source: "/billing/retorno", destination: "/subscribe/return", permanent: true },
       // Tudo que pertencia a uma sessão morava sob `/recording/:id/`, mesmo o
       // que não era gravação. `/recording` hoje é o gravador, e mais nada.
       { source: "/recording/:id/summary", destination: "/summary/:id", permanent: true },
-      { source: "/recording/:id/deepening", destination: "/studies/:id", permanent: true },
-      { source: "/recording/:id/youtube", destination: "/importar/:id", permanent: true },
+      { source: "/recording/:id/youtube", destination: "/import/:id", permanent: true },
       // O nome mais antigo de todos.
       { source: "/session/:id", destination: "/summary/:id", permanent: true },
+      /**
+       * **O português saiu das URLs.** O produto nasceu com os endereços
+       * públicos em pt-BR (`/escrever`, `/importar`, `/parceiros`) e os
+       * internos em inglês, e a fronteira entre os dois nunca foi uma regra
+       * que se pudesse aplicar: era caso a caso, e cada rota nova reabria a
+       * discussão. Hoje TODO endereço é inglês e nenhum texto de tela mudou.
+       *
+       * Estes redirects são o que impede que a troca quebre o que já está no
+       * mundo: `/parceiros` está impresso em material de divulgação e
+       * indexado, `/importar?url=` é o que o compartilhar-com-o-Scriba manda,
+       * e `/escrever/<id>` está no histórico de quem escreveu.
+       */
+      { source: "/escrever", destination: "/summary/new", permanent: true },
+      { source: "/escrever/:id", destination: "/summary/:id/edit", permanent: true },
+      { source: "/importar", destination: "/import", permanent: true },
+      { source: "/importar/:id", destination: "/import/:id", permanent: true },
+      { source: "/assinar", destination: "/subscribe", permanent: true },
+      { source: "/retorno", destination: "/subscribe/return", permanent: true },
+      { source: "/indicar", destination: "/refer", permanent: true },
+      { source: "/nova-senha", destination: "/new-password", permanent: true },
+      { source: "/recuperar", destination: "/forgot-password", permanent: true },
+      /**
+       * A página de convite dos parceiros era `/parceiros` e o painel deles
+       * `/partners`, um par que só se sustentava enquanto o idioma separava os
+       * dois. Em inglês os dois querem o mesmo endereço, e quem fica com ele é
+       * a PÚBLICA: é a que está divulgada, indexada e no sitemap. O painel
+       * desceu um degrau, para `/partners/dashboard`.
+       *
+       * **O `/partners` antigo, o do painel, não tem redirect e não pode
+       * ter**: ele é agora o endereço da landing. Um parceiro com o painel nos
+       * favoritos cai na página de convite, que traz o link para entrar. É a
+       * única perda da troca, e ela atinge poucas pessoas que entram no painel
+       * todo mês pelo menu da conta.
+       */
+      { source: "/parceiros", destination: "/partners", permanent: true },
+      { source: "/parceiros/regulamento", destination: "/partners/terms", permanent: true },
+      { source: "/parceiros/entrar", destination: "/partners/join", permanent: true },
+      /**
+       * O modo estudo saiu do produto. O acesso já tinha sido tirado da
+       * interface num commit anterior; agora as telas foram junto. Um link
+       * antigo de `/studies/<id>` aponta para a sessão que gerou o estudo, que
+       * é o que a pessoa procurava ao guardá-lo, e `/studies` sozinho volta
+       * para a Biblioteca. O que foi gerado continua no banco e continua
+       * legível em `/admin/sessions/:id`.
+       */
+      { source: "/studies", destination: "/home", permanent: true },
+      { source: "/studies/:id", destination: "/summary/:id", permanent: true },
+      { source: "/recording/:id/deepening", destination: "/summary/:id", permanent: true },
       // O painel passou de dezessete itens de menu para oito, e os recortes
       // viraram ABAS. Estes seis endereços eram telas; hoje são abas, e cada
       // redirect aponta para a aba que absorveu a tela. Eles existem porque o
@@ -206,20 +253,42 @@ const nextConfig: NextConfig = {
       // de `/admin/usage` responde 404, que se lê como "a funcionalidade
       // sumiu" e não como "mudou de endereço". A query sobrevive sozinha, o
       // que importa em `?sessionId=`, o parâmetro do inspetor de execuções.
-      { source: "/admin/usage", destination: "/admin/custos?aba=rotas", permanent: true },
-      { source: "/admin/precificacao", destination: "/admin/custos", permanent: true },
+      { source: "/admin/usage", destination: "/admin/costs?tab=routes", permanent: true },
+      { source: "/admin/precificacao", destination: "/admin/costs", permanent: true },
       { source: "/admin/insights", destination: "/admin", permanent: true },
-      { source: "/admin/features", destination: "/admin/configuracoes", permanent: true },
+      { source: "/admin/features", destination: "/admin/settings", permanent: true },
       {
         source: "/admin/financeiro/compromissos",
-        destination: "/admin/financeiro/lancamentos?visao=aberto",
+        destination: "/admin/finance/entries?view=open",
         permanent: true,
       },
       {
         source: "/admin/financeiro/configuracoes",
-        destination: "/admin/configuracoes?aba=financeiro",
+        destination: "/admin/settings?tab=finance",
         permanent: true,
       },
+      // E os endereços do painel que o português deixou para trás.
+      { source: "/admin/configuracoes", destination: "/admin/settings", permanent: true },
+      { source: "/admin/cupons", destination: "/admin/coupons", permanent: true },
+      { source: "/admin/custos", destination: "/admin/costs", permanent: true },
+      { source: "/admin/financeiro", destination: "/admin/finance", permanent: true },
+      {
+        source: "/admin/financeiro/lancamentos",
+        destination: "/admin/finance/entries",
+        permanent: true,
+      },
+      {
+        source: "/admin/financeiro/projecoes",
+        destination: "/admin/finance/scenarios",
+        permanent: true,
+      },
+      {
+        source: "/admin/financeiro/recorrentes",
+        destination: "/admin/finance/recurring",
+        permanent: true,
+      },
+      { source: "/admin/lexico", destination: "/admin/lexicon", permanent: true },
+      { source: "/admin/metricas", destination: "/admin/metrics", permanent: true },
     ];
   },
 };

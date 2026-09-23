@@ -10,9 +10,9 @@ import { SITE_URL } from "@/lib/seo";
  * ranquear e o `?next=` multiplica variantes da mesma página. Ambas seguem
  * rastreáveis (só não são candidatas a índice), ver `app/robots.ts`.
  *
- * O resto do app (/feed, /recordings, /studies, /recording/*, /billing/*) está
- * atrás do `proxy.ts`: para um rastreador aquilo é `307 → /sign-in`, então
- * listar qualquer uma delas seria pedir um erro de cobertura.
+ * O resto do app (/home, /recording, /summary/*, /import/*) está atrás do
+ * `proxy.ts`: para um rastreador aquilo é `307 → /sign-in`, então listar
+ * qualquer uma delas seria pedir um erro de cobertura.
  */
 
 /** Data das páginas legais, bate com o "Última atualização" renderizado nelas.
@@ -52,13 +52,13 @@ export default function sitemap(): MetadataRoute.Sitemap {
       priority: 0.4,
     },
     {
-      url: `${SITE_URL}/parceiros`,
+      url: `${SITE_URL}/partners`,
       lastModified: PARTNERS_LAST_MODIFIED,
       changeFrequency: "monthly",
       priority: 0.6,
     },
     {
-      url: `${SITE_URL}/parceiros/regulamento`,
+      url: `${SITE_URL}/partners/terms`,
       lastModified: PARTNERS_LAST_MODIFIED,
       changeFrequency: "yearly",
       priority: 0.3,

@@ -105,7 +105,7 @@ export function parseClipRange(
  * `"12:30"`, `"1:02:30"`, `"12"` → ms. Devolve `null` para o que não é um
  * tempo, e `0` é uma resposta válida (o começo do vídeo).
  *
- * **Um número solto é lido como MINUTOS**, não segundos: quem escreve `?inicio=12`
+ * **Um número solto é lido como MINUTOS**, não segundos: quem escreve `?start=12`
  * está dizendo o minuto em que a pregação começa. Ler como segundos devolveria
  * os doze primeiros segundos do culto, um erro silencioso que só aparece no
  * resumo pronto. O FORMULÁRIO não produz mais número solto — o `maskTimecode`
@@ -312,7 +312,7 @@ export function extractYoutubeUrl(text: string): ParsedYoutubeUrl | null {
  * vídeo que nunca foi enviado em HD, o que daria um quadrado quebrado na tela
  * de espera.
  *
- * Quem consome é o `/importar/:id`, por `next/image` (ver o `remotePatterns`
+ * Quem consome é o `/import/:id`, por `next/image` (ver o `remotePatterns`
  * do `next.config.ts`): host externo em `<img>` cru é proibido, ver
  * `src/app/AGENTS.md`.
  */

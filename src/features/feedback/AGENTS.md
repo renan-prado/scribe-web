@@ -90,9 +90,15 @@ na décima gravação é exatamente a pessoa que ainda está aqui.
 | Página | `kind` | Atraso | Pergunta sobre |
 |---|---|---|---|
 | `/summary/:id` | `recording` | 5s | o resumo |
-| `/studies/:id` | `study` | 8s | o estudo |
 
 Os atrasos e o porquê de cada um estão em `config.ts`.
+
+**`study` é o terceiro `kind` que sobrevive só no enum, pela mesma razão de
+`live`/`transcript` acima.** `/studies/:id`, de onde ele era disparado, saiu do
+produto junto com o resto do modo estudo; o `z.enum(["recording", "study"])`
+de `/api/feedback/prompt` e a união de tipos em `FeedbackPrompt`/`api.ts`
+continuam aceitando o valor porque há notas antigas gravadas com ele, e o
+painel as lê. Nenhum componente monta `kind="study"` hoje.
 
 ## O painel
 

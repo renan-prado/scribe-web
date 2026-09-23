@@ -118,7 +118,7 @@ export async function POST(request: Request) {
   // importaram este vídeo?".
   let sourceUrl: string | null = null;
   // O recorte do vídeo, quando a pessoa pediu um trecho. Ele nasce JUNTO com a
-  // linha, e não no POST da importação, porque `/importar/:id` redispara a
+  // linha, e não no POST da importação, porque `/import/:id` redispara a
   // importação a cada reload: no corpo daquela rota, um "atrás" do navegador
   // importaria o vídeo inteiro pelo mesmo preço. Ver a migração 0060.
   let startMs: number | null = null;

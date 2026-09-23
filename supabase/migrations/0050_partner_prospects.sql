@@ -1,4 +1,4 @@
--- Pré-parceiro: quem chega por /parceiros, cria conta SEM COMPROMISSO e ganha
+-- Pré-parceiro: quem chega por /partners, cria conta SEM COMPROMISSO e ganha
 -- moedas para conhecer o produto antes de decidir se quer divulgá-lo.
 --
 -- POR QUE UMA TABELA NOVA, E NÃO UM STATUS EM `partners`.
@@ -17,7 +17,7 @@
 -- abas simultâneas, nem num caminho de código que ainda não existe.
 --
 -- O TETO É GLOBAL, e é o ponto mais importante deste arquivo.
--- `/parceiros` é uma página PÚBLICA: qualquer pessoa com uma conta Google nova
+-- `/partners` é uma página PÚBLICA: qualquer pessoa com uma conta Google nova
 -- pode passar por ela e pedir as moedas. Diferente do bônus de indicação, que
 -- só existe se um parceiro real divulgou um link e tem `bonus_budget_coins`
 -- para segurá-lo, aqui não há ninguém do outro lado limitando nada. Sem um
@@ -49,7 +49,7 @@ create table if not exists public.partner_prospects (
 );
 
 comment on table public.partner_prospects is
-  'Candidatos a parceiro que criaram conta por /parceiros. Sem slug, sem comissão, sem PIX, ver 0050.';
+  'Candidatos a parceiro que criaram conta por /partners. Sem slug, sem comissão, sem PIX, ver 0050.';
 comment on column public.partner_prospects.coins_granted is
   'Moedas de cortesia efetivamente creditadas. 0 = teto global estourado. Controle, não ledger.';
 
@@ -64,7 +64,7 @@ create index if not exists partner_prospects_status_idx
 --   ok | already_prospect | not_new | already_partner | already_attributed | capped
 --
 -- A JANELA DE CONTA NOVA (30 min) é a mesma de `attach_partner`, e pelo mesmo
--- motivo: sem ela, um usuário de um ano atrás que abrisse /parceiros ganharia
+-- motivo: sem ela, um usuário de um ano atrás que abrisse /partners ganharia
 -- as moedas no login seguinte, e de novo a cada vez que limpasse o cookie.
 --
 -- `already_attributed` recusa quem JÁ ganhou bônus por ter entrado pelo link de

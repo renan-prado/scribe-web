@@ -68,7 +68,7 @@ export type BibloDockHandle = { open: () => void };
  *
  * ## O gatilho no celular mudou de dono
  *
- * `/summary` e `/escrever` têm hoje uma `MobileActionBar` própria, com o
+ * `/summary` e `/summary/new` têm hoje uma `MobileActionBar` própria, com o
  * "Pergunte ao Biblo" dentro dela — e não mais o disco flutuante que este
  * componente desenhava sozinho no canto. `hideMobileTrigger` esconde esse
  * disco só no celular (`max-md:hidden`); no desktop ele continua existindo,
@@ -85,7 +85,7 @@ export const BibloDock = forwardRef<
      * Garante que a linha da sessão exista no banco antes de uma pergunta, e
      * devolve o id dela (`null` quando o salvamento falhou).
      *
-     * Só o `/escrever` passa: lá o id é do APARELHO e a linha nasce no primeiro
+     * Só o `/summary/new` passa: lá o id é do APARELHO e a linha nasce no primeiro
      * salvamento, então sem isto a primeira pergunta esbarraria numa sessão que
      * não existe. Ver o cabeçalho do `Composer`.
      */

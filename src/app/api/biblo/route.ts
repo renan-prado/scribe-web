@@ -75,7 +75,7 @@ function toMessage(row: BibloRow): BibloMessage {
  * resumo (ver `biblo/opening.ts`), então abrir a gaveta é de graça em todos os
  * sentidos da palavra.
  *
- * **E ela não exige que a sessão EXISTA.** No `/escrever` o id é sorteado no
+ * **E ela não exige que a sessão EXISTA.** No `/summary/new` o id é sorteado no
  * aparelho quando a folha abre, e a linha só nasce no primeiro salvamento — que
  * só acontece depois de a pessoa digitar (ver `escrever/useWrittenDraft.ts`,
  * que mantém de propósito a invariante "linha vazia no banco é impossível").
@@ -110,9 +110,9 @@ export async function GET(request: Request) {
       summary: session?.finalSummary ?? null,
       speakerName: session?.speakerName ?? null,
       firstName: auth.user.firstName,
-      // O `/escrever` é o único modo em que o texto na tela é de quem está
+      // O `/summary/new` é o único modo em que o texto na tela é de quem está
       // lendo esta frase — e é o que decide entre "escrevendo" e "lendo". Sem
-      // linha no banco só se chega aqui pelo `/escrever`, então `true`.
+      // linha no banco só se chega aqui pelo `/summary/new`, então `true`.
       authored: session ? session.mode === "manual" : true,
       introduce,
     }),

@@ -30,7 +30,7 @@ const log = createLogger("usage");
  *   POST /rest/v1/llm_usage_events { user_id: <o meu>, route: 'transcribe',
  *                                    model: 'gpt-5.1', total_cost_usd: 12345.67 }
  *
- * direto com o anon key, e o custo forjado entrava em `/admin/custos`, os
+ * direto com o anon key, e o custo forjado entrava em `/admin/costs`, os
  * números que decidem o preço da moeda e medem a margem. Reproduzido em dev: HTTP 201. É a mesma lição de `charge_coins`
  * (migração 0037): o gate na rota não protege o que a policy concede por fora
  * dela. A policy foi derrubada na 0039.
@@ -55,7 +55,7 @@ const log = createLogger("usage");
  *
  * Ela governa só o que se escreve daqui em diante — e, desde que virou VALOR e
  * não só tipo, é também quem decide o que ganha linha própria na aba "Rotas"
- * de /admin/custos: o que não está aqui já não é gerado e some dentro de
+ * de /admin/costs: o que não está aqui já não é gerado e some dentro de
  * "outras", ver `features/admin/server/db/usage.ts`. Acrescentar uma rota nova
  * aqui é, portanto, o mesmo gesto que lhe dar uma linha no painel.
  */
@@ -75,7 +75,7 @@ export const USAGE_ROUTES = [
   // alguém leria o custo por importação sem saber que há duas chamadas ali.
   "youtube-metadata",
   // As três etapas de LLM do estudo (`lib/study/generate.ts`). Separadas de
-  // propósito: é o que permite ver em /admin/custos quanto custa PERGUNTAR,
+  // propósito: é o que permite ver em /admin/costs quanto custa PERGUNTAR,
   // quanto custa RESPONDER e quanto custa ESCREVER, e portanto onde vale subir
   // ou baixar de modelo. Um "deepening" único não respondia a isso.
   "study-questions",

@@ -20,7 +20,7 @@ export const dynamic = "force-dynamic";
  * gravação por um defeito nosso, ou destravar um suporte, significava abrir a
  * tabela `profiles` e somar um número na mão — sem lançamento no ledger, sem
  * autor, sem motivo, e com o dedo a uma tecla de editar a linha errada. Um
- * crédito feito assim não aparece em `/admin/custos`, não entra no passivo de
+ * crédito feito assim não aparece em `/admin/costs`, não entra no passivo de
  * moedas e não tem como ser auditado depois.
  *
  * ## Ela NÃO é uma segunda porta de crédito

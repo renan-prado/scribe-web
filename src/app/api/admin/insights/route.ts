@@ -21,7 +21,7 @@ export const maxDuration = 300;
  * card de cada tela DISPARAVA a geração sozinho quando a linha gravada passava
  * de 24 horas. A rota reconferia a validade para que "uma vez por dia" não
  * virasse "uma vez por aba", e nada disso era pedido por ninguém: quem abria
- * `/admin/metricas` para conferir o MRR pagava um modelo de raciocínio.
+ * `/admin/metrics` para conferir o MRR pagava um modelo de raciocínio.
  *
  * Sem disparo automático, a conferência de validade some junto: não há o que
  * proteger contra recarregar a página, porque recarregar não gera nada. O que

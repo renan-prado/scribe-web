@@ -55,7 +55,7 @@ Contexto factual que muda o plano. Nada aqui é opinião, é o que está no repo
 - `src/lib/domain/deepening.ts`: reusa `SummaryPayload` (mesmo renderer).
 - `src/lib/db/deepenings.ts`: persistência.
 - Migration `0009_session_deepenings.sql`.
-- Custo já rastreado via `recordChatUsage({ route: "deepening", ... })` e visível em `/admin/custos`.
+- Custo já rastreado via `recordChatUsage({ route: "deepening", ... })` e visível em `/admin/costs`.
 
 **Consequência**: a "integração ao Aprofundar" do GPT (Fase 4 do dele) é substituir o `userMessage` da rota, adicionar um bloco `FONTES DE APOIO` antes da chamada `callChat`. Não é feature nova.
 
@@ -77,9 +77,9 @@ Contexto factual que muda o plano. Nada aqui é opinião, é o que está no repo
 
 ### 1.4 Admin já é infra viva
 
-- `/admin`, `/admin/users`, `/admin/custos` existem, com layout, `AdminPageHeader`, role check.
+- `/admin`, `/admin/users`, `/admin/costs` existem, com layout, `AdminPageHeader`, role check.
 - Migration `0007_admin_role.sql` estabelece o modelo de permissão.
-- Custo por rota + FX BRL já é renderizado (`/admin/custos`).
+- Custo por rota + FX BRL já é renderizado (`/admin/costs`).
 - Adicionar `/admin/knowledge` é uma extensão natural, não é criar o admin.
 
 ### 1.5 Ainda não existe: o que o GPT propõe é genuinamente novo
@@ -198,7 +198,7 @@ Cada `session_deepenings`, cada `session_feed_items.speakerHighlight`, cada `fin
 
 `text-embedding-3-small` a $0.02/M tokens é barato mas não zero. Auto-indexar cada `final_summary` da produção sem medir vai virar linha no `llm_usage_events` que ninguém previu.
 
-**Sugestão**: nova migration `llm_embedding_usage_events` (ou coluna `event_kind='embedding'` em `llm_usage_events`), integrar com `src/lib/llm/pricing.ts` que já existe. O admin `/admin/custos` já mostra por rota; adicionar "embeddings" como rota é 1 linha.
+**Sugestão**: nova migration `llm_embedding_usage_events` (ou coluna `event_kind='embedding'` em `llm_usage_events`), integrar com `src/lib/llm/pricing.ts` que já existe. O admin `/admin/costs` já mostra por rota; adicionar "embeddings" como rota é 1 linha.
 
 #### (c) Shadow mode antes de rewrite
 

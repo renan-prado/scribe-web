@@ -32,7 +32,7 @@ import type { SessionListItem } from "@/lib/domain/session";
  *
  * ## De onde vem o id
  *
- * Do layout de `(barra)`, que já leu a conta para desenhar o avatar (ver
+ * Do layout de `(shell)`, que já leu a conta para desenhar o avatar (ver
  * `SessionOwnerProvider`). Não custa consulta nenhuma, e é o mesmo id que a RLS
  * usa do outro lado.
  */

@@ -51,7 +51,7 @@ export function NewPasswordForm() {
             Este link expirou ou já foi usado. Peça outro na página de recuperação.
           </AuthAlert>
           <Link
-            href="/recuperar"
+            href="/forgot-password"
             className="text-center text-[12px] font-light text-scriba-ink-mute underline underline-offset-2 transition-colors hover:text-scriba-ink-soft"
           >
             Pedir um novo link

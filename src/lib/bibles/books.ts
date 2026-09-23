@@ -192,7 +192,7 @@ export function chapterVerseCount(bookFullName: string, chapter: number): number
  * os acentos antes da busca) e a ordem dele é a de escrita, não a da Bíblia.
  *
  * Esta lista existe para OFERECER: é dela que sai o seletor de passagem do
- * editor de `/escrever`. O `name` é a forma canônica — com acento, com o
+ * editor de `/summary/new`. O `name` é a forma canônica — com acento, com o
  * numeral arábico — e é ele que entra na referência gravada no bloco
  * (`"1 Coríntios 13:4-7"`), o que fecha o círculo: `normalizeBookName(name)`
  * cai numa chave de `BOOK_ABBREVS`, e o `abbrev` ao lado é o mesmo que a busca

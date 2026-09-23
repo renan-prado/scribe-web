@@ -84,7 +84,7 @@ export type TourDefinition = {
   steps: readonly TourStep[];
 };
 
-export const TOUR_KEYS = ["library", "recording", "summary", "studies", "study"] as const;
+export const TOUR_KEYS = ["library", "recording", "summary"] as const;
 
 export type TourKey = (typeof TOUR_KEYS)[number];
 
@@ -93,13 +93,15 @@ export function isTourKey(value: unknown): value is TourKey {
 }
 
 /**
- * **Eram oito chaves, e cinco delas descreviam telas que não existem mais.**
+ * **Eram dez chaves, e sete delas descreviam telas que não existem mais.**
  * `feed` era o Início; `recordings` era a Biblioteca antes de ela virar a
- * primeira tela; e `capture_live`, `capture_audio` e `capture_transcribe` eram
- * os três modos de gravação, que viraram um. As chaves novas não reaproveitam
- * os nomes antigos de propósito: quem viu a apresentação do `recordings` viu
- * OUTRA tela, e mostrá-la de novo é o certo, não um bug. As linhas velhas
- * ficam em `user_tours` sem chave correspondente, inertes.
+ * primeira tela; `capture_live`, `capture_audio` e `capture_transcribe` eram
+ * os três modos de gravação, que viraram um; e `studies`/`study` eram a lista
+ * de Estudos e o estudo pronto, que saíram do produto com a rota. As chaves
+ * novas não reaproveitam os nomes antigos de propósito: quem viu a
+ * apresentação do `recordings` viu OUTRA tela, e mostrá-la de novo é o certo,
+ * não um bug. As linhas velhas ficam em `user_tours` sem chave
+ * correspondente, inertes.
  */
 export const TOURS: Record<TourKey, TourDefinition> = {
   library: {
@@ -177,7 +179,7 @@ export const TOURS: Record<TourKey, TourDefinition> = {
         /**
          * Daqui até o fim, os três alvos existem DUAS vezes — no painel do
          * `CreateDock`, no celular, e nos chips da barra do topo, no desktop
-         * (`(app)/(barra)/components/CreateActions.tsx`). Um dos dois está sempre em
+         * (`(app)/(shell)/components/CreateActions.tsx`). Um dos dois está sempre em
          * `display: none`, e `resolveAnchor` fica com o visível, então os
          * mesmos três passos servem às duas larguras sem um `if` de tamanho de
          * tela em lugar nenhum.
@@ -269,57 +271,6 @@ export const TOURS: Record<TourKey, TourDefinition> = {
         anchor: '[data-tour="session-menu"]',
         title: "As opções do resumo",
         body: "Aqui ficam o reprocessamento do resumo, o aviso de erro (se o Scriba escrever algo que não foi dito) e a exclusão. Para ler o texto bruto da pregação, deslize o resumo para o lado.",
-      },
-    ],
-  },
-
-  studies: {
-    version: 1,
-    label: "Estudos",
-    steps: [
-      {
-        id: "intro",
-        title: "Estudos teológicos",
-        body: "A partir de qualquer resumo você pode pedir um estudo: contexto da passagem, tese central e desdobramentos. Ele é gerado uma vez por sessão e mora aqui.",
-      },
-      {
-        /**
-         * A LUPA, pela mesma razão do passo irmão na Biblioteca: a barra
-         * (`[data-tour="collection-search"]`) agora nasce fechada aqui também,
-         * e um passo ancorado nela seria descartado em silêncio.
-         *
-         * Trocar o alvo NÃO sobe a `version`: é o mesmo passo, dizendo a mesma
-         * coisa, apontando para onde a busca passou a morar. Subir a versão
-         * reabriria o tour inteiro dos Estudos na cara de toda a base.
-         */
-        id: "search",
-        anchor: '[data-tour="studies-search"]',
-        title: "Busque por tema ou versículo",
-        body: "A lupa procura pelo estudo do qual você só lembra de um trecho — por tema, por autor ou por um versículo.",
-      },
-    ],
-  },
-
-  study: {
-    version: 1,
-    label: "Estudo pronto",
-    steps: [
-      {
-        id: "intro",
-        title: "Seu estudo está pronto",
-        body: "Ele foi escrito sobre a pregação inteira, não sobre o resumo. Leia com calma: é para estudo, não para consulta rápida.",
-      },
-      {
-        id: "thesis",
-        anchor: '[data-tour="study-thesis"]',
-        title: "A tese central",
-        body: "Se você só puder ler uma coisa, leia esta. O resto do estudo desenvolve o que está escrito aqui.",
-      },
-      {
-        id: "menu",
-        anchor: '[data-tour="study-menu"]',
-        title: "Refazer o estudo",
-        body: "Se o resultado não ficou bom, dá para gerar de novo por aqui. O estudo anterior é substituído.",
       },
     ],
   },

@@ -46,7 +46,7 @@ export const COIN_COSTS = {
    *
    * Só a transcrição já come R$ 0,032 dos R$ 0,100 que 5 moedas rendem à régua
    * de `DEFAULT_COIN_PRICE_PER_THOUSAND_BRL`; o resumo final vem por cima.
-   * Reconfira em `/admin/custos` assim que houver execução nova medida.
+   * Reconfira em `/admin/costs` assim que houver execução nova medida.
    */
   recordingMinute: 5,
   /**
@@ -165,7 +165,7 @@ export const COIN_COSTS = {
    * baixar um preço e caro subir: cair para 1 depois da medição em produção é
    * um presente que se anuncia, subir de 1 para 2 é a única mudança de preço
    * que gera reclamação. A medição acima é de BANCADA, com um resumo pequeno e
-   * sem conversa longa atrás — reconfira em `/admin/custos` (linha "Biblo")
+   * sem conversa longa atrás — reconfira em `/admin/costs` (linha "Biblo")
    * assim que houver tráfego real, olhando a fatia de chamadas que pegou cache.
    *
    * A elegância de "uma moeda por mensagem" não compra nada aqui porque **o
@@ -219,7 +219,7 @@ export const COIN_COSTS = {
    * modelo, a mesma regra do `bibleQuote`), no mesmo modelo pequeno. Nenhum
    * dos dois motivos que fizeram `bibloVoiceMessage` custar mais que
    * `bibloMessage` (STT, teto de tempo maior) se aplica aqui. Reconfira em
-   * `/admin/custos` assim que houver tráfego real — este número é o de
+   * `/admin/costs` assim que houver tráfego real — este número é o de
    * PARTIDA, não uma medição.
    */
   bibleSearch: 2,
@@ -229,7 +229,7 @@ export const COIN_COSTS = {
  * O presente: mensagens que a conta GRATUITA usa antes de conhecer o preço.
  *
  * **Uma vez por CONTA, nunca por sessão.** Abrir uma sessão não custa nada
- * (`/escrever` é o caminho gratuito do produto), então dez mensagens por
+ * (`/summary/new` é o caminho gratuito do produto), então dez mensagens por
  * sessão seriam dez mensagens infinitas com um passo a mais. Um presente tem
  * fim, ou não é presente, é um preço mal cobrado.
  *

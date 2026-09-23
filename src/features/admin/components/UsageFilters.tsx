@@ -14,7 +14,7 @@ import {
 } from "@/components/ui/select";
 
 /**
- * Os filtros FINOS de /admin/custos: usuário, rota e modo.
+ * Os filtros FINOS de /admin/costs: usuário, rota e modo.
  *
  * Período e versão saíram daqui. Eles valem para as quatro abas e para os dois
  * lados da margem, então vivem no cabeçalho, ao lado do título, onde estão à

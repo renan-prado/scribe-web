@@ -190,7 +190,7 @@ export const BibloHomeDock = forwardRef<
     <div className="flex items-center gap-2 rounded-xl bg-scriba-hairline/40 px-3 py-2">
       <FileText aria-hidden className="size-3.5 shrink-0 text-scriba-ink-mute" strokeWidth={1.75} />
       <Link
-        href={`/escrever/${workspace.doc.id}`}
+        href={`/summary/${workspace.doc.id}/edit`}
         className="min-w-0 flex-1 truncate text-[12.5px] text-scriba-ink-soft underline-offset-2 hover:text-scriba-ink hover:underline"
       >
         {workspace.doc.title}

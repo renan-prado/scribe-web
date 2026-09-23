@@ -78,7 +78,7 @@ export function LexiconReports({ reports }: { reports: AdminLexiconReport[] }) {
           >
             <div className="flex min-w-0 flex-1 flex-col gap-1">
               <a
-                href={`/admin/lexico?q=${encodeURIComponent(report.slug)}`}
+                href={`/admin/lexicon?q=${encodeURIComponent(report.slug)}`}
                 className="w-fit font-mono text-[11px] text-scriba-ink-mute hover:text-scriba-ink hover:underline"
               >
                 {report.slug}

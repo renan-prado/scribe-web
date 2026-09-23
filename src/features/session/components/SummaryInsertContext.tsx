@@ -26,9 +26,9 @@ const SummaryInsertContext = createContext<SummaryInsertApi | null>(null);
  * mesmo documento sem se enxergar: a segunda escrita apagaria a primeira.
  *
  * Monta em `/summary/[id]/page.tsx`, envolvendo `SavedSessionView` E
- * `BibloSummaryDock`. Fora dele (a landing, o `/studies`, que não tem
- * provider nenhum) `useSummaryInsert()` devolve `null`, e quem consome —
- * hoje só o `ChapterDialog` — simplesmente não mostra o botão.
+ * `BibloSummaryDock`. Fora dele (a landing, que não tem provider nenhum)
+ * `useSummaryInsert()` devolve `null`, e quem consome — hoje só o
+ * `ChapterDialog` — simplesmente não mostra o botão.
  */
 export function SummaryInsertProvider({
   sessionId,

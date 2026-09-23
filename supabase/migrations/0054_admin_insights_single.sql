@@ -10,7 +10,7 @@
 --     negócio, porque cada uma via um terço dele: uma rota cara é a margem de
 --     uma ação, que é o preço de um plano, que é o passivo de moedas;
 --   * ninguém as pedia. A chamada de LLM mais cara do produto rodava porque
---     alguém abriu /admin/metricas para conferir o MRR.
+--     alguém abriu /admin/metrics para conferir o MRR.
 --
 -- Hoje existe uma leitura geral, em /admin/insights, gerada só no clique, e a
 -- linha dela tem `scope = 'general'` (ver `lib/admin/insights/store.ts`).

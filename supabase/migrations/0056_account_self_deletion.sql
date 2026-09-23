@@ -12,7 +12,7 @@
 --
 --   * `coin_transactions` é o extrato de dinheiro entrando. `lib/finance/`
 --     calcula receita a partir dos créditos `subscription_grant` e
---     `topup_pack` (ver `lib/finance/measured.ts`), e o /admin/financeiro lê
+--     `topup_pack` (ver `lib/finance/measured.ts`), e o /admin/finance lê
 --     dali. Com o cascade, cancelar a conta apagava a RECEITA que ela já
 --     tinha gerado: o faturamento do mês passado encolhia sozinho, sem erro
 --     nenhum na tela, que é o pior jeito de uma medição falhar.

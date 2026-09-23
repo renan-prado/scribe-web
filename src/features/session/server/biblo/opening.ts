@@ -143,7 +143,7 @@ function citedReferences(summary: SummaryPayload): string[] {
  * O cumprimento.
  *
  * **Ele chama a pessoa pelo nome, e o verbo olha o modo da sessão.** Um resumo
- * que veio de gravação ou do YouTube é algo que ela está LENDO; o `/escrever`
+ * que veio de gravação ou do YouTube é algo que ela está LENDO; o `/summary/new`
  * é algo que ela está ESCREVENDO, e dizer "vi que você está lendo" para quem
  * está com a própria página aberta erra na primeira frase — que é a única que
  * todo mundo lê.
@@ -164,7 +164,7 @@ function citedReferences(summary: SummaryPayload): string[] {
  * **E ela não diz nada sobre a SITUAÇÃO**, de propósito: quem diz é a frase
  * seguinte, que sabe se a pessoa está lendo um sermão, escrevendo o próprio
  * texto ou diante de uma folha em branco. A primeira versão abria com "eu leio
- * junto com você", e no `/escrever` isso estava simplesmente errado.
+ * junto com você", e no `/summary/new` isso estava simplesmente errado.
  *
  * **A quarta capacidade é a mais larga de propósito.** As três primeiras são
  * sobre o texto que está na tela; "conversar sobre qualquer tema" abre a
@@ -199,7 +199,7 @@ export function buildBibloOpening(input: {
   summary: SummaryPayload | null;
   speakerName: string | null;
   firstName: string | null;
-  /** `true` no `/escrever`: o texto na tela é dela, não de um pregador. */
+  /** `true` no `/summary/new`: o texto na tela é dela, não de um pregador. */
   authored: boolean;
   /**
    * `true` nas primeiras conversas: ele diz quem é antes de falar do texto.
@@ -212,7 +212,7 @@ export function buildBibloOpening(input: {
   const hasContent = !!summary && (summary.blocks.length > 0 || !!summary.shortSummary.trim());
 
   // A folha em branco: cumprimenta sem fingir que sabe de algo. É o caso de
-  // quem acabou de abrir o `/escrever`, e um "vi que você está escrevendo
+  // quem acabou de abrir o `/summary/new`, e um "vi que você está escrevendo
   // sobre" ali seria uma mentira na primeira frase.
   if (!hasContent) {
     const hello = firstName ? `Olá, ${firstName}!` : "Olá!";

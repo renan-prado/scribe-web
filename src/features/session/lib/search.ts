@@ -1,13 +1,11 @@
 /**
- * A busca das listas, `/recordings` e `/studies`. Helpers PUROS e
- * client-safe: a filtragem roda no navegador, sobre a lista que a página já
- * entregou.
+ * A busca do acervo. Helpers PUROS e client-safe: a filtragem roda no
+ * navegador, sobre a lista que já está carregada.
  *
  * ## Por que no cliente
  *
- * As duas páginas já carregam TODAS as sessões (e todos os estudos) do usuário
- * num render de servidor, não há paginação em lugar nenhum, e a escala é a de
- * quem grava um ou dois sermões por semana. Filtrar isso no cliente responde
+ * O acervo inteiro já está disponível sem paginação, e a escala é a de quem
+ * grava um ou dois sermões por semana. Filtrar isso no cliente responde
  * instantaneamente a cada tecla, sem uma ida ao servidor por caractere e sem
  * um estado de carregamento piscando entre os cartões.
  *

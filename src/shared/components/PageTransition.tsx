@@ -14,7 +14,7 @@ import { cn } from "@/lib/utils";
  * celular, e principalmente no PWA, a barra inferior SUMIA e voltava a cada
  * toque, porque ela é o elemento fixo que o olho está seguindo.
  *
- * Por isso cada moldura instala a sua: `(app)`, `/admin` e `/partners` a
+ * Por isso cada moldura instala a sua: `(app)`, `/admin` e `/partners/dashboard` a
  * colocam em volta dos próprios `children`, com o header e a nav de fora. O
  * root layout mantém só a classe, sem `key`: ela toca uma vez no carregamento
  * completo, para toda rota, e não volta a tocar em navegação de cliente.

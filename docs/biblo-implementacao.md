@@ -12,7 +12,7 @@
 
 O escopo é **a feature inteira numa entrega só**, como o `biblo.md` a descreve:
 gaveta, conversa persistida, chips derivados, inserção de bloco no resumo com
-desfazer, nas duas telas (`/summary/:id` e `/escrever/:id`).
+desfazer, nas duas telas (`/summary/:id` e `/summary/:id/edit`).
 
 ---
 
@@ -33,7 +33,7 @@ com essas palavras. Quando ele acaba, ninguém é cobrado de nada — o Biblo
 agradece e conta onde ele continua morando.
 
 **Uma vez por CONTA, nunca por sessão**, e a diferença é a feature inteira: uma
-sessão nova é de graça (`/escrever` não cobra nada), então dez mensagens por
+sessão nova é de graça (`/summary/new` não cobra nada), então dez mensagens por
 sessão são infinitas mensagens com um passo a mais. Um presente tem fim, ou não
 é presente, é um preço mal cobrado. A conta do que ele custa: dez mensagens são
 ~R$ 0,10 uma vez na vida da conta, contra os R$ 1,00 de valor que
@@ -78,7 +78,7 @@ o MESMO fato; a gaveta traduz um no outro e mostra a despedida uma vez só, no
 lugar onde ela é verdade.
 
 **O botão dela ABRE O DIÁLOGO DE CRÉDITOS, e não uma página.** Ele era um link
-para `/assinar`, e navegar era o pior que podia acontecer ali: a pessoa está no
+para `/subscribe`, e navegar era o pior que podia acontecer ali: a pessoa está no
 meio de uma conversa, com o resumo atrás da gaveta e a pergunta seguinte já
 pensada, e trocar a tela pede que ela decida assinar longe do motivo pelo qual
 quis assinar. O `BillingDialog` é o MESMO que o avatar abre em "Créditos e
@@ -194,7 +194,7 @@ caminho para 1 moeda ficou bem mais curto do que este documento supunha.
 > ⚠️ **A medição acima é de BANCADA**: resumo pequeno, conversa vazia atrás,
 > quatro execuções. Ela desmente a estimativa para o lado bom, mas não substitui
 > o tráfego real — uma conversa de trinta mensagens sobre um sermão de uma hora
-> não foi medida. Assim que houver uso, `/admin/custos` mostra a linha **Biblo**,
+> não foi medida. Assim que houver uso, `/admin/costs` mostra a linha **Biblo**,
 > e é ali que a decisão de **cair para 1 moeda** se toma com número. Ver §1.5.
 
 ### 1.3 Quem não pode, vê o quê
@@ -245,7 +245,7 @@ por hora por usuário.
 Quatro manetes, **e o preço é a última**:
 
 1. **A mensagem está custando mais que o estimado** → peça uma resposta mais
-   curta no PROMPT, e olhe `completion_tokens` em `/admin/custos` antes e
+   curta no PROMPT, e olhe `completion_tokens` em `/admin/costs` antes e
    depois. **Não encolha `BIBLO_ANSWER_MAX_TOKENS`**: ele não é um pedido de
    brevidade, é o ponto em que a chamada é INTERROMPIDA no meio do JSON, e foi
    exatamente isso que ele fez em 400 (ver §1.4). Ele é uma amarra de teto
@@ -297,7 +297,7 @@ código de estorno.
 **Uma linha no ledger por mensagem**, e isso é muito menos volume do que parece:
 a gravação já escreve uma linha por MINUTO (`recording_minute`, pulsado a cada
 60s), então uma conversa de vinte mensagens é menos ledger que um sermão de meia
-hora. Em troca, `/admin/custos` soma o Biblo pela mesma via que soma tudo o
+hora. Em troca, `/admin/costs` soma o Biblo pela mesma via que soma tudo o
 mais, sem nenhum contador paralelo.
 
 **A mensagem do usuário é gravada antes da resposta.** Se o modelo falhar, a
@@ -745,14 +745,14 @@ numa fileira de pastilhas ele lê como preenchimento. Nomeando o assunto, o chip
 vira convite em vez de rótulo.
 
 Três a cinco chips por vez, nunca a lista inteira (`biblo.md` §4). **Sessão
-vazia** — alguém que acabou de abrir o `/escrever` — recebe o cumprimento sem
+vazia** — alguém que acabou de abrir o `/summary/new` — recebe o cumprimento sem
 fingir que sabe de algo e os chips genéricos: *"sobre qual passagem você quer
 escrever?"*.
 
 **O cumprimento chama a pessoa pelo nome, e o VERBO olha o modo da sessão.** O
 nome sai de `display_name` (a conta vem do Google, quase sempre existe) e vem de
 carona na consulta que o `requireAuth` já faz; sem nome usável, o "Olá!" fica
-sozinho — ninguém se reconhece em "Olá, usuário!". E o texto do `/escrever` é
+sozinho — ninguém se reconhece em "Olá, usuário!". E o texto do `/summary/new` é
 algo que a pessoa está ESCREVENDO, não lendo: dizer "vi que você está lendo"
 para quem está com a própria página aberta erra logo na frase que todo mundo lê.
 
@@ -816,7 +816,7 @@ toda vez que alguém rolasse a página.
 
 ### O teclado: o botão sobe junto
 
-No `/escrever` o teclado abre por baixo, e é ali que um `fixed bottom-0`
+No `/summary/new` o teclado abre por baixo, e é ali que um `fixed bottom-0`
 desaparece: **nenhuma das duas plataformas resolve isso sozinha.** No Chrome
 Android o padrão (`interactive-widget=resizes-visual`) não encolhe o viewport de
 layout, então o botão fica atrás do teclado; no iOS Safari o `fixed` também não
@@ -1048,7 +1048,7 @@ Ela precisa estar na primeira frase para ser feita.
 Ela não diz nada sobre a SITUAÇÃO — quem diz é a frase seguinte, que sabe se a
 pessoa está lendo um sermão, escrevendo o próprio texto ou diante de uma folha
 em branco. A primeira versão abria com *"eu leio junto com você"*, e no
-`/escrever` isso estava simplesmente errado.
+`/summary/new` isso estava simplesmente errado.
 
 **Quem conta é um COOKIE, e o atalho é deliberado.** O fato existe no banco
 (`biblo_messages` sabe em quantas sessões a pessoa já falou), mas um
@@ -1232,11 +1232,11 @@ O caminho é diferente nas duas telas, e isso é bom:
 
 | tela | "Adicionar" faz |
 |---|---|
-| `/escrever/:id` | `insertAt(afterIndex + 1, block)` no rascunho local do `Composer`. O salvamento automático que já existe leva ao banco. |
+| `/summary/:id/edit` | `insertAt(afterIndex + 1, block)` no rascunho local do `Composer`. O salvamento automático que já existe leva ao banco. |
 | `/summary/:id` | `POST /api/sessions/written` com o payload atual + o bloco inserido. |
 
 **A segunda linha só é possível porque aquela rota deixou de exigir sessão
-`manual`** — ela salva o resumo de qualquer modo, e o `/escrever/:id` abre
+`manual`** — ela salva o resumo de qualquer modo, e o `/summary/:id/edit` abre
 qualquer modo (ver os cabeçalhos dos dois arquivos). Se aquele `409 not_manual`
 ainda existisse, o Biblo do `/summary` não teria onde escrever, e o desenho
 desta seção seria outro.
@@ -1324,7 +1324,7 @@ teto de 1,2s, para um dedo que interrompe a rolagem não cancelar a piscada.
 LEITURA todo bloco entra com `animate-content-fade`, e as duas classes escrevem
 a MESMA propriedade `animation` com a mesma especificidade — uma classe cada. A
 utilitária do Tailwind é gerada depois no arquivo, então ela vencia: o
-`/escrever` piscava, o `/summary` **não piscava nada**, sem erro nenhum na tela.
+`/summary/new` piscava, o `/summary` **não piscava nada**, sem erro nenhum na tela.
 `animation` é uma propriedade só; por 1,4s a piscada é a animação dona daquele
 elemento, e é isso que o `!important` diz.
 
@@ -1341,7 +1341,7 @@ inserção — com o bloco que estava lá. Piscar cedo pisca o parágrafo errado
 
 | tela | o que se espera | quem espera |
 |---|---|---|
-| `/escrever` | o commit do React (o bloco entrou num rascunho local) | `revealIndex`, um estado com efeito, como o `focusIndex` ao lado |
+| `/summary/new` | o commit do React (o bloco entrou num rascunho local) | `revealIndex`, um estado com efeito, como o `focusIndex` ao lado |
 | `/summary` | o `router.refresh()` voltar com o payload novo | um efeito na IDENTIDADE da prop `summary` |
 
 **Na leitura o sinal é a identidade da prop, e não o conteúdo do bloco.** A
@@ -1521,7 +1521,7 @@ rodou meses custando zero no painel. Se `OPENAI_BIBLO_MODEL` for trocado por
 qualquer coisa, **confira a tabela de preços ANTES do deploy**.
 
 E, porque o preço nasceu de estimativa (§1.2), há uma pergunta específica a
-responder no `/admin/custos` depois das primeiras cem conversas:
+responder no `/admin/costs` depois das primeiras cem conversas:
 
 1. Quanto custa uma mensagem de verdade, contra os R$ 0,0103 estimados? E
    **qual fatia das chamadas pegou o cache** (`cachedTokens` em

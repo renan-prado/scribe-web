@@ -46,7 +46,7 @@ const poppins = Poppins({
  * **A área logada e a entrada travam**, porque lá o produto é um app
  * instalado (e amanhã um WebView), onde ampliar não é ler melhor, é a tela
  * desalinhar no meio da pregação. Quem manda nelas é o `APP_VIEWPORT` de
- * `@/shared/viewport`, declarado por `(app)/layout.tsx` e `(entrar)/layout.tsx`.
+ * `@/shared/viewport`, declarado por `(app)/layout.tsx` e `(entry)/layout.tsx`.
  *
  * **O `themeColor` ENTRA aqui**, e entrou quando o produto passou a ter um
  * tema só. Ele morava num script inline no `<head>` (`ThemeScript`) porque

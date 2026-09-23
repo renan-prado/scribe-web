@@ -29,7 +29,7 @@ const BodySchema = z
 /**
  * POST /api/sessions/written
  *
- * Salva o texto que a pessoa ESCREVEU em `/escrever`. Cria a linha no primeiro
+ * Salva o texto que a pessoa ESCREVEU em `/summary/new`. Cria a linha no primeiro
  * salvamento, sobrescreve nos seguintes, e devolve o id nos dois casos.
  *
  * **Uma rota para os dois, e não um POST e um PUT**, porque para quem chama é

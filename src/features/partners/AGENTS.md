@@ -19,13 +19,13 @@ src/features/partners/components/   ReferralField (tela de entrada),
                                     ReferralLinkCard, PartnerTabs,
                                     EarningsByPlan, RefreshPanelButton
 app/r/[slug]/route.ts               o link de divulgação
-app/parceiros/page.tsx              a página PÚBLICA de convite
-app/parceiros/regulamento/page.tsx  as regras que obrigam
-app/parceiros/entrar/route.ts       marca o pré-parceiro e manda ao login
+(site)/partners/page.tsx           a página PÚBLICA de convite, em `/partners`
+(site)/partners/terms/page.tsx  as regras que obrigam
+(site)/partners/join/route.ts    marca o pré-parceiro e manda ao login
 lib/db/prospects.ts                 pré-parceiros: attach, lista, promoção
 lib/partners/prospect-actions.ts    descartar candidato (assertAdmin)
 components/ProspectNotice.tsx       o selo da tela de entrada
-app/partners/{layout,page}.tsx      o painel
+(panel)/partners/{layout,dashboard/page}.tsx   o painel, em `/partners/dashboard`
 lib/referrals/cookies.ts             nomes, prazos e opções dos cookies
 lib/partners/economics.ts           a conta do programa (client-safe)
 lib/partners/allowance.ts           server-only: a mesada mensal
@@ -126,19 +126,23 @@ indicação por prop, resolvida no servidor.
 
 ## A página pública e o painel são rotas diferentes de propósito
 
-`/parceiros` é a página de convite: PÚBLICA, estática, servida da CDN para
-alguém que ainda não tem conta. `/partners` é o painel, atrás do login. O par
-está em `PUBLIC_PREFIXES` e `KNOWN_APP_PREFIXES` do `src/proxy.ts`
-respectivamente, e o idioma é a pista de qual é qual.
+`/partners` é a página de convite: PÚBLICA, estática, servida da CDN para
+alguém que ainda não tem conta. `/partners/dashboard` é o painel, atrás do
+login. Os dois compartilham o mesmo prefixo — o painel desceu um degrau
+quando o endereço da página de convite deixou de ser `/parceiros` e virou
+`/partners` — então `src/proxy.ts` não pode decidir por prefixo sozinho:
+`/partners` está em `PUBLIC_PREFIXES`, mas `/partners/dashboard` entra também
+em `PROTECTED_EXCEPTIONS`, conferida ANTES e que vence. Tirar essa exceção sem
+perceber reabre o painel para qualquer visitante.
 
 **Nenhum número é redigitado nas páginas públicas**, nem os minutos: elas leem
 `economics.ts`, `plans.ts`, `pricing.ts` e `cookies.ts`. A tabela de minutos de
 `docs/parceiros.md` mostra por quê, ela ficou dois preços desatualizada sem
-que nada quebrasse. E a prévia do painel na `/parceiros` é markup próprio, não
+que nada quebrasse. E a prévia do painel na `/partners` é markup próprio, não
 o painel real: os componentes daqui são `"use client"` e não podem entrar no
 bundle de uma página de venda.
 
-Mudou uma regra? Mude `docs/parceiros.md` E `src/app/parceiros/regulamento/page.tsx`
+Mudou uma regra? Mude `docs/parceiros.md` E `src/app/(site)/partners/terms/page.tsx`
 no mesmo commit.
 
 ## O painel nunca expõe uma pessoa

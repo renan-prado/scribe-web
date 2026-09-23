@@ -40,7 +40,7 @@ const MAX_PREV_TEXT_CHARS = 4000;
 // custo (`recordAudioUsage`). Já foi 5 minutos, quando o único cliente era o
 // gravador de chunks de 15-20s do app. O v2 manda a gravação INTEIRA num POST,
 // e com aquele teto um arquivo de 40 minutos era registrado como 5: o
-// `/admin/custos` subestimava o custo real em oito vezes, sem erro nenhum.
+// `/admin/costs` subestimava o custo real em oito vezes, sem erro nenhum.
 // 60 minutos é o que cabe nos 8 MB de `MAX_FILE_BYTES` com folga.
 const MAX_DURATION_MS = 60 * 60 * 1000;
 

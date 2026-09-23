@@ -61,8 +61,8 @@ A gravação pertence ao usuário e não é pública. O tratamento de dados est�
 - [Site](https://scriba.cc): landing page com demonstração das telas, explicação dos passos e planos.
 - [Sobre](https://scriba.cc/about): o que é o Scriba, para quem é e quem mantém o produto.
 - [Contato](https://scriba.cc/contact): como falar com a equipe (suporte, privacidade/LGPD, imprensa, parcerias).
-- [Programa de Parceiros](https://scriba.cc/parceiros): programa por convite para quem divulga o Scriba, comissão sobre a primeira mensalidade, painel de resultados e moedas de cortesia.
-- [Regulamento do Programa de Parceiros](https://scriba.cc/parceiros/regulamento): as regras completas do programa.
+- [Programa de Parceiros](https://scriba.cc/partners): programa por convite para quem divulga o Scriba, comissão sobre a primeira mensalidade, painel de resultados e moedas de cortesia.
+- [Regulamento do Programa de Parceiros](https://scriba.cc/partners/terms): as regras completas do programa.
 - [Política de Privacidade](https://scriba.cc/privacy): quais dados são coletados, por quanto tempo e com quem são compartilhados.
 - [Termos de Uso](https://scriba.cc/terms): condições do serviço, créditos e cancelamento.
 - [Criar conta](https://scriba.cc/sign-in): cadastro e login.

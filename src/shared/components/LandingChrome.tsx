@@ -90,7 +90,7 @@ export function LandingFooter({ onLandingPage = false }: LandingFooterProps) {
           <Link href="/about" className="lp-link-footer">
             Sobre
           </Link>
-          <Link href="/parceiros" className="lp-link-footer">
+          <Link href="/partners" className="lp-link-footer">
             Parceiros
           </Link>
           <Link href="/terms" className="lp-link-footer">
@@ -123,7 +123,7 @@ type SectionLabelProps = {
  * A pequena etiqueta em caixa alta que abre cada seção das páginas de venda.
  *
  * Mora aqui, e não em `app/page.tsx`, desde que a LP deixou de ser a única:
- * `/parceiros` usa a mesma linguagem visual, e duas cópias de um átomo de
+ * `/partners` usa a mesma linguagem visual, e duas cópias de um átomo de
  * tipografia é como as duas páginas começam a divergir em tracking e peso sem
  * ninguém decidir isso.
  */

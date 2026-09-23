@@ -123,9 +123,9 @@ export function CoinBalance({
   // moravam aqui e NÃO FUNCIONAVAM: este chip vive dentro do menu da conta, que
   // é um popup, e base-ui só monta o conteúdo de um `DropdownMenu` quando ele
   // abre. Enquanto ninguém tocasse no avatar, a store ficava em `null` e todo
-  // gate que a lê ficava preso em "carregando" — no `/importar` isso era o
+  // gate que a lê ficava preso em "carregando" — no `/import` isso era o
   // botão Importar substituído por uma pastilha pulsando que nunca terminava.
-  // As duas passaram para o `CoinsSync`, no layout de `(barra)`, que está
+  // As duas passaram para o `CoinsSync`, no layout de `(shell)`, que está
   // sempre montado; o porquê inteiro está no cabeçalho de lá.
   //
   // O `initialBalance` fica, e agora é só o que ele sempre foi de verdade: o

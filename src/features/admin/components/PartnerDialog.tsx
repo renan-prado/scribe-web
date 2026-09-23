@@ -45,7 +45,7 @@ import { CommissionSimulator } from "./CommissionSimulator";
 type Props = {
   partner: AdminPartnerWithStats | null;
   /**
-   * Valores iniciais quando se está PROMOVENDO um candidato de `/parceiros`.
+   * Valores iniciais quando se está PROMOVENDO um candidato de `/partners`.
    * Só vale na criação (`partner === null`): num cadastro existente, o que está
    * gravado manda.
    */

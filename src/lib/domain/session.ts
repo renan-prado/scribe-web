@@ -5,7 +5,7 @@
  * - `youtube`: NÃO CAPTURA NADA. A transcrição vem pronta das legendas de um
  *   vídeo e o resumo roda sobre ela.
  * - `manual`: NÃO CAPTURA E NÃO GERA NADA. A pessoa escreve os blocos à mão em
- *   `/escrever`, e eles são gravados como `final_summary` direto.
+ *   `/summary/new`, e eles são gravados como `final_summary` direto.
  *
  * **Eram quatro, e a diferença entre três deles era o que rodava DURANTE a
  * pregação.** `live` mantinha três pipelines de enriquecimento alimentando um

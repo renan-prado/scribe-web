@@ -122,16 +122,14 @@ entre as telas, então o `seen` que veio do servidor continua valendo.
 
 **O balão vai para o `body`, num portal.** `position: fixed` deixa de ser
 relativo ao viewport dentro de um ancestral com `transform`, e o `/admin` e o
-`/partners` têm o `PageTransition`, que anima deslocamento a cada troca de rota.
+`/partners/dashboard` têm o `PageTransition`, que anima deslocamento a cada troca de rota.
 
 ## Onde os gatilhos estão montados
 
 | Tela | `tour` | Atraso | Portão |
 |---|---|---|---|
 | `/home` | `library` | 1,2s | — (roda TAMBÉM na Biblioteca vazia) |
-| `/studies` | `studies` | 1,2s | nem vazio, nem na tela de convite |
 | `/summary/:id` | `summary` | 3s | — |
-| `/studies/:id` | `study` | 3s | — |
 | `/recording` | `recording` | 0,7s | só sem `?auto=1` |
 
 Os atrasos e o porquê de cada um estão em `config.ts`.
@@ -151,10 +149,6 @@ tour que começa com "Bem-vindo ao Scriba". Calá-lo ali seria calá-lo justamen
 para quem ele foi escrito. Os passos sobrevivem à lista vazia porque
 nenhum alvo deles mora nela: a lupa e as portas de criação existem sempre.
 
-O vazio dos `/studies` fica de fora porque o tour de lá fala de uma lista que
-não está na tela, e a tela de convite fica de fora por outro motivo: ela JÁ É
-uma explicação, e um tour por cima dela é a mesma coisa dita duas vezes.
-
 ## Telas com tour, e o atributo que o holofote procura
 
 O contrato entre o passo e a tela é um seletor CSS, e a convenção é
@@ -162,33 +156,28 @@ O contrato entre o passo e a tela é um seletor CSS, e a convenção é
 
 | `data-tour` | Onde vive |
 |---|---|
-| `library-search` | o botão de busca, duas vezes — `SearchTrigger` (desktop, na `TopBar`) e o botão da `MobileActionBar` (celular); um dos dois sempre `display: none`. O passo que o usa é o da BIBLIOTECA, e lá os dois abrem a busca global; no `/summary` e no `/escrever` o mesmo atributo veste um botão que procura dentro do texto aberto, e nenhum tour aponta para ele |
-| `studies-search` | a lupa da barra ANTIGA nos Estudos (`SearchToggle`, em `(app)/(barra)/components/SearchScope.tsx`) — o `tourId` é prop, a tela é que o nomeia. Único uso restante de `SearchScope`/`CollectionSearch`, que a Biblioteca não usa mais |
-| `collection-search` | `CollectionSearch`, a barra dos Estudos. Nenhum tour aponta para ela, e é de propósito |
-| `create-dock` | o `+` de `src/app/(app)/(barra)/components/MobileActionBar.tsx` (era `record-dock`, no microfone que ele substituiu, e antes disso o `+` vivia sozinho em `CreateDock.tsx`, hoje apagado). **Só no celular e só na Biblioteca**: as outras duas telas com barra dão aquela ponta para o editar/ver, e o passo se apaga sozinho onde não há alvo |
+| `library-search` | o botão de busca, duas vezes — `SearchTrigger` (desktop, na `TopBar`) e o botão da `MobileActionBar` (celular); um dos dois sempre `display: none`. O passo que o usa é o da BIBLIOTECA, e lá os dois abrem a busca global; no `/summary` e no `/summary/new` o mesmo atributo veste um botão que procura dentro do texto aberto, e nenhum tour aponta para ele |
+| `create-dock` | o `+` de `src/app/(app)/(shell)/components/MobileActionBar.tsx` (era `record-dock`, no microfone que ele substituiu, e antes disso o `+` vivia sozinho em `CreateDock.tsx`, hoje apagado). **Só no celular e só na Biblioteca**: as outras duas telas com barra dão aquela ponta para o editar/ver, e o passo se apaga sozinho onde não há alvo |
 | `create-record` | a porta "Gravar" — o quadrado do painel do dock, e o chip do microfone da `TopBar` |
 | `create-write` | a porta "Escrever", nos mesmos dois lugares |
 | `create-import` | a porta "Importar", nos mesmos dois lugares |
 | `record-button` | `src/app/recording/AudioStudio.tsx` |
 | `summary-header` | `SavedSessionView` |
 | `session-menu` | `SessionMenu` |
-| `deepen` | `DeepenButton`. Sem passo apontando para ele: o botão saiu da interface com o modo estudo |
-| `study-thesis` | `src/app/studies/[id]/page.tsx` |
-| `study-menu` | `DeepeningMenu` |
 
 Um atributo que some não quebra nada: o passo simplesmente deixa de aparecer, o
 que é a pior forma de a explicação falhar, porque não avisa. Quando um alvo
 mudar de lugar, mude o atributo com ele.
 
 **E um atributo que EXISTE no código pode não existir na tela.** O passo
-`search` do `library` apontou para `[data-tour="collection-search"]` desde o
-primeiro dia e nunca apareceu uma vez: aquela barra só é montada depois do
-clique na lupa, e o tour abre com ela fechada. O passo irmão dos Estudos
-aparecia — lá a barra era permanente —, e parou de aparecer no dia em que ela
-foi para trás da lupa também; mudou de alvo no mesmo commit. Um alvo condicional
-serve de âncora para o passo que fala DELE (o botão de gerar estudo, a faixa
-"Em aberto"); para o passo que fala de um recurso, a âncora é o que abre o
-recurso, e esse está sempre na tela.
+`search` do `library` já apontou para a barra de busca de ANTES da global
+(`SearchToggle`), que só era montada depois do clique na lupa; o tour abria com
+ela fechada e o passo nunca apareceu uma vez. Trocar o alvo para
+`[data-tour="library-search"]`, o botão que sempre está na tela, não sobe a
+`version`, é o mesmo passo dizendo a mesma coisa sobre o que hoje faz o
+trabalho. Um alvo condicional serve de âncora para o passo que fala DELE (o
+botão que abre a busca); para o passo que fala de um recurso, a âncora é o
+que abre o recurso, e esse está sempre na tela.
 
 ## O que ainda não existe
 
@@ -199,10 +188,11 @@ quando alguém for olhar; a tela que a mostra é trabalho de outro dia.
 
 ## As chaves foram TROCADAS, não renomeadas
 
-Os cinco tours de hoje são `library`, `recording`, `summary`, `studies` e
-`study`. Eram oito, e cinco descreviam telas que deixaram de existir: `feed` (o
-Início), `recordings` (a Biblioteca antes de virar a primeira tela) e os três
-`capture_*`, um por modo de gravação.
+Os três tours de hoje são `library`, `recording` e `summary`. Eram dez, e sete
+descreviam telas que deixaram de existir: `feed` (o Início), `recordings` (a
+Biblioteca antes de virar a primeira tela), os três `capture_*` (um por modo de
+gravação) e `studies`/`study` (a lista de Estudos e o estudo pronto, que saíram
+do produto com a rota).
 
 **As chaves novas não reaproveitam os nomes antigos, e isso é decisão.** O
 mecanismo de `version` existe para reexibir um tour MUDADO; aqui a tela é outra,

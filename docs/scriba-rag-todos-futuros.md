@@ -284,7 +284,7 @@
 
 ## 17. Cost tracking de embeddings
 
-**O que é**: incluir embeddings no `llm_usage_events` + `/admin/custos`.
+**O que é**: incluir embeddings no `llm_usage_events` + `/admin/costs`.
 
 **Por que adiado**: parcialmente já no PR 1 (ingest inicial), mas versão completa vem quando auto-indexação ligar.
 
@@ -295,7 +295,7 @@
 - [ ] Atualizar `recordChatUsage` para não hardcodar `event_kind`.
 - [ ] Novo helper `recordEmbeddingUsage(...)`.
 - [ ] Adicionar preço de embedding em `src/lib/llm/pricing.ts`.
-- [ ] Admin: `/admin/custos` filtra por `event_kind`.
+- [ ] Admin: `/admin/costs` filtra por `event_kind`.
 
 ---
 

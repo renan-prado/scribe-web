@@ -34,7 +34,7 @@ import { ScribaMark } from "@/shared/brand";
  * nesta tela criaria um quarto lugar com preço, e seria o único que ninguém
  * lembraria de corrigir. Ver `features/billing/plan-features.ts`.
  *
- * **E ela abre um diálogo em vez de navegar para `/assinar`.** Navegar tiraria
+ * **E ela abre um diálogo em vez de navegar para `/subscribe`.** Navegar tiraria
  * a pessoa do meio do que ela estava fazendo; o diálogo pousa por cima sem
  * desmontar nada, e quem fechar sem comprar volta exatamente para onde estava.
  * É a mesma decisão da despedida do presente do Biblo.
@@ -78,7 +78,7 @@ export function AiPaywallDialog({ open, onOpenChange, action }: Props) {
               </Button>
               {/* A saída que funciona AGORA. Ver o cabeçalho. */}
               <NavLink
-                href="/escrever"
+                href="/summary/new"
                 onClick={() => onOpenChange(false)}
                 spinner="none"
                 contentClassName="inline-flex items-center justify-center gap-1.5"

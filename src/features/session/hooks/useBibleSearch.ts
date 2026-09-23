@@ -21,8 +21,9 @@ export type BibleSearchState =
  * ela custa moeda as duas vezes.
  *
  * **402 e 403 abrem o `BillingDialog`, não um texto de erro.** É a MESMA
- * decisão do `DeepenButton`: quem esbarrou num muro de plano ou de saldo não
- * precisa ler que esbarrou, precisa da porta de saída.
+ * decisão do resto do app (ver `YoutubeImport`, `BibloDrawer`): quem esbarrou
+ * num muro de plano ou de saldo não precisa ler que esbarrou, precisa da
+ * porta de saída.
  */
 export function useBibleSearch() {
   const [state, setState] = useState<BibleSearchState>({ status: "idle" });

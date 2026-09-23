@@ -10,14 +10,14 @@ src/app/
   layout.tsx  globals.css  not-found.tsx
   robots.ts  sitemap.ts  manifest.ts  favicon.ico  apple-icon.png  opengraph-image.png
   (site)/     o que um visitante anônimo vê
-  (entrar)/   login, OAuth e os links que criam sessão
+  (entry)/   login, OAuth e os links que criam sessão
   (app)/      tudo atrás do login
-  (painel)/   /admin e /partners
+  (panel)/   /admin e /partners/dashboard
   api/
 ```
 
 Os parênteses são o [route group][rg] do Next: a pasta organiza e **não entra
-na URL**. `(app)/(barra)/home/page.tsx` continua sendo `/home` — dois grupos
+na URL**. `(app)/(shell)/home/page.tsx` continua sendo `/home` — dois grupos
 aninhados, zero segmento de endereço.
 
 [rg]: https://nextjs.org/docs/app/api-reference/file-conventions/route-groups
@@ -57,15 +57,15 @@ herdar a moldura do app nem a consulta ao banco que ela faz. O que o Next proíb
 /sign-in  /sign-up      entrada. /sign-up redireciona para /sign-in. Google em
                         cima; abaixo do "ou", e fechado atrás de um botão, o
                         formulário de e-mail e senha (ver docs/auth.md)
-/recuperar              "esqueci minha senha". Pública porque quem chega nela é
+/forgot-password              "esqueci minha senha". Pública porque quem chega nela é
                         justamente quem não consegue entrar. A irmã dela,
-                        /nova-senha, é PROTEGIDA e está na lista do app
+                        /new-password, é PROTEGIDA e está na lista do app
 /terms  /privacy        legais. Datadas; a data também está no sitemap
 /about  /contact        páginas de confiança. Estáticas, chrome da landing
-/parceiros              convite do programa de parceiros. Estática, pública.
-                        NÃO confundir com /partners (o painel, atrás do login)
-/parceiros/regulamento  as regras que obrigam. Datada, como /terms
-/parceiros/entrar       marca o cookie de pré-parceiro e vai para /sign-in.
+/partners              convite do programa de parceiros. Estática, pública.
+                        NÃO confundir com /partners/dashboard (o painel, atrás do login)
+/partners/terms  as regras que obrigam. Datada, como /terms
+/partners/join       marca o cookie de pré-parceiro e vai para /sign-in.
                         Não é página, irmã de /r/<slug>, e pelo mesmo motivo
 /auth/callback          troca o ?code= do PKCE por sessão: o Google, e os
                         e-mails enquanto os modelos do Supabase forem os de
@@ -100,41 +100,44 @@ Router, ver o comentário no `src/proxy.ts`).
                      criar. É onde cai quem loga
 /recording        o gravador: onda, pausar, parar e apagar. Um modo só
 /summary/[id]     o resumo da sessão. O destino de TUDO que o app faz
-/studies          a lista de estudos gerados. SEM ACESSO pela interface
-/studies/[id]     um estudo. SEM ACESSO pela interface
-/escrever         a folha em branco: o editor de blocos, modo manual
-/escrever/[id]    o mesmo editor, num texto que já existe
-/importar         cola (ou recebe por ?url=/?v=/?text=) o link do vídeo,
+/summary/new      a folha em branco: o editor de blocos, modo manual
+/summary/[id]/edit    o mesmo editor, num texto que já existe
+/import         cola (ou recebe por ?url=/?v=/?text=) o link do vídeo,
                      opcionalmente um trecho, e cria a sessão modo youtube
-/importar/[id]    a importação rodando: legenda + resumo
+/import/[id]    a importação rodando: legenda + resumo
 /profile          a conta, o saldo e o plano
-/indicar          indique a um amigo
-/assinar          abre o Checkout (destino do CTA da landing)
-/retorno          volta do Checkout. DECORATIVA: não credita nada
+/refer          indique a um amigo
+/subscribe          abre o Checkout (destino do CTA da landing)
+/subscribe/return          volta do Checkout. DECORATIVA: não credita nada
 ```
 
-**O `/studies` continua de pé e ninguém mais chega nele.** O modo estudo vai
-sair do produto, e o primeiro passo foi tirar o acesso: o item da gaveta (que
-morreu junto com o hambúrguer), o botão "Gerar estudo" do `/summary`
-(`DeepenButton`), o atalho do `manifest.ts` e o passo de tour que apontava para
-o botão. As rotas, a API, as tabelas e os componentes continuam inteiros — isto
-é esconder, não remover, e o dia de remover é outro commit. **Quem mexer aqui
-não deve "consertar" o acesso**: ele foi tirado de propósito. Duas consultas
-foram junto do botão (`hasDeepening` e a checagem de `study_generation` do
-`/summary`), porque alimentavam só a ele.
+**O `/studies` não existe mais, e este é o commit que o removeu.** O modo
+estudo saiu do produto em duas etapas: primeiro só o ACESSO foi tirado da
+interface (o item da gaveta que morreu junto com o hambúrguer, o botão "Gerar
+estudo" do `/summary` — `DeepenButton` —, o atalho do `manifest.ts` e o passo
+de tour que apontava para o botão), com a rota, a API, as tabelas e os
+componentes inteiros de propósito. Esta etapa é a segunda: as rotas
+`/studies` e `/studies/[id]` foram apagadas, junto com `StudiesBrowser`,
+`StudiesEmptyState`, `StudiesUpsell`, `DeepenButton`, `DeepeningMenu` e as duas
+entradas do tour que só elas usavam. **O que continua de pé é a API
+(`/api/deepening/*`), as tabelas e a leitura em `/admin/sessions/[id]`** — dado
+gerado e pago por gente continua legível ali, e é o painel, não o app, quem
+decide se aquele texto ainda serve a alguém. Um link antigo de `/studies/<id>`
+vira `redirects()` para `/summary/<id>`, a sessão que gerou o estudo, que é o
+que quem guardou o link procurava.
 
 São DUAS molduras, uma dentro da outra. `src/app/(app)/layout.tsx` garante o
 chão grafite, o recorte do aparelho e o `TourProvider`, e vale para tudo que
-está atrás do login. Dentro dele, `src/app/(app)/(barra)/layout.tsx` desenha a
+está atrás do login. Dentro dele, `src/app/(app)/(shell)/layout.tsx` desenha a
 BARRA DO TOPO e é quem lê a conta — perfil, saldo e papel de parceiro.
 
-**O grupo `(barra)` existe para dizer quem tem barra sem uma lista de
-exceções.** Dentro dele: `/home`, `/summary`, `/recording`, `/escrever`,
-`/importar`, `/profile` e `/studies`. Fora: `/assinar` e `/retorno`, que são o
-fluxo de pagamento em tela cheia, e `/indicar`, que traz o próprio voltar. Um
+**O grupo `(shell)` existe para dizer quem tem barra sem uma lista de
+exceções.** Dentro dele: `/home`, `/summary`, `/recording`, `/summary/new`,
+`/import` e `/profile`. Fora: `/subscribe` e `/subscribe/return`, que são o
+fluxo de pagamento em tela cheia, e `/refer`, que traz o próprio voltar. Um
 `if` de pathname no layout apodrece na primeira rota nova; a pasta não, e ela é
 a documentação. Grupo de rotas não entra na URL, então nenhum endereço mudou
-quando as sete pastas se mudaram para lá.
+quando as pastas se mudaram para lá.
 
 **A coluna do app tem teto de 1024px, e ele é escrito em CADA página**, no
 `max-w-[1024px]` do `<main>` — o layout não o declara porque cada tela tem o
@@ -147,16 +150,13 @@ maior sem conteúdo que a ocupe é o cartão esticado de sempre, num tamanho
 maior.
 
 **Nas telas de LEITURA o teto vale para a BARRA e não para o texto.** O
-`/summary` e o `/escrever` têm o `<main>` em 1024px, como todo o resto, e uma
+`/summary` e o `/summary/new` têm o `<main>` em 1024px, como todo o resto, e uma
 coluna INTERNA de `max-w-3xl` (768px) em volta do conteúdo. São duas medidas
 diferentes porque respondem a duas perguntas diferentes: a barra do topo é a
 mesma peça em toda tela do app, e terminá-la 256px antes numa delas faria o
 avatar saltar de lugar ao abrir um cartão; a largura de um parágrafo, essa, não
 é layout, é MEDIDA DE LINHA — a 1024px a linha passa de 120 caracteres e o olho
-perde o começo da seguinte. O `/studies/[id]` ficou em 768px INTEIRO, barra
-junto, e não é esquecimento: o modo estudo está saindo do produto e não há
-botão que chegue nele, então mexer no layout de uma tela sem acesso é trabalho
-numa coisa que vai ser apagada.
+perde o começo da seguinte.
 
 **A barra é PARTIDA EM DUAS, e a linha do corte é o que muda e o que não
 muda.** Ela era um server component inteiro dentro de CADA página, lendo perfil
@@ -165,7 +165,7 @@ toque num link refazia `getCurrentAccount` e `isCurrentUserPartner`, remontava o
 avatar e o menu da conta, e deixava o cabeçalho num estado de carregando até a
 resposta voltar. Era literalmente o "header carregando de uma tela para outra".
 
-- **O que é da SESSÃO mora no layout de `(barra)`** (`AppHeaderShell` +
+- **O que é da SESSÃO mora no layout de `(shell)`** (`AppHeaderShell` +
   `AccountMenu`): o avatar, o saldo, o menu da conta, o fio que os separa dos
   controles. Consultado uma vez por carregamento de verdade, e preservado em
   toda navegação — o menu nem perde o estado de aberto.
@@ -189,7 +189,7 @@ barra nunca parece quebrada, e o vão tem `min-h-10`, então a altura é a mesma
 nos dois momentos e nada pula de lugar. É uma vez por abertura do app, contra
 uma vez por TOQUE, que era o que se pagava antes.
 
-**Consequência para quem escreve tela nova em `(barra)`:** o `<main>` não leva
+**Consequência para quem escreve tela nova em `(shell)`:** o `<main>` não leva
 recuo de topo NENHUM — a folga acima da barra (`pt-2`) e a que separa a barra do
 conteúdo (`pb-4`) são as duas da casca, e repetir qualquer uma abre um vão
 duplicado. O `pb-4` existe porque o `py-3` do `<header>` sozinho deixava o
@@ -210,7 +210,7 @@ ao ir do `/summary` para a Biblioteca. No layout do segmento a barra atravessa o
 esqueleto pela mesma regra que preserva o avatar, um degrau abaixo — é o que
 `home/layout.tsx` e `profile/layout.tsx` fazem. Sem `loading.tsx` tanto faz: ali
 o router segura a tela anterior inteira até a nova estar pronta, e é por isso
-que o `/studies` e o `/summary` nunca piscaram.
+que o `/summary` nunca piscou.
 
 Quando a barra depende de estado da tela, o PROVIDER sobe junto — o `ClockScope`
 da gravação e o `SummaryFindProvider` do resumo envolvem a `TopBar` e o resto da
@@ -252,18 +252,17 @@ glifos com propósitos diferentes, no mesmo lugar da barra:
 
 | Tela | Quem é a lupa | O que ela procura |
 |---|---|---|
-| `/home`, `/importar` | `SearchTrigger` (`(barra)/components/`) | a busca GLOBAL, um diálogo por cima da tela (`GlobalSearchDialog`) |
-| `/escrever` (desktop) | `SearchTrigger` | a busca GLOBAL |
-| `/escrever` (celular) | o botão da `MobileActionBar` | **dentro do rascunho aberto** |
+| `/home`, `/import` | `SearchTrigger` (`(shell)/components/`) | a busca GLOBAL, um diálogo por cima da tela (`GlobalSearchDialog`) |
+| `/summary/new` (desktop) | `SearchTrigger` | a busca GLOBAL |
+| `/summary/new` (celular) | o botão da `MobileActionBar` | **dentro do rascunho aberto** |
 | `/summary` | `SummaryFindToggle`, e o botão da `MobileActionBar` | **dentro do resumo aberto** |
-| `/studies` | `SearchToggle` | a lista da própria tela (`SearchScope`), a barra ANTIGA |
 
 **Onde há um DOCUMENTO na tela, a lupa procura dentro dele.** A regra que o
 `/summary` inaugurou passou a valer para a única lupa que o celular mostra nas
-telas de texto: no `/summary` e no `/escrever` a `TopBar` some atrás do vão, e
+telas de texto: no `/summary` e no `/summary/new` a `TopBar` some atrás do vão, e
 quem procura no celular é a barra de baixo. Enquanto ela abria o acervo, o
 botão prometia uma coisa e fazia outra, em cima de um texto aberto. No desktop
-a lupa do `/escrever` continua sendo a global, porque lá ela divide a barra com
+a lupa do `/summary/new` continua sendo a global, porque lá ela divide a barra com
 as três portas de criação e não é a única na tela.
 
 **As duas buscas de documento dividem a BARRA e não o motor** (`FindBar`, em
@@ -276,18 +275,12 @@ contagem sobrevive como aviso de leitor de tela.
 
 **`SearchTrigger` não abre nada NESTA tela.** Ele só manda `open: true` para a
 `GlobalSearchStore`, e quem desenha a busca é `GlobalSearchDialog`
-(`(barra)/layout.tsx`, montado uma vez), que aparece por cima de qualquer rota
+(`(shell)/layout.tsx`, montado uma vez), que aparece por cima de qualquer rota
 — inclusive as que nem têm o chip, alcançável ali por Ctrl+K/Cmd+K. Ele é
 `hidden md:inline-flex`: no celular quem abre a MESMA busca é o botão da
 `MobileActionBar`, e os dois levam `data-tour="library-search"` para o tour
 achar o visível. Não há mais link para `/home?busca=1`, nem `?busca=1` para ler
 — a busca não precisa mais de estar em `/home` para existir.
-
-**`/studies` é a exceção, de propósito.** Os Estudos estão saindo do produto
-(ver a seção deles abaixo) e ficaram com a busca de sempre — `SearchToggle`
-abrindo uma barra (`CollectionSearch`) atrás da lupa, com o estado num
-`SearchScope` que envolve a `TopBar` e a lista. Não valeu migrar uma tela que
-está de saída.
 
 **O `/summary` foi o caso difícil, e por um tempo a saída foi não ter lupa
 nenhuma ali.** O raciocínio estava certo pela metade: sobre um texto longo, uma
@@ -302,7 +295,7 @@ CSS Custom Highlight API. O porquê está no cabeçalho do arquivo, e vale ler
 antes de mexer — é o que permite achar o texto dos versículos, que chega por
 fetch e não está em `SummaryPayload`.
 
-**O `/escrever` procura dentro do rascunho no CELULAR e no acervo no
+**O `/summary/new` procura dentro do rascunho no CELULAR e no acervo no
 DESKTOP**, e a assimetria é sobre quantas lupas cada largura mostra. No desktop
 a lupa da barra do topo é o `SearchTrigger` de sempre; no celular a única lupa
 é a da barra de baixo, e ali ela procura no texto aberto. A busca do editor tem
@@ -312,11 +305,11 @@ O bloco encontrado rola até o centro, pisca (`revealSummaryBlock`) e fica com a
 borda acesa enquanto a busca está aberta. Ver "A busca do editor" no
 `Composer`.
 
-## `/escrever`: a terceira porta
+## `/summary/new`: a terceira porta
 
 O produto tem três maneiras de uma sessão nascer, e a terceira não captura
-nada: o gravador abre o microfone, o `/importar` traz a legenda de um vídeo, e
-o `/escrever` é a pessoa digitando o resumo à mão. As três desembocam no mesmo
+nada: o gravador abre o microfone, o `/import` traz a legenda de um vídeo, e
+o `/summary/new` é a pessoa digitando o resumo à mão. As três desembocam no mesmo
 lugar, um `SummaryPayload` numa linha de `sessions` — modo `manual`, ver
 `lib/domain/session.ts`.
 
@@ -361,16 +354,65 @@ lixeira, o mover, a pastilha da passagem), o cursor não saiu dali. Sem esse
 apagar, a pílula revelada por um clique ficava acesa pelo resto da sessão; sem a
 conferência, tocar na lixeira apagaria o estado que mantém a lixeira na tela.
 
-**Não há mais botão "+". A barra `/`, num parágrafo vazio, é o ÚNICO caminho
-para inserir um bloco** — título, passagem, destaque, citação, conclusão,
-tudo o que o menu oferece (ver "O menu da BARRA" abaixo). Havia um disco por
-vão entre blocos, e outro na pílula de cada bloco (`BlockControls`, "Adicionar
-bloco acima"), os dois abrindo a mesma fileira flutuante de pastilhas; o
-celular perdia o `hover` que acendia o disco, e o alvo de 24px já nascia
-pequeno para o dedo. O placeholder de todo parágrafo vazio (`BLOCK_PLACEHOLDERS`)
-ensina o atalho, e a linha do fim do texto (`WritingLine`) continua sempre lá
-— é nela, ou em qualquer parágrafo vazio no meio do documento, que se digita
-`/`.
+**Não há mais botão "+" no meio do texto. A barra `/`, num parágrafo vazio, é
+o caminho para inserir um bloco** — título, passagem, destaque, citação,
+conclusão, tudo o que o menu oferece (ver "O menu da BARRA" abaixo). Havia um
+disco por vão entre blocos, e outro na pílula de cada bloco (`BlockControls`,
+"Adicionar bloco acima"), os dois abrindo a mesma fileira flutuante de
+pastilhas; o celular perdia o `hover` que acendia o disco, e o alvo de 24px já
+nascia pequeno para o dedo. O placeholder de todo parágrafo vazio
+(`BLOCK_PLACEHOLDERS`) ensina o atalho, e a linha do fim do texto
+(`WritingLine`) está lá enquanto a folha estiver aberta — é nela, ou em
+qualquer parágrafo vazio no meio do documento, que se digita `/`. **Posta a
+conclusão, ela some**: ver "Ela e a CONCLUSÃO são as duas pontas" abaixo.
+
+**No CELULAR quem serve esse menu é a barra de blocos acima do teclado**
+(`BlockKeyboardBar`), e ela existe porque a `/` é um atalho de teclado num
+aparelho que não tem teclado: ali a barra mora no terceiro nível do teclado
+virtual (`?123`, e depois a página dos símbolos), então o único caminho para
+pedir um título custava dois toques antes do primeiro caractere. A fileira traz
+as MESMAS opções do menu (`menuOptions` menos "Parágrafo", que é o que a linha
+já é), uma por glifo num alvo de 40px, a um toque; o `+` fixo na direita abre o
+`SlashMenu` de sempre, com os nomes escritos, a busca e a citação rápida.
+
+**Só os GLIFOS, e a FILEIRA não tem fundo: os discos têm.** Com o rótulo ao
+lado cada opção media uns 120px e três delas enchiam a largura da tela; com uma
+pílula de vidro embrulhando todos, a fileira virava uma segunda barra do app em
+cima do teclado. O que sobrou são discos de vidro soltos sobre o texto, 40px
+cada, o mesmo vocabulário dos botões da `MobileActionBar` sem a faixa que os
+agrupava. O nome está no `aria-label` para quem ouve a tela, e escrito no menu
+do `+`, que é também a saída para o glifo que ficou ambíguo. Só o `+` leva
+`backdrop-blur`: o vidro dos outros já é 72% opaco, e dez `backdrop-filter`
+lado a lado sobre texto cobram caro num aparelho com o teclado aberto.
+
+**As pontas DESVANECEM, e só do lado que ainda tem fileira.** Sem a faixa, um
+disco cortado pela metade na borda lê como defeito, não como "há mais coisa para
+este lado", e a máscara é a única pista de que a fileira rola. Ela é medida
+(`syncEdges`), não fixa: parada no começo, o primeiro glifo aparece inteiro.
+É `mask-image`, e não uma faixa da cor do fundo por cima — a barra flutua SOBRE
+o texto do rascunho, e um retângulo opaco nas pontas seria o único pedaço sólido
+de uma barra que acabou de perder o fundo.
+
+Três regras, e elas são o desenho todo:
+
+- **Ela só aparece com o cursor numa LINHA EM BRANCO** — um parágrafo vazio ou
+  a `WritingLine` (é por ela que existe o `tailFocus`: a linha do fim não é um
+  bloco e não passa pelo `active`). Com uma palavra escrita a pergunta "o que é
+  esta linha?" já foi respondida, e escolher no menu SUBSTITUI a linha: sobre
+  texto, isso seria apagar o que a pessoa escreveu.
+- **Ela TOMA O LUGAR da `MobileActionBar`, não se soma a ela.** Duas faixas
+  empilhadas comeriam mais de 100px sobre um teclado que já cobre metade da
+  tela, e buscar/Biblo/salvar não são o gesto de quem está com o cursor numa
+  linha vazia. Ela é bem mais baixa que a de ações (40px contra 56), no mesmo
+  recuo de baixo; a de ações volta assim que a linha ganha texto ou vira um
+  bloco.
+- **Com o `SlashMenu` aberto não fica nenhuma das duas.** A linha passa a ter
+  `/` escrito, deixou de ser em branco, e devolver a barra de ações no mesmo
+  quadro em que o menu abre seria uma faixa piscando por baixo dele.
+
+E a barra ABANDONADA some com o menu: uma linha que ficou só com `/` é um
+comando que ninguém completou, e o `onBlur` do bloco a esvazia. Sem isso, abrir
+o menu pelo `+` e desistir deixaria um parágrafo com uma barra dentro toda vez.
 
 **O que sobra na PÍLULA do bloco** (`BlockControls`) é o que só faz sentido
 sobre um bloco que já existe: marcar um recorte selecionado, mover para cima
@@ -419,9 +461,10 @@ o prefixo é COMIDO na conversão — ele era a instrução, não conteúdo.
 **O NEGRITO vira o MARCA-TEXTO**, e não há bold nenhum escondido nisso: todo
 bloco é `{ type, text }`, string pura, e a única ênfase dentro de uma frase que
 o produto tem é a faixa amarela. `**assim**` vira `==assim==` onde a marca
-APARECE na leitura (`MARKABLE`), e o cursor anda junto — são dois caracteres a
-menos por par convertido, e sem o acerto quem marca uma palavra no meio de um
-parágrafo perde o lugar. Num título ou numa citação a conversão não acontece:
+APARECE na leitura (`MARKABLE`), e o cursor anda junto — são QUATRO caracteres
+a menos na tela por par convertido (os dois asteriscos de cada ponta saem, e as
+cercas que entram no lugar não são desenhadas), e sem o acerto quem marca uma
+palavra no meio de um parágrafo perde o lugar. Num título ou numa citação a conversão não acontece:
 ali `==` apareceria como texto, que é pior que o `**`.
 
 ### O menu da BARRA (`/`), o ÚNICO caminho para inserir um bloco
@@ -495,7 +538,24 @@ editor inteiro: todo bloco é `{ type, text }`, string pura. Um marca-texto em n
 e marcas obrigaria a uma segunda representação do documento, que é exatamente o
 que o editor existe para não ter. Ele vale onde a leitura passa pelo `RichText`
 (parágrafo, exemplo, conclusão e os itens de lista) — `MARKABLE`, no `Composer`
-—, e a faixa amarela é a MESMA da frase de destaque.
+—, e a faixa amarela é a `.highlight-mark`: o mesmo amarelo da frase de
+destaque cobrindo a palavra de cima a baixo, e não a passada por baixo dela
+(`.highlight-phrase`). Sobre duas palavras no meio de um parágrafo, aquela faixa
+lia como sublinhado gordo; o comentário das duas classes em `globals.css` tem o
+argumento inteiro.
+
+**E as CERCAS não aparecem na edição.** A caixa mostra o texto sem elas
+(`stripMarks`) e cada tecla volta para o texto cru por `applyDisplayEdit`, em
+`lib/domain/mark.ts` — o bloco continua guardando `==assim==`, o schema não
+mudou, e quem escreve nunca vê quatro sinais de igual no meio da própria frase
+nem gasta duas setas para atravessar um caractere que não está na tela. Uma
+`textarea` não sabe esconder parte do próprio conteúdo, então o preço é uma
+tradução de mão dupla, com três consequências que a seção "O TEXTO CRU E O
+TEXTO VISÍVEL" daquele arquivo explica: na BORDA de uma marca o que se digita
+fica de fora dela, apagar o conteúdo apaga a marca, e um `=` digitado no meio a
+desfaz. Quem escreve em posições visíveis — o `markAt`, o Enter que fecha uma
+lista, a conta de cursor do negrito→marca — traduz antes de gravar; gravar o
+que está na caixa apagaria toda marca do bloco.
 
 **O botão dele mora na pílula de controles que já existe**, e aparece quando há
 recorte na mão. Uma barra flutuante sobre a seleção precisaria medir a geometria
@@ -549,7 +609,19 @@ SOMEM de lá depois de usadas: duas conclusões num texto não são um recurso, 
 erro de digitação que ninguém desfaz sem ir procurar a segunda. A posição de
 cada uma é fixa — a ideia central abre o texto, a conclusão o fecha —, e é o
 `Composer` quem garante isso: toda inserção tem o índice da conclusão como teto,
-ela não se move com as setas, e nada se move para depois dela. A ideia central
+ela não se move com as setas, e nada se move para depois dela.
+
+**E não existe caixa de digitar fora dessas pontas — nem abaixo da conclusão,
+nem acima da ideia central.** A de cima é de graça (o cartão do `shortSummary`
+é o primeiro item da coluna, sempre), a de baixo custou uma linha: a
+`WritingLine` ficava na folha mesmo com o fecho posto, oferecendo uma posição
+que o teto da inserção não permite — o parágrafo digitado ali nascia ACIMA da
+conclusão, e a letra aparecia a um cartão de distância de onde o cursor estava.
+Com conclusão no documento ela não é desenhada (`closed`, no `Composer`), e
+quem quer mais um parágrafo continua com o Enter no fim do bloco de cima, que
+cai logo antes do fecho.
+
+A ideia central
 já teve uma pastilha própria no topo da folha; eram dois lugares respondendo "o
 que mais cabe aqui?", e o que decidia em qual deles cada coisa aparecia era um
 detalhe do schema (ser ou não ser bloco) que ninguém que escreve tem como saber.
@@ -624,7 +696,7 @@ separá-las conserta um defeito que apareceu em produção. A linha continua
 nascendo só quando há texto — criar ao abrir encheria a Biblioteca de folhas em
 branco de quem clicou no menu e desistiu —, mas o id é sorteado pelo editor
 (`newDraftId`), vira a chave do rascunho local, vai no corpo do POST e é com ele
-que `/api/sessions/written` cria a linha. A URL passa a ser `/escrever/{id}`
+que `/api/sessions/written` cria a linha. A URL passa a ser `/summary/{id}/edit`
 assim que a folha abre, por `replaceState`.
 
 O desenho anterior deixava o id para o servidor, e o rascunho de um texto novo
@@ -633,7 +705,7 @@ salvamento falhava, o texto ficava guardado ali e o "Escrever" seguinte abria
 com ele dentro — a pessoa pedia folha em branco e recebia o texto anterior. Um
 id por folha faz de cada "Escrever" um documento.
 
-**Consequência em `/escrever/{id}`: id sem linha no banco abre o editor VAZIO,
+**Consequência em `/summary/{id}/edit`: id sem linha no banco abre o editor VAZIO,
 não um 404.** O endereço existe antes do primeiro salvamento, e o rascunho está
 no aparelho; um 404 ali jogaria fora o texto de quem recarregou a página no meio
 da escrita. Id que não é UUID continua sendo 404. A rota, do lado de lá, CRIA
@@ -723,10 +795,10 @@ conhecido, e o conserto seria `theme-color` por rota.
 
 ```
 /feed /recordings /list   → /home
-/billing/assinar          → /assinar        /billing/retorno → /retorno
+/billing/assinar             → /subscribe        /billing/retorno → /subscribe/return
 /recording/:id/summary    → /summary/:id
-/recording/:id/deepening  → /studies/:id
-/recording/:id/youtube    → /importar/:id
+/recording/:id/deepening  → /summary/:id
+/recording/:id/youtube    → /import/:id
 /session/:id              → /summary/:id
 ```
 
@@ -742,9 +814,10 @@ webhook não chegou — uma sessão de Checkout aberta durante o deploy ainda tr
 `/billing/retorno` gravado do lado do Stripe.
 
 **Quatro endereços antigos não viraram redirect: viraram a própria rota.**
-`/studies`, `/importar`, `/profile` e `/indicar` respondiam 308 para
-`/v2/<mesma coisa>`; com o prefixo fora, o endereço antigo É o novo. O
-`/v2/` era andaime de uma migração que acabou.
+`/studies` (antes de ele morrer com o modo estudo, ver abaixo), `/import`,
+`/profile` e `/refer` respondiam 308 para `/v2/<mesma coisa>`; com o prefixo
+fora, o endereço antigo É o novo. O `/v2/` era andaime de uma migração que
+acabou.
 
 ## A Biblioteca e o gravador
 
@@ -843,7 +916,7 @@ celular. São 40px com glifo de 20px — 44px com glifo de 24px davam à barra d
 botões que pesavam mais que o próprio título. Eram quadrados arredondados até o
 avatar entrar ao lado deles: três controles na mesma barra com duas bordas
 diferentes liam como peças de origens diferentes, e quem cede é o chip. A
-classe deles mora em `(app)/(barra)/components/chip.ts`, um `.ts` puro que servidor e
+classe deles mora em `(app)/(shell)/components/chip.ts`, um `.ts` puro que servidor e
 cliente leem igual: são quatro botões em quatro arquivos desenhando o mesmo
 objeto, e copiada ela divergiria no primeiro ajuste de raio.
 
@@ -874,7 +947,7 @@ quando há algum estudo — sem lista montada, ele abriria uma barra sem onde
 existir.
 
 **No desktop quem cria é a barra do topo, e a razão não é a mesma do celular.**
-No `/summary` e no `/escrever`, chegar a uma tela de leitura é ter escolhido
+No `/summary` e no `/summary/new`, chegar a uma tela de leitura é ter escolhido
 LER, e um `+` flutuando sobre o sermão aberto cobraria a tela por uma ação que
 o voltar já alcança. No celular o `+` das três portas mora na
 `MobileActionBar` da BIBLIOTECA (ver abaixo), e só dela: nas duas telas de
@@ -884,7 +957,7 @@ aberto. Ele chegou a ficar nas três, e nas de texto pagava o lugar mais
 alcançável do polegar por uma ação que quase ninguém faz dali.
 
 **No DESKTOP não há `+`: as três portas ficam na barra do topo**
-(`(app)/(barra)/components/CreateActions.tsx`), como chips de 40px, só o ícone, com o
+(`(app)/(shell)/components/CreateActions.tsx`), como chips de 40px, só o ícone, com o
 nome no tooltip. O `+` é um clique cobrado para revelar três ícones, e ele se
 paga enquanto a tela é estreita: ali a barra do topo é a única linha larga que
 existe, e gastá-la com três botões seria gastar o lugar do título. Num monitor
@@ -924,11 +997,11 @@ alvo, aquele passo se apaga sozinho, e o desktop vê cinco balões onde o celula
 vê seis.
 
 **No CELULAR as três portas ficam atrás do "+" da `MobileActionBar`**
-(`(app)/(barra)/components/MobileActionBar.tsx`), a barra de baixo comum a
-`/home`, `/summary` e `/escrever` — ver "A barra de baixo do celular" adiante,
+(`(app)/(shell)/components/MobileActionBar.tsx`), a barra de baixo comum a
+`/home`, `/summary` e `/summary/new` — ver "A barra de baixo do celular" adiante,
 onde ela é explicada por inteiro. O painel que o "+" abre é o mesmo de sempre:
-"Gravar" (o microfone, `/recording?auto=1`), "Escrever" (`/escrever`) e
-"Importar" (`/importar`), num painel de ícone-e-nome como o dos
+"Gravar" (o microfone, `/recording?auto=1`), "Escrever" (`/summary/new`) e
+"Importar" (`/import`), num painel de ícone-e-nome como o dos
 prints em `public/prints/new-release/`.
 
 **Os três rótulos dizem o RESULTADO, sob um título**: "Resumo automático",
@@ -977,9 +1050,9 @@ glifo faria o fechar aparecer do nada no lugar do abrir.
 
 ### A barra de baixo do celular
 
-`MobileActionBar` (`(app)/(barra)/components/MobileActionBar.tsx`) é a barra
+`MobileActionBar` (`(app)/(shell)/components/MobileActionBar.tsx`) é a barra
 que junta busca, "Pergunte ao Biblo" e criar num só lugar, `md:hidden`, e vive
-em TRÊS telas: `/home`, `/summary` e `/escrever`. Ela substituiu dois discos
+em TRÊS telas: `/home`, `/summary` e `/summary/new`. Ela substituiu dois discos
 soltos que cada tela desenhava por conta própria — o `+` (o antigo
 `CreateDock`, que só existia na Biblioteca) e o disco flutuante do Biblo
 (`BibloDock`/`BibloHomeDock`, repetido nas três) — por uma peça PERSISTENTE:
@@ -1002,8 +1075,8 @@ meio em toda tela; a busca e a ação de cada lado, não:
 | | busca | ação |
 |---|---|---|
 | `/home` | a GLOBAL (`GlobalSearchDialog`) | o "+", as três portas |
-| `/summary` | dentro do resumo (`SummaryFind`) | "Editar" (`/escrever/:id`) |
-| `/escrever` | dentro do rascunho | "Salvar", que abre `/summary/:id` |
+| `/summary` | dentro do resumo (`SummaryFind`) | "Editar" (`/summary/:id/edit`) |
+| `/summary/new` | dentro do rascunho | "Salvar", que abre `/summary/:id` |
 
 A busca das três já foi a GLOBAL, e nas duas telas de texto isso era a lupa
 prometendo procurar no documento e abrindo o acervo — o mesmo defeito que o
@@ -1086,7 +1159,7 @@ da onda; hoje são camadas fechadas por padrão, cada uma reaproveitando o
 lugar em que a mesma ferramenta já mora no resto do app:
 
 - **Biblo** é o `BibloDock` de sempre, o disco de vidro no canto de baixo à
-  direita — o MESMO componente de `/summary` e `/escrever`, sem `onInsert`
+  direita — o MESMO componente de `/summary` e `/summary/new`, sem `onInsert`
   (durante a gravação não há resumo em que inserir).
 - **Bíblia** é o `BibleDock` de sempre, a aba colada na borda direita.
 - **Notas** é a única sem gêmea em outra tela: `RecordingNotesDock`, um
@@ -1109,7 +1182,7 @@ pregação parecer a MESMA coisa que abri-las lendo um resumo.
   no mesmo instante que o da gravação, sem custar rede. A LINHA no banco é
   outra coisa: ela só é criada quando alguém de fato pergunta algo ao Biblo
   (`ensureSession`), e no caminho comum continua nascendo no ENVIO, como
-  sempre nasceu. É o mesmo desenho do `/escrever` e do Biblo da Biblioteca, e
+  sempre nasceu. É o mesmo desenho do `/summary/new` e do Biblo da Biblioteca, e
   substituiu um `POST` adiantado no toque em "gravar" que punha uma ida ao
   servidor no instante em que a tela tem uma coisa só para fazer, e deixava
   uma sessão vazia no banco para cada gravação abandonada no primeiro minuto.
@@ -1176,7 +1249,7 @@ espera hoje tem cartão na Biblioteca, motivo escrito e retentativa automática,
 o que é muito melhor que sumir, mas ainda não é funcionar offline.
 
 **Restrito:** `/admin/*` (gate em `src/app/admin/layout.tsx`, responde `notFound()`
-a quem não é admin) e `/partners` (gate em `src/lib/auth/require-partner.ts`).
+a quem não é admin) e `/partners/dashboard` (gate em `src/lib/auth/require-partner.ts`).
 
 As três rotas de link de entrada (`/r`, `/i`, `/c`) são irmãs e seguem as
 mesmas decisões: são ROTAS e não páginas (para nenhuma delas custar a
@@ -1208,7 +1281,7 @@ o rascunho de sair é a POLICY da migração 0063, não um filtro na rota.
 entidade. Ver `src/features/admin/AGENTS.md`.
 
 `POST /api/sessions` aceita um `id` sorteado no APARELHO, opcional. Era só o
-`/escrever` que precisava disso (por outra rota); hoje a conversa do Biblo na
+`/summary/new` que precisava disso (por outra rota); hoje a conversa do Biblo na
 Biblioteca e a GRAVAÇÃO também — as três pela mesma razão, que é precisar de
 uma chave antes de haver o que guardar no servidor. Id que já existe e é seu
 devolve o mesmo id; id de outra pessoa vira 409 `id_taken`, a mesma régua de
@@ -1216,7 +1289,7 @@ devolve o mesmo id; id de outra pessoa vira 409 `id_taken`, a mesma régua de
 ele chama a rota SEMPRE, com o id da linha, sem precisar saber se a sessão já
 foi criada durante a pregação.
 
-`sessions/written` é a rota do `/escrever`, e a ÚNICA do produto que recebe um
+`sessions/written` é a rota do `/summary/new`, e a ÚNICA do produto que recebe um
 `SummaryPayload` vindo do CLIENTE — todos os outros nascem dentro do servidor, a
 partir da resposta de um modelo. Daí `WrittenSummarySchema` ter teto em cada
 campo e em cada lista: sem eles uma aba empurraria megabytes de jsonb para
@@ -1266,7 +1339,7 @@ deliberada em relação a `/reprocess` e `/api/deepening`, ela é a chamada
 barata (~R$ 0,03) e é ela que diz se o vídeo é importável, então cobrar antes
 obrigaria a estornar quatro recusas rotineiras. O RECORTE (`source_start_ms` /
 `source_end_ms`) é lido da LINHA, nunca do corpo: esta rota é redisparada a
-cada reload de `/importar/:id`, e um recorte que viesse na requisição viraria o
+cada reload de `/import/:id`, e um recorte que viesse na requisição viraria o
 vídeo inteiro pelo mesmo preço num "atrás" do navegador. A regra que aquelas rotas
 protegem continua valendo: a chamada CARA (o resumo) só roda depois do débito.
 Ver o cabeçalho da rota.
@@ -1393,7 +1466,7 @@ export async function POST(request: Request) {
     metadata: buildLlmMetadata({ route: "foo", userId: auth.user.id, sessionId }),
   });
   // 6. parseFooFromLLM() do lib/domain, nunca JSON.parse à mão
-  // 7. recordChatUsage() para o custo aparecer em /admin/custos
+  // 7. recordChatUsage() para o custo aparecer em /admin/costs
   // 8. log.debug("ok", { latencyMs, finishReason, promptTokens, completionTokens })
 }
 ```
@@ -1584,7 +1657,7 @@ eles deixaram continua valendo: imagem decorativa nova entra por import
 estático, em WebP, no tamanho de tela vezes quatro** — o import dá
 `width`/`height` de graça, e é isso que evita CLS.
 
-**As duas regras acima valem para `/parceiros` também.** Ela é a segunda página
+**As duas regras acima valem para `/partners` também.** Ela é a segunda página
 que um anônimo carrega, é estática pelas mesmas razões, e sua prévia do painel
 do parceiro é markup próprio justamente para não arrastar `PartnerTabs`,
 `EarningsByPlan` e o `RefreshPanelButton`, todos `"use client"`, para o bundle
@@ -1658,7 +1731,7 @@ aparece semanas depois, num relatório do Search Console.
 - **Página pública nova entra em TRÊS listas no mesmo commit**: `PUBLIC_PREFIXES`
   do `src/proxy.ts` (sem isso ela responde `307 → /sign-in` para quem não tem
   conta, que é exatamente o público dela), `src/app/sitemap.ts` e os `Links` do
-  `/llms.txt`. Foi o caminho de `/parceiros`.
+  `/llms.txt`. Foi o caminho de `/partners`.
 - **Conteúdo para agentes** (`/llms.txt`, `/index.md`) sai de
   `src/shared/content/llms.ts`, um lugar só, mesma regra de `src/lib/seo.ts`. A
   seção "Quando usar o Scriba" existe porque o produto não tem API pública: a
@@ -1705,7 +1778,7 @@ dev (`PwaBootstrap`): service worker + HMR gera loop de código velho difícil d
 depurar.
 
 **Ele não cacheia CONTEÚDO, e isso continua sendo decisão.** Nenhuma resposta
-de `/api/*`, nenhuma tela de sessão (`/summary/:id`, `/escrever/:id`), nada que
+de `/api/*`, nenhuma tela de sessão (`/summary/:id`, `/summary/:id/edit`), nada que
 carregue transcrição, feed ou saldo. O conteúdo aqui muda a cada segundo, e
 cache velho não apareceria como bug de cache: apareceria como sessão que perdeu
 texto.

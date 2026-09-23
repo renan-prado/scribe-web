@@ -40,7 +40,7 @@ const log = createLogger("passages");
  * ## Quem precisa disto
  *
  * Toda página que renderiza blocos de resumo no servidor: `/summary/:id`,
- * `/escrever/:id` e `/admin/sessions/:id`. Uma página que esqueça a chamada não
+ * `/summary/:id/edit` e `/admin/sessions/:id`. Uma página que esqueça a chamada não
  * quebra — volta a ter o aviso e a requisição —, e é por isso que a chave da
  * entrada é montada pelo `formatPassageRange` compartilhado, e não por uma
  * string escrita à mão aqui: uma chave que não bate é uma semeadura que ninguém

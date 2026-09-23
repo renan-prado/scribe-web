@@ -1,6 +1,6 @@
 # Controle financeiro do Scriba
 
-O `/admin/financeiro` existe para responder a uma pergunta só:
+O `/admin/finance` existe para responder a uma pergunta só:
 
 > **Se eu olhar para o Scriba hoje e para os próximos meses, sei exatamente
 > quanto estamos ganhando, quanto estamos gastando, quanto devemos e para onde
@@ -80,7 +80,7 @@ e é isso que impede o custo de dobrar.
 ### Por que dívida não é um tipo
 
 Uma dívida é uma despesa com `status <> 'paid'` e `due_date`; um valor a
-receber é uma receita na mesma situação. `/admin/financeiro/lancamentos?visao=aberto` é um
+receber é uma receita na mesma situação. `/admin/finance/entries?visao=aberto` é um
 RECORTE da mesma tabela.
 
 Um terceiro `kind` daria três somas para o mesmo dinheiro, a despesa, o
@@ -153,7 +153,7 @@ se recusa a existir. Toda soma da camada devolve quantos itens ficaram de fora,
 e a tela diz.
 
 O câmbio do histórico é o de `src/lib/fx/usd-brl.ts` (AwesomeAPI, com fallback
-manual em cookie, o mesmo de `/admin/custos`). O das PROJEÇÕES é separado, em
+manual em cookie, o mesmo de `/admin/costs`). O das PROJEÇÕES é separado, em
 `finance_settings.projection_usd_brl`, para uma projeção de doze meses não
 mudar de resultado entre dois carregamentos porque o dólar oscilou.
 
@@ -260,17 +260,17 @@ A área é UM item do menu do painel, com navegação própria (`FinanceTabs`) e
 cinco abas sobre quatro rotas:
 
 ```
-/admin/financeiro                             → Visão geral + evolução mensal
-/admin/financeiro/lancamentos                 → CRUD com os filtros do §17
-/admin/financeiro/lancamentos?visao=aberto    → o que devemos e o que temos a receber
-/admin/financeiro/recorrentes                 → contratos, equivalentes, próxima cobrança
-/admin/financeiro/projecoes                   → base medida, cenários, mês a mês
+/admin/finance                             → Visão geral + evolução mensal
+/admin/finance/entries                 → CRUD com os filtros do §17
+/admin/finance/entries?visao=aberto    → o que devemos e o que temos a receber
+/admin/finance/recurring                 → contratos, equivalentes, próxima cobrança
+/admin/finance/scenarios                   → base medida, cenários, mês a mês
 ```
 
 Mais um destino fora da área, porque o que ele edita não é só financeiro:
 
 ```
-/admin/configuracoes?aba=financeiro  → categorias, saldo, alíquota, câmbio
+/admin/settings?aba=financeiro  → categorias, saldo, alíquota, câmbio
 ```
 
 **"Em aberto" divide a rota com Lançamentos de propósito**, e é a tela dizendo
@@ -284,7 +284,7 @@ sem cotação do dólar, sem custo recorrente cadastrado, com a receita contada
 duas vezes ou com assinaturas que nunca passaram pelo checkout, o total
 continua sendo um número plausível. O sintoma é sempre uma conta boa demais,
 que é a que ninguém investiga. É a mesma razão do aviso de modelo sem preço em
-`/admin/custos`.
+`/admin/costs`.
 
 Os avisos implementados hoje (`buildFinanceOverview`):
 

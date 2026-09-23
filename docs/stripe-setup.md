@@ -275,7 +275,7 @@ Com tudo em modo de teste:
    - Validade: qualquer data futura (ex.: `12/34`)
    - CVC: qualquer 3 dígitos
    - Nome/CEP: qualquer coisa
-4. Você volta para `/billing/retorno`. Em poucos segundos a tela troca para
+4. Você volta para `/subscribe/return`. Em poucos segundos a tela troca para
    "Créditos adicionados!" e o saldo sobe.
 5. Repita com um plano para conferir a assinatura, e confira em
    `/profile` se o card mostra o plano e a data da próxima recarga.

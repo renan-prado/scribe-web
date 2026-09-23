@@ -2,19 +2,19 @@ import type { ReactNode } from "react";
 import { NavLink } from "@/components/NavLink";
 
 /**
- * O POST-IT: a casca dos cartões dos dois murais, a Biblioteca e os Estudos.
+ * O POST-IT: a casca do cartão da Biblioteca, hoje o único mural do app.
  *
- * Ela guarda o que é igual nos dois — a cor sorteada, o cartão inteiro
- * clicável, o véu do toque, o anel de foco — e deixa o CONTEÚDO para quem a
- * usa, porque é só nisso que os dois diferem: `LibraryNote` põe uma sessão
- * dentro, `StudyNote` põe um estudo.
+ * Ela guarda a cor sorteada, o cartão inteiro clicável, o véu do toque, o
+ * anel de foco, e deixa o CONTEÚDO para quem a usa (`LibraryNote`).
  *
- * **Casca compartilhada, e não um `variant`.** A diferença entre os dois
- * cartões é o que entra em três buracos; um `variant` traria de volta o `if`
- * que o `SessionCard` tinha, com dois conteúdos vivos no mesmo arquivo. E
- * copiar a casca no segundo mural seria pior: o "stretched link" daqui é
- * `::after` + `static` + `z-10` afinados entre si, e duas cópias disso divergem
- * no primeiro ajuste — uma delas para de ser clicável e ninguém percebe.
+ * **Ela nasceu para servir DOIS murais**, a Biblioteca e os Estudos, e o
+ * `StudyNote` que punha um estudo nela saiu junto quando o modo estudo saiu do
+ * produto. A casca ficou separada do conteúdo mesmo com um caller só: um
+ * `variant` aqui traria de volta o `if` que o `SessionCard` tinha, com dois
+ * conteúdos vivos no mesmo arquivo, e o "stretched link" — `::after` +
+ * `static` + `z-10` afinados entre si — é o tipo de detalhe que uma segunda
+ * cópia deixa de acompanhar no primeiro ajuste, e um cartão para de ser
+ * clicável sem ninguém perceber.
  *
  * ## A anatomia, e por que ela é essa
  *
@@ -37,11 +37,6 @@ import { NavLink } from "@/components/NavLink";
  * visual, e instável ela é só ruído. Pelo id, ela nasce com a sessão e morre
  * com ela.
  *
- * **Os dois murais passam o MESMO id**, o da sessão: um estudo sai de um
- * sermão, e nas duas telas os dois saem com a mesma cor. Não é enfeite, é a
- * única pista de que aquele cartão verde dos Estudos é filho daquele cartão
- * verde da Biblioteca.
- *
  * O hash é determinístico e sem `Math.random()`/`Date`, então servidor e
  * cliente chegam à mesma cor e a hidratação não tem o que divergir.
  *
@@ -52,7 +47,7 @@ import { NavLink } from "@/components/NavLink";
  * eles já se separam do fundo pela própria cor.
  *
  * Não leva `"use client"`: sem estado e sem hook, vai para o bundle do cliente
- * só porque as duas listas, que são client, o importam.
+ * só porque `LibraryBrowser`, que é client, o importa.
  */
 type Props = {
   /** De onde sai a cor. É sempre o id da SESSÃO, ver o cabeçalho. */
@@ -62,8 +57,7 @@ type Props = {
    *  para o topo sem trocar a anatomia do cartão. */
   eyebrow?: string | null;
   title: string;
-  /** O rodapé, na tinta apagada do cartão: o glifo do modo e a data na
-   *  Biblioteca, só a data nos Estudos. */
+  /** O rodapé, na tinta apagada do cartão: o glifo do modo e a data. */
   footer: ReactNode;
   /** A linha que explica um casamento invisível da busca. Ver o cabeçalho. */
   hint?: ReactNode;

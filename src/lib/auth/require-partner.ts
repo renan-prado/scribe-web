@@ -27,7 +27,7 @@ const log = createLogger("partners");
  *     saber SE mostra o item. Vem da mesma consulta porque a linha é uma só e
  *     buscá-la parcialmente não economizaria nada.
  *
- * Memoizada com `cache()` por render pass. O layout de `/partners` e a página
+ * Memoizada com `cache()` por render pass. O layout de `/partners/dashboard` e a página
  * dentro dele chamavam os dois, o comentário na página dizia "reaproveita a
  * resolução", e não reaproveitava: eram duas rodadas completas, com dois
  * `getUser()`, duas consultas service-role e duas conferências de mesada.

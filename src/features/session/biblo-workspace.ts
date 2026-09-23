@@ -16,7 +16,7 @@ const log = createLogger("biblo-workspace");
  * 0062), e na Biblioteca não há sessão nenhuma na tela. Ela nasce no primeiro
  * "enviar", fica com `ended_at` nulo para sempre, e por isso **não aparece no
  * acervo**: `listSessions` filtra `ended_at is not null`. É o mesmo desenho do
- * `/escrever`, onde o id nasce no aparelho e a linha só existe quando há o que
+ * `/summary/new`, onde o id nasce no aparelho e a linha só existe quando há o que
  * guardar.
  *
  * **O DOCUMENTO** é o que o Biblo CRIA quando a pessoa pede um texto. Ele é uma
@@ -68,7 +68,7 @@ export const EMPTY_WORKSPACE: BibloWorkspace = { sessionId: null, created: false
  * A bancada guardada, com o id da âncora JÁ SORTEADO se ele faltava.
  *
  * **O id nasce no aparelho, e a linha só depois**, exatamente como no
- * `/escrever`. A razão aqui é outra e mais direta: a gaveta precisa de um
+ * `/summary/new`. A razão aqui é outra e mais direta: a gaveta precisa de um
  * `sessionId` para LER a conversa, e o `GET /api/biblo` responde sem exigir que
  * a sessão exista (está escrito no cabeçalho daquela rota). Com o id local, a
  * primeira abertura da gaveta é instantânea e não custa linha nenhuma no banco
@@ -169,7 +169,7 @@ export function navigationTargetFor(action: BibloAction): string | null {
     case "iniciarGravacao":
       return "/recording?auto=1";
     case "importarVideoDoYoutube":
-      return action.url ? `/importar?url=${encodeURIComponent(action.url)}` : "/importar";
+      return action.url ? `/import?url=${encodeURIComponent(action.url)}` : "/import";
     case "navegarPara":
       return action.destino === "perfil" ? "/profile" : "/home";
     default:

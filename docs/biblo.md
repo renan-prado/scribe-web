@@ -50,7 +50,7 @@ interessante, pergunta sobre Nínive, gosta de um parágrafo, manda para o resum
 Cada passo custa pouco, chega rápido e é dirigido por quem sabe o que está
 procurando. O estudo tentava adivinhar tudo de uma vez; o Biblo pergunta.
 
-**Terceiro: o `/escrever` criou um segundo momento para ele.** Quem escreve um
+**Terceiro: o `/summary/new` criou um segundo momento para ele.** Quem escreve um
 resumo à mão está com a folha aberta e a cabeça no assunto. É o instante em que
 "me lembra outra passagem sobre perdão" tem mais valor do que em qualquer outro
 lugar do app — e é o único caminho do produto que não custa moeda nenhuma, o que
@@ -62,7 +62,7 @@ primeira vez.
 ## 3. Onde ele vive
 
 **Nos dois lugares, com o mesmo comportamento: na leitura (`/summary/:id`) e na
-escrita (`/escrever/:id`).**
+escrita (`/summary/:id/edit`).**
 
 Isso não é "vamos colocar em todo lugar". É que a conversa é sobre o CONTEÚDO, e
 o conteúdo é o mesmo nos dois — o `SummaryPayload` que a IA escreve e que o
@@ -89,7 +89,7 @@ parou. Uma conversa que evapora ensina a pessoa a não usá-la.
 
 **O cumprimento olha o resumo antes de falar.** Título, ideia central,
 passagens citadas — o suficiente para a primeira frase ser específica. Se a
-sessão ainda está vazia (alguém que acabou de abrir o `/escrever`), ele
+sessão ainda está vazia (alguém que acabou de abrir o `/summary/new`), ele
 cumprimenta sem fingir que sabe de algo, e os chips viram os genéricos ("sobre
 qual passagem você quer escrever?").
 
@@ -323,7 +323,7 @@ extremo também existe — só que ele virou uma janela de contexto deslizante, 
 segura o custo sem nenhuma parede na tela.
 
 Duas coisas a resolver junto com o preço: **o Biblo depende de plano?** (o
-`/escrever` é o único caminho gratuito do produto, e o Biblo ali dentro é a
+`/summary/new` é o único caminho gratuito do produto, e o Biblo ali dentro é a
 melhor vitrine que os planos pagos poderiam ter) e **quem não tem moedas vê o
 quê?** — a gaveta abre e mostra o convite, ou o botão nem aparece?
 

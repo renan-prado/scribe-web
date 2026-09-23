@@ -139,7 +139,7 @@ export const DEFAULT_PARTNER_SIGNUP_REWARD_COINS = 20;
 export const DEFAULT_PARTNER_MONTHLY_COINS = 500;
 
 /**
- * Moedas de cortesia do PRÉ-PARCEIRO, quem chega por `/parceiros`, cria conta
+ * Moedas de cortesia do PRÉ-PARCEIRO, quem chega por `/partners`, cria conta
  * sem compromisso nenhum e quer só ver se o produto faz sentido para o público
  * dele antes de topar divulgar.
  *
@@ -158,7 +158,7 @@ export const PARTNER_PROSPECT_COINS = 500;
  * já creditados.
  *
  * **Ele é a única coisa entre esta funcionalidade e uma torneira aberta.**
- * `/parceiros` é página pública: qualquer pessoa com uma conta Google nova
+ * `/partners` é página pública: qualquer pessoa com uma conta Google nova
  * passa por ela e pede as moedas, e não há um parceiro do outro lado com
  * `bonus_budget_coins` limitando nada. O custo de atacar isto é o custo de
  * criar contas Google, alto, mas não infinito.

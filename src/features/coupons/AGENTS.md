@@ -7,7 +7,7 @@ vive fora, e saber onde é metade do que este arquivo tem a dizer:
 ```
 src/features/coupons/components/CouponNotice.tsx  o selo da tela de entrada
 app/c/[code]/route.ts                             o link: grava o cookie, 302
-app/admin/cupons/page.tsx                         a emissão (painel)
+app/admin/coupons/page.tsx                         a emissão (panel)
 src/features/admin/components/CouponsManager.tsx  o formulário e a tabela
 app/api/admin/coupons/route.ts                    criar, desativar, apagar
 lib/domain/coupon.ts                              client-safe: formato, limites

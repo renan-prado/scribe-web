@@ -10,7 +10,7 @@ export type CycleUsage = { grant: number; spent: number; since: string };
  * Central store for the current user's coin balance. Replaces the old
  * `scriba:coin-balance` CustomEvent bus, every consumer now subscribes to
  * this store, so a single refresh/charge propagates to the header chip, the
- * NewRecordingDialog gate, the DeepenButton state, etc. simultaneously.
+ * create-action gates, etc. simultaneously.
  *
  * `balance === null` means "unknown yet", used by consumers to distinguish
  * initial-loading from actually-zero when gating buttons.

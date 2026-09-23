@@ -13,17 +13,19 @@ que o transforma em resumo e a fila que insiste por ele são desta pasta
 da tela de gravação, e ser dela foi exatamente o defeito — ver "A gravação
 guardada, e quem insiste por ela".
 
-**O EDITOR também não.** `src/app/(app)/escrever/` é a terceira porta de entrada
-de uma sessão, a que a pessoa escreve à mão (modo `manual`). Ele mora lá pela
-mesma razão do gravador: é uma tela de CRIAÇÃO, e esta pasta é tudo o que vem
-depois de a sessão existir. Ele escreve o mesmo `SummaryPayload` que o resumo
-gerado, então tudo aqui o lê sem saber que ele existe — com uma exceção, o
-`SavedSessionView`, que precisa saber que uma sessão `manual` não tem
-transcrição (somem o SLIDE da transcrição e os pontinhos que o anunciam, o
-"Reprocessar", o "Algo está errado" e o "Gerar estudo"). Ver
+**O EDITOR também não.** `src/app/(app)/(shell)/summary/_editor/` (a folha em
+branco de `/summary/new` e o `/summary/[id]/edit` que reabre um resumo) é a
+terceira porta de entrada de uma sessão, a que a pessoa escreve à mão (modo
+`manual`). Diferente do gravador, ele não é uma pasta irmã de topo: mora
+DENTRO de `summary/`, porque as duas entradas são páginas do mesmo segmento
+que a leitura, `/summary/[id]`, e compartilham o `Composer`. Ele escreve o
+mesmo `SummaryPayload` que o resumo gerado, então tudo aqui o lê sem saber que
+ele existe — com uma exceção, o `SavedSessionView`, que precisa saber que uma
+sessão `manual` não tem transcrição (somem o SLIDE da transcrição e os
+pontinhos que o anunciam, o "Reprocessar" e o "Algo está errado"). Ver
 `src/app/AGENTS.md`.
 
-**E ele não é mais só a porta de entrada: `/escrever/:id` REABRE o resumo de
+**E ele não é mais só a porta de entrada: `/summary/:id/edit` REABRE o resumo de
 qualquer modo**, e o botão "Editar" do cabeçalho do `SavedSessionView` — que já
 foi um item do menu de três pontinhos — aparece em todos. A
 IA erra um nome ou perde a frase que valia a pregação, e consertar à mão custa um
@@ -69,7 +71,7 @@ pessoa quiser, aprofundar.
 | `lib/capture-store.ts` | o áudio guardado no IndexedDB: fragmentos, partes, os PEDAÇOS do envio e a linha de cada gravação |
 | `lib/capture-upload.ts` | sessão → transcrição → resumo, com a falha CLASSIFICADA |
 | `capture-queue.ts` | a fila que insiste pelas gravações guardadas, de qualquer tela |
-| `components/PendingCaptureRunner.tsx` | quem acorda a fila (mora no layout de `(barra)`) |
+| `components/PendingCaptureRunner.tsx` | quem acorda a fila (mora no layout de `(shell)`) |
 | `components/PendingCaptures.tsx` + `PendingCaptureNote.tsx` | o bloco e o cartão do que ainda não subiu |
 | `query.ts` | a Biblioteca guardada no aparelho: leitura, escrita otimista e o conserto do atraso |
 | `folders-query.ts` | as PASTAS guardadas no aparelho, mesmo desenho de `query.ts` |
@@ -151,7 +153,7 @@ responde, nunca o desenho:
 |---|---|---|
 | `PassageVerses` | uma referência dentro de um bloco | desenha os versículos dela |
 | `ChapterDialog` | uma menção tocada no meio do texto | mostra o capítulo e fecha |
-| `PassagePicker` (`/escrever`) | nada | devolve uma REFERÊNCIA para virar bloco |
+| `PassagePicker` (`/summary/new`) | nada | devolve uma REFERÊNCIA para virar bloco |
 | `BibleReader` | nada | deixa LER: livro → capítulo → texto, e as setas andam de capítulo |
 | `BibleReader` (modo "ask") | uma pergunta de sentido | pede ao Biblo, mostra passagens achadas |
 
@@ -240,7 +242,7 @@ toda vez.
 ### O léxico é CADASTRO, e marcado quer dizer "tem cartão"
 
 Ele já foi um array de ~330 strings em `src/lib/domain/lexicon.ts`, compilado no
-bundle. Hoje é `lexicon_entries` (migração 0063), editado em **/admin/lexico**,
+bundle. Hoje é `lexicon_entries` (migração 0063), editado em **/admin/lexicon**,
 e cada entrada carrega um cartão: título, descrição e, opcionalmente, imagem. O
 arquivo antigo virou só o vocabulário (tipos, limites e o `slugifyTerm`); as
 strings foram para a tabela pelo seed daquela migração, **todas como rascunho**.
@@ -296,8 +298,11 @@ exatamente o certo.
   colateral é uma regra e não um defeito: **uma menção partida ao meio por uma
   marca deixa de ser menção** — marcar "João 3" e deixar o ":16" de fora entrega
   dois pedaços, e nenhum deles é a referência. A sintaxe inteira mora em
-  `lib/domain/mark.ts`, e a faixa é a `.highlight-phrase`, a MESMA da frase de
-  destaque: um segundo amarelo seria uma segunda gramática para a mesma ideia.
+  `lib/domain/mark.ts`, e a faixa é a `.highlight-mark`: o mesmo amarelo da frase
+  de destaque — um segundo matiz seria uma segunda gramática para a mesma ideia
+  —, mas cobrindo a palavra de cima a baixo, e não passando por baixo dela como
+  a `.highlight-phrase`. Sobre duas palavras no meio de um parágrafo aquela
+  faixa lia como sublinhado gordo, e é por isso que hoje são duas classes.
 - **A passada de referência vem ANTES da de nomes, e exige número de
   capítulo.** É o que separa o evangelho do apóstolo: "João 3:16" é consumido
   inteiro pela primeira passada. Um "João" solto no meio da frase continua
@@ -371,7 +376,7 @@ apareceu, porque dois limiares para a mesma pergunta divergem no primeiro
 ajuste.
 
 **A descrição é escrita à MÃO, não gerada.** Não há modelo nenhum produzindo o
-texto do cartão; quem escreve é uma pessoa em `/admin/lexico`, e é por isso que
+texto do cartão; quem escreve é uma pessoa em `/admin/lexicon`, e é por isso que
 a instrução de "uma ideia por parágrafo" mora no campo daquele formulário. O
 `splitWall` é a rede embaixo de quem esquece — uma quebra escolhida por quem
 escreveu cai sempre num lugar melhor que uma calculada por contagem de
@@ -437,7 +442,7 @@ O conserto tem três partes, e nenhuma delas mora numa tela:
   (`fatal`). É a classificação que decide se a fila retenta sozinha, e a frase
   fica GRAVADA na linha da gravação para a Biblioteca escrevê-la no cartão.
 - **`capture-queue.ts`** é quem insiste, acordada pelo `PendingCaptureRunner` no
-  layout de `(barra)`. Quatro sinais, porque esperar por um só é escolher o dia
+  layout de `(shell)`. Quatro sinais, porque esperar por um só é escolher o dia
   em que nada acontece: a abertura do app, o evento `online`, a volta ao app e
   um relógio de 20s que só pergunta se já venceu a espera daquela gravação (ela
   cresce de 15s a 10min a cada falha).
@@ -561,7 +566,7 @@ Duas particularidades que mordem de fora:
 Um botão flutuante no canto de baixo à direita abre uma gaveta onde se conversa
 sobre o texto que está na tela — contexto, personagens, outras passagens,
 provocações —, e o que presta volta para o resumo como BLOCO. Ele vive nas duas
-telas que têm um `SummaryPayload`: `/summary/:id` e `/escrever/:id`.
+telas que têm um `SummaryPayload`: `/summary/:id` e `/summary/:id/edit`.
 
 Desenho completo em [`docs/biblo-implementacao.md`](../../../docs/biblo-implementacao.md).
 Cinco coisas que mordem de fora:
@@ -711,7 +716,7 @@ Cinco coisas que mordem de fora:
   ali que se decide assinar. O "—" está proibido na nossa cópia e no prompt (ver
   `NADA DE TRAVESSÃO` em `server/prompts/biblo.ts`): é a marca registrada de
   texto escrito por máquina, e o Biblo inteiro existe para não soar como uma.
-- **O botão da despedida abre o `BillingDialog`, não `/assinar`.** É o mesmo
+- **O botão da despedida abre o `BillingDialog`, não `/subscribe`.** É o mesmo
   diálogo do avatar ("Créditos e planos") e o mesmo do overlay de saldo
   esgotado. Navegar dali tiraria a pessoa do meio da conversa que é justamente o
   motivo de ela considerar assinar; o diálogo pousa por cima sem desmontar nada,
@@ -874,10 +879,10 @@ justamente porque cada um mora numa mãe diferente.
 **A Biblioteca não tem mais busca PRÓPRIA.** Ela teve uma barra atrás da lupa
 do cabeçalho (`CollectionSearch` + `SearchScope`, aberta por `?busca=1`), e
 essa barra saiu — a busca virou GLOBAL
-(`(app)/(barra)/components/GlobalSearchDialog.tsx`), um diálogo por cima de
+(`(app)/(shell)/components/GlobalSearchDialog.tsx`), um diálogo por cima de
 QUALQUER tela do app, aberto por Ctrl+K, pelo `SearchTrigger` do desktop ou
 pelo botão de busca da `MobileActionBar` **da Biblioteca** (no `/summary` e no
-`/escrever` aquele botão procura dentro do texto aberto, ver
+`/summary/new` aquele botão procura dentro do texto aberto, ver
 `src/app/AGENTS.md`). `LibraryBrowser` voltou a mostrar
 sempre o acervo inteiro (pastas, pendentes, meses), sem estado de "busca
 aberta" nenhum; o diálogo lê a MESMA `useLibrary()`, sem consulta nova, e

@@ -7,7 +7,7 @@
 -- respondida onde ela precisa sobreviver: no banco.
 --
 -- **Por que não só no cliente.** A linha da sessão nasce ANTES da importação
--- (o formulário cria, `/importar/:id` dispara), e essa página é recarregável,
+-- (o formulário cria, `/import/:id` dispara), e essa página é recarregável,
 -- compartilhável e sobrevive a um "atrás" do navegador. Um recorte que morasse
 -- no estado do React viraria, num reload, uma importação do vídeo inteiro
 -- cobrada pelo mesmo preço — e o pior é que ninguém perceberia até o resumo

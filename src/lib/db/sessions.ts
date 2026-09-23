@@ -78,7 +78,7 @@ export type CreateEmptySessionInput = {
   /**
    * O id da linha, quando quem chama já tem um.
    *
-   * Só o `/escrever` passa: lá o id é sorteado no APARELHO antes do primeiro
+   * Só o `/summary/new` passa: lá o id é sorteado no APARELHO antes do primeiro
    * salvamento, porque o rascunho local precisa de uma chave e a URL precisa
    * de um endereço enquanto a rede ainda não entrou na história (ver
    * `escrever/draft-store.ts`). Deixar o banco sortear obrigaria o aparelho a
@@ -374,7 +374,7 @@ export const getSession = cache(async (id: string): Promise<SessionRow | null> =
  * A sessão para a TELA do resumo: tudo menos a transcrição, mais o booleano
  * que diz se ela existe.
  *
- * É o que `/summary/:id` e `/escrever/:id` leem. Quem precisa do TEXTO é o
+ * É o que `/summary/:id` e `/summary/:id/edit` leem. Quem precisa do TEXTO é o
  * pipeline do servidor — reprocessar resumo, gerar estudo, relatar alucinação,
  * importar do YouTube — e esse continua em `getSession`, que roda no servidor e
  * não manda nada pelo fio.

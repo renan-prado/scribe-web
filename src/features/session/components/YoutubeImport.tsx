@@ -186,11 +186,11 @@ export function YoutubeImport({ sessionId, sourceUrl, videoId, title, startMs, e
   }, [error]);
 
   // O endereço do formulário com este vídeo (e o trecho atual) já preenchidos.
-  // Ver `importar/page.tsx`, que é quem lê estes parâmetros.
+  // Ver `import/page.tsx`, que é quem lê estes parâmetros.
   const adjustParams = new URLSearchParams({ url: sourceUrl });
-  if (startMs !== null) adjustParams.set("inicio", formatTimecode(startMs));
-  if (endMs !== null) adjustParams.set("fim", formatTimecode(endMs));
-  const adjustHref = `/importar?${adjustParams.toString()}`;
+  if (startMs !== null) adjustParams.set("start", formatTimecode(startMs));
+  if (endMs !== null) adjustParams.set("end", formatTimecode(endMs));
+  const adjustHref = `/import?${adjustParams.toString()}`;
 
   if (error) {
     const copy =
@@ -235,7 +235,7 @@ export function YoutubeImport({ sessionId, sourceUrl, videoId, title, startMs, e
 
           {/* Os dois erros de TAMANHO têm uma saída melhor que "tente outro
               link": voltar ao formulário com este mesmo vídeo e acertar o
-              trecho. É para isso que o `/importar` aceita o vídeo por
+              trecho. É para isso que o `/import` aceita o vídeo por
               parâmetro. */}
           {error === "video_too_long" || error === "clip_empty" ? (
             <Link

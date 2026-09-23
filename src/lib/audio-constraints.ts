@@ -31,7 +31,7 @@ const log = createLogger("mic");
  * este objeto, e nada mais. Ver `docs/transcricao.md`.
  *
  * **Quem abre microfone neste repositório usa ESTE objeto.** O gravador
- * (`(app)/(barra)/recording/useAudioCapture.ts`) e o recado falado ao Biblo
+ * (`(app)/(shell)/recording/useAudioCapture.ts`) e o recado falado ao Biblo
  * (`features/session/hooks/useBibloVoice.ts`) são os dois consumidores; o
  * gravador já abriu o microfone por conta própria pedindo os três LIGADOS, para
  * a onda na tela não dançar com o ar-condicionado da sala — uma decisão

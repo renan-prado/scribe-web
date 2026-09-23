@@ -8,13 +8,15 @@ type CollectionEmptyStateProps = {
 };
 
 /**
- * A casca dos estados vazios das duas listas do app, a Biblioteca e os
- * Estudos: sticker, título e um parágrafo. Nada mais.
+ * A casca do estado vazio da Biblioteca: sticker, título e um parágrafo. Nada
+ * mais.
  *
- * Ela existe porque as duas telas vazias dizem a MESMA coisa em formatos
- * diferentes — "aqui ainda não tem nada, e é assim que se põe algo aqui" — e
- * duas cópias do mesmo desenho divergem no primeiro ajuste de padding. O que
- * muda entre elas é só o TEXTO, e é por isso que só o texto é prop.
+ * Ela nasceu para servir duas telas vazias que diziam a MESMA coisa em
+ * formatos diferentes — a Biblioteca e a lista de Estudos, que saiu do
+ * produto. A casca ficou porque o padrão continua sendo o certo se um dia
+ * outra lista vazia aparecer, e porque separar sticker/título/parágrafo da
+ * frase de cada tela é o que evita duas cópias do mesmo desenho divergindo no
+ * primeiro ajuste de padding.
  *
  * **Ela já teve três passos numerados no rodapé, e não tem mais.** Um tutorial
  * de três colunas numa tela que a pessoa vê uma vez é muito desenho para pouca
@@ -22,9 +24,9 @@ type CollectionEmptyStateProps = {
  * passos explicavam cabe numa frase do parágrafo. O estado vazio volta a
  * dizer só o que precisa — que está vazio, e o que aparece aqui.
  *
- * Quem desenha o conteúdo são `SessionsEmptyState` e `StudiesEmptyState`, um
- * por tela. Esta casca não é chamada direto por página nenhuma: a frase de
- * cada lista é decisão de produto e merece um nome próprio no import.
+ * Quem desenha o conteúdo é `SessionsEmptyState`. Esta casca não é chamada
+ * direto por página nenhuma: a frase de cada lista é decisão de produto e
+ * merece um nome próprio no import.
  */
 export function CollectionEmptyState({ sticker, heading, body }: CollectionEmptyStateProps) {
   return (

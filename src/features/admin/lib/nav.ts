@@ -59,23 +59,23 @@ export type AdminNavItem = {
  */
 export const ADMIN_NAV: AdminNavItem[] = [
   { href: "/admin", label: "Visão geral", icon: LayoutDashboard, exact: true },
-  { href: "/admin/metricas", label: "Métricas", icon: TrendingUp },
-  { href: "/admin/custos", label: "Custos", icon: BarChart3 },
-  { href: "/admin/financeiro", label: "Financeiro", icon: PiggyBank },
+  { href: "/admin/metrics", label: "Métricas", icon: TrendingUp },
+  { href: "/admin/costs", label: "Custos", icon: BarChart3 },
+  { href: "/admin/finance", label: "Financeiro", icon: PiggyBank },
   {
     href: "/admin/sessions",
     label: "Conteúdo",
     icon: Mic,
-    match: ["/admin/sessions", "/admin/feedback", "/admin/lexico"],
+    match: ["/admin/sessions", "/admin/feedback", "/admin/lexicon"],
   },
   {
     href: "/admin/partners",
     label: "Crescimento",
     icon: Handshake,
-    match: ["/admin/partners", "/admin/cupons"],
+    match: ["/admin/partners", "/admin/coupons"],
   },
   { href: "/admin/users", label: "Usuários", icon: Users },
-  { href: "/admin/configuracoes", label: "Configurações", icon: SlidersHorizontal },
+  { href: "/admin/settings", label: "Configurações", icon: SlidersHorizontal },
 ];
 
 /**

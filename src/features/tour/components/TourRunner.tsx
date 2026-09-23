@@ -25,7 +25,7 @@ import { cn } from "@/lib/utils";
  *
  * `position: fixed` é relativo ao viewport ATÉ um ancestral ter `transform`,
  * `filter` ou `backdrop-filter`, e aí passa a ser relativo a ele. O `/admin` e
- * o `/partners` têm o `PageTransition`, que anima deslocamento a cada troca de
+ * o `/partners/dashboard` têm o `PageTransition`, que anima deslocamento a cada troca de
  * rota; sem o portal, o véu ficaria preso na caixa da página animada e o furo
  * apontaria para o lugar errado durante meio segundo, só nas navegações.
  *

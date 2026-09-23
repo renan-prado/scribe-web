@@ -27,7 +27,7 @@ durante a pregação), `audio_only` e `transcript_only` (sem resumo) — e três
 dois a mais.
 
 **E um modo que NÃO captura nada: `youtube`.** A pessoa cola o link em
-`/importar`, e a legenda que o YouTube já tem vira a transcrição, sobre a qual
+`/import`, e a legenda que o YouTube já tem vira a transcrição, sobre a qual
 roda o MESMO pipeline de resumo. Sem áudio, sem STT.
 
 O preço dele é o único que não é por minuto: **30 moedas por vídeo**, cobradas
@@ -42,10 +42,10 @@ para a transmissão de duas horas com trinta minutos de pregação no meio. Não
 custa chamada a mais: a legenda já vem em segmentos com tempo, e o recorte é um
 filtro sobre eles. O teto passa a medir o TRECHO, não a fita. O par mora na
 linha da sessão (`source_start_ms`/`source_end_ms`), nunca só no cliente:
-`/importar/:id` redispara a importação a cada reload. Ver `docs/youtube.md` §8.
+`/import/:id` redispara a importação a cada reload. Ver `docs/youtube.md` §8.
 
-**E o `/importar` aceita o vídeo pela URL** (`?url=`, `?v=`, `?text=`,
-`?inicio=`/`?fim=`), preenchendo o formulário — o botão continua sendo a única
+**E o `/import` aceita o vídeo pela URL** (`?url=`, `?v=`, `?text=`,
+`?start=`/`?end=`), preenchendo o formulário — o botão continua sendo a única
 coisa que COBRA. É o que prepara o compartilhar-com-o-Scriba. Ver §9 do mesmo
 documento.
 
@@ -62,7 +62,7 @@ separador que pode ser a LETRA `I`, e `author_name` do oEmbed é a IGREJA, não 
 autor. `src/features/session/server/youtube/metadata.ts` separa os três; falha dele devolve o título
 cru, e em nenhum caminho o canal vira `speaker_name`. Ver `docs/youtube.md` §3.
 
-**E um terceiro modo, que não captura NEM gera: `manual`.** Em `/escrever` a
+**E um terceiro modo, que não captura NEM gera: `manual`.** Em `/summary/new` a
 pessoa digita o resumo ela mesma, num editor de blocos com o mesmo vocabulário
 do resumo gerado — título, subtítulo, parágrafo, passagem bíblica, frase de
 destaque, citação e conclusão. É o único caminho do produto que **não custa
@@ -84,9 +84,9 @@ dele, que resolve `supabase/config.toml` a partir do diretório de trabalho).
 src/
   app/          rotas, API, SEO, landing              → src/app/AGENTS.md
     (site)/     público: landing, legais, parceiros
-    (entrar)/   login, OAuth e os links de entrada
-    (app)/      O APP, atrás do login (o gravador e o /escrever moram aqui)
-    (painel)/   /admin e /partners
+    (entry)/   login, OAuth e os links de entrada
+    (app)/      O APP, atrás do login (o gravador e o /summary/new moram aqui)
+    (panel)/   /admin e /partners/dashboard
     api/
   proxy.ts      o gate de rota (o "middleware" do Next 16)
   instrumentation.ts

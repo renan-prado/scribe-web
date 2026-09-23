@@ -7,7 +7,7 @@ import { DropdownMenuItem } from "@/components/ui/dropdown-menu";
  *
  * É um SERVER component de propósito, e é essa a única razão de ele existir
  * separado do menu. Enquanto estes dois itens moravam lá dentro, atrás de um
- * `isAdmin &&`, as strings "Admin", "Área do parceiro", "/admin" e "/partners"
+ * `isAdmin &&`, as strings "Admin", "Área do parceiro", "/admin" e "/partners/dashboard"
  * viajavam no chunk de JavaScript que TODO usuário logado baixa: o `false`
  * escondia o item na tela, não o código que o desenha. Conferido no build, o
  * chunk continha as quatro.
@@ -17,7 +17,7 @@ import { DropdownMenuItem } from "@/components/ui/dropdown-menu";
  * lucide saem do bundle compartilhado pela mesma razão.
  *
  * Isso NÃO é o controle de acesso, esse mora nos gates de `/admin` e
- * `/partners`, que respondem 404 para quem digitar a URL. Aqui é só não
+ * `/partners/dashboard`, que respondem 404 para quem digitar a URL. Aqui é só não
  * anunciar a existência da porta.
  *
  * `<Link>` cru, e não o `NavLink` que a gaveta usa nos outros itens: os dois
@@ -49,7 +49,7 @@ export function PrivilegedMenuItems({
       {/* Sem este item o parceiro só chega ao painel digitando a URL: o admin
           manda o link uma vez e depois a área some do mundo dele. */}
       {isPartner ? (
-        <DropdownMenuItem render={<Link href="/partners" />} className={ITEM_CLASS}>
+        <DropdownMenuItem render={<Link href="/partners/dashboard" />} className={ITEM_CLASS}>
           <Handshake className="size-4 text-v2-ink-mute" />
           Área do parceiro
         </DropdownMenuItem>

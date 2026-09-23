@@ -18,7 +18,7 @@ const log = createLogger("written-reading-draft");
  * Escrever num resumo já SALVO, sem rascunho local — a metade que
  * `useWrittenDraft` não cobre.
  *
- * `/escrever` guarda um rascunho no IndexedDB e sincroniza a cada 1,8s; aqui
+ * `/summary/new` guarda um rascunho no IndexedDB e sincroniza a cada 1,8s; aqui
  * não há aparelho para guardar nada, o texto que está na tela veio do
  * servidor num render, e escrever nele é um `POST /api/sessions/written` mais
  * um `router.refresh()`. **É o mesmo POST que o editor usa**, e isso só é

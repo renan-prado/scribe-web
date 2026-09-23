@@ -213,7 +213,7 @@ type LedgerRow = {
  *
  * O dinheiro em reais NÃO é calculado aqui: quem converte moedas creditadas em
  * centavos é `aggregateMeasuredRevenue`, a mesma função que desenha a receita
- * de `/admin/financeiro`. Uma segunda conversão aqui daria dois totais de
+ * de `/admin/finance`. Uma segunda conversão aqui daria dois totais de
  * receita no mesmo painel, e um dia eles discordariam.
  */
 async function loadBilling(admin: AdminClient): Promise<Map<string, AdminUserBilling>> {
@@ -314,6 +314,46 @@ async function loadBilling(admin: AdminClient): Promise<Map<string, AdminUserBil
   }
 
   return out;
+}
+
+/**
+ * O que a FICHA de uma conta mostra: só a linha de `profiles`.
+ *
+ * É de propósito que ela não traga `billing` nem `lastSignInAt`. A ficha
+ * existe para EDITAR nome, e-mail, papel e situação, e esses quatro campos
+ * saem todos de uma consulta só. O retrato financeiro custa duas varreduras
+ * (`subscriptions` e `coin_transactions`, ver `loadBilling`) que a lista já
+ * paga uma vez para todo mundo — pagá-las de novo para desenhar um formulário
+ * que não as usa seria trocar um SELECT por três para não mostrar nada a mais.
+ */
+export type AdminUserDetail = Pick<
+  AdminUser,
+  "id" | "email" | "displayName" | "avatarUrl" | "role" | "isActive" | "createdAt" | "coinBalance"
+>;
+
+/**
+ * Uma conta pelo id, para `/admin/users/[id]`.
+ *
+ * Devolve `null` em vez de lançar quando não há linha: quem chama é uma
+ * página, e um id que não existe ali é `notFound()`, não erro de servidor.
+ */
+export async function getUserForAdmin(id: string): Promise<AdminUserDetail | null> {
+  const admin = createAdminClient();
+  const { data, error } = await admin.from("profiles").select(SELECT).eq("id", id).maybeSingle();
+  if (error) throw new Error(`getUserForAdmin failed: ${error.message}`);
+  if (!data) return null;
+
+  const row = data as ProfileRow;
+  return {
+    id: row.id,
+    email: row.email,
+    displayName: row.display_name,
+    avatarUrl: row.avatar_url,
+    role: row.role,
+    isActive: row.is_active,
+    createdAt: row.created_at,
+    coinBalance: row.coin_balance,
+  };
 }
 
 export type UpdateUserInput = {

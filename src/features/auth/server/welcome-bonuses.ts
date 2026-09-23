@@ -132,7 +132,7 @@ async function redeemCouponIfAny(userId: string): Promise<void> {
 }
 
 /**
- * Registra quem chegou por `/parceiros` como PRÉ-PARCEIRO e credita a cortesia.
+ * Registra quem chegou por `/partners` como PRÉ-PARCEIRO e credita a cortesia.
  *
  * Sem compromisso nenhum dos dois lados: a pessoa não prometeu divulgar, e nós
  * não prometemos aceitá-la no programa. O que a linha em `partner_prospects`

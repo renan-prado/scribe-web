@@ -1,6 +1,7 @@
 "use client";
 
 import { Coins as CoinsIcon, Pencil, ShieldCheck, Trash2 } from "lucide-react";
+import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { useMemo, useState, useTransition } from "react";
 import { toast } from "sonner";
@@ -17,7 +18,6 @@ import {
 } from "@/components/ui/table";
 import type { AdminUser, AdminUserBilling, PayingStatus } from "@/features/admin/server/db/users";
 import { formatBrl, formatCoins, PLANS } from "@/features/billing/plans";
-import { EditUserDialog } from "./EditUserDialog";
 import { GrantCoinsDialog } from "./GrantCoinsDialog";
 
 const DATE_FMT = new Intl.DateTimeFormat("pt-BR", {
@@ -80,7 +80,7 @@ const SUBSCRIPTION_STATUS_LABEL: Record<string, string> = {
  * uma resposta, e não como quatro filtros que talvez se sobreponham.
  *
  * Nenhum deles publica MRR nem receita total: esses números já têm dono em
- * `/admin/metricas` e `/admin/financeiro`, e um segundo lugar publicando o
+ * `/admin/metrics` e `/admin/finance`, e um segundo lugar publicando o
  * mesmo número faz quem lê conferir se batem em vez de ler a tela.
  */
 const FILTERS: { key: "todos" | PayingStatus; label: string }[] = [
@@ -100,7 +100,6 @@ export function UsersManager({ initialUsers, currentUserId }: Props) {
   const [users] = useState(initialUsers);
   const [search, setSearch] = useState("");
   const [filter, setFilter] = useState<"todos" | PayingStatus>("todos");
-  const [editing, setEditing] = useState<AdminUser | null>(null);
   const [granting, setGranting] = useState<AdminUser | null>(null);
   const [pendingId, setPendingId] = useState<string | null>(null);
   const [_isPending, startTransition] = useTransition();
@@ -303,10 +302,17 @@ export function UsersManager({ initialUsers, currentUserId }: Props) {
                         >
                           <CoinsIcon />
                         </Button>
+                        {/* LINK, e não um `useState`. A ficha é a rota
+                            `/admin/users/<id>`: de dentro da tabela ela é
+                            interceptada e abre por cima desta lista
+                            (`@modal/(.)users/[id]`), e colada numa conversa
+                            abre em página cheia. Como botão, ela não tinha
+                            endereço nenhum. */}
                         <Button
                           variant="ghost"
                           size="icon-sm"
-                          onClick={() => setEditing(u)}
+                          nativeButton={false}
+                          render={<Link href={`/admin/users/${u.id}`} />}
                           aria-label={`Editar ${label}`}
                         >
                           <Pencil />
@@ -339,18 +345,6 @@ export function UsersManager({ initialUsers, currentUserId }: Props) {
             // `router.refresh()` porque o saldo que esta tabela mostra veio do
             // SERVIDOR, no render da página: sem ele a coluna continuaria com o
             // número de antes do crédito que a pessoa acabou de dar.
-            startTransition(() => router.refresh());
-          }}
-        />
-      ) : null}
-
-      {editing ? (
-        <EditUserDialog
-          user={editing}
-          currentUserId={currentUserId}
-          onClose={() => setEditing(null)}
-          onSaved={() => {
-            setEditing(null);
             startTransition(() => router.refresh());
           }}
         />

@@ -173,7 +173,7 @@ export type GrantReason =
   // momento do cadastro do indicado pode não haver conta para creditar. Ver
   // `flush_partner_signup_rewards`.
   | "partner_signup_reward"
-  // Cortesia do PRÉ-PARCEIRO: quem chegou por /parceiros e criou conta sem
+  // Cortesia do PRÉ-PARCEIRO: quem chegou por /partners e criou conta sem
   // compromisso, para conhecer o produto antes de topar divulgá-lo. Teto
   // global em `lib/partners/economics.ts`, ver migração 0050.
   | "partner_prospect_bonus"

@@ -104,7 +104,7 @@ rota. Os dois devolvem `Result<T>` (nunca lançam) e têm timeout por
   é o que permite conciliar `llm_usage_events` com a fatura. (A OpenAI retém
   prompt e resposta por 30 dias do lado dela.)
 - **`recordChatUsage` / `recordAudioUsage` (`db/usage.ts`) alimentam
-  `/admin/custos`.** São fire-and-forget: a rota aguarda, mas qualquer falha de
+  `/admin/costs`.** São fire-and-forget: a rota aguarda, mas qualquer falha de
   insert é capturada e logada, observabilidade quebrada nunca vira 500 numa
   rota que funcionou. O preço por token está em `llm/pricing.ts`.
 
@@ -113,11 +113,11 @@ rota. Os dois devolvem `Result<T>` (nunca lançam) e têm timeout por
   client do usuário, sob a policy `user_id = auth.uid()`, e policy de INSERT
   autoriza a escrita sem conferir o conteúdo: dava para mandar uma linha de
   custo inventada direto por `POST /rest/v1/llm_usage_events` com o anon key e
-  envenenar `/admin/custos`. Migração 0039. De quebra sumiu um
+  envenenar `/admin/costs`. Migração 0039. De quebra sumiu um
   `auth.getUser()` por registro, era uma ida à rede por trecho transcrito.
 
   As duas também carimbam `app_version` (migração 0044), o que torna a tabela
-  comparável DEPLOY A DEPLOY em `/admin/custos`, mas só enquanto a versão subir
+  comparável DEPLOY A DEPLOY em `/admin/costs`, mas só enquanto a versão subir
   a cada entrega. Ver a seção "Versão e release" do `AGENTS.md` da raiz.
 
 ## Supabase: três clients, três autoridades
@@ -186,7 +186,7 @@ fio.**
 | Função | Traz | Para quem |
 |---|---|---|
 | `getSession` | tudo, `transcript` inclusive | o pipeline do SERVIDOR: reprocessar resumo, gerar estudo, auditar alucinação, importar do YouTube |
-| `getSessionView` | tudo menos `transcript`, mais `hasTranscript` | as TELAS: `/summary/:id` e `/escrever/:id` |
+| `getSessionView` | tudo menos `transcript`, mais `hasTranscript` | as TELAS: `/summary/:id` e `/summary/:id/edit` |
 | `getSessionMeta` | nem `transcript` nem `final_summary` | quem só decide rota e cabeçalho |
 | `getSessionTranscript` | só `transcript` + duração | o dialog da transcrição, quando abre |
 
@@ -212,7 +212,7 @@ chamam a mesma, e o Next só deduplica `fetch()`, não consulta do Supabase.
   migração 0007 afirmava que o proxy conferia, nunca conferiu, e por três
   meses o botão "desativar" do `/admin` pintou a linha de vermelho sem tirar
   nada de ninguém. As páginas são cobertas pela `TopBar` do app e pelo layout
-  de `/partners`, que leem `isActive` da consulta memoizada de `db/account.ts`.
+  de `/partners/dashboard`, que leem `isActive` da consulta memoizada de `db/account.ts`.
 
   A mesma consulta traz `coin_balance`, e por isso `auth.user.coinBalance`
   existe: é o que `coins/require-balance.ts` usa sem custar um segundo SELECT.
@@ -226,7 +226,7 @@ chamam a mesma, e o Next só deduplica `fetch()`, não consulta do Supabase.
   - `isCurrentUserAdmin()` em server component. Lê da consulta memoizada.
   - `assertAdmin()` em **Server Action**. Obrigatório: uma action é um POST
     próprio, e o gate do layout não a protege.
-- `auth/require-partner.ts`: gate do `/partners`, vínculo parceiro↔conta na
+- `auth/require-partner.ts`: gate do `/partners/dashboard`, vínculo parceiro↔conta na
   primeira visita, e o ponto onde a mesada mensal é conferida. São **duas
   consultas**, não um `.or()` com o e-mail interpolado no filtro: o valor ia
   parar dentro de um `ilike`, onde `%` é curinga, e a consulta roda com
@@ -413,7 +413,7 @@ Dois módulos, e a divisão é a mesma de `billing/plans.ts` × `billing/catalog
 
 **O catálogo mora em CÓDIGO, não no banco.** Mesma razão de `billing/catalog.ts`:
 uma linha errada numa tabela não pode virar acesso grátis a funcionalidade
-paga. O `/admin/configuracoes` MOSTRA a matriz; não a edita. Mudar qual plano libera
+paga. O `/admin/settings` MOSTRA a matriz; não a edita. Mudar qual plano libera
 o quê é um commit.
 
 O que o admin edita são as duas coisas que precisam mudar sem deploy, ambas em
@@ -452,7 +452,7 @@ Diagnóstico e desenho completos: `docs/estudo-v2.md` §8.
 ## Finanças: a conta mora fora da tela
 
 `src/features/admin/finance/` é PURO e CLIENT-SAFE, e é a única implementação da aritmética do
-`/admin/financeiro`. Quatro módulos, nenhum deles tocando banco:
+`/admin/finance`. Quatro módulos, nenhum deles tocando banco:
 
 | Módulo | Papel |
 |---|---|
@@ -607,7 +607,7 @@ nunca disparava com o modelo novo, nem em áudio com 27% de WER.
 
 - `app-version.ts`: **client-safe**. `APP_VERSION` sai do `package.json` pelo
   `env` do `next.config.ts`, e é o mesmo número que carimba
-  `llm_usage_events.app_version` e rotula o filtro do `/admin/custos`. Ele **não**
+  `llm_usage_events.app_version` e rotula o filtro do `/admin/costs`. Ele **não**
   está no schema Zod de `env/client.ts` de propósito: aquele schema valida o que
   uma PESSOA configura, e declarar esta ali convidaria alguém a criar a variável
   à mão, dois números de versão que um dia discordam. `compareVersions` existe
@@ -629,7 +629,11 @@ nunca disparava com o modelo novo, nem em áudio com 27% de WER.
   string pura — ver `domain/summary.ts` e `src/app/AGENTS.md`. A leitura
   (`RichText`) e o editor (`Composer`) leem daqui; uma segunda regex em qualquer
   uma das duas pontas faria a tela e o salvamento discordarem sobre o que é uma
-  marca.
+  marca. **E a edição não MOSTRA as cercas**: `applyDisplayEdit`,
+  `displayToRaw` e `toggleMarkOnDisplay` traduzem entre o texto cru (com elas) e
+  o texto visível (sem), porque uma `textarea` não sabe esconder parte do
+  próprio conteúdo. A tradução é da tela, não do dado — ver "O TEXTO CRU E O
+  TEXTO VISÍVEL" no arquivo.
 - `idb-storage.ts`: **client-safe**. Um `AsyncStorage` de três métodos sobre o
   IndexedDB, para o persistidor do TanStack Query (`shared/components/Providers.tsx`).
   Não é `localStorage` porque aquele é SÍNCRONO: serializar o cache na thread
@@ -649,7 +653,7 @@ nunca disparava com o modelo novo, nem em áudio com 27% de WER.
   conta de margem por milheiro de moeda, os dois client-safe. `pricing.ts` diz
   quanto custa em moedas; `billable.ts` diz o que é uma coisa (gerar e
   reprocessar estudo são dois motivos no ledger e um produto só). Alimentam
-  `/admin/custos`, ver `src/features/admin/AGENTS.md`.
+  `/admin/costs`, ver `src/features/admin/AGENTS.md`.
 - `admin/insights/`: server-only, a leitura que um modelo faz dos números do
   painel inteiro, na visão geral (`/admin`). UMA leitura, gerada só no clique; já
   foram três, uma por tela de dinheiro, e cada uma se disparava sozinha. O
@@ -667,7 +671,7 @@ nunca disparava com o modelo novo, nem em áudio com 27% de WER.
   resumo marca e o cartão de cada um (migração 0063). O segundo é client-safe e
   guarda só o vocabulário — ele já foi o léxico INTEIRO, um array de ~330 strings
   compilado no bundle, e hoje as strings são cadastro editado em
-  `/admin/lexico`. O primeiro tem uma assimetria deliberada: as leituras
+  `/admin/lexicon`. O primeiro tem uma assimetria deliberada: as leituras
   PÚBLICAS passam pelo client do usuário, porque a policy já diz
   `using (published)` e service-role ali trocaria uma garantia do banco por um
   `.eq()` que alguém esquece de escrever na próxima consulta; a escrita é

@@ -57,7 +57,7 @@ export function VersionPicker({ versions, current }: { versions: string[]; curre
   //
   // Desabilitado com o motivo no `title` diz as duas coisas ao mesmo tempo:
   // existe, e ainda não tem o que oferecer. É também o que a barra de filtros
-  // de /admin/custos já fazia, lá o campo sempre esteve na tela.
+  // de /admin/costs já fazia, lá o campo sempre esteve na tela.
   const empty = versions.length === 0;
 
   return (

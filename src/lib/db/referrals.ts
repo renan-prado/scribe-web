@@ -207,7 +207,7 @@ export async function getReferrerPublicByCode(code: string): Promise<ReferrerPub
 }
 
 /**
- * Os números da página `/indicar`.
+ * Os números da página `/refer`.
  *
  * SÓ AGREGADOS, pela mesma regra do painel do parceiro
  * (`lib/db/partner-panel.ts`): nenhuma função aqui devolve linha que

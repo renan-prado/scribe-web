@@ -8,19 +8,19 @@ import type { ReactNode } from "react";
  *
  * Existem porque o menu do avatar, onde eles moram, é `hidden sm:flex`: no
  * telefone o header não tem avatar nenhum, e quem é admin ou parceiro
- * simplesmente não tinha por onde chegar em `/admin` e `/partners` sem digitar
+ * simplesmente não tinha por onde chegar em `/admin` e `/partners/dashboard` sem digitar
  * a URL. O `/profile` é o lugar natural, é para lá que o item "Perfil" da
  * barra inferior leva, e é onde já moram conta e preferências.
  *
  * **É um SERVER component, pela mesma razão que o irmão dele.** Atrás de um
  * `isAdmin &&` dentro de um componente cliente, as strings "Admin", "Área do
- * parceiro", "/admin" e "/partners" viajariam no JavaScript de TODO usuário
+ * parceiro", "/admin" e "/partners/dashboard" viajariam no JavaScript de TODO usuário
  * logado, o booleano esconde o item na tela, não o código que o desenha.
  * Renderizado no servidor, quem não tem o papel recebe `null` e nunca vê os
  * nomes.
  *
  * E, como lá, isto NÃO é controle de acesso: os gates de `/admin` e
- * `/partners` respondem 404 a quem digitar a URL. Aqui é só não anunciar a
+ * `/partners/dashboard` respondem 404 a quem digitar a URL. Aqui é só não anunciar a
  * porta.
  */
 export function PrivilegedProfileLinks({
@@ -40,7 +40,7 @@ export function PrivilegedProfileLinks({
       <div className="flex flex-col gap-2">
         {isPartner ? (
           <PrivilegedLink
-            href="/partners"
+            href="/partners/dashboard"
             label="Área do parceiro"
             icon={<Handshake className="size-4" />}
           />

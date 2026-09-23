@@ -145,7 +145,7 @@ function SignInForm({ next }: Props) {
       ) : null}
 
       <Link
-        href="/recuperar"
+        href="/forgot-password"
         className="text-center text-[11.5px] font-light text-scriba-ink-mute underline underline-offset-2 transition-colors hover:text-scriba-ink-soft"
       >
         Esqueci minha senha

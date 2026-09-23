@@ -2,7 +2,7 @@
  * A versão do app, o marcador que separa "antes" de "depois" nas medições.
  *
  * Client-safe de propósito: o mesmo número carimba os eventos de LLM no
- * servidor (`lib/db/usage.ts`) e rotula o filtro do `/admin/custos`, e uma
+ * servidor (`lib/db/usage.ts`) e rotula o filtro do `/admin/costs`, e uma
  * segunda constante para a tela seria uma segunda fonte da verdade.
  *
  * A ORIGEM é o `version` do `package.json`, lido UMA vez em `next.config.ts` e

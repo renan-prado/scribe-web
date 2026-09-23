@@ -6,7 +6,7 @@ import { type CycleUsage, getCoinsState, useCoinsStore } from "@/features/coins/
 /**
  * Quem SEMEIA o saldo de moedas na store, e quem o ressincroniza depois.
  *
- * Não desenha nada. Mora no layout de `(barra)`, que é o lugar onde o saldo
+ * Não desenha nada. Mora no layout de `(shell)`, que é o lugar onde o saldo
  * já chegou do servidor (`getCurrentAccount`), e por isso o semear não custa
  * requisição nenhuma: o número já estava na resposta.
  *
@@ -19,7 +19,7 @@ import { type CycleUsage, getCoinsState, useCoinsStore } from "@/features/coins/
  * um `DropdownMenu` quando ele abre. Enquanto ninguém tocasse no avatar, a
  * store ficava em `null` para sempre.
  *
- * O sintoma era no `/importar`: o botão "Importar" só aparece quando o saldo é
+ * O sintoma era no `/import`: o botão "Importar" só aparece quando o saldo é
  * conhecido (é ele que decide entre o botão e o aviso de saldo insuficiente), e
  * até lá a tela desenha uma pastilha pulsando no lugar dele. Um carregando que
  * não terminava nunca, porque não havia nada carregando — e a única maneira de

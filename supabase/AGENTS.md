@@ -9,7 +9,7 @@ e-mail), em HTML de tabela e CSS inline, para serem COLADOS no painel
 (Authentication → Emails → Templates), nos dois projetos. Eles moram aqui por
 serem configuração do mesmo serviço; o guia de colagem, as variáveis, o
 remetente e o DNS estão em [`docs/auth.md`](../docs/auth.md) §4 e §5. Mexeu
-num `next=` ou num `type=` ali? Confira `src/app/(entrar)/auth/confirm/route.ts`,
+num `next=` ou num `type=` ali? Confira `src/app/(entry)/auth/confirm/route.ts`,
 que é quem os recebe.
 
 ## Como aplicar

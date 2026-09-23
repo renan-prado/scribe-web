@@ -4,7 +4,7 @@ Duas portas para a mesma conta. Este guia é sobre a segunda, que chegou depois,
 e sobre as três chaves do painel do Supabase sem as quais ela não funciona.
 
 > O código mora em `src/features/auth/` (actions, componentes e os dois módulos
-> de servidor) e em `src/app/(entrar)/`. Cada arquivo explica a própria decisão;
+> de servidor) e em `src/app/(entry)/`. Cada arquivo explica a própria decisão;
 > aqui está o que NÃO cabe em cabeçalho nenhum, porque não é código: a
 > configuração do projeto no Supabase.
 
@@ -13,8 +13,8 @@ e sobre as três chaves do painel do Supabase sem as quais ela não funciona.
 | Caminho | O que é |
 |---|---|
 | `/sign-in` | A entrada. Botão do Google em cima, e abaixo do "ou" o formulário de e-mail e senha, que começa FECHADO atrás de um botão |
-| `/recuperar` | "Esqueci minha senha". Pública, porque quem chega nela é quem não consegue entrar |
-| `/nova-senha` | Define a senha nova. PROTEGIDA: a sessão criada pelo link do e-mail é a credencial, então não há token na URL |
+| `/forgot-password` | "Esqueci minha senha". Pública, porque quem chega nela é quem não consegue entrar |
+| `/new-password` | Define a senha nova. PROTEGIDA: a sessão criada pelo link do e-mail é a credencial, então não há token na URL |
 | `/auth/callback` | Troca o `?code=` do PKCE por sessão. Google, e os e-mails com os modelos de fábrica |
 | `/auth/confirm` | Troca o `?token_hash=` por sessão. Os e-mails com os modelos da seção 4 |
 
@@ -168,7 +168,7 @@ tela de "confira seu e-mail" que nunca termina.
 
 O Supabase liga as identidades pelo e-mail CONFIRMADO. Na prática:
 
-- Quem criou a conta pelo Google e quer uma senha usa `/recuperar`. A conta é a
+- Quem criou a conta pelo Google e quer uma senha usa `/forgot-password`. A conta é a
   mesma, não nasce uma segunda, e depois disso as duas portas levam ao mesmo
   lugar.
 - Quem tenta entrar com senha numa conta que só tem Google recebe
@@ -188,7 +188,7 @@ O Supabase liga as identidades pelo e-mail CONFIRMADO. Na prática:
 Duas recusas são deliberadamente silenciosas, e mexer nisso é desfazer a
 proteção:
 
-- **`/recuperar` responde "enviado" para qualquer endereço**, exista conta ou
+- **`/forgot-password` responde "enviado" para qualquer endereço**, exista conta ou
   não. Um formulário que responde "não encontrei esse e-mail" é uma lista de
   quem usa o produto, de graça, para quem quiser montá-la.
 - **O cadastro com um e-mail já existente devolve o mesmo "confira seu

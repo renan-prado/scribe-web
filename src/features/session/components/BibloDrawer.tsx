@@ -152,7 +152,7 @@ const COMPOSER_MAX_PX = COMPOSER_MAX_LINES * COMPOSER_LINE_PX + COMPOSER_PADDING
  *
  * ## O BOTÃO ABRE O DIÁLOGO, e não uma página
  *
- * Ele era um `<a href="/assinar">`, e navegar era o pior que podia acontecer
+ * Ele era um `<a href="/subscribe">`, e navegar era o pior que podia acontecer
  * ali: a pessoa está NO MEIO de uma conversa, com o resumo atrás da gaveta e a
  * pergunta seguinte já pensada. Trocar a tela por outra pede que ela decida
  * assinar longe do motivo pelo qual quis assinar, e a volta fica por conta do

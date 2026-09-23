@@ -158,7 +158,7 @@ título cru volta.
 
 ### Onde o link é colado
 
-Em `/v2/importar`, uma página própria, alcançada pela gaveta do hambúrguer.
+Em `/v2/import`, uma página própria, alcançada pela gaveta do hambúrguer.
 
 Já esteve dentro de um diálogo de escolha de modo, como um card com um `<input>`
 dentro, e duas coisas quebraram: o card precisava crescer no meio de uma fileira
@@ -255,7 +255,7 @@ Isso foi decidido com o número à vista, não descoberto depois. Se um dia a
 mistura de receita virar problema, os dois consertos são conhecidos e nenhum
 exige mudar o desenho: subir o preço fixo, ou passar a cobrar por faixa de
 duração (o ledger já separa `youtube_import` como motivo próprio, e
-`/admin/custos` já mede a linha isoladamente).
+`/admin/costs` já mede a linha isoladamente).
 
 ## 6. A ordem dentro da rota
 
@@ -296,7 +296,7 @@ O `ended_at` que esse UPDATE grava é também o que faz um POST repetido bater n
   de importações do nosso ledger, é ali que a diferença aparece.
 - **Telemetria:** três rotas próprias em `llm_usage_events`
   (`final-summary-youtube`, `rereads-youtube` e `reminders-youtube`), somadas
-  na ação `youtube` de `/admin/custos`. Houve uma quarta,
+  na ação `youtube` de `/admin/costs`. Houve uma quarta,
   `summary-enrichment-youtube`, do enriquecimento que saiu do produto; as
   linhas antigas continuam no banco e continuam sendo lidas.
   Elas são separadas justamente para a pergunta "vídeo longo está comendo a
@@ -310,7 +310,7 @@ produto recusava o vídeo com uma frase que empurrava o problema de volta —
 "procure o corte só da pregação" — para um corte que o canal pode nunca ter
 publicado.
 
-`/importar` tem dois campos opcionais, início e fim, e eles vão para
+`/import` tem dois campos opcionais, início e fim, e eles vão para
 `sessions.source_start_ms` / `source_end_ms` (migração 0060).
 
 ### Os dois campos são MASCARADOS
@@ -340,7 +340,7 @@ cortaria a abertura no meio.
 ### Onde o recorte MORA, e por quê
 
 No **banco**, na linha da sessão, e não no corpo do `POST /api/youtube/import`.
-A linha nasce antes da importação (o formulário cria, `/importar/:id` dispara),
+A linha nasce antes da importação (o formulário cria, `/import/:id` dispara),
 e essa página é recarregável e sobrevive a um "atrás" do navegador — ela
 redispara a rota ao montar. Um recorte que morasse no estado do React viraria,
 num reload, **o vídeo inteiro importado pelo mesmo preço**, e ninguém
@@ -368,10 +368,10 @@ o vídeo já preenchido.
 ## 9. O endereço aceita o vídeo por parâmetro
 
 ```
-/importar?url=https://youtu.be/XXXXXXXXXXX
-/importar?v=XXXXXXXXXXX
-/importar?text=<qualquer texto com o link no meio>
-/importar?url=…&inicio=12:00&fim=45:30
+/import?url=https://youtu.be/XXXXXXXXXXX
+/import?v=XXXXXXXXXXX
+/import?text=<qualquer texto com o link no meio>
+/import?url=…&start=12:00&end=45:30
 ```
 
 O caminho natural de um vídeo até o Scriba é **alguém mandando o link**, e até

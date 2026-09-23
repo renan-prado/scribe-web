@@ -134,7 +134,7 @@ propósito da rota e roda atrás de `requireAdmin()`.
   confirmamos a existência da área). `src/app/admin/layout.tsx` faz `notFound()`, e
   as três actions privilegiadas (`coins/settings-actions.ts`, `fx/actions.ts`)
   chamam `assertAdmin()` dentro de si.
-- **Parceiro:** `/partners` é gated por `getCurrentPartner()` no layout, com
+- **Parceiro:** `/partners/dashboard` é gated por `getCurrentPartner()` no layout, com
   `notFound()`; não há rota de API de parceiro. O casamento por `invited_email`
   escapa curinga de `ilike` e exige `user_id is null`.
 - **Logout mata a sessão de verdade:** `signOut()` do auth-js usa

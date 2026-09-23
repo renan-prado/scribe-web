@@ -1,7 +1,7 @@
 -- O Biblo: a conversa que acontece DENTRO de uma sessão.
 --
 -- A pessoa acabou de resumir uma pregação (ou está escrevendo uma em
--- `/escrever`) e conversa sobre aquele texto: contexto da passagem, quem foi
+-- `/summary/new`) e conversa sobre aquele texto: contexto da passagem, quem foi
 -- o personagem, outras passagens sobre o tema, uma provocação. O que presta
 -- volta para o resumo como bloco. O desenho inteiro está em
 -- `docs/biblo-implementacao.md`; aqui mora só o que o banco precisa saber.

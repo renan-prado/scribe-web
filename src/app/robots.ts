@@ -39,8 +39,8 @@ export default function robots(): MetadataRoute.Robots {
         // Não é página: é o desvio que marca o cookie de pré-parceiro e
         // redireciona para o login. Rastreá-la só gasta orçamento para chegar
         // numa tela que já é `noindex`, e a página que queremos indexada,
-        // `/parceiros`, continua liberada.
-        "/parceiros/entrar",
+        // `/partners`, continua liberada.
+        "/partners/join",
         // O app inteiro. Está atrás do login, então para um rastreador é um
         // `307 → /sign-in`; dizê-lo aqui poupa o orçamento de descobrir isso
         // uma URL por vez. `/profile/delete` escapa pelo `allow` acima, e é
@@ -50,13 +50,12 @@ export default function robots(): MetadataRoute.Robots {
         "/home",
         "/recording",
         "/summary",
-        "/studies",
-        "/importar",
+        "/import",
         "/profile",
-        "/indicar",
-        "/assinar",
-        "/retorno",
-        "/partners",
+        "/refer",
+        "/subscribe",
+        "/subscribe/return",
+        "/partners/dashboard",
       ],
     },
     sitemap: `${SITE_URL}/sitemap.xml`,

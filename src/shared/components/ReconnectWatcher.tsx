@@ -46,7 +46,7 @@ import { useNetworkStatus } from "@/shared/hooks/use-network-status";
  *
  * ## Onde ela mora
  *
- * No layout de `(barra)`, ao lado do `OfflineBadge`, e pelo mesmo motivo: o
+ * No layout de `(shell)`, ao lado do `OfflineBadge`, e pelo mesmo motivo: o
  * estado é do APARELHO e não da página, e repetido em sete telas bastaria
  * esquecer uma para o aviso sumir justamente onde alguém estava trabalhando.
  */

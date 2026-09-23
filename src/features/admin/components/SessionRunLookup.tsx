@@ -12,7 +12,7 @@ import { Label } from "@/components/ui/label";
  *
  * Aceita o UUID cru OU a URL da gravação colada do navegador, que é como o id
  * chega até a mão de quem está testando. Exigir que a pessoa recorte o UUID de
- * dentro de `/studies/<id>` é atrito por nada.
+ * dentro de `/summary/<id>` é atrito por nada.
  */
 const UUID = /[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}/i;
 
@@ -33,7 +33,7 @@ export function SessionRunLookup({ current }: { current: string }) {
     const qs = params.toString();
     // O destino é o `pathname` atual, e não uma rota escrita à mão: este campo
     // já mudou de tela uma vez (nasceu na de precificação, hoje vive na aba
-    // Sessões de /admin/custos), e uma rota fixa aqui quebra em silêncio.
+    // Sessões de /admin/costs), e uma rota fixa aqui quebra em silêncio.
     startTransition(() => router.push(qs ? `${pathname}?${qs}` : pathname));
   }
 

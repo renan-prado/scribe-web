@@ -16,7 +16,7 @@ src/features/referrals/components/  ReferralField (tela de entrada, os DOIS
 src/shared/components/HeroEyebrow      o selo do hero da LP (cliente)
 src/shared/components/ReferrerAvatar   foto ou iniciais de quem indicou
 app/i/[code]/route.ts               o link de indicação
-app/(app)/indicar/page.tsx          a página do usuário
+app/(app)/refer/page.tsx          a página do usuário
 app/api/referral/active/route.ts    quem indicou esta visita (público)
 lib/referrals/economics.ts          os números (client-safe)
 lib/referrals/cookies.ts            cookies dos DOIS programas (client-safe)
@@ -86,7 +86,7 @@ Não "resolva" isso creditando na hora com um `if (partner.user_id)`: o ramo do
 
 ## O painel nunca expõe uma pessoa
 
-Só agregados, como em `/partners`. `referral_rewards` tem RLS ligada e NENHUMA
+Só agregados, como em `/partners/dashboard`. `referral_rewards` tem RLS ligada e NENHUMA
 policy, o cliente não lê essa tabela. Quem indicou vê "3 amigos entraram",
 nunca quem são. Não crie rota que liste indicados.
 

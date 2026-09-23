@@ -380,7 +380,7 @@ export function SavedSessionView({
                     encostar e sair. Ver `NavLink`. */}
               {summary ? (
                 <NavLink
-                  href={`/escrever/${id}`}
+                  href={`/summary/${id}/edit`}
                   prefetchOnPress
                   spinner="none"
                   contentClassName="inline-flex items-center gap-1"
@@ -495,13 +495,11 @@ export function SavedSessionView({
               ) : null}
             </div>
             {/* Aqui morava o "Gerar estudo" (`DeepenButton`), a única porta para
-                  o `/studies` a partir de uma sessão. O modo estudo está saindo do
-                  produto e, enquanto ele não sai de verdade, o acesso a ele foi
-                  retirado da interface — com o botão, foram junto a consulta de
-                  `hasDeepening` e a checagem de `study_generation` que a página
-                  fazia só para desenhá-lo (ver `summary/[id]/page.tsx`). O
-                  componente continua no repositório, inteiro, para o dia em que a
-                  decisão for a outra.
+                  o modo estudo a partir de uma sessão. O modo saiu do produto de
+                  verdade: a rota, o botão e os componentes que só ele usava foram
+                  apagados. O que fica de pé é a API, as tabelas e a leitura em
+                  `/admin/sessions/[id]` — dado gerado e pago por gente continua
+                  legível ali.
 
                   Ele também era o motivo de este cabeçalho ter três colunas no
                   desktop; a data que morava debaixo dele continua onde estava. */}

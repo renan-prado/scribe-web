@@ -20,7 +20,7 @@ import { cn } from "@/lib/utils";
  * ## Ela só roda no clique
  *
  * Este componente já foi um CARD lateral em três telas (as duas de custo, que
- * hoje são `/admin/custos`, e `/admin/metricas`), com três leituras diferentes,
+ * hoje são `/admin/costs`, e `/admin/metrics`), com três leituras diferentes,
  * e cada um deles DISPARAVA a geração sozinho quando a linha gravada passava de
  * 24 horas.
  * Duas coisas estavam erradas nisso: a chamada de LLM mais cara do produto

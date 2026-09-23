@@ -114,7 +114,7 @@ function sort(payload: AdminInsightsPayload): AdminInsightsPayload {
 /**
  * A janela de análise é FIXA, e não o filtro de período das telas de dinheiro.
  *
- * /admin/custos tem pílulas de 7/30/90 dias, e amarrar a leitura a elas
+ * /admin/costs tem pílulas de 7/30/90 dias, e amarrar a leitura a elas
  * daria quatro variantes da mesma pergunta, cada uma uma chamada de modelo de
  * raciocínio. Trinta dias é a janela em que a pergunta de preço tem resposta:
  * sete dias não cobrem um mês de assinatura, e noventa diluem uma troca de

@@ -248,18 +248,18 @@ primeiro terço e o halo azul ganha uma borda de contraste em volta.
 
 `--lp-hero-fade` precisa ser igual a essa última parada; um tom fora do lugar
 desenha uma faixa visível exatamente onde a ideia era não haver borda nenhuma.
-Quem ainda o consome é a `/parceiros`, que esfuma a prévia do painel contra
+Quem ainda o consome é a `/partners`, que esfuma a prévia do painel contra
 ele. As duas landings leem o mesmo `--lp-hero`.
 
 **Os halos radiais do hero ficam**, e hoje são UM por landing: a `/` tem só o
-azul, a `/parceiros` tem o dourado. São a última cor de marca do produto e o
+azul, a `/partners` tem o dourado. São a última cor de marca do produto e o
 que impede a primeira dobra de ser um retângulo cinza com texto no meio; saíram
 por uma versão, junto com a pele antiga, e a página perdeu com isso o que a
 fazia parecer viva.
 
 O dourado saiu da `/` junto com o mockup de celular do hero dela: ele ficava
 ATRÁS do aparelho, e sem nada por cima um degradê âmbar de 16% lê como mancha
-em vez de luz. Espalhá-lo só fez a mancha maior. Na `/parceiros` ele continua,
+em vez de luz. Espalhá-lo só fez a mancha maior. Na `/partners` ele continua,
 com um objeto na frente.
 
 **E a `/` ganhou PARTÍCULAS**, pontinhos que sobem devagar atrás do texto do
@@ -275,7 +275,7 @@ acabou e a calibragem ficou num lugar só. Sobre o grafite, 16% de opacidade é
 o teto antes de o halo deixar de ser luz e virar mancha de cor; no chão quase
 preto de antes dava para ir mais alto.
 
-Na `/parceiros` o dourado divide matiz com o AMARELO DA MOEDA, que ali é
+Na `/partners` o dourado divide matiz com o AMARELO DA MOEDA, que ali é
 informação. Passa porque é luz difusa atrás do texto, não pastilha nem número.
 Se um valor em amarelo cair em cima dele, quem sai é o halo.
 
@@ -451,7 +451,7 @@ aparelho, e se ele nascesse "offline" toda página apareceria com o aviso por um
 quadro antes de se corrigir.
 
 `components/OfflineBadge.tsx` é a pastilha, montada uma vez no layout de
-`(barra)`. Ela é pequena e fica embaixo porque não é um erro, é um MODO: uma
+`(shell)`. Ela é pequena e fica embaixo porque não é um erro, é um MODO: uma
 faixa vermelha no topo trataria a falta de rede como um acidente a resolver
 agora, e aqui ela não impede nada do que a pessoa veio fazer. O que ela conserta
 é o silêncio — o Scriba passou a funcionar sem rede e não contava isso, e um app
@@ -480,8 +480,8 @@ cinco ícones) — as quatro saíram junto com a moldura antiga. Quem navega hoj
 tem o menu da conta no avatar e o voltar da `TopBar` (a pena ao lado dele é
 marcação, não leva a lugar nenhum);
 quem CRIA — gravar, escrever, importar — usa o `+` da `MobileActionBar` no
-celular (`(app)/(barra)/components/MobileActionBar.tsx`, a barra de baixo
-comum a `/home`, `/summary` e `/escrever`, ver `src/app/AGENTS.md`) ou os chips
+celular (`(app)/(shell)/components/MobileActionBar.tsx`, a barra de baixo
+comum a `/home`, `/summary` e `/summary/new`, ver `src/app/AGENTS.md`) ou os chips
 do `CreateActions` na `TopBar` no desktop (`ImportAction`, `RecordAction` e
 `WriteAction`, com a lupa entre o segundo e o terceiro), todos montados pela
 própria página. A gaveta do hambúrguer que ficava entre os dois durou uma
@@ -522,7 +522,7 @@ chegava lá digitando a URL.
 
 **Os dois são SERVER components, e é isso que justifica existirem separados.**
 Atrás de um `isAdmin &&` dentro de um componente cliente, as strings "Admin",
-"Área do parceiro", "/admin" e "/partners" viajam no JavaScript de todo usuário
+"Área do parceiro", "/admin" e "/partners/dashboard" viajam no JavaScript de todo usuário
 logado: o booleano esconde o item na tela, não o código que o desenha. Nenhum
 dos dois é controle de acesso, os gates das rotas respondem 404 a quem digitar
 a URL.
@@ -633,7 +633,7 @@ São QUATRO telas, uma por capacidade da LP, e cada uma tem uma amarra:
   — a keyframe percorre a fita INTEIRA (`-100%` dela), então é o número de
   passos que define quanto vale um dígito.
 - `LandingYoutubeMock` (importar) — o link colado e o botão, e mais duas fatias:
-  a espera (`LandingYoutubeImportingMock`, que é `/importar/[id]` com as etapas
+  a espera (`LandingYoutubeImportingMock`, que é `/import/[id]` com as etapas
   do `STEPS` do `YoutubeImport`) e o resumo. A do meio é a que responde "e depois
   que eu colo o link?" — sem ela a seção mostra um formulário e um resultado, e o
   trabalho, que é a parte que o Scriba faz no lugar da pessoa, acontece fora da
@@ -641,7 +641,7 @@ São QUATRO telas, uma por capacidade da LP, e cada uma tem uma amarra:
   responde uma pergunta que ninguém fez ainda na LP, e o que a seção precisa
   provar é que um link vira resumo. Não o traga de volta sem pedido. O preço
   também não está no botão: nenhuma das quatro seções fala em moedas hoje.
-- `LandingEditorMock` (escrever) — o `/escrever` em três estados (`state`): o
+- `LandingEditorMock` (escrever) — o `/summary/new` em três estados (`state`): o
   texto como estava, o menu do `+` ABERTO e o bloco novo sendo digitado, com o
   cursor piscando (`--animate-lp-caret`). A pastilha "Parágrafo" aparece escolhida
   no menu porque o bloco que nasce na fatia seguinte é um parágrafo: trocou um,

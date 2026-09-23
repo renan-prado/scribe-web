@@ -17,16 +17,16 @@ import { AdminTabs } from "@/features/admin/components/AdminTabs";
  * quem chegava era se um valor lançado ali aparecia no outro lugar.
  *
  * Configurações saiu daqui: categorias e parâmetros foram para
- * `/admin/configuracoes`, junto do resto do que o painel gira.
+ * `/admin/settings`, junto do resto do que o painel gira.
  */
 export type FinanceTabKey = "geral" | "lancamentos" | "aberto" | "recorrentes" | "projecoes";
 
 const TABS: { key: FinanceTabKey; href: string; label: string }[] = [
-  { key: "geral", href: "/admin/financeiro", label: "Visão geral" },
-  { key: "lancamentos", href: "/admin/financeiro/lancamentos", label: "Lançamentos" },
-  { key: "aberto", href: "/admin/financeiro/lancamentos?visao=aberto", label: "Em aberto" },
-  { key: "recorrentes", href: "/admin/financeiro/recorrentes", label: "Custos recorrentes" },
-  { key: "projecoes", href: "/admin/financeiro/projecoes", label: "Projeções" },
+  { key: "geral", href: "/admin/finance", label: "Visão geral" },
+  { key: "lancamentos", href: "/admin/finance/entries", label: "Lançamentos" },
+  { key: "aberto", href: "/admin/finance/entries?view=open", label: "Em aberto" },
+  { key: "recorrentes", href: "/admin/finance/recurring", label: "Custos recorrentes" },
+  { key: "projecoes", href: "/admin/finance/scenarios", label: "Projeções" },
 ];
 
 export function FinanceTabs({ active }: { active: FinanceTabKey }) {

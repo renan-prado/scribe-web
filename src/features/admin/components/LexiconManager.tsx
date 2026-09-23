@@ -96,7 +96,7 @@ export function LexiconManager({ entries, current, total }: Props) {
     if (next.estado !== ANY) params.set("estado", next.estado);
     else params.delete("estado");
     const qs = params.toString();
-    startTransition(() => router.push(qs ? `/admin/lexico?${qs}` : "/admin/lexico"));
+    startTransition(() => router.push(qs ? `/admin/lexicon?${qs}` : "/admin/lexicon"));
   }
 
   function refresh() {

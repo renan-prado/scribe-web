@@ -5,7 +5,7 @@
 -- materializa:
 --
 --   * Todo usuário tem um código próprio (`profiles.referral_code`), gerado
---     na primeira vez que ele abre /indicar. O link é `scriba.cc/i/<codigo>`.
+--     na primeira vez que ele abre /refer. O link é `scriba.cc/i/<codigo>`.
 --   * Quem INDICA ganha moedas duas vezes por pessoa: no cadastro dela e, uma
 --     única vez, quando ela assina. Quem é indicado NÃO ganha nada além das
 --     50 de boas-vindas, é o que mantém o link do parceiro (150 moedas) como
@@ -159,7 +159,7 @@ end;
 $$;
 
 -- 6) ensure_referral_code() --------------------------------------------------
--- Preguiçosa, como a mesada: o código nasce quando alguém abre /indicar, não
+-- Preguiçosa, como a mesada: o código nasce quando alguém abre /refer, não
 -- no trigger de criação do perfil. Duas razões, não mexer no trigger de
 -- `auth.users` (que roda dentro do Supabase Auth e é o caminho mais caro de
 -- depurar quando quebra), e não gerar código para contas que nunca vão indicar
@@ -563,7 +563,7 @@ grant execute on function public.flush_partner_signup_rewards(uuid, uuid) to ser
 
 -- 12) RLS --------------------------------------------------------------------
 -- RLS ligado e NENHUMA policy: é a forma mais forte de dizer que o cliente não
--- toca nesta tabela. O painel de /indicar monta os contadores no servidor, com
+-- toca nesta tabela. O painel de /refer monta os contadores no servidor, com
 -- service-role, e devolve só números, mesma regra do painel do parceiro, pela
 -- mesma razão: `referred_user_id` é uma pessoa, e não há motivo de negócio
 -- para quem indicou saber quem ela é além do que já sabe.

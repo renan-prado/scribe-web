@@ -296,7 +296,7 @@ type EditorState = "base" | "menu" | "written";
 const EDITOR_TYPED_TEXT = "A promessa não é um poço melhor, é uma fonte que";
 
 /**
- * `/escrever` dentro do aparelho, em TRÊS estados que o `MockSwap` alterna: o
+ * `/summary/new` dentro do aparelho, em TRÊS estados que o `MockSwap` alterna: o
  * bloco já escrito com a linha do fim, o menu do `+` aberto, e o bloco novo
  * sendo digitado.
  *
@@ -929,7 +929,7 @@ function YoutubeGlyph({ className }: { className?: string }) {
 }
 
 /**
- * A tela de `/importar` dentro do `PhoneFrame`: o link colado e o botão.
+ * A tela de `/import` dentro do `PhoneFrame`: o link colado e o botão.
  *
  * **O RECORTE ("do minuto 12 ao 45") não aparece aqui, e a ausência é
  * deliberada.** Ele é uma resposta para quem já entendeu o que a importação
@@ -991,7 +991,7 @@ export function LandingYoutubeMock() {
 }
 
 /**
- * A ESPERA da importação: a mesma tela de `/importar/[id]`, com a etapa em que
+ * A ESPERA da importação: a mesma tela de `/import/[id]`, com a etapa em que
  * o Scriba já está escrevendo.
  *
  * É a fatia do meio da seção, e é a que responde "o que acontece depois que eu

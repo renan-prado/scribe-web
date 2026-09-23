@@ -13,7 +13,7 @@ import { cn } from "@/lib/utils";
  * Existe porque a intenção precisa sobreviver ao login: um visitante clica em
  * "Assinar Pessoal" sem ter conta, passa pelo Google, e tem de voltar
  * exatamente para onde parou. O caminho é
- * `/sign-in?next=/assinar?plan=pessoal`, o `next` já era suportado
+ * `/sign-in?next=/subscribe?plan=pessoal`, o `next` já era suportado
  * pelo fluxo de auth; esta página é o destino que faltava.
  *
  * A chave do plano viaja pela URL, e isso é seguro: ela só ENDEREÇA. Quem

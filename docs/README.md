@@ -38,7 +38,7 @@ saber ao editar código ficam nos `AGENTS.md` de cada pasta, não aqui.
   dá para automatizar do repositório.
 - **[`versionamento.md`](./versionamento.md)**: por que `npm run release` roda
   antes de todo push: a versão do `package.json` é carimbada em cada chamada de
-  LLM e é o eixo da tabela "Por versão" do `/admin/custos`. Sem o bump, a
+  LLM e é o eixo da tabela "Por versão" do `/admin/costs`. Sem o bump, a
   comparação entre deploys deixa de existir sem nenhum erro na tela. Traz o
   fluxo, a regra do degrau e como ler a tabela. **Status: implementado.**
 - **[`auth.md`](./auth.md)**: as duas portas de entrada (Google e e-mail com
@@ -82,7 +82,7 @@ saber ao editar código ficam nos `AGENTS.md` de cada pasta, não aqui.
   30 moedas por vídeo com teto de 2h, e a canibalização do Modo Resumo que foi
   assumida de olhos abertos. Leitura obrigatória antes de mexer no preço, no
   teto ou em `src/features/session/server/youtube/*`. **Status: implementado.**
-- **[`financeiro.md`](./financeiro.md)**: o desenho do `/admin/financeiro`: o
+- **[`financeiro.md`](./financeiro.md)**: o desenho do `/admin/finance`: o
   que já é medido e por isso NÃO se digita, o modelo de dados das cinco tabelas,
   a separação entre competência e caixa, o modelo de projeção com crescimento e
   churn, e quais indicadores valem a pena (e quais ficaram de fora, com o

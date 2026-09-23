@@ -1,7 +1,7 @@
 /**
  * A economia do "Indique a um amigo", em um lugar só.
  *
- * Client-safe de propósito: a página `/indicar`, o card do feed e a tela de
+ * Client-safe de propósito: a página `/refer`, o card do feed e a tela de
  * entrada mostram estes números, e as funções do banco os RECEBEM por
  * parâmetro (ver o cabeçalho da migração 0045). Uma cópia só, portanto, o
  * mesmo motivo de `lib/partners/economics.ts` existir, e o mesmo motivo de

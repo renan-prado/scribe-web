@@ -151,3 +151,167 @@ export function toggleMark(text: string, start: number, end: number): MarkToggle
   const out = `${text.slice(0, at)}${MARK_FENCE}${inner}${MARK_FENCE}${text.slice(at + inner.length)}`;
   return { text: out, start: at, end: at + inner.length + MARK_FENCE.length * 2 };
 }
+
+/* -------------------------------------------------------------------------
+ * O TEXTO CRU E O TEXTO VISÍVEL
+ *
+ * Na EDIÇÃO as cercas não aparecem. Elas são a gramática que guarda a marca
+ * dentro da string, e quem está escrevendo um sermão não tem nada que ver com
+ * ela: `==texto==` no meio da frase é ruído que a pessoa não pediu, não pode
+ * apagar sem perder a marca, e ainda cobra duas setas para atravessar um
+ * "caractere" que não existe na tela.
+ *
+ * Uma `textarea` não sabe esconder parte do próprio conteúdo, então o editor
+ * mostra o texto VISÍVEL (`stripMarks`) e devolve cada edição para o texto CRU
+ * por aqui. **O schema não muda**: o que está guardado continua sendo
+ * `{ type, text }` com as cercas dentro, e a leitura continua lendo a mesma
+ * string. O que passou a existir é uma tradução de MÃO DUPLA, viva só enquanto
+ * a caixa está na tela.
+ *
+ * As três funções abaixo são essa tradução, e a regra que as une é uma só:
+ * **na BORDA de uma marca, o cursor está do lado de fora dela.** Quem digita
+ * colado no começo ou no fim de um trecho marcado está escrevendo texto novo,
+ * não estendendo a marca de alguém; no MEIO, sim, o que se digita entra na
+ * marca, que é o que "escrever dentro do grifo" quer dizer.
+ * ------------------------------------------------------------------------- */
+
+/** O que cabe DENTRO de uma marca sem quebrá-la. Ver `MARK_RE`. */
+function fitsInsideMark(text: string): boolean {
+  return !text.includes("=") && !text.includes("\n");
+}
+
+/** Uma marca em volta do texto, ou nada quando não sobrou texto para marcar. */
+function fenced(text: string): string {
+  return text ? `${MARK_FENCE}${text}${MARK_FENCE}` : "";
+}
+
+function clamp(value: number, min: number, max: number): number {
+  return Math.min(Math.max(value, min), max);
+}
+
+/** Uma posição do texto visível, no texto cru. */
+export function displayToRaw(raw: string, index: number): number {
+  let display = 0;
+  for (const segment of splitMarks(raw)) {
+    const end = display + segment.text.length;
+    if (index < end) {
+      if (!segment.marked) return segment.start + (index - display);
+      // A borda de abertura é o lado de fora: antes da cerca.
+      if (index === display) return segment.start;
+      return segment.start + MARK_FENCE.length + (index - display);
+    }
+    display = end;
+  }
+  return raw.length;
+}
+
+/** O caminho de volta: uma posição do texto cru, no texto visível. */
+export function rawToDisplay(raw: string, index: number): number {
+  let display = 0;
+  for (const segment of splitMarks(raw)) {
+    if (index < segment.end) {
+      if (!segment.marked) return display + Math.max(0, index - segment.start);
+      return display + clamp(index - segment.start - MARK_FENCE.length, 0, segment.text.length);
+    }
+    display += segment.text.length;
+  }
+  return display;
+}
+
+/**
+ * O texto cru depois de uma edição feita sobre o texto VISÍVEL.
+ *
+ * A edição é descoberta por diferença — o pedaço comum no começo, o pedaço
+ * comum no fim, e o que sobrou no meio —, e não pelo evento do teclado: colar,
+ * apagar uma seleção, o autocompletar do celular e o Ctrl+Z chegam todos como
+ * "o campo agora contém isto", e a mesma conta serve para os quatro.
+ *
+ * Três decisões moram aqui:
+ *
+ * - **apagar o conteúdo inteiro de uma marca apaga a marca**, cercas incluídas.
+ *   Deixá-las daria `====` à vista no meio da frase, que é a sintaxe vazando
+ *   exatamente onde ela não devia aparecer.
+ * - **um `=` digitado dentro de uma marca a DESFAZ.** A regex não aceita `=`
+ *   dentro (ver `MARK_RE`), então a alternativa seria comer o caractere que a
+ *   pessoa acabou de digitar.
+ * - **uma quebra de linha dentro de uma marca a PARTE em duas**, que é a mesma
+ *   regra de a marca não atravessar linha. Só acontece nas listas, o único
+ *   bloco cujo Enter escreve um `\n` em vez de abrir um bloco novo.
+ *
+ * E há uma REDE embaixo de tudo: se a reconstrução não devolver exatamente o
+ * texto visível que chegou, o que vale é o texto visível, sem marca nenhuma.
+ * Perder o amarelo de um parágrafo é reparável com um clique; perder ou
+ * duplicar um caractere debaixo do cursor de quem está escrevendo, não.
+ */
+export function applyDisplayEdit(raw: string, nextDisplay: string): string {
+  const before = stripMarks(raw);
+  if (before === nextDisplay) return raw;
+
+  const shortest = Math.min(before.length, nextDisplay.length);
+  let head = 0;
+  while (head < shortest && before[head] === nextDisplay[head]) head += 1;
+  let tail = 0;
+  while (
+    tail < shortest - head &&
+    before[before.length - 1 - tail] === nextDisplay[nextDisplay.length - 1 - tail]
+  ) {
+    tail += 1;
+  }
+  const from = head;
+  const to = before.length - tail;
+  const inserted = nextDisplay.slice(head, nextDisplay.length - tail);
+
+  let out = "";
+  let display = 0;
+  let placed = false;
+  for (const segment of splitMarks(raw)) {
+    const start = display;
+    const end = start + segment.text.length;
+    display = end;
+
+    const kept =
+      segment.text.slice(0, clamp(from - start, 0, segment.text.length)) +
+      segment.text.slice(clamp(to - start, 0, segment.text.length));
+
+    // No MEIO deste trecho: o que se digita entra nele.
+    if (!placed && from > start && from < end) {
+      const left = segment.text.slice(0, clamp(from - start, 0, segment.text.length));
+      const right = segment.text.slice(clamp(to - start, 0, segment.text.length));
+      placed = true;
+      if (!segment.marked || fitsInsideMark(inserted)) {
+        out += segment.marked ? fenced(left + inserted + right) : left + inserted + right;
+      } else if (inserted.includes("=")) {
+        out += left + inserted + right;
+      } else {
+        out += fenced(left) + inserted + fenced(right);
+      }
+      continue;
+    }
+
+    // Na BORDA: o que se digita fica de fora da marca, antes deste trecho.
+    if (!placed && from <= start) {
+      out += inserted;
+      placed = true;
+    }
+    out += segment.marked ? fenced(kept) : kept;
+  }
+  if (!placed) out += inserted;
+
+  return stripMarks(out) === nextDisplay ? out : nextDisplay;
+}
+
+/**
+ * O `toggleMark` para quem só tem as posições do texto VISÍVEL: traduz o
+ * recorte para o texto cru, liga ou desliga a marca lá, e devolve onde a
+ * seleção ficou — de novo em posições visíveis, que é o que a `textarea`
+ * entende.
+ */
+export function toggleMarkOnDisplay(raw: string, start: number, end: number): MarkToggle | null {
+  const toggled = toggleMark(raw, displayToRaw(raw, start), displayToRaw(raw, end));
+  if (!toggled) return null;
+  return {
+    text: toggled.text,
+    start: rawToDisplay(toggled.text, toggled.start),
+    end: rawToDisplay(toggled.text, toggled.end),
+  };
+}

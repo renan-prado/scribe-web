@@ -1182,6 +1182,31 @@
       var(--session-highlight-yellow) 58%
     );
   }
+  /* O MARCA-TEXTO (`==assim==`), que é OUTRA coisa e por isso tem classe
+     própria.
+
+     Ele já usou a `.highlight-phrase` acima, e o argumento era bom: um segundo
+     amarelo seria uma segunda gramática para a mesma ideia. Só que a faixa de
+     lá começa a 58% da altura da letra — é uma passada de marcador POR BAIXO
+     de uma frase inteira, centralizada e em corpo grande, e é assim que ela
+     deve continuar. Sobre duas palavras no meio de um parágrafo, a mesma faixa
+     lê como sublinhado gordo: a palavra fica fora da tinta, e o que o olho vê
+     é um traço, não um grifo.
+
+     Um marca-texto de verdade cobre a palavra DE CIMA A BAIXO, e é o que esta
+     faz. O amarelo é o MESMO token (a cor não mudou, só a área que ela ocupa),
+     e ele é translúcido de propósito: a 44% a letra continua legível por baixo,
+     como acontece no papel.
+
+     Sem recuo horizontal aqui dentro. Na leitura o `<mark>` acrescenta um
+     `px-0.5`, mas na EDIÇÃO a mesma classe pinta um espelho atrás da
+     `textarea`, e um pixel de recuo ali empurra o texto invisível e tira a
+     faixa de fase com o que está escrito. O respiro é de quem usa, não da
+     classe. */
+  .highlight-mark {
+    background-color: var(--session-highlight-yellow);
+    border-radius: 3px;
+  }
   /* O AMARELO DA BUSCA DENTRO DO RESUMO morava aqui, e SAIU — ver
      `SummaryFind.tsx`, que agora injeta essas duas regras num `<style>`
      próprio.

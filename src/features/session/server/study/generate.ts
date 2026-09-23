@@ -377,7 +377,7 @@ export async function generateStudy(input: GenerateStudyInput): Promise<Generate
     words: payload.blocks.reduce((n, b) => n + ("text" in b ? b.text.split(/\s+/).length : 0), 0),
     // Duração e tokens no MESMO evento porque as duas perguntas que se faz
     // sobre esta rota são "por que demora tanto?" e "quanto custa?", e elas se
-    // respondem juntas. O custo em reais sai em /admin/custos.
+    // respondem juntas. O custo em reais sai em /admin/costs.
     durationMs: Date.now() - startedAt,
     totalTokens,
     ...report,

@@ -22,7 +22,7 @@ linha própria no menu.
 - "Leitura da IA" era um cabeçalho e um botão.
 - "Funcionalidades" e "Configurações financeiras" eram os dois lugares de girar
   um parâmetro sem deploy, em cantos opostos do menu.
-- MRR aparecia em `/admin/metricas` E em `/admin/financeiro`, por duas
+- MRR aparecia em `/admin/metrics` E em `/admin/finance`, por duas
   consultas diferentes sobre a mesma definição.
 
 O custo disso não é estético. **Uma lista de dezessete deixa de ser encontrada
@@ -47,8 +47,8 @@ vez de ler a tela.
 A faixa de abas é `AdminTabs`, e ela é **LINK, não estado de cliente**: toda
 tela do painel é `force-dynamic`, a aba troca o que o SERVIDOR busca, não o que
 o navegador esconde. Como link, ela sobrevive a um F5 e pode ser colada para
-alguém. Cada tela também busca só o que a aba ativa usa — `/admin/custos` só
-carrega a lista de usuários do filtro nas abas que a têm, e `/admin/configuracoes`
+alguém. Cada tela também busca só o que a aba ativa usa — `/admin/costs` só
+carrega a lista de usuários do filtro nas abas que a têm, e `/admin/settings`
 não toca em finanças na aba de produto.
 
 O que uma aba diz e um item de menu não diz: **isto aqui é o mesmo assunto,
@@ -169,7 +169,7 @@ invente porcentagem para preencher o espaço.
 **As grades de KPI viram quatro colunas só em `xl`, não no `@5xl/main` do
 bloco.** Em `lg` a sidebar já come 16rem, e um "R$ 12.345,67" não cabia nos
 ~175px que sobravam por cartão. Vale para o mesmo motivo na barra de filtros de
-`/admin/custos`.
+`/admin/costs`.
 
 **O `max-w-[1600px]` do conteúdo não é do bloco e fica.** Sem ele uma tabela de
 finanças se estica por um monitor inteiro e a linha deixa de ser lida de ponta
@@ -186,7 +186,7 @@ para os blocos que ainda são `<div>`; quando o último virar `<Card>`, ela sai.
 Os itens de admin e de parceiro do menu do avatar são um **server component**
 (`PrivilegedMenuItems`) entregue ao `UserMenu` por slot. Atrás de um
 `isAdmin &&` dentro do componente cliente, as strings "Admin", "Área do
-parceiro", "/admin" e "/partners" viajavam no chunk que TODO usuário logado
+parceiro", "/admin" e "/partners/dashboard" viajavam no chunk que TODO usuário logado
 baixa: o `false` escondia o item na tela, não o código que o desenha.
 
 Consequência prática: **constante lida por server component não pode morar num
@@ -207,7 +207,7 @@ O mesmo vale para a conta do programa de parceiros: ela mora em
 
 ## Custo
 
-`/admin/custos` lê `llm_usage_events`, alimentada por `recordChatUsage` /
+`/admin/costs` lê `llm_usage_events`, alimentada por `recordChatUsage` /
 `recordAudioUsage` em cada rota de LLM. O preço por token está em
 `src/lib/llm/pricing.ts`; a conversão para reais usa o câmbio de
 `src/lib/fx/usd-brl.ts`.
@@ -264,7 +264,7 @@ Três coisas que essa fusão não pode desfazer:
   leitura da IA a rotula como aposentada: sem isso o analista sugere trocar o
   modelo "da rota outras".
 
-## O corte por VERSÃO (aba "Versões" de `/admin/custos`)
+## O corte por VERSÃO (aba "Versões" de `/admin/costs`)
 
 Rota, usuário, ação e sessão são cortes de ESPAÇO, dizem onde o dinheiro foi. A
 aba "Versões" é o corte de TEMPO, e responde à outra pergunta: **depois daquela
@@ -338,7 +338,7 @@ Guia completo em [`docs/versionamento.md`](../../../docs/versionamento.md).
 
 ## O inspetor de sessão (na aba "Sessões")
 
-`/admin/custos?aba=sessoes&sessionId=<uuid>` abre uma sessão **execução por
+`/admin/costs?aba=sessoes&sessionId=<uuid>` abre uma sessão **execução por
 execução** (`src/features/admin/server/db/session-runs.ts`). É a única leitura
 que NÃO agrega, e existe por causa de um ponto cego de todas as outras:
 reprocessar um estudo grava um segundo conjunto de eventos na mesma sessão, e
@@ -373,7 +373,7 @@ estorno grava um negativo que é devolução de crédito, não consumo. Só os s
 motivos de `CHARGE_REASONS` são gasto. O módulo de leitura já faz esse corte,
 não recrie a soma numa tela.
 
-## Preços e margem (a aba de decisão de `/admin/custos`)
+## Preços e margem (a aba de decisão de `/admin/costs`)
 
 Responde a UMA pergunta que nenhum dos outros três cortes responde: **continuo
 cobrando 5 moedas o minuto?** Preço não é cobrado por rota, é cobrado por AÇÃO,
@@ -381,7 +381,7 @@ e uma ação é várias rotas (um minuto gravado é transcrição + a fatia dele
 resumo final). Somar rota a rota à mão para chegar no minuto era o trabalho que
 esta aba existe para não ser refeito.
 
-**Ela é a aba PADRÃO da tela** (`/admin/custos` sem query abre nela), e a ordem
+**Ela é a aba PADRÃO da tela** (`/admin/costs` sem query abre nela), e a ordem
 das quatro é a da decisão: preço, depois o diagnóstico por rota, depois o
 tempo, depois a sessão. Quem chega com uma pergunta de dinheiro cai na resposta
 antes de cair no detalhe.
@@ -430,7 +430,7 @@ diferente do preço atual (`ledgerDivergesFromPrice`), porque aí a divergência
 
 Quatro coisas que quem mexer aqui não pode desfazer:
 
-- **A régua da moeda mora NESTA aba, e não em `/admin/configuracoes`.** Ela é o
+- **A régua da moeda mora NESTA aba, e não em `/admin/settings`.** Ela é o
   único parâmetro do painel que não foi para a tela de configurações, e a razão
   é a do item seguinte: separá-la da margem que ela move faria o número da
   outra tela parecer um fato. O câmbio manual fica fora pelo mesmo motivo, no
@@ -463,7 +463,7 @@ para o prompt" produziria um insight contradizendo uma tabela do painel.
 
 **Ela já foi três, depois uma tela própria, e as duas mudanças são o que este
 trecho precisa ensinar.** Primeiro havia um card lateral nas duas telas de
-custo de então e em `/admin/metricas`, cada um com o seu recorte (`pricing`,
+custo de então e em `/admin/metrics`, cada um com o seu recorte (`pricing`,
 `usage`, `metrics`), e cada um DISPARANDO a geração sozinho quando a linha
 gravada passava de 24 horas. Dois defeitos que só aparecem com o painel em uso:
 
@@ -577,7 +577,7 @@ comissão.
 
 ## Modelo sem preço na tabela
 
-`/admin/custos` abre com um aviso vermelho quando alguma chamada rodou num
+`/admin/costs` abre com um aviso vermelho quando alguma chamada rodou num
 modelo que não está em `src/lib/llm/pricing.ts`. Elas gravaram custo **zero**, e
 sem o aviso o sintoma é uma conta boa demais, que é o sintoma que ninguém
 investiga. O efeito em cadeia é o pior possível: a margem daquela ação sobe, e
@@ -591,7 +591,7 @@ para ser avisado. Vale o mesmo para a faixa da janela de versão: os dois são
 ressalvas sobre TODA a tela. Ele reaparece, resumido, entre os avisos da visão
 geral, pela mesma razão — é lá que se abre o painel.
 
-## Configurações (`/admin/configuracoes`)
+## Configurações (`/admin/settings`)
 
 **Tudo o que o painel GIRA sem deploy, num lugar só**, em duas abas:
 Funcionalidades e Financeiro. Eram duas telas em cantos opostos do menu
@@ -601,7 +601,7 @@ tinha de adivinhar por qual começar.
 
 **Duas réguas NÃO vieram para cá, e a exceção é a regra.** O valor da moeda e o
 câmbio manual continuam onde o número que eles movem é lido: a régua na aba de
-preços de `/admin/custos`, o câmbio no selo que mostra a cotação em uso.
+preços de `/admin/costs`, o câmbio no selo que mostra a cotação em uso.
 Separar uma simulação da margem que ela produz faria o número da outra tela
 parecer um fato — que é exatamente o risco documentado na seção de preços.
 
@@ -638,6 +638,54 @@ todo o histórico despencar sem nada indicando por quê. Por isso não existe
 `DELETE` na rota de categorias, e por isso trocar a `nature` de uma tem log
 próprio.
 
+## Os dois detalhes que abrem POR CIMA da lista
+
+`/admin/sessions/[id]` e `/admin/users/[id]` são **rotas interceptadas**: o
+clique na linha abre um modal sobre a lista, e a mesma URL colada num chat ou
+recarregada com F5 abre a página cheia. São as duas únicas do repositório, e a
+convenção é a do Next (`@modal` + `(.)`, ver `intercepting-routes.md` e
+`parallel-routes.md` em `node_modules/next/dist/docs/`).
+
+```
+admin/layout.tsx                    recebe o slot `modal` como PROP
+admin/@modal/default.tsx            `null` — o estado vazio, em toda outra rota
+admin/@modal/(.)sessions/[id]/      o modal  ─┐ os dois desenham
+admin/@modal/(.)users/[id]/         o modal  ─┤ o MESMO componente
+admin/sessions/[id]/                a página ─┤ (`AdminSessionReader`,
+admin/users/[id]/                   a página ─┘  `UserEditForm`)
+```
+
+**O que isso compra é a lista que fica ATRÁS.** `/admin/sessions` tem filtro de
+modo, de usuário e paginação em `searchParams`, e é uma tela que se percorre:
+abrir e fechar quatro sessões até achar a certa era, antes, quatro voltas à
+lista do zero — consulta refeita, filtro perdido, rolagem no topo. Com o modal
+a lista nunca é desmontada. Em `/admin/users` o ganho é outro: a ficha era um
+`<Dialog>` aberto por `useState`, **sem endereço nenhum** — não dava para
+mandar "olha essa conta" para alguém nem voltar a ela depois de um F5.
+
+Quatro coisas que quem mexer aqui não pode desfazer:
+
+- **O conteúdo mora num COMPONENTE, nunca dentro de uma das duas rotas.** Elas
+  são dois enquadramentos do mesmo conteúdo, e duas cópias divergem na primeira
+  aba nova — que entraria só numa delas, sem nada acusando, até alguém comparar.
+- **`@modal/default.tsx` devolvendo `null` é obrigatório.** Um slot paralelo
+  precisa ter o que renderizar em TODA rota do painel, e sem ele uma carga dura
+  de `/admin/costs` responde 404 na tela inteira: o jeito mais confuso possível
+  de uma rota que existe parecer que não existe.
+- **Fechar é `router.back()`, nunca um `push` para a lista** (`RouteModal`). O
+  modal nasceu de uma navegação, então desfazê-la é o que devolve a pessoa ao
+  lugar exato de onde ela veio. Um `push` empilha entrada nova e traz a lista do
+  topo, com os filtros em branco — exatamente o que este desenho evita.
+- **O link tem de ser um `<Link>`.** A interceptação só acontece na navegação
+  do cliente; um `onClick` com `window.location` ou um `<a>` cru é carga dura, e
+  a pessoa cai na página cheia sem lista atrás. Foi essa a troca feita no botão
+  da pena de `UsersManager`.
+
+O `AdminSessionReader` recebe `inModal` para esconder o "Todas as sessões": no
+modal ele seria um segundo jeito de fazer o que fechar já faz, e o pior dos
+dois, porque é um `<Link>` que empilha histórico. O `UserEditForm` recebe
+`frame` pela mesma razão, e é o que decide entre `back()` e `push`.
+
 ## Sessões (aba de "Conteúdo")
 
 Não é métrica nem custo: é o CONTEÚDO. A lista traz todas as sessões, de todo
@@ -645,7 +693,7 @@ mundo, e `/admin/sessions/[id]` abre uma delas em abas, resumo, transcrição,
 estudo e o feed do ao vivo.
 
 Ela existe porque as outras telas respondem em volta do texto e nunca sobre
-ele: `/admin/custos` diz quanto custou, `/admin/metricas` quantas foram, e a
+ele: `/admin/costs` diz quanto custou, `/admin/metrics` quantas foram, e a
 aba vizinha, Feedback, que nota deram. Uma nota "razoável" não distingue um
 resumo que inventou uma citação de uma transcrição que perdeu o meio da
 pregação, e nos primeiros usuários o texto é a única evidência de qualidade que
@@ -681,7 +729,7 @@ DIZ o teto no rodapé, mesma regra do `/admin/users`: o dia em que a base passar
 disso precisa ser visível, e não a lista parando de crescer em silêncio.
 
 A pílula de modo é uma só, `SessionModeBadge`, compartilhada com a tabela de
-sessões de `/admin/custos`. Ela nasceu lá e virou componente quando a segunda
+sessões de `/admin/costs`. Ela nasceu lá e virou componente quando a segunda
 tela precisou dela, com a divergência que duas cópias sempre produzem já
 consumada: `youtube` tinha entrado em `SESSION_MODES` e a cópia de lá continuava
 desenhando "-", que se lê como "sessão sem modo".
@@ -872,7 +920,7 @@ desenha os chips no navegador.
 A lista de contas responde "quem são e o que podem" desde sempre; ela passou a
 responder também **quem paga, por qual plano, há quanto tempo, e quem já pagou e
 parou**. Antes disso a única forma de saber se uma conta era pagante era abrir o
-Stripe: `/admin/metricas` dizia QUANTOS assinantes existem e `/admin/financeiro`
+Stripe: `/admin/metrics` dizia QUANTOS assinantes existem e `/admin/finance`
 quanto eles somam, mas nenhuma das duas dizia QUEM.
 
 **E ela CREDITA moedas avulsas**, pelo botão da moeda em cada linha
@@ -880,7 +928,7 @@ quanto eles somam, mas nenhuma das duas dizia QUEM.
 cortesia a quem perdeu uma gravação por um defeito nosso significava abrir o
 Supabase Studio e somar um número na coluna `coin_balance` à mão: sem lançamento
 no ledger, sem autor, sem motivo, e a uma tecla de editar a linha errada. Um
-crédito feito assim não aparece em `/admin/custos` e não entra no passivo de
+crédito feito assim não aparece em `/admin/costs` e não entra no passivo de
 moedas.
 
 **A rota é mais um chamador de `grantCoins`, não uma segunda porta de crédito**
@@ -927,7 +975,7 @@ resposta em vez de quatro filtros que talvez se sobreponham.
 O que não pode ser desfeito:
 
 - **A receita por conta sai de `aggregateMeasuredRevenue`**, a MESMA função que
-  desenha a receita de `/admin/financeiro`. Uma conversão moeda→reais escrita
+  desenha a receita de `/admin/finance`. Uma conversão moeda→reais escrita
   aqui seria a segunda definição do mesmo número, e as duas discordariam no dia
   em que um plano mudasse de franquia. A limitação dela vale aqui igual (é preço
   de TABELA, não valor cobrado — ver o cabeçalho de `finance/measured.ts`), e o
@@ -955,7 +1003,7 @@ perfis o filtro viraria uma URL de mil UUIDs no PostgREST, as duas tabelas são
 pequenas ao lado de `profiles`, e o cruzamento em memória ainda evita a
 pegadinha do `in([])`, que o PostgREST lê como "sem filtro".
 
-## Financeiro (`/admin/financeiro`)
+## Financeiro (`/admin/finance`)
 
 Uma área com navegação PRÓPRIA (`FinanceTabs`), atrás de um item de menu só. A
 área inteira responde a uma pergunta que as outras sete não respondem: **quanto
@@ -969,11 +1017,11 @@ quatro rotas e cinco abas:
 
 | Aba | Rota |
 |---|---|
-| Visão geral | `/admin/financeiro` |
-| Lançamentos | `/admin/financeiro/lancamentos` |
-| Em aberto | `/admin/financeiro/lancamentos?visao=aberto` |
-| Custos recorrentes | `/admin/financeiro/recorrentes` |
-| Projeções | `/admin/financeiro/projecoes` |
+| Visão geral | `/admin/finance` |
+| Lançamentos | `/admin/finance/entries` |
+| Em aberto | `/admin/finance/entries?visao=aberto` |
+| Custos recorrentes | `/admin/finance/recurring` |
+| Projeções | `/admin/finance/scenarios` |
 
 **"Em aberto" é um FILTRO de Lançamentos, e a faixa de abas diz isso ao pôr os
 dois lado a lado sobre a mesma rota.** Era `/admin/financeiro/compromissos`,
@@ -983,7 +1031,7 @@ um valor lançado numa aparecia na outra. Dívida não é um tipo: é um lançam
 com `status <> 'paid'` e `due_date`, e a tela agora responde isso sozinha.
 
 Configurações saiu da área: categorias e parâmetros são a aba Financeiro de
-`/admin/configuracoes`, junto do resto do que o painel gira.
+`/admin/settings`, junto do resto do que o painel gira.
 
 **Metade do painel é MEDIDA e não se digita.** Receita de assinatura sai dos
 créditos de `coin_transactions` (`src/features/admin/finance/measured.ts`), custo de IA de
@@ -1019,7 +1067,7 @@ Cinco coisas que quem mexer aqui não pode desfazer:
   Vale para toda a camada (`src/features/admin/finance/money.ts`).
 - **Os avisos vêm ANTES dos números.** Um painel financeiro erra em silêncio, e
   o sintoma é sempre uma conta boa demais, que é a que ninguém investiga. É a
-  mesma razão do aviso de modelo sem preço em `/admin/custos`.
+  mesma razão do aviso de modelo sem preço em `/admin/costs`.
 
 **A projeção roda no CLIENTE, e isso não é cálculo no frontend.** O componente
 chama `project()` de `src/features/admin/finance/projection.ts`, o único lugar onde a fórmula
@@ -1034,7 +1082,7 @@ rota com Lançamentos. Um terceiro `kind` daria três somas para o mesmo dinheir
 e a primeira quitação faria as três discordarem.
 
 **Categoria não se apaga, arquiva-se.** A regra está na aba Financeiro de
-`/admin/configuracoes`, que é onde as categorias são editadas; ver a seção de
+`/admin/settings`, que é onde as categorias são editadas; ver a seção de
 Configurações, acima.
 
 ## Parceiros (aba de "Crescimento")

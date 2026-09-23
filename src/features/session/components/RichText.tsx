@@ -57,7 +57,7 @@ import { splitMarks } from "@/lib/domain/mark";
  */
 
 /**
- * A seta que `/escrever` cria a partir de `->` (`autoArrow`, no `Composer`).
+ * A seta que `/summary/new` cria a partir de `->` (`autoArrow`, no `Composer`).
  * Ela é APAGADA de propósito: a tinta cheia pesaria como palavra, e ela é
  * pontuação, um `->` mais legível, não um destaque.
  *
@@ -139,8 +139,10 @@ export function RichText({ children }: { children: string }) {
    *
    * `<mark>` é a tag do HTML para exatamente isto, e ela vem com fundo amarelo e
    * tinta preta de fábrica: os dois são zerados, porque quem pinta aqui é a
-   * `.highlight-phrase`, a MESMA faixa da frase de destaque. Um segundo amarelo
-   * no produto seria uma segunda gramática para a mesma ideia.
+   * `.highlight-mark`, o mesmo amarelo do resto do produto cobrindo a palavra
+   * inteira, de cima a baixo. Ela já foi a `.highlight-phrase` da frase de
+   * destaque; o porquê da separação está no comentário da classe, em
+   * `globals.css`.
    */
   return (
     <>
@@ -149,7 +151,7 @@ export function RichText({ children }: { children: string }) {
           <mark
             // biome-ignore lint/suspicious/noArrayIndexKey: lista derivada de string imutável
             key={index}
-            className="highlight-phrase bg-transparent px-0.5 text-inherit [-webkit-box-decoration-break:clone] [box-decoration-break:clone]"
+            className="highlight-mark px-0.5 text-inherit [-webkit-box-decoration-break:clone] [box-decoration-break:clone]"
           >
             <Annotated text={piece.text} lexicon={lexicon} />
           </mark>

@@ -12,9 +12,9 @@ import { APP_VIEWPORT } from "@/shared/viewport";
  * A moldura do Scriba.
  *
  * Ela quase não desenha: não há header nem barra de navegação AQUI. A barra do
- * topo desceu um degrau, para `(barra)/layout.tsx`, e a razão é que ela não
- * cobre tudo que está atrás do login: `/assinar` e `/retorno` são o fluxo de
- * pagamento em tela cheia e `/indicar` traz o próprio voltar. O grupo de rotas
+ * topo desceu um degrau, para `(shell)/layout.tsx`, e a razão é que ela não
+ * cobre tudo que está atrás do login: `/subscribe` e `/subscribe/return` são o fluxo de
+ * pagamento em tela cheia e `/refer` traz o próprio voltar. O grupo de rotas
  * é o que diz quem tem barra sem um `if` de pathname que apodrece na primeira
  * rota nova.
  *
@@ -27,13 +27,13 @@ import { APP_VIEWPORT } from "@/shared/viewport";
  *
  * **A classe `dark` não é decoração, é o que faz o app ter UM tema.** Ela
  * redeclara os tokens `--scriba-*` neste nó, e eles descem por herança, então
- * todo componente que veio da pele antiga (o `SessionCard`, o `SavedSessionView`,
- * a página de estudo) desenha na paleta escura. Sem isso, um cartão branco
+ * todo componente que veio da pele antiga (o `SessionCard`, o `SavedSessionView`)
+ * desenha na paleta escura. Sem isso, um cartão branco
  * pousaria sobre o grafite e a tela ficaria com dois desenhos brigando.
  *
  * A Biblioteca não depende mais disso — os post-its dela são `--v2-note-*` e se
- * pintam sozinhos (ver `LibraryNote`) —, mas o `/summary` e o `/studies` ainda
- * dependem, e é por eles que a classe fica.
+ * pintam sozinhos (ver `LibraryNote`) —, mas o `/summary` ainda depende, e é
+ * por ele que a classe fica.
  *
  * **O topo respeita o RECORTE do aparelho** (`env(safe-area-inset-top)`).
  * Instalado na tela inicial, o Scriba desenha por baixo da barra de status do

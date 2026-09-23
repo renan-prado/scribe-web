@@ -286,7 +286,7 @@ export async function requestPasswordReset(
   const origin = await requestOrigin();
   const supabase = await createClient();
   const { error } = await supabase.auth.resetPasswordForEmail(email, {
-    redirectTo: `${origin}/auth/callback?next=${encodeURIComponent("/nova-senha")}`,
+    redirectTo: `${origin}/auth/callback?next=${encodeURIComponent("/new-password")}`,
   });
   if (error) {
     // Vira log e nada mais: a resposta é a mesma do caminho feliz, ver o

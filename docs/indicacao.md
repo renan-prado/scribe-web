@@ -18,7 +18,7 @@ Todo usuário do Scriba tem um link próprio (`scriba.cc/i/<codigo>`) e um códi
 de sete caracteres. Quem cria conta por esse link ou digita esse código vira
 uma indicação, e **quem indicou ganha moedas**.
 
-Não há inscrição: o link existe para toda conta, e aparece em `/indicar`.
+Não há inscrição: o link existe para toda conta, e aparece em `/refer`.
 
 ---
 
@@ -58,7 +58,7 @@ que dá 150 (ver "Por que os dois programas existem").
 
 ## Onde o usuário encontra isso
 
-- **`/indicar`**: o link, o botão de compartilhar (folha nativa do celular), o
+- **`/refer`**: o link, o botão de compartilhar (folha nativa do celular), o
   código para ditar, e os contadores: quantos entraram, quantos assinaram,
   quantas moedas rendeu.
 - **`/profile`**: o atalho para a página, logo abaixo do cartão de plano.
@@ -145,7 +145,7 @@ lugar dessa pessoa é o programa de parceiros, onde há comissão em dinheiro.
 | quem indica ganha por cadastro | 20 moedas | 50 moedas |
 | quem indica ganha por assinatura | **30% da 1ª mensalidade, em dinheiro** | 200 moedas |
 | teto | orçamento de bônus, por parceiro | 10 cadastros premiados por mês |
-| painel | `/partners`, com PIX e comprovantes | `/indicar`, três contadores |
+| painel | `/partners/dashboard`, com PIX e comprovantes | `/refer`, três contadores |
 
 O parceiro tem audiência, emite nota e recebe PIX; o amigo mandou um link no
 grupo da igreja. O link do parceiro precisa continuar sendo a **melhor oferta
@@ -203,7 +203,7 @@ mesmo caminho preguiçoso da mesada. Não há perda: moeda só serve dentro do a
 - **Contagem de visitas.** `/i/<codigo>` não conta cliques, ao contrário de
   `/r/<slug>`. O parceiro precisa do topo do funil porque otimizar divulgação é
   o trabalho dele; quem manda o link no grupo da igreja não vai. Se um dia o
-  painel de `/indicar` precisar de "N pessoas abriram seu link", a tabela é um
+  painel de `/refer` precisar de "N pessoas abriram seu link", a tabela é um
   espelho de `partner_clicks`, e a escrita anônima que ela exige é o custo a
   pesar antes.
 - **Revisão das premissas.** O custo do milheiro é MEDIDO, não configurado:
