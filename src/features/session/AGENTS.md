@@ -594,12 +594,31 @@ Cinco coisas que mordem de fora:
   `passage` do contrato, que o servidor encaixa depois do primeiro parágrafo
   (`splicePassage`); pedir a disposição em prosa foi tentado e medido, e perde
   para o hábito de escrever prosa corrida.
-- **Três coisas do texto da resposta são garantidas no servidor, não pedidas**
+- **QUATRO coisas do texto da resposta são garantidas no servidor, não pedidas**
   (`biblo/answer.ts`): a parede de parágrafo é quebrada em fronteira de frase
   (`breathe`), o "quer que eu escreva isso?" do fim é removido
-  (`dropTrailingOffer`) e a oferta é virada para a voz de quem pergunta
+  (`dropTrailingOffer`), a oferta é virada para a voz de quem pergunta
   (`asUserVoice`) — o chip da oferta é ENVIADO como se a pessoa o tivesse
-  digitado, e uma pergunta ali deixa de fazer sentido no instante do toque.
+  digitado, e uma pergunta ali deixa de fazer sentido no instante do toque —, e
+  o TRAVESSÃO é trocado por vírgula (`undash`), em tudo o que o modelo escreve:
+  resposta, chips, oferta, rótulo e blocos das ferramentas. A proibição do "—"
+  está no prompt desde sempre e o `gpt-4.1-mini` a respeitava; o `gpt-5-mini`
+  põe dois ou três por resposta de análise, e uma regra que vale SEMPRE não se
+  pede a quem pode esquecer. Três exceções, todas no código: entre dígitos ele
+  é faixa de versículos e vira hífen, no começo da linha é marcador de lista e
+  some, e depois de pontuação some em vez de virar uma segunda vírgula.
+- **O modelo é `gpt-5-mini` com `reasoningEffort: "low"`**, e a troca (de
+  `gpt-4.1-mini`) foi por PROFUNDIDADE: o anterior respondia bem o que é
+  recuperação ("quem foi Paulo?") e raso tudo o que pede um passo de
+  pensamento, que é a pergunta de quem já passou da primeira semana no app.
+  Junto veio a régua de tamanho no prompt (fato em um ou dois parágrafos,
+  análise em quatro a seis que ANDAM) e os tetos de saída dobrados, porque na
+  família de raciocínio o `max_completion_tokens` inclui o pensamento. O preço
+  disso está medido em `COIN_COSTS.bibloMessage`: margem de 69 a 79% na
+  conversa, 59% no `criarDocumento` da Biblioteca. **E a resposta passou de ~4s
+  para ~9s**, o que reabre a pergunta do streaming — medido, o tempo é o prompt
+  de ~4.800 tokens na entrada, não o raciocínio: em esforço `minimal`, com zero
+  token de pensamento, ela ainda leva 9s.
 - **A sugestão é um `SummaryBlock`, e não um formato novo.** Se o que o Biblo
   quer oferecer não couber nos oito tipos que o editor já desenha, não há
   sugestão. Um "bloco do Biblo" seria um nono tipo que o `BlockRenderer`, o

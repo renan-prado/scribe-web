@@ -65,8 +65,8 @@ const THINKING_BEAT_MS = 400;
  * O tempo MÍNIMO que o "Pensando…" fica na tela antes de a resposta entrar.
  *
  * Com a batida acima, o piso da conversa inteira é 1,1s. Hoje ele quase nunca
- * pega: uma resposta real leva de 3,7 a 4,8 segundos (medido, ver
- * `docs/biblo-implementacao.md` §9). Ele existe para o dia em que pegar — um
+ * pega: uma resposta real leva de 7,7 a 10,6 segundos (medido no `gpt-5-mini`,
+ * ver `docs/biblo-implementacao.md` §9). Ele existe para o dia em que pegar — um
  * modelo mais rápido, uma resposta curta — e para o "Pensando…" nunca ser um
  * lampejo de 200ms, que é pior do que não ter indicador nenhum.
  *

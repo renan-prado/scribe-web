@@ -64,24 +64,76 @@ const log = createLogger("biblo");
  * saída a mais nelas são R$ 0,0003. A margem medida de 82% (`/admin/costs`,
  * linha "Biblo") não sente. Quem segura o tamanho da PROSA continua sendo o
  * prompt, que é onde essa decisão é de leitura e não de orçamento.
+ *
+ * ## E 1600 porque O RACIOCÍNIO COME DO MESMO PRATO
+ *
+ * Com `gpt-5-mini` (ver `OPENAI_BIBLO_MODEL`), este número deixou de ser o
+ * orçamento do objeto e passou a ser o orçamento do objeto MAIS o pensamento
+ * do modelo: na família de raciocínio o parâmetro é `max_completion_tokens`, e
+ * os tokens de raciocínio saem de dentro dele antes de a primeira chave do
+ * JSON ser escrita. Em 700, uma pergunta que rendesse 400 tokens de raciocínio
+ * deixaria 300 para sete campos, e o JSON voltaria cortado no meio — a falha
+ * de 17/09 de novo, pela porta de trás.
+ *
+ * 1600 cobre o raciocínio de `low` (ordem de 100 a 400) mais a resposta
+ * desenvolvida que a régua de profundidade do prompt pede, com folga para a
+ * cauda. **Teto não é consumo:** a pergunta factual continua gastando o que
+ * sempre gastou, e quem paga o teto cheio é só a resposta que o mereceu.
  */
-export const BIBLO_ANSWER_MAX_TOKENS = 700;
+export const BIBLO_ANSWER_MAX_TOKENS = 1600;
+
+/**
+ * O esforço de raciocínio, e ele é `low` de propósito.
+ *
+ * Não é economia, é a calibragem certa para uma CONVERSA. Um passo de
+ * pensamento é o que faltava ao `gpt-4.1-mini` para responder "por que" em vez
+ * de "o quê"; um plano interno de mil tokens não torna a resposta melhor, só
+ * mais lenta e mais cara, e sem streaming no produto (ver o `AGENTS.md` da
+ * raiz) a lentidão aparece inteira de uma vez, atrás do "pensando" do avatar.
+ *
+ * **MEDIDO** (`tmp/dev-scripts/biblo-effort.mts`, a mesma pergunta de análise
+ * nos três esforços, com este prompt):
+ *
+ * | esforço | raciocínio | total | tempo | resultado |
+ * |---|---|---|---|---|
+ * | `minimal` | 0 tokens | 532 | ~9,0s | responde bem, e NÃO é mais rápido |
+ * | **`low`** | 320 tokens | 817 | ~11,8s | a resposta que queremos |
+ * | `medium` | 1.600 tokens | 1.600 | ~17,1s | **JSON inválido**, teto estourado |
+ *
+ * Duas coisas saem daí, e as duas contrariam a intuição:
+ *
+ * **Baixar o esforço não compra velocidade.** `minimal` não gastou um único
+ * token de raciocínio e ainda assim levou 9s: o tempo desta chamada é o prompt
+ * de ~4.800 tokens na entrada mais a geração, não o pensamento. Quem quiser a
+ * resposta mais rápida terá de encurtar o PROMPT, não o esforço.
+ *
+ * **`medium` não é o degrau seguinte, é uma mudança de teto.** Ele gastou os
+ * 1.600 de `BIBLO_ANSWER_MAX_TOKENS` inteiros pensando e não sobrou nada para
+ * escrever o JSON: a resposta veio truncada, paga e inútil. Se um dia ele for
+ * tentado, o teto sobe JUNTO, e a conta de margem é refeita antes.
+ */
+export const BIBLO_REASONING_EFFORT = "low" as const;
 
 /**
  * O teto quando a conversa TEM ferramentas (a superfície `home`).
  *
- * 700 é o orçamento de uma resposta de chat com seis campos ao redor. Um
- * `criarDocumento` é outra coisa: título, seis a dezesseis blocos com texto
- * escrito de verdade, e a prosa por cima. Naquele teto ele seria cortado no
- * meio, e um JSON truncado é a falha mais cara do Biblo — a resposta existe,
- * foi paga, e não chega (ver `salvageAnswer`).
+ * `BIBLO_ANSWER_MAX_TOKENS` é o orçamento de uma resposta de chat com seis
+ * campos ao redor. Um `criarDocumento` é outra coisa: título, seis a dezesseis
+ * blocos com texto escrito de verdade, e a prosa por cima. Naquele teto ele
+ * seria cortado no meio, e um JSON truncado é a falha mais cara do Biblo — a
+ * resposta existe, foi paga, e não chega (ver `salvageAnswer`).
  *
  * **O custo sobe só quando a ferramenta é usada.** Teto não é consumo: uma
  * pergunta comum na Biblioteca continua gastando os mesmos ~300 tokens de
  * saída. O que muda é o pior caso, e o pior caso aqui é justamente o pedido
  * mais valioso da conversa.
+ *
+ * Subiu de 2.400 para 3.600 junto com a troca de modelo, e pela mesma razão do
+ * outro teto: o raciocínio de `gpt-5-mini` sai de dentro deste número. Um
+ * documento de dezesseis blocos é exatamente o pedido em que o modelo mais
+ * pensa antes de escrever, então é o que ficaria sem orçamento primeiro.
  */
-export const BIBLO_TOOLS_MAX_TOKENS = 2400;
+export const BIBLO_TOOLS_MAX_TOKENS = 3600;
 
 /**
  * Teto do resumo que entra no prompt, em CARACTERES (~4 por token em
@@ -353,6 +405,64 @@ const IMPERATIVE: Record<string, string> = {
 };
 
 /**
+ * Tira o TRAVESSÃO do texto, e ele é a quarta coisa garantida aqui em vez de
+ * pedida ao modelo.
+ *
+ * O prompt proíbe o "—" em maiúsculas, com o motivo escrito ("é a marca
+ * registrada de texto escrito por máquina"), e o `gpt-4.1-mini` obedecia. O
+ * `gpt-5-mini` não: medido na troca, ele põe de dois a três por resposta de
+ * análise, e a proibição no prompt não mudou isso. É o mesmo padrão de
+ * `breathe` e `dropTrailingOffer` — uma regra que vale SEMPRE não se pede a
+ * quem pode esquecer, se garante onde ela é obrigatória.
+ *
+ * A troca é por vírgula, porque é isso que o travessão está fazendo em 95% dos
+ * casos: uma pausa no meio da frase, ou um par de pausas em volta de um aposto
+ * ("as duas coisas, justiça e misericórdia, se encontram"). As exceções estão
+ * tratadas na ordem em que aparecem abaixo, e a primeira é a que importa mais:
+ * **entre dígitos ele é uma FAIXA**, e "Jonas 4:6—10" virando "Jonas 4:6, 10"
+ * quebraria a resolução da passagem contra a NVI.
+ */
+export function undash(text: string): string {
+  if (!text.includes("—") && !text.includes("–")) return text;
+  return (
+    text
+      // Faixa de versículos, de anos, de capítulos: aqui ele é hífen.
+      .replace(/(\d)\s*[—–]\s*(\d)/g, "$1-$2")
+      // No começo da linha é marcador de lista ou de fala: some, o texto fica.
+      .replace(/^[ \t]*[—–]\s*/gm, "")
+      // No meio da frase vira vírgula, a não ser que já haja pontuação antes:
+      // duas marcas para a mesma pausa é pior que o travessão.
+      .replace(/\s*[—–]\s*/g, (_match, offset: number, whole: string) =>
+        /[,;:.!?]/.test(whole[offset - 1] ?? "") ? " " : ", "
+      )
+      // O travessão de fechamento costuma encostar na pontuação seguinte.
+      .replace(/,\s*([,;:.!?])/g, "$1")
+      .replace(/\s+([,;:.!?])/g, "$1")
+  );
+}
+
+/**
+ * Uma ação com o texto limpo do travessão.
+ *
+ * O `bibleQuote` fica de fora de propósito: o `text` dele é escrito pelo
+ * SERVIDOR a partir da NVI (aqui ele chega vazio, e quem o preenche é o
+ * cliente ao montar o documento), e a `reference` é onde um travessão viraria
+ * hífen de faixa pelo caminho do `undash` — mexer nela é mexer no que resolve
+ * a passagem.
+ */
+function cleanAction(action: BibloAction): BibloAction {
+  if (!("blocks" in action)) {
+    return "title" in action ? { ...action, title: undash(action.title) } : action;
+  }
+  const blocks = action.blocks.map((block) =>
+    block.type === "bibleQuote" ? block : { ...block, text: undash(block.text) }
+  );
+  return "title" in action
+    ? { ...action, title: undash(action.title), blocks }
+    : { ...action, blocks };
+}
+
+/**
  * Tira o pedido de licença do FIM da resposta.
  *
  * "Quer que eu escreva um trecho explicando essa parábola?" como último
@@ -396,7 +506,7 @@ function asUserVoice(offer: string | null): string | null {
 /**
  * A prosa resgatada de um JSON que o modelo não terminou de escrever.
  *
- * `BIBLO_ANSWER_MAX_TOKENS` subiu para 700 justamente para este caso ficar
+ * `BIBLO_ANSWER_MAX_TOKENS` subiu duas vezes justamente para este caso ficar
  * raro, e isto é a rede embaixo dele: o teto é um número fixo e a prolixidade
  * não é, então um dia ele será alcançado de novo. Quando for, o que está em
  * jogo já não é uma resposta a gerar — é uma resposta JÁ GERADA e JÁ PAGA,
@@ -542,13 +652,18 @@ async function verifySuggestion(
     const text = pointing ? previousAnswer.trim() : answerText.trim();
     if (!text) return null;
     block = { ...block, text };
+  } else {
+    // O bloco que o MODELO escreveu (`quote` e `h2` são os dois que ele
+    // escreve por inteiro): o travessão sai aqui também, porque este texto vai
+    // para dentro do documento de alguém e lá ele fica. Ver `undash`.
+    block = { ...block, text: undash(block.text) };
   }
 
   // O modelo chuta índices fora da lista de vez em quando; um `afterIndex` de
   // 12 num resumo de 5 blocos inseriria no fim sem ninguém pedir. Clampear é a
   // leitura mais próxima da intenção.
   const afterIndex = Math.min(Math.max(suggestion.afterIndex, -1), blockCount - 1);
-  return { label: suggestion.label, block, afterIndex };
+  return { label: undash(suggestion.label), block, afterIndex };
 }
 
 /**
@@ -670,7 +785,11 @@ export async function generateBibloAnswer(input: BibloAnswerInput): Promise<Bibl
   const result: Result<ChatResult> = await callChat({
     model,
     messages,
+    // `temperature` só vale se alguém configurar um modelo fora da família de
+    // raciocínio: `callChat` a descarta para os `gpt-5*`, que aceitam apenas o
+    // padrão. Quem regula a etapa hoje é o esforço abaixo.
     temperature: 0.7,
+    reasoningEffort: BIBLO_REASONING_EFFORT,
     maxTokens: tools ? BIBLO_TOOLS_MAX_TOKENS : BIBLO_ANSWER_MAX_TOKENS,
     responseFormat: { type: "json_object" },
     store: true,
@@ -760,7 +879,7 @@ export async function generateBibloAnswer(input: BibloAnswerInput): Promise<Bibl
 
   const answer = await resolveMarkers(written);
   const text = await splicePassage(
-    dropTrailingOffer(breathe(answer.text)),
+    dropTrailingOffer(breathe(undash(answer.text))),
     offtopic ? null : reply.data.passage
   );
   // O bloco preenchido pelo servidor leva a PROSA, sem a linha da passagem: ela
@@ -798,8 +917,8 @@ export async function generateBibloAnswer(input: BibloAnswerInput): Promise<Bibl
   // Daqui para baixo é um chip como outro qualquer: o banco, a gaveta e o
   // `send` não precisam saber que ela nasceu num campo próprio. E é justamente
   // por isso que a voz dela é acertada ANTES daqui — ver `asUserVoice`.
-  const offer = offtopic ? null : asUserVoice(reply.data.offer);
-  const chips = offer ? [offer, ...reply.data.chips] : reply.data.chips;
+  const offer = offtopic ? null : asUserVoice(undash(reply.data.offer ?? ""));
+  const chips = (offer ? [offer, ...reply.data.chips] : reply.data.chips).map(undash);
 
   // O retrato só acompanha resposta DENTRO do território: embaixo de "aqui eu
   // só falo de Bíblia" ele seria um enfeite numa recusa, e a foto de um
@@ -811,7 +930,10 @@ export async function generateBibloAnswer(input: BibloAnswerInput): Promise<Bibl
   // instruções nem foi enviado, então uma ação aqui é o modelo inventando), e
   // fora do território a mesma regra da `suggestion` vale em dobro — criar um
   // documento com a recusa dentro é pior que oferecer um botão para inseri-la.
-  const actions = tools && !offtopic ? reply.data.actions : [];
+  // O travessão sai daqui também, e aqui ele é o caso mais caro: o que a
+  // ferramenta escreve vira um DOCUMENTO no acervo, e o que entra no acervo
+  // fica. Ver `undash`.
+  const actions = (tools && !offtopic ? reply.data.actions : []).map(cleanAction);
   if (actions.length > 0) {
     log.info("ações", { tools: actions.map((a) => a.tool) });
   }

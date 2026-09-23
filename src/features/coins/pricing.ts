@@ -129,6 +129,45 @@ export const COIN_COSTS = {
    * `DEFAULT_COIN_PRICE_PER_THOUSAND_BRL`, uma moeda vale R$ 0,02, então uma
    * mensagem rende R$ 0,04.
    *
+   * **⚠️ A medição de bancada mais abaixo é do `gpt-4.1-mini`, que NÃO é mais
+   * o modelo.** O Biblo roda em `gpt-5-mini` com raciocínio `low` desde a
+   * mudança que trouxe profundidade às respostas (ver `OPENAI_BIBLO_MODEL`).
+   *
+   * **REMEDIDO** com o mesmo `biblo-eval.mts`, três execuções reais sobre o
+   * mesmo resumo de cinco blocos, com o prompt de hoje:
+   *
+   * | | entrada | saída | custo | margem a 2 |
+   * |---|---|---|---|---|
+   * | cache frio | 4.774 (0 em cache) | 561 | R$ 0,0125 | **69%** |
+   * | cache quente | 4.793 (4.736 em cache) | 714 | R$ 0,0084 – 0,0086 | **79%** |
+   *
+   * Continua lucrando com folga em todo cenário medido, mas **a faixa caiu dos
+   * 86–92% para 69–79%**, e as duas metades da queda merecem ser separadas:
+   *
+   * **A metade pequena é a troca de modelo.** Entrada 0,25 e saída 2,00 por
+   * milhão (`lib/llm/pricing.ts`) contra 0,40 e 1,60 do anterior: entrada mais
+   * barata, saída mais cara.
+   *
+   * **A metade grande é o PROMPT, e ela não tem nada a ver com esta mudança.**
+   * A medição antiga registrava ~1.300 tokens de entrada; hoje são ~4.800. O
+   * system prompt engordou release a release (o território, as duas portas do
+   * documento, o formato, agora a régua de tamanho), e como ele é lido em toda
+   * mensagem, cada parágrafo acrescentado ali é um custo fixo por conversa. É
+   * também o que domina a LATÊNCIA (ver `BIBLO_REASONING_EFFORT`: com zero
+   * token de raciocínio a resposta ainda leva 9s). **Se esta linha apertar em
+   * `/admin/costs`, o primeiro lugar a olhar é o tamanho do prompt, não o
+   * modelo.**
+   *
+   * E o cache paga metade da diferença sozinho: 10% do preço de entrada nesta
+   * família, contra 25% na 4.1. A ordem das mensagens em `generateBibloAnswer`
+   * (prefixo estável primeiro, léxico depois da janela) vale mais agora do que
+   * quando foi escrita.
+   *
+   * **`gpt-5.4-mini` ficou de fora por preço, não por qualidade**: a 4,50 de
+   * saída ele custaria ~R$ 0,016 por mensagem, margem de ~55%. É o degrau
+   * seguinte se a profundidade ainda parecer curta, e ele é uma decisão de
+   * PREÇO.
+   *
    * **MEDIDO** (`tmp/dev-scripts/biblo-eval.mts`, quatro execuções reais em
    * `gpt-4.1-mini` sobre um resumo de cinco blocos, com a janela deslizante e
    * os dois tetos de `BIBLO_ANSWER_MAX_TOKENS` / `BIBLO_SUMMARY_TOKEN_BUDGET`
@@ -151,15 +190,26 @@ export const COIN_COSTS = {
    * (R$ 0,0237) que condenava o preço de 1 moeda, o mesmo buraco em que
    * `reprocessSummary` esteve a 5.
    *
-   * **Na BIBLIOTECA o teto da saída é outro** (`BIBLO_TOOLS_MAX_TOKENS`, 2.400
-   * contra 700), porque ali o Biblo pode ESCREVER um documento inteiro em vez
+   * **Na BIBLIOTECA o teto da saída é outro** (`BIBLO_TOOLS_MAX_TOKENS`, 3.600
+   * contra 1.600), porque ali o Biblo pode ESCREVER um documento inteiro em vez
    * de responder uma pergunta. O preço continua o mesmo, e a conta continua de
    * pé por dois motivos: teto não é consumo — a pergunta comum daquela tela
-   * gasta os mesmos ~250 tokens de saída —, e o pior caso, com o teto cheio,
-   * custa ~R$ 0,014 por mensagem, margem de ~65%. É a única ação do Biblo que
-   * desce da faixa dos 80%, e ela é justamente a que entrega um resumo pronto
-   * no acervo — que pelo caminho do gravador custaria `recordingMinute` vezes a
-   * duração da pregação.
+   * gasta os mesmos ~250 tokens de saída —, e o documento que ela entrega é um
+   * resumo pronto no acervo, que pelo caminho do gravador custaria
+   * `recordingMinute` vezes a duração da pregação.
+   *
+   * **Este é o caso que a troca de modelo mais encarece, e por isso ele foi
+   * MEDIDO** (`tmp/dev-scripts/biblo-tools-eval.mts`, um "me escreva um esboço
+   * de sermão sobre o semeador" na Biblioteca, `gpt-5-mini`): documento de 15
+   * blocos, entrada 5.752 (3.840 em cache), raciocínio 320, saída 1.240,
+   * **R$ 0,0165 por mensagem, margem 59%**, em 15,4s.
+   *
+   * Com `gpt-4.1-mini` o pior caso custava ~R$ 0,014 (margem ~65%), então a
+   * troca tirou seis pontos de uma ação que já era a mais apertada do Biblo, e
+   * a saída real (1.240) ficou a um terço do teto de 3.600: quem paga a conta
+   * aqui é o tamanho do documento, não o teto. Continua sendo a linha a olhar
+   * primeiro em `/admin/costs` depois do deploy — e se ela apertar, o conserto
+   * é o número de blocos que o prompt pede, não o preço.
    *
    * **2 é o número de PARTIDA, e o ajuste provável é para BAIXO.** É fácil
    * baixar um preço e caro subir: cair para 1 depois da medição em produção é

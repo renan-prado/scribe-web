@@ -27,9 +27,10 @@ const log = createLogger("biblo");
 
 export const runtime = "nodejs";
 export const dynamic = "force-dynamic";
-// Uma mensagem é UMA chamada a um modelo não-raciocinador: 2 a 4 segundos no
-// caso normal. 60 é folga para a cauda, não expectativa — se uma conversa
-// chegar perto disso, o problema é o modelo escolhido, não este número.
+// Uma mensagem é UMA chamada, hoje a um modelo de raciocínio em esforço `low`
+// (ver `OPENAI_BIBLO_MODEL`): a casa dos segundos, não das dezenas. 60 é folga
+// para a cauda, não expectativa — se uma conversa chegar perto disso, o
+// problema é o esforço configurado, não este número.
 export const maxDuration = 60;
 
 const PostSchema = z

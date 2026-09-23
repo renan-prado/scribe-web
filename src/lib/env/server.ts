@@ -104,25 +104,56 @@ const schema = z.object({
   /**
    * O Biblo, a conversa dentro da sessão.
    *
-   * **`gpt-4.1-mini`, e NÃO um da família de raciocínio**, por duas razões que
-   * puxam para o mesmo lado:
+   * **`gpt-5-mini` com `reasoningEffort: "low"`**, e este arquivo já defendeu
+   * o contrário: era `gpt-4.1-mini`, escolhido por latência e por custo, com
+   * a família de raciocínio descartada em duas linhas. O que derrubou aquela
+   * escolha não foi a conta, foi o PRODUTO.
    *
-   *   * **Latência.** Não há streaming no produto (ver o AGENTS.md da raiz), e
-   *     numa conversa a resposta inteira aparece de uma vez. 2 a 4 segundos
-   *     passam despercebidos atrás do "pensando" do avatar; os 9s que o
-   *     guardião leva no `gpt-5-mini` seriam uma conversa inutilizável.
-   *   * **Custo, e a margem é apertada aqui.** Token de raciocínio é cobrado
-   *     como SAÍDA, e o preço de 2 moedas por mensagem (features/coins/pricing.ts)
-   *     foi calculado sem nenhum. Um modelo de raciocínio no lugar deste muda
-   *     a conta, não só a qualidade.
+   * Um modelo sem raciocínio responde bem o que é recuperação ("quem foi
+   * Paulo?", "onde ficava Nínive?") e responde raso tudo o que exige um passo
+   * de pensamento: por que o texto diz isso, o que muda se a leitura for
+   * outra, como isso encosta num autor de fora. São justamente as perguntas de
+   * quem já passou da primeira semana no app, e a conversa inteira existe para
+   * elas. Nenhuma formulação de prompt tira profundidade de um modelo que não
+   * a tem, é a mesma lição que o estudo já pagou com o `gpt-4o` (ver "Nenhum
+   * default é `gpt-4o`" no `src/lib/AGENTS.md`).
+   *
+   * **Por que `gpt-5-mini` e não `gpt-5.4-mini`.** A conta, com a saída maior
+   * que a profundidade exige (~450 tokens, raciocínio incluído):
+   *
+   * | modelo | custo/mensagem | margem a 2 moedas |
+   * |---|---|---|
+   * | `gpt-4.1-mini` (antes) | ~R$ 0,005 | ~87% |
+   * | **`gpt-5-mini`** | ~R$ 0,007 | **~83%** |
+   * | `gpt-5.4-mini` | ~R$ 0,016 | ~55% |
+   *
+   * O 5.4-mini escreve melhor e é mais novo, mas cobra 4,5 por milhão de saída
+   * contra 2,0 do 5-mini, e saída é onde mora 85% da conta de um chat. Cortar
+   * a margem do Biblo pela metade é uma decisão de PREÇO, e o preço de
+   * `bibloMessage` foi fixado para cair, não para subir. Fica registrado como
+   * o degrau seguinte, se um dia a profundidade ainda parecer curta.
+   *
+   * **`reasoningEffort: "low"` não é economia, é a calibragem certa.** Token
+   * de raciocínio é cobrado como saída, e uma pergunta de conversa não precisa
+   * de um plano interno de mil tokens para ser bem respondida. `low` é o que
+   * mantém a resposta na casa dos segundos, que é a outra metade do que este
+   * comentário defendia antes: sem streaming no produto, a resposta aparece
+   * inteira de uma vez, e uma conversa que leva 9s por mensagem não é uma
+   * conversa. Ver `BIBLO_REASONING_EFFORT` em `biblo/answer.ts`.
+   *
+   * **O teto de saída subiu junto, e era obrigatório.** Na família de
+   * raciocínio o `max_completion_tokens` inclui os tokens de raciocínio, então
+   * manter 700 seria deixar o JSON ser cortado no meio pelo próprio
+   * pensamento do modelo. Ver `BIBLO_ANSWER_MAX_TOKENS`.
    *
    * O cache automático da OpenAI cobra o prefixo estável (instruções + resumo)
-   * a 25% na família 4.1, e é essa linha que separa 74% de margem de 61%.
+   * a 10% do preço nesta família, contra 25% na 4.1: a ordem das mensagens em
+   * `generateBibloAnswer` ficou mais valiosa, não menos.
    *
    * ⚠️ Trocar por um modelo FORA de `lib/llm/pricing.ts` faz o painel medir
    * zero e toda margem do Biblo sair inflada. Confira a tabela antes do deploy.
    */
-  OPENAI_BIBLO_MODEL: z.string().default("gpt-4.1-mini"),
+  OPENAI_BIBLO_MODEL: z.string().default("gpt-5-mini"),
   /**
    * Capa dos livros indicados no estudo. OPCIONAL: sem ela o resolvedor
    * devolve null sem chamar ninguém e a UI desenha uma capa tipográfica.

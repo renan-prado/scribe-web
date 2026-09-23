@@ -132,9 +132,32 @@ a mais.
 
 **A conta — e agora ela é MEDIDA.** Na régua de
 `DEFAULT_COIN_PRICE_PER_THOUSAND_BRL` (R$ 20 o milheiro, uma moeda ≈ R$ 0,02),
-uma mensagem rende R$ 0,04. Quatro execuções reais em `gpt-4.1-mini` sobre um
-resumo de cinco blocos (`tmp/dev-scripts/biblo-eval.mts`), com a janela da §1.4
-e as duas amarras no lugar:
+uma mensagem rende R$ 0,04.
+
+**Números de hoje, em `gpt-5-mini` com raciocínio `low`** (três execuções reais
+de `tmp/dev-scripts/biblo-eval.mts` sobre um resumo de cinco blocos, com a
+janela da §1.4 e as duas amarras no lugar):
+
+| | entrada | saída | latência | custo | margem a **2** |
+|---|---|---|---|---|---|
+| cache frio | 4.774 (0 em cache) | 561 | 9,5s | R$ 0,0125 | **69%** |
+| cache quente | 4.793 (4.736 em cache) | 714 | 7,7–10,6s | R$ 0,0084–0,0086 | **79%** |
+
+E o pior caso, que é o `criarDocumento` da Biblioteca
+(`tmp/dev-scripts/biblo-tools-eval.mts`): 15 blocos, saída 1.240, **R$ 0,0165,
+margem 59%**, em 15,4s.
+
+**A queda de 86–92% para 69–79% tem duas metades, e a maior não é o modelo.** A
+troca de `gpt-4.1-mini` por `gpt-5-mini` mexeu pouco (entrada mais barata,
+saída mais cara). O que pesou foi o PROMPT: a medição antiga registrava ~1.300
+tokens de entrada, hoje são ~4.800, porque o system prompt engordou release a
+release e é lido em toda mensagem. Ele também é o que domina a latência, e isso
+foi medido: em `reasoning_effort: "minimal"`, com ZERO token de raciocínio, a
+resposta ainda leva 9s. Quem quiser o Biblo mais rápido ou mais barato encurta
+o prompt, não troca o modelo.
+
+**Os números antigos, do `gpt-4.1-mini`**, ficam aqui porque são a linha de
+base de qualquer comparação:
 
 | | entrada | saída | latência | custo | margem a **2** |
 |---|---|---|---|---|---|
@@ -278,7 +301,7 @@ Quatro manetes, **e o preço é a última**:
         ├─ 5. se coins → chargeCoins("biblo_message")       ← 402 se não houver saldo
         ├─ 6. insertMessage(role:"user", billing)            ← grava ANTES de chamar o modelo
         ├─ 7. buildPrompt: instruções + final_summary + janela + fio  ← §5
-        ├─ 8. callChat(gpt-4.1-mini, response_format json)
+        ├─ 8. callChat(gpt-5-mini, effort low, response_format json)
         ├─ 9. BibloReplySchema.safeParse                     ← §6
         ├─ 10. resolveVerses(answer, suggestion)             ← §7, NVI local
         ├─ 11. insertMessage(role:"assistant", chips, suggestion, thread)
@@ -1171,12 +1194,21 @@ houve evento nenhum para acompanhar, este é o lugar onde a lista nasce.
 
 ### O "pensando"
 
-Sem streaming (`biblo.md` §10, e `AGENTS.md`: o produto não tem SSE). **Medido:
-3,7 a 4,8 segundos** por resposta no `gpt-4.1-mini` — um pouco acima dos 2 a 4
-que este documento supunha, e dentro do que o `thinking` do avatar cobre. É
-também o número que decide se um dia vale trazer SSE para o produto: abaixo de
-5s, um texto aparecendo letra a letra compra pouco; se a resposta passar disso
-(um modelo maior, um contexto maior), a conta muda.
+Sem streaming (`biblo.md` §10, e `AGENTS.md`: o produto não tem SSE). **Medido
+hoje: 7,7 a 10,6 segundos** por resposta no `gpt-5-mini`, e 15,4s no
+`criarDocumento` da Biblioteca. Eram 3,7 a 4,8s no `gpt-4.1-mini`.
+
+**E isso reabre a pergunta do SSE, que este parágrafo já tinha deixado
+escrita**: abaixo de 5s um texto aparecendo letra a letra compra pouco, acima
+disso a conta muda. Dez segundos atrás de um avatar pensando é uma espera que
+se sente, e o Biblo passou a ser o primeiro lugar do produto onde streaming
+teria o que fazer. Continua fora por ora (ver `AGENTS.md`), agora por escolha e
+não por não fazer diferença.
+
+**O que NÃO resolve isso é baixar o `reasoning_effort`.** Medido em
+`tmp/dev-scripts/biblo-effort.mts`: em `minimal`, com zero token de raciocínio,
+a resposta ainda leva 9s. O tempo é o prompt de ~4.800 tokens na entrada mais a
+geração, não o pensamento.
 
 **E ele pensa também com a gaveta fechada.** Quem fecha para reler o versículo
 enquanto a resposta não chega vê o rosto no canto pensando, e voltando a `idle`
@@ -1190,7 +1222,7 @@ custa nada a ninguém** — a requisição sai no instante zero, o que atrasa é
 que se vê.
 
 Há também um piso de 1,1s para a resposta entrar na tela. Hoje ele quase nunca
-pega, porque uma resposta real leva de 3,7 a 4,8s; ele existe para o dia em que
+pega, porque uma resposta real leva de 7,7 a 10,6s; ele existe para o dia em que
 pegar e para o "Pensando…" nunca ser um lampejo de 200ms, que é pior que
 indicador nenhum. **É o único atraso que o usuário paga**, e por isso tem teto
 fixo: ele adia a resposta que chegou cedo demais, nunca a que demorou.
@@ -1515,7 +1547,7 @@ Quatro listas ganham uma linha, e nenhuma delas é opcional:
 // lib/entitlements/features.ts → FEATURE_KEYS:     "biblo_chat"
 ```
 
-**`gpt-4.1-mini` já está em `CHAT_PRICES`** (`lib/llm/pricing.ts`), então o
+**`gpt-5-mini` já está em `CHAT_PRICES`** (`lib/llm/pricing.ts`), então o
 custo entra medido desde a primeira mensagem — não é o caso do `gpt-5.1`, que
 rodou meses custando zero no painel. Se `OPENAI_BIBLO_MODEL` for trocado por
 qualquer coisa, **confira a tabela de preços ANTES do deploy**.
