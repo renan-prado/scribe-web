@@ -9,6 +9,12 @@ Gerado por `npm run release` a partir dos Conventional Commits. `feat` sobe o
 minor; o resto sobe o patch. Não edite à mão, a próxima execução escreve por
 cima do topo do arquivo.
 
+## 0.79.0, 2026-09-23, desde v0.78.0
+
+### Novidades
+
+- **tema:** o tema claro volta, com a paleta inteira e o switch (`16a3926`)
+
 ## 0.78.0, 2026-09-23, desde v0.77.0
 
 ### Novidades
