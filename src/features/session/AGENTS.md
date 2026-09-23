@@ -52,6 +52,8 @@ pessoa quiser, aprofundar.
 | `components/SessionModeGlyph.tsx` | o ícone do modo, o mesmo nas três vistas |
 | `components/StudyNote.tsx` | o post-it de um estudo, a mesma casca com outro recheio |
 | `components/CollectionSearch.tsx` + `src/lib/search.ts` | a barra dos Estudos e o motor da busca (também usado pela `GlobalSearchDialog`) |
+| `components/SummaryFind.tsx` | procurar DENTRO do resumo aberto: `Range`s + CSS Custom Highlight API |
+| `components/FindBar.tsx` | a barra dessa busca, FIXA no topo — a casca que a leitura e o editor dividem |
 | `components/YoutubeUrlForm.tsx` + `YoutubeImport.tsx` | colar o link (ou recebê-lo por parâmetro), recortar um trecho, e esperar a importação |
 | `components/BibloDock.tsx` + `BibloDrawer.tsx` + `BibloMessage.tsx` | a conversa com o Biblo: botão flutuante e gaveta (ou painel `inline`) |
 | `components/BibloSummaryDock.tsx` | o mesmo Biblo na tela de LEITURA, que precisa de um POST para inserir |
@@ -344,7 +346,7 @@ Isso conserta um defeito que o desenho original tinha e o documento escondia: o
 provedor mora num LAYOUT, e o App Router reusa o payload de um layout em toda
 navegação entre telas que o compartilham. A lista ficava congelada **até um
 F5**, e a promessa de "um minuto no máximo entre publicar e acender" era falsa.
-O sintoma foi publicar um nome, tocar em "Ver como ficou" no editor e não ver
+O sintoma foi publicar um nome, tocar em "Salvar" no editor e não ver
 marcação nenhuma.
 
 E a query leva `meta: { persist: false }`: o índice já vem no HTML, então
@@ -874,7 +876,9 @@ do cabeçalho (`CollectionSearch` + `SearchScope`, aberta por `?busca=1`), e
 essa barra saiu — a busca virou GLOBAL
 (`(app)/(barra)/components/GlobalSearchDialog.tsx`), um diálogo por cima de
 QUALQUER tela do app, aberto por Ctrl+K, pelo `SearchTrigger` do desktop ou
-pelo botão de busca da `MobileActionBar`. `LibraryBrowser` voltou a mostrar
+pelo botão de busca da `MobileActionBar` **da Biblioteca** (no `/summary` e no
+`/escrever` aquele botão procura dentro do texto aberto, ver
+`src/app/AGENTS.md`). `LibraryBrowser` voltou a mostrar
 sempre o acervo inteiro (pastas, pendentes, meses), sem estado de "busca
 aberta" nenhum; o diálogo lê a MESMA `useLibrary()`, sem consulta nova, e
 reaproveita o mesmo motor (`src/lib/search.ts`) e a mesma metade servidor

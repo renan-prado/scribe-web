@@ -252,9 +252,27 @@ glifos com propósitos diferentes, no mesmo lugar da barra:
 
 | Tela | Quem é a lupa | O que ela procura |
 |---|---|---|
-| `/home`, `/importar`, `/escrever` | `SearchTrigger` (`(barra)/components/`) | a busca GLOBAL, um diálogo por cima da tela (`GlobalSearchDialog`) |
-| `/summary` | `SummaryFindToggle` | **dentro do resumo aberto** |
+| `/home`, `/importar` | `SearchTrigger` (`(barra)/components/`) | a busca GLOBAL, um diálogo por cima da tela (`GlobalSearchDialog`) |
+| `/escrever` (desktop) | `SearchTrigger` | a busca GLOBAL |
+| `/escrever` (celular) | o botão da `MobileActionBar` | **dentro do rascunho aberto** |
+| `/summary` | `SummaryFindToggle`, e o botão da `MobileActionBar` | **dentro do resumo aberto** |
 | `/studies` | `SearchToggle` | a lista da própria tela (`SearchScope`), a barra ANTIGA |
+
+**Onde há um DOCUMENTO na tela, a lupa procura dentro dele.** A regra que o
+`/summary` inaugurou passou a valer para a única lupa que o celular mostra nas
+telas de texto: no `/summary` e no `/escrever` a `TopBar` some atrás do vão, e
+quem procura no celular é a barra de baixo. Enquanto ela abria o acervo, o
+botão prometia uma coisa e fazia outra, em cima de um texto aberto. No desktop
+a lupa do `/escrever` continua sendo a global, porque lá ela divide a barra com
+as três portas de criação e não é a única na tela.
+
+**As duas buscas de documento dividem a BARRA e não o motor** (`FindBar`, em
+`features/session/components/`): o campo fixo no topo, o ↑↓ e o fechar são os
+mesmos; o que procura é `SummaryFind` na leitura e o estado do `Composer` no
+editor, pela razão escrita em "A busca do editor" lá. A barra não mostra conta
+de resultados nem "x" de limpar dentro do campo: num telefone ela divide a
+linha com três botões, e cada peça a mais saía da largura do que se digita. A
+contagem sobrevive como aviso de leitor de tela.
 
 **`SearchTrigger` não abre nada NESTA tela.** Ele só manda `open: true` para a
 `GlobalSearchStore`, e quem desenha a busca é `GlobalSearchDialog`
@@ -284,10 +302,15 @@ CSS Custom Highlight API. O porquê está no cabeçalho do arquivo, e vale ler
 antes de mexer — é o que permite achar o texto dos versículos, que chega por
 fetch e não está em `SummaryPayload`.
 
-O `/escrever` ficou com a busca GLOBAL, e não com uma busca própria: procurar
-dentro de um rascunho que a pessoa acabou de digitar, e que cabe na tela, é uma
-busca sobre um palheiro que ela conhece de cor — o `SearchTrigger` dali abre o
-MESMO `GlobalSearchDialog` de qualquer outra tela.
+**O `/escrever` procura dentro do rascunho no CELULAR e no acervo no
+DESKTOP**, e a assimetria é sobre quantas lupas cada largura mostra. No desktop
+a lupa da barra do topo é o `SearchTrigger` de sempre; no celular a única lupa
+é a da barra de baixo, e ali ela procura no texto aberto. A busca do editor tem
+motor próprio e a unidade dela é o BLOCO, não a ocorrência: cada bloco é uma
+`textarea`, e nem `Range` nem `::highlight` alcançam o que está dentro de uma.
+O bloco encontrado rola até o centro, pisca (`revealSummaryBlock`) e fica com a
+borda acesa enquanto a busca está aberta. Ver "A busca do editor" no
+`Composer`.
 
 ## `/escrever`: a terceira porta
 
@@ -853,10 +876,12 @@ existir.
 **No desktop quem cria é a barra do topo, e a razão não é a mesma do celular.**
 No `/summary` e no `/escrever`, chegar a uma tela de leitura é ter escolhido
 LER, e um `+` flutuando sobre o sermão aberto cobraria a tela por uma ação que
-o voltar já alcança — mas no celular hoje as três portas moram na
-`MobileActionBar` (ver abaixo) em TODA tela que tem uma, `/home`, `/summary` e
-`/escrever` incluídas: criar a próxima sessão sem sair da que se está lendo ou
-escrevendo deixou de custar a viagem de volta à Biblioteca.
+o voltar já alcança. No celular o `+` das três portas mora na
+`MobileActionBar` da BIBLIOTECA (ver abaixo), e só dela: nas duas telas de
+texto aquela ponta da barra é a travessia entre ler e escrever ("Editar" no
+resumo, "Salvar" no editor), que é o gesto da vez sobre um documento
+aberto. Ele chegou a ficar nas três, e nas de texto pagava o lugar mais
+alcançável do polegar por uma ação que quase ninguém faz dali.
 
 **No DESKTOP não há `+`: as três portas ficam na barra do topo**
 (`(app)/(barra)/components/CreateActions.tsx`), como chips de 40px, só o ícone, com o
@@ -971,17 +996,28 @@ DESKTOP nada mudou — lá não há barra, e o disco de cada uma continua sendo 
 único caminho até a gaveta. Ver o cabeçalho de `BibloDock`
 ("O gatilho no celular mudou de dono").
 
-**A busca é sempre a GLOBAL, nunca a do texto aberto.** No `/summary` a lupa da
-`TopBar` já procura DENTRO do resumo (`SummaryFindToggle`); esta é outra
-pergunta, "onde isto está no acervo?", e o botão das três telas manda
-`open: true` para a `GlobalSearchStore` — a mesma que o `SearchTrigger` do
-desktop e o Ctrl+K abrem. Não há mais link para `/home?busca=1`: a busca não
-precisa de estar na Biblioteca para existir.
+**As duas PONTAS são da tela, e o meio nunca muda.** O Biblo é o pill do
+meio em toda tela; a busca e a ação de cada lado, não:
+
+| | busca | ação |
+|---|---|---|
+| `/home` | a GLOBAL (`GlobalSearchDialog`) | o "+", as três portas |
+| `/summary` | dentro do resumo (`SummaryFind`) | "Editar" (`/escrever/:id`) |
+| `/escrever` | dentro do rascunho | "Salvar", que abre `/summary/:id` |
+
+A busca das três já foi a GLOBAL, e nas duas telas de texto isso era a lupa
+prometendo procurar no documento e abrindo o acervo — o mesmo defeito que o
+`SummaryFindToggle` já tinha corrigido na `TopBar`, repetido no único botão que
+o celular mostra. Quem passa `onSearch` e `trailing` é a tela; sem eles a barra
+é a da Biblioteca, com a busca global e o "+".
 
 **O "+" é o MESMO painel de três portas de sempre**, só que dentro da barra em
 vez de sozinho no canto: o botão carrega `data-tour="create-dock"` e escuta
 `useTourReveal("create-dock")`, então o passo do tour que já apontava para ele
-continua funcionando sem saber que o `CreateDock` antigo foi apagado.
+continua funcionando sem saber que o `CreateDock` antigo foi apagado. Ele mora
+num componente à parte (`CreateButton`) porque o estado dele — o painel aberto,
+o apanhador de toque, o paywall de saldo zero — não existe nas telas que passam
+um `trailing`.
 
 **O `/recording` grava UM áudio e transcreve UMA vez.** O produto já
 transcreveu a cada 15-20s, porque havia um feed ao vivo que precisava do texto

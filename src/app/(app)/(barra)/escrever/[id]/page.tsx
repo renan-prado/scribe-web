@@ -116,10 +116,10 @@ export default async function EscreverIdPage({ params }: PageProps) {
             <>
               <ImportAction />
               <RecordAction />
-              {/* Aqui a lupa é a GLOBAL, a mesma do resto do app. Procurar
-                  dentro de um rascunho que a própria pessoa acabou de digitar,
-                  e que cabe na tela, seria uma busca sobre um palheiro que ela
-                  conhece de cor. */}
+              {/* Aqui a lupa é a GLOBAL, a mesma do resto do app, e ela é
+                  `hidden md:inline-flex`. No celular quem procura é a barra de
+                  baixo, e lá a busca é a do TEXTO aberto (ver "A busca do
+                  editor" no `Composer`). */}
               <SearchTrigger />
               <WriteAction />
             </>

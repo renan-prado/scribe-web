@@ -3,11 +3,11 @@
 import {
   ChevronDown,
   ChevronUp,
-  Eye,
   Highlighter,
   Info,
   MapPin,
   Plus,
+  Save,
   Trash2,
   X,
 } from "lucide-react";
@@ -18,6 +18,7 @@ import {
   type ReactNode,
   useEffect,
   useLayoutEffect,
+  useMemo,
   useRef,
   useState,
 } from "react";
@@ -26,6 +27,7 @@ import { BookGlyph } from "@/components/icons/BookGlyph";
 import { BibleDock } from "@/features/session/components/BibleDock";
 import { BibloDock, type BibloDockHandle } from "@/features/session/components/BibloDock";
 import { EntityFieldDialog } from "@/features/session/components/EntityFieldDialog";
+import { FindBar } from "@/features/session/components/FindBar";
 import { PassageVerses } from "@/features/session/components/PassageVerses";
 import { revealSummaryBlock, SUMMARY_BLOCK_ATTR } from "@/features/session/components/reveal-block";
 import { useUnloadGuard } from "@/features/session/hooks/useUnloadGuard";
@@ -44,7 +46,7 @@ import {
 import { cn } from "@/lib/utils";
 import { ScribaMark } from "@/shared/brand";
 import { TOPBAR_SLOT_ID } from "../components/AppHeaderShell";
-import { MobileActionBar } from "../components/MobileActionBar";
+import { MOBILE_BAR_BUTTON_CLASS, MobileActionBar } from "../components/MobileActionBar";
 import { AutoTextarea } from "./AutoTextarea";
 import {
   BLOCK_OPTIONS,
@@ -74,7 +76,7 @@ import { type SaveStatus, useWrittenDraft } from "./useWrittenDraft";
  * está na tela já é o resultado. Um botão "pré-visualizar" existiria para
  * responder "como isto vai ficar?", e a resposta certa para essa pergunta é
  * não deixá-la nascer. Até o texto bíblico é buscado na NVI aqui dentro, pelo
- * mesmo `PassageVerses` da leitura. (O "Ver como ficou" do topo é outra coisa:
+ * mesmo `PassageVerses` da leitura. (O "Salvar" do topo é outra coisa:
  * ele abre a página de LEITURA, onde as referências soltas no meio da prosa
  * viram links — isso sim a edição não tem como mostrar, porque ali o texto
  * ainda está sendo digitado.)
@@ -113,6 +115,27 @@ import { type SaveStatus, useWrittenDraft } from "./useWrittenDraft";
  *     borda da tela.
  */
 const BLOCK_SURFACE = "-mx-3 -my-2 rounded-[20px] px-3 py-2 transition-colors sm:-mx-5 sm:px-5";
+
+/** O mesmo mínimo da busca da leitura (`SummaryFind`), pela mesma razão: com
+ * uma letra só, o rascunho inteiro é resultado. */
+const FIND_MIN_QUERY = 2;
+
+/**
+ * Tudo o que é TEXTO num bloco, para a busca do editor.
+ *
+ * Não é só `block.text`: o título de uma Informação, a referência de uma
+ * passagem e o autor de uma citação são escritos por quem escreve o resumo, e
+ * um "Romanos 8" que não achasse o bloco de Bíblia seria uma busca que ignora
+ * justamente o que está mais à vista.
+ */
+function blockHaystack(block: WrittenBlock): string {
+  const extras = [
+    "title" in block ? block.title : null,
+    "reference" in block ? block.reference : null,
+    "author" in block ? block.author : null,
+  ];
+  return [block.text, ...extras].filter(Boolean).join(" ");
+}
 
 /** Pastilha neutra do "adicionar autor/local", a mesma família da leitura
  * (`ADD_BADGE_CLASSES` em `SavedSessionView`). */
@@ -737,7 +760,98 @@ export function Composer({
   }
 
   /**
-   * "Ver como ficou": manda o que falta e ABRE A LEITURA, nessa ordem.
+   * ## A busca do editor: "procurar neste rascunho"
+   *
+   * O botão de busca da barra de baixo procura DENTRO do texto que está na
+   * tela, e não no acervo — a mesma correção que a lupa do `/summary` já tinha
+   * feito (ver `SummaryFind`). Sobre um documento aberto, uma lupa promete
+   * procurar dentro dele; quem quer o acervo tem o voltar, que é por onde
+   * entrou. No DESKTOP a lupa do cabeçalho continua sendo a GLOBAL, porque lá
+   * ela divide a barra com as três portas de criação e o polegar não decide
+   * nada.
+   *
+   * **A unidade aqui é o BLOCO, e não a ocorrência.** Na leitura o destaque são
+   * `Range`s entregues à CSS Custom Highlight API, sobre o texto já pintado;
+   * aqui cada bloco é uma `textarea`, e o que está dentro de uma `textarea`
+   * nenhuma das duas coisas alcança — nem o `Range`, nem o `::highlight`. Então
+   * o resultado é o bloco: ele rola até o centro, PISCA (`revealSummaryBlock`,
+   * o mesmo retorno que a inserção pela conversa já usa) e fica com a borda
+   * acesa enquanto a busca está aberta. Acender todos os que casam de uma vez é
+   * o que responde "quantos e onde" sem pintar uma palavra.
+   *
+   * O termo é comparado sem acento e sem caixa (`normalizeSearch`), como no
+   * acervo, e varre também o que o bloco tem além do corpo: o título de uma
+   * Informação, a referência de uma passagem, o autor de uma citação.
+   *
+   * O mínimo de 2 letras é o mesmo da leitura: com uma letra só, "a" acende o
+   * texto inteiro, e um rascunho todo aceso não é um resultado de busca.
+   */
+  const [findOpen, setFindOpen] = useState(false);
+  const [findQuery, setFindQuery] = useState("");
+  const [findIndex, setFindIndex] = useState(0);
+
+  const findNeedle = normalizeSearch(findQuery.trim());
+  const findEnough = findNeedle.length >= FIND_MIN_QUERY;
+
+  const findHits = useMemo(() => {
+    if (!findOpen || !findEnough) return [];
+    const hits: number[] = [];
+    doc.blocks.forEach((block, i) => {
+      if (normalizeSearch(blockHaystack(block)).includes(findNeedle)) hits.push(i);
+    });
+    return hits;
+  }, [findOpen, findEnough, findNeedle, doc.blocks]);
+
+  const findCurrent = findHits.length > 0 ? Math.min(findIndex, findHits.length - 1) : -1;
+
+  // Termo novo recomeça do primeiro resultado: manter o quinto ao trocar de
+  // palavra levaria o texto para um lugar que ninguém pediu.
+  // biome-ignore lint/correctness/useExhaustiveDependencies: o alvo é a troca de termo, não o valor dele
+  useEffect(() => {
+    setFindIndex(0);
+  }, [findNeedle]);
+
+  /**
+   * Rolar até o resultado em foco, UMA vez por (termo, posição).
+   *
+   * A trava é a mesma do `SummaryFind`, e aqui ela vale mais: `findHits` é
+   * recalculado a cada tecla digitada no PRÓPRIO texto (o editor continua
+   * editável com a busca aberta), e sem ela a página escorregaria sozinha
+   * enquanto alguém corrige a palavra que acabou de achar.
+   */
+  const revealedFor = useRef("");
+  useEffect(() => {
+    if (findCurrent < 0) return;
+    const key = `${findNeedle}::${findCurrent}`;
+    if (revealedFor.current === key) return;
+    revealedFor.current = key;
+    revealSummaryBlock(findHits[findCurrent]);
+  }, [findCurrent, findHits, findNeedle]);
+
+  function stepFind(delta: number) {
+    setFindIndex((prev) => {
+      const total = findHits.length;
+      if (total === 0) return 0;
+      return (Math.min(prev, total - 1) + delta + total) % total;
+    });
+  }
+
+  function closeFind() {
+    setFindOpen(false);
+    setFindQuery("");
+  }
+
+  /**
+   * "Salvar": manda o que falta e ABRE A LEITURA, nessa ordem.
+   *
+   * **O rótulo diz SALVAR porque é isso que se procura num editor**, e o botão
+   * chamava-se "Ver como ficou". O salvamento sozinho já acontece — cada
+   * mudança cai no aparelho em 300ms e no banco em 1,8s (ver `useWrittenDraft`)
+   * —, e um botão que anuncia a leitura deixava a pergunta que todo mundo faz
+   * ("e isto está salvo?") sem nada na tela para respondê-la, com o chip de
+   * estado do lado dizendo a resposta em voz baixa. Abrir a leitura continua
+   * sendo o que ele faz depois, e é o destino certo: o texto salvo é o texto
+   * lido.
    *
    * O `await flush()` é a coisa toda. Ele espera o texto da tela estar no
    * banco — inclusive a palavra digitada durante um salvamento automático que
@@ -781,6 +895,21 @@ export function Composer({
     <main className="mx-auto flex min-h-svh w-full max-w-[1024px] flex-col gap-6 px-4 pb-24 sm:gap-8 sm:px-6">
       {header}
 
+      {/* A busca deste rascunho, FIXA no topo enquanto aberta (ela sai do
+          fluxo, então esta posição no JSX não é a posição dela na tela). Ver
+          "A busca do editor" acima e o cabeçalho de `FindBar`. */}
+      {findOpen ? (
+        <FindBar
+          query={findQuery}
+          total={findEnough ? findHits.length : null}
+          index={findCurrent < 0 ? 0 : findCurrent}
+          label="Procurar neste texto"
+          onQueryChange={setFindQuery}
+          onStep={stepFind}
+          onClose={closeFind}
+        />
+      ) : null}
+
       {/* A COLUNA DE ESCRITA, mais estreita que a barra do topo.
 
           O `<main>` tem 1024px para a `TopBar` terminar onde ela termina na
@@ -811,8 +940,8 @@ export function Composer({
                 disabled={leaving}
                 className="inline-flex items-center gap-1.5 rounded-full bg-scriba-ink-mute/10 px-3 py-1.5 text-[11px] font-semibold uppercase tracking-wider text-scriba-ink-soft transition-colors hover:bg-scriba-blue-soft/70 hover:text-scriba-blue-ink disabled:opacity-60"
               >
-                <Eye className="size-3.5" />
-                Ver como ficou
+                <Save className="size-3.5" />
+                Salvar
               </button>
             ) : null}
           </div>
@@ -952,6 +1081,11 @@ export function Composer({
           ) : null}
 
           {doc.blocks.map((block, i) => {
+            // A busca acende TODOS os blocos que casam e destaca o da vez. Ver
+            // "A busca do editor": aqui o resultado é o bloco, porque o que
+            // está dentro de uma `textarea` não aceita destaque de texto.
+            const hit = findHits.includes(i);
+            const currentHit = findCurrent >= 0 && findHits[findCurrent] === i;
             const body = (
               <BlockBody
                 block={block}
@@ -1040,7 +1174,19 @@ export function Composer({
                     nada a que sobreviver — ela é o foco, e mais nada —, e o
                     `active` existe para os botões, que precisam continuar
                     clicáveis no toque seguinte. */}
-                <div className={cn(BLOCK_SURFACE, "relative focus-within:bg-scriba-blue-soft/60")}>
+                <div
+                  className={cn(
+                    BLOCK_SURFACE,
+                    "relative focus-within:bg-scriba-blue-soft/60",
+                    // O amarelo é o MESMO da busca da leitura e do marca-texto:
+                    // um segundo tom para "achei aqui" seria uma segunda
+                    // gramática para a mesma ideia. O da vez é o cheio, os
+                    // outros ficam no claro — sem essa diferença, achar o
+                    // quinto de doze seria contar de cima.
+                    hit && "ring-1 ring-scriba-yellow-light/40",
+                    currentHit && "bg-scriba-yellow-light/10 ring-scriba-yellow"
+                  )}
+                >
                   {/* `relative` para o ÂNCORA do menu da barra cobrir
                       EXATAMENTE a linha: esta caixa começa onde o texto começa,
                       e o âncora é um `absolute inset-0` invisível dentro dela.
@@ -1162,14 +1308,33 @@ export function Composer({
           um bloco, e inserir no texto é um preço alto demais por uma consulta.
           Ver `BibleDock`. */}
       <BibleDock />
-      {/* No celular, a barra unificada (busca, Biblo, criar) — a busca sai
-          daqui direto para o acervo (`/home?busca=1`), como em toda tela que
-          não é a Biblioteca. No desktop o Biblo continua sendo o disco de
-          sempre. Ver o cabeçalho de `BibloDock`. */}
+      {/* No celular, a barra unificada, e as duas PONTAS dela são desta tela: a
+          busca procura neste rascunho (ver "A busca do editor") e a ação é o
+          "Salvar", o mesmo botão do cabeçalho, ao alcance do polegar.
+          O "+" das três portas fica na Biblioteca — criar a próxima sessão no
+          meio de um texto que está sendo escrito é o gesto raro aqui. No
+          desktop o Biblo continua sendo o disco de sempre. Ver o cabeçalho de
+          `MobileActionBar`. */}
       {ready && (
         <MobileActionBar
           onAskBiblo={() => bibloRef.current?.open()}
           bibloThinking={bibloThinking}
+          onSearch={() => (findOpen ? closeFind() : setFindOpen(true))}
+          searchOpen={findOpen}
+          searchLabel="Procurar neste texto"
+          trailing={
+            sessionId ? (
+              <button
+                type="button"
+                onClick={openReading}
+                disabled={leaving}
+                aria-label="Salvar"
+                className={MOBILE_BAR_BUTTON_CLASS}
+              >
+                <Save aria-hidden className="size-5" strokeWidth={1.75} />
+              </button>
+            ) : undefined
+          }
         />
       )}
       {ready && (

@@ -6,6 +6,7 @@ import { FEEDBACK_DELAY_SUMMARY_MS } from "@/features/feedback/config";
 import { BackToTop } from "@/features/session/components/BackToTop";
 import { BibleDock } from "@/features/session/components/BibleDock";
 import { SavedSessionView } from "@/features/session/components/SavedSessionView";
+import { SummaryFindProvider } from "@/features/session/components/SummaryFind";
 import { SummaryInsertProvider } from "@/features/session/components/SummaryInsertContext";
 import { formatDurationLong, shortDate } from "@/features/session/lib/formatting";
 import { dehydratePassages } from "@/features/session/server/passages";
@@ -99,67 +100,74 @@ export default async function V2SummaryPage({ params }: PageProps) {
       summary={session.finalSummary}
       title={session.title?.trim() || ""}
     >
-      <SavedSessionView
-        header={
-          <TopBar
-            backHref="/home"
-            trailing={
-              <>
-                <ImportAction />
-                <RecordAction />
-                {/* A lupa DESTA tela procura dentro do resumo aberto, e não no
-                    acervo (ver `SummaryFind`). Ela fica no mesmo lugar da lupa da
-                    Biblioteca, entre "Gravar" e "Escrever": a barra tem a mesma
-                    ordem em toda tela, e o que muda é o alcance da busca, que aqui
-                    é o texto em que a pessoa já está. */}
-                <SummaryFindToggle />
-                <WriteAction />
-              </>
-            }
-          />
-        }
-        id={id}
-        title={session.title?.trim() || "Sessão sem título"}
-        createdAtLabel={DATE_FMT.format(createdAt)}
-        /* A data SIMPLIFICADA, "6 set", a mesma do cartão do `/home`. Com o
-           ano só quando ele não é o corrente, e é por isso que ela é calculada
-           aqui e não dentro da view: quem sabe que ano é hoje é o servidor. */
-        createdAtShortLabel={shortDate(
-          session.createdAt,
-          createdAt.getFullYear() !== new Date().getFullYear()
-        )}
-        durationLabel={formatDurationLong(session.durationMs)}
-        durationMs={session.durationMs}
-        speakerName={session.speakerName}
-        speakerLocation={session.speakerLocation}
-        hasTranscript={session.hasTranscript}
-        summary={session.finalSummary}
-        meta="compact"
-        mode={session.mode}
-        folderId={session.folderId}
-      />
-      {/* A pesquisa da 1ª, 3ª e 8ª gravação, e a apresentação da tela. As duas
-          disputam o mesmo espaço, e quem cede é a pesquisa: enquanto o tour
-          está aberto ela nem conta o atraso dela. Ver `FeedbackPrompt`. */}
-      <FeedbackPrompt kind="recording" sessionId={id} delayMs={FEEDBACK_DELAY_SUMMARY_MS} />
-      <TourTrigger tour="summary" delayMs={TOUR_DELAY_RESULT_MS} />
-      {/* No celular, a barra unificada (busca, Biblo, criar). No desktop o
-          Biblo continua sendo o disco de sempre no canto de baixo à direita —
-          a pergunta nasce no meio do texto, não no topo dele. Ver
-          `SummaryMobileDock` e o cabeçalho de `BibloDock`. */}
-      <SummaryMobileDock sessionId={id} />
-      {/* A Bíblia, na borda direita, em toda a altura da leitura. Ela não
-          entra no canto de baixo porque ele já tem dois donos — o Biblo, que é
-          permanente, e o voltar ao topo, que empilha por cima quando aparece.
-          Ver `BibleDock`. */}
-      <BibleDock />
-      {/* Um resumo com transcrição longa rola vários telefones; o voltar, o
-          menu e o título moram todos no alto. Ver `BackToTop`.
+      {/* A busca DENTRO do resumo envolve a tela inteira porque ela tem DOIS
+          gatilhos em ramos diferentes: a lupa da `TopBar` (que chega pronta
+          pelo slot `header` do `SavedSessionView`) e o botão da barra de baixo
+          do celular (`SummaryMobileDock`, irmão dela). Ele morava dentro da
+          view, e ali o segundo gatilho não o alcançava. Ver `SummaryFind`. */}
+      <SummaryFindProvider>
+        <SavedSessionView
+          header={
+            <TopBar
+              backHref="/home"
+              trailing={
+                <>
+                  <ImportAction />
+                  <RecordAction />
+                  {/* A lupa DESTA tela procura dentro do resumo aberto, e não no
+                      acervo (ver `SummaryFind`). Ela fica no mesmo lugar da lupa da
+                      Biblioteca, entre "Gravar" e "Escrever": a barra tem a mesma
+                      ordem em toda tela, e o que muda é o alcance da busca, que aqui
+                      é o texto em que a pessoa já está. */}
+                  <SummaryFindToggle />
+                  <WriteAction />
+                </>
+              }
+            />
+          }
+          id={id}
+          title={session.title?.trim() || "Sessão sem título"}
+          createdAtLabel={DATE_FMT.format(createdAt)}
+          /* A data SIMPLIFICADA, "6 set", a mesma do cartão do `/home`. Com o
+             ano só quando ele não é o corrente, e é por isso que ela é calculada
+             aqui e não dentro da view: quem sabe que ano é hoje é o servidor. */
+          createdAtShortLabel={shortDate(
+            session.createdAt,
+            createdAt.getFullYear() !== new Date().getFullYear()
+          )}
+          durationLabel={formatDurationLong(session.durationMs)}
+          durationMs={session.durationMs}
+          speakerName={session.speakerName}
+          speakerLocation={session.speakerLocation}
+          hasTranscript={session.hasTranscript}
+          summary={session.finalSummary}
+          meta="compact"
+          mode={session.mode}
+          folderId={session.folderId}
+        />
+        {/* A pesquisa da 1ª, 3ª e 8ª gravação, e a apresentação da tela. As duas
+            disputam o mesmo espaço, e quem cede é a pesquisa: enquanto o tour
+            está aberto ela nem conta o atraso dela. Ver `FeedbackPrompt`. */}
+        <FeedbackPrompt kind="recording" sessionId={id} delayMs={FEEDBACK_DELAY_SUMMARY_MS} />
+        <TourTrigger tour="summary" delayMs={TOUR_DELAY_RESULT_MS} />
+        {/* No celular, a barra unificada (busca no resumo, Biblo, editar). No
+            desktop o Biblo continua sendo o disco de sempre no canto de baixo à
+            direita — a pergunta nasce no meio do texto, não no topo dele. Ver
+            `SummaryMobileDock` e o cabeçalho de `BibloDock`. */}
+        <SummaryMobileDock sessionId={id} canEdit={!!session.finalSummary} />
+        {/* A Bíblia, na borda direita, em toda a altura da leitura. Ela não
+            entra no canto de baixo porque ele já tem dois donos — o Biblo, que é
+            permanente, e o voltar ao topo, que empilha por cima quando aparece.
+            Ver `BibleDock`. */}
+        <BibleDock />
+        {/* Um resumo com transcrição longa rola vários telefones; o voltar, o
+            menu e o título moram todos no alto. Ver `BackToTop`.
 
-          `stacked`: ele divide o canto com o Biblo, e o permanente fica
-          embaixo. O contrário faria o botão principal pular de lugar toda vez
-          que alguém rolasse a página. */}
-      <BackToTop stacked />
+            `stacked`: ele divide o canto com o Biblo, e o permanente fica
+            embaixo. O contrário faria o botão principal pular de lugar toda vez
+            que alguém rolasse a página. */}
+        <BackToTop stacked />
+      </SummaryFindProvider>
     </SummaryInsertProvider>
   );
 

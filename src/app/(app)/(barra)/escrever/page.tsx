@@ -26,10 +26,11 @@ export const metadata: Metadata = { title: "Escrever" };
  * escrevê-lo também na barra seria dizer a mesma coisa duas vezes na mesma
  * dobra.
  *
- * **A lupa é a GLOBAL** (`SearchTrigger`), e não a busca-dentro-do-texto do
- * `/summary`: procurar num rascunho que a própria pessoa acabou de digitar, e
- * que cabe na tela, é uma busca sobre um palheiro que ela conhece de cor. O
- * `/escrever/[id]` monta a mesma barra.
+ * **A lupa DESTA barra é a GLOBAL** (`SearchTrigger`), e ela só existe no
+ * desktop, onde divide a fileira com as três portas de criação. No CELULAR a
+ * única lupa é a da barra de baixo, e essa procura dentro do rascunho aberto —
+ * sobre um documento na tela, uma lupa promete procurar dentro dele. Ver
+ * "A busca do editor" no `Composer`. O `/escrever/[id]` monta a mesma barra.
  */
 export default function EscreverPage() {
   return (
@@ -61,10 +62,10 @@ export default function EscreverPage() {
             <>
               <ImportAction />
               <RecordAction />
-              {/* Aqui a lupa é a GLOBAL, a mesma do resto do app. Procurar
-                  dentro de um rascunho que a própria pessoa acabou de digitar,
-                  e que cabe na tela, seria uma busca sobre um palheiro que ela
-                  conhece de cor. */}
+              {/* Aqui a lupa é a GLOBAL, a mesma do resto do app, e ela é
+                  `hidden md:inline-flex`. No celular quem procura é a barra de
+                  baixo, e lá a busca é a do TEXTO aberto (ver "A busca do
+                  editor" no `Composer`). */}
               <SearchTrigger />
               <WriteAction />
             </>

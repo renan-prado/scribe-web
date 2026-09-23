@@ -113,7 +113,7 @@ export type WrittenDraftState = {
  * volta da aba); para o `flush` está errado, porque ele existe exatamente para
  * alguém poder esperar o texto estar no banco antes de sair da tela.
  *
- * O defeito que isso causava era o "Ver como ficou" abrir a leitura
+ * O defeito que isso causava era o "Salvar" abrir a leitura
  * desatualizada, e só ÀS VEZES: bastava digitar mais uma palavra enquanto o
  * salvamento automático corria e tocar no botão. O `flush` recebia `null`,
  * caía no id que já tinha e navegava — e a palavra saía num POST que partiu

@@ -34,7 +34,7 @@ import { LEXICON_INDEX_STALE_MS, type LexiconIndexEntry } from "@/lib/domain/lex
  * de página.
  *
  * O sintoma, em produção e em duas linhas: publicar um nome no painel, voltar
- * ao editor, tocar em "Ver como ficou" e não ver marcação nenhuma. Um F5
+ * ao editor, tocar em "Salvar" e não ver marcação nenhuma. Um F5
  * resolvia, e é exatamente essa a assinatura de conteúdo preso num layout.
  * Pior: isso tornava FALSA a promessa escrita no cache do servidor, de que um
  * minuto é o atraso máximo entre publicar e acender.

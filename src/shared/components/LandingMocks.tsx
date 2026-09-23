@@ -339,19 +339,24 @@ export function LandingEditorMock({ state = "base" }: { state?: EditorState }) {
     // fora dela. O que a seção precisa mostrar é justamente o par `+` e as
     // pastilhas; o que sobra de folga no app é o que dá para apertar.
     <div className="flex flex-col gap-4 px-4 pb-2 pt-3">
-      {/* A linha do cabeçalho do editor: o que está salvo, e o atalho para a
-          leitura. Mesmos tokens do `StatusChip` e do "Ver como ficou". */}
+      {/* A linha do cabeçalho do editor: o que está salvo, e o botão que
+          manda o que falta e abre a leitura. Mesmos tokens do `StatusChip` e do
+          "Salvar". */}
       <div className="flex items-center justify-between gap-3">
         <span className="inline-flex items-center gap-1.5 rounded-full bg-scriba-mint px-2.5 py-1 font-semibold text-[10px] text-scriba-mint-accent uppercase tracking-wider">
           <span className="size-1.5 rounded-full bg-scriba-mint-accent" />
           Salvo
         </span>
         <span className="inline-flex items-center gap-1.5 rounded-full bg-scriba-ink-mute/10 px-3 py-1.5 font-semibold text-[11px] text-scriba-ink-soft uppercase tracking-wider">
+          {/* O disquete do `Save` do lucide, redesenhado no viewBox de 16 do
+              mockup: a landing imita a tela, e o botão de lá mudou de glifo
+              junto com o rótulo. */}
           <svg {...EDITOR_ICON} className="size-3.5" role="presentation">
-            <path d="M1.6 8S4 3.8 8 3.8 14.4 8 14.4 8 12 12.2 8 12.2 1.6 8 1.6 8Z" />
-            <circle cx="8" cy="8" r="1.9" />
+            <path d="M10.2 2H3.4A1.4 1.4 0 0 0 2 3.4v9.2A1.4 1.4 0 0 0 3.4 14h9.2a1.4 1.4 0 0 0 1.4-1.4V5.8z" />
+            <path d="M11.2 14V9.6a.7.7 0 0 0-.7-.7H5.5a.7.7 0 0 0-.7.7V14" />
+            <path d="M4.8 2v2.7c0 .4.3.7.7.7h4.2" />
           </svg>
-          Ver como ficou
+          Salvar
         </span>
       </div>
 

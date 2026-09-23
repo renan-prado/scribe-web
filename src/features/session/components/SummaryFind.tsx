@@ -1,6 +1,5 @@
 "use client";
 
-import { ChevronDown, ChevronUp, Search, X } from "lucide-react";
 import {
   createContext,
   type ReactNode,
@@ -12,18 +11,23 @@ import {
   useRef,
   useState,
 } from "react";
+import { FindBar } from "@/features/session/components/FindBar";
 import { normalizeSearch } from "@/features/session/lib/search";
-import { cn } from "@/lib/utils";
 
 /**
  * A busca DENTRO de um resumo: o Ctrl+F do `/summary`.
  *
  * **A lupa desta tela procura no sermão aberto, e não no acervo.** Ela já
- * levou para a busca da Biblioteca (`LibrarySearchLink`, que é o que as outras
- * telas ainda fazem), e o defeito daquilo estava escrito no próprio código: uma
- * lupa sobre um texto longo promete procurar DENTRO dele. A saída de então foi
- * tirar o botão; a saída de agora é cumprir a promessa. Quem quer o acervo tem
- * o voltar, que é por onde entrou.
+ * levou para a busca da Biblioteca, e o defeito daquilo estava escrito no
+ * próprio código: uma lupa sobre um texto longo promete procurar DENTRO dele. A
+ * saída de então foi tirar o botão; a saída de agora é cumprir a promessa. Quem
+ * quer o acervo tem o voltar, que é por onde entrou.
+ *
+ * **São DOIS gatilhos, e é por isso que o provider mora na página.** No desktop
+ * é a lupa da `TopBar` (`SummaryFindToggle`); no celular é o botão de busca da
+ * `MobileActionBar`, que é a única lupa visível lá — enquanto ele abria a busca
+ * global, a barra de baixo prometia uma coisa e fazia a outra, em cima do mesmo
+ * texto. Ver `SummaryMobileDock`.
  *
  * ## Por que os destaques não são `<mark>`
  *
@@ -60,13 +64,16 @@ import { cn } from "@/lib/utils";
  * `Range`s, que existem em todo navegador. Só o amarelo não aparece. É o degrau
  * certo para um recurso que hoje só falta no que ninguém mais abre.
  *
- * ## O contexto existe pela mesma razão do `SearchScope`
+ * ## O contexto existe porque os gatilhos e o texto são irmãos distantes
  *
- * O BOTÃO mora na `TopBar` e o TEXTO mora na página, em ramos diferentes da
- * árvore, com um server component no meio. A diferença é onde o provider entra:
- * na Biblioteca é a página que envolve os dois, aqui é o `SavedSessionView` —
- * ele é `"use client"`, recebe a barra pronta pelo slot `header` e a renderiza
- * DENTRO de si, e contexto anda pela posição de render, não pela de criação.
+ * A lupa mora na `TopBar`, o botão do celular mora na barra de baixo e o TEXTO
+ * mora na view, em ramos diferentes da árvore, com server components no meio.
+ * O provider ENVOLVE OS TRÊS, e por isso está na página
+ * (`/summary/[id]/page.tsx`), do lado de fora do `SavedSessionView` — ele
+ * morou DENTRO da view enquanto a lupa era o único gatilho (ela chega pronta
+ * pelo slot `header` e é renderizada lá dentro), e ali a barra de baixo, que é
+ * irmã da view, não o alcançava. Contexto anda pela posição de render, não pela
+ * de criação, então a `TopBar` continua sendo servida por ele como sempre foi.
  *
  * O mínimo de 2 letras não é economia de CPU: com uma letra só, "a" acende
  * quase todo o texto, e um resumo inteiro amarelo não é um resultado de busca.
@@ -308,102 +315,30 @@ export function SummaryFindArea({
 }
 
 /**
- * A barra da busca, entre o cabeçalho e o texto.
+ * A barra da busca, FIXA no topo da tela enquanto está aberta.
  *
  * Ela só existe aberta: um campo permanente no topo de uma tela de LEITURA
  * seria um convite a procurar em quem veio ler.
  *
- * O Enter anda para a próxima ocorrência em vez de enviar nada — não há nada
- * que enviar, a busca é ao vivo —, e com Shift ele volta, que é o
- * comportamento do Ctrl+F de todo navegador. O Esc fecha, como em qualquer
- * coisa que abre por cima da tela.
+ * O desenho dela é o `FindBar`, compartilhado com o editor — ver o cabeçalho
+ * de lá, inclusive para o porquê de ela ter saído do fluxo da página.
  */
 export function SummaryFindBar() {
   const { open, query, total, index, setQuery, close, step } = useSummaryFind();
-  const inputRef = useRef<HTMLInputElement | null>(null);
-
-  useEffect(() => {
-    if (open) inputRef.current?.focus();
-  }, [open]);
 
   if (!open) return null;
 
   const enough = normalizeSearch(query.trim()).length >= MIN_QUERY;
 
   return (
-    <div className="mx-auto flex w-full max-w-3xl items-center gap-2">
-      <div className="relative min-w-0 flex-1">
-        <Search
-          aria-hidden
-          className="pointer-events-none absolute top-1/2 left-3 size-4 -translate-y-1/2 text-scriba-ink-mute"
-        />
-        <input
-          ref={inputRef}
-          type="search"
-          value={query}
-          onChange={(e) => setQuery(e.target.value)}
-          onKeyDown={(e) => {
-            if (e.key === "Escape") {
-              e.preventDefault();
-              close();
-            } else if (e.key === "Enter") {
-              e.preventDefault();
-              step(e.shiftKey ? -1 : 1);
-            }
-          }}
-          placeholder="Procurar neste resumo"
-          aria-label="Procurar neste resumo"
-          className={cn(
-            "w-full rounded-full border border-scriba-hairline bg-scriba-paper py-2 pr-16 pl-9 text-sm font-light text-scriba-ink outline-none transition-colors",
-            "placeholder:text-scriba-ink-mute hover:border-scriba-ink-mute/40 focus:border-scriba-ink-mute/60"
-          )}
-        />
-        {/* A conta fica DENTRO do campo, à direita, e não numa terceira peça na
-            linha: ela é resposta ao que se digitou, não um controle. O
-            `tabular-nums` a impede de tremer de "1 de 9" para "10 de 12". */}
-        {enough ? (
-          <span
-            role="status"
-            className="pointer-events-none absolute top-1/2 right-4 -translate-y-1/2 text-[11px] tabular-nums text-scriba-ink-mute"
-          >
-            {total === 0 ? "nada" : `${index + 1} de ${total}`}
-          </span>
-        ) : null}
-      </div>
-      <FindStep label="Ocorrência anterior" onClick={() => step(-1)} disabled={total === 0}>
-        <ChevronUp className="size-4" strokeWidth={1.75} />
-      </FindStep>
-      <FindStep label="Próxima ocorrência" onClick={() => step(1)} disabled={total === 0}>
-        <ChevronDown className="size-4" strokeWidth={1.75} />
-      </FindStep>
-      <FindStep label="Fechar a busca" onClick={close}>
-        <X className="size-4" strokeWidth={1.75} />
-      </FindStep>
-    </div>
-  );
-}
-
-function FindStep({
-  label,
-  onClick,
-  disabled = false,
-  children,
-}: {
-  label: string;
-  onClick: () => void;
-  disabled?: boolean;
-  children: ReactNode;
-}) {
-  return (
-    <button
-      type="button"
-      onClick={onClick}
-      disabled={disabled}
-      aria-label={label}
-      title={label}
-      className="inline-flex size-9 shrink-0 items-center justify-center rounded-full text-scriba-ink-soft transition-colors hover:bg-scriba-blue-soft/70 hover:text-scriba-ink disabled:pointer-events-none disabled:opacity-40"
-    >
-      {children}
-    </button>
+    <FindBar
+      query={query}
+      total={enough ? total : null}
+      index={index}
+      label="Procurar neste resumo"
+      onQueryChange={setQuery}
+      onStep={step}
+      onClose={close}
+    />
   );
 }

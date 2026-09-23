@@ -162,10 +162,10 @@ O contrato entre o passo e a tela é um seletor CSS, e a convenção é
 
 | `data-tour` | Onde vive |
 |---|---|
-| `library-search` | o botão da busca GLOBAL, duas vezes — `SearchTrigger` (desktop, na `TopBar`) e o botão de busca da `MobileActionBar` (celular); um dos dois sempre `display: none` |
+| `library-search` | o botão de busca, duas vezes — `SearchTrigger` (desktop, na `TopBar`) e o botão da `MobileActionBar` (celular); um dos dois sempre `display: none`. O passo que o usa é o da BIBLIOTECA, e lá os dois abrem a busca global; no `/summary` e no `/escrever` o mesmo atributo veste um botão que procura dentro do texto aberto, e nenhum tour aponta para ele |
 | `studies-search` | a lupa da barra ANTIGA nos Estudos (`SearchToggle`, em `(app)/(barra)/components/SearchScope.tsx`) — o `tourId` é prop, a tela é que o nomeia. Único uso restante de `SearchScope`/`CollectionSearch`, que a Biblioteca não usa mais |
 | `collection-search` | `CollectionSearch`, a barra dos Estudos. Nenhum tour aponta para ela, e é de propósito |
-| `create-dock` | o `+` de `src/app/(app)/(barra)/components/MobileActionBar.tsx` (era `record-dock`, no microfone que ele substituiu, e antes disso o `+` vivia sozinho em `CreateDock.tsx`, hoje apagado). **Só no celular**: o passo que fala dele se apaga sozinho no desktop |
+| `create-dock` | o `+` de `src/app/(app)/(barra)/components/MobileActionBar.tsx` (era `record-dock`, no microfone que ele substituiu, e antes disso o `+` vivia sozinho em `CreateDock.tsx`, hoje apagado). **Só no celular e só na Biblioteca**: as outras duas telas com barra dão aquela ponta para o editar/ver, e o passo se apaga sozinho onde não há alvo |
 | `create-record` | a porta "Gravar" — o quadrado do painel do dock, e o chip do microfone da `TopBar` |
 | `create-write` | a porta "Escrever", nos mesmos dois lugares |
 | `create-import` | a porta "Importar", nos mesmos dois lugares |
