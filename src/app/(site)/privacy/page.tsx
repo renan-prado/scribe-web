@@ -8,7 +8,7 @@ export const metadata: Metadata = {
   alternates: { canonical: "/privacy" },
 };
 
-const LAST_UPDATED = "11 de setembro de 2026";
+const LAST_UPDATED = "24 de setembro de 2026";
 const CONTACT_EMAIL = "contato@scriba.cc";
 
 export default function PrivacyPage() {
@@ -299,12 +299,19 @@ export default function PrivacyPage() {
           <section>
             <h2 className="mb-3 text-base font-semibold text-scriba-ink-strong">10. Cookies</h2>
             <p>
-              Utilizamos apenas <strong>cookies estritamente necessários</strong> para autenticar
-              sua sessão, manter suas preferências essenciais e proteger a plataforma contra
-              fraudes. Não utilizamos cookies publicitários, de rastreamento comportamental
-              cross-site ou de compartilhamento com anunciantes terceiros. Você pode bloquear
-              cookies nas configurações do seu navegador, mas isso pode inviabilizar o uso do
-              serviço.
+              Utilizamos <strong>cookies estritamente necessários</strong> para autenticar sua
+              sessão, proteger a plataforma contra fraudes e registrar a origem de quem chega por um
+              link de convite ou de parceiro, e um cookie de <strong>medição de audiência</strong>{" "}
+              (Google Analytics), que conta visitas de forma agregada. Não utilizamos cookies
+              publicitários, de rastreamento comportamental cross-site ou de compartilhamento com
+              anunciantes terceiros.
+            </p>
+            <p className="mt-3">
+              Na primeira visita pedimos o seu <strong>consentimento</strong>. O cookie de medição
+              só é gravado depois do aceite. Como o login depende de cookies, o serviço não pode ser
+              usado sem aceitá-los; esta política e os termos continuam acessíveis a qualquer
+              pessoa. Você pode retirar o consentimento a qualquer momento apagando os cookies do
+              site nas configurações do navegador, e o aviso voltará a ser exibido.
             </p>
           </section>
 

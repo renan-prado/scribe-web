@@ -1,6 +1,7 @@
 import type { Metadata, Viewport } from "next";
 import { Fira_Mono, Geist, Geist_Mono, Poppins } from "next/font/google";
 import { Analytics } from "@/components/Analytics";
+import { CookieConsent } from "@/components/CookieConsent";
 import { HeroEyebrowScript } from "@/components/HeroEyebrowScript";
 import { Providers } from "@/components/Providers";
 import { PwaBootstrap } from "@/components/PwaBootstrap";
@@ -210,6 +211,11 @@ export default function RootLayout({ children }: LayoutProps<"/">) {
           <PwaBootstrap />
         </Providers>
         <Analytics />
+        {/* FORA do `Providers` e por último, de propósito: enquanto não há
+            aceite, ele marca como `inert` todo IRMÃO dele no <body>, e é
+            preciso que o resto da página seja irmão, não pai. Ver
+            `CookieConsent` e `src/shared/consent.ts`. */}
+        <CookieConsent />
       </body>
     </html>
   );

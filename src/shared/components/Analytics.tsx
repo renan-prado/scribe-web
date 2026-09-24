@@ -1,6 +1,6 @@
-import { GoogleAnalytics } from "@next/third-parties/google";
 import { IS_PRODUCTION_DEPLOY } from "@/lib/deploy";
 import { clientEnv } from "@/lib/env/client";
+import { AnalyticsAfterConsent } from "./AnalyticsAfterConsent";
 
 /**
  * Google Analytics 4, só no deploy de produção.
@@ -34,11 +34,15 @@ import { clientEnv } from "@/lib/env/client";
  *
  * Para eventos personalizados, use `sendGAEvent` de `@next/third-parties/google`
  * dentro de um componente client, não chame `window.gtag` na mão.
+ *
+ * **E há uma terceira condição, do lado do navegador: o aceite de cookies.**
+ * Quem ainda não aceitou não carrega o gtag (`AnalyticsAfterConsent`). Ver
+ * `src/shared/consent.ts`.
  */
 export function Analytics() {
   const gaId = clientEnv.NEXT_PUBLIC_GA_ID;
 
   if (!IS_PRODUCTION_DEPLOY || !gaId) return null;
 
-  return <GoogleAnalytics gaId={gaId} />;
+  return <AnalyticsAfterConsent gaId={gaId} />;
 }

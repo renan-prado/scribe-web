@@ -774,11 +774,39 @@ respeite `prefers-reduced-motion` (o bloco já existe no `globals.css`).
   e `dev.scriba.cc` portanto não medem, nem que a variável vaze para o escopo
   errado do painel da Vercel. Para validar uma tag: DebugView do GA4 contra
   `scriba.cc`.
+- **E uma terceira, no navegador: o aceite de cookies.** O gtag só carrega
+  depois dele (`AnalyticsAfterConsent`); ver "Cookies: aceitar ou não usar",
+  abaixo.
 - Ler `process.env` não torna rota dinâmica: a LP continua `○ Static` com o
   `<Analytics />` no root layout, conferido no output do build.
 - **Não escrevemos pageview.** As navegações do App Router viram `page_view`
   pela medição aprimorada do GA4 (eventos de histórico), ligada na
   propriedade. Evento personalizado usa `sendGAEvent`, nunca `window.gtag`.
+
+## Cookies: aceitar ou não usar
+
+`components/CookieConsent.tsx`, montado no root layout, com nome, versão e
+leitura em `consent.ts` (client-safe). **É um bloqueio, não um banner**: quem
+não aceitou vê um diálogo por cima de tudo, e o resto da página fica `inert`
+(sem clique, sem Tab, sem leitor de tela) com a rolagem travada. Recusar
+mostra o porquê e o caminho de volta. A razão de não haver "recusar e seguir":
+a sessão de login é um cookie, e sem ela não existe produto.
+
+Quatro coisas que não podem ser desfeitas:
+
+- **As páginas legais não bloqueiam** (`CONSENT_EXEMPT_PATHS`: `/privacy`,
+  `/terms`, `/partners/terms`). Lá o aviso é um cartão no rodapé: ninguém
+  pode ser obrigado a aceitar uma política que não conseguiu ler.
+- **O componente é o ÚLTIMO filho do `<body>`, fora do `Providers`.** O
+  `inert` é aplicado aos IRMÃOS dele; dentro de uma árvore, ele travaria a si
+  mesmo junto.
+- **A decisão é do navegador, nunca do servidor.** Ler o cookie no root layout
+  tornaria dinâmica toda página estática do site, a landing inclusive, para
+  desenhar um aviso que a maioria já aceitou. O preço é o aviso aparecer um
+  instante depois do primeiro paint, uma vez.
+- **O valor do cookie é uma VERSÃO** (`CONSENT_VERSION`). Mudou o que se pede
+  para aceitar? Suba a versão e todo mundo vê o aviso de novo. A Política de
+  Privacidade (§10) descreve o mesmo, e as duas mudam juntas.
 
 ## LandingMocks
 
