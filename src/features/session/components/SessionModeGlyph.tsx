@@ -1,5 +1,5 @@
-import { PenLine } from "lucide-react";
 import { MicGlyph } from "@/components/icons/MicGlyph";
+import { WriteGlyph } from "@/components/icons/WriteGlyph";
 import { YoutubeIcon } from "@/components/icons/YoutubeIcon";
 import type { SessionMode } from "@/lib/domain/session";
 
@@ -30,12 +30,10 @@ import type { SessionMode } from "@/lib/domain/session";
  * caía certa. Medido num print: a 1,5px o miolo do glifo do YouTube ficava
  * ~1,1px acima do miolo dos dígitos.
  *
- * A caneta é de CONTORNO, ao contrário dos dois vizinhos, que são tinta cheia,
- * e o `strokeWidth` sobe de 2 para 2.25 para compensar: um traço de 1,5px a
- * 14px de altura fica visivelmente mais claro que um glifo preenchido do mesmo
- * tamanho, e a coluna de ícones do rodapé passaria a ter um item desbotado. A
- * descida é a do microfone, não a do YouTube: como ele, a caneta é uma
- * diagonal estreita, e não um retângulo de aresta reta.
+ * A caneta (`WriteGlyph`, o `public/icons/write.svg`) é tinta cheia como os
+ * outros dois, então não precisa de `strokeWidth` para compensar. A descida é
+ * a do microfone, não a do YouTube: como ele, a caneta é uma diagonal
+ * estreita, e não um retângulo de aresta reta.
  *
  * O rótulo mora no `<span>`, não no `<svg>`: o `YoutubeIcon` já nasce
  * `aria-hidden` e não aceita props soltas, e um `<svg>` com `aria-label` sem
@@ -54,7 +52,7 @@ export function SessionModeGlyph({ mode }: { mode: SessionMode }) {
       {mode === "youtube" ? (
         <YoutubeIcon className="size-3.5 -translate-y-[0.5px]" />
       ) : mode === "manual" ? (
-        <PenLine className="-translate-y-[1.5px] size-3.5" strokeWidth={2.25} />
+        <WriteGlyph className="-translate-y-[1.5px] size-3.5" />
       ) : (
         /* O `MicGlyph`, o MESMO microfone do botão de gravar, e não o `Mic` do
            lucide: o glifo que a pessoa aperta para gravar e o que marca o

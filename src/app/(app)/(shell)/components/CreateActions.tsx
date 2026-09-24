@@ -1,8 +1,8 @@
 "use client";
 
-import { PenLine } from "lucide-react";
 import { type ReactNode, useState } from "react";
 import { MicGlyph } from "@/components/icons/MicGlyph";
+import { WriteGlyph } from "@/components/icons/WriteGlyph";
 import { YoutubeIcon } from "@/components/icons/YoutubeIcon";
 import { NavLink } from "@/components/NavLink";
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/components/ui/tooltip";
@@ -107,7 +107,7 @@ export function WriteAction() {
     <CreateAction
       href="/summary/new"
       label="Escrever resumo"
-      icon={<PenLine className="size-5" strokeWidth={1.75} />}
+      icon={<WriteGlyph className="size-5" />}
       tourId="create-write"
     />
   );
