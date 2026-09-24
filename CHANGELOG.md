@@ -9,6 +9,16 @@ Gerado por `npm run release` a partir dos Conventional Commits. `feat` sobe o
 minor; o resto sobe o patch. Não edite à mão, a próxima execução escreve por
 cima do topo do arquivo.
 
+## 0.81.0, 2026-09-24, desde v0.80.0
+
+### Novidades
+
+- **app:** a caneta do lucide sai do app, e editar ganha o glifo próprio (`ced4987`)
+
+### Outros
+
+- **shared:** registra o par de glifos de escrever e editar (`bd6f349`)
+
 ## 0.80.0, 2026-09-24, desde v0.79.0
 
 ### Novidades
