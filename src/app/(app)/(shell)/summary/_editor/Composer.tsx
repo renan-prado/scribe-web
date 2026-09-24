@@ -3,6 +3,7 @@
 import {
   ChevronDown,
   ChevronUp,
+  GripVertical,
   Highlighter,
   Info,
   MapPin,
@@ -55,6 +56,7 @@ import { ScribaMark } from "@/shared/brand";
 import { TOPBAR_SLOT_ID } from "../../components/AppHeaderShell";
 import { MOBILE_BAR_BUTTON_CLASS, MobileActionBar } from "../../components/MobileActionBar";
 import { AutoTextarea } from "./AutoTextarea";
+import { BlockDragGhost } from "./BlockDragGhost";
 import { BlockKeyboardBar } from "./BlockKeyboardBar";
 import {
   BLOCK_OPTIONS,
@@ -69,6 +71,7 @@ import {
   matchBibleQuery,
 } from "./blocks";
 import { PassagePicker } from "./PassagePicker";
+import { useBlockDrag } from "./useBlockDrag";
 import { type SaveStatus, useWrittenDraft } from "./useWrittenDraft";
 
 /**
@@ -254,11 +257,20 @@ export function Composer({
    * `slashQuery` devolve vazio aqui —, e escolher CONVERTE o bloco em vez de
    * substituí-lo por um vazio, que jogaria fora justamente o que a pessoa não
    * quer redigitar.
+   *
+   * **`convert` é OBRIGATÓRIO no tipo, e isso é o conserto de um defeito.** Ele
+   * nasceu opcional, e meia dúzia de lugares aqui remontam este objeto do zero
+   * só para mover o cursor de uma linha — a seta do teclado, o mouse passando
+   * por cima de um item. Cada um deles APAGAVA o modo em silêncio: o menu
+   * voltava a ler o texto da linha como se fosse uma busca, e "Teste" virava
+   * `/este`, que acha o livro de Ester e mais nada. O campo exigido faz o
+   * compilador cobrar a resposta de quem constrói um estado novo, e quem só
+   * quer mover o cursor passa a ter de preservar o que já estava lá.
    */
   const [slash, setSlash] = useState<{
     index: number;
     cursor: number;
-    convert?: boolean;
+    convert: boolean;
   } | null>(null);
   /**
    * Qual bloco tem o cursor. É o que põe a pílula de controles no ar no
@@ -452,6 +464,32 @@ export function Composer({
     setFocusIndex(target);
   }
 
+  /**
+   * O destino de um ARRASTO, que fala em índice de INSERÇÃO e não em vizinho.
+   *
+   * "Entre o quarto e o quinto" é `to === 4`, e a diferença para o `moveBy`
+   * acima está na conta de uma linha: tirando o bloco da lista, todo destino
+   * ABAIXO dele desce uma casa. Sem isso, arrastar para baixo sempre para uma
+   * posição antes da que a linha indicava.
+   *
+   * **Sem `setFocusIndex`**, ao contrário do `moveBy`: aquele é um clique num
+   * botão que fica ao lado do cursor, este é um dedo sobre a folha, e pedir o
+   * cursor aqui abriria o teclado do celular por cima do texto que a pessoa
+   * acabou de reorganizar. O `active` acende a pílula no lugar novo, que é o
+   * retorno que o gesto pede.
+   */
+  function moveTo(index: number, insertion: number) {
+    const target = insertion > index ? insertion - 1 : insertion;
+    if (target === index || target < 0 || target >= doc.blocks.length) return;
+    patchBlocks((blocks) => {
+      const copy = blocks.slice();
+      const [moved] = copy.splice(index, 1);
+      copy.splice(target, 0, moved);
+      return copy;
+    });
+    setActive(target);
+  }
+
   function setBlock(index: number, patch: Partial<WrittenBlock>) {
     patchBlocks((blocks) =>
       blocks.map((b, i) => (i === index ? ({ ...b, ...patch } as WrittenBlock) : b))
@@ -579,7 +617,7 @@ export function Composer({
       return;
     }
     if (text === "/") {
-      setSlash({ index, cursor: 0 });
+      setSlash({ index, cursor: 0, convert: false });
       return;
     }
     if (slash?.index !== index) return;
@@ -587,7 +625,7 @@ export function Composer({
     // barra, ou escreveu uma linha de verdade: o menu não tem mais o que
     // filtrar. O cursor volta ao topo porque a lista mudou debaixo dele.
     if (!text.startsWith("/")) setSlash(null);
-    else setSlash({ index, cursor: 0 });
+    else setSlash({ index, cursor: 0, convert: false });
   }
 
   function changeBlock(index: number, patch: Partial<WrittenBlock>) {
@@ -881,11 +919,11 @@ export function Composer({
   function openSlashFrom(target: number | "tail") {
     if (target === "tail") {
       const at = insertAt(doc.blocks.length, { type: "paragraph", text: "/" });
-      setSlash({ index: at, cursor: 0 });
+      setSlash({ index: at, cursor: 0, convert: false });
       return;
     }
     setBlock(target, { text: "/" });
-    setSlash({ index: target, cursor: 0 });
+    setSlash({ index: target, cursor: 0, convert: false });
     setFocusIndex(target);
   }
 
@@ -949,7 +987,10 @@ export function Composer({
         const count = slashOptions.length;
         // Circular: numa lista de nove itens, chegar ao fim e voltar ao começo
         // é mais curto que subir oito vezes.
-        setSlash({ index, cursor: (slash.cursor + step + count) % count });
+        // Atualização FUNCIONAL, e não um objeto novo: mover o cursor é a
+        // única coisa que esta tecla faz, e remontar o estado aqui apagava o
+        // modo `convert` do menu. Ver o cabeçalho de `slash`.
+        setSlash((cur) => (cur ? { ...cur, cursor: (cur.cursor + step + count) % count } : cur));
         return;
       }
       if (e.key === "Enter" || e.key === "Tab") {
@@ -1203,6 +1244,40 @@ export function Composer({
    */
   const closed = conclusionAt >= 0;
 
+  /**
+   * ## Arrastar um bloco: o gesto que as setas não dão
+   *
+   * As duas setas da pílula andam UMA casa por toque. Pôr o terceiro parágrafo
+   * depois do décimo custa sete cliques com o olho perseguindo o bloco tela
+   * abaixo; com o dedo (ou o punho da margem esquerda) é um gesto só. As setas
+   * ficam, e passam a ser o que sempre foram melhores em ser: o ajuste de um
+   * vizinho, e o caminho de quem usa teclado.
+   *
+   * O teto é a CONCLUSÃO, a mesma regra do `insertionIndex`: nada cai abaixo do
+   * fecho, e ela própria não se move (`canDrag`). Um gesto que não passa pelo
+   * menu não pode furar a invariante que o menu respeita.
+   *
+   * O resto — o punho, o pressionar e segurar, a rolagem automática e a linha
+   * de destino — mora em `useBlockDrag`, e a prévia em `BlockDragGhost`.
+   */
+  const listRef = useRef<HTMLDivElement | null>(null);
+  const surfaceRefs = useRef<(HTMLDivElement | null)[]>([]);
+  const blockDrag = useBlockDrag({
+    count: doc.blocks.length,
+    ceiling: closed ? conclusionAt : doc.blocks.length,
+    canDrag: (i) => doc.blocks[i]?.type !== "conclusion",
+    nodeAt: (i) => surfaceRefs.current[i] ?? null,
+    container: () => listRef.current,
+    onDrop: moveTo,
+    // O menu da barra e a pílula somem no instante em que o bloco se solta: são
+    // controles de uma linha parada, e um deles ficaria pousado sobre o lugar
+    // de onde o bloco saiu.
+    onStart: () => {
+      setSlash(null);
+      setActive(null);
+    },
+  });
+
   return (
     <main className="mx-auto flex min-h-svh w-full max-w-[1024px] flex-col gap-6 px-4 pb-24 sm:gap-8 sm:px-6">
       {header}
@@ -1337,7 +1412,26 @@ export function Composer({
             **A linha do cabeçalho é o PRIMEIRO item desta lista**, e não uma irmã
             dela lá em cima: assim o espaço abaixo dela é decidido por quem sabe o
             que vem depois, e não pelo `gap` do `<main>`. */}
-        <div className="flex flex-col gap-8">
+        <div ref={listRef} className="relative flex flex-col gap-8">
+          {/* ONDE O BLOCO VAI CAIR, enquanto ele está no ar.
+
+              Uma linha no vão entre dois blocos, e não o vizinho abrindo espaço
+              para ele: abrir espaço significa mudar a altura da lista debaixo do
+              dedo, e as caixas de todos os blocos foram medidas no início do
+              gesto justamente para que nada se mexa (ver `useBlockDrag`). A
+              linha diz a mesma coisa sem mover uma letra.
+
+              Ela é `absolute` sobre o contêiner, e por isso ele é `relative`. */}
+          {blockDrag.drag ? (
+            <div
+              aria-hidden
+              style={{ top: blockDrag.drag.indicatorTop }}
+              // Ela tem a largura da SUPERFÍCIE, não a da coluna de texto: é o
+              // bloco que vai cair ali, e o bloco avança 12px (20 no sm) para
+              // fora da coluna de cada lado. É o mesmo par do `BLOCK_SURFACE`.
+              className="pointer-events-none absolute -left-3 -right-3 z-20 h-0.5 -translate-y-1/2 rounded-full bg-scriba-blue sm:-left-5 sm:-right-5"
+            />
+          ) : null}
           <div className="h-px w-full bg-scriba-hairline" />
 
           {/* A IDEIA CENTRAL, quando existe, é o primeiro item do texto.
@@ -1417,9 +1511,11 @@ export function Composer({
             );
 
             return (
-              // O `onBlur` daqui não é interação: ele APAGA um estado quando o
-              // cursor sai do bloco. Não há ação atrás deste `div` para um leitor
-              // de tela alcançar.
+              // Nem o `onBlur` nem o `onPointerDown` daqui são interação: o
+              // primeiro APAGA um estado quando o cursor sai do bloco, o segundo
+              // arma o pressionar-e-segurar do arrasto (`useBlockDrag`). Não há
+              // ação atrás deste `div` para um leitor de tela alcançar — quem
+              // move o bloco pelo teclado são as setas da pílula.
               // biome-ignore lint/a11y/noStaticElementInteractions: ver acima
               <div
                 // biome-ignore lint/suspicious/noArrayIndexKey: ver o cabeçalho
@@ -1427,7 +1523,15 @@ export function Composer({
                 // O índice no DOM é o que deixa a inserção pela conversa rolar
                 // até o bloco e piscar nele. Ver `revealSummaryBlock`.
                 {...{ [SUMMARY_BLOCK_ATTR]: i }}
-                className="group relative flex flex-col"
+                {...blockDrag.pressProps(i)}
+                className={cn(
+                  "group relative flex flex-col",
+                  // O bloco que está no ar continua no lugar, APAGADO: tirá-lo
+                  // da lista mudaria a altura de tudo abaixo dele no meio do
+                  // gesto, e é a imobilidade da folha que faz a linha de destino
+                  // significar alguma coisa.
+                  blockDrag.drag?.from === i && "opacity-30"
+                )}
                 onBlur={(e) => {
                   // `relatedTarget` é quem RECEBEU o foco. Se for um filho deste
                   // bloco (a lixeira, o mover, a pastilha da passagem), o cursor
@@ -1448,38 +1552,43 @@ export function Composer({
                   if (block.type === "paragraph" && block.text === "/") setBlock(i, { text: "" });
                 }}
               >
-                <BlockControls
-                  shown={active === i}
-                  blank={block.text.trim().length === 0 || block.text === "/"}
-                  /* A passagem fica de fora: o texto dela vem da NVI pela
+                {/* A pílula não fica no ar durante um arrasto: ela é o controle
+                    de uma linha PARADA, e os botões dela pousariam sobre o vão
+                    de onde o bloco acabou de sair. */}
+                {blockDrag.drag ? null : (
+                  <BlockControls
+                    shown={active === i}
+                    blank={block.text.trim().length === 0 || block.text === "/"}
+                    /* A passagem fica de fora: o texto dela vem da NVI pela
                      referência, então não há frase sua para virar outro bloco,
                      e o que se troca nela — a referência — já é a pastilha que
                      ela desenha. Ver `turnAt`. */
-                  onTurn={block.type === "bibleQuote" ? undefined : () => turnAt(i)}
-                  /* A CONCLUSÃO não se move, e nada se move para depois dela:
+                    onTurn={block.type === "bibleQuote" ? undefined : () => turnAt(i)}
+                    /* A CONCLUSÃO não se move, e nada se move para depois dela:
                      ela é o fecho, e as setas são o único caminho que restaria
                      para desmanchar a posição que a inserção garante. Os
                      botões ficam ali, desabilitados (o `ControlButton` já
                      desenha isso a 30% quando não recebe `onClick`) — sumir
                      com eles faria a pílula deste bloco ter uma largura
                      diferente da dos vizinhos. */
-                  onUp={i > 0 && block.type !== "conclusion" ? () => moveBy(i, -1) : undefined}
-                  onDown={
-                    i < doc.blocks.length - 1 &&
-                    block.type !== "conclusion" &&
-                    conclusionAt !== i + 1
-                      ? () => moveBy(i, 1)
-                      : undefined
-                  }
-                  /* O marca-texto só existe com um recorte na mão, e só nos
+                    onUp={i > 0 && block.type !== "conclusion" ? () => moveBy(i, -1) : undefined}
+                    onDown={
+                      i < doc.blocks.length - 1 &&
+                      block.type !== "conclusion" &&
+                      conclusionAt !== i + 1
+                        ? () => moveBy(i, 1)
+                        : undefined
+                    }
+                    /* O marca-texto só existe com um recorte na mão, e só nos
                      blocos cuja LEITURA passa pelo `RichText` — marcar onde a
                      marca não vai aparecer seria um botão que engole o gesto.
                      Ver `MARKABLE`. */
-                  onMark={
-                    selectedIn === i && MARKABLE.has(block.type) ? () => markAt(i) : undefined
-                  }
-                  onDelete={() => removeAt(i)}
-                />
+                    onMark={
+                      selectedIn === i && MARKABLE.has(block.type) ? () => markAt(i) : undefined
+                    }
+                    onDelete={() => removeAt(i)}
+                  />
+                )}
                 {/* O bloco em foco POUSA NUMA SUPERFÍCIE, e é assim que se vê
                     onde o cursor está. Ele existe pelo celular, onde não há
                     ponteiro e o teclado cobre metade da tela — sem nada aceso,
@@ -1500,6 +1609,11 @@ export function Composer({
                     `active` existe para os botões, que precisam continuar
                     clicáveis no toque seguinte. */}
                 <div
+                  // A caixa VISÍVEL do bloco: é ela que o arrasto mede e é ela
+                  // que a prévia clona. Ver `useBlockDrag`.
+                  ref={(el) => {
+                    surfaceRefs.current[i] = el;
+                  }}
                   className={cn(
                     BLOCK_SURFACE,
                     "relative focus-within:bg-scriba-blue-soft/40",
@@ -1512,6 +1626,45 @@ export function Composer({
                     currentHit && "bg-scriba-yellow-light/10 ring-scriba-yellow"
                   )}
                 >
+                  {/* O PUNHO, na margem esquerda, e ele mora dentro do RECUO da
+                      superfície — não fora dela.
+
+                      A superfície avança 20px para além da coluna de texto
+                      (`-mx-5`), e esses 20px são exatamente o `px-5` dela: um
+                      absoluto em `left-0` cai nesse vão, à esquerda de toda
+                      letra e sem cobrir nenhuma. Pô-lo FORA da superfície seria
+                      bonito e quebraria em janela estreita — a coluna encosta
+                      nas bordas do `<main>` antes dos 1024px, e o punho sairia
+                      da tela sem nada avisando.
+
+                      **Ele é CENTRADO na superfície**, e não alinhado ao topo
+                      dela. Alinhado ao topo ele nasce alto em quase todo bloco
+                      e por razões diferentes em cada um: o `h1` empurra o texto
+                      com um `mt-4`, a Informação é uma moldura com `py-4`, a
+                      passagem e a conclusão são cartões de `p-6` — não existe um
+                      número que sirva aos oito. E centrar não é só o conserto
+                      mais robusto, é o mais honesto: o punho move o BLOCO
+                      inteiro, não a linha em que ele está, e quem se ancora no
+                      alto é a pílula, que é de outra coisa.
+
+                      **Ele não existe no celular** (`hidden sm:flex`), e é a
+                      mesma razão pela qual a pílula flutua acima do bloco: não
+                      há margem esquerda ali. No dedo quem move é pressionar e
+                      segurar a linha, ver `useBlockDrag`.
+
+                      `cursor-grab` é metade do convite; a outra metade é ele
+                      aparecer só ao passar o mouse, como a pílula. */}
+                  {blockDrag.drag || block.type === "conclusion" ? null : (
+                    <button
+                      type="button"
+                      aria-label={`Arrastar o bloco ${i + 1} para outro lugar`}
+                      title="Arrastar para mover"
+                      {...blockDrag.handleProps(i)}
+                      className="-translate-y-1/2 absolute top-1/2 left-0 hidden size-5 cursor-grab touch-none items-center justify-center rounded-md text-scriba-ink-mute opacity-0 transition-opacity hover:bg-scriba-blue-soft/60 hover:text-scriba-ink focus-visible:opacity-100 active:cursor-grabbing group-hover:opacity-100 sm:flex"
+                    >
+                      <GripVertical className="size-3.5" />
+                    </button>
+                  )}
                   {/* `relative` para o ÂNCORA do menu da barra cobrir
                       EXATAMENTE a linha: esta caixa começa onde o texto começa,
                       e o âncora é um `absolute inset-0` invisível dentro dela.
@@ -1528,7 +1681,11 @@ export function Composer({
                         options={slashOptions}
                         cursor={slash.cursor}
                         query={slashQuery}
-                        onHover={(cursor) => setSlash({ index: i, cursor })}
+                        // Funcional pela mesma razão das setas: o mouse
+                        // passando por cima de um item só move o cursor, e um
+                        // objeto novo aqui apagava o modo `convert` no caminho
+                        // entre o botão que abriu o menu e o item escolhido.
+                        onHover={(cursor) => setSlash((cur) => (cur ? { ...cur, cursor } : cur))}
                         onPick={(pick) => pickSlash(i, pick)}
                       />
                     ) : null}
@@ -1573,7 +1730,7 @@ export function Composer({
                   // acima) desenha o menu sobre ele. Sem isto, o único lugar do
                   // editor onde se escreve sem escolher nada antes seria
                   // justamente o único onde a barra não funcionaria.
-                  if (text === "/") setSlash({ index: at, cursor: 0 });
+                  if (text === "/") setSlash({ index: at, cursor: 0, convert: false });
                 }}
               />
             </div>
@@ -1710,6 +1867,16 @@ export function Composer({
           }}
         />
       )}
+
+      {/* O bloco NA MÃO: um clone da caixa de origem seguindo o ponteiro, por
+          portal. Ver `BlockDragGhost`. */}
+      {blockDrag.drag && blockDrag.source ? (
+        <BlockDragGhost
+          source={blockDrag.source}
+          width={blockDrag.drag.width}
+          elementRef={blockDrag.ghostRef}
+        />
+      ) : null}
 
       {/* `ready` só é falso por um instante, enquanto o rascunho do aparelho é
           consultado. Ele não esconde a tela (isso faria a página piscar em todo

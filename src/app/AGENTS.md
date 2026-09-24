@@ -467,6 +467,71 @@ quando há algo à esquerda dele. Ele era incondicional, e numa passagem — sem
 porque o texto dela é da NVI — ficava sozinho na ponta da pílula, um traço
 perdido antes do primeiro botão.
 
+### Arrastar um bloco (`useBlockDrag`, `BlockDragGhost`)
+
+As duas setas da pílula andam UMA casa por toque, e isso é o suficiente para um
+ajuste e insuficiente para tudo o mais: pôr o terceiro parágrafo depois do
+décimo custa sete cliques com o olho perseguindo o bloco tela abaixo. As setas
+ficam, e passam a ser o que sempre foram melhores em ser — o acerto de um
+vizinho, e o caminho de quem usa teclado, que não se arrasta.
+
+**Não é o arrastar do NAVEGADOR, e essa é a decisão central.** A API nativa
+(`draggable`/`dragstart`/`setDragImage`) traz a prévia pronta e tem um defeito
+sem conserto: **ela não existe no toque** — nenhum `dragstart` sai de um dedo,
+em nenhum navegador de celular, que é onde este produto é usado. Sobre eventos
+de PONTEIRO o mesmo código serve aos dois, e a prévia deixa de ser um bitmap que
+o sistema tira para virar um nó do DOM que é nosso.
+
+São dois gestos com a mesma consequência, cada um no aparelho em que é natural:
+
+- **o PUNHO**, no rato: o grip que acende ao passar o mouse. Ele mora DENTRO do
+  recuo esquerdo da superfície (`left-0` sobre os `px-5` que o `-mx-5` devolve),
+  à esquerda de toda letra e sem cobrir nenhuma. Fora da superfície ficaria mais
+  bonito e sairia da tela em janela estreita: a coluna encosta nas bordas do
+  `<main>` bem antes dos 1024px. É CENTRADO na superfície, e não alinhado ao
+  topo: o topo nasce alto em quase todo bloco e por razões diferentes em cada um
+  (o `mt-4` do `h1`, o `py-4` da Informação, o `p-6` da passagem e da
+  conclusão), e nenhum número serve aos oito. Centrar também é o que ele diz de
+  verdade — o punho move o BLOCO, não a linha; quem se ancora no alto é a
+  pílula, que é de outra coisa.
+- **PRESSIONAR E SEGURAR**, no dedo, porque no celular não há margem esquerda —
+  a mesma razão pela qual a pílula flutua acima do bloco em vez de ficar ao lado
+  dele. Por isso o punho é `hidden sm:flex`.
+
+Quatro coisas que parecem detalhe e são o gesto inteiro:
+
+- **A espera do toque morre com MOVIMENTO, nunca com rolagem.** Usar a rolagem
+  como sinal é a tentação óbvia e está errada: tocar numa linha dá foco à caixa,
+  o teclado sobe e o navegador rola a página para manter o cursor visível — a
+  espera morreria antes de nascer, no gesto mais comum do editor.
+- **Enquanto arrasta, a rolagem é nossa.** `touch-action: none` é lido pelo
+  navegador no início do gesto e o nosso começa 320ms depois; quem segura a
+  página é um `touchmove` não-passivo com `preventDefault`, que funciona porque
+  um arrasto nascido de pressionar e segurar nasce de um dedo PARADO. E como a
+  página não rola mais sozinha, um laço de quadro a empurra quando o ponteiro
+  chega perto de uma borda.
+- **Nada se mexe na folha.** O bloco de origem fica no lugar, apagado, e o
+  destino é uma LINHA no vão. Abrir espaço mudaria a altura da lista debaixo do
+  dedo, e é a imobilidade que faz as caixas medidas uma vez no início (em
+  coordenadas de PÁGINA, que sobrevivem à rolagem) continuarem valendo.
+- **A posição do ponteiro não é estado.** Um `setState` por `pointermove`
+  repintaria o documento sessenta vezes por segundo para mover uma prévia; quem
+  a move é uma escrita direta no `transform` dela. O estado guarda só o índice
+  de destino, que muda quando o ponteiro cruza o meio de um bloco.
+
+**A prévia é um CLONE da caixa de verdade**, e não um cartão com o tipo e as
+primeiras palavras: uma passagem com sete versículos, uma frase de destaque com
+a faixa amarela e um bloco de Informação com o rótulo só se reconhecem pela cara
+deles. O conserto que ela precisa é que `cloneNode` **não copia o que foi
+digitado** — o texto de uma `textarea` é propriedade do nó, não atributo —,
+então cada caixa do clone vira uma `div` com a mesma classe, o mesmo texto e a
+mesma altura (a do `offsetHeight` da caixa viva, porque a altura destas é
+escrita à mão pela `AutoTextarea`).
+
+**A CONCLUSÃO não se arrasta e nada cai depois dela**, que é a mesma regra do
+`insertionIndex`: um gesto que não passa pelo menu não pode furar a invariante
+que o menu respeita.
+
 **NENHUM controle é mais alto que a linha de texto, e é essa regra que mantém
 o editor com uma altura de linha só.** Toda caixa de bloco tem 42px (a linha
 de 26px mais 8px de cada lado), sempre — é esse "sempre" que importa.
