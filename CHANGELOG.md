@@ -9,6 +9,12 @@ Gerado por `npm run release` a partir dos Conventional Commits. `feat` sobe o
 minor; o resto sobe o patch. Não edite à mão, a próxima execução escreve por
 cima do topo do arquivo.
 
+## 0.87.1, 2026-09-24, desde v0.87.0
+
+### Correções
+
+- **app:** o disco do puxar-para-atualizar ficava preso no topo da tela (`b1a4b67`)
+
 ## 0.87.0, 2026-09-24, desde v0.86.0
 
 ### Novidades
