@@ -7,6 +7,7 @@ import { listSeenTours } from "@/lib/db/tours";
 import type { TourSeenMap } from "@/lib/domain/tour";
 import { getAuthUser } from "@/lib/supabase/server";
 import { APP_VIEWPORT } from "@/shared/viewport";
+import { PresenceHeartbeat } from "./PresenceHeartbeat";
 
 /**
  * A moldura do Scriba.
@@ -93,6 +94,9 @@ export default async function AppLayout({ children }: { children: ReactNode }) {
     <TourProvider seen={seenTours}>
       <LexiconProvider entries={lexicon}>
         <ZoomLock />
+        {/* Só pulsa com conta de verdade: sem ela a chamada só renderia um
+            401 previsível a cada minuto, para nenhuma leitura a mais. */}
+        {user ? <PresenceHeartbeat /> : null}
         {/* **Sem `dark` aqui, e a ausência é a regra.** Esta moldura forçava o
             escuro no próprio nó, e era exatamente isso que fazia o tema claro
             valer em metade do produto: o switch do `/profile` mudava a landing

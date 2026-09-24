@@ -394,6 +394,17 @@ export const RATE_LIMITS = {
   // uma chamada paga de API e um objeto persistido lá. Apertado de propósito,
   // uso legítimo são alguns cliques por hora, e um limite baixo aqui é a
   // primeira barreira contra alguém rodando um script de criação de sessões.
+  // O pulso de presença: um POST a cada ~60s enquanto o app está aberto, sem
+  // moeda e sem modelo atrás. O balde por usuário é folgado o bastante para
+  // sobreviver a uma aba que pulsa mais rápido por engano; o de IP segue a
+  // régua de `sessions-read`, porque uma igreja gravando ao mesmo tempo põe
+  // centenas de aparelhos atrás do mesmo Wi-Fi, e apertar aqui apagaria a
+  // conta de "online agora" justamente no pico de uso do produto.
+  "presence-heartbeat": {
+    route: "presence-heartbeat",
+    perUser: { limit: 20, windowMs: MIN },
+    perIp: { limit: 600, windowMs: MIN },
+  },
   "billing-write": {
     route: "billing-write",
     perUser: { limit: 12, windowMs: 10 * MIN },

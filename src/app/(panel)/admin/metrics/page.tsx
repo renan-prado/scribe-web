@@ -1,5 +1,6 @@
 import type { Metadata } from "next";
 import { CoinMark } from "@/components/icons/CoinMark";
+import { AccessChart, type AccessChartPoint } from "@/features/admin/components/AccessChart";
 import {
   EmptyState,
   KpiCard,
@@ -8,7 +9,8 @@ import {
   ListCard,
 } from "@/features/admin/components/AdminCards";
 import { AdminPageHeader } from "@/features/admin/components/AdminPageHeader";
-import { loadAdminMetrics } from "@/features/admin/server/db/metrics";
+import { type AccessPoint, loadAdminAccessMetrics } from "@/features/admin/server/db/access";
+import { loadAdminMetrics, type SignupPoint } from "@/features/admin/server/db/metrics";
 import { loadAdminUsageSummary } from "@/features/admin/server/db/usage";
 import { formatBrl, PLANS } from "@/features/billing/plans";
 import { INITIAL_COIN_BALANCE } from "@/features/coins/pricing";
@@ -36,8 +38,14 @@ const pct = (n: number) => `${(n * 100).toFixed(1).replace(".", ",")}%`;
  * ele muda com o dólar e com o preço do modelo, e é a base da conversão do
  * passivo em reais.
  */
+const ACCESS_CHART_DAYS = 90;
+
 export default async function AdminMetricsPage() {
-  const [rate, usage] = await Promise.all([getUsdToBrl(), loadAdminUsageSummary()]);
+  const [rate, usage, access] = await Promise.all([
+    getUsdToBrl(),
+    loadAdminUsageSummary(),
+    loadAdminAccessMetrics(ACCESS_CHART_DAYS),
+  ]);
 
   // USD/moeda → centavos de BRL por 1.000 moedas. Sem câmbio disponível o
   // passivo aparece zerado em vez de errado, a tela diz que falta a cotação.
@@ -108,11 +116,13 @@ export default async function AdminMetricsPage() {
     { label: `Gastaram as ${INITIAL_COIN_BALANCE} ou mais`, value: welcomeCoins.exhausted },
   ];
 
+  const accessSeries = buildAccessSeries(metrics.signupsByDay, access.byDay, ACCESS_CHART_DAYS);
+
   return (
     <div className="flex flex-col gap-6">
       <AdminPageHeader
         title="Métricas"
-        subtitle="O caminho da visita até a assinatura: funil, ativação e o passivo de moedas."
+        subtitle="O caminho da visita até a assinatura: funil, ativação, quem volta a cada dia e o passivo de moedas."
       />
 
       <KpiGrid>
@@ -120,6 +130,8 @@ export default async function AdminMetricsPage() {
           <KpiCard key={t.label} {...t} />
         ))}
       </KpiGrid>
+
+      <AccessChart data={accessSeries} />
 
       <section className="grid gap-4 lg:grid-cols-2">
         <ListCard title="Funil" subtitle="Base completa">
@@ -210,6 +222,37 @@ export default async function AdminMetricsPage() {
       </section>
     </div>
   );
+}
+
+/**
+ * Uma linha por dia, sempre, mesmo nos dias sem nenhum pulso e sem nenhum
+ * cadastro. `signupsByDay` e `access.byDay` só têm entrada para dias com pelo
+ * menos uma linha, e um gráfico de área com buracos no eixo lê como falha de
+ * coleta, não como "zero naquele dia" — que é o que de fato aconteceu.
+ */
+function buildAccessSeries(
+  signups: SignupPoint[],
+  access: AccessPoint[],
+  days: number
+): AccessChartPoint[] {
+  const cadastrosByDay = new Map(signups.map((p) => [p.day, p.count]));
+  const acessosByDay = new Map(access.map((p) => [p.day, p.count]));
+
+  const cursor = new Date();
+  cursor.setUTCHours(0, 0, 0, 0);
+
+  const series: AccessChartPoint[] = [];
+  for (let i = days - 1; i >= 0; i--) {
+    const d = new Date(cursor);
+    d.setUTCDate(d.getUTCDate() - i);
+    const day = d.toISOString().slice(0, 10);
+    series.push({
+      day,
+      acessos: acessosByDay.get(day) ?? 0,
+      cadastros: cadastrosByDay.get(day) ?? 0,
+    });
+  }
+  return series;
 }
 
 function MetricRow({ label, value, strong }: { label: string; value: string; strong?: boolean }) {

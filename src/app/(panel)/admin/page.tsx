@@ -6,6 +6,7 @@ import { AdminPageHeader } from "@/features/admin/components/AdminPageHeader";
 import { FxRateBadge } from "@/features/admin/components/FxRateBadge";
 import { FinanceNotices } from "@/features/admin/components/finance/FinanceNotices";
 import { formatBrlCents, formatPercent } from "@/features/admin/finance/money";
+import { loadAdminAccessMetrics } from "@/features/admin/server/db/access";
 import { loadFinanceSnapshot } from "@/features/admin/server/db/finance-overview";
 import { loadAdminUsageSummary } from "@/features/admin/server/db/usage";
 import { readAdminInsights } from "@/features/admin/server/insights/store";
@@ -42,11 +43,12 @@ const DAY_MS = 24 * 60 * 60 * 1000;
  */
 export default async function AdminOverviewPage() {
   const cutoff30 = new Date(Date.now() - 30 * DAY_MS).toISOString();
-  const [{ overview, usdBrl }, summary30d, rate, insights] = await Promise.all([
+  const [{ overview, usdBrl }, summary30d, rate, insights, access] = await Promise.all([
     loadFinanceSnapshot(),
     loadAdminUsageSummary({ from: cutoff30 }),
     getUsdToBrl(),
     readAdminInsights().catch(() => null),
+    loadAdminAccessMetrics(0),
   ]);
 
   const { current, indicators, commitments } = overview;
@@ -92,6 +94,13 @@ export default async function AdminOverviewPage() {
         summary30d.overallCostPerCoinUsd
       )} por 1.000 moedas`,
       icon: <CoinMark size={22} />,
+    },
+    {
+      label: "Acessos hoje",
+      value: INT.format(access.today),
+      // "Online agora" é aproximado (pulso nos últimos 5 minutos, ver
+      // `server/db/access.ts`), não uma contagem de conexão aberta.
+      hint: `~${INT.format(access.onlineNow)} online agora`,
     },
   ];
 

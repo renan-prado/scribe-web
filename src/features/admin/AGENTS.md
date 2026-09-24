@@ -175,11 +175,62 @@ bloco.** Em `lg` a sidebar já come 16rem, e um "R$ 12.345,67" não cabia nos
 finanças se estica por um monitor inteiro e a linha deixa de ser lida de ponta
 a ponta.
 
-O que deste bloco NÃO foi trazido, e por quê: arrastar linha (`@dnd-kit`),
-escolher colunas e paginar (`@tanstack/react-table`) e o gráfico de área
-(`recharts`). São quatro dependências novas e a reescrita das 15 tabelas, não
-estética. `.admin-card-surface` sobrevive como o mesmo desenho do `<Card>`
-para os blocos que ainda são `<div>`; quando o último virar `<Card>`, ela sai.
+O que deste bloco NÃO foi trazido, e por quê: arrastar linha (`@dnd-kit`) e
+escolher colunas e paginar (`@tanstack/react-table`). São dependências novas e
+a reescrita das 15 tabelas, não estética. `.admin-card-surface` sobrevive como
+o mesmo desenho do `<Card>` para os blocos que ainda são `<div>`; quando o
+último virar `<Card>`, ela sai.
+
+**O gráfico de área (`recharts`) ENTROU**, a pedido, para "Contas ativas por
+dia" de `/admin/metrics` — ver "Acessos e presença", abaixo. `src/shared/ui/chart.tsx`
+é o wrapper padrão do shadcn (`ChartContainer`/`ChartTooltip`/`ChartConfig`),
+escrito à mão porque `ui.shadcn.com` não é um host que o ambiente de build
+alcança: o CLI não consegue buscar o registro do componente, só o pacote do
+`recharts` (npm) é alcançável. Gráfico novo no painel usa este wrapper, não uma
+segunda cópia dele.
+
+## Acessos e presença (KPI de "Visão geral", gráfico de "Métricas")
+
+**"Quantas contas estão online agora" e "quantas acessaram hoje" não vinham de
+lugar nenhum.** `auth.users.last_sign_in_at` (já lido em `server/db/users.ts`,
+para a ficha de `/admin/users`) é um valor por CONTA, sobrescrito a cada login:
+não dá história ("quantas contas diferentes acessaram terça-feira passada?") e
+não diz nada sobre quem ainda está com o app aberto duas horas depois de
+entrar. Os dois números são outra pergunta, e vêm de uma fonte nova.
+
+**A fonte é um PULSO, não um evento de login.** O cliente logado (moldura de
+`(app)/layout.tsx`, ver `src/app/AGENTS.md`) bate em `POST
+/api/presence/heartbeat` a cada ~60s enquanto o app está aberto
+(`PresenceHeartbeat.tsx`), sem corpo — quem chama já basta, a sessão diz quem
+é. A escrita é `upsert` numa linha por (dia, conta), `user_daily_access`
+(migração 0070), sempre por service-role recebendo o `user_id` da SESSÃO,
+nunca do corpo: é telemetria que o painel lê para decidir coisa, a mesma régua
+de `user_tours` (RLS ligada, nenhuma policy, ver `supabase/AGENTS.md`).
+
+`src/features/admin/server/db/access.ts` é a ÚNICA leitura. Como a chave primária já é
+`(day, user_id)`, uma conta não tem como aparecer duas vezes no mesmo dia, e
+`count(*)` de um dia JÁ É contas distintas — sem `distinct` nenhum em memória.
+Duas contas:
+
+- **"Hoje"** é `count(*)` do dia corrente — o tile "Acessos hoje" de `/admin`.
+- **"Online agora"** é o mesmo filtro mais `last_seen_at` nos últimos 5
+  minutos. É uma APROXIMAÇÃO deliberada, não uma contagem de WebSocket aberto:
+  a folga de 5 minutos cobre até três pulsos perdidos (rede ruim, aba em
+  segundo plano), e ninguém deveria ler este número como uma medida exata —
+  é "tem gente usando isto agora", com a margem que o método permite.
+
+**O gráfico de `/admin/metrics` ("Contas ativas por dia") funde esta fonte com
+`signupsByDay`**, que já existia em `loadAdminMetrics` sem NENHUM consumidor
+visual até aqui. As duas áreas não empilham: cadastro e acesso são duas
+perguntas diferentes (gente NOVA contra gente que voltou), e empilhá-las
+somaria como se fossem partes do mesmo total. `buildAccessSeries` (no page.tsx)
+preenche todo dia da janela, inclusive os de zero — um buraco no eixo de um
+gráfico de área lê como falha de coleta, não como "zero naquele dia".
+
+O bucket de `rate-limit.ts` (`presence-heartbeat`) segue a régua de
+`sessions-read` no limite por IP, e não a de uma rota de LLM: uma igreja
+gravando ao mesmo tempo põe centenas de aparelhos atrás do mesmo Wi-Fi, e
+apertar o balde apagaria "online agora" justamente no pico de uso do produto.
 
 ## As telas privilegiadas não vazam no bundle
 

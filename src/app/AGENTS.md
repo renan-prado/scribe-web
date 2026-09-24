@@ -1451,10 +1451,18 @@ não são conteúdo, são efeito colateral com redirect.
 `deepening[/reprocess]`, `youtube/import`, `verse`, `hallucination-report`,
 `biblo`, `biblo/voice`),
 dados (`sessions[/search|/written]`, `speakers`, `locations`, `coins`,
-`lexicon/[slug]`, `feedback[/prompt]`, `tour/{start,finish,reset}`), conta
-(`account/delete`), cobrança (`billing/*`, `stripe/webhook`) e admin
-(`admin/users`, `admin/partners`, `admin/features`, `admin/coupons`,
-`admin/insights`, `admin/lexicon[/image]`).
+`lexicon/[slug]`, `feedback[/prompt]`, `tour/{start,finish,reset}`,
+`presence/heartbeat`), conta (`account/delete`), cobrança (`billing/*`,
+`stripe/webhook`) e admin (`admin/users`, `admin/partners`, `admin/features`,
+`admin/coupons`, `admin/insights`, `admin/lexicon[/image]`).
+
+`presence/heartbeat` é o pulso "esta conta está com o Scriba aberto", chamado
+pelo cliente a cada ~60s enquanto o app está aberto
+(`PresenceHeartbeat.tsx`, montado em `(app)/layout.tsx`). Sem corpo — a sessão
+já diz quem é —, sem moeda e sem modelo, então não passa por `requireBalance`
+nem por `parseJsonBody`. Alimenta "quantas contas acessaram hoje" e "quantas
+estão online agora" em `/admin`; ver `src/features/admin/AGENTS.md`, "Acessos e
+presença".
 
 `lexicon/[slug]` é o cartão de um nome marcado no resumo, e é **GET** enquanto
 `/api/verse` é POST: lá o corpo é uma lista de referências, aqui o pedido é um
