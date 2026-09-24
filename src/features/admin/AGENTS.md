@@ -203,7 +203,7 @@ entrar. Os dois números são outra pergunta, e vêm de uma fonte nova.
 /api/presence/heartbeat` a cada ~60s enquanto o app está aberto
 (`PresenceHeartbeat.tsx`), sem corpo — quem chama já basta, a sessão diz quem
 é. A escrita é `upsert` numa linha por (dia, conta), `user_daily_access`
-(migração 0070), sempre por service-role recebendo o `user_id` da SESSÃO,
+(migração 0071), sempre por service-role recebendo o `user_id` da SESSÃO,
 nunca do corpo: é telemetria que o painel lê para decidir coisa, a mesma régua
 de `user_tours` (RLS ligada, nenhuma policy, ver `supabase/AGENTS.md`).
 

@@ -12,7 +12,7 @@ import { createAdminClient } from "@/lib/supabase/admin";
  * seguinte, é o que sustenta as duas leituras do painel, "quantas contas
  * acessaram hoje" (a linha existe) e "quantas estão online agora" (o pulso é
  * recente). Ver `src/features/admin/server/db/access.ts` e o cabeçalho da
- * migração 0070.
+ * migração 0071.
  *
  * Falha aqui nunca vira erro para quem gravava: é telemetria, não é o produto,
  * e um 500 numa rota cujo único trabalho é esta escrita não ajuda ninguém.

@@ -4,7 +4,7 @@ import { useEffect } from "react";
 
 /** A cada quanto tempo o pulso bate. Ver o comentário do bucket
  * `presence-heartbeat` em `src/lib/rate-limit.ts` e a janela de "online" de
- * 5 minutos no cabeçalho da migração 0070: três pulsos perdidos ainda contam
+ * 5 minutos no cabeçalho da migração 0071: três pulsos perdidos ainda contam
  * como presente. */
 const HEARTBEAT_MS = 60_000;
 

@@ -5,7 +5,7 @@ import { createAdminClient } from "@/lib/supabase/admin";
  * Quantas contas usaram o Scriba, dia a dia, e quantas estão com o app aberto
  * agora.
  *
- * A fonte é `user_daily_access` (migração 0070), uma linha por (dia, conta)
+ * A fonte é `user_daily_access` (migração 0071), uma linha por (dia, conta)
  * atualizada a cada pulso de `POST /api/presence/heartbeat`. Como a chave
  * primária já é `(day, user_id)`, cada dia não tem como ter duas linhas da
  * mesma conta: `count(*)` de um dia JÁ É o número de contas distintas, sem
