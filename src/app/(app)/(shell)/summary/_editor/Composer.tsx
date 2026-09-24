@@ -1637,6 +1637,16 @@ export function Composer({
                       nas bordas do `<main>` antes dos 1024px, e o punho sairia
                       da tela sem nada avisando.
 
+                      **Ele é mais ESTREITO que o recuo, e é daí que sai o vão
+                      até o texto.** Com 20px ele preenchia os 20px do `px-5`
+                      inteiros e encostava na primeira letra. O recuo não pode
+                      crescer para abrir espaço (a superfície já avança até a
+                      borda do `<main>` em janela estreita, e mais um pixel para
+                      fora é uma barra de rolagem horizontal), e o punho não
+                      pode sair dele pela mesma razão — então quem cede é o
+                      punho: 16px de alvo com um glifo de 12, que deixa 6px de
+                      ar antes do texto começar.
+
                       **Ele é CENTRADO na superfície**, e não alinhado ao topo
                       dela. Alinhado ao topo ele nasce alto em quase todo bloco
                       e por razões diferentes em cada um: o `h1` empurra o texto
@@ -1660,9 +1670,9 @@ export function Composer({
                       aria-label={`Arrastar o bloco ${i + 1} para outro lugar`}
                       title="Arrastar para mover"
                       {...blockDrag.handleProps(i)}
-                      className="-translate-y-1/2 absolute top-1/2 left-0 hidden size-5 cursor-grab touch-none items-center justify-center rounded-md text-scriba-ink-mute opacity-0 transition-opacity hover:bg-scriba-blue-soft/60 hover:text-scriba-ink focus-visible:opacity-100 active:cursor-grabbing group-hover:opacity-100 sm:flex"
+                      className="-translate-y-1/2 absolute top-1/2 left-0 hidden h-6 w-4 cursor-grab touch-none items-center justify-center rounded-md text-scriba-ink-mute opacity-0 transition-opacity hover:bg-scriba-blue-soft/60 hover:text-scriba-ink focus-visible:opacity-100 active:cursor-grabbing group-hover:opacity-100 sm:flex"
                     >
-                      <GripVertical className="size-3.5" />
+                      <GripVertical className="size-3" />
                     </button>
                   )}
                   {/* `relative` para o ÂNCORA do menu da barra cobrir
