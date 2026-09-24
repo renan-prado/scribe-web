@@ -9,6 +9,16 @@ Gerado por `npm run release` a partir dos Conventional Commits. `feat` sobe o
 minor; o resto sobe o patch. Não edite à mão, a próxima execução escreve por
 cima do topo do arquivo.
 
+## 0.85.0, 2026-09-24, desde v0.84.2
+
+### Novidades
+
+- **admin:** mostra acessos, presença online e gráficos com shadcn charts (`675ce52`)
+
+### Outros
+
+- sincroniza a versão do package-lock.json (`de79937`)
+
 ## 0.84.2, 2026-09-24, desde v0.84.1
 
 ### Correções
