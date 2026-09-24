@@ -1,6 +1,6 @@
 "use client";
 
-import { ChevronRight, Folder as FolderIcon } from "lucide-react";
+import { ArrowLeft, ChevronRight, Folder as FolderIcon } from "lucide-react";
 import { useRouter, useSearchParams } from "next/navigation";
 import { Fragment, useCallback, useEffect, useMemo, useState } from "react";
 import { usePendingCount } from "@/features/session/capture-queue";
@@ -10,7 +10,7 @@ import { PendingCaptures } from "@/features/session/components/PendingCaptures";
 import { SessionsEmptyState } from "@/features/session/components/SessionsEmptyState";
 import { useFolders } from "@/features/session/folders-query";
 import { useLibrary } from "@/features/session/query";
-import { FOLDER_ICON_INK, folderCountLabel, folderPath } from "@/lib/domain/folder";
+import { FOLDER_ICON_INK, folderPath } from "@/lib/domain/folder";
 import type { SessionListItem } from "@/lib/domain/session";
 import { cn } from "@/lib/utils";
 import { monthGroupLabel } from "../lib/format";
@@ -178,10 +178,10 @@ export function LibraryBrowser({ nowIso }: Props) {
           repeti-lo aqui empurraria os cartões para baixo da dobra para dizer o
           que já estava dito. */}
       {folderTrail.length === 0 ? null : (
-        <header className="flex flex-col gap-1.5">
+        <header className="flex flex-col gap-2.5 pb-1">
           <nav
             aria-label="Você está em"
-            className="flex flex-wrap items-center gap-1 px-1 text-[13px]"
+            className="flex flex-wrap items-center gap-1.5 px-1 text-[13px]"
           >
             <button
               type="button"
@@ -207,25 +207,38 @@ export function LibraryBrowser({ nowIso }: Props) {
               </Fragment>
             ))}
           </nav>
-          <h1 className="flex min-w-0 items-center gap-2 px-1">
-            <FolderIcon
-              aria-hidden
-              strokeWidth={1.75}
-              className={cn(
-                "size-5 shrink-0",
-                FOLDER_ICON_INK[folderTrail[folderTrail.length - 1].color ?? "mist"]
-              )}
-            />
-            <span className="truncate font-heading text-xl font-semibold leading-tight tracking-tight text-v2-ink sm:text-2xl">
-              {folderTrail[folderTrail.length - 1].name}
-            </span>
-            <span className="shrink-0 text-[12px] font-light text-v2-ink-mute">
-              {folderCountLabel(
-                (folders ?? []).filter((f) => f.parentId === selectedFolderId).length,
-                sessionsInFolder.length
-              )}
-            </span>
-          </h1>
+          <div className="flex min-w-0 items-center gap-3 px-1">
+            {/* O VOLTAR: um degrau para cima na árvore (a mãe da pasta aberta,
+                ou a raiz quando ela é de primeiro nível). A migalha acima já
+                navega, mas exige mirar num nome de texto; este é o alvo redondo
+                que o polegar já procura no canto de uma tela, o mesmo desenho
+                do voltar da `TopBar` (`ArrowLeft` + chip de 40px). */}
+            <button
+              type="button"
+              onClick={() =>
+                selectFolder(
+                  folderTrail.length >= 2 ? folderTrail[folderTrail.length - 2].id : null
+                )
+              }
+              aria-label="Voltar"
+              className="inline-flex size-10 shrink-0 items-center justify-center rounded-full bg-v2-card text-v2-ink outline-none transition-colors hover:bg-v2-card-hover focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-v2-ink-mute active:brightness-95"
+            >
+              <ArrowLeft aria-hidden className="size-5" strokeWidth={1.75} />
+            </button>
+            <h1 className="flex min-w-0 flex-1 items-center gap-2">
+              <FolderIcon
+                aria-hidden
+                strokeWidth={1.75}
+                className={cn(
+                  "size-5 shrink-0",
+                  FOLDER_ICON_INK[folderTrail[folderTrail.length - 1].color ?? "mist"]
+                )}
+              />
+              <span className="truncate font-heading text-xl font-semibold leading-tight tracking-tight text-v2-ink sm:text-2xl">
+                {folderTrail[folderTrail.length - 1].name}
+              </span>
+            </h1>
+          </div>
         </header>
       )}
 
