@@ -45,7 +45,7 @@ pessoa quiser, aprofundar.
 
 | Onde | O que |
 |---|---|
-| `components/SavedSessionView.tsx` | a tela de uma sessão salva: cabeçalho editável, resumo, estudo, menu |
+| `components/SavedSessionView.tsx` | a tela de uma sessão salva: cabeçalho (só o título se corrige aqui), resumo, menu |
 | `components/SummaryDeck.tsx` | o carrossel resumo ↔ transcrição, e quem busca a transcrição |
 | `components/SummaryView.tsx` + `BlockRenderer.tsx` | os blocos do resumo |
 | `components/StudyBlockRenderer.tsx` | os blocos a MAIS que o estudo tem |

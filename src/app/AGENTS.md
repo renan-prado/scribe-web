@@ -373,7 +373,7 @@ virtual (`?123`, e depois a página dos símbolos), então o único caminho para
 pedir um título custava dois toques antes do primeiro caractere. A fileira traz
 as MESMAS opções do menu (`menuOptions` menos "Parágrafo", que é o que a linha
 já é), uma por glifo num alvo de 40px, a um toque; o `+` fixo na direita abre o
-`SlashMenu` de sempre, com os nomes escritos, a busca e a citação rápida.
+`SlashMenu` de sempre, com os nomes escritos, a busca e a Bíblia digitada.
 
 **Só os GLIFOS, e a FILEIRA não tem fundo: os discos têm.** Com o rótulo ao
 lado cada opção media uns 120px e três delas enchiam a largura da tela; com uma
@@ -471,8 +471,8 @@ ali `==` apareceria como texto, que é pior que o `**`.
 
 Digitar `/` num parágrafo VAZIO abre uma lista vertical com as opções de bloco
 (`menuOptions`). O que se digita depois da barra FILTRA: `/info` deixa
-"Informação", `/atos 1:1` deixa a citação rápida daquela passagem (ver
-"Citação rápida" abaixo). As setas andam (circulares), Enter e Tab escolhem,
+"Informação", `/atos` deixa o livro de Atos e `/atos 1:1` deixa aquela
+passagem (ver "A Bíblia digitada na barra" abaixo). As setas andam (circulares), Enter e Tab escolhem,
 Esc fecha, o mouse escolhe também e passar por cima move o mesmo cursor que as
 setas movem.
 
@@ -651,24 +651,61 @@ Todo item escolhível do diálogo tem `active:` (`LIST_ITEM`): num diálogo em q
 todo toque troca a tela, `hover:` não existe no celular, e sem o afundar do
 toque o dedo pousa no número e nada acontece até a tela seguinte chegar.
 
+**O terceiro passo MOSTRA O TEXTO, e é ele que responde "é esta mesmo?".** A
+prévia abre no CAPÍTULO inteiro — dá para procurar a frase ali mesmo — e
+encolhe para a faixa ao primeiro toque na grade, mostrando exatamente o que o
+bloco vai mostrar. Antes, a grade de números pedia uma escolha que só podia ser
+conferida com o bloco já no documento: quem não sabe o versículo de cor
+escolhia, fechava, lia e voltava para corrigir.
+
+**É UMA busca, e ela é a do capítulo** (`useVerseFetch` na referência sem
+faixa): o recorte é um `filter` no cliente. Buscar a faixa a cada toque seria
+uma requisição por número tocado, contra um limite de 60/min, para receber de
+volta um pedaço do que já está na memória — e a entrada de cache que esta
+semeia é a mesma que a menção de capítulo usa depois. **O hover não mexe na
+prévia**, só a faixa fincada: trocar o texto a cada número sob o mouse
+transformaria a leitura num piscar. Falha de rede não impede a escolha, a grade
+é montada sobre `CHAPTER_VERSE_COUNTS` e não depende de rede nenhuma.
+
 **E o terceiro passo termina no `Concluir`, não no toque.** Fechar a faixa
 fechava o diálogo junto, e quem errava o último versículo por uma casa refazia
 livro e capítulo. Os dois primeiros passos não têm rodapé: ali escolher é
 avançar, e um botão de confirmar seria um segundo jeito de fazer a mesma coisa.
 
-**Editar uma referência que já existe reabre o `PassagePicker` no passo 3, com
-o livro, o capítulo e a faixa que já estavam ali** (`initialReference`), não
-na lista dos 66 livros. Só um bloco NOVO (sem referência ainda) recomeça do
-livro — reabrir do zero uma passagem já escolhida cobraria os dois primeiros
-passos de novo só para corrigir o último versículo por uma casa.
+**O `PassagePicker` abre no passo que a referência recebida já alcança**
+(`initialReference`), e ela pode vir pela metade: `"João 3:16"` (editar um
+bloco que já tem referência) abre no passo 3 com a faixa acesa, `"João 3"`
+abre no passo 3 com "capítulo inteiro" marcado, e `"João"` — a forma que vem
+da barra — abre no passo 2, na grade de capítulos. Só sem referência nenhuma
+ele recomeça da lista dos 66 livros. Cobrar de novo um passo já respondido é
+devolver à pessoa o trabalho que ela acabou de fazer.
 
-**Citação rápida: `/atos 1:1` já É a referência**, e Enter insere o bloco de
-Bíblia direto, sem o seletor de três passos. `parseQuickBibleReference`
-(`blocks.tsx`) usa o MESMO vocabulário de apelidos do resto do produto
-(`lib/bibles/books.ts` — "atos", "at", "1 corintios"…) e confere capítulo e
-versículo contra `CHAPTER_VERSE_COUNTS` antes de oferecer a opção: uma
-referência que não existe não aparece no menu, porque o atalho não insere o
-que a leitura não vai conseguir mostrar depois.
+**A Bíblia digitada na barra: escrever o livro SEMPRE acha o livro.** O que
+vem depois da `/` é lido por `matchBibleQuery` (`blocks.tsx`) contra o MESMO
+vocabulário do resto do produto (`lib/bibles/books.ts` — o nome escrito, os
+apelidos, a sigla do lombo, e o COMEÇO de qualquer um deles a partir de duas
+letras). Cada estágio da digitação tem a sua opção, e nenhum é um beco:
+
+| o que se digitou | o que a opção faz |
+|---|---|
+| `/atos`, `/at`, `/gene` | abre o `PassagePicker` no passo 2, no livro escolhido |
+| `/atos 1` | abre o seletor no passo 3, com o livro e o capítulo postos |
+| `/atos 1:1`, `/at 1:1-4` | insere o bloco direto, sem seletor |
+
+Capítulo e versículo são conferidos contra `CHAPTER_VERSE_COUNTS`, e o que não
+existe REBAIXA o alvo em vez de apagá-lo: `/atos 99` oferece o livro (a grade
+mostra os capítulos que há), `/atos 1:999` oferece o capítulo. O atalho nunca
+insere uma referência que a leitura não vai conseguir mostrar depois, e nunca
+responde "Nada com…" a um livro da Bíblia — que era o que fazia antes de o
+versículo estar escrito, e lia como "este produto não cita a Bíblia".
+
+**A Bíblia vem na FRENTE das opções de bloco quando o livro está escrito
+inteiro** (ou quando já há um número depois dele), e atrás quando é só o começo
+de uma palavra: `/tito` é o livro, mas `/ti` ainda é o começo de "Título" tanto
+quanto o de "Tiago", e o Enter escolhe o primeiro da lista. Quando o começo
+serve a vários livros, todos aparecem (até cinco): `/jo` traz João — a sigla
+`Jo` ganha do nome de Jó, que os acentos perdidos na normalização empatariam —,
+e logo abaixo Jó, Joel, Jonas e Josué.
 
 **O bloco de Bíblia guarda só a REFERÊNCIA.** (Ele se chamava "Passagem
 bíblica" no menu, e a palavra a mais descrevia o RECORTE numa fileira em que

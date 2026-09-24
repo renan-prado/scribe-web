@@ -70,12 +70,15 @@ export type BlockOption = {
  * lugares diferentes. Quem trata a diferença é o `Composer`: a ideia central
  * abre o campo do cabeçalho em vez de virar um bloco na posição escolhida.
  *
- * `"quickBibleQuote"` é a terceira exceção: a citação rápida da barra
- * (`/atos 1:1`, ver `parseQuickBibleReference`). Não é bloco do schema nem
- * campo do payload — é uma ENTRADA A MAIS que a barra reconhece no meio do
- * que se digita, e por isso nunca entra em `BLOCK_OPTIONS`.
+ * O `BibleTarget` é a terceira exceção: a Bíblia reconhecida no meio do que se
+ * digita (`/atos`, `/atos 1`, `/atos 1:1`, ver `matchBibleQuery`). Não é bloco
+ * do schema nem campo do payload — é uma ENTRADA A MAIS que a barra monta a
+ * partir do texto, e por isso nunca entra em `BLOCK_OPTIONS`. É também o único
+ * `pick` que CARREGA dado (qual livro, qual capítulo): os outros são um nome
+ * de tipo e nada mais, e por isso este é um objeto onde os outros são string
+ * — `typeof pick === "string"` é o que separa os dois no `Composer`.
  */
-export type BlockPick = WrittenBlockType | "leadIdea" | "quickBibleQuote";
+export type BlockPick = WrittenBlockType | "leadIdea" | BibleTarget;
 
 export type MenuOption = {
   type: BlockPick;
@@ -228,66 +231,164 @@ export const BLOCK_PLACEHOLDERS: Record<WrittenBlockType, string> = {
   conclusion: "O que fica da mensagem",
 };
 
-const QUICK_REFERENCE_RE = /^(.+?)\s+(\d{1,3})(?::(\d{1,3})(?:-(\d{1,3}))?)?$/;
+/**
+ * O ALVO de uma opção de Bíblia da barra: o que escolhê-la FAZ.
+ *
+ * São três porque o que se digitou pode estar em três estágios, e cada um tem
+ * uma continuação óbvia — nenhum deles é um beco:
+ *
+ * - `passage` — `/atos 1:1`, `/at 1:1-4`: a referência está pronta, e escolher
+ *   insere o bloco direto, sem seletor.
+ * - `chapter` — `/atos 1`: falta o versículo, e o `PassagePicker` abre no
+ *   passo 3, com o livro e o capítulo já postos.
+ * - `book` — `/atos`, `/at`: falta tudo depois do livro, e o seletor abre no
+ *   passo 2, na grade de capítulos daquele livro.
+ *
+ * **Um pedaço que não existe REBAIXA o alvo, não o apaga.** `Atos 99` vira o
+ * alvo `book` (o capítulo não existe, mas o livro existe e a grade mostra os
+ * que há), e `Atos 1:999` vira `chapter`. O menu sempre oferece o passo mais
+ * fundo que a digitação sustenta, e quem termina de escolher é o seletor.
+ */
+export type BibleTarget =
+  | { kind: "passage"; reference: string }
+  | { kind: "chapter"; book: string; chapter: number }
+  | { kind: "book"; book: string };
 
 /**
- * O livro por trás de "atos", "1 corintios" (nome escrito, `abbrevFor`) OU
- * "at", "rm", "1co" (a SIGLA, sem acento e em qualquer caixa — quem digita
- * rápido usa a abreviação do rótulo do lombo da Bíblia, não o nome por
- * extenso). `abbrevFor` só entende a primeira forma; a segunda casa contra o
- * `abbrev` de `BOOK_CANON` normalizado do mesmo jeito.
+ * `exact` = o livro foi escrito INTEIRO (nome ou sigla), ou já há um número
+ * depois dele. É o que decide se as opções de Bíblia entram ANTES ou DEPOIS
+ * das opções de bloco no menu: `/tito` é o livro, mas `/ti` ainda é o começo
+ * de "Título" tanto quanto de "Tiago". Ver `slashOptions` no `Composer`.
  */
-function resolveQuickBook(bookRaw: string): CanonBook | undefined {
-  const abbrev = abbrevFor(bookRaw);
-  if (abbrev) return BOOK_CANON.find((b) => b.abbrev === abbrev);
-  const normalized = normalizeBookName(bookRaw);
-  return BOOK_CANON.find((b) => normalizeBookName(b.abbrev) === normalized);
+export type BibleQueryResult = { exact: boolean; targets: BibleTarget[] };
+
+/** Quantos livros o menu oferece quando o começo digitado serve a vários. */
+const MAX_BOOK_MATCHES = 5;
+
+const BIBLE_QUERY_RE = /^(.+?)(?:\s+(\d{1,3})(?:\s*:\s*(\d{1,3})(?:\s*-\s*(\d{1,3}))?)?)?$/;
+
+/**
+ * Os livros por trás do que foi digitado, do mais certo ao menos certo.
+ *
+ * Três formas, nesta ordem, e a ordem é a resposta para o empate:
+ *
+ * 1. **A SIGLA exata** do lombo da Bíblia (`at`, `rm`, `1co`), em qualquer
+ *    caixa, primeiro COM o acento e depois sem. Ela vem na frente porque é o
+ *    que digita quem tem pressa, e porque é o acento dela que decide o caso
+ *    `jo`: `Jo` é João e `Jó` é Jó, dois livros que a normalização empata. Quem
+ *    escreve `/jo 3:16` quer João, quem escreve `/jó` quer Jó, e o outro fica
+ *    logo abaixo na lista.
+ * 2. **O nome escrito**, com todos os apelidos de `BOOK_ABBREVS` ("atos dos
+ *    apostolos", "i corintios", "revelacao").
+ * 3. **O COMEÇO** do nome ou da sigla, a partir de duas letras: `/gene` acha
+ *    Gênesis, `/1co` acha 1 Coríntios, `/jo` acha também Joel, Jonas e Josué.
+ *    É o que faz o menu responder enquanto se digita, em vez de só no instante
+ *    em que a palavra fecha.
+ */
+function resolveBooks(raw: string): { exact: boolean; books: CanonBook[] } {
+  const norm = normalizeBookName(raw);
+  if (!norm) return { exact: false, books: [] };
+  const books: CanonBook[] = [];
+  const push = (book: CanonBook | undefined) => {
+    if (book && !books.includes(book)) books.push(book);
+  };
+
+  // A sigla COM o acento primeiro, e é ela que resolve `jo`: "Jó" e "Jo" são
+  // siglas de livros diferentes, e a normalização — que come os acentos —
+  // empata as duas. Quem digita "jó" quer Jó; quem digita "jo" quer João.
+  const lower = raw.trim().toLowerCase();
+  push(BOOK_CANON.find((b) => b.abbrev.toLowerCase() === lower));
+  push(BOOK_CANON.find((b) => normalizeBookName(b.abbrev) === norm));
+  const abbrev = abbrevFor(raw);
+  if (abbrev) push(BOOK_CANON.find((b) => b.abbrev === abbrev));
+  const exact = books.length > 0;
+
+  // O COMEÇO, com os espaços fora dos dois lados: quem digita rápido escreve
+  // "1cor", e "1 coríntios" tem um espaço ali que a pressa não tem.
+  if (norm.length >= 2) {
+    const squashed = norm.replace(/\s+/g, "");
+    for (const b of BOOK_CANON) {
+      const name = normalizeBookName(b.name).replace(/\s+/g, "");
+      const abbr = normalizeBookName(b.abbrev).replace(/\s+/g, "");
+      if (name.startsWith(squashed) || abbr.startsWith(squashed)) push(b);
+    }
+  }
+  return { exact, books: books.slice(0, MAX_BOOK_MATCHES) };
+}
+
+/** O alvo mais fundo que este livro sustenta com o número (ou a falta dele). */
+function targetFor(
+  canon: CanonBook,
+  chapterStr: string | undefined,
+  startStr: string | undefined,
+  endStr: string | undefined
+): BibleTarget {
+  const book = canon.name;
+  if (!chapterStr) return { kind: "book", book };
+  const chapter = Number.parseInt(chapterStr, 10);
+  if (chapter < 1 || chapter > chapterCountFor(book)) return { kind: "book", book };
+  if (!startStr) return { kind: "chapter", book, chapter };
+  const start = Number.parseInt(startStr, 10);
+  const end = endStr ? Number.parseInt(endStr, 10) : start;
+  const verses = chapterVerseCount(book, chapter) ?? 0;
+  if (start < 1 || end < start || end > verses) return { kind: "chapter", book, chapter };
+  // BYTE A BYTE a string que o `PassagePicker` produziria escolhendo a mesma
+  // passagem nos três passos, porque é ela que vira a chave do cache de
+  // `PassageVerses` (ver `lib/domain/reference.ts`).
+  return { kind: "passage", reference: formatPassageRange(book, chapter, start, end) };
 }
 
 /**
- * A citação rápida da barra: `/atos 1:1` ou `/at 1:1` já é a referência, sem
- * passar pelo `PassagePicker`.
+ * O que a barra oferece quando o que se digitou depois dela parece Bíblia.
  *
- * **É o mesmo vocabulário do resto do produto**, e não um parser novo: o
- * nome do livro passa por `resolveQuickBook` (nome escrito OU sigla — os
- * mesmos apelidos de `lib/bibles/books.ts`), e capítulo e versículo são
- * conferidos contra `CHAPTER_VERSE_COUNTS` antes de virar referência. Uma
- * referência que não existe (`Atos 99`) devolve `null`, e a barra
- * simplesmente não oferece a opção — ela não insere o que não pode ler
- * depois.
+ * **Digitar o livro SEMPRE encontra o livro.** A versão anterior só oferecia
+ * alguma coisa quando a referência inteira já estava certa (`/atos 1:1`), e
+ * até lá a barra respondia "Nada com 'atos'" — que lê como "este produto não
+ * cita a Bíblia", e não como "falta terminar de digitar". Agora cada estágio
+ * da digitação tem a sua opção, e escolher qualquer uma leva ao passo
+ * seguinte em vez de pedir que se comece de novo. Ver `BibleTarget`.
  *
- * A string devolvida é BYTE A BYTE a mesma que o `PassagePicker` produziria
- * escolhendo a mesma passagem nos três passos (`formatPassageRange`, sem
- * faixa quando só há capítulo), porque é essa string que vira a chave do
- * cache de `PassageVerses` (ver `lib/domain/reference.ts`).
+ * O vocabulário é o mesmo do resto do produto (`lib/bibles/books.ts`), e
+ * capítulo e versículo são conferidos contra `CHAPTER_VERSE_COUNTS` antes de
+ * virarem referência: o atalho não insere o que a leitura não vai conseguir
+ * mostrar depois.
  */
-export function parseQuickBibleReference(query: string): string | null {
-  const m = QUICK_REFERENCE_RE.exec(query.trim());
-  if (!m) return null;
+export function matchBibleQuery(query: string): BibleQueryResult {
+  const m = BIBLE_QUERY_RE.exec(query.trim());
+  if (!m) return { exact: false, targets: [] };
   const [, bookRaw, chapterStr, startStr, endStr] = m;
-  const canon = resolveQuickBook(bookRaw);
-  if (!canon) return null;
-  const chapter = Number.parseInt(chapterStr, 10);
-  if (chapter < 1 || chapter > chapterCountFor(canon.name)) return null;
-  if (!startStr) return `${canon.name} ${chapter}`;
-  const start = Number.parseInt(startStr, 10);
-  const end = endStr ? Number.parseInt(endStr, 10) : start;
-  const verses = chapterVerseCount(canon.name, chapter) ?? 0;
-  if (start < 1 || end < start || end > verses) return null;
-  return formatPassageRange(canon.name, chapter, start, end);
+  const { exact, books } = resolveBooks(bookRaw);
+  if (books.length === 0) return { exact: false, targets: [] };
+  return {
+    exact: exact || chapterStr !== undefined,
+    targets: books.map((b) => targetFor(b, chapterStr, startStr, endStr)),
+  };
+}
+
+/**
+ * O nome do alvo na tela: "Atos", "Atos 1", "Atos 1:1-4".
+ *
+ * É a mesma string nos dois usos, e de propósito: ela é o RÓTULO da opção no
+ * menu e, quando ainda falta escolher, a referência PARCIAL entregue ao
+ * `PassagePicker` (`initialReference`), que a lê de volta para saber em que
+ * passo abrir. Um segundo formato entre os dois lados faria a opção dizer uma
+ * coisa e o seletor abrir noutra.
+ */
+export function bibleTargetLabel(target: BibleTarget): string {
+  if (target.kind === "passage") return target.reference;
+  if (target.kind === "chapter") return `${target.book} ${target.chapter}`;
+  return target.book;
 }
 
 /**
  * O texto depois da barra PARECE uma referência em andamento — letras
- * seguidas, mais adiante, de um número —, mesmo quando `parseQuickBibleReference`
- * ainda devolve `null`: falta o versículo (`/rm 12`), o livro tem um erro de
- * digitação (`/romanaos 12:1`), ou o capítulo passou do que o livro tem.
+ * seguidas, mais adiante, de um número —, mesmo quando `matchBibleQuery` não
+ * achou livro nenhum: o nome tem um erro de digitação (`/romanaos 12:1`), ou
+ * é um apelido que o vocabulário não conhece.
  *
- * Sem isto, a barra só mostra alguma opção quando o texto já está CERTO, e
- * até lá ela responde "Nada com…" — que lê como "isto não existe", não como
- * "falta terminar de digitar". Quando isto é verdade e a citação rápida não
- * resolveu, a barra oferece "Bíblia" (o seletor completo) no lugar: sempre
- * um caminho para a frente, nunca um beco.
+ * Quando isto é verdade e nenhuma outra opção sobrou, a barra oferece
+ * "Bíblia" (o seletor completo) no lugar: sempre um caminho para a frente,
+ * nunca um beco.
  */
 export function looksLikeBibleQuery(query: string): boolean {
   return /\p{L}.*\d/u.test(query);

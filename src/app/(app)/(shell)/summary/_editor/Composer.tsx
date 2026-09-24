@@ -59,11 +59,12 @@ import {
   BLOCK_OPTIONS,
   BLOCK_PLACEHOLDERS,
   type BlockPick,
+  bibleTargetLabel,
   emptyBlock,
   LEAD_OPTION,
   looksLikeBibleQuery,
   type MenuOption,
-  parseQuickBibleReference,
+  matchBibleQuery,
 } from "./blocks";
 import { PassagePicker } from "./PassagePicker";
 import { type SaveStatus, useWrittenDraft } from "./useWrittenDraft";
@@ -206,11 +207,21 @@ export function Composer({
   const [bibloThinking, setBibloThinking] = useState(false);
 
   /**
-   * Mesmo PATCH que a leitura usa (`/api/sessions/:id`), e por isso só chama
-   * com `sessionId`: a rota confere dono numa linha que precisa existir, e
-   * antes do primeiro salvamento não há linha nenhuma para o "Autor"
-   * apontar — o campo simplesmente não aparece até lá (ver o `sessionId ?`
-   * abaixo).
+   * O MESMO PATCH que a leitura usa para o título (`/api/sessions/:id`), e por
+   * isso só chama com `sessionId`: a rota confere dono numa linha que precisa
+   * existir, e antes do primeiro salvamento não há linha nenhuma para o
+   * "Autor" apontar — o campo simplesmente não aparece até lá (ver o
+   * `sessionId ?` abaixo).
+   *
+   * **Este é o único lugar do produto onde autor e local se escrevem.** A
+   * leitura os MOSTRA e não os edita mais (ver o cabeçalho do
+   * `SavedSessionView`).
+   *
+   * O `router.refresh()` no fim é o que impede o nome novo de sumir na volta:
+   * a leitura é uma rota adiantada inteira no `pointerdown` do botão que traz
+   * para cá (`prefetchOnPress`, ver `NavLink`), e um prefetch completo fica
+   * guardado no cliente por cinco minutos. Sem jogar essa cópia fora, voltar
+   * para `/summary/:id` mostra o autor de antes, com o banco já gravado.
    */
   async function patchSpeakerField(field: "speakerName" | "speakerLocation", value: string) {
     if (!sessionId) return;
@@ -222,6 +233,7 @@ export function Composer({
     if (!res.ok) throw new Error("update failed");
     if (field === "speakerName") setSpeakerName(value || null);
     else setSpeakerLocation(value || null);
+    router.refresh();
   }
 
   const speakerInitials = initialsOf(speakerName);
@@ -269,6 +281,13 @@ export function Composer({
   const [selectedIn, setSelectedIn] = useState<number | null>(null);
   /** O bloco de passagem cujo seletor está aberto. `-1` = um bloco novo. */
   const [pickerFor, setPickerFor] = useState<number | null>(null);
+  /**
+   * O COMEÇO da referência, quando o seletor foi aberto pela barra com um
+   * livro já digitado (`/atos`, `/atos 1`). É uma referência PARCIAL — só o
+   * livro, ou livro e capítulo —, e é o `PassagePicker` que traduz cada forma
+   * no passo em que abrir. `null` = o seletor começa dos 66 livros.
+   */
+  const [pickerSeed, setPickerSeed] = useState<string | null>(null);
   const [leaving, setLeaving] = useState(false);
 
   const refs = useRef<(HTMLTextAreaElement | null)[]>([]);
@@ -630,33 +649,44 @@ export function Composer({
    */
   const slashQuery = slash !== null ? (doc.blocks[slash.index]?.text ?? "").slice(1) : "";
   /**
-   * A citação rápida: `/atos 1:1` já É a referência, e não uma busca por
-   * "Bíblia". Quando o que vem depois da barra resolve contra
-   * `parseQuickBibleReference`, ela entra como a PRIMEIRA opção — na prática a
-   * única, porque uma referência não casa com nenhum `label` de
-   * `BLOCK_OPTIONS` — e escolhê-la insere o bloco direto, sem o seletor de
-   * três passos.
+   * A Bíblia reconhecida no meio do que se digita — o livro, o livro e o
+   * capítulo, ou a referência inteira (ver `matchBibleQuery`).
+   *
+   * **Digitar o livro sempre acha o livro.** Antes, só a referência COMPLETA
+   * virava opção, e `/atos` respondia "Nada com 'atos'": a barra parecia não
+   * citar a Bíblia até o instante exato em que passava a citar. Cada estágio
+   * tem agora a sua opção, e escolher leva ao passo seguinte — direto ao
+   * bloco quando a referência fechou, ao `PassagePicker` já dentro do livro
+   * (ou do capítulo) quando ainda falta escolher.
    */
-  const quickBibleRef = slash !== null ? parseQuickBibleReference(slashQuery) : null;
+  const bible = matchBibleQuery(slashQuery);
+  const bibleOptions: MenuOption[] = bible.targets.map((target) => ({
+    type: target,
+    label: bibleTargetLabel(target),
+    hint:
+      target.kind === "passage"
+        ? "Inserir esta passagem"
+        : target.kind === "chapter"
+          ? "Escolher os versículos"
+          : "Escolher capítulo e versículo",
+    icon: <BookGlyph className="size-3" />,
+  }));
   const slashOptions = (() => {
     if (slash === null) return [];
     const q = normalizeSearch(slashQuery).trim();
     const base = !q ? menuOptions : menuOptions.filter((o) => normalizeSearch(o.label).includes(q));
-    if (quickBibleRef) {
-      const quick: MenuOption = {
-        type: "quickBibleQuote",
-        label: quickBibleRef,
-        hint: "Inserir esta passagem",
-        icon: <BookGlyph className="size-3" />,
-      };
-      return [quick, ...base];
+    // A Bíblia vem NA FRENTE quando o livro já está escrito inteiro (ou já há
+    // um número depois dele), e ATRÁS quando é só o começo de uma palavra:
+    // `/tito` é o livro, mas `/ti` ainda é o começo de "Título" tanto quanto
+    // o de "Tiago", e o Enter escolhe o primeiro da lista. Ver `exact` em
+    // `matchBibleQuery`.
+    if (bibleOptions.length > 0) {
+      return bible.exact ? [...bibleOptions, ...base] : [...base, ...bibleOptions];
     }
-    // A referência ainda não fechou — falta o versículo, o livro tem um erro
-    // de digitação, ou o capítulo não existe — mas o formato (letras, depois
-    // um número) já diz que é isto que a pessoa está tentando. Sem esta
-    // saída, a lista fica vazia ("Nada com…") do primeiro número digitado
-    // até a referência ficar byte a byte certa, e a barra parece não
-    // suportar citar a Bíblia até o instante em que ela funciona. Ver
+    // Nenhum livro reconhecido, mas o formato (letras, depois um número) diz
+    // que é isto que a pessoa está tentando — um erro de digitação no nome,
+    // um apelido que o vocabulário não conhece. Oferecer o seletor completo é
+    // um caminho para a frente onde havia um "Nada com…". Ver
     // `looksLikeBibleQuery`.
     if (base.length === 0 && looksLikeBibleQuery(slashQuery)) {
       const bibleOption = menuOptions.find((o) => o.type === "bibleQuote");
@@ -678,14 +708,21 @@ export function Composer({
       askLead();
       return;
     }
-    if (pick === "quickBibleQuote") {
-      // Mesmo desenho do `bibleQuote` via seletor, um parágrafo abaixo: o
-      // parágrafo esvazia, o bloco de Bíblia entra na posição da linha, e o
-      // parágrafo vazio desce para continuar a escrita — só que aqui a
-      // referência já está pronta, sem abrir o `PassagePicker`.
-      if (!quickBibleRef) return;
+    if (typeof pick !== "string") {
+      // A Bíblia digitada na barra. Nos três estágios o desenho é o mesmo do
+      // `bibleQuote` pelo seletor — o parágrafo esvazia e o bloco entra na
+      // posição da linha —; o que muda é quanto do caminho já foi andado. Com
+      // a referência inteira não há o que escolher, e o seletor nem chega a
+      // abrir; com o livro (ou o livro e o capítulo), ele abre JÁ DENTRO, no
+      // passo que falta.
       setBlock(index, { text: "" });
-      insertAt(index, { type: "bibleQuote", reference: quickBibleRef, text: "" });
+      if (pick.kind === "passage") {
+        insertAt(index, { type: "bibleQuote", reference: pick.reference, text: "" });
+        return;
+      }
+      setPendingIndex(index);
+      setPickerSeed(bibleTargetLabel(pick));
+      setPickerFor(-1);
       return;
     }
     if (pick === "bibleQuote") {
@@ -695,6 +732,7 @@ export function Composer({
       // que é onde se continua escrevendo.
       setBlock(index, { text: "" });
       setPendingIndex(index);
+      setPickerSeed(null);
       setPickerFor(-1);
       return;
     }
@@ -988,6 +1026,13 @@ export function Composer({
     setLeaving(true);
     const sentId = await flush();
     if (sentId) {
+      // O texto acabou de mudar no banco, e a leitura pode estar GUARDADA no
+      // cliente: o cartão da Biblioteca adianta `/summary/:id` inteiro no
+      // toque (`prefetchOnPress`, ver `NavLink`), e um prefetch completo vale
+      // cinco minutos. Sem esta linha, "Salvar" abre o resumo de antes da
+      // edição — o sintoma clássico dele é recarregar a página e ver o texto
+      // certo. `refresh` é a única alavanca do cliente sobre esse cache.
+      router.refresh();
       router.push(`/summary/${sentId}`);
       return;
     }
@@ -1388,12 +1433,14 @@ export function Composer({
       <PassagePicker
         open={pickerFor !== null}
         // Editando uma referência que já existe, o seletor abre direto no
-        // capítulo/versículo atual — não na lista de livros. `null` (bloco
-        // novo, `pickerFor === -1`) mantém o começo do zero de sempre.
+        // capítulo/versículo atual — não na lista de livros. Num bloco NOVO
+        // (`pickerFor === -1`) vale o que a barra já sabia: o livro digitado,
+        // o livro e o capítulo, ou nada (`pickerSeed`), e aí o começo do zero
+        // de sempre.
         initialReference={
           pickerFor !== null && pickerFor >= 0
             ? ((doc.blocks[pickerFor] as { reference?: string } | undefined)?.reference ?? null)
-            : null
+            : pickerSeed
         }
         onOpenChange={(v) => {
           if (!v) setPickerFor(null);
@@ -1784,7 +1831,10 @@ function SlashMenu({
       >
         {options.map((o, i) => (
           <button
-            key={o.type}
+            // O rótulo, e não o `type`: as opções de Bíblia trazem um OBJETO
+            // ali (qual livro, qual capítulo), e não há duas com o mesmo nome
+            // na lista.
+            key={o.label}
             type="button"
             // `onMouseDown` com `preventDefault`, e não `onClick`: um clique tira
             // o foco da `textarea` antes de o handler rodar, e sem o foco o

@@ -1,6 +1,6 @@
 "use client";
 
-import { Folder as FolderIcon, MapPin, Pencil, PenLine, Plus } from "lucide-react";
+import { Folder as FolderIcon, MapPin, Pencil, PenLine } from "lucide-react";
 import { useRouter } from "next/navigation";
 import type { ReactNode } from "react";
 import { useState } from "react";
@@ -9,7 +9,6 @@ import { LinkPendingSwap, NavLink } from "@/components/NavLink";
 import { PageBlurOverlay } from "@/components/PageBlurOverlay";
 import { useCoinsStore } from "@/features/coins/store";
 import { ConfirmDialog } from "@/features/session/components/ConfirmDialog";
-import { EntityFieldDialog } from "@/features/session/components/EntityFieldDialog";
 import { HallucinationReportDialog } from "@/features/session/components/HallucinationReportDialog";
 import { MoveToFolderDialog } from "@/features/session/components/MoveToFolderDialog";
 import { SessionMenu } from "@/features/session/components/SessionMenu";
@@ -18,7 +17,6 @@ import { SummaryFindArea, SummaryFindBar } from "@/features/session/components/S
 import { SummaryView } from "@/features/session/components/SummaryView";
 import { TitleDialog } from "@/features/session/components/TitleDialog";
 import { useFolders } from "@/features/session/folders-query";
-import { requestLocationSuggestions, requestSpeakerSuggestions } from "@/features/session/lib/api";
 import { initialsOf } from "@/features/session/lib/text";
 import { useLibrarySync, useLibraryWriter } from "@/features/session/query";
 import { FOLDER_ICON_INK, folderPath } from "@/lib/domain/folder";
@@ -26,8 +24,7 @@ import type { SessionMode } from "@/lib/domain/session";
 import type { SummaryPayload } from "@/lib/domain/summary";
 import { cn } from "@/lib/utils";
 
-/** Neutral pill matching the "Salvo" / "Estudo" family for "add missing meta"
- * CTAs. Rendered when speaker or location is unknown. */
+/** A pastilha neutra da família "Salvo": hoje ela veste só o "Editar". */
 const ADD_BADGE_CLASSES = cn(
   "inline-flex items-center gap-1 rounded-full bg-scriba-ink-mute/10 px-2.5 py-1 text-[11px] font-semibold uppercase tracking-wider text-scriba-ink-soft outline-none transition-colors",
   "hover:bg-scriba-blue-soft/70 hover:text-scriba-blue-ink focus-visible:ring-2 focus-visible:ring-ring/40"
@@ -36,10 +33,17 @@ const ADD_BADGE_CLASSES = cn(
 /**
  * A tela de uma sessão salva: cabeçalho editável, o resumo e o menu.
  *
- * Título, autor e local são cada um o seu próprio diálogo, abertos pela
- * pastilha correspondente — a edição acontece no lugar em que o dado está, e
- * não num formulário com os três campos que obrigaria a procurar o que se veio
- * corrigir.
+ * **Daqui só se corrige o TÍTULO**, num diálogo aberto pelo próprio título.
+ * Autor e local são MOSTRADOS, e quem os escreve é o editor (`/summary/:id/edit`,
+ * ver o `Composer`), a um toque no "Editar" ao lado.
+ *
+ * Eles já foram editáveis aqui também, e o que isso produzia era a mesma
+ * pergunta respondida em duas telas: a leitura ganhava dois diálogos e duas
+ * pastilhas de "Adicionar…" no meio do que existe para ser LIDO, e a pessoa
+ * que corrigia um nome aqui e outro lá acabava com duas ideias de onde se
+ * mexe no cabeçalho de uma sessão. A leitura fica com a edição RÁPIDA do
+ * título — o campo que se relê toda vez e se corrige na hora — e o resto mora
+ * onde se edita.
  *
  * **O CORPO são dois slides, não um** (`SummaryDeck`): o resumo e, quando a
  * sessão tem uma, a transcrição, com os pontinhos em cima. A transcrição já
@@ -131,8 +135,8 @@ export function SavedSessionView({
   createdAtShortLabel,
   durationLabel,
   durationMs,
-  speakerName: initialSpeakerName,
-  speakerLocation: initialSpeakerLocation,
+  speakerName,
+  speakerLocation,
   hasTranscript,
   summary,
   header,
@@ -141,8 +145,6 @@ export function SavedSessionView({
   folderId: initialFolderId = null,
 }: SavedSessionViewProps) {
   const [titleDialogOpen, setTitleDialogOpen] = useState(false);
-  const [speakerDialogOpen, setSpeakerDialogOpen] = useState(false);
-  const [locationDialogOpen, setLocationDialogOpen] = useState(false);
   const [reprocessing, setReprocessing] = useState(false);
   const [reportOpen, setReportOpen] = useState(false);
   const [deleteOpen, setDeleteOpen] = useState(false);
@@ -171,8 +173,6 @@ export function SavedSessionView({
   useLibrarySync(id);
 
   const [title, setTitle] = useState(initialTitle);
-  const [speakerName, setSpeakerName] = useState(initialSpeakerName);
-  const [speakerLocation, setSpeakerLocation] = useState(initialSpeakerLocation);
 
   async function handleDelete() {
     // OTIMISTA: o cartão sai da Biblioteca ANTES da resposta. É o que permite
@@ -220,27 +220,39 @@ export function SavedSessionView({
     }
   }
 
-  async function patchField(field: "title" | "speakerName" | "speakerLocation", value: string) {
-    const body = { [field]: value || null };
-    // O mesmo de `handleDelete`, e pela mesma razão: o cartão da Biblioteca
-    // mostra autor e título, e sem isto renomear aqui deixaria a lista com o
-    // nome velho até a próxima revalidação. `speakerLocation` entra junto
-    // porque a BUSCA procura por local, mesmo o cartão não o exibindo.
-    const undo = library.patch(id, { [field]: value || null });
+  /**
+   * Renomear, do diálogo do título. É o único campo que esta tela escreve.
+   *
+   * **Três lugares guardam este nome, e os três precisam saber.** O estado
+   * daqui (o `<h1>` na tela), o cartão da Biblioteca guardado no aparelho
+   * (`library.patch`, o mesmo otimismo de `handleDelete`: sem ele a lista fica
+   * com o nome velho até a próxima revalidação) e o CACHE DE ROTA do
+   * navegador.
+   *
+   * O terceiro é o que faltava, e o defeito que ele causava parecia perda de
+   * dado: renomear, sair, e reabrir pelo "Editar" trazia o nome ANTIGO de
+   * volta. A rota `/summary/:id/edit` é adiantada inteira no `pointerdown` do
+   * botão (`prefetchOnPress`, ver `NavLink`), e uma rota adiantada assim fica
+   * guardada no cliente por CINCO MINUTOS (o `staleTimes.static` do Next, que
+   * vale para todo prefetch completo). O servidor já tinha o nome novo; quem
+   * respondia era a cópia guardada antes da troca. `router.refresh()` joga
+   * essa cópia fora — é a única alavanca que o cliente tem sobre esse cache.
+   */
+  async function renameTitle(value: string) {
+    const undo = library.patch(id, { title: value || null });
     try {
       const res = await fetch(`/api/sessions/${id}`, {
         method: "PATCH",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify(body),
+        body: JSON.stringify({ title: value || null }),
       });
       if (!res.ok) throw new Error("update failed");
     } catch (error) {
       undo();
       throw error;
     }
-    if (field === "title") setTitle(value || title);
-    else if (field === "speakerName") setSpeakerName(value || null);
-    else setSpeakerLocation(value || null);
+    setTitle(value || title);
+    router.refresh();
   }
 
   async function handleMoveToFolder(nextFolderId: string | null) {
@@ -305,39 +317,30 @@ export function SavedSessionView({
             termo não acende dentro de um diálogo fechado, que contaria
             ocorrências que ninguém vê. */}
       <SummaryFindArea className="mx-auto flex w-full max-w-3xl flex-col gap-6 sm:gap-8">
-        {/* O holofote do passo "Título, autor e local são seus" recorta o
-              cabeçalho INTEIRO, e não só o título: os três campos editáveis moram
-              aqui, e apontar para um deles deixaria os outros dois sem explicação
-              na única tela em que eles aparecem. */}
+        {/* O holofote do passo "O título é seu" recorta o cabeçalho INTEIRO, e
+              não só o título: autor, local e o "Editar" que os escreve moram
+              aqui, e apontar só para o título deixaria sem explicação a linha
+              que o passo manda procurar. */}
         <header data-tour="summary-header" className="flex flex-col gap-3">
           <div className="flex items-center justify-between gap-3">
+            {/* O autor, escrito. Sem autor não há pastilha nenhuma no lugar:
+                quem o acrescenta é o editor, e um "Adicionar autor" aqui seria
+                a segunda porta para a mesma coisa. Ver o cabeçalho. */}
             {speakerName?.trim() ? (
-              <button
-                type="button"
-                onClick={() => setSpeakerDialogOpen(true)}
-                className={cn(
-                  "group inline-flex items-center gap-2 rounded-full -mx-1 px-1 py-0.5 outline-none transition-colors",
-                  "hover:bg-scriba-blue-soft/60 focus-visible:ring-2 focus-visible:ring-ring/40"
-                )}
-              >
+              <span className="inline-flex items-center gap-2">
                 <span className="flex size-6 items-center justify-center rounded-full bg-scriba-blue-soft text-[10px] font-semibold text-scriba-blue-ink">
                   {initials}
                 </span>
                 <span className="text-sm font-medium leading-none text-scriba-ink">
                   {speakerName}
                 </span>
-              </button>
-            ) : (
-              <button
-                type="button"
-                onClick={() => setSpeakerDialogOpen(true)}
-                className={ADD_BADGE_CLASSES}
-              >
-                <Plus className="size-3" strokeWidth={2.5} />
-                Adicionar autor
-              </button>
-            )}
-            <div className="flex items-center gap-2">
+              </span>
+            ) : null}
+            {/* `ms-auto` porque o vizinho da esquerda pode não existir: com um
+                filho só, o `justify-between` o encostaria na ESQUERDA, e o
+                "Editar" trocaria de lado conforme a sessão tivesse autor ou
+                não. */}
+            <div className="ms-auto flex items-center gap-2">
               <span
                 role="status"
                 aria-label="Sessão salva"
@@ -356,9 +359,9 @@ export function SavedSessionView({
                     pontinhos. Ele era a ação mais usada do menu e estava no
                     lugar das raras — apagar, reprocessar, reportar erro —, o
                     que cobrava dois toques por aquilo que se faz toda vez que a
-                    IA erra um nome. A pastilha é a MESMA do "Adicionar autor"
-                    (`ADD_BADGE_CLASSES`), porque é a mesma promessa: toque aqui
-                    e conserte o que está na tela.
+                    IA erra um nome. E hoje ele é a ÚNICA porta para o autor e
+                    o local, que deixaram de ser editáveis aqui: o que esta
+                    tela ainda corrige sozinha é o título.
 
                     Ele é um `NavLink` e não um `button` com `push`: o destino é
                     uma ROTA, e como link ele ganha o abrir em nova aba, o
@@ -450,15 +453,11 @@ export function SavedSessionView({
 
           <div className="flex flex-col items-start gap-3 sm:flex-row sm:items-end sm:justify-between">
             <div className="flex min-w-0 flex-col gap-1">
+              {/* O local, escrito, pela mesma razão do autor logo acima. Sem
+                  local o `compact` ainda precisa da data, que mora nesta linha
+                  — e é só ela que sobra. */}
               {speakerLocation?.trim() ? (
-                <button
-                  type="button"
-                  onClick={() => setLocationDialogOpen(true)}
-                  className={cn(
-                    "group -mx-1 inline-flex w-fit items-center gap-1.5 rounded-md px-1 py-0.5 text-xs font-light text-scriba-ink-mute outline-none transition-colors",
-                    "hover:bg-scriba-blue-soft/60 focus-visible:ring-2 focus-visible:ring-ring/40"
-                  )}
-                >
+                <span className="inline-flex w-fit items-center gap-1.5 text-xs font-light text-scriba-ink-mute">
                   <MapPin className="size-3" />
                   {speakerLocation}
                   {meta === "compact" ? (
@@ -467,24 +466,12 @@ export function SavedSessionView({
                       {createdAtShortLabel}
                     </>
                   ) : null}
-                </button>
-              ) : (
-                <span className="inline-flex w-fit items-center gap-1.5">
-                  <button
-                    type="button"
-                    onClick={() => setLocationDialogOpen(true)}
-                    className={cn(ADD_BADGE_CLASSES, "w-fit")}
-                  >
-                    <Plus className="size-3" strokeWidth={2.5} />
-                    Adicionar local
-                  </button>
-                  {meta === "compact" ? (
-                    <span className="text-xs font-light text-scriba-ink-mute">
-                      {createdAtShortLabel}
-                    </span>
-                  ) : null}
                 </span>
-              )}
+              ) : meta === "compact" ? (
+                <span className="text-xs font-light text-scriba-ink-mute">
+                  {createdAtShortLabel}
+                </span>
+              ) : null}
               {/* A ficha longa (data por extenso + duração) é do cabeçalho
                     `full`. No `compact` a data já subiu para a linha do local. */}
               {meta === "full" ? (
@@ -559,28 +546,7 @@ export function SavedSessionView({
         open={titleDialogOpen}
         onOpenChange={setTitleDialogOpen}
         initialValue={title}
-        onSave={(v) => patchField("title", v)}
-      />
-
-      <EntityFieldDialog
-        kind="speaker"
-        open={speakerDialogOpen}
-        onOpenChange={setSpeakerDialogOpen}
-        title={speakerName?.trim() ? "Editar autor" : "Adicionar autor"}
-        placeholder="Nome do pregador"
-        initialValue={speakerName ?? ""}
-        fetchSuggestions={requestSpeakerSuggestions}
-        onSave={(v) => patchField("speakerName", v)}
-      />
-      <EntityFieldDialog
-        kind="location"
-        open={locationDialogOpen}
-        onOpenChange={setLocationDialogOpen}
-        title={speakerLocation?.trim() ? "Editar local" : "Adicionar local"}
-        placeholder="Igreja ou local"
-        initialValue={speakerLocation ?? ""}
-        fetchSuggestions={requestLocationSuggestions}
-        onSave={(v) => patchField("speakerLocation", v)}
+        onSave={renameTitle}
       />
     </main>
   );

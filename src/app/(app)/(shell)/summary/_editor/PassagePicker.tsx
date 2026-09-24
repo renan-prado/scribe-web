@@ -11,6 +11,8 @@ import {
   DialogHeader,
   DialogTitle,
 } from "@/components/ui/dialog";
+import { VerseLines } from "@/features/session/components/PassageVerses";
+import { useVerseFetch } from "@/features/session/hooks/useVerseFetch";
 import {
   abbrevFor,
   BOOK_CANON,
@@ -19,6 +21,7 @@ import {
   normalizeBookName,
 } from "@/lib/bibles/books";
 import { parseVerseReference } from "@/lib/domain/reference";
+import type { VerseLine } from "@/lib/domain/verse";
 import { cn } from "@/lib/utils";
 
 /**
@@ -55,24 +58,57 @@ import { cn } from "@/lib/utils";
  * desenha a faixa, um terceiro recomeça dali (como em todo seletor de período),
  * e sair dali é uma decisão à parte.
  *
+ * **O terceiro passo MOSTRA O TEXTO, e é ele que responde "é esta mesmo?".**
+ * A grade de números sozinha pedia uma escolha que só podia ser conferida
+ * depois, com o bloco já no documento: quem não sabe o versículo de cor
+ * escolhia 16, fechava, lia, e voltava para corrigir. A prévia abre no
+ * CAPÍTULO inteiro — dá para procurar a frase ali mesmo — e, ao primeiro
+ * toque na grade, encolhe para o que foi escolhido, que é a mesma coisa que o
+ * bloco vai mostrar.
+ *
+ * **Uma busca só, e ela é a do capítulo.** O texto vem por `useVerseFetch` na
+ * referência SEM faixa ("João 3"), e o recorte é um `filter` no cliente.
+ * Buscar a faixa a cada toque seria uma requisição por número tocado contra um
+ * limite de 60/min, para receber de volta um pedaço de algo que já está na
+ * memória. Como bônus, a entrada de cache que isto semeia é exatamente a que a
+ * menção de capítulo usa depois (`staleTime` infinito, ver `passageQueryOptions`).
+ *
+ * **O hover não mexe na prévia.** Ele pinta a faixa na grade, que é uma
+ * resposta a um gesto em curso; trocar o TEXTO a cada número sob o mouse
+ * transformaria a leitura num piscar. Quem manda na prévia são as pontas
+ * fincadas.
+ *
  * **O capítulo inteiro é uma escolha legítima**, e a leitura sabe o que fazer
  * com ela: sem faixa de versículos e sem corpo, o `BlockRenderer` desenha a
  * MENÇÃO (`ChapterMention`, uma pastilha clicável que abre o capítulo) em vez
  * da moldura de citação vazia em volta de nada.
  *
- * **Editando uma referência que já existe, ele abre no passo 3, já com o
- * livro, o capítulo e a faixa daquela referência** (`initialReference`), em
- * vez de recomeçar do livro. Reabrir do zero uma passagem que já foi
- * escolhida cobra os dois primeiros passos de novo só para corrigir o
- * versículo errado por uma casa. `initialReference` ausente ou que não
- * resolve contra `lib/bibles/books` (um bloco novo, sem referência ainda) cai
- * no reset de sempre.
+ * **Ele abre no passo que a referência recebida já alcança** — e ela pode vir
+ * PELA METADE. São três formas, e cada uma pula os passos que já estão
+ * respondidos:
+ *
+ * - `"João 3:16"` (editar um bloco que já tem referência) → passo 3, com o
+ *   livro, o capítulo e a faixa acesos. Reabrir do zero uma passagem já
+ *   escolhida cobraria os dois primeiros passos de novo só para corrigir o
+ *   último versículo por uma casa.
+ * - `"João 3"` → passo 3 também, com "capítulo inteiro" marcado: é
+ *   literalmente o que essa referência significa no produto (a menção de
+ *   capítulo), e o primeiro toque numa grade de versículos a desmarca.
+ * - `"João"` → passo 2, na grade de capítulos. É a forma que vem da barra
+ *   (`/joao`), onde o livro já foi digitado e pedi-lo de novo numa lista de
+ *   66 seria devolver o trabalho já feito.
+ *
+ * `initialReference` ausente, ou que não resolve contra `lib/bibles/books`,
+ * cai no reset de sempre: o passo 1, os 66 livros.
  */
 type Props = {
   open: boolean;
   onOpenChange: (open: boolean) => void;
   onPick: (reference: string) => void;
-  /** A referência já escolhida, ao EDITAR. `null`/inválida = bloco novo. */
+  /**
+   * A referência já escolhida (ao EDITAR) ou o começo dela (o livro, ou livro
+   * e capítulo, vindos da barra). `null`/inválida = começa do livro.
+   */
   initialReference?: string | null;
 };
 
@@ -119,6 +155,21 @@ const LIST_ITEM = cn(
   "focus-visible:ring-2 focus-visible:ring-ring/40 focus-visible:outline-none"
 );
 
+/**
+ * O livro por trás de um nome escrito, na forma CANÔNICA — "joao" → "João".
+ *
+ * A referência parcial que chega da barra já vem canônica (ela é montada a
+ * partir de `BOOK_CANON`), mas passar por `abbrevFor` é o que mantém o
+ * seletor de pé se um dia ela chegar de outro lugar, escrita de outro jeito:
+ * o nome que entra no estado tem de ser o MESMO que `chapterCountFor` e
+ * `chapterVerseCount` sabem ler, senão as grades nascem vazias.
+ */
+function canonNameFor(raw: string): string | null {
+  const abbrev = abbrevFor(raw);
+  if (!abbrev) return null;
+  return BOOK_CANON.find((b) => b.abbrev === abbrev)?.name ?? null;
+}
+
 export function PassagePicker({ open, onOpenChange, onPick, initialReference }: Props) {
   const [step, setStep] = useState<Step>("book");
   const [book, setBook] = useState<string | null>(null);
@@ -133,11 +184,9 @@ export function PassagePicker({ open, onOpenChange, onPick, initialReference }: 
   const [whole, setWhole] = useState(false);
   const [query, setQuery] = useState("");
 
-  // Toda abertura recomeça do livro, A MENOS que exista uma referência já
-  // escolhida (editar um bloco existente): aí ela pousa direto no passo 3,
-  // com aquele livro, capítulo e faixa. Um seletor que reabre sempre no
-  // primeiro passo obriga quem quer só corrigir o último versículo a refazer
-  // livro e capítulo de novo.
+  // Toda abertura recomeça do livro, A MENOS que já venha uma referência —
+  // inteira ou pela metade. Ver o cabeçalho: cada forma pousa no passo que ela
+  // alcança, e nenhum passo já respondido é cobrado de novo.
   useEffect(() => {
     if (!open) return;
     const parsed = initialReference ? parseVerseReference(initialReference) : null;
@@ -157,6 +206,20 @@ export function PassagePicker({ open, onOpenChange, onPick, initialReference }: 
         setEnd(null);
       }
       setHover(null);
+      setQuery("");
+      return;
+    }
+    // Só o LIVRO ("João", "/joao" na barra): não há capítulo para o parser
+    // achar, e o passo 2 é exatamente o que falta.
+    const onlyBook = initialReference ? canonNameFor(initialReference) : null;
+    if (onlyBook) {
+      setStep("chapter");
+      setBook(onlyBook);
+      setChapter(null);
+      setStart(null);
+      setEnd(null);
+      setHover(null);
+      setWhole(false);
       setQuery("");
       return;
     }
@@ -189,6 +252,32 @@ export function PassagePicker({ open, onOpenChange, onPick, initialReference }: 
     const other = end ?? hover ?? start;
     return { from: Math.min(start, other), to: Math.max(start, other) };
   })();
+
+  /**
+   * A faixa FINCADA — sem o hover, ao contrário de `range`. É ela que recorta
+   * a prévia: ver "O hover não mexe na prévia" no cabeçalho. `null` quando
+   * ainda não se tocou em nada, ou quando a escolha é o capítulo inteiro, e
+   * nos dois casos a prévia mostra o capítulo todo.
+   */
+  const picked = (() => {
+    if (whole || start === null) return null;
+    const other = end ?? start;
+    return { from: Math.min(start, other), to: Math.max(start, other) };
+  })();
+
+  /**
+   * O texto do CAPÍTULO, uma vez. `null` fora do passo 3 — o diálogo fica
+   * montado o tempo todo (`open` é prop), e sem isto ele pediria o texto de
+   * um capítulo que ninguém ainda escolheu.
+   */
+  const chapterReference = step === "verse" && book && chapter ? `${book} ${chapter}` : null;
+  const passage = useVerseFetch(chapterReference);
+  const previewVerses =
+    passage.status === "ok"
+      ? picked
+        ? passage.verses.filter((v) => v.verse >= picked.from && v.verse <= picked.to)
+        : passage.verses
+      : [];
 
   /** O que o `Concluir` vai gravar, e o que o rodapé mostra. `null` = nada. */
   const reference = (() => {
@@ -345,7 +434,7 @@ export function PassagePicker({ open, onOpenChange, onPick, initialReference }: 
             {/* O `onMouseLeave` aqui só APAGA a faixa de prévia quando o
                 ponteiro sai da grade; não há ação atrás deste `div`. */}
             {/* biome-ignore lint/a11y/noStaticElementInteractions: ver acima */}
-            <div className="max-h-[44vh] overflow-y-auto" onMouseLeave={() => setHover(null)}>
+            <div className="max-h-[30vh] overflow-y-auto" onMouseLeave={() => setHover(null)}>
               <VerseRange
                 count={verses}
                 range={whole ? null : range}
@@ -354,6 +443,7 @@ export function PassagePicker({ open, onOpenChange, onPick, initialReference }: 
                 onPick={pickVerse}
               />
             </div>
+            <Preview state={passage.status} verses={previewVerses} />
           </div>
         ) : null}
 
@@ -372,6 +462,53 @@ export function PassagePicker({ open, onOpenChange, onPick, initialReference }: 
         ) : null}
       </DialogContent>
     </Dialog>
+  );
+}
+
+/**
+ * A prévia: o texto do que está escolhido, na NVI.
+ *
+ * **A mesma marcação da leitura** (`VerseLines`), e não uma lista própria: é
+ * exatamente o que o bloco vai mostrar depois, e duas marcações divergiriam na
+ * primeira vez que alguém mexesse no alinhamento do número sobrescrito.
+ *
+ * Ela tem rolagem PRÓPRIA, separada da grade logo acima: são duas listas que
+ * crescem (o Salmo 119 tem 176 versículos), e uma única área rolável faria a
+ * grade sumir por cima enquanto se lê o texto — justamente quando se quer
+ * tocar no número seguinte.
+ *
+ * Falha e capítulo sem texto dizem a MESMA frase curta, e nenhuma das duas
+ * impede a escolha: a grade continua ali, montada sobre
+ * `CHAPTER_VERSE_COUNTS`, que não depende de rede nenhuma. A prévia é uma
+ * ajuda, não um passo.
+ */
+function Preview({
+  state,
+  verses,
+}: {
+  state: "idle" | "loading" | "ok" | "error";
+  verses: VerseLine[];
+}) {
+  return (
+    <div className="min-h-24 max-h-[28vh] overflow-y-auto rounded-xl border border-scriba-hairline px-3 py-2.5">
+      {state === "ok" && verses.length > 0 ? (
+        <VerseLines verses={verses} />
+      ) : state === "error" || (state === "ok" && verses.length === 0) ? (
+        <p className="px-1 py-4 text-center text-scriba-ink-mute text-sm">
+          Não consegui carregar o texto agora. Dá para escolher assim mesmo.
+        </p>
+      ) : (
+        <div aria-hidden className="flex flex-col gap-2 pl-3 pt-1">
+          {["w-full", "w-[92%]", "w-[97%]", "w-[85%]"].map((w, i) => (
+            <span
+              key={w}
+              style={{ animationDelay: `${i * 90}ms` }}
+              className={`block h-3 animate-skeleton-shimmer rounded-md bg-muted ${w}`}
+            />
+          ))}
+        </div>
+      )}
+    </div>
   );
 }
 

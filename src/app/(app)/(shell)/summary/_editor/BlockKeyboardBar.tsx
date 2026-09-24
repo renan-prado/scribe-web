@@ -53,7 +53,7 @@ import type { BlockPick, MenuOption } from "./blocks";
  * **O `+` é fixo na direita e NÃO é mais uma opção**, e por isso é o disco mais
  * claro da fileira: ele é a saída, não um bloco. Ele abre o menu da
  * barra — o mesmo `SlashMenu`, com a mesma lista, os NOMES escritos, a busca e
- * a citação rápida (`/atos 1:1`) —, que é o que responde ao glifo que ficou
+ * a Bíblia digitada (`/atos`, `/atos 1:1`) —, que é o que responde ao glifo que ficou
  * ambíguo e ao que não coube na fileira. Fica na ponta porque a fileira ROLA, e
  * uma saída que rola para fora da tela é uma saída que some.
  *
@@ -141,7 +141,9 @@ export function BlockKeyboardBar({
         >
           {options.map((o) => (
             <button
-              key={o.type}
+              // Ver a mesma chave no `SlashMenu`: `type` deixou de ser sempre
+              // uma string desde que a Bíblia digitada virou opção.
+              key={o.label}
               type="button"
               // Ver "Cada glifo come o `mousedown`" no cabeçalho.
               onMouseDown={(e) => e.preventDefault()}

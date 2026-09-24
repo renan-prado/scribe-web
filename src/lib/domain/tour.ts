@@ -247,8 +247,12 @@ export const TOURS: Record<TourKey, TourDefinition> = {
       {
         id: "header",
         anchor: '[data-tour="summary-header"]',
-        title: "Título, autor e local são seus",
-        body: "Toque em qualquer um deles para corrigir. O Scriba tenta preencher sozinho, e nem sempre acerta o nome de quem pregou.",
+        // O passo falava dos TRÊS campos ("toque em qualquer um deles"), e
+        // dois deles deixaram de ser editáveis aqui: autor e local agora se
+        // escrevem no editor, e a leitura ficou com a correção rápida do
+        // título. Ver o cabeçalho do `SavedSessionView`.
+        title: "O título é seu",
+        body: "Toque nele para corrigir. O Scriba tenta preencher sozinho, e nem sempre acerta. Autor e local se ajustam no Editar, ao lado.",
       },
       /**
        * Havia aqui um passo sobre o "Gerar estudo" (`[data-tour="deepen"]`). O
