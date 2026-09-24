@@ -48,6 +48,7 @@ pessoa quiser, aprofundar.
 | `components/SavedSessionView.tsx` | a tela de uma sessão salva: cabeçalho (só o título se corrige aqui), resumo, menu |
 | `components/SummaryDeck.tsx` | o carrossel resumo ↔ transcrição, e quem busca a transcrição |
 | `components/SummaryView.tsx` + `BlockRenderer.tsx` | os blocos do resumo |
+| `components/SummaryEmptyState.tsx` | sessão salva sem resumo nenhum: o botão que abre o editor |
 | `components/StudyBlockRenderer.tsx` | os blocos a MAIS que o estudo tem |
 | `components/PostItNote.tsx` | a casca do post-it dos dois murais: cor, cartão clicável, anatomia |
 | `components/LibraryNote.tsx` | o post-it de uma sessão na Biblioteca (autor, título, data) |

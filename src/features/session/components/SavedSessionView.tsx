@@ -509,7 +509,15 @@ export function SavedSessionView({
               mão) o `SummaryDeck` devolve o resumo direto, sem trilho e sem
               pontinhos — ver o cabeçalho dele. */}
         <SummaryDeck sessionId={id} durationMs={durationMs} hasTranscript={hasTranscript}>
-          <SummaryView summary={summary} hasTranscript={hasTranscript} running={false} />
+          {/* `sessionId` serve ao ESTADO VAZIO, e só a ele: sem resumo nenhum,
+              é o que deixa o quadro oferecer o editor, que aqui em cima não
+              aparece justamente por não haver resumo. Ver `SummaryEmptyState`. */}
+          <SummaryView
+            summary={summary}
+            hasTranscript={hasTranscript}
+            running={false}
+            sessionId={id}
+          />
         </SummaryDeck>
       </SummaryFindArea>
 
