@@ -667,7 +667,26 @@ prévia**, só a faixa fincada: trocar o texto a cada número sob o mouse
 transformaria a leitura num piscar. Falha de rede não impede a escolha, a grade
 é montada sobre `CHAPTER_VERSE_COUNTS` e não depende de rede nenhuma.
 
-**E o terceiro passo termina no `Concluir`, não no toque.** Fechar a faixa
+**O rodapé ENSINA a barra, com a escolha da pessoa.** Sob a referência que se
+formou, uma linha de 11px traduz o que ela acabou de fazer em três passos para
+o que faria numa linha: `Atalho:` seguido de `/gn 1:1` numa pastilha de
+comando. O exemplo é DINÂMICO, sai do livro e da faixa que estão na tela,
+porque um exemplo genérico é o que se lê sem se reconhecer. E é sutil de
+propósito: não é instrução para agora, é uma porta que fica sabida para a
+próxima vez.
+
+**O resto da explicação mora atrás de um `(i)`** (`Hint`): onde se digita, e as
+três formas do atalho com os três lugares onde cada uma para, sempre com a
+sigla do livro que está na tela. É um parágrafo, e um parágrafo aberto no
+rodapé seria ruído em cima de quem veio escolher um versículo. O tooltip é
+CONTROLADO porque o base-ui abre no hover e no foco, e nenhum dos dois existe
+no celular, que é onde este diálogo mais roda: o toque abre pelo `onClick` e o
+mouse continua abrindo pelo `onOpenChange`.
+
+**E o terceiro passo termina num BOTÃO, não no toque.** Ele diz "Citar
+versículos" (ou "Citar capítulo", conforme a escolha) com o `+` de acrescentar,
+e não "Concluir": o que sai dali é um bloco novo no texto, não o fim de um
+formulário. Fechar a faixa
 fechava o diálogo junto, e quem errava o último versículo por uma casa refazia
 livro e capítulo. Os dois primeiros passos não têm rodapé: ali escolher é
 avançar, e um botão de confirmar seria um segundo jeito de fazer a mesma coisa.

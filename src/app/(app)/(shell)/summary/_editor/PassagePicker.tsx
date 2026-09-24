@@ -1,6 +1,6 @@
 "use client";
 
-import { ArrowLeft, BookOpen } from "lucide-react";
+import { ArrowLeft, BookOpen, Info, Plus } from "lucide-react";
 import { useEffect, useMemo, useState } from "react";
 import { Button } from "@/components/ui/button";
 import {
@@ -11,6 +11,7 @@ import {
   DialogHeader,
   DialogTitle,
 } from "@/components/ui/dialog";
+import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/components/ui/tooltip";
 import { VerseLines } from "@/features/session/components/PassageVerses";
 import { useVerseFetch } from "@/features/session/hooks/useVerseFetch";
 import {
@@ -54,7 +55,7 @@ import { cn } from "@/lib/utils";
  *
  * **E o terceiro passo agora termina num botão, não no toque.** Fechar a faixa
  * fechava o diálogo junto: quem errava o último versículo por uma casa tinha de
- * reabrir tudo e refazer livro e capítulo. Com o `Concluir`, o segundo toque só
+ * reabrir tudo e refazer livro e capítulo. Com o botão de citar, o segundo toque só
  * desenha a faixa, um terceiro recomeça dali (como em todo seletor de período),
  * e sair dali é uma decisão à parte.
  *
@@ -182,6 +183,8 @@ export function PassagePicker({ open, onOpenChange, onPick, initialReference }: 
   const [hover, setHover] = useState<number | null>(null);
   /** "O capítulo inteiro" é uma terceira escolha, e exclui a faixa. */
   const [whole, setWhole] = useState(false);
+  /** O tooltip da dica é CONTROLADO: sem isso o dedo não o abre. Ver `Hint`. */
+  const [hintOpen, setHintOpen] = useState(false);
   const [query, setQuery] = useState("");
 
   // Toda abertura recomeça do livro, A MENOS que já venha uma referência —
@@ -279,7 +282,7 @@ export function PassagePicker({ open, onOpenChange, onPick, initialReference }: 
         : passage.verses
       : [];
 
-  /** O que o `Concluir` vai gravar, e o que o rodapé mostra. `null` = nada. */
+  /** O que o botão de citar vai gravar, e o que o rodapé mostra. `null` = nada. */
   const reference = (() => {
     if (!book || !chapter) return null;
     if (whole) return `${book} ${chapter}`;
@@ -288,6 +291,25 @@ export function PassagePicker({ open, onOpenChange, onPick, initialReference }: 
     const from = Math.min(start, to);
     const last = Math.max(start, to);
     return from === last ? `${book} ${chapter}:${from}` : `${book} ${chapter}:${from}-${last}`;
+  })();
+
+  /**
+   * O MESMO recorte, escrito como se digita na barra: "/gn 1:1".
+   *
+   * É ensino no lugar onde ele cabe: quem chegou até aqui andou três passos
+   * para pedir uma passagem, e a barra faz isso numa linha. A dica sai da
+   * escolha que está na tela AGORA, não de um exemplo fixo, porque o exemplo
+   * genérico é o que a pessoa lê sem se reconhecer; com o livro que ela acabou
+   * de procurar, a frase vira a tradução do que ela fez.
+   *
+   * A sigla, e não o nome por extenso, porque é o que economiza digitação e
+   * porque é ela que a barra entende igual (ver `matchBibleQuery`). Sem faixa
+   * escolhida ainda, o `:1` é só a forma da coisa.
+   */
+  const abbrev = book ? BOOK_CANON.find((b) => b.name === book)?.abbrev.toLowerCase() : null;
+  const shortcut = (() => {
+    if (!book || !chapter || !abbrev) return null;
+    return `/${abbrev} ${reference ? reference.slice(book.length + 1) : `${chapter}:1`}`;
   })();
 
   function confirm() {
@@ -443,6 +465,17 @@ export function PassagePicker({ open, onOpenChange, onPick, initialReference }: 
                 onPick={pickVerse}
               />
             </div>
+            {/* O DIVISOR é o que separa a grade da prévia agora. Ela já teve
+                borda em volta, e a moldura fazia o texto bíblico parecer mais
+                um controle do diálogo, ao lado dos outros dois: um fio só diz
+                "daqui para baixo é leitura" sem desenhar uma terceira caixa
+                numa tela que já tem o botão do capítulo e a grade. */}
+            {/* O `my-4` SOMA ao `gap-3` da coluna: 28px de cada lado do fio,
+                contra os 12 que o vão sozinho daria. O respiro é a metade do
+                trabalho que o divisor faz aqui, porque o que está acima dele
+                se TOCA e o que está abaixo se LÊ, e duas listas encostadas num
+                fio apertado continuariam parecendo uma coisa só. */}
+            <div aria-hidden className="my-4 h-px w-full shrink-0 bg-scriba-hairline" />
             <Preview state={passage.status} verses={previewVerses} />
           </div>
         ) : null}
@@ -452,11 +485,48 @@ export function PassagePicker({ open, onOpenChange, onPick, initialReference }: 
             a mesma coisa. */}
         {step === "verse" ? (
           <DialogFooter className="items-center sm:justify-between">
-            <p className="text-sm text-scriba-ink-mute tabular-nums">
-              {reference ?? "Toque no primeiro versículo"}
-            </p>
+            {/* `gap-2`, e não o vão de duas linhas de um mesmo parágrafo: a
+                referência é o ESTADO da escolha e a dica é outro assunto, e
+                coladas elas liam como uma frase de duas linhas. */}
+            <div className="flex min-w-0 flex-col gap-2">
+              <p className="text-sm text-scriba-ink-mute tabular-nums">
+                {reference ?? "Toque no primeiro versículo"}
+              </p>
+              {/* SUTIL de propósito: ela não é uma instrução a seguir agora, é
+                  uma porta que fica sabida para a próxima vez. Em 11px e na
+                  tinta mais apagada, quem está escolhendo versículo não é
+                  interrompido; quem já terminou tem o olho livre para ler a
+                  linha de baixo. */}
+              {shortcut && abbrev ? (
+                <p className="flex items-center gap-1.5 text-[11px] text-scriba-ink-mute/80">
+                  Atalho:
+                  {/* O fundo é o que separa COMANDO de frase: sem ele, "/gn
+                      1:1" no meio do texto lê como continuação da linha, e o
+                      que se quer ensinar é que aquilo se DIGITA, letra por
+                      letra. O véu é a mesma tinta clara dos realces deste
+                      diálogo (`VEIL_*`), porque cinza literal aqui seria a cor
+                      do próprio popup. */}
+                  <code className="rounded bg-scriba-ink-strong/10 px-1.5 py-px font-mono text-scriba-ink">
+                    {shortcut}
+                  </code>
+                  <Hint
+                    abbrev={abbrev}
+                    chapter={chapter ?? 1}
+                    open={hintOpen}
+                    onOpenChange={setHintOpen}
+                  />
+                </p>
+              ) : null}
+            </div>
+            {/* "Citar…", e não "Concluir". O verbo diz o que o botão FAZ com o
+                que está escolhido, e o `+` é o mesmo sinal de acrescentar do
+                resto do editor: o que sai daqui é um bloco novo no texto, não
+                o fim de um formulário. O rótulo acompanha a escolha porque ela
+                cabe em duas frases diferentes, e um "Citar versículos" com o
+                capítulo inteiro marcado seria o botão dizendo outra coisa. */}
             <Button size="lg" disabled={!reference} onClick={confirm}>
-              Concluir
+              <Plus className="size-4" strokeWidth={2.5} />
+              {whole ? "Citar capítulo" : "Citar versículos"}
             </Button>
           </DialogFooter>
         ) : null}
@@ -466,11 +536,81 @@ export function PassagePicker({ open, onOpenChange, onPick, initialReference }: 
 }
 
 /**
+ * O `(i)` ao lado do atalho, e o que ele conta.
+ *
+ * **A linha de baixo do rodapé só cabe o atalho**, e o atalho sozinho não
+ * ensina: falta onde se digita, e falta que ele tem TRÊS formas, cada uma
+ * parando num lugar diferente. Isso é um parágrafo, e um parágrafo no rodapé
+ * de um diálogo de escolha seria ruído em cima de quem veio escolher um
+ * versículo. Atrás de um `(i)`, ele fica para quem PERGUNTOU.
+ *
+ * **Os exemplos usam o livro que está na tela**, como o atalho logo ao lado: um
+ * "/gn" genérico se lê sem se reconhecer; "/{sigla do livro que acabei de
+ * procurar}" é a tradução do que a pessoa está fazendo agora.
+ *
+ * **Ele é CONTROLADO por causa do dedo.** O tooltip do base-ui abre no hover e
+ * no foco, e nenhum dos dois existe no celular, que é onde este diálogo mais
+ * roda. O `onClick` abre, e o `onOpenChange` continua entregando o hover de
+ * quem tem mouse: as duas portas, um estado só.
+ */
+function Hint({
+  abbrev,
+  chapter,
+  open,
+  onOpenChange,
+}: {
+  abbrev: string;
+  chapter: number;
+  open: boolean;
+  onOpenChange: (open: boolean) => void;
+}) {
+  const line = (command: string, what: string) => (
+    <li className="flex items-baseline gap-1.5">
+      <code className="rounded bg-background/15 px-1 py-px font-mono">{command}</code>
+      <span className="opacity-80">{what}</span>
+    </li>
+  );
+  return (
+    <TooltipProvider delay={120}>
+      <Tooltip open={open} onOpenChange={onOpenChange}>
+        <TooltipTrigger
+          render={
+            <button
+              type="button"
+              aria-label="Como usar o atalho"
+              onClick={() => onOpenChange(!open)}
+              className="inline-flex size-4 shrink-0 items-center justify-center rounded-full text-scriba-ink-mute transition-colors hover:text-scriba-ink focus-visible:ring-2 focus-visible:ring-ring/40 focus-visible:outline-none"
+            />
+          }
+        >
+          <Info className="size-3.5" />
+        </TooltipTrigger>
+        <TooltipContent className="flex-col items-start gap-1.5 py-2 text-left">
+          <p>
+            Numa linha em branco do texto, escreva <code className="font-mono">/</code> e o livro.
+            Quanto mais você escrever, menos resta a escolher:
+          </p>
+          <ul className="flex flex-col gap-1">
+            {line(`/${abbrev}`, "abre aqui, no livro")}
+            {line(`/${abbrev} ${chapter}`, "já no capítulo")}
+            {line(`/${abbrev} ${chapter}:1`, "põe a passagem direto")}
+          </ul>
+        </TooltipContent>
+      </Tooltip>
+    </TooltipProvider>
+  );
+}
+
+/**
  * A prévia: o texto do que está escolhido, na NVI.
  *
  * **A mesma marcação da leitura** (`VerseLines`), e não uma lista própria: é
  * exatamente o que o bloco vai mostrar depois, e duas marcações divergiriam na
  * primeira vez que alguém mexesse no alinhamento do número sobrescrito.
+ *
+ * **Sem moldura, só um fio acima dela.** Com borda em volta, o texto bíblico
+ * lia como mais um controle do diálogo, ao lado do botão do capítulo e da
+ * grade; o divisor diz a mesma coisa sem desenhar uma terceira caixa.
  *
  * Ela tem rolagem PRÓPRIA, separada da grade logo acima: são duas listas que
  * crescem (o Salmo 119 tem 176 versículos), e uma única área rolável faria a
@@ -490,9 +630,9 @@ function Preview({
   verses: VerseLine[];
 }) {
   return (
-    <div className="min-h-24 max-h-[28vh] overflow-y-auto rounded-xl border border-scriba-hairline px-3 py-2.5">
+    <div className="max-h-[28vh] min-h-24 overflow-y-auto">
       {state === "ok" && verses.length > 0 ? (
-        <VerseLines verses={verses} />
+        <VerseLines muted verses={verses} />
       ) : state === "error" || (state === "ok" && verses.length === 0) ? (
         <p className="px-1 py-4 text-center text-scriba-ink-mute text-sm">
           Não consegui carregar o texto agora. Dá para escolher assim mesmo.

@@ -3,6 +3,7 @@
 import { useVerseFetch } from "@/features/session/hooks/useVerseFetch";
 import { formatPassageRange } from "@/lib/domain/reference";
 import type { VerseLine } from "@/lib/domain/verse";
+import { cn } from "@/lib/utils";
 
 /**
  * Uma passagem bíblica como pilha de versículos numerados (estilo app de
@@ -44,8 +45,16 @@ type PassageVersesProps = {
  * mostra exatamente esta marcação a partir de uma referência SEM faixa,
  * "Jonas 1", que não cabe nas props acima. Duas cópias divergiriam na
  * primeira vez que alguém mexesse no alinhamento do `sup`.
+ *
+ * **`muted` é para onde o texto bíblico NÃO é o conteúdo da tela.** Na leitura
+ * e no diálogo de capítulo ele é o que se veio ler, e leva a tinta cheia; na
+ * prévia do `PassagePicker` ele é a conferência de uma escolha que está sendo
+ * feita logo acima, e com a mesma força competia com a grade de números pela
+ * atenção. `ink-mute` é o piso da escala (4,8:1 sobre o papel do diálogo, AA
+ * para texto pequeno, ver `globals.css`), e o número do versículo desce junto
+ * para não ficar mais forte que a frase que ele numera.
  */
-export function VerseLines({ verses }: { verses: VerseLine[] }) {
+export function VerseLines({ verses, muted = false }: { verses: VerseLine[]; muted?: boolean }) {
   return (
     <div className="flex flex-col gap-1.5 pl-3">
       {verses.map((line) => (
@@ -56,9 +65,17 @@ export function VerseLines({ verses }: { verses: VerseLine[] }) {
         <p
           key={line.verse}
           data-verse={line.verse}
-          className="rounded-md text-sm leading-relaxed text-foreground/90"
+          className={cn(
+            "rounded-md text-sm leading-relaxed",
+            muted ? "text-scriba-ink-mute" : "text-foreground/90"
+          )}
         >
-          <sup className="mr-1.5 select-none align-[0.35em] text-[0.65rem] font-semibold text-muted-foreground">
+          <sup
+            className={cn(
+              "mr-1.5 select-none align-[0.35em] text-[0.65rem] font-semibold",
+              muted ? "text-scriba-ink-mute/75" : "text-muted-foreground"
+            )}
+          >
             {line.verse}
           </sup>
           <span>{line.text}</span>
