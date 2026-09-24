@@ -9,6 +9,12 @@ Gerado por `npm run release` a partir dos Conventional Commits. `feat` sobe o
 minor; o resto sobe o patch. Não edite à mão, a próxima execução escreve por
 cima do topo do arquivo.
 
+## 0.84.2, 2026-09-24, desde v0.84.1
+
+### Correções
+
+- **consent:** troca o diálogo central por uma barra discreta no rodapé (`306df03`)
+
 ## 0.84.1, 2026-09-24, desde v0.84.0
 
 ### Correções
