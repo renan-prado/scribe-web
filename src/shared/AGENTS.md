@@ -661,6 +661,34 @@ botão de recarregar: hoje oferece também "acessar notas e gravações locais" 
 "nova gravação offline", e cada um só aparece se o SW tiver a moldura daquela
 tela guardada. O porquê dos três baldes de cache está em `src/app/AGENTS.md`.
 
+## Puxar para baixo e atualizar
+
+`components/PullToRefresh.tsx`, no mesmo layout de `(shell)` dos dois acima, e
+pelo mesmo motivo: o gesto é do APARELHO, não da página.
+
+**Ele existe porque metade dos aparelhos não tem o gesto.** O Chrome do Android
+tem o nativo; o Safari do iPhone não tem nenhum quando o app está instalado na
+tela inicial, que é como o Scriba é usado, e ali também não há barra de endereço
+com botão de recarregar. Quem estava no iPhone não tinha caminho nenhum para
+pedir dados novos.
+
+**Atualizar aqui é a mesma reidratação do `ReconnectWatcher`**
+(`invalidateQueries` + `resumePausedMutations` + `router.refresh()`), e não o
+recarregamento do navegador, que remonta o app inteiro. O `router.refresh()` vai
+dentro de um `startTransition` porque é do `isPending` dele que o indicador sabe
+quando o servidor terminou.
+
+**O `<html>` ganha `overscroll-behavior-y: contain` enquanto o app está
+montado**, por JS e não por CSS global, pela razão do `ZoomLock`: a trava é do
+app e o CSS pegaria a landing junto. Ela vale inclusive nas telas em que o nosso
+gesto está desligado — é justamente na gravação que um recarregar do navegador
+seria destrutivo.
+
+O gesto morre antes de mexer em nada se houver diálogo aberto, se o dedo estiver
+dentro de uma caixa com rolagem própria, se o movimento for mais horizontal que
+vertical (o `SummaryDeck`) ou se a rota for a gravação. Mexeu nessa lista? O
+cabeçalho do componente é onde ela se explica.
+
 ## A navegação do app não mora aqui
 
 **Não há barra de navegação em `src/shared/`.** Havia `AppNav` (desktop),

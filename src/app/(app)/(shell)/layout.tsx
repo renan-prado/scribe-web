@@ -10,6 +10,7 @@ import { getCurrentAccount } from "@/lib/db/account";
 import { getCycleUsage } from "@/lib/db/coins";
 import { getCurrentPlan } from "@/lib/entitlements/server";
 import { OfflineBadge } from "@/shared/components/OfflineBadge";
+import { PullToRefresh } from "@/shared/components/PullToRefresh";
 import { ReconnectWatcher } from "@/shared/components/ReconnectWatcher";
 import { AccountMenu } from "./components/AccountMenu";
 import { AppHeaderShell } from "./components/AppHeaderShell";
@@ -116,6 +117,11 @@ export default async function BarraLayout({ children }: { children: ReactNode })
           ele anuncia (queries, mutações pausadas e os server components da
           moldura). Ver `ReconnectWatcher`. */}
       <ReconnectWatcher />
+      {/* Puxar para baixo e atualizar, o gesto que o iPhone instalado não tem
+          de fábrica e que o Android tinha recarregando a página inteira. Fica
+          aqui pela razão dos dois acima: é do APARELHO, não da página. Ver
+          `PullToRefresh`. */}
+      <PullToRefresh />
       {/* Quem é o dono do cache do aparelho, e a faxina quando ele muda. Fica
           aqui porque é onde a conta já foi lida, e envolve `children` porque
           toda tela que lê a Biblioteca do disco precisa do id na chave. Sem
