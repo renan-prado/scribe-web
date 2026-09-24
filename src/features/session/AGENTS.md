@@ -83,7 +83,7 @@ pessoa quiser, aprofundar.
 | `recording-store.ts` | um booleano: há gravação viva nesta aba? |
 | `server/final-summary.ts` | a chamada única que vira o resumo |
 | `server/study/` | as cinco etapas do estudo (ver `src/lib/AGENTS.md`) |
-| `server/youtube/` | oEmbed, legenda pela Supadata e a limpeza do título |
+| `server/youtube/` | oEmbed, legenda pela Supadata, o CACHE dela por vídeo e a limpeza do título |
 | `server/prompts/` | todo system prompt do assunto |
 | `lib/transcription/` | sanitize e o veredito de qualidade de uma parte |
 

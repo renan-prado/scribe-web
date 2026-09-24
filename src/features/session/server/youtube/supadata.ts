@@ -1,9 +1,15 @@
 import "server-only";
 
 /**
- * A implementação Supadata de `fetchYoutubeTranscript`. O único arquivo do
+ * A implementação Supadata de `fetchYoutubeCaptions`. O único arquivo do
  * repositório que sabe o nome do provedor de legendas, ver `transcript.ts`
  * para o contrato e o porquê da indireção.
+ *
+ * **Ele devolve SEGMENTOS crus e nada mais.** Dobrar a lista num texto e
+ * aplicar o recorte é de `segments.ts`, e saiu daqui quando o cache
+ * (`cache.ts`) passou a ser uma segunda fonte dos mesmos segmentos: legenda
+ * vinda do banco e legenda vinda da rede têm de virar transcrição pela mesma
+ * régua.
  *
  * ## Por que um provedor pago para algo que parece grátis
  *
@@ -26,16 +32,22 @@ import "server-only";
  * único custo que cresce com a duração do vídeo é a transcrição na entrada do
  * resumo, não esta chamada.
  *
+ * E é um crédito por CHAMADA, não por vídeo: o mesmo link importado duas vezes
+ * custava dois. É o que `cache.ts` existe para não pagar.
+ *
  * O modo `generate` (Whisper deles, para vídeo sem legenda) custa 2 créditos
  * por MINUTO e volta assíncrono. Está fora, ver `transcript.ts`.
  */
 
-import type { YoutubeClip } from "@/lib/domain/youtube";
 import { serverEnv } from "@/lib/env/server";
 import { createLogger } from "@/lib/log";
-import type { YoutubeTranscriptResult } from "./transcript";
+import type { CaptionSegment } from "./segments";
+import type { YoutubeCaptionsResult } from "./transcript";
 
 const log = createLogger("supadata");
+
+/** Vai para a coluna `provider` do cache. Ver a migração 0072. */
+export const SUPADATA_PROVIDER = "supadata";
 
 const ENDPOINT = "https://api.supadata.ai/v1/transcript";
 
@@ -65,73 +77,28 @@ function asFiniteNumber(value: unknown): number {
 }
 
 /**
- * Junta os segmentos num texto corrido e mede onde o último termina.
+ * A lista da Supadata na forma que o resto do código entende.
  *
- * **Pedimos `text=false` de propósito, mesmo querendo texto corrido.** Com
- * `text=true` a Supadata devolve a string já montada e NENHUM tempo, e é do
- * `offset + duration` do último segmento que sai a duração do vídeo, que é o
- * que decide se ele cabe no teto e o que vai para `sessions.duration_ms`. A
- * alternativa era uma segunda chamada de metadados, custando um segundo
- * crédito por vídeo para saber algo que já veio junto.
- *
- * **E é o mesmo tempo que faz o RECORTE existir de graça.** Pedir "do minuto
- * 12 ao 45" não é uma opção do provedor nem uma segunda chamada: a legenda
- * inteira já veio, por 1 crédito fixo, e o recorte é um filtro sobre a lista
- * que está na memória. Um segmento entra quando ele TOCA a janela, não quando
- * cabe inteiro nela — a frase que começa em 11:58 e termina em 12:02 pertence
- * à pregação, e descartá-la cortaria a abertura no meio.
- *
- * `fullDurationMs` é sempre o vídeo todo (é o que o log e um diagnóstico
- * futuro querem saber); `durationMs` é o que foi de fato importado, e é ele
- * que a rota compara com o teto e grava em `sessions.duration_ms`.
+ * **Pedimos `text=false` de propósito, mesmo querendo texto corrido no fim.**
+ * Com `text=true` a Supadata devolve a string já montada e NENHUM tempo, e é
+ * do `offset + duration` que saem a duração do vídeo e o recorte, ver
+ * `segments.ts`. A alternativa era uma segunda chamada de metadados, custando
+ * um segundo crédito por vídeo para saber algo que já veio junto.
  */
-function foldSegments(
-  segments: SupadataSegment[],
-  clip: YoutubeClip | null
-): { text: string; durationMs: number; fullDurationMs: number } {
-  const parts: string[] = [];
-  let fullDurationMs = 0;
-  let firstMs: number | null = null;
-  let lastMs = 0;
-
-  const from = clip?.startMs ?? 0;
-  const to = clip?.endMs ?? Number.POSITIVE_INFINITY;
-
-  for (const segment of segments) {
-    const start = asFiniteNumber(segment?.offset);
-    const end = start + asFiniteNumber(segment?.duration);
-    if (end > fullDurationMs) fullDurationMs = end;
-
-    if (end <= from || start >= to) continue;
-
-    if (typeof segment?.text === "string") {
-      const trimmed = segment.text.trim();
-      if (trimmed) parts.push(trimmed);
-    }
-    if (firstMs === null) firstMs = start;
-    if (end > lastMs) lastMs = end;
+function toSegments(raw: SupadataSegment[]): CaptionSegment[] {
+  const segments: CaptionSegment[] = [];
+  for (const segment of raw) {
+    const text = typeof segment?.text === "string" ? segment.text.trim() : "";
+    segments.push({
+      offsetMs: asFiniteNumber(segment?.offset),
+      durationMs: asFiniteNumber(segment?.duration),
+      text,
+    });
   }
-
-  // A duração do trecho é medida pelos segmentos que SOBRARAM, não pela janela
-  // pedida: quem escreve "até 2:00:00" num vídeo de 50 minutos importou 50
-  // minutos, e é esse número que deve ir para a sessão e para o teto.
-  const durationMs = clip
-    ? firstMs === null
-      ? 0
-      : Math.max(0, lastMs - Math.max(from, firstMs))
-    : fullDurationMs;
-
-  return {
-    text: parts.join(" ").replace(/\s+/g, " ").trim(),
-    durationMs,
-    fullDurationMs,
-  };
+  return segments;
 }
 
-export async function fetchSupadataTranscript(
-  videoUrl: string,
-  clip: YoutubeClip | null
-): Promise<YoutubeTranscriptResult> {
+export async function fetchSupadataCaptions(videoUrl: string): Promise<YoutubeCaptionsResult> {
   const apiKey = serverEnv.SUPADATA_API_KEY;
   if (!apiKey) {
     // Configuração ausente, não falha do usuário. A rota vira 503 e a tela diz
@@ -179,7 +146,8 @@ export async function fetchSupadataTranscript(
   // Cabeçalho que a Supadata devolve com quantos créditos a chamada consumiu.
   // Vai para o log porque é a única forma de conciliar a fatura deles com o
   // número de importações do nosso ledger, se um dia divergir, é aqui que a
-  // diferença aparece.
+  // diferença aparece. Com o cache no meio ele passa a medir outra coisa
+  // também: quantas importações NÃO chegaram até aqui.
   const billed = response.headers.get("x-billable-requests");
 
   let body: SupadataBody = {};
@@ -221,24 +189,12 @@ export async function fetchSupadataTranscript(
     };
   }
 
-  const { text, durationMs, fullDurationMs } = foldSegments(
-    body.content as SupadataSegment[],
-    clip
-  );
-  // Sem recorte, texto vazio é vídeo sem legenda. COM recorte, a legenda
-  // existe e a janela é que caiu fora dela (o fim antes do início da fala, um
-  // "1:40:00" num vídeo de 50 minutos), e as duas coisas pedem frases
-  // diferentes na tela: "esse vídeo não tem legendas" mandaria a pessoa trocar
-  // de link quando o que ela precisa é corrigir dois campos.
-  if (!text) return { ok: false, error: clip ? "clip_empty" : "no_captions" };
-
-  log.debug("ok", { chars: text.length, durationMs, fullDurationMs, billed, lang: body.lang });
+  const segments = toSegments(body.content as SupadataSegment[]);
+  log.debug("ok", { segments: segments.length, billed, lang: body.lang });
 
   return {
     ok: true,
-    text,
+    segments,
     lang: typeof body.lang === "string" ? body.lang : "pt",
-    durationMs,
-    fullDurationMs,
   };
 }

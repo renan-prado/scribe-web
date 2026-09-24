@@ -1527,7 +1527,12 @@ tour não cobram moedas e não chamam modelo nenhum. Ver
 
 `youtube/import` é a outra porta do mesmo pipeline de resumo, e a única cuja
 transcrição não veio de um microfone: ela busca a legenda do vídeo em
-`sessions.source_url`, grava como transcrição e roda o resumo por cima. A ordem
+`sessions.source_url`, grava como transcrição e roda o resumo por cima. **A
+legenda pode não custar nada**: ela é guardada por VÍDEO em
+`youtube_transcripts` (migração 0072), e como o que fica guardado são os
+segmentos com tempo, pedir outro TRECHO do mesmo culto não volta ao provedor.
+O cache mora na interface (`youtube/transcript.ts`), nunca no provedor, e
+falhar nele só custa a ida ao provedor que se pagava antes. A ordem
 dentro dela é `dono → já importada? → legenda →
 duração → COBRA → resumo`, e a legenda vir ANTES da cobrança é uma inversão
 deliberada em relação a `/reprocess` e `/api/deepening`, ela é a chamada

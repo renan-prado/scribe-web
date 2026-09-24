@@ -16,11 +16,30 @@ import "server-only";
  * frase na tela. Um provedor novo tem de encaixar as falhas dele aqui; se não
  * couber, o union cresce e o compilador aponta os dois lugares que precisam
  * saber disso.
+ *
+ * ## As três camadas, e por que o CACHE fica nesta
+ *
+ * ```
+ * rota  →  fetchYoutubeTranscript  →  cache (por video_id)
+ *                                  →  provedor (por URL)
+ *                                  →  fold (recorte + texto)
+ * ```
+ *
+ * O cache (`cache.ts`) é de legenda, não de provedor: trocar a Supadata por
+ * outro fornecedor não pode invalidar o que já está guardado, porque a legenda
+ * é do YOUTUBE e o provedor é só quem foi buscá-la. Pôr o cache dentro de
+ * `supadata.ts` amarraria as duas coisas e faria a troca de fornecedor começar
+ * com a tabela zerada, pagando de novo por tudo que já tinha sido pago.
+ *
+ * E o fold fica aqui pelo mesmo motivo: ele tem de rodar igual sobre os
+ * segmentos dos dois caminhos, ver `segments.ts`.
  */
 
 import type { YoutubeClip } from "@/lib/domain/youtube";
 import { createLogger } from "@/lib/log";
-import { fetchSupadataTranscript } from "./supadata";
+import { readCachedTranscript, saveCachedTranscript } from "./cache";
+import { type CaptionSegment, foldSegments } from "./segments";
+import { fetchSupadataCaptions, SUPADATA_PROVIDER } from "./supadata";
 
 const log = createLogger("youtube-transcript");
 
@@ -34,23 +53,32 @@ export type YoutubeTranscriptError =
   /** Rede, timeout, 5xx do provedor, cota estourada. Vale tentar de novo. */
   | "provider_failed"
   /**
-   * O vídeo TEM legenda, e o trecho pedido não pegou nada dela — um fim antes
+   * O vídeo TEM legenda, e o trecho pedido não pegou nada dela, um fim antes
    * do início da fala, um "1:40:00" num vídeo de cinquenta minutos. Separado
    * de `no_captions` porque a saída é outra: corrigir dois campos, não trocar
    * de vídeo.
    */
   | "clip_empty";
 
+/**
+ * O que um PROVEDOR devolve: os segmentos crus do vídeo inteiro, sem recorte
+ * e sem texto montado. É o mesmo formato que sai do cache, e é isso que faz
+ * as duas fontes serem intercambiáveis.
+ */
+export type YoutubeCaptionsResult =
+  | { ok: true; segments: CaptionSegment[]; lang: string }
+  | { ok: false; error: YoutubeTranscriptError; message?: string };
+
 export type YoutubeTranscriptResult =
   | {
       ok: true;
-      /** A legenda inteira como um texto corrido. */
+      /** A legenda (ou o trecho dela) como um texto corrido. */
       text: string;
       /** Idioma que o provedor devolveu (ISO 639-1). */
       lang: string;
       /**
        * Duração do que foi IMPORTADO, em ms, derivada dos segmentos de legenda
-       * que sobraram — o vídeo inteiro quando não há recorte, o trecho quando
+       * que sobraram, o vídeo inteiro quando não há recorte, o trecho quando
        * há. É este número que a rota compara com `YOUTUBE_MAX_DURATION_MS` e
        * que vai para `sessions.duration_ms`, porque é ele que mede o texto que
        * entra no resumo, que é onde o custo mora.
@@ -68,12 +96,30 @@ export type YoutubeTranscriptResult =
       durationMs: number;
       /** O vídeo inteiro, sempre, mesmo com recorte. Só para log e diagnóstico. */
       fullDurationMs: number;
+      /** `true` quando a legenda veio do cache, sem custar crédito. Para o log. */
+      cached: boolean;
     }
   | { ok: false; error: YoutubeTranscriptError; message?: string };
 
+export type YoutubeTranscriptInput = {
+  /** Os 11 caracteres do id, a chave do cache. De `parseYoutubeUrl`. */
+  videoId: string;
+  /** A forma canônica do link, o que o provedor recebe. */
+  canonicalUrl: string;
+  /**
+   * O trecho a importar, ou `null` para o vídeo inteiro. **Não é um parâmetro
+   * do provedor nem do cache**: a legenda inteira vem de qualquer jeito, pelo
+   * mesmo 1 crédito, e o recorte é aplicado sobre os segmentos que voltaram.
+   * É por isso que o cache é chaveado só pelo vídeo, e que pedir um segundo
+   * trecho do mesmo culto não custa nada.
+   */
+  clip: YoutubeClip | null;
+};
+
 /**
- * Busca a legenda de `videoUrl`. Nunca lança: toda falha vira um `ok: false`
- * com um motivo do union acima.
+ * Busca a legenda de um vídeo, do cache ou do provedor, e devolve o texto do
+ * trecho pedido. Nunca lança: toda falha vira um `ok: false` com um motivo do
+ * union acima.
  *
  * **`mode: "native"`, só legenda que JÁ EXISTE no YouTube.** A Supadata sabe
  * transcrever o áudio com Whisper quando não há legenda, e essa porta está
@@ -89,19 +135,62 @@ export type YoutubeTranscriptResult =
  * isso que a sessão importada abre em `/summary`.
  */
 export async function fetchYoutubeTranscript(
-  videoUrl: string,
-  /**
-   * O trecho a importar, ou `null` para o vídeo inteiro. **Não é um parâmetro
-   * do provedor**: a legenda inteira vem de qualquer jeito, pelo mesmo 1
-   * crédito, e o recorte é aplicado sobre os segmentos que voltaram. Um
-   * provedor futuro que aceite janela nativamente pode usá-la; um que não
-   * aceite cumpre o contrato filtrando, como este.
-   */
-  clip: YoutubeClip | null = null
+  input: YoutubeTranscriptInput
 ): Promise<YoutubeTranscriptResult> {
-  const result = await fetchSupadataTranscript(videoUrl, clip);
-  if (!result.ok) {
-    log.warn("fetch failed", { error: result.error, message: result.message });
+  const { videoId, canonicalUrl, clip } = input;
+
+  const cached = await readCachedTranscript(videoId);
+  if (cached) {
+    log.debug("cache hit", { videoId, fetchedAt: cached.fetchedAt });
+    return fold(cached.segments, cached.lang, clip, true);
   }
+
+  const captions = await fetchSupadataCaptions(canonicalUrl);
+  if (!captions.ok) {
+    log.warn("fetch failed", { videoId, error: captions.error, message: captions.message });
+    return { ok: false, error: captions.error, message: captions.message };
+  }
+
+  const result = fold(captions.segments, captions.lang, clip, false);
+
+  // Guarda só o que tem fala. A recusa não vira linha, ver o cabeçalho da
+  // migração 0072: o YouTube publica legenda automática horas depois do
+  // upload, e um "sem legenda" guardado viraria uma recusa que dura o TTL.
+  //
+  // E a condição é a do VÍDEO, não a do trecho: um `clip_empty` significa que
+  // a legenda existe e a janela é que errou, e essa legenda é exatamente a que
+  // se quer ter em mãos quando a pessoa corrigir os dois campos e tentar de
+  // novo, que é o caminho que a tela oferece.
+  const hasSpeech = captions.segments.some((segment) => segment.text.trim().length > 0);
+  if (hasSpeech) {
+    const { fullDurationMs } = foldSegments(captions.segments, null);
+    await saveCachedTranscript({
+      videoId,
+      segments: captions.segments,
+      lang: captions.lang,
+      fullDurationMs,
+      provider: SUPADATA_PROVIDER,
+    });
+  }
+
   return result;
+}
+
+/** O fold com a tradução do texto vazio nos dois motivos que ele pode ter. */
+function fold(
+  segments: CaptionSegment[],
+  lang: string,
+  clip: YoutubeClip | null,
+  cached: boolean
+): YoutubeTranscriptResult {
+  const { text, durationMs, fullDurationMs } = foldSegments(segments, clip);
+
+  // Sem recorte, texto vazio é vídeo sem legenda. COM recorte, a legenda
+  // existe e a janela é que caiu fora dela (o fim antes do início da fala, um
+  // "1:40:00" num vídeo de 50 minutos), e as duas coisas pedem frases
+  // diferentes na tela: "esse vídeo não tem legendas" mandaria a pessoa trocar
+  // de link quando o que ela precisa é corrigir dois campos.
+  if (!text) return { ok: false, error: clip ? "clip_empty" : "no_captions" };
+
+  return { ok: true, text, lang, durationMs, fullDurationMs, cached };
 }

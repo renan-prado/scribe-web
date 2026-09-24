@@ -120,7 +120,16 @@ export async function POST(request: Request) {
   const clip = range.clip;
 
   // ---- a legenda, antes da cobrança ------------------------------------
-  const transcriptResult = await fetchYoutubeTranscript(parsedUrl.canonicalUrl, clip);
+  //
+  // Ela pode não custar nada: o mesmo vídeo já importado por qualquer pessoa
+  // sai do cache (`youtube/cache.ts`), e o recorte é aplicado sobre os
+  // segmentos guardados. O que muda aqui é só a latência, a ordem e a
+  // cobrança seguem idênticas.
+  const transcriptResult = await fetchYoutubeTranscript({
+    videoId: parsedUrl.videoId,
+    canonicalUrl: parsedUrl.canonicalUrl,
+    clip,
+  });
   if (!transcriptResult.ok) {
     // `provider_unavailable` é 503 e não 4xx: falta a nossa chave, o usuário
     // não fez nada errado, e a tela precisa dizer "indisponível" em vez de
@@ -136,7 +145,7 @@ export async function POST(request: Request) {
     return NextResponse.json({ error: transcriptResult.error }, { status });
   }
 
-  const { text, durationMs, fullDurationMs, lang } = transcriptResult;
+  const { text, durationMs, fullDurationMs, lang, cached } = transcriptResult;
 
   // O teto mede o que vai ser IMPORTADO, e com recorte isso é o trecho. Um
   // culto de três horas recortado em quarenta minutos passa, e deve passar: a
@@ -175,7 +184,17 @@ export async function POST(request: Request) {
     return NextResponse.json({ error: "charge_failed" }, { status: 500 });
   }
 
-  log.info("charged", { sessionId, durationMs, fullDurationMs, clip, chars: text.length, lang });
+  log.info("charged", {
+    sessionId,
+    durationMs,
+    fullDurationMs,
+    clip,
+    chars: text.length,
+    lang,
+    // `true` = a legenda saiu do cache e esta importação não gastou crédito de
+    // provedor. É por este campo que se mede se o cache está pegando.
+    cached,
+  });
 
   // ---- o título, separado do amontoado ----------------------------------
   //

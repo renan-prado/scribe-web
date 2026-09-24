@@ -282,6 +282,56 @@ quem pagou fica com o sermão inteiro em texto, e
 O `ended_at` que esse UPDATE grava é também o que faz um POST repetido bater no
 409 de `session_already_imported` em vez de cobrar duas vezes.
 
+## 6.1. O cache de legenda, por vídeo
+
+A legenda de um vídeo é **pública e imutável**, e custava 1 crédito de provedor
+mais 1-3s **toda vez** que era buscada. Três situações rotineiras buscavam a
+mesma legenda de novo, e nenhuma delas é abuso:
+
+1. O link de um sermão circula no grupo da igreja e cinco pessoas o importam.
+2. A mesma pessoa reimporta **outro trecho** do mesmo culto ("peguei do 12 ao
+   45, mas a pregação começava no 10").
+3. A sessão foi apagada e o link importado de novo.
+
+`youtube_transcripts` (migração 0072) guarda uma linha por vídeo, chaveada pelo
+**`video_id`** e não pela URL: `youtu.be/x`, `watch?v=x&t=930` e `/live/x` são o
+mesmo vídeo e a mesma legenda.
+
+**O que fica guardado são os SEGMENTOS**, no formato compacto
+`[offsetMs, durationMs, texto]`, e é isso que faz o caso 2 funcionar: o recorte
+é um filtro sobre `offset`/`duration` (§8), então guardar só o texto corrido
+resolveria uma reimportação idêntica e nenhuma outra. A tupla em vez do objeto
+é sobre tamanho de linha, um culto de duas horas tem uns dois mil segmentos, e
+os nomes de chave repetidos pesariam mais que o texto de vários deles.
+
+**Não é cache de recusa.** Vídeo sem legenda, privado ou inexistente não
+escreve linha nenhuma: o YouTube publica legenda automática horas depois do
+upload, e um "não tem legenda" guardado viraria uma recusa que dura o TTL
+inteiro. Um `clip_empty`, ao contrário, GRAVA, a legenda existe e a janela é
+que errou, e ela é exatamente a que se quer ter em mãos quando a pessoa
+corrigir os dois campos.
+
+**TTL de 90 dias.** Em tese a legenda de um vídeo publicado não muda mais; na
+prática o canal pode trocar a automática por uma revisada à mão (com pontuação,
+e portanto um resumo melhor) e o vídeo pode ser reeditado. Noventa dias cobrem
+a janela em que um sermão circula e vencem antes de o vídeo virar acervo.
+Vencer custa 1 crédito, que é o preço de não ficar preso na primeira versão
+para sempre.
+
+**O preço não muda.** As 30 moedas pagam o **resumo**, que roda de novo a cada
+importação; o que o cache economiza é ~R$ 0,03 de provedor por acerto. O ganho
+visível para quem usa é o caso 2 ficar instantâneo.
+
+**Ele mora na INTERFACE, não no provedor** (`youtube/transcript.ts`, não
+`supadata.ts`), e por uma razão de manutenção: trocar de fornecedor não pode
+invalidar o que já está guardado, porque a legenda é do YouTube e o provedor é
+só quem foi buscá-la. Pela mesma razão o fold (§8) subiu junto, legenda vinda
+do banco e legenda vinda da rede viram transcrição pela mesma régua.
+
+Nada nessa camada pode quebrar uma importação: banco fora do ar, linha ilegível
+ou formato desconhecido são todos tratados como "não há cache", e o caminho
+segue para o provedor.
+
 ## 7. Operação
 
 - **Variável:** `SUPADATA_API_KEY`, opcional. Sem ela o app sobe normalmente e
@@ -293,7 +343,9 @@ O `ended_at` que esse UPDATE grava é também o que faz um POST repetido bater n
   créditos; Mega US$ 47/30.000.
 - **Conciliação:** o cabeçalho `x-billable-requests` de cada resposta vai para
   o log (`supadata` scope, nível debug). Se a fatura deles divergir do número
-  de importações do nosso ledger, é ali que a diferença aparece.
+  de importações do nosso ledger, é ali que a diferença aparece. Com o cache
+  (§6.1) a fatura deve ficar ABAIXO do número de importações; o `cached` do log
+  `youtube-import charged` diz de quais delas ela não cresceu.
 - **Telemetria:** três rotas próprias em `llm_usage_events`
   (`final-summary-youtube`, `rereads-youtube` e `reminders-youtube`), somadas
   na ação `youtube` de `/admin/costs`. Houve uma quarta,
