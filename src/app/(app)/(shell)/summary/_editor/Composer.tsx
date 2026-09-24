@@ -1477,7 +1477,7 @@ export function Composer({
 
           Ele esperava o primeiro salvamento, e isso o tirava da tela justamente
           onde ele é mais útil: diante da folha vazia, onde a conversa dele é
-          "Sobre qual assunto você gostaria de escrever?". O endereço nunca foi o problema —
+          "Sobre qual assunto você gostaria de conversar?". O endereço nunca foi o problema —
           o `draftId` existe desde o primeiro quadro, sorteado no aparelho.
 
           Quem resolve a linha que ainda não existe é o `ensureSession`: o

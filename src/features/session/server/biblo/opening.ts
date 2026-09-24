@@ -218,8 +218,8 @@ export function buildBibloOpening(input: {
     const hello = firstName ? `Olá, ${firstName}!` : "Olá!";
     return {
       greeting: introduce
-        ? `${hello} ${INTRODUCTION} Sobre qual assunto você gostaria de escrever?`
-        : `${hello} Sobre qual assunto você gostaria de escrever?`,
+        ? `${hello} ${INTRODUCTION} Sobre qual assunto você gostaria de conversar?`
+        : `${hello} Sobre qual assunto você gostaria de conversar?`,
       chips: emptyChips(),
     };
   }

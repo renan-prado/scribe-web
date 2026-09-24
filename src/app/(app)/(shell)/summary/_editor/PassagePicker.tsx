@@ -566,7 +566,9 @@ function Hint({
 }) {
   const line = (command: string, what: string) => (
     <li className="flex items-baseline gap-1.5">
-      <code className="rounded bg-background/15 px-1 py-px font-mono">{command}</code>
+      <code className="shrink-0 whitespace-nowrap rounded bg-background/15 px-1 py-px font-mono">
+        {command}
+      </code>
       <span className="opacity-80">{what}</span>
     </li>
   );
@@ -588,12 +590,12 @@ function Hint({
         <TooltipContent className="flex-col items-start gap-1.5 py-2 text-left">
           <p>
             Numa linha em branco do texto, escreva <code className="font-mono">/</code> e o livro.
-            Quanto mais você escrever, menos resta a escolher:
+            Assim, você poderá citar um livro, capítulo e versículo com mais facilidade.
           </p>
           <ul className="flex flex-col gap-1">
-            {line(`/${abbrev}`, "abre aqui, no livro")}
-            {line(`/${abbrev} ${chapter}`, "já no capítulo")}
-            {line(`/${abbrev} ${chapter}:1`, "põe a passagem direto")}
+            {line(`/${abbrev}`, "abre no livro")}
+            {line(`/${abbrev} ${chapter}`, "abre no capítulo")}
+            {line(`/${abbrev} ${chapter}:1`, "insere a passagem diretamente")}
           </ul>
         </TooltipContent>
       </Tooltip>
