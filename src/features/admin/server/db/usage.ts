@@ -1,5 +1,10 @@
 import "server-only";
 import {
+  type AdminAudience,
+  audienceIncludes,
+  DEFAULT_ADMIN_AUDIENCE,
+} from "@/features/admin/audience";
+import {
   BILLABLE_ACTIONS,
   type BillableActionKey,
   INTERNAL_ACTION_KEY,
@@ -12,6 +17,7 @@ import { isAudioUsageRoute, USAGE_ROUTES } from "@/lib/db/usage";
 import { SESSION_MODES, type SessionMode } from "@/lib/domain/session";
 import { hasAudioPricing, hasChatPricing } from "@/lib/llm/pricing";
 import { createAdminClient } from "@/lib/supabase/admin";
+import { loadInternalUserIds } from "./internal-accounts";
 
 /**
  * Admin-side usage aggregates. Uses the service-role client so it can
@@ -307,6 +313,20 @@ export type UsageFilters = {
   version?: string;
   from?: string;
   to?: string;
+  /**
+   * Clientes, contas de Backoffice, ou as duas. Omitido = `clients`, e esse
+   * default é a decisão: esta função alimenta a margem por ação, o custo por
+   * 1.000 moedas e o custo por rota, que são perguntas sobre MERCADO. Ver
+   * `features/admin/audience.ts`.
+   *
+   * Aplicado em MEMÓRIA, nos dois lados da conta: a coluna `is_internal` mora
+   * em `profiles`, e nem `llm_usage_events` nem `coin_transactions` a têm.
+   * Filtrar no SQL exigiria um `in(...)` em cada uma das duas consultas com a
+   * mesma lista — e no dia em que uma delas fosse esquecida, o custo sairia
+   * recortado e a moeda não, que é o jeito silencioso de a margem ficar
+   * errada.
+   */
+  audience?: AdminAudience;
 };
 
 export type AdminUsageSummary = {
@@ -482,10 +502,19 @@ export async function loadAdminUsageSummary(
   const { data: events, error } = await query;
   if (error) throw new Error(`loadAdminUsageSummary events failed: ${error.message}`);
 
+  // O recorte por audiência. Linha SEM dono (`user_id` nulo, a conta que foi
+  // excluída — ver `EventRow.user_id`) conta como cliente: o custo dela é
+  // histórico de gente de verdade, e jogá-la no balde interno encolheria o
+  // custo de atender clientes por um motivo que não tem nada a ver com isso.
+  const audience = filters.audience ?? DEFAULT_ADMIN_AUDIENCE;
+  const internalIds = audience === "all" ? new Set<string>() : await loadInternalUserIds();
+  const inAudience = (userId: string | null): boolean =>
+    audienceIncludes(audience, userId !== null && internalIds.has(userId));
+
   // O universo de versões sai das linhas ANTES do recorte por versão, e é isso
   // que mantém o seletor da tela com todas as opções depois de escolher uma,
   // filtrar no SQL o deixaria com um item só a partir do primeiro clique.
-  const scanned = (events ?? []) as EventRow[];
+  const scanned = ((events ?? []) as EventRow[]).filter((row) => inAudience(row.user_id));
   const versionUniverse = new Set<string>();
   for (const row of scanned) {
     if (row.app_version) versionUniverse.add(row.app_version);
@@ -547,11 +576,12 @@ export async function loadAdminUsageSummary(
     reason: string;
     created_at: string;
   };
+  const coinRowsInAudience = ((coinRows ?? []) as CoinRow[]).filter((r) => inAudience(r.user_id));
   const coinsBySession = new Map<string, number>();
   const coinsByUser = new Map<string, number>();
   const coinsByAction = new Map<BillableActionKey, { coins: number; executions: number }>();
   let coinsTotal = 0;
-  for (const r of (coinRows ?? []) as CoinRow[]) {
+  for (const r of coinRowsInAudience) {
     // "Moedas gastas" é o que o usuário CONSUMIU, e o ledger guarda também o
     // que ele comprou: grant_coins grava `subscription_grant` e `topup_pack`
     // com amount POSITIVO, e o estorno grava um negativo que é devolução de

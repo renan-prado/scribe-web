@@ -1,5 +1,12 @@
 import type { Metadata } from "next";
 import Link from "next/link";
+import {
+  ADMIN_AUDIENCE_LABEL,
+  ADMIN_AUDIENCE_NOTE,
+  ADMIN_AUDIENCES,
+  type AdminAudience,
+  parseAdminAudience,
+} from "@/features/admin/audience";
 import { AdminPageHeader } from "@/features/admin/components/AdminPageHeader";
 import { AdminTabs } from "@/features/admin/components/AdminTabs";
 import { CoinEconomicsForm } from "@/features/admin/components/CoinEconomicsForm";
@@ -94,6 +101,7 @@ function parseModeFilter(value: string | undefined): SessionMode | undefined {
 type SearchParams = {
   tab?: string;
   range?: string;
+  audience?: string;
   userId?: string;
   route?: string;
   sessionId?: string;
@@ -114,6 +122,11 @@ function hrefFor(tab: Tab, sp: SearchParams, overrides: Partial<SearchParams> = 
   if (tab !== "prices") params.set("tab", tab);
   if (merged.range && merged.range !== "30d") params.set("range", merged.range);
   if (merged.version) params.set("version", merged.version);
+  // Como período e versão: atravessa as quatro abas, inclusive a de preços.
+  // É o recorte mais grosso que existe nesta tela — ele decide DE QUEM é o
+  // custo —, e perdê-lo ao trocar de aba devolveria em silêncio uma margem
+  // medida sobre outra população.
+  if (merged.audience && merged.audience !== "clients") params.set("audience", merged.audience);
   if (tab !== "prices") {
     if (merged.userId) params.set("userId", merged.userId);
     if (merged.route) params.set("route", merged.route);
@@ -133,6 +146,7 @@ export default async function AdminCostsPage({
   const tab: Tab = TABS.includes(sp.tab as Tab) ? (sp.tab as Tab) : "prices";
   const range = RANGES.some((r) => r.key === sp.range) ? (sp.range as string) : "30d";
   const version = sp.version?.trim() ?? "";
+  const audience = parseAdminAudience(sp.audience);
   // Validado aqui e não no componente: um `sessionId` malformado viraria uma
   // consulta ao Postgres que estoura em vez de devolver vazio.
   const sessionId =
@@ -144,6 +158,7 @@ export default async function AdminCostsPage({
   const filters: UsageFiltersType = {
     from: rangeToFrom(range),
     version: version || undefined,
+    audience,
     userId: fine ? sp.userId || undefined : undefined,
     route: fine ? sp.route || undefined : undefined,
     mode: fine ? parseModeFilter(sp.mode) : undefined,
@@ -178,6 +193,7 @@ export default async function AdminCostsPage({
         subtitle={TAB_SUBTITLES[tab]}
         actions={
           <>
+            <AudiencePills tab={tab} sp={sp} current={audience} />
             <VersionPicker versions={summary.versions} current={version} />
             <RangePills tab={tab} sp={sp} current={range} />
           </>
@@ -196,6 +212,16 @@ export default async function AdminCostsPage({
           abas: custo subestimado contamina margem, rota, versão e sessão, e
           quem abriu direto numa delas não passa pelas outras para ser
           avisado. */}
+      {/* O recorte de audiência DIZ o que ficou de fora quando não é o padrão.
+          Um total recortado é indistinguível de um total inteiro olhando para
+          o número: sem esta linha, "custo de IA R$ 12,40" é a mesma tela nos
+          três casos. */}
+      {ADMIN_AUDIENCE_NOTE[audience] ? (
+        <p className="rounded-xl border border-scriba-hairline bg-scriba-paper px-4 py-3 text-[13px] font-light text-scriba-ink-mute">
+          {ADMIN_AUDIENCE_NOTE[audience]}
+        </p>
+      ) : null}
+
       <UnpricedNote summary={summary} />
       <VersionWindowNote summary={summary} />
 
@@ -251,6 +277,44 @@ export default async function AdminCostsPage({
 
       <FxRateBadge rate={rate} />
     </div>
+  );
+}
+
+/**
+ * Quem entra na conta. Fica ao lado do período e da versão porque é da mesma
+ * natureza dos dois: vale para as quatro abas e recorta os DOIS lados da
+ * margem (o custo e a moeda). Ver `features/admin/audience.ts`.
+ */
+function AudiencePills({
+  tab,
+  sp,
+  current,
+}: {
+  tab: Tab;
+  sp: SearchParams;
+  current: AdminAudience;
+}) {
+  return (
+    <nav
+      aria-label="Contas"
+      className="flex flex-wrap items-center gap-1 rounded-full border border-scriba-hairline-soft bg-scriba-paper p-1"
+    >
+      {ADMIN_AUDIENCES.map((key) => (
+        <Link
+          key={key}
+          href={hrefFor(tab, sp, { audience: key })}
+          aria-current={key === current ? "page" : undefined}
+          className={cn(
+            "rounded-full px-3 py-1 text-[12px] font-medium transition-colors",
+            key === current
+              ? "bg-scriba-blue-soft text-scriba-blue-ink"
+              : "text-scriba-ink-mute hover:text-scriba-ink"
+          )}
+        >
+          {ADMIN_AUDIENCE_LABEL[key]}
+        </Link>
+      ))}
+    </nav>
   );
 }
 

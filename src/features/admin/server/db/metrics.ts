@@ -1,4 +1,5 @@
 import "server-only";
+import { type AdminAudience, DEFAULT_ADMIN_AUDIENCE } from "@/features/admin/audience";
 import { isActiveStatus, PLANS, type PlanKey } from "@/features/billing/plans";
 import { INITIAL_COIN_BALANCE } from "@/features/coins/pricing";
 import { stripeFeeCents } from "@/features/partners/economics";
@@ -30,6 +31,19 @@ export type MetricsFilters = {
   to?: string;
   /** Recorta tudo à base de um parceiro. É o que o painel dele consome. */
   partnerId?: string;
+  /**
+   * Clientes, Backoffice, ou as duas. Omitido = `clients`.
+   *
+   * O recorte é aplicado NA CONSULTA DE CONTAS, e todo o resto deriva dela
+   * (sessões, moedas e assinaturas são buscadas por `userIds`). Uma conta
+   * interna não é aquisição, não converte e não é MRR: as duas únicas
+   * assinaturas "ativas" de produção, no dia da migração 0073, eram do próprio
+   * autor testando o checkout — R$ 89,80 de MRR que nunca foi dinheiro de
+   * ninguém, e um funil que dizia 2 convertidos de 16 cadastros.
+   *
+   * Ver `features/admin/audience.ts`.
+   */
+  audience?: AdminAudience;
 };
 
 export type FunnelMetrics = {
@@ -128,6 +142,13 @@ export async function loadAdminMetrics(
     .order("created_at", { ascending: false })
     .limit(MAX_ROWS);
   if (filters.partnerId) profileQuery = profileQuery.eq("partner_id", filters.partnerId);
+  // O recorte de audiência entra AQUI, na origem: todo agregado abaixo é
+  // buscado por `userIds`, então excluir a conta no primeiro SELECT a tira do
+  // funil, da receita, do passivo de moedas e do uso das moedas de boas-vindas
+  // de uma vez — sem que cada um deles precise lembrar da regra.
+  const audience = filters.audience ?? DEFAULT_ADMIN_AUDIENCE;
+  if (audience === "clients") profileQuery = profileQuery.eq("is_internal", false);
+  else if (audience === "internal") profileQuery = profileQuery.eq("is_internal", true);
   if (filters.from) profileQuery = profileQuery.gte("created_at", filters.from);
   if (filters.to) profileQuery = profileQuery.lte("created_at", filters.to);
 

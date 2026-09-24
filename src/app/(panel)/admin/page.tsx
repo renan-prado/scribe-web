@@ -90,7 +90,12 @@ export default async function AdminOverviewPage() {
     {
       label: "Custo de IA (30 dias)",
       value: money(summary30d.totals.totalCostUsd),
-      hint: `${INT.format(summary30d.totals.totalEvents)} chamadas · ${costPerThousandCoins(
+      // "de clientes" não é enfeite: desde a migração 0073 este número é
+      // recortado (as contas de Backoffice ficam de fora, ver
+      // `features/admin/audience.ts`), e o card do Financeiro ao lado mede
+      // CAIXA — o dólar dos testes saiu da conta da OpenAI do mesmo jeito.
+      // Sem a palavra, os dois discordariam na mesma tela sem dizer por quê.
+      hint: `${INT.format(summary30d.totals.totalEvents)} chamadas de clientes · ${costPerThousandCoins(
         summary30d.overallCostPerCoinUsd
       )} por 1.000 moedas`,
       icon: <CoinMark size={22} />,
@@ -151,6 +156,10 @@ export default async function AdminOverviewPage() {
           <QuickLink href="/admin/costs">Custos e margem</QuickLink>
           <QuickLink href="/admin/metrics">Funil e ativação</QuickLink>
           <QuickLink href="/admin/finance">Financeiro</QuickLink>
+          {/* A porta da conta que esta tela deixa de fora. Ela existe para que
+              "quanto me custa testar o meu próprio produto" continue tendo
+              resposta depois de o Backoffice sair de todos os números acima. */}
+          <QuickLink href="/admin/costs?audience=internal">Backoffice</QuickLink>
         </div>
         <FxRateBadge rate={rate} />
       </div>
