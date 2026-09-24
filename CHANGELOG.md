@@ -9,6 +9,71 @@ Gerado por `npm run release` a partir dos Conventional Commits. `feat` sobe o
 minor; o resto sobe o patch. Não edite à mão, a próxima execução escreve por
 cima do topo do arquivo.
 
+## 0.84.0, 2026-09-24
+
+### Novidades
+
+- **consent:** exige aceite de cookies para usar o Scriba (`a26603d`)
+- **partners:** exige CPF e endereço no cadastro do parceiro (`2589ade`)
+- **partners:** remove o valor mínimo de saque (`1ed320e`)
+- **summary:** blocos do editor se movem arrastando, no punho e no dedo (`c76fd8a`)
+- **summary:** o editor ganha o "+" que pergunta o que a linha é (`0173080`)
+- **summary:** resumo vazio para de prometer e abre a porta do editor (`911fd52`)
+- **app:** a caneta do lucide sai do app, e editar ganha o glifo próprio (`ced4987`)
+- **summary:** o seletor de passagem ensina o atalho da barra, e a prévia fica sutil (`2ffbd09`)
+- **summary:** a barra acha qualquer livro da Bíblia, e o seletor mostra o texto (`2944be3`)
+- **biblioteca:** troca o ícone de escrever pelo glifo próprio (`0658e31`)
+- **biblioteca:** adiciona botão de voltar e mais respiro ao abrir uma pasta (`c70ba6c`)
+- **summary:** aumenta a fonte do corpo do resumo, na leitura e na edição (`da9d139`)
+- **biblioteca:** os post-its voltam a ser pastéis, mais translúcidos (`20ceb2e`)
+- **tema:** o tema claro volta, com a paleta inteira e o switch (`16a3926`)
+- **biblo:** respostas com profundidade, em gpt-5-mini (`d7d8e1a`)
+- **app:** endereços em inglês, estudo fora do app e admin em modal (`e23990e`)
+- **app:** barra de baixo do celular serve o documento aberto (`412faf5`)
+- **app:** barra de baixo no celular e busca global com Ctrl+K (`525e842`)
+- **escrever:** barra "/" vira único jeito de inserir bloco, citação rápida e mais (`ec205ad`)
+- **auth:** modelos de e-mail transacionais com a marca do Scriba (`e5d3f4b`)
+- **pwa:** tela offline com atalhos e casca do app no service worker (`0a369d6`)
+- **auth:** entrar e criar conta com e-mail e senha (`d387ba0`)
+- **session:** pastas em três níveis, integradas à Biblioteca como cartões (`6643f23`)
+- **session:** mostra a pasta da sessão no cabeçalho do resumo (`53cfbb3`)
+
+### Correções
+
+- **summary:** o punho do arrasto para de encostar na primeira letra (`c1a2200`)
+- **session:** a Bíblia do painel recupera as superfícies, e a busca ganha a voz do Biblo (`4bf144e`)
+- **summary:** a dica do "/" diz para que serve, e o Biblo convida a conversar (`226404d`)
+- **editor:** menu da barra vai para o body e respeita a barra do app (`125dd9c`)
+- plan title (`ccfc8a6`)
+- **landing:** o script da pílula de indicação vai para o head do root layout (`17258ba`)
+- **session:** useFolders só devolve a lista depois da hidratação (`9efbf05`)
+
+### Outros
+
+- **deps:** sincroniza a versão do package-lock com o package.json (`7804e27`)
+- **release:** v0.83.1 (`ec207e6`)
+- **release:** v0.83.0 (`20ec8c1`)
+- **release:** v0.82.0 (`6e73d86`)
+- **release:** v0.81.0 (`7b60f28`)
+- **shared:** registra o par de glifos de escrever e editar (`bd6f349`)
+- **release:** v0.80.0 (`0c14e0f`)
+- **release:** v0.79.0 (`6a85934`)
+- **release:** v0.78.0 (`c330bce`)
+- **release:** v0.77.0 (`96fa1af`)
+- **release:** v0.76.0 (`ce632cb`)
+- **release:** v0.75.0 (`61d8602`)
+- **release:** v0.74.0 (`50743a1`)
+- **release:** v0.73.0 (`3787b3c`)
+- **release:** v0.72.2 (`7180f6d`)
+- **home:** remove as vistas lista e grade, deixa só o mural de post-its (`e52d14e`)
+- **release:** v0.72.1 (`99aa3cd`)
+- **release:** v0.72.0 (`d7309d2`)
+- **release:** v0.71.0 (`cd6eee5`)
+- **billing:** tira "Sem custo para sempre" da lista do plano grátis (`19808c2`)
+- **release:** v0.70.1 (`1d74acf`)
+- **release:** v0.70.0 (`995d24b`)
+- **release:** v0.69.0 (`6086de9`)
+
 ## 0.83.1, 2026-09-24, desde v0.83.0
 
 ### Correções
