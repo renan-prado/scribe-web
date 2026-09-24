@@ -113,6 +113,32 @@ export const USAGE_ROUTES = [
 /** A mesma lista, como tipo. Um lugar só, ou a lista e o tipo divergem. */
 export type UsageRoute = (typeof USAGE_ROUTES)[number];
 
+/**
+ * As rotas cujo custo é medido em MINUTO DE ÁUDIO, e não em token.
+ *
+ * Ela existe porque a pergunta "este modelo tem preço?" não tem resposta sem
+ * saber a QUAL tabela perguntar: `gpt-transcribe` está em `AUDIO_PRICES` e não
+ * em `CHAT_PRICES`, e perguntar à errada devolve "sem preço" para uma chamada
+ * cobrada corretamente. Era o que acontecia com `biblo-voice`, a segunda rota
+ * de áudio do produto: `/admin/costs` a mandava para a tabela de chat e
+ * anunciava "custo subestimado" sobre duas chamadas que tinham gravado
+ * US$ 0,008 certinhos. Um aviso de medição que mente é pior que aviso nenhum,
+ * ele gasta a confiança que o painel precisa ter quando estiver certo.
+ *
+ * Toda rota nova que chamar `recordAudioUsage` entra aqui — o tipo de
+ * `RecordAudioUsageInput.route` sai desta lista justamente para que a
+ * declaração e a medição não possam divergir.
+ */
+export const AUDIO_USAGE_ROUTES = ["transcribe", "biblo-voice"] as const;
+export type AudioUsageRoute = (typeof AUDIO_USAGE_ROUTES)[number];
+
+/** True quando o custo da rota é por minuto de áudio. Aceita `string` porque
+ * quem pergunta lê linhas antigas do banco, incluindo rotas que o código já
+ * não escreve (ver o cabeçalho de `USAGE_ROUTES`). */
+export function isAudioUsageRoute(route: string): route is AudioUsageRoute {
+  return (AUDIO_USAGE_ROUTES as readonly string[]).includes(route);
+}
+
 export type RecordChatUsageInput = {
   /** Sempre `auth.user.id`, nunca um valor vindo do corpo da requisição. */
   userId: string;
@@ -137,7 +163,7 @@ export type RecordAudioUsageInput = {
   /** Sempre `auth.user.id`, nunca um valor vindo do corpo da requisição. */
   userId: string;
   sessionId: string | null;
-  route: Extract<UsageRoute, "transcribe" | "biblo-voice">;
+  route: AudioUsageRoute;
   model: string;
   audioSeconds: number;
   latencyMs: number;

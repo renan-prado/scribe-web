@@ -8,7 +8,7 @@ import {
 } from "@/features/coins/billable";
 import { isChargeReason } from "@/features/coins/pricing";
 import { sortVersionsDesc } from "@/lib/app-version";
-import { USAGE_ROUTES } from "@/lib/db/usage";
+import { isAudioUsageRoute, USAGE_ROUTES } from "@/lib/db/usage";
 import { SESSION_MODES, type SessionMode } from "@/lib/domain/session";
 import { hasAudioPricing, hasChatPricing } from "@/lib/llm/pricing";
 import { createAdminClient } from "@/lib/supabase/admin";
@@ -623,11 +623,15 @@ export async function loadAdminUsageSummary(
     routeMap.set(row.route, routeAgg);
 
     // A tabela de preço que vale para uma linha depende da rota, não do nome
-    // do modelo: `transcribe` é cobrada por minuto de áudio e o resto por
-    // token. Perguntar à tabela errada marcaria todo modelo de STT como sem
-    // preço, e o aviso perderia o sentido no dia seguinte.
+    // do modelo: as rotas de áudio são cobradas por minuto e o resto por
+    // token. Perguntar à tabela errada marca todo modelo de STT como sem
+    // preço — e não é hipótese: `biblo-voice` nasceu como a SEGUNDA rota de
+    // áudio e esta linha só conhecia `transcribe`, então dois recados falados
+    // em `gpt-transcribe`, com custo gravado certo, viravam um aviso de
+    // "custo subestimado" na visão geral. Quem responde agora é
+    // `isAudioUsageRoute`, ao lado da lista que declara as rotas de áudio.
     const model = row.model ?? "(sem modelo)";
-    const priced = row.route === "transcribe" ? hasAudioPricing(model) : hasChatPricing(model);
+    const priced = isAudioUsageRoute(row.route) ? hasAudioPricing(model) : hasChatPricing(model);
     if (!priced) {
       unpricedEvents += 1;
       unpricedModels.add(model);
