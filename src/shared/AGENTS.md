@@ -534,6 +534,19 @@ Sobre formatos e precedência de `<link>`, ver `src/app/AGENTS.md`.
 
 ## Ícones
 
+**Escrever e editar têm glifo PRÓPRIO, e são dois.** `WriteGlyph`
+(`public/icons/write.svg`) é a caneta sozinha e quer dizer CRIAR um texto: o
+chip "Escrever resumo" da `TopBar` e o painel de criação do celular, a saída
+grátis do paywall de IA, o glifo de modo dos cartões da Biblioteca.
+`EditGlyph` (`public/icons/edit.svg`) é a caneta sobre a folha e quer dizer
+mexer no que já existe: a barra de baixo da leitura no celular, o botão
+"Editar" do cabeçalho, o item do menu de três pontinhos, o lápis do hover no
+título. **O `PenLine`/`Pencil` do lucide não serve nenhum dos dois** — os dois
+traçados lado a lado não tinham parentesco, e a caneta outline do lucide ficou
+meses ao lado dos glifos cheios sem ninguém notar. Os dois são `fill` e herdam
+`currentColor`, então `strokeWidth` ali não faz nada. A exceção é o `/admin`,
+onde `Pencil` é a ação de uma linha de tabela e não este assunto.
+
 **O `Sparkles` do lucide-react é PROIBIDO COMO ACENTO DECORATIVO.** Não o
 pendure num canto para "dar um brilho". Para isso existe o hexágono amarelo já
 usado no `/admin`:
