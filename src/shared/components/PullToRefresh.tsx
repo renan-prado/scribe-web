@@ -219,10 +219,13 @@ export function PullToRefresh() {
   if (!enabled) return null;
 
   const progress = Math.min(1, distance / TRIGGER);
+  // O mesmo caminho, SEM teto: a borracha além do gatilho continua descendo o
+  // disco, e é este número (não o `progress`) que o posiciona.
+  const travel = (distance / TRIGGER).toFixed(4);
 
   return (
     <div
-      className="pointer-events-none fixed inset-x-0 top-[calc(env(safe-area-inset-top)+0.25rem)] z-40 flex justify-center"
+      className="pointer-events-none fixed inset-x-0 top-0 z-40 flex justify-center"
       role="status"
       aria-live="polite"
     >
@@ -234,9 +237,20 @@ export function PullToRefresh() {
           dragging ? null : "transition-transform duration-300 ease-out"
         )}
         style={{
-          // Com distância zero o disco descansa acima da borda, fora da tela:
-          // é o próprio arrasto que o traz, sem nada a esconder ou revelar.
-          transform: `translate3d(0, ${distance - 48}px, 0)`,
+          // O disco viaja entre DOIS pontos, e é preciso ler os dois juntos:
+          //
+          // - parado, `-2.75rem`, medido da BORDA de cima da janela. São os
+          //   36px dele mais 8px de folga, ou seja, fora da tela por inteiro.
+          // - puxado até o gatilho, `env(safe-area-inset-top) + 1.25rem`, que é
+          //   o respiro abaixo do recorte do aparelho.
+          //
+          // **O recorte entra só no ponto de chegada, e essa é a correção.**
+          // Antes ele estava no `top` da moldura e o repouso era um `-48px`
+          // fixo: num aparelho com `viewport-fit=cover` e barra de status de
+          // 40px, "fora da tela" virava 4px DENTRO dela, e o disco ficava
+          // permanentemente encostado no topo, sem ninguém ter puxado nada.
+          // Medindo da borda da janela, o repouso é o mesmo em todo aparelho.
+          transform: `translate3d(0, calc(-2.75rem + ${travel} * (env(safe-area-inset-top) + 4rem)), 0)`,
         }}
       >
         <RefreshCw
