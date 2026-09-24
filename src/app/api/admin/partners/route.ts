@@ -4,7 +4,8 @@ import { createPartner, listPartners } from "@/features/admin/server/db/partners
 import { normalizeSocials } from "@/features/partners/socials";
 import { normalizeSlug } from "@/features/referrals/cookies";
 import { requireAdmin } from "@/lib/auth/require-admin";
-import { isValidDoc, normalizeDoc } from "@/lib/domain/documento";
+import { isValidCpf, onlyDigits } from "@/lib/domain/documento";
+import { isUf, isValidCep } from "@/lib/domain/endereco";
 import { parseJsonBody } from "@/lib/http/validate";
 import { createLogger } from "@/lib/log";
 import { enforceRateLimit, RATE_LIMITS } from "@/lib/rate-limit";
@@ -33,6 +34,35 @@ const SlugSchema = z.string().transform((v, ctx) => {
   return slug;
 });
 
+/**
+ * Endereço obrigatório, com a mesma regra de `isCompleteAddress` e do CHECK
+ * `partners_address_shape`. O CEP chega com ou sem máscara e sai só com os
+ * dígitos; a UF sai em maiúsculas.
+ */
+const AddressSchema = z
+  .object({
+    cep: z
+      .string()
+      .transform((v) => v.replace(/\D/g, ""))
+      .refine(isValidCep, "CEP inválido"),
+    street: z.string().trim().min(1).max(200),
+    number: z.string().trim().min(1).max(20),
+    complement: z
+      .string()
+      .trim()
+      .max(120)
+      .optional()
+      .transform((v) => v || undefined),
+    district: z.string().trim().min(1).max(120),
+    city: z.string().trim().min(1).max(120),
+    state: z
+      .string()
+      .trim()
+      .transform((v) => v.toUpperCase())
+      .refine(isUf, "UF inválida"),
+  })
+  .strict();
+
 export const PartnerBodySchema = z
   .object({
     invitedEmail: z.string().email().max(320),
@@ -45,23 +75,24 @@ export const PartnerBodySchema = z
       .record(z.string(), z.string().trim().max(200))
       .optional()
       .transform((v) => (v ? normalizeSocials(v) : v)),
-    // Só dígitos no banco, e o dígito verificador tem de fechar: um PIX
-    // enviado para documento errado não volta sozinho.
+    // CPF OBRIGATÓRIO, e só CPF: o programa é para pessoa física (ver a
+    // cláusula 3 dos termos e a migração 0070). Só dígitos no banco, e o
+    // dígito verificador tem de fechar: um PIX enviado para documento errado
+    // não volta sozinho. Nem `null` nem vazio passam, nem no PATCH, onde o
+    // `.partial()` torna o campo omissível mas não anulável.
     doc: z
       .string()
       .trim()
       .max(40)
-      .nullable()
-      .optional()
       .transform((v, ctx) => {
-        const digits = normalizeDoc(v);
-        if (digits === null) return null;
-        if (!isValidDoc(digits)) {
-          ctx.addIssue({ code: "custom", message: "CPF ou CNPJ inválido" });
+        const digits = onlyDigits(v);
+        if (!isValidCpf(digits)) {
+          ctx.addIssue({ code: "custom", message: "CPF inválido" });
           return z.NEVER;
         }
         return digits;
       }),
+    address: AddressSchema,
     pixKey: z.string().trim().max(140).nullable().optional(),
     // Teto em 100%: o simulador avisa muito antes disso, mas nada aqui deveria
     // aceitar um número que o CHECK do banco recusaria.

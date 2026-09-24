@@ -29,7 +29,8 @@ import {
   DEFAULT_SIGNUP_BONUS_COINS,
 } from "@/features/partners/economics";
 import { normalizeHandle, SOCIAL_LABELS, SOCIAL_NETWORKS } from "@/features/partners/socials";
-import { formatDoc, isValidDoc, normalizeDoc, onlyDigits } from "@/lib/domain/documento";
+import { formatDoc, isValidCpf, onlyDigits } from "@/lib/domain/documento";
+import { type Address, formatCep, isCompleteAddress, UFS } from "@/lib/domain/endereco";
 import { cn } from "@/lib/utils";
 import { CommissionSimulator } from "./CommissionSimulator";
 
@@ -40,6 +41,11 @@ import { CommissionSimulator } from "./CommissionSimulator";
  * campo aqui que decide quanto sai do caixa, e é negociável caso a caso.
  * Digitar 70% e ver na hora "você fica R$ 1,10 negativo no primeiro mês,
  * recuperado em 3 dias" é diferente de descobrir isso no fechamento do mês.
+ *
+ * **CPF e endereço são obrigatórios** (migração 0070 e cláusula 3 dos
+ * termos). Um cadastro anterior à regra abre com os campos vazios e só salva
+ * depois de completados: é a forma de a base inteira convergir sem uma
+ * migração que inventasse dados.
  */
 
 type Props = {
@@ -59,8 +65,9 @@ const ERROR_MESSAGES: Record<string, string> = {
   slug_or_email_taken: "Já existe um parceiro com esse código ou e-mail.",
   create_failed: "Não consegui criar o parceiro. Nada foi salvo, tente de novo.",
   update_failed: "Não consegui salvar as alterações. Nada foi alterado, tente de novo.",
-  invalid_doc: "CPF ou CNPJ inválido, confira os dígitos.",
-  invalid_input: "Algum campo não passou na validação: confira código, e-mail e documento.",
+  invalid_doc: "CPF inválido, confira os dígitos.",
+  invalid_address: "Endereço incompleto: CEP, rua, número, bairro, cidade e UF são obrigatórios.",
+  invalid_input: "Algum campo não passou na validação: confira código, e-mail, CPF e endereço.",
   invalid_json: "Não consegui enviar os dados. Tente de novo.",
 };
 
@@ -71,6 +78,18 @@ function messageFor(status: number, code: unknown): string {
   if (status === 429) return "Muitas ações seguidas. Espere alguns segundos.";
   return "Não consegui salvar. Confira o log do servidor antes de tentar de novo.";
 }
+
+const UF_OPTIONS: SelectOption[] = UFS.map((uf) => ({ value: uf, label: uf }));
+
+const EMPTY_ADDRESS: Address = {
+  cep: "",
+  street: "",
+  number: "",
+  complement: "",
+  district: "",
+  city: "",
+  state: "",
+};
 
 const STATUS_OPTIONS: SelectOption[] = [
   { value: "active", label: "Ativo" },
@@ -96,7 +115,16 @@ export function PartnerDialog({
   const [socials, setSocials] = useState<Record<string, string>>(() =>
     Object.fromEntries(SOCIAL_NETWORKS.map((n) => [n, partner?.socials[n] ?? ""]))
   );
-  const [doc, setDoc] = useState(partner?.doc ? formatDoc(partner.doc) : "");
+  // Um cadastro antigo com CNPJ abre VAZIO: CNPJ não é mais aceito, e
+  // mostrá-lo preenchido só para a rota recusar ao salvar seria pior.
+  const [doc, setDoc] = useState(
+    partner?.doc && partner.doc.length === 11 ? formatDoc(partner.doc) : ""
+  );
+  const [address, setAddress] = useState<Address>(() =>
+    partner?.address
+      ? { ...EMPTY_ADDRESS, ...partner.address, cep: formatCep(partner.address.cep) }
+      : EMPTY_ADDRESS
+  );
   const [pixKey, setPixKey] = useState(partner?.pixKey ?? "");
   const [ratePct, setRatePct] = useState(
     String((partner?.commissionRateBps ?? DEFAULT_COMMISSION_BPS) / 100)
@@ -122,29 +150,37 @@ export function PartnerDialog({
   const rateBps = Math.min(10_000, Math.max(0, Math.round(Number(ratePct || 0) * 100)));
   const bonus = Math.max(0, Math.round(Number(bonusCoins || 0)));
 
-  // O documento é opcional, mas um documento ERRADO é pior que nenhum: o PIX
-  // sai, cai em lugar nenhum, e a gente só descobre pela reclamação. Vazio
-  // passa; preenchido tem de fechar.
+  // O CPF é obrigatório, e um CPF ERRADO é pior que nenhum: o PIX sai, cai
+  // em lugar nenhum, e a gente só descobre pela reclamação.
   const docDigits = onlyDigits(doc);
-  const docComplete = docDigits.length === 11 || docDigits.length === 14;
-  const docValid = docComplete && isValidDoc(doc);
-  const docBlocking = docDigits.length > 0 && !docValid;
+  const docComplete = docDigits.length === 11;
+  const docValid = docComplete && isValidCpf(docDigits);
   // A mensagem só aparece quando já dá para julgar, ao completar os dígitos
   // ou ao sair do campo. Gritar "faltam 10 dígitos" na primeira tecla é ruído.
-  const docError =
-    docBlocking && (docComplete || docBlurred)
-      ? docComplete
-        ? "Dígitos não conferem, confira o número."
-        : "Documento incompleto."
-      : undefined;
+  const docError = docValid
+    ? undefined
+    : docComplete
+      ? "Dígitos não conferem, confira o número."
+      : docBlurred
+        ? docDigits.length === 0
+          ? "CPF obrigatório."
+          : "CPF incompleto."
+        : undefined;
+  const addressValid = isCompleteAddress(address);
+  const setAddressField = (field: keyof Address, value: string) =>
+    setAddress((prev) => ({ ...prev, [field]: value }));
 
   // Conversão medida só existe quando já houve cadastros por este parceiro.
   const measuredConversion =
     partner && partner.stats.signups > 0 ? partner.stats.conversionRate : null;
 
   async function handleSave() {
-    if (docBlocking) {
+    if (!docValid) {
       toast.error(ERROR_MESSAGES.invalid_doc);
+      return;
+    }
+    if (!addressValid) {
+      toast.error(ERROR_MESSAGES.invalid_address);
       return;
     }
     setSaving(true);
@@ -156,7 +192,16 @@ export function PartnerDialog({
         socials: Object.fromEntries(
           SOCIAL_NETWORKS.map((n) => [n, normalizeHandle(socials[n] ?? "")]).filter(([, v]) => v)
         ),
-        doc: normalizeDoc(doc),
+        doc: docDigits,
+        address: {
+          cep: onlyDigits(address.cep),
+          street: address.street.trim(),
+          number: address.number.trim(),
+          ...(address.complement?.trim() ? { complement: address.complement.trim() } : {}),
+          district: address.district.trim(),
+          city: address.city.trim(),
+          state: address.state,
+        },
         pixKey: pixKey.trim() || null,
         commissionRateBps: rateBps,
         signupBonusCoins: bonus,
@@ -245,17 +290,18 @@ export function PartnerDialog({
 
           <div className="grid gap-3 sm:grid-cols-2">
             <Field
-              label="CPF / CNPJ"
+              label="CPF"
               id="p-doc"
-              hint="Opcional. Máscara e dígito verificador conferidos aqui."
+              hint="Obrigatório. Máscara e dígito verificador conferidos aqui."
               error={docError}
             >
               <Input
                 id="p-doc"
                 inputMode="numeric"
                 autoComplete="off"
+                required
                 value={doc}
-                onChange={(e) => setDoc(formatDoc(e.target.value))}
+                onChange={(e) => setDoc(formatDoc(onlyDigits(e.target.value).slice(0, 11)))}
                 onBlur={() => setDocBlurred(true)}
                 aria-invalid={docError ? true : undefined}
                 placeholder="000.000.000-00"
@@ -265,6 +311,89 @@ export function PartnerDialog({
               <Input id="p-pix" value={pixKey} onChange={(e) => setPixKey(e.target.value)} />
             </Field>
           </div>
+
+          <fieldset className="flex flex-col gap-3">
+            <legend className="mb-1.5 text-sm font-medium text-scriba-ink-strong">
+              Endereço <span className="font-light text-scriba-ink-mute">(obrigatório)</span>
+            </legend>
+            <div className="grid gap-3 sm:grid-cols-[140px_1fr]">
+              <Field label="CEP" id="p-cep">
+                <Input
+                  id="p-cep"
+                  inputMode="numeric"
+                  autoComplete="off"
+                  required
+                  value={address.cep}
+                  onChange={(e) => setAddressField("cep", formatCep(e.target.value))}
+                  placeholder="00000-000"
+                />
+              </Field>
+              <Field label="Rua" id="p-street">
+                <Input
+                  id="p-street"
+                  required
+                  value={address.street}
+                  onChange={(e) => setAddressField("street", e.target.value)}
+                  placeholder="Rua das Flores"
+                />
+              </Field>
+            </div>
+            <div className="grid gap-3 sm:grid-cols-[140px_1fr]">
+              <Field label="Número" id="p-number">
+                <Input
+                  id="p-number"
+                  required
+                  value={address.number}
+                  onChange={(e) => setAddressField("number", e.target.value)}
+                  placeholder="123"
+                />
+              </Field>
+              <Field label="Complemento" id="p-complement" hint="Opcional.">
+                <Input
+                  id="p-complement"
+                  value={address.complement ?? ""}
+                  onChange={(e) => setAddressField("complement", e.target.value)}
+                  placeholder="Apto 42"
+                />
+              </Field>
+            </div>
+            <div className="grid gap-3 sm:grid-cols-[1fr_1fr_96px]">
+              <Field label="Bairro" id="p-district">
+                <Input
+                  id="p-district"
+                  required
+                  value={address.district}
+                  onChange={(e) => setAddressField("district", e.target.value)}
+                />
+              </Field>
+              <Field label="Cidade" id="p-city">
+                <Input
+                  id="p-city"
+                  required
+                  value={address.city}
+                  onChange={(e) => setAddressField("city", e.target.value)}
+                />
+              </Field>
+              <Field label="UF" id="p-state">
+                <Select
+                  items={UF_OPTIONS}
+                  value={address.state || null}
+                  onValueChange={(v) => setAddressField("state", (v as string | null) ?? "")}
+                >
+                  <SelectTrigger id="p-state" className="w-full">
+                    <SelectValue placeholder="UF" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    {UF_OPTIONS.map((o) => (
+                      <SelectItem key={o.value} value={o.value}>
+                        {o.label}
+                      </SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+              </Field>
+            </div>
+          </fieldset>
 
           <div className="grid gap-3 sm:grid-cols-2">
             <Field label="Comissão (%)" id="p-rate">
@@ -376,7 +505,7 @@ export function PartnerDialog({
           </Button>
           <Button
             onClick={handleSave}
-            disabled={saving || !displayName.trim() || !slug.trim() || docBlocking}
+            disabled={saving || !displayName.trim() || !slug.trim() || !docValid || !addressValid}
           >
             {saving ? "Salvando…" : isNew ? "Cadastrar" : "Salvar"}
           </Button>

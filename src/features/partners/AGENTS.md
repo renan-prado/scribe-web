@@ -211,6 +211,14 @@ porque contradizia o "sem meta mínima de resultado" dos termos. O botão de
 pagar aparece com qualquer valor disponível. Não recrie um mínimo sem mudar os
 termos (cláusulas 3, 9 e 14) no mesmo commit.
 
+**CPF e endereço são obrigatórios no cadastro, e a regra é da ROTA.**
+Migração 0070: `address` é jsonb com o FORMATO num CHECK, mas as duas colunas
+seguem anuláveis porque há parceiros de antes da regra. `PartnerBodySchema`
+exige CPF (só CPF, o programa é para pessoa física) e endereço completo em
+todo cadastro novo, e o `.partial()` do PATCH deixa omitir, nunca anular. O
+diálogo do admin não salva um cadastro antigo sem completá-lo. A validação é
+uma só dos dois lados: `lib/domain/documento.ts` e `lib/domain/endereco.ts`.
+
 **O comprovante do PIX é um LINK, não um upload.** `partner_payouts.receipt_url`,
 com https obrigatório num CHECK da coluna e no schema da rota, um "mandei no
 zap" salvo ali vira botão quebrado no painel do parceiro.

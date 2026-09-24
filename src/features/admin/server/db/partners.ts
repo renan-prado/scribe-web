@@ -1,6 +1,7 @@
 import "server-only";
 import { escapeLikeValue } from "@/lib/db/like";
 import { markProspectsPromoted } from "@/lib/db/prospects";
+import type { Address } from "@/lib/domain/endereco";
 import { createLogger } from "@/lib/log";
 import { createAdminClient } from "@/lib/supabase/admin";
 
@@ -29,6 +30,8 @@ export type AdminPartner = {
   displayName: string;
   socials: Record<string, string>;
   doc: string | null;
+  /** NULL só em cadastro anterior à migração 0070; todo cadastro novo tem. */
+  address: Address | null;
   pixKey: string | null;
   commissionRateBps: number;
   signupBonusCoins: number;
@@ -66,6 +69,7 @@ type PartnerRow = {
   display_name: string;
   socials: Record<string, string> | null;
   doc: string | null;
+  address: Address | null;
   pix_key: string | null;
   commission_rate_bps: number;
   signup_bonus_coins: number;
@@ -78,7 +82,7 @@ type PartnerRow = {
 };
 
 const SELECT =
-  "id, user_id, invited_email, slug, display_name, socials, doc, pix_key, commission_rate_bps, signup_bonus_coins, signup_reward_coins, monthly_coins, bonus_budget_coins, bonus_granted_coins, status, created_at";
+  "id, user_id, invited_email, slug, display_name, socials, doc, address, pix_key, commission_rate_bps, signup_bonus_coins, signup_reward_coins, monthly_coins, bonus_budget_coins, bonus_granted_coins, status, created_at";
 
 function toPartner(row: PartnerRow): AdminPartner {
   return {
@@ -89,6 +93,7 @@ function toPartner(row: PartnerRow): AdminPartner {
     displayName: row.display_name,
     socials: row.socials ?? {},
     doc: row.doc,
+    address: row.address,
     pixKey: row.pix_key,
     commissionRateBps: row.commission_rate_bps,
     signupBonusCoins: row.signup_bonus_coins,
@@ -154,7 +159,9 @@ export type PartnerInput = {
   slug: string;
   displayName: string;
   socials?: Record<string, string>;
-  doc?: string | null;
+  /** CPF, só dígitos. Obrigatório desde a migração 0070. */
+  doc: string;
+  address: Address;
   pixKey?: string | null;
   commissionRateBps?: number;
   signupBonusCoins?: number;
@@ -173,7 +180,8 @@ export async function createPartner(input: PartnerInput): Promise<AdminPartner> 
       slug: input.slug,
       display_name: input.displayName,
       socials: input.socials ?? {},
-      doc: input.doc ?? null,
+      doc: input.doc,
+      address: input.address,
       pix_key: input.pixKey ?? null,
       commission_rate_bps: input.commissionRateBps,
       signup_bonus_coins: input.signupBonusCoins,
@@ -212,6 +220,7 @@ export async function updatePartner(
   if (input.displayName !== undefined) patch.display_name = input.displayName;
   if (input.socials !== undefined) patch.socials = input.socials;
   if (input.doc !== undefined) patch.doc = input.doc;
+  if (input.address !== undefined) patch.address = input.address;
   if (input.pixKey !== undefined) patch.pix_key = input.pixKey;
   if (input.commissionRateBps !== undefined) patch.commission_rate_bps = input.commissionRateBps;
   if (input.signupBonusCoins !== undefined) patch.signup_bonus_coins = input.signupBonusCoins;

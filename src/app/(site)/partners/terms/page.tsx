@@ -11,7 +11,6 @@ import {
   DEFAULT_SIGNUP_BONUS_COINS,
   PARTNER_PROSPECT_COINS,
   PAYOUT_DAY_OF_MONTH,
-  PAYOUT_MINIMUM_CENTS,
 } from "@/features/partners/economics";
 import { REF_COOKIE_MAX_AGE } from "@/features/referrals/cookies";
 import { LandingFooter, LandingHeader } from "@/shared/components/LandingChrome";
@@ -42,7 +41,7 @@ export const metadata: Metadata = {
  * condição que ninguém anunciou.
  */
 
-const LAST_UPDATED = "10 de setembro de 2026";
+const LAST_UPDATED = "24 de setembro de 2026";
 const CONTACT_EMAIL = "contato@scriba.cc";
 
 const ATTRIBUTION_DAYS = REF_COOKIE_MAX_AGE / (24 * 60 * 60);
@@ -137,6 +136,11 @@ export default function PartnersTermsPage() {
               <li>
                 O Parceiro deve ser maior de 18 anos, ter plena capacidade civil e manter conta
                 ativa no Serviço, acessada pelo mesmo provedor de login utilizado no aplicativo.
+              </li>
+              <li>
+                O cadastro exige o <strong>CPF</strong> e o <strong>endereço completo</strong> do
+                Parceiro, sem os quais a participação não é ativada. O Parceiro responde pela
+                veracidade desses dados e deve mantê-los atualizados.
               </li>
               <li>
                 A adesão <strong>não gera vínculo empregatício</strong>, societário, de agência, de
@@ -362,10 +366,9 @@ export default function PartnersTermsPage() {
                 efetuado, e a ausência deles não configura mora do Scriba.
               </li>
               <li>
-                <strong>Valor mínimo de {formatBrl(PAYOUT_MINIMUM_CENTS)}.</strong> Abaixo desse
-                montante o saldo permanece acumulado para os meses seguintes.{" "}
-                <strong>O saldo não expira</strong> e é pago integralmente, ainda que inferior ao
-                mínimo, no encerramento da participação por qualquer motivo que não fraude.
+                <strong>Sem valor mínimo.</strong> Todo o saldo disponível na data de pagamento é
+                pago, qualquer que seja o montante. <strong>O saldo não expira</strong> e é pago
+                integralmente no encerramento da participação por qualquer motivo que não fraude.
               </li>
               <li>
                 <strong>Comprovante.</strong> Efetuado o pagamento, o Scriba pode disponibilizar no
@@ -473,8 +476,7 @@ export default function PartnersTermsPage() {
               <li>
                 <strong>Encerramento voluntário.</strong> Qualquer das partes pode encerrar a
                 participação a qualquer tempo, sem multa, mediante comunicação. O saldo disponível e
-                as Comissões em carência que vencerem sem estorno são pagos integralmente, ainda que
-                inferiores ao mínimo da cláusula 9.
+                as Comissões em carência que vencerem sem estorno são pagos integralmente.
               </li>
               <li>
                 Encerrada a participação, cessam a cortesia mensal, o acesso ao painel e a
@@ -487,7 +489,7 @@ export default function PartnersTermsPage() {
           <Section n={14} title="Alteração das condições">
             <p>
               O Scriba pode alterar as condições do Programa, percentual padrão, valores em moedas,
-              carência, mínimo de pagamento e demais regras, mediante comunicação ao Parceiro com{" "}
+              carência, data de pagamento e demais regras, mediante comunicação ao Parceiro com{" "}
               <strong>antecedência mínima de 30 dias</strong> por e-mail ou aviso no painel.
             </p>
             <p className="mt-2">
@@ -513,7 +515,7 @@ export default function PartnersTermsPage() {
               solicitados.
             </p>
             <p className="mt-2">
-              Os dados pessoais do próprio Parceiro, nome, e-mail, chave PIX, CPF ou CNPJ, são
+              Os dados pessoais do próprio Parceiro, nome, e-mail, CPF, endereço e chave PIX, são
               tratados para execução deste Regulamento e cumprimento de obrigações legais e fiscais,
               nos termos da Lei nº 13.709/2018 (LGPD) e da{" "}
               <Link href="/privacy" className="text-scriba-blue-ink underline underline-offset-2">
