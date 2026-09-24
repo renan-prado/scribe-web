@@ -767,58 +767,48 @@
     #B32E3C 72%,
     #D8423A 100%
   );
-  /* OS POST-ITS DA BIBLIOTECA, e hoje eles são UMA COR SÓ: a do cartão.
+  /* OS POST-ITS DA BIBLIOTECA, e no escuro eles são QUATRO PASTÉIS.
 
-     `--v2-note-*` vale exatamente `--v2-card` nos dois temas, e a tinta e o
-     `mute` acompanham. O post-it deixou de ser um objeto com paleta própria e
-     virou o que o resto da Biblioteca já é — o mesmo cartão do cartão de
-     pasta, na mesma superfície.
+     Azul, verde, um escuro e limão, cada um com o próprio par de tinta. O
+     argumento é o do chão: num grafite a saturação some, e a cor é o que dá
+     vida a um mural que de resto seria cinza sobre cinza — e é ela que faz a
+     memória visual do acervo, "aquele é o verde", que uma cor só não tem.
 
-     **Eles foram quatro PASTÉIS, e depois quatro cinzas com um fio de matiz.**
-     Os pastéis (azul, verde, limão, mais um escuro) tinham um argumento bom:
-     num chão grafite a saturação some, e a cor dá vida a um mural que de resto
-     seria cinza sobre cinza. O que o argumento não pesa é o que a cor faz COM
-     O TEXTO — o mural é a primeira tela do app, cada cartão tem um título
-     dentro, e quatro lavados numa grade de seis puxam o olho para a grade em
-     vez de para o que está escrito nela. Um acervo não é uma paleta.
+     **Eles já foram UMA COR SÓ, a do cartão, e voltaram.** O argumento contra
+     era o que a cor faz COM O TEXTO: o mural é a primeira tela do app, cada
+     cartão tem um título dentro, e quatro lavados numa grade de seis puxariam
+     o olho para a grade em vez de para o que está escrito nela. Foi levado até
+     o fim (quatro pastéis → quatro cinzas com um fio de matiz → uma cor só) e
+     não sobreviveu ao teste de olhar: sem cor, o mural deixou de parecer um
+     mural. **No CLARO a conclusão continua valendo**, e lá eles seguem numa
+     cor só — ver o bloco `.light`, onde está o porquê da assimetria.
 
-     Os quatro cinzas foram a tentativa de manter a memória visual sem a cor, e
-     não sobreviveram ao mesmo teste: um "fio de matiz" continua sendo matiz, e
-     de perto o mural lia verde e bege. Uma cor só é a conclusão de levar o
-     argumento até o fim.
+     **Consequência viva:** a cor gravada em `folders.color` continua sem
+     pintar pixel nenhum. O ícone de pasta pousa no cartão do APP, não no
+     post-it, e o `-mute` de uma face pastel é tinta escura, calibrada sobre
+     papel claro; `FOLDER_ICON_INK` lê `slate-mute` nas quatro por isso, ver o
+     comentário de lá.
 
-     **Os QUATRO tokens continuam, com valores idênticos, e isso é deliberado.**
-     O `PostItNote` segue sorteando uma das quatro faces pelo hash do id, e
-     `FOLDER_ICON_INK` segue lendo os `-mute` para tingir o ícone de pasta.
-     Nenhum dos dois muda nada na tela hoje; os tokens são o seam por onde a
-     distinção volta se um dia ela tiver trabalho a fazer, e derrubá-los seria
-     apagar o mecanismo junto com a decisão. **Consequência viva:** a cor de
-     pasta gravada no banco (`folders.color`) deixou de pintar qualquer pixel —
-     o seletor dela já não existia no diálogo, e agora o ícone também não a
-     mostra.
-
-     Contraste sobre o próprio cartão: tinta ~11:1 no escuro e ~14:1 no claro,
-     `mute` ~4,7:1 e ~5,0:1, que é o piso da linha de data. O `mute` NÃO é o
-     `--v2-ink-mute` do app (#8C8C8C / #707070): sobre esta superfície ele dá
-     3,9:1, abaixo de AA. */
-  --v2-note-mist: #2F3035;
-  --v2-note-mist-ink: #F5F5F5;
-  --v2-note-mist-mute: #9A9A9A;
-  --v2-note-sage: #2F3035;
-  --v2-note-sage-ink: #F5F5F5;
-  --v2-note-sage-mute: #9A9A9A;
-  /* O neutro, e ele é o mais CLARO dos quatro — o degrau que quebra o mural
-     para ele não ser quatro tons da mesma coisa. Era o contrário: ele era o
-     único ESCURO no meio de três pastéis claros, e por isso o único que
-     levava um fio de luz na borda. Com os quatro na mesma família o papel
-     dele continua sendo o de destoar, só que pelo lado de cima, e o fio
-     passou a valer para os quatro (ver `PostItNote`). */
+     Contraste sobre o próprio cartão: tinta ~11:1 nos quatro, `mute` de 4,7 a
+     5,4:1, que é o piso da linha de data. O `mute` NÃO é o `--v2-ink-mute` do
+     app (#8C8C8C / #707070): sobre estas superfícies ele não chega a AA. */
+  --v2-note-mist: #D8DFE9;
+  --v2-note-mist-ink: #1B2330;
+  --v2-note-mist-mute: #4A5568;
+  --v2-note-sage: #CFDECB;
+  --v2-note-sage-ink: #1C2A1B;
+  --v2-note-sage-mute: #48584A;
+  /* O ESCURO, e ele é o único: o degrau que quebra o mural para ele não ser
+     três lavados da mesma família. É também o único que precisa do fio de luz
+     na borda — contra a página ele dá 1,25:1 e, sem o fio, lê como um buraco
+     na lista. O fio hoje vale para os quatro, e nos três claros ele some
+     sozinho por ser a TINTA a 10%, não um branco (ver `PostItNote`). */
   --v2-note-slate: #2F3035;
   --v2-note-slate-ink: #F5F5F5;
-  --v2-note-slate-mute: #9A9A9A;
-  --v2-note-lemon: #2F3035;
-  --v2-note-lemon-ink: #F5F5F5;
-  --v2-note-lemon-mute: #9A9A9A;
+  --v2-note-slate-mute: #9A9BA2;
+  --v2-note-lemon: #EFF0A4;
+  --v2-note-lemon-ink: #2A2B12;
+  --v2-note-lemon-mute: #5A5B30;
   /* O chão do botão de gravar: uma faixa que escurece até o GRAFITE da página
      embaixo e some em transparente em cima. Ela SUBSTITUIU a sombra que o botão tinha:
      uma sombra separa o botão do que está atrás dele num ponto só, a faixa
@@ -1223,31 +1213,22 @@
     rgba(255, 255, 255, 0) 100%
   );
 
-  /* OS POST-ITS, e no claro eles são QUATRO CINZAS.
+  /* OS POST-ITS, e no claro eles são UMA COR SÓ: a do cartão.
 
-     No escuro são quatro pastéis, e é o certo lá: sobre um chão grafite a cor
-     é a única coisa que dá vida ao mural, e a saturação some no escuro. Sobre
-     uma página branca os mesmos quatro pastéis viram adesivos de papelaria —
-     a cor, que no escuro era um respiro, passa a ser a coisa mais barulhenta
-     da primeira tela do app.
+     No escuro são quatro pastéis, e é o certo LÁ: sobre um chão grafite a cor
+     é o que dá vida ao mural, e a saturação some no escuro. Sobre uma página
+     branca os mesmos quatro viram adesivos de papelaria — o que no escuro era
+     um respiro passa a ser a coisa mais barulhenta da primeira tela do app, e
+     puxa o olho para a grade em vez de para o título escrito dentro de cada
+     cartão. Foram tentados aqui em duas forças (os pastéis, e depois quatro
+     cinzas com um fio de matiz, que de perto liam verde e bege) antes de a
+     conclusão ser esta.
 
-     Então aqui eles são quatro cinzas com um FIO de matiz, na escala de
-     neutros da própria página: frio, verde, quente e o mais fundo dos quatro.
-     Eles continuam fazendo o que sempre fizeram — dar ao acervo uma memória
-     visual, "aquele é o cinza azulado" — sem disputar com o título que está
-     escrito dentro deles.
-
-     A distância entre eles é curta de propósito, e a hierarquia continua sendo
-     de TINTA, não de fundo. Cada um mantém o próprio par (`-ink` e `-mute`)
-     puxado para o matiz do cartão, e o `mute` foi medido sobre o CARTÃO, não
-     sobre a página (regra do `src/shared/AGENTS.md`): ~4,9-5,2:1, que é o piso
-     da linha de data.
-
-     O quarto (`slate`) era o ESCURO no tema escuro, e aqui ele é o mais FUNDO
-     dos quatro cinzas. O papel dele é o mesmo — quebrar o mural para ele não
-     ser quatro tons da mesma coisa —, e ele continua sendo o único que pede o
-     fio de luz na borda (ver `PostItNote`), que no claro é invisível e
-     inofensivo. */
+     Os quatro tokens valem `--v2-card`, e a tinta e o `mute` acompanham: ~14:1
+     e ~5,0:1 sobre o próprio cartão, medidos sobre ELE e não sobre a página
+     (regra do `src/shared/AGENTS.md`). Aqui o fio da borda vale para os quatro
+     e é necessário nos quatro — a página é branca e o cartão é cinza-claro,
+     então nenhum deles se separa do chão pela própria cor (ver `PostItNote`). */
   --v2-note-mist: #F5F5F5;
   --v2-note-mist-ink: #000000;
   --v2-note-mist-mute: #6B6B6B;

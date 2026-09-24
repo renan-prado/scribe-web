@@ -41,10 +41,14 @@ import { NavLink } from "@/components/NavLink";
  * cliente chegam à mesma cor e a hidratação não tem o que divergir.
  *
  * Cada cor traz o próprio par de tinta porque uma das quatro é ESCURA (ver o
- * bloco `--v2-note-*` em `globals.css`). E só a escura leva o fio de luz na
- * borda: contra o fundo da página ela dá 1,25:1 e, sem o fio, lê como um
- * buraco na lista em vez de cartão. Nos três claros o mesmo fio seria sujeira,
- * eles já se separam do fundo pela própria cor.
+ * bloco `--v2-note-*` em `globals.css`), e é ela também quem precisa do fio de
+ * luz na borda: contra o fundo da página ela dá 1,25:1 e, sem o fio, lê como
+ * um buraco na lista em vez de cartão. O fio hoje é declarado para os quatro,
+ * e nos três claros ele some sozinho — ver `NOTE_RING`.
+ *
+ * **As quatro faces são pastéis no escuro e uma cor só no claro**, e o
+ * componente não sabe disso: quem decide é o token. Foi por essa porta que os
+ * pastéis saíram, quando o tema claro entrou, e foi por ela que voltaram.
  *
  * Não leva `"use client"`: sem estado e sem hook, vai para o bundle do cliente
  * só porque `LibraryBrowser`, que é client, o importa.
@@ -73,27 +77,37 @@ type Props = {
  * As quatro faces do post-it, cada uma com o próprio par de tinta. A ordem
  * aqui é a ordem do rodízio, e mexer nela repinta o acervo de todo mundo —
  * o índice sorteado é posição neste array.
+ *
+ * **Os três PASTÉIS levam `/90`, o escuro não.** É o mesmo pedido que fez os
+ * pastéis voltarem — mural com cara de mural, não de grade — um degrau mais
+ * fundo: 90% de opacidade deixa o chão grafite pingar de leve por trás da
+ * cor, em vez de um retângulo de tinta chapada. O `slate` já É praticamente a
+ * cor do fundo (`--v2-card`), então diluí-lo não muda nada que se veja e só
+ * custaria o cálculo do `color-mix`.
  */
 const NOTES = [
-  { bg: "bg-v2-note-mist", ink: "text-v2-note-mist-ink", mute: "text-v2-note-mist-mute" },
-  { bg: "bg-v2-note-sage", ink: "text-v2-note-sage-ink", mute: "text-v2-note-sage-mute" },
+  { bg: "bg-v2-note-mist/90", ink: "text-v2-note-mist-ink", mute: "text-v2-note-mist-mute" },
+  { bg: "bg-v2-note-sage/90", ink: "text-v2-note-sage-ink", mute: "text-v2-note-sage-mute" },
   { bg: "bg-v2-note-slate", ink: "text-v2-note-slate-ink", mute: "text-v2-note-slate-mute" },
-  { bg: "bg-v2-note-lemon", ink: "text-v2-note-lemon-ink", mute: "text-v2-note-lemon-mute" },
+  { bg: "bg-v2-note-lemon/90", ink: "text-v2-note-lemon-ink", mute: "text-v2-note-lemon-mute" },
 ] as const;
 
 /**
  * O FIO, e ele vale para os QUATRO cartões.
  *
- * Era exceção de um só: enquanto três post-its eram pastéis claros e o quarto
- * era escuro, só o escuro precisava de borda — ele dava 1,25:1 contra a página
- * e lia como um buraco na lista, e pôr o mesmo fio nos outros três sujaria
- * cartões que já se separavam do fundo pela própria cor.
+ * Ele já foi exceção de um só, escrito por face: enquanto três post-its eram
+ * pastéis claros e o quarto era escuro, só o escuro precisava de borda, e um
+ * `ring-white/10` nos outros três sujaria cartões que já se separavam do fundo
+ * pela própria cor.
  *
- * Com os quatro em cinza, nos dois temas, não existe mais o cartão destoante:
- * todos estão a um degrau curto da página, e a exceção virou a regra. O fio é
- * `--scriba-hairline` (a tinta a 10%), o mesmo que a Biblioteca usa entre os
- * meses, e não um branco literal — é o que faz ele acompanhar o tema em vez de
- * sumir no claro.
+ * Ele vale para os quatro desde que o fio deixou de ser um branco literal e
+ * passou a ser `--scriba-hairline`, a TINTA a 10% (o mesmo que a Biblioteca
+ * usa entre os meses). Com isso ele acompanha o tema, e a exceção deixou de
+ * precisar ser escrita: no CLARO a página é branca e os quatro cartões são
+ * cinza-claro, então todos o pedem; no ESCURO, sobre os três pastéis, um
+ * branco a 10% não desenha nada, que é exatamente o que a regra por face
+ * dizia. Uma linha faz o que quatro faziam, e continua certa quando a paleta
+ * muda de tema — foi o que aconteceu quando os pastéis voltaram.
  *
  * `ring-inset` e não `border`: 1px de borda mudaria a caixa do cartão, e com
  * ela a régua do mural inteiro.

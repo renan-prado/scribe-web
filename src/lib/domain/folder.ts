@@ -33,31 +33,36 @@ export function parseFolderColor(value: unknown): FolderColor {
  * código, `` `text-v2-note-${color}` `` não geraria nada.
  *
  * Com o seletor fora, o caminho normal é `color === null` e a leitura cai em
- * `mist` para todas. `slate` aponta para `--v2-note-slate-mute` e não para
- * `--v2-note-slate` porque o segundo É o cinza do cartão, e o ícone de uma
- * pasta antiga gravada assim simplesmente não apareceria.
- */
-/**
- * A cor do ícone de pasta, e ela sai do `-mute` de cada post-it, NUNCA da
- * superfície dele.
+ * `mist` para todas.
  *
- * Três dos quatro apontavam para a superfície (`text-v2-note-mist`), e
- * funcionava enquanto aquelas eram pastéis CLAROS: um glifo azul-claro tinha
- * contraste de sobra no cartão escuro do app. Com os post-its virando cinzas
- * nos dois temas, a superfície deles passou a ser quase a mesma do cartão em
- * que o ícone pousa — no claro ele saía quase branco sobre cinza-claro, e no
- * escuro sairia escuro sobre escuro. O mesmo erro, espelhado.
+ * Hoje as QUATRO valem a mesma tinta: a pasta deixou de ser pintada quando o
+ * seletor de cor saiu do `FolderDialog`, e `folders.color` não governa mais
+ * pixel nenhum (ver `src/features/session/AGENTS.md`).
  *
- * O `-mute` é a tinta já calibrada de cada família (~5:1 sobre o próprio
- * cartão), e como post-it e cartão do app estão no mesmo degrau em cada tema,
- * ela vale nos dois. A pasta continua colorida — o matiz é o mesmo —, só deixa
- * de ser pintada com uma cor de FUNDO.
+ * **O que este mapa evita é um erro de SUPERFÍCIE, e ele já aconteceu nas duas
+ * direções.** O ícone pousa no cartão do APP, não no post-it, e a paleta do
+ * post-it não é feita para lá:
+ *
+ * - Apontar para a SUPERFÍCIE (`text-v2-note-mist`) funcionava enquanto ela era
+ *   um pastel claro sobre o cartão escuro. No tema claro, e enquanto os
+ *   post-its foram cinzas, ela virou quase a cor do cartão em que o glifo
+ *   pousa — invisível.
+ * - Apontar para o `-mute` de cada família funciona enquanto todas forem
+ *   escuras. Com os pastéis de volta no tema escuro, o `-mute` das três claras
+ *   é tinta ESCURA (calibrada sobre papel claro), e um ícone dessa cor sobre o
+ *   cartão escuro do app dá 1,75:1.
+ *
+ * `slate` é a única face cuja tinta apagada é feita para esta superfície nos
+ * DOIS temas — ela é a do cartão escuro no escuro (#9A9BA2) e a do cinza claro
+ * no claro (#6B6B6B), ~4,8:1 e ~5,0:1 sobre o cartão. Por isso as quatro
+ * apontam para ela. Quando a cor de pasta voltar a ter trabalho, o que ela
+ * pede é um token PRÓPRIO por tema, não o empréstimo de uma face do mural.
  */
 export const FOLDER_ICON_INK: Record<FolderColor, string> = {
-  mist: "text-v2-note-mist-mute",
-  sage: "text-v2-note-sage-mute",
+  mist: "text-v2-note-slate-mute",
+  sage: "text-v2-note-slate-mute",
   slate: "text-v2-note-slate-mute",
-  lemon: "text-v2-note-lemon-mute",
+  lemon: "text-v2-note-slate-mute",
 };
 
 /**

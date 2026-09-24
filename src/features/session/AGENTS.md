@@ -854,10 +854,17 @@ Duas consequências:
   é `#2F3035`, exatamente `--v2-card` e `bg-popover`, e como pastilha de 28px
   dentro do diálogo lia como um buraco em vez de uma opção. A primeira
   correção foi um fio de borda (`ring-1 ring-white/20`, o recurso que o
-  post-it escuro usa); a correção da correção foi tirar o seletor. Ele sobrevive
-  em `FOLDER_ICON_INK`, apontando para `--v2-note-slate-mute`, só para a linha
-  antiga que estiver gravada assim — como TINTA, `--v2-note-slate` seria o
-  próprio cinza do cartão e o ícone não apareceria.
+  post-it escuro usa); a correção da correção foi tirar o seletor.
+- **As quatro entradas de `FOLDER_ICON_INK` apontam para `slate-mute`**, e o
+  ícone sai da mesma tinta qualquer que seja a linha gravada. O ícone pousa no
+  cartão do APP, não no post-it, e a paleta do post-it não serve a essa
+  superfície nos dois temas: a superfície de uma face é quase a cor do cartão
+  no claro, e o `-mute` das faces pastel é tinta escura, calibrada sobre papel
+  claro, que sobre o cartão escuro dá 1,75:1. O `slate` é a única face cuja
+  tinta apagada foi feita para este lugar nos dois temas. O cabeçalho da
+  constante tem as duas direções do erro; quando a cor de pasta voltar a ter
+  trabalho, o que ela pede é um token próprio, não o empréstimo de uma face do
+  mural.
 
 ### Mover: duas portas, nenhuma no cartão da sessão
 
