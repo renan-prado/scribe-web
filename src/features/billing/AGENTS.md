@@ -88,6 +88,15 @@ de metadata e nunca do corpo do request.
   key podia dar `update profiles set coin_balance = 999999 where id = auth.uid()`.
 - **Nunca escreva em `coin_balance` diretamente.** Todo crédito é
   `grant_coins`, todo débito é `chargeCoins`.
+- **A conta de Backoffice REGISTRA e não PAGA** (`profiles.is_internal`,
+  migração 0073). `charge_coins` grava a linha do ledger com o motivo e o valor
+  de sempre e pula só o decremento do saldo — e as duas alternativas eram
+  piores: não gravar nada deixaria sem registro o consumo dos testes, que é
+  justamente o número que responde quanto custa por mês testar o próprio
+  produto; creditar um saldo gigante poria dinheiro INVENTADO em
+  `coin_transactions`, que é a fonte da receita medida e do passivo de moedas,
+  nas duas telas que existem para não inventar dinheiro. Quem tira essas contas
+  dos números do painel é `features/admin/audience.ts`.
 - **A MEDIÇÃO, porém, é do cliente.** Quem conta os minutos e chama
   `/api/coins/charge` é o navegador. É decisão de produto (só ele sabe quanto
   tempo o microfone ficou aberto), mas quer dizer que o débito é cooperativo:

@@ -214,10 +214,13 @@ chamam a mesma, e o Next só deduplica `fetch()`, não consulta do Supabase.
   nada de ninguém. As páginas são cobertas pela `TopBar` do app e pelo layout
   de `/partners/dashboard`, que leem `isActive` da consulta memoizada de `db/account.ts`.
 
-  A mesma consulta traz `coin_balance`, e por isso `auth.user.coinBalance`
-  existe: é o que `coins/require-balance.ts` usa sem custar um segundo SELECT.
-  Linha ausente ou erro de leitura passam, só o `false` LIDO recusa, pelo
-  mesmo princípio de `getCurrentBalance`.
+  A mesma consulta traz `coin_balance` e `is_internal`, e por isso
+  `auth.user.coinBalance` e `auth.user.isInternal` existem: é o que
+  `coins/require-balance.ts` usa sem custar um segundo SELECT. Linha ausente ou
+  erro de leitura passam, só o `false` LIDO recusa, pelo mesmo princípio de
+  `getCurrentBalance` — e `isInternal` erra para o lado oposto (`=== true`),
+  porque ali o engano seguro é cobrar de quem não devia, nunca liberar quem
+  não é.
 - `auth/require-admin.ts`: três formas, e a escolha importa:
   - `requireAdmin()` em Route Handler. Responde **404, não 403**: não
     confirmamos a existência da área administrativa a quem não deveria vê-la.
@@ -235,12 +238,15 @@ chamam a mesma, e o Next só deduplica `fetch()`, não consulta do Supabase.
   por minuto é emitida pelo NAVEGADOR, então sem ele bastava não chamar
   `/api/coins/charge` para transcrever de graça. Ele recusa quem está zerado;
   ele **não** mede consumo, para isso a contagem teria de sair do cliente, que
-  é mudança de produto.
+  é mudança de produto. A conta de Backoffice passa sempre: `charge_coins` não
+  debita o saldo dela, então o número em `profiles` está congelado e não diz
+  nada — recusá-la por esse zero trancaria justamente a conta que existe para
+  exercitar as rotas caras.
 
 ## db/: uma linha, uma leitura
 
-`db/account.ts` lê `profiles` UMA vez por request e serve perfil, saldo e
-papel. `getCurrentProfile`, `getCurrentBalance` e `isCurrentUserAdmin` mantêm
+`db/account.ts` lê `profiles` UMA vez por request e serve perfil, saldo, papel
+e a marca de Backoffice. `getCurrentProfile`, `getCurrentBalance` e `isCurrentUserAdmin` mantêm
 a assinatura de sempre e leem dali. Antes eram três SELECTs na mesma linha,
 cada um com o seu próprio `getUser()`.
 
@@ -423,8 +429,19 @@ O que o admin edita são as duas coisas que precisam mudar sem deploy, ambas em
 - **exceção por pessoa**: libera para um beta tester, revoga de um abusador.
 
 Precedência, implementada em `evaluateFeature` e em nenhum outro lugar:
-`kill switch → exceção → plano`. O kill switch vencer a exceção é deliberado,
-ele existe para incidente, e incidente não abre exceção para ninguém.
+`kill switch → exceção → Backoffice → plano`. O kill switch vencer a exceção é
+deliberado, ele existe para incidente, e incidente não abre exceção para
+ninguém.
+
+O terceiro degrau é a **conta de Backoffice** (`profiles.is_internal`, migração
+0073): uso interno, alcança qualquer degrau, porque testar a funcionalidade é
+o que ela existe para fazer. Ela entra como CONTEXTO, ao lado do kill switch e
+do override, e **não** como degrau em `PLAN_ORDER` — não é um plano que alguém
+compra, e a escada alimenta o MRR. Ela vem depois da exceção pelo mesmo
+raciocínio de sempre: uma revogação escrita à mão para aquela pessoa é uma
+decisão que alguém tomou olhando para ela, e um passe-livre que a ignorasse
+seria uma quarta regra discutindo com as três. Ver
+`src/features/admin/AGENTS.md`.
 
 **Flag e entitlement são coisas diferentes, e um ponto de consulta só.** Flag é
 temporária e não olha para quem é o usuário; entitlement é contratual e muda

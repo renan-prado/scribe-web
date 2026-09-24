@@ -256,6 +256,58 @@ discordância aparece como um parceiro reclamando do próprio painel.
 O mesmo vale para a conta do programa de parceiros: ela mora em
 `src/features/partners/economics.ts`, e o simulador do admin lê de lá.
 
+## Quem entra na conta: a conta de Backoffice
+
+**Todo número de dinheiro deste painel mede CLIENTES por padrão**, e as contas
+de Backoffice (`profiles.is_internal`, migração 0073) ficam de fora.
+
+O motivo é medido, não teórico. No dia em que a coluna nasceu, em produção:
+435 das 1.004 chamadas de LLM (43%) eram de duas contas do autor; as DUAS
+únicas assinaturas ativas eram dele, somando R$ 89,80 de MRR que nunca foi
+dinheiro de ninguém; e o funil dizia 2 convertidos de 16 cadastros. Nenhum
+desses números estava errado pelo caminho que o produziu — estavam errados na
+PERGUNTA: "quanto custa atender um cliente" e "quantos clientes pagam" não
+admitem o operador dentro da amostra.
+
+O vocabulário é `features/admin/audience.ts` (client-safe, porque o seletor é
+componente cliente): `clients` (padrão), `internal`, `all`. Os dois agregados
+o aceitam, e cada um o aplica onde ele não pode ser esquecido:
+
+| | Onde filtra | Por quê |
+|---|---|---|
+| `loadAdminUsageSummary` | em MEMÓRIA, nos DOIS lados | nem `llm_usage_events` nem `coin_transactions` têm a coluna. Recortar o custo e não a moeda produz a fatia dividida pelo total que `coinsScoped` documenta: um número que parece margem, sempre bom |
+| `loadAdminMetrics` | na consulta de CONTAS | sessões, moedas e assinaturas são buscadas por `userIds`; excluir na origem tira a conta do funil, da receita e do passivo de uma vez |
+
+O conjunto de ids sai de `server/db/internal-accounts.ts`, numa consulta só, e
+**falha de leitura devolve vazio** — o painel volta a medir tudo, como media
+antes. O engano na outra direção esvaziaria todas as telas de dinheiro sem
+nenhum erro aparecendo nelas.
+
+**As pílulas ficam no cabeçalho de `/admin/costs`**, ao lado de período e
+versão e pela mesma razão: valem para as quatro abas e atravessam a troca
+delas. Fora do padrão, a tela DIZ o que ficou de fora — um total recortado é
+indistinguível de um total inteiro olhando só para o número.
+
+**O Financeiro é a exceção, e é deliberada.** A despesa de IA de
+`/admin/finance` continua contando as contas internas: lá o número é CAIXA, e
+o dólar dos testes saiu da conta da OpenAI do mesmo jeito. Quem mede unit
+economics é `/admin/costs`. Para os dois não discordarem em silêncio na visão
+geral, o card de custo diz "chamadas de clientes" e há um atalho para
+`/admin/costs?audience=internal` — "quanto me custa testar o meu próprio
+produto" continua sendo uma pergunta com resposta.
+
+O MRR do Financeiro sai de `loadAdminMetrics` (ver "Uma definição por
+número"), então ele cai junto: é por isso que o aviso "há assinaturas ativas e
+nenhum crédito de assinatura no ledger" cala ao marcar as contas de teste — ele
+acusava exatamente as assinaturas criadas para ver o checkout de pé.
+
+**Marcar é do admin**, em `/admin/users` → Tipo de conta, e nenhum caminho do
+cliente escreve a coluna (o GRANT por coluna de 0026 a deixa fora do alcance de
+`authenticated`). O campo é separado do "Papel" de propósito: **admin é quem
+ENTRA no painel; interna é a conta que não deve APARECER nele.** O admin que
+testa é as duas coisas; um beta tester convidado pode precisar ser só a
+segunda.
+
 ## Custo
 
 `/admin/costs` lê `llm_usage_events`, alimentada por `recordChatUsage` /
@@ -631,7 +683,18 @@ comissão.
 `/admin/costs` abre com um aviso vermelho quando alguma chamada rodou num
 modelo que não está em `src/lib/llm/pricing.ts`. Elas gravaram custo **zero**, e
 sem o aviso o sintoma é uma conta boa demais, que é o sintoma que ninguém
-investiga. O efeito em cadeia é o pior possível: a margem daquela ação sobe, e
+investiga.
+
+**A tabela que vale depende da ROTA, não do nome do modelo**, e é
+`isAudioUsageRoute` (`lib/db/usage.ts`) quem responde: as rotas de áudio são
+cobradas por minuto e o resto por token. Isto já falhou uma vez — o agregador
+só conhecia `transcribe`, e quando `biblo-voice` nasceu como a segunda rota de
+áudio o modelo dela passou a ser procurado na tabela de CHAT, onde nenhum STT
+existe. Duas chamadas com custo gravado certo viravam um aviso de custo
+subestimado, na visão geral inclusive. **Um aviso de medição que mente é pior
+que aviso nenhum**: ele gasta a confiança que o painel precisa ter no dia em
+que estiver certo. Rota nova que chame `recordAudioUsage` entra em
+`AUDIO_USAGE_ROUTES`, de onde o tipo do parâmetro também sai. O efeito em cadeia é o pior possível: a margem daquela ação sobe, e
 a aba de preços passa a recomendar BAIXAR um preço que já não se paga. Trocar
 um modelo por env var sem acrescentá-lo à tabela é o caminho normal de cair
 nisso.
