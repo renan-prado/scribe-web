@@ -12,6 +12,7 @@ import {
 import { useEffect, useMemo, useState } from "react";
 import { toast } from "sonner";
 import { BillingDialog } from "@/features/billing/components/BillingDialog";
+import { BibloBubble } from "@/features/session/components/BibloMessage";
 import { VerseLines } from "@/features/session/components/PassageVerses";
 import { useBibleSearch } from "@/features/session/hooks/useBibleSearch";
 import { useVerseFetch } from "@/features/session/hooks/useVerseFetch";
@@ -84,6 +85,19 @@ import { BibloAvatar } from "@/shared/brand";
  * capítulo termina de chegar (`pendingHighlight`, mais abaixo) — reaproveita a
  * MESMA classe de piscada (`summary-block-flash`) que revela um bloco do
  * resumo, o mesmo "aqui" dito de dois lugares diferentes do produto.
+ *
+ * ## As superfícies daqui sobem UM DEGRAU, e não é gosto
+ *
+ * Esta região mora sempre dentro do painel do `BibleDock`, que é `bg-popover`,
+ * e `--popover` vale `#2F3035` no escuro: exatamente o valor de `--v2-card`.
+ * Um campo `bg-v2-card` ali não é discreto, é INVISÍVEL — o alternador e os
+ * dois campos de busca ficavam sem contorno nenhum, texto solto no meio do
+ * painel. Por isso tudo que precisa LER como peça aqui usa o realce
+ * (`bg-v2-card-hover`) mais o fio (`ring-v2-glass-edge`), e o que sobe mais um
+ * degrau DENTRO dessas peças usa `bg-v2-glass-tile`, que é translúcido e
+ * portanto funciona sobre qualquer uma delas. É a regra de tema de
+ * `src/shared/AGENTS.md` aplicada: no escuro separa a superfície, no claro
+ * separa o fio.
  */
 
 type Props = {
@@ -95,7 +109,7 @@ type Props = {
 
 const BOOK_ITEM = cn(
   "flex w-full items-baseline gap-2 rounded-xl px-3 py-2 text-left text-[13.5px] text-v2-ink-soft",
-  "transition-colors hover:bg-v2-card hover:text-v2-ink active:translate-y-px",
+  "transition-colors hover:bg-v2-card-hover hover:text-v2-ink active:translate-y-px",
   "focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-v2-ink-mute"
 );
 
@@ -196,7 +210,7 @@ export function BibleReader({ className, initialBook, initialChapter }: Props) {
                 onChange={(e) => setQuery(e.target.value)}
                 placeholder="Procurar um livro"
                 aria-label="Procurar um livro da Bíblia"
-                className="w-full rounded-full bg-v2-card py-2.5 pr-4 pl-9 text-[13.5px] text-v2-ink placeholder:text-v2-ink-mute focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-v2-ink-mute"
+                className="w-full rounded-full bg-v2-card-hover py-2.5 pr-4 pl-9 text-[13.5px] text-v2-ink ring-1 ring-v2-glass-edge placeholder:text-v2-ink-mute focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-v2-ink-mute"
               />
             </label>
             <div className="min-h-0 flex-1 overflow-y-auto">
@@ -251,7 +265,7 @@ export function BibleReader({ className, initialBook, initialChapter }: Props) {
           type="button"
           onClick={() => (chapter ? setChapter(null) : setBook(null))}
           aria-label={chapter ? "Escolher outro capítulo" : "Escolher outro livro"}
-          className="inline-flex size-9 shrink-0 items-center justify-center rounded-full text-v2-ink-mute transition-colors hover:bg-v2-card hover:text-v2-ink focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-v2-ink-mute"
+          className="inline-flex size-9 shrink-0 items-center justify-center rounded-full text-v2-ink-mute transition-colors hover:bg-v2-card-hover hover:text-v2-ink focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-v2-ink-mute"
         >
           <ArrowLeft aria-hidden className="size-4" strokeWidth={1.75} />
         </button>
@@ -265,7 +279,7 @@ export function BibleReader({ className, initialBook, initialChapter }: Props) {
               onClick={() => go(-1)}
               disabled={chapter <= 1}
               aria-label="Capítulo anterior"
-              className="inline-flex size-9 shrink-0 items-center justify-center rounded-full text-v2-ink-mute transition-colors hover:bg-v2-card hover:text-v2-ink disabled:opacity-30 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-v2-ink-mute"
+              className="inline-flex size-9 shrink-0 items-center justify-center rounded-full text-v2-ink-mute transition-colors hover:bg-v2-card-hover hover:text-v2-ink disabled:opacity-30 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-v2-ink-mute"
             >
               <ChevronLeft aria-hidden className="size-4" strokeWidth={1.75} />
             </button>
@@ -274,7 +288,7 @@ export function BibleReader({ className, initialBook, initialChapter }: Props) {
               onClick={() => go(1)}
               disabled={chapter >= chapterCount}
               aria-label="Próximo capítulo"
-              className="inline-flex size-9 shrink-0 items-center justify-center rounded-full text-v2-ink-mute transition-colors hover:bg-v2-card hover:text-v2-ink disabled:opacity-30 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-v2-ink-mute"
+              className="inline-flex size-9 shrink-0 items-center justify-center rounded-full text-v2-ink-mute transition-colors hover:bg-v2-card-hover hover:text-v2-ink disabled:opacity-30 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-v2-ink-mute"
             >
               <ChevronRight aria-hidden className="size-4" strokeWidth={1.75} />
             </button>
@@ -290,7 +304,10 @@ export function BibleReader({ className, initialBook, initialChapter }: Props) {
                 key={n}
                 type="button"
                 onClick={() => setChapter(n)}
-                className={cn(CHAPTER_ITEM, "text-v2-ink-soft hover:bg-v2-card hover:text-v2-ink")}
+                className={cn(
+                  CHAPTER_ITEM,
+                  "text-v2-ink-soft hover:bg-v2-card-hover hover:text-v2-ink"
+                )}
               >
                 {n}
               </button>
@@ -332,7 +349,7 @@ function SearchModeToggle({
   onChange: (mode: SearchMode) => void;
 }) {
   return (
-    <div className="inline-flex shrink-0 items-center gap-1 self-start rounded-full bg-v2-card p-1">
+    <div className="inline-flex shrink-0 items-center gap-1 self-start rounded-full bg-v2-card-hover p-1 ring-1 ring-v2-glass-edge">
       <button
         type="button"
         aria-pressed={mode === "exact"}
@@ -342,7 +359,7 @@ function SearchModeToggle({
           "focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-v2-ink-mute",
           mode === "exact"
             ? "bg-v2-ink text-v2-bg"
-            : "text-v2-ink-mute hover:bg-v2-card-hover hover:text-v2-ink"
+            : "text-v2-ink-mute hover:bg-v2-glass-tile hover:text-v2-ink"
         )}
       >
         Pesquisa exata
@@ -356,7 +373,7 @@ function SearchModeToggle({
           "focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-v2-ink-mute",
           mode === "ask"
             ? "bg-v2-ink text-v2-bg"
-            : "text-v2-ink-mute hover:bg-v2-card-hover hover:text-v2-ink"
+            : "text-v2-ink-mute hover:bg-v2-glass-tile hover:text-v2-ink"
         )}
       >
         <BibloAvatar size={14} />
@@ -373,6 +390,14 @@ function SearchModeToggle({
  * (`passages` vazio) é a orientação do Biblo para reformular — pergunta
  * genérica demais, ou fora do território —, e a tela mostra ISSO em vez de
  * "nada encontrado" seco. Ver a regra 4 e 5 do prompt.
+ *
+ * **Tudo que é voz DELE usa o `BibloBubble` da conversa**: o convite de
+ * abertura, a espera e a orientação de reformular. Eram três parágrafos
+ * cinzas centralizados, e um convite escrito na terceira pessoa ("Pergunte
+ * por um tema…") é o aplicativo instruindo, não o personagem conversando,
+ * logo abaixo de um botão que promete falar com ele. O mesmo balão da gaveta
+ * dá um dono só à tela, e de graça resolve o contraste: ele é `bg-secondary`,
+ * o degrau de realce, e portanto aparece sobre o painel.
  */
 function AskBiblo({
   question,
@@ -400,22 +425,14 @@ function AskBiblo({
     <div className="flex min-h-0 flex-1 flex-col gap-3">
       <div className="min-h-0 flex-1 overflow-y-auto">
         {state.status === "idle" ? (
-          <p className="px-1 py-6 text-center text-[13px] font-light leading-relaxed text-v2-ink-mute">
-            Pergunte por um tema, uma história ou um personagem: "versículos sobre perdão", "em que
-            passagem Daniel estava na cova dos leões".
-          </p>
+          <BibloBubble>
+            Me diga o que você procura: um tema, uma história, um personagem. Pode ser do jeito que
+            vier na cabeça, por exemplo: "versículos sobre perdão" ou "em que passagem Daniel ficou
+            na cova dos leões".
+          </BibloBubble>
         ) : state.status === "loading" ? (
-          <div
-            aria-live="polite"
-            className="flex flex-col items-center gap-3 px-3 py-8 text-center"
-          >
-            <span
-              aria-hidden
-              className="size-5 animate-spin rounded-full border-2 border-v2-ink-mute border-t-transparent"
-            />
-            <p className="text-[13px] font-light text-v2-ink-mute">
-              O Biblo está analisando as escrituras…
-            </p>
+          <div aria-live="polite">
+            <BibloBubble mood="thinking">Deixa eu procurar nas escrituras…</BibloBubble>
           </div>
         ) : state.status === "error" ? (
           <p role="alert" className="px-3 py-6 text-center text-[13px] font-light text-v2-ink-mute">
@@ -423,11 +440,7 @@ function AskBiblo({
           </p>
         ) : (
           <div className="flex flex-col gap-3">
-            {state.data.explanation ? (
-              <p className="px-1 text-[13px] font-light leading-relaxed text-v2-ink-soft">
-                {state.data.explanation}
-              </p>
-            ) : null}
+            {state.data.explanation ? <BibloBubble>{state.data.explanation}</BibloBubble> : null}
             {state.data.passages.map((passage) => (
               <PassageResultCard
                 key={passage.reference}
@@ -455,7 +468,7 @@ function AskBiblo({
           placeholder="Versículos sobre perdão…"
           aria-label="Perguntar ao Biblo sobre a Bíblia"
           disabled={submitting}
-          className="w-full rounded-full bg-v2-card py-2.5 pr-11 pl-4 text-[13.5px] text-v2-ink placeholder:text-v2-ink-mute focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-v2-ink-mute disabled:opacity-60"
+          className="w-full rounded-full bg-v2-card-hover py-2.5 pr-11 pl-4 text-[13.5px] text-v2-ink ring-1 ring-v2-glass-edge placeholder:text-v2-ink-mute focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-v2-ink-mute disabled:opacity-60"
         />
         <button
           type="submit"
@@ -482,7 +495,7 @@ function PassageResultCard({
   onCopy: () => void;
 }) {
   return (
-    <div className="flex flex-col gap-2 rounded-2xl bg-v2-card p-3.5">
+    <div className="flex flex-col gap-2 rounded-2xl bg-v2-card-hover p-3.5 ring-1 ring-v2-glass-edge">
       <p className="text-[13.5px] font-medium text-v2-ink">{passage.reference}</p>
       <p className="line-clamp-3 text-[13px] font-light leading-relaxed text-v2-ink-soft">
         {joinVerses(passage.verses)}
@@ -494,7 +507,7 @@ function PassageResultCard({
         <button
           type="button"
           onClick={onGoToPassage}
-          className="inline-flex items-center gap-1.5 rounded-full bg-v2-card-hover px-3 py-1.5 text-[12px] font-medium text-v2-ink transition-colors hover:brightness-110 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-v2-ink-mute"
+          className="inline-flex items-center gap-1.5 rounded-full bg-v2-glass-tile px-3 py-1.5 text-[12px] font-medium text-v2-ink transition-colors hover:bg-v2-glass-edge focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-v2-ink-mute"
         >
           Ir para a passagem
           <ArrowRight aria-hidden className="size-3.5" strokeWidth={2} />
@@ -504,7 +517,7 @@ function PassageResultCard({
           onClick={onCopy}
           aria-label={`Copiar ${passage.reference}`}
           title="Copiar"
-          className="inline-flex size-8 items-center justify-center rounded-full text-v2-ink-mute transition-colors hover:bg-v2-card-hover hover:text-v2-ink focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-v2-ink-mute"
+          className="inline-flex size-8 items-center justify-center rounded-full text-v2-ink-mute transition-colors hover:bg-v2-glass-tile hover:text-v2-ink focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-v2-ink-mute"
         >
           <Copy aria-hidden className="size-3.5" strokeWidth={1.75} />
         </button>
