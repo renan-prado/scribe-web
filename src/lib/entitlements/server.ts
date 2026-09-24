@@ -2,6 +2,7 @@ import "server-only";
 import { NextResponse } from "next/server";
 import { cache } from "react";
 import { isActiveStatus, type PlanKey } from "@/features/billing/plans";
+import { getCurrentAccount } from "@/lib/db/account";
 import { getOwnSubscription } from "@/lib/db/billing";
 import { getFeatureSwitches, getOwnFeatureOverrides } from "@/lib/db/feature-flags";
 import {
@@ -51,11 +52,15 @@ export const getCurrentEntitlements = cache(async (): Promise<EntitlementSnapsho
 });
 
 async function resolveEntitlements(): Promise<EntitlementSnapshot> {
-  const [plan, switches, overrides] = await Promise.all([
+  const [plan, switches, overrides, account] = await Promise.all([
     getCurrentPlan(),
     getFeatureSwitches().catch(() => ({}) as Record<string, boolean>),
     getOwnFeatureOverrides().catch(() => ({}) as Record<string, boolean>),
+    // Falha de leitura vira conta NÃO interna: o erro seguro aqui é o que
+    // cobra e recusa, nunca o que libera.
+    getCurrentAccount().catch(() => null),
   ]);
+  const internal = account?.isInternal === true;
 
   const features = {} as Record<FeatureKey, FeatureAccess>;
   for (const key of FEATURE_KEYS) {
@@ -63,9 +68,10 @@ async function resolveEntitlements(): Promise<EntitlementSnapshot> {
       plan,
       enabled: switches[key],
       override: overrides[key] ?? null,
+      internal,
     });
   }
-  return { plan, features };
+  return { plan, internal, features };
 }
 
 /** Atalho para Server Component: "esta pessoa pode?". */

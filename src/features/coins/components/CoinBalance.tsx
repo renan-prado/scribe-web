@@ -2,6 +2,7 @@
 
 import { useEffect, useRef, useState } from "react";
 import { BillingDialog } from "@/features/billing/components/BillingDialog";
+import { BACKOFFICE_LABEL } from "@/features/billing/plans";
 import { COIN_RING_REFERENCE } from "@/features/coins/pricing";
 import { useCoinsStore } from "@/features/coins/store";
 import { cn } from "@/lib/utils";
@@ -118,6 +119,7 @@ export function CoinBalance({
 }) {
   const storeBalance = useCoinsStore((s) => s.balance);
   const cycle = useCoinsStore((s) => s.cycle);
+  const unlimited = useCoinsStore((s) => s.unlimited);
 
   // **Ele não semeia mais a store, e não ressincroniza nada.** As duas coisas
   // moravam aqui e NÃO FUNCIONAVAM: este chip vive dentro do menu da conta, que
@@ -153,11 +155,16 @@ export function CoinBalance({
 
   // O modo calmo: assina, tem franquia e ainda há folga. Só aí o número sai da
   // tela — sem plano não há renovação, e com a reserva no fim há o que decidir.
-  const quiet = cycle !== null && !!planName && !lowOnCredit;
+  // A conta de Backoffice nunca entra nele: ela tem um modo próprio logo
+  // abaixo, e o crachá de plano diria o plano ERRADO (o do Stripe, que ela
+  // pode nem ter).
+  const quiet = !unlimited && cycle !== null && !!planName && !lowOnCredit;
 
-  const percent = quiet
-    ? Math.max(0, Math.min(100, ((monthLeft ?? 0) / Math.max(1, cycle.grant)) * 100))
-    : Math.max(0, Math.min(100, (balance / COIN_RING_REFERENCE) * 100));
+  const percent = unlimited
+    ? 100
+    : quiet
+      ? Math.max(0, Math.min(100, ((monthLeft ?? 0) / Math.max(1, cycle.grant)) * 100))
+      : Math.max(0, Math.min(100, (balance / COIN_RING_REFERENCE) * 100));
   const filled = (percent / 100) * COIN_C;
 
   const chip = (
@@ -196,7 +203,15 @@ export function CoinBalance({
         </span>
       </span>
       <span className="inline-flex h-6.5 flex-none items-center text-[13px] font-semibold leading-none text-scriba-gold-ink">
-        {quiet ? (
+        {unlimited ? (
+          // A conta de Backoffice não tem saldo que signifique alguma coisa:
+          // `charge_coins` grava o gasto dela no ledger e não mexe no número,
+          // que fica congelado no que era. Desenhá-lo seria mostrar um dado
+          // morto que só desce; o anel cheio e o ∞ dizem a verdade.
+          <span aria-hidden className="px-0.5 text-[15px] leading-none">
+            ∞
+          </span>
+        ) : quiet ? (
           // O nome do plano ocupa o lugar que o odômetro deixou, e ele diz a
           // coisa que o assinante quer confirmar de relance ("estou no Pessoal,
           // está tudo certo"). O chip deixa de ser medidor de combustível e
@@ -214,9 +229,11 @@ export function CoinBalance({
   // O rótulo acessível NUNCA esconde o número: quem usa leitor de tela não tem
   // um anel para olhar, e a decisão de esconder é sobre ATENÇÃO VISUAL, não
   // sobre transparência.
-  const label = quiet
-    ? `Plano ${planName}. ${monthLeft} de ${cycle.grant} créditos do mês restantes, ${reserve} de reserva.`
-    : `${balance} moedas restantes`;
+  const label = unlimited
+    ? `Conta ${BACKOFFICE_LABEL}: créditos ilimitados.`
+    : quiet
+      ? `Plano ${planName}. ${monthLeft} de ${cycle.grant} créditos do mês restantes, ${reserve} de reserva.`
+      : `${balance} moedas restantes`;
 
   if (!interactive) {
     return (

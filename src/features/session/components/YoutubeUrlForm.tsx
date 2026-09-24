@@ -8,7 +8,7 @@ import { YoutubeIcon } from "@/components/icons/YoutubeIcon";
 import { BillingDialog } from "@/features/billing/components/BillingDialog";
 import { CoinCost } from "@/features/coins/components/CoinCost";
 import { COIN_COSTS } from "@/features/coins/pricing";
-import { useCoinsStore } from "@/features/coins/store";
+import { useCanAfford, useCoinsStore } from "@/features/coins/store";
 import { requestCreateSession } from "@/features/session/lib/api";
 import {
   formatTimecode,
@@ -82,12 +82,18 @@ export function YoutubeUrlForm({ initialUrl = "", initialStartMs, initialEndMs }
     initialStartMs != null ? formatTimecode(initialStartMs) : ""
   );
   const [endRaw, setEndRaw] = useState(initialEndMs != null ? formatTimecode(initialEndMs) : "");
-  const balance = useCoinsStore((s) => s.balance);
   const refresh = useCoinsStore((s) => s.refresh);
+  // Só para ESCREVER o aviso ("você tem N créditos"); quem decide se o aviso
+  // aparece é `insufficient`, logo abaixo.
+  const balance = useCoinsStore((s) => s.balance);
 
   const cost = COIN_COSTS.youtubeImport;
-  const balanceLoading = balance === null;
-  const insufficient = balance !== null && balance < cost;
+  // Os três estados de `useCanAfford`: `null` é o carregando que desenha a
+  // pastilha pulsando, `false` é o aviso de saldo, `true` é o botão. A conta
+  // de Backoffice cai no terceiro sem passar pelo saldo.
+  const affordable = useCanAfford(cost);
+  const balanceLoading = affordable === null;
+  const insufficient = affordable === false;
   const valid = isYoutubeVideoUrl(url);
   /** Só acusa link inválido depois de a pessoa ter digitado algo de verdade,
    * um erro em vermelho no primeiro caractere é ruído, não ajuda. */

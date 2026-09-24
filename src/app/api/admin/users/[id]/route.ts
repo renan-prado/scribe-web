@@ -16,6 +16,7 @@ const PatchSchema = z
     displayName: z.string().trim().min(1).max(120).nullable().optional(),
     role: z.enum(["user", "admin"]).optional(),
     isActive: z.boolean().optional(),
+    isInternal: z.boolean().optional(),
     email: z.string().email().max(320).optional(),
   })
   .strict();
@@ -37,6 +38,10 @@ export async function PATCH(request: Request, { params }: { params: Promise<{ id
 
   // Guardrail: admin cannot demote or deactivate themselves, prevents
   // locking the last admin out of the platform.
+  //
+  // `isInternal` fica de FORA dessa proteção de propósito: marcar a própria
+  // conta como Backoffice é o caso de uso normal (quem testa o produto é quem
+  // o escreve), e desmarcá-la não tranca ninguém para fora de nada.
   if (id === auth.user.id) {
     if (parsed.data.role === "user") {
       return NextResponse.json({ error: "cannot_self_demote" }, { status: 400 });

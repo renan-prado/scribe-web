@@ -29,8 +29,18 @@ import { NextResponse } from "next/server";
  * 402 e não 403: é exatamente o código que os clientes de gravação já tratam
  * como "pare de capturar e ofereça a compra" (ver o 402 de /api/coins/charge),
  * então a UI existente reage certo sem mudança nenhuma.
+ *
+ * **A conta de Backoffice passa sempre** (migração 0073). O saldo dela não é
+ * debitado por `charge_coins`, então o número em `profiles` está congelado no
+ * que era quando a conta foi marcada — pode ser 8.959, pode ser 0, e nenhum
+ * dos dois diz nada. Recusar por esse zero trancaria exatamente a conta que
+ * existe para exercitar as rotas caras.
  */
-export function requireBalance(user: { coinBalance: number | null }): NextResponse | null {
+export function requireBalance(user: {
+  coinBalance: number | null;
+  isInternal?: boolean;
+}): NextResponse | null {
+  if (user.isInternal === true) return null;
   if (user.coinBalance === null) return null;
   if (user.coinBalance > 0) return null;
   return NextResponse.json({ error: "insufficient_balance" }, { status: 402 });

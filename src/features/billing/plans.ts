@@ -98,6 +98,17 @@ export const PLANS: Record<PlanKey, PlanDisplay> = {
   },
 };
 
+/**
+ * Como a conta de Backoffice se chama NA TELA (migração 0073).
+ *
+ * Ela não é um `PlanKey` e não entra em `PLANS`: não é um degrau que alguém
+ * compra, é uma propriedade da conta, e enfiá-la na escada obrigaria o MRR, a
+ * receita medida e a landing a aprender a ignorá-la. O que ela precisa do
+ * catálogo é só isto: um nome, escrito uma vez, para o painel e o chip do
+ * saldo não inventarem dois.
+ */
+export const BACKOFFICE_LABEL = "Backoffice";
+
 /** Ordem de exibição e de comparação (índice maior = plano mais alto). */
 export const PLAN_ORDER: PlanKey[] = ["free", "pessoal", "estudioso"];
 

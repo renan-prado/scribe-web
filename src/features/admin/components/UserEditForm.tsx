@@ -15,6 +15,7 @@ import {
   SelectValue,
 } from "@/components/ui/select";
 import type { AdminUserDetail } from "@/features/admin/server/db/users";
+import { BACKOFFICE_LABEL } from "@/features/billing/plans";
 
 // `items` no Root é o que faz o gatilho mostrar o rótulo em vez do valor cru,
 // sem ele, "Situação" exibia "active". Ver shared/ui/select.
@@ -26,6 +27,16 @@ const ROLE_OPTIONS: SelectOption[] = [
 const STATUS_OPTIONS: SelectOption[] = [
   { value: "active", label: "Ativo" },
   { value: "inactive", label: "Desativado" },
+];
+
+/**
+ * A conta de Backoffice. É um campo à parte do "Papel" porque as duas coisas
+ * são diferentes: papel diz quem ENTRA no painel, este diz quem não deve
+ * APARECER nele.
+ */
+const KIND_OPTIONS: SelectOption[] = [
+  { value: "client", label: "Cliente" },
+  { value: "internal", label: BACKOFFICE_LABEL },
 ];
 
 type Props = {
@@ -66,6 +77,7 @@ export function UserEditForm({ user, currentUserId, frame }: Props) {
   const [email, setEmail] = useState(user.email ?? "");
   const [role, setRole] = useState<"user" | "admin">(user.role);
   const [isActive, setIsActive] = useState(user.isActive);
+  const [isInternal, setIsInternal] = useState(user.isInternal);
   const [saving, setSaving] = useState(false);
 
   const isSelf = user.id === currentUserId;
@@ -84,6 +96,7 @@ export function UserEditForm({ user, currentUserId, frame }: Props) {
       }
       if (role !== user.role) patch.role = role;
       if (isActive !== user.isActive) patch.isActive = isActive;
+      if (isInternal !== user.isInternal) patch.isInternal = isInternal;
 
       if (Object.keys(patch).length === 0) {
         dismiss();
@@ -173,6 +186,30 @@ export function UserEditForm({ user, currentUserId, frame }: Props) {
               ))}
             </SelectContent>
           </Select>
+        </div>
+        <div className="flex flex-col gap-1.5">
+          <Label>Tipo de conta</Label>
+          <Select
+            items={KIND_OPTIONS}
+            value={isInternal ? "internal" : "client"}
+            onValueChange={(v) => setIsInternal(v === "internal")}
+          >
+            <SelectTrigger className="w-full">
+              <SelectValue />
+            </SelectTrigger>
+            <SelectContent>
+              {KIND_OPTIONS.map((o) => (
+                <SelectItem key={o.value} value={o.value}>
+                  {o.label}
+                </SelectItem>
+              ))}
+            </SelectContent>
+          </Select>
+          <p className="text-xs text-muted-foreground">
+            {isInternal
+              ? "Créditos ilimitados, e fora de todo custo, margem e funil do painel. O gasto continua registrado no ledger."
+              : "Conta comum: paga em créditos e entra na medição."}
+          </p>
         </div>
       </div>
 

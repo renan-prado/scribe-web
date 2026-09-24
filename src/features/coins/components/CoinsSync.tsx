@@ -41,9 +41,19 @@ import { type CycleUsage, getCoinsState, useCoinsStore } from "@/features/coins/
  *
  * No layout eles são um par só para o app inteiro, e sobrevivem à navegação.
  */
-export function CoinsSync({ balance, cycle }: { balance: number; cycle: CycleUsage | null }) {
+export function CoinsSync({
+  balance,
+  cycle,
+  unlimited = false,
+}: {
+  balance: number;
+  cycle: CycleUsage | null;
+  /** Conta de Backoffice (migração 0073): o saldo não vale nada e nada trava. */
+  unlimited?: boolean;
+}) {
   const setBalance = useCoinsStore((s) => s.setBalance);
   const setCycle = useCoinsStore((s) => s.setCycle);
+  const setUnlimited = useCoinsStore((s) => s.setUnlimited);
   const refresh = useCoinsStore((s) => s.refresh);
 
   // O ciclo é semeado SEM guarda, ao contrário do saldo: ele não tem um
@@ -53,6 +63,13 @@ export function CoinsSync({ balance, cycle }: { balance: number; cycle: CycleUsa
   useEffect(() => {
     setCycle(cycle);
   }, [cycle, setCycle]);
+
+  // Sem guarda, como o ciclo e pelo mesmo motivo: não há "ainda não sei" aqui
+  // — o servidor já respondeu, e `false` é a resposta certa para todo mundo
+  // que não é conta interna.
+  useEffect(() => {
+    setUnlimited(unlimited);
+  }, [unlimited, setUnlimited]);
 
   // Só semeia o que ainda não se sabe. Este componente monta uma vez (é do
   // layout, que sobrevive à navegação), mas a guarda importa mesmo assim: a

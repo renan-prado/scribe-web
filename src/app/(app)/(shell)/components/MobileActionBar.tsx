@@ -158,7 +158,11 @@ function CreateButton() {
   const open = tapped || revealed;
 
   const balance = useCoinsStore((s) => s.balance);
-  const broke = balance === 0;
+  const unlimited = useCoinsStore((s) => s.unlimited);
+  // O gêmeo de `CreateActions` no celular, e as duas telas andam juntas: uma
+  // porta que abre aqui e recusa no desktop é a mesma decisão contada de dois
+  // jeitos. A conta de Backoffice passa nas duas.
+  const broke = !unlimited && balance === 0;
   const [paywall, setPaywall] = useState<string | null>(null);
 
   useEffect(() => {

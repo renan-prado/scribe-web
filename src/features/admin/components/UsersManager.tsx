@@ -17,7 +17,7 @@ import {
   TableRow,
 } from "@/components/ui/table";
 import type { AdminUser, AdminUserBilling, PayingStatus } from "@/features/admin/server/db/users";
-import { formatBrl, formatCoins, PLANS } from "@/features/billing/plans";
+import { BACKOFFICE_LABEL, formatBrl, formatCoins, PLANS } from "@/features/billing/plans";
 import { GrantCoinsDialog } from "./GrantCoinsDialog";
 
 const DATE_FMT = new Intl.DateTimeFormat("pt-BR", {
@@ -212,6 +212,16 @@ export function UsersManager({ initialUsers, currentUserId }: Props) {
                           {isMe ? (
                             <Badge variant="outline" className="text-[0.65rem]">
                               você
+                            </Badge>
+                          ) : null}
+                          {/* Ao lado do NOME, e não numa coluna própria: é a
+                              etiqueta que muda como toda linha da tabela deve
+                              ser lida — o plano, o gasto e o saldo desta conta
+                              não são mercado. Uma coluna a mais para um caso
+                              que atinge duas contas seria pior que o selo. */}
+                          {u.isInternal ? (
+                            <Badge variant="outline" className="text-[0.65rem]">
+                              {BACKOFFICE_LABEL}
                             </Badge>
                           ) : null}
                         </span>

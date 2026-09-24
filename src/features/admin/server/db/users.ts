@@ -88,6 +88,16 @@ export type AdminUser = {
   avatarUrl: string | null;
   role: "user" | "admin";
   isActive: boolean;
+  /**
+   * Conta de Backoffice (migração 0073): uso interno. Gasta sem debitar saldo
+   * e fica FORA de toda medição de custo, margem e funil do painel.
+   *
+   * Ela é independente de `role`, e a separação é a que importa: admin é quem
+   * ENTRA no painel; interna é a conta que não deve APARECER nele. O admin que
+   * testa é as duas coisas, e um beta tester convidado pode precisar ser só a
+   * segunda.
+   */
+  isInternal: boolean;
   createdAt: string;
   lastSignInAt: string | null;
   /**
@@ -107,11 +117,13 @@ type ProfileRow = {
   email: string | null;
   role: "user" | "admin";
   is_active: boolean;
+  is_internal: boolean | null;
   created_at: string;
   coin_balance: number | null;
 };
 
-const SELECT = "id, display_name, avatar_url, email, role, is_active, created_at, coin_balance";
+const SELECT =
+  "id, display_name, avatar_url, email, role, is_active, is_internal, created_at, coin_balance";
 
 /**
  * Teto da listagem do /admin/users. Quando a base passar disto, a tela precisa
@@ -159,6 +171,7 @@ export async function listUsers(): Promise<AdminUser[]> {
     avatarUrl: row.avatar_url,
     role: row.role,
     isActive: row.is_active,
+    isInternal: row.is_internal === true,
     createdAt: row.created_at,
     lastSignInAt: lastSignIn.get(row.id) ?? null,
     coinBalance: row.coin_balance,
@@ -328,7 +341,15 @@ async function loadBilling(admin: AdminClient): Promise<Map<string, AdminUserBil
  */
 export type AdminUserDetail = Pick<
   AdminUser,
-  "id" | "email" | "displayName" | "avatarUrl" | "role" | "isActive" | "createdAt" | "coinBalance"
+  | "id"
+  | "email"
+  | "displayName"
+  | "avatarUrl"
+  | "role"
+  | "isActive"
+  | "isInternal"
+  | "createdAt"
+  | "coinBalance"
 >;
 
 /**
@@ -351,6 +372,7 @@ export async function getUserForAdmin(id: string): Promise<AdminUserDetail | nul
     avatarUrl: row.avatar_url,
     role: row.role,
     isActive: row.is_active,
+    isInternal: row.is_internal === true,
     createdAt: row.created_at,
     coinBalance: row.coin_balance,
   };
@@ -360,6 +382,8 @@ export type UpdateUserInput = {
   displayName?: string | null;
   role?: "user" | "admin";
   isActive?: boolean;
+  /** Marca/desmarca a conta de Backoffice. Ver `AdminUser.isInternal`. */
+  isInternal?: boolean;
   email?: string;
 };
 
@@ -388,11 +412,20 @@ export async function updateUser(id: string, input: UpdateUserInput): Promise<vo
   if (input.displayName !== undefined) profilePatch.display_name = input.displayName;
   if (input.role !== undefined) profilePatch.role = input.role;
   if (input.isActive !== undefined) profilePatch.is_active = input.isActive;
+  if (input.isInternal !== undefined) profilePatch.is_internal = input.isInternal;
   if (input.email !== undefined) profilePatch.email = input.email;
 
   if (Object.keys(profilePatch).length > 0) {
     const { error } = await admin.from("profiles").update(profilePatch).eq("id", id);
     if (error) throw new Error(`updateUser profile failed: ${error.message}`);
+  }
+
+  // Em `info` e não em `debug`, pela mesma régua do e-mail logo acima: marcar
+  // uma conta como Backoffice a tira do custo, da margem e do funil do painel
+  // inteiro. É uma mudança que se vai querer reconstruir no dia em que um
+  // número parecer bom demais.
+  if (input.isInternal !== undefined) {
+    log.info("conta de backoffice", { id, isInternal: input.isInternal });
   }
 }
 

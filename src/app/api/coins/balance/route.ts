@@ -15,6 +15,12 @@ export const dynamic = "force-dynamic";
  * saldo. Buscá-lo numa segunda rota faria o anel e o número discordarem por um
  * instante a cada gasto. `null` = conta sem franquia, e aí o chip volta ao
  * saldo absoluto. Ver `docs/creditos-na-tela.md`.
+ *
+ * `unlimited` é a conta de Backoffice (migração 0073). Ela vai no MESMO
+ * payload, e não numa rota própria, pela mesma razão do ciclo: é o cliente
+ * decidindo entre desenhar um número e desenhar ∞, e duas respostas
+ * separadas deixariam o chip mostrar o saldo congelado por um instante antes
+ * de se corrigir.
  */
 export async function GET(request: Request) {
   const auth = await requireAuth();
@@ -27,5 +33,5 @@ export async function GET(request: Request) {
     getCurrentBalance(),
     getCycleUsage().catch(() => null),
   ]);
-  return NextResponse.json({ balance: balance ?? 0, cycle });
+  return NextResponse.json({ balance: balance ?? 0, cycle, unlimited: auth.user.isInternal });
 }

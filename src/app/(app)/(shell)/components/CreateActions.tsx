@@ -151,11 +151,16 @@ function CreateAction({
   paywall?: string;
 }) {
   const balance = useCoinsStore((s) => s.balance);
+  const unlimited = useCoinsStore((s) => s.unlimited);
   const [blocked, setBlocked] = useState(false);
   // Só o ZERO LIDO fecha a porta. `null` é "ainda não sei", e um carregamento
   // lento do saldo não pode transformar uma conta paga numa parede — é o mesmo
   // princípio do `requireBalance` do servidor. Ver `CreateDock`.
-  const broke = paywall !== undefined && balance === 0;
+  //
+  // A conta de Backoffice nunca fecha: o saldo dela fica congelado no que era
+  // quando foi marcada, e um zero congelado murararia a conta que existe
+  // justamente para atravessar estas portas.
+  const broke = !unlimited && paywall !== undefined && balance === 0;
 
   return (
     // `delay` curto: o nome do ícone é informação que se pede com o cursor já

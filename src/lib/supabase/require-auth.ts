@@ -33,6 +33,12 @@ const log = createLogger("require-auth");
  * quer dizer "não sei", não "zero", e quem consome trata as duas de formas
  * diferentes.
  *
+ * `isInternal` entra pela mesma régua: é a conta de Backoffice (migração
+ * 0073), e quem precisa dela é o piso de saldo — uma conta interna não tem
+ * saldo que signifique alguma coisa, então recusá-la por "saldo zero" seria
+ * trancar justamente a conta que existe para testar. Ver
+ * `features/coins/server/require-balance.ts`.
+ *
  * `firstName` entra pela MESMA razão e com a mesma régua: é uma coluna a mais
  * numa linha já aberta, para as rotas em que o produto fala COM a pessoa em
  * vez de sobre ela (hoje só a abertura do Biblo). `null` quer dizer "não há
@@ -46,7 +52,13 @@ const log = createLogger("require-auth");
  * `profiles`, que é o fato gravado, e não do token. Ver `lib/supabase/server.ts`.
  */
 
-type AuthUser = { id: string; coinBalance: number | null; firstName: string | null };
+type AuthUser = {
+  id: string;
+  coinBalance: number | null;
+  /** Conta de Backoffice: gasta sem debitar saldo (migração 0073). */
+  isInternal: boolean;
+  firstName: string | null;
+};
 type AuthResult = { user: AuthUser; response: null } | { user: null; response: NextResponse };
 
 export async function requireAuth(): Promise<AuthResult> {
@@ -65,7 +77,7 @@ export async function requireAuth(): Promise<AuthResult> {
   // nada.
   const { data, error } = await supabase
     .from("profiles")
-    .select("is_active, coin_balance, display_name, email")
+    .select("is_active, coin_balance, is_internal, display_name, email")
     .eq("id", userId)
     .maybeSingle();
   if (error) {
@@ -81,6 +93,10 @@ export async function requireAuth(): Promise<AuthResult> {
     user: {
       id: userId,
       coinBalance: data?.coin_balance ?? null,
+      // `=== true` e não `?? false`: erro de leitura devolve conta NORMAL, e a
+      // conta normal é a que paga. O engano seguro aqui é cobrar de quem não
+      // devia, nunca liberar quem não é.
+      isInternal: data?.is_internal === true,
       firstName: firstNameFrom(data?.display_name ?? null, data?.email ?? null),
     },
     response: null,

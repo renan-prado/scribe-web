@@ -70,7 +70,11 @@ export default async function BarraLayout({ children }: { children: ReactNode })
           menu da conta, ou seja, só existia com o menu aberto. O sintoma era o
           botão do `/import` preso num carregando eterno. Ver `CoinsSync`. */}
       {account ? (
-        <CoinsSync balance={account.coinBalance ?? INITIAL_COIN_BALANCE} cycle={cycle} />
+        <CoinsSync
+          balance={account.coinBalance ?? INITIAL_COIN_BALANCE}
+          cycle={cycle}
+          unlimited={account.isInternal}
+        />
       ) : null}
       <AppHeaderShell
         account={

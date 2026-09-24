@@ -32,8 +32,21 @@ type CoinsStoreState = {
    * de qualquer jeito. Ver `docs/creditos-na-tela.md`.
    */
   cycle: CycleUsage | null;
+  /**
+   * Conta de Backoffice: o saldo não significa nada e nada trava por causa
+   * dele (migração 0073). A UI desenha ∞ no lugar do número e nenhum gate
+   * fecha.
+   *
+   * Ele é um TERCEIRO estado ao lado de `balance`, e não um `balance = Infinity`
+   * disfarçado: o número continua sendo o que está em `profiles`, e um
+   * `Infinity` atravessaria `Odometer`, `Math.min` do anel e o `toLocaleString`
+   * do chip — três lugares que passariam a desenhar "∞" por acidente em vez
+   * de por decisão.
+   */
+  unlimited: boolean;
   setBalance: (v: number | null) => void;
   setCycle: (v: CycleUsage | null) => void;
+  setUnlimited: (v: boolean) => void;
   /** GET /api/coins/balance. Returns the fetched balance or null on error. */
   refresh: () => Promise<number | null>;
   /** POST /api/coins/charge. Updates `balance` on success. */
@@ -43,17 +56,25 @@ type CoinsStoreState = {
 export const useCoinsStore = create<CoinsStoreState>((set) => ({
   balance: null,
   cycle: null,
+  unlimited: false,
 
   setBalance: (v) => set({ balance: v === null ? null : Math.max(0, v) }),
 
   setCycle: (v) => set({ cycle: v }),
 
+  setUnlimited: (v) => set({ unlimited: v }),
+
   refresh: async () => {
     try {
       const res = await fetch("/api/coins/balance", { cache: "no-store" });
       if (!res.ok) return null;
-      const body = (await res.json()) as { balance?: number; cycle?: CycleUsage | null };
+      const body = (await res.json()) as {
+        balance?: number;
+        cycle?: CycleUsage | null;
+        unlimited?: boolean;
+      };
       if (typeof body.balance !== "number") return null;
+      set({ unlimited: body.unlimited === true });
       // O ciclo entra na MESMA atualização do saldo: os dois envelhecem pelo
       // mesmo débito, e gravá-los separado faria o anel e o número discordarem
       // por um instante a cada gasto.
@@ -100,3 +121,21 @@ export const useCoinsStore = create<CoinsStoreState>((set) => ({
 
 /** Non-hook access for use inside effects/callbacks. */
 export const getCoinsState = () => useCoinsStore.getState();
+
+/**
+ * "Esta conta pode pagar `cost`?" — `null` enquanto o saldo é desconhecido.
+ *
+ * Os três estados são o ponto: `true` libera, `false` fecha, e `null` é "ainda
+ * não sei", que NUNCA deve fechar nada (um saldo lento não pode transformar
+ * uma conta paga numa parede — o mesmo princípio de `requireBalance` no
+ * servidor). Existe para que cada gate não reescreva a condição e esqueça o
+ * `unlimited` da conta de Backoffice, que foi exatamente o que aconteceu nos
+ * quatro lugares que a liam à mão.
+ */
+export function useCanAfford(cost: number): boolean | null {
+  return useCoinsStore((s) => {
+    if (s.unlimited) return true;
+    if (s.balance === null) return null;
+    return s.balance >= cost;
+  });
+}

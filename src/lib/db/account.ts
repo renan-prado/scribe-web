@@ -33,9 +33,20 @@ export type CurrentAccount = {
    * do lado das páginas, ao 403 que `requireAuth()` devolve nas rotas.
    */
   isActive: boolean;
+  /**
+   * Conta de Backoffice: uso interno. Gasta sem debitar saldo e fica fora de
+   * toda medição do /admin. Só o admin marca (migração 0073).
+   *
+   * Ela viaja junto de `isAdmin` e não no lugar dele: são coisas diferentes e
+   * ficariam erradas se fossem a mesma. Admin é quem ENTRA no painel; interna
+   * é a conta que não deve APARECER nele. O admin que testa é as duas, e um
+   * beta tester convidado pode precisar ser só a segunda.
+   */
+  isInternal: boolean;
 };
 
-const SELECT = "id, display_name, avatar_url, email, created_at, coin_balance, role, is_active";
+const SELECT =
+  "id, display_name, avatar_url, email, created_at, coin_balance, role, is_active, is_internal";
 
 type DbRow = {
   id: string;
@@ -46,6 +57,7 @@ type DbRow = {
   coin_balance: number | null;
   role: string | null;
   is_active: boolean | null;
+  is_internal: boolean | null;
 };
 
 export const getCurrentAccount = cache(async (): Promise<CurrentAccount | null> => {
@@ -75,5 +87,10 @@ export const getCurrentAccount = cache(async (): Promise<CurrentAccount | null> 
     // `!== false` e não `=== true`: null (linha antiga, coluna recém-criada)
     // é conta ativa. Só a desativação explícita barra alguém.
     isActive: row.is_active !== false,
+    // `=== true` e não `!== false`: o oposto de `isActive` logo acima, e de
+    // propósito. Ali o default é permissivo (linha antiga é conta ativa);
+    // aqui um null só pode significar "não marcada", e tratá-lo como interna
+    // tiraria uma conta de cliente da medição sem ninguém pedir.
+    isInternal: row.is_internal === true,
   };
 });

@@ -105,19 +105,35 @@ export type FeatureContext = {
   enabled?: boolean;
   /** Exceção por pessoa. `null`/ausente = sem exceção, decide o plano. */
   override?: boolean | null;
+  /**
+   * Conta de Backoffice (`profiles.is_internal`, migração 0073). Alcança
+   * qualquer degrau, porque testar a funcionalidade é o que ela existe para
+   * fazer.
+   *
+   * Entra aqui como CONTEXTO, ao lado do kill switch e do override, e não
+   * como um degrau em `PLAN_ORDER`: não é um plano que alguém compra, é uma
+   * propriedade da conta. Ver o cabeçalho da migração.
+   */
+  internal?: boolean;
 };
 
 /**
- * A decisão. Precedência: kill switch → override → plano.
+ * A decisão. Precedência: kill switch → override → Backoffice → plano.
  *
  * O kill switch vencer o override é deliberado: ele existe para incidente, e
  * um incidente não abre exceção para ninguém, nem para o beta tester que
  * tinha `granted = true`.
+ *
+ * E o override vencer o Backoffice é a mesma ideia um degrau abaixo: a conta
+ * interna alcança tudo, mas uma revogação escrita À MÃO para aquela pessoa é
+ * uma decisão que alguém tomou olhando para ela. Um passe-livre que ignorasse
+ * o admin seria uma quarta regra discutindo com as três que já existem.
  */
 export function evaluateFeature(key: FeatureKey, ctx: FeatureContext): FeatureAccess {
   if (ctx.enabled === false) return { allowed: false, reason: "disabled" };
   if (ctx.override === true) return { allowed: true };
   if (ctx.override === false) return { allowed: false, reason: "revoked" };
+  if (ctx.internal === true) return { allowed: true };
   if (planMeetsFeature(ctx.plan, key)) return { allowed: true };
   return { allowed: false, reason: "plan" };
 }
@@ -136,6 +152,13 @@ export function canUseFeature(key: FeatureKey, ctx: FeatureContext): boolean {
  */
 export type EntitlementSnapshot = {
   plan: PlanKey;
+  /**
+   * Conta de Backoffice. A UI precisa saber para dizer "Backoffice" onde
+   * diria o nome do plano, e para mostrar ∞ onde mostraria o saldo — sem
+   * isso, a conta interna apareceria como "Gratuito" com 8.959 moedas, que é
+   * uma frase falsa nas duas metades.
+   */
+  internal: boolean;
   features: Record<FeatureKey, FeatureAccess>;
 };
 
@@ -147,7 +170,7 @@ export function snapshotAllows(snapshot: EntitlementSnapshot, key: FeatureKey): 
 export function emptySnapshot(): EntitlementSnapshot {
   const features = {} as Record<FeatureKey, FeatureAccess>;
   for (const key of FEATURE_KEYS) features[key] = { allowed: false, reason: "plan" };
-  return { plan: "free", features };
+  return { plan: "free", internal: false, features };
 }
 
 /**

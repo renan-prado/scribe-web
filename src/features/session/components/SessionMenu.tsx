@@ -10,7 +10,7 @@ import {
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
 import { COIN_COSTS } from "@/features/coins/pricing";
-import { useCoinsStore } from "@/features/coins/store";
+import { useCanAfford } from "@/features/coins/store";
 import { cn } from "@/lib/utils";
 
 type SessionMenuProps = {
@@ -62,8 +62,9 @@ export function SessionMenu({
   onMoveToFolder,
   written = false,
 }: SessionMenuProps) {
-  const balance = useCoinsStore((s) => s.balance);
-  const insufficient = balance !== null && balance < REPROCESS_COST;
+  // `false` fecha, `null` ("ainda não sei") não fecha nada — e a conta de
+  // Backoffice responde `true` sempre. Ver `useCanAfford`.
+  const insufficient = useCanAfford(REPROCESS_COST) === false;
   const reprocessDisabled = !onReprocess || reprocessing || insufficient;
   const hasLeadingItem = Boolean(onEdit || onReprocess || onMoveToFolder);
   const hasItemAboveDiscard = hasLeadingItem || Boolean(onReportHallucination);
