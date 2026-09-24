@@ -9,6 +9,17 @@ Gerado por `npm run release` a partir dos Conventional Commits. `feat` sobe o
 minor; o resto sobe o patch. Não edite à mão, a próxima execução escreve por
 cima do topo do arquivo.
 
+## 0.82.0, 2026-09-24, desde v0.81.0
+
+### Novidades
+
+- **summary:** resumo vazio para de prometer e abre a porta do editor (`911fd52`)
+
+### Correções
+
+- **session:** a Bíblia do painel recupera as superfícies, e a busca ganha a voz do Biblo (`4bf144e`)
+- **summary:** a dica do "/" diz para que serve, e o Biblo convida a conversar (`226404d`)
+
 ## 0.81.0, 2026-09-24, desde v0.80.0
 
 ### Novidades
