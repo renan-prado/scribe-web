@@ -1,7 +1,7 @@
 "use client";
 
-import { PenLine } from "lucide-react";
 import { useState } from "react";
+import { WriteGlyph } from "@/components/icons/WriteGlyph";
 import { NavLink } from "@/components/NavLink";
 import { Button } from "@/components/ui/button";
 import { Dialog, DialogContent, DialogTitle } from "@/components/ui/dialog";
@@ -84,7 +84,7 @@ export function AiPaywallDialog({ open, onOpenChange, action }: Props) {
                 contentClassName="inline-flex items-center justify-center gap-1.5"
                 className="inline-flex w-full items-center justify-center rounded-md px-4 py-2 text-sm font-medium text-scriba-ink-soft transition-colors hover:text-scriba-ink focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-v2-ink-mute"
               >
-                <PenLine className="size-4" strokeWidth={1.75} />
+                <WriteGlyph className="size-4" />
                 Escrever à mão agora
               </NavLink>
             </div>

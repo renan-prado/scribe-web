@@ -1,7 +1,7 @@
 "use client";
 
-import { PenLine } from "lucide-react";
 import { useRef, useState } from "react";
+import { EditGlyph } from "@/components/icons/EditGlyph";
 import { LinkPendingSwap, NavLink } from "@/components/NavLink";
 import type { BibloDockHandle } from "@/features/session/components/BibloDock";
 import { BibloSummaryDock } from "@/features/session/components/BibloSummaryDock";
@@ -56,7 +56,7 @@ export function SummaryMobileDock({ sessionId, canEdit }: { sessionId: string; c
               className={MOBILE_BAR_BUTTON_CLASS}
             >
               <LinkPendingSwap className="size-5">
-                <PenLine aria-hidden className="size-5" strokeWidth={1.75} />
+                <EditGlyph className="size-5" />
               </LinkPendingSwap>
             </NavLink>
           ) : undefined

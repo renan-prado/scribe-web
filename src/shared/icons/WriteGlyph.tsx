@@ -4,10 +4,12 @@ import { cn } from "@/lib/utils";
  * O glifo de "escrever": a caneta do `public/icons/write.svg`, embutida como
  * componente para herdar `currentColor` (um `<img src>` não herdaria).
  *
- * Substitui o `PenLine` do lucide-react nos dois lugares que marcam o modo
- * `manual` — o chip "Escrever resumo" da `TopBar` e o glifo de modo dos
- * cartões da Biblioteca — para os dois usarem o MESMO desenho de caneta que
- * o resto do produto (ver `public/icons/edit.svg`, o par dela para "editar").
+ * **A caneta sozinha é CRIAR um texto**, e é o par do
+ * [`EditGlyph`](./EditGlyph.tsx), a caneta sobre a folha, que é mexer num que
+ * já existe. Ela substitui o `PenLine` do lucide em todo lugar que abre uma
+ * folha em branco ou marca o modo `manual`: o chip "Escrever resumo" da
+ * `TopBar` e o painel de criação do celular, a saída grátis do paywall de IA,
+ * e o glifo de modo dos cartões da Biblioteca.
  */
 export function WriteGlyph({ className }: { className?: string }) {
   return (

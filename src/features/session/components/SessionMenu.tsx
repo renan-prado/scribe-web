@@ -1,6 +1,7 @@
 "use client";
 
-import { FolderInput, MoreVertical, Pencil, RefreshCw, Trash2, TriangleAlert } from "lucide-react";
+import { FolderInput, MoreVertical, RefreshCw, Trash2, TriangleAlert } from "lucide-react";
+import { EditGlyph } from "@/components/icons/EditGlyph";
 import {
   DropdownMenu,
   DropdownMenuContent,
@@ -85,7 +86,7 @@ export function SessionMenu({
       <DropdownMenuContent align="end" className="w-56">
         {onEdit ? (
           <DropdownMenuItem onClick={onEdit} className="gap-2">
-            <Pencil className="size-4" />
+            <EditGlyph className="size-4" />
             Editar
           </DropdownMenuItem>
         ) : null}

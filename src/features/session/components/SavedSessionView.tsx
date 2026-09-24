@@ -1,10 +1,11 @@
 "use client";
 
-import { Folder as FolderIcon, MapPin, Pencil, PenLine } from "lucide-react";
+import { Folder as FolderIcon, MapPin } from "lucide-react";
 import { useRouter } from "next/navigation";
 import type { ReactNode } from "react";
 import { useState } from "react";
 import { toast } from "sonner";
+import { EditGlyph } from "@/components/icons/EditGlyph";
 import { LinkPendingSwap, NavLink } from "@/components/NavLink";
 import { PageBlurOverlay } from "@/components/PageBlurOverlay";
 import { useCoinsStore } from "@/features/coins/store";
@@ -390,7 +391,7 @@ export function SavedSessionView({
                   className={ADD_BADGE_CLASSES}
                 >
                   <LinkPendingSwap className="size-3">
-                    <PenLine className="size-3" strokeWidth={2.5} />
+                    <EditGlyph className="size-3" />
                   </LinkPendingSwap>
                   Editar
                 </NavLink>
@@ -413,7 +414,7 @@ export function SavedSessionView({
           >
             <h1 className="font-heading text-2xl font-semibold leading-tight tracking-tight text-scriba-ink-strong sm:text-3xl md:text-4xl">
               {title}
-              <Pencil className="ml-2 inline size-4 align-middle opacity-0 text-scriba-ink-mute transition-opacity group-hover:opacity-60" />
+              <EditGlyph className="ml-2 inline size-3.5 align-middle opacity-0 text-scriba-ink-mute transition-opacity group-hover:opacity-60" />
             </h1>
           </button>
 

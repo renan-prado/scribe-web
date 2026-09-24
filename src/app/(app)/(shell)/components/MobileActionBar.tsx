@@ -1,8 +1,9 @@
 "use client";
 
-import { PenLine, Plus, Search, Sparkles, X } from "lucide-react";
+import { Plus, Search, Sparkles, X } from "lucide-react";
 import { type ReactNode, useEffect, useState } from "react";
 import { MicGlyph } from "@/components/icons/MicGlyph";
+import { WriteGlyph } from "@/components/icons/WriteGlyph";
 import { YoutubeIcon } from "@/components/icons/YoutubeIcon";
 import { NavLink } from "@/components/NavLink";
 import { AiPaywallDialog } from "@/features/billing/components/AiPaywallDialog";
@@ -206,7 +207,7 @@ function CreateButton() {
               />
               <CreateOption
                 href="/summary/new"
-                icon={<PenLine className="size-5" strokeWidth={1.5} />}
+                icon={<WriteGlyph className="size-5" />}
                 label="Escrever resumo"
                 tourId="create-write"
                 onNavigate={() => setTapped(false)}
