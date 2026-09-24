@@ -7,11 +7,7 @@ import { EarningsByPlan } from "@/features/partners/components/EarningsByPlan";
 import { PartnerTabs } from "@/features/partners/components/PartnerTabs";
 import { ReferralLinkCard } from "@/features/partners/components/ReferralLinkCard";
 import { RefreshPanelButton } from "@/features/partners/components/RefreshPanelButton";
-import {
-  COMMISSION_HOLD_DAYS,
-  PAYOUT_DAY_OF_MONTH,
-  PAYOUT_MINIMUM_CENTS,
-} from "@/features/partners/economics";
+import { COMMISSION_HOLD_DAYS, PAYOUT_DAY_OF_MONTH } from "@/features/partners/economics";
 import { getCurrentPartner } from "@/lib/auth/require-partner";
 import { loadPartnerPanel } from "@/lib/db/partner-panel";
 import { cn } from "@/lib/utils";
@@ -88,11 +84,7 @@ export default async function PartnerDashboardPage() {
         <Money
           label="Disponível"
           value={formatBrl(summary.availableCents)}
-          hint={
-            summary.availableCents >= PAYOUT_MINIMUM_CENTS
-              ? `Entra no PIX do dia ${PAYOUT_DAY_OF_MONTH}`
-              : `Faltam ${formatBrl(PAYOUT_MINIMUM_CENTS - summary.availableCents)} para o mínimo`
-          }
+          hint={`Entra no PIX do dia ${PAYOUT_DAY_OF_MONTH}`}
           strong
         />
         <Money

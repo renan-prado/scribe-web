@@ -305,7 +305,6 @@ Na tela, ao lado do campo de taxa:
 
 - **o que o parceiro ganha** por assinante, nos dois planos;
 - **o que o Scriba recebe** no mês 1 e o recorrente do mês 2 em diante;
-- **quantas conversões** o parceiro precisa para atingir o mínimo de R$ 50;
 - faixa de aviso conforme o resultado do mês 1: saudável → atenção →
   **negativo**, com o texto dizendo o valor ("a 90% você fica R$ X negativo no
   primeiro mês, recuperado no mês 2 em Y dias").

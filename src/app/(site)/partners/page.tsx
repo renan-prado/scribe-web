@@ -10,7 +10,6 @@ import {
   DEFAULT_PARTNER_SIGNUP_REWARD_COINS,
   DEFAULT_SIGNUP_BONUS_COINS,
   PARTNER_PROSPECT_COINS,
-  PAYOUT_MINIMUM_CENTS,
   PAYOUT_SCHEDULE_LABEL,
 } from "@/features/partners/economics";
 import { REF_COOKIE_MAX_AGE } from "@/features/referrals/cookies";
@@ -40,7 +39,7 @@ export const metadata: Metadata = {
  * `"use client"` é importado. Ela é servida da CDN para um visitante que, por
  * definição, ainda não tem conta.
  *
- * **E ela não tem números próprios.** Percentual, carência, mínimo de saque,
+ * **E ela não tem números próprios.** Percentual, carência, dia do pagamento,
  * moedas e preços saem de `lib/partners/economics.ts`, `lib/billing/plans.ts`
  * e `lib/coins/pricing.ts`, os mesmos módulos que o painel do parceiro e o
  * simulador do admin leem. Um número redigitado aqui vira, semanas depois,
@@ -185,18 +184,17 @@ function InviteCard() {
           body={`${formatBrl(commissionCents(PLANS.pessoal.priceCents, DEFAULT_COMMISSION_BPS))} pelo plano ${PLANS.pessoal.name} e ${formatBrl(commissionCents(PLANS.estudioso.priceCents, DEFAULT_COMMISSION_BPS))} pelo plano ${PLANS.estudioso.name}.`}
         />
         {/* Quando e quanto, no cartão que responde "o que eu ganho".
-            As duas regras que decidem a hora de receber estavam só no FAQ, e
-            uma pessoa que lê a página inteira e não rola até lá sai achando que
-            o pagamento é imediato e sem piso. As duas frustram na mesma hora, a
-            primeira vez que alguém assina e o dinheiro não aparece, então elas
-            vêm antes, não depois. */}
+            A regra que decide a hora de receber estava só no FAQ, e uma pessoa
+            que lê a página inteira e não rola até lá sai achando que o
+            pagamento é imediato. Isso frustra na primeira vez que alguém
+            assina e o dinheiro não aparece, então ela vem antes, não depois. */}
         <InviteRow
           title={`Pagamento por PIX ${PAYOUT_SCHEDULE_LABEL}`}
           body={`Sobre o que estiver disponível naquela data. Cada comissão espera ${COMMISSION_HOLD_DAYS} dias de carência antes de entrar no disponível, o prazo em que a cobrança ainda pode ser contestada no cartão.`}
         />
         <InviteRow
-          title={`Mínimo de ${formatBrl(PAYOUT_MINIMUM_CENTS)} para o PIX sair`}
-          body="Abaixo disso o saldo espera o mês seguinte, acumula e nunca expira. Se você sair do programa, ele é pago integralmente mesmo abaixo do mínimo."
+          title="Sem valor mínimo para receber"
+          body="Todo o saldo disponível sai no PIX do dia de pagamento, seja qual for o valor. Se você sair do programa, o que ainda estiver em carência também é pago quando vencer."
         />
         <InviteRow
           title="Um painel só seu"
@@ -788,12 +786,12 @@ const FAQ: { question: string; answer: string }[] = [
   },
   {
     question: "Quando o dinheiro cai na conta?",
-    answer: `Cada comissão espera ${COMMISSION_HOLD_DAYS} dias, é o tempo em que a cobrança ainda pode ser contestada no cartão. Passado o prazo, ela fica disponível e entra no PIX ${PAYOUT_SCHEDULE_LABEL}, desde que o total disponível tenha chegado a ${formatBrl(PAYOUT_MINIMUM_CENTS)}.`,
+    answer: `Cada comissão espera ${COMMISSION_HOLD_DAYS} dias, é o tempo em que a cobrança ainda pode ser contestada no cartão. Passado o prazo, ela fica disponível e entra no PIX ${PAYOUT_SCHEDULE_LABEL}, seja qual for o valor.`,
   },
   {
-    question: `E se eu não juntar os ${formatBrl(PAYOUT_MINIMUM_CENTS)}?`,
+    question: "Tem valor mínimo para sacar?",
     answer:
-      "O saldo continua acumulado para o mês seguinte e nunca expira. Se você decidir sair do programa, ele é pago integralmente, mesmo abaixo do mínimo.",
+      "Não. Todo o saldo disponível é pago no dia de pagamento, mesmo que seja pequeno. Se você decidir sair do programa, as comissões ainda em carência são pagas quando vencerem.",
   },
   {
     question: "Eu vejo quem se cadastrou pelo meu link?",

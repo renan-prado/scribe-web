@@ -206,11 +206,10 @@ pago deixa o número mentindo para sempre.
 A rota não aceita valor no corpo: o servidor soma o que está disponível, para
 que pagamento e comissões sempre fechem.
 
-**`PAYOUT_MINIMUM_CENTS` é política, não trava.** O botão de pagar aparece com
-qualquer valor disponível e o diálogo apenas AVISA abaixo do mínimo. A regra
-do próprio programa, saldo pago integralmente a quem sai, descreve um
-pagamento que quase sempre nasce abaixo dele; escondendo o botão, a saída
-seria mexer no banco à mão.
+**Não há mínimo de saque.** Existiu (`PAYOUT_MINIMUM_CENTS`, R$ 50) e saiu,
+porque contradizia o "sem meta mínima de resultado" dos termos. O botão de
+pagar aparece com qualquer valor disponível. Não recrie um mínimo sem mudar os
+termos (cláusulas 3, 9 e 14) no mesmo commit.
 
 **O comprovante do PIX é um LINK, não um upload.** `partner_payouts.receipt_url`,
 com https obrigatório num CHECK da coluna e no schema da rota, um "mandei no

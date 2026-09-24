@@ -25,23 +25,17 @@
  */
 export const COMMISSION_HOLD_DAYS = 30;
 
-/**
- * Mínimo do pagamento de ROTINA. Abaixo disso o saldo acumula para o mês
- * seguinte, nunca expira, e é pago integralmente se o parceiro deixar o
- * programa.
+/*
+ * **Não existe valor mínimo de saque.** Existiu (R$ 50), porque um PIX manual
+ * de R$ 4 custa mais em trabalho do que vale, e saiu porque contradizia a
+ * promessa dos termos: "sem meta mínima de resultado". Um mínimo de saque É
+ * uma meta, só que escrita no pagamento: o parceiro pequeno passava meses sem
+ * receber nada, e o programa PARECIA não pagar. Hoje todo saldo disponível
+ * entra no PIX do dia de pagamento, seja qual for o valor.
  *
- * Existe porque um PIX manual de R$ 4 custa mais em trabalho do que vale, e
- * o número não é neutro: quanto maior o mínimo, mais tempo um parceiro
- * pequeno passa sem receber nada, o que faz o programa PARECER que não paga.
- * Foi essa tensão, e não a margem, que decidiu a taxa padrão de 30%.
- *
- * É POLÍTICA, NÃO TRAVA. O admin pode registrar um pagamento abaixo dele,
- * o diálogo avisa e segue. A própria frase acima ("é pago integralmente se o
- * parceiro deixar o programa") descreve um pagamento que quase sempre nasce
- * abaixo do mínimo; se o botão sumisse, a única saída seria mexer no banco à
- * mão. Não transforme esta constante em condição de bloqueio.
+ * Não recrie a constante sem mudar os termos (cláusulas 3, 9 e 14) no mesmo
+ * commit.
  */
-export const PAYOUT_MINIMUM_CENTS = 5000;
 
 /**
  * O dia do mês em que o pagamento de rotina sai.
@@ -239,8 +233,6 @@ export type Simulation = {
   recurringCents: number;
   /** Dias do mês 2 necessários para cobrir um mês 1 negativo. 0 se positivo. */
   paybackDays: number;
-  /** Conversões necessárias para o parceiro atingir o mínimo de saque. */
-  conversionsToPayout: number;
   /** Faixa de leitura para a UI. */
   verdict: "healthy" | "thin" | "negative";
 };
@@ -282,8 +274,6 @@ export function simulatePartnerEconomics(input: SimulationInput): Simulation {
 
   const paybackDays = month1 < 0 && recurring > 0 ? Math.ceil((-month1 / recurring) * 30) : 0;
 
-  const conversionsToPayout = partner > 0 ? Math.ceil(PAYOUT_MINIMUM_CENTS / partner) : 0;
-
   // "thin" não é um alerta de prejuízo, é o aviso de que a folga ficou
   // pequena o bastante para uma variação de câmbio ou de preço de modelo
   // empurrar o mês 1 para o vermelho.
@@ -298,7 +288,6 @@ export function simulatePartnerEconomics(input: SimulationInput): Simulation {
     month1Cents: month1,
     recurringCents: recurring,
     paybackDays,
-    conversionsToPayout,
     verdict,
   };
 }

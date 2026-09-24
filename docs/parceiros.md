@@ -194,13 +194,18 @@ padrão do programa, e pode ser negociado individualmente.
   disponível.
 - O painel mostra as duas colunas separadas: **a liberar** (dentro da
   carência) e **disponível** (pronto para o próximo pagamento).
-- **Valor mínimo para saque: R$ 50.** Abaixo disso o saldo permanece acumulado
-  para o mês seguinte, nunca expira, e é pago integralmente caso o parceiro
-  deixe o programa.
+- **Não há valor mínimo para saque.** Existiu (R$ 50) e saiu: contradizia a
+  promessa de "sem meta mínima de resultado" dos termos, e deixava o parceiro
+  pequeno meses sem receber nada. Todo o disponível sai no dia de pagamento.
 
-O parceiro informa chave PIX e CPF/CNPJ no cadastro. Sem esses dados não há
-como pagar. O CPF/CNPJ é conferido pelo dígito verificador na hora de salvar,
-um documento digitado errado só apareceria quando o PIX não caísse.
+**CPF e endereço completo são obrigatórios no cadastro** (a chave PIX
+continua opcional até o primeiro pagamento). O CPF é conferido pelo dígito
+verificador na hora de salvar, um documento digitado errado só apareceria
+quando o PIX não caísse; o endereço (CEP, logradouro, número, bairro, cidade e
+UF) é o que um informe de rendimentos pede. CNPJ não é aceito: o programa é
+para pessoa física. O banco guarda as duas colunas como anuláveis porque há
+parceiros de antes da regra; quem garante a obrigatoriedade é a rota
+(`PartnerBodySchema`), e editar um cadastro antigo exige completá-lo.
 
 Ao registrar o pagamento, quem paga pode anexar o **link do comprovante** (um
 arquivo no Drive, por exemplo). Ele aparece no painel do parceiro junto da
@@ -214,10 +219,7 @@ linha do pagamento. Não há upload: guardamos o endereço, não o arquivo.
 - **Cadastros**: quantas dessas criaram conta.
 - **Assinantes**: quantas viraram assinantes pagantes.
 - **Quanto ele ganha por plano**: a comissão em reais de cada assinatura.
-  "30% da primeira mensalidade" é fórmula; o parceiro precisa do valor. O
-  mínimo de saque aparece uma vez, no rodapé do cartão, repetido por linha
-  como "faltam N assinantes", era lido como se o valor ao lado só valesse
-  depois de N indicações.
+  "30% da primeira mensalidade" é fórmula; o parceiro precisa do valor.
 - **A liberar / disponível / já pago**: em reais.
   - *A liberar*: dentro da carência de 30 dias.
   - *Disponível*: passou a carência e ainda não foi pago, é o que sai no
@@ -262,7 +264,7 @@ página pública (`/import`, `/refer`), o painel mantém o nome da feature.
 `PUBLIC_PREFIXES` no `src/proxy.ts` casa por prefixo, então o regulamento entra
 junto; `/partners/dashboard` segue em `KNOWN_APP_PREFIXES`.
 
-**Nenhuma das duas tem número próprio.** Percentual, carência, mínimo de saque,
+**Nenhuma das duas tem número próprio.** Percentual, carência, dia de pagamento,
 moedas, preços e MINUTOS saem de `src/features/partners/economics.ts`,
 `src/features/billing/plans.ts`, `src/features/coins/pricing.ts` e `src/features/referrals/cookies.ts` (a
 janela de 30 dias). A regra é a mesma da landing page (ver `src/app/AGENTS.md`), e
@@ -342,12 +344,12 @@ vigiar, não o percentual do parceiro.
 
 Já com as 50 moedas de recompensa ao parceiro descontadas:
 
-| comissão | valor ao parceiro | resultado mês 1 | conversões p/ R$ 50 |
-|---|---|---|---|
-| 20% | R$ 3,98 | R$ 7,75 | 13 |
-| 30% | R$ 5,97 | R$ 5,76 | 9 |
-| 40% | R$ 7,96 | R$ 3,77 | 7 |
-| 50% | R$ 9,95 | R$ 1,78 | 6 |
+| comissão | valor ao parceiro | resultado mês 1 |
+|---|---|---|
+| 20% | R$ 3,98 | R$ 7,75 |
+| 30% | R$ 5,97 | R$ 5,76 |
+| 40% | R$ 7,96 | R$ 3,77 |
+| 50% | R$ 9,95 | R$ 1,78 |
 
 No cenário pessimista (c = 3%, u = 100%) a 30%, o mês 1 fica em −R$ 7,87 e se
 paga em 15 dias do mês 2. O simulador do cadastro mostra esse número antes de
@@ -362,10 +364,9 @@ Em base de LTV, mesmo 50% custa ~10%, a restrição real não é margem.
 ## Pendências (interno)
 
 - ~~Percentual definitivo.~~ **Fechado: 30% padrão, editável por parceiro.**
-  Positivo no mês 1 mesmo com premissas pessimistas, e resolve a tensão com o
-  mínimo de R$ 50, a 20% seriam 13 conversões até o primeiro pagamento, o que
-  deixaria a maioria travada abaixo do piso por meses; a 30% são 9, e 4 no
-  Estudioso. Taxas negociadas caso a caso passam pelo simulador do admin, que
+  Positivo no mês 1 mesmo com premissas pessimistas. (A escolha também
+  resolvia a tensão com o antigo mínimo de saque de R$ 50, que não existe
+  mais.) Taxas negociadas caso a caso passam pelo simulador do admin, que
   mostra o efeito no mês 1 antes de salvar.
 - **Bruto ou líquido.** O documento acima usa o valor cheio da mensalidade
   porque o parceiro consegue conferir sozinho a partir do preço público, o

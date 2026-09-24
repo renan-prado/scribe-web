@@ -4,7 +4,6 @@ import { formatBrl, PLANS } from "@/features/billing/plans";
 import {
   ASSUMED_BONUS_USAGE_RATE,
   ASSUMED_CONVERSION_RATE,
-  PAYOUT_MINIMUM_CENTS,
   type Simulation,
   simulatePartnerEconomics,
 } from "@/features/partners/economics";
@@ -15,8 +14,7 @@ import { cn } from "@/lib/utils";
  *
  * Existe porque a taxa é editável por parceiro e pode ser negociada caso a
  * caso. Sem esta tela, a escolha seria às cegas: nada no formulário diria que
- * 70% deixa o primeiro mês negativo, nem que a 20% um parceiro pequeno passa
- * meses sem atingir o mínimo de saque.
+ * 70% deixa o primeiro mês negativo.
  *
  * É AVISO, não bloqueio. Pode haver razão comercial para uma taxa agressiva
  * num parceiro específico, o que não pode é ela ser escolhida sem que a
@@ -86,7 +84,6 @@ export function CommissionSimulator({
             <th className="pb-1.5 text-right font-medium">Parceiro</th>
             <th className="pb-1.5 text-right font-medium">Você, mês 1</th>
             <th className="pb-1.5 text-right font-medium">Recorrente</th>
-            <th className="pb-1.5 text-right font-medium">Saque</th>
           </tr>
         </thead>
         <tbody className="divide-y divide-scriba-hairline">
@@ -107,9 +104,6 @@ export function CommissionSimulator({
               <td className="py-2 text-right font-mono text-[11.5px] text-scriba-ink-soft">
                 {formatBrl(sim.recurringCents)}/mês
               </td>
-              <td className="py-2 text-right font-mono text-[11.5px] text-scriba-ink-soft">
-                {sim.conversionsToPayout} conv.
-              </td>
             </tr>
           ))}
         </tbody>
@@ -128,9 +122,7 @@ export function CommissionSimulator({
             dado real deste parceiro).
           </>
         )}{" "}
-        Custo de 1.000 moedas: {formatBrl(costPerThousandCoinsCents)}, medido. &quot;Saque&quot; é
-        quantos assinantes o parceiro precisa trazer para atingir o mínimo de{" "}
-        {formatBrl(PAYOUT_MINIMUM_CENTS)}.
+        Custo de 1.000 moedas: {formatBrl(costPerThousandCoinsCents)}, medido.
       </p>
     </div>
   );
