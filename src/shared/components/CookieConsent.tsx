@@ -1,6 +1,5 @@
 "use client";
 
-import { Cookie } from "lucide-react";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { useEffect, useRef, useState } from "react";
@@ -8,30 +7,36 @@ import { Button } from "@/components/ui/button";
 import { CONSENT_EVENT, grantConsent, hasConsent, isConsentExemptPath } from "@/shared/consent";
 
 /**
- * O aviso de cookies, e o BLOQUEIO de quem não aceitou.
+ * O aviso de cookies: uma barra discreta no rodapé, do jeito que a maioria
+ * dos sites faz. Não é um diálogo central com véu escuro por cima de tudo —
+ * essa versão já existiu e a sensação de abrir o site e topar de cara com uma
+ * tela bloqueada era ruim demais para o primeiro instante de visita.
  *
- * O porquê de ser um bloqueio, e não um banner que se ignora, está em
- * `src/shared/consent.ts`: sem cookies não há login, e um "recusar e seguir"
- * prometeria um produto que não existe sem eles.
+ * **O que continua sendo pedido de produto, e o que mudou, são coisas
+ * diferentes.** Continua existindo o impedimento de uso sem aceite (sem
+ * cookies não há login, ver `src/shared/consent.ts`), só que ele deixou de
+ * ser um VÉU: fora das páginas legais, enquanto não aceito, o resto da
+ * página vira `inert` (sem clique, sem Tab, sem leitor de tela) e a rolagem
+ * trava, mas nada escurece nem borra — a barra some assim que aceita, e até
+ * lá ela é a única coisa na tela com quem dá para interagir.
  *
- * Três estados, e só um deles desenha tela cheia:
+ * Três estados:
  *
- * - **aceito**: nada é desenhado. É o caso de quase toda visita.
- * - **pendente** fora das páginas legais: tela cheia por cima de tudo. O resto
- *   da página vira `inert` (nem clique, nem teclado, nem leitor de tela chega
- *   nela) e a rolagem trava. Só o `overflow: hidden` e o véu não bastariam: o
- *   Tab atravessaria o véu e acionaria um botão escondido atrás dele.
- * - **pendente** numa página legal: um cartão no rodapé, sem bloquear. A
- *   pessoa precisa poder LER a política antes de aceitá-la.
+ * - **aceito**: nada é desenhado. Quase toda visita.
+ * - **pendente/recusado** fora das páginas legais: a barra bloqueia (inert +
+ *   rolagem travada), mas SÓ ela aparece, sem véu.
+ * - **pendente/recusado** numa página legal (`CONSENT_EXEMPT_PATHS`): a mesma
+ *   barra, sem bloquear nada — a pessoa precisa poder ler a política antes de
+ *   aceitá-la.
  *
- * Quem recusa vê o motivo e um caminho de volta, nunca uma tela vazia: "não
- * usar" é uma resposta legítima, e a tela diz o que ela implica.
+ * Recusar não abre uma segunda tela: o texto da própria barra muda para
+ * explicar por quê, e o botão de aceitar continua ali. "Não usar" é uma
+ * resposta legítima, só que sem exigir um segundo componente para dizê-la.
  *
  * **Nada é desenhado antes da hidratação.** O cookie só é legível no
  * navegador, e decidir no servidor tornaria dinâmica toda página estática do
- * site (a landing inclusive), só para desenhar um aviso que a maioria já
- * aceitou. O preço é o aviso surgir um instante depois do primeiro paint para
- * quem ainda não aceitou, uma vez na vida.
+ * site (a landing inclusive) só para desenhar um aviso que a maioria já
+ * aceitou.
  */
 
 type State = "unknown" | "accepted" | "pending" | "refused";
@@ -40,7 +45,6 @@ export function CookieConsent() {
   const pathname = usePathname() ?? "/";
   const [state, setState] = useState<State>("unknown");
   const rootRef = useRef<HTMLElement>(null);
-  const acceptRef = useRef<HTMLButtonElement>(null);
 
   useEffect(() => {
     setState(hasConsent() ? "accepted" : "pending");
@@ -68,7 +72,6 @@ export function CookieConsent() {
     for (const el of siblings) el.inert = true;
     const previousOverflow = document.body.style.overflow;
     document.body.style.overflow = "hidden";
-    acceptRef.current?.focus();
     return () => {
       for (const el of siblings) el.inert = false;
       document.body.style.overflow = previousOverflow;
@@ -82,110 +85,41 @@ export function CookieConsent() {
     setState("accepted");
   };
 
-  if (!blocking) {
-    return (
-      <section
-        ref={rootRef}
-        aria-label="Aviso de cookies"
-        className="fixed inset-x-0 bottom-0 z-[100] px-4 pb-[max(1rem,env(safe-area-inset-bottom))]"
-      >
-        <div className="mx-auto flex max-w-2xl flex-col gap-3 rounded-2xl border border-scriba-hairline bg-popover p-4 text-popover-foreground shadow-[var(--scriba-shadow)] sm:flex-row sm:items-center">
-          <p className="flex-1 text-[13px] font-light leading-[1.55] text-scriba-ink-soft">
-            O Scriba usa cookies para manter você conectado e medir, de forma agregada, o uso do
-            site. Para usar o Scriba é preciso aceitá-los.
-          </p>
-          <Button onClick={accept} className="shrink-0">
-            Aceitar cookies
-          </Button>
-        </div>
-      </section>
-    );
-  }
-
   return (
-    <div
-      ref={(el) => {
-        rootRef.current = el;
-      }}
-      role="dialog"
-      aria-modal="true"
-      aria-labelledby="cookie-consent-title"
-      aria-describedby="cookie-consent-body"
-      className="fixed inset-0 z-[100] flex items-end justify-center overflow-y-auto bg-background/80 px-4 pt-10 pb-[max(1rem,env(safe-area-inset-bottom))] backdrop-blur-md sm:items-center"
+    <section
+      ref={rootRef}
+      aria-label="Aviso de cookies"
+      className="fixed inset-x-0 bottom-0 z-[100] px-4 pb-[max(1rem,env(safe-area-inset-bottom))]"
     >
-      <div className="flex w-full max-w-md flex-col gap-4 rounded-3xl border border-scriba-hairline bg-popover p-6 text-popover-foreground shadow-[var(--scriba-shadow)]">
-        <span
-          aria-hidden
-          className="flex size-10 items-center justify-center rounded-full bg-scriba-surface text-scriba-ink-strong"
-        >
-          <Cookie className="size-5" />
-        </span>
-
-        {state === "refused" ? (
-          <>
-            <h2
-              id="cookie-consent-title"
-              className="font-heading text-lg font-semibold tracking-tight text-scriba-ink-strong"
-            >
-              Sem cookies, o Scriba não funciona
-            </h2>
-            <p
-              id="cookie-consent-body"
-              className="text-sm font-light leading-relaxed text-scriba-ink-soft"
-            >
-              Entrar na sua conta, guardar suas gravações e abrir seus resumos dependem de um cookie
-              de sessão. Sem ele não há como saber que é você. Se mudar de ideia, é só aceitar
-              abaixo.
-            </p>
-          </>
-        ) : (
-          <>
-            <h2
-              id="cookie-consent-title"
-              className="font-heading text-lg font-semibold tracking-tight text-scriba-ink-strong"
-            >
-              Este site usa cookies
-            </h2>
-            <div
-              id="cookie-consent-body"
-              className="flex flex-col gap-2 text-sm font-light leading-relaxed text-scriba-ink-soft"
-            >
-              <p>Usamos cookies para:</p>
-              <ul className="list-disc space-y-1 pl-5">
-                <li>Manter você conectado à sua conta com segurança;</li>
-                <li>Identificar quando um usuário chega por um convite;</li>
-                <li>
-                  Entender como o site está sendo usado para melhorar a experiência global (Google
-                  Analytics).
-                </li>
-              </ul>
-              <p>Não usamos cookies de publicidade. Para usar o Scriba, é preciso aceitá-los.</p>
-            </div>
-          </>
-        )}
-
-        <p className="text-[12px] font-light text-scriba-ink-mute">
-          Detalhes na{" "}
+      <div className="mx-auto flex max-w-2xl flex-col gap-3 rounded-2xl border border-scriba-hairline bg-popover p-4 text-popover-foreground shadow-[var(--scriba-shadow)] sm:flex-row sm:items-center">
+        <p className="flex-1 text-[13px] font-light leading-[1.55] text-scriba-ink-soft">
+          {state === "refused" ? (
+            "Sem aceitar cookies não dá para usar o Scriba: são eles que mantêm você conectado à sua conta. "
+          ) : (
+            <>
+              Usamos cookies para manter você conectado, identificar indicações e entender o uso do
+              site (Google Analytics).{" "}
+            </>
+          )}
           <Link
             href="/privacy"
             className="text-scriba-blue-ink underline underline-offset-2 focus-visible:ring-2 focus-visible:ring-ring"
           >
-            Política de Privacidade
+            Saiba mais
           </Link>
           .
         </p>
-
-        <div className="flex flex-col-reverse gap-2 sm:flex-row sm:justify-end">
+        <div className="flex shrink-0 items-center gap-2">
           {state === "pending" ? (
-            <Button variant="ghost" onClick={() => setState("refused")}>
+            <Button variant="ghost" size="sm" onClick={() => setState("refused")}>
               Recusar
             </Button>
           ) : null}
-          <Button ref={acceptRef} onClick={accept}>
-            Aceitar e continuar
+          <Button size="sm" onClick={accept}>
+            Aceitar cookies
           </Button>
         </div>
       </div>
-    </div>
+    </section>
   );
 }

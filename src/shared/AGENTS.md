@@ -786,17 +786,26 @@ respeite `prefers-reduced-motion` (o bloco já existe no `globals.css`).
 ## Cookies: aceitar ou não usar
 
 `components/CookieConsent.tsx`, montado no root layout, com nome, versão e
-leitura em `consent.ts` (client-safe). **É um bloqueio, não um banner**: quem
-não aceitou vê um diálogo por cima de tudo, e o resto da página fica `inert`
-(sem clique, sem Tab, sem leitor de tela) com a rolagem travada. Recusar
-mostra o porquê e o caminho de volta. A razão de não haver "recusar e seguir":
-a sessão de login é um cookie, e sem ela não existe produto.
+leitura em `consent.ts` (client-safe). **É uma barra discreta no rodapé, não
+um diálogo com véu.** Já foi um diálogo central bloqueando a tela inteira, e a
+sensação de abrir o site e topar de cara com isso era ruim demais para o
+primeiro instante de visita — voltou a ser o formato comum, uma faixa fina no
+canto de baixo.
+
+**O impedimento de uso continua existindo, só que sem parecer um bloqueio.**
+Fora das páginas legais, enquanto não há aceite, o resto da página vira
+`inert` (sem clique, sem Tab, sem leitor de tela) e a rolagem trava — só que
+nada escurece nem borra, e a única coisa visível diferente é a barra. Recusar
+não abre uma segunda tela: o texto da própria barra muda para explicar por que
+o site não funciona sem cookies, com o botão de aceitar ao lado. A razão de
+não haver "recusar e seguir" de verdade: a sessão de login é um cookie, e sem
+ela não existe produto.
 
 Quatro coisas que não podem ser desfeitas:
 
 - **As páginas legais não bloqueiam** (`CONSENT_EXEMPT_PATHS`: `/privacy`,
-  `/terms`, `/partners/terms`). Lá o aviso é um cartão no rodapé: ninguém
-  pode ser obrigado a aceitar uma política que não conseguiu ler.
+  `/terms`, `/partners/terms`). Lá a mesma barra aparece sem aplicar `inert`:
+  ninguém pode ser obrigado a aceitar uma política que não conseguiu ler.
 - **O componente é o ÚLTIMO filho do `<body>`, fora do `Providers`.** O
   `inert` é aplicado aos IRMÃOS dele; dentro de uma árvore, ele travaria a si
   mesmo junto.
