@@ -9,6 +9,13 @@ Gerado por `npm run release` a partir dos Conventional Commits. `feat` sobe o
 minor; o resto sobe o patch. Não edite à mão, a próxima execução escreve por
 cima do topo do arquivo.
 
+## 0.83.0, 2026-09-24, desde v0.82.0
+
+### Novidades
+
+- **summary:** blocos do editor se movem arrastando, no punho e no dedo (`c76fd8a`)
+- **summary:** o editor ganha o "+" que pergunta o que a linha é (`0173080`)
+
 ## 0.82.0, 2026-09-24, desde v0.81.0
 
 ### Novidades
