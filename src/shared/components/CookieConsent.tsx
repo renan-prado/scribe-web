@@ -152,9 +152,12 @@ export function CookieConsent() {
             >
               <p>Usamos cookies para:</p>
               <ul className="list-disc space-y-1 pl-5">
-                <li>manter você conectado à sua conta com segurança;</li>
-                <li>saber de onde você veio, quando chega por um convite;</li>
-                <li>medir, de forma agregada, como o site é usado (Google Analytics).</li>
+                <li>Manter você conectado à sua conta com segurança;</li>
+                <li>Identificar quando um usuário chega por um convite;</li>
+                <li>
+                  Entender como o site está sendo usado para melhorar a experiência global (Google
+                  Analytics).
+                </li>
               </ul>
               <p>Não usamos cookies de publicidade. Para usar o Scriba, é preciso aceitá-los.</p>
             </div>
