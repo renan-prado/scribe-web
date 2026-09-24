@@ -9,6 +9,22 @@ Gerado por `npm run release` a partir dos Conventional Commits. `feat` sobe o
 minor; o resto sobe o patch. Não edite à mão, a próxima execução escreve por
 cima do topo do arquivo.
 
+## 0.87.0, 2026-09-24, desde v0.86.0
+
+### Novidades
+
+- **admin:** custo, margem e funil passam a medir só clientes (`8dd8e21`)
+- **admin:** conta de Backoffice, com crédito ilimitado e fora da medição (`5cf5a6c`)
+- **app:** puxar para baixo atualiza a tela no celular (`5f49b2e`)
+
+### Correções
+
+- **admin:** o aviso de custo subestimado parava de acusar o recado falado (`4b3138e`)
+
+### Outros
+
+- **agents:** registra a conta de Backoffice e o recorte por audiência (`db61605`)
+
 ## 0.86.0, 2026-09-24, desde v0.85.1
 
 ### Novidades
