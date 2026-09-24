@@ -208,6 +208,25 @@ export function emptyBlock(type: WrittenBlockType): WrittenBlock {
 }
 
 /**
+ * O MESMO texto, vestido de outro bloco: é o que o botão "trocar" da pílula faz.
+ *
+ * **O que atravessa é `text`, e só ele.** Todo bloco deste editor é `{ type,
+ * text }` (ver `src/app/AGENTS.md`), e os campos a mais que dois deles têm — o
+ * rótulo da Informação, o autor da citação — pertencem ao tipo, não à frase:
+ * levá-los adiante escreveria "Agostinho" num título. Quem troca de tipo está
+ * dizendo "isto aqui é um subtítulo, não um parágrafo", e a frase é a única
+ * coisa que ele não quer refazer.
+ *
+ * Quem NÃO entra nesta troca é o `bibleQuote`, e não por falta de vontade: o
+ * texto dele vem da NVI pela referência, então "virar uma passagem" jogaria
+ * fora a frase que a pessoa escreveu para caber num bloco que não tem onde
+ * guardá-la. É o `Composer` quem o tira da lista quando há texto na linha.
+ */
+export function convertBlock(block: WrittenBlock, type: WrittenBlockType): WrittenBlock {
+  return { ...emptyBlock(type), text: block.text } as WrittenBlock;
+}
+
+/**
  * O texto de rascunho de cada tipo, mostrado enquanto o bloco está vazio.
  *
  * É a instrução ficando onde a dúvida aparece: no menu da barra cabe uma

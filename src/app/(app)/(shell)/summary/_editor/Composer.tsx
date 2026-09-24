@@ -8,6 +8,7 @@ import {
   MapPin,
   Plus,
   Save,
+  Shapes,
   Trash2,
   X,
 } from "lucide-react";
@@ -60,6 +61,7 @@ import {
   BLOCK_PLACEHOLDERS,
   type BlockPick,
   bibleTargetLabel,
+  convertBlock,
   emptyBlock,
   LEAD_OPTION,
   looksLikeBibleQuery,
@@ -245,8 +247,19 @@ export function Composer({
    * setas movem. A BUSCA não mora aqui: ela é o próprio texto do bloco depois
    * da barra (`/exem`), e guardá-la de novo aqui daria duas verdades sobre o
    * que está escrito na linha.
+   *
+   * **`convert` é o MESMO menu aberto sobre uma linha que já tem texto**, pelo
+   * botão de trocar da pílula (ver `turnAt`). A diferença inteira está em duas
+   * coisas: não há `/` escrito na linha — então não há busca, e é por isso que
+   * `slashQuery` devolve vazio aqui —, e escolher CONVERTE o bloco em vez de
+   * substituí-lo por um vazio, que jogaria fora justamente o que a pessoa não
+   * quer redigitar.
    */
-  const [slash, setSlash] = useState<{ index: number; cursor: number } | null>(null);
+  const [slash, setSlash] = useState<{
+    index: number;
+    cursor: number;
+    convert?: boolean;
+  } | null>(null);
   /**
    * Qual bloco tem o cursor. É o que põe a pílula de controles no ar no
    * celular, onde não existe passar o mouse.
@@ -646,8 +659,31 @@ export function Composer({
    * acha "Citação", `/bib` acha "Bíblia". Não é busca aproximada de
    * propósito: a lista tem nove itens, e uma correspondência frouxa aqui
    * significaria o Enter escolher o bloco errado.
+   *
+   * **No modo `convert` ela é vazia, e tem de ser**: ali o texto da linha é o
+   * PARÁGRAFO da pessoa, não um comando, e cortar-lhe a primeira letra para
+   * usar o resto como filtro procuraria "risto é o caminho" na lista de
+   * blocos. Quem quer filtrar digitando abre o menu pela barra, numa linha em
+   * branco — que é onde a barra existe.
    */
-  const slashQuery = slash !== null ? (doc.blocks[slash.index]?.text ?? "").slice(1) : "";
+  const slashQuery =
+    slash !== null && !slash.convert ? (doc.blocks[slash.index]?.text ?? "").slice(1) : "";
+
+  /**
+   * O bloco que o menu vai CONVERTER, quando há um.
+   *
+   * A pergunta não é só "o botão de trocar abriu este menu?", é "há texto a
+   * preservar?". Numa linha sem uma letra as duas operações dão no mesmo — um
+   * bloco vazio do tipo escolhido —, e aí vale o caminho de sempre
+   * (`emptyBlock`), que é o único que sabe abrir o seletor de passagem. É o
+   * que deixa `/` e o botão oferecerem a MESMA lista numa linha em branco, e
+   * uma lista mais curta só onde encurtá-la significa alguma coisa.
+   */
+  const convertTarget = (() => {
+    if (!slash?.convert) return null;
+    const block = doc.blocks[slash.index];
+    return block && block.text.trim().length > 0 ? block : null;
+  })();
   /**
    * A Bíblia reconhecida no meio do que se digita — o livro, o livro e o
    * capítulo, ou a referência inteira (ver `matchBibleQuery`).
@@ -673,6 +709,31 @@ export function Composer({
   }));
   const slashOptions = (() => {
     if (slash === null) return [];
+    /**
+     * TROCAR é uma lista mais curta que inserir, e cada ausência tem uma razão:
+     *
+     * - **o tipo que o bloco JÁ é** sai porque escolhê-lo não faria nada, e uma
+     *   opção que não faz nada num menu de nove é uma que se tenta uma vez;
+     * - **a Bíblia** sai porque o texto dela vem da NVI pela referência: virar
+     *   passagem apagaria a frase escrita, que é o oposto do que "trocar"
+     *   promete (ver `convertBlock`);
+     * - **a ideia central** sai porque não é bloco — é o campo do cabeçalho, e
+     *   "trocar este parágrafo pelo resumo em uma frase" é outra pergunta;
+     * - **a conclusão** sai de qualquer linha que não seja a ÚLTIMA, porque
+     *   nada vive abaixo do fecho (ver `insertionIndex`) e converter o
+     *   parágrafo do meio quebraria essa ordem sem sair do lugar.
+     */
+    if (convertTarget) {
+      const last = slash.index === doc.blocks.length - 1;
+      return menuOptions.filter(
+        (o) =>
+          typeof o.type === "string" &&
+          o.type !== "leadIdea" &&
+          o.type !== "bibleQuote" &&
+          o.type !== convertTarget.type &&
+          (o.type !== "conclusion" || last)
+      );
+    }
     const q = normalizeSearch(slashQuery).trim();
     const base = !q ? menuOptions : menuOptions.filter((o) => normalizeSearch(o.label).includes(q));
     // A Bíblia vem NA FRENTE quando o livro já está escrito inteiro (ou já há
@@ -700,9 +761,23 @@ export function Composer({
    * a pessoa está DENTRO de uma linha dizendo o que aquela linha é, e inserir
    * acima deixaria para trás o parágrafo com a barra dentro, que é o oposto
    * do que a tecla pediu.
+   *
+   * **Menos quando o menu foi aberto para TROCAR** (`convertTarget`): aí a
+   * linha tem texto, e substituí-la por um bloco vazio seria apagar o
+   * parágrafo de alguém para responder "este parágrafo é um subtítulo". O
+   * texto atravessa, o resto do bloco não (ver `convertBlock`).
    */
   function pickSlash(index: number, pick: BlockPick) {
+    const converting = convertTarget !== null && slash?.index === index;
     setSlash(null);
+    if (converting && typeof pick === "string" && pick !== "leadIdea") {
+      patchBlocks((blocks) => blocks.map((b, i) => (i === index ? convertBlock(b, pick) : b)));
+      // O bloco troca de tipo, então troca de árvore no DOM e o nó focado é
+      // destruído: é o mesmo pedido de foco que o atalho `# ` já faz em
+      // `changeBlock`, pela mesma razão escrita lá.
+      setFocusIndex(index);
+      return;
+    }
     if (pick === "leadIdea") {
       setBlock(index, { text: "" });
       askLead();
@@ -814,6 +889,45 @@ export function Composer({
     setFocusIndex(target);
   }
 
+  /**
+   * ## O botão que abre o menu sobre um bloco que já existe
+   *
+   * **A barra `/` responde "o que é esta linha?" antes de escrever, e não
+   * havia nada respondendo DEPOIS.** Quem digitou um parágrafo e percebeu que
+   * ele era um título tinha de apagar a frase, digitar `/`, escolher e
+   * redigitá-la — ou aprender o atalho `# `, que existe e que ninguém
+   * descobre sem ser avisado. O botão é a mesma pergunta feita com o texto já
+   * na tela.
+   *
+   * **Ele é UM botão com dois glifos, porque são dois momentos da mesma
+   * pergunta.** Numa linha em branco não há o que trocar, e o que ele faz é
+   * ESCOLHER o que vai nascer ali: o `+` é essa promessa, e o caminho é
+   * literalmente o de digitar a barra (`openSlashFrom`), com a busca e a
+   * Bíblia que vêm junto dela. Com texto na linha a escolha já foi feita uma
+   * vez, e o que resta é trocá-la: as formas (`Shapes`) são esse glifo, e o
+   * menu abre sem escrever nada na frase de ninguém.
+   *
+   * **O `+` some da PÍLULA do bloco quando ele é uma passagem**: um
+   * `bibleQuote` não tem texto seu para virar outra coisa, e o que se troca
+   * nele — a referência — já é a pastilha que ele desenha.
+   *
+   * O cursor volta para a linha porque o menu é do TECLADO: as setas o
+   * percorrem, o Enter escolhe, o Escape desiste, e tudo isso mora no
+   * `onKeyDown` da caixa.
+   */
+  function turnAt(index: number) {
+    const block = doc.blocks[index];
+    if (!block) return;
+    // Um parágrafo em branco é o terreno da barra: escrever `/` nele é o gesto
+    // que a pessoa faria, e passar por ele mantém UM caminho só para inserir.
+    if (isBlankParagraph(block)) {
+      openSlashFrom(index);
+      return;
+    }
+    setSlash({ index, cursor: 0, convert: true });
+    setFocusIndex(index);
+  }
+
   function onKeyDown(index: number, e: React.KeyboardEvent<HTMLTextAreaElement>) {
     const el = e.currentTarget;
     const block = doc.blocks[index];
@@ -892,13 +1006,35 @@ export function Composer({
     }
 
     if (e.key === "Backspace" && el.value.length === 0 && el.selectionStart === 0) {
-      // Numa lista vazia, apagar DESFAZ a lista em vez de apagar o bloco: o
-      // gesto de quem chega aqui é "não era isto que eu queria", e devolver o
-      // parágrafo é o desfazer que ele pede. Apagar o bloco inteiro tiraria da
-      // tela a linha em que a pessoa está.
-      if (isList) {
+      /**
+       * **Apagar numa linha vazia DESFAZ o bloco, e o parágrafo é o chão.**
+       *
+       * O gesto de quem chega aqui é "não era isto que eu queria": o título
+       * escolhido no menu ainda não tem uma letra, e a tecla que se aperta
+       * para desfazer uma escolha errada é o Backspace. A regra valia só para
+       * as listas, e valia por acidente de quem a escreveu primeiro — num
+       * título, num destaque ou numa citação vazia a MESMA tecla apagava o
+       * bloco inteiro e jogava o cursor para a linha de cima, que é uma
+       * resposta bem maior do que a pergunta.
+       *
+       * O parágrafo é o fundo do poço porque ele é o bloco sem escolha: um
+       * Backspace nele, aí sim, apaga a linha (é o que todo editor faz).
+       *
+       * O bloco troca de árvore no DOM ao trocar de tipo, e por isso o foco é
+       * pedido de novo — a mesma razão escrita em `changeBlock`.
+       */
+      if (block && block.type !== "paragraph") {
         e.preventDefault();
+        // Vazio de TEXTO não é vazio: o rótulo da Informação e o autor da
+        // citação são campos do bloco, não da linha sob o cursor. Com um deles
+        // escrito, a tecla não faz nada — que é o que ela faz em toda caixa
+        // vazia — em vez de levar embora o que está dois centímetros acima.
+        const extra =
+          ("title" in block ? block.title : undefined) ??
+          ("author" in block ? block.author : undefined);
+        if (extra?.trim()) return;
         setBlock(index, { type: "paragraph", text: "" });
+        setFocusIndex(index);
         return;
       }
       if (doc.blocks.length > 1) {
@@ -1314,6 +1450,12 @@ export function Composer({
               >
                 <BlockControls
                   shown={active === i}
+                  blank={block.text.trim().length === 0 || block.text === "/"}
+                  /* A passagem fica de fora: o texto dela vem da NVI pela
+                     referência, então não há frase sua para virar outro bloco,
+                     e o que se troca nela — a referência — já é a pastilha que
+                     ela desenha. Ver `turnAt`. */
+                  onTurn={block.type === "bibleQuote" ? undefined : () => turnAt(i)}
                   /* A CONCLUSÃO não se move, e nada se move para depois dela:
                      ela é o fecho, e as setas são o único caminho que restaria
                      para desmanchar a posição que a inserção garante. Os
@@ -1360,7 +1502,7 @@ export function Composer({
                 <div
                   className={cn(
                     BLOCK_SURFACE,
-                    "relative focus-within:bg-scriba-blue-soft/60",
+                    "relative focus-within:bg-scriba-blue-soft/40",
                     // O amarelo é o MESMO da busca da leitura e do marca-texto:
                     // um segundo tom para "achei aqui" seria uma segunda
                     // gramática para a mesma ideia. O da vez é o cheio, os
@@ -1408,7 +1550,16 @@ export function Composer({
               linha em branco, e empilhadas seriam duas onde a pessoa pediu
               uma. E some de vez quando há conclusão, ver `closed`. */}
           {endsBlank || closed ? null : (
-            <div className={cn(BLOCK_SURFACE, "focus-within:bg-scriba-blue-soft/60")}>
+            <div
+              className={cn(BLOCK_SURFACE, "group relative focus-within:bg-scriba-blue-soft/40")}
+            >
+              {/* **A linha do fim TAMBÉM tem o `+`, e é onde ele mais falta.**
+                  A pílula é por BLOCO, e esta linha não é um — então, numa folha
+                  em branco, onde não há bloco nenhum, o editor inteiro ficava
+                  sem o botão: o único caminho para pedir um título era saber que
+                  a `/` existe. Aqui ela é só o `+`: não há o que mover, o que
+                  excluir nem o que marcar numa linha que ainda não é nada. */}
+              <BlockControls shown={tailFocus} blank onTurn={() => openSlashFrom("tail")} />
               <WritingLine
                 emphasis={empty}
                 // Ela não passa pelo `active` (não é um bloco), e é a linha em
@@ -1943,7 +2094,14 @@ function WritingLine({
           setText("");
         }
       }}
-      className="w-full resize-none overflow-hidden text-pretty bg-transparent font-light text-[17px] text-scriba-ink leading-[1.72] outline-none placeholder:text-scriba-ink-mute/60"
+      // `block` pela MESMA razão da `AutoTextarea`, e esta linha era a única
+      // caixa do editor que não a tinha: uma `textarea` é inline-block por
+      // padrão e pousa na linha de base do pai, deixando por baixo dela o
+      // espaço dos descendentes. São uns quatro píxeis que caem DENTRO da
+      // superfície do foco, sempre embaixo — e é isso que fazia a frase parecer
+      // colada no topo de uma caixa alta demais. Sem `text-pretty` pelo motivo
+      // escrito em `src/app/AGENTS.md`: a `textarea` não o aplica.
+      className="block w-full resize-none overflow-hidden bg-transparent font-light text-[17px] text-scriba-ink leading-[1.72] outline-none placeholder:text-scriba-ink-mute/60"
     />
   );
 }
@@ -1965,18 +2123,37 @@ function WritingLine({
  * fica longa. No desktop é um estorvo com jeito de detalhe; no celular é a
  * lixeira debaixo do dedo de quem só queria tocar no fim da palavra.
  *
- * Inserir um bloco não passa mais por aqui — é a barra `/` quem faz isso,
- * numa linha em branco. O que sobra nesta pílula é o que só faz sentido sobre
- * um bloco que já existe: marcar um recorte, mover e excluir.
+ * A pílula abre com a pergunta "o que é esta linha?" (`onTurn`, ver `turnAt`)
+ * e segue com o que só faz sentido sobre um bloco que já existe: marcar um
+ * recorte, mover e excluir. O fio separa as duas coisas — o começo mexe no que
+ * a linha É, o fim mexe em onde ela está e se ela fica.
+ *
+ * **A METADE DE TRÁS é opcional, e é `onDelete` quem a liga.** Excluir é a
+ * única ação que todo bloco tem (mover depende de haver vizinho, marcar de
+ * haver recorte), então ele é o sinal de que há um bloco ali. Sem ele a pílula
+ * é só o `+`: é o que a linha do FIM recebe, que não é bloco nenhum e não tem
+ * o que mover nem o que excluir.
  */
 function BlockControls({
   shown,
+  blank,
+  onTurn,
   onUp,
   onDown,
   onMark,
   onDelete,
 }: {
   shown: boolean;
+  /**
+   * A linha não tem uma letra — e uma que só tem `/` dentro também não, porque
+   * ali a barra é um comando em andamento, não texto. É o que decide entre o
+   * `+` e as formas; sem a segunda metade, o glifo trocava debaixo do dedo no
+   * instante em que o menu que ele acabou de abrir aparecia.
+   */
+  blank: boolean;
+  /** Abre o menu de blocos sobre esta linha. `undefined` numa passagem, que
+   *  não tem texto seu para virar outra coisa. Ver `turnAt`. */
+  onTurn?: () => void;
   onUp?: () => void;
   onDown?: () => void;
   /**
@@ -1993,8 +2170,12 @@ function BlockControls({
    * no instante da seleção é uma resposta.
    */
   onMark?: () => void;
-  onDelete: () => void;
+  /** Excluir o bloco — e, por ser a única ação que TODO bloco tem, o sinal de
+   *  que há um bloco aqui. Sem ele a pílula é só o `+`. Ver o cabeçalho. */
+  onDelete?: () => void;
 }) {
+  /** Há um bloco de verdade sob esta pílula, e não a linha do fim. */
+  const isBlock = onDelete !== undefined;
   return (
     <div
       className={cn(
@@ -2011,30 +2192,48 @@ function BlockControls({
         shown && "opacity-100"
       )}
     >
+      {/* O `+` (ou as formas) ABRE a pílula porque é a pergunta mais antiga das
+          quatro: o que esta linha é. Ver `turnAt`. */}
+      {onTurn ? (
+        <ControlButton
+          label={blank ? "Escolher o que vai nesta linha" : "Trocar o tipo deste bloco"}
+          onClick={onTurn}
+        >
+          {blank ? <Plus className="size-3.5" /> : <Shapes className="size-3.5" />}
+        </ControlButton>
+      ) : null}
       {/* O MARCA-TEXTO entra aqui, e não numa barra flutuante sobre a seleção.
           Uma barra própria teria de ser posicionada em cima de um recorte
           dentro de uma `textarea`, que é a única coisa da página cuja geometria
           o DOM não expõe — daria um espelho de medição só para achar o pixel.
           Numa barra que já existe, e que já aparece na hora certa, isto é um
-          botão a mais.
-
-          O fio fica DEPOIS dele: marcar escreve no texto, mover/excluir mexem
-          no bloco. */}
+          botão a mais. */}
       {onMark ? (
         <ControlButton keepFocus label="Marcar o trecho selecionado" onClick={onMark}>
           <Highlighter className="size-3.5" />
         </ControlButton>
       ) : null}
-      <span aria-hidden className="mx-0.5 h-4 w-px bg-scriba-hairline" />
-      <ControlButton label="Mover para cima" onClick={onUp}>
-        <ChevronUp className="size-3.5" />
-      </ControlButton>
-      <ControlButton label="Mover para baixo" onClick={onDown}>
-        <ChevronDown className="size-3.5" />
-      </ControlButton>
-      <ControlButton label="Excluir bloco" onClick={onDelete} destructive>
-        <Trash2 className="size-3.5" />
-      </ControlButton>
+      {/* O fio separa o que a linha É do que acontece com ela, e só existe se
+          houver o que separar dos DOIS lados. Ele era incondicional: numa
+          passagem — sem o `+`, porque ela não tem texto para virar outra coisa,
+          e sem o marca-texto, porque o texto dela é da NVI — ficava sozinho na
+          ponta esquerda da pílula, um traço perdido antes do primeiro botão. */}
+      {(onTurn || onMark) && isBlock ? (
+        <span aria-hidden className="mx-0.5 h-4 w-px bg-scriba-hairline" />
+      ) : null}
+      {isBlock ? (
+        <>
+          <ControlButton label="Mover para cima" onClick={onUp}>
+            <ChevronUp className="size-3.5" />
+          </ControlButton>
+          <ControlButton label="Mover para baixo" onClick={onDown}>
+            <ChevronDown className="size-3.5" />
+          </ControlButton>
+          <ControlButton label="Excluir bloco" onClick={onDelete} destructive>
+            <Trash2 className="size-3.5" />
+          </ControlButton>
+        </>
+      ) : null}
     </div>
   );
 }

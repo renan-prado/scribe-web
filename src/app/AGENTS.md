@@ -339,9 +339,13 @@ dela — o mesmo texto, mesma tipografia, mesma largura útil, em tinta
 transparente. O `text-pretty` da leitura NÃO vai para os dois: ele mexe na
 quebra e a `textarea` não o aplica, o que desalinharia a marca do texto.
 
-**O bloco em foco pousa numa superfície** (`focus-within:bg-scriba-blue-soft/60`,
+**O bloco em foco pousa numa superfície** (`focus-within:bg-scriba-blue-soft/40`,
 com recuo negativo para o texto não andar quando a cor acende). Ele existe pelo
-celular, onde não há ponteiro e o teclado cobre metade da tela. Não é uma barra
+celular, onde não há ponteiro e o teclado cobre metade da tela. A opacidade já
+foi 60%, e 60% de `--scriba-blue-soft` sobre o chão é quase a superfície
+ELEVADA do produto: a linha em que se digita lia como um cartão pousado no meio
+do texto, e num rascunho de vinte blocos o olho caía nela antes de cair no
+parágrafo. A 40% ela continua respondendo "é aqui", sem virar peça. Não é uma barra
 na margem: barra na margem é o vocabulário de CITAÇÃO, é o que o bloco `quote`
 desenha, e o mesmo traço para "isto é citação" e para "é aqui que você está"
 faz um parágrafo comum parecer citado enquanto é escrito. É CSS, e não o estado
@@ -354,17 +358,54 @@ lixeira, o mover, a pastilha da passagem), o cursor não saiu dali. Sem esse
 apagar, a pílula revelada por um clique ficava acesa pelo resto da sessão; sem a
 conferência, tocar na lixeira apagaria o estado que mantém a lixeira na tela.
 
-**Não há mais botão "+" no meio do texto. A barra `/`, num parágrafo vazio, é
-o caminho para inserir um bloco** — título, passagem, destaque, citação,
-conclusão, tudo o que o menu oferece (ver "O menu da BARRA" abaixo). Havia um
-disco por vão entre blocos, e outro na pílula de cada bloco (`BlockControls`,
-"Adicionar bloco acima"), os dois abrindo a mesma fileira flutuante de
-pastilhas; o celular perdia o `hover` que acendia o disco, e o alvo de 24px já
-nascia pequeno para o dedo. O placeholder de todo parágrafo vazio
-(`BLOCK_PLACEHOLDERS`) ensina o atalho, e a linha do fim do texto
-(`WritingLine`) está lá enquanto a folha estiver aberta — é nela, ou em
-qualquer parágrafo vazio no meio do documento, que se digita `/`. **Posta a
-conclusão, ela some**: ver "Ela e a CONCLUSÃO são as duas pontas" abaixo.
+**A barra `/`, num parágrafo vazio, é o caminho para inserir um bloco** —
+título, passagem, destaque, citação, conclusão, tudo o que o menu oferece (ver
+"O menu da BARRA" abaixo). Não há mais disco por VÃO entre blocos: havia um
+por vão e outro na pílula de cada bloco ("Adicionar bloco acima"), os dois
+abrindo a mesma fileira flutuante de pastilhas; o celular perdia o `hover` que
+acendia o disco, e o alvo de 24px já nascia pequeno para o dedo. O placeholder
+de todo parágrafo vazio (`BLOCK_PLACEHOLDERS`) ensina o atalho, e a linha do
+fim do texto (`WritingLine`) está lá enquanto a folha estiver aberta — é nela,
+ou em qualquer parágrafo vazio no meio do documento, que se digita `/`. **Posta
+a conclusão, ela some**: ver "Ela e a CONCLUSÃO são as duas pontas" abaixo.
+
+**O `+` da PÍLULA voltou, e ele é outra coisa: é a mesma pergunta feita DEPOIS
+de escrever** (`turnAt`). A barra responde "o que é esta linha?" antes da
+primeira letra, e não havia nada respondendo com o texto já na tela: quem
+digitou um parágrafo e percebeu que ele era um título tinha de apagar a frase,
+digitar `/`, escolher e redigitá-la — ou conhecer o atalho `# `, que existe e
+que ninguém descobre sem ser avisado.
+
+É UM botão com dois glifos, porque são dois momentos da mesma pergunta:
+
+- **linha em branco → `+`**, e o caminho é literalmente o de digitar a barra
+  (`openSlashFrom` escreve o `/` na linha), com a busca e a Bíblia digitada que
+  vêm junto dela. Um caminho só para inserir.
+- **linha com texto → as FORMAS** (`Shapes`, o triângulo/quadrado/círculo do
+  lucide, que é o vocabulário de "que forma isto tem" sem colidir com as setas
+  de mover logo ao lado). O menu abre em modo `convert`: nada é escrito na
+  frase, não há busca — o texto da linha é o parágrafo da pessoa, não um
+  comando —, e escolher CONVERTE o bloco preservando `text` (`convertBlock`).
+
+A lista do modo `convert` é mais curta, e cada ausência tem razão: o tipo que o
+bloco já é (escolhê-lo não faria nada), a Bíblia (o texto dela vem da NVI pela
+referência, virar passagem apagaria a frase escrita), a ideia central (não é
+bloco, é o campo do cabeçalho) e a conclusão fora da ÚLTIMA linha (nada vive
+abaixo do fecho). Numa linha VAZIA nada disso vale: sem texto a preservar, as
+duas operações dão no mesmo, e a lista volta a ser a inteira.
+
+**Numa passagem o botão não existe**: um `bibleQuote` não tem texto seu para
+virar outra coisa, e o que se troca nele — a referência — já é a pastilha que
+ele desenha.
+
+**E a LINHA DO FIM tem o `+` também, que é onde ele mais falta.** A pílula é
+por BLOCO, e a `WritingLine` não é um: numa folha em branco, onde não há bloco
+nenhum, o editor inteiro ficava sem o botão, e o único caminho para pedir um
+título era já saber que a `/` existe. Ali a pílula é SÓ o `+` — não há o que
+mover, o que excluir nem o que marcar numa linha que ainda não é nada —, e quem
+liga a metade de trás é o `onDelete`: excluir é a única ação que todo bloco tem
+(mover depende de haver vizinho, marcar de haver recorte), então ele é o sinal
+de que há um bloco sob a pílula.
 
 **No CELULAR quem serve esse menu é a barra de blocos acima do teclado**
 (`BlockKeyboardBar`), e ela existe porque a `/` é um atalho de teclado num
@@ -414,11 +455,17 @@ E a barra ABANDONADA some com o menu: uma linha que ficou só com `/` é um
 comando que ninguém completou, e o `onBlur` do bloco a esvazia. Sem isso, abrir
 o menu pelo `+` e desistir deixaria um parágrafo com uma barra dentro toda vez.
 
-**O que sobra na PÍLULA do bloco** (`BlockControls`) é o que só faz sentido
-sobre um bloco que já existe: marcar um recorte selecionado, mover para cima
-ou para baixo, excluir. Ela continua no vão acima do bloco (`bottom-full`),
-34px, MENOR que os 42 da caixa — maior que a linha que controla, ela virava a
-linha.
+**A PÍLULA do bloco** (`BlockControls`) abre com a pergunta "o que é esta
+linha?" (o `+`/formas acima) e segue com o que só faz sentido sobre um bloco
+que já existe: marcar um recorte selecionado, mover para cima ou para baixo,
+excluir. Ela continua no vão acima do bloco (`bottom-full`), 34px, MENOR que os
+42 da caixa — maior que a linha que controla, ela virava a linha.
+
+**O FIO separa o que a linha É do que acontece com ela**, e ele só é desenhado
+quando há algo à esquerda dele. Ele era incondicional, e numa passagem — sem o
+`+`, porque ela não tem texto para virar outra coisa, e sem o marca-texto,
+porque o texto dela é da NVI — ficava sozinho na ponta da pílula, um traço
+perdido antes do primeiro botão.
 
 **NENHUM controle é mais alto que a linha de texto, e é essa regra que mantém
 o editor com uma altura de linha só.** Toda caixa de bloco tem 42px (a linha
@@ -440,6 +487,13 @@ o espaço dos descendentes: quatro píxeis que ninguém pediu, dentro da superf�
 do foco (que ficava alta demais, com o texto encostado no topo) e somados a cada
 dois parágrafos do documento.
 
+**A `WritingLine` ficou de fora dessa correção por um bom tempo**, porque ela é
+a única caixa do editor que não passa pela `AutoTextarea` (ela precisa de
+`onBlur` e `onCompositionEnd`, que a outra não expõe). O sintoma é o da folha
+em BRANCO, onde ela é a única linha da tela: a superfície do foco alta demais,
+com a frase colada no topo. `block` na classe dela é a mesma linha, pelo mesmo
+motivo. Caixa nova no editor nasce com ele.
+
 **TÓPICOS e TÓPICOS NUMERADOS são dois blocos novos, e uma LISTA INTEIRA é UM
 bloco**, com um item por linha de `text`. Um bloco por item foi considerado e
 recusado: o `map` do `SummaryView` é um-para-um com `blocks` de propósito (é a
@@ -451,8 +505,17 @@ sobreviveria a mover o bloco e o banco diria "3." onde a tela mostra o segundo.
 Quatro gestos, os da web inteira: `- `, `* `, `1. ` ou `1) ` no começo de um
 parágrafo o convertem (a detecção mora no `setBlock`, não numa tecla, para
 pegar também colagem e teclado de celular); Enter abre um item; Enter numa
-linha vazia no fim fecha a lista e abre um parágrafo. Backspace numa lista
-vazia a DESFAZ em vez de apagar o bloco.
+linha vazia no fim fecha a lista e abre um parágrafo.
+
+**Backspace numa linha VAZIA desfaz o bloco, e o parágrafo é o chão.** A regra
+valia só para as listas, por acidente de quem a escreveu primeiro: num título,
+num destaque ou numa citação sem uma letra, a MESMA tecla apagava o bloco
+inteiro e jogava o cursor para a linha de cima — uma resposta bem maior do que
+a pergunta, já que o gesto de quem aperta Backspace num bloco recém-escolhido é
+"não era isto que eu queria". O parágrafo é o fundo do poço porque é o bloco
+sem escolha: um Backspace nele, aí sim, apaga a linha. Vazio de TEXTO não é
+vazio: com o rótulo da Informação ou o autor da citação escrito, a tecla não
+faz nada, em vez de levar embora o que está dois centímetros acima.
 
 **O MARKDOWN de bloco é a mesma máquina**, e por isso mora no mesmo lugar
 (`autoformatted`): `# ` vira título, `## ` vira subtítulo, `> ` vira citação, e
@@ -527,10 +590,12 @@ Três coisas que não são detalhe:
   dois gestos com a mesma linha: pelo teclado, que pode apontar para fora,
   rola; pelo mouse, que só aponta para o que já está visível, não move nada.
 
-Escolher **SUBSTITUI** o parágrafo em vez de inserir acima, ao contrário do
-`+`: lá se aponta uma POSIÇÃO, aqui se diz o que a linha em que já se está É.
-Os itens usam `onMouseDown` com `preventDefault`, senão o clique tiraria o foco
-da `textarea` e o `onBlur` fecharia o menu antes de o toque chegar.
+Escolher **SUBSTITUI** a linha, nunca insere acima dela: aqui não se aponta uma
+POSIÇÃO, se diz o que a linha em que já se está É. (Aberto pelo botão de trocar
+sobre uma linha COM texto, ele converte em vez de substituir — mesma frase,
+outra roupa. Ver "O `+` da PÍLULA voltou" acima.) Os itens usam `onMouseDown`
+com `preventDefault`, senão o clique tiraria o foco da `textarea` e o `onBlur`
+fecharia o menu antes de o toque chegar.
 
 **O MARCA-TEXTO é sintaxe dentro da string, `==assim==`** (`lib/domain/mark.ts`),
 e não formatação no schema. É o que preserva a invariante que sustenta este
