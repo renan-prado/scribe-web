@@ -9,6 +9,12 @@ Gerado por `npm run release` a partir dos Conventional Commits. `feat` sobe o
 minor; o resto sobe o patch. Não edite à mão, a próxima execução escreve por
 cima do topo do arquivo.
 
+## 0.84.1, 2026-09-24, desde v0.84.0
+
+### Correções
+
+- **consent:** ajusta os textos dos itens do aviso de cookies (`a94b60b`)
+
 ## 0.84.0, 2026-09-24
 
 ### Novidades
