@@ -9,6 +9,12 @@ Gerado por `npm run release` a partir dos Conventional Commits. `feat` sobe o
 minor; o resto sobe o patch. Não edite à mão, a próxima execução escreve por
 cima do topo do arquivo.
 
+## 0.85.1, 2026-09-24, desde v0.85.0
+
+### Correções
+
+- **db:** renumera a migração de presença para 0071 (`b19a5da`)
+
 ## 0.85.0, 2026-09-24, desde v0.84.2
 
 ### Novidades
