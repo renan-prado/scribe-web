@@ -44,7 +44,7 @@ export function BlockRenderer({ block }: { block: SummaryBlock }) {
             <p
               // biome-ignore lint/suspicious/noArrayIndexKey: parágrafos de um texto imutável, a ordem é estável
               key={`p-${index}`}
-              className="text-pretty text-[15px] font-light leading-[1.72] text-scriba-ink"
+              className="text-pretty text-[17px] font-light leading-[1.72] text-scriba-ink"
             >
               <RichText>{paragraph}</RichText>
             </p>
@@ -78,7 +78,7 @@ export function BlockRenderer({ block }: { block: SummaryBlock }) {
       const items = listItems(block.text);
       if (items.length === 0) return null;
       const face =
-        "ml-5 text-pretty text-[15px] font-light leading-[1.72] text-scriba-ink marker:text-scriba-ink-mute";
+        "ml-5 text-pretty text-[17px] font-light leading-[1.72] text-scriba-ink marker:text-scriba-ink-mute";
       return block.type === "orderedList" ? (
         <ol className={`list-decimal ${face} marker:tabular-nums`}>
           {items.map((item, index) => (
@@ -111,7 +111,7 @@ export function BlockRenderer({ block }: { block: SummaryBlock }) {
             <Info className="size-3" aria-hidden />
             {block.title?.trim() || "Informação"}
           </span>
-          <p className="text-pretty text-sm font-light leading-relaxed text-scriba-ink">
+          <p className="text-pretty text-[17px] font-light leading-relaxed text-scriba-ink">
             <RichText>{block.text}</RichText>
           </p>
         </aside>
@@ -143,7 +143,7 @@ export function BlockRenderer({ block }: { block: SummaryBlock }) {
             </span>
           </figcaption>
           {hasRange ? (
-            <div className="text-[15px] font-light leading-relaxed text-session-verse-text">
+            <div className="text-[17px] font-light leading-relaxed text-session-verse-text">
               <PassageVerses
                 bookDisplay={parsed.bookDisplay}
                 chapter={parsed.chapter}
@@ -152,7 +152,7 @@ export function BlockRenderer({ block }: { block: SummaryBlock }) {
               />
             </div>
           ) : (
-            <blockquote className="text-[15px] font-light leading-relaxed text-session-verse-text">
+            <blockquote className="text-[17px] font-light leading-relaxed text-session-verse-text">
               {block.text}
             </blockquote>
           )}
@@ -181,7 +181,7 @@ export function BlockRenderer({ block }: { block: SummaryBlock }) {
             <ScribaMark className="size-3" />
             Conclusão
           </span>
-          <p className="text-pretty text-[15px] font-light leading-[1.7] text-session-verse-text">
+          <p className="text-pretty text-[17px] font-light leading-[1.7] text-session-verse-text">
             <RichText>{block.text}</RichText>
           </p>
         </section>
@@ -189,7 +189,7 @@ export function BlockRenderer({ block }: { block: SummaryBlock }) {
     case "quote":
       return (
         <figure className="flex flex-col gap-1.5 border-l-2 border-scriba-hairline pl-4">
-          <blockquote className="text-[15px] font-light italic leading-relaxed text-scriba-ink-soft">
+          <blockquote className="text-[17px] font-light italic leading-relaxed text-scriba-ink-soft">
             {block.text}
           </blockquote>
           {block.author ? (

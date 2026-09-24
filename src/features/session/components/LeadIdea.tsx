@@ -51,13 +51,13 @@ export function LeadIdea({ label, text, tourId }: Props) {
         {label}
       </span>
       {/* Corpo nas MESMAS medidas do bloco `conclusion`
-          (`text-[15px] font-light leading-[1.7]`): se as duas têm a mesma
+          (`text-[17px] font-light leading-[1.7]`): se as duas têm a mesma
           roupa, ter tamanhos diferentes faria uma parecer mais importante
           que a outra. Quem dá destaque à abertura é o lugar dela, no topo,
           não o corpo da letra. */}
       <p
         key={text}
-        className="animate-content-fade text-pretty text-[15px] font-light leading-[1.7] text-session-verse-text"
+        className="animate-content-fade text-pretty text-[17px] font-light leading-[1.7] text-session-verse-text"
       >
         {text}
       </p>

@@ -1206,7 +1206,7 @@ export function Composer({
                 }}
                 ariaLabel="Ideia central"
                 placeholder="Em uma frase, do que trata esta mensagem."
-                className="text-pretty text-[15px] font-light leading-[1.7] text-session-verse-text"
+                className="text-pretty text-[17px] font-light leading-[1.7] text-session-verse-text"
               />
             </section>
           ) : null}
@@ -1893,7 +1893,7 @@ function WritingLine({
           setText("");
         }
       }}
-      className="w-full resize-none overflow-hidden text-pretty bg-transparent font-light text-[15px] text-scriba-ink leading-[1.72] outline-none placeholder:text-scriba-ink-mute/60"
+      className="w-full resize-none overflow-hidden text-pretty bg-transparent font-light text-[17px] text-scriba-ink leading-[1.72] outline-none placeholder:text-scriba-ink-mute/60"
     />
   );
 }
@@ -2248,7 +2248,7 @@ function BlockBody({
             se escolheu a certa é o texto. A busca é em cache por referência
             (`passageQueryOptions`), então abrir a leitura em seguida não a
             refaz. */}
-        <div className="font-light text-[15px] text-session-verse-text leading-relaxed">
+        <div className="font-light text-[17px] text-session-verse-text leading-relaxed">
           <PassageVerses
             bookDisplay={parsed.bookDisplay}
             chapter={parsed.chapter}
@@ -2295,7 +2295,7 @@ function BlockBody({
      * MARCA — o texto, que é o que se lê, começa no mesmo lugar nas duas.
      */
     const ordered = block.type === "orderedList";
-    const face = "text-[15px] font-light leading-[1.72]";
+    const face = "text-[17px] font-light leading-[1.72]";
     let position = 0;
     return (
       <div className="relative">
@@ -2468,7 +2468,7 @@ function BlockBody({
           value={block.text}
           onChange={(text) => onChange({ text })}
           ariaLabel={block.title?.trim() || "Informação"}
-          className="font-light text-scriba-ink text-sm leading-relaxed"
+          className="font-light text-scriba-ink text-[17px] leading-relaxed"
         />
       </aside>
     );
@@ -2482,7 +2482,7 @@ function BlockBody({
           value={block.text}
           onChange={(text) => onChange({ text })}
           ariaLabel="Citação"
-          className="font-light text-[15px] text-scriba-ink-soft italic leading-relaxed"
+          className="font-light text-[17px] text-scriba-ink-soft italic leading-relaxed"
         />
         <input
           value={block.author ?? ""}
@@ -2508,7 +2508,7 @@ function BlockBody({
           value={block.text}
           onChange={(text) => onChange({ text })}
           ariaLabel="Conclusão"
-          className="font-light text-[15px] text-session-verse-text leading-[1.7]"
+          className="font-light text-[17px] text-session-verse-text leading-[1.7]"
         />
       </section>
     );
@@ -2520,7 +2520,7 @@ function BlockBody({
       value={block.text}
       onChange={(text) => onChange({ text })}
       ariaLabel="Parágrafo"
-      className="font-light text-[15px] text-scriba-ink leading-[1.72]"
+      className="font-light text-[17px] text-scriba-ink leading-[1.72]"
     />
   );
 }
