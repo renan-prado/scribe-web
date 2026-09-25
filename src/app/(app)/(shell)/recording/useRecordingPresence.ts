@@ -1,6 +1,10 @@
 "use client";
 
 import { useCallback, useEffect, useRef } from "react";
+import {
+  closeRecordingNotification,
+  RECORDING_NOTIFICATION_TAG,
+} from "@/features/session/lib/recording-notification";
 
 /**
  * A gravação vista de FORA da aba: a notificação do sistema, os controles da
@@ -57,7 +61,6 @@ import { useCallback, useEffect, useRef } from "react";
  * a gravação continua exatamente como continuava antes de este arquivo existir.
  */
 
-const NOTIFICATION_TAG = "scriba-recording";
 const NOTIFICATION_TITLE = "Gravando áudio em background…";
 const NOTIFICATION_BODY = "O Scriba continua gravando. Toque para voltar.";
 /**
@@ -160,16 +163,13 @@ export function useRecordingPresence({ active, paused, onPause, onResume, onStop
   const handlers = useRef({ onPause, onResume, onStop });
   handlers.current = { onPause, onResume, onStop };
 
+  // Quem apaga é o módulo compartilhado, porque a abertura do app precisa
+  // apagar a MESMA notificação sem montar este hook. Ver
+  // `features/session/lib/recording-notification.ts`.
   const closeNotification = useCallback(async () => {
-    looseRef.current?.close();
+    const loose = looseRef.current;
     looseRef.current = null;
-    const reg = await swRegistration();
-    if (!reg) return;
-    try {
-      for (const n of await reg.getNotifications({ tag: NOTIFICATION_TAG })) n.close();
-    } catch {
-      // best-effort
-    }
+    await closeRecordingNotification(loose);
   }, []);
 
   const showNotification = useCallback(async (isPaused: boolean) => {
@@ -180,7 +180,7 @@ export function useRecordingPresence({ active, paused, onPause, onResume, onStop
       body: isPaused ? PAUSED_BODY : NOTIFICATION_BODY,
       icon: APP_ICON,
       badge: MIC_BADGE,
-      tag: NOTIFICATION_TAG,
+      tag: RECORDING_NOTIFICATION_TAG,
       silent: true,
       requireInteraction: true,
       data: { url: "/recording" },

@@ -84,7 +84,7 @@ export type TourDefinition = {
   steps: readonly TourStep[];
 };
 
-export const TOUR_KEYS = ["library", "recording", "summary"] as const;
+export const TOUR_KEYS = ["library", "summary"] as const;
 
 export type TourKey = (typeof TOUR_KEYS)[number];
 
@@ -212,29 +212,17 @@ export const TOURS: Record<TourKey, TourDefinition> = {
     ],
   },
 
-  recording: {
-    version: 1,
-    label: "Gravação",
-    steps: [
-      {
-        id: "button",
-        anchor: '[data-tour="record-button"]',
-        title: "Toque para começar",
-        body: "Deixe o aparelho com a tela virada para quem prega, o mais perto possível. Distância e eco são o que mais atrapalham a transcrição.",
-      },
-      {
-        id: "quiet",
-        title: "A tela fica quieta de propósito",
-        body: "O Scriba só escuta enquanto a pregação corre. É o modo de quem quer prestar atenção, não olhar o celular.",
-      },
-      {
-        id: "stop",
-        title: "Ao encerrar",
-        body: "O áudio sobe inteiro, de uma vez, e o resumo é gerado sobre tudo o que foi dito. Se algo der errado no envio, a gravação fica guardada no aparelho e você pode tentar de novo.",
-      },
-    ],
-  },
-
+  /**
+   * **O tour `recording` saiu, e ele é o oitavo a sair pela mesma porta.** Os
+   * três passos dele só rodavam na tela de gravação EM REPOUSO, porque um balão
+   * por cima de uma pregação em andamento é inaceitável, e essa tela deixou de
+   * existir: `/recording` sem `?auto=1` devolve a pessoa para `/home`, e o
+   * botão de microfone no meio (`record-button`, a âncora do primeiro passo)
+   * foi removido. Gravar passou a ser sempre um pedido explícito, feito de onde
+   * se cria. Ver `src/app/(app)/(shell)/recording/AudioStudio.tsx`.
+   *
+   * As linhas de `recording` em `user_tours` ficam lá, inertes, como as outras.
+   */
   summary: {
     version: 1,
     label: "Resumo salvo",

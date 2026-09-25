@@ -1,6 +1,4 @@
 import type { Metadata } from "next";
-import { TourTrigger } from "@/features/tour/components/TourTrigger";
-import { TOUR_DELAY_CAPTURE_MS } from "@/features/tour/config";
 import { TopBar } from "../components/TopBar";
 import { AudioStudio } from "./AudioStudio";
 import { ClockScope, RecordingClock } from "./ClockScope";
@@ -24,10 +22,16 @@ export default async function V2RecordingPage({
 }: {
   searchParams: Promise<{ auto?: string }>;
 }) {
-  // `?auto=1` é a marca de quem chegou pelo "Gravar" do `/home` (ver
-  // `CreateDock`). Ele é lido AQUI, no servidor, e desce como prop: fazê-lo no
-  // cliente com `useSearchParams` obrigaria esta página a nascer dentro de um
-  // `<Suspense>` só para ler um parâmetro que o servidor já tem na mão.
+  // `?auto=1` é a marca de quem PEDIU para gravar (o `+` do rodapé, os chips da
+  // barra no desktop, o atalho do sistema). Ele é lido AQUI, no servidor, e
+  // desce como prop: fazê-lo no cliente com `useSearchParams` obrigaria esta
+  // página a nascer dentro de um `<Suspense>` só para ler um parâmetro que o
+  // servidor já tem na mão.
+  //
+  // **Sem ele, o `AudioStudio` devolve a pessoa para `/home`.** Esta tela
+  // deixou de ser um destino: ela é alcançável por caminhos que não são um
+  // pedido de gravar (o histórico, o app restaurado pelo sistema, um atalho
+  // velho), e em todos eles o certo é a Biblioteca. O porquê inteiro está lá.
   const { auto } = await searchParams;
 
   return (
@@ -38,11 +42,13 @@ export default async function V2RecordingPage({
         <TopBar title="Gravação" trailing={<RecordingClock />} />
         <AudioStudio autoStart={auto === "1"} />
       </main>
-      {/* A apresentação da gravação NÃO roda para quem chegou pelo botão do
-          dock: `?auto=1` começa a gravar na hora, e um balão por cima de uma
-          pregação em andamento é o pior defeito que esta pasta poderia ter.
-          Quem abre a tela pelo endereço direto, sem o parâmetro, vê. */}
-      <TourTrigger tour="recording" delayMs={TOUR_DELAY_CAPTURE_MS} enabled={auto !== "1"} />
+      {/* **Não há apresentação nesta tela, e não é esquecimento.** O tour
+          `recording` existia e só podia rodar ANTES de a gravação começar, que
+          é a tela sem `?auto=1` — a mesma que hoje redireciona para `/home`.
+          Um balão por cima de uma pregação em andamento é o pior defeito que
+          esta pasta poderia ter, então a alternativa (rodá-lo gravando) nunca
+          esteve em jogo. A chave saiu de `TOURS` junto, pela regra de sempre:
+          tour que descreve tela que não existe é pior que tour nenhum. */}
     </ClockScope>
   );
 }

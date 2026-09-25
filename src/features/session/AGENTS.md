@@ -80,7 +80,8 @@ pessoa quiser, aprofundar.
 | `components/FolderDialog.tsx` + `DeleteFolderDialog.tsx` + `MoveToFolderDialog.tsx` | criar/editar, excluir (com o destino do conteúdo) e mover uma sessão só |
 | `lib/folder-dnd.ts` | os dois `dataTransfer` de tipo próprio do arrastar-e-soltar (sessão e pasta) |
 | `hooks/useCoinTick.ts` | o débito por minuto, durante a gravação |
-| `recording-store.ts` | um booleano: há gravação viva nesta aba? |
+| `recording-store.ts` | um booleano: há gravação viva nesta aba? Escrito pelo `AudioStudio`, lido pela fila e pelo `BillingDialog` |
+| `lib/recording-notification.ts` | a tag da notificação de gravação, e como apagá-la de fora da tela |
 | `server/final-summary.ts` | a chamada única que vira o resumo |
 | `server/study/` | as cinco etapas do estudo (ver `src/lib/AGENTS.md`) |
 | `server/youtube/` | oEmbed, legenda pela Supadata, o CACHE dela por vídeo e a limpeza do título |
@@ -434,8 +435,17 @@ O conserto tem três partes, e nenhuma delas mora numa tela:
   PRIMEIRO SEGUNDO, e não no stop: nascendo no stop, a aba morta no minuto 40
   deixava 20 fragmentos sem índice nenhum apontando para eles, invisíveis para o
   resgate e para a faxina por idade. `closed` diz se o `stop()` chegou ao fim e
-  `heartbeatAt` é a hora do último fragmento, que é como uma segunda aba
-  distingue "abandonada" de "gravando agora".
+  `heartbeatAt` é como uma segunda aba distingue "abandonada" de "gravando
+  agora".
+
+  **`heartbeatAt` deixou de ser "a hora do último fragmento".** Ele era escrito
+  só no `onFragment`, ou seja, só existia com áudio entrando — e pausa e
+  interrupção são justamente os momentos em que não há. Uma gravação pausada por
+  mais que o `STALE_OPEN_MS` envelhecia até ser lida como abandonada. Hoje o
+  `AudioStudio` o escreve por relógio próprio (`HEARTBEAT_MS`, 30s) enquanto a
+  gravação existir, parada ou não: são duas perguntas diferentes, e o fragmento
+  responde a outra ("está entrando áudio", que é o que o watchdog do gravador
+  usa, ver `src/app/AGENTS.md`).
 - **`lib/capture-upload.ts`** é o caminho até o resumo, e o produto dele é a
   TAXONOMIA da falha. "Não consegui" não é resposta: a pessoa precisa saber se
   espera a rede voltar (`offline`), se espera o Scriba (`server`), se recarrega
@@ -480,6 +490,14 @@ propósito: `capturing` é o id vivo nesta aba, e o `heartbeatAt` cobre a aba
 vizinha, que esta não enxerga. Ela também não trabalha durante uma gravação —
 subir 7 MB enquanto o microfone está aberto disputa rede e CPU com a única coisa
 da tela que não pode falhar.
+
+**Essa última guarda ficou um tempo morta**, e vale saber por quê: ela lê
+`useRecordingStore.getState().running`, e NINGUÉM escrevia naquele store. O
+`AudioStudio` tinha um `setRunning` no escopo, mas era o do `ClockScope` (o
+relógio da barra), e o nome sombreado escondeu a ausência — sem erro, sem aviso,
+com o sintoma aparecendo como gravação que trava no meio da pregação. O
+`BillingDialog` lia o mesmo booleano para decidir se podia navegar a aba até o
+Stripe, e por isso navegava. Ver o cabeçalho de `recording-store.ts`.
 
 **Retentar é seguro porque moeda não é cobrada nessa pipeline.** O débito sai do
 navegador por minuto GRAVADO (`useCoinTick`); `transcribe` e `final-summary` só

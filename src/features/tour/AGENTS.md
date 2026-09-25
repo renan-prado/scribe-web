@@ -130,9 +130,17 @@ relativo ao viewport dentro de um ancestral com `transform`, e o `/admin` e o
 |---|---|---|---|
 | `/home` | `library` | 1,2s | — (roda TAMBÉM na Biblioteca vazia) |
 | `/summary/:id` | `summary` | 3s | — |
-| `/recording` | `recording` | 0,7s | só sem `?auto=1` |
 
 Os atrasos e o porquê de cada um estão em `config.ts`.
+
+**Havia um terceiro, o `recording`**, com 0,7s e o portão "só sem `?auto=1`". Ele
+saiu, e não por causa do tour: a tela que ele descrevia deixou de existir.
+`/recording` sem `?auto=1` devolve a pessoa para `/home` (era por ali que alguém
+chegava ao gravador sem ter pedido para gravar e tocava no microfone do meio por
+cima de uma gravação que tinha acabado de se perder), e o portão do tour era
+exatamente essa tela. Rodá-lo COM `?auto=1` nunca esteve em jogo: um balão por
+cima de uma pregação em andamento é o pior defeito que aquela pasta poderia ter.
+Ver `src/app/(app)/(shell)/recording/AudioStudio.tsx`.
 
 **O tour da Biblioteca tem SEIS passos no celular e CINCO no desktop, e a
 diferença não é um `if` de largura.** Os três últimos falam de uma porta de
@@ -161,7 +169,6 @@ O contrato entre o passo e a tela é um seletor CSS, e a convenção é
 | `create-record` | a porta "Gravar" — o quadrado do painel do dock, e o chip do microfone da `TopBar` |
 | `create-write` | a porta "Escrever", nos mesmos dois lugares |
 | `create-import` | a porta "Importar", nos mesmos dois lugares |
-| `record-button` | `src/app/recording/AudioStudio.tsx` |
 | `summary-header` | `SavedSessionView` |
 | `session-menu` | `SessionMenu` |
 
@@ -188,11 +195,12 @@ quando alguém for olhar; a tela que a mostra é trabalho de outro dia.
 
 ## As chaves foram TROCADAS, não renomeadas
 
-Os três tours de hoje são `library`, `recording` e `summary`. Eram dez, e sete
-descreviam telas que deixaram de existir: `feed` (o Início), `recordings` (a
-Biblioteca antes de virar a primeira tela), os três `capture_*` (um por modo de
-gravação) e `studies`/`study` (a lista de Estudos e o estudo pronto, que saíram
-do produto com a rota).
+Os dois tours de hoje são `library` e `summary`. Eram dez, e oito descreviam
+telas que deixaram de existir: `feed` (o Início), `recordings` (a Biblioteca
+antes de virar a primeira tela), os três `capture_*` (um por modo de gravação),
+`studies`/`study` (a lista de Estudos e o estudo pronto, que saíram do produto
+com a rota) e `recording` (a tela de gravação EM REPOUSO, que deixou de ser
+alcançável).
 
 **As chaves novas não reaproveitam os nomes antigos, e isso é decisão.** O
 mecanismo de `version` existe para reexibir um tour MUDADO; aqui a tela é outra,

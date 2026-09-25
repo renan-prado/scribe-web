@@ -3,6 +3,7 @@
 import { useQueryClient } from "@tanstack/react-query";
 import { useEffect, useRef } from "react";
 import { useCaptureQueue } from "../capture-queue";
+import { closeRecordingNotification } from "../lib/recording-notification";
 import { libraryKey, useSessionOwner } from "../query";
 
 /**
@@ -42,6 +43,20 @@ export function PendingCaptureRunner() {
   useEffect(() => {
     void scan().then(() => kick());
   }, [scan, kick]);
+
+  /**
+   * A notificação de gravação que sobrou de uma aba que o sistema matou.
+   *
+   * O app acabou de montar, então não há `MediaRecorder` vivo em lugar nenhum
+   * desta aba: qualquer notificação com aquela tag é sobra de uma sessão
+   * anterior, e uma notificação fixa anunciando uma gravação que não existe é o
+   * caminho por onde alguém volta para a tela de gravação achando que ela ainda
+   * corre. Se uma gravação começar em seguida, `useRecordingPresence` recria a
+   * notificação do zero. Ver `lib/recording-notification.ts`.
+   */
+  useEffect(() => {
+    void closeRecordingNotification();
+  }, []);
 
   useEffect(() => {
     const wake = () => void kick();

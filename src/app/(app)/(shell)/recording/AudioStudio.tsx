@@ -16,12 +16,13 @@ import {
   putFragment,
 } from "@/features/session/lib/capture-store";
 import { phaseLabel } from "@/features/session/lib/capture-upload";
+import { useRecordingStore } from "@/features/session/recording-store";
 import { pickMime } from "@/lib/audio-constraints";
 import { cn } from "@/lib/utils";
 import { useClockScope } from "./ClockScope";
 import { RecordingWorkbench } from "./RecordingWorkbench";
 import { useRecordingNotes } from "./recording-notes";
-import { useAudioCapture, WAVE_BARS } from "./useAudioCapture";
+import { type InterruptReason, useAudioCapture, WAVE_BARS } from "./useAudioCapture";
 import { askRecordingNotificationPermission, useRecordingPresence } from "./useRecordingPresence";
 
 /**
@@ -68,6 +69,35 @@ import { askRecordingNotificationPermission, useRecordingPresence } from "./useR
  * cartão amarelo dizendo o que aconteceu e o Scriba tentando de novo atrás. A
  * pessoa vai para onde a gravação dela está.
  *
+ * ## Esta tela SÓ existe gravando
+ *
+ * Chegar aqui sem `?auto=1` devolve a pessoa para `/home`, e o disco de
+ * microfone no meio da tela ociosa deixou de existir. Ele era o botão mais
+ * perigoso do produto por um motivo que não se vê olhando para ele: `/recording`
+ * é alcançável por caminhos que NÃO são um pedido de gravar (a notificação que
+ * sobrou de uma aba morta, o atalho da tela offline, o histórico do navegador, o
+ * app restaurado pelo sistema na última rota). Quem chegava por um desses via
+ * uma tela pronta para gravar e um botão no meio, e o gesto seguinte começava
+ * uma gravação NOVA por cima da que tinha acabado de se perder.
+ *
+ * Gravar passa a ser sempre um pedido explícito, feito de onde se cria: o `+` do
+ * rodapé, os chips da barra no desktop e o atalho do sistema, todos com
+ * `?auto=1`. A única coisa que sobrou em repouso é a saída de um start que
+ * falhou (microfone negado), com o motivo escrito e um "Tentar de novo".
+ *
+ * ## A tela diz o que está acontecendo DE VERDADE
+ *
+ * O relógio é tempo de parede, e por isso ele nunca soube se havia áudio
+ * entrando. Quem sabe é o `useAudioCapture`, que agora reporta `interrupted`
+ * quando o sistema tira o microfone, quando o gravador desiste ou quando os
+ * fragmentos param de chegar (ver o cabeçalho de lá). Aqui isso vira um estado
+ * VISÍVEL: o relógio congela, a tela diz o que houve, a cobrança para, e os
+ * controles viram "Retomar" e "Parar".
+ *
+ * Nada disso descarta o que já foi gravado: os fragmentos estão no IndexedDB
+ * desde o primeiro minuto, e parar depois de uma interrupção entrega a pregação
+ * até ali como qualquer outra.
+ *
  * ## O que ainda NÃO faz
  *
  * Começar sem internet. A gravação em si não depende de rede, mas a sessão
@@ -75,6 +105,34 @@ import { askRecordingNotificationPermission, useRecordingPresence } from "./useR
  * hoje é uma espera com cartão, aviso e retentativa, mas ainda não é o mesmo
  * que funcionar offline.
  */
+
+/**
+ * De quanto em quanto a linha da gravação recebe um pulso.
+ *
+ * Ele saía JUNTO do fragmento, e por isso só existia enquanto havia áudio
+ * entrando: uma gravação pausada por dez minutos, ou interrompida por uma
+ * ligação longa, envelhecia até passar do `STALE_OPEN_MS` da fila e ser dada
+ * por abandonada, com o risco de outra aba subi-la no meio da pregação. São
+ * duas perguntas diferentes, e agora têm duas respostas: o fragmento diz
+ * "está entrando áudio", o pulso diz "esta aba ainda é a dona disto".
+ */
+const HEARTBEAT_MS = 30_000;
+
+/**
+ * O que a tela diz quando a gravação para sozinha.
+ *
+ * Três motivos, três frases, e nenhuma delas culpa a pessoa nem inventa
+ * certeza: o hook sabe QUE parou e sabe por qual sensor, não sabe o que estava
+ * acontecendo no aparelho. Todas terminam na mesma garantia, que é a única
+ * coisa que importa nesse instante.
+ */
+const INTERRUPTION_TEXT: Record<InterruptReason, string> = {
+  device:
+    "O microfone foi tomado por outra coisa no aparelho (uma ligação, um áudio de outro app ou um fone que desconectou).",
+  recorder: "A gravação parou sozinha neste navegador.",
+  stalled:
+    "O Scriba parou de receber áudio. Costuma ser o sistema congelando o app em segundo plano.",
+};
 export function AudioStudio({ autoStart = false }: { autoStart?: boolean }) {
   const router = useRouter();
   const barsRef = useRef<(HTMLSpanElement | null)[]>([]);
@@ -145,56 +203,120 @@ export function AudioStudio({ autoStart = false }: { autoStart?: boolean }) {
   // hook só a move.
   const { startedAtRef, setRunning, setVisible } = useClockScope();
 
-  const { state, error, setError, start, pause, resume, stop, discard } = useAudioCapture({
-    startedAtRef,
-    onLevels: paintLevels,
-    onFragment: ({ part, seq, blob }) => {
-      const id = captureIdRef.current;
-      if (!id) return;
-      const set = writesRef.current;
-      const write: Promise<void> = putFragment({ captureId: id, part, seq, blob })
-        .then(async (ok) => {
-          if (!ok) {
-            setPersisted(false);
-            return;
-          }
-          // O pulso da gravação aberta, e a duração aproximada dela. Os dois
-          // existem para o caso em que o `stop()` NUNCA acontece: o pulso diz à
-          // fila que esta gravação ainda está viva (e que ela não deve subi-la
-          // de outra aba), e a duração é o que sobra para a tela mostrar se a
-          // aba morrer no meio. Um `stop()` normal reescreve os dois com o
-          // valor exato dois minutos depois, no máximo.
-          const elapsed = startedAtRef.current > 0 ? performance.now() - startedAtRef.current : 0;
-          await patchCaptureMeta(id, {
-            heartbeatAt: Date.now(),
-            durationMs: Math.max(0, Math.round(elapsed)),
-            parts: part + 1,
-            // As notas vão junto do pulso, e por isso a cada 2 minutos: é o que
-            // sobra delas se a aba morrer no meio da pregação. `getState()` e
-            // não um seletor — assinar o texto aqui repintaria o gravador a
-            // cada tecla (ver `recording-notes.ts`).
-            notes: useRecordingNotes.getState().notes.trim() || null,
-          });
-        })
-        .finally(() => set.delete(write));
-      set.add(write);
-    },
-  });
+  const { state, error, setError, interruptedBy, start, pause, resume, recover, stop, discard } =
+    useAudioCapture({
+      startedAtRef,
+      onLevels: paintLevels,
+      onFragment: ({ part, seq, blob }) => {
+        const id = captureIdRef.current;
+        if (!id) return;
+        const set = writesRef.current;
+        const write: Promise<void> = putFragment({ captureId: id, part, seq, blob })
+          .then(async (ok) => {
+            if (!ok) {
+              setPersisted(false);
+              return;
+            }
+            // O pulso da gravação aberta, e a duração aproximada dela. Os dois
+            // existem para o caso em que o `stop()` NUNCA acontece: o pulso diz
+            // à fila que esta gravação ainda está viva (e que ela não deve
+            // subi-la de outra aba), e a duração é o que sobra para a tela
+            // mostrar se a aba morrer no meio. Um `stop()` normal reescreve os
+            // dois com o valor exato trinta segundos depois, no máximo.
+            //
+            // O pulso TAMBÉM tem um relógio próprio (ver `HEARTBEAT_MS`): aqui
+            // ele só existe enquanto há áudio entrando, e pausa e interrupção
+            // são justamente os momentos em que não há.
+            const elapsed = startedAtRef.current > 0 ? performance.now() - startedAtRef.current : 0;
+            await patchCaptureMeta(id, {
+              heartbeatAt: Date.now(),
+              durationMs: Math.max(0, Math.round(elapsed)),
+              parts: part + 1,
+              // As notas vão junto do pulso: é o que sobra delas se a aba
+              // morrer no meio da pregação. `getState()` e não um seletor —
+              // assinar o texto aqui repintaria o gravador a cada tecla (ver
+              // `recording-notes.ts`).
+              notes: useRecordingNotes.getState().notes.trim() || null,
+            });
+          })
+          .finally(() => set.delete(write));
+        set.add(write);
+      },
+    });
 
   const idle = state === "idle";
   const busy = sending !== null;
   const capturing = state === "recording" || state === "paused";
+  /** A gravação parou sozinha e está esperando uma decisão. O áudio até aqui
+   *  já está no disco; ver o cabeçalho e o de `useAudioCapture`. */
+  const interrupted = state === "interrupted";
+  /** O microfone está abrindo: chegou por `?auto=1` e o `start()` ainda não
+   *  respondeu. Sem isto a tela mostrava o vazio nesse intervalo, agora que não
+   *  há mais botão nenhum em repouso. */
+  const opening = idle && autoStart && !busy && !error;
   /**
-   * A dica embaixo da onda só aparece na tela EM REPOUSO, antes do primeiro
-   * toque. Ela responde "e depois, o que acontece?", e essa pergunta tem hora:
-   * depois que a gravação começa, a resposta virou passado, e o lugar embaixo da
-   * onda passa a ser dos avisos (saldo no fim, cópia local que falhou). Por isso
-   * ela também cede a `error`: uma dica e um alerta empilhados rebaixam o
-   * alerta.
+   * A dica embaixo da onda só aparece enquanto o microfone abre. Ela responde
+   * "e depois, o que acontece?", e essa pergunta tem hora: depois que a
+   * gravação começa, a resposta virou passado, e o lugar embaixo da onda passa
+   * a ser dos avisos (saldo no fim, gravação interrompida, cópia local que
+   * falhou). Por isso ela também cede a `error`: uma dica e um alerta
+   * empilhados rebaixam o alerta.
    */
-  const hinting = idle && !busy && !depleted && !error;
+  const hinting = opening && !depleted;
 
-  useUnloadGuard(capturing || busy);
+  useUnloadGuard(capturing || interrupted || busy);
+
+  /**
+   * **Esta tela não é um destino.** Sem `?auto=1` ninguém PEDIU para gravar:
+   * quem chegou aqui veio por um caminho que não é o botão de criar (a
+   * notificação de uma aba morta, o atalho da tela offline, o histórico, o app
+   * restaurado pelo sistema na última rota). A resposta certa é a Biblioteca,
+   * que é onde uma gravação que ficou para trás está esperando como cartão.
+   *
+   * Ver o cabeçalho: era este o caminho pelo qual alguém tocava no microfone do
+   * meio da tela e começava uma segunda gravação por cima da primeira.
+   */
+  useEffect(() => {
+    if (autoStart) return;
+    router.replace("/home");
+  }, [autoStart, router]);
+
+  /**
+   * A resposta de "há gravação viva NESTA aba?", que mora num store porque quem
+   * pergunta está fora desta árvore (ver `features/session/recording-store.ts`).
+   *
+   * **Ninguém escrevia nele**, e as duas proteções que ele sustenta estavam
+   * mortas há tempos: a fila subia uma gravação antiga de 7 MB no meio de uma
+   * pregação ao vivo (`kick()` lê este booleano), e o `BillingDialog` abria o
+   * checkout NA MESMA ABA quando o pop-up era bloqueado, destruindo o
+   * `MediaRecorder`. O segundo é o pior dos dois, porque a tela oferece comprar
+   * moedas exatamente quando o saldo acaba no meio da gravação.
+   *
+   * `busy` entra junto: o envio já não tem microfone aberto, mas continua sendo
+   * trabalho desta aba que uma navegação interromperia.
+   */
+  const setRecordingLive = useRecordingStore((s) => s.setRunning);
+  useEffect(() => {
+    setRecordingLive(capturing || interrupted || busy);
+  }, [capturing, interrupted, busy, setRecordingLive]);
+  useEffect(() => () => setRecordingLive(false), [setRecordingLive]);
+
+  /**
+   * O pulso da linha da gravação, com relógio próprio.
+   *
+   * Ele vale para o que o fragmento não cobre: a pausa e a interrupção, em que
+   * não entra áudio nenhum e o pulso do `onFragment` simplesmente não acontece.
+   * Sem ele, uma gravação parada por mais que o `STALE_OPEN_MS` da fila passa a
+   * ser lida como abandonada. Ver `HEARTBEAT_MS`.
+   */
+  useEffect(() => {
+    if (!capturing && !interrupted) return;
+    const timer = window.setInterval(() => {
+      const id = captureIdRef.current;
+      if (id) void patchCaptureMeta(id, { heartbeatAt: Date.now() });
+    }, HEARTBEAT_MS);
+    return () => window.clearInterval(timer);
+  }, [capturing, interrupted]);
 
   // A onda tem um tamanho só, gravando ou em repouso. Ela já encolheu para dar
   // lugar à bancada (as três ferramentas do lado); hoje elas são camadas
@@ -203,12 +325,12 @@ export function AudioStudio({ autoStart = false }: { autoStart?: boolean }) {
   // tamanho de sempre. O efeito continua existindo para DEFLACIONAR as barras
   // ao sair da gravação: sem ele, parar no meio de um pico deixava a onda
   // congelada alta enquanto a tela voltava ao repouso.
-  // biome-ignore lint/correctness/useExhaustiveDependencies: `capturing` não é LIDO pelo efeito, e é dependência de propósito — o gatilho é a TRANSIÇÃO (parar de gravar), não o valor.
+  // biome-ignore lint/correctness/useExhaustiveDependencies: `capturing` e `interrupted` não são LIDOS pelo efeito, e são dependência de propósito — o gatilho é a TRANSIÇÃO (parar de gravar), não o valor.
   useEffect(() => {
     for (const bar of barsRef.current) {
       if (bar) bar.style.height = `${waveRef.current.base}px`;
     }
-  }, [capturing]);
+  }, [capturing, interrupted]);
 
   /**
    * A gravação vista de FORA da aba: a notificação do sistema quando o app é
@@ -220,21 +342,33 @@ export function AudioStudio({ autoStart = false }: { autoStart?: boolean }) {
    * recusa a religar.
    */
   useRecordingPresence({
-    active: capturing,
-    paused: state === "paused",
+    // A interrupção entra como ATIVA e PAUSADA: a gravação não acabou (o áudio
+    // está no disco e o "Retomar" está a um toque), e a notificação passa a
+    // dizer que o Scriba não está gravando agora, que é a verdade. Deixá-la
+    // fora daqui apagaria a notificação e a faixa que mantém a aba acordada
+    // justamente no instante em que a pessoa mais precisa voltar ao app.
+    active: capturing || interrupted,
+    paused: state === "paused" || interrupted,
     onPause: pause,
     onResume: () => {
-      if (!depleted) resume();
+      if (depleted) return;
+      // O "tocar" da tela de bloqueio é o mesmo gesto do botão da tela, e
+      // depois de uma interrupção retomar quer dizer reabrir o microfone.
+      if (interrupted) void recover();
+      else resume();
     },
     onStop: () => void finish(),
   });
 
-  // O relógio corre gravando, congela na pausa e some ao voltar ao repouso.
+  // O relógio corre gravando, congela na pausa E na interrupção, e some ao
+  // voltar ao repouso. Congelar é o ponto: enquanto ele corria sobre uma
+  // gravação morta, ele era a própria afirmação falsa que esta tela passou a
+  // existir para não fazer.
   useEffect(() => {
     setRunning(state === "recording");
-    if (capturing) setVisible(true);
+    if (capturing || interrupted) setVisible(true);
     else if (idle && !busy) setVisible(false);
-  }, [state, capturing, idle, busy, setRunning, setVisible]);
+  }, [state, capturing, interrupted, idle, busy, setRunning, setVisible]);
 
   useCoinTick({
     enabled: state === "recording",
@@ -354,7 +488,10 @@ export function AudioStudio({ autoStart = false }: { autoStart?: boolean }) {
         router.replace(`/summary/${done.sessionId}`);
         return;
       }
-      setSending(null);
+      // `sending` NÃO é apagado aqui: a navegação é o que desmonta esta tela, e
+      // limpar antes devolveria a tela por um quadro ao estado de quem acabou
+      // de chegar para gravar, com o "Abrindo o microfone…" por cima de uma
+      // gravação que acabou de ser entregue à fila.
       router.replace("/home");
     },
     [router, track, run]
@@ -363,6 +500,10 @@ export function AudioStudio({ autoStart = false }: { autoStart?: boolean }) {
   async function finish() {
     const id = captureIdRef.current;
     const result = await stop();
+    // `null` aqui quer dizer que o gravador nunca chegou a existir (o `start()`
+    // falhou). Uma gravação INTERROMPIDA não cai neste caminho: o `stop()`
+    // devolve normalmente o que foi gravado até a interrupção, porque os
+    // fragmentos já estão no disco. Ver o cabeçalho de `useAudioCapture`.
     if (!id || !result) {
       setError("Não deu tempo de gravar nada. Tente de novo.");
       return;
@@ -406,6 +547,14 @@ export function AudioStudio({ autoStart = false }: { autoStart?: boolean }) {
   useEffect(() => () => setCapturing(null), [setCapturing]);
 
   const showingPhase = busy && uploading === sending && phase !== null;
+  /** Do toque em parar até a navegação. A tela não oferece controle nenhum
+   *  aqui: o gravador já fechou e o que resta é esperar. */
+  const finishing = state === "stopping" || busy;
+
+  // Sem `?auto=1` o efeito acima já está navegando para `/home`, e desenhar o
+  // repouso aqui poria na tela, por um quadro, um "Tentar de novo" que não se
+  // refere a erro nenhum.
+  if (!autoStart) return null;
 
   return (
     <>
@@ -476,7 +625,7 @@ export function AudioStudio({ autoStart = false }: { autoStart?: boolean }) {
           ) : null}
         </div>
 
-        {busy ? (
+        {finishing ? (
           <div className="flex max-w-xs flex-col items-center gap-2 text-center">
             <p role="status" className="text-sm font-light text-v2-ink-soft">
               {showingPhase ? phaseLabel(phase, chunk) : "Guardando a gravação…"}
@@ -489,6 +638,26 @@ export function AudioStudio({ autoStart = false }: { autoStart?: boolean }) {
               Biblioteca e o Scriba tenta de novo sozinho.
             </p>
           </div>
+        ) : interrupted ? (
+          /* A gravação parou sozinha. Duas frases: o que houve, e o que
+             continua valendo. A segunda é a que importa, e ela é verdade porque
+             os fragmentos estão no IndexedDB desde o primeiro minuto. Um erro
+             de "Retomar" (o microfone que segue tomado) toma o lugar dela: ali
+             a garantia já foi lida, e o que falta saber é por que o botão não
+             funcionou. */
+          <div className="flex max-w-xs flex-col items-center gap-2 text-center">
+            <p role="alert" className="text-sm font-light text-v2-ink-soft">
+              {INTERRUPTION_TEXT[interruptedBy ?? "recorder"]}
+            </p>
+            <p className="text-xs font-light text-v2-ink-mute">
+              {error ??
+                "O que você gravou até aqui está guardado. Retome para continuar na mesma gravação, ou pare para receber o resumo do que já foi dito."}
+            </p>
+          </div>
+        ) : opening ? (
+          <p role="status" className="max-w-xs text-center text-sm font-light text-v2-ink-soft">
+            Abrindo o microfone…
+          </p>
         ) : depleted ? (
           <p role="alert" className="max-w-xs text-center text-sm font-light text-v2-ink-soft">
             Suas moedas acabaram e a gravação foi pausada. Você ainda pode parar e ficar com o
@@ -522,19 +691,47 @@ export function AudioStudio({ autoStart = false }: { autoStart?: boolean }) {
           ferramentas flutuantes ocupam enquanto a gravação está aberta. Em
           repouso não há ferramenta nenhuma flutuando, e a folga extra seria
           só espaço morto sob o microfone. */}
-      <div className={cn("flex flex-col items-center gap-6", capturing && "pb-16")}>
+      <div
+        className={cn("flex flex-col items-center gap-6", (capturing || interrupted) && "pb-16")}
+      >
         <div className="flex items-center justify-center gap-6">
-          {busy ? null : idle ? (
-            <button
-              type="button"
-              onClick={() => void begin()}
-              aria-label="Começar a gravar"
-              data-tour="record-button"
-              className="inline-flex size-24 items-center justify-center rounded-full bg-v2-card text-v2-ink transition-colors hover:bg-v2-card-hover focus-visible:outline-2 focus-visible:outline-offset-4 focus-visible:outline-v2-ink-mute"
-            >
-              <MicGlyph className="size-9" />
-            </button>
-          ) : (
+          {/* **Não há botão de gravar aqui, e a ausência é o ponto.** Esta tela
+              só é alcançável com `?auto=1`, ou seja, sempre a partir de um
+              pedido explícito de gravar; sem ele o efeito lá em cima devolve a
+              pessoa para a Biblioteca antes de qualquer pixel. O disco de
+              microfone que morava no meio era o que transformava uma chegada
+              acidental (a notificação que sobrou de uma aba morta, o histórico,
+              o app restaurado pelo sistema) numa segunda gravação por cima da
+              primeira. Ver o cabeçalho. */}
+          {finishing || opening ? null : interrupted ? (
+            <>
+              <button
+                type="button"
+                onClick={() => void recover()}
+                disabled={depleted}
+                aria-label="Retomar a gravação"
+                className="inline-flex size-14 items-center justify-center rounded-full bg-v2-card text-v2-ink transition-colors hover:bg-v2-card-hover focus-visible:outline-2 focus-visible:outline-offset-4 focus-visible:outline-v2-ink-mute disabled:opacity-40"
+              >
+                <Play className="size-5 fill-current" strokeWidth={0} />
+              </button>
+              <button
+                type="button"
+                onClick={() => void finish()}
+                aria-label="Parar e receber o resumo"
+                className="inline-flex size-24 items-center justify-center rounded-full bg-v2-card text-v2-ink transition-colors hover:bg-v2-card-hover focus-visible:outline-2 focus-visible:outline-offset-4 focus-visible:outline-v2-ink-mute"
+              >
+                <Square className="size-8 fill-current" strokeWidth={0} />
+              </button>
+              <button
+                type="button"
+                onClick={() => setConfirmDiscard(true)}
+                aria-label="Apagar"
+                className="inline-flex size-14 items-center justify-center rounded-full bg-v2-card text-v2-ink-mute transition-colors hover:bg-v2-card-hover hover:text-v2-ink focus-visible:outline-2 focus-visible:outline-offset-4 focus-visible:outline-v2-ink-mute"
+              >
+                <Trash2 className="size-5" strokeWidth={1.75} />
+              </button>
+            </>
+          ) : capturing ? (
             <>
               <button
                 type="button"
@@ -570,6 +767,33 @@ export function AudioStudio({ autoStart = false }: { autoStart?: boolean }) {
                 <Trash2 className="size-5" strokeWidth={1.75} />
               </button>
             </>
+          ) : (
+            /* O único repouso que esta tela ainda tem: um start que falhou,
+               quase sempre o microfone negado. São DOIS caminhos porque um
+               deles pode não resolver: quem negou a permissão no diálogo do
+               sistema precisa liberá-la nas configurações antes de "Tentar de
+               novo" servir para alguma coisa, e ficar preso numa tela com um
+               botão que não funciona é o defeito que esta pasta inteira existe
+               para não ter. Eles são pastilhas de texto, e não o disco de 96px:
+               aquele desenho é o do gravador, e aqui não há gravação nenhuma
+               para comandar. */
+            <div className="flex flex-col items-center gap-3">
+              <button
+                type="button"
+                onClick={() => void begin()}
+                className="inline-flex items-center gap-2 rounded-full bg-v2-card px-5 py-2.5 text-sm font-light text-v2-ink transition-colors hover:bg-v2-card-hover focus-visible:outline-2 focus-visible:outline-offset-4 focus-visible:outline-v2-ink-mute"
+              >
+                <MicGlyph className="size-4" />
+                Tentar de novo
+              </button>
+              <button
+                type="button"
+                onClick={() => router.replace("/home")}
+                className="rounded-full px-4 py-2 text-xs font-light text-v2-ink-mute transition-colors hover:text-v2-ink focus-visible:outline-2 focus-visible:outline-offset-4 focus-visible:outline-v2-ink-mute"
+              >
+                Voltar para a Biblioteca
+              </button>
+            </div>
           )}
         </div>
       </div>

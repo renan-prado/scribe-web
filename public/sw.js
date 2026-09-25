@@ -26,14 +26,20 @@
 // Registrado por `src/shared/components/PwaBootstrap.tsx`, nunca em dev.
 
 /** A casca da tela offline. Estática, e a única coisa PRÉ-cacheada. */
-const SHELL_CACHE = "scriba-shell-v2";
+const SHELL_CACHE = "scriba-shell-v3";
 /** Os arquivos da casca do app, guardados conforme vão sendo pedidos. */
-const ASSET_CACHE = "scriba-assets-v2";
+const ASSET_CACHE = "scriba-assets-v3";
 /** O HTML das telas de atalho. É o único cache com dado de CONTA dentro. */
-const PAGE_CACHE = "scriba-pages-v2";
+const PAGE_CACHE = "scriba-pages-v3";
 const KEEP = [SHELL_CACHE, ASSET_CACHE, PAGE_CACHE];
 
 const OFFLINE_URL = "/offline.html";
+
+// A tag da notificação de gravação. Mexeu aqui? Mexa em
+// `RECORDING_NOTIFICATION_TAG` de
+// `src/features/session/lib/recording-notification.ts`, que é a mesma constante
+// do lado do app (um service worker não importa módulo do bundle).
+const NOTIFICATION_TAG = "scriba-recording";
 // A pena, que a página offline pinta por máscara CSS. Sem ela no cache, a
 // única imagem da tela offline seria justamente a que não carrega.
 const OFFLINE_ASSETS = [OFFLINE_URL, "/brand/pena.svg"];
@@ -75,6 +81,17 @@ self.addEventListener("activate", (event) => {
       if (self.registration.navigationPreload) {
         await self.registration.navigationPreload.enable().catch(() => {});
       }
+      // A notificação de gravação que sobrou de uma aba que o sistema matou.
+      // Ela é `requireInteraction`, então fica na gaveta até alguém tocá-la, e
+      // quem toca cai numa tela de gravação que não está gravando nada. O
+      // cleanup do React não cobre este caso por definição: o processo morreu.
+      // Aqui é a única ponta do conserto que funciona sem o app estar aberto.
+      try {
+        const stale = await self.registration.getNotifications({ tag: NOTIFICATION_TAG });
+        for (const n of stale) n.close();
+      } catch {
+        // best-effort
+      }
       const keys = await caches.keys();
       await Promise.all(keys.filter((key) => !KEEP.includes(key)).map((key) => caches.delete(key)));
       await self.clients.claim();
@@ -93,21 +110,28 @@ self.addEventListener("message", (event) => {
 });
 
 // A notificação de "Gravando áudio em background…" (ver
-// `src/app/(app)/(barra)/recording/useRecordingPresence.ts`). O toque nela tem
+// `src/app/(app)/(shell)/recording/useRecordingPresence.ts`). O toque nela tem
 // UM trabalho: trazer de volta a aba que está com o microfone aberto. Por isso
 // ele procura QUALQUER janela do Scriba antes de abrir uma nova — abrir outra
 // durante uma gravação daria duas abas disputando o microfone, que é o mesmo
 // motivo do `launch_handler` do manifest.
+//
+// **Sem janela nenhuma, o destino é `/home` e não `/recording`.** Sem janela
+// não há `MediaRecorder` vivo em lugar algum: aquela gravação MORREU com o
+// processo, e o que sobrou dela é o áudio no IndexedDB, que a fila resgata e a
+// Biblioteca mostra como cartão. Abrir o gravador ali era levar a pessoa a uma
+// tela vazia, onde o gesto seguinte começa uma gravação NOVA por cima da que
+// ficou para trás — foi assim que um relato terminou em erro. Ela vai para
+// onde a gravação dela está.
 self.addEventListener("notificationclick", (event) => {
   event.notification.close();
-  const target = (event.notification.data && event.notification.data.url) || "/recording";
   event.waitUntil(
     (async () => {
       const windows = await self.clients.matchAll({ type: "window", includeUncontrolled: true });
       for (const client of windows) {
         if ("focus" in client) return client.focus();
       }
-      if (self.clients.openWindow) return self.clients.openWindow(target);
+      if (self.clients.openWindow) return self.clients.openWindow("/home");
     })()
   );
 });

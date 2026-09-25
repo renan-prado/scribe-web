@@ -98,7 +98,7 @@ Router, ver o comentário no `src/proxy.ts`).
 ```
 /home             "Biblioteca": o acervo agrupado por mês e o botão de
                      criar. É onde cai quem loga
-/recording        o gravador: onda, pausar, parar e apagar. Um modo só
+/recording        o gravador. SÓ com ?auto=1; sem ele, redirect para /home
 /summary/[id]     o resumo da sessão. O destino de TUDO que o app faz
 /summary/new      a folha em branco: o editor de blocos, modo manual
 /summary/[id]/edit    o mesmo editor, num texto que já existe
@@ -1287,10 +1287,15 @@ para entregar exatamente o mesmo resumo.
 O áudio é fatiado mesmo assim, mas por OUTRO motivo e em outra escala, e os dois
 cortes não se confundem:
 
-- **Fragmento (2 min), para não perder.** `MediaRecorder.start(timeslice)` emite
-  um pedaço a cada 2 minutos, guardado no IndexedDB na hora. O primeiro traz o
-  cabeçalho e os seguintes são continuação, então concatená-los devolve o
-  arquivo original. A aba morrer custa, no pior caso, 2 minutos.
+- **Fragmento (30s), para não perder E para provar que ainda grava.**
+  `MediaRecorder.start(timeslice)` emite um pedaço a cada 30 segundos, guardado
+  no IndexedDB na hora. O primeiro traz o cabeçalho e os seguintes são
+  continuação, então concatená-los devolve o arquivo original. A aba morrer
+  custa, no pior caso, 30 segundos. **Eram 2 minutos**, e o corte veio junto com
+  a detecção de interrupção (abaixo): o `ondataavailable` é o único sinal de
+  vida que sobrevive à aba escondida, e a 2 minutos a tela ficaria afirmando uma
+  gravação morta por até quatro. Os bytes são os mesmos, em mais linhas do
+  IndexedDB.
 - **Parte (~7 MB), para caber no POST.** `/api/transcribe` recusa acima de 8 MB,
   uns 46 minutos a 24 kbps. Ao encostar no teto o gravador é encerrado e outro
   começa (cabeçalho novo = arquivo válido por si), esperando um silêncio para a
@@ -1362,7 +1367,7 @@ pregação parecer a MESMA coisa que abri-las lendo um resumo.
   entendeu, e um ponto anotado é sinal de que ele importou. O que aparece só
   nelas e não foi dito não vira conteúdo — uma nota não é fala.
 - Elas viajam na LINHA da gravação (`CaptureMeta.notes`), gravadas junto do
-  pulso a cada 2 minutos. Uma gravação pode ser retentada pela fila dois dias
+  pulso do fragmento. Uma gravação pode ser retentada pela fila dois dias
   depois, de outra tela, e notas que morressem com a tela só chegariam ao
   resumo quando tudo desse certo de primeira.
 - **O Biblo precisa de uma sessão, e o ID dela nasce no APARELHO** — sorteado
@@ -1391,15 +1396,83 @@ pregação parecer a MESMA coisa que abri-las lendo um resumo.
   que é ref e não prop de propósito: `paintLevels` roda a 60 quadros por
   segundo.
 
-**A tela em repouso diz o que vem DEPOIS de parar**, numa pastilha sob a onda
-(o `hinting` do `AudioStudio`). Quem chega ali vê uma onda apagada e um
-microfone, e nada responde à pergunta que decide se a pessoa vai deixar o
-aparelho gravando uma hora de pregação. Ela é `absolute` dentro da caixa da
-onda, e não um irmão dela: a coluna é centralizada, então qualquer coisa que
-entrasse no fluxo empurraria a onda — que é o objeto em volta do qual a tela foi
-desenhada. E ela some no instante em que a gravação começa: dali em diante o
-lugar embaixo da onda é dos avisos que importam (saldo no fim, cópia local que
-falhou), e uma dica dividindo espaço com um alerta rebaixa o alerta.
+**Esta tela SÓ existe gravando, e não há mais botão de gravar nela.**
+`/recording` sem `?auto=1` devolve a pessoa para `/home`, e o disco de microfone
+que ficava no meio da tela ociosa foi removido. O motivo não se vê olhando para
+o botão: a rota é alcançável por caminhos que NÃO são um pedido de gravar — a
+notificação que sobrou de uma aba que o sistema matou, o atalho da tela offline,
+o histórico, o app restaurado pelo sistema na última rota. Quem chegava por um
+desses via uma tela pronta para gravar, tocava no botão, e começava uma gravação
+NOVA por cima da que tinha acabado de se perder. Foi esse o caminho de um relato
+que terminou em erro.
+
+Gravar passou a ser sempre um pedido explícito, feito de onde se cria: o `+` do
+rodapé, os chips da barra no desktop e o atalho do sistema, todos com `?auto=1`.
+Em repouso a tela só desenha uma coisa, a saída de um start que FALHOU (o
+microfone negado), com o motivo escrito, um "Tentar de novo" e um "Voltar para a
+Biblioteca" — dois caminhos porque o primeiro pode não resolver, e ficar preso
+num botão que não funciona é o defeito que aquela pasta existe para não ter.
+
+**Consequências fora do gravador**, todas no mesmo commit: o `notificationclick`
+do `sw.js` abre `/home` quando não há janela, o atalho da tela offline passou a
+apontar para `/recording?auto=1`, e o tour `recording` saiu de `TOURS` (ele só
+podia rodar na tela em repouso, ver `src/features/tour/AGENTS.md`).
+
+**A dica do que vem DEPOIS de parar** (o `hinting` do `AudioStudio`) sobreviveu
+a isso, e agora aparece enquanto o microfone abre. Ela é `absolute` dentro da
+caixa da onda, e não um irmão dela: a coluna é centralizada, então qualquer
+coisa que entrasse no fluxo empurraria a onda — que é o objeto em volta do qual
+a tela foi desenhada. E ela some no instante em que a gravação começa: dali em
+diante o lugar embaixo da onda é dos avisos que importam (saldo no fim, gravação
+interrompida, cópia local que falhou), e uma dica dividindo espaço com um alerta
+rebaixa o alerta.
+
+**A tela sabe quando a gravação PARA sozinha, e essa é a correção que mais
+mudou o produto.** O relógio é `performance.now() - startedAt`, tempo de PAREDE:
+ele sobe igual com o microfone aberto, com o microfone tomado por outro app e
+com o `MediaRecorder` morto. A tela afirmava, o tempo todo, uma coisa que não
+tinha como saber, e foi exatamente esse o relato de quem minimizou o app
+("continua na tela de gravação, mas não gravou nada"). Num celular o microfone é
+tirado o tempo todo: uma ligação, um áudio do WhatsApp, o assistente de voz, um
+fone bluetooth que cai, o sistema congelando a aba.
+
+São TRÊS sensores (`useAudioCapture`), e eles se cobrem porque nenhum pega
+tudo: `MediaRecorder.onerror`, `track.onended`/`onmute`, e o WATCHDOG do
+fragmento — o `ondataavailable` é o único sinal de vida que sobrevive à aba
+escondida, então "quando chegou o último fragmento" é a única prova de gravação
+que existe. Passou de `FRAGMENT_STALL_MS` sem fragmento, parou.
+
+O estado resultante é `interrupted`, e ele NÃO descarta nada: o relógio congela,
+a tela diz o que houve (três frases, uma por sensor), a cobrança por minuto para
+na hora, e os controles viram "Retomar" (reabre o microfone numa PARTE nova, com
+cabeçalho próprio, a mesma mecânica do corte por tamanho) e "Parar" (entrega a
+pregação até ali como qualquer outra, porque os fragmentos estão no disco desde
+o primeiro minuto).
+
+**E o pulso da linha da gravação ganhou relógio próprio** (`HEARTBEAT_MS`, 30s).
+Ele saía junto do fragmento, ou seja, só existia com áudio entrando — e pausa e
+interrupção são justamente os momentos em que não há. Uma gravação parada por
+mais que o `STALE_OPEN_MS` da fila passava a ser lida como abandonada, com o
+risco de outra aba subi-la. São duas perguntas: o fragmento diz "está entrando
+áudio", o pulso diz "esta aba ainda é a dona disto".
+
+**O `recording-store` voltou a ser escrito, e ele não era.** O `AudioStudio`
+tinha um `setRunning` no escopo, mas era o do `ClockScope` (o relógio da barra),
+e o nome sombreado escondeu a ausência. As duas proteções que aquele booleano
+sustenta estavam mortas, sem erro em lugar nenhum: a FILA subia 7 MB de uma
+gravação antiga no meio da pregação de hoje (`kick()` o lê), e o
+`BillingDialog` abria o checkout NA MESMA ABA quando o pop-up era bloqueado (o
+padrão no PWA do Android), destruindo o `MediaRecorder` — no gesto que a própria
+tela oferece quando as moedas acabam no meio da gravação.
+
+**A notificação de gravação não pode sobreviver à gravação.** Ela é
+`requireInteraction`, e era apagada só pelo cleanup do React — que, por
+definição, não roda no caso que ela existe para cobrir: o sistema matando a aba
+com o app minimizado. Ela ficava na gaveta anunciando uma gravação morta até
+alguém tocá-la. O conserto tem três pontas: o `activate` do `sw.js` apaga a tag
+(a única que funciona sem o app aberto), o `PendingCaptureRunner` a apaga na
+abertura do app, e o `notificationclick` leva para `/home` quando não há janela.
+Ver `src/features/session/lib/recording-notification.ts`.
 
 **Minimizar o app não interrompe a gravação, e agora o sistema DIZ isso**
 (`useRecordingPresence`). O `MediaRecorder` nunca parou ao esconder a aba, mas

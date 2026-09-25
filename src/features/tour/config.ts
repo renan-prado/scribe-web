@@ -32,13 +32,9 @@ export const TOUR_DELAY_LIST_MS = 1_200;
 export const TOUR_DELAY_RESULT_MS = 3_000;
 
 /**
- * A tela de gravação: 700 ms.
- *
- * O mais curto de todos, e por uma razão de risco. O tour ali só pode rodar
- * ANTES de a gravação começar (ver `TourTrigger` e `AudioStudio`), e a janela
- * entre chegar na tela e tocar no botão é curta, é uma tela de um botão só. Um
- * atraso longo faria o balão abrir por cima de alguém que já está gravando,
- * que é exatamente o que não pode acontecer — e quem chega por `?auto=1` já
- * está.
+ * **Havia aqui um `TOUR_DELAY_CAPTURE_MS` de 700 ms**, o mais curto de todos,
+ * dimensionado para a janela entre chegar na tela de gravação e tocar no botão.
+ * Ele saiu com o tour `recording`: aquela tela em repouso não existe mais, e
+ * `/recording` sem `?auto=1` devolve a pessoa para a Biblioteca. Ver
+ * `src/lib/domain/tour.ts`.
  */
-export const TOUR_DELAY_CAPTURE_MS = 700;
