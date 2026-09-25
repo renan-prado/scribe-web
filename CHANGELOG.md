@@ -9,6 +9,12 @@ Gerado por `npm run release` a partir dos Conventional Commits. `feat` sobe o
 minor; o resto sobe o patch. Não edite à mão, a próxima execução escreve por
 cima do topo do arquivo.
 
+## 0.87.2, 2026-09-25, desde v0.87.1
+
+### Correções
+
+- **recording:** a tela de gravação deixa de ser um destino e para de perder pregação (`2e90ec9`)
+
 ## 0.87.1, 2026-09-24, desde v0.87.0
 
 ### Correções
