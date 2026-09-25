@@ -9,6 +9,16 @@ Gerado por `npm run release` a partir dos Conventional Commits. `feat` sobe o
 minor; o resto sobe o patch. Não edite à mão, a próxima execução escreve por
 cima do topo do arquivo.
 
+## 0.89.0, 2026-09-25, desde v0.88.0
+
+### Novidades
+
+- **home:** a busca e o Biblo viram rotas, /home/search e /home/chat (`1a330c6`)
+
+### Correções
+
+- **site:** o aviso de cookies deixa de travar a rolagem da pagina (`1aa710a`)
+
 ## 0.88.0, 2026-09-25, desde v0.87.3
 
 ### Novidades
