@@ -822,8 +822,12 @@ canto de baixo.
 
 **O impedimento de uso continua existindo, só que sem parecer um bloqueio.**
 Fora das páginas legais, enquanto não há aceite, o resto da página vira
-`inert` (sem clique, sem Tab, sem leitor de tela) e a rolagem trava — só que
-nada escurece nem borra, e a única coisa visível diferente é a barra. Recusar
+`inert` (sem clique, sem Tab, sem leitor de tela) — só que nada escurece nem
+borra, a rolagem continua livre, e a única coisa visível diferente é a barra.
+**Travar a rolagem junto com o `inert` já existiu e saiu**: era exatamente a
+sensação de tela bloqueada que o formato de barra veio desfazer, e quem chega
+pela landing precisa poder descer e ver o que é o produto antes de decidir
+sobre cookies. Ler não é usar. Recusar
 não abre uma segunda tela: o texto da própria barra muda para explicar por que
 o site não funciona sem cookies, com o botão de aceitar ao lado. A razão de
 não haver "recusar e seguir" de verdade: a sessão de login é um cookie, e sem

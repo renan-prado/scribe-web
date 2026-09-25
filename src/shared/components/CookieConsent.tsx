@@ -16,15 +16,21 @@ import { CONSENT_EVENT, grantConsent, hasConsent, isConsentExemptPath } from "@/
  * diferentes.** Continua existindo o impedimento de uso sem aceite (sem
  * cookies não há login, ver `src/shared/consent.ts`), só que ele deixou de
  * ser um VÉU: fora das páginas legais, enquanto não aceito, o resto da
- * página vira `inert` (sem clique, sem Tab, sem leitor de tela) e a rolagem
- * trava, mas nada escurece nem borra — a barra some assim que aceita, e até
- * lá ela é a única coisa na tela com quem dá para interagir.
+ * página vira `inert` (sem clique, sem Tab, sem leitor de tela), mas nada
+ * escurece nem borra — a barra some assim que aceita, e até lá ela é a única
+ * coisa na tela com quem dá para interagir.
+ *
+ * **A ROLAGEM NÃO TRAVA.** Ela já travou junto com o `inert`, e travar a
+ * página inteira era justamente a sensação de tela bloqueada que o formato de
+ * barra veio desfazer: quem chega pela landing precisa poder descer e ver o
+ * que é o produto ANTES de decidir sobre cookies. Ler não é usar; o `inert`
+ * sozinho já garante que nada seja clicado sem aceite.
  *
  * Três estados:
  *
  * - **aceito**: nada é desenhado. Quase toda visita.
- * - **pendente/recusado** fora das páginas legais: a barra bloqueia (inert +
- *   rolagem travada), mas SÓ ela aparece, sem véu.
+ * - **pendente/recusado** fora das páginas legais: a barra bloqueia o USO
+ *   (inert), mas não a leitura — rola normalmente, e sem véu.
  * - **pendente/recusado** numa página legal (`CONSENT_EXEMPT_PATHS`): a mesma
  *   barra, sem bloquear nada — a pessoa precisa poder ler a política antes de
  *   aceitá-la.
@@ -70,11 +76,8 @@ export function CookieConsent() {
       (el): el is HTMLElement => el instanceof HTMLElement && el !== root && !el.inert
     );
     for (const el of siblings) el.inert = true;
-    const previousOverflow = document.body.style.overflow;
-    document.body.style.overflow = "hidden";
     return () => {
       for (const el of siblings) el.inert = false;
-      document.body.style.overflow = previousOverflow;
     };
   }, [blocking]);
 
