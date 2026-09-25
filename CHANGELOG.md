@@ -9,6 +9,12 @@ Gerado por `npm run release` a partir dos Conventional Commits. `feat` sobe o
 minor; o resto sobe o patch. Não edite à mão, a próxima execução escreve por
 cima do topo do arquivo.
 
+## 0.88.0, 2026-09-25, desde v0.87.3
+
+### Novidades
+
+- **admin:** lucro por sessão, filtro de pessoa por busca e saída do estudo (`2a0430e`)
+
 ## 0.87.3, 2026-09-25, desde v0.87.2
 
 ### Correções
