@@ -1,6 +1,7 @@
 import "server-only";
 import { cache } from "react";
 import { INITIAL_COIN_BALANCE } from "@/features/coins/pricing";
+import { parseTranslation } from "@/lib/bibles/translations";
 import type { Profile } from "@/lib/domain/profile";
 import { createClient, getAuthUser } from "@/lib/supabase/server";
 
@@ -46,7 +47,7 @@ export type CurrentAccount = {
 };
 
 const SELECT =
-  "id, display_name, avatar_url, email, created_at, coin_balance, role, is_active, is_internal";
+  "id, display_name, avatar_url, email, created_at, coin_balance, role, is_active, is_internal, bible_translation";
 
 type DbRow = {
   id: string;
@@ -58,6 +59,7 @@ type DbRow = {
   role: string | null;
   is_active: boolean | null;
   is_internal: boolean | null;
+  bible_translation: string | null;
 };
 
 export const getCurrentAccount = cache(async (): Promise<CurrentAccount | null> => {
@@ -81,6 +83,11 @@ export const getCurrentAccount = cache(async (): Promise<CurrentAccount | null> 
       avatarUrl: row.avatar_url,
       email: row.email,
       createdAt: row.created_at,
+      // A coluna é `text` com CHECK (migração 0076), então o que chega aqui
+      // já é uma das escolhíveis ou nulo. `parseTranslation` mesmo assim,
+      // porque um valor gravado antes de um id sair do registro não pode virar
+      // uma tradução que o loader não acha em disco.
+      bibleTranslation: row.bible_translation ? parseTranslation(row.bible_translation) : null,
     },
     coinBalance: row.coin_balance ?? INITIAL_COIN_BALANCE,
     isAdmin: row.role === "admin" && row.is_active !== false,

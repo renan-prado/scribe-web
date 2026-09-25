@@ -1,4 +1,5 @@
 import { z } from "zod";
+import { TRANSLATION_IDS } from "@/lib/bibles/translations";
 
 /**
  * Uma passagem, versículo a versículo.
@@ -18,6 +19,14 @@ const PassagePayloadSchema = z.object({
   reference: z.string(),
   book: z.string(),
   chapter: z.number().int().positive(),
+  /**
+   * QUAL tradução respondeu. Vem na carga, e não só no pedido, porque o
+   * cliente precisa dizer isso na tela: a sigla ao lado da referência é o
+   * crédito que a licença da BLIVRE exige (ver `lib/bibles/translations.ts`),
+   * e uma pastilha que mostrasse o que foi PEDIDO mentiria no dia em que o
+   * servidor caísse no padrão por não achar o arquivo.
+   */
+  translation: z.enum(TRANSLATION_IDS),
   /** Só os versículos que EXISTEM. Um pedido por 1:11-17 num capítulo de 15
    *  devolve 5 linhas, não 7 com duas vazias. */
   verses: z.array(VerseLineSchema),

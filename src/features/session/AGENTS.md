@@ -61,7 +61,7 @@ pessoa quiser, aprofundar.
 | `components/BibloHomeDrawer.tsx` + `biblo-workspace.ts` | o Biblo da Biblioteca, que ESCREVE um documento em vez de sugerir um bloco |
 | `components/BibloHomeTrigger.tsx` | o disco que o abre no desktop: um link para `/home/chat` |
 | `biblo-query.ts` | a conversa guardada no aparelho: leitura, pré-busca e a rodada nova |
-| `server/biblo/` | allowance, resposta, a abertura derivada e a ancoragem de uma referência na NVI |
+| `server/biblo/` | allowance, resposta, a abertura derivada e a ancoragem de uma referência na Bíblia local |
 | `components/PassageVerses.tsx` + `RichText.tsx` | texto bíblico e menções dentro do parágrafo |
 | `components/BibleReader.tsx` | a Bíblia para LER: livro → capítulo → texto, dentro de uma aba ou de uma gaveta |
 | `components/BibleDock.tsx` | a aba colada na borda direita que abre o leitor, na leitura, no editor e no gravador |
@@ -183,7 +183,7 @@ que carrega o próprio `Dialog` não entra numa aba.
 uma pergunta ao Biblo** (`POST /api/bible-search`, `COIN_COSTS.bibleSearch`,
 gate pela MESMA feature do chat, `biblo_chat` — não uma segunda entrada no
 catálogo de planos). O modelo devolve só REFERÊNCIA e uma nota curta, nunca o
-texto do versículo: quem resolve cada uma contra a NVI local é
+texto do versículo: quem resolve cada uma contra a Bíblia local é
 `server/biblo/bible-search.ts`, a mesma técnica de `server/biblo/anchor.ts`
 — uma referência que não existir é descartada em
 silêncio, sem aviso na tela. "Ir para a passagem" usa o MESMO `book`/`chapter`
@@ -218,13 +218,85 @@ coisas quebraram, e as duas são o motivo de o arquivo estar como está:
 2. **Montagem aos pedaços.** O bloco aparecia e ia se preenchendo linha a
    linha, empurrando o conteúdo abaixo a cada versículo que chegava.
 
-O cache do React Query é por PASSAGEM (`["passage", reference]`) e
-`staleTime: Infinity` — texto bíblico não muda, e sem isso voltar para uma
-sessão refazia todas as buscas.
+O cache do React Query é por TRADUÇÃO e passagem
+(`["passage", translation, reference]`) e `staleTime: Infinity` — texto bíblico
+não muda, e sem isso voltar para uma sessão refazia todas as buscas. A tradução
+entra na chave porque ela entrou no produto: sem ela, o mesmo "João 3:16"
+guardado numa tradução seria servido em todas as outras, para sempre.
 
 As larguras do esqueleto são fixas por posição, e não sorteadas: um
 `Math.random()` ali daria hidratação divergente e o React descartaria o HTML do
 servidor.
+
+## Qual tradução, e de quem é a escolha
+
+O produto leu UMA tradução por muito tempo, a NVI, e o problema dela não era
+qualidade: era licença. O resumo é a coisa que se compartilha por link, e o
+texto bíblico dentro dele é redistribuição. Hoje são duas, as duas
+redistribuíveis: Bíblia Livre (CC BY 3.0 Brasil, crédito obrigatório, o PADRÃO)
+e Almeida 1911 (domínio público). A NVI saiu do registro; o porquê está em
+`src/lib/AGENTS.md`, "Bíblia".
+
+**São QUATRO camadas, e cada uma pertence a alguém diferente:**
+
+| camada | onde mora | de quem é |
+|---|---|---|
+| a escolha da CITAÇÃO | `bibleQuote.translation`, no jsonb | de quem ESCREVEU o resumo |
+| a preferência | `profiles.bible_translation` (migração 0076) | de quem LÊ |
+| o padrão | `DEFAULT_TRANSLATION` | do produto |
+| o toque na pastilha | estado local, morre com a página | de quem está lendo AGORA |
+
+A ordem é essa: bloco, preferência, padrão. O bloco vence a preferência porque
+um texto que cita Almeida de propósito continua citando Almeida na tela de quem
+prefere a Bíblia Livre.
+
+**A quarta camada não grava nada, e isso é decisão.** O toque na pastilha de uma
+citação (`BibleQuoteBlock`) troca a tradução ali, naquela leitura. Gravar
+exigiria dono, rota e escrita no jsonb para um gesto que quase sempre termina na
+pergunta seguinte — e faria o leitor de um link compartilhado editar o texto de
+quem o escreveu. Quem quer permanência tem os dois caminhos que gravam: o EDITOR
+(a pastilha gêmea do `Composer`, que escreve no bloco) e o /profile.
+
+**A preferência precisa ser conhecida no SERVIDOR**, e é por isso que ela é
+coluna e não `localStorage`: `server/passages.ts` semeia o texto das passagens
+no HTML, e a chave do cache carrega a tradução. Semeando a errada, a semeadura
+vira entrada que ninguém lê e a divergência de hidratação que aquele arquivo
+existe para consertar volta inteira. Ele lê o perfil sozinho quando ninguém
+passa a tradução, justamente para que uma página nova não possa esquecer.
+
+**No cliente ela desce por contexto** (`TranslationScope`, montado no layout de
+`(shell)`), e é por isso que `ChapterDialog`, `BibloPassage` e a prévia do
+`PassagePicker` acompanham a escolha sem nenhuma prop nova: eles chamam
+`useVerseFetch` sem tradução, e sem tradução é a de quem lê.
+
+**O `BibleReader` tem o seletor DELE**, no cabeçalho do capítulo, ao lado das
+setas. Ele é a superfície onde se vem LER a Bíblia (e não ler um resumo que a
+cita), então comparar duas traduções ali é o gesto da tela e não uma pergunta
+de passagem. Como a pastilha de uma citação, ele não grava nada; ao contrário
+dela, a escolha sobrevive a fechar a gaveta, porque o `BibleDock` mantém o
+leitor montado (`keepMounted`) pelo mesmo motivo que preserva o capítulo
+aberto.
+
+**A referência e a tradução são DUAS pastilhas, nunca uma.** Elas já foram o
+mesmo botão no cartão de citação, e o alvo dizia "João 3:16" e fazia outra
+coisa: a referência é o NOME da citação, escolhido por quem escreveu o texto, e
+a tradução é um controle. A leitura e o editor desenham o mesmo par.
+
+**O crédito da BLIVRE é obrigação de licença, não enfeite**, e ele tem duas
+formas porque a licença pede menção adequada ao MEIO:
+
+| onde | o que aparece |
+|---|---|
+| seletor de passagem e Bíblia da lateral | o crédito por extenso (`TranslationCredit`) |
+| pastilha de uma citação no resumo | a SIGLA, que é o que os autores aceitam em espaço curto |
+| /profile | o crédito por extenso, abaixo do seletor |
+
+`TranslationCredit` vive DENTRO da área rolável, depois do último versículo: é o
+texto acima dele que ele credita, e uma faixa fixa de três linhas cobraria
+altura de toda leitura numa gaveta e disputaria com a grade de números num
+diálogo. Ele devolve `null` para tradução sem crédito a dar — a condição é uma
+regra num lugar, não um `if` copiado em cada tela. Ao redesenhar uma passagem,
+o crédito não é o que se corta para ganhar espaço.
 
 ## Menções dentro do parágrafo
 
@@ -581,7 +653,7 @@ plano e os três estados de `/studies`.
 **Nada disso existe mais.** A saída foi em três etapas — o acesso, depois as
 rotas e os componentes, por fim a API, o pipeline, o entitlement e a tabela
 `session_deepenings` (migração 0075). O único pedaço que sobreviveu é
-`server/biblo/anchor.ts`, a ancoragem de referência contra a NVI, porque o
+`server/biblo/anchor.ts`, a ancoragem de referência contra a Bíblia local, porque o
 Biblo precisa dela pela mesma razão que o estudo precisava.
 
 Duas coisas dessa história continuam valendo para quem mexer no resumo:
@@ -614,13 +686,13 @@ Cinco coisas que mordem de fora:
   "Adicionar este parágrafo" embaixo de uma recusa põe a recusa no resumo de
   alguém. Ver `O TERRITÓRIO` em `server/prompts/biblo.ts`.
 - **O texto bíblico nunca vem do modelo.** Ele escreve a REFERÊNCIA, o
-  `RichText` a transforma em link para a NVI local, e numa sugestão
+  `RichText` a transforma em link para a Bíblia local, e numa sugestão
   `bibleQuote` o `text` é escrito pelo SERVIDOR (`verifySuggestion`) — a
   sugestão inteira é descartada se a referência não resolver. É o que torna um
   versículo inventado impossível em vez de improvável.
 - **A referência tem DUAS formas, e o que as separa é a POSIÇÃO na linha.** No
   meio da frase é link; sozinha numa linha (com faixa de versículos) vira a
-  passagem ABERTA dentro do balão, com os versículos da NVI desenhados ali
+  passagem ABERTA dentro do balão, com os versículos desenhados ali
   (`asStandaloneScripture` → `BibloPassage`). Numa conversa sobre a Bíblia, ver a
   Bíblia é o padrão. Quem garante que ela apareça não é o prompt — é o campo
   `passage` do contrato, que o servidor encaixa depois do primeiro parágrafo

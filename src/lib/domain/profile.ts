@@ -1,4 +1,5 @@
 import { z } from "zod";
+import { TRANSLATION_IDS } from "@/lib/bibles/translations";
 
 const ProfileSchema = z.object({
   id: z.string().uuid(),
@@ -6,6 +7,13 @@ const ProfileSchema = z.object({
   avatarUrl: z.string().nullable(),
   email: z.string().nullable(),
   createdAt: z.string(),
+  /**
+   * A tradução bíblica preferida, ou `null` para quem nunca escolheu — e
+   * `null` é o estado normal, não um defeito: o padrão do produto mora em
+   * `lib/bibles/translations.ts` e pode mudar sem um UPDATE nesta tabela.
+   * Ver a migração 0076.
+   */
+  bibleTranslation: z.enum(TRANSLATION_IDS).nullable(),
 });
 
 export type Profile = z.infer<typeof ProfileSchema>;

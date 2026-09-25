@@ -380,6 +380,16 @@ export const RATE_LIMITS = {
     perUser: { limit: 30, windowMs: MIN },
     perIp: { limit: 90, windowMs: MIN },
   },
+  // A tradução bíblica preferida, escolhida no /profile. É um clique
+  // deliberado numa lista de duas opções, então o uso legítimo são poucos por
+  // sessão; o teto existe porque a rota ESCREVE na linha de `profiles`, e toda
+  // escrita de preferência merece um balde para não virar um caminho de gerar
+  // UPDATEs em série.
+  "profile-write": {
+    route: "profile-write",
+    perUser: { limit: 20, windowMs: MIN },
+    perIp: { limit: 60, windowMs: MIN },
+  },
   // Cobrança: cada clique abre UMA sessão de checkout/portal no Stripe, que é
   // uma chamada paga de API e um objeto persistido lá. Apertado de propósito,
   // uso legítimo são alguns cliques por hora, e um limite baixo aqui é a

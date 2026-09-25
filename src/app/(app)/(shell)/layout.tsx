@@ -5,7 +5,9 @@ import { CoinsSync } from "@/features/coins/components/CoinsSync";
 import { INITIAL_COIN_BALANCE } from "@/features/coins/pricing";
 import { CacheOwner } from "@/features/session/components/CacheOwner";
 import { PendingCaptureRunner } from "@/features/session/components/PendingCaptureRunner";
+import { TranslationScope } from "@/features/session/components/TranslationScope";
 import { isCurrentUserPartner } from "@/lib/auth/require-partner";
+import { DEFAULT_TRANSLATION } from "@/lib/bibles/translations";
 import { getCurrentAccount } from "@/lib/db/account";
 import { getCycleUsage } from "@/lib/db/coins";
 import { getCurrentPlan } from "@/lib/entitlements/server";
@@ -146,7 +148,16 @@ export default async function BarraLayout({ children }: { children: ReactNode })
               ver `GlobalSearchHost`. Fica aqui dentro porque o diálogo lê a
               Biblioteca de `useLibrary()`, que só tem dono no `CacheOwner`. */}
           <GlobalSearchHost />
-          {children}
+          {/* A tradução bíblica de quem está lendo, para toda tela logada. Ela
+              vem da MESMA linha de `profiles` que o resto desta consulta, então
+              não custa ida ao banco, e precisa estar num contexto porque quem a
+              consome está fundo na árvore e em lugares que não se conhecem: o
+              bloco de citação do resumo, o leitor da Bíblia, o diálogo de
+              capítulo, a prévia do seletor de passagem. Ver
+              `TranslationScope`. */}
+          <TranslationScope translation={account.profile.bibleTranslation ?? DEFAULT_TRANSLATION}>
+            {children}
+          </TranslationScope>
         </CacheOwner>
       ) : (
         children

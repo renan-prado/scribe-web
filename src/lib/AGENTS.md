@@ -14,7 +14,7 @@ sabe o que é um sermão:
 | `env` `log` `http` `supabase` `llm` `fx` `auth` | infraestrutura: config, logging, validação, os três clients do Supabase, a chamada de LLM, câmbio e os gates de autorização |
 | `db` | o acesso ao banco. `server-only`, uma função por consulta |
 | `domain` | o VOCABULÁRIO: tipos, schemas Zod e parsers. **Client-safe**, é o que as duas pontas dividem |
-| `bibles` | a NVI em disco. Dado, não regra |
+| `bibles` | as traduções em disco e o registro de licença delas. Dado, não regra |
 | `entitlements` | qual plano libera o quê. Política que atravessa tudo |
 | `rate-limit.ts` `utils.ts` `deploy.ts` `app-version.ts` `seo.ts` | cinco concerns soltos, cada um de uma linha só |
 
@@ -262,7 +262,7 @@ aparece como um parceiro reclamando do próprio painel.
 ## O estudo saiu do produto
 
 Havia aqui uma seção longa sobre `src/features/session/server/study/`: um
-pipeline de cinco etapas (perguntar, filtrar, responder, ancorar na NVI,
+pipeline de cinco etapas (perguntar, filtrar, responder, ancorar na Bíblia local,
 redigir, selar) que produzia um artigo de três a quatro mil palavras por 50
 moedas. **Ele não existe mais**, e a remoção foi total: a API
 (`/api/deepening`, `/api/deepening/reprocess`), os prompts, os modelos em
@@ -272,7 +272,7 @@ e a tabela `session_deepenings` (migração 0075).
 O que ficou do pipeline, e por quê:
 
 - `features/session/server/biblo/anchor.ts` — a ancoragem de uma referência
-  bíblica contra a NVI local. Era o passo 3, e o Biblo o usa pela mesma razão
+  bíblica contra a Bíblia local. Era o passo 3, e o Biblo o usa pela mesma razão
   que o estudo usava: impedir que o modelo PARAFRASEIE a Escritura.
 - Os nomes de rota `study-*` e `deepening*` em
   `features/admin/server/db/usage.ts`, como rotas LEGADAS. `llm_usage_events`
@@ -453,13 +453,48 @@ log.error("upstream falhou", err);            // aceita Error direto
 
 ## Bíblia
 
-`src/lib/bibles/` é **server-only**: a tradução em si. `loader.ts` lê a NVI do disco
-na primeira chamada e a mantém em memória pelo tempo do processo (~4 MB de
-JSON), deduplicando chamadas concorrentes. `BIBLE_TRANSLATION` existe para o
-número sair de um lugar só, **não** para sugerir que trocá-la basta: o arquivo
-precisa estar em `src/lib/bibles/`, e hoje só a NVI está. As outras dez foram
-removidas — 41 MB no bundle de deploy que nenhum caminho de código lia. Se um
-seletor de tradução voltar, o cache precisa virar LRU antes.
+`src/lib/bibles/` é **quase todo** server-only: os JSON e o `loader.ts` são o
+disco. `loader.ts` lê uma tradução na primeira chamada e a mantém em memória
+pelo tempo do processo (~4 MB de JSON cada), com cache POR TRADUÇÃO e
+deduplicação de chamadas concorrentes. O cache é um `Map` e não um LRU porque o
+registro é fechado: ele não pode crescer além das traduções declaradas.
+
+**A exceção client-safe é `translations.ts`, e ela é o registro.** A sigla e o
+crédito aparecem na TELA, então o registro não pode ser server-only. Ele tem
+DUAS entradas, e as duas estão lá por LICENÇA:
+
+| id | o que é | licença |
+|---|---|---|
+| `BLIVRE` | Bíblia Livre, revisão de 2018 da Almeida de 1819 (Textus Receptus) | CC BY 3.0 Brasil, **crédito obrigatório** |
+| `ALM1911` | Almeida, reimpressão de 1911 da edição de 1900 | domínio público |
+
+**A NVI não está no registro**, embora o `NVI.json` continue no disco. Ela foi a
+única tradução do produto por muito tempo e é proprietária: o resumo é a coisa
+que se compartilha por link, e mostrar nele texto que não podemos redistribuir é
+o problema que estas duas existem para resolver. Ela chegou a ficar como opção
+trancada (`selectable: false`) e saiu de vez, porque opção trancada é opção que
+alguém destranca. Hoje nenhum caminho de código a alcança: o `loader` só aceita
+um `TranslationId`, e "NVI" gravado em jsonb antigo é rebaixado para o padrão
+por `parseTranslation`.
+
+**A licença cobra uma coisa da tela, e ela é cumprida em dois lugares:** a
+BLIVRE exige menção, então a sigla aparece na pastilha de toda citação (é o que
+os autores dizem bastar em espaço curto) e o crédito por extenso fica na
+preferência do /profile. Ao mexer no desenho de uma passagem, o crédito não é
+enfeite que se corta.
+
+**É CC BY 3.0 Brasil, e não 4.0.** A ficha da eBible diz 4.0 e imprime
+`creativecommons.org/licenses/by/4.0/br/`, uma URL que não existe: a 4.0 nunca
+foi portada para jurisdição nenhuma, e "br" só existe na 3.0. O texto do
+`credit` é o dos próprios autores, com a DATA da versão dentro dele, porque a
+Bíblia Livre é revisada e creditar sem a data credita uma edição que pode não
+ser a que está no disco.
+
+**Quem decide a tradução de uma passagem são três camadas, nesta ordem**: a
+escolha da CITAÇÃO (gravada no bloco `bibleQuote`), a preferência de quem LÊ
+(`profiles.bible_translation`, migração 0076) e o `DEFAULT_TRANSLATION`. A
+quarta, o toque na pastilha durante a leitura, não é gravada em lugar nenhum —
+ver `features/session/AGENTS.md`.
 
 Quem entende uma REFERÊNCIA ("João 3:16", "Romanos 8") é
 `src/lib/domain/reference.ts`, client-safe: a tela do resumo usa para transformar

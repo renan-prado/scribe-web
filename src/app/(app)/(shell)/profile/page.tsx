@@ -17,6 +17,7 @@ import { PlanCard } from "@/features/billing/components/PlanCard";
 import { COIN_RING_REFERENCE } from "@/features/coins/pricing";
 import { ProfileFeedbackRow } from "@/features/feedback/components/ProfileFeedbackRow";
 import { REFERRAL_SIGNUP_COINS } from "@/features/referrals/economics";
+import { ProfileTranslationRow } from "@/features/session/components/ProfileTranslationRow";
 import { ProfileTourRow } from "@/features/tour/components/ProfileTourRow";
 import { isCurrentUserAdmin } from "@/lib/auth/require-admin";
 import { isCurrentUserPartner } from "@/lib/auth/require-partner";
@@ -216,7 +217,10 @@ export default async function ProfilePage() {
         <h2 className="mb-5 text-[11px] font-semibold uppercase tracking-wider text-scriba-ink-mute">
           Preferências
         </h2>
-        <div className="flex flex-col gap-5">
+        {/* `gap-6` e não `gap-5`: com a linha da Bíblia trazendo um parágrafo
+            de crédito abaixo dela, cinco linhas de respiro entre as três
+            deixavam a nota de uma encostada no rótulo da seguinte. */}
+        <div className="flex flex-col gap-6">
           {/* O switch de tema, DE VOLTA, e desta vez com a paleta junto.
 
               Ele saiu porque governava menos do que parecia: a moldura do app
@@ -232,6 +236,13 @@ export default async function ProfilePage() {
               que ela existe. Os dois ficam em sincronia pelo evento que o
               `useTheme` dispara. */}
           <ThemeToggleRow />
+          {/* A tradução da Bíblia. Fica nas Preferências, e não em "Informações
+              da conta", porque é uma ESCOLHA e não um dado: aquela lista é
+              nome, e-mail e data, três coisas que se leem. Ver
+              `ProfileTranslationRow` para os três níveis da decisão (padrão,
+              esta preferência, a citação) e para o crédito que a licença da
+              Bíblia Livre exige. */}
+          <ProfileTranslationRow current={profile.bibleTranslation} />
           {/* Caminho PERMANENTE para instalar: a faixa do topo do app pode ser
               dispensada para sempre, e é a única outra porta. Ela some sozinha
               onde não há o que oferecer, ver `InstallAppRow`. */}

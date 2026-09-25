@@ -151,7 +151,7 @@ export function InstallAppRow({ className }: { className?: string }) {
       <span className="flex size-9 flex-none items-center justify-center rounded-full bg-scriba-blue-soft text-scriba-blue-ink">
         {installed ? <Check className="size-4" /> : <Download className="size-4" />}
       </span>
-      <div className="flex min-w-0 flex-1 flex-col">
+      <div className="flex min-w-0 flex-1 flex-col gap-1">
         <span className="text-[11px] font-medium uppercase tracking-wider text-scriba-ink-mute">
           Aplicativo
         </span>

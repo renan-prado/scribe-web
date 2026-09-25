@@ -140,7 +140,7 @@ export function ThemeToggleRow({ className }: ThemeToggleProps) {
       <span className="flex size-9 flex-none items-center justify-center rounded-full bg-scriba-blue-soft text-scriba-blue-ink">
         {isDark ? <Moon aria-hidden className="size-4" /> : <Sun aria-hidden className="size-4" />}
       </span>
-      <div className="flex min-w-0 flex-1 flex-col">
+      <div className="flex min-w-0 flex-1 flex-col gap-1">
         <span className="text-[11px] font-medium uppercase tracking-wider text-scriba-ink-mute">
           Aparência
         </span>

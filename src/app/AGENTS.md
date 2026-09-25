@@ -487,7 +487,7 @@ que ninguém descobre sem ser avisado.
   comando —, e escolher CONVERTE o bloco preservando `text` (`convertBlock`).
 
 A lista do modo `convert` é mais curta, e cada ausência tem razão: o tipo que o
-bloco já é (escolhê-lo não faria nada), a Bíblia (o texto dela vem da NVI pela
+bloco já é (escolhê-lo não faria nada), a Bíblia (o texto dela vem da tradução da vez pela
 referência, virar passagem apagaria a frase escrita), a ideia central (não é
 bloco, é o campo do cabeçalho) e a conclusão fora da ÚLTIMA linha (nada vive
 abaixo do fecho). Numa linha VAZIA nada disso vale: sem texto a preservar, as
@@ -563,7 +563,7 @@ excluir. Ela continua no vão acima do bloco (`bottom-full`), 34px, MENOR que os
 **O FIO separa o que a linha É do que acontece com ela**, e ele só é desenhado
 quando há algo à esquerda dele. Ele era incondicional, e numa passagem — sem o
 `+`, porque ela não tem texto para virar outra coisa, e sem o marca-texto,
-porque o texto dela é da NVI — ficava sozinho na ponta da pílula, um traço
+porque o texto dela é da Bíblia — ficava sozinho na ponta da pílula, um traço
 perdido antes do primeiro botão.
 
 ### Arrastar um bloco (`useBlockDrag`, `BlockDragGhost`)
@@ -959,8 +959,11 @@ e logo abaixo Jó, Joel, Jonas e Josué.
 bíblica" no menu, e a palavra a mais descrevia o RECORTE numa fileira em que
 toda outra opção é uma palavra só; o tipo no jsonb continua `bibleQuote`.) O `PassagePicker` caminha livro →
 capítulo → versículos sobre `CHAPTER_VERSE_COUNTS`, então só é possível escolher
-o que existe, e o bloco nasce com `text` vazio: quem busca a NVI é o
-`PassageVerses`, como num bloco escrito pela IA. Guardar aqui uma cópia do texto
+o que existe, e o bloco nasce com `text` vazio: quem busca o texto é o
+`PassageVerses`, como num bloco escrito pela IA. **A pastilha ao lado da
+referência escolhe a TRADUÇÃO daquela citação**, e essa escolha é gravada no
+bloco (`translation`, opcional): ausente, a passagem segue a preferência de
+quem lê. Ver `src/features/session/AGENTS.md`. Guardar aqui uma cópia do texto
 bíblico seria uma segunda fonte para a mesma passagem.
 
 O editor monta o MESMO `PassageVerses`, e não um aviso de que o texto entra
@@ -1856,7 +1859,7 @@ cobra o minuto de gravação é o navegador, chamando `/api/coins/charge`. Sem o
 piso, um cliente que simplesmente não chamasse aquela rota transcrevia de graça
 com saldo zero. `requireBalance` lê o saldo que `requireAuth` já trouxe, então
 não custa consulta nenhuma. Rota que **não** chama modelo (`/api/verse`, que lê
-a NVI do disco) não precisa dele; `/api/hallucination-report` é a exceção
+a Bíblia do disco) não precisa dele; `/api/hallucination-report` é a exceção
 deliberada, o usuário está reportando um defeito NOSSO, e cortá-lo no saldo
 zero silenciaria justamente o aviso que queremos.
 
@@ -2140,9 +2143,11 @@ strict-origin-when-cross-origin` e um `Permissions-Policy` que libera
 `microphone=(self)` e `autoplay=(self)` (o keepalive de áudio silencioso
 precisa) e bloqueia câmera e geolocalização.
 
-`instrumentation.ts` aquece a NVI no boot do runtime Node para que a primeira
-chamada a `/api/verse` não pague o parse de 4 MB de JSON. É a ÚNICA tradução
-que o código lê, ver `src/lib/bibles/loader.ts` antes de adicionar outra.
+`instrumentation.ts` aquece a tradução PADRÃO no boot do runtime Node para que
+a primeira chamada a `/api/verse` não pague o parse de 4 MB de JSON. São três
+em disco e duas escolhíveis; aquecer todas dobraria a memória de cada instância
+para adiantar a minoria das leituras. Ver `src/lib/AGENTS.md`, "Bíblia", para
+quem pode ser escolhida e por que a NVI não pode.
 
 `public/sw.js` faz QUATRO coisas: existir (é requisito para o navegador nos
 tratar como PWA instalável), servir `public/offline.html` quando uma

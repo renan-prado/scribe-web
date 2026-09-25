@@ -1,3 +1,4 @@
+import type { TranslationId } from "@/lib/bibles/translations";
 import type { HallucinationReview } from "@/lib/domain/hallucination";
 import type { LexiconCard, LexiconIndexEntry } from "@/lib/domain/lexicon";
 import type { SessionMode } from "@/lib/domain/session";
@@ -198,13 +199,14 @@ export async function requestLocationSuggestions(q: string): Promise<EntitySugge
  * indistinguível de "esse versículo não existe".
  */
 export async function requestPassage(
-  reference: string
+  reference: string,
+  translation?: TranslationId
 ): Promise<{ ok: true; payload: PassagePayload } | { ok: false; message: string }> {
   try {
     const res = await fetch("/api/verse", {
       method: "POST",
       headers: { "content-type": "application/json" },
-      body: JSON.stringify({ reference }),
+      body: JSON.stringify(translation ? { reference, translation } : { reference }),
     });
     if (!res.ok) {
       const body = (await res.json().catch(() => ({}))) as { error?: string };
@@ -295,6 +297,25 @@ export async function reportLexiconEntry(input: { slug: string; note: string }):
       method: "POST",
       headers: { "content-type": "application/json" },
       body: JSON.stringify(input),
+    });
+    return res.ok;
+  } catch {
+    return false;
+  }
+}
+
+/**
+ * Grava a tradução bíblica preferida, ou `null` para voltar ao padrão do
+ * produto. Devolve `boolean` e não lança: quem chama é um controle do /profile,
+ * e um clique que não faz nada e não avisa é pior que um botão que não existe
+ * (a mesma régua de `resetTours`).
+ */
+export async function saveBibleTranslation(translation: TranslationId | null): Promise<boolean> {
+  try {
+    const res = await fetch("/api/profile/translation", {
+      method: "PUT",
+      headers: { "content-type": "application/json" },
+      body: JSON.stringify({ translation }),
     });
     return res.ok;
   } catch {

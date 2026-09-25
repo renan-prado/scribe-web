@@ -4,6 +4,8 @@ import {
   ArrowLeft,
   ArrowRight,
   ArrowUp,
+  Check,
+  ChevronDown,
   ChevronLeft,
   ChevronRight,
   Copy,
@@ -11,12 +13,25 @@ import {
 } from "lucide-react";
 import { useEffect, useMemo, useState } from "react";
 import { toast } from "sonner";
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuTrigger,
+} from "@/components/ui/dropdown-menu";
 import { BillingDialog } from "@/features/billing/components/BillingDialog";
 import { BibloBubble } from "@/features/session/components/BibloMessage";
 import { VerseLines } from "@/features/session/components/PassageVerses";
+import { TranslationCredit } from "@/features/session/components/TranslationCredit";
+import { useResolvedTranslation } from "@/features/session/components/TranslationScope";
 import { useBibleSearch } from "@/features/session/hooks/useBibleSearch";
 import { useVerseFetch } from "@/features/session/hooks/useVerseFetch";
 import { BOOK_CANON, chapterCountFor, normalizeBookName } from "@/lib/bibles/books";
+import {
+  SELECTABLE_TRANSLATIONS,
+  TRANSLATIONS,
+  type TranslationId,
+} from "@/lib/bibles/translations";
 import {
   BIBLE_SEARCH_MAX_QUESTION_CHARS,
   type BibleSearchPassage,
@@ -147,7 +162,17 @@ export function BibleReader({ className, initialBook, initialChapter }: Props) {
 
   const chapterCount = book ? chapterCountFor(book) : 0;
   const reference = book && chapter ? `${book} ${chapter}` : null;
-  const state = useVerseFetch(reference);
+  // A tradução do LEITOR, local a esta gaveta. Ela não grava nada, pela mesma
+  // razão da pastilha de uma citação (ver `BibleQuoteBlock`): aqui a pergunta é
+  // "como está nesta outra?", feita no meio de uma leitura. Quem quer que a
+  // escolha valha sempre a faz no /profile, e é de lá que vem o estado inicial,
+  // pelo `TranslationScope`.
+  //
+  // Ela SOBREVIVE a fechar a gaveta porque o `BibleDock` a mantém montada
+  // (`keepMounted`), que é o mesmo motivo pelo qual o capítulo aberto fica.
+  const [chosenTranslation, setChosenTranslation] = useState<TranslationId | null>(null);
+  const readerTranslation = useResolvedTranslation(chosenTranslation ?? undefined);
+  const state = useVerseFetch(reference, readerTranslation);
 
   const go = (delta: number) => {
     if (!chapter) return;
@@ -272,6 +297,43 @@ export function BibleReader({ className, initialBook, initialChapter }: Props) {
         <span className="flex-1 truncate text-[14px] font-normal text-v2-ink">
           {chapter ? `${book} ${chapter}` : book}
         </span>
+        {/* A tradução, à esquerda das setas de capítulo: ela é do TEXTO que
+            está na tela, e as setas são de navegação. Só a sigla, porque esta
+            gaveta tem 380px no desktop e menos no celular, e o nome inteiro
+            comeria o título do capítulo. */}
+        <DropdownMenu>
+          <DropdownMenuTrigger
+            aria-label={`Tradução: ${TRANSLATIONS[readerTranslation].name}. Trocar.`}
+            title="Trocar a tradução"
+            className="inline-flex shrink-0 items-center gap-1 rounded-full px-2.5 py-1.5 text-[10px] font-semibold uppercase tracking-wider text-v2-ink-mute transition-colors hover:bg-v2-card-hover hover:text-v2-ink focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-v2-ink-mute"
+          >
+            {TRANSLATIONS[readerTranslation].short}
+            <ChevronDown aria-hidden className="size-3" />
+          </DropdownMenuTrigger>
+          <DropdownMenuContent align="end" className="w-72">
+            {SELECTABLE_TRANSLATIONS.map((option) => (
+              <DropdownMenuItem
+                key={option.id}
+                onClick={() => setChosenTranslation(option.id)}
+                className="items-start gap-2.5"
+              >
+                <Check
+                  aria-hidden
+                  className={cn(
+                    "mt-0.5 size-3.5 flex-none",
+                    option.id === readerTranslation ? "opacity-100" : "opacity-0"
+                  )}
+                />
+                <span className="flex min-w-0 flex-col gap-0.5">
+                  <span className="font-medium">{option.name}</span>
+                  <span className="text-xs font-light leading-snug text-muted-foreground">
+                    {option.hint}
+                  </span>
+                </span>
+              </DropdownMenuItem>
+            ))}
+          </DropdownMenuContent>
+        </DropdownMenu>
         {chapter ? (
           <>
             <button
@@ -314,7 +376,22 @@ export function BibleReader({ className, initialBook, initialChapter }: Props) {
             ))}
           </div>
         ) : state.status === "ok" && state.verses.length > 0 ? (
-          <VerseLines verses={state.verses} />
+          <>
+            <VerseLines verses={state.verses} />
+            {/* O crédito da licença, no fim do capítulo, dentro da rolagem: ele
+                credita o texto acima dele, e uma faixa fixa no rodapé desta
+                gaveta cobraria três linhas de altura de toda leitura. Só
+                aparece com texto na tela, e só para tradução que o exige. */}
+            {/* Os tokens `v2-*` no lugar dos `scriba-*` do componente: esta
+                gaveta é escrita no vocabulário do v2, e `twMerge` deixa a
+                classe passada aqui vencer. Os dois pares são equivalentes nos
+                dois temas (ver `globals.css`), então é sobre ler igual ao
+                arquivo em volta, não sobre a cor mudar. */}
+            <TranslationCredit
+              translation={readerTranslation}
+              className="mr-1 mb-2 ml-3 border-v2-card-hover text-v2-ink-mute/80"
+            />
+          </>
         ) : state.status === "error" || state.status === "ok" ? (
           <p className="px-3 py-6 text-center text-[13px] font-light text-v2-ink-mute">
             Não consegui buscar este capítulo agora. Confira sua conexão e tente de novo.

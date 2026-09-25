@@ -2,8 +2,10 @@
 
 import { queryOptions, useQuery, useQueryClient } from "@tanstack/react-query";
 import { useCallback } from "react";
+import { useResolvedTranslation } from "@/features/session/components/TranslationScope";
 import { requestPassage } from "@/features/session/lib/api";
 import type { VerseFetchState } from "@/features/session/types";
+import { DEFAULT_TRANSLATION, type TranslationId } from "@/lib/bibles/translations";
 import type { PassagePayload } from "@/lib/domain/verse";
 
 /**
@@ -15,11 +17,18 @@ import type { PassagePayload } from "@/lib/domain/verse";
  * uma entrada por versículo e uma requisição por entrada, sete chamadas para
  * essa referência, e um estudo com muitas passagens estourava o rate limit.
  */
-export function passageQueryOptions(reference: string) {
+export function passageQueryOptions(
+  reference: string,
+  translation: TranslationId = DEFAULT_TRANSLATION
+) {
   return queryOptions<PassagePayload>({
-    queryKey: ["passage", reference] as const,
+    // A TRADUÇÃO entra na chave, e não é enfeite: sem ela o mesmo "João 3:16"
+    // guardado numa tradução seria servido em todas as outras, e trocar a
+    // tradução de um bloco devolveria o texto antigo de um cache com
+    // `staleTime` infinito — o mesmo cache que o servidor semeia.
+    queryKey: ["passage", translation, reference] as const,
     queryFn: async () => {
-      const result = await requestPassage(reference);
+      const result = await requestPassage(reference, translation);
       if (!result.ok) throw new Error(result.message);
       return result.payload;
     },
@@ -36,22 +45,31 @@ export function passageQueryOptions(reference: string) {
  */
 export function useVersePrefetcher() {
   const queryClient = useQueryClient();
+  const translation = useResolvedTranslation();
   return useCallback(
     (reference: string) => {
-      void queryClient.prefetchQuery(passageQueryOptions(reference));
+      void queryClient.prefetchQuery(passageQueryOptions(reference, translation));
     },
-    [queryClient]
+    [queryClient, translation]
   );
 }
 
 /**
- * O texto de uma passagem. Sempre NVI (ver `/api/verse`). Uma chamada por
- * passagem, com todos os versículos dela.
+ * O texto de uma passagem. Uma chamada por passagem, com todos os versículos
+ * dela.
+ *
+ * Sem o segundo argumento, na tradução de quem está lendo (ver
+ * `TranslationScope`); com ele, na tradução daquela citação. É por aqui que
+ * "este versículo em Almeida, o resto como sempre" atravessa a árvore inteira.
  */
-export function useVerseFetch(reference: string | null): VerseFetchState {
+export function useVerseFetch(
+  reference: string | null,
+  translation?: TranslationId
+): VerseFetchState {
+  const resolved = useResolvedTranslation(translation);
   const query = useQuery({
     ...(reference !== null
-      ? passageQueryOptions(reference)
+      ? passageQueryOptions(reference, resolved)
       : { queryKey: ["passage", "__idle__"] as const, queryFn: async () => null as never }),
     enabled: reference !== null,
   });

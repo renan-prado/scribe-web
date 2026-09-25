@@ -13,6 +13,8 @@ import {
 } from "@/components/ui/dialog";
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/components/ui/tooltip";
 import { VerseLines } from "@/features/session/components/PassageVerses";
+import { TranslationCredit } from "@/features/session/components/TranslationCredit";
+import { useResolvedTranslation } from "@/features/session/components/TranslationScope";
 import { useVerseFetch } from "@/features/session/hooks/useVerseFetch";
 import {
   abbrevFor,
@@ -21,6 +23,7 @@ import {
   chapterVerseCount,
   normalizeBookName,
 } from "@/lib/bibles/books";
+import type { TranslationId } from "@/lib/bibles/translations";
 import { parseVerseReference } from "@/lib/domain/reference";
 import type { VerseLine } from "@/lib/domain/verse";
 import { cn } from "@/lib/utils";
@@ -275,6 +278,11 @@ export function PassagePicker({ open, onOpenChange, onPick, initialReference }: 
    */
   const chapterReference = step === "verse" && book && chapter ? `${book} ${chapter}` : null;
   const passage = useVerseFetch(chapterReference);
+  // A prévia é lida na tradução de quem está montando o bloco, que é a mesma
+  // que `useVerseFetch` acabou de usar (ele cai no contexto quando ninguém
+  // passa nada). O crédito tem de falar da tradução que está na TELA, não da
+  // padrão do produto.
+  const previewTranslation = useResolvedTranslation();
   const previewVerses =
     passage.status === "ok"
       ? picked
@@ -476,7 +484,11 @@ export function PassagePicker({ open, onOpenChange, onPick, initialReference }: 
                 se TOCA e o que está abaixo se LÊ, e duas listas encostadas num
                 fio apertado continuariam parecendo uma coisa só. */}
             <div aria-hidden className="my-4 h-px w-full shrink-0 bg-scriba-hairline" />
-            <Preview state={passage.status} verses={previewVerses} />
+            <Preview
+              state={passage.status}
+              verses={previewVerses}
+              translation={previewTranslation}
+            />
           </div>
         ) : null}
 
@@ -627,14 +639,24 @@ function Hint({
 function Preview({
   state,
   verses,
+  translation,
 }: {
   state: "idle" | "loading" | "ok" | "error";
   verses: VerseLine[];
+  translation: TranslationId;
 }) {
   return (
     <div className="max-h-[28vh] min-h-24 overflow-y-auto">
       {state === "ok" && verses.length > 0 ? (
-        <VerseLines muted verses={verses} />
+        <>
+          <VerseLines muted verses={verses} />
+          {/* O crédito da licença, DENTRO da rolagem e depois do último
+              versículo: ele credita o texto que está acima dele, e fora da
+              área rolável seria uma faixa fixa de três linhas num diálogo que
+              já disputa altura com a grade de números. Só existe quando há
+              texto na tela — sem versículo não há reprodução a creditar. */}
+          <TranslationCredit translation={translation} className="mr-1 ml-3" />
+        </>
       ) : state === "error" || (state === "ok" && verses.length === 0) ? (
         <p className="px-1 py-4 text-center text-scriba-ink-mute text-sm">
           Não consegui carregar o texto agora. Dá para escolher assim mesmo.

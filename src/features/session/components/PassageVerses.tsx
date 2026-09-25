@@ -1,6 +1,7 @@
 "use client";
 
 import { useVerseFetch } from "@/features/session/hooks/useVerseFetch";
+import type { TranslationId } from "@/lib/bibles/translations";
 import { formatPassageRange } from "@/lib/domain/reference";
 import type { VerseLine } from "@/lib/domain/verse";
 import { cn } from "@/lib/utils";
@@ -36,6 +37,11 @@ type PassageVersesProps = {
   chapter: number;
   startVerse: number;
   endVerse: number;
+  /**
+   * A tradução DESTA passagem. Ausente = a de quem está lendo, que é o caso
+   * de quase toda citação; ver `TranslationScope`.
+   */
+  translation?: TranslationId;
 };
 
 /**
@@ -87,10 +93,16 @@ export function VerseLines({ verses, muted = false }: { verses: VerseLine[]; mut
 
 const SKELETON_WIDTHS = ["w-full", "w-[92%]", "w-[97%]", "w-[85%]", "w-[95%]"];
 
-export function PassageVerses({ bookDisplay, chapter, startVerse, endVerse }: PassageVersesProps) {
+export function PassageVerses({
+  bookDisplay,
+  chapter,
+  startVerse,
+  endVerse,
+  translation,
+}: PassageVersesProps) {
   const reference = formatPassageRange(bookDisplay, chapter, startVerse, endVerse);
 
-  const state = useVerseFetch(reference);
+  const state = useVerseFetch(reference, translation);
 
   if (state.status === "ok") return <VerseLines verses={state.verses} />;
 

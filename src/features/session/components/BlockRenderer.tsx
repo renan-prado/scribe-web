@@ -1,7 +1,7 @@
 import { Info } from "lucide-react";
 import { BookGlyph } from "@/components/icons/BookGlyph";
+import { BibleQuoteBlock } from "@/features/session/components/BibleQuoteBlock";
 import { ChapterMention } from "@/features/session/components/ChapterMention";
-import { PassageVerses } from "@/features/session/components/PassageVerses";
 import { RichText } from "@/features/session/components/RichText";
 import { parseVerseReference } from "@/lib/domain/reference";
 import { listItems, type SummaryBlock } from "@/lib/domain/summary";
@@ -134,6 +134,23 @@ export function BlockRenderer({ block }: { block: SummaryBlock }) {
         return <ChapterMention reference={block.reference} />;
       }
 
+      // Com FAIXA, o cartão é cliente: a pastilha troca a tradução daquela
+      // citação no ato (ver `BibleQuoteBlock`). Sem faixa não há o que trocar
+      // — o texto é o que a pessoa digitou, não o que a Bíblia diz —, e o
+      // cartão continua sendo markup de servidor.
+      if (hasRange) {
+        return (
+          <BibleQuoteBlock
+            reference={block.reference}
+            bookDisplay={parsed.bookDisplay}
+            chapter={parsed.chapter}
+            startVerse={parsed.startVerse as number}
+            endVerse={parsed.endVerse as number}
+            blockTranslation={block.translation}
+          />
+        );
+      }
+
       return (
         <figure className="relative flex flex-col gap-3.5 rounded-[26px] p-6 animate-insight-gradient bg-[image:var(--session-surface-quote)] bg-[size:200%_100%]">
           <figcaption>
@@ -142,20 +159,9 @@ export function BlockRenderer({ block }: { block: SummaryBlock }) {
               {block.reference}
             </span>
           </figcaption>
-          {hasRange ? (
-            <div className="text-[17px] font-light leading-relaxed text-session-verse-text">
-              <PassageVerses
-                bookDisplay={parsed.bookDisplay}
-                chapter={parsed.chapter}
-                startVerse={parsed.startVerse as number}
-                endVerse={parsed.endVerse as number}
-              />
-            </div>
-          ) : (
-            <blockquote className="text-[17px] font-light leading-relaxed text-session-verse-text">
-              {block.text}
-            </blockquote>
-          )}
+          <blockquote className="text-[17px] font-light leading-relaxed text-session-verse-text">
+            {block.text}
+          </blockquote>
         </figure>
       );
     }

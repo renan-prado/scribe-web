@@ -2,6 +2,7 @@ import { NextResponse } from "next/server";
 import { z } from "zod";
 import { loadBible } from "@/lib/bibles/loader";
 import { lookupPassage } from "@/lib/bibles/lookup";
+import { parseTranslation, TRANSLATION_IDS } from "@/lib/bibles/translations";
 import { parseVerseReference } from "@/lib/domain/reference";
 import type { PassagePayload, VerseResponse } from "@/lib/domain/verse";
 import { parseJsonBody } from "@/lib/http/validate";
@@ -36,6 +37,16 @@ const BodySchema = z
   .object({
     reference: ReferenceSchema.optional(),
     references: z.array(ReferenceSchema).max(24).optional(),
+    // A tradução do LOTE inteiro. Uma por chamada, e não uma por referência:
+    // quem pede um lote é a página, que resolve tudo na preferência de quem
+    // lê; a citação com tradução própria é uma passagem só e vira a sua
+    // própria chamada, com a sua própria chave de cache.
+    //
+    // `parseTranslation` cai no padrão em silêncio para id desconhecido e
+    // para a NVI, que não é escolhível por licença — recusar a requisição
+    // trocaria um versículo certo por um buraco na tela por causa de uma
+    // string velha no jsonb.
+    translation: z.enum(TRANSLATION_IDS).optional(),
   })
   .strict()
   .refine((b) => b.reference != null || b.references != null, {
@@ -68,9 +79,10 @@ export async function POST(request: Request) {
     return NextResponse.json({ error: "empty reference" }, { status: 400 });
   }
 
-  const bible = await loadBible();
+  const translation = parseTranslation(parsed.data.translation);
+  const bible = await loadBible(translation);
   if (!bible) {
-    log.warn("miss", { reason: "translation-file-missing" });
+    log.warn("miss", { reason: "translation-file-missing", translation });
     return NextResponse.json({ passages: [] } satisfies VerseResponse);
   }
 
@@ -98,6 +110,7 @@ export async function POST(request: Request) {
       reference,
       book: ref.bookDisplay,
       chapter: ref.chapter,
+      translation,
       verses,
     });
   }
@@ -108,7 +121,7 @@ export async function POST(request: Request) {
     // ao livro com nome fora do mapa de abreviações.
     log.warn("referências não resolvidas", { missed: missed.join(" | ") });
   }
-  log.debug("ok", { pedidas: requested.length, resolvidas: passages.length });
+  log.debug("ok", { pedidas: requested.length, resolvidas: passages.length, translation });
 
   return NextResponse.json({ passages } satisfies VerseResponse);
 }

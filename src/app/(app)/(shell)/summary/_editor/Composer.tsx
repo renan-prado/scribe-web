@@ -1,6 +1,7 @@
 "use client";
 
 import {
+  Check,
   ChevronDown,
   ChevronUp,
   GripVertical,
@@ -26,6 +27,12 @@ import {
 } from "react";
 import { createPortal } from "react-dom";
 import { BookGlyph } from "@/components/icons/BookGlyph";
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuTrigger,
+} from "@/components/ui/dropdown-menu";
 import { BibleDock } from "@/features/session/components/BibleDock";
 import { BibloDock, type BibloDockHandle } from "@/features/session/components/BibloDock";
 import { EntityFieldDialog } from "@/features/session/components/EntityFieldDialog";
@@ -36,6 +43,7 @@ import { useUnloadGuard } from "@/features/session/hooks/useUnloadGuard";
 import { requestLocationSuggestions, requestSpeakerSuggestions } from "@/features/session/lib/api";
 import { normalizeSearch } from "@/features/session/lib/search";
 import { initialsOf } from "@/features/session/lib/text";
+import { SELECTABLE_TRANSLATIONS, TRANSLATIONS } from "@/lib/bibles/translations";
 import {
   applyDisplayEdit,
   hasMark,
@@ -2657,6 +2665,75 @@ function BlockBody({
       </button>
     );
 
+    /**
+     * A TRADUÇÃO desta citação, e aqui ela é GRAVADA no bloco.
+     *
+     * É a diferença entre este chip e o gêmeo da leitura (`BibleQuoteBlock`):
+     * lá a troca vale para aquela leitura e morre com a página, porque quem lê
+     * pode não ser quem escreveu; aqui quem está mexendo é o dono do texto, e a
+     * escolha viaja no jsonb — "esta passagem em Almeida" continua em Almeida
+     * para todo mundo que abrir o resumo, inclusive por link.
+     *
+     * "Padrão" grava a AUSÊNCIA do campo, e não o id da tradução padrão: um
+     * bloco sem escolha segue a preferência de quem lê, e é esse o estado em
+     * que nasce toda citação. Gravar "BLIVRE" ali congelaria a passagem numa
+     * tradução que ninguém escolheu.
+     */
+    const translationChip = (
+      <DropdownMenu>
+        <DropdownMenuTrigger
+          onClick={onFocus}
+          aria-label={`Tradução da passagem do bloco ${index + 1}`}
+          title="Trocar a tradução desta passagem"
+          className="veil-chip inline-flex shrink-0 items-center gap-1.5 whitespace-nowrap rounded-full px-3 py-1.5 font-semibold text-[10px] uppercase tracking-wider transition-opacity hover:opacity-85 focus-visible:ring-2 focus-visible:ring-ring/40 focus-visible:outline-none"
+        >
+          {block.translation ? TRANSLATIONS[block.translation].short : "Padrão"}
+          <ChevronDown aria-hidden className="size-3" />
+        </DropdownMenuTrigger>
+        <DropdownMenuContent align="start" className="w-64">
+          <DropdownMenuItem
+            onClick={() => onChange({ translation: undefined })}
+            className="items-start gap-2.5"
+          >
+            <Check
+              aria-hidden
+              className={cn(
+                "mt-0.5 size-3.5 flex-none",
+                block.translation ? "opacity-0" : "opacity-100"
+              )}
+            />
+            <span className="flex min-w-0 flex-col gap-0.5">
+              <span className="font-medium">Padrão</span>
+              <span className="font-light text-muted-foreground text-xs leading-snug">
+                Selecione sua tradução preferida como padrão no seu perfil
+              </span>
+            </span>
+          </DropdownMenuItem>
+          {SELECTABLE_TRANSLATIONS.map((option) => (
+            <DropdownMenuItem
+              key={option.id}
+              onClick={() => onChange({ translation: option.id })}
+              className="items-start gap-2.5"
+            >
+              <Check
+                aria-hidden
+                className={cn(
+                  "mt-0.5 size-3.5 flex-none",
+                  block.translation === option.id ? "opacity-100" : "opacity-0"
+                )}
+              />
+              <span className="flex min-w-0 flex-col gap-0.5">
+                <span className="font-medium">{option.name}</span>
+                <span className="font-light text-muted-foreground text-xs leading-snug">
+                  {option.hint}
+                </span>
+              </span>
+            </DropdownMenuItem>
+          ))}
+        </DropdownMenuContent>
+      </DropdownMenu>
+    );
+
     // Sem faixa de versículos não há o que citar, e a leitura desenha a MENÇÃO
     // (uma pastilha solta, `ChapterMention`) em vez da moldura vazia. Aqui vale
     // o mesmo: a moldura em volta de nada era o que o `BlockRenderer` recusa a
@@ -2666,7 +2743,13 @@ function BlockBody({
 
     return (
       <figure className="animate-insight-gradient relative flex flex-col gap-3.5 rounded-[26px] bg-[image:var(--session-surface-quote)] bg-[size:200%_100%] p-6">
-        <figcaption>{chip}</figcaption>
+        {/* Duas pastilhas na mesma linha, e elas trocam coisas diferentes: a
+            primeira, QUAL passagem; a segunda, em qual tradução. `flex-wrap`
+            porque no celular "1 Coríntios 13:1-13" já ocupa a largura toda. */}
+        <figcaption className="flex flex-wrap items-center gap-2">
+          {chip}
+          {translationChip}
+        </figcaption>
         {/* O texto da NVI, buscado pelo MESMO `PassageVerses` da leitura.
             Mostrar aqui um aviso de que "a passagem entra depois" era pedir fé
             num bloco que é o único do editor sem nada para digitar: escolhida a
@@ -2680,6 +2763,7 @@ function BlockBody({
             chapter={parsed.chapter}
             startVerse={parsed.startVerse as number}
             endVerse={parsed.endVerse as number}
+            translation={block.translation}
           />
         </div>
       </figure>

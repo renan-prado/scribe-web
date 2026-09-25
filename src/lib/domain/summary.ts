@@ -1,4 +1,5 @@
 import { z } from "zod";
+import { TRANSLATION_IDS } from "@/lib/bibles/translations";
 
 /**
  * Os blocos do sermão organizado. TODOS carregam a voz do pregador, editada
@@ -21,7 +22,18 @@ export const SummaryBlockSchema = z.discriminatedUnion("type", [
   // item: ver o cabeçalho de `WRITTEN_BLOCK_TYPES`.
   z.object({ type: z.literal("bulletList"), text: z.string() }),
   z.object({ type: z.literal("orderedList"), text: z.string() }),
-  z.object({ type: z.literal("bibleQuote"), reference: z.string(), text: z.string() }),
+  // `translation` é a tradução ESCOLHIDA para esta citação, e é opcional
+  // porque quase nenhuma tem: sem ela vale a preferência da pessoa, e sem
+  // preferência vale o padrão (ver `lib/bibles/translations.ts`). Guardar a
+  // escolha no BLOCO, e não numa preferência global, é o que faz "este
+  // versículo em Almeida, o resto como sempre" sobreviver ao reload e ao
+  // link compartilhado.
+  z.object({
+    type: z.literal("bibleQuote"),
+    reference: z.string(),
+    text: z.string(),
+    translation: z.enum(TRANSLATION_IDS).optional(),
+  }),
   z.object({ type: z.literal("highlight"), text: z.string() }),
   // `title` é o rótulo do cartão na tela — ausente ou vazio cai no padrão
   // "Informação" (ver `BLOCK_OPTIONS.example` em `blocks.tsx`). O tipo no
@@ -103,7 +115,19 @@ export function parseSummaryFromLLM(content: string, phase: SummaryPhase): Summa
       }
       case "bibleQuote": {
         const reference = typeof rec.reference === "string" ? rec.reference.trim() : "";
-        if (reference) blocks.push({ type: "bibleQuote", reference, text });
+        // A tradução só entra no bloco se for uma do REGISTRO. Um `id`
+        // desconhecido some aqui e o bloco volta a seguir a preferência de
+        // quem lê. O caso garantido é "NVI", gravado por nenhuma tela mas
+        // possível em jsonb antigo, e é justamente o que não pode passar: ela
+        // saiu do registro por licença.
+        const chosen = TRANSLATION_IDS.find((id) => id === rec.translation);
+        if (reference) {
+          blocks.push(
+            chosen
+              ? { type: "bibleQuote", reference, text, translation: chosen }
+              : { type: "bibleQuote", reference, text }
+          );
+        }
         break;
       }
       case "quote": {
@@ -220,8 +244,11 @@ const WrittenBlockSchema = z.discriminatedUnion("type", [
   z.object({
     type: z.literal("bibleQuote"),
     reference: z.string().max(WRITTEN_LIMITS.reference),
+    /** A tradução desta citação. Ausente = a preferência de quem lê. */
+    translation: z.enum(TRANSLATION_IDS).optional(),
     // Vazio, e é assim de propósito: com uma faixa de versículos o
-    // `BlockRenderer` IGNORA `text` e busca a NVI na hora de ler. Guardar uma
+    // `BlockRenderer` IGNORA `text` e busca a tradução da vez na hora de ler
+    // (a do bloco, a de quem lê, ou o padrão). Guardar uma
     // cópia do texto bíblico no jsonb seria uma segunda fonte para a mesma
     // passagem, que envelhece sozinha.
     text: z.string().max(WRITTEN_LIMITS.blockText),
