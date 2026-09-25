@@ -1,5 +1,8 @@
 import "server-only";
-import { FINAL_SUMMARY_SYSTEM_PROMPT } from "@/features/session/server/prompts/final-summary";
+import {
+  FINAL_SUMMARY_NO_VERSE_TEXT_RETRY,
+  FINAL_SUMMARY_SYSTEM_PROMPT,
+} from "@/features/session/server/prompts/final-summary";
 import { recordChatUsage, type UsageRoute } from "@/lib/db/usage";
 import { parseSummaryFromLLM, type SummaryPayload } from "@/lib/domain/summary";
 import { serverEnv } from "@/lib/env/server";
@@ -12,7 +15,6 @@ import { createLogger } from "@/lib/log";
  * curated feed items. Used by:
  *   - POST /api/final-summary          (first pass, right after stop)
  *   - POST /api/final-summary/reprocess (re-run on a saved session)
- *   - POST /api/final-summary/from-transcript
  *   - a importação do YouTube (`lib/youtube/*`)
  *
  * **É UMA chamada só.** Havia uma segunda, o "enriquecimento", que recebia os
@@ -33,7 +35,18 @@ export type GenerateFinalSummarySuccess = {
 
 export type GenerateFinalSummaryError =
   | { ok: false; kind: "fetch"; message: string }
-  | { ok: false; kind: "upstream"; message: string; status: number; latencyMs: number };
+  | { ok: false; kind: "upstream"; message: string; status: number; latencyMs: number }
+  /**
+   * O modelo respondeu 200 e o que veio não tem UM bloco. JSON truncado pelo
+   * filtro de conteúdo do provedor, refusal, ou um objeto de outra forma.
+   *
+   * **Isto já foi um `ok: true`**, e era o pior desfecho do produto: o payload
+   * vazio ia para o banco por cima da sessão, a rota devolvia 200, e quem
+   * pagou ficava com uma tela em esqueleto para sempre. Uma sessão vale mais
+   * sem resumo (com a transcrição salva e o "Gerar novamente" à mão) do que
+   * com um resumo de zero blocos gravado como se tivesse dado certo.
+   */
+  | { ok: false; kind: "empty"; message: string; latencyMs: number };
 
 export type GenerateFinalSummaryResult = GenerateFinalSummarySuccess | GenerateFinalSummaryError;
 
@@ -61,22 +74,24 @@ export type GenerateFinalSummaryInput = {
   >;
 };
 
-export async function generateFinalSummary(
-  input: GenerateFinalSummaryInput
-): Promise<GenerateFinalSummaryResult> {
-  const { userId, sessionId, transcript, notes, logPrefix, metadataRoute } = input;
-  const log = createLogger(logPrefix);
-  const model = serverEnv.OPENAI_FINAL_SUMMARY_MODEL;
-
-  const trimmedNotes = notes?.trim();
-  const userMessage = trimmedNotes
-    ? `transcript:
-${transcript}
-
-notas do ouvinte:
-${trimmedNotes}`
-    : `transcript:
-${transcript}`;
+/**
+ * Uma tentativa: a chamada, o parse, o log e o registro de uso. Sempre grava
+ * `llm_usage_events`, inclusive quando o payload volta vazio, porque o
+ * provedor cobra a chamada cortada igual, e um custo que não aparece no
+ * `/admin/usage` é um custo que ninguém acha depois.
+ */
+async function attemptFinalSummary(params: {
+  input: GenerateFinalSummaryInput;
+  log: ReturnType<typeof createLogger>;
+  model: string;
+  systemPrompt: string;
+  userMessage: string;
+}): Promise<
+  | { ok: true; payload: SummaryPayload; finishReason: string; latencyMs: number }
+  | GenerateFinalSummaryError
+> {
+  const { input, log, model, systemPrompt, userMessage } = params;
+  const { userId, sessionId, metadataRoute } = input;
 
   const result = await callChat({
     model,
@@ -90,7 +105,7 @@ ${transcript}`;
     timeoutMs: 180_000,
     responseFormat: { type: "json_object" },
     messages: [
-      { role: "system", content: FINAL_SUMMARY_SYSTEM_PROMPT },
+      { role: "system", content: systemPrompt },
       { role: "user", content: userMessage },
     ],
     store: true,
@@ -143,5 +158,96 @@ ${transcript}`;
     latencyMs,
   });
 
-  return { ok: true, payload, latencyMs, model };
+  return { ok: true, payload, finishReason, latencyMs };
+}
+
+/**
+ * ## A SEGUNDA tentativa, e por que ela existe
+ *
+ * Um payload de ZERO blocos nunca serve para nada: ele é gravado por cima da
+ * sessão, a pessoa já pagou, e a tela não tem o que desenhar. Então vale mais
+ * uma segunda chamada do que devolver aquilo, e é o que acontece aqui, uma
+ * vez só.
+ *
+ * O que a segunda tentativa MUDA depende do motivo da primeira ter voltado
+ * vazia, e há um motivo que uma repetição igual nunca resolveria:
+ *
+ *   - `finish_reason: "content_filter"` → o filtro do provedor cortou a
+ *     resposta no meio, e isso é DETERMINÍSTICO: a mesma transcrição morre no
+ *     mesmo token quantas vezes se tente. A segunda vai com
+ *     `FINAL_SUMMARY_NO_VERSE_TEXT_RETRY`, que tira do caminho o único trecho
+ *     que o filtro leu errado nos casos vistos, o texto do versículo. Ver o
+ *     cabeçalho daquela constante para o caso que revelou isso.
+ *   - qualquer outro motivo (JSON de outra forma, objeto sem `blocks`) → a
+ *     segunda é a MESMA chamada, porque ali a variação de amostragem é o que
+ *     pode salvar, e estreitar o prompt só pioraria o resumo.
+ *
+ * Se a segunda também vier vazia, a rota recebe `kind: "empty"` e NÃO grava
+ * nada. É o que dá à pessoa a transcrição intacta e um "Gerar novamente" que
+ * pode dar certo, em vez de um resumo de zero blocos carimbado como sucesso.
+ */
+export async function generateFinalSummary(
+  input: GenerateFinalSummaryInput
+): Promise<GenerateFinalSummaryResult> {
+  const { transcript, notes, logPrefix } = input;
+  const log = createLogger(logPrefix);
+  const model = serverEnv.OPENAI_FINAL_SUMMARY_MODEL;
+
+  const trimmedNotes = notes?.trim();
+  const userMessage = trimmedNotes
+    ? `transcript:
+${transcript}
+
+notas do ouvinte:
+${trimmedNotes}`
+    : `transcript:
+${transcript}`;
+
+  const first = await attemptFinalSummary({
+    input,
+    log,
+    model,
+    systemPrompt: FINAL_SUMMARY_SYSTEM_PROMPT,
+    userMessage,
+  });
+  if (!first.ok) return first;
+  if (first.payload.blocks.length > 0) {
+    return { ok: true, payload: first.payload, latencyMs: first.latencyMs, model };
+  }
+
+  const filtered = first.finishReason === "content_filter";
+  log.warn(`resumo vazio, tentando de novo`, {
+    finishReason: first.finishReason,
+    // `true` = a segunda vai pedir `bibleQuote` sem texto. É por este campo
+    // que se mede se o filtro do provedor está cortando resumo em produção.
+    withoutVerseText: filtered,
+  });
+
+  const second = await attemptFinalSummary({
+    input,
+    log,
+    model,
+    systemPrompt: filtered
+      ? FINAL_SUMMARY_SYSTEM_PROMPT + FINAL_SUMMARY_NO_VERSE_TEXT_RETRY
+      : FINAL_SUMMARY_SYSTEM_PROMPT,
+    userMessage,
+  });
+  if (!second.ok) return second;
+
+  const latencyMs = first.latencyMs + second.latencyMs;
+  if (second.payload.blocks.length > 0) {
+    log.info(`resumo salvo na segunda tentativa`, { withoutVerseText: filtered, latencyMs });
+    return { ok: true, payload: second.payload, latencyMs, model };
+  }
+
+  log.error(`resumo vazio nas duas tentativas`, {
+    finishReason: second.finishReason,
+    withoutVerseText: filtered,
+  });
+  return {
+    ok: false,
+    kind: "empty",
+    message: `resumo vazio nas duas tentativas (finish_reason=${first.finishReason}/${second.finishReason})`,
+    latencyMs,
+  };
 }

@@ -19,10 +19,11 @@ export const dynamic = "force-dynamic";
  * POST /api/final-summary/reprocess
  *
  * Re-runs the final-summary LLM chain on an already-saved session, using the
- * transcript and curated feed items already stored on the row. Overwrites the
- * previous final_summary payload. Costs `reprocess_summary` coins, charged
- * before the LLM call, following the same pattern as /api/deepening (a 402
- * here means the account is dry; downstream LLM failures do not refund).
+ * transcript already stored on the row. Overwrites the previous final_summary
+ * payload, ou ESCREVE o primeiro quando a sessão ficou sem nenhum (o resumo
+ * falhou na gravação ou na importação). Costs `reprocess_summary` coins,
+ * charged before the LLM call, following the same pattern as /api/deepening (a
+ * 402 here means the account is dry; downstream LLM failures do not refund).
  */
 export async function POST(request: Request) {
   const auth = await requireAuth();
@@ -39,9 +40,18 @@ export async function POST(request: Request) {
   if (!session) {
     return NextResponse.json({ error: "session_not_found" }, { status: 404 });
   }
-  if (!session.finalSummary) {
-    return NextResponse.json({ error: "session_not_finalized" }, { status: 409 });
-  }
+  // A TRANSCRIÇÃO é a única precondição, e é ela que diz que a sessão está
+  // parada: durante uma gravação a linha existe com a transcrição vazia, e ela
+  // só é escrita no stop (ou no fim da importação).
+  //
+  // Aqui havia uma segunda guarda, `if (!session.finalSummary) → 409
+  // session_not_finalized`, e ela FECHAVA a porta justamente para quem mais
+  // precisava dela: desde que `generateFinalSummary` deixou de gravar payload
+  // vazio como sucesso (ver o `kind: "empty"` de lá), a sessão cujo resumo
+  // falhou fica com a transcrição salva e `final_summary` NULO — e era esse
+  // nulo que o 409 lia como "nem terminou de gravar ainda". Refazer o resumo
+  // não depende de haver um resumo anterior para sobrescrever; depende de
+  // haver texto de onde tirá-lo.
   const transcript = session.transcript.trim();
   if (!transcript) {
     return NextResponse.json({ error: "empty_transcript" }, { status: 409 });

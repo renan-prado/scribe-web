@@ -36,9 +36,8 @@ export const maxDuration = 300;
  * POST /api/youtube/import
  *
  * Transforma um vídeo do YouTube numa sessão salva: busca a legenda pelo
- * provedor, grava como transcrição, e roda por cima o MESMO pipeline de
- * `/api/final-summary/from-transcript`, resumo, releia, lembra e frases
- * marcantes. Sem áudio, sem chunks, sem STT.
+ * provedor, grava como transcrição, e roda por cima o MESMO
+ * `generateFinalSummary` da gravação. Sem áudio, sem chunks, sem STT.
  *
  * A linha da sessão já existe quando esta rota é chamada: o diálogo a criou
  * com `mode: "youtube"` e a URL em `source_url`, e o cliente foi para
@@ -68,9 +67,10 @@ export const maxDuration = 300;
  *
  * Depois da cobrança o comportamento é o das outras: falha do modelo NÃO
  * estorna. Aqui isso dói menos que lá, porque a transcrição é gravada assim que
- * o pagamento passa, quem pagou e viu o resumo falhar continua com o texto do
- * sermão inteiro na mão, e `/api/final-summary/from-transcript` é o caminho de
- * recuperação que já existe.
+ * o pagamento passa: quem pagou e viu o resumo falhar continua com o texto do
+ * sermão inteiro na mão, e a tela da sessão oferece o "Gerar o resumo" que
+ * refaz a tentativa a partir dele (`/api/final-summary/reprocess`). Ver
+ * `SummaryEmptyState`.
  */
 export async function POST(request: Request) {
   const auth = await requireAuth();
@@ -258,8 +258,13 @@ export async function POST(request: Request) {
 
   if (!result.ok) {
     // A sessão JÁ está salva e legível, este 502 diz "o resumo falhou", não
-    // "a importação falhou". O cliente manda para `/summary`, que oferece
-    // gerar o resumo a partir da transcrição.
+    // "a importação falhou". O cliente manda para `/summary/:id`, que oferece
+    // refazer o resumo a partir da transcrição (ver `SummaryEmptyState`).
+    //
+    // `kind: "empty"` cai aqui junto dos erros de rede, e é o motivo mais
+    // provável: o modelo respondeu 200 e o que veio não tinha um bloco, duas
+    // vezes. Antes aquilo era `ok: true`, e o payload vazio ia para o banco
+    // por cima da sessão com 200 na resposta. Ver `server/final-summary.ts`.
     log.error("summary failed", { sessionId, message: result.message });
     return NextResponse.json(
       { error: "summary_failed", sessionId, transcriptSaved: true },

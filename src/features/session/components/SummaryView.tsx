@@ -24,13 +24,23 @@ type SummaryViewProps = {
   running: boolean;
   /**
    * A sessão a que este resumo pertence. Serve a um caso só: sem resumo
-   * nenhum, é o que deixa o estado vazio oferecer o editor. O `/admin` monta
+   * nenhum, é o que deixa o estado vazio oferecer a saída. O `/admin` monta
    * esta view sem ele. Ver `SummaryEmptyState`.
    */
   sessionId?: string;
+  /** Refazer o resumo a partir da transcrição, quando ele falhou. Ver `SummaryEmptyState`. */
+  onGenerate?: () => void;
+  generating?: boolean;
 };
 
-export function SummaryView({ summary, hasTranscript, running, sessionId }: SummaryViewProps) {
+export function SummaryView({
+  summary,
+  hasTranscript,
+  running,
+  sessionId,
+  onGenerate,
+  generating,
+}: SummaryViewProps) {
   const hasBody = summary && (summary.shortSummary.length > 0 || summary.blocks.length > 0);
 
   if (hasBody) {
@@ -59,10 +69,23 @@ export function SummaryView({ summary, hasTranscript, running, sessionId }: Summ
       </div>
     );
   }
-  if (running || hasTranscript) {
+  // O esqueleto responde só a `running`, e não mais a `running ||
+  // hasTranscript`. A sessão salva NUNCA está `running` (as duas telas que
+  // montam esta view passam `false`), então "tem transcrição e não tem resumo"
+  // caía num esqueleto que nunca resolvia: o resumo falhou e não vem mais.
+  // Quem desenha aquele caso agora é o `SummaryEmptyState`, que sabe a
+  // diferença entre "não há de onde tirar resumo" e "o resumo falhou".
+  if (running) {
     return <SummarySkeleton />;
   }
-  // Nem resumo, nem transcrição, nem gravação em curso: a sessão está salva e
-  // PARADA assim, sem nada escrito nela.
-  return <SummaryEmptyState sessionId={sessionId} />;
+  // Sessão salva e PARADA sem resumo: ou não há nada escrito nela, ou há a
+  // transcrição e o resumo é que não saiu.
+  return (
+    <SummaryEmptyState
+      sessionId={sessionId}
+      hasTranscript={hasTranscript}
+      onGenerate={onGenerate}
+      generating={generating}
+    />
+  );
 }

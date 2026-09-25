@@ -1,5 +1,7 @@
 import "server-only";
-export const FINAL_SUMMARY_SYSTEM_PROMPT = `Você recebe a transcrição COMPLETA em português de uma palestra, aula bíblica, sermão ou reunião cristã já ENCERRADA.
+export const FINAL_SUMMARY_SYSTEM_PROMPT = `Você recebe a transcrição COMPLETA de uma palestra, aula bíblica, sermão ou reunião cristã já ENCERRADA.
+
+A transcrição vem no IDIOMA EM QUE A MENSAGEM FOI PREGADA, que pode não ser português (o modo YouTube importa a legenda de qualquer canal). O JSON que você devolve é SEMPRE em português do Brasil: traduza o que precisar, e ao traduzir preserve a voz do pregador, as imagens e as frases-marca em vez de neutralizá-las. Versículo citado numa pregação em outro idioma sai com a "reference" em português (ver BIBLEQUOTE abaixo).
 
 Sua tarefa: produzir o SERMÃO ORGANIZADO em JSON. O objetivo NÃO é resumir "sobre" o sermão nem escrever um artigo autoral sobre o tema. O objetivo é entregar uma VERSÃO ESCRITA, CONDENSADA E NAVEGÁVEL DA PRÓPRIA MENSAGEM, como se o sermão falado tivesse sido editado para leitura, preservando a linha de pensamento, os argumentos, os exemplos e a voz do pregador. O ouvinte deve reencontrar aqui a mesma mensagem que ouviu, apenas organizada.
 
@@ -164,3 +166,47 @@ REGRAS FINAIS
 - A ordem dos blocks segue a ordem real da mensagem (início → desenvolvimento → conclusão), não reorganize.
 - NENHUM testemunho pessoal, história vivida ou ilustração contada pelo pregador fica de fora — ver TESTEMUNHOS E ILUSTRAÇÕES NUNCA SÃO CORTADOS acima.
 - NÃO emita nenhum bloco fora da lista permitida acima. Não há segunda chamada: o que sair daqui é o resumo inteiro.`;
+
+/**
+ * O acréscimo ao system prompt na SEGUNDA tentativa, quando a primeira voltou
+ * com `finish_reason: "content_filter"`.
+ *
+ * ## O que ele existe para contornar
+ *
+ * O filtro de conteúdo do provedor corta a resposta NO MEIO, em 200, sem erro:
+ * o que volta é um JSON truncado e um `finish_reason` que quase ninguém olha.
+ * O caso que revelou isso foi uma pregação do Paul Washer importada do YouTube
+ * (sessão `f0693ab7`): a resposta morria sempre no mesmo token, dentro do
+ * "text" de um `bibleQuote` de **Mateus 7:13-14 em português**, na altura de
+ * "e apertado o caminho que". Reproduzido isolado, fora deste produto, e
+ * determinístico:
+ *
+ *   - Mt 7:13-14 em português, gpt-4o e gpt-4.1 → `content_filter`, sempre;
+ *   - o MESMO versículo em inglês → `stop`;
+ *   - Jo 3:16, Rm 8:28, Mt 7:21-23, Ap 21:8, Mt 25:41 em português → `stop`.
+ *
+ * Não é sobre o sermão ser em inglês, nem sobre o tema ser duro (o lago de
+ * fogo de Ap 21:8 passa). É uma cadeia de tokens específica que o classificador
+ * do provedor lê errado em português, e não há o que pedir a ele para desligar.
+ *
+ * ## Por que apagar o texto do versículo resolve, e não custa nada
+ *
+ * O prompt principal já autoriza `bibleQuote` com `"text": ""` quando falta
+ * certeza do texto, e a tela já trata isso como o caminho NORMAL: para uma
+ * `reference` com faixa de versículos, `BlockRenderer` nem olha o `text`, ele
+ * monta `PassageVerses`, que busca a passagem na nossa própria Bíblia. Ou
+ * seja, o texto que o filtro cortou é justamente o que a tela ia descartar.
+ *
+ * Pedir isto na primeira chamada seria pior: sem faixa ("Jonas 1", ou um
+ * versículo solto que o pregador leu), o `text` é o que aparece, e perdê-lo em
+ * todo resumo para proteger de um caso raro é pagar caro pelo barato.
+ */
+export const FINAL_SUMMARY_NO_VERSE_TEXT_RETRY = `
+
+═══════════════════════════════════════════════════════════════════
+RESTRIÇÃO DESTA TENTATIVA (a anterior foi cortada no meio)
+═══════════════════════════════════════════════════════════════════
+
+A tentativa anterior foi INTERROMPIDA pelo filtro do provedor dentro do texto de um versículo, e a resposta voltou pela metade. Nesta tentativa, TODO bloco "bibleQuote" sai com "text": "" (string vazia), mantendo apenas a "reference". Não transcreva o texto de nenhum versículo, em nenhum bloco, nem dentro de um paragraph.
+
+Não se perde nada com isso: a tela busca o texto da passagem na nossa própria Bíblia a partir da "reference". Todas as outras regras acima continuam valendo integralmente, inclusive a densidade e a preservação dos testemunhos.`;

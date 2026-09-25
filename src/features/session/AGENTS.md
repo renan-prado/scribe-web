@@ -48,7 +48,7 @@ pessoa quiser, aprofundar.
 | `components/SavedSessionView.tsx` | a tela de uma sessão salva: cabeçalho (só o título se corrige aqui), resumo, menu |
 | `components/SummaryDeck.tsx` | o carrossel resumo ↔ transcrição, e quem busca a transcrição |
 | `components/SummaryView.tsx` + `BlockRenderer.tsx` | os blocos do resumo |
-| `components/SummaryEmptyState.tsx` | sessão salva sem resumo nenhum: o botão que abre o editor |
+| `components/SummaryEmptyState.tsx` | sessão salva sem resumo nenhum: a porta de escrever, ou a de refazer o resumo que falhou |
 | `components/StudyBlockRenderer.tsx` | os blocos a MAIS que o estudo tem |
 | `components/PostItNote.tsx` | a casca do post-it dos dois murais: cor, cartão clicável, anatomia |
 | `components/LibraryNote.tsx` | o post-it de uma sessão na Biblioteca (autor, título, data) |
@@ -532,6 +532,41 @@ migrar para a linha errada do painel.
 
 O que fica no resumo é a voz do pregador: `bibleQuote` com a referência,
 `highlight` com a frase marcante, `example`, `quote` e a `conclusion`.
+
+**A chamada é uma, as TENTATIVAS podem ser duas, e resumo vazio NÃO é
+sucesso.** `generateFinalSummary` devolvia `ok: true` com um payload de zero
+blocos sempre que o JSON do modelo não desse parse, e a rota o gravava por cima
+da sessão respondendo 200. O resultado era o pior desfecho que o produto tem: a
+pessoa pagou, a sessão ficou com `final_summary` preenchido e vazio, e a tela
+mostrava o ESQUELETO do resumo para sempre, porque `SummaryView` desenhava
+esqueleto para "tem transcrição e não tem resumo" numa tela que nunca está
+`running`. Nada disso aparecia como erro em lugar nenhum.
+
+Hoje são três mudanças que andam juntas, e desfazer uma reabre o beco:
+
+1. **Payload vazio vira `kind: "empty"`**, um `ok: false`, e nenhuma das três
+   rotas grava nada. Uma sessão vale mais sem resumo, com a transcrição salva,
+   do que com um resumo de zero blocos carimbado como pronto.
+2. **Antes de desistir, uma segunda tentativa.** Quando a primeira voltou com
+   `finish_reason: "content_filter"` ela vai com
+   `FINAL_SUMMARY_NO_VERSE_TEXT_RETRY`, que manda emitir `bibleQuote` com
+   `"text": ""`: o filtro do provedor corta a resposta no meio do TEXTO de
+   certos versículos em português, é determinístico (repetir igual morre no
+   mesmo token), e o texto que ele corta é justamente o que a tela ia descartar,
+   porque uma referência com faixa é resolvida contra a nossa própria Bíblia.
+   Por qualquer outro motivo a segunda é a MESMA chamada, onde só a variação de
+   amostragem pode salvar. O caso que revelou isso está no cabeçalho daquela
+   constante.
+3. **A tela sem resumo tem uma PORTA.** `SummaryEmptyState` distingue "não há de
+   onde tirar resumo" (escrever) de "o resumo é que não saiu" (refazer a partir
+   da transcrição), e o "Gerar novamente" passou a depender da TRANSCRIÇÃO e não
+   de haver um resumo anterior — no cabeçalho da rota e no do
+   `SavedSessionView`. Enquanto dependia do resumo, ele sumia exatamente da
+   sessão que mais precisava dele.
+
+E o prompt não assume mais transcrição em português: o modo YouTube importa
+legenda de qualquer canal, e uma pregação em inglês sai resumida em português do
+Brasil como qualquer outra.
 
 Sessões nunca encerradas (`ended_at is null`) saem da lista principal e
 aparecem numa faixa "Gravações em aberto", com opção de continuar ou apagar.

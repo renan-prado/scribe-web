@@ -110,6 +110,13 @@ type SavedSessionViewProps = {
    * chamada custaria 15 moedas para apagar o que a pessoa escreveu e pôr no
    * lugar um resumo de um texto vazio.
    *
+   * **E é a TRANSCRIÇÃO que o libera, não o resumo.** A condição era
+   * `summary && !written`, e ela sumia com o botão exatamente na sessão que
+   * mais precisa dele: quando o resumo falha, a transcrição fica salva e
+   * `final_summary` fica nulo (ver `kind: "empty"` em `server/final-summary.ts`),
+   * e a tela ficava sem UMA porta para tentar de novo, com as moedas da
+   * gravação ou da importação já gastas.
+   *
    * "Algo está errado" CONTINUA em todo modo: numa sessão `manual` não há o que
    * auditar contra transcrição nenhuma, então a rota (`/api/hallucination-report`)
    * não chama modelo — só registra a nota como `acknowledged`, sem custo.
@@ -398,7 +405,7 @@ export function SavedSessionView({
               ) : null}
               <SessionMenu
                 onDelete={() => setDeleteOpen(true)}
-                onReprocess={summary && !written ? handleReprocess : undefined}
+                onReprocess={hasTranscript && !written ? handleReprocess : undefined}
                 reprocessing={reprocessing}
                 onReportHallucination={() => setReportOpen(true)}
                 onMoveToFolder={() => setMoveFolderOpen(true)}
@@ -517,6 +524,8 @@ export function SavedSessionView({
             hasTranscript={hasTranscript}
             running={false}
             sessionId={id}
+            onGenerate={hasTranscript && !written ? handleReprocess : undefined}
+            generating={reprocessing}
           />
         </SummaryDeck>
       </SummaryFindArea>
@@ -525,7 +534,7 @@ export function SavedSessionView({
         open={reportOpen}
         onOpenChange={setReportOpen}
         sessionId={id}
-        onReprocess={summary && !written ? handleReprocess : undefined}
+        onReprocess={hasTranscript && !written ? handleReprocess : undefined}
         written={written}
       />
 
