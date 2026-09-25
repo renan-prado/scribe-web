@@ -14,7 +14,7 @@ import { PullToRefresh } from "@/shared/components/PullToRefresh";
 import { ReconnectWatcher } from "@/shared/components/ReconnectWatcher";
 import { AccountMenu } from "./components/AccountMenu";
 import { AppHeaderShell } from "./components/AppHeaderShell";
-import { GlobalSearchDialog } from "./components/GlobalSearchDialog";
+import { GlobalSearchHost } from "./components/GlobalSearchHost";
 
 /**
  * As telas do app que têm BARRA, e o dono da metade dela que não muda.
@@ -140,11 +140,12 @@ export default async function BarraLayout({ children }: { children: ReactNode })
       {account ? (
         <CacheOwner userId={account.profile.id}>
           <PendingCaptureRunner />
-          {/* A busca GLOBAL (Ctrl+K, o chip da `TopBar` e o botão da
-              `MobileActionBar`), montada UMA vez aqui dentro: ela lê a
-              Biblioteca de `useLibrary()`, que só tem dono dentro do
-              `CacheOwner`. Ver `GlobalSearchDialog`. */}
-          <GlobalSearchDialog />
+          {/* O Ctrl+K, e a busca das telas que ainda a abrem por estado
+              (`/import`, `/summary/new`, `/summary/:id/edit`). Na Biblioteca
+              quem a monta é a ROTA `/home/search`, e este host se apaga lá —
+              ver `GlobalSearchHost`. Fica aqui dentro porque o diálogo lê a
+              Biblioteca de `useLibrary()`, que só tem dono no `CacheOwner`. */}
+          <GlobalSearchHost />
           {children}
         </CacheOwner>
       ) : (

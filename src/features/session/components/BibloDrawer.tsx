@@ -462,7 +462,7 @@ export function BibloDrawer({
   /**
    * Executa o que o Biblo decidiu FAZER, e devolve o rótulo do que está
    * acontecendo enquanto acontece — é ele que a gaveta escreve no lugar do
-   * "Pensando…". Só a Biblioteca passa; ver `BibloHomeDock`.
+   * "Pensando…". Só a Biblioteca passa; ver `BibloHomeDrawer`.
    *
    * Ele é `await`-ado ANTES de a resposta entrar na lista: uma linha dizendo
    * "montei o esboço" com o documento ainda não salvo é a tela adiantando um
@@ -473,8 +473,15 @@ export function BibloDrawer({
   banner?: ReactNode;
   /** Obrigatório no `drawer`: sem ele a gaveta não tem como fechar. */
   onClose?: () => void;
-  /** Avisa o botão flutuante para ele pensar junto, com a gaveta fechada. */
-  onThinking: (thinking: boolean) => void;
+  /**
+   * Avisa o botão flutuante para ele pensar junto, com a gaveta fechada.
+   *
+   * OPCIONAL porque nem toda superfície tem esse botão: na Biblioteca a
+   * conversa virou a rota `/home/chat`, e o disco que a abre está fora da
+   * árvore dela (`BibloHomeTrigger`) — com a gaveta fechada ela nem está
+   * montada, então não há o que acender.
+   */
+  onThinking?: (thinking: boolean) => void;
   /**
    * Insere a sugestão no texto. `undefined` quando a tela não sabe editar —
    * aí a conversa continua servindo, só sem o "Adicionar".
@@ -603,7 +610,7 @@ export function BibloDrawer({
       // unica coisa desta conversa que nao precisa de servidor nenhum para ser
       // verdade: a pessoa acabou de escreve-la.
       setAsking(question);
-      onThinking(true);
+      onThinking?.(true);
 
       const startedAt = Date.now();
       const beat = window.setTimeout(() => setShowThinking(true), THINKING_BEAT_MS);
@@ -682,7 +689,7 @@ export function BibloDrawer({
         window.clearTimeout(beat);
         setShowThinking(false);
         setPending(false);
-        onThinking(false);
+        onThinking?.(false);
       }
     },
     [

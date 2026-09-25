@@ -16,8 +16,9 @@ export type BibloDockHandle = { open: () => void };
  * O DISCO FLUTUANTE DO BIBLO, e ele é UMA classe para as duas telas.
  *
  * Ele existe em dois lugares — este componente (a leitura e o editor) e o
- * `BibloHomeDock` (a Biblioteca, que precisa de um disco próprio porque o dele
- * some e volta com a rolagem). A classe estava COPIADA nos dois, e o resultado
+ * `BibloHomeTrigger` (a Biblioteca, que precisa de um disco próprio porque o
+ * dele some e volta com a rolagem, e porque lá ele é um LINK para `/home/chat`
+ * em vez de um botão). A classe estava COPIADA nos dois, e o resultado
  * foi o previsível: ao dar ao disco uma superfície própria no tema claro, só
  * uma das cópias mudou, e o mesmo botão passou a ter dois visuais em duas
  * telas do mesmo app.

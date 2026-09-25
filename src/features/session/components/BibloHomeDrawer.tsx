@@ -3,7 +3,7 @@
 import { FileText, X } from "lucide-react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
-import { forwardRef, useCallback, useEffect, useImperativeHandle, useRef, useState } from "react";
+import { useCallback, useEffect, useState } from "react";
 import { toast } from "sonner";
 import { useBibloWriter } from "@/features/session/biblo-query";
 import {
@@ -17,14 +17,11 @@ import {
   runBibloAction,
   writeWorkspace,
 } from "@/features/session/biblo-workspace";
-import { BIBLO_TRIGGER_CLASS, type BibloDockHandle } from "@/features/session/components/BibloDock";
 import { BibloDrawer } from "@/features/session/components/BibloDrawer";
 import { useLibraryWriter } from "@/features/session/query";
 import { useKeyboardInset } from "@/hooks/use-keyboard-inset";
 import type { BibloAction } from "@/lib/domain/biblo";
 import { createLogger } from "@/lib/log";
-import { cn } from "@/lib/utils";
-import { BibloAvatar } from "@/shared/brand";
 
 const log = createLogger("biblo-home");
 
@@ -61,56 +58,29 @@ const log = createLogger("biblo-home");
  * `manual`, que aparece como qualquer resumo escrito à mão. O porquê inteiro
  * está em `biblo-workspace.ts`.
  *
- * ## O botão
+ * ## Ela não tem mais um botão, ela tem um ENDEREÇO
  *
- * O mesmo disco de vidro do Biblo das outras telas, no mesmo canto — e hoje,
- * SÓ NO DESKTOP: no celular a Biblioteca não tem mais um `+` e um disco do
- * Biblo dividindo o canto, ela tem a `MobileActionBar`, com as duas coisas
- * (e a busca) numa barra só. Ver "No celular o gatilho..." abaixo.
+ * Esta gaveta era um `open` de estado, aberto por um `ref.current.open()` que
+ * a `MobileActionBar` e um disco flutuante chamavam. Hoje ela é a rota
+ * `/home/chat` (`home/@overlay/chat/`): quem abre é um `<Link>`, quem fecha é
+ * o voltar do sistema, e o endereço colado numa nova aba reconstrói a mesma
+ * tela. O disco do desktop virou o `BibloHomeTrigger`, um link, e some da
+ * tela por ROTA em vez de por `{!open && …}`.
  *
- * **No celular o gatilho é a `MobileActionBar`, não mais este disco.** A
- * barra chama `ref.current.open()` (`BibloDockHandle`) e lê o `thinking` por
- * `onThinkingChange`; `hideMobileTrigger` esconde o disco só no celular
- * (`max-md:hidden`) — no desktop ele continua sendo o único caminho até a
- * gaveta, porque não há barra nenhuma lá. Ver o mesmo desenho em `BibloDock`.
+ * **Ela só existe montada, e por isso não tem mais `open`.** Fechar é
+ * desmontar, como já era ao tocar o "X" (`BibloDrawer` sempre desmontou em vez
+ * de animar a saída). O que não se perde nisso: o documento em edição está no
+ * `localStorage` (`readWorkspace`) e as mensagens estão no cache do TanStack,
+ * que vive no `CacheOwner`, um degrau acima desta rota.
+ *
+ * O `thinking` também saiu: ele acendia o avatar do botão, e o botão não está
+ * mais na mesma árvore que a conversa.
  */
-export const BibloHomeDock = forwardRef<
-  BibloDockHandle,
-  { hideMobileTrigger?: boolean; onThinkingChange?: (thinking: boolean) => void }
->(function BibloHomeDock({ hideMobileTrigger = false, onThinkingChange }, ref) {
-  const [open, setOpen] = useState(false);
-  const [thinking, setThinking] = useState(false);
+export function BibloHomeDrawer({ onClose }: { onClose: () => void }) {
   const [workspace, setWorkspace] = useState<BibloWorkspace>(EMPTY_WORKSPACE);
   const library = useLibraryWriter();
   const router = useRouter();
   useKeyboardInset();
-  useImperativeHandle(ref, () => ({ open: () => setOpen(true) }), []);
-  useEffect(() => {
-    onThinkingChange?.(thinking);
-  }, [thinking, onThinkingChange]);
-
-  // Esconde-ao-rolar, hoje só relevante no DESKTOP (o disco só existe lá):
-  // rolar para baixo é ler, rolar para cima é procurar, e perto do topo o
-  // botão volta sempre, mesmo que o último gesto tenha sido para baixo.
-  const [scrolledIn, setScrolledIn] = useState(true);
-  const [moved, setMoved] = useState(false);
-  const lastY = useRef(0);
-  useEffect(() => {
-    lastY.current = window.scrollY;
-    function onScroll() {
-      const y = window.scrollY;
-      const dy = y - lastY.current;
-      if (Math.abs(dy) < 8) return;
-      lastY.current = y;
-      const next = y < 80 ? true : dy < 0;
-      setScrolledIn((prev) => {
-        if (prev !== next) setMoved(true);
-        return next;
-      });
-    }
-    window.addEventListener("scroll", onScroll, { passive: true });
-    return () => window.removeEventListener("scroll", onScroll);
-  }, []);
 
   // O `localStorage` só existe no cliente, e lê-lo durante o render faria o
   // servidor desenhar uma coisa e o navegador outra. Um quadro depois, como a
@@ -214,49 +184,13 @@ export const BibloHomeDock = forwardRef<
   ) : null;
 
   return (
-    <>
-      {/* O botão sai da tela com a gaveta aberta: ele não é um interruptor
-          aceso, ele VIROU a gaveta. Só existe no DESKTOP hoje
-          (`hideMobileTrigger`); no celular quem abre é a `MobileActionBar`.
-          Ver "## O botão" no topo do arquivo. */}
-      {!open && (
-        <div
-          className={cn(
-            "pointer-events-none fixed inset-x-0 bottom-0 z-30 flex justify-end px-5 pb-[calc(1.75rem+max(env(safe-area-inset-bottom),var(--kb-inset,0px)))] md:pb-[calc(1rem+max(env(safe-area-inset-bottom),var(--kb-inset,0px)))]",
-            hideMobileTrigger && "max-md:hidden"
-          )}
-        >
-          <button
-            type="button"
-            onClick={() => setOpen(true)}
-            aria-label="Conversar com o Biblo"
-            aria-expanded={false}
-            // Escondido ele também sai do alcance do dedo e do TAB, a mesma
-            // regra do `+` do `CreateDock`.
-            tabIndex={scrolledIn ? undefined : -1}
-            aria-hidden={scrolledIn ? undefined : true}
-            className={cn(
-              BIBLO_TRIGGER_CLASS,
-              scrolledIn ? "pointer-events-auto" : "pointer-events-none",
-              moved && (scrolledIn ? "animate-v2-rec-in" : "animate-v2-rec-out")
-            )}
-          >
-            <BibloAvatar mood={thinking ? "thinking" : "idle"} size={36} />
-          </button>
-        </div>
-      )}
-
-      {open && (
-        <BibloDrawer
-          surface="home"
-          sessionId={workspace.sessionId ?? ""}
-          ensureSession={ensureSession}
-          onActions={runActions}
-          banner={banner}
-          onClose={() => setOpen(false)}
-          onThinking={setThinking}
-        />
-      )}
-    </>
+    <BibloDrawer
+      surface="home"
+      sessionId={workspace.sessionId ?? ""}
+      ensureSession={ensureSession}
+      onActions={runActions}
+      banner={banner}
+      onClose={onClose}
+    />
   );
-});
+}

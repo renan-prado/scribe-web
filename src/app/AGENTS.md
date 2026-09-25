@@ -48,6 +48,92 @@ produto depende disso: `/profile` mora em `(app)` e `/profile/delete` em
 herdar a moldura do app nem a consulta ao banco que ela faz. O que o Next proíbe
 é a mesma URL FINAL sair de dois grupos.
 
+## Overlay é ROTA
+
+**Toda gaveta que cobre uma tela tem um endereço, e é o endereço que a abre.**
+Na Biblioteca são duas:
+
+| URL | O que pousa por cima | Quem monta |
+|---|---|---|
+| `/home/search` | a busca global | `home/@overlay/search/` |
+| `/home/chat` | a conversa com o Biblo | `home/@overlay/chat/` |
+
+Não é enfeite de URL: é o preparo para o aplicativo desenhar os menus em
+NATIVO. Quando o menu de baixo for React Native, abrir a busca deixa de ser uma
+chamada e passa a ser o aplicativo apontando o WebView para `/home/search`. Sem
+função exposta, sem evento a inventar, sem duas implementações do mesmo gesto:
+a URL é a interface, e ela já é a que o navegador entende.
+
+### Rota PARALELA, e não interceptada
+
+O `/admin` usa rota interceptada (`@modal/(.)sessions/[id]`), e aqui ela seria
+o mecanismo errado. A diferença não é de estilo:
+
+| | interceptada (`(.)`) | paralela (`@slot`) |
+|---|---|---|
+| URL | MASCARA a de baixo (`/search`) | soma-se a ela (`/home/search`) |
+| num F5 | a rota REAL, em página cheia, sem a tela de baixo | a mesma coisa que num toque |
+| para quê | conteúdo que se manda por link e também existe sozinho | gaveta que só faz sentido sobre a tela |
+
+O requisito aqui é o da última linha: `/home/search` aberto direto tem de
+mostrar a Biblioteca com a busca por cima, igualzinho ao toque no botão. Uma
+rota interceptada faz o CONTRÁRIO num carregamento duro, de propósito — e um
+carregamento duro é exatamente o que o aplicativo faz ao apontar o WebView.
+
+### A anatomia, e os dois `default.tsx`
+
+```
+home/
+  layout.tsx          recebe { children, overlay } e renderiza os dois
+  page.tsx            a Biblioteca
+  default.tsx         export { default } from "./page"  ← o children numa carga dura
+  @overlay/
+    page.tsx          /home: o disco do Biblo (desktop)
+    default.tsx       null
+    search/page.tsx   /home/search
+    chat/page.tsx     /home/chat
+```
+
+Três arquivos existem por razões que não se adivinham:
+
+- **`home/default.tsx`** é o que cumpre o requisito. Numa carga DURA de
+  `/home/search` o Next casa o slot `@overlay` com a gaveta e fica sem resposta
+  para o `children`, que não tem segmento naquela URL; sem este arquivo a
+  resposta é `404` na tela inteira. Com ele, é o acervo.
+- **`@overlay/page.tsx`** (o disco do Biblo) e não só o `default.tsx`: numa
+  navegação de cliente o Next MANTÉM o último estado dos slots que a URL nova
+  não casa. Sem uma página explícita para `/home`, voltar de `/home/chat`
+  deixaria a gaveta na tela depois de fechada.
+- **`@overlay/default.tsx`** cobre a carga dura de uma futura `/home/<algo>`
+  que exista no `children` e não aqui — sem ele, `404` numa rota que existe.
+
+### As regras que valem para a próxima
+
+1. **O endereço mora em `(shell)/lib/overlay-routes.ts`**, nunca escrito à mão
+   na tela. Ele é contrato com o aplicativo, e um endereço digitado em cinco
+   arquivos diverge num deles sem erro na tela.
+2. **Quem abre é um `<Link>`**, não um `onClick`. Ganha Ctrl+clique, prefetch e
+   menu de contexto de graça, e o nativo só precisa do endereço.
+3. **Quem fecha é o `useOverlayClose`** (`(shell)/lib/`): `router.back()`, que
+   desfaz o `push` do link e não incha o histórico, com `replace` no pai quando
+   não há de onde voltar (o endereço colado, o WebView recarregado). O
+   raciocínio inteiro está no cabeçalho de lá.
+4. **A gaveta não guarda o que precisa sobreviver a ela.** Fechar é DESMONTAR:
+   o que tem de ficar mora um degrau acima (o cache do TanStack no
+   `CacheOwner`, o `localStorage`), como já é no `BibloHomeDrawer`.
+5. **Nem todo overlay vira rota.** A pergunta é se ele tem conteúdo com
+   identidade própria, que faça sentido como endereço. A busca e a conversa
+   têm; um `ConfirmDialog` de apagar pasta, não — aquele é estado de um gesto,
+   e um `searchParam` já seria demais.
+
+### O que ainda NÃO é rota
+
+A busca de `/import`, `/summary/new` e `/summary/:id/edit`, e o Ctrl+K fora da
+Biblioteca. Elas seguem na `GlobalSearchStore`, com o `GlobalSearchHost`
+(`(shell)/layout.tsx`) de ponte — ele se apaga em `/home/search` para não
+haver dois diálogos na mesma tela. **A store e o host somem juntos** quando as
+três telas ganharem o próprio segmento; não acrescente consumidor novo a ela.
+
 ## Mapa de rotas
 
 **Público** (o `src/proxy.ts` deixa passar sem sessão):
@@ -258,7 +344,8 @@ glifos com propósitos diferentes, no mesmo lugar da barra:
 
 | Tela | Quem é a lupa | O que ela procura |
 |---|---|---|
-| `/home`, `/import` | `SearchTrigger` (`(shell)/components/`) | a busca GLOBAL, um diálogo por cima da tela (`GlobalSearchDialog`) |
+| `/home` | `SearchTrigger` com `href` | a busca GLOBAL, pela ROTA `/home/search` |
+| `/import` | `SearchTrigger` (`(shell)/components/`) | a busca GLOBAL, um diálogo por cima da tela (`GlobalSearchDialog`) |
 | `/summary/new` (desktop) | `SearchTrigger` | a busca GLOBAL |
 | `/summary/new` (celular) | o botão da `MobileActionBar` | **dentro do rascunho aberto** |
 | `/summary` | `SummaryFindToggle`, e o botão da `MobileActionBar` | **dentro do resumo aberto** |
@@ -279,14 +366,20 @@ de resultados nem "x" de limpar dentro do campo: num telefone ela divide a
 linha com três botões, e cada peça a mais saía da largura do que se digita. A
 contagem sobrevive como aviso de leitor de tela.
 
-**`SearchTrigger` não abre nada NESTA tela.** Ele só manda `open: true` para a
-`GlobalSearchStore`, e quem desenha a busca é `GlobalSearchDialog`
+**`SearchTrigger` não abre nada NESTA tela**, e hoje ele tem dois modos. Com
+`href` (só a Biblioteca, por enquanto) ele é um `<a>` para `/home/search`, e
+quem desenha a busca é o slot `@overlay` daquela rota. Sem `href` ele manda
+`open: true` para a `GlobalSearchStore`, e quem desenha é o `GlobalSearchHost`
 (`(shell)/layout.tsx`, montado uma vez), que aparece por cima de qualquer rota
 — inclusive as que nem têm o chip, alcançável ali por Ctrl+K/Cmd+K. Ele é
 `hidden md:inline-flex`: no celular quem abre a MESMA busca é o botão da
 `MobileActionBar`, e os dois levam `data-tour="library-search"` para o tour
-achar o visível. Não há mais link para `/home?busca=1`, nem `?busca=1` para ler
-— a busca não precisa mais de estar em `/home` para existir.
+achar o visível. Não há mais link para `/home?busca=1`, nem `?busca=1` para ler.
+
+**Os dois modos são uma TRAVESSIA, não um desenho.** A busca vai virar rota nas
+quatro telas; a Biblioteca foi a primeira, e a store segura `/import`,
+`/summary/new` e `/summary/:id/edit` até a vez delas. Ver "Overlay é ROTA"
+abaixo, e `GlobalSearchHost`, que é a ponte e some junto com a store.
 
 **O `/summary` foi o caso difícil, e por um tempo a saída foi não ter lupa
 nenhuma ali.** O raciocínio estava certo pela metade: sobre um texto longo, uma
@@ -1124,7 +1217,8 @@ encostado no botão lia como legenda dele em vez de nome da tela.
 busca virou GLOBAL (`GlobalSearchDialog`, ver "A lupa existe em toda tela"
 acima), um diálogo por cima de qualquer rota, aberto por Ctrl+K ou pelo
 `SearchTrigger`. Não há mais estado de tela para dividir entre o botão e a
-lista.
+lista — e na Biblioteca não há estado nenhum: lá ela é a rota `/home/search`
+(ver "Overlay é ROTA" abaixo).
 
 Houve uma barra ANTIGA, com `SearchToggle` e um `SearchScope` na própria
 página, e o único consumidor dela era `/studies`. Saiu junto com os Estudos: o
@@ -1239,26 +1333,37 @@ que junta busca, "Pergunte ao Biblo" e criar num só lugar, `md:hidden`, e vive
 em TRÊS telas: `/home`, `/summary` e `/summary/new`. Ela substituiu dois discos
 soltos que cada tela desenhava por conta própria — o `+` (o antigo
 `CreateDock`, que só existia na Biblioteca) e o disco flutuante do Biblo
-(`BibloDock`/`BibloHomeDock`, repetido nas três) — por uma peça PERSISTENTE:
+(`BibloDock`/`BibloHomeDrawer`, repetido nas três) — por uma peça PERSISTENTE:
 ao contrário do `CreateDock` antigo, ela não some ao rolar. Uma barra de
 navegação que aparece e desaparece é pior que uma parada.
 
 **Quem abre a conversa não é esta barra.** A gaveta do Biblo (a sessão, as
 ferramentas de cada tela, `onInsert`/`onRemove`) continua exatamente onde
-estava — `BibloHomeDock` na Biblioteca, `BibloDock`/`BibloSummaryDock` no
-resumo e no editor —, só o GATILHO mudou de lugar: cada uma expõe um
-`BibloDockHandle` por `ref` (`{ open: () => void }`) e um `onThinkingChange`,
-e no celular deixa de desenhar o próprio disco (`hideMobileTrigger`). No
-DESKTOP nada mudou — lá não há barra, e o disco de cada uma continua sendo o
-único caminho até a gaveta. Ver o cabeçalho de `BibloDock`
-("O gatilho no celular mudou de dono").
+estava — `BibloHomeDrawer` na Biblioteca, `BibloDock`/`BibloSummaryDock` no
+resumo e no editor —, só o GATILHO mudou de lugar: no resumo e no editor cada
+uma expõe um `BibloDockHandle` por `ref` (`{ open: () => void }`) e um
+`onThinkingChange`, e no celular deixa de desenhar o próprio disco
+(`hideMobileTrigger`). Ver o cabeçalho de `BibloDock` ("O gatilho no celular
+mudou de dono").
+
+**Na BIBLIOTECA não há `ref` nenhum: as duas pontas são ENDEREÇOS.**
+`searchHref` e `bibloHref` fazem do botão um `<a>` para `/home/search` e
+`/home/chat`, e a barra deixa de saber que existe uma gaveta. Foi isso que
+apagou o `HomeDockBar`, um componente cliente que existia só para segurar o
+`ref` e o `thinking` entre a barra e a conversa: sem estado a dividir, a
+`page.tsx` (servidor) monta a barra direto. Ver "Overlay é ROTA" abaixo.
+
+No DESKTOP nada disso mudou de forma — lá não há barra, e o disco de cada tela
+continua sendo o único caminho até a gaveta. Na Biblioteca esse disco é o
+`BibloHomeTrigger`, que virou um link para `/home/chat` e some por ROTA, não
+mais por um `{!open && …}`.
 
 **As duas PONTAS são da tela, e o meio nunca muda.** O Biblo é o pill do
 meio em toda tela; a busca e a ação de cada lado, não:
 
 | | busca | ação |
 |---|---|---|
-| `/home` | a GLOBAL (`GlobalSearchDialog`) | o "+", as três portas |
+| `/home` | a GLOBAL, por rota (`/home/search`) | o "+", as três portas |
 | `/summary` | dentro do resumo (`SummaryFind`) | "Editar" (`/summary/:id/edit`) |
 | `/summary/new` | dentro do rascunho | "Salvar", que abre `/summary/:id` |
 

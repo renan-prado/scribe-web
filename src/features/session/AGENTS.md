@@ -58,7 +58,8 @@ pessoa quiser, aprofundar.
 | `components/BibloDock.tsx` + `BibloDrawer.tsx` + `BibloMessage.tsx` | a conversa com o Biblo: botão flutuante e gaveta (ou painel `inline`) |
 | `components/BibloSummaryDock.tsx` | o mesmo Biblo na tela de LEITURA, que precisa de um POST para inserir |
 | `hooks/useWrittenReadingDraft.ts` + `components/SummaryInsertContext.tsx` | escrever num resumo salvo sem rascunho local — o POST que o Biblo e o "Adicionar ao resumo" da referência dividem |
-| `components/BibloHomeDock.tsx` + `biblo-workspace.ts` | o Biblo da Biblioteca, que ESCREVE um documento em vez de sugerir um bloco |
+| `components/BibloHomeDrawer.tsx` + `biblo-workspace.ts` | o Biblo da Biblioteca, que ESCREVE um documento em vez de sugerir um bloco |
+| `components/BibloHomeTrigger.tsx` | o disco que o abre no desktop: um link para `/home/chat` |
 | `biblo-query.ts` | a conversa guardada no aparelho: leitura, pré-busca e a rodada nova |
 | `server/biblo/` | allowance, resposta, a abertura derivada e a ancoragem de uma referência na NVI |
 | `components/PassageVerses.tsx` + `RichText.tsx` | texto bíblico e menções dentro do parágrafo |
@@ -940,7 +941,14 @@ essa barra saiu — a busca virou GLOBAL
 QUALQUER tela do app, aberto por Ctrl+K, pelo `SearchTrigger` do desktop ou
 pelo botão de busca da `MobileActionBar` **da Biblioteca** (no `/summary` e no
 `/summary/new` aquele botão procura dentro do texto aberto, ver
-`src/app/AGENTS.md`). `LibraryBrowser` voltou a mostrar
+`src/app/AGENTS.md`).
+
+**Na Biblioteca ela é uma ROTA, `/home/search`**, e os dois botões de lá são
+links. O diálogo é o mesmo, só deixou de ter dono em estado: `open` e
+`onOpenChange` são props, e quem as passa é o slot `@overlay` daquela rota. Nas
+outras três telas quem passa ainda é a `GlobalSearchStore`, por um host no
+layout de `(shell)`. Ver "Overlay é ROTA" em `src/app/AGENTS.md` para o porquê
+e para onde isso vai. `LibraryBrowser` voltou a mostrar
 sempre o acervo inteiro (pastas, pendentes, meses), sem estado de "busca
 aberta" nenhum; o diálogo lê a MESMA `useLibrary()`, sem consulta nova, e
 reaproveita o mesmo motor (`src/lib/search.ts`) e a mesma metade servidor

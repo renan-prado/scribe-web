@@ -36,7 +36,6 @@ import { useLibrary } from "@/features/session/query";
 import { useKeyboardInset } from "@/hooks/use-keyboard-inset";
 import type { SessionListItem } from "@/lib/domain/session";
 import { cn } from "@/lib/utils";
-import { useGlobalSearchStore } from "./GlobalSearchStore";
 
 /**
  * O valor que representa "sem filtro" num `<Select>` de faceta.
@@ -108,14 +107,23 @@ const FACET_ALL = "__all__";
  * ATRÁS do teclado que ele mesmo abre, porque o `viewport` do app é o padrão
  * `resizes-visual` e o viewport de LAYOUT não encolhe.
  *
- * ## Montada UMA vez, sempre — mesmo fechada
+ * ## Ela não sabe mais quem a abriu
  *
- * O atalho Ctrl+K/Cmd+K é escutado AQUI DENTRO, e por isso este componente
- * precisa estar montado o tempo todo (`(shell)/layout.tsx`, dentro do
- * `CacheOwner`, onde `useLibrary()` tem dono). `open` vem da
- * `GlobalSearchStore`, e é o que permite à `MobileActionBar` e ao
- * `SearchTrigger` do desktop abrirem O MESMO diálogo sem subir estado até
- * eles.
+ * `open`/`onOpenChange` são PROPS, e este componente não lê store nenhuma nem
+ * escuta o Ctrl+K. São dois donos possíveis hoje, e é de propósito:
+ *
+ * | Dono | Onde | O que "fechar" significa |
+ * |---|---|---|
+ * | a ROTA | `home/@overlay/search/page.tsx` | voltar para `/home` |
+ * | a `GlobalSearchStore` | `GlobalSearchHost` | `open: false`, sem navegar |
+ *
+ * A rota é o destino (ver `src/app/AGENTS.md`, "Overlay é rota"); a store é o
+ * que ainda segura as telas que não ganharam o próprio `/…/search`. Um
+ * componente que lesse a store direto não poderia ser montado pela rota sem
+ * virar dois diálogos ao mesmo tempo — daí as props.
+ *
+ * Ela continua precisando estar dentro do `CacheOwner`, onde `useLibrary()`
+ * tem dono; os dois donos acima estão.
  *
  * ## ABRIR limpa tudo, e não fechar
  *
@@ -135,9 +143,14 @@ const RANGE_OPTIONS: SelectOption<DateRangeKey>[] = DATE_RANGES.map((r) => ({
 
 const EMPTY: SessionListItem[] = [];
 
-export function GlobalSearchDialog() {
-  const open = useGlobalSearchStore((s) => s.open);
-  const setOpen = useGlobalSearchStore((s) => s.setOpen);
+export function GlobalSearchDialog({
+  open,
+  onOpenChange,
+}: {
+  open: boolean;
+  /** Quem abriu decide o que fechar quer dizer. Ver o cabeçalho. */
+  onOpenChange: (open: boolean) => void;
+}) {
   const router = useRouter();
   const inputId = useId();
 
@@ -163,19 +176,9 @@ export function GlobalSearchDialog() {
   // `hooks/use-keyboard-inset.ts`.
   useKeyboardInset();
 
-  // Ctrl+K / Cmd+K, em toda tela logada, o tempo todo — este componente nunca
-  // desmonta. `toggle`, não só "abrir": apertar de novo com o diálogo já
-  // aberto é o mesmo gesto de fechar que a maioria dos apps de comando usa.
-  useEffect(() => {
-    function onKeyDown(event: KeyboardEvent) {
-      if ((event.metaKey || event.ctrlKey) && event.key.toLowerCase() === "k") {
-        event.preventDefault();
-        setOpen(!useGlobalSearchStore.getState().open);
-      }
-    }
-    window.addEventListener("keydown", onKeyDown);
-    return () => window.removeEventListener("keydown", onKeyDown);
-  }, [setOpen]);
+  // (O Ctrl+K saiu daqui para o `GlobalSearchHost`: o atalho precisa funcionar
+  // com o diálogo FECHADO, e este componente pode nem estar montado — quando a
+  // dona é a rota, ele só existe em `/home/search`.)
 
   // Abrir LIMPA o filtro (ver o cabeçalho) e foca o campo.
   //
@@ -268,7 +271,10 @@ export function GlobalSearchDialog() {
 
   function select(id: string) {
     inputRef.current?.blur();
-    setOpen(false);
+    // Sem `onOpenChange(false)` aqui: quando a dona é a ROTA, fechar é
+    // navegar, e fechar + abrir a sessão seriam duas navegações no mesmo
+    // gesto (a segunda em cima da primeira, com uma entrada de histórico a
+    // mais entre as duas). Este `push` já tira `/home/search` da tela.
     router.push(`/summary/${id}`);
   }
 
@@ -281,7 +287,7 @@ export function GlobalSearchDialog() {
   // dá ao teclado uma cabeça de saída antes do fade começar.
   function closeSearch() {
     inputRef.current?.blur();
-    setOpen(false);
+    onOpenChange(false);
   }
 
   // O índice ativo acompanha a lista: ela encolhe a cada tecla, e um índice
@@ -417,7 +423,7 @@ export function GlobalSearchDialog() {
   );
 
   return (
-    <DialogPrimitive.Root open={open} onOpenChange={setOpen}>
+    <DialogPrimitive.Root open={open} onOpenChange={onOpenChange}>
       <DialogPrimitive.Portal>
         {/* **O FECHAR do celular não tem animação, e é isso que mata a
             piscada.** Enquanto havia `data-closed:animate-out` aqui, o Base UI

@@ -1,7 +1,18 @@
+import type { Metadata } from "next";
 import type { ReactNode } from "react";
 import { ImportAction, RecordAction, WriteAction } from "../components/CreateActions";
 import { SearchTrigger } from "../components/SearchTrigger";
 import { TopBar } from "../components/TopBar";
+import { HOME_SEARCH_HREF } from "../lib/overlay-routes";
+
+/**
+ * O título da aba, no LAYOUT e não na página: ele vale para `/home` e para as
+ * duas gavetas, e metadata exportada de um slot paralelo não é lida (a de
+ * `children` é a que conta, e em `/home/search` o `children` é o
+ * `default.tsx`, que não exporta nenhuma). No layout a herança resolve os três
+ * endereços de uma vez.
+ */
+export const metadata: Metadata = { title: "Biblioteca" };
 
 /**
  * A metade da barra que é da Biblioteca, e a razão de ela ter saído da página.
@@ -21,12 +32,35 @@ import { TopBar } from "../components/TopBar";
  * segmento**, não na página; sem `loading.tsx` tanto faz, porque ali o router
  * segura a tela anterior inteira até a nova estar pronta.
  *
- * **A busca não precisa mais de um `SearchScope` aqui.** Ela é a
- * `GlobalSearchDialog`, montada uma vez em `(shell)/layout.tsx`; o
- * `SearchTrigger` só manda `open: true` para a `GlobalSearchStore`, sem estado
- * nenhum para dividir com a página.
+ * **A busca não precisa mais de estado nenhum aqui: ela é um ENDEREÇO.** O
+ * `SearchTrigger` é um link para `/home/search`, e quem desenha o diálogo é o
+ * slot `@overlay` abaixo. Ela já foi um `SearchScope` deste layout e depois um
+ * `open: true` mandado para a `GlobalSearchStore`; o porquê da terceira forma
+ * está em `lib/overlay-routes.ts`.
+ *
+ * ## O slot `@overlay`: o que pousa POR CIMA da Biblioteca
+ *
+ * `children` é o acervo; `overlay` é a gaveta da vez — a busca
+ * (`/home/search`), a conversa com o Biblo (`/home/chat`), ou o disco que abre
+ * a segunda quando não há nenhuma aberta (`@overlay/page.tsx`).
+ *
+ * **São rotas PARALELAS e não interceptadas**, e a diferença é justamente o
+ * que se quer aqui: uma interceptada mascararia a URL (`/search`, com a
+ * Biblioteca atrás e invisível no endereço) e mostraria a busca em página
+ * CHEIA num F5. Com o slot, `/home/search` aberto direto monta a Biblioteca
+ * com a busca por cima — o mesmo resultado do toque no botão, que é o que
+ * torna a URL um comando confiável para quem estiver do outro lado dela.
+ *
+ * Os dois slots precisam de um `default.tsx` cada, para a carga dura em que o
+ * Next não tem estado anterior de slot para recuperar; ver os dois arquivos.
  */
-export default function BibliotecaLayout({ children }: { children: ReactNode }) {
+export default function BibliotecaLayout({
+  children,
+  overlay,
+}: {
+  children: ReactNode;
+  overlay: ReactNode;
+}) {
   return (
     <>
       <TopBar
@@ -42,12 +76,13 @@ export default function BibliotecaLayout({ children }: { children: ReactNode }) 
           <>
             <ImportAction />
             <RecordAction />
-            <SearchTrigger />
+            <SearchTrigger href={HOME_SEARCH_HREF} />
             <WriteAction />
           </>
         }
       />
       {children}
+      {overlay}
     </>
   );
 }

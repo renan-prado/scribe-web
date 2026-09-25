@@ -197,7 +197,7 @@ export type ActionOutcome =
  * **As três de NAVEGAÇÃO não passam por aqui.** Esta função só sabe salvar
  * documento; `iniciarGravacao`, `importarVideoDoYoutube` e `navegarPara` são
  * um `router.push`, e quem tem o router é o componente (ver
- * `navigationTargetFor` e `BibloHomeDock`). Chamada com uma delas por engano,
+ * `navigationTargetFor` e `BibloHomeDrawer`). Chamada com uma delas por engano,
  * ela devolve `null` em vez de acessar um campo que não existe.
  */
 export async function runBibloAction(

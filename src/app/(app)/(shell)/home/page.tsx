@@ -1,10 +1,8 @@
-import type { Metadata } from "next";
 import { TourTrigger } from "@/features/tour/components/TourTrigger";
 import { TOUR_DELAY_LIST_MS } from "@/features/tour/config";
-import { HomeDockBar } from "./HomeDockBar";
+import { MobileActionBar } from "../components/MobileActionBar";
+import { HOME_CHAT_HREF, HOME_SEARCH_HREF } from "../lib/overlay-routes";
 import { LibraryBrowser } from "./LibraryBrowser";
-
-export const metadata: Metadata = { title: "Biblioteca" };
 
 /**
  * O Início do v2: a lista de tudo que a pessoa gravou ou importou, agrupada por
@@ -30,13 +28,11 @@ export const metadata: Metadata = { title: "Biblioteca" };
  * consulta que alimenta tela que não existe, ou que existe guardada no
  * aparelho, não aparece como bug — aparece como latência.)
  *
- * **A barra do topo e o `SearchScope` moram no `layout.tsx` deste segmento**, e
- * não aqui: o `loading.tsx` envolve a página, nunca o layout, e com a barra na
- * página o vão dela ficava vazio durante o esqueleto — a lupa piscava a cada
- * chegada. O porquê inteiro está no cabeçalho de lá.
- *
- * A busca em si continua no cliente (`LibraryBrowser`); o provider só precisa
- * envolver os dois lados, o botão lá em cima e a lista aqui.
+ * **A barra do topo mora no `layout.tsx` deste segmento**, e não aqui: o
+ * `loading.tsx` envolve a página, nunca o layout, e com a barra na página o vão
+ * dela ficava vazio durante o esqueleto — a lupa piscava a cada chegada. O
+ * `title` da aba subiu junto, pelo mesmo motivo de vizinhança: ele vale para
+ * `/home` e para as duas gavetas, e metadata de slot paralelo não é lida.
  *
  * A largura trava em 1024px, e o mural ganha colunas junto (ver
  * `LibraryBrowser`): a tela nasceu de um print de celular, e esticada sem teto
@@ -45,16 +41,23 @@ export const metadata: Metadata = { title: "Biblioteca" };
  * o mesmo defeito num tamanho menor.
  *
  * **No desktop as três portas de criação sobem para a BARRA** (`CreateActions`),
- * e a `MobileActionBar` some. Por isso a folga de baixo é mobile-only: sem a
- * barra não há o que desviar, e o vão viraria um buraco no fim da lista. Ver
- * `HomeDockBar`.
+ * e a `MobileActionBar` some (`md:hidden`). Por isso a folga de baixo é
+ * mobile-only: sem a barra não há o que desviar, e o vão viraria um buraco no
+ * fim da lista.
+ *
+ * **A barra do rodapé virou dois LINKS, e por isso ela voltou para cá.** Ela
+ * morava num `HomeDockBar` cliente, que existia só para segurar o `ref` que
+ * abria a gaveta do Biblo e o `thinking` que acendia o avatar. Com a busca e a
+ * conversa viradas em rota (`/home/search`, `/home/chat`), não há estado a
+ * dividir: a barra recebe dois endereços e nada mais, e um componente cliente a
+ * menos separa esta página deles. Ver `lib/overlay-routes.ts`.
  */
 export default function V2HomePage() {
   return (
     <>
       {/* A folga de baixo é a altura da barra do rodapé mais o inset do
           iPhone: sem ela o último cartão da lista para debaixo dela e não há
-          rolagem que o traga inteiro para a luz. Ver `HomeDockBar`.
+          rolagem que o traga inteiro para a luz.
 
           A de CIMA não está aqui, e não é esquecimento: ela é a mesma em toda
           tela do app e mora no `pb-4` do `AppHeaderShell`, junto da barra que
@@ -64,7 +67,7 @@ export default function V2HomePage() {
       <main className="mx-auto flex w-full max-w-[1024px] flex-1 flex-col gap-6 px-4 pb-[calc(7.5rem+env(safe-area-inset-bottom))] md:pb-10">
         <LibraryBrowser nowIso={new Date().toISOString()} />
       </main>
-      <HomeDockBar />
+      <MobileActionBar searchHref={HOME_SEARCH_HREF} bibloHref={HOME_CHAT_HREF} />
       {/* A apresentação da Biblioteca, e a primeira que qualquer pessoa vê: é
           aqui que se cai ao entrar. Ver `src/features/tour/AGENTS.md`. */}
       <TourTrigger tour="library" delayMs={TOUR_DELAY_LIST_MS} />

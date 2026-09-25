@@ -1,6 +1,7 @@
 "use client";
 
 import { Search } from "lucide-react";
+import Link from "next/link";
 import { cn } from "@/lib/utils";
 import { TOPBAR_CHIP_CLASS } from "./chip";
 import { useGlobalSearchStore } from "./GlobalSearchStore";
@@ -24,26 +25,49 @@ import { useGlobalSearchStore } from "./GlobalSearchStore";
  * da `MobileActionBar`: um dos dois está sempre em `display: none`, e
  * `resolveAnchor` fica com o visível — a mesma técnica de `create-record` /
  * `create-write` / `create-import` entre `CreateActions` e o painel do rodapé.
+ *
+ * ## Com `href` ele é um LINK, e é para lá que as quatro telas vão
+ *
+ * Na Biblioteca a busca virou rota (`/home/search`), e abrir uma rota é o que
+ * um link faz: ele ganha o Ctrl+clique, o prefetch e o menu de contexto de
+ * graça, e o aplicativo que um dia desenhar esta barra em nativo só precisa do
+ * endereço. As outras três telas (`/import`, `/summary/new`,
+ * `/summary/:id/edit`) ainda abrem o diálogo pela `GlobalSearchStore` — ver
+ * `GlobalSearchHost`, que é a ponte enquanto elas não têm rota própria.
  */
 export function SearchTrigger({
+  href,
   label = "Buscar na biblioteca",
   tourId = "library-search",
   mobileVisible = false,
 }: {
+  /** O endereço da busca desta tela. Sem ele, o diálogo abre pela store. */
+  href?: string;
   label?: string;
   tourId?: string;
   mobileVisible?: boolean;
 } = {}) {
   const setOpen = useGlobalSearchStore((s) => s.setOpen);
+  const className = cn(TOPBAR_CHIP_CLASS, !mobileVisible && "hidden md:inline-flex");
+  const glyph = <Search className="size-5" strokeWidth={1.75} />;
+
+  if (href) {
+    return (
+      <Link href={href} aria-label={label} data-tour={tourId} className={className}>
+        {glyph}
+      </Link>
+    );
+  }
+
   return (
     <button
       type="button"
       onClick={() => setOpen(true)}
       aria-label={label}
       data-tour={tourId}
-      className={cn(TOPBAR_CHIP_CLASS, !mobileVisible && "hidden md:inline-flex")}
+      className={className}
     >
-      <Search className="size-5" strokeWidth={1.75} />
+      {glyph}
     </button>
   );
 }

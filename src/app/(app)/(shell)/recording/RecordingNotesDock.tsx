@@ -19,7 +19,7 @@ import { RECORDING_NOTES_MAX_CHARS, useRecordingNotes } from "./recording-notes"
  *
  * ## Fechado é um disco, aberto ele VIRA o painel
  *
- * Mesma gramática do `BibloHomeDock` e do `CreateDock`: o botão sai da tela
+ * Mesma gramática do `BibloHomeTrigger` e do `CreateDock`: o botão sai da tela
  * quando o painel abre, e o painel tem o próprio fechar — nunca os dois ao
  * mesmo tempo competindo pelo canto.
  *

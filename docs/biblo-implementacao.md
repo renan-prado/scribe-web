@@ -1751,7 +1751,7 @@ editor entram todos por aqui.
 ### 15.3 Quem executa é o CLIENTE
 
 O servidor decide o que o Biblo QUER fazer; quem escreve é o
-`BibloHomeDock`, por `POST /api/sessions/written` — a mesma rota do editor, que
+`BibloHomeDrawer`, por `POST /api/sessions/written` — a mesma rota do editor, que
 confere dono e passa pela RLS. Nenhuma rota nova nasce com permissão de
 escrever no acervo de alguém a partir do que um modelo devolveu, e uma ação
 inventada esbarra no mesmo schema que o editor esbarra.

@@ -1,6 +1,7 @@
 "use client";
 
 import { Plus, Search, Sparkles, X } from "lucide-react";
+import Link from "next/link";
 import { type ReactNode, useEffect, useState } from "react";
 import { MicGlyph } from "@/components/icons/MicGlyph";
 import { WriteGlyph } from "@/components/icons/WriteGlyph";
@@ -26,6 +27,19 @@ export const MOBILE_BAR_BUTTON_CLASS =
   "inline-flex size-14 shrink-0 items-center justify-center rounded-full bg-v2-glass-button bg-[image:var(--v2-glass-sheen)] text-v2-ink shadow-[0_2px_6px_var(--v2-glass-shadow),0_10px_28px_var(--v2-glass-shadow)] ring-1 ring-v2-glass-edge backdrop-blur-xl transition hover:brightness-125 active:brightness-150 focus-visible:outline-2 focus-visible:outline-offset-4 focus-visible:outline-v2-ink-mute disabled:opacity-50";
 
 /**
+ * O pill do meio, que CRESCE (`flex-1`): é o alvo mais provável, o mesmo
+ * raciocínio do quadrado colorido do `CreateDock` — só que aqui o destaque é
+ * TAMANHO, porque a superfície é a mesma dos outros dois botões, sem cor de
+ * ação.
+ *
+ * Constante porque ele é um `<a>` onde a conversa é rota (a Biblioteca) e um
+ * `<button>` onde ela ainda é estado; a classe é a mesma nos dois, e copiada
+ * divergiria no primeiro ajuste.
+ */
+const BIBLO_PILL_CLASS =
+  "inline-flex h-14 min-w-0 flex-1 items-center gap-2.5 rounded-full bg-v2-glass-button bg-[image:var(--v2-glass-sheen)] py-1.5 pr-4 pl-1.5 text-left shadow-[0_2px_6px_var(--v2-glass-shadow),0_10px_28px_var(--v2-glass-shadow)] ring-1 ring-v2-glass-edge backdrop-blur-xl transition hover:brightness-125 active:brightness-150 focus-visible:outline-2 focus-visible:outline-offset-4 focus-visible:outline-v2-ink-mute";
+
+/**
  * A barra de baixo do celular, única em `/home`, `/summary` e `/summary/new`:
  * busca, "Pergunte ao Biblo" e uma terceira ação, os três SEMPRE visíveis. Ela
  * substitui os discos soltos que cada tela desenhava por conta própria (o `+`
@@ -34,11 +48,17 @@ export const MOBILE_BAR_BUTTON_CLASS =
  * rolar: uma barra de navegação que soma e some é pior que uma parada.
  *
  * **Quem abre o Biblo não é esta barra.** A conversa (a gaveta, a sessão, as
- * ferramentas de cada tela) continua exatamente onde estava — `BibloHomeDock`,
- * `BibloDock`, `BibloSummaryDock` — e só o GATILHO delas mudou de lugar: em
- * vez de renderizar o próprio disco flutuante no celular, cada uma expõe um
+ * ferramentas de cada tela) continua exatamente onde estava — `BibloDock`,
+ * `BibloSummaryDock`, `BibloHomeDrawer` — e só o GATILHO delas mudou de lugar:
+ * em vez de renderizar o próprio disco flutuante no celular, cada uma expõe um
  * `ref` com `open()` que esta barra chama. No desktop nada mudou, o disco
  * delas continua ali, porque esta barra é `md:hidden`.
+ *
+ * **Na BIBLIOTECA não há mais `ref` nenhum: as duas pontas são ENDEREÇOS.**
+ * `searchHref` e `bibloHref` fazem do botão um `<a>` para `/home/search` e
+ * `/home/chat`, e a barra deixa de saber que existe uma gaveta — quem a monta
+ * é o slot `@overlay` daquela rota. As outras telas seguem no `ref`; ver
+ * `lib/overlay-routes.ts` para o porquê da troca e para onde ela vai.
  *
  * ## As duas PONTAS dependem de onde a barra está, e o meio nunca muda
  *
@@ -46,7 +66,7 @@ export const MOBILE_BAR_BUTTON_CLASS =
  *
  * | | busca | ação |
  * |---|---|---|
- * | `/home` | a busca GLOBAL (`GlobalSearchDialog`) | o "+", as três portas |
+ * | `/home` | a busca GLOBAL, por rota (`/home/search`) | o "+", as três portas |
  * | `/summary` | dentro do resumo (`SummaryFind`) | "Editar" |
  * | `/summary/new` | dentro do rascunho | "Salvar" |
  *
@@ -78,16 +98,27 @@ export const MOBILE_BAR_BUTTON_CLASS =
  */
 export function MobileActionBar({
   onAskBiblo,
+  bibloHref,
   bibloThinking = false,
   onSearch,
+  searchHref,
   searchLabel = "Buscar na biblioteca",
   searchOpen = false,
   trailing,
 }: {
-  onAskBiblo: () => void;
+  onAskBiblo?: () => void;
+  /**
+   * O ENDEREÇO da conversa desta tela (na Biblioteca, `/home/chat`). Com ele o
+   * pill vira um link e a barra não precisa de estado nenhum da gaveta — nem do
+   * `ref` que a abria, nem do `bibloThinking`, que acendia o avatar de uma
+   * conversa montada na mesma árvore. Ver `lib/overlay-routes.ts`.
+   */
+  bibloHref?: string;
   bibloThinking?: boolean;
-  /** O que o botão de busca faz. Sem ele, abre a busca GLOBAL. */
+  /** O que o botão de busca faz. Sem ele e sem `searchHref`, a busca GLOBAL. */
   onSearch?: () => void;
+  /** O ENDEREÇO da busca desta tela. Mesma história do `bibloHref`. */
+  searchHref?: string;
   searchLabel?: string;
   /** A busca desta tela já está aberta? O glifo vira um X, como no cabeçalho. */
   searchOpen?: boolean;
@@ -97,6 +128,12 @@ export function MobileActionBar({
   const setSearchOpen = useGlobalSearchStore((s) => s.setOpen);
   useKeyboardInset();
 
+  const searchGlyph = searchOpen ? (
+    <X aria-hidden className="size-5" strokeWidth={1.75} />
+  ) : (
+    <Search aria-hidden className="size-5" strokeWidth={1.75} />
+  );
+
   return (
     <div
       className={cn(
@@ -105,38 +142,53 @@ export function MobileActionBar({
       )}
     >
       <div className="flex w-full max-w-[1024px] items-end gap-3">
-        <button
-          type="button"
-          onClick={onSearch ?? (() => setSearchOpen(true))}
-          aria-label={searchOpen ? "Fechar a busca" : searchLabel}
-          aria-expanded={onSearch ? searchOpen : undefined}
-          /* O MESMO alvo de tour do chip do desktop: um dos dois está sempre em
-             `display: none`, e o `resolveAnchor` fica com o visível. */
-          data-tour="library-search"
-          className={MOBILE_BAR_BUTTON_CLASS}
-        >
-          {searchOpen ? (
-            <X aria-hidden className="size-5" strokeWidth={1.75} />
-          ) : (
-            <Search aria-hidden className="size-5" strokeWidth={1.75} />
-          )}
-        </button>
+        {searchHref ? (
+          /* `Link` e não `NavLink`: o destino é uma gaveta que monta na hora,
+             sem `loading.tsx` para esperar, e o spinner do `NavLink` seria
+             ruído no lugar de resposta. Vale para o pill do Biblo abaixo. */
+          <Link
+            href={searchHref}
+            aria-label={searchLabel}
+            /* O MESMO alvo de tour do chip do desktop: um dos dois está sempre
+               em `display: none`, e o `resolveAnchor` fica com o visível. */
+            data-tour="library-search"
+            className={MOBILE_BAR_BUTTON_CLASS}
+          >
+            {searchGlyph}
+          </Link>
+        ) : (
+          <button
+            type="button"
+            onClick={onSearch ?? (() => setSearchOpen(true))}
+            aria-label={searchOpen ? "Fechar a busca" : searchLabel}
+            aria-expanded={onSearch ? searchOpen : undefined}
+            data-tour="library-search"
+            className={MOBILE_BAR_BUTTON_CLASS}
+          >
+            {searchGlyph}
+          </button>
+        )}
 
-        {/* O pill do meio CRESCE (`flex-1`): é o alvo mais provável, o mesmo
-            raciocínio do quadrado colorido do `CreateDock` — só que aqui o
-            destaque é TAMANHO, porque a superfície é a mesma dos outros
-            dois botões, sem cor de ação. */}
-        <button
-          type="button"
-          onClick={onAskBiblo}
-          aria-label="Pergunte ao Biblo"
-          className="inline-flex h-14 min-w-0 flex-1 items-center gap-2.5 rounded-full bg-v2-glass-button bg-[image:var(--v2-glass-sheen)] py-1.5 pr-4 pl-1.5 text-left shadow-[0_2px_6px_var(--v2-glass-shadow),0_10px_28px_var(--v2-glass-shadow)] ring-1 ring-v2-glass-edge backdrop-blur-xl transition hover:brightness-125 active:brightness-150 focus-visible:outline-2 focus-visible:outline-offset-4 focus-visible:outline-v2-ink-mute"
-        >
-          <BibloAvatar mood={bibloThinking ? "thinking" : "idle"} size={40} />
-          <span className="truncate font-medium text-[15px] text-v2-ink-soft">
-            Pergunte ao Biblo
-          </span>
-        </button>
+        {bibloHref ? (
+          <Link href={bibloHref} aria-label="Pergunte ao Biblo" className={BIBLO_PILL_CLASS}>
+            <BibloAvatar mood="idle" size={40} />
+            <span className="truncate font-medium text-[15px] text-v2-ink-soft">
+              Pergunte ao Biblo
+            </span>
+          </Link>
+        ) : (
+          <button
+            type="button"
+            onClick={onAskBiblo}
+            aria-label="Pergunte ao Biblo"
+            className={BIBLO_PILL_CLASS}
+          >
+            <BibloAvatar mood={bibloThinking ? "thinking" : "idle"} size={40} />
+            <span className="truncate font-medium text-[15px] text-v2-ink-soft">
+              Pergunte ao Biblo
+            </span>
+          </button>
+        )}
 
         {trailing ?? <CreateButton />}
       </div>

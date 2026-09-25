@@ -139,7 +139,10 @@ export const TOURS: Record<TourKey, TourDefinition> = {
         /**
          * O alvo é o BOTÃO de busca, e não um resultado dentro dela: a busca
          * é a GLOBAL (`GlobalSearchDialog`, Ctrl+K), aberta por cima de
-         * qualquer tela, e `[data-tour="library-search"]` existe DUAS vezes —
+         * qualquer tela — e na Biblioteca, onde este passo roda, os dois
+         * botões são LINKS para `/home/search` (ver "Overlay é ROTA" em
+         * `src/app/AGENTS.md`); o passo só destaca, nunca clica, então a troca
+         * não o afeta. `[data-tour="library-search"]` existe DUAS vezes —
          * no `SearchTrigger` da `TopBar` (desktop) e no botão de busca da
          * `MobileActionBar` (celular) — um dos dois sempre em
          * `display: none`, e `resolveAnchor` fica com o visível, a mesma
