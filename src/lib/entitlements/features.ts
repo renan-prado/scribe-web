@@ -19,7 +19,7 @@
 
 import { PLAN_ORDER, PLANS, type PlanKey } from "@/features/billing/plans";
 
-export const FEATURE_KEYS = ["study_generation", "biblo_chat"] as const;
+export const FEATURE_KEYS = ["biblo_chat"] as const;
 export type FeatureKey = (typeof FEATURE_KEYS)[number];
 
 export function isFeatureKey(value: unknown): value is FeatureKey {
@@ -39,27 +39,15 @@ export type FeatureDefinition = {
 };
 
 export const FEATURES: Record<FeatureKey, FeatureDefinition> = {
-  study_generation: {
-    key: "study_generation",
-    name: "Gerar estudo",
-    description: "Produz o estudo aprofundado de uma sessão já resumida, e o reprocessamento dele.",
-    // "pessoal" e não "estudioso": o estudo é o que diferencia um plano PAGO
-    // do gratuito, e não o plano de cima do plano do meio. Prender a única
-    // funcionalidade exclusiva do produto no degrau mais alto deixava o
-    // Pessoal sem nada que o Gratuito não tivesse, a diferença entre os dois
-    // era só a quantidade de créditos.
-    //
-    // `PLAN_ORDER` faz o Estudioso herdar automaticamente: quem alcança o
-    // degrau mínimo, e qualquer um acima dele, tem acesso.
-    minPlan: "pessoal",
-    upsell: "O estudo aprofundado faz parte dos planos pagos.",
-  },
   biblo_chat: {
     key: "biblo_chat",
     name: "Chat inteligente com o Biblo",
     description:
       "A conversa dentro de uma sessão: contexto, passagens e provocações sobre o resumo.",
-    // Mesmo degrau do estudo, e pela mesma razão escrita lá em cima.
+    // "pessoal" e não "estudioso": o que diferencia um plano PAGO do gratuito
+    // não pode morar no degrau mais alto, ou o Pessoal fica sem nada que o
+    // Gratuito não tenha e a diferença entre os dois vira só a quantidade de
+    // créditos. `PLAN_ORDER` faz o Estudioso herdar sozinho.
     //
     // ⚠️ **Este é o único `FEATURE_KEYS` cujo "não" não é o fim da história.**
     // A conta gratuita recusada por `reason: "plan"` ainda tem as mensagens de

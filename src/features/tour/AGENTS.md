@@ -23,10 +23,10 @@ raciocínio do schema.
 
 ## A regra que governa tudo: uma vez por pessoa, por TELA
 
-Não existe "o" tour do Scriba. A Biblioteca, a gravação, o resumo salvo, a
-lista de estudos e o estudo pronto ensinam coisas diferentes, e quem chega pelo
-link de um resumo pode levar semanas até abrir a Biblioteca. **Uma flag única de
-"já fez o onboarding" gastaria a explicação de cinco telas na primeira delas**, e
+Não existe "o" tour do Scriba. A Biblioteca, a gravação e o resumo salvo
+ensinam coisas diferentes, e quem chega pelo link de um resumo pode levar
+semanas até abrir a Biblioteca. **Uma flag única de "já fez o onboarding"
+gastaria a explicação de várias telas na primeira delas**, e
 é por isso que a chave primária de `user_tours` é `(user_id, tour)`.
 
 Tudo aqui desce daí, e nada é preferência estética:
@@ -57,7 +57,7 @@ Tudo aqui desce daí, e nada é preferência estética:
 
 **O passo cujo alvo não está na tela é DESCARTADO, e o tour segue.** Metade dos
 alvos é condicional: a faixa "Em aberto" só existe para quem tem gravação
-inacabada, o botão de gerar estudo troca de forma para quem já gerou. Um tour
+inacabada. Um tour
 que travasse no alvo ausente seria um tour que só funciona na conta de quem o
 escreveu. E se não sobrar passo nenhum, **nada é registrado**: a tela ainda não
 tem o que mostrar, e o tour espera a próxima visita.
@@ -101,8 +101,8 @@ o microfone sozinho, e ali o tour simplesmente não dispara. Quem abre a tela pe
 endereço direto vê. Um balão por cima de uma pregação em andamento é o pior
 defeito que esta pasta poderia ter.
 
-**O tour tem preferência sobre a pesquisa de satisfação.** As duas moram nas
-mesmas telas (o resumo e o estudo) e as duas abrem sozinhas. Enquanto um
+**O tour tem preferência sobre a pesquisa de satisfação.** As duas moram na
+mesma tela (o resumo) e as duas abrem sozinhas. Enquanto um
 tour está aberto, o `FeedbackPrompt` nem começa a contar o atraso dele, e
 recomeça do zero quando a tela fica livre. Não é só cortesia visual: perguntar
 é GASTAR a 1ª, a 3ª ou a 8ª gravação da vida de alguém, e gastá-la atrás de um
@@ -199,7 +199,7 @@ Os dois tours de hoje são `library` e `summary`. Eram dez, e oito descreviam
 telas que deixaram de existir: `feed` (o Início), `recordings` (a Biblioteca
 antes de virar a primeira tela), os três `capture_*` (um por modo de gravação),
 `studies`/`study` (a lista de Estudos e o estudo pronto, que saíram do produto
-com a rota) e `recording` (a tela de gravação EM REPOUSO, que deixou de ser
+inteiro) e `recording` (a tela de gravação EM REPOUSO, que deixou de ser
 alcançável).
 
 **As chaves novas não reaproveitam os nomes antigos, e isso é decisão.** O

@@ -44,7 +44,12 @@ export type KpiTrend = {
 export type KpiTile = {
   label: string;
   value: string;
-  hint: string;
+  /**
+   * `ReactNode` e não `string`: a linha do rodapé às vezes carrega um SINAL
+   * junto do texto (a bola verde de "online agora"), e uma bola desenhada em
+   * caractere não acompanha o tom do tema nem se alinha com a base da linha.
+   */
+  hint: React.ReactNode;
   /** A linha em negrito do rodapé, acima do `hint`. Opcional. */
   note?: string;
   trend?: KpiTrend;

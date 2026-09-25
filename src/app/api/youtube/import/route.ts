@@ -52,7 +52,7 @@ export const maxDuration = 300;
  * ```
  *
  * A legenda vem ANTES da cobrança de propósito, e é uma inversão em relação a
- * `/reprocess` e `/api/deepening`, onde nada acontece antes de pagar. Dois
+ * `/reprocess`, onde nada acontece antes de pagar. Dois
  * motivos, e os dois são sobre esta rota especificamente:
  *
  * 1. **A legenda é a chamada barata** (~R$ 0,03, 1 crédito de provedor); o

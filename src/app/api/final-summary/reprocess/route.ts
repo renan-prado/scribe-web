@@ -22,7 +22,7 @@ export const dynamic = "force-dynamic";
  * transcript already stored on the row. Overwrites the previous final_summary
  * payload, ou ESCREVE o primeiro quando a sessão ficou sem nenhum (o resumo
  * falhou na gravação ou na importação). Costs `reprocess_summary` coins,
- * charged before the LLM call, following the same pattern as /api/deepening (a
+ * charged before the LLM call, following the same pattern as every paid route (a
  * 402 here means the account is dry; downstream LLM failures do not refund).
  */
 export async function POST(request: Request) {

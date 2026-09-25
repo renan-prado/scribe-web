@@ -112,7 +112,8 @@ const AI_FEATURES: PlanFeature[] = [
 /**
  * O nome da funcionalidade paga sai do CATÁLOGO, e não daqui: é o mesmo rótulo
  * que o `/admin` mostra na matriz de features e o mesmo que a frase de upsell
- * usa. O `biblo_chat` é hoje o degrau pago, no `minPlan` em que o estudo estava.
+ * usa. O `biblo_chat` é hoje a ÚNICA feature do catálogo, no `minPlan` em que
+ * o estudo estava antes de sair do produto.
  */
 const BIBLO_FEATURE = FEATURES.biblo_chat.name;
 

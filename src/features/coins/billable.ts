@@ -2,10 +2,9 @@
  * As AÇÕES cobráveis do produto, a unidade em que a precificação é decidida.
  *
  * `pricing.ts` responde "quanto custa" em moedas; este arquivo responde "o que
- * é uma coisa". São perguntas diferentes: `deepening` e `reprocess_deepening`
- * são dois motivos no ledger e UM produto (o mesmo pipeline, o mesmo preço), e
- * os quatro motivos por minuto que já existiram são hoje uma linha só. Sem esta camada, o painel de custo mostraria motivos de
- * lançamento contábil onde o usuário precisa ver decisões de preço.
+ * é uma coisa". São perguntas diferentes: os quatro motivos por minuto que já
+ * existiram são hoje uma linha só. Sem esta camada, o painel de custo mostraria
+ * motivos de lançamento contábil onde o usuário precisa ver decisões de preço.
  *
  * Client-safe: a tela de precificação lê daqui e a agregação server-only
  * também. É o mesmo motivo de `lib/partners/economics.ts` ser client-safe,
@@ -18,13 +17,7 @@
 
 import { COIN_COSTS } from "./pricing";
 
-export const BILLABLE_ACTION_KEYS = [
-  "recording",
-  "youtube",
-  "study",
-  "reprocess_summary",
-  "biblo",
-] as const;
+export const BILLABLE_ACTION_KEYS = ["recording", "youtube", "reprocess_summary", "biblo"] as const;
 export type BillableActionKey = (typeof BILLABLE_ACTION_KEYS)[number];
 
 export type BillableAction = {
@@ -71,18 +64,6 @@ export const BILLABLE_ACTIONS: readonly BillableAction[] = [
     note: "Legenda do vídeo pela Supadata (~1 crédito, R$ 0,03) e o resumo completo por cima. Nenhum minuto de STT. O custo cresce com a DURAÇÃO do vídeo e o preço não, é o teto de 2h em lib/domain/youtube.ts que segura a margem.",
   },
   {
-    key: "study",
-    label: "Estudo aprofundado",
-    coins: COIN_COSTS.deepening,
-    unit: "estudo",
-    reasons: ["deepening", "reprocess_deepening"],
-    // Gerar e reprocessar rodam `generateStudy` com as MESMAS rotas de
-    // telemetria, então o custo dos dois é indistinguível no banco. Como o
-    // preço também é o mesmo, somá-los não perde informação nenhuma, separar
-    // as linhas é que daria um custo por execução inventado.
-    note: "Gerar E reprocessar estudo, somados, 50 moedas cada. Mesmo pipeline, custo indistinguível na telemetria.",
-  },
-  {
     key: "reprocess_summary",
     label: "Resumo de sessão salva",
     coins: COIN_COSTS.reprocessSummary,
@@ -92,7 +73,7 @@ export const BILLABLE_ACTIONS: readonly BillableAction[] = [
     // motivo continua no ledger, e somá-lo aqui é o que mantém o histórico
     // comparável.
     reasons: ["reprocess_summary", "summary_from_transcript"],
-    note: "Resumo rodado FORA da gravação, sobre uma sessão já salva. Não confundir com reprocessar o estudo, que custa 50 e está na linha acima.",
+    note: "Resumo rodado FORA da gravação, sobre uma sessão já salva.",
   },
   {
     key: "biblo",
@@ -113,6 +94,27 @@ export const BILLABLE_ACTIONS: readonly BillableAction[] = [
 export const BILLABLE_ACTION_BY_KEY: Record<BillableActionKey, BillableAction> = Object.fromEntries(
   BILLABLE_ACTIONS.map((a) => [a.key, a])
 ) as Record<BillableActionKey, BillableAction>;
+
+/**
+ * Custo de um produto que SAIU, e que continua no banco.
+ *
+ * Hoje é o estudo aprofundado: as rotas `study-*` / `deepening*` gravaram
+ * chamadas de LLM e o ledger debitou 50 moedas por execução, e nenhuma das
+ * duas coisas pode ser reescrita. O que saiu foi a LINHA DE PREÇO — perguntar
+ * "o estudo ainda se paga?" sobre algo que ninguém mais pode comprar é uma
+ * decisão que não existe.
+ *
+ * Precisa de chave PRÓPRIA por uma razão só, e ela é a de sempre neste
+ * arquivo: sem ela o custo daquelas chamadas cairia no modo da sessão que as
+ * gerou (quase sempre `recording`), engordando o custo da gravação sem
+ * engordar as moedas dela, e a margem do minuto gravado apareceria pior do
+ * que é, em silêncio.
+ *
+ * Diferente de `unbilled` e de `internal`, este custo CONTINUA dentro da
+ * margem agregada, e é o certo: ele foi cobrado, as moedas estão no mesmo
+ * total. Ele só não tem linha na tabela de decisão de preço.
+ */
+export const LEGACY_ACTION_KEY = "legacy" as const;
 
 /**
  * Custo que NÃO tem ação cobrável atrás dele: chamadas fora de uma gravação
@@ -138,10 +140,12 @@ export const INTERNAL_ACTION_KEY = "internal" as const;
 export type UsageActionKey =
   | BillableActionKey
   | typeof UNBILLED_ACTION_KEY
-  | typeof INTERNAL_ACTION_KEY;
+  | typeof INTERNAL_ACTION_KEY
+  | typeof LEGACY_ACTION_KEY;
 
-/** As duas chaves que não são ação cobrável, não entram na tabela de margem. */
+/** As chaves que não são ação cobrável, não entram na tabela de margem. */
 export const NON_BILLABLE_ACTION_KEYS: readonly UsageActionKey[] = [
   UNBILLED_ACTION_KEY,
   INTERNAL_ACTION_KEY,
+  LEGACY_ACTION_KEY,
 ];

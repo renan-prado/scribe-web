@@ -1864,46 +1864,6 @@
        exigiria posicionar a caixa do bloco só para isso. */
     animation: var(--animate-block-flash) !important;
   }
-
-  /* A pele do ESTUDO: `/studies` e o aprofundamento. Ela reaponta os tokens
-     `session-*` que o `BlockRenderer` lê (citação, conclusão, verso
-     relacionado) sem tocar nos tokens em si.
-
-     Era um par de blocos, um por tema. Com um tema só sobra este, e o que ele
-     faz é subir MEIO DEGRAU acima da superfície do resumo (#2F3035 → #383940):
-     abrir um estudo tem de parecer entrar num cômodo vizinho, não em outro
-     produto. A diferença já foi de MATIZ, verde contra azul, e era grande
-     demais para o que ela separa. */
-  .tone-study {
-    --session-surface-quote: linear-gradient(110deg, #383940, #383940, #383940, #383940);
-    --session-verse-text: #D4D4D4;
-    --session-verse-border: #5C5D65;
-    --session-chip-ai: #A6A7AE;
-    --session-example-bg: #32333A;
-    --session-example-border: rgba(255, 255, 255, 0.12);
-    --session-mention-ink: #F5F5F5;
-  }
-
-  /* A mesma pele, do lado claro, e aqui o meio degrau vai para BAIXO.
-
-     No escuro o estudo SOBE meio degrau acima do resumo (#2F3035 → #383940),
-     porque lá subir é o que afasta do chão. No claro a direção se inverte
-     junto com a das superfícies: o resumo é o cinza do cartão (#F5F5F5) e o
-     estudo desce meio degrau para #EFEFEF, na direção do realce. A distância é
-     a mesma que lá, e a intenção também — entrar num cômodo vizinho, não em
-     outro produto.
-
-     `.light .tone-study` ganha da regra acima por especificidade, e as duas
-     estão na MESMA @layer, então a ordem entre camadas não entra na conta. */
-  .light .tone-study {
-    --session-surface-quote: linear-gradient(110deg, #EFEFEF, #EFEFEF, #EFEFEF, #EFEFEF);
-    --session-verse-text: #3D3D3D;
-    --session-verse-border: #D6D6D6;
-    --session-chip-ai: #707070;
-    --session-example-bg: #E7E7E7;
-    --session-example-border: rgba(0, 0, 0, 0.12);
-    --session-mention-ink: #1F1F1F;
-  }
 }
 
 @theme {

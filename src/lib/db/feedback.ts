@@ -26,7 +26,14 @@ import { createAdminClient } from "@/lib/supabase/admin";
 
 const log = createLogger("feedback");
 
-export type FeedbackPromptKind = "recording" | "study";
+/**
+ * Era `"recording" | "study"`. O estudo saiu do produto, e com ele a única
+ * outra família de pergunta. O tipo continua existindo (e não virou um
+ * literal solto) porque `feedback_prompts.kind` é uma COLUNA, com linhas
+ * antigas gravadas como `study`: quem lê uma delas precisa ter onde recusar,
+ * ver `resolveAnsweredPromptSurface`.
+ */
+export type FeedbackPromptKind = "recording";
 
 export type ResolvedFeedbackPrompt = {
   promptId: string;
@@ -87,35 +94,22 @@ export async function resolveFeedbackPrompt(input: {
   }
   const startedAt = profile.feedback_started_at as string;
 
-  // O instante do fato que se quer numerar, e a superfície sobre a qual
-  // perguntar. As duas famílias divergem só aqui.
-  let anchorAt: string;
-  let surface: FeedbackSurface;
+  const { data: session, error: sessionError } = await admin
+    .from("sessions")
+    .select("created_at, ended_at, mode")
+    .eq("id", sessionId)
+    .eq("user_id", userId)
+    .maybeSingle();
+  if (sessionError || !session) return null;
+  // Gravação em aberto ainda não terminou: não há experiência completa
+  // sobre a qual perguntar.
+  if (!session.ended_at) return null;
 
-  if (kind === "recording") {
-    const { data: session, error } = await admin
-      .from("sessions")
-      .select("created_at, ended_at, mode")
-      .eq("id", sessionId)
-      .eq("user_id", userId)
-      .maybeSingle();
-    if (error || !session) return null;
-    // Gravação em aberto ainda não terminou: não há experiência completa
-    // sobre a qual perguntar.
-    if (!session.ended_at) return null;
-    anchorAt = session.created_at as string;
-    surface = surfaceForSession();
-  } else {
-    const { data: deepening, error } = await admin
-      .from("session_deepenings")
-      .select("created_at")
-      .eq("session_id", sessionId)
-      .eq("user_id", userId)
-      .maybeSingle();
-    if (error || !deepening) return null;
-    anchorAt = deepening.created_at as string;
-    surface = "study";
-  }
+  // O instante do fato que se quer numerar, e a superfície sobre a qual
+  // perguntar. Eram duas famílias (gravação e estudo) e a bifurcação morava
+  // aqui; com o estudo fora do produto sobrou uma.
+  const anchorAt = session.created_at as string;
+  const surface: FeedbackSurface = surfaceForSession();
 
   // Comparação por instante, não por texto: o Postgres devolve o carimbo com
   // ou sem fração de segundo conforme o valor, e duas grafias do mesmo momento
@@ -166,17 +160,16 @@ async function countUpTo(input: {
   anchorAt: string;
 }): Promise<number | null> {
   const admin = createAdminClient();
-  const table = input.kind === "recording" ? "sessions" : "session_deepenings";
+  const table = "sessions";
 
-  let query = admin
+  const query = admin
     .from(table)
     .select("id", { count: "exact", head: true })
     .eq("user_id", input.userId)
     .gte("created_at", input.startedAt)
-    .lte("created_at", input.anchorAt);
-
-  // Gravação em aberto não conta: ela ainda pode virar sessão nenhuma.
-  if (input.kind === "recording") query = query.not("ended_at", "is", null);
+    .lte("created_at", input.anchorAt)
+    // Gravação em aberto não conta: ela ainda pode virar sessão nenhuma.
+    .not("ended_at", "is", null);
 
   const { count, error } = await query;
   if (error) {
@@ -191,8 +184,8 @@ async function countUpTo(input: {
  *
  * Existe para que o cliente não precise mandar nem uma nem outra. Ele devolve
  * só o `promptId` que recebeu, e o servidor reconstrói o resto da linha que
- * ele mesmo escreveu, um corpo que dissesse `surface: "study"` sobre a sessão
- * de outra pessoa não teria como ser desmentido.
+ * ele mesmo escreveu, um corpo que dissesse a superfície de uma sessão de
+ * outra pessoa não teria como ser desmentido.
  *
  * `null` quando a pergunta não é dele, não existe, ou já foi respondida. A
  * última é o clique duplo no botão de enviar, e é por isso que ela é tratada
@@ -212,7 +205,10 @@ export async function loadOpenFeedbackPrompt(input: {
   if (error || !prompt || prompt.answered_at) return null;
 
   const sessionId = prompt.session_id as string;
-  if (prompt.kind === "study") return { surface: "study", sessionId };
+  // Linha antiga de uma pergunta sobre o ESTUDO, que saiu do produto. Não há
+  // superfície para reconstruir, e responder pelo caminho da gravação
+  // gravaria uma nota sobre a coisa errada.
+  if (prompt.kind !== "recording") return null;
 
   const { data: session } = await admin
     .from("sessions")

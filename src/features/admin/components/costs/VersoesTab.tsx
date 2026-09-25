@@ -25,7 +25,7 @@ import { SectionLabel } from "./notices";
  * **A leitura correta é uma ROTA de cada vez**, e o aviso no topo diz isso
  * porque a armadilha é silenciosa: sem fixar a rota, o custo médio por chamada
  * de uma versão muda só porque a MISTURA de rotas mudou entre dois deploys,
- * uma semana com mais estudos gerados parece "a 0.6.0 encareceu tudo".
+ * uma semana com mais importações do YouTube parece "a 0.6.0 encareceu tudo".
  *
  * O custo sai por MIL chamadas pela mesma razão que o custo por moeda sai por
  * milheiro (ver `lib/fx/format.ts`): uma chamada custa na casa do milésimo de
@@ -67,8 +67,8 @@ export function VersoesTab({
               Filtre uma rota antes de concluir
             </strong>{" "}
             qualquer coisa daqui: sem isso, o custo médio por chamada muda quando a MISTURA de rotas
-            muda entre dois deploys, e uma semana com mais estudos gerados parece uma versão que
-            encareceu.
+            muda entre dois deploys, e uma semana com mais importações do YouTube parece uma versão
+            que encareceu.
           </>
         )}
       </p>

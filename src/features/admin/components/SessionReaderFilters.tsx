@@ -14,6 +14,7 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
+import { UserPicker, type UserPickerOption } from "@/features/admin/components/UserPicker";
 
 /**
  * A barra de filtros de `/admin/sessions`.
@@ -27,8 +28,13 @@ import {
  */
 
 type Props = {
-  users: { id: string; displayName: string | null; email: string | null }[];
-  current: { userId: string; mode: string; q: string };
+  /**
+   * A pessoa do `?userId=` JÁ resolvida pelo servidor, ou `null` — e não a
+   * lista de contas, que antes vinha inteira para encher um `<select>`. Quem
+   * procura agora é o banco, a cada tecla, ver `UserPicker`.
+   */
+  selectedUser: UserPickerOption | null;
+  current: { mode: string; q: string };
 };
 
 const ANY = "__any__";
@@ -42,21 +48,13 @@ const MODE_OPTIONS: SelectOption[] = [
   { value: "youtube", label: "YouTube" },
 ];
 
-export function SessionReaderFilters({ users, current }: Props) {
+export function SessionReaderFilters({ selectedUser, current }: Props) {
   const router = useRouter();
   const searchParams = useSearchParams();
-  const [userId, setUserId] = useState(current.userId || ANY);
+  const [user, setUser] = useState<UserPickerOption | null>(selectedUser);
   const [mode, setMode] = useState(current.mode || ANY);
   const [q, setQ] = useState(current.q);
   const [isPending, startTransition] = useTransition();
-
-  const userOptions: SelectOption[] = [
-    { value: ANY, label: "Todos" },
-    ...users.map((u) => ({
-      value: u.id,
-      label: u.displayName?.trim() || u.email || u.id.slice(0, 8),
-    })),
-  ];
 
   function push(next: { userId: string; mode: string; q: string }) {
     const params = new URLSearchParams(searchParams.toString());
@@ -72,37 +70,26 @@ export function SessionReaderFilters({ users, current }: Props) {
   }
 
   function reset() {
-    setUserId(ANY);
+    setUser(null);
     setMode(ANY);
     setQ("");
     startTransition(() => router.push("/admin/sessions"));
   }
 
-  const dirty = userId !== ANY || mode !== ANY || q.trim().length > 0;
+  const dirty = user !== null || mode !== ANY || q.trim().length > 0;
 
   return (
     <form
       className="admin-card-surface flex flex-col gap-4 p-5"
       onSubmit={(e) => {
         e.preventDefault();
-        push({ userId, mode, q });
+        push({ userId: user?.id ?? ANY, mode, q });
       }}
     >
       <div className="grid gap-3 sm:grid-cols-2 xl:grid-cols-3 xl:items-end">
         <div className="flex flex-col gap-1.5">
-          <Label>Pessoa</Label>
-          <Select items={userOptions} value={userId} onValueChange={(v) => setUserId(v ?? ANY)}>
-            <SelectTrigger className="w-full">
-              <SelectValue />
-            </SelectTrigger>
-            <SelectContent>
-              {userOptions.map((o) => (
-                <SelectItem key={o.value} value={o.value}>
-                  {o.label}
-                </SelectItem>
-              ))}
-            </SelectContent>
-          </Select>
+          <Label htmlFor="admin-sessions-user">Pessoa</Label>
+          <UserPicker id="admin-sessions-user" value={user} onChange={setUser} />
         </div>
 
         <div className="flex flex-col gap-1.5">

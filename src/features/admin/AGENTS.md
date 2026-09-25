@@ -214,7 +214,10 @@ Duas contas:
 
 - **"Hoje"** é `count(*)` do dia corrente — o tile "Acessos hoje" de `/admin`.
 - **"Online agora"** é o mesmo filtro mais `last_seen_at` nos últimos 5
-  minutos. É uma APROXIMAÇÃO deliberada, não uma contagem de WebSocket aberto:
+  minutos. No tile ele leva uma BOLA VERDE e nenhum til: o `~` que abria a
+  linha lia como incerteza do dado, não como a janela de 5 minutos que ele de
+  fato é, e a ressalva foi para o `title`. É uma APROXIMAÇÃO deliberada, não
+  uma contagem de WebSocket aberto:
   a folga de 5 minutos cobre até três pulsos perdidos (rede ruim, aba em
   segundo plano), e ninguém deveria ler este número como uma medida exata —
   é "tem gente usando isto agora", com a margem que o método permite.
@@ -231,6 +234,63 @@ O bucket de `rate-limit.ts` (`presence-heartbeat`) segue a régua de
 `sessions-read` no limite por IP, e não a de uma rota de LLM: uma igreja
 gravando ao mesmo tempo põe centenas de aparelhos atrás do mesmo Wi-Fi, e
 apertar o balde apagaria "online agora" justamente no pico de uso do produto.
+
+## O filtro por PESSOA (`/admin/costs` e `/admin/sessions`)
+
+Os dois filtros por pessoa eram um `<select>` cheio com a base inteira:
+`listUsersForFilter()` lia `profiles` sem teto declarado e a lista viajava
+inteira no payload do RSC, uma `<option>` por conta.
+
+**Isso tem três vidas, e a do meio é a perigosa.** Com dezenas de contas é o
+mais simples que existe. Com mil, quem corta é o `max-rows` do PostgREST: a
+lista fica INCOMPLETA e nada na tela diz isso, então a pessoa procurada
+simplesmente não está no select e quem olha conclui que ela não tem sessão
+nenhuma. Com um milhão nem chega lá, a consulta ordena a tabela toda e a tela
+carrega megabytes de nome e e-mail para usar UM deles.
+
+O que ficou no lugar, em três peças:
+
+- `src/features/admin/server/db/user-search.ts` — `searchUsersForFilter(termo)`, teto de
+  20 linhas SEMPRE, e `getUserFilterOption(id)`, uma linha, que resolve o
+  rótulo de quem já está no `?userId=`.
+- `/api/admin/users/search` — irmã de `/api/admin/users` e deliberadamente
+  não a mesma rota: aquela monta a ficha financeira de cada conta (duas
+  varreduras de `coin_transactions`) para a tabela de `/admin/users`, e um
+  campo que dispara a cada tecla não pode pagar isso.
+- `UserPicker` — o campo, com debounce de 200ms e `AbortController`.
+
+Quatro decisões que quem mexer aqui não deve desfazer:
+
+- **O teto é DITO quando é atingido.** Vinte linhas cheias podem ser vinte de
+  vinte ou vinte de duas mil, e sem a linha do rodapé as duas são a mesma
+  tela. É a mesma régua do teto de `/admin/users` e do de `ADMIN_SESSIONS_PAGE_SIZE`.
+- **A falha de rede é dita também.** Uma lista vazia por 500 é idêntica, na
+  tela, a "não existe ninguém com esse nome", e as duas mandam quem lê para
+  lados opostos.
+- **O campo aceita o uuid colado.** O id é o que está à mão em toda outra tela
+  do painel (uma coluna, um link, um log) e num select não tinha onde ser
+  digitado.
+- **O servidor resolve o rótulo do `?userId=` da URL.** Sem isso, um link
+  colado abriria mostrando um uuid até a busca do cliente responder. O estado
+  do filtro continua na URL, como no resto do painel.
+
+O termo passa por `sanitizeTerm` antes de entrar no `.or()` do PostgREST: a
+vírgula e os parênteses são a GRAMÁTICA do filtro, não dados, e um deles
+digitado no campo muda a consulta que chega ao Postgres. `escapeLikeValue`
+(de `lib/db/like.ts`) cuida de `%` e `_`, que são de outra camada.
+
+A migração **0074** é o que sustenta a busca no tamanho grande: `pg_trgm` mais
+GIN em `display_name` e `email`, porque `ilike '%pedaço%'` não usa B-tree
+nenhum, e um índice por `created_at desc` para as 20 mais recentes que o campo
+mostra antes de alguém digitar. Termo de menos de dois caracteres não vai ao
+banco procurar (trigrama tem três letras, abaixo disso o índice não ajuda e a
+consulta vira varredura a cada tecla).
+
+**A lista de `/admin/users` continua sendo o caso não resolvido**, e de
+propósito: ela não é um filtro, é a tela, e a busca dela é sobre a ficha
+financeira que só ela carrega. O teto está declarado
+(`ADMIN_USERS_PAGE_SIZE`, 1000) e aparece na tela; o dia de paginar de verdade
+é quando a base passar disso.
 
 ## As telas privilegiadas não vazam no bundle
 
@@ -385,8 +445,8 @@ parece resposta e não é:
 
 - **A leitura correta é uma ROTA de cada vez**, e o aviso acima da tabela diz
   isso. Sem fixar a rota, o custo médio por chamada muda só porque a MISTURA de
-  rotas mudou entre dois deploys: uma semana com mais estudos gerados parece
-  uma versão que encareceu tudo.
+  rotas mudou entre dois deploys: uma semana com mais importações do YouTube
+  parece uma versão que encareceu tudo.
 - **Não há coluna de moedas por versão na tabela.** O débito é por minuto de
   gravação, não por chamada, não há como ratear uma cobrança de minuto entre
   as chamadas que ela pagou.
@@ -439,35 +499,59 @@ serve as duas versões por alguns minutos.
 
 Guia completo em [`docs/versionamento.md`](../../../docs/versionamento.md).
 
-## O inspetor de sessão (na aba "Sessões")
+## A aba "Sessões": o LUCRO de cada uma
 
-`/admin/costs?aba=sessoes&sessionId=<uuid>` abre uma sessão **execução por
-execução** (`src/features/admin/server/db/session-runs.ts`). É a única leitura
-que NÃO agrega, e existe por causa de um ponto cego de todas as outras:
-reprocessar um estudo grava um segundo conjunto de eventos na mesma sessão, e
-somados eles viram um número que não descreve nem uma execução nem a outra, que
-é justamente o número que se quer comparar ao ajustar modelo ou prompt.
+A tabela responde "esta sessão deu dinheiro?", e as colunas de hoje são o
+conserto de uma que respondia outra pergunta. A última era **custo por 1.000
+moedas** — a unidade da aba de PREÇOS, onde a pergunta é se o milheiro se
+paga. Uma sessão não é uma decisão de preço: ela já aconteceu, já cobrou e já
+custou. O que se quer dela é quanto sobrou.
 
-**Ele mora na MESMA aba da tabela de sessões, e isso conserta uma ambiguidade
-real.** Antes, a tabela estava numa tela e o inspetor na outra, as duas
-governadas por um `sessionId` na URL com o mesmo nome e significados
-diferentes: lá ele filtrava a tabela, aqui ele abria a sessão. Juntos, o
-parâmetro quer dizer uma coisa só, e o clique numa linha entrega o agregado e
-as execuções de uma vez.
+No lugar entraram **duas** colunas, e são a mesma conta em unidades que
+servem para coisas diferentes: **lucro em real** soma ao longo da lista,
+**margem em porcento** compara sessões de tamanhos diferentes. A conta é
+`computeSessionEconomics` (`features/coins/economics.ts`), no mesmo arquivo
+de onde sai a da aba de preços — uma segunda definição de margem no painel é
+o começo de duas telas discordando.
 
-A execução é delimitada pelo evento `study-questions`, o passo 1 do pipeline,
-que roda exatamente uma vez por estudo. É corte exato, não janela de tempo: dois
-reprocessamentos podem ser disparados com minutos de diferença. O intervalo de
-10 minutos no código é só a rede para as linhas legadas de rota `deepening`,
-que não têm passo 1 para abrir.
+É a margem **realizada** (custo medido contra a moeda que o ledger cobrou), e
+não a "do preço de hoje": uma sessão inteira não tem preço de tabela contra o
+qual ser comparada. Duas consequências que a legenda da tabela DIZ:
 
-**Só a última execução tem texto.** `updateDeepening` sobrescreve a linha, então
-as anteriores existem em custo e não em qualidade. A tela diz isso; não repita
-as métricas ao lado de cada execução como se cada uma tivesse sido medida.
+- **A receita é simulada e o custo é medido.** A receita são as moedas da
+  sessão avaliadas pela régua de `/admin/costs` → Preços & margem.
+- **Margem em `-` não é 0%.** Uma sessão cuja moeda foi debitada fora do
+  período não tem receita para dividir; ali o lucro é o custo com sinal
+  negativo, e −100% seria um número inventado sobre uma divisão por zero.
 
-As métricas de qualidade vêm de `src/features/session/server/study/metrics.ts`, client-safe, pura, e a
-MESMA que o harness de avaliação usa. Ela espelha o contrato declarado no prompt
-de `src/features/session/server/prompts/study-write.ts`: dois lugares, um commit.
+Saiu também a coluna **Chamadas** (detalhe de pipeline, e a aba Rotas é a
+tela que responde onde o custo se reparte) e a data subiu de legenda do
+título para COLUNA — uma coluna que não existe é uma coluna pela qual não se
+ordena.
+
+**A ordenação é estado de CLIENTE, e é a exceção consciente à regra da URL.**
+Data (padrão, mais recentes primeiro), modo, lucro e margem. A regra do
+painel — abas e filtros são LINK — vale porque aqueles controles trocam *o
+que o servidor busca*; ordenar não troca nada, as linhas já estão na tela. O
+preço da escolha está escrito na legenda: a ordenação reordena as
+`RECENT_SESSIONS` (50) linhas que vieram, que são as mais recentes do
+período. Ordenar por lucro não vai buscar a sessão mais lucrativa de três
+meses atrás.
+
+## O que saiu dessa aba: o inspetor de execuções
+
+Havia ali um `/admin/costs?aba=sessoes&sessionId=<uuid>` que abria uma sessão
+**execução por execução** (`server/db/session-runs.ts`, `SessionRunPanel`,
+`SessionRunLookup`). Era a única leitura que NÃO agregava, e existia por um
+ponto cego específico: reprocessar um ESTUDO gravava um segundo conjunto de
+eventos na mesma sessão, e somados eles viravam um número que não descrevia
+nem uma execução nem a outra.
+
+**Com o estudo fora do produto não há mais duas execuções para separar.** Toda
+outra ação do Scriba grava um conjunto de eventos por cobrança, e é isso que a
+tabela de sessões já mostra. O inspetor saiu junto, e com ele o `sessionId` na
+URL desta tela: a porta que a linha ainda tem é o "ler", que abre o CONTEÚDO
+da sessão em `/admin/sessions/[id]` ao lado do custo que ele pagou.
 
 **"Moedas gastas" é filtrado por MOTIVO, nunca por `abs(amount)`.**
 `coin_transactions` é o ledger inteiro: `grant_coins` grava
@@ -495,11 +579,20 @@ o primeiro cartão rebatizado ("Custo no período" contra "Custo medido"). Ficou
 a fileira completa, uma vez só, e a margem — a única diferença real — é o
 cartão que fecha a leitura.
 
-**As ações são quatro: gravação, importação do YouTube, estudo e resumo de
-sessão salva.** Os motivos de ledger LEGADOS (os três modos de captura antigos,
-o resumo sob demanda do modo transcrição) continuam somando nas linhas certas —
-ver o comentário de `reasons` em `billable.ts`. Reescrever motivo em ledger de
-dinheiro é apagar o que de fato aconteceu.
+**As ações são quatro: gravação, importação do YouTube, resumo de sessão
+salva e Biblo.** Os motivos de ledger LEGADOS (os três modos de captura
+antigos, o resumo sob demanda do modo transcrição) continuam somando nas
+linhas certas — ver o comentário de `reasons` em `billable.ts`. Reescrever
+motivo em ledger de dinheiro é apagar o que de fato aconteceu.
+
+**Eram cinco, e a quinta era o Estudo aprofundado.** Ele saiu do produto
+inteiro, e com ele a LINHA DE PREÇO: perguntar "o estudo ainda se paga?" sobre
+algo que ninguém pode comprar é uma decisão que não existe. O que ele gastou e
+cobrou continua no banco e continua dentro da margem agregada, num balde
+próprio (`LEGACY_ACTION_KEY`) — sem ele o custo daquelas chamadas cairia na
+linha da Gravação, que as gerou, engordando o custo do minuto sem engordar as
+moedas dele. Os motivos `deepening` / `reprocess_deepening` foram para
+`LEGACY_CHARGE_REASONS` pela mesma razão, do lado do ledger.
 
 O vocabulário está em `src/features/coins/billable.ts` (client-safe) e a conta em
 `src/features/coins/economics.ts`. O mapeamento ROTA → ação mora em
@@ -519,11 +612,11 @@ parágrafo.
 **Há DUAS margens, e a coluna mostra a da DECISÃO.** `marginAtCurrentPrice` é
 custo de uma execução contra o que a ação cobra hoje; `realizedMargin` é custo
 contra as moedas que o ledger de fato debitou no período. A coluna já mostrou
-só a segunda, e isso a punha em contradição com a coluna vizinha: o Estudo
-aprofundado aparecia com **−18% de margem** e, ao lado, a sugestão de **cobrar
-menos**. Nenhuma das duas tinha defeito de cálculo, o período pegava
-lançamentos anteriores à subida de 5 para 50 moedas, então o ledger tinha 180
-moedas em 18 execuções. Ao preço de hoje aquela linha tem 76% de margem.
+só a segunda, e isso a punha em contradição com a coluna vizinha: a linha do
+Estudo aprofundado (que existia então) aparecia com **−18% de margem** e, ao
+lado, a sugestão de **cobrar menos**. Nenhuma das duas tinha defeito de
+cálculo: o período pegava lançamentos anteriores à subida de 5 para 50 moedas,
+então o ledger tinha 180 moedas em 18 execuções.
 
 A regra que decorre: **a margem exibida e o preço sugerido saem do MESMO custo
 por execução**, ou duas colunas vizinhas voltam a se contradizer sem que nada
@@ -550,11 +643,6 @@ Quatro coisas que quem mexer aqui não pode desfazer:
   avulsa, a formatação fora de gravação e o evento de sessão apagada: custo real
   que não entrou em margem nenhuma. Listar só o que é cobrável faz toda margem
   parecer melhor do que é.
-
-Gerar e reprocessar estudo são UMA linha. Os dois rodam `generateStudy` com as
-mesmas rotas de telemetria, então o custo é indistinguível no banco; como o
-preço também é o mesmo, somá-los não perde nada, separá-los daria um custo por
-execução inventado.
 
 ## A leitura da IA (na visão geral, `/admin`)
 
@@ -729,7 +817,13 @@ consultas grandes por visita sem nada em troca.
 Três blocos, e a ORDEM é a mensagem: a matriz `funcionalidade × plano` vem
 primeiro e **não tem botão nenhum**. Ela é o retrato de
 `src/lib/entitlements/features.ts`, e é assim que a tela diz "o lugar de liberar
-o estudo para outro plano não é aqui, é um commit".
+uma funcionalidade para outro plano não é aqui, é um commit".
+
+**Ela tem UMA linha hoje, `biblo_chat`.** A segunda era `study_generation`, e
+saiu junto com o estudo: um kill switch e uma exceção por pessoa para um
+produto que não existe são controles que não governam nada, e girá-los não
+produz efeito nenhum em tela nenhuma. É o mesmo raciocínio que tirou a linha
+de preço do estudo de `/admin/costs`.
 
 Os dois blocos seguintes editam o que precisa mudar sem deploy:
 
@@ -803,8 +897,8 @@ dois, porque é um `<Link>` que empilha histórico. O `UserEditForm` recebe
 ## Sessões (aba de "Conteúdo")
 
 Não é métrica nem custo: é o CONTEÚDO. A lista traz todas as sessões, de todo
-mundo, e `/admin/sessions/[id]` abre uma delas em abas, resumo, transcrição,
-estudo e o feed do ao vivo.
+mundo, e `/admin/sessions/[id]` abre uma delas em abas: resumo e transcrição.
+Houve uma terceira, o estudo, que saiu com ele do produto.
 
 Ela existe porque as outras telas respondem em volta do texto e nunca sobre
 ele: `/admin/costs` diz quanto custou, `/admin/metrics` quantas foram, e a
@@ -848,27 +942,25 @@ tela precisou dela, com a divergência que duas cópias sempre produzem já
 consumada: `youtube` tinha entrado em `SESSION_MODES` e a cópia de lá continuava
 desenhando "-", que se lê como "sessão sem modo".
 
-## O que saiu: `/admin/studies`
+## O que saiu: `/admin/studies`, e depois o estudo inteiro
 
 A tela de avaliação do estudo (as 25-30 perguntas do questionador, as
-respondidas, as cortadas pelo guardião e as não escolhidas) foi **removida do
-painel**. Ela era leitura diagnóstica, não métrica, e quem quisesse o
+respondidas, as cortadas pelo guardião e as não escolhidas) foi removida do
+painel primeiro: era leitura diagnóstica, não métrica, e quem quisesse o
 diagnóstico precisava abrir uma tela que ninguém abria.
 
-**O dado continua existindo**, e essa é a parte que quem mexer aqui precisa
-saber: `session_deepenings.plan` continua guardando o `StudyRecord` inteiro
-(migração 0033), o pipeline continua gravando-o e `src/features/admin/server/db/sessions.ts` e
-`session-runs.ts` continuam lendo-o. O que saiu foi a página e o
-`src/features/admin/server/db/studies.ts` que só ela usava. `/admin/sessions/[id]` mostra a
-CONTAGEM ("11 de 27 perguntas respondidas") e nada mais.
+Naquele commit **o dado continuou existindo** — `session_deepenings.plan`
+guardava o `StudyRecord` inteiro (migração 0033), o pipeline continuava
+gravando-o, e `/admin/sessions/[id]` mostrava a CONTAGEM ("11 de 27 perguntas
+respondidas").
 
-Se a pergunta "as perguntas eram rasas ou foram mal respondidas?" voltar a ser
-urgente, o caminho é ler o `plan` da sessão direto no banco, ou ressuscitar a
-tela a partir do git. O que não vale é desenhar meia dúzia de perguntas numa
-aba de leitura e chamar isso de diagnóstico: a distinção que importava era
-entre **cortada** (o guardião disse que o resumo já respondia, culpa do
-questionador) e **não escolhida** (o respondedor preferiu outras, culpa dele),
-e uma lista que as colapse num "descartada" não responde nada.
+**Hoje não existe mais nada disso.** O estudo saiu do produto inteiro e a
+tabela foi dropada (migração 0075), junto com a aba de leitura, o
+`SessionRunPanel` e a linha de preço. Quem quiser a história abre o git: a
+distinção que importava era entre **cortada** (o guardião disse que o resumo já
+respondia, culpa do questionador) e **não escolhida** (o respondedor preferiu
+outras, culpa dele), e ela vale como lição de desenho de diagnóstico mesmo sem
+o produto atrás.
 
 ## Léxico (aba de "Conteúdo")
 
@@ -1008,8 +1100,7 @@ Três blocos, e a ORDEM é a mensagem:
   investiga. É por isso que `feedback_prompts` guarda também as perguntas
   IGNORADAS; sem o denominador, o numerador mente.
 - **A nota é por TÓPICO, e nunca uma soma.** Sugestões ao vivo, resumo,
-  transcrição, estudo e experiência geral são cinco peças com consertos
-  diferentes; uma "nota do Scriba" que as misturasse não apontaria para lugar
+  transcrição e experiência geral são peças com consertos diferentes; uma "nota do Scriba" que as misturasse não apontaria para lugar
   nenhum. Tópico sem resposta mostra `-`, jamais zero, zero é uma nota abaixo
   de "ruim", que não existe na escala, e um painel que o exibe convida a
   concluir que a parte é péssima quando o que houve foi silêncio.

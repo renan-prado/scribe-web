@@ -52,10 +52,16 @@ export function isFeedbackRating(value: unknown): value is FeedbackRating {
 }
 
 /**
- * ONDE a pergunta foi feita. Espelha os três modos de captura
- * (`lib/domain/session.ts`) mais o estudo e o feedback avulso do /profile.
+ * ONDE a pergunta foi feita. Espelha os modos de captura
+ * (`lib/domain/session.ts`) mais o feedback avulso do /profile.
+ *
+ * `live` e `transcript` são modos que morreram e continuam aqui: eles ainda
+ * nomeiam linhas gravadas em `feedback_responses`. O `study` NÃO continuou,
+ * e é a diferença que importa: o estudo saiu do produto inteiro, então o
+ * painel não deve abrir um cartão para ele. As respostas antigas com essa
+ * superfície são desenhadas pelo valor cru, ver `/admin/feedback`.
  */
-export const FEEDBACK_SURFACES = ["live", "audio", "transcript", "study", "general"] as const;
+export const FEEDBACK_SURFACES = ["live", "audio", "transcript", "general"] as const;
 export type FeedbackSurface = (typeof FEEDBACK_SURFACES)[number];
 
 /**
@@ -73,8 +79,6 @@ export const FEEDBACK_TOPICS = [
   "summary",
   /** O texto transcrito em si, modo `transcript_only`. */
   "transcript",
-  /** O estudo aprofundado gerado sob demanda. */
-  "study",
   /** O produto inteiro. Só do /profile, e nunca misturado com os outros. */
   "overall",
 ] as const;
@@ -89,7 +93,6 @@ export const FEEDBACK_TOPIC_LABEL: Record<FeedbackTopic, string> = {
   live_suggestions: "Sugestões ao vivo",
   summary: "Resumo gerado",
   transcript: "Transcrição",
-  study: "Estudo aprofundado",
   overall: "Experiência geral",
 };
 
@@ -103,7 +106,6 @@ export const FEEDBACK_TOPIC_QUESTION: Record<FeedbackTopic, string> = {
   live_suggestions: "O que você achou das sugestões que apareceram durante a pregação?",
   summary: "E do resumo que geramos no final?",
   transcript: "O que você achou da transcrição?",
-  study: "O que você achou do estudo?",
   overall: "Como está sendo sua experiência com o Scriba?",
 };
 
@@ -119,7 +121,6 @@ export const FEEDBACK_TOPICS_BY_SURFACE: Record<FeedbackSurface, readonly Feedba
   live: ["live_suggestions", "summary"],
   audio: ["summary"],
   transcript: ["transcript"],
-  study: ["study"],
   general: ["overall"],
 };
 
@@ -148,7 +149,6 @@ export const FEEDBACK_SURFACE_INTRO: Record<FeedbackSurface, string> = {
   live: "Você acabou de gravar ao vivo. Como foi?",
   audio: "Sua gravação está pronta. Como foi?",
   transcript: "Sua transcrição está pronta. Como foi?",
-  study: "Seu estudo está pronto. Como foi?",
   general: "Sua opinião muda o que a gente constrói em seguida.",
 };
 

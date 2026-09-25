@@ -10,13 +10,8 @@ import {
   SessionReaderTabs,
 } from "@/features/admin/components/SessionReaderTabs";
 import { getSessionForAdmin } from "@/features/admin/server/db/sessions";
-import { LeadIdea } from "@/features/session/components/LeadIdea";
 import { LexiconProvider } from "@/features/session/components/LexiconProvider";
 import { SavedTranscriptView } from "@/features/session/components/SavedTranscriptView";
-import {
-  StudyBlockRenderer,
-  studyBlockKey,
-} from "@/features/session/components/StudyBlockRenderer";
 import { SummaryView } from "@/features/session/components/SummaryView";
 import { formatDurationLong } from "@/features/session/lib/formatting";
 import { dehydratePassages } from "@/features/session/server/passages";
@@ -39,9 +34,8 @@ const DATE_FMT = new Intl.DateTimeFormat("pt-BR", {
 /**
  * A leitura de UMA sessão, do jeito que o dono dela leu.
  *
- * Ela renderiza o `SummaryView`, o `SavedTranscriptView` e o
- * `StudyBlockRenderer` do próprio produto, e isso é a decisão central desta
- * tela: uma segunda maneira de desenhar resumo no painel mostraria um texto
+ * Ela renderiza o `SummaryView` e o `SavedTranscriptView` do próprio produto,
+ * e isso é a decisão central desta tela: uma segunda maneira de desenhar resumo no painel mostraria um texto
  * que ninguém viu, e a pergunta aqui é sobre o que a pessoa VIU. Quando um
  * bloco novo entrar no resumo, ele aparece aqui sem ninguém lembrar de vir
  * mexer.
@@ -68,7 +62,6 @@ export async function AdminSessionReader({ id, inModal = false }: Props) {
 
   const owner = session.ownerName?.trim() || session.ownerEmail || session.userId || "sem dono";
   const duration = formatDurationLong(session.durationMs);
-  const study = session.study;
 
   // O mesmo pré-carregamento da `/summary/:id`: esta tela desenha o `SummaryView`
   // do produto, então herda a divergência de hidratação dele junto com o
@@ -105,49 +98,6 @@ export async function AdminSessionReader({ id, inModal = false }: Props) {
       ),
     },
   ];
-
-  if (study) {
-    panels.push({
-      value: "estudo",
-      label: "Estudo",
-      content: (
-        <ReaderSurface>
-          <div className="tone-study flex flex-col gap-7">
-            <div className="flex flex-col gap-2">
-              <h2 className="font-heading text-2xl font-semibold leading-tight tracking-tight text-scriba-ink-strong">
-                {study.payload.title?.trim() || "Estudo sem título"}
-              </h2>
-              {/* A CONTAGEM, não as perguntas. O registro inteiro continua em
-                  `session_deepenings.plan`, mas a tela que o lia (/admin/studies)
-                  saiu do painel: desenhá-lo aqui seria trazer de volta, numa aba
-                  de leitura, a tela que foi retirada. A contagem fica porque ela
-                  qualifica o texto ao lado, um estudo de 11 perguntas não se lê
-                  como um de 3. */}
-              {study.record ? (
-                <span className="w-fit text-[11px] font-medium text-scriba-ink-mute">
-                  {study.record.answered.length} de {study.record.questions.length} perguntas
-                  respondidas
-                </span>
-              ) : null}
-            </div>
-            {/* O MESMO `LeadIdea` do `SummaryView`. Aqui havia uma cópia do
-                desenho com filete VERDE, de quando o estudo tinha cor própria;
-                o painel lê a sessão "do jeito que o dono dela leu", e uma
-                abertura pintada de outro jeito quebra exatamente isso. */}
-            <LeadIdea label="Tese central" text={study.payload.shortSummary} />
-            {study.payload.blocks.map((block, i) => (
-              <div
-                // biome-ignore lint/suspicious/noArrayIndexKey: mesma desambiguação da página do estudo
-                key={`${block.type}-${i}-${studyBlockKey(block)}`}
-              >
-                <StudyBlockRenderer block={block} />
-              </div>
-            ))}
-          </div>
-        </ReaderSurface>
-      ),
-    });
-  }
 
   const page = (
     <div className="flex flex-col gap-6">

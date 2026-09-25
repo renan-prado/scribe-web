@@ -13,7 +13,7 @@ export const dynamic = "force-dynamic";
 
 const BodySchema = z
   .object({
-    kind: z.enum(["recording", "study"]),
+    kind: z.literal("recording"),
     sessionId: UuidSchema,
   })
   .strict();
@@ -31,8 +31,8 @@ const BodySchema = z
  * contrário o navegador escolheria quando é perguntado, e a amostra deixaria
  * de ser a que escolhemos medir.
  *
- * A resposta normal é `{ prompt: null }`. Só três gravações e três estudos na
- * vida de cada usuário devolvem outra coisa.
+ * A resposta normal é `{ prompt: null }`. Só três gravações na vida de cada
+ * usuário devolvem outra coisa.
  */
 export async function POST(request: Request) {
   const auth = await requireAuth();

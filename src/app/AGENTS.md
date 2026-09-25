@@ -111,20 +111,26 @@ Router, ver o comentário no `src/proxy.ts`).
 /subscribe/return          volta do Checkout. DECORATIVA: não credita nada
 ```
 
-**O `/studies` não existe mais, e este é o commit que o removeu.** O modo
-estudo saiu do produto em duas etapas: primeiro só o ACESSO foi tirado da
-interface (o item da gaveta que morreu junto com o hambúrguer, o botão "Gerar
-estudo" do `/summary` — `DeepenButton` —, o atalho do `manifest.ts` e o passo
-de tour que apontava para o botão), com a rota, a API, as tabelas e os
-componentes inteiros de propósito. Esta etapa é a segunda: as rotas
-`/studies` e `/studies/[id]` foram apagadas, junto com `StudiesBrowser`,
-`StudiesEmptyState`, `StudiesUpsell`, `DeepenButton`, `DeepeningMenu` e as duas
-entradas do tour que só elas usavam. **O que continua de pé é a API
-(`/api/deepening/*`), as tabelas e a leitura em `/admin/sessions/[id]`** — dado
-gerado e pago por gente continua legível ali, e é o painel, não o app, quem
-decide se aquele texto ainda serve a alguém. Um link antigo de `/studies/<id>`
-vira `redirects()` para `/summary/<id>`, a sessão que gerou o estudo, que é o
-que quem guardou o link procurava.
+**O `/studies` não existe mais, e o estudo tampouco.** A saída foi em TRÊS
+etapas, e vale saber em qual delas um comentário antigo foi escrito:
+
+1. **O acesso.** O item da gaveta (que morreu junto com o hambúrguer), o botão
+   "Gerar estudo" do `/summary` (`DeepenButton`), o atalho do `manifest.ts` e
+   o passo de tour que apontava para o botão. Rota, API, tabelas e componentes
+   ficaram inteiros de propósito.
+2. **As rotas.** `/studies` e `/studies/[id]`, com `StudiesBrowser`,
+   `StudiesEmptyState`, `StudiesUpsell`, `DeepenButton`, `DeepeningMenu` e as
+   duas entradas do tour que só elas usavam.
+3. **O resto**, porque a etapa 2 deixou o produto num estado que não se
+   sustenta: uma rota POST viva, cobrando 50 moedas e queimando quatro minutos
+   de modelo de raciocínio, sem nenhum botão que chegasse a ela — e, no
+   painel, um kill switch, uma exceção por pessoa e uma decisão de preço para
+   uma coisa que ninguém podia comprar. Saíram `/api/deepening[/reprocess]`, o
+   pipeline, os prompts, o entitlement `study_generation`, a leitura em
+   `/admin/sessions/[id]` e a tabela `session_deepenings` (migração 0075).
+
+Um link antigo de `/studies/<id>` vira `redirects()` para `/summary/<id>`, a
+sessão que gerou o estudo, que é o que quem guardou o link procurava.
 
 São DUAS molduras, uma dentro da outra. `src/app/(app)/layout.tsx` garante o
 chão grafite, o recorte do aparelho e o `TourProvider`, e vale para tudo que
@@ -924,8 +930,7 @@ causa disso: o SLIDE da transcrição (com os pontinhos que o anunciam — o
 "Reprocessar" (refaria o resumo a partir de uma
 transcrição vazia, cobrando 15 moedas para apagar o que a pessoa escreveu) e
 "Algo está errado" (audita a IA contra a transcrição — aqui não houve IA, o
-alerta apontaria o dedo para o próprio autor). Gerar estudo também não aparece,
-e é decisão do v1: `/api/deepening` recusaria com `empty_transcript`.
+alerta apontaria o dedo para o próprio autor).
 
 **O caminho inverso não vale: o botão "Editar" aparece em TODO modo.** Ele fica
 no cabeçalho do `/summary`, ao lado do menu de três pontinhos, onde já foi um
@@ -1054,18 +1059,13 @@ coluna de 992px dariam post-its de meia tela. Nos três degraus o post-it fica n
 mesma faixa de largura, ~230 a ~300px, que é onde autor, título e data cabem em
 poucas linhas.
 
-**Os Estudos são o MESMO mural** (`StudyNote`): autor da pregação, título do
-estudo, data em que ele foi gerado. Enquanto uma tela era um mural de anotações
-e a outra uma lista de fichas com "Baseado em", trocar de aba parecia trocar de
-produto. A casca das duas é o `PostItNote` — cor, cartão clicável, véu do toque
-—, e o recheio é o único arquivo de cada uma; um `variant` traria de volta o
-`if` que matou o `SessionCard`, e copiar a casca faria duas versões do
-"stretched link" divergirem até uma parar de ser clicável em silêncio. O cartão
-do estudo passa o id da SESSÃO como cor, então estudo e sermão saem da mesma cor
-nos dois murais. No estudo não há glifo de modo: ali todo cartão é um estudo, e
-um ícone que nunca muda é enfeite ocupando a linha da data. Saíram o
+**Houve um segundo mural, o dos Estudos** (`StudyNote`), e a casca era a
+mesma, `PostItNote` — cor, cartão clicável, véu do toque. Um `variant` teria
+trazido de volta o `if` que matou o `SessionCard`, e copiar a casca faria duas
+versões do "stretched link" divergirem até uma parar de ser clicável em
+silêncio. Ele saiu com o estudo. Do cartão de hoje saíram o
 resumo curto, a duração, o local, o botão "Ver resumo →" e as pastilhas de modo
-e de estudo — numa coluna de ~150px, cada linha a mais empurrava a data para
+— numa coluna de ~150px, cada linha a mais empurrava a data para
 fora do primeiro olhar. Sobreviveu o MODO, como glifo ao lado da data: microfone
 para o gravado, play para o importado. Marcar só o YouTube seria marcar a
 exceção, e o cartão sem glifo diria "não é YouTube" em vez de "gravado".
@@ -1126,12 +1126,9 @@ acima), um diálogo por cima de qualquer rota, aberto por Ctrl+K ou pelo
 `SearchTrigger`. Não há mais estado de tela para dividir entre o botão e a
 lista.
 
-**Nos Estudos a barra antiga continua de pé**, e é a exceção deliberada — eles
-estão saindo do produto e não valeram a migração. Lá a lupa é `SearchToggle`
-(rótulo e alvo de tour por prop), o estado é um `SearchScope` na página
-(sem `loading.tsx`, ele não precisa subir para o layout), e o botão só aparece
-quando há algum estudo — sem lista montada, ele abriria uma barra sem onde
-existir.
+Houve uma barra ANTIGA, com `SearchToggle` e um `SearchScope` na própria
+página, e o único consumidor dela era `/studies`. Saiu junto com os Estudos: o
+diálogo global é a única busca de lista do produto hoje.
 
 **No desktop quem cria é a barra do topo, e a razão não é a mesma do celular.**
 No `/summary` e no `/summary/new`, chegar a uma tela de leitura é ter escolhido
@@ -1521,13 +1518,13 @@ foi convencido. Nenhuma das três entra no `sitemap.ts` nem no `/llms.txt`, elas
 não são conteúdo, são efeito colateral com redirect.
 
 **API:** `src/app/api/`, LLM (`transcribe`, `final-summary[/reprocess]`,
-`deepening[/reprocess]`, `youtube/import`, `verse`, `hallucination-report`,
-`biblo`, `biblo/voice`),
+`youtube/import`, `verse`, `hallucination-report`, `biblo`, `biblo/voice`),
 dados (`sessions[/search|/written]`, `speakers`, `locations`, `coins`,
 `lexicon/[slug]`, `feedback[/prompt]`, `tour/{start,finish,reset}`,
 `presence/heartbeat`), conta (`account/delete`), cobrança (`billing/*`,
 `stripe/webhook`) e admin (`admin/users`, `admin/partners`, `admin/features`,
-`admin/coupons`, `admin/insights`, `admin/lexicon[/image]`).
+`admin/coupons`, `admin/insights`, `admin/lexicon[/image]`,
+`admin/users/search`).
 
 `presence/heartbeat` é o pulso "esta conta está com o Scriba aberto", chamado
 pelo cliente a cada ~60s enquanto o app está aberto
@@ -1608,7 +1605,7 @@ O cache mora na interface (`youtube/transcript.ts`), nunca no provedor, e
 falhar nele só custa a ida ao provedor que se pagava antes. A ordem
 dentro dela é `dono → já importada? → legenda →
 duração → COBRA → resumo`, e a legenda vir ANTES da cobrança é uma inversão
-deliberada em relação a `/reprocess` e `/api/deepening`, ela é a chamada
+deliberada em relação a `/reprocess`, ela é a chamada
 barata (~R$ 0,03) e é ela que diz se o vídeo é importável, então cobrar antes
 obrigaria a estornar quatro recusas rotineiras. O RECORTE (`source_start_ms` /
 `source_end_ms`) é lido da LINHA, nunca do corpo: esta rota é redisparada a

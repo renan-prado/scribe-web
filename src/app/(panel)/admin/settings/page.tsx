@@ -76,7 +76,7 @@ export default async function AdminSettingsPage({
 
       {/* A matriz `funcionalidade × plano` é LEITURA, e vem primeiro: ela é o
           retrato de `lib/entitlements/features.ts`, e é assim que a tela diz
-          "o lugar de liberar o estudo para outro plano não é aqui, é um
+          "o lugar de liberar uma funcionalidade para outro plano não é aqui, é um
           commit". O que se edita abaixo dela são as duas exceções de runtime:
           desligar para todo mundo (incidente) e abrir ou fechar para uma
           pessoa. */}

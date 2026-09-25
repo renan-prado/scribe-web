@@ -130,7 +130,7 @@ export async function GET(request: Request) {
  *   1. auth → rate limit → a sessão é dela?
  *   2. o que ela pode (presente / moedas / nada)
  *   3. **cobra ANTES de chamar o modelo.** Um 402 aqui não gastou token
- *      nenhum, que é a mesma decisão de `/api/deepening`. O débito não volta
+ *      nenhum, que é a mesma decisão de `/reprocess`. O débito não volta
  *      se o upstream falhar depois — aqui isso custa 2 moedas ao usuário, e
  *      duas moedas não pagam a complexidade de um estorno.
  *   4. **grava a PERGUNTA antes de chamar o modelo.** Se o modelo falhar, o

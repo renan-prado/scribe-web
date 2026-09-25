@@ -61,7 +61,7 @@ export async function POST(request: Request) {
   if (!text) {
     return NextResponse.json({ error: "empty text" }, { status: 400 });
   }
-  // Dono conferido ANTES do modelo, como já fazem `/reprocess` e `/deepening`.
+  // Dono conferido ANTES do modelo, como já faz `/reprocess`.
   // Sem isto, a rota mais cara do app (até 300 mil caracteres num modelo
   // grande, 12k tokens de saída) rodava sobre um `sessionId` qualquer e só
   // descobria que a sessão não era de quem chamou no UPDATE lá embaixo, onde

@@ -184,8 +184,8 @@ function ActionsTable({ summary, rate, settings }: Props) {
                       {action.note}
                     </span>
                     {/* Os motivos do ledger, à vista. Sem eles, uma linha que
-                        soma duas cobranças ("Estudo aprofundado" carrega
-                        reprocessar estudo junto) parece contradizer o preço
+                        soma duas cobranças ("Gravação" carrega os três modos
+                        de captura antigos junto) parece contradizer o preço
                         que o menu do app mostra, e a discordância aparente
                         vira uma investigação de meia hora. */}
                     <span className="flex flex-wrap gap-1">
@@ -240,13 +240,14 @@ function ActionsTable({ summary, rate, settings }: Props) {
         </Table>
       </div>
       <p className="text-[11.5px] font-light leading-relaxed text-scriba-ink-mute">
-        Uma execução é um lançamento no ledger: um minuto INICIADO de gravação, um estudo, um
-        reprocessamento. A margem é a de UMA execução ao preço que a ação cobra hoje, a mesma base
-        da sugestão ao lado, para as duas colunas nunca se contradizerem. Quando aparece uma segunda
-        linha “realizada”, é porque o ledger cobrou no período algo diferente do preço atual (uma
-        mudança de preço dentro da janela, ou cobrança sem execução medida), e aí a diferença entre
-        as duas é o achado. O detalhe por rota e por modelo, onde vale trocar de modelo em vez de
-        mexer no preço, está na aba <strong className="font-medium">Rotas &amp; usuários</strong>.
+        Uma execução é um lançamento no ledger: um minuto INICIADO de gravação, um vídeo importado,
+        um reprocessamento, uma mensagem ao Biblo. A margem é a de UMA execução ao preço que a ação
+        cobra hoje, a mesma base da sugestão ao lado, para as duas colunas nunca se contradizerem.
+        Quando aparece uma segunda linha “realizada”, é porque o ledger cobrou no período algo
+        diferente do preço atual (uma mudança de preço dentro da janela, ou cobrança sem execução
+        medida), e aí a diferença entre as duas é o achado. O detalhe por rota e por modelo, onde
+        vale trocar de modelo em vez de mexer no preço, está na aba{" "}
+        <strong className="font-medium">Rotas &amp; usuários</strong>.
       </p>
     </section>
   );
@@ -257,7 +258,7 @@ function ActionsTable({ summary, rate, settings }: Props) {
  *
  * A coluna já mostrou só a realizada, custo contra as moedas que o ledger
  * debitou, e isso a punha em contradição direta com a coluna vizinha: o
- * Estudo aprofundado aparecia com -18% de margem e, ao lado, a sugestão de
+ * Estudo aprofundado (linha que existiu) aparecia com -18% de margem e, ao lado, a sugestão de
  * COBRAR MENOS. Nenhuma das duas estava com defeito de cálculo; elas
  * respondiam a perguntas diferentes, e a tela não dizia qual era qual.
  *

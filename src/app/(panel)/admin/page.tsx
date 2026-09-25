@@ -104,8 +104,17 @@ export default async function AdminOverviewPage() {
       label: "Acessos hoje",
       value: INT.format(access.today),
       // "Online agora" é aproximado (pulso nos últimos 5 minutos, ver
-      // `server/db/access.ts`), não uma contagem de conexão aberta.
-      hint: `~${INT.format(access.onlineNow)} online agora`,
+      // `server/db/access.ts`), não uma contagem de conexão aberta. O "~" que
+      // dizia isso saiu: o til diante de um número pequeno lê como incerteza
+      // do dado, e não como a janela de 5 minutos que ele de fato é — a
+      // ressalva ficou no `title`, e a BOLA diz o que importa à distância,
+      // "tem gente com o app aberto agora".
+      hint: (
+        <span className="flex items-center gap-1.5" title="pulso dos últimos 5 minutos">
+          <span aria-hidden className="size-2 shrink-0 rounded-full bg-scriba-ok-ink" />
+          {INT.format(access.onlineNow)} online agora
+        </span>
+      ),
     },
   ];
 

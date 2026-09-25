@@ -22,8 +22,8 @@ cujo cabeçalho tem o raciocínio do schema.
 A pessoa acabou de gerar um resumo e quer LER o resumo. Toda decisão desta
 pasta desce daí, e nenhuma delas é preferência estética:
 
-- **Três vezes na vida, nunca mais.** 1ª, 3ª e 8ª gravação; 1ª, 3º e 8º
-  estudo. A 1ª é a primeira impressão, que não existe duas vezes; a 3ª é
+- **Três vezes na vida, nunca mais.** 1ª, 3ª e 8ª gravação (já foram duas
+  famílias, a outra era o estudo). A 1ª é a primeira impressão, que não existe duas vezes; a 3ª é
   depois de o encanto passar e antes de o hábito se formar, a janela em que
   se desiste; a 8ª é a opinião de quem já sabe do que está falando. Perguntar
   em toda gravação treinaria a pessoa a fechar o diálogo sem ler, e a partir
@@ -49,9 +49,9 @@ pasta desce daí, e nenhuma delas é preferência estética:
 está na tela; `resolveFeedbackPrompt` responde. Ordinal, marco e superfície
 são derivados no servidor, e o envio nem sequer manda a superfície, ela é
 reconstruída da linha de `feedback_prompts` que o próprio servidor escreveu.
-Um corpo que dissesse "isto é sobre o estudo da sessão X" não teria como ser
-desmentido, e a tabela que orienta o roadmap passaria a aceitar o que o
-navegador quisesse dizer.
+Um corpo que dissesse a superfície de uma sessão de outra pessoa não teria
+como ser desmentido, e a tabela que orienta o roadmap passaria a aceitar o que
+o navegador quisesse dizer.
 
 **A pergunta é REGISTRADA no momento em que é feita, e por isso o
 `FeedbackPrompt` chama o servidor DEPOIS do atraso, não antes.** Perguntar
@@ -93,12 +93,21 @@ na décima gravação é exatamente a pessoa que ainda está aqui.
 
 Os atrasos e o porquê de cada um estão em `config.ts`.
 
-**`study` é o terceiro `kind` que sobrevive só no enum, pela mesma razão de
-`live`/`transcript` acima.** `/studies/:id`, de onde ele era disparado, saiu do
-produto junto com o resto do modo estudo; o `z.enum(["recording", "study"])`
-de `/api/feedback/prompt` e a união de tipos em `FeedbackPrompt`/`api.ts`
-continuam aceitando o valor porque há notas antigas gravadas com ele, e o
-painel as lê. Nenhum componente monta `kind="study"` hoje.
+**`study` foi o segundo `kind`, e é o único que NÃO sobreviveu no enum.**
+Enquanto o estudo estava só fora da interface, o valor ficou aceito em
+`/api/feedback/prompt` e nos tipos, porque havia notas antigas gravadas com
+ele. Com o estudo removido do produto inteiro (migração 0075), o tópico e a
+superfície saíram do vocabulário e as notas antigas foram apagadas junto: um
+cartão "Estudo aprofundado" no painel é um convite a medir uma coisa que não
+existe.
+
+O que sobra da história: `FeedbackPromptKind` continua sendo um TIPO e não um
+literal solto, porque `feedback_prompts.kind` é uma coluna com um `check` que
+ainda aceita `'study'`, e `resolveAnsweredPromptSurface` recusa
+explicitamente qualquer `kind` que não seja `recording`. Contraste com
+`live`/`transcript`, que continuam no vocabulário: aqueles eram MODOS de
+captura que morreram, e as notas deles são sobre o resumo, que continua de
+pé.
 
 ## O painel
 

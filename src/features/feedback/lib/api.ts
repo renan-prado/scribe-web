@@ -21,7 +21,7 @@ export type FeedbackPromptInfo = {
  * é o caminho normal, não um erro.
  */
 export async function checkFeedbackPrompt(body: {
-  kind: "recording" | "study";
+  kind: "recording";
   sessionId: string;
 }): Promise<FeedbackPromptInfo | null> {
   try {

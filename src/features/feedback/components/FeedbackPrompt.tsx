@@ -6,7 +6,7 @@ import { checkFeedbackPrompt, type FeedbackPromptInfo } from "@/features/feedbac
 import { useTour } from "@/features/tour/components/TourProvider";
 
 type Props = {
-  kind: "recording" | "study";
+  kind: "recording";
   sessionId: string;
   /** Ver `src/features/feedback/config.ts`, um valor por superfície. */
   delayMs: number;
@@ -31,7 +31,7 @@ type Props = {
  * queimaria em silêncio. Ela volta na próxima abertura da tela.
  *
  * **O TOUR TEM PREFERÊNCIA, e a pesquisa espera.** As duas coisas moram nas
- * mesmas telas (`/summary`, `/deepening`) e as duas abrem sozinhas; juntas,
+ * mesmas telas (hoje, `/summary`) e as duas abrem sozinhas; juntas,
  * não são duas perguntas, são uma parede. Enquanto um tour está aberto o
  * relógio daqui nem começa, e ele recomeça do zero quando a tela fica livre,
  * o que também protege o marco: perguntar não é só mostrar uma janela, é

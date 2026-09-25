@@ -74,16 +74,6 @@ export const USAGE_ROUTES = [
   // roda sobre METADADO e não sobre o sermão: fundida com a do resumo, um dia
   // alguém leria o custo por importação sem saber que há duas chamadas ali.
   "youtube-metadata",
-  // As três etapas de LLM do estudo (`lib/study/generate.ts`). Separadas de
-  // propósito: é o que permite ver em /admin/costs quanto custa PERGUNTAR,
-  // quanto custa RESPONDER e quanto custa ESCREVER, e portanto onde vale subir
-  // ou baixar de modelo. Um "deepening" único não respondia a isso.
-  "study-questions",
-  "study-answers",
-  "study-write",
-  // Os dois cortes do guardião, num modelo barato. Mesma rota para os dois:
-  // separá-los daria duas linhas de custo irrisório cada.
-  "study-guard",
   "hallucination-report",
   // A análise diária do próprio painel (/api/admin/insights). Entra aqui, e não
   // fora da telemetria, porque é dólar de verdade saindo: fora da tabela, o

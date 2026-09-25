@@ -51,9 +51,21 @@ const SURFACE_LABEL: Record<FeedbackSurface, string> = {
   live: "Ao vivo",
   audio: "Áudio",
   transcript: "Transcrição",
-  study: "Estudo",
   general: "Perfil",
 };
+
+/**
+ * O rótulo de uma superfície ou de um tópico, com o valor CRU quando ele não
+ * está mais no vocabulário.
+ *
+ * `study` saiu junto com o estudo, e continua gravado nas respostas que
+ * existiam. Sem esta função a linha antiga desenhava `undefined` no lugar do
+ * nome, que é o jeito mais barato de uma tela mentir: não há erro, só uma
+ * palavra em inglês onde deveria haver um rótulo.
+ */
+function labelFor<K extends string>(map: Record<K, string>, key: string): string {
+  return (map as Record<string, string>)[key] ?? key;
+}
 
 export default async function AdminFeedbackPage() {
   const data = await loadAdminFeedback().catch(() => null);
@@ -166,7 +178,7 @@ export default async function AdminFeedbackPage() {
                 <header className="flex flex-wrap items-baseline justify-between gap-x-3 gap-y-1">
                   <div className="flex min-w-0 flex-wrap items-baseline gap-x-2 gap-y-1">
                     <span className="rounded-full bg-scriba-blue-soft px-2 py-0.5 text-[10px] font-semibold uppercase tracking-wider text-scriba-blue-ink">
-                      {SURFACE_LABEL[s.surface]}
+                      {labelFor(SURFACE_LABEL, s.surface)}
                     </span>
                     <span className="truncate text-[12px] font-medium text-scriba-ink">
                       {s.userName?.trim() || s.userEmail || "usuário removido"}
@@ -200,7 +212,7 @@ export default async function AdminFeedbackPage() {
                     >
                       <span aria-hidden>{FEEDBACK_RATING_EMOJI[r.rating]}</span>
                       <span className="font-medium text-scriba-ink">
-                        {FEEDBACK_TOPIC_LABEL[r.topic]}
+                        {labelFor(FEEDBACK_TOPIC_LABEL, r.topic)}
                       </span>
                       {FEEDBACK_RATING_LABEL[r.rating]}
                     </span>

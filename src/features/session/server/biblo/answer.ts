@@ -1,11 +1,11 @@
 import "server-only";
+import { anchorReference } from "@/features/session/server/biblo/anchor";
 import {
   BIBLO_SYSTEM_PROMPT,
   BIBLO_TOOLS_BLOCK,
   bibloContextBlock,
   bibloLexiconBlock,
 } from "@/features/session/server/prompts/biblo";
-import { anchorReference } from "@/features/session/server/study/anchor";
 import type { BibloRow } from "@/lib/db/biblo";
 import { getLexiconCards, getLexiconIndex } from "@/lib/db/lexicon";
 import { annotateText, asStandaloneScripture } from "@/lib/domain/annotate";

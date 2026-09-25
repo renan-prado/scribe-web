@@ -497,7 +497,7 @@ export async function updateSessionSummary(
 }
 
 /**
- * Quais destes ids já têm resumo. Espelha `listDeepenedSessionIds`: uma
+ * Quais destes ids já têm resumo. Uma
  * consulta de chave a mais para o /recordings poder mandar uma sessão do modo
  * transcrição que GANHOU resumo direto para `/summary`, em vez de fazê-la
  * pousar em `/transcript` só para ser redirecionada.

@@ -46,8 +46,9 @@ fecha.
 Toda tabela de domínio tem `user_id` referenciando `auth.users(id)` com
 `on delete cascade`, RLS ligada e policies auto-escopadas por `auth.uid()`.
 Tabela nova segue o mesmo molde, e o padrão vale também para as tabelas
-filhas de sessão (hoje só `session_deepenings`), que é o que permite emitir os
-selects e cruzar em memória sem filtrar dono na mão.
+filhas de sessão, que é o que permite emitir os selects e cruzar em memória
+sem filtrar dono na mão. (A última delas, `session_deepenings`, caiu com o
+estudo na migração 0075; o molde continua valendo para a próxima.)
 
 **Duas tabelas fogem do `on delete cascade`, e a exceção tem nome: elas são a
 CONTABILIDADE.** `coin_transactions` (o dinheiro que entrou) e
@@ -78,11 +79,13 @@ precisa ser seu** (migração 0040). A policy antiga garantia que a LINHA era
 minha e não dizia nada sobre para onde ela apontava: dava para inserir uma
 linha própria carimbada com a sessão de outra pessoa, sabendo só o uuid que
 aparecia na URL da sessão. Em cinco das seis tabelas o efeito era sujeira no
-feed de quem inseriu. Em `session_deepenings` era negação de
-serviço com prejuízo: lá existe `unique (session_id)`, a linha do atacante é
-invisível para a vítima sob RLS, e o resultado é a rota conferir "já existe
-estudo?" → não, debitar as moedas, rodar quatro minutos de modelo caro e
-morrer em 23505 na hora de gravar.
+feed de quem inseriu. Na sexta, `session_deepenings`, era negação de serviço
+com prejuízo: lá existia `unique (session_id)`, a linha do atacante era
+invisível para a vítima sob RLS, e o resultado seria a rota conferir "já
+existe estudo?" → não, debitar as moedas, rodar quatro minutos de modelo caro
+e morrer em 23505 na hora de gravar. **Aquela tabela não existe mais** (0075,
+o estudo saiu do produto), e o exemplo fica porque a CLASSE de furo não é
+dela: é de toda tabela filha com uma restrição de unicidade.
 
 > **Toda coluna que APONTA para outra tabela do usuário entra no `with check`,
 > não só a que diz de quem a linha é.** E entra no de UPDATE junto, senão a
@@ -221,7 +224,6 @@ uma constraint vale para caminhos de código que ainda não existem:
 | `coin_transactions.external_ref` UNIQUE | crédito idempotente pelos quatro caminhos de fulfill |
 | `stripe_events` PK = id do evento | reentrega do Stripe é descartada |
 | `partner_commissions.referred_user_id` UNIQUE | uma comissão por pessoa na vida |
-| `session_deepenings` unique(session_id) | um aprofundamento por sessão |
 | `feedback_prompts_once` unique(user_id, kind, session_id) | a pesquisa não volta depois de fechada |
 | CHECK https em `partner_payouts.receipt_url` | comprovante é link, não recado |
 

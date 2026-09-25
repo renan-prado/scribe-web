@@ -170,6 +170,50 @@ export function computeActionEconomics(input: ActionEconomicsInput): ActionEcono
   };
 }
 
+export type SessionEconomics = {
+  /** As moedas que a sessão debitou, avaliadas à régua. Em real. */
+  revenueBrl: number | null;
+  /** O que a OpenAI cobrou por ela, convertido pelo câmbio em uso. */
+  costBrl: number | null;
+  /** Receita menos custo. NEGATIVO quando a sessão custou mais do que cobrou. */
+  profitBrl: number | null;
+  /** 0–1, a fatia da receita que sobrou. `null` quando não há receita. */
+  margin: number | null;
+};
+
+/**
+ * A mesma conta de `computeActionEconomics`, para UMA SESSÃO.
+ *
+ * Precisa de função própria porque uma sessão não tem "execuções" nem
+ * "moedas por execução": ela debitou o que debitou (minutos × 5, ou 30 do
+ * vídeo, mais as mensagens ao Biblo), e essa soma JÁ É a receita dela. Das
+ * duas margens do arquivo, esta é a REALIZADA — custo medido contra a moeda
+ * que o ledger de fato cobrou —, e é a única que faz sentido aqui: não há
+ * preço de tabela para uma sessão inteira contra o qual comparar.
+ *
+ * `margin` é `null` com zero moedas, e isso não é o mesmo que 0%: uma sessão
+ * sem cobrança no período (a moeda foi debitada fora da janela, ou a sessão
+ * nunca cobrou) não tem receita para dividir, e −100% ali seria um número
+ * inventado sobre uma divisão por zero. O `profitBrl` continua saindo, e sai
+ * negativo: o custo aconteceu.
+ */
+export function computeSessionEconomics(input: {
+  costUsd: number;
+  usdToBrl: number | null;
+  coins: number;
+  settings: CoinEconomicsSettings;
+}): SessionEconomics {
+  const { costUsd, usdToBrl, coins, settings } = input;
+  const coinPriceBrl = settings.pricePerThousandBrl / COINS_PER_COST_UNIT;
+
+  const revenueBrl = coins * coinPriceBrl;
+  const costBrl = brl(costUsd, usdToBrl);
+  const profitBrl = costBrl == null ? null : revenueBrl - costBrl;
+  const margin = profitBrl != null && revenueBrl > 0 ? profitBrl / revenueBrl : null;
+
+  return { revenueBrl, costBrl, profitBrl, margin };
+}
+
 /**
  * O ledger cobrou algo diferente do preço de hoje? Acima de 2% de diferença a
  * tela mostra a margem realizada ao lado da de decisão, abaixo disso é

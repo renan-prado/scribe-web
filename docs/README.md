@@ -18,13 +18,12 @@ saber ao editar código ficam nos `AGENTS.md` de cada pasta, não aqui.
 | Quais são as regras do programa de parceiros? | [`parceiros.md`](./parceiros.md) |
 | Quanto se ganha indicando um amigo, e por que esses números? | [`indicacao.md`](./indicacao.md) |
 | Como o painel sabe quanto ganhamos, gastamos e devemos? | [`financeiro.md`](./financeiro.md) |
-| Por que o estudo entrega pouco, e o que fazer? | [`estudo-v2.md`](./estudo-v2.md) |
 | O que é o Biblo, o bate-papo dentro do resumo? | [`biblo.md`](./biblo.md) |
 | Como o Biblo vai ser construído, e quanto ele custa? | [`biblo-implementacao.md`](./biblo-implementacao.md) |
 | Por que o assinante não vê o número de créditos? | [`creditos-na-tela.md`](./creditos-na-tela.md) |
 | Por que a transcrição erra, e o que já foi tentado? | [`transcricao.md`](./transcricao.md) |
 | Por que importar do YouTube custa 30 e não um preço por minuto? | [`youtube.md`](./youtube.md) |
-| Qual plano libera qual funcionalidade? | [`estudo-v2.md` §8](./estudo-v2.md) e `src/lib/entitlements/features.ts` |
+| Qual plano libera qual funcionalidade? | `src/lib/entitlements/features.ts` e `src/features/billing/AGENTS.md` |
 | Como a shell React Native sabe que estamos gravando? | [`react-native-bridge.md`](./react-native-bridge.md) |
 | O que a Apple exige para aprovar o app na loja? | [`app-store-ios.md`](./app-store-ios.md) |
 | O que já foi auditado em segurança? | [`security/`](./security/README.md) |
@@ -90,16 +89,18 @@ saber ao editar código ficam nos `AGENTS.md` de cada pasta, não aqui.
 - **[`melhorias-resumo-sermao.md`](./melhorias-resumo-sermao.md)**, o problema
   de o resumo soar como interpretação da IA em vez de organização do que foi
   dito, e o que fazer a respeito.
-- **[`estudo-v2.md`](./estudo-v2.md)**: por que o "Gerar estudo" entrega
-  pouco valor hoje (sete causas, todas no código, nenhuma resolvível por
-  prompt), o pipeline de cinco etapas que substitui a chamada única, e o
-  desenho de entitlements por plano. **Status: implementado, exceto a rotina de
-  avaliação da §7 (passo 5 da §9).**
+- **[`estudo-v2.md`](./estudo-v2.md)**: por que o "Gerar estudo" entregava
+  pouco valor, o pipeline de cinco etapas que substituiu a chamada única e o
+  desenho de entitlements por plano. **Status: REMOVIDO do produto.** Nenhuma
+  linha deste documento descreve código vivo: o estudo saiu inteiro (API,
+  pipeline, entitlement, preço e a tabela `session_deepenings`, migração
+  0075). Fica como história de uma decisão de produto e como desenho de
+  pipeline multi-etapa, que é a parte reutilizável.
 - **[`biblo.md`](./biblo.md)**: o bate-papo com o Biblo dentro do resumo e do
   editor: conversar sobre o conteúdo, receber contexto, passagens e provocações
   em pedaços pequenos, e mandar o que prestou de volta para o texto. É a mesma
-  ambição do estudo pelo caminho oposto — dirigido pela pessoa, um pedaço de
-  cada vez. **Status: proposta.**
+  ambição que o estudo teve, pelo caminho oposto — dirigido pela pessoa, um
+  pedaço de cada vez. **Status: proposta.**
 - **[`biblo-implementacao.md`](./biblo-implementacao.md)**: o **como** do
   Biblo. Fecha com número as três decisões que a proposta deixou em aberto (o
   Biblo é dos planos pagos, a conta gratuita ganha 10 mensagens de presente, e

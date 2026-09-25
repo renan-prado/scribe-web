@@ -1,4 +1,4 @@
-import { BookOpen, FileText } from "lucide-react";
+import { FileText } from "lucide-react";
 import type { Metadata } from "next";
 import Link from "next/link";
 import {
@@ -17,7 +17,7 @@ import {
   ADMIN_SESSIONS_PAGE_SIZE,
   listSessionsForAdmin,
 } from "@/features/admin/server/db/sessions";
-import { listUsersForFilter } from "@/features/admin/server/db/usage";
+import { getUserFilterOption } from "@/features/admin/server/db/user-search";
 import { SESSION_MODES, type SessionMode } from "@/lib/domain/session";
 
 export const metadata: Metadata = { title: "Sessões" };
@@ -31,10 +31,10 @@ export const dynamic = "force-dynamic";
  * responder por que a nota foi aquela. Esta é a porta de entrada da leitura;
  * quem faz a leitura é `/admin/sessions/[id]`.
  *
- * As duas colunas de conteúdo (resumo, estudo) são deliberadamente sim/não e
- * não uma prévia: um trecho de resumo numa célula de tabela convida a julgar
- * qualidade por uma frase cortada, que é exatamente o julgamento que a tela de
- * leitura existe para substituir.
+ * A coluna de conteúdo é deliberadamente sim/não e não uma prévia: um trecho
+ * de resumo numa célula de tabela convida a julgar qualidade por uma frase
+ * cortada, que é exatamente o julgamento que a tela de leitura existe para
+ * substituir. Eram DUAS colunas enquanto o estudo existia.
  */
 
 const DATE_FMT = new Intl.DateTimeFormat("pt-BR", {
@@ -67,27 +67,29 @@ export default async function AdminSessionsPage({ searchParams }: PageProps) {
   const sp = await searchParams;
   const mode = parseModeFilter(sp.mode);
 
-  const [sessions, users] = await Promise.all([
+  const [sessions, selectedUser] = await Promise.all([
     listSessionsForAdmin({
       userId: sp.userId?.trim() || undefined,
       mode,
       search: sp.q?.trim() || undefined,
     }),
-    listUsersForFilter().catch(() => []),
+    // Uma linha, e só quando há filtro: a barra procura no banco a cada tecla
+    // em vez de receber a base inteira para um `<select>`.
+    sp.userId ? getUserFilterOption(sp.userId).catch(() => null) : Promise.resolve(null),
   ]);
 
   return (
     <div className="flex flex-col gap-6">
       <AdminPageHeader
         title="Sessões"
-        subtitle="O que os usuários receberam de fato: resumo, transcrição e estudo, para ler e julgar."
+        subtitle="O que os usuários receberam de fato: resumo e transcrição, para ler e julgar."
       />
 
       <ContentTabs active="sessoes" />
 
       <SessionReaderFilters
-        users={users}
-        current={{ userId: sp.userId ?? "", mode: sp.mode ?? "", q: sp.q ?? "" }}
+        selectedUser={selectedUser}
+        current={{ mode: sp.mode ?? "", q: sp.q ?? "" }}
       />
 
       <div className="admin-table">
@@ -151,13 +153,7 @@ export default async function AdminSessionsPage({ searchParams }: PageProps) {
                           resumo
                         </span>
                       ) : null}
-                      {s.hasStudy ? (
-                        <span className="inline-flex items-center gap-1 text-scriba-green">
-                          <BookOpen aria-hidden className="size-3" />
-                          estudo
-                        </span>
-                      ) : null}
-                      {!s.hasSummary && !s.hasStudy ? "só transcrição" : null}
+                      {s.hasSummary ? null : "só transcrição"}
                     </span>
                   </TableCell>
                 </TableRow>

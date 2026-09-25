@@ -6,7 +6,7 @@
  *
  * A gravação é cobrada por minuto INICIADO (ceil), pulsada pelo cliente a
  * cada 60s. O resto do produto é cobrança única: importar um vídeo,
- * aprofundar, reprocessar.
+ * reprocessar um resumo, falar com o Biblo.
  *
  * NOTE: this file governs SPENDING only. Crediting lives in lib/billing/* and
  * only ever happens server-side from a verified Stripe webhook.
@@ -49,16 +49,6 @@ export const COIN_COSTS = {
    * Reconfira em `/admin/costs` assim que houver execução nova medida.
    */
   recordingMinute: 5,
-  /**
-   * One-shot cost of running /api/deepening.
-   *
-   * 50 e não 5: o estudo deixou de ser uma chamada de LLM e virou um pipeline
-   * de cinco etapas, três delas num modelo de raciocínio, que produz um
-   * artigo de três a quatro mil palavras e leva perto de quatro minutos. É a
-   * ação mais cara do produto por uma ordem de grandeza, e a única restrita a
-   * um plano (ver lib/entitlements/features.ts).
-   */
-  deepening: 50,
   /**
    * One-shot cost of re-running /api/final-summary/reprocess on a saved
    * session.
@@ -115,13 +105,6 @@ export const COIN_COSTS = {
    * tomada com o número à vista, não um efeito colateral que ninguém viu.
    */
   youtubeImport: 30,
-  /**
-   * Reprocessar roda o MESMO pipeline do zero, então custa o mesmo. Deixá-lo
-   * mais barato que a geração abriria uma arbitragem óbvia: gerar uma vez pelo
-   * preço cheio e reprocessar indefinidamente pelo preço de banana, pagando 5
-   * por um trabalho de 50.
-   */
-  reprocessDeepening: 50,
   /**
    * UMA mensagem ao Biblo, a conversa dentro da sessão.
    *
@@ -300,9 +283,7 @@ export const BIBLO_GIFT_MESSAGES = 10;
  */
 export const CHARGE_REASONS = [
   "recording_minute",
-  "deepening",
   "reprocess_summary",
-  "reprocess_deepening",
   "youtube_import",
   "biblo_message",
   "biblo_voice_message",
@@ -312,9 +293,7 @@ export type ChargeReason = (typeof CHARGE_REASONS)[number];
 
 export const COIN_COST_BY_REASON: Record<ChargeReason, number> = {
   recording_minute: COIN_COSTS.recordingMinute,
-  deepening: COIN_COSTS.deepening,
   reprocess_summary: COIN_COSTS.reprocessSummary,
-  reprocess_deepening: COIN_COSTS.reprocessDeepening,
   youtube_import: COIN_COSTS.youtubeImport,
   biblo_message: COIN_COSTS.bibloMessage,
   biblo_voice_message: COIN_COSTS.bibloVoiceMessage,
@@ -326,15 +305,23 @@ export const COIN_COST_BY_REASON: Record<ChargeReason, number> = {
  *
  * `live_minute`, `audio_only_minute` e `transcript_minute` eram os três modos
  * de captura; `summary_from_transcript` era o resumo sob demanda de uma sessão
- * do modo transcrição. Nenhum cliente manda mais nenhum deles, mas
- * `coin_transactions` guarda anos de linhas com esses nomes, e o painel soma
- * por motivo. Ver `lib/coins/billable.ts`.
+ * do modo transcrição; `deepening` e `reprocess_deepening` eram o estudo
+ * aprofundado, que saiu do produto. Nenhum cliente manda mais nenhum deles,
+ * mas `coin_transactions` guarda anos de linhas com esses nomes, e o painel
+ * soma por motivo. Ver `features/coins/billable.ts`.
+ *
+ * Os dois do estudo são os únicos da lista SEM linha na tabela de ações: as
+ * moedas deles continuam no total gasto, e o custo que as acompanha vai para
+ * `LEGACY_ACTION_KEY`. Um produto que saiu não tem decisão de preço para
+ * tomar.
  */
 export const LEGACY_CHARGE_REASONS = [
   "live_minute",
   "audio_only_minute",
   "transcript_minute",
   "summary_from_transcript",
+  "deepening",
+  "reprocess_deepening",
 ] as const;
 
 export function isChargeReason(value: unknown): value is ChargeReason {

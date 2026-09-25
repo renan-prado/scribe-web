@@ -177,9 +177,9 @@ troca o check pelo ROSTO dele (`face`), e no Gratuito esse rosto vai em
 `grayscale`, porque ali ele é um presente com fim.
 
 **O Estudioso NÃO tem exclusiva, e o card não finge que tem.** Os dois planos
-pagos liberam as mesmas features (`lib/entitlements/features.ts`: `biblo_chat` e
-`study_generation` estão em `minPlan: "pessoal"`), então o que o card dele vende
-é ritmo, não uma funcionalidade a mais. Ali já esteve "Estudo aprofundado de cada sessão", nos DOIS planos, e
+pagos liberam as mesmas features (`lib/entitlements/features.ts` tem UMA hoje,
+`biblo_chat`, em `minPlan: "pessoal"`), então o que o card dele vende é ritmo,
+não uma funcionalidade a mais. Ali já esteve "Estudo aprofundado de cada sessão", nos DOIS planos, e
 a linha sobreviveu à saída do estudo da interface: a pessoa pagava, procurava e
 não achava. **Uma exclusiva inventada é a promessa quebrada do lado de dentro**,
 onde não há 403 para explicá-la. O dia em que o Estudioso ganhar uma de verdade,

@@ -1,7 +1,6 @@
 import "server-only";
 import { escapeLikeValue } from "@/lib/db/like";
 import { parseSessionMode, type SessionMode } from "@/lib/domain/session";
-import type { StudyPayload, StudyRecord } from "@/lib/domain/study";
 import type { SummaryPayload } from "@/lib/domain/summary";
 import { createAdminClient } from "@/lib/supabase/admin";
 
@@ -54,7 +53,6 @@ export type AdminSessionListItem = {
    * uma coluna de sim/não.
    */
   hasSummary: boolean;
-  hasStudy: boolean;
 };
 
 export type AdminSessionFilters = {
@@ -105,13 +103,9 @@ export async function listSessionsForAdmin(
   const rows = (data ?? []) as unknown as ListRow[];
   if (rows.length === 0) return [];
 
-  const ids = rows.map((r) => r.id);
   const ownerIds = [...new Set(rows.map((r) => r.user_id).filter((v): v is string => !!v))];
 
-  const [owners, studyIds] = await Promise.all([
-    loadOwners(ownerIds),
-    loadSessionIdsWithStudy(ids),
-  ]);
+  const owners = await loadOwners(ownerIds);
 
   return rows.map((row) => {
     const owner = row.user_id ? owners.get(row.user_id) : undefined;
@@ -129,7 +123,6 @@ export async function listSessionsForAdmin(
       ownerName: owner?.name ?? null,
       ownerEmail: owner?.email ?? null,
       hasSummary: !!row.short_summary?.trim(),
-      hasStudy: studyIds.has(row.id),
     };
   });
 }
@@ -149,12 +142,6 @@ export type AdminSessionDetail = {
   ownerEmail: string | null;
   transcript: string;
   summary: SummaryPayload | null;
-  study: {
-    createdAt: string;
-    payload: StudyPayload;
-    /** Perguntas levantadas e o recorte respondido. Nulo antes da 0033. */
-    record: StudyRecord | null;
-  } | null;
 };
 
 type DetailRow = ListRow & {
@@ -176,10 +163,7 @@ export async function getSessionForAdmin(id: string): Promise<AdminSessionDetail
 
   const row = data as unknown as DetailRow;
 
-  const [owners, study] = await Promise.all([
-    loadOwners(row.user_id ? [row.user_id] : []),
-    loadStudy(id),
-  ]);
+  const owners = await loadOwners(row.user_id ? [row.user_id] : []);
   const owner = row.user_id ? owners.get(row.user_id) : undefined;
 
   return {
@@ -197,7 +181,6 @@ export async function getSessionForAdmin(id: string): Promise<AdminSessionDetail
     ownerEmail: owner?.email ?? null,
     transcript: row.transcript ?? "",
     summary: row.final_summary,
-    study,
   };
 }
 
@@ -221,30 +204,4 @@ async function loadOwners(ids: string[]): Promise<Map<string, Owner>> {
     map.set(p.id, { name: p.display_name, email: p.email });
   }
   return map;
-}
-
-async function loadSessionIdsWithStudy(ids: string[]): Promise<Set<string>> {
-  const admin = createAdminClient();
-  const { data, error } = await admin
-    .from("session_deepenings")
-    .select("session_id")
-    .in("session_id", ids);
-  if (error) return new Set();
-  return new Set((data ?? []).map((r) => (r as { session_id: string }).session_id));
-}
-
-async function loadStudy(sessionId: string): Promise<AdminSessionDetail["study"]> {
-  const admin = createAdminClient();
-  const { data, error } = await admin
-    .from("session_deepenings")
-    .select("created_at, payload, plan")
-    .eq("session_id", sessionId)
-    .maybeSingle();
-  if (error || !data) return null;
-  const row = data as unknown as {
-    created_at: string;
-    payload: StudyPayload;
-    plan: StudyRecord | null;
-  };
-  return { createdAt: row.created_at, payload: row.payload, record: row.plan ?? null };
 }

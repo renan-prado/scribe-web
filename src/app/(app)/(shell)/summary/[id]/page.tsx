@@ -43,12 +43,13 @@ const DATE_FMT = new Intl.DateTimeFormat("pt-BR", {
  * uma sessão sem resumo: o modo transcrição, que produzia uma, foi removido
  * junto com os outros dois.
  *
- * **Daqui saía o estudo, e não sai mais.** O modo estudo está saindo do
- * produto; enquanto ele não sai de verdade, o acesso a ele foi retirado da
- * interface, e com o botão foram embora as duas leituras que existiam só para
- * desenhá-lo: `hasDeepening` (uma ida ao banco por resumo aberto) e
- * `canCurrentUserUse("study_generation")`. Consulta que alimenta botão que não
- * existe não aparece como bug, aparece como latência.
+ * **Daqui saía o estudo, e ele não existe mais em lugar nenhum.** A saída foi
+ * em três etapas: primeiro o acesso (o botão, o item da gaveta, o atalho do
+ * manifesto), depois as rotas `/studies`, e por fim a API, o pipeline, as
+ * tabelas e o entitlement. Com o botão foram embora as duas leituras que
+ * existiam só para desenhá-lo: `hasDeepening` (uma ida ao banco por resumo
+ * aberto) e a de entitlement. Consulta que alimenta botão que não existe não
+ * aparece como bug, aparece como latência.
  *
  * **A coluna tem 1024px e o TEXTO tem 768.** A barra do topo é a mesma peça em
  * toda tela do app, e terminá-la 256px antes daqui faria o avatar saltar de

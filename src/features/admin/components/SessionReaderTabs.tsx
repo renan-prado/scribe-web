@@ -12,9 +12,9 @@ import { Tabs, TabsList, TabsPanel, TabsTab } from "@/components/ui/tabs";
  *
  * A ordem é a da avaliação: **resumo primeiro**, porque é o que a pessoa lê;
  * transcrição depois, porque é contra ela que se confere o que o resumo
- * afirma; estudo e feed por último, que existem só em parte das sessões.
+ * afirma. Já houve uma terceira, o estudo, que saiu do produto.
  *
- * Abas em vez de tudo empilhado porque as três leituras são longas e
+ * Abas em vez de tudo empilhado porque as leituras são longas e
  * concorrentes: com elas na mesma coluna, conferir uma frase do resumo contra
  * a transcrição vira role de mil linhas.
  */

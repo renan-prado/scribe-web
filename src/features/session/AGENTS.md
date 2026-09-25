@@ -1,7 +1,7 @@
 # src/features/session: a sessão
 
 Tudo que pertence a uma sessão depois que ela existe: a leitura do resumo, o
-estudo, a importação do YouTube, os cartões da Biblioteca e a busca das listas.
+a importação do YouTube, os cartões da Biblioteca e a busca das listas.
 
 **O GRAVADOR não mora aqui.** Ele é `src/app/recording/`, e é uma tela só
 (`AudioStudio` + `useAudioCapture` + `useRecordingPresence` +
@@ -49,12 +49,9 @@ pessoa quiser, aprofundar.
 | `components/SummaryDeck.tsx` | o carrossel resumo ↔ transcrição, e quem busca a transcrição |
 | `components/SummaryView.tsx` + `BlockRenderer.tsx` | os blocos do resumo |
 | `components/SummaryEmptyState.tsx` | sessão salva sem resumo nenhum: a porta de escrever, ou a de refazer o resumo que falhou |
-| `components/StudyBlockRenderer.tsx` | os blocos a MAIS que o estudo tem |
 | `components/PostItNote.tsx` | a casca do post-it dos dois murais: cor, cartão clicável, anatomia |
 | `components/LibraryNote.tsx` | o post-it de uma sessão na Biblioteca (autor, título, data) |
 | `components/SessionModeGlyph.tsx` | o ícone do modo, o mesmo nas três vistas |
-| `components/StudyNote.tsx` | o post-it de um estudo, a mesma casca com outro recheio |
-| `components/CollectionSearch.tsx` + `src/lib/search.ts` | a barra dos Estudos e o motor da busca (também usado pela `GlobalSearchDialog`) |
 | `components/SummaryFind.tsx` | procurar DENTRO do resumo aberto: `Range`s + CSS Custom Highlight API |
 | `components/FindBar.tsx` | a barra dessa busca, FIXA no topo — a casca que a leitura e o editor dividem |
 | `components/YoutubeUrlForm.tsx` + `YoutubeImport.tsx` | colar o link (ou recebê-lo por parâmetro), recortar um trecho, e esperar a importação |
@@ -63,8 +60,7 @@ pessoa quiser, aprofundar.
 | `hooks/useWrittenReadingDraft.ts` + `components/SummaryInsertContext.tsx` | escrever num resumo salvo sem rascunho local — o POST que o Biblo e o "Adicionar ao resumo" da referência dividem |
 | `components/BibloHomeDock.tsx` + `biblo-workspace.ts` | o Biblo da Biblioteca, que ESCREVE um documento em vez de sugerir um bloco |
 | `biblo-query.ts` | a conversa guardada no aparelho: leitura, pré-busca e a rodada nova |
-| `server/biblo/` | allowance, resposta e a abertura derivada |
-| `components/DeepenButton.tsx` + `DeepeningMenu.tsx` | gerar e reprocessar o estudo |
+| `server/biblo/` | allowance, resposta, a abertura derivada e a ancoragem de uma referência na NVI |
 | `components/PassageVerses.tsx` + `RichText.tsx` | texto bíblico e menções dentro do parágrafo |
 | `components/BibleReader.tsx` | a Bíblia para LER: livro → capítulo → texto, dentro de uma aba ou de uma gaveta |
 | `components/BibleDock.tsx` | a aba colada na borda direita que abre o leitor, na leitura, no editor e no gravador |
@@ -83,7 +79,6 @@ pessoa quiser, aprofundar.
 | `recording-store.ts` | um booleano: há gravação viva nesta aba? Escrito pelo `AudioStudio`, lido pela fila e pelo `BillingDialog` |
 | `lib/recording-notification.ts` | a tag da notificação de gravação, e como apagá-la de fora da tela |
 | `server/final-summary.ts` | a chamada única que vira o resumo |
-| `server/study/` | as cinco etapas do estudo (ver `src/lib/AGENTS.md`) |
 | `server/youtube/` | oEmbed, legenda pela Supadata, o CACHE dela por vídeo e a limpeza do título |
 | `server/prompts/` | todo system prompt do assunto |
 | `lib/transcription/` | sanitize e o veredito de qualidade de uma parte |
@@ -166,7 +161,7 @@ seria pedir que a pessoa escolha versículos para poder ler o capítulo.
 
 **O `ChapterDialog` ganhou um botão, "Adicionar ao resumo".** Ele é a única
 das quatro respostas que aparece dentro de OUTRA prosa — a referência tocada
-pode estar no resumo, no estudo ou numa mensagem do Biblo — e por isso não
+pode estar no resumo ou numa mensagem do Biblo — e por isso não
 sabe, sozinho, se há onde escrever a resposta. Quem sabe é
 `SummaryInsertContext` (`SummaryInsertProvider`, montado em
 `/summary/[id]/page.tsx` envolvendo `SavedSessionView` E `BibloSummaryDock`):
@@ -188,8 +183,8 @@ uma pergunta ao Biblo** (`POST /api/bible-search`, `COIN_COSTS.bibleSearch`,
 gate pela MESMA feature do chat, `biblo_chat` — não uma segunda entrada no
 catálogo de planos). O modelo devolve só REFERÊNCIA e uma nota curta, nunca o
 texto do versículo: quem resolve cada uma contra a NVI local é
-`server/biblo/bible-search.ts`, a mesma técnica de `server/study/anchor.ts`
-(passo 3 do estudo) — uma referência que não existir é descartada em
+`server/biblo/bible-search.ts`, a mesma técnica de `server/biblo/anchor.ts`
+— uma referência que não existir é descartada em
 silêncio, sem aviso na tela. "Ir para a passagem" usa o MESMO `book`/`chapter`
 que o resto do componente e reaproveita a classe de piscada do
 `revealSummaryBlock` (`.summary-block-flash`) para destacar o versículo
@@ -216,8 +211,8 @@ esqueleto do bloco inteiro, ou o texto inteiro. Não há revelação progressiva
 Ela já teve um componente por versículo, cada um com a sua requisição. Duas
 coisas quebraram, e as duas são o motivo de o arquivo estar como está:
 
-1. **Rate limit.** Um estudo com dezessete passagens passava das 60/min de
-   `/api/verse`. Os versículos recusados voltavam vazios, e a tela mostrava
+1. **Rate limit.** Um texto com dezessete passagens (o recorde veio de um
+   estudo, quando ele ainda existia) passava das 60/min de `/api/verse`. Os versículos recusados voltavam vazios, e a tela mostrava
    número sem texto, sem erro nenhum visível.
 2. **Montagem aos pedaços.** O bloco aparecia e ia se preenchendo linha a
    linha, empurrando o conteúdo abaixo a cada versículo que chegava.
@@ -232,7 +227,7 @@ servidor.
 
 ## Menções dentro do parágrafo
 
-`RichText` é o que o resumo, o estudo e o Biblo usam para desenhar PROSA. Ele
+`RichText` é o que o resumo e o Biblo usam para desenhar PROSA. Ele
 passa o texto por `annotateText` (`src/lib/domain/annotate.ts`) e marca duas
 coisas: referência bíblica e nome próprio do LÉXICO.
 
@@ -413,10 +408,9 @@ lista é vazia e o anotador só reconhece referência, que é o que ele já fazi
 referência estável; um `[]` literal novo a cada render recompilaria uma
 alternação de trezentos termos por parágrafo.
 
-Dentro de `.tone-study` sobra `--session-mention-ink`: o `--session-mention-wash`
-era reapontado ali para a faixa não sumir na superfície meio degrau mais clara
-do estudo, e com a faixa fora do produto aquele override deixou de governar
-qualquer pixel.
+Havia aqui uma pele `.tone-study`, que reapontava os tokens `session-*` para a
+superfície meio degrau mais clara do estudo. Ela saiu de `globals.css` com o
+resto do estudo: não sobrou nenhum elemento na aplicação com aquela classe.
 
 ## A gravação guardada, e quem insiste por ela
 
@@ -577,43 +571,26 @@ O usuário pode acionar o alerta manual de alucinação
 auditoria da IA contra a transcrição salva. É raro e de alto impacto, por isso
 usa o modelo bom, e não cobra moeda: o usuário está reportando um defeito nosso.
 
-## O estudo
+## O estudo, que saiu
 
-**Ele está saindo do produto, e ninguém chega mais nele pela interface.** O
-"Gerar estudo" do `/summary`, o item da gaveta e o atalho do manifesto saíram;
-o código desta seção continua inteiro e funcionando, e o dia de removê-lo é
-outro commit. Ver `src/app/AGENTS.md`.
+Havia aqui uma seção descrevendo o estudo aprofundado: o vocabulário de blocos
+próprio (`objection`, `reading`, `question`), o `StudyBlockRenderer`, o gate de
+plano e os três estados de `/studies`.
 
-Duas particularidades que mordem de fora:
+**Nada disso existe mais.** A saída foi em três etapas — o acesso, depois as
+rotas e os componentes, por fim a API, o pipeline, o entitlement e a tabela
+`session_deepenings` (migração 0075). O único pedaço que sobreviveu é
+`server/biblo/anchor.ts`, a ancoragem de referência contra a NVI, porque o
+Biblo precisa dela pela mesma razão que o estudo precisava.
 
-- **Ele não fala o vocabulário de blocos do resumo.** `StudyBlock`
-  (`src/lib/domain/study.ts`) acrescenta `objection`, `reading` e `question`, e
-  reinterpreta `example` — no resumo é "Exemplo", no estudo é
-  ilustração do próprio estudo. Por isso a página usa `StudyBlockRenderer`, que
-  desenha esses quatro e delega o resto ao `BlockRenderer`. Um bloco novo
-  precisa entrar nos DOIS lugares.
+Duas coisas dessa história continuam valendo para quem mexer no resumo:
 
-  **Havia um quinto, o `distinction`** (`{ a, b, text }`, duas pastilhas com um
-  "não é" no meio), e ele saiu do produto: do prompt, do parser, da selagem e
-  da tela. Os estudos já gerados continuam com ele salvo no jsonb e não foram
-  migrados — o bloco cai no `default` do renderer, o `BlockRenderer` devolve
-  `null` para tipo que não conhece, e ele some da tela sem erro. É a mesma
-  porta por onde saíram os blocos do feed ao vivo.
-
-  O `question` tem limite de dois blocos, e só no fecho. Não é estética: o
-  estudo é um ARTIGO, e o pipeline que o produz passa por uma etapa de
-  perguntas; sem esse limite o redator devolve o andaime como se fosse o
-  produto, e o texto vira um FAQ.
-- **Gerar exige plano `Estudioso`. LER um estudo salvo, não.** O booleano vem
-  do servidor por prop; a proteção real está em `requireFeature` dentro da
-  rota. Ver `src/lib/AGENTS.md`.
-
-  Consequência na tela: `/studies` tem TRÊS estados, não dois. Sem plano e
-  sem nenhum estudo, a página inteira é o convite (`StudiesUpsell` variante
-  `full`) — o `StudiesEmptyState`, que ensina a gerar, seria instrução para algo
-  que a pessoa não pode fazer. Sem plano MAS com estudos antigos, a lista fica e
-  o convite vira faixa acima dela: esconder o que a pessoa já pagou para
-  produzir seria confisco.
+- **`BlockRenderer` devolve `null` para tipo de bloco que não conhece.** Foi
+  assim que os blocos do feed ao vivo e o `distinction` do estudo sumiram da
+  tela sem erro nenhum quando saíram do produto, e é a porta por onde o
+  próximo vai sair.
+- **Ler conteúdo já gerado nunca foi gated, só gerar.** A regra sobrevive ao
+  estudo e governa o Biblo hoje, ver `src/lib/AGENTS.md`.
 
 ## O Biblo: a conversa dentro da sessão
 
@@ -812,8 +789,8 @@ vive em NO MÁXIMO uma pasta, e sem pasta continua sendo o estado padrão (a
 **A pasta que uma sessão aponta precisa ser DO MESMO DONO, e isso é RLS, não
 a rota.** `sessions_insert_own`/`sessions_update_own` (migração 0068) levam um
 `exists (select 1 from folders where id = folder_id and user_id = auth.uid())`
-no `with check` — a mesma classe de furo fechada em `session_deepenings` na
-0040 (ver `supabase/AGENTS.md`), aqui prevenida em vez de corrigida depois. A
+no `with check` — a mesma classe de furo fechada nas tabelas filhas de sessão
+na 0040 (ver `supabase/AGENTS.md`), aqui prevenida em vez de corrigida depois. A
 rota confere de novo (`getFolder` antes do PATCH) só para devolver
 `folder_not_found` em vez do erro cru do Postgres.
 
@@ -969,18 +946,13 @@ aberta" nenhum; o diálogo lê a MESMA `useLibrary()`, sem consulta nova, e
 reaproveita o mesmo motor (`src/lib/search.ts`) e a mesma metade servidor
 (`useContentSearch`, abaixo).
 
-**`/studies` continua com a barra ANTIGA** (`CollectionSearch` + `SearchScope`
-+ `SearchToggle`, atrás da lupa do cabeçalho, fechando limpa os filtros): os
-Estudos estão saindo do produto (ver `src/app/AGENTS.md`) e não valeram a
-migração para o diálogo global. `StudiesBrowser` é hoje o único consumidor de
-`CollectionSearch`. **O passo de busca do tour dos Estudos aponta para a LUPA**
-— ancorado na barra, ele seria descartado em silêncio porque ela ainda não
-existe quando o tour abre. O passo irmão da Biblioteca aponta para o botão que
-abre o diálogo global, não para um resultado dentro dele.
+Houve uma segunda barra, a ANTIGA (`CollectionSearch` + `SearchScope` +
+`SearchToggle`, atrás da lupa do cabeçalho), e o único consumidor dela era
+`/studies`. Saiu junto com os Estudos.
 
-**Lista vazia e busca sem resultado são DUAS telas, não uma.** As duas páginas
-têm um estado vazio de verdade (`SessionsEmptyState`, `StudiesEmptyState`, sobre
-a casca comum do `CollectionEmptyState`) que ensina o caminho de encher a lista,
+**Lista vazia e busca sem resultado são DUAS telas, não uma.** A página tem um
+estado vazio de verdade (`SessionsEmptyState`, sobre a casca comum do
+`CollectionEmptyState`) que ensina o caminho de encher a lista,
 e ele só entra quando não há nada mesmo. Com filtro ligado quem aparece é o
 "nenhuma gravação com esse recorte", cuja saída é limpar a busca: ensinar a
 gravar a quem tem trinta gravações e digitou uma palavra errada é responder
@@ -1027,14 +999,11 @@ TypeScript, com `parseVerseReference` (`src/lib/domain/reference.ts`).
 que respondia pelas sessões gravadas naquele modo. Ela foi dropada na migração
 0058, e a RPC passou a ler só o resumo — que toda sessão tem.
 
-**Nos ESTUDOS**, o cartão que casou só pela transcrição ganha a linha "Trecho na
-transcrição" e o que casou por versículo mostra a REFERÊNCIA — na tinta do
-próprio post-it, não numa pastilha de cor fixa, que sobre quatro papéis
-diferentes some em uns e grita em outros. Ali essa linha é obrigatória: o
-post-it do estudo não cita o sermão, então sem ela o cartão aparece sem nenhuma
-explicação visível para estar ali. Na Biblioteca as pastilhas equivalentes
-saíram com o `SessionCard` — lá o cartão É o sermão buscado. Ver o cabeçalho de
-`LibraryBrowser`.
+Houve um segundo mural, o dos Estudos, e lá o cartão que casou só pela
+transcrição ganhava a linha "Trecho na transcrição", obrigatória porque o
+post-it do estudo não citava o sermão. Ele saiu do produto. Na Biblioteca as
+pastilhas equivalentes saíram com o `SessionCard` — aqui o cartão É o sermão
+buscado. Ver o cabeçalho de `LibraryBrowser`.
 
 **O agrupamento por mês foi para dentro do browser**, junto com a filtragem:
 agrupar no servidor e filtrar no cliente deixa seções vazias na tela toda vez

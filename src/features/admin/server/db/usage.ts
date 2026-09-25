@@ -8,6 +8,7 @@ import {
   BILLABLE_ACTIONS,
   type BillableActionKey,
   INTERNAL_ACTION_KEY,
+  LEGACY_ACTION_KEY,
   UNBILLED_ACTION_KEY,
   type UsageActionKey,
 } from "@/features/coins/billable";
@@ -178,12 +179,19 @@ export type UsageByAction = {
 };
 
 /**
- * As três etapas de LLM do estudo, mais os nomes de rota LEGADOS que saíram do
- * código e continuam no banco (ver o comentário de `UsageRoute` em
- * lib/db/usage.ts). Esquecer os legados não quebra nada visivelmente: o custo
- * antigo do estudo some caladamente dentro da linha da gravação que o gerou.
+ * As rotas do ESTUDO, que saiu do produto e não gera mais nenhuma chamada.
+ *
+ * Elas continuam aqui porque `llm_usage_events` continua cheio delas, e o
+ * custo que elas gravaram precisa de um lugar. Esse lugar é
+ * `LEGACY_ACTION_KEY`, não a linha da gravação: as duas etapas de LLM do
+ * estudo sempre traziam `sessionId`, então sem esta lista o custo antigo
+ * some caladamente dentro da sessão que o gerou, engordando o custo do minuto
+ * gravado sem engordar as moedas dele. Ver o cabeçalho de `LEGACY_ACTION_KEY`.
+ *
+ * A lista inclui os nomes LEGADOS (`deepening*`, `study-plan`, `study-audit`),
+ * que já tinham saído do código antes de o produto sair, pelo mesmo motivo.
  */
-const STUDY_ROUTES = new Set([
+const LEGACY_PRODUCT_ROUTES = new Set([
   "study-questions",
   "study-answers",
   "study-write",
@@ -196,7 +204,7 @@ const STUDY_ROUTES = new Set([
 
 /**
  * Inclui as rotas LEGADAS do enriquecimento do resumo (`summary-enrichment-*`),
- * pelo mesmo motivo de `STUDY_ROUTES` acima: a segunda chamada saiu do código
+ * pelo mesmo motivo de `LEGACY_PRODUCT_ROUTES` acima: a segunda chamada saiu do código
  * (ver `lib/final-summary/generate.ts`), as linhas dela continuam no banco, e
  * tirá-las daqui jogaria o custo histórico de reprocessar resumo dentro da
  * linha da gravação, sem erro nenhum na tela.
@@ -252,8 +260,8 @@ const LEGACY_ROUTE_BUCKET = "outras";
 const LIVE_ROUTES: ReadonlySet<string> = new Set(USAGE_ROUTES);
 
 /**
- * A conversa com o Biblo. Precisa de conjunto próprio pela MESMA razão do
- * estudo: as mensagens sempre trazem `sessionId`, então sem esta linha o custo
+ * A conversa com o Biblo. Precisa de conjunto próprio pela MESMA razão das
+ * rotas acima: as mensagens sempre trazem `sessionId`, então sem esta linha o custo
  * delas cairia no modo da sessão — engordando a linha da gravação num resumo
  * gravado, e caindo em `unbilled` num texto escrito à mão, que é o oposto da
  * verdade (ali a conversa é a única coisa que cobra).
@@ -281,14 +289,15 @@ const ACTION_BY_REASON = new Map<string, BillableActionKey>(
 );
 
 /**
- * Toda rota que não é do estudo nem do reprocessamento de resumo está dentro
- * do preço por minuto da gravação, inclusive as gratuitas que já existiram
- * (praticar, releia, lembra, formatação). Sem sessão para dizer o modo, cai em
- * `unbilled`: é gasto real que ninguém pagou, e ele PRECISA aparecer.
+ * Toda rota que não é de produto morto nem do reprocessamento de resumo está
+ * dentro do preço por minuto da gravação, inclusive as gratuitas que já
+ * existiram (praticar, releia, lembra, formatação). Sem sessão para dizer o
+ * modo, cai em `unbilled`: é gasto real que ninguém pagou, e ele PRECISA
+ * aparecer.
  */
 function actionForEvent(route: string, mode: SessionMode | null): UsageActionKey {
   if (INTERNAL_ROUTES.has(route)) return INTERNAL_ACTION_KEY;
-  if (STUDY_ROUTES.has(route)) return "study";
+  if (LEGACY_PRODUCT_ROUTES.has(route)) return LEGACY_ACTION_KEY;
   if (REPROCESS_SUMMARY_ROUTES.has(route)) return "reprocess_summary";
   if (BIBLO_ROUTES.has(route)) return "biblo";
   return mode ? ACTION_BY_MODE[mode] : UNBILLED_ACTION_KEY;
@@ -297,7 +306,6 @@ function actionForEvent(route: string, mode: SessionMode | null): UsageActionKey
 export type UsageFilters = {
   userId?: string;
   route?: string;
-  sessionId?: string;
   /**
    * Recording mode of the parent session. When set, only events tied to a
    * session with this mode are counted. Events without a session_id (ad-hoc
@@ -458,7 +466,12 @@ function accumulate(acc: UsageTotals, row: EventRow): void {
   acc.totalAudioSeconds += toNumber(row.audio_seconds);
 }
 
-const RECENT_SESSIONS = 50;
+/**
+ * Teto de linhas da tabela de sessões. Exportado porque a TELA o diz em voz
+ * alta: ordenar por lucro reordena estas 50, não o período inteiro, e sem o
+ * número na legenda as duas coisas são indistinguíveis.
+ */
+export const RECENT_SESSIONS = 50;
 const TOP_USERS = 25;
 
 export async function loadAdminUsageSummary(
@@ -476,7 +489,6 @@ export async function loadAdminUsageSummary(
 
   if (filters.userId) query = query.eq("user_id", filters.userId);
   if (filters.route) query = query.eq("route", filters.route);
-  if (filters.sessionId) query = query.eq("session_id", filters.sessionId);
   if (filters.from) query = query.gte("created_at", filters.from);
   if (filters.to) query = query.lte("created_at", filters.to);
   let modeSessionIds: Set<string> | null = null;
@@ -563,7 +575,6 @@ export async function loadAdminUsageSummary(
     .order("created_at", { ascending: false })
     .limit(50_000);
   if (filters.userId) coinQuery = coinQuery.eq("user_id", filters.userId);
-  if (filters.sessionId) coinQuery = coinQuery.eq("session_id", filters.sessionId);
   if (filters.from) coinQuery = coinQuery.gte("created_at", filters.from);
   if (filters.to) coinQuery = coinQuery.lte("created_at", filters.to);
   const { data: coinRows, error: coinErr } = await coinQuery;
@@ -797,7 +808,7 @@ export async function loadAdminUsageSummary(
         executions: coins?.executions ?? 0,
       } satisfies UsageByAction;
     }),
-    ...([UNBILLED_ACTION_KEY, INTERNAL_ACTION_KEY] as const).map(
+    ...([UNBILLED_ACTION_KEY, INTERNAL_ACTION_KEY, LEGACY_ACTION_KEY] as const).map(
       (key) =>
         ({
           key,
@@ -817,8 +828,8 @@ export async function loadAdminUsageSummary(
       const durationMs = meta?.duration_ms ?? null;
       const coins = coinsBySession.get(id) ?? 0;
       // custo/moeda = tudo que a API cobrou nessa sessão dividido pelas moedas
-      // que o usuário efetivamente pagou (recording_minute + deepening +
-      // reprocess_*, mais os motivos legados). Sem ledger para a sessão, é null.
+      // que o usuário efetivamente pagou (recording_minute + reprocess_*,
+      // mais os motivos legados). Sem ledger para a sessão, é null.
       const costPerCoinUsd = coins > 0 ? agg.cost / coins : null;
       const ownerProfile = meta?.user_id ? profiles.get(meta.user_id) : null;
       return {
@@ -977,23 +988,4 @@ function buildByRoute(
     mergedRoutes: merged.sort(),
   });
   return live;
-}
-
-/**
- * Cheap list for the user filter dropdown, no aggregate work.
- */
-export async function listUsersForFilter(): Promise<
-  { id: string; displayName: string | null; email: string | null }[]
-> {
-  const admin = createAdminClient();
-  const { data, error } = await admin
-    .from("profiles")
-    .select("id, display_name, email")
-    .order("display_name", { ascending: true });
-  if (error) throw new Error(`listUsersForFilter failed: ${error.message}`);
-  return (data as ProfileLite[]).map((p) => ({
-    id: p.id,
-    displayName: p.display_name,
-    email: p.email,
-  }));
 }

@@ -490,11 +490,9 @@ export function SavedSessionView({
               ) : null}
             </div>
             {/* Aqui morava o "Gerar estudo" (`DeepenButton`), a única porta para
-                  o modo estudo a partir de uma sessão. O modo saiu do produto de
-                  verdade: a rota, o botão e os componentes que só ele usava foram
-                  apagados. O que fica de pé é a API, as tabelas e a leitura em
-                  `/admin/sessions/[id]` — dado gerado e pago por gente continua
-                  legível ali.
+                  o estudo a partir de uma sessão. Ele saiu do produto INTEIRO:
+                  a rota, os componentes, a API, o pipeline, o entitlement e a
+                  tabela (migração 0075). Ver `src/app/AGENTS.md`.
 
                   Ele também era o motivo de este cabeçalho ter três colunas no
                   desktop; a data que morava debaixo dele continua onde estava. */}

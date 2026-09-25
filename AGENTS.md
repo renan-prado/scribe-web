@@ -15,11 +15,13 @@ da própria pasta**, abra o da área em que for mexer ANTES de escrever código.
 **Grava → resumo.**
 
 Um sermão ou aula bíblica é gravado pelo microfone em UM arquivo. No stop ele
-sobe inteiro, é transcrito de uma vez e vira um resumo estruturado. A partir do
-resumo, quem tem plano `Estudioso` pedia um estudo teológico, uma vez por sessão
-— **o estudo está saindo do produto, e o acesso a ele já foi tirado da
-interface**: as rotas, a API e as tabelas continuam de pé, sem nenhum botão que
-chegue nelas. Ver `src/app/AGENTS.md`.
+sobe inteiro, é transcrito de uma vez e vira um resumo estruturado.
+
+A partir do resumo, quem tinha plano pago pedia um estudo teológico, uma vez
+por sessão. **O estudo SAIU do produto, inteiro**, em três etapas: o acesso,
+depois as rotas e os componentes, por fim a API, o pipeline, o entitlement, a
+linha de preço do painel e a tabela (migração 0075). Não há mais nada na
+aplicação que o gere, o leia ou o precifique. Ver `src/app/AGENTS.md`.
 
 **Um modo de captura só, `audio`**, a 5 moedas por minuto iniciado
 (`src/features/coins/pricing.ts`). Já foram três — `live` (com um feed de cartões
@@ -68,8 +70,8 @@ do resumo gerado — título, subtítulo, parágrafo, passagem bíblica, frase d
 destaque, citação e conclusão. É o único caminho do produto que **não custa
 moeda**, porque não há STT nem chamada de modelo em lugar nenhum dele; o
 trabalho foi todo de quem escreveu. Uma sessão assim não tem transcrição, e é
-isso que tira dela o reprocessamento, o alerta de alucinação e, por ora, o
-estudo. Ver `src/app/AGENTS.md`.
+isso que tira dela o reprocessamento e o alerta de alucinação. Ver
+`src/app/AGENTS.md`.
 
 **Stack:** Next.js 16 (App Router) · React 19 · Supabase SSR · Tailwind v4 +
 shadcn sobre base-ui · Zod · Zustand · TanStack Query · Biome · Stripe.
@@ -92,7 +94,7 @@ src/
   instrumentation.ts
 
   features/     UM ASSUNTO POR PASTA, da tela ao banco
-    session/    gravação, resumo, estudo, YouTube, busca → session/AGENTS.md
+    session/    gravação, resumo, YouTube, Biblo, busca → session/AGENTS.md
     billing/    Stripe, planos e crédito                 → billing/AGENTS.md
     coins/      preço em moedas e a conta de margem
     admin/      painel interno, métricas, finanças       → admin/AGENTS.md

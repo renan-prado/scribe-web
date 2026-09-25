@@ -12,6 +12,7 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
+import { UserPicker, type UserPickerOption } from "@/features/admin/components/UserPicker";
 
 /**
  * Os filtros FINOS de /admin/costs: usuário, rota e modo.
@@ -32,10 +33,13 @@ import {
  * saber em qual está.
  */
 type Props = {
-  users: { id: string; displayName: string | null; email: string | null }[];
+  /**
+   * A pessoa do `?userId=` JÁ resolvida pelo servidor, ou `null`. Não é a
+   * lista de contas: o campo procura no banco a cada tecla, ver `UserPicker`.
+   */
+  selectedUser: UserPickerOption | null;
   routes: string[];
   current: {
-    userId: string;
     route: string;
     mode: string;
   };
@@ -52,22 +56,15 @@ const MODE_OPTIONS: SelectOption[] = [
   { value: "youtube", label: "YouTube" },
 ];
 
-export function UsageFilters({ users, routes, current }: Props) {
+export function UsageFilters({ selectedUser, routes, current }: Props) {
   const router = useRouter();
   const pathname = usePathname();
   const searchParams = useSearchParams();
-  const [userId, setUserId] = useState(current.userId || ANY);
+  const [user, setUser] = useState<UserPickerOption | null>(selectedUser);
   const [route, setRoute] = useState(current.route || ANY);
   const [mode, setMode] = useState(current.mode || ANY);
   const [isPending, startTransition] = useTransition();
 
-  const userOptions: SelectOption[] = [
-    { value: ANY, label: "Todos" },
-    ...users.map((u) => ({
-      value: u.id,
-      label: u.displayName?.trim() || u.email || u.id.slice(0, 8),
-    })),
-  ];
   const routeOptions: SelectOption[] = [
     { value: ANY, label: "Todas" },
     ...routes.map((r) => ({ value: r, label: r })),
@@ -81,7 +78,7 @@ export function UsageFilters({ users, routes, current }: Props) {
   function apply() {
     const params = new URLSearchParams(searchParams.toString());
     for (const [key, value] of [
-      ["userId", userId],
+      ["userId", user?.id ?? ANY],
       ["route", route],
       ["mode", mode],
     ] as const) {
@@ -92,7 +89,7 @@ export function UsageFilters({ users, routes, current }: Props) {
   }
 
   function reset() {
-    setUserId(ANY);
+    setUser(null);
     setRoute(ANY);
     setMode(ANY);
     const params = new URLSearchParams(searchParams.toString());
@@ -109,23 +106,8 @@ export function UsageFilters({ users, routes, current }: Props) {
           filtro deixava de dizer quem ele estava filtrando. */}
       <div className="grid gap-3 sm:grid-cols-2 xl:grid-cols-4 xl:items-end">
         <div className="flex flex-col gap-1.5">
-          <Label>Usuário</Label>
-          <Select
-            items={userOptions}
-            value={userId === ANY ? undefined : userId}
-            onValueChange={(v) => setUserId(v ?? ANY)}
-          >
-            <SelectTrigger className="w-full">
-              <SelectValue placeholder="Todos" />
-            </SelectTrigger>
-            <SelectContent>
-              {userOptions.map((o) => (
-                <SelectItem key={o.value} value={o.value}>
-                  {o.label}
-                </SelectItem>
-              ))}
-            </SelectContent>
-          </Select>
+          <Label htmlFor="admin-usage-user">Usuário</Label>
+          <UserPicker id="admin-usage-user" value={user} onChange={setUser} />
         </div>
 
         {/* A rota é o filtro que a aba de versões PEDE: sem fixá-la, o custo

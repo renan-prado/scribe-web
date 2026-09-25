@@ -209,7 +209,7 @@ const AUDIO_BUDGET_BYTES_PER_HOUR = 240 * 1024 * 1024;
  *   cabe num POST só. O limite de 40/min é folga de outra era (o gravador
  *   antigo mandava um trecho a cada 30s) e fica: ele nunca é o que impede um
  *   abuso de transcrição, quem faz isso é `AUDIO_BUDGET_BYTES_PER_HOUR`.
- * - final-summary/deepening são uma vez por sessão, e caras.
+ * - final-summary roda uma vez por sessão, e é cara.
  * - sessions/coins/verse são encanamento barato, mas ainda assim limitados.
  */
 export const RATE_LIMITS = {
@@ -255,16 +255,6 @@ export const RATE_LIMITS = {
   // mas queima crédito da Supadata, e é esse o abuso que este bucket corta.
   "youtube-import": {
     route: "youtube-import",
-    perUser: { limit: 10, windowMs: HOUR },
-    perIp: { limit: 40, windowMs: HOUR },
-  },
-  deepening: {
-    route: "deepening",
-    perUser: { limit: 30, windowMs: HOUR },
-    perIp: { limit: 100, windowMs: HOUR },
-  },
-  "deepening-reprocess": {
-    route: "deepening-reprocess",
     perUser: { limit: 10, windowMs: HOUR },
     perIp: { limit: 40, windowMs: HOUR },
   },

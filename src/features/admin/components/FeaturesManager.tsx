@@ -40,7 +40,7 @@ import type {
  *   3. AS EXCEÇÕES: por pessoa, por e-mail.
  *
  * A matriz vir primeiro e não ter botão nenhum é intencional: é o que impede
- * alguém de procurar aqui o lugar de "liberar o estudo pro plano Pessoal".
+ * alguém de procurar aqui o lugar de "liberar o Biblo pro plano Gratuito".
  * Esse lugar não existe nesta tela; é um commit.
  */
 
@@ -78,8 +78,10 @@ export function FeaturesManager({ features, switches, overrides }: Props) {
   const isEnabled = (key: FeatureKey) => switchByFeature.get(key)?.enabled !== false;
 
   const [email, setEmail] = useState("");
+  // `FEATURE_KEYS` nunca é vazio, mas o tipo não sabe disso: `biblo_chat` é o
+  // fallback do compilador, não uma segunda fonte de verdade.
   const [overrideFeature, setOverrideFeature] = useState<FeatureKey>(
-    features[0]?.key ?? ("study_generation" as FeatureKey)
+    features[0]?.key ?? ("biblo_chat" as FeatureKey)
   );
   const [granted, setGranted] = useState<"true" | "false">("true");
   const featureOptions: SelectOption<FeatureKey>[] = features.map((f) => ({

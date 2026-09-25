@@ -293,8 +293,8 @@ vira o objeto mais luminoso do cartão. Virou `.veil-chip`, em
 tinta `--scriba-ink`, um degrau abaixo do topo.
 
 **O véu virou TRATAMENTO, não componente**, e é por isso que o nome descreve o
-efeito: ele veste também os ícones de tipo (YouTube, gravação, estudo) dos cartões da
-Biblioteca e dos Estudos. Lá eles eram
+efeito: ele veste também os ícones de tipo (YouTube, gravação) dos cartões da
+Biblioteca. Lá eles eram
 `bg-[image:var(--scriba-cta)]`, o gradiente do BOTÃO primário, um bloco com o
 peso de uma ação para marcar o TIPO da sessão, que é informação passiva.
 
@@ -469,7 +469,7 @@ inline "só desta vez".
 - `ScribaLogo`: pena + a palavra "scriba" em Poppins (`--font-poppins`), com
   `subtitle` opcional (hoje só o "Admin" da sidebar).
 - `ScribaAvatar`: a pena branca no disco com gradiente, usada quando o Scriba
-  fala como autor (cards de IA no feed e nos blocos de estudo).
+  fala como autor (os cards de IA).
 
 ### O rosto do Biblo existe em TRÊS arquivos, e nenhum é cópia do outro
 

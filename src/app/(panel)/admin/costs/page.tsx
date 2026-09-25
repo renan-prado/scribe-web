@@ -16,19 +16,17 @@ import { RotasTab } from "@/features/admin/components/costs/RotasTab";
 import { SessoesTab } from "@/features/admin/components/costs/SessoesTab";
 import { VersoesTab } from "@/features/admin/components/costs/VersoesTab";
 import { FxRateBadge } from "@/features/admin/components/FxRateBadge";
-import { SessionRunLookup } from "@/features/admin/components/SessionRunLookup";
-import { SessionRunPanel } from "@/features/admin/components/SessionRunPanel";
 import { UsageFilters } from "@/features/admin/components/UsageFilters";
 import { VersionPicker } from "@/features/admin/components/VersionPicker";
-import { loadSessionRuns } from "@/features/admin/server/db/session-runs";
 import {
-  listUsersForFilter,
   loadAdminUsageSummary,
+  RECENT_SESSIONS,
   type UsageFilters as UsageFiltersType,
 } from "@/features/admin/server/db/usage";
+import { getUserFilterOption } from "@/features/admin/server/db/user-search";
 import { getCoinEconomics, hasCustomCoinEconomics } from "@/features/coins/server/settings";
 import { SESSION_MODES, type SessionMode } from "@/lib/domain/session";
-import { makeCostPerThousandCoinsFormatter, makeMoneyFormatter } from "@/lib/fx/format";
+import { makeMoneyFormatter } from "@/lib/fx/format";
 import { getUsdToBrl } from "@/lib/fx/usd-brl";
 import { cn } from "@/lib/utils";
 
@@ -90,8 +88,6 @@ function rangeToFrom(range: string): string | undefined {
   return new Date(Date.now() - found.days * 24 * 60 * 60 * 1000).toISOString();
 }
 
-const UUID = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
-
 function parseModeFilter(value: string | undefined): SessionMode | undefined {
   return (SESSION_MODES as readonly string[]).includes(value ?? "")
     ? (value as SessionMode)
@@ -104,7 +100,6 @@ type SearchParams = {
   audience?: string;
   userId?: string;
   route?: string;
-  sessionId?: string;
   mode?: string;
   version?: string;
 };
@@ -114,7 +109,7 @@ type SearchParams = {
  *
  * Período e versão sobrevivem a qualquer troca; os filtros finos só existem
  * nas abas que os usam, e são DESCARTADOS ao entrar em "Preços & margem" pela
- * razão do cabeçalho do arquivo. O `sessionId` é de uma aba só.
+ * razão do cabeçalho do arquivo.
  */
 function hrefFor(tab: Tab, sp: SearchParams, overrides: Partial<SearchParams> = {}): string {
   const merged = { ...sp, ...overrides };
@@ -132,7 +127,6 @@ function hrefFor(tab: Tab, sp: SearchParams, overrides: Partial<SearchParams> = 
     if (merged.route) params.set("route", merged.route);
     if (merged.mode) params.set("mode", merged.mode);
   }
-  if (tab === "sessions" && merged.sessionId) params.set("sessionId", merged.sessionId);
   const qs = params.toString();
   return qs ? `/admin/costs?${qs}` : "/admin/costs";
 }
@@ -147,13 +141,6 @@ export default async function AdminCostsPage({
   const range = RANGES.some((r) => r.key === sp.range) ? (sp.range as string) : "30d";
   const version = sp.version?.trim() ?? "";
   const audience = parseAdminAudience(sp.audience);
-  // Validado aqui e não no componente: um `sessionId` malformado viraria uma
-  // consulta ao Postgres que estoura em vez de devolver vazio.
-  const sessionId =
-    tab === "sessions" && UUID.test(sp.sessionId?.trim() ?? "")
-      ? (sp.sessionId as string).trim()
-      : "";
-
   const fine = tab !== "prices";
   const filters: UsageFiltersType = {
     from: rangeToFrom(range),
@@ -162,29 +149,26 @@ export default async function AdminCostsPage({
     userId: fine ? sp.userId || undefined : undefined,
     route: fine ? sp.route || undefined : undefined,
     mode: fine ? parseModeFilter(sp.mode) : undefined,
-    sessionId: sessionId || undefined,
   };
 
-  const [summary, rate, settings, isCustom, users, sessionRuns] = await Promise.all([
+  const [summary, rate, settings, isCustom, selectedUser] = await Promise.all([
     loadAdminUsageSummary(filters),
     getUsdToBrl(),
     getCoinEconomics(),
     hasCustomCoinEconomics(),
-    fine ? listUsersForFilter() : Promise.resolve([]),
-    // Melhor-esforço: um id que não existe não pode derrubar a tela inteira,
-    // que é a razão de alguém ter chegado aqui.
-    sessionId ? loadSessionRuns(sessionId).catch(() => null) : Promise.resolve(null),
+    // SÓ a pessoa que o `?userId=` já nomeia, uma linha. A lista de contas não
+    // vem mais: quem procura é o campo, contra o banco, a cada tecla.
+    fine && sp.userId ? getUserFilterOption(sp.userId).catch(() => null) : Promise.resolve(null),
   ]);
 
   const money = makeMoneyFormatter(rate);
-  const costPerThousandCoins = makeCostPerThousandCoinsFormatter(rate);
   const routeUniverse: string[] =
     summary.routes.length > 0
       ? summary.routes
       : // Só quando o período não tem evento nenhum: um `Select` vazio não abre,
         // e o filtro pareceria quebrado em vez de vazio. Espelha as rotas vivas
         // de `UsageRoute`; as legadas aparecem sozinhas quando houver linha delas.
-        ["transcribe", "final-summary", "study-answers", "study-write"];
+        ["transcribe", "final-summary", "biblo", "youtube-transcript"];
 
   return (
     <div className="flex flex-col gap-6">
@@ -227,9 +211,9 @@ export default async function AdminCostsPage({
 
       {fine ? (
         <UsageFilters
-          users={users}
+          selectedUser={selectedUser}
           routes={routeUniverse}
-          current={{ userId: sp.userId ?? "", route: sp.route ?? "", mode: sp.mode ?? "" }}
+          current={{ route: sp.route ?? "", mode: sp.mode ?? "" }}
         />
       ) : null}
 
@@ -251,28 +235,12 @@ export default async function AdminCostsPage({
       ) : null}
 
       {tab === "sessions" ? (
-        <>
-          <SessionRunLookup current={sessionId} />
-          {sessionId && !sessionRuns ? (
-            <p className="rounded-xl border border-scriba-hairline bg-scriba-paper p-5 text-[13px] font-light text-scriba-ink-mute">
-              Nenhuma sessão com o id <span className="font-mono">{sessionId}</span> neste ambiente.
-            </p>
-          ) : null}
-          {sessionRuns ? (
-            <SessionRunPanel
-              report={sessionRuns}
-              usdToBrl={rate?.rate ?? null}
-              settings={settings}
-              money={money}
-            />
-          ) : null}
-          <SessoesTab
-            summary={summary}
-            money={money}
-            costPerThousandCoins={costPerThousandCoins}
-            sessionHref={(id) => hrefFor("sessions", sp, { sessionId: id })}
-          />
-        </>
+        <SessoesTab
+          sessions={summary.bySession}
+          rate={rate}
+          settings={settings}
+          cap={RECENT_SESSIONS}
+        />
       ) : null}
 
       <FxRateBadge rate={rate} />

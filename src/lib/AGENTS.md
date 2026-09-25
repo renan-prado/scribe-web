@@ -19,7 +19,7 @@ sabe o que é um sermão:
 | `rate-limit.ts` `utils.ts` `deploy.ts` `app-version.ts` `seo.ts` | cinco concerns soltos, cada um de uma linha só |
 
 **As REGRAS DE NEGÓCIO saíram daqui.** Eram catorze pastas (`billing`, `coins`,
-`partners`, `referrals`, `study`, `youtube`, `final-summary`, `transcription`,
+`partners`, `referrals`, `youtube`, `final-summary`, `transcription`,
 `finance`, `admin`, `prompts`, `account`…) e cada uma tinha uma metade de tela
 em `src/features/` com o mesmo nome, mais um pedaço em `lib/db/`. Uma feature em
 três lugares é três lugares para procurar, e nada no código dizia que os três
@@ -185,7 +185,7 @@ fio.**
 
 | Função | Traz | Para quem |
 |---|---|---|
-| `getSession` | tudo, `transcript` inclusive | o pipeline do SERVIDOR: reprocessar resumo, gerar estudo, auditar alucinação, importar do YouTube |
+| `getSession` | tudo, `transcript` inclusive | o pipeline do SERVIDOR: reprocessar resumo, auditar alucinação, importar do YouTube |
 | `getSessionView` | tudo menos `transcript`, mais `hasTranscript` | as TELAS: `/summary/:id` e `/summary/:id/edit` |
 | `getSessionMeta` | nem `transcript` nem `final_summary` | quem só decide rota e cabeçalho |
 | `getSessionTranscript` | só `transcript` + duração | o dialog da transcrição, quando abre |
@@ -259,153 +259,30 @@ ativação, receita, passivo de moedas), e já aceita recorte por período e por
 de parceiro: duas definições do mesmo número um dia discordam, e a discordância
 aparece como um parceiro reclamando do próprio painel.
 
-## O estudo é um pipeline, não uma chamada
+## O estudo saiu do produto
 
-A definição de produto que governa `src/features/session/server/study/`:
+Havia aqui uma seção longa sobre `src/features/session/server/study/`: um
+pipeline de cinco etapas (perguntar, filtrar, responder, ancorar na NVI,
+redigir, selar) que produzia um artigo de três a quatro mil palavras por 50
+moedas. **Ele não existe mais**, e a remoção foi total: a API
+(`/api/deepening`, `/api/deepening/reprocess`), os prompts, os modelos em
+`env/server.ts`, o entitlement `study_generation`, a linha de preço do painel
+e a tabela `session_deepenings` (migração 0075).
 
-```
-resumo  responde  →  o que foi ensinado nesta pregação?
-estudo  responde  →  agora que entendi o tema, o que preciso aprender sobre ele?
-```
+O que ficou do pipeline, e por quê:
 
-Cinco etapas, três de LLM e **duas determinísticas**:
+- `features/session/server/biblo/anchor.ts` — a ancoragem de uma referência
+  bíblica contra a NVI local. Era o passo 3, e o Biblo o usa pela mesma razão
+  que o estudo usava: impedir que o modelo PARAFRASEIE a Escritura.
+- Os nomes de rota `study-*` e `deepening*` em
+  `features/admin/server/db/usage.ts`, como rotas LEGADAS. `llm_usage_events`
+  continua cheio delas, e sem essa lista o custo antigo cairia dentro da linha
+  da gravação que o gerou. Ver `LEGACY_ACTION_KEY`.
+- Os motivos `deepening` / `reprocess_deepening` em `LEGACY_CHARGE_REASONS`,
+  pelo mesmo motivo do lado do ledger.
 
-```
-[1]  src/features/session/server/prompts/study-questions.ts  LLM   interroga o sermão: 25-30 perguntas
-[1b] src/features/session/server/prompts/study-guard.ts      mini  corta a que o resumo já responde
-[2]  src/features/session/server/prompts/study-answers.ts    LLM   ESCOLHE as 10-14 que rendem e responde
-[3]  lib/study/anchor.ts             ---   resolve as referências citadas na NVI
-[4]  src/features/session/server/prompts/study-write.ts      LLM   vira um artigo corrido
-[4b] src/features/session/server/prompts/study-guard.ts      mini  tese repetiu o resumo? reescreve 1x
-[5]  lib/study/seal.ts               ---   versículo da NVI; fonte sem obra cai
-```
-
-Orquestrador: `src/features/session/server/study/generate.ts`. Chamado por `/api/deepening` e
-`/api/deepening/reprocess`.
-
-**A representação intermediária é PERGUNTA, não taxonomia.** A versão anterior
-pedia um plano de eixos com disciplinas ("exegese", "teologia sistemática") e
-não funcionou: taxonomia é formulário, preenchível por qualquer modelo, e não
-diz nada sobre a qualidade do que virá. Uma pergunta é autovalidável, dá para
-ler "Graça é libertinagem?" e saber que rende.
-
-Regra que decorre disso, e que decide onde investir prompt:
-
-> **A qualidade do estudo é a qualidade das perguntas.** Estudo ruim: olhe o
-> questionador primeiro.
-
-Quatro decisões que parecem detalhe e não são:
-
-- **O questionador não seleciona.** Gera 25-30 e entrega todas. Pedir poucas
-  produz as óbvias, as boas aparecem depois da décima. A seleção é do passo 2,
-  porque quem melhor julga se uma pergunta vale é quem vai ter de respondê-la.
-- **As respostas saem numa chamada só**, com todas as perguntas à vista. Uma
-  chamada por pergunta faz dez respostas reestabelecerem a mesma definição.
-- **Divergência entre tradições é conteúdo, não risco.** Onde protestantes
-  concordam, o texto AFIRMA; onde divergem, nomeia os lados. A leitura ingênua
-  ("não ofenda ninguém") produz "alguns entendem X, outros Y", o genérico que
-  a reforma existe para matar. Vive no campo `tension` de cada resposta.
-- **O sermão sai do pipeline depois do passo 1.** Só o questionador vê a
-  transcrição e o resumo; respondedor e redator recebem um ASSUNTO e as
-  perguntas. Entregar o resumo "para não repetir" a um modelo que vai escrever
-  é priming, não proteção, era assim que a expressão cunhada pelo pregador
-  virava título de seção do estudo.
-- **Ninguém escreve citação entre aspas.** Não temos o texto das obras, e uma
-  frase entre aspas que o autor não escreveu é invenção com aparência de prova.
-  Os autores entram por atribuição em prosa (nomeando a obra) e por blocos
-  `reading`. O tipo `quote` continua existindo para os payloads antigos.
-- **O redator tem licença para reordenar, fundir, descartar e desdobrar.** Sem
-  ela, ele tira os pontos de interrogação e entrega um FAQ disfarçado. Teste:
-  se o artigo tem tantas seções quanto respostas, ele não fez o trabalho.
-
-**Não há cota de nada**, nem de citação, nem de versículo, nem de seção. As
-cotas mínimas do prompt antigo eram a maior fonte de invenção do sistema: cota
-é concreta, "não invente" é vago, e cota vence. O comprimento vem do número de
-perguntas boas respondidas, nunca de uma instrução para escrever longo.
-
-**Não há passo de auditoria de conteúdo**, e é deliberado: o artigo fala do
-ASSUNTO, não do que o pregador disse, e o que um auditor pegaria, citação sem
-origem, versículo parafraseado, a selagem pega melhor, porque é código.
-
-**O guardião é a única verificação que sobrou, e ele faz uma pergunta só:
-"isto repete o resumo?"** Roda duas vezes num modelo barato a temperatura zero.
-O corte [1b] mata na fonte (pergunta que o resumo já responde produz,
-necessariamente, parágrafo que repete o resumo); o corte [4b] pega o que o
-primeiro não alcança, o redator colapsando o artigo de volta na tese do
-sermão na hora de amarrar tudo, que foi a falha observada em produção.
-
-Três invariantes do guardião, todas contra o mesmo risco de trocar um problema
-de qualidade por um de disponibilidade:
-
-- **Falha do guardião nunca derruba a geração.** Sem o filtro o estudo ainda
-  sai, só com mais risco de repetir.
-- **Se sobrarem menos de seis perguntas, seguimos com todas.** Corte excessivo
-  é sinal de questionador preguiçoso; responder duas sobras dá estudo
-  raquítico, e vazio é pior que repetido.
-- **[4b] dispara UMA reescrita, nunca duas.** Se a segunda também repetir, o
-  estudo é entregue: o usuário já pagou as moedas, e 502 depois de cobrar é
-  pior que um texto imperfeito. Fica o `warn` e o registro em
-  `StudyRecord.guard`.
-
-As perguntas são **persistidas** (`session_deepenings.plan`, migração 0033, a
-coluna nasceu guardando um plano de eixos e hoje guarda um `StudyRecord`). É o
-que separa "as perguntas eram rasas" de "eram boas e foram mal respondidas",
-que são consertos em modelos diferentes. A tela que as lia (`/admin/studies`)
-saiu do painel; o registro continua gravado, e quem precisar do diagnóstico o
-lê direto do banco. Ver `src/features/admin/AGENTS.md`.
-
-Quatro env vars (`OPENAI_STUDY_QUESTIONS_MODEL`, `_ANSWERS_`, `_WRITE_`,
-`_GUARD_`) e quatro rotas em `llm_usage_events`, para dar para trocar uma etapa
-de modelo e medir o efeito isoladamente.
-
-**Nenhum default é `gpt-4o`, e isso foi MEDIDO.** Com 4o, os mesmos prompts
-produziam respostas de 186 palavras (o prompt pedia 350-500) e um artigo de 723
-a 1.330 palavras a partir de 2 mil palavras de material. Três rodadas de ajuste
-de prompt não furaram esse teto; a troca de modelo levou o artigo a 4 mil
-palavras na primeira tentativa. Antes de reescrever prompt de novo, pergunte se
-o teto não é do modelo.
-
-**Mas só o RESPONDEDOR é `gpt-5.1`; questionador e redator rodam em
-`gpt-5-mini`.** Com os três no modelo caro o estudo fechava a −16% de margem, e
-a medição mostrou que token de saída é 85% da conta. O respondedor é a única
-etapa que carrega obra, controvérsia, data e referência bíblica, é onde uma
-invenção vira erro do produto. O questionador levanta um andaime que é
-descartado em dois terços por desenho, e o redator recebe a substância já
-fixada, as passagens já conferidas contra a NVI e os autores já filtrados. **O
-modelo caro fica só onde moram os fatos**, e é essa a justificativa retroativa
-de o pipeline ser separado em etapas. Números e a proibição de fundir [2] com
-[4] em `docs/estudo-v2.md` §4.
-
-Isso trouxe uma consequência para o `callChat`: a família de raciocínio recusa
-`max_tokens` (é `max_completion_tokens`) e só aceita a `temperature` padrão.
-`src/lib/llm/openai.ts` detecta por prefixo e troca os parâmetros; quem regula a
-etapa ali é `reasoningEffort`. Um `gpt-4o` configurado de volta continua
-recebendo a temperatura de sempre.
-
-**O orçamento de tempo é apertado.** O pipeline mede ~255s, as rotas declaram
-`maxDuration = 300`, e as chamadas [2] e [4] passam `timeoutMs` de 240s. É esse
-teto que explica o esforço baixo no redator e o prazo da reescrita do guardião
-(`REWRITE_DEADLINE_MS`): estourar a função depois de já ter debitado moedas é
-um estrago maior que entregar um texto imperfeito.
-
-**A capa do bloco `reading` não vem do modelo.** `src/features/session/server/study/covers.ts` resolve
-contra a Google Books API e confere autor+título antes de deixar a URL entrar
-no payload, o parser de `domain/study.ts` DESCARTA um `coverUrl` que venha do
-LLM, de propósito. Sem `GOOGLE_BOOKS_API_KEY` (opcional) nada é chamado e a UI
-desenha uma capa tipográfica, que é o caso normal, não um fallback degradado.
-Medido: sem chave o Google responde 429 sempre, e a Open Library em busca livre
-devolve a capa de outro livro do mesmo autor.
-
-Para medir qualquer uma dessas coisas de novo, o harness é
-`tmp/dev-scripts/study-eval.mts` (roda o pipeline de verdade sobre uma sessão
-real e imprime perguntas, vereditos e o artigo) e `guard-eval.mts` (compara
-modelos só no filtro). Os dois vivem em `tmp/`, que é gitignored.
-
-**As chamadas [2] e [4] passam `timeoutMs` explícito de 180s.** O padrão de
-`callChat` é 60s, e essas duas são grandes, um timeout ali abortaria trabalho
-que o usuário já pagou em moedas.
-
-Diagnóstico e desenho completos: `docs/estudo-v2.md`.
+O diagnóstico e o desenho continuam legíveis em `docs/estudo-v2.md`, como
+história: nenhuma linha daquele documento descreve código vivo.
 
 ## Entitlements: o que cada plano libera
 
@@ -464,7 +341,10 @@ Três regras ao usar:
 Ler conteúdo já gerado nunca é gated, só gerar. Tirar acesso ao que a pessoa
 já pagou seria confisco.
 
-Diagnóstico e desenho completos: `docs/estudo-v2.md` §8.
+**Hoje há UMA feature no catálogo, `biblo_chat`.** A segunda era
+`study_generation`, e ela saiu junto com o estudo: um kill switch e uma
+exceção por pessoa para algo que ninguém pode usar são controles que não
+governam nada, e girá-los não produz efeito nenhum na tela.
 
 ## Finanças: a conta mora fora da tela
 
@@ -568,7 +448,7 @@ log.error("upstream falhou", err);            // aceita Error direto
   silêncio justamente os números que o log das rotas de LLM existe para
   mostrar.
 - `log.child({ sessionId })` gruda contexto; `log.scoped("audit")` abre
-  sub-escopo (`deepening/audit`); `log.time()` devolve o fechador que loga
+  sub-escopo (`resumo/audit`); `log.time()` devolve o fechador que loga
   `durationMs`; `log.table()` é no-op em produção.
 
 ## Bíblia
@@ -584,8 +464,8 @@ seletor de tradução voltar, o cache precisa virar LRU antes.
 Quem entende uma REFERÊNCIA ("João 3:16", "Romanos 8") é
 `src/lib/domain/reference.ts`, client-safe: a tela do resumo usa para transformar
 uma referência escrita no meio de um parágrafo num link, e o servidor usa o
-mesmo parser em `/api/verse`, no ancoramento do estudo e na busca por
-versículo. Um segundo parser em qualquer uma dessas pontas faria a tela e o
+mesmo parser em `/api/verse`, no ancoramento das referências do Biblo e na
+busca por versículo. Um segundo parser em qualquer uma dessas pontas faria a tela e o
 banco discordarem sobre o que "Romanos 8" significa.
 
 ## Transcrição: qualidade
@@ -668,8 +548,8 @@ nunca disparava com o modelo novo, nem em áudio com 27% de WER.
   tela DIZ que é. O custo por moeda é sempre MEDIDO, nunca constante.
 - `coins/billable.ts` + `coins/economics.ts`, o que é uma AÇÃO cobrável e a
   conta de margem por milheiro de moeda, os dois client-safe. `pricing.ts` diz
-  quanto custa em moedas; `billable.ts` diz o que é uma coisa (gerar e
-  reprocessar estudo são dois motivos no ledger e um produto só). Alimentam
+  quanto custa em moedas; `billable.ts` diz o que é uma coisa (os quatro
+  motivos por minuto que já existiram são uma linha só). Alimentam
   `/admin/costs`, ver `src/features/admin/AGENTS.md`.
 - `admin/insights/`: server-only, a leitura que um modelo faz dos números do
   painel inteiro, na visão geral (`/admin`). UMA leitura, gerada só no clique; já

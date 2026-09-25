@@ -1,5 +1,18 @@
 # Estudo V2: diagnóstico e nova arquitetura de geração
 
+> ⚠️ **ESTE DOCUMENTO É HISTÓRIA. O estudo saiu do produto.**
+>
+> Nada aqui descreve código vivo: `/api/deepening[/reprocess]`, o pipeline de
+> cinco etapas, os prompts, os modelos em `env/server.ts`, o entitlement
+> `study_generation`, a linha de preço do painel e a tabela
+> `session_deepenings` foram removidos (migração 0075). O único pedaço que
+> sobreviveu é a ancoragem de referência contra a NVI, hoje em
+> `src/features/session/server/biblo/anchor.ts`, porque o Biblo precisa dela.
+>
+> Ele fica por duas razões: o raciocínio de por que uma chamada única não
+> entregava, e o desenho de um pipeline multi-etapa com papéis separados, que
+> é a parte reaproveitável no dia em que algo parecido for tentado de novo.
+
 > Resposta à task `tasks/001-modo-gerar-estudo`. Este documento é a análise que
 > precede a implementação. O que já está decidido sobre a camada de
 > conhecimento (RAG) está em `docs/scriba-rag-proposta-claude.md` e não é
