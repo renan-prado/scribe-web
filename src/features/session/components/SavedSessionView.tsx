@@ -298,7 +298,7 @@ export function SavedSessionView({
     // (`/summary/[id]/page.tsx`), porque a barra de baixo do celular é irmã
     // desta view e também abre a busca — ver `SummaryFind`. Esta view continua
     // dentro dele, então nada aqui mudou de comportamento.
-    <main className="mx-auto flex min-h-svh w-full max-w-[1024px] flex-col gap-6 px-4 pb-8 sm:gap-8 sm:px-6 sm:pb-10">
+    <main className="mx-auto flex min-h-svh w-full max-w-[1024px] flex-col gap-6 px-4 pb-24 sm:gap-8 sm:px-6 md:pb-10">
       <PageBlurOverlay
         open={reprocessing}
         title="Reprocessando o resumo"
