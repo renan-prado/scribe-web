@@ -9,6 +9,12 @@ Gerado por `npm run release` a partir dos Conventional Commits. `feat` sobe o
 minor; o resto sobe o patch. Não edite à mão, a próxima execução escreve por
 cima do topo do arquivo.
 
+## 0.90.1, 2026-09-26, desde v0.90.0
+
+### Correções
+
+- **landing:** remove o dialog de instalar app do CTA "Começar agora" (`645a9e8`)
+
 ## 0.90.0, 2026-09-25, desde v0.89.0
 
 ### Novidades
