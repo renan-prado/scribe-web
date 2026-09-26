@@ -9,6 +9,12 @@ Gerado por `npm run release` a partir dos Conventional Commits. `feat` sobe o
 minor; o resto sobe o patch. Não edite à mão, a próxima execução escreve por
 cima do topo do arquivo.
 
+## 0.91.1, 2026-09-26, desde v0.91.0
+
+### Correções
+
+- **summary:** adiciona respiro no rodapé para não ficar atrás da barra do celular (`d0bd7f4`)
+
 ## 0.91.0, 2026-09-26, desde v0.90.1
 
 ### Novidades
