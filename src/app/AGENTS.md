@@ -2252,44 +2252,20 @@ Três consumidores hoje:
 
 - `useInstallPrompt`: não oferece instalação a quem já está dentro do app. No
   Android é o `beforeinstallprompt`; no iOS não existe API e o botão só ENSINA
-  o caminho do menu Compartilhar. Dois lugares o usam:
+  o caminho do menu Compartilhar. Hoje só um lugar o usa:
   - `InstallAppCard`, **no `/feed`** e só nele, a primeira tela de toda sessão
     de uso e a única em que a pessoa está olhando em volta em vez de terminando
     alguma coisa. `no-touch:hidden`. O X é dispensa LEVE: some nesta visita e volta na
     próxima vez que o `/feed` montar, no celular/tablet o convite nunca some de
     vez. O caminho que pode ser adiado de vez é o `/profile` (`InstallAppRow`).
-  - `LandingCta`: o CTA da landing. **O rótulo é o MESMO no celular e no
-    desktop** ("Começar grátis" na hero e no CTA final, "Começar" no header,
-    o `cta` do catálogo no card do Gratuito). Em aparelho de toque o CTA não
-    navega: abre o `InstallChoiceDialog`, com "Instalar o app" e "Usar no
-    navegador" lado a lado. **Os dois botões são os mesmos nos dois sistemas.**
-    O que muda é o que o primeiro FAZ: no Android ele dispara o
-    `beforeinstallprompt`; no iPhone e no iPad, onde não existe API de
-    instalação, ele troca o conteúdo do diálogo pelo passo a passo do menu
-    Compartilhar. Mostrar os passos DE SAÍDA no aparelho da Apple, como já foi
-    feito, trocava a pergunta por uma aula: a mesma decisão chegava com duas
-    caras conforme o sistema. Quem não tem nada a escolher
-    (`method === "none"`: app já instalado, ou navegador que não instala) vai
-    direto para o `href`, sem diálogo. No desktop é o `<Link>` de sempre, com o
-    mesmo texto e as mesmas classes, para o HTML estático não mudar. Cliente
-    puro como o `StandaloneHomeGuard`; o diálogo entra por `dynamic` e só monta
-    no primeiro toque, para o Dialog do base-ui não pesar no bundle da LP.
 
-    A versão anterior trocava o texto por "Instalar app" no celular e mandava
-    "Conhecer o Scriba" para a frente na coluna, para compensar. Era o primeiro
-    toque da página pedindo espaço no telefone antes de o produto ter mostrado
-    qualquer coisa. **Perguntar depois do toque mantém a instalação à mão sem
-    transformá-la em pedágio**, e foi o que devolveu o CTA à primeira posição
-    também no celular.
-
-  **O corte é `touch`/`no-touch`, não um breakpoint.** A pergunta aqui é "isto
-  é um celular ou tablet?", e nenhuma largura responde: o corte já foi `lg`
-  (1024px), escolhido porque o iPad em RETRATO cai abaixo dele, e o mesmo iPad
-  DEITADO mede 1024px. Ele caía no bucket "desktop" e perdia a única porta de
-  instalação que tem, sem nada na tela dizendo por quê. Não existe largura que
-  separe um tablet deitado de um notebook; o que separa é o HOVER, o mesmo
-  critério do pressionado, e pela mesma razão (um notebook com tela sensível
-  continua tendo mouse). As variantes moram em `src/app/globals.css`, ao lado da
+  **`LandingCta` NÃO oferece mais instalação.** O CTA da landing chegou a
+  perguntar, em aparelho de toque, se a pessoa queria instalar o app antes de
+  seguir (`InstallChoiceDialog`). Isso saiu: hoje ele é um `<Link>` puro para o
+  `href`, igual em qualquer aparelho, sem diálogo no meio. A oferta de instalar
+  continua existindo, só que só onde a pessoa já está DENTRO do produto
+  (`InstallAppCard` no `/feed`, `InstallAppRow` no `/profile`); o primeiro toque
+  de quem chega pela LP não precisa decidir isso antes de ver o produto.
   `dark`.
 
   Isso vale onde o alvo é o APARELHO. Para largura de viewport, que é sobre o

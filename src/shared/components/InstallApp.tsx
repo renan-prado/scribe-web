@@ -1,7 +1,7 @@
 "use client";
 
-import { Check, Download, Globe, Share, SquarePlus, X } from "lucide-react";
-import { type ReactNode, useCallback, useEffect, useState } from "react";
+import { Check, Download, Share, SquarePlus, X } from "lucide-react";
+import { type ReactNode, useCallback, useState } from "react";
 import { Button } from "@/components/ui/button";
 import {
   Dialog,
@@ -12,7 +12,7 @@ import {
 } from "@/components/ui/dialog";
 import { cn } from "@/lib/utils";
 import { ScribaMark } from "@/shared/brand";
-import { type InstallMethod, useInstallPrompt } from "@/shared/hooks/use-install-prompt";
+import { useInstallPrompt } from "@/shared/hooks/use-install-prompt";
 
 /**
  * O convite para instalar o Scriba na tela inicial.
@@ -242,101 +242,6 @@ function IosSteps() {
         text="Confirme em “Adicionar”. O Scriba passa a abrir como um aplicativo."
       />
     </ol>
-  );
-}
-
-/**
- * A escolha que o CTA da landing abre num aparelho de toque: instalar ou
- * seguir no navegador.
- *
- * Ele existe porque o botão da LP voltou a dizer o que promete ("Começar
- * grátis"), e não "Instalar app". Empurrar a instalação no primeiro toque é
- * pedir uma decisão de compromisso a quem ainda não viu o produto; perguntar
- * DEPOIS do toque mantém a instalação à mão sem transformá-la em pedágio.
- * Quem quer só entrar tem o segundo botão, no mesmo lugar e sem hierarquia
- * escondida.
- *
- * **A escolha é a MESMA nos dois sistemas**, e é isso que o `step` protege. A
- * Apple não expõe API de instalação, então no iPhone o passo a passo do menu
- * Compartilhar é tudo o que existe para oferecer, mas ele só aparece DEPOIS
- * do "Instalar o app". Mostrá-lo de saída trocava a pergunta por uma aula: o
- * aparelho da Apple via três passos e um botão onde o Android via duas
- * opções, e a mesma decisão chegava com duas caras diferentes. Aqui o segundo
- * toque é o que muda de plataforma, não o primeiro.
- *
- * O `step` volta para "choice" quando o diálogo ABRE, e não quando ele fecha,
- * porque fechar tem animação de saída: resetar ali trocaria o conteúdo na
- * frente de quem está vendo o diálogo se despedir.
- *
- * `method === "none"` (navegador que não instala, ou app já instalado) NÃO
- * chega aqui: o `LandingCta` navega direto, porque um diálogo de escolha com
- * uma opção só é uma pergunta sem pergunta.
- */
-export function InstallChoiceDialog({
-  open,
-  onOpenChange,
-  method,
-  onInstall,
-  onBrowser,
-}: {
-  open: boolean;
-  onOpenChange: (open: boolean) => void;
-  method: InstallMethod;
-  onInstall: () => void;
-  onBrowser: () => void;
-}) {
-  const [step, setStep] = useState<"choice" | "ios">("choice");
-
-  useEffect(() => {
-    if (open) setStep("choice");
-  }, [open]);
-
-  function handleInstall() {
-    // No iPhone/iPad o botão não instala: ele ENSINA, que é tudo o que a
-    // plataforma permite. No Android ele dispara o diálogo nativo.
-    if (method === "ios") {
-      setStep("ios");
-      return;
-    }
-    onInstall();
-  }
-
-  const showingSteps = step === "ios";
-
-  return (
-    <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent
-        className="rounded-[28px] bg-scriba-paper"
-        bodyClassName="flex flex-col gap-4 px-6 pb-6"
-      >
-        <DialogHeader className="px-6 pt-8">
-          <DialogTitle className="font-heading text-base font-semibold text-scriba-ink-strong">
-            {showingSteps ? "Instalar no iPhone ou iPad" : "Como você quer usar o Scriba?"}
-          </DialogTitle>
-          <DialogDescription className="text-scriba-ink-soft">
-            {showingSteps
-              ? "A instalação é feita pelo menu Compartilhar do Safari. São três toques:"
-              : "Você pode instalar o Scriba no seu aparelho ou usar direto pelo navegador."}
-          </DialogDescription>
-        </DialogHeader>
-        {showingSteps ? <IosSteps /> : null}
-        <div className="flex flex-col gap-2.5">
-          {showingSteps ? null : (
-            <Button className="h-11 w-full rounded-full" onClick={handleInstall}>
-              <Download aria-hidden className="size-4" />
-              Instalar o app
-            </Button>
-          )}
-          {/* O caminho do navegador continua à mão mesmo no passo a passo:
-              quem abriu as instruções e desistiu delas não pode ficar sem
-              saída a não ser fechar o diálogo e tocar no CTA de novo. */}
-          <Button variant="outline" className="h-11 w-full rounded-full" onClick={onBrowser}>
-            <Globe aria-hidden className="size-4" />
-            Usar no navegador
-          </Button>
-        </div>
-      </DialogContent>
-    </Dialog>
   );
 }
 
