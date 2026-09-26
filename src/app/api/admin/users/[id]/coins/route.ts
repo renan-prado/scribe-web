@@ -1,7 +1,7 @@
 import { NextResponse } from "next/server";
 import { z } from "zod";
+import { createCoinGift } from "@/features/coins/server/gifts";
 import { requireAdmin } from "@/lib/auth/require-admin";
-import { grantCoins } from "@/lib/db/billing";
 import { parseJsonBody, parseUuidParam } from "@/lib/http/validate";
 import { createLogger } from "@/lib/log";
 import { enforceRateLimit, RATE_LIMITS } from "@/lib/rate-limit";
@@ -12,58 +12,37 @@ export const runtime = "nodejs";
 export const dynamic = "force-dynamic";
 
 /**
- * Crédito AVULSO na conta de alguém, pelo painel.
+ * Presenteia alguém com moedas, pelo painel. NÃO credita na hora.
  *
- * ## Por que ela existe
+ * ## Por que ela deixou de ser um crédito instantâneo
  *
- * Porque a alternativa era o Supabase Studio. Dar cortesia a quem perdeu uma
- * gravação por um defeito nosso, ou destravar um suporte, significava abrir a
- * tabela `profiles` e somar um número na mão — sem lançamento no ledger, sem
- * autor, sem motivo, e com o dedo a uma tecla de editar a linha errada. Um
- * crédito feito assim não aparece em `/admin/costs`, não entra no passivo de
- * moedas e não tem como ser auditado depois.
+ * O crédito direto era invisível para quem recebia: a conta de alguém subia
+ * 200 moedas no meio de um saldo que já muda toda hora, e o gesto se perdia
+ * dentro de um número. Hoje o admin escreve um TÍTULO e uma MENSAGEM junto do
+ * valor, e a pessoa vê um cartão na Biblioteca com um botão "Resgatar X
+ * moedas" — o crédito de verdade só acontece quando ELA toca nele. Ver
+ * `src/features/coins/server/gifts.ts` e a migração 0077.
  *
- * ## Ela NÃO é uma segunda porta de crédito
+ * ## Ela ainda não é uma segunda porta de crédito
  *
- * `grantCoins` continua sendo a única (ver `lib/db/billing.ts`), e esta rota é
- * mais um chamador dela, como o webhook do Stripe e a mesada do parceiro. Daí
- * ela herdar de graça as três garantias que importam: o lançamento no ledger
- * com motivo próprio (`admin_grant`, que já existia no `GrantReason` esperando
- * por isto), o incremento ATÔMICO no banco (a RPC `grant_coins` faz
- * `saldo = saldo + valor` numa transação, então duas cortesias simultâneas não
- * se atropelam), e a idempotência por `external_ref`.
- *
- * **O `external_ref` carrega QUEM deu, e um id sorteado no servidor.** Quem deu
- * é o que torna o lançamento auditável meses depois; o id sorteado é o que faz
- * duas cortesias iguais, no mesmo minuto, para a mesma pessoa, serem dois
- * créditos em vez de um. Sortear no CLIENTE seria deixar a chave de
- * idempotência na mão de quem chama, e um duplo clique viraria crédito dobrado
- * ou nenhum, conforme o navegador reenviasse o mesmo valor ou um novo.
+ * Esta rota só INSERE a promessa (`coin_gifts`). Quem credita é
+ * `redeem_coin_gift`, pela porta única (`grant_coins`, `lib/db/billing.ts`),
+ * chamada por `POST /api/coins/gifts/:id/redeem` no momento do resgate.
  *
  * ## O que ela não deixa fazer
  *
- * **Só CREDITA.** Não há valor negativo, e não é esquecimento: tirar moeda de
- * alguém é estorno, tem motivo próprio (`refund`/`chargeback`) e já tem caminho
- * (`clawbackCoins`). Um campo que aceitasse os dois sinais transformaria um
- * erro de digitação na zeragem da conta de um assinante.
- *
- * O teto por operação existe pela mesma razão: `50.000` moedas é vinte vezes a
- * franquia mensal do plano mais caro, ou seja, folga enorme para qualquer
- * cortesia real, e um piso contra o dia em que alguém colar um id no campo do
- * valor.
+ * **Só presenteia.** Não há valor negativo, e não é esquecimento: tirar moeda
+ * de alguém é estorno, tem motivo próprio (`refund`/`chargeback`) e já tem
+ * caminho (`clawbackCoins`). O teto de 50.000 por operação é a mesma folga de
+ * sempre, vinte vezes a franquia mensal do plano mais caro.
  */
 const MAX_GRANT = 50_000;
 
 const BodySchema = z
   .object({
     amount: z.number().int().positive().max(MAX_GRANT),
-    /**
-     * Por que esta cortesia foi dada. Vai para o LOG, não para o ledger: a
-     * coluna `reason` de `coin_transactions` é o vocabulário fechado de
-     * `GrantReason`, e escrever texto livre nela faria toda consulta que agrupa
-     * por motivo passar a ter uma cauda de frases únicas.
-     */
-    note: z.string().trim().max(280).optional(),
+    title: z.string().trim().min(1).max(120),
+    message: z.string().trim().min(1).max(1000),
   })
   .strict();
 
@@ -82,33 +61,27 @@ export async function POST(request: Request, { params }: { params: Promise<{ id:
   const parsed = await parseJsonBody(request, BodySchema);
   if (!parsed.ok) return parsed.response;
 
-  const externalRef = `admin:${auth.user.id}:${crypto.randomUUID()}`;
-  const balance = await grantCoins({
+  const gift = await createCoinGift({
     userId: id,
     amount: parsed.data.amount,
-    reason: "admin_grant",
-    externalRef,
+    title: parsed.data.title,
+    message: parsed.data.message,
+    grantedBy: auth.user.id,
   });
 
-  // `null` é a RPC tendo recusado, e o caso mais provável é o id não ser de
-  // ninguém: `grant_coins` não tem o que atualizar e volta vazia. Um 500 aqui
-  // diria "o Scriba quebrou" sobre o que quase sempre é um id colado errado.
-  if (balance === null) {
-    log.error("grant failed", { targetId: id, amount: parsed.data.amount, externalRef });
+  if (gift === null) {
+    log.error("gift creation failed", { targetId: id, amount: parsed.data.amount });
     return NextResponse.json({ error: "grant_failed" }, { status: 422 });
   }
 
-  // `info`, e não `debug`: é dinheiro saindo da casa por decisão de uma pessoa,
-  // e é exatamente o tipo de rastro que se vai querer numa auditoria. Ver
-  // `src/lib/AGENTS.md`.
-  log.info("granted", {
+  // `info`, e não `debug`: é dinheiro prometido por decisão de uma pessoa, e é
+  // o tipo de rastro que se vai querer numa auditoria. Ver `src/lib/AGENTS.md`.
+  log.info("gift created", {
     targetId: id,
     byAdminId: auth.user.id,
-    amount: parsed.data.amount,
-    note: parsed.data.note ?? null,
-    externalRef,
-    balance,
+    amount: gift.amount,
+    giftId: gift.id,
   });
 
-  return NextResponse.json({ ok: true, balance });
+  return NextResponse.json({ ok: true, gift });
 }

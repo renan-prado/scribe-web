@@ -410,6 +410,14 @@ export const RATE_LIMITS = {
     perUser: { limit: 12, windowMs: 10 * MIN },
     perIp: { limit: 40, windowMs: 10 * MIN },
   },
+  // Resgatar um presente de moedas. A cadência legítima é um toque por
+  // presente que existir, quase sempre um só na fila; apertado porque é uma
+  // das rotas que credita moeda.
+  "coin-gift-redeem": {
+    route: "coin-gift-redeem",
+    perUser: { limit: 20, windowMs: 10 * MIN },
+    perIp: { limit: 60, windowMs: 10 * MIN },
+  },
   // Reconciliação pós-checkout. A tela de retorno chama uma vez; os retries
   // são raros. Apertado porque cada chamada bate na API do Stripe, e porque
   // é o único endpoint autenticado capaz de creditar, ainda que só um

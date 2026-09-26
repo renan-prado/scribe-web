@@ -3,6 +3,7 @@
 import { ArrowLeft, ChevronRight, Folder as FolderIcon } from "lucide-react";
 import { useRouter, useSearchParams } from "next/navigation";
 import { Fragment, useCallback, useEffect, useMemo, useState } from "react";
+import { CoinGiftBanner } from "@/features/coins/components/CoinGiftBanner";
 import { usePendingCount } from "@/features/session/capture-queue";
 import { FolderGrid } from "@/features/session/components/FolderGrid";
 import { LibraryNote } from "@/features/session/components/LibraryNote";
@@ -241,6 +242,11 @@ export function LibraryBrowser({ nowIso }: Props) {
           </div>
         </header>
       )}
+
+      {/* Presente de moedas pendente de resgate, antes de qualquer outra
+          coisa: é a única seção que pede uma DECISÃO da pessoa, e não só
+          informa o que já está acontecendo. */}
+      <CoinGiftBanner />
 
       {/* O que está guardado no aparelho e ainda não subiu, antes dos meses. */}
       <PendingCaptures now={now} />

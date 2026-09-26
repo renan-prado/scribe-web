@@ -1128,7 +1128,7 @@ parou**. Antes disso a única forma de saber se uma conta era pagante era abrir 
 Stripe: `/admin/metrics` dizia QUANTOS assinantes existem e `/admin/finance`
 quanto eles somam, mas nenhuma das duas dizia QUEM.
 
-**E ela CREDITA moedas avulsas**, pelo botão da moeda em cada linha
+**E ela PRESENTEIA com moedas**, pelo botão da moeda em cada linha
 (`GrantCoinsDialog` → `POST /api/admin/users/:id/coins`). Antes disso, dar uma
 cortesia a quem perdeu uma gravação por um defeito nosso significava abrir o
 Supabase Studio e somar um número na coluna `coin_balance` à mão: sem lançamento
@@ -1136,23 +1136,30 @@ no ledger, sem autor, sem motivo, e a uma tecla de editar a linha errada. Um
 crédito feito assim não aparece em `/admin/costs` e não entra no passivo de
 moedas.
 
-**A rota é mais um chamador de `grantCoins`, não uma segunda porta de crédito**
-(ver `src/features/billing/AGENTS.md`, "Todo crédito passa por `fulfill.ts`" —
-o princípio é o mesmo). Daí ela herdar de graça o lançamento com motivo próprio
-(`admin_grant`, que já existia no `GrantReason` esperando por isto), o
-incremento ATÔMICO da RPC e a idempotência por `external_ref`. O `external_ref`
-carrega QUEM deu e um id sorteado no SERVIDOR: quem deu é o que torna o
-lançamento auditável meses depois, e o sorteio do lado de cá é o que faz duas
-cortesias iguais no mesmo minuto serem dois créditos em vez de um — sorteado no
-cliente, um duplo clique viraria crédito dobrado ou nenhum.
+**Ela NÃO credita na hora, e essa é a segunda correção, sobre o primeiro
+conserto.** O crédito direto pela porta única resolveu o rastro, mas continuou
+invisível para quem recebia: a conta de alguém subia 200 moedas no meio de um
+saldo que já muda toda hora, e o gesto se perdia dentro de um número. Hoje o
+admin escreve um TÍTULO e uma MENSAGEM junto do valor (com um texto padrão de
+agradecimento, editável), e a rota só insere um PRESENTE PENDENTE
+(`coin_gifts`, migração 0077) — nenhuma moeda entra ainda. A pessoa vê um
+cartão na Biblioteca, acima das pastas (`CoinGiftBanner`, no mesmo lugar de
+`PendingCaptures`), com o título, a mensagem e um botão "Resgatar X moedas". O
+crédito de verdade só acontece no toque dela, por
+`POST /api/coins/gifts/:id/redeem`, que chama a RPC `redeem_coin_gift`.
 
-**Ela só CREDITA**, com teto de 50.000 por operação. Tirar moeda é estorno, tem
-motivo próprio (`refund`/`chargeback`) e já tem caminho (`clawbackCoins`); um
-campo que aceitasse os dois sinais transformaria um erro de digitação na zeragem
-da conta de um assinante. O MOTIVO digitado vai para o log, nunca para o ledger:
-`coin_transactions.reason` é o vocabulário fechado de `GrantReason`, e texto
-livre nele faria toda consulta que agrupa por motivo ganhar uma cauda de frases
-únicas.
+**E o resgate segue sendo mais um chamador de `grantCoins`, não uma segunda
+porta de crédito** (ver `src/features/billing/AGENTS.md`, "Todo crédito passa
+por `fulfill.ts`" — o princípio é o mesmo). A RPC de resgate trava a linha do
+presente, confere dono e estado, credita pela porta única com motivo
+`admin_grant` (o mesmo de sempre) e `external_ref` derivado do id do presente
+— idempotente do mesmo jeito que o crédito direto era. Ver
+`src/features/coins/server/gifts.ts`.
+
+**Ela só PRESENTEIA**, com teto de 50.000 por operação. Tirar moeda é estorno,
+tem motivo próprio (`refund`/`chargeback`) e já tem caminho (`clawbackCoins`);
+um campo que aceitasse os dois sinais transformaria um erro de digitação na
+zeragem da conta de um assinante.
 
 A coluna "Saldo" ao lado veio junto, da mesma linha de `profiles` que a lista já
 lia — sem ela o diálogo pediria um número sem dizer quanto já existe na conta,

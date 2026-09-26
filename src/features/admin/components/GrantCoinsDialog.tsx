@@ -13,34 +13,38 @@ import {
 } from "@/components/ui/dialog";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
+import { Textarea } from "@/components/ui/textarea";
 import type { AdminUser } from "@/features/admin/server/db/users";
 import { formatCoins } from "@/features/billing/plans";
 
 /**
- * Creditar um pacote avulso de moedas na conta de alguém.
+ * Presentear alguém com um pacote de moedas.
  *
  * Ele substitui o gesto que existia antes: abrir o Supabase Studio e somar um
  * número na coluna `coin_balance` à mão. Aquilo não deixava lançamento no
  * ledger, não dizia quem tinha dado nem por quê, e acontecia a uma tecla de
- * distância de editar a linha errada. Aqui o crédito passa pela mesma porta de
- * todo crédito do produto (ver a rota, e `grantCoins` atrás dela).
+ * distância de editar a linha errada. O crédito seguinte, direto pela porta de
+ * todo crédito do produto, resolveu isso — mas era instantâneo, e um número
+ * subindo sozinho no saldo de alguém não se sente como um presente.
+ *
+ * ## O que muda aqui: não credita. PRESENTEIA.
+ *
+ * O envio cria um presente PENDENTE (`POST .../coins` → `coin_gifts`), com o
+ * título e a mensagem escritos abaixo. A pessoa vê um cartão na Biblioteca com
+ * um botão "Resgatar X moedas", e só aí a moeda entra na conta — ver
+ * `src/features/coins/server/gifts.ts` e a migração 0077.
  *
  * ## Três decisões da TELA
  *
- * **O saldo atual fica à vista, e o resultado também.** "Dar 200 moedas" não é
- * uma decisão que se tome no vácuo: ela depende de quanto já existe na conta.
- * A linha de baixo mostra a soma antes de ela acontecer, que é o que transforma
- * um zero a mais digitado por engano em algo que se vê antes de confirmar.
+ * **O saldo atual fica à vista.** "Dar 200 moedas" não é uma decisão que se
+ * tome no vácuo: ela depende de quanto já existe na conta.
  *
  * **Os atalhos são o caminho comum.** Cortesia de suporte é quase sempre um
- * número redondo, e quatro pastilhas resolvem o caso normal sem teclado —
- * especialmente porque este painel também é aberto do celular.
+ * número redondo, e quatro pastilhas resolvem o caso normal sem teclado.
  *
- * **O motivo é opcional e vai para o LOG, não para o ledger.** A coluna
- * `reason` de `coin_transactions` é um vocabulário fechado, e texto livre nela
- * faria toda consulta que agrupa por motivo ganhar uma cauda de frases únicas.
- * O campo existe porque "por que demos 500 moedas àquela pessoa em março?" é
- * uma pergunta real, e a resposta tem de estar em algum lugar.
+ * **Título e mensagem nascem com um texto padrão**, editável antes de enviar:
+ * a maioria das cortesias é a mesma frase de agradecimento, e um campo vazio
+ * por padrão cobraria digitar a mesma coisa toda vez.
  */
 type Props = {
   user: AdminUser;
@@ -51,14 +55,22 @@ type Props = {
 /** Os valores que um suporte dá sem pensar duas vezes. */
 const PRESETS = [50, 200, 500, 1000];
 
+const DEFAULT_TITLE = "Obrigado por usar o Scriba!";
+const DEFAULT_MESSAGE =
+  "Estamos muito felizes por ter você usando o Scriba! Como forma de agradecimento, queremos te presentear com algumas moedas.";
+
 export function GrantCoinsDialog({ user, onClose, onDone }: Props) {
   const [amount, setAmount] = useState("");
-  const [note, setNote] = useState("");
+  const [title, setTitle] = useState(DEFAULT_TITLE);
+  const [message, setMessage] = useState(DEFAULT_MESSAGE);
   const [saving, setSaving] = useState(false);
 
   const label = user.displayName || user.email || user.id.slice(0, 8);
   const parsed = Number.parseInt(amount, 10);
-  const valid = Number.isInteger(parsed) && parsed > 0 && parsed <= 50_000;
+  const validAmount = Number.isInteger(parsed) && parsed > 0 && parsed <= 50_000;
+  const validTitle = title.trim().length > 0 && title.trim().length <= 120;
+  const validMessage = message.trim().length > 0 && message.trim().length <= 1000;
+  const valid = validAmount && validTitle && validMessage;
   const current = user.coinBalance ?? 0;
 
   async function handleGrant() {
@@ -68,16 +80,18 @@ export function GrantCoinsDialog({ user, onClose, onDone }: Props) {
       const res = await fetch(`/api/admin/users/${user.id}/coins`, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ amount: parsed, note: note.trim() || undefined }),
+        body: JSON.stringify({
+          amount: parsed,
+          title: title.trim(),
+          message: message.trim(),
+        }),
       });
-      const body = (await res.json().catch(() => ({}))) as { balance?: number; error?: string };
+      const body = (await res.json().catch(() => ({}))) as { error?: string };
       if (!res.ok) throw new Error(body.error || `HTTP ${res.status}`);
-      toast.success(
-        `${formatCoins(parsed)} moedas creditadas. ${label} está com ${formatCoins(body.balance ?? current + parsed)}.`
-      );
+      toast.success(`Presente de ${formatCoins(parsed)} moedas enviado para ${label}.`);
       onDone();
     } catch (err) {
-      toast.error(`Falha ao creditar: ${(err as Error).message}`);
+      toast.error(`Falha ao presentear: ${(err as Error).message}`);
     } finally {
       setSaving(false);
     }
@@ -87,10 +101,10 @@ export function GrantCoinsDialog({ user, onClose, onDone }: Props) {
     <Dialog open onOpenChange={(open) => !open && onClose()}>
       <DialogContent className="sm:max-w-md">
         <DialogHeader>
-          <DialogTitle>Creditar moedas</DialogTitle>
+          <DialogTitle>Presentear com moedas</DialogTitle>
           <DialogDescription>
-            O crédito entra na hora, com lançamento no extrato de {label} e o seu nome registrado.
-            Não dá para desfazer por aqui.
+            {label} vai ver um cartão na Biblioteca com este título e mensagem, e um botão para
+            resgatar. O crédito só entra quando a pessoa resgatar.
           </DialogDescription>
         </DialogHeader>
 
@@ -123,22 +137,24 @@ export function GrantCoinsDialog({ user, onClose, onDone }: Props) {
                 </Button>
               ))}
             </div>
-            {/* A soma ANTES de acontecer. Ver o cabeçalho: é o que deixa um zero
-                a mais visível enquanto ainda dá para apagá-lo. */}
-            {valid ? (
-              <p className="pt-1 text-xs text-muted-foreground tabular-nums">
-                Fica com {formatCoins(current + parsed)}.
-              </p>
-            ) : null}
           </div>
 
           <div className="flex flex-col gap-1.5">
-            <Label htmlFor="grant-note">Motivo (opcional)</Label>
+            <Label htmlFor="grant-title">Título do cartão</Label>
             <Input
-              id="grant-note"
-              value={note}
-              onChange={(e) => setNote(e.target.value.slice(0, 280))}
-              placeholder="Cortesia por gravação perdida"
+              id="grant-title"
+              value={title}
+              onChange={(e) => setTitle(e.target.value.slice(0, 120))}
+            />
+          </div>
+
+          <div className="flex flex-col gap-1.5">
+            <Label htmlFor="grant-message">Mensagem</Label>
+            <Textarea
+              id="grant-message"
+              rows={4}
+              value={message}
+              onChange={(e) => setMessage(e.target.value.slice(0, 1000))}
             />
           </div>
         </div>
@@ -148,7 +164,7 @@ export function GrantCoinsDialog({ user, onClose, onDone }: Props) {
             Cancelar
           </Button>
           <Button type="button" onClick={handleGrant} disabled={!valid || saving}>
-            {saving ? "Creditando…" : "Creditar"}
+            {saving ? "Enviando…" : "Enviar presente"}
           </Button>
         </DialogFooter>
       </DialogContent>
