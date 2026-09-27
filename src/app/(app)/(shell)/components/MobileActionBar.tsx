@@ -244,7 +244,7 @@ function CreateButton() {
           <nav
             id="mobile-create-options"
             aria-labelledby="mobile-create-title"
-            className="pointer-events-auto absolute right-0 bottom-full mb-3 flex origin-bottom-right animate-v2-rec-in flex-col gap-2 rounded-[28px] bg-v2-glass-panel bg-[image:var(--v2-glass-sheen)] px-3 pt-3 pb-5 shadow-[0_2px_6px_var(--v2-glass-shadow),0_10px_28px_var(--v2-glass-shadow)] ring-1 ring-v2-glass-edge backdrop-blur-xl"
+            className="pointer-events-auto absolute right-0 bottom-full z-30 mb-3 flex origin-bottom-right animate-v2-rec-in flex-col gap-2 rounded-[28px] bg-v2-glass-panel bg-[image:var(--v2-glass-sheen)] px-3 pt-3 pb-5 shadow-[0_2px_6px_var(--v2-glass-shadow),0_10px_28px_var(--v2-glass-shadow)] ring-1 ring-v2-glass-edge backdrop-blur-xl"
           >
             <p
               id="mobile-create-title"
