@@ -9,6 +9,12 @@ Gerado por `npm run release` a partir dos Conventional Commits. `feat` sobe o
 minor; o resto sobe o patch. Não edite à mão, a próxima execução escreve por
 cima do topo do arquivo.
 
+## 0.91.3, 2026-09-27, desde v0.91.2
+
+### Correções
+
+- **shared:** puxar-para-atualizar no /summary e toast cinza ao terminar (`d8674b5`)
+
 ## 0.91.2, 2026-09-27, desde v0.91.1
 
 ### Correções
