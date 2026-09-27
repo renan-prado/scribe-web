@@ -9,6 +9,12 @@ Gerado por `npm run release` a partir dos Conventional Commits. `feat` sobe o
 minor; o resto sobe o patch. Não edite à mão, a próxima execução escreve por
 cima do topo do arquivo.
 
+## 0.92.0, 2026-09-27, desde v0.91.3
+
+### Novidades
+
+- **tester:** pré-cadastro do teste fechado da Play Store e o presente de 150 moedas (`f66bdf6`)
+
 ## 0.91.3, 2026-09-27, desde v0.91.2
 
 ### Correções
