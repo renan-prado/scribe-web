@@ -1,9 +1,10 @@
 "use client";
 
 import { useQueryClient } from "@tanstack/react-query";
-import { RefreshCw } from "lucide-react";
+import { Check, RefreshCw } from "lucide-react";
 import { usePathname, useRouter } from "next/navigation";
 import { useCallback, useEffect, useRef, useState, useTransition } from "react";
+import { toast } from "sonner";
 import { cn } from "@/lib/utils";
 
 /** Quanto o disco pode descer, em px. Além disso o arrasto não move mais nada. */
@@ -212,6 +213,9 @@ export function PullToRefresh() {
       busyRef.current = false;
       setRefreshing(false);
       applyDistance(0);
+      // Sem `richColors`: é aviso, não sucesso nem erro, e o disco que acabou
+      // de girar já contou a metade da história. Cinza, como o resto do app.
+      toast("Conteúdo atualizado!", { icon: <Check aria-hidden className="size-4" /> });
     }, remaining);
     return () => clearTimeout(timer);
   }, [applyDistance, isPending, refreshing]);
@@ -274,9 +278,17 @@ export function PullToRefresh() {
  * inteiro, mesmo que o dedo tenha pousado fora dele: no celular esses diálogos
  * ocupam a tela toda e o que está atrás não é para rolar. Fora isso, qualquer
  * ancestral com rolagem própria fica com o dedo.
+ *
+ * **`:not([hidden])` não é filtro opcional.** A Bíblia lateral (`BibleDock`,
+ * na leitura, no editor e no gravador) mantém o painel no DOM depois de
+ * fechado (`keepMounted`, para não perder o capítulo aberto), e o que sobra
+ * dele fechado é o atributo `hidden` — o `role="dialog"` continua lá. Sem o
+ * filtro, `querySelector` achava esse painel FECHADO e desligava o gesto para
+ * sempre em toda tela que monta o `BibleDock`, o `/summary` incluído.
  */
 function isBlocked(target: EventTarget | null): boolean {
-  if (document.querySelector('[role="dialog"], [role="alertdialog"]')) return true;
+  if (document.querySelector('[role="dialog"]:not([hidden]), [role="alertdialog"]:not([hidden])'))
+    return true;
 
   let node = target instanceof Element ? target : null;
   while (node && node !== document.body) {

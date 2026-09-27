@@ -16,5 +16,25 @@ import { useTheme } from "@/shared/hooks/use-theme";
  */
 export function ThemedToaster() {
   const { theme } = useTheme();
-  return <Toaster position="top-center" richColors theme={theme} />;
+  return (
+    <Toaster
+      position="top-center"
+      richColors
+      theme={theme}
+      // O preto puro (`--normal-bg`) é o padrão do sonner para o tema escuro,
+      // e nenhum toast SEM tipo (o "Conteúdo atualizado!" do puxar-para-
+      // atualizar, por exemplo) usa `richColors` — ele fica nesse preto. Aqui
+      // ele vira o mesmo VIDRO do dock mobile (`--v2-glass-panel` +
+      // `backdrop-blur`), não um cinza chapado: no claro o token já responde
+      // com a superfície sólida certa (ver "O dock" em `src/shared/AGENTS.md`).
+      style={
+        {
+          "--normal-bg": "var(--v2-glass-panel)",
+          "--normal-border": "var(--v2-glass-edge)",
+          "--normal-text": "var(--scriba-ink)",
+        } as React.CSSProperties
+      }
+      toastOptions={{ classNames: { toast: "backdrop-blur-xl" } }}
+    />
+  );
 }
