@@ -100,6 +100,16 @@ Cinco coisas do chrome que quem mexer aqui não pode desfazer:
   é um sheet FECHADO: só no menu, sair do admin exigia abrir a gaveta antes.
   Sair é sempre um `<form method="post">` para `/auth/sign-out`, a rota que
   limpa o cookie, nunca um link.
+- **Atualizar é UM botão, na faixa, e vale para as onze telas**
+  (`AdminRefreshButton`). Toda rota do painel é server component com
+  `dynamic = "force-dynamic"` e nenhuma delas guarda dado em TanStack Query, então
+  `router.refresh()` refaz a consulta e preserva o que o cliente tem na mão: a
+  gaveta, a rolagem, o que estiver digitado num formulário. Ele fica na moldura
+  porque o painel é lido em aba aberta e o dado muda por fora (um webhook do
+  Stripe, um pré-cadastro, um evento de uso); um botão por página seria a mesma
+  linha onze vezes, e a décima segunda nasceria sem ele. É só o glifo, como o
+  sair: a faixa divide a largura com o breadcrumb. Tela nova que passe a ler por
+  fetch no cliente traz o próprio botão, este não sabe invalidar cache.
 - **O `SidebarInset` JÁ é o `<main>` da página.** Um segundo `<main>` dentro
   dele é HTML inválido e violação de a11y; o wrapper de padding é `<div>`.
 

@@ -8,6 +8,7 @@ import { Button } from "@/components/ui/button";
 import { SidebarInset, SidebarProvider } from "@/components/ui/sidebar";
 import { AdminBreadcrumbs } from "@/features/admin/components/AdminBreadcrumbs";
 import { AdminMenu } from "@/features/admin/components/AdminMenu";
+import { AdminRefreshButton } from "@/features/admin/components/AdminRefreshButton";
 import { AdminSidebar } from "@/features/admin/components/AdminSidebar";
 import { isCurrentUserAdmin } from "@/lib/auth/require-admin";
 import { createClient } from "@/lib/supabase/server";
@@ -110,6 +111,11 @@ export default async function AdminLayout({
             dois botões, sair do admin exigia abrir a gaveta antes.
           */}
           <div className="flex shrink-0 items-center gap-1">
+            {/* Atualizar mora aqui, e não em cada tela: a faixa é a moldura das
+                onze rotas do painel, e todas são server component dinâmico, que
+                é o que o `router.refresh()` do botão refaz. Ver
+                `AdminRefreshButton`. */}
+            <AdminRefreshButton />
             <Button variant="ghost" size="sm" nativeButton={false} render={<Link href="/home" />}>
               <ArrowUpRight />
               <span className="hidden sm:inline">Voltar ao app</span>
