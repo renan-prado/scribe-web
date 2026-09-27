@@ -40,7 +40,7 @@ vez de ler a tela.
 | Custos | quanto a OpenAI cobra, e o preço fecha? | `usage` + `precificacao`, em 4 abas |
 | Financeiro | quanto entra, sai e devemos? | 6 telas → 1 item com abas |
 | Conteúdo | o que a pessoa recebeu presta? | `sessions` + `feedback` + `lexico` |
-| Crescimento | por onde entra gente? | `partners` + `cupons` |
+| Crescimento | por onde entra gente? | `partners` + `cupons` + `testers` |
 | Usuários | quem são, quem paga e o que podem? | |
 | Configurações | o que dá para girar sem deploy? | `features` + as financeiras |
 
@@ -1296,6 +1296,59 @@ e a primeira quitação faria as três discordarem.
 **Categoria não se apaga, arquiva-se.** A regra está na aba Financeiro de
 `/admin/settings`, que é onde as categorias são editadas; ver a seção de
 Configurações, acima.
+
+## Testadores (aba de "Crescimento")
+
+A fila de quem pediu acesso ao **teste fechado da Play Store** pelo formulário
+público de `/tester`. Tabela `tester_signups` (migração 0078), leitura e
+anotação em `server/db/testers.ts`, as escritas como Server Actions em
+`server/tester-actions.ts`.
+
+**É aba de Crescimento porque responde à pergunta dos outros dois itens de
+lá**, "por onde entra gente?". São três portas com contas diferentes: o
+parceiro ganha comissão sobre quem trouxe, o cupom gasta moeda para chamar
+alguém escolhido, e o teste fechado troca moedas por quem se dispõe a usar uma
+versão instável e contar o que quebrou.
+
+**A tela existe para substituir um ritual de SQL em produção.** A lista de
+testadores mora no console do Google Play, num campo de texto separado por
+vírgula, e não há API pública para escrever nela: alguém copia os endereços e
+cola lá, sempre. Enquanto esta tela não existia, isso era um `string_agg`
+digitado à mão no SQL Editor do Supabase de produção, uma conferência a olho e
+um `update` com o `where` escrito na hora. A tela não automatiza o convite, ela
+tira as três etapas de SQL do caminho.
+
+O que não pode ser desfeito:
+
+- **`invited_at` é uma ANOTAÇÃO, não o convite.** Quem convida é o console; a
+  coluna só registra que o endereço já foi colado lá. É isso que torna
+  "Devolver à fila" inofensivo, e é isso que o `title` do botão diz.
+- **Marcar nunca REESCREVE uma data existente** (`is("invited_at", null)` no
+  update, inclusive no lote). A data é a única pista de há quanto tempo a
+  pessoa espera o Google propagar, e um clique distraído a substituiria pelo
+  `now()`.
+- **Os endereços aparecem na TELA, não só dentro do botão de copiar.** Área de
+  transferência é invisível: sem o texto à vista, não há como saber se foram
+  copiados dois endereços ou duzentos, nem conferir um que pareça digitado
+  errado ANTES de colar no console.
+- **A ordem é CRESCENTE, ao contrário de toda outra lista do painel.** As
+  outras são leitura e abrem pelo mais novo; esta é uma fila, e quem espera há
+  mais tempo é quem precisa ser atendido primeiro. A ordem da tela é a ordem em
+  que os endereços vão para o console.
+- **A terceira situação ("entrou no app") vem de `gifted_at`**, que é marcado
+  no primeiro login por `applyWelcomeBonuses` (migração 0079). Ela é a taxa de
+  conversão do programa linha por linha: quantos pediram contra quantos
+  chegaram a criar a conta.
+- **A tela não APAGA pré-cadastro.** Um endereço que chegou é o pedido de uma
+  pessoa; o que se faz com um endereço inválido é convidá-lo e deixar o Google
+  recusar.
+- **O teto é dito quando é atingido** (`ADMIN_TESTERS_PAGE_SIZE`, 500), mesma
+  régua de `/admin/sessions` e `/admin/users`.
+
+O presente de moedas do programa não é emitido aqui: ele nasce pendente em
+`coin_gifts` no primeiro login de quem se pré-cadastrou, pela mesma porta do
+presente do `/admin/users`. Ver `src/lib/domain/tester.ts` e a seção de
+Usuários, acima.
 
 ## Parceiros (aba de "Crescimento")
 

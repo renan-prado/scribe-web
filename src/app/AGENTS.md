@@ -172,7 +172,8 @@ três telas ganharem o próprio segmento; não acrescente consumidor novo a ela.
 /tester/install         as instruções dos dois passos (aceitar o convite,
                         instalar). Avulsa para ser colada num WhatsApp
 /api/tester/signup      a fila do pré-cadastro. Pública como a página que a
-                        posta; grava com service-role (migração 0078)
+                        posta; grava com service-role (migração 0078). Quem lê
+                        a fila é /admin/testers, aba de "Crescimento"
 /api/stripe/webhook     ÚNICA porta de crédito. HMAC no lugar do cookie
 /api/billing/sweep      cron diário da Vercel, guardado por CRON_SECRET
 /robots.txt  /sitemap.xml  /manifest.webmanifest

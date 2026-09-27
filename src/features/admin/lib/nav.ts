@@ -72,7 +72,7 @@ export const ADMIN_NAV: AdminNavItem[] = [
     href: "/admin/partners",
     label: "Crescimento",
     icon: Handshake,
-    match: ["/admin/partners", "/admin/coupons"],
+    match: ["/admin/partners", "/admin/coupons", "/admin/testers"],
   },
   { href: "/admin/users", label: "Usuários", icon: Users },
   { href: "/admin/settings", label: "Configurações", icon: SlidersHorizontal },

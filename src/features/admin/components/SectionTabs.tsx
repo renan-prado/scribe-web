@@ -21,10 +21,12 @@ import { AdminTabs } from "./AdminTabs";
  * foi escrito à mão. Quem abre uma sessão para julgar qualidade está a um
  * clique de consertar a parte que é nossa.
  *
- * **Crescimento** junta Parceiros e Cupons porque as duas são portas de
- * entrada de gente, com contas diferentes: o parceiro ganha comissão sobre
- * quem trouxe, o cupom gasta moeda para chamar alguém escolhido. Quem abre uma
- * costuma estar decidindo sobre a outra.
+ * **Crescimento** junta Parceiros, Cupons e Testadores porque as três são
+ * portas de entrada de gente, com contas diferentes: o parceiro ganha comissão
+ * sobre quem trouxe, o cupom gasta moeda para chamar alguém escolhido, e o
+ * teste fechado da Play Store troca moedas por quem se dispõe a usar uma versão
+ * instável e contar o que quebrou. Quem abre uma costuma estar decidindo sobre
+ * as outras.
  */
 
 const CONTENT_TABS = [
@@ -48,9 +50,10 @@ export function ContentTabs({ active }: { active: "sessoes" | "feedback" | "lexi
 const GROWTH_TABS = [
   { key: "parceiros", href: "/admin/partners", label: "Parceiros" },
   { key: "cupons", href: "/admin/coupons", label: "Cupons de convite" },
+  { key: "testadores", href: "/admin/testers", label: "Testadores" },
 ] as const;
 
-export function GrowthTabs({ active }: { active: "parceiros" | "cupons" }) {
+export function GrowthTabs({ active }: { active: "parceiros" | "cupons" | "testadores" }) {
   return (
     <AdminTabs
       tabs={GROWTH_TABS.map((t) => ({
