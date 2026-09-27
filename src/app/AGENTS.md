@@ -166,6 +166,13 @@ três telas ganharem o próprio segmento; não acrescente consumidor novo a ela.
                         para /sign-in, onde a tela diz quanto ele vale
 /profile/delete         a página que apaga a conta. Pública de propósito, é a
                         URL da ficha das lojas; o botão só aparece logado
+/tester                 o pré-cadastro do TESTE FECHADO da Play Store: o
+                        e-mail da conta Google e o WhatsApp de quem quer
+                        entrar na lista de testadores
+/tester/install         as instruções dos dois passos (aceitar o convite,
+                        instalar). Avulsa para ser colada num WhatsApp
+/api/tester/signup      a fila do pré-cadastro. Pública como a página que a
+                        posta; grava com service-role (migração 0078)
 /api/stripe/webhook     ÚNICA porta de crédito. HMAC no lugar do cookie
 /api/billing/sweep      cron diário da Vercel, guardado por CRON_SECRET
 /robots.txt  /sitemap.xml  /manifest.webmanifest

@@ -49,7 +49,7 @@ export async function GET(request: Request) {
 
   // Indicação, pré-parceiro e cupom. Nada aqui pode impedir o login; ver
   // `features/auth/server/welcome-bonuses.ts`.
-  await applyWelcomeBonuses(data.user?.id);
+  await applyWelcomeBonuses(data.user?.id, data.user?.email);
 
   return NextResponse.redirect(`${resolveOrigin(request, origin)}${next}`);
 }

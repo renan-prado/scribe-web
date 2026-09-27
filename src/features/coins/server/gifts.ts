@@ -41,16 +41,23 @@ function rowToGift(row: CoinGiftRow): CoinGift {
 }
 
 /**
- * Emite um presente na conta de alguém. Só o admin chama, com service-role:
- * não há policy de INSERT para `authenticated` (ver 0077), então esta é a
- * ÚNICA porta de criação.
+ * Emite um presente na conta de alguém, com service-role: não há policy de
+ * INSERT para `authenticated` (ver 0077), então esta é a ÚNICA porta de
+ * criação.
+ *
+ * **`grantedBy` aceita `null`, e o nulo tem significado.** Quase todo presente
+ * é ato de uma pessoa no `/admin/users`, e ali a coluna guarda quem o
+ * emitiu. O do testador (`applyWelcomeBonuses`) não tem autor: ele é uma
+ * regra do programa, disparada no primeiro login de quem se pré-cadastrou, e
+ * carimbar nela o admin que nem estava na frente do computador inventaria uma
+ * decisão que ninguém tomou naquele instante.
  */
 export async function createCoinGift(args: {
   userId: string;
   amount: number;
   title: string;
   message: string;
-  grantedBy: string;
+  grantedBy: string | null;
 }): Promise<CoinGift | null> {
   const admin = createAdminClient();
   const { data, error } = await admin

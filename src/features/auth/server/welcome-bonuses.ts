@@ -1,5 +1,6 @@
 import "server-only";
 import { cookies } from "next/headers";
+import { createCoinGift } from "@/features/coins/server/gifts";
 import {
   COUPON_COOKIE,
   decodeRef,
@@ -12,14 +13,17 @@ import { redeemSignupCoupon } from "@/lib/db/coupons";
 import { attachPartner } from "@/lib/db/partners";
 import { attachPartnerProspect } from "@/lib/db/prospects";
 import { attachReferrer } from "@/lib/db/referrals";
+import { claimTesterGift } from "@/lib/db/testers";
 import { normalizeCouponCode } from "@/lib/domain/coupon";
+import { TESTER_GIFT_COINS, TESTER_GIFT_MESSAGE, TESTER_GIFT_TITLE } from "@/lib/domain/tester";
 import { createLogger } from "@/lib/log";
 
 const log = createLogger("auth/welcome");
 
 /**
  * Tudo o que uma conta RECÉM-NASCIDA tem a receber: a atribuição de quem a
- * indicou, o selo de pré-parceiro e o cupom de convite.
+ * indicou, o selo de pré-parceiro, o cupom de convite e o presente de quem
+ * entrou pelo teste fechado da Play Store.
  *
  * **Isto morava dentro de `/auth/callback`, e saiu de lá no dia em que o login
  * por e-mail e senha entrou.** O callback deixou de ser o único caminho por
@@ -33,7 +37,8 @@ const log = createLogger("auth/welcome");
  * **Chamar duas vezes é seguro**, e isso não é descuido, é requisito: as três
  * RPCs recusam sozinhas a segunda tentativa (`already_attributed`, `not_new`),
  * então uma pessoa que confirme o e-mail e depois faça login pelo Google no
- * mesmo navegador não ganha nada duas vezes.
+ * mesmo navegador não ganha nada duas vezes. O quarto brinde, que não tem RPC,
+ * traz o próprio trinco: ver `claimTesterGift`.
  *
  * A ORDEM é a regra, não acaso: a indicação vem primeiro porque ela decide
  * DINHEIRO (a comissão de quem indicou) e o brinde de 150 moedas. O
@@ -46,11 +51,58 @@ const log = createLogger("auth/welcome");
  * silêncio porque a pessoa clicou num link de parceiro semana passada faria o
  * convite falhar exatamente onde ele foi mais intencional. Ver a migração 0055.
  */
-export async function applyWelcomeBonuses(userId: string | null | undefined): Promise<void> {
+export async function applyWelcomeBonuses(
+  userId: string | null | undefined,
+  email?: string | null
+): Promise<void> {
   if (!userId) return;
   await attachReferralIfAny(userId);
   await attachProspectIfAny(userId);
   await redeemCouponIfAny(userId);
+  await grantTesterGiftIfAny(userId, email);
+}
+
+/**
+ * O presente de quem entrou pelo TESTE FECHADO da Play Store.
+ *
+ * **É o único dos quatro que não nasce de um cookie**, e não poderia nascer: o
+ * pré-cadastro de `/tester` acontece num navegador (às vezes num computador)
+ * horas ou dias antes de o Google liberar o download, e quem se cadastra no
+ * app depois é o CELULAR. Nenhum cookie atravessa esse intervalo. O elo é o
+ * e-mail, que é justamente o dado que o programa pede: é a conta Google do
+ * aparelho, a mesma com que se entra no Scriba pelo botão do Google.
+ *
+ * **O presente é PENDENTE, não crédito**, e é aí que ele se distingue dos
+ * outros três: eles creditam moeda na hora, por RPC; este insere uma linha em
+ * `coin_gifts` e espera a pessoa tocar "Resgatar" na Biblioteca. Ver
+ * `lib/domain/tester.ts`.
+ *
+ * A ordem é a última de propósito: ele não disputa com nada (não há recusa
+ * por bônus empilhado aqui, como entre indicação e pré-parceiro), e um
+ * testador que também chegou por um link de parceiro merece os dois.
+ *
+ * Como os três irmãos, NADA aqui pode impedir o login: todo desfecho vira log
+ * e uma exceção inesperada é engolida.
+ */
+async function grantTesterGiftIfAny(userId: string, email?: string | null): Promise<void> {
+  const normalized = email?.trim().toLowerCase();
+  if (!normalized) return;
+  try {
+    // A reserva é o trinco: só quem a leva emite o presente. Ver
+    // `claimTesterGift` e a migração 0079.
+    if (!(await claimTesterGift(normalized, userId))) return;
+
+    const gift = await createCoinGift({
+      userId,
+      amount: TESTER_GIFT_COINS,
+      title: TESTER_GIFT_TITLE,
+      message: TESTER_GIFT_MESSAGE,
+      grantedBy: null,
+    });
+    log.info("presente de testador", { emitido: gift !== null, moedas: TESTER_GIFT_COINS });
+  } catch (err) {
+    log.error("presente de testador falhou", { error: (err as Error).message });
+  }
 }
 
 /**

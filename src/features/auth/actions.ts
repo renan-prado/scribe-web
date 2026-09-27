@@ -228,7 +228,7 @@ export async function signUpWithPassword(
   // conta de verdade. O brinde de boas-vindas espera lá no `/auth/callback`.
   if (!data.session) return { status: "check_email", email };
 
-  await applyWelcomeBonuses(data.user?.id);
+  await applyWelcomeBonuses(data.user?.id, data.user?.email);
   log.info("conta criada por e-mail e senha", { userId: data.user?.id });
 
   redirect(next);

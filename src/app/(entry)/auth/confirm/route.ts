@@ -60,7 +60,7 @@ export async function GET(request: Request) {
   if (BIRTH_TYPES.has(rawType)) {
     // Indicação, pré-parceiro e cupom. Chamar duas vezes é seguro; ver
     // `features/auth/server/welcome-bonuses.ts`.
-    await applyWelcomeBonuses(data.user?.id);
+    await applyWelcomeBonuses(data.user?.id, data.user?.email);
   }
 
   return NextResponse.redirect(`${resolveOrigin(request, origin)}${next}`);

@@ -47,8 +47,8 @@ import { SUPABASE_AUTH_COOKIE } from "@/lib/supabase/cookie";
  * Route buckets:
  *   PUBLIC, /, /sign-in, /sign-up, /forgot-password, /auth/*, /about, /contact, /terms, /privacy,
  *                /partners e /partners/terms (mas NÃO /partners/dashboard, ver
- *                PROTECTED_EXCEPTIONS), e as três rotas de link de entrada:
- *                /r/*, /i/*, /c/*
+ *                PROTECTED_EXCEPTIONS), /tester e /tester/install, e as três
+ *                rotas de link de entrada: /r/*, /i/*, /c/*
  *   PROTECTED, a known app area (KNOWN_APP_PREFIXES) behind the login
  *   UNKNOWN, neither: passed through so the Next router answers a real 404
  *
@@ -113,8 +113,15 @@ import { SUPABASE_AUTH_COOKIE } from "@/lib/supabase/cookie";
 // login que ela acabou de não conseguir usar. A irmã dela, "/new-password", é o
 // oposto e está em KNOWN_APP_PREFIXES: lá a pessoa já tem sessão (criada pelo
 // link do e-mail), e é justamente a sessão que faz as vezes do token na URL.
+// "/tester" é o convite do teste fechado da Play Store, e "/api/tester" é o
+// pré-cadastro que ele posta. Públicos pela mesma razão de "/partners": quem
+// os lê ainda não tem conta — o app que ele quer baixar é justamente o que
+// ainda não dá para baixar. Casa por prefixo, então "/tester/install" (as
+// instruções) entra junto, e é isso que queremos.
 const PUBLIC_PREFIXES = [
   "/sign-in",
+  "/tester",
+  "/api/tester",
   "/profile/delete",
   "/c",
   "/sign-up",

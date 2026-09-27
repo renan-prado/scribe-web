@@ -484,6 +484,17 @@ export const RATE_LIMITS = {
     route: "coupon-link",
     perIp: { limit: 120, windowMs: MIN },
   },
+  // O pré-cadastro do teste fechado da Play Store (/tester). Anônimo, então
+  // só por IP. A cadência legítima é UMA por pessoa, com um reenvio ou outro
+  // de quem trocou de número; o balde existe porque do outro lado há uma FILA
+  // DE TRABALHO manual — enchê-la de endereços inventados não custa dinheiro
+  // nenhum, custa os pedidos de verdade ficarem enterrados no meio deles.
+  // Mesma régua do alerta do léxico, com folga para a família atrás do mesmo
+  // NAT que se cadastra junto depois do culto.
+  "tester-signup": {
+    route: "tester-signup",
+    perIp: { limit: 12, windowMs: HOUR },
+  },
   // A leitura do selo "indicado por" no hero da landing page. Anônima e por
   // IP, com folga para uma família atrás do mesmo NAT abrindo o mesmo link,
   // ela dispara uma vez por carregamento de LP de quem tem a pista, e nunca
