@@ -604,29 +604,56 @@ O que fica no resumo é a voz do pregador: `bibleQuote` com a referência,
 (`server/summary-density.ts`). O prompt sempre pediu "densidade adaptativa",
 mas calibrava por sinais que o modelo não tem como medir — a duração em
 minutos, o tamanho do feed (que morreu junto com o modo `live`), a "densidade
-doutrinária" —, e diante de alvo subjetivo ele ENCOLHE: uma pregação de 5.128
-palavras saiu com 718 (14%), enquanto o mesmo prompt pedia 40 a 55% do peso
+doutrinária" —, e diante de alvo subjetivo ele ENCOLHE: uma pregação de 4.860
+palavras saiu com 636 (13%), enquanto o mesmo prompt pedia 40 a 55% do peso
 argumentativo. Não era alucinação nem falta de material, era falta de RÉGUA.
 
-Hoje a contagem de palavras da transcrição vira número na MENSAGEM DO USUÁRIO
-("a transcrição tem N palavras, o resumo fica entre X e Y, em Z blocks"), e o
-system prompt manda tratar a faixa como requisito de formato. Três coisas que
-mordem de fora:
+Foram QUATRO frentes contra isso, e nenhuma sozinha resolvia:
 
-- **A régua vai na mensagem do usuário, não no system prompt.** Ela é medida
-  DESTA transcrição, não regra do produto, e o system prompt é o que se quer
-  estável entre chamadas.
-- **A proporção CAI conforme a fita cresce** (35% / 25% / 15%, nas faixas de
-  `TIERS`), com piso de 250 e teto de 3.000 palavras. Um devocional de dez
-  minutos quase não tem gordura; uma transmissão de duas horas tem saudação,
-  aviso e recado de igreja, e 35% dela seria um documento que ninguém lê e uma
-  saída perto do teto de `maxTokens`.
-- **Pedir mais palavras aqui não aumenta o risco de alucinação** como
-  aumentaria num texto autoral: o trabalho é condensar o que foi dito, e o que
-  falta num resumo curto é material que ESTÁ na transcrição e foi descartado. O
-  prompt diz, com essas palavras, que o caminho até a faixa é recuperar o que
-  foi cortado, nunca acrescentar o que não foi dito — e que numa transcrição
-  genuinamente pobre é para ficar abaixo dela.
+1. **A régua**, na mensagem do usuário: "a transcrição tem N palavras, escreva
+   M movimentos, de 4 a 7 parágrafos cada". Ela vai na mensagem e não no system
+   prompt porque é medida DESTA transcrição, não regra do produto.
+2. **O alvo firme é ESTRUTURAL, não a contagem de palavras.** Nenhum LLM conta
+   palavras (ele não tem como somar o que ainda não escreveu), então um alvo em
+   palavras é lido como humor. "Nove movimentos" é discreto, verificável
+   enquanto ele escreve, e produz o comprimento como consequência.
+3. **O prompt protege as duas coisas que o modelo mais corta** (ver
+   `server/prompts/final-summary.ts`): a NARRATIVA bíblica exposta, que ele
+   conhece de cor e por isso comprime ao rótulo ("o episódio de Paulo e Silas no
+   cárcere") em vez de recontar cena a cena como o pregador fez; e a
+   ENUMERAÇÃO, as sete lições que viram "e daí extrai lições práticas".
+4. **O modelo**, `gpt-4.1` no lugar do `gpt-4o` (ver `lib/env/server.ts`). É a
+   única das quatro que não se resolve escrevendo prompt, e ela sai de graça:
+   o `4.1` é 20% mais barato na entrada e na saída.
+
+**E acima de `CHUNKED_ABOVE_WORDS` o sermão é redigido por TRECHO**, na ordem,
+uma chamada por trecho, mais uma costura curta que escreve o título e a ideia
+central. Com a pregação inteira na entrada, o modelo decide sozinho o que cabe
+na resposta, e o que ele corta é sempre o MEIO; dando a ele um trecho de cada
+vez, com a FATIA do alvo que cabe àquele trecho, a cobertura passa a ser
+proporcional por construção em vez de por obediência. O que cola um trecho no
+outro são os movimentos já escritos e o último parágrafo redigido, no prompt do
+seguinte; não há sobreposição de texto (`server/transcript-slices.ts`).
+
+**Medido na pregação que revelou o defeito** (4.860 palavras faladas, Atos 16):
+636 palavras em 18 blocks antes, 2.272 palavras em 44 blocks e 9 movimentos
+depois, com a narrativa reconstada cena a cena e os testemunhos pessoais de
+volta. O harness é `tmp/dev-scripts/summary-density-eval.mts`, que roda o
+pipeline de verdade sobre uma sessão salva, mede o que saiu contra o alvo e
+NÃO grava nada.
+
+**O preço disso é real e está medido: R$ 0,33 por resumo longo, contra R$ 0,17
+antes.** A gravação absorve (o STT continua sendo o grosso da conta), mas
+`reprocessSummary` e `youtubeImport` ficaram ABAIXO da régua de margem. Ver o
+aviso em `features/coins/pricing.ts`: é decisão de produto, não conserto de
+código.
+
+**A "ideia central" encolheu junto**, e de propósito: ela pedia 3 a 5 frases e
+hoje pede 1 a 2, no máximo 45 palavras. Ela é a primeira coisa da tela e existe
+para dizer num relance sobre o que foi a pregação; o desenvolvimento está nos
+blocks logo abaixo e o chamado está na `conclusion`. A faixa de densidade mede
+os BLOCKS e não ela, e o prompt diz isso com todas as letras para que um alvo
+maior não a infle junto.
 
 **A chamada é uma, as TENTATIVAS podem ser duas, e resumo vazio NÃO é
 sucesso.** `generateFinalSummary` devolvia `ok: true` com um payload de zero

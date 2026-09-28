@@ -35,7 +35,24 @@ const schema = z.object({
   OPENAI_BIBLE_MODEL: z.string().default("gpt-4.1-mini"),
   OPENAI_INSIGHTS_MODEL: z.string().default("gpt-4.1-mini"),
   OPENAI_ECHO_MODEL: z.string().default("gpt-4o-mini"),
-  OPENAI_FINAL_SUMMARY_MODEL: z.string().default("gpt-4o"),
+  /**
+   * O resumo final, a maior chamada do produto.
+   *
+   * **`gpt-4.1`, e era `gpt-4o`.** A troca é a última das quatro frentes
+   * contra o resumo curto demais (ver `features/session/server/summary-density.ts`),
+   * e é a única que não se resolve escrevendo prompt: o `gpt-4o` tem viés de
+   * brevidade e um teto prático de saída bem abaixo do que um sermão
+   * organizado de uma hora pede, então a régua de densidade era lida como um
+   * humor em vez de um requisito. O `4.1` foi treinado para seguir instrução
+   * de formato e comprimento, e aceita saída longa sem empurrão.
+   *
+   * **E é MAIS BARATO**, o que torna a decisão fácil: $2/$8 por milhão contra
+   * $2,5/$10 do `4o` (ver `lib/llm/pricing.ts`), 20% a menos na entrada e na
+   * saída. A margem do `reprocessSummary` e da `youtubeImport` melhora com a
+   * troca, e não piora, mesmo com o resumo maior. Reconfira em `/admin/usage`
+   * comparando as versões, que é para isso que a tabela "Por versão" existe.
+   */
+  OPENAI_FINAL_SUMMARY_MODEL: z.string().default("gpt-4.1"),
   /**
    * O Biblo, a conversa dentro da sessão.
    *

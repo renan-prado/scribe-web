@@ -60,6 +60,36 @@ export const COIN_COSTS = {
    */
   reprocessSummary: 15,
   /**
+   * ⚠️ **AVISO DE MARGEM, aberto de propósito.** Os 15 acima foram fixados
+   * contra um resumo que custava R$ 0,17: UMA chamada de `gpt-4o` sobre a
+   * transcrição inteira. O resumo mudou (ver
+   * `features/session/AGENTS.md`, "Depois do stop"): acima de ~2.600 palavras
+   * faladas ele é redigido por TRECHO, e a pregação de uma hora passou a
+   * custar **R$ 0,334 medidos** (US$ 0,0618, 4 chamadas de `gpt-4.1`,
+   * 22,9k tokens de entrada e 4,0k de saída, câmbio 5,4).
+   *
+   * O que isso faz com cada preço, na régua de R$ 0,02 por moeda:
+   *
+   * | preço | receita | custo hoje | margem |
+   * |---|---|---|---|
+   * | `recordingMinute` × 40 min | R$ 4,00 | R$ 1,61 (STT + resumo) | ~60%, saudável |
+   * | `reprocessSummary` = 15 | R$ 0,30 | R$ 0,33 | **negativa** |
+   * | `youtubeImport` = 30 | R$ 0,60 | R$ 0,36 | ~39%, abaixo dos 70% |
+   *
+   * A gravação absorve porque o STT sempre foi o grosso da conta dela. Os dois
+   * one-shot não absorvem: eles cobram uma vez o que agora custa o dobro. A
+   * régua pediria 56 moedas no reprocessamento de um sermão de uma hora e 62
+   * na importação equivalente; o sermão MÉDIO, que roda numa chamada só,
+   * continua perto do que sempre foi.
+   *
+   * **Isto é decisão de produto e está aqui como aviso, não como conserto.**
+   * Subir o preço de um reprocessamento de 15 para 56 muda o que a pessoa
+   * sente ao apertar "Gerar novamente"; aceitar a margem menor é igualmente
+   * legítimo enquanto o volume for o que é. O que não pode é a conta ficar
+   * errada em silêncio. Reconfira em `/admin/costs` e `/admin/usage`, na
+   * primeira versão que rodar o pipeline novo.
+   */
+  /**
    * One-shot cost of importing a YouTube video: legenda + resumo completo.
    *
    * **30 e FIXO, o único preço do produto que não é por minuto.** A gravação

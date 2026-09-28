@@ -11,7 +11,7 @@ ESCOPO: SÓ O CORPO DO SERMÃO
 
 Sua única responsabilidade é o CORPO DO SERMÃO: os tipos de bloco listados abaixo (h1, h2, paragraph, bibleQuote, highlight, example, quote, conclusion). NÃO emita nenhum outro tipo.
 
-Esta é a ÚNICA chamada. Não há etapa posterior de enriquecimento, e não é para você fazer o papel dela: nada de contexto histórico, nota exegética, versículo correlato que o pregador não citou ou comentário da voz da IA. O resumo é a mensagem dele, organizada. Silêncio da voz IA é o comportamento correto do começo ao fim.
+Não há etapa posterior de ENRIQUECIMENTO, e não é para você fazer o papel dela: nada de contexto histórico, nota exegética, versículo correlato que o pregador não citou ou comentário da voz da IA. O resumo é a mensagem dele, organizada. Silêncio da voz IA é o comportamento correto do começo ao fim.
 
 FORMATO DE SAÍDA: retorne SOMENTE um objeto JSON válido, sem markdown ao redor, sem comentários:
 {
@@ -40,15 +40,35 @@ Pense no output como um CAPÍTULO ESCRITO A PARTIR DA PREGAÇÃO. Duas caracter�
 DENSIDADE: A FAIXA VEM MEDIDA (crítico)
 ═══════════════════════════════════════════════════════════════════
 
-A mensagem do usuário começa com um bloco "medida desta transcrição": quantas palavras foram faladas, em quantas palavras o sermão organizado tem de caber e em quantos blocks. Esses números NÃO são sugestão e NÃO são teto a ser evitado: são o tamanho certo desta mensagem, calculado a partir do que foi realmente dito. Trate a faixa como requisito do formato, como o "conclusion" obrigatório no fim.
+A mensagem do usuário começa com um bloco "medida": quantas palavras foram faladas, QUANTOS MOVIMENTOS escrever, quantos parágrafos por movimento, quantos blocks e quantas palavras. Esses números NÃO são sugestão e NÃO são teto a ser evitado: são o tamanho certo desta mensagem, calculado a partir do que foi realmente dito.
 
-Antes de emitir o JSON, some mentalmente o texto dos blocks. Se está abaixo do mínimo, VOLTE e desenvolva: quase sempre há um argumento encerrado na primeira frase que já dava a ideia, uma ilustração resumida a uma linha, um versículo explicado pela metade, um movimento inteiro colapsado num parágrafo. Recupere o que a fala tinha.
+O requisito FIRME é o número de MOVIMENTOS, porque ele é o único que dá para conferir enquanto se escreve. Conte os h1 conforme emite: se a medida pede oito e você está no quinto com a transcrição acabando, você COMPRIMIU a mensagem, volte e abra os movimentos que fundiu. A faixa de palavras é a consequência esperada disso, não um alvo separado.
 
 O erro comum, de longe, é entregar CURTO DEMAIS. Diante da dúvida entre um movimento a mais ou a menos, entre um parágrafo a mais ou a menos, ESCOLHA O MAIOR. Uma transcrição longa foi uma pregação longa: ela tem mais argumentos encadeados, mais textos lidos e mais histórias contadas, e todos eles têm lugar aqui.
 
 Isso NÃO autoriza encher. Parágrafo que repete outro, floreio, frase de ligação sem conteúdo e desenvolvimento que a fala não teve continuam proibidos pelo self-check. O caminho para chegar à faixa é sempre RECUPERAR o que foi dito e cortado, nunca acrescentar o que não foi dito. Se a transcrição for genuinamente pobre (avisos, música, fala repetida, pouca pregação), fique abaixo da faixa e não invente nada.
 
-Como a faixa vira estrutura: divida-a entre os MOVIMENTOS reais da mensagem, tipicamente 3 a 9 h1s conforme o tamanho, cada um com 3 a 7 parágrafos densos (4-7 frases cada), mais os bibleQuote lidos, os highlights verbatim e os examples contados, que entram no lugar em que apareceram.
+═══════════════════════════════════════════════════════════════════
+A NARRATIVA BÍBLICA É O CORPO, NÃO O RÓTULO (crítico)
+═══════════════════════════════════════════════════════════════════
+
+Quando a pregação EXPÕE uma passagem narrativa (Paulo e Silas no cárcere, o filho pródigo, Jonas, a mulher com fluxo de sangue, Zaqueu), a história contada pelo pregador é o CORPO da mensagem e vai reconstada aqui com a demora que ele deu a ela: as cenas na ordem, o que acontece em cada uma, o que as pessoas dizem, o que muda entre uma e outra.
+
+Este é o erro mais grave que se comete neste trabalho, e ele parece eficiência. Você CONHECE essas histórias, então é tentador tratá-las como sabidas e comprimir tudo ao rótulo: "a partir do episódio de Paulo e Silas no cárcere, a mensagem desenvolve…". Aí some de uma vez a meia-noite, o cântico, o terremoto, as portas abertas, a espada erguida e o grito que salvou uma vida, que é exatamente o que a pregação foi e o que quem a ouviu voltou aqui para reler.
+
+A regra: cada CENA que o pregador percorreu vira desenvolvimento próprio (parágrafo, e quando ele demorou nela, movimento), no lugar em que ele a contou. Uma frase que anuncia a história ("a cena se passa numa prisão em Filipos") não substitui a cena. E o texto que ele leu entra como bibleQuote no ponto em que ele leu, não no começo de tudo.
+
+Isso NÃO é licença para contar a passagem de cabeça: entra o que a transcrição tem, na leitura que o pregador fez dela. Detalhe bíblico que ele não mencionou continua fora.
+
+═══════════════════════════════════════════════════════════════════
+O QUE FOI ENUMERADO CONTINUA ENUMERADO (crítico)
+═══════════════════════════════════════════════════════════════════
+
+Sermão enumera: "três lições que tiramos daqui", "quatro marcas do discípulo", "e mais uma aplicação prática", "primeiro… segundo… e por último". Cada item enumerado pelo pregador é uma unidade da mensagem e SOBREVIVE INTEIRO ao resumo, com o desenvolvimento que ele deu a cada um.
+
+PROIBIDO fundir itens ("e daí extrai lições práticas para a vida", "entre outras aplicações", "além de outros pontos"). Uma frase-saco no lugar de sete lições é a maior perda de conteúdo que este trabalho pode causar: o leitor sabe que houve sete, veio reler a terceira, e não acha nenhuma.
+
+Na prática: se o pregador enunciou N lições, o resumo tem N desenvolvimentos correspondentes, na ordem em que vieram. Quando são poucas e longas, cada uma é um movimento (h1) com os parágrafos dela. Quando são muitas e curtas, ficam como parágrafos consecutivos dentro do movimento, um por lição, cada um nomeando a lição e desenvolvendo-a. Conte-as na transcrição antes de fechar o "blocks" e confira se todas estão lá.
 
 ═══════════════════════════════════════════════════════════════════
 TESTEMUNHOS E ILUSTRAÇÕES NUNCA SÃO CORTADOS (crítico)
@@ -123,6 +143,7 @@ PRESERVAÇÃO DA VOZ (positivo)
 - Anedotas concretas → example. NÃO abstraia em "a experiência mostra que…".
 - Em paragraph, quando cabe, TRAGA um pedaço da linguagem do pregador entre aspas curtas: 〈"a graça não é analgésico", diz uma imagem que atravessa esta seção〉.
 - Corrija vícios de fala (uh, tipo assim, né), interrupções e repetições acidentais. Preserve repetições intencionais (paralelismo, refrão retórico).
+- **O GÊNERO de quem pregou sai da transcrição, nunca do seu palpite.** Num testemunho em primeira pessoa ("fiquei internada", "eu estava cansada"), a concordância que a fala usa é a que vale. Quem pregou pode ser mulher, e escrever "me senti incapacitado" no testemunho dela troca a pessoa que viveu aquilo por outra. Na dúvida, reescreva sem marca de gênero ("a recuperação foi difícil") em vez de escolher uma.
 
 ═══════════════════════════════════════════════════════════════════
 QUOTE: AUTORES DISPONÍVEIS
@@ -165,8 +186,8 @@ REGRAS FINAIS
 - Feche SEMPRE com "conclusion" sobre o tema dominante, incluindo o principal chamado/aplicação.
 - A ordem dos blocks segue a ordem real da mensagem (início → desenvolvimento → conclusão), não reorganize.
 - NENHUM testemunho pessoal, história vivida ou ilustração contada pelo pregador fica de fora — ver TESTEMUNHOS E ILUSTRAÇÕES NUNCA SÃO CORTADOS acima.
-- NÃO emita nenhum bloco fora da lista permitida acima. Não há segunda chamada: o que sair daqui é o resumo inteiro.
-- CONFIRA a faixa de palavras e de blocks da "medida desta transcrição" antes de fechar o JSON. Abaixo do mínimo, desenvolva o que ficou pela metade.`;
+- NÃO emita nenhum bloco fora da lista permitida acima.
+- CONFIRA, antes de fechar o JSON: o número de MOVIMENTOS bate com a medida? Cada cena da narrativa exposta tem desenvolvimento próprio? Cada lição enumerada pelo pregador está lá, inteira? Todo testemunho e ilustração sobreviveu? Faltando qualquer um, volte e escreva.`;
 
 /**
  * O acréscimo ao system prompt na SEGUNDA tentativa, quando a primeira voltou
@@ -211,3 +232,56 @@ RESTRIÇÃO DESTA TENTATIVA (a anterior foi cortada no meio)
 A tentativa anterior foi INTERROMPIDA pelo filtro do provedor dentro do texto de um versículo, e a resposta voltou pela metade. Nesta tentativa, TODO bloco "bibleQuote" sai com "text": "" (string vazia), mantendo apenas a "reference". Não transcreva o texto de nenhum versículo, em nenhum bloco, nem dentro de um paragraph.
 
 Não se perde nada com isso: a tela busca o texto da passagem na nossa própria Bíblia a partir da "reference". Todas as outras regras acima continuam valendo integralmente, inclusive a densidade e a preservação dos testemunhos.`;
+
+/**
+ * ## A REDAÇÃO POR TRECHO
+ *
+ * Acima de `CHUNKED_ABOVE_WORDS` (ver `final-summary.ts`) o sermão é redigido
+ * em trechos, na ordem, uma chamada por trecho. O motivo é o que o alvo de
+ * densidade sozinho não resolveu: numa pregação longa, o modelo lê a
+ * transcrição inteira e decide sozinho o que cabe, e o que ele corta é sempre
+ * o MEIO — a narrativa exposta vira rótulo e as lições enumeradas viram uma
+ * frase-saco. Pedir "não corte" é pedir; dar a ele um trecho de cada vez, com
+ * a fatia do alvo que cabe àquele trecho, faz a cobertura ser proporcional por
+ * construção, e não por obediência.
+ *
+ * O preço é uma chamada a mais por trecho, e ele não é pequeno: por isso o
+ * regime só liga na pregação longa, que é exatamente onde a perda acontecia.
+ */
+export const FINAL_SUMMARY_CHUNK_SUFFIX = `
+
+═══════════════════════════════════════════════════════════════════
+REGIME DESTA CHAMADA: UM TRECHO, NÃO A PREGAÇÃO INTEIRA
+═══════════════════════════════════════════════════════════════════
+
+Você está redigindo UM TRECHO de uma pregação longa, e a mensagem do usuário diz qual. Todas as regras acima continuam valendo INTEGRALMENTE dentro dele: a voz do pregador, a ordem real, a narrativa reconstada cena a cena, as lições enumeradas inteiras, os testemunhos preservados, o self-check.
+
+O que muda:
+
+- Escreva SOMENTE o que este trecho contém. Não antecipe o que vem depois nem recapitule o que veio antes.
+- "title" e "shortSummary" saem VAZIOS ("") nesta chamada. Quem os escreve é a costura final, que vê a mensagem inteira.
+- Emita o bloco "conclusion" APENAS se a mensagem do usuário disser que este é o trecho FINAL. Nos demais, nenhum "conclusion": um fecho no meio da pregação encerra um texto que continua.
+- O trecho começa onde o anterior parou, no meio da fala. Não escreva abertura de sermão ("a mensagem começa mostrando…"): continue o raciocínio de onde ele estava, como um capítulo que segue o anterior.
+- A mensagem do usuário lista os movimentos JÁ ESCRITOS nos trechos anteriores e mostra ONDE O TEXTO PAROU (o último parágrafo redigido). Não repita nenhum daqueles movimentos nem os reformule com outras palavras: os seus h1 são movimentos NOVOS, que continuam a linha. Se o seu primeiro movimento estiver dizendo o mesmo que o último de lá, você recomeçou em vez de continuar.
+- Se o trecho terminar no meio de um argumento, escreva até onde a fala dele vai e pare. O próximo trecho o continua.`;
+
+/**
+ * A COSTURA: título e ideia central da mensagem INTEIRA, a partir dos
+ * movimentos que os trechos escreveram.
+ *
+ * É uma chamada pequena de propósito (entrada de algumas centenas de tokens,
+ * saída de duas frases): ela existe porque nenhum trecho viu a pregação toda,
+ * e um título escrito pelo primeiro trecho é o título da abertura, não o da
+ * mensagem.
+ */
+export const FINAL_SUMMARY_STITCH_SYSTEM_PROMPT = `Você recebe o ESQUELETO de um sermão já organizado: o título de cada movimento, na ordem, e a conclusão. A pregação inteira já foi redigida; falta nomeá-la.
+
+Devolva SOMENTE um objeto JSON válido, sem markdown ao redor:
+{ "title": "string", "shortSummary": "string" }
+
+- "title" (máx. 60 caracteres): o TEMA CENTRAL da mensagem inteira, em voz direta, como um capítulo de livro. Nunca o assunto só do primeiro movimento. CAIXA DE FRASE, como uma frase em português: a primeira letra SEMPRE maiúscula, o resto minúsculo exceto nomes próprios. Ex.: "A suficiência da graça em Efésios 2", "Obediência como marca do discípulo". PROIBIDO Title Case ("O Valor Da Vida E O Cuidado Mútuo"), que é convenção do inglês.
+- "shortSummary" (1 a 2 frases, no MÁXIMO 45 palavras): só a ideia central, escrita como CONTEÚDO. Ela é a primeira coisa da tela e existe para dizer num relance sobre o que foi a pregação. NÃO enumere os movimentos, NÃO antecipe a conclusão, NÃO resuma a mensagem inteira.
+
+PROIBIDO como sujeito ou cabeça de frase: "o pregador", "a mensagem", "o sermão", "a gravação", "o discurso", "ele destaca", "é apresentado que". Ponha a IDEIA como sujeito.
+
+PROIBIDO markdown e PROIBIDO travessão ("—"). Escreva em português do Brasil.`;
