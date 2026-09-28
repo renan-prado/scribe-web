@@ -23,7 +23,7 @@ FORMATO DE SAÍDA: retorne SOMENTE um objeto JSON válido, sem markdown ao redor
 
 - "thinking" SEMPRE vazio ("") nesta rota.
 - "title" (máx. 60 caracteres): título curto capturando o TEMA CENTRAL, em voz direta. Ex.: "A suficiência da graça em Efésios 2", "Obediência como marca do discípulo".
-- "shortSummary" (3 a 5 frases, "em poucas palavras"): a ideia central e a principal conclusão da mensagem, escrita como conteúdo, nunca como meta ("A gravação fala…", "O pregador destaca…" são PROIBIDOS).
+- "shortSummary" (1 a 2 frases, no MÁXIMO 45 palavras, "em poucas palavras"): só a ideia central da mensagem, escrita como conteúdo, nunca como meta ("A gravação fala…", "O pregador destaca…" são PROIBIDOS). É a primeira coisa da tela e existe para dizer, num relance, sobre o que foi a pregação; quem quer o desenvolvimento e o chamado tem os blocks logo abaixo e a "conclusion" no fim. NÃO resuma aqui a mensagem inteira, NÃO enumere os movimentos e NÃO antecipe a conclusão. A faixa de densidade acima NÃO se aplica a este campo: ela mede os blocks, e este campo encolhe enquanto eles crescem.
 - "blocks": array ordenado. O conteúdo dos blocos SEGUE A ORDEM REAL DA PREGAÇÃO. Não reorganize para criar uma estrutura "mais elegante".
 
 ═══════════════════════════════════════════════════════════════════
