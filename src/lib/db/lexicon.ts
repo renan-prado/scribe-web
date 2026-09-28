@@ -276,7 +276,27 @@ export async function getLexiconEntryForAdmin(id: string): Promise<AdminLexiconE
 
 export type LexiconWriteResult =
   | { ok: true; entry: AdminLexiconEntry }
-  | { ok: false; reason: "duplicate" | "not_found" | "incomplete" | "error" };
+  | {
+      ok: false;
+      reason: "duplicate" | "not_found" | "incomplete" | "error" | "bucket_limit";
+    };
+
+/**
+ * O Storage recusou o arquivo pelo `file_size_limit` do bucket.
+ *
+ * Ele é uma recusa DIFERENTE do teto do formulário, e confundir os dois custou
+ * uma rodada de depuração: o arquivo passou pelo `LEXICON_LIMITS.imageBytes` da
+ * rota e morreu no bucket, que estava um degrau abaixo. A tela dizia "não
+ * consegui subir a imagem" e a frase do tamanho, a única que apontava para o
+ * conserto, existia só no log do servidor.
+ *
+ * É casamento por TEXTO porque o `StorageError` não carrega código para este
+ * caso. Errar para o lado do genérico é de graça: quem não casar cai no
+ * `error` de sempre, que é onde ele já caía.
+ */
+function isBucketSizeLimit(message: string): boolean {
+  return /exceeded the maximum allowed size/i.test(message);
+}
 
 /** `23505` é unique_violation: slug ou termo já cadastrados. */
 function isDuplicate(code: string | undefined): boolean {
@@ -473,7 +493,10 @@ export async function setLexiconImage(
 
   if (upload.error) {
     log.error("upload falhou", { id, path, error: upload.error.message });
-    return { ok: false, reason: "error" };
+    return {
+      ok: false,
+      reason: isBucketSizeLimit(upload.error.message) ? "bucket_limit" : "error",
+    };
   }
 
   const { data, error } = await admin

@@ -24,10 +24,14 @@ import { useLexiconCard } from "@/features/session/lexicon-query";
  * continua sendo o conteúdo, e a imagem é o rosto dela. Uma foto do tamanho do
  * diálogo transformaria a conversa numa galeria com legendas.
  *
- * **A faixa tem altura fixa e `object-contain`**, pela mesma razão do cartão
- * (ver `LexiconCardDialog`), e aqui o erro era pior: ela era 21/9 com
- * `object-cover`, uma fresta deitada sobre um retrato em pé. Do rosto de Paulo
- * sobrava a barba.
+ * **A faixa tem altura fixa e `object-contain`**, e aqui ela NÃO acompanhou o
+ * cartão. Ela já foi 21/9 com `object-cover`, uma fresta deitada sobre um
+ * retrato em pé, e do rosto de Paulo sobrava a barba; o `LexiconCardDialog`
+ * voltou ao banner 21/9 quando o cadastro passou a entregar a arte nessa
+ * proporção, e aqui isso não obriga a nada — a imagem em 21/9 cabe inteira
+ * numa faixa contida, com um respiro dos lados, e o `contain` continua sendo o
+ * que protege as entradas antigas de aparecerem cortadas dentro de uma
+ * resposta, onde não há um segundo lugar para conferir a arte.
  *
  * ## O carregamento não desenha esqueleto
  *

@@ -137,13 +137,18 @@ export default async function AdminLayout({
             do bloco, e fica: sem ele uma tabela de finanças se estica por um
             monitor inteiro e a linha deixa de ser lida de ponta a ponta.
 
-            Embaixo o ritmo não vale, e por isso o `py` do bloco virou `pt`: a
-            folga de baixo é a altura do botão flutuante mais o recorte do
-            aparelho, senão a última linha de uma tabela para debaixo dele e não
-            há rolagem que a traga inteira para a luz. É o mesmo pagamento que a
-            Biblioteca faz pelo `+` do `CreateDock`, e aqui ele vale em TODA
-            largura, porque o `AdminMenu` não some no desktop. */}
-        <PageTransition className="mx-auto flex w-full max-w-[1600px] flex-1 flex-col gap-4 px-4 pt-4 pb-[calc(6rem+env(safe-area-inset-bottom))] md:gap-6 md:pt-6 lg:px-6">
+            Embaixo o ritmo não vale no CELULAR, e por isso o `py` do bloco
+            virou `pt`: a folga de baixo é a altura do botão flutuante mais o
+            recorte do aparelho, senão a última linha de uma tabela para debaixo
+            dele e não há rolagem que a traga inteira para a luz. É o mesmo
+            pagamento que a Biblioteca faz pelo `+` do `CreateDock`.
+
+            Em `md` ela volta ao ritmo do bloco, porque ali o `AdminMenu` some
+            (a lateral entra no mesmo degrau, e o botão flutuante seria um
+            segundo caminho para as mesmas oito áreas). Uma folga de 6rem paga a
+            um botão que não está mais lá é um rodapé vazio em toda tela do
+            painel. */}
+        <PageTransition className="mx-auto flex w-full max-w-[1600px] flex-1 flex-col gap-4 px-4 pt-4 pb-[calc(6rem+env(safe-area-inset-bottom))] md:gap-6 md:pt-6 md:pb-6 lg:px-6">
           {children}
         </PageTransition>
         {/* O slot paralelo. Ver o cabeçalho da função. */}

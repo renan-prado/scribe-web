@@ -1,6 +1,6 @@
 "use client";
 
-import { ArrowLeft, MoreVertical, TriangleAlert } from "lucide-react";
+import { ArrowLeft, Loader2, MoreVertical, TriangleAlert } from "lucide-react";
 import Image from "next/image";
 import { useEffect, useState } from "react";
 import { Button } from "@/components/ui/button";
@@ -33,40 +33,47 @@ import { toParagraphs } from "@/lib/domain/paragraphs";
  * admin cadastrou em `lexicon_entries`. Em nenhum dos dois o modelo tem a
  * caneta.
  *
- * ## A imagem é o RETRATO do cabeçalho, não uma faixa
+ * ## A imagem é um BANNER 21/9, abaixo do título e da categoria
  *
- * Ela fica à esquerda do título, na altura dele, e a descrição corre embaixo na
- * largura inteira:
- *
- *     [img]  Paulo, o apóstolo dos gentios
- *     [   ]  Personagem bíblico
- *     ------------------------------------
+ *     Paulo, o apóstolo dos gentios
+ *     Personagem bíblico
+ *     ┌──────────────────────────────────┐
+ *     │            [ 21 / 9 ]            │
+ *     └──────────────────────────────────┘
  *     Judeu nascido em Tarso, na Cilícia…
  *
- * **Ela já foi uma faixa da largura toda, e duas vezes.** Primeiro em 16/9 com
- * `object-cover`, depois contida em 208px, depois em 104px — e o problema nunca
- * foi a altura, era o PAPEL. Uma faixa acima do título é a capa de um artigo, e
- * anuncia que a imagem é o conteúdo; aqui o conteúdo é o texto. Quem tocou num
- * nome tocou para LER sobre ele, e cada pixel de faixa empurrava a resposta para
- * baixo da dobra.
+ * **Ela já foi faixa, depois retrato de 56px no cabeçalho, e voltou a ser
+ * faixa.** As duas primeiras vidas saíram pelo mesmo motivo: o léxico guardava
+ * as DUAS formas — o retrato de um personagem é alto, o mapa de uma rota é
+ * deitado —, e nenhuma caixa serve às duas. Contida, ela deixava sobras de
+ * fundo dos lados; cortada, comia a cabeça de quem ela deveria mostrar. O
+ * retrato do cabeçalho foi a saída de então: pequeno o bastante para a forma da
+ * imagem não importar.
  *
- * No cabeçalho ela vira o que de fato é: a cara da entrada, do lado do nome
- * dela, como a pastilha de iniciais do `EntityCombobox` é a cara de um
- * pregador. Custa 56px de uma linha que já existia.
+ * **O que mudou não foi a opinião, foi o INSUMO.** A imagem do cadastro passou
+ * a ser 21/9, escolhida e recortada por quem escreve o cartão. Com uma
+ * proporção só, a caixa pode ser dessa proporção, e a objeção de origem
+ * simplesmente não tem mais sujeito.
  *
- * **`object-contain`, e isso não mudou.** O léxico guarda as duas formas — o
- * retrato de um personagem é alto, o mapa de uma rota é deitado —, e um quadrado
- * que corte serve mal às duas.
+ * **`object-cover`, e é deliberado.** Um banner que não preenche a própria
+ * faixa não é um banner, é uma imagem com tarjas. Com o insumo em 21/9 o corte
+ * é nulo; a consequência a dizer em voz alta é que as entradas ANTIGAS, com
+ * retrato em pé, aparecem cortadas aqui — o conserto delas é subir a arte na
+ * proporção nova, não devolver o `contain`, que traria de volta as sobras para
+ * o caso que passou a ser a regra.
  *
- * **O que sumiu foi o chão cinza atrás dela.** Contido, o quadrado quase nunca
- * é preenchido pela imagem, e o `bg-muted` desenhava as sobras: uma caixa clara
- * em volta de um retrato, no canto de um diálogo que não tem nenhuma outra
- * caixa. Sem ele, o que aparece ao lado do título é a arte e mais nada.
+ * **21/9 e não 16/9**: é a faixa mais rasa que ainda lê como imagem, e a
+ * objeção antiga contra a capa de artigo continua de pé — quem tocou num nome
+ * tocou para LER sobre ele, e cada pixel de banner empurra a resposta para
+ * baixo da dobra. Num diálogo de 512px ela custa ~220px; em 16/9 custaria 288.
  *
- * **Sem imagem o cabeçalho não fica com um buraco**: o quadrado simplesmente não
- * existe e o título encosta na esquerda. Imagem é opcional no cadastro de
+ * **Sem imagem o cartão não fica com um buraco**: a faixa simplesmente não
+ * existe e o texto encosta na categoria. Imagem é opcional no cadastro de
  * propósito (ver `canPublishLexiconEntry`), então "sem foto" é um estado comum,
- * não uma falha a ser desenhada com um ícone de imagem quebrada.
+ * não uma falha a ser desenhada com um ícone de imagem quebrada. Pela mesma
+ * razão ela não tem chão cinza atrás e não é esqueleto enquanto carrega: ela
+ * mora no ramo do `data`, e reservar a faixa antes de saber se há imagem seria
+ * desenhar o buraco para as entradas que não têm.
  *
  * `next/image` e nunca `<object>`/`<iframe>`: o bucket aceita SVG, e SVG só é
  * inerte enquanto for desenhado como imagem. Ver a migração 0064.
@@ -195,30 +202,39 @@ export function LexiconCardDialog({
                 <ArrowLeft className="size-4" />
               </Button>
             ) : null}
-            {data?.imageUrl ? (
-              <div className="relative size-14 shrink-0 overflow-hidden rounded-lg">
-                <Image
-                  src={data.imageUrl}
-                  alt=""
-                  fill
-                  // 56px na tela, e o dobro numa tela retina: pedir a imagem
-                  // inteira seria baixar um arquivo grande para desenhá-lo do
-                  // tamanho de um avatar.
-                  sizes="56px"
-                  className="object-contain"
-                />
-              </div>
-            ) : null}
             {/* `min-w-0` é o que deixa um título longo QUEBRAR em vez de esticar a
               linha: um filho de flex adota a largura mínima do conteúdo, e sem
               isto "Nabucodonosor, rei da Babilônia" empurraria a caixa. */}
             <div className="flex min-w-0 flex-col gap-1">
-              {/* `leading-snug` sobre o `leading-none` do componente: ao lado da
-                imagem a coluna é estreita, e um título de duas linhas com
-                entrelinha zerada tem os glifos de uma encostando nos da outra. */}
-              <DialogTitle className="leading-snug">{data?.title ?? current}</DialogTitle>
-              <DialogDescription>
-                {data ? LEXICON_CATEGORY_LABEL[data.category] : "Carregando"}
+              {/* `leading-snug` sobre o `leading-none` do componente: um título
+                de duas linhas com entrelinha zerada tem os glifos de uma
+                encostando nos da outra. */}
+              {/* O giro mora NO TÍTULO, e a categoria só aparece quando chega.
+                Antes a linha de baixo dizia "Carregando" enquanto as tarjas de
+                esqueleto já diziam a mesma coisa logo abaixo, e o texto ainda
+                empurrava a categoria para dentro do cartão: o aviso aparecia
+                duas vezes e sumia trocado por outra palavra. */}
+              {/* `text-lg` sobre o `text-base` do componente, e `text-xs` na
+                categoria logo abaixo: o par abre o cartão, e com os dois a um
+                degrau de distância (16 e 14) a categoria disputava com o nome
+                em vez de apoiá-lo. Afastando para 18 e 12, o nome vira o título
+                que ele é e a categoria vira a etiqueta que ela é — a hierarquia
+                passa a ser lida antes de qualquer palavra. */}
+              <DialogTitle className="flex items-center gap-2 text-lg leading-snug">
+                <span className="min-w-0">{data?.title ?? current}</span>
+                {isPending ? (
+                  <Loader2
+                    aria-hidden
+                    className="size-4 shrink-0 animate-spin text-scriba-ink-mute"
+                  />
+                ) : null}
+              </DialogTitle>
+              {/* O `DialogDescription` não pode simplesmente sumir: o diálogo o
+                aponta por `aria-describedby`, e um alvo inexistente é lido como
+                descrição vazia. Enquanto carrega ele fica só para o leitor de
+                tela. */}
+              <DialogDescription className={data ? "text-xs" : "sr-only"}>
+                {data ? LEXICON_CATEGORY_LABEL[data.category] : "Carregando o verbete"}
               </DialogDescription>
             </div>
 
@@ -266,6 +282,29 @@ export function LexiconCardDialog({
               <LexiconNavProvider
                 nav={{ self: data.slug, go: (next) => setTrail((t) => [...t, next]) }}
               >
+                {/* O BANNER, abaixo do título e da categoria e acima do texto.
+                  Ver o cabeçalho: a proporção é 21/9 porque é a que o cadastro
+                  entrega, e `object-cover` porque um banner que não preenche a
+                  própria faixa não é um banner.
+
+                  Ele mora AQUI dentro, no ramo do `data`, e não no cabeçalho:
+                  enquanto carrega, o corpo inteiro é esqueleto, e uma faixa
+                  reservada lá em cima seria um buraco para as entradas que não
+                  têm imagem — que continuam sendo um estado comum, não uma
+                  falha (ver `canPublishLexiconEntry`). */}
+                {data.imageUrl ? (
+                  <div className="relative mb-4 aspect-[21/9] w-full overflow-hidden rounded-xl">
+                    <Image
+                      src={data.imageUrl}
+                      alt=""
+                      fill
+                      // A largura do diálogo: a tela menos a margem no celular,
+                      // 512px (`sm:max-w-lg`) do `sm` para cima.
+                      sizes="(max-width: 640px) 92vw, 512px"
+                      className="object-cover"
+                    />
+                  </div>
+                ) : null}
                 {/* Um `<p>` por parágrafo, e não um `whitespace-pre-line` sobre
                   o texto inteiro: o `RichText` precisa de uma string por
                   parágrafo para marcar referência e nome próprio dentro de cada

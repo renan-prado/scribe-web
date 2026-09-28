@@ -89,8 +89,10 @@ Cinco coisas do chrome que quem mexer aqui não pode desfazer:
   degrau que o inset existe para criar. O `backdrop-blur` fica porque ela é
   `sticky` e o conteúdo passa por baixo, o que no bloco original não acontece.
 - **A altura da faixa é `--header-height`, declarada no `SidebarProvider`**, e
-  vale 56px, não os 48px do bloco: o `SidebarTrigger` tem 44px no celular por
-  WCAG 2.5.5 (ver abaixo) e precisa de folga em volta.
+  vale 56px, não os 48px do bloco: ela nasceu com um `SidebarTrigger` de 44px
+  por WCAG 2.5.5 e precisa de folga em volta. O gatilho virou o `AdminMenu`
+  (ver abaixo), mas a altura ficou — é ela que o `group-has-data-[collapsible=icon]`
+  lê, e a faixa ainda carrega o breadcrumb com três botões ao lado.
 - **`SidebarInset` precisa de `min-w-0`.** É o que deixa uma tabela larga rolar
   DENTRO do próprio cartão: sem ele o item flex adota a largura mínima do
   conteúdo, e quem ganha barra horizontal é a página inteira, a sidebar sai da
@@ -128,12 +130,21 @@ ao lado empurraria o rótulo a cada clique. E `useLinkStatus`, que é o que
 quem põe o componente lá é o `render={<Link/>}` do `SidebarMenuButton`. Fora de
 um Link ele devolve `pending: false` para sempre, em silêncio.
 
-**O `SidebarTrigger` tem 44px no celular** (`size-11 sm:size-7`), contra os
-28px do `size="icon-sm"` do shadcn. Ele é o ÚNICO jeito de abrir a gaveta no
-telefone, o `SidebarRail`, a faixa arrastável, é `sm:flex` e não existe no
-toque, e um alvo de 28px encostado no canto superior esquerdo erra na maioria
-dos toques de polegar. Errava tantas vezes seguidas que parecia botão quebrado.
-44px é o mínimo do WCAG 2.5.5 e cabe folgado nos 56px da faixa.
+**O `AdminMenu` é `md:hidden`, e o degrau é o mesmo do `md:flex` da lateral.**
+Ele é o botão flutuante do canto de baixo à direita que abre as oito áreas em
+grade, e no DESKTOP era um segundo caminho para o que a lateral já mostra sem
+pedir clique nenhum — cobrindo, de quebra, o canto de baixo à direita de toda
+tabela do painel. No telefone a lateral é um sheet fechado, e ali ele é o
+caminho inteiro: 56px no canto que o polegar alcança sem trocar a mão de
+posição, contra os 28px do `SidebarTrigger` encostado no canto superior
+esquerdo que ele substituiu (e que errava tantas vezes seguidas que parecia
+botão quebrado). Quem o esconde é media query, e não o `useIsMobile`: um gancho
+que só sabe a largura depois de montar o desenharia no primeiro quadro do
+desktop para apagá-lo em seguida.
+
+**E a folga de baixo do conteúdo cai no mesmo `md`.** Ela existe para a última
+linha de uma tabela não morrer embaixo do botão; paga onde ele não está, é um
+rodapé vazio em toda tela do painel.
 
 ## A estética: o bloco `dashboard-01` do shadcn
 
@@ -1019,6 +1030,16 @@ O que não pode ser desfeito:
   primeiro que se alcança. O "x de y publicadas" é o progresso disso, e o
   denominador vem de uma segunda leitura sem filtro, senão filtrar por rascunho
   mudaria o total na mesma tela em que se acompanha o avanço.
+- **O olho da lista abre o CARTÃO DE VERDADE.** Ele monta o mesmo
+  `LexiconCardDialog` que abre no toque de um nome do resumo, o componente
+  literal e não uma prévia parecida — uma segunda pintura do cartão aqui
+  divergiria do que o leitor vê no primeiro ajuste feito lá. E o painel SEMEIA
+  a linha no cache da query antes de abrir (`["lexicon-card", slug]`), porque
+  `/api/lexicon/[slug]` lê pelo client do usuário e a policy de 0063 só deixa
+  passar publicado: sem a semente, conferir um RASCUNHO — que é o motivo de o
+  botão existir — abriria em "Ainda não escrevi sobre isso". A tela também monta
+  o `LexiconProvider` com o índice publicado, senão as menções de dentro do
+  cartão sairiam lisas justamente onde se decide se ele está pronto.
 - **O SLUG não é recalculado quando o termo muda.** Ele é o endereço do cartão
   (`/api/lexicon/<slug>`) e o que o Biblo grava ao apontar uma entrada; trocá-lo
   por causa de um acerto de acento quebraria em silêncio toda referência já
@@ -1076,16 +1097,24 @@ service-role. Três coisas:
   imutável; um cartão é conteúdo que a mesma pessoa acabou de editar. Hoje o
   prazo dele é o mesmo do índice de nomes, e a query fica fora do disco. Ver
   `features/session/lexicon-query.ts`.
-- **A imagem nunca é CORTADA, em nenhuma das três telas.** Faixa de altura fixa
-  com `object-contain`, e não uma proporção com `object-cover`. O léxico guarda
-  as duas formas — o retrato de um personagem é alto, o mapa de uma rota é
-  deitado —, e não existe proporção fixa que sirva às duas cortando: um 16/9
-  sobre o retrato de Paulo comeu a cabeça e o peito, que era o que a imagem
-  tinha a dizer. A altura é fixa porque não guardamos as dimensões do arquivo:
-  uma caixa que se molda à imagem só saberia o tamanho depois de carregá-la, e o
-  texto abaixo pularia de lugar no meio da leitura. A miniatura do painel segue
-  a mesma regra, porque quem confere a imagem aqui está conferindo o que vai
-  aparecer lá.
+- **A proporção do cadastro é 21/9, e é ela que manda na tela.** O cartão a
+  desenha como BANNER abaixo do título, com `object-cover`, e a miniatura deste
+  formulário usa a MESMA caixa e o MESMO recorte — quem confere a imagem aqui
+  está conferindo o enquadramento que vai aparecer lá, e uma prévia `contain`
+  numa caixa de outra proporção escondia justamente o corte que a leitura faria.
+  A regra anterior era o oposto (`contain` em toda tela, nunca cortar), e ela
+  existia porque o léxico guardava as duas formas — retrato em pé e mapa
+  deitado — sem nenhuma caixa que servisse às duas. Com uma proporção só no
+  insumo, a objeção não tem mais sujeito; o preço é que a **entrada antiga
+  aparece cortada** até alguém subir a arte em 21/9, e o conserto dela é a arte
+  nova, não o `contain` de volta. A altura continua vindo da proporção e não do
+  arquivo: não guardamos as dimensões, e uma caixa que se molda à imagem só
+  saberia o tamanho depois de carregá-la, com o texto abaixo pulando de lugar no
+  meio da leitura.
+- **O retrato do Biblo é a exceção, e continua `contain`.** Ali a imagem
+  aparece dentro de uma resposta, sem um segundo lugar onde conferir a arte;
+  uma 21/9 cabe inteira numa faixa contida, e a entrada antiga não é cortada
+  onde ninguém a está editando. Ver `BibloEntityImage`.
 - **SVG é aceito** (migração 0064), e o cabeçalho dela tem o argumento inteiro:
   mapa, planta do templo e linha do tempo são desenho, não foto. O que o mantém
   inerte são três pernas, e as três precisam continuar de pé — quem sobe é o

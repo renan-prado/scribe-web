@@ -538,14 +538,23 @@ ganha um voltar. O próprio nome não é marcado, porque seria um caminho para
 onde a pessoa já está. A referência bíblica continua abrindo o `ChapterDialog`
 por cima, e ali empilhar é aceitável: ele é uma FOLHA, mostra o texto e fecha.
 
-**No cartão, a imagem é o RETRATO do cabeçalho, ao lado do título, e não uma
-faixa acima dele.** A faixa foi tentada em três alturas antes de o problema
-aparecer, e ele nunca foi a altura: era o PAPEL. Uma faixa sobre o título é a
-capa de um artigo, e anuncia que a imagem é o conteúdo — mas quem tocou num nome
-tocou para LER sobre ele, e cada pixel de faixa empurrava a resposta para baixo
-da dobra. `object-contain` sempre, e sem chão atrás: o léxico guarda as duas
-formas (retrato em pé, mapa deitado), nenhum recorte serve às duas, e o cinza
-por trás só desenhava as sobras de um quadrado que a arte quase nunca preenche.
+**No cartão, a imagem é um BANNER 21/9, abaixo do título e da categoria.** Ela
+já foi faixa, depois retrato de 56px no cabeçalho, e voltou a ser faixa — e o
+que mudou de verdade não foi a opinião, foi o INSUMO. As duas primeiras vidas
+saíram porque o léxico guardava as duas formas (retrato em pé, mapa deitado) e
+nenhuma caixa serve às duas: contida, sobrava fundo dos lados; cortada, comia a
+cabeça de quem ela deveria mostrar. Com o cadastro entregando 21/9, a caixa pode
+ser dessa proporção e a objeção some. `object-cover`, porque um banner que não
+preenche a própria faixa é uma imagem com tarjas — e a consequência a dizer em
+voz alta é que a entrada ANTIGA, com retrato em pé, aparece cortada até alguém
+subir a arte na proporção nova. 21/9 e não 16/9 porque a objeção da capa de
+artigo continua de pé: quem tocou num nome tocou para LER sobre ele, e cada
+pixel de banner empurra a resposta para baixo da dobra.
+
+**O retrato do Biblo (`BibloEntityImage`) NÃO acompanhou**, e é deliberado: lá
+a imagem aparece dentro de uma resposta, sem um segundo lugar onde conferir a
+arte, e `contain` numa faixa de altura fixa mostra uma 21/9 inteira com um
+respiro dos lados sem cortar a entrada antiga.
 
 **O índice chega ao `RichText` por CONTEXTO** (`LexiconProvider`), e não por
 prop: o caminho até ele tem cinco degraus em quatro árvores, e esquecer um faria

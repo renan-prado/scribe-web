@@ -14,6 +14,20 @@ import { cn } from "@/lib/utils";
  * conteúdo, e a semelhança é o ponto — são o mesmo gesto em dois lugares do
  * produto.
  *
+ * ## Ele só existe no CELULAR
+ *
+ * `md:hidden`, o mesmo degrau em que o `md:flex` do `Sidebar` do shadcn traz a
+ * lateral para a tela. Onde as oito áreas já estão à vista numa coluna
+ * permanente, um botão flutuante que abre as MESMAS oito é um segundo caminho
+ * para o mesmo lugar, e um que cobre o canto de baixo à direita de toda tabela
+ * do painel. No telefone a lateral é um sheet fechado, e aí ele é o caminho
+ * inteiro.
+ *
+ * **É media query, e não o `useIsMobile`.** O painel inteiro é server component,
+ * e um gancho que só sabe a largura DEPOIS de montar desenharia o botão no
+ * primeiro quadro do desktop para apagá-lo em seguida. A folga de baixo do
+ * `admin/layout.tsx`, que paga os 56px dele, cai no mesmo `md`.
+ *
  * ## O que ele substitui
  *
  * Um `SidebarTrigger` do shadcn, encostado no canto superior ESQUERDO da faixa,
@@ -28,9 +42,7 @@ import { cn } from "@/lib/utils";
  *
  * **A lateral do desktop continua**, e continua sendo o mapa permanente do
  * painel: ela mostra as oito áreas sem pedir clique nenhum, que é o que uma
- * coluna de 1400px de altura pode fazer e um botão não. O menu flutuante é o
- * atalho para quem não quer arrastar o olho até lá — e no celular, onde a
- * lateral não aparece, ele é o caminho inteiro. Recolher a lateral agora é o
+ * coluna de 1400px de altura pode fazer e um botão não. Recolher a lateral é o
  * `SidebarRail` (a faixa entre ela e o conteúdo) ou o `Ctrl/⌘ + B` do shadcn.
  *
  * ## O que ele herda do `CreateDock`, e o que não
@@ -49,7 +61,7 @@ import { cn } from "@/lib/utils";
  *   próxima tela: um botão de navegação que brinca de esconde-esconde enquanto
  *   se varre uma linha custa mais do que os 56px que ele ocupa. Quem paga esses
  *   56px é a folga de baixo do `admin/layout.tsx`, para a última linha de uma
- *   tabela não morrer embaixo dele.
+ *   tabela não morrer embaixo dele — e ela cai no mesmo `md` em que ele some.
  * - **É `<nav>` com nome, e não `role="menu"`.** ARIA menu promete navegação por
  *   setas, e quem o anuncia sem implementar as setas entrega ao leitor de tela
  *   um menu que não responde como menu. São oito LINKS para oito telas.
@@ -107,7 +119,7 @@ export function AdminMenu() {
           type="button"
           aria-label="Fechar o menu"
           onClick={() => setOpen(false)}
-          className="fixed inset-0 z-30 cursor-default"
+          className="fixed inset-0 z-30 cursor-default md:hidden"
         />
       ) : null}
       {/* `pointer-events-none` na faixa: ela atravessa o canto inteiro da tela, e
@@ -118,7 +130,8 @@ export function AdminMenu() {
           que faz a lista de post-its terminar em desvanecimento em vez de em
           corte. Aqui o que está embaixo é uma tabela com cabeçalho e totais, e
           um fade por cima dela apagaria justamente a linha que se foi ler. */}
-      <div className="pointer-events-none fixed inset-x-0 bottom-0 z-40 pb-[calc(1.25rem+env(safe-area-inset-bottom))]">
+      {/* `md:hidden`: o degrau em que a lateral entra na tela. Ver o cabeçalho. */}
+      <div className="pointer-events-none fixed inset-x-0 bottom-0 z-40 pb-[calc(1.25rem+env(safe-area-inset-bottom))] md:hidden">
         {/* A mesma geometria do `CreateDock`: painel e botão na mesma linha,
             alinhados por baixo, o painel cedendo (`min-w-0`) e o botão nunca
             (`shrink-0`) — um painel 8px mais apertado ninguém vê, um círculo

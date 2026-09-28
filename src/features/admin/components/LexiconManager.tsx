@@ -1,6 +1,7 @@
 "use client";
 
-import { ImageIcon, Plus, Search } from "lucide-react";
+import { useQueryClient } from "@tanstack/react-query";
+import { Eye, ImageIcon, Plus, Search } from "lucide-react";
 import { useRouter, useSearchParams } from "next/navigation";
 import { useState, useTransition } from "react";
 import { Badge } from "@/components/ui/badge";
@@ -23,10 +24,12 @@ import {
   TableHeader,
   TableRow,
 } from "@/components/ui/table";
+import { LexiconCardDialog } from "@/features/session/components/LexiconCardDialog";
 import {
   type AdminLexiconEntry,
   LEXICON_CATEGORIES,
   LEXICON_CATEGORY_LABEL,
+  type LexiconCard,
 } from "@/lib/domain/lexicon";
 import { LexiconEntryDialog } from "./LexiconEntryDialog";
 
@@ -47,6 +50,22 @@ import { LexiconEntryDialog } from "./LexiconEntryDialog";
  * e uma terceira pastilha para um estado intermediário seria uma régua a mais
  * na tela que já tem a régua certa, o botão de publicar aceso ou apagado dentro
  * do formulário.
+ *
+ * ## O olho abre o CARTÃO DE VERDADE, não uma imitação dele
+ *
+ * O botão de ver monta o mesmo `LexiconCardDialog` que abre quando alguém toca
+ * num nome do resumo — o componente literal, não uma cópia com a mesma cara.
+ * Uma segunda pintura do cartão aqui seria a terceira régua do léxico na tela
+ * (a lista, o formulário e um falso cartão), e a que mais mente: ela
+ * divergiria do que o leitor vê no primeiro ajuste de tipografia feito lá.
+ *
+ * **E ele é semeado no cache antes de abrir**, o que não é otimização: a rota
+ * `/api/lexicon/[slug]` lê pelo client do USUÁRIO, e a policy da migração 0063
+ * só deixa passar linha publicada. Sem a semente, o olho de um rascunho — que é
+ * justamente o que se quer conferir antes de publicar — abriria em "Ainda não
+ * escrevi sobre isso". O painel já tem a linha inteira em mãos; semear é
+ * entregá-la à query que o cartão usa, com o carimbo de tempo de agora, o que
+ * de quebra evita a revalidação que devolveria o 404 do rascunho.
  *
  * ## Os filtros moram na URL
  *
@@ -86,6 +105,24 @@ export function LexiconManager({ entries, current, total }: Props) {
 
   /** `null` = fechado; `"new"` = cadastro novo; senão, a entrada em edição. */
   const [editing, setEditing] = useState<AdminLexiconEntry | "new" | null>(null);
+
+  /** A entrada cujo cartão está aberto para leitura. `null` = nenhum. */
+  const [previewing, setPreviewing] = useState<AdminLexiconEntry | null>(null);
+  const queryClient = useQueryClient();
+
+  function preview(entry: AdminLexiconEntry) {
+    const card: LexiconCard = {
+      slug: entry.slug,
+      term: entry.term,
+      category: entry.category,
+      title: entry.title,
+      description: entry.description,
+      imageUrl: entry.imageUrl,
+    };
+    // A mesma chave do `useLexiconCard`. Ver o cabeçalho.
+    queryClient.setQueryData(["lexicon-card", entry.slug], card);
+    setPreviewing(entry);
+  }
 
   function push(next: { q: string; categoria: string; estado: string }) {
     const params = new URLSearchParams(searchParams.toString());
@@ -197,12 +234,15 @@ export function LexiconManager({ entries, current, total }: Props) {
               <TableHead>Categoria</TableHead>
               <TableHead>Cartão</TableHead>
               <TableHead className="text-right">Estado</TableHead>
+              <TableHead className="w-10">
+                <span className="sr-only">Ver cartão</span>
+              </TableHead>
             </TableRow>
           </TableHeader>
           <TableBody>
             {entries.length === 0 ? (
               <TableRow>
-                <TableCell colSpan={4} className="text-[13px] font-light text-scriba-ink-mute">
+                <TableCell colSpan={5} className="text-[13px] font-light text-scriba-ink-mute">
                   Nada com esses filtros.
                 </TableCell>
               </TableRow>
@@ -242,6 +282,23 @@ export function LexiconManager({ entries, current, total }: Props) {
                       {entry.published ? "publicada" : "rascunho"}
                     </Badge>
                   </TableCell>
+                  <TableCell className="text-right">
+                    {/* A linha inteira abre o formulário, então o olho precisa
+                      segurar o clique dele: sem isto, ver o cartão abriria o
+                      cartão E o editor atrás. */}
+                    <Button
+                      type="button"
+                      variant="ghost"
+                      size="icon-sm"
+                      aria-label={`Ver o cartão de ${entry.term}`}
+                      onClick={(e) => {
+                        e.stopPropagation();
+                        preview(entry);
+                      }}
+                    >
+                      <Eye className="size-3.5" />
+                    </Button>
+                  </TableCell>
                 </TableRow>
               ))
             )}
@@ -261,6 +318,20 @@ export function LexiconManager({ entries, current, total }: Props) {
             if (!open) setEditing(null);
           }}
           onChanged={refresh}
+        />
+      ) : null}
+
+      {/* A `key` pela mesma razão do formulário: o cartão guarda a trilha de
+          nomes abertos, e sem remontar, abrir o segundo traria o voltar do
+          primeiro. */}
+      {previewing ? (
+        <LexiconCardDialog
+          key={previewing.id}
+          slug={previewing.slug}
+          open
+          onOpenChange={(open) => {
+            if (!open) setPreviewing(null);
+          }}
         />
       ) : null}
     </div>

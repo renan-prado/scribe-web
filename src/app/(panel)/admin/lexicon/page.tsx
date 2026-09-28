@@ -3,7 +3,8 @@ import { AdminPageHeader } from "@/features/admin/components/AdminPageHeader";
 import { LexiconManager } from "@/features/admin/components/LexiconManager";
 import { LexiconReports } from "@/features/admin/components/LexiconReports";
 import { ContentTabs } from "@/features/admin/components/SectionTabs";
-import { listLexiconForAdmin, listLexiconReports } from "@/lib/db/lexicon";
+import { LexiconProvider } from "@/features/session/components/LexiconProvider";
+import { getLexiconIndex, listLexiconForAdmin, listLexiconReports } from "@/lib/db/lexicon";
 import { LEXICON_CATEGORIES, type LexiconCategory } from "@/lib/domain/lexicon";
 
 export const metadata: Metadata = { title: "Léxico" };
@@ -44,7 +45,7 @@ export default async function AdminLexiconPage({ searchParams }: PageProps) {
   // denominador do "x de y publicadas". Sem a segunda, filtrar por rascunho
   // mudaria o total na mesma tela em que se está tentando acompanhar o
   // progresso do trabalho.
-  const [entries, all, reports] = await Promise.all([
+  const [entries, all, reports, index] = await Promise.all([
     listLexiconForAdmin({
       search: sp.q?.trim() || undefined,
       category: parseCategory(sp.categoria),
@@ -55,6 +56,12 @@ export default async function AdminLexiconPage({ searchParams }: PageProps) {
     // alerta fura a fila do cadastro (ver `LexiconReports`), e escondê-lo atrás
     // de um filtro seria enterrar exatamente o que veio de fora.
     listLexiconReports(),
+    // O índice de nomes PUBLICADOS, para o cartão que o olho da lista abre
+    // marcar as menções de dentro dele como o leitor as vê. Sem provedor o
+    // padrão é lista vazia, e o cartão conferido aqui sairia com a prosa lisa
+    // justamente na tela onde se decide se ele está pronto. Não custa consulta:
+    // `getLexiconIndex` é cacheado por um minuto em memória.
+    getLexiconIndex(),
   ]);
 
   return (
@@ -68,15 +75,17 @@ export default async function AdminLexiconPage({ searchParams }: PageProps) {
 
       <LexiconReports reports={reports} />
 
-      <LexiconManager
-        entries={entries}
-        current={{
-          q: sp.q ?? "",
-          categoria: sp.categoria ?? "",
-          estado: sp.estado ?? "",
-        }}
-        total={{ all: all.length, published: all.filter((e) => e.published).length }}
-      />
+      <LexiconProvider entries={index}>
+        <LexiconManager
+          entries={entries}
+          current={{
+            q: sp.q ?? "",
+            categoria: sp.categoria ?? "",
+            estado: sp.estado ?? "",
+          }}
+          total={{ all: all.length, published: all.filter((e) => e.published).length }}
+        />
+      </LexiconProvider>
     </div>
   );
 }

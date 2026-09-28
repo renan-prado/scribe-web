@@ -113,9 +113,32 @@ export const LEXICON_LIMITS = {
   title: 120,
   description: 2000,
   aliases: 12,
-  /** 2 MB, o `file_size_limit` do bucket. */
-  imageBytes: 2 * 1024 * 1024,
+  /**
+   * 8 MB, o `file_size_limit` do bucket (0063, subido na 0081).
+   *
+   * **Era 2 MB, e o teto passou a recusar o insumo do produto.** A imagem do
+   * cartão virou um BANNER 21/9, e uma arte nessa proporção em boa resolução
+   * (2100×900 e acima) passa dos 2 MB sem esforço em PNG — que é o formato de
+   * quem exporta um mapa ou uma linha do tempo, justamente o caso que o SVG da
+   * 0064 existe para servir e que nem todo mundo tem como entregar vetorizado.
+   * O teto existe para não guardar um arquivo de câmera por engano, não para
+   * obrigar quem escreve o cartão a passar a arte por um compressor antes.
+   *
+   * O bucket é público e a escrita é só do service-role, atrás de
+   * `requireAdmin`, então o risco de subir o teto é de espaço em disco e não
+   * de porta aberta.
+   */
+  imageBytes: 8 * 1024 * 1024,
 } as const;
+
+/**
+ * O teto do arquivo escrito como a tela o diz.
+ *
+ * Ele existe porque a frase "até 2 MB" estava em TRÊS lugares da mesma tela, e
+ * nenhum deles lia a constante: subir o limite trocaria o erro por um aviso
+ * mentindo sobre o próprio limite, sem nada quebrar.
+ */
+export const LEXICON_IMAGE_MAX_LABEL = `${LEXICON_LIMITS.imageBytes / (1024 * 1024)} MB`;
 
 /**
  * Os formatos aceitos, espelhando `allowed_mime_types` do bucket (0063 + 0064).

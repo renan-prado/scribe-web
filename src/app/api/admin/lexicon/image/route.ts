@@ -77,10 +77,14 @@ export async function POST(request: Request) {
 
   if (!result.ok) {
     log.error("imagem não subiu", { id, reason: result.reason });
-    return NextResponse.json(
-      { error: result.reason },
-      { status: result.reason === "not_found" ? 404 : 500 }
-    );
+    // `bucket_limit` é 413 e não 500: o arquivo passou pelo teto DESTA rota e
+    // morreu no do bucket, o que quer dizer que os dois estão fora de sincronia
+    // (uma migração que não subiu, ou um ambiente atrás do outro). É defeito de
+    // configuração, não do arquivo, e a tela do admin diz isso com todas as
+    // letras — ver o comentário do `isBucketSizeLimit`.
+    const status =
+      result.reason === "not_found" ? 404 : result.reason === "bucket_limit" ? 413 : 500;
+    return NextResponse.json({ error: result.reason }, { status });
   }
 
   return NextResponse.json({ ok: true, entry: result.entry });

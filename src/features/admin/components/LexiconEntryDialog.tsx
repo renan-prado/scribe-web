@@ -28,6 +28,7 @@ import {
   canPublishLexiconEntry,
   LEXICON_CATEGORIES,
   LEXICON_CATEGORY_LABEL,
+  LEXICON_IMAGE_MAX_LABEL,
   LEXICON_IMAGE_TYPES,
   LEXICON_LIMITS,
   type LexiconCategory,
@@ -228,7 +229,7 @@ export function LexiconEntryDialog({ entry, open, onOpenChange, onChanged }: Pro
   async function handleUpload(file: File) {
     if (!current) return;
     if (file.size > LEXICON_LIMITS.imageBytes) {
-      toast.error("A imagem passa de 2 MB.");
+      toast.error(`A imagem passa de ${LEXICON_IMAGE_MAX_LABEL}.`);
       return;
     }
     setBusy("image");
@@ -246,8 +247,14 @@ export function LexiconEntryDialog({ entry, open, onOpenChange, onChanged }: Pro
           data.error === "bad_type"
             ? "Formato não aceito. Use JPG, PNG, WebP ou SVG."
             : data.error === "too_large"
-              ? "A imagem passa de 2 MB."
-              : "Não consegui subir a imagem."
+              ? `A imagem passa de ${LEXICON_IMAGE_MAX_LABEL}.`
+              : // O bucket recusou o tamanho que ESTE formulário aceitou: os
+                // dois tetos estão fora de sincronia. A frase nomeia o conserto
+                // porque quem a lê é o admin — a mesma régua da mensagem de
+                // erro da leitura da IA, que mostra o que o upstream disse.
+                data.error === "bucket_limit"
+                ? "O Storage recusou o tamanho. O teto do bucket está abaixo do teto do formulário: falta rodar a migração neste ambiente."
+                : "Não consegui subir a imagem."
         );
         return;
       }
@@ -387,13 +394,16 @@ export function LexiconEntryDialog({ entry, open, onOpenChange, onChanged }: Pro
               </p>
             ) : (
               <div className="flex items-center gap-3">
-                <div className="relative h-16 w-28 shrink-0 overflow-hidden rounded-md border border-scriba-hairline bg-muted">
+                {/* 21/9, a MESMA caixa do banner do cartão, e `cover` pelo
+                  mesmo motivo: quem confere a imagem aqui está conferindo
+                  justamente o enquadramento que vai aparecer lá. Enquanto a
+                  miniatura era `contain` numa caixa de outra proporção, ela
+                  mostrava a imagem inteira e escondia o corte que a leitura
+                  faria — o pior jeito de uma prévia errar, porque ela parece
+                  ter funcionado. */}
+                <div className="relative aspect-[21/9] w-40 shrink-0 overflow-hidden rounded-md border border-scriba-hairline bg-muted">
                   {imageUrl ? (
-                    // `contain`, como nas duas telas que a pessoa vê: uma
-                    // miniatura cortada mostraria enquadramento que o produto
-                    // não usa, e quem confere a imagem aqui está conferindo
-                    // justamente o que vai aparecer lá.
-                    <Image src={imageUrl} alt="" fill sizes="7rem" className="object-contain" />
+                    <Image src={imageUrl} alt="" fill sizes="10rem" className="object-cover" />
                   ) : (
                     <span className="flex h-full items-center justify-center text-scriba-ink-mute">
                       <ImageOff className="size-4" />
@@ -439,8 +449,8 @@ export function LexiconEntryDialog({ entry, open, onOpenChange, onChanged }: Pro
                     ) : null}
                   </div>
                   <p className="text-[11px] text-scriba-ink-mute">
-                    JPG, PNG, WebP ou SVG, até 2 MB. SVG serve para mapa e planta, que em foto
-                    borram no zoom.
+                    JPG, PNG, WebP ou SVG, até {LEXICON_IMAGE_MAX_LABEL}, na proporção 21/9 (é a do
+                    banner do cartão). SVG serve para mapa e planta, que em foto borram no zoom.
                   </p>
                 </div>
               </div>
