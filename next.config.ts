@@ -47,8 +47,11 @@ const securityHeaders = [
   {
     key: "Permissions-Policy",
     // microphone + autoplay needed for recording + silent-audio keepalive;
+    // screen-wake-lock keeps the phone's screen on while the mic is open (it
+    // already defaults to `self`, but this header enumerates what the recorder
+    // uses, and a feature missing from the list reads as one nobody checked);
     // camera/geolocation blocked.
-    value: "camera=(), microphone=(self), geolocation=(), autoplay=(self)",
+    value: "camera=(), microphone=(self), geolocation=(), autoplay=(self), screen-wake-lock=(self)",
   },
   {
     // HSTS. Vale para toda resposta (`/(.*)`), e não só as HTML: um navegador

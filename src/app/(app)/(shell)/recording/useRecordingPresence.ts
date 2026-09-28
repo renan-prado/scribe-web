@@ -20,7 +20,14 @@ import {
  * insegurança resultante faz gente desistir de minimizar, ou pior, reabrir o
  * app a cada minuto para ver se ainda está lá.
  *
- * ## Três camadas, e cada uma responde uma pergunta diferente
+ * ## Quatro camadas, e cada uma responde uma pergunta diferente
+ *
+ * **0. A trava de tela é o que mantém a TELA ACESA**, e ela não se confunde com a
+ * camada 1: a faixa silenciosa impede o navegador de congelar a ABA, e nada
+ * nela impede o aparelho de apagar o monitor depois de trinta segundos. São dois
+ * sonos diferentes, com dois remédios diferentes. Quem apoia o celular no banco
+ * e quer olhar o cronômetro de canto de olho durante a pregação é quem sente a
+ * falta desta. Ver o efeito da `WakeLockSentinel`.
  *
  * **1. O áudio silencioso é o que mantém a aba ACORDADA.** Um navegador em
  * segundo plano corta temporizadores, para o `requestAnimationFrame` e, no
@@ -142,7 +149,7 @@ export async function askRecordingNotificationPermission(): Promise<void> {
     await Notification.requestPermission();
   } catch {
     // Navegador que só aceita a forma antiga com callback, ou que recusa o
-    // pedido. Sem notificação, as outras duas camadas continuam de pé.
+    // pedido. Sem notificação, as outras camadas continuam de pé.
   }
 }
 
@@ -226,6 +233,64 @@ export function useRecordingPresence({ active, paused, onPause, onResume, onStop
       URL.revokeObjectURL(url);
     };
   }, [active]);
+
+  // Camada 0: a tela acesa, enquanto o microfone estiver de fato aberto.
+  //
+  // Duas asperezas da API mandam na forma deste efeito, e nenhuma das duas é
+  // evitável:
+  //
+  // 1. **A trava só é concedida a documento VISÍVEL**, e o navegador a solta
+  //    sozinho quando a aba esconde. Então não basta pedi-la uma vez: quem
+  //    volta do WhatsApp para o Scriba volta sem trava nenhuma, e por isso o
+  //    `visibilitychange` repete o pedido. Isso também quer dizer que ela nunca
+  //    manteve a tela acesa com o aparelho bloqueado, o que é trabalho das
+  //    camadas 1 a 3.
+  // 2. **Um sentinel liberado não se reusa**, seja quem o liberou nós, a aba
+  //    escondida ou o modo de economia de bateria. Guardar o objeto e chamar
+  //    `release()` nele duas vezes não é um erro, mas reaproveitá-lo depois de
+  //    solto é; o `release` na escuta zera a referência para que o próximo
+  //    pedido nasça do zero.
+  //
+  // **PAUSADO não segura a tela**, e isso é de propósito. Com o microfone
+  // fechado não há nada acontecendo que justifique gastar bateria de um aparelho
+  // que talvez passe a pregação inteira assim, e voltar a gravar continua a um
+  // toque na tela de bloqueio (camada 2) ou na notificação (camada 3).
+  useEffect(() => {
+    if (!active || paused) return;
+    if (typeof navigator === "undefined" || !("wakeLock" in navigator)) return;
+    let sentinel: WakeLockSentinel | null = null;
+    let over = false;
+
+    const acquire = async () => {
+      if (over || sentinel || document.visibilityState !== "visible") return;
+      try {
+        const lock = await navigator.wakeLock.request("screen");
+        // O `await` acima demora o bastante para a gravação ter acabado no
+        // meio dele; sem esta guarda a trava sobreviveria ao efeito.
+        if (over) {
+          void lock.release().catch(() => {});
+          return;
+        }
+        sentinel = lock;
+        lock.addEventListener("release", () => {
+          if (sentinel === lock) sentinel = null;
+        });
+      } catch {
+        // Navegador sem suporte (Safari até hoje), http, bateria no fim ou
+        // economia de energia ligada. A gravação não depende disto.
+      }
+    };
+
+    void acquire();
+    document.addEventListener("visibilitychange", acquire);
+    return () => {
+      over = true;
+      document.removeEventListener("visibilitychange", acquire);
+      const lock = sentinel;
+      sentinel = null;
+      if (lock) void lock.release().catch(() => {});
+    };
+  }, [active, paused]);
 
   // Camada 2: a notificação de mídia e os controles da tela de bloqueio.
   useEffect(() => {

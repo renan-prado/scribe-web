@@ -2148,8 +2148,12 @@ ordem de regeneração estão em `src/shared/AGENTS.md`.
 `next.config.ts` aplica em `/(.*)`: `X-Frame-Options: DENY`,
 `X-Content-Type-Options: nosniff`, `Referrer-Policy:
 strict-origin-when-cross-origin` e um `Permissions-Policy` que libera
-`microphone=(self)` e `autoplay=(self)` (o keepalive de áudio silencioso
-precisa) e bloqueia câmera e geolocalização.
+`microphone=(self)`, `autoplay=(self)` (o keepalive de áudio silencioso precisa)
+e `screen-wake-lock=(self)` (a trava que mantém a tela acesa enquanto o
+microfone está aberto, ver `useRecordingPresence`), e bloqueia câmera e
+geolocalização. Os três já valeriam por padrão para a própria origem; estão
+escritos porque a lista é o inventário do que o gravador usa, e um recurso fora
+dela se lê como um recurso que ninguém conferiu.
 
 `instrumentation.ts` aquece a tradução PADRÃO no boot do runtime Node para que
 a primeira chamada a `/api/verse` não pague o parse de 4 MB de JSON. São três
