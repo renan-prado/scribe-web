@@ -9,6 +9,12 @@ Gerado por `npm run release` a partir dos Conventional Commits. `feat` sobe o
 minor; o resto sobe o patch. Não edite à mão, a próxima execução escreve por
 cima do topo do arquivo.
 
+## 0.100.0, 2026-09-28, desde v0.99.0
+
+### Novidades
+
+- **lexico:** ver o cartao pelo painel, e a imagem vira banner 21/9 (`1f8cf87`)
+
 ## 0.99.0, 2026-09-28, desde v0.98.0
 
 ### Novidades
