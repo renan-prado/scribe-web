@@ -1,6 +1,6 @@
 "use client";
 
-import { Pause, Play, Square, Trash2 } from "lucide-react";
+import { Info, Pause, Play, Square, Trash2, X } from "lucide-react";
 import { useRouter } from "next/navigation";
 import { useCallback, useEffect, useRef, useState } from "react";
 import { MicGlyph } from "@/components/icons/MicGlyph";
@@ -126,6 +126,13 @@ const HEARTBEAT_MS = 30_000;
  * acontecendo no aparelho. Todas terminam na mesma garantia, que é a única
  * coisa que importa nesse instante.
  */
+/**
+ * Quanto tempo o aviso do experimento fica na tela antes de sair sozinho.
+ *
+ * Ver `noticing` no corpo do componente para o porquê de ele ter prazo.
+ */
+const EXPERIMENT_NOTICE_MS = 30_000;
+
 const INTERRUPTION_TEXT: Record<InterruptReason, string> = {
   device:
     "O microfone foi tomado por outra coisa no aparelho (uma ligação, um áudio de outro app ou um fone que desconectou).",
@@ -142,6 +149,15 @@ export function AudioStudio({ autoStart = false }: { autoStart?: boolean }) {
   /** `false` quando o IndexedDB recusou os fragmentos: a gravação corre sem
    * rede de segurança e a tela precisa dizer isso. */
   const [persisted, setPersisted] = useState(true);
+  /**
+   * O aviso do experimento já saiu da tela, por leitura ou por tempo.
+   *
+   * Ele NÃO é lembrado entre gravações de propósito: enquanto a coisa é
+   * experimental, quem grava toda semana é exatamente quem precisa continuar
+   * sabendo que ela é. No dia em que deixar de ser, o aviso sai do código
+   * inteiro, e não fica um `localStorage` decidindo quem ainda o vê.
+   */
+  const [noticed, setNoticed] = useState(false);
 
   const captureIdRef = useRef<string | null>(null);
   /**
@@ -551,6 +567,29 @@ export function AudioStudio({ autoStart = false }: { autoStart?: boolean }) {
    *  aqui: o gravador já fechou e o que resta é esperar. */
   const finishing = state === "stopping" || busy;
 
+  /**
+   * O aviso de que gravar com a tela bloqueada é um experimento.
+   *
+   * **Por que ele tem prazo.** É uma ressalva, não um alerta: nada está errado,
+   * e depois de meia hora de pregação uma ressalva que continua na tela deixou
+   * de informar e passou a ocupar. Trinta segundos é o tempo de ler duas linhas
+   * e voltar ao sermão; o X existe para quem lê em cinco.
+   *
+   * **E ele cede a QUALQUER das mensagens abaixo da onda.** Saldo no fim, cópia
+   * local que falhou, gravação interrompida: cada uma delas é uma coisa que a
+   * pessoa precisa resolver, e uma ressalva sobre tela bloqueada empilhada
+   * junto rebaixa as três. Mesma regra da dica do repouso, ver `hinting`.
+   */
+  const alerting =
+    finishing || interrupted || opening || depleted || error !== null || (!persisted && capturing);
+  const noticing = capturing && !noticed && !alerting;
+
+  useEffect(() => {
+    if (!noticing) return;
+    const timer = window.setTimeout(() => setNoticed(true), EXPERIMENT_NOTICE_MS);
+    return () => window.clearTimeout(timer);
+  }, [noticing]);
+
   // Sem `?auto=1` o efeito acima já está navegando para `/home`, e desenhar o
   // repouso aqui poria na tela, por um quadro, um "Tentar de novo" que não se
   // refere a erro nenhum.
@@ -570,11 +609,12 @@ export function AudioStudio({ autoStart = false }: { autoStart?: boolean }) {
           a um toque de distância sem custar um pixel da tela enquanto
           fechadas. */}
       <div className="flex min-h-0 flex-1 flex-col items-center justify-center gap-10">
-        {/* A onda e a dica moram no MESMO bloco, e a dica é `absolute` dentro
-              dele: a coluna está centralizada (`justify-center`), então qualquer
+        {/* A onda, a dica do repouso e a ressalva do experimento moram no
+              MESMO bloco, e as duas são `absolute` dentro dele: a coluna está centralizada (`justify-center`), então qualquer
               coisa que entrasse no fluxo aqui empurraria a onda para cima — e a
               onda é o objeto em volta do qual esta tela foi desenhada. Fora do
-              fluxo, ela pendura embaixo sem mover um pixel do que já estava. */}
+              fluxo, elas penduram embaixo sem mover um pixel do que já estava.
+              Nunca aparecem juntas: uma é do repouso, a outra da gravação. */}
         <div className="relative flex items-center justify-center">
           <div aria-hidden className="flex h-[168px] items-center justify-center gap-2 sm:gap-2.5">
             {Array.from({ length: WAVE_BARS }, (_, i) => (
@@ -622,6 +662,47 @@ export function AudioStudio({ autoStart = false }: { autoStart?: boolean }) {
             <p className="pointer-events-none absolute top-1/2 left-1/2 mt-12 w-max max-w-[min(18rem,80vw)] -translate-x-1/2 text-balance rounded-2xl bg-v2-card px-4 py-2.5 text-center text-xs font-light leading-snug text-v2-ink-mute">
               Ao encerrar, o Scriba transcreve tudo e escreve o resumo para você.
             </p>
+          ) : null}
+          {noticing ? (
+            /* A ressalva do experimento, e ela é `absolute` pela MESMA razão
+               que a dica acima: a coluna está centralizada, então uma caixa no
+               fluxo empurraria a onda para cima. As mensagens que moram no
+               fluxo logo abaixo (saldo, interrupção, cópia local) podem fazer
+               isso porque cada uma delas fica até a gravação acabar; esta
+               aparece no segundo zero e sai no trinta, e mover a onda duas
+               vezes no começo de toda pregação seria pagar um susto por um
+               aviso.
+
+               `top-full` e não `top-1/2 mt-12` da dica: aqui as barras estão
+               CRESCENDO, e metade da caixa delas (84px) é altura de barra que a
+               dica nunca teve de considerar. A borda de baixo do bloco é a
+               única âncora que não depende do que o som está fazendo. */
+            <div
+              role="status"
+              className="absolute top-full left-1/2 mt-3 flex w-max max-w-[min(20rem,84vw)] -translate-x-1/2 items-start gap-2 rounded-2xl bg-v2-card py-3 pr-1.5 pl-3.5"
+            >
+              {/* O `mt-px` alinha o glifo com a PRIMEIRA linha do texto, e não
+                  com o topo da caixa dele: `items-start` num ícone de 14px ao
+                  lado de uma linha de 16px o deixa um fio alto. */}
+              <Info
+                aria-hidden
+                className="mt-px size-3.5 shrink-0 text-v2-ink-mute"
+                strokeWidth={1.75}
+              />
+              <p className="text-left text-xs font-light leading-snug text-v2-ink-mute">
+                A gravação com a tela bloqueada ainda está em fase de experimento e pode não
+                funcionar corretamente em alguns aparelhos. Na dúvida, deixe o Scriba com a tela
+                aberta até o fim.
+              </p>
+              <button
+                type="button"
+                onClick={() => setNoticed(true)}
+                aria-label="Dispensar o aviso"
+                className="-mt-1 inline-flex size-7 shrink-0 items-center justify-center rounded-full text-v2-ink-mute transition-colors hover:bg-v2-card-hover hover:text-v2-ink focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-v2-ink-mute"
+              >
+                <X aria-hidden className="size-3.5" strokeWidth={1.75} />
+              </button>
+            </div>
           ) : null}
         </div>
 

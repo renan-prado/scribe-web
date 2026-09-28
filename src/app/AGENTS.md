@@ -1540,6 +1540,16 @@ diante o lugar embaixo da onda é dos avisos que importam (saldo no fim, gravaç
 interrompida, cópia local que falhou), e uma dica dividindo espaço com um alerta
 rebaixa o alerta.
 
+**A ressalva de que gravar com a tela bloqueada é um experimento** (o `noticing`
+do mesmo arquivo) é a segunda caixa `absolute` da mesma âncora, e a única coisa
+que aparece embaixo da onda no caminho feliz. Ela tem prazo de 30 segundos e um
+X, porque é ressalva e não alerta: nada está errado, e uma ressalva que continua
+lá no minuto 40 deixou de informar e passou a ocupar. Ela cede a QUALQUER das
+mensagens de alerta pela mesma régua da dica, e não é lembrada entre gravações de
+propósito — enquanto a trava de tela for experimental, quem grava toda semana é
+quem mais precisa continuar sabendo que ela é. A trava em si é a camada 0 do
+`useRecordingPresence`.
+
 **A tela sabe quando a gravação PARA sozinha, e essa é a correção que mais
 mudou o produto.** O relógio é `performance.now() - startedAt`, tempo de PAREDE:
 ele sobe igual com o microfone aberto, com o microfone tomado por outro app e
