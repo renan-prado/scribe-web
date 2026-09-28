@@ -3,6 +3,11 @@ import {
   FINAL_SUMMARY_NO_VERSE_TEXT_RETRY,
   FINAL_SUMMARY_SYSTEM_PROMPT,
 } from "@/features/session/server/prompts/final-summary";
+import {
+  buildDensityBriefing,
+  countTranscriptWords,
+  resolveSummaryDensity,
+} from "@/features/session/server/summary-density";
 import { recordChatUsage, type UsageRoute } from "@/lib/db/usage";
 import { parseSummaryFromLLM, type SummaryPayload } from "@/lib/domain/summary";
 import { serverEnv } from "@/lib/env/server";
@@ -194,14 +199,29 @@ export async function generateFinalSummary(
   const model = serverEnv.OPENAI_FINAL_SUMMARY_MODEL;
 
   const trimmedNotes = notes?.trim();
-  const userMessage = trimmedNotes
-    ? `transcript:
-${transcript}
+  // A régua de tamanho vai na mensagem do usuário, não no system prompt: ela é
+  // medida DESTA transcrição, e é o que impede o modelo de encolher o resumo
+  // por conta própria. Ver `summary-density.ts`.
+  const density = resolveSummaryDensity(countTranscriptWords(transcript));
+  const userMessage = [
+    buildDensityBriefing(density),
+    `transcript:
+${transcript}`,
+    ...(trimmedNotes
+      ? [
+          `notas do ouvinte:
+${trimmedNotes}`,
+        ]
+      : []),
+  ].join("\n\n");
 
-notas do ouvinte:
-${trimmedNotes}`
-    : `transcript:
-${transcript}`;
+  log.debug(`alvo de densidade`, {
+    transcriptWords: density.transcriptWords,
+    minWords: density.minWords,
+    maxWords: density.maxWords,
+    minBlocks: density.minBlocks,
+    maxBlocks: density.maxBlocks,
+  });
 
   const first = await attemptFinalSummary({
     input,

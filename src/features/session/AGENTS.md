@@ -600,6 +600,34 @@ migrar para a linha errada do painel.
 O que fica no resumo é a voz do pregador: `bibleQuote` com a referência,
 `highlight` com a frase marcante, `example`, `quote` e a `conclusion`.
 
+**O TAMANHO do resumo é MEDIDO, não estimado pelo modelo**
+(`server/summary-density.ts`). O prompt sempre pediu "densidade adaptativa",
+mas calibrava por sinais que o modelo não tem como medir — a duração em
+minutos, o tamanho do feed (que morreu junto com o modo `live`), a "densidade
+doutrinária" —, e diante de alvo subjetivo ele ENCOLHE: uma pregação de 5.128
+palavras saiu com 718 (14%), enquanto o mesmo prompt pedia 40 a 55% do peso
+argumentativo. Não era alucinação nem falta de material, era falta de RÉGUA.
+
+Hoje a contagem de palavras da transcrição vira número na MENSAGEM DO USUÁRIO
+("a transcrição tem N palavras, o resumo fica entre X e Y, em Z blocks"), e o
+system prompt manda tratar a faixa como requisito de formato. Três coisas que
+mordem de fora:
+
+- **A régua vai na mensagem do usuário, não no system prompt.** Ela é medida
+  DESTA transcrição, não regra do produto, e o system prompt é o que se quer
+  estável entre chamadas.
+- **A proporção CAI conforme a fita cresce** (35% / 25% / 15%, nas faixas de
+  `TIERS`), com piso de 250 e teto de 3.000 palavras. Um devocional de dez
+  minutos quase não tem gordura; uma transmissão de duas horas tem saudação,
+  aviso e recado de igreja, e 35% dela seria um documento que ninguém lê e uma
+  saída perto do teto de `maxTokens`.
+- **Pedir mais palavras aqui não aumenta o risco de alucinação** como
+  aumentaria num texto autoral: o trabalho é condensar o que foi dito, e o que
+  falta num resumo curto é material que ESTÁ na transcrição e foi descartado. O
+  prompt diz, com essas palavras, que o caminho até a faixa é recuperar o que
+  foi cortado, nunca acrescentar o que não foi dito — e que numa transcrição
+  genuinamente pobre é para ficar abaixo dela.
+
 **A chamada é uma, as TENTATIVAS podem ser duas, e resumo vazio NÃO é
 sucesso.** `generateFinalSummary` devolvia `ok: true` com um payload de zero
 blocos sempre que o JSON do modelo não desse parse, e a rota o gravava por cima

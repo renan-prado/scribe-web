@@ -37,18 +37,18 @@ Pense no output como um CAPÍTULO ESCRITO A PARTIR DA PREGAÇÃO. Duas caracter�
 2. LINHA DE PENSAMENTO REAL. Os h1 refletem os MOVIMENTOS reais da mensagem, na ORDEM em que foram desenvolvidos. Não são "temas mencionados" nem uma estrutura editorial imposta. Se o pregador subiu ao pergaminho por 3 arcos argumentativos, o sermão organizado tem 3 h1s. Se foi um único argumento em 6 estações, então 6 h1s.
 
 ═══════════════════════════════════════════════════════════════════
-DENSIDADE ADAPTATIVA (crítico)
+DENSIDADE: A FAIXA VEM MEDIDA (crítico)
 ═══════════════════════════════════════════════════════════════════
 
-O tamanho do sermão organizado é proporcional à DENSIDADE DOUTRINÁRIA E ARGUMENTATIVA da mensagem, não à duração em minutos. Sinais para calibrar:
+A mensagem do usuário começa com um bloco "medida desta transcrição": quantas palavras foram faladas, em quantas palavras o sermão organizado tem de caber e em quantos blocks. Esses números NÃO são sugestão e NÃO são teto a ser evitado: são o tamanho certo desta mensagem, calculado a partir do que foi realmente dito. Trate a faixa como requisito do formato, como o "conclusion" obrigatório no fim.
 
-- Sermão expositivo denso (Nicodemus, Piper, MacArthur, Lopes, Keller, Sproul), 40-60 min, muitos citedVerse e speakerCitation no feed, argumentos exegéticos encadeados → 6-9 movimentos (h1), com 4-7 parágrafos densos por movimento, versículos citados aparecendo inline, múltiplos highlights e examples preservados. Total ~22-42 blocks. NÃO condense em "shortSummary + 5 parágrafos genéricos", isso trai a mensagem.
-- Sermão temático/pastoral médio (25-40 min, densidade moderada) → 4-6 movimentos, 3-5 parágrafos por movimento. Total ~16-28 blocks.
-- Devocional curto ou reflexão informal (< 20 min, feed enxuto) → 3-4 movimentos, 2-4 parágrafos cada. Total ~10-17 blocks.
+Antes de emitir o JSON, some mentalmente o texto dos blocks. Se está abaixo do mínimo, VOLTE e desenvolva: quase sempre há um argumento encerrado na primeira frase que já dava a ideia, uma ilustração resumida a uma linha, um versículo explicado pela metade, um movimento inteiro colapsado num parágrafo. Recupere o que a fala tinha.
 
-Meta implícita: o sermão organizado deve manter algo entre 40% e 55% do "peso argumentativo" da fala original, condensa, mas preserva a linha de raciocínio. Nunca substitua desenvolvimento por conclusão apenas.
+O erro comum, de longe, é entregar CURTO DEMAIS. Diante da dúvida entre um movimento a mais ou a menos, entre um parágrafo a mais ou a menos, ESCOLHA O MAIOR. Uma transcrição longa foi uma pregação longa: ela tem mais argumentos encadeados, mais textos lidos e mais histórias contadas, e todos eles têm lugar aqui.
 
-O erro comum é entregar CURTO DEMAIS. Diante da dúvida entre um movimento a mais ou a menos, entre um parágrafo a mais ou a menos, ESCOLHA O MAIOR: desenvolva o argumento até o fim em vez de encerrá-lo na primeira frase que já dá a ideia. Ficar ABAIXO da faixa da categoria só se justifica quando a transcrição realmente não tem material, nunca por economia. Isso NÃO autoriza encher: parágrafo que repete outro, floreio, ou desenvolvimento que a fala não teve continuam proibidos pelo self-check.
+Isso NÃO autoriza encher. Parágrafo que repete outro, floreio, frase de ligação sem conteúdo e desenvolvimento que a fala não teve continuam proibidos pelo self-check. O caminho para chegar à faixa é sempre RECUPERAR o que foi dito e cortado, nunca acrescentar o que não foi dito. Se a transcrição for genuinamente pobre (avisos, música, fala repetida, pouca pregação), fique abaixo da faixa e não invente nada.
+
+Como a faixa vira estrutura: divida-a entre os MOVIMENTOS reais da mensagem, tipicamente 3 a 9 h1s conforme o tamanho, cada um com 3 a 7 parágrafos densos (4-7 frases cada), mais os bibleQuote lidos, os highlights verbatim e os examples contados, que entram no lugar em que apareceram.
 
 ═══════════════════════════════════════════════════════════════════
 TESTEMUNHOS E ILUSTRAÇÕES NUNCA SÃO CORTADOS (crítico)
@@ -165,7 +165,8 @@ REGRAS FINAIS
 - Feche SEMPRE com "conclusion" sobre o tema dominante, incluindo o principal chamado/aplicação.
 - A ordem dos blocks segue a ordem real da mensagem (início → desenvolvimento → conclusão), não reorganize.
 - NENHUM testemunho pessoal, história vivida ou ilustração contada pelo pregador fica de fora — ver TESTEMUNHOS E ILUSTRAÇÕES NUNCA SÃO CORTADOS acima.
-- NÃO emita nenhum bloco fora da lista permitida acima. Não há segunda chamada: o que sair daqui é o resumo inteiro.`;
+- NÃO emita nenhum bloco fora da lista permitida acima. Não há segunda chamada: o que sair daqui é o resumo inteiro.
+- CONFIRA a faixa de palavras e de blocks da "medida desta transcrição" antes de fechar o JSON. Abaixo do mínimo, desenvolva o que ficou pela metade.`;
 
 /**
  * O acréscimo ao system prompt na SEGUNDA tentativa, quando a primeira voltou
