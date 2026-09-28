@@ -9,6 +9,12 @@ Gerado por `npm run release` a partir dos Conventional Commits. `feat` sobe o
 minor; o resto sobe o patch. Não edite à mão, a próxima execução escreve por
 cima do topo do arquivo.
 
+## 0.99.0, 2026-09-28, desde v0.98.0
+
+### Novidades
+
+- **bible:** escolher versiculos e trocar a traducao no capitulo (`0f6d1ce`)
+
 ## 0.98.0, 2026-09-28, desde v0.97.0
 
 ### Novidades
