@@ -1,7 +1,7 @@
 "use client";
 
-import { Loader2 } from "lucide-react";
-import { type ReactNode, useCallback, useEffect, useRef, useState } from "react";
+import { Loader2, PenLine } from "lucide-react";
+import { type ReactNode, useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { SavedTranscriptView } from "@/features/session/components/SavedTranscriptView";
 import { cn } from "@/lib/utils";
 
@@ -78,53 +78,81 @@ import { cn } from "@/lib/utils";
  * trilho cresce quando o texto entra. É a ordem certa: a página não reserva
  * quinze telas de vão por um texto que talvez ninguém peça.
  */
+/**
+ * ## O TERCEIRO slide: as anotações
+ *
+ * Quem grava pode escrever no bloco de notas durante a pregação
+ * (`recording/RecordingNotesDock`), e até a migração 0080 esse texto ia para o
+ * prompt e morria ali: não havia coluna, não havia tela, e quem escreveu três
+ * parágrafos no meio do sermão não tinha onde relê-los. Elas são a única
+ * testemunha HUMANA do que aconteceu na sala, e o lugar delas é ao lado das
+ * outras duas leituras da mesma pregação, não atrás de um menu.
+ *
+ * O slide só existe quando há anotação. Um carrossel que promete três lados e
+ * entrega um vazio é pior que um de dois.
+ *
+ * **Os slides deixaram de ser um par fixo por causa disso.** As alturas eram
+ * uma tupla `[number, number]` e os refs eram dois campos; hoje são listas
+ * indexadas pela posição do slide. O mecanismo é o mesmo do cabeçalho acima,
+ * só que para N: parado, a altura é a do slide ativo; em movimento, a do
+ * maior de todos.
+ */
 type Props = {
   sessionId: string;
   durationMs: number | null;
   /**
-   * SE existe transcrição. Sem ela não há segundo slide, não há pontinhos, e o
-   * resumo é desenhado direto, sem trilho nenhum em volta — é o caso de toda
-   * sessão `manual`, escrita à mão. Um carrossel de um slide só é um carrossel
-   * que promete uma coisa que não está lá.
+   * SE existe transcrição. Sem ela não há slide de transcrição — é o caso de
+   * toda sessão `manual`, escrita à mão.
    */
   hasTranscript: boolean;
+  /**
+   * As anotações escritas durante a gravação, ou `null`/vazio quando não houve
+   * nenhuma. Ao contrário da transcrição, elas viajam INTEIRAS no payload da
+   * página: o teto é de 4.000 caracteres, e uma rota só para isso seria uma
+   * ida à rede a mais pelo que já cabe no HTML que está descendo.
+   */
+  notes: string | null;
   /** O resumo: o primeiro slide, e o que a tela mostra ao abrir. */
   children: ReactNode;
 };
 
-const PANES = [
-  { id: "summary", label: "Resumo" },
-  { id: "transcript", label: "Transcrição" },
-] as const;
-
-export function SummaryDeck({ sessionId, durationMs, hasTranscript, children }: Props) {
+export function SummaryDeck({ sessionId, durationMs, hasTranscript, notes, children }: Props) {
   const trackRef = useRef<HTMLDivElement | null>(null);
-  const summaryRef = useRef<HTMLDivElement | null>(null);
-  const transcriptRef = useRef<HTMLDivElement | null>(null);
+  const paneRefs = useRef<(HTMLDivElement | null)[]>([]);
 
   const [index, setIndex] = useState(0);
-  const [moving, setMoving] = useState(false);
   /** A altura natural de cada slide, medida. Ver o cabeçalho. */
-  const [heights, setHeights] = useState<[number, number]>([0, 0]);
-  /** O segundo slide já foi visitado? É o que dispara a busca do texto. */
+  const [heights, setHeights] = useState<number[]>([]);
+  const [moving, setMoving] = useState(false);
+  /** O slide da transcrição já foi visitado? É o que dispara a busca do texto. */
   const [opened, setOpened] = useState(false);
 
   const [transcript, setTranscript] = useState<string | null>(null);
   const [failed, setFailed] = useState(false);
+
+  const trimmedNotes = notes?.trim() ?? "";
+  const panes = useMemo(() => {
+    const list: { id: string; label: string }[] = [{ id: "summary", label: "Resumo" }];
+    if (hasTranscript) list.push({ id: "transcript", label: "Transcrição" });
+    if (trimmedNotes) list.push({ id: "notes", label: "Suas anotações" });
+    return list;
+  }, [hasTranscript, trimmedNotes]);
+
+  const transcriptIndex = hasTranscript ? 1 : -1;
 
   // Um observador por slide, e não um por render: a altura muda quando o texto
   // dos versículos chega (`PassageVerses`), quando a transcrição carrega e
   // quando a janela muda de largura. Um `useEffect` que medisse uma vez erraria
   // nos três casos.
   useEffect(() => {
-    if (!hasTranscript) return;
-    const nodes = [summaryRef.current, transcriptRef.current];
+    if (panes.length < 2) return;
+    const nodes = paneRefs.current.slice(0, panes.length);
     const observer = new ResizeObserver(() => {
-      setHeights([nodes[0]?.offsetHeight ?? 0, nodes[1]?.offsetHeight ?? 0]);
+      setHeights(paneRefs.current.slice(0, panes.length).map((n) => n?.offsetHeight ?? 0));
     });
     for (const node of nodes) if (node) observer.observe(node);
     return () => observer.disconnect();
-  }, [hasTranscript]);
+  }, [panes.length]);
 
   useEffect(() => {
     if (!opened || transcript !== null) return;
@@ -151,43 +179,51 @@ export function SummaryDeck({ sessionId, durationMs, hasTranscript, children }: 
     const width = track.clientWidth || 1;
     const at = Math.round(track.scrollLeft / width);
     setIndex(at);
-    if (at === 1) setOpened(true);
+    if (at === transcriptIndex) setOpened(true);
     // "Parou de mover" não tem evento próprio em navegador nenhum (o
     // `scrollend` ainda falta no Safari), então é uma pausa: 140ms sem um
     // `scroll` novo. Enquanto ela não vence, a altura é a do maior slide.
     setMoving(true);
     window.clearTimeout(settle.current);
     settle.current = window.setTimeout(() => setMoving(false), 140);
-  }, []);
+  }, [transcriptIndex]);
 
   useEffect(() => () => window.clearTimeout(settle.current), []);
 
-  const goTo = useCallback((to: number) => {
-    const track = trackRef.current;
-    if (!track) return;
-    if (to === 1) setOpened(true);
-    track.scrollTo({ left: to * track.clientWidth, behavior: "smooth" });
-  }, []);
+  const goTo = useCallback(
+    (to: number) => {
+      const track = trackRef.current;
+      if (!track) return;
+      if (to === transcriptIndex) setOpened(true);
+      track.scrollTo({ left: to * track.clientWidth, behavior: "smooth" });
+    },
+    [transcriptIndex]
+  );
 
-  if (!hasTranscript) return <>{children}</>;
+  if (panes.length < 2) return <>{children}</>;
 
-  const height = moving ? Math.max(heights[0], heights[1]) : heights[index];
+  const height = moving ? Math.max(...heights, 0) : (heights[index] ?? 0);
 
   return (
     <div className="flex flex-col gap-4">
-      {/* OS PONTINHOS, em cima do texto: é o que diz que há um segundo lado
-          antes de alguém descobrir por acaso. Eles são `tab`s de verdade, e não
-          enfeite clicável — quem chega por teclado anda entre os dois com as
-          setas, e quem usa leitor de tela ouve "Transcrição, aba 2 de 2" em vez
+      {/* OS PONTINHOS, em cima do texto: é o que diz que há outro lado antes
+          de alguém descobrir por acaso. Eles são `tab`s de verdade, e não
+          enfeite clicável — quem chega por teclado anda entre eles com as
+          setas, e quem usa leitor de tela ouve "Transcrição, aba 2 de 3" em vez
           de "botão". */}
       <div
         role="tablist"
-        aria-label="Resumo e transcrição"
+        aria-label="Resumo, transcrição e anotações"
         className="flex items-center justify-center gap-2"
         onKeyDown={(e) => {
           if (e.key !== "ArrowRight" && e.key !== "ArrowLeft") return;
           e.preventDefault();
-          const to = e.key === "ArrowRight" ? 1 : 0;
+          // As setas andam de UM, e param nas pontas. Com três slides, um
+          // salto para o extremo (como era com dois) pularia o do meio.
+          const to = Math.min(
+            panes.length - 1,
+            Math.max(0, index + (e.key === "ArrowRight" ? 1 : -1))
+          );
           goTo(to);
           // O FOCO anda junto com a seleção. Sem isto ele ficaria no botão
           // anterior, que acabou de virar `tabIndex={-1}` — a próxima seta não
@@ -196,7 +232,7 @@ export function SummaryDeck({ sessionId, durationMs, hasTranscript, children }: 
           (e.currentTarget.children[to] as HTMLElement | undefined)?.focus();
         }}
       >
-        {PANES.map((pane, i) => (
+        {panes.map((pane, i) => (
           <button
             key={pane.id}
             type="button"
@@ -208,15 +244,14 @@ export function SummaryDeck({ sessionId, durationMs, hasTranscript, children }: 
             title={pane.label}
             onClick={() => goTo(i)}
             // O alvo tem 24px de altura e o ponto tem 6: o `py-2.5` estica a
-            // área de toque e o `-my-2.5` devolve o espaço ao layout, para dois
+            // área de toque e o `-my-2.5` devolve o espaço ao layout, para os
             // pontinhos não abrirem um vão de botão entre o fio e o texto.
             className="-my-2.5 group inline-flex items-center px-1 py-2.5 outline-none"
           >
             <span className="sr-only">{pane.label}</span>
             {/* O ativo é uma PASTILHA, não um ponto maior: crescer nos dois
                 eixos faria os dois pularem de lugar a cada troca. Esticando só
-                na horizontal, o que se lê é uma barra de progresso de duas
-                casas. */}
+                na horizontal, o que se lê é uma barra de progresso. */}
             <span
               aria-hidden
               className={cn(
@@ -248,40 +283,73 @@ export function SummaryDeck({ sessionId, durationMs, hasTranscript, children }: 
           !moving && "transition-[height] duration-300 ease-out"
         )}
       >
-        <section
-          role="tabpanel"
-          id="deck-pane-summary"
-          aria-labelledby="deck-tab-summary"
-          className="w-full shrink-0 snap-start overflow-hidden"
-        >
-          <div ref={summaryRef}>{children}</div>
-        </section>
-        {/* `data-find-skip`: a lupa da barra procura no RESUMO, e contar aqui
-            dentro apontaria "3 de 17" para um texto que não está na tela. Ver
-            `SummaryFind`. */}
-        <section
-          role="tabpanel"
-          id="deck-pane-transcript"
-          aria-labelledby="deck-tab-transcript"
-          data-find-skip
-          className="w-full shrink-0 snap-start overflow-hidden"
-        >
-          <div ref={transcriptRef}>
-            {transcript !== null ? (
-              <SavedTranscriptView transcript={transcript} durationMs={durationMs} />
-            ) : failed ? (
-              <p className="py-8 text-center text-[14px] text-scriba-ink-soft">
-                Não consegui carregar a transcrição. Volte ao resumo e tente de novo.
-              </p>
-            ) : opened ? (
-              <div className="flex items-center justify-center gap-2 py-16 text-scriba-ink-soft">
-                <Loader2 aria-hidden className="size-4 animate-spin" />
-                <span className="text-[14px]">Carregando a transcrição…</span>
-              </div>
-            ) : null}
-          </div>
-        </section>
+        {panes.map((pane, i) => (
+          // `data-find-skip` em tudo que NÃO é o resumo: a lupa da barra
+          // procura no resumo, e contar aqui dentro apontaria "3 de 17" para um
+          // texto que não está na tela. Ver `SummaryFind`.
+          <section
+            key={pane.id}
+            role="tabpanel"
+            id={`deck-pane-${pane.id}`}
+            aria-labelledby={`deck-tab-${pane.id}`}
+            data-find-skip={pane.id === "summary" ? undefined : true}
+            className="w-full shrink-0 snap-start overflow-hidden"
+          >
+            <div
+              ref={(node) => {
+                paneRefs.current[i] = node;
+              }}
+            >
+              {pane.id === "summary" ? children : null}
+              {pane.id === "transcript" ? (
+                transcript !== null ? (
+                  <SavedTranscriptView transcript={transcript} durationMs={durationMs} />
+                ) : failed ? (
+                  <p className="py-8 text-center text-[14px] text-scriba-ink-soft">
+                    Não consegui carregar a transcrição. Volte ao resumo e tente de novo.
+                  </p>
+                ) : opened ? (
+                  <div className="flex items-center justify-center gap-2 py-16 text-scriba-ink-soft">
+                    <Loader2 aria-hidden className="size-4 animate-spin" />
+                    <span className="text-[14px]">Carregando a transcrição…</span>
+                  </div>
+                ) : null
+              ) : null}
+              {pane.id === "notes" ? <SessionNotesView notes={trimmedNotes} /> : null}
+            </div>
+          </section>
+        ))}
       </div>
     </div>
+  );
+}
+
+/**
+ * As anotações, desenhadas como o que são: o que a PESSOA escreveu, com a
+ * quebra de linha dela preservada.
+ *
+ * Nada de `RichText` aqui, e nada de marcação de referência bíblica ou de
+ * léxico: este é o único texto da tela que não passou por modelo nenhum, e
+ * anotar o que alguém escreveu à mão é mexer no texto de quem escreveu. As
+ * linhas em branco separam parágrafos, como no bloco de notas do gravador.
+ */
+function SessionNotesView({ notes }: { notes: string }) {
+  const paragraphs = notes.split(/\n{2,}/).filter((p) => p.trim().length > 0);
+
+  return (
+    <article className="flex flex-col gap-4 py-2">
+      <header className="flex items-center gap-1.5 text-[10px] font-semibold uppercase tracking-[0.14em] text-scriba-ink-mute">
+        <PenLine className="size-3" aria-hidden />
+        Escrito durante a pregação
+      </header>
+      {paragraphs.map((paragraph) => (
+        <p
+          key={paragraph.slice(0, 40)}
+          className="whitespace-pre-wrap text-pretty text-[17px] font-light leading-relaxed text-scriba-ink"
+        >
+          {paragraph}
+        </p>
+      ))}
+    </article>
   );
 }

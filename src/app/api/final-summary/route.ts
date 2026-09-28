@@ -145,6 +145,10 @@ export async function POST(request: Request) {
       speakerLocation,
       speakerId,
       locationId,
+      // As notas ficam GRAVADAS, e não só usadas. Elas já iam ao prompt; sem
+      // esta linha morriam no fim da requisição, e quem escreveu durante a
+      // pregação não tinha onde relê-las. Ver a migração 0080.
+      notes: body.notes?.trim() || null,
     });
     saved = true;
     log.debug("saved", { sessionId });

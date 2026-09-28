@@ -73,6 +73,12 @@ export async function POST(request: Request) {
     userId: auth.user.id,
     sessionId,
     transcript,
+    // As ANOTAÇÕES vão junto, como no primeiro resumo. Enquanto elas morriam
+    // no fim do POST de `/api/final-summary` isto era impossível, e o
+    // reprocessamento perdia em silêncio a correção de nome próprio que a
+    // pessoa tinha digitado durante a pregação: o resumo refeito saía PIOR
+    // que o original, por 15 moedas. Ver a migração 0080.
+    notes: session.notes,
     logPrefix: "final-summary-reprocess",
     metadataRoute: "final-summary-reprocess",
   });

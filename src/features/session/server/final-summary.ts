@@ -308,6 +308,12 @@ const CHUNKED_ABOVE_WORDS = 2_600;
 const WORDS_PER_SLICE = 1_700;
 /** Teto de trechos: acima disso o custo deixa de se pagar. */
 const MAX_SLICES = 6;
+/**
+ * Quantas anotações o resumo responde, no máximo. O mesmo número que o prompt
+ * pede, aplicado aqui porque o prompt não tem como contar o que os outros
+ * trechos emitiram. Ver `noteReply` em `lib/domain/summary.ts`.
+ */
+const MAX_NOTE_REPLIES = 3;
 
 function sliceCountFor(words: number): number {
   if (words <= CHUNKED_ABOVE_WORDS) return 1;
@@ -397,6 +403,8 @@ async function generateBySlices(
   const slices = sliceTranscript(transcript, sliceCount);
   const blocks: SummaryPayload["blocks"] = [];
   const movements: string[] = [];
+  /** As anotações já respondidas, para nenhuma ser respondida duas vezes. */
+  const answeredNotes = new Set<string>();
   let latencyMs = 0;
   let lastError: GenerateFinalSummaryError | null = null;
 
@@ -428,7 +436,17 @@ async function generateBySlices(
       buildDensityBriefing(target, "trecho"),
       written,
       `transcript (trecho ${slice.index}):\n${slice.text}`,
-      ...(trimmedNotes ? [`notas do ouvinte:\n${trimmedNotes}`] : []),
+      ...(trimmedNotes
+        ? [
+            `notas do ouvinte:\n${trimmedNotes}`,
+            // O teto de 3 "noteReply" é do resumo INTEIRO, e cada trecho é uma
+            // chamada que não vê as outras: sem esta linha, uma pregação de
+            // cinco trechos sairia com cinco respostas à mesma anotação.
+            slice.index === 1
+              ? 'você pode emitir blocks "noteReply" aqui (no máximo 3 no resumo inteiro).'
+              : 'os trechos anteriores já puderam responder às anotações: só emita "noteReply" aqui se a anotação falar de algo que aparece NESTE trecho e ainda não foi respondido.',
+          ]
+        : []),
     ].join("\n\n");
 
     const attempt = await attemptFinalSummary({
@@ -457,6 +475,16 @@ async function generateBySlices(
     // isso de vez em quando.
     for (const block of attempt.payload.blocks) {
       if (block.type === "conclusion" && !slice.isLast) continue;
+      // A resposta à anotação é do resumo INTEIRO, e cada trecho é uma chamada
+      // que não vê as outras: o prompt pede que os seguintes se contenham, e
+      // pedir não basta — medido, o terceiro trecho reescreveu a resposta que o
+      // primeiro já tinha dado, palavra por palavra diferente e conteúdo igual.
+      // O teto e a repetição são GARANTIDOS aqui.
+      if (block.type === "noteReply") {
+        const key = block.note.trim().toLowerCase();
+        if (answeredNotes.size >= MAX_NOTE_REPLIES || answeredNotes.has(key)) continue;
+        answeredNotes.add(key);
+      }
       if (block.type === "h1") movements.push(block.text);
       blocks.push(block);
     }

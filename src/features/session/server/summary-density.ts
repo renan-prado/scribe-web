@@ -147,7 +147,7 @@ export function buildDensityBriefing(
 - movimentos (h1) a escrever: ${target.movements}
 - parágrafos por movimento: 4 a 7, densos
 - total de blocks: ${target.minBlocks} a ${target.maxBlocks}
-- palavras somando o texto de TODOS os blocks: ${target.minWords} a ${target.maxWords}
+- palavras somando o texto dos blocks do SERMÃO: ${target.minWords} a ${target.maxWords} (blocks "noteReply" não contam aqui, ver a seção das notas)
 
 O número de MOVIMENTOS é o requisito firme: conte-os enquanto escreve. A faixa de palavras é a consequência esperada dele. Ficar abaixo é o erro mais comum e mais caro; só se justifica se o material realmente não existir (avisos, música, fala repetida), nunca por economia. Encher com floreio ou repetição também é erro.`;
 }

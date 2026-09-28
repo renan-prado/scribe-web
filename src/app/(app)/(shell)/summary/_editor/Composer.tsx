@@ -8,6 +8,7 @@ import {
   Highlighter,
   Info,
   MapPin,
+  PenLine,
   Plus,
   Save,
   Shapes,
@@ -3003,6 +3004,35 @@ function BlockBody({
           className="w-full bg-transparent font-normal text-scriba-ink-mute text-xs outline-none placeholder:text-scriba-ink-mute/60"
         />
       </figure>
+    );
+  }
+
+  // A resposta à anotação, quando o editor abre um resumo que tem uma. Os dois
+  // campos são editáveis: a anotação é de quem escreveu e a resposta é nossa,
+  // e corrigir qualquer uma à mão custa menos que reprocessar. Ver
+  // `BlockRenderer`.
+  if (block.type === "noteReply") {
+    return (
+      <section className="mt-2 flex flex-col gap-2 rounded-2xl border border-scriba-hairline bg-[var(--session-example-bg)] p-5">
+        <span className="inline-flex items-center gap-1.5 font-semibold text-[10px] text-scriba-ink-mute uppercase tracking-[0.14em]">
+          <PenLine className="size-3" aria-hidden />
+          Sobre a sua anotação
+        </span>
+        <MarkableField
+          shared={shared}
+          value={block.note}
+          onChange={(note) => onChange({ note })}
+          ariaLabel="A sua anotação"
+          className="border-scriba-hairline border-l-2 pl-3 font-light text-[15px] text-scriba-ink-soft italic leading-relaxed"
+        />
+        <MarkableField
+          shared={shared}
+          value={block.text}
+          onChange={(text) => onChange({ text })}
+          ariaLabel="A resposta à anotação"
+          className="font-light text-[17px] text-scriba-ink leading-relaxed"
+        />
+      </section>
     );
   }
 

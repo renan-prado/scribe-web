@@ -192,18 +192,28 @@ export const BLOCK_OPTIONS: BlockOption[] = [
   },
 ];
 
-export const BLOCK_LABELS: Record<WrittenBlockType, string> = BLOCK_OPTIONS.reduce(
-  (acc, o) => {
-    acc[o.type] = o.label;
-    return acc;
-  },
-  {} as Record<WrittenBlockType, string>
-);
+export const BLOCK_LABELS: Record<WrittenBlockType, string> = {
+  // Os rótulos do MENU, mais os tipos que não têm entrada nele. O
+  // `noteReply` nasce da anotação da gravação, nunca de um gesto na folha em
+  // branco, mas precisa de nome: ele aparece na pílula de um bloco já
+  // existente quando alguém abre o resumo no editor.
+  ...BLOCK_OPTIONS.reduce(
+    (acc, o) => {
+      acc[o.type] = o.label;
+      return acc;
+    },
+    {} as Record<string, string>
+  ),
+  noteReply: "Sobre a sua anotação",
+} as Record<WrittenBlockType, string>;
 
 /** O bloco recém-nascido, vazio, do tipo escolhido. */
 export function emptyBlock(type: WrittenBlockType): WrittenBlock {
   if (type === "bibleQuote") return { type, reference: "", text: "" };
   if (type === "quote") return { type, text: "", author: "" };
+  // `noteReply` não tem entrada no menu, então este caminho nunca é pedido por
+  // um gesto: ele existe para o `convertBlock` e para a exaustividade do tipo.
+  if (type === "noteReply") return { type, note: "", text: "" };
   return { type, text: "" };
 }
 
@@ -248,6 +258,7 @@ export const BLOCK_PLACEHOLDERS: Record<WrittenBlockType, string> = {
   example: "Uma nota, exemplo ou comparação à parte",
   quote: "A frase citada",
   conclusion: "O que fica da mensagem",
+  noteReply: "A resposta à sua anotação",
 };
 
 /**

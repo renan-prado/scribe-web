@@ -1,4 +1,4 @@
-import { Info } from "lucide-react";
+import { Info, PenLine } from "lucide-react";
 import { BookGlyph } from "@/components/icons/BookGlyph";
 import { BibleQuoteBlock } from "@/features/session/components/BibleQuoteBlock";
 import { ChapterMention } from "@/features/session/components/ChapterMention";
@@ -10,6 +10,7 @@ import { ScribaMark } from "@/shared/brand";
 export function blockKey(block: SummaryBlock): string {
   if (block.type === "bibleQuote") return `${block.reference}-${block.text.slice(0, 24)}`;
   if (block.type === "quote") return `${block.text.slice(0, 24)}-${block.author ?? ""}`;
+  if (block.type === "noteReply") return `nota-${block.note.slice(0, 24)}`;
   return block.text.slice(0, 32);
 }
 
@@ -191,6 +192,35 @@ export function BlockRenderer({ block }: { block: SummaryBlock }) {
             <RichText>{block.text}</RichText>
           </p>
         </section>
+      );
+    /**
+     * A resposta à ANOTAÇÃO, e o único bloco do resumo em que a voz do
+     * produto fala. Ver o tipo em `lib/domain/summary.ts`.
+     *
+     * O desenho carrega a regra: a frase de quem anotou vem PRIMEIRO, em
+     * itálico e com o lápis ao lado, e a resposta vem abaixo. Sem ela na
+     * tela o bloco viraria um comentário da IA aparecendo no meio do sermão
+     * de outra pessoa, que foi exatamente o que tirou o `contextCard` do
+     * produto. Aqui há dono: a pessoa escreveu aquilo durante a pregação.
+     *
+     * Não leva `ScribaMark` nem a superfície da conclusão, de propósito: o
+     * fecho é o ponto alto do texto e dois blocos com o mesmo peso brigariam.
+     * Este é uma nota de margem, e o cartão é discreto como uma.
+     */
+    case "noteReply":
+      return (
+        <aside className="relative rounded-2xl border border-scriba-hairline bg-[var(--session-example-bg)] px-5 py-4">
+          <span className="mb-2 flex items-center gap-1.5 text-[10px] font-semibold uppercase tracking-[0.14em] text-scriba-ink-mute">
+            <PenLine className="size-3" aria-hidden />
+            Sobre a sua anotação
+          </span>
+          <p className="mb-3 border-l-2 border-scriba-hairline pl-3 text-[15px] font-light italic leading-relaxed text-scriba-ink-soft">
+            {block.note}
+          </p>
+          <p className="text-pretty text-[17px] font-light leading-relaxed text-scriba-ink">
+            <RichText>{block.text}</RichText>
+          </p>
+        </aside>
       );
     case "quote":
       return (

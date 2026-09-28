@@ -45,6 +45,13 @@ export type SessionRow = {
   finalSummary: SummaryPayload | null;
   /** A pasta da sessão, ou `null` para "sem pasta" (a raiz). Migração 0068. */
   folderId: string | null;
+  /**
+   * O que quem gravou digitou DURANTE a pregação (migração 0080). `null` em
+   * toda sessão que não nasceu de uma gravação e em toda gravação anterior à
+   * migração; `null` e `""` são a mesma coisa para a tela, que não abre o
+   * slide das anotações em nenhum dos dois.
+   */
+  notes: string | null;
 };
 
 // Reexportado por compatibilidade: o tipo mudou de casa para `lib/domain/`
@@ -110,6 +117,12 @@ export type UpdateSessionFinalInput = {
   speakerLocation: string | null;
   speakerId?: string | null;
   locationId?: string | null;
+  /**
+   * As anotações da gravação. `undefined` não toca na coluna; `null` a
+   * esvazia. Quem grava manda o que digitou, e as outras duas entradas de
+   * sessão (YouTube e escrita à mão) não mandam nada.
+   */
+  notes?: string | null;
 };
 
 type DbRow = {
@@ -130,6 +143,8 @@ type DbRow = {
   transcript: string;
   final_summary: SummaryPayload | null;
   folder_id: string | null;
+  /** As anotações escritas durante a gravação (migração 0080). */
+  notes: string | null;
 };
 
 // `mode` is a Postgres ordered-set aggregate function name, PostgREST tries
@@ -138,10 +153,10 @@ type DbRow = {
 // `capture_mode`; we keep the API-side field name as `mode` for callers.
 const SELECT_LIST =
   "id, created_at, duration_ms, title, short_summary, speaker_id, location_id, speaker_name, speaker_location, capture_mode, source_url, folder_id";
-const SELECT_FULL = `id, created_at, ended_at, duration_ms, title, short_summary, speaker_id, location_id, speaker_name, speaker_location, capture_mode, source_url, source_start_ms, source_end_ms, transcript, final_summary, folder_id`;
+const SELECT_FULL = `id, created_at, ended_at, duration_ms, title, short_summary, speaker_id, location_id, speaker_name, speaker_location, capture_mode, source_url, source_start_ms, source_end_ms, transcript, final_summary, folder_id, notes`;
 // O mesmo de SELECT_FULL menos transcript/final_summary.
 const SELECT_META =
-  "id, created_at, ended_at, duration_ms, title, short_summary, speaker_id, location_id, speaker_name, speaker_location, capture_mode, source_url, source_start_ms, source_end_ms, folder_id";
+  "id, created_at, ended_at, duration_ms, title, short_summary, speaker_id, location_id, speaker_name, speaker_location, capture_mode, source_url, source_start_ms, source_end_ms, folder_id, notes";
 // O de SELECT_FULL com `has_transcript` (coluna gerada, migração 0061) no
 // lugar de `transcript`: o mesmo conteúdo de tela por uma fração do payload.
 const SELECT_VIEW = `${SELECT_META}, has_transcript, final_summary`;
@@ -166,6 +181,10 @@ function rowToMeta(row: MetaRow): SessionMeta {
     sourceStartMs: row.source_start_ms,
     sourceEndMs: row.source_end_ms,
     folderId: row.folder_id,
+    // As notas viajam no payload da PÁGINA, ao contrário da transcrição: o
+    // teto delas são 4.000 caracteres, e uma busca separada para isso seria
+    // uma ida à rede a mais para o que cabe no HTML que já está descendo.
+    notes: row.notes,
   };
 }
 
@@ -188,6 +207,7 @@ function rowToSession(row: DbRow): SessionRow {
     transcript: row.transcript,
     finalSummary: row.final_summary,
     folderId: row.folder_id,
+    notes: row.notes,
   };
 }
 
@@ -258,6 +278,7 @@ export async function updateSessionFinal(
     transcript: input.transcript,
     final_summary: input.summary,
   };
+  if (input.notes !== undefined) patch.notes = input.notes;
   if (input.speakerId !== undefined) patch.speaker_id = input.speakerId;
   if (input.locationId !== undefined) patch.location_id = input.locationId;
 

@@ -834,6 +834,11 @@ salvo se mexeu. **Bloco novo no `SummaryBlockSchema` entra em
 `WRITTEN_BLOCK_TYPES`, no `BlockBody` e no `BlockRenderer` no mesmo commit.** O
 que o editor não tem é um terceiro nível de título.
 
+O `noteReply` está em `WRITTEN_BLOCK_TYPES` e NÃO em `BLOCK_OPTIONS`: ele é a
+resposta a uma anotação da gravação (ver `features/session/AGENTS.md`), nasce no
+resumo gerado e nunca de um gesto na folha em branco. Estar na primeira lista é
+o que faz o editor DEVOLVER o bloco que abriu em vez de apagá-lo ao salvar.
+
 A "ideia central" não é bloco: ela é o `shortSummary`, o que aparece no cartão da
 Biblioteca e na busca. E é OPCIONAL — o campo não nasce na tela, entra pelo menu
 da barra e sai pelo `×` do próprio cartão. Resumir a mensagem em uma frase é

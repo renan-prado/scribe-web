@@ -76,6 +76,12 @@ type SavedSessionViewProps = {
    * carrossel nem pontinhos, e o resumo é desenhado direto.
    */
   hasTranscript: boolean;
+  /**
+   * O que a pessoa digitou DURANTE a gravação (migração 0080), ou `null` se
+   * não digitou nada. Vira o TERCEIRO slide do `SummaryDeck`; ver o cabeçalho
+   * dele para por que ela viaja no payload e a transcrição não.
+   */
+  notes: string | null;
   summary: SummaryPayload | null;
   /**
    * A barra do topo, montada pela PÁGINA e entregue pronta.
@@ -146,6 +152,7 @@ export function SavedSessionView({
   speakerName,
   speakerLocation,
   hasTranscript,
+  notes,
   summary,
   header,
   meta = "full",
@@ -513,7 +520,12 @@ export function SavedSessionView({
               em cima da "Ideia central". Sem transcrição (toda sessão escrita à
               mão) o `SummaryDeck` devolve o resumo direto, sem trilho e sem
               pontinhos — ver o cabeçalho dele. */}
-        <SummaryDeck sessionId={id} durationMs={durationMs} hasTranscript={hasTranscript}>
+        <SummaryDeck
+          sessionId={id}
+          durationMs={durationMs}
+          hasTranscript={hasTranscript}
+          notes={notes}
+        >
           {/* `sessionId` serve ao ESTADO VAZIO, e só a ele: sem resumo nenhum,
               é o que deixa o quadro oferecer o editor, que aqui em cima não
               aparece justamente por não haver resumo. Ver `SummaryEmptyState`. */}

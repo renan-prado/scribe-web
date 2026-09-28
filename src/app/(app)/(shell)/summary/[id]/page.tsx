@@ -141,6 +141,7 @@ export default async function V2SummaryPage({ params }: PageProps) {
           speakerName={session.speakerName}
           speakerLocation={session.speakerLocation}
           hasTranscript={session.hasTranscript}
+          notes={session.notes}
           summary={session.finalSummary}
           meta="compact"
           mode={session.mode}

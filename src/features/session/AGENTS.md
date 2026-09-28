@@ -139,8 +139,33 @@ inteiro; três consequências que mordem de fora:
   conteúdo dos slides não precisa fazer nada — o `ResizeObserver` cobre —, mas
   quem mexer no TRILHO precisa ler aquele cabeçalho antes.
 
-**Sem transcrição não há carrossel nenhum** (é o caso de toda sessão `manual`):
-o `SummaryDeck` devolve o resumo direto, sem trilho e sem pontinhos.
+**São TRÊS slides quando a gravação teve anotações**, e o terceiro são elas
+(migração 0080). O bloco de notas do gravador sempre mandou o texto para o
+prompt, e até a migração ele MORRIA ali: não havia coluna e não havia tela, de
+modo que quem escreveu três parágrafos no meio do sermão não tinha onde relê-los
+e nada dizia que eles tinham servido para alguma coisa. Guardar consertou dois
+buracos de uma vez, e o segundo é o que doía mais caro: **o reprocessamento ia
+sem as notas**, porque não tinha de onde tirá-las, então refazer o resumo por 15
+moedas descartava em silêncio a correção de nome próprio que a pessoa havia
+digitado, e o resumo novo saía PIOR que o original.
+
+Três coisas desse slide:
+
+- **Ele só existe quando há anotação.** Um carrossel que promete três lados e
+  entrega um vazio é pior que um de dois. Sessão antiga, importada do YouTube ou
+  escrita à mão nunca o tem.
+- **As notas viajam no payload da PÁGINA, ao contrário da transcrição.** O teto
+  delas são 4.000 caracteres (`RECORDING_NOTES_MAX_CHARS`), e uma rota só para
+  isso seria uma ida à rede a mais pelo que já cabe no HTML que está descendo. O
+  raciocínio da migração 0061 vale para dezenas de KB, não para quatro.
+- **Nada de `RichText` nelas.** É o único texto da tela que não passou por
+  modelo nenhum, e marcar referência ou nome do léxico ali é mexer no texto de
+  quem escreveu à mão.
+
+**Sem transcrição e sem anotação não há carrossel nenhum** (é o caso de toda
+sessão `manual`): o `SummaryDeck` devolve o resumo direto, sem trilho e sem
+pontinhos. O deck deixou de ser um PAR fixo por causa do terceiro slide — as
+alturas eram uma tupla e hoje são uma lista indexada pela posição.
 
 ## Texto bíblico na tela
 
@@ -647,6 +672,35 @@ antes.** A gravação absorve (o STT continua sendo o grosso da conta), mas
 `reprocessSummary` e `youtubeImport` ficaram ABAIXO da régua de margem. Ver o
 aviso em `features/coins/pricing.ts`: é decisão de produto, não conserto de
 código.
+
+**E a anotação pode ser RESPONDIDA dentro do resumo**, pelo bloco `noteReply`
+(`note`, o recorte do que a pessoa escreveu; `text`, a resposta). Uma anotação
+às vezes não é lembrete, é uma pergunta feita no meio da pregação, e ficar calado
+diante dela é pior que responder.
+
+**Este é o único bloco do resumo em que a voz do produto fala**, e a tensão com
+o `contextCard` que foi removido é real: a diferença é que aqui há DONO. O
+`contextCard` era comentário da IA aparecendo sozinho no meio do sermão de
+outra pessoa; este responde a uma frase que alguém escreveu, e a frase vem
+desenhada ao lado da resposta justamente para isso ficar dito na tela. Sem
+anotação na entrada, nenhum bloco destes é emitido, nunca.
+
+Quatro regras, e três delas são GARANTIDAS no servidor porque pedir não bastou:
+
+- **Lembrete não vira bloco.** "Falar com a Ana", "levar a Bíblia domingo" já
+  fizeram o trabalho deles no corpo do sermão. O prompt separa isso de pergunta,
+  dúvida e objeção, e acertou em bancada.
+- **Teto de 3 por resumo, e nenhuma anotação respondida duas vezes.** Cada
+  trecho é uma chamada que não vê as outras; medido, o terceiro trecho
+  reescreveu a resposta que o primeiro já tinha dado. `MAX_NOTE_REPLIES` e o
+  `Set` de anotações respondidas ficam em `generateBySlices`, não no prompt.
+- **Eles NÃO contam para a faixa de palavras nem para os movimentos.** A régua
+  mede a condensação da pregação; isto é um acréscimo a ela. O briefing diz isso
+  com todas as letras, e a medição do harness separa os dois números.
+- **O bloco está em `WRITTEN_BLOCK_TYPES` mas NÃO em `BLOCK_OPTIONS`**: ele
+  nasce da anotação e não de um gesto na folha em branco, e está na primeira
+  lista para SOBREVIVER a uma edição — sem isso, abrir o resumo no editor e
+  salvar apagaria a resposta em silêncio.
 
 **A "ideia central" encolheu junto**, e de propósito: ela pedia 3 a 5 frases e
 hoje pede 1 a 2, no máximo 45 palavras. Ela é a primeira coisa da tela e existe

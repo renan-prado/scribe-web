@@ -41,6 +41,25 @@ export const SummaryBlockSchema = z.discriminatedUnion("type", [
   z.object({ type: z.literal("example"), title: z.string().optional(), text: z.string() }),
   z.object({ type: z.literal("quote"), text: z.string(), author: z.string().optional() }),
   z.object({ type: z.literal("conclusion"), text: z.string() }),
+  /**
+   * A resposta à ANOTAÇÃO de quem estava na sala.
+   *
+   * `note` é o que a pessoa escreveu, recortado da anotação dela; `text` é o
+   * que o sermão responde àquilo. Os dois no mesmo bloco de propósito: um
+   * comentário solto, sem a frase que o provocou ao lado, é a voz da IA
+   * falando sozinha no meio do sermão de outra pessoa — que é exatamente o
+   * que o `contextCard` era, e por isso ele saiu.
+   *
+   * **Este é o ÚNICO bloco em que a voz do produto pode aparecer**, e ele só
+   * existe porque tem dono: a pessoa fez uma pergunta ou deixou um apontamento
+   * DURANTE a pregação, e ficar calado diante disso é pior que responder. Sem
+   * anotação, nenhum bloco destes é emitido, nunca.
+   *
+   * Ele também não conta para a faixa de palavras do resumo (ver
+   * `features/session/server/summary-density.ts`): a régua mede a condensação
+   * da pregação, e isto é um acréscimo a ela, não parte dela.
+   */
+  z.object({ type: z.literal("noteReply"), note: z.string(), text: z.string() }),
 ]);
 
 export type SummaryBlock = z.infer<typeof SummaryBlockSchema>;
@@ -142,6 +161,14 @@ export function parseSummaryFromLLM(content: string, phase: SummaryPhase): Summa
         if (text) blocks.push({ type: "conclusion", text });
         break;
       }
+      // A resposta à anotação. Os DOIS lados são obrigatórios: sem `note` o
+      // bloco vira comentário da IA sem dono, que é o que ele não pode ser.
+      case "noteReply": {
+        if (phase !== "final") break;
+        const note = typeof rec.note === "string" ? rec.note.trim() : "";
+        if (note && text) blocks.push({ type: "noteReply", note, text });
+        break;
+      }
       default:
         break;
     }
@@ -207,6 +234,11 @@ export const WRITTEN_BLOCK_TYPES = [
   "quote",
   "bibleQuote",
   "conclusion",
+  // Não tem entrada no menu do "+" (ver `BLOCK_OPTIONS`): ele nasce da
+  // anotação e não de um gesto na folha em branco. Está nesta lista para
+  // SOBREVIVER a uma edição — sem isso, abrir o resumo no editor e salvar
+  // apagaria em silêncio a resposta à anotação.
+  "noteReply",
 ] as const;
 
 export type WrittenBlockType = (typeof WRITTEN_BLOCK_TYPES)[number];
@@ -254,6 +286,13 @@ const WrittenBlockSchema = z.discriminatedUnion("type", [
     text: z.string().max(WRITTEN_LIMITS.blockText),
   }),
   z.object({ type: z.literal("conclusion"), text: z.string().max(WRITTEN_LIMITS.blockText) }),
+  // A resposta à anotação, pelo mesmo motivo que ela está em
+  // `WRITTEN_BLOCK_TYPES`: o editor precisa poder DEVOLVER o bloco que abriu.
+  z.object({
+    type: z.literal("noteReply"),
+    note: z.string().max(WRITTEN_LIMITS.blockText),
+    text: z.string().max(WRITTEN_LIMITS.blockText),
+  }),
 ]);
 
 export type WrittenBlock = z.infer<typeof WrittenBlockSchema>;
@@ -312,6 +351,14 @@ export function writtenToPayload(written: WrittenSummary): SummaryPayload {
     }
     const text = b.text.trim();
     if (!text) continue;
+    if (b.type === "noteReply") {
+      // A resposta à anotação só atravessa INTEIRA: sem a frase de quem
+      // escreveu, o que sobra é comentário sem dono. Ver o tipo.
+      const note = b.note.trim();
+      if (!note) continue;
+      blocks.push({ type: "noteReply", note, text });
+      continue;
+    }
     if (b.type === "quote") {
       const author = b.author?.trim();
       blocks.push(author ? { type: "quote", text, author } : { type: "quote", text });
