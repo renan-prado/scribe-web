@@ -9,6 +9,14 @@ Gerado por `npm run release` a partir dos Conventional Commits. `feat` sobe o
 minor; o resto sobe o patch. Não edite à mão, a próxima execução escreve por
 cima do topo do arquivo.
 
+## 0.97.0, 2026-09-28, desde v0.96.0
+
+### Novidades
+
+- **summary:** redação por trecho, alvo estrutural e gpt-4.1 (`7b75bae`)
+- **summary:** ideia central curta, 1 a 2 frases (`7bd14dc`)
+- **summary:** faixa de tamanho do resumo medida pela transcrição (`b04a757`)
+
 ## 0.96.0, 2026-09-28, desde v0.95.0
 
 ### Novidades
