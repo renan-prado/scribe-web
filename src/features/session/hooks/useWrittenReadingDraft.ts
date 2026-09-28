@@ -107,11 +107,31 @@ export function useWrittenReadingDraft({
    * (`Number.MAX_SAFE_INTEGER`, de `lib/domain/biblo.ts`).
    */
   function addBlock(block: WrittenBlock, requestedIndex: number) {
-    const blocks = draft.current.blocks.slice();
-    const at = insertionIndex(blocks, block, requestedIndex);
-    blocks.splice(at, 0, block);
+    addBlocks([block], requestedIndex);
+  }
+
+  /**
+   * Vários blocos numa escrita SÓ.
+   *
+   * Chamar `addBlock` em sequência não serve, e não é questão de economia: cada
+   * chamada dispara o próprio `POST` com a sua cópia do documento, e a ordem em
+   * que eles chegam ao banco não é a ordem em que saíram. O último a chegar
+   * grava por cima, e os blocos dos outros somem sem erro nenhum na tela. Quem
+   * precisa disto é a escolha de versículos (`VerseSelection`), que manda uma
+   * faixa por trecho contíguo.
+   *
+   * A revelação pisca no PRIMEIRO deles: é onde o olho precisa ser levado, e os
+   * seguintes estão logo abaixo.
+   */
+  function addBlocks(blocks: WrittenBlock[], requestedIndex: number) {
+    if (blocks.length === 0) return;
+    const next = draft.current.blocks.slice();
+    // O teto da conclusão é calculado com o PRIMEIRO, e vale para todos: eles
+    // entram grudados, no mesmo ponto, e são todos do mesmo tipo.
+    const at = insertionIndex(next, blocks[0], requestedIndex);
+    next.splice(at, 0, ...blocks);
     pendingReveal.current = at;
-    void save({ ...draft.current, blocks });
+    void save({ ...draft.current, blocks: next });
   }
 
   /** Remove a ÚLTIMA ocorrência igual a `block`, e não um índice guardado: o
@@ -127,5 +147,5 @@ export function useWrittenReadingDraft({
     });
   }
 
-  return { addBlock, removeBlock };
+  return { addBlock, addBlocks, removeBlock };
 }

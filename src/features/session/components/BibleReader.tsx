@@ -4,34 +4,27 @@ import {
   ArrowLeft,
   ArrowRight,
   ArrowUp,
-  Check,
   ChevronDown,
   ChevronLeft,
   ChevronRight,
   Copy,
+  ListChecks,
   Search,
 } from "lucide-react";
 import { useEffect, useMemo, useState } from "react";
 import { toast } from "sonner";
-import {
-  DropdownMenu,
-  DropdownMenuContent,
-  DropdownMenuItem,
-  DropdownMenuTrigger,
-} from "@/components/ui/dropdown-menu";
+import { DropdownMenu, DropdownMenuTrigger } from "@/components/ui/dropdown-menu";
 import { BillingDialog } from "@/features/billing/components/BillingDialog";
 import { BibloBubble } from "@/features/session/components/BibloMessage";
 import { VerseLines } from "@/features/session/components/PassageVerses";
+import { TranslationChoices } from "@/features/session/components/TranslationChoices";
 import { TranslationCredit } from "@/features/session/components/TranslationCredit";
 import { useResolvedTranslation } from "@/features/session/components/TranslationScope";
+import { useVerseSelection, VerseSelectionBar } from "@/features/session/components/VerseSelection";
 import { useBibleSearch } from "@/features/session/hooks/useBibleSearch";
 import { useVerseFetch } from "@/features/session/hooks/useVerseFetch";
 import { BOOK_CANON, chapterCountFor, normalizeBookName } from "@/lib/bibles/books";
-import {
-  SELECTABLE_TRANSLATIONS,
-  TRANSLATIONS,
-  type TranslationId,
-} from "@/lib/bibles/translations";
+import { TRANSLATIONS, type TranslationId } from "@/lib/bibles/translations";
 import {
   BIBLE_SEARCH_MAX_QUESTION_CHARS,
   type BibleSearchPassage,
@@ -174,6 +167,15 @@ export function BibleReader({ className, initialBook, initialChapter }: Props) {
   const readerTranslation = useResolvedTranslation(chosenTranslation ?? undefined);
   const state = useVerseFetch(reference, readerTranslation);
 
+  // A escolha de versículos, que só existe onde há resumo para receber: na
+  // leitura e no editor. No gravador esta MESMA gaveta monta sem provider
+  // nenhum, e ali ela é só leitura — ver `VerseSelection`.
+  const selection = useVerseSelection({
+    bookDisplay: book,
+    chapter,
+    translation: chosenTranslation ?? undefined,
+  });
+
   const go = (delta: number) => {
     if (!chapter) return;
     const next = chapter + delta;
@@ -310,30 +312,26 @@ export function BibleReader({ className, initialBook, initialChapter }: Props) {
             {TRANSLATIONS[readerTranslation].short}
             <ChevronDown aria-hidden className="size-3" />
           </DropdownMenuTrigger>
-          <DropdownMenuContent align="end" className="w-72">
-            {SELECTABLE_TRANSLATIONS.map((option) => (
-              <DropdownMenuItem
-                key={option.id}
-                onClick={() => setChosenTranslation(option.id)}
-                className="items-start gap-2.5"
-              >
-                <Check
-                  aria-hidden
-                  className={cn(
-                    "mt-0.5 size-3.5 flex-none",
-                    option.id === readerTranslation ? "opacity-100" : "opacity-0"
-                  )}
-                />
-                <span className="flex min-w-0 flex-col gap-0.5">
-                  <span className="font-medium">{option.name}</span>
-                  <span className="text-xs font-light leading-snug text-muted-foreground">
-                    {option.hint}
-                  </span>
-                </span>
-              </DropdownMenuItem>
-            ))}
-          </DropdownMenuContent>
+          <TranslationChoices
+            value={readerTranslation}
+            onChange={setChosenTranslation}
+            align="end"
+          />
         </DropdownMenu>
+        {/* O jeito de ENTRAR na escolha de versículos sem segurar o dedo: o
+            toque longo é o gesto do celular, e no mouse ele não se descobre.
+            Só aparece com capítulo aberto e com resumo para onde mandar. */}
+        {chapter && selection.enabled && !selection.active ? (
+          <button
+            type="button"
+            onClick={selection.start}
+            aria-label="Selecionar versículos para o resumo"
+            title="Selecionar versículos"
+            className="inline-flex size-9 shrink-0 items-center justify-center rounded-full text-v2-ink-mute transition-colors hover:bg-v2-card-hover hover:text-v2-ink focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-v2-ink-mute"
+          >
+            <ListChecks aria-hidden className="size-4" strokeWidth={1.75} />
+          </button>
+        ) : null}
         {chapter ? (
           <>
             <button
@@ -377,7 +375,7 @@ export function BibleReader({ className, initialBook, initialChapter }: Props) {
           </div>
         ) : state.status === "ok" && state.verses.length > 0 ? (
           <>
-            <VerseLines verses={state.verses} />
+            <VerseLines verses={state.verses} selection={selection} />
             {/* O crédito da licença, no fim do capítulo, dentro da rolagem: ele
                 credita o texto acima dele, e uma faixa fixa no rodapé desta
                 gaveta cobraria três linhas de altura de toda leitura. Só
@@ -408,6 +406,15 @@ export function BibleReader({ className, initialBook, initialChapter }: Props) {
           </div>
         )}
       </div>
+      {/* A barra fica FORA da rolagem, colada no pé da gaveta: dentro dela, a
+          confirmação do gesto sumiria de vista no primeiro versículo rolado —
+          que é exatamente o que se faz enquanto se escolhe. */}
+      {selection.active ? (
+        <VerseSelectionBar
+          selection={selection}
+          className="shrink-0 border-v2-card-hover border-t pt-2"
+        />
+      ) : null}
     </div>
   );
 }

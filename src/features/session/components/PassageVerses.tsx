@@ -1,5 +1,7 @@
 "use client";
 
+import { Check } from "lucide-react";
+import { useLongPress, type VerseSelection } from "@/features/session/components/VerseSelection";
 import { useVerseFetch } from "@/features/session/hooks/useVerseFetch";
 import type { TranslationId } from "@/lib/bibles/translations";
 import { formatPassageRange } from "@/lib/domain/reference";
@@ -60,33 +62,120 @@ type PassageVersesProps = {
  * para texto pequeno, ver `globals.css`), e o número do versículo desce junto
  * para não ficar mais forte que a frase que ele numera.
  */
-export function VerseLines({ verses, muted = false }: { verses: VerseLine[]; muted?: boolean }) {
+export function VerseLines({
+  verses,
+  muted = false,
+  selection,
+}: {
+  verses: VerseLine[];
+  muted?: boolean;
+  /**
+   * A escolha de versículos, quando a tela tem para onde mandá-los. Ausente —
+   * o resumo, o estudo, a prévia do seletor —, cada versículo continua sendo o
+   * parágrafo de sempre, sem caixa, sem toque longo e com o texto selecionável
+   * pelo gesto nativo. Ver `VerseSelection`.
+   */
+  selection?: VerseSelection;
+}) {
   return (
     <div className="flex flex-col gap-1.5 pl-3">
       {verses.map((line) => (
-        // `data-verse` é o que o "Ir para a passagem" da busca do Biblo usa
-        // para rolar até este versículo e piscar nele — ver o cabeçalho de
-        // `BibleReader.tsx`. Único por CAPÍTULO visível, não por Bíblia
-        // inteira: só um capítulo está montado por vez.
-        <p
-          key={line.verse}
-          data-verse={line.verse}
+        <VerseLineRow key={line.verse} line={line} muted={muted} selection={selection} />
+      ))}
+    </div>
+  );
+}
+
+function VerseLineRow({
+  line,
+  muted,
+  selection,
+}: {
+  line: VerseLine;
+  muted: boolean;
+  selection?: VerseSelection;
+}) {
+  const selecting = selection?.active ?? false;
+  const checked = selection?.has(line.verse) ?? false;
+  // O toque longo fica desarmado DENTRO do modo: ali um toque simples já
+  // marca, e segurar não precisa abrir o que já está aberto.
+  const longPress = useLongPress(
+    () => selection?.begin(line.verse),
+    Boolean(selection?.enabled) && !selecting
+  );
+
+  const body = (
+    <>
+      <sup
+        className={cn(
+          "mr-1.5 select-none align-[0.35em] text-[0.65rem] font-semibold",
+          muted ? "text-scriba-ink-mute/75" : "text-muted-foreground"
+        )}
+      >
+        {line.verse}
+      </sup>
+      <span>{line.text}</span>
+    </>
+  );
+
+  const text = cn(
+    "rounded-md text-sm leading-relaxed",
+    muted ? "text-scriba-ink-mute" : "text-foreground/90"
+  );
+
+  // `data-verse` é o que o "Ir para a passagem" da busca do Biblo usa
+  // para rolar até este versículo e piscar nele — ver o cabeçalho de
+  // `BibleReader.tsx`. Único por CAPÍTULO visível, não por Bíblia
+  // inteira: só um capítulo está montado por vez. Ele fica SEMPRE no nó de
+  // fora, que é o que muda de forma quando o modo de seleção liga.
+  if (!selection?.enabled) {
+    return (
+      <p data-verse={line.verse} className={text}>
+        {body}
+      </p>
+    );
+  }
+
+  return (
+    // `select-none` porque os dois gestos disputam o mesmo meio segundo de
+    // dedo parado: com a seleção nativa de texto ligada, segurar um versículo
+    // no celular levanta as alças de copiar em vez das nossas caixas.
+    <div
+      data-verse={line.verse}
+      {...longPress}
+      {...(selecting
+        ? {
+            role: "checkbox" as const,
+            "aria-checked": checked,
+            tabIndex: 0,
+            onClick: () => selection.toggle(line.verse),
+            onKeyDown: (e: React.KeyboardEvent) => {
+              if (e.key !== " " && e.key !== "Enter") return;
+              e.preventDefault();
+              selection.toggle(line.verse);
+            },
+          }
+        : {})}
+      className={cn(
+        "flex select-none items-start gap-2 rounded-md transition-colors",
+        selecting && "-mx-1.5 cursor-pointer px-1.5 py-0.5",
+        selecting && checked && "bg-muted"
+      )}
+    >
+      {selecting ? (
+        <span
+          aria-hidden
           className={cn(
-            "rounded-md text-sm leading-relaxed",
-            muted ? "text-scriba-ink-mute" : "text-foreground/90"
+            "mt-1 flex size-4 flex-none items-center justify-center rounded-[5px] border transition-colors",
+            checked
+              ? "border-transparent bg-foreground text-background"
+              : "border-muted-foreground/45"
           )}
         >
-          <sup
-            className={cn(
-              "mr-1.5 select-none align-[0.35em] text-[0.65rem] font-semibold",
-              muted ? "text-scriba-ink-mute/75" : "text-muted-foreground"
-            )}
-          >
-            {line.verse}
-          </sup>
-          <span>{line.text}</span>
-        </p>
-      ))}
+          {checked ? <Check className="size-3" strokeWidth={3} /> : null}
+        </span>
+      ) : null}
+      <p className={cn(text, "min-w-0 flex-1")}>{body}</p>
     </div>
   );
 }

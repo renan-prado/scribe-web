@@ -105,7 +105,7 @@ export function InlineScripture({ reference, text }: { reference: string; text: 
       <button
         type="button"
         onClick={dialog.show}
-        aria-label={`Abrir ${reference} na NVI`}
+        aria-label={`Abrir ${reference}`}
         className="cursor-pointer rounded-sm font-medium text-session-mention-ink underline decoration-dotted decoration-session-mention-ink/50 underline-offset-[3px] transition-colors hover:decoration-solid focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring/40"
       >
         {text}

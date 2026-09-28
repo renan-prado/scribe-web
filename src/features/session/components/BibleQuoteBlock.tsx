@@ -1,22 +1,13 @@
 "use client";
 
-import { Check, ChevronDown } from "lucide-react";
+import { ChevronDown } from "lucide-react";
 import { useState } from "react";
 import { BookGlyph } from "@/components/icons/BookGlyph";
-import {
-  DropdownMenu,
-  DropdownMenuContent,
-  DropdownMenuItem,
-  DropdownMenuTrigger,
-} from "@/components/ui/dropdown-menu";
+import { DropdownMenu, DropdownMenuTrigger } from "@/components/ui/dropdown-menu";
 import { PassageVerses } from "@/features/session/components/PassageVerses";
+import { TranslationChoices } from "@/features/session/components/TranslationChoices";
 import { useResolvedTranslation } from "@/features/session/components/TranslationScope";
-import {
-  SELECTABLE_TRANSLATIONS,
-  TRANSLATIONS,
-  type TranslationId,
-} from "@/lib/bibles/translations";
-import { cn } from "@/lib/utils";
+import { TRANSLATIONS, type TranslationId } from "@/lib/bibles/translations";
 
 /**
  * O cartão de uma citação bíblica na LEITURA, com a tradução na pastilha.
@@ -93,29 +84,7 @@ export function BibleQuoteBlock({
             {TRANSLATIONS[translation].short}
             <ChevronDown aria-hidden className="size-3" />
           </DropdownMenuTrigger>
-          <DropdownMenuContent align="start" className="w-72">
-            {SELECTABLE_TRANSLATIONS.map((option) => (
-              <DropdownMenuItem
-                key={option.id}
-                onClick={() => setChosen(option.id)}
-                className="items-start gap-2.5"
-              >
-                <Check
-                  aria-hidden
-                  className={cn(
-                    "mt-0.5 size-3.5 flex-none",
-                    option.id === translation ? "opacity-100" : "opacity-0"
-                  )}
-                />
-                <span className="flex min-w-0 flex-col gap-0.5">
-                  <span className="font-medium">{option.name}</span>
-                  <span className="text-xs font-light leading-snug text-muted-foreground">
-                    {option.hint}
-                  </span>
-                </span>
-              </DropdownMenuItem>
-            ))}
-          </DropdownMenuContent>
+          <TranslationChoices value={translation} onChange={setChosen} />
         </DropdownMenu>
       </figcaption>
       <div className="text-[17px] font-light leading-relaxed text-session-verse-text">

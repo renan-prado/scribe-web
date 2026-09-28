@@ -743,7 +743,7 @@ function VerseRange({
   if (count < 1) {
     return (
       <p className="px-1 py-6 text-center text-scriba-ink-mute text-sm">
-        Não encontrei este texto na NVI.
+        Não encontrei este texto na Bíblia.
       </p>
     );
   }
@@ -803,7 +803,7 @@ function NumberGrid({ count, onPick }: { count: number; onPick: (n: number) => v
   if (count < 1) {
     return (
       <p className="px-1 py-6 text-center text-sm text-scriba-ink-mute">
-        Não encontrei este texto na NVI.
+        Não encontrei este texto na Bíblia.
       </p>
     );
   }

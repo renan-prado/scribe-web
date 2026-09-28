@@ -40,11 +40,20 @@ import { EntityFieldDialog } from "@/features/session/components/EntityFieldDial
 import { FindBar } from "@/features/session/components/FindBar";
 import { PassageVerses } from "@/features/session/components/PassageVerses";
 import { revealSummaryBlock, SUMMARY_BLOCK_ATTR } from "@/features/session/components/reveal-block";
+import {
+  type SummaryInsertApi,
+  SummaryInsertScope,
+} from "@/features/session/components/SummaryInsertContext";
 import { useUnloadGuard } from "@/features/session/hooks/useUnloadGuard";
 import { requestLocationSuggestions, requestSpeakerSuggestions } from "@/features/session/lib/api";
 import { normalizeSearch } from "@/features/session/lib/search";
 import { initialsOf } from "@/features/session/lib/text";
-import { SELECTABLE_TRANSLATIONS, TRANSLATIONS } from "@/lib/bibles/translations";
+import {
+  SELECTABLE_TRANSLATIONS,
+  TRANSLATIONS,
+  type TranslationId,
+} from "@/lib/bibles/translations";
+import { BIBLO_AT_END } from "@/lib/domain/biblo";
 import {
   applyDisplayEdit,
   hasMark,
@@ -425,6 +434,56 @@ export function Composer({
     if (focus) setFocusIndex(at);
     setActive(at);
     return at;
+  }
+
+  /**
+   * A MESMA API de inserção da leitura, ligada ao rascunho daqui.
+   *
+   * A Bíblia da lateral e o diálogo de capítulo escrevem no resumo pelo
+   * `SummaryInsertContext`, e é isso que os deixa não saber em qual das duas
+   * telas estão montados. Aqui ela não pode passar por
+   * `useWrittenReadingDraft` — o documento desta tela é o rascunho local, com
+   * desfazer, foco e sincronização próprios —, então o que se empresta é a
+   * ligação: inserir é `insertAt`, no fim, sem foco (o bloco chega pronto, e o
+   * cursor nele abriria o teclado por cima do que se quer ver).
+   *
+   * **Vários blocos entram num `patchBlocks` só**, e não num `insertAt` por
+   * bloco: `insertAt` calcula a posição a partir do `doc` fechado no render, e
+   * N chamadas no mesmo quadro leriam todas o mesmo estado velho — os blocos
+   * cairiam no mesmo índice, em ordem invertida.
+   */
+  const summaryInsert: SummaryInsertApi = {
+    addBlock: (block, requestedIndex) => {
+      setRevealIndex(insertAt(requestedIndex, block, false));
+    },
+    removeBlock: (block) => {
+      const needle = JSON.stringify(block);
+      patchBlocks((blocks) => {
+        const at = blocks.map((b) => JSON.stringify(b)).lastIndexOf(needle);
+        return at < 0 ? blocks : blocks.filter((_, i) => i !== at);
+      });
+    },
+    addPassage: (reference, translation) => addPassages([reference], translation),
+    addPassages,
+  };
+
+  function addPassages(references: string[], translation?: TranslationId) {
+    if (references.length === 0) return;
+    const added = references.map<WrittenBlock>((reference) => ({
+      type: "bibleQuote",
+      reference,
+      text: "",
+      ...(translation ? { translation } : {}),
+    }));
+    // O teto da conclusão sai do `doc` deste render, como no `insertAt`: é uma
+    // chamada por gesto, e todos os blocos são do mesmo tipo.
+    const at = insertionIndex(doc.blocks, added[0], BIBLO_AT_END);
+    patchBlocks((blocks) => {
+      const copy = blocks.slice();
+      copy.splice(at, 0, ...added);
+      return copy;
+    });
+    setRevealIndex(at);
   }
 
   /**
@@ -1288,25 +1347,29 @@ export function Composer({
   });
 
   return (
-    <main className="mx-auto flex min-h-svh w-full max-w-[1024px] flex-col gap-6 px-4 pb-24 sm:gap-8 sm:px-6">
-      {header}
+    // A Bíblia da lateral (`BibleDock`) escreve no resumo pelo contexto, e é o
+    // que faz o mesmo componente servir a leitura e o editor. Ver
+    // `SummaryInsertContext`.
+    <SummaryInsertScope api={summaryInsert}>
+      <main className="mx-auto flex min-h-svh w-full max-w-[1024px] flex-col gap-6 px-4 pb-24 sm:gap-8 sm:px-6">
+        {header}
 
-      {/* A busca deste rascunho, FIXA no topo enquanto aberta (ela sai do
+        {/* A busca deste rascunho, FIXA no topo enquanto aberta (ela sai do
           fluxo, então esta posição no JSX não é a posição dela na tela). Ver
           "A busca do editor" acima e o cabeçalho de `FindBar`. */}
-      {findOpen ? (
-        <FindBar
-          query={findQuery}
-          total={findEnough ? findHits.length : null}
-          index={findCurrent < 0 ? 0 : findCurrent}
-          label="Procurar neste texto"
-          onQueryChange={setFindQuery}
-          onStep={stepFind}
-          onClose={closeFind}
-        />
-      ) : null}
+        {findOpen ? (
+          <FindBar
+            query={findQuery}
+            total={findEnough ? findHits.length : null}
+            index={findCurrent < 0 ? 0 : findCurrent}
+            label="Procurar neste texto"
+            onQueryChange={setFindQuery}
+            onStep={stepFind}
+            onClose={closeFind}
+          />
+        ) : null}
 
-      {/* A COLUNA DE ESCRITA, mais estreita que a barra do topo.
+        {/* A COLUNA DE ESCRITA, mais estreita que a barra do topo.
 
           O `<main>` tem 1024px para a `TopBar` terminar onde ela termina na
           Biblioteca — ela é a mesma peça em toda tela do app, e o avatar
@@ -1317,99 +1380,99 @@ export function Composer({
 
           O `PassagePicker` fica FORA desta coluna: é um diálogo, portal, sem
           posição no fluxo. */}
-      <div className="mx-auto flex w-full max-w-3xl flex-col gap-6 sm:gap-8">
-        <header className="flex flex-col gap-4">
-          <div className="flex items-center justify-between gap-3">
-            {/* Numa folha em branco que nunca foi salva, "Salvo" é tecnicamente
+        <div className="mx-auto flex w-full max-w-3xl flex-col gap-6 sm:gap-8">
+          <header className="flex flex-col gap-4">
+            <div className="flex items-center justify-between gap-3">
+              {/* Numa folha em branco que nunca foi salva, "Salvo" é tecnicamente
                 verdade e mentira na prática: não há nada salvo porque não há
                 nada. O chip entra quando passa a existir algo sobre o que
                 afirmar. */}
-            {sessionId || status !== "synced" ? (
-              <StatusChip status={status} offline={offline} />
-            ) : (
-              <span />
-            )}
-            {sessionId ? (
-              <button
-                type="button"
-                onClick={openReading}
-                disabled={leaving}
-                className="inline-flex items-center gap-1.5 rounded-full bg-scriba-ink-mute/10 px-3 py-1.5 text-[11px] font-semibold uppercase tracking-wider text-scriba-ink-soft transition-colors hover:bg-scriba-blue-soft/70 hover:text-scriba-blue-ink disabled:opacity-60"
-              >
-                <Save className="size-3.5" />
-                Salvar
-              </button>
-            ) : null}
-          </div>
+              {sessionId || status !== "synced" ? (
+                <StatusChip status={status} offline={offline} />
+              ) : (
+                <span />
+              )}
+              {sessionId ? (
+                <button
+                  type="button"
+                  onClick={openReading}
+                  disabled={leaving}
+                  className="inline-flex items-center gap-1.5 rounded-full bg-scriba-ink-mute/10 px-3 py-1.5 text-[11px] font-semibold uppercase tracking-wider text-scriba-ink-soft transition-colors hover:bg-scriba-blue-soft/70 hover:text-scriba-blue-ink disabled:opacity-60"
+                >
+                  <Save className="size-3.5" />
+                  Salvar
+                </button>
+              ) : null}
+            </div>
 
-          <AutoTextarea
-            value={doc.title}
-            onChange={(v) =>
-              setDoc((prev) => ({ ...prev, title: v.slice(0, WRITTEN_LIMITS.title) }))
-            }
-            ariaLabel="Título"
-            placeholder="Título"
-            className="font-heading text-2xl font-semibold leading-tight tracking-tight text-scriba-ink-strong sm:text-3xl md:text-4xl"
-          />
+            <AutoTextarea
+              value={doc.title}
+              onChange={(v) =>
+                setDoc((prev) => ({ ...prev, title: v.slice(0, WRITTEN_LIMITS.title) }))
+              }
+              ariaLabel="Título"
+              placeholder="Título"
+              className="font-heading text-2xl font-semibold leading-tight tracking-tight text-scriba-ink-strong sm:text-3xl md:text-4xl"
+            />
 
-          {/* Autor e local só existem depois do primeiro salvamento (o PATCH
+            {/* Autor e local só existem depois do primeiro salvamento (o PATCH
               precisa de uma linha para apontar) — mesmo botão da leitura,
               trazido para cá para não obrigar uma volta ao `/summary`. */}
-          {sessionId ? (
-            <div className="flex flex-wrap items-center gap-2">
-              {speakerName?.trim() ? (
-                <button
-                  type="button"
-                  onClick={() => setSpeakerDialogOpen(true)}
-                  className={cn(
-                    "group inline-flex items-center gap-2 rounded-full -mx-1 px-1 py-0.5 outline-none transition-colors",
-                    "hover:bg-scriba-blue-soft/60 focus-visible:ring-2 focus-visible:ring-ring/40"
-                  )}
-                >
-                  <span className="flex size-6 items-center justify-center rounded-full bg-scriba-blue-soft text-[10px] font-semibold text-scriba-blue-ink">
-                    {speakerInitials}
-                  </span>
-                  <span className="text-sm font-medium leading-none text-scriba-ink">
-                    {speakerName}
-                  </span>
-                </button>
-              ) : (
-                <button
-                  type="button"
-                  onClick={() => setSpeakerDialogOpen(true)}
-                  className={ADD_BADGE_CLASSES}
-                >
-                  <Plus className="size-3" strokeWidth={2.5} />
-                  Adicionar autor
-                </button>
-              )}
-              {speakerLocation?.trim() ? (
-                <button
-                  type="button"
-                  onClick={() => setLocationDialogOpen(true)}
-                  className={cn(
-                    "group -mx-1 inline-flex w-fit items-center gap-1.5 rounded-md px-1 py-0.5 text-xs font-light text-scriba-ink-mute outline-none transition-colors",
-                    "hover:bg-scriba-blue-soft/60 focus-visible:ring-2 focus-visible:ring-ring/40"
-                  )}
-                >
-                  <MapPin className="size-3" />
-                  {speakerLocation}
-                </button>
-              ) : (
-                <button
-                  type="button"
-                  onClick={() => setLocationDialogOpen(true)}
-                  className={ADD_BADGE_CLASSES}
-                >
-                  <Plus className="size-3" strokeWidth={2.5} />
-                  Adicionar local
-                </button>
-              )}
-            </div>
-          ) : null}
-        </header>
+            {sessionId ? (
+              <div className="flex flex-wrap items-center gap-2">
+                {speakerName?.trim() ? (
+                  <button
+                    type="button"
+                    onClick={() => setSpeakerDialogOpen(true)}
+                    className={cn(
+                      "group inline-flex items-center gap-2 rounded-full -mx-1 px-1 py-0.5 outline-none transition-colors",
+                      "hover:bg-scriba-blue-soft/60 focus-visible:ring-2 focus-visible:ring-ring/40"
+                    )}
+                  >
+                    <span className="flex size-6 items-center justify-center rounded-full bg-scriba-blue-soft text-[10px] font-semibold text-scriba-blue-ink">
+                      {speakerInitials}
+                    </span>
+                    <span className="text-sm font-medium leading-none text-scriba-ink">
+                      {speakerName}
+                    </span>
+                  </button>
+                ) : (
+                  <button
+                    type="button"
+                    onClick={() => setSpeakerDialogOpen(true)}
+                    className={ADD_BADGE_CLASSES}
+                  >
+                    <Plus className="size-3" strokeWidth={2.5} />
+                    Adicionar autor
+                  </button>
+                )}
+                {speakerLocation?.trim() ? (
+                  <button
+                    type="button"
+                    onClick={() => setLocationDialogOpen(true)}
+                    className={cn(
+                      "group -mx-1 inline-flex w-fit items-center gap-1.5 rounded-md px-1 py-0.5 text-xs font-light text-scriba-ink-mute outline-none transition-colors",
+                      "hover:bg-scriba-blue-soft/60 focus-visible:ring-2 focus-visible:ring-ring/40"
+                    )}
+                  >
+                    <MapPin className="size-3" />
+                    {speakerLocation}
+                  </button>
+                ) : (
+                  <button
+                    type="button"
+                    onClick={() => setLocationDialogOpen(true)}
+                    className={ADD_BADGE_CLASSES}
+                  >
+                    <Plus className="size-3" strokeWidth={2.5} />
+                    Adicionar local
+                  </button>
+                )}
+              </div>
+            ) : null}
+          </header>
 
-        {/* O VÃO é do contêiner, e nada mais mora dentro dele.
+          {/* O VÃO é do contêiner, e nada mais mora dentro dele.
 
             Ele já foi de 56px para abrigar um disco de `+` que aparecia entre
             cada dois blocos. Eram dois discos por bloco, acendendo e apagando ao
@@ -1421,8 +1484,8 @@ export function Composer({
             **A linha do cabeçalho é o PRIMEIRO item desta lista**, e não uma irmã
             dela lá em cima: assim o espaço abaixo dela é decidido por quem sabe o
             que vem depois, e não pelo `gap` do `<main>`. */}
-        <div ref={listRef} className="relative flex flex-col gap-8">
-          {/* ONDE O BLOCO VAI CAIR, enquanto ele está no ar.
+          <div ref={listRef} className="relative flex flex-col gap-8">
+            {/* ONDE O BLOCO VAI CAIR, enquanto ele está no ar.
 
               Uma linha no vão entre dois blocos, e não o vizinho abrindo espaço
               para ele: abrir espaço significa mudar a altura da lista debaixo do
@@ -1431,19 +1494,19 @@ export function Composer({
               linha diz a mesma coisa sem mover uma letra.
 
               Ela é `absolute` sobre o contêiner, e por isso ele é `relative`. */}
-          {blockDrag.drag ? (
-            <div
-              aria-hidden
-              style={{ top: blockDrag.drag.indicatorTop }}
-              // Ela tem a largura da SUPERFÍCIE, não a da coluna de texto: é o
-              // bloco que vai cair ali, e o bloco avança 12px (20 no sm) para
-              // fora da coluna de cada lado. É o mesmo par do `BLOCK_SURFACE`.
-              className="pointer-events-none absolute -left-3 -right-3 z-20 h-0.5 -translate-y-1/2 rounded-full bg-scriba-blue sm:-left-5 sm:-right-5"
-            />
-          ) : null}
-          <div className="h-px w-full bg-scriba-hairline" />
+            {blockDrag.drag ? (
+              <div
+                aria-hidden
+                style={{ top: blockDrag.drag.indicatorTop }}
+                // Ela tem a largura da SUPERFÍCIE, não a da coluna de texto: é o
+                // bloco que vai cair ali, e o bloco avança 12px (20 no sm) para
+                // fora da coluna de cada lado. É o mesmo par do `BLOCK_SURFACE`.
+                className="pointer-events-none absolute -left-3 -right-3 z-20 h-0.5 -translate-y-1/2 rounded-full bg-scriba-blue sm:-left-5 sm:-right-5"
+              />
+            ) : null}
+            <div className="h-px w-full bg-scriba-hairline" />
 
-          {/* A IDEIA CENTRAL, quando existe, é o primeiro item do texto.
+            {/* A IDEIA CENTRAL, quando existe, é o primeiro item do texto.
               Ela não é um bloco — é o `shortSummary` do payload, a frase que
               aparece no cartão da Biblioteca e na busca —, e por isso não tem
               pílula de mover nem de excluir: a posição dela é fixa, e quem a
@@ -1457,148 +1520,148 @@ export function Composer({
               sem a animação do gradiente. Lá ela diz "isto a máquina escreveu";
               aqui quem escreve é a pessoa, e um cartão pulsando sob o cursor é
               movimento embaixo do texto que está sendo digitado. */}
-          {showLead ? (
-            <section className="flex flex-col gap-2 rounded-[26px] bg-[image:var(--session-surface-quote)] bg-[size:200%_100%] p-5">
-              <div className="flex items-center justify-between gap-3">
-                <span className="inline-flex items-center gap-1.5 text-[10px] font-semibold uppercase tracking-[0.14em] text-session-chip-ai">
-                  <ScribaMark className="size-3" />
-                  Ideia central
-                </span>
-                <button
-                  type="button"
-                  aria-label="Remover a ideia central"
-                  title="Remover a ideia central"
-                  onClick={() => {
-                    setLeadAsked(false);
-                    setDoc((prev) => ({ ...prev, shortSummary: "" }));
+            {showLead ? (
+              <section className="flex flex-col gap-2 rounded-[26px] bg-[image:var(--session-surface-quote)] bg-[size:200%_100%] p-5">
+                <div className="flex items-center justify-between gap-3">
+                  <span className="inline-flex items-center gap-1.5 text-[10px] font-semibold uppercase tracking-[0.14em] text-session-chip-ai">
+                    <ScribaMark className="size-3" />
+                    Ideia central
+                  </span>
+                  <button
+                    type="button"
+                    aria-label="Remover a ideia central"
+                    title="Remover a ideia central"
+                    onClick={() => {
+                      setLeadAsked(false);
+                      setDoc((prev) => ({ ...prev, shortSummary: "" }));
+                    }}
+                    className="-mr-1 -mt-1 inline-flex size-7 shrink-0 items-center justify-center rounded-full text-scriba-ink-mute transition-colors hover:bg-scriba-rose hover:text-scriba-rose-ink"
+                  >
+                    <X className="size-4" />
+                  </button>
+                </div>
+                <AutoTextarea
+                  value={doc.shortSummary}
+                  onChange={(v) =>
+                    setDoc((prev) => ({
+                      ...prev,
+                      shortSummary: v.slice(0, WRITTEN_LIMITS.shortSummary),
+                    }))
+                  }
+                  textareaRef={(el) => {
+                    leadRef.current = el;
                   }}
-                  className="-mr-1 -mt-1 inline-flex size-7 shrink-0 items-center justify-center rounded-full text-scriba-ink-mute transition-colors hover:bg-scriba-rose hover:text-scriba-rose-ink"
+                  ariaLabel="Ideia central"
+                  placeholder="Em uma frase, do que trata esta mensagem."
+                  className="text-pretty text-[17px] font-light leading-[1.7] text-session-verse-text"
+                />
+              </section>
+            ) : null}
+
+            {doc.blocks.map((block, i) => {
+              // A busca acende TODOS os blocos que casam e destaca o da vez. Ver
+              // "A busca do editor": aqui o resultado é o bloco, porque o que
+              // está dentro de uma `textarea` não aceita destaque de texto.
+              const hit = findHits.includes(i);
+              const currentHit = findCurrent >= 0 && findHits[findCurrent] === i;
+              const body = (
+                <BlockBody
+                  block={block}
+                  index={i}
+                  onFocus={() => setActive(i)}
+                  onChange={(patch) => changeBlock(i, patch)}
+                  onKeyDown={(e) => onKeyDown(i, e)}
+                  onSelect={(e) => {
+                    const el = e.currentTarget;
+                    setSelectedIn(el.selectionEnd > el.selectionStart ? i : null);
+                  }}
+                  onOpenPicker={() => setPickerFor(i)}
+                  registerRef={(el) => {
+                    refs.current[i] = el;
+                  }}
+                />
+              );
+
+              return (
+                // Nem o `onBlur` nem o `onPointerDown` daqui são interação: o
+                // primeiro APAGA um estado quando o cursor sai do bloco, o segundo
+                // arma o pressionar-e-segurar do arrasto (`useBlockDrag`). Não há
+                // ação atrás deste `div` para um leitor de tela alcançar — quem
+                // move o bloco pelo teclado são as setas da pílula.
+                // biome-ignore lint/a11y/noStaticElementInteractions: ver acima
+                <div
+                  // biome-ignore lint/suspicious/noArrayIndexKey: ver o cabeçalho
+                  key={i}
+                  // O índice no DOM é o que deixa a inserção pela conversa rolar
+                  // até o bloco e piscar nele. Ver `revealSummaryBlock`.
+                  {...{ [SUMMARY_BLOCK_ATTR]: i }}
+                  {...blockDrag.pressProps(i)}
+                  className={cn(
+                    "group relative flex flex-col",
+                    // O bloco que está no ar continua no lugar, APAGADO: tirá-lo
+                    // da lista mudaria a altura de tudo abaixo dele no meio do
+                    // gesto, e é a imobilidade da folha que faz a linha de destino
+                    // significar alguma coisa.
+                    blockDrag.drag?.from === i && "opacity-30"
+                  )}
+                  onBlur={(e) => {
+                    // `relatedTarget` é quem RECEBEU o foco. Se for um filho deste
+                    // bloco (a lixeira, o mover, a pastilha da passagem), o cursor
+                    // não saiu daqui e o bloco continua sendo o ativo.
+                    if (e.currentTarget.contains(e.relatedTarget as Node | null)) return;
+                    setActive((cur) => (cur === i ? null : cur));
+                    // O menu da barra é a linha sendo escrita: sem o cursor nela,
+                    // ele fica pousado sobre um `/` que ninguém está digitando.
+                    // Escolher uma opção não passa por aqui — os itens usam
+                    // `onMouseDown` com `preventDefault`, que não tira o foco.
+                    setSlash((cur) => (cur?.index === i ? null : cur));
+                    // A barra ABANDONADA some com o menu que ela abriu: uma linha
+                    // que ficou só com `/` é um comando que ninguém completou, e
+                    // não um parágrafo com uma barra dentro. Sem isto, o `+` da
+                    // barra de blocos (`openSlashFrom`) deixaria esse resíduo
+                    // toda vez que alguém abrisse o menu e desistisse — e
+                    // desistir sem apagar nada é o que o botão deve permitir.
+                    if (block.type === "paragraph" && block.text === "/") setBlock(i, { text: "" });
+                  }}
                 >
-                  <X className="size-4" />
-                </button>
-              </div>
-              <AutoTextarea
-                value={doc.shortSummary}
-                onChange={(v) =>
-                  setDoc((prev) => ({
-                    ...prev,
-                    shortSummary: v.slice(0, WRITTEN_LIMITS.shortSummary),
-                  }))
-                }
-                textareaRef={(el) => {
-                  leadRef.current = el;
-                }}
-                ariaLabel="Ideia central"
-                placeholder="Em uma frase, do que trata esta mensagem."
-                className="text-pretty text-[17px] font-light leading-[1.7] text-session-verse-text"
-              />
-            </section>
-          ) : null}
-
-          {doc.blocks.map((block, i) => {
-            // A busca acende TODOS os blocos que casam e destaca o da vez. Ver
-            // "A busca do editor": aqui o resultado é o bloco, porque o que
-            // está dentro de uma `textarea` não aceita destaque de texto.
-            const hit = findHits.includes(i);
-            const currentHit = findCurrent >= 0 && findHits[findCurrent] === i;
-            const body = (
-              <BlockBody
-                block={block}
-                index={i}
-                onFocus={() => setActive(i)}
-                onChange={(patch) => changeBlock(i, patch)}
-                onKeyDown={(e) => onKeyDown(i, e)}
-                onSelect={(e) => {
-                  const el = e.currentTarget;
-                  setSelectedIn(el.selectionEnd > el.selectionStart ? i : null);
-                }}
-                onOpenPicker={() => setPickerFor(i)}
-                registerRef={(el) => {
-                  refs.current[i] = el;
-                }}
-              />
-            );
-
-            return (
-              // Nem o `onBlur` nem o `onPointerDown` daqui são interação: o
-              // primeiro APAGA um estado quando o cursor sai do bloco, o segundo
-              // arma o pressionar-e-segurar do arrasto (`useBlockDrag`). Não há
-              // ação atrás deste `div` para um leitor de tela alcançar — quem
-              // move o bloco pelo teclado são as setas da pílula.
-              // biome-ignore lint/a11y/noStaticElementInteractions: ver acima
-              <div
-                // biome-ignore lint/suspicious/noArrayIndexKey: ver o cabeçalho
-                key={i}
-                // O índice no DOM é o que deixa a inserção pela conversa rolar
-                // até o bloco e piscar nele. Ver `revealSummaryBlock`.
-                {...{ [SUMMARY_BLOCK_ATTR]: i }}
-                {...blockDrag.pressProps(i)}
-                className={cn(
-                  "group relative flex flex-col",
-                  // O bloco que está no ar continua no lugar, APAGADO: tirá-lo
-                  // da lista mudaria a altura de tudo abaixo dele no meio do
-                  // gesto, e é a imobilidade da folha que faz a linha de destino
-                  // significar alguma coisa.
-                  blockDrag.drag?.from === i && "opacity-30"
-                )}
-                onBlur={(e) => {
-                  // `relatedTarget` é quem RECEBEU o foco. Se for um filho deste
-                  // bloco (a lixeira, o mover, a pastilha da passagem), o cursor
-                  // não saiu daqui e o bloco continua sendo o ativo.
-                  if (e.currentTarget.contains(e.relatedTarget as Node | null)) return;
-                  setActive((cur) => (cur === i ? null : cur));
-                  // O menu da barra é a linha sendo escrita: sem o cursor nela,
-                  // ele fica pousado sobre um `/` que ninguém está digitando.
-                  // Escolher uma opção não passa por aqui — os itens usam
-                  // `onMouseDown` com `preventDefault`, que não tira o foco.
-                  setSlash((cur) => (cur?.index === i ? null : cur));
-                  // A barra ABANDONADA some com o menu que ela abriu: uma linha
-                  // que ficou só com `/` é um comando que ninguém completou, e
-                  // não um parágrafo com uma barra dentro. Sem isto, o `+` da
-                  // barra de blocos (`openSlashFrom`) deixaria esse resíduo
-                  // toda vez que alguém abrisse o menu e desistisse — e
-                  // desistir sem apagar nada é o que o botão deve permitir.
-                  if (block.type === "paragraph" && block.text === "/") setBlock(i, { text: "" });
-                }}
-              >
-                {/* A pílula não fica no ar durante um arrasto: ela é o controle
+                  {/* A pílula não fica no ar durante um arrasto: ela é o controle
                     de uma linha PARADA, e os botões dela pousariam sobre o vão
                     de onde o bloco acabou de sair. */}
-                {blockDrag.drag ? null : (
-                  <BlockControls
-                    shown={active === i}
-                    blank={block.text.trim().length === 0 || block.text === "/"}
-                    /* A passagem fica de fora: o texto dela vem da NVI pela
+                  {blockDrag.drag ? null : (
+                    <BlockControls
+                      shown={active === i}
+                      blank={block.text.trim().length === 0 || block.text === "/"}
+                      /* A passagem fica de fora: o texto dela vem da NVI pela
                      referência, então não há frase sua para virar outro bloco,
                      e o que se troca nela — a referência — já é a pastilha que
                      ela desenha. Ver `turnAt`. */
-                    onTurn={block.type === "bibleQuote" ? undefined : () => turnAt(i)}
-                    /* A CONCLUSÃO não se move, e nada se move para depois dela:
+                      onTurn={block.type === "bibleQuote" ? undefined : () => turnAt(i)}
+                      /* A CONCLUSÃO não se move, e nada se move para depois dela:
                      ela é o fecho, e as setas são o único caminho que restaria
                      para desmanchar a posição que a inserção garante. Os
                      botões ficam ali, desabilitados (o `ControlButton` já
                      desenha isso a 30% quando não recebe `onClick`) — sumir
                      com eles faria a pílula deste bloco ter uma largura
                      diferente da dos vizinhos. */
-                    onUp={i > 0 && block.type !== "conclusion" ? () => moveBy(i, -1) : undefined}
-                    onDown={
-                      i < doc.blocks.length - 1 &&
-                      block.type !== "conclusion" &&
-                      conclusionAt !== i + 1
-                        ? () => moveBy(i, 1)
-                        : undefined
-                    }
-                    /* O marca-texto só existe com um recorte na mão, e só nos
+                      onUp={i > 0 && block.type !== "conclusion" ? () => moveBy(i, -1) : undefined}
+                      onDown={
+                        i < doc.blocks.length - 1 &&
+                        block.type !== "conclusion" &&
+                        conclusionAt !== i + 1
+                          ? () => moveBy(i, 1)
+                          : undefined
+                      }
+                      /* O marca-texto só existe com um recorte na mão, e só nos
                      blocos cuja LEITURA passa pelo `RichText` — marcar onde a
                      marca não vai aparecer seria um botão que engole o gesto.
                      Ver `MARKABLE`. */
-                    onMark={
-                      selectedIn === i && MARKABLE.has(block.type) ? () => markAt(i) : undefined
-                    }
-                    onDelete={() => removeAt(i)}
-                  />
-                )}
-                {/* O bloco em foco POUSA NUMA SUPERFÍCIE, e é assim que se vê
+                      onMark={
+                        selectedIn === i && MARKABLE.has(block.type) ? () => markAt(i) : undefined
+                      }
+                      onDelete={() => removeAt(i)}
+                    />
+                  )}
+                  {/* O bloco em foco POUSA NUMA SUPERFÍCIE, e é assim que se vê
                     onde o cursor está. Ele existe pelo celular, onde não há
                     ponteiro e o teclado cobre metade da tela — sem nada aceso,
                     "onde eu estava?" só se responde rolando até achar o cursor.
@@ -1617,25 +1680,25 @@ export function Composer({
                     nada a que sobreviver — ela é o foco, e mais nada —, e o
                     `active` existe para os botões, que precisam continuar
                     clicáveis no toque seguinte. */}
-                <div
-                  // A caixa VISÍVEL do bloco: é ela que o arrasto mede e é ela
-                  // que a prévia clona. Ver `useBlockDrag`.
-                  ref={(el) => {
-                    surfaceRefs.current[i] = el;
-                  }}
-                  className={cn(
-                    BLOCK_SURFACE,
-                    "relative focus-within:bg-scriba-blue-soft/40",
-                    // O amarelo é o MESMO da busca da leitura e do marca-texto:
-                    // um segundo tom para "achei aqui" seria uma segunda
-                    // gramática para a mesma ideia. O da vez é o cheio, os
-                    // outros ficam no claro — sem essa diferença, achar o
-                    // quinto de doze seria contar de cima.
-                    hit && "ring-1 ring-scriba-yellow-light/40",
-                    currentHit && "bg-scriba-yellow-light/10 ring-scriba-yellow"
-                  )}
-                >
-                  {/* O PUNHO, na margem esquerda, e ele mora dentro do RECUO da
+                  <div
+                    // A caixa VISÍVEL do bloco: é ela que o arrasto mede e é ela
+                    // que a prévia clona. Ver `useBlockDrag`.
+                    ref={(el) => {
+                      surfaceRefs.current[i] = el;
+                    }}
+                    className={cn(
+                      BLOCK_SURFACE,
+                      "relative focus-within:bg-scriba-blue-soft/40",
+                      // O amarelo é o MESMO da busca da leitura e do marca-texto:
+                      // um segundo tom para "achei aqui" seria uma segunda
+                      // gramática para a mesma ideia. O da vez é o cheio, os
+                      // outros ficam no claro — sem essa diferença, achar o
+                      // quinto de doze seria contar de cima.
+                      hit && "ring-1 ring-scriba-yellow-light/40",
+                      currentHit && "bg-scriba-yellow-light/10 ring-scriba-yellow"
+                    )}
+                  >
+                    {/* O PUNHO, na margem esquerda, e ele mora dentro do RECUO da
                       superfície — não fora dela.
 
                       A superfície avança 20px para além da coluna de texto
@@ -1673,18 +1736,18 @@ export function Composer({
 
                       `cursor-grab` é metade do convite; a outra metade é ele
                       aparecer só ao passar o mouse, como a pílula. */}
-                  {blockDrag.drag || block.type === "conclusion" ? null : (
-                    <button
-                      type="button"
-                      aria-label={`Arrastar o bloco ${i + 1} para outro lugar`}
-                      title="Arrastar para mover"
-                      {...blockDrag.handleProps(i)}
-                      className="-translate-y-1/2 absolute top-1/2 left-0 hidden h-6 w-4 cursor-grab touch-none items-center justify-center rounded-md text-scriba-ink-mute opacity-0 transition-opacity hover:bg-scriba-blue-soft/60 hover:text-scriba-ink focus-visible:opacity-100 active:cursor-grabbing group-hover:opacity-100 sm:flex"
-                    >
-                      <GripVertical className="size-3" />
-                    </button>
-                  )}
-                  {/* `relative` para o ÂNCORA do menu da barra cobrir
+                    {blockDrag.drag || block.type === "conclusion" ? null : (
+                      <button
+                        type="button"
+                        aria-label={`Arrastar o bloco ${i + 1} para outro lugar`}
+                        title="Arrastar para mover"
+                        {...blockDrag.handleProps(i)}
+                        className="-translate-y-1/2 absolute top-1/2 left-0 hidden h-6 w-4 cursor-grab touch-none items-center justify-center rounded-md text-scriba-ink-mute opacity-0 transition-opacity hover:bg-scriba-blue-soft/60 hover:text-scriba-ink focus-visible:opacity-100 active:cursor-grabbing group-hover:opacity-100 sm:flex"
+                      >
+                        <GripVertical className="size-3" />
+                      </button>
+                    )}
+                    {/* `relative` para o ÂNCORA do menu da barra cobrir
                       EXATAMENTE a linha: esta caixa começa onde o texto começa,
                       e o âncora é um `absolute inset-0` invisível dentro dela.
                       A barra só abre num parágrafo VAZIO, então o cursor está
@@ -1693,28 +1756,28 @@ export function Composer({
                       única coisa da página cuja posição o DOM não expõe. O menu
                       em si não mora aqui: ele sai por portal para o `body`, e
                       as coordenadas saem deste âncora (ver `SlashMenu`). */}
-                  <div className="relative min-w-0">
-                    {body}
-                    {slash?.index === i ? (
-                      <SlashMenu
-                        options={slashOptions}
-                        cursor={slash.cursor}
-                        query={slashQuery}
-                        // Funcional pela mesma razão das setas: o mouse
-                        // passando por cima de um item só move o cursor, e um
-                        // objeto novo aqui apagava o modo `convert` no caminho
-                        // entre o botão que abriu o menu e o item escolhido.
-                        onHover={(cursor) => setSlash((cur) => (cur ? { ...cur, cursor } : cur))}
-                        onPick={(pick) => pickSlash(i, pick)}
-                      />
-                    ) : null}
+                    <div className="relative min-w-0">
+                      {body}
+                      {slash?.index === i ? (
+                        <SlashMenu
+                          options={slashOptions}
+                          cursor={slash.cursor}
+                          query={slashQuery}
+                          // Funcional pela mesma razão das setas: o mouse
+                          // passando por cima de um item só move o cursor, e um
+                          // objeto novo aqui apagava o modo `convert` no caminho
+                          // entre o botão que abriu o menu e o item escolhido.
+                          onHover={(cursor) => setSlash((cur) => (cur ? { ...cur, cursor } : cur))}
+                          onPick={(pick) => pickSlash(i, pick)}
+                        />
+                      ) : null}
+                    </div>
                   </div>
                 </div>
-              </div>
-            );
-          })}
+              );
+            })}
 
-          {/* A linha do fim: uma linha em branco de parágrafo, sempre presente.
+            {/* A linha do fim: uma linha em branco de parágrafo, sempre presente.
               É a única posição que não depende de um bloco existir — todas as
               outras saem da pílula de um deles —, e a única em que se escreve
               sem escolher nada antes (ver `WritingLine`). É ela que mantém
@@ -1725,82 +1788,83 @@ export function Composer({
               um Enter no fim do texto acabou de criar: as duas desenham a mesma
               linha em branco, e empilhadas seriam duas onde a pessoa pediu
               uma. E some de vez quando há conclusão, ver `closed`. */}
-          {endsBlank || closed ? null : (
-            <div
-              className={cn(BLOCK_SURFACE, "group relative focus-within:bg-scriba-blue-soft/40")}
-            >
-              {/* **A linha do fim TAMBÉM tem o `+`, e é onde ele mais falta.**
+            {endsBlank || closed ? null : (
+              <div
+                className={cn(BLOCK_SURFACE, "group relative focus-within:bg-scriba-blue-soft/40")}
+              >
+                {/* **A linha do fim TAMBÉM tem o `+`, e é onde ele mais falta.**
                   A pílula é por BLOCO, e esta linha não é um — então, numa folha
                   em branco, onde não há bloco nenhum, o editor inteiro ficava
                   sem o botão: o único caminho para pedir um título era saber que
                   a `/` existe. Aqui ela é só o `+`: não há o que mover, o que
                   excluir nem o que marcar numa linha que ainda não é nada. */}
-              <BlockControls shown={tailFocus} blank onTurn={() => openSlashFrom("tail")} />
-              <WritingLine
-                emphasis={empty}
-                // Ela não passa pelo `active` (não é um bloco), e é a linha em
-                // branco mais provável do editor. Ver `tailFocus`.
-                onFocusChange={setTailFocus}
-                onWrite={(text) => {
-                  const at = insertAt(doc.blocks.length, { type: "paragraph", text });
-                  // A barra digitada na linha do fim faz a MESMA coisa que
-                  // dentro de um bloco: ela vira um parágrafo com `/` dentro, e
-                  // o bloco recém-criado (agora mapeado por `doc.blocks.map`
-                  // acima) desenha o menu sobre ele. Sem isto, o único lugar do
-                  // editor onde se escreve sem escolher nada antes seria
-                  // justamente o único onde a barra não funcionaria.
-                  if (text === "/") setSlash({ index: at, cursor: 0, convert: false });
-                }}
-              />
-            </div>
-          )}
+                <BlockControls shown={tailFocus} blank onTurn={() => openSlashFrom("tail")} />
+                <WritingLine
+                  emphasis={empty}
+                  // Ela não passa pelo `active` (não é um bloco), e é a linha em
+                  // branco mais provável do editor. Ver `tailFocus`.
+                  onFocusChange={setTailFocus}
+                  onWrite={(text) => {
+                    const at = insertAt(doc.blocks.length, { type: "paragraph", text });
+                    // A barra digitada na linha do fim faz a MESMA coisa que
+                    // dentro de um bloco: ela vira um parágrafo com `/` dentro, e
+                    // o bloco recém-criado (agora mapeado por `doc.blocks.map`
+                    // acima) desenha o menu sobre ele. Sem isto, o único lugar do
+                    // editor onde se escreve sem escolher nada antes seria
+                    // justamente o único onde a barra não funcionaria.
+                    if (text === "/") setSlash({ index: at, cursor: 0, convert: false });
+                  }}
+                />
+              </div>
+            )}
+          </div>
         </div>
-      </div>
 
-      <PassagePicker
-        open={pickerFor !== null}
-        // Editando uma referência que já existe, o seletor abre direto no
-        // capítulo/versículo atual — não na lista de livros. Num bloco NOVO
-        // (`pickerFor === -1`) vale o que a barra já sabia: o livro digitado,
-        // o livro e o capítulo, ou nada (`pickerSeed`), e aí o começo do zero
-        // de sempre.
-        initialReference={
-          pickerFor !== null && pickerFor >= 0
-            ? ((doc.blocks[pickerFor] as { reference?: string } | undefined)?.reference ?? null)
-            : pickerSeed
-        }
-        onOpenChange={(v) => {
-          if (!v) setPickerFor(null);
-        }}
-        onPick={(reference) => {
-          if (pickerFor === -1) insertAt(pendingIndex, { type: "bibleQuote", reference, text: "" });
-          else if (pickerFor !== null) setBlock(pickerFor, { reference });
-          setPickerFor(null);
-        }}
-      />
+        <PassagePicker
+          open={pickerFor !== null}
+          // Editando uma referência que já existe, o seletor abre direto no
+          // capítulo/versículo atual — não na lista de livros. Num bloco NOVO
+          // (`pickerFor === -1`) vale o que a barra já sabia: o livro digitado,
+          // o livro e o capítulo, ou nada (`pickerSeed`), e aí o começo do zero
+          // de sempre.
+          initialReference={
+            pickerFor !== null && pickerFor >= 0
+              ? ((doc.blocks[pickerFor] as { reference?: string } | undefined)?.reference ?? null)
+              : pickerSeed
+          }
+          onOpenChange={(v) => {
+            if (!v) setPickerFor(null);
+          }}
+          onPick={(reference) => {
+            if (pickerFor === -1)
+              insertAt(pendingIndex, { type: "bibleQuote", reference, text: "" });
+            else if (pickerFor !== null) setBlock(pickerFor, { reference });
+            setPickerFor(null);
+          }}
+        />
 
-      <EntityFieldDialog
-        kind="speaker"
-        open={speakerDialogOpen}
-        onOpenChange={setSpeakerDialogOpen}
-        title={speakerName?.trim() ? "Editar autor" : "Adicionar autor"}
-        placeholder="Nome do pregador"
-        initialValue={speakerName ?? ""}
-        fetchSuggestions={requestSpeakerSuggestions}
-        onSave={(v) => patchSpeakerField("speakerName", v)}
-      />
-      <EntityFieldDialog
-        kind="location"
-        open={locationDialogOpen}
-        onOpenChange={setLocationDialogOpen}
-        title={speakerLocation?.trim() ? "Editar local" : "Adicionar local"}
-        placeholder="Igreja ou local"
-        initialValue={speakerLocation ?? ""}
-        fetchSuggestions={requestLocationSuggestions}
-        onSave={(v) => patchSpeakerField("speakerLocation", v)}
-      />
+        <EntityFieldDialog
+          kind="speaker"
+          open={speakerDialogOpen}
+          onOpenChange={setSpeakerDialogOpen}
+          title={speakerName?.trim() ? "Editar autor" : "Adicionar autor"}
+          placeholder="Nome do pregador"
+          initialValue={speakerName ?? ""}
+          fetchSuggestions={requestSpeakerSuggestions}
+          onSave={(v) => patchSpeakerField("speakerName", v)}
+        />
+        <EntityFieldDialog
+          kind="location"
+          open={locationDialogOpen}
+          onOpenChange={setLocationDialogOpen}
+          title={speakerLocation?.trim() ? "Editar local" : "Adicionar local"}
+          placeholder="Igreja ou local"
+          initialValue={speakerLocation ?? ""}
+          fetchSuggestions={requestLocationSuggestions}
+          onSave={(v) => patchSpeakerField("speakerLocation", v)}
+        />
 
-      {/* O Biblo, e ele aparece desde a FOLHA EM BRANCO.
+        {/* O Biblo, e ele aparece desde a FOLHA EM BRANCO.
 
           Ele esperava o primeiro salvamento, e isso o tirava da tela justamente
           onde ele é mais útil: diante da folha vazia, onde a conversa dele é
@@ -1817,92 +1881,93 @@ export function Composer({
           Aqui ele SABE inserir: o `insertAt` é o mesmo do menu do `+`, e a
           sugestão entra como bloco de verdade, no lugar que o Biblo propôs. Ver
           `BibloDock`. */}
-      {/* A Bíblia fica na borda direita, aqui como na leitura: quem escreve o
+        {/* A Bíblia fica na borda direita, aqui como na leitura: quem escreve o
           resumo de um sermão confere uma passagem tanto quanto quem o lê, e o
           `PassagePicker` do `+` não serve para isso — ele existe para INSERIR
           um bloco, e inserir no texto é um preço alto demais por uma consulta.
           Ver `BibleDock`. */}
-      <BibleDock />
-      {/* No celular, a barra unificada, e as duas PONTAS dela são desta tela: a
+        <BibleDock />
+        {/* No celular, a barra unificada, e as duas PONTAS dela são desta tela: a
           busca procura neste rascunho (ver "A busca do editor") e a ação é o
           "Salvar", o mesmo botão do cabeçalho, ao alcance do polegar.
           O "+" das três portas fica na Biblioteca — criar a próxima sessão no
           meio de um texto que está sendo escrito é o gesto raro aqui. No
           desktop o Biblo continua sendo o disco de sempre. Ver o cabeçalho de
           `MobileActionBar`. */}
-      {/* A fileira de blocos, no lugar da barra de ações enquanto o cursor está
+        {/* A fileira de blocos, no lugar da barra de ações enquanto o cursor está
           numa linha em branco. Ver "A barra de blocos" acima e o cabeçalho de
           `BlockKeyboardBar`. */}
-      {ready && slash === null && writingFocus !== null && (
-        <BlockKeyboardBar
-          options={barOptions}
-          onPick={(pick) => pickFromBar(writingFocus, pick)}
-          onMore={() => openSlashFrom(writingFocus)}
-        />
-      )}
-      {ready && slash === null && writingFocus === null && (
-        <MobileActionBar
-          onAskBiblo={() => bibloRef.current?.open()}
-          bibloThinking={bibloThinking}
-          onSearch={() => (findOpen ? closeFind() : setFindOpen(true))}
-          searchOpen={findOpen}
-          searchLabel="Procurar neste texto"
-          trailing={
-            sessionId ? (
-              <button
-                type="button"
-                onClick={openReading}
-                disabled={leaving}
-                aria-label="Salvar"
-                className={MOBILE_BAR_BUTTON_CLASS}
-              >
-                <Save aria-hidden className="size-5" strokeWidth={1.75} />
-              </button>
-            ) : undefined
-          }
-        />
-      )}
-      {ready && (
-        <BibloDock
-          ref={bibloRef}
-          sessionId={draftId}
-          ensureSession={flush}
-          hideMobileTrigger
-          onThinkingChange={setBibloThinking}
-          onInsert={(suggestion) => {
-            // Sem foco, com revelação: ver `revealIndex`.
-            setRevealIndex(insertAt(suggestion.afterIndex + 1, suggestion.block, false));
-          }}
-          onRemove={(suggestion) => {
-            // Remove a ÚLTIMA ocorrência igual à sugerida, e não um índice
-            // guardado: entre o "Adicionar" e o "Remover" a pessoa pode ter
-            // escrito, movido ou apagado blocos, e um índice velho apagaria o
-            // parágrafo errado. Comparar o conteúdo é o que sobrevive a isso.
-            const needle = JSON.stringify(suggestion.block);
-            patchBlocks((blocks) => {
-              const at = blocks.map((b) => JSON.stringify(b)).lastIndexOf(needle);
-              return at < 0 ? blocks : blocks.filter((_, i) => i !== at);
-            });
-          }}
-        />
-      )}
+        {ready && slash === null && writingFocus !== null && (
+          <BlockKeyboardBar
+            options={barOptions}
+            onPick={(pick) => pickFromBar(writingFocus, pick)}
+            onMore={() => openSlashFrom(writingFocus)}
+          />
+        )}
+        {ready && slash === null && writingFocus === null && (
+          <MobileActionBar
+            onAskBiblo={() => bibloRef.current?.open()}
+            bibloThinking={bibloThinking}
+            onSearch={() => (findOpen ? closeFind() : setFindOpen(true))}
+            searchOpen={findOpen}
+            searchLabel="Procurar neste texto"
+            trailing={
+              sessionId ? (
+                <button
+                  type="button"
+                  onClick={openReading}
+                  disabled={leaving}
+                  aria-label="Salvar"
+                  className={MOBILE_BAR_BUTTON_CLASS}
+                >
+                  <Save aria-hidden className="size-5" strokeWidth={1.75} />
+                </button>
+              ) : undefined
+            }
+          />
+        )}
+        {ready && (
+          <BibloDock
+            ref={bibloRef}
+            sessionId={draftId}
+            ensureSession={flush}
+            hideMobileTrigger
+            onThinkingChange={setBibloThinking}
+            onInsert={(suggestion) => {
+              // Sem foco, com revelação: ver `revealIndex`.
+              setRevealIndex(insertAt(suggestion.afterIndex + 1, suggestion.block, false));
+            }}
+            onRemove={(suggestion) => {
+              // Remove a ÚLTIMA ocorrência igual à sugerida, e não um índice
+              // guardado: entre o "Adicionar" e o "Remover" a pessoa pode ter
+              // escrito, movido ou apagado blocos, e um índice velho apagaria o
+              // parágrafo errado. Comparar o conteúdo é o que sobrevive a isso.
+              const needle = JSON.stringify(suggestion.block);
+              patchBlocks((blocks) => {
+                const at = blocks.map((b) => JSON.stringify(b)).lastIndexOf(needle);
+                return at < 0 ? blocks : blocks.filter((_, i) => i !== at);
+              });
+            }}
+          />
+        )}
 
-      {/* O bloco NA MÃO: um clone da caixa de origem seguindo o ponteiro, por
+        {/* O bloco NA MÃO: um clone da caixa de origem seguindo o ponteiro, por
           portal. Ver `BlockDragGhost`. */}
-      {blockDrag.drag && blockDrag.source ? (
-        <BlockDragGhost
-          source={blockDrag.source}
-          width={blockDrag.drag.width}
-          elementRef={blockDrag.ghostRef}
-        />
-      ) : null}
+        {blockDrag.drag && blockDrag.source ? (
+          <BlockDragGhost
+            source={blockDrag.source}
+            width={blockDrag.drag.width}
+            elementRef={blockDrag.ghostRef}
+          />
+        ) : null}
 
-      {/* `ready` só é falso por um instante, enquanto o rascunho do aparelho é
+        {/* `ready` só é falso por um instante, enquanto o rascunho do aparelho é
           consultado. Ele não esconde a tela (isso faria a página piscar em todo
           carregamento); serve para não anunciar "Salvo" antes de saber se há
           trabalho local por sincronizar. */}
-      {ready ? null : <span className="sr-only">Carregando o rascunho…</span>}
-    </main>
+        {ready ? null : <span className="sr-only">Carregando o rascunho…</span>}
+      </main>
+    </SummaryInsertScope>
   );
 }
 

@@ -290,9 +290,18 @@ existe para consertar volta inteira. Ele lê o perfil sozinho quando ninguém
 passa a tradução, justamente para que uma página nova não possa esquecer.
 
 **No cliente ela desce por contexto** (`TranslationScope`, montado no layout de
-`(shell)`), e é por isso que `ChapterDialog`, `BibloPassage` e a prévia do
-`PassagePicker` acompanham a escolha sem nenhuma prop nova: eles chamam
-`useVerseFetch` sem tradução, e sem tradução é a de quem lê.
+`(shell)`), e é por isso que `BibloPassage` e a prévia do `PassagePicker`
+acompanham a escolha sem nenhuma prop nova: eles chamam `useVerseFetch` sem
+tradução, e sem tradução é a de quem lê.
+
+**O `ChapterDialog` parte da mesma preferência e tem o seletor dele**, no
+subtítulo. Ele dizia "Capítulo completo, na NVI" escrito à mão, e isso virou
+mentira no dia em que a NVI saiu do registro: o texto na tela era o da Bíblia
+Livre com o nome de outra tradução em cima. Um nome de tradução em texto fixo é
+sempre isso esperando acontecer — o nome sai de `TRANSLATIONS`, sempre. O toque
+troca só aquela leitura, pela regra da quarta camada acima; o gatilho é o
+próprio nome dentro da frase, e não uma pastilha, porque o diálogo tem um
+controle só e uma pastilha ao lado inventaria um segundo.
 
 **O `BibleReader` tem o seletor DELE**, no cabeçalho do capítulo, ao lado das
 setas. Ele é a superfície onde se vem LER a Bíblia (e não ler um resumo que a
@@ -301,6 +310,48 @@ de passagem. Como a pastilha de uma citação, ele não grava nada; ao contrári
 dela, a escolha sobrevive a fechar a gaveta, porque o `BibleDock` mantém o
 leitor montado (`keepMounted`) pelo mesmo motivo que preserva o capítulo
 aberto.
+
+## Escolher versículos e mandá-los para o resumo
+
+O capítulo inteiro já ia com um botão, e por muito tempo foi o ÚNICO tamanho
+possível: quem queria três versículos de Atos 16 levava os quarenta. Hoje
+segurar um versículo (`useLongPress`, 420ms) abre as caixas, um toque marca, e
+a barra do pé manda só o que foi marcado. Vale nos dois lugares que mostram um
+capítulo: o `ChapterDialog` (a menção clicada no meio do texto) e o
+`BibleReader` da gaveta lateral.
+
+**O modo nasce de um gesto, e não de uma coluna de caixas sempre acesa.** Ler é
+o que se faz aqui noventa e nove vezes em cem, e as caixas permanentes cobram
+de toda leitura o preço de uma escrita rara. Como segurar o botão do mouse não
+é gesto que se descubra no desktop, cada tela acende um "Selecionar versículos"
+ao lado do que já tinha.
+
+**O toque longo CAI no primeiro arrasto.** Sem isso, toda rolagem que começasse
+em cima de um versículo abriria o modo meio segundo depois, no meio da leitura.
+E o versículo ganha `select-none` onde a seleção existe: os dois gestos disputam
+o mesmo meio segundo de dedo parado, e a seleção nativa de texto ganha.
+
+**A escolha vira FAIXAS contíguas**: 3, 4, 5 e 12 entram como "Atos 16:3-5" e
+"Atos 16:12", dois blocos, não quatro — a referência de uma pregação é a faixa,
+que é como ela vai ser procurada depois. **E os dois entram numa escrita só**
+(`addPassages`): dois `POST` sobre o mesmo documento chegam na ordem que o
+servidor quiser, e o segundo grava por cima do primeiro.
+
+**A tradução só viaja junto quando foi ESCOLHIDA na pastilha.** Gravar a
+preferência de quem lê no bloco a congelaria: o resumo passaria a citar Almeida
+para sempre porque alguém leu em Almeida uma vez.
+
+**O editor monta o MESMO contexto** (`SummaryInsertScope`, em `Composer`), e é
+por isso que a Bíblia da lateral não sabe em qual das duas telas está. Ela não
+podia usar o `SummaryInsertProvider`: o documento do editor é um rascunho local
+com desfazer e foco, e um segundo dono do mesmo texto é o problema que aquele
+arquivo existe para não ter. No GRAVADOR a mesma gaveta monta sem contexto
+nenhum, e lá ela é só leitura — sem caixas, sem toque longo.
+
+**A LISTA de traduções é uma só** (`TranslationChoices`): o cartão de citação,
+a Bíblia da lateral e o diálogo de capítulo abrem a mesma gaveta e vestem o
+gatilho do jeito de cada tela. Estava copiada em três lugares, e uma tradução
+nova teria de ser lembrada nos três.
 
 **A referência e a tradução são DUAS pastilhas, nunca uma.** Elas já foram o
 mesmo botão no cartão de citação, e o alvo dizia "João 3:16" e fazia outra
