@@ -9,6 +9,12 @@ Gerado por `npm run release` a partir dos Conventional Commits. `feat` sobe o
 minor; o resto sobe o patch. Não edite à mão, a próxima execução escreve por
 cima do topo do arquivo.
 
+## 0.96.0, 2026-09-28, desde v0.95.0
+
+### Novidades
+
+- **recording:** ressalva do experimento de tela bloqueada (`3d563fd`)
+
 ## 0.95.0, 2026-09-28, desde v0.94.0
 
 ### Novidades
